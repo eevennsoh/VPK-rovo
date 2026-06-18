@@ -204,54 +204,54 @@ export function EntityCardAgentProfile({
 			</div>
 
 			<div className="flex flex-col gap-4 bg-surface-raised pt-6">
-				<div className="flex flex-col gap-1 px-4 pt-2">
-					<div className="flex w-full items-center justify-between gap-3">
-						<h3 className="min-w-0 truncate text-[20px] font-bold leading-6 text-text">
+				<div className="flex w-full items-center justify-between gap-3 px-4 pt-2">
+					<div className="flex min-w-0 flex-col gap-0">
+						<h3 className="min-w-0 truncate text-base font-bold leading-5 text-text">
 							{name}
 						</h3>
-						<div className="flex items-center gap-2">
-							<Button
-								aria-label={resolvedSwapActionLabel}
-								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
-								onClick={onSwapAction}
-								size="icon-compact"
-								type="button"
-								variant="outline"
-							>
-								<AiChatIcon label="" size="small" />
-							</Button>
-							<Button
-								aria-label={resolvedEditActionLabel}
-								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
-								onClick={onEditAction}
-								size="icon-compact"
-								type="button"
-								variant="outline"
-							>
-								<EditIcon label="" size="small" />
-							</Button>
-							<Button
-								aria-label={resolvedMoreActionLabel}
-								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
-								onClick={onMoreAction}
-								size="icon-compact"
-								type="button"
-								variant="outline"
-							>
-								<ShowMoreHorizontalIcon label="" size="small" />
-							</Button>
-						</div>
+						<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
+							<span>By</span>
+							<span className="truncate text-link">{partnerName}</span>
+							{verified ? (
+								<Icon
+									className="text-icon-information"
+									render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
+								/>
+							) : null}
+						</p>
 					</div>
-					<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-						<span>By</span>
-						<span className="truncate text-link">{partnerName}</span>
-						{verified ? (
-							<Icon
-								className="text-icon-information"
-								render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
-							/>
-						) : null}
-					</p>
+					<div className="flex shrink-0 items-center gap-2">
+						<Button
+							aria-label={resolvedSwapActionLabel}
+							className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
+							onClick={onSwapAction}
+							size="icon-compact"
+							type="button"
+							variant="outline"
+						>
+							<AiChatIcon label="" size="small" />
+						</Button>
+						<Button
+							aria-label={resolvedEditActionLabel}
+							className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
+							onClick={onEditAction}
+							size="icon-compact"
+							type="button"
+							variant="outline"
+						>
+							<EditIcon label="" size="small" />
+						</Button>
+						<Button
+							aria-label={resolvedMoreActionLabel}
+							className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
+							onClick={onMoreAction}
+							size="icon-compact"
+							type="button"
+							variant="outline"
+						>
+							<ShowMoreHorizontalIcon label="" size="small" />
+						</Button>
+					</div>
 				</div>
 				<p className="px-4 pb-4 text-sm leading-5 text-text">
 					{description}

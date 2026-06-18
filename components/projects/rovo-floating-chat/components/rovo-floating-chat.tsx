@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { token } from "@/lib/tokens";
 import { useRovoChat } from "@/app/contexts";
+import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
@@ -16,6 +17,7 @@ interface RovoFloatingChatProps {
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	hideComposerSourceAndModelControls?: boolean;
+	sendPromptOptions?: SendPromptOptions;
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
@@ -28,6 +30,7 @@ export default function RovoFloatingChat({
 	greeting,
 	customAgentTabs,
 	hideComposerSourceAndModelControls = false,
+	sendPromptOptions,
 	onInterceptSubmit,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
@@ -72,6 +75,7 @@ export default function RovoFloatingChat({
 					greeting={greeting}
 					customAgentTabs={customAgentTabs}
 					hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
+					sendPromptOptions={sendPromptOptions}
 					onInterceptSubmit={onInterceptSubmit}
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}

@@ -80,13 +80,14 @@ export function RightNavigationActions({
 						render={(
 							<Button
 								aria-label="Settings"
+								className="[&_svg]:text-icon-subtle aria-expanded:[&_svg]:text-icon-selected"
 								size="icon"
 								type="button"
 								variant="ghost"
 							/>
 						)}
 					>
-						<SettingsIcon label="" color={token("color.icon.subtle")} />
+						<SettingsIcon label="" color="currentColor" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-64">
 						<DropdownMenuGroup>

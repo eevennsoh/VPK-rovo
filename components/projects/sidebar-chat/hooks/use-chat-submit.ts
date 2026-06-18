@@ -100,6 +100,7 @@ export function useChatSubmit({
 		activePrompt,
 		queuedPrompts,
 		removeQueuedPrompt,
+		ensureThreadForLocalTurn,
 	} = useRovoChat();
 
 	// `uiMessages` mutates on every streamed token. Keep it in a ref so the
@@ -141,6 +142,7 @@ export function useChatSubmit({
 			if (isStreamingRef.current || hasInFlightTurnRef.current) {
 				await stopStreaming();
 			}
+			await ensureThreadForLocalTurn(promptText || files[0]?.filename || "New chat");
 
 			const baseMessages = uiMessagesRef.current;
 			const createdAt = new Date().toISOString();
@@ -187,7 +189,7 @@ export function useChatSubmit({
 				setLocalThinkingAssistantMessageId(null);
 			}
 		},
-		[replaceMessages, stopStreaming],
+		[ensureThreadForLocalTurn, replaceMessages, stopStreaming],
 	);
 
 	// Deterministic interception: when the prompt is a handled build intent, skip

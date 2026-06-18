@@ -809,6 +809,7 @@ interface RovoChatContextType {
 	cancelThreadRun: (threadId: string) => Promise<void>;
 	openCurrentThreadFullscreen: () => void;
 	currentThreadHasRichState: boolean;
+	ensureThreadForLocalTurn: (seedPrompt: string) => Promise<string>;
 	replaceMessages: (messages: ReadonlyArray<RovoUIMessage>) => void;
 	adoptThreadMessages: (threadId: string, messages: ReadonlyArray<RovoUIMessage>) => void;
 	isStreaming: boolean;
@@ -2516,6 +2517,15 @@ export function RovoChatProvider({
 		[ensureCompactThread, refreshThreads, sendMessage, setMessages, stop]
 	);
 
+	const ensureThreadForLocalTurn = useCallback(
+		async (seedPrompt: string) => {
+			const threadId = await ensureCompactThread(seedPrompt);
+			void refreshThreads();
+			return threadId;
+		},
+		[ensureCompactThread, refreshThreads]
+	);
+
 	useEffect(() => {
 		sendChatMessageRef.current = sendChatMessage;
 	}, [sendChatMessage]);
@@ -3502,6 +3512,7 @@ export function RovoChatProvider({
 			cancelThreadRun,
 			openCurrentThreadFullscreen,
 			currentThreadHasRichState,
+			ensureThreadForLocalTurn,
 			replaceMessages,
 			adoptThreadMessages,
 			isStreaming,
@@ -3567,6 +3578,7 @@ export function RovoChatProvider({
 			cancelThreadRun,
 			openCurrentThreadFullscreen,
 			currentThreadHasRichState,
+			ensureThreadForLocalTurn,
 			replaceMessages,
 			adoptThreadMessages,
 			isStreaming,
