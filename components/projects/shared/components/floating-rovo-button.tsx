@@ -421,7 +421,12 @@ function FloatingRovoButtonPersistentBarRail({
 					return item.tooltipLabel ? (
 						<Tooltip key={item.id}>
 							<TooltipTrigger render={actionButton} />
-							<TooltipContent side="left">{item.tooltipLabel}</TooltipContent>
+							{/* Anchor vertically along the bar's own direction (away from the
+							    button) so the label centers on the button and never overflows a
+							    narrow preview card's left/right edge the way a fixed
+							    `side="left"` tooltip did. Base UI auto-flips if that side lacks
+							    room. */}
+							<TooltipContent side={side}>{item.tooltipLabel}</TooltipContent>
 						</Tooltip>
 					) : actionButton;
 				})}

@@ -132,8 +132,10 @@ test("compact chat streams realtime assistant text into the Clicky response pane
 	assert.match(sidebarPanel, /if \(!isClickyActive\) \{[\s\S]*activateClicky\(\);[\s\S]*\}[\s\S]*clickyStartSpeaking\(text\);/u);
 	assert.match(assistantDeltaSource, /streamClickyAssistantText\(text\);/u);
 	assert.doesNotMatch(assistantDeltaSource, /if \(!isClickyActive\)/u);
-	assert.match(assistantCompletedSource, /if \(!text \|\| !streamClickyAssistantText\(text\)\) \{[\s\S]*return;/u);
-	assert.match(assistantCompletedSource, /clickyAddExchange\(\{ role: "assistant", content: text \}\);/u);
+	assert.match(assistantCompletedSource, /const promptText = realtimeTranscriptRef\.current\.trim\(\);/u);
+	assert.match(assistantCompletedSource, /const didStreamToClicky = streamClickyAssistantText\(text\);/u);
+	assert.match(assistantCompletedSource, /void recordLocalAssistantTurn\(\{[\s\S]*assistantParts: \[\{ type: "text", text, state: "done" \}\],[\s\S]*promptText,[\s\S]*\}\);/u);
+	assert.match(assistantCompletedSource, /if \(didStreamToClicky\) \{[\s\S]*clickyAddExchange\(\{ role: "assistant", content: text \}\);/u);
 	assert.match(sidebarPanel, /onAssistantTextDelta: handleRealtimeAssistantTextDelta/u);
 	assert.match(sidebarPanel, /onAssistantTextCompleted: handleRealtimeAssistantTextCompleted/u);
 });
@@ -455,6 +457,7 @@ test("compact chat submits add-menu files through the shared Rovo thread queue",
 	const sendPromptIndex = context.indexOf("const sendPrompt = useCallback(");
 
 	assert.match(submitHook, /handleSubmit: \(message: \{ text: string; files: FileUIPart\[\] \}\) => Promise<void>/u);
+	assert.match(submitHook, /recordLocalAssistantTurn: \(params: \{[\s\S]*assistantParts: RovoUIMessage\["parts"\];[\s\S]*promptText: string;[\s\S]*\}\) => Promise<void>/u);
 	assert.match(submitHook, /await sendPrompt\(promptText, defaultPromptOptions, files\)/u);
 	assert.match(context, /files: FileUIPart\[\];/u);
 	assert.match(context, /sendPrompt: \(prompt: string, options\?: SendPromptOptions, files\?: ReadonlyArray<FileUIPart>\) => Promise<void>/u);
