@@ -539,7 +539,7 @@ export function RovoCursorOnboardingTour({
 							width: PANEL_WIDTH,
 						}}
 					>
-						<div className="flex items-start justify-between gap-2">
+						<div className="flex w-full items-start justify-between gap-2">
 							<div className="min-w-0 flex-1">
 								<h2 id={titleId} className="text-text-inverse" style={{ font: token("font.heading.xsmall") }}>
 									{phase === "returning" ? "Rovo" : step.headline}
