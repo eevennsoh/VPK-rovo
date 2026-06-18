@@ -9,6 +9,7 @@
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
 import { Fragment, useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import type { FileUIPart } from "ai";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
@@ -42,6 +43,7 @@ import {
 	isRenderableRovoUIMessage,
 	type RovoRenderableUIMessage,
 	type RovoDataParts,
+	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import {
@@ -87,7 +89,7 @@ import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
-import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
+import { type DelegationRequest, type UseRealtimeVoiceResult, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
 import { useClicky } from "@/components/projects/rovo/hooks/use-clicky";
 import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voice";
@@ -106,6 +108,7 @@ import styles from "./chat.module.css";
 export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 
 interface ChatPanelCardsProps {
+	generatedAgentResult?: RovoDataParts["agent-result"] | null;
 	generativeAnimation?: GenerativeCardAnimationProps;
 }
 
@@ -154,6 +157,39 @@ export interface ChatPanelAgentVersionOption {
 	 * preview.
 	 */
 	isCurrent?: boolean;
+}
+
+export interface ChatPanelScriptedConversation {
+	initialVoiceKey?: string | null;
+	initialVoiceText?: string | null;
+	messages: ReadonlyArray<RovoUIMessage>;
+	onSubmit: (text: string) => Promise<ChatPanelScriptedConversationSubmitResult> | ChatPanelScriptedConversationSubmitResult;
+}
+
+export interface ChatPanelScriptedConversationSubmitDetails {
+	handled?: boolean;
+	voiceText?: string | null;
+}
+
+export type ChatPanelScriptedConversationSubmitResult =
+	| boolean
+	| ChatPanelScriptedConversationSubmitDetails
+	| void;
+
+function isScriptedConversationSubmitHandled(result: ChatPanelScriptedConversationSubmitResult): boolean {
+	return result !== false && (
+		typeof result !== "object" ||
+		result === null ||
+		result.handled !== false
+	);
+}
+
+function getScriptedConversationVoiceText(result: ChatPanelScriptedConversationSubmitResult): string {
+	if (typeof result !== "object" || result === null || typeof result.voiceText !== "string") {
+		return "";
+	}
+
+	return result.voiceText.trim();
 }
 
 interface ChatPanelProps {
@@ -242,6 +278,7 @@ interface ChatPanelProps {
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
+	scriptedConversation?: ChatPanelScriptedConversation | null;
 	startRealtimeVoiceRequestKey?: number;
 }
 
@@ -384,6 +421,7 @@ export default function ChatPanel({
 	onArtifactResult,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
+	scriptedConversation = null,
 	startRealtimeVoiceRequestKey = 0,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
@@ -524,6 +562,58 @@ export default function ChatPanel({
 		onInterceptSubmit,
 		requireIntercept: isCollapsibleEditContextBar && isContextBarOpen,
 	});
+	const isScriptedConversationActive = scriptedConversation !== null;
+	const sendRealtimeTextInputRef = useRef<UseRealtimeVoiceResult["sendTextInput"] | null>(null);
+	const lastScriptedInitialVoiceKeyRef = useRef<string | null>(null);
+	const speakScriptedConversationVoiceText = useCallback((result: ChatPanelScriptedConversationSubmitResult) => {
+		const voiceText = getScriptedConversationVoiceText(result);
+		if (!voiceText) {
+			return;
+		}
+
+		void sendRealtimeTextInputRef.current?.({
+			text: `Speak much quicker than normal, with tight upbeat pacing. Read only this onboarding narration, without adding extra words:\n${voiceText}`,
+		});
+	}, []);
+	useEffect(() => {
+		if (!scriptedConversation) {
+			lastScriptedInitialVoiceKeyRef.current = null;
+			return;
+		}
+
+		const initialVoiceText = scriptedConversation.initialVoiceText?.trim() ?? "";
+		if (!initialVoiceText) {
+			return;
+		}
+
+		const initialVoiceKey = scriptedConversation.initialVoiceKey?.trim() || initialVoiceText;
+		if (lastScriptedInitialVoiceKeyRef.current === initialVoiceKey) {
+			return;
+		}
+
+		lastScriptedInitialVoiceKeyRef.current = initialVoiceKey;
+		speakScriptedConversationVoiceText({ voiceText: initialVoiceText });
+	}, [scriptedConversation, speakScriptedConversationVoiceText]);
+	const handleComposerSubmit = useCallback(async ({ files, text }: { text: string; files: FileUIPart[] }) => {
+		if (!scriptedConversation) {
+			await handleSubmit({ files, text });
+			return;
+		}
+
+		const promptText = (text || prompt).trim();
+		if (!promptText) {
+			return;
+		}
+
+		const result = await scriptedConversation.onSubmit(promptText);
+		if (!isScriptedConversationSubmitHandled(result)) {
+			await handleSubmit({ files, text: promptText });
+			return;
+		}
+
+		setPrompt("");
+		speakScriptedConversationVoiceText(result);
+	}, [handleSubmit, prompt, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
 
 	// --- Rovo AI cursor companion (Clicky) ---
 	const clicky = useClicky();
@@ -652,6 +742,10 @@ export default function ChatPanel({
 			return;
 		}
 
+		if (!transcriptText.trim()) {
+			return;
+		}
+
 		// Clicky: transition to processing and record the user's spoken question
 		// instead of routing it into the chat composer/thread.
 		if (isClickyActive) {
@@ -662,12 +756,21 @@ export default function ChatPanel({
 			return;
 		}
 
-		if (!transcriptText.trim()) {
+		if (scriptedConversation) {
+			void Promise.resolve(scriptedConversation.onSubmit(transcriptText)).then((result) => {
+				if (isScriptedConversationSubmitHandled(result)) {
+					realtimeTranscriptRef.current = "";
+					speakScriptedConversationVoiceText(result);
+					return;
+				}
+				realtimeTranscriptRef.current = transcriptText;
+				void handleSubmit({ files: [], text: transcriptText });
+			});
 			return;
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-	}, [isClickyActive, clickyStartProcessing, clickyAddExchange, setPrompt]);
+	}, [clickyAddExchange, clickyStartProcessing, handleSubmit, isClickyActive, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
 
 	const getScreenAssistantSnapshot = useCallback(() => {
 		return createStudioScreenAssistantSnapshot({
@@ -742,7 +845,7 @@ export default function ChatPanel({
 				case "submit_composer": {
 					const text = promptRef.current.trim();
 					if (text) {
-						void handleSubmit({ files: [], text });
+						void handleComposerSubmit({ files: [], text });
 					}
 					respond({ ok: Boolean(text) });
 					return;
@@ -759,7 +862,7 @@ export default function ChatPanel({
 			activateClicky,
 			clickyStartPointing,
 			getScreenAssistantSnapshot,
-			handleSubmit,
+			handleComposerSubmit,
 			isClickyActive,
 			setPrompt,
 		],
@@ -767,6 +870,10 @@ export default function ChatPanel({
 
 		const handleRealtimeAssistantTextDelta = useCallback((payload: RealtimeAssistantTextPayload) => {
 			if (isDictationActiveRef.current) {
+				return;
+			}
+
+			if (scriptedConversation) {
 				return;
 			}
 
@@ -778,10 +885,14 @@ export default function ChatPanel({
 			}
 
 			streamClickyAssistantText(text);
-		}, [streamClickyAssistantText]);
+		}, [scriptedConversation, streamClickyAssistantText]);
 
 		const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
 			if (isDictationActiveRef.current) {
+				return;
+			}
+
+			if (scriptedConversation) {
 				return;
 			}
 
@@ -793,7 +904,7 @@ export default function ChatPanel({
 			}
 
 			clickyAddExchange({ role: "assistant", content: text });
-		}, [clickyAddExchange, streamClickyAssistantText]);
+		}, [clickyAddExchange, scriptedConversation, streamClickyAssistantText]);
 	const handleRealtimeDelegateToRovo = useCallback(
 		(request: DelegationRequest) => {
 			if (isDictationActiveRef.current) {
@@ -810,21 +921,36 @@ export default function ChatPanel({
 				return;
 			}
 
-			const contextDescription = mergeRovoContextDescriptions(
-				resolvedSendPromptOptions?.contextDescription,
-				request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined,
-			);
-			const promptOptions = contextDescription
-				? {
-						...resolvedSendPromptOptions,
-						contextDescription,
-					}
-				: resolvedSendPromptOptions;
 			realtimeTranscriptRef.current = "";
 			setPrompt("");
-			void sendPrompt(promptText, promptOptions);
+			const sendRealtimePrompt = () => {
+				const contextDescription = mergeRovoContextDescriptions(
+					resolvedSendPromptOptions?.contextDescription,
+					request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined,
+				);
+				const promptOptions = contextDescription
+					? {
+							...resolvedSendPromptOptions,
+							contextDescription,
+						}
+					: resolvedSendPromptOptions;
+				void sendPrompt(promptText, promptOptions);
+			};
+
+			if (!scriptedConversation) {
+				sendRealtimePrompt();
+				return;
+			}
+
+			void Promise.resolve(scriptedConversation.onSubmit(promptText)).then((result) => {
+				if (!isScriptedConversationSubmitHandled(result)) {
+					sendRealtimePrompt();
+					return;
+				}
+				speakScriptedConversationVoiceText(result);
+			});
 		},
-		[isClickyActive, resolvedSendPromptOptions, sendPrompt, setPrompt],
+		[isClickyActive, resolvedSendPromptOptions, scriptedConversation, sendPrompt, setPrompt, speakScriptedConversationVoiceText],
 	);
 	const realtime = useRealtimeVoice({
 		chatMessages: uiMessages,
@@ -854,6 +980,7 @@ export default function ChatPanel({
 		),
 	});
 
+	sendRealtimeTextInputRef.current = realtime.sendTextInput;
 	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
 
 	// --- AI cursor voice bridge: connects realtime + injects tool-based prompt ---
@@ -902,14 +1029,59 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = "";
-		realtime.connect();
-	}, [realtime]);
+		realtime.connect(isScriptedConversationActive ? { explicitResponseOnly: true } : undefined);
+	}, [isScriptedConversationActive, realtime]);
 	const lastStartRealtimeVoiceRequestKeyRef = useRef(0);
+	const cleanupDeferredStartRealtimeVoiceRef = useRef<(() => void) | null>(null);
+	const clearDeferredStartRealtimeVoice = useCallback(() => {
+		cleanupDeferredStartRealtimeVoiceRef.current?.();
+		cleanupDeferredStartRealtimeVoiceRef.current = null;
+	}, []);
+	const shouldDeferRealtimeVoiceStartForUserActivation = useCallback(() => {
+		if (typeof navigator === "undefined" || !navigator.userActivation) {
+			return false;
+		}
+
+		return !navigator.userActivation.hasBeenActive;
+	}, []);
+	const startRealtimeVoiceAfterUserActivation = useCallback(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		clearDeferredStartRealtimeVoice();
+		const handleUserActivation = (event: Event) => {
+			if (!event.isTrusted) {
+				return;
+			}
+
+			clearDeferredStartRealtimeVoice();
+			startRealtimeVoice();
+		};
+		const listenerOptions: AddEventListenerOptions = {
+			capture: true,
+		};
+		const removeListenerOptions: EventListenerOptions = {
+			capture: true,
+		};
+
+		window.addEventListener("pointerdown", handleUserActivation, listenerOptions);
+		window.addEventListener("keydown", handleUserActivation, listenerOptions);
+		window.addEventListener("touchstart", handleUserActivation, listenerOptions);
+		cleanupDeferredStartRealtimeVoiceRef.current = () => {
+			window.removeEventListener("pointerdown", handleUserActivation, removeListenerOptions);
+			window.removeEventListener("keydown", handleUserActivation, removeListenerOptions);
+			window.removeEventListener("touchstart", handleUserActivation, removeListenerOptions);
+		};
+	}, [clearDeferredStartRealtimeVoice, startRealtimeVoice]);
 	useEffect(() => {
-		if (
-			startRealtimeVoiceRequestKey <= 0 ||
-			lastStartRealtimeVoiceRequestKeyRef.current === startRealtimeVoiceRequestKey
-		) {
+		if (startRealtimeVoiceRequestKey <= 0) {
+			lastStartRealtimeVoiceRequestKeyRef.current = 0;
+			clearDeferredStartRealtimeVoice();
+			return;
+		}
+
+		if (lastStartRealtimeVoiceRequestKeyRef.current === startRealtimeVoiceRequestKey) {
 			return;
 		}
 
@@ -918,10 +1090,26 @@ export default function ChatPanel({
 			return;
 		}
 
+		if (shouldDeferRealtimeVoiceStartForUserActivation()) {
+			startRealtimeVoiceAfterUserActivation();
+			return;
+		}
+
 		startRealtimeVoice();
-	}, [realtime.voiceState, startRealtimeVoice, startRealtimeVoiceRequestKey]);
+	}, [
+		clearDeferredStartRealtimeVoice,
+		realtime.voiceState,
+		shouldDeferRealtimeVoiceStartForUserActivation,
+		startRealtimeVoice,
+		startRealtimeVoiceAfterUserActivation,
+		startRealtimeVoiceRequestKey,
+	]);
+	useEffect(() => {
+		return () => clearDeferredStartRealtimeVoice();
+	}, [clearDeferredStartRealtimeVoice]);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
+		clearDeferredStartRealtimeVoice();
 		if (realtime.voiceState === "idle") {
 			startRealtimeVoice();
 			return;
@@ -930,7 +1118,7 @@ export default function ChatPanel({
 		realtimeTranscriptRef.current = "";
 		realtime.disconnect();
 		deactivateClicky();
-	}, [deactivateClicky, realtime, startRealtimeVoice]);
+	}, [clearDeferredStartRealtimeVoice, deactivateClicky, realtime, startRealtimeVoice]);
 
 	const handleToggleClicky = useCallback(() => {
 		if (isClickyActive) {
@@ -969,12 +1157,40 @@ export default function ChatPanel({
 	const isRequestInFlight = hasInFlightTurn;
 	const hasPendingChatWork = isRequestInFlight || queuedPrompts.length > 0;
 
-	const rawMessages = useMemo(() => uiMessages.filter(isRenderableRovoUIMessage), [uiMessages]);
+	const rawMessages = useMemo(() => {
+		const realMessages = uiMessages.filter(isRenderableRovoUIMessage);
+		if (!isScriptedConversationActive) {
+			return realMessages;
+		}
+
+		const scriptedMessages = scriptedConversation?.messages.filter(isRenderableRovoUIMessage) ?? [];
+		return [...realMessages, ...scriptedMessages];
+	}, [isScriptedConversationActive, scriptedConversation, uiMessages]);
 	const optimisticPrompt = activePrompt ?? (isSubmitPending ? queuedPrompts[0] ?? null : null);
 	const messages = useMemo(
 		() => appendOptimisticCompactUserMessage(rawMessages, optimisticPrompt),
 		[optimisticPrompt, rawMessages]
 	);
+	const shouldRenderGeneratedAgentFallbackCard = useMemo(() => {
+		if (!isGeneratedAgentResult(cards?.generatedAgentResult)) {
+			return false;
+		}
+
+		const cardAgentId = cards.generatedAgentResult.agentId;
+		const cardAction = cards.generatedAgentResult.action;
+		return !messages.some((message) => {
+			if (!hasTurnCompleteSignal(message)) {
+				return false;
+			}
+
+			const messageAgentResult = getMessageAgentResult(message);
+			return (
+				isGeneratedAgentResult(messageAgentResult) &&
+				messageAgentResult.agentId === cardAgentId &&
+				messageAgentResult.action === cardAction
+			);
+		});
+	}, [cards?.generatedAgentResult, messages]);
 
 	useEffect(() => {
 		if (!onArtifactResult) {
@@ -1005,7 +1221,9 @@ export default function ChatPanel({
 		return null;
 	}, [messages]);
 
-	const activeQuestionCard = useMemo(() => getLatestQuestionCardPayload(rawUiMessages), [rawUiMessages]);
+	const activeQuestionCard = useMemo(() => (
+		isScriptedConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)
+	), [isScriptedConversationActive, rawUiMessages]);
 	const handleClarificationDismiss = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			const dismissPrompt = buildClarificationDismissPrompt(questionCard);
@@ -1032,7 +1250,9 @@ export default function ChatPanel({
 		onDismissQuestionCard: handleClarificationDismiss,
 	});
 	const shouldShowQuestionCard = !isRequestInFlight && shouldShowQuestionCardRaw;
-	const activePendingPlan = useMemo(() => getLatestPendingPlanWidget(rawUiMessages), [rawUiMessages]);
+	const activePendingPlan = useMemo(() => (
+		isScriptedConversationActive ? null : getLatestPendingPlanWidget(rawUiMessages)
+	), [isScriptedConversationActive, rawUiMessages]);
 	const [dismissedApprovalCardKey, setDismissedApprovalCardKey] = useState<string | null>(null);
 	const [isSubmittingPlanApproval, setIsSubmittingPlanApproval] = useState(false);
 	const pendingPlanKey = activePendingPlan?.planWidget.deferredToolCallId ?? null;
@@ -1388,6 +1608,14 @@ export default function ChatPanel({
 						}}
 					/>
 				)}
+				{shouldRenderGeneratedAgentFallbackCard && cards?.generatedAgentResult ? (
+					<div className="w-full px-3" data-testid="rovo-generated-result-group">
+						<AgentResultCard
+							agent={cards.generatedAgentResult}
+							onSelectAgent={handleAgentResultSelect}
+						/>
+					</div>
+				) : null}
 				{thinking.shouldShowPreloader ? (
 					<div style={chatStyles.thinkingContainer}>
 						<PreloadThinkingIndicator />
@@ -1455,11 +1683,11 @@ export default function ChatPanel({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						focusRequestKey={composerFocusRequestKey}
-						clickyActive={!hideAiCursor && isClickyActive}
+						clickyActive={!hideAiCursor && (isClickyActive || isScriptedConversationActive)}
 						onPromptChange={setPrompt}
 						onStartDictation={handleStartDictation}
 						onStopDictation={handleStopDictation}
-						onSubmit={handleSubmit}
+						onSubmit={handleComposerSubmit}
 						onStop={abort}
 						onToggleClicky={handleToggleClicky}
 						onToggleRealtimeVoice={handleToggleRealtimeVoice}
