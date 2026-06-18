@@ -135,6 +135,9 @@ interface RovoAppAgentConfigPanelProps {
 	// Opens the host-owned Agent Directory on its first template tab when the
 	// empty-instructions "start with a template" link is clicked.
 	onStartWithTemplate?: () => void;
+	// Receives the config's automation-dialog opener so the shell can let the
+	// Ask Rovo agent-edit-summary card jump to the trigger/flow dialog.
+	registerAutomationDialogOpener?: (opener: (() => void) | null) => void;
 	className?: string;
 }
 
@@ -646,6 +649,7 @@ export function RovoAppAgentConfigPanel({
 	onChatInterceptSubmit,
 	onUpdateDraft,
 	onStartWithTemplate,
+	registerAutomationDialogOpener,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -1245,22 +1249,32 @@ export function RovoAppAgentConfigPanel({
 			onCommitPublishReady(profileId);
 		}
 		onPublish(profileId);
-		if (!hasPublishedVersion) {
-			toast.custom(
-				(id) => (
-					<SonnerToast
-						appearance="success"
-						title="Agent launched"
-						description={`${agentName} is live as V1.`}
-						dismissible
-						onDismiss={() => toast.dismiss(id)}
-					/>
-				),
-				{ id: `${STUDIO_AGENT_PUBLISH_TOASTER_ID}-${profileId}`, toasterId: STUDIO_AGENT_PUBLISH_TOASTER_ID, duration: SONNER_TOAST_AUTO_DISMISS_MS },
-			);
-		}
+		// Confirm every publish with a flag — the first launch and each later
+		// update. The toast id is version-scoped so successive publishes don't
+		// dedupe into a single stale toast.
+		const nextVersion = entry.publishedVersion + 1;
+		toast.custom(
+			(id) => (
+				<SonnerToast
+					appearance="success"
+					title={hasPublishedVersion ? "Changes published" : "Agent launched"}
+					description={
+						hasPublishedVersion
+							? `${agentName} is now live as V${nextVersion}.`
+							: `${agentName} is live as V1.`
+					}
+					dismissible
+					onDismiss={() => toast.dismiss(id)}
+				/>
+			),
+			{
+				id: `${STUDIO_AGENT_PUBLISH_TOASTER_ID}-${profileId}-v${nextVersion}`,
+				toasterId: STUDIO_AGENT_PUBLISH_TOASTER_ID,
+				duration: SONNER_TOAST_AUTO_DISMISS_MS,
+			},
+		);
 		setPreviewVersionId(null);
-	}, [agentName, hasPublishedVersion, hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
+	}, [agentName, entry.publishedVersion, hasPublishedVersion, hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
 
 	const handleRestoreVersion = useCallback(
 		(versionId: string) => {
@@ -1628,6 +1642,11 @@ export function RovoAppAgentConfigPanel({
 											onSelectListItem={handleSelectListItem}
 											onStartWithTemplate={onStartWithTemplate}
 											onAutomationRulesChange={handleAutomationRulesChange}
+											// Subagents can't own triggers (the row is hidden), so only
+											// expose the automation opener for the base agent.
+											registerAutomationDialogOpener={
+												isSubagentActive ? undefined : registerAutomationDialogOpener
+											}
 											onOpenDirectory={handleOpenDirectory}
 											selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
 											screenAssistantTargetPrefix="studio-agent-config"

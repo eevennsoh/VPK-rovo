@@ -54,14 +54,24 @@ test("AgentTestPanel surfaces automations in the greeting and runs them inline i
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, />\s*Flows\s*</u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*<AgentAutomationFlowCover[\s\S]*rootElement="span"[\s\S]*triggers=\{rule\.triggers\}/u);
-	// Clicking a row injects a scripted user + assistant turn via replaceMessages.
-	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ createAssistantTextMessage, type RovoDataParts, type RovoUIMessage \} from "@\/lib\/rovo-ui-messages";/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAutomationRunMessages\(/u);
+	// Clicking a row plays a scripted user + assistant turn that streams in via
+	// staged replaceMessages calls (not an instant single dump).
+	assert.match(AGENT_TEST_PANEL_SOURCE, /import type \{ RovoDataParts, RovoUIMessage \} from "@\/lib\/rovo-ui-messages";/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAutomationRunPlan\(/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const trigger = rule\.triggers\[0\];/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const result = createAutomationTestResult\(rule, ruleIndex, trigger\);/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /replaceMessages\(messages\);/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /Sample event payload/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /Callback result/u);
+	// Progressive playback: a stable assistant id, delayed frames, and a run token
+	// so a newer run supersedes an in-flight one.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const frames: AutomationRunFrame\[\]/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /runTokenRef/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /window\.setTimeout\(resolve, frame\.delayMs\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /replaceMessages\(\[\s*userMessage,/u);
+	// Tool calls + streamed reply; the payload/callback ride inside the thought.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /toolName: "jira\.search_work_items"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /toolName: "slack\.send_message"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /state: "streaming"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /input: result\.payload/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /output: result\.callback/u);
 	// The old standalone automation detail surface is gone.
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /AgentTestAutomationDetailView/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /function AutomationTestCard/u);

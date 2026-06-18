@@ -17,7 +17,7 @@ const DEMO_SOURCE = readFileSync(
 );
 
 test("ManageTriggersDialog restores the compact drag-list modal", () => {
-	assert.match(DIALOG_SOURCE, /Manage automations/u);
+	assert.match(DIALOG_SOURCE, /Manage flows/u);
 	assert.match(DIALOG_SOURCE, /\{open \? \(\s*<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /onSelectEvent=\{onAddAutomation\}/u);
@@ -29,7 +29,7 @@ test("ManageTriggersDialog restores the compact drag-list modal", () => {
 	assert.match(DIALOG_SOURCE, /useSortable\(\{ id: automationRule\.id \}\)/u);
 	assert.match(DIALOG_SOURCE, /onReorderAutomations\(String\(active\.id\), String\(over\.id\)\)/u);
 
-	assert.match(DIALOG_SOURCE, /No automations yet\./u);
+	assert.match(DIALOG_SOURCE, /No flows yet\./u);
 });
 
 test("ManageTriggersDialog rows manage automation rules, not individual event triggers", () => {
@@ -57,7 +57,7 @@ test("ManageTriggersDialog rows manage automation rules, not individual event tr
 	assert.match(DIALOG_SOURCE, /onClick=\{\(\) => onEdit\(automationRule\)\}/u);
 });
 
-test('agent config fallback wires "Manage automations" to ManageTriggersDialog', () => {
+test('agent config fallback wires "Manage flows" to ManageTriggersDialog', () => {
 	assert.match(AGENT_SOURCE, /import \{ ManageTriggersDialog \}/u);
 	assert.match(AGENT_SOURCE, /const \[manageTriggersOpen, setManageTriggersOpen\] = useState\(false\)/u);
 	assert.match(AGENT_SOURCE, /setManageTriggersOpen\(true\)/u);

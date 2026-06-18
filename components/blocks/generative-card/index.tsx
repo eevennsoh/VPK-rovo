@@ -130,7 +130,12 @@ export const GenerativeCard = memo(function GenerativeCard({
 
 	const card = (
 		<GenerativeCardContext value={contextValue}>
-			<Card ref={cardRef} className={cn("w-full gap-0 p-0", needsWrapper ? undefined : className)} {...props}>
+			{/* `p-0`/`gap-0` zero the base Card padding + flex gap, but the
+			    `data-[size=sm]:py-3` / `data-[size=sm]:gap-3` variants are separate
+			    tailwind-merge groups, so they survive and (by specificity) re-add
+			    vertical padding + a 12px gap between header and the collapsed body
+			    on sm cards. Zero the variants too so only the header sets height. */}
+			<Card ref={cardRef} className={cn("w-full gap-0 p-0 data-[size=sm]:py-0 data-[size=sm]:gap-0", needsWrapper ? undefined : className)} {...props}>
 				{animate ? (
 					<div ref={distortionTargetRef} className="relative">
 						{children}

@@ -142,7 +142,10 @@ test("RFP leadership Slack summary prompt adds a scheduled trigger to the open a
 		triggers: [],
 	});
 	assert.equal(directScheduleOutcome.handled, true);
-	assert.deepEqual(directScheduleOutcome.triggerAutomationNames, ["Send Slack Message Friday"]);
+	// A Friday-9am RFP/Slack request maps to the curated weekly-summary flow
+	// (nicer title + "Every Friday, 9am" schedule) instead of the terse generic
+	// derivation ("Send Slack Message Friday").
+	assert.deepEqual(directScheduleOutcome.triggerAutomationNames, ["Weekly RFP loss review for sales leadership"]);
 });
 
 test("tool mention resolves to an APP and populates both facets", async () => {

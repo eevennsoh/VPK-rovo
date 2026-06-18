@@ -38,6 +38,11 @@ interface MessageBubbleProps {
 	onWidgetPrimaryAction?: (
 		payload: GenerativeWidgetPrimaryActionPayload
 	) => Promise<void> | void;
+	/**
+	 * Opens the automation trigger/flow dialog from an agent-edit-summary card's
+	 * "Open" button. When omitted the card renders without the button.
+	 */
+	onOpenAgentEditSummary?: () => void;
 	renderWidget?: (
 		widget: { type: string; data: unknown },
 		message: RovoRenderableUIMessage
@@ -62,6 +67,7 @@ export default function MessageBubble({
 	onEditMessage,
 	onSetEditingMessageId,
 	onWidgetPrimaryAction,
+	onOpenAgentEditSummary,
 	renderWidget: renderCustomWidget,
 	getWidgetPosition,
 	onBuildPlan,
@@ -113,7 +119,12 @@ export default function MessageBubble({
 
 					if (widget.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE) {
 						const summaryPayload = parseAgentEditSummaryPayload(widget.data);
-						return summaryPayload ? <AgentEditSummaryCard payload={summaryPayload} /> : null;
+						return summaryPayload ? (
+							<AgentEditSummaryCard
+								payload={summaryPayload}
+								onOpen={onOpenAgentEditSummary}
+							/>
+						) : null;
 					}
 
 					const customWidget = renderCustomWidget?.(widget, widgetMessage);

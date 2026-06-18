@@ -227,6 +227,18 @@ interface ChatPanelProps {
 		message: RovoRenderableUIMessage
 	) => ReactNode;
 	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
+	/**
+	 * Opens the host's automation trigger/flow dialog from an agent-edit-summary
+	 * card's "Open" button. Studio passes its config-panel automation opener here.
+	 */
+	onOpenAgentEditSummary?: () => void;
+	/**
+	 * Id of an externally-injected assistant message that should render as
+	 * actively "thinking" (live morphing-Rovo trace, auto-expanded) — used by the
+	 * Agent Test panel while it plays a scripted run via `replaceMessages`. Cleared
+	 * (set to null) when the run settles so the trace collapses to "Thought for Xs".
+	 */
+	externalThinkingMessageId?: string | null;
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
@@ -367,6 +379,8 @@ export default function ChatPanel({
 	chatContextBar,
 	renderWidget,
 	getWidgetPosition,
+	onOpenAgentEditSummary,
+	externalThinkingMessageId,
 	onArtifactResult,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
@@ -1313,7 +1327,7 @@ export default function ChatPanel({
 						renderMessage={(message) => (
 							<MessageBubble
 								message={message}
-								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId) && message.id === lastAssistantMessageId}
+								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId || message.id === externalThinkingMessageId) && message.id === lastAssistantMessageId}
 								onSuggestionClick={handleFollowUpSuggestionClick}
 								showFollowUpSuggestions={message.id === lastAssistantMessageId && !hasPendingChatWork}
 								enableSmartWidgets={enableSmartWidgets}
@@ -1324,6 +1338,7 @@ export default function ChatPanel({
 								}
 								onSetEditingMessageId={setEditingMessageId}
 								onWidgetPrimaryAction={handleWidgetPrimaryAction}
+								onOpenAgentEditSummary={onOpenAgentEditSummary}
 								renderWidget={renderWidget}
 								getWidgetPosition={getWidgetPosition}
 								onBuildPlan={handleBuildPlan}

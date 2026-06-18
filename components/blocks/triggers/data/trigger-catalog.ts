@@ -212,6 +212,11 @@ export const TRIGGER_PROVIDERS = [
 				description: "Run once every morning at 7:00 AM.",
 			},
 			{
+				id: "weekly-friday-9am",
+				label: "Custom schedule (Every Friday, 9am)",
+				description: "Run once a week, every Friday at 9:00 AM.",
+			},
+			{
 				id: "custom-schedule",
 				label: "Custom schedule",
 				description: "Use a custom recurring schedule.",

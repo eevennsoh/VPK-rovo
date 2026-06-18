@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 
-import EditIcon from "@atlaskit/icon/core/edit";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 
 import {
 	GenerativeCard,
@@ -10,7 +10,9 @@ import {
 	GenerativeCardContent,
 	GenerativeCardHeader,
 } from "@/components/blocks/generative-card";
+import { Button } from "@/components/ui/button";
 import { Tile } from "@/components/ui/tile";
+import { ExternalLinkIcon } from "@/components/ui/vpk-icons";
 import type { AgentEditSummaryPayload } from "@/components/projects/shared/lib/agent-edit-summary";
 
 /**
@@ -18,19 +20,39 @@ import type { AgentEditSummaryPayload } from "@/components/projects/shared/lib/a
  * agent-config edit. The header carries a one-line summary while collapsed;
  * expanding reveals the per-field change rows. Replaces the previous plain
  * "Done — I added …" text reply so each edit reads as a reviewable change.
+ *
+ * The leading glyph mirrors the config's Flows/trigger row: a 32px automation
+ * tile (lime), matching `AgentTriggerSummaryRow`'s automation icon. When `onOpen`
+ * is supplied the header shows an external-link icon button — sitting to the left
+ * of the expand chevron — that jumps to the automation trigger/flow dialog.
  */
 function AgentEditSummaryCardComponent({
 	payload,
-}: Readonly<{ payload: AgentEditSummaryPayload }>) {
+	onOpen,
+}: Readonly<{ payload: AgentEditSummaryPayload; onOpen?: () => void }>) {
 	return (
 		<GenerativeCard className="w-full" defaultExpanded={false} size="sm">
 			<GenerativeCardHeader
 				collapseLabel="Hide change details"
 				description={payload.summary}
 				expandLabel="Show change details"
+				action={
+					onOpen ? (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="text-icon-subtle"
+							onClick={onOpen}
+							type="button"
+							aria-label="Open automation"
+						>
+							<ExternalLinkIcon size="small" />
+						</Button>
+					) : null
+				}
 				leading={
-					<Tile label="Edit" size="small" variant="discovery">
-						<EditIcon label="" color="currentColor" />
+					<Tile label="Automation" size="medium" variant="limeSubtle">
+						<AutomationIcon label="" color="currentColor" />
 					</Tile>
 				}
 				title={payload.headline}

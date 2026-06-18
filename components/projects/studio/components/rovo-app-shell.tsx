@@ -4772,6 +4772,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		<AgentTestPanel entry={activeSessionAgentEntry} />
 	) : null;
 
+	// Bridges the agent config's encapsulated automation dialog to the sibling
+	// Ask Rovo chat: the config panel registers its opener here, and the
+	// agent-edit-summary card's "Open" button invokes it via onOpenAgentEditSummary.
+	const automationDialogOpenerRef = useRef<(() => void) | null>(null);
+
 	const agentConfigPane = activeSessionAgentEntry ? (
 		<RovoAppAgentConfigPanel
 			activeView={activeAgentConfigView}
@@ -4786,6 +4791,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			onChatInterceptSubmit={handleAgentEditInterceptSubmit}
 			onUpdateDraft={handleUpdateAgentDraft}
 			onStartWithTemplate={handleStartAgentWithTemplate}
+			registerAutomationDialogOpener={(opener) => {
+				automationDialogOpenerRef.current = opener;
+			}}
 		/>
 	) : null;
 
@@ -5377,6 +5385,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							renderWidget={renderStudioAskRovoWidget}
 							getWidgetPosition={getStudioAskRovoWidgetPosition}
 							onInterceptSubmit={handleAgentEditInterceptSubmit}
+							onOpenAgentEditSummary={() => automationDialogOpenerRef.current?.()}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent
