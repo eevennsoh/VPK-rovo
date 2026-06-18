@@ -31,6 +31,7 @@ test("AgentResultCard renders created agent profile description", () => {
 	assert.match(AGENT_RESULT_CARD_SOURCE, /if \(!isGeneratedAgentResult\(agent\)\) \{[\s\S]*return null;[\s\S]*\}/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /function getAgentDescription\(agent: AgentResult\): string/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /RFP Drafter monitors Drafting work items, reads Jira context/u);
+	assert.match(AGENT_RESULT_CARD_SOURCE, /getDeterministicAgentAvatarSrc\(agent\.agentId\?\.trim\(\) \|\| agent\.name\)/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /function getAgentDisplayName\(agent: AgentResult\): string/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /agent\.agentId === RFP_DRAFTING_AGENT_ID \? "RFP Drafter" : agent\.name/u);
@@ -42,6 +43,8 @@ test("AgentResultCard renders created agent profile description", () => {
 		AGENT_RESULT_CARD_SOURCE,
 		/<AgentProfileCard[\s\S]*attributionKind="person"[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onPreviewAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*partnerLogoSrc=\{AGENT_CREATOR_AVATAR_SRC\}[\s\S]*partnerName=\{AGENT_CREATOR_NAME\}[\s\S]*previewActionLabel=\{`View \$\{displayName\}`\}[\s\S]*swapActionLabel="Chat with agent"[\s\S]*variant="preview"[\s\S]*verified=\{false\}[\s\S]*\/>/u,
 	);
+	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onInputAction/u);
+	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onVoiceInput/u);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /ArtifactCard/u);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /SkillTag/u);
 });

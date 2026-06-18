@@ -103,8 +103,13 @@ export interface UseRealtimeVoiceOptions {
 	isGenerating?: boolean;
 }
 
+export interface RealtimeVoiceConnectOptions {
+	transcriptionOnly?: boolean;
+	explicitResponseOnly?: boolean;
+}
+
 export interface UseRealtimeVoiceResult {
-	connect: (options?: { transcriptionOnly?: boolean }) => void;
+	connect: (options?: RealtimeVoiceConnectOptions) => void;
 	disconnect: () => void;
 	sendTextInput: (payload: {
 		contextDescription?: string;
@@ -636,6 +641,7 @@ export function useRealtimeVoice({
 		text: string;
 	}>>([]);
 	const transcriptionOnlyModeRef = useRef(false);
+	const explicitResponseOnlyModeRef = useRef(false);
 	const connectWsRef = useRef<() => void>(() => {});
 	const disconnectRef = useRef<() => void>(() => {});
 	const cleanupConnectionRef = useRef<() => void>(() => {});
@@ -846,14 +852,14 @@ export function useRealtimeVoice({
 	}, []);
 
 	const scheduleResponseCreateFallback = useCallback(() => {
-		if (!isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current) {
+		if (!isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current || explicitResponseOnlyModeRef.current) {
 			return;
 		}
 
 		clearResponseCreateFallbackTimer();
 		responseCreateFallbackTimerRef.current = setTimeout(() => {
 			responseCreateFallbackTimerRef.current = null;
-			if (!activeRef.current || !isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current) {
+			if (!activeRef.current || !isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current || explicitResponseOnlyModeRef.current) {
 				return;
 			}
 
@@ -1344,16 +1350,17 @@ export function useRealtimeVoice({
 					setConnectionState("connected");
 					setStatusMessage(null);
 					setVoice("listening");
-					if (transcriptionOnlyModeRef.current) {
+					if (transcriptionOnlyModeRef.current || explicitResponseOnlyModeRef.current) {
 						sendWsMessage({
 							type: "session_update",
 							config: {
-								transcription_only: true,
+								...(transcriptionOnlyModeRef.current ? { transcription_only: true } : {}),
+								...(explicitResponseOnlyModeRef.current ? { explicit_response_only: true } : {}),
 								turn_detection: {
 									type: "semantic_vad",
 									eagerness: "auto",
 									create_response: false,
-									interrupt_response: false,
+									interrupt_response: explicitResponseOnlyModeRef.current,
 								},
 							},
 						});
@@ -1770,6 +1777,7 @@ export function useRealtimeVoice({
 		lastAudioAppendCaptureEpochRef.current = null;
 		isAwaitingSpeechResponseRef.current = false;
 		transcriptionOnlyModeRef.current = false;
+		explicitResponseOnlyModeRef.current = false;
 		resetSpeechTurnTracking();
 		resetAssistantTextStream();
 		setOutputWaveformBars([]);
@@ -1887,11 +1895,12 @@ export function useRealtimeVoice({
 
 	// -- Public API ----------------------------------------------------------
 
-	const connect = useCallback((options?: { transcriptionOnly?: boolean }) => {
+	const connect = useCallback((options?: RealtimeVoiceConnectOptions) => {
 		if (activeRef.current) {
 			return;
 		}
 		transcriptionOnlyModeRef.current = Boolean(options?.transcriptionOnly);
+		explicitResponseOnlyModeRef.current = Boolean(options?.explicitResponseOnly);
 		activeRef.current = true;
 		isCaptureAvailableRef.current = resolveCaptureAvailability();
 		if (!isCaptureAvailableRef.current) {
@@ -1970,6 +1979,7 @@ export function useRealtimeVoice({
 		activeRef.current = false;
 		isCaptureAvailableRef.current = false;
 		transcriptionOnlyModeRef.current = false;
+		explicitResponseOnlyModeRef.current = false;
 		queuedTextInputsRef.current = [];
 		resetSpeechTurnTracking();
 		cleanupConnection();

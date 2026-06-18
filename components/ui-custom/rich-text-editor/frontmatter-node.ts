@@ -140,18 +140,32 @@ export const FrontmatterNode = Node.create({
 					const tr = newState.tr;
 					let changed = false;
 
-					// (a) Pin: re-insert a single card at the top if it was deleted
-					// (backspace / select-all), so the SKILL.md never loses its
-					// frontmatter. We do NOT auto-delete extra cards — a mis-parsed
-					// `---…---` block in the body would lose content if silently removed,
-					// so a rare duplicate stays visible for the user to fix instead.
+					// (a) Single source of truth: a SKILL.md has exactly one frontmatter
+					// card. A paste can insert extra `---…---` blocks; collapse them to one
+					// card pinned at the top, keeping the latest (last) block's content so
+					// the most recent paste overwrites the older one.
+					if (frontmatterNodes.length > 1) {
+						const latest = frontmatterNodes[frontmatterNodes.length - 1];
+						const latestEntries = (latest.node.attrs.entries as FrontmatterEntries) ?? [];
+						// Delete from last to first so earlier positions stay valid, then
+						// re-insert a single card at the top with the latest content.
+						for (let index = frontmatterNodes.length - 1; index >= 0; index -= 1) {
+							const { node, pos } = frontmatterNodes[index];
+							tr.delete(pos, pos + node.nodeSize);
+						}
+						tr.insert(0, nodeType.create({ entries: latestEntries }));
+						return tr;
+					}
+
+					// (b) Pin: re-insert a single card at the top if it was deleted
+					// (backspace / select-all), so the SKILL.md never loses its frontmatter.
 					if (frontmatterNodes.length === 0) {
 						const remembered = pluginKey.getState(oldState)?.entries ?? [];
 						tr.insert(0, nodeType.create({ entries: remembered }));
 						return tr;
 					}
 
-					// (b) Sync: mirror body app/tool/knowledge mentions into allowed-tools.
+					// (c) Sync: mirror body app/tool/knowledge mentions into allowed-tools.
 					// Diff old→new so a tag removed in the card stays removed (body
 					// unchanged ⇒ empty diff), while a mention added/removed via `/` in
 					// the body adds/removes the matching allowed-tools entry.

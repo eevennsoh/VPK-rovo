@@ -16,7 +16,7 @@ description: >-
 
 # vpk-system-clean
 
-A 24/7 Mac running Next.js dev (Turbopack) hits three linked CPU/RAM problems:
+A 24/7 Mac running Next.js dev (Turbopack) hits four linked CPU/RAM problems:
 
 1. **Runaway dev server (the big one).** `next-server` gets stuck in a
    watch → recompile → write → FSEvent → re-watch feedback loop and pegs the CPU
@@ -25,12 +25,17 @@ A 24/7 Mac running Next.js dev (Turbopack) hits three linked CPU/RAM problems:
 2. **Runaway `.next` caches.** Turbopack's `.next/dev` grows unbounded (15 GB /
    39k files seen). Every file feeds macOS FSEvents and *amplifies* the loop in
    (1). Keeping it small is the prevention.
-3. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
+3. **Stale tmux dev sessions.** `scripts/dev-tmux.sh` runs a per-worktree session
+   named `vpk-dev-<worktree>` holding a frontend, a backend, and a pool of Rovo
+   port processes. Nothing auto-stops them, so a deleted worktree leaves an
+   **orphaned** session burning CPU/RAM/ports indefinitely. Killed when its
+   worktree path no longer exists (and you are not attached).
+4. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
    (22 GB / 100%+ seen). It auto-respawns clean when killed.
 
-They reinforce each other, so the skill addresses all three: it **fixes** a live
-runaway by restarting it, and **prevents** recurrence by clearing the bloat that
-drives the loop.
+They reinforce each other, so the skill addresses all four: it **fixes** a live
+runaway by restarting it, and **prevents** recurrence by clearing the bloat —
+stale caches and orphaned dev sessions — that drives the loop.
 
 The setup: a guard **script** (`scripts/vpk-system-clean.sh`) run on a schedule
 by a per-user **launchd agent** (`com.<user>.vpk-system-clean`). The skill is the
@@ -51,7 +56,8 @@ by a per-user **launchd agent** (`com.<user>.vpk-system-clean`). The skill is th
 | "remove this", "uninstall", "remove all the cleanup setup" | **Uninstall** | `scripts/uninstall.sh` (`--dry-run` to preview) |
 
 Vague request ("machine is slow")? Start with **Status** (it lists hot dev
-servers, fseventsd, and cache sizes), then act on whatever it flags.
+servers, fseventsd, cache sizes, and orphaned `vpk-dev-*` tmux sessions), then
+act on whatever it flags.
 
 ## Doctor — fix a runaway dev server (the CPU spike)
 
@@ -80,8 +86,10 @@ zsh ~/.local/bin/vpk-system-clean.sh
 Order: (1) detect a *sustained*-hot `next-server` (sampled twice so a normal
 burst isn't killed) and restart it if `KILL_RUNAWAY_NEXT=1`; (2) delete `.next`
 caches over `NEXT_MAX_GB` **only when no dev server is running** — it never
-deletes a live build's cache; (3) restart `fseventsd` if over `FSEVENTS_MAX_MB`
-*and* the sudoers rule exists. Afterward show `scripts/records.sh` or the log.
+deletes a live build's cache; (3) kill orphaned `vpk-dev-*` tmux sessions whose
+worktree path is gone (skipping any session you're attached to); (4) restart
+`fseventsd` if over `FSEVENTS_MAX_MB` *and* the sudoers rule exists. Afterward
+show `scripts/records.sh` or the log.
 
 If `fseventsd` is bloated but the sudoers rule is missing, the script logs that
 it skipped. The user can fix the current balloon now with `sudo pkill -x
@@ -105,8 +113,8 @@ Tip: if runaway dev servers are the recurring pain, a more frequent interval
 ## Records (cleanup history)
 
 `scripts/records.sh` aggregates the log: total runs, servers killed, caches
-removed, ~GB reclaimed, fseventsd resets, and the last 8 runs. `--removed` lists
-every removed cache; `--raw` dumps the full log.
+removed, ~GB reclaimed, stale tmux sessions killed, fseventsd resets, and the
+last 8 runs. `--removed` lists every removed cache; `--raw` dumps the full log.
 
 ## Install / repair
 

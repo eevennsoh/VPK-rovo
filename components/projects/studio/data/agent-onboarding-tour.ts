@@ -1,8 +1,6 @@
 // Step content for the studio "agent just created" onboarding tour. Each step
-// anchors a Spotlight card to an existing element on the testing screen (the
-// tour does not render those elements — see use-agent-onboarding-tour).
-
-import type { SpotlightPlacement } from "@/components/blocks/spotlight";
+// anchors the Rovo Cursor overlay to an existing element on the testing screen
+// (the tour does not render those elements; see use-agent-onboarding-tour).
 
 /** Where a step resolves its live anchor element from, and in which panel. */
 export type AgentOnboardingAnchorKey =
@@ -18,8 +16,6 @@ export interface AgentOnboardingTourStep {
 	anchorKey: AgentOnboardingAnchorKey;
 	headline: string;
 	body: string;
-	/** ADS-style placement of the card relative to the anchor. */
-	placement: SpotlightPlacement;
 }
 
 export const AGENT_ONBOARDING_TOUR_STEPS: ReadonlyArray<AgentOnboardingTourStep> = [
@@ -27,28 +23,24 @@ export const AGENT_ONBOARDING_TOUR_STEPS: ReadonlyArray<AgentOnboardingTourStep>
 		key: "agent-result-card",
 		anchorKey: "agent-result-card",
 		headline: "Your new agent",
-		body: "This is the agent you just created. Open it any time to chat, tweak, or share it.",
-		placement: "left-start",
+		body: "Your agent is ready. Open it here any time to chat, refine, or share.",
 	},
 	{
 		key: "ask-rovo-composer",
 		anchorKey: "ask-rovo-composer",
 		headline: "Refine by just prompting",
-		body: "Keep chatting here to adjust instructions, tools, and triggers — no forms required.",
-		placement: "top-end",
+		body: "Keep talking to me here. I can update instructions, tools, and triggers.",
 	},
 	{
 		key: "chat-starters",
 		anchorKey: "chat-starters",
 		headline: "Test it right away",
-		body: "Try a starter prompt to see how your agent responds before you ship it.",
-		placement: "right-start",
+		body: "Try a starter prompt to see how teammates will experience this agent.",
 	},
 	{
 		key: "activate-button",
 		anchorKey: "activate-button",
 		headline: "Activate when you're happy",
-		body: "Publish the agent so your team can run it from chat, the sidebar, or automations.",
-		placement: "bottom-end",
+		body: "Activate it when it is ready for chat, sidebar, and automations.",
 	},
 ];

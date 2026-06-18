@@ -44,22 +44,10 @@ import {
 } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
+import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
 import { AgentTestPanel } from "@/components/blocks/agent-test";
-import {
-	SpotlightActions,
-	SpotlightBody,
-	SpotlightCard,
-	SpotlightControls,
-	SpotlightDismissControl,
-	SpotlightFooter,
-	SpotlightHeader,
-	SpotlightHeadline,
-	SpotlightPrimaryAction,
-	SpotlightSecondaryAction,
-	SpotlightStepCount,
-	SpotlightTarget,
-} from "@/components/blocks/spotlight";
 import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
+import { AGENT_ONBOARDING_TOUR_STEPS, type AgentOnboardingTourStep } from "@/components/projects/studio/data/agent-onboarding-tour";
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { isGeneratedAgentResult } from "@/components/projects/sidebar-chat/components/agent-result-card";
@@ -155,7 +143,7 @@ import {
 } from "@/components/projects/studio/lib/studio-screen-assistant";
 import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar-resize";
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
-import ChatPanel, { type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
+import ChatPanel, { type ChatPanelGreetingProps, type ChatPanelScriptedConversation } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import {
@@ -173,7 +161,7 @@ import { clamp, cn, createId } from "@/lib/utils";
 import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
-import { getAllDataParts, getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts, type RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
+import { getAllDataParts, getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts, type RovoRenderableUIMessage, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo/lib/rovo-app-artifacts";
 import { RovoAppHeader } from "@/components/projects/studio/components/rovo-app-header";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
@@ -283,8 +271,107 @@ const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
 const ROVO_APP_SPLIT_ARTIFACT_PANEL_ID = "rovo-app-artifact-pane";
+const STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES = [
+	{
+		root: "right",
+		selectors: [
+			"[data-screen-assistant-target='sidebar-composer:voice']",
+			"[data-screen-assistant-target='sidebar-composer'] button[aria-label='Stop live voice']",
+			"[data-screen-assistant-target='sidebar-composer'] button[aria-label='Start live voice']",
+		],
+	},
+	{
+		root: "document",
+		selectors: [
+			"[data-screen-assistant-target='sidebar-composer:voice']",
+			"[data-screen-assistant-target='sidebar-composer'] button[aria-label='Stop live voice']",
+			"[data-screen-assistant-target='sidebar-composer'] button[aria-label='Start live voice']",
+		],
+	},
+] as const;
+const STUDIO_LIVE_CHAT_ANCHOR_RESOLVE_FRAMES = 180;
+const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM = "onboarding";
+const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE = "rovo-cursor";
+const STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS = "\"next\", \"go back\", or \"done\"";
 const STUDIO_AUTOMATION_DISCOVERY_SOURCE_PATTERN = /\b(?:slack|jira|confluence|loom|figma|github|bitbucket|calendar|atlas|twg|teamwork graph)\b/giu;
 type HomeStarterCategory = "analyze" | "brainstorm" | "review" | "summarize" | "create";
+
+type StudioAgentOnboardingGuideCommand = "next" | "back" | "done" | "unknown";
+type StudioAgentOnboardingGuideRole = Extract<RovoUIMessage["role"], "assistant" | "user">;
+
+function normalizeStudioAgentOnboardingGuideCommand(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9\s]/gu, " ")
+		.replace(/\s+/gu, " ")
+		.trim();
+}
+
+function resolveStudioAgentOnboardingGuideCommand(text: string): StudioAgentOnboardingGuideCommand {
+	const command = normalizeStudioAgentOnboardingGuideCommand(text);
+	if (["next", "continue", "forward", "go next", "move on", "show next"].includes(command)) {
+		return "next";
+	}
+	if (["back", "go back", "previous", "prev", "go previous", "last step"].includes(command)) {
+		return "back";
+	}
+	if (["done", "finish", "finished", "end", "skip", "close", "dismiss"].includes(command)) {
+		return "done";
+	}
+
+	return "unknown";
+}
+
+function createStudioAgentOnboardingGuideMessage({
+	createdAt = new Date().toISOString(),
+	role,
+	text,
+}: {
+	createdAt?: string;
+	role: StudioAgentOnboardingGuideRole;
+	text: string;
+}): RovoUIMessage {
+	return {
+		id: createId(`studio-agent-onboarding-guide-${role}`),
+		role,
+		metadata: {
+			origin: "rovo",
+			createdAt,
+			updatedAt: createdAt,
+		},
+		parts: [
+			{
+				type: "text",
+				text,
+				state: "done",
+			},
+		],
+	};
+}
+
+function getStudioAgentOnboardingGuideGreeting(agentName: string | null): string {
+	const subject = agentName ? `${agentName} is ready` : "Your agent is ready";
+	return `Congrats - ${subject}. This is step 1 of 4: the agent card is your home base, with the name, summary, and entry point teammates will recognize. Say ${STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS} when you want to steer the tour.`;
+}
+
+function getStudioAgentOnboardingGuideStepNarration(step: AgentOnboardingTourStep | null): string {
+	switch (step?.key) {
+		case "agent-result-card":
+			return "The agent card is the launchpad: it shows what you built, what it is for, and where people can open it later.";
+		case "ask-rovo-composer":
+			return "This side chat is for fast refinements. Ask for changes to instructions, tools, triggers, or tone, and the draft can keep evolving.";
+		case "chat-starters":
+			return "These starter prompts are quick test cases. Use them to see whether the agent answers the first teammate requests clearly.";
+		case "activate-button":
+			return "This is the activation checkpoint. Once the test behavior feels right, activate the agent so it can show up where work happens.";
+		default:
+			return "This step highlights the next part of the testing flow.";
+	}
+}
+
+function getStudioAgentOnboardingGuideStepByIndex(stepIndex: number): AgentOnboardingTourStep | null {
+	return AGENT_ONBOARDING_TOUR_STEPS[stepIndex] ?? null;
+}
 
 interface HomeStarterCategoryOption {
 	iconClassName?: string;
@@ -1838,6 +1925,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [sidebarAgentBrowserInitialCategory, setSidebarAgentBrowserInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const hasSeededStudioRfpDemoAgentRef = useRef(false);
+	const hasStartedAgentOnboardingTourPreviewRef = useRef(false);
+	const hasQueuedAgentOnboardingTourPreviewRef = useRef(false);
 	// Bumped each time an agent is created from a generated result, so a later
 	// effect (declared after the onboarding-tour hook) can kick off the tour
 	// without the earlier create handler needing the tour controller in scope.
@@ -2269,7 +2358,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// Defaults to the expanded "Edit: <agent>" state; the bar itself owns the
 	// collapse-to-pill / re-expand affordance.
 	const agentEditContextBar = useMemo<ChatContextBarDescriptor | null>(() => {
-		if (!activeSessionAgentEntry || isCustomAgentSelected) {
+		if (!activeSessionAgentEntry) {
 			return null;
 		}
 		const { profile } = activeSessionAgentEntry;
@@ -2283,7 +2372,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			collapsible: true,
 			collapsedLabel: "Edit agent",
 		};
-	}, [activeSessionAgentEntry, isCustomAgentSelected]);
+	}, [activeSessionAgentEntry]);
 	// When the "Edit agent" context bar is active, the Ask Rovo empty state pivots
 	// to an agent-improvement greeting; closing the bar reverts to the default.
 	const agentEditGreeting = useMemo<ChatPanelGreetingProps | undefined>(() => {
@@ -2297,6 +2386,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			suggestions: agentEditSuggestions,
 		};
 	}, [agentEditContextBar]);
+	const agentEditCards = useMemo(() => {
+		if (!activeSessionAgentEntry) {
+			return undefined;
+		}
+
+		return {
+			generatedAgentResult: activeSessionAgentEntry.sourceResult,
+		};
+	}, [activeSessionAgentEntry]);
 	// When the Ask Rovo sidebar is editing a studio agent, ride the shared product
 	// knowledge (catalog ids + editable fields) on every sidebar turn that falls
 	// through to the model, so typed requests understand the agent builder the same
@@ -4481,7 +4579,58 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		rightPanelRef: askRovoPanelRef,
 		centerRef: shellRef,
 	});
-	const { start: startAgentOnboardingTour } = agentOnboardingTour;
+	const {
+		back: backAgentOnboardingTourStep,
+		dismiss: dismissAgentOnboardingTour,
+		isLast: isAgentOnboardingTourLastStep,
+		next: nextAgentOnboardingTourStep,
+		start: startAgentOnboardingTour,
+	} = agentOnboardingTour;
+	const [liveChatAnchorElement, setLiveChatAnchorElement] = useState<HTMLElement | null>(null);
+	const [agentOnboardingTourFinishRequestKey, setAgentOnboardingTourFinishRequestKey] = useState(0);
+	const [agentOnboardingLiveVoiceRequestKey, setAgentOnboardingLiveVoiceRequestKey] = useState(0);
+	const [agentOnboardingGuideMessages, setAgentOnboardingGuideMessages] = useState<ReadonlyArray<RovoUIMessage>>([]);
+	const activeAgentOnboardingGuideAgentIdRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (
+			process.env.NODE_ENV === "production" ||
+			hasStartedAgentOnboardingTourPreviewRef.current ||
+			hasQueuedAgentOnboardingTourPreviewRef.current ||
+			!shouldShowAgentConfigPane ||
+			!activeSessionAgentEntry
+		) {
+			return;
+		}
+
+		const params = new URLSearchParams(window.location.search);
+		if (params.get(STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM) !== STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE) {
+			return;
+		}
+
+		hasQueuedAgentOnboardingTourPreviewRef.current = true;
+		setActiveAgentConfigView("test");
+		openAgentCreationAskRovoChat();
+		let frame = 0;
+		let rafId = 0;
+		const startPreviewTour = () => {
+			frame += 1;
+			if (frame < 4) {
+				rafId = requestAnimationFrame(startPreviewTour);
+				return;
+			}
+
+			hasStartedAgentOnboardingTourPreviewRef.current = true;
+			hasQueuedAgentOnboardingTourPreviewRef.current = false;
+			startAgentOnboardingTour();
+		};
+		rafId = requestAnimationFrame(startPreviewTour);
+		return () => {
+			cancelAnimationFrame(rafId);
+			if (!hasStartedAgentOnboardingTourPreviewRef.current) {
+				hasQueuedAgentOnboardingTourPreviewRef.current = false;
+			}
+		};
+	}, [activeSessionAgentEntry, openAgentCreationAskRovoChat, shouldShowAgentConfigPane, startAgentOnboardingTour]);
 	useEffect(() => {
 		if (agentCreationTourSignal === 0) {
 			return;
@@ -4491,6 +4640,167 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		const frame = requestAnimationFrame(() => startAgentOnboardingTour());
 		return () => cancelAnimationFrame(frame);
 	}, [agentCreationTourSignal, startAgentOnboardingTour]);
+	useEffect(() => {
+		if (!agentOnboardingTour.isActive) {
+			setLiveChatAnchorElement(null);
+			return;
+		}
+
+		let frame = 0;
+		let rafId = 0;
+		let cancelled = false;
+		const resolveLiveChatAnchor = () => {
+			if (cancelled) {
+				return;
+			}
+
+			const getCandidateRoot = (root: typeof STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES[number]["root"]) => {
+				if (root === "right") {
+					return askRovoPanelRef.current;
+				}
+				return document;
+			};
+			let element: HTMLElement | null = null;
+			for (const candidate of STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES) {
+				const root = getCandidateRoot(candidate.root);
+				if (!root) {
+					continue;
+				}
+				for (const selector of candidate.selectors) {
+					const match = root.querySelector<HTMLElement>(selector);
+					if (match && match.getClientRects().length > 0) {
+						element = match;
+						break;
+					}
+				}
+				if (element) {
+					break;
+				}
+			}
+			if (element || frame >= STUDIO_LIVE_CHAT_ANCHOR_RESOLVE_FRAMES) {
+				setLiveChatAnchorElement(element);
+				if (!element) {
+					dismissAgentOnboardingTour();
+				}
+				return;
+			}
+
+			frame += 1;
+			rafId = requestAnimationFrame(resolveLiveChatAnchor);
+		};
+
+		rafId = requestAnimationFrame(resolveLiveChatAnchor);
+		return () => {
+			cancelled = true;
+			cancelAnimationFrame(rafId);
+		};
+	}, [agentOnboardingTour.isActive, agentOnboardingTour.stepIndex, activeAgentConfigView, shouldShowAgentConfigPane, dismissAgentOnboardingTour]);
+	const handleAgentOnboardingTourNext = useCallback(() => {
+		if (isAgentOnboardingTourLastStep) {
+			setAgentOnboardingTourFinishRequestKey((currentKey) => currentKey + 1);
+			return;
+		}
+
+		nextAgentOnboardingTourStep();
+	}, [isAgentOnboardingTourLastStep, nextAgentOnboardingTourStep]);
+	useEffect(() => {
+		if (!agentOnboardingTour.isActive) {
+			activeAgentOnboardingGuideAgentIdRef.current = null;
+			setAgentOnboardingGuideMessages([]);
+			setAgentOnboardingLiveVoiceRequestKey(0);
+			return;
+		}
+
+		const agentId = activeSessionAgentEntry?.profile.id ?? "generated-agent";
+		if (activeAgentOnboardingGuideAgentIdRef.current === agentId) {
+			return;
+		}
+
+		activeAgentOnboardingGuideAgentIdRef.current = agentId;
+		setAgentOnboardingLiveVoiceRequestKey((currentKey) => currentKey + 1);
+		setAgentOnboardingGuideMessages([
+			createStudioAgentOnboardingGuideMessage({
+				role: "assistant",
+				text: getStudioAgentOnboardingGuideGreeting(activeSessionAgentEntry?.profile.name ?? null),
+			}),
+		]);
+	}, [activeSessionAgentEntry?.profile.id, activeSessionAgentEntry?.profile.name, agentOnboardingTour.isActive]);
+	const appendAgentOnboardingGuideExchange = useCallback((userText: string, assistantText: string) => {
+		const createdAt = new Date().toISOString();
+		setAgentOnboardingGuideMessages((messages) => [
+			...messages,
+			createStudioAgentOnboardingGuideMessage({
+				createdAt,
+				role: "user",
+				text: userText,
+			}),
+			createStudioAgentOnboardingGuideMessage({
+				createdAt,
+				role: "assistant",
+				text: assistantText,
+			}),
+		]);
+	}, []);
+	const handleAgentOnboardingGuideSubmit = useCallback(
+		(text: string) => {
+			const command = resolveStudioAgentOnboardingGuideCommand(text);
+			const respond = (assistantText: string) => {
+				appendAgentOnboardingGuideExchange(text, assistantText);
+				return {
+					handled: true,
+					voiceText: assistantText,
+				};
+			};
+			switch (command) {
+				case "next": {
+					if (agentOnboardingTour.isLast) {
+						setAgentOnboardingTourFinishRequestKey((currentKey) => currentKey + 1);
+						return respond("Done - I will move back to the live chat button. You can find me here any time.");
+					}
+
+					nextAgentOnboardingTourStep();
+					const nextStepIndex = Math.min(agentOnboardingTour.stepIndex + 1, agentOnboardingTour.total - 1);
+					return respond(getStudioAgentOnboardingGuideStepNarration(getStudioAgentOnboardingGuideStepByIndex(nextStepIndex)));
+				}
+				case "back": {
+					if (agentOnboardingTour.isFirst) {
+						return respond(getStudioAgentOnboardingGuideStepNarration(getStudioAgentOnboardingGuideStepByIndex(0)));
+					}
+
+					backAgentOnboardingTourStep();
+					const previousStepIndex = Math.max(agentOnboardingTour.stepIndex - 1, 0);
+					return respond(getStudioAgentOnboardingGuideStepNarration(getStudioAgentOnboardingGuideStepByIndex(previousStepIndex)));
+				}
+				case "done": {
+					setAgentOnboardingTourFinishRequestKey((currentKey) => currentKey + 1);
+					return respond("Done - I will tuck back into live chat. If you need help, you can always find me here.");
+				}
+				default:
+					return respond(`Try ${STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS} to control the tour.`);
+			}
+		},
+		[
+			agentOnboardingTour.isFirst,
+			agentOnboardingTour.isLast,
+			agentOnboardingTour.stepIndex,
+			agentOnboardingTour.total,
+			appendAgentOnboardingGuideExchange,
+			backAgentOnboardingTourStep,
+			nextAgentOnboardingTourStep,
+		],
+	);
+	const agentOnboardingScriptedConversation = useMemo<ChatPanelScriptedConversation | null>(() => {
+		if (!agentOnboardingTour.isActive || agentOnboardingGuideMessages.length === 0) {
+			return null;
+		}
+
+		return {
+			initialVoiceKey: activeSessionAgentEntry?.profile.id ?? "generated-agent",
+			initialVoiceText: getStudioAgentOnboardingGuideGreeting(activeSessionAgentEntry?.profile.name ?? null),
+			messages: agentOnboardingGuideMessages,
+			onSubmit: handleAgentOnboardingGuideSubmit,
+		};
+	}, [activeSessionAgentEntry?.profile.id, activeSessionAgentEntry?.profile.name, agentOnboardingGuideMessages, agentOnboardingTour.isActive, handleAgentOnboardingGuideSubmit]);
 	const composerDockRef = useRef<HTMLDivElement | null>(null);
 	const defaultHomeTopSpacerRef = useRef<HTMLDivElement | null>(null);
 	const artifactCardOriginRef = useRef<DOMRect | null>(null);
@@ -4772,6 +5082,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		<AgentTestPanel entry={activeSessionAgentEntry} />
 	) : null;
 
+	// Bridges the agent config's encapsulated automation dialog to the sibling
+	// Ask Rovo chat: the config panel registers its opener here, and the
+	// agent-edit-summary card's "Open" button invokes it via onOpenAgentEditSummary.
+	const automationDialogOpenerRef = useRef<(() => void) | null>(null);
+
 	const agentConfigPane = activeSessionAgentEntry ? (
 		<RovoAppAgentConfigPanel
 			activeView={activeAgentConfigView}
@@ -4786,6 +5101,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			onChatInterceptSubmit={handleAgentEditInterceptSubmit}
 			onUpdateDraft={handleUpdateAgentDraft}
 			onStartWithTemplate={handleStartAgentWithTemplate}
+			registerAutomationDialogOpener={(opener) => {
+				automationDialogOpenerRef.current = opener;
+			}}
 		/>
 	) : null;
 
@@ -5371,12 +5689,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						<ChatPanel
 							onClose={nav.toggleChat}
 							abortOnUnmount={false}
+							cards={agentEditCards}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
 							sendPromptOptions={agentEditSendPromptOptions}
 							renderWidget={renderStudioAskRovoWidget}
 							getWidgetPosition={getStudioAskRovoWidgetPosition}
 							onInterceptSubmit={handleAgentEditInterceptSubmit}
+							onOpenAgentEditSummary={() => automationDialogOpenerRef.current?.()}
+							scriptedConversation={agentOnboardingScriptedConversation}
+							startRealtimeVoiceRequestKey={agentOnboardingLiveVoiceRequestKey}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent
@@ -5408,49 +5730,20 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onRegionChange={setScreenAssistantRegion}
 				region={screenAssistantRegion}
 			/>
-			{agentOnboardingTour.isActive && agentOnboardingTour.anchorElement && agentOnboardingTour.step ? (
-				<SpotlightTarget
-					open
-					anchor={agentOnboardingTour.anchorElement}
-					placement={agentOnboardingTour.step.placement}
-					onOpenChange={(next) => {
-						if (!next) {
-							agentOnboardingTour.dismiss();
-						}
-					}}
-					content={
-						<SpotlightCard className="w-72">
-							<SpotlightHeader>
-								<SpotlightHeadline>{agentOnboardingTour.step.headline}</SpotlightHeadline>
-								<SpotlightControls>
-									<SpotlightDismissControl onClick={agentOnboardingTour.dismiss} />
-								</SpotlightControls>
-							</SpotlightHeader>
-							<SpotlightBody>{agentOnboardingTour.step.body}</SpotlightBody>
-							<SpotlightFooter>
-								<SpotlightStepCount
-									current={agentOnboardingTour.stepIndex + 1}
-									total={agentOnboardingTour.total}
-								/>
-								<SpotlightActions>
-									{!agentOnboardingTour.isFirst ? (
-										<SpotlightSecondaryAction onClick={agentOnboardingTour.back}>
-											Back
-										</SpotlightSecondaryAction>
-									) : null}
-									<SpotlightPrimaryAction
-										onClick={
-											agentOnboardingTour.isLast
-												? agentOnboardingTour.dismiss
-												: agentOnboardingTour.next
-										}
-									>
-										{agentOnboardingTour.isLast ? "Finish" : "Next"}
-									</SpotlightPrimaryAction>
-								</SpotlightActions>
-							</SpotlightFooter>
-						</SpotlightCard>
-					}
+			{agentOnboardingTour.step ? (
+				<RovoCursorOnboardingTour
+					isActive={agentOnboardingTour.isActive && Boolean(agentOnboardingTour.anchorElement) && Boolean(liveChatAnchorElement)}
+					step={agentOnboardingTour.step}
+					stepIndex={agentOnboardingTour.stepIndex}
+					total={agentOnboardingTour.total}
+					isFirst={agentOnboardingTour.isFirst}
+					isLast={agentOnboardingTour.isLast}
+					anchorElement={agentOnboardingTour.anchorElement}
+					liveChatAnchorElement={liveChatAnchorElement}
+					finishRequestKey={agentOnboardingTourFinishRequestKey}
+					onBack={backAgentOnboardingTourStep}
+					onNext={handleAgentOnboardingTourNext}
+					onDismiss={dismissAgentOnboardingTour}
 				/>
 			) : null}
 		</SidebarProvider>

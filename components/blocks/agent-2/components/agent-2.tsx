@@ -41,6 +41,7 @@ import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { AgentCompactOperationsBento } from "@/components/blocks/agent-bento";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
@@ -4247,7 +4248,7 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				className="space-y-2"
+				className="space-y-0"
 				contentClassName={contentClassName}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
@@ -4281,6 +4282,7 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				toolbarReveal="hover"
+				padStuckToolbar
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
@@ -4703,6 +4705,13 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onManageTriggers?: () => void;
+	/**
+	 * Registers an imperative opener for this config's automation dialog so a
+	 * sibling surface (e.g. the Ask Rovo sidebar's agent-edit-summary card) can
+	 * jump straight to the trigger/flow dialog. Called with the opener on mount
+	 * and `null` on unmount. The dialog state stays encapsulated here.
+	 */
+	registerAutomationDialogOpener?: (opener: (() => void) | null) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	// When provided, the empty-instructions "start with a template" link defers to
 	// the host (e.g. the Studio shell opens its Agent Directory on the first
@@ -4745,6 +4754,7 @@ export const AgentConfigFields = memo(
 		onConnectTrigger,
 		onInstructionsViewModeChange,
 		onManageTriggers,
+		registerAutomationDialogOpener,
 		onManageSubagents,
 		onOpenDirectory,
 		onProfileAvatarChange,
@@ -4770,6 +4780,9 @@ export const AgentConfigFields = memo(
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const [mentionRemovalRequest, setMentionRemovalRequest] = useState<RichTextMentionRemovalRequest | null>(null);
+		// Onboarding bento dismissal ("Not now"). Local to the editor session so the
+		// tiles can be hidden without persisting a flag onto the agent config.
+		const [isOnboardingBentoDismissed, setIsOnboardingBentoDismissed] = useState(false);
 		const handleTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
 			onTextChange?.(field, value);
 		}, [onTextChange]);
@@ -4875,6 +4888,27 @@ export const AgentConfigFields = memo(
 
 			setManageTriggersOpen(true);
 		}, [onManageTriggers]);
+		// Opens the flow config dialog directly for the most recently configured
+		// automation (the one the agent-edit-summary card refers to), instead of
+		// the manage-flows list. Falls back to a fresh flow when none exist.
+		const handleOpenAutomationFlowConfig = useCallback(() => {
+			const rules = currentAutomationRules;
+			if (rules.length > 0) {
+				handleEditTriggers(rules[rules.length - 1]);
+				return;
+			}
+			handleEditTriggers();
+		}, [currentAutomationRules, handleEditTriggers]);
+		// Hand the flow-config opener to a registered host so a sibling surface
+		// (the Ask Rovo agent-edit-summary card) can open it. Re-register whenever
+		// the opener identity changes and clear it on unmount.
+		useEffect(() => {
+			if (!registerAutomationDialogOpener) {
+				return;
+			}
+			registerAutomationDialogOpener(handleOpenAutomationFlowConfig);
+			return () => registerAutomationDialogOpener(null);
+		}, [registerAutomationDialogOpener, handleOpenAutomationFlowConfig]);
 		const handleAddAutomationFromManage = useCallback(
 			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
 				const next = createAutomationRuleFromEvent(providerId, eventId, currentAutomationRules);
@@ -5002,6 +5036,30 @@ export const AgentConfigFields = memo(
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
+						{/*
+							Onboarding bento: on a brand-new, capability-empty base agent
+							(not a subagent), surface the "Start with these agent templates"
+							tiles pinned to the bottom of the config. The instructions
+							composer above is `flex-1` and absorbs free space, so this
+							`shrink-0` block lands flush at the scroll area's bottom. It
+							animates away once the agent gains its first capability
+							(`isFilledConfig`) or the user picks "Not now".
+						*/}
+						<AnimatePresence initial={false}>
+							{!isFilledConfig && !isSubagent && !isOnboardingBentoDismissed ? (
+								<motion.div
+									key="agent-onboarding-bento"
+									className="shrink-0"
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+								>
+									<AgentCompactOperationsBento
+										onDismiss={() => setIsOnboardingBentoDismissed(true)}
+										onStartWithTemplate={onStartWithTemplate}
+									/>
+								</motion.div>
+							) : null}
+						</AnimatePresence>
 					</div>
 					{/* Optional caller-supplied slot rendered at the panel bottom. */}
 					{compactFooterBefore}

@@ -57,11 +57,10 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarPanel, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarPanel, /hideAiCursor = false/u);
 	assert.match(sidebarPanel, /hideAiCursor=\{hideAiCursor\}/u);
-	assert.match(sidebarPanel, /clickyActive=\{!hideAiCursor && isClickyActive\}/u);
+	assert.match(sidebarPanel, /clickyActive=\{!hideAiCursor && \(isClickyActive \|\| isScriptedConversationActive\)\}/u);
 	assert.match(sidebarPanel, /\{hideAiCursor \? null : \([\s\S]*<ClickyOverlay/u);
 	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
 	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*responseText=\{clicky\.responseText\}/u);
-	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*history=\{clicky\.history\}/u);
 	assert.match(sidebarPanel, /<ScreenAssistantRegionOverlay[\s\S]*active=\{!hideAiCursor && isClickyActive\}[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}[\s\S]*onRegionChange=\{setScreenAssistantRegion\}/u);
 	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarComposer, /hideAiCursor = false/u);
@@ -73,13 +72,14 @@ test("compact chat can hide the AI cursor control without changing the default",
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
+	const realtimeRequestSource = sourceBetween(sidebarPanel, "const lastStartRealtimeVoiceRequestKeyRef", "const handleToggleRealtimeVoice");
 	const clickyToggleSource = sourceBetween(sidebarPanel, "const handleToggleClicky", "// Cmd+Shift+K");
 	const keyboardShortcutSource = sourceBetween(sidebarPanel, "// Cmd+Shift+K", "const isStreamingLifecycleActive");
 	const endVoiceSessionSource = sourceBetween(REALTIME_VOICE_HOOK_SOURCE, 'if (message.name === "end_voice_session")', '} else if (message.name === "delegate_to_rovo")');
 	const panelEndVoiceSessionSource = sourceBetween(sidebarPanel, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 
 	assert.match(sidebarPanel, /activate: activateClicky,/u);
-	assert.match(sidebarPanel, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[realtime\]\);/u);
+	assert.match(sidebarPanel, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*realtime\.connect\(isScriptedConversationActive \? \{ explicitResponseOnly: true \} : undefined\);[\s\S]*\}, \[isScriptedConversationActive, realtime\]\);/u);
 
 	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
@@ -87,6 +87,21 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 
 	assert.match(realtimeToggleSource, /if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(realtimeToggleSource, /realtime\.disconnect\(\);[\s\S]*deactivateClicky\(\);/u);
+	assert.match(realtimeToggleSource, /clearDeferredStartRealtimeVoice\(\);[\s\S]*if \(realtime\.voiceState === "idle"\)/u);
+	assert.match(realtimeRequestSource, /const cleanupDeferredStartRealtimeVoiceRef = useRef<\(\(\) => void\) \| null>\(null\);/u);
+	assert.match(realtimeRequestSource, /return !navigator\.userActivation\.hasBeenActive;/u);
+	assert.match(realtimeRequestSource, /window\.addEventListener\("pointerdown", handleUserActivation, listenerOptions\);/u);
+	assert.match(realtimeRequestSource, /window\.addEventListener\("keydown", handleUserActivation, listenerOptions\);/u);
+	assert.match(realtimeRequestSource, /if \(!event\.isTrusted\) \{[\s\S]*return;[\s\S]*\}/u);
+	assert.doesNotMatch(realtimeRequestSource, /once: true/u);
+	assert.match(realtimeRequestSource, /if \(startRealtimeVoiceRequestKey <= 0\) \{[\s\S]*lastStartRealtimeVoiceRequestKeyRef\.current = 0;[\s\S]*clearDeferredStartRealtimeVoice\(\);/u);
+	assert.match(realtimeRequestSource, /if \(realtime\.voiceState !== "idle"\) \{[\s\S]*return;[\s\S]*\}/u);
+	assert.doesNotMatch(realtimeRequestSource, /if \(isScriptedConversationActive\) \{[\s\S]*startRealtimeVoice\(\);/u);
+	assert.match(realtimeRequestSource, /if \(shouldDeferRealtimeVoiceStartForUserActivation\(\)\) \{[\s\S]*startRealtimeVoiceAfterUserActivation\(\);[\s\S]*return;/u);
+	assert.doesNotMatch(sidebarPanel, /connectRealtimeForClicky/u);
+	assert.match(sidebarPanel, /connectRealtime: realtime\.connect/u);
+	assert.doesNotMatch(REALTIME_VOICE_HOOK_SOURCE, /applyRealtimeConnectionOptions|createRealtimeSessionUpdateConfig/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /if \(activeRef\.current\) \{[\s\S]*return;[\s\S]*\}/u);
 
 	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
 	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
@@ -97,6 +112,14 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /onEndVoiceSession\?: \(\) => void;/u);
 	assert.match(endVoiceSessionSource, /onEndVoiceSessionRef\.current\?\.\(\);[\s\S]*setTimeout\(\(\) => \{[\s\S]*disconnectRef\.current\(\);/u);
 	assert.match(panelEndVoiceSessionSource, /realtimeTranscriptRef\.current = "";[\s\S]*deactivateClicky\(\);/u);
+});
+
+test("compact chat can keep a generated agent result card visible when the transcript is scripted", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+
+	assert.match(sidebarPanel, /interface ChatPanelCardsProps \{[\s\S]*generatedAgentResult\?: RovoDataParts\["agent-result"\] \| null;/u);
+	assert.match(sidebarPanel, /const shouldRenderGeneratedAgentFallbackCard = useMemo\(\(\) => \{[\s\S]*const cardAgentId = cards\.generatedAgentResult\.agentId;[\s\S]*const cardAction = cards\.generatedAgentResult\.action;[\s\S]*const messageAgentResult = getMessageAgentResult\(message\);[\s\S]*messageAgentResult\.agentId === cardAgentId[\s\S]*messageAgentResult\.action === cardAction/u);
+	assert.match(sidebarPanel, /\{shouldRenderGeneratedAgentFallbackCard && cards\?\.generatedAgentResult \? \([\s\S]*data-testid="rovo-generated-result-group"[\s\S]*<AgentResultCard[\s\S]*agent=\{cards\.generatedAgentResult\}[\s\S]*onSelectAgent=\{handleAgentResultSelect\}/u);
 });
 
 test("compact chat streams realtime assistant text into the Clicky response panel", () => {
@@ -242,7 +265,7 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(source, /"absolute top-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all"[\s\S]*clickyActive \? "left-0\.5 right-0\.5" : "right-0\.5 w-8"/u);
 	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);
-	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*className="relative flex size-9 shrink-0 items-center justify-center rounded-md bg-transparent"[\s\S]*aria-label="Start live voice"/u);
+	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:voice` : undefined\}/u);
 	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1\.5", className\)\}/u);
 	assert.doesNotMatch(source, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
@@ -315,7 +338,8 @@ test("shared composer uses a dark live chat CTA while submit dark styling remain
 	assert.match(source, new RegExp(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
 	assert.match(source, new RegExp(`const LIVE_VOICE_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
 	assert.match(source, /const liveVoiceCtaClassName = experimentalDarkCtaClassName \?\? LIVE_VOICE_CTA_CLASS_NAME;/u);
-	assert.match(source, /<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger[\s\S]*aria-label="Start live voice"[\s\S]*<TooltipContent side="top">Live chat<\/TooltipContent>/u);
+	assert.doesNotMatch(source, /<TooltipProvider delay=\{0\}>[\s\S]*aria-label="Start live voice"/u);
+	assert.match(source, /<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*tooltip=\{\{ content: "Live chat", delay: 0 \}\}/u);
 	assert.notEqual(submitIndex, -1);
 	assert.notEqual(dictationStartIndex, -1);
 	assert.notEqual(voiceStartIndex, -1);
@@ -323,8 +347,10 @@ test("shared composer uses a dark live chat CTA while submit dark styling remain
 	const dictationButtonStartIndex = source.lastIndexOf("<PromptInputButton", dictationStartIndex);
 	assert.match(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /variant="ghost"/u);
 	assert.doesNotMatch(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /experimentalDarkCtaClassName/u);
-	assert.doesNotMatch(source.slice(voiceStartIndex, source.indexOf("</button>", voiceStartIndex)), /shadow-sm/u);
-	assert.match(source.slice(voiceStartIndex, source.indexOf("</button>", voiceStartIndex)), /liveVoiceCtaClassName/u);
+	const voiceStartButtonStartIndex = source.lastIndexOf("<PromptInputButton", voiceStartIndex);
+	const voiceStartButtonSource = source.slice(voiceStartButtonStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex));
+	assert.doesNotMatch(voiceStartButtonSource, /shadow-sm/u);
+	assert.match(voiceStartButtonSource, /liveVoiceCtaClassName/u);
 });
 
 test("Rovo composers default reasoning to Auto", () => {

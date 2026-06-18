@@ -299,7 +299,55 @@ function deriveAutomationDescription(instruction: string): string {
 	return `${firstSentence.slice(0, 95).trimEnd()}…`;
 }
 
+// Hand-authored content for the canonical RFP Drafter demo flow — a weekly
+// Friday 9am Slack summary of lost / no-bid RFPs. The generic derivation would
+// produce a terse "Friday At 9am" name and a one-line prompt; this curates a
+// nicer title, description, the "Every Friday, 9am" schedule (via the
+// `weekly-friday-9am` catalog event), and a richer multi-line instruction body.
+const WEEKLY_RFP_SUMMARY_SPEC: TriggerSpec = {
+	providerId: "scheduled",
+	eventId: "weekly-friday-9am",
+	automationName: "Weekly RFP loss review for sales leadership",
+	description:
+		"Every Friday at 9 AM, summarize the RFP work items that moved to Lost or No Bid this week and post the rollup to #sales-leadership in Slack.",
+	prompt: [
+		"Every Friday at 9:00 AM, review the Enterprise RFP Response project in Jira and compile a summary of every RFP work item that moved to a **Lost** or **No Bid** status in the past 7 days.",
+		"",
+		"For each item, capture:",
+		"- the RFP name and Jira key,",
+		"- the account or customer,",
+		"- the outcome (Lost or No Bid),",
+		"- the deal size or contract value when known, and",
+		"- the recorded reason for the loss or no-bid decision.",
+		"",
+		"Then post the summary as a Slack message to **#sales-leadership**:",
+		"- lead with the total count and combined value of the week's losses,",
+		"- group the items by outcome (Lost vs No Bid),",
+		"- call out any recurring loss reasons or at-risk accounts, and",
+		"- keep it skimmable so leadership can review the week's results at a glance.",
+		"",
+		"If no RFPs moved to Lost or No Bid this week, post a short note confirming a clean week instead.",
+	].join("\n"),
+};
+
+// Detects the demo's signature weekly Friday-9am schedule so it maps to the
+// curated RFP summary spec above instead of the terse generic derivation. The
+// clause that reaches here is just the trigger cadence ("every Friday at 9am") —
+// the RFP/Slack intent lives in sibling clauses — so we key off the cadence.
+function isWeeklyRfpSummaryClause(clause: string): boolean {
+	return (
+		/\bfriday\b/i.test(clause) &&
+		/\b9\s*(?::00)?\s*(?:am|a\.m\.)\b|\b9:00\b/i.test(clause)
+	);
+}
+
 function deriveTriggerSpec(clause: string): TriggerSpec | null {
+	// Canonical RFP demo flow gets hand-authored title/description/prompt + the
+	// "Every Friday, 9am" schedule, rather than the terse generic derivation.
+	if (isWeeklyRfpSummaryClause(clause)) {
+		return WEEKLY_RFP_SUMMARY_SPEC;
+	}
+
 	// Name + description come from the plain instruction (token markup would
 	// corrupt the title/summary); the stored prompt gets `@name`/`/name`
 	// references rewritten into `@[app:id]` chips for the rule-builder editor.
@@ -904,7 +952,7 @@ export function buildAgentEditSummaryPayload(
 
 	if (intent.triggerSpecs.length > 0) {
 		changes.push({
-			label: intent.triggerSpecs.length > 1 ? "Automations" : "Automation",
+			label: intent.triggerSpecs.length > 1 ? "Flows" : "Flow",
 			value: intent.triggerSpecs.map((spec) => spec.automationName).join(", "),
 		});
 	}

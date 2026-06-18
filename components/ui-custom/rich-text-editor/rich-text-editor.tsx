@@ -33,6 +33,7 @@ import {
 	type MarkdownFormatKind,
 } from "./markdown-format";
 import { MarkdownSourceEditor } from "./markdown-source-editor";
+import { FrontmatterPortalContext } from "./frontmatter-portal";
 import "./rich-text-editor.css";
 import {
 	RichTextEditorBubbleMenu,
@@ -113,6 +114,14 @@ interface RichTextEditorProps
 	 *   `scroll-state(stuck)`; degrades to hover-only where unsupported).
 	 */
 	toolbarReveal?: "always" | "hover";
+	/**
+	 * When `true`, reserves 8px of surface below the hover-reveal toolbar (`pb-2`
+	 * on the reveal) so the toolbar→content gap is opaque. Once the bar pins, that
+	 * keeps content scrolling under it from cramping the bar and avoids a
+	 * transparent gap below the divider. Pair with `space-y-0` on the root so the
+	 * gap isn't doubled. Opt-in (e.g. agent + skill config instructions).
+	 */
+	padStuckToolbar?: boolean;
 	"aria-label"?: string;
 }
 
@@ -348,6 +357,7 @@ export function RichTextEditor({
 	showBubbleMenu = true,
 	showFloatingMenu = false,
 	toolbarReveal = "always",
+	padStuckToolbar = false,
 	"aria-label": ariaLabel,
 	...props
 }: Readonly<RichTextEditorProps>) {
@@ -480,6 +490,11 @@ export function RichTextEditor({
 	// while a changing handler is still read live through the ref.
 	const hasOpenDirectory = Boolean(onOpenDirectory);
 	const frontmatterEnabled = Boolean(frontmatter?.enabled);
+	// Portal target for the frontmatter card. When frontmatter is enabled the
+	// editor renders this slot above the toolbar and the frontmatter node-view
+	// portals its card into it (the node stays in the doc — markdown round-trip
+	// and save are unchanged). Null elsewhere, so the card renders inline.
+	const [frontmatterPortalEl, setFrontmatterPortalEl] = useState<HTMLElement | null>(null);
 	const extensions = useMemo(
 		() => {
 			const richTextExtensions = createRichTextEditorExtensions({
@@ -744,6 +759,9 @@ export function RichTextEditor({
 
 	return (
 		<div className={cn("space-y-2", toolbarReveal === "hover" && "group", className)} {...props}>
+			{frontmatterEnabled && viewMode === "rendered" ? (
+				<div data-slot="rich-text-editor-frontmatter-header" ref={setFrontmatterPortalEl} />
+			) : null}
 			{showToolbar && editor ? (
 				<div
 					data-slot="rich-text-editor-toolbar"
@@ -764,11 +782,12 @@ export function RichTextEditor({
 							// scroll-state(stuck) rule in the CSS — while pinned.
 							// `relative` anchors the stuck ::before that fills any
 							// scroll-padding gap above the pinned bar (see CSS).
-							// `pb-2` gives the controls breathing room above the
-							// bottom divider so the bar isn't cramped against the
-							// content scrolling under it (matches the Figma spec).
 							toolbarReveal === "hover" &&
-								"relative bg-surface pb-2 opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
+								"relative bg-surface opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
+							// `padStuckToolbar` reserves 8px of surface below the bar so,
+							// once it pins, content scrolling under isn't cramped and no
+							// transparent gap shows. Consumers pair it with `space-y-0`.
+							padStuckToolbar && "pb-2",
 						)}
 					>
 						<RichTextEditorToolbar
@@ -818,7 +837,9 @@ export function RichTextEditor({
 						onValueChange={handleMarkdownSourceChange}
 					/>
 				) : (
-					<EditorContent editor={editor} />
+					<FrontmatterPortalContext value={frontmatterPortalEl}>
+						<EditorContent editor={editor} />
+					</FrontmatterPortalContext>
 				)}
 				{placeholderSlot && isEmpty && viewMode === "rendered" ? (
 					<div

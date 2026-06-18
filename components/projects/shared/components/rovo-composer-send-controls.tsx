@@ -15,7 +15,6 @@ import {
 	PromptInputSubmit,
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LiveWaveform } from "@/components/ui-audio/live-waveform";
 import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { resolveRovoAppComposerIdleAction } from "@/components/projects/shared/lib/rovo-app-composer-idle-action";
@@ -451,26 +450,16 @@ export function RovoComposerActionButton({
 									</PromptInputSubmit>
 								) : null}
 								{shouldShowRealtimeVoiceStart ? (
-									<TooltipProvider delay={0}>
-										<Tooltip>
-											<TooltipTrigger
-												render={(
-													<span className="relative flex size-9 shrink-0 items-center justify-center rounded-md bg-transparent">
-														<button
-															aria-label="Start live voice"
-															className={cn("flex size-8 items-center justify-center rounded-md border border-transparent p-0 outline-none transition-colors hover:opacity-90 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:opacity-80", liveVoiceCtaClassName, voiceStartButtonClassName)}
-															data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
-															onClick={handleToggleRealtimeVoice}
-															type="button"
-														>
-															<AudioWaveformIcon label="" />
-														</button>
-													</span>
-												)}
-											/>
-											<TooltipContent side="top">Live chat</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
+									<PromptInputButton
+										aria-label="Start live voice"
+										className={cn("size-8 hover:opacity-90 active:opacity-80", liveVoiceCtaClassName, voiceStartButtonClassName)}
+										data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
+										onClick={handleToggleRealtimeVoice}
+										tooltip={{ content: "Live chat", delay: 0 }}
+										variant="ghost"
+									>
+										<AudioWaveformIcon label="" />
+									</PromptInputButton>
 								) : null}
 							</div>
 						</ComposerActionFrame>

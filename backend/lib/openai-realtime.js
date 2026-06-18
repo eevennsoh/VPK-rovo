@@ -496,6 +496,7 @@ class RealtimeSession {
 		this._plannedCloseReason = null;
 		this._manualTurnTaking = false;
 		this._transcriptionOnly = false;
+		this._explicitResponseOnly = false;
 		this._manualTurnTranscriptBuffer = "";
 		this._manualTurnCoalesceTimer = null;
 		this._manualTurnHardCapTimer = null;
@@ -504,6 +505,7 @@ class RealtimeSession {
 		// an active response defer their response.create until response.done.
 		this._activeResponseId = null;
 		this._pendingResponseCreate = false;
+		this._pendingResponseCreateForce = false;
 	}
 
 	get state() {
@@ -834,6 +836,7 @@ class RealtimeSession {
 		}
 		this._manualTurnTaking = manualTurnTaking;
 		this._transcriptionOnly = clientConfig.transcription_only === true;
+		this._explicitResponseOnly = clientConfig.explicit_response_only === true;
 		const session = buildRealtimeSessionConfig({
 			instructions:
 				typeof clientConfig.instructions === "string" && clientConfig.instructions
@@ -904,7 +907,7 @@ class RealtimeSession {
 	 * flight — OpenAI rejects that with "Conversation already has an active
 	 * response in progress". If one is active, defer until RESPONSE_DONE.
 	 */
-	_requestResponse() {
+	_requestResponse(options = {}) {
 		if (!this.isReady || !this._openaiWs) {
 			return;
 		}
@@ -914,8 +917,14 @@ class RealtimeSession {
 			return;
 		}
 
+		if (this._explicitResponseOnly && options.force !== true) {
+			this._log("REALTIME", "Response create ignored — explicit-response-only mode");
+			return;
+		}
+
 		if (this._activeResponseId) {
 			this._pendingResponseCreate = true;
+			this._pendingResponseCreateForce = this._pendingResponseCreateForce || options.force === true;
 			this._log("REALTIME", "Response create deferred — active response in progress");
 			return;
 		}
@@ -1003,6 +1012,7 @@ class RealtimeSession {
 			});
 			this._clearManualTurnTranscription();
 			this._pendingResponseCreate = false;
+			this._pendingResponseCreateForce = false;
 		}
 
 		this._sendToClient({ type: "speech_started" });
@@ -1072,10 +1082,7 @@ class RealtimeSession {
 				],
 			},
 		});
-		this._sendToOpenAI({
-			type: OPENAI_EVENT.RESPONSE_CREATE,
-			response: {},
-		});
+		this._requestResponse({ force: true });
 		this._log("REALTIME", "Text message received from user");
 	}
 
@@ -1098,7 +1105,9 @@ class RealtimeSession {
 				// Fresh session — no response can be in flight from a prior connection.
 				this._activeResponseId = null;
 				this._pendingResponseCreate = false;
+				this._pendingResponseCreateForce = false;
 				this._manualTurnTaking = false;
+				this._explicitResponseOnly = false;
 				this._clearManualTurnTranscription();
 				this._log("REALTIME", `Session created: ${event.session?.id || "unknown"}`);
 				this._sendSessionUpdate(getRealtimeConfig());
@@ -1190,8 +1199,10 @@ class RealtimeSession {
 				// A tool output (or other request) arrived mid-response and deferred
 				// its response.create — now that the response is done, fire it.
 				if (this._pendingResponseCreate) {
+					const forcePendingResponseCreate = this._pendingResponseCreateForce;
 					this._pendingResponseCreate = false;
-					this._requestResponse();
+					this._pendingResponseCreateForce = false;
+					this._requestResponse({ force: forcePendingResponseCreate });
 				}
 				break;
 
@@ -1250,6 +1261,7 @@ class RealtimeSession {
 					if (isStaleResponseCancel) {
 						this._activeResponseId = null;
 						this._pendingResponseCreate = false;
+						this._pendingResponseCreateForce = false;
 					}
 					this._log("REALTIME", `OpenAI warning: ${errorMessage}`);
 				} else {

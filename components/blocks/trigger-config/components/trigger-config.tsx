@@ -3960,6 +3960,7 @@ function AgentInstructionsComposer({
 					onOpenDirectory={handleOpenDirectory}
 					onViewModeChange={onViewModeChange}
 					suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
+					toolbarReveal="hover"
 					value={instructions}
 					mentionSources={mentionSources}
 					mentionRemovalRequest={mentionRemovalRequest}
@@ -4358,7 +4359,7 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
-							contentClassName={cn("pt-4", compactInstructionsContentClassName ?? (isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]"))}
+							contentClassName={cn("pt-0", compactInstructionsContentClassName ?? (isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]"))}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}
