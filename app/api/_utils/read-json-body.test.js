@@ -181,3 +181,25 @@ test("readJsonBody exposes a default JSON body limit aligned with backend scoped
 	const { DEFAULT_JSON_BODY_LIMIT_BYTES } = await loadBundledHelper(t);
 	assert.equal(DEFAULT_JSON_BODY_LIMIT_BYTES, 12 * 1024 * 1024);
 });
+
+test("readJsonBody exposes the backend fallback JSON body limit for parity-sensitive dev proxies", async (t) => {
+	const { BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES } = await loadBundledHelper(t);
+	assert.equal(BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES, 50 * 1024 * 1024);
+});
+
+test("large backend fallback proxies opt into the 50 MB JSON body limit", () => {
+	const helperImportPattern =
+		/BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES[\s\S]*readJsonBody/u;
+	const maxBytesPattern =
+		/readJsonBody\(request,\s*\{[\s\S]*maxBytes: BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES/u;
+	const routePaths = [
+		path.join(__dirname, "../genui-export/route.ts"),
+		path.join(__dirname, "../rovo/documents/route.ts"),
+	];
+
+	for (const routePath of routePaths) {
+		const source = fs.readFileSync(routePath, "utf8");
+		assert.match(source, helperImportPattern, routePath);
+		assert.match(source, maxBytesPattern, routePath);
+	}
+});

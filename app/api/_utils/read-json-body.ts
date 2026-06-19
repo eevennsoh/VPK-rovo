@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 export const DEFAULT_JSON_BODY_LIMIT_BYTES = 12 * 1024 * 1024;
+export const BACKEND_FALLBACK_JSON_BODY_LIMIT_BYTES = 50 * 1024 * 1024;
 
 interface ReadJsonBodyResult<T> {
 	body: T | null;
