@@ -474,6 +474,7 @@ export function PersonalGraphSurface({
 		refreshTwg,
 		setSource,
 		source,
+		twgRefreshError,
 	} = useGraphSource();
 	const isTwgMode = source === "twg";
 	const explorerEnabled = isTwgMode || vaultSettings?.status === "ready";
@@ -491,7 +492,7 @@ export function PersonalGraphSurface({
 	});
 	const lastAssistantMessage = twgChat.messages.findLast((message) => message.role === "assistant")?.content ?? null;
 	const isTwgAuthError = isTwgMode && isTwgAuthRequiredError(error);
-	const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError(graphSourceError);
+	const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError(twgRefreshError);
 	const shouldShowTwgAuthError = isTwgAuthError || isTwgRefreshAuthError;
 	const { actualTheme, setTheme, theme } = useTheme();
 	const [introReplayKey, setIntroReplayKey] = useState(0);

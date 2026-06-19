@@ -26,15 +26,24 @@ test("Personal Graph keeps source actions visible when settings are unavailable"
 });
 
 test("Personal Graph refresh surfaces TWG auth failures from source refreshes", () => {
+	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /twgRefreshError: Error \| null;/);
+	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /const \[twgRefreshError, setTwgRefreshError\] = useState<Error \| null>\(null\);/);
 	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /isRefreshingTwg: boolean;/);
 	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /const \[isRefreshingTwg, setIsRefreshingTwg\] = useState\(false\);/);
 	assert.match(
 		GRAPH_SOURCE_HOOK_SOURCE,
 		/setIsRefreshingTwg\(true\);[\s\S]*const explorer = await refreshTwg\(\{ since: options\.since \}\);[\s\S]*finally \{[\s\S]*setIsRefreshingTwg\(false\);[\s\S]*\}/,
 	);
+	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /setTwgRefreshError\(null\);/);
+	assert.match(GRAPH_SOURCE_HOOK_SOURCE, /setTwgRefreshError\(nextError instanceof Error \? nextError : new Error\(String\(nextError\)\)\);/);
+	assert.doesNotMatch(
+		GRAPH_SOURCE_HOOK_SOURCE,
+		/fetchActiveSource\(\{ signal: controller\.signal \}\);[\s\S]{0,160}setTwgRefreshError\(null\);/,
+	);
 	assert.match(SURFACE_SOURCE, /function isTwgAuthRequiredError\(error: Error \| null\): boolean/);
 	assert.match(SURFACE_SOURCE, /const isTwgAuthError = isTwgMode && isTwgAuthRequiredError\(error\);/);
-	assert.match(SURFACE_SOURCE, /const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError\(graphSourceError\);/);
+	assert.match(SURFACE_SOURCE, /twgRefreshError,/);
+	assert.match(SURFACE_SOURCE, /const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError\(twgRefreshError\);/);
 	assert.match(SURFACE_SOURCE, /const shouldShowTwgAuthError = isTwgAuthError \|\| isTwgRefreshAuthError;/);
 	assert.match(
 		SURFACE_SOURCE,

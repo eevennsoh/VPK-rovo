@@ -18,11 +18,13 @@ interface UseGraphSourceState {
 	refreshTwg: (options?: { since?: string }) => Promise<void>;
 	setSource: (source: "vault" | "twg") => Promise<GraphSourceState | null>;
 	source: "vault" | "twg";
+	twgRefreshError: Error | null;
 }
 
 export function useGraphSource(): UseGraphSourceState {
 	const [state, setState] = useState<GraphSourceState>({ source: "vault", generatedAt: null });
 	const [error, setError] = useState<Error | null>(null);
+	const [twgRefreshError, setTwgRefreshError] = useState<Error | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRefreshingTwg, setIsRefreshingTwg] = useState(false);
 	const [isSwitching, setIsSwitching] = useState(false);
@@ -48,6 +50,7 @@ export function useGraphSource(): UseGraphSourceState {
 			const next = await setActiveSourceApi(source);
 			setState(next);
 			setError(null);
+			setTwgRefreshError(null);
 			return next;
 		} catch (nextError) {
 			setError(nextError instanceof Error ? nextError : new Error(String(nextError)));
@@ -62,9 +65,9 @@ export function useGraphSource(): UseGraphSourceState {
 		try {
 			const explorer = await refreshTwg({ since: options.since });
 			setState((current) => ({ ...current, generatedAt: explorer.generatedAt }));
-			setError(null);
+			setTwgRefreshError(null);
 		} catch (nextError) {
-			setError(nextError instanceof Error ? nextError : new Error(String(nextError)));
+			setTwgRefreshError(nextError instanceof Error ? nextError : new Error(String(nextError)));
 		} finally {
 			setIsRefreshingTwg(false);
 		}
@@ -92,5 +95,6 @@ export function useGraphSource(): UseGraphSourceState {
 		refreshTwg: refreshTwgExplorer,
 		setSource,
 		source: state.source,
+		twgRefreshError,
 	};
 }
