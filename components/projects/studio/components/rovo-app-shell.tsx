@@ -26,7 +26,7 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
-import { AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions } from "@/components/blocks/agents-directory";
+import { AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions } from "@/components/blocks/agent-directory";
 import { inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
@@ -5501,7 +5501,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			    category the user was exploring (e.g. "Planning"). The `key` remounts
 			    AgentBrowser so its `initialTemplateCategory` re-seeds per category. */}
 			<AgentsDirectoryDialog
-				key={`agents-directory-${sidebarAgentBrowserInitialCategory}`}
+				key={`agent-directory-${sidebarAgentBrowserInitialCategory}`}
 				open={isSidebarAgentBrowserOpen}
 				onOpenChange={setIsSidebarAgentBrowserOpen}
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}

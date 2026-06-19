@@ -1,4 +1,4 @@
-import AgentsDirectoryPage, { AgentsDirectoryExperimentalPage } from "@/components/blocks/agents-directory/page";
+import AgentsDirectoryPage, { AgentsDirectoryExperimentalPage } from "@/components/blocks/agent-directory/page";
 
 export default function AgentsDirectoryDemo(): React.ReactElement {
 	return <AgentsDirectoryPage />;

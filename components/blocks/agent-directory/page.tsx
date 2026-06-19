@@ -7,7 +7,7 @@ import {
 	AgentsDirectoryDialog,
 	type AgentsDirectoryAgent,
 	type AgentsDirectoryVariant,
-} from "@/components/blocks/agents-directory";
+} from "@/components/blocks/agent-directory";
 import { DEMO_AGENT_BROWSER_AGENTS } from "@/app/data/directory/agents";
 
 const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [

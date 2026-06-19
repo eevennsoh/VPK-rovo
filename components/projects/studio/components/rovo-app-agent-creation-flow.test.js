@@ -617,14 +617,14 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.match(SHELL_SOURCE, /handledAgentResultKeysRef\.current\.add\(agentResultKey\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.activeThreadId\);[\s\S]*break;/u);
 	assert.match(SHELL_SOURCE, /const unmarkStudioAgentCreationThread = useCallback[\s\S]*studioAgentCreationThreadKeysRef\.current\.delete\(threadId\);/u);
 	assert.doesNotMatch(SHELL_SOURCE, /!studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\) &&[\s\S]*return;[\s\S]*for \(const message of chat\.messages/u);
-	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agents-directory";/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agent-directory";/u);
 	assert.match(SHELL_SOURCE, /sessionAgentEntries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /sessionAgents=\{studioAgentRegistry\.sessionAgentEntries\.map\(\(entry\) => entry\.profile\)\}/u);
 	assert.match(SHELL_SOURCE, /agents=\{ROVO_DIRECTORY_AGENT_PROFILES\}/u);
 	assert.match(SHELL_SOURCE, /selectedAgentId=\{activeSessionAgentEntry\?\.profile\.id \?\? studioAgentRegistry\.selectedAgentId\}/u);
 	assert.match(SHELL_SOURCE, /onSelectAgent=\{handleStudioSidebarAgentSelect\}/u);
 	assert.match(SHELL_SOURCE, /onViewAllAgents=\{handleReturnToAgentsHome\}/u);
-	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agents-directory/u);
+	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agent-directory/u);
 });
 
 test("Studio automation artifact-list agents persist in the sidebar without auto-selection", () => {

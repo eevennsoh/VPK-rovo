@@ -7,8 +7,8 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
-import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
-import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
+import type { AgentsDirectoryAgent } from "@/components/blocks/agent-directory";
+import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agent-directory/data/sidebar-groups";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";

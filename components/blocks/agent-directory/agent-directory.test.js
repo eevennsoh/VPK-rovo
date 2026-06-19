@@ -10,28 +10,28 @@ function readProjectFile(relativePath) {
 test("Agent Directory is exposed as a website block and used by Studio", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
-		/blockComponent\("agents-directory", "Agent Directory"\)/u,
+		/blockComponent\("agent-directory", "Agent Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
-		/blockComponent\("agents-directory", "Agent Directory"\)/u,
+		/blockComponent\("agent-directory", "Agent Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/details/blocks.ts"),
-		/import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agents-directory";/u,
+		/import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agent-directory";/u,
 	);
 	assert.match(
 		readProjectFile("components/website/registry.ts"),
-		/"agents-directory": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/agents-directory-demo"\)/u,
+		/"agent-directory": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/agent-directory-demo"\)/u,
 	);
 	assert.match(
 		readProjectFile("components/projects/studio/components/rovo-app-shell.tsx"),
-		/import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agents-directory";/u,
+		/import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agent-directory";/u,
 	);
 });
 
 test("Agent Directory docs demo starts closed until the trigger is clicked", () => {
-	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
+	const pageSource = readProjectFile("components/blocks/agent-directory/page.tsx");
 
 	assert.match(
 		pageSource,
@@ -67,7 +67,7 @@ test("Agent Directory close button sits in the dialog header", () => {
 
 test("Agent Directory renders a New agent header action", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
 	const detailsSource = readProjectFile("app/data/details/blocks.ts");
 
 	assert.match(source, /primaryActionLabel\?: string;/u);
@@ -83,12 +83,12 @@ test("Agent Directory renders a New agent header action", () => {
 
 test("Agent Directory exposes an opt-in experimental variation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
-	const indexSource = readProjectFile("components/blocks/agents-directory/index.ts");
+	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
+	const indexSource = readProjectFile("components/blocks/agent-directory/index.ts");
 	const detailsSource = readProjectFile("app/data/details/blocks.ts");
 	const registrySource = readProjectFile("components/website/registry.ts");
-	const demoSource = readProjectFile("components/website/demos/blocks/agents-directory-demo.tsx");
-	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
+	const demoSource = readProjectFile("components/website/demos/blocks/agent-directory-demo.tsx");
+	const pageSource = readProjectFile("components/blocks/agent-directory/page.tsx");
 
 	assert.match(source, /export type AgentBrowserVariant = "default" \| "experimental";/u);
 	assert.match(source, /variant\?: AgentBrowserVariant;/u);
@@ -101,11 +101,11 @@ test("Agent Directory exposes an opt-in experimental variation", () => {
 	assert.match(agentsDirectorySource, /mergeDirectoryAgents\(\{ agents, sessionAgents, variant \}\)/u);
 	assert.match(agentsDirectorySource, /variant=\{variant\}/u);
 	assert.match(indexSource, /AgentsDirectoryVariant/u);
-	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agents-directory-demo-standard"/u);
-	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agents-directory-demo-experimental"/u);
+	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agent-directory-demo-standard"/u);
+	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agent-directory-demo-experimental"/u);
 	assert.match(detailsSource, /name: "variant"[\s\S]*type: "\\"default\\" \| \\"experimental\\""/u);
-	assert.match(registrySource, /"agents-directory-demo-standard": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoStandard/u);
-	assert.match(registrySource, /"agents-directory-demo-experimental": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoExperimental/u);
+	assert.match(registrySource, /"agent-directory-demo-standard": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoStandard/u);
+	assert.match(registrySource, /"agent-directory-demo-experimental": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoExperimental/u);
 	assert.match(demoSource, /export function AgentsDirectoryDemoStandard/u);
 	assert.match(demoSource, /export function AgentsDirectoryDemoExperimental/u);
 	assert.match(pageSource, /export function AgentsDirectoryExperimentalPage/u);
@@ -158,7 +158,7 @@ test("Agent Directory experimental variation has searchable multi-select filters
 
 test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
 	const agentTemplatesSource = readProjectFile("components/blocks/agent-templates/components/agent-templates.tsx");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
 
@@ -229,9 +229,9 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 
 test("Agent Directory experimental templates use the setup flow before opening config", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
 	const greetingPromptRowSource = readProjectFile("components/projects/shared/components/greeting-prompt-row.tsx");
-	const indexSource = readProjectFile("components/blocks/agents-directory/index.ts");
+	const indexSource = readProjectFile("components/blocks/agent-directory/index.ts");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
 	const tailwindThemeSource = readProjectFile("app/tailwind-theme.css");
 
@@ -405,13 +405,13 @@ test("Agent Directory uses independent column scrolling without extra content pa
 
 test("Agent Directory uses one unsegmented results grid and updated sidebar labels", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agents-directory/data/sidebar-groups.ts");
+	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agent-directory/data/sidebar-groups.ts");
 	// The agent-browser sidebar groups + directory catalog now live in the unified
 	// agents data layer (DEMO_AGENT_BROWSER_SIDEBAR_GROUPS salvaged verbatim there).
 	const agentsLoaderSource = readProjectFile("app/data/directory/agents.ts");
-	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agent-directory/components/agent-directory.tsx");
 	const agentsJson = JSON.parse(readProjectFile("app/data/directory/agents.json"));
-	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
+	const pageSource = readProjectFile("components/blocks/agent-directory/page.tsx");
 
 	assert.match(source, /<AgentSection agents=\{filtered\} key=\{`agents-\$\{activeCategory\}`\} onSelectAgent=\{onSelectAgent\} \/>/u);
 	assert.match(source, /favorite\?: boolean;/u);

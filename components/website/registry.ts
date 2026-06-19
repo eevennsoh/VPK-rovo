@@ -6869,8 +6869,8 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "agent-profile-card": dynamic(() => import("./demos/blocks/agent-profile-card-demo"), {
     ssr: false,
   }),
-  "agents-directory": dynamic(
-    () => import("./demos/blocks/agents-directory-demo"),
+  "agent-directory": dynamic(
+    () => import("./demos/blocks/agent-directory-demo"),
     { ssr: false },
   ),
   "agent-templates": dynamic(
@@ -7325,16 +7325,16 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
 
   // Agent Directory
-  "agents-directory-demo-standard": dynamic(
+  "agent-directory-demo-standard": dynamic(
     () =>
-      import("./demos/blocks/agents-directory-demo").then((mod) => ({
+      import("./demos/blocks/agent-directory-demo").then((mod) => ({
         default: mod.AgentsDirectoryDemoStandard,
       })),
     { ssr: false },
   ),
-  "agents-directory-demo-experimental": dynamic(
+  "agent-directory-demo-experimental": dynamic(
     () =>
-      import("./demos/blocks/agents-directory-demo").then((mod) => ({
+      import("./demos/blocks/agent-directory-demo").then((mod) => ({
         default: mod.AgentsDirectoryDemoExperimental,
       })),
     { ssr: false },

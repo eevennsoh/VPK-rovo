@@ -15,7 +15,7 @@ import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
 } from "@/components/blocks/agent-templates/data/demo-template-agents";
-import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
+import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agent-directory/data/sidebar-groups";
 
 export type AgentsDirectoryAgent = AgentBrowserAgent;
 export type AgentsDirectoryTemplateAgent = AgentTemplatesAgent;

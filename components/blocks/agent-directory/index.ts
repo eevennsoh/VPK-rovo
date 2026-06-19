@@ -1,4 +1,4 @@
-export { AgentsDirectoryDialog } from "./components/agents-directory";
+export { AgentsDirectoryDialog } from "./components/agent-directory";
 export type {
 	AgentsDirectoryAgent,
 	AgentsDirectoryDialogProps,
@@ -7,4 +7,4 @@ export type {
 	AgentsDirectoryTemplateBuildOptions,
 	AgentsDirectoryTemplateBuildResult,
 	AgentsDirectoryVariant,
-} from "./components/agents-directory";
+} from "./components/agent-directory";
