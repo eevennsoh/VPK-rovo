@@ -90,6 +90,9 @@ const UI_DEMO: Record<string, ComponentType> = {
   blanket: dynamic(() => import("./demos/ui/blanket-demo"), { ssr: false }),
   banner: dynamic(() => import("./demos/ui/banner-demo"), { ssr: false }),
   comment: dynamic(() => import("./demos/ui/comment-demo"), { ssr: false }),
+  "date-label": dynamic(() => import("./demos/ui/date-label-demo"), {
+    ssr: false,
+  }),
   "date-picker": dynamic(() => import("./demos/ui/date-picker-demo"), {
     ssr: false,
   }),
@@ -409,6 +412,34 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
 };
 
 const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "date-label-demo-default": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDefault })),
+    { ssr: false },
+  ),
+  "date-label-demo-appearance": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoAppearance })),
+    { ssr: false },
+  ),
+  "date-label-demo-icon": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoIcon })),
+    { ssr: false },
+  ),
+  "date-label-demo-spacious": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoSpacious })),
+    { ssr: false },
+  ),
+  "date-label-demo-max-width": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoMaxWidth })),
+    { ssr: false },
+  ),
+  "date-label-demo-date-styles": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDateStyles })),
+    { ssr: false },
+  ),
+  "date-label-demo-dropdown-trigger": dynamic(
+    () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDropdownTrigger })),
+    { ssr: false },
+  ),
   // Button
   "button-demo-default": dynamic(
     () =>

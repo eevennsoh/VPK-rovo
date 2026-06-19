@@ -249,6 +249,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("comment"),
 	uiComponent("command"),
 	uiComponent("context-menu", "Context Menu"),
+	uiComponent("date-label", "Date Label"),
 	uiComponent("date-picker", "Date Picker"),
 	uiComponent("date-time-picker", "Date Time Picker"),
 	uiComponent("dialog"),
