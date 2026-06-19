@@ -761,12 +761,10 @@ function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, ski
 	return (
 		<EntityCardShell
 			active={moreMenuOpen}
-			className={cn(
-				"min-h-[112px] gap-4 hover:border-transparent",
-				selected && "border-border-selected hover:border-border-selected",
-			)}
+			className="min-h-[112px] gap-4"
 			onSelect={() => onSelect()}
 			selectLabel={`${selected ? "Deselect" : "Select"} ${skill.name}`}
+			selected={selected}
 		>
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center gap-2">
@@ -1731,4 +1729,3 @@ function ExperimentalSkillOptionAvatar({ option }: Readonly<{ option: Experiment
 	}
 	return null;
 }
-

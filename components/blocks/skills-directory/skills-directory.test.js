@@ -108,7 +108,7 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /active=\{moreMenuOpen\}/u);
 	assert.match(source, /<SkillMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
-	assert.match(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
+	assert.match(source, /className="min-h-\[112px\] gap-4"/u);
 	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardDescription className="text-text">/u);
 	assert.match(source, /<IconTile[\s\S]*icon=\{getSkillIcon\(skill\.icon\)\}[\s\S]*variant=\{getSkillIconTileVariant\(skill\)\}/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
@@ -117,8 +117,9 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /focus-visible:pointer-events-auto focus-visible:opacity-100/u);
 	assert.match(source, /pointer-events-none group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
 	assert.doesNotMatch(source, /group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
-	assert.match(source, /border-border-selected/u);
-	assert.match(source, /hover:border-transparent/u);
+	assert.match(source, /<EntityCardShell[\s\S]*selected=\{selected\}[\s\S]*>/u);
+	assert.doesNotMatch(source, /selected && "border-border-selected hover:border-border-selected"/u);
+	assert.doesNotMatch(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /function SkillMoreMenu/u);
 	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
 	assert.match(source, /Learn more/u);
