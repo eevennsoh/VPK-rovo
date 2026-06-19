@@ -642,58 +642,58 @@ packages:
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@asamuzakjp/nwsapi/-/nwsapi-2.3.9.tgz}
 
   '@atlaskit/atlassian-context@0.9.0':
-    resolution: {integrity: sha512-5oY2wMYEfXE3oVIdlqQB9HTZHAfp6+xgWuwyVU1dHOTb+VC2DW6nFaFxj6HKsusuZl8auMHlZOl8tiNO1/fYhA==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/atlassian-context/-/@atlaskit/atlassian-context-0.9.0.tgz}
+    resolution: {integrity: sha512-5oY2wMYEfXE3oVIdlqQB9HTZHAfp6+xgWuwyVU1dHOTb+VC2DW6nFaFxj6HKsusuZl8auMHlZOl8tiNO1/fYhA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/atlassian-context/-/atlassian-context-0.9.0.tgz}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
   '@atlaskit/css@0.19.4':
-    resolution: {integrity: sha512-OBacSDD/XBkuu4R2FFMgOoVifSbs7E4LRwqUJFolPurxnsc88/cDrwf9C3obMwDh+64O3a5OyzuUPLVQTfMXYQ==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/css/-/@atlaskit/css-0.19.4.tgz}
+    resolution: {integrity: sha512-OBacSDD/XBkuu4R2FFMgOoVifSbs7E4LRwqUJFolPurxnsc88/cDrwf9C3obMwDh+64O3a5OyzuUPLVQTfMXYQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/css/-/css-0.19.4.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/ds-lib@7.0.0':
-    resolution: {integrity: sha512-Uqywr6YMi6uBpD0BtbRmG8f81fteRT7NBf62J8zzWPSs7u3Jq9G3Oruwm3y+57Dxv6IqfRwrS10WJARlCJdBLw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/ds-lib/-/@atlaskit/ds-lib-7.0.0.tgz}
+    resolution: {integrity: sha512-Uqywr6YMi6uBpD0BtbRmG8f81fteRT7NBf62J8zzWPSs7u3Jq9G3Oruwm3y+57Dxv6IqfRwrS10WJARlCJdBLw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/ds-lib/-/ds-lib-7.0.0.tgz}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
   '@atlaskit/feature-gate-js-client@5.7.1':
-    resolution: {integrity: sha512-srKJmOSV0EeCuQ4atPs0Dsap5msJUabBLVMMhK9F5M2bMDpcgNXmL8a0h+LmCINyxevFhcIEjDhKoJnMkgRJ/w==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/feature-gate-js-client/-/@atlaskit/feature-gate-js-client-5.7.1.tgz}
+    resolution: {integrity: sha512-srKJmOSV0EeCuQ4atPs0Dsap5msJUabBLVMMhK9F5M2bMDpcgNXmL8a0h+LmCINyxevFhcIEjDhKoJnMkgRJ/w==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/feature-gate-js-client/-/feature-gate-js-client-5.7.1.tgz}
 
   '@atlaskit/icon-lab@6.12.0':
-    resolution: {integrity: sha512-t1PsNKT2oUqQo2QukfrElFxyeMSnY9mx6fXCk0BC4JmoUHa0NMSLfMWDivXMdMe2aStQEV2nCRpLQvlOXkbpQA==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/icon-lab/-/@atlaskit/icon-lab-6.12.0.tgz}
+    resolution: {integrity: sha512-t1PsNKT2oUqQo2QukfrElFxyeMSnY9mx6fXCk0BC4JmoUHa0NMSLfMWDivXMdMe2aStQEV2nCRpLQvlOXkbpQA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/icon-lab/-/icon-lab-6.12.0.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/icon@35.3.0':
-    resolution: {integrity: sha512-s0rKUSJTZUycBSvL8DGibyVquajMwT1RBEJ6v+BWMSFsBQMHQbMLCA5TOUoICSTq5ewELAYq8FWulfnKZZnv1A==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/icon/-/@atlaskit/icon-35.3.0.tgz}
+    resolution: {integrity: sha512-s0rKUSJTZUycBSvL8DGibyVquajMwT1RBEJ6v+BWMSFsBQMHQbMLCA5TOUoICSTq5ewELAYq8FWulfnKZZnv1A==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/icon/-/icon-35.3.0.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/logo@20.1.2':
-    resolution: {integrity: sha512-FLtfqUswfUaEb9bSWuRPSyLIBIP0SJnmndG8SKfxWYp65Y67M1f5rVTLXfhRQWgX/o6PTrojR+vTxgRwU4letw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/logo/-/@atlaskit/logo-20.1.2.tgz}
+    resolution: {integrity: sha512-FLtfqUswfUaEb9bSWuRPSyLIBIP0SJnmndG8SKfxWYp65Y67M1f5rVTLXfhRQWgX/o6PTrojR+vTxgRwU4letw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/logo/-/logo-20.1.2.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/platform-feature-flags@1.1.3':
-    resolution: {integrity: sha512-dRn6UvVmMF5+WXnv7ZlxKTV2rVQncI2TgM0KTGSqpHdD9LnogITWC/rFjzUuF/W8MBCEvpouGilukqhq6rASnw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/platform-feature-flags/-/@atlaskit/platform-feature-flags-1.1.3.tgz}
+    resolution: {integrity: sha512-dRn6UvVmMF5+WXnv7ZlxKTV2rVQncI2TgM0KTGSqpHdD9LnogITWC/rFjzUuF/W8MBCEvpouGilukqhq6rASnw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/platform-feature-flags/-/platform-feature-flags-1.1.3.tgz}
 
   '@atlaskit/skeleton@2.1.10':
-    resolution: {integrity: sha512-VisOKpPhJfbixdZIoc8P2/yFR8qwmLr2F7oQqXc8cwOmJ9JZ+foyggp2+y++vVyvVKZFU194OGNzoI3Z1B/FfQ==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/skeleton/-/@atlaskit/skeleton-2.1.10.tgz}
+    resolution: {integrity: sha512-VisOKpPhJfbixdZIoc8P2/yFR8qwmLr2F7oQqXc8cwOmJ9JZ+foyggp2+y++vVyvVKZFU194OGNzoI3Z1B/FfQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/skeleton/-/skeleton-2.1.10.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/theme@25.0.0':
-    resolution: {integrity: sha512-zZFJla2cDQg9hM87L1AiSy6SvgYWyZQ2uw/bWLV6Cb/anat2/NVtQ9fxlOpVrCiq8yVZEnJNaY97gFQ8mL9lzA==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/theme/-/@atlaskit/theme-25.0.0.tgz}
+    resolution: {integrity: sha512-zZFJla2cDQg9hM87L1AiSy6SvgYWyZQ2uw/bWLV6Cb/anat2/NVtQ9fxlOpVrCiq8yVZEnJNaY97gFQ8mL9lzA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/theme/-/theme-25.0.0.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/tile@1.1.0':
-    resolution: {integrity: sha512-ZvFITAzYx4IUV+V7OsLrdM1Hic9WQfK4nIebG4dHasssBjsJfdVQmLDsR/lHbop24cFENI4x/D75LcMtr+kQew==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/tile/-/@atlaskit/tile-1.1.0.tgz}
+    resolution: {integrity: sha512-ZvFITAzYx4IUV+V7OsLrdM1Hic9WQfK4nIebG4dHasssBjsJfdVQmLDsR/lHbop24cFENI4x/D75LcMtr+kQew==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/tile/-/tile-1.1.0.tgz}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/tokens@13.1.0':
-    resolution: {integrity: sha512-P9VUWZDFY6Rsm7R1GINAkkIMgj/uwxdxgKfdF6iDIBTD6ffVPID4cubal6lsdFZ3JxWZ6W7wQnw/fO3If0H0dw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/tokens/-/@atlaskit/tokens-13.1.0.tgz}
+    resolution: {integrity: sha512-P9VUWZDFY6Rsm7R1GINAkkIMgj/uwxdxgKfdF6iDIBTD6ffVPID4cubal6lsdFZ3JxWZ6W7wQnw/fO3If0H0dw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/tokens/-/tokens-13.1.0.tgz}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
