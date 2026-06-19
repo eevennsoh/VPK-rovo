@@ -22,6 +22,7 @@ export const ADS_EQUIVALENTS: Record<string, AdsEquivalent> = {
 	code: "@atlaskit/code",
 	"code-block": { package: "@atlaskit/code", importPath: "@atlaskit/code", namedExport: "CodeBlock" },
 	comment: "@atlaskit/comment",
+	"date-label": "@atlaskit/date-label",
 	"date-picker": { package: "@atlaskit/datetime-picker", importPath: "@atlaskit/datetime-picker", namedExport: "DatePicker" },
 	"date-time-picker": { package: "@atlaskit/datetime-picker", importPath: "@atlaskit/datetime-picker", namedExport: "DateTimePicker" },
 	dialog: "@atlaskit/modal-dialog",
