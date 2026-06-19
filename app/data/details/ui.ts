@@ -267,6 +267,12 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         demoSlug: "badge-demo-with-spinner",
       },
       {
+        title: "Letters and special characters",
+        description:
+          "Optional leading symbols and trailing letters add meaning: leading + or - represents additions or subtractions, and trailing letters abbreviate units (d for day, K for thousand, M for million).",
+        demoSlug: "badge-demo-letters-symbols",
+      },
+      {
         title: "Disabled",
         description: "Disabled badge states.",
         demoSlug: "badge-demo-disabled",

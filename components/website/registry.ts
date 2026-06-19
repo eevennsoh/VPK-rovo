@@ -656,6 +656,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "badge-demo-letters-symbols": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoLettersAndSymbols,
+      })),
+    { ssr: false },
+  ),
   "badge-demo-disabled": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
