@@ -305,7 +305,19 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				</span>
 			) : null}
 			{elemAfter ? (
-				<span className="inline-flex shrink-0 items-center" data-slot="tag-after-content">
+				<span
+					className={cn(
+						"inline-flex shrink-0 items-center",
+						// When an overlay control shares the trailing edge, it floats
+						// absolutely over this slot on hover/focus. Fade the trailing
+						// content out (and drop pointer events) in that state — mirroring
+						// the label's trailing-edge mask — so the control stays legible
+						// and clickable instead of sitting on top of the badge.
+						hasOverlayControl &&
+							"transition-opacity duration-fast ease-out group-hover/tag:pointer-events-none group-hover/tag:opacity-0 group-focus-within/tag:pointer-events-none group-focus-within/tag:opacity-0",
+					)}
+					data-slot="tag-after-content"
+				>
 					{elemAfter}
 				</span>
 			) : null}
