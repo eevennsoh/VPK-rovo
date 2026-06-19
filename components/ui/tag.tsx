@@ -132,6 +132,12 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	overlayAction?: TagOverlayAction;
 	/** Element rendered before the tag text, such as an icon, logo, or avatar. */
 	elemBefore?: React.ReactNode;
+	/**
+	 * Element rendered after the tag text, such as a count `<Badge>`. It sits in
+	 * its own trailing slot (before any remove button) and stays `shrink-0`, so
+	 * the label keeps the ellipsis while the trailing element stays fully visible.
+	 */
+	elemAfter?: React.ReactNode;
 	isVerified?: boolean;
 	maxWidth?: React.CSSProperties["maxWidth"];
 }
@@ -149,6 +155,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	removeButtonLabel = "Remove",
 	overlayAction,
 	elemBefore,
+	elemAfter,
 	isVerified = false,
 	maxWidth,
 	className,
@@ -295,6 +302,23 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			{shouldShowVerifiedIcon ? (
 				<span className="ml-px inline-flex shrink-0 items-center text-blue-500" data-slot="tag-verified-icon">
 					<Icon render={<StatusVerifiedIcon label="" size="small" />} label="Verified" />
+				</span>
+			) : null}
+			{elemAfter ? (
+				<span
+					className={cn(
+						"inline-flex shrink-0 items-center",
+						// When an overlay control shares the trailing edge, it floats
+						// absolutely over this slot on hover/focus. Fade the trailing
+						// content out (and drop pointer events) in that state — mirroring
+						// the label's trailing-edge mask — so the control stays legible
+						// and clickable instead of sitting on top of the badge.
+						hasOverlayControl &&
+							"transition-opacity duration-fast ease-out group-hover/tag:pointer-events-none group-hover/tag:opacity-0 group-focus-within/tag:pointer-events-none group-focus-within/tag:opacity-0",
+					)}
+					data-slot="tag-after-content"
+				>
+					{elemAfter}
 				</span>
 			) : null}
 			{hasRemoveButton ? (

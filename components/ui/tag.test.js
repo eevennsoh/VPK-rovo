@@ -30,3 +30,22 @@ test("Tag front-slot demo uses shared logo treatment for 1P, 2P, and 3P marks", 
 	assert.doesNotMatch(TAG_DEMO_SOURCE, /PublicLogoMark|ProductLogoMark|LogoSlot/u);
 	assert.doesNotMatch(TAG_DEMO_SOURCE, /className="size-3 \[&_svg\]:size-3"/u);
 });
+
+test("Tag badge demo renders a trailing Badge via the elemAfter slot", () => {
+	const tagSource = fs.readFileSync(
+		path.join(process.cwd(), "components", "ui", "tag.tsx"),
+		"utf8",
+	);
+
+	// Component exposes a trailing slot that renders before the remove button and
+	// stays shrink-0 so the label (not the badge) owns the ellipsis.
+	assert.match(tagSource, /elemAfter\?: React\.ReactNode;/u);
+	assert.match(tagSource, /data-slot="tag-after-content"/u);
+	assert.match(tagSource, /\{elemAfter \? \([\s\S]*shrink-0[\s\S]*\) : null\}/u);
+
+	// Demo wires a real Badge into the trailing slot.
+	assert.match(TAG_DEMO_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
+	assert.match(TAG_DEMO_SOURCE, /export function TagDemoBadge\(\)/u);
+	assert.match(TAG_DEMO_SOURCE, /elemAfter=\{<Badge[\s\S]*?<\/Badge>\}/u);
+});
+

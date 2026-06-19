@@ -5986,6 +5986,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         description: "Element rendered before tag text, such as an icon, logo, or avatar.",
       },
       {
+        name: "elemAfter",
+        type: "ReactNode",
+        description:
+          "Element rendered after tag text, such as a count `<Badge>`. Sits in its own trailing slot (before any remove button) and stays fully visible while the label truncates.",
+      },
+      {
         name: "isVerified",
         type: "boolean",
         default: "false",
@@ -6027,6 +6033,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         description:
           "Same front-slot tags with `variant=\"editor\"`: the colored border stroke is removed and the surface is filled with the solid `bg-bg-neutral` color (matching SkillTag), while the leading-icon accent color is preserved.",
         demoSlug: "tag-demo-editor-tag",
+      },
+      {
+        title: "Badge",
+        description:
+          "Trailing count `<Badge>` via `elemAfter`. The badge sits in its own slot before any remove button and stays fully visible while the label truncates. Combine with `elemBefore` and `onRemove` as needed.",
+        demoSlug: "tag-demo-badge",
       },
       {
         title: "Removable (overlay)",
