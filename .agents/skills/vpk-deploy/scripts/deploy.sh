@@ -84,14 +84,14 @@ if atlas micros service show --service=$SERVICE_NAME --env=$ENV -o json 2>/dev/n
     | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get('stacks',{}).get('$ENV') else 1)" 2>/dev/null; then
   echo "✅ Service exists in $ENV — will update existing deployment"
 
-  # Verify the 7 required env vars are stashed in $ENV. We use `stash list` because
+  # Verify the required env vars are stashed in $ENV. We use `stash list` because
   # `stash get` does not exist as a subcommand. Stashes are scoped per-env, so
   # switching env (e.g. pdev-west2 -> pdev-apse2) requires re-stashing all keys.
   echo "   Checking environment variables in $ENV..."
 
   STASHED=$(atlas micros stash list -s "$SERVICE_NAME" -e "$ENV" 2>/dev/null || true)
   MISSING_VARS=()
-  REQUIRED_VARS=("AI_GATEWAY_URL" "AI_GATEWAY_USE_CASE_ID" "AI_GATEWAY_CLOUD_ID" "AI_GATEWAY_USER_ID" "ASAP_KID" "ASAP_ISSUER" "ASAP_PRIVATE_KEY")
+  REQUIRED_VARS=("AI_GATEWAY_URL" "AI_GATEWAY_USE_CASE_ID" "AI_GATEWAY_CLOUD_ID" "AI_GATEWAY_USER_ID" "ASAP_KID" "ASAP_ISSUER" "ASAP_PRIVATE_KEY" "OPENAI_REALTIME_MODEL" "OPENAI_REALTIME_WS_URL" "OPENAI_REALTIME_VOICE" "VPK_RUNTIME_ADMIN_TOKEN")
   for var in "${REQUIRED_VARS[@]}"; do
     if ! echo "$STASHED" | grep -qx "$var"; then
       MISSING_VARS+=("$var")
@@ -104,7 +104,7 @@ if atlas micros service show --service=$SERVICE_NAME --env=$ENV -o json 2>/dev/n
     echo "   in references/guide-manual-deployment.md (Step 3.6) targeting $ENV."
     echo "   The deployment may fail health checks if these are missing."
   else
-    echo "✅ All 7 required environment variables are stashed in $ENV"
+    echo "✅ All required environment variables are stashed in $ENV"
   fi
 else
   echo "🆕 Service does not have a deployment in $ENV yet (first-time for this env)"
@@ -112,7 +112,7 @@ else
   echo "Steps to bootstrap $ENV:"
   echo "  1. Create the service if it doesn't exist anywhere:"
   echo "       atlas micros service create --service=$SERVICE_NAME --no-sd"
-  echo "  2. Stash all 7 env vars under $ENV (see references/guide-manual-deployment.md, Step 3.6)"
+  echo "  2. Stash all required env vars under $ENV (see references/guide-manual-deployment.md, Step 3.6)"
   echo "       Tip: stashes from another env are NOT auto-copied — they're scoped per-env."
   echo "  3. Re-run this script: ./scripts/deploy.sh $SERVICE_NAME $VERSION $ENV"
   echo ""
@@ -122,7 +122,12 @@ fi
 # Build Docker image
 echo ""
 echo "📦 Building Docker image..."
+DOCKER_SECRET_ARGS=()
+if [ -f "$HOME/.npmrc" ]; then
+  DOCKER_SECRET_ARGS+=(--secret "id=npmrc,src=$HOME/.npmrc")
+fi
 docker buildx build --platform linux/amd64 --no-cache \
+  "${DOCKER_SECRET_ARGS[@]}" \
   -t docker.atl-paas.net/${SERVICE_NAME}:app-${VERSION} \
   -f backend/Dockerfile . --load
 

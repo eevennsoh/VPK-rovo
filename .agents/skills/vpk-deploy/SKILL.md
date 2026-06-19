@@ -249,6 +249,10 @@ AI_GATEWAY_USER_ID: ((ssm:/<service-name>/AI_GATEWAY_USER_ID))
 ASAP_PRIVATE_KEY: ((ssm:/<service-name>/ASAP_PRIVATE_KEY))
 ASAP_KID: ((ssm:/<service-name>/ASAP_KID))
 ASAP_ISSUER: ((ssm:/<service-name>/ASAP_ISSUER))
+OPENAI_REALTIME_MODEL: ((ssm:/<service-name>/OPENAI_REALTIME_MODEL))
+OPENAI_REALTIME_WS_URL: ((ssm:/<service-name>/OPENAI_REALTIME_WS_URL))
+OPENAI_REALTIME_VOICE: ((ssm:/<service-name>/OPENAI_REALTIME_VOICE))
+VPK_RUNTIME_ADMIN_TOKEN: ((ssm:/<service-name>/VPK_RUNTIME_ADMIN_TOKEN))
 PORT: "8080"
 ```
 
@@ -324,7 +328,7 @@ macOS is case-insensitive, so `Providers.tsx` and `providers.tsx` appear identic
 
 **For initial deployments, you MUST set environment variables on Micros BEFORE deploying.** The deployment will fail health checks if variables are missing.
 
-**Set all 7 variables using `atlas micros stash set`:**
+**Set all required variables using `atlas micros stash set`:**
 
 ```bash
 SERVICE_NAME="<your-service-name>"
@@ -340,6 +344,21 @@ atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_CLOUD_ID -v "$AI_G
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k AI_GATEWAY_USER_ID -v "$AI_GATEWAY_USER_ID"
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k ASAP_KID -v "$ASAP_KID"
 atlas micros stash set -s $SERVICE_NAME -e $ENV -k ASAP_ISSUER -v "$ASAP_ISSUER"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k OPENAI_REALTIME_MODEL -v "$OPENAI_REALTIME_MODEL"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k OPENAI_REALTIME_WS_URL -v "$OPENAI_REALTIME_WS_URL"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k OPENAI_REALTIME_VOICE -v "$OPENAI_REALTIME_VOICE"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k VPK_RUNTIME_ADMIN_TOKEN -v "$VPK_RUNTIME_ADMIN_TOKEN"
+```
+
+For full backend exports, production startup requires
+`VPK_RUNTIME_ADMIN_TOKEN`. If the source repo does not already provide one,
+generate a new high-entropy token, stash it on Micros, and never print or commit
+the value:
+
+```bash
+VPK_RUNTIME_ADMIN_TOKEN="$(openssl rand -hex 32)"
+atlas micros stash set -s $SERVICE_NAME -e $ENV -k VPK_RUNTIME_ADMIN_TOKEN -v "$VPK_RUNTIME_ADMIN_TOKEN"
+unset VPK_RUNTIME_ADMIN_TOKEN
 ```
 
 **For ASAP_PRIVATE_KEY (multiline key - requires special handling):**
@@ -466,7 +485,7 @@ The script will:
 1. Validate service name length (≤26 chars) and that `$ENV` is a known pdev env
 2. Check if service-descriptor.yml has been updated from placeholder
 3. Detect if service exists *in the chosen env* (update) or needs creation (new)
-4. Verify all 7 required env vars are stashed *in that env* (uses `stash list`, since `stash get` doesn't exist)
+4. Verify all required env vars are stashed *in that env* (uses `stash list`, since `stash get` doesn't exist)
 5. Build Docker image with `--platform linux/amd64`
 6. Push to `docker.atl-paas.net` (re-auth via `atlas packages secrets -t docker -i <token>` if needed)
 7. Deploy using `atlas micros service deploy`
@@ -508,7 +527,7 @@ ELB requires at least 8 free IP addresses in each subnet.
 # 1. Update .deploy.local (the script reads ENV from here when no 3rd arg given)
 sed -i '' 's/^ENV=.*/ENV="pdev-apse2"/' .deploy.local
 
-# 2. Re-stash all 7 env vars in the new env (stashes are per-env, not copied)
+# 2. Re-stash all required env vars in the new env (stashes are per-env, not copied)
 #    See Step 3.6 above; substitute -e pdev-apse2 in every command.
 
 # 3. Re-run deploy with explicit env arg (or just `./scripts/deploy.sh <svc> <ver>`)
@@ -527,7 +546,7 @@ sed -i '' 's/^ENV=.*/ENV="pdev-apse2"/' .deploy.local
 - [ ] `service-descriptor.yml` updated (replace `YOUR-SERVICE-NAME`)
 - [ ] `service-descriptor.yml` image and env refs use the final service name
 - [ ] Micros service created
-- [ ] **ALL 7 env vars set and verified**
+- [ ] All required AI Gateway, ASAP, realtime, and runtime admin env vars are set and verified
 - [ ] Docker authenticated
 - [ ] Docker registry write permission verified if push initially fails
 - [ ] Image built & pushed (v1.0.1)
