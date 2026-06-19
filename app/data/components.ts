@@ -281,6 +281,7 @@ export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	uiComponent("kbd", "Kbd"),
 	uiComponent("label"),
 	uiComponent("logo", "Logo"),
+	uiComponent("logo-third-party", "Logo Third Party"),
 	uiComponent("lozenge"),
 	uiComponent("menu-group", "Menu"),
 	uiComponent("menubar"),

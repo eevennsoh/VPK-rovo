@@ -421,6 +421,85 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
     ],
   },
 
+  "logo-third-party": {
+    description:
+      "Typed third-party (3P) brand logos rendered from the local public/3p assets, mirroring the platform-labs/logo-third-party package's named-brand API. LogoThirdParty takes a typed name (e.g. \"slack\"); every brand also has a convenience named export (SlackLogo, FigmaLogo, …). Built on CustomLogo, so border treatment and the white-tile borderless-variant swap are resolved automatically from components/ui/data/logo-usage.json — no per-brand border wiring. The accessible label defaults to the brand's display name.",
+    adsUrl: "https://atlaskit.atlassian.com/packages/platform-labs/logo-third-party",
+    usage: `import { LogoThirdParty, SlackLogo } from "@/components/ui/logo-third-party";
+
+<LogoThirdParty name="slack" size="small" />
+<LogoThirdParty name="figma" size="medium" />
+{/* Convenience named export, same props minus name */}
+<SlackLogo size="small" />
+{/* Optional wordmark for a lockup layout */}
+<LogoThirdParty name="github" wordmark="GitHub" size="small" />`,
+    props: [
+      {
+        name: "name",
+        type: '"adobe-sign" | "airtable" | "asana" | "figma" | "github" | "gitlab" | "notion" | "slack" | "zoom" | … (61 brands)',
+        description:
+          "Third-party brand id, matching a folder under public/3p/. Required for LogoThirdParty; the named exports (SlackLogo, …) set it for you.",
+      },
+      {
+        name: "size",
+        type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge" | number',
+        default: '"small"',
+        description: "Logo size (shared scale with the Logo component).",
+      },
+      {
+        name: "wordmark",
+        type: "string",
+        description: "Optional text displayed beside the icon for a lockup layout.",
+      },
+      {
+        name: "label",
+        type: "string",
+        description:
+          "Accessible label. Defaults to the brand's display name (e.g. \"GitHub\").",
+      },
+      {
+        name: "className",
+        type: "string",
+        description: "Additional CSS classes on the wrapper.",
+      },
+    ],
+    examples: [
+      {
+        title: "Icons",
+        description: "All available third-party brand logos.",
+        demoSlug: "logo-third-party-demo-icons",
+      },
+      {
+        title: "Sizes",
+        description:
+          "All six size options, shown for a solid-fill mark (Figma) and a white-tile mark (Slack).",
+        demoSlug: "logo-third-party-demo-sizes",
+      },
+      {
+        title: "Lockups",
+        description: "Icon + wordmark lockup layout.",
+        demoSlug: "logo-third-party-demo-lockups",
+      },
+      {
+        title: "In a Tile",
+        description:
+          "Picker / suggestion-menu rows: solid-fill marks fill the tile; white-tile marks swap to their borderless glyph inside a surface Tile.",
+        demoSlug: "logo-third-party-demo-in-tile",
+      },
+      {
+        title: "In a Tag",
+        description:
+          "Inline chips: every mark is normalized to a 16px box; white-tile marks render as a centered glyph, solid-fill marks fill the box.",
+        demoSlug: "logo-third-party-demo-in-tag",
+      },
+      {
+        title: "Named Exports",
+        description: "Per-brand convenience exports for direct usage.",
+        demoSlug: "logo-third-party-demo-named-exports",
+      },
+    ],
+  },
+
   dialog: {
     description:
       "A modal dialog component using Base UI with customizable header, content, footer, title, and description sub-components. Supports backdrop overlay with animations.",

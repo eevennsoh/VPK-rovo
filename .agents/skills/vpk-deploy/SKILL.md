@@ -191,6 +191,15 @@ configuration when it is safe and intended:
   tokens, ASAP keys, or AI Gateway credentials.
 - Update `service-descriptor.yml` for the new service before deploying. The
   local deploy config does not update Micros metadata by itself.
+- For Studio, Rovo, live chat, realtime voice, wiki, or generated-agent
+  exports, do not treat the app as "static-only" just because `next build`
+  succeeds. These demos depend on backend routes, WebSockets, runtime tokens,
+  and AI Gateway configuration. Deploy the same backend behavior used locally,
+  or clearly mark the deploy as a static mock.
+- `pnpm run dev` in a backend-backed export should run the frontend and backend
+  together, matching the source repo's behavior. If local dev only serves
+  `out/`, reset-demo controls, AI generation, live chat, and scripted voice
+  narration will fail with 404/405 or inactive realtime sessions.
 
 ## Step 2: Generate Deploy Config
 
@@ -449,6 +458,54 @@ pnpm run build
 ./.agents/skills/vpk-deploy/scripts/deploy.sh <service-name> <version> [env]
 ```
 
+### 8. Full backend exports must preserve runtime security and static serving
+
+When an export includes the full VPK-Rovo backend, check these production-only
+edges before deploying:
+
+- `service-descriptor.yml` must include AI Gateway, ASAP, realtime, and
+  `VPK_RUNTIME_ADMIN_TOKEN` SSM refs for the new service.
+- `/api/health` must report AI Gateway configured and the expected realtime
+  model. For Studio voice demos, the expected model is `gpt-realtime-2` unless
+  the source app intentionally changed it.
+- `/api/realtime/audio-conversation-token` must return `200` for same-origin
+  browser requests. Production can require a runtime admin token internally,
+  but same-origin realtime clients still need a safe token path.
+- WebSocket upgrades for `/api/realtime/audio-conversation` must allow the
+  same production host without weakening browser-preview sockets.
+- The backend must not register a global CORS middleware that rejects
+  same-host browser requests just because the `Origin` header is present.
+  Browser font requests include `Origin` and `Sec-Fetch-Dest: font`; a plain
+  `curl` without those headers is not enough proof.
+
+If static fonts or chunks fail only in Chrome, reproduce the browser request
+shape directly:
+
+```bash
+BASE="https://<service-name>.us-west-2.platdev.atl-paas.net"
+curl -sS -o /dev/null -D - \
+  -H "Origin: $BASE" \
+  -H "Referer: $BASE/" \
+  -H "Sec-Fetch-Dest: font" \
+  -H "Sec-Fetch-Mode: cors" \
+  "$BASE/_next/static/media/<font-file>.woff2"
+```
+
+Expected result is `200` plus `access-control-allow-origin: $BASE`. If the
+same URL returns `200` without headers but `500` with these headers, fix the
+backend CORS/origin policy. Do not assume Chrome DevTools is showing stale
+errors until this check passes.
+
+Avoid custom HTML `Link` preload headers unless they are proven necessary.
+Malformed or over-broad preload headers can make Chrome request chunks/fonts in
+a different mode from ordinary navigation. Verify deployed HTML does not carry
+unexpected preload headers:
+
+```bash
+curl -fsSI "$BASE/" | grep -i '^link:' || true
+curl -fsSI "$BASE/studio/" | grep -i '^link:' || true
+```
+
 ## Step 4: Pre-Deployment Checks
 
 Run the pre-deployment check script from this skill's scripts directory:
@@ -465,6 +522,17 @@ The script validates:
 - Backend package-lock.json exists
 - Dockerfile uses Node 20+
 - next.config.ts has NEXT_OUTPUT export support
+
+After deployment, run the runtime verifier against the deployed URL:
+
+```bash
+node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs \
+  "https://<service-name>.us-west-2.platdev.atl-paas.net"
+```
+
+This checks `/`, `/studio/`, all discovered `/_next/static` refs,
+browser-shaped font requests, `/api/health`, and the realtime token endpoint.
+Use it before telling the user a Studio, AI, or voice deploy is healthy.
 
 ## Step 5: Deploy
 
@@ -555,6 +623,8 @@ sed -i '' 's/^ENV=.*/ENV="pdev-apse2"/' .deploy.local
 - [ ] `/api/health` returns success
 - [ ] Main route returns success, including the trailing-slash URL when the
       static server redirects
+- [ ] Browser-shaped font/media requests return `200` with same-origin CORS
+- [ ] `node .agents/skills/vpk-deploy/scripts/verify-runtime.mjs <url>` passes
 - [ ] Backend-backed APIs, realtime, and live chat are verified when the UI
       depends on them
 - [ ] User informed about `pnpm run deploy:micros` for future deployments
@@ -592,6 +662,8 @@ For common deployment issues (health check failures, Docker auth, ASAP key forma
 - All user-facing functionality that changed is verified.
 - Backend-backed APIs are rechecked when the change affects AI, realtime, or
   live chat behavior.
+- Browser-shaped static asset checks pass when the deployment includes Next.js
+  local fonts or generated `/_next/static/media/*` assets.
 
 ## URLs After Deployment
 

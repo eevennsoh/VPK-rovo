@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, ReactNode } from "react";
-import Image from "next/image";
+import { SlackLogo } from "@/components/ui/logo-third-party";
 import AppIcon from "@atlaskit/icon/core/app";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import CommentIcon from "@atlaskit/icon/core/comment";
@@ -92,7 +92,7 @@ export const AGENT_EXTENDED_SURFACES: ReadonlyArray<AgentExtendedSurface> = [
 				Rovo app is installed.
 			</>
 		),
-		icon: <Image alt="" aria-hidden height={20} src="/3p/slack/20.svg" width={20} />,
+		icon: <SlackLogo size="xsmall" label="" />,
 		id: "slack",
 		label: "Slack",
 		status: "managed",

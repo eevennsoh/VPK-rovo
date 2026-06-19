@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { GoogleDriveLogo, SlackLogo } from "@/components/ui/logo-third-party";
 import { Button } from "@/components/ui/button";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
@@ -29,11 +29,11 @@ export default function FilterButtonBar(): ReactNode {
 
 			<div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
 				<Button className="max-w-full gap-2" variant="secondary">
-					<Image src="/3p/google-drive/20.svg" alt="" aria-hidden width={20} height={20} />
+					<GoogleDriveLogo size="xsmall" label="" />
 					<span className="truncate">Google Drive</span>
 				</Button>
 				<Button className="max-w-full gap-2" variant="secondary">
-					<Image src="/3p/slack/20.svg" alt="" aria-hidden width={20} height={20} />
+					<SlackLogo size="xsmall" label="" />
 					<span className="truncate">Slack</span>
 				</Button>
 				<Button variant="secondary">+47</Button>

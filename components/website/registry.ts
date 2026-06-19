@@ -109,6 +109,10 @@ const UI_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   logo: dynamic(() => import("./demos/ui/logo-demo"), { ssr: false }),
+  "logo-third-party": dynamic(
+    () => import("./demos/ui/logo-third-party-demo"),
+    { ssr: false },
+  ),
   lozenge: dynamic(() => import("./demos/ui/lozenge-demo"), { ssr: false }),
   "menu-group": dynamic(() => import("./demos/ui/menu-group-demo"), {
     ssr: false,
@@ -4814,6 +4818,49 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/logo-demo").then((mod) => ({
         default: mod.LogoDemoInTag,
+      })),
+    { ssr: false },
+  ),
+  // Logo Third-party
+  "logo-third-party-demo-icons": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoIcons,
+      })),
+    { ssr: false },
+  ),
+  "logo-third-party-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoSizes,
+      })),
+    { ssr: false },
+  ),
+  "logo-third-party-demo-lockups": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoLockups,
+      })),
+    { ssr: false },
+  ),
+  "logo-third-party-demo-in-tile": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoInTile,
+      })),
+    { ssr: false },
+  ),
+  "logo-third-party-demo-in-tag": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoInTag,
+      })),
+    { ssr: false },
+  ),
+  "logo-third-party-demo-named-exports": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoNamedExports,
       })),
     { ssr: false },
   ),

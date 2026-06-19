@@ -1,6 +1,6 @@
 ---
 name: vpk-build
-description: Extract one VPK-Rovo route into a standalone Next.js app with deploy scaffold.
+description: Extract VPK routes to standalone apps.
 ---
 
 # VPK Build — extract a route into a standalone sibling project
@@ -34,6 +34,12 @@ land at ~60 source files and ~10 npm deps; project routes at ~100 source files
 and ~15 npm deps. The full `public/` asset tree is copied by default because
 several VPK catalog and Studio components derive image URLs from data at runtime.
 No per-route configuration is required — detection happens during Phase A.
+
+For Studio/Rovo exports, "minimal" is the wrong target. If the route uses AI
+generation, live chat, realtime voice, scripted tours, reset-demo controls, or
+wiki-backed data, preserve the full runtime contract from VPK-Rovo instead of
+trimming to a static shell. Missing backend routes usually show up later as
+405s, inactive live chat, or deployed AI calls that silently fall back.
 
 ## When to use vs. when to stay in VPK-Rovo
 
@@ -101,6 +107,10 @@ agent generation, Rovo threads, reset-demo controls, or wiki memory APIs:
   Use `node scripts/dev.mjs` as the target `dev` script, with
   `dev:backend` starting `pnpm run dev:backend` in the source checkout and
   `dev:frontend` running `pnpm run build && node scripts/serve-static.mjs 3001`.
+- Keep `pnpm run dev` semantically aligned with VPK-Rovo. If a user expects
+  local AI generation, reset-demo, live chat, or scripted narration, the dev
+  command must not become a frontend-only static server. A successful
+  `NEXT_OUTPUT=export next build` only proves the static page was generated.
 - Proxy real backend APIs instead of recreating them in the extracted app. At a
   minimum, proxy `/api/rovo/*`, `/api/wiki/*`,
   `/api/agents/rfp-demo/*`, and `/api/realtime/*` to the VPK-Rovo backend.
@@ -112,6 +122,16 @@ agent generation, Rovo threads, reset-demo controls, or wiki memory APIs:
   `backend/lib/ai-gateway-helpers.js`, which uses
   `OPENAI_REALTIME_MODEL || "gpt-realtime"`. Don't hardcode a model in the
   extracted frontend.
+- For deployed Studio voice demos, verify the service stash sets
+  `OPENAI_REALTIME_MODEL` to the same model used by the source deployment. In
+  the current Rovo/Studio flow that is `gpt-realtime-2`.
+- When moving from source-backed local dev to Micros, deploy the full backend
+  implementation, not the minimal static Micros scaffold. The minimal scaffold
+  is only for routes with no live `/api/*`, SSE, or WebSocket dependency.
+- If the full backend uses global CORS middleware, it must allow same-host
+  production origins before static assets are served. Chrome font requests send
+  `Origin` and `Sec-Fetch-Dest: font`; plain asset fetches can pass while the
+  real browser request fails with `ERR_ABORTED 500`.
 - Treat scripted tours as real realtime clients. If narration doesn't start or
   doesn't read the script, verify the backend is running, `/api/realtime/ws-url`
   returns the backend URL, the WebSocket upgrade proxy works, and the Studio /
@@ -210,6 +230,14 @@ If any step fails, read the output for the specific cause:
   client fallbacks, copied-in API shims, or source-file drift. The export must
   preserve VPK-Rovo behavior unless the user explicitly asks for a mocked
   presentation demo.
+- **Deployed page renders but Chrome console shows `/_next/static/media/*`
+  `ERR_ABORTED 500`**: test the exact browser font request shape with
+  `Origin`, `Referer`, `Sec-Fetch-Dest: font`, and `Sec-Fetch-Mode: cors`.
+  If that returns `500`, the backend CORS/origin policy is rejecting same-host
+  static asset requests before `express.static`; fix the backend, then redeploy.
+- **Normal asset curl returns `200` but Chrome still fails**: do not call it
+  cache until the browser-shaped request also returns `200` and deployed HTML
+  has no unexpected custom `Link` preload header.
 
 ## Ports
 
