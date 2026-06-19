@@ -5,9 +5,9 @@ alwaysApply: true
 
 # Browser Screenshot Path
 
-When taking screenshots with `/agent-browser` (`npx agent-browser screenshot`), always specify the output path inside this repo's ignored `output/agent-browser/` directory. Choose a descriptive filename and subfolder structure that fits the context.
+When saving browser screenshots from any tool, use this repo's ignored `output/agent-browser/` directory. Choose a descriptive filename and subfolder structure that fits the context.
 
-**Never** omit the filename — the default may save screenshots into the current working directory, scattering files across the workspace root.
+For `/agent-browser` (`npx agent-browser screenshot`), always specify the output path explicitly. **Never** omit the filename — the default may save screenshots into the current working directory, scattering files across the workspace root.
 
 Examples:
 

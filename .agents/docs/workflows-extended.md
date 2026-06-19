@@ -37,7 +37,7 @@ Run on every change:
 
 Run additionally for UI changes:
 
-1. Visual checks via `/agent-browser` (`npx agent-browser`) — the standard tool for browser automation, screenshots, and snapshots
+1. Visual checks via Codex App built-in browser plugins first when available (`@Browser` for local/isolated web work, `@Chrome` for signed-in browser state); fall back to `/agent-browser` (`npx agent-browser`) outside Codex App or when the preferred plugin is unavailable/blocked
 2. Accessibility checks:
    - `ads_analyze_a11y` for component code
    - `ads_analyze_localhost_a11y` for live page
