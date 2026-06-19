@@ -15,7 +15,7 @@
  * to avoid re-rendering React 60 times/sec.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -88,14 +88,15 @@ export function TWGLoader({
 	const sizePx = SIZE_PX[size];
 	const reducedMotion = usePrefersReducedMotion();
 
-	// Dot ring + line colors flip with the active theme; resolve once per render.
-	// The mask color is driven by CSS (`currentColor`) instead of JS so it tracks
-	// the surface the loader actually sits on — see the wrapper's `text-surface`.
+	// Dot ring colors render as CSS variables with fallbacks so SSR and client
+	// hydration see the same attribute strings while the browser resolves theme.
+	// The mask color is driven by CSS (`currentColor`) so it tracks the surface
+	// the loader actually sits on — see the wrapper's `text-surface`.
 	// The `<svg>` forces `color: inherit` so the mask reads that wrapper color even
 	// when an ancestor (e.g. a Button's `[&_svg]:text-icon-subtle`) tries to recolor
 	// descendant svgs — without it, the mask holes pick up the ancestor's icon color.
-	const dotColors = useMemo(() => getDotColors(), []);
-	const lineColor = useMemo(() => getLineColor(), []);
+	const dotColors = getDotColors();
+	const lineColor = getLineColor();
 
 	const svgRef = useRef<SVGSVGElement>(null);
 

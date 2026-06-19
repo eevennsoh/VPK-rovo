@@ -7,9 +7,10 @@
  * DOM updaters, which mutate SVG nodes passed in by the caller.
  *
  * The only adaptation from upstream is color resolution: instead of calling
- * `@atlaskit/tokens` `token()` at runtime, we read the equivalent ADS CSS
- * custom properties (`--ds-*`) with the same hard-coded fallbacks, so the
- * loader still themes correctly via `setGlobalTheme()`.
+ * `@atlaskit/tokens` `token()` at runtime, we render equivalent ADS CSS custom
+ * properties (`--ds-*`) with hard-coded fallbacks. Keeping the literal SVG
+ * attribute stable avoids SSR/client hydration drift while the browser still
+ * resolves the active theme from `setGlobalTheme()`.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -116,27 +117,16 @@ export function easeInOutQuad(t: number): number {
 /* Colors                                                                     */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Resolve an ADS token CSS variable to a concrete color string, falling back
- * to the upstream literal when the variable is unset (e.g. SSR or no theme).
- */
-function resolveCssVar(variable: string, fallback: string): string {
-	if (typeof window === "undefined") return fallback;
-	const value = window
-		.getComputedStyle(document.documentElement)
-		.getPropertyValue(variable)
-		.trim();
-	return value || fallback;
-}
-
 /** Brand colors for the four dot rings. Aligned with `DOT_ANGLES`. */
+const DOT_COLORS = [
+	"var(--ds-icon-accent-orange, #FCA700)",
+	"var(--ds-icon-accent-lime, #6A9A23)",
+	"var(--ds-icon-accent-blue, #1868DB)",
+	"var(--ds-icon-accent-purple, #AF59E0)",
+] as const;
+
 export function getDotColors(): readonly string[] {
-	return [
-		resolveCssVar("--ds-icon-accent-orange", "#FCA700"),
-		resolveCssVar("--ds-icon-accent-lime", "#6A9A23"),
-		resolveCssVar("--ds-icon-accent-blue", "#1868DB"),
-		resolveCssVar("--ds-icon-accent-purple", "#AF59E0"),
-	];
+	return DOT_COLORS;
 }
 
 /** Single neutral color for the snake / connector lines. No exact ADS token. */

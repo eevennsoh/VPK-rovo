@@ -151,7 +151,18 @@ test("Personal Graph flyout trigger remains a two-state settings or close button
 	assert.match(CONTROL_FLYOUT_SOURCE, /"rounded-full"/);
 	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /aria-expanded:!/);
 	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /aria-expanded:\[&_svg\]:!/);
-	assert.match(CONTROL_FLYOUT_SOURCE, /className,\s+\)\}/);
+	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /\[&_svg\]:text-icon-selected/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /const PERSONAL_GRAPH_TRIGGER_OPEN_CLASS_NAME =/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /aria-expanded:bg-surface-overlay/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /aria-expanded:border-border-bold/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /aria-expanded:text-text/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /\[&_svg\]:text-border-bold/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /hover:bg-surface-overlay-hovered/);
+	assert.match(CONTROL_FLYOUT_SOURCE, /active:bg-surface-overlay-pressed/);
+	assert.match(
+		CONTROL_FLYOUT_SOURCE,
+		/className=\{cn\(\s+"rounded-full",\s+isOpen && PERSONAL_GRAPH_TRIGGER_OPEN_CLASS_NAME,\s+className,\s+\)\}/,
+	);
 	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /PERSONAL_GRAPH_SEARCH_ICON_BUTTON_CLASS_NAME/);
 	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /glassProps=\{PERSONAL_GRAPH_SEARCH_ICON_BUTTON_GLASS_PROPS\}/);
 	assert.doesNotMatch(CONTROL_FLYOUT_SOURCE, /magnetDistance=\{0\}/);

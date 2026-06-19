@@ -40,6 +40,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
+	// Keep its SVG color attributes deterministic across SSR/client hydration.
+	"components/ui-custom/twg-loader/twg-loader.test.js",
 	// Scheduled-trigger inference (daily-at-7am + NL → structured definitions).
 	// Lives under components/ so it must be included explicitly to run in CI.
 	"components/blocks/triggers/data/trigger-inference.test.js",

@@ -312,6 +312,8 @@ test("Personal Graph keeps the search and chat composer separate from the center
 	assert.match(SURFACE_SOURCE, /aria-hidden=\{!isSearchRevealed\}/);
 	assert.match(SURFACE_SOURCE, /inert=\{!isSearchRevealed\}/);
 	assert.match(SURFACE_SOURCE, /left-4 right-4 z-40 flex justify-center/);
+	assert.match(SURFACE_SOURCE, /max-w-\[560px\]/);
+	assert.doesNotMatch(SURFACE_SOURCE, /max-w-\[760px\]/);
 	assert.match(SURFACE_SOURCE, /initial=\{\{ bottom: -120 \}\}/);
 	assert.match(SURFACE_SOURCE, /const isSearchRevealed = isVaultReadyForLayout && \(phase === "search"/);
 	assert.match(SURFACE_SOURCE, /bottom: isSearchRevealed \? 24 : -120/);
