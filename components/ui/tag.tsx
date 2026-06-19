@@ -190,6 +190,10 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// right padding (matching non-removable logo/default tags).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
 	const hasOverlayControl = isOverlayRemove || Boolean(overlayAction);
+	// A trailing `elemAfter` (typically a count `<Badge>`) sits flush at the edge:
+	// it carries its own internal padding, so the tag only needs a hairline 1px
+	// inset to clear the inner border (no remove button reserving space here).
+	const hasElemAfter = Boolean(elemAfter);
 	// Round the remove button to match the tag shape: pill tags (user avatars or
 	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
 	const removeButtonShapeClass = isUserAvatarTag || isRounded ? "rounded-full" : "rounded-xs";
@@ -250,8 +254,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// Avatar types keep their fixed rounding; everything else honors `isRounded`.
 					isUserAvatarTag ? "rounded-full" : isOtherAvatarTag || type === "agent" ? "rounded-sm" : isRounded ? "rounded-full" : "rounded-sm",
 					// Removable tags and logo/default tags get 4px right padding;
+					// a trailing badge (`elemAfter`) tightens to 1px so it sits flush;
 					// otherwise keep the avatar-type defaults (user 6px, other 4px).
-					hasRemoveButton ? "pe-[4px]" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[4px]",
+					hasRemoveButton ? "pe-[4px]" : hasElemAfter ? "pe-px" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[4px]",
 				),
 				isInteractive ? cn("cursor-pointer", isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed") : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
