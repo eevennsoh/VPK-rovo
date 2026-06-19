@@ -25,6 +25,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// cursor + Ask Rovo sidebar). Bundles the real catalog via the directory
 	// harness, so gate it explicitly like its sibling above.
 	"components/projects/studio/lib/studio-screen-assistant-patch.test.js",
+	// Generated agent-result card placement/source contract. A recent render-gate
+	// change left this colocated test stale until review, so keep it CI-gated.
+	"components/projects/sidebar-chat/components/agent-result-card.test.js",
 	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.
