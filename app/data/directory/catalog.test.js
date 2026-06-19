@@ -116,6 +116,24 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 	}
 });
 
+test("skill display names slugify to stable unique config labels", async () => {
+	const { dir } = await loadCatalog();
+	const { DEFAULT_SKILLS, slugifySkillName } = dir;
+
+	assert.equal(slugifySkillName("  Explore Ideas  "), "explore-ideas");
+	assert.equal(slugifySkillName("Power BI reporter"), "power-bi-reporter");
+	assert.equal(slugifySkillName("AI/Rovo: Agent Builder!"), "ai-rovo-agent-builder");
+
+	const labels = new Map();
+	for (const skill of DEFAULT_SKILLS) {
+		const label = slugifySkillName(skill.name);
+
+		assert.match(label, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, `skill ${skill.id}: invalid config label ${label}`);
+		assert.ok(!labels.has(label), `skill ${skill.id}: duplicate config label ${label} also used by ${labels.get(label)}`);
+		labels.set(label, skill.id);
+	}
+});
+
 test("tools catalog (both groups) is valid, uniquely identified, and produces resolvable visuals", async () => {
 	const { dir } = await loadCatalog();
 	const { DEMO_TOOLS, DEMO_SESSION_TOOLS, getToolDirectoryVisual, resolveDirectoryVisual } = dir;
