@@ -109,6 +109,28 @@ fi
 - If service-descriptor.yml says `YOUR-SERVICE-NAME` → **Initial deploy** (ask for service name + credentials)
 - If service-descriptor.yml has custom name but no `.deploy.local` → **Redeploy without config** (ask for credentials to generate config)
 
+### Confirm Micros state before choosing the final path
+
+Local files are only hints. Before an initial deploy or a redeploy without
+`.deploy.local`, verify the service in Micros:
+
+```bash
+atlas micros service show --service="$SERVICE_NAME" --env="$ENV"
+atlas micros stash list -s "$SERVICE_NAME" -e "$ENV"
+```
+
+If `service show` reports `No such service` or `stash list` reports
+`Unknown service`, this is an initial Micros setup even if local files already
+contain a service name. Create the service before stashing variables:
+
+```bash
+atlas micros service create --service="$SERVICE_NAME" --no-sd
+```
+
+> **Sandbox note:** `atlas` writes logs under `~/.cache/atlassian/atlas`.
+> In restricted Codex sessions, run `atlas micros ...` commands with escalated
+> permissions when the sandbox blocks that cache write.
+
 ### Fast Redeploy Path (when `.deploy.local` exists)
 
 When `.deploy.local` is detected, inform the user to run the deploy command:
@@ -154,6 +176,22 @@ pnpm run deploy:micros
 
 If the service exists but `.deploy.local` is missing (e.g., cloned repo, deleted config), collect Docker credentials from the user to regenerate the config file, then proceed with deployment.
 
+### For exported sibling apps
+
+When deploying an app generated from another VPK repo, reuse proven source
+configuration when it is safe and intended:
+
+- Copy `.env.local`, `.asap-config`, and `.deploy.local` from the source repo
+  only when the source app already deploys successfully and targets the same AI
+  Gateway and ASAP identity.
+- Edit the copied `.deploy.local` so `SERVICE_NAME` matches the new Micros
+  service. Keep `ENV`, `DOCKER_USERNAME`, and `DOCKER_PASSWORD` intact unless
+  the user explicitly changes them.
+- Never print or commit `.env.local`, `.asap-config`, `.deploy.local`, Docker
+  tokens, ASAP keys, or AI Gateway credentials.
+- Update `service-descriptor.yml` for the new service before deploying. The
+  local deploy config does not update Micros metadata by itself.
+
 ## Step 2: Generate Deploy Config
 
 After gathering required information, generate the `.deploy.local` config file for fast future deployments.
@@ -187,6 +225,33 @@ Replace `<service-name>`, `<username>`, and `<api-token>` with the values collec
 >
 > **Note:** Use `pnpm run deploy:micros` (not `pnpm deploy`). The latter is a reserved pnpm command.
 
+### Update service-descriptor.yml
+
+Before the first deploy, replace every placeholder in `service-descriptor.yml`
+with service-specific values:
+
+- `description` names the exported prototype.
+- `notifications.email` uses the owner email, even though Micros may warn that
+  the field is deprecated.
+- `image` is `docker.atl-paas.net/<service-name>`.
+- `environment` contains all required runtime values as SSM references for the
+  new service.
+- `PORT` is `"8080"` unless the backend wrapper intentionally uses another
+  port.
+
+Use service-scoped stash references:
+
+```yaml
+AI_GATEWAY_URL: ((ssm:/<service-name>/AI_GATEWAY_URL))
+AI_GATEWAY_USE_CASE_ID: ((ssm:/<service-name>/AI_GATEWAY_USE_CASE_ID))
+AI_GATEWAY_CLOUD_ID: ((ssm:/<service-name>/AI_GATEWAY_CLOUD_ID))
+AI_GATEWAY_USER_ID: ((ssm:/<service-name>/AI_GATEWAY_USER_ID))
+ASAP_PRIVATE_KEY: ((ssm:/<service-name>/ASAP_PRIVATE_KEY))
+ASAP_KID: ((ssm:/<service-name>/ASAP_KID))
+ASAP_ISSUER: ((ssm:/<service-name>/ASAP_ISSUER))
+PORT: "8080"
+```
+
 ## Step 3: Pre-Deployment Fixes
 
 Before running deployment, ensure these common issues are addressed:
@@ -200,6 +265,16 @@ if [ ! -f backend/package-lock.json ]; then
   echo "Generating backend/package-lock.json..."
   cd backend && npm install && cd ..
 fi
+```
+
+If `npm install` fails with an `EPERM` error in `/Users/<user>/.npm`, use a
+temporary cache and remove the generated local install afterward:
+
+```bash
+cd backend
+npm install --cache /private/tmp/<service-name>-npm-cache
+rm -rf node_modules
+cd ..
 ```
 
 ### 2. Dockerfile uses Node 20 (for Next.js 16+)
@@ -225,7 +300,21 @@ Before pushing, always re-login:
 docker login docker.atl-paas.net
 ```
 
-If push fails with "unauthorized", wait 1-2 minutes after `atlas packages permission grant` and retry.
+If push fails with "unauthorized", distinguish local Docker auth from
+server-side registry permission:
+
+```bash
+source .deploy.local
+atlas packages secrets -t docker -i "$DOCKER_PASSWORD"
+```
+
+If the push still fails with a path like
+`docker-private-local/<service-name>/_uploads`, grant package permissions,
+wait 1-2 minutes, and retry the push:
+
+```bash
+atlas packages permission grant
+```
 
 ### 5. File casing matches imports
 
@@ -291,6 +380,56 @@ atlas micros stash list -s $SERVICE_NAME -e $ENV
 
 > **Note:** Use `stash list` to verify (not `stash get` - that command doesn't exist).
 
+### 7. Static export versus backend-backed behavior
+
+Many VPK exports are static Next.js pages wrapped by a small Node server. That
+is enough for pages and `/api/health`, but it is not enough for live AI,
+realtime narration, WebSockets, or generated-agent APIs unless the production
+backend explicitly implements or proxies those routes.
+
+Before claiming the deployed app works, inspect whether the UI calls routes
+such as:
+
+- `/api/rovo/*`
+- `/api/wiki/*`
+- `/api/agents/*`
+- `/api/realtime/*`
+- WebSocket or Server-Sent Events endpoints
+
+If those routes exist, verify one of these conditions before deployment:
+
+- `backend/server.js` implements or proxies the same API behavior used in
+  local development.
+- The deployment is intentionally static-only, and the final report clearly
+  says AI, realtime, or live chat are not expected to work.
+
+If Docker builds fail while installing frontend dependencies because private
+Atlassian packages return `ERR_PNPM_FETCH_404` or `No authorization header was
+set`, don't install frontend dependencies inside Docker. Build the static export
+locally, then copy `out/` into the runtime image:
+
+```Dockerfile
+FROM node:20-alpine
+WORKDIR /app
+
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
+
+COPY backend/server.js ./
+COPY out ./public
+
+EXPOSE 8080
+CMD ["node", "server.js"]
+```
+
+For this static-wrapper pattern, the deploy command must run the frontend build
+before the Docker image build:
+
+```bash
+pnpm run build
+./.agents/skills/vpk-deploy/scripts/deploy.sh <service-name> <version> [env]
+```
+
 ## Step 4: Pre-Deployment Checks
 
 Run the pre-deployment check script from this skill's scripts directory:
@@ -331,6 +470,19 @@ The script will:
 5. Build Docker image with `--platform linux/amd64`
 6. Push to `docker.atl-paas.net` (re-auth via `atlas packages secrets -t docker -i <token>` if needed)
 7. Deploy using `atlas micros service deploy`
+
+Initial deployments commonly take 10-15 minutes. If the deploy command returns
+a deployment ID, watch the Micros event stream until the stack reaches a final
+state:
+
+```bash
+atlas micros events -s <service-name> -e <env> -d <deployment-id>
+```
+
+Expected first-deploy warnings include missing Opsgenie team configuration,
+deprecated notification email fields, default instance type or strategy, and
+incomplete compliance metadata. Treat them as follow-up work unless Micros marks
+the deployment failed.
 
 For manual deployment commands, see [references/guide-manual-deployment.md](references/guide-manual-deployment.md).
 
@@ -373,12 +525,19 @@ sed -i '' 's/^ENV=.*/ENV="pdev-apse2"/' .deploy.local
 - [ ] Docker credentials collected (username + API token)
 - [ ] `.deploy.local` config file generated
 - [ ] `service-descriptor.yml` updated (replace `YOUR-SERVICE-NAME`)
+- [ ] `service-descriptor.yml` image and env refs use the final service name
 - [ ] Micros service created
 - [ ] **ALL 7 env vars set and verified**
 - [ ] Docker authenticated
+- [ ] Docker registry write permission verified if push initially fails
 - [ ] Image built & pushed (v1.0.1)
 - [ ] Deployed (10-15 min first time)
-- [ ] Health check shows all "SET" (no "MISSING")
+- [ ] `atlas micros service show` reports the latest stack is stable
+- [ ] `/api/health` returns success
+- [ ] Main route returns success, including the trailing-slash URL when the
+      static server redirects
+- [ ] Backend-backed APIs, realtime, and live chat are verified when the UI
+      depends on them
 - [ ] User informed about `pnpm run deploy:micros` for future deployments
 
 ### Redeploy (via `pnpm run deploy:micros`)
@@ -398,15 +557,22 @@ For common deployment issues (health check failures, Docker auth, ASAP key forma
 
 ### Initial Deploy
 
-✅ Health check returns all 7 "SET" values (not "MISSING")
-✅ Chat API streams responses
-✅ AI responses appear in chat
+- `atlas micros service show` shows the service URL and a stable deployment
+  stack, such as `CREATE_COMPLETE`.
+- `/api/health` returns success.
+- The main app route returns success. For static exports, check both `/studio`
+  and `/studio/` if the first request redirects.
+- If the app depends on backend APIs, realtime, voice, live chat, or AI
+  Gateway calls, those exact routes work in the deployed environment. A passing
+  health check alone is not enough proof.
 
 ### Redeploy
 
-✅ New version shown in `atlas micros service show`
-✅ Changes visible after hard refresh
-✅ All functionality working
+- New version shown in `atlas micros service show`.
+- Changes visible after hard refresh.
+- All user-facing functionality that changed is verified.
+- Backend-backed APIs are rechecked when the change affects AI, realtime, or
+  live chat behavior.
 
 ## URLs After Deployment
 
