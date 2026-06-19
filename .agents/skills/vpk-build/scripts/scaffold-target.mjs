@@ -5,7 +5,7 @@
  * Reads an extraction plan produced by trace-imports.mjs and materializes a
  * standalone sibling Next.js project. Copies files verbatim (preserving
  * repo-relative paths so `@/*` imports resolve without rewriting), fills in
- * templated scaffold files, copies public assets, and initializes a git repo.
+ * templated scaffold files, copies the public asset tree, and initializes a git repo.
  *
  * Usage:
  *   node scaffold-target.mjs <plan.json> [--target <dir>] [--force]
@@ -468,17 +468,18 @@ export function FeatureFlagsShim() {
 		buildGlobalsCssFromSource(sourceGlobalsCss, availablePackages),
 	);
 
-	// ---- 4b. Copy public/fonts/ (if any) ----
-	// VPK prototypes reference fonts via CSS variables (--font-sans,
-	// --font-ark-es) set up in the root layout. Without copying the font
-	// files AND wiring them into the extracted layout, typography falls back
-	// to browser defaults and the prototype's visual identity looks off.
-	const fontsDir = path.join(repoRoot, "public", "fonts");
-	if (fs.existsSync(fontsDir)) {
-		copyTreeVerbatim(fontsDir, path.join(targetDir, "public", "fonts"));
+	// ---- 4b. Copy public/ (if any) ----
+	// Studio and catalog surfaces derive some image URLs at runtime from ids
+	// and data records. A traced asset allow-list is too brittle for those
+	// routes, so standalone builds carry the source public tree verbatim.
+	const publicDir = path.join(repoRoot, "public");
+	if (fs.existsSync(publicDir)) {
+		copyTreeVerbatim(publicDir, path.join(targetDir, "public"));
 	}
 
-	// ---- 5. Copy public assets ----
+	// ---- 5. Copy traced public assets ----
+	// Kept for older plans and for source repos that do not have a complete
+	// public tree. If public/ was copied above these writes are no-ops.
 	for (const assetPath of plan.assets) {
 		const rel = assetPath.startsWith("/") ? assetPath.slice(1) : assetPath;
 		const srcAbs = path.join(repoRoot, "public", rel);

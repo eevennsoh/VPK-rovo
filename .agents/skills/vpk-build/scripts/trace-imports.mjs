@@ -22,7 +22,7 @@ import path from "node:path";
 import process from "node:process";
 import ts from "typescript";
 
-const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs", ".cts"];
+const RESOLVE_EXTENSIONS = [".tsx", ".ts", ".jsx", ".js", ".mjs", ".mts", ".cjs", ".cts", ".json"];
 
 // Files we never follow, even if statically imported. These are "dispatcher"
 // modules whose sole job is to centralize imports across many unrelated
@@ -121,9 +121,13 @@ function resolveWithExtensions(base) {
 
 function classifySpecifier(specifier) {
 	const ext = path.extname(specifier).toLowerCase();
+	if (specifier.startsWith("@/") || specifier.startsWith("./") || specifier.startsWith("../")) {
+		if (CSS_EXTENSIONS.has(ext)) return "css";
+		if (ASSET_EXTENSIONS.has(ext) && ext !== ".json") return "asset";
+		return "local";
+	}
 	if (CSS_EXTENSIONS.has(ext)) return "css";
 	if (ASSET_EXTENSIONS.has(ext)) return "asset";
-	if (specifier.startsWith("@/") || specifier.startsWith("./") || specifier.startsWith("../")) return "local";
 	return "npm";
 }
 
@@ -213,6 +217,28 @@ function extractAssetRefs(text) {
 	return [...results];
 }
 
+function publicAssetExists(repoRoot, assetPath) {
+	const rel = assetPath.startsWith("/") ? assetPath.slice(1) : assetPath;
+	return fs.existsSync(path.join(repoRoot, "public", rel));
+}
+
+function companionAssetRefs(assetPath, repoRoot) {
+	const companions = [];
+
+	if (assetPath.startsWith("/avatar-agent/")) {
+		const unmaskedPath = assetPath.replace("/avatar-agent/", "/avatar-agent-unmasked/");
+		if (publicAssetExists(repoRoot, unmaskedPath)) companions.push(unmaskedPath);
+	}
+
+	const thirdPartyMatch = assetPath.match(/^\/3p\/([^/]+)\/\d+\.svg$/);
+	if (thirdPartyMatch) {
+		const borderlessPath = `/3p/${thirdPartyMatch[1]}/16-borderless.svg`;
+		if (publicAssetExists(repoRoot, borderlessPath)) companions.push(borderlessPath);
+	}
+
+	return companions;
+}
+
 // -------- Main trace ----------------------------------------------------
 
 function trace({ route, repoRoot }) {
@@ -243,6 +269,13 @@ function trace({ route, repoRoot }) {
 	// we collect them here and surface as warnings for the user to wire up.
 	const apiCalls = new Set();
 
+	function addAsset(assetPath) {
+		assets.add(assetPath);
+		for (const companion of companionAssetRefs(assetPath, repoRoot)) {
+			assets.add(companion);
+		}
+	}
+
 	while (queue.length > 0) {
 		const file = queue.shift();
 		if (visited.has(file)) continue;
@@ -260,7 +293,7 @@ function trace({ route, repoRoot }) {
 		}
 
 		// Asset literals in source
-		for (const a of extractAssetRefs(text)) assets.add(a);
+		for (const a of extractAssetRefs(text)) addAsset(a);
 
 		// Runtime fetch("/api/...") references. Regex is sufficient — we just
 		// need the URL literals to warn the user about required backend wiring.
@@ -293,7 +326,7 @@ function trace({ route, repoRoot }) {
 				// e.g. import logo from "./logo.svg"
 				if (spec.startsWith("@/") || spec.startsWith("./") || spec.startsWith("../")) {
 					const resolved = resolveLocalSpecifier(spec, file, repoRoot);
-					if (resolved) assets.add("/" + path.relative(repoRoot, resolved).replace(/^public\//, ""));
+					if (resolved) addAsset("/" + path.relative(repoRoot, resolved).replace(/^public\//, ""));
 				}
 				continue;
 			}

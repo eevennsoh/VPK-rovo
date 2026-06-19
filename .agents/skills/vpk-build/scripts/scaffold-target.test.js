@@ -58,6 +58,10 @@ export default function AwakePage() {
 			"bold-font\n",
 		);
 		writeFile(
+			path.join(repoRoot, "public", "3p", "google-drive", "16-borderless.svg"),
+			"<svg />\n",
+		);
+		writeFile(
 			planPath,
 			JSON.stringify(
 				{
@@ -170,6 +174,13 @@ test("scaffold-target emits the updated layout, shim, config, and fonts for extr
 				"utf8",
 			),
 			"bold-font\n",
+		);
+		assert.equal(
+			fs.readFileSync(
+				path.join(fixture.targetDir, "public", "3p", "google-drive", "16-borderless.svg"),
+				"utf8",
+			),
+			"<svg />\n",
 		);
 		assert.equal(
 			fs.readFileSync(path.join(fixture.targetDir, "app", "tailwind-theme.css"), "utf8"),

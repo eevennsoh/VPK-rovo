@@ -1,13 +1,6 @@
 ---
 name: vpk-deploy
-description: This skill should be used when the user asks to "deploy", "deploy to
-  Micros", "push to production", "ship to production", "deploy my prototype", "push
-  my changes", "check deployment status", "redeploy changes", "set up deployment",
-  "go live", "publish", "make it live", "host this", "put this online", "release",
-  "launch", "how do I deploy", "how do I ship this", or wants to deploy their VPK
-  prototype to Atlassian Micros infrastructure. Also triggered by errors like "deployment
-  failed", "deploy error", "build failed on Micros". Auto-detects initial vs redeploy
-  workflows.
+description: Deploy, redeploy, or check status for a VPK prototype on Atlassian Micros.
 ---
 # VPK Deploy - Deploy to Micros
 

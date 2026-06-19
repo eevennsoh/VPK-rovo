@@ -1,6 +1,6 @@
 ---
 name: vpk-build
-description: Extract a single VPK-Rovo route into a standalone, minimal Next.js 16 project deployable to Atlassian Micros. Use when the user asks to build, extract, carve out, spin out, split, or slim down a slash route, asks for a standalone prototype or minimal route project, wants a route to become a separate app or repo, or points at a localhost route URL and wants it slimmed down into a separately deployable project. Works for any route under app, including arts, projects, or future categories. Produces a Git-initialized sibling directory with only the npm deps the route transitively uses, context providers auto-wrapped in the layout, and a Micros deploy scaffold ready for /vpk-deploy.
+description: Extract one VPK-Rovo route into a standalone Next.js app with deploy scaffold.
 ---
 
 # VPK Build — extract a route into a standalone sibling project
@@ -30,8 +30,10 @@ category registered via `loadDemoComponent`.
 | `/vpk-build /<anything>` | Any | Trace figures out what's needed; output scales to the route |
 
 The output size scales to what the route actually needs. Arts routes typically
-land at ~60 files and ~10 npm deps; project routes at ~100 files and ~15 npm
-deps. No per-route configuration is required — detection happens during Phase A.
+land at ~60 source files and ~10 npm deps; project routes at ~100 source files
+and ~15 npm deps. The full `public/` asset tree is copied by default because
+several VPK catalog and Studio components derive image URLs from data at runtime.
+No per-route configuration is required — detection happens during Phase A.
 
 ## When to use vs. when to stay in VPK-Rovo
 
@@ -61,19 +63,66 @@ node .agents/skills/vpk-build/scripts/trace-imports.mjs <route-path> \
 ```
 
 The plan JSON includes `summary.fileCount`, `summary.npmCount`,
-`summary.assetCount`, and `summary.backendRouteCount`. If `backendRouteCount > 0`,
-**stop**: v1 only supports pure frontend routes. Tell the user to keep deploying
-the route through VPK's own `/vpk-deploy` until backend support lands.
+`summary.assetCount`, and `summary.backendRouteCount`. If
+`backendRouteCount > 0`, treat it as a decision point:
+
+- For a pure standalone route, **stop**. Tell the user the route depends on
+  VPK-Rovo backend behavior and must either stay in VPK-Rovo or get an
+  explicit backend/proxy plan before extraction.
+- For a Studio, chat, Rovo, wiki, realtime, or other backend-backed demo that
+  is meant to mirror VPK-Rovo locally, continue only with the backend-backed
+  export contract below. Don't add fake local API shims unless the user
+  explicitly asks for a mocked demo.
 
 Also check `skippedDispatchers` — if unexpected files appear there, the trace
 may be missing legitimate graph edges. The common entry (`demo-registry-loader.ts`)
 is intentional and resolved via the `loadDemoComponent` special case.
 
+### Backend-backed export contract
+
+Some extracts intentionally remain coupled to the source VPK-Rovo backend while
+running as a static standalone frontend. Studio, live chat, Rovo app browsing,
+wiki-backed memory views, and scripted voice tours are in this category. For
+these exports, the app source must stay source-identical to VPK-Rovo where
+possible; put extraction-specific behavior in the dev/runtime harness instead.
+
+Use this contract when the route depends on `/api/*`, realtime audio, Studio
+agent generation, Rovo threads, reset-demo controls, or wiki memory APIs:
+
+- Copy source files verbatim from VPK-Rovo. If behavior differs, compare the
+  exported file against the source file before patching anything. Common
+  source-parity files include `components/projects/sidebar-chat/page.tsx`,
+  `components/projects/rovo/hooks/use-realtime-voice.ts`,
+  `components/projects/studio/hooks/use-rovo-app.ts`, and
+  `components/projects/studio/components/rovo-app-shell.tsx`.
+- Run the source backend alongside the extracted static frontend. `pnpm run
+  dev` in the target must start both processes, with a default source root of
+  `../vpk-rovo` and an override such as `VPK_ROVO_ROOT=/path/to/vpk-rovo`.
+  Use `node scripts/dev.mjs` as the target `dev` script, with
+  `dev:backend` starting `pnpm run dev:backend` in the source checkout and
+  `dev:frontend` running `pnpm run build && node scripts/serve-static.mjs 3001`.
+- Proxy real backend APIs instead of recreating them in the extracted app. At a
+  minimum, proxy `/api/rovo/*`, `/api/wiki/*`,
+  `/api/agents/rfp-demo/*`, and `/api/realtime/*` to the VPK-Rovo backend.
+- Recreate static-only realtime glue in the harness. A static export removes
+  Next API routes, so the static server must answer `/api/realtime/ws-url` with
+  the backend WebSocket base URL and must proxy WebSocket upgrades for
+  `/api/realtime/audio-conversation`.
+- Keep realtime model selection in the backend. VPK-Rovo owns the model through
+  `backend/lib/ai-gateway-helpers.js`, which uses
+  `OPENAI_REALTIME_MODEL || "gpt-realtime"`. Don't hardcode a model in the
+  extracted frontend.
+- Treat scripted tours as real realtime clients. If narration doesn't start or
+  doesn't read the script, verify the backend is running, `/api/realtime/ws-url`
+  returns the backend URL, the WebSocket upgrade proxy works, and the Studio /
+  sidebar chat source files still match VPK-Rovo.
+
 ### Phase B — Scaffold & copy
 
-Create the sibling directory, copy files verbatim (preserving repo-relative
-paths so `@/*` imports resolve without rewriting), rewrite the route entry,
-fill in the Micros deploy scaffold, `git init`.
+Create the sibling directory, copy source files verbatim (preserving
+repo-relative paths so `@/*` imports resolve without rewriting), copy the full
+`public/` asset tree, rewrite the route entry, fill in the Micros deploy
+scaffold, `git init`.
 
 ```bash
 node .agents/skills/vpk-build/scripts/scaffold-target.mjs \
@@ -138,12 +187,41 @@ If any step fails, read the output for the specific cause:
   regeneration, confirm both files exist and the shim is mounted in the
   layout — module-level side effects only run when the module is actually
   imported from a client-side entry.
+- **Broken app logos or missing product icons**: confirm the full source
+  `public/` tree was copied. Runtime data can reference assets that don't
+  appear in the traced import graph, including paths such as
+  `/3p/google-drive/16-borderless.svg`,
+  `/3p/microsoft-sharepoint/16-borderless.svg`, and
+  `/avatar-agent-unmasked/dev-agents/feature-flag-cleaner.svg`.
+- **404 on `/api/rovo/threads` or `/api/wiki/memory-explorer`**: the target is
+  serving a static export without the source backend proxy. Start the VPK-Rovo
+  backend and proxy those routes; don't replace them with local in-memory
+  route handlers.
+- **405 on reset-demo controls**: proxy `/api/agents/rfp-demo/reset` and any
+  sibling `/api/agents/rfp-demo/*` routes to the source backend. A static file
+  server can't service those mutations by itself.
+- **AI generation works but live chat or scripted narration doesn't activate**:
+  verify `/api/realtime/ws-url`, the
+  `/api/realtime/audio-conversation` WebSocket upgrade proxy, and source backend
+  startup before changing app source. Also compare
+  `rovo-app-shell.tsx`, `sidebar-chat/page.tsx`, and
+  `use-realtime-voice.ts` against VPK-Rovo.
+- **Agent generation diverges from VPK-Rovo**: check for local deterministic
+  client fallbacks, copied-in API shims, or source-file drift. The export must
+  preserve VPK-Rovo behavior unless the user explicitly asks for a mocked
+  presentation demo.
 
 ## Ports
 
 Extracted projects default to `next dev -p 3001` so they coexist with
 VPK-Rovo on 3000. Override via `pnpm dev -- -p <port>` if you need to run
 multiple extracted projects side by side.
+
+Backend-backed static exports still serve the extracted frontend on 3001, but
+their `pnpm run dev` script must also start or reuse the source VPK-Rovo backend.
+When port 3001 is already in use, the failure is an `EADDRINUSE` listener
+conflict, not a build failure. Stop the existing frontend process or start the
+static server on another port.
 
 ## Dev tools badge
 
@@ -269,7 +347,7 @@ done
   plan JSON. This is the deterministic load-bearing piece of the skill;
   tracing the import graph via LLM would be too lossy.
 - [`scripts/scaffold-target.mjs`](scripts/scaffold-target.mjs) — Plan-driven
-  copy + `git init`.
+  source copy, full `public/` copy, and `git init`.
 - [`scripts/verify-target.sh`](scripts/verify-target.sh) — `pnpm install`
   through `next build` in the extracted project.
 
@@ -305,6 +383,10 @@ cd ../vpk-<route>/
 
 - **Auto-rewriting internal cross-route `<Link>` hrefs** — warns instead; user rewires manually.
 - **Multi-route bundles** — one route per extraction.
-- **Auto-generating backend for runtime API calls** — `apiCalls` detected in Phase A are surfaced as warnings. The scaffold proceeds and the project builds, but runtime `/api/*` calls (common in chat-based routes via `useChat`) will fail until a backend is wired up manually or the user adds proxy routes to VPK-Rovo.
+- **Auto-generating a replacement backend for runtime API calls** — `apiCalls`
+  detected in Phase A are surfaced as warnings. Pure standalone routes still
+  need an explicit backend plan before extraction. Backend-backed exports can
+  proxy to the source VPK-Rovo backend, but they must not invent local
+  replacement behavior unless the user asks for a mock.
 - **Provider dependency ordering** — auto-wrapped alphabetically. If a provider needs to be inside another because of a cross-dependency, user reorders the generated `app/layout.tsx`.
 - **Non-Micros deploy targets** (Vercel, Netlify, etc.) — Micros only for now; `references/micros/` is the only scaffold.
