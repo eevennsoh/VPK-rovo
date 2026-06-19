@@ -202,6 +202,31 @@ export function BadgeDemoWithSpinner() {
 }
 
 /**
+ * Letters and special characters — optional leading symbols and trailing
+ * letters add meaning to a count (mirrors atlassian.design badge usage):
+ * leading "+"/"-" represent additions or subtractions, and trailing letters
+ * abbreviate units (d for day, K for thousand, M for million). These strings
+ * contain non-digit characters, so they bypass the numeric `max` capping.
+ */
+export function BadgeDemoLettersAndSymbols() {
+	return (
+		<div className="flex flex-col gap-3">
+			<div className="flex flex-wrap items-center gap-2">
+				<Badge variant="success">+5</Badge>
+				<Badge variant="success">+99</Badge>
+				<Badge variant="danger">-3</Badge>
+				<Badge variant="danger">-12</Badge>
+			</div>
+			<div className="flex flex-wrap items-center gap-2">
+				<Badge>5d</Badge>
+				<Badge variant="information">2K</Badge>
+				<Badge variant="discovery">1.2M</Badge>
+			</div>
+		</div>
+	);
+}
+
+/**
  * Disabled — Badge is a display-only element (span), not interactive.
  * Apply disabled styles via className for visual-only disabled presentation.
  */
