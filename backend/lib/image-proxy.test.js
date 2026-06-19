@@ -2,11 +2,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
 	isAllowedAtlassianImageUrl,
 	parseImageProxyTarget,
+	readImageProxyResponsePayload,
 } = require("./image-proxy");
 
 test("parseImageProxyTarget accepts Atlassian headshot attachment URLs", () => {
@@ -74,4 +76,78 @@ test("extractAtlassianImageCandidatesFromHtml returns relative download attachme
 			"https://hello.atlassian.net/wiki/download/attachments/6450653554/David+Hoang+headshot.png?api=v2",
 		],
 	);
+});
+
+test("readImageProxyResponsePayload returns payloads within the configured limit", async () => {
+	const response = new Response("test", {
+		headers: {
+			"content-length": "4",
+			"content-type": "image/png",
+		},
+	});
+
+	const payload = await readImageProxyResponsePayload(response, { maxBytes: 4 });
+
+	assert.deepEqual(payload, Buffer.from("test"));
+});
+
+test("readImageProxyResponsePayload rejects oversized content-length before reading", async () => {
+	let wasPulled = false;
+	let wasCanceled = false;
+	const response = new Response(
+		new ReadableStream({
+			pull(controller) {
+				wasPulled = true;
+				controller.enqueue(new Uint8Array([1]));
+				controller.close();
+			},
+			cancel() {
+				wasCanceled = true;
+			},
+		}),
+		{
+			headers: {
+				"content-length": "5",
+				"content-type": "image/png",
+			},
+		},
+	);
+
+	await assert.rejects(
+		readImageProxyResponsePayload(response, { maxBytes: 4 }),
+		ImageProxyResponseTooLargeError,
+	);
+	assert.equal(wasPulled, false);
+	assert.equal(wasCanceled, true);
+});
+
+test("readImageProxyResponsePayload rejects streamed responses that exceed the limit", async () => {
+	let wasCanceled = false;
+	const chunks = [Buffer.alloc(3), Buffer.alloc(2)];
+	const response = new Response(
+		new ReadableStream({
+			pull(controller) {
+				const chunk = chunks.shift();
+				if (chunk) {
+					controller.enqueue(chunk);
+					return;
+				}
+				controller.close();
+			},
+			cancel() {
+				wasCanceled = true;
+			},
+		}),
+		{
+			headers: {
+				"content-type": "image/png",
+			},
+		},
+	);
+
+	await assert.rejects(
+		readImageProxyResponsePayload(response, { maxBytes: 4 }),
+		ImageProxyResponseTooLargeError,
+	);
+	assert.equal(wasCanceled, true);
 });

@@ -1,5 +1,6 @@
 const FIGMA_MCP_ASSET_PATH_PREFIX = "/api/mcp/asset/";
 const IMAGE_PROXY_ALLOWED_HOSTS = new Set(["figma.com", "www.figma.com"]);
+const IMAGE_PROXY_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 const ATLASSIAN_HOST_PATTERN = /(^|\.)atlassian\.net$/i;
 const IMAGE_FILE_EXTENSION_PATTERN =
 	/\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)(?:$|[?#])/i;
@@ -12,12 +13,113 @@ function getNonEmptyString(value) {
 		: "";
 }
 
+class ImageProxyResponseTooLargeError extends Error {
+	constructor(maxBytes = IMAGE_PROXY_MAX_RESPONSE_BYTES) {
+		super(`Image response exceeds the ${maxBytes} byte proxy limit`);
+		this.name = "ImageProxyResponseTooLargeError";
+		this.maxBytes = maxBytes;
+		this.statusCode = 413;
+	}
+}
+
 function safeDecodeURIComponent(value) {
 	try {
 		return decodeURIComponent(value);
 	} catch {
 		return value;
 	}
+}
+
+function parseContentLength(value) {
+	const normalizedValue = getNonEmptyString(value);
+	if (!/^\d+$/.test(normalizedValue)) {
+		return null;
+	}
+
+	const parsedValue = Number(normalizedValue);
+	return Number.isSafeInteger(parsedValue) ? parsedValue : null;
+}
+
+function normalizeMaxResponseBytes(value) {
+	return Number.isSafeInteger(value) && value > 0
+		? value
+		: IMAGE_PROXY_MAX_RESPONSE_BYTES;
+}
+
+async function cancelReadableBody(bodyOrReader) {
+	if (!bodyOrReader) {
+		return;
+	}
+
+	try {
+		if (typeof bodyOrReader.cancel === "function") {
+			await bodyOrReader.cancel();
+		}
+	} catch {
+		// Best effort: cancellation only releases upstream resources.
+	}
+}
+
+async function readImageProxyResponsePayload(upstreamResponse, options = {}) {
+	const maxBytes = normalizeMaxResponseBytes(options.maxBytes);
+	const contentLength = parseContentLength(
+		upstreamResponse?.headers?.get?.("content-length"),
+	);
+
+	if (contentLength !== null && contentLength > maxBytes) {
+		await cancelReadableBody(upstreamResponse.body);
+		throw new ImageProxyResponseTooLargeError(maxBytes);
+	}
+
+	const body = upstreamResponse?.body;
+	if (!body) {
+		return Buffer.alloc(0);
+	}
+
+	const chunks = [];
+	let totalBytes = 0;
+
+	if (typeof body.getReader === "function") {
+		const reader = body.getReader();
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) {
+					break;
+				}
+
+				const chunk = Buffer.from(value);
+				totalBytes += chunk.length;
+				if (totalBytes > maxBytes) {
+					await cancelReadableBody(reader);
+					throw new ImageProxyResponseTooLargeError(maxBytes);
+				}
+				chunks.push(chunk);
+			}
+		} finally {
+			if (typeof reader.releaseLock === "function") {
+				reader.releaseLock();
+			}
+		}
+
+		return Buffer.concat(chunks, totalBytes);
+	}
+
+	if (typeof body[Symbol.asyncIterator] === "function") {
+		for await (const value of body) {
+			const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
+			totalBytes += chunk.length;
+			if (totalBytes > maxBytes) {
+				await cancelReadableBody(body);
+				throw new ImageProxyResponseTooLargeError(maxBytes);
+			}
+			chunks.push(chunk);
+		}
+
+		return Buffer.concat(chunks, totalBytes);
+	}
+
+	throw new Error("Upstream image response body is not readable");
 }
 
 function isAtlassianHost(hostname) {
@@ -215,9 +317,12 @@ function buildImageProxyRequestHeaders(targetUrl, env = process.env) {
 
 module.exports = {
 	FIGMA_MCP_ASSET_PATH_PREFIX,
+	IMAGE_PROXY_MAX_RESPONSE_BYTES,
+	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
 	isAllowedAtlassianImageUrl,
 	parseImageProxyTarget,
+	readImageProxyResponsePayload,
 };

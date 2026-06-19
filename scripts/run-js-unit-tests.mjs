@@ -1,5 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+
+const COMPONENT_TEST_PREFIX = "components/";
+const COMPONENT_TEST_REPORT_PREFIX = "JS_UNIT_COMPONENT_TEST_REPORT";
 
 const EXCLUDED_TEST_FILES = new Set([
 	// Stale source-extraction coverage for functions no longer in backend/server.js.
@@ -78,58 +82,153 @@ const INCLUDED_TEST_FILES = new Set([
 	"components/ui-audio/live-waveform-layout.test.js",
 ]);
 
-const gitResult = spawnSync("git", [
-	"ls-files",
-	"--cached",
-	"--others",
-	"--exclude-standard",
-	"*.test.js",
-	"*.test.ts",
-], {
-	encoding: "utf8",
-	stdio: ["ignore", "pipe", "inherit"],
-});
-
-if (gitResult.status !== 0) {
-	process.exit(gitResult.status ?? 1);
-}
-
-const testFiles = gitResult.stdout
-	.split("\n")
-	.map((filePath) => filePath.trim())
-	.filter((filePath) => {
-		if (!filePath || EXCLUDED_TEST_FILES.has(filePath)) {
-			return false;
-		}
-		const isIncluded =
-			INCLUDED_TEST_FILES.has(filePath) ||
-			INCLUDED_TEST_PREFIXES.some((prefix) => filePath.startsWith(prefix));
-		if (!isIncluded) {
-			return false;
-		}
-
-		const source = readFileSync(filePath, "utf8");
-		return source.includes("node:test");
-	});
-
-if (testFiles.length === 0) {
-	process.exit(0);
-}
-
-for (const testFile of testFiles) {
-	const source = readFileSync(testFile, "utf8");
-	const nodeArgs = source.includes("vm.SyntheticModule") || source.includes("vm.SourceTextModule")
-		? ["--experimental-vm-modules"]
-		: [];
-	const result = spawnSync(process.execPath, [...nodeArgs, "--test", testFile], {
-		stdio: "inherit",
-	});
-
-	if (result.status !== 0) {
-		process.exit(result.status ?? 1);
+export function getTestFileInclusion(filePath, {
+	excludedTestFiles = EXCLUDED_TEST_FILES,
+	includedTestFiles = INCLUDED_TEST_FILES,
+	includedTestPrefixes = INCLUDED_TEST_PREFIXES,
+} = {}) {
+	if (!filePath || excludedTestFiles.has(filePath)) {
+		return {
+			included: false,
+			reason: "excluded-file",
+		};
 	}
 
-	if (result.signal) {
-		process.kill(process.pid, result.signal);
+	if (includedTestFiles.has(filePath)) {
+		return {
+			included: true,
+			reason: "included-file",
+		};
 	}
+
+	if (includedTestPrefixes.some((prefix) => filePath.startsWith(prefix))) {
+		return {
+			included: true,
+			reason: "included-prefix",
+		};
+	}
+
+	return {
+		included: false,
+		reason: "not-included",
+	};
+}
+
+export function buildComponentTestReport(testEntries, options) {
+	const componentEntries = testEntries
+		.map((entry) => {
+			const inclusion = getTestFileInclusion(entry.filePath, options);
+			return {
+				filePath: entry.filePath,
+				included: inclusion.included,
+				reason: inclusion.reason,
+			};
+		})
+		.filter((entry, index) => {
+			const source = testEntries[index]?.source ?? "";
+			return entry.filePath.startsWith(COMPONENT_TEST_PREFIX) && source.includes("node:test");
+		})
+		.sort((a, b) => a.filePath.localeCompare(b.filePath));
+
+	const includedFiles = componentEntries
+		.filter((entry) => entry.included)
+		.map((entry) => entry.filePath);
+	const excludedFiles = componentEntries
+		.filter((entry) => !entry.included)
+		.map((entry) => ({
+			filePath: entry.filePath,
+			reason: entry.reason,
+		}));
+
+	return {
+		version: 1,
+		componentRoot: COMPONENT_TEST_PREFIX,
+		includedCount: includedFiles.length,
+		excludedCount: excludedFiles.length,
+		includedFiles,
+		excludedFiles,
+	};
+}
+
+export function selectRunnableTestFiles(testEntries, options) {
+	return testEntries
+		.filter((entry) => {
+			const inclusion = getTestFileInclusion(entry.filePath, options);
+			return inclusion.included && entry.source.includes("node:test");
+		})
+		.map((entry) => entry.filePath);
+}
+
+function listCandidateTestFiles() {
+	const gitResult = spawnSync("git", [
+		"ls-files",
+		"--cached",
+		"--others",
+		"--exclude-standard",
+		"*.test.js",
+		"*.test.ts",
+	], {
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "inherit"],
+	});
+
+	if (gitResult.status !== 0) {
+		process.exit(gitResult.status ?? 1);
+	}
+
+	return gitResult.stdout
+		.split("\n")
+		.map((filePath) => filePath.trim())
+		.filter(Boolean);
+}
+
+function readTestEntries(filePaths) {
+	return filePaths.map((filePath) => ({
+		filePath,
+		source: readFileSync(filePath, "utf8"),
+	}));
+}
+
+function reportComponentTestCoverage(report) {
+	console.log(
+		`js-unit-tests: component node:test coverage ${report.includedCount} included, ${report.excludedCount} excluded. Graduate stable component tests through INCLUDED_TEST_FILES.`
+	);
+	console.log(`${COMPONENT_TEST_REPORT_PREFIX} ${JSON.stringify(report)}`);
+}
+
+function runTestFiles(testFiles) {
+	for (const testFile of testFiles) {
+		const source = readFileSync(testFile, "utf8");
+		const nodeArgs = source.includes("vm.SyntheticModule") || source.includes("vm.SourceTextModule")
+			? ["--experimental-vm-modules"]
+			: [];
+		const result = spawnSync(process.execPath, [...nodeArgs, "--test", testFile], {
+			stdio: "inherit",
+		});
+
+		if (result.status !== 0) {
+			process.exit(result.status ?? 1);
+		}
+
+		if (result.signal) {
+			process.kill(process.pid, result.signal);
+		}
+	}
+}
+
+function main() {
+	const testEntries = readTestEntries(listCandidateTestFiles());
+	const report = buildComponentTestReport(testEntries);
+	reportComponentTestCoverage(report);
+
+	const testFiles = selectRunnableTestFiles(testEntries);
+	if (testFiles.length === 0) {
+		process.exit(0);
+	}
+
+	runTestFiles(testFiles);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+	main();
 }
