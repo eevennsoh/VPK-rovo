@@ -101,10 +101,12 @@ const {
 	isRuntimeSocketTokenValid: isRuntimeSocketTokenValidWithOptions,
 } = require("./lib/runtime-socket-security");
 const {
+	ImageProxyResponseTooLargeError,
 	buildImageProxyRequestHeaders,
 	deriveAtlassianImageCandidatesFromUrl,
 	extractAtlassianImageCandidatesFromHtml,
 	parseImageProxyTarget,
+	readImageProxyResponsePayload,
 } = require("./lib/image-proxy");
 const {
 	createCapturedResponse,
@@ -13823,7 +13825,7 @@ app.get("/api/image-proxy", async (req, res) => {
 				"application/octet-stream";
 
 			if (contentType.toLowerCase().startsWith("image/")) {
-				const payload = Buffer.from(await upstreamResponse.arrayBuffer());
+				const payload = await readImageProxyResponsePayload(upstreamResponse);
 				const upstreamCacheControl = getNonEmptyString(
 					upstreamResponse.headers.get("cache-control")
 				);
@@ -13856,6 +13858,12 @@ app.get("/api/image-proxy", async (req, res) => {
 					: "Upstream response is not an image",
 		});
 	} catch (error) {
+		if (error instanceof ImageProxyResponseTooLargeError) {
+			return res.status(error.statusCode).json({
+				error: "Image response is too large",
+			});
+		}
+
 		const isAbortError =
 			typeof error === "object" &&
 			error !== null &&

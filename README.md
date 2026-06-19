@@ -27,7 +27,7 @@ Both modes use the same `/api/*` relative paths - no code changes needed between
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js >=20.9.0 (CI uses Node 24)
 - pnpm
 - ASAP credentials for AI Gateway (see [guide-setup.md](./.cursor/skills/vpk-setup/references/guide-setup.md))
 

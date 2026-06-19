@@ -2,6 +2,8 @@ packages:
   - .
   - backend
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - undici
 trustPolicy: no-downgrade
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
@@ -45,10 +47,12 @@ overrides:
   dompurify: ^3.3.2
   express-rate-limit: ^8.2.2
   fast-uri: 3.1.2
-  hono: ^4.12.4
+  hono: ^4.12.25
   lodash-es: ^4.18.1
   postcss: ^8.5.13
   qs: 6.15.2
+  undici@^7.0.0: 7.28.0
+  undici@^8.0.0: 8.5.0
   ws: ^8.21.0
 allowBuilds:
   '@google/genai': false
