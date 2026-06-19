@@ -127,7 +127,12 @@ export function AtlassianLogoMark({
 				aria-hidden="true"
 				className={cn(
 					"inline-flex size-4 shrink-0 items-center justify-center",
-					isBackgroundless && "[&>span]:size-3! [&_svg]:size-3!",
+					// Clamp the inset glyph to 12px. `AtlassianLogo` nests its sized span
+					// one level below its own wrapper, so a direct-child `[&>span]`
+					// selector misses it and the glyph keeps atlaskit's native 16px
+					// height (rendering 12×16 and sitting off-center). Use a descendant
+					// selector so every wrapper span is squared to 12.
+					isBackgroundless && "[&_span]:size-3! [&_svg]:size-3!",
 					className,
 				)}
 			>
