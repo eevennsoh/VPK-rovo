@@ -2,7 +2,7 @@ import templatesData from "./agent-templates.json";
 
 /**
  * Tabs the agent-template directory is grouped by, mirrored by the bento and
- * agents-directory surfaces. Owned here so the data layer is the single source
+ * agent-directory surfaces. Owned here so the data layer is the single source
  * of truth; the UI components import this union rather than redeclaring it.
  */
 export type AgentTemplateCategoryId =
@@ -152,7 +152,7 @@ export interface AgentTemplateConfig {
 
 /**
  * The complete agent-template catalog, sourced from `agent-templates.json` as the
- * single source of truth. Powers the agent-templates directory, the agents-directory
+ * single source of truth. Powers the agent-templates directory, the agent-directory
  * template tab, and the agent-bento operations tiles.
  */
 export const AGENT_TEMPLATE_CONFIGS: readonly AgentTemplateConfig[] =

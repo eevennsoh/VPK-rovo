@@ -638,11 +638,11 @@ const suggestedAgents: TWGAgentSuggestion[] = [
 			},
 		],
 	},
-	"agents-directory": {
+	"agent-directory": {
 		description: "Dialog-based Agent Directory for browsing recommended, team, partner, and session-created agents.",
-		importStatement: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";`,
-		usage: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import type { AgentsDirectoryAgent, AgentsDirectoryTemplateAgent } from "@/components/blocks/agents-directory";
+		importStatement: `import { AgentsDirectoryDialog } from "@/components/blocks/agent-directory";`,
+		usage: `import { AgentsDirectoryDialog } from "@/components/blocks/agent-directory";
+import type { AgentsDirectoryAgent, AgentsDirectoryTemplateAgent } from "@/components/blocks/agent-directory";
 
 const agents: AgentsDirectoryAgent[] = [
   {
@@ -670,12 +670,12 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
 			{
 				title: "Standard",
 				description: "Default sidebar directory with the original navigation and template mode.",
-				demoSlug: "agents-directory-demo-standard",
+				demoSlug: "agent-directory-demo-standard",
 			},
 			{
 				title: "Experimental",
 				description: "Dense browse layout with full-width search, sectioned rows, and searchable multi-select filters.",
-				demoSlug: "agents-directory-demo-experimental",
+				demoSlug: "agent-directory-demo-experimental",
 			},
 		],
 		props: [
