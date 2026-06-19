@@ -5,6 +5,7 @@ import LockIcon from "@atlaskit/icon/core/lock-locked";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -182,6 +183,37 @@ export function TagDemoEditorTag() {
 				}
 			>
 				Restricted
+			</Tag>
+		</div>
+	);
+}
+
+export function TagDemoBadge() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Tag elemAfter={<Badge>8</Badge>}>Epics</Tag>
+			<Tag color="blue" elemAfter={<Badge variant="information">12</Badge>}>
+				In progress
+			</Tag>
+			<Tag color="green" elemAfter={<Badge variant="success">3</Badge>}>
+				Done
+			</Tag>
+			<Tag
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon render={<TagIcon label="" size="small" />} aria-hidden />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+				elemAfter={<Badge>128</Badge>}
+			>
+				Backlog
+			</Tag>
+			<Tag elemAfter={<Badge variant="danger">5</Badge>} onRemove={() => {}}>
+				Blocked
 			</Tag>
 		</div>
 	);
