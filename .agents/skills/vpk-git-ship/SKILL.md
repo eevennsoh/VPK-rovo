@@ -232,6 +232,8 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
    - `Fixed in <commit>; validation: <check/result>.`
    - `No code change: <specific evidence/rationale>.`
 
+   A reply is **not** a resolution. `addPullRequestReviewThreadReply` only posts the visible disposition; it does not satisfy GitHub's conversation-resolution gate. Do not queue merge, re-queue auto-merge, or report the review gate as cleared after only posting a reply.
+
    Use GraphQL to reply:
 
    ```bash
@@ -262,9 +264,11 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
        }'
    ```
 
-7. Re-fetch review threads after remediation. Continue only when there are no unresolved threads. If GitHub API access cannot fetch, reply, or resolve threads, stop and report the blocker instead of queueing/finishing auto-merge.
+   The normal resolve path requires the GraphQL review-thread id (`PRRT_...`), not the REST review-comment id (`PRRC_...`) and not any numeric thread id scraped from GitHub HTML. If GraphQL cannot provide a resolvable thread id while REST or the GitHub page still shows the review comment, stop before merging and report the exact comment URL plus the fact that the thread needs manual resolution in GitHub. Do not try undocumented `page_data/resolve_thread` endpoints, unauthenticated Browser sessions, or direct UI side channels as a substitute for a verified `resolveReviewThread` result.
 
-Never resolve a thread silently. Never resolve an ambiguous thread. Never resolve first and fix later.
+7. Re-fetch review threads after remediation. Continue only when every thread you handled has a verified `isResolved: true` result and there are no unresolved threads. If GitHub API access cannot fetch, reply, resolve, or verify the resolution state, stop and report the blocker instead of queueing/finishing auto-merge.
+
+Never resolve a thread silently. Never resolve an ambiguous thread. Never resolve first and fix later. Never treat a posted reply as a resolved conversation.
 
 ## Full Ship Sequence
 
