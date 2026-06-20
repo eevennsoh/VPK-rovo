@@ -21,6 +21,7 @@ function loadLogoThirdPartyData() {
 		export {
 			THIRD_PARTY_LOGO_NAMES,
 			THIRD_PARTY_LOGO_LABELS,
+			THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES,
 			THIRD_PARTY_LOGO_LOCAL_FALLBACKS,
 			thirdPartyLogoSrc,
 		} from "@/components/ui/data/logo-third-party-data";
@@ -33,28 +34,27 @@ const THIRD_PARTY_DIR = path.join(__dirname, "..", "..", "public", "3p");
 
 /**
  * Brand marks are now sourced primarily from `@atlassian/logo-third-party`, so
- * the registry is a superset of the on-disk `public/3p` folders. Two invariants
- * still protect against drift:
- *   1. Every `public/3p` folder MUST be a registered brand (no orphan asset that
- *      bypasses the component).
- *   2. Every declared local-fallback brand MUST have a `public/3p` folder (the
- *      package has no entry for it, so the asset is the only render path).
+ * `THIRD_PARTY_LOGO_NAMES` is a superset of the on-disk `public/3p` folders. The
+ * `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` subset is the contract with `public/3p`
+ * (it types `thirdPartyLogoSrc`), so it MUST equal the folders exactly — a drift
+ * would mean either a `thirdPartyLogoSrc` id with no asset (404) or a shipped
+ * asset no helper can reach.
  */
-test("every public/3p folder is a registered brand name", async () => {
-	const { THIRD_PARTY_LOGO_NAMES } = await loadLogoThirdPartyData();
+test("THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES matches the public/3p folders", async () => {
+	const { THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES } = await loadLogoThirdPartyData();
 
 	const onDisk = readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name);
+		.map((entry) => entry.name)
+		.sort();
 
-	const registered = new Set(THIRD_PARTY_LOGO_NAMES);
-	const orphans = onDisk.filter((name) => !registered.has(name));
+	const inList = [...THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES].sort();
 
 	assert.deepEqual(
-		orphans,
-		[],
-		"public/3p folders are not registered in THIRD_PARTY_LOGO_NAMES " +
-			"(components/ui/data/logo-third-party-data.ts): " + orphans.join(", "),
+		inList,
+		onDisk,
+		"THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES in components/ui/data/logo-third-party-data.ts " +
+			"is out of sync with /public/3p. Update the list to match the folders.",
 	);
 });
 

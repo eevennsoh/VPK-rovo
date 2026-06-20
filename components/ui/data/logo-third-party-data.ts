@@ -4,9 +4,15 @@
  * (see `logo-third-party-icons.ts`); a small set of legacy brands without an
  * upstream entry are still backed by local `public/3p/<id>/` assets.
  *
- * `THIRD_PARTY_LOGO_LOCAL_FALLBACKS` lists the brands that have no package entry
- * and therefore render from `public/3p`. `logo-third-party.test.js` asserts every
- * on-disk `public/3p` folder stays registered here.
+ * Three lists, narrowing in scope:
+ * - `THIRD_PARTY_LOGO_NAMES` — every supported brand (package-backed + local).
+ * - `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` — brands that have a `public/3p/<id>/`
+ *   folder; the only ids valid for `thirdPartyLogoSrc`.
+ * - `THIRD_PARTY_LOGO_LOCAL_FALLBACKS` — local-asset brands with NO package
+ *   entry, so `public/3p` is their only render path.
+ *
+ * `logo-third-party.test.js` asserts `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` equals
+ * the on-disk `public/3p` folders exactly.
  */
 
 /** Every supported third-party brand id. Keep alphabetized. */
@@ -132,13 +138,80 @@ export const THIRD_PARTY_LOGO_NAMES = [
 
 export type ThirdPartyLogoName = (typeof THIRD_PARTY_LOGO_NAMES)[number];
 
-/** Brands without an upstream package entry — rendered from `public/3p/<id>/`. */
+/** Brand ids with a local `public/3p/<id>/` asset folder. MUST match the folders. */
+export const THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES = [
+	"adobe-sign",
+	"adobe-xd",
+	"aha",
+	"airtable",
+	"amplitude",
+	"asana",
+	"azure-devops",
+	"box",
+	"brightspot",
+	"canva",
+	"clickup",
+	"coupa",
+	"databricks",
+	"datadog",
+	"docusign",
+	"dovetail",
+	"dropbox",
+	"egnyte",
+	"figma",
+	"freshservice",
+	"github",
+	"gitlab",
+	"gmail",
+	"google-calendar",
+	"google-chrome",
+	"google-cloud-platform",
+	"google-drive",
+	"hubspot",
+	"jenkins",
+	"launchdarkly",
+	"lucid-co",
+	"lucidchart",
+	"microsoft-onedrive",
+	"microsoft-outlook",
+	"microsoft-sharepoint",
+	"microsoft-teams",
+	"miro",
+	"monday",
+	"mural",
+	"notion",
+	"outreach",
+	"pagerduty",
+	"pipedrive",
+	"powerbi",
+	"salesforce",
+	"sentry",
+	"servicenow",
+	"simpplr",
+	"slack",
+	"smartsheet",
+	"spinnaker",
+	"stack-overflow",
+	"stripe",
+	"tableau",
+	"todoist",
+	"webex",
+	"workday",
+	"zendesk",
+	"zeplin",
+	"ziprecruiter",
+	"zoom",
+] as const satisfies ReadonlyArray<ThirdPartyLogoName>;
+
+export type LocalAssetThirdPartyLogoName = (typeof THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES)[number];
+
+/** Local-asset brands with no upstream package entry — rendered from `public/3p`. */
 export const THIRD_PARTY_LOGO_LOCAL_FALLBACKS = [
 	"adobe-sign",
 	"coupa",
 	"google-chrome",
 	"spinnaker",
-] as const satisfies ReadonlyArray<ThirdPartyLogoName>;
+] as const satisfies ReadonlyArray<LocalAssetThirdPartyLogoName>;
 
 /**
  * Human-readable brand names. Used for accessible labels and demo captions.
@@ -264,11 +337,21 @@ export const THIRD_PARTY_LOGO_LABELS: Readonly<Record<ThirdPartyLogoName, string
 	zoom: "Zoom",
 };
 
+const LOCAL_ASSET_SET: ReadonlySet<string> = new Set(THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES);
+
+/** Narrow a brand id to one that has a local `public/3p` asset. */
+export function isLocalAssetThirdPartyLogoName(
+	name: ThirdPartyLogoName,
+): name is LocalAssetThirdPartyLogoName {
+	return LOCAL_ASSET_SET.has(name);
+}
+
 /**
  * Local asset path consumed by `CustomLogo` for the `public/3p` fallback brands.
- * We always reference the `24` variant: `CustomLogo` resolves the final src +
- * border treatment from `logo-usage.json`.
+ * Restricted to local-asset ids so package-only brands (which have no folder)
+ * can't produce a 404ing path. We always reference the `24` variant: `CustomLogo`
+ * resolves the final src + border treatment from `logo-usage.json`.
  */
-export function thirdPartyLogoSrc(name: ThirdPartyLogoName): string {
+export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName): string {
 	return `/3p/${name}/24.svg`;
 }

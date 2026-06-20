@@ -4,6 +4,7 @@
 
 import { CUSTOM_LOGO_SIZES } from "@/components/ui/data/logo-data";
 import {
+	isLocalAssetThirdPartyLogoName,
 	THIRD_PARTY_LOGO_LABELS,
 	THIRD_PARTY_LOGO_NAMES,
 	thirdPartyLogoSrc,
@@ -45,8 +46,9 @@ export function LogoThirdParty({
 	const Icon = THIRD_PARTY_LOGO_ICONS[name];
 
 	if (!Icon) {
-		// No upstream asset yet — keep rendering from the local public/3p assets.
-		return (
+		// No package icon → only the local-asset (public/3p) fallback brands reach
+		// here. The guard narrows `name` to a brand that has a `public/3p` folder.
+		return isLocalAssetThirdPartyLogoName(name) ? (
 			<CustomLogo
 				className={className}
 				label={accessibleLabel}
@@ -54,7 +56,7 @@ export function LogoThirdParty({
 				src={thirdPartyLogoSrc(name)}
 				wordmark={wordmark}
 			/>
-		);
+		) : null;
 	}
 
 	// The package tile already encapsulates the accessible label and sizing.
