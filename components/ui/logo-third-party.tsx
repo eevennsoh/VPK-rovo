@@ -2,13 +2,19 @@
 
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates the generated per-brand logo components alongside the base wrapper.
 
-import { CustomLogo, type CustomLogoProps } from "@/components/ui/logo";
+import { CUSTOM_LOGO_SIZES } from "@/components/ui/data/logo-data";
 import {
 	THIRD_PARTY_LOGO_LABELS,
 	THIRD_PARTY_LOGO_NAMES,
 	thirdPartyLogoSrc,
 	type ThirdPartyLogoName,
 } from "@/components/ui/data/logo-third-party-data";
+import {
+	THIRD_PARTY_LOGO_ICONS,
+	toThirdPartyLogoTileSize,
+} from "@/components/ui/data/logo-third-party-icons";
+import { CustomLogo, type CustomLogoProps } from "@/components/ui/logo";
+import { cn } from "@/lib/utils";
 
 export { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LABELS };
 export type { ThirdPartyLogoName };
@@ -19,18 +25,55 @@ export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"
 }
 
 /**
- * Renders a third-party brand logo from the local `public/3p/<name>/` assets.
- * Border treatment and the white-tile borderless-variant swap are resolved
- * automatically by `CustomLogo` from `logo-usage.json` — callers never wire
- * borders per brand. The accessible label defaults to the brand's display name.
+ * Renders a third-party brand logo from the upstream `@atlassian/logo-third-party`
+ * package (Atlassian Platform Labs), which draws each mark full-bleed inside an
+ * `@atlaskit/tile` (white background, Tile border on) and is maintained upstream.
+ *
+ * Brands not yet published to the package (`adobe-sign`, `coupa`,
+ * `google-chrome`, `spinnaker`) fall back to the local `public/3p/<name>/`
+ * assets via `CustomLogo`. The accessible label defaults to the brand's display
+ * name; an optional `wordmark` renders beside the mark as an inline lockup.
  */
-export function LogoThirdParty({ name, label, ...props }: Readonly<LogoThirdPartyProps>) {
+export function LogoThirdParty({
+	name,
+	label,
+	size,
+	wordmark,
+	className,
+}: Readonly<LogoThirdPartyProps>) {
+	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
+	const Icon = THIRD_PARTY_LOGO_ICONS[name];
+
+	if (!Icon) {
+		// No upstream asset yet — keep rendering from the local public/3p assets.
+		return (
+			<CustomLogo
+				className={className}
+				label={accessibleLabel}
+				size={size}
+				src={thirdPartyLogoSrc(name)}
+				wordmark={wordmark}
+			/>
+		);
+	}
+
+	// The package tile already encapsulates the accessible label and sizing.
+	const icon = <Icon label={wordmark ? "" : accessibleLabel} size={toThirdPartyLogoTileSize(size)} />;
+	if (!wordmark && !className) {
+		return icon;
+	}
+
+	// Lockup (icon + wordmark) or custom className — mirror CustomLogo's layout.
+	const px = CUSTOM_LOGO_SIZES[toThirdPartyLogoTileSize(size)] ?? CUSTOM_LOGO_SIZES.small;
 	return (
-		<CustomLogo
-			src={thirdPartyLogoSrc(name)}
-			label={label ?? THIRD_PARTY_LOGO_LABELS[name]}
-			{...props}
-		/>
+		<span aria-label={accessibleLabel} className={cn("inline-flex items-center gap-1", className)} role="img">
+			{icon}
+			{wordmark ? (
+				<span className="font-semibold leading-none text-text" style={{ fontSize: Math.max(12, px * 0.6) }}>
+					{wordmark}
+				</span>
+			) : null}
+		</span>
 	);
 }
 

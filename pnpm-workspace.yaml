@@ -4,6 +4,9 @@ packages:
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - undici
+  # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
+  # the public-supply-chain release-age gate does not apply.
+  - "@atlassian/logo-third-party"
 trustPolicy: no-downgrade
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
