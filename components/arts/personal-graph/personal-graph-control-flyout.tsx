@@ -25,6 +25,8 @@ const ARC_ORIGIN_VISIBILITY_THRESHOLD_PERCENT = 2;
 const ARC_EXIT_BEHIND_TRIGGER_THRESHOLD_PERCENT = 40;
 const ACTION_ACTIVE_Z_INDEX = 40;
 const ACTION_BEHIND_TRIGGER_Z_INDEX = 0;
+const PERSONAL_GRAPH_TRIGGER_OPEN_CLASS_NAME =
+	"aria-expanded:bg-surface-overlay aria-expanded:border-border-bold aria-expanded:text-text [&_svg]:text-border-bold hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed";
 
 // Cubic bezier curving up and to the right — closer to Motion's reference (~21° top tilt)
 // than the dramatic sweep (~56°), settling around ~30° at the top.
@@ -143,6 +145,7 @@ export function PersonalGraphControlFlyoutTrigger({
 				aria-label={isOpen ? "Close graph controls" : "Open graph controls"}
 				className={cn(
 					"rounded-full",
+					isOpen && PERSONAL_GRAPH_TRIGGER_OPEN_CLASS_NAME,
 					className,
 				)}
 				disabled={disabled}

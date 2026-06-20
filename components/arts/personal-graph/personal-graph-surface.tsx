@@ -174,6 +174,10 @@ function getGraphStatsText(explorer: VaultExplorer | null) {
 		: "Obsidian-backed second-brain graph";
 }
 
+function isTwgAuthRequiredError(error: Error | null): boolean {
+	return /twg_auth_required/iu.test(error?.message ?? "");
+}
+
 function formatRelativeTime(iso: string | null): string | null {
 	if (!iso) return null;
 	const then = new Date(iso).getTime();
@@ -464,11 +468,13 @@ export function PersonalGraphSurface({
 	const {
 		error: graphSourceError,
 		generatedAt: twgGeneratedAt,
+		isRefreshingTwg,
 		isSwitching: isSourceSwitching,
 		refresh: refreshSource,
 		refreshTwg,
 		setSource,
 		source,
+		twgRefreshError,
 	} = useGraphSource();
 	const isTwgMode = source === "twg";
 	const explorerEnabled = isTwgMode || vaultSettings?.status === "ready";
@@ -485,7 +491,9 @@ export function PersonalGraphSurface({
 		},
 	});
 	const lastAssistantMessage = twgChat.messages.findLast((message) => message.role === "assistant")?.content ?? null;
-	const isTwgAuthError = isTwgMode && Boolean(error) && /twg_auth_required/iu.test(error?.message ?? "");
+	const isTwgAuthError = isTwgMode && isTwgAuthRequiredError(error);
+	const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError(twgRefreshError);
+	const shouldShowTwgAuthError = isTwgAuthError || isTwgRefreshAuthError;
 	const { actualTheme, setTheme, theme } = useTheme();
 	const [introReplayKey, setIntroReplayKey] = useState(0);
 	const [flyoutCollapseKey, setFlyoutCollapseKey] = useState(0);
@@ -503,7 +511,7 @@ export function PersonalGraphSurface({
 	const shouldShowVaultOnboarding = Boolean(vaultSettings) && !isVaultReadyForLayout && !isTwgMode;
 	const shouldShowSourcePicker =
 		!isVaultReadyForLayout &&
-		!isTwgAuthError &&
+		!shouldShowTwgAuthError &&
 		(vaultSettings === null ||
 			Boolean(vaultSettingsError) ||
 			vaultSettings.status === "unconfigured" ||
@@ -682,7 +690,7 @@ export function PersonalGraphSurface({
 			: isTwgMode
 				? "Connecting to Team Work Graph…"
 				: vaultSettings?.message ?? getGraphStatsText(explorer);
-	const visibleError = shouldShowVaultOnboarding || shouldShowSourcePicker || isTwgAuthError ? null : error;
+	const visibleError = shouldShowVaultOnboarding || shouldShowSourcePicker || shouldShowTwgAuthError ? null : error;
 	const themeLabel = theme === "system" ? "System theme" : theme === "dark" ? "Dark theme" : "Light theme";
 
 	const flyoutActions = useMemo<ReadonlyArray<PersonalGraphControlFlyoutAction>>(() => {
@@ -725,7 +733,8 @@ export function PersonalGraphSurface({
 				render: (
 					<PersonalGraphLiquidGlassIconButton
 						aria-label="Refresh"
-						disabled={isLoading}
+						disabled={isLoading || isRefreshingTwg}
+						isLoading={isLoading || isRefreshingTwg}
 						onClick={handleRefreshAll}
 					>
 						<PixelRefreshIcon />
@@ -773,6 +782,7 @@ export function PersonalGraphSurface({
 		handleToggleTheme,
 		isCaptureQueueOpen,
 		isLoading,
+		isRefreshingTwg,
 		isReady,
 		isVaultReady,
 		isVaultResetting,
@@ -1008,7 +1018,7 @@ export function PersonalGraphSurface({
 								) : null}
 							</motion.div>
 						) : null}
-						{isTwgAuthError ? (
+						{shouldShowTwgAuthError ? (
 							<motion.div
 								initial={{ opacity: 0, y: 12, filter: "blur(12px)" }}
 								animate={{
@@ -1018,7 +1028,7 @@ export function PersonalGraphSurface({
 								}}
 								transition={{ duration: 0.45, ease: easeOut }}
 							>
-								<PersonalGraphTwgAuthError isRetrying={isLoading} onRetry={handleRetryTwg} />
+								<PersonalGraphTwgAuthError isRetrying={isLoading || isRefreshingTwg} onRetry={handleRetryTwg} />
 							</motion.div>
 						) : null}
 					</motion.div>
@@ -1075,7 +1085,7 @@ export function PersonalGraphSurface({
 						bottom: { duration: 0.6, ease: easeOut },
 					}}
 				>
-					<div className="pointer-events-auto relative w-full max-w-[760px]">
+					<div className="pointer-events-auto relative w-full max-w-[560px]">
 						<PersonalGraphSummaryPanel
 							explorer={explorer}
 							node={isInspectorOpen ? displayedNode : null}
