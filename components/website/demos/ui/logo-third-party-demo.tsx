@@ -17,7 +17,10 @@ import {
 	THIRD_PARTY_LOGO_LABELS,
 	type ThirdPartyLogoName,
 } from "@/components/ui/logo-third-party";
-import { thirdPartyLogoSrc } from "@/components/ui/data/logo-third-party-data";
+import {
+	thirdPartyLogoSrc,
+	type LocalAssetThirdPartyLogoName,
+} from "@/components/ui/data/logo-third-party-data";
 
 /* ── Overview demo (default export) ──────────────────────────────── */
 
@@ -120,7 +123,7 @@ export function LogoThirdPartyDemoLockups() {
 const BRAND_TILE_SIZES = ["xsmall", "small", "medium", "large", "xlarge"] as const;
 
 // GitHub = solid-fill (fills the tile), Slack = white-tile (borderless + tile).
-const TILE_SAMPLES: ReadonlyArray<ThirdPartyLogoName> = ["github", "slack", "notion"];
+const TILE_SAMPLES: ReadonlyArray<LocalAssetThirdPartyLogoName> = ["github", "slack", "notion"];
 
 export function LogoThirdPartyDemoInTile() {
 	return (
@@ -153,7 +156,7 @@ export function LogoThirdPartyDemoInTile() {
 
 /* ── Demo: In a Tag (inline chips) ───────────────────────────────── */
 
-const TAG_SAMPLES: ReadonlyArray<ThirdPartyLogoName> = [
+const TAG_SAMPLES: ReadonlyArray<LocalAssetThirdPartyLogoName> = [
 	"figma",
 	"github",
 	"slack",
