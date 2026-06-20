@@ -47,6 +47,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { getThirdPartyLogoIconFromSrc } from "@/components/ui/data/logo-third-party-icons";
 import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
 import {
 	DropdownMenu,
@@ -285,7 +286,16 @@ function getToolLogo(tool: AppsDirectoryTool): ReactNode {
 	}
 
 	const src = tool.logoSrc ?? tool.avatarSrc;
-	return src ? <BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} /> : null;
+	if (!src) return null;
+
+	// Prefer the upstream @atlassian/logo-third-party mark (tile + border); fall
+	// back to the local public/3p asset for brands the package doesn't ship yet.
+	const ThirdPartyIcon = getThirdPartyLogoIconFromSrc(src);
+	return ThirdPartyIcon ? (
+		<ThirdPartyIcon label={tool.name} size="medium" />
+	) : (
+		<BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} />
+	);
 }
 
 function getDetailLogo(tool: AppsDirectoryTool): ReactNode {
@@ -1433,7 +1443,14 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 		return <AtlassianLogoMark label={item.label} name={item.logoName} size="small" />;
 	}
 
-	return item.avatarSrc ? <BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} /> : null;
+	if (!item.avatarSrc) return null;
+
+	const ThirdPartyIcon = getThirdPartyLogoIconFromSrc(item.avatarSrc);
+	return ThirdPartyIcon ? (
+		<ThirdPartyIcon label={item.label} size="small" />
+	) : (
+		<BrandLogoMark frame="tile" label={item.label} size="small" src={item.avatarSrc} />
+	);
 }
 
 interface ToolDetailViewProps {

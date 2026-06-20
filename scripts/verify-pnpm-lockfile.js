@@ -11,11 +11,27 @@ const BLOCKED_REGISTRY_PATTERNS = [
 	},
 ];
 
+// Packages that legitimately resolve from the internal atlassian-npm registry
+// because they are NOT published to the public npm-remote mirror
+// (`inPublicMirror: false`). These require atlassian-npm auth in CI — see
+// `.github/workflows/ci.yml`. Keep this list as small as possible.
+const ALLOWED_ATLASSIAN_NPM_PACKAGES = [
+	// @atlassian/logo-third-party (Platform Labs) — third-party brand logos,
+	// internal-only while the catalog/asset workflow is validated with early
+	// consumers. Only the package tarball itself is exempt; its @atlaskit deps
+	// still resolve from npm-remote.
+	/\/atlassian-npm\/@atlassian\/logo-third-party\//u,
+];
+
 function findBlockedLockfileRegistryUrls(lockfileText) {
 	const findings = [];
 	const lines = lockfileText.split(/\r?\n/u);
 
 	lines.forEach((line, index) => {
+		if (ALLOWED_ATLASSIAN_NPM_PACKAGES.some((allowed) => allowed.test(line))) {
+			return;
+		}
+
 		for (const registryPattern of BLOCKED_REGISTRY_PATTERNS) {
 			if (registryPattern.pattern.test(line)) {
 				findings.push({
