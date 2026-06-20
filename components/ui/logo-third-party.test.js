@@ -21,6 +21,7 @@ function loadLogoThirdPartyData() {
 		export {
 			THIRD_PARTY_LOGO_NAMES,
 			THIRD_PARTY_LOGO_LABELS,
+			THIRD_PARTY_LOGO_LOCAL_FALLBACKS,
 			thirdPartyLogoSrc,
 		} from "@/components/ui/data/logo-third-party-data";
 	`);
@@ -31,27 +32,46 @@ function loadLogoThirdPartyData() {
 const THIRD_PARTY_DIR = path.join(__dirname, "..", "..", "public", "3p");
 
 /**
- * The brand union backing LogoThirdParty MUST mirror the on-disk `public/3p`
- * folders — otherwise a name resolves to a missing asset, or a shipped brand has
- * no typed component. Assert the list equals reality so new 3P assets can't
- * silently bypass the component (and vice versa).
+ * Brand marks are now sourced primarily from `@atlassian/logo-third-party`, so
+ * the registry is a superset of the on-disk `public/3p` folders. Two invariants
+ * still protect against drift:
+ *   1. Every `public/3p` folder MUST be a registered brand (no orphan asset that
+ *      bypasses the component).
+ *   2. Every declared local-fallback brand MUST have a `public/3p` folder (the
+ *      package has no entry for it, so the asset is the only render path).
  */
-test("THIRD_PARTY_LOGO_NAMES matches the public/3p folders", async () => {
+test("every public/3p folder is a registered brand name", async () => {
 	const { THIRD_PARTY_LOGO_NAMES } = await loadLogoThirdPartyData();
 
 	const onDisk = readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name)
-		.sort();
+		.map((entry) => entry.name);
 
-	const inList = [...THIRD_PARTY_LOGO_NAMES].sort();
+	const registered = new Set(THIRD_PARTY_LOGO_NAMES);
+	const orphans = onDisk.filter((name) => !registered.has(name));
 
 	assert.deepEqual(
-		inList,
-		onDisk,
-		"THIRD_PARTY_LOGO_NAMES in components/ui/data/logo-third-party-data.ts is out " +
-			"of sync with /public/3p. Update the names list to match the folders.",
+		orphans,
+		[],
+		"public/3p folders are not registered in THIRD_PARTY_LOGO_NAMES " +
+			"(components/ui/data/logo-third-party-data.ts): " + orphans.join(", "),
 	);
+});
+
+test("every local-fallback brand has a public/3p folder and is registered", async () => {
+	const { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LOCAL_FALLBACKS } = await loadLogoThirdPartyData();
+
+	const onDisk = new Set(
+		readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
+			.filter((entry) => entry.isDirectory())
+			.map((entry) => entry.name),
+	);
+	const registered = new Set(THIRD_PARTY_LOGO_NAMES);
+
+	for (const name of THIRD_PARTY_LOGO_LOCAL_FALLBACKS) {
+		assert.ok(onDisk.has(name), `local-fallback brand "${name}" has no public/3p/${name} folder`);
+		assert.ok(registered.has(name), `local-fallback brand "${name}" missing from THIRD_PARTY_LOGO_NAMES`);
+	}
 });
 
 test("every brand name has a display label", async () => {
