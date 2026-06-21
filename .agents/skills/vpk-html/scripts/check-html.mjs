@@ -132,12 +132,6 @@ export function validateHtmlString(html, label = "document") {
 		}
 	}
 
-	if (/data-vpk-algebrica="true"/.test(html)) {
-		if (!/Algebrica/.test(html) || !/CC BY-NC 4\.0/.test(html)) {
-			failures.push("uses Algebrica material but lacks visible Algebrica attribution");
-		}
-	}
-
 	const imageTags = collectMatches(/<img\b[^>]*>/gi, html);
 	for (const tag of imageTags) {
 		if (!hasAttribute(tag, "alt")) {

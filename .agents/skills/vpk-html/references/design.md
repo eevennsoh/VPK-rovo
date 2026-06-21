@@ -33,4 +33,56 @@ success/warning/danger/info accents for light and dark modes.
 Every rendered document includes `color-scheme: light dark`, initializes from
 `prefers-color-scheme`, renders a visible toggle when `theme.allowToggle` is
 true, persists only that user override in `localStorage`, and respects
-`prefers-reduced-motion`.
+`prefers-reduced-motion`. Light and dark must reach **parity** — every token
+group in `references/tokens.json` defines both a `light` and a `dark` value, so
+no surface is left unstyled in either mode.
+
+## Operative rules
+
+These are the load-bearing visual rules for every generated document. Values
+live in `references/tokens.json`; this section names *how* to apply them. (For
+*content* quality — emptiness, fabrication, tone — see
+`references/anti-patterns.md`.)
+
+### Type hierarchy
+
+Hierarchy comes from **family, weight, and position — not size inflation**.
+Headlines use `Charlie Display`, body uses `Charlie Text`, code/figures use
+`Atlassian Mono`. Keep the type scale collapsed: separate a heading from body by
+switching family and weight before reaching for a larger font-size. Avoid
+overlines/eyebrows and decorative all-caps labels.
+
+### Case
+
+Headings and UI labels are **title case** (sentence-case body). No SCREAMING
+CAPS headings; small-caps/letter-spacing tricks are not a substitute for real
+hierarchy.
+
+### Spacing rhythm
+
+Spacing follows an 8px-based rhythm (4px for tight inline gaps). Vertical
+rhythm between sections should be consistent across a document — uneven gaps
+read as accidental. Prefer one generous, repeated spacing step over many
+bespoke margins.
+
+### Borders & elevation — flat editorial surface
+
+The surface is **flat**. Banned outright (enforced by
+`scripts/build.mjs --check-templates` and `references/anti-patterns.md`):
+
+- No `border-left`/`border-top` accent **side-stripes** on sections, cards,
+  callouts, or figures.
+- No rounded-corner frames or `box-shadow` chrome on content blocks.
+
+Separation is achieved with whitespace, a single hairline `rule` token, or a
+`surfaceSunken`/`surfaceRaised` token shift — never a decorative frame. The one
+sanctioned elevation is the opt-in raised-surface `shadow` token; use it
+sparingly and only where a true overlay plane exists.
+
+### Color discipline
+
+Use the semantic alias layer (`--paper`, `--ink`, `--primary-blue`,
+`--accent-*`, `--success`/`--warning`/`--danger`/`--info`) — never raw hex in a
+template. Accent ramps are **decoration only**; semantic role colors
+(success/warning/danger/info) carry meaning and must not be used for mere
+decoration. In a diagram, one focal node gets the accent; demote the rest.
