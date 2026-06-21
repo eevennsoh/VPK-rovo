@@ -11,7 +11,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";

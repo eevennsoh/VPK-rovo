@@ -75,7 +75,7 @@ ADS font heading tokens (`font.heading.xxsmall` through `font.heading.xxlarge`) 
 | Wrong | Correct |
 |---|---|
 | `className="text-3xl font-semibold"` | `style={{ font: token("font.heading.large") }}` |
-| `<Heading size="xxlarge">` (shared-ui wrapper) | `<h2 style={{ font: token("font.heading.xxlarge") }} className="text-text">` |
+| Importing `<Heading>` from retired `components/blocks/shared-ui` | Move the callsite to `components/ui/heading` or inline the ADS font token |
 
 ## Motion and Transition Tokens
 

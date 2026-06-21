@@ -2,7 +2,7 @@
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { ConfluenceIcon } from "@/components/ui/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SourceCard as SourceCardData } from "../data/ai-summary-data";

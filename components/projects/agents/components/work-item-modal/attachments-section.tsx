@@ -8,7 +8,7 @@ import Image from "next/image";
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { Badge } from "@/components/ui/badge";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo } from "@/components/ui/logo";

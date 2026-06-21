@@ -1,4 +1,4 @@
-import { composerUpwardShadow, textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
+import { composerUpwardShadow, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { token } from "@/lib/tokens";
 
 export { textareaCSS };

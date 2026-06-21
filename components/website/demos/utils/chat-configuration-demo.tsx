@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import CustomizeMenu from "./customize-menu";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
 
-export default function SharedUiAdsPage() {
+export default function ChatConfigurationDemo() {
 	const [selectedReasoning, setSelectedReasoning] = useState("let-rovo-decide");
 	const [webResultsEnabled, setWebResultsEnabled] = useState(true);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);

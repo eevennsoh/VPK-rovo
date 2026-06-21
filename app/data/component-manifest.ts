@@ -258,6 +258,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("dropdown-menu", "Dropdown Menu"),
 	uiComponent("empty"),
 	uiComponent("field"),
+	uiComponent("heading", "Heading"),
 	{
 		name: "Forms",
 		slug: "forms",
@@ -393,12 +394,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("rovo-canvas", "Rovo Canvas"),
 	blockComponent("settings-dialog", "Settings Dialog"),
 	blockComponent("visual-waveform", "Visual Waveform"),
-	{
-		name: "Chat Configuration",
-		slug: "chat-configuration",
-		importPath: "@/components/blocks/chat-configuration",
-		category: "blocks",
-	},
 	{
 		name: "App Sidebar",
 		slug: "app-sidebar",
@@ -563,9 +558,12 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 		importPath: "@/components/website/demos/utils/agent-browser",
 		category: "utility",
 	},
+	utilityComponent("chat-configuration", "Chat Configuration"),
+	utilityComponent("elapsed-time", "Elapsed Time"),
 	utilityComponent("gui", "GUI"),
 	utilityComponent("image-generation", "Image Generation"),
 	utilityComponent("multiports", "Multiports"),
+	utilityComponent("rovo-composer-styles", "Rovo Composer Styles"),
 	utilityComponent("sound-generation", "Sound Generation"),
 	utilityComponent("streamdown", "Streamdown"),
 	utilityComponent("tools-invocation", "Tools Invocation"),

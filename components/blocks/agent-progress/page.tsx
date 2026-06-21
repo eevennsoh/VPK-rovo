@@ -20,7 +20,7 @@ import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import { MOCK_TASKS, type ProgressStatusGroups, type ProgressTask } from "./data/mock-tasks";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
-import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/components/blocks/shared/elapsed-time";
+import { formatElapsedTime, getElapsedSeconds, resolveInitialNowMs } from "@/lib/elapsed-time";
 
 const SUMMARY_RING_SEGMENTED_GRADIENT =
 	"conic-gradient(from 220deg, transparent 0deg 252deg, #8d63ff 252deg 266deg, #7fbb44 266deg 280deg, #3b66e0 280deg 294deg, #e5a126 294deg 308deg, transparent 308deg 360deg)";

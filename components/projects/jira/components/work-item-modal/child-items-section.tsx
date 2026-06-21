@@ -2,7 +2,7 @@
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 
 import { ChildItemRow } from "./child-item-row";
 import { ChildItemsProgressBar } from "./child-items-progress-bar";

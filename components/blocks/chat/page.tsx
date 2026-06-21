@@ -5,8 +5,8 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import ChatHeader from "./components/chat-header";
 import ChatGreeting from "./components/chat-greeting";
 import MessageBubble from "./components/message-bubble";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
-import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import {
 	PromptInput,
 	PromptInputActionMenu,
@@ -27,7 +27,7 @@ import {
 	composerPromptInputClassName,
 	composerTextareaClassName,
 	textareaCSS,
-} from "@/components/blocks/shared-ui/composer-styles";
+} from "@/components/projects/shared/components/rovo-composer-styles";
 import { Footer } from "@/components/ui-custom/footer";
 import { chatStyles } from "./data/styles";
 import { useChatSubmit } from "./hooks/use-chat-submit";

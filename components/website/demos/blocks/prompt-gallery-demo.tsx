@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import PromptGallery from "@/components/blocks/prompt-gallery/page";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import {
 	PromptInput,
 	PromptInputActionMenu,
@@ -18,10 +18,10 @@ import {
 	PromptInputTools,
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { composerUpwardShadow, composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
+import { composerUpwardShadow, composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { SpeechInput } from "@/components/ui-custom/speech-input";
 import { Footer } from "@/components/ui-custom/footer";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import Image from "next/image";
 import { token } from "@/lib/tokens";
 import AddIcon from "@atlaskit/icon/core/add";

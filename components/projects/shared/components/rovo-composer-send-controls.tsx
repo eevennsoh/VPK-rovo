@@ -7,8 +7,8 @@
 import { cloneElement, useCallback, useEffect, useRef, useState, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
-import { REASONING_OPTIONS } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
+import { REASONING_OPTIONS } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import {
 	PromptInputAutoButton,
 	PromptInputButton,

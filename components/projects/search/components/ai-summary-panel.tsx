@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 
 import CollapsedSummary from "./collapsed-summary";
 import SourcesCarousel from "./sources-carousel";

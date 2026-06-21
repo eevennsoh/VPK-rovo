@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { type CustomizeMenuProps } from "./components/customize-menu";
 import AddMenu from "./components/add-menu";
-import CustomizeMenu from "./components/customize-menu";
+import CustomizeMenu, { type CustomizeMenuProps } from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { Footer } from "@/components/ui-custom/footer";
 import {
 	PromptInput,

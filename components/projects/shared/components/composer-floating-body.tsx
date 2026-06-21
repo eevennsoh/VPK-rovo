@@ -4,7 +4,7 @@ import {
 	PromptInputButton,
 	PromptInputTextarea,
 } from "@/components/ui-custom/prompt-input";
-import { composerTextareaClassName, floatingComposerTextareaClassName } from "@/components/blocks/shared-ui/composer-styles";
+import { composerTextareaClassName, floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 import { AnimatePresence, motion } from "motion/react";

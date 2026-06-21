@@ -1,20 +1,20 @@
 ---
 name: vpk-tidy
-description: Repo-local VPK-rovo component refactoring and wrapper migration guidance. Use when the user asks to tidy or refactor a VPK React component, retire blocks/shared-ui wrappers, split an overgrown component under app or components, move VPK UI logic into hooks or data files, make a VPK component easier to reuse without changing behavior, or verify VPK route/accessibility impact after cleanup. Do not use for generic behavior-preserving simplification outside VPK UI; prefer the global code-simplification skill for that.
+description: Repo-local VPK-rovo component refactoring and placement guidance. Use when the user asks to tidy or refactor a VPK React component, split an overgrown component under app or components, move VPK UI logic into hooks or data files, make a VPK component easier to reuse without changing behavior, remove stale shared buckets, or verify VPK route/accessibility impact after cleanup. Do not use for generic behavior-preserving simplification outside VPK UI; prefer the global code-simplification skill for that.
 ---
 
 # VPK Tidy
 
 Refactor VPK-rovo React component surfaces without losing repo conventions,
-route behavior, or wrapper-migration safety. This skill is a repo-local router
-and checklist; use broader system skills for generic React theory.
+route behavior, or ownership clarity. This skill is a repo-local router and
+checklist; use broader system skills for generic React theory.
 
 ## Boundary
 
 Use this skill for:
 
 - VPK components under `app/**`, `components/**`, or VPK route demos.
-- Retiring local wrappers such as `blocks/shared-ui/*`.
+- Removing stale shared buckets or preventing new vague shared folders.
 - Splitting oversized VPK components into local `components/`, `hooks/`, or
   `data/` files.
 - Moving static route/component data out of JSX.
@@ -58,56 +58,65 @@ Do not use this skill as the primary guide for:
 | Location | Use when |
 | --- | --- |
 | `components/ui/` | Shared primitive used by multiple features, no feature logic |
+| `components/ui-custom/` | VPK-specific reusable component used across unrelated surfaces |
+| `components/projects/shared/` | Shared project/runtime component or utility used by multiple project surfaces |
 | `components/blocks/[feature]/components/` | Feature-specific block sub-component |
 | `components/blocks/[feature]/hooks/` | Feature-specific state or business logic |
 | `components/blocks/[feature]/data/` | Feature-specific static data |
+| `components/website/demos/utils/` | Utility/control-surface demo for the component catalog |
 | Existing route/demo folder | Route-local cleanup that should not become shared |
 
 Prefer `@/` imports when the alias applies. Preserve tabs in TS/JS files. Use
 `cn()` for class merging. Use `cva()` only where the surrounding UI primitive
 already uses variant styling or the component genuinely needs variants.
 
-## Wrapper Migration Gates
+## Retired Shared Buckets
 
-Use these gates whenever replacing local wrappers with direct
-`components/ui/*`, `components/ui-custom/*`, or `components/ui-audio/*` usage.
+`components/blocks/shared/*` and `components/blocks/shared-ui/*` are retired.
+Do not add new components, demos, data, styles, utilities, or re-export shims
+there.
+
+Use these gates whenever you find a stale import from a retired shared bucket or
+when moving a shared component to a clearer owner.
 
 ### 1. Inventory every reference
 
 ```bash
-rg -n "blocks/shared-ui/<wrapper-name>|shared-ui/<wrapper-name>" components app
+rg -n "@/components/blocks/shared(?:-ui)?|components/blocks/shared(?:-ui)?" app components
 ```
 
-For multiple wrappers:
+### 2. Choose the explicit owner before edits
 
-```bash
-rg -n "blocks/shared-ui/(link|tag|lozenge|menu|inline-edit|custom-tooltip|icon-livepage)" components app
-```
+| Old shape | New owner |
+| --- | --- |
+| Shared primitive with no feature logic | `components/ui/` |
+| VPK-specific reusable UI | `components/ui-custom/` |
+| Shared Rovo/project runtime surface | `components/projects/shared/` |
+| Shared non-visual utility | `lib/` |
+| Block-specific sub-component | `components/blocks/[feature]/components/` |
+| Catalog utility/control demo | `components/website/demos/utils/` |
 
-### 2. Map old API to new API before edits
-
-| Wrapper | Old API | New API | Callsite action |
-| --- | --- | --- | --- |
-| `shared-ui/tag` | `text`, `appearance` | `children`, `shape` | Map text to children and appearance to shape |
-| `shared-ui/link` | `appearance="subtle"` | `className` override | Port subtle styling to classes |
-
-Include removed props, renamed props, type substitutions, and behavior
-differences. Do not delete a wrapper before every callsite compiles.
+Map old imports, exported names, removed props, renamed props, type
+substitutions, and behavior differences. Do not delete old files before every
+callsite compiles.
 
 ### 3. Migrate callsites first
 
 - Update imports and callsites.
 - Run the affected typecheck/lint path.
-- Delete wrapper files only after callsites compile.
+- Delete old files only after callsites compile.
 - If interaction behavior changed, smoke-test every impacted route.
 
-### 4. Prove no retired imports remain
+### 4. Prove no retired bucket remains
 
 ```bash
-rg -n "blocks/shared-ui/(<wrapper-1>|<wrapper-2>|...)" components app
+rg -n "@/components/blocks/shared(?:-ui)?|components/blocks/shared(?:-ui)?" app components
+test ! -d components/blocks/shared
+test ! -d components/blocks/shared-ui
 ```
 
-Expected result: no matches for retired wrappers.
+Expected result: no stale imports and no `components/blocks/shared` or
+`components/blocks/shared-ui` directory.
 
 ## Refactor Workflow
 
@@ -115,7 +124,7 @@ Expected result: no matches for retired wrappers.
 2. Read the target component and nearby files before editing.
 3. Search for existing VPK primitives or sibling patterns before creating new
    files.
-4. If wrappers are being retired, complete the wrapper migration gates.
+4. If ownership is changing, complete the retired shared bucket gates.
 5. Make the smallest behavior-preserving structural change that solves the
    tidy request.
 6. Validate with repo commands and route evidence.

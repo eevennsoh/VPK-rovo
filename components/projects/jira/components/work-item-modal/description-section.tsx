@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { InlineEdit } from "@/components/ui/inline-edit";
 
 export function Description() {

@@ -2487,9 +2487,6 @@ import { SheetIcon } from "@/components/ui/vpk-icons";
 	"prompt-gallery": {
 		description: "ADS prompt gallery block with quick chips, hover previews, and discover-more examples.",
 	},
-	"chat-configuration": {
-		description: "Chat configuration panel with reasoning mode selection and data source toggles for web results and company knowledge.",
-	},
 	"settings-dialog": {
 		description: "Settings dialog with configurable options and preferences.",
 	},

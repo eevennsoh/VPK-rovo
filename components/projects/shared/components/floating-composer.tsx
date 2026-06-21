@@ -9,7 +9,7 @@ import {
 	PromptInputBody,
 	PromptInputButton,
 } from "@/components/ui-custom/prompt-input";
-import { composerPromptInputClassName } from "@/components/blocks/shared-ui/composer-styles";
+import { composerPromptInputClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 
