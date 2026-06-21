@@ -40,8 +40,6 @@ import {
 	type AtlassianLogoName,
 	type LogoProps,
 } from "@/components/ui/logo";
-import { LogoThirdParty } from "@/components/ui/logo-third-party";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 const logoEntries: ReadonlyArray<{ name: AtlassianLogoName; label: string }> = [
 	{ name: "atlassian", label: "Atlassian" },
@@ -284,24 +282,22 @@ export function LogoDemoCustom() {
 	);
 }
 
-/* ── Demo: Brand logos (1P / 2P / 3P) ─────────────────────────── */
+/* ── Demo: Brand logos (1P / 2P) ──────────────────────────────── */
 
-// Representative marks for each tier + each 3P sub-case. Border treatment is
-// NOT set here — it is resolved from components/ui/data/logo-usage.json.
-const BRAND_LOGO_SAMPLES: ReadonlyArray<{
-	src?: string;
-	name?: ThirdPartyLogoName;
-	label: string;
-	caption: string;
-}> = [
-	// 3P brands render the upstream `@atlassian/logo-third-party` package mark.
-	{ name: "github", label: "GitHub", caption: "3P · package mark" },
-	{ name: "figma", label: "Figma", caption: "3P · package mark" },
-	{ name: "airtable", label: "Airtable", caption: "3P · package mark" },
-	{ name: "slack", label: "Slack", caption: "3P · package mark" },
+// Representative marks for each tier. Border treatment is NOT set here — it is
+// resolved from components/ui/data/logo-usage.json. 3P brands are documented on
+// their own component, /components/ui/logo-third-party.
+type BrandLogoSample =
+	| { tier: "1p"; name: AtlassianLogoName; label: string; caption: string }
+	| { tier: "2p"; src: string; label: string; caption: string };
+
+const BRAND_LOGO_SAMPLES: ReadonlyArray<BrandLogoSample> = [
+	// 1P Atlassian product mark: renders bare on its own solid background. (The
+	// Atlassian master logo's tile treatment is shown in the In a Tile demo.)
+	{ tier: "1p", name: "jira", label: "Jira", caption: "1P · product → bare" },
 	// 2P partner marks: bare PNGs, always get a bordered tile.
-	{ src: "/2p/appfire.png", label: "Appfire", caption: "2P · bare PNG → tile" },
-	{ src: "/2p/adaptavist.png", label: "Adaptavist", caption: "2P · bare PNG → tile" },
+	{ tier: "2p", src: "/2p/appfire.png", label: "Appfire", caption: "2P · bare PNG → tile" },
+	{ tier: "2p", src: "/2p/adaptavist.png", label: "Adaptavist", caption: "2P · bare PNG → tile" },
 ];
 
 export function LogoDemoBrandLogos() {
@@ -310,10 +306,10 @@ export function LogoDemoBrandLogos() {
 			<div className="flex flex-wrap items-start gap-x-6 gap-y-4">
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<div key={sample.label} className="flex w-28 flex-col items-center gap-2 text-center">
-						{sample.name ? (
-							<LogoThirdParty name={sample.name} label={sample.label} size="large" />
+						{sample.tier === "1p" ? (
+							<AtlassianLogo name={sample.name} label={sample.label} size="large" withUsageBorder />
 						) : (
-							<CustomLogo src={sample.src ?? ""} label={sample.label} size="large" />
+							<CustomLogo src={sample.src} label={sample.label} size="large" />
 						)}
 						<span className="text-xs font-semibold text-text">{sample.label}</span>
 						<span className="text-[11px] leading-tight text-text-subtle">{sample.caption}</span>
@@ -321,10 +317,12 @@ export function LogoDemoBrandLogos() {
 				))}
 			</div>
 			<p className="text-xs text-text-subtle">
-				3P brands render via <code className="rounded bg-bg-neutral px-1 py-0.5">LogoThirdParty</code> by
-				brand <code className="rounded bg-bg-neutral px-1 py-0.5">name</code>; 2P partner marks pass an
-				asset path via <code className="rounded bg-bg-neutral px-1 py-0.5">src</code> (the bordered tile is
-				resolved from <code className="rounded bg-bg-neutral px-1 py-0.5">logo-usage.json</code>).
+				1P Atlassian marks render via <code className="rounded bg-bg-neutral px-1 py-0.5">AtlassianLogo</code>{" "}
+				(opt into the tile treatment with <code className="rounded bg-bg-neutral px-1 py-0.5">withUsageBorder</code>);
+				2P partner marks pass an asset path via <code className="rounded bg-bg-neutral px-1 py-0.5">src</code> to{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">CustomLogo</code> (the bordered tile is resolved from{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">logo-usage.json</code>). 3P brands live on{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">LogoThirdParty</code>.
 			</p>
 		</div>
 	);
@@ -353,10 +351,9 @@ export function LogoDemoInTile() {
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<div key={sample.label} className="flex items-end gap-3">
 						{BRAND_TILE_SIZES.map((size) =>
-							sample.name ? (
-								<BrandLogoMark
+							sample.tier === "1p" ? (
+								<AtlassianLogoMark
 									key={size}
-									frame="tile"
 									name={sample.name}
 									label={`${sample.label} ${size}`}
 									size={size}
@@ -365,7 +362,7 @@ export function LogoDemoInTile() {
 								<BrandLogoMark
 									key={size}
 									frame="tile"
-									src={sample.src ?? ""}
+									src={sample.src}
 									label={`${sample.label} ${size}`}
 									size={size}
 								/>
@@ -376,12 +373,13 @@ export function LogoDemoInTile() {
 				))}
 			</div>
 			<p className="text-xs text-text-subtle">
-				Picker / suggestion-menu rows (e.g. the editor-palette). Atlassian company, 2P, and
-				white-tile 3P marks sit on a surface{" "}
+				Picker / suggestion-menu rows (e.g. the editor-palette). The Atlassian master logo and bare 2P
+				partner marks sit on a surface{" "}
 				<code className="rounded bg-bg-neutral px-1 py-0.5">Tile</code> and use the inset content scale
 				shown on{" "}
 				<code className="rounded bg-bg-neutral px-1 py-0.5">/components/ui/tile#sizes</code>.
-				Solid-fill 3P marks fill the whole tile because they already include their own background.
+				Solid-background 1P product marks (e.g. Jira) fill the whole tile because they already include
+				their own background.
 			</p>
 		</div>
 	);
@@ -393,14 +391,17 @@ export function LogoDemoInTag() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-center gap-2">
+				<Tag elemBefore={<AtlassianLogoMark frame="chip" name="atlassian" label="Atlassian" />}>
+					Atlassian
+				</Tag>
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<Tag
 						key={sample.label}
 						elemBefore={
-							sample.name ? (
-								<BrandLogoMark frame="chip" name={sample.name} label={sample.label} />
+							sample.tier === "1p" ? (
+								<AtlassianLogoMark frame="chip" name={sample.name} label={sample.label} />
 							) : (
-								<BrandLogoMark frame="chip" src={sample.src ?? ""} label={sample.label} />
+								<BrandLogoMark frame="chip" src={sample.src} label={sample.label} />
 							)
 						}
 					>
@@ -410,7 +411,8 @@ export function LogoDemoInTag() {
 			</div>
 			<p className="text-xs text-text-subtle">
 				Inline chips (e.g. the agent config panel&apos;s tags): every mark is normalized to a 16px box.
-				Borderless 3P + 2P marks render as a centered 12px glyph (no tile); solid-fill 3P marks fill the box.
+				The Atlassian master logo and bare 2P marks render as a centered 12px glyph (no tile);
+				solid-background 1P product marks fill the box.
 			</p>
 		</div>
 	);

@@ -4837,6 +4837,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "logo-third-party-demo-borderless": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoBorderless,
+      })),
+    { ssr: false },
+  ),
   "logo-third-party-demo-lockups": dynamic(
     () =>
       import("./demos/ui/logo-third-party-demo").then((mod) => ({
