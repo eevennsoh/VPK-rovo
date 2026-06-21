@@ -350,6 +350,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("chat-timeline", "Chat Timeline"),
 	blockComponent("subagents", "Subagents"),
 	blockComponent("tool-approval", "Tool Approval"),
+	{ name: "Chat Configuration", slug: "chat-configuration", importPath: "@/components/projects/shared/components/chat-configuration/customize-menu", category: "blocks", detail: BLOCK_DETAILS["chat-configuration"] },
 	blockComponent("chat-gallery", "Chat gallery"),
 	blockComponent("chatbot", "Chatbot"),
 	blockComponent("chatgpt", "ChatGPT"),
@@ -426,7 +427,6 @@ export const ART_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 
 export const UTILITY_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	{ name: "Agent Browser", slug: "agent-browser", importPath: "@/components/website/demos/utils/agent-browser", category: "utility", detail: UTILITY_DETAILS["agent-browser"] },
-	utilityComponent("chat-configuration", "Chat Configuration"),
 	utilityComponent("elapsed-time", "Elapsed Time"),
 	utilityComponent("gui", "GUI"),
 	utilityComponent("image-generation", "Image Generation"),

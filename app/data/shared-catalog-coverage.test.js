@@ -28,7 +28,6 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	assert.doesNotMatch(componentSource, /customComponent\("heading"/u);
 
 	for (const [slug, name] of [
-		["chat-configuration", "Chat Configuration"],
 		["elapsed-time", "Elapsed Time"],
 	]) {
 		assert.match(manifestSource, new RegExp(`utilityComponent\\("${slug}", "${name}"\\)`, "u"));
@@ -38,14 +37,24 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 		assert.equal(existsSync(path.join(ROOT, "components/website/demos/utils", `${slug}-demo.tsx`)), true);
 	}
 
+	// chat-configuration was re-categorized from utility into blocks; its catalog demo now lives under demos/blocks.
+	assert.match(componentSource, /slug: "chat-configuration",[\s\S]*?category: "blocks"/u);
+	assert.match(manifestSource, /slug: "chat-configuration",[\s\S]*?category: "blocks"/u);
+	assert.match(blockDetailsSource, /"chat-configuration": \{/u);
+	assert.match(registrySource, /"chat-configuration": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/chat-configuration-demo"\)/u);
+	assert.equal(existsSync(path.join(ROOT, "components/website/demos/blocks/chat-configuration-demo.tsx")), true);
+	assert.doesNotMatch(componentSource, /utilityComponent\("chat-configuration"/u);
+	assert.doesNotMatch(manifestSource, /utilityComponent\("chat-configuration"/u);
+	assert.doesNotMatch(utilityDetailsSource, /"chat-configuration": \{/u);
+	assert.doesNotMatch(registrySource, /demos\/utils\/chat-configuration-demo/u);
+
 	assert.equal(existsSync(path.join(ROOT, "components/website/demos/ui/heading-demo.tsx")), true);
 	assert.equal(existsSync(path.join(ROOT, "components/ui/heading.tsx")), true);
 	assert.equal(existsSync(path.join(ROOT, "components/ui-custom/heading.tsx")), false);
 
+	// chat-configuration documents the shared CustomizeMenu surface; it must not gain a fake blocks source dir/path.
 	assert.doesNotMatch(manifestSource, /importPath: "@\/components\/blocks\/chat-configuration"/u);
-	assert.doesNotMatch(componentSource, /category: "blocks"[\s\S]*slug: "chat-configuration"|slug: "chat-configuration"[\s\S]*category: "blocks"/u);
-	assert.doesNotMatch(blockDetailsSource, /"chat-configuration": \{/u);
-	assert.doesNotMatch(registrySource, /demos\/blocks\/(?:chat-configuration|shared-ui-demo)/u);
+	assert.doesNotMatch(registrySource, /demos\/blocks\/shared-ui-demo/u);
 	assert.doesNotMatch(navAdsSource, /"chat-configuration"/u);
 
 	assert.equal(existsSync(path.join(ROOT, "components/blocks/shared")), false);
