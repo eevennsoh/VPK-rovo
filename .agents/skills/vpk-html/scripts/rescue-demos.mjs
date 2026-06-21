@@ -95,6 +95,10 @@ function q2Status() {
 		"OTel sidecar deploy to 12 tier-0 services. Target end of Q3.",
 		"Active-active us-east-1 + us-west-2 for the API tier. RTO 5 min.",
 	]);
+	// kami v1.7.4 added an optional, commented-out hero product-shot figure that
+	// still carries {{...}} placeholders. This demo uses no screenshot, so drop
+	// the whole optional block to keep the offline single-file check clean.
+	h = h.replace(/<!-- Optional hero product shot[\s\S]*?-->\n?/, "");
 	return h;
 }
 

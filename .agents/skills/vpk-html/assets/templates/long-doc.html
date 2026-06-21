@@ -293,6 +293,9 @@
     --serif: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --sans: var(--serif);
     --mono:  "Atlassian Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    --rhythm-module:  14pt;
+    --rhythm-section: 18pt;
   }
 
   html, body { background: var(--parchment); }
@@ -322,6 +325,9 @@
     break-after: page;
   }
   .cover-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8pt;
     font-family: var(--sans);
     font-size: 10pt;
     color: var(--brand);
@@ -329,6 +335,14 @@
     text-transform: uppercase;
     font-weight: 500;
     margin-bottom: 18pt;
+  }
+  .cover-eyebrow::before {
+    content: "";
+    width: 9pt;
+    height: 1.5pt;
+    border-radius: 0.75pt;
+    background: var(--brand);
+    flex-shrink: 0;
   }
   .cover-title {
     font-size: 40pt;
@@ -360,7 +374,7 @@
   .toc h2 {
     font-size: 22pt;
     font-weight: 500;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
     border-left: 2.5pt solid var(--brand);
     border-radius: 1.5pt;
     padding-left: 8pt;
@@ -438,7 +452,7 @@
     font-size: 12pt;
     line-height: 1.55;
     color: var(--dark-warm);
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
   }
 
   .hl { color: var(--brand); font-weight: 500; }
@@ -812,7 +826,8 @@
   <h2>Approach</h2>
   <p>{{Describe the methodology. Code or formula examples welcome:}}</p>
 
-  <pre><code>def analyze(data):
+  <pre><code class="language-python">def analyze(data):
+    """Transform raw data."""
     return transform(data)</code></pre>
 
   <h2>Key Findings</h2>
@@ -871,6 +886,6 @@
   <p>{{Acknowledgement paragraph.}}</p>
 </section>
 
-</main>
-</body>
+
+</main></body>
 </html>

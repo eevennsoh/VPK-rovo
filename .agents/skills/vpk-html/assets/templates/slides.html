@@ -259,6 +259,9 @@
     --serif: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --sans:  var(--serif);
     --mono:  "Atlassian Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    --rhythm-module:  14pt;
+    --rhythm-section: 18pt;
   }
 
   body {
@@ -317,7 +320,7 @@
     line-height: 1.2;
     letter-spacing: -0.3pt;
     color: var(--near-black);
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
   }
 
   h3 {
@@ -363,7 +366,7 @@
     color: var(--stone);
     border-bottom: 0.3pt solid var(--border);
     padding-bottom: 4pt;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
   }
 
   .mb {
@@ -371,7 +374,7 @@
     font-size: 11pt;
     line-height: 1.55;
     color: var(--dark-warm);
-    margin-bottom: 18pt;
+    margin-bottom: var(--rhythm-section);
   }
 
   .mi {
@@ -389,7 +392,7 @@
     color: var(--olive);
     border-top: 0.3pt solid var(--border);
     padding-top: 8pt;
-    margin-top: 18pt;
+    margin-top: var(--rhythm-section);
   }
 
   .co {
@@ -472,6 +475,14 @@
     color: var(--stone);
     letter-spacing: 1.5pt;
     text-transform: uppercase;
+  }
+  /* Brand logo slot (optional, from brand profile; styles apply only once uncommented). */
+  .cover .brand-logo {
+    height: 72px;
+    width: auto;
+    max-width: 220px;
+    object-fit: contain;
+    margin-bottom: 24pt;
   }
 
 
@@ -612,6 +623,9 @@
      Design language: Atlassian deck/editorial language
      ================================================================== -->
 <section class="slide cover">
+  <!-- Brand logo slot (optional, from the brand profile logo field). Leave commented when there is no logo; do not insert a broken image.
+       To use, uncomment and set src to an expanded local absolute path:
+  <img class="brand-logo" src="/absolute/path/to/logo.svg" alt=""> -->
   <h1>{{Title}}</h1>
   <div class="sub">{{Subtitle}}</div>
   <div class="meta">{{Author}} · {{Date}}</div>
@@ -705,6 +719,6 @@
   <div class="footer-mark">{{Project}}</div>
 </section>
 
-</main>
-</body>
+
+</main></body>
 </html>

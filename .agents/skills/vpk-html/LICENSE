@@ -8,12 +8,23 @@ authoritative licensing.
 Third-party material
 ====================
 
-The 14 SVG diagram primitives in `assets/diagrams/` are ported from
-tw93/kami (https://github.com/tw93/Kami) and re-skinned with vpk-html's
-visual identity. The SVG geometry is kami's work, used under the MIT License.
+The editorial document templates (`assets/templates/`), the 14 SVG diagram
+primitives (`assets/diagrams/`), and the curated demos (`assets/demos/demo-*.html`)
+are ported from tw93/kami (https://github.com/tw93/Kami) and re-skinned with
+vpk-html's visual identity. The underlying layout, SVG geometry, and structure
+are kami's work, used under the MIT License.
 
   kami — Copyright (c) tw93
   MIT License — https://github.com/tw93/Kami/blob/main/LICENSE
+
+The 20 example pages snapshotted in `assets/html-effectiveness/`, and the
+demos derived from them (`assets/demos/demo-*.html` restyled by
+`scripts/port-engineering-demos.mjs`), originate from
+ThariqS/html-effectiveness (https://github.com/ThariqS/html-effectiveness),
+used under the Apache License 2.0.
+
+  html-effectiveness — Copyright 2026 Anthropic PBC
+  Apache-2.0 — https://github.com/ThariqS/html-effectiveness/blob/main/LICENSE
 
 The fonts shipped under `assets/fonts/` are committed local font assets used
 to preserve the offline HTML artifact contract:

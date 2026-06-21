@@ -275,6 +275,9 @@
 
     --serif: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --sans: var(--serif);
+
+    --rhythm-module:  14pt;
+    --rhythm-section: 18pt;
   }
 
   html, body { background: var(--parchment); }
@@ -311,6 +314,15 @@
     letter-spacing: 2.5pt;
     text-transform: uppercase;
     font-weight: 500;
+  }
+  /* Brand logo slot (optional, from brand profile; styles apply only once uncommented). */
+  .brand-logo {
+    display: block;
+    height: 72px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+    margin-bottom: 16pt;
   }
   .cover-center {
     display: flex;
@@ -408,7 +420,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
     border-left: 2.5pt solid var(--brand);
     border-radius: 1.5pt;
     padding-left: 8pt;
@@ -461,7 +473,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4pt;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
   }
   .tag {
     background: var(--tag-bg);
@@ -481,7 +493,7 @@
     height: 110mm;
     background: var(--ivory);
     border-radius: 6pt;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -516,7 +528,7 @@
   .project-results {
     display: flex;
     gap: 14pt;
-    margin-top: 14pt;
+    margin-top: var(--rhythm-module);
     padding-top: 10pt;
     border-top: 0.5pt dotted var(--border);
   }
@@ -541,7 +553,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10pt;
-    margin-bottom: 14pt;
+    margin-bottom: var(--rhythm-module);
   }
   .project-visuals-2col .project-hero {
     height: 80mm;
@@ -812,7 +824,12 @@
 
 <!-- COVER -->
 <div class="cover">
-  <div class="cover-top">{{YEAR_RANGE - e.g. Selected Works 2023–2026}}</div>
+  <div class="cover-head">
+    <!-- Brand logo slot (optional, from the brand profile logo field). Leave commented when there is no logo; do not insert a broken image.
+         To use, uncomment and set src to an expanded local absolute path:
+    <img class="brand-logo" src="/absolute/path/to/logo.svg" alt=""> -->
+    <div class="cover-top">{{YEAR_RANGE - e.g. Selected Works 2023–2026}}</div>
+  </div>
 
   <div class="cover-center">
     <div class="cover-name">{{NAME}}<br>Portfolio</div>
@@ -988,6 +1005,6 @@
   </div>
 </section>
 
-</main>
-</body>
+
+</main></body>
 </html>

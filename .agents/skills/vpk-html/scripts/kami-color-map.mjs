@@ -227,6 +227,22 @@ export const KAMI_COLOR_MAP = {
 	"rgba(227, 218, 204, 0.35)": "color-mix(in srgb, var(--primary-blue-tint) 35%, transparent)",
 	"rgba(199,142,63,0.16)": "color-mix(in srgb, var(--accent-saffron) 16%, transparent)",
 	"rgba(199, 142, 63, 0.16)": "color-mix(in srgb, var(--accent-saffron) 16%, transparent)",
+	// --- kami v1.7.4 additions (mapped 2026-06-21 by usage context) ---
+	"#141318": "var(--ink)",
+	"#D8D5C8": "var(--rule)",
+	"#d8d5c8": "var(--rule)",
+	"rgba(245, 244, 237, 0.16)": "color-mix(in srgb, var(--paper) 16%, transparent)",
+	"rgba(245,244,237,0.16)": "color-mix(in srgb, var(--paper) 16%, transparent)",
+	"rgba(245, 244, 237, 0)": "transparent",
+	"rgba(245,244,237,0)": "transparent",
+	"rgba(20, 20, 19, 0.16)": "color-mix(in srgb, var(--ink) 16%, transparent)",
+	"rgba(20,20,19,0.16)": "color-mix(in srgb, var(--ink) 16%, transparent)",
+	"rgba(20, 19, 19, 0.10)": "color-mix(in srgb, var(--ink) 10%, transparent)",
+	"rgba(20,19,19,0.10)": "color-mix(in srgb, var(--ink) 10%, transparent)",
+	"rgba(0, 0, 0, 0.05)": "color-mix(in srgb, var(--ink) 5%, transparent)",
+	"rgba(0,0,0,0.05)": "color-mix(in srgb, var(--ink) 5%, transparent)",
+	"rgba(1B365D, 0.08)": "color-mix(in srgb, var(--primary-blue) 8%, transparent)",
+	"rgba(1B365D,0.08)": "color-mix(in srgb, var(--primary-blue) 8%, transparent)",
 };
 
 // Apply the color map to a string. Pure literal substitution (split/join), matching
