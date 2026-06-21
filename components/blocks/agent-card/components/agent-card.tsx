@@ -18,6 +18,8 @@ import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCou
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
@@ -334,11 +336,15 @@ export interface AgentCardProps {
 	avatarSrc?: string;
 	insetLogo?: boolean;
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands), replacing the hexagon avatar. */
+	brandName?: ThirdPartyLogoName;
 	/** Flat icon shown by the `"template"` variant header (when there is no banner). */
 	iconSrc?: string;
 	publisher: string;
 	attributionKind?: "company" | "team" | "person";
 	publisherLogoSrc?: string;
+	/** 3P publisher brand id — renders the upstream package mark on the company badge. */
+	publisherBrandName?: ThirdPartyLogoName;
 	description?: string;
 	/** Capabilities feature list — rendered by the `"expanded"` and experimental template variants. */
 	capabilities?: readonly (AgentCardCapability | string)[];
@@ -382,10 +388,12 @@ export function AgentCard({
 	avatarSrc,
 	insetLogo = false,
 	logoName,
+	brandName,
 	iconSrc,
 	publisher,
 	attributionKind,
 	publisherLogoSrc,
+	publisherBrandName,
 	description,
 	capabilities = [],
 	capabilitiesLabel,
@@ -470,7 +478,9 @@ export function AgentCard({
 		if (attributionKind === "company") {
 			return (
 				<AvatarCompanyBadge className={badgeClassName}>
-					{publisherLogoSrc ? (
+					{publisherBrandName ? (
+						<LogoThirdParty label="" name={publisherBrandName} size="xsmall" />
+					) : publisherLogoSrc ? (
 						<img alt="" aria-hidden src={publisherLogoSrc} />
 					) : (
 						<AtlassianLogo
@@ -580,28 +590,32 @@ export function AgentCard({
 					}
 					byline={<AgentCardByline publisher={publisher} verified={verified} />}
 					leading={
-						<Avatar shape="hexagon" size="default">
-							{logoName ? (
-								<AtlassianLogo
-									name={logoName}
-									size={logoName === "atlassian" ? "xsmall" : "medium"}
-									themeAware
-									label={name}
-								/>
-							) : avatarSrc ? (
-								<Image
-									alt=""
-									aria-hidden
-									className={insetLogo ? "size-4 object-contain" : "size-full object-contain"}
-									height={insetLogo ? 16 : 32}
-									src={avatarSrc}
-									width={insetLogo ? 16 : 32}
-								/>
-							) : (
-								<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
-							)}
-							{avatarBadge}
-						</Avatar>
+						brandName ? (
+							<LogoThirdParty label={name} name={brandName} size="large" />
+						) : (
+							<Avatar shape="hexagon" size="default">
+								{logoName ? (
+									<AtlassianLogo
+										name={logoName}
+										size={logoName === "atlassian" ? "xsmall" : "medium"}
+										themeAware
+										label={name}
+									/>
+								) : avatarSrc ? (
+									<Image
+										alt=""
+										aria-hidden
+										className={insetLogo ? "size-4 object-contain" : "size-full object-contain"}
+										height={insetLogo ? 16 : 32}
+										src={avatarSrc}
+										width={insetLogo ? 16 : 32}
+									/>
+								) : (
+									<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
+								)}
+								{avatarBadge}
+							</Avatar>
+						)
 					}
 					title={name}
 				/>

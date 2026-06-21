@@ -1,6 +1,15 @@
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
 
 import { Tile, type TileProps } from "@/components/ui/tile";
+import {
+	getThirdPartyLogoIconFromSrc,
+	THIRD_PARTY_LOGO_ICONS,
+} from "@/components/ui/data/logo-third-party-icons";
+import {
+	isLocalAssetThirdPartyLogoName,
+	thirdPartyLogoSrc,
+	type ThirdPartyLogoName,
+} from "@/components/ui/data/logo-third-party-data";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import {
 	isBackgroundlessAtlassianLogo,
@@ -33,8 +42,17 @@ import { cn } from "@/lib/utils";
  */
 
 export interface BrandLogoMarkProps {
-	/** The 2P/3P asset path (e.g. `/3p/airtable/24.svg` or `/2p/appfire.png`). */
-	src: string;
+	/**
+	 * A 2P partner asset path (e.g. `/2p/appfire.png`). For third-party (3P)
+	 * brands, prefer `name` — it renders the upstream `@atlassian/logo-third-party`
+	 * mark and keeps `public/3p` paths out of call sites.
+	 */
+	src?: string;
+	/**
+	 * Third-party brand id (e.g. `"slack"`). Renders the upstream package mark via
+	 * {@link THIRD_PARTY_LOGO_ICONS}. Use this for all 3P brands instead of `src`.
+	 */
+	name?: ThirdPartyLogoName;
 	/** Accessible label forwarded to the underlying `Tile` (chips ignore it). */
 	label: string;
 	/**
@@ -186,13 +204,51 @@ export function AtlassianLogoMark({
 
 export function BrandLogoMark({
 	src,
+	name,
 	label,
 	frame = "tile",
 	size = "medium",
 	className,
 	transparent = false,
 }: Readonly<BrandLogoMarkProps>) {
-	const presentation = resolveBrandLogoPresentation(src);
+	// Prefer the upstream `@atlassian/logo-third-party` mark: by `name` for 3P
+	// brands, or resolved from a legacy `/3p` `src`. The package always renders a
+	// white bordered `Tile`, so it maps cleanly onto the tile/chip frames but NOT
+	// the borderless `transparent` low-chrome treatment — that keeps the local
+	// `public/3p` asset below (asset path only; package brands have no such variant).
+	const ThirdPartyIcon = name
+		? THIRD_PARTY_LOGO_ICONS[name]
+		: transparent
+			? undefined
+			: getThirdPartyLogoIconFromSrc(src ?? "");
+	if (ThirdPartyIcon) {
+		if (frame === "chip") {
+			return (
+				<span
+					aria-hidden="true"
+					className={cn(
+						"inline-flex size-4 shrink-0 items-center justify-center align-middle",
+						className,
+					)}
+				>
+					<ThirdPartyIcon label="" size="xxsmall" />
+				</span>
+			);
+		}
+
+		const icon = <ThirdPartyIcon label={label} size={size} />;
+		return className ? <span className={cn("inline-flex", className)}>{icon}</span> : icon;
+	}
+
+	// Asset path: an explicit `src`, or the local `public/3p` fallback for a
+	// package-less 3P `name` (the only brands without an upstream icon).
+	const assetSrc =
+		src ?? (name && isLocalAssetThirdPartyLogoName(name) ? thirdPartyLogoSrc(name) : undefined);
+	if (!assetSrc) {
+		return null;
+	}
+
+	const presentation = resolveBrandLogoPresentation(assetSrc);
 
 	if (frame === "chip") {
 		return (

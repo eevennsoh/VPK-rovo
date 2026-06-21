@@ -7,7 +7,7 @@ export const BOARD_AGENTS: readonly KanbanBoardAgentData[] = [
 		id: "github-copilot",
 		name: "GitHub Copilot",
 		byline: "Agent by GitHub",
-		avatarSrc: "/3p/github/24.svg",
+		brandName: "github",
 	},
 	{
 		id: "readiness-checker",
@@ -19,13 +19,13 @@ export const BOARD_AGENTS: readonly KanbanBoardAgentData[] = [
 		id: "figma",
 		name: "Figma",
 		byline: "by Figma",
-		avatarSrc: "/3p/figma/24.svg",
+		brandName: "figma",
 	},
 	{
 		id: "canva",
 		name: "Canva",
 		byline: "by Canva",
-		avatarSrc: "/3p/canva/24.svg",
+		brandName: "canva",
 	},
 	{
 		id: "code-reviewer",
@@ -61,18 +61,18 @@ export const BOARD_AGENTS: readonly KanbanBoardAgentData[] = [
 		id: "notion",
 		name: "Notion",
 		byline: "by Notion",
-		avatarSrc: "/3p/notion/24.svg",
+		brandName: "notion",
 	},
 	{
 		id: "slack",
 		name: "Slack",
 		byline: "by Slack",
-		avatarSrc: "/3p/slack/24.svg",
+		brandName: "slack",
 	},
 	{
 		id: "google-drive",
 		name: "Google Drive",
 		byline: "by Google",
-		avatarSrc: "/3p/google-drive/24.svg",
+		brandName: "google-drive",
 	},
 ] as const;

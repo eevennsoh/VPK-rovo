@@ -1,3 +1,5 @@
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+
 export type AgentTriggerProviderId =
 	| "scheduled"
 	| "jira"
@@ -52,6 +54,7 @@ export interface AgentTriggerProviderDefinition {
 export type AgentTriggerProviderIcon =
 	| { kind: "atlassian-logo"; name: "jira" | "confluence" | "teams" | "opsgenie" | "bitbucket" }
 	| { kind: "atlaskit-icon"; name: "automation" | "branch" | "clock" | "incident" | "webhook" }
+	| { kind: "third-party"; name: ThirdPartyLogoName }
 	| { kind: "image"; src: string };
 
 export interface AgentTriggerValue {
@@ -338,7 +341,7 @@ export const TRIGGER_PROVIDERS = [
 		id: "slack",
 		label: "Slack",
 		description: "React to messages and mentions.",
-		icon: { kind: "image", src: "/3p/slack/16.svg" },
+		icon: { kind: "third-party", name: "slack" },
 		requiresConnection: true,
 		events: [
 			{
@@ -386,7 +389,7 @@ export const TRIGGER_PROVIDERS = [
 		id: "sentry",
 		label: "Sentry",
 		description: "React to errors and regressions.",
-		icon: { kind: "image", src: "/3p/sentry/16.svg" },
+		icon: { kind: "third-party", name: "sentry" },
 		requiresConnection: true,
 		events: [
 			{
@@ -447,7 +450,7 @@ export const TRIGGER_PROVIDERS = [
 		id: "pagerduty",
 		label: "PagerDuty",
 		description: "React to incident lifecycle events.",
-		icon: { kind: "image", src: "/3p/pagerduty/16.svg" },
+		icon: { kind: "third-party", name: "pagerduty" },
 		requiresConnection: true,
 		events: [
 			{

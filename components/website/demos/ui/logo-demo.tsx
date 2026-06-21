@@ -40,6 +40,8 @@ import {
 	type AtlassianLogoName,
 	type LogoProps,
 } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 const logoEntries: ReadonlyArray<{ name: AtlassianLogoName; label: string }> = [
 	{ name: "atlassian", label: "Atlassian" },
@@ -287,17 +289,16 @@ export function LogoDemoCustom() {
 // Representative marks for each tier + each 3P sub-case. Border treatment is
 // NOT set here — it is resolved from components/ui/data/logo-usage.json.
 const BRAND_LOGO_SAMPLES: ReadonlyArray<{
-	src: string;
+	src?: string;
+	name?: ThirdPartyLogoName;
 	label: string;
 	caption: string;
 }> = [
-	// 3P, solid-fill (own background): renders bare, no border.
-	{ src: "/3p/github/24.svg", label: "GitHub", caption: "3P · solid-fill → bare" },
-	{ src: "/3p/figma/24.svg", label: "Figma", caption: "3P · solid-fill → bare" },
-	// 3P, white-tile (ships 16-borderless.svg): swaps to the borderless glyph
-	// inside a VPK-drawn bordered tile so borders don't double up.
-	{ src: "/3p/airtable/24.svg", label: "Airtable", caption: "3P · white-tile → borderless + tile" },
-	{ src: "/3p/slack/24.svg", label: "Slack", caption: "3P · white-tile → borderless + tile" },
+	// 3P brands render the upstream `@atlassian/logo-third-party` package mark.
+	{ name: "github", label: "GitHub", caption: "3P · package mark" },
+	{ name: "figma", label: "Figma", caption: "3P · package mark" },
+	{ name: "airtable", label: "Airtable", caption: "3P · package mark" },
+	{ name: "slack", label: "Slack", caption: "3P · package mark" },
 	// 2P partner marks: bare PNGs, always get a bordered tile.
 	{ src: "/2p/appfire.png", label: "Appfire", caption: "2P · bare PNG → tile" },
 	{ src: "/2p/adaptavist.png", label: "Adaptavist", caption: "2P · bare PNG → tile" },
@@ -308,17 +309,22 @@ export function LogoDemoBrandLogos() {
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-start gap-x-6 gap-y-4">
 				{BRAND_LOGO_SAMPLES.map((sample) => (
-					<div key={sample.src} className="flex w-28 flex-col items-center gap-2 text-center">
-						<CustomLogo src={sample.src} label={sample.label} size="large" />
+					<div key={sample.label} className="flex w-28 flex-col items-center gap-2 text-center">
+						{sample.name ? (
+							<LogoThirdParty name={sample.name} label={sample.label} size="large" />
+						) : (
+							<CustomLogo src={sample.src ?? ""} label={sample.label} size="large" />
+						)}
 						<span className="text-xs font-semibold text-text">{sample.label}</span>
 						<span className="text-[11px] leading-tight text-text-subtle">{sample.caption}</span>
 					</div>
 				))}
 			</div>
 			<p className="text-xs text-text-subtle">
-				Pass a 2P/3P asset path via the <code className="rounded bg-bg-neutral px-1 py-0.5">src</code> prop.
-				The bordered tile and borderless-variant swap come from{" "}
-				<code className="rounded bg-bg-neutral px-1 py-0.5">logo-usage.json</code> — no per-call border wiring.
+				3P brands render via <code className="rounded bg-bg-neutral px-1 py-0.5">LogoThirdParty</code> by
+				brand <code className="rounded bg-bg-neutral px-1 py-0.5">name</code>; 2P partner marks pass an
+				asset path via <code className="rounded bg-bg-neutral px-1 py-0.5">src</code> (the bordered tile is
+				resolved from <code className="rounded bg-bg-neutral px-1 py-0.5">logo-usage.json</code>).
 			</p>
 		</div>
 	);
@@ -345,16 +351,26 @@ export function LogoDemoInTile() {
 					<span className="self-center text-sm text-text">Atlassian company</span>
 				</div>
 				{BRAND_LOGO_SAMPLES.map((sample) => (
-					<div key={sample.src} className="flex items-end gap-3">
-						{BRAND_TILE_SIZES.map((size) => (
-							<BrandLogoMark
-								key={size}
-								frame="tile"
-								src={sample.src}
-								label={`${sample.label} ${size}`}
-								size={size}
-							/>
-						))}
+					<div key={sample.label} className="flex items-end gap-3">
+						{BRAND_TILE_SIZES.map((size) =>
+							sample.name ? (
+								<BrandLogoMark
+									key={size}
+									frame="tile"
+									name={sample.name}
+									label={`${sample.label} ${size}`}
+									size={size}
+								/>
+							) : (
+								<BrandLogoMark
+									key={size}
+									frame="tile"
+									src={sample.src ?? ""}
+									label={`${sample.label} ${size}`}
+									size={size}
+								/>
+							),
+						)}
 						<span className="self-center text-sm text-text">{sample.label}</span>
 					</div>
 				))}
@@ -379,8 +395,14 @@ export function LogoDemoInTag() {
 			<div className="flex flex-wrap items-center gap-2">
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<Tag
-						key={sample.src}
-						elemBefore={<BrandLogoMark frame="chip" src={sample.src} label={sample.label} />}
+						key={sample.label}
+						elemBefore={
+							sample.name ? (
+								<BrandLogoMark frame="chip" name={sample.name} label={sample.label} />
+							) : (
+								<BrandLogoMark frame="chip" src={sample.src ?? ""} label={sample.label} />
+							)
+						}
 					>
 						{sample.label}
 					</Tag>

@@ -1,4 +1,5 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 import { DEFAULT_KNOWLEDGE_APPS, type KnowledgeDirectoryApp } from "./knowledge";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS, type ToolsDirectoryTool } from "./tools";
@@ -63,9 +64,14 @@ function canonicalAppId(id: string): string {
 function brandFieldsFromVisual(visual: DirectoryVisual): {
 	logoName?: AtlassianLogoName;
 	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
 } {
 	if (visual.kind === "logo") {
 		return { logoName: visual.logoName };
+	}
+
+	if (visual.kind === "third-party") {
+		return { brandName: visual.name };
 	}
 
 	if (visual.kind === "image" || visual.kind === "avatar") {
@@ -135,8 +141,8 @@ export function getAppById(id: string): DirectoryApp | undefined {
  * mark (logo/avatar) takes precedence; otherwise the knowledge facet's visual.
  */
 export function getAppDirectoryVisual(app: DirectoryApp): DirectoryVisual | undefined {
-	if (app.logoName || app.avatarSrc) {
-		return avatarVisualFromSrc(app.logoName, app.avatarSrc);
+	if (app.logoName || app.avatarSrc || app.brandName) {
+		return avatarVisualFromSrc(app.logoName, app.avatarSrc, app.brandName);
 	}
 
 	return app.knowledgeApp?.visual;

@@ -27,6 +27,8 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, CustomLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Lozenge, LozengeDropdownTrigger, type LozengeProps } from "@/components/ui/lozenge";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,7 @@ export type SmartLinkVariant =
 
 export type SmartLinkVisual =
 	| { kind: "atlassian"; name: AtlassianLogoName }
+	| { kind: "third-party"; name: ThirdPartyLogoName }
 	| { kind: "image"; src: string; alt: string }
 	| { kind: "icon"; icon: ReactElement }
 	| { kind: "icon-tile"; icon: ReactElement; tone?: SmartLinkTone }
@@ -200,6 +203,14 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 
 	if (visual.kind === "atlassian") {
 		return <AtlassianLogo name={visual.name} label="" size={logoSize} withUsageBorder />;
+	}
+
+	if (visual.kind === "third-party") {
+		return size === "trigger" ? (
+			<BrandLogoMark frame="chip" name={visual.name} label="" />
+		) : (
+			<LogoThirdParty name={visual.name} size={logoSize} />
+		);
 	}
 
 	if (visual.kind === "image") {

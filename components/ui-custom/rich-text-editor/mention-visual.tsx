@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { TagColor } from "@/components/ui/tag";
 import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
 import { getDirectoryIcon } from "@/app/data/directory/visual";
@@ -84,6 +85,13 @@ export function getRichTextMentionVisualAttrs(
 		return {};
 	}
 
+	if (visual.kind === "third-party") {
+		return {
+			visualKind: visual.kind,
+			visualLogoName: visual.name,
+		};
+	}
+
 	if (visual.kind === "logo") {
 		return {
 			visualKind: visual.kind,
@@ -118,6 +126,13 @@ export function getRichTextMentionVisualFromAttrs(
 					src: attrs.visualSrc,
 				}
 			: undefined;
+	}
+
+	if (attrs.visualKind === "third-party" && attrs.visualLogoName) {
+		return {
+			kind: "third-party",
+			name: attrs.visualLogoName as ThirdPartyLogoName,
+		};
 	}
 
 	if (attrs.visualKind === "logo" && attrs.visualLogoName) {
@@ -219,6 +234,16 @@ export function RichTextMentionVisualMark({
 			/>
 		) : (
 			<BrandLogoMark className={className} frame="chip" label={label} src={visual.src} />
+		);
+	}
+
+	if (visual.kind === "third-party") {
+		// 3P brand → upstream package mark via the shared `BrandLogoMark` `name`
+		// path. Menu rows use the tile frame; inline chips use the 16px chip frame.
+		return isMenu ? (
+			<BrandLogoMark className={className} frame="tile" label={label} name={visual.name} size={menuTileSize} />
+		) : (
+			<BrandLogoMark className={className} frame="chip" label={label} name={visual.name} />
 		);
 	}
 
@@ -327,6 +352,18 @@ export function getRichTextMentionVisualDOMSpec(
 				"data-visual-shape": visual.shape ?? undefined,
 			},
 			["img", { alt: "", src }],
+		];
+	}
+
+	if (visual.kind === "third-party") {
+		return [
+			"span",
+			{
+				"aria-hidden": "true",
+				class: "rich-text-mention-visual rich-text-mention-logo-fallback",
+				"data-visual-kind": visual.kind,
+			},
+			visual.name.slice(0, 1).toUpperCase(),
 		];
 	}
 

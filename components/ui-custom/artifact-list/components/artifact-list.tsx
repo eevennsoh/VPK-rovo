@@ -4,6 +4,8 @@ import { type ReactNode } from "react";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile } from "@/components/ui/tile";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -26,7 +28,12 @@ export interface ArtifactListItem {
 	 */
 	tileVariant?: React.ComponentProps<typeof Tile>["variant"];
 	/**
-	 * 2P/3P logo path (e.g. `/3p/google-drive/16.svg`) rendered 24px inset on the
+	 * Third-party brand id — renders the upstream package mark (its own tile).
+	 * Takes precedence over `logoSrc`/`icon`.
+	 */
+	logoName?: ThirdPartyLogoName;
+	/**
+	 * 2P logo path (e.g. `/2p/appfire.png`) rendered 24px inset on the
 	 * neutral tile. Takes precedence over `icon`.
 	 */
 	logoSrc?: string;
@@ -59,6 +66,11 @@ function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>)
 }
 
 function ArtifactListLeadingTile({ item }: Readonly<{ item: ArtifactListItem }>) {
+	// 3P brand logos render as the self-framing package mark (its own tile).
+	if (item.logoName) {
+		return <LogoThirdParty label="" name={item.logoName} size="medium" />;
+	}
+
 	// Logo + agent-avatar rows stay neutral; logos render 24px inset and agent
 	// avatars 20px, while plain icon rows can opt into a color appearance and keep
 	// the tile's default 16px inset.

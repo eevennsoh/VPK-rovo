@@ -30,6 +30,7 @@ import { GreetingPromptRow } from "@/components/projects/shared/components/greet
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -42,6 +43,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ProgressTracker, type ProgressTrackerStep } from "@/components/ui/progress-tracker";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
@@ -64,6 +66,8 @@ export interface AgentBrowserAgent {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 	description?: string;
 	favorite?: boolean;
 	rating?: number;
@@ -85,6 +89,8 @@ export interface AgentBrowserSidebarItem {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface AgentBrowserCategory {
@@ -306,6 +312,8 @@ interface ExperimentalFilterOption {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 }
 
 const TEAM_PROJECT_AVATARS: readonly string[] = [
@@ -362,8 +370,12 @@ function getAttributionOptions(
 			return { id, label, logoName };
 		}
 
-		const brandAvatar = members.find((member) => member.avatarSrc?.startsWith("/3p/"))?.avatarSrc
-			?? members.find((member) => member.avatarSrc)?.avatarSrc;
+		const brandName = members.find((member) => member.brandName)?.brandName;
+		if (brandName) {
+			return { id, label, brandName };
+		}
+
+		const brandAvatar = members.find((member) => member.avatarSrc)?.avatarSrc;
 		return { id, label, avatarSrc: brandAvatar };
 	});
 }
@@ -429,26 +441,8 @@ function getSidebarGroupItems(
 		label: agent.name,
 		avatarSrc: agent.avatarSrc,
 		logoName: agent.logoName,
+		brandName: agent.brandName,
 	}));
-}
-
-// Third-party app marks that ship a purpose-built, self-contained 16px tile
-// (`/3p/<id>/16-borderless.svg`). On the directory card these render in a
-// borderless hexagon so the artwork isn't fighting an edge. Other surfaces
-// (e.g. the sidebar) keep the standard `avatarSrc` at their own size.
-const BORDERLESS_HEXAGON_AGENT_IDS: ReadonlySet<string> = new Set(["google-drive", "slack", "notion"]);
-
-function isBorderlessHexagonAgent(agent: AgentBrowserAgent): boolean {
-	return BORDERLESS_HEXAGON_AGENT_IDS.has(agent.id);
-}
-
-// Swap the standard 3p logo for its borderless 16px sibling used on the card.
-function getDirectoryCardAvatarSrc(agent: AgentBrowserAgent): string | undefined {
-	if (isBorderlessHexagonAgent(agent)) {
-		return `/3p/${agent.id}/16-borderless.svg`;
-	}
-
-	return agent.avatarSrc;
 }
 
 export function AgentBrowserDialog({
@@ -1105,6 +1099,10 @@ function ExperimentalFilterOptionAvatar({ option }: Readonly<{ option: Experimen
 		);
 	}
 
+	if (option.brandName) {
+		return <LogoThirdParty className="shrink-0" label={option.label} name={option.brandName} size="small" />;
+	}
+
 	if (option.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
 			<span className="flex size-6 shrink-0 items-center justify-center">
@@ -1420,6 +1418,10 @@ function getExperimentalTemplateSourceLogo(
 		return getExperimentalTemplateDirectoryAppLogo(directoryApp);
 	}
 
+	if (source.name) {
+		return <BrandLogoMark frame="tile" label={source.label} name={source.name} size="medium" />;
+	}
+
 	if (source.iconSrc) {
 		return <BrandLogoMark frame="tile" label={source.label} size="medium" src={source.iconSrc} />;
 	}
@@ -1429,8 +1431,8 @@ function getExperimentalTemplateSourceLogo(
 			<BrandLogoMark
 				frame="tile"
 				label={source.label}
+				name={source.provider}
 				size="medium"
-				src={`/3p/${source.provider}/24.svg`}
 			/>
 		);
 	}
@@ -1764,7 +1766,7 @@ function ExperimentalTemplateCard({
 			name={agent.name}
 			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
 			publisher={deriveTemplatePublisher(agent)}
-			publisherLogoSrc={agent.publisherLogoSrc}
+			publisherBrandName={agent.publisherBrandName}
 			skills={agent.skills}
 			sources={agent.sources}
 			stats={agent.stats}
@@ -1928,6 +1930,10 @@ function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: 
 }
 
 function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
+	if (item.brandName) {
+		return <LogoThirdParty className="shrink-0" label={item.label} name={item.brandName} size="small" />;
+	}
+
 	if (item.logoName) {
 		// The 3p logos carry their own rounded-square tile inside the SVG; the
 		// Atlassian brand mark is transparent, so wrap it in a bordered Tile to
@@ -2071,7 +2077,7 @@ function AgentTemplateCard({
 			onMoreActions={NOOP_TEMPLATE_MORE_ACTIONS}
 			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
 			publisher={deriveTemplatePublisher(agent)}
-			publisherLogoSrc={agent.publisherLogoSrc}
+			publisherBrandName={agent.publisherBrandName}
 			skills={agent.skills}
 			sources={agent.sources}
 			stats={agent.stats}
@@ -2093,8 +2099,8 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 	return (
 		<EntityCardAgentCard
 			active={moreMenuOpen}
-			avatarSrc={getDirectoryCardAvatarSrc(agent)}
-			insetLogo={isBorderlessHexagonAgent(agent)}
+			avatarSrc={agent.avatarSrc}
+			brandName={agent.brandName}
 			chatCount={agent.chatCount}
 			className="hover:border-transparent"
 			description={agent.description}
@@ -2135,11 +2141,11 @@ function ExperimentalProfileCard({
 			<ExperimentalDirectoryCard
 				active={moreMenuOpen}
 				attributionKind={agent.attributionKind}
-				avatarSrc={getDirectoryCardAvatarSrc(agent)}
+				avatarSrc={agent.avatarSrc}
 				chatCount={agent.chatCount}
 				description={agent.description}
 				feedbackCount={agent.feedbackCount}
-				insetLogo={isBorderlessHexagonAgent(agent)}
+				brandName={agent.brandName}
 				logoName={agent.logoName}
 				moreAction={
 					<DirectoryCardMoreMenu

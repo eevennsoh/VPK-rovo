@@ -2065,7 +2065,7 @@ const items: ArtifactListItem[] = [
     title: "Content Variation Analysis",
     source: "Google Spreadsheet",
     owner: "Vitafleet Team",
-    logoSrc: "/3p/google-drive/16.svg",
+    brandName: "google-drive",
   },
 ];
 

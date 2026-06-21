@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -33,7 +34,7 @@ export type EntityCardSource =
 	| {
 			type: "app";
 			name: string;
-			logoSrc?: string;
+			brandName?: ThirdPartyLogoName;
 	  }
 	| {
 			type: "custom";
@@ -98,8 +99,8 @@ function EntityCardSourceRow({ source }: Readonly<{ source: EntityCardSource }>)
 				</>
 			) : (
 				<>
-					{source.logoSrc ? (
-						<BrandLogoMark src={source.logoSrc} size="xxsmall" transparent label={source.name} />
+					{source.brandName ? (
+						<BrandLogoMark name={source.brandName} size="xxsmall" label={source.name} />
 					) : (
 						<span aria-hidden className="size-4 rounded-full bg-bg-neutral" />
 					)}

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
@@ -21,6 +23,8 @@ export interface AgentSelectorAgent {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface AgentSelectorAction {
@@ -106,6 +110,9 @@ function filterAgentsByQuery(
 }
 
 function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): ReactElement {
+	if (agent.brandName) {
+		return <LogoThirdParty className="shrink-0" label={agent.name} name={agent.brandName} size="small" />;
+	}
 	return (
 		<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
 			{agent.logoName ? (

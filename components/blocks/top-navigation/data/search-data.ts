@@ -54,7 +54,7 @@ export const FILTER_BUTTONS = {
 		{ label: "Contributor", type: "contributor" as const },
 	],
 	right: [
-		{ icon: "/3p/google-drive/20.svg", label: "Google Drive", type: "external" as const },
-		{ icon: "/3p/slack/20.svg", label: "Slack", type: "external" as const },
+		{ label: "Google Drive", type: "external" as const },
+		{ label: "Slack", type: "external" as const },
 	],
 } as const;

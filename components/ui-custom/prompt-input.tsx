@@ -58,7 +58,7 @@ import {
 } from "@/lib/directory-autocomplete";
 
 import { Badge } from "@/components/ui/badge";
-import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import {
   Command,
   CommandEmpty,
@@ -2509,11 +2509,11 @@ export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
 
 const PROMPT_INPUT_PREFERENCE_SOURCES = [
   {
-    src: "/3p/google-drive/16.svg",
+    name: "google-drive",
     label: "Google Drive",
   },
   {
-    src: "/3p/microsoft-teams/16.svg",
+    name: "microsoft-teams",
     label: "Microsoft Teams",
   },
 ] as const;
@@ -2593,14 +2593,12 @@ export const PromptInputPreferencesButton = ({
     {...props}
   >
     {PROMPT_INPUT_PREFERENCE_SOURCES.map((source) => (
-      <Image
-        alt=""
-        aria-hidden
-        className="size-4 shrink-0 object-contain"
-        height={16}
+      <LogoThirdParty
+        className="size-4 shrink-0"
         key={source.label}
-        src={resolveBrandLogoPresentation(source.src).src}
-        width={16}
+        label=""
+        name={source.name}
+        size="xxsmall"
       />
     ))}
     <span aria-hidden className="inline-flex size-4 shrink-0 items-center justify-center rounded bg-primary">

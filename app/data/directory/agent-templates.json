@@ -1310,7 +1310,7 @@
 		"avatarSrc": "/avatar-agent/product-agents/wildcard-5.svg",
 		"publisher": "Amplitude",
 		"attributionKind": "company",
-		"publisherLogoSrc": "/3p/amplitude/16.svg",
+		"publisherBrandName": "amplitude",
 		"sourceKeys": [
 			"amplitude",
 			"jiraProductDiscovery",
@@ -3556,7 +3556,7 @@
 		"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
 		"publisher": "Smartsheet",
 		"attributionKind": "company",
-		"publisherLogoSrc": "/3p/smartsheet/16.svg",
+		"publisherBrandName": "smartsheet",
 		"sourceKeys": [
 			"jira",
 			"smartSheet",

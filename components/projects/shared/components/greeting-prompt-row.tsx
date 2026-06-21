@@ -5,6 +5,8 @@ import Image from "next/image";
 import type { ComponentType, ReactNode } from "react";
 
 import { IconTile } from "@/components/ui/icon-tile";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
 /**
@@ -63,6 +65,8 @@ export interface GreetingPromptRowProps {
 	description?: string;
 	/** Image path for prompts with a rich brand glyph (takes precedence). */
 	imageSrc?: string;
+	/** Third-party brand id — renders the upstream package mark (takes precedence over `imageSrc`). */
+	imageName?: ThirdPartyLogoName;
 	/** Icon component used when there is no `imageSrc`. */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	icon?: ComponentType<any>;
@@ -82,12 +86,18 @@ export interface GreetingPromptRowProps {
 function GreetingPromptVisual({
 	label,
 	imageSrc,
+	imageName,
 	icon: IconComponent,
 	iconColor,
 	visual,
-}: Readonly<Pick<GreetingPromptRowProps, "label" | "imageSrc" | "icon" | "iconColor" | "visual">>) {
+}: Readonly<Pick<GreetingPromptRowProps, "label" | "imageSrc" | "imageName" | "icon" | "iconColor" | "visual">>) {
 	if (visual) {
 		return <>{visual}</>;
+	}
+
+	if (imageName) {
+		// 3P brand → self-framing package mark (its own 32px tile replaces the IconTile).
+		return <LogoThirdParty label={label} name={imageName} size="medium" />;
 	}
 
 	return (
@@ -117,6 +127,7 @@ export function GreetingPromptRow({
 	label,
 	description,
 	imageSrc,
+	imageName,
 	icon,
 	iconColor,
 	visual,
@@ -145,6 +156,7 @@ export function GreetingPromptRow({
 		<GreetingPromptVisual
 			icon={icon}
 			iconColor={iconColor}
+			imageName={imageName}
 			imageSrc={imageSrc}
 			label={label}
 			visual={visual}

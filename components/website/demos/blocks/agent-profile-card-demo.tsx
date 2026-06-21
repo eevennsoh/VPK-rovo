@@ -18,7 +18,7 @@ export default function AgentProfileCardDemo(): React.ReactElement {
 				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
 				description="Turns product feedback into Figma-ready briefs and keeps design specs in sync with the latest research."
 				name="Design Researcher"
-				partnerLogoSrc="/3p/figma/24.svg"
+				partnerBrandName="figma"
 				partnerName="Figma"
 			/>
 

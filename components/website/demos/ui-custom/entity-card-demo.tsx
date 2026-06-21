@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import PageIcon from "@atlaskit/icon/core/page";
 import SearchIcon from "@atlaskit/icon/core/search";
 
@@ -17,6 +16,7 @@ import {
 	EntityCardToolCard,
 } from "@/components/ui-custom/entity-card";
 import { ConfluenceLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 
 const KNOWLEDGE_DEMO_STATS = [
 	{ starCount: 38, verified: true, teammateCount: 6273 },
@@ -89,7 +89,7 @@ function AddedEntityCardsDemo() {
 				/>
 				<EntityCardToolCard
 					added
-					appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+					appLogo={<LogoThirdParty name="slack" size="medium" label="" />}
 					description="Send messages and search conversations from your workspace."
 					name="Slack"
 					onMoreActions={() => {}}
@@ -151,7 +151,7 @@ function SelectableEntityCardsDemo() {
 					toolCount={36}
 				/>
 				<EntityCardToolCard
-					appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+					appLogo={<LogoThirdParty name="slack" size="medium" label="" />}
 					description="Send messages and search conversations from your workspace."
 					name="Slack"
 					onSelect={() => toggle("slack-tool")}
@@ -250,7 +250,7 @@ export function EntityCardDemoSkills() {
 				name="Find similar work"
 				onMoreActions={() => {}}
 				onSelect={() => {}}
-				source={{ type: "app", name: "Slack", logoSrc: "/3p/slack/16.svg" }}
+				source={{ type: "app", name: "Slack", brandName: "slack" }}
 				starCount={120}
 				teammateCount={4100}
 			/>
@@ -274,7 +274,7 @@ export function EntityCardDemoApps() {
 				toolCount={36}
 			/>
 			<EntityCardAppCard
-				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+				appLogo={<LogoThirdParty name="slack" size="medium" label="" />}
 				description="Send messages and search conversations from your workspace."
 				mentionHandle="slack"
 				name="Slack"
@@ -301,7 +301,7 @@ export function EntityCardDemoTools() {
 				toolCount={36}
 			/>
 			<EntityCardToolCard
-				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+				appLogo={<LogoThirdParty name="slack" size="medium" label="" />}
 				description="Send messages and search conversations from your workspace."
 				name="Slack"
 				onMoreActions={() => {}}

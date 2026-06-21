@@ -5,6 +5,8 @@ import Image from "next/image";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +22,15 @@ export interface TwgToolSource {
 	label: string;
 	provider: TwgToolSourceProvider;
 	icon?: ReactNode;
+	/**
+	 * Third-party brand id — renders the upstream `@atlassian/logo-third-party`
+	 * mark. Preferred over `provider` for arbitrary 3P brands.
+	 */
+	name?: ThirdPartyLogoName;
+	/**
+	 * Non-brand image source (e.g. an `/avatar-agent/…` SVG). Do NOT use this for
+	 * 3P brand logos — use `name` instead so `public/3p` paths stay out of data.
+	 */
 	iconSrc?: string;
 }
 
@@ -80,11 +91,7 @@ function isThirdPartyProvider(
 	return provider === "google-drive" || provider === "salesforce";
 }
 
-function getThirdPartyIconPath(provider: TwgToolThirdPartyProvider, size: TwgToolSourceIconSize) {
-	return `/3p/${provider}/${size === "md" ? "24" : "16"}.svg`;
-}
-
-function getSourceTileSize(size: TwgToolSourceIconSize): ComponentProps<typeof Tile>["size"] {
+function getSourceTileSize(size: TwgToolSourceIconSize): "small" | "xxsmall" {
 	return size === "md" ? "small" : "xxsmall";
 }
 
@@ -102,7 +109,6 @@ export function TwgToolSourceIcon({
 	size = "md",
 	...props
 }: TwgToolSourceIconProps) {
-	const imageSize = getSourceImageSize(size);
 	const tileSize = getSourceTileSize(size);
 
 	if (source.icon) {
@@ -120,7 +126,21 @@ export function TwgToolSourceIcon({
 		);
 	}
 
+	if (source.name) {
+		// 3P brand → upstream package mark (its own white tile replaces the appstack
+		// tile at the same size). No `public/3p` asset path.
+		return (
+			<LogoThirdParty
+				className={cn("shrink-0", className)}
+				label={source.label}
+				name={source.name}
+				size={tileSize}
+			/>
+		);
+	}
+
 	if (source.iconSrc) {
+		// Non-brand image (e.g. an `/avatar-agent/…` SVG). 3P brands use `name`.
 		return (
 			<Tile
 				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
@@ -133,9 +153,9 @@ export function TwgToolSourceIcon({
 				<Image
 					alt=""
 					aria-hidden
-					height={imageSize}
+					height={getSourceImageSize(size)}
 					src={source.iconSrc}
-					width={imageSize}
+					width={getSourceImageSize(size)}
 				/>
 			</Tile>
 		);
@@ -165,23 +185,14 @@ export function TwgToolSourceIcon({
 	}
 
 	if (isThirdPartyProvider(source.provider)) {
+		// Provider is itself a 3P brand id (`google-drive` / `salesforce`).
 		return (
-			<Tile
-				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
-				isInset={false}
+			<LogoThirdParty
+				className={cn("shrink-0", className)}
 				label={source.label}
+				name={source.provider}
 				size={tileSize}
-				variant="transparent"
-				{...props}
-			>
-				<Image
-					alt=""
-					aria-hidden
-					height={imageSize}
-					src={getThirdPartyIconPath(source.provider, size)}
-					width={imageSize}
-				/>
-			</Tile>
+			/>
 		);
 	}
 

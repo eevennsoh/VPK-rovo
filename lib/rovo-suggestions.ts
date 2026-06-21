@@ -8,6 +8,7 @@ import type { ComponentType } from "react";
 import type { GenerativeContentType } from "@/components/projects/shared/lib/generative-widget";
 import type { ResolvedCardIdentity } from "@/components/projects/shared/lib/visual-identity";
 import { resolveGenerativeCardIdentity } from "@/components/projects/shared/lib/visual-identity";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 // Icon imports - these will be used by consuming components
 import TimelineIcon from "@atlaskit/icon/core/timeline";
@@ -29,6 +30,8 @@ export interface RovoSuggestion {
 	icon?: ComponentType<any>;
 	/** Image path for prompts with rich illustrations */
 	imageSrc?: string;
+	/** Third-party brand id — renders the upstream package mark (takes precedence over `imageSrc`). */
+	imageName?: ThirdPartyLogoName;
 	/** Shared visual identity for generated/contextual suggestions. */
 	visualIdentity?: ResolvedCardIdentity;
 	/** Hidden context attached when this suggestion is submitted */
@@ -178,14 +181,14 @@ export const defaultSuggestions: RovoSuggestion[] = [
 		label: "Get Figma design context",
 		description: "Pull frames and specs from a Figma file",
 		prompt: "Get Figma context for this design file",
-		imageSrc: "/3p/figma/16.svg",
+		imageName: "figma",
 		type: "prompt",
 	},
 	{
 		id: "send-slack-message",
 		label: "Send Slack message",
 		description: "Draft and post a message to a Slack channel",
-		imageSrc: "/3p/slack/16-borderless.svg",
+		imageName: "slack",
 		type: "prompt",
 	},
 	{
@@ -194,7 +197,7 @@ export const defaultSuggestions: RovoSuggestion[] = [
 		description: "Show today's events from Google Calendar",
 		prompt: GOOGLE_CALENDAR_LIST_EVENTS_PROMPT,
 		contextDescription: GOOGLE_CALENDAR_LIST_EVENTS_CONTEXT,
-		imageSrc: "/3p/google-calendar/16-borderless.svg",
+		imageName: "google-calendar",
 		type: "prompt",
 	},
 ];

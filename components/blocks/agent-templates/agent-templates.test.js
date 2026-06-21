@@ -160,7 +160,7 @@ test("Agent Templates renders the strategy dialog layout with entity-card cards"
 	assert.ok(attributionKinds.has("team"), "templates include a team attribution (default)");
 	assert.ok(attributionKinds.has("person"), "templates include a person attribution");
 	assert.ok(attributionKinds.has("company"), "templates include a company attribution");
-	assert.equal(templateByName.get("Funnel Analyzer")?.publisherLogoSrc, "/3p/amplitude/16.svg");
+	assert.equal(templateByName.get("Funnel Analyzer")?.publisherBrandName, "amplitude");
 	for (const name of [
 		"Decision Director",
 		"Customer Insights",

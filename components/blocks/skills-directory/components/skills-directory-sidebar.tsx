@@ -17,6 +17,7 @@ import CartIcon from "@atlaskit/icon-lab/core/cart";
 import { useState, type ReactElement } from "react";
 
 import { AtlassianLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -74,6 +75,11 @@ function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 }
 
 function LogoLeading({ item }: Readonly<{ item: SkillsDirectoryCompanyItem }>) {
+	// 3P brands render as the self-framing package mark (its own bordered tile).
+	if (item.brandName) {
+		return <LogoThirdParty className="shrink-0" label={item.label} name={item.brandName} size="small" />;
+	}
+
 	const logo = item.logoName ? (
 		<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
 	) : item.logoSrc ? (

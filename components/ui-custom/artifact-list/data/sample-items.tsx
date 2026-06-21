@@ -29,7 +29,7 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		title: "Content Variation Analysis",
 		source: "Google Spreadsheet",
 		owner: "Vitafleet Team",
-		logoSrc: "/3p/google-drive/16.svg",
+		logoName: "google-drive",
 	},
 	{
 		id: "improve-lead-conversion",

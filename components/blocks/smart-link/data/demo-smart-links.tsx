@@ -162,8 +162,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		href: "#project-slingshot",
 		title: "Project slingshot release plan",
 		variant: "file",
-		provider: { name: "Google Drive", logo: { kind: "image", src: "/3p/google-drive/16.svg", alt: "Google Drive" } },
-		icon: { kind: "image", src: "/3p/google-drive/24.svg", alt: "Google Drive" },
+		provider: { name: "Google Drive", logo: { kind: "third-party", name: "google-drive" } },
+		icon: { kind: "third-party", name: "google-drive" },
 		previewImage: {
 			kind: "brand-panel",
 			title: "ATLASSIAN",
@@ -185,8 +185,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		href: "#slack-release-plan",
 		title: "Project slingshot release plan",
 		variant: "generic",
-		provider: { name: "Slack", logo: { kind: "image", src: "/3p/slack/16.svg", alt: "Slack" } },
-		icon: { kind: "image", src: "/3p/slack/24.svg", alt: "Slack" },
+		provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
+		icon: { kind: "third-party", name: "slack" },
 		metadata: [
 			{ label: "Sent on Feb 21, 2023" },
 			{ label: "", metric: 4, icon: <ThumbsUpIcon label="" size="small" /> },

@@ -14,6 +14,8 @@ import TaskIcon from "@atlaskit/icon/core/task";
 
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import { AgentSelector } from "@/components/blocks/agent-selector";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
 	Avatar,
 	AvatarFallback,
@@ -64,7 +66,9 @@ export interface KanbanBoardAgentData {
 	id: string;
 	name: string;
 	byline: string;
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface KanbanBoardCardSelectModifiers {
@@ -130,6 +134,10 @@ function getAgentInitials(name: string): string {
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: KanbanBoardAgentData; className?: string }>) {
+	if (agent.brandName) {
+		// Brand-identity agent → self-framing package tile (no hexagon).
+		return <LogoThirdParty className={className} label={agent.name} name={agent.brandName} size="small" />;
+	}
 	return (
 		<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
 			<AvatarImage alt="" src={agent.avatarSrc} />

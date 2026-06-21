@@ -198,6 +198,7 @@ function SkillListItem({
 			description={suggestion.description}
 			icon={suggestion.icon}
 			iconColor={iconColor}
+			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
 			active={active}
@@ -272,13 +273,14 @@ function CustomAgentStarterItem({
 	suggestion,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const hasOwnVisual = Boolean(suggestion.imageSrc || suggestion.icon);
+	const hasOwnVisual = Boolean(suggestion.imageName || suggestion.imageSrc || suggestion.icon);
 
 	return (
 		<GreetingPromptRow
 			description={suggestion.description}
 			icon={suggestion.icon}
 			iconColor={token("color.icon.subtle")}
+			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
 			onClick={onClick}

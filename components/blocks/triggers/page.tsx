@@ -51,6 +51,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AtlassianLogo } from "@/components/ui/logo";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import {
 	createAgentTriggerValue,
 	createAgentAutomationRule,
@@ -99,6 +100,10 @@ function renderTriggerProviderIcon(
 	icon: AgentTriggerProviderIcon,
 	label: string,
 ): ReactElement {
+	if (icon.kind === "third-party") {
+		return <BrandLogoMark frame="chip" label={label} name={icon.name} />;
+	}
+
 	if (icon.kind === "image") {
 		return (
 			<Image
@@ -212,6 +217,9 @@ export function renderAgentTriggerProviderCompactTileIcon(trigger: AgentTriggerV
 function getTriggerProviderVisual(icon: AgentTriggerProviderIcon): RichTextMentionVisual {
 	if (icon.kind === "atlassian-logo") {
 		return { kind: "logo", logoName: icon.name };
+	}
+	if (icon.kind === "third-party") {
+		return { kind: "third-party", name: icon.name };
 	}
 	if (icon.kind === "image") {
 		return { kind: "image", src: icon.src };

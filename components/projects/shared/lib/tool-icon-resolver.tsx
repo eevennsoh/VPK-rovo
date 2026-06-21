@@ -4,6 +4,8 @@ import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
 import RoadmapIcon from "@atlaskit/icon/core/roadmap";
@@ -35,7 +37,6 @@ import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import TemplateIcon from "@atlaskit/icon-lab/core/template";
 import PencilIcon from "@atlaskit/icon-lab/core/pencil";
 import SaveIcon from "@atlaskit/icon-lab/core/save";
-import Image from "next/image";
 
 export type { AtlassianLogoName };
 
@@ -51,7 +52,7 @@ export interface ResolvedToolIcon {
 	toolName: string | null;
 	provider: string | null;
 	iconComponent?: (props: NewCoreIconProps) => ReactNode;
-	logoPath?: string;
+	brandName?: ThirdPartyLogoName;
 	atlassianLogoName?: AtlassianLogoName;
 }
 
@@ -269,10 +270,6 @@ function isMcpToolName(toolName: string | null | undefined): boolean {
 	return Boolean(toolName && toolName.trim().startsWith("mcp__"));
 }
 
-function resolveThirdPartyLogoPath(provider: string): string {
-	return `/3p/${provider}/16-borderless.svg`;
-}
-
 function renderVpkLogo(
 	name: AtlassianLogoName,
 	label: string,
@@ -374,7 +371,7 @@ export function resolveToolIcon(options: {
 			label: toolLabel,
 			toolName: normalizedToolName,
 			provider: displayInfo.server ?? thirdPartyProvider,
-			logoPath: resolveThirdPartyLogoPath(thirdPartyProvider),
+			brandName: thirdPartyProvider as ThirdPartyLogoName,
 		};
 	}
 
@@ -438,11 +435,10 @@ export function renderResolvedToolIcon(
 		return renderVpkLogo(resolved.atlassianLogoName, label, wrapperClassName);
 	}
 
-	if (resolved.kind === "third-party-icon" && resolved.logoPath) {
-		const px = size === "medium" ? 16 : 12;
+	if (resolved.kind === "third-party-icon" && resolved.brandName) {
 		return (
 			<span className={wrapperClassName} role="img" aria-label={label}>
-				<Image alt="" aria-hidden height={px} src={resolved.logoPath} width={px} />
+				<LogoThirdParty label="" name={resolved.brandName} size="xxsmall" />
 			</span>
 		);
 	}

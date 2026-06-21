@@ -726,6 +726,10 @@ function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 		return <AtlassianLogoMark name={logoName} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
 	}
 
+	if (skill.publisherBrandName) {
+		return <BrandLogoMark name={skill.publisherBrandName} size="xxsmall" label={getSkillPublisherName(skill)} />;
+	}
+
 	const src = getSkillPublisherAvatarSrc(skill);
 	if (!src) {
 		return null;
