@@ -33,6 +33,18 @@ vpk_bootstrap_env_basename_matches() {
 	esac
 }
 
+vpk_bootstrap_is_provider_worktree_path() {
+	local rel="$1"
+	case "$rel" in
+		.claude/worktrees/*|.rovo/worktrees/*|.codex/worktrees/*|.cursor/worktrees/*)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 vpk_bootstrap_has_project_env_file() {
 	local project_dir="$1"
 	local entry base
@@ -56,6 +68,7 @@ vpk_bootstrap_has_ignored_env_files() {
 	local rel base
 
 	while IFS= read -r -d '' rel; do
+		vpk_bootstrap_is_provider_worktree_path "$rel" && continue
 		base="${rel##*/}"
 		if vpk_bootstrap_env_basename_matches "$base"; then
 			return 0
@@ -95,6 +108,7 @@ vpk_bootstrap_copy_ignored_env_files() {
 	copied_count=0
 
 	while IFS= read -r -d '' rel; do
+		vpk_bootstrap_is_provider_worktree_path "$rel" && continue
 		base="${rel##*/}"
 		vpk_bootstrap_env_basename_matches "$base" || continue
 

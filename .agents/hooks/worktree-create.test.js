@@ -45,6 +45,9 @@ function createTempGitRepo(t) {
 			"node_modules/",
 			".cache/",
 			".claude/worktrees/",
+			".rovo/worktrees/",
+			".codex/worktrees/",
+			".cursor/worktrees/",
 			"",
 		].join("\n"),
 	);
@@ -153,6 +156,13 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 	fs.writeFileSync(path.join(repoRoot, "nested", ".env.local"), "NESTED=true\n");
 	fs.mkdirSync(path.join(repoRoot, ".cache"), { recursive: true });
 	fs.writeFileSync(path.join(repoRoot, ".cache", "not-env"), "cache artifact\n");
+	for (const providerRoot of [".claude", ".rovo", ".codex", ".cursor"]) {
+		fs.mkdirSync(path.join(repoRoot, providerRoot, "worktrees", "stale"), { recursive: true });
+		fs.writeFileSync(
+			path.join(repoRoot, providerRoot, "worktrees", "stale", ".env.local"),
+			`${providerRoot}=stale\n`,
+		);
+	}
 
 	const result = runWorktreeCreateHook(
 		repoRoot,
@@ -184,6 +194,12 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 		"NESTED=true\n",
 	);
 	assert.equal(fs.existsSync(path.join(worktreeDir, ".cache", "not-env")), false);
+	for (const providerRoot of [".claude", ".rovo", ".codex", ".cursor"]) {
+		assert.equal(
+			fs.existsSync(path.join(worktreeDir, providerRoot, "worktrees", "stale", ".env.local")),
+			false,
+		);
+	}
 	assert.equal(fs.readFileSync(recordPath, "utf8"), "install --prefer-offline\n");
 
 	const branch = run("git", ["branch", "--show-current"], { cwd: worktreeDir });
