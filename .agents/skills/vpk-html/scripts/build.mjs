@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /*
  * vpk-html build/validate — Node port of kami's build.py, scoped to the
- * HTML-only output we ship. PDF-only checks (density, orphans, rhythm) are
- * intentionally omitted; vpk-html has no PDF pipeline.
+ * HTML-first output we ship. PDF is supported as an OPTIONAL, derived export
+ * via headless Chromium (--pdf, see scripts/pdf.mjs) — never WeasyPrint/Python,
+ * and it never changes the single-file HTML contract.
  *
  * Usage:
  *   node scripts/build.mjs                          # run all checks on all templates
@@ -10,6 +11,7 @@
  *   node scripts/build.mjs --sync                  # check CSS token drift
  *   node scripts/build.mjs --check-templates       # CSS / token / font sanity across templates
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
+ *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
  */
 
@@ -50,7 +52,7 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null };
+	const args = { mode: "default", file: null, out: null };
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
 		if (arg === "--check-placeholders") { args.mode = "placeholders"; args.file = argv[++i]; }
@@ -58,6 +60,8 @@ function parseArgs(argv) {
 		else if (arg === "--write-styles" || arg === "--write-theme") { args.mode = "write-styles"; }
 		else if (arg === "--check-templates") { args.mode = "templates"; }
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
+		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
+		else if (arg === "--out") { args.out = argv[++i]; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
 	}
@@ -239,6 +243,7 @@ Usage:
   node scripts/build.mjs --sync                    # check CSS token drift
   node scripts/build.mjs --check-templates
   node scripts/build.mjs --verify <file>
+  node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }
@@ -272,6 +277,18 @@ async function main() {
 	if (args.mode === "verify") {
 		const result = await verify(args.file);
 		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+	if (args.mode === "pdf") {
+		if (!args.file) { console.error("--pdf requires a file path"); process.exitCode = 1; return; }
+		const { exportPdf } = await import("./pdf.mjs");
+		const result = await exportPdf(args.file, args.out);
+		if (result.ok) {
+			console.log(`✓ ${path.relative(process.cwd(), result.out)} — ${(result.bytes / 1024).toFixed(0)} KB`);
+		} else {
+			console.error(`✗ PDF export produced an empty file: ${result.out}`);
+			process.exitCode = 1;
+		}
 		return;
 	}
 
