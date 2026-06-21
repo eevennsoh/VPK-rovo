@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /*
  * vpk-html build/validate — Node port of kami's build.py, scoped to the
- * HTML-only output we ship. PDF-only checks (density, orphans, rhythm) are
- * intentionally omitted; vpk-html has no PDF pipeline.
+ * HTML-first output we ship. PDF is supported as an OPTIONAL, derived export
+ * via headless Chromium (--pdf, see scripts/pdf.mjs) — never WeasyPrint/Python,
+ * and it never changes the single-file HTML contract.
  *
  * Usage:
  *   node scripts/build.mjs                          # run all checks on all templates
@@ -10,6 +11,7 @@
  *   node scripts/build.mjs --sync                  # check CSS token drift
  *   node scripts/build.mjs --check-templates       # CSS / token / font sanity across templates
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
+ *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
  */
 
@@ -50,7 +52,13 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null };
+	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null };
+	const GATE_FLAGS = {
+		"--check-density": "density",
+		"--check-resume-balance": "resume-balance",
+		"--check-rhythm": "rhythm",
+		"--check-orphans": "orphans",
+	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
 		if (arg === "--check-placeholders") { args.mode = "placeholders"; args.file = argv[++i]; }
@@ -58,6 +66,12 @@ function parseArgs(argv) {
 		else if (arg === "--write-styles" || arg === "--write-theme") { args.mode = "write-styles"; }
 		else if (arg === "--check-templates") { args.mode = "templates"; }
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
+		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
+		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
+		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
+		else if (arg === "--out") { args.out = argv[++i]; }
+		else if (arg === "--origin") { args.origin = argv[++i]; }
+		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
 	}
@@ -239,6 +253,9 @@ Usage:
   node scripts/build.mjs --sync                    # check CSS token drift
   node scripts/build.mjs --check-templates
   node scripts/build.mjs --verify <file>
+  node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
+  node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
+  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }
@@ -272,6 +289,46 @@ async function main() {
 	if (args.mode === "verify") {
 		const result = await verify(args.file);
 		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+	if (args.mode === "pdf") {
+		if (!args.file) { console.error("--pdf requires a file path"); process.exitCode = 1; return; }
+		const { exportPdf } = await import("./pdf.mjs");
+		const result = await exportPdf(args.file, args.out);
+		if (result.ok) {
+			console.log(`✓ ${path.relative(process.cwd(), result.out)} — ${(result.bytes / 1024).toFixed(0)} KB`);
+		} else {
+			console.error(`✗ PDF export produced an empty file: ${result.out}`);
+			process.exitCode = 1;
+		}
+		return;
+	}
+	if (args.mode === "landing") {
+		if (!args.file) { console.error("--landing requires a file path"); process.exitCode = 1; return; }
+		const { processLanding } = await import("./landing.mjs");
+		const { companions, outDir, verify } = await processLanding(args.file, { out: args.out, origin: args.origin });
+		console.log(`✓ emitted ${companions.length} companion files → ${path.relative(process.cwd(), outDir)} (${companions.join(", ")})`);
+		if (verify.ok) {
+			console.log("✓ responsive verify clean (1280/880/480: no overflow, fonts load, no console errors)");
+		} else {
+			console.log("✗ responsive verify");
+			for (const issue of verify.issues) console.log(`  ${issue}`);
+			process.exitCode = 1;
+		}
+		return;
+	}
+	if (args.mode === "gate") {
+		const { runGates } = await import("./gates.mjs");
+		const { results } = await runGates(args.file, { gates: [args.gate] });
+		let total = 0;
+		for (const { gate, findings } of results) {
+			if (findings.length === 0) { console.log(`✓ ${gate}: clean`); continue; }
+			total += findings.length;
+			console.log(`${args.strict ? "✗" : "⚠"} ${gate}: ${findings.length} finding${findings.length === 1 ? "" : "s"}`);
+			for (const f of findings) console.log(`    - ${f}`);
+		}
+		if (total > 0 && args.strict) process.exitCode = 1;
+		else if (total > 0) console.log(`(advisory — warnings only; pass --strict to fail)`);
 		return;
 	}
 

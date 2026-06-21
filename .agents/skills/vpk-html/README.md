@@ -75,12 +75,15 @@ node scripts/build.mjs --verify <file>            # Playwright render + load che
 node scripts/check-html.mjs <file>                # static HTML validity
 node scripts/ensure-fonts.mjs                     # fetch fonts to assets/fonts/
 
-node scripts/port-templates.mjs                   # re-port templates from kami
-node scripts/port-diagrams.mjs                    # re-port diagrams from kami
-node scripts/port-demos.mjs                       # re-port kami's curated demos
-node scripts/port-html-effectiveness.mjs          # regenerate Phase 2 engineering templates
-node scripts/rescue-demos.mjs                     # regenerate the 4 vpk-native demos
-node scripts/rescue-html-effectiveness-demos.mjs  # copy + restyle direct Phase 2 upstream demo ports
+node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF (Chromium, Node-only)
+node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]  # landing companions + responsive verify
+node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
+
+node scripts/port-kami.mjs [--templates|--diagrams|--demos]  # re-port templates + diagrams + curated demos from kami
+node scripts/port-engineering.mjs                 # regenerate Phase 2 engineering templates
+node scripts/build-demos.mjs [--curated|--landing]  # regenerate curated demos + landing mock previews
+node scripts/port-engineering-demos.mjs           # copy + restyle direct Phase 2 upstream demo ports
+node scripts/landing.mjs                          # regenerate assets/landing/ shells
 ```
 
 ## Directory map
@@ -99,7 +102,7 @@ node scripts/rescue-html-effectiveness-demos.mjs  # copy + restyle direct Phase 
 | `assets/fonts/` | Charlie Display, Charlie Text, and Atlassian Mono (inlined as base64 at port time) |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
 | `references/` | Anti-patterns, diagrams, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
-| `scripts/` | build (validator), check-html, shared helpers, port-*.mjs, rescue-demos (regenerate vpk demos), ensure-fonts |
+| `scripts/` | build (validator), check-html, shared helpers, port-*.mjs, build-demos (regenerate demos), landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road
 

@@ -270,6 +270,8 @@
     --border:    var(--rule);
     --border-soft:var(--rule);
     --tag-bg:    var(--primary-blue-tint);
+    --breaking-bg:var(--danger-tint);
+    --breaking-fg:var(--danger);
 
     --serif: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --sans: var(--serif);
@@ -294,80 +296,88 @@
   strong { font-weight: 500; }
   .hl { color: var(--brand); font-weight: 500; }
 
-  /* VERSION HEADER */
-  .version-header {
-    text-align: center;
-    margin-bottom: 24pt;
-    padding-bottom: 16pt;
+  /* HEADER - left-aligned editorial opener (matches the one-pager) */
+  .header {
+    margin-bottom: 20pt;
+    padding-bottom: 13pt;
     border-bottom: 0.5pt solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20pt;
   }
-  .version-logo {
+  .title-block { flex: 1; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7pt;
     font-family: var(--sans);
-    font-size: 14pt;
-    font-weight: 500;
+    font-size: 9pt;
     color: var(--brand);
-    letter-spacing: 2pt;
+    letter-spacing: 1.5pt;
     text-transform: uppercase;
+    font-weight: 500;
     margin-bottom: 8pt;
   }
-  .version-title {
+  .eyebrow::before {
+    content: "";
+    width: 8pt;
+    height: 1.5pt;
+    border-radius: 0.75pt;
+    background: var(--brand);
+    flex-shrink: 0;
+  }
+  h1 {
     font-family: var(--serif);
-    font-size: 30pt;
+    font-size: 29pt;
     font-weight: 500;
     color: var(--near-black);
-    line-height: 1.15;
+    line-height: 1.1;
     letter-spacing: -0.5pt;
-    margin-bottom: 6pt;
+    margin-bottom: 7pt;
   }
-  .version-tagline {
-    font-size: 12pt;
+  .subtitle {
+    font-size: 11.5pt;
     color: var(--olive);
-    line-height: 1.5;
+    line-height: 1.45;
+    max-width: 150mm;
   }
-  .version-date {
+  .meta {
     font-size: 10pt;
     color: var(--stone);
-    margin-top: 6pt;
-    font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
-  /* SECTIONS */
+  /* SECTION HEAD - brand left bar */
   h2 {
     font-family: var(--serif);
-    font-size: 16pt;
+    font-size: 14pt;
     font-weight: 500;
     color: var(--near-black);
-    margin: 20pt 0 8pt 0;
+    margin: 20pt 0 10pt 0;
     border-left: 2.5pt solid var(--brand);
     border-radius: 1.5pt;
-    padding-left: 8pt;
+    padding-left: 9pt;
     break-after: avoid;
   }
-
-  h3 {
-    font-size: 13pt;
-    font-weight: 500;
-    color: var(--dark-warm);
-    margin: 14pt 0 4pt 0;
-    break-after: avoid;
-  }
+  h2:first-of-type { margin-top: 0; }
 
   p { margin: 0 0 8pt 0; line-height: 1.55; widows: 2; orphans: 2; }
+  code { font-family: var(--mono); font-size: 0.92em; }
 
-  /* CHANGE LIST */
-  ol.changes {
-    margin: 6pt 0 14pt 0;
-    padding-left: 24pt;
-    line-height: 1.55;
-  }
+  /* CHANGE LIST - numbered, brand-colored markers, bold lead-in then detail */
+  ol.changes { margin: 0; padding-left: 18pt; }
   ol.changes li {
-    margin-bottom: 4pt;
+    margin-bottom: 7pt;
+    padding-left: 3pt;
+    line-height: 1.55;
+    break-inside: avoid;
   }
-  ol.changes li::marker {
-    color: var(--brand);
-    font-weight: 500;
-  }
+  ol.changes li:last-child { margin-bottom: 0; }
+  ol.changes li::marker { color: var(--brand); font-weight: 500; }
+  ol.changes li strong { font-weight: 500; color: var(--near-black); }
+  ol.changes li .hl { color: var(--brand); font-weight: 500; }
 
   /* TAG */
   .tag {
@@ -384,32 +394,20 @@
     margin-right: 3pt;
   }
   .tag.breaking {
-    background: var(--danger-tint);
-    color: var(--danger);
+    background: var(--breaking-bg);
+    color: var(--breaking-fg);
   }
 
-  /* CALLOUT */
-  .callout {
-    background: var(--ivory);
-    border-left: 2pt solid var(--brand);
-    padding: 8pt 14pt;
-    border-radius: 3pt;
-    margin: 12pt 0;
-    line-height: 1.55;
-    break-inside: avoid;
-  }
-
-  /* THANKS */
+  /* ACKNOWLEDGEMENTS - a quiet labelled note, not a filled card, so the page
+     stays flat. The small brand label is the only marker it needs. */
   .thanks {
-    margin-top: 16pt;
-    padding: 10pt 14pt;
-    background: var(--ivory);
-    border-left: 1.4pt solid var(--brand);
-    border-radius: 4pt;
-    font-size: 10pt;
+    margin-top: 18pt;
+    font-size: 9.5pt;
     line-height: 1.55;
+    color: var(--olive);
     break-inside: avoid;
   }
+  .thanks .hl { color: var(--brand); font-weight: 500; }
   .thanks-label {
     font-family: var(--sans);
     font-size: 9pt;
@@ -427,9 +425,11 @@
     border-top: 0.3pt dotted var(--border);
     font-size: 9pt;
     color: var(--stone);
-    text-align: center;
     line-height: 1.5;
+    display: flex;
+    justify-content: space-between;
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3pt;
   }
 
 
@@ -555,50 +555,51 @@
 </style>
 </head>
 <body>
-<main aria-label="vpk-html mock preview">
+<main>
 
-<!-- VERSION HEADER -->
-<div class="version-header">
-  <div class="version-logo">vpk-html</div>
-  <div class="version-title">2026.05.12 Landing Demo Separation</div>
-  <div class="version-tagline">Landing rows now open filled mock previews instead of raw placeholder-bearing sources.</div>
-  <div class="version-date">May 12, 2026</div>
+<!-- HEADER -->
+<div class="header">
+  <div class="title-block">
+    <div class="eyebrow">Release Notes</div>
+    <h1>vpk-html 2026.05.12</h1>
+    <div class="subtitle">Landing rows now open filled mock previews instead of raw placeholder-bearing sources.</div>
+  </div>
+  <div class="meta">May 12, 2026</div>
 </div>
 
-<!-- CHANGELOG -->
-<h2>Changelog</h2>
-
-<h3>Breaking Changes</h3>
+<!-- Each entry: a bold lead-in, then a colon and the detail. Numbers carry
+     sequence and restart per section. Drop any section that does not apply. -->
+<h2>Breaking Changes</h2>
 <ol class="changes">
-  <li><span class="tag breaking">Breaking</span> None for the authoring workflow. Source templates and diagram primitives remain in place.</li>
+  <li><span class="tag breaking">Breaking</span> <strong>Filled mock content for the landing preview.</strong>: Filled mock content for the landing preview.</li>
 </ol>
 
-<h3>Features</h3>
+<h2>Features</h2>
 <ol class="changes">
-  <li>Added explicit mock demo files for five base document templates.</li>
-  <li>Added mock preview files for all fourteen inline diagram primitives.</li>
-  <li>Updated the landing copy and row labels to describe the demo-only path.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Representative mock content for the landing demo preview.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Representative mock content for the landing demo preview.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Representative mock content for the landing demo preview.</li>
 </ol>
 
-<h3>Fixes</h3>
+<h2>Fixes</h2>
 <ol class="changes">
-  <li>Removed direct landing links to `assets/templates/`.</li>
-  <li>Removed direct landing links to `assets/diagrams/`.</li>
-  <li>Added a regression test that validates every landing target with `check-html.mjs`.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Filled mock content for the landing preview.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Filled mock content for the landing preview.</li>
+  <li><strong>Filled mock content for the landing preview.</strong>: Filled mock content for the landing preview.</li>
 </ol>
 
-<!-- THANKS (optional) -->
+<!-- ACKNOWLEDGEMENTS (optional) -->
 <div class="thanks">
   <div class="thanks-label">Acknowledgements</div>
-  Thanks to the local VPK maintainers for keeping demos and source templates clearly separated.
+  Filled mock content for the landing preview.
 </div>
 
 <!-- FOOTER -->
 <div class="changelog-footer">
-  Offline HTML artifact templates for polished local documents and diagrams.<br>
-  file://vpk-html/index.html
+  <span>Offline HTML artifact templates for polished local documents and diagrams.</span>
+  <span>file://vpk-html/index.html</span>
 </div>
-</main>
 
-</body>
+
+</main></body>
 </html>

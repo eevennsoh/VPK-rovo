@@ -261,7 +261,6 @@
   :root {
     --parchment: var(--paper);
     --ivory:     var(--paper);
-    --sand:      var(--rule);
     --near-black:var(--ink);
     --dark-warm: var(--ink);
     --olive:     var(--muted-text);
@@ -291,10 +290,9 @@
   .serif { font-family: var(--serif); }
 
   .header {
-    border-left: 2.5pt solid var(--brand);
-    border-radius: 1.5pt;
-    padding-left: 8pt;
-    margin-bottom: 14pt;
+    margin-bottom: 16pt;
+    padding-bottom: 12pt;
+    border-bottom: 0.5pt solid var(--border);
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -302,12 +300,23 @@
   }
   .title-block { flex: 1; }
   .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7pt;
     font-size: 9pt;
     color: var(--brand);
-    letter-spacing: 1pt;
+    letter-spacing: 1.5pt;
     text-transform: uppercase;
-    margin-bottom: 4pt;
+    margin-bottom: 7pt;
     font-weight: 500;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 8pt;
+    height: 1.5pt;
+    border-radius: 0.75pt;
+    background: var(--brand);
+    flex-shrink: 0;
   }
   h1 {
     font-family: var(--serif);
@@ -330,6 +339,14 @@
     line-height: 1.5;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+  /* Brand logo slot (optional, from brand profile; styles apply only once uncommented). */
+  .brand-logo {
+    height: 44px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    align-self: flex-start;
   }
 
   /* METRICS - horizontal baseline, no containers (matches resume aesthetic). */
@@ -363,7 +380,28 @@
     font-size: 9pt;
     color: var(--olive);
     line-height: 1.3;
+    white-space: nowrap;
   }
+
+  /* PRODUCT SHOT (optional) - one real screenshot as the page's visual anchor.
+     Uncomment the <figure> in the body, point src at a local image, and tune
+     .frame height to fill the page. object-fit trims dead margin, not the window. */
+  .product-shot { margin-bottom: 16pt; break-inside: avoid; }
+  .product-shot .frame {
+    height: 110mm;
+    overflow: hidden;
+    border-radius: 5pt;
+    box-shadow: 0 1.5pt 6pt color-mix(in srgb, var(--ink) 16%, transparent);
+  }
+  .product-shot .frame img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center; display: block;
+  }
+  .product-shot figcaption {
+    margin-top: 7pt; font-size: 8.5pt;
+    color: var(--stone); line-height: 1.45; text-align: center;
+  }
+  .product-shot figcaption .hl { color: var(--brand); font-weight: 500; }
 
   section { margin-bottom: 18pt; break-inside: avoid; }
   section:last-of-type { margin-bottom: 0; }
@@ -401,22 +439,15 @@
   }
 
   ul.dash {
-    list-style: none;
     margin: 0;
-    padding: 0;
+    padding-left: 16pt;
   }
   ul.dash li {
-    position: relative;
-    padding-left: 14pt;
-    margin-bottom: 4pt;
+    margin-bottom: 5pt;
     line-height: 1.45;
   }
-  ul.dash li::before {
-    content: "\2013";
-    position: absolute;
-    left: 0;
-    color: var(--brand);
-  }
+  ul.dash li:last-child { margin-bottom: 0; }
+  ul.dash li::marker { color: var(--brand); }
 
   .timeline {
     display: flex;
@@ -640,7 +671,7 @@
 </style>
 </head>
 <body>
-<main aria-label="vpk-html mock preview">
+<main>
 
 <div class="header">
   <div class="title-block">
@@ -653,6 +684,9 @@
     2026.05.12<br>
     Mock preview
   </div>
+  <!-- Brand logo slot (optional, from the brand profile logo field). Leave commented when there is no logo; do not insert a broken image.
+       To use, uncomment and set src to an expanded local absolute path:
+  <img class="brand-logo" src="/absolute/path/to/logo.svg" alt=""> -->
 </div>
 
 <div class="metrics">
@@ -677,6 +711,14 @@
 <p class="lead">
   The landing page now links to <span class="hl">filled mock previews</span> instead of raw placeholder-bearing sources. Authors can still copy templates from the documented source tables when they need a reusable starting point.
 </p>
+
+<!-- Optional hero product shot. Uncomment, point src at a local screenshot, and
+     tune .frame height (in the CSS) so the page fills without overflowing.
+<figure class="product-shot">
+  <div class="frame"><img src="Filled mock content for the landing preview." alt="Filled mock content for the landing preview."></div>
+  <figcaption>Representative mock content for the landing demo preview.</figcaption>
+</figure>
+-->
 
 <div class="two-col">
   <section>
@@ -729,7 +771,7 @@
   <span>LOCAL DEMO</span>
   <span>1 of 1 - vpk-html</span>
 </div>
-</main>
 
-</body>
+
+</main></body>
 </html>

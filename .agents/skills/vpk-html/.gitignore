@@ -5,6 +5,10 @@
 .DS_Store
 *.log
 
+# Derived, on-demand PDF exports (build.mjs --pdf) are never committed — the
+# single-file HTML is the source of truth; PDF is regenerated when needed.
+*.pdf
+
 # Local payload scratch space (not part of the example fixture set)
 /local/
 /.tmp/

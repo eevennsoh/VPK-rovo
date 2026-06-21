@@ -283,6 +283,9 @@
     --serif: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --sans: var(--serif);
     --mono:  "Atlassian Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    --rhythm-module:  14pt;
+    --rhythm-section: 18pt;
   }
 
   html, body { background: var(--parchment); }
@@ -308,13 +311,15 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 14pt;
-    border-left: 2.5pt solid var(--brand);
-    border-radius: 1.5pt;
-    padding-left: 8pt;
+    margin-bottom: var(--rhythm-module);
+    padding-bottom: 10pt;
+    border-bottom: 0.5pt solid var(--border);
   }
   .ticker-block { flex: 1; }
   .ticker-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7pt;
     font-family: var(--sans);
     font-size: 9pt;
     color: var(--brand);
@@ -322,6 +327,14 @@
     text-transform: uppercase;
     font-weight: 500;
     margin-bottom: 4pt;
+  }
+  .ticker-eyebrow::before {
+    content: "";
+    width: 8pt;
+    height: 1.5pt;
+    border-radius: 0.75pt;
+    background: var(--brand);
+    flex-shrink: 0;
   }
   .ticker-name {
     font-family: var(--serif);
@@ -394,6 +407,7 @@
     font-size: 9pt;
     color: var(--olive);
     line-height: 1.3;
+    white-space: nowrap;
   }
 
   /* SECTIONS */
@@ -835,6 +849,6 @@
   <span>{{AUTHOR}} · {{DATE}}</span>
 </div>
 
-</main>
-</body>
+
+</main></body>
 </html>

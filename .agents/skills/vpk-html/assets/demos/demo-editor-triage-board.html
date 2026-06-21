@@ -1,3 +1,4 @@
+<!-- Copyright 2026 Anthropic PBC · SPDX-License-Identifier: Apache-2.0 -->
 <!doctype html>
 <!-- Source: https://github.com/ThariqS/html-effectiveness/blob/main/18-editor-triage-board.html -->
 <html lang="en" data-vpk-upstream-demo="html-effectiveness" data-vpk-literal-double-braces="true">
@@ -9,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3C%2Fsvg%3E">
-<title>Birchline — Cycle 14 triage</title>
+<title>Acme — Cycle 14 triage</title>
 <style>
 /* vpk-html validation shim: local fonts and offline checks. */
 @font-face {
@@ -905,7 +906,7 @@ svg [stroke="#d1cfc5"] {
 <div class="wrap">
 
   <header>
-    <div class="eyebrow">Birchline / editor / triage</div>
+    <div class="eyebrow">Acme / editor / triage</div>
     <h1>Cycle 14 triage</h1>
     <p class="sub">
       Twenty-four open Linear tickets, pre-sorted into a best guess. Drag them
@@ -1128,7 +1129,7 @@ svg [stroke="#d1cfc5"] {
   // ---------- export ----------
   function buildMarkdown() {
     var lines = [];
-    lines.push('# Birchline — Cycle 14 triage');
+    lines.push('# Acme — Cycle 14 triage');
     lines.push('');
     COLUMNS.forEach(function (c) {
       var rows = tickets.filter(function (t) { return t.col === c.key; });

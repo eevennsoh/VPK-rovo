@@ -122,7 +122,7 @@ The ported diagrams are committed. If you want to refresh from kami's source
 (e.g., kami released a new diagram type), run:
 
 ```bash
-node .agents/skills/vpk-html/scripts/port-diagrams.mjs
+node .agents/skills/vpk-html/scripts/port-kami.mjs --diagrams
 ```
 
 The port script preserves SVG geometry verbatim and rewrites only the chrome

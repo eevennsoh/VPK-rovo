@@ -8,12 +8,12 @@
 	"plugins": [
 		{
 			"name": "vpk-html",
-			"description": "Render structured payloads into offline, single-file HTML artifacts with a terminal × blueprint identity. Built for engineering work: PR writeups, code reviews, status reports, post-mortems, math handouts, prototypes, and editorial documents.",
+			"description": "Render supplied material into offline, single-file HTML artifacts with the Atlassian deck identity (Charlie + Atlassian Mono, ADS tokens, dotted-grid canvas). HTML-first, Node-only, with an optional derived PDF export and a landing/product-site track. Built for documents and engineering work: one-pagers, reports, decks, changelogs, portfolios, resumes, PR writeups, code reviews, status reports, incident reports, and more.",
 			"category": "documents",
 			"source": "./",
 			"homepage": "https://github.com/eevennsoh/vpk-rovo",
 			"skills": ["./"],
-			"strict": false
+			"strict": true
 		}
 	]
 }
