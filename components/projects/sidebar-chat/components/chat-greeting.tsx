@@ -359,7 +359,7 @@ function CustomAgentGreeting({
 						variants={activeContainerVariants}
 					>
 						<motion.div variants={activeItemVariants}>
-							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
+							<AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 						</motion.div>
 						<motion.div className={cn("flex flex-col gap-2", isAgentTest ? "items-start" : "items-center")} variants={activeItemVariants}>
 							<Heading size="large" className={isAgentTest ? "text-left" : "text-center"}>{agent.name}</Heading>

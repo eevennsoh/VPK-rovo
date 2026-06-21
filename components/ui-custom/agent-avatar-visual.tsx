@@ -3,6 +3,8 @@
 import Image from "next/image";
 
 import { AtlassianLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /** Maps a square pixel size to the nearest ADS logo size token. */
 const PX_TO_LOGO_SIZE: Record<number, LogoProps["size"]> = {
@@ -18,6 +20,8 @@ export interface AgentAvatarVisualProps {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 	label?: string;
 	/** Square pixel size for both the image and the logo. */
 	sizePx: number;
@@ -26,12 +30,14 @@ export interface AgentAvatarVisualProps {
 }
 
 /**
- * Renders an agent's avatar as either the ADS brand logo (when `logoName` is set)
- * or a static image (`avatarSrc`). Returns null when neither is provided.
+ * Renders an agent's avatar as the ADS brand logo (`logoName`), the upstream
+ * third-party package mark (`brandName`), or a static image (`avatarSrc`).
+ * Returns null when none is provided.
  */
 export function AgentAvatarVisual({
 	avatarSrc,
 	logoName,
+	brandName,
 	label,
 	sizePx,
 	className,
@@ -39,6 +45,10 @@ export function AgentAvatarVisual({
 }: Readonly<AgentAvatarVisualProps>) {
 	if (logoName) {
 		return <AtlassianLogo name={logoName} size={PX_TO_LOGO_SIZE[sizePx] ?? "small"} themeAware label={label} />;
+	}
+
+	if (brandName) {
+		return <LogoThirdParty name={brandName} size={PX_TO_LOGO_SIZE[sizePx] ?? "small"} label={label ?? ""} />;
 	}
 
 	return avatarSrc ? (

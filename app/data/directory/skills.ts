@@ -201,7 +201,7 @@ export function isSkillPublisherPerson(skill: SkillsDirectorySkill): boolean {
  * set, rendered via the ADS logo component rather than a static asset.
  */
 export function getSkillPublisherLogoName(skill: SkillsDirectorySkill): AtlassianLogoName | undefined {
-	return getSkillPublisherAvatarSrc(skill) ? undefined : "atlassian";
+	return getSkillPublisherAvatarSrc(skill) || skill.publisherBrandName ? undefined : "atlassian";
 }
 
 export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory | undefined {

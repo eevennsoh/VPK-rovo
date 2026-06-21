@@ -160,6 +160,7 @@ export function RovoAppBrand() {
 						>
 							<AgentAvatarVisual
 								avatarSrc={selectedAgent.avatarSrc}
+								brandName={selectedAgent.brandName}
 								logoName={selectedAgent.logoName}
 								label={selectedAgent.name}
 								sizePx={16}

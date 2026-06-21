@@ -1449,6 +1449,10 @@ function getExperimentalTemplateDirectoryAppLogo(app: DirectoryApp) {
 		return <AtlassianLogoMark label={app.name} name={app.logoName ?? "atlassian"} size="medium" />;
 	}
 
+	if (app.brandName) {
+		return <BrandLogoMark frame="tile" label={app.name} name={app.brandName} size="medium" />;
+	}
+
 	const src = app.logoSrc ?? app.avatarSrc;
 	return src ? <BrandLogoMark frame="tile" label={app.name} size="medium" src={src} /> : null;
 }

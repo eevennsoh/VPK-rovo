@@ -783,7 +783,7 @@ function RovoAppCustomAgentEmptyState({
 		>
 			<div className="flex max-w-[520px] flex-col items-center gap-3">
 				<motion.div variants={itemVariants}>
-					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
+					<AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
 					<Heading size="xlarge">{agent.name}</Heading>
