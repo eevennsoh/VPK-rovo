@@ -20,6 +20,36 @@ produce a document, copy a template into a working directory and fill its
 
 ---
 
+## Step 0 · Brand profile (optional, baked at fill time)
+
+Before extracting intent, check for a brand profile at
+`~/.config/vpk-html/brand.md` (fallback `~/.vpk-html/brand.md`). It is optional —
+if absent, render with the built-in Atlassian identity (blue accent) and skip
+this step. There is no runtime; **you bake the profile into the output as you
+fill the template.**
+
+The profile is YAML frontmatter (author/name/role/email/website/company,
+`brand_color`, `logo`) plus freeform Markdown "habit notes". Apply with this
+precedence (highest wins): **explicit prompt > your editorial judgment > habit
+notes > frontmatter > built-in default.**
+
+- **Identity placeholders** — substitute `{{AUTHOR}}`, `{{NAME}}`, role, email,
+  `{{PAGE / CONTACT}}`, company, etc. from frontmatter when the prompt doesn't
+  override them.
+- **Brand color (hue-on-accent only)** — if `brand_color: #HEX` is set, change the
+  inline brand alias from `--brand: var(--primary-blue);` to
+  `--brand: var(--ds-brand-override, #HEX);`. This stays offline and check-clean
+  (the `--ds-*` semantic-fallback exemption in `check-html.mjs`). It re-tints the
+  accent only — the ADS palette (`--primary-blue`, status colors, neutrals) stays
+  in force. Do **not** rewrite the whole palette.
+- **Logo** — if `logo:` points at a local image, base64-inline it into the header
+  slot as a `data:image/*` URI (already exempt from the remote-asset check). Never
+  reference a remote or local file path. Missing logo/profile → no logo, ADS blue.
+
+Full format and examples: `references/brand-profile.md`.
+
+---
+
 ## Step 1 · Intent extraction (silent checklist)
 
 Before choosing a template, verify these four dimensions are clear. Do not
