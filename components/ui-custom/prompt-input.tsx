@@ -2594,6 +2594,7 @@ export const PromptInputPreferencesButton = ({
   >
     {PROMPT_INPUT_PREFERENCE_SOURCES.map((source) => (
       <LogoThirdParty
+        borderless
         className="size-4 shrink-0"
         key={source.label}
         label=""

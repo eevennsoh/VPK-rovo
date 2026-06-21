@@ -5,6 +5,7 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import SearchIcon from "@atlaskit/icon/core/search";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 import StarIcon from "@atlaskit/icon/core/star-starred";
+import StarOutlineIcon from "@atlaskit/icon/core/star-unstarred";
 import HomeIcon from "@atlaskit/icon/core/home";
 import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 import HeartIcon from "@atlaskit/icon/core/heart";
@@ -51,6 +52,7 @@ export function IconTileDemoTransparent() {
 		<div className="flex flex-col gap-4">
 			<div className="flex items-end gap-3 text-icon-subtle">
 				<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
+				<IconTile icon={tileIcon(<StarOutlineIcon label="" size="small" />)} label="Star" variant="transparent" size="xxsmall" />
 				<IconTile icon={tileIcon(<HomeIcon label="" size="small" />)} label="Home" variant="transparent" size="small" />
 				<IconTile icon={tileIcon(<AddIcon label="" />)} label="Add" variant="transparent" size="medium" />
 			</div>
