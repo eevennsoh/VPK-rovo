@@ -313,6 +313,9 @@ node .agents/skills/vpk-html/scripts/port-engineering.mjs
 # Copy and restyle direct Phase 2 demo ports from assets/html-effectiveness/
 node .agents/skills/vpk-html/scripts/port-engineering-demos.mjs
 
+# Regenerate curated vpk-native demos + landing mock previews (catalog)
+node .agents/skills/vpk-html/scripts/build-demos.mjs   # or --curated / --landing
+
 # Regenerate landing shells (landing-page.html, docs-site.html)
 node .agents/skills/vpk-html/scripts/landing.mjs
 ```

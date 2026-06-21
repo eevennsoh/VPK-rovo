@@ -81,7 +81,7 @@ node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--c
 
 node scripts/port-kami.mjs [--templates|--diagrams|--demos]  # re-port templates + diagrams + curated demos from kami
 node scripts/port-engineering.mjs                 # regenerate Phase 2 engineering templates
-node scripts/rescue-demos.mjs                     # regenerate the 4 vpk-native demos
+node scripts/build-demos.mjs [--curated|--landing]  # regenerate curated demos + landing mock previews
 node scripts/port-engineering-demos.mjs           # copy + restyle direct Phase 2 upstream demo ports
 node scripts/landing.mjs                          # regenerate assets/landing/ shells
 ```
@@ -102,7 +102,7 @@ node scripts/landing.mjs                          # regenerate assets/landing/ s
 | `assets/fonts/` | Charlie Display, Charlie Text, and Atlassian Mono (inlined as base64 at port time) |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
 | `references/` | Anti-patterns, diagrams, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
-| `scripts/` | build (validator), check-html, shared helpers, port-*.mjs, rescue-demos (regenerate vpk demos), ensure-fonts |
+| `scripts/` | build (validator), check-html, shared helpers, port-*.mjs, build-demos (regenerate demos), landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road
 

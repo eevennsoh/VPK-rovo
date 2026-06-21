@@ -72,7 +72,7 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 - node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]   (advisory gates)
 - node scripts/port-kami.mjs [--templates|--diagrams|--demos]  (re-port templates + diagrams + curated demos from kami)
 - node scripts/port-engineering.mjs                  (regenerate Phase 2 engineering templates)
-- node scripts/rescue-demos.mjs                     (regenerate vpk-native demos)
+- node scripts/build-demos.mjs [--curated|--landing]  (regenerate curated vpk-native demos + landing mock previews)
 - node scripts/port-engineering-demos.mjs            (copy + restyle Phase 2 upstream demo ports)
 - node scripts/landing.mjs                           (regenerate assets/landing/ shells)
 
