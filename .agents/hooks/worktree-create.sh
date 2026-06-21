@@ -7,9 +7,7 @@
 # flow, so we are responsible for:
 #
 #   1. Creating the worktree itself (git worktree add)
-#   2. Copying gitignored env files (mirrors .worktreeinclude semantics,
-#      done defensively here since we own the creation flow)
-#   3. Installing dependencies (pnpm install --prefer-offline)
+#   2. Bootstrapping ignored env files and dependencies
 #   4. Printing the worktree directory path to stdout (Claude Code reads
 #      stdout as the new session's cwd)
 #
@@ -27,9 +25,14 @@ set -euo pipefail
 INPUT="$(cat)"
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+BOOTSTRAP_LIB="${REPO_ROOT}/.agents/hooks/lib/worktree-bootstrap.sh"
 LOG_DIR="${REPO_ROOT}/.claude/hooks/state"
 mkdir -p "$LOG_DIR"
 LOG_FILE="${LOG_DIR}/worktree-create.log"
+
+# Shared bootstrap logic must stay stderr-only here; stdout is reserved for the
+# final worktree path consumed by Claude Code.
+. "$BOOTSTRAP_LIB"
 
 # Debug log: record every invocation so we can diagnose hook behavior later.
 {
@@ -87,29 +90,11 @@ else
 	fi
 fi
 
-# Step 2: copy gitignored env files. Idempotent — skip if already present
-# (e.g. if .worktreeinclude semantics also fired alongside this hook).
-for f in .env.local; do
-	if [ -f "$REPO_ROOT/$f" ] && [ ! -f "$WORKTREE_DIR/$f" ]; then
-		cp "$REPO_ROOT/$f" "$WORKTREE_DIR/$f"
-		echo "WorktreeCreate: copied $f from main worktree" >&2
-	fi
-done
-
-# Step 3: install dependencies. Best-effort: log failure to stderr but do
+# Step 2/3: bootstrap ignored env files and dependencies. Best-effort: log
+# failure to stderr but do
 # NOT abort worktree creation — a worktree with a broken install is still
 # more useful than no worktree at all (the agent can install manually).
-cd "$WORKTREE_DIR"
-if [ -d node_modules ]; then
-	echo "WorktreeCreate: node_modules present — skipping pnpm install" >&2
-else
-	echo "WorktreeCreate: running pnpm install --prefer-offline in $WORKTREE_DIR..." >&2
-	if pnpm install --prefer-offline >&2; then
-		echo "WorktreeCreate: pnpm install complete" >&2
-	else
-		echo "⚠️  WorktreeCreate: pnpm install failed — sub-agent will need to install manually" >&2
-	fi
-fi
+vpk_bootstrap_worktree "$WORKTREE_DIR" "$REPO_ROOT"
 
 # Step 4: echo the worktree path so Claude Code uses it as the session cwd.
 # Must be the only thing on stdout; everything else goes to stderr above.
