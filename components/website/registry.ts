@@ -8688,6 +8688,15 @@ export function getDemoComponent(
 }
 
 const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
+  utility: {
+    "gui-demo-full-config": dynamic(
+      () =>
+        import("./demos/utils/gui-demo").then((mod) => ({
+          default: mod.GUIFullConfigDemo,
+        })),
+      { ssr: false },
+    ),
+  },
   "ui-audio": {
     "audio-player-demo-default": dynamic(
       () =>

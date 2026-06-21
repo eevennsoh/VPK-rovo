@@ -11,11 +11,14 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 	},
 	gui: {
 		description:
-			"A reusable compound component for building interactive animation and parameter control panels. Includes a slider/input control row (GUI.Control) and a card wrapper with copy-values button plus capped, scrollable content (GUI.Panel). Used by Shimmer and Generative Card demo pages.",
-		demoLayout: { previewContentWidth: "full" },
+			"A reusable compound component for building dense animation and visual parameter panels. It owns numeric sliders, normalized percentages, toggles, selects, text, color inputs, editable color lists, RGBA tuple editors, local image/SVG uploads, swatch groups, segmented playback controls, sections, panel actions, and mounted value-key copy filtering.",
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
 		usage: `import { GUI } from "@/components/utils/gui";
 
-<GUI.Panel title="Controls" values={config}>
+<GUI.Panel title="Controls" values={config} onPlay={replay}>
   <GUI.Control
     id="my-param"
     label="Duration"
@@ -26,23 +29,48 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
     step={0.05}
     unit="s"
     onChange={setDuration}
+    valueKeys="duration"
+  />
+  <GUI.ColorInput
+    id="accent"
+    label="Accent"
+    value={accent}
+    defaultValue="#357DE8"
+    onChange={setAccent}
+    valueKeys="accent"
   />
 </GUI.Panel>`,
+		examples: [
+			{
+				title: "Full config",
+				description: "Kitchen-sink panel exercising every shared GUI control type plus optional config paths: descriptions, resets, disabled states, sticky selects, image labels, swatch shapes, mounted value keys, section defaults, and panel actions.",
+				demoSlug: "gui-demo-full-config",
+			},
+		],
 		props: [
-			{ name: "id", type: "string", description: "Unique identifier for the control. Used to generate input element IDs." },
-			{ name: "label", type: "string", description: "Display label shown next to the input." },
-			{ name: "description", type: "string", description: "Optional helper text below the label." },
-			{ name: "value", type: "number", description: "Current numeric value." },
-			{ name: "defaultValue", type: "number", description: "Optional default value. When provided, shows an undo button that resets to this value." },
-			{ name: "min", type: "number", description: "Minimum value for the slider range." },
-			{ name: "max", type: "number", description: "Maximum value for the slider range." },
-			{ name: "step", type: "number", description: "Step increment for the slider. Also determines decimal precision in the readout." },
-			{ name: "unit", type: "string", description: "Optional unit label displayed after the input (e.g. \"px\", \"s\", \"deg\")." },
-			{ name: "onChange", type: "(next: number) => void", description: "Callback fired when the value changes via input or slider." },
+			{ name: "id", type: "string", description: "Unique control identifier used to generate input, select, and upload element IDs." },
+			{ name: "label", type: "string", description: "Compact label shown with the control." },
+			{ name: "description", type: "string", description: "Optional helper text for controls that need extra context." },
+			{ name: "value / checked", type: "number | string | boolean | string[] | [r,g,b,a]", description: "Current value shape for the specific control." },
+			{ name: "defaultValue", type: "number | string | string[] | [r,g,b,a]", description: "Optional reset target. Controls with defaults show a reset action." },
+			{ name: "onChange", type: "(next) => void", description: "Callback fired when the control commits a value change." },
+			{ name: "valueKeys", type: "string | readonly string[]", description: "Registers mounted controls with GUI.Panel so copy-values includes only visible keys when any keys are registered." },
+			{ name: "useGUIValueKeys", type: "(valueKeys?: string | readonly string[]) => void", description: "Hook for custom GUI-adjacent controls that need to participate in mounted value-key copy filtering." },
 		],
 		subComponents: [
-			{ name: "GUI.Control", description: "A single parameter row with label, undo button, number input, slider, and min/max range labels." },
-			{ name: "GUI.Panel", description: "Collapsible card wrapper with a title, copy-values button, chevron toggle, and capped scroll area for controls." },
+			{ name: "GUI.Panel", description: "Collapsible wrapper with title, copy-values action, optional play/refresh action, chevron toggle, capped scroll area, and mounted value-key filtering." },
+			{ name: "GUI.Section", description: "Collapsible section used to group related controls inside a panel." },
+			{ name: "GUI.Control", description: "Numeric slider/input row with label, optional reset, min/max labels, step precision, disabled state, and unit suffix." },
+			{ name: "GUI.PercentControl", description: "Normalized 0..1 numeric control displayed and edited as a percentage." },
+			{ name: "GUI.Toggle", description: "Boolean switch row with optional helper text and value-key registration." },
+			{ name: "GUI.Select", description: "Compact segmented select for short option sets or dropdown select for larger/enriched options. Options support swatch, description, meta text, sticky option, and default reset." },
+			{ name: "GUI.SegmentedControl", description: "Compact option group for string or boolean values with optional Atlaskit icons." },
+			{ name: "GUI.TextInput", description: "Small labeled text input for strings and shader text fields." },
+			{ name: "GUI.ColorInput", description: "String color input for hex or CSS colors with color picker, draft buffering for partial hex input, disabled state, default reset, and value-key registration." },
+			{ name: "GUI.ColorList", description: "Editable string[] color stop list with picker rows, add/remove controls, max color support, disabled state, and default reset." },
+			{ name: "GUI.RgbaColorInput", description: "RGBA unit tuple editor with alpha-aware swatch, alpha slider, HEX/RGB/HSL editing, and default reset." },
+			{ name: "GUI.ImageInput", description: "Local image/SVG upload control with preview, accept filtering, clear/reset hooks, object-fit options, and file adapter callback." },
+			{ name: "GUI.SwatchGroup", description: "Ordered multi-select swatches with minSelected support and canonical option-order output." },
 		],
 	},
 	"streamdown": {

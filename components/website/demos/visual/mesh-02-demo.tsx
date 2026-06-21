@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Mesh2 from "./shaders/mesh2";
 
 const DEFAULT_BACKGROUND_COLOR = "#000000";
@@ -50,14 +49,14 @@ export default function Mesh02Demo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="m2-fill"
 					label="Fill"
 					value={backgroundColor}
 					defaultValue={DEFAULT_BACKGROUND_COLOR}
 					onChange={setBackgroundColor}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="m2-lineColor"
 					label="Line Color"
 					value={lineColor}

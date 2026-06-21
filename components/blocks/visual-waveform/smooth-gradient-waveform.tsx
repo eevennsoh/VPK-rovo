@@ -7,7 +7,7 @@
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import type { RGBAColor } from "./color-utils";
+import type { GUIRGBAColor as RGBAColor } from "@/components/utils/gui-color";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 
 export type WaveformConfig = {

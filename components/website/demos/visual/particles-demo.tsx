@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Particles from "./shaders/particles";
 
 const DEFAULT_BACKGROUND_COLOR = "#000000";
@@ -105,7 +104,7 @@ export default function ParticlesDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="p-background"
 					label="Background"
 					value={bgColor}

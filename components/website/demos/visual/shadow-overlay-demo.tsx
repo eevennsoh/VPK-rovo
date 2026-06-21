@@ -1,13 +1,8 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
+import { useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 
 import ShadowOverlay, {
@@ -26,143 +21,6 @@ const DEFAULT_ANIMATION_SPEED = 30;
 const DEFAULT_NOISE_ENABLED = false;
 const DEFAULT_NOISE_OPACITY = 0.5;
 const DEFAULT_NOISE_SCALE = 1;
-
-function ImageUploadControl({
-	imageSrc,
-	onChange,
-}: {
-	imageSrc: string | undefined;
-	onChange: (next: string | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		(file: File) => {
-			onChange(URL.createObjectURL(file));
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<div className="flex items-center gap-2">
-				<Label className="text-xs font-medium text-text">Custom mask</Label>
-				<span className="text-[11px] text-text-subtlest">
-					Transparent PNG or SVG works best.
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				{imageSrc ? (
-					<Image
-						src={imageSrc}
-						alt="Custom shadow mask"
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border bg-bg-neutral object-cover"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{imageSrc ? "Change" : "Upload"}
-				</button>
-				{imageSrc ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.target.files?.[0];
-						if (file) {
-							handleFile(file);
-						}
-						event.target.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
-
-function clampColorByte(value: number): number {
-	return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function toHexChannel(value: number): string {
-	return clampColorByte(value).toString(16).padStart(2, "0");
-}
-
-function resolvePickerColor(value: string): string {
-	const normalized = value.trim();
-	if (/^#[0-9a-f]{6}$/i.test(normalized)) {
-		return normalized;
-	}
-
-	const rgbMatch = normalized.match(
-		/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)/i,
-	);
-	if (rgbMatch) {
-		return `#${toHexChannel(Number(rgbMatch[1]))}${toHexChannel(Number(rgbMatch[2]))}${toHexChannel(Number(rgbMatch[3]))}`;
-	}
-
-	return "#000000";
-}
-
-function CssColorInput({
-	id,
-	label,
-	value,
-	onChange,
-}: {
-	id: string;
-	label: string;
-	value: string;
-	onChange: (next: string) => void;
-}) {
-	return (
-		<div className="space-y-2">
-			<Label htmlFor={`${id}-text`} className="text-xs font-medium text-text">
-				{label}
-			</Label>
-			<div className="flex items-center gap-2">
-				<input
-					id={`${id}-picker`}
-					type="color"
-					aria-label={`Choose ${label.toLowerCase()}`}
-					value={resolvePickerColor(value)}
-					onInput={(event) => onChange(event.currentTarget.value)}
-					onChange={(event) => onChange(event.currentTarget.value)}
-					className="size-7 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0"
-				/>
-				<Input
-					id={`${id}-text`}
-					type="text"
-					value={value}
-					onChange={(event) => onChange(event.currentTarget.value)}
-					isCompact
-					isMonospaced
-					className="h-7 flex-1 text-xs"
-				/>
-			</div>
-		</div>
-	);
-}
 
 export default function ShadowOverlayDemo() {
 	const [type, setType] = useState<ShadowOverlayType>(DEFAULT_TYPE);
@@ -269,8 +127,13 @@ export default function ShadowOverlayDemo() {
 							onChange={setPresetIndex}
 						/>
 					) : (
-						<ImageUploadControl
-							imageSrc={customImageSrc}
+						<GUI.ImageInput
+							id="shadow-overlay-custom-mask"
+							label="Custom mask"
+							description="Transparent PNG or SVG works best."
+							value={customImageSrc}
+							previewAlt="Custom shadow mask"
+							previewClassName="bg-bg-neutral"
 							onChange={setCustomImageSrc}
 						/>
 					)}
@@ -284,9 +147,10 @@ export default function ShadowOverlayDemo() {
 						]}
 						onChange={setSizing}
 					/>
-					<CssColorInput
+					<GUI.ColorInput
 						id="shadow-overlay-color"
 						label="Color"
+						format="css"
 						value={color}
 						onChange={setColor}
 					/>

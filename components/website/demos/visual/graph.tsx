@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import UndoIcon from "@atlaskit/icon/core/undo";
 import { PersonalGraphNeuralCanvas } from "@/components/arts/personal-graph/personal-graph-neural-canvas";
 import {
 	NEURAL_GRAPH_COLOR_TOKEN_OPTIONS,
@@ -18,7 +17,6 @@ import {
 	DEFAULT_NEURAL_GRAPH_PARAMS,
 	NEURAL_GRAPH_PARAM_SECTIONS,
 	clampNeuralGraphParams,
-	type NeuralGraphColorKey,
 	type NeuralGraphLayoutShape,
 	type NeuralGraphParams,
 	type NeuralGraphNodeShape,
@@ -41,16 +39,7 @@ import type {
 	VaultNodeKind,
 } from "@/components/arts/personal-graph/lib/personal-graph-types";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { GUI, useGUIValueKeys } from "@/components/utils/gui";
+import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -100,6 +89,20 @@ const ROVO_GRAPH_COLORS = {
 	purple: "var(--ds-icon-accent-purple)",
 	surface: "var(--ds-surface)",
 } as const;
+
+const GRAPH_COLOR_SELECT_OPTIONS = NEURAL_GRAPH_COLOR_TOKEN_OPTIONS.map((option) => ({
+	value: option.value,
+	label: option.label,
+	description: option.lightHex,
+	meta: option.token,
+	swatch: option.value,
+}));
+
+function getGraphColorSelectValue(value: string, fallback: string): string {
+	return getNeuralGraphColorTokenOption(value)?.value
+		?? getNeuralGraphColorTokenOption(fallback)?.value
+		?? NEURAL_GRAPH_COLOR_TOKEN_OPTIONS[0].value;
+}
 
 export const ROVO_GRAPH_DEFAULT_PARAMS: NeuralGraphParams = clampNeuralGraphParams({
 	...DEFAULT_NEURAL_GRAPH_PARAMS,
@@ -555,113 +558,6 @@ interface GraphControlsProps {
 	raySoundSettings: NeuralRaySoundSettings;
 }
 
-interface GraphColorTokenControlProps {
-	defaultValue: string;
-	description?: string;
-	id: string;
-	label: string;
-	onChange: (nextColor: string) => void;
-	value: string;
-	valueKey: NeuralGraphColorKey;
-}
-
-function getComparableGraphColorValue(value: string): string {
-	return getNeuralGraphColorTokenOption(value)?.value ?? value.trim().toLowerCase();
-}
-
-function GraphColorTokenControl({
-	defaultValue,
-	description,
-	id,
-	label,
-	onChange,
-	value,
-	valueKey,
-}: Readonly<GraphColorTokenControlProps>) {
-	useGUIValueKeys(valueKey);
-	const selectedOption = getNeuralGraphColorTokenOption(value)
-		?? getNeuralGraphColorTokenOption(defaultValue)
-		?? NEURAL_GRAPH_COLOR_TOKEN_OPTIONS[0];
-	const defaultOption = getNeuralGraphColorTokenOption(defaultValue);
-	const isDefault = getComparableGraphColorValue(value) === getComparableGraphColorValue(defaultValue);
-
-	return (
-		<div className="space-y-2">
-			<div className="flex items-center gap-2">
-				<Label htmlFor={`${id}-select`} className="text-xs font-medium text-text">
-					{label}
-				</Label>
-				<div className="ml-auto">
-					<button
-						type="button"
-						aria-label={`Reset ${label}`}
-						disabled={isDefault}
-						onClick={() => onChange(defaultValue)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon disabled:pointer-events-none disabled:opacity-0"
-					>
-						<UndoIcon label="" size="small" />
-					</button>
-				</div>
-			</div>
-			<Select
-				value={selectedOption.value}
-				onValueChange={(nextValue) => {
-					if (typeof nextValue === "string") {
-						onChange(nextValue);
-					}
-				}}
-			>
-				<SelectTrigger
-					id={`${id}-select`}
-					size="sm"
-					className="w-full min-w-0"
-				>
-					<SelectValue className="min-w-0">
-						<span className="flex min-w-0 items-center gap-2">
-							<span
-								aria-hidden="true"
-								className="size-3 shrink-0 rounded-full border border-border"
-								style={{ backgroundColor: selectedOption.value }}
-							/>
-							<span className="truncate">{selectedOption.label}</span>
-						</span>
-					</SelectValue>
-				</SelectTrigger>
-				<SelectContent align="start" className="min-w-64">
-					<SelectGroup>
-						{NEURAL_GRAPH_COLOR_TOKEN_OPTIONS.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								<span
-									aria-hidden="true"
-									className="size-3 shrink-0 self-center rounded-full border border-border"
-									style={{ backgroundColor: option.value }}
-								/>
-								<span className="flex min-w-0 flex-col">
-									<span className="truncate">{option.label}</span>
-									<span className="truncate font-mono text-[11px] text-text-subtlest">
-										{option.token}
-									</span>
-								</span>
-							</SelectItem>
-						))}
-					</SelectGroup>
-				</SelectContent>
-			</Select>
-			<div className="space-y-1">
-				{description ? (
-					<p className="text-[12px] leading-4 text-text-subtlest">
-						{description}
-					</p>
-				) : null}
-				<p className="font-mono text-[11px] leading-4 text-text-subtlest">
-					{selectedOption.token} · {selectedOption.lightHex}
-					{defaultOption && defaultOption.value !== selectedOption.value ? ` · default ${defaultOption.token}` : ""}
-				</p>
-			</div>
-		</div>
-	);
-}
-
 function GraphControls({
 	defaultInteractionSettings,
 	defaultParams,
@@ -738,14 +634,15 @@ function GraphControls({
 							const value = params[definition.key];
 							const defaultValue = defaultParams[definition.key];
 							return (
-								<GraphColorTokenControl
+								<GUI.Select
 									id={`graph-${definition.key}`}
 									key={definition.key}
 									label={definition.label}
 									description={definition.description}
-									value={value}
-									defaultValue={defaultValue}
-									valueKey={definition.key}
+									value={getGraphColorSelectValue(value, defaultValue)}
+									defaultValue={getGraphColorSelectValue(defaultValue, defaultValue)}
+									options={GRAPH_COLOR_SELECT_OPTIONS}
+									valueKeys={definition.key}
 									onChange={(nextColor) => updateParam(definition.key, nextColor)}
 								/>
 							);
@@ -890,58 +787,64 @@ function GraphControls({
 			</GUI.Section>
 
 			<GUI.Section borderTop title="Node type colors">
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-color-synthesis"
 					label="Synthesis"
 					description="Distilled outputs (graph, knowledge cards, playbooks)"
-					value={params.colorSynthesis}
-					defaultValue={defaultParams.colorSynthesis}
-					valueKey="colorSynthesis"
+					value={getGraphColorSelectValue(params.colorSynthesis, defaultParams.colorSynthesis)}
+					defaultValue={getGraphColorSelectValue(defaultParams.colorSynthesis, defaultParams.colorSynthesis)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="colorSynthesis"
 					onChange={(nextColor) => updateParam("colorSynthesis", nextColor)}
 				/>
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-color-concept"
 					label="Concept"
 					description="Ideas and abstractions (chat, search, decisions)"
-					value={params.colorConcept}
-					defaultValue={defaultParams.colorConcept}
-					valueKey="colorConcept"
+					value={getGraphColorSelectValue(params.colorConcept, defaultParams.colorConcept)}
+					defaultValue={getGraphColorSelectValue(defaultParams.colorConcept, defaultParams.colorConcept)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="colorConcept"
 					onChange={(nextColor) => updateParam("colorConcept", nextColor)}
 				/>
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-color-source"
 					label="Source"
 					description="External feeders (Jira, Confluence, signals)"
-					value={params.colorSource}
-					defaultValue={defaultParams.colorSource}
-					valueKey="colorSource"
+					value={getGraphColorSelectValue(params.colorSource, defaultParams.colorSource)}
+					defaultValue={getGraphColorSelectValue(defaultParams.colorSource, defaultParams.colorSource)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="colorSource"
 					onChange={(nextColor) => updateParam("colorSource", nextColor)}
 				/>
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-color-entity"
 					label="Entity"
 					description="Owners, goals, and named things"
-					value={params.colorEntity}
-					defaultValue={defaultParams.colorEntity}
-					valueKey="colorEntity"
+					value={getGraphColorSelectValue(params.colorEntity, defaultParams.colorEntity)}
+					defaultValue={getGraphColorSelectValue(defaultParams.colorEntity, defaultParams.colorEntity)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="colorEntity"
 					onChange={(nextColor) => updateParam("colorEntity", nextColor)}
 				/>
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-color-raw"
 					label="Raw"
 					description="Unprocessed material (insights, incidents)"
-					value={params.colorRaw}
-					defaultValue={defaultParams.colorRaw}
-					valueKey="colorRaw"
+					value={getGraphColorSelectValue(params.colorRaw, defaultParams.colorRaw)}
+					defaultValue={getGraphColorSelectValue(defaultParams.colorRaw, defaultParams.colorRaw)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="colorRaw"
 					onChange={(nextColor) => updateParam("colorRaw", nextColor)}
 				/>
-				<GraphColorTokenControl
+				<GUI.Select
 					id="graph-node-color"
 					label="Idle"
 					description="Default node fill before hover or selection reveals type colors"
-					value={params.nodeColor}
-					defaultValue={defaultParams.nodeColor}
-					valueKey="nodeColor"
+					value={getGraphColorSelectValue(params.nodeColor, defaultParams.nodeColor)}
+					defaultValue={getGraphColorSelectValue(defaultParams.nodeColor, defaultParams.nodeColor)}
+					options={GRAPH_COLOR_SELECT_OPTIONS}
+					valueKeys="nodeColor"
 					onChange={(nextColor) => updateParam("nodeColor", nextColor)}
 				/>
 			</GUI.Section>
