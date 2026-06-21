@@ -140,7 +140,7 @@ export function ComposerCardBody({
 	return (
 		<div
 			ref={composerRef}
-			className={cn("relative z-10 rounded-xl border border-border bg-surface px-4 py-2.5", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2 pt-3" : undefined)}
+			className={cn("relative z-10 rounded-xl border border-border bg-surface p-3", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2 pt-3" : undefined)}
 			style={{
 				boxShadow: composerUpwardShadow,
 				...(composerHeight
