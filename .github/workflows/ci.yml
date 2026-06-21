@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: pnpm
 
       - name: Verify lockfile registries
         run: node scripts/verify-pnpm-lockfile.js
@@ -49,16 +50,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Debug logo-third-party resolution
-        run: |
-          echo "pnpm: $(pnpm --version)"
-          echo "--- node_modules/@atlassian/logo-third-party symlink ---"
-          ls -la node_modules/@atlassian/ | grep logo-third-party || echo "NO TOP-LEVEL SYMLINK"
-          echo "--- adobe.js present? ---"
-          ls -la node_modules/@atlassian/logo-third-party/dist/esm/entry-points/adobe.js 2>&1 || echo "MISSING adobe.js"
-          echo "--- require.resolve ---"
-          node -e "console.log(require.resolve('@atlassian/logo-third-party/dist/esm/entry-points/adobe.js'))" 2>&1 || echo "require.resolve FAILED"
 
       - name: Run fast PR checks
         run: pnpm run ci:pr
