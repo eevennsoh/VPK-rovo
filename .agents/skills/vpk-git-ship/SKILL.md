@@ -53,6 +53,16 @@ This gate is **not optional** and **not tied to a flag**. Before any pull reques
 
 A merge that lands with unresolved review threads, or without either checking current-head Codex status or recording that Codex review was explicitly unavailable, is a **process failure even if it succeeds mechanically**. Missing/timed-out/unavailable Codex review is not a blocker (see the poll's non-blocking rule) — unresolved *conversations* are. The hard server-side backstop is the branch-protection rule **"Require conversation resolution before merging"** on the default branch; enable it — but note an `--admin` merge overrides it, which is exactly why this agent-side gate must hold regardless.
 
+### GitHub Review Gate Tooling
+
+Use GitHub CLI/API only for review conversation state and resolution:
+
+- Inspect PR state with `gh pr view`.
+- Reconcile review comments/reviews with `gh api repos/<owner>/<repo>/pulls/<pr>/comments` and `gh api repos/<owner>/<repo>/pulls/<pr>/reviews`.
+- Fetch and resolve review conversations with documented GraphQL `reviewThreads`, `addPullRequestReviewThreadReply`, and `resolveReviewThread`.
+
+Do **not** use the GitHub web UI, `@Chrome`, `@Browser`, `@Computer`, browser automation, scraped HTML, or undocumented endpoints to resolve review conversations or clear merge gates. If the user says "resolve the comment", interpret that as "use the documented CLI/API review-thread flow." If GitHub will not expose a resolvable `PRRT_...` thread id through GraphQL, follow the stop rule in [PR Review Remediation](#pr-review-remediation) instead of clicking the web UI.
+
 ## Cleanup is a separate skill
 
 Removing landed worktrees, deleting local branches, and pruning stale tracking refs live in the **`vpk-git-clean`** skill, not here. This split is intentional and physical, not stylistic: VPK background agents (Codex, Claude) almost always run **inside** a `.claude/worktrees/<x>` checkout, and an agent cannot remove the worktree its own shell is sitting in — git refuses, and deleting the directory out from under a running process corrupts the session. Coupling cleanup to every ship therefore left half-done state in the common case and let worktrees pile up.
@@ -212,9 +222,16 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
      --jq '.[] | select(.state != "APPROVED") | {id, author: .user.login, state}'
    ```
 
-   Reconcile **by comment, not by author**: if REST surfaces any review comment or non-approving review (human or bot) that is not represented in a GraphQL thread, the GraphQL read is stale — re-fetch the threads after a short backoff (e.g. 5s, up to ~3 tries) and only conclude "no unresolved threads" once the two sources agree. REST has no resolution field, so it can prove a comment *exists* but never that its thread is *resolved*; GraphQL `isResolved` stays the resolution authority. Do **not** filter this reconciliation by head SHA — an unaddressed comment anchored to an older commit is still a blocking conversation.
+   Reconcile **by comment identity, review state, and GraphQL resolution state, not by author**. REST comments have no resolution field and continue to list historical review comments after their conversations are resolved, so a REST comment row by itself does not prove the thread is unresolved. Instead, every top-level REST review comment (`in_reply_to == null`) must be represented inside a GraphQL review thread, and that thread's `isResolved` field remains the resolution authority. Treat any non-approving REST review (`state != "APPROVED"`) that is not represented by a GraphQL review thread as a separate blocking review signal to classify before merging. If GraphQL omits a top-level REST review comment or non-approving review, re-fetch with bounded backoff before deciding:
 
-   This reconciliation is **source-agnostic and must never wait on any one reviewer**. A review tool that is not configured, disabled, or out of credits simply contributes no comments — that is a genuine clean-empty, not a stale read, and the merge proceeds. The only triggers for suspicion are *disagreement between REST and GraphQL* or *`BLOCKED` while required checks are green*; the mere absence of a Codex (or any) auto-review is never a blocker (see the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge)).
+   ```bash
+   # Repeat the PR view + GraphQL reviewThreads + REST comments/reviews
+   # reconciliation every 5s for up to 30s before declaring the thread hidden.
+   ```
+
+   Only conclude "no unresolved threads" after every GraphQL page has been checked, every top-level REST review comment and non-approving REST review is represented in a GraphQL thread or otherwise classified, and no GraphQL thread has `isResolved == false`. If a top-level REST review comment remains missing from GraphQL after the bounded re-poll, the thread is hidden from the documented resolution path. Stop and report the exact comment URL plus the missing thread id. If a non-approving REST review remains missing from GraphQL after the bounded re-poll, stop and report the review URL or id plus the fact that it needs manual review-state resolution. Do **not** filter reconciliation by head SHA — an unaddressed comment anchored to an older commit is still a blocking conversation.
+
+   This reconciliation is **source-agnostic and must never wait on any one reviewer**. A review tool that is not configured, disabled, or out of credits simply contributes no comments or non-approving reviews — that is a genuine clean-empty, not a stale read, and the merge proceeds. The triggers for suspicion are *any top-level REST review comment missing from GraphQL*, *any non-approving REST review that has not been represented or classified*, *any GraphQL thread with `isResolved == false`*, or *`BLOCKED`/`UNKNOWN` while required checks are green*. `mergeStateStatus: CLEAN` is only supporting evidence; it never proves review comments are resolved by itself. The mere absence of a Codex (or any) auto-review is never a blocker (see the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge)).
 
 2. Filter to `isResolved == false`. If branch protection requires conversation resolution, process **all** unresolved threads, not only threads that look Codex-authored. Codex-only identification is best-effort from author login/body text (`codex`, `openai`, or automation bot names) and is not reliable enough to ignore other unresolved conversations.
 
@@ -264,7 +281,7 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
        }'
    ```
 
-   The normal resolve path requires the GraphQL review-thread id (`PRRT_...`), not the REST review-comment id (`PRRC_...`) and not any numeric thread id scraped from GitHub HTML. If GraphQL cannot provide a resolvable thread id while REST or the GitHub page still shows the review comment, stop before merging and report the exact comment URL plus the fact that the thread needs manual resolution in GitHub. Do not try undocumented `page_data/resolve_thread` endpoints, unauthenticated Browser sessions, or direct UI side channels as a substitute for a verified `resolveReviewThread` result.
+   The normal resolve path requires the GraphQL review-thread id (`PRRT_...`), not the REST review-comment id (`PRRC_...`) and not any numeric thread id scraped from GitHub HTML. If GraphQL cannot provide a resolvable thread id after the bounded CLI/API re-poll above while a top-level REST review comment remains missing from GraphQL, stop before merging and report the exact comment URL plus the fact that the thread needs manual resolution in GitHub. Do not try undocumented `page_data/resolve_thread` endpoints, browser sessions, browser automation, or direct UI side channels as a substitute for a verified `resolveReviewThread` result.
 
 7. Re-fetch review threads after remediation. Continue only when every thread you handled has a verified `isResolved: true` result and there are no unresolved threads. If GitHub API access cannot fetch, reply, resolve, or verify the resolution state, stop and report the blocker instead of queueing/finishing auto-merge.
 
