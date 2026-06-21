@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import {
 	BackendConnectionError,
 	fetchBackend,
-	getBackendUrlCandidates,
 } from "@/app/api/_utils/backend-url";
 import { buildErrorMessage } from "@/app/api/_utils/proxy";
 import { readJsonBody } from "@/app/api/_utils/read-json-body";
@@ -102,24 +101,20 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(data);
 	} catch (error) {
 		if (error instanceof BackendConnectionError) {
-			return NextResponse.json(
-				{
-					error: "Cannot connect to backend server",
-					details: error.cause instanceof Error ? error.cause.message : String(error.cause),
-					backendUrls: error.backendUrls,
+			return new NextResponse("Cannot connect to backend server", {
+				status: 503,
+				headers: {
+					"Content-Type": "text/plain; charset=utf-8",
 				},
-				{ status: 503 }
-			);
+			});
 		}
 
 		console.error("Chat SDK proxy error:", error);
-		return NextResponse.json(
-			{
-				error: "Internal server error",
-				details: error instanceof Error ? error.message : String(error),
-				backendUrls: getBackendUrlCandidates(),
+		return new NextResponse("Internal server error", {
+			status: 500,
+			headers: {
+				"Content-Type": "text/plain; charset=utf-8",
 			},
-			{ status: 500 }
-		);
+		});
 	}
 }
