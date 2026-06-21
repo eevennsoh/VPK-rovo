@@ -601,6 +601,13 @@ const EMPTY_ANNOTATIONS: ArtifactAnnotation[] = [];
 
 type ArtifactVersionHistoryItem = ArtifactDocument["versions"][number];
 
+// Module-level formatters avoid constructing Intl.DateTimeFormat for every visible version row.
+const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+const ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	dateStyle: "medium",
+	timeStyle: "short",
+});
+
 function isSameLocalDate(a: Date, b: Date): boolean {
 	return a.getFullYear() === b.getFullYear()
 		&& a.getMonth() === b.getMonth()
@@ -618,7 +625,7 @@ function getArtifactVersionHistoryGroup(createdAt: string): string {
 		return "Today";
 	}
 
-	return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(date);
+	return ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER.format(date);
 }
 
 function formatArtifactVersionHistoryTimestamp(createdAt: string): string {
@@ -646,10 +653,7 @@ function formatArtifactVersionHistoryTimestamp(createdAt: string): string {
 		return `${hours} hr ago`;
 	}
 
-	return new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(date);
+	return ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER.format(date);
 }
 
 function ArtifactVersionHistoryPanel({
