@@ -8303,10 +8303,6 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   multiports: dynamic(() => import("./demos/utils/multiports-demo"), {
     ssr: false,
   }),
-  "rovo-composer-styles": dynamic(
-    () => import("./demos/utils/rovo-composer-styles-demo"),
-    { ssr: false },
-  ),
   "sound-generation": dynamic(
     () => import("./demos/utils/sound-generation-demo"),
     { ssr: false },
