@@ -71,6 +71,32 @@ test("POST /api/chat-sdk keeps malformed JSON errors on the AI SDK text contract
 	assert.equal(requests.length, 0);
 });
 
+test("POST /api/chat-sdk keeps backend connection errors on the AI SDK text contract", async (t) => {
+	const { POST } = await loadBundledRoute(t);
+	const requests = mockBackendFetch(t, () => {
+		throw new TypeError("fetch failed");
+	});
+
+	const response = await POST(new Request("http://localhost/api/chat-sdk", {
+		body: JSON.stringify({
+			messages: [
+				{
+					id: "user-1",
+					role: "user",
+					parts: [{ type: "text", text: "hi" }],
+				},
+			],
+		}),
+		headers: { "Content-Type": "application/json" },
+		method: "POST",
+	}));
+
+	assert.equal(response.status, 503);
+	assert.equal(response.headers.get("Content-Type"), "text/plain; charset=utf-8");
+	assert.equal(await response.text(), "Cannot connect to backend server");
+	assert.ok(requests.length > 0);
+});
+
 test("POST /api/chat-sdk defaults /agents requests to AI Gateway", async (t) => {
 	const { POST } = await loadBundledRoute(t);
 	const requests = mockBackendFetch(t, () => new Response(
