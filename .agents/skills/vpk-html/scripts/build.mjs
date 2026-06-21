@@ -52,7 +52,13 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, out: null };
+	const args = { mode: "default", file: null, out: null, gate: null, strict: false };
+	const GATE_FLAGS = {
+		"--check-density": "density",
+		"--check-resume-balance": "resume-balance",
+		"--check-rhythm": "rhythm",
+		"--check-orphans": "orphans",
+	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
 		if (arg === "--check-placeholders") { args.mode = "placeholders"; args.file = argv[++i]; }
@@ -61,7 +67,9 @@ function parseArgs(argv) {
 		else if (arg === "--check-templates") { args.mode = "templates"; }
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
+		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
+		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
 	}
@@ -244,6 +252,7 @@ Usage:
   node scripts/build.mjs --check-templates
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
+  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }
@@ -289,6 +298,20 @@ async function main() {
 			console.error(`✗ PDF export produced an empty file: ${result.out}`);
 			process.exitCode = 1;
 		}
+		return;
+	}
+	if (args.mode === "gate") {
+		const { runGates } = await import("./gates.mjs");
+		const { results } = await runGates(args.file, { gates: [args.gate] });
+		let total = 0;
+		for (const { gate, findings } of results) {
+			if (findings.length === 0) { console.log(`✓ ${gate}: clean`); continue; }
+			total += findings.length;
+			console.log(`${args.strict ? "✗" : "⚠"} ${gate}: ${findings.length} finding${findings.length === 1 ? "" : "s"}`);
+			for (const f of findings) console.log(`    - ${f}`);
+		}
+		if (total > 0 && args.strict) process.exitCode = 1;
+		else if (total > 0) console.log(`(advisory — warnings only; pass --strict to fail)`);
 		return;
 	}
 

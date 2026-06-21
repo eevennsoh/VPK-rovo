@@ -1,0 +1,18 @@
+{
+	"density": {
+		"maxTrailingRatio": 0.25,
+		"minSectionHeightPx": 120
+	},
+	"resumeBalance": {
+		"pageHeightPx": 1123,
+		"minLastPageFill": 0.2,
+		"onlyWhenPagesAtLeast": 1.05
+	},
+	"rhythm": {
+		"maxIdenticalConsecutive": 3
+	},
+	"orphans": {
+		"minLastLineChars": 12,
+		"minLastLineWidthRatio": 0.15
+	}
+}
