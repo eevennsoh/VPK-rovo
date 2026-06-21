@@ -38,12 +38,28 @@ jobs:
         # the public npm-remote mirror, so it resolves from `atlassian-npm`, which
         # (unlike npm-remote) requires auth. The project `.npmrc` supplies the
         # registry mapping; this supplies the token, mirroring local `~/.npmrc`.
-        run: echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}" >> "$HOME/.npmrc"
+        # Cover both registry path variants: metadata uses `/artifactory/api/npm/`,
+        # the lockfile tarball URL uses `/api/npm/`.
+        run: |
+          {
+            echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
+            echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
+          } >> "$HOME/.npmrc"
         env:
           ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Debug logo-third-party resolution
+        run: |
+          echo "pnpm: $(pnpm --version)"
+          echo "--- node_modules/@atlassian/logo-third-party symlink ---"
+          ls -la node_modules/@atlassian/ | grep logo-third-party || echo "NO TOP-LEVEL SYMLINK"
+          echo "--- adobe.js present? ---"
+          ls -la node_modules/@atlassian/logo-third-party/dist/esm/entry-points/adobe.js 2>&1 || echo "MISSING adobe.js"
+          echo "--- require.resolve ---"
+          node -e "console.log(require.resolve('@atlassian/logo-third-party/dist/esm/entry-points/adobe.js'))" 2>&1 || echo "require.resolve FAILED"
 
       - name: Run fast PR checks
         run: pnpm run ci:pr
