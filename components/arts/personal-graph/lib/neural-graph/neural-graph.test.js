@@ -1005,6 +1005,50 @@ test("computeNeuralGraphLayout keeps radial origin anchors fixed during ambient 
 	assert.ok(Math.hypot(beta.x, beta.y) > 1);
 });
 
+test("computeNeuralGraphLayout keeps disconnected radial roots from stacking at the origin", async () => {
+	const { computeNeuralGraphLayout } = await layoutModule;
+	const { DEFAULT_NEURAL_GRAPH_PARAMS, clampNeuralGraphParams } = await paramsModule;
+	const { createNeuralGraphStore } = await storeModule;
+	const disconnectedExplorer = {
+		edges: [
+			edge("primary", "alpha"),
+			edge("secondary", "beta"),
+		],
+		generatedAt: "2026-04-30T00:00:00.000Z",
+		nodes: [
+			node("primary", "Primary", "synthesis", 1),
+			node("alpha", "Alpha", "concept", 1),
+			node("secondary", "Secondary", "entity", 1),
+			node("beta", "Beta", "raw", 1),
+		],
+		stats: { danglingCount: 0, edgeCount: 2, nodeCount: 4, rawCount: 1, wikiCount: 3 },
+	};
+	const params = clampNeuralGraphParams({
+		...DEFAULT_NEURAL_GRAPH_PARAMS,
+		amplitude: 0,
+		layoutShape: "radialCluster",
+		maxVisibleNodes: 10,
+		speed: 0,
+		spread: 400,
+	});
+	const layout = computeNeuralGraphLayout({
+		params,
+		selectedNodeId: null,
+		store: createNeuralGraphStore(disconnectedExplorer),
+		viewport: { height: 700, width: 1000 },
+	});
+	const originBranches = layout.treeBranches.filter((branch) => branch.sourceId === null);
+	const firstRoot = layout.nodesById.get(originBranches[0].targetId);
+	const secondRoot = layout.nodesById.get(originBranches[1].targetId);
+
+	assert.equal(originBranches.length, 2);
+	assert.ok(firstRoot);
+	assert.ok(secondRoot);
+	assert.equal(firstRoot.x, 0);
+	assert.equal(firstRoot.y, 0);
+	assert.ok(Math.hypot(secondRoot.x, secondRoot.y) > 1);
+});
+
 test("computeNeuralGraphLayout distributes full-circle radial leaves without duplicating endpoints", async () => {
 	const { computeNeuralGraphLayout } = await layoutModule;
 	const { DEFAULT_NEURAL_GRAPH_PARAMS, clampNeuralGraphParams } = await paramsModule;

@@ -338,18 +338,20 @@ function assignRadialRadii({
 	node,
 	outerRadius,
 	params,
+	pinRootToOrigin,
 	rootRadius,
 }: {
 	maxDepth: number;
 	node: RadialClusterTreeNode;
 	outerRadius: number;
 	params: NeuralGraphParams;
+	pinRootToOrigin: boolean;
 	rootRadius: number;
 }) {
 	if (node.children.length === 0) {
 		node.radius = outerRadius;
 	} else if (node.depth <= 1) {
-		node.radius = 0;
+		node.radius = pinRootToOrigin ? 0 : rootRadius;
 	} else {
 		const depthProgress = maxDepth <= 1 ? 1 : (node.depth - 1) / Math.max(1, maxDepth - 1);
 		const curvedProgress = Math.pow(Math.max(0, Math.min(1, depthProgress)), params.radialDepthCurve);
@@ -357,7 +359,7 @@ function assignRadialRadii({
 	}
 
 	for (const child of node.children) {
-		assignRadialRadii({ maxDepth, node: child, outerRadius, params, rootRadius });
+		assignRadialRadii({ maxDepth, node: child, outerRadius, params, pinRootToOrigin: false, rootRadius });
 	}
 }
 
@@ -482,7 +484,7 @@ function computeRadialClusterLayout({
 	);
 	const maxDepth = forest.reduce((depth, root) => Math.max(depth, getMaxRadialDepth(root)), 1);
 
-	for (const root of forest) {
+	for (const [rootIndex, root] of forest.entries()) {
 		assignRadialLeafAngles({
 			arcAngle,
 			nextLeafIndex,
@@ -490,7 +492,14 @@ function computeRadialClusterLayout({
 			startAngle,
 			totalLeaves,
 		});
-		assignRadialRadii({ maxDepth, node: root, outerRadius, params, rootRadius });
+		assignRadialRadii({
+			maxDepth,
+			node: root,
+			outerRadius,
+			params,
+			pinRootToOrigin: rootIndex === 0,
+			rootRadius,
+		});
 	}
 
 	const treeNodes = flattenRadialClusterForest(forest);
