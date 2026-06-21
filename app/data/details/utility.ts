@@ -54,9 +54,6 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 	"multiports": {
 		description: "A concurrent chat testing surface that renders three independent Sidebar Chat panels side by side. Supports Tab key navigation between panels for multi-stream validation.",
 	},
-	"rovo-composer-styles": {
-		description: "Shared Rovo composer class and CSS utilities for raised chat composers and compact floating composer bars. The demo renders both surfaces with the actual exported class names.",
-	},
 	"image-generation": {
 		description: "An interactive test harness for image generation via AI Gateway. Sends prompts to /api/chat-sdk with provider: \"google\", streams SSE responses, and displays both text and generated images with download support. Configure AI_GATEWAY_URL_GOOGLE (preferred), or use a Google/Gemini AI_GATEWAY_URL, to enable native image generation.",
 	},

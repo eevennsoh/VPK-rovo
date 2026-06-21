@@ -563,7 +563,6 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	utilityComponent("gui", "GUI"),
 	utilityComponent("image-generation", "Image Generation"),
 	utilityComponent("multiports", "Multiports"),
-	utilityComponent("rovo-composer-styles", "Rovo Composer Styles"),
 	utilityComponent("sound-generation", "Sound Generation"),
 	utilityComponent("streamdown", "Streamdown"),
 	utilityComponent("tools-invocation", "Tools Invocation"),
