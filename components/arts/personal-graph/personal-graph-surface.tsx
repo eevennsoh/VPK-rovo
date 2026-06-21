@@ -99,6 +99,8 @@ const PERSONAL_GRAPH_SETTLED_TITLE_RESERVED_HEIGHT =
 	`calc(${PERSONAL_GRAPH_SETTLED_TITLE_SIZE} * ${PERSONAL_GRAPH_TITLE_LINE_HEIGHT} * ${PERSONAL_GRAPH_TITLE_LINE_COUNT})`;
 const PERSONAL_GRAPH_INITIAL_TITLE_RESERVED_HEIGHT =
 	`calc(${PERSONAL_GRAPH_SETTLED_TITLE_SIZE} * ${PERSONAL_GRAPH_TITLE_LINE_HEIGHT} * ${PERSONAL_GRAPH_TITLE_LINE_COUNT} * ${PERSONAL_GRAPH_INITIAL_TITLE_SCALE})`;
+const PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS = 0.7;
+const PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS = 0.4;
 const PERSONAL_GRAPH_PROMPT_INPUT_BOTTOM_PX = 24;
 const PERSONAL_GRAPH_PROMPT_INPUT_HEIGHT_PX = 64;
 const PERSONAL_GRAPH_TAIL_PROMPT_GAP_PX = 8;
@@ -504,6 +506,7 @@ export function PersonalGraphSurface({
 	const isHeaderRevealed = phase === "title" || phase === "subtext" || phase === "controls" || phase === "settle" || phase === "search" || phase === "graph" || phase === "done";
 	const isSubtextRevealed = phase === "subtext" || phase === "controls" || phase === "settle" || phase === "search" || phase === "graph" || phase === "done";
 	const isIntroSettled = phase === "settle" || phase === "search" || phase === "graph" || phase === "done";
+	const isGraphIntroPhase = phase === "graph" || phase === "done";
 	const isVaultReady = vaultSettings?.status === "ready";
 	const isTwgReady = isTwgMode && Boolean(twgGeneratedAt) && !isTwgConnecting && !isTwgAuthError;
 	const isReady = isTwgMode ? isTwgReady : isVaultReady;
@@ -519,7 +522,8 @@ export function PersonalGraphSurface({
 	const sourcePickerError = shouldShowSourcePicker ? (vaultSettingsError ?? graphSourceError) : null;
 	const isPostSettle = isVaultReadyForLayout && isIntroSettled;
 	const isSearchRevealed = isVaultReadyForLayout && (phase === "search" || phase === "graph" || phase === "done");
-	const isGraphRevealed = isSearchRevealed;
+	const isGraphRevealed = isVaultReadyForLayout && isGraphIntroPhase;
+	const isBylineRevealed = isPostSettle;
 	const easeOut: [number, number, number, number] = [0, 0.4, 0, 1];
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -927,7 +931,7 @@ export function PersonalGraphSurface({
 							gap: isPostSettle ? "16px" : "24px",
 						}}
 						transition={{
-							y: { duration: 0.7, ease: easeOut },
+							y: { duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS, ease: easeOut },
 							gap: { duration: 0.45, ease: easeOut },
 						}}
 						style={{ willChange: "transform" }}
@@ -943,12 +947,21 @@ export function PersonalGraphSurface({
 							transition={{ duration: 1.0, ease: easeOut }}
 							style={{ willChange: "filter, opacity" }}
 						>
-							<div
+							<motion.div
 								className="flex justify-center"
-								style={{
+								initial={{
+									minHeight: PERSONAL_GRAPH_INITIAL_TITLE_RESERVED_HEIGHT,
+								}}
+								animate={{
 									minHeight: isPostSettle
 										? PERSONAL_GRAPH_SETTLED_TITLE_RESERVED_HEIGHT
 										: PERSONAL_GRAPH_INITIAL_TITLE_RESERVED_HEIGHT,
+								}}
+								transition={{
+									minHeight: {
+										duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,
+										ease: easeOut,
+									},
 								}}
 							>
 								<PersonalGraphTitle
@@ -966,22 +979,44 @@ export function PersonalGraphSurface({
 									animate={{
 										scale: isPostSettle ? 1 : PERSONAL_GRAPH_INITIAL_TITLE_SCALE,
 									}}
-									transition={{ duration: 1.0, ease: easeOut }}
+									transition={{
+										duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,
+										ease: easeOut,
+									}}
 									play={isHeaderRevealed}
 								/>
-							</div>
+							</motion.div>
 							<motion.p
 								className="truncate leading-none tracking-normal text-text"
-								style={{ ...PERSONAL_GRAPH_META_FONT_STYLE, willChange: "filter, opacity" }}
-								initial={{ opacity: 0, y: 15, filter: "blur(12px)", fontSize: "1.4rem", marginTop: "1rem" }}
-								animate={{
-									opacity: isSubtextRevealed ? 1 : 0,
-									y: isSubtextRevealed ? 0 : 15,
-									filter: isSubtextRevealed ? "blur(0px)" : "blur(12px)",
-									fontSize: isPostSettle ? "0.75rem" : "1.4rem",
-									marginTop: isPostSettle ? "0.5rem" : "1rem",
+								style={{
+									...PERSONAL_GRAPH_META_FONT_STYLE,
+									fontSize: "0.75rem",
+									marginTop: "0.5rem",
+									willChange: "filter, opacity, transform",
 								}}
-								transition={{ duration: 0.5, ease: easeOut }}
+								initial={{ opacity: 0, y: 10, filter: "blur(10px)" }}
+								animate={{
+									opacity: isBylineRevealed ? 1 : 0,
+									y: isBylineRevealed ? 0 : 10,
+									filter: isBylineRevealed ? "blur(0px)" : "blur(10px)",
+								}}
+								transition={{
+									opacity: {
+										delay: isBylineRevealed ? PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS : 0,
+										duration: 0.45,
+										ease: easeOut,
+									},
+									y: {
+										delay: isBylineRevealed ? PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS : 0,
+										duration: 0.45,
+										ease: easeOut,
+									},
+									filter: {
+										delay: isBylineRevealed ? PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS : 0,
+										duration: 0.45,
+										ease: easeOut,
+									},
+								}}
 							>
 								{graphStatusText}
 							</motion.p>
@@ -1037,15 +1072,18 @@ export function PersonalGraphSurface({
 				<motion.section
 					className="absolute inset-0 z-10"
 					aria-label="Vault graph"
-					initial={{ clipPath: "circle(0% at 50% 92%)", opacity: 0.4 }}
+					initial={shouldReduceMotion ? false : { opacity: 0, transform: "translateY(72px) scale(0.94)", filter: "blur(24px)" }}
 					animate={{
-						clipPath: isGraphRevealed ? "circle(180% at 50% 92%)" : "circle(0% at 50% 92%)",
-						opacity: isGraphRevealed ? 1 : 0.4,
+						opacity: isGraphRevealed ? 1 : 0,
+						transform: isGraphRevealed || shouldReduceMotion ? "translateY(0px) scale(1)" : "translateY(72px) scale(0.94)",
+						filter: isGraphRevealed || shouldReduceMotion ? "blur(0px)" : "blur(24px)",
 					}}
 					transition={{
-						clipPath: { duration: 1.2, ease: [0.16, 1, 0.3, 1] },
-						opacity: { duration: 0.8, ease: easeOut },
+						opacity: { duration: shouldReduceMotion ? 0 : 0.9, ease: easeOut },
+						transform: { duration: shouldReduceMotion ? 0 : 1.1, ease: [0.16, 1, 0.3, 1] },
+						filter: { duration: shouldReduceMotion ? 0 : 0.85, ease: easeOut },
 					}}
+					style={{ transformOrigin: "50% 92%", willChange: "transform, opacity, filter" }}
 				>
 					<div
 						className="h-full"

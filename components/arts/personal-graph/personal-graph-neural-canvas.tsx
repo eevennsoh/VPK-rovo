@@ -162,12 +162,12 @@ function getRayOriginY({
 	);
 }
 
-function getOriginMarkerStyleForViewport(params: NeuralGraphParams, viewport: NeuralViewport, rayOriginBottomOffset?: number): CSSProperties {
-	if (typeof rayOriginBottomOffset !== "number") return getOriginMarkerStyle(params);
+function getOriginMarkerStyleForViewport(params: NeuralGraphParams, viewport: NeuralViewport, rayOriginY?: number): CSSProperties {
+	if (typeof rayOriginY !== "number") return getOriginMarkerStyle(params);
 	return {
 		...getOriginMarkerVisualStyle(params),
-		left: `calc(50% ${formatSignedPixels(params.originOffset)})`,
-		top: getRayOriginY({ params, rayOriginBottomOffset, viewport }),
+		left: viewport.width / 2 + params.originOffset,
+		top: rayOriginY,
 	};
 }
 
@@ -418,6 +418,7 @@ export function PersonalGraphNeuralCanvas({
 	const store = useMemo(() => providedStore ?? createNeuralGraphStore(explorer), [explorer, providedStore]);
 	const hasGraph = store.nodes.length > 0;
 	const rayOriginY = getRayOriginY({ params, rayOriginBottomOffset, viewport });
+	const hasMeasuredViewport = viewport.width > 0 && viewport.height > 0;
 	const resolveGraphColor = useCallback((color: string) => {
 		return resolveNeuralGraphCssColorValue(color, containerRef.current);
 	}, []);
@@ -448,9 +449,11 @@ export function PersonalGraphNeuralCanvas({
 
 		const updateSize = () => {
 			const rect = container.getBoundingClientRect();
+			const layoutWidth = container.clientWidth || rect.width;
+			const layoutHeight = container.clientHeight || rect.height;
 			setViewport({
-				height: Math.max(1, rect.height),
-				width: Math.max(1, rect.width),
+				height: Math.max(1, layoutHeight),
+				width: Math.max(1, layoutWidth),
 			});
 		};
 
@@ -1199,12 +1202,12 @@ export function PersonalGraphNeuralCanvas({
 			>
 				<canvas aria-hidden="true" className="block h-full w-full" ref={canvasRef} />
 			</div>
-			{params.showRays && params.showOriginMarker ? (
+			{params.showRays && params.showOriginMarker && hasMeasuredViewport ? (
 				<div
 					aria-hidden="true"
 					className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 shadow-lg"
 					data-neural-graph-origin-node="true"
-					style={getOriginMarkerStyleForViewport(params, viewport, rayOriginBottomOffset)}
+					style={getOriginMarkerStyleForViewport(params, viewport, rayOriginY)}
 				/>
 			) : null}
 			{showSelectionOverlay ? (
