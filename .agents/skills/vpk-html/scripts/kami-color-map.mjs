@@ -228,3 +228,13 @@ export const KAMI_COLOR_MAP = {
 	"rgba(199,142,63,0.16)": "color-mix(in srgb, var(--accent-saffron) 16%, transparent)",
 	"rgba(199, 142, 63, 0.16)": "color-mix(in srgb, var(--accent-saffron) 16%, transparent)",
 };
+
+// Apply the color map to a string. Pure literal substitution (split/join), matching
+// what each port script did individually. Hoisted here from 4 identical copies.
+export function rewriteKamiColors(text) {
+	let out = text;
+	for (const [from, to] of Object.entries(KAMI_COLOR_MAP)) {
+		out = out.split(from).join(to);
+	}
+	return out;
+}

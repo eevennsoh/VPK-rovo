@@ -349,3 +349,30 @@ ${unicodeRangeRule}}`;
 export function buildSharedCssBlock() {
 	return `${buildFontFaceBlock()}\n${readStylesCss()}`;
 }
+
+// Wrap the body's visible content in a <main> landmark, closing before any
+// trailing <script> (or </body> when there is none). Idempotent. Slice-based
+// placement; used by the editorial templates (see scripts/build.test.js).
+export function addMainLandmark(text) {
+	if (/<main\b/i.test(text)) return text;
+	const bodyOpenMatch = /<body([^>]*)>/i.exec(text);
+	if (!bodyOpenMatch) return text;
+	const bodyOpenEnd = bodyOpenMatch.index + bodyOpenMatch[0].length;
+	const bodyTail = text.slice(bodyOpenEnd);
+	const bodyCloseMatch = /<\/body>/i.exec(bodyTail);
+	if (!bodyCloseMatch) return text;
+	const bodyContent = bodyTail.slice(0, bodyCloseMatch.index);
+	const bodyScriptMatch = /<script\b/i.exec(bodyContent);
+	const mainCloseOffset = bodyOpenEnd + (bodyScriptMatch ? bodyScriptMatch.index : bodyCloseMatch.index);
+	return `${text.slice(0, bodyOpenEnd)}\n<main>${text.slice(bodyOpenEnd, mainCloseOffset)}\n</main>${text.slice(mainCloseOffset)}`;
+}
+
+// Regex two-step landmark with an aria-label, used by the curated + upstream demo
+// families. Distinct whitespace handling from addMainLandmark — kept separate so
+// each family's output stays byte-for-byte stable. Idempotent.
+export function addLabeledMainLandmark(html, label) {
+	if (/<main\b/i.test(html)) return html;
+	return html
+		.replace(/<body([^>]*)>/i, `<body$1>\n<main aria-label="${label}">`)
+		.replace(/(\s*)(<script\b|<\/body>)/i, `\n</main>$1$2`);
+}

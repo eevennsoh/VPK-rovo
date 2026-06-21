@@ -12,8 +12,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss } from "./shared.mjs";
-import { KAMI_COLOR_MAP } from "./kami-color-map.mjs";
+import { addLabeledMainLandmark, buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss } from "./shared.mjs";
+import { rewriteKamiColors } from "./kami-color-map.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = path.resolve(__dirname, "..");
@@ -438,14 +438,6 @@ function addGeneratorMeta(html) {
 	);
 }
 
-function rewriteSourceColors(html) {
-	let out = html;
-	for (const [from, to] of Object.entries(KAMI_COLOR_MAP)) {
-		out = out.split(from).join(to);
-	}
-	return out;
-}
-
 function addValidationCss(html) {
 	if (html.includes("vpk-html validation shim")) return html;
 	return html.replace(/<style>/i, `<style>\n${validationCss()}`);
@@ -454,13 +446,6 @@ function addValidationCss(html) {
 function addVpkVisualCss(html) {
 	if (html.includes("vpk-html visual overlay")) return html;
 	return html.replace(/<\/style>/i, `${vpkVisualCss()}\n</style>`);
-}
-
-function addMainLandmark(html) {
-	if (/<main\b/i.test(html)) return html;
-	return html
-		.replace(/<body([^>]*)>/i, `<body$1>\n<main aria-label="html-effectiveness demo">`)
-		.replace(/(\s*)(<script\b|<\/body>)/i, `\n</main>$1$2`);
 }
 
 function markDecorativeSvgs(html) {
@@ -493,16 +478,17 @@ function addGeneratedButtonLabels(html) {
 function adapt(html, sourceFile) {
 	return ensureFaviconLinks(addGeneratedButtonLabels(
 		markDecorativeSvgs(
-			addMainLandmark(
+			addLabeledMainLandmark(
 				addVpkVisualCss(
 					addValidationCss(
 						addGeneratorMeta(
 							markUpstreamDemo(
-								addSourceComment(rewriteSourceColors(html), sourceFile),
+								addSourceComment(rewriteKamiColors(html), sourceFile),
 							),
 						),
 					),
 				),
+				"html-effectiveness demo",
 			),
 		),
 	));
