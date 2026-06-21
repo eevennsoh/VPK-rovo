@@ -1635,10 +1635,9 @@ import {
 			{ title: "With controls", description: "Canvas with zoom, fit-view, and interactive toggle controls.", demoSlug: "canvas-demo-with-controls" },
 			{ title: "With panel", description: "Canvas with an overlay status panel and controls.", demoSlug: "canvas-demo-with-panel" },
 			{ title: "With toolbar", description: "Nodes with a bottom-positioned toolbar for edit, copy, and delete actions.", demoSlug: "canvas-demo-with-toolbar" },
-		],
-	},
-
-	list: {
+    ],
+  },
+  list: {
 		description:
 			"A presentational compound for rendering record lists styled as a rounded card with a fixed-width column layout. List.Root provides the labelled section wrapper, List.Heading renders a subtle section label, and List.Table sets up the colgroup and table body. Compose rows with List.Row and cells with List.Cell — rows get a 14-unit height, divider borders, and a row-wide hover highlight, while the leading/trailing edge cells round the outer corners automatically. Keep state and interaction logic in the consuming component; List stays purely presentational.",
 		usage: `import { List, type ListColumn } from "@/components/ui-custom/list";

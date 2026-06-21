@@ -4,7 +4,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import ExampleCard from "./example-card";
 import { CheckboxFilterDropdown } from "./checkbox-filter-dropdown";
 import { getExamplePrompt, CHAT_GALLERY_ROLE_OPTIONS, CHAT_GALLERY_USE_CASE_OPTIONS, type ChatGalleryExample } from "../data/examples";

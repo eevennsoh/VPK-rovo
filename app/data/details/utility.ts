@@ -6,6 +6,12 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 			"An AI-assisted browser workspace for VPK. Binds chat actions to a dedicated embedded browser workspace with real tabs, live preview streaming, accessibility snapshots, and an explicit fullscreen preview route.",
 		demoLayout: { previewContentWidth: "full" },
 	},
+	"chat-configuration": {
+		description: "Chat configuration panel with reasoning mode selection and data source toggles for web results and company knowledge.",
+	},
+	"elapsed-time": {
+		description: "Shared elapsed-time formatting helpers used by progress blocks. The demo visualizes running, completed, and invalid timestamp cases so route surfaces can be checked without opening a full progress block.",
+	},
 	gui: {
 		description:
 			"A reusable compound component for building interactive animation and parameter control panels. Includes a slider/input control row (GUI.Control) and a card wrapper with copy-values button plus capped, scrollable content (GUI.Panel). Used by Shimmer and Generative Card demo pages.",
@@ -47,6 +53,9 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 	},
 	"multiports": {
 		description: "A concurrent chat testing surface that renders three independent Sidebar Chat panels side by side. Supports Tab key navigation between panels for multi-stream validation.",
+	},
+	"rovo-composer-styles": {
+		description: "Shared Rovo composer class and CSS utilities for raised chat composers and compact floating composer bars. The demo renders both surfaces with the actual exported class names.",
 	},
 	"image-generation": {
 		description: "An interactive test harness for image generation via AI Gateway. Sends prompts to /api/chat-sdk with provider: \"google\", streams SSE responses, and displays both text and generated images with download support. Configure AI_GATEWAY_URL_GOOGLE (preferred), or use a Google/Gemini AI_GATEWAY_URL, to enable native image generation.",

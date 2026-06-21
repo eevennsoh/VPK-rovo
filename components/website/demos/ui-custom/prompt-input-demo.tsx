@@ -2,15 +2,15 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
-import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import {
 	composerPromptInputClassName,
 	composerTextareaClassName,
 	composerUpwardShadow,
 	floatingComposerTextareaClassName,
 	textareaCSS,
-} from "@/components/blocks/shared-ui/composer-styles";
+} from "@/components/projects/shared/components/rovo-composer-styles";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import {
 	RovoComposerActionButton,

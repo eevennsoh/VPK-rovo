@@ -14,7 +14,7 @@ import {
 	QueueItemIndicator,
 	QueueList,
 } from "@/components/ui-custom/queue";
-import { textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
+import { textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import ChatContextBar from "@/components/projects/sidebar-chat/components/chat-context-bar";

@@ -31,7 +31,6 @@ const ADS_BLOCK_SLUGS = new Set([
 	"prompt-gallery",
 	"generative-card",
 	"kanban-board",
-	"chat-configuration",
 	"product-sidebar",
 	"rovo-canvas",
 	"sidebar-rail",

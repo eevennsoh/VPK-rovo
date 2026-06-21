@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

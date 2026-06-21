@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
-import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import {
 	PromptInput,
 	PromptInputActionMenu,
@@ -22,7 +22,7 @@ import {
 import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { composerUpwardShadow, composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
+import { composerUpwardShadow, composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui-custom/queue";
 import { Button } from "@/components/ui/button";
 import DeleteIcon from "@atlaskit/icon/core/delete";

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Icon } from "@/components/ui/icon";
 import { Tile } from "@/components/ui/tile";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
 import AddIcon from "@atlaskit/icon/core/add";

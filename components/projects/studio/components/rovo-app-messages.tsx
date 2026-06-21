@@ -59,7 +59,7 @@ import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/
 import Image from "next/image";
 import { Component, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 
 interface RovoAppMessagesProps {
 	activeDocumentId: string | null;

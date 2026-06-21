@@ -356,7 +356,7 @@ test("shared composer uses a dark live chat CTA while submit dark styling remain
 });
 
 test("Rovo composers default reasoning to Auto", () => {
-	const sharedMenuData = readProjectFile("components/blocks/shared-ui/data/customize-menu-data.tsx");
+	const sharedMenuData = readProjectFile("components/projects/shared/components/chat-configuration/customize-menu-data.tsx");
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const rovoComposer = readProjectFile("components/projects/shared/components/composer-card-body.tsx");
 

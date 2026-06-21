@@ -2,7 +2,7 @@
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { Badge } from "@/components/ui/badge";
 import AddIcon from "@atlaskit/icon/core/add";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";

@@ -3,7 +3,7 @@
 import type { CSSProperties, ElementType, HTMLAttributes } from "react";
 import { token } from "@/lib/tokens";
 
-interface HeadingProps extends HTMLAttributes<HTMLElement> {
+export interface HeadingProps extends HTMLAttributes<HTMLElement> {
 	as?: ElementType;
 	size?: "xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge" | "xxlarge";
 }
@@ -18,7 +18,7 @@ const sizeMap: Record<NonNullable<HeadingProps["size"]>, Parameters<typeof token
 	xxlarge: "font.heading.xxlarge",
 };
 
-export default function Heading({
+export function Heading({
 	as: Component = "h2",
 	size = "medium",
 	style,
@@ -35,3 +35,5 @@ export default function Heading({
 
 	return <PolymorphicHeading style={mergedStyle} className={className} {...props} />;
 }
+
+export default Heading;

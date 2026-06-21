@@ -6,8 +6,8 @@
 
 import { token } from "@/lib/tokens";
 import { Switch as Toggle } from "@/components/ui/switch";
-import { MenuItemButton, CircleIcon } from "./components/menu-item-button";
-import { REASONING_OPTIONS, FILTER_BY_APPS_ICON, SELECTED_CHECK_ICON } from "./data/customize-menu-data";
+import { MenuItemButton, CircleIcon } from "./menu-item-button";
+import { REASONING_OPTIONS, FILTER_BY_APPS_ICON, SELECTED_CHECK_ICON } from "./customize-menu-data";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 import OfficeBuildingIcon from "@atlaskit/icon/core/office-building";
 

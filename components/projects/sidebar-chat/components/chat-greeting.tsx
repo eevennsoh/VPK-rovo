@@ -7,7 +7,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import { token } from "@/lib/tokens";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";

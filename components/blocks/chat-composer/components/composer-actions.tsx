@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import AddMenu from "./add-menu";
-import CustomizeMenu, { type CustomizeMenuProps } from "./customize-menu";
+import CustomizeMenu, { type CustomizeMenuProps } from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { composerStyles } from "../data/styles";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";

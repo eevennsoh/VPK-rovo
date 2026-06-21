@@ -4,7 +4,7 @@
 
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { useWorkItemData, type WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
 
 import { ChildItemRow } from "./child-item-row";

@@ -11,8 +11,8 @@ import {
 	PromptInputTextarea,
 	PromptInputTools,
 } from "@/components/ui-custom/prompt-input";
-import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow } from "@/components/blocks/shared-ui/composer-styles";
-import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
+import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow } from "@/components/projects/shared/components/rovo-composer-styles";
+import CustomizeMenu from "@/components/projects/shared/components/chat-configuration/customize-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -21,7 +21,7 @@ import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { useRovoAppComposerHeight } from "@/components/projects/shared/hooks/use-rovo-app-composer-height";
-import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import { type ComposerBodyBaseProps, usePrefillEffect } from "@/components/projects/shared/components/composer-body-shared";
 
 export interface ComposerCardBodyProps extends ComposerBodyBaseProps {

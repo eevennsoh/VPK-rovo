@@ -1,7 +1,7 @@
 "use client";
 
 import { token } from "@/lib/tokens";
-import Heading from "@/components/blocks/shared-ui/heading";
+import Heading from "@/components/ui/heading";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import Image from "next/image";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";

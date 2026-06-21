@@ -10,7 +10,7 @@
 
 import { Fragment, useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { FileUIPart } from "ai";
-import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "./lib/chat-context-bar";

@@ -40,6 +40,7 @@ const UI_DEMO: Record<string, ComponentType> = {
   }),
   empty: dynamic(() => import("./demos/ui/empty-demo"), { ssr: false }),
   field: dynamic(() => import("./demos/ui/field-demo"), { ssr: false }),
+  heading: dynamic(() => import("./demos/ui/heading-demo"), { ssr: false }),
   "hover-card": dynamic(() => import("./demos/ui/hover-card-demo"), {
     ssr: false,
   }),
@@ -6125,6 +6126,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "heading-demo-scale": dynamic(
+    () =>
+      import("./demos/ui/heading-demo").then((mod) => ({
+        default: mod.HeadingDemoScale,
+      })),
+    { ssr: false },
+  ),
+  "heading-demo-semantics": dynamic(
+    () =>
+      import("./demos/ui/heading-demo").then((mod) => ({
+        default: mod.HeadingDemoSemantics,
+      })),
+    { ssr: false },
+  ),
   "image-demo-gallery": dynamic(
     () =>
       import("./demos/ui-custom/image-demo").then((mod) => ({
@@ -7072,9 +7087,6 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/rovo-canvas-direct-demo"),
     { ssr: false },
   ),
-  "chat-configuration": dynamic(() => import("./demos/blocks/shared-ui-demo"), {
-    ssr: false,
-  }),
   memory: dynamic(() => import("./demos/blocks/memory-demo"), { ssr: false }),
   "settings-dialog": dynamic(
     () => import("./demos/blocks/settings-dialog-demo"),
@@ -8276,6 +8288,13 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   "agent-browser": dynamic(() => import("./demos/utils/agent-browser"), {
     ssr: false,
   }),
+  "chat-configuration": dynamic(
+    () => import("./demos/utils/chat-configuration-demo"),
+    { ssr: false },
+  ),
+  "elapsed-time": dynamic(() => import("./demos/utils/elapsed-time-demo"), {
+    ssr: false,
+  }),
   gui: dynamic(() => import("./demos/utils/gui-demo"), { ssr: false }),
   "image-generation": dynamic(
     () => import("./demos/utils/image-generation-demo"),
@@ -8284,6 +8303,10 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   multiports: dynamic(() => import("./demos/utils/multiports-demo"), {
     ssr: false,
   }),
+  "rovo-composer-styles": dynamic(
+    () => import("./demos/utils/rovo-composer-styles-demo"),
+    { ssr: false },
+  ),
   "sound-generation": dynamic(
     () => import("./demos/utils/sound-generation-demo"),
     { ssr: false },

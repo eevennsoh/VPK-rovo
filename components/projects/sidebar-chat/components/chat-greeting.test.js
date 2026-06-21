@@ -60,7 +60,7 @@ async function loadChatGreetingHarness() {
 			`,
 		],
 		[
-			"@/components/blocks/shared-ui/heading",
+			"@/components/ui/heading",
 			`
 				import React from "react";
 
