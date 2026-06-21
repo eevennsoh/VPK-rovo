@@ -6,9 +6,6 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 			"An AI-assisted browser workspace for VPK. Binds chat actions to a dedicated embedded browser workspace with real tabs, live preview streaming, accessibility snapshots, and an explicit fullscreen preview route.",
 		demoLayout: { previewContentWidth: "full" },
 	},
-	"chat-configuration": {
-		description: "Chat configuration panel with reasoning mode selection and data source toggles for web results and company knowledge.",
-	},
 	"elapsed-time": {
 		description: "Shared elapsed-time formatting helpers used by progress blocks. The demo visualizes running, completed, and invalid timestamp cases so route surfaces can be checked without opening a full progress block.",
 	},

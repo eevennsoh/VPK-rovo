@@ -6992,6 +6992,10 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "chat-timeline": dynamic(() => import("./demos/blocks/chat-timeline-demo"), {
     ssr: false,
   }),
+  "chat-configuration": dynamic(
+    () => import("./demos/blocks/chat-configuration-demo"),
+    { ssr: false },
+  ),
   subagents: dynamic(() => import("./demos/blocks/subagents-demo"), {
     ssr: false,
   }),
@@ -8288,10 +8292,6 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   "agent-browser": dynamic(() => import("./demos/utils/agent-browser"), {
     ssr: false,
   }),
-  "chat-configuration": dynamic(
-    () => import("./demos/utils/chat-configuration-demo"),
-    { ssr: false },
-  ),
   "elapsed-time": dynamic(() => import("./demos/utils/elapsed-time-demo"), {
     ssr: false,
   }),
