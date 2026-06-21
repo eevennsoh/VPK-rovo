@@ -52,7 +52,7 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, out: null, gate: null, strict: false };
+	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null };
 	const GATE_FLAGS = {
 		"--check-density": "density",
 		"--check-resume-balance": "resume-balance",
@@ -67,8 +67,10 @@ function parseArgs(argv) {
 		else if (arg === "--check-templates") { args.mode = "templates"; }
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
+		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
 		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
+		else if (arg === "--origin") { args.origin = argv[++i]; }
 		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
@@ -252,6 +254,7 @@ Usage:
   node scripts/build.mjs --check-templates
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
+  node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
   node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
@@ -296,6 +299,20 @@ async function main() {
 			console.log(`✓ ${path.relative(process.cwd(), result.out)} — ${(result.bytes / 1024).toFixed(0)} KB`);
 		} else {
 			console.error(`✗ PDF export produced an empty file: ${result.out}`);
+			process.exitCode = 1;
+		}
+		return;
+	}
+	if (args.mode === "landing") {
+		if (!args.file) { console.error("--landing requires a file path"); process.exitCode = 1; return; }
+		const { processLanding } = await import("./landing.mjs");
+		const { companions, outDir, verify } = await processLanding(args.file, { out: args.out, origin: args.origin });
+		console.log(`✓ emitted ${companions.length} companion files → ${path.relative(process.cwd(), outDir)} (${companions.join(", ")})`);
+		if (verify.ok) {
+			console.log("✓ responsive verify clean (1280/880/480: no overflow, fonts load, no console errors)");
+		} else {
+			console.log("✗ responsive verify");
+			for (const issue of verify.issues) console.log(`  ${issue}`);
 			process.exitCode = 1;
 		}
 		return;
