@@ -161,12 +161,13 @@ function SelectItem({
 			data-slot="select-item"
 			className={cn(
 				dropdownStyles.selectableItem,
+				"pr-8 pl-2",
 				"data-selected:bg-bg-selected data-selected:data-highlighted:bg-bg-selected-hovered data-selected:active:bg-bg-selected-pressed",
 				className
 			)}
 			{...props}
 		>
-			<span className={dropdownStyles.indicator}>
+			<span className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected">
 				<SelectPrimitive.ItemIndicator>
 					<Icon
 						render={<CheckMarkIcon label="" size="small" />}
@@ -175,7 +176,7 @@ function SelectItem({
 					/>
 				</SelectPrimitive.ItemIndicator>
 			</span>
-			<SelectPrimitive.ItemText className="flex flex-1 gap-2 shrink-0 whitespace-nowrap">
+			<SelectPrimitive.ItemText className="flex min-w-0 flex-1 gap-2 whitespace-nowrap">
 				{children}
 			</SelectPrimitive.ItemText>
 		</SelectPrimitive.Item>

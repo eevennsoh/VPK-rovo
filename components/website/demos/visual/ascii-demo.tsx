@@ -2,16 +2,11 @@
 
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
 import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
-import { ShaderColorInput, ShaderColorListControl } from "./shader-color-controls";
 import { token } from "@/lib/tokens";
 
 import Ascii, {
@@ -160,158 +155,6 @@ function getPreviewAspectRatio(image: UploadedImage | undefined): string {
 	return image ? `${image.width} / ${image.height}` : DEFAULT_PREVIEW_ASPECT_RATIO;
 }
 
-function PercentControl({
-	id,
-	label,
-	value,
-	defaultValue,
-	min = 0,
-	max = 1,
-	step = 0.01,
-	onChange,
-}: {
-	id: string;
-	label: string;
-	value: number;
-	defaultValue: number;
-	min?: number;
-	max?: number;
-	step?: number;
-	onChange: (next: number) => void;
-}) {
-	return (
-		<GUI.Control
-			id={id}
-			label={label}
-			value={value * 100}
-			defaultValue={defaultValue * 100}
-			min={min * 100}
-			max={max * 100}
-			step={step * 100}
-			unit="%"
-			onChange={(next) => onChange(next / 100)}
-		/>
-	);
-}
-
-function ImageUploadControl({
-	image,
-	onChange,
-}: {
-	image: UploadedImage | undefined;
-	onChange: (next: UploadedImage | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		async (file: File) => {
-			const src = URL.createObjectURL(file);
-			try {
-				const dimensions = await loadUploadedImageDimensions(src);
-				onChange({ src, ...dimensions });
-			} catch {
-				URL.revokeObjectURL(src);
-				onChange(undefined);
-			}
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">Image</Label>
-			<div className="flex items-center gap-2">
-				{image ? (
-					<Image
-						src={image.src}
-						alt="Source"
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border object-cover"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{image ? "Change" : "Upload"}
-				</button>
-				{image ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.currentTarget.files?.[0];
-						if (file) void handleFile(file);
-						event.currentTarget.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
-
-function AnimationPlaybackControl({
-	playing,
-	onChange,
-}: {
-	playing: boolean;
-	onChange: (next: boolean) => void;
-}) {
-	const options = [
-		{ value: true, label: "Play", icon: VideoPlayIcon },
-		{ value: false, label: "Stop", icon: VideoStopIcon },
-	] as const;
-
-	return (
-		<div className="space-y-1.5">
-			<Label className="text-xs font-medium text-text">Playback</Label>
-			<div
-				role="group"
-				aria-label="Playback"
-				className="inline-flex w-fit max-w-full flex-wrap items-center gap-0.5 rounded-md bg-bg-neutral p-0.5"
-			>
-				{options.map((option) => {
-					const Icon = option.icon;
-					const selected = playing === option.value;
-					return (
-						<button
-							key={option.label}
-							type="button"
-							aria-pressed={selected}
-							onClick={() => onChange(option.value)}
-							className={`flex items-center gap-1 whitespace-nowrap rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
-								selected
-									? "bg-surface text-text shadow-sm"
-									: "text-text-subtle hover:text-text"
-							}`}
-						>
-							<Icon label="" size="small" />
-							{option.label}
-						</button>
-					);
-				})}
-			</div>
-		</div>
-	);
-}
-
 export default function AsciiDemo() {
 	const [sourceMode, setSourceMode] = useState<AsciiSourceMode>("field");
 	const [sourceColors, setSourceColors] = useState<string[]>([...ASCII_DEFAULT_SOURCE_COLORS]);
@@ -452,6 +295,20 @@ export default function AsciiDemo() {
 			setBackgroundMode("solid-black");
 		},
 		[applyImageBackgroundDefaults],
+	);
+
+	const handleImageFile = useCallback(
+		async (file: File) => {
+			const src = URL.createObjectURL(file);
+			try {
+				const dimensions = await loadUploadedImageDimensions(src);
+				handleImageChange({ src, ...dimensions });
+			} catch {
+				URL.revokeObjectURL(src);
+				handleImageChange(undefined);
+			}
+		},
+		[handleImageChange],
 	);
 
 	const config = useMemo(
@@ -725,10 +582,17 @@ export default function AsciiDemo() {
 							onChange={handleSourceModeChange}
 						/>
 						{sourceMode === "image" ? (
-							<ImageUploadControl image={uploadedImage} onChange={handleImageChange} />
+							<GUI.ImageInput
+								id="ascii-image"
+								label="Image"
+								value={uploadedImage?.src}
+								previewAlt="Source"
+								onFile={handleImageFile}
+								onClear={() => handleImageChange(undefined)}
+							/>
 						) : null}
 						{sourceMode === "field" ? (
-							<ShaderColorListControl
+							<GUI.ColorList
 								id="ascii-sourceColors"
 								label="Colors"
 								value={sourceColors}
@@ -810,7 +674,7 @@ export default function AsciiDemo() {
 							step={0.01}
 							onChange={setSaturation}
 						/>
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-brightness"
 							label="Brightness"
 							value={brightness}
@@ -820,7 +684,7 @@ export default function AsciiDemo() {
 							step={0.01}
 							onChange={setBrightness}
 						/>
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-contrast"
 							label="Contrast"
 							value={contrast}
@@ -833,7 +697,7 @@ export default function AsciiDemo() {
 					</GUI.Section>
 
 					<GUI.Section title="Settings">
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-density"
 							label="Density"
 							value={density}
@@ -923,7 +787,7 @@ export default function AsciiDemo() {
 							/>
 						) : null}
 						{colorMode === "monochrome" ? (
-							<ShaderColorInput
+							<GUI.ColorInput
 								id="ascii-monoColor"
 								label="Tint"
 								value={monoColor}
@@ -931,7 +795,7 @@ export default function AsciiDemo() {
 								onChange={setMonoColor}
 							/>
 						) : null}
-						<ShaderColorInput
+						<GUI.ColorInput
 							id="ascii-backgroundColor"
 							label="Background Color"
 							value={backgroundColor}
@@ -975,7 +839,7 @@ export default function AsciiDemo() {
 							checked={invert}
 							onChange={setInvert}
 						/>
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-edgeEmphasis"
 							label="Edge Emphasis"
 							value={edgeEmphasis}
@@ -1006,8 +870,14 @@ export default function AsciiDemo() {
 							checked={animatedCharacters}
 							onChange={setAnimatedCharacters}
 						/>
-						<AnimationPlaybackControl
-							playing={animationPlaying}
+						<GUI.SegmentedControl
+							id="ascii-playback"
+							label="Playback"
+							value={animationPlaying}
+							options={[
+								{ value: true, label: "Play", icon: VideoPlayIcon },
+								{ value: false, label: "Stop", icon: VideoStopIcon },
+							]}
 							onChange={setAnimationPlaying}
 						/>
 						<GUI.Select
@@ -1034,7 +904,7 @@ export default function AsciiDemo() {
 								setAnimatedCharacters(true);
 							}}
 						/>
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-animationIntensity"
 							label="Intensity"
 							value={animationIntensity}
@@ -1047,7 +917,7 @@ export default function AsciiDemo() {
 								setAnimatedCharacters(true);
 							}}
 						/>
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-animationRandomness"
 							label="Randomness"
 							value={animationRandomness}
@@ -1153,7 +1023,7 @@ export default function AsciiDemo() {
 					</GUI.Section>
 
 					<GUI.Section title="Presence">
-						<PercentControl
+						<GUI.PercentControl
 							id="ascii-coverage"
 							label="Coverage"
 							value={coverage}
@@ -1184,14 +1054,14 @@ export default function AsciiDemo() {
 						/>
 						{colorOverlay ? (
 							<>
-								<ShaderColorInput
+								<GUI.ColorInput
 									id="ascii-colorOverlayColor"
 									label="Color"
 									value={colorOverlayColor}
 									defaultValue="#F5F5F0"
 									onChange={setColorOverlayColor}
 								/>
-								<PercentControl
+								<GUI.PercentControl
 									id="ascii-colorOverlayOpacity"
 									label="Opacity"
 									value={colorOverlayOpacity}
@@ -1217,7 +1087,7 @@ export default function AsciiDemo() {
 							onChange={setVignette}
 						/>
 						{vignette ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-vignetteIntensity"
 								label="Intensity"
 								value={vignetteIntensity}
@@ -1235,7 +1105,7 @@ export default function AsciiDemo() {
 							onChange={setScanLines}
 						/>
 						{scanLines ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-scanLinesIntensity"
 								label="Intensity"
 								value={scanLinesIntensity}
@@ -1253,7 +1123,7 @@ export default function AsciiDemo() {
 							onChange={setCrtCurvature}
 						/>
 						{crtCurvature ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-crtCurvatureIntensity"
 								label="Intensity"
 								value={crtCurvatureIntensity}
@@ -1289,7 +1159,7 @@ export default function AsciiDemo() {
 							onChange={setBloomEnabled}
 						/>
 						{bloomEnabled ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-bloomIntensity"
 								label="Intensity"
 								value={bloomIntensity}
@@ -1307,7 +1177,7 @@ export default function AsciiDemo() {
 							onChange={setCharacterBloom}
 						/>
 						{characterBloom ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-characterBloomIntensity"
 								label="Intensity"
 								value={characterBloomIntensity}
@@ -1343,7 +1213,7 @@ export default function AsciiDemo() {
 							onChange={setFilmGrain}
 						/>
 						{filmGrain ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-filmGrainIntensity"
 								label="Intensity"
 								value={filmGrainIntensity}
@@ -1361,7 +1231,7 @@ export default function AsciiDemo() {
 							onChange={setGlitch}
 						/>
 						{glitch ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-glitchIntensity"
 								label="Intensity"
 								value={glitchIntensity}
@@ -1451,7 +1321,7 @@ export default function AsciiDemo() {
 							onChange={setFilmDust}
 						/>
 						{filmDust ? (
-							<PercentControl
+							<GUI.PercentControl
 								id="ascii-filmDustDensity"
 								label="Density"
 								value={filmDustDensity}

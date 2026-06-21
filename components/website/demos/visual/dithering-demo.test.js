@@ -63,7 +63,7 @@ test("Dithering demo exposes Shader Lab dithering controls", () => {
 	assert.match(DEMO_SOURCE, /label="Dither Speed"/);
 	assert.match(DEMO_SOURCE, /label="Chromatic Split"/);
 	assert.match(DEMO_SOURCE, /label="Color Mode"/);
-	assert.match(DEMO_SOURCE, /ShaderColorInput/);
+	assert.match(DEMO_SOURCE, /GUI\.ColorInput/);
 });
 
 test("Dithering shader ports Shader Lab algorithms and color modes", () => {

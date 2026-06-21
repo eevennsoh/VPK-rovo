@@ -50,8 +50,9 @@ test("Scribbles demo exposes the expected GUI controls", () => {
 
 	assert.match(SOURCE_SOURCE, /DEFAULT_SCRIBBLES_SVG_SRC = "\/illustration-ai\/chat\/light\.svg"/);
 	assert.match(DEMO_SOURCE, /title="Source"/);
+	assert.match(DEMO_SOURCE, /<GUI\.ImageInput/);
 	assert.match(DEMO_SOURCE, /accept="image\/svg\+xml,\.svg"/);
-	assert.match(DEMO_SOURCE, /aria-label="Reset to default SVG"/);
+	assert.match(DEMO_SOURCE, /clearLabel="Reset to default SVG"/);
 	assert.match(DEMO_SOURCE, /URL\.createObjectURL/);
 	assert.match(DEMO_SOURCE, /URL\.revokeObjectURL/);
 	assert.match(DEMO_SOURCE, /label="scale"/);

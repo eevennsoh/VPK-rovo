@@ -1,83 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
+import { useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Truchet from "./shaders/truchet";
-
-function ImageUploadControl({
-	imageSrc,
-	onChange,
-}: {
-	imageSrc: string | undefined;
-	onChange: (next: string | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		(file: File) => {
-			const url = URL.createObjectURL(file);
-			onChange(url);
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">Image</Label>
-			<div className="flex items-center gap-2">
-				{imageSrc ? (
-					<Image
-						src={imageSrc}
-						alt="Source"
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border object-cover"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{imageSrc ? "Change" : "Upload"}
-				</button>
-				{imageSrc ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(e) => {
-						const file = e.target.files?.[0];
-						if (file) handleFile(file);
-						e.target.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
 
 const DEFAULT_BACKGROUND = "#FFFFFF";
 
@@ -108,7 +36,12 @@ export default function TruchetDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ImageUploadControl imageSrc={imageSrc} onChange={setImageSrc} />
+				<GUI.ImageInput
+					id="truchet-image"
+					label="Image"
+					value={imageSrc}
+					onChange={setImageSrc}
+				/>
 				<GUI.Control
 					id="tr-cells"
 					label="Cells"
@@ -139,7 +72,7 @@ export default function TruchetDemo() {
 					]}
 					onChange={(v) => setInvert(v === "yes")}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="tr-background"
 					label="Background"
 					value={background}

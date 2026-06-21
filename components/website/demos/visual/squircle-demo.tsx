@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Squircle from "./shaders/squircle";
 import { SQUIRCLE_DEFAULT_SMOOTHNESS } from "./shaders/squircle-shape";
 
@@ -150,7 +149,7 @@ export default function SquircleDemo() {
 
 					{showStroke ? (
 						<>
-							<ShaderColorInput
+							<GUI.ColorInput
 								id="sq-stroke-color"
 								label="Stroke Color"
 								value={strokeColor}

@@ -6,7 +6,6 @@ import { GUI } from "@/components/utils/gui";
 import { ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorListControl } from "./shader-color-controls";
 import Rings from "./shaders/rings";
 
 const DEFAULT_COLORS = [...ROVO_SHADER_COLOR_HEX];
@@ -49,7 +48,7 @@ export default function RingsDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ShaderColorListControl
+				<GUI.ColorList
 					id="r-colors"
 					label="Colors"
 					value={colors}

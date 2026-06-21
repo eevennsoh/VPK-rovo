@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import PatternTile, {
 	ANIMATABLE_PATTERNS,
 	BLEND_MODE_TYPES,
@@ -182,14 +181,14 @@ export default function PatternTileDemo() {
 					options={PATTERN_TYPES}
 					onChange={(next) => setPatternType(next as PatternType)}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="pattern-front"
 					label="Front"
 					value={front}
 					defaultValue={DEFAULT_FRONT}
 					onChange={setFront}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="pattern-back"
 					label="Back"
 					value={backColor}

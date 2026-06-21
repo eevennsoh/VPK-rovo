@@ -1,15 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
+import { useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import LogoGlass, { DEFAULT_LOGO_GLASS_IMAGE_SRC } from "./shaders/logo-glass";
 
 type MotionModeOption = "free" | "melt";
@@ -42,79 +37,6 @@ const DEFAULT_AMBIENT = 0;
 const DEFAULT_BRIGHTNESS = 0.8;
 const DEFAULT_CONTRAST = 2.8;
 const DEFAULT_SATURATION = 1;
-
-function ImageUploadControl({
-	imageSrc,
-	onChange,
-}: {
-	imageSrc: string | undefined;
-	onChange: (next: string | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		(file: File) => {
-			onChange(URL.createObjectURL(file));
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<div className="flex items-center gap-2">
-				<Label className="text-xs font-medium text-text">Image</Label>
-				<span className="text-[11px] text-text-subtlest">
-					Uses the Framer Path.svg asset when empty.
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				{imageSrc ? (
-					<Image
-						src={imageSrc}
-						alt="Logo source"
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border bg-[#04070d] object-contain p-1"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{imageSrc ? "Change" : "Upload"}
-				</button>
-				{imageSrc ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.target.files?.[0];
-						if (file) {
-							handleFile(file);
-						}
-						event.target.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
 
 function resolveMotionModeValue(option: MotionModeOption): 0 | 1 {
 	return option === "melt" ? 1 : 0;
@@ -260,36 +182,45 @@ export default function LogoGlassDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ImageUploadControl imageSrc={imageSrc} onChange={setImageSrc} />
-				<ShaderColorInput
+				<GUI.ImageInput
+					id="lg-logo-image"
+					label="Image"
+					description="Uses the Framer Path.svg asset when empty."
+					value={imageSrc}
+					previewAlt="Logo source"
+					objectFit="contain"
+					previewClassName="bg-[#04070d] p-1"
+					onChange={setImageSrc}
+				/>
+				<GUI.ColorInput
 					id="lg-logo-background"
 					label="Background"
 					value={colorBack}
 					defaultValue={DEFAULT_BACKGROUND}
 					onChange={setColorBack}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="lg-logo-low"
 					label="Color Low"
 					value={colorA}
 					defaultValue={DEFAULT_COLOR_LOW}
 					onChange={setColorA}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="lg-logo-tint"
 					label="Tint"
 					value={colorB}
 					defaultValue={DEFAULT_TINT}
 					onChange={setColorB}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="lg-logo-highlight"
 					label="Highlight"
 					value={colorHighlight}
 					defaultValue={DEFAULT_HIGHLIGHT}
 					onChange={setColorHighlight}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="lg-logo-shadow"
 					label="Shadow"
 					value={colorShadow}
