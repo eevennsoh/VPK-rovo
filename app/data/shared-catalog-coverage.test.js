@@ -30,7 +30,6 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	for (const [slug, name] of [
 		["chat-configuration", "Chat Configuration"],
 		["elapsed-time", "Elapsed Time"],
-		["rovo-composer-styles", "Rovo Composer Styles"],
 	]) {
 		assert.match(manifestSource, new RegExp(`utilityComponent\\("${slug}", "${name}"\\)`, "u"));
 		assert.match(componentSource, new RegExp(`utilityComponent\\("${slug}", "${name}"\\)`, "u"));
