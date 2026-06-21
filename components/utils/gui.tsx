@@ -857,14 +857,14 @@ function GUIColorList({
 	const canRemove = !disabled && allowAddRemove && value.length > 1;
 
 	return (
-		<div className={cn("space-y-2", disabled && "pointer-events-none opacity-40")}>
+		<div className={cn("space-y-2", disabled && "opacity-40")}>
 			<div className="flex items-center gap-2">
 				<Label className="text-xs font-medium text-text">{label}</Label>
 				{defaultValue ? (
 					<div className="ml-auto">
 						<GUIResetButton
 							ariaLabel={`Reset ${label}`}
-							disabled={isDefault}
+							disabled={isDefault || disabled}
 							onClick={() => onChange([...defaultValue])}
 						/>
 					</div>
@@ -882,7 +882,8 @@ function GUIColorList({
 								next[index] = event.currentTarget.value;
 								onChange(next);
 							}}
-							className="size-7 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0"
+							disabled={disabled}
+							className="size-7 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0 disabled:cursor-not-allowed"
 						/>
 						<Input
 							type="text"
@@ -893,6 +894,7 @@ function GUIColorList({
 								next[index] = event.currentTarget.value;
 								onChange(next);
 							}}
+							disabled={disabled}
 							isCompact
 							isMonospaced
 							className="h-7 flex-1 text-xs"

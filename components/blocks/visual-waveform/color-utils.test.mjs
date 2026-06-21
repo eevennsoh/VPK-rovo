@@ -6,7 +6,7 @@ import {
 	hslaToRgbaUnit,
 	rgbaUnitToHex,
 	rgbaUnitToHsla,
-} from "./color-utils.ts";
+} from "../../utils/gui-color.ts";
 
 function assertClose(actual, expected, epsilon = 0.005) {
 	assert.ok(
