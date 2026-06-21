@@ -8,8 +8,11 @@ import { cn } from "@/lib/utils";
 
 type PersonalGraphBackdropProps = React.ComponentProps<"div">;
 
-const PERSONAL_GRAPH_SURFACE_COLOR = "var(--ds-surface)";
 const PERSONAL_GRAPH_ASCII_COLOR = "var(--ds-text-subtle)";
+const PERSONAL_GRAPH_SHADER_SURFACE_COLORS = {
+	dark: "#1D2125",
+	light: "#FFFFFF",
+} as const;
 const PERSONAL_GRAPH_GRID_STROKE = {
 	style: "dashed",
 	dash: 3,
@@ -27,15 +30,15 @@ const PERSONAL_GRAPH_SHADER_COLORS: [string, string, string, string] = [
 	"#AF59E1",
 	"#6A9A23",
 ];
-const PERSONAL_GRAPH_WAVE_COLORS: [string, string, string, string] = [
-	PERSONAL_GRAPH_SURFACE_COLOR,
-	PERSONAL_GRAPH_SURFACE_COLOR,
-	PERSONAL_GRAPH_SURFACE_COLOR,
-	PERSONAL_GRAPH_SURFACE_COLOR,
-];
+function getPersonalGraphShaderSurfaceColors(theme: "light" | "dark"): [string, string, string, string] {
+	const surfaceColor = PERSONAL_GRAPH_SHADER_SURFACE_COLORS[theme];
+	return [surfaceColor, surfaceColor, surfaceColor, surfaceColor];
+}
 
 function PersonalGraphAsciiBackdrop() {
 	const { actualTheme } = useTheme();
+	const surfaceColors = getPersonalGraphShaderSurfaceColors(actualTheme);
+	const surfaceColor = PERSONAL_GRAPH_SHADER_SURFACE_COLORS[actualTheme];
 
 	return (
 		<div
@@ -49,7 +52,7 @@ function PersonalGraphAsciiBackdrop() {
 		>
 			<WaveGradient
 				className="absolute inset-0 opacity-55 mix-blend-multiply"
-				colors={PERSONAL_GRAPH_WAVE_COLORS}
+				colors={surfaceColors}
 				key={`personal-graph-wave-${actualTheme}`}
 				seed={31}
 				speed={1.1}
@@ -69,7 +72,7 @@ function PersonalGraphAsciiBackdrop() {
 				customChars=" .:-=+*#%@ROVO"
 				className="absolute inset-0 opacity-90 mix-blend-multiply"
 				monoColor={PERSONAL_GRAPH_ASCII_COLOR}
-				backgroundColor={PERSONAL_GRAPH_SURFACE_COLOR}
+				backgroundColor={surfaceColor}
 				signalBlackPoint={0.1}
 				signalWhitePoint={0.88}
 				signalGamma={0.92}

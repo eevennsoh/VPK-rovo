@@ -402,7 +402,7 @@ function drawRadialBranches(
 	const branches = layout.treeBranches ?? [];
 	if (branches.length === 0) return;
 
-	const origin = getNeuralOrigin(options.viewport, options.params);
+	const origin = worldToViewport(layout.origin, options.camera, options.viewport, options.params);
 	const focusProgress = getFocusProgress(options);
 	const activeNodeId = options.selectedNodeId ?? options.hoveredNodeId;
 	const baseAlpha = Math.max(0.24, options.params.rayOpacity * 6, options.params.edgeOpacity * 1.25);

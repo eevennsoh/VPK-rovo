@@ -329,8 +329,15 @@ test("Personal Graph keeps the search and chat composer separate from the center
 	assert.match(SURFACE_SOURCE, /transform: `translateY\(\$\{PERSONAL_GRAPH_STAGE_TRANSLATE_Y_PX\}px\)`/);
 	assert.match(SURFACE_SOURCE, /rayOriginBottomOffset=\{PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX\}/);
 	assert.doesNotMatch(SURFACE_SOURCE, /opacity: isSearchRevealed \? 1 : 0/);
-	assert.doesNotMatch(SURFACE_SOURCE, /opacity: \{ duration: 0\.5, ease: easeOut \}/);
 	assert.doesNotMatch(SURFACE_SOURCE, /border-border-inverse bg-bg-neutral-bold/);
+	assert.match(NEURAL_CANVAS_SOURCE, /left: viewport\.width \/ 2 \+ params\.originOffset/);
+	assert.match(NEURAL_CANVAS_SOURCE, /top: rayOriginY/);
+	assert.match(NEURAL_CANVAS_SOURCE, /const layoutWidth = container\.clientWidth \|\| rect\.width;/);
+	assert.match(NEURAL_CANVAS_SOURCE, /const layoutHeight = container\.clientHeight \|\| rect\.height;/);
+	assert.match(NEURAL_CANVAS_SOURCE, /const hasMeasuredViewport = viewport\.width > 0 && viewport\.height > 0;/);
+	assert.match(NEURAL_CANVAS_SOURCE, /params\.showRays && params\.showOriginMarker && hasMeasuredViewport/);
+	assert.match(NEURAL_CANVAS_SOURCE, /style=\{getOriginMarkerStyleForViewport\(params, viewport, rayOriginY\)\}/);
+	assert.doesNotMatch(NEURAL_CANVAS_SOURCE, /top: `calc\(100% - \$\{rayOriginBottomOffset\}px\)`/);
 	assert.match(NEURAL_CANVAS_SOURCE, /backgroundColor: params\.originMarkerColor/);
 	assert.match(NEURAL_CANVAS_SOURCE, /height: params\.originMarkerSize/);
 	assert.match(NEURAL_CANVAS_SOURCE, /borderRadius: params\.nodeShape === "square" \? params\.nodeRadius : 9999/);
@@ -558,12 +565,24 @@ test("Personal Graph enables liquid glass stage tracking for route glass UI", ()
 
 test("Personal Graph lets the graph renderer fill the route viewport behind the chrome", () => {
 	assert.match(SURFACE_SOURCE, /<motion\.section\s+className="absolute inset-0 z-10"\s+aria-label="Vault graph"/);
-	assert.match(SURFACE_SOURCE, /const isGraphRevealed = isSearchRevealed;/);
+	assert.match(SURFACE_SOURCE, /const isGraphIntroPhase = phase === "graph" \|\| phase === "done";/);
+	assert.match(SURFACE_SOURCE, /const isGraphRevealed = isVaultReadyForLayout && isGraphIntroPhase;/);
 	assert.doesNotMatch(SURFACE_SOURCE, /bottom-\[6\.5rem\] top-\[250px\]/);
 	assert.doesNotMatch(SURFACE_SOURCE, /sm:top-\[320px\] lg:top-\[360px\] xl:top-\[400px\]/);
 	assert.match(GRAPH_SOURCE, /isFillVariant \? "flex h-full w-full flex-col"/);
 	assert.match(NEURAL_CANVAS_SOURCE, /"relative h-full min-h-0 overflow-hidden"/);
 	assert.doesNotMatch(NEURAL_CANVAS_SOURCE, /min-h-\[620px\]/);
+});
+
+test("Personal Graph reveals the radial graph with Motion blur and scale", () => {
+	assert.match(
+		SURFACE_SOURCE,
+		/initial=\{shouldReduceMotion \? false : \{ opacity: 0, transform: "translateY\(72px\) scale\(0\.94\)", filter: "blur\(24px\)" \}\}/,
+	);
+	assert.match(SURFACE_SOURCE, /transform: isGraphRevealed \|\| shouldReduceMotion \? "translateY\(0px\) scale\(1\)" : "translateY\(72px\) scale\(0\.94\)"/);
+	assert.match(SURFACE_SOURCE, /filter: isGraphRevealed \|\| shouldReduceMotion \? "blur\(0px\)" : "blur\(24px\)"/);
+	assert.match(SURFACE_SOURCE, /style=\{\{ transformOrigin: "50% 92%", willChange: "transform, opacity, filter" \}\}/);
+	assert.doesNotMatch(SURFACE_SOURCE, /clipPath: "circle/);
 });
 
 test("Personal Graph uses theme-aware editor-style surrounding chrome", () => {
@@ -589,7 +608,17 @@ test("Personal Graph leaves the page header transparent over the backdrop grid",
 	assert.match(SURFACE_SOURCE, /<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">\s*<motion\.div\s+className="relative flex flex-col items-center"/);
 	assert.match(SURFACE_SOURCE, /initial=\{\{ y: PERSONAL_GRAPH_HEADER_INITIAL_Y, gap: "24px" \}\}/);
 	assert.match(SURFACE_SOURCE, /y: isPostSettle \? PERSONAL_GRAPH_HEADER_SETTLED_Y : PERSONAL_GRAPH_HEADER_INITIAL_Y/);
-	assert.match(SURFACE_SOURCE, /y: \{ duration: 0\.7, ease: easeOut \}/);
+	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS = 0\.7;/);
+	assert.match(SURFACE_SOURCE, /y: \{ duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS, ease: easeOut \}/);
+	assert.match(SURFACE_SOURCE, /minHeight: \{\s+duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,\s+ease: easeOut,/);
+	assert.match(SURFACE_SOURCE, /scale: isPostSettle \? 1 : PERSONAL_GRAPH_INITIAL_TITLE_SCALE,\s+\}\}\s+transition=\{\{\s+duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,/);
+	assert.doesNotMatch(SURFACE_SOURCE, /PERSONAL_GRAPH_TITLE_SETTLE_DELAY_SECONDS/);
+	assert.doesNotMatch(SURFACE_SOURCE, /delay: isPostSettle \?/);
+	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS = 0\.4;/);
+	assert.match(SURFACE_SOURCE, /const isBylineRevealed = isPostSettle;/);
+	assert.match(SURFACE_SOURCE, /delay: isBylineRevealed \? PERSONAL_GRAPH_BYLINE_REVEAL_DELAY_SECONDS : 0/);
+	assert.doesNotMatch(SURFACE_SOURCE, /fontSize: isPostSettle \? "0\.75rem" : "1\.4rem"/);
+	assert.doesNotMatch(SURFACE_SOURCE, /marginTop: isPostSettle \? "0\.5rem" : "1rem"/);
 	assert.doesNotMatch(
 		SURFACE_SOURCE,
 		/<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">\s*<PersonalGraphGlassPanel contentClassName="relative flex flex-col items-center gap-4/,
@@ -632,6 +661,8 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(SURFACE_SOURCE, /variant="fill"/);
 	assert.match(SURFACE_SOURCE, /showControls=\{false\}/);
 	assert.match(SURFACE_SOURCE, /background="transparent"/);
+	assert.match(SURFACE_SOURCE, /const responsiveGraphParams = useResponsivePersonalGraphParams\(graphStageRef\);/);
+	assert.doesNotMatch(SURFACE_SOURCE, /showOriginMarker: false/);
 	assert.match(SURFACE_SOURCE, /params=\{responsiveGraphParams\}/);
 	assert.match(SURFACE_SOURCE, /rayOriginBottomOffset=\{PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX\}/);
 	assert.match(SURFACE_SOURCE, /DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS/);
@@ -662,6 +693,7 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(NEURAL_CANVAS_SOURCE, /const store = useMemo\(\(\) => providedStore \?\? createNeuralGraphStore\(explorer\), \[explorer, providedStore\]\);/);
 	assert.match(NEURAL_CANVAS_SOURCE, /function getRayOriginY/);
 	assert.match(NEURAL_CANVAS_SOURCE, /viewport\.height - rayOriginBottomOffset/);
+	assert.match(NEURAL_CANVAS_SOURCE, /style=\{getOriginMarkerStyleForViewport\(params, viewport, rayOriginY\)\}/);
 	assert.match(NEURAL_RENDERER_SOURCE, /rayOriginY\?: number;/);
 	assert.match(NEURAL_RENDERER_SOURCE, /rayOriginY \?\? viewport\.height \* params\.rayOriginY/);
 	assert.match(NEURAL_RENDERER_SOURCE, /function drawRadialRayTails/);
@@ -689,7 +721,7 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(GRAPH_SOURCE, /<PersonalGraphNeuralCanvas/);
 	assert.match(NEURAL_CANVAS_SOURCE, /data-neural-graph-renderer="owned-canvas"/);
 	assert.match(NEURAL_CANVAS_SOURCE, /data-neural-graph-origin-node="true"/);
-	assert.match(NEURAL_CANVAS_SOURCE, /params\.showRays && params\.showOriginMarker \? \(/);
+	assert.match(NEURAL_CANVAS_SOURCE, /params\.showRays && params\.showOriginMarker && hasMeasuredViewport \? \(/);
 	assert.match(NEURAL_CANVAS_SOURCE, /backgroundClass = background === "transparent" \? "bg-transparent" : "bg-surface"/);
 	assert.match(NEURAL_CANVAS_SOURCE, /<canvas aria-hidden="true"/);
 	assert.match(NEURAL_CANVAS_SOURCE, /<SelectedNodeOverlay/);
@@ -752,7 +784,6 @@ test("Personal Graph uses a theme-aware editor canvas backdrop", () => {
 	assert.match(BACKDROP_SOURCE, /overflow-hidden bg-surface/);
 	assert.match(BACKDROP_SOURCE, /#000 42%, #000 100%/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /bg-gradient-to-t from-white/);
-	assert.doesNotMatch(BACKDROP_SOURCE, /"#FFFFFF"/);
 	assert.match(
 		BACKDROP_SOURCE,
 		/import PatternTile, \{ type PatternStrokeOptions \} from "@\/components\/website\/demos\/visual\/pattern-tile";/,
@@ -771,7 +802,6 @@ test("Personal Graph uses a theme-aware editor canvas backdrop", () => {
 	assert.match(BACKDROP_SOURCE, /back="transparent"/);
 	assert.match(TAILWIND_THEME_SOURCE, /--color-neutral-400: var\(--ds-chart-gray-bold\);/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /blendMode="multiply"/);
-	assert.match(BACKDROP_SOURCE, /const PERSONAL_GRAPH_SURFACE_COLOR = "var\(--ds-surface\)";/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /PERSONAL_GRAPH_GRID_COLORS/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /PERSONAL_GRAPH_GRID_OVERLAY_COLORS/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /front=\{gridColor\}/);
@@ -793,9 +823,11 @@ test("Personal Graph uses a theme-aware editor canvas backdrop", () => {
 	assert.match(BACKDROP_SOURCE, /dash: 3/);
 	assert.match(BACKDROP_SOURCE, /gap: 6/);
 	assert.match(BACKDROP_SOURCE, /<WaveGradient/);
-	assert.match(BACKDROP_SOURCE, /colors=\{PERSONAL_GRAPH_WAVE_COLORS\}/);
-	assert.match(BACKDROP_SOURCE, /const PERSONAL_GRAPH_WAVE_COLORS: \[string, string, string, string\]/);
-	assert.match(BACKDROP_SOURCE, /PERSONAL_GRAPH_SURFACE_COLOR,\s+PERSONAL_GRAPH_SURFACE_COLOR,\s+PERSONAL_GRAPH_SURFACE_COLOR,\s+PERSONAL_GRAPH_SURFACE_COLOR,/);
+	assert.match(BACKDROP_SOURCE, /const PERSONAL_GRAPH_SHADER_SURFACE_COLORS = \{/);
+	assert.match(BACKDROP_SOURCE, /dark: "#1D2125"/);
+	assert.match(BACKDROP_SOURCE, /light: "#FFFFFF"/);
+	assert.match(BACKDROP_SOURCE, /function getPersonalGraphShaderSurfaceColors\(theme: "light" \| "dark"\): \[string, string, string, string\]/);
+	assert.match(BACKDROP_SOURCE, /colors=\{surfaceColors\}/);
 	assert.match(BACKDROP_SOURCE, /key=\{`personal-graph-wave-\$\{actualTheme\}`\}/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /absolute inset-x-0 top-0 h-32/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /bg-gradient-to-b from-surface via-surface\/90 to-transparent/);
@@ -811,7 +843,7 @@ test("Personal Graph uses a theme-aware editor canvas backdrop", () => {
 	assert.doesNotMatch(BACKDROP_SOURCE, /colorMode="monochrome"/);
 	assert.match(BACKDROP_SOURCE, /const PERSONAL_GRAPH_ASCII_COLOR = "var\(--ds-text-subtle\)";/);
 	assert.match(BACKDROP_SOURCE, /monoColor=\{PERSONAL_GRAPH_ASCII_COLOR\}/);
-	assert.match(BACKDROP_SOURCE, /backgroundColor=\{PERSONAL_GRAPH_SURFACE_COLOR\}/);
+	assert.match(BACKDROP_SOURCE, /backgroundColor=\{surfaceColor\}/);
 	assert.match(BACKDROP_SOURCE, /key=\{`personal-graph-ascii-\$\{actualTheme\}`\}/);
 	assert.doesNotMatch(BACKDROP_SOURCE, /colorMode="source"/);
 	assert.match(BACKDROP_SOURCE, /compositeMode="mask"/);

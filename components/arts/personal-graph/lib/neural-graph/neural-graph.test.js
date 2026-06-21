@@ -929,6 +929,7 @@ test("computeNeuralGraphLayout arranges radial cluster leaves on a shared outer 
 	assert.equal(layout.layoutShape, "radialCluster");
 	assert.equal(layout.treeBranches.filter((branch) => branch.sourceId === null).at(0).targetId, "root");
 	assert.deepEqual(layout.treeBranches.map((branch) => branch.targetId).sort(), ["alpha", "beta", "delta", "gamma", "root"]);
+	assert.equal(radius("root"), 0);
 	assert.equal(radius("alpha"), radius("gamma"));
 	assert.equal(radius("gamma"), radius("delta"));
 	assert.ok(radius("root") < radius("beta"));
@@ -960,6 +961,48 @@ test("computeNeuralGraphLayout pins the selected radial node to the graph center
 	assert.ok(Math.abs(selected.x) < 0.001);
 	assert.ok(Math.abs(selected.y) < 0.001);
 	assert.deepEqual([...new Set(layout.nodes.map((item) => item.baseSize))], [4]);
+});
+
+test("computeNeuralGraphLayout keeps radial origin anchors fixed during ambient motion", async () => {
+	const { computeNeuralGraphLayout } = await layoutModule;
+	const { DEFAULT_NEURAL_GRAPH_PARAMS, clampNeuralGraphParams } = await paramsModule;
+	const { createNeuralGraphStore } = await storeModule;
+	const treeExplorer = {
+		edges: [
+			edge("root", "alpha"),
+			edge("root", "beta"),
+			edge("beta", "gamma"),
+		],
+		generatedAt: "2026-04-30T00:00:00.000Z",
+		nodes: [
+			node("root", "Root", "synthesis", 2),
+			node("alpha", "Alpha", "concept", 1),
+			node("beta", "Beta", "entity", 2),
+			node("gamma", "Gamma", "raw", 1),
+		],
+		stats: { danglingCount: 0, edgeCount: 3, nodeCount: 4, rawCount: 1, wikiCount: 3 },
+	};
+	const params = clampNeuralGraphParams({
+		...DEFAULT_NEURAL_GRAPH_PARAMS,
+		amplitude: 0.9,
+		layoutShape: "radialCluster",
+		maxVisibleNodes: 10,
+		speed: 0.85,
+		spread: 400,
+	});
+	const layout = computeNeuralGraphLayout({
+		params,
+		selectedNodeId: "root",
+		store: createNeuralGraphStore(treeExplorer),
+		time: 2.3,
+		viewport: { height: 700, width: 1000 },
+	});
+	const root = layout.nodesById.get("root");
+	const beta = layout.nodesById.get("beta");
+
+	assert.equal(root.x, 0);
+	assert.equal(root.y, 0);
+	assert.ok(Math.hypot(beta.x, beta.y) > 1);
 });
 
 test("computeNeuralGraphLayout distributes full-circle radial leaves without duplicating endpoints", async () => {
@@ -1765,6 +1808,74 @@ test("drawNeuralGraph keeps radial branches centered while ray tails start at th
 	assert.deepEqual(moveTos.slice(0, 2).map(([, x, y]) => [x, y]), [[300, 360], [300, 360]]);
 	assert.deepEqual(moveTos[2].slice(1), [300, 200]);
 	assert.equal(ctx.calls.filter(([name]) => name === "bezierCurveTo").length, 5);
+});
+
+test("drawNeuralGraph pans radial branches with the root while keeping ray tails fixed", async () => {
+	const { createNeuralCamera } = await cameraModule;
+	const { DEFAULT_NEURAL_GRAPH_PARAMS } = await paramsModule;
+	const { drawNeuralGraph } = await rendererModule;
+	const viewport = { height: 400, width: 600 };
+	const root = { ...layoutNode("root", 0), y: 0 };
+	const child = { ...layoutNode("child", 120), y: -120 };
+	const childEdge = layoutEdge("root-child", root, child);
+	const layout = {
+		edges: [childEdge],
+		layoutShape: "radialCluster",
+		nodes: [root, child],
+		nodesById: new Map([
+			[root.id, root],
+			[child.id, child],
+		]),
+		origin: { x: 0, y: 0 },
+		treeBranches: [
+			{
+				edge: null,
+				id: "origin-root",
+				source: null,
+				sourceId: null,
+				target: root,
+				targetId: root.id,
+			},
+			{
+				edge: childEdge.edge,
+				id: childEdge.id,
+				source: root,
+				sourceId: root.id,
+				target: child,
+				targetId: child.id,
+			},
+		],
+		viewport,
+	};
+	const ctx = createRecordingCanvasContext();
+
+	drawNeuralGraph(ctx, layout, {
+		background: "transparent",
+		camera: createNeuralCamera({ x: 24, y: -12 }),
+		focusProgress: 0,
+		hoveredNodeId: null,
+		params: {
+			...DEFAULT_NEURAL_GRAPH_PARAMS,
+			glowIntensity: 0,
+			layoutShape: "radialCluster",
+			nodeRadius: 0,
+			nodeShape: "square",
+			originY: 0.5,
+			showEdges: false,
+			showLabels: false,
+			showRays: true,
+			showSignals: false,
+		},
+		rayOriginY: 360,
+		selectedNodeId: null,
+		theme: "light",
+		viewport,
+	});
+
+	const moveTos = ctx.calls.filter(([name]) => name === "moveTo");
+	assert.deepEqual(moveTos[0].slice(1), [300, 360]);
+	assert.deepEqual(moveTos[1].slice(1), [276, 212]);
+	assert.deepEqual(moveTos[2].slice(1), [276, 212]);
 });
 
 test("drawNeuralGraph bends ray curves with the elastic hover field", async () => {

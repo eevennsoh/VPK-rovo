@@ -348,6 +348,8 @@ function assignRadialRadii({
 }) {
 	if (node.children.length === 0) {
 		node.radius = outerRadius;
+	} else if (node.depth <= 1) {
+		node.radius = 0;
 	} else {
 		const depthProgress = maxDepth <= 1 ? 1 : (node.depth - 1) / Math.max(1, maxDepth - 1);
 		const curvedProgress = Math.pow(Math.max(0, Math.min(1, depthProgress)), params.radialDepthCurve);
@@ -400,6 +402,9 @@ function createRadialLayoutNode({
 	const flow = waveNoise(node.node, params, time, reduceMotion, interaction);
 	const flowScale = params.layoutShape === "radialCluster" ? 0.18 : 1;
 	const tiltOffset = Math.sin(params.tiltX * DEG_TO_RAD) * z * 0.16 + pointerY * interactionProgress * params.spread * 0.006;
+	const isOriginAnchor = node.depth <= 1 && node.radius <= 0.001;
+	const originOffsetX = isOriginAnchor ? 0 : flow.x * flowScale;
+	const originOffsetY = isOriginAnchor ? 0 : flow.y * flowScale + tiltOffset;
 
 	return {
 		alpha: 1,
@@ -408,8 +413,8 @@ function createRadialLayoutNode({
 		id: node.node.id,
 		node: node.node,
 		phase: unitHash(node.node.id, "phase"),
-		x: Math.cos(angle) * node.radius + flow.x * flowScale,
-		y: Math.sin(angle) * node.radius + flow.y * flowScale + tiltOffset,
+		x: Math.cos(angle) * node.radius + originOffsetX,
+		y: Math.sin(angle) * node.radius + originOffsetY,
 		z,
 	};
 }
