@@ -17,8 +17,8 @@ Complete setup guide for local development with ASAP authentication to Atlassian
 **Local Development:**
 
 ```
-Browser → Next.js Server (port 3000) with API proxy routes
-        → Express Backend (port 8080)
+Browser → Next.js Server (actual port in .dev-frontend-port; default base 3000) with API proxy routes
+        → Express Backend (actual port in .dev-backend-port; default base 8080)
         → Rovo Serve (primary chat)
         → AI Gateway-assisted routes (image, voice, suggestions)
 ```
@@ -33,19 +33,26 @@ Browser → Single Express Server (port 8080)
 
 The same code works in both environments! Next.js API routes (`/api/chat-sdk`, `/api/health`) run in development directly and are bundled into the Express server for production.
 
-### Option 1: Automated Startup
+### Option 1: Worktree-Aware Browser Verification
 
 ```bash
-./.agents/skills/vpk-setup/scripts/start-dev.sh
+pnpm run dev:tmux:start
+pnpm run dev:tmux:status
 ```
 
-This starts Rovo Serve (:8000), Express backend (:8080), and Next.js frontend (:3000).
+This starts Express backend and Next.js frontend in a detached, worktree-aware tmux session. Use the printed URLs, `pnpm ports`, or `.dev-frontend-port` / `.dev-backend-port`; do not assume default ports in linked worktrees.
 
-**For AI/automated execution:** Use `./.agents/skills/vpk-setup/scripts/start-dev.sh --no-wait` to prevent the script from blocking.
+### Option 2: Full Rovo Stack
 
-**To stop:** `./.agents/skills/vpk-setup/scripts/stop-dev.sh`
+```bash
+pnpm run rovo
+# For browser verification with Rovo in tmux:
+pnpm run rovo:tmux:start --1
+```
 
-### Option 2: Manual 2-Terminal Setup
+This starts Rovo Serve, Express backend, and Next.js frontend. Use this when chat behavior explicitly selects or delegates to Rovo.
+
+### Option 3: Manual / Foreground Fallback
 
 **Terminal 1 - Rovo Serve:**
 
@@ -59,17 +66,19 @@ pnpm run dev:rovo
 pnpm run dev
 ```
 
+Use the manual fallback when tmux is unavailable or you need foreground logs in the current terminal.
+
 ### Verify It Works
 
 1. **Check backend health:**
 
    ```bash
-   curl http://localhost:8080/api/health
+   curl "http://localhost:$(cat .dev-backend-port)/api/health"
    ```
 
    Should show `"authMethod": "ASAP"`
 
-2. **Open browser:** http://localhost:3000
+2. **Open browser:** `http://localhost:$(cat .dev-frontend-port)`
 
 ### Troubleshooting
 
@@ -83,14 +92,14 @@ pkill -f 'next dev'
 **"Unable to acquire lock at .next/dev/lock":** Another Next.js dev server is already running for this repo.
 
 ```bash
-./.agents/skills/vpk-setup/scripts/stop-dev.sh
+pnpm run dev:tmux:stop
 rm -f .next/dev/lock
-./.agents/skills/vpk-setup/scripts/start-dev.sh
+pnpm run dev:tmux:start
 ```
 
 **Frontend 500 with "Can't resolve '@/components/providers'":** Ensure the file is named `components/providers.tsx` (lowercase) and matches the import casing.
 
-**No available port found (3000-3019 or 8000-8099):** Another process is using the dev port range. Stop other dev servers and retry.
+**No available port found:** Another process is using this worktree's dev port range. Check `pnpm ports`, stop stale dev servers for this worktree, and retry.
 
 **No AI response:** Check `.env.local` has ASAP credentials properly set (ASAP_KID, ASAP_ISSUER, ASAP_PRIVATE_KEY)
 
@@ -269,7 +278,7 @@ ROVO_SESSION_TOKEN=<paste-token-from-rovo-serve-output>
 - This is a **one-time setup** — the token does not expire or rotate
 - The supervisor passes this token to Serve as `ROVO_SERVE_SESSION_TOKEN` so both sides share the same secret
 - If `ROVO_SESSION_TOKEN` is missing, all `/v3/*` endpoints on Serve return `"Missing credentials"` (the `/healthcheck` endpoint is unauthenticated and still works)
-- If you see `"Missing credentials"` when curling port 8000 directly, remember that port 8000 is Rovo Serve — not the VPK backend. The backend port is in `.dev-backend-port` (typically 8081)
+- If you see `"Missing credentials"` when curling the Rovo port directly, remember that Rovo Serve is not the VPK backend. The backend port is in `.dev-backend-port`; use that for `/api/health`.
 
 **Optional — TTS model verification (`tts-latest`):**
 
@@ -355,13 +364,23 @@ Need help? Ask in #help-ai-gateway on Slack
 
 ### Start Development Services
 
-**Option 1 - Automated (Recommended):**
+**Option 1 - Worktree-Aware Browser Verification (Recommended):**
 
 ```bash
-./.agents/skills/vpk-setup/scripts/start-dev.sh
+pnpm run dev:tmux:start
 ```
 
-**Option 2 - Manual:**
+**Option 2 - Full Rovo Stack:**
+
+```bash
+pnpm run rovo
+# For browser verification with Rovo in tmux:
+pnpm run rovo:tmux:start --1
+# For full pool mode:
+pnpm run rovo:tmux:start --6
+```
+
+**Option 3 - Manual / Foreground Fallback:**
 
 ```bash
 # Terminal 1
@@ -371,20 +390,12 @@ pnpm run dev:rovo
 pnpm run dev
 ```
 
-**Option 3 - Concurrent:**
-
-```bash
-pnpm run rovo
-# For full pool mode:
-# pnpm run rovo -- 6
-```
-
-**Important:** Only run one stack command at a time. Running `pnpm run rovo` while `start-dev.sh` (or another `pnpm run rovo`) is active will trigger lock/port conflicts.
+**Important:** Only run one stack command at a time. Running `pnpm run rovo` while another foreground or tmux stack is active can trigger lock/port conflicts.
 
 ### Verify Everything Works
 
-1. **Open** http://localhost:3000
-2. **Check backend:** `curl http://localhost:8080/api/health` should show `"authMethod": "ASAP"`
+1. **Open** `http://localhost:$(cat .dev-frontend-port)` or the frontend URL printed by `pnpm run dev:tmux:start`
+2. **Check backend:** `curl "http://localhost:$(cat .dev-backend-port)/api/health"` should show `"authMethod": "ASAP"`
 
 **Troubleshooting .env.local Issues:**
 

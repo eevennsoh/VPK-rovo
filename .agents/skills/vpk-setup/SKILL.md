@@ -22,8 +22,8 @@ Rovo App live voice mode.
 3. **Collect AI Gateway credentials** → Ask for use case ID and Atlassian email
 4. **Configure AI Gateway + Voice STT** → Generate ASAP keys and create `.env.local` with Google endpoint values and the current STT preset block
 5. **Set Rovo Session Token** → First launch of `pnpm run rovo` prints a session token; copy it to `ROVO_SESSION_TOKEN` in `.env.local` (one-time, does not expire)
-6. **Start servers** → Ask permission, then `pnpm run rovo` (single Rovo Serve + backend + frontend by default)
-7. **Verify** → http://localhost:3000 (or the port shown in terminal output)
+6. **Start servers** → Ask permission, then `pnpm run rovo` for first-time Rovo setup, or `pnpm run dev:tmux:start` when the task only needs frontend + backend browser verification
+7. **Verify** → Use `pnpm ports` or the recorded `.dev-frontend-port` / `.dev-backend-port`; do not assume default frontend/backend ports in linked worktrees
 
 ## Preflight Cleanup (when node_modules exists)
 
@@ -64,6 +64,8 @@ Rovo billing site is set via `ROVO_BILLING_URL` in `.env.local` (required, no ha
 For the full pool (6 instances, needed for agent team parallel runs), use `pnpm run rovo -- 6` instead.
 
 ### Multiport / tmux Mode
+
+`pnpm run dev:tmux:start` starts frontend + backend in a worktree-aware detached tmux session. Prefer this for browser verification when Rovo Serve is not part of the behavior under test. Use `pnpm run dev:tmux:status` or the `.dev-frontend-port` / `.dev-backend-port` files to get the actual URLs.
 
 `pnpm run rovo:tmux:start` starts a tmux session with 8 panes: frontend, backend, and 6 rovo serve ports.
 
@@ -227,7 +229,7 @@ OPENAI_REALTIME_VOICE=alloy
 | `SLACK_DM_USER_ID` | Optional | Slack user ID to send run-summary DMs to |
 | `NEXT_PUBLIC_API_URL` | Production | API URL for production static export builds |
 | `PORT` | Optional | Backend port override (default: 8080) |
-| `BACKEND_URL` | Optional | Frontend → backend URL override (default: http://localhost:8080) |
+| `BACKEND_URL` | Optional | Frontend → backend URL override; dev scripts normally inject the backend port recorded in `.dev-backend-port` |
 | `DEBUG` | Optional | Set `true` for verbose backend logging |
 | `OPENAI_REALTIME_API_KEY` | Optional | Direct OpenAI API key for Realtime — omit to use AI Gateway with ASAP credentials |
 | `OPENAI_REALTIME_MODEL` | Yes | Realtime voice model (default: `gpt-4o-realtime-preview`) |
@@ -285,9 +287,9 @@ For full model switching details, see [references/guide-model-switch.md](referen
 - [ ] `ROVO_SESSION_TOKEN` is set (copy from Rovo Serve first-launch output — one-time setup)
 - [ ] Google endpoints enabled in `.env.local`
 - [ ] `GOOGLE_STT_MODEL` and `STT_PRESET` are set in `.env.local`
-- [ ] Dev servers started with `pnpm run rovo`
-- [ ] Health check passes at http://localhost:8080/api/health
-- [ ] Chat responds at http://localhost:3000
+- [ ] Dev servers started with `pnpm run rovo` for full Rovo setup or `pnpm run dev:tmux:start` for frontend + backend verification
+- [ ] Backend health check passes at `http://localhost:<backend-port>/api/health` using `.dev-backend-port`
+- [ ] Frontend responds at `http://localhost:<frontend-port>` using `.dev-frontend-port`
 
 ## Quick Troubleshooting
 
@@ -295,7 +297,7 @@ For full model switching details, see [references/guide-model-switch.md](referen
 | ----- | --------- |
 | Chat returns 503 | Rovo Serve not running — use `pnpm run rovo` to start all processes |
 | Auth errors during ASAP save | `atlas upgrade` |
-| "EADDRINUSE" error | Servers auto-find available ports (3001+/8081+). If still failing, run with `--force-kill`: `./.agents/skills/vpk-setup/scripts/start-dev.sh --force-kill` |
+| "EADDRINUSE" error | Servers auto-find available ports within the worktree range. If still failing, check `pnpm ports`, stop the stale tmux stack with `pnpm run dev:tmux:stop` or `pnpm run rovo:tmux:stop`, then restart. |
 | Next.js lock error | Remove stale lock: `rm -f .next/dev/lock` then restart |
 | Turbopack cache corrupted | Clear cache: `rm -rf .next` then restart |
 | Zombie processes blocking ports | `ROVO_FORCE_CLEAN_START=true pnpm run rovo` (graceful SIGTERM then SIGKILL fallback) |
@@ -330,11 +332,11 @@ VPK dev servers automatically find available ports if defaults are in use:
 pnpm ports  # Show port assignments for all worktrees
 ```
 
-The actual ports are written to `.dev-rovo-port`, `.dev-frontend-port`, and `.dev-backend-port` at runtime. Agent-browser and other tools read these files to determine the correct localhost URLs for the current worktree.
+The actual ports are written to `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port` at runtime. Agent-browser and other tools should read these files, or `pnpm ports`, to determine the correct localhost URLs for the current worktree.
 
 ## Next Steps
 
-- **Develop locally:** Run `pnpm run rovo` in your terminal (Ctrl+C to stop)
+- **Develop locally:** Run `pnpm run dev:tmux:start` for frontend + backend browser verification, or `pnpm run rovo` / `pnpm run rovo:tmux:start --1` when Rovo Serve is in scope
 - **Ready to deploy?** Use `/vpk-deploy` to create a permanent, shareable URL
 - **Make changes:** Edit code, test locally, then commit and `/vpk-deploy` again
 

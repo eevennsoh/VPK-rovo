@@ -50,7 +50,10 @@ fi
 # If we found any ports, output context for Claude
 if [ ${#CONTEXT_PARTS[@]} -gt 0 ]; then
     # Build the context message
-    CONTEXT="Dev servers running in this worktree: ${CONTEXT_PARTS[*]}. Use the frontend URL (http://localhost:$FRONTEND_PORT) when navigating to pages."
+    CONTEXT="Dev servers running in this worktree: ${CONTEXT_PARTS[*]}. Use these recorded worktree ports instead of assuming default localhost ports."
+    if [ -n "$FRONTEND_PORT" ]; then
+        CONTEXT="$CONTEXT Use the frontend URL (http://localhost:$FRONTEND_PORT) when navigating to pages."
+    fi
 
     # Escape for JSON
     CONTEXT_ESCAPED=$(echo "$CONTEXT" | sed 's/"/\\"/g' | tr -d '\n')
@@ -70,7 +73,7 @@ else
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "additionalContext": "No dev servers detected in this worktree. Start with 'pnpm run dev' if you need to test locally."
+    "additionalContext": "No dev servers detected in this worktree. For browser verification, start the worktree-aware tmux stack with 'pnpm run dev:tmux:start', then use 'pnpm ports' or the .dev-frontend-port/.dev-backend-port files for the actual URLs. Use 'pnpm run dev' only as a foreground fallback when tmux is unavailable."
   }
 }
 EOF
