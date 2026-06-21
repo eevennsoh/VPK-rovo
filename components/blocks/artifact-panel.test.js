@@ -66,6 +66,29 @@ test("ArtifactPanel uses the Rovo Canvas version-history treatment instead of a 
 	assert.doesNotMatch(ARTIFACT_SOURCE, /aria-label="Artifact version"/u);
 });
 
+test("ArtifactPanel reuses Intl formatters across version history rows", () => {
+	assert.match(
+		ARTIFACT_SOURCE,
+		/const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{ dateStyle: "medium" \}\);/u,
+	);
+	assert.match(
+		ARTIFACT_SOURCE,
+		/const ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER = new Intl\.DateTimeFormat\("en-US", \{[\s\S]*dateStyle: "medium",[\s\S]*timeStyle: "short",[\s\S]*\}\);/u,
+	);
+	assert.match(
+		ARTIFACT_SOURCE,
+		/return ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER\.format\(date\);/u,
+	);
+	assert.match(
+		ARTIFACT_SOURCE,
+		/return ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER\.format\(date\);/u,
+	);
+	assert.doesNotMatch(
+		ARTIFACT_SOURCE,
+		/return new Intl\.DateTimeFormat\("en-US"/u,
+	);
+});
+
 test("ArtifactPanel renders annotations through the shared annotation layer", () => {
 	assert.match(ARTIFACT_SOURCE, /export function ArtifactAnnotationLayer/u);
 	assert.match(
