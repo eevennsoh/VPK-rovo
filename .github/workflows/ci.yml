@@ -41,7 +41,6 @@ jobs:
         # Cover both registry path variants: metadata uses `/artifactory/api/npm/`,
         # the lockfile tarball URL uses `/api/npm/`.
         run: |
-          echo "ATLASSIAN_NPM_TOKEN length: ${#ATLASSIAN_NPM_TOKEN}"
           {
             echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
             echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
