@@ -84,7 +84,7 @@ export function validateHtmlString(html, label = "document") {
 	// remote-asset + external-stylesheet rules; every other offline invariant
 	// (embedded fonts, dark block, a11y, main landmark, no unresolved {{...}})
 	// still applies.
-	const isLanding = /data-vpk-landing=["']true["']/.test(html);
+	const isLanding = /<html\b[^>]*\bdata-vpk-landing=["']true["']/i.test(html);
 
 	if (/{{[^}]+}}/.test(html) && !/data-vpk-literal-double-braces="true"/.test(html)) {
 		failures.push("contains unresolved {{...}} placeholder tokens");
