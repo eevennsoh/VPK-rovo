@@ -113,6 +113,8 @@ function directoryVisualToSmartLinkVisual(visual: DirectoryVisual, label: string
 				icon: getDirectoryIcon(visual.iconKey),
 				tone: visual.iconColor ? smartLinkToneByIconColor[visual.iconColor] : undefined,
 			};
+		case "third-party":
+			return { kind: "third-party", name: visual.name };
 		default:
 			return { kind: "image", src: visual.src, alt: label };
 	}

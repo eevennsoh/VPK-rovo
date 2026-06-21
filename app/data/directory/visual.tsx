@@ -34,6 +34,7 @@ import WorkItemIcon from "@atlaskit/icon/core/work-item";
 
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor";
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 import type { DirectoryIconKey, DirectoryVisual, SkillIconKey } from "./types";
 
@@ -48,7 +49,12 @@ import type { DirectoryIconKey, DirectoryVisual, SkillIconKey } from "./types";
 export function avatarVisualFromSrc(
 	logoName: AtlassianLogoName | undefined,
 	avatarSrc: string | undefined,
+	brandName?: ThirdPartyLogoName,
 ): DirectoryVisual | undefined {
+	if (brandName) {
+		return { kind: "third-party", name: brandName };
+	}
+
 	if (logoName) {
 		return { kind: "logo", logoName };
 	}

@@ -1686,7 +1686,7 @@ const agents: AgentSelectorAgent[] = [
     id: "github-copilot",
     name: "GitHub Copilot",
     byline: "Agent by GitHub",
-    avatarSrc: "/3p/github/24.svg",
+    brandName: "github",
   },
 ];
 

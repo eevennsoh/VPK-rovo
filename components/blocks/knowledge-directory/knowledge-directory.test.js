@@ -111,9 +111,8 @@ test("Knowledge Directory includes real connector defaults", () => {
 
 	assert.deepEqual(byName.get("Confluence").visual, { kind: "logo", logoName: "confluence" });
 	assert.deepEqual(byName.get("Google Drive").visual, {
-		kind: "image",
-		shape: "square",
-		src: "/3p/google-drive/20.svg",
+		kind: "third-party",
+		name: "google-drive",
 	});
 	assert.ok(apps.every((app) => Array.isArray(app.contents)));
 	for (const app of apps) {

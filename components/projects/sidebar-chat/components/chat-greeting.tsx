@@ -198,6 +198,7 @@ function SkillListItem({
 			description={suggestion.description}
 			icon={suggestion.icon}
 			iconColor={iconColor}
+			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
 			active={active}
@@ -272,13 +273,14 @@ function CustomAgentStarterItem({
 	suggestion,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const hasOwnVisual = Boolean(suggestion.imageSrc || suggestion.icon);
+	const hasOwnVisual = Boolean(suggestion.imageName || suggestion.imageSrc || suggestion.icon);
 
 	return (
 		<GreetingPromptRow
 			description={suggestion.description}
 			icon={suggestion.icon}
 			iconColor={token("color.icon.subtle")}
+			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
 			onClick={onClick}
@@ -357,7 +359,7 @@ function CustomAgentGreeting({
 						variants={activeContainerVariants}
 					>
 						<motion.div variants={activeItemVariants}>
-							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
+							<AgentAvatarVisual avatarSrc={agent.avatarSrc} brandName={agent.brandName} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 						</motion.div>
 						<motion.div className={cn("flex flex-col gap-2", isAgentTest ? "items-start" : "items-center")} variants={activeItemVariants}>
 							<Heading size="large" className={isAgentTest ? "text-left" : "text-center"}>{agent.name}</Heading>

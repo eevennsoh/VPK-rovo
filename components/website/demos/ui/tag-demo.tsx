@@ -97,10 +97,10 @@ export function TagDemoFrontSlot() {
 			<Tag color="teal" elemBefore={<BrandLogoMark frame="chip" src="/2p/adaptavist.png" label="Adaptavist" />}>
 				Adaptavist
 			</Tag>
-			<Tag color="purple" elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}>
+			<Tag color="purple" elemBefore={<BrandLogoMark frame="chip" name="figma" label="Figma" />}>
 				Figma
 			</Tag>
-			<Tag color="green" elemBefore={<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />}>
+			<Tag color="green" elemBefore={<BrandLogoMark frame="chip" name="google-drive" label="Google Drive" />}>
 				Drive
 			</Tag>
 			<Tag
@@ -163,10 +163,10 @@ export function TagDemoEditorTag() {
 			<Tag variant="editor" color="teal" elemBefore={<BrandLogoMark frame="chip" src="/2p/adaptavist.png" label="Adaptavist" />}>
 				Adaptavist
 			</Tag>
-			<Tag variant="editor" color="purple" elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}>
+			<Tag variant="editor" color="purple" elemBefore={<BrandLogoMark frame="chip" name="figma" label="Figma" />}>
 				Figma
 			</Tag>
-			<Tag variant="editor" color="green" elemBefore={<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />}>
+			<Tag variant="editor" color="green" elemBefore={<BrandLogoMark frame="chip" name="google-drive" label="Google Drive" />}>
 				Drive
 			</Tag>
 			<Tag

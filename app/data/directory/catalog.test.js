@@ -4,7 +4,7 @@ const test = require("node:test");
 
 const { loadDirectoryModule } = require(path.join(__dirname, "__tests__", "load-directory-module.js"));
 
-const VALID_VISUAL_KINDS = new Set(["avatar", "image", "logo", "icon"]);
+const VALID_VISUAL_KINDS = new Set(["avatar", "image", "logo", "third-party", "icon"]);
 
 let modulePromise;
 function loadCatalog() {
@@ -103,10 +103,9 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 		// 2p/3p app skills render the publisher's company brand mark, not a glyph.
 		if (skill.source === "2p" || skill.source === "3p") {
 			const visual = getSkillDirectoryVisual(skill);
-			assert.equal(
-				visual.kind,
-				"image",
-				`skill ${skill.id}: ${skill.source} source must resolve to a company logo image`,
+			assert.ok(
+				visual.kind === "image" || visual.kind === "third-party",
+				`skill ${skill.id}: ${skill.source} source must resolve to a company brand mark (image or third-party), got ${visual.kind}`,
 			);
 		}
 	}

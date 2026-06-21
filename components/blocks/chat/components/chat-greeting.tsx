@@ -33,6 +33,7 @@ function SkillListItem({
 			description={suggestion.description}
 			icon={suggestion.icon}
 			iconColor={iconColor}
+			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
 			onClick={onClick}

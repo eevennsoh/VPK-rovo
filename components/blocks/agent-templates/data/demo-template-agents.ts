@@ -5,6 +5,7 @@ import type {
 import type { EntityCardCapability } from "@/components/ui-custom/entity-card";
 import { AGENT_TEMPLATE_CONFIGS } from "@/app/data/directory/agent-templates";
 import { getSkillIcon } from "@/lib/skill-icons";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 type DemoTemplateSource = NonNullable<AgentTemplatesAgent["sources"]>[number];
 type DemoTemplateSkill = NonNullable<AgentTemplatesAgent["skills"]>[number];
@@ -19,7 +20,7 @@ type DemoTemplateConfig = {
 	avatarSrc: string;
 	publisher: string;
 	attributionKind?: AgentTemplatesAgent["attributionKind"];
-	publisherLogoSrc?: string;
+	publisherBrandName?: ThirdPartyLogoName;
 	templatePrompt?: string;
 	verified?: boolean;
 	sources?: readonly DemoTemplateSource[];
@@ -33,22 +34,22 @@ type DemoTemplateConfig = {
 
 const SOURCE = {
 	bitbucket: { id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
-	figma: { id: "figma", label: "Figma", provider: "teams", iconSrc: "/3p/figma/24.svg" },
-	amplitude: { id: "amplitude", label: "Amplitude", provider: "teams", iconSrc: "/3p/amplitude/24.svg" },
+	figma: { id: "figma", label: "Figma", provider: "teams", name: "figma" },
+	amplitude: { id: "amplitude", label: "Amplitude", provider: "teams", name: "amplitude" },
 	confluence: { id: "confluence", label: "Confluence", provider: "confluence" },
-	github: { id: "github", label: "GitHub", provider: "teams", iconSrc: "/3p/github/24.svg" },
+	github: { id: "github", label: "GitHub", provider: "teams", name: "github" },
 	googleDrive: { id: "google-drive", label: "Google Drive", provider: "google-drive" },
 	jira: { id: "jira", label: "Jira", provider: "jira" },
 	jiraProductDiscovery: { id: "jira-product-discovery", label: "Jira Product Discovery", provider: "jira-product-discovery" },
 	jiraServiceManagement: { id: "jira-service-management", label: "Jira Service Management", provider: "jira-service-management" },
 	loom: { id: "loom", label: "Loom", provider: "loom" },
-	microsoftTeams: { id: "microsoft-teams", label: "Microsoft Teams", provider: "teams", iconSrc: "/3p/microsoft-teams/24.svg" },
-	monday: { id: "monday", label: "monday.com", provider: "teams", iconSrc: "/3p/monday/24.svg" },
-	pagerDuty: { id: "pagerduty", label: "PagerDuty", provider: "teams", iconSrc: "/3p/pagerduty/24.svg" },
-	powerBi: { id: "powerbi", label: "Power BI", provider: "teams", iconSrc: "/3p/powerbi/24.svg" },
+	microsoftTeams: { id: "microsoft-teams", label: "Microsoft Teams", provider: "teams", name: "microsoft-teams" },
+	monday: { id: "monday", label: "monday.com", provider: "teams", name: "monday" },
+	pagerDuty: { id: "pagerduty", label: "PagerDuty", provider: "teams", name: "pagerduty" },
+	powerBi: { id: "powerbi", label: "Power BI", provider: "teams", name: "powerbi" },
 	salesforce: { id: "salesforce", label: "Salesforce", provider: "salesforce" },
-	slack: { id: "slack", label: "Slack", provider: "teams", iconSrc: "/3p/slack/24.svg" },
-	smartSheet: { id: "smartsheet", label: "Smartsheet", provider: "teams", iconSrc: "/3p/smartsheet/24.svg" },
+	slack: { id: "slack", label: "Slack", provider: "teams", name: "slack" },
+	smartSheet: { id: "smartsheet", label: "Smartsheet", provider: "teams", name: "smartsheet" },
 	trello: { id: "trello", label: "Trello", provider: "trello" },
 } satisfies Record<string, DemoTemplateSource>;
 
@@ -338,7 +339,7 @@ function demoTemplateAgent({
 	avatarSrc,
 	publisher,
 	attributionKind = "team",
-	publisherLogoSrc,
+	publisherBrandName,
 	templatePrompt,
 	verified = false,
 	sources,
@@ -372,7 +373,7 @@ function demoTemplateAgent({
 		byline: `${name} by ${publisher}`,
 		publisher,
 		attributionKind,
-		publisherLogoSrc,
+		publisherBrandName,
 		avatarSrc,
 		description,
 		verified,
@@ -455,7 +456,7 @@ function templateConfigToDemo(
 		updated: config.updated,
 		peopleOffset: config.peopleOffset,
 		...(config.attributionKind ? { attributionKind: config.attributionKind } : {}),
-		...(config.publisherLogoSrc ? { publisherLogoSrc: config.publisherLogoSrc } : {}),
+		...(config.publisherBrandName ? { publisherBrandName: config.publisherBrandName } : {}),
 		...(config.verified ? { verified: config.verified } : {}),
 		...(config.templatePrompt ? { templatePrompt: config.templatePrompt } : {}),
 		...(config.collaboratorOverflow ? { collaboratorOverflow: config.collaboratorOverflow } : {}),

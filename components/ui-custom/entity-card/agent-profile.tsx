@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { getDeterministicAgentBannerSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +64,8 @@ export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"sectio
 	 * omitted, `"company"` falls back to the Atlassian glyph.
 	 */
 	partnerLogoSrc?: string;
+	/** 3P partner brand id — renders the upstream package mark on the company badge. */
+	partnerBrandName?: ThirdPartyLogoName;
 	/** Shows the verified check beside the partner name. Defaults to `true`. */
 	verified?: boolean;
 	/**
@@ -97,6 +101,7 @@ export function EntityCardAgentProfile({
 	partnerName = "Atlassian",
 	attributionKind = "company",
 	partnerLogoSrc,
+	partnerBrandName,
 	verified = true,
 	variant = "chat",
 	description = "Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries.",
@@ -153,7 +158,9 @@ export function EntityCardAgentProfile({
 		}
 		return (
 			<AvatarCompanyBadge>
-				{partnerLogoSrc ? (
+				{partnerBrandName ? (
+					<LogoThirdParty label="" name={partnerBrandName} size="xsmall" />
+				) : partnerLogoSrc ? (
 					<Image alt="" aria-hidden className="size-full object-cover" height={40} src={partnerLogoSrc} width={40} />
 				) : (
 					<AtlassianLogo

@@ -169,9 +169,9 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
 	assert.ok(allTools.some((tool) => tool.logoName === "atlassian"), "a tool should use the Atlassian brand logo");
 	assert.equal(
-		allTools.find((tool) => tool.id === "outlook")?.avatarSrc,
-		"/3p/microsoft-outlook/16-borderless.svg",
-		"Outlook should use the borderless logo inside directory tiles",
+		allTools.find((tool) => tool.id === "outlook")?.brandName,
+		"microsoft-outlook",
+		"Outlook should use the upstream package mark via brandName",
 	);
 	assert.ok(allTools.some((tool) => tool.favorite === true), "a tool should be marked favourite");
 	for (const categoryId of ["project-management", "software-development", "security-and-compliance"]) {

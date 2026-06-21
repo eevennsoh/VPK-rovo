@@ -13,6 +13,14 @@ import {
 	GoalsIcon,
 	FocusIcon,
 } from "@/components/ui/logo";
+import {
+	SlackLogo,
+	GoogleDriveLogo,
+	GoogleCalendarLogo,
+	MicrosoftSharepointLogo,
+	MicrosoftTeamsLogo,
+	MiroLogo,
+} from "@/components/ui/logo-third-party";
 
 /**
  * Filter item data structure
@@ -33,19 +41,19 @@ export const PRODUCT_FILTERS: FilterItem[] = [
 	{ id: "all", name: "All", icon: AppSwitcherIcon, count: "15M" },
 	{ id: "confluence", name: "Confluence", icon: ConfluenceIcon, count: "2.9M" },
 	{ id: "jira", name: "Jira", icon: JiraIcon, count: "2.6M" },
-	{ id: "slack", name: "Slack", icon: "/3p/slack/20.svg", count: "3.1M" },
+	{ id: "slack", name: "Slack", icon: SlackLogo, count: "3.1M" },
 	{ id: "jsm", name: "Jira Service Management", icon: JiraServiceManagementIcon, count: "2M" },
-	{ id: "drive", name: "Google Drive", icon: "/3p/google-drive/20.svg", count: "98K" },
+	{ id: "drive", name: "Google Drive", icon: GoogleDriveLogo, count: "98K" },
 	{ id: "loom", name: "Loom", icon: LoomIcon, count: "28K" },
 	{ id: "jpd", name: "Jira Product Discovery", icon: JiraProductDiscoveryIcon, count: "47K" },
 	{ id: "assets", name: "Assets", icon: AssetsIcon, count: "8K" },
 	{ id: "bitbucket", name: "Bitbucket", icon: BitbucketIcon, count: "6.8K" },
 	{ id: "compass", name: "Compass", icon: CompassIcon, count: "672" },
-	{ id: "gcal", name: "Google Calendar", icon: "/3p/google-calendar/20.svg", count: "1.3K" },
+	{ id: "gcal", name: "Google Calendar", icon: GoogleCalendarLogo, count: "1.3K" },
 	{ id: "focus", name: "Focus", icon: FocusIcon, count: "65" },
-	{ id: "sharepoint", name: "Microsoft SharePoint", icon: "/3p/microsoft-sharepoint/20.svg", actionLabel: "Connect" },
-	{ id: "teams", name: "Microsoft Teams", icon: "/3p/microsoft-teams/20.svg", actionLabel: "Connect" },
-	{ id: "miro", name: "Miro", icon: "/3p/miro/20.svg", actionLabel: "Connect" },
+	{ id: "sharepoint", name: "Microsoft SharePoint", icon: MicrosoftSharepointLogo, actionLabel: "Connect" },
+	{ id: "teams", name: "Microsoft Teams", icon: MicrosoftTeamsLogo, actionLabel: "Connect" },
+	{ id: "miro", name: "Miro", icon: MiroLogo, actionLabel: "Connect" },
 ];
 
 /**
@@ -72,4 +80,10 @@ export const LOGO_COMPONENTS = [
 	ProjectsIcon,
 	GoalsIcon,
 	FocusIcon,
+	SlackLogo,
+	GoogleDriveLogo,
+	GoogleCalendarLogo,
+	MicrosoftSharepointLogo,
+	MicrosoftTeamsLogo,
+	MiroLogo,
 ] as const;

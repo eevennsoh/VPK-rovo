@@ -1,4 +1,5 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 import skillsData from "./skills.json";
 import {
@@ -134,6 +135,8 @@ export interface SkillsDirectorySkill {
 	collectionDocsUrl?: string;
 	publisherName?: string;
 	publisherAvatarSrc?: string;
+	/** Publisher's 3P brand id — renders the upstream `@atlassian/logo-third-party` mark. */
+	publisherBrandName?: ThirdPartyLogoName;
 	companyId?: string;
 	categoryId?: SkillCategory;
 	starCount?: number;
@@ -198,7 +201,7 @@ export function isSkillPublisherPerson(skill: SkillsDirectorySkill): boolean {
  * set, rendered via the ADS logo component rather than a static asset.
  */
 export function getSkillPublisherLogoName(skill: SkillsDirectorySkill): AtlassianLogoName | undefined {
-	return getSkillPublisherAvatarSrc(skill) ? undefined : "atlassian";
+	return getSkillPublisherAvatarSrc(skill) || skill.publisherBrandName ? undefined : "atlassian";
 }
 
 export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory | undefined {
@@ -286,6 +289,9 @@ export function getSkillById(
  *   `resolveDirectoryVisual`.
  */
 export function getSkillDirectoryVisual(skill: SkillsDirectorySkill): DirectoryVisual {
+	if ((skill.source === "2p" || skill.source === "3p") && skill.publisherBrandName) {
+		return { kind: "third-party", name: skill.publisherBrandName };
+	}
 	const brandSrc = getSkillPublisherAvatarSrc(skill);
 	if ((skill.source === "2p" || skill.source === "3p") && brandSrc) {
 		return { kind: "image", shape: "square", src: brandSrc };

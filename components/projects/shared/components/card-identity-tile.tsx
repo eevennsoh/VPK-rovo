@@ -8,6 +8,7 @@ import { VisualIdentityTile } from "@/components/projects/shared/components/visu
 import type { ResolvedCardIdentity } from "@/components/projects/shared/lib/visual-identity";
 import { Tile } from "@/components/ui/tile";
 import { AtlassianLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { cn } from "@/lib/utils";
 
 type CardIdentityTileSize = "small" | "medium" | "large";
@@ -100,6 +101,19 @@ export function CardIdentityTile({
 			>
 				{renderAvatarTileChild(identity)}
 			</Tile>
+		);
+	}
+
+	if (identity.kind === "third-party") {
+		// The package mark is self-framing (its own white bordered tile), so it
+		// replaces the bordered `Tile` wrapper used by the other logo kinds.
+		return (
+			<LogoThirdParty
+				className={className}
+				label={decorative ? "" : label}
+				name={identity.name}
+				size={size}
+			/>
 		);
 	}
 

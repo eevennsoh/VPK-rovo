@@ -15,6 +15,7 @@ import {
 } from "@/components/blocks/generative-card";
 import { Button } from "@/components/ui/button";
 import { ConfluenceLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Tile } from "@/components/ui/tile";
 import { GUI } from "@/components/utils/gui";
 import { cn } from "@/lib/utils";
@@ -156,7 +157,7 @@ export function GenerativeCardDemo3p() {
 				description="Google Calendar"
 				leading={(
 					<Tile label="Google Calendar" size="medium" variant="transparent" isInset={false}>
-						<Image src="/3p/google-calendar/32.svg" alt="" width={32} height={32} />
+						<LogoThirdParty name="google-calendar" size="medium" label="" />
 					</Tile>
 				)}
 			/>
@@ -305,7 +306,7 @@ export function GenerativeCardDemoAction() {
 				description="Slack"
 				leading={(
 					<Tile label="Slack" size="medium" variant="transparent" isInset={false}>
-						<Image src="/3p/slack/32.svg" alt="" width={32} height={32} />
+						<LogoThirdParty name="slack" size="medium" label="" />
 					</Tile>
 				)}
 			/>
@@ -473,7 +474,7 @@ export function GenerativeCardDemoAnimated() {
 								description="Google Calendar"
 								leading={(
 									<Tile label="Google Calendar" size="medium" variant="transparent" isInset={false}>
-										<Image src="/3p/google-calendar/32.svg" alt="" width={32} height={32} />
+										<LogoThirdParty name="google-calendar" size="medium" label="" />
 									</Tile>
 								)}
 							/>
@@ -821,7 +822,7 @@ export function GenerativeCardDemoAnimatedExample() {
 					description="Google Calendar"
 					leading={(
 						<Tile label="Google Calendar" size="medium" variant="transparent" isInset={false}>
-							<Image src="/3p/google-calendar/32.svg" alt="" width={32} height={32} />
+							<LogoThirdParty name="google-calendar" size="medium" label="" />
 						</Tile>
 					)}
 				/>
@@ -887,7 +888,7 @@ export function GenerativeCardDemoTrace() {
 					description="Google Calendar"
 					leading={(
 						<Tile label="Google Calendar" size="medium" variant="transparent" isInset={false}>
-							<Image src="/3p/google-calendar/32.svg" alt="" width={32} height={32} />
+							<LogoThirdParty name="google-calendar" size="medium" label="" />
 						</Tile>
 					)}
 				/>
@@ -963,7 +964,7 @@ export function GenerativeCardDemoInnerGlow() {
 						description="Google Calendar"
 						leading={(
 							<Tile label="Google Calendar" size="medium" variant="transparent" isInset={false}>
-								<Image src="/3p/google-calendar/32.svg" alt="" width={32} height={32} />
+								<LogoThirdParty name="google-calendar" size="medium" label="" />
 							</Tile>
 						)}
 					/>

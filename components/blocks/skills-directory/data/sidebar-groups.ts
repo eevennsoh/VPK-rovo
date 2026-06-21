@@ -1,5 +1,6 @@
 import type { SkillCategory } from "@/app/data/directory/skills";
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /** Primary (sectionless) nav rows shown above the first group heading. */
 export interface SkillsDirectoryPrimaryItem {
@@ -40,6 +41,8 @@ export interface SkillsDirectoryCompanyItem {
 	logoSrc?: string;
 	/** When set, renders the ADS brand logo instead of a `logoSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark. */
+	brandName?: ThirdPartyLogoName;
 	/**
 	 * When true, wrap the logo in a bordered VPK tile. Use for bare marks that
 	 * lack their own tile/background (e.g. the Atlassian brand mark, Tempo).
@@ -69,18 +72,18 @@ export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySi
 		title: "By companies",
 		items: [
 			{ kind: "company", id: "atlassian", label: "Atlassian", logoName: "atlassian", needsTile: true },
-			{ kind: "company", id: "stripe", label: "Stripe", logoSrc: "/3p/stripe/24.svg" },
+			{ kind: "company", id: "stripe", label: "Stripe", brandName: "stripe" },
 			{ kind: "company", id: "tempo", label: "Tempo", logoSrc: "/2p/tempo-software.png", needsTile: true },
-			{ kind: "company", id: "google", label: "Google", logoSrc: "/3p/google-drive/24.svg" },
-			{ kind: "company", id: "notion", label: "Notion", logoSrc: "/3p/notion/24.svg" },
-			{ kind: "company", id: "slack", label: "Slack", logoSrc: "/3p/slack/24.svg" },
-			{ kind: "company", id: "figma", label: "Figma", logoSrc: "/3p/figma/24.svg" },
-			{ kind: "company", id: "github", label: "GitHub", logoSrc: "/3p/github/24.svg" },
-			{ kind: "company", id: "salesforce", label: "Salesforce", logoSrc: "/3p/salesforce/24.svg" },
-			{ kind: "company", id: "zoom", label: "Zoom", logoSrc: "/3p/zoom/24.svg" },
-			{ kind: "company", id: "asana", label: "Asana", logoSrc: "/3p/asana/24.svg" },
-			{ kind: "company", id: "miro", label: "Miro", logoSrc: "/3p/miro/24.svg" },
-			{ kind: "company", id: "dropbox", label: "Dropbox", logoSrc: "/3p/dropbox/24.svg" },
+			{ kind: "company", id: "google", label: "Google", brandName: "google-drive" },
+			{ kind: "company", id: "notion", label: "Notion", brandName: "notion" },
+			{ kind: "company", id: "slack", label: "Slack", brandName: "slack" },
+			{ kind: "company", id: "figma", label: "Figma", brandName: "figma" },
+			{ kind: "company", id: "github", label: "GitHub", brandName: "github" },
+			{ kind: "company", id: "salesforce", label: "Salesforce", brandName: "salesforce" },
+			{ kind: "company", id: "zoom", label: "Zoom", brandName: "zoom" },
+			{ kind: "company", id: "asana", label: "Asana", brandName: "asana" },
+			{ kind: "company", id: "miro", label: "Miro", brandName: "miro" },
+			{ kind: "company", id: "dropbox", label: "Dropbox", brandName: "dropbox" },
 			{ kind: "company", id: "gitkraken", label: "GitKraken", logoSrc: "/2p/gitkraken.png", needsTile: true },
 			{ kind: "company", id: "appfire", label: "Appfire", logoSrc: "/2p/appfire.png", needsTile: true },
 		],

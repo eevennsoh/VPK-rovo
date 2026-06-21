@@ -11,6 +11,8 @@ import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarProjectBadge } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
@@ -128,6 +130,8 @@ export interface EntityCardAgentExpandedProps {
 	publisher: string;
 	attributionKind?: "company" | "team" | "person";
 	publisherLogoSrc?: string;
+	/** 3P publisher brand id — renders the upstream package mark on the company badge. */
+	publisherBrandName?: ThirdPartyLogoName;
 	description?: string;
 	capabilities: readonly (EntityCardCapability | string)[];
 	capabilitiesLabel?: string;
@@ -152,6 +156,7 @@ export function EntityCardAgentExpanded({
 	publisher,
 	attributionKind,
 	publisherLogoSrc,
+	publisherBrandName,
 	description,
 	capabilities,
 	capabilitiesLabel,
@@ -210,7 +215,9 @@ export function EntityCardAgentExpanded({
 		if (attributionKind === "company") {
 			return (
 				<AvatarCompanyBadge>
-					{publisherLogoSrc ? (
+					{publisherBrandName ? (
+						<LogoThirdParty label="" name={publisherBrandName} size="xsmall" />
+					) : publisherLogoSrc ? (
 						<img alt="" aria-hidden src={publisherLogoSrc} />
 					) : (
 						<AtlassianLogo

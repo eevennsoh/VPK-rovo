@@ -5,7 +5,6 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import { type Dispatch, type KeyboardEvent, type MouseEvent, type SetStateAction, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
@@ -48,7 +47,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getThirdPartyLogoIconFromSrc } from "@/components/ui/data/logo-third-party-icons";
-import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -58,6 +56,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
@@ -285,17 +284,14 @@ function getToolLogo(tool: AppsDirectoryTool): ReactNode {
 		return <AtlassianLogoMark label={tool.name} name={tool.logoName ?? "atlassian"} size="medium" />;
 	}
 
+	if (tool.brandName) {
+		return <BrandLogoMark frame="tile" label={tool.name} name={tool.brandName} size="medium" />;
+	}
+
 	const src = tool.logoSrc ?? tool.avatarSrc;
 	if (!src) return null;
 
-	// Prefer the upstream @atlassian/logo-third-party mark (tile + border); fall
-	// back to the local public/3p asset for brands the package doesn't ship yet.
-	const ThirdPartyIcon = getThirdPartyLogoIconFromSrc(src);
-	return ThirdPartyIcon ? (
-		<ThirdPartyIcon label={tool.name} size="medium" />
-	) : (
-		<BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} />
-	);
+	return <BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} />;
 }
 
 function getDetailLogo(tool: AppsDirectoryTool): ReactNode {
@@ -316,25 +312,12 @@ function getDetailLogo(tool: AppsDirectoryTool): ReactNode {
 		);
 	}
 
+	if (tool.brandName) {
+		return <LogoThirdParty label={tool.name} name={tool.brandName} size="xlarge" />;
+	}
+
 	const src = tool.logoSrc ?? tool.avatarSrc;
 	if (!src) return null;
-
-	const presentation = resolveBrandLogoPresentation(src);
-	if (presentation.hasBorder && src.startsWith("/3p/")) {
-		return (
-			<div aria-hidden className="flex size-12 items-center justify-center">
-				{/* The configure screen already supplies the outer tile border. */}
-				<Image
-					alt=""
-					aria-hidden
-					className="size-full object-contain"
-					height={48}
-					src={presentation.src}
-					width={48}
-				/>
-			</div>
-		);
-	}
 
 	return <CustomLogo label={tool.name} size="xlarge" src={src} />;
 }
@@ -804,7 +787,7 @@ function getCompanyOptions(tools: readonly AppsDirectoryTool[]): readonly AgentB
 		if (byId.has(id)) continue;
 
 		order.push(id);
-		byId.set(id, { id, label, avatarSrc: tool.avatarSrc, logoName: tool.logoName });
+		byId.set(id, { id, label, avatarSrc: tool.avatarSrc, logoName: tool.logoName, brandName: tool.brandName });
 	}
 
 	return order.map((id) => byId.get(id)!);
@@ -1441,6 +1424,10 @@ function AppsDirectorySidebarGroup({
 function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
 	if (item.logoName) {
 		return <AtlassianLogoMark label={item.label} name={item.logoName} size="small" />;
+	}
+
+	if (item.brandName) {
+		return <BrandLogoMark frame="tile" label={item.label} name={item.brandName} size="small" />;
 	}
 
 	if (!item.avatarSrc) return null;

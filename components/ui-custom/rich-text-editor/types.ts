@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import type { Editor } from "@tiptap/core";
 
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /**
  * "@" mention surface: people, teams, and subagents. Each opens a nested list
@@ -56,6 +57,10 @@ export type RichTextMentionVisual =
 	| {
 			kind: "logo";
 			logoName: AtlassianLogoName;
+		}
+	| {
+			kind: "third-party";
+			name: ThirdPartyLogoName;
 		}
 	| {
 			kind: "icon";

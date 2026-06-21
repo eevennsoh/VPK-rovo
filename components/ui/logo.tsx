@@ -156,9 +156,13 @@ export interface CustomLogoProps {
 	 */
 	svg?: React.ReactElement<{ width?: number; height?: number; "aria-hidden"?: boolean }>;
 	/**
-	 * Brand asset path (e.g. `/2p/appfire.png` or `/3p/airtable/24.svg`). When
-	 * set, border treatment and the borderless variant swap are applied
-	 * automatically from the centralized usage metadata.
+	 * Brand asset path for a 2P partner mark (e.g. `/2p/appfire.png`) or a custom
+	 * project avatar (`/avatar-project/…`). Border treatment and any borderless
+	 * variant swap are applied automatically from the centralized usage metadata.
+	 *
+	 * Third-party (3P) brands do NOT flow through here from app code — render them
+	 * with `LogoThirdParty` (package-backed). `LogoThirdParty` alone reuses this
+	 * component for its package-less `public/3p` fallback.
 	 */
 	src?: string;
 	/** Optional wordmark text displayed beside the icon */

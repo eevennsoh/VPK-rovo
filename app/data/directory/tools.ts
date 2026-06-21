@@ -1,4 +1,5 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 import toolsData from "./tools.json";
 import type { DirectoryVisual } from "./types";
@@ -44,6 +45,8 @@ export interface ToolsDirectoryTool {
 	avatarSrc?: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
+	brandName?: ThirdPartyLogoName;
 	description?: string;
 	favorite?: boolean;
 	categoryId?: string;
@@ -87,7 +90,7 @@ export const DEMO_SESSION_TOOLS: readonly ToolsDirectoryTool[] = data.sessionToo
  * agents (see {@link avatarVisualFromSrc}) so the two never diverge.
  */
 export function getToolDirectoryVisual(tool: ToolsDirectoryTool): DirectoryVisual | undefined {
-	return avatarVisualFromSrc(tool.logoName, tool.avatarSrc);
+	return avatarVisualFromSrc(tool.logoName, tool.avatarSrc, tool.brandName);
 }
 
 /** Convenience lookup across both tool groups. */

@@ -292,8 +292,8 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 {/* withUsageBorder pulls the 1P treatment from logo-usage.json (atlassian = tile) */}
 <AtlassianLogo name="atlassian" label="Atlassian" size="small" withUsageBorder />
 <CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />
-{/* src auto-resolves border + borderless variant from logo-usage.json */}
-<CustomLogo src="/3p/airtable/24.svg" size="small" label="Airtable" />
+{/* 3P brands render via LogoThirdParty by brand name */}
+<LogoThirdParty name="airtable" size="small" label="Airtable" />
 <RovoColorIcon size="small" label="Rovo" />`,
     props: [
       {
@@ -348,7 +348,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         name: "src",
         type: "string (CustomLogo only)",
         description:
-          "2P/3P brand asset path (e.g. /3p/airtable/24.svg). Border treatment and the borderless variant swap are resolved automatically from logo-usage.json.",
+          "2P partner asset path (e.g. /2p/appfire.png). Border treatment and the borderless variant swap are resolved automatically from logo-usage.json. (3P brands use LogoThirdParty by name.)",
       },
       {
         name: "hasBorder",
@@ -438,7 +438,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         name: "name",
         type: '"adobe-sign" | "airtable" | "asana" | "figma" | "github" | "gitlab" | "notion" | "slack" | "zoom" | … (61 brands)',
         description:
-          "Third-party brand id, matching a folder under public/3p/. Required for LogoThirdParty; the named exports (SlackLogo, …) set it for you.",
+          "Third-party brand id from the upstream @atlassian/logo-third-party package. Required for LogoThirdParty; the named exports (SlackLogo, …) set it for you.",
       },
       {
         name: "size",

@@ -9,6 +9,8 @@ import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import { Avatar } from "@/components/ui/avatar";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -25,6 +27,8 @@ export interface EntityCardAgentProps {
 	name: string;
 	avatarSrc?: string;
 	logoName?: AtlassianLogoName;
+	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands), replacing the hexagon avatar. */
+	brandName?: ThirdPartyLogoName;
 	publisher: string;
 	description?: string;
 	verified?: boolean;
@@ -43,6 +47,7 @@ export function EntityCardAgent({
 	name,
 	avatarSrc,
 	logoName,
+	brandName,
 	publisher,
 	description,
 	verified = false,
@@ -58,7 +63,10 @@ export function EntityCardAgent({
 }: Readonly<EntityCardAgentProps>) {
 	const showRating = typeof rating === "number";
 	const showChats = typeof chatCount === "number";
-	const leadingAvatar = (
+	const leadingAvatar = brandName ? (
+		// Brand-identity agent → self-framing package tile (no hexagon).
+		<LogoThirdParty label={name} name={brandName} size="large" />
+	) : (
 		<Avatar size="default" shape="hexagon">
 			{logoName ? (
 				<AtlassianLogo

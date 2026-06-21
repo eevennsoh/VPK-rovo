@@ -129,11 +129,11 @@ const STUDIO_AUTOMATION_TWG_TOOL_NAME = "twg.search_work_patterns";
 const STUDIO_AUTOMATION_TWG_SOURCES = [
 	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
 	{ id: "loom", label: "Loom", provider: "loom" },
-	{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+	{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
 	{ id: "confluence", label: "Confluence", provider: "confluence" },
 	{ id: "jira", label: "Jira", provider: "jira" },
-	{ id: "figma", label: "Figma", provider: "twg", iconSrc: "/3p/figma/16.svg" },
-	{ id: "github", label: "GitHub", provider: "twg", iconSrc: "/3p/github/16.svg" },
+	{ id: "figma", label: "Figma", provider: "twg", name: "figma" },
+	{ id: "github", label: "GitHub", provider: "twg", name: "github" },
 ] satisfies ReadonlyArray<TwgToolSource>;
 type StudioAutomationToolCycleDetail = {
 	title: string;
@@ -151,7 +151,7 @@ const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolC
 		description: "Following each new Loom into Slack, stakeholder messages, and Atlas update drafts.",
 		sources: [
 			{ id: "loom", label: "Loom", provider: "loom" },
-			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
 			{ id: "confluence", label: "Confluence", provider: "confluence" },
 			{ id: "atlas", label: "Atlas", provider: "home" },
 			{ id: "twg", label: "Teamwork Graph", provider: "twg" },
@@ -163,7 +163,7 @@ const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolC
 		sources: [
 			{ id: "jira", label: "Jira", provider: "jira" },
 			{ id: "studio", label: "Studio inventory", provider: "twg" },
-			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
 			{ id: "twg", label: "Teamwork Graph", provider: "twg" },
 		],
 	},
@@ -174,7 +174,7 @@ const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolC
 			{ id: "confluence", label: "Confluence", provider: "confluence" },
 			{ id: "atlas", label: "Atlas", provider: "home" },
 			{ id: "loom", label: "Loom", provider: "loom" },
-			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
 			{ id: "calendar", label: "Calendar", provider: "twg" },
 		],
 	},
@@ -186,7 +186,7 @@ const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolC
 			{ id: "loom", label: "Loom", provider: "loom" },
 			{ id: "jira", label: "Jira", provider: "jira" },
 			{ id: "confluence", label: "Confluence", provider: "confluence" },
-			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "slack", label: "Slack", provider: "twg", name: "slack" },
 		],
 	},
 	"studio.resolve_creation_boundaries": {

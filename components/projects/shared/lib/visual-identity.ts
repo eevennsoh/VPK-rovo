@@ -1,4 +1,5 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { IconTileVariant } from "@/components/ui/icon-tile";
 import type { GenerativeContentType } from "@/components/projects/shared/lib/generative-widget";
 
@@ -26,6 +27,7 @@ export interface VisualIdentity {
 
 export type ResolvedCardIdentity =
 	| { kind: "external-logo"; logoSrc: string }
+	| { kind: "third-party"; name: ThirdPartyLogoName }
 	| { kind: "atlassian-logo"; logoName: AtlassianLogoName }
 	| { kind: "avatar"; avatarSrc: string }
 	| { kind: "icon-tile"; iconName: string; tileVariant: VisualIdentityTileVariant };
@@ -187,12 +189,12 @@ const ATLASSIAN_LOGO_CATALOG: ReadonlyArray<{
 ];
 
 const EXTERNAL_LOGO_CATALOG: ReadonlyArray<{
-	logoSrc: string;
+	name: ThirdPartyLogoName;
 	keywords: readonly string[];
 }> = [
-	{ logoSrc: "/3p/google-calendar/16-borderless.svg", keywords: ["google calendar", "gcal"] },
-	{ logoSrc: "/3p/slack/16-borderless.svg", keywords: ["slack", "direct message"] },
-	{ logoSrc: "/3p/figma/16.svg", keywords: ["figma"] },
+	{ name: "google-calendar", keywords: ["google calendar", "gcal"] },
+	{ name: "slack", keywords: ["slack", "direct message"] },
+	{ name: "figma", keywords: ["figma"] },
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -368,14 +370,14 @@ function resolveAtlassianLogoFromSearchText(
 	return null;
 }
 
-function resolveExternalLogoFromSearchText(searchText: string): string | null {
+function resolveExternalLogoFromSearchText(searchText: string): ThirdPartyLogoName | null {
 	if (!searchText) {
 		return null;
 	}
 
 	for (const entry of EXTERNAL_LOGO_CATALOG) {
 		if (entry.keywords.some((keyword) => includesKeyword(searchText, keyword))) {
-			return entry.logoSrc;
+			return entry.name;
 		}
 	}
 
@@ -424,8 +426,8 @@ export function resolveGenerativeCardIdentity(
 	const inferredExternalLogo = resolveExternalLogoFromSearchText(searchText);
 	if (inferredExternalLogo) {
 		return {
-			kind: "external-logo",
-			logoSrc: inferredExternalLogo,
+			kind: "third-party",
+			name: inferredExternalLogo,
 		};
 	}
 
@@ -495,8 +497,8 @@ export function resolveArtifactCardIdentity(
 	const inferredExternalLogo = resolveExternalLogoFromSearchText(searchText);
 	if (inferredExternalLogo) {
 		return {
-			kind: "external-logo",
-			logoSrc: inferredExternalLogo,
+			kind: "third-party",
+			name: inferredExternalLogo,
 		};
 	}
 

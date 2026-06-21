@@ -15,6 +15,7 @@ import {
 	type AgentBrowserAgent,
 	type AgentBrowserSidebarGroup,
 } from "@/components/blocks/agent-browser";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
@@ -36,7 +37,7 @@ import { cn } from "@/lib/utils";
 export interface AgentTemplatesAgent extends AgentBrowserAgent {
 	categoryId?: AgentTemplatesCategoryId;
 	publisher?: string;
-	publisherLogoSrc?: string;
+	publisherBrandName?: ThirdPartyLogoName;
 	templatePrompt?: string;
 	/** Robust setup/usage guidance for the template (from the directory catalog). */
 	instructions?: string;
@@ -535,7 +536,7 @@ function AgentTemplateCard({
 			onMoreActions={NOOP_TEMPLATE_MORE_ACTIONS}
 			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
 			publisher={agent.publisher ?? deriveAgentPublisher(agent.byline)}
-			publisherLogoSrc={agent.publisherLogoSrc}
+			publisherBrandName={agent.publisherBrandName}
 			skills={agent.skills}
 			sources={agent.sources}
 			stats={agent.stats}

@@ -7,7 +7,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg",
+				"brandName": "github",
 				"description": "Helps review code, explain repository changes, and suggest implementation paths.",
 				"contextDescription": "[Selected custom agent]\nAgent: GitHub Copilot\nByline: Agent by GitHub\nDescription: Helps review code, explain repository changes, and suggest implementation paths.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -91,7 +91,7 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg",
+				"brandName": "figma",
 				"description": "Finds design context, summarizes frames, and helps connect UI work to design intent.",
 				"contextDescription": "[Selected custom agent]\nAgent: Figma\nByline: by Figma\nDescription: Finds design context, summarizes frames, and helps connect UI work to design intent.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -119,7 +119,7 @@
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg",
+				"brandName": "canva",
 				"description": "Helps draft visual assets, campaign ideas, and design-ready content.",
 				"contextDescription": "[Selected custom agent]\nAgent: Canva\nByline: by Canva\nDescription: Helps draft visual assets, campaign ideas, and design-ready content.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -287,7 +287,7 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg",
+				"brandName": "notion",
 				"description": "Helps organize notes, docs, and project knowledge into structured pages.",
 				"contextDescription": "[Selected custom agent]\nAgent: Notion\nByline: by Notion\nDescription: Helps organize notes, docs, and project knowledge into structured pages.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -315,7 +315,7 @@
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg",
+				"brandName": "slack",
 				"description": "Drafts, summarizes, and prepares Slack-ready team communication.",
 				"contextDescription": "[Selected custom agent]\nAgent: Slack\nByline: by Slack\nDescription: Drafts, summarizes, and prepares Slack-ready team communication.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -343,7 +343,7 @@
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg",
+				"brandName": "google-drive",
 				"description": "Helps locate, summarize, and work with Drive files and document context.",
 				"contextDescription": "[Selected custom agent]\nAgent: Google Drive\nByline: by Google\nDescription: Helps locate, summarize, and work with Drive files and document context.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -569,7 +569,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg"
+				"brandName": "github"
 			},
 			{
 				"id": "release-notes-drafter",
@@ -587,13 +587,13 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg"
+				"brandName": "figma"
 			},
 			{
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg"
+				"brandName": "canva"
 			},
 			{
 				"id": "code-reviewer",
@@ -629,19 +629,19 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg"
+				"brandName": "notion"
 			},
 			{
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg"
+				"brandName": "slack"
 			},
 			{
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg"
+				"brandName": "google-drive"
 			},
 			{
 				"id": "atlassian",
@@ -690,7 +690,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg"
+				"brandName": "github"
 			},
 			{
 				"id": "release-notes-drafter",
@@ -708,13 +708,13 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg"
+				"brandName": "figma"
 			},
 			{
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg"
+				"brandName": "canva"
 			},
 			{
 				"id": "code-reviewer",
@@ -750,19 +750,19 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg"
+				"brandName": "notion"
 			},
 			{
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg"
+				"brandName": "slack"
 			},
 			{
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg"
+				"brandName": "google-drive"
 			},
 			{
 				"id": "atlassian",
@@ -814,7 +814,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg",
+				"brandName": "github",
 				"description": "Helps review code, explain repository changes, and suggest implementation paths.",
 				"contextDescription": "[Selected custom agent]\nAgent: GitHub Copilot\nByline: Agent by GitHub\nDescription: Helps review code, explain repository changes, and suggest implementation paths.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -877,7 +877,7 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg",
+				"brandName": "figma",
 				"description": "Finds design context, summarizes frames, and helps connect UI work to design intent.",
 				"contextDescription": "[Selected custom agent]\nAgent: Figma\nByline: by Figma\nDescription: Finds design context, summarizes frames, and helps connect UI work to design intent.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -905,7 +905,7 @@
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg",
+				"brandName": "canva",
 				"description": "Helps draft visual assets, campaign ideas, and design-ready content.",
 				"contextDescription": "[Selected custom agent]\nAgent: Canva\nByline: by Canva\nDescription: Helps draft visual assets, campaign ideas, and design-ready content.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1073,7 +1073,7 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg",
+				"brandName": "notion",
 				"description": "Helps organize notes, docs, and project knowledge into structured pages.",
 				"contextDescription": "[Selected custom agent]\nAgent: Notion\nByline: by Notion\nDescription: Helps organize notes, docs, and project knowledge into structured pages.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1101,7 +1101,7 @@
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg",
+				"brandName": "slack",
 				"description": "Drafts, summarizes, and prepares Slack-ready team communication.",
 				"contextDescription": "[Selected custom agent]\nAgent: Slack\nByline: by Slack\nDescription: Drafts, summarizes, and prepares Slack-ready team communication.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1129,7 +1129,7 @@
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg",
+				"brandName": "google-drive",
 				"description": "Helps locate, summarize, and work with Drive files and document context.",
 				"contextDescription": "[Selected custom agent]\nAgent: Google Drive\nByline: by Google\nDescription: Helps locate, summarize, and work with Drive files and document context.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1327,7 +1327,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg"
+				"brandName": "github"
 			},
 			{
 				"id": "readiness-checker",
@@ -1339,13 +1339,13 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg"
+				"brandName": "figma"
 			},
 			{
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg"
+				"brandName": "canva"
 			},
 			{
 				"id": "code-reviewer",
@@ -1381,19 +1381,19 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg"
+				"brandName": "notion"
 			},
 			{
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg"
+				"brandName": "slack"
 			},
 			{
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg"
+				"brandName": "google-drive"
 			},
 			{
 				"id": "ai-insights-agent",
@@ -1437,7 +1437,7 @@
 				"id": "github-copilot",
 				"name": "GitHub Copilot",
 				"byline": "Agent by GitHub",
-				"avatarSrc": "/3p/github/24.svg"
+				"brandName": "github"
 			},
 			{
 				"id": "readiness-checker",
@@ -1449,13 +1449,13 @@
 				"id": "figma",
 				"name": "Figma",
 				"byline": "by Figma",
-				"avatarSrc": "/3p/figma/24.svg"
+				"brandName": "figma"
 			},
 			{
 				"id": "canva",
 				"name": "Canva",
 				"byline": "by Canva",
-				"avatarSrc": "/3p/canva/24.svg"
+				"brandName": "canva"
 			},
 			{
 				"id": "code-reviewer",
@@ -1491,19 +1491,19 @@
 				"id": "notion",
 				"name": "Notion",
 				"byline": "by Notion",
-				"avatarSrc": "/3p/notion/24.svg"
+				"brandName": "notion"
 			},
 			{
 				"id": "slack",
 				"name": "Slack",
 				"byline": "by Slack",
-				"avatarSrc": "/3p/slack/24.svg"
+				"brandName": "slack"
 			},
 			{
 				"id": "google-drive",
 				"name": "Google Drive",
 				"byline": "by Google",
-				"avatarSrc": "/3p/google-drive/24.svg"
+				"brandName": "google-drive"
 			},
 			{
 				"id": "ai-insights-agent",

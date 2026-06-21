@@ -307,9 +307,9 @@ export default function AgentsView({
 		}
 
 		const assignedAgentAvatars = boardAgents
-			.filter((agent) => assignedAgentIds.has(agent.id))
+			.filter((agent) => assignedAgentIds.has(agent.id) && Boolean(agent.avatarSrc))
 			.map((agent) => ({
-				src: agent.avatarSrc,
+				src: agent.avatarSrc as string,
 				name: agent.name,
 				shape: "hexagon" as const,
 			}));

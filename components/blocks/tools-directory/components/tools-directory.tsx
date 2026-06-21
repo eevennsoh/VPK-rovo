@@ -5,7 +5,6 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
@@ -40,7 +39,6 @@ import { DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/tool
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -50,6 +48,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
@@ -251,6 +250,10 @@ function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
 		return <AtlassianLogoMark label={tool.name} name={tool.logoName ?? "atlassian"} size="medium" />;
 	}
 
+	if (tool.brandName) {
+		return <BrandLogoMark frame="tile" label={tool.name} name={tool.brandName} size="medium" />;
+	}
+
 	const src = tool.logoSrc ?? tool.avatarSrc;
 	return src ? <BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} /> : null;
 }
@@ -273,25 +276,12 @@ function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
 		);
 	}
 
+	if (tool.brandName) {
+		return <LogoThirdParty label={tool.name} name={tool.brandName} size="xlarge" />;
+	}
+
 	const src = tool.logoSrc ?? tool.avatarSrc;
 	if (!src) return null;
-
-	const presentation = resolveBrandLogoPresentation(src);
-	if (presentation.hasBorder && src.startsWith("/3p/")) {
-		return (
-			<div aria-hidden className="flex size-12 items-center justify-center">
-				{/* The configure screen already supplies the outer tile border. */}
-				<Image
-					alt=""
-					aria-hidden
-					className="size-full object-contain"
-					height={48}
-					src={presentation.src}
-					width={48}
-				/>
-			</div>
-		);
-	}
 
 	return <CustomLogo label={tool.name} size="xlarge" src={src} />;
 }

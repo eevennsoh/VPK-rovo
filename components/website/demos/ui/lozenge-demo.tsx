@@ -142,14 +142,14 @@ export function LozengeDemoFrontSlot() {
 			</Lozenge>
 			<Lozenge
 				variant="accent-purple"
-				elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}
+				elemBefore={<BrandLogoMark frame="chip" name="figma" label="Figma" />}
 			>
 				Figma
 			</Lozenge>
 			<Lozenge
 				variant="accent-green"
 				elemBefore={
-					<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />
+					<BrandLogoMark frame="chip" name="google-drive" label="Google Drive" />
 				}
 			>
 				Drive

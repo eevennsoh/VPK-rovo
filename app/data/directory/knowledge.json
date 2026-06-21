@@ -64,9 +64,8 @@
 		"description": "Connect shared documents, folders, spreadsheets, and team files from Drive.",
 		"providerName": "Google",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/google-drive/20.svg"
+			"kind": "third-party",
+			"name": "google-drive"
 		},
 		"contents": [
 			{
@@ -75,9 +74,8 @@
 				"description": "Planning docs and team strategy materials.",
 				"type": "folder",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/google-drive/20.svg"
+					"kind": "third-party",
+					"name": "google-drive"
 				}
 			},
 			{
@@ -86,9 +84,8 @@
 				"description": "Collaborative notes and interview synthesis.",
 				"type": "doc",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/google-drive/20.svg"
+					"kind": "third-party",
+					"name": "google-drive"
 				}
 			},
 			{
@@ -97,9 +94,8 @@
 				"description": "Milestones, owners, and readiness tracking.",
 				"type": "spreadsheet",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/google-drive/20.svg"
+					"kind": "third-party",
+					"name": "google-drive"
 				}
 			},
 			{
@@ -108,9 +104,8 @@
 				"description": "Shared references for campaign and product work.",
 				"type": "deck",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/google-drive/20.svg"
+					"kind": "third-party",
+					"name": "google-drive"
 				}
 			}
 		],
@@ -124,9 +119,8 @@
 		"description": "Reuse channel conversations, shared decisions, and collaboration history.",
 		"providerName": "Microsoft",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/microsoft-teams/20.svg"
+			"kind": "third-party",
+			"name": "microsoft-teams"
 		},
 		"contents": [
 			{
@@ -135,9 +129,8 @@
 				"description": "Implementation threads and technical decisions.",
 				"type": "channel",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-teams/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-teams"
 				}
 			},
 			{
@@ -146,9 +139,8 @@
 				"description": "Customer issues, resolutions, and escalation notes.",
 				"type": "channel",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-teams/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-teams"
 				}
 			},
 			{
@@ -157,9 +149,8 @@
 				"description": "Team updates, blockers, and follow-up actions.",
 				"type": "meeting recap",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-teams/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-teams"
 				}
 			},
 			{
@@ -168,9 +159,8 @@
 				"description": "Field questions and product positioning notes.",
 				"type": "thread",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-teams/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-teams"
 				}
 			}
 		],
@@ -184,9 +174,8 @@
 		"description": "Connect team sites, policies, and document libraries from SharePoint.",
 		"providerName": "Microsoft",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/microsoft-sharepoint/20.svg"
+			"kind": "third-party",
+			"name": "microsoft-sharepoint"
 		},
 		"contents": [
 			{
@@ -195,9 +184,8 @@
 				"description": "Governance, security, and compliance documents.",
 				"type": "document library",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-sharepoint/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-sharepoint"
 				}
 			},
 			{
@@ -206,9 +194,8 @@
 				"description": "Department resources and operating procedures.",
 				"type": "site",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-sharepoint/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-sharepoint"
 				}
 			},
 			{
@@ -217,9 +204,8 @@
 				"description": "Reusable sales and procurement responses.",
 				"type": "document library",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-sharepoint/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-sharepoint"
 				}
 			},
 			{
@@ -228,9 +214,8 @@
 				"description": "Enablement decks, guides, and onboarding docs.",
 				"type": "policy",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/microsoft-sharepoint/20.svg"
+					"kind": "third-party",
+					"name": "microsoft-sharepoint"
 				}
 			}
 		],
@@ -244,9 +229,8 @@
 		"description": "Connect issues, pull requests, code discussions, and repository documentation.",
 		"providerName": "GitHub",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/github/20.svg"
+			"kind": "third-party",
+			"name": "github"
 		},
 		"contents": [
 			{
@@ -255,9 +239,8 @@
 				"description": "Project overview, setup, and contribution guidance.",
 				"type": "repository",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/github/20.svg"
+					"kind": "third-party",
+					"name": "github"
 				}
 			},
 			{
@@ -266,9 +249,8 @@
 				"description": "Prioritized bug reports and feature requests.",
 				"type": "issue",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/github/20.svg"
+					"kind": "third-party",
+					"name": "github"
 				}
 			},
 			{
@@ -277,9 +259,8 @@
 				"description": "Implementation discussion and review context.",
 				"type": "pull request",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/github/20.svg"
+					"kind": "third-party",
+					"name": "github"
 				}
 			},
 			{
@@ -288,9 +269,8 @@
 				"description": "Technical decisions and system diagrams.",
 				"type": "discussion",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/github/20.svg"
+					"kind": "third-party",
+					"name": "github"
 				}
 			}
 		],
@@ -481,9 +461,8 @@
 		"description": "Connect wikis, project docs, and structured databases from Notion workspaces.",
 		"providerName": "Notion",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/notion/20.svg"
+			"kind": "third-party",
+			"name": "notion"
 		},
 		"contents": [
 			{
@@ -492,9 +471,8 @@
 				"description": "Processes, policies, and onboarding documentation.",
 				"type": "wiki",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/notion/20.svg"
+					"kind": "third-party",
+					"name": "notion"
 				}
 			},
 			{
@@ -503,9 +481,8 @@
 				"description": "Database of initiatives, status, and owners.",
 				"type": "database",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/notion/20.svg"
+					"kind": "third-party",
+					"name": "notion"
 				}
 			},
 			{
@@ -514,9 +491,8 @@
 				"description": "Agendas, decisions, and action items by meeting.",
 				"type": "page",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/notion/20.svg"
+					"kind": "third-party",
+					"name": "notion"
 				}
 			},
 			{
@@ -525,9 +501,8 @@
 				"description": "Feature briefs, requirements, and design context.",
 				"type": "page",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/notion/20.svg"
+					"kind": "third-party",
+					"name": "notion"
 				}
 			}
 		],
@@ -541,9 +516,8 @@
 		"description": "Reuse documents, contracts, and shared folders stored in Box.",
 		"providerName": "Box",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/box/20.svg"
+			"kind": "third-party",
+			"name": "box"
 		},
 		"contents": [
 			{
@@ -552,9 +526,8 @@
 				"description": "Signed agreements and legal documentation.",
 				"type": "contract",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/box/20.svg"
+					"kind": "third-party",
+					"name": "box"
 				}
 			},
 			{
@@ -563,9 +536,8 @@
 				"description": "Budgets, invoices, and procurement records.",
 				"type": "folder",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/box/20.svg"
+					"kind": "third-party",
+					"name": "box"
 				}
 			},
 			{
@@ -574,9 +546,8 @@
 				"description": "Client-facing assets and project outputs.",
 				"type": "file",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/box/20.svg"
+					"kind": "third-party",
+					"name": "box"
 				}
 			},
 			{
@@ -585,9 +556,8 @@
 				"description": "Audit reports and regulatory paperwork.",
 				"type": "file",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/box/20.svg"
+					"kind": "third-party",
+					"name": "box"
 				}
 			}
 		],
@@ -601,9 +571,8 @@
 		"description": "Connect synced files, shared folders, and team libraries from Dropbox.",
 		"providerName": "Dropbox",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/dropbox/20.svg"
+			"kind": "third-party",
+			"name": "dropbox"
 		},
 		"contents": [
 			{
@@ -612,9 +581,8 @@
 				"description": "Source artwork, mockups, and exported assets.",
 				"type": "file",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/dropbox/20.svg"
+					"kind": "third-party",
+					"name": "dropbox"
 				}
 			},
 			{
@@ -623,9 +591,8 @@
 				"description": "Shared reference materials and templates.",
 				"type": "folder",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/dropbox/20.svg"
+					"kind": "third-party",
+					"name": "dropbox"
 				}
 			},
 			{
@@ -634,9 +601,8 @@
 				"description": "Final files handed off to stakeholders.",
 				"type": "file",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/dropbox/20.svg"
+					"kind": "third-party",
+					"name": "dropbox"
 				}
 			},
 			{
@@ -645,9 +611,8 @@
 				"description": "Historical projects and retired documentation.",
 				"type": "folder",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/dropbox/20.svg"
+					"kind": "third-party",
+					"name": "dropbox"
 				}
 			}
 		],
@@ -661,9 +626,8 @@
 		"description": "Pull in structured records, project bases, and tracked workflows from Airtable.",
 		"providerName": "Airtable",
 		"visual": {
-			"kind": "image",
-			"shape": "square",
-			"src": "/3p/airtable/20.svg"
+			"kind": "third-party",
+			"name": "airtable"
 		},
 		"contents": [
 			{
@@ -672,9 +636,8 @@
 				"description": "Scheduled campaigns, owners, and publish dates.",
 				"type": "base",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/airtable/20.svg"
+					"kind": "third-party",
+					"name": "airtable"
 				}
 			},
 			{
@@ -683,9 +646,8 @@
 				"description": "Customer asks with votes, status, and themes.",
 				"type": "table",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/airtable/20.svg"
+					"kind": "third-party",
+					"name": "airtable"
 				}
 			},
 			{
@@ -694,9 +656,8 @@
 				"description": "Suppliers, contracts, and renewal timelines.",
 				"type": "record view",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/airtable/20.svg"
+					"kind": "third-party",
+					"name": "airtable"
 				}
 			},
 			{
@@ -705,9 +666,8 @@
 				"description": "Initiatives mapped to quarters and dependencies.",
 				"type": "base",
 				"visual": {
-					"kind": "image",
-					"shape": "square",
-					"src": "/3p/airtable/20.svg"
+					"kind": "third-party",
+					"name": "airtable"
 				}
 			}
 		],

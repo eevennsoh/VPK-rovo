@@ -1,4 +1,5 @@
 import templatesData from "./agent-templates.json";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /**
  * Tabs the agent-template directory is grouped by, mirrored by the bento and
@@ -91,7 +92,7 @@ export interface AgentTemplateConfig {
 	avatarSrc: string;
 	publisher: string;
 	attributionKind?: "company" | "team" | "person";
-	publisherLogoSrc?: string;
+	publisherBrandName?: ThirdPartyLogoName;
 	verified?: boolean;
 	/** Keys into the component loader's connected-app SOURCE map. */
 	sourceKeys?: readonly string[];

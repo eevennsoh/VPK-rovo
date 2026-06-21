@@ -70,6 +70,7 @@ interface UnifiedAgentRecord {
 	byline: string;
 	avatarSrc?: string;
 	logoName?: AgentSelectorAgent["logoName"];
+	brandName?: AgentSelectorAgent["brandName"];
 	description?: string;
 	attributionKind?: AgentBrowserAgent["attributionKind"];
 	favorite?: boolean;
@@ -186,6 +187,7 @@ function toAgentProfile(record: UnifiedAgentRecord): RovoAgentProfile {
 		byline: record.byline,
 		avatarSrc,
 		logoName: record.logoName,
+		brandName: record.brandName,
 		description: record.description,
 		attributionKind: record.attributionKind,
 		favorite: record.favorite,
@@ -222,6 +224,7 @@ export const ROVO_AGENT_SELECTOR_AGENTS: readonly AgentSelectorAgent[] = ROVO_AG
 		name: agent.name,
 		byline: agent.byline,
 		avatarSrc: agent.avatarSrc,
+		brandName: agent.brandName,
 	}));
 
 export const ROVO_CUSTOM_AGENT_SELECTOR_AGENTS: readonly AgentSelectorAgent[] = ROVO_AGENT_SELECTOR_AGENTS;
@@ -257,6 +260,7 @@ function toAgentBrowserAgent(agent: RovoAgentProfile): AgentBrowserAgent {
 		attributionKind: agent.attributionKind,
 		avatarSrc: agent.avatarSrc,
 		logoName: agent.logoName,
+		brandName: agent.brandName,
 		description: agent.description,
 		favorite: agent.favorite,
 		rating: agent.rating,
@@ -346,7 +350,7 @@ export const DIRECTORY_SUBAGENTS: readonly AgentBrowserAgent[] = DEMO_AGENT_BROW
  * logo nor an avatar.
  */
 export function getAgentDirectoryVisual(
-	agent: Pick<AgentBrowserAgent, "avatarSrc" | "logoName">,
+	agent: Pick<AgentBrowserAgent, "avatarSrc" | "logoName" | "brandName">,
 ): DirectoryVisual | undefined {
-	return avatarVisualFromSrc(agent.logoName, agent.avatarSrc);
+	return avatarVisualFromSrc(agent.logoName, agent.avatarSrc, agent.brandName);
 }

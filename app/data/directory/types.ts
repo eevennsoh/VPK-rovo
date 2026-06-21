@@ -1,4 +1,5 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 /**
  * Closed set of icon keys used by skill directory items. Kept as a pure type
@@ -65,6 +66,10 @@ export type DirectoryVisual =
 	| {
 			kind: "logo";
 			logoName: AtlassianLogoName;
+	  }
+	| {
+			kind: "third-party";
+			name: ThirdPartyLogoName;
 	  }
 	| {
 			kind: "icon";

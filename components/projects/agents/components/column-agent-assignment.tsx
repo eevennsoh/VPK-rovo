@@ -12,6 +12,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { BoardAgentData } from "../data/board-agents";
@@ -35,6 +36,10 @@ function getAgentInitials(name: string): string {
 }
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: BoardAgentData; className?: string }>) {
+	if (agent.brandName) {
+		// Brand-identity agent → self-framing package tile (no hexagon).
+		return <LogoThirdParty className={className} label={agent.name} name={agent.brandName} size="small" />;
+	}
 	return (
 		<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
 			<AvatarImage alt="" src={agent.avatarSrc} />
