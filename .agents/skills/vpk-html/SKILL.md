@@ -1,16 +1,17 @@
 ---
 name: vpk-html
-description: 'Render supplied material into an offline, single-file HTML artifact by filling a kami-architected template with the vpk-html Atlassian deck identity. Use when the user asks to generate, create, or write an HTML artifact such as a document, report, one-pager, brief, memo, deck, changelog, portfolio, resume, or engineering workflow surface.'
+description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus an optional derived PDF export and a landing/product-site track. Invoked explicitly via /vpk-html (optionally with a doc-type hint, e.g. /vpk-html resume); does not auto-trigger on casual mentions of HTML or documents.'
 ---
 
 # vpk-html
 
-Use this skill when the user asks to generate, create, or write an offline HTML
-artifact such as a document, report, one-pager, brief, memo, deck, changelog,
-portfolio, resume, or engineering workflow surface, or when a host agent has
-detected that intent and routes the turn to this skill. Casual mentions of
-HTML, documents, or reports are not enough; activation still requires a
-concrete artifact-generation request.
+This skill is invoked **explicitly** via `/vpk-html` (optionally with a doc-type
+hint, e.g. `/vpk-html resume`, `/vpk-html one-pager`). It does **not**
+auto-trigger on natural-language mentions of HTML, documents, or reports — the
+monorepo ships sibling skills (`/vpk-design`, etc.) and kami itself, so
+activation is strict to avoid collisions. It produces an offline, single-file
+HTML artifact such as a document, report, one-pager, brief, memo, deck,
+changelog, portfolio, resume, or engineering workflow surface.
 
 **Architecture:** kami-style template editing. The skill ships 28 HTML
 templates at `assets/templates/`: 8 base document shells plus 20 Phase 2
@@ -275,6 +276,22 @@ node .agents/skills/vpk-html/scripts/build.mjs --verify <slug>.html
 node .agents/skills/vpk-html/scripts/check-html.mjs <slug>.html
 ```
 
+Optional, on demand:
+
+```bash
+# Derived PDF export (Chromium print-to-PDF; HTML stays source of truth)
+node .agents/skills/vpk-html/scripts/build.mjs --pdf <slug>.html [--out <file.pdf>]
+
+# Advisory content-quality gates (warnings; --strict to fail). See references/quality-gates.md
+node .agents/skills/vpk-html/scripts/build.mjs --check-density <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-orphans <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-rhythm <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-resume-balance <slug>.html
+
+# Landing / product-site export (companions + responsive verify). See references/landing.md
+node .agents/skills/vpk-html/scripts/build.mjs --landing <file>.html [--out <dir>] [--origin <url>]
+```
+
 For template-library changes (color sweeps, font swaps, port-script edits):
 
 ```bash
@@ -287,20 +304,17 @@ node .agents/skills/vpk-html/scripts/build.mjs --write-styles
 # CSS / token / font sanity across all templates
 node .agents/skills/vpk-html/scripts/build.mjs --check-templates
 
-# Re-port from kami source (idempotent)
-node .agents/skills/vpk-html/scripts/port-templates.mjs
-
-# Re-port the diagram primitives library
-node .agents/skills/vpk-html/scripts/port-diagrams.mjs
-
-# Re-port kami's curated demos
-node .agents/skills/vpk-html/scripts/port-demos.mjs
+# Re-port from kami source (idempotent): templates + diagrams + curated demos
+node .agents/skills/vpk-html/scripts/port-kami.mjs   # or --templates / --diagrams / --demos
 
 # Regenerate original Phase 2 shells from the html-effectiveness use-case map
-node .agents/skills/vpk-html/scripts/port-html-effectiveness.mjs
+node .agents/skills/vpk-html/scripts/port-engineering.mjs
 
 # Copy and restyle direct Phase 2 demo ports from assets/html-effectiveness/
-node .agents/skills/vpk-html/scripts/rescue-html-effectiveness-demos.mjs
+node .agents/skills/vpk-html/scripts/port-engineering-demos.mjs
+
+# Regenerate landing shells (landing-page.html, docs-site.html)
+node .agents/skills/vpk-html/scripts/landing.mjs
 ```
 
 ---
@@ -410,6 +424,10 @@ resolved theme block — don't redefine it per document.
 - `references/resume-writing.md` — Action + Scope + Result + Outcome
 - `references/writing.md` — general prose rules + quality bars per doc type
 - `references/design.md` — visual rules
+- `references/brand-profile.md` — optional offline brand profile (Step 0)
+- `references/pdf-export.md` — optional derived PDF export
+- `references/quality-gates.md` — advisory content-quality gates
+- `references/landing.md` — landing / product-site track
 - `references/production.md` — troubleshooting (page overflow, font issues)
 - `references/source-policy.md` — when and how to cite
 
