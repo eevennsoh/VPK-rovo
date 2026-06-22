@@ -150,6 +150,7 @@ function normalizeAutomationRules(value: unknown): AgentAutomationRule[] | undef
 		}
 		rules.push(
 			createAgentAutomationRule({
+				enabled: raw.enabled === false ? false : true,
 				id: normalizeText(raw.id) ?? `automation-${ruleIndex + 1}`,
 				name: normalizeText(raw.name),
 				description: normalizeText(raw.description),

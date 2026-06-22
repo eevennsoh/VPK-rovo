@@ -113,6 +113,7 @@ test("builds automation rules from a validated structured triggers array", () =>
 	const patch = normalizeAgentDraftPatch({
 		automationRules: [
 			{
+				enabled: false,
 				name: "Triage new work",
 				triggers: [
 					{ providerId: "jira", eventId: "work-item-created" },
@@ -124,6 +125,7 @@ test("builds automation rules from a validated structured triggers array", () =>
 	});
 	assert.equal(patch.automationRules.length, 1);
 	assert.equal(patch.automationRules[0].name, "Triage new work");
+	assert.equal(patch.automationRules[0].enabled, false);
 	assert.equal(patch.automationRules[0].triggers.length, 1);
 	assert.equal(patch.automationRules[0].triggers[0].providerId, "jira");
 });
