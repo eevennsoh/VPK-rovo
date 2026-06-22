@@ -60,8 +60,13 @@ portless run
 ```
 
 Open [https://vpk-rovo.localhost](https://vpk-rovo.localhost) in the main worktree.
-Linked git worktrees get a branch-prefixed URL such as
-`https://my-branch.vpk-rovo.localhost`.
+Bare `portless run` handles both cases automatically: from a branched worktree
+it auto-prepends the branch as `https://my-branch.vpk-rovo.localhost`. Only a
+detached worktree needs `portless run --name <worktree-dir>` (served at
+`https://<worktree-dir>.localhost`). Add `--script rovo` when the surface needs
+Rovo Serve. `pnpm run dev:tmux:start` also runs the dev stack through
+`portless run`, so it prints a stable `.localhost` URL (shown as `🌐 https://…`
+by `pnpm ports`).
 
 **Option 3: Separate terminals**
 
@@ -86,12 +91,12 @@ Should show `"authMethod": "ASAP"` and all env vars as `"SET"`.
 ```bash
 # Development
 pnpm run dev              # Start frontend + backend on direct localhost ports
-portless run              # Start frontend + backend through explicit Portless routing
+portless run              # Start frontend + backend through Portless (.localhost URL; --name <worktree-dir> when detached)
 pnpm run dev:frontend     # Frontend only (Next.js with Turbopack)
 pnpm run dev:backend      # Backend only (Express)
 pnpm run rovo             # Start Rovo Serve + backend + frontend on direct localhost ports
 portless run --script rovo
-                          # Start Rovo Serve + backend + frontend through explicit Portless routing
+                          # Start Rovo Serve + backend + frontend through Portless (when the surface needs Rovo Serve)
 
 # Building
 pnpm run build            # Next.js build

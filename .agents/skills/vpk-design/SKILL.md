@@ -68,7 +68,7 @@ Not every Figma design requires the full 3-agent pipeline. Choose the approach b
 4. **Read the current component code** to understand what already exists. Diff the Figma screenshot against the current code to identify ALL differences.
 5. Re-read current component interfaces before implementation (`Props`, callback names, exported APIs). Do not rely on stale assumptions.
 6. Check local workspace state (`git status --short`) and avoid touching unrelated modified files.
-7. Capture runtime ports with `pnpm ports` so validator hits the correct worktree URL.
+7. Capture the worktree's runtime URL with `pnpm ports` — prefer the Portless `🌐 https://…` URL (falling back to the port files) so the validator hits the correct worktree.
 8. Run an ADS MCP pre-pass for Atlassian-like primitives:
    - Use `ads_plan` as the primary lookup, with at least 2 likely search terms per populated field (`components`, `icons`, `tokens`)
    - Set `exactName: true` when the Figma layer name makes the ADS component explicit
