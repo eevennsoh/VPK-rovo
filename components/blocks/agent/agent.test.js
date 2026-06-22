@@ -1011,10 +1011,11 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	// The shared color helper lives alongside the visual helpers so both the node
 	// view and the config chips resolve color from a single source of truth.
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /export function getRichTextMentionTagColor\(/u);
-	// Every mention visual (avatar, image, logo, icon) now occupies the same 16px
-	// box inside a tag, so the logo no longer scales up for menu rows — it stays a
-	// single `xxsmall` constant regardless of `size`.
-	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = "xxsmall";/u);
+	// Menu rows use the shared tile size constant while inline tags/pills use the
+	// BrandLogoMark chip frame, so every visual kind keeps one sizing source.
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /export const MENU_VISUAL_TILE_SIZE = "medium" as const;/u);
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const menuTileSize = isCompactMenu \? "small" : MENU_VISUAL_TILE_SIZE;/u);
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /<BrandLogoMark[\s\S]*frame="chip"[\s\S]*label=\{label\}[\s\S]*name=\{visual\.name\}/u);
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /<IconTile[\s\S]*border border-border bg-surface[\s\S]*visual\.iconColor/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Markdown\.configure/u);
 });
@@ -1103,7 +1104,9 @@ test("Slash command menu contains every toolbar command", () => {
 	// The picker drops already-configured rows by normalized label so an added
 	// app/skill cannot reappear in the inline "Add" search.
 	assert.match(EDITOR_PALETTE_SOURCE, /excludeLabels\?: readonly string\[\];/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /function getSearchPickerExcludeKey\(category: EditorPaletteSearchCategory, label: string\): string \{[\s\S]*category === "skill" \? slugifySkillName\(label\) : label\.trim\(\)\.toLowerCase\(\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /import \{ getSkillConfigLabel \} from "@\/components\/blocks\/agent-2\/lib\/agent-config-model";/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function getSearchPickerExcludeKey\(category: EditorPaletteSearchCategory, label: string\): string \{[\s\S]*category === "skill" \? getSkillConfigLabel\(label\) : label\.trim\(\)\.toLowerCase\(\);/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function excludeItemsByLabel\([\s\S]*category: EditorPaletteSearchCategory,[\s\S]*getSearchPickerExcludeKey\(category, item\.label\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\([\s\S]*category,[\s\S]*excludeLabels,\s*\);/u);
 	// The empty state now comes from the shared RichTextSuggestionEmptyState

@@ -3,6 +3,7 @@ const DEFAULT_GENERATED_AGENT_BYLINE = "Custom agent by You";
 const MAX_GENERATED_AGENT_CONVERSATION_STARTERS = 3;
 const MISSING_STUDIO_AGENT_RESULT_ERROR_CODE = "missing-agent-result";
 const STUDIO_AGENT_RESULT_WIDGET_TYPE = "agent-result";
+const { createBareAppMentionConverter } = require("../../lib/bare-app-mention-tokens");
 
 function getNonEmptyString(value) {
 	if (typeof value !== "string") {
@@ -989,77 +990,7 @@ function detectAppsFromText(text) {
 	return apps;
 }
 
-function escapeRegExp(value) {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function slugifyAppMentionId(value) {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-}
-
-// `[@/]name` matchers for the known fallback apps, longest name first so a
-// multi-word name like "Google Calendar" wins over a bare "Google". The leading
-// boundary char is captured (group 1) so it survives the rewrite.
-let appMentionMatchers = null;
-function getAppMentionMatchers() {
-	if (appMentionMatchers) {
-		return appMentionMatchers;
-	}
-	appMentionMatchers = [...FALLBACK_APP_PATTERNS]
-		.map(({ id, name }) => ({ id, name: (name ?? "").trim() }))
-		.filter((entry) => entry.name.length > 0)
-		.sort((a, b) => b.name.length - a.name.length)
-		.map(({ id, name }) => ({
-			id,
-			pattern: new RegExp(
-				`(^|[\\s(>"'])[@/](?!\\[)(?:${escapeRegExp(name).replace(/\s+/g, "\\s+")})(?=$|[\\s.,;:!?)\\]"'])`,
-				"giu",
-			),
-		}));
-	return appMentionMatchers;
-}
-
-const BARE_APP_MENTION_PATTERN = /(^|[\s(>"'])[@/](?!\[)([A-Za-z][A-Za-z0-9.+_-]*)/giu;
-const CODE_REGION_PATTERN = /```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`/g;
-
-// Mirror of the frontend `convertBareMentionsToTokens` (app/data/directory/
-// resolve-ids.ts): rewrite bare `@name` / `/name` references the model or the
-// brief echoed into generated text into `@[app:<id>]` tokens so the rich-text
-// editor renders them as app chips. Known fallback apps resolve to their id;
-// anything else becomes `@[app:<slug>]` (the editor renders a logo-less chip).
-// Code spans/fences and existing `@[...]` tokens are left untouched.
-function convertBareAppMentionsToTokens(text) {
-	if (typeof text !== "string" || text.length === 0) {
-		return text;
-	}
-
-	const transform = (segment) => {
-		let next = segment;
-		for (const { id, pattern } of getAppMentionMatchers()) {
-			next = next.replace(pattern, (_full, lead) => `${lead}@[app:${id}]`);
-		}
-		next = next.replace(BARE_APP_MENTION_PATTERN, (full, lead, word) => {
-			const slug = slugifyAppMentionId(word);
-			return slug ? `${lead}@[app:${slug}]` : full;
-		});
-		return next;
-	};
-
-	let result = "";
-	let lastIndex = 0;
-	for (const match of text.matchAll(CODE_REGION_PATTERN)) {
-		const index = match.index ?? 0;
-		result += transform(text.slice(lastIndex, index));
-		result += match[0];
-		lastIndex = index + match[0].length;
-	}
-	result += transform(text.slice(lastIndex));
-	return result;
-}
+const convertBareAppMentionsToTokens = createBareAppMentionConverter(FALLBACK_APP_PATTERNS);
 
 // Maps a brief's recurring-schedule language to a trigger label that the
 // frontend `inferScheduledTriggerDefinitions` hydrates into a structured

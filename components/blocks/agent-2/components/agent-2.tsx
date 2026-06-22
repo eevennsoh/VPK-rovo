@@ -11,7 +11,7 @@
 
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
-import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLazyRef } from "@/lib/use-lazy-ref";
@@ -143,13 +143,53 @@ import {
 	DEFAULT_SKILLS,
 	getSkillCollectionId,
 	getSkillIcon,
-	slugifySkillName,
 } from "@/app/data/directory/skills";
 import {
 	AGENT_AVATAR_OPTION_GROUPS,
 	AGENT_AVATAR_OPTION_SRCS,
 } from "@/components/blocks/agent-2/data/agent-avatar-options";
+import {
+	AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS,
+	AgentCompactNavMenuInitialHighlightReset,
+	AgentCompactNavMenuList,
+	useCompactNavMenuKeepOpen,
+	useCompactNavMenuNoInitialHighlight,
+} from "@/components/blocks/agent-2/components/agent-compact-nav-menu";
+import {
+	type AgentConfigFormValue,
+	type AgentConfigListFieldName,
+	type AgentConfigReferenceListFieldName,
+	type AgentConfigTextFieldName,
+	type AgentDirectoryKind,
+	type AgentHideableConfigField,
+	getAgentConfigListLookupValue,
+	getNonEmptyConfigItems,
+	getSkillConfigItems,
+	getSkillConfigLabel,
+	isAgentListItemDisabled,
+} from "@/components/blocks/agent-2/lib/agent-config-model";
+import {
+	AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY,
+	AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD,
+	getAgentReferenceKey,
+	hasAgentReferenceValue,
+	mapConfigValuesToMentionItems,
+	mapMemoryToKnowledgeItems,
+	mapSubagentConfigValuesToMentionItems,
+	mergeMentionItems,
+} from "@/components/blocks/agent-2/lib/agent-reference-mapping";
 import { getDeterministicAgentBannerSrc } from "@/lib/agent-avatars";
+
+export type {
+	AgentConfigFormValue,
+	AgentConfigListFieldName,
+	AgentConfigReferenceListFieldName,
+	AgentConfigTextFieldName,
+	AgentDirectoryKind,
+	AgentHideableConfigField,
+} from "@/components/blocks/agent-2/lib/agent-config-model";
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally re-exports colocated non-component API used by consumers.
+export { toggleAgentConfigDisabledItem } from "@/components/blocks/agent-2/lib/agent-config-model";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
@@ -295,38 +335,12 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 	});
 }
 
-const MENTION_SOURCE_LIMIT = 24;
-
 // Studio instructions editor uses the shared nested-first suggestion behavior:
 // bare "@" / "/" show parent categories, while top-level typing searches flat
 // across that trigger's full set. Hoisted so the editor's extension memo stays
 // referentially stable.
 const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = "nested";
 
-function toMentionId(category: RichTextMentionItem["category"], id: string): string {
-	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
-}
-
-export type AgentConfigReferenceListFieldName = Extract<
-	AgentConfigListFieldName,
-	"knowledge" | "skills" | "subagents" | "tools" | "apps"
->;
-
-const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName> = {
-	knowledge: "knowledge",
-	skill: "skills",
-	subagent: "subagents",
-	tool: "tools",
-	app: "apps",
-};
-
-const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory> = {
-	knowledge: "knowledge",
-	skills: "skill",
-	subagents: "subagent",
-	tools: "tool",
-	apps: "app",
-};
 type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "apps" | "knowledge" | "skills" | "tools">;
 
 const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, EditorPaletteSearchCategory> = {
@@ -352,116 +366,10 @@ function isAgentConfigReferenceListField(
 	return field in AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD;
 }
 
-function getNormalizedAgentReferenceValue(value: string): string {
-	return value.trim().toLowerCase();
-}
-
-function getSkillConfigLabel(value: string): string {
-	return slugifySkillName(value);
-}
-
-function getAgentConfigListLookupValue(field: AgentConfigListFieldName, value: string): string {
-	return field === "skills" ? getSkillConfigLabel(value) : getNormalizedAgentReferenceValue(value);
-}
-
-function getAgentReferenceKey(
-	field: AgentConfigReferenceListFieldName,
-	value: string,
-): string {
-	return `${field}:${getAgentConfigListLookupValue(field, value)}`;
-}
-
-function hasAgentReferenceValue(
-	config: AgentConfigFormValue,
-	field: AgentConfigReferenceListFieldName,
-	value: string,
-): boolean {
-	const normalizedValue = getAgentConfigListLookupValue(field, value);
-	return getNonEmptyConfigItems(config[field]).some(
-		(item) => getAgentConfigListLookupValue(field, item) === normalizedValue,
-	);
-}
-
-function mapConfigValuesToMentionItems(
-	category: RichTextReferenceCategory,
-	values: readonly string[] | undefined,
-): RichTextMentionItem[] {
-	return getNonEmptyConfigItems(values).map((value) =>
-		getDirectoryMentionItemOrFallback(category, value)
-	);
-}
-
-function mapSubagentConfigValuesToMentionItems(
-	values: readonly string[] | undefined,
-): RichTextMentionItem[] {
-	return getNonEmptyConfigItems(values).map((value) => ({
-		category: "subagent",
-		id: toMentionId("subagent", value),
-		label: value,
-	}));
-}
-
-function mapMemoryToKnowledgeItems(
-	explorer: WikiMemoryExplorerResponse | null,
-): RichTextMentionItem[] {
-	return (explorer?.nodes ?? [])
-		.slice(0, MENTION_SOURCE_LIMIT)
-		.map((node) => ({
-			category: "knowledge",
-			id: toMentionId("knowledge", node.id),
-			label: node.title || node.label || node.id,
-			description: node.summary || node.kind,
-		}));
-}
-
-function mergeMentionItems(
-	...groups: ReadonlyArray<readonly RichTextMentionItem[] | undefined>
-): RichTextMentionItem[] {
-	const seen = new Set<string>();
-	const items: RichTextMentionItem[] = [];
-
-	for (const group of groups) {
-		for (const item of group ?? []) {
-			const key = `${item.category}:${item.id}:${getNormalizedAgentReferenceValue(item.label)}`;
-			if (seen.has(key)) {
-				continue;
-			}
-			seen.add(key);
-			items.push(item);
-		}
-	}
-
-	return items;
-}
-
 function getAgentProfileCoverBackgroundColor(avatarSrc: string | undefined): string {
 	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
 	return (category ? AGENT_AVATAR_PROFILE_COVER_COLORS[category] : undefined) ?? DEFAULT_AGENT_PROFILE_COVER_COLOR;
 }
-
-export type AgentConfigTextFieldName =
-	| "name"
-	| "description"
-	| "instructions"
-	| "contextDescription"
-	| "trigger"
-	| "guardrail"
-	// Mode selectors are single-value (string) config like the text fields, so
-	// they reuse the same onTextChange plumbing rather than a bespoke callback.
-	| "memoryMode"
-	| "reasoningMode"
-	| "knowledgeMode";
-
-export type AgentConfigListFieldName =
-	| "triggers"
-	| "skills"
-	| "tools"
-	| "subagents"
-	| "knowledge"
-	| "apps"
-	| "conversationStarters";
-
-export type AgentDirectoryKind = "knowledge" | "tools" | "apps" | "skills" | "memory" | "conversationStarters";
 
 // Maps a directory-backed "/" slash category to the config-panel directory it
 // opens from a nested empty state's "Browse all". "format" has no directory and
@@ -476,47 +384,6 @@ const AGENT_DIRECTORY_BY_SLASH_CATEGORY: Record<
 	knowledge: "knowledge",
 	app: "apps",
 };
-
-// Config rows that can be suppressed by callers (e.g. while editing a subagent,
-// where these capabilities can't be configured). Keyed by the canonical row key
-// used in `AgentFilledConfigSummary` and the `agentFieldName` used by the
-// compact empty-config nav and missing-config actions.
-export type AgentHideableConfigField = "trigger" | "subagents" | "conversationStarters";
-
-export interface AgentConfigFormValue {
-	name?: string;
-	description?: string;
-	summary?: string;
-	instructions?: string;
-	contextDescription?: string;
-	trigger?: string;
-	triggers?: readonly string[];
-	automationRules?: readonly AgentAutomationRule[];
-	skills?: readonly string[];
-	guardrail?: string;
-	tools?: readonly string[];
-	subagents?: readonly string[];
-	knowledge?: readonly string[];
-	apps?: readonly string[];
-	conversationStarters?: readonly string[];
-	conversationStarterIcons?: readonly string[];
-	// Per-field set of disabled list items, keyed by the item's label (not index)
-	// so the disabled state survives reordering and removal. A configured item
-	// (tool / skill / knowledge / subagent) whose label appears here is shown in a
-	// disabled state in both the collapsed-nav dropdown and the filled summary,
-	// but stays listed until explicitly removed. Persisted on the agent draft
-	// alongside the other config fields (e.g. localStorage).
-	disabledItems?: Partial<Record<AgentConfigListFieldName, readonly string[]>>;
-	// Mode selectors, persisted on the agent draft. Stored loosely as `string`
-	// (matching the agent-result wire type); the option lists below
-	// (MEMORY_MODE_OPTIONS / REASONING_MODE_SECTIONS / KNOWLEDGE_MODE_OPTIONS)
-	// are the source of valid values, narrowed at the selector boundary.
-	memoryMode?: string;
-	reasoningMode?: string;
-	knowledgeMode?: string;
-	agentId?: string;
-	action?: string;
-}
 
 export type AgentProps = ComponentProps<"div">;
 
@@ -996,231 +863,6 @@ function AgentCompactConfigNavButton({
 			{item.count > 0 ? <Badge>{item.count}</Badge> : null}
 		</button>
 	);
-}
-
-// Shared chrome for every collapsed-nav dropdown so Triggers, Knowledge/Tools/
-// Skills, Subagents and Conversation starters all read identically to the
-// Memory dropdown: items sit directly inside the popup's default `p-1` frame
-// (4px all around), so list, separator, and footer share one even inset. The
-// popup itself scrolls and caps height (`overflow-y-auto max-h-(--available-height)`),
-// so no inner scroll region or sticky footer is needed.
-function AgentCompactNavMenuList({ children }: Readonly<{ children: ReactNode }>) {
-	return <>{children}</>;
-}
-
-// Flex-column popup sizing for the Memory/Reasoning menus: the list scrolls
-// within the available height while a pinned section stays put.
-const AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS = "flex max-h-(--available-height) flex-col";
-
-type AgentCompactNavMenuOpenChange = NonNullable<ComponentProps<typeof MenubarMenu>["onOpenChange"]>;
-
-function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCompactNavMenuOpenChange>[1]): boolean {
-	if (
-		eventDetails.reason === "trigger-focus" ||
-		eventDetails.reason === "trigger-hover" ||
-		eventDetails.reason === "sibling-open"
-	) {
-		return true;
-	}
-
-	if (eventDetails.reason !== "trigger-press") {
-		return false;
-	}
-
-	const event = eventDetails.event;
-	if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent) {
-		return true;
-	}
-	return !(event instanceof MouseEvent) || event.detail !== 0;
-}
-
-function clearCompactNavInitialHighlight(contentElement: HTMLElement): void {
-	const activeElement = contentElement.ownerDocument.activeElement;
-
-	for (const highlightedElement of contentElement.querySelectorAll<HTMLElement>("[data-highlighted]")) {
-		highlightedElement.removeAttribute("data-highlighted");
-
-		if (highlightedElement.getAttribute("tabindex") === "0") {
-			highlightedElement.setAttribute("tabindex", "-1");
-		}
-	}
-
-	if (
-		activeElement instanceof HTMLElement &&
-		contentElement.contains(activeElement) &&
-		activeElement !== contentElement
-	) {
-		contentElement.focus({ preventScroll: true });
-	}
-}
-
-function AgentCompactNavMenuInitialHighlightReset({
-	enabled,
-	resetToken,
-}: Readonly<{
-	enabled: boolean;
-	resetToken: number;
-}>) {
-	const markerRef = useRef<HTMLSpanElement | null>(null);
-
-	useLayoutEffect(() => {
-		if (!enabled) {
-			return;
-		}
-
-		const contentElement = markerRef.current?.closest<HTMLElement>(
-			"[data-slot='menubar-content'], [data-slot='dropdown-menu-content']",
-		);
-		if (!contentElement) {
-			return;
-		}
-
-		const clear = () => clearCompactNavInitialHighlight(contentElement);
-
-		clear();
-
-		// While the popup is opening, Base UI applies two auto-behaviors right after
-		// our synchronous clear — too fast to react to — that we don't want:
-		//   1. the item the popup materializes over flashes `data-highlighted` (the
-		//      CSS rule keyed on the attribute below forces highlighted rows
-		//      transparent for the brief open window); and
-		//   2. initial focus auto-lands on the first form field (e.g. the
-		//      Conversation starters inputs) — we bounce that *programmatic* focus
-		//      back to the menu content, while leaving a deliberate user click alone.
-		// The guards lift on the first real interaction (pointerdown/keydown), which
-		// — unlike pointermove — never fires coincidentally while a cursor is still
-		// gliding to a rest as the menu opens, or after a short fallback timeout.
-		contentElement.setAttribute("data-agent-suppress-initial-highlight", "");
-
-		let guardsReleased = false;
-		const redirectInitialAutoFocus = (event: FocusEvent) => {
-			if (guardsReleased) {
-				return;
-			}
-			const target = event.target;
-			if (
-				target instanceof HTMLElement &&
-				target !== contentElement &&
-				contentElement.contains(target) &&
-				target.matches("input, textarea, [contenteditable='true']")
-			) {
-				contentElement.focus({ preventScroll: true });
-			}
-		};
-		const releaseInitialOpenGuards = () => {
-			if (guardsReleased) {
-				return;
-			}
-			guardsReleased = true;
-			contentElement.removeAttribute("data-agent-suppress-initial-highlight");
-			contentElement.removeEventListener("focusin", redirectInitialAutoFocus);
-			window.removeEventListener("pointerdown", releaseInitialOpenGuards, true);
-			window.removeEventListener("keydown", releaseInitialOpenGuards, true);
-		};
-		contentElement.addEventListener("focusin", redirectInitialAutoFocus);
-		window.addEventListener("pointerdown", releaseInitialOpenGuards, true);
-		window.addEventListener("keydown", releaseInitialOpenGuards, true);
-		const guardTimeoutId = window.setTimeout(releaseInitialOpenGuards, 250);
-
-		queueMicrotask(() => {
-			clear();
-			requestAnimationFrame(clear);
-			window.setTimeout(clear, 120);
-		});
-
-		return () => {
-			window.clearTimeout(guardTimeoutId);
-			releaseInitialOpenGuards();
-		};
-	}, [enabled, resetToken]);
-
-	return (
-		<span
-			aria-hidden
-			className="hidden"
-			data-agent-compact-nav-initial-highlight-reset=""
-			ref={markerRef}
-		/>
-	);
-}
-
-function useCompactNavMenuNoInitialHighlight(): {
-	onOpenChange: AgentCompactNavMenuOpenChange;
-	resetInitialHighlight: boolean;
-	resetToken: number;
-} {
-	const shouldResetInitialHighlightRef = useRef(false);
-	const [resetToken, setResetToken] = useState(0);
-	const handleOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
-		(open, eventDetails) => {
-			if (open && shouldClearCompactNavInitialHighlight(eventDetails)) {
-				shouldResetInitialHighlightRef.current = true;
-				setResetToken((currentResetToken) => currentResetToken + 1);
-				return;
-			}
-
-			if (!open) {
-				shouldResetInitialHighlightRef.current = false;
-			}
-		},
-		[],
-	);
-
-	return {
-		onOpenChange: handleOpenChange,
-		resetInitialHighlight: shouldResetInitialHighlightRef.current,
-		resetToken,
-	};
-}
-
-// Multi-select support for the Apps/Skills add menus. Picking a result adds it
-// to the picker's `excludeLabels`, which unmounts the focused option button — so
-// focus leaves the menu and Base UI closes the whole tree (submenu AND root) on
-// focus-out. To let several items be added in a row we CONTROL the root menu's
-// open state and ignore the close request triggered by a pick (flagged via
-// `suppressNextClose`, which self-clears once the focus-out settles). Only the
-// standalone row "Edit" instances opt in (`controlled`); the chip-strip
-// instances stay uncontrolled because Base UI's `Menubar` coordinates its child
-// menus' open state itself (and adding the first item there promotes the field
-// to a row, unmounting the chip regardless).
-function useCompactNavMenuKeepOpen(controlled: boolean): {
-	resetInitialHighlight: boolean;
-	resetToken: number;
-	rootProps: { open?: boolean; onOpenChange: AgentCompactNavMenuOpenChange };
-	keepOpenRef: RefObject<boolean>;
-	suppressNextClose: () => void;
-} {
-	const base = useCompactNavMenuNoInitialHighlight();
-	const baseOnOpenChange = base.onOpenChange;
-	const [open, setOpen] = useState(false);
-	const keepOpenRef = useRef(false);
-	const handleRootOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
-		(next, eventDetails) => {
-			if (!next && keepOpenRef.current) {
-				return;
-			}
-			setOpen(next);
-			baseOnOpenChange(next, eventDetails);
-		},
-		[baseOnOpenChange],
-	);
-	const suppressNextClose = useCallback(() => {
-		keepOpenRef.current = true;
-		// Cleared after the focus-out close has had a chance to fire and be
-		// ignored, so a later deliberate dismiss (outside press / Escape) still
-		// closes the menu.
-		window.setTimeout(() => {
-			keepOpenRef.current = false;
-		}, 150);
-	}, []);
-
-	return {
-		resetInitialHighlight: base.resetInitialHighlight,
-		resetToken: base.resetToken,
-		rootProps: controlled ? { open, onOpenChange: handleRootOpenChange } : { onOpenChange: baseOnOpenChange },
-		keepOpenRef,
-		suppressNextClose,
-	};
 }
 
 // Memoize disabled label keys for O(1) per-row lookups. The collapsed-nav
@@ -2351,76 +1993,6 @@ function AgentSectionLabel({ children }: Readonly<{ children: ReactNode }>) {
 			{children}
 		</div>
 	);
-}
-
-function getNonEmptyConfigItems(items: readonly string[] | undefined): readonly string[] {
-	return (items ?? [])
-		.map((item) => item.trim())
-		.filter(Boolean);
-}
-
-function getSkillConfigItems(items: readonly string[] | undefined): readonly string[] {
-	return getNonEmptyConfigItems(items)
-		.map(getSkillConfigLabel)
-		.filter(Boolean);
-}
-
-// Disabled-item lookups are label-keyed so they survive reordering and removal
-// of the underlying list. Skills use their kebab-case config key; other rows use
-// trimmed labels. A missing field or label means "enabled".
-function getDisabledItemLabels(
-	config: AgentConfigFormValue | undefined,
-	field: AgentConfigListFieldName,
-): readonly string[] {
-	return config?.disabledItems?.[field] ?? [];
-}
-
-function isAgentListItemDisabled(
-	config: AgentConfigFormValue | undefined,
-	field: AgentConfigListFieldName,
-	label: string,
-): boolean {
-	const target = getAgentConfigListLookupValue(field, label);
-	return getDisabledItemLabels(config, field).some((entry) => getAgentConfigListLookupValue(field, entry) === target);
-}
-
-// Pure reducer: returns a new config with `label` added to / removed from the
-// field's disabled set. Used by owners that persist the config (e.g. the studio
-// draft saved to localStorage). Prunes empty field arrays and an empty
-// `disabledItems` map so the persisted shape stays minimal.
-// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
-export function toggleAgentConfigDisabledItem(
-	config: AgentConfigFormValue,
-	field: AgentConfigListFieldName,
-	label: string,
-	enabled: boolean,
-): AgentConfigFormValue {
-	const target = getAgentConfigListLookupValue(field, label);
-	if (!target) {
-		return config;
-	}
-	const current = getDisabledItemLabels(config, field);
-	const isCurrentlyDisabled = current.some((entry) => getAgentConfigListLookupValue(field, entry) === target);
-	// No-op fast paths keep referential identity stable (avoids needless writes).
-	if (enabled && !isCurrentlyDisabled) {
-		return config;
-	}
-	if (!enabled && isCurrentlyDisabled) {
-		return config;
-	}
-	const nextField = enabled
-		? current.filter((entry) => getAgentConfigListLookupValue(field, entry) !== target)
-		: [...current, target];
-	const nextDisabledItems: Partial<Record<AgentConfigListFieldName, readonly string[]>> = {
-		...config.disabledItems,
-	};
-	if (nextField.length > 0) {
-		nextDisabledItems[field] = nextField;
-	} else {
-		delete nextDisabledItems[field];
-	}
-	const hasAny = Object.keys(nextDisabledItems).length > 0;
-	return { ...config, disabledItems: hasAny ? nextDisabledItems : undefined };
 }
 
 function getConversationStarterSummaryItems(config: AgentConfigFormValue): ReadonlyArray<{

@@ -979,7 +979,7 @@ test("completed thinking tool calls suppress the collapsed byline", () => {
 	);
 	assert.match(
 		assistantTraceSource,
-		/description=\{\s*toolCall\.state === "completed"\s*\?\s*null\s*:\s*getThinkingToolByline\(toolCall, narration\)\s*\}/u,
+		/description=\{\s*tracePresentation\?\.headerRender \|\| toolCall\.state === "completed"\s*\?\s*null\s*:\s*getThinkingToolByline\(toolCall, narration\)\s*\}/u,
 	);
 });
 

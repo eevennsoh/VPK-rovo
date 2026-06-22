@@ -1,343 +1,203 @@
 /**
- * Static catalog for the third-party (3P) brand logos. Mirrors the Atlassian
- * Platform Labs `@atlassian/logo-third-party` package's full named-brand surface
- * (see `logo-third-party-icons.ts`); a small set of legacy brands without an
- * upstream entry are still backed by local `public/3p/<id>/` assets.
+ * Canonical local registry for third-party (3P) brand logos. Each brand is
+ * described once: VPK public id, display label, optional package entrypoint,
+ * optional package export, and whether a legacy `public/3p/<id>/` asset exists.
  *
- * Three lists, narrowing in scope:
- * - `THIRD_PARTY_LOGO_NAMES` — every supported brand (package-backed + local).
- * - `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` — brands that have a `public/3p/<id>/`
- *   folder; the only ids valid for `thirdPartyLogoSrc`.
- * - `THIRD_PARTY_LOGO_LOCAL_FALLBACKS` — local-asset brands with NO package
- *   entry, so `public/3p` is their only render path.
- *
- * `logo-third-party.test.js` asserts `THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES` equals
- * the on-disk `public/3p` folders exactly.
+ * The package-backed icon lookup in `logo-third-party-icons.ts` and the public
+ * arrays below all derive from this manifest.
  */
 
-/** Every supported third-party brand id. Keep alphabetized. */
-export const THIRD_PARTY_LOGO_NAMES = [
-	"adobe",
-	"adobe-sign",
-	"adobe-xd",
-	"aha",
-	"airtable",
-	"amazon",
-	"amazon-web-services-aws",
-	"amplitude",
-	"ansible",
-	"asana",
-	"azure-devops",
-	"box",
-	"brightspot",
-	"canva",
-	"claude",
-	"clickup",
-	"cloudflare",
-	"coupa",
-	"cursor",
-	"daloopa",
-	"databricks",
-	"datadog",
-	"docker",
-	"documentum",
-	"docusign",
-	"dovetail",
-	"dropbox",
-	"dynatrace",
-	"egnyte",
-	"evernote",
-	"figma",
-	"fireflies",
-	"freshservice",
-	"gamma",
-	"generic-mcp-server",
-	"giphy",
-	"github",
-	"gitlab",
-	"gmail",
-	"gong",
-	"google-calendar",
-	"google-chrome",
-	"google-cloud-platform",
-	"google-docs",
-	"google-drive",
-	"google-sheets",
-	"google-slides",
-	"hubspot",
-	"hugging-face",
-	"identity-now",
-	"intercom",
-	"invision",
-	"jam",
-	"jenkins",
-	"launchdarkly",
-	"linear",
-	"lucid-co",
-	"lucidchart",
-	"microsoft",
-	"microsoft-365",
-	"microsoft-azure",
-	"microsoft-entra-id",
-	"microsoft-excel",
-	"microsoft-onedrive",
-	"microsoft-outlook",
-	"microsoft-power-point",
-	"microsoft-sharepoint",
-	"microsoft-teams",
-	"microsoft-word",
-	"miro",
-	"monday",
-	"mural",
-	"neon",
-	"new-relic",
-	"notion",
-	"octopus-deploy",
-	"okta",
-	"openai",
-	"oracle",
-	"outreach",
-	"pagerduty",
-	"paypal",
-	"pipedrive",
-	"postman",
-	"powerbi",
-	"quip",
-	"salesforce",
-	"sap",
-	"scriptrunner",
-	"sentry",
-	"servicenow",
-	"shopify",
-	"simpplr",
-	"slack",
-	"smartsheet",
-	"snowflake",
-	"spinnaker",
-	"splunk",
-	"square",
-	"stack-overflow",
-	"stripe",
-	"stych",
-	"tableau",
-	"tempo-timesheets",
-	"todoist",
-	"twilio",
-	"vercel",
-	"webex",
-	"wix",
-	"workato",
-	"workday",
-	"youtube",
-	"zapier",
-	"zendesk",
-	"zeplin",
-	"ziprecruiter",
-	"zoom",
+export type ThirdPartyLogoPackageIcon = Readonly<{
+	entrypoint: string;
+	exportName: string;
+}>;
+
+export const THIRD_PARTY_LOGO_MANIFEST = [
+	{ name: "adobe", label: "Adobe", packageIcon: { entrypoint: "adobe", exportName: "AdobeIcon" } },
+	{ name: "adobe-sign", label: "Adobe Sign", localAsset: true },
+	{ name: "adobe-xd", label: "Adobe XD", packageIcon: { entrypoint: "adobexd", exportName: "AdobeXDIcon" }, localAsset: true },
+	{ name: "aha", label: "Aha!", packageIcon: { entrypoint: "aha", exportName: "AhaIcon" }, localAsset: true },
+	{ name: "airtable", label: "Airtable", packageIcon: { entrypoint: "airtable", exportName: "AirtableIcon" }, localAsset: true },
+	{ name: "amazon", label: "Amazon", packageIcon: { entrypoint: "amazon", exportName: "AmazonIcon" } },
+	{ name: "amazon-web-services-aws", label: "Amazon Web Services (AWS)", packageIcon: { entrypoint: "amazon-web-services-aws", exportName: "AmazonWebServicesAWSIcon" } },
+	{ name: "amplitude", label: "Amplitude", packageIcon: { entrypoint: "amplitude", exportName: "AmplitudeIcon" }, localAsset: true },
+	{ name: "ansible", label: "Ansible", packageIcon: { entrypoint: "ansible", exportName: "AnsibleIcon" } },
+	{ name: "asana", label: "Asana", packageIcon: { entrypoint: "asana", exportName: "AsanaIcon" }, localAsset: true },
+	{ name: "azure-devops", label: "Azure DevOps", packageIcon: { entrypoint: "microsoft-azure-devops", exportName: "MicrosoftAzureDevOpsIcon" }, localAsset: true },
+	{ name: "box", label: "Box", packageIcon: { entrypoint: "box", exportName: "BoxIcon" }, localAsset: true },
+	{ name: "brightspot", label: "Brightspot", packageIcon: { entrypoint: "brightspot", exportName: "BrightspotIcon" }, localAsset: true },
+	{ name: "canva", label: "Canva", packageIcon: { entrypoint: "canva", exportName: "CanvaIcon" }, localAsset: true },
+	{ name: "claude", label: "Claude", packageIcon: { entrypoint: "claude", exportName: "ClaudeIcon" } },
+	{ name: "clickup", label: "ClickUp", packageIcon: { entrypoint: "clickup", exportName: "ClickupIcon" }, localAsset: true },
+	{ name: "cloudflare", label: "Cloudflare", packageIcon: { entrypoint: "cloudflare", exportName: "CloudflareIcon" } },
+	{ name: "coupa", label: "Coupa", localAsset: true },
+	{ name: "cursor", label: "Cursor", packageIcon: { entrypoint: "cursor", exportName: "CursorIcon" } },
+	{ name: "daloopa", label: "Daloopa", packageIcon: { entrypoint: "daloopa", exportName: "DaloopaIcon" } },
+	{ name: "databricks", label: "Databricks", packageIcon: { entrypoint: "databricks", exportName: "DatabricksIcon" }, localAsset: true },
+	{ name: "datadog", label: "Datadog", packageIcon: { entrypoint: "datadog", exportName: "DataDogIcon" }, localAsset: true },
+	{ name: "docker", label: "Docker", packageIcon: { entrypoint: "docker", exportName: "DockerIcon" } },
+	{ name: "documentum", label: "Documentum", packageIcon: { entrypoint: "documentum", exportName: "DocumentumIcon" } },
+	{ name: "docusign", label: "DocuSign", packageIcon: { entrypoint: "docusign", exportName: "DocuSignIcon" }, localAsset: true },
+	{ name: "dovetail", label: "Dovetail", packageIcon: { entrypoint: "dovetail", exportName: "DovetailIcon" }, localAsset: true },
+	{ name: "dropbox", label: "Dropbox", packageIcon: { entrypoint: "dropbox", exportName: "DropboxIcon" }, localAsset: true },
+	{ name: "dynatrace", label: "Dynatrace", packageIcon: { entrypoint: "dynatrace", exportName: "DynatraceIcon" } },
+	{ name: "egnyte", label: "Egnyte", packageIcon: { entrypoint: "egnyte", exportName: "EgnyteIcon" }, localAsset: true },
+	{ name: "evernote", label: "Evernote", packageIcon: { entrypoint: "evernote", exportName: "EvernoteIcon" } },
+	{ name: "figma", label: "Figma", packageIcon: { entrypoint: "figma", exportName: "FigmaIcon" }, localAsset: true },
+	{ name: "fireflies", label: "Fireflies", packageIcon: { entrypoint: "fireflies", exportName: "FirefliesIcon" } },
+	{ name: "freshservice", label: "Freshservice", packageIcon: { entrypoint: "freshservice", exportName: "FreshserviceIcon" }, localAsset: true },
+	{ name: "gamma", label: "Gamma", packageIcon: { entrypoint: "gamma", exportName: "GammaIcon" } },
+	{ name: "generic-mcp-server", label: "Generic MCP Server", packageIcon: { entrypoint: "generic-mcp-server", exportName: "GenericMCPServerIcon" } },
+	{ name: "giphy", label: "Giphy", packageIcon: { entrypoint: "giphy", exportName: "GiphyIcon" } },
+	{ name: "github", label: "GitHub", packageIcon: { entrypoint: "github", exportName: "GithubIcon" }, localAsset: true },
+	{ name: "gitlab", label: "GitLab", packageIcon: { entrypoint: "gitlab", exportName: "GitlabIcon" }, localAsset: true },
+	{ name: "gmail", label: "Gmail", packageIcon: { entrypoint: "gmail", exportName: "GmailIcon" }, localAsset: true },
+	{ name: "gong", label: "Gong", packageIcon: { entrypoint: "gong", exportName: "GongIcon" } },
+	{ name: "google-calendar", label: "Google Calendar", packageIcon: { entrypoint: "google-calendar", exportName: "GoogleCalendarIcon" }, localAsset: true },
+	{ name: "google-chrome", label: "Google Chrome", localAsset: true },
+	{ name: "google-cloud-platform", label: "Google Cloud Platform", packageIcon: { entrypoint: "google-cloud-platform", exportName: "GoogleCloudPlatformIcon" }, localAsset: true },
+	{ name: "google-docs", label: "Google Docs", packageIcon: { entrypoint: "google-docs", exportName: "GoogleDocsIcon" } },
+	{ name: "google-drive", label: "Google Drive", packageIcon: { entrypoint: "google-drive", exportName: "GoogleDriveIcon" }, localAsset: true },
+	{ name: "google-sheets", label: "Google Sheets", packageIcon: { entrypoint: "google-sheets", exportName: "GoogleSheetsIcon" } },
+	{ name: "google-slides", label: "Google Slides", packageIcon: { entrypoint: "google-slides", exportName: "GoogleSlidesIcon" } },
+	{ name: "hubspot", label: "HubSpot", packageIcon: { entrypoint: "hubspot", exportName: "HubspotIcon" }, localAsset: true },
+	{ name: "hugging-face", label: "Hugging Face", packageIcon: { entrypoint: "hugging-face", exportName: "HuggingFaceIcon" } },
+	{ name: "identity-now", label: "Identity Now", packageIcon: { entrypoint: "identity-now", exportName: "IdentityNowIcon" } },
+	{ name: "intercom", label: "Intercom", packageIcon: { entrypoint: "intercom", exportName: "IntercomIcon" } },
+	{ name: "invision", label: "InVision", packageIcon: { entrypoint: "invision", exportName: "InVisionIcon" } },
+	{ name: "jam", label: "Jam", packageIcon: { entrypoint: "jam", exportName: "JamIcon" } },
+	{ name: "jenkins", label: "Jenkins", packageIcon: { entrypoint: "jenkins", exportName: "JenkinsIcon" }, localAsset: true },
+	{ name: "launchdarkly", label: "LaunchDarkly", packageIcon: { entrypoint: "launchdarkly", exportName: "LaunchdarklyIcon" }, localAsset: true },
+	{ name: "linear", label: "Linear", packageIcon: { entrypoint: "linear", exportName: "LinearIcon" } },
+	{ name: "lucid-co", label: "Lucid", packageIcon: { entrypoint: "lucid", exportName: "LucidIcon" }, localAsset: true },
+	{ name: "lucidchart", label: "Lucidchart", packageIcon: { entrypoint: "lucidchart", exportName: "LucidchartIcon" }, localAsset: true },
+	{ name: "microsoft", label: "Microsoft", packageIcon: { entrypoint: "microsoft", exportName: "MicrosoftIcon" } },
+	{ name: "microsoft-365", label: "Microsoft 365", packageIcon: { entrypoint: "microsoft-365", exportName: "Microsoft365Icon" } },
+	{ name: "microsoft-azure", label: "Microsoft Azure", packageIcon: { entrypoint: "microsoft-azure", exportName: "MicrosoftAzureIcon" } },
+	{ name: "microsoft-entra-id", label: "Microsoft Entra ID", packageIcon: { entrypoint: "microsoft-entra-id", exportName: "MicrosoftEntraIDIcon" } },
+	{ name: "microsoft-excel", label: "Microsoft Excel", packageIcon: { entrypoint: "microsoft-excel", exportName: "MicrosoftExcelIcon" } },
+	{ name: "microsoft-onedrive", label: "Microsoft OneDrive", packageIcon: { entrypoint: "microsoft-onedrive", exportName: "MicrosoftOneDriveIcon" }, localAsset: true },
+	{ name: "microsoft-outlook", label: "Microsoft Outlook", packageIcon: { entrypoint: "microsoft-outlook", exportName: "MicrosoftOutlookIcon" }, localAsset: true },
+	{ name: "microsoft-power-point", label: "Microsoft Power Point", packageIcon: { entrypoint: "microsoft-power-point", exportName: "MicrosoftPowerPointIcon" } },
+	{ name: "microsoft-sharepoint", label: "Microsoft SharePoint", packageIcon: { entrypoint: "microsoft-sharepoint", exportName: "MicrosoftSharePointIcon" }, localAsset: true },
+	{ name: "microsoft-teams", label: "Microsoft Teams", packageIcon: { entrypoint: "microsoft-teams", exportName: "MicrosoftTeamsIcon" }, localAsset: true },
+	{ name: "microsoft-word", label: "Microsoft Word", packageIcon: { entrypoint: "microsoft-word", exportName: "MicrosoftWordIcon" } },
+	{ name: "miro", label: "Miro", packageIcon: { entrypoint: "miro", exportName: "MiroIcon" }, localAsset: true },
+	{ name: "monday", label: "monday.com", packageIcon: { entrypoint: "monday", exportName: "MondayIcon" }, localAsset: true },
+	{ name: "mural", label: "Mural", packageIcon: { entrypoint: "mural", exportName: "MuralIcon" }, localAsset: true },
+	{ name: "neon", label: "Neon", packageIcon: { entrypoint: "neon", exportName: "NeonIcon" } },
+	{ name: "new-relic", label: "New Relic", packageIcon: { entrypoint: "new-relic", exportName: "NewRelicIcon" } },
+	{ name: "notion", label: "Notion", packageIcon: { entrypoint: "notion", exportName: "NotionIcon" }, localAsset: true },
+	{ name: "octopus-deploy", label: "Octopus Deploy", packageIcon: { entrypoint: "octopus-deploy", exportName: "OctopusDeployIcon" } },
+	{ name: "okta", label: "Okta", packageIcon: { entrypoint: "okta", exportName: "OktaIcon" } },
+	{ name: "openai", label: "OpenAI", packageIcon: { entrypoint: "openai", exportName: "OpenAIIcon" } },
+	{ name: "oracle", label: "Oracle", packageIcon: { entrypoint: "oracle", exportName: "OracleIcon" } },
+	{ name: "outreach", label: "Outreach", packageIcon: { entrypoint: "outreach", exportName: "OutreachIcon" }, localAsset: true },
+	{ name: "pagerduty", label: "PagerDuty", packageIcon: { entrypoint: "pager-duty", exportName: "PagerDutyIcon" }, localAsset: true },
+	{ name: "paypal", label: "PayPal", packageIcon: { entrypoint: "paypal", exportName: "PayPalIcon" } },
+	{ name: "pipedrive", label: "Pipedrive", packageIcon: { entrypoint: "pipedrive", exportName: "PipedriveIcon" }, localAsset: true },
+	{ name: "postman", label: "Postman", packageIcon: { entrypoint: "postman", exportName: "PostmanIcon" } },
+	{ name: "powerbi", label: "Power BI", packageIcon: { entrypoint: "microsoft-power-bi", exportName: "MicrosoftPowerBIIcon" }, localAsset: true },
+	{ name: "quip", label: "Quip", packageIcon: { entrypoint: "quip", exportName: "QuipIcon" } },
+	{ name: "salesforce", label: "Salesforce", packageIcon: { entrypoint: "salesforce", exportName: "SalesforceIcon" }, localAsset: true },
+	{ name: "sap", label: "SAP", packageIcon: { entrypoint: "sap", exportName: "SAPIcon" } },
+	{ name: "scriptrunner", label: "Scriptrunner", packageIcon: { entrypoint: "scriptrunner", exportName: "ScriptrunnerIcon" } },
+	{ name: "sentry", label: "Sentry", packageIcon: { entrypoint: "sentry", exportName: "SentryIcon" }, localAsset: true },
+	{ name: "servicenow", label: "ServiceNow", packageIcon: { entrypoint: "servicenow", exportName: "ServiceNowIcon" }, localAsset: true },
+	{ name: "shopify", label: "Shopify", packageIcon: { entrypoint: "shopify", exportName: "ShopifyIcon" } },
+	{ name: "simpplr", label: "Simpplr", packageIcon: { entrypoint: "simpplr", exportName: "SimpplrIcon" }, localAsset: true },
+	{ name: "slack", label: "Slack", packageIcon: { entrypoint: "slack", exportName: "SlackIcon" }, localAsset: true },
+	{ name: "smartsheet", label: "Smartsheet", packageIcon: { entrypoint: "smartsheet", exportName: "SmartsheetIcon" }, localAsset: true },
+	{ name: "snowflake", label: "Snowflake", packageIcon: { entrypoint: "snowflake", exportName: "SnowflakeIcon" } },
+	{ name: "spinnaker", label: "Spinnaker", localAsset: true },
+	{ name: "splunk", label: "Splunk", packageIcon: { entrypoint: "splunk", exportName: "SplunkIcon" } },
+	{ name: "square", label: "Square", packageIcon: { entrypoint: "square", exportName: "SquareIcon" } },
+	{ name: "stack-overflow", label: "Stack Overflow", packageIcon: { entrypoint: "stack-overflow", exportName: "StackOverflowIcon" }, localAsset: true },
+	{ name: "stripe", label: "Stripe", packageIcon: { entrypoint: "stripe", exportName: "StripeIcon" }, localAsset: true },
+	{ name: "stych", label: "Stych", packageIcon: { entrypoint: "stych", exportName: "StychIcon" } },
+	{ name: "tableau", label: "Tableau", packageIcon: { entrypoint: "tableau", exportName: "TableauIcon" }, localAsset: true },
+	{ name: "tempo-timesheets", label: "Tempo Timesheets", packageIcon: { entrypoint: "tempo-timesheets", exportName: "TempoTimesheetsIcon" } },
+	{ name: "todoist", label: "Todoist", packageIcon: { entrypoint: "todoist", exportName: "TodoistIcon" }, localAsset: true },
+	{ name: "twilio", label: "Twilio", packageIcon: { entrypoint: "twilio", exportName: "TwilioIcon" } },
+	{ name: "vercel", label: "Vercel", packageIcon: { entrypoint: "vercel", exportName: "VercelIcon" } },
+	{ name: "webex", label: "Webex", packageIcon: { entrypoint: "webex", exportName: "WebexIcon" }, localAsset: true },
+	{ name: "wix", label: "Wix", packageIcon: { entrypoint: "wix", exportName: "WixIcon" } },
+	{ name: "workato", label: "Workato", packageIcon: { entrypoint: "workato", exportName: "WorkatoIcon" } },
+	{ name: "workday", label: "Workday", packageIcon: { entrypoint: "workday", exportName: "WorkdayIcon" }, localAsset: true },
+	{ name: "youtube", label: "YouTube", packageIcon: { entrypoint: "youtube", exportName: "YoutubeIcon" } },
+	{ name: "zapier", label: "Zapier", packageIcon: { entrypoint: "zapier", exportName: "ZapierIcon" } },
+	{ name: "zendesk", label: "Zendesk", packageIcon: { entrypoint: "zendesk", exportName: "ZendeskIcon" }, localAsset: true },
+	{ name: "zeplin", label: "Zeplin", packageIcon: { entrypoint: "zeplin", exportName: "ZeplinIcon" }, localAsset: true },
+	{ name: "ziprecruiter", label: "ZipRecruiter", packageIcon: { entrypoint: "ziprecruiter", exportName: "ZipRecruiterIcon" }, localAsset: true },
+	{ name: "zoom", label: "Zoom", packageIcon: { entrypoint: "zoom", exportName: "ZoomIcon" }, localAsset: true },
 ] as const;
 
-export type ThirdPartyLogoName = (typeof THIRD_PARTY_LOGO_NAMES)[number];
+export type ThirdPartyLogoManifestEntry = (typeof THIRD_PARTY_LOGO_MANIFEST)[number];
+export type ThirdPartyLogoName = ThirdPartyLogoManifestEntry["name"];
+export type ThirdPartyLogoPackageIconManifestEntry = Extract<
+	ThirdPartyLogoManifestEntry,
+	{ readonly packageIcon: ThirdPartyLogoPackageIcon }
+>;
+export type ThirdPartyLogoPackageEntry = ThirdPartyLogoPackageIconManifestEntry["packageIcon"]["entrypoint"];
+export type LocalAssetThirdPartyLogoName = Extract<
+	ThirdPartyLogoManifestEntry,
+	{ readonly localAsset: true }
+>["name"];
+type ThirdPartyLogoManifestEntryWithoutPackageIcon = ThirdPartyLogoManifestEntry extends infer Entry
+	? Entry extends { readonly packageIcon: ThirdPartyLogoPackageIcon }
+		? never
+		: Entry
+	: never;
+export type LocalFallbackThirdPartyLogoName = Extract<
+	ThirdPartyLogoManifestEntryWithoutPackageIcon,
+	{ readonly localAsset: true }
+>["name"];
+
+function getManifestNames<const Entries extends ReadonlyArray<{ readonly name: string }>>(
+	entries: Entries,
+): { readonly [Index in keyof Entries]: Entries[Index] extends { readonly name: infer Name } ? Name : never } {
+	return entries.map((entry) => entry.name) as {
+		readonly [Index in keyof Entries]: Entries[Index] extends { readonly name: infer Name } ? Name : never;
+	};
+}
+
+function hasPackageIcon(entry: ThirdPartyLogoManifestEntry): entry is ThirdPartyLogoPackageIconManifestEntry {
+	return "packageIcon" in entry;
+}
+
+function hasLocalAsset(
+	entry: ThirdPartyLogoManifestEntry,
+): entry is Extract<ThirdPartyLogoManifestEntry, { readonly localAsset: true }> {
+	return "localAsset" in entry && entry.localAsset === true;
+}
+
+function isLocalFallbackManifestEntry(
+	entry: ThirdPartyLogoManifestEntry,
+): entry is Extract<ThirdPartyLogoManifestEntryWithoutPackageIcon, { readonly localAsset: true }> {
+	return hasLocalAsset(entry) && !hasPackageIcon(entry);
+}
+
+/** Every supported third-party brand id. */
+export const THIRD_PARTY_LOGO_NAMES = getManifestNames(THIRD_PARTY_LOGO_MANIFEST);
+
+/** Package-backed brand metadata consumed by `logo-third-party-icons.ts`. */
+export const THIRD_PARTY_LOGO_PACKAGE_ICON_ENTRIES = THIRD_PARTY_LOGO_MANIFEST.filter(hasPackageIcon);
 
 /** Brand ids with a local `public/3p/<id>/` asset folder. MUST match the folders. */
-export const THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES = [
-	"adobe-sign",
-	"adobe-xd",
-	"aha",
-	"airtable",
-	"amplitude",
-	"asana",
-	"azure-devops",
-	"box",
-	"brightspot",
-	"canva",
-	"clickup",
-	"coupa",
-	"databricks",
-	"datadog",
-	"docusign",
-	"dovetail",
-	"dropbox",
-	"egnyte",
-	"figma",
-	"freshservice",
-	"github",
-	"gitlab",
-	"gmail",
-	"google-calendar",
-	"google-chrome",
-	"google-cloud-platform",
-	"google-drive",
-	"hubspot",
-	"jenkins",
-	"launchdarkly",
-	"lucid-co",
-	"lucidchart",
-	"microsoft-onedrive",
-	"microsoft-outlook",
-	"microsoft-sharepoint",
-	"microsoft-teams",
-	"miro",
-	"monday",
-	"mural",
-	"notion",
-	"outreach",
-	"pagerduty",
-	"pipedrive",
-	"powerbi",
-	"salesforce",
-	"sentry",
-	"servicenow",
-	"simpplr",
-	"slack",
-	"smartsheet",
-	"spinnaker",
-	"stack-overflow",
-	"stripe",
-	"tableau",
-	"todoist",
-	"webex",
-	"workday",
-	"zendesk",
-	"zeplin",
-	"ziprecruiter",
-	"zoom",
-] as const satisfies ReadonlyArray<ThirdPartyLogoName>;
+export const THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES: ReadonlyArray<LocalAssetThirdPartyLogoName> =
+	THIRD_PARTY_LOGO_MANIFEST.filter(hasLocalAsset).map((entry) => entry.name);
 
-export type LocalAssetThirdPartyLogoName = (typeof THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES)[number];
+/** Local-asset brands with no upstream package entry, rendered from `public/3p`. */
+export const THIRD_PARTY_LOGO_LOCAL_FALLBACKS: ReadonlyArray<LocalFallbackThirdPartyLogoName> =
+	THIRD_PARTY_LOGO_MANIFEST.filter(isLocalFallbackManifestEntry).map((entry) => entry.name);
 
-/** Local-asset brands with no upstream package entry — rendered from `public/3p`. */
-export const THIRD_PARTY_LOGO_LOCAL_FALLBACKS = [
-	"adobe-sign",
-	"coupa",
-	"google-chrome",
-	"spinnaker",
-] as const satisfies ReadonlyArray<LocalAssetThirdPartyLogoName>;
-
-/**
- * Human-readable brand names. Used for accessible labels and demo captions.
- * Casing follows each vendor's own brand styling (e.g. GitHub, HubSpot).
- */
-export const THIRD_PARTY_LOGO_LABELS: Readonly<Record<ThirdPartyLogoName, string>> = {
-	adobe: "Adobe",
-	"adobe-sign": "Adobe Sign",
-	"adobe-xd": "Adobe XD",
-	aha: "Aha!",
-	airtable: "Airtable",
-	amazon: "Amazon",
-	"amazon-web-services-aws": "Amazon Web Services (AWS)",
-	amplitude: "Amplitude",
-	ansible: "Ansible",
-	asana: "Asana",
-	"azure-devops": "Azure DevOps",
-	box: "Box",
-	brightspot: "Brightspot",
-	canva: "Canva",
-	claude: "Claude",
-	clickup: "ClickUp",
-	cloudflare: "Cloudflare",
-	coupa: "Coupa",
-	cursor: "Cursor",
-	daloopa: "Daloopa",
-	databricks: "Databricks",
-	datadog: "Datadog",
-	docker: "Docker",
-	documentum: "Documentum",
-	docusign: "DocuSign",
-	dovetail: "Dovetail",
-	dropbox: "Dropbox",
-	dynatrace: "Dynatrace",
-	egnyte: "Egnyte",
-	evernote: "Evernote",
-	figma: "Figma",
-	fireflies: "Fireflies",
-	freshservice: "Freshservice",
-	gamma: "Gamma",
-	"generic-mcp-server": "Generic MCP Server",
-	giphy: "Giphy",
-	github: "GitHub",
-	gitlab: "GitLab",
-	gmail: "Gmail",
-	gong: "Gong",
-	"google-calendar": "Google Calendar",
-	"google-chrome": "Google Chrome",
-	"google-cloud-platform": "Google Cloud Platform",
-	"google-docs": "Google Docs",
-	"google-drive": "Google Drive",
-	"google-sheets": "Google Sheets",
-	"google-slides": "Google Slides",
-	hubspot: "HubSpot",
-	"hugging-face": "Hugging Face",
-	"identity-now": "Identity Now",
-	intercom: "Intercom",
-	invision: "InVision",
-	jam: "Jam",
-	jenkins: "Jenkins",
-	launchdarkly: "LaunchDarkly",
-	linear: "Linear",
-	"lucid-co": "Lucid",
-	lucidchart: "Lucidchart",
-	microsoft: "Microsoft",
-	"microsoft-365": "Microsoft 365",
-	"microsoft-azure": "Microsoft Azure",
-	"microsoft-entra-id": "Microsoft Entra ID",
-	"microsoft-excel": "Microsoft Excel",
-	"microsoft-onedrive": "Microsoft OneDrive",
-	"microsoft-outlook": "Microsoft Outlook",
-	"microsoft-power-point": "Microsoft Power Point",
-	"microsoft-sharepoint": "Microsoft SharePoint",
-	"microsoft-teams": "Microsoft Teams",
-	"microsoft-word": "Microsoft Word",
-	miro: "Miro",
-	monday: "monday.com",
-	mural: "Mural",
-	neon: "Neon",
-	"new-relic": "New Relic",
-	notion: "Notion",
-	"octopus-deploy": "Octopus Deploy",
-	okta: "Okta",
-	openai: "OpenAI",
-	oracle: "Oracle",
-	outreach: "Outreach",
-	pagerduty: "PagerDuty",
-	paypal: "PayPal",
-	pipedrive: "Pipedrive",
-	postman: "Postman",
-	powerbi: "Power BI",
-	quip: "Quip",
-	salesforce: "Salesforce",
-	sap: "SAP",
-	scriptrunner: "Scriptrunner",
-	sentry: "Sentry",
-	servicenow: "ServiceNow",
-	shopify: "Shopify",
-	simpplr: "Simpplr",
-	slack: "Slack",
-	smartsheet: "Smartsheet",
-	snowflake: "Snowflake",
-	spinnaker: "Spinnaker",
-	splunk: "Splunk",
-	square: "Square",
-	"stack-overflow": "Stack Overflow",
-	stripe: "Stripe",
-	stych: "Stych",
-	tableau: "Tableau",
-	"tempo-timesheets": "Tempo Timesheets",
-	todoist: "Todoist",
-	twilio: "Twilio",
-	vercel: "Vercel",
-	webex: "Webex",
-	wix: "Wix",
-	workato: "Workato",
-	workday: "Workday",
-	youtube: "YouTube",
-	zapier: "Zapier",
-	zendesk: "Zendesk",
-	zeplin: "Zeplin",
-	ziprecruiter: "ZipRecruiter",
-	zoom: "Zoom",
-};
+/** Human-readable brand names. Used for accessible labels and demo captions. */
+export const THIRD_PARTY_LOGO_LABELS: Readonly<Record<ThirdPartyLogoName, string>> = Object.fromEntries(
+	THIRD_PARTY_LOGO_MANIFEST.map(({ name, label }) => [name, label]),
+) as Readonly<Record<ThirdPartyLogoName, string>>;
 
 const LOCAL_ASSET_SET: ReadonlySet<string> = new Set(THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES);
+const LOCAL_FALLBACK_SET: ReadonlySet<string> = new Set(THIRD_PARTY_LOGO_LOCAL_FALLBACKS);
 
 /** Narrow a brand id to one that has a local `public/3p` asset. */
 export function isLocalAssetThirdPartyLogoName(
@@ -346,11 +206,16 @@ export function isLocalAssetThirdPartyLogoName(
 	return LOCAL_ASSET_SET.has(name);
 }
 
+/** Narrow a brand id to one that only has a local `public/3p` fallback asset. */
+export function isLocalFallbackThirdPartyLogoName(
+	name: ThirdPartyLogoName,
+): name is LocalFallbackThirdPartyLogoName {
+	return LOCAL_FALLBACK_SET.has(name);
+}
+
 /**
- * Local asset path consumed by `CustomLogo` for the `public/3p` fallback brands.
- * Restricted to local-asset ids so package-only brands (which have no folder)
- * can't produce a 404ing path. We always reference the `24` variant: `CustomLogo`
- * resolves the final src + border treatment from `logo-usage.json`.
+ * Local asset path consumed by `CustomLogo` for `public/3p` assets. Restricted
+ * to local-asset ids so package-only brands cannot produce a 404ing path.
  */
 export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName): string {
 	return `/3p/${name}/24.svg`;

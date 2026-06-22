@@ -100,8 +100,11 @@ test("Skills Directory sidebar does not include Collections as a default taxonom
 
 test("Skills Directory uses multi-select cards, hover learn-more, and selected toolbar", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const skillSource = readProjectFile("components/ui-custom/entity-card/skill.tsx");
+	const partsSource = readProjectFile("components/ui-custom/entity-card/parts.tsx");
+	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
 
-	assert.match(source, /<Checkbox/u);
+	assert.match(source, /EntityCardSkillCard/u);
 	assert.match(source, /<SkillsDirectoryHeader[\s\S]*onCreateSkill=\{createSkillHandler\}/u);
 	assert.match(source, /Showing \{filteredSkills\.length\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
@@ -109,15 +112,23 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /<SkillMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[112px\] gap-4"/u);
-	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardDescription className="text-text">/u);
-	assert.match(source, /<IconTile[\s\S]*icon=\{getSkillIcon\(skill\.icon\)\}[\s\S]*variant=\{getSkillIconTileVariant\(skill\)\}/u);
+	assert.match(source, /description=\{skill\.description\}/u);
+	assert.match(source, /icon=\{getSkillIcon\(skill\.icon\)\}/u);
+	assert.match(source, /iconVariant=\{getSkillIconTileVariant\(skill\)\}/u);
+	assert.match(source, /source=\{getSkillCardSource\(skill\)\}/u);
+	assert.match(source, /starCount=\{skill\.starCount\}/u);
+	assert.match(source, /teammateCount=\{skill\.teammateCount\}/u);
+	assert.match(variantsSource, /export interface EntityCardSkillCardProps extends EntityCardSkillProps \{[\s\S]*active\?: boolean;[\s\S]*moreAction\?: ReactNode;/u);
+	assert.match(variantsSource, /<EntityCardShell[\s\S]*active=\{active\}[\s\S]*selected=\{selected\}/u);
+	assert.match(partsSource, /function EntityCardSelectableLeading/u);
+	assert.match(partsSource, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
-	assert.match(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
-	assert.match(source, /selected[\s\S]*\? "opacity-0"[\s\S]*: "opacity-100 group-hover\/card:opacity-0"/u);
-	assert.match(source, /focus-visible:pointer-events-auto focus-visible:opacity-100/u);
-	assert.match(source, /pointer-events-none group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
+	assert.doesNotMatch(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
+	assert.match(partsSource, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
+	assert.match(partsSource, /focus-visible:pointer-events-auto focus-visible:opacity-100/u);
+	assert.match(partsSource, /pointer-events-none group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
 	assert.doesNotMatch(source, /group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
-	assert.match(source, /<EntityCardShell[\s\S]*selected=\{selected\}[\s\S]*>/u);
+	assert.match(source, /selected=\{selected\}/u);
 	assert.doesNotMatch(source, /selected && "border-border-selected hover:border-border-selected"/u);
 	assert.doesNotMatch(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /function SkillMoreMenu/u);
@@ -125,15 +136,17 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /Learn more/u);
 	assert.match(source, /function SelectedSkillsToolbar/u);
 	assert.match(source, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
-	assert.match(source, /function SkillPublisherAvatar/u);
+	assert.doesNotMatch(source, /function SkillPublisherAvatar/u);
+	assert.match(source, /function getSkillCardSource/u);
 	assert.match(source, /getSkillPublisherLogoName\(skill\)/u);
-	// Attribution marks are a uniform 16x16: brand logo uses the xxsmall (16px) size.
-	assert.match(source, /<AtlassianLogoMark name=\{logoName\} size="xxsmall" transparent label=\{getSkillPublisherName\(skill\)\} \/>/u);
+	// Attribution marks are a uniform 16x16 through the canonical EntityCard source row.
+	assert.match(skillSource, /<AtlassianLogoMark name=\{source\.logoName\} size="xxsmall" transparent label=\{source\.name\} \/>/u);
+	assert.match(skillSource, /<BrandLogoMark src=\{source\.avatarSrc\} size="xxsmall" transparent label=\{source\.name\} \/>/u);
 	assert.doesNotMatch(source, /size="xsmall" themeAware label=\{getSkillPublisherName/u);
 	// Only human avatars are rounded; company logos use the shared transparent logo mark.
 	assert.match(source, /if \(isSkillPublisherPerson\(skill\)\) \{/u);
-	assert.match(source, /className="size-4 shrink-0 rounded-full object-cover"/u);
-	assert.match(source, /<BrandLogoMark src=\{src\} size="xxsmall" transparent label=\{getSkillPublisherName\(skill\)\} \/>/u);
+	assert.match(source, /type: "custom"[\s\S]*avatarSrc/u);
+	assert.match(source, /type: "app"[\s\S]*brandName: skill\.publisherBrandName,[\s\S]*logoName/u);
 	assert.match(source, /Add skills/u);
 	assert.match(source, /Create link to share/u);
 	assert.match(source, /Favorite/u);
@@ -355,39 +368,44 @@ test("Skills Directory exposes an opt-in experimental variation", () => {
 
 test("Skills Directory experimental variation has searchable multi-select filters", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const sharedSource = readProjectFile("components/blocks/directory-shared/experimental-directory-view.tsx");
 
 	assert.match(source, /function ExperimentalSkillsDirectoryView\(/u);
-	assert.match(source, /function ExperimentalSkillFilterDropdown\(/u);
-	assert.match(source, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover";/u);
+	assert.match(source, /<ExperimentalDirectoryView/u);
+	assert.match(source, /<ExperimentalDirectorySection/u);
+	assert.match(sharedSource, /export function FacetFilterDropdown/u);
+	assert.match(sharedSource, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover";/u);
 
 	// Pinned search + filter header above a separate scroll region (only results scroll).
-	assert.match(source, /"flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2"/u);
-	assert.match(source, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2"/u);
+	assert.match(sharedSource, /"flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2"/u);
+	assert.match(sharedSource, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2"/u);
+	assert.match(source, /contentClassName=\{hasSelection \? "pb-28" : "pb-8"\}/u);
 
 	// Filter controls: Your skills + Favourites toggles, Collections + Companies dropdowns.
 	// (Categories was intentionally removed.)
 	assert.match(source, /Filter by your skills/u);
 	assert.match(source, /Favourites/u);
-	assert.match(source, /activeLabel="Filter by collections"[\s\S]*label="Collections"/u);
-	assert.match(source, /activeLabel="Filter by companies"[\s\S]*label="Companies"/u);
+	assert.match(source, /activeLabel: "Filter by collections"[\s\S]*label: "Collections"/u);
+	assert.match(source, /activeLabel: "Filter by companies"[\s\S]*label: "Companies"/u);
 	assert.doesNotMatch(source, /label="Categories"/u);
 
-	// Single active facet at a time (agent/apps-directory parity).
-	assert.match(source, /const showFacet = \(facet: string\) => activeFacet === null \|\| activeFacet === facet;/u);
-	assert.match(source, /\{showFacet\("yourSkills"\) \?/u);
-	assert.match(source, /\{showFacet\("collections"\) \?/u);
+	// Single active facet at a time is shared with apps-directory.
+	assert.match(sharedSource, /const activeFacet = facets\.find\(facetIsActive\)\?\.id \?\? null;/u);
+	assert.match(sharedSource, /const showFacet = \(facet: ExperimentalDirectoryFacet<TOption>\) => activeFacet === null \|\| activeFacet === facet\.id;/u);
+	assert.match(source, /id: "yourSkills"/u);
+	assert.match(source, /id: "collections"/u);
 
 	// Searchable multi-select with a selected-count badge.
-	assert.match(source, /placeholder="Search options"/u);
-	assert.match(source, /<Checkbox\s+checked=\{selectedValues\.includes\(option\.id\)\}/u);
-	assert.match(source, /\{selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null\}/u);
+	assert.match(sharedSource, /placeholder="Search options"/u);
+	assert.match(sharedSource, /<Checkbox\s+checked=\{selectedValues\.includes\(option\.id\)\}/u);
+	assert.match(sharedSource, /\{selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null\}/u);
 
-	// Filter-aware empty state + a result count, reusing the shared SkillSection grid
+	// Filter-aware empty state + a result count, reusing the shared experimental section grid
 	// at a 3-column layout (the default view stays 2-column).
 	assert.match(source, /function getExperimentalSkillsEmptyState\(/u);
 	assert.match(source, /title: "No favourite skills yet"/u);
-	assert.match(source, /Showing \{filteredSkills\.length\.toLocaleString\("en-US"\)\} results/u);
-	assert.match(source, /gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"/u);
+	assert.match(sharedSource, /Showing \{resultCount\.toLocaleString\("en-US"\)\} \{resultLabel\}/u);
+	assert.match(sharedSource, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">/u);
 	// Results are alphabetised so the grey-heavy catalog order doesn't front-load a
 	// block of grey tiles — the first rows stay multi-coloured by collection.
 	assert.match(source, /\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name, "en"\)\)/u);
@@ -396,11 +414,11 @@ test("Skills Directory experimental variation has searchable multi-select filter
 	assert.match(source, /heading="My skills"/u);
 	assert.match(source, /heading="Other skills"/u);
 	assert.match(source, /const mySkills = useMemo\(\(\) => filteredSkills\.filter\(isYourSkill\)/u);
-	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
+	assert.match(sharedSource, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
 
 	// Popover keeps the end gap inside the scroll list, not on the parent.
-	assert.match(source, /className="w-72 gap-2 p-2 pb-0"/u);
-	assert.match(source, /<ul className="flex flex-col gap-px pb-2">/u);
+	assert.match(sharedSource, /className="w-72 gap-2 p-2 pb-0"/u);
+	assert.match(sharedSource, /<ul className="flex flex-col gap-px pb-2">/u);
 
 	// Company options derive from non-self publishers.
 	assert.match(source, /function getSkillCompanyOptions\(/u);

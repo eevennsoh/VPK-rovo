@@ -8,6 +8,7 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
+import { getSkillConfigLabel } from "@/components/blocks/agent-2/lib/agent-config-model";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";
@@ -25,7 +26,6 @@ import {
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
-import { slugifySkillName } from "@/app/data/directory/skills";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -188,7 +188,7 @@ function normalizeSearchPickerItem(
  * item the agent already has never reappears in the inline "Add" search.
  */
 function getSearchPickerExcludeKey(category: EditorPaletteSearchCategory, label: string): string {
-	return category === "skill" ? slugifySkillName(label) : label.trim().toLowerCase();
+	return category === "skill" ? getSkillConfigLabel(label) : label.trim().toLowerCase();
 }
 
 function excludeItemsByLabel(

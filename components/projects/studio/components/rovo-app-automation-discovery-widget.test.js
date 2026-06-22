@@ -23,6 +23,10 @@ const THINKING_TRACE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/shared/components/assistant-thinking-trace.tsx"),
 	"utf8",
 );
+const THINKING_TRACE_PRESENTATION_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/shared/lib/assistant-thinking-trace-presentation.tsx"),
+	"utf8",
+);
 const TWG_TOOL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/twg-tool.tsx"),
 	"utf8",
@@ -37,6 +41,18 @@ const USE_ROVO_APP_SOURCE = fs.readFileSync(
 );
 const BACKEND_SERVER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "backend/server.js"),
+	"utf8",
+);
+const BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "backend/lib/studio-automation-discovery-chat.js"),
+	"utf8",
+);
+const BACKEND_AUTOMATION_DISCOVERY_DEMO_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "backend/lib/studio-automation-discovery-demo.js"),
+	"utf8",
+);
+const BACKEND_AUTOMATION_DISCOVERY_DEMO_DATA_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "backend/lib/studio-automation-discovery-demo-data.js"),
 	"utf8",
 );
 
@@ -70,27 +86,34 @@ test("Studio requests preserve their chat SDK source through the Rovo app proxy"
 });
 
 test("Studio automation discovery clarification emits pre-question thinking before awaiting input", () => {
-	assert.match(BACKEND_SERVER_SOURCE, /function buildStudioAutomationDiscoveryInitialQuestionPreflightTrace/u);
-	assert.match(BACKEND_SERVER_SOURCE, /toolName: "studio\.scope_agent_discovery"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /toolName: "studio\.plan_source_scan"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /await writeStudioAutomationDiscoveryQuestionPreflightTrace/u);
-	assert.match(BACKEND_SERVER_SOURCE, /label: "Waiting for your choices"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /type: "data-thinking-event"[\s\S]*phase: "start"[\s\S]*toolName: STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME/u);
-	assert.match(BACKEND_SERVER_SOURCE, /questions: \["priority", "source-weighting", "conservatism"\]/u);
-	assert.match(BACKEND_SERVER_SOURCE, /label: "Asking for draft boundaries"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /questions: \["creation-boundary", "approval-boundary", "hero-moment"\]/u);
-	assert.match(BACKEND_SERVER_SOURCE, /Before I create any agents, I need to lock the decision frame/u);
-	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /I found the automation-discovery brief/u);
-	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /ranking matches Venn's presentation goals/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /function buildStudioAutomationDiscoveryInitialQuestionPreflightTrace/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /toolName: "studio\.scope_agent_discovery"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /toolName: "studio\.plan_source_scan"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /await writeStudioAutomationDiscoveryQuestionPreflightTrace/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /label: "Waiting for your choices"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /type: "data-thinking-event"[\s\S]*phase: "start"[\s\S]*toolName: STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /questions: \["priority", "source-weighting", "conservatism"\]/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /label: "Asking for draft boundaries"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /questions: \["creation-boundary", "approval-boundary", "hero-moment"\]/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /Before I create any agents, I need to lock the decision frame/u);
+	assert.match(BACKEND_SERVER_SOURCE, /handleStudioAutomationDiscoveryChatTurn/u);
+	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /function buildStudioAutomationDiscoveryInitialQuestionPreflightTrace/u);
+	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /function streamStudioAutomationDiscoveryQuestionCard/u);
+	assert.doesNotMatch(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /I found the automation-discovery brief/u);
+	assert.doesNotMatch(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /ranking matches Venn's presentation goals/u);
 });
 
 test("Studio automation discovery routes initial and follow-up answers to separate phases", () => {
-	assert.match(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryInitialSession\(clarificationSubmission\?\.sessionId\)/u);
-	assert.match(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryFollowupSession\(clarificationSubmission\?\.sessionId\)/u);
-	assert.match(BACKEND_SERVER_SOURCE, /phase: "discovery"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /phase: "generation"/u);
-	assert.match(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryInitialDismissalPrompt\(latestVisiblePromptText\)/u);
-	assert.match(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryFollowupDismissalPrompt\(latestVisiblePromptText\)/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /function resolveStudioAutomationDiscoveryTurn/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /isStudioAutomationDiscoveryInitialSession\(clarificationSubmission\?\.sessionId\)/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /isStudioAutomationDiscoveryFollowupSession\(clarificationSubmission\?\.sessionId\)/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /phase: "discovery"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /phase: "generation"/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /isStudioAutomationDiscoveryInitialDismissalPrompt\(latestVisiblePromptText\)/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_CHAT_SOURCE, /isStudioAutomationDiscoveryFollowupDismissalPrompt\(latestVisiblePromptText\)/u);
+	assert.match(BACKEND_SERVER_SOURCE, /const didHandleStudioAutomationDiscovery =\s*handleStudioAutomationDiscoveryChatTurn/u);
+	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryInitialSession\(clarificationSubmission\?\.sessionId\)/u);
+	assert.doesNotMatch(BACKEND_SERVER_SOURCE, /isStudioAutomationDiscoveryFollowupSession\(clarificationSubmission\?\.sessionId\)/u);
 });
 
 test("Studio automation discovery prompt does not enter generic agent creation mode", () => {
@@ -101,16 +124,26 @@ test("Studio automation discovery prompt does not enter generic agent creation m
 });
 
 test("scripted TWG trace step renders TwgTool as the first-level step header", () => {
-	assert.match(THINKING_TRACE_SOURCE, /import \{ TwgTool, type TwgToolSource \} from "@\/components\/ui-custom\/twg-tool";/u);
-	assert.match(THINKING_TRACE_SOURCE, /const STUDIO_AUTOMATION_TWG_TOOL_NAME = "twg\.search_work_patterns";/u);
+	assert.match(THINKING_TRACE_SOURCE, /defaultAssistantThinkingToolTracePresentationResolver/u);
+	assert.match(THINKING_TRACE_SOURCE, /toolTracePresentationResolver\?: AssistantThinkingToolTracePresentationResolver/u);
+	assert.match(THINKING_TRACE_SOURCE, /toolTracePresentationResolver = defaultAssistantThinkingToolTracePresentationResolver/u);
+	assert.doesNotMatch(THINKING_TRACE_SOURCE, /const STUDIO_AUTOMATION_TWG_TOOL_NAME/u);
+	assert.doesNotMatch(THINKING_TRACE_SOURCE, /STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /import \{ TwgTool, type TwgToolSource \} from "@\/components\/ui-custom\/twg-tool";/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY = \{/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /"twg\.search_work_patterns": \{[\s\S]*title: "Correlating through Teamwork Graph"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /satisfies AssistantThinkingToolTracePresentationRegistry/u);
 	assert.match(CHAIN_OF_THOUGHT_SOURCE, /headerRender\?: \(context: ChainOfThoughtStepHeaderRenderContext\) => ReactNode;/u);
-	assert.match(THINKING_TRACE_SOURCE, /function getStudioAutomationToolByline/u);
-	assert.match(THINKING_TRACE_SOURCE, /function StudioAutomationTwgTraceDetail/u);
-	assert.match(THINKING_TRACE_SOURCE, /headerRender=\{studioAutomationToolHeader \? \(\) => \([\s\S]*<TwgTool[\s\S]*title=\{studioAutomationToolHeader\.title\}/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function getToolTracePresentationByline/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function TraceNarrationRowsDetail/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export function createAssistantThinkingToolTracePresentationResolver/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /const entry = registry\[options\.toolCall\.toolName\];/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /return function ToolTraceHeaderRender\(\) \{[\s\S]*<TwgTool[\s\S]*title=\{header\.title\}/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /className="pl-11 text-xs leading-5 text-text-subtle"/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /ml-11 space-y-1 text-xs leading-5 text-text-subtle/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /rounded-md border border-border\/60 bg-surface px-2\.5 py-2/u);
-	assert.match(THINKING_TRACE_SOURCE, /isStudioAutomationTwgTool \? \(/u);
+	assert.doesNotMatch(THINKING_TRACE_PRESENTATION_SOURCE, /isStudioAutomationTwgTool/u);
+	assert.doesNotMatch(THINKING_TRACE_PRESENTATION_SOURCE, /STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS/u);
 	assert.match(TWG_TOOL_SOURCE, /import \{ TWGLoader \} from "@\/components\/ui-custom\/twg-loader";/u);
 	assert.match(TWG_TOOL_SOURCE, /<TWGLoader label="Teamwork Graph" size="small" \/>/u);
 	assert.match(TWG_TOOL_SOURCE, /<CyclingByline>\{description\}<\/CyclingByline>/u);
@@ -119,12 +152,13 @@ test("scripted TWG trace step renders TwgTool as the first-level step header", (
 });
 
 test("scripted automation trace renders extra tool cycling moments", () => {
-	assert.match(THINKING_TRACE_SOURCE, /const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS/u);
-	assert.match(THINKING_TRACE_SOURCE, /"parallel\.source_scan": \{[\s\S]*title: "Cycling through source apps"/u);
-	assert.match(THINKING_TRACE_SOURCE, /"studio\.rank_automation_candidates": \{[\s\S]*title: "Cycling create, skip, and evidence buckets"/u);
-	assert.match(THINKING_TRACE_SOURCE, /"studio\.create_agent_drafts": \{[\s\S]*title: "Cycling through three Studio drafts"/u);
-	assert.match(THINKING_TRACE_SOURCE, /function StudioAutomationToolCycleTraceDetail/u);
-	assert.match(THINKING_TRACE_SOURCE, /studioAutomationToolCycleDetail \? \(/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export const STUDIO_AUTOMATION_THINKING_TOOL_TRACE_PRESENTATION_REGISTRY/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /"parallel\.source_scan": \{[\s\S]*title: "Cycling through source apps"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /"studio\.rank_automation_candidates": \{[\s\S]*title: "Cycling create, skip, and evidence buckets"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /"studio\.create_agent_drafts": \{[\s\S]*title: "Cycling through three Studio drafts"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function TraceNarrationRowsDetail/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /detail: \{[\s\S]*type: "narration-rows"/u);
+	assert.doesNotMatch(THINKING_TRACE_PRESENTATION_SOURCE, /studioAutomationToolCycleDetail/u);
 });
 
 test("Studio automation discovery create-agent trace drives sidebar generating rows", () => {
@@ -145,7 +179,16 @@ test("Studio automation discovery create-agent trace drives sidebar generating r
 });
 
 test("Studio automation discovery draft trace uses distinct agent avatar families", () => {
-	assert.match(THINKING_TRACE_SOURCE, /id: "loom-agent"[\s\S]*iconSrc: "\/avatar-agent\/product-agents\/feedback-analyzer\.svg"/u);
-	assert.match(THINKING_TRACE_SOURCE, /id: "triage-agent"[\s\S]*iconSrc: "\/avatar-agent\/service-agents\/service-triage\.svg"/u);
-	assert.match(THINKING_TRACE_SOURCE, /id: "digest-agent"[\s\S]*iconSrc: "\/avatar-agent\/strategy-agents\/strategic-insight\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "loom-agent"[\s\S]*iconSrc: "\/avatar-agent\/product-agents\/feedback-analyzer\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "triage-agent"[\s\S]*iconSrc: "\/avatar-agent\/service-agents\/service-triage\.svg"/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /id: "digest-agent"[\s\S]*iconSrc: "\/avatar-agent\/strategy-agents\/strategic-insight\.svg"/u);
+});
+
+test("generated automation discovery agent fixtures live outside the demo flow module", () => {
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_DEMO_SOURCE, /studio-automation-discovery-demo-data/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_DEMO_SOURCE, /buildStudioAutomationDiscoveryDataWidgetPayload/u);
+	assert.doesNotMatch(BACKEND_AUTOMATION_DISCOVERY_DEMO_SOURCE, /const GENERATED_AGENT_FIXTURES/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_DEMO_DATA_SOURCE, /const GENERATED_AGENT_FIXTURES/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_DEMO_DATA_SOURCE, /function buildStudioAutomationDiscoveryGeneratedAgentResults/u);
+	assert.match(BACKEND_AUTOMATION_DISCOVERY_DEMO_DATA_SOURCE, /function buildStudioAutomationDiscoveryArtifactAgent/u);
 });

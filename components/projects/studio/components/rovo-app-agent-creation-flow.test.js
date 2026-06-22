@@ -39,6 +39,14 @@ const CHAT_PANEL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
 	"utf8",
 );
+const STUDIO_CHAT_HELPERS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "lib", "studio-chat-helpers.ts"),
+	"utf8",
+);
+const STUDIO_DEMO_RESET_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-studio-demo-reset.ts"),
+	"utf8",
+);
 const MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/components/message-bubble.tsx"),
 	"utf8",
@@ -61,6 +69,10 @@ const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
 );
 const AGENT_BLOCK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/blocks/agent-2/components/agent-2.tsx"),
+	"utf8",
+);
+const AGENT_CONFIG_MODEL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent-2/lib/agent-config-model.ts"),
 	"utf8",
 );
 const NAV_HOOK_SOURCE = fs.readFileSync(
@@ -222,29 +234,32 @@ test("RovoAppShell seeds the published RFP Drafter into the default Studio landi
 
 test("RovoAppShell settings reset clears Studio state and restores the fresh RFP Drafter", () => {
 	const resetSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const handleResetStudioDemo"),
-		SHELL_SOURCE.indexOf("const handleBrowseAgentTemplates"),
+		SHELL_SOURCE.indexOf("const resetStudioDemoLocalState"),
+		SHELL_SOURCE.indexOf("const studioSettingsMenuItems"),
 	);
 
-	assert.match(SHELL_SOURCE, /const STUDIO_RFP_DEMO_RESET_ENDPOINT = "\/api\/agents\/rfp-demo\/reset";/u);
-	assert.match(SHELL_SOURCE, /resetStudioRfpDemoBackendState/u);
-	assert.match(resetSource, /await resetStudioRfpDemoBackendState\(\);/u);
-	assert.match(resetSource, /await chat\.deleteAllThreads\(\);/u);
-	assert.match(resetSource, /await studioAgentRegistry\.deleteAllThreads\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /const STUDIO_RFP_DEMO_RESET_ENDPOINT = "\/api\/agents\/rfp-demo\/reset";/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /async function resetStudioRfpDemoBackendState/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await resetStudioRfpDemoBackendState\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await chat\.deleteAllThreads\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /await studioAgentRegistry\.deleteAllThreads\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /onResetLocalState\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /const seededEntry = resetSessionAgentsToStudioRfpDemoAgent\(\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /writeSessionAgentRecords\(\[toPersistedRecord\(seededEntry\)\]\);/u);
+	assert.match(STUDIO_DEMO_RESET_HOOK_SOURCE, /window\.history\.pushState\(null, "", ROVO_APP_ROOT_PATH\);/u);
 	assert.match(resetSource, /creationTemplateRef\.current = null;/u);
 	assert.match(resetSource, /creationTemplateByThreadRef\.current = \{\};/u);
 	assert.match(resetSource, /setActiveAgentConfigState\(null\);/u);
 	assert.match(resetSource, /setActiveAgentConfigView\("configure"\);/u);
 	assert.match(resetSource, /studioAgentCreationThreadKeysRef\.current\.clear\(\);/u);
 	assert.match(resetSource, /setStudioAgentCreationThreadIds\(new Set<string>\(\)\);/u);
-	assert.match(resetSource, /studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);/u);
-	assert.match(resetSource, /const seededEntry = resetSessionAgentsToStudioRfpDemoAgent\(\);/u);
-	assert.match(resetSource, /writeSessionAgentRecords\(\[toPersistedRecord\(seededEntry\)\]\);/u);
-	assert.match(resetSource, /window\.history\.pushState\(null, "", ROVO_APP_ROOT_PATH\);/u);
+	assert.match(SHELL_SOURCE, /const \{ isResettingStudioDemo, resetStudioDemo \} = useStudioDemoReset\(\{[\s\S]*chat,[\s\S]*embedded,[\s\S]*onResetLocalState: resetStudioDemoLocalState,[\s\S]*resetSessionAgentsToStudioRfpDemoAgent,[\s\S]*studioAgentRegistry,/u);
 	assert.match(SHELL_SOURCE, /settingsMenuItems=\{studioSettingsMenuItems\}/u);
 	assert.match(SHELL_SOURCE, /id: "reset-studio-demo"[\s\S]*label: isResettingStudioDemo \? "Resetting demo\.\.\." : "Reset demo"/u);
 	assert.match(SHELL_SOURCE, /for \(const entry of studioAgentRegistry\.sessionAgentEntries\) \{[\s\S]*studioAgentRegistry\.removeSessionAgent\(entry\.profile\.id\);[\s\S]*registerCreatedAgentFromResult\?\.\(STUDIO_RFP_DEMO_AGENT_RESULT/u);
-	assert.match(ROVO_CONTEXT_SOURCE, /deleteAllThreads,[\s\S]*adoptThreadMessages,/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /deleteAllThreads,[\s\S]*hydrateThreadSnapshot,/u);
+	assert.doesNotMatch(ROVO_CONTEXT_SOURCE, /adoptThreadMessages/u);
 });
 
 test("RovoAppShell does not render the Hermes turn-state card", () => {
@@ -673,7 +688,7 @@ test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 		(SHELL_SOURCE.match(/setActiveAgentConfigView\("test"\);/gu) ?? []).length >= 2,
 		"both registration success paths should land in the Test tab",
 	);
-	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
+	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*adoptStudioGenerationTranscript\(\{[\s\S]*chat: chatRef\.current,[\s\S]*registry: studioAgentRegistry,[\s\S]*\}\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
 	const agentResultSelectSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect = useCallback"),
 		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
@@ -716,27 +731,21 @@ test("Studio agent config floating chat and voice preserve the generation conver
 });
 
 test("Studio bridges the generation transcript into the Ask Rovo sidebar store", () => {
-	// The studio shell runs generation through its own useRovoApp chat store,
-	// which is separate from the RovoChatProvider context that the Ask Rovo
-	// sidebar (ChatPanel) reads. Opening the sidebar must adopt the generation
-	// thread (id + transcript) into the context, or the sidebar sees an empty
-	// thread and shows the "Improve your agent?" greeting instead of the
-	// conversation used to build the agent.
+	// Opening the sidebar must bridge the generation chat store into the shared
+	// provider through a Studio helper, keeping the provider API generic.
 	assert.match(
 		SHELL_SOURCE,
-		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*const generationThreadId = chatRef\.current\?\.activeThreadId \?\? null;[\s\S]*const generationMessages = chatRef\.current\?\.messages;[\s\S]*if \(generationThreadId && generationMessages && generationMessages\.length > 0\) \{[\s\S]*studioAgentRegistry\.adoptThreadMessages\(generationThreadId, generationMessages\);[\s\S]*\}[\s\S]*nav\.openChat\("sidebar"\);/u,
+		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*adoptStudioGenerationTranscript\(\{[\s\S]*chat: chatRef\.current,[\s\S]*registry: studioAgentRegistry,[\s\S]*\}\);[\s\S]*nav\.openChat\("sidebar"\);/u,
 	);
-	// useRovoSelectedAgent must expose adoptThreadMessages so the shell registry
-	// can perform the bridge.
+	assert.match(
+		STUDIO_CHAT_HELPERS_SOURCE,
+		/export function adoptStudioGenerationTranscript\([\s\S]*registry\.hydrateThreadSnapshot\(\{[\s\S]*markPersisted: true,[\s\S]*messages: generationMessages,[\s\S]*threadId: generationThreadId,/u,
+	);
+	// hydrateThreadSnapshot must be generic and pre-seed the persist key when
+	// callers adopt an already-owned transcript.
 	assert.match(
 		ROVO_CONTEXT_SOURCE,
-		/export function useRovoSelectedAgent\(\) \{[\s\S]*adoptThreadMessages,[\s\S]*\} = useRovoChat\(\);[\s\S]*return \{[\s\S]*adoptThreadMessages,[\s\S]*\};/u,
-	);
-	// adoptThreadMessages must pre-seed the persist key so the bridge never
-	// rewrites the adopted thread (the generation flow already owns it).
-	assert.match(
-		ROVO_CONTEXT_SOURCE,
-		/const adoptThreadMessages = useCallback\([\s\S]*setActiveThreadId\(threadId\);[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
+		/const hydrateThreadSnapshot = useCallback\([\s\S]*\{ markPersisted = true, messages, threadId \}: RovoThreadSnapshot[\s\S]*setActiveThreadId\(threadId\);[\s\S]*if \(markPersisted\) \{[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
 	);
 	// The adopted transcript can include Studio-only data-widget parts. The
 	// generic Ask Rovo sidebar must receive a Studio render hook so the generated
@@ -839,7 +848,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Memory \} from "@\/components\/blocks\/memory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/app\/data\/directory\/knowledge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS, slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ getAgentConfigListLookupValue, getSkillConfigLabel \} from "@\/components\/blocks\/agent-2\/lib\/agent-config-model";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsights \} from "@\/components\/blocks\/agent-insights";/u);
@@ -854,14 +864,19 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind, selectedItem\?: string\) => \{[\s\S]*setDirectorySelectedToolId\(matchedTool\?\.id \?\? null\);[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS, slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /slugifySkillName/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const existing = new Set\(current\.map\(\(value\) => getAgentConfigListLookupValue\(field, value\)\)\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const additions = nextValues\.filter\(\(value\) => !existing\.has\(getAgentConfigListLookupValue\(field, value\)\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
-	assert.match(AGENT_BLOCK_SOURCE, /import \{[\s\S]*slugifySkillName,[\s\S]*\} from "@\/app\/data\/directory\/skills";/u);
-	assert.match(AGENT_BLOCK_SOURCE, /function getSkillConfigItems\(items: readonly string\[\] \| undefined\): readonly string\[\] \{[\s\S]*\.map\(getSkillConfigLabel\)/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigItems\(items: readonly string\[\] \| undefined\): readonly string\[\] \{[\s\S]*\.map\(getSkillConfigLabel\)/u);
+	assert.match(AGENT_BLOCK_SOURCE, /getSkillConfigItems,[\s\S]*getSkillConfigLabel,/u);
 	assert.match(AGENT_BLOCK_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{directoryToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{addedToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Memory[\s\S]*open=\{activeDirectory === "memory"\}[\s\S]*showTrigger=\{false\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
@@ -964,7 +979,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(SHELL_SOURCE, /askRovoCustomAgentTabs/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /restoreSessionAgentVersion,[\s\S]*sessionAgentSaveStatus,[\s\S]*sessionAgentSavedAt,[\s\S]*\} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[floatingLiveChatRequestKey, setFloatingLiveChatRequestKey\] = useState\(0\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*setFloatingLiveChatRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleStartFloatingRovoVoice = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*setFloatingLiveChatRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /useEffect\(\(\) => \{[\s\S]*if \(chatSurface !== "floating"\) \{[\s\S]*setFloatingLiveChatRequestKey\(0\);[\s\S]*\}[\s\S]*\}, \[chatSurface\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton[\s\S]*ariaLabel="Open Rovo chat"[\s\S]*product="home"[\s\S]*onButtonClick=\{handleOpenFloatingRovoChat\}[\s\S]*persistentBar=\{rovoButtonPersistentBar\}[\s\S]*\/>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /agent-config-rovo-bar-cursor/u);
@@ -1144,7 +1160,7 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(SHELL_SOURCE, /onToolCall: useCallback/u);
 	assert.match(SHELL_SOURCE, /handleScreenAssistantToolCall\(\{ args, callId, name \}, respond\);/u);
 	assert.match(REALTIME_VOICE_HOOK_SOURCE, /"activate_screen_target"/u);
-	assert.match(SHELL_SOURCE, /normalizeAgentDraftPatch/u);
+	assert.match(SHELL_SOURCE, /prepareStudioAgentDraftPatch\(\{[\s\S]*currentDraft: activeSessionAgentEntry\.draftResult,[\s\S]*rawPatch: args\.patch,/u);
 	assert.match(SHELL_SOURCE, /ScreenAssistantRegionOverlay/u);
 	assert.match(SHELL_SOURCE, /activeRegion: screenAssistantRegion/u);
 	assert.match(SHELL_SOURCE, /const \[screenAssistantRegionPainting, setScreenAssistantRegionPainting\] = useState\(false\);/u);
@@ -1242,7 +1258,7 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /screenAssistantTargetPrefix/u);
-	assert.match(AGENT_BLOCK_SOURCE, /data-screen-assistant-target=\{avatarTargetId\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:avatar` : undefined\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /getAgentAvatarOptionTargetId\(screenAssistantTargetPrefix, group\.id, option\.src\)/u);
 	assert.match(AGENT_BLOCK_SOURCE, /data-agent-field="instructions"/u);
 });
@@ -1313,20 +1329,16 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.doesNotMatch(SHELL_SOURCE, /getStudioAgentOnboardingGuideNextMessage/u);
 	assert.match(SHELL_SOURCE, /getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
 	assert.match(SHELL_SOURCE, /const respond = \(assistantText: string\) => \{[\s\S]*appendAgentOnboardingGuideExchange\(text, assistantText\);[\s\S]*voiceText: assistantText/u);
-	assert.match(SHELL_SOURCE, /initialVoiceKey: activeSessionAgentEntry\?\.profile\.id \?\? "generated-agent",[\s\S]*initialVoiceText: getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
-	assert.match(SHELL_SOURCE, /scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
+	assert.match(SHELL_SOURCE, /createStudioAgentOnboardingLocalConversation\(\{[\s\S]*initialAgentName: activeSessionAgentEntry\?\.profile\.name \?\? null,[\s\S]*initialVoiceKey: activeSessionAgentEntry\?\.profile\.id \?\? null,[\s\S]*resolveInitialVoiceText: getStudioAgentOnboardingGuideGreeting,/u);
+	assert.match(SHELL_SOURCE, /localConversation=\{agentOnboardingLocalConversation\}/u);
 	// The Ask Rovo "Edit agent" cards must gate the generated-agent result card to a
-	// fresh generation: `generatedAgentResult` is withheld (null) and the in-transcript
-	// card is restricted to the source message unless THIS session just generated the
-	// agent (`activeAgentConfig.sourceMessageId` non-null). Reopening an existing agent
-	// resets `sourceMessageId` to null, so the replayed "agent created" card is hidden.
-	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*const freshGenerationMessageId = activeAgentConfig\?\.sourceMessageId \?\? null;[\s\S]*generatedAgentResult: freshGenerationMessageId \? activeSessionAgentEntry\.sourceResult : null,[\s\S]*restrictGeneratedAgentCardToMessageId: freshGenerationMessageId,[\s\S]*\}, \[activeSessionAgentEntry, activeAgentConfig\?\.sourceMessageId\]\);/u);
-	// ChatPanel honors the restriction: an in-transcript generated-agent card renders
-	// only when unrestricted (undefined → every non-studio consumer) or when the message
-	// id matches the fresh-generation source message.
-	assert.match(CHAT_PANEL_SOURCE, /restrictGeneratedAgentCardToMessageId\?: string \| null;/u);
-	assert.match(CHAT_PANEL_SOURCE, /const restrictGeneratedAgentCardToMessageId = cards\?\.restrictGeneratedAgentCardToMessageId;[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(restrictGeneratedAgentCardToMessageId === undefined \|\|[\s\S]*message\.id === restrictGeneratedAgentCardToMessageId\)/u);
-	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*cards=\{agentEditCards\}[\s\S]*scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
+	// fresh generation, but that replay policy belongs to a Studio helper. ChatPanel
+	// only accepts a generic generated-agent render predicate.
+	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*return createStudioAgentEditCards\(\{[\s\S]*entry: activeSessionAgentEntry,[\s\S]*sourceMessageId: activeAgentConfig\?\.sourceMessageId \?\? null,[\s\S]*\}\);[\s\S]*\}, \[activeSessionAgentEntry, activeAgentConfig\?\.sourceMessageId\]\);/u);
+	assert.match(STUDIO_CHAT_HELPERS_SOURCE, /generatedAgentResult: freshGenerationMessageId \? entry\.sourceResult : null,[\s\S]*shouldRenderGeneratedAgentResult: \(\{ message \}\) => message\.id === freshGenerationMessageId/u);
+	assert.match(CHAT_PANEL_SOURCE, /shouldRenderGeneratedAgentResult\?: \(input: ChatPanelGeneratedAgentResultRenderInput\) => boolean;/u);
+	assert.match(CHAT_PANEL_SOURCE, /const shouldRenderGeneratedAgentResult = cards\?\.shouldRenderGeneratedAgentResult;[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(shouldRenderGeneratedAgentResult\?\.\(\{ agent: agentResult, message \}\) \?\? true\)/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*cards=\{agentEditCards\}[\s\S]*localConversation=\{agentOnboardingLocalConversation\}/u);
 	assert.match(SHELL_SOURCE, /const \[agentOnboardingLiveVoiceRequestKey, setAgentOnboardingLiveVoiceRequestKey\] = useState\(0\);/u);
 	assert.match(SHELL_SOURCE, /setAgentOnboardingLiveVoiceRequestKey\(0\);[\s\S]*setAgentOnboardingLiveVoiceRequestKey\(\(currentKey\) => currentKey \+ 1\);/u);
 	assert.match(SHELL_SOURCE, /startRealtimeVoiceRequestKey=\{agentOnboardingLiveVoiceRequestKey\}/u);
@@ -1390,33 +1402,35 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /reducedMotion\s*\?\s*\{ duration: 0 \}/u);
 	assert.doesNotMatch(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /useClicky|useClickyVoice|useRealtimeVoice|submitPrompt|createRovoAppUserMessage|appendDictationTranscript/u);
 
-	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversation \{[\s\S]*initialVoiceKey\?: string \| null;[\s\S]*initialVoiceText\?: string \| null;[\s\S]*messages: ReadonlyArray<RovoUIMessage>;[\s\S]*onSubmit: \(text: string\) => Promise<ChatPanelScriptedConversationSubmitResult> \| ChatPanelScriptedConversationSubmitResult;/u);
-	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversationSubmitDetails \{[\s\S]*handled\?: boolean;[\s\S]*voiceText\?: string \| null;/u);
-	assert.match(CHAT_PANEL_SOURCE, /function getScriptedConversationVoiceText\(result: ChatPanelScriptedConversationSubmitResult\): string/u);
-	assert.match(CHAT_PANEL_SOURCE, /const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;/u);
-	assert.match(CHAT_PANEL_SOURCE, /function getScriptedConversationVoiceSuppressionMs\(text: string\): number/u);
+	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelLocalConversation \{[\s\S]*buildVoiceInput\?: \(voiceText: string\) => string;[\s\S]*initialVoiceKey\?: string \| null;[\s\S]*initialVoiceText\?: string \| null;[\s\S]*messages: ReadonlyArray<RovoUIMessage>;[\s\S]*onSubmit: \(text: string\) => Promise<ChatPanelLocalConversationSubmitResult> \| ChatPanelLocalConversationSubmitResult;/u);
+	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelLocalConversationSubmitDetails \{[\s\S]*handled\?: boolean;[\s\S]*voiceText\?: string \| null;/u);
+	assert.match(CHAT_PANEL_SOURCE, /function getLocalConversationVoiceText\(result: ChatPanelLocalConversationSubmitResult\): string/u);
+	assert.match(CHAT_PANEL_SOURCE, /const LOCAL_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;/u);
+	assert.match(CHAT_PANEL_SOURCE, /function getLocalConversationVoiceSuppressionMs\(text: string\): number/u);
 	assert.match(CHAT_PANEL_SOURCE, /const realtimeVoiceStateRef = useRef<UseRealtimeVoiceResult\["voiceState"\]>\("idle"\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /const speakScriptedConversationVoiceText = useCallback\(\(result: ChatPanelScriptedConversationSubmitResult\) => \{[\s\S]*sendRealtimeTextInputRef\.current\?\.\(\{[\s\S]*Speak much quicker than normal/u);
-	assert.match(CHAT_PANEL_SOURCE, /scriptedConversationVoiceSuppressedUntilRef\.current = Math\.max\([\s\S]*Date\.now\(\) \+ getScriptedConversationVoiceSuppressionMs\(voiceText\)/u);
-	assert.match(CHAT_PANEL_SOURCE, /const lastScriptedInitialVoiceKeyRef = useRef<string \| null>\(null\);[\s\S]*const initialVoiceText = scriptedConversation\.initialVoiceText\?\.trim\(\) \?\? "";[\s\S]*speakScriptedConversationVoiceText\(\{ voiceText: initialVoiceText \}\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /scriptedConversationVoiceSuppressedUntilRef\.current = 0;/u);
-	assert.match(CHAT_PANEL_SOURCE, /const isScriptedConversationActive = scriptedConversation !== null;/u);
-	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*await handleSubmit\(\{ files, text \}\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /const result = await scriptedConversation\.onSubmit\(promptText\);[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*setPrompt\(""\);[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const scriptedMessages = scriptedConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.scriptedMessages\];/u);
-	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*scriptedConversation\.onSubmit\(promptText\)[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isScriptedConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const speakLocalConversationVoiceText = useCallback\(\(result: ChatPanelLocalConversationSubmitResult\) => \{[\s\S]*text: localConversation\?\.buildVoiceInput\?\.\(voiceText\) \?\? voiceText/u);
+	assert.match(STUDIO_CHAT_HELPERS_SOURCE, /buildVoiceInput: buildStudioAgentOnboardingVoiceInput/u);
+	assert.match(STUDIO_CHAT_HELPERS_SOURCE, /Speak much quicker than normal/u);
+	assert.match(CHAT_PANEL_SOURCE, /localConversationVoiceSuppressedUntilRef\.current = Math\.max\([\s\S]*Date\.now\(\) \+ getLocalConversationVoiceSuppressionMs\(voiceText\)/u);
+	assert.match(CHAT_PANEL_SOURCE, /const lastLocalInitialVoiceKeyRef = useRef<string \| null>\(null\);[\s\S]*const initialVoiceText = localConversation\.initialVoiceText\?\.trim\(\) \?\? "";[\s\S]*speakLocalConversationVoiceText\(\{ voiceText: initialVoiceText \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /localConversationVoiceSuppressedUntilRef\.current = 0;/u);
+	assert.match(CHAT_PANEL_SOURCE, /const isLocalConversationActive = localConversation !== null;/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(!localConversation\) \{[\s\S]*await handleSubmit\(\{ files, text \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const result = await localConversation\.onSubmit\(promptText\);[\s\S]*if \(!isLocalConversationSubmitHandled\(result\)\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*setPrompt\(""\);[\s\S]*speakLocalConversationVoiceText\(result\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const localMessages = localConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.localMessages\];/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(!localConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*localConversation\.onSubmit\(promptText\)[\s\S]*if \(!isLocalConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakLocalConversationVoiceText\(result\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isLocalConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /realtimeVoiceStateRef\.current = realtime\.voiceState;/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscript = useCallback", "const handleRealtimeTranscriptCompleted"), /Date\.now\(\) < scriptedConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(scriptedConversation\) \{[\s\S]*speakScriptedConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /Date\.now\(\) < scriptedConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;[\s\S]*if \(isClickyActive\)/u);
-	assert.match(CHAT_PANEL_SOURCE, /if \(scriptedConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
-	assert.match(CHAT_PANEL_SOURCE, /isScriptedConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscript = useCallback", "const handleRealtimeTranscriptCompleted"), /Date\.now\(\) < localConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(localConversation\) \{[\s\S]*speakLocalConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /Date\.now\(\) < localConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;[\s\S]*if \(isClickyActive\)/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(localConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /isLocalConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor\}/u);
-	assert.match(CHAT_PANEL_SOURCE, /clickyActive=\{!hideAiCursor && \(isClickyActive \|\| isScriptedConversationActive\)\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /clickyActive=\{!hideAiCursor && \(isClickyActive \|\| isLocalConversationActive\)\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /onToggleRealtimeVoice=\{handleToggleRealtimeVoice\}/u);
-	assert.doesNotMatch(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor \|\| isScriptedConversationActive\}/u);
+	assert.doesNotMatch(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor \|\| isLocalConversationActive\}/u);
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {

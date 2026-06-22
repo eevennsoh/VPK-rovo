@@ -8,7 +8,8 @@ import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,8 @@ export type EntityCardSource =
 	| {
 			type: "app";
 			name: string;
+			avatarSrc?: string;
+			logoName?: AtlassianLogoName;
 			brandName?: ThirdPartyLogoName;
 	  }
 	| {
@@ -99,8 +102,12 @@ function EntityCardSourceRow({ source }: Readonly<{ source: EntityCardSource }>)
 				</>
 			) : (
 				<>
-					{source.brandName ? (
+					{source.logoName ? (
+						<AtlassianLogoMark name={source.logoName} size="xxsmall" transparent label={source.name} />
+					) : source.brandName ? (
 						<BrandLogoMark name={source.brandName} size="xxsmall" label={source.name} />
+					) : source.avatarSrc ? (
+						<BrandLogoMark src={source.avatarSrc} size="xxsmall" transparent label={source.name} />
 					) : (
 						<span aria-hidden className="size-4 rounded-full bg-bg-neutral" />
 					)}

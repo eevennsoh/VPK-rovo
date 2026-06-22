@@ -423,7 +423,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   "logo-third-party": {
     description:
-      "Typed third-party (3P) brand logos rendered from the local public/3p assets, mirroring the platform-labs/logo-third-party package's named-brand API. LogoThirdParty takes a typed name (e.g. \"slack\"); every brand also has a convenience named export (SlackLogo, FigmaLogo, …). Built on CustomLogo, so border treatment and the white-tile borderless-variant swap are resolved automatically from components/ui/data/logo-usage.json — no per-brand border wiring. The accessible label defaults to the brand's display name.",
+      "Typed third-party (3P) brand logos rendered from the upstream platform-labs/logo-third-party package, with local public/3p fallbacks only for brands not yet published upstream. LogoThirdParty takes a typed name (e.g. \"slack\"); a few compatibility named exports remain for existing direct imports. The accessible label defaults to the brand's display name.",
     adsUrl: "https://atlaskit.atlassian.com/packages/platform-labs/logo-third-party",
     usage: `import { LogoThirdParty, SlackLogo } from "@/components/ui/logo-third-party";
 
@@ -440,7 +440,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         name: "name",
         type: '"adobe-sign" | "airtable" | "asana" | "figma" | "github" | "gitlab" | "notion" | "slack" | "zoom" | … (61 brands)',
         description:
-          "Third-party brand id from the upstream @atlassian/logo-third-party package. Required for LogoThirdParty; the named exports (SlackLogo, …) set it for you.",
+          "Third-party brand id from the upstream @atlassian/logo-third-party package. Prefer this typed id over adding a new per-brand wrapper.",
       },
       {
         name: "size",
@@ -508,8 +508,8 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         demoSlug: "logo-third-party-demo-in-tag",
       },
       {
-        title: "Named Exports",
-        description: "Per-brand convenience exports for direct usage.",
+        title: "Compatibility Exports",
+        description: "The generic typed API plus retained direct wrappers used by existing callsites.",
         demoSlug: "logo-third-party-demo-named-exports",
       },
     ],

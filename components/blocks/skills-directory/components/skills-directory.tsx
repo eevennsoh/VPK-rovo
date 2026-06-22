@@ -4,7 +4,6 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import Image from "next/image";
 import {
 	type Dispatch,
 	type KeyboardEvent,
@@ -19,12 +18,18 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkIcon from "@atlaskit/icon/core/link";
-import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
+import {
+	ExperimentalDirectorySection,
+	ExperimentalDirectoryView,
+	toggleSelectedValue,
+	type ExperimentalDirectoryFacet,
+	type ExperimentalDirectoryFilterOption,
+} from "@/components/blocks/directory-shared/experimental-directory-view";
 import {
 	Agent,
 	AgentConfigFields,
@@ -39,7 +44,6 @@ import {
 } from "./skill-md-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
@@ -48,19 +52,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SplitButton } from "@/components/ui/split-button";
 import { Switch } from "@/components/ui/switch";
 import {
-	EntityCardAddedCheck,
-	EntityCardShell,
-	EntityCardDescription,
-	EntityCardFooter,
-	EntityCardStat,
-	formatCompact,
+	EntityCardSkillCard,
+	type EntityCardSource,
 } from "@/components/ui-custom/entity-card";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
@@ -719,132 +717,54 @@ interface SkillsDirectoryEntityCardProps {
 	skill: SkillsDirectorySkill;
 }
 
-/** Publisher avatar — brand logos use the transparent Tile sizing (components/ui/tile) via the shared logo marks; human publishers stay a rounded avatar. */
-function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
+function getSkillCardSource(skill: SkillsDirectorySkill): EntityCardSource {
+	const publisher = getSkillPublisherName(skill);
 	const logoName = getSkillPublisherLogoName(skill);
-	if (logoName) {
-		return <AtlassianLogoMark name={logoName} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
-	}
+	const avatarSrc = getSkillPublisherAvatarSrc(skill);
 
-	if (skill.publisherBrandName) {
-		return <BrandLogoMark name={skill.publisherBrandName} size="xxsmall" label={getSkillPublisherName(skill)} />;
-	}
-
-	const src = getSkillPublisherAvatarSrc(skill);
-	if (!src) {
-		return null;
-	}
-
-	// Human avatars are rounded circles; company brand logos use the shared
-	// transparent-Tile logo mark so their inset/border treatment matches the rest
-	// of the app (editor-palette, logo docs).
 	if (isSkillPublisherPerson(skill)) {
-		return (
-			<Image
-				alt=""
-				aria-hidden
-				className="size-4 shrink-0 rounded-full object-cover"
-				height={16}
-				src={src}
-				width={16}
-			/>
-		);
+		return {
+			type: "custom",
+			name: publisher,
+			avatarSrc,
+		};
 	}
 
-	return <BrandLogoMark src={src} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
+	return {
+		type: "app",
+		name: publisher,
+		avatarSrc,
+		brandName: skill.publisherBrandName,
+		logoName,
+	};
 }
 
 function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-	const publisher = getSkillPublisherName(skill);
-
-	function stopInteractivePropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
-		event.stopPropagation();
-	}
 
 	return (
-		<EntityCardShell
+		<EntityCardSkillCard
 			active={moreMenuOpen}
+			added={added}
 			className="min-h-[112px] gap-4"
-			onSelect={() => onSelect()}
-			selectLabel={`${selected ? "Deselect" : "Select"} ${skill.name}`}
+			description={skill.description}
+			icon={getSkillIcon(skill.icon)}
+			iconVariant={getSkillIconTileVariant(skill)}
+			moreAction={
+				<SkillMoreMenu
+					onLearnMore={onLearnMore}
+					onOpenChange={setMoreMenuOpen}
+					open={moreMenuOpen}
+					skillName={skill.name}
+				/>
+			}
+			name={skill.name}
+			onSelect={onSelect}
 			selected={selected}
-		>
-			<div className="flex flex-col gap-2">
-				<div className="flex items-center gap-2">
-					<span className="relative size-8 shrink-0">
-						<span
-							aria-hidden
-							className={cn(
-								"absolute inset-0 flex items-center justify-center transition-opacity duration-fast ease-out",
-								selected
-									? "opacity-0"
-									: "opacity-100 group-hover/card:opacity-0",
-							)}
-						>
-							<IconTile
-								icon={getSkillIcon(skill.icon)}
-								label={skill.name}
-								size="medium"
-								variant={getSkillIconTileVariant(skill)}
-							/>
-						</span>
-						<Checkbox
-							aria-label={`${selected ? "Deselect" : "Select"} ${skill.name}`}
-							checked={selected}
-							className={cn(
-								"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out focus-visible:pointer-events-auto focus-visible:opacity-100",
-								selected
-									? "pointer-events-auto opacity-100"
-									: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",
-							)}
-							onCheckedChange={(checked) => onSelect(Boolean(checked))}
-							onClick={stopInteractivePropagation}
-							onKeyDown={stopInteractivePropagation}
-						/>
-					</span>
-					<div className="min-w-0 flex-1">
-						<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
-							{skill.name}
-						</h3>
-					</div>
-					<SkillMoreMenu
-						onLearnMore={onLearnMore}
-						onOpenChange={setMoreMenuOpen}
-						open={moreMenuOpen}
-						skillName={skill.name}
-					/>
-					{added ? <EntityCardAddedCheck /> : null}
-				</div>
-
-				<EntityCardDescription className="text-text">
-					{skill.description}
-				</EntityCardDescription>
-			</div>
-
-			<EntityCardFooter>
-				<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
-					<SkillPublisherAvatar skill={skill} />
-					<span className="truncate">{publisher}</span>
-				</span>
-				<span className="inline-flex shrink-0 items-center gap-4">
-					{typeof skill.starCount === "number" ? (
-						<EntityCardStat
-							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							{formatCompact(skill.starCount)}
-						</EntityCardStat>
-					) : null}
-					{typeof skill.teammateCount === "number" ? (
-						<EntityCardStat
-							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							Used by {formatCompact(skill.teammateCount)} teammates
-						</EntityCardStat>
-					) : null}
-				</span>
-			</EntityCardFooter>
-		</EntityCardShell>
+			source={getSkillCardSource(skill)}
+			starCount={skill.starCount}
+			teammateCount={skill.teammateCount}
+		/>
 	);
 }
 
@@ -1294,18 +1214,12 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 // experimental apps/agent directories).
 // ---------------------------------------------------------------------------
 
-interface ExperimentalSkillFilterOption {
+interface ExperimentalSkillFilterOption extends ExperimentalDirectoryFilterOption {
 	id: string;
 	label: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: ReturnType<typeof getSkillPublisherLogoName>;
 	avatarSrc?: string;
-}
-
-function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
-	return values.includes(value)
-		? values.filter((current) => current !== value)
-		: [...values, value];
 }
 
 // Collections present in the catalog, in the canonical SKILL_COLLECTIONS order.
@@ -1450,8 +1364,6 @@ function ExperimentalSkillsDirectoryView({
 	setSelectedCompanies,
 	skills,
 }: Readonly<ExperimentalSkillsDirectoryViewProps>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-
 	const collectionOptions = useMemo(() => getSkillCollectionOptions(skills), [skills]);
 	const companyOptions = useMemo(() => getSkillCompanyOptions(skills), [skills]);
 
@@ -1476,30 +1388,47 @@ function ExperimentalSkillsDirectoryView({
 	const mySkills = useMemo(() => filteredSkills.filter(isYourSkill), [filteredSkills]);
 	const otherSkills = useMemo(() => filteredSkills.filter((skill) => !isYourSkill(skill)), [filteredSkills]);
 
-	const hasActiveFilters =
-		Boolean(query.trim()) ||
-		filterYourSkills ||
-		filterFavourites ||
-		selectedCollections.length > 0 ||
-		selectedCompanies.length > 0;
-
 	const emptyState = getExperimentalSkillsEmptyState(query, {
 		yourSkills: filterYourSkills,
 		favourites: filterFavourites,
 	});
 
-	// Single active facet at a time (mirrors the experimental apps/agent directories):
-	// once one filter is engaged, the others are hidden until it is cleared.
-	const activeFacet = filterYourSkills
-		? "yourSkills"
-		: filterFavourites
-			? "favourites"
-			: selectedCollections.length > 0
-				? "collections"
-				: selectedCompanies.length > 0
-					? "companies"
-					: null;
-	const showFacet = (facet: string) => activeFacet === null || activeFacet === facet;
+	const facets: readonly ExperimentalDirectoryFacet<ExperimentalSkillFilterOption>[] = [
+		{
+			active: filterYourSkills,
+			id: "yourSkills",
+			kind: "toggle",
+			label: "Filter by your skills",
+			onToggle: () => setFilterYourSkills((current) => !current),
+		},
+		{
+			active: filterFavourites,
+			id: "favourites",
+			kind: "toggle",
+			label: "Favourites",
+			onToggle: () => setFilterFavourites((current) => !current),
+		},
+		{
+			activeLabel: "Filter by collections",
+			id: "collections",
+			kind: "dropdown",
+			label: "Collections",
+			onToggle: (value) => setSelectedCollections((current) => toggleSelectedValue(current, value)),
+			options: collectionOptions,
+			renderOptionLeading: (option) => <ExperimentalSkillOptionAvatar option={option} />,
+			selectedValues: selectedCollections,
+		},
+		{
+			activeLabel: "Filter by companies",
+			id: "companies",
+			kind: "dropdown",
+			label: "Companies",
+			onToggle: (value) => setSelectedCompanies((current) => toggleSelectedValue(current, value)),
+			options: companyOptions,
+			renderOptionLeading: (option) => <ExperimentalSkillOptionAvatar option={option} />,
+			selectedValues: selectedCompanies,
+		},
+	];
 
 	function resetFilters() {
 		setQuery("");
@@ -1510,217 +1439,51 @@ function ExperimentalSkillsDirectoryView({
 	}
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
-			{/* Pinned controls: search + filters stay put so the user can always refine;
-			    only the results below scroll. px-6 clears the card side reach, pt-1 the
-			    search focus ring, pb-4 separates the controls from the grid. */}
-			<div className="flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2">
-				<InputGroup>
-					<InputGroupAddon>
-						<SearchIcon label="" />
-					</InputGroupAddon>
-					<InputGroupInput
-						aria-label="Search skills"
-						placeholder="Search for a skill by name, or describe it"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
+		<ExperimentalDirectoryView
+			contentClassName={hasSelection ? "pb-28" : "pb-8"}
+			emptyState={emptyState}
+			facets={facets}
+			isEmpty={filteredSkills.length === 0}
+			onQueryChange={setQuery}
+			onResetFilters={resetFilters}
+			query={query}
+			resultCount={filteredSkills.length}
+			searchLabel="Search skills"
+			searchPlaceholder="Search for a skill by name, or describe it"
+		>
+			<div className="flex flex-col gap-6">
+				{mySkills.length > 0 ? (
+					<ExperimentalDirectorySection
+						heading="My skills"
+						items={mySkills}
+						renderItem={(skill) => (
+							<SkillsDirectoryEntityCard
+								added={addedIds.has(skill.id)}
+								onLearnMore={() => onLearnMore(skill)}
+								onSelect={(checked) => onSelectSkill(skill, checked)}
+								selected={selectedIds.has(skill.id)}
+								skill={skill}
+							/>
+						)}
 					/>
-				</InputGroup>
-				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-					<div className="flex flex-wrap items-center gap-2">
-						{showFacet("yourSkills") ? (
-							<Button
-								aria-pressed={filterYourSkills ? true : undefined}
-								onClick={() => setFilterYourSkills((current) => !current)}
-								type="button"
-								variant="outline"
-							>
-								Filter by your skills
-							</Button>
-						) : null}
-						{showFacet("favourites") ? (
-							<Button
-								aria-pressed={filterFavourites ? true : undefined}
-								onClick={() => setFilterFavourites((current) => !current)}
-								type="button"
-								variant="outline"
-							>
-								Favourites
-							</Button>
-						) : null}
-						{showFacet("collections") ? (
-							<ExperimentalSkillFilterDropdown
-								activeLabel="Filter by collections"
-								label="Collections"
-								onToggle={(value) => setSelectedCollections((current) => toggleSelectedValue(current, value))}
-								options={collectionOptions}
-								selectedValues={selectedCollections}
+				) : null}
+				{otherSkills.length > 0 ? (
+					<ExperimentalDirectorySection
+						heading="Other skills"
+						items={otherSkills}
+						renderItem={(skill) => (
+							<SkillsDirectoryEntityCard
+								added={addedIds.has(skill.id)}
+								onLearnMore={() => onLearnMore(skill)}
+								onSelect={(checked) => onSelectSkill(skill, checked)}
+								selected={selectedIds.has(skill.id)}
+								skill={skill}
 							/>
-						) : null}
-						{showFacet("companies") ? (
-							<ExperimentalSkillFilterDropdown
-								activeLabel="Filter by companies"
-								label="Companies"
-								onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
-								options={companyOptions}
-								selectedValues={selectedCompanies}
-							/>
-						) : null}
-						{hasActiveFilters ? (
-							<Button type="button" variant="ghost" onClick={resetFilters}>
-								Reset
-							</Button>
-						) : null}
-					</div>
-					<p className="text-sm leading-5 text-text-subtle">
-						Showing {filteredSkills.length.toLocaleString("en-US")} results
-					</p>
-				</div>
+						)}
+					/>
+				) : null}
 			</div>
-
-			{/* Scroll region begins after the filters: only the results scroll, with the
-			    top fade mask sitting just below the pinned filter bar. pb-8 clears the card
-			    hover shadow; pb-28 makes room for the floating selection toolbar. */}
-			<div
-				ref={contentOverflow.ref}
-				className={cn(
-					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2",
-					hasSelection ? "pb-28" : "pb-8",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
-				)}
-			>
-				{filteredSkills.length === 0 ? (
-					<div className="flex flex-1 flex-col items-center justify-center gap-1 py-12 text-center">
-						<p className="text-sm font-medium leading-5 text-text">{emptyState.title}</p>
-						<p className="text-sm leading-5 text-text-subtlest">{emptyState.description}</p>
-					</div>
-				) : (
-					<div className="flex flex-col gap-6">
-						{mySkills.length > 0 ? (
-							<SkillSection
-								addedIds={addedIds}
-								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
-								heading="My skills"
-								onLearnMore={onLearnMore}
-								onSelectSkill={onSelectSkill}
-								selectedIds={selectedIds}
-								skills={mySkills}
-							/>
-						) : null}
-						{otherSkills.length > 0 ? (
-							<SkillSection
-								addedIds={addedIds}
-								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
-								heading="Other skills"
-								onLearnMore={onLearnMore}
-								onSelectSkill={onSelectSkill}
-								selectedIds={selectedIds}
-								skills={otherSkills}
-							/>
-						) : null}
-					</div>
-				)}
-			</div>
-		</div>
-	);
-}
-
-interface ExperimentalSkillFilterDropdownProps {
-	activeLabel: string;
-	label: string;
-	onToggle: (value: string) => void;
-	options: readonly ExperimentalSkillFilterOption[];
-	selectedValues: readonly string[];
-}
-
-function ExperimentalSkillFilterDropdown({
-	activeLabel,
-	label,
-	onToggle,
-	options,
-	selectedValues,
-}: Readonly<ExperimentalSkillFilterDropdownProps>) {
-	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState("");
-	const visibleOptions = useMemo(() => {
-		const normalized = query.trim().toLowerCase();
-		return normalized
-			? options.filter((option) => option.label.toLowerCase().includes(normalized))
-			: options;
-	}, [options, query]);
-	const selectedCount = selectedValues.length;
-	const triggerLabel = selectedCount > 0 ? activeLabel : label;
-
-	function handleOpenChange(nextOpen: boolean) {
-		setOpen(nextOpen);
-		if (!nextOpen) {
-			setQuery("");
-		}
-	}
-
-	return (
-		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger
-				render={
-					<Button
-						aria-expanded={open}
-						aria-pressed={selectedCount > 0 ? true : undefined}
-						className="gap-2"
-						type="button"
-						variant="outline"
-					/>
-				}
-			>
-				<span>{triggerLabel}</span>
-				{selectedCount > 0 ? <Badge>{selectedCount}</Badge> : null}
-				<Icon
-					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
-					className={cn(
-						"transition-transform duration-fast",
-						selectedCount > 0 || open ? "[&_svg]:text-icon-selected" : "[&_svg]:text-icon-subtle",
-						open ? "rotate-180" : null,
-					)}
-				/>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
-				<InputGroup className="pl-[7px]">
-					<InputGroupAddon className="w-4 p-0">
-						<SearchIcon label="" />
-					</InputGroupAddon>
-					<InputGroupInput
-						aria-label={`Search ${label}`}
-						className="px-2"
-						placeholder="Search options"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-					/>
-				</InputGroup>
-				<div className="max-h-64 overflow-y-auto">
-					{visibleOptions.length === 0 ? (
-						<p className="px-2 py-3 text-sm text-text-subtlest">No options found.</p>
-					) : (
-						<ul className="flex flex-col gap-px pb-2">
-							{visibleOptions.map((option) => (
-								<li key={option.id}>
-									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
-										<Checkbox
-											checked={selectedValues.includes(option.id)}
-											onCheckedChange={(checked) => {
-												if (checked === true || checked === false) {
-													onToggle(option.id);
-												}
-											}}
-										/>
-										<ExperimentalSkillOptionAvatar option={option} />
-										<span className="min-w-0 flex-1 truncate">{option.label}</span>
-									</label>
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
+		</ExperimentalDirectoryView>
 	);
 }
 
