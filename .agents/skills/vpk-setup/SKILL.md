@@ -23,7 +23,7 @@ Rovo App live voice mode.
 4. **Configure AI Gateway + Voice STT** → Generate ASAP keys and create `.env.local` with Google endpoint values and the current STT preset block
 5. **Set Rovo Session Token** → First launch of `pnpm run rovo` prints a session token; copy it to `ROVO_SESSION_TOKEN` in `.env.local` (one-time, does not expire)
 6. **Start servers** → Ask permission, then `pnpm run rovo` for first-time Rovo setup, or `pnpm run dev:tmux:start` when the task only needs frontend + backend browser verification
-7. **Verify** → Use `pnpm ports` or the recorded `.dev-frontend-port` / `.dev-backend-port`; do not assume default frontend/backend ports in linked worktrees
+7. **Verify** → Prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry), falling back to the recorded `.dev-frontend-port` / `.dev-backend-port`; do not assume default frontend/backend ports in linked worktrees
 
 ## Preflight Cleanup (when node_modules exists)
 
@@ -65,7 +65,7 @@ For the full pool (6 instances, needed for agent team parallel runs), use `pnpm 
 
 ### Multiport / tmux Mode
 
-`pnpm run dev:tmux:start` starts frontend + backend in a worktree-aware detached tmux session. Prefer this for browser verification when Rovo Serve is not part of the behavior under test. Use `pnpm run dev:tmux:status` or the `.dev-frontend-port` / `.dev-backend-port` files to get the actual URLs.
+`pnpm run dev:tmux:start` starts frontend + backend in a worktree-aware detached tmux session, running the dev stack through `portless run` so it prints a stable `.localhost` URL. Prefer this for browser verification when Rovo Serve is not part of the behavior under test. Use `pnpm ports` (prefer the Portless `🌐 https://…` URL) or `pnpm run dev:tmux:status` / the `.dev-frontend-port` / `.dev-backend-port` files to get the actual URLs.
 
 `pnpm run rovo:tmux:start` starts a tmux session with 8 panes: frontend, backend, and 6 rovo serve ports.
 
@@ -289,7 +289,7 @@ For full model switching details, see [references/guide-model-switch.md](referen
 - [ ] `GOOGLE_STT_MODEL` and `STT_PRESET` are set in `.env.local`
 - [ ] Dev servers started with `pnpm run rovo` for full Rovo setup or `pnpm run dev:tmux:start` for frontend + backend verification
 - [ ] Backend health check passes at `http://localhost:<backend-port>/api/health` using `.dev-backend-port`
-- [ ] Frontend responds at `http://localhost:<frontend-port>` using `.dev-frontend-port`
+- [ ] Frontend responds at its worktree URL — prefer the Portless `🌐 https://…` URL from `pnpm ports`, falling back to `http://localhost:<frontend-port>` using `.dev-frontend-port`
 
 ## Quick Troubleshooting
 
@@ -332,7 +332,7 @@ VPK dev servers automatically find available ports if defaults are in use:
 pnpm ports  # Show port assignments for all worktrees
 ```
 
-The actual ports are written to `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port` at runtime. Agent-browser and other tools should read these files, or `pnpm ports`, to determine the correct localhost URLs for the current worktree.
+The actual ports are written to `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, and `.dev-backend-port` at runtime. Agent-browser and other tools should prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree), falling back to these files or `pnpm ports` for the localhost URL when no portless route exists.
 
 ## Next Steps
 

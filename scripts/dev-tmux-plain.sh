@@ -3,7 +3,8 @@
 set -euo pipefail
 
 # Lightweight tmux launcher for the plain dev stack (frontend + backend via
-# `pnpm run dev`, no Rovo Serve pool). Companion to scripts/dev-tmux.sh, which
+# `pnpm run dev`, no Rovo Serve pool), run THROUGH `portless run` so each
+# worktree gets a stable .localhost URL. Companion to scripts/dev-tmux.sh, which
 # owns the heavier `rovo:tmux:*` 8-pane session.
 #
 # Why this exists separately:
@@ -83,6 +84,33 @@ process.stdout.write(`${prefix}-${worktree}`);
 NODE
 }
 
+# Resolve the extra args for `portless run` for this worktree: empty on main or a
+# branched worktree (vanilla portless derives the URL), or `--name <dir>` when
+# HEAD is detached. Shared logic lives in scripts/lib/worktree-ports.js.
+resolve_portless_args() {
+	node - <<'NODE'
+const { getPortlessRunArgs } = require("./scripts/lib/worktree-ports");
+process.stdout.write(getPortlessRunArgs().join(" "));
+NODE
+}
+
+# Print the worktree's stable Portless URL by matching the running frontend port
+# against ~/.portless/routes.json via the shared helper (skips stale routes).
+resolve_portless_url() {
+	node - <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const { loadPortlessRoutes, findPortlessUrl } = require("./scripts/lib/portless-routes");
+try {
+	const port = fs.readFileSync(path.join(process.cwd(), ".dev-frontend-port"), "utf8").trim();
+	const url = findPortlessUrl(loadPortlessRoutes(), port);
+	if (url) process.stdout.write(url);
+} catch {
+	// Best effort — no URL line if portless isn't routing this worktree.
+}
+NODE
+}
+
 SESSION_NAME="$(resolve_session_name)"
 
 # Seed .env.local the same way the non-tmux launchers do, preferring the main
@@ -126,9 +154,13 @@ wait_for_frontend() {
 }
 
 print_endpoints() {
-	local fe="$1" be
+	local fe="$1" be url
 	be="$(read_port "$BACKEND_PORT_FILE")"
+	url="$(resolve_portless_url)"
 	echo ""
+	if [[ -n "$url" ]]; then
+		echo "  🌐 Portless: $url"
+	fi
 	if [[ -n "$fe" ]]; then
 		echo "  ▲ Frontend: http://localhost:$fe"
 	fi
@@ -152,8 +184,14 @@ start_session() {
 		# port from a previous run.
 		rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
 		seed_env_local
+		local portless_args
+		portless_args="$(resolve_portless_args)"
 		tm new-session -d -s "$SESSION_NAME" -c "$REPO_ROOT"
-		tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && pnpm run dev" C-m
+		# Launch the dev stack THROUGH portless so this worktree gets a stable
+		# .localhost URL. `portless run` with no command runs the package.json
+		# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
+		# only when HEAD is detached.
+		tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && pnpm exec portless run ${portless_args}" C-m
 		echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
 	fi
 
@@ -169,11 +207,22 @@ start_session() {
 
 stop_session() {
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		tm kill-session -t "$SESSION_NAME"
+		# Send Ctrl-C first so `portless run` runs its own SIGINT cleanup and
+		# removes THIS worktree's route from ~/.portless/routes.json before we
+		# kill the session. (tmux kill-session sends SIGHUP, which portless does
+		# not trap, so the route would otherwise linger until a manual prune.)
+		# This is scoped to this worktree — unlike `portless prune`, which is
+		# global and would risk other worktrees' routes.
+		tm send-keys -t "$SESSION_NAME" C-c 2>/dev/null || true
+		sleep 1
+		tm kill-session -t "$SESSION_NAME" 2>/dev/null || true
 		echo "Stopped tmux session '$SESSION_NAME' (socket: $SOCKET)."
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
 	fi
+	# Backstop: stop any listener still bound to this exact worktree (cwd-scoped,
+	# never touches other worktrees). Best-effort: never fail the stop.
+	node ./scripts/cleanup-worktree-listeners.js || true
 	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
 }
 
@@ -205,12 +254,13 @@ status_session() {
 usage() {
 	echo "Usage: $0 [start|stop|attach|status]"
 	echo ""
-	echo "Runs the plain dev stack (pnpm run dev) in a detached tmux session on a"
-	echo "private socket, kept alive independently of the launching terminal."
+	echo "Runs the plain dev stack (pnpm run dev) through portless in a detached"
+	echo "tmux session on a private socket, kept alive independently of the"
+	echo "launching terminal. Prints the worktree's stable .localhost URL."
 	echo ""
 	echo "Commands:"
-	echo "  start   Start (or report) the session, then print the bound ports (default)"
-	echo "  stop    Kill the session and remove this worktree's dev port files"
+	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)"
+	echo "  stop    Kill the session (letting portless remove this worktree's route) and remove its dev port files"
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "  status  Show session and port state"
 	echo ""

@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
 
-import { GUI, useGUIValueKeys } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
+import { GUI } from "@/components/utils/gui";
 import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 
@@ -41,67 +39,6 @@ function ScribblesSourceImage({ source }: Readonly<ScribblesSourceImageProps>) {
 			unoptimized
 			className="h-auto w-full max-w-[18rem] object-contain"
 		/>
-	);
-}
-
-interface ScribblesSvgUploadControlProps {
-	source: ScribblesSvgSource;
-	onUpload: (file: File) => void;
-	onReset: () => void;
-}
-
-function ScribblesSvgUploadControl({
-	source,
-	onUpload,
-	onReset,
-}: Readonly<ScribblesSvgUploadControlProps>) {
-	useGUIValueKeys("source");
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">SVG</Label>
-			<div className="flex items-center gap-2">
-				<div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-bg-neutral">
-					<Image
-						src={source.src}
-						alt=""
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 object-contain"
-					/>
-				</div>
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{source.uploaded ? "Change" : "Upload SVG"}
-				</button>
-				{source.uploaded ? (
-					<button
-						type="button"
-						aria-label="Reset to default SVG"
-						onClick={onReset}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Reset to default SVG" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/svg+xml,.svg"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.currentTarget.files?.[0];
-						if (file) onUpload(file);
-						event.currentTarget.value = "";
-					}}
-				/>
-			</div>
-		</div>
 	);
 }
 
@@ -212,10 +149,19 @@ export default function ScribblesDemo() {
 
 			<GUI.Panel title="Scribbles controls" values={config}>
 				<GUI.Section title="Source" borderTop={false}>
-					<ScribblesSvgUploadControl
-						source={svgSource}
-						onUpload={uploadSvgSource}
-						onReset={resetSvgSource}
+					<GUI.ImageInput
+						id="scribbles-svg"
+						label="SVG"
+						value={svgSource.src}
+						accept="image/svg+xml,.svg"
+						objectFit="contain"
+						previewAlt="Scribbles source"
+						uploadLabel="Upload SVG"
+						changeLabel={svgSource.uploaded ? "Change" : "Upload SVG"}
+						clearLabel="Reset to default SVG"
+						showClear={svgSource.uploaded}
+						onFile={uploadSvgSource}
+						onClear={resetSvgSource}
 					/>
 				</GUI.Section>
 				<GUI.Section title="Filter">

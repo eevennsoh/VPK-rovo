@@ -159,8 +159,9 @@ test("Shader Lab source layers use the runtime source-pass wrapper", () => {
 	assert.ok(fs.existsSync(path.join(ROOT, "public/ambient/atlassian/pictorial/clouds/primary/blue.png")));
 	assert.match(DEMO_SOURCE, /src: "\/ambient\/atlassian\/pictorial\/clouds\/primary\/blue\.png"/);
 	assert.match(DEMO_SOURCE, /return \[activeLayer, createShaderLabSourceImageLayer\(sourceImage\)\]/);
-	assert.match(DEMO_SOURCE, /type="file"/);
+	assert.match(DEMO_SOURCE, /<GUI\.ImageInput/);
 	assert.match(DEMO_SOURCE, /accept="image\/\*"/);
+	assert.match(DEMO_SOURCE, /clearLabel="Reset to default source image"/);
 });
 
 test("original VPK visual shaders keep the base routes", () => {

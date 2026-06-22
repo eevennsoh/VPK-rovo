@@ -95,8 +95,8 @@ test("ASCII demo exposes the shader-lab style ASCII controls", () => {
 	assert.match(DEMO_SOURCE, /label="Invert"/);
 	assert.match(DEMO_SOURCE, /label="Bloom"/);
 	assert.match(DEMO_SOURCE, /label="RGB Split"/);
-	assert.match(DEMO_SOURCE, /PercentControl/);
-	assert.match(DEMO_SOURCE, /ShaderColorInput/);
+	assert.match(DEMO_SOURCE, /GUI\.PercentControl/);
+	assert.match(DEMO_SOURCE, /GUI\.ColorInput/);
 });
 
 test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-processing controls", () => {
@@ -181,7 +181,7 @@ test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-
 		assert.match(DEMO_SOURCE, new RegExp(`id="${escapeRegExp(id)}"`));
 	}
 
-	assert.match(DEMO_SOURCE, /AnimationPlaybackControl/);
+	assert.match(DEMO_SOURCE, /GUI\.SegmentedControl/);
 	assert.match(DEMO_SOURCE, /VideoPlayIcon/);
 	assert.match(DEMO_SOURCE, /VideoStopIcon/);
 	assert.match(DEMO_SOURCE, /animationDurationToCycleSpeed/);
@@ -341,8 +341,9 @@ test("ASCII demo defaults to the requested source color palette", () => {
 
 test("ASCII image mode does not keep the generated VPK backdrop as a fallback", () => {
 	assert.match(SHADER_SOURCE, /createEmptyTexture/);
-	assert.match(SHADER_SOURCE, /sourceMode === "image" && imageSrc/);
-	assert.match(SHADER_SOURCE, /shouldUseAnonymousCrossOrigin\(imageSrc\)/);
+	assert.match(SHADER_SOURCE, /const applyImage = \(src: string \| undefined, mode: typeof initialProps\.sourceMode\) =>/);
+	assert.match(SHADER_SOURCE, /mode === "image" && src/);
+	assert.match(SHADER_SOURCE, /shouldUseAnonymousCrossOrigin\(src\)/);
 	assert.doesNotMatch(SHADER_SOURCE, /createDefaultTexture/);
 	assert.doesNotMatch(SHADER_SOURCE, /fillText\("VPK"/);
 	assert.match(DETAILS_SOURCE, /image mode starts from an empty source rather than a bundled demo texture/);

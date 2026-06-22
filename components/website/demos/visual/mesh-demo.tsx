@@ -6,7 +6,6 @@ import { GUI } from "@/components/utils/gui";
 import { ROVO_SHADER_TRIAD_HEX } from "@/lib/rovo-colors";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Mesh from "./shaders/mesh";
 
 const [DEFAULT_COLOR_A, DEFAULT_COLOR_B, DEFAULT_COLOR_C] = ROVO_SHADER_TRIAD_HEX;
@@ -36,21 +35,21 @@ export default function MeshDemo() {
 			</div>
 
 			<GUI.Panel title="SVG controls" values={config}>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="m-colorA"
 					label="Color A"
 					value={colorA}
 					defaultValue={DEFAULT_COLOR_A}
 					onChange={setColorA}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="m-colorB"
 					label="Color B"
 					value={colorB}
 					defaultValue={DEFAULT_COLOR_B}
 					onChange={setColorB}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="m-colorC"
 					label="Color C"
 					value={colorC}

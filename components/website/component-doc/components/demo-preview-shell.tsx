@@ -63,7 +63,7 @@ export function DemoPreviewShell({ children, contentWidth = "fit", fullPage, fit
 					display: "flex",
 					width: "100%",
 					minHeight: DEMO_SHELL_MIN_HEIGHT_PX,
-					padding: isFullWidth ? 0 : DEMO_SHELL_PADDING_PX,
+					padding: DEMO_SHELL_PADDING_PX,
 					alignItems: isFullWidth ? "stretch" : "center",
 					justifyContent: isFullWidth ? "stretch" : "center",
 				}}

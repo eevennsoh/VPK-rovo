@@ -29,6 +29,7 @@ async function loadDemoPreviewShellHarness() {
 					return {
 						surface: token("elevation.surface", "#FFFFFF"),
 						defaultStyle: defaultShell.props.style,
+						defaultPadding: defaultShell.props.children.props.style.padding,
 						fullPageStyle: fullPageShell.props.style,
 						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
 						fullWidthInnerStyle: fullWidthShell.props.children.props.children.props.style,
@@ -85,11 +86,12 @@ test("DemoPreviewShell uses a fallback-backed 1px border for preview outlines", 
 	assert.equal(fullPageStyle.boxShadow, undefined);
 });
 
-test("DemoPreviewShell lets full-width demos fill the embedded preview surface", async () => {
+test("DemoPreviewShell insets full-width demos while preserving stretch layout", async () => {
 	const harness = await loadDemoPreviewShellHarness();
-	const { fullWidthPadding, fullWidthInnerStyle } = harness.getShellStyles();
+	const { defaultPadding, fullWidthPadding, fullWidthInnerStyle } = harness.getShellStyles();
 
-	assert.equal(fullWidthPadding, 0);
+	assert.equal(fullWidthPadding, defaultPadding);
+	assert.equal(fullWidthPadding, 24);
 	assert.equal(fullWidthInnerStyle.alignItems, "stretch");
 	assert.equal(fullWidthInnerStyle.justifyContent, "stretch");
 });

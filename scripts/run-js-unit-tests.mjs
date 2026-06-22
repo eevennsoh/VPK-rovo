@@ -40,6 +40,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Shared select primitive keeps selected indicators aligned with dropdown menu
+	// affordances. Components are not included wholesale, so gate it explicitly.
+	"components/ui/select.test.js",
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",
@@ -83,6 +86,12 @@ const INCLUDED_TEST_FILES = new Set([
 	// Pure waveform layout and audio-band mapping used by compact composer voice
 	// affordances. Components are not included wholesale, so gate explicitly.
 	"components/ui-audio/live-waveform-layout.test.js",
+	// Shared GUI utility controls and copy-filtering helpers are used across many
+	// visual demos, so gate their source and pure helper contracts explicitly.
+	"components/website/demos/utils/gui-demo.test.js",
+	"components/utils/gui.test.js",
+	"components/utils/gui-color.test.js",
+	"components/utils/gui-values.test.js",
 ]);
 
 export function getTestFileInclusion(filePath, {

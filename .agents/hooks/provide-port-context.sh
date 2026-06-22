@@ -29,6 +29,24 @@ if [ -f "$FRONTEND_PORT_FILE" ]; then
     fi
 fi
 
+# Resolve this worktree's stable Portless URL (preferred navigation target) by
+# matching the frontend port against ~/.portless/routes.json via the shared
+# helper (which skips stale/dead routes). Best-effort: empty if portless isn't
+# routing this worktree or node is unavailable.
+PORTLESS_URL=""
+if [ -n "$FRONTEND_PORT" ] && command -v node >/dev/null 2>&1; then
+    PORTLESS_URL=$(FP="$FRONTEND_PORT" PDIR="$PROJECT_DIR" node -e '
+try {
+  const path = require("path");
+  const { loadPortlessRoutes, findPortlessUrl } = require(path.join(process.env.PDIR, "scripts/lib/portless-routes"));
+  const url = findPortlessUrl(loadPortlessRoutes(), process.env.FP);
+  if (url) process.stdout.write(url);
+} catch {}' 2>/dev/null)
+    if [ -n "$PORTLESS_URL" ]; then
+        CONTEXT_PARTS=("Portless URL: $PORTLESS_URL" "${CONTEXT_PARTS[@]}")
+    fi
+fi
+
 # Read backend port if file exists
 BACKEND_PORT_FILE="$PROJECT_DIR/.dev-backend-port"
 if [ -f "$BACKEND_PORT_FILE" ]; then
@@ -50,8 +68,10 @@ fi
 # If we found any ports, output context for Claude
 if [ ${#CONTEXT_PARTS[@]} -gt 0 ]; then
     # Build the context message
-    CONTEXT="Dev servers running in this worktree: ${CONTEXT_PARTS[*]}. Use these recorded worktree ports instead of assuming default localhost ports."
-    if [ -n "$FRONTEND_PORT" ]; then
+    CONTEXT="Dev servers running in this worktree: ${CONTEXT_PARTS[*]}. Use these recorded worktree ports/URLs instead of assuming default localhost ports."
+    if [ -n "$PORTLESS_URL" ]; then
+        CONTEXT="$CONTEXT Prefer the stable Portless URL ($PORTLESS_URL) when navigating to pages; it survives dev-server restarts and is origin-isolated per worktree."
+    elif [ -n "$FRONTEND_PORT" ]; then
         CONTEXT="$CONTEXT Use the frontend URL (http://localhost:$FRONTEND_PORT) when navigating to pages."
     fi
 
@@ -73,7 +93,7 @@ else
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "additionalContext": "No dev servers detected in this worktree. For browser verification, start the worktree-aware tmux stack with 'pnpm run dev:tmux:start', then use 'pnpm ports' or the .dev-frontend-port/.dev-backend-port files for the actual URLs. Use 'pnpm run dev' only as a foreground fallback when tmux is unavailable."
+    "additionalContext": "No dev servers detected in this worktree. For browser verification, start the worktree-aware tmux stack with 'pnpm run dev:tmux:start' — it runs the dev stack through 'portless run' and prints this worktree's stable .localhost URL (also shown by 'pnpm ports' as '🌐 https://…'). Prefer that Portless URL when navigating; fall back to .dev-frontend-port/.dev-backend-port only if no route exists. Use 'pnpm run dev' only as a foreground fallback when tmux is unavailable."
   }
 }
 EOF

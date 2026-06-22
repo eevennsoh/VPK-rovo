@@ -24,7 +24,7 @@ test("waveform color controls register value keys for GUI copy filtering", () =>
 	for (const key of colorKeys) {
 		assert.match(
 			PAGE_SOURCE,
-			new RegExp(`<ColorInput[^>]+value=\\{${key}\\}[^>]+valueKeys="${key}"`),
+			new RegExp(`<GUI\\.RgbaColorInput[^>]+value=\\{${key}\\}[^>]+valueKeys="${key}"`),
 		);
 	}
 });

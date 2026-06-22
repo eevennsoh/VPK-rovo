@@ -2253,6 +2253,9 @@ const item: SmartLinkItem = {
 	chatgpt: {
 		description: "ChatGPT-style prompt form with model selector, group chat dialog, and project creation.",
 	},
+	"chat-configuration": {
+		description: "Chat configuration panel with reasoning mode selection and data source toggles for web results and company knowledge.",
+	},
 	"chat-timeline": {
 		description: "Chat transcript with a floating prompt navigator that previews earlier user messages and jumps to them in place.",
 		usage: `import ChatTimeline, { type ChatTimelineMessage } from "@/components/blocks/chat-timeline/page";

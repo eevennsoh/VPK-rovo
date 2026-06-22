@@ -4,9 +4,9 @@
 
 - Build: `pnpm run build`
 - Build for production (static export): `NEXT_OUTPUT=export pnpm run build`
-- Start frontend + backend for browser verification: `pnpm run dev:tmux:start`
+- Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (runs the dev stack through `portless run`, so it prints a stable `.localhost` URL)
 - Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
-- Discover actual worktree ports: `pnpm ports`, `.dev-frontend-port`, and `.dev-backend-port`
+- Discover actual worktree URLs/ports: `pnpm ports` (prefer the Portless `🌐 https://…` URL), with `.dev-frontend-port` and `.dev-backend-port` as fallback
 
 ## Deployment
 
@@ -39,7 +39,7 @@ Run on every change:
 
 Run additionally for UI changes:
 
-1. Visual checks via Codex App built-in browser plugins first when available (`@Browser` for local/isolated web work, `@Chrome` for signed-in browser state); fall back to `/agent-browser` (`npx agent-browser`) outside Codex App or when the preferred plugin is unavailable/blocked. In parallel worktrees, navigate to the frontend URL from `.dev-frontend-port` or `pnpm ports`; do not assume the default frontend port.
+1. Visual checks via Codex App built-in browser plugins first when available (`@Browser` for local/isolated web work, `@Chrome` for signed-in browser state); fall back to `/agent-browser` (`npx agent-browser`) outside Codex App or when the preferred plugin is unavailable/blocked. In parallel worktrees, prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree); fall back to the frontend URL from `.dev-frontend-port` only when no portless route exists. Do not assume the default frontend port.
 2. Accessibility checks:
    - `ads_analyze_a11y` for component code
    - `ads_analyze_localhost_a11y` for live page

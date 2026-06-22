@@ -81,6 +81,11 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/blocks/agent-card");
 	}
 
+	// chat-configuration moved from utility to a blocks doc.
+	if (category === "utility" && slug === "chat-configuration") {
+		redirect("/components/blocks/chat-configuration");
+	}
+
 	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
 		notFound();
 	}

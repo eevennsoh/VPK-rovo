@@ -157,7 +157,7 @@ const VPK_PROVIDER_ALIASES: Record<string, AtlassianLogoName> = {
 	"remote-bitbucket-search": "bitbucket",
 };
 
-const THIRD_PARTY_PROVIDER_ALIASES: Record<string, string> = {
+const THIRD_PARTY_PROVIDER_ALIASES: Record<string, ThirdPartyLogoName> = {
 	github: "github",
 	figma: "figma",
 	notion: "notion",
@@ -253,7 +253,7 @@ function resolveVpkProvider(candidates: string[]): AtlassianLogoName | null {
 	return null;
 }
 
-function resolveThirdPartyProvider(candidates: string[]): string | null {
+function resolveThirdPartyProvider(candidates: string[]): ThirdPartyLogoName | null {
 	for (const candidate of candidates) {
 		if (candidate in THIRD_PARTY_PROVIDER_ALIASES) {
 			return THIRD_PARTY_PROVIDER_ALIASES[candidate]!;
@@ -371,7 +371,7 @@ export function resolveToolIcon(options: {
 			label: toolLabel,
 			toolName: normalizedToolName,
 			provider: displayInfo.server ?? thirdPartyProvider,
-			brandName: thirdPartyProvider as ThirdPartyLogoName,
+			brandName: thirdPartyProvider,
 		};
 	}
 

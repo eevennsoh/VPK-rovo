@@ -28,7 +28,6 @@ import {
 } from "@/components/visual/ink-wash";
 import { GUI } from "@/components/utils/gui";
 
-import { ShaderColorInput } from "./shader-color-controls";
 
 type InkWashConfigKey = keyof InkWashConfig;
 
@@ -165,7 +164,7 @@ export default function InkWashDemo() {
 						options={INK_WASH_MODE_OPTIONS}
 						onChange={(mode) => setInkWashValue(setConfig, "mode", mode)}
 					/>
-					<ShaderColorInput
+					<GUI.ColorInput
 						id="ink-wash-ink-color"
 						label="Ink hue"
 						value={config.inkColor}

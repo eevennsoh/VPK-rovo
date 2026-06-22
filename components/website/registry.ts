@@ -4837,6 +4837,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "logo-third-party-demo-borderless": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoBorderless,
+      })),
+    { ssr: false },
+  ),
   "logo-third-party-demo-lockups": dynamic(
     () =>
       import("./demos/ui/logo-third-party-demo").then((mod) => ({
@@ -6992,6 +6999,10 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "chat-timeline": dynamic(() => import("./demos/blocks/chat-timeline-demo"), {
     ssr: false,
   }),
+  "chat-configuration": dynamic(
+    () => import("./demos/blocks/chat-configuration-demo"),
+    { ssr: false },
+  ),
   subagents: dynamic(() => import("./demos/blocks/subagents-demo"), {
     ssr: false,
   }),
@@ -8288,10 +8299,6 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   "agent-browser": dynamic(() => import("./demos/utils/agent-browser"), {
     ssr: false,
   }),
-  "chat-configuration": dynamic(
-    () => import("./demos/utils/chat-configuration-demo"),
-    { ssr: false },
-  ),
   "elapsed-time": dynamic(() => import("./demos/utils/elapsed-time-demo"), {
     ssr: false,
   }),
@@ -8303,10 +8310,6 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   multiports: dynamic(() => import("./demos/utils/multiports-demo"), {
     ssr: false,
   }),
-  "rovo-composer-styles": dynamic(
-    () => import("./demos/utils/rovo-composer-styles-demo"),
-    { ssr: false },
-  ),
   "sound-generation": dynamic(
     () => import("./demos/utils/sound-generation-demo"),
     { ssr: false },
@@ -8692,6 +8695,15 @@ export function getDemoComponent(
 }
 
 const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
+  utility: {
+    "gui-demo-full-config": dynamic(
+      () =>
+        import("./demos/utils/gui-demo").then((mod) => ({
+          default: mod.GUIFullConfigDemo,
+        })),
+      { ssr: false },
+    ),
+  },
   "ui-audio": {
     "audio-player-demo-default": dynamic(
       () =>
