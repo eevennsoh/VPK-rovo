@@ -73,6 +73,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
+	// Skill Config keeps its footer toolbar intentionally apps-only; this guards
+	// the named visibility model so it does not drift back into ad hoc filters.
+	"components/blocks/skill-config/skill-config.test.js",
 	// Studio-only automation-discovery demo: custom ArtifactList widget and TWG
 	// trace wiring live under components/, so gate this focused source coverage.
 	"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
