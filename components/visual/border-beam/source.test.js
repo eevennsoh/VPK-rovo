@@ -19,10 +19,12 @@ test("Border Beam only handles its own wrapper fade animation events", () => {
 });
 
 test("Border Beam pulse effects stay visible when reduced motion disables animation", () => {
-	const source = readProjectFile("components/visual/border-beam/styles.ts");
+	const wrapperSource = readProjectFile("components/visual/border-beam/styles.ts");
+	const source = readProjectFile("components/visual/border-beam/styles-generated.ts");
 	const reducedMotionOpacityBlocks = source.match(
 		/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\[data-beam="\$\{id\}"\]\[data-active\] \{\s*--beam-opacity-\$\{id\}: 1;\s*\}[\s\S]*?\[data-beam="\$\{id\}"\]\[data-fading\] \{\s*--beam-opacity-\$\{id\}: 0;\s*\}/gu,
 	);
 
+	assert.match(wrapperSource, /from "\.\/styles-generated"/u);
 	assert.equal(reducedMotionOpacityBlocks?.length, 2);
 });

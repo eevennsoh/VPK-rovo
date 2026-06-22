@@ -559,7 +559,6 @@ export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 		importPath: "@/components/website/demos/utils/agent-browser",
 		category: "utility",
 	},
-	utilityComponent("elapsed-time", "Elapsed Time"),
 	utilityComponent("gui", "GUI"),
 	utilityComponent("image-generation", "Image Generation"),
 	utilityComponent("multiports", "Multiports"),

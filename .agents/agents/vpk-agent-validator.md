@@ -81,18 +81,18 @@ You receive:
 
 ### Step 0: Resolve Target URL Reliably
 
-Prefer `pnpm ports` to confirm the active frontend port for the current worktree.
-Fallback: read `.dev-frontend-port` if needed.
+Prefer this worktree's stable Portless URL: run `pnpm ports` and use the `🌐 https://<…>.localhost` it prints for the current worktree. This URL survives dev-server restarts and is origin-isolated per worktree, so it avoids navigating to a stale or recycled port.
+Fallback: if no portless route is shown, read `.dev-frontend-port` and use `http://localhost:<port>`.
 
 ### Step 1: Get Dev Server Port
 
-Read the port file to find the running dev server:
+Read the port file only as a fallback when `pnpm ports` shows no Portless URL:
 
 ```
 Read file: .dev-frontend-port
 ```
 
-Use the port number from this file for all browser navigation.
+Use the Portless URL when available, otherwise the port number from this file, for all browser navigation.
 
 ### Step 2: Navigate to Component
 

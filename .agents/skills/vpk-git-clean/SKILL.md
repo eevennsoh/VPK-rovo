@@ -155,6 +155,10 @@ node -e 'require("./scripts/lib/worktree-listener-cleanup").cleanupListeningProc
 
 The returned summary reports `matchedPids`, `signalledCount`, `gracefulCount`, and `forceKilledCount` — record the killed PIDs per worktree for the final report. The CLI wrapper `scripts/cleanup-worktree-listeners.js` does the same but hardcodes `process.cwd()`, so it only suits stopping the worktree you are standing in; the `node -e` form above is what targets a *different* worktree from the main checkout.
 
+> Portless routes: a worktree previewed via `portless run` (e.g. `pnpm run dev:tmux:start`) registers a `~/.portless/routes.json` entry. `dev:tmux:stop` sends Ctrl-C so `portless run` removes its own route (scoped to that worktree). If you remove a worktree without stopping it that way, its route lingers as a harmless dead/`pid 0` entry (visible in `portless list`). Drop a single one with `portless alias --remove <name>`. **Do not** reach for `portless prune` as part of per-worktree cleanup: it is global and kills whatever currently listens on each stale route's port (`lsof`), so on a reused port it can SIGKILL an unrelated live worktree's dev server. Run `portless prune` only as a deliberate, standalone maintenance sweep when you know no ports have been reused.
+
+> Likewise on the tmux side: stop the worktree you are standing in with `pnpm run dev:tmux:stop` (it does the scoped Ctrl-C route cleanup + `kill-session`), and stop a *different* worktree's stack with the cwd-scoped helper above. **Never** `tmux kill-server` for cleanup — all worktrees share the one `vpk-dev` socket/server, so that kills every worktree's dev session at once. `kill-session` (what `dev:tmux:stop` uses) is the per-worktree-isolated stop.
+
 ### Fallback: port files
 
 If the helper is unavailable, fall back to the worktree's own port files — `.dev-frontend-port`, `.dev-backend-port`, `.dev-rovo-port` (legacy single), and `.dev-rovo-ports` (JSON array pool). Read them first, before `git worktree remove`, since they live inside the worktree, and free each port only when its listener's cwd is that exact worktree:

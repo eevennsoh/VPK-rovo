@@ -1673,6 +1673,7 @@ const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
 			{ title: "Early progress", description: "Run just started with mostly todo tasks.", demoSlug: "agent-progress-demo-early-progress" },
 			{ title: "Multiple runs", description: "Progress tracker showing multiple run count.", demoSlug: "agent-progress-demo-multiple-runs" },
 			{ title: "All states", description: "Running, completed, and failed states side by side.", demoSlug: "agent-progress-demo-all-states" },
+			{ title: "Elapsed time", description: "Header timer driven by the shared elapsed-time helpers: live running, frozen completed, and missing-start fallback.", demoSlug: "agent-progress-demo-elapsed-time" },
 		],
 	},
 	"agent-selector": {
@@ -1820,6 +1821,7 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "Early progress", description: "Run just started with mostly todo tasks.", demoSlug: "task-progress-demo-early-progress" },
 			{ title: "Multiple runs", description: "Progress tracker showing multiple run count.", demoSlug: "task-progress-demo-multiple-runs" },
 			{ title: "All states", description: "Running, completed, and failed states side by side.", demoSlug: "task-progress-demo-all-states" },
+			{ title: "Elapsed time", description: "Header timer driven by the shared elapsed-time helpers: live running, frozen completed, and missing-start fallback.", demoSlug: "task-progress-demo-elapsed-time" },
 		],
 	},
 	triggers: {

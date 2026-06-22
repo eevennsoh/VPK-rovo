@@ -1,90 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
+import { useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import LogoCrystal, { LOGO_CRYSTAL_DEFAULT_BACKGROUND } from "./shaders/logo-crystal";
-
-function ImageUploadControl({
-	label,
-	hint,
-	imageSrc,
-	onChange,
-}: {
-	label: string;
-	hint: string;
-	imageSrc: string | undefined;
-	onChange: (next: string | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		(file: File) => {
-			const url = URL.createObjectURL(file);
-			onChange(url);
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<div className="flex items-center gap-2">
-				<Label className="text-xs font-medium text-text">{label}</Label>
-				<span className="text-[11px] text-text-subtlest">{hint}</span>
-			</div>
-			<div className="flex items-center gap-2">
-				{imageSrc ? (
-					<Image
-						src={imageSrc}
-						alt={label}
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border object-cover"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{imageSrc ? "Change" : "Upload"}
-				</button>
-				{imageSrc ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.target.files?.[0];
-						if (file) handleFile(file);
-						event.target.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
 
 const DEMO_DEFAULTS = {
 	colorBack: LOGO_CRYSTAL_DEFAULT_BACKGROUND,
@@ -219,19 +140,21 @@ export default function LogoCrystalDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ImageUploadControl
+				<GUI.ImageInput
+					id="logo-crystal-logo"
 					label="Logo"
-					hint="Uses the Framer Path.svg asset when empty."
-					imageSrc={imageSrc}
+					description="Uses the Framer Path.svg asset when empty."
+					value={imageSrc}
 					onChange={setImageSrc}
 				/>
-				<ImageUploadControl
+				<GUI.ImageInput
+					id="logo-crystal-image"
 					label="Image"
-					hint="Background texture refracted through the logo."
-					imageSrc={bgTextureSrc}
+					description="Background texture refracted through the logo."
+					value={bgTextureSrc}
 					onChange={setBgTextureSrc}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="logo-crystal-background"
 					label="Background"
 					value={colorBack}

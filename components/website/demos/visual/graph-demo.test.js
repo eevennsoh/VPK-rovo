@@ -164,8 +164,9 @@ test("Graph renderer exposes hover, ray, edge, and label toggles through params"
 	assert.match(NEURAL_CANVAS_SOURCE, /rayElastic: !reduceMotion && rayElasticRef\.current\.progress > 0 \? rayElasticRef\.current : null/);
 	assert.match(RENDERER_SOURCE, /viewport\.height \* params\.rayOriginY/);
 	assert.match(NEURAL_CANVAS_SOURCE, /data-neural-graph-origin-node="true"/);
-	assert.match(NEURAL_CANVAS_SOURCE, /style=\{getOriginMarkerStyleForViewport\(params, viewport, rayOriginBottomOffset\)\}/);
-	assert.match(NEURAL_CANVAS_SOURCE, /params\.showRays && params\.showOriginMarker \? \(/);
+	assert.match(NEURAL_CANVAS_SOURCE, /const rayOriginY = getRayOriginY\(\{ params, rayOriginBottomOffset, viewport \}\);/);
+	assert.match(NEURAL_CANVAS_SOURCE, /style=\{getOriginMarkerStyleForViewport\(params, viewport, rayOriginY\)\}/);
+	assert.match(NEURAL_CANVAS_SOURCE, /params\.showRays && params\.showOriginMarker && hasMeasuredViewport \? \(/);
 	assert.match(NEURAL_CANVAS_SOURCE, /backgroundColor: params\.originMarkerColor/);
 	assert.match(NEURAL_CANVAS_SOURCE, /borderRadius: params\.nodeShape === "square" \? params\.nodeRadius : 9999/);
 	assert.match(NEURAL_CANVAS_SOURCE, /height: params\.originMarkerSize/);
@@ -246,12 +247,15 @@ test("Graph controls expose node type and edge state color fields", () => {
 
 test("Graph color controls use design token selectors instead of hex-only pickers", () => {
 	assert.match(GRAPH_SOURCE, /NEURAL_GRAPH_COLOR_TOKEN_OPTIONS/);
-	assert.match(GRAPH_SOURCE, /function GraphColorTokenControl/);
+	assert.match(GRAPH_SOURCE, /GRAPH_COLOR_SELECT_OPTIONS/);
+	assert.match(GRAPH_SOURCE, /getGraphColorSelectValue/);
 	assert.match(GRAPH_SOURCE, /getNeuralGraphColorTokenOption/);
-	assert.match(GRAPH_SOURCE, /useGUIValueKeys\(valueKey\)/);
-	assert.match(GRAPH_SOURCE, /<Select[\s\S]*value=\{selectedOption\.value\}[\s\S]*onValueChange=\{\(nextValue\) => \{/);
-	assert.match(GRAPH_SOURCE, /style=\{\{ backgroundColor: option\.value \}\}/);
-	assert.match(GRAPH_SOURCE, /<SelectItem key=\{option\.value\} value=\{option\.value\}>[\s\S]*className="size-3 shrink-0 self-center rounded-full border border-border"/);
+	assert.match(GRAPH_SOURCE, /description: option\.lightHex/);
+	assert.match(GRAPH_SOURCE, /meta: option\.token/);
+	assert.match(GRAPH_SOURCE, /swatch: option\.value/);
+	assert.match(GRAPH_SOURCE, /<GUI\.Select[\s\S]*options=\{GRAPH_COLOR_SELECT_OPTIONS\}[\s\S]*valueKeys=\{definition\.key\}/);
+	assert.match(GRAPH_SOURCE, /<GUI\.Select[\s\S]*id="graph-color-synthesis"[\s\S]*options=\{GRAPH_COLOR_SELECT_OPTIONS\}[\s\S]*valueKeys="colorSynthesis"/);
+	assert.doesNotMatch(GRAPH_SOURCE, /function GraphColorTokenControl/);
 	assert.match(COLORS_SOURCE, /token: "color\.icon"/);
 	for (const accent of ["red", "orange", "yellow", "lime", "green", "teal", "blue", "purple", "magenta", "gray"]) {
 		assert.match(COLORS_SOURCE, new RegExp(`token: "color\\.icon\\.accent\\.${accent}"`));

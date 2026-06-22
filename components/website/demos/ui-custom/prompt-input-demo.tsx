@@ -105,7 +105,7 @@ export function PromptInputDemoChatComposer() {
 		<DemoFrame>
 			<div className="px-1">
 				<div
-					className="relative z-10 rounded-xl border border-border bg-surface px-4 py-2.5"
+					className="relative z-10 rounded-xl border border-border bg-surface p-3"
 					style={{ boxShadow: composerUpwardShadow }}
 				>
 					<PromptInput

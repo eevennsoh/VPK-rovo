@@ -6,7 +6,6 @@ import { GUI } from "@/components/utils/gui";
 import { ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorListControl } from "./shader-color-controls";
 import LiquidGradient from "./shaders/liquid-gradient";
 
 const DEFAULT_COLORS = [...ROVO_SHADER_COLOR_HEX];
@@ -61,7 +60,7 @@ export default function LiquidGradientDemo() {
 			</div>
 
 			<GUI.Panel title="Shader controls" values={config}>
-				<ShaderColorListControl
+				<GUI.ColorList
 					id="lg-colors"
 					label="Colors"
 					value={colors}

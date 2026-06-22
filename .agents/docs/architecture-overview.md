@@ -19,9 +19,14 @@ Browser -> Express (:8080) -> static export + /api/* -> Rovo Serve
 
 The `rovo` script starts all three processes concurrently (single-instance by
 default; use `pnpm run rovo -- 6` for full pool). The `dev` script starts
-only backend + frontend. Use `portless run` or
-`portless run --script rovo` when you explicitly want Portless URLs such as
-`https://<branch.>vpk-rovo.localhost`. The backend auto-detects Rovo Serve
+only backend + frontend. For stable per-worktree `.localhost` URLs, use vanilla
+`portless run`: from the main checkout it serves `https://vpk-rovo.localhost`,
+and from a branched worktree it auto-prepends the branch as
+`https://<branch>.vpk-rovo.localhost` — only a detached worktree needs
+`portless run --name <worktree-dir>` (→ `https://<worktree-dir>.localhost`).
+Add `--script rovo` only when the surface needs Rovo Serve. `pnpm run
+dev:tmux:start` already runs the dev stack through `portless run`, so it prints
+a stable `.localhost` URL (shown as `🌐 https://…` by `pnpm ports`). The backend auto-detects Rovo Serve
 via `.dev-rovo-port` (single) or `.dev-rovo-ports` (pool) files. Chat SDK
 requests default to AI Gateway unless a caller selects Rovo. `/api/rovo/chat`
 starts managed runs on AI Gateway, then delegates artifact, plan, or tool-heavy

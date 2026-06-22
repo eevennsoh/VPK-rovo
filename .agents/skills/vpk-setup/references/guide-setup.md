@@ -40,7 +40,7 @@ pnpm run dev:tmux:start
 pnpm run dev:tmux:status
 ```
 
-This starts Express backend and Next.js frontend in a detached, worktree-aware tmux session. Use the printed URLs, `pnpm ports`, or `.dev-frontend-port` / `.dev-backend-port`; do not assume default ports in linked worktrees.
+This starts Express backend and Next.js frontend in a detached, worktree-aware tmux session, running the dev stack through `portless run` so it prints a stable `.localhost` URL. Prefer that Portless URL (the `🌐 https://…` entry from `pnpm ports`); otherwise use the printed URLs or `.dev-frontend-port` / `.dev-backend-port`. Do not assume default ports in linked worktrees.
 
 ### Option 2: Full Rovo Stack
 
@@ -78,7 +78,7 @@ Use the manual fallback when tmux is unavailable or you need foreground logs in 
 
    Should show `"authMethod": "ASAP"`
 
-2. **Open browser:** `http://localhost:$(cat .dev-frontend-port)`
+2. **Open browser:** prefer the worktree's Portless `🌐 https://…` URL from `pnpm ports`, falling back to `http://localhost:$(cat .dev-frontend-port)`
 
 ### Troubleshooting
 
@@ -394,7 +394,7 @@ pnpm run dev
 
 ### Verify Everything Works
 
-1. **Open** `http://localhost:$(cat .dev-frontend-port)` or the frontend URL printed by `pnpm run dev:tmux:start`
+1. **Open** the worktree's Portless `🌐 https://…` URL from `pnpm ports`, or fall back to `http://localhost:$(cat .dev-frontend-port)` / the frontend URL printed by `pnpm run dev:tmux:start` (which runs through `portless run`)
 2. **Check backend:** `curl "http://localhost:$(cat .dev-backend-port)/api/health"` should show `"authMethod": "ASAP"`
 
 **Troubleshooting .env.local Issues:**

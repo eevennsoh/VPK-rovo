@@ -11,7 +11,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Quick start:
   - `pnpm install`
   - `pnpm run rovo`
-- Local browser verification in parallel worktrees should use the worktree-aware tmux launcher: `pnpm run dev:tmux:start` for frontend + backend, or `pnpm run rovo:tmux:start --1` / `--6` only when Rovo behavior is in scope. Use `pnpm ports` or the `.dev-frontend-port` / `.dev-backend-port` files for the actual URLs; do not assume the default frontend port.
+- Local browser verification in parallel worktrees should use the worktree-aware tmux launcher: `pnpm run dev:tmux:start` for frontend + backend, or `pnpm run rovo:tmux:start --1` / `--6` only when Rovo behavior is in scope. `dev:tmux:start` runs the dev stack through vanilla `portless run`, giving each worktree a stable `.localhost` URL — prefer that URL (shown by `pnpm ports` as `🌐 https://…`) when navigating. Fall back to `.dev-frontend-port` / `.dev-backend-port` only when no portless route exists; never assume the default frontend port. Because the tmux session is detached, the server and its Portless URL **survive across turns** — for multi-turn work (fix → prompt → return to the same URL) re-navigate to that URL on later turns instead of restarting. Stop with `pnpm run dev:tmux:stop` (per-worktree isolated); see the browser-automation isolation gotcha below.
 - Production runtime uses one Express process serving static export plus `/api/*`.
 - Primary frontend edits are in `components/projects/`, `components/blocks/`, `components/arts/`, `components/ui-custom/`, `components/ui-audio/`, `components/visual/`, `components/website/` (component docs and demos), and `app/` route files.
 - Backend/API edits are in `backend/server.js`, `backend/lib/*.js`, and nested `app/api/**/route.ts` handlers (dev proxy and route-local adapters).
@@ -168,9 +168,9 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Install dependencies: `pnpm install`
 - First-time Rovo bootstrap: run `pnpm run rovo` (or `rovo`) once, copy the printed `ROVO_SESSION_TOKEN` into `.env.local`, then restart the stack
 - Start everything: `pnpm run rovo` (starts 1 rovo serve instance + backend + frontend; use `pnpm run rovo -- 6` for full pool)
-- Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (worktree-aware detached tmux session; use `pnpm run dev:tmux:status` or `.dev-frontend-port` / `.dev-backend-port` for actual ports)
+- Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (worktree-aware detached tmux session; runs through `portless run` so this worktree gets a stable `.localhost` URL — read it from `pnpm ports` / `pnpm run dev:tmux:status`, or `.dev-frontend-port` / `.dev-backend-port` for raw ports)
 - Start frontend + backend in foreground: `pnpm run dev` (simple fallback when tmux is unavailable; AI Gateway-backed chat works when credentials are configured; Rovo-selected flows still need Rovo Serve)
-- Start through explicit Portless routing: `portless run` or `portless run --script rovo`
+- Start with an explicit Portless URL for this worktree (vanilla — no wrapper): `portless run` gives `vpk-rovo.localhost` on main and `<branch>.vpk-rovo.localhost` on a branch automatically; add `--name <worktree-dir>` only when HEAD is detached (`portless run --name <worktree-dir>` → `<worktree-dir>.localhost`). The `/portless` command resolves this for you. Add `--script rovo` only when the surface needs Rovo Serve.
 - Start Rovo Serve only: `pnpm run dev:rovo`
 - Start frontend only: `pnpm run dev:frontend`
 - Start backend only: `pnpm run dev:backend`
@@ -225,7 +225,8 @@ static export used by deployment.
 
 ## Gotchas
 
-- Worktree ports are deterministic; check with `pnpm ports` or keep a live dashboard open with `pnpm ports watch`. Browser tools should navigate to the actual frontend URL from `.dev-frontend-port`, not a hardcoded default.
+- Worktree ports are deterministic; check with `pnpm ports` or keep a live dashboard open with `pnpm ports watch`. Browser tools should navigate to this worktree's stable Portless URL (`pnpm ports` prints it as `🌐 https://…`), falling back to the actual frontend URL from `.dev-frontend-port` only when no portless route exists — never a hardcoded default.
+- Browser automation across worktrees is isolated by design — three orthogonal layers keep parallel agents from clashing or cross-killing: deterministic per-worktree ports (`scripts/lib/worktree-ports.js`) prevent port clashes; vanilla `portless run` gives each worktree a unique `.localhost` URL; and the detached `vpk-dev-<worktree>` tmux session persists each server across turns. Stopping one worktree with `pnpm run dev:tmux:stop` uses `kill-session` and leaves the others running. The only actions that cascade across all worktrees are `tmux kill-server` (kills every session on the shared `vpk-dev` socket) and `portless prune` (global — kills whatever listens on each stale route's port) — never use either for per-worktree cleanup; use `pnpm run dev:tmux:stop` or `portless alias --remove <name>` instead.
 - Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`
 - Dev API calls traverse Next.js proxy then Express; debug both layers.
 - No directories are excluded from TypeScript type-checking (only `node_modules`). All errors are visible and trackable.
@@ -307,10 +308,10 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | Express Backend | `pnpm run dev:backend` | 8080 | Yes |
 | Rovo Serve | `pnpm run dev:rovo` | 8000 | Only for Rovo-selected chat/tool flows |
 
-Start frontend + backend for browser verification: `pnpm run dev:tmux:start`
+Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (runs through `portless run` → stable `.localhost` URL via `pnpm ports`)
 Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
 Start all three locally when the Rovo CLI is available: `pnpm run rovo`
-Use `portless run` or `portless run --script rovo` when you specifically want Portless URLs.
+Use vanilla `portless run` (bare on main/branch, `--name <worktree-dir>` when detached) when you want a Portless URL directly; the `/portless` command resolves the args for you.
 
 ### Running checks
 

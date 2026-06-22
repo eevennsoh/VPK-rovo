@@ -107,20 +107,15 @@ import styles from "./chat.module.css";
 
 export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 
-interface ChatPanelCardsProps {
+export interface ChatPanelGeneratedAgentResultRenderInput {
+	agent: RovoDataParts["agent-result"];
+	message: RovoRenderableUIMessage;
+}
+
+export interface ChatPanelCardsProps {
 	generatedAgentResult?: RovoDataParts["agent-result"] | null;
 	generativeAnimation?: GenerativeCardAnimationProps;
-	/**
-	 * When provided, the panel only renders the *in-transcript* generated-agent
-	 * profile card for the message whose id matches. The studio Ask Rovo "Edit
-	 * agent" panel re-adopts an agent's original generation transcript when the
-	 * agent is reopened, which would otherwise replay the "agent created" card on
-	 * every view. The shell sets this to the id of the message that triggered THIS
-	 * session's fresh generation, and `null` when merely viewing an existing agent
-	 * (so the replayed card is suppressed). Omit it entirely — as every other
-	 * ChatPanel consumer does — to always render the card.
-	 */
-	restrictGeneratedAgentCardToMessageId?: string | null;
+	shouldRenderGeneratedAgentResult?: (input: ChatPanelGeneratedAgentResultRenderInput) => boolean;
 }
 
 type GeneratedResult =
@@ -170,29 +165,30 @@ export interface ChatPanelAgentVersionOption {
 	isCurrent?: boolean;
 }
 
-export interface ChatPanelScriptedConversation {
+export interface ChatPanelLocalConversation {
+	buildVoiceInput?: (voiceText: string) => string;
 	initialVoiceKey?: string | null;
 	initialVoiceText?: string | null;
 	messages: ReadonlyArray<RovoUIMessage>;
-	onSubmit: (text: string) => Promise<ChatPanelScriptedConversationSubmitResult> | ChatPanelScriptedConversationSubmitResult;
+	onSubmit: (text: string) => Promise<ChatPanelLocalConversationSubmitResult> | ChatPanelLocalConversationSubmitResult;
 }
 
-export interface ChatPanelScriptedConversationSubmitDetails {
+export interface ChatPanelLocalConversationSubmitDetails {
 	handled?: boolean;
 	voiceText?: string | null;
 }
 
-export type ChatPanelScriptedConversationSubmitResult =
+export type ChatPanelLocalConversationSubmitResult =
 	| boolean
-	| ChatPanelScriptedConversationSubmitDetails
+	| ChatPanelLocalConversationSubmitDetails
 	| void;
 
-const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;
-const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MAX_MS = 12000;
-const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS = 280;
-const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS = 900;
+const LOCAL_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;
+const LOCAL_CONVERSATION_VOICE_SUPPRESSION_MAX_MS = 12000;
+const LOCAL_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS = 280;
+const LOCAL_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS = 900;
 
-function isScriptedConversationSubmitHandled(result: ChatPanelScriptedConversationSubmitResult): boolean {
+function isLocalConversationSubmitHandled(result: ChatPanelLocalConversationSubmitResult): boolean {
 	return result !== false && (
 		typeof result !== "object" ||
 		result === null ||
@@ -200,7 +196,7 @@ function isScriptedConversationSubmitHandled(result: ChatPanelScriptedConversati
 	);
 }
 
-function getScriptedConversationVoiceText(result: ChatPanelScriptedConversationSubmitResult): string {
+function getLocalConversationVoiceText(result: ChatPanelLocalConversationSubmitResult): string {
 	if (typeof result !== "object" || result === null || typeof result.voiceText !== "string") {
 		return "";
 	}
@@ -208,12 +204,12 @@ function getScriptedConversationVoiceText(result: ChatPanelScriptedConversationS
 	return result.voiceText.trim();
 }
 
-function getScriptedConversationVoiceSuppressionMs(text: string): number {
+function getLocalConversationVoiceSuppressionMs(text: string): number {
 	const wordCount = text.trim().split(/\s+/u).filter(Boolean).length;
-	const estimatedDuration = wordCount * SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS + SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS;
+	const estimatedDuration = wordCount * LOCAL_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS + LOCAL_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS;
 	return Math.min(
-		Math.max(estimatedDuration, SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS),
-		SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MAX_MS,
+		Math.max(estimatedDuration, LOCAL_CONVERSATION_VOICE_SUPPRESSION_MIN_MS),
+		LOCAL_CONVERSATION_VOICE_SUPPRESSION_MAX_MS,
 	);
 }
 
@@ -274,7 +270,7 @@ interface ChatPanelProps {
 	 * Optional deterministic submit interceptor. When provided and it reports the
 	 * prompt as handled, the composer submission skips the model entirely — the
 	 * user message and the returned `assistantReply` are injected locally. Used by
-	 * the studio agent-edit ("Improve your agent?") chat to apply scripted agent
+	 * the studio agent-edit ("Improve your agent?") chat to apply local agent
 	 * edits; absent for normal conversational chats (including the agent test
 	 * chat, which must stay a real conversation).
 	 */
@@ -296,14 +292,14 @@ interface ChatPanelProps {
 	/**
 	 * Id of an externally-injected assistant message that should render as
 	 * actively "thinking" (live morphing-Rovo trace, auto-expanded) — used by the
-	 * Agent Test panel while it plays a scripted run via `replaceMessages`. Cleared
+	 * Agent Test panel while it plays a local run via `replaceMessages`. Cleared
 	 * (set to null) when the run settles so the trace collapses to "Thought for Xs".
 	 */
 	externalThinkingMessageId?: string | null;
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
-	scriptedConversation?: ChatPanelScriptedConversation | null;
+	localConversation?: ChatPanelLocalConversation | null;
 	startRealtimeVoiceRequestKey?: number;
 }
 
@@ -446,7 +442,7 @@ export default function ChatPanel({
 	onArtifactResult,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
-	scriptedConversation = null,
+	localConversation = null,
 	startRealtimeVoiceRequestKey = 0,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
@@ -588,47 +584,47 @@ export default function ChatPanel({
 		onInterceptSubmit,
 		requireIntercept: isCollapsibleEditContextBar && isContextBarOpen,
 	});
-	const isScriptedConversationActive = scriptedConversation !== null;
+	const isLocalConversationActive = localConversation !== null;
 	const sendRealtimeTextInputRef = useRef<UseRealtimeVoiceResult["sendTextInput"] | null>(null);
 	const realtimeVoiceStateRef = useRef<UseRealtimeVoiceResult["voiceState"]>("idle");
-	const lastScriptedInitialVoiceKeyRef = useRef<string | null>(null);
-	const scriptedConversationVoiceSuppressedUntilRef = useRef(0);
-	const speakScriptedConversationVoiceText = useCallback((result: ChatPanelScriptedConversationSubmitResult) => {
-		const voiceText = getScriptedConversationVoiceText(result);
+	const lastLocalInitialVoiceKeyRef = useRef<string | null>(null);
+	const localConversationVoiceSuppressedUntilRef = useRef(0);
+	const speakLocalConversationVoiceText = useCallback((result: ChatPanelLocalConversationSubmitResult) => {
+		const voiceText = getLocalConversationVoiceText(result);
 		if (!voiceText) {
 			return;
 		}
 
-		scriptedConversationVoiceSuppressedUntilRef.current = Math.max(
-			scriptedConversationVoiceSuppressedUntilRef.current,
-			Date.now() + getScriptedConversationVoiceSuppressionMs(voiceText),
+		localConversationVoiceSuppressedUntilRef.current = Math.max(
+			localConversationVoiceSuppressedUntilRef.current,
+			Date.now() + getLocalConversationVoiceSuppressionMs(voiceText),
 		);
 		void sendRealtimeTextInputRef.current?.({
-			text: `Speak much quicker than normal, with tight upbeat pacing. Read only this onboarding narration, without adding extra words:\n${voiceText}`,
+			text: localConversation?.buildVoiceInput?.(voiceText) ?? voiceText,
 		});
-	}, []);
+	}, [localConversation]);
 	useEffect(() => {
-		if (!scriptedConversation) {
-			lastScriptedInitialVoiceKeyRef.current = null;
-			scriptedConversationVoiceSuppressedUntilRef.current = 0;
+		if (!localConversation) {
+			lastLocalInitialVoiceKeyRef.current = null;
+			localConversationVoiceSuppressedUntilRef.current = 0;
 			return;
 		}
 
-		const initialVoiceText = scriptedConversation.initialVoiceText?.trim() ?? "";
+		const initialVoiceText = localConversation.initialVoiceText?.trim() ?? "";
 		if (!initialVoiceText) {
 			return;
 		}
 
-		const initialVoiceKey = scriptedConversation.initialVoiceKey?.trim() || initialVoiceText;
-		if (lastScriptedInitialVoiceKeyRef.current === initialVoiceKey) {
+		const initialVoiceKey = localConversation.initialVoiceKey?.trim() || initialVoiceText;
+		if (lastLocalInitialVoiceKeyRef.current === initialVoiceKey) {
 			return;
 		}
 
-		lastScriptedInitialVoiceKeyRef.current = initialVoiceKey;
-		speakScriptedConversationVoiceText({ voiceText: initialVoiceText });
-	}, [scriptedConversation, speakScriptedConversationVoiceText]);
+		lastLocalInitialVoiceKeyRef.current = initialVoiceKey;
+		speakLocalConversationVoiceText({ voiceText: initialVoiceText });
+	}, [localConversation, speakLocalConversationVoiceText]);
 	const handleComposerSubmit = useCallback(async ({ files, text }: { text: string; files: FileUIPart[] }) => {
-		if (!scriptedConversation) {
+		if (!localConversation) {
 			await handleSubmit({ files, text });
 			return;
 		}
@@ -638,15 +634,15 @@ export default function ChatPanel({
 			return;
 		}
 
-		const result = await scriptedConversation.onSubmit(promptText);
-		if (!isScriptedConversationSubmitHandled(result)) {
+		const result = await localConversation.onSubmit(promptText);
+		if (!isLocalConversationSubmitHandled(result)) {
 			await handleSubmit({ files, text: promptText });
 			return;
 		}
 
 		setPrompt("");
-		speakScriptedConversationVoiceText(result);
-	}, [handleSubmit, prompt, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
+		speakLocalConversationVoiceText(result);
+	}, [handleSubmit, prompt, localConversation, setPrompt, speakLocalConversationVoiceText]);
 
 	// --- Rovo AI cursor companion (Clicky) ---
 	const clicky = useClicky();
@@ -748,8 +744,8 @@ export default function ChatPanel({
 		}
 
 		if (
-			scriptedConversation &&
-			(Date.now() < scriptedConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
+			localConversation &&
+			(Date.now() < localConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
 		) {
 			realtimeTranscriptRef.current = "";
 			return;
@@ -765,7 +761,7 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-	}, [isClickyActive, scriptedConversation]);
+	}, [isClickyActive, localConversation]);
 	const handleRealtimeTranscriptCompleted = useCallback((payload: RealtimeTranscriptPayload) => {
 		const transcriptText = getRealtimeTranscriptText(payload);
 
@@ -788,8 +784,8 @@ export default function ChatPanel({
 		}
 
 		if (
-			scriptedConversation &&
-			(Date.now() < scriptedConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
+			localConversation &&
+			(Date.now() < localConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
 		) {
 			realtimeTranscriptRef.current = "";
 			return;
@@ -805,11 +801,11 @@ export default function ChatPanel({
 			return;
 		}
 
-		if (scriptedConversation) {
-			void Promise.resolve(scriptedConversation.onSubmit(transcriptText)).then((result) => {
-				if (isScriptedConversationSubmitHandled(result)) {
+		if (localConversation) {
+			void Promise.resolve(localConversation.onSubmit(transcriptText)).then((result) => {
+				if (isLocalConversationSubmitHandled(result)) {
 					realtimeTranscriptRef.current = "";
-					speakScriptedConversationVoiceText(result);
+					speakLocalConversationVoiceText(result);
 					return;
 				}
 				realtimeTranscriptRef.current = transcriptText;
@@ -819,7 +815,7 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-	}, [clickyAddExchange, clickyStartProcessing, handleSubmit, isClickyActive, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
+	}, [clickyAddExchange, clickyStartProcessing, handleSubmit, isClickyActive, localConversation, setPrompt, speakLocalConversationVoiceText]);
 
 	const getScreenAssistantSnapshot = useCallback(() => {
 		return createStudioScreenAssistantSnapshot({
@@ -922,7 +918,7 @@ export default function ChatPanel({
 				return;
 			}
 
-			if (scriptedConversation) {
+			if (localConversation) {
 				return;
 			}
 
@@ -933,14 +929,14 @@ export default function ChatPanel({
 			}
 
 			streamClickyAssistantText(text);
-		}, [scriptedConversation, streamClickyAssistantText]);
+		}, [localConversation, streamClickyAssistantText]);
 
 		const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
 			if (isDictationActiveRef.current) {
 				return;
 			}
 
-			if (scriptedConversation) {
+			if (localConversation) {
 				return;
 			}
 
@@ -965,7 +961,7 @@ export default function ChatPanel({
 			if (didStreamToClicky) {
 				clickyAddExchange({ role: "assistant", content: text });
 			}
-		}, [clickyAddExchange, recordLocalAssistantTurn, scriptedConversation, streamClickyAssistantText]);
+		}, [clickyAddExchange, recordLocalAssistantTurn, localConversation, streamClickyAssistantText]);
 	const handleRealtimeDelegateToRovo = useCallback(
 		(request: DelegationRequest) => {
 			if (isDictationActiveRef.current) {
@@ -998,20 +994,20 @@ export default function ChatPanel({
 				void sendPrompt(promptText, promptOptions);
 			};
 
-			if (!scriptedConversation) {
+			if (!localConversation) {
 				sendRealtimePrompt();
 				return;
 			}
 
-			void Promise.resolve(scriptedConversation.onSubmit(promptText)).then((result) => {
-				if (!isScriptedConversationSubmitHandled(result)) {
+			void Promise.resolve(localConversation.onSubmit(promptText)).then((result) => {
+				if (!isLocalConversationSubmitHandled(result)) {
 					sendRealtimePrompt();
 					return;
 				}
-				speakScriptedConversationVoiceText(result);
+				speakLocalConversationVoiceText(result);
 			});
 		},
-		[isClickyActive, resolvedSendPromptOptions, scriptedConversation, sendPrompt, setPrompt, speakScriptedConversationVoiceText],
+		[isClickyActive, resolvedSendPromptOptions, localConversation, sendPrompt, setPrompt, speakLocalConversationVoiceText],
 	);
 	const realtime = useRealtimeVoice({
 		chatMessages: uiMessages,
@@ -1091,8 +1087,8 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = "";
-		realtime.connect(isScriptedConversationActive ? { explicitResponseOnly: true } : undefined);
-	}, [isScriptedConversationActive, realtime]);
+		realtime.connect(isLocalConversationActive ? { explicitResponseOnly: true } : undefined);
+	}, [isLocalConversationActive, realtime]);
 	const lastStartRealtimeVoiceRequestKeyRef = useRef(0);
 	const cleanupDeferredStartRealtimeVoiceRef = useRef<(() => void) | null>(null);
 	const clearDeferredStartRealtimeVoice = useCallback(() => {
@@ -1221,13 +1217,13 @@ export default function ChatPanel({
 
 	const rawMessages = useMemo(() => {
 		const realMessages = uiMessages.filter(isRenderableRovoUIMessage);
-		if (!isScriptedConversationActive) {
+		if (!isLocalConversationActive) {
 			return realMessages;
 		}
 
-		const scriptedMessages = scriptedConversation?.messages.filter(isRenderableRovoUIMessage) ?? [];
-		return [...realMessages, ...scriptedMessages];
-	}, [isScriptedConversationActive, scriptedConversation, uiMessages]);
+		const localMessages = localConversation?.messages.filter(isRenderableRovoUIMessage) ?? [];
+		return [...realMessages, ...localMessages];
+	}, [isLocalConversationActive, localConversation, uiMessages]);
 	const optimisticPrompt = activePrompt ?? (isSubmitPending ? queuedPrompts[0] ?? null : null);
 	const messages = useMemo(
 		() => appendOptimisticCompactUserMessage(rawMessages, optimisticPrompt),
@@ -1284,8 +1280,8 @@ export default function ChatPanel({
 	}, [messages]);
 
 	const activeQuestionCard = useMemo(() => (
-		isScriptedConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)
-	), [isScriptedConversationActive, rawUiMessages]);
+		isLocalConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)
+	), [isLocalConversationActive, rawUiMessages]);
 	const handleClarificationDismiss = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			const dismissPrompt = buildClarificationDismissPrompt(questionCard);
@@ -1313,8 +1309,8 @@ export default function ChatPanel({
 	});
 	const shouldShowQuestionCard = !isRequestInFlight && shouldShowQuestionCardRaw;
 	const activePendingPlan = useMemo(() => (
-		isScriptedConversationActive ? null : getLatestPendingPlanWidget(rawUiMessages)
-	), [isScriptedConversationActive, rawUiMessages]);
+		isLocalConversationActive ? null : getLatestPendingPlanWidget(rawUiMessages)
+	), [isLocalConversationActive, rawUiMessages]);
 	const [dismissedApprovalCardKey, setDismissedApprovalCardKey] = useState<string | null>(null);
 	const [isSubmittingPlanApproval, setIsSubmittingPlanApproval] = useState(false);
 	const pendingPlanKey = activePendingPlan?.planWidget.deferredToolCallId ?? null;
@@ -1459,7 +1455,7 @@ export default function ChatPanel({
 
 			void (async () => {
 				// Route build-intent greeting chips through the deterministic
-				// interceptor first so they get the scripted reply instead of the
+				// interceptor first so they get the local reply instead of the
 				// real model; fall back to the normal send for everything else.
 				if (await interceptSubmit(promptText)) {
 					return;
@@ -1628,21 +1624,14 @@ export default function ChatPanel({
 							/>
 						)}
 						renderTurnAfter={(turn) => {
-							// When the shell restricts generated-agent cards to a specific
-							// source message (studio "Edit agent" panel), only the message
-							// that triggered THIS session's fresh generation may render the
-							// card. `undefined` means "no restriction" (every other consumer)
-							// so the card always renders; `null` (viewing an existing agent)
-							// matches no message, suppressing the replayed generation card.
-							const restrictGeneratedAgentCardToMessageId = cards?.restrictGeneratedAgentCardToMessageId;
+							const shouldRenderGeneratedAgentResult = cards?.shouldRenderGeneratedAgentResult;
 							const generatedResults = turn.flatMap((message): GeneratedResult[] => {
 								const artifactResult = getMessageArtifactResult(message);
 								const agentResult = getMessageAgentResult(message);
 								const generatedAgentResult =
 									isGeneratedAgentResult(agentResult) &&
 									hasTurnCompleteSignal(message) &&
-									(restrictGeneratedAgentCardToMessageId === undefined ||
-										message.id === restrictGeneratedAgentCardToMessageId)
+									(shouldRenderGeneratedAgentResult?.({ agent: agentResult, message }) ?? true)
 										? agentResult
 										: null;
 								const results: GeneratedResult[] = [];
@@ -1755,7 +1744,7 @@ export default function ChatPanel({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						focusRequestKey={composerFocusRequestKey}
-						clickyActive={!hideAiCursor && (isClickyActive || isScriptedConversationActive)}
+						clickyActive={!hideAiCursor && (isClickyActive || isLocalConversationActive)}
 						onPromptChange={setPrompt}
 						onStartDictation={handleStartDictation}
 						onStopDictation={handleStopDictation}

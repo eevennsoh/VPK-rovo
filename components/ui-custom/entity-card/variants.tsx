@@ -151,22 +151,29 @@ export function EntityCardKnowledgeCard({
 }
 
 export interface EntityCardSkillCardProps extends EntityCardSkillProps {
+	/** Keeps the shell hover treatment active while nested menus/popovers are open. */
+	active?: boolean;
+	moreAction?: ReactNode;
 	/** See `EntityCardAppCardProps.onSelect`. */
 	onSelect?: (checked?: boolean) => void;
 }
 
 /** Skill directory card — icon tile, byline attribution, and usage stats. */
 export function EntityCardSkillCard({
+	active = false,
 	className,
+	moreAction,
 	name,
 	onSelect,
 	selected,
+	action,
 	...entityProps
 }: Readonly<EntityCardSkillCardProps>) {
 	const selectable = selected !== undefined;
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
 		<EntityCardShell
+			active={active}
 			className={className}
 			onSelect={onSelect ? () => onSelect() : undefined}
 			selectLabel={selectLabel}
@@ -174,6 +181,7 @@ export function EntityCardSkillCard({
 		>
 			<EntityCardSkill
 				{...entityProps}
+				action={moreAction ?? action}
 				name={name}
 				onSelectedChange={onSelect}
 				selectLabel={selectLabel}

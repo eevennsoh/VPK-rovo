@@ -12,11 +12,11 @@ import {
 	activateStudioScreenAssistantTarget,
 	createStudioScreenAssistantSnapshot,
 	groundStudioScreenAssistantTarget,
-	normalizeAgentDraftPatch,
 	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantSnapshot,
 	type StudioScreenAssistantVisibleTarget,
 } from "@/components/projects/studio/lib/studio-screen-assistant";
+import { normalizeAgentDraftPatch } from "@/components/projects/studio/lib/studio-agent-draft-patch";
 import type {
 	ScreenAssistantAdapter,
 	ScreenAssistantTranscriptEntry,

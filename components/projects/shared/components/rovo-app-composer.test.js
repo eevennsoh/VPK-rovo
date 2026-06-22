@@ -11,6 +11,7 @@ const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-audio/live-waveform.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
 const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
+const VISUAL_TRACE_AUTO_TAGGING_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
 const MENTION_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/extensions.ts"), "utf8");
 const MENTION_NODE_VIEW_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/mention-node-view.tsx"), "utf8");
@@ -90,7 +91,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(SEND_CONTROLS_SOURCE, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Paint screen area"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /HighlightIcon/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<div className="flex h-9 items-center gap-1">[\s\S]*className="relative flex size-9 shrink-0 items-center justify-center rounded-md bg-transparent"[\s\S]*aria-label="Start live voice"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /<ComposerActionFrame>[\s\S]*<div className="flex h-9 items-center gap-1">[\s\S]*aria-label="Start live voice"[\s\S]*className=\{cn\("size-8 hover:opacity-90 active:opacity-80", liveVoiceCtaClassName, voiceStartButtonClassName\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1\.5", className\)\}/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
@@ -199,59 +200,60 @@ test("PromptInputTextarea fades overflowing Tiptap composer text with the shared
 });
 
 test("visual trace auto-tagging flushes before submit and cancels stale delayed ranges", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /getDirectoryAutocompleteExactLabelMatches/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS = 180;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const VISUAL_TRACE_AUTO_TAG_CONVERT_MS = 940;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const VISUAL_TRACE_AUTO_TAG_STAGGER_MS = 140;/u);
+	assert.match(PROMPT_INPUT_SOURCE, /useComposerVisualTraceAutoTagging\(\{/u);
+	assert.match(PROMPT_INPUT_SOURCE, /flushAutoTagging,/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const handleEnterSubmit = useCallback/u);
+	assert.match(PROMPT_INPUT_SOURCE, /flushAutoTagging\(\);[\s\S]*form\.requestSubmit\(\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getDirectoryAutocompleteExactLabelMatches/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS = 180;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_AUTO_TAG_CONVERT_MS = 940;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_AUTO_TAG_STAGGER_MS = 140;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /animation: prompt-input-trace-decoration-sweep 900ms cubic-bezier\(0\.4, 0, 0\.2, 1\) forwards;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-trace-decoration \{[\s\S]*display: inline-block;[\s\S]*margin: -2px -4px;[\s\S]*padding: 2px 4px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /filter: blur\(4px\);[\s\S]*opacity: 0\.74;[\s\S]*filter: blur\(1\.4px\);[\s\S]*filter: blur\(0\.35px\);[\s\S]*filter: blur\(0\);[\s\S]*opacity: 1;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /setTimeout\(\(\) => \{[\s\S]*runVisualTraceAutoTagging\(activeEditor, generation, scope\);[\s\S]*\}, delay\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const delay = immediate \? 0 : VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /suppressTrailingPrefixMatches: scope !== "document"/u);
-	assert.match(PROMPT_INPUT_SOURCE, /scheduleVisualTraceAutoTagging\(activeEditor, immediate, immediate \? "document" : "block"\);/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /scheduleVisualTraceAutoTagging\(activeEditor, immediate\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /form\?\.addEventListener\("submit", handleSubmit, \{ capture: true \}\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const handleSubmit = \(\) => \{[\s\S]*flushVisualTraceAutoTagging\(editor\);[\s\S]*\};/u);
-	assert.match(PROMPT_INPUT_SOURCE, /flushVisualTraceAutoTagging\(\);[\s\S]*form\.requestSubmit\(\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /setTimeout\(\(\) => \{[\s\S]*runAutoTagging\(activeEditor, generation, scope\);[\s\S]*\}, delay\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const delay = immediate \? 0 : VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /suppressTrailingPrefixMatches: scope !== "document"/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, immediate, immediate \? "document" : "block"\);/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, immediate\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const field = form\.querySelector<HTMLInputElement>\([\s\S]*data-slot="prompt-input-message"[\s\S]*const text = field[\s\S]*\? field\.value[\s\S]*: usingProvider/u);
-	assert.match(PROMPT_INPUT_SOURCE, /visualTraceGenerationRef\.current \+= 1;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /generation !== visualTraceGenerationRef\.current/u);
-	assert.match(PROMPT_INPUT_SOURCE, /getVisualTraceAutoTagMatches\(activeEditor, "document"\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /generationRef\.current \+= 1;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /generation !== generationRef\.current/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getAutoTagMatches\(activeEditor, "document"\)/u);
 });
 
 test("visual trace auto-tagging limits append-only dictation syncs to the appended range", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /import \{ TextSelection \} from "@tiptap\/pm\/state";/u);
-	assert.match(PROMPT_INPUT_SOURCE, /serializeComposerMentionAttrs,/u);
-	assert.match(PROMPT_INPUT_SOURCE, /interface VisualTraceRangeScope \{[\s\S]*type: "range";[\s\S]*\}/u);
-	assert.match(PROMPT_INPUT_SOURCE, /type VisualTraceAutoTagScope = "block" \| "document" \| VisualTraceRangeScope;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function getVisualTraceRangeText\(editor: Editor, range: VisualTraceRangeScope\): VisualTraceBlockText/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const VISUAL_TRACE_EXTERNAL_SYNC_LOOKBACK_CHARS = 96;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function getCommonPrefixLength\(left: string, right: string\): number/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function getVisualTraceExternalSyncTextOffset\(text: string, changedFromOffset: number\): number/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function getComposerDocPositionAtSerializedOffset\(editor: Editor, textOffset: number\): number/u);
-	assert.match(PROMPT_INPUT_SOURCE, /serializeComposerMentionAttrs\(node\.attrs\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function replaceComposerPlainTextFrom\(editor: Editor, from: number, text: string\): void/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function appendComposerPlainTextAtEnd\(editor: Editor, text: string\): void/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const insertFrom = TextSelection\.atEnd\(editor\.state\.doc\)\.from;[\s\S]*replaceComposerPlainTextFrom\(editor, insertFrom, text\);/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /insertText\(text, editor\.state\.doc\.content\.size\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const visualTraceExternalAppendFromRef = useRef<number \| null>\(null\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const visualTraceExternalAppendRangeRef = useRef<VisualTraceRangeScope \| null>\(null\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /import \{ TextSelection \} from "@tiptap\/pm\/state";/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /serializeComposerMentionAttrs,/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /interface VisualTraceRangeScope \{[\s\S]*type: "range";[\s\S]*\}/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /type VisualTraceAutoTagScope = "block" \| "document" \| VisualTraceRangeScope;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getVisualTraceRangeText\(\s*editor: Editor,\s*range: VisualTraceRangeScope,\s*\): VisualTraceBlockText/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const VISUAL_TRACE_EXTERNAL_SYNC_LOOKBACK_CHARS = 96;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getCommonPrefixLength\(left: string, right: string\): number/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getVisualTraceExternalSyncTextOffset\(text: string, changedFromOffset: number\): number/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getComposerDocPositionAtSerializedOffset\(editor: Editor, textOffset: number\): number/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /serializeComposerMentionAttrs\(node\.attrs\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function replaceComposerPlainTextFrom\(editor: Editor, from: number, text: string\): void/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function appendComposerPlainTextAtEnd\(editor: Editor, text: string\): void/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const insertFrom = TextSelection\.atEnd\(editor\.state\.doc\)\.from;[\s\S]*replaceComposerPlainTextFrom\(editor, insertFrom, text\);/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /insertText\(text, editor\.state\.doc\.content\.size\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const externalAppendRangeRef = useRef<VisualTraceRangeScope \| null>\(null\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const lastEditorPublishedTextRef = useRef<string \| null>\(null\);/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /type VisualTraceAutoTagMode/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /type VisualTraceAutoTagMode/u);
 	assert.match(PROMPT_INPUT_SOURCE, /if \(!fromEditor\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*lastEditorPublishedTextRef\.current = text;/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /getInstantDocumentFallbackMatches/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /mode === "instant"/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /queueMicrotask/u);
-	assert.match(PROMPT_INPUT_SOURCE, /scheduleVisualTraceAutoTagging\(activeEditor, true, "document"\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const externalAppendScope = visualTraceExternalAppendRangeRef\.current;[\s\S]*scheduleVisualTraceAutoTagging\(activeEditor, true, externalAppendScope\);[\s\S]*return;/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /const convertedExternalAppend = scheduleVisualTraceAutoTagging/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /scheduleVisualTraceAutoTagging\(activeEditor, true, externalAppendScope, "instant"\);/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /scheduleVisualTraceAutoTagging\(activeEditor, false, externalAppendScope\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const setExternalVisualTraceRange = \(changedFromTextOffset: number, rangeTo: number\) => \{[\s\S]*getVisualTraceExternalSyncTextOffset\([\s\S]*resolvedValue,[\s\S]*changedFromTextOffset,[\s\S]*\);[\s\S]*visualTraceExternalAppendRangeRef\.current = \{[\s\S]*from: traceFrom,[\s\S]*to: rangeTo,[\s\S]*type: "range",[\s\S]*\};[\s\S]*\};/u);
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /visualTraceExternalAppendFromRef\.current \?\? from/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const currentText = serializeComposerDoc\(editor\);[\s\S]*if \(currentText === resolvedValue\) \{[\s\S]*if \(lastEditorPublishedTextRef\.current === resolvedValue\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*if \(lastEditorPublishedTextRef\.current === resolvedValue\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const appendedText = resolvedValue\.startsWith\(currentText\)[\s\S]*setExternalVisualTraceRange\(currentText\.length, to\);[\s\S]*appendComposerPlainTextAtEnd\(editor, appendedText\);[\s\S]*const commonPrefixLength = getCommonPrefixLength\(currentText, resolvedValue\);[\s\S]*replaceComposerPlainTextFrom\(editor, from, replacementText\);[\s\S]*return;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /setComposerPlainText\(editor, resolvedValue\);/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getInstantDocumentFallbackMatches/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /mode === "instant"/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /queueMicrotask/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, true, "document"\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const externalAppendScope = externalAppendRangeRef\.current;[\s\S]*scheduleAutoTagging\(activeEditor, true, externalAppendScope\);[\s\S]*return;/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const convertedExternalAppend = scheduleAutoTagging/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, true, externalAppendScope, "instant"\);/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /scheduleAutoTagging\(activeEditor, false, externalAppendScope\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const setExternalVisualTraceRange = \(changedFromTextOffset: number, rangeTo: number\) => \{[\s\S]*getVisualTraceExternalSyncTextOffset\([\s\S]*resolvedValue,[\s\S]*changedFromTextOffset,[\s\S]*\);[\s\S]*externalAppendRangeRef\.current = \{[\s\S]*from: traceFrom,[\s\S]*to: rangeTo,[\s\S]*type: "range",[\s\S]*\};[\s\S]*\};/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /externalAppendFromRef\.current \?\? from/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const currentText = serializeComposerDoc\(editor\);[\s\S]*if \(currentText === resolvedValue\) \{[\s\S]*lastEditorPublishedTextRef\.current = null;[\s\S]*return;[\s\S]*\}[\s\S]*if \(lastEditorPublishedTextRef\.current === resolvedValue\) \{[\s\S]*return;[\s\S]*\}[\s\S]*syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /syncVisualTraceExternalValue\(editor, resolvedValue, currentText\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /setComposerPlainText\(activeEditor, resolvedValue\);/u);
 });
 
 test("composer plain Enter submits before Tiptap can split the paragraph", () => {
@@ -269,27 +271,27 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 });
 
 test("visual trace auto-tagging uses mention nodes and hides autocomplete while tracing", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /\.\.\.getMentionNodeAttrs\(pendingMatch\.match\.mention\),[\s\S]*sourceText: pendingMatch\.expectedText,/u);
-	assert.match(PROMPT_INPUT_SOURCE, /mentionType\.create\(mentionAttrs\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const shouldInsertTrailingSpace = textAfter === undefined;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const conversionOrder = \[\.\.\.pendingMatches\]\.sort\(\(a, b\) => b\.from - a\.from\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /editor\.state\.doc\.forEach\(\(block, blockOffset, blockIndex\) => \{[\s\S]*text \+= "\\n";/u);
-	assert.match(PROMPT_INPUT_SOURCE, /traceText: string;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /traceText: block\.text\.slice\(match\.from, match\.to\),/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const from = getVisualTraceDocPosition\(block, match\.from\);[\s\S]*const to = getVisualTraceDocPosition\(block, match\.to\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /label: pendingMatch\.traceText/u);
-	assert.match(PROMPT_INPUT_SOURCE, /label: match\.traceText/u);
-	assert.match(PROMPT_INPUT_SOURCE, /interface VisualTraceAutoTagUndoSnapshot/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const visualTraceUndoSnapshotRef = useRef<VisualTraceAutoTagUndoSnapshot \| null>\(null\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function[\s\S]*restoreVisualTraceUndoSnapshot|const restoreVisualTraceUndoSnapshot/u);
-	assert.match(PROMPT_INPUT_SOURCE, /event\.key\.toLowerCase\(\) !== "z"/u);
-	assert.match(PROMPT_INPUT_SOURCE, /restoreVisualTraceUndoSnapshot\(editor, snapshot\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /activeEditor\.commands\.setContent\(snapshot\.beforeJSON, \{[\s\S]*emitUpdate: false/u);
-	assert.match(PROMPT_INPUT_SOURCE, /currentText\.includes\(RICH_TEXT_OBJECT_REPLACEMENT\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /currentText\.toLowerCase\(\) !== expectedText\.toLowerCase\(\)/u);
-	assert.match(PROMPT_INPUT_SOURCE, /visualTracePendingRef\.current \|\|[\s\S]*visualTraceApplyingRef\.current[\s\S]*setDirectoryAutocompleteState\(null\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /visualTraceImmediateUpdateRef\.current = true;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /flushVisualTraceAutoTagging\(editor\);[\s\S]*publishText\(serializeComposerDoc\(editor\), editor\.view\.dom, false\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /\.\.\.getMentionNodeAttrs\(pendingMatch\.match\.mention\),[\s\S]*sourceText: pendingMatch\.expectedText,/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /mentionType\.create\(mentionAttrs\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const shouldInsertTrailingSpace = textAfter === undefined;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const conversionOrder = \[\.\.\.pendingMatches\]\.sort\(\(a, b\) => b\.from - a\.from\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /editor\.state\.doc\.forEach\(\(block, blockOffset, blockIndex\) => \{[\s\S]*text \+= "\\n";/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /traceText: string;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /traceText: block\.text\.slice\(match\.from, match\.to\),/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const from = getVisualTraceDocPosition\(block, match\.from\);[\s\S]*const to = getVisualTraceDocPosition\(block, match\.to\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /label: pendingMatch\.traceText/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /label: match\.traceText/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /interface VisualTraceAutoTagUndoSnapshot/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const undoSnapshotRef = useRef<VisualTraceAutoTagUndoSnapshot \| null>\(null\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const restoreUndoSnapshot = useCallback/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /event\.key\.toLowerCase\(\) !== "z"/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /restoreUndoSnapshot\(activeEditor, snapshot\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /activeEditor\.commands\.setContent\(snapshot\.beforeJSON, \{[\s\S]*emitUpdate: false/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /currentText\.includes\(RICH_TEXT_OBJECT_REPLACEMENT\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /currentText\.toLowerCase\(\) !== expectedText\.toLowerCase\(\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /pendingRef\.current \|\|[\s\S]*applyingRef\.current[\s\S]*setDirectoryAutocompleteState\(null\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /immediateUpdateRef\.current = true;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /flushAutoTagging[\s\S]*publishText\(serializeComposerDoc\(activeEditor\), activeEditor\.view\.dom, true\);/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.react-renderer\.node-mention \{[\s\S]*display: inline-flex;[\s\S]*height: 1\.25rem;[\s\S]*vertical-align: bottom;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.25rem;[\s\S]*line-height: 1\.25rem;[\s\S]*vertical-align: bottom;/u);
 });
@@ -346,31 +348,31 @@ test("auto-tagged tokens carry sourceText and a restore command on the mention n
 test("Backspace next to an auto-tagged token reverts it, including across a trailing space", () => {
 	// Scoped to auto-tagged nodes (sourceText present); deliberate mentions fall
 	// through to the mention extension's default delete-and-reinsert-"@".
-	assert.match(PROMPT_INPUT_SOURCE, /event\.key === "Backspace"/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function getBackspaceRevertPos\(editor: Editor\): number \| null/u);
-	assert.match(PROMPT_INPUT_SOURCE, /function isAutoTaggedMention\(/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /event\.key === "Backspace"/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getBackspaceRevertPos\(editor: Editor\): number \| null/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function isAutoTaggedMention\(/u);
 	// Caret directly after the chip.
-	assert.match(PROMPT_INPUT_SOURCE, /if \(isAutoTaggedMention\(before\)\) \{[\s\S]*return \$from\.pos - before!\.nodeSize;/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /if \(isAutoTaggedMention\(before\)\) \{[\s\S]*return \$from\.pos - before!\.nodeSize;/u);
 	// Caret after the conversion-inserted trailing space (treat lone space as adjacency).
-	assert.match(PROMPT_INPUT_SOURCE, /before\?\.isText && before\.text === " "/u);
-	assert.match(PROMPT_INPUT_SOURCE, /editor\.commands\.restoreAutoTaggedMention\(backspaceRevertPos\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /before\?\.isText && before\.text === " "/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /activeEditor\.commands\.restoreAutoTaggedMention\(backspaceRevertPos\)/u);
 });
 
 test("auto-tagger skips reverted spots by position and clears them on draft reset", () => {
 	// Candidate matches whose document range overlaps a reverted spot are skipped.
-	assert.match(PROMPT_INPUT_SOURCE, /function overlapsDismissedAutoTag\(/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const dismissedRanges = getDismissedAutoTagRanges\(activeEditor\.state\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /if \(overlapsDismissedAutoTag\(dismissedRanges, range\.from, range\.to\)\) \{[\s\S]*return \[\];/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function overlapsDismissedAutoTag\(/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const dismissedRanges = getDismissedAutoTagRanges\(activeEditor\.state\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /if \(overlapsDismissedAutoTag\(dismissedRanges, range\.from, range\.to\)\) \{[\s\S]*return \[\];/u);
 	// Cleared wherever the draft resets so a fresh draft starts clean.
-	assert.match(PROMPT_INPUT_SOURCE, /clearDismissedAutoTags\(editor\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /clearDismissedAutoTags\(activeEditor\);/u);
 	// Also cleared when the auto-tag conversion is undone (whole-doc restore).
-	assert.match(PROMPT_INPUT_SOURCE, /clearComposerTraceDecorations\(activeEditor\.view\);[\s\S]*clearDismissedAutoTags\(activeEditor\);/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /clearComposerTraceDecorations\(activeEditor\.view\);[\s\S]*clearDismissedAutoTags\(activeEditor\);/u);
 	// Object-replacement sentinel is the shared constant, not a re-declared literal.
 	// The sentinel is the imported shared constant used directly — no local alias.
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /VISUAL_TRACE_OBJECT_REPLACEMENT/u);
-	assert.match(PROMPT_INPUT_SOURCE, /textBetween\([\s\S]*RICH_TEXT_OBJECT_REPLACEMENT/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /VISUAL_TRACE_OBJECT_REPLACEMENT/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /textBetween\([\s\S]*RICH_TEXT_OBJECT_REPLACEMENT/u);
 	// The duplicate trace-range helper was collapsed into getVisualTraceDocRange.
-	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /getVisualTraceDocTraceRange/u);
+	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getVisualTraceDocTraceRange/u);
 });
 
 test("auto-tagged chip exposes a swap-back-to-text overlay action", () => {

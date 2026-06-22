@@ -1,15 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useMemo, useRef, useState } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import ImageIcon from "@atlaskit/icon/core/image";
+import { useCallback, useMemo, useState } from "react";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import Dithering, {
 	DITHERING_ALGORITHMS,
 	DITHERING_BLEND_MODES,
@@ -69,73 +64,6 @@ const COLOR_MODE_OPTIONS = DITHERING_COLOR_MODES.map((mode) => ({
 	value: mode,
 	label: COLOR_MODE_LABELS[mode],
 }));
-
-function ImageUploadControl({
-	imageSrc,
-	onChange,
-}: {
-	imageSrc: string | undefined;
-	onChange: (next: string | undefined) => void;
-}) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	const handleFile = useCallback(
-		(file: File) => {
-			const url = URL.createObjectURL(file);
-			onChange(url);
-		},
-		[onChange],
-	);
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">Image</Label>
-			<div className="flex items-center gap-2">
-				{imageSrc ? (
-					<Image
-						src={imageSrc}
-						alt="Source"
-						width={36}
-						height={36}
-						unoptimized
-						className="size-9 shrink-0 rounded border border-border object-cover"
-					/>
-				) : (
-					<div className="flex size-9 shrink-0 items-center justify-center rounded border border-border bg-bg-neutral text-icon-subtle">
-						<ImageIcon label="" size="small" />
-					</div>
-				)}
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					{imageSrc ? "Change" : "Upload"}
-				</button>
-				{imageSrc ? (
-					<button
-						type="button"
-						onClick={() => onChange(undefined)}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Clear" size="small" />
-					</button>
-				) : null}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.currentTarget.files?.[0];
-						if (file) handleFile(file);
-						event.currentTarget.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
-}
 
 export default function DitheringDemo() {
 	const [sourceMode, setSourceMode] = useState<DitheringSourceMode>("field");
@@ -262,7 +190,12 @@ export default function DitheringDemo() {
 							onChange={setSourceMode}
 						/>
 						{sourceMode === "image" ? (
-							<ImageUploadControl imageSrc={imageSrc} onChange={setImageSrc} />
+							<GUI.ImageInput
+								id="dithering-image"
+								label="Image"
+								value={imageSrc}
+								onChange={setImageSrc}
+							/>
 						) : (
 							<GUI.Control
 								id="dithering-speed"
@@ -381,7 +314,7 @@ export default function DitheringDemo() {
 							onChange={setLevels}
 						/>
 						{colorMode === "monochrome" ? (
-							<ShaderColorInput
+							<GUI.ColorInput
 								id="dithering-monoColor"
 								label="Color"
 								value={monoColor}
@@ -391,14 +324,14 @@ export default function DitheringDemo() {
 						) : null}
 						{colorMode === "duo-tone" ? (
 							<>
-								<ShaderColorInput
+								<GUI.ColorInput
 									id="dithering-shadowColor"
 									label="Shadow"
 									value={shadowColor}
 									defaultValue="#101010"
 									onChange={setShadowColor}
 								/>
-								<ShaderColorInput
+								<GUI.ColorInput
 									id="dithering-highlightColor"
 									label="Highlight"
 									value={highlightColor}

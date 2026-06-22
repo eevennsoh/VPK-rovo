@@ -10,11 +10,9 @@ import {
 	type TracingConfig,
 	type TracingMode,
 } from "@/components/visual/visual-tracing/data";
-import { Label } from "@/components/ui/label";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
-import { ROVO_COLOR_SWATCHES, ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
-import { cn } from "@/lib/utils";
+import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
 
 const MODE_OPTIONS: readonly { value: TracingMode; label: string }[] = [
 	{ value: "line", label: "Line" },
@@ -26,56 +24,6 @@ function spreadRangeForMode(mode: TracingMode) {
 	return mode === "vertical"
 		? { min: 0.5, max: 15, step: 0.5, unit: "lh" }
 		: { min: 1, max: 60, step: 1, unit: "ch" };
-}
-
-type RovoColorPickerProps = Readonly<{
-	value: readonly string[];
-	onChange: (next: string[]) => void;
-}>;
-
-/** Toggle the four Rovo brand hues on/off (at least one stays selected). */
-function RovoColorPicker({ value, onChange }: RovoColorPickerProps) {
-	const toggle = (hex: string) => {
-		const isSelected = value.includes(hex);
-		if (isSelected && value.length === 1) return; // keep at least one color
-		// Rebuild from canonical Rovo order so the blend stays consistent.
-		onChange(
-			ROVO_SHADER_COLOR_HEX.filter((candidate) =>
-				candidate === hex ? !isSelected : value.includes(candidate),
-			),
-		);
-	};
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">Colors</Label>
-			<div className="flex items-center gap-2">
-				{ROVO_COLOR_SWATCHES.map((swatch) => {
-					const selected = value.includes(swatch.hex);
-					return (
-						<button
-							key={swatch.hex}
-							type="button"
-							aria-pressed={selected}
-							aria-label={`${swatch.label}${selected ? " (selected)" : ""}`}
-							title={swatch.label}
-							onClick={() => toggle(swatch.hex)}
-							style={{ background: swatch.hex }}
-							className={cn(
-								"size-8 rounded-full border-2 transition-all",
-								selected
-									? "border-text shadow-sm"
-									: "border-transparent opacity-40 hover:opacity-100",
-							)}
-						/>
-					);
-				})}
-			</div>
-			<p className="text-[12px] leading-4 text-text-subtlest">
-				Select one Rovo color for a solid trace, or several to blend them into one gradient.
-			</p>
-		</div>
-	);
 }
 
 export default function VisualTracingDemo() {
@@ -204,7 +152,19 @@ export default function VisualTracingDemo() {
 				</GUI.Section>
 
 				<GUI.Section title="Appearance">
-					<RovoColorPicker value={colors} onChange={setColors} />
+					<GUI.SwatchGroup
+						id="visual-tracing-colors"
+						label="Colors"
+						value={colors}
+						options={ROVO_COLOR_SWATCHES.map((swatch) => ({
+							value: swatch.hex,
+							label: swatch.label,
+							color: swatch.hex,
+						}))}
+						minSelected={1}
+						description="Select one Rovo color for a solid trace, or several to blend them into one gradient."
+						onChange={setColors}
+					/>
 					<GUI.Control
 						id="vt-spread"
 						label="Spread"

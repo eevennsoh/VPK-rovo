@@ -282,7 +282,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   logo: {
     description:
-      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG or a 2P/3P brand asset, and a RovoColorIcon for the full-color Rovo brand mark. Logo usage decisions (bare vs. bordered tile vs. borderless-in-tile) are documented centrally in components/ui/data/logo-usage.json. CustomLogo with a src applies the 2P/3P treatment automatically; AtlassianLogo opts in to the 1P treatment (Atlassian master logo = tile, product logos = bare) via withUsageBorder.",
+      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG or a 2P partner brand asset, and a RovoColorIcon for the full-color Rovo brand mark. Logo usage decisions (bare vs. bordered tile vs. borderless-in-tile) are documented centrally in components/ui/data/logo-usage.json. CustomLogo with a src applies the 2P treatment automatically; AtlassianLogo opts in to the 1P treatment (Atlassian master logo = tile, product logos = bare) via withUsageBorder. Third-party (3P) brand logos live on their own component — see /components/ui/logo-third-party.",
     adsUrl: "https://atlassian.design/components/logo",
     usage: `import { AtlassianLogo, JiraIcon, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
 
@@ -291,9 +291,9 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 <JiraIcon label="Jira" size="small" variant="lockup" />
 {/* withUsageBorder pulls the 1P treatment from logo-usage.json (atlassian = tile) */}
 <AtlassianLogo name="atlassian" label="Atlassian" size="small" withUsageBorder />
+{/* 2P partner mark by asset path */}
+<CustomLogo src="/2p/appfire.png" label="Appfire" size="small" />
 <CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />
-{/* 3P brands render via LogoThirdParty by brand name */}
-<LogoThirdParty name="airtable" size="small" label="Airtable" />
 <RovoColorIcon size="small" label="Rovo" />`,
     props: [
       {
@@ -396,21 +396,21 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         demoSlug: "logo-demo-custom",
       },
       {
-        title: "Brand Logos (1P / 2P / 3P)",
+        title: "Brand Logos (1P / 2P)",
         description:
-          "CustomLogo with a src auto-resolves border treatment from logo-usage.json: solid-fill 3P marks render bare, white-tile 3P marks swap to their borderless variant inside a tile, and bare 2P partner PNGs get a bordered tile.",
+          "1P Atlassian marks render via AtlassianLogo (opt into the tile treatment with withUsageBorder); 2P partner PNGs pass a src to CustomLogo and get a bordered tile resolved from logo-usage.json. 3P brands live on LogoThirdParty.",
         demoSlug: "logo-demo-brand-logos",
       },
       {
         title: "Brand Logos in a Tile",
         description:
-          "Picker / suggestion-menu rows (e.g. the editor-palette): every mark fills the Tile box so the glyph scales with the tile size. Solid-fill 3P marks render bare; bordered 2P/white-tile 3P marks sit in a surface Tile with a size-scaled inset — driven by the same metadata.",
+          "Picker / suggestion-menu rows (e.g. the editor-palette): the Atlassian master logo and bare 2P marks sit in a surface Tile with a size-scaled inset, while solid-background 1P product marks (e.g. Jira) fill the whole tile — driven by logo-usage.json.",
         demoSlug: "logo-demo-in-tile",
       },
       {
         title: "Brand Logos in a Tag",
         description:
-          "Inline chips (e.g. the agent config panel's tags): every mark is normalized to a 16px box; borderless 3P + 2P marks render as a centered glyph, solid-fill 3P marks fill the box.",
+          "Inline chips (e.g. the agent config panel's tags): every mark is normalized to a 16px box; the Atlassian master logo and bare 2P marks render as a centered 12px glyph, solid-background 1P product marks fill the box.",
         demoSlug: "logo-demo-in-tag",
       },
       {
@@ -423,7 +423,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   "logo-third-party": {
     description:
-      "Typed third-party (3P) brand logos rendered from the local public/3p assets, mirroring the platform-labs/logo-third-party package's named-brand API. LogoThirdParty takes a typed name (e.g. \"slack\"); every brand also has a convenience named export (SlackLogo, FigmaLogo, …). Built on CustomLogo, so border treatment and the white-tile borderless-variant swap are resolved automatically from components/ui/data/logo-usage.json — no per-brand border wiring. The accessible label defaults to the brand's display name.",
+      "Typed third-party (3P) brand logos rendered from the upstream platform-labs/logo-third-party package, with local public/3p fallbacks only for brands not yet published upstream. LogoThirdParty takes a typed name (e.g. \"slack\"); a few compatibility named exports remain for existing direct imports. The accessible label defaults to the brand's display name.",
     adsUrl: "https://atlaskit.atlassian.com/packages/platform-labs/logo-third-party",
     usage: `import { LogoThirdParty, SlackLogo } from "@/components/ui/logo-third-party";
 
@@ -432,13 +432,15 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 {/* Convenience named export, same props minus name */}
 <SlackLogo size="small" />
 {/* Optional wordmark for a lockup layout */}
-<LogoThirdParty name="github" wordmark="GitHub" size="small" />`,
+<LogoThirdParty name="github" wordmark="GitHub" size="small" />
+{/* Borderless: just the glyph, no white tile + border */}
+<LogoThirdParty name="figma" size="small" borderless />`,
     props: [
       {
         name: "name",
         type: '"adobe-sign" | "airtable" | "asana" | "figma" | "github" | "gitlab" | "notion" | "slack" | "zoom" | … (61 brands)',
         description:
-          "Third-party brand id from the upstream @atlassian/logo-third-party package. Required for LogoThirdParty; the named exports (SlackLogo, …) set it for you.",
+          "Third-party brand id from the upstream @atlassian/logo-third-party package. Prefer this typed id over adding a new per-brand wrapper.",
       },
       {
         name: "size",
@@ -450,6 +452,13 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         name: "wordmark",
         type: "string",
         description: "Optional text displayed beside the icon for a lockup layout.",
+      },
+      {
+        name: "borderless",
+        type: "boolean",
+        default: "false",
+        description:
+          "Render the bare brand glyph without the package's white tile + border. The mark sits transparently on the surrounding surface — for placement on a row, avatar, or container where the tile would double up.",
       },
       {
         name: "label",
@@ -472,8 +481,14 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       {
         title: "Sizes",
         description:
-          "All six size options, shown for a solid-fill mark (Figma) and a white-tile mark (Slack).",
+          "All six size options, shown for a solid-fill mark (Figma) and a white-tile mark (Slack) in both the default (tile + border) and borderless treatments.",
         demoSlug: "logo-third-party-demo-sizes",
+      },
+      {
+        title: "Borderless",
+        description:
+          "Pass borderless to strip the package's white tile + border and render just the brand glyph.",
+        demoSlug: "logo-third-party-demo-borderless",
       },
       {
         title: "Lockups",
@@ -483,18 +498,18 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       {
         title: "In a Tile",
         description:
-          "Picker / suggestion-menu rows: solid-fill marks fill the tile; white-tile marks swap to their borderless glyph inside a surface Tile.",
+          "Picker / suggestion-menu rows: most 3P marks render inside the upstream @atlassian/logo-third-party tile (white background + hairline border), scaled to the tile size. Marks with their own solid-filled background (e.g. Adobe Sign) render bare, with no added border.",
         demoSlug: "logo-third-party-demo-in-tile",
       },
       {
         title: "In a Tag",
         description:
-          "Inline chips: every mark is normalized to a 16px box; white-tile marks render as a centered glyph, solid-fill marks fill the box.",
+          "Inline chips: each brand mark renders as a bare 16px glyph (no tile or border) filling the chip box, so it never doubles up borders with the surrounding Tag. Marks with their own solid-filled background (e.g. Adobe Sign) need no border either — they fill the box as-is.",
         demoSlug: "logo-third-party-demo-in-tag",
       },
       {
-        title: "Named Exports",
-        description: "Per-brand convenience exports for direct usage.",
+        title: "Compatibility Exports",
+        description: "The generic typed API plus retained direct wrappers used by existing callsites.",
         demoSlug: "logo-third-party-demo-named-exports",
       },
     ],

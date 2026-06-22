@@ -7,30 +7,31 @@ const { loadDirectoryModule } = require(
 );
 
 /**
- * Coverage for the widened `normalizeAgentDraftPatch` — the single contract the
- * Studio on-screen assistants (voice cursor + Ask Rovo sidebar) use to configure
- * the agent draft. The normalizer now resolves capability arrays to catalog
- * display names, validates avatar/modes, derives subagents from prompts, and
- * builds automation rules.
+ * Coverage for the Studio draft-patch contract used by on-screen assistants
+ * (voice cursor + Ask Rovo sidebar) to configure the agent draft. The normalizer
+ * resolves capability arrays to catalog display names, validates avatar/modes,
+ * derives subagents from prompts, and builds automation rules.
  *
- * `studio-screen-assistant.ts` imports the real `@/app/data/directory` catalog
- * (via the id resolver) plus the avatar/subagent/trigger data layers, so — like
+ * `studio-agent-draft-patch.ts` imports the real `@/app/data/directory` catalog
+ * (via the id resolver) plus the avatar/subagent/trigger data layers, so - like
  * `studio-agent-creation-context.test.js` — it cannot be `require()`d directly
  * under `node --test`. We bundle a tiny re-export entry to CJS through the shared
  * directory harness (heavy UI deps mocked) and assert against the real catalogs.
  */
 
 let normalizeAgentDraftPatch;
+let prepareStudioAgentDraftPatch;
 let DEFAULT_SKILLS;
 let AGENT_AVATAR_OPTION_SRCS;
 
 test.before(async () => {
 	const mod = await loadDirectoryModule(`
-		export { normalizeAgentDraftPatch } from "@/components/projects/studio/lib/studio-screen-assistant";
+		export { normalizeAgentDraftPatch, prepareStudioAgentDraftPatch } from "@/components/projects/studio/lib/studio-agent-draft-patch";
 		export { DEFAULT_SKILLS } from "@/app/data/directory";
 		export { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent-2/data/agent-avatar-options";
 	`);
 	normalizeAgentDraftPatch = mod.normalizeAgentDraftPatch;
+	prepareStudioAgentDraftPatch = mod.prepareStudioAgentDraftPatch;
 	DEFAULT_SKILLS = mod.DEFAULT_SKILLS;
 	AGENT_AVATAR_OPTION_SRCS = mod.AGENT_AVATAR_OPTION_SRCS;
 });
@@ -134,4 +135,25 @@ test("NL trigger phrases set the triggers field without clobbering automationRul
 	// updateSessionAgentDraft shallow-merges, so that would drop a draft's existing
 	// custom rules. Only an explicit automationRules array replaces them.
 	assert.equal(patch.automationRules, undefined);
+});
+
+test("prepares draft patches with shell-owned summary mirroring and trigger hydration", () => {
+	const patch = prepareStudioAgentDraftPatch({
+		currentDraft: {
+			automationRules: [],
+			description: "Old description",
+			triggers: [],
+		},
+		rawPatch: {
+			description: "Updated description",
+			triggers: ["When a Jira work item is created"],
+		},
+	});
+
+	assert.equal(patch.description, "Updated description");
+	assert.equal(patch.summary, "Updated description");
+	assert.ok(Array.isArray(patch.automationRules));
+	assert.ok(patch.automationRules.length > 0);
+	assert.ok(Array.isArray(patch.triggers));
+	assert.ok(patch.triggers.length > 0);
 });

@@ -14,6 +14,7 @@ export {
 } from "./context-rovo-chat";
 export type {
 	QueuedPromptItem,
+	RovoThreadSnapshot,
 	SendPromptOptions,
 	StudioAgentPublishStatus,
 	StudioSessionAgentEntry,

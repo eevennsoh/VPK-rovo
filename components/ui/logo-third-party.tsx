@@ -4,7 +4,7 @@
 
 import { CUSTOM_LOGO_SIZES } from "@/components/ui/data/logo-data";
 import {
-	isLocalAssetThirdPartyLogoName,
+	isLocalFallbackThirdPartyLogoName,
 	THIRD_PARTY_LOGO_LABELS,
 	THIRD_PARTY_LOGO_NAMES,
 	thirdPartyLogoSrc,
@@ -21,17 +21,32 @@ export { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LABELS };
 export type { ThirdPartyLogoName };
 
 export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"> {
-	/** Third-party brand id (matches a folder under `public/3p/`). */
+	/** Third-party brand id from `THIRD_PARTY_LOGO_NAMES`. */
 	name: ThirdPartyLogoName;
+	/**
+	 * Render the bare brand glyph without the upstream package's white tile +
+	 * 1px border. The package always wraps each mark in `<Tile hasBorder
+	 * backgroundColor="white">` and exposes no prop to disable it, so we suppress
+	 * the Tile chrome with `!important` overrides (its `@compiled` CSS is
+	 * unlayered and beats layered Tailwind utilities). The glyph SVG is
+	 * transparent-backed, so only the colored mark remains. Defaults to off.
+	 */
+	borderless?: boolean;
 }
+
+/**
+ * Suppress the upstream `@atlaskit/tile` chrome (white `background-color:#fff` +
+ * `border-width:1px`) wrapping a package mark, leaving only the transparent-backed
+ * glyph. ADS `@compiled` styles are unlayered, so `!` (important) is required to win.
+ */
+const BORDERLESS_TILE_OVERRIDE = "[&>span]:bg-transparent! [&>span]:border-0!";
 
 /**
  * Renders a third-party brand logo from the upstream `@atlassian/logo-third-party`
  * package (Atlassian Platform Labs), which draws each mark full-bleed inside an
  * `@atlaskit/tile` (white background, Tile border on) and is maintained upstream.
  *
- * Brands not yet published to the package (`adobe-sign`, `coupa`,
- * `google-chrome`, `spinnaker`) fall back to the local `public/3p/<name>/`
+ * Manifest-declared local fallback brands render from `public/3p/<name>/`
  * assets via `CustomLogo`. The accessible label defaults to the brand's display
  * name; an optional `wordmark` renders beside the mark as an inline lockup.
  */
@@ -41,14 +56,16 @@ export function LogoThirdParty({
 	size,
 	wordmark,
 	className,
+	borderless = false,
 }: Readonly<LogoThirdPartyProps>) {
 	const accessibleLabel = label ?? THIRD_PARTY_LOGO_LABELS[name];
 	const Icon = THIRD_PARTY_LOGO_ICONS[name];
 
 	if (!Icon) {
-		// No package icon → only the local-asset (public/3p) fallback brands reach
-		// here. The guard narrows `name` to a brand that has a `public/3p` folder.
-		return isLocalAssetThirdPartyLogoName(name) ? (
+		// No package icon: only manifest-declared local fallback brands render
+		// from `public/3p`. `borderless` targets the package Tile chrome, so it
+		// has no effect on the CustomLogo fallback.
+		return isLocalFallbackThirdPartyLogoName(name) ? (
 			<CustomLogo
 				className={className}
 				label={accessibleLabel}
@@ -59,8 +76,14 @@ export function LogoThirdParty({
 		) : null;
 	}
 
-	// The package tile already encapsulates the accessible label and sizing.
-	const icon = <Icon label={wordmark ? "" : accessibleLabel} size={toThirdPartyLogoTileSize(size)} />;
+	// The package tile already encapsulates the accessible label and sizing. When
+	// `borderless`, wrap it so the Tile's white background + border are stripped.
+	const rawIcon = <Icon label={wordmark ? "" : accessibleLabel} size={toThirdPartyLogoTileSize(size)} />;
+	const icon = borderless ? (
+		<span className={cn("inline-flex", BORDERLESS_TILE_OVERRIDE)}>{rawIcon}</span>
+	) : (
+		rawIcon
+	);
 	if (!wordmark && !className) {
 		return icon;
 	}
@@ -79,7 +102,7 @@ export function LogoThirdParty({
 	);
 }
 
-/* -- Named brand exports ----------------------------------------- */
+/* -- Named compatibility exports --------------------------------- */
 
 function createThirdPartyLogo(name: ThirdPartyLogoName) {
 	return function LogoComponent(props: Readonly<Omit<LogoThirdPartyProps, "name">>) {

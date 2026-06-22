@@ -113,7 +113,7 @@ function TaskStatusIcon({
 	}
 
 	if (status === "failed") {
-		return <CrossCircleIcon label="" size="small" color={token("color.icon.danger")} />;
+		return <CrossCircleIcon label="" color={token("color.icon.danger")} />;
 	}
 
 	return <ProgressCircle value={0} size="sm" variant="filled" label="Not started" />;
@@ -170,7 +170,7 @@ function TaskGroupRow({
 								void onRetry();
 							}}
 						>
-							<RetryIcon label="" size="small" />
+							<RetryIcon label="" />
 						</Button>
 					) : null}
 				</div>
@@ -451,7 +451,7 @@ export default function AgentsProgress({
 					</div>
 					{runStatus === "running" ? (
 						<Button aria-label="Stop execution" size="icon" variant="outline" className="rounded-full text-icon-danger" onClick={(e) => e.stopPropagation()}>
-							<VideoStopOverlayIcon label="" size="small" />
+							<VideoStopOverlayIcon label="" />
 						</Button>
 					) : onDelete ? (
 						<span className="hidden group-hover/card:block" onClick={(e) => e.stopPropagation()} role="presentation">
@@ -462,7 +462,7 @@ export default function AgentsProgress({
 								className="rounded-full text-icon-subtle hover:text-icon"
 								onClick={onDelete}
 							>
-								<DeleteIcon size="small" label="" />
+								<DeleteIcon label="" />
 							</Button>
 						</span>
 					) : null}

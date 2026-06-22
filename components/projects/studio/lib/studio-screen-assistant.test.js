@@ -10,7 +10,6 @@ const {
 	getStudioScreenAssistantPointerContext,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
-	normalizeAgentDraftPatch,
 } = require("./studio-screen-assistant.ts");
 
 function createFakeElement({
@@ -116,58 +115,6 @@ function withFakeDom({ elements, pointerElement }, callback) {
 		global.window = previousWindow;
 	}
 }
-
-test("normalizeAgentDraftPatch keeps only safe session draft fields", () => {
-	assert.deepEqual(
-		normalizeAgentDraftPatch({
-			action: "update",
-			agentId: "should-not-change",
-			conversationStarters: ["Summarize this", "", 42, "Draft next steps"],
-			description: "  Helps teams triage work  ",
-			guardrail: "",
-			name: "  Triage Copilot  ",
-			tools: ["Jira", "  Confluence  "],
-			unknown: "ignored",
-		}),
-		{
-			action: "update",
-			conversationStarters: ["Summarize this", "Draft next steps"],
-			description: "Helps teams triage work",
-			name: "Triage Copilot",
-			tools: ["Jira", "Confluence"],
-		},
-	);
-
-	assert.equal(normalizeAgentDraftPatch({ agentId: "ignored", name: "" }), null);
-	assert.equal(normalizeAgentDraftPatch(null), null);
-});
-
-test("normalizeAgentDraftPatch sanitizes avatar fallback and action fields", () => {
-	assert.deepEqual(
-		normalizeAgentDraftPatch({
-			action: "delete",
-			agentId: "should-not-change",
-			avatarFallback: {
-				backgroundColor: "  bg-discovery-bold  ",
-				href: "javascript:alert(1)",
-				iconName: "  robot  ",
-				initials: "  SA  ",
-				label: "  Support agent  ",
-			},
-			byline: "  Support specialist  ",
-			publishStatus: "published",
-		}),
-		{
-			avatarFallback: {
-				backgroundColor: "bg-discovery-bold",
-				iconName: "robot",
-				initials: "SA",
-				label: "Support agent",
-			},
-			byline: "Support specialist",
-		},
-	);
-});
 
 test("collects visible Studio screen assistant targets from DOM metadata", () => {
 	const nameElement = createFakeElement({

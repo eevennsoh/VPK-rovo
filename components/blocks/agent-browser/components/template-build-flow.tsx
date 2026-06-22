@@ -1,0 +1,354 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+
+import { getAppById, type DirectoryApp } from "@/app/data/directory/apps";
+import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import type {
+	AgentBrowserTemplateBuildOptions,
+	AgentBrowserTemplateBuildResult,
+} from "@/components/blocks/agent-browser";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import type { AtlassianLogoName } from "@/components/ui/logo";
+import { ProgressTracker, type ProgressTrackerStep } from "@/components/ui/progress-tracker";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
+
+const TEMPLATE_BUILD_STEP_LABELS = [
+	"Review template",
+	"Connect apps",
+	"Apply instructions",
+	"Configure skills",
+	"Prepare knowledge",
+	"Create draft agent",
+] as const;
+const TEMPLATE_BUILD_STEP_DURATION_MS = 1400;
+
+type TemplateSetupPhase = "connect" | "building" | "built" | "error";
+
+function getTemplateBuildSteps(
+	phase: TemplateSetupPhase,
+	activeIndex: number,
+): ProgressTrackerStep[] {
+	return TEMPLATE_BUILD_STEP_LABELS.map((label, index) => ({
+		id: label.toLowerCase().replace(/\s+/gu, "-"),
+		label,
+		state: phase === "built" || index < activeIndex
+			? "done"
+			: index === activeIndex && phase === "building"
+				? "current"
+				: "todo",
+	}));
+}
+
+function getTemplateDirectoryAppLogo(app: DirectoryApp) {
+	if (app.logoName || app.id === "atlassian") {
+		return <AtlassianLogoMark label={app.name} name={app.logoName ?? "atlassian"} size="medium" />;
+	}
+
+	if (app.brandName) {
+		return <BrandLogoMark frame="tile" label={app.name} name={app.brandName} size="medium" />;
+	}
+
+	const src = app.logoSrc ?? app.avatarSrc;
+	return src ? <BrandLogoMark frame="tile" label={app.name} size="medium" src={src} /> : null;
+}
+
+function getTemplateSourceLogo(
+	source: NonNullable<AgentTemplatesAgent["sources"]>[number],
+) {
+	const directoryApp = getAppById(source.id);
+
+	if (directoryApp) {
+		return getTemplateDirectoryAppLogo(directoryApp);
+	}
+
+	if (source.name) {
+		return <BrandLogoMark frame="tile" label={source.label} name={source.name} size="medium" />;
+	}
+
+	if (source.iconSrc) {
+		return <BrandLogoMark frame="tile" label={source.label} size="medium" src={source.iconSrc} />;
+	}
+
+	if (source.provider === "google-drive" || source.provider === "salesforce") {
+		return (
+			<BrandLogoMark
+				frame="tile"
+				label={source.label}
+				name={source.provider}
+				size="medium"
+			/>
+		);
+	}
+
+	if (source.provider === "twg") {
+		return <AtlassianLogoMark label={source.label} name="jira-service-management" size="medium" />;
+	}
+
+	return <AtlassianLogoMark label={source.label} name={source.provider as AtlassianLogoName} size="medium" />;
+}
+
+export interface UseTemplateBuildFlowOptions {
+	agent: AgentTemplatesAgent;
+	onBuildAgent?: (
+		agent: AgentTemplatesAgent,
+		options: AgentBrowserTemplateBuildOptions
+	) => AgentBrowserTemplateBuildResult | null;
+	onCancel: () => void;
+}
+
+export function useTemplateBuildFlow({
+	agent,
+	onBuildAgent,
+	onCancel,
+}: Readonly<UseTemplateBuildFlowOptions>) {
+	const [phase, setPhase] = useState<TemplateSetupPhase>("connect");
+	const [activeBuildStep, setActiveBuildStep] = useState(0);
+	const [builtProfileId, setBuiltProfileId] = useState<string | null>(null);
+	const [builtAgentCancel, setBuiltAgentCancel] = useState<(() => void) | null>(null);
+	const [pendingBuildOptions, setPendingBuildOptions] = useState<AgentBrowserTemplateBuildOptions | null>(null);
+	const [selectedAppIds, setSelectedAppIds] = useState<ReadonlySet<string>>(() => new Set());
+	const buildSteps = useMemo(
+		() => getTemplateBuildSteps(phase, activeBuildStep),
+		[activeBuildStep, phase],
+	);
+
+	useEffect(() => {
+		if (phase !== "building") {
+			return;
+		}
+
+		const stepTimer = window.setTimeout(() => {
+			if (activeBuildStep >= TEMPLATE_BUILD_STEP_LABELS.length - 1) {
+				const result = onBuildAgent?.(agent, pendingBuildOptions ?? {
+					appIds: [],
+					connectApps: false,
+				}) ?? { profileId: `demo-template-${agent.id}` };
+
+				if (!result) {
+					setPhase("error");
+					return;
+				}
+
+				setBuiltProfileId(result.profileId);
+				setBuiltAgentCancel(() => result.onCancel ?? null);
+				setPhase("built");
+				return;
+			}
+
+			setActiveBuildStep((currentStep) => Math.min(
+				currentStep + 1,
+				TEMPLATE_BUILD_STEP_LABELS.length - 1,
+			));
+		}, TEMPLATE_BUILD_STEP_DURATION_MS);
+
+		return () => window.clearTimeout(stepTimer);
+	}, [activeBuildStep, agent, onBuildAgent, pendingBuildOptions, phase]);
+
+	const startBuild = useCallback((connectApps: boolean) => {
+		const appIds = connectApps ? [...selectedAppIds] : [];
+		setPendingBuildOptions({
+			appIds,
+			connectApps: connectApps && appIds.length > 0,
+		});
+		setBuiltProfileId(null);
+		setBuiltAgentCancel(null);
+		setActiveBuildStep(0);
+		setPhase("building");
+	}, [selectedAppIds]);
+
+	const cancel = useCallback(() => {
+		builtAgentCancel?.();
+		onCancel();
+	}, [builtAgentCancel, onCancel]);
+
+	const toggleApp = useCallback((sourceId: string) => {
+		setSelectedAppIds((currentAppIds) => {
+			const nextAppIds = new Set(currentAppIds);
+			if (nextAppIds.has(sourceId)) {
+				nextAppIds.delete(sourceId);
+			} else {
+				nextAppIds.add(sourceId);
+			}
+
+			return nextAppIds;
+		});
+	}, []);
+
+	return {
+		buildSteps,
+		builtProfileId,
+		cancel,
+		phase,
+		selectedAppCount: selectedAppIds.size,
+		selectedAppIds,
+		startBuild,
+		toggleApp,
+	};
+}
+
+export interface TemplateBuildFlowProps {
+	agent: AgentTemplatesAgent;
+	onBuildAgent?: (
+		agent: AgentTemplatesAgent,
+		options: AgentBrowserTemplateBuildOptions
+	) => AgentBrowserTemplateBuildResult | null;
+	onCancel: () => void;
+	onOpenBuiltAgent: (agent: AgentTemplatesAgent, profileId: string) => void;
+}
+
+export function TemplateBuildFlow({
+	agent,
+	onCancel,
+	onBuildAgent,
+	onOpenBuiltAgent,
+}: Readonly<TemplateBuildFlowProps>) {
+	const {
+		buildSteps,
+		builtProfileId,
+		cancel,
+		phase,
+		selectedAppCount,
+		selectedAppIds,
+		startBuild,
+		toggleApp,
+	} = useTemplateBuildFlow({ agent, onBuildAgent, onCancel });
+	const appSources = agent.sources ?? [];
+	const appListOverflow = useHasVerticalOverflow<HTMLDivElement>();
+
+	if (phase === "building" || phase === "built" || phase === "error") {
+		return (
+			<section
+				aria-label={`Build ${agent.name}`}
+				className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
+			>
+				<div className="flex min-h-0 flex-1 flex-col">
+					<p style={{ font: token("font.heading.small") }} className="text-text">
+						{phase === "built" ? `${agent.name} is ready` : "Build your agent"}
+					</p>
+					<p className="mt-1 text-sm leading-5 text-text-subtle">
+						{phase === "error"
+							? "We couldn't create this draft. Try again or start from another template."
+							: phase === "built"
+								? "Review agent before publishing."
+								: "Setting up your agent."}
+					</p>
+					<div className="mt-8">
+						<ProgressTracker
+							aria-label={`${agent.name} build progress`}
+							className="template-build-progress-spinner gap-1.5"
+							labelClassName="text-sm leading-5"
+							steps={buildSteps}
+						/>
+					</div>
+				</div>
+				<div className="mt-6 grid gap-2">
+					{phase === "built" ? (
+						<>
+							<Button
+								onClick={() => builtProfileId ? onOpenBuiltAgent(agent, builtProfileId) : undefined}
+								type="button"
+							>
+								See agent
+							</Button>
+							<Button onClick={cancel} type="button" variant="ghost">
+								Cancel
+							</Button>
+						</>
+					) : phase === "error" ? (
+						<Button onClick={() => startBuild(true)} type="button">
+							Try again
+						</Button>
+					) : (
+						<>
+							<Button disabled type="button">
+								Building...
+							</Button>
+							<Button onClick={cancel} type="button" variant="ghost">
+								Cancel
+							</Button>
+						</>
+					)}
+				</div>
+			</section>
+		);
+	}
+
+	return (
+		<section
+			aria-label={`Connect apps for ${agent.name}`}
+			className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
+		>
+			<div className="flex min-h-0 flex-1 flex-col">
+				<p style={{ font: token("font.heading.small") }} className="text-text">
+					Connect your apps
+				</p>
+				<p className="mt-1 text-sm leading-5 text-text-subtle">
+					Pick your apps, you can adjust later too.
+				</p>
+				<div
+					className={cn(
+						"mt-6 flex max-h-[304px] flex-col gap-1 overflow-y-auto pr-1",
+						appListOverflow.showBottomScrollMask && "scroll-mask-bottom overscroll-contain",
+					)}
+					ref={appListOverflow.ref}
+				>
+					{appSources.length > 0 ? (
+						appSources.map((source) => {
+							const isSelected = selectedAppIds.has(source.id);
+
+							return (
+								<GreetingPromptRow
+									className="group/template-app-row shrink-0"
+									description={`Use ${source.label} context while setting up ${agent.name}.`}
+									key={source.id}
+									label={source.label}
+									onClick={() => toggleApp(source.id)}
+									selected={isSelected}
+									shortcut={
+										<span
+											aria-hidden="true"
+											className={cn(
+												"opacity-0 transition-opacity duration-fast",
+												isSelected ? "text-icon-selected" : "text-icon-subtle",
+												"group-hover/template-app-row:opacity-100 group-focus-visible/template-app-row:opacity-100",
+												isSelected && "opacity-100",
+											)}
+										>
+											<StatusSuccessIcon
+												color="currentColor"
+												label=""
+												size="small"
+												spacing="none"
+											/>
+										</span>
+									}
+									visual={getTemplateSourceLogo(source)}
+								/>
+							);
+						})
+					) : (
+						<p className="rounded-lg bg-surface-sunken px-3 py-2 text-sm leading-5 text-text-subtle">
+							This template does not require app setup.
+						</p>
+					)}
+				</div>
+			</div>
+			<div className="mt-6 grid gap-2">
+				<Button onClick={() => startBuild(true)} type="button">
+					Continue
+					{selectedAppCount > 0 ? <Badge variant="inverse">{selectedAppCount}</Badge> : null}
+				</Button>
+				<Button onClick={cancel} type="button" variant="ghost">
+					Cancel
+				</Button>
+			</div>
+		</section>
+	);
+}

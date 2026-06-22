@@ -15,9 +15,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
-import { getAppById, type DirectoryApp } from "@/app/data/directory/apps";
 import {
 	AGENT_TEMPLATES_CATEGORIES,
 	type AgentTemplatesAgent,
@@ -25,8 +23,8 @@ import {
 	type AgentTemplatesCategoryId,
 } from "@/components/blocks/agent-templates";
 import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
+import { TemplateBuildFlow } from "@/components/blocks/agent-browser/components/template-build-flow";
 import { TWGAgentCard, DEFAULT_TWG_AGENT_CARD_SUGGESTIONS } from "@/components/blocks/twg-agent-card";
-import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
@@ -42,10 +40,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ProgressTracker, type ProgressTrackerStep } from "@/components/ui/progress-tracker";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -169,15 +165,6 @@ const AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION = {
 	bounce: 0,
 	visualDuration: 0.2,
 } as const;
-const AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS = [
-	"Review template",
-	"Connect apps",
-	"Apply instructions",
-	"Configure skills",
-	"Prepare knowledge",
-	"Create draft agent",
-] as const;
-const AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS = 1400;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 // Presentation-only: the persistent Teamwork Graph card in the Templates carousel
 // shows 2 suggested agents (and the matching stat number) instead of the block's
@@ -1339,7 +1326,7 @@ function ExperimentalTemplateMode({
 								{templates.map((agent, index) => (
 									activeSetupAgentIds.has(agent.id) ? (
 										<div className="w-90 shrink-0" key={agent.id}>
-											<ExperimentalTemplateSetupCard
+											<TemplateBuildFlow
 												agent={agent}
 												onCancel={() => handleCancelSetupAgent(agent.id)}
 												onBuildAgent={onBuildAgent}
@@ -1389,292 +1376,6 @@ function ExperimentalTemplateMode({
 				</AnimatePresence>
 			</section>
 		</div>
-	);
-}
-
-type ExperimentalTemplateSetupPhase = "connect" | "building" | "built" | "error";
-
-function getExperimentalTemplateBuildSteps(
-	phase: ExperimentalTemplateSetupPhase,
-	activeIndex: number,
-): ProgressTrackerStep[] {
-	return AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS.map((label, index) => ({
-		id: label.toLowerCase().replace(/\s+/gu, "-"),
-		label,
-		state: phase === "built" || index < activeIndex
-			? "done"
-			: index === activeIndex && phase === "building"
-				? "current"
-				: "todo",
-	}));
-}
-
-function getExperimentalTemplateSourceLogo(
-	source: NonNullable<AgentTemplatesAgent["sources"]>[number],
-) {
-	const directoryApp = getAppById(source.id);
-
-	if (directoryApp) {
-		return getExperimentalTemplateDirectoryAppLogo(directoryApp);
-	}
-
-	if (source.name) {
-		return <BrandLogoMark frame="tile" label={source.label} name={source.name} size="medium" />;
-	}
-
-	if (source.iconSrc) {
-		return <BrandLogoMark frame="tile" label={source.label} size="medium" src={source.iconSrc} />;
-	}
-
-	if (source.provider === "google-drive" || source.provider === "salesforce") {
-		return (
-			<BrandLogoMark
-				frame="tile"
-				label={source.label}
-				name={source.provider}
-				size="medium"
-			/>
-		);
-	}
-
-	if (source.provider === "twg") {
-		return <AtlassianLogoMark label={source.label} name="jira-service-management" size="medium" />;
-	}
-
-	return <AtlassianLogoMark label={source.label} name={source.provider as AtlassianLogoName} size="medium" />;
-}
-
-function getExperimentalTemplateDirectoryAppLogo(app: DirectoryApp) {
-	if (app.logoName || app.id === "atlassian") {
-		return <AtlassianLogoMark label={app.name} name={app.logoName ?? "atlassian"} size="medium" />;
-	}
-
-	if (app.brandName) {
-		return <BrandLogoMark frame="tile" label={app.name} name={app.brandName} size="medium" />;
-	}
-
-	const src = app.logoSrc ?? app.avatarSrc;
-	return src ? <BrandLogoMark frame="tile" label={app.name} size="medium" src={src} /> : null;
-}
-
-function ExperimentalTemplateSetupCard({
-	agent,
-	onCancel,
-	onBuildAgent,
-	onOpenBuiltAgent,
-}: Readonly<{
-	agent: AgentTemplatesAgent;
-	onCancel: () => void;
-	onBuildAgent?: (
-		agent: AgentTemplatesAgent,
-		options: AgentBrowserTemplateBuildOptions
-	) => AgentBrowserTemplateBuildResult | null;
-	onOpenBuiltAgent: (agent: AgentTemplatesAgent, profileId: string) => void;
-}>) {
-	const [phase, setPhase] = useState<ExperimentalTemplateSetupPhase>("connect");
-	const [activeBuildStep, setActiveBuildStep] = useState(0);
-	const [builtProfileId, setBuiltProfileId] = useState<string | null>(null);
-	const [builtAgentCancel, setBuiltAgentCancel] = useState<(() => void) | null>(null);
-	const [pendingBuildOptions, setPendingBuildOptions] = useState<AgentBrowserTemplateBuildOptions | null>(null);
-	const [selectedAppIds, setSelectedAppIds] = useState<ReadonlySet<string>>(() => new Set());
-	const appSources = agent.sources ?? [];
-	const selectedAppCount = selectedAppIds.size;
-	const buildSteps = useMemo(
-		() => getExperimentalTemplateBuildSteps(phase, activeBuildStep),
-		[activeBuildStep, phase],
-	);
-	const appListOverflow = useHasVerticalOverflow<HTMLDivElement>();
-
-	useEffect(() => {
-		if (phase !== "building") {
-			return;
-		}
-
-		const stepTimer = window.setTimeout(() => {
-			if (activeBuildStep >= AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS.length - 1) {
-				const result = onBuildAgent?.(agent, pendingBuildOptions ?? {
-					appIds: [],
-					connectApps: false,
-				}) ?? { profileId: `demo-template-${agent.id}` };
-
-				if (!result) {
-					setPhase("error");
-					return;
-				}
-
-				setBuiltProfileId(result.profileId);
-				setBuiltAgentCancel(() => result.onCancel ?? null);
-				setPhase("built");
-				return;
-			}
-
-			setActiveBuildStep((currentStep) => Math.min(
-				currentStep + 1,
-				AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS.length - 1,
-			));
-		}, AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS);
-
-		return () => window.clearTimeout(stepTimer);
-	}, [activeBuildStep, agent, onBuildAgent, pendingBuildOptions, phase]);
-
-	function handleStartBuild(connectApps: boolean) {
-		const appIds = connectApps ? [...selectedAppIds] : [];
-		setPendingBuildOptions({
-			appIds,
-			connectApps: connectApps && appIds.length > 0,
-		});
-		setBuiltProfileId(null);
-		setBuiltAgentCancel(null);
-		setActiveBuildStep(0);
-		setPhase("building");
-	}
-
-	function handleCancel() {
-		builtAgentCancel?.();
-		onCancel();
-	}
-
-	function handleToggleApp(sourceId: string) {
-		setSelectedAppIds((currentAppIds) => {
-			const nextAppIds = new Set(currentAppIds);
-			if (nextAppIds.has(sourceId)) {
-				nextAppIds.delete(sourceId);
-			} else {
-				nextAppIds.add(sourceId);
-			}
-
-			return nextAppIds;
-		});
-	}
-
-	if (phase === "building" || phase === "built" || phase === "error") {
-		return (
-			<section
-				aria-label={`Build ${agent.name}`}
-				className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
-			>
-				<div className="flex min-h-0 flex-1 flex-col">
-					<p style={{ font: token("font.heading.small") }} className="text-text">
-						{phase === "built" ? `${agent.name} is ready` : "Build your agent"}
-					</p>
-					<p className="mt-1 text-sm leading-5 text-text-subtle">
-						{phase === "error"
-							? "We couldn't create this draft. Try again or start from another template."
-							: phase === "built"
-								? "Review agent before publishing."
-								: "Setting up your agent."}
-					</p>
-					<div className="mt-8">
-						<ProgressTracker
-							aria-label={`${agent.name} build progress`}
-							className="template-build-progress-spinner gap-1.5"
-							labelClassName="text-sm leading-5"
-							steps={buildSteps}
-						/>
-					</div>
-				</div>
-				<div className="mt-6 grid gap-2">
-					{phase === "built" ? (
-						<>
-							<Button
-								onClick={() => builtProfileId ? onOpenBuiltAgent(agent, builtProfileId) : undefined}
-								type="button"
-							>
-								See agent
-							</Button>
-							<Button onClick={handleCancel} type="button" variant="ghost">
-								Cancel
-							</Button>
-						</>
-					) : phase === "error" ? (
-						<Button onClick={() => handleStartBuild(true)} type="button">
-							Try again
-						</Button>
-					) : (
-						<>
-							<Button disabled type="button">
-								Building...
-							</Button>
-							<Button onClick={handleCancel} type="button" variant="ghost">
-								Cancel
-							</Button>
-						</>
-					)}
-				</div>
-			</section>
-		);
-	}
-
-	return (
-		<section
-			aria-label={`Connect apps for ${agent.name}`}
-			className="flex h-[515px] w-full flex-col rounded-[16px] border border-border bg-surface-raised p-5"
-		>
-			<div className="flex min-h-0 flex-1 flex-col">
-				<p style={{ font: token("font.heading.small") }} className="text-text">
-					Connect your apps
-				</p>
-				<p className="mt-1 text-sm leading-5 text-text-subtle">
-					Pick your apps, you can adjust later too.
-				</p>
-				<div
-					className={cn(
-						"mt-6 flex max-h-[304px] flex-col gap-1 overflow-y-auto pr-1",
-						appListOverflow.showBottomScrollMask && "scroll-mask-bottom overscroll-contain",
-					)}
-					ref={appListOverflow.ref}
-				>
-					{appSources.length > 0 ? (
-						appSources.map((source) => {
-							const isSelected = selectedAppIds.has(source.id);
-
-							return (
-								<GreetingPromptRow
-									className="group/template-app-row shrink-0"
-									description={`Use ${source.label} context while setting up ${agent.name}.`}
-									key={source.id}
-									label={source.label}
-									onClick={() => handleToggleApp(source.id)}
-									selected={isSelected}
-									shortcut={
-										<span
-											aria-hidden="true"
-											className={cn(
-												"opacity-0 transition-opacity duration-fast",
-												isSelected ? "text-icon-selected" : "text-icon-subtle",
-												"group-hover/template-app-row:opacity-100 group-focus-visible/template-app-row:opacity-100",
-												isSelected && "opacity-100",
-											)}
-										>
-											<StatusSuccessIcon
-												color="currentColor"
-												label=""
-												size="small"
-												spacing="none"
-											/>
-										</span>
-									}
-									visual={getExperimentalTemplateSourceLogo(source)}
-								/>
-							);
-						})
-					) : (
-						<p className="rounded-lg bg-surface-sunken px-3 py-2 text-sm leading-5 text-text-subtle">
-							This template does not require app setup.
-						</p>
-					)}
-				</div>
-			</div>
-			<div className="mt-6 grid gap-2">
-				<Button onClick={() => handleStartBuild(true)} type="button">
-					Continue
-					{selectedAppCount > 0 ? <Badge variant="inverse">{selectedAppCount}</Badge> : null}
-				</Button>
-				<Button onClick={handleCancel} type="button" variant="ghost">
-					Cancel
-				</Button>
-			</div>
-		</section>
 	);
 }
 

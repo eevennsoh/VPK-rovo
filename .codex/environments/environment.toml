@@ -43,6 +43,6 @@ icon = "run"
 command = "pnpm run rovo:tmux:stop"
 
 [[actions]]
-name = "vpk-portless"
+name = "portless run"
 icon = "tool"
-command = "vpk-portless"
+command = "pnpm exec portless run $(node -e 'process.stdout.write(require(\"./scripts/lib/worktree-ports\").getPortlessRunArgs().join(\" \"))')"

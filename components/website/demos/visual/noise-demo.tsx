@@ -6,7 +6,6 @@ import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
 import { NoisePreviewSurface } from "./noise-preview-surface";
-import { ShaderColorInput } from "./shader-color-controls";
 import { BLEND_MODE_TYPES, type NoiseBlendMode } from "./shaders/noise";
 
 const DEFAULT_OPACITY = 0.36;
@@ -80,7 +79,7 @@ export default function NoiseDemo() {
 					step={1}
 					onChange={setSeed}
 				/>
-				<ShaderColorInput
+				<GUI.ColorInput
 					id="noise-color"
 					label="Color"
 					value={color}

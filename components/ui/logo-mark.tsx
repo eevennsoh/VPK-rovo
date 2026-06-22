@@ -223,11 +223,18 @@ export function BrandLogoMark({
 			: getThirdPartyLogoIconFromSrc(src ?? "");
 	if (ThirdPartyIcon) {
 		if (frame === "chip") {
+			// A 3P mark reads as a bare inline glyph filling the 16px chip box — no
+			// white tile/border — so it doesn't double up borders inside a bordered
+			// container. The package mark is a transparent glyph wrapped in an
+			// `@atlaskit/tile` at `xxsmall` (16px); its `@compiled` chrome is unlayered,
+			// so strip the background + border with `!important` and let the glyph fill
+			// the box at its native 16px (no inset).
 			return (
 				<span
 					aria-hidden="true"
 					className={cn(
 						"inline-flex size-4 shrink-0 items-center justify-center align-middle",
+						"[&>span]:bg-transparent! [&>span]:border-0!",
 						className,
 					)}
 				>

@@ -25,11 +25,7 @@ A 24/7 Mac running Next.js dev (Turbopack) hits four linked CPU/RAM problems:
 2. **Runaway `.next` caches.** Turbopack's `.next/dev` grows unbounded (15 GB /
    39k files seen). Every file feeds macOS FSEvents and *amplifies* the loop in
    (1). Keeping it small is the prevention.
-3. **Stale tmux dev sessions.** `scripts/dev-tmux.sh` runs a per-worktree session
-   named `vpk-dev-<worktree>` holding a frontend, a backend, and a pool of Rovo
-   port processes. Nothing auto-stops them, so a deleted worktree leaves an
-   **orphaned** session burning CPU/RAM/ports indefinitely. Killed when its
-   worktree path no longer exists (and you are not attached).
+3. **Stale tmux dev sessions.** The worktree launchers — `scripts/dev-tmux-plain.sh` (plain frontend + backend, run **through `portless run`**) and `scripts/dev-tmux.sh` (the Rovo pool) — each run a per-worktree session named `vpk-dev-<worktree>` on the shared `vpk-dev` socket. Nothing auto-stops them, so a deleted worktree leaves an **orphaned** session burning CPU/RAM/ports indefinitely. Killed when its worktree path no longer exists (and you are not attached).
 4. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
    (22 GB / 100%+ seen). It auto-respawns clean when killed.
 
@@ -71,9 +67,7 @@ zsh scripts/doctor.sh          # inspect
 zsh scripts/doctor.sh --kill   # restart the runaways
 ```
 
-After killing, tell the user to restart the dev server (`pnpm run dev` / `rovo`)
-and that clearing `.next` first helps (it regenerates). The scheduled job also
-does this automatically (see below).
+After killing, tell the user to restart the dev server — for browser-verification worktrees use `pnpm run dev:tmux:start` (re-establishes the detached tmux session **and** its stable Portless `.localhost` URL so agents can resume browser automation at the same address), or `pnpm run dev` / `rovo` otherwise — and that clearing `.next` first helps (it regenerates). The scheduled job also does this automatically (see below).
 
 ## Run now (full sweep, has side effects)
 
@@ -155,6 +149,7 @@ Two things it does not remove automatically:
 
 ## Notes
 
+- **Portless awareness.** Browser-verification dev servers run **through `portless run`** inside the `vpk-dev-<worktree>` tmux session, so each worktree has a stable `.localhost` URL (`pnpm ports`). When this skill kills a runaway `next-server` (Doctor) or an orphaned session, that worktree's `~/.portless/routes.json` entry is left behind as a harmless stale route — reaped by `pnpm run dev:tmux:stop`'s Ctrl-C on next clean stop, or a deliberate `portless prune`. This cleanup only ever targets `next-server` / `next dev` / `vpk-dev-*` tmux sessions, so it never touches the portless `:443` proxy (a separate long-lived daemon, not a `next-server`); other worktrees' `.localhost` routing keeps working. Do **not** add a global `portless prune` to the sweep — it kills by port and could hit a live worktree.
 - Paths assume vpk-rovo at `~/Documents/Labs/vpk-rovo` plus `~/.codex/worktrees/*`
   and `.../.claude/worktrees/*`. Adjust `NEXT_DIRS` if your layout differs.
 - `KILL_RUNAWAY_NEXT=1` can, in principle, kill a genuinely-busy build that

@@ -12,7 +12,7 @@ import {
 	getBorderBeamDefaultsForSize,
 	getBorderBeamSizeOptions,
 } from "./data.ts";
-import { generateBeamCSS } from "./styles.ts";
+import { generateBeamCSS } from "./styles-generated.ts";
 import { ROVO_COLOR_SWATCHES } from "../../../lib/rovo-colors.ts";
 
 const ROOT = process.cwd();

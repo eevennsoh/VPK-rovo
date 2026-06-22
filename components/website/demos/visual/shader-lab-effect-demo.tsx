@@ -8,16 +8,12 @@ import {
 	type ShaderLabLayerConfig,
 	type ShaderLabParameterValue,
 } from "@basementstudio/shader-lab";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { GUI } from "@/components/utils/gui";
-import { Label } from "@/components/ui/label";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { ShaderColorInput } from "./shader-color-controls";
 import {
 	SHADER_LAB_BLEND_MODES,
 	SHADER_LAB_COMPOSITE_MODES,
@@ -169,65 +165,6 @@ function createShaderLabSourceImageLayer(sourceImage: ShaderLabSourceImage): Sha
 		type: "image",
 		visible: true,
 	};
-}
-
-function ShaderLabSourceImageControl({
-	image,
-	isDefault,
-	onReset,
-	onUpload,
-}: Readonly<{
-	image: ShaderLabSourceImage;
-	isDefault: boolean;
-	onReset: () => void;
-	onUpload: (file: File) => void;
-}>) {
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	return (
-		<div className="space-y-2">
-			<Label className="text-xs font-medium text-text">Source image</Label>
-			<div className="flex items-center gap-2">
-				<Image
-					src={image.src}
-					alt="Shader source"
-					width={36}
-					height={36}
-					unoptimized
-					className="size-9 shrink-0 rounded border border-border bg-bg-neutral object-cover"
-				/>
-				<button
-					type="button"
-					onClick={() => inputRef.current?.click()}
-					className="h-7 rounded border border-border bg-transparent px-3 text-xs text-text transition-colors hover:bg-bg-neutral"
-				>
-					Change
-				</button>
-				{isDefault ? null : (
-					<button
-						type="button"
-						onClick={onReset}
-						className="flex size-7 shrink-0 items-center justify-center rounded text-icon-subtle transition-colors hover:bg-bg-neutral hover:text-icon"
-					>
-						<CrossIcon label="Reset to default source image" size="small" />
-					</button>
-				)}
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					className="hidden"
-					onChange={(event) => {
-						const file = event.currentTarget.files?.[0];
-						if (file) {
-							onUpload(file);
-						}
-						event.currentTarget.value = "";
-					}}
-				/>
-			</div>
-		</div>
-	);
 }
 
 function getShaderLabDemoLayers({
@@ -438,7 +375,7 @@ export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerPr
 				);
 			case "color":
 				return (
-					<ShaderColorInput
+					<GUI.ColorInput
 						key={param.key}
 						id={id}
 						label={param.label}
@@ -556,11 +493,17 @@ export function ShaderLabLayer({ layerType, className, style }: ShaderLabLayerPr
 			<GUI.Panel title="Shader controls" values={values}>
 				<div className="space-y-4">
 					{usesSourceImage ? (
-						<ShaderLabSourceImageControl
-							image={sourceImage}
-							isDefault={sourceImage.src === DEFAULT_SHADER_LAB_SOURCE_IMAGE.src}
-							onReset={resetSourceImage}
-							onUpload={uploadSourceImage}
+						<GUI.ImageInput
+							id={`${layerType}-source-image`}
+							label="Source image"
+							value={sourceImage.src}
+							accept="image/*"
+							previewAlt="Shader source"
+							changeLabel="Change"
+							clearLabel="Reset to default source image"
+							showClear={sourceImage.src !== DEFAULT_SHADER_LAB_SOURCE_IMAGE.src}
+							onFile={uploadSourceImage}
+							onClear={resetSourceImage}
 						/>
 					) : null}
 					<GUI.Section title="Layer" borderTop={false}>

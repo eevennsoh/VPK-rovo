@@ -4837,6 +4837,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "logo-third-party-demo-borderless": dynamic(
+    () =>
+      import("./demos/ui/logo-third-party-demo").then((mod) => ({
+        default: mod.LogoThirdPartyDemoBorderless,
+      })),
+    { ssr: false },
+  ),
   "logo-third-party-demo-lockups": dynamic(
     () =>
       import("./demos/ui/logo-third-party-demo").then((mod) => ({
@@ -7519,6 +7526,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-progress-demo-elapsed-time": dynamic(
+    () =>
+      import("./demos/blocks/agent-progress-demo").then((mod) => ({
+        default: mod.AgentProgressDemoElapsedTime,
+      })),
+    { ssr: false },
+  ),
 
   // Task Progress
   "task-progress-demo-running": dynamic(
@@ -7581,6 +7595,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/task-progress-demo").then((mod) => ({
         default: mod.TaskProgressDemoAllStates,
+      })),
+    { ssr: false },
+  ),
+  "task-progress-demo-elapsed-time": dynamic(
+    () =>
+      import("./demos/blocks/task-progress-demo").then((mod) => ({
+        default: mod.TaskProgressDemoElapsedTime,
       })),
     { ssr: false },
   ),
@@ -8292,9 +8313,6 @@ const UTILITY_DEMOS: Record<string, ComponentType> = {
   "agent-browser": dynamic(() => import("./demos/utils/agent-browser"), {
     ssr: false,
   }),
-  "elapsed-time": dynamic(() => import("./demos/utils/elapsed-time-demo"), {
-    ssr: false,
-  }),
   gui: dynamic(() => import("./demos/utils/gui-demo"), { ssr: false }),
   "image-generation": dynamic(
     () => import("./demos/utils/image-generation-demo"),
@@ -8688,6 +8706,15 @@ export function getDemoComponent(
 }
 
 const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
+  utility: {
+    "gui-demo-full-config": dynamic(
+      () =>
+        import("./demos/utils/gui-demo").then((mod) => ({
+          default: mod.GUIFullConfigDemo,
+        })),
+      { ssr: false },
+    ),
+  },
   "ui-audio": {
     "audio-player-demo-default": dynamic(
       () =>
