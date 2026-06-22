@@ -101,6 +101,9 @@ const INCLUDED_TEST_FILES = new Set([
 	"components/utils/gui.test.js",
 	"components/utils/gui-color.test.js",
 	"components/utils/gui-values.test.js",
+	// Root-mounted :user-invalid -> aria-invalid bridge. Components are not
+	// included wholesale, so gate the pure DOM ownership contract explicitly.
+	"components/utils/user-invalid-sync.test.js",
 ]);
 
 export function getTestFileInclusion(filePath, {
