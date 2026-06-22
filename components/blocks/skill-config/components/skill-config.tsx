@@ -187,6 +187,7 @@ const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters", Icon: AiChatIcon },
 	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon },
 ] as const;
+type AgentConfigToolbarFieldName = (typeof AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS)[number]["agentFieldName"];
 
 // Match the shared Menubar's default `gap-0.5` (2px) so the connected config
 // strip spaces items identically to the base component.
@@ -448,6 +449,46 @@ const AGENT_DIRECTORY_BY_SLASH_CATEGORY: Record<
 // used in `AgentFilledConfigSummary` and the `agentFieldName` used by the
 // compact empty-config nav and missing-config actions.
 export type AgentHideableConfigField = "trigger" | "subagents" | "conversationStarters";
+const SKILL_CONFIG_TOOLBAR_FIELD_NAMES: ReadonlySet<AgentConfigToolbarFieldName> =
+	new Set<AgentConfigToolbarFieldName>(["apps"]);
+
+interface AgentConfigToolbarRow {
+	key: AgentConfigToolbarFieldName;
+	isEmpty: boolean;
+	alwaysLast?: boolean;
+	node: ReactNode;
+}
+
+function isAgentHideableConfigField(fieldName: AgentConfigToolbarFieldName): fieldName is AgentHideableConfigField {
+	return fieldName === "trigger" || fieldName === "subagents" || fieldName === "conversationStarters";
+}
+
+function isSkillConfigToolbarFieldVisible(
+	fieldName: AgentConfigToolbarFieldName,
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>,
+): boolean {
+	if (!SKILL_CONFIG_TOOLBAR_FIELD_NAMES.has(fieldName)) {
+		return false;
+	}
+
+	return isAgentHideableConfigField(fieldName) ? !hiddenConfigFields?.has(fieldName) : true;
+}
+
+function getVisibleSkillConfigToolbarNavItems(
+	config?: AgentConfigFormValue,
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>,
+) {
+	return getAgentCompactEmptyConfigNavItems(config).filter((item) =>
+		isSkillConfigToolbarFieldVisible(item.agentFieldName, hiddenConfigFields)
+	);
+}
+
+function getVisibleSkillConfigToolbarRows(
+	rows: ReadonlyArray<AgentConfigToolbarRow>,
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>,
+): ReadonlyArray<AgentConfigToolbarRow> {
+	return rows.filter((row) => isSkillConfigToolbarFieldVisible(row.key, hiddenConfigFields));
+}
 
 export interface AgentConfigFormValue {
 	name?: string;
@@ -1981,13 +2022,7 @@ function AgentCompactEmptyConfigNav({
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }>) {
-	// `agentFieldName` doubles as a hideable-field key for trigger/subagents/
-	// conversationStarters; other field names never appear in the hidden set.
-	const items = getAgentCompactEmptyConfigNavItems(config).filter(
-		(item) =>
-			item.agentFieldName === "apps" &&
-			!hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
-	);
+	const items = getVisibleSkillConfigToolbarNavItems(config, hiddenConfigFields);
 	const navOverflow = useHasHorizontalOverflow<HTMLDivElement>({
 		edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,
 	});
@@ -2917,7 +2952,7 @@ function AgentFilledConfigSummary({
 	// Tools › Skills › Subagents › Conversation starters › Memory › Reasoning.
 	// `orderedRows` below applies this in the sort, so the array order is the
 	// single source of truth. Reorder here, not in the sort.
-	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; alwaysLast?: boolean; node: ReactNode }> = [
+	const rows: ReadonlyArray<AgentConfigToolbarRow> = [
 		{
 			key: "trigger",
 			isEmpty: triggerItems.length === 0,
@@ -3101,8 +3136,7 @@ function AgentFilledConfigSummary({
 	// only became stable in V8 in 2018, but other engines may differ). Row keys
 	// (`trigger`, `subagents`, `conversationStarters`) double as hideable-field
 	// keys, so suppressed rows are dropped before ordering.
-	const orderedRows = rows
-		.filter((row) => row.key === "apps" && !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
+	const orderedRows = getVisibleSkillConfigToolbarRows(rows, hiddenConfigFields)
 		.map((row, index) => ({ ...row, index }))
 		.sort((a, b) => {
 			// `alwaysLast` rows (Memory, Reasoning) sink below every other row,
