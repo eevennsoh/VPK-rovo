@@ -1279,12 +1279,18 @@ export const PromptInputTextarea = ({
   }, []);
 
   const refreshDirectoryAutocomplete = useCallback((activeEditor: Editor) => {
-    if (
-      !enableDirectoryAutocomplete ||
-      !activeEditor.isEditable ||
-      isVisualTraceAutoTaggingBusy()
-    ) {
+    if (!enableDirectoryAutocomplete || !activeEditor.isEditable) {
       setDirectoryAutocompleteState(null);
+      return;
+    }
+
+    // Auto-tagging is mid-flight: either the post-keystroke idle debounce is
+    // pending, or an exact-label match is converting into a chip. Don't clear the
+    // current matches here — this runs on every selection/keystroke, and blanking
+    // it made the empty-state greeting blink to its default prompts and snap back
+    // each keystroke. `runAutoTagging` owns the state during an actual conversion
+    // (it nulls then recomputes once idle); here we just preserve what's shown.
+    if (isVisualTraceAutoTaggingBusy()) {
       return;
     }
 

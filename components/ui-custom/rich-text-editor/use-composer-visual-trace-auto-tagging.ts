@@ -727,14 +727,20 @@ export function useComposerVisualTraceAutoTagging({
 
 		const generation = generationRef.current;
 		pendingRef.current = true;
-		setDirectoryAutocompleteState(null);
+		// Intentionally do NOT clear the directory-autocomplete state here. This runs
+		// on every keystroke, and `runAutoTagging` (after the idle debounce) already
+		// nulls + recomputes it synchronously. Clearing eagerly left the empty-state
+		// greeting with no matches for the entire debounce window, so it flipped to
+		// its default prompt list and then snapped back to the matches — a jarring
+		// per-keystroke jump. Keeping the prior matches until the recompute lands
+		// keeps the suggestion list stable while typing.
 		const delay = immediate ? 0 : VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS;
 		const timeout = setTimeout(() => {
 			runAutoTagging(activeEditor, generation, scope);
 		}, delay);
 		timeoutsRef.current = [timeout];
 		return true;
-	}, [clearPendingAutoTagging, enabled, runAutoTagging, setDirectoryAutocompleteState]);
+	}, [clearPendingAutoTagging, enabled, runAutoTagging]);
 
 	const handleEditorUpdated = useCallback((activeEditor: Editor): boolean => {
 		if (applyingRef.current) {

@@ -4,7 +4,9 @@ import type {
 } from "@/components/ui-custom/rich-text-editor";
 
 export const DIRECTORY_AUTOCOMPLETE_MIN_QUERY_LENGTH = 2;
-export const DIRECTORY_AUTOCOMPLETE_LIMIT = 9;
+// Capped at 8 (not 9) so the fullscreen two-column suggestion grid stays balanced
+// (4 rows × 2). An odd 9th match left a lone trailing row that broke the layout.
+export const DIRECTORY_AUTOCOMPLETE_LIMIT = 8;
 
 export interface DirectoryAutocompleteMatch {
 	mention: RichTextMentionItem;
