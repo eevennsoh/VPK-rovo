@@ -4,7 +4,7 @@
 
 import { CUSTOM_LOGO_SIZES } from "@/components/ui/data/logo-data";
 import {
-	isLocalAssetThirdPartyLogoName,
+	isLocalFallbackThirdPartyLogoName,
 	THIRD_PARTY_LOGO_LABELS,
 	THIRD_PARTY_LOGO_NAMES,
 	thirdPartyLogoSrc,
@@ -21,7 +21,7 @@ export { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LABELS };
 export type { ThirdPartyLogoName };
 
 export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"> {
-	/** Third-party brand id (matches a folder under `public/3p/`). */
+	/** Third-party brand id from `THIRD_PARTY_LOGO_NAMES`. */
 	name: ThirdPartyLogoName;
 }
 
@@ -30,8 +30,7 @@ export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"
  * package (Atlassian Platform Labs), which draws each mark full-bleed inside an
  * `@atlaskit/tile` (white background, Tile border on) and is maintained upstream.
  *
- * Brands not yet published to the package (`adobe-sign`, `coupa`,
- * `google-chrome`, `spinnaker`) fall back to the local `public/3p/<name>/`
+ * Manifest-declared local fallback brands render from `public/3p/<name>/`
  * assets via `CustomLogo`. The accessible label defaults to the brand's display
  * name; an optional `wordmark` renders beside the mark as an inline lockup.
  */
@@ -46,9 +45,9 @@ export function LogoThirdParty({
 	const Icon = THIRD_PARTY_LOGO_ICONS[name];
 
 	if (!Icon) {
-		// No package icon → only the local-asset (public/3p) fallback brands reach
-		// here. The guard narrows `name` to a brand that has a `public/3p` folder.
-		return isLocalAssetThirdPartyLogoName(name) ? (
+		// No package icon: only manifest-declared local fallback brands render
+		// from `public/3p`.
+		return isLocalFallbackThirdPartyLogoName(name) ? (
 			<CustomLogo
 				className={className}
 				label={accessibleLabel}
@@ -79,7 +78,7 @@ export function LogoThirdParty({
 	);
 }
 
-/* -- Named brand exports ----------------------------------------- */
+/* -- Named compatibility exports --------------------------------- */
 
 function createThirdPartyLogo(name: ThirdPartyLogoName) {
 	return function LogoComponent(props: Readonly<Omit<LogoThirdPartyProps, "name">>) {

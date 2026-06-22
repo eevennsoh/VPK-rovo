@@ -27,7 +27,7 @@ import { AgentInsights } from "@/components/blocks/agent-insights";
 import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
-import { DEFAULT_SKILLS, slugifySkillName } from "@/app/data/directory/skills";
+import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
 import { AppsDirectoryDialog, type AppsDirectoryAddPayload } from "@/components/blocks/apps-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
@@ -72,6 +72,7 @@ import {
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
 } from "@/components/blocks/agent-2";
+import { getAgentConfigListLookupValue, getSkillConfigLabel } from "@/components/blocks/agent-2/lib/agent-config-model";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPersistentBar,
@@ -105,10 +106,6 @@ import { getStudioAgentChangeSummary, type StudioAgentChangeSection, type Studio
 type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "insights" | "test";
 type PublishDropdownView = "summary" | "draftChanges" | "history" | "versionDetail";
-
-function getSkillConfigLabel(value: string): string {
-	return slugifySkillName(value);
-}
 
 function getSkillByConfigLabel(value: string): SkillsDirectorySkill | undefined {
 	const normalized = getSkillConfigLabel(value);
@@ -846,8 +843,8 @@ export function RovoAppAgentConfigPanel({
 			}
 
 			const current = getListItems(activeConfig, field);
-			const existing = new Set(current.map((value) => field === "skills" ? getSkillConfigLabel(value) : value.trim().toLowerCase()));
-			const additions = nextValues.filter((value) => !existing.has(field === "skills" ? getSkillConfigLabel(value) : value.toLowerCase()));
+			const existing = new Set(current.map((value) => getAgentConfigListLookupValue(field, value)));
+			const additions = nextValues.filter((value) => !existing.has(getAgentConfigListLookupValue(field, value)));
 
 			if (additions.length === 0) {
 				return;

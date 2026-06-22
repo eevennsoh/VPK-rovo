@@ -30,6 +30,12 @@ import type {
 	AgentBrowserSidebarGroup,
 	AgentBrowserSidebarItem,
 } from "@/components/blocks/agent-browser";
+import {
+	ExperimentalDirectorySection,
+	ExperimentalDirectoryView,
+	toggleSelectedValue,
+	type ExperimentalDirectoryFacet,
+} from "@/components/blocks/directory-shared/experimental-directory-view";
 import type {
 	ToolsDirectoryPermission as AppsDirectoryPermission,
 } from "@/app/data/directory/tools";
@@ -44,7 +50,6 @@ import { APPS_DIRECTORY_CATEGORIES } from "@/components/blocks/apps-directory/da
 import { DEFAULT_APPS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/apps-directory/data/sidebar-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getThirdPartyLogoIconFromSrc } from "@/components/ui/data/logo-third-party-icons";
 import {
@@ -58,7 +63,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -760,12 +764,6 @@ function createOptionId(label: string): string {
 	return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
-	return values.includes(value)
-		? values.filter((current) => current !== value)
-		: [...values, value];
-}
-
 // Categories map straight from the catalog; they carry no avatar (text only).
 function getCategoryOptions(): readonly AgentBrowserSidebarItem[] {
 	return APPS_DIRECTORY_CATEGORIES.map((category) => ({ id: category.id, label: category.label }));
@@ -899,8 +897,6 @@ function ExperimentalAppsDirectoryView({
 	setSelectedCompanies,
 	tools,
 }: Readonly<ExperimentalAppsDirectoryViewProps>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-
 	const categoryOptions = useMemo(() => getCategoryOptions(), []);
 	const companyOptions = useMemo(() => getCompanyOptions(tools), [tools]);
 
@@ -924,30 +920,47 @@ function ExperimentalAppsDirectoryView({
 	const myApps = useMemo(() => filteredTools.filter((tool) => addedIds.has(tool.id)), [addedIds, filteredTools]);
 	const otherApps = useMemo(() => filteredTools.filter((tool) => !addedIds.has(tool.id)), [addedIds, filteredTools]);
 
-	const hasActiveFilters =
-		Boolean(query.trim()) ||
-		filterMyApps ||
-		filterFavourites ||
-		selectedCategories.length > 0 ||
-		selectedCompanies.length > 0;
-
 	const emptyState = getExperimentalEmptyState(query, {
 		myApps: filterMyApps,
 		favourites: filterFavourites,
 	});
 
-	// Single active facet at a time (mirrors the experimental agent directory):
-	// once one filter is engaged, the others are hidden until it is cleared.
-	const activeFacet = filterMyApps
-		? "myApps"
-		: filterFavourites
-			? "favourites"
-			: selectedCategories.length > 0
-				? "categories"
-				: selectedCompanies.length > 0
-					? "companies"
-					: null;
-	const showFacet = (facet: string) => activeFacet === null || activeFacet === facet;
+	const facets: readonly ExperimentalDirectoryFacet<AgentBrowserSidebarItem>[] = [
+		{
+			active: filterMyApps,
+			id: "myApps",
+			kind: "toggle",
+			label: "Filter by my apps",
+			onToggle: () => setFilterMyApps((current) => !current),
+		},
+		{
+			active: filterFavourites,
+			id: "favourites",
+			kind: "toggle",
+			label: "Favourites",
+			onToggle: () => setFilterFavourites((current) => !current),
+		},
+		{
+			activeLabel: "Filter by categories",
+			id: "categories",
+			kind: "dropdown",
+			label: "Categories",
+			onToggle: (value) => setSelectedCategories((current) => toggleSelectedValue(current, value)),
+			options: categoryOptions,
+			renderOptionLeading: (option) => <SidebarToolAvatar item={option} />,
+			selectedValues: selectedCategories,
+		},
+		{
+			activeLabel: "Filter by companies",
+			id: "companies",
+			kind: "dropdown",
+			label: "Companies",
+			onToggle: (value) => setSelectedCompanies((current) => toggleSelectedValue(current, value)),
+			options: companyOptions,
+			renderOptionLeading: (option) => <SidebarToolAvatar item={option} />,
+			selectedValues: selectedCompanies,
+		},
+	];
 
 	function resetFilters() {
 		setQuery("");
@@ -958,230 +971,35 @@ function ExperimentalAppsDirectoryView({
 	}
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
-			{/* Pinned controls: search + filters stay put so the user can always refine,
-			    while only the results below scroll. px-6 clears the card side reach,
-			    pt-1 clears the search focus ring, pb-4 separates the controls from the grid. */}
-			<div className="flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2">
-				<InputGroup>
-					<InputGroupAddon>
-						<SearchIcon label="" />
-					</InputGroupAddon>
-					<InputGroupInput
-						aria-label="Search apps"
-						placeholder="Search for an app by name, or describe it"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
+		<ExperimentalDirectoryView
+			contentClassName="pb-8"
+			emptyState={emptyState}
+			facets={facets}
+			isEmpty={filteredTools.length === 0}
+			onQueryChange={setQuery}
+			onResetFilters={resetFilters}
+			query={query}
+			resultCount={filteredTools.length}
+			searchLabel="Search apps"
+			searchPlaceholder="Search for an app by name, or describe it"
+		>
+			<div className="flex flex-col gap-6">
+				{myApps.length > 0 ? (
+					<ExperimentalDirectorySection
+						heading="My apps"
+						items={myApps}
+						renderItem={(tool) => <AppCard added onSelectTool={onSelectTool} tool={tool} />}
 					/>
-				</InputGroup>
-				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-					<div className="flex flex-wrap items-center gap-2">
-						{showFacet("myApps") ? (
-							<Button
-								aria-pressed={filterMyApps ? true : undefined}
-								onClick={() => setFilterMyApps((current) => !current)}
-								type="button"
-								variant="outline"
-							>
-								Filter by my apps
-							</Button>
-						) : null}
-						{showFacet("favourites") ? (
-							<Button
-								aria-pressed={filterFavourites ? true : undefined}
-								onClick={() => setFilterFavourites((current) => !current)}
-								type="button"
-								variant="outline"
-							>
-								Favourites
-							</Button>
-						) : null}
-						{showFacet("categories") ? (
-							<ExperimentalFilterDropdown
-								activeLabel="Filter by categories"
-								label="Categories"
-								onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
-								options={categoryOptions}
-								selectedValues={selectedCategories}
-							/>
-						) : null}
-						{showFacet("companies") ? (
-							<ExperimentalFilterDropdown
-								activeLabel="Filter by companies"
-								label="Companies"
-								onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
-								options={companyOptions}
-								selectedValues={selectedCompanies}
-							/>
-						) : null}
-						{hasActiveFilters ? (
-							<Button type="button" variant="ghost" onClick={resetFilters}>
-								Reset
-							</Button>
-						) : null}
-					</div>
-					<p className="text-sm leading-5 text-text-subtle">
-						Showing {filteredTools.length.toLocaleString("en-US")} results
-					</p>
-				</div>
+				) : null}
+				{otherApps.length > 0 ? (
+					<ExperimentalDirectorySection
+						heading="Other apps"
+						items={otherApps}
+						renderItem={(tool) => <AppCard onSelectTool={onSelectTool} tool={tool} />}
+					/>
+				) : null}
 			</div>
-			{/* Scroll region begins after the filters: overflow-y-auto clips outside its
-			    box (pb-8 clears the card hover shadow, px-6 the side reach), and the top
-			    fade mask now sits just below the pinned filter bar instead of over it. */}
-			<div
-				ref={contentOverflow.ref}
-				className={cn(
-					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2 pb-8",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
-				)}
-			>
-				{filteredTools.length === 0 ? (
-					<div className="flex flex-1 flex-col items-center justify-center gap-1 py-12 text-center">
-						<p className="text-sm font-medium leading-5 text-text">{emptyState.title}</p>
-						<p className="text-sm leading-5 text-text-subtlest">{emptyState.description}</p>
-					</div>
-				) : (
-					<div className="flex flex-col gap-6">
-						{myApps.length > 0 ? (
-							<ExperimentalAppsSection added heading="My apps" onSelectTool={onSelectTool} tools={myApps} />
-						) : null}
-						{otherApps.length > 0 ? (
-							<ExperimentalAppsSection heading="Other apps" onSelectTool={onSelectTool} tools={otherApps} />
-						) : null}
-					</div>
-				)}
-			</div>
-		</div>
-	);
-}
-
-function ExperimentalAppsSection({
-	added = false,
-	heading,
-	onSelectTool,
-	tools,
-}: Readonly<{
-	added?: boolean;
-	heading: string;
-	onSelectTool: (tool: AppsDirectoryTool) => void;
-	tools: readonly AppsDirectoryTool[];
-}>) {
-	return (
-		<section aria-label={heading} className="flex flex-col gap-2">
-			<h2 className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
-				{heading}
-			</h2>
-			<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-				{tools.map((tool) => (
-					<li key={tool.id}>
-						<AppCard added={added} onSelectTool={onSelectTool} tool={tool} />
-					</li>
-				))}
-			</ul>
-		</section>
-	);
-}
-
-interface ExperimentalFilterDropdownProps {
-	activeLabel: string;
-	label: string;
-	onToggle: (value: string) => void;
-	options: readonly AgentBrowserSidebarItem[];
-	selectedValues: readonly string[];
-}
-
-function ExperimentalFilterDropdown({
-	activeLabel,
-	label,
-	onToggle,
-	options,
-	selectedValues,
-}: Readonly<ExperimentalFilterDropdownProps>) {
-	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState("");
-	const visibleOptions = useMemo(() => {
-		const normalized = query.trim().toLowerCase();
-		return normalized
-			? options.filter((option) => option.label.toLowerCase().includes(normalized))
-			: options;
-	}, [options, query]);
-	const selectedCount = selectedValues.length;
-	const triggerLabel = selectedCount > 0 ? activeLabel : label;
-
-	function handleOpenChange(nextOpen: boolean) {
-		setOpen(nextOpen);
-		if (!nextOpen) {
-			setQuery("");
-		}
-	}
-
-	return (
-		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger
-				render={
-					<Button
-						aria-expanded={open}
-						aria-pressed={selectedCount > 0 ? true : undefined}
-						className="gap-2"
-						type="button"
-						variant="outline"
-					/>
-				}
-			>
-				<span>{triggerLabel}</span>
-				{selectedCount > 0 ? <Badge>{selectedCount}</Badge> : null}
-				<Icon
-					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
-					className={cn(
-						"transition-transform duration-fast",
-						selectedCount > 0 || open
-							? "[&_svg]:text-icon-selected"
-							: "[&_svg]:text-icon-subtle",
-						open ? "rotate-180" : null,
-					)}
-				/>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
-				<InputGroup className="pl-[7px]">
-					<InputGroupAddon className="w-4 p-0">
-						<SearchIcon label="" />
-					</InputGroupAddon>
-					<InputGroupInput
-						aria-label={`Search ${label}`}
-						className="px-2"
-						placeholder="Search options"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-					/>
-				</InputGroup>
-				<div className="max-h-64 overflow-y-auto">
-					{visibleOptions.length === 0 ? (
-						<p className="px-2 py-3 text-sm text-text-subtlest">
-							No options found.
-						</p>
-					) : (
-						<ul className="flex flex-col gap-px pb-2">
-							{visibleOptions.map((option) => (
-								<li key={option.id}>
-									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
-										<Checkbox
-											checked={selectedValues.includes(option.id)}
-											onCheckedChange={(checked) => {
-												if (checked === true || checked === false) {
-													onToggle(option.id);
-												}
-											}}
-										/>
-										<SidebarToolAvatar item={option} />
-										<span className="min-w-0 flex-1 truncate">{option.label}</span>
-									</label>
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
+		</ExperimentalDirectoryView>
 	);
 }
 

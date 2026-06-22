@@ -1,17 +1,19 @@
 /**
  * Resolves VPK third-party brand ids to their `@atlassian/logo-third-party`
- * (Atlassian Platform Labs) icon components — the upstream source of truth for
- * third-party brand marks, rendered full-bleed inside an `@atlaskit/tile`.
+ * icon components.
  *
- * Brands listed in `THIRD_PARTY_LOGO_LOCAL_FALLBACKS` have no package entry and
- * are intentionally absent from the map; callers fall back to `public/3p`.
- *
- * Imports target the package's deep ESM entry points directly because the
- * package ships no `exports` map — see `types/atlassian-logo-third-party.d.ts`.
+ * The package ships no root `exports` map, so static deep imports are still
+ * required. Brand ids, labels, package entrypoints, package export names, and
+ * local fallback ids live in `logo-third-party-data.ts`; this module only binds
+ * the manifest-declared package entrypoints to their imported modules.
  */
 import type { ComponentType } from "react";
 
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import {
+	THIRD_PARTY_LOGO_PACKAGE_ICON_ENTRIES,
+	type ThirdPartyLogoName,
+	type ThirdPartyLogoPackageEntry,
+} from "@/components/ui/data/logo-third-party-data";
 
 import * as adobe from "@atlassian/logo-third-party/dist/esm/entry-points/adobe";
 import * as adobexd from "@atlassian/logo-third-party/dist/esm/entry-points/adobexd";
@@ -142,6 +144,8 @@ export type ThirdPartyLogoIcon = ComponentType<{
 	testId?: string;
 }>;
 
+type ThirdPartyLogoIconModule = Readonly<Record<string, ThirdPartyLogoIcon>>;
+
 const TILE_SIZES: ReadonlySet<string> = new Set([
 	"xxsmall",
 	"xsmall",
@@ -161,125 +165,144 @@ export function toThirdPartyLogoTileSize(size?: string | number): ThirdPartyLogo
 		: "small";
 }
 
+const THIRD_PARTY_LOGO_PACKAGE_MODULES = {
+	adobe,
+	adobexd,
+	aha,
+	airtable,
+	amazon,
+	"amazon-web-services-aws": amazonWebServicesAws,
+	amplitude,
+	ansible,
+	asana,
+	"microsoft-azure-devops": microsoftAzureDevops,
+	box,
+	brightspot,
+	canva,
+	claude,
+	clickup,
+	cloudflare,
+	cursor,
+	daloopa,
+	databricks,
+	datadog,
+	docker,
+	documentum,
+	docusign,
+	dovetail,
+	dropbox,
+	dynatrace,
+	egnyte,
+	evernote,
+	figma,
+	fireflies,
+	freshservice,
+	gamma,
+	"generic-mcp-server": genericMcpServer,
+	giphy,
+	github,
+	gitlab,
+	gmail,
+	gong,
+	"google-calendar": googleCalendar,
+	"google-cloud-platform": googleCloudPlatform,
+	"google-docs": googleDocs,
+	"google-drive": googleDrive,
+	"google-sheets": googleSheets,
+	"google-slides": googleSlides,
+	hubspot,
+	"hugging-face": huggingFace,
+	"identity-now": identityNow,
+	intercom,
+	invision,
+	jam,
+	jenkins,
+	launchdarkly,
+	linear,
+	lucid,
+	lucidchart,
+	microsoft,
+	"microsoft-365": microsoft365,
+	"microsoft-azure": microsoftAzure,
+	"microsoft-entra-id": microsoftEntraId,
+	"microsoft-excel": microsoftExcel,
+	"microsoft-onedrive": microsoftOnedrive,
+	"microsoft-outlook": microsoftOutlook,
+	"microsoft-power-point": microsoftPowerPoint,
+	"microsoft-sharepoint": microsoftSharepoint,
+	"microsoft-teams": microsoftTeams,
+	"microsoft-word": microsoftWord,
+	miro,
+	monday,
+	mural,
+	neon,
+	"new-relic": newRelic,
+	notion,
+	"octopus-deploy": octopusDeploy,
+	okta,
+	openai,
+	oracle,
+	outreach,
+	"pager-duty": pagerDuty,
+	paypal,
+	pipedrive,
+	postman,
+	"microsoft-power-bi": microsoftPowerBi,
+	quip,
+	salesforce,
+	sap,
+	scriptrunner,
+	sentry,
+	servicenow,
+	shopify,
+	simpplr,
+	slack,
+	smartsheet,
+	snowflake,
+	splunk,
+	square,
+	"stack-overflow": stackOverflow,
+	stripe,
+	stych,
+	tableau,
+	"tempo-timesheets": tempoTimesheets,
+	todoist,
+	twilio,
+	vercel,
+	webex,
+	wix,
+	workato,
+	workday,
+	youtube,
+	zapier,
+	zendesk,
+	zeplin,
+	ziprecruiter,
+	zoom,
+} as const satisfies Record<ThirdPartyLogoPackageEntry, ThirdPartyLogoIconModule>;
+
+function resolvePackageIcon(entry: (typeof THIRD_PARTY_LOGO_PACKAGE_ICON_ENTRIES)[number]): ThirdPartyLogoIcon {
+	const Icon = THIRD_PARTY_LOGO_PACKAGE_MODULES[entry.packageIcon.entrypoint][entry.packageIcon.exportName];
+	if (!Icon) {
+		throw new Error(
+			`Missing @atlassian/logo-third-party icon export ${entry.packageIcon.exportName} ` +
+				`from entrypoint ${entry.packageIcon.entrypoint}`,
+		);
+	}
+	return Icon;
+}
+
+function buildThirdPartyLogoIconMap(): Partial<Record<ThirdPartyLogoName, ThirdPartyLogoIcon>> {
+	return Object.fromEntries(
+		THIRD_PARTY_LOGO_PACKAGE_ICON_ENTRIES.map((entry) => [entry.name, resolvePackageIcon(entry)]),
+	) as Partial<Record<ThirdPartyLogoName, ThirdPartyLogoIcon>>;
+}
+
 /**
- * VPK brand id -> Atlassian package icon component. Keyed by `ThirdPartyLogoName`;
- * fallback brands are omitted (handled by the public/3p fallback).
+ * VPK brand id to Atlassian package icon component. Fallback-only brands are
+ * omitted and handled by the local `public/3p` renderer.
  */
-export const THIRD_PARTY_LOGO_ICONS: Partial<Record<ThirdPartyLogoName, ThirdPartyLogoIcon>> = {
-	adobe: adobe.AdobeIcon,
-	"adobe-xd": adobexd.AdobeXDIcon,
-	aha: aha.AhaIcon,
-	airtable: airtable.AirtableIcon,
-	amazon: amazon.AmazonIcon,
-	"amazon-web-services-aws": amazonWebServicesAws.AmazonWebServicesAWSIcon,
-	amplitude: amplitude.AmplitudeIcon,
-	ansible: ansible.AnsibleIcon,
-	asana: asana.AsanaIcon,
-	"azure-devops": microsoftAzureDevops.MicrosoftAzureDevOpsIcon,
-	box: box.BoxIcon,
-	brightspot: brightspot.BrightspotIcon,
-	canva: canva.CanvaIcon,
-	claude: claude.ClaudeIcon,
-	clickup: clickup.ClickupIcon,
-	cloudflare: cloudflare.CloudflareIcon,
-	cursor: cursor.CursorIcon,
-	daloopa: daloopa.DaloopaIcon,
-	databricks: databricks.DatabricksIcon,
-	datadog: datadog.DataDogIcon,
-	docker: docker.DockerIcon,
-	documentum: documentum.DocumentumIcon,
-	docusign: docusign.DocuSignIcon,
-	dovetail: dovetail.DovetailIcon,
-	dropbox: dropbox.DropboxIcon,
-	dynatrace: dynatrace.DynatraceIcon,
-	egnyte: egnyte.EgnyteIcon,
-	evernote: evernote.EvernoteIcon,
-	figma: figma.FigmaIcon,
-	fireflies: fireflies.FirefliesIcon,
-	freshservice: freshservice.FreshserviceIcon,
-	gamma: gamma.GammaIcon,
-	"generic-mcp-server": genericMcpServer.GenericMCPServerIcon,
-	giphy: giphy.GiphyIcon,
-	github: github.GithubIcon,
-	gitlab: gitlab.GitlabIcon,
-	gmail: gmail.GmailIcon,
-	gong: gong.GongIcon,
-	"google-calendar": googleCalendar.GoogleCalendarIcon,
-	"google-cloud-platform": googleCloudPlatform.GoogleCloudPlatformIcon,
-	"google-docs": googleDocs.GoogleDocsIcon,
-	"google-drive": googleDrive.GoogleDriveIcon,
-	"google-sheets": googleSheets.GoogleSheetsIcon,
-	"google-slides": googleSlides.GoogleSlidesIcon,
-	hubspot: hubspot.HubspotIcon,
-	"hugging-face": huggingFace.HuggingFaceIcon,
-	"identity-now": identityNow.IdentityNowIcon,
-	intercom: intercom.IntercomIcon,
-	invision: invision.InVisionIcon,
-	jam: jam.JamIcon,
-	jenkins: jenkins.JenkinsIcon,
-	launchdarkly: launchdarkly.LaunchdarklyIcon,
-	linear: linear.LinearIcon,
-	"lucid-co": lucid.LucidIcon,
-	lucidchart: lucidchart.LucidchartIcon,
-	microsoft: microsoft.MicrosoftIcon,
-	"microsoft-365": microsoft365.Microsoft365Icon,
-	"microsoft-azure": microsoftAzure.MicrosoftAzureIcon,
-	"microsoft-entra-id": microsoftEntraId.MicrosoftEntraIDIcon,
-	"microsoft-excel": microsoftExcel.MicrosoftExcelIcon,
-	"microsoft-onedrive": microsoftOnedrive.MicrosoftOneDriveIcon,
-	"microsoft-outlook": microsoftOutlook.MicrosoftOutlookIcon,
-	"microsoft-power-point": microsoftPowerPoint.MicrosoftPowerPointIcon,
-	"microsoft-sharepoint": microsoftSharepoint.MicrosoftSharePointIcon,
-	"microsoft-teams": microsoftTeams.MicrosoftTeamsIcon,
-	"microsoft-word": microsoftWord.MicrosoftWordIcon,
-	miro: miro.MiroIcon,
-	monday: monday.MondayIcon,
-	mural: mural.MuralIcon,
-	neon: neon.NeonIcon,
-	"new-relic": newRelic.NewRelicIcon,
-	notion: notion.NotionIcon,
-	"octopus-deploy": octopusDeploy.OctopusDeployIcon,
-	okta: okta.OktaIcon,
-	openai: openai.OpenAIIcon,
-	oracle: oracle.OracleIcon,
-	outreach: outreach.OutreachIcon,
-	pagerduty: pagerDuty.PagerDutyIcon,
-	paypal: paypal.PayPalIcon,
-	pipedrive: pipedrive.PipedriveIcon,
-	postman: postman.PostmanIcon,
-	powerbi: microsoftPowerBi.MicrosoftPowerBIIcon,
-	quip: quip.QuipIcon,
-	salesforce: salesforce.SalesforceIcon,
-	sap: sap.SAPIcon,
-	scriptrunner: scriptrunner.ScriptrunnerIcon,
-	sentry: sentry.SentryIcon,
-	servicenow: servicenow.ServiceNowIcon,
-	shopify: shopify.ShopifyIcon,
-	simpplr: simpplr.SimpplrIcon,
-	slack: slack.SlackIcon,
-	smartsheet: smartsheet.SmartsheetIcon,
-	snowflake: snowflake.SnowflakeIcon,
-	splunk: splunk.SplunkIcon,
-	square: square.SquareIcon,
-	"stack-overflow": stackOverflow.StackOverflowIcon,
-	stripe: stripe.StripeIcon,
-	stych: stych.StychIcon,
-	tableau: tableau.TableauIcon,
-	"tempo-timesheets": tempoTimesheets.TempoTimesheetsIcon,
-	todoist: todoist.TodoistIcon,
-	twilio: twilio.TwilioIcon,
-	vercel: vercel.VercelIcon,
-	webex: webex.WebexIcon,
-	wix: wix.WixIcon,
-	workato: workato.WorkatoIcon,
-	workday: workday.WorkdayIcon,
-	youtube: youtube.YoutubeIcon,
-	zapier: zapier.ZapierIcon,
-	zendesk: zendesk.ZendeskIcon,
-	zeplin: zeplin.ZeplinIcon,
-	ziprecruiter: ziprecruiter.ZipRecruiterIcon,
-	zoom: zoom.ZoomIcon,
-};
+export const THIRD_PARTY_LOGO_ICONS = buildThirdPartyLogoIconMap();
 
 /**
  * Look up a brand icon by raw id (e.g. `"figma"`). Returns `undefined` when the
@@ -290,7 +313,7 @@ export function getThirdPartyLogoIconById(id: string): ThirdPartyLogoIcon | unde
 }
 
 /**
- * Extract the `/3p/<id>/…` brand id from an asset path and resolve its package
+ * Extract the `/3p/<id>/...` brand id from an asset path and resolve its package
  * icon. Returns `undefined` for non-3p paths or brands without an upstream asset.
  */
 export function getThirdPartyLogoIconFromSrc(src: string): ThirdPartyLogoIcon | undefined {

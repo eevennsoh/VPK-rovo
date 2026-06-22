@@ -19,6 +19,7 @@ let modulePromise;
 function loadLogoThirdPartyData() {
 	modulePromise ??= loadDirectoryModule(`
 		export {
+			THIRD_PARTY_LOGO_MANIFEST,
 			THIRD_PARTY_LOGO_NAMES,
 			THIRD_PARTY_LOGO_LABELS,
 			THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES,
@@ -32,6 +33,16 @@ function loadLogoThirdPartyData() {
 // components/ui -> repo root -> public/3p
 const THIRD_PARTY_DIR = path.join(__dirname, "..", "..", "public", "3p");
 
+test("THIRD_PARTY_LOGO_NAMES derives from the manifest", async () => {
+	const { THIRD_PARTY_LOGO_MANIFEST, THIRD_PARTY_LOGO_NAMES } = await loadLogoThirdPartyData();
+
+	assert.deepEqual(
+		THIRD_PARTY_LOGO_NAMES,
+		THIRD_PARTY_LOGO_MANIFEST.map((entry) => entry.name),
+		"THIRD_PARTY_LOGO_NAMES must be derived from THIRD_PARTY_LOGO_MANIFEST",
+	);
+});
+
 /**
  * Brand marks are now sourced primarily from `@atlassian/logo-third-party`, so
  * `THIRD_PARTY_LOGO_NAMES` is a superset of the on-disk `public/3p` folders. The
@@ -41,7 +52,7 @@ const THIRD_PARTY_DIR = path.join(__dirname, "..", "..", "public", "3p");
  * asset no helper can reach.
  */
 test("THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES matches the public/3p folders", async () => {
-	const { THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES } = await loadLogoThirdPartyData();
+	const { THIRD_PARTY_LOGO_MANIFEST, THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES } = await loadLogoThirdPartyData();
 
 	const onDisk = readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
@@ -49,6 +60,16 @@ test("THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES matches the public/3p folders", async (
 		.sort();
 
 	const inList = [...THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES].sort();
+	const inManifest = THIRD_PARTY_LOGO_MANIFEST
+		.filter((entry) => entry.localAsset === true)
+		.map((entry) => entry.name)
+		.sort();
+
+	assert.deepEqual(
+		inList,
+		inManifest,
+		"THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES must be derived from manifest localAsset entries",
+	);
 
 	assert.deepEqual(
 		inList,
@@ -58,8 +79,13 @@ test("THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES matches the public/3p folders", async (
 	);
 });
 
-test("every local-fallback brand has a public/3p folder and is registered", async () => {
-	const { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LOCAL_FALLBACKS } = await loadLogoThirdPartyData();
+test("local fallback brands derive from manifest local-only assets with public folders", async () => {
+	const {
+		THIRD_PARTY_LOGO_MANIFEST,
+		THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES,
+		THIRD_PARTY_LOGO_LOCAL_FALLBACKS,
+		THIRD_PARTY_LOGO_NAMES,
+	} = await loadLogoThirdPartyData();
 
 	const onDisk = new Set(
 		readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
@@ -67,8 +93,20 @@ test("every local-fallback brand has a public/3p folder and is registered", asyn
 			.map((entry) => entry.name),
 	);
 	const registered = new Set(THIRD_PARTY_LOGO_NAMES);
+	const localAssets = new Set(THIRD_PARTY_LOGO_LOCAL_ASSET_NAMES);
+	const manifestFallbacks = THIRD_PARTY_LOGO_MANIFEST
+		.filter((entry) => entry.localAsset === true && !entry.packageIcon)
+		.map((entry) => entry.name)
+		.sort();
+
+	assert.deepEqual(
+		[...THIRD_PARTY_LOGO_LOCAL_FALLBACKS].sort(),
+		manifestFallbacks,
+		"THIRD_PARTY_LOGO_LOCAL_FALLBACKS must be derived from manifest local-only entries",
+	);
 
 	for (const name of THIRD_PARTY_LOGO_LOCAL_FALLBACKS) {
+		assert.ok(localAssets.has(name), `local-fallback brand "${name}" missing from local asset ids`);
 		assert.ok(onDisk.has(name), `local-fallback brand "${name}" has no public/3p/${name} folder`);
 		assert.ok(registered.has(name), `local-fallback brand "${name}" missing from THIRD_PARTY_LOGO_NAMES`);
 	}

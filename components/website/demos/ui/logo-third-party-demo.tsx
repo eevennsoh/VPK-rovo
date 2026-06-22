@@ -5,14 +5,8 @@ import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { type LogoProps } from "@/components/ui/logo";
 import {
 	LogoThirdParty,
-	FigmaLogo,
-	GithubLogo,
 	SlackLogo,
-	NotionLogo,
 	ZoomLogo,
-	SalesforceLogo,
-	MiroLogo,
-	AirtableLogo,
 	THIRD_PARTY_LOGO_NAMES,
 	THIRD_PARTY_LOGO_LABELS,
 	type ThirdPartyLogoName,
@@ -197,14 +191,14 @@ export function LogoThirdPartyDemoInTag() {
 export function LogoThirdPartyDemoNamedExports() {
 	return (
 		<div className="flex flex-wrap items-center gap-4">
-			<FigmaLogo size="small" />
-			<GithubLogo size="small" />
+			<LogoThirdParty name="figma" size="small" />
+			<LogoThirdParty name="github" size="small" />
 			<SlackLogo size="small" />
-			<NotionLogo size="small" />
+			<LogoThirdParty name="notion" size="small" />
 			<ZoomLogo size="small" />
-			<SalesforceLogo size="small" />
-			<MiroLogo size="small" />
-			<AirtableLogo size="small" />
+			<LogoThirdParty name="salesforce" size="small" />
+			<LogoThirdParty name="miro" size="small" />
+			<LogoThirdParty name="airtable" size="small" />
 		</div>
 	);
 }

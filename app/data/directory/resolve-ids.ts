@@ -21,6 +21,7 @@ import {
 	DIRECTORY_APPS,
 	ROVO_AGENT_PROFILES,
 } from "@/app/data/directory";
+import { createBareAppMentionConverter } from "@/lib/bare-app-mention-tokens";
 
 /**
  * The mention categories the ingest layer understands. `app` is the umbrella
@@ -625,47 +626,9 @@ export function stripMentionMarkup(text: string): string {
 
 // --- Bare `@name` / `/name` → `@[app:id]` conversion -----------------------
 
-/** Slugifies a captured reference word into an `@[app:<id>]`-safe id. */
-function slugifyMentionId(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-}
-
-/** Escapes a string for literal use inside a RegExp. */
-function escapeRegExp(value: string): string {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Per-app `[@/]name` matchers, longest app name first so a multi-word name like
- * "Google Calendar" wins over a bare "Google". Lazily built once from the app
- * catalog. Each pattern captures the leading boundary char (group 1) so it can be
- * preserved, then consumes the `@`/`/` prefix and the app name.
- */
-let appAliasMatchers: { id: string; pattern: RegExp }[] | null = null;
-function getAppAliasMatchers(): { id: string; pattern: RegExp }[] {
-	if (appAliasMatchers) {
-		return appAliasMatchers;
-	}
-	appAliasMatchers = [...DIRECTORY_APPS]
-		.map((app) => ({ id: app.id, name: app.name?.trim() ?? "" }))
-		.filter((entry) => entry.name.length > 0)
-		.sort((a, b) => b.name.length - a.name.length)
-		.map((entry) => ({
-			id: entry.id,
-			pattern: new RegExp(
-				`(^|[\\s(>"'])[@/](?!\\[)(?:${escapeRegExp(entry.name).replace(/\s+/gu, "\\s+")})(?=$|[\\s.,;:!?)\\]"'])`,
-				"giu",
-			),
-		}));
-	return appAliasMatchers;
-}
-
-/** Generic bare mention: `@word` / `/word` that is not already part of a `@[...]` token. */
-const BARE_MENTION_PATTERN = /(^|[\s(>"'])[@/](?!\[)([A-Za-z][A-Za-z0-9.+_-]*)/giu;
+const convertBareAppMentionsForDirectory = createBareAppMentionConverter(
+	DIRECTORY_APPS.map((app) => ({ id: app.id, name: app.name })),
+);
 
 /**
  * Rewrites bare `@name` / `/name` references in generated prose into
@@ -685,17 +648,7 @@ export function convertBareMentionsToTokens(markdown: string): string {
 		return markdown ?? "";
 	}
 
-	return mapOutsideCode(markdown, (segment) => {
-		let next = segment;
-		for (const { id, pattern } of getAppAliasMatchers()) {
-			next = next.replace(pattern, (_full, lead: string) => `${lead}@[app:${id}]`);
-		}
-		next = next.replace(BARE_MENTION_PATTERN, (full, lead: string, word: string) => {
-			const slug = slugifyMentionId(word);
-			return slug ? `${lead}@[app:${slug}]` : full;
-		});
-		return next;
-	});
+	return convertBareAppMentionsForDirectory(markdown);
 }
 
 export { TOKEN_CATEGORIES };
