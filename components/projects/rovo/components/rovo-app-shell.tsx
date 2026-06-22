@@ -393,12 +393,12 @@ function RovoAppDirectoryAutocompleteRows({
 	return (
 		<motion.div
 			animate={{ opacity: 1, y: 0 }}
-			className={cn("mx-auto w-full max-w-[720px]", className)}
+			className={cn("w-full", className)}
 			initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 			transition={{ duration: 0.18, ease: [0, 0.4, 0, 1] }}
 			style={{ willChange: "transform, opacity" }}
 		>
-			<div className={cn("grid gap-1", useWideLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1")}>
+			<div className={cn("grid gap-1", useWideLayout ? "grid-cols-2 gap-x-6" : "grid-cols-1")}>
 				{state.matches.map((match, index) => {
 					const active = state.activeIndex === index;
 
@@ -2379,7 +2379,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								/>
 								{showHomeState && shouldShowDirectoryAutocompleteList && directoryAutocompleteState ? (
 									<RovoAppDirectoryAutocompleteRows
-										className="absolute inset-x-0 top-full z-20 mt-3"
+										className="absolute inset-x-0 top-full z-20 mt-6"
 										shouldReduceMotion={Boolean(shouldReduceMotion)}
 										state={directoryAutocompleteState}
 										useWideLayout={shouldUseWideDirectoryAutocompleteLayout}
@@ -2387,33 +2387,39 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 										onSelect={handleDirectoryAutocompleteSelect}
 									/>
 								) : null}
+								{/* Default prompt gallery and the directory-match list both
+								    render as absolute overlays anchored to the composer's
+								    bottom edge, so swapping between them never changes the
+								    centered hero+composer block height — the input stays put
+								    instead of sliding up/down as matches appear. */}
+								{showHomeState && !isCustomAgentSelected ? (
+									<motion.div
+										aria-hidden={shouldHideHomePromptGallery ? true : undefined}
+										className={cn(
+											"absolute inset-x-0 top-full z-10 mt-6",
+											shouldHideHomePromptGallery && "pointer-events-none hidden",
+										)}
+										initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.3 }}
+										style={{ willChange: "transform, opacity" }}
+									>
+										<ViewTransition exit="slide-down" default="none">
+											<PromptGallery
+												items={HOME_SUGGESTIONS}
+												onSelect={handleGallerySelect}
+												onExpandChange={setGalleryExpanded}
+												onPreviewStart={handleGalleryPreviewStart}
+												onPreviewEnd={handleGalleryPreviewEnd}
+											/>
+										</ViewTransition>
+									</motion.div>
+								) : null}
 							</motion.div>
 							{!showHomeState ? <Footer className="relative z-10" /> : null}
 						</>
 					)}
 				</div>
-
-				{showHomeState && !isCustomAgentSelected ? (
-					<motion.div
-						aria-hidden={shouldHideHomePromptGallery ? true : undefined}
-						className={cn(shouldHideHomePromptGallery && "pointer-events-none invisible")}
-						initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.3 }}
-						style={{ willChange: "transform, opacity" }}
-					>
-						<ViewTransition exit="slide-down" default="none">
-							<PromptGallery
-								className="mt-5"
-								items={HOME_SUGGESTIONS}
-								onSelect={handleGallerySelect}
-								onExpandChange={setGalleryExpanded}
-								onPreviewStart={handleGalleryPreviewStart}
-								onPreviewEnd={handleGalleryPreviewEnd}
-							/>
-						</ViewTransition>
-					</motion.div>
-				) : null}
 			</div>
 		</>
 	);

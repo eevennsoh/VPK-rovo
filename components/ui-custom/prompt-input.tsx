@@ -1147,6 +1147,12 @@ export const PromptInputTextarea = ({
   const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
   const moveDirectoryAutocompleteActiveRef = useRef<(direction: -1 | 1) => boolean>(() => false);
   const setDirectoryAutocompleteActiveIndexRef = useRef<(index: number) => boolean>(() => false);
+  // True while the visual-trace auto-tagger is mid-debounce. During that window we
+  // intentionally keep the prior matches visible (no per-keystroke flicker), but
+  // their query range is stale, so the list must not be *acceptable* — otherwise
+  // Enter/Cmd+number/Tab could insert a mention at the old range. Assigned after
+  // the hook below; defaults to "not busy".
+  const isAutoTaggingBusyRef = useRef<() => boolean>(() => false);
 
   const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
     acceptActive: () => acceptDirectoryAutocompleteIndexRef.current(
@@ -1156,6 +1162,7 @@ export const PromptInputTextarea = ({
     acceptIndex: (index: number) => acceptDirectoryAutocompleteIndexRef.current(index),
     hasVisibleList: () =>
       directoryAutocompleteListVisibleRef.current &&
+      !isAutoTaggingBusyRef.current() &&
       (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
     moveActive: (direction: -1 | 1) => moveDirectoryAutocompleteActiveRef.current(direction),
     setActiveIndex: (index: number) => setDirectoryAutocompleteActiveIndexRef.current(index),
@@ -1279,18 +1286,28 @@ export const PromptInputTextarea = ({
   }, []);
 
   const refreshDirectoryAutocomplete = useCallback((activeEditor: Editor) => {
-    if (
-      !enableDirectoryAutocomplete ||
-      !activeEditor.isEditable ||
-      isVisualTraceAutoTaggingBusy()
-    ) {
+    if (!enableDirectoryAutocomplete || !activeEditor.isEditable) {
       setDirectoryAutocompleteState(null);
       return;
     }
 
     const { selection } = activeEditor.state;
     if (activeEditor.view.composing || !selection.empty || isAnySuggestionMenuOpen(activeEditor)) {
+      // Context that always invalidates an inline autocomplete (IME composition,
+      // a non-collapsed selection, or an open suggestion menu) clears the state
+      // even mid-debounce, so a stale list can't linger after the cursor context
+      // changed.
       setDirectoryAutocompleteState(null);
+      return;
+    }
+
+    // Auto-tagging is mid-flight (post-keystroke idle debounce, or an exact-label
+    // match converting into a chip) and the cursor is still a collapsed caret with
+    // no menu open: keep the current matches rather than blanking on every
+    // keystroke (that made the empty-state greeting blink to its default prompts
+    // and back). The query range may be stale until `runAutoTagging` recomputes,
+    // so acceptance is disabled while busy via the controller's hasVisibleList.
+    if (isVisualTraceAutoTaggingBusy()) {
       return;
     }
 
@@ -1310,6 +1327,7 @@ export const PromptInputTextarea = ({
   }, [enableDirectoryAutocomplete, isAnySuggestionMenuOpen, isVisualTraceAutoTaggingBusy, setDirectoryAutocompleteState]);
 
   refreshDirectoryAutocompleteRef.current = refreshDirectoryAutocomplete;
+  isAutoTaggingBusyRef.current = isVisualTraceAutoTaggingBusy;
 
   acceptDirectoryAutocompleteIndexRef.current = (index: number, requireGhost = false): boolean => {
     const activeEditor = activeEditorRef.current;

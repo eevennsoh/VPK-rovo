@@ -447,6 +447,12 @@ export default function ChatGreeting({
 	const shouldUseControlledChatIllustration = !isMaxMode && resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC;
 	const heroKey = isMaxMode ? "max" : "default";
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
+	// Show directory matches when the query has them; otherwise always fall back to
+	// the default prompts (empty composer, too-short query, or no-match query) so
+	// the greeting is never left blank. The per-keystroke flicker that used to make
+	// this list strobe between matches and defaults is fixed at the source (the
+	// composer no longer nulls its autocomplete state mid-debounce), so this can
+	// stay a simple "matches, else defaults" rule.
 	const shouldShowSuggestionList =
 		shouldRenderDirectoryMatches ||
 		((directoryAutocompleteState === null || hasEmptyDirectoryQuery) && greetingSuggestions.length > 0);
