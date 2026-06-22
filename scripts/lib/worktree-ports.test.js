@@ -209,30 +209,74 @@ test("buildPortlessRunArgs returns no args for a branched worktree (vanilla pref
 	);
 });
 
-test("buildPortlessRunArgs names a detached worktree by its directory basename", () => {
+test("buildPortlessRunArgs names a detached worktree by its unique path token", () => {
+	// Nested managed layout (Codex): basename is the repo dir name, so the
+	// unique token is the PARENT dir — using the basename would collide.
 	assert.deepEqual(
-		buildPortlessRunArgs({
-			isMain: false,
-			branch: null,
-			path: "/Users/x/.codex/worktrees/972c/vpk-rovo",
-		}),
-		["--name", "vpk-rovo"]
+		buildPortlessRunArgs(
+			{
+				isMain: false,
+				branch: null,
+				path: "/Users/x/.codex/worktrees/972c/vpk-rovo",
+			},
+			"vpk-rovo"
+		),
+		["--name", "972c"]
 	);
+	// Flat layout (.claude/worktrees/<feature>): basename is already unique.
 	assert.deepEqual(
-		buildPortlessRunArgs({ isMain: false, branch: "", path: "/tmp/detached-wt" }),
-		["--name", "detached-wt"]
+		buildPortlessRunArgs(
+			{
+				isMain: false,
+				branch: "",
+				path: "/Users/x/.claude/worktrees/composer-padding-12px",
+			},
+			"vpk-rovo"
+		),
+		["--name", "composer-padding-12px"]
 	);
+	// Defensive: a record without a path yields no args (no crash).
+	assert.deepEqual(
+		buildPortlessRunArgs({ isMain: false, branch: null }, "vpk-rovo"),
+		[]
+	);
+});
+
+test("buildPortlessRunArgs gives two nested detached worktrees DISTINCT names (no collision)", () => {
+	const a = buildPortlessRunArgs(
+		{ isMain: false, branch: null, path: "/Users/x/.codex/worktrees/972c/vpk-rovo" },
+		"vpk-rovo"
+	);
+	const b = buildPortlessRunArgs(
+		{ isMain: false, branch: null, path: "/Users/x/.codex/worktrees/90ba/vpk-rovo" },
+		"vpk-rovo"
+	);
+	assert.deepEqual(a, ["--name", "972c"]);
+	assert.deepEqual(b, ["--name", "90ba"]);
+	assert.notDeepEqual(a, b);
 });
 
 test("getPortlessRunArgs resolves [] on main/branch and --name when detached", () => {
 	const fixture = createGitWorktreeFixture();
 	const detachedPath = path.join(path.dirname(fixture.repoPath), "wt-detached");
+	// Reproduce the managed nested layout `.../<hash>/<repo-dir>` (e.g. Codex),
+	// where the worktree basename equals the repo dir name ("repo" here).
+	const nestedHashDir = path.join(path.dirname(fixture.repoPath), "abcd1234");
+	const nestedDetachedPath = path.join(
+		nestedHashDir,
+		path.basename(fixture.repoPath)
+	);
 
 	try {
 		execSync(`git worktree add --detach ${JSON.stringify(detachedPath)}`, {
 			cwd: fixture.repoPath,
 			stdio: "ignore",
 		});
+		fs.mkdirSync(nestedHashDir, { recursive: true });
+		execSync(
+			`git worktree add --detach ${JSON.stringify(nestedDetachedPath)}`,
+			{ cwd: fixture.repoPath, stdio: "ignore" }
+		);
 
 		// Main checkout -> bare `portless run` -> vpk-rovo.localhost
 		assert.deepEqual(
@@ -247,10 +291,19 @@ test("getPortlessRunArgs resolves [] on main/branch and --name when detached", (
 			),
 			[]
 		);
-		// Detached worktree -> needs an explicit name -> <dir>.localhost
+		// Flat detached worktree -> basename is unique -> --name <dir>
 		assert.deepEqual(
 			runWorktreePortsExpression(detachedPath, "mod.getPortlessRunArgs()"),
 			["--name", path.basename(detachedPath)]
+		);
+		// Nested detached worktree (basename == repo dir name) -> --name <parent>,
+		// NOT the repo dir name (which would collide with main and siblings).
+		assert.deepEqual(
+			runWorktreePortsExpression(
+				nestedDetachedPath,
+				"mod.getPortlessRunArgs()"
+			),
+			["--name", path.basename(nestedHashDir)]
 		);
 	} finally {
 		fixture.cleanup();

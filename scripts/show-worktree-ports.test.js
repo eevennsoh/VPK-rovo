@@ -8,31 +8,6 @@ const test = require("node:test");
 
 const SHOW_WORKTREE_PORTS_SCRIPT = path.resolve(__dirname, "show-worktree-ports.js");
 
-const { findPortlessUrl } = require("./show-worktree-ports");
-
-test("findPortlessUrl returns the https URL of the route matching the frontend port", () => {
-	const routes = [
-		{ hostname: "vpk-rovo.localhost", port: 3000, pid: 111 },
-		{ hostname: "feature-x.vpk-rovo.localhost", port: 3020, pid: 222 },
-	];
-
-	assert.equal(
-		findPortlessUrl(routes, 3020),
-		"https://feature-x.vpk-rovo.localhost"
-	);
-	// String ports (as read from .dev-frontend-port) still match.
-	assert.equal(findPortlessUrl(routes, "3000"), "https://vpk-rovo.localhost");
-});
-
-test("findPortlessUrl returns null when no route matches or input is missing", () => {
-	const routes = [{ hostname: "vpk-rovo.localhost", port: 3000, pid: 111 }];
-
-	assert.equal(findPortlessUrl(routes, 9999), null);
-	assert.equal(findPortlessUrl(routes, null), null);
-	assert.equal(findPortlessUrl(routes, ""), null);
-	assert.equal(findPortlessUrl([], 3000), null);
-});
-
 function execGit(args, cwd) {
 	execFileSync("git", args, {
 		cwd,

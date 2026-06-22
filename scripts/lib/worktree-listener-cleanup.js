@@ -39,7 +39,6 @@ function buildCleanupResult({
 	matchedSupervisorPids,
 	signalledCount = 0,
 	forceKilledCount = 0,
-	portlessPruned = false,
 }) {
 	const matchedPids = getUniqueSortedPids([
 		...matchedListenerPids,
@@ -54,38 +53,7 @@ function buildCleanupResult({
 		signalledCount,
 		gracefulCount: Math.max(signalledCount - forceKilledCount, 0),
 		forceKilledCount,
-		portlessPruned,
 	};
-}
-
-/**
- * Best-effort `portless prune`: reaps dev servers orphaned by crashed portless
- * sessions (routes whose owning CLI is dead but whose port is still held) and
- * clears those stale route entries from ~/.portless/routes.json.
- *
- * Runs unconditionally during teardown because the repo registers portless
- * routes only when a worktree is previewed via `portless run`, and nothing else
- * reaps them. It is global (portless prune takes no per-worktree arg) and safe:
- * any failure (portless absent, no routes) is swallowed so teardown never breaks.
- *
- * Note: a *gracefully* stopped worktree frees its port, so prune will not remove
- * its now-dead route — that entry lingers as `pid 0` until reused. Removing the
- * specific route would need `portless alias --remove <name>`; left out for now
- * because its syntax is version-sensitive and prune covers the crash case.
- */
-function prunePortless({ execSyncFn = execSync, logger = console } = {}) {
-	try {
-		execSyncFn("portless prune", {
-			encoding: "utf8",
-			stdio: ["pipe", "pipe", "pipe"],
-		});
-		return true;
-	} catch (error) {
-		logger.warn?.(
-			`[cleanup] portless prune skipped: ${error?.message ?? error}`
-		);
-		return false;
-	}
 }
 
 function listListeningPids({ execSyncFn = execSync } = {}) {
@@ -182,7 +150,6 @@ async function cleanupListeningProcessesForWorktree({
 	getProcessCwdFn = getProcessCwd,
 	killFn = process.kill,
 	sleepFn = sleep,
-	prunePortlessFn = prunePortless,
 	gracePeriodMs = 2_000,
 	logger = console,
 } = {}) {
@@ -197,16 +164,10 @@ async function cleanupListeningProcessesForWorktree({
 		listProcessInfoFn,
 		getProcessCwdFn,
 	});
-
-	// Prune stale portless routes unconditionally — a worktree may have a dead
-	// route to reap even when it has no live listeners left to kill.
-	const portlessPruned = prunePortlessFn({ logger });
-
 	const initialResult = buildCleanupResult({
 		worktreePath: normalizedWorktreePath,
 		matchedListenerPids,
 		matchedSupervisorPids,
-		portlessPruned,
 	});
 	const { matchedPids } = initialResult;
 
@@ -262,7 +223,6 @@ async function cleanupListeningProcessesForWorktree({
 		matchedSupervisorPids,
 		signalledCount,
 		forceKilledCount,
-		portlessPruned,
 	});
 }
 
@@ -273,5 +233,4 @@ module.exports = {
 	getProcessCwd,
 	listProcessInfo,
 	listListeningPids,
-	prunePortless,
 };

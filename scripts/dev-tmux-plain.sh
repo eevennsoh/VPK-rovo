@@ -95,22 +95,16 @@ NODE
 }
 
 # Print the worktree's stable Portless URL by matching the running frontend port
-# against ~/.portless/routes.json (mirrors findPortlessUrl in show-worktree-ports.js).
+# against ~/.portless/routes.json via the shared helper (skips stale routes).
 resolve_portless_url() {
 	node - <<'NODE'
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
+const { loadPortlessRoutes, findPortlessUrl } = require("./scripts/lib/portless-routes");
 try {
-	const portRaw = fs.readFileSync(path.join(process.cwd(), ".dev-frontend-port"), "utf8").trim();
-	const port = Number(portRaw);
-	if (!Number.isFinite(port)) process.exit(0);
-	const routesFile = path.join(os.homedir(), ".portless", "routes.json");
-	if (!fs.existsSync(routesFile)) process.exit(0);
-	const routes = JSON.parse(fs.readFileSync(routesFile, "utf8"));
-	if (!Array.isArray(routes)) process.exit(0);
-	const route = routes.find((r) => r && r.port === port);
-	if (route && route.hostname) process.stdout.write(`https://${route.hostname}`);
+	const port = fs.readFileSync(path.join(process.cwd(), ".dev-frontend-port"), "utf8").trim();
+	const url = findPortlessUrl(loadPortlessRoutes(), port);
+	if (url) process.stdout.write(url);
 } catch {
 	// Best effort — no URL line if portless isn't routing this worktree.
 }
@@ -213,13 +207,21 @@ start_session() {
 
 stop_session() {
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		tm kill-session -t "$SESSION_NAME"
+		# Send Ctrl-C first so `portless run` runs its own SIGINT cleanup and
+		# removes THIS worktree's route from ~/.portless/routes.json before we
+		# kill the session. (tmux kill-session sends SIGHUP, which portless does
+		# not trap, so the route would otherwise linger until a manual prune.)
+		# This is scoped to this worktree — unlike `portless prune`, which is
+		# global and would risk other worktrees' routes.
+		tm send-keys -t "$SESSION_NAME" C-c 2>/dev/null || true
+		sleep 1
+		tm kill-session -t "$SESSION_NAME" 2>/dev/null || true
 		echo "Stopped tmux session '$SESSION_NAME' (socket: $SOCKET)."
 	else
 		echo "No tmux session '$SESSION_NAME' on socket '$SOCKET'."
 	fi
-	# Stop any stragglers bound to this worktree and prune stale portless routes
-	# (the shared helper runs `portless prune`). Best-effort: never fail the stop.
+	# Backstop: stop any listener still bound to this exact worktree (cwd-scoped,
+	# never touches other worktrees). Best-effort: never fail the stop.
 	node ./scripts/cleanup-worktree-listeners.js || true
 	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
 }
@@ -258,7 +260,7 @@ usage() {
 	echo ""
 	echo "Commands:"
 	echo "  start   Start (or report) the session, then print the Portless URL + ports (default)"
-	echo "  stop    Kill the session, prune stale portless routes, and remove this worktree's dev port files"
+	echo "  stop    Kill the session (letting portless remove this worktree's route) and remove its dev port files"
 	echo "  attach  Attach to the running session (Ctrl-b then d to detach)"
 	echo "  status  Show session and port state"
 	echo ""

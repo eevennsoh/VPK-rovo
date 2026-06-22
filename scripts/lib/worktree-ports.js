@@ -226,31 +226,67 @@ function getWorktreeName() {
 }
 
 /**
+ * Normalize a string into a DNS-label-safe portless name (lowercase, only
+ * [a-z0-9-], no leading/trailing or doubled dashes).
+ */
+function sanitizePortlessName(value) {
+	return String(value ?? "")
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9-]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.replace(/-{2,}/g, "-");
+}
+
+/**
  * Build the extra args for `portless run` from a worktree record.
  *
  * Vanilla `portless run` already derives the right URL on its own for the main
  * checkout (default branch -> vpk-rovo.localhost) and for branched worktrees
  * (branch prepended as a subdomain -> <branch>.vpk-rovo.localhost). Only a
  * detached worktree has no branch for portless to key on, so we supply an
- * explicit --name from the worktree directory basename (-> <dir>.localhost).
+ * explicit --name (-> <name>.localhost).
+ *
+ * Naming the detached worktree is subtle: the directory basename is the unique
+ * token for layouts like `.claude/worktrees/<feature>`, but managed providers
+ * nest the checkout as `.../<hash>/<repo-dir>` (e.g. Codex
+ * `.codex/worktrees/972c/vpk-rovo`), where the basename is just the repo dir
+ * name and the unique token lives in the PARENT dir. Using the basename there
+ * would emit `--name <repo-dir>` for every such worktree, colliding with each
+ * other and with the main checkout. So when the basename equals the repo dir
+ * name, fall back to the parent dir.
  *
  * @param {{ isMain?: boolean, branch?: string|null, path?: string }|null} worktree
- * @returns {string[]} [] for main/branch, or ["--name", <dir>] when detached
+ * @param {string|null} [repoDirName] basename of the main checkout's dir
+ * @returns {string[]} [] for main/branch, or ["--name", <name>] when detached
  */
-function buildPortlessRunArgs(worktree) {
+function buildPortlessRunArgs(worktree, repoDirName = null) {
 	if (!worktree || worktree.isMain) {
 		return [];
 	}
 	if (typeof worktree.branch === "string" && worktree.branch.length > 0) {
 		return [];
 	}
-	return ["--name", path.basename(worktree.path)];
+	if (typeof worktree.path !== "string" || worktree.path.length === 0) {
+		return [];
+	}
+
+	let name = path.basename(worktree.path);
+	if (repoDirName && name === repoDirName) {
+		const parent = path.basename(path.dirname(worktree.path));
+		if (parent && parent !== name) {
+			name = parent;
+		}
+	}
+
+	const sanitized = sanitizePortlessName(name);
+	return sanitized ? ["--name", sanitized] : [];
 }
 
 /**
  * Resolve the args to pass after `portless run` for the current worktree.
  * Returns [] on main or a branched worktree (vanilla portless handles those);
- * ["--name", <worktree-dir>] when HEAD is detached.
+ * ["--name", <unique-token>] when HEAD is detached.
  */
 function getPortlessRunArgs() {
 	const currentWorktreePath = getCurrentWorktreePath();
@@ -258,8 +294,11 @@ function getPortlessRunArgs() {
 		return [];
 	}
 
-	const { worktree } = getWorktreeSlotDetails(currentWorktreePath);
-	return buildPortlessRunArgs(worktree);
+	const worktrees = getGitWorktrees();
+	const worktree = findWorktreeByPath(worktrees, currentWorktreePath);
+	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
+	const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
+	return buildPortlessRunArgs(worktree, repoDirName);
 }
 
 /**

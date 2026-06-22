@@ -96,7 +96,6 @@ test("cleanupListeningProcessesForWorktree escalates only the matching listeners
 		sleepFn: async (ms) => {
 			sleepCalls.push(ms);
 		},
-		prunePortlessFn: () => true,
 		gracePeriodMs: 25,
 		logger: {
 			log: () => {},
@@ -120,7 +119,6 @@ test("cleanupListeningProcessesForWorktree escalates only the matching listeners
 		signalledCount: 2,
 		gracefulCount: 1,
 		forceKilledCount: 1,
-		portlessPruned: true,
 	});
 });
 
@@ -160,7 +158,6 @@ test("cleanupListeningProcessesForWorktree also stops orphaned rovo supervisors 
 		sleepFn: async (ms) => {
 			sleepCalls.push(ms);
 		},
-		prunePortlessFn: () => true,
 		gracePeriodMs: 25,
 		logger: {
 			log: () => {},
@@ -181,35 +178,5 @@ test("cleanupListeningProcessesForWorktree also stops orphaned rovo supervisors 
 		signalledCount: 1,
 		gracefulCount: 1,
 		forceKilledCount: 0,
-		portlessPruned: true,
 	});
-});
-
-test("cleanupListeningProcessesForWorktree prunes portless routes even when no worktree processes are running", async () => {
-	const killCalls = [];
-	let prunedFor = 0;
-
-	const result = await cleanupListeningProcessesForWorktree({
-		worktreePath: "/tmp/repo-a",
-		listListeningPidsFn: () => [],
-		listProcessInfoFn: () => [],
-		getProcessCwdFn: () => null,
-		killFn: (pid, signal) => {
-			killCalls.push([pid, signal]);
-		},
-		sleepFn: async () => {},
-		prunePortlessFn: () => {
-			prunedFor += 1;
-			return true;
-		},
-		logger: { log: () => {}, warn: () => {} },
-	});
-
-	// No PIDs matched, so nothing is signalled...
-	assert.deepEqual(killCalls, []);
-	// ...but prune still runs exactly once and is reported.
-	assert.equal(prunedFor, 1);
-	assert.equal(result.matchedPids.length, 0);
-	assert.equal(result.signalledCount, 0);
-	assert.equal(result.portlessPruned, true);
 });

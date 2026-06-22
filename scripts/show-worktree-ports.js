@@ -12,11 +12,11 @@
  */
 
 const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
 const { Worker } = require("node:worker_threads");
 const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
 const { probePortAlive } = require("./lib/port-liveness");
+const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -67,25 +67,6 @@ function readRovoPorts(worktreePath) {
 
 	const single = readPortFile(worktreePath, ".dev-rovo-port");
 	return single ? [single] : [];
-}
-
-function loadPortlessRoutes() {
-	try {
-		const file = path.join(os.homedir(), ".portless", "routes.json");
-		if (!fs.existsSync(file)) return [];
-		const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
-		return Array.isArray(parsed) ? parsed : [];
-	} catch {
-		return [];
-	}
-}
-
-function findPortlessUrl(routes, frontendPort) {
-	if (!frontendPort) return null;
-	const port = Number(frontendPort);
-	if (!Number.isFinite(port)) return null;
-	const route = routes.find((r) => r && r.port === port);
-	return route?.hostname ? `https://${route.hostname}` : null;
 }
 
 async function probeOrNull(port) {
@@ -269,23 +250,19 @@ async function runWatch() {
 }
 
 const subcommand = process.argv[2];
-if (require.main === module) {
-	if (subcommand === "watch") {
-		runWatch().catch((error) => {
-			console.error(error.message);
-			process.exit(1);
-		});
-	} else if (subcommand && subcommand !== "once") {
-		console.error(
-			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\` or \`pnpm ports watch\`.`
-		);
-		process.exit(2);
-	} else {
-		main().catch((error) => {
-			console.error(error.message);
-			process.exit(1);
-		});
-	}
+if (subcommand === "watch") {
+	runWatch().catch((error) => {
+		console.error(error.message);
+		process.exit(1);
+	});
+} else if (subcommand && subcommand !== "once") {
+	console.error(
+		`Unknown subcommand: ${subcommand}. Use \`pnpm ports\` or \`pnpm ports watch\`.`
+	);
+	process.exit(2);
+} else {
+	main().catch((error) => {
+		console.error(error.message);
+		process.exit(1);
+	});
 }
-
-module.exports = { findPortlessUrl, loadPortlessRoutes };

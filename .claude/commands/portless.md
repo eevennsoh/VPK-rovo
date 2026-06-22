@@ -41,7 +41,7 @@ Bare `portless run` already produces the first two automatically: main is a defa
 
 ## Persistence note
 
-This command's backgrounded `portless run` is fine for a quick look. For a preview that survives cleanly across turns, prefer `pnpm run dev:tmux:start` — it runs the same `portless run` under a detached tmux session, and `pnpm run dev:tmux:stop` prunes the route on teardown.
+This command's backgrounded `portless run` is fine for a quick look. For a preview that survives cleanly across turns, prefer `pnpm run dev:tmux:start` — it runs the same `portless run` under a detached tmux session, and `pnpm run dev:tmux:stop` lets portless remove this worktree's route on teardown (it sends Ctrl-C so `portless run` cleans up its own route — scoped to this worktree, unlike the global `portless prune`).
 
 ## Why this command exists
 

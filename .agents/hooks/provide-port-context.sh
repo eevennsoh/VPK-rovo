@@ -30,19 +30,17 @@ if [ -f "$FRONTEND_PORT_FILE" ]; then
 fi
 
 # Resolve this worktree's stable Portless URL (preferred navigation target) by
-# matching the frontend port against ~/.portless/routes.json. Best-effort: empty
-# if portless isn't routing this worktree or node is unavailable.
+# matching the frontend port against ~/.portless/routes.json via the shared
+# helper (which skips stale/dead routes). Best-effort: empty if portless isn't
+# routing this worktree or node is unavailable.
 PORTLESS_URL=""
 if [ -n "$FRONTEND_PORT" ] && command -v node >/dev/null 2>&1; then
-    PORTLESS_URL=$(FP="$FRONTEND_PORT" node -e '
+    PORTLESS_URL=$(FP="$FRONTEND_PORT" PDIR="$PROJECT_DIR" node -e '
 try {
-  const fs = require("fs"), os = require("os"), path = require("path");
-  const file = path.join(os.homedir(), ".portless", "routes.json");
-  if (!fs.existsSync(file)) process.exit(0);
-  const routes = JSON.parse(fs.readFileSync(file, "utf8"));
-  const port = Number(process.env.FP);
-  const route = Array.isArray(routes) ? routes.find((r) => r && r.port === port) : null;
-  if (route && route.hostname) process.stdout.write("https://" + route.hostname);
+  const path = require("path");
+  const { loadPortlessRoutes, findPortlessUrl } = require(path.join(process.env.PDIR, "scripts/lib/portless-routes"));
+  const url = findPortlessUrl(loadPortlessRoutes(), process.env.FP);
+  if (url) process.stdout.write(url);
 } catch {}' 2>/dev/null)
     if [ -n "$PORTLESS_URL" ]; then
         CONTEXT_PARTS=("Portless URL: $PORTLESS_URL" "${CONTEXT_PARTS[@]}")
