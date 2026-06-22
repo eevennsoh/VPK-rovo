@@ -56,6 +56,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// No source-grep assertions (so it won't drift like the wholesale component
 	// tests); included explicitly so the morph keying stays guarded in CI.
 	"components/visual/text-morphing/lib.test.js",
+	// SVG Tracing parses pasted SVG/path input before rendering it; keep the pure
+	// parser/sanitizer contract gated without enabling broad component tests.
+	"components/visual/svg-tracing/lib.test.js",
 	// Pure heatmap date-domain/filtering contracts behind the chart component.
 	// Components are not included wholesale, so this focused coverage is listed
 	// explicitly to keep it gated by CI.
