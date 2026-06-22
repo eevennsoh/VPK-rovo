@@ -140,7 +140,7 @@ export function ComposerCardBody({
 	return (
 		<div
 			ref={composerRef}
-			className={cn("relative z-10 rounded-xl border border-border bg-surface p-3", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2 pt-3" : undefined)}
+			className={cn("relative z-10 rounded-xl border border-border bg-surface p-3", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2 pt-3" : "pt-4")}
 			style={{
 				boxShadow: composerUpwardShadow,
 				...(composerHeight
@@ -175,7 +175,7 @@ export function ComposerCardBody({
 					/>
 				</PromptInputBody>
 
-				<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
+				<PromptInputFooter className="mt-3 justify-between px-0 pb-0 pt-0">
 					<PromptInputTools>
 						<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
 							<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">

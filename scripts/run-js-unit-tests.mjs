@@ -36,6 +36,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/website/component-doc/components/demo-preview-shell.test.js",
+	// Screen-assistant target geometry powers point_at_target; keep this pure
+	// viewport conversion test gated without enabling the component tree wholesale.
+	"components/screen-assistant/screen-assistant-geometry.test.js",
 	// Canonical logo usage metadata (1P/2P/3P border treatment) — guards the
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.

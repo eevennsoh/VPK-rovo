@@ -128,7 +128,11 @@ function getLineBounds(
 	selectionEnd: number,
 ): { lineStart: number; lineEnd: number } {
 	const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
-	const newlineAfter = value.indexOf("\n", selectionEnd);
+	const effectiveSelectionEnd =
+		selectionEnd > selectionStart && value[selectionEnd - 1] === "\n"
+			? selectionEnd - 1
+			: selectionEnd;
+	const newlineAfter = value.indexOf("\n", effectiveSelectionEnd);
 	const lineEnd = newlineAfter === -1 ? value.length : newlineAfter;
 	return { lineStart, lineEnd };
 }

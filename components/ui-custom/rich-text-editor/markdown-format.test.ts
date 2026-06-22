@@ -77,10 +77,22 @@ test("bulleted list prefixes every selected line", () => {
 	assert.equal(result.value, "- one\n- two\n- three");
 });
 
+test("bulleted list does not format the next line when selection ends on a newline", () => {
+	const result = applyMarkdownFormat("bulletList", select("one\ntwo", 0, 4));
+	assert.equal(result.value, "- one\ntwo");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "- one");
+});
+
 test("numbered list numbers each selected line sequentially", () => {
 	const value = "one\ntwo\nthree";
 	const result = applyMarkdownFormat("orderedList", select(value, 0, value.length));
 	assert.equal(result.value, "1. one\n2. two\n3. three");
+});
+
+test("numbered list does not format the next line when selection ends on a newline", () => {
+	const result = applyMarkdownFormat("orderedList", select("one\ntwo", 0, 4));
+	assert.equal(result.value, "1. one\ntwo");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "1. one");
 });
 
 test("numbered list toggles off when all lines are already numbered", () => {
