@@ -269,19 +269,23 @@ async function runWatch() {
 }
 
 const subcommand = process.argv[2];
-if (subcommand === "watch") {
-	runWatch().catch((error) => {
-		console.error(error.message);
-		process.exit(1);
-	});
-} else if (subcommand && subcommand !== "once") {
-	console.error(
-		`Unknown subcommand: ${subcommand}. Use \`pnpm ports\` or \`pnpm ports watch\`.`
-	);
-	process.exit(2);
-} else {
-	main().catch((error) => {
-		console.error(error.message);
-		process.exit(1);
-	});
+if (require.main === module) {
+	if (subcommand === "watch") {
+		runWatch().catch((error) => {
+			console.error(error.message);
+			process.exit(1);
+		});
+	} else if (subcommand && subcommand !== "once") {
+		console.error(
+			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\` or \`pnpm ports watch\`.`
+		);
+		process.exit(2);
+	} else {
+		main().catch((error) => {
+			console.error(error.message);
+			process.exit(1);
+		});
+	}
 }
+
+module.exports = { findPortlessUrl, loadPortlessRoutes };

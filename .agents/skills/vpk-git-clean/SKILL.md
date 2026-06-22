@@ -145,7 +145,7 @@ Stop dev servers only for a worktree that has already passed every removal check
 
 ### Preferred: the repo's canonical helper
 
-Use the repo's tested helper rather than a hand-rolled `lsof` sweep: `cleanupListeningProcessesForWorktree({ worktreePath })` in `scripts/lib/worktree-listener-cleanup.js`. It matches every TCP listener whose working directory is that exact worktree **plus** the Rovo supervisor process (`scripts/dev-rovo-port.js`), excludes the current process, and escalates SIGTERM → 2s grace → SIGKILL. Because it matches on each PID's cwd, it can never touch the main checkout's or another worktree's dev server. It is covered by `scripts/lib/worktree-listener-cleanup.test.js`.
+Use the repo's tested helper rather than a hand-rolled `lsof` sweep: `cleanupListeningProcessesForWorktree({ worktreePath })` in `scripts/lib/worktree-listener-cleanup.js`. It matches every TCP listener whose working directory is that exact worktree **plus** the Rovo supervisor process (`scripts/dev-rovo-port.js`), excludes the current process, and escalates SIGTERM → 2s grace → SIGKILL. Because it matches on each PID's cwd, it can never touch the main checkout's or another worktree's dev server. It also runs `portless prune` (best-effort) to reap dev servers orphaned by crashed `portless run` sessions and clear their stale `~/.portless/routes.json` entries — so the freed worktree leaves no dangling portless route. It is covered by `scripts/lib/worktree-listener-cleanup.test.js`.
 
 Run it from the main checkout, targeting each removable worktree by absolute path, before `git worktree remove`:
 
@@ -153,7 +153,9 @@ Run it from the main checkout, targeting each removable worktree by absolute pat
 node -e 'require("./scripts/lib/worktree-listener-cleanup").cleanupListeningProcessesForWorktree({ worktreePath: process.argv[1], logger: console }).then((s) => console.log(JSON.stringify(s)))' <worktree>
 ```
 
-The returned summary reports `matchedPids`, `signalledCount`, `gracefulCount`, and `forceKilledCount` — record the killed PIDs per worktree for the final report. The CLI wrapper `scripts/cleanup-worktree-listeners.js` does the same but hardcodes `process.cwd()`, so it only suits stopping the worktree you are standing in; the `node -e` form above is what targets a *different* worktree from the main checkout.
+The returned summary reports `matchedPids`, `signalledCount`, `gracefulCount`, `forceKilledCount`, and `portlessPruned` — record the killed PIDs per worktree for the final report. The CLI wrapper `scripts/cleanup-worktree-listeners.js` does the same but hardcodes `process.cwd()`, so it only suits stopping the worktree you are standing in; the `node -e` form above is what targets a *different* worktree from the main checkout.
+
+> Note: `portless prune` only reaps orphans whose port is still held (crashed sessions). A *gracefully* stopped worktree frees its port, so its route may linger as a harmless `pid 0` entry until reused (visible in `portless list`). That is expected and never affects other worktrees' routes; remove it explicitly with `portless alias --remove <name>` if you want it gone.
 
 ### Fallback: port files
 

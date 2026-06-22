@@ -226,6 +226,43 @@ function getWorktreeName() {
 }
 
 /**
+ * Build the extra args for `portless run` from a worktree record.
+ *
+ * Vanilla `portless run` already derives the right URL on its own for the main
+ * checkout (default branch -> vpk-rovo.localhost) and for branched worktrees
+ * (branch prepended as a subdomain -> <branch>.vpk-rovo.localhost). Only a
+ * detached worktree has no branch for portless to key on, so we supply an
+ * explicit --name from the worktree directory basename (-> <dir>.localhost).
+ *
+ * @param {{ isMain?: boolean, branch?: string|null, path?: string }|null} worktree
+ * @returns {string[]} [] for main/branch, or ["--name", <dir>] when detached
+ */
+function buildPortlessRunArgs(worktree) {
+	if (!worktree || worktree.isMain) {
+		return [];
+	}
+	if (typeof worktree.branch === "string" && worktree.branch.length > 0) {
+		return [];
+	}
+	return ["--name", path.basename(worktree.path)];
+}
+
+/**
+ * Resolve the args to pass after `portless run` for the current worktree.
+ * Returns [] on main or a branched worktree (vanilla portless handles those);
+ * ["--name", <worktree-dir>] when HEAD is detached.
+ */
+function getPortlessRunArgs() {
+	const currentWorktreePath = getCurrentWorktreePath();
+	if (!currentWorktreePath) {
+		return [];
+	}
+
+	const { worktree } = getWorktreeSlotDetails(currentWorktreePath);
+	return buildPortlessRunArgs(worktree);
+}
+
+/**
  * Calculate the base port offset for the current worktree
  * Returns 0 for main worktree.
  */
@@ -322,6 +359,8 @@ module.exports = {
 	hashString,
 	getGitWorktrees,
 	getWorktreeName,
+	buildPortlessRunArgs,
+	getPortlessRunArgs,
 	getWorktreePortOffset,
 	getWorktreePortOffsetForPath,
 	getFrontendBasePort,

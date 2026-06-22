@@ -12,6 +12,7 @@ const {
 	getPortInfoForPath,
 	getRovoBasePort,
 	getWorktreePortOffsetForPath,
+	buildPortlessRunArgs,
 } = require("./worktree-ports");
 
 const WORKTREE_PORTS_MODULE_PATH = path.resolve(__dirname, "worktree-ports.js");
@@ -186,6 +187,73 @@ test("getPortInfoForPath falls back to main defaults for unknown paths", () => {
 		});
 	} finally {
 		fs.rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("buildPortlessRunArgs returns no args for the main checkout", () => {
+	assert.deepEqual(buildPortlessRunArgs(null), []);
+	assert.deepEqual(
+		buildPortlessRunArgs({ isMain: true, branch: "main", path: "/repo" }),
+		[]
+	);
+});
+
+test("buildPortlessRunArgs returns no args for a branched worktree (vanilla prefixes by branch)", () => {
+	assert.deepEqual(
+		buildPortlessRunArgs({
+			isMain: false,
+			branch: "feature-a",
+			path: "/tmp/wt-a",
+		}),
+		[]
+	);
+});
+
+test("buildPortlessRunArgs names a detached worktree by its directory basename", () => {
+	assert.deepEqual(
+		buildPortlessRunArgs({
+			isMain: false,
+			branch: null,
+			path: "/Users/x/.codex/worktrees/972c/vpk-rovo",
+		}),
+		["--name", "vpk-rovo"]
+	);
+	assert.deepEqual(
+		buildPortlessRunArgs({ isMain: false, branch: "", path: "/tmp/detached-wt" }),
+		["--name", "detached-wt"]
+	);
+});
+
+test("getPortlessRunArgs resolves [] on main/branch and --name when detached", () => {
+	const fixture = createGitWorktreeFixture();
+	const detachedPath = path.join(path.dirname(fixture.repoPath), "wt-detached");
+
+	try {
+		execSync(`git worktree add --detach ${JSON.stringify(detachedPath)}`, {
+			cwd: fixture.repoPath,
+			stdio: "ignore",
+		});
+
+		// Main checkout -> bare `portless run` -> vpk-rovo.localhost
+		assert.deepEqual(
+			runWorktreePortsExpression(fixture.repoPath, "mod.getPortlessRunArgs()"),
+			[]
+		);
+		// Branched worktree -> bare `portless run` -> <branch>.vpk-rovo.localhost
+		assert.deepEqual(
+			runWorktreePortsExpression(
+				fixture.worktreeAPath,
+				"mod.getPortlessRunArgs()"
+			),
+			[]
+		);
+		// Detached worktree -> needs an explicit name -> <dir>.localhost
+		assert.deepEqual(
+			runWorktreePortsExpression(detachedPath, "mod.getPortlessRunArgs()"),
+			["--name", path.basename(detachedPath)]
+		);
+	} finally {
+		fixture.cleanup();
 	}
 });
 
