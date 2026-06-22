@@ -6,9 +6,6 @@ export const UTILITY_DETAILS: Record<string, ComponentDetail> = {
 			"An AI-assisted browser workspace for VPK. Binds chat actions to a dedicated embedded browser workspace with real tabs, live preview streaming, accessibility snapshots, and an explicit fullscreen preview route.",
 		demoLayout: { previewContentWidth: "full" },
 	},
-	"elapsed-time": {
-		description: "Shared elapsed-time formatting helpers used by progress blocks. The demo visualizes running, completed, and invalid timestamp cases so route surfaces can be checked without opening a full progress block.",
-	},
 	gui: {
 		description:
 			"A reusable compound component for building dense animation and visual parameter panels. It owns numeric sliders, normalized percentages, toggles, selects, text, color inputs, editable color lists, RGBA tuple editors, local image/SVG uploads, swatch groups, segmented playback controls, sections, panel actions, and mounted value-key copy filtering.",

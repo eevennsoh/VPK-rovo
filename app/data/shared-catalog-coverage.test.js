@@ -27,15 +27,22 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	assert.doesNotMatch(manifestSource, /customComponent\("heading"/u);
 	assert.doesNotMatch(componentSource, /customComponent\("heading"/u);
 
-	for (const [slug, name] of [
-		["elapsed-time", "Elapsed Time"],
-	]) {
-		assert.match(manifestSource, new RegExp(`utilityComponent\\("${slug}", "${name}"\\)`, "u"));
-		assert.match(componentSource, new RegExp(`utilityComponent\\("${slug}", "${name}"\\)`, "u"));
-		assert.match(utilityDetailsSource, new RegExp(`"${slug}": \\{`, "u"));
-		assert.match(registrySource, new RegExp(`"${slug}": dynamic\\(\\s*\\(\\) => import\\("\\./demos/utils/${slug}-demo"\\)`, "u"));
-		assert.equal(existsSync(path.join(ROOT, "components/website/demos/utils", `${slug}-demo.tsx`)), true);
+	// elapsed-time was folded into the progress block docs (agent-progress + task-progress);
+	// it must NOT exist as a standalone utility catalog page anymore.
+	assert.doesNotMatch(manifestSource, /utilityComponent\("elapsed-time", "Elapsed Time"\)/u);
+	assert.doesNotMatch(componentSource, /utilityComponent\("elapsed-time", "Elapsed Time"\)/u);
+	assert.doesNotMatch(utilityDetailsSource, /"elapsed-time": \{/u);
+	assert.doesNotMatch(registrySource, /demos\/utils\/elapsed-time-demo/u);
+	assert.equal(existsSync(path.join(ROOT, "components/website/demos/utils/elapsed-time-demo.tsx")), false);
+
+	// The elapsed-time behavior is now documented as an example inside both progress blocks,
+	// rendered through the real component and the shared @/lib/elapsed-time helpers.
+	for (const block of ["agent-progress", "task-progress"]) {
+		assert.match(blockDetailsSource, new RegExp(`demoSlug: "${block}-demo-elapsed-time"`, "u"));
+		assert.match(registrySource, new RegExp(`"${block}-demo-elapsed-time": dynamic\\(`, "u"));
+		assert.equal(existsSync(path.join(ROOT, "components/website/demos/blocks", `${block}-demo.tsx`)), true);
 	}
+	assert.equal(existsSync(path.join(ROOT, "lib/elapsed-time.ts")), true);
 
 	// chat-configuration was re-categorized from utility into blocks; its catalog demo now lives under demos/blocks.
 	assert.match(componentSource, /slug: "chat-configuration",[\s\S]*?category: "blocks"/u);

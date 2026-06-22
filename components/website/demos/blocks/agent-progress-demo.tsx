@@ -196,3 +196,26 @@ export function AgentProgressDemoAllStates() {
 		</div>
 	);
 }
+
+// The header timer (`• {elapsed}`) is driven by the shared @/lib/elapsed-time helpers
+// via runCreatedAt / runCompletedAt. This example documents those three states in place
+// of a standalone elapsed-time page.
+export function AgentProgressDemoElapsedTime() {
+	const runningStartedAt = new Date(Date.now() - 243_000).toISOString(); // started ~4m 03s ago
+	return (
+		<div className="flex flex-col items-center gap-6 p-6">
+			<div className="flex w-full max-w-sm flex-col gap-2">
+				<span className="text-xs font-medium text-text-subtlest">Running — live timer counts up from runCreatedAt</span>
+				<AgentsProgress planTitle="Live Run" planVisualIdentity={resolvePlanVisualIdentity("Live Run")} taskStatusGroups={TASKS_MIXED} runStatus="running" runCreatedAt={runningStartedAt} agentCount={6} />
+			</div>
+			<div className="flex w-full max-w-sm flex-col gap-2">
+				<span className="text-xs font-medium text-text-subtlest">Completed — frozen at runCompletedAt − runCreatedAt</span>
+				<AgentsProgress planTitle="Finished Run" planVisualIdentity={resolvePlanVisualIdentity("Finished Run")} taskStatusGroups={TASKS_ALL_DONE} runStatus="completed" runCreatedAt="2025-01-15T10:00:00Z" runCompletedAt="2025-01-15T10:05:29Z" agentCount={4} />
+			</div>
+			<div className="flex w-full max-w-sm flex-col gap-2">
+				<span className="text-xs font-medium text-text-subtlest">Missing start — falls back to 0m 00s</span>
+				<AgentsProgress planTitle="Unknown Start" planVisualIdentity={resolvePlanVisualIdentity("Unknown Start")} taskStatusGroups={TASKS_EARLY} runStatus="running" runCreatedAt={null} agentCount={2} />
+			</div>
+		</div>
+	);
+}
