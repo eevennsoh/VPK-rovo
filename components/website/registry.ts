@@ -7526,6 +7526,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-progress-demo-elapsed-time": dynamic(
+    () =>
+      import("./demos/blocks/agent-progress-demo").then((mod) => ({
+        default: mod.AgentProgressDemoElapsedTime,
+      })),
+    { ssr: false },
+  ),
 
   // Task Progress
   "task-progress-demo-running": dynamic(
@@ -7588,6 +7595,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/task-progress-demo").then((mod) => ({
         default: mod.TaskProgressDemoAllStates,
+      })),
+    { ssr: false },
+  ),
+  "task-progress-demo-elapsed-time": dynamic(
+    () =>
+      import("./demos/blocks/task-progress-demo").then((mod) => ({
+        default: mod.TaskProgressDemoElapsedTime,
       })),
     { ssr: false },
   ),
@@ -8297,9 +8311,6 @@ export function getChartDemoComponent(slug: string): ComponentType | null {
 
 const UTILITY_DEMOS: Record<string, ComponentType> = {
   "agent-browser": dynamic(() => import("./demos/utils/agent-browser"), {
-    ssr: false,
-  }),
-  "elapsed-time": dynamic(() => import("./demos/utils/elapsed-time-demo"), {
     ssr: false,
   }),
   gui: dynamic(() => import("./demos/utils/gui-demo"), { ssr: false }),
