@@ -9,22 +9,55 @@ import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
-import Ascii, {
-	ASCII_ANIMATION_STYLES,
-	ASCII_BACKGROUND_MODES,
-	ASCII_CHARSETS,
-	ASCII_COMPOSITE_MODES,
-	ASCII_CONTROL_BLEND_MODES,
-	ASCII_CONTROL_COLOR_MODES,
-	ASCII_COLOR_SOURCE_MODES,
-	ASCII_DEFAULT_SOURCE_COLORS,
+import {
+	ANIMATION_STYLE_OPTIONS,
+	BACKGROUND_MODE_OPTIONS,
+	BLEND_MODE_OPTIONS,
+	CHARSET_OPTIONS,
+	COLOR_MODE_OPTIONS,
+	COLOR_OVERLAY_BLEND_OPTIONS,
+	COLOR_SOURCE_OPTIONS,
+	COMPOSITE_MODE_OPTIONS,
+	DEFAULT_ANIMATION_INTENSITY,
+	DEFAULT_ANIMATION_RANDOMNESS,
+	DEFAULT_ANIMATION_SPEED_SECONDS,
+	DEFAULT_BLUR_RADIUS,
+	DEFAULT_BLOOM_INTENSITY,
+	DEFAULT_BLOOM_RADIUS,
+	DEFAULT_BLOOM_SOFTNESS,
+	DEFAULT_BLOOM_THRESHOLD,
+	DEFAULT_CHARACTER_BLOOM_INTENSITY,
+	DEFAULT_CHARACTER_CHROMATIC_OFFSET,
+	DEFAULT_CHARSET_VALUES,
+	DEFAULT_CHROMATIC_OFFSET,
+	DEFAULT_COLOR_OVERLAY_OPACITY,
+	DEFAULT_CRT_CURVATURE_INTENSITY,
+	DEFAULT_DENSITY,
+	DEFAULT_FILM_DUST_DENSITY,
+	DEFAULT_FILM_GRAIN_INTENSITY,
+	DEFAULT_GLITCH_INTENSITY,
+	DEFAULT_HALFTONE_SIZE,
+	DEFAULT_PIXELATE_SIZE,
+	DEFAULT_RGB_SPLIT_OFFSET,
+	DEFAULT_SCAN_LINES_INTENSITY,
+	DEFAULT_VIGNETTE_INTENSITY,
+	FONT_WEIGHT_OPTIONS,
+	IMAGE_BACKGROUND_BLUR_RADIUS,
+	IMAGE_BACKGROUND_OPACITY,
+	MASK_MODE_OPTIONS,
+	MASK_SOURCE_OPTIONS,
+	SIGNAL_MODE_OPTIONS,
+	SOURCE_MODE_OPTIONS,
+	TONE_MAPPING_OPTIONS,
+	animationDurationToCycleSpeed,
+	getPreviewAspectRatio,
+	resolveImageBackgroundDefaults,
+} from "./ascii-control-model";
+import Ascii from "./shaders/ascii";
+import {
 	ASCII_DEFAULT_CHARACTERS,
-	ASCII_FONT_WEIGHTS,
+	ASCII_DEFAULT_SOURCE_COLORS,
 	ASCII_MAX_SOURCE_COLORS,
-	ASCII_MASK_MODES,
-	ASCII_MASK_SOURCES,
-	ASCII_SIGNAL_MODES,
-	ASCII_TONE_MAPPING_MODES,
 	type AsciiBackgroundMode,
 	type AsciiBlendMode,
 	type AsciiCharset,
@@ -38,98 +71,7 @@ import Ascii, {
 	type AsciiSignalMode,
 	type AsciiSourceMode,
 	type AsciiToneMappingMode,
-} from "./shaders/ascii";
-
-const SOURCE_MODE_OPTIONS = [
-	{ value: "field", label: "Field" },
-	{ value: "image", label: "Image" },
-] as const;
-
-const ANIMATION_STYLE_OPTIONS = [
-	{ value: "wave", label: "Wave" },
-	{ value: "cascade-left-right", label: "Cascade Left -> Right" },
-	{ value: "cascade-right-left", label: "Cascade Right -> Left" },
-	{ value: "cascade-top-bottom", label: "Cascade Top -> Bottom" },
-	{ value: "reveal", label: "Reveal" },
-	{ value: "pulse", label: "Pulse" },
-] satisfies ReadonlyArray<{ value: (typeof ASCII_ANIMATION_STYLES)[number]; label: string }>;
-
-function titleize(value: string): string {
-	return value
-		.split("-")
-		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-		.join(" ");
-}
-
-function optionsFromValues<const T extends readonly string[]>(values: T) {
-	return values.map((value) => ({ value, label: titleize(value) }));
-}
-
-const BLEND_MODE_OPTIONS = optionsFromValues(ASCII_CONTROL_BLEND_MODES);
-const COMPOSITE_MODE_OPTIONS = optionsFromValues(ASCII_COMPOSITE_MODES);
-const CHARSET_OPTIONS = [
-	...optionsFromValues(Object.keys(ASCII_CHARSETS) as Array<keyof typeof ASCII_CHARSETS>),
-	{ value: "custom", label: "Custom" },
-] as const;
-const FONT_WEIGHT_OPTIONS = optionsFromValues(ASCII_FONT_WEIGHTS);
-const COLOR_MODE_OPTIONS = optionsFromValues(ASCII_CONTROL_COLOR_MODES);
-const COLOR_SOURCE_OPTIONS = optionsFromValues(ASCII_COLOR_SOURCE_MODES);
-const MASK_SOURCE_OPTIONS = optionsFromValues(ASCII_MASK_SOURCES);
-const MASK_MODE_OPTIONS = optionsFromValues(ASCII_MASK_MODES);
-const SIGNAL_MODE_OPTIONS = optionsFromValues(ASCII_SIGNAL_MODES);
-const TONE_MAPPING_OPTIONS = optionsFromValues(ASCII_TONE_MAPPING_MODES);
-const BACKGROUND_MODE_OPTIONS = [
-	{ value: "blurred-image", label: "Blurred Image" },
-	{ value: "solid-black", label: "Solid Black" },
-	{ value: "original-image", label: "Original Image" },
-	{ value: "transparent", label: "None (Transparent)" },
-] satisfies ReadonlyArray<{ value: (typeof ASCII_BACKGROUND_MODES)[number]; label: string }>;
-const DEFAULT_CHARSET_VALUES: Record<AsciiCharset, string> = {
-	...ASCII_CHARSETS,
-	custom: ASCII_DEFAULT_CHARACTERS,
-};
-const DEFAULT_DENSITY = 0.82;
-const DEFAULT_PREVIEW_ASPECT_RATIO = "16 / 9";
-const IMAGE_BACKGROUND_OPACITY = 0.61;
-const IMAGE_BACKGROUND_BLUR_RADIUS = 60;
-const DEFAULT_ANIMATION_SPEED_SECONDS = 4.3;
-const DEFAULT_ANIMATION_INTENSITY = 0.83;
-const DEFAULT_ANIMATION_RANDOMNESS = 0.5;
-const DEFAULT_COLOR_OVERLAY_OPACITY = 0.3;
-const DEFAULT_VIGNETTE_INTENSITY = 0.5;
-const DEFAULT_SCAN_LINES_INTENSITY = 0.4;
-const DEFAULT_CRT_CURVATURE_INTENSITY = 0.3;
-const DEFAULT_CHROMATIC_OFFSET = 3;
-const DEFAULT_BLOOM_INTENSITY = 0.4;
-const DEFAULT_BLOOM_THRESHOLD = 0.6;
-const DEFAULT_BLOOM_RADIUS = 6;
-const DEFAULT_BLOOM_SOFTNESS = 0.35;
-const DEFAULT_CHARACTER_BLOOM_INTENSITY = 0.6;
-const DEFAULT_CHARACTER_CHROMATIC_OFFSET = 3;
-const DEFAULT_FILM_GRAIN_INTENSITY = 0.3;
-const DEFAULT_GLITCH_INTENSITY = 0.2;
-const DEFAULT_RGB_SPLIT_OFFSET = 2;
-const DEFAULT_BLUR_RADIUS = 2;
-const DEFAULT_PIXELATE_SIZE = 4;
-const DEFAULT_HALFTONE_SIZE = 4;
-const DEFAULT_FILM_DUST_DENSITY = 0.2;
-const COLOR_OVERLAY_BLEND_OPTIONS = [
-	{ value: "multiply", label: "Multiply" },
-	{ value: "overlay", label: "Overlay" },
-	{ value: "screen", label: "Screen" },
-	{ value: "color", label: "Color" },
-	{ value: "hue", label: "Hue" },
-	{ value: "saturation", label: "Saturation" },
-	{ value: "luminosity", label: "Luminosity" },
-	{ value: "soft-light", label: "Soft Light" },
-	{ value: "hard-light", label: "Hard Light" },
-	{ value: "color-burn", label: "Color Burn" },
-	{ value: "color-dodge", label: "Color Dodge" },
-] satisfies ReadonlyArray<{ value: AsciiBlendMode; label: string }>;
-
-function animationDurationToCycleSpeed(durationSeconds: number, characterCount: number): number {
-	return characterCount / Math.max(durationSeconds, 0.1);
-}
+} from "./shaders/ascii-core";
 
 interface UploadedImage {
 	src: string;
@@ -149,10 +91,6 @@ function loadUploadedImageDimensions(src: string): Promise<Pick<UploadedImage, "
 		image.onerror = () => reject(new Error("Unable to read uploaded image dimensions."));
 		image.src = src;
 	});
-}
-
-function getPreviewAspectRatio(image: UploadedImage | undefined): string {
-	return image ? `${image.width} / ${image.height}` : DEFAULT_PREVIEW_ASPECT_RATIO;
 }
 
 export default function AsciiDemo() {
@@ -262,9 +200,10 @@ export default function AsciiDemo() {
 	);
 
 	const applyImageBackgroundDefaults = useCallback(() => {
-		setBackgroundMode("blurred-image");
-		setBackgroundOpacity(IMAGE_BACKGROUND_OPACITY);
-		setBackgroundBlurRadius(IMAGE_BACKGROUND_BLUR_RADIUS);
+		const defaults = resolveImageBackgroundDefaults();
+		setBackgroundMode(defaults.backgroundMode);
+		setBackgroundOpacity(defaults.backgroundOpacity);
+		setBackgroundBlurRadius(defaults.backgroundBlurRadius);
 	}, []);
 
 	const handleSourceModeChange = useCallback(
