@@ -45,9 +45,10 @@ function invokingSkillLabel(skillId: string): ReactNode {
 
 interface SkillCreationTraceCardProps {
 	payload: SkillCreationTracePayload;
-	/** When the question card has been answered, the awaiting trace flips its
-	 *  header to "Questions answered". */
-	answered?: boolean;
+	/** Flow ids whose question card has been answered. The awaiting trace flips
+	 *  its header to "Questions answered" when its own flow id is in this set, so
+	 *  multiple create-skill flows in one transcript stay independent. */
+	answeredFlowIds?: ReadonlySet<string>;
 }
 
 /**
@@ -56,8 +57,9 @@ interface SkillCreationTraceCardProps {
  * the design-system component exactly. The header is general (not parroting the
  * active step) and reflects awaiting/answered/duration states.
  */
-export function SkillCreationTraceCard({ payload, answered = false }: Readonly<SkillCreationTraceCardProps>) {
+export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<SkillCreationTraceCardProps>) {
 	const isAwaiting = payload.awaiting === true;
+	const answered = isAwaiting && payload.flowId ? Boolean(answeredFlowIds?.has(payload.flowId)) : false;
 	const state: ChainOfThoughtScenarioState =
 		isAwaiting ? (answered ? "completed" : "thinking") : payload.headerState;
 	const headerLabel: ReactNode = isAwaiting

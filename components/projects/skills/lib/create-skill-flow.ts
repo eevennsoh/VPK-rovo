@@ -100,6 +100,9 @@ export interface SkillCreationTracePayload {
 	/** Stage-1 final frame: header reads "Awaiting user response" until answered,
 	 *  then the card flips it to "Questions answered". */
 	awaiting?: boolean;
+	/** Identifies the create-skill flow instance so the card can track answered
+	 *  state per flow (multiple create-skill flows can share one transcript). */
+	flowId?: string;
 	steps: readonly SkillCreationTraceStep[];
 }
 
@@ -131,6 +134,25 @@ function normalize(text: string): string {
 /** True when the composer text contains the create-skill mention (`/Create skill`). */
 export function hasCreateSkillMention(text: string): boolean {
 	return CREATE_SKILL_MENTION_RE.test(text);
+}
+
+/**
+ * Finds a runtime-created skill referenced as a `/<Skill name>` mention in the
+ * composer text (e.g. the auto-prefilled tag after creation). Lets SkillsPanel
+ * handle invocation of a created skill locally instead of letting it fall through
+ * to the static keyword matcher (which could mis-fire a built-in skill).
+ */
+export function matchCreatedSkillMention<T extends { name: string }>(
+	text: string,
+	createdSkills: readonly T[],
+): T | undefined {
+	for (const skill of createdSkills) {
+		const escaped = skill.name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+		if (new RegExp(`(?:^|\\s)\\/${escaped}\\b`, "iu").test(text)) {
+			return skill;
+		}
+	}
+	return undefined;
 }
 
 /**
@@ -239,7 +261,7 @@ function stage1Steps(activeIndex: number, allComplete = false): SkillCreationTra
 	}));
 }
 
-export function buildCreateSkillStage1(): CreateSkillStageOutcome {
+export function buildCreateSkillStage1(flowId: string): CreateSkillStageOutcome {
 	return {
 		getPendingAssistantParts: () =>
 			[traceWidgetPart({ headerLabel: STAGE_1_HEADER, headerState: "thinking", steps: stage1Steps(0) })],
@@ -257,9 +279,10 @@ export function buildCreateSkillStage1(): CreateSkillStageOutcome {
 			{
 				delayMs: TRACE_STEP_DELAYS_MS[1],
 				// All steps complete; header reads "Awaiting user response" (card flips
-				// it to "Questions answered" once answered) and the question card docks.
+				// it to "Questions answered" once this flow is answered) and the
+				// question card docks.
 				getAssistantParts: () => [
-					traceWidgetPart({ headerState: "thinking", awaiting: true, steps: stage1Steps(0, true) }),
+					traceWidgetPart({ headerState: "thinking", awaiting: true, flowId, steps: stage1Steps(0, true) }),
 					buildQuestionCardPart(),
 				],
 			},

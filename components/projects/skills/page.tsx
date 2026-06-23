@@ -32,6 +32,7 @@ import {
 	deriveSkillFromPrompt,
 	hasCreateSkillMention,
 	isCreateSkillClarification,
+	matchCreatedSkillMention,
 	SKILL_CREATION_RESULT_WIDGET_TYPE,
 	SKILL_CREATION_TRACE_WIDGET_TYPE,
 	type SkillCreationResultPayload,
@@ -80,12 +81,16 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	// derive the skill from it (the clarification summary alone lacks it).
 	const pendingCreatePromptRef = useRef<string>("");
 	const prefillCounterRef = useRef(0);
+	// Per-flow identity so answered state is tracked per create-skill flow, not
+	// panel-wide (multiple flows can coexist in one transcript).
+	const flowCounterRef = useRef(0);
+	const pendingFlowIdRef = useRef<string>("");
 	const [configSkillId, setConfigSkillId] = useState<string | null>(null);
 	const [isSkillsDirectoryOpen, setIsSkillsDirectoryOpen] = useState(false);
 	const [prefillRequest, setPrefillRequest] = useState<{ text: string; requestKey: number }>();
-	// Flips the first trace's header from "Awaiting user response" to
-	// "Questions answered" once the question card has been answered.
-	const [clarificationAnswered, setClarificationAnswered] = useState(false);
+	// Flow ids whose question round has been answered. Each awaiting trace flips
+	// to "Questions answered" only when its own flow id lands here.
+	const [answeredFlowIds, setAnsweredFlowIds] = useState<ReadonlySet<string>>(() => new Set());
 
 	const handleEditSkill = useCallback((skillId: string) => {
 		setConfigSkillId(skillId);
@@ -100,7 +105,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 					return (
 						<SkillCreationTraceCard
 							payload={widget.data as SkillCreationTracePayload}
-							answered={clarificationAnswered}
+							answeredFlowIds={answeredFlowIds}
 						/>
 					);
 				case SKILL_CREATION_RESULT_WIDGET_TYPE:
@@ -117,7 +122,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 					return undefined;
 			}
 		},
-		[clarificationAnswered, handleEditSkill],
+		[answeredFlowIds, handleEditSkill],
 	);
 
 	const getWidgetPosition = useCallback(
@@ -138,8 +143,9 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 		// Submit 1: the composer carries the create-skill tag → start the build flow.
 		if (hasCreateSkillMention(text)) {
 			pendingCreatePromptRef.current = text;
-			setClarificationAnswered(false);
-			const stage = buildCreateSkillStage1();
+			flowCounterRef.current += 1;
+			pendingFlowIdRef.current = String(flowCounterRef.current);
+			const stage = buildCreateSkillStage1(pendingFlowIdRef.current);
 			return {
 				handled: true,
 				getPendingAssistantParts: stage.getPendingAssistantParts,
@@ -149,7 +155,14 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 
 		// Answer turn: ChatPanel routed the question-card answers back here.
 		if (isCreateSkillClarification(text)) {
-			setClarificationAnswered(true);
+			const flowId = pendingFlowIdRef.current;
+			setAnsweredFlowIds((prev) => {
+				const next = new Set(prev);
+				if (flowId) {
+					next.add(flowId);
+				}
+				return next;
+			});
 			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text);
 			addCreatedSkill(skill);
 			const stage = buildCreateSkillStage2(skill, () => {
@@ -163,9 +176,26 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 			};
 		}
 
+		// Invoking a runtime-created skill (e.g. the auto-prefilled `/<name>` tag).
+		// Handle it locally so it doesn't fall through to the static keyword matcher
+		// and mis-fire a built-in skill (e.g. a name containing "summarize").
+		const invokedCreatedSkill = matchCreatedSkillMention(text, createdSkills);
+		if (invokedCreatedSkill) {
+			return {
+				handled: true,
+				assistantParts: [
+					{
+						type: "text",
+						text: `Ran **${invokedCreatedSkill.name}** — ${invokedCreatedSkill.description}`,
+						state: "done",
+					},
+				] as ChatSubmitInterceptOutcome["assistantParts"],
+			};
+		}
+
 		// Otherwise fall back to the skill-invocation demo.
 		return buildSkillInterceptOutcome(text);
-	}, []);
+	}, [createdSkills]);
 
 	const resolveComposerPlaceholder = useCallback(
 		(prompt: string): string | undefined =>
