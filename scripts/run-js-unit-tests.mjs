@@ -16,14 +16,17 @@ const INCLUDED_TEST_PREFIXES = [
 	"rovo/",
 	"scripts/",
 ];
-// Specific component-tree tests gated by CI even though `components/` as a whole
-// is not (its 200+ source-assertion tests have drifted and aren't CI-maintained).
+// Specific tests gated by CI even though they live outside the broad included
+// prefixes or under `components/` (which has 200+ source-assertion tests that
+// have drifted and aren't CI-maintained).
 // This covers the agent-generation creation-context seam. NOTE: the broader
 // `rovo-app-agent-creation-flow.test.js` is deliberately NOT gated — it bundles
 // pre-existing source-grep tests (greeting, landing layout) that drift whenever
 // main refactors those components; the focused tests here plus the e2e pipeline
 // test in `app/data/directory/agent-generation-e2e.test.js` cover this feature.
 const INCLUDED_TEST_FILES = new Set([
+	// Root-level Teamwork Graph installer wrapper contract.
+	"twg-install.test.js",
 	"components/projects/studio/lib/studio-agent-creation-context.test.js",
 	// Widened agent-draft patch contract used by the on-screen assistants (voice
 	// cursor + Ask Rovo sidebar). Bundles the real catalog via the directory
@@ -49,6 +52,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",
+	// Personal Graph neural renderer/store/sound/layout contracts. This is a pure
+	// node:test file under components/arts, so gate it explicitly without enabling
+	// broad source-grep component tests.
+	"components/arts/personal-graph/lib/neural-graph/neural-graph.test.js",
 	// Scheduled-trigger inference (daily-at-7am + NL → structured definitions).
 	// Lives under components/ so it must be included explicitly to run in CI.
 	"components/blocks/triggers/data/trigger-inference.test.js",
