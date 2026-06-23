@@ -50,6 +50,7 @@ import {
 	syncWiki,
 } from "./lib/control-plane-api";
 import { formatControlPlaneDateTime } from "./lib/control-plane-utils";
+import { buildMemoryArtifactSelection, resolveExplicitMemoryArtifactNode } from "./lib/memory-artifact-selection";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import type {
 	WikiCanonicalMemoryBlock,
@@ -235,7 +236,7 @@ export function MemoriesSurfacePage() {
 
 	const filterInput = useMemo(() => buildExplorerFilterInput(filters), [filters]);
 	const selectedNode = useMemo(
-		() => explorer?.nodes.find((node) => node.id === selectedNodeId) ?? explorer?.nodes[0] ?? null,
+		() => resolveExplicitMemoryArtifactNode(explorer?.nodes, selectedNodeId),
 		[explorer?.nodes, selectedNodeId],
 	);
 	const selectedCanonicalDocument = useMemo(
@@ -257,7 +258,7 @@ export function MemoriesSurfacePage() {
 			setMemoryDocuments(nextMemories);
 			setErrorMessage(null);
 			startTransition(() => {
-				setSelectedNodeId((current) => nextExplorer.nodes.some((node) => node.id === current) ? current : nextExplorer.nodes[0]?.id ?? null);
+				setSelectedNodeId((current) => nextExplorer.nodes.some((node) => node.id === current) ? current : null);
 			});
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -336,14 +337,18 @@ export function MemoriesSurfacePage() {
 			return;
 		}
 
-		const selectedNodeIds = selectedNode ? [selectedNode.id] : [];
+		const artifactSelection = buildMemoryArtifactSelection({
+			kind,
+			selectedNode,
+			selectedNodeId,
+		});
 		try {
 			if (kind === "brief") {
 				setIsGeneratingBrief(true);
 				const nextBrief = await generateWikiMemoryBrief({
 					filters: filterInput,
-					selectedNodeIds,
-					title: selectedNode ? `${selectedNode.title} brief` : "Memory Brief",
+					selectedNodeIds: artifactSelection.selectedNodeIds,
+					title: artifactSelection.title,
 				});
 				setBriefArtifact(nextBrief);
 				return;
@@ -352,8 +357,8 @@ export function MemoriesSurfacePage() {
 			setIsGeneratingDeck(true);
 			const nextDeck = await generateWikiMemoryDeck({
 				filters: filterInput,
-				selectedNodeIds,
-				title: selectedNode ? `${selectedNode.title} deck` : "Memory Explorer Deck",
+				selectedNodeIds: artifactSelection.selectedNodeIds,
+				title: artifactSelection.title,
 			});
 			setDeckArtifact(nextDeck);
 		} catch (error) {
@@ -661,7 +666,7 @@ export function MemoriesSurfacePage() {
 														{explorer?.nodes.map((node) => (
 															<TableRow
 																key={node.id}
-																data-state={selectedNode?.id === node.id ? "selected" : undefined}
+																data-state={selectedNodeId === node.id ? "selected" : undefined}
 																className="cursor-pointer"
 																onClick={() => setSelectedNodeId(node.id)}
 															>
