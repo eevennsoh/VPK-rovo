@@ -70,7 +70,7 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
-import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { ComposerDirectoryAutocompleteController, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
@@ -302,6 +302,35 @@ interface ChatPanelProps {
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	localConversation?: ChatPanelLocalConversation | null;
 	startRealtimeVoiceRequestKey?: number;
+	/**
+	 * Opt-in: derive the composer placeholder from the current prompt text.
+	 * Returns `undefined` to use the default. Used by the Skills demo to switch
+	 * the placeholder when the create-skill tag is present.
+	 */
+	resolveComposerPlaceholder?: (prompt: string) => string | undefined;
+	/**
+	 * Opt-in: imperatively set the composer text. Apply on `requestKey` change
+	 * (keyed-request idiom, like `startRealtimeVoiceRequestKey`). Used to
+	 * auto-prefill a newly-created skill's tag.
+	 */
+	composerPrefillRequest?: { text: string; requestKey: number };
+	/**
+	 * Opt-in: route docked question-card answers back through `onInterceptSubmit`
+	 * (via the clarification summary prompt) instead of the model. Lets a
+	 * deterministic flow (e.g. create-skill) continue without a backend call.
+	 */
+	interceptClarificationAnswers?: boolean;
+	/**
+	 * Opt-in: extra mention sources merged into the composer's `/` and `@` menus
+	 * (e.g. runtime-created skills). Forwarded to the rich-text editor.
+	 */
+	composerMentionSources?: RichTextMentionSources;
+	/**
+	 * Opt-in: flip a message's thinking trace from "Awaiting user response" to
+	 * "Questions answered" once a later user message exists (studio behavior).
+	 * Default false leaves other consumers unchanged.
+	 */
+	markAnsweredQuestionTraces?: boolean;
 }
 
 const COMPACT_CHAT_WIDTH_MAX = 520;
@@ -446,6 +475,11 @@ export default function ChatPanel({
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	localConversation = null,
 	startRealtimeVoiceRequestKey = 0,
+	resolveComposerPlaceholder,
+	composerPrefillRequest,
+	interceptClarificationAnswers = false,
+	composerMentionSources,
+	markAnsweredQuestionTraces = false,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
 		resetChat,
@@ -688,6 +722,19 @@ export default function ChatPanel({
 
 	const realtimeTranscriptRef = useRef("");
 	const promptRef = useRef(prompt);
+	const lastComposerPrefillKeyRef = useRef(0);
+
+	// Opt-in imperative composer prefill (keyed-request idiom). Applies the
+	// requested text via setPrompt whenever requestKey increments.
+	useEffect(() => {
+		const requestKey = composerPrefillRequest?.requestKey ?? 0;
+		if (requestKey <= 0 || lastComposerPrefillKeyRef.current === requestKey) {
+			return;
+		}
+		lastComposerPrefillKeyRef.current = requestKey;
+		setPrompt(composerPrefillRequest?.text ?? "");
+		setComposerFocusRequestKey((currentKey) => currentKey + 1);
+	}, [composerPrefillRequest, setPrompt]);
 	const screenAssistantPointerRef = useRef<{ x: number; y: number } | null>(null);
 	const sendFunctionCallOutputRef = useRef<
 		((payload: { callId: string; output: unknown; createResponse?: boolean }) => void) | null
@@ -1281,6 +1328,27 @@ export default function ChatPanel({
 		return null;
 	}, [messages]);
 
+	// Opt-in (markAnsweredQuestionTraces): assistant messages followed by a later
+	// user message have had their clarification answered, so their thinking trace
+	// should read "Questions answered" instead of "Awaiting user response".
+	const answeredTraceMessageIds = useMemo(() => {
+		const ids = new Set<string>();
+		if (!markAnsweredQuestionTraces) {
+			return ids;
+		}
+		let sawLaterUser = false;
+		for (let i = messages.length - 1; i >= 0; i--) {
+			const candidate = messages[i];
+			if (candidate.role === "assistant" && sawLaterUser) {
+				ids.add(candidate.id);
+			}
+			if (candidate.role === "user") {
+				sawLaterUser = true;
+			}
+		}
+		return ids;
+	}, [markAnsweredQuestionTraces, messages]);
+
 	const activeQuestionCard = useMemo(() => (
 		isLocalConversationActive ? null : getLatestQuestionCardPayload(rawUiMessages)
 	), [isLocalConversationActive, rawUiMessages]);
@@ -1390,6 +1458,25 @@ export default function ChatPanel({
 			const clarificationSubmission = createClarificationSubmission(activeQuestionCard, answers);
 			const clarificationPrompt = buildClarificationSummaryPrompt(activeQuestionCard, answers);
 
+			// Opt-in: let a deterministic interceptor (e.g. the create-skill flow)
+			// handle the answer locally. interceptSubmit returns false when there is
+			// no interceptor or it declines, in which case we fall back to the model.
+			if (interceptClarificationAnswers) {
+				const clarificationMetadata = {
+					...(resolvedSendPromptOptions?.messageMetadata ?? {}),
+					...buildClarificationMessageMetadata(activeQuestionCard, { answers, status: "answered" }),
+				};
+				void interceptSubmit(clarificationPrompt, [], { userMetadata: clarificationMetadata }).then((handled) => {
+					if (handled) return;
+					void sendPrompt(clarificationPrompt, {
+						...resolvedSendPromptOptions,
+						messageMetadata: clarificationMetadata,
+						clarification: clarificationSubmission,
+					});
+				});
+				return;
+			}
+
 			const clarificationMetadata = {
 				...(resolvedSendPromptOptions?.messageMetadata ?? {}),
 				...buildClarificationMessageMetadata(activeQuestionCard, {
@@ -1404,7 +1491,7 @@ export default function ChatPanel({
 				clarification: clarificationSubmission,
 			});
 		},
-		[activeQuestionCard, resolvedSendPromptOptions, sendPrompt],
+		[activeQuestionCard, interceptClarificationAnswers, interceptSubmit, resolvedSendPromptOptions, sendPrompt],
 	);
 	const handleBuildPlan = useCallback(
 		(planWidget: ParsedPlanWidgetPayload) => {
@@ -1608,6 +1695,7 @@ export default function ChatPanel({
 							<MessageBubble
 								message={message}
 								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId || message.id === externalThinkingMessageId) && message.id === lastAssistantMessageId}
+								treatQuestionToolCallsAsAnswered={answeredTraceMessageIds.has(message.id)}
 								onSuggestionClick={handleFollowUpSuggestionClick}
 								showFollowUpSuggestions={message.id === lastAssistantMessageId && !hasPendingChatWork}
 								enableSmartWidgets={enableSmartWidgets}
@@ -1763,6 +1851,8 @@ export default function ChatPanel({
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
+						placeholder={resolveComposerPlaceholder?.(prompt)}
+						mentionSources={composerMentionSources}
 						onContextBarOpenChange={setIsContextBarOpen}
 						onDirectoryAutocompleteChange={setDirectoryAutocompleteState}
 						onDirectoryAutocompleteControllerChange={setDirectoryAutocompleteController}

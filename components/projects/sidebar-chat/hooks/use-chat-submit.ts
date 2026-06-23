@@ -6,7 +6,7 @@ import type { QueuedPromptItem } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import { createId } from "@/lib/utils";
-import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { RovoMessageMetadata, RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { FileUIPart } from "ai";
 
 interface ChatSubmitInterceptStage {
@@ -44,7 +44,11 @@ interface UseChatSubmitReturn {
 	 * the model. Returns `false` when no interceptor is configured or the prompt
 	 * was not handled — the caller should fall back to its normal send path.
 	 */
-	interceptSubmit: (text: string, files?: ReadonlyArray<FileUIPart>) => Promise<boolean>;
+	interceptSubmit: (
+		text: string,
+		files?: ReadonlyArray<FileUIPart>,
+		options?: { userMetadata?: RovoMessageMetadata },
+	) => Promise<boolean>;
 	abort: () => void;
 	uiMessages: RovoUIMessage[];
 	isStreaming: boolean;
@@ -130,6 +134,7 @@ export function useChatSubmit({
 			pendingAssistantParts,
 			promptText,
 			delayMs,
+			userMetadata,
 		}: {
 			assistantParts: RovoUIMessage["parts"];
 			assistantPartStages?: readonly ChatSubmitInterceptStage[];
@@ -140,6 +145,7 @@ export function useChatSubmit({
 			pendingAssistantParts?: RovoUIMessage["parts"];
 			promptText: string;
 			delayMs?: number;
+			userMetadata?: RovoMessageMetadata;
 		}) => {
 			setPrompt("");
 			// Abort any live turn before mutating the transcript — otherwise the
@@ -157,6 +163,7 @@ export function useChatSubmit({
 				createdAt,
 				files,
 				text: promptText,
+				metadata: userMetadata,
 			});
 			const assistantMessageId = createId("rovo-chat-assistant");
 			const createAssistantMessage = (parts: RovoUIMessage["parts"]): RovoUIMessage => ({
@@ -201,7 +208,11 @@ export function useChatSubmit({
 	// the model and inject the user message + scripted reply locally so the
 	// agent-edit conversation reads naturally. Returns true when handled.
 	const interceptSubmit = useCallback(
-		async (text: string, files: ReadonlyArray<FileUIPart> = []): Promise<boolean> => {
+		async (
+			text: string,
+			files: ReadonlyArray<FileUIPart> = [],
+			options?: { userMetadata?: RovoMessageMetadata },
+		): Promise<boolean> => {
 			const promptText = text.trim();
 			if (!onInterceptSubmit || !promptText) {
 				return false;
@@ -225,6 +236,7 @@ export function useChatSubmit({
 				onApply: outcome.onApply,
 				pendingAssistantParts: outcome.pendingAssistantParts,
 				promptText,
+				userMetadata: options?.userMetadata,
 			});
 			return true;
 		},

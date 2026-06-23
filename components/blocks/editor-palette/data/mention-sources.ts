@@ -49,7 +49,7 @@ function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
 	};
 }
 
-function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMentionItem {
+export function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMentionItem {
 	return {
 		category: "skill",
 		description: skill.description,

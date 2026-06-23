@@ -19,6 +19,18 @@ function normalizeSkillTagColor(color: SkillTagColor): SkillCollectionId {
 	return color === "2p3p" ? "marketplace" : color;
 }
 
+/**
+ * Skill tags display the skill's canonical handle — lowercase, kebab-cased — to
+ * match how skills are named (e.g. `create-skill`, `design-landing-page`). Plain
+ * string children are normalized to that form; non-string children pass through.
+ */
+function toKebabSkillLabel(value: string): string {
+	return value
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, "-")
+		.replace(/^-+|-+$/gu, "");
+}
+
 interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	icon?: React.ReactNode;
 	color?: SkillTagColor;
@@ -110,7 +122,7 @@ function SkillTag({
 				)}
 				data-slot="skill-tag-label"
 			>
-				{children}
+				{typeof children === "string" ? toKebabSkillLabel(children) : children}
 			</span>
 
 			{hasOverlayReveal ? (

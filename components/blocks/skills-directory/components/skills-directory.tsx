@@ -119,6 +119,13 @@ export interface SkillsDirectoryDialogProps {
 	 * value re-seeds the detail state on each open.
 	 */
 	initialDetailSkillId?: string | null;
+	/**
+	 * When the dialog is opened directly on a skill's detail/config view, exiting
+	 * that view (Back or the config's Cancel) closes the whole dialog instead of
+	 * returning to the browse grid. Use when there is no meaningful grid to return
+	 * to (e.g. a generated-skill config opened from a chat card).
+	 */
+	closeOnDetailExit?: boolean;
 	onAddSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateShareLink?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateSkill?: () => void;
@@ -294,6 +301,7 @@ export function SkillsDirectoryDialog({
 	defaultSelectedSkillIds = [],
 	disabledSkillIds,
 	initialDetailSkillId = null,
+	closeOnDetailExit = false,
 	onAddSkills,
 	onCreateShareLink,
 	onCreateSkill,
@@ -385,6 +393,16 @@ export function SkillsDirectoryDialog({
 		onOpenChange(nextOpen);
 	}
 
+	/** Leaving the detail view: close the dialog when opened directly on it,
+	 *  otherwise return to the browse grid. */
+	function handleExitDetail(): void {
+		if (closeOnDetailExit) {
+			handleOpenChange(false);
+			return;
+		}
+		setSelectedDetailSkillId(null);
+	}
+
 	function handleSelectSkill(skill: SkillsDirectorySkill, checked?: boolean): void {
 		const nextSelectedIdSet = new Set(resolvedSelectedIds);
 		const nextChecked = checked ?? !nextSelectedIdSet.has(skill.id);
@@ -466,7 +484,7 @@ export function SkillsDirectoryDialog({
 					<SkillDetailHeader
 						added={addedIdSet.has(selectedDetailSkill.id)}
 						enabled={!disabledIdSet.has(selectedDetailSkill.id)}
-						onBack={() => setSelectedDetailSkillId(null)}
+						onBack={handleExitDetail}
 						onCreateShareLink={() => handleBulkAction(onCreateShareLink)}
 						onDownloadSkills={() => handleBulkAction(onDownloadSkills)}
 						onFavoriteSkills={() => handleBulkAction(onFavoriteSkills)}
@@ -486,7 +504,7 @@ export function SkillsDirectoryDialog({
 					<SkillDetailView
 						disabled={addedIdSet.has(selectedDetailSkill.id) && disabledIdSet.has(selectedDetailSkill.id)}
 						skill={selectedDetailSkill}
-						onExit={() => setSelectedDetailSkillId(null)}
+						onExit={handleExitDetail}
 					/>
 				) : (
 					<>
