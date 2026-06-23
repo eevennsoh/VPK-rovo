@@ -39,6 +39,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/website/component-doc/components/demo-preview-shell.test.js",
+	// Website preview defers far-offscreen cards; keep the focused visibility
+	// contract gated without admitting the broader website component test set.
+	"components/website/website-preview-visibility.test.js",
 	// Screen-assistant target geometry powers point_at_target; keep this pure
 	// viewport conversion test gated without enabling the component tree wholesale.
 	"components/screen-assistant/screen-assistant-geometry.test.js",
@@ -86,6 +89,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Pure defaults/options/helpers behind the ASCII visual demo controls.
 	// Components are not included wholesale, so keep this model test gated.
 	"components/website/demos/visual/ascii-control-model.test.js",
+	// Liquid Glass shader utility math is shared by the visual demo and shader
+	// wrapper. Gate this pure utility coverage without the source-grep demo tests.
+	"components/website/demos/visual/shaders/liquid-glass-utils.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
@@ -114,6 +120,13 @@ const INCLUDED_TEST_FILES = new Set([
 	// Root-mounted :user-invalid -> aria-invalid bridge. Components are not
 	// included wholesale, so gate the pure DOM ownership contract explicitly.
 	"components/utils/user-invalid-sync.test.js",
+	// Awake city persistence contracts guard localStorage migration, removal
+	// selection, and debounced writes without gating the broad source-grep UI tests.
+	"components/arts/awake/city-storage.test.js",
+	"components/arts/awake/use-cities.test.js",
+	// Repo-owned extraction scaffolding lives under .agents, outside the broad
+	// test prefixes, but it is a stable node:test contract for vpk-build output.
+	".agents/skills/vpk-build/scripts/scaffold-target.test.js",
 ]);
 
 export function getTestFileInclusion(filePath, {
