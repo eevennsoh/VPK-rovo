@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback } from "react";
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- Menu items use slot props for Atlaskit icons.
+
+import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
 import ChatPanel, {
 	type ChatPanelGreetingProps,
 	type ChatSubmitInterceptOutcome,
 } from "@/components/projects/sidebar-chat/page";
+import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { getRovoAgentProfile, ROVO_AGENT_ID } from "@/app/data/directory/agents";
+import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
+import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
+import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import { SkillInvocationCard } from "./components/skill-invocation-card";
 import {
 	buildSkillInterceptOutcome,
@@ -44,6 +51,8 @@ interface SkillsPanelProps {
  *   positioned above the reply via `getWidgetPosition`.
  */
 export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
+	const [isSkillsDirectoryOpen, setIsSkillsDirectoryOpen] = useState(false);
+
 	const renderWidget = useCallback(
 		(widget: { type: string; data: unknown }): ReactNode => {
 			if (widget.type === SKILL_INVOCATION_WIDGET_TYPE) {
@@ -64,17 +73,48 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 		(text: string): ChatSubmitInterceptOutcome => buildSkillInterceptOutcome(text),
 		[],
 	);
+	const handleViewAllSkills = useCallback(() => {
+		setIsSkillsDirectoryOpen(true);
+	}, []);
+	const handleCreateSpace = useCallback(() => {
+		setIsSkillsDirectoryOpen(false);
+	}, []);
+	const addMenuItemsBefore = (
+		<>
+			<PromptInputActionMenuItem
+				elemBefore={<FolderAddIcon label="" />}
+				onSelect={handleCreateSpace}
+			>
+				Create space
+			</PromptInputActionMenuItem>
+			<PromptInputActionMenuItem
+				elemBefore={<SkillIcon label="" />}
+				onSelect={handleViewAllSkills}
+			>
+				View all skills
+			</PromptInputActionMenuItem>
+		</>
+	);
 
 	return (
-		<ChatPanel
-			onClose={onClose ?? (() => {})}
-			enableSmartWidgets
-			greeting={SKILLS_GREETING}
-			greetingSelectedAgent={ROVO_GREETING_AGENT}
-			suppressCustomAgentTabs
-			onInterceptSubmit={onInterceptSubmit}
-			renderWidget={renderWidget}
-			getWidgetPosition={getWidgetPosition}
-		/>
+		<>
+			<ChatPanel
+				onClose={onClose ?? (() => {})}
+				addMenuItemsBefore={addMenuItemsBefore}
+				enableSmartWidgets
+				greeting={SKILLS_GREETING}
+				greetingSelectedAgent={ROVO_GREETING_AGENT}
+				suppressCustomAgentTabs
+				onInterceptSubmit={onInterceptSubmit}
+				renderWidget={renderWidget}
+				getWidgetPosition={getWidgetPosition}
+			/>
+			<SkillsDirectoryDialog
+				open={isSkillsDirectoryOpen}
+				onOpenChange={setIsSkillsDirectoryOpen}
+				skills={DEFAULT_SKILLS}
+				variant="experimental"
+			/>
+		</>
 	);
 }
