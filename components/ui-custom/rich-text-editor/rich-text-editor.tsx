@@ -456,6 +456,7 @@ export function RichTextEditor({
 	const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
 		acceptGhost: () => acceptDirectoryAutocompleteGhost(),
 		acceptIndex: () => false,
+		hasAcceptableList: () => false,
 		hasVisibleList: () => false,
 	}), [acceptDirectoryAutocompleteGhost]);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());

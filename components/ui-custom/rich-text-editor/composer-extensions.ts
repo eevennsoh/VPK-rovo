@@ -432,6 +432,7 @@ function createComposerBehavior(
 export interface ComposerDirectoryAutocompleteController {
 	acceptGhost: () => boolean;
 	acceptIndex: (index: number) => boolean;
+	hasAcceptableList: () => boolean;
 	hasVisibleList: () => boolean;
 }
 
@@ -491,7 +492,7 @@ export function createComposerDirectoryAutocomplete(
 								return false;
 							}
 
-							if ((event.metaKey || event.ctrlKey) && /^[1-9]$/u.test(event.key) && controller.hasVisibleList()) {
+							if ((event.metaKey || event.ctrlKey) && /^[1-9]$/u.test(event.key) && controller.hasAcceptableList()) {
 								event.preventDefault();
 								return controller.acceptIndex(Number(event.key) - 1);
 							}

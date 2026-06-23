@@ -1147,17 +1147,20 @@ export const PromptInputTextarea = ({
   const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
   // True while the visual-trace auto-tagger is mid-debounce. During that window we
   // intentionally keep the prior matches visible (no per-keystroke flicker), but
-  // their query range is stale, so the list must not be *acceptable* — otherwise
-  // Cmd+number could insert a mention at the old range. Assigned after the hook
-  // below; defaults to "not busy".
+  // their query range is stale, so autocomplete must not be *acceptable* — otherwise
+  // Cmd+number or ghost acceptance could insert a mention at the old range.
+  // Assigned after the hook below; defaults to "not busy".
   const isAutoTaggingBusyRef = useRef<() => boolean>(() => false);
 
   const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
-    acceptGhost: () => acceptDirectoryAutocompleteIndexRef.current(0, true),
-    acceptIndex: (index: number) => acceptDirectoryAutocompleteIndexRef.current(index),
-    hasVisibleList: () =>
+    acceptGhost: () => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(0, true),
+    acceptIndex: (index: number) => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(index),
+    hasAcceptableList: () =>
       directoryAutocompleteListVisibleRef.current &&
       !isAutoTaggingBusyRef.current() &&
+      (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
+    hasVisibleList: () =>
+      directoryAutocompleteListVisibleRef.current &&
       (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
   }), []);
 
@@ -1299,7 +1302,7 @@ export const PromptInputTextarea = ({
     // no menu open: keep the current matches rather than blanking on every
     // keystroke (that made the empty-state greeting blink to its default prompts
     // and back). The query range may be stale until `runAutoTagging` recomputes,
-    // so acceptance is disabled while busy via the controller's hasVisibleList.
+    // so acceptance is disabled while busy via the controller's accept methods.
     if (isVisualTraceAutoTaggingBusy()) {
       return;
     }

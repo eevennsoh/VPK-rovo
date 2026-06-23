@@ -269,7 +269,10 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /insertParagraph[\s\S]*controller\.acceptActive/u);
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowDown"[\s\S]*controller\.moveActive/u);
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowUp"[\s\S]*controller\.moveActive/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\^\[1-9\]\$[\s\S]*controller\.hasAcceptableList\(\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\(event\.key === "Tab" \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
+	assert.match(PROMPT_INPUT_SOURCE, /acceptGhost: \(\) => !isAutoTaggingBusyRef\.current\(\) && acceptDirectoryAutocompleteIndexRef\.current\(0, true\)/u);
+	assert.match(PROMPT_INPUT_SOURCE, /hasVisibleList: \(\) =>[\s\S]*directoryAutocompleteListVisibleRef\.current &&[\s\S]*\(directoryAutocompleteStateRef\.current\?\.matches\.length \?\? 0\) > 0/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
