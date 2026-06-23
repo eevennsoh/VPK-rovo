@@ -1314,7 +1314,7 @@ function AgentCompactTriggersNavButton({
 		<DropdownMenuSub open={addTriggerOpen} onOpenChange={handleAddTriggerOpenChange}>
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
-					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+					<span className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:text-icon-subtle">
 						<PlusIcon />
 					</span>
 					Add flow
@@ -1486,7 +1486,7 @@ function AgentCompactDirectoryNavButton({
 		<DropdownMenuSub open={addOpen} onOpenChange={handleAddOpenChange}>
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
-					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+					<span className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:text-icon-subtle">
 						<PlusIcon />
 					</span>
 					{addLabel}
@@ -1611,7 +1611,7 @@ function AgentCompactAppsNavButton({
 		<DropdownMenuSub open={addOpen} onOpenChange={handleAddOpenChange}>
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
-					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+					<span className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4 [&_svg]:text-icon-subtle">
 						<PlusIcon />
 					</span>
 					{addLabel}
