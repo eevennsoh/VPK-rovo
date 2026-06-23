@@ -25,5 +25,9 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<FolderAddIcon label="" \/>\}[\s\S]*Create space/u);
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<SkillIcon label="" \/>\}[\s\S]*View all skills/u);
 	assert.match(SOURCE, /<ChatPanel[\s\S]*addMenuItemsBefore=\{addMenuItemsBefore\}/u);
-	assert.match(SOURCE.slice(dialogIndex), /open=\{isSkillsDirectoryOpen\}[\s\S]*onOpenChange=\{setIsSkillsDirectoryOpen\}[\s\S]*skills=\{DEFAULT_SKILLS\}[\s\S]*variant="experimental"/u);
+	// The directory dialog is shared with the create-skill config view, so its
+	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)
+	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
+	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillsDirectoryOpen/u);
+	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"/u);
 });
