@@ -554,7 +554,7 @@ export function RovoComposerSendControls({
 	}, [hideReasoningSelector, onOpenChange, open]);
 
 	return (
-		<div className={cn("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1.5", className)} {...props}>
+		<div className={cn("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className)} {...props}>
 			<AnimatePresence initial={false} mode="popLayout">
 				{hideReasoningSelector ? null : (
 					<motion.div

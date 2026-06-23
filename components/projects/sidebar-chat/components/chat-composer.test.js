@@ -268,7 +268,7 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);
 	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:voice` : undefined\}/u);
-	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1\.5", className\)\}/u);
+	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1", className\)\}/u);
 	assert.doesNotMatch(source, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
 	assert.doesNotMatch(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
 	assert.match(source, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md/u);

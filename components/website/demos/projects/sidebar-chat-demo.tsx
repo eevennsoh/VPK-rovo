@@ -4,7 +4,7 @@ import ChatPanel from "@/components/projects/sidebar-chat/page";
 
 export default function SidebarChatDemo() {
 	return (
-		<div className="flex h-full w-full items-center justify-center p-6">
+		<div className="flex min-h-dvh w-full items-center justify-center p-6">
 			<div className="h-[800px] w-[400px]">
 				<ChatPanel
 					onClose={() => {}}
