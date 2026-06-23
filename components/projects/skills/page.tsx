@@ -6,6 +6,7 @@ import ChatPanel, {
 	type ChatPanelGreetingProps,
 	type ChatSubmitInterceptOutcome,
 } from "@/components/projects/sidebar-chat/page";
+import { getRovoAgentProfile, ROVO_AGENT_ID } from "@/app/data/directory/agents";
 import { SkillInvocationCard } from "./components/skill-invocation-card";
 import {
 	buildSkillInterceptOutcome,
@@ -18,6 +19,14 @@ const SKILLS_GREETING: ChatPanelGreetingProps = {
 	heading: "What skill should I run?",
 	suggestions: SKILL_GREETING_SUGGESTIONS,
 };
+
+/**
+ * The default Rovo agent profile. Pinning the greeting to it keeps the Skills
+ * triggers visible even when a custom agent is selected in the shared Rovo chat
+ * state — otherwise `ChatGreeting`'s custom-agent branch would ignore
+ * `greeting.suggestions` and show that agent's starters instead.
+ */
+const ROVO_GREETING_AGENT = getRovoAgentProfile(ROVO_AGENT_ID);
 
 interface SkillsPanelProps {
 	/** Mirrors `ChatPanel.onClose`; defaults to a no-op for the standalone demo. */
@@ -61,6 +70,8 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 			onClose={onClose ?? (() => {})}
 			enableSmartWidgets
 			greeting={SKILLS_GREETING}
+			greetingSelectedAgent={ROVO_GREETING_AGENT}
+			suppressCustomAgentTabs
 			onInterceptSubmit={onInterceptSubmit}
 			renderWidget={renderWidget}
 			getWidgetPosition={getWidgetPosition}
