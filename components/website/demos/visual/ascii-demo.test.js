@@ -4,7 +4,9 @@ const path = require("node:path");
 const test = require("node:test");
 
 const SHADER_SOURCE = fs.readFileSync(path.join(__dirname, "shaders/ascii.tsx"), "utf8");
+const CORE_SOURCE = fs.readFileSync(path.join(__dirname, "shaders/ascii-core.ts"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "ascii-demo.tsx"), "utf8");
+const CONTROL_MODEL_SOURCE = fs.readFileSync(path.join(__dirname, "ascii-control-model.ts"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../../../app/data/components.ts"),
 	"utf8",
@@ -46,15 +48,15 @@ test("ASCII is registered as a visual shader component", () => {
 
 test("ASCII demo exposes the shader-lab style ASCII controls", () => {
 	assert.match(DEMO_SOURCE, /import Ascii/);
-	assert.match(DEMO_SOURCE, /ASCII_ANIMATION_STYLES/);
-	assert.match(DEMO_SOURCE, /ASCII_BACKGROUND_MODES/);
-	assert.match(DEMO_SOURCE, /ASCII_CONTROL_BLEND_MODES/);
-	assert.match(DEMO_SOURCE, /ASCII_COLOR_SOURCE_MODES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_ANIMATION_STYLES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_BACKGROUND_MODES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_CONTROL_BLEND_MODES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_COLOR_SOURCE_MODES/);
 	assert.match(DEMO_SOURCE, /ASCII_DEFAULT_SOURCE_COLORS/);
 	assert.match(DEMO_SOURCE, /ASCII_MAX_SOURCE_COLORS/);
-	assert.match(DEMO_SOURCE, /ASCII_TONE_MAPPING_MODES/);
-	assert.match(DEMO_SOURCE, /ASCII_MASK_SOURCES/);
-	assert.match(DEMO_SOURCE, /ASCII_MASK_MODES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_TONE_MAPPING_MODES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_MASK_SOURCES/);
+	assert.match(CONTROL_MODEL_SOURCE, /ASCII_MASK_MODES/);
 	assert.match(DEMO_SOURCE, /label="Blend"/);
 	assert.match(DEMO_SOURCE, /label="Mode"/);
 	assert.match(DEMO_SOURCE, /label="Mask Mode"/);
@@ -101,7 +103,7 @@ test("ASCII demo exposes the shader-lab style ASCII controls", () => {
 
 test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-processing controls", () => {
 	for (const label of ["Blurred Image", "Solid Black", "Original Image", "None (Transparent)"]) {
-		assert.match(DEMO_SOURCE, new RegExp(`label: "${escapeRegExp(label)}"`));
+		assert.match(CONTROL_MODEL_SOURCE, new RegExp(`label: "${escapeRegExp(label)}"`));
 	}
 
 	for (const label of ["Coverage", "Edge Emphasis", "Density", "Brightness", "Contrast"]) {
@@ -130,7 +132,7 @@ test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-
 		"Reveal",
 		"Pulse",
 	]) {
-		assert.match(DEMO_SOURCE, new RegExp(`label: "${escapeRegExp(label)}"`));
+		assert.match(CONTROL_MODEL_SOURCE, new RegExp(`label: "${escapeRegExp(label)}"`));
 	}
 
 	for (const label of [
@@ -185,9 +187,9 @@ test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-
 	assert.match(DEMO_SOURCE, /VideoPlayIcon/);
 	assert.match(DEMO_SOURCE, /VideoStopIcon/);
 	assert.match(DEMO_SOURCE, /animationDurationToCycleSpeed/);
-	assert.match(DEMO_SOURCE, /DEFAULT_ANIMATION_SPEED_SECONDS = 4\.3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_ANIMATION_INTENSITY = 0\.83/);
-	assert.match(DEMO_SOURCE, /DEFAULT_ANIMATION_RANDOMNESS = 0\.5/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_ANIMATION_SPEED_SECONDS = 4\.3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_ANIMATION_INTENSITY = 0\.83/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_ANIMATION_RANDOMNESS = 0\.5/);
 	assert.match(DEMO_SOURCE, /const \[animationPlaying, setAnimationPlaying\] = useState\(true\)/);
 	assert.match(DEMO_SOURCE, /const \[animationStyle, setAnimationStyle\] = useState<AsciiAnimationStyle>\("wave"\)/);
 	assert.match(DEMO_SOURCE, /characterCycleSpeed=\{resolvedCharacterCycleSpeed\}/);
@@ -200,23 +202,23 @@ test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-
 	assert.match(DEMO_SOURCE, /id="ascii-animationIntensity"[\s\S]*setAnimationIntensity\(next\);[\s\S]*setAnimatedCharacters\(true\);/);
 	assert.match(DEMO_SOURCE, /id="ascii-animationRandomness"[\s\S]*setAnimationRandomness\(next\);[\s\S]*setAnimatedCharacters\(true\);/);
 	assert.match(DEMO_SOURCE, /COLOR_OVERLAY_BLEND_OPTIONS/);
-	assert.match(DEMO_SOURCE, /value: "multiply", label: "Multiply"/);
-	assert.match(DEMO_SOURCE, /value: "color-dodge", label: "Color Dodge"/);
-	assert.match(DEMO_SOURCE, /DEFAULT_COLOR_OVERLAY_OPACITY = 0\.3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_VIGNETTE_INTENSITY = 0\.5/);
-	assert.match(DEMO_SOURCE, /DEFAULT_SCAN_LINES_INTENSITY = 0\.4/);
-	assert.match(DEMO_SOURCE, /DEFAULT_CRT_CURVATURE_INTENSITY = 0\.3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_CHROMATIC_OFFSET = 3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_BLOOM_INTENSITY = 0\.4/);
-	assert.match(DEMO_SOURCE, /DEFAULT_CHARACTER_BLOOM_INTENSITY = 0\.6/);
-	assert.match(DEMO_SOURCE, /DEFAULT_CHARACTER_CHROMATIC_OFFSET = 3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_FILM_GRAIN_INTENSITY = 0\.3/);
-	assert.match(DEMO_SOURCE, /DEFAULT_GLITCH_INTENSITY = 0\.2/);
-	assert.match(DEMO_SOURCE, /DEFAULT_RGB_SPLIT_OFFSET = 2/);
-	assert.match(DEMO_SOURCE, /DEFAULT_BLUR_RADIUS = 2/);
-	assert.match(DEMO_SOURCE, /DEFAULT_PIXELATE_SIZE = 4/);
-	assert.match(DEMO_SOURCE, /DEFAULT_HALFTONE_SIZE = 4/);
-	assert.match(DEMO_SOURCE, /DEFAULT_FILM_DUST_DENSITY = 0\.2/);
+	assert.match(CONTROL_MODEL_SOURCE, /value: "multiply", label: "Multiply"/);
+	assert.match(CONTROL_MODEL_SOURCE, /value: "color-dodge", label: "Color Dodge"/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_COLOR_OVERLAY_OPACITY = 0\.3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_VIGNETTE_INTENSITY = 0\.5/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_SCAN_LINES_INTENSITY = 0\.4/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_CRT_CURVATURE_INTENSITY = 0\.3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_CHROMATIC_OFFSET = 3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_BLOOM_INTENSITY = 0\.4/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_CHARACTER_BLOOM_INTENSITY = 0\.6/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_CHARACTER_CHROMATIC_OFFSET = 3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_FILM_GRAIN_INTENSITY = 0\.3/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_GLITCH_INTENSITY = 0\.2/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_RGB_SPLIT_OFFSET = 2/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_BLUR_RADIUS = 2/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_PIXELATE_SIZE = 4/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_HALFTONE_SIZE = 4/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_FILM_DUST_DENSITY = 0\.2/);
 	assert.match(DEMO_SOURCE, /label="RGB Offset"/);
 	assert.match(DEMO_SOURCE, /colorOverlay=\{colorOverlay \? colorOverlayOpacity : 0\}/);
 	assert.match(DEMO_SOURCE, /vignette=\{vignette \? vignetteIntensity : 0\}/);
@@ -228,15 +230,15 @@ test("ASCII demo exposes ASCII Magic background, intensity, animation, and post-
 	assert.match(DEMO_SOURCE, /label="Animated ASCII"[\s\S]*checked=\{animatedCharacters\}/);
 	assert.doesNotMatch(DEMO_SOURCE, /sourceMode === "field"[\s\S]{0,1200}label="Animated ASCII"/);
 	assert.doesNotMatch(DEMO_SOURCE, /<GUI.Section title="Shimmer">/);
-	assert.match(DEMO_SOURCE, /IMAGE_BACKGROUND_OPACITY = 0\.61/);
-	assert.match(DEMO_SOURCE, /IMAGE_BACKGROUND_BLUR_RADIUS = 60/);
-	assert.match(DEMO_SOURCE, /setBackgroundMode\("blurred-image"\)/);
+	assert.match(CONTROL_MODEL_SOURCE, /IMAGE_BACKGROUND_OPACITY = 0\.61/);
+	assert.match(CONTROL_MODEL_SOURCE, /IMAGE_BACKGROUND_BLUR_RADIUS = 60/);
+	assert.match(DEMO_SOURCE, /resolveImageBackgroundDefaults/);
 	assert.match(DEMO_SOURCE, /setBackgroundMode\("solid-black"\)/);
 });
 
 test("ASCII shader implements ASCII Magic style creative controls", () => {
-	assert.match(SHADER_SOURCE, /ASCII_ANIMATION_STYLES = \["wave", "cascade-left-right", "cascade-right-left", "cascade-top-bottom", "reveal", "pulse"\]/);
-	assert.match(SHADER_SOURCE, /ASCII_BACKGROUND_MODES = \["blurred-image", "solid-black", "original-image", "transparent"\]/);
+	assert.match(CORE_SOURCE, /ASCII_ANIMATION_STYLES = \["wave", "cascade-left-right", "cascade-right-left", "cascade-top-bottom", "reveal", "pulse"\]/);
+	assert.match(CORE_SOURCE, /ASCII_BACKGROUND_MODES = \["blurred-image", "solid-black", "original-image", "transparent"\]/);
 	assert.match(SHADER_SOURCE, /densityToCellSize/);
 	assert.match(SHADER_SOURCE, /edgeEmphasis/);
 	assert.match(SHADER_SOURCE, /1 - clampNumber\(coverage, 0, 1\)/);
@@ -333,10 +335,10 @@ test("ASCII shader implements ASCII Magic style creative controls", () => {
 test("ASCII demo defaults to the requested source color palette", () => {
 	const requestedPalette = /\["#1868DB", "#FCA700", "#AF59E1", "#6A9A23"\]/;
 
-	assert.match(SHADER_SOURCE, new RegExp(`ASCII_DEFAULT_SOURCE_COLORS = ${requestedPalette.source}`));
+	assert.match(CORE_SOURCE, new RegExp(`ASCII_DEFAULT_SOURCE_COLORS = ${requestedPalette.source}`));
 	assert.match(DETAILS_SOURCE, requestedPalette);
-	assert.doesNotMatch(SHADER_SOURCE, /"#05070F"/);
-	assert.doesNotMatch(SHADER_SOURCE, /"#66D9E8"/);
+	assert.doesNotMatch(CORE_SOURCE, /"#05070F"/);
+	assert.doesNotMatch(CORE_SOURCE, /"#66D9E8"/);
 });
 
 test("ASCII image mode does not keep the generated VPK backdrop as a fallback", () => {
@@ -350,7 +352,7 @@ test("ASCII image mode does not keep the generated VPK backdrop as a fallback", 
 });
 
 test("ASCII uploaded image preview uses the source aspect ratio", () => {
-	assert.match(DEMO_SOURCE, /DEFAULT_PREVIEW_ASPECT_RATIO = "16 \/ 9"/);
+	assert.match(CONTROL_MODEL_SOURCE, /DEFAULT_PREVIEW_ASPECT_RATIO = "16 \/ 9"/);
 	assert.match(DEMO_SOURCE, /interface UploadedImage/);
 	assert.match(DEMO_SOURCE, /image\.naturalWidth/);
 	assert.match(DEMO_SOURCE, /image\.naturalHeight/);
@@ -363,7 +365,7 @@ test("ASCII shader uses a generated glyph atlas and luminance pass", () => {
 	assert.match(SHADER_SOURCE, /createAsciiAtlas/);
 	assert.match(SHADER_SOURCE, /u_asciiAtlas/);
 	assert.match(SHADER_SOURCE, /u_characterCount/);
-	assert.match(SHADER_SOURCE, /ASCII_CHARACTER_MODES = \["signal", "sequence"\]/);
+	assert.match(CORE_SOURCE, /ASCII_CHARACTER_MODES = \["signal", "sequence"\]/);
 	assert.match(SHADER_SOURCE, /characterMode \?\? "signal"/);
 	assert.doesNotMatch(SHADER_SOURCE, /charset === "custom" \? "sequence"/);
 	assert.match(SHADER_SOURCE, /u_characterMode/);

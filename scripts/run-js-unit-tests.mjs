@@ -83,6 +83,9 @@ const INCLUDED_TEST_FILES = new Set([
 	"components/visual/border-beam/data.test.js",
 	"components/visual/border-beam/registry.test.js",
 	"components/visual/border-beam/source.test.js",
+	// Pure defaults/options/helpers behind the ASCII visual demo controls.
+	// Components are not included wholesale, so keep this model test gated.
+	"components/website/demos/visual/ascii-control-model.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
