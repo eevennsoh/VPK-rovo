@@ -14,6 +14,7 @@ import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-summary";
 import ChartBarIcon from "@atlaskit/icon/core/chart-bar";
 import CalendarPlusIcon from "@atlaskit/icon/core/calendar-plus";
+import PageIcon from "@atlaskit/icon/core/page";
 
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
 import { SKILL_INVOCATIONS } from "../data/skill-invocations";
@@ -28,6 +29,7 @@ const SKILL_STARTER_ICONS: Readonly<Record<string, SkillStarterIcon>> = {
 	"summarize-thread": AiGenerativeTextSummaryIcon,
 	"build-report": ChartBarIcon,
 	"schedule-meeting": CalendarPlusIcon,
+	"confluence-page-drafter": PageIcon,
 };
 
 export const SKILL_GREETING_SUGGESTIONS: readonly RovoSuggestion[] = SKILL_INVOCATIONS.map((entry) => ({

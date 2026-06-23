@@ -93,4 +93,15 @@ export const SKILL_INVOCATIONS: readonly SkillInvocationEntry[] = [
 		replyText:
 			"I found a slot Thursday at 2:00pm and drafted the invite for all three attendees.",
 	},
+	{
+		skillId: "confluence-page-drafter",
+		starterLabel: "Draft a Confluence page",
+		starterDescription: "Turn notes into a structured Confluence page",
+		starterPrompt: "Draft a Confluence page",
+		triggerKeywords: ["confluence page", "draft a page", "wiki page", "doc page"],
+		inputSummary: "Project kickoff notes",
+		outputSummary: "Draft page with headings + action items",
+		replyText:
+			"I drafted a Confluence page from your kickoff notes, with an overview, goals, and an action-items table. Want me to publish it to the Team space?",
+	},
 ];
