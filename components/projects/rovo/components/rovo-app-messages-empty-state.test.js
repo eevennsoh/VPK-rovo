@@ -57,24 +57,23 @@ test("Rovo app empty state keeps directory autocomplete rows below the composer"
 	assert.match(MESSAGES_SOURCE, /hideCustomAgentStarters\?: boolean;/u);
 	assert.match(MESSAGES_SOURCE, /hideStarters=\{hideCustomAgentStarters\}/u);
 	assert.match(SHELL_SOURCE, /import \{ Kbd \} from "@\/components\/ui\/kbd";/u);
-	assert.match(SHELL_SOURCE, /import \{ ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.doesNotMatch(SHELL_SOURCE, /import \{ ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(SHELL_SOURCE, /import \{ RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController \} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(SHELL_SOURCE, /function RovoAppDirectoryAutocompleteRows/u);
-	assert.match(SHELL_SOURCE, /useWideLayout \? "grid-cols-2 gap-x-8" : "grid-cols-1"/u);
+	assert.match(SHELL_SOURCE, /useWideLayout \? "grid-cols-2 gap-x-6" : "grid-cols-1"/u);
 	assert.match(SHELL_SOURCE, /state\.matches\.map/u);
-	assert.match(SHELL_SOURCE, /const active = state\.activeIndex === index;/u);
-	assert.match(SHELL_SOURCE, /active=\{active\}/u);
-	assert.match(SHELL_SOURCE, /shortcut=\{<RovoAppDirectoryAutocompleteShortcut active=\{active\} index=\{index\} \/>\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /const active = state\.activeIndex === index;/u);
+	assert.doesNotMatch(SHELL_SOURCE, /active=\{active\}/u);
+	assert.match(SHELL_SOURCE, /shortcut=\{<RovoAppDirectoryAutocompleteShortcut index=\{index\} \/>\}/u);
 	assert.match(SHELL_SOURCE, /onClick=\{\(\) => onSelect\?\.\(index\)\}/u);
-	assert.match(SHELL_SOURCE, /onMouseEnter=\{\(\) => onActiveChange\?\.\(index\)\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onMouseEnter=\{\(\) => onActiveChange\?\.\(index\)\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onFocus=\{\(\) => onActiveChange\?\.\(index\)\}/u);
 	assert.match(SHELL_SOURCE, /<RichTextMentionVisualMark/u);
-	assert.match(SHELL_SOURCE, /<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>/u);
+	assert.doesNotMatch(SHELL_SOURCE, /<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>/u);
 	assert.match(SHELL_SOURCE, /⌘\{index \+ 1\}/u);
 	assert.match(SHELL_SOURCE, /<motion\.div[\s\S]*className="relative overflow-visible"[\s\S]*<RovoAppComposer[\s\S]*\/>[\s\S]*<RovoAppDirectoryAutocompleteRows/u);
-	assert.match(SHELL_SOURCE, /className="absolute inset-x-0 top-full z-20 mt-3"/u);
+	assert.match(SHELL_SOURCE, /className="absolute inset-x-0 top-full z-20 mt-6"/u);
 	assert.match(SHELL_SOURCE, /state=\{directoryAutocompleteState\}/u);
-	assert.match(SHELL_SOURCE, /aria-hidden=\{shouldHideHomePromptGallery \? true : undefined\}/u);
-	assert.match(SHELL_SOURCE, /className=\{cn\(shouldHideHomePromptGallery && "pointer-events-none invisible"\)\}/u);
 });
 
 test("Rovo app shell wires directory autocomplete to composer, messages, and home gallery", () => {
@@ -85,9 +84,10 @@ test("Rovo app shell wires directory autocomplete to composer, messages, and hom
 	assert.match(SHELL_SOURCE, /const directoryAutocompleteLayoutWidth = shellSize\.width \|\| viewportWidthPx \|\| 0;/u);
 	assert.match(SHELL_SOURCE, /const shouldUseWideDirectoryAutocompleteLayout = directoryAutocompleteLayoutWidth >= 760;/u);
 	assert.match(SHELL_SOURCE, /directoryAutocompleteController\?\.acceptIndex\(index\)/u);
-	assert.match(SHELL_SOURCE, /directoryAutocompleteController\?\.setActiveIndex\(index\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /directoryAutocompleteController\?\.setActiveIndex\(index\)/u);
 	assert.match(SHELL_SOURCE, /hideCustomAgentStarters=\{showHomeState && directoryAutocompleteState !== null\}/u);
-	assert.match(SHELL_SOURCE, /<RovoAppDirectoryAutocompleteRows[\s\S]*onActiveChange=\{handleDirectoryAutocompleteActiveChange\}[\s\S]*onSelect=\{handleDirectoryAutocompleteSelect\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppDirectoryAutocompleteRows[\s\S]*onSelect=\{handleDirectoryAutocompleteSelect\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onActiveChange=\{handleDirectoryAutocompleteActiveChange\}/u);
 	assert.match(SHELL_SOURCE, /directoryAutocompleteListVisible=\{shouldShowDirectoryAutocompleteList\}/u);
 	assert.match(SHELL_SOURCE, /onDirectoryAutocompleteChange=\{setDirectoryAutocompleteState\}/u);
 	assert.match(SHELL_SOURCE, /onDirectoryAutocompleteControllerChange=\{setDirectoryAutocompleteController\}/u);

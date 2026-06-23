@@ -16,7 +16,6 @@ import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Kbd } from "@/components/ui/kbd";
-import { ReturnIcon } from "@/components/ui/vpk-icons";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { cn } from "@/lib/utils";
 
@@ -163,12 +162,9 @@ interface ChatGreetingProps {
 	/** Callback when a suggestion is clicked */
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 	onDirectoryAutocompleteSelect?: (index: number) => void;
-	onDirectoryAutocompleteActiveChange?: (index: number) => void;
 }
 
 interface SkillListItemProps {
-	active?: boolean;
-	onActive?: () => void;
 	suggestion: RovoSuggestion;
 	shortcut?: ReactNode;
 	onClick?: () => void;
@@ -183,8 +179,6 @@ function getPairedDarkIllustrationSrc(illustrationSrc: string): string {
 }
 
 function SkillListItem({
-	active = false,
-	onActive,
 	suggestion,
 	shortcut,
 	onClick,
@@ -201,26 +195,17 @@ function SkillListItem({
 			imageName={suggestion.imageName}
 			imageSrc={suggestion.imageSrc}
 			label={suggestion.label}
-			active={active}
 			onClick={onClick}
-			onFocus={onActive}
-			onMouseEnter={onActive}
 			shortcut={shortcut}
 		/>
 	);
 }
 
 function DirectoryAutocompleteShortcut({
-	active,
 	index,
 }: Readonly<{
-	active: boolean;
 	index: number;
 }>) {
-	if (active) {
-		return <ReturnIcon className="size-3.5 text-icon-subtlest" />;
-	}
-
 	return (
 		<Kbd className="h-5 min-w-7 rounded-sm bg-bg-neutral px-1.5 text-[11px] text-text-subtle">
 			⌘{index + 1}
@@ -229,16 +214,12 @@ function DirectoryAutocompleteShortcut({
 }
 
 function DirectoryAutocompleteItem({
-	active,
 	index,
 	state,
-	onActive,
 	onSelect,
 }: Readonly<{
-	active: boolean;
 	index: number;
 	state: DirectoryAutocompleteState;
-	onActive?: () => void;
 	onSelect?: () => void;
 }>) {
 	const match = state.matches[index];
@@ -248,13 +229,10 @@ function DirectoryAutocompleteItem({
 
 	return (
 		<GreetingPromptRow
-			active={active}
 			description={match.mention.description}
 			label={match.mention.label}
 			onClick={onSelect}
-			onFocus={onActive}
-			onMouseEnter={onActive}
-			shortcut={<DirectoryAutocompleteShortcut active={active} index={index} />}
+			shortcut={<DirectoryAutocompleteShortcut index={index} />}
 			visual={
 				match.mention.visual ? (
 					<RichTextMentionVisualMark
@@ -416,7 +394,6 @@ export default function ChatGreeting({
 	useWideSuggestionLayout = false,
 	onSuggestionClick,
 	onDirectoryAutocompleteSelect,
-	onDirectoryAutocompleteActiveChange,
 }: Readonly<ChatGreetingProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const customAgent = selectedAgent !== null && !isRovoAgentProfile(selectedAgent) ? selectedAgent : null;
@@ -541,10 +518,8 @@ export default function ChatGreeting({
 										? directoryAutocompleteState.matches.map((match, index) => (
 												<motion.div key={match.mention.id} variants={activeItemVariants}>
 													<DirectoryAutocompleteItem
-														active={directoryAutocompleteState.activeIndex === index}
 														index={index}
 														state={directoryAutocompleteState}
-														onActive={() => onDirectoryAutocompleteActiveChange?.(index)}
 														onSelect={() => onDirectoryAutocompleteSelect?.(index)}
 													/>
 												</motion.div>

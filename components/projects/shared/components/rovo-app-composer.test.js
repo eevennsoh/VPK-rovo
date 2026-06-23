@@ -260,11 +260,16 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /Plain Enter[\s\S]*submits the host form/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /Shift\+Enter inserts a hard break/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /priority: 125,/u);
-	assert.match(COMPOSER_EXTENSIONS_SOURCE, /external directory autocomplete plugin \(150\)/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /plain Enter and arrow keys remain reserved for the prompt input/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /event\.key !== "Enter"/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /event\.shiftKey \|\| event\.isComposing/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /isSuggestionMenuOpen\(view\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /return onEnter \? onEnter\(view\) : false;/u);
+	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "Enter" && controller\.hasVisibleList\(\)/u);
+	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /insertParagraph[\s\S]*controller\.acceptActive/u);
+	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowDown"[\s\S]*controller\.moveActive/u);
+	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowUp"[\s\S]*controller\.moveActive/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\(event\.key === "Tab" \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
