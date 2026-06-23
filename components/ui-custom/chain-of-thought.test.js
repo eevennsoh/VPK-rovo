@@ -31,6 +31,8 @@ test("Chain of Thought docs include Studio-quality AI usage recipes", () => {
 		"chain-of-thought-demo-automation-trigger-flow",
 		"chain-of-thought-demo-research-retrieval-flow",
 		"chain-of-thought-demo-tool-call-details-flow",
+		"chain-of-thought-demo-normal-tool-calling-replay",
+		"chain-of-thought-demo-awaiting-user-response-replay",
 	]) {
 		assert.match(DETAILS_SOURCE, new RegExp(demoSlug, "u"));
 		assert.match(REGISTRY_SOURCE, new RegExp(`"${demoSlug}"`, "u"));
@@ -43,6 +45,47 @@ test("Chain of Thought docs include Studio-quality AI usage recipes", () => {
 	assert.match(DEMO_SOURCE, /export function ChainOfThoughtDemoAutomationTriggerFlow/u);
 	assert.match(DEMO_SOURCE, /export function ChainOfThoughtDemoResearchRetrievalFlow/u);
 	assert.match(DEMO_SOURCE, /export function ChainOfThoughtDemoToolCallDetailsFlow/u);
+	assert.match(DEMO_SOURCE, /export function ChainOfThoughtDemoNormalToolCallingReplay/u);
+	assert.match(DEMO_SOURCE, /export function ChainOfThoughtDemoAwaitingUserResponseReplay/u);
+	assert.match(DEMO_SOURCE, /data-chain-of-thought-replay-demo="true"/u);
+	assert.match(DEMO_SOURCE, /ask_user_questions/u);
+	assert.match(DEMO_SOURCE, /Reset normal tool calling animation/u);
+	assert.match(DEMO_SOURCE, /Reset awaiting user response animation/u);
+	assert.match(DEMO_SOURCE, /Build a Rovo agent named OKR Generator/u);
+	assert.match(DEMO_SOURCE, /STUDIO_REPLAY_TOOL_CALL_DELAY_MS = 2300/u);
+	assert.match(DEMO_SOURCE, /STUDIO_REPLAY_NARRATION_ROW_DELAY_MS = 550/u);
+	assert.match(DEMO_SOURCE, /Math\.round\(remainingRunMs \* 0\.7\)/u);
+	assert.match(DEMO_SOURCE, /buildThinkingNarrationMap/u);
+	assert.match(DEMO_SOURCE, /getThinkingToolCallSummaries/u);
+	assert.match(DEMO_SOURCE, /phase === "completed" \|\| phase === "awaiting" \|\| hasAwaitingInput/u);
+	assert.match(DEMO_SOURCE, /setIsOpen\(false\)/u);
+
+	for (const studioLabel of [
+		"Reading agent brief",
+		"Preparing clarification questions",
+		"Reviewing agent details",
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
+	]) {
+		assert.match(DEMO_SOURCE, new RegExp(studioLabel, "u"));
+	}
+
+	for (const studioToolName of [
+		"studio.read_brief",
+		"ask_user_questions",
+		"studio.review_answers",
+		"studio.select_tools",
+		"studio.draft_instructions",
+		"studio.name_agent",
+		"studio.save_profile",
+	]) {
+		assert.match(DEMO_SOURCE, new RegExp(studioToolName.replace(".", "\\."), "u"));
+	}
+
+	const replayToolCallIds = DEMO_SOURCE.match(/toolCallId: "studio-agent-replay-turn-[12]-[^"]+"/gu) ?? [];
+	assert.equal(replayToolCallIds.length, 8);
 });
 
 test("Chain of Thought docs demos center their preview content", () => {
@@ -51,7 +94,7 @@ test("Chain of Thought docs demos center their preview content", () => {
 	assert.match(DEMO_SOURCE, /className="flex min-h-\[400px\] w-full items-center justify-center/u);
 
 	const frameUsageCount = DEMO_SOURCE.match(/<ChainOfThoughtDemoFrame>/gu)?.length ?? 0;
-	assert.equal(frameUsageCount, 11);
+	assert.equal(frameUsageCount, 12);
 });
 
 test("Chain of Thought tool icon table does not add a second outer preview border", () => {
