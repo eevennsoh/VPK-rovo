@@ -544,6 +544,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	projectComponent("rovo-button", "Rovo Button"),
 	projectComponent("search", "Search"),
 	projectComponent("sidebar-chat", "Sidebar Chat"),
+	projectComponent("skills", "Skills"),
 	projectComponent("studio", "Studio"),
 ]);
 

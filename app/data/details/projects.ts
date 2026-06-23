@@ -48,6 +48,10 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 	"sidebar-chat": {
 		description: "A sliding chat panel with message bubbles, greeting view, and integrated composer for conversational AI interfaces.",
 	},
+	"skills": {
+		description: "A skills workspace built on the Sidebar Chat interface that shows how skills are invoked and triggered inline, with deterministic skill-invocation cards.",
+		importStatement: `import SkillsPanel from "@/components/projects/skills/page";`,
+	},
 	"studio": {
 		description: "A Studio project template forked from the Rovo chat workspace for future template design customization.",
 		importStatement: `import Studio from "@/components/projects/studio";`,
