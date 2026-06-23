@@ -101,6 +101,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Studio-only automation-discovery demo: custom ArtifactList widget and TWG
 	// trace wiring live under components/, so gate this focused source coverage.
 	"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
+	// Control-plane memory artifact target selection decides whether generated
+	// briefs/decks use one explicit node or the full filtered explorer view.
+	"components/projects/control-plane/lib/memory-artifact-selection.test.ts",
 	// Clicky live-voice transcript streaming is shared by /studio and /rovo but
 	// implemented in route shells/hooks; keep this focused source contract gated
 	// without enabling broad drift-prone component source tests.
