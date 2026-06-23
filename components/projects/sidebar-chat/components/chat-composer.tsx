@@ -239,7 +239,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					</Queue>
 				</div>
 			) : null}
-			<div className="chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-4 pb-2.5 pt-3.5" style={{ boxShadow: composerUpwardShadow }}>
+			<div className="chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-3 pb-3 pt-4" style={{ boxShadow: composerUpwardShadow }}>
 				<PromptInput
 					allowOverflow
 					data-screen-assistant-target={screenAssistantTargetPrefix}
@@ -263,7 +263,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 						/>
 					</PromptInputBody>
 
-					<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
+					<PromptInputFooter className="mt-3 justify-between px-0 pb-0 pt-0">
 						<PromptInputTools>
 							<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
 								<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">

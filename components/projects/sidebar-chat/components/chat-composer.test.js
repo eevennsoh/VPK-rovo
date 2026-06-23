@@ -169,7 +169,7 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 	assert.match(sidebarPanel, /containerClassName=\{composerContainerClassName\}/u);
 	assert.match(sidebarComposer, /containerClassName\?: string;/u);
 	assert.match(sidebarComposer, /className=\{cn\("relative min-w-0 px-3", containerClassName\)\}/u);
-	assert.match(sidebarComposer, /rounded-xl border border-border bg-surface px-4 pb-2\.5 pt-3\.5/u);
+	assert.match(sidebarComposer, /rounded-xl border border-border bg-surface px-3 pb-3 pt-4/u);
 });
 
 test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
