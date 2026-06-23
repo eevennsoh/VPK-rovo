@@ -1,18 +1,37 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import ChatPanel, {
 	type ChatPanelGreetingProps,
 	type ChatSubmitInterceptOutcome,
 } from "@/components/projects/sidebar-chat/page";
 import { getRovoAgentProfile, ROVO_AGENT_ID } from "@/app/data/directory/agents";
+import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
+import { addCreatedSkill, useCreatedSkills } from "@/app/data/directory/created-skills-store";
+import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+import type { RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
+import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
 import { SkillInvocationCard } from "./components/skill-invocation-card";
+import { SkillCreationTraceCard } from "./components/skill-creation-trace-card";
+import { SkillCreationResultCard } from "./components/skill-creation-result-card";
 import {
 	buildSkillInterceptOutcome,
 	SKILL_INVOCATION_WIDGET_TYPE,
 	type SkillInvocationPayload,
 } from "./lib/skill-intercept";
+import {
+	buildCreateSkillStage1,
+	buildCreateSkillStage2,
+	buildSkillMentionText,
+	deriveSkillFromPrompt,
+	hasCreateSkillMention,
+	isCreateSkillClarification,
+	SKILL_CREATION_RESULT_WIDGET_TYPE,
+	SKILL_CREATION_TRACE_WIDGET_TYPE,
+	type SkillCreationResultPayload,
+	type SkillCreationTracePayload,
+} from "./lib/create-skill-flow";
 import { SKILL_GREETING_SUGGESTIONS } from "./lib/skill-suggestions";
 
 const SKILLS_GREETING: ChatPanelGreetingProps = {
@@ -28,6 +47,8 @@ const SKILLS_GREETING: ChatPanelGreetingProps = {
  */
 const ROVO_GREETING_AGENT = getRovoAgentProfile(ROVO_AGENT_ID);
 
+const CREATE_SKILL_PLACEHOLDER = "Describe what you want";
+
 interface SkillsPanelProps {
 	/** Mirrors `ChatPanel.onClose`; defaults to a no-op for the standalone demo. */
 	onClose?: () => void;
@@ -35,46 +56,150 @@ interface SkillsPanelProps {
 
 /**
  * Skills project surface. A thin, fork-free reuse of the Sidebar Chat `ChatPanel`
- * (so the interface stays pixel-identical and can never drift) wired to
- * demonstrate how skills are **invoked** and **triggered**:
+ * wired to demonstrate two things, all client-side (the model is never hit):
  *
- * - Greeting starters and matching typed prompts are intercepted
- *   (`buildSkillInterceptOutcome`) and answered locally — the model is never hit.
- * - Each invocation renders an inline "Skill invoked" card via `renderWidget`,
- *   positioned above the reply via `getWidgetPosition`.
+ * 1. **Invoking** skills — greeting starters / matching prompts are intercepted
+ *    (`buildSkillInterceptOutcome`) and answered with an inline "Skill invoked" card.
+ * 2. **Creating** a skill — when the composer carries the `create-skill` tag, the
+ *    deterministic `create-skill-flow` engine animates a chain-of-thought, asks one
+ *    round of questions (docked card), then shows a generated-skill result card. The
+ *    new skill is registered at runtime so it resolves in the `/` menu, skill-tag
+ *    styling, and the config dialog, and the composer is auto-prefilled with its tag.
  */
 export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
+	const createdSkills = useCreatedSkills();
+	// Original create-skill prompt, stashed on submit 1 so the answer turn can
+	// derive the skill from it (the clarification summary alone lacks it).
+	const pendingCreatePromptRef = useRef<string>("");
+	const prefillCounterRef = useRef(0);
+	const [configSkillId, setConfigSkillId] = useState<string | null>(null);
+	const [prefillRequest, setPrefillRequest] = useState<{ text: string; requestKey: number }>();
+	// Flips the first trace's header from "Awaiting user response" to
+	// "Questions answered" once the question card has been answered.
+	const [clarificationAnswered, setClarificationAnswered] = useState(false);
+
+	const handleEditSkill = useCallback((skillId: string) => {
+		setConfigSkillId(skillId);
+	}, []);
+
 	const renderWidget = useCallback(
 		(widget: { type: string; data: unknown }): ReactNode => {
-			if (widget.type === SKILL_INVOCATION_WIDGET_TYPE) {
-				return <SkillInvocationCard {...(widget.data as SkillInvocationPayload)} />;
+			switch (widget.type) {
+				case SKILL_INVOCATION_WIDGET_TYPE:
+					return <SkillInvocationCard {...(widget.data as SkillInvocationPayload)} />;
+				case SKILL_CREATION_TRACE_WIDGET_TYPE:
+					return (
+						<SkillCreationTraceCard
+							payload={widget.data as SkillCreationTracePayload}
+							answered={clarificationAnswered}
+						/>
+					);
+				case SKILL_CREATION_RESULT_WIDGET_TYPE:
+					return (
+						<SkillCreationResultCard
+							payload={widget.data as SkillCreationResultPayload}
+							onEdit={handleEditSkill}
+						/>
+					);
+				case "question-card":
+					// Rendered as the docked clarification card by ChatPanel, not inline.
+					return null;
+				default:
+					return undefined;
+			}
+		},
+		[clarificationAnswered, handleEditSkill],
+	);
+
+	const getWidgetPosition = useCallback(
+		(widgetType: string): "before-content" | "after-content" | undefined => {
+			if (
+				widgetType === SKILL_INVOCATION_WIDGET_TYPE ||
+				widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE ||
+				widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE
+			) {
+				return "before-content";
 			}
 			return undefined;
 		},
 		[],
 	);
 
-	const getWidgetPosition = useCallback(
-		(widgetType: string): "before-content" | "after-content" | undefined =>
-			widgetType === SKILL_INVOCATION_WIDGET_TYPE ? "before-content" : undefined,
+	const onInterceptSubmit = useCallback((text: string): ChatSubmitInterceptOutcome => {
+		// Submit 1: the composer carries the create-skill tag → start the build flow.
+		if (hasCreateSkillMention(text)) {
+			pendingCreatePromptRef.current = text;
+			setClarificationAnswered(false);
+			const stage = buildCreateSkillStage1();
+			return {
+				handled: true,
+				getPendingAssistantParts: stage.getPendingAssistantParts,
+				assistantPartStages: stage.assistantPartStages,
+			};
+		}
+
+		// Answer turn: ChatPanel routed the question-card answers back here.
+		if (isCreateSkillClarification(text)) {
+			setClarificationAnswered(true);
+			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text);
+			addCreatedSkill(skill);
+			const stage = buildCreateSkillStage2(skill, () => {
+				prefillCounterRef.current += 1;
+				setPrefillRequest({ text: buildSkillMentionText(skill.name), requestKey: prefillCounterRef.current });
+			});
+			return {
+				handled: true,
+				getPendingAssistantParts: stage.getPendingAssistantParts,
+				assistantPartStages: stage.assistantPartStages,
+			};
+		}
+
+		// Otherwise fall back to the skill-invocation demo.
+		return buildSkillInterceptOutcome(text);
+	}, []);
+
+	const resolveComposerPlaceholder = useCallback(
+		(prompt: string): string | undefined =>
+			hasCreateSkillMention(prompt) ? CREATE_SKILL_PLACEHOLDER : undefined,
 		[],
 	);
 
-	const onInterceptSubmit = useCallback(
-		(text: string): ChatSubmitInterceptOutcome => buildSkillInterceptOutcome(text),
-		[],
+	const composerMentionSources = useMemo<RichTextMentionSources | undefined>(
+		() => (createdSkills.length > 0 ? { skill: createdSkills.map(mapSkillToMentionItem) } : undefined),
+		[createdSkills],
 	);
+
+	const dialogSkills = useMemo(() => [...DEFAULT_SKILLS, ...createdSkills], [createdSkills]);
 
 	return (
-		<ChatPanel
-			onClose={onClose ?? (() => {})}
-			enableSmartWidgets
-			greeting={SKILLS_GREETING}
-			greetingSelectedAgent={ROVO_GREETING_AGENT}
-			suppressCustomAgentTabs
-			onInterceptSubmit={onInterceptSubmit}
-			renderWidget={renderWidget}
-			getWidgetPosition={getWidgetPosition}
-		/>
+		<>
+			<ChatPanel
+				onClose={onClose ?? (() => {})}
+				greeting={SKILLS_GREETING}
+				greetingSelectedAgent={ROVO_GREETING_AGENT}
+				suppressCustomAgentTabs
+				onInterceptSubmit={onInterceptSubmit}
+				interceptClarificationAnswers
+				renderWidget={renderWidget}
+				getWidgetPosition={getWidgetPosition}
+				resolveComposerPlaceholder={resolveComposerPlaceholder}
+				composerPrefillRequest={prefillRequest}
+				composerMentionSources={composerMentionSources}
+			/>
+			<SkillsDirectoryDialog
+				key={configSkillId ?? "closed"}
+				open={configSkillId !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setConfigSkillId(null);
+					}
+				}}
+				initialDetailSkillId={configSkillId}
+				skills={dialogSkills}
+				variant="experimental"
+				addedSkillIds={configSkillId ? [configSkillId] : []}
+				closeOnDetailExit
+			/>
+		</>
 	);
 }

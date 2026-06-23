@@ -8,6 +8,7 @@ import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-d
  */
 export type SkillIconKey =
 	| "page"
+	| "skill"
 	| "comment"
 	| "curly-brackets"
 	| "device-mobile"

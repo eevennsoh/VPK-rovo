@@ -50,6 +50,13 @@ interface ThreadMessageRootProps {
 	message: RovoRenderableUIMessage;
 	surface: "sidebar" | "fullscreen";
 	isThinkingLifecycleStreaming?: boolean;
+	/**
+	 * Opt-in: treat this message's question/clarification tool calls as answered,
+	 * so the thinking trace header flips from "Awaiting user response" to
+	 * "Questions answered" (studio behavior). Consumers compute this from message
+	 * order (e.g. a later user message exists). Defaults to false.
+	 */
+	treatQuestionToolCallsAsAnswered?: boolean;
 	assistantStreamingRenderMode?: "rich" | "text-first";
 	onDeleteMessage?: (messageId: string) => void;
 	editingMessageId?: string | null;
@@ -71,6 +78,7 @@ function useThreadMessageDerived(
 	assistantStreamingRenderMode: "rich" | "text-first",
 	renderWidget: ThreadMessageRootProps["renderWidget"],
 	getWidgetPosition: ThreadMessageRootProps["getWidgetPosition"],
+	treatQuestionToolCallsAsAnswered: boolean,
 ): ThreadMessageContextValue {
 	const rawMessageText = getMessageText(message);
 	const isStreaming = isMessageTextStreaming(message);
@@ -208,6 +216,7 @@ function useThreadMessageDerived(
 		hasWidgetOutput,
 		isRetryThinkingStatus,
 		thinkingToolCalls: thinkingToolCallsForStatus,
+		treatQuestionToolCallsAsAnswered,
 	});
 	const messageTextBeforeSanitization = baseMessageText;
 	const sanitizedMessageText = sanitizeMarkdownArtifactMarkers(
@@ -374,6 +383,7 @@ export function ThreadMessageRoot({
 	message,
 	surface,
 	isThinkingLifecycleStreaming = false,
+	treatQuestionToolCallsAsAnswered = false,
 	assistantStreamingRenderMode = "rich",
 	onDeleteMessage,
 	editingMessageId,
@@ -391,6 +401,7 @@ export function ThreadMessageRoot({
 		assistantStreamingRenderMode,
 		renderWidget,
 		getWidgetPosition,
+		treatQuestionToolCallsAsAnswered,
 	);
 
 	if (message.role === "user") {

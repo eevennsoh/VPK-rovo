@@ -1,5 +1,6 @@
 import { type ReactElement } from "react";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import AssetsIcon from "@atlaskit/icon/core/assets";
 import BoardIcon from "@atlaskit/icon/core/board";
 import BookWithBookmarkIcon from "@atlaskit/icon/core/book-with-bookmark";
@@ -142,6 +143,8 @@ export function getDirectoryIcon(icon: DirectoryIconKey = "page"): ReactElement 
 			return <WhiteboardIcon label="" color="currentColor" />;
 		case "work-item":
 			return <WorkItemIcon label="" color="currentColor" />;
+		case "skill":
+			return <SkillIcon label="" color="currentColor" />;
 		case "page":
 		default:
 			return <PageIcon label="" color="currentColor" />;

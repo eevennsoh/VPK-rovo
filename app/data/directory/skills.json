@@ -1,5 +1,33 @@
 [
 	{
+		"id": "create-skill",
+		"name": "Create skill",
+		"description": "Create a new Rovo skill from a plain-language description. Use when the user asks to build, create, scaffold, or author a new skill.",
+		"icon": "skill",
+		"publisherName": "Atlassian",
+		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
+		"companyId": "atlassian",
+		"categoryId": "software-development",
+		"starCount": 152,
+		"favorite": false,
+		"tools": [
+			{ "id": "tool-1", "name": "Editor", "icon": "edit" },
+			{ "id": "tool-2", "name": "Knowledge", "icon": "page" }
+		],
+		"instructions": "# Create skill\n\nGuide the user from a plain-language description to a working Rovo skill. Ask a short round of clarifying questions, then scaffold the skill's name, description, trigger conditions, and instructions.",
+		"source": "platform",
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": ["Rovo"],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 1280,
+		"verified": true,
+		"skillMd": "---\nname: create-skill\ndescription: Create a new Rovo skill from a plain-language description. Use when the user asks to build, create, scaffold, or author a new skill.\nlicense: MIT\nversion: 1.0.0\n---\n\n# Create skill\n\nCreate a new Rovo skill from a plain-language description.\n\n## When to use\n\nUse this skill when the user wants to author a brand-new skill but only has an idea in plain language. It asks a short round of clarifying questions, then generates a ready-to-edit skill.\n\n## Instructions\n\n1. Read the user's description of what the skill should do.\n2. Ask one round of clarifying questions (purpose, trigger, tools).\n3. Generate the skill name, description, and instructions.\n4. Open the generated skill for review and editing.\n\n## Output\n\nA ready-to-edit skill, available immediately for use.\n",
+		"createdBy": "Atlassian",
+		"addedBy": "You",
+		"lastUpdatedAt": "2026-06-01T00:00:00.000Z"
+	},
+	{
 		"id": "design-landing-page",
 		"name": "Design landing page",
 		"description": "Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.",

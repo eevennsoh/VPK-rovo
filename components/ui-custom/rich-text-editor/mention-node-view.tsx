@@ -8,6 +8,7 @@ import SwapIcon from "@atlaskit/icon-lab/core/swap";
 import type { ReactNode } from "react";
 
 import { DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon, slugifySkillName } from "@/app/data/directory/skills";
+import { getCreatedSkills } from "@/app/data/directory/created-skills-store";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag, type TagOverlayAction } from "@/components/ui/tag";
@@ -64,7 +65,12 @@ function resolveMentionVisual(
 
 function getSkillMentionTagProps(label: string): { color: SkillTagColor; icon: ReactNode } {
 	const normalized = slugifySkillName(label);
-	const skill = DEFAULT_SKILLS.find((entry) => entry.id === normalized || slugifySkillName(entry.name) === normalized);
+	// Include runtime-created skills so a freshly generated skill's tag resolves
+	// its real collection color/icon (the registry is empty until the
+	// create-skill demo flow generates one, so static skills are unaffected).
+	const skill = [...DEFAULT_SKILLS, ...getCreatedSkills()].find(
+		(entry) => entry.id === normalized || slugifySkillName(entry.name) === normalized,
+	);
 	return {
 		color: skill ? getSkillCollectionId(skill) : "default",
 		icon: getSkillIcon(skill?.icon ?? "page"),

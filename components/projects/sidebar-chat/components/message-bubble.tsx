@@ -31,6 +31,8 @@ interface MessageBubbleProps {
 	showFollowUpSuggestions?: boolean;
 	showThinkingStatusSection?: boolean;
 	isThinkingLifecycleStreaming?: boolean;
+	/** Forwarded to ThreadMessage.Root: flip answered question traces to "Questions answered". */
+	treatQuestionToolCallsAsAnswered?: boolean;
 	generativeCardAnimation?: GenerativeCardAnimationProps;
 	editingMessageId?: string | null;
 	onEditMessage?: (messageId: string, nextText: string) => Promise<void> | void;
@@ -62,6 +64,7 @@ export default function MessageBubble({
 	showFollowUpSuggestions = true,
 	showThinkingStatusSection = true,
 	isThinkingLifecycleStreaming = false,
+	treatQuestionToolCallsAsAnswered = false,
 	generativeCardAnimation,
 	editingMessageId,
 	onEditMessage,
@@ -152,6 +155,7 @@ export default function MessageBubble({
 			message={message}
 			surface="sidebar"
 			isThinkingLifecycleStreaming={isThinkingLifecycleStreaming}
+			treatQuestionToolCallsAsAnswered={treatQuestionToolCallsAsAnswered}
 			editingMessageId={editingMessageId}
 			onEditMessage={onEditMessage}
 			onSetEditingMessageId={onSetEditingMessageId}
