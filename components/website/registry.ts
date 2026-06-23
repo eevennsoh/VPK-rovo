@@ -6014,6 +6014,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "chain-of-thought-demo-normal-tool-calling-replay": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoNormalToolCallingReplay,
+      })),
+    { ssr: false },
+  ),
+  "chain-of-thought-demo-awaiting-user-response-replay": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoAwaitingUserResponseReplay,
+      })),
+    { ssr: false },
+  ),
   "chain-of-thought-demo-thinking": dynamic(
     () =>
       import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({

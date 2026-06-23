@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
@@ -40,6 +40,7 @@ interface ChatComposerProps {
 	isStreaming: boolean;
 	hasInFlightTurn: boolean;
 	queuedPrompts: ReadonlyArray<QueuedPromptItem>;
+	addMenuItemsBefore?: ReactNode;
 	experimentalDarkCta?: boolean;
 	hideAiCursor?: boolean;
 	hideSourceAndModelControls?: boolean;
@@ -170,7 +171,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -284,6 +285,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									sideOffset={8}
 								>
 									<RovoAppComposerAddMenu
+										itemsBefore={addMenuItemsBefore}
 										onClose={() => setIsAddMenuOpen(false)}
 									/>
 								</PromptInputActionMenuContent>

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- Menu items use slot props for Atlaskit icons.
+
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import ChatPanel, {
@@ -12,6 +14,9 @@ import { addCreatedSkill, useCreatedSkills } from "@/app/data/directory/created-
 import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
+import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
+import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import { SkillInvocationCard } from "./components/skill-invocation-card";
 import { SkillCreationTraceCard } from "./components/skill-creation-trace-card";
 import { SkillCreationResultCard } from "./components/skill-creation-result-card";
@@ -65,6 +70,9 @@ interface SkillsPanelProps {
  *    round of questions (docked card), then shows a generated-skill result card. The
  *    new skill is registered at runtime so it resolves in the `/` menu, skill-tag
  *    styling, and the config dialog, and the composer is auto-prefilled with its tag.
+ *
+ * The composer "+" menu also exposes "View all skills" (the directory) and a
+ * placeholder "Create space" item.
  */
 export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	const createdSkills = useCreatedSkills();
@@ -73,6 +81,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	const pendingCreatePromptRef = useRef<string>("");
 	const prefillCounterRef = useRef(0);
 	const [configSkillId, setConfigSkillId] = useState<string | null>(null);
+	const [isSkillsDirectoryOpen, setIsSkillsDirectoryOpen] = useState(false);
 	const [prefillRequest, setPrefillRequest] = useState<{ text: string; requestKey: number }>();
 	// Flips the first trace's header from "Awaiting user response" to
 	// "Questions answered" once the question card has been answered.
@@ -171,10 +180,35 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 
 	const dialogSkills = useMemo(() => [...DEFAULT_SKILLS, ...createdSkills], [createdSkills]);
 
+	const handleViewAllSkills = useCallback(() => {
+		setConfigSkillId(null);
+		setIsSkillsDirectoryOpen(true);
+	}, []);
+	const handleCreateSpace = useCallback(() => {
+		setIsSkillsDirectoryOpen(false);
+	}, []);
+	const addMenuItemsBefore = (
+		<>
+			<PromptInputActionMenuItem elemBefore={<FolderAddIcon label="" />} onSelect={handleCreateSpace}>
+				Create space
+			</PromptInputActionMenuItem>
+			<PromptInputActionMenuItem elemBefore={<SkillIcon label="" />} onSelect={handleViewAllSkills}>
+				View all skills
+			</PromptInputActionMenuItem>
+		</>
+	);
+
+	// One dialog serves both surfaces: the generated-skill config detail (opened
+	// from a result card's Edit, which closes on exit) and the "View all skills"
+	// browse grid.
+	const isDetailOpen = configSkillId !== null;
+	const isDialogOpen = isDetailOpen || isSkillsDirectoryOpen;
+
 	return (
 		<>
 			<ChatPanel
 				onClose={onClose ?? (() => {})}
+				addMenuItemsBefore={addMenuItemsBefore}
 				greeting={SKILLS_GREETING}
 				greetingSelectedAgent={ROVO_GREETING_AGENT}
 				suppressCustomAgentTabs
@@ -187,18 +221,19 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				composerMentionSources={composerMentionSources}
 			/>
 			<SkillsDirectoryDialog
-				key={configSkillId ?? "closed"}
-				open={configSkillId !== null}
+				key={configSkillId ?? (isSkillsDirectoryOpen ? "browse" : "closed")}
+				open={isDialogOpen}
 				onOpenChange={(open) => {
 					if (!open) {
 						setConfigSkillId(null);
+						setIsSkillsDirectoryOpen(false);
 					}
 				}}
 				initialDetailSkillId={configSkillId}
 				skills={dialogSkills}
 				variant="experimental"
 				addedSkillIds={configSkillId ? [configSkillId] : []}
-				closeOnDetailExit
+				closeOnDetailExit={isDetailOpen}
 			/>
 		</>
 	);

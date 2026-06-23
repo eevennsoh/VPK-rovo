@@ -215,6 +215,7 @@ function getLocalConversationVoiceSuppressionMs(text: string): number {
 
 interface ChatPanelProps {
 	onClose: () => void;
+	addMenuItemsBefore?: ReactNode;
 	sendPromptOptions?: SendPromptOptions;
 	enableSmartWidgets?: boolean;
 	cards?: ChatPanelCardsProps;
@@ -440,6 +441,7 @@ function getViewportPointFromScreenAssistantTarget(
 
 export default function ChatPanel({
 	onClose,
+	addMenuItemsBefore,
 	sendPromptOptions,
 	enableSmartWidgets = false,
 	cards,
@@ -1824,6 +1826,7 @@ export default function ChatPanel({
 						isStreaming={isStreamingLifecycleActive}
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
+						addMenuItemsBefore={addMenuItemsBefore}
 						experimentalDarkCta
 						containerClassName={composerContainerClassName}
 						hideAiCursor={hideAiCursor}

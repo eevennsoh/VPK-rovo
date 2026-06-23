@@ -441,12 +441,19 @@ test("Rovo app Max reasoning owns plan mode without a separate Task button", () 
 test("compact chat plus menu reuses the Rovo app attachment actions", () => {
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const rovoAddMenu = readProjectFile("components/projects/shared/components/rovo-app-composer-add-menu.tsx");
+	const customItemsIndex = rovoAddMenu.indexOf("{itemsBefore}");
+	const uploadItemIndex = rovoAddMenu.indexOf("<PromptInputActionAddAttachments");
 
+	assert.match(sidebarComposer, /addMenuItemsBefore\?: ReactNode;/u);
 	assert.match(sidebarComposer, /RovoAppComposerAddMenu/u);
+	assert.match(sidebarComposer, /itemsBefore=\{addMenuItemsBefore\}/u);
 	assert.match(sidebarComposer, /PendingAttachments/u);
 	assert.match(sidebarComposer, /usePromptInputAttachments/u);
+	assert.match(rovoAddMenu, /itemsBefore\?: ReactNode;/u);
 	assert.match(rovoAddMenu, /PromptInputActionAddAttachments/u);
 	assert.match(rovoAddMenu, /PromptInputActionAddScreenshot/u);
+	assert.ok(customItemsIndex > -1);
+	assert.ok(uploadItemIndex > customItemsIndex);
 	assert.doesNotMatch(sidebarComposer, /UploadIcon/u);
 });
 
