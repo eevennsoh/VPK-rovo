@@ -1549,6 +1549,8 @@ AI usage guidance:
 		],
 		examples: [
 			{ title: "Preload", description: "Collapsed initial state before reasoning begins — header visible, content hidden.", demoSlug: "chain-of-thought-demo-preload" },
+			{ title: "Normal tool calling replay", description: "Resettable Studio-style replay that steps through running and completed tool calls for custom-agent creation.", demoSlug: "chain-of-thought-demo-normal-tool-calling-replay" },
+			{ title: "Awaiting user response replay", description: "Resettable custom-agent creation replay that pauses on an ask_user_questions tool call while awaiting input.", demoSlug: "chain-of-thought-demo-awaiting-user-response-replay" },
 			{ title: "Thinking", description: "Active processing — multiple steps with search results, image evidence, and one active step in progress.", demoSlug: "chain-of-thought-demo-thinking" },
 			{ title: "Completed", description: "All reasoning steps complete, with the parent summary collapsed by default.", demoSlug: "chain-of-thought-demo-completed" },
 			{ title: "Status variants", description: "Compare complete, active, and pending step states in one reasoning chain.", demoSlug: "chain-of-thought-demo-status-variants" },
