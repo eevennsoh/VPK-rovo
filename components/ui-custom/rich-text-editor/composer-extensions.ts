@@ -354,9 +354,9 @@ function createComposerBehavior(
 	return Extension.create({
 		name: "composerBehavior",
 		// Higher than Tiptap's default core keymap priority (100), so plain Enter
-		// submits instead of falling through to `splitBlock()`. Still lower than
-		// the external directory autocomplete plugin (150), so visible ghost-list
-		// rows can accept Enter first.
+		// submits instead of falling through to `splitBlock()`. The external
+		// directory autocomplete plugin stays higher for explicit shortcuts, but
+		// plain Enter and arrow keys remain reserved for the prompt input.
 		priority: 125,
 		addProseMirrorPlugins() {
 			return [
@@ -430,12 +430,10 @@ function createComposerBehavior(
 }
 
 export interface ComposerDirectoryAutocompleteController {
-	acceptActive: () => boolean;
 	acceptGhost: () => boolean;
 	acceptIndex: (index: number) => boolean;
+	hasAcceptableList: () => boolean;
 	hasVisibleList: () => boolean;
-	moveActive: (direction: -1 | 1) => boolean;
-	setActiveIndex: (index: number) => boolean;
 }
 
 export interface ComposerDirectoryAutocompleteDecoration {
@@ -448,8 +446,8 @@ export function createComposerDirectoryAutocomplete(
 ) {
 	return Extension.create({
 		name: "composerDirectoryAutocomplete",
-		// Above ProseMirror's base Enter keymap so a visible external list can
-		// accept the active row before Enter splits the composer paragraph.
+		// Above ProseMirror's base keymap so a visible external list can own
+		// explicit Cmd/Ctrl+number shortcuts before default editor handling.
 		priority: 150,
 		addProseMirrorPlugins() {
 			return [
@@ -489,40 +487,12 @@ export function createComposerDirectoryAutocomplete(
 						decorations(state) {
 							return composerDirectoryAutocompletePluginKey.getState(state) ?? DecorationSet.empty;
 						},
-						handleDOMEvents: {
-							keydown: (_view, event) => {
-								if (!controller || !controller.hasVisibleList()) {
-									return false;
-								}
-
-								const keyboardEvent = event as KeyboardEvent;
-								if (keyboardEvent.key !== "Enter" || keyboardEvent.shiftKey || keyboardEvent.isComposing) {
-									return false;
-								}
-
-								event.preventDefault();
-								return controller.acceptActive();
-							},
-							beforeinput: (_view, event) => {
-								if (!controller || event.isComposing || !controller.hasVisibleList()) {
-									return false;
-								}
-
-								const inputType = (event as InputEvent).inputType;
-								if (inputType !== "insertParagraph" && inputType !== "insertLineBreak") {
-									return false;
-								}
-
-								event.preventDefault();
-								return controller.acceptActive();
-							},
-						},
 						handleKeyDown: (_view, event) => {
 							if (!controller || event.isComposing || event.altKey) {
 								return false;
 							}
 
-							if ((event.metaKey || event.ctrlKey) && /^[1-9]$/u.test(event.key) && controller.hasVisibleList()) {
+							if ((event.metaKey || event.ctrlKey) && /^[1-9]$/u.test(event.key) && controller.hasAcceptableList()) {
 								event.preventDefault();
 								return controller.acceptIndex(Number(event.key) - 1);
 							}
@@ -531,22 +501,10 @@ export function createComposerDirectoryAutocomplete(
 								return false;
 							}
 
-							if (event.key === "ArrowDown" && controller.hasVisibleList()) {
-								event.preventDefault();
-								return controller.moveActive(1);
-							}
-
-							if (event.key === "ArrowUp" && controller.hasVisibleList()) {
-								event.preventDefault();
-								return controller.moveActive(-1);
-							}
-
-							if (event.key === "Enter" && controller.hasVisibleList()) {
-								event.preventDefault();
-								return controller.acceptActive();
-							}
-
-							if (event.key === "Tab" || event.key === "ArrowRight") {
+							if (
+								(event.key === "Tab" || event.key === "ArrowRight") &&
+								!controller.hasVisibleList()
+							) {
 								return controller.acceptGhost();
 							}
 

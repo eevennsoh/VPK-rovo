@@ -99,7 +99,6 @@ import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { useRovoSelectedAgent } from "@/app/contexts";
 import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/app/data/directory/agents";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
-import { ReturnIcon } from "@/components/ui/vpk-icons";
 
 interface RovoAppShellProps {
 	embedded?: boolean;
@@ -354,16 +353,10 @@ function getViewportPointFromScreenAssistantTarget(
 }
 
 function RovoAppDirectoryAutocompleteShortcut({
-	active,
 	index,
 }: Readonly<{
-	active: boolean;
 	index: number;
 }>) {
-	if (active) {
-		return <ReturnIcon className="size-3.5 text-icon-subtlest" />;
-	}
-
 	return (
 		<Kbd className="h-5 min-w-7 rounded-sm bg-bg-neutral px-1.5 text-[11px] text-text-subtle">
 			⌘{index + 1}
@@ -376,14 +369,12 @@ function RovoAppDirectoryAutocompleteRows({
 	shouldReduceMotion,
 	state,
 	useWideLayout,
-	onActiveChange,
 	onSelect,
 }: Readonly<{
 	className?: string;
 	shouldReduceMotion: boolean;
 	state: DirectoryAutocompleteState;
 	useWideLayout: boolean;
-	onActiveChange?: (index: number) => void;
 	onSelect?: (index: number) => void;
 }>) {
 	if (state.matches.length === 0) {
@@ -399,32 +390,25 @@ function RovoAppDirectoryAutocompleteRows({
 			style={{ willChange: "transform, opacity" }}
 		>
 			<div className={cn("grid gap-1", useWideLayout ? "grid-cols-2 gap-x-6" : "grid-cols-1")}>
-				{state.matches.map((match, index) => {
-					const active = state.activeIndex === index;
-
-					return (
-						<GreetingPromptRow
-							active={active}
-							description={match.mention.description}
-							key={match.mention.id}
-							label={match.mention.label}
-							onClick={() => onSelect?.(index)}
-							onFocus={() => onActiveChange?.(index)}
-							onMouseEnter={() => onActiveChange?.(index)}
-							shortcut={<RovoAppDirectoryAutocompleteShortcut active={active} index={index} />}
-							visual={
-								match.mention.visual ? (
-									<RichTextMentionVisualMark
-										category={match.mention.category}
-										label={match.mention.label}
-										size="menu"
-										visual={match.mention.visual}
-									/>
-								) : undefined
-							}
-						/>
-					);
-				})}
+				{state.matches.map((match, index) => (
+					<GreetingPromptRow
+						description={match.mention.description}
+						key={match.mention.id}
+						label={match.mention.label}
+						onClick={() => onSelect?.(index)}
+						shortcut={<RovoAppDirectoryAutocompleteShortcut index={index} />}
+						visual={
+							match.mention.visual ? (
+								<RichTextMentionVisualMark
+									category={match.mention.category}
+									label={match.mention.label}
+									size="menu"
+									visual={match.mention.visual}
+								/>
+							) : undefined
+						}
+					/>
+				))}
 			</div>
 		</motion.div>
 	);
@@ -812,9 +796,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);
-	}, [directoryAutocompleteController]);
-	const handleDirectoryAutocompleteActiveChange = useCallback((index: number) => {
-		directoryAutocompleteController?.setActiveIndex(index);
 	}, [directoryAutocompleteController]);
 
 	// Question card / clarification support
@@ -2383,7 +2364,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 										shouldReduceMotion={Boolean(shouldReduceMotion)}
 										state={directoryAutocompleteState}
 										useWideLayout={shouldUseWideDirectoryAutocompleteLayout}
-										onActiveChange={handleDirectoryAutocompleteActiveChange}
 										onSelect={handleDirectoryAutocompleteSelect}
 									/>
 								) : null}

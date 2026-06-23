@@ -454,12 +454,10 @@ export function RichTextEditor({
 	// Ghost-only controller: this editor has no external suggestion list, so the
 	// list-navigation branches stay inert (hasVisibleList → false).
 	const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
-		acceptActive: () => false,
 		acceptGhost: () => acceptDirectoryAutocompleteGhost(),
 		acceptIndex: () => false,
+		hasAcceptableList: () => false,
 		hasVisibleList: () => false,
-		moveActive: () => false,
-		setActiveIndex: () => false,
 	}), [acceptDirectoryAutocompleteGhost]);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
 	const [viewMode, setViewMode] = useState<EditorToolbarViewMode>("rendered");

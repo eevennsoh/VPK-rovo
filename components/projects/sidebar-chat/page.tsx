@@ -1568,9 +1568,6 @@ export default function ChatPanel({
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);
 	}, [directoryAutocompleteController]);
-	const handleDirectoryAutocompleteActiveChange = useCallback((index: number) => {
-		directoryAutocompleteController?.setActiveIndex(index);
-	}, [directoryAutocompleteController]);
 
 	const handleWidgetPrimaryAction = useCallback(
 		(payload: GenerativeWidgetPrimaryActionPayload) => {
@@ -1674,7 +1671,6 @@ export default function ChatPanel({
 							useWideSuggestionLayout={shouldUseWideDirectoryAutocompleteList}
 							onSuggestionClick={handleGreetingSuggestionClick}
 							onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
-							onDirectoryAutocompleteActiveChange={handleDirectoryAutocompleteActiveChange}
 						/>
 					</div>
 				) : (

@@ -1033,8 +1033,8 @@ export type PromptInputTextareaProps = ComponentProps<
   enableDirectoryAutocomplete?: boolean;
   /**
    * Whether the host is rendering an external suggestions list for the current
-   * composer. When true, ArrowUp/ArrowDown/Enter and Mod+1..9 select that list
-   * instead of submitting.
+   * composer. When true, Mod+1..9 selects that list; plain Enter and arrow
+   * keys stay with the prompt input.
    */
   directoryAutocompleteListVisible?: boolean;
   /** Receives composer-owned autocomplete state for external list rendering. */
@@ -1145,27 +1145,23 @@ export const PromptInputTextarea = ({
   const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
   const onDirectoryAutocompleteControllerChangeRef = useRef(onDirectoryAutocompleteControllerChange);
   const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
-  const moveDirectoryAutocompleteActiveRef = useRef<(direction: -1 | 1) => boolean>(() => false);
-  const setDirectoryAutocompleteActiveIndexRef = useRef<(index: number) => boolean>(() => false);
   // True while the visual-trace auto-tagger is mid-debounce. During that window we
   // intentionally keep the prior matches visible (no per-keystroke flicker), but
-  // their query range is stale, so the list must not be *acceptable* — otherwise
-  // Enter/Cmd+number/Tab could insert a mention at the old range. Assigned after
-  // the hook below; defaults to "not busy".
+  // their query range is stale, so autocomplete must not be *acceptable* — otherwise
+  // Cmd+number or ghost acceptance could insert a mention at the old range.
+  // Assigned after the hook below; defaults to "not busy".
   const isAutoTaggingBusyRef = useRef<() => boolean>(() => false);
 
   const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
-    acceptActive: () => acceptDirectoryAutocompleteIndexRef.current(
-      directoryAutocompleteStateRef.current?.activeIndex ?? 0
-    ),
-    acceptGhost: () => acceptDirectoryAutocompleteIndexRef.current(0, true),
-    acceptIndex: (index: number) => acceptDirectoryAutocompleteIndexRef.current(index),
-    hasVisibleList: () =>
+    acceptGhost: () => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(0, true),
+    acceptIndex: (index: number) => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(index),
+    hasAcceptableList: () =>
       directoryAutocompleteListVisibleRef.current &&
       !isAutoTaggingBusyRef.current() &&
       (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
-    moveActive: (direction: -1 | 1) => moveDirectoryAutocompleteActiveRef.current(direction),
-    setActiveIndex: (index: number) => setDirectoryAutocompleteActiveIndexRef.current(index),
+    hasVisibleList: () =>
+      directoryAutocompleteListVisibleRef.current &&
+      (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
   }), []);
 
   useEffect(() => {
@@ -1306,7 +1302,7 @@ export const PromptInputTextarea = ({
     // no menu open: keep the current matches rather than blanking on every
     // keystroke (that made the empty-state greeting blink to its default prompts
     // and back). The query range may be stale until `runAutoTagging` recomputes,
-    // so acceptance is disabled while busy via the controller's hasVisibleList.
+    // so acceptance is disabled while busy via the controller's accept methods.
     if (isVisualTraceAutoTaggingBusy()) {
       return;
     }
@@ -1318,7 +1314,6 @@ export const PromptInputTextarea = ({
       RICH_TEXT_OBJECT_REPLACEMENT
     );
     const nextState = getDirectoryAutocompleteState({
-      activeIndex: directoryAutocompleteStateRef.current?.activeIndex ?? 0,
       cursorPosition: selection.from,
       sources: mentionSourcesRef.current,
       textBeforeCursor,
@@ -1359,33 +1354,6 @@ export const PromptInputTextarea = ({
       )
       .run();
     setDirectoryAutocompleteState(null);
-    return true;
-  };
-
-  moveDirectoryAutocompleteActiveRef.current = (direction: -1 | 1): boolean => {
-    const currentState = directoryAutocompleteStateRef.current;
-    if (!currentState || currentState.matches.length === 0) {
-      return false;
-    }
-
-    const nextIndex = (currentState.activeIndex + direction + currentState.matches.length) %
-      currentState.matches.length;
-    setDirectoryAutocompleteState({
-      ...currentState,
-      activeIndex: nextIndex,
-    });
-    return true;
-  };
-
-  setDirectoryAutocompleteActiveIndexRef.current = (index: number): boolean => {
-    const currentState = directoryAutocompleteStateRef.current;
-    if (!currentState || index < 0 || index >= currentState.matches.length) {
-      return false;
-    }
-    setDirectoryAutocompleteState({
-      ...currentState,
-      activeIndex: index,
-    });
     return true;
   };
 

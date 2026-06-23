@@ -347,6 +347,14 @@ test("ChatGreeting prompt rows render through the shared GreetingPromptRow", () 
 	assert.match(CHAT_GREETING_SOURCE, /<GreetingPromptRow[\s\S]*description=\{suggestion\.description\}/u);
 });
 
+test("ChatGreeting directory prompt rows stay shortcut and click only", () => {
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /onDirectoryAutocompleteActiveChange/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /active=\{directoryAutocompleteState\.activeIndex === index\}/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /onMouseEnter=\{onActive\}/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /onFocus=\{onActive\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /shortcut=\{<DirectoryAutocompleteShortcut index=\{index\} \/>\}/u);
+});
+
 test("ChatGreeting renders selected custom agent profile and three starters", async () => {
 	const harness = await loadChatGreetingHarness();
 	const markup = harness.renderCustomAgentGreeting();
