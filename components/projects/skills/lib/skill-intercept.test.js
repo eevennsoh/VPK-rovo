@@ -58,6 +58,15 @@ test("a keyword in free text is an auto trigger with the matched keyword", async
 	assert.match(outcome.assistantParts[0].data.payload.triggerLabel, /bug/u);
 });
 
+test("multi-word keywords in free text trigger the matching skill", async () => {
+	const { buildSkillInterceptOutcome } = await loadSkillInterceptModule();
+
+	const outcome = buildSkillInterceptOutcome("could you review this pull request before release?");
+	assert.equal(outcome.handled, true);
+	assert.equal(outcome.assistantParts[0].data.payload.skillId, "review-pull-request");
+	assert.match(outcome.assistantParts[0].data.payload.triggerLabel, /pull request/u);
+});
+
 test("keyword matching is whole-word (does not match substrings)", async () => {
 	const { matchSkillInvocation } = await loadSkillInterceptModule();
 
