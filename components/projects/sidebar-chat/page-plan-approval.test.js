@@ -58,3 +58,9 @@ test("compact chat can suppress automatic custom agent tabs", () => {
 		/const shouldRenderCustomAgentTabs = !suppressCustomAgentTabs && \([\s\S]*Boolean\(customAgentTabs\)[\s\S]*isCustomAgentTabsProfile\(selectedAgent\)[\s\S]*\);/,
 	);
 });
+
+test("compact chat forwards opt-in add menu items without changing defaults", () => {
+	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore\?: ReactNode;/);
+	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore,/);
+	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore=\{addMenuItemsBefore\}/);
+});

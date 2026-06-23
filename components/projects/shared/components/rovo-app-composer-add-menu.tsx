@@ -2,6 +2,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
+import type { ReactNode } from "react";
 import {
 	PromptInputActionAddAttachments,
 	PromptInputActionAddScreenshot,
@@ -15,14 +16,17 @@ import ScreenIcon from "@atlaskit/icon/core/screen";
 import UploadIcon from "@atlaskit/icon/core/upload";
 
 interface RovoAppComposerAddMenuProps {
+	itemsBefore?: ReactNode;
 	onClose: () => void;
 }
 
 export function RovoAppComposerAddMenu({
+	itemsBefore,
 	onClose,
 }: Readonly<RovoAppComposerAddMenuProps>) {
 	return (
 		<>
+			{itemsBefore}
 			<PromptInputActionAddAttachments
 				elemBefore={<UploadIcon label="" />}
 				onSelect={onClose}
