@@ -84,14 +84,17 @@ export function EntityCardShell({
 					onClick={handleSelect}
 					type="button"
 				/>
-				{/* Content sits above the select button (z-10) so genuinely interactive
-				    nested controls (menus, checkboxes) stay clickable. Inert content is
-				    made pointer-events-none so clicks on text/logo fall through to the
-				    select button below; pointer events are re-enabled only on actual
-				    interactive descendants. Without this, clicks landing on the card's
-				    text/logo never reach the select button, making selection feel
-				    unreliable (requiring repeated clicks). */}
-				<div className="contents [&>*]:pointer-events-none [&>*]:relative [&>*]:z-10 [&_[role=button]]:pointer-events-auto [&_[role=menuitem]]:pointer-events-auto [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_select]:pointer-events-auto [&_textarea]:pointer-events-auto">
+				{/* Content sits above the select button so genuinely interactive nested
+				    controls (menus, checkboxes) stay clickable. Inert content is made
+				    pointer-events-none so clicks on text/logo fall through to the select
+				    button below; pointer events are re-enabled only on actual interactive
+				    descendants. Those descendants ALSO get `relative z-10`: the card
+				    variants root their content in a `display:contents` wrapper, which has
+				    no box, so the `[&>*]:z-10` lift never reaches the real controls — and
+				    a positioned `z-0` element (the select button) paints above static
+				    content, swallowing clicks on the "…" menu. Elevating each interactive
+				    descendant directly puts it back on top of the select overlay. */}
+				<div className="contents [&>*]:pointer-events-none [&>*]:relative [&>*]:z-10 [&_[role=button]]:pointer-events-auto [&_[role=button]]:relative [&_[role=button]]:z-10 [&_[role=menuitem]]:pointer-events-auto [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_button]:pointer-events-auto [&_button]:relative [&_button]:z-10 [&_input]:pointer-events-auto [&_input]:relative [&_input]:z-10 [&_select]:pointer-events-auto [&_select]:relative [&_select]:z-10 [&_textarea]:pointer-events-auto [&_textarea]:relative [&_textarea]:z-10">
 					{children}
 				</div>
 			</motion.article>
