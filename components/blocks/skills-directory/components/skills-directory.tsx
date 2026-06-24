@@ -1282,17 +1282,19 @@ function SkillDetailConfig({
 					</Agent>
 				</div>
 			</div>
-			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6">
-				<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
-				<div className="flex shrink-0 items-center gap-2">
-					<Button onClick={handleCancel} type="button" variant="outline">
-						Cancel
-					</Button>
-					<Button disabled={Boolean(validationError)} onClick={handleSave} type="button">
-						Save
-					</Button>
+			{dirty ? (
+				<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6">
+					<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
+					<div className="flex shrink-0 items-center gap-2">
+						<Button onClick={handleCancel} type="button" variant="outline">
+							Cancel
+						</Button>
+						<Button disabled={Boolean(validationError)} onClick={handleSave} type="button">
+							Save
+						</Button>
+					</div>
 				</div>
-			</div>
+			) : null}
 		</div>
 	);
 }

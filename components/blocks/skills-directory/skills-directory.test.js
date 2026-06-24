@@ -248,7 +248,7 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /frontmatter=\{\{ enabled: true \}\}/u);
 	assert.match(source, /showConfigToolbar=\{false\}/u);
 	// Globe cover + Created/Added/Last-update meta row via the shared slot components,
-	// and a Save/Cancel footer; draft state lives in the shared useSkillMdDraft hook.
+	// and a Save/Cancel footer that only appears after the skill draft changes.
 	assert.match(source, /profileCover=\{<SkillProfileCover skill=\{skill\} \/>\}/u);
 	assert.match(source, /profileMetaSlot=\{<SkillProfileMeta skill=\{skill\} \/>\}/u);
 	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-8"/u);
@@ -257,7 +257,10 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /function handleSave\(\)/u);
 	assert.match(source, /function handleCancel\(\)/u);
 	assert.match(source, /saveSkillDraft\(skill\.id, current\)/u);
-	assert.match(source, /className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6"/u);
+	assert.match(
+		source,
+		/dirty \? \([\s\S]*className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6"[\s\S]*Cancel[\s\S]*Save[\s\S]*\) : null/u,
+	);
 	// The editor is seeded with the full SKILL.md (frontmatter + body).
 	assert.match(source, /getSkillMarkdown\(skill\)/u);
 	// The shared cover + meta row + draft hook live in skill-md-editor.

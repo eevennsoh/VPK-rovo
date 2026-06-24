@@ -328,9 +328,11 @@ test("visual trace auto-tagging uses mention nodes and hides autocomplete while 
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /pendingRef\.current \|\|[\s\S]*applyingRef\.current[\s\S]*setDirectoryAutocompleteState\(null\);/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /immediateUpdateRef\.current = true;/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /flushAutoTagging[\s\S]*publishText\(serializeComposerDoc\(activeEditor\), activeEditor\.view\.dom, true\);/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.react-renderer\.node-mention \{[\s\S]*display: inline-flex;[\s\S]*height: 1\.625rem;[\s\S]*margin-inline: -0\.5rem;[\s\S]*overflow: visible;[\s\S]*padding-inline: 0\.5rem;[\s\S]*line-height: 1\.625rem;[\s\S]*vertical-align: bottom;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.625rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.625rem;[\s\S]*vertical-align: bottom;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-trigger-wrapper \{[\s\S]*height: 1\.625rem;[\s\S]*overflow: visible;[\s\S]*line-height: 0;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer\.ProseMirror \{[\s\S]*width: calc\(100% \+ 1\.5rem\);[\s\S]*margin-block: -0\.0625rem;[\s\S]*margin-inline: -0\.75rem;[\s\S]*padding-block: 0\.0625rem;[\s\S]*padding-inline: 0\.75rem;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.react-renderer\.node-mention \{[\s\S]*display: inline-flex;[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.5rem;[\s\S]*vertical-align: bottom;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.5rem;[\s\S]*vertical-align: bottom;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-trigger-wrapper \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 0;[\s\S]*vertical-align: top;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-chip \{[\s\S]*align-self: center;[\s\S]*vertical-align: middle;/u);
 });
 
 test("composer trace auto-tagging keeps native undo history available", () => {

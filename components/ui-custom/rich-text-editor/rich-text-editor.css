@@ -338,6 +338,15 @@
 	outline: none;
 }
 
+/* Keep outside tag focus rings inside the composer scroll container without moving inline content. */
+.prompt-input-composer.ProseMirror {
+	width: calc(100% + 1.5rem);
+	margin-block: -0.0625rem;
+	margin-inline: -0.75rem;
+	padding-block: 0.0625rem;
+	padding-inline: 0.75rem;
+}
+
 /*
  * The tall authoring min-height applies to the document editor only — every
  * document surface tags its editor with `.tiptap-editor`. Scoping to that
@@ -873,25 +882,23 @@
 
 .prompt-input-composer .react-renderer.node-mention {
 	display: inline-flex;
-	height: 1.625rem;
+	height: 1.5rem;
 	align-items: center;
-	margin-inline: -0.5rem;
 	overflow: visible;
-	padding-inline: 0.5rem;
-	line-height: 1.625rem;
+	line-height: 1.5rem;
 	vertical-align: bottom;
 }
 
 .prompt-input-composer .rich-text-mention-node {
-	height: 1.625rem;
+	height: 1.5rem;
 	align-items: center;
 	overflow: visible;
-	line-height: 1.625rem;
+	line-height: 1.5rem;
 	vertical-align: bottom;
 }
 
 .prompt-input-composer .rich-text-mention-trigger-wrapper {
-	height: 1.625rem;
+	height: 1.5rem;
 	align-items: center;
 	overflow: visible;
 	line-height: 0;
@@ -899,6 +906,7 @@
 }
 
 .prompt-input-composer .rich-text-mention-chip {
+	align-self: center;
 	margin-top: 0;
 	margin-bottom: 0;
 	vertical-align: middle;
