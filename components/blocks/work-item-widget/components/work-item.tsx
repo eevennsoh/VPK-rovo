@@ -32,10 +32,13 @@ function getPriorityColor(priority?: string) {
 	}
 }
 
+// Reuse the formatter across visible due-date rows instead of constructing one per render.
+const WORK_ITEM_DUE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
 function formatDate(dateString: string) {
 	try {
 		const date = new Date(dateString);
-		return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(date);
+		return WORK_ITEM_DUE_DATE_FORMATTER.format(date);
 	} catch {
 		return dateString;
 	}

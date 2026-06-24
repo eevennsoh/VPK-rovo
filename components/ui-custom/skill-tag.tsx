@@ -101,21 +101,26 @@ function SkillTag({
 			return;
 		}
 
-		const label = labelRef.current;
-		if (!label) {
+		const labelElement = labelRef.current;
+		if (!labelElement) {
 			return;
 		}
 
 		function updateLabelOverflow() {
+			const label = labelRef.current;
+			if (!label) {
+				setLabelHasOverflow(false);
+				return;
+			}
 			setLabelHasOverflow(label.scrollWidth > label.clientWidth + 1);
 		}
 
 		updateLabelOverflow();
 
 		const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateLabelOverflow) : null;
-		observer?.observe(label);
-		if (label.parentElement) {
-			observer?.observe(label.parentElement);
+		observer?.observe(labelElement);
+		if (labelElement.parentElement) {
+			observer?.observe(labelElement.parentElement);
 		}
 
 		window.addEventListener("resize", updateLabelOverflow);
