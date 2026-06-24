@@ -63,10 +63,19 @@ test("stage 1 animates a trace then awaits with a question card", async () => {
 	assert.equal(pending[0].type, "data-widget-data");
 	assert.equal(pending[0].data.type, SKILL_CREATION_TRACE_WIDGET_TYPE);
 	assert.equal(pending[0].data.payload.headerState, "thinking");
-	// The second step is the "Invoking /create-skill" skill-mention step.
-	assert.ok(pending[0].data.payload.steps.some((step) => step.skillMention === "create-skill"));
+	assert.deepEqual(pending[0].data.payload.steps.map((step) => step.id), ["read"]);
+	assert.equal(pending[0].data.payload.steps[0].status, "active");
 
-	assert.ok(stage.assistantPartStages.length >= 1);
+	assert.equal(stage.assistantPartStages.length, 3);
+	const invokeFrame = stage.assistantPartStages[0].getAssistantParts(ctx)[0].data.payload;
+	assert.deepEqual(invokeFrame.steps.map((step) => step.id), ["read", "invoke"]);
+	assert.deepEqual(invokeFrame.steps.map((step) => step.status), ["complete", "active"]);
+	assert.equal(invokeFrame.steps[1].skillMention, "create-skill");
+
+	const questionPrepFrame = stage.assistantPartStages[1].getAssistantParts(ctx)[0].data.payload;
+	assert.deepEqual(questionPrepFrame.steps.map((step) => step.id), ["read", "invoke", "questions"]);
+	assert.deepEqual(questionPrepFrame.steps.map((step) => step.status), ["complete", "complete", "active"]);
+
 	const finalParts = stage.assistantPartStages.at(-1).getAssistantParts(ctx);
 
 	// Final frame: the trace marks itself awaiting (header flips to "Awaiting user
@@ -86,6 +95,26 @@ test("stage 1 animates a trace then awaits with a question card", async () => {
 	assert.ok(questionPart.data.payload.maxRounds > questionPart.data.payload.round);
 	assert.ok(questionPart.data.payload.questions.length >= 1);
 	assert.ok(questionPart.data.payload.questions.length <= 4);
+});
+
+test("stage 2 reveals build steps sequentially before rendering the result", async () => {
+	const { deriveSkillFromPrompt, buildCreateSkillStage2 } = await loadCreateSkillFlowModule();
+	const ctx = { startedAt: new Date(0) };
+	const skill = deriveSkillFromPrompt("/Create skill draft release notes");
+	const stage = buildCreateSkillStage2(skill);
+
+	const pending = stage.getPendingAssistantParts(ctx)[0].data.payload;
+	assert.deepEqual(pending.steps.map((step) => step.id), ["review"]);
+	assert.deepEqual(pending.steps.map((step) => step.status), ["active"]);
+
+	const stagedStepIds = stage.assistantPartStages.slice(0, -1).map((step) =>
+		step.getAssistantParts(ctx)[0].data.payload.steps.map((traceStep) => traceStep.id),
+	);
+	assert.deepEqual(stagedStepIds, [
+		["review", "draft"],
+		["review", "draft", "wire"],
+		["review", "draft", "wire", "save"],
+	]);
 });
 
 test("derives a believable skill from a free-form prompt (deterministic)", async () => {

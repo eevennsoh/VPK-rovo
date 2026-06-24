@@ -255,7 +255,11 @@ const STAGE_1_STEP_DEFS = [
 ] as const;
 
 function stage1Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
-	return STAGE_1_STEP_DEFS.map((step, index) => ({
+	const visibleSteps = allComplete
+		? STAGE_1_STEP_DEFS
+		: STAGE_1_STEP_DEFS.slice(0, activeIndex + 1);
+
+	return visibleSteps.map((step, index) => ({
 		...step,
 		status: allComplete || index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
 	}));
@@ -416,7 +420,11 @@ const STAGE_2_STEP_DEFS = [
 ] as const;
 
 function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
-	return STAGE_2_STEP_DEFS.map((step, index) => ({
+	const visibleSteps = allComplete
+		? STAGE_2_STEP_DEFS
+		: STAGE_2_STEP_DEFS.slice(0, activeIndex + 1);
+
+	return visibleSteps.map((step, index) => ({
 		...step,
 		status: allComplete || index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
 	}));

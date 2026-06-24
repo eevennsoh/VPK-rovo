@@ -78,6 +78,7 @@ export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<Sk
 
 	return (
 		<ChainOfThoughtScenario
+			animateStepEntrance
 			state={state}
 			headerLabel={headerLabel}
 			duration={payload.durationSeconds}

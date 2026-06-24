@@ -1,15 +1,64 @@
 "use client";
 
-import EditIcon from "@atlaskit/icon/core/edit";
-import { GenerativeCard, GenerativeCardFooter } from "@/components/blocks/generative-card";
+import type { ComponentProps } from "react";
+
+import {
+	GenerativeCard,
+	GenerativeCardBody,
+	GenerativeCardContent,
+	GenerativeCardFooter,
+	GenerativeCardHeader,
+} from "@/components/blocks/generative-card";
 import { Button } from "@/components/ui/button";
+import { Tile } from "@/components/ui/tile";
 import { getSkillIcon } from "@/app/data/directory/skills";
+import {
+	getSkillCollectionMetadata,
+	SKILL_COLLECTIONS,
+	type SkillCollectionMetadata,
+	type SkillCollectionId,
+} from "@/app/data/directory/skill-collections";
 import type { SkillIconKey } from "@/app/data/directory/types";
 import type { SkillCreationResultPayload } from "../lib/create-skill-flow";
+
+type SkillResultTileVariant = NonNullable<ComponentProps<typeof Tile>["variant"]>;
 
 interface SkillCreationResultCardProps {
 	payload: SkillCreationResultPayload;
 	onEdit: (skillId: string) => void;
+}
+
+const SKILL_ICON_TILE_TO_TILE_VARIANTS = {
+	transparent: "transparent",
+	gray: "graySubtle",
+	blue: "blueSubtle",
+	teal: "tealSubtle",
+	green: "greenSubtle",
+	lime: "limeSubtle",
+	yellow: "yellowSubtle",
+	orange: "orangeSubtle",
+	red: "redSubtle",
+	magenta: "magentaSubtle",
+	purple: "purpleSubtle",
+	grayBold: "grayBold",
+	blueBold: "blueBold",
+	tealBold: "tealBold",
+	greenBold: "greenBold",
+	limeBold: "limeBold",
+	yellowBold: "yellowBold",
+	orangeBold: "orangeBold",
+	redBold: "redBold",
+	magentaBold: "magentaBold",
+	purpleBold: "purpleBold",
+} as const satisfies Record<SkillCollectionMetadata["iconTileVariant"], SkillResultTileVariant>;
+
+function isSkillCollectionId(collectionId: string): collectionId is SkillCollectionId {
+	return collectionId in SKILL_COLLECTIONS;
+}
+
+function getSkillResultTileVariant(collectionId: string): SkillResultTileVariant {
+	const resolvedCollectionId = isSkillCollectionId(collectionId) ? collectionId : "default";
+	return SKILL_ICON_TILE_TO_TILE_VARIANTS[getSkillCollectionMetadata(resolvedCollectionId).iconTileVariant];
 }
 
 /**
@@ -20,22 +69,25 @@ interface SkillCreationResultCardProps {
 export function SkillCreationResultCard({ payload, onEdit }: Readonly<SkillCreationResultCardProps>) {
 	return (
 		<GenerativeCard className="w-full">
-			{/* Header: skill name (with its icon) */}
-			<div className="flex items-center gap-2.5 border-b px-4 py-3">
-				<span className="flex size-6 shrink-0 items-center justify-center text-text-subtle [&_span]:size-4! [&_svg]:size-4!">
-					{getSkillIcon(payload.iconKey as SkillIconKey)}
-				</span>
-				<p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{payload.name}</p>
-			</div>
-			{/* Body: description */}
-			<div className="px-4 py-3 text-sm leading-5 text-text-subtle">{payload.description}</div>
-			{/* Footer: single Edit CTA */}
-			<GenerativeCardFooter className="border-t">
-				<Button type="button" onClick={() => onEdit(payload.skillId)}>
-					<EditIcon label="" size="small" />
-					Edit
-				</Button>
-			</GenerativeCardFooter>
+			<GenerativeCardHeader
+				showToggle={false}
+				title={payload.name}
+				leading={(
+					<Tile label={payload.name} size="medium" variant={getSkillResultTileVariant(payload.collectionId)}>
+						{getSkillIcon(payload.iconKey as SkillIconKey)}
+					</Tile>
+				)}
+			/>
+			<GenerativeCardBody>
+				<GenerativeCardContent className="py-3 text-sm leading-5 text-text-subtle">
+					{payload.description}
+				</GenerativeCardContent>
+				<GenerativeCardFooter>
+					<Button type="button" variant="outline" onClick={() => onEdit(payload.skillId)}>
+						Edit
+					</Button>
+				</GenerativeCardFooter>
+			</GenerativeCardBody>
 		</GenerativeCard>
 	);
 }

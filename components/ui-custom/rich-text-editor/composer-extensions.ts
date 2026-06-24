@@ -430,6 +430,7 @@ function createComposerBehavior(
 }
 
 export interface ComposerDirectoryAutocompleteController {
+	acceptActiveListItem: () => boolean;
 	acceptGhost: () => boolean;
 	acceptIndex: (index: number) => boolean;
 	hasAcceptableList: () => boolean;
@@ -499,6 +500,11 @@ export function createComposerDirectoryAutocomplete(
 
 							if (event.ctrlKey || event.metaKey) {
 								return false;
+							}
+
+							if (event.key === "Tab" && controller.hasAcceptableList()) {
+								event.preventDefault();
+								return controller.acceptActiveListItem();
 							}
 
 							if (
