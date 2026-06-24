@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import NodeIcon from "@atlaskit/icon/core/node";
 import { createContext, memo, use, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 
 import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/components/projects/shared/lib/reasoning-labels";
 import { token } from "@/lib/tokens";
@@ -233,7 +233,9 @@ export const ChainOfThoughtHeader = memo(
 	}
 );
 
-export type ChainOfThoughtStepProps = ComponentProps<"div"> & {
+export type ChainOfThoughtStepProps = ComponentProps<"div"> & MotionProps & {
+	animateOnMount?: boolean;
+	entranceDelay?: number;
 	icon?: ComponentType<NewCoreIconProps>;
 	iconRender?: ReactNode;
 	label: ReactNode;
@@ -317,12 +319,17 @@ export const ChainOfThoughtStep = memo(
 		iconShimmer,
 		collapsible = false,
 		defaultOpen = false,
+		animateOnMount = false,
+		entranceDelay = 0,
 		open,
 		onOpenChange,
 		headerRender,
+		style,
 		children,
 		...props
 	}: ChainOfThoughtStepProps) => {
+		const shouldReduceMotion = useReducedMotion();
+		const shouldAnimateEntrance = animateOnMount && !shouldReduceMotion;
 		const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
 		const isControlled = open !== undefined;
 		const isOpen = isControlled ? open : uncontrolledOpen;
@@ -380,13 +387,20 @@ export const ChainOfThoughtStep = memo(
 		);
 
 		return (
-			<div
+			<motion.div
 				className={cn(
 					"group/cot-step transition-all duration-medium ease-out data-starting-style:opacity-0 data-starting-style:-translate-y-2",
 					"flex gap-2 text-sm",
 					stepStatusStyles[status],
 					className
 				)}
+				initial={shouldAnimateEntrance ? { opacity: 0, y: -6 } : false}
+				animate={shouldAnimateEntrance ? { opacity: 1, y: 0 } : undefined}
+				transition={shouldAnimateEntrance ? { duration: 0.22, ease: "easeOut", delay: entranceDelay } : undefined}
+				style={{
+					...style,
+					...(shouldAnimateEntrance ? { willChange: "opacity, transform" } : {}),
+				}}
 				{...props}
 			>
 				<div className="relative mt-0.5">
@@ -416,7 +430,7 @@ export const ChainOfThoughtStep = memo(
 						children
 					)}
 				</div>
-			</div>
+			</motion.div>
 		);
 	}
 );
@@ -496,6 +510,7 @@ export interface ChainOfThoughtScenarioStep {
 }
 
 export interface ChainOfThoughtScenarioProps extends Omit<ChainOfThoughtProps, "children"> {
+	animateStepEntrance?: boolean;
 	state: ChainOfThoughtScenarioState;
 	duration?: number;
 	steps: readonly ChainOfThoughtScenarioStep[];
@@ -508,6 +523,7 @@ export const ChainOfThoughtScenario = memo(
 		className,
 		contentClassName,
 		defaultOpen,
+		animateStepEntrance = false,
 		duration,
 		headerLabel,
 		state,
@@ -527,13 +543,15 @@ export const ChainOfThoughtScenario = memo(
 				{headerLabel}
 			</ChainOfThoughtHeader>
 			<ChainOfThoughtContent className={contentClassName}>
-				{steps.map((step) => (
+				{steps.map((step, index) => (
 					<ChainOfThoughtStep
 						key={step.id}
 						className={step.className}
 						collapsible={step.collapsible}
 						defaultOpen={step.defaultOpen}
 						description={step.description}
+						animateOnMount={animateStepEntrance}
+						entranceDelay={animateStepEntrance ? Math.min(index * 0.045, 0.18) : 0}
 						icon={step.icon}
 						iconRender={step.iconRender}
 						label={step.label}

@@ -22,3 +22,18 @@ test("Atlassian company logo uses the shared bordered Tile treatment", () => {
 	assert.match(LOGO_DEMO_SOURCE, /<AtlassianLogoMark[\s\S]*label=\{`Atlassian \$\{size\}`\}[\s\S]*name="atlassian"[\s\S]*size=\{size\}[\s\S]*\/>/u);
 	assert.match(LOGO_DEMO_SOURCE, /Atlassian company/u);
 });
+
+test("logo tile demos include the 16px Tile size", () => {
+	assert.match(LOGO_DEMO_SOURCE, /LOGO_TILE_SIZES/u);
+	assert.doesNotMatch(LOGO_DEMO_SOURCE, /const BRAND_TILE_SIZES/u);
+});
+
+test("logo sizes demo adds the Atlassian company logo at every size", () => {
+	const sizesDemoMatch = LOGO_DEMO_SOURCE.match(/export function LogoDemoSizes\(\) \{[\s\S]*?\n\}/u);
+
+	assert.ok(sizesDemoMatch, "LogoDemoSizes should exist");
+	assert.match(sizesDemoMatch[0], /LOGO_TILE_SIZES\.map\(\(size\) =>/u);
+	assert.match(sizesDemoMatch[0], /<JiraIcon label="Jira" size=\{size\} \/>/u);
+	assert.match(sizesDemoMatch[0], /<AtlassianLogo name="jira" label="Jira" variant="lockup" size=\{size\} \/>/u);
+	assert.match(sizesDemoMatch[0], /<AtlassianLogo name="atlassian" label="Atlassian" size=\{size\} \/>/u);
+});

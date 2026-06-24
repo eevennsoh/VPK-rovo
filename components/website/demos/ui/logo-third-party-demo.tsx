@@ -2,7 +2,7 @@
 
 import { Tag } from "@/components/ui/tag";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
-import { type LogoProps } from "@/components/ui/logo";
+import { LOGO_TILE_SIZES, type LogoProps } from "@/components/ui/logo";
 import {
 	LogoThirdParty,
 	SlackLogo,
@@ -168,8 +168,6 @@ export function LogoThirdPartyDemoLockups() {
 
 /* ── Demo: In a Tile (picker / menu rows) ────────────────────────── */
 
-const BRAND_TILE_SIZES = ["xsmall", "small", "medium", "large", "xlarge"] as const;
-
 // GitHub / Slack / Notion are package-backed, so each renders inside the upstream
 // `@atlassian/logo-third-party` tile (white background + hairline border). Adobe
 // Sign ships its own solid-filled background, so it renders bare — no added border.
@@ -181,7 +179,7 @@ export function LogoThirdPartyDemoInTile() {
 			<div className="flex flex-col gap-3">
 				{TILE_SAMPLES.map((name) => (
 					<div key={name} className="flex items-end gap-3">
-						{BRAND_TILE_SIZES.map((size) => (
+						{LOGO_TILE_SIZES.map((size) => (
 							<BrandLogoMark
 								key={size}
 								frame="tile"

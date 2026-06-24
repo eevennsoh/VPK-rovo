@@ -191,6 +191,7 @@ export type GenerativeCardHeaderProps = Omit<ComponentProps<typeof CardHeader>, 
 	title: ReactNode;
 	description?: ReactNode;
 	action?: ReactNode;
+	showToggle?: boolean;
 	expandLabel?: string;
 	collapseLabel?: string;
 	expanded?: boolean;
@@ -203,6 +204,7 @@ export const GenerativeCardHeader = memo(function GenerativeCardHeader({
 	description,
 	leading,
 	action,
+	showToggle = true,
 	expandLabel = "Expand card details",
 	collapseLabel = "Collapse card details",
 	expanded,
@@ -212,7 +214,7 @@ export const GenerativeCardHeader = memo(function GenerativeCardHeader({
 	const context = useGenerativeCardContext(true);
 	const isExpanded = expanded ?? context?.expanded ?? true;
 	const setExpanded = onExpandedChange ?? context?.setExpanded;
-	const showToggle = typeof setExpanded === "function";
+	const shouldShowToggle = showToggle && typeof setExpanded === "function";
 
 	return (
 		<CardHeader className={cn("items-center gap-x-3 gap-y-0 px-4 py-3", isExpanded ? "border-b" : null, className)} {...props}>
@@ -227,11 +229,11 @@ export const GenerativeCardHeader = memo(function GenerativeCardHeader({
 					) : null}
 				</div>
 			</div>
-			{action || showToggle ? (
+			{action || shouldShowToggle ? (
 				<CardAction className="self-center">
 					<div className="flex items-center gap-1">
 						{action}
-						{showToggle ? (
+						{shouldShowToggle ? (
 							<Button
 								variant="ghost"
 								size="icon"

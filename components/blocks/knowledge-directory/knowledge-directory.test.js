@@ -66,6 +66,8 @@ test("Knowledge Directory owns a knowledge-specific modal without the copied sid
 	assert.match(source, /sm:max-w-\[640px\]/u);
 	assert.match(source, /title = "Browse knowledge"/u);
 	assert.match(source, /onBack=\{selectedApp \? handleBack : undefined\}/u);
+	assert.match(source, /function KnowledgeDirectoryHeader[\s\S]*className="flex items-center justify-between px-6 py-6"/u);
+	assert.match(source, /function KnowledgeDirectoryFooter[\s\S]*className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-6"/u);
 	assert.match(source, /aria-label="Back to knowledge apps"[\s\S]*size="icon"[\s\S]*<ArrowLeftIcon label="" color="currentColor" \/>/u);
 });
 

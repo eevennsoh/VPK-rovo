@@ -1153,6 +1153,11 @@ export const PromptInputTextarea = ({
   const isAutoTaggingBusyRef = useRef<() => boolean>(() => false);
 
   const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
+    acceptActiveListItem: () =>
+      !isAutoTaggingBusyRef.current() &&
+      acceptDirectoryAutocompleteIndexRef.current(
+        directoryAutocompleteStateRef.current?.activeIndex ?? 0
+      ),
     acceptGhost: () => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(0, true),
     acceptIndex: (index: number) => !isAutoTaggingBusyRef.current() && acceptDirectoryAutocompleteIndexRef.current(index),
     hasAcceptableList: () =>

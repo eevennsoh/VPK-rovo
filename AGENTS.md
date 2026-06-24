@@ -241,6 +241,19 @@ static export used by deployment.
 
 Two runtime modes: **dev** (Next.js proxy + Express, with optional Rovo Serve for selected chat/tool flows) and **prod** (single Express process serving static export). Key dirs: `app/` (routes), `components/` (UI), `backend/` (API), `rovo/` (AI config). See `.agents/docs/architecture-overview.md` for full details before making architectural changes.
 
+### Architecture Quality Bar
+
+Recurring thermo-nuclear reviews have shown that VPK stays healthiest when new behavior creates clear owners instead of expanding already-busy files. Before implementing a non-trivial feature or refactor, check these constraints:
+
+- Keep route, shell, and top-level component files shallow. They should compose focused owners, not absorb product policy, parser logic, fixture data, DOM primitive behavior, and rendering variants in one place.
+- Put behavior in the canonical layer that owns the concept. Shared primitives should stay generic; route-specific or Studio-specific behavior belongs behind a route/domain adapter, hook, strategy, or render callback instead of feature checks inside shared code.
+- Normalize data at boundaries. Prefer typed models, resolvers, reducers, or explicit dispatchers over repeated `field === "..."` checks, cast-heavy objects, optional-mode flags, or display-only normalization spread across call sites.
+- Treat repeated conditionals, nullable modes, one-off booleans, and fallback branches as signs that the state model or ownership boundary needs to be simplified before adding more branches.
+- Treat 1000-line files as a decomposition alarm. Do not push a file past that size, or add another concern to an already-oversized owner, unless the structure is clearly intentional and still easy to scan.
+- When introducing a shared abstraction, migrate the old local copies and delete the duplicate behavior in the same change. Do not let old and new card, directory, toolbar, reducer, parser, or converter implementations coexist.
+- Split orchestration from business logic. Long reset/generation/chat flows should move state transitions into reducers or dedicated helpers, keep independent async work parallel when practical, and avoid half-applied UI/backend state.
+- Prefer stable, deterministic contract tests around extracted helpers or data boundaries. Add exact-file tests to the repo unit gate when they protect real behavior; avoid relying on broad source-grep tests for durable architecture contracts.
+
 > API endpoints and chat architecture load as contextual rules when editing backend or chat files.
 > See `.agents/rules/api-surfaces.md` and `.agents/rules/chat-architecture.md`.
 

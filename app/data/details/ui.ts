@@ -404,7 +404,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       {
         title: "Brand Logos in a Tile",
         description:
-          "Picker / suggestion-menu rows (e.g. the editor-palette): the Atlassian master logo and bare 2P marks sit in a surface Tile with a size-scaled inset, while solid-background 1P product marks (e.g. Jira) fill the whole tile — driven by logo-usage.json.",
+          "Picker / suggestion-menu rows (e.g. the editor-palette): all Tile sizes are shown, including the 16×16 xxsmall tile. The Atlassian master logo and bare 2P marks sit in a surface Tile with a size-scaled inset, while solid-background 1P product marks (e.g. Jira) fill the whole tile — driven by logo-usage.json.",
         demoSlug: "logo-demo-in-tile",
       },
       {
@@ -444,7 +444,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
       {
         name: "size",
-        type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge" | number',
+        type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"small"',
         description: "Logo size (shared scale with the Logo component).",
       },
@@ -498,7 +498,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       {
         title: "In a Tile",
         description:
-          "Picker / suggestion-menu rows: most 3P marks render inside the upstream @atlassian/logo-third-party tile (white background + hairline border), scaled to the tile size. Marks with their own solid-filled background (e.g. Adobe Sign) render bare, with no added border.",
+          "Picker / suggestion-menu rows: all Tile sizes are shown, including the 16×16 xxsmall tile. Most 3P marks render inside the upstream @atlassian/logo-third-party tile (white background + hairline border), scaled to the tile size. Marks with their own solid-filled background (e.g. Adobe Sign) render bare, with no added border.",
         demoSlug: "logo-third-party-demo-in-tile",
       },
       {

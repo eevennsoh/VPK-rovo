@@ -16,12 +16,13 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	const viewAllSkillsIndex = SOURCE.indexOf("View all skills", addMenuIndex);
 
 	assert.match(SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
-	assert.match(SOURCE, /import \{ SkillsDirectoryDialog \} from "@\/components\/blocks\/skills-directory";/u);
+	assert.match(SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
 	assert.match(SOURCE, /import \{ PromptInputActionMenuItem \} from "@\/components\/ui-custom\/prompt-input";/u);
 	assert.match(SOURCE, /import FolderAddIcon from "@atlaskit\/icon-lab\/core\/folder-add";/u);
 	assert.match(SOURCE, /import SkillIcon from "@atlaskit\/icon-lab\/core\/skill";/u);
 	assert.match(SOURCE, /const \[isSkillsDirectoryOpen, setIsSkillsDirectoryOpen\] = useState\(false\);/u);
 	assert.match(SOURCE, /const handleViewAllSkills = useCallback\(\(\) => \{[\s\S]*setIsSkillsDirectoryOpen\(true\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ text: buildSkillMentionText\(skill\.name\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillsDirectoryOpen\(false\);/u);
 
 	assert.ok(addMenuIndex > -1);
 	assert.ok(createSpaceIndex > addMenuIndex);
@@ -33,7 +34,7 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
 	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillsDirectoryOpen/u);
-	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"/u);
+	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"[\s\S]*onAddSkills=\{handleAddDirectorySkills\}[\s\S]*selectionExperience="chat-single-add"/u);
 });
 
 test("Create-skill question traces collapse while awaiting user response", () => {

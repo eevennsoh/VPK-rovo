@@ -1174,6 +1174,7 @@ export function RovoAppAgentConfigPanel({
 	const handleAddSkills = useCallback(
 		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
 			appendListValues("skills", skills.map((skill) => getSkillConfigLabel(skill.name)));
+			setDirectorySkillIds([]);
 			setActiveDirectory(null);
 		},
 		[appendListValues],
@@ -1754,10 +1755,12 @@ export function RovoAppAgentConfigPanel({
 					setActiveDirectory(open ? "skills" : null);
 					if (!open) {
 						setDirectorySelectedSkillId(null);
+						setDirectorySkillIds([]);
 					}
 				}}
 				onRemoveSkills={handleRemoveSkills}
 				onSelectedSkillIdsChange={setDirectorySkillIds}
+				selectionExperience="studio-bulk-add"
 				onToggleSkillEnabled={handleToggleSkillEnabled}
 				open={activeDirectory === "skills"}
 				selectedSkillIds={directorySkillIds}

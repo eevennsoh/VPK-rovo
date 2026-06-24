@@ -454,6 +454,7 @@ export function RichTextEditor({
 	// Ghost-only controller: this editor has no external suggestion list, so the
 	// list-navigation branches stay inert (hasVisibleList → false).
 	const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
+		acceptActiveListItem: () => false,
 		acceptGhost: () => acceptDirectoryAutocompleteGhost(),
 		acceptIndex: () => false,
 		hasAcceptableList: () => false,
@@ -489,9 +490,9 @@ export function RichTextEditor({
 	const hasOpenDirectory = Boolean(onOpenDirectory);
 	const frontmatterEnabled = Boolean(frontmatter?.enabled);
 	// Portal target for the frontmatter card. When frontmatter is enabled the
-	// editor renders this slot above the toolbar and the frontmatter node-view
-	// portals its card into it (the node stays in the doc — markdown round-trip
-	// and save are unchanged). Null elsewhere, so the card renders inline.
+	// editor renders this slot directly below the toolbar and the frontmatter
+	// node-view portals its card into it (the node stays in the doc — markdown
+	// round-trip and save are unchanged). Null elsewhere, so the card renders inline.
 	const [frontmatterPortalEl, setFrontmatterPortalEl] = useState<HTMLElement | null>(null);
 	const extensions = useMemo(
 		() => {
@@ -757,9 +758,6 @@ export function RichTextEditor({
 
 	return (
 		<div className={cn("space-y-2", toolbarReveal === "hover" && "group", className)} {...props}>
-			{frontmatterEnabled && viewMode === "rendered" ? (
-				<div data-slot="rich-text-editor-frontmatter-header" ref={setFrontmatterPortalEl} />
-			) : null}
 			{showToolbar && editor ? (
 				<div
 					data-slot="rich-text-editor-toolbar"
@@ -801,6 +799,9 @@ export function RichTextEditor({
 						/>
 					</div>
 				</div>
+			) : null}
+			{frontmatterEnabled && viewMode === "rendered" ? (
+				<div data-slot="rich-text-editor-frontmatter-header" ref={setFrontmatterPortalEl} />
 			) : null}
 			{toolbarBelowSlot ? (
 				<div data-slot="rich-text-editor-toolbar-below">

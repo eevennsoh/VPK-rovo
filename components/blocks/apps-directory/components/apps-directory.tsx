@@ -21,6 +21,8 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 import ShieldIcon from "@atlaskit/icon/core/shield";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StarStarredIcon from "@atlaskit/icon/core/star-starred";
+import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import SupportIcon from "@atlaskit/icon/core/support";
 import TimelineIcon from "@atlaskit/icon/core/timeline";
@@ -398,6 +400,13 @@ export function AppsDirectoryDialog({
 	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
 	const [experimentalCategories, setExperimentalCategories] = useState<readonly string[]>([]);
 	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
+	const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
+	const resolvedDirectoryTools = useMemo(
+		() => directoryTools.map((tool) => (
+			tool.id in favoriteOverrides ? { ...tool, favorite: favoriteOverrides[tool.id] } : tool
+		)),
+		[directoryTools, favoriteOverrides],
+	);
 	const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
 	// Seed the detail view from `initialSelectedToolId` each time the dialog
 	// transitions to open, so callers can deep-link to a specific tool (e.g. a
@@ -429,11 +438,11 @@ export function AppsDirectoryDialog({
 		[addedToolIds, controlledAddedIds, uncontrolledAddedToolIds],
 	);
 	const selectedTool = selectedToolId
-		? directoryTools.find((tool) => tool.id === selectedToolId) ?? null
+		? resolvedDirectoryTools.find((tool) => tool.id === selectedToolId) ?? null
 		: null;
 	const filteredTools = useMemo(
-		() => filterTools(directoryTools, query, activeCategory, addedIds),
-		[directoryTools, query, activeCategory, addedIds],
+		() => filterTools(resolvedDirectoryTools, query, activeCategory, addedIds),
+		[resolvedDirectoryTools, query, activeCategory, addedIds],
 	);
 
 	function commitAddedToolIds(nextAddedIds: ReadonlySet<string>): void {
@@ -520,6 +529,13 @@ export function AppsDirectoryDialog({
 		});
 	}
 
+	function handleToggleFavoriteTool(tool: AppsDirectoryTool): void {
+		setFavoriteOverrides((current) => ({
+			...current,
+			[tool.id]: !tool.favorite,
+		}));
+	}
+
 	function setPermission(tool: AppsDirectoryTool, permissionId: string, checked: boolean): void {
 		setPermissionSelections((current) => ({
 			...current,
@@ -580,6 +596,7 @@ export function AppsDirectoryDialog({
 						filterFavourites={experimentalFavourites}
 						filterMyApps={experimentalMyApps}
 						onSelectTool={handleSelectTool}
+						onToggleFavoriteTool={handleToggleFavoriteTool}
 						query={query}
 						selectedCategories={experimentalCategories}
 						selectedCompanies={experimentalCompanies}
@@ -588,7 +605,7 @@ export function AppsDirectoryDialog({
 						setQuery={setQuery}
 						setSelectedCategories={setExperimentalCategories}
 						setSelectedCompanies={setExperimentalCompanies}
-						tools={directoryTools}
+						tools={resolvedDirectoryTools}
 					/>
 				) : (
 					<AppsDirectoryView
@@ -597,10 +614,11 @@ export function AppsDirectoryDialog({
 						filteredTools={filteredTools}
 						onSelectCategory={setActiveCategory}
 						onSelectTool={handleSelectTool}
+						onToggleFavoriteTool={handleToggleFavoriteTool}
 						query={query}
 						setQuery={setQuery}
 						sidebarGroups={sidebarGroups}
-						tools={directoryTools}
+						tools={resolvedDirectoryTools}
 					/>
 				)}
 			</DialogContent>
@@ -681,6 +699,7 @@ interface AppsDirectoryViewProps {
 	filteredTools: readonly AppsDirectoryTool[];
 	onSelectCategory: (categoryId: string) => void;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	setQuery: (query: string) => void;
 	sidebarGroups: readonly AppsDirectorySidebarGroup[];
@@ -693,6 +712,7 @@ function AppsDirectoryView({
 	filteredTools,
 	onSelectCategory,
 	onSelectTool,
+	onToggleFavoriteTool,
 	query,
 	setQuery,
 	sidebarGroups,
@@ -750,7 +770,12 @@ function AppsDirectoryView({
 					<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{filteredTools.map((tool) => (
 							<li key={tool.id}>
-								<AppCard added={addedIds.has(tool.id)} onSelectTool={onSelectTool} tool={tool} />
+								<AppCard
+									added={addedIds.has(tool.id)}
+									onSelectTool={onSelectTool}
+									onToggleFavoriteTool={onToggleFavoriteTool}
+									tool={tool}
+								/>
 							</li>
 						))}
 					</ul>
@@ -871,6 +896,7 @@ interface ExperimentalAppsDirectoryViewProps {
 	filterFavourites: boolean;
 	filterMyApps: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	selectedCategories: readonly string[];
 	selectedCompanies: readonly string[];
@@ -887,6 +913,7 @@ function ExperimentalAppsDirectoryView({
 	filterFavourites,
 	filterMyApps,
 	onSelectTool,
+	onToggleFavoriteTool,
 	query,
 	selectedCategories,
 	selectedCompanies,
@@ -988,14 +1015,27 @@ function ExperimentalAppsDirectoryView({
 					<ExperimentalDirectorySection
 						heading="My apps"
 						items={myApps}
-						renderItem={(tool) => <AppCard added onSelectTool={onSelectTool} tool={tool} />}
+						renderItem={(tool) => (
+							<AppCard
+								added
+								onSelectTool={onSelectTool}
+								onToggleFavoriteTool={onToggleFavoriteTool}
+								tool={tool}
+							/>
+						)}
 					/>
 				) : null}
 				{otherApps.length > 0 ? (
 					<ExperimentalDirectorySection
 						heading="Other apps"
 						items={otherApps}
-						renderItem={(tool) => <AppCard onSelectTool={onSelectTool} tool={tool} />}
+						renderItem={(tool) => (
+							<AppCard
+								onSelectTool={onSelectTool}
+								onToggleFavoriteTool={onToggleFavoriteTool}
+								tool={tool}
+							/>
+						)}
 					/>
 				) : null}
 			</div>
@@ -1006,13 +1046,15 @@ function ExperimentalAppsDirectoryView({
 interface AppCardProps {
 	added?: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	tool: AppsDirectoryTool;
 }
 
-function AppCard({ added = false, onSelectTool, tool }: Readonly<AppCardProps>) {
+function AppCard({ added = false, onSelectTool, onToggleFavoriteTool, tool }: Readonly<AppCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const knowledgeApp = getKnowledgeAppForTool(tool);
 	const selectTool = () => onSelectTool(tool);
+	const toggleFavorite = () => onToggleFavoriteTool(tool);
 
 	return (
 		<EntityCardAppCard
@@ -1024,8 +1066,10 @@ function AppCard({ added = false, onSelectTool, tool }: Readonly<AppCardProps>) 
 			moreAction={
 				<DirectoryCardMoreMenu
 					label={`More actions for ${tool.name}`}
+					favorite={Boolean(tool.favorite)}
 					onLearnMore={selectTool}
 					onOpenChange={setMoreMenuOpen}
+					onToggleFavorite={toggleFavorite}
 					open={moreMenuOpen}
 				/>
 			}
@@ -1041,16 +1085,20 @@ function AppCard({ added = false, onSelectTool, tool }: Readonly<AppCardProps>) 
 }
 
 interface DirectoryCardMoreMenuProps {
+	favorite: boolean;
 	label: string;
 	onLearnMore?: () => void;
 	onOpenChange: (open: boolean) => void;
+	onToggleFavorite: () => void;
 	open: boolean;
 }
 
 function DirectoryCardMoreMenu({
+	favorite,
 	label,
 	onLearnMore,
 	onOpenChange,
+	onToggleFavorite,
 	open,
 }: Readonly<DirectoryCardMoreMenuProps>) {
 	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
@@ -1087,6 +1135,16 @@ function DirectoryCardMoreMenu({
 					}}
 				>
 					Learn more
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					elemBefore={favorite ? <StarStarredIcon label="" /> : <StarUnstarredIcon label="" />}
+					onClick={stopPropagation}
+					onSelect={(event) => {
+						event.stopPropagation();
+						onToggleFavorite();
+					}}
+				>
+					{favorite ? "Unfavourite" : "Favourite"}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

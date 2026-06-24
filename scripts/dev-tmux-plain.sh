@@ -134,6 +134,17 @@ read_port() {
 	return 0
 }
 
+port_is_listening() {
+	local port="$1"
+	[[ -n "$port" ]] && lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+session_frontend_is_listening() {
+	local port
+	port="$(read_port "$FRONTEND_PORT_FILE")"
+	port_is_listening "$port"
+}
+
 # Poll until the frontend records a port AND that port is actually listening.
 # Prints the port on success; prints whatever was recorded (possibly empty) and
 # returns 1 on timeout.
@@ -143,7 +154,7 @@ wait_for_frontend() {
 	local i
 	for ((i = 0; i < attempts; i++)); do
 		port="$(read_port "$FRONTEND_PORT_FILE")"
-		if [[ -n "$port" ]] && lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+		if port_is_listening "$port"; then
 			printf '%s' "$port"
 			return 0
 		fi
@@ -176,23 +187,33 @@ print_controls() {
 	echo "  Stop:        pnpm run dev:tmux:stop"
 }
 
+launch_session() {
+	# Clear stale port files so wait_for_frontend doesn't latch onto a dead
+	# port from a previous run.
+	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
+	seed_env_local
+	local portless_args
+	portless_args="$(resolve_portless_args)"
+	tm new-session -d -s "$SESSION_NAME" -c "$REPO_ROOT"
+	# Launch the dev stack THROUGH portless so this worktree gets a stable
+	# .localhost URL. `portless run` with no command runs the package.json
+	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
+	# only when HEAD is detached.
+	tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && pnpm exec portless run ${portless_args}" C-m
+	echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
+}
+
 start_session() {
 	if tm has-session -t "$SESSION_NAME" 2>/dev/null; then
-		echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
+		if session_frontend_is_listening; then
+			echo "Session '$SESSION_NAME' already running (socket: $SOCKET)."
+		else
+			echo "Session '$SESSION_NAME' exists but has no listening frontend port. Restarting it..."
+			stop_session
+			launch_session
+		fi
 	else
-		# Clear stale port files so wait_for_frontend doesn't latch onto a dead
-		# port from a previous run.
-		rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
-		seed_env_local
-		local portless_args
-		portless_args="$(resolve_portless_args)"
-		tm new-session -d -s "$SESSION_NAME" -c "$REPO_ROOT"
-		# Launch the dev stack THROUGH portless so this worktree gets a stable
-		# .localhost URL. `portless run` with no command runs the package.json
-		# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
-		# only when HEAD is detached.
-		tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && pnpm exec portless run ${portless_args}" C-m
-		echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
+		launch_session
 	fi
 
 	echo "Waiting for the frontend to come up..."

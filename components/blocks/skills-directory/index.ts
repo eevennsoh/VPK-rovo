@@ -3,6 +3,7 @@ export type {
 	SkillsDirectoryAgent,
 	SkillsDirectoryDialogProps,
 	SkillsDirectoryPrimaryItem,
+	SkillsDirectorySelectionExperience,
 	SkillsDirectorySidebarGroup,
 	SkillsDirectorySkill,
 	SkillsDirectoryVariant,

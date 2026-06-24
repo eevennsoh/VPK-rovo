@@ -18,12 +18,20 @@ test("ChainOfThoughtScenario composes the primitive chain-of-thought parts", () 
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioStep/u);
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioProps/u);
 	assert.match(COMPONENT_SOURCE, /export const ChainOfThoughtScenario = memo/u);
-	assert.match(COMPONENT_SOURCE, /defaultOpen,\s*duration,/u);
+	assert.match(COMPONENT_SOURCE, /defaultOpen,\s*animateStepEntrance = false,\s*duration,/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThought[\s\S]*defaultOpen=\{defaultOpen \?\? state === "thinking"\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtHeader[\s\S]*showChevron=\{state !== "preload" && steps\.length > 0\}[\s\S]*state=\{state\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtContent[\s\S]*className=\{contentClassName\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtStep[\s\S]*status=\{step\.status\}/u);
 	assert.match(COMPONENT_SOURCE, /ChainOfThoughtScenario\.displayName = "ChainOfThoughtScenario"/u);
+});
+
+test("ChainOfThoughtScenario supports opt-in transform-only step entrance motion", () => {
+	assert.match(COMPONENT_SOURCE, /animateStepEntrance\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /animateOnMount\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /initial=\{shouldAnimateEntrance \? \{ opacity: 0, y: -6 \} : false\}/u);
+	assert.match(COMPONENT_SOURCE, /willChange: "opacity, transform"/u);
+	assert.match(COMPONENT_SOURCE, /entranceDelay=\{animateStepEntrance \? Math\.min\(index \* 0\.045, 0\.18\) : 0\}/u);
 });
 
 test("Chain of Thought docs include Studio-quality AI usage recipes", () => {
