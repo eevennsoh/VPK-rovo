@@ -1037,6 +1037,8 @@ export type PromptInputTextareaProps = ComponentProps<
    * keys stay with the prompt input.
    */
   directoryAutocompleteListVisible?: boolean;
+  /** Caps plain-text directory autocomplete matches before external rendering. */
+  directoryAutocompleteLimit?: number;
   /** Receives composer-owned autocomplete state for external list rendering. */
   onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
   /** Receives imperative insertion/selection actions for external rows. */
@@ -1090,6 +1092,7 @@ export const PromptInputTextarea = ({
   enableVisualTraceAutoTagging = false,
   enableDirectoryAutocomplete = true,
   directoryAutocompleteListVisible = false,
+  directoryAutocompleteLimit,
   onDirectoryAutocompleteChange,
   onDirectoryAutocompleteControllerChange,
   onChange,
@@ -1142,6 +1145,7 @@ export const PromptInputTextarea = ({
   const lastEditorPublishedTextRef = useRef<string | null>(null);
   const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
   const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
+  const directoryAutocompleteLimitRef = useRef(directoryAutocompleteLimit);
   const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
   const onDirectoryAutocompleteControllerChangeRef = useRef(onDirectoryAutocompleteControllerChange);
   const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
@@ -1178,6 +1182,7 @@ export const PromptInputTextarea = ({
     controllerRef.current = controller;
     nameRef.current = name;
     directoryAutocompleteListVisibleRef.current = directoryAutocompleteListVisible;
+    directoryAutocompleteLimitRef.current = directoryAutocompleteLimit;
     onDirectoryAutocompleteChangeRef.current = onDirectoryAutocompleteChange;
     onDirectoryAutocompleteControllerChangeRef.current = onDirectoryAutocompleteControllerChange;
   });
@@ -1320,6 +1325,7 @@ export const PromptInputTextarea = ({
     );
     const nextState = getDirectoryAutocompleteState({
       cursorPosition: selection.from,
+      limit: directoryAutocompleteLimitRef.current,
       sources: mentionSourcesRef.current,
       textBeforeCursor,
     });

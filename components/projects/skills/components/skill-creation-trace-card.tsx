@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import SearchIcon from "@atlaskit/icon/core/search";
 import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
@@ -43,6 +43,17 @@ function invokingSkillLabel(skillId: string): ReactNode {
 	);
 }
 
+const ACTIVE_BYLINE_CYCLE_MS = 1200;
+
+function getActiveStepBylines(payload: SkillCreationTracePayload): readonly string[] {
+	const activeStep = payload.steps.find((step) => step.status === "active");
+	if (!activeStep) {
+		return [];
+	}
+	const bylines = activeStep.bylines?.filter((byline) => byline.trim().length > 0);
+	return bylines && bylines.length > 0 ? bylines : [activeStep.byline];
+}
+
 interface SkillCreationTraceCardProps {
 	payload: SkillCreationTracePayload;
 	/** Flow ids whose question card has been answered. The awaiting trace flips
@@ -60,6 +71,8 @@ interface SkillCreationTraceCardProps {
 export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<SkillCreationTraceCardProps>) {
 	const isAwaiting = payload.awaiting === true;
 	const answered = isAwaiting && payload.flowId ? Boolean(answeredFlowIds?.has(payload.flowId)) : false;
+	const activeStepBylines = useMemo(() => getActiveStepBylines(payload), [payload]);
+	const [activeBylineIndex, setActiveBylineIndex] = useState(0);
 	const state: ChainOfThoughtScenarioState =
 		isAwaiting ? (answered ? "completed" : "thinking") : payload.headerState;
 	const headerLabel: ReactNode = isAwaiting
@@ -68,10 +81,26 @@ export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<Sk
 			: "Awaiting user response"
 		: payload.headerLabel;
 
+	useEffect(() => {
+		setActiveBylineIndex(0);
+		if (activeStepBylines.length <= 1) {
+			return;
+		}
+		const intervalId = window.setInterval(() => {
+			setActiveBylineIndex((currentIndex) => (currentIndex + 1) % activeStepBylines.length);
+		}, ACTIVE_BYLINE_CYCLE_MS);
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, [activeStepBylines]);
+
 	const steps: ChainOfThoughtScenarioStep[] = payload.steps.map((step) => ({
 		id: step.id,
 		label: step.skillMention ? invokingSkillLabel(step.skillMention) : step.label,
-		description: step.byline,
+		description: step.status === "active"
+			? activeStepBylines[activeBylineIndex % Math.max(activeStepBylines.length, 1)] ?? step.byline
+			: step.byline,
 		status: step.status,
 		icon: stepIcon(step.iconKey),
 	}));

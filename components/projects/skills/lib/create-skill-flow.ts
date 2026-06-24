@@ -88,6 +88,8 @@ export interface SkillCreationTraceStep {
 	label: string;
 	/** Canonical byline shown under the step. */
 	byline: string;
+	/** Optional active-step narration cycled by the renderer while the step runs. */
+	bylines?: readonly string[];
 	status: TraceStepStatus;
 	/** Icon key mapped to an icon component by the card. */
 	iconKey: string;
@@ -234,7 +236,7 @@ function buildQuestionCardPart(): AssistantParts[number] {
 					},
 					{
 						id: "tools",
-						label: "Which tools should it use?",
+						label: "Which apps should it use?",
 						required: false,
 						kind: "multi-select",
 						options: [
@@ -257,9 +259,40 @@ const STAGE_1_HEADER = "Designing your skill";
 
 // Distinct icon per step (the card maps these keys to icon components).
 const STAGE_1_STEP_DEFS = [
-	{ id: "read", label: "Reading your request", byline: "Identifying what the skill should do, its inputs, and the outcome you want.", iconKey: "search" },
-	{ id: "invoke", label: "Invoking", byline: "Running the create-skill assistant to scaffold the skill.", iconKey: "skill", skillMention: CREATE_SKILL_ID },
-	{ id: "questions", label: "Preparing clarification questions", byline: "Asking a few targeted questions to shape the skill before drafting.", iconKey: "question" },
+	{
+		id: "read",
+		label: "Reading your request",
+		byline: "Identifying what the skill should do, its inputs, and the outcome you want.",
+		bylines: [
+			"Identifying what the skill should do, its inputs, and the outcome you want.",
+			"Parsing your request for task, audience, and success criteria.",
+			"Checking for constraints that should shape the generated skill.",
+		],
+		iconKey: "search",
+	},
+	{
+		id: "invoke",
+		label: "Invoking",
+		byline: "Running the create-skill assistant to scaffold the skill.",
+		bylines: [
+			"Running the create-skill assistant to scaffold the skill.",
+			"Translating the brief into a reusable skill shape.",
+			"Preparing the generated instructions and metadata.",
+		],
+		iconKey: "skill",
+		skillMention: CREATE_SKILL_ID,
+	},
+	{
+		id: "questions",
+		label: "Preparing clarification questions",
+		byline: "Asking a few targeted questions to shape the skill before drafting.",
+		bylines: [
+			"Asking a few targeted questions to shape the skill before drafting.",
+			"Spotting the choices that would change the skill design.",
+			"Keeping the question round short and actionable.",
+		],
+		iconKey: "question",
+	},
 ] as const;
 
 function stage1Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
@@ -364,8 +397,6 @@ export function deriveSkillFromPrompt(
 		"version: 1.0.0",
 		"---",
 		"",
-		`# ${name}`,
-		"",
 		description,
 		"",
 		"## When to use",
@@ -421,10 +452,50 @@ export function deriveSkillFromPrompt(
 const STAGE_2_HEADER = "Building your skill";
 
 const STAGE_2_STEP_DEFS = [
-	{ id: "review", label: "Reviewing your answers", byline: "Merging your answers into the skill design.", iconKey: "review" },
-	{ id: "draft", label: "Drafting the skill", byline: "Writing the name, description, and instructions.", iconKey: "draft" },
-	{ id: "wire", label: "Wiring tools and triggers", byline: "Connecting the tools and trigger you chose.", iconKey: "wire" },
-	{ id: "save", label: "Saving skill", byline: "Saving the skill so it's ready to use.", iconKey: "save" },
+	{
+		id: "review",
+		label: "Reviewing your answers",
+		byline: "Merging your answers into the skill design.",
+		bylines: [
+			"Merging your answers into the skill design.",
+			"Reconciling the clarification answers with the original request.",
+			"Locking in the confirmed goal, inputs, and output.",
+		],
+		iconKey: "review",
+	},
+	{
+		id: "draft",
+		label: "Drafting the skill",
+		byline: "Writing the name, description, and instructions.",
+		bylines: [
+			"Writing the name, description, and instructions.",
+			"Structuring when to use the skill and how it should respond.",
+			"Drafting reusable instructions for future runs.",
+		],
+		iconKey: "draft",
+	},
+	{
+		id: "wire",
+		label: "Wiring tools and triggers",
+		byline: "Connecting the tools and trigger you chose.",
+		bylines: [
+			"Connecting the tools and trigger you chose.",
+			"Mapping selected apps to the generated workflow.",
+			"Checking that the skill has the right execution context.",
+		],
+		iconKey: "wire",
+	},
+	{
+		id: "save",
+		label: "Saving skill",
+		byline: "Saving the skill so it's ready to use.",
+		bylines: [
+			"Saving the skill so it's ready to use.",
+			"Preparing the skill card and editor draft.",
+			"Finishing the generated skill setup.",
+		],
+		iconKey: "save",
+	},
 ] as const;
 
 function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {

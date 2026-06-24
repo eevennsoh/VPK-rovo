@@ -55,6 +55,8 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared select primitive keeps selected indicators aligned with dropdown menu
 	// affordances. Components are not included wholesale, so gate it explicitly.
 	"components/ui/select.test.js",
+	// Shared message markdown heading spacing used by compact chat surfaces.
+	"components/ui-custom/message.test.js",
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",

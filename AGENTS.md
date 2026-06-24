@@ -17,7 +17,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Backend/API edits are in `backend/server.js`, `backend/lib/*.js`, and nested `app/api/**/route.ts` handlers (dev proxy and route-local adapters).
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`.
 - For UI changes, also run visual + accessibility checks (see `.agents/docs/workflows-extended.md`).
-- Browser/computer control: use `agent-browser` (`npx agent-browser`) first for browser testing, local web-app verification, screenshots, UI probes, public pages, isolated sessions, visual debugging, responsive checks, and unauthenticated web verification, regardless of whether the session is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. Use `@Chrome` only when signed-in Chrome state, cookies, extensions, existing tabs, or multi-tab authenticated browser work matters, and use `@Computer` / app-specific Computer Use for native apps, OS workflows, and cross-app GUI flows. Put ad-hoc browser artifacts under ignored `output/agent-browser/`.
+- Browser testing and verification: use `agent-browser` (`npx agent-browser`) by default for browser testing, local web-app verification, screenshots, UI probes, public pages, isolated sessions, visual debugging, responsive checks, and unauthenticated web verification. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright` skill before using that fallback. Put ad-hoc browser artifacts under ignored `output/agent-browser/`.
 - Symphony browser evidence is the exception: use the repo-local `vpk-symphony` skill so issue-scoped screenshots, WebM recordings, and traces land under ignored `output/playwright/` for the workpad flow, as specified in `WORKFLOW.md` and `docs/SYMPHONY.md`.
 
 ## Documentation Index
@@ -209,8 +209,8 @@ static export used by deployment.
   required by branch protection on `main` — `/vpk-git-ship` auto-merge will wait
   for it to pass.
 - For UI changes, keep the observational checks too: `pnpm run lint`, `pnpm run
-  typecheck`, visual checks using the Codex App browser/computer routing above
-  when available, and accessibility checks via `ads_analyze_a11y` /
+  typecheck`, visual checks using the browser testing guidance above, and
+  accessibility checks via `ads_analyze_a11y` /
   `ads_analyze_localhost_a11y`.
 
 ### Debugging
@@ -276,7 +276,7 @@ Recurring thermo-nuclear reviews have shown that VPK stays healthiest when new b
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
-- After a UI edit, trace which source the target route actually imports/renders and confirm the change is visible on the live route (open it with the preferred Codex App browser route when available, then screenshot) before reporting done. Editing a component definition is not enough if the route renders a different instance or wrapper — verify the change reaches the actual usage/render path, not just the definition.
+- After a UI edit, trace which source the target route actually imports/renders and confirm the change is visible on the live route (open it with the browser testing guidance above, then screenshot) before reporting done. Editing a component definition is not enough if the route renders a different instance or wrapper — verify the change reaches the actual usage/render path, not just the definition.
 - When you change a UI pattern or make a new variant the default, update every instance of the old pattern and fully delete the old behavior/markup so old and new states never coexist (e.g. no leftover empty rows beside new single-line buttons). Strip any content the user explicitly excludes.
 - When fixing layout, check the whole surrounding region, not just the edited element: do not introduce spacing collisions with adjacent panels, viewport-level overflow/scroll, or clipping, and preserve existing visual effects (gradient fades, shadows). Verify across viewport sizes (collapsed sidebar, larger viewport, empty state), not just the first case.
 - When an element overlays content (hover-reveal control, remove button, scrim), implement the specified gradient/scrim so underlying text stays legible and no residual borders/edges of the underlying element peek through; keep padding symmetric after layout changes, and verify the overlay state visually.

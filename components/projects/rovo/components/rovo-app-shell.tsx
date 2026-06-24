@@ -112,6 +112,9 @@ const ROVO_APP_SIDEBAR_MAX_WIDTH = 480;
 
 const HOME_SUGGESTIONS = DEFAULT_PROMPT_GALLERY_SUGGESTIONS.slice(0, 3);
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe what it should do";
+// Fullscreen Rovo renders directory matches as a two-column grid; 8 keeps it at
+// four rows per column while other prompt surfaces can show the default 9.
+const ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT = 8;
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
@@ -2326,6 +2329,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen}
 									directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
+									directoryAutocompleteLimit={ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT}
 									dictationState={dictationState}
 									dictationTranscriptPreview={dictationTranscriptPreview}
 									errorMessage={chat.inputError}

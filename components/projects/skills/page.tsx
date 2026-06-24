@@ -17,14 +17,8 @@ import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/b
 import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
-import { SkillInvocationCard } from "./components/skill-invocation-card";
 import { SkillCreationTraceCard } from "./components/skill-creation-trace-card";
 import { SkillCreationResultCard } from "./components/skill-creation-result-card";
-import {
-	buildSkillInterceptOutcome,
-	SKILL_INVOCATION_WIDGET_TYPE,
-	type SkillInvocationPayload,
-} from "./lib/skill-intercept";
 import {
 	buildCreateSkillStage1,
 	buildCreateSkillStage2,
@@ -62,15 +56,16 @@ interface SkillsPanelProps {
 
 /**
  * Skills project surface. A thin, fork-free reuse of the Sidebar Chat `ChatPanel`
- * wired to demonstrate two things, all client-side (the model is never hit):
+ * wired to keep skill creation local while normal prompts use the Rovo chat path:
  *
- * 1. **Invoking** skills — greeting starters / matching prompts are intercepted
- *    (`buildSkillInterceptOutcome`) and answered with an inline "Skill invoked" card.
- * 2. **Creating** a skill — when the composer carries the `create-skill` tag, the
+ * 1. **Creating** a skill — when the composer carries the `create-skill` tag, the
  *    deterministic `create-skill-flow` engine animates a chain-of-thought, asks one
  *    round of questions (docked card), then shows a generated-skill result card. The
  *    new skill is registered at runtime so it resolves in the `/` menu, skill-tag
  *    styling, and the config dialog, and the composer is auto-prefilled with its tag.
+ * 2. **Chatting** with skills — greeting starters submit through the shared
+ *    `ChatPanel` path so they behave like `sidebar-chat`, instead of injecting a
+ *    one-off scripted "Skill invoked" response locally.
  *
  * The composer "+" menu also exposes "View all skills" (the directory) and a
  * placeholder "Create space" item.
@@ -99,8 +94,6 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	const renderWidget = useCallback(
 		(widget: { type: string; data: unknown }): ReactNode => {
 			switch (widget.type) {
-				case SKILL_INVOCATION_WIDGET_TYPE:
-					return <SkillInvocationCard {...(widget.data as SkillInvocationPayload)} />;
 				case SKILL_CREATION_TRACE_WIDGET_TYPE:
 					return (
 						<SkillCreationTraceCard
@@ -131,10 +124,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				return "after-content";
 			}
 
-			if (
-				widgetType === SKILL_INVOCATION_WIDGET_TYPE ||
-				widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE
-			) {
+			if (widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE) {
 				return "before-content";
 			}
 			return undefined;
@@ -196,8 +186,8 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 			};
 		}
 
-		// Otherwise fall back to the skill-invocation demo.
-		return buildSkillInterceptOutcome(text);
+		// Otherwise let ChatPanel submit through the normal Rovo chat path.
+		return { handled: false };
 	}, [createdSkills]);
 
 	const resolveComposerPlaceholder = useCallback(
@@ -265,6 +255,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				resolveComposerPlaceholder={resolveComposerPlaceholder}
 				composerPrefillRequest={prefillRequest}
 				composerMentionSources={composerMentionSources}
+				autoFocusComposer
 			/>
 			<SkillsDirectoryDialog
 				key={configSkillId ?? (isSkillsDirectoryOpen ? "browse" : "closed")}

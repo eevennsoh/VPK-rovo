@@ -63,6 +63,7 @@ export function ComposerFloatingBody({
 	clickyActive,
 	composerStatus,
 	directoryAutocompleteListVisible,
+	directoryAutocompleteLimit,
 	dictationState,
 	dictationTranscriptPreview,
 	experimentalDarkCta,
@@ -163,6 +164,7 @@ export function ComposerFloatingBody({
 					autoResize
 					className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
 					directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+					directoryAutocompleteLimit={directoryAutocompleteLimit}
 					enableVisualTraceAutoTagging
 					onBlur={() => setInputFocused(false)}
 					onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}

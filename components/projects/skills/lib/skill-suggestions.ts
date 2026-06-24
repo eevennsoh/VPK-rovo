@@ -2,10 +2,9 @@
  * Greeting conversation starters for the Skills project.
  *
  * Maps the scripted {@link SKILL_INVOCATIONS} dataset to `RovoSuggestion`s for
- * `ChatPanel`'s greeting. Each starter is a *manual trigger*: clicking it submits
- * the entry's `starterPrompt`, which the interceptor (`./skill-intercept`) matches
- * to render the inline "Skill invoked" card. Icons are representative ADS glyphs,
- * mirroring how `defaultSuggestions` (`@/lib/rovo-suggestions`) attaches icons.
+ * `ChatPanel`'s greeting. Clicking a starter submits the entry's `starterPrompt`
+ * through the normal chat path. Icons are representative ADS glyphs, mirroring how
+ * `defaultSuggestions` (`@/lib/rovo-suggestions`) attaches icons.
  */
 
 import type { ComponentType } from "react";

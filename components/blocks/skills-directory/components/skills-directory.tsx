@@ -20,8 +20,6 @@ import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkIcon from "@atlaskit/icon/core/link";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import StarStarredIcon from "@atlaskit/icon/core/star-starred";
-import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
 import {
@@ -910,7 +908,6 @@ function SkillMoreMenu({
 					Learn more
 				</DropdownMenuItem>
 				<DropdownMenuItem
-					elemBefore={favorite ? <StarStarredIcon label="" /> : <StarUnstarredIcon label="" />}
 					onClick={stopPropagation}
 					onSelect={(event) => {
 						event.stopPropagation();
@@ -963,7 +960,6 @@ function SelectedSkillsFooter({
 							Create link to share
 						</Button>
 						<Button onClick={onFavoriteSkills} size="default" type="button" variant="ghost">
-							<StarUnstarredIcon label="" />
 							Favorite
 						</Button>
 						<Button onClick={onDownloadSkills} size="default" type="button" variant="ghost">
@@ -1057,7 +1053,7 @@ function SkillDetailHeader({
 						<DropdownMenuItem elemBefore={<LinkIcon label="" />} onSelect={() => onCreateShareLink()}>
 							Create link to share
 						</DropdownMenuItem>
-						<DropdownMenuItem elemBefore={<StarUnstarredIcon label="" />} onSelect={() => onFavoriteSkills()}>
+						<DropdownMenuItem onSelect={() => onFavoriteSkills()}>
 							Favorite
 						</DropdownMenuItem>
 						<DropdownMenuItem elemBefore={<DownloadIcon label="" />} onSelect={() => onDownloadSkills()}>
@@ -1219,17 +1215,18 @@ function SkillDetailConfig({
 				>
 					<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
 						{/* Drop the frame's vertical padding (keep px-6) so the 24px
-						    top/bottom rhythm rides INSIDE the scrollport instead of on
-						    this fixed frame: `pt-6` scrolls away for a full-bleed top,
-						    and the bottom gap only appears at the scroll end. The bottom
-						    padding must sit on the editor body (`.rich-text-editor-content`)
-						    — the instructions section is `flex-1 min-h-0` and collapses to
-						    a 0-basis box, so its overflowing editor body is the real
-						    scroll boundary; pb on the scrollport or section lands above
-						    the fold and never shows. */}
+						    top/bottom rhythm is owned by the scroll content. The top padding
+						    stays on the scrollport so the hover-reveal editor toolbar keeps
+						    a visible 24px gap when it pins. The bottom padding must sit on
+						    the editor body (`.rich-text-editor-content`) — the instructions
+						    section is `flex-1 min-h-0` and collapses to a 0-basis box, so
+						    its overflowing editor body is the real scroll boundary; pb on
+						    the scrollport or section lands above the fold and never shows.
+						    Keep it large enough that short SKILL.md files still have enough
+						    scroll travel for the toolbar to finish sticking. */}
 						<AgentContent className="flex min-h-0 flex-1 flex-col py-0">
 							<AgentConfigFields
-								compactScrollAreaClassName="-mr-6 pr-6 pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
+								compactScrollAreaClassName="-mr-6 pr-6 pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-8"
 								config={config}
 								idPrefix={`skill-detail-${skill.id}`}
 								profileCover={<SkillProfileCover skill={skill} />}

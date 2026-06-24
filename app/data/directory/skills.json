@@ -11,18 +11,28 @@
 		"starCount": 152,
 		"favorite": false,
 		"tools": [
-			{ "id": "tool-1", "name": "Editor", "icon": "edit" },
-			{ "id": "tool-2", "name": "Knowledge", "icon": "page" }
+			{
+				"id": "tool-1",
+				"name": "Editor",
+				"icon": "edit"
+			},
+			{
+				"id": "tool-2",
+				"name": "Knowledge",
+				"icon": "page"
+			}
 		],
 		"instructions": "# Create skill\n\nGuide the user from a plain-language description to a working Rovo skill. Ask a short round of clarifying questions, then scaffold the skill's name, description, trigger conditions, and instructions.",
 		"source": "platform",
 		"collectionId": "platform",
 		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
-		"collectionProducts": ["Rovo"],
+		"collectionProducts": [
+			"Rovo"
+		],
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 1280,
 		"verified": true,
-		"skillMd": "---\nname: create-skill\ndescription: Create a new Rovo skill from a plain-language description. Use when the user asks to build, create, scaffold, or author a new skill.\nlicense: MIT\nversion: 1.0.0\n---\n\n# Create skill\n\nCreate a new Rovo skill from a plain-language description.\n\n## When to use\n\nUse this skill when the user wants to author a brand-new skill but only has an idea in plain language. It asks a short round of clarifying questions, then generates a ready-to-edit skill.\n\n## Instructions\n\n1. Read the user's description of what the skill should do.\n2. Ask one round of clarifying questions (purpose, trigger, tools).\n3. Generate the skill name, description, and instructions.\n4. Open the generated skill for review and editing.\n\n## Output\n\nA ready-to-edit skill, available immediately for use.\n",
+		"skillMd": "---\nname: create-skill\ndescription: Create a new Rovo skill from a plain-language description. Use when the user asks to build, create, scaffold, or author a new skill.\nlicense: MIT\nversion: 1.0.0\n---\n\nCreate a new Rovo skill from a plain-language description.\n\n## When to use\n\nUse this skill when the user wants to author a brand-new skill but only has an idea in plain language. It asks a short round of clarifying questions, then generates a ready-to-edit skill.\n\n## Instructions\n\n1. Read the user's description of what the skill should do.\n2. Ask one round of clarifying questions (purpose, trigger, tools).\n3. Generate the skill name, description, and instructions.\n4. Open the generated skill for review and editing.\n\n## Output\n\nA ready-to-edit skill, available immediately for use.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-06-01T00:00:00.000Z"
@@ -65,7 +75,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 8653,
 		"verified": false,
-		"skillMd": "---\nname: design-landing-page\ndescription: Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: MIT\nversion: 1.1.3\n---\n\n# Design landing page\n\nCreate high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: design-landing-page\ndescription: Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: MIT\nversion: 1.1.3\n---\n\nCreate high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Venn",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-07-05T00:00:00.000Z"
@@ -103,7 +113,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 24391,
 		"verified": false,
-		"skillMd": "---\nname: develop-mobile-app-interface\ndescription: Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.\nallowed-tools:\n  - Jira\n  - Bitbucket\n  - GitHub\nlicense: Proprietary\nversion: 1.5.5\n---\n\n# Develop mobile app interface\n\nCraft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira, Bitbucket, and GitHub to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: develop-mobile-app-interface\ndescription: Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.\nallowed-tools:\n  - Jira\n  - Bitbucket\n  - GitHub\nlicense: Proprietary\nversion: 1.5.5\n---\n\nCraft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira, Bitbucket, and GitHub to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Venn",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-03-10T00:00:00.000Z"
@@ -141,7 +151,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 3836,
 		"verified": false,
-		"skillMd": "---\nname: create-brand-identity\ndescription: Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.\nallowed-tools:\n  - Confluence\n  - Slack\nlicense: Apache-2.0\nversion: 1.0.2\n---\n\n# Create brand identity\n\nEstablish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence and Slack to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: create-brand-identity\ndescription: Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.\nallowed-tools:\n  - Confluence\n  - Slack\nlicense: Apache-2.0\nversion: 1.0.2\n---\n\nEstablish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence and Slack to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Venn",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-05-14T00:00:00.000Z"
@@ -173,7 +183,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 449,
 		"verified": false,
-		"skillMd": "---\nname: produce-marketing-materials\ndescription: Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\n# Produce marketing materials\n\nDesign eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: produce-marketing-materials\ndescription: Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\nDesign eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Venn",
 		"addedBy": "You",
 		"lastUpdatedAt": "2024-12-23T00:00:00.000Z"
@@ -207,7 +217,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 20489,
 		"verified": true,
-		"skillMd": "---\nname: review-pull-request\ndescription: Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: MIT\nversion: 1.1.9\n---\n\n# Review pull request\n\nSummarize diffs and surface review-worthy changes across a pull request before a teammate merges it.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: review-pull-request\ndescription: Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: MIT\nversion: 1.1.9\n---\n\nSummarize diffs and surface review-worthy changes across a pull request before a teammate merges it.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-05-13T00:00:00.000Z"
@@ -240,7 +250,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 2657,
 		"verified": true,
-		"skillMd": "---\nname: summarize-thread\ndescription: Condense a long conversation into the decisions, owners, and next steps that matter.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: Proprietary\nversion: 1.1.4\n---\n\n# Summarize thread\n\nCondense a long conversation into the decisions, owners, and next steps that matter.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: summarize-thread\ndescription: Condense a long conversation into the decisions, owners, and next steps that matter.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: Proprietary\nversion: 1.1.4\n---\n\nCondense a long conversation into the decisions, owners, and next steps that matter.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-11-20T00:00:00.000Z"
@@ -273,7 +283,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 3440,
 		"verified": true,
-		"skillMd": "---\nname: schedule-meeting\ndescription: Find a time that works for everyone and create a calendar invite with the right context.\nallowed-tools:\n  - Google Calendar\n  - Slack\nlicense: Proprietary\nversion: 1.4.8\n---\n\n# Schedule meeting\n\nFind a time that works for everyone and create a calendar invite with the right context.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: schedule-meeting\ndescription: Find a time that works for everyone and create a calendar invite with the right context.\nallowed-tools:\n  - Google Calendar\n  - Slack\nlicense: Proprietary\nversion: 1.4.8\n---\n\nFind a time that works for everyone and create a calendar invite with the right context.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-06T00:00:00.000Z"
@@ -306,7 +316,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 19998,
 		"verified": true,
-		"skillMd": "---\nname: build-report\ndescription: Turn raw metrics into a narrative report your stakeholders will actually read.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.8\n---\n\n# Build report\n\nTurn raw metrics into a narrative report your stakeholders will actually read.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: build-report\ndescription: Turn raw metrics into a narrative report your stakeholders will actually read.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.8\n---\n\nTurn raw metrics into a narrative report your stakeholders will actually read.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-06-22T00:00:00.000Z"
@@ -339,7 +349,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 15441,
 		"verified": true,
-		"skillMd": "---\nname: create-payment-flow\ndescription: Design checkout, billing, and account-update flows with clear states and recovery paths.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Trello\nlicense: Proprietary\nversion: 1.3.9\n---\n\n# Create payment flow\n\nDesign checkout, billing, and account-update flows with clear states and recovery paths.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira, Confluence, and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: create-payment-flow\ndescription: Design checkout, billing, and account-update flows with clear states and recovery paths.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Trello\nlicense: Proprietary\nversion: 1.3.9\n---\n\nDesign checkout, billing, and account-update flows with clear states and recovery paths.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira, Confluence, and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-05-04T00:00:00.000Z"
@@ -364,7 +374,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 20450,
 		"verified": true,
-		"skillMd": "---\nname: sprint-planner\ndescription: Break an epic into sprint-ready work items with estimates and owners.\nallowed-tools:\n  - Confluence\n  - Trello\nlicense: MIT\nversion: 1.4.2\n---\n\n# Sprint planner\n\nBreak an epic into sprint-ready work items with estimates and owners.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: sprint-planner\ndescription: Break an epic into sprint-ready work items with estimates and owners.\nallowed-tools:\n  - Confluence\n  - Trello\nlicense: MIT\nversion: 1.4.2\n---\n\nBreak an epic into sprint-ready work items with estimates and owners.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-04-22T00:00:00.000Z"
@@ -389,7 +399,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 9334,
 		"verified": true,
-		"skillMd": "---\nname: backlog-groomer\ndescription: Re-rank, label, and de-duplicate your backlog automatically.\nallowed-tools:\n  - Confluence\n  - Trello\nlicense: MIT\nversion: 1.4.7\n---\n\n# Backlog groomer\n\nRe-rank, label, and de-duplicate your backlog automatically.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: backlog-groomer\ndescription: Re-rank, label, and de-duplicate your backlog automatically.\nallowed-tools:\n  - Confluence\n  - Trello\nlicense: MIT\nversion: 1.4.7\n---\n\nRe-rank, label, and de-duplicate your backlog automatically.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-22T00:00:00.000Z"
@@ -414,7 +424,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 20784,
 		"verified": true,
-		"skillMd": "---\nname: create-work-items\ndescription: Turn a plan into structured, assigned, ready-to-start work items.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.8\n---\n\n# Create work items\n\nTurn a plan into structured, assigned, ready-to-start work items.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: create-work-items\ndescription: Turn a plan into structured, assigned, ready-to-start work items.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.8\n---\n\nTurn a plan into structured, assigned, ready-to-start work items.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-17T00:00:00.000Z"
@@ -439,7 +449,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 1821,
 		"verified": true,
-		"skillMd": "---\nname: roadmap-builder\ndescription: Generate a quarterly roadmap from epics and goals.\nallowed-tools:\n  - Confluence\n  - Trello\n  - Jira\nlicense: MIT\nversion: 1.1.5\n---\n\n# Roadmap builder\n\nGenerate a quarterly roadmap from epics and goals.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence, Trello, and Jira to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: roadmap-builder\ndescription: Generate a quarterly roadmap from epics and goals.\nallowed-tools:\n  - Confluence\n  - Trello\n  - Jira\nlicense: MIT\nversion: 1.1.5\n---\n\nGenerate a quarterly roadmap from epics and goals.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Confluence, Trello, and Jira to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-13T00:00:00.000Z"
@@ -464,7 +474,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 24790,
 		"verified": true,
-		"skillMd": "---\nname: dependency-mapper\ndescription: Surface cross-team blockers and dependency chains across boards.\nallowed-tools:\n  - Trello\n  - Jira\nlicense: Proprietary\nversion: 1.2.3\n---\n\n# Dependency mapper\n\nSurface cross-team blockers and dependency chains across boards.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Trello and Jira to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: dependency-mapper\ndescription: Surface cross-team blockers and dependency chains across boards.\nallowed-tools:\n  - Trello\n  - Jira\nlicense: Proprietary\nversion: 1.2.3\n---\n\nSurface cross-team blockers and dependency chains across boards.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Trello and Jira to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-03-07T00:00:00.000Z"
@@ -489,7 +499,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 17018,
 		"verified": true,
-		"skillMd": "---\nname: milestone-tracker\ndescription: Track delivery milestones and flag slippage against target dates.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.3\n---\n\n# Milestone tracker\n\nTrack delivery milestones and flag slippage against target dates.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: milestone-tracker\ndescription: Track delivery milestones and flag slippage against target dates.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.3\n---\n\nTrack delivery milestones and flag slippage against target dates.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-04-19T00:00:00.000Z"
@@ -514,7 +524,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 23316,
 		"verified": true,
-		"skillMd": "---\nname: standup-summarizer\ndescription: Compile yesterday, today, and blockers from recent activity.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.4\n---\n\n# Standup summarizer\n\nCompile yesterday, today, and blockers from recent activity.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: standup-summarizer\ndescription: Compile yesterday, today, and blockers from recent activity.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.4\n---\n\nCompile yesterday, today, and blockers from recent activity.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-05-01T00:00:00.000Z"
@@ -538,7 +548,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 2227,
 		"verified": true,
-		"skillMd": "---\nname: bulk-issue-editor\ndescription: Apply field changes across many work items at once.\nallowed-tools:\n  - Confluence\n  - Google Calendar\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\n# Bulk issue editor\n\nApply field changes across many work items at once.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence, Google Calendar, and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: bulk-issue-editor\ndescription: Apply field changes across many work items at once.\nallowed-tools:\n  - Confluence\n  - Google Calendar\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\nApply field changes across many work items at once.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence, Google Calendar, and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-17T00:00:00.000Z"
@@ -562,7 +572,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 20494,
 		"verified": true,
-		"skillMd": "---\nname: user-provisioning\ndescription: Add or remove members and assign product access.\nallowed-tools:\n  - Google Calendar\n  - Slack\nlicense: MIT\nversion: 1.4.2\n---\n\n# User provisioning\n\nAdd or remove members and assign product access.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: user-provisioning\ndescription: Add or remove members and assign product access.\nallowed-tools:\n  - Google Calendar\n  - Slack\nlicense: MIT\nversion: 1.4.2\n---\n\nAdd or remove members and assign product access.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-18T00:00:00.000Z"
@@ -586,7 +596,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 17559,
 		"verified": true,
-		"skillMd": "---\nname: permission-auditor\ndescription: Review space and project permissions for over-grants.\nallowed-tools:\n  - Google Calendar\n  - Slack\n  - Confluence\nlicense: MIT\nversion: 1.1.5\n---\n\n# Permission auditor\n\nReview space and project permissions for over-grants.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar, Slack, and Confluence to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: permission-auditor\ndescription: Review space and project permissions for over-grants.\nallowed-tools:\n  - Google Calendar\n  - Slack\n  - Confluence\nlicense: MIT\nversion: 1.1.5\n---\n\nReview space and project permissions for over-grants.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Google Calendar, Slack, and Confluence to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-11-08T00:00:00.000Z"
@@ -610,7 +620,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 23808,
 		"verified": true,
-		"skillMd": "---\nname: license-optimizer\ndescription: Find inactive seats and reclaim unused licenses.\nallowed-tools:\n  - Slack\n  - Confluence\nlicense: Proprietary\nversion: 1.2.7\n---\n\n# License optimizer\n\nFind inactive seats and reclaim unused licenses.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Slack and Confluence to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: license-optimizer\ndescription: Find inactive seats and reclaim unused licenses.\nallowed-tools:\n  - Slack\n  - Confluence\nlicense: Proprietary\nversion: 1.2.7\n---\n\nFind inactive seats and reclaim unused licenses.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Slack and Confluence to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-04-24T00:00:00.000Z"
@@ -634,7 +644,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 9193,
 		"verified": true,
-		"skillMd": "---\nname: automation-rule-builder\ndescription: Draft automation rules from plain-language intent.\nallowed-tools:\n  - Confluence\n  - Google Calendar\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.2\n---\n\n# Automation rule builder\n\nDraft automation rules from plain-language intent.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence, Google Calendar, and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: automation-rule-builder\ndescription: Draft automation rules from plain-language intent.\nallowed-tools:\n  - Confluence\n  - Google Calendar\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.2\n---\n\nDraft automation rules from plain-language intent.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence, Google Calendar, and Slack to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-03-12T00:00:00.000Z"
@@ -656,7 +666,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 24620,
 		"verified": true,
-		"skillMd": "---\nname: use-computer\ndescription: Operate apps and tools to complete a multi-step task end to end.\nallowed-tools:\n  - Confluence\n  - Google Calendar\nlicense: Apache-2.0\nversion: 1.0.2\n---\n\n# Use computer\n\nOperate apps and tools to complete a multi-step task end to end.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence and Google Calendar to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: use-computer\ndescription: Operate apps and tools to complete a multi-step task end to end.\nallowed-tools:\n  - Confluence\n  - Google Calendar\nlicense: Apache-2.0\nversion: 1.0.2\n---\n\nOperate apps and tools to complete a multi-step task end to end.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence and Google Calendar to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-20T00:00:00.000Z"
@@ -681,7 +691,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 20164,
 		"verified": true,
-		"skillMd": "---\nname: appfire-automation\ndescription: Configure Appfire-powered automation, templates, and macros.\nallowed-tools:\n  - Confluence\n  - Google Calendar\nlicense: Proprietary\nversion: 1.0.6\n---\n\n# Appfire automation\n\nConfigure Appfire-powered automation, templates, and macros.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence and Google Calendar to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
+		"skillMd": "---\nname: appfire-automation\ndescription: Configure Appfire-powered automation, templates, and macros.\nallowed-tools:\n  - Confluence\n  - Google Calendar\nlicense: Proprietary\nversion: 1.0.6\n---\n\nConfigure Appfire-powered automation, templates, and macros.\n\n## When to use\n\nUse this skill when the user wants to automate routine coordination or record-keeping. It draws on Confluence and Google Calendar to do the work.\n\n## Instructions\n\n1. Capture the request and the inputs it depends on.\n2. Cross-check the connected sources so nothing is stale or missing.\n3. Carry out the task and summarize what changed.\n\n## Output\n\nThe completed action plus a short, auditable summary of what was done.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-16T00:00:00.000Z"
@@ -706,7 +716,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 14952,
 		"verified": true,
-		"skillMd": "---\nname: confluence-page-drafter\ndescription: Turn a brief into a structured, publish-ready page.\nallowed-tools:\n  - Slack\n  - Loom\nlicense: MIT\nversion: 1.4.5\n---\n\n# Draft Confluence page\n\nTurn a brief into a structured, publish-ready page.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: confluence-page-drafter\ndescription: Turn a brief into a structured, publish-ready page.\nallowed-tools:\n  - Slack\n  - Loom\nlicense: MIT\nversion: 1.4.5\n---\n\nTurn a brief into a structured, publish-ready page.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-30T00:00:00.000Z"
@@ -731,7 +741,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 6364,
 		"verified": true,
-		"skillMd": "---\nname: release-announcement\ndescription: Draft a customer-facing announcement from shipped work.\nallowed-tools:\n  - Slack\n  - Loom\nlicense: MIT\nversion: 1.4.7\n---\n\n# Release announcement\n\nDraft a customer-facing announcement from shipped work.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: release-announcement\ndescription: Draft a customer-facing announcement from shipped work.\nallowed-tools:\n  - Slack\n  - Loom\nlicense: MIT\nversion: 1.4.7\n---\n\nDraft a customer-facing announcement from shipped work.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Linear",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-16T00:00:00.000Z"
@@ -755,7 +765,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 14967,
 		"verified": true,
-		"skillMd": "---\nname: translate-content\ndescription: Localize pages and posts into multiple languages.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.9\n---\n\n# Translate content\n\nLocalize pages and posts into multiple languages.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: translate-content\ndescription: Localize pages and posts into multiple languages.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.9\n---\n\nLocalize pages and posts into multiple languages.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-06-09T00:00:00.000Z"
@@ -780,7 +790,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 12533,
 		"verified": true,
-		"skillMd": "---\nname: brand-voice-editor\ndescription: Rewrite copy to match your brand tone and style guide.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\n# Brand voice editor\n\nRewrite copy to match your brand tone and style guide.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: brand-voice-editor\ndescription: Rewrite copy to match your brand tone and style guide.\nallowed-tools:\n  - Confluence\n  - Slack\n  - Loom\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\nRewrite copy to match your brand tone and style guide.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Confluence, Slack, and Loom to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-01-04T00:00:00.000Z"
@@ -805,7 +815,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 23589,
 		"verified": true,
-		"skillMd": "---\nname: explore-ideas\ndescription: Brainstorm and shape early ideas into clear next steps.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: MIT\nversion: 1.1.7\n---\n\n# Explore ideas\n\nBrainstorm and shape early ideas into clear next steps.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: explore-ideas\ndescription: Brainstorm and shape early ideas into clear next steps.\nallowed-tools:\n  - Slack\n  - Loom\n  - Confluence\nlicense: MIT\nversion: 1.1.7\n---\n\nBrainstorm and shape early ideas into clear next steps.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Slack, Loom, and Confluence to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2024-12-31T00:00:00.000Z"
@@ -830,7 +840,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 6967,
 		"verified": true,
-		"skillMd": "---\nname: jql-query-builder\ndescription: Generate complex JQL from a natural-language question.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.5.7\n---\n\n# JQL query builder\n\nGenerate complex JQL from a natural-language question.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira, Atlassian Analytics, and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: jql-query-builder\ndescription: Generate complex JQL from a natural-language question.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.5.7\n---\n\nGenerate complex JQL from a natural-language question.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira, Atlassian Analytics, and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-05-09T00:00:00.000Z"
@@ -855,7 +865,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 9511,
 		"verified": true,
-		"skillMd": "---\nname: dashboard-generator\ndescription: Build a dashboard from a metrics request.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.1\n---\n\n# Dashboard generator\n\nBuild a dashboard from a metrics request.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: dashboard-generator\ndescription: Build a dashboard from a metrics request.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.1\n---\n\nBuild a dashboard from a metrics request.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-23T00:00:00.000Z"
@@ -880,7 +890,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 20190,
 		"verified": true,
-		"skillMd": "---\nname: trend-spotter\ndescription: Identify themes and anomalies across issue and ticket data.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.5\n---\n\n# Trend spotter\n\nIdentify themes and anomalies across issue and ticket data.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: trend-spotter\ndescription: Identify themes and anomalies across issue and ticket data.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.5\n---\n\nIdentify themes and anomalies across issue and ticket data.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-02-04T00:00:00.000Z"
@@ -905,7 +915,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 15655,
 		"verified": true,
-		"skillMd": "---\nname: report-compiler\ndescription: Roll up cross-project metrics into a periodic report.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\n# Report compiler\n\nRoll up cross-project metrics into a periodic report.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: report-compiler\ndescription: Roll up cross-project metrics into a periodic report.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\nRoll up cross-project metrics into a periodic report.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-07T00:00:00.000Z"
@@ -927,7 +937,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 7538,
 		"verified": true,
-		"skillMd": "---\nname: search-web\ndescription: Find and cite current information from across the web.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.1\n---\n\n# Search the web\n\nFind and cite current information from across the web.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: search-web\ndescription: Find and cite current information from across the web.\nallowed-tools:\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.2.1\n---\n\nFind and cite current information from across the web.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Jira and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-15T00:00:00.000Z"
@@ -949,7 +959,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 17359,
 		"verified": true,
-		"skillMd": "---\nname: run-deep-research\ndescription: Investigate a topic in depth and synthesize sources.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.8\n---\n\n# Run deep research\n\nInvestigate a topic in depth and synthesize sources.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: run-deep-research\ndescription: Investigate a topic in depth and synthesize sources.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.8\n---\n\nInvestigate a topic in depth and synthesize sources.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics, Snowflake, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-11T00:00:00.000Z"
@@ -974,7 +984,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 6738,
 		"verified": true,
-		"skillMd": "---\nname: funnel-analytics\ndescription: Analyze conversion and drop-off across the product funnel.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.0.2\n---\n\n# Funnel analytics\n\nAnalyze conversion and drop-off across the product funnel.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: funnel-analytics\ndescription: Analyze conversion and drop-off across the product funnel.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.0.2\n---\n\nAnalyze conversion and drop-off across the product funnel.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-02-06T00:00:00.000Z"
@@ -999,7 +1009,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 16147,
 		"verified": true,
-		"skillMd": "---\nname: powerbi-reporter\ndescription: Locate and summarize BI reports for a stakeholder.\nallowed-tools:\n  - Snowflake\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.1.0\n---\n\n# Power BI reporter\n\nLocate and summarize BI reports for a stakeholder.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Snowflake, Jira, and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: powerbi-reporter\ndescription: Locate and summarize BI reports for a stakeholder.\nallowed-tools:\n  - Snowflake\n  - Jira\n  - Atlassian Analytics\nlicense: Proprietary\nversion: 1.1.0\n---\n\nLocate and summarize BI reports for a stakeholder.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Snowflake, Jira, and Atlassian Analytics to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-22T00:00:00.000Z"
@@ -1024,7 +1034,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 21296,
 		"verified": true,
-		"skillMd": "---\nname: tempo-timesheet-report\ndescription: Summarize logged time and capacity from Tempo.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.0.1\n---\n\n# Tempo timesheet report\n\nSummarize logged time and capacity from Tempo.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
+		"skillMd": "---\nname: tempo-timesheet-report\ndescription: Summarize logged time and capacity from Tempo.\nallowed-tools:\n  - Atlassian Analytics\n  - Snowflake\nlicense: Proprietary\nversion: 1.0.1\n---\n\nSummarize logged time and capacity from Tempo.\n\n## When to use\n\nUse this skill when the user wants to explore, summarize, or report on data. It draws on Atlassian Analytics and Snowflake to do the work.\n\n## Instructions\n\n1. Confirm the question and the metrics that answer it.\n2. Query the connected sources and validate the numbers before trusting them.\n3. Surface the findings with the supporting evidence and caveats.\n\n## Output\n\nA decision-ready readout of findings, trends, and recommended next steps.\n",
 		"createdBy": "Linear",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-11T00:00:00.000Z"
@@ -1049,7 +1059,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 16236,
 		"verified": true,
-		"skillMd": "---\nname: generate-code\ndescription: Scaffold functions, components, and tests from a spec.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.3\n---\n\n# Generate code\n\nScaffold functions, components, and tests from a spec.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: generate-code\ndescription: Scaffold functions, components, and tests from a spec.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.3\n---\n\nScaffold functions, components, and tests from a spec.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-07-28T00:00:00.000Z"
@@ -1074,7 +1084,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 2358,
 		"verified": true,
-		"skillMd": "---\nname: draft-release-notes\ndescription: Turn merged work into clear, customer-ready release notes.\nallowed-tools:\n  - Bitbucket\n  - GitHub\nlicense: Apache-2.0\nversion: 1.0.1\n---\n\n# Draft release notes\n\nTurn merged work into clear, customer-ready release notes.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Bitbucket and GitHub to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: draft-release-notes\ndescription: Turn merged work into clear, customer-ready release notes.\nallowed-tools:\n  - Bitbucket\n  - GitHub\nlicense: Apache-2.0\nversion: 1.0.1\n---\n\nTurn merged work into clear, customer-ready release notes.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Bitbucket and GitHub to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-26T00:00:00.000Z"
@@ -1099,7 +1109,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 5090,
 		"verified": true,
-		"skillMd": "---\nname: commit-message-writer\ndescription: Draft a conventional commit from a staged diff.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.9\n---\n\n# Write commit message\n\nDraft a conventional commit from a staged diff.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: commit-message-writer\ndescription: Draft a conventional commit from a staged diff.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.9\n---\n\nDraft a conventional commit from a staged diff.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-05-18T00:00:00.000Z"
@@ -1124,7 +1134,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 11803,
 		"verified": true,
-		"skillMd": "---\nname: bug-report-assistant\ndescription: Write a clear, reproducible bug report for triage.\nallowed-tools:\n  - Bitbucket\n  - GitHub\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\n# Bug report assistant\n\nWrite a clear, reproducible bug report for triage.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Bitbucket, GitHub, and Jira to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: bug-report-assistant\ndescription: Write a clear, reproducible bug report for triage.\nallowed-tools:\n  - Bitbucket\n  - GitHub\n  - Jira\nlicense: Apache-2.0\nversion: 1.3.3\n---\n\nWrite a clear, reproducible bug report for triage.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Bitbucket, GitHub, and Jira to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-04-16T00:00:00.000Z"
@@ -1149,7 +1159,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 4265,
 		"verified": true,
-		"skillMd": "---\nname: test-plan-builder\ndescription: Generate test cases and coverage from requirements.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: MIT\nversion: 1.1.7\n---\n\n# Test plan builder\n\nGenerate test cases and coverage from requirements.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: test-plan-builder\ndescription: Generate test cases and coverage from requirements.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: MIT\nversion: 1.1.7\n---\n\nGenerate test cases and coverage from requirements.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-03T00:00:00.000Z"
@@ -1174,7 +1184,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 19272,
 		"verified": true,
-		"skillMd": "---\nname: github-pr-summary\ndescription: Summarize a pull request's intent, risk, and review points.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.0\n---\n\n# Summarize GitHub PR\n\nSummarize a pull request's intent, risk, and review points.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: github-pr-summary\ndescription: Summarize a pull request's intent, risk, and review points.\nallowed-tools:\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.2.0\n---\n\nSummarize a pull request's intent, risk, and review points.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on Jira and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-12-01T00:00:00.000Z"
@@ -1199,7 +1209,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 13443,
 		"verified": true,
-		"skillMd": "---\nname: gitkraken-branch-helper\ndescription: Navigate branches, commits, and merge conflicts.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.1.7\n---\n\n# GitKraken branch helper\n\nNavigate branches, commits, and merge conflicts.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
+		"skillMd": "---\nname: gitkraken-branch-helper\ndescription: Navigate branches, commits, and merge conflicts.\nallowed-tools:\n  - GitHub\n  - Jira\n  - Bitbucket\nlicense: Proprietary\nversion: 1.1.7\n---\n\nNavigate branches, commits, and merge conflicts.\n\n## When to use\n\nUse this skill when the user is building, reviewing, or shipping software. It draws on GitHub, Jira, and Bitbucket to do the work.\n\n## Instructions\n\n1. Establish the change and the constraints it has to satisfy.\n2. Work through the code or pipeline in order, grounding each step in the repo.\n3. Verify the result and note follow-ups before handing back.\n\n## Output\n\nA reviewed, working result with clear follow-ups.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-22T00:00:00.000Z"
@@ -1224,7 +1234,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 22607,
 		"verified": true,
-		"skillMd": "---\nname: service-request-triage\ndescription: Categorize, route, and set fields on incoming requests.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.5\n---\n\n# Triage service request\n\nCategorize, route, and set fields on incoming requests.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: service-request-triage\ndescription: Categorize, route, and set fields on incoming requests.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.5\n---\n\nCategorize, route, and set fields on incoming requests.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-17T00:00:00.000Z"
@@ -1249,7 +1259,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 8518,
 		"verified": true,
-		"skillMd": "---\nname: analyze-root-cause\ndescription: Trace an incident to its root cause from signals and logs.\nallowed-tools:\n  - Opsgenie\n  - Slack\nlicense: MIT\nversion: 1.4.7\n---\n\n# Analyze root cause\n\nTrace an incident to its root cause from signals and logs.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Opsgenie and Slack to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: analyze-root-cause\ndescription: Trace an incident to its root cause from signals and logs.\nallowed-tools:\n  - Opsgenie\n  - Slack\nlicense: MIT\nversion: 1.4.7\n---\n\nTrace an incident to its root cause from signals and logs.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Opsgenie and Slack to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-24T00:00:00.000Z"
@@ -1274,7 +1284,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 16475,
 		"verified": true,
-		"skillMd": "---\nname: debug-log-issue\ndescription: Diagnose an error from stack traces and log context.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.5\n---\n\n# Debug log issue\n\nDiagnose an error from stack traces and log context.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: debug-log-issue\ndescription: Diagnose an error from stack traces and log context.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.5\n---\n\nDiagnose an error from stack traces and log context.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-27T00:00:00.000Z"
@@ -1299,7 +1309,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 6762,
 		"verified": true,
-		"skillMd": "---\nname: incident-responder\ndescription: Guide on-call response and assemble an incident timeline.\nallowed-tools:\n  - Slack\n  - Jira Service Management\nlicense: Proprietary\nversion: 1.2.9\n---\n\n# Incident responder\n\nGuide on-call response and assemble an incident timeline.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack and Jira Service Management to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: incident-responder\ndescription: Guide on-call response and assemble an incident timeline.\nallowed-tools:\n  - Slack\n  - Jira Service Management\nlicense: Proprietary\nversion: 1.2.9\n---\n\nGuide on-call response and assemble an incident timeline.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack and Jira Service Management to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-05T00:00:00.000Z"
@@ -1324,7 +1334,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 11073,
 		"verified": true,
-		"skillMd": "---\nname: kb-article-writer\ndescription: Turn a resolved ticket into a reusable knowledge article.\nallowed-tools:\n  - Jira Service Management\n  - Opsgenie\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.1\n---\n\n# Write KB article\n\nTurn a resolved ticket into a reusable knowledge article.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Jira Service Management, Opsgenie, and Slack to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: kb-article-writer\ndescription: Turn a resolved ticket into a reusable knowledge article.\nallowed-tools:\n  - Jira Service Management\n  - Opsgenie\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.1\n---\n\nTurn a resolved ticket into a reusable knowledge article.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Jira Service Management, Opsgenie, and Slack to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-25T00:00:00.000Z"
@@ -1349,7 +1359,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 15180,
 		"verified": true,
-		"skillMd": "---\nname: sla-monitor\ndescription: Flag tickets approaching an SLA breach.\nallowed-tools:\n  - Jira Service Management\n  - Opsgenie\nlicense: Apache-2.0\nversion: 1.0.5\n---\n\n# SLA monitor\n\nFlag tickets approaching an SLA breach.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Jira Service Management and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: sla-monitor\ndescription: Flag tickets approaching an SLA breach.\nallowed-tools:\n  - Jira Service Management\n  - Opsgenie\nlicense: Apache-2.0\nversion: 1.0.5\n---\n\nFlag tickets approaching an SLA breach.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Jira Service Management and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-06-24T00:00:00.000Z"
@@ -1374,7 +1384,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 10983,
 		"verified": true,
-		"skillMd": "---\nname: response-drafter\ndescription: Compose a support response and find the right assignee.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.2\n---\n\n# Draft support reply\n\nCompose a support response and find the right assignee.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: response-drafter\ndescription: Compose a support response and find the right assignee.\nallowed-tools:\n  - Slack\n  - Jira Service Management\n  - Opsgenie\nlicense: Proprietary\nversion: 1.5.2\n---\n\nCompose a support response and find the right assignee.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack, Jira Service Management, and Opsgenie to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-09T00:00:00.000Z"
@@ -1399,7 +1409,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 17346,
 		"verified": true,
-		"skillMd": "---\nname: servicenow-ticket-finder\ndescription: Search requests and incidents across ServiceNow.\nallowed-tools:\n  - Slack\n  - Jira Service Management\nlicense: Proprietary\nversion: 1.2.4\n---\n\n# Find ServiceNow ticket\n\nSearch requests and incidents across ServiceNow.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack and Jira Service Management to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
+		"skillMd": "---\nname: servicenow-ticket-finder\ndescription: Search requests and incidents across ServiceNow.\nallowed-tools:\n  - Slack\n  - Jira Service Management\nlicense: Proprietary\nversion: 1.2.4\n---\n\nSearch requests and incidents across ServiceNow.\n\n## When to use\n\nUse this skill when the user is triaging, resolving, or routing a service request. It draws on Slack and Jira Service Management to do the work.\n\n## Instructions\n\n1. Identify the issue, its impact, and who is affected.\n2. Check the connected systems for prior incidents and known fixes.\n3. Resolve or route the request and record the resolution.\n\n## Output\n\nA resolved or correctly routed request with an auditable trail.\n",
 		"createdBy": "Linear",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-04-29T00:00:00.000Z"
@@ -1423,7 +1433,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 9621,
 		"verified": true,
-		"skillMd": "---\nname: diagram-creator\ndescription: Generate a diagram from a plain-language description.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.0\n---\n\n# Create diagram\n\nGenerate a diagram from a plain-language description.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: diagram-creator\ndescription: Generate a diagram from a plain-language description.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.0\n---\n\nGenerate a diagram from a plain-language description.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-05-14T00:00:00.000Z"
@@ -1448,7 +1458,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
 		"teammateCount": 7356,
 		"verified": true,
-		"skillMd": "---\nname: architecture-diagrammer\ndescription: Render a system architecture from a description.\nallowed-tools:\n  - Confluence\n  - Lucidchart\nlicense: MIT\nversion: 1.4.6\n---\n\n# Diagram architecture\n\nRender a system architecture from a description.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence and Lucidchart to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: architecture-diagrammer\ndescription: Render a system architecture from a description.\nallowed-tools:\n  - Confluence\n  - Lucidchart\nlicense: MIT\nversion: 1.4.6\n---\n\nRender a system architecture from a description.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence and Lucidchart to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-05-27T00:00:00.000Z"
@@ -1472,7 +1482,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 10041,
 		"verified": true,
-		"skillMd": "---\nname: flowchart-builder\ndescription: Turn a process narrative into a flowchart.\nallowed-tools:\n  - Confluence\n  - Lucidchart\n  - Figma\nlicense: MIT\nversion: 1.1.3\n---\n\n# Build flowchart\n\nTurn a process narrative into a flowchart.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence, Lucidchart, and Figma to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: flowchart-builder\ndescription: Turn a process narrative into a flowchart.\nallowed-tools:\n  - Confluence\n  - Lucidchart\n  - Figma\nlicense: MIT\nversion: 1.1.3\n---\n\nTurn a process narrative into a flowchart.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence, Lucidchart, and Figma to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-02-17T00:00:00.000Z"
@@ -1496,7 +1506,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 4727,
 		"verified": true,
-		"skillMd": "---\nname: wireframe-generator\ndescription: Produce low-fidelity wireframes from a feature brief.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.2\n---\n\n# Generate wireframe\n\nProduce low-fidelity wireframes from a feature brief.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: wireframe-generator\ndescription: Produce low-fidelity wireframes from a feature brief.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.2\n---\n\nProduce low-fidelity wireframes from a feature brief.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-04-26T00:00:00.000Z"
@@ -1520,7 +1530,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 3760,
 		"verified": true,
-		"skillMd": "---\nname: whiteboard-summarizer\ndescription: Convert a board into structured notes and action items.\nallowed-tools:\n  - Figma\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.9\n---\n\n# Summarize whiteboard\n\nConvert a board into structured notes and action items.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Figma and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: whiteboard-summarizer\ndescription: Convert a board into structured notes and action items.\nallowed-tools:\n  - Figma\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.9\n---\n\nConvert a board into structured notes and action items.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Figma and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-01-01T00:00:00.000Z"
@@ -1545,7 +1555,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 2736,
 		"verified": true,
-		"skillMd": "---\nname: figma-design-context\ndescription: Summarize frames and connect UI work to design intent.\nallowed-tools:\n  - Confluence\n  - Lucidchart\nlicense: Proprietary\nversion: 1.4.2\n---\n\n# Get Figma context\n\nSummarize frames and connect UI work to design intent.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence and Lucidchart to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: figma-design-context\ndescription: Summarize frames and connect UI work to design intent.\nallowed-tools:\n  - Confluence\n  - Lucidchart\nlicense: Proprietary\nversion: 1.4.2\n---\n\nSummarize frames and connect UI work to design intent.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Confluence and Lucidchart to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-06T00:00:00.000Z"
@@ -1570,7 +1580,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 23332,
 		"verified": true,
-		"skillMd": "---\nname: miro-board-synth\ndescription: Turn a workshop board into prioritized follow-up work.\nallowed-tools:\n  - Lucidchart\n  - Figma\nlicense: Proprietary\nversion: 1.2.0\n---\n\n# Synthesize Miro board\n\nTurn a workshop board into prioritized follow-up work.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart and Figma to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: miro-board-synth\ndescription: Turn a workshop board into prioritized follow-up work.\nallowed-tools:\n  - Lucidchart\n  - Figma\nlicense: Proprietary\nversion: 1.2.0\n---\n\nTurn a workshop board into prioritized follow-up work.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart and Figma to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-30T00:00:00.000Z"
@@ -1595,7 +1605,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 6799,
 		"verified": true,
-		"skillMd": "---\nname: lucid-diagram-finder\ndescription: Search documents and diagrams across Lucid.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.2\n---\n\n# Find Lucid diagram\n\nSearch documents and diagrams across Lucid.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
+		"skillMd": "---\nname: lucid-diagram-finder\ndescription: Search documents and diagrams across Lucid.\nallowed-tools:\n  - Lucidchart\n  - Figma\n  - Confluence\nlicense: Proprietary\nversion: 1.5.2\n---\n\nSearch documents and diagrams across Lucid.\n\n## When to use\n\nUse this skill when the user is designing, mapping, or visualizing a system or interface. It draws on Lucidchart, Figma, and Confluence to do the work.\n\n## Instructions\n\n1. Understand the problem and the audience for the artifact.\n2. Draft the structure, then refine layout, hierarchy, and detail.\n3. Review against the intent and prepare it for sharing.\n\n## Output\n\nA polished, shareable design artifact with deliberate choices.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-20T00:00:00.000Z"
@@ -1619,7 +1629,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 6748,
 		"verified": true,
-		"skillMd": "---\nname: access-review\ndescription: Run a periodic review of user access and roles.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.7\n---\n\n# Access review\n\nRun a periodic review of user access and roles.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: access-review\ndescription: Run a periodic review of user access and roles.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.7\n---\n\nRun a periodic review of user access and roles.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-03-20T00:00:00.000Z"
@@ -1643,7 +1653,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 7508,
 		"verified": true,
-		"skillMd": "---\nname: permission-audit\ndescription: Audit space, project, and content permissions for risk.\nallowed-tools:\n  - Splunk\n  - Jira\nlicense: Proprietary\nversion: 1.2.6\n---\n\n# Permission audit\n\nAudit space, project, and content permissions for risk.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Splunk and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: permission-audit\ndescription: Audit space, project, and content permissions for risk.\nallowed-tools:\n  - Splunk\n  - Jira\nlicense: Proprietary\nversion: 1.2.6\n---\n\nAudit space, project, and content permissions for risk.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Splunk and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-11-25T00:00:00.000Z"
@@ -1667,7 +1677,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 13646,
 		"verified": true,
-		"skillMd": "---\nname: policy-drafter\ndescription: Generate a security or compliance policy page.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.6\n---\n\n# Draft security policy\n\nGenerate a security or compliance policy page.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: policy-drafter\ndescription: Generate a security or compliance policy page.\nallowed-tools:\n  - Jira\n  - Confluence\nlicense: Apache-2.0\nversion: 1.0.6\n---\n\nGenerate a security or compliance policy page.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira and Confluence to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Linear",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-07T00:00:00.000Z"
@@ -1691,7 +1701,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 19173,
 		"verified": true,
-		"skillMd": "---\nname: audit-trail-reporter\ndescription: Compile audit-log evidence for a control or incident.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.3\n---\n\n# Audit trail report\n\nCompile audit-log evidence for a control or incident.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: audit-trail-reporter\ndescription: Compile audit-log evidence for a control or incident.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.3\n---\n\nCompile audit-log evidence for a control or incident.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-12T00:00:00.000Z"
@@ -1715,7 +1725,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 5933,
 		"verified": true,
-		"skillMd": "---\nname: compliance-check\ndescription: Check changes against your compliance controls.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.0\n---\n\n# Compliance check\n\nCheck changes against your compliance controls.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: compliance-check\ndescription: Check changes against your compliance controls.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.0\n---\n\nCheck changes against your compliance controls.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-25T00:00:00.000Z"
@@ -1739,7 +1749,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 7537,
 		"verified": true,
-		"skillMd": "---\nname: data-residency-review\ndescription: Review where regulated data is stored and accessed.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.7\n---\n\n# Data residency review\n\nReview where regulated data is stored and accessed.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: data-residency-review\ndescription: Review where regulated data is stored and accessed.\nallowed-tools:\n  - Confluence\n  - Splunk\n  - Jira\nlicense: MIT\nversion: 1.1.7\n---\n\nReview where regulated data is stored and accessed.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Confluence, Splunk, and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-03-14T00:00:00.000Z"
@@ -1764,7 +1774,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 6484,
 		"verified": true,
-		"skillMd": "---\nname: vulnerability-triage\ndescription: Prioritize and route security findings from monitoring.\nallowed-tools:\n  - Splunk\n  - Jira\nlicense: Proprietary\nversion: 1.2.2\n---\n\n# Vulnerability triage\n\nPrioritize and route security findings from monitoring.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Splunk and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: vulnerability-triage\ndescription: Prioritize and route security findings from monitoring.\nallowed-tools:\n  - Splunk\n  - Jira\nlicense: Proprietary\nversion: 1.2.2\n---\n\nPrioritize and route security findings from monitoring.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Splunk and Jira to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "Figma",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-14T00:00:00.000Z"
@@ -1789,7 +1799,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
 		"teammateCount": 22657,
 		"verified": true,
-		"skillMd": "---\nname: incident-disclosure\ndescription: Prepare a clear customer disclosure after an incident.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Splunk\nlicense: Apache-2.0\nversion: 1.3.8\n---\n\n# Draft incident disclosure\n\nPrepare a clear customer disclosure after an incident.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira, Confluence, and Splunk to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
+		"skillMd": "---\nname: incident-disclosure\ndescription: Prepare a clear customer disclosure after an incident.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Splunk\nlicense: Apache-2.0\nversion: 1.3.8\n---\n\nPrepare a clear customer disclosure after an incident.\n\n## When to use\n\nUse this skill when the user needs to assess, harden, or document security and compliance posture. It draws on Jira, Confluence, and Splunk to do the work.\n\n## Instructions\n\n1. Scope the assessment and the standards it maps to.\n2. Inspect the connected systems and evidence for gaps.\n3. Report findings ranked by risk with concrete remediations.\n\n## Output\n\nA risk-ranked findings report with actionable remediations.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-05T00:00:00.000Z"
@@ -1814,7 +1824,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 17905,
 		"verified": true,
-		"skillMd": "---\nname: user-manual-writer\ndescription: Draft a personal 'how to work with me' manual.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: MIT\nversion: 1.1.3\n---\n\n# Write user manual\n\nDraft a personal 'how to work with me' manual.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: user-manual-writer\ndescription: Draft a personal 'how to work with me' manual.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: MIT\nversion: 1.1.3\n---\n\nDraft a personal 'how to work with me' manual.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Notion",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-02-17T00:00:00.000Z"
@@ -1839,7 +1849,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 7674,
 		"verified": true,
-		"skillMd": "---\nname: onboarding-plan\ndescription: Create a structured new-hire onboarding plan.\nallowed-tools:\n  - Confluence\n  - Slack\nlicense: Apache-2.0\nversion: 1.0.1\n---\n\n# Build onboarding plan\n\nCreate a structured new-hire onboarding plan.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Confluence and Slack to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: onboarding-plan\ndescription: Create a structured new-hire onboarding plan.\nallowed-tools:\n  - Confluence\n  - Slack\nlicense: Apache-2.0\nversion: 1.0.1\n---\n\nCreate a structured new-hire onboarding plan.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Confluence and Slack to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-13T00:00:00.000Z"
@@ -1863,7 +1873,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 3948,
 		"verified": true,
-		"skillMd": "---\nname: create-teams\ndescription: Set up a team with members, roles, and a charter.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.3\n---\n\n# Create team\n\nSet up a team with members, roles, and a charter.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: create-teams\ndescription: Set up a team with members, roles, and a charter.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.3\n---\n\nSet up a team with members, roles, and a charter.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Linear",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-01-27T00:00:00.000Z"
@@ -1888,7 +1898,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 4190,
 		"verified": true,
-		"skillMd": "---\nname: team-health-survey-skill\ndescription: Generate and summarize a team pulse survey.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.8\n---\n\n# Team health survey\n\nGenerate and summarize a team pulse survey.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: team-health-survey-skill\ndescription: Generate and summarize a team pulse survey.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.8\n---\n\nGenerate and summarize a team pulse survey.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-18T00:00:00.000Z"
@@ -1912,7 +1922,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/platform",
 		"teammateCount": 2459,
 		"verified": true,
-		"skillMd": "---\nname: offboarding-checklist\ndescription: Produce an offboarding access and asset checklist.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: MIT\nversion: 1.1.5\n---\n\n# Offboarding checklist\n\nProduce an offboarding access and asset checklist.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: offboarding-checklist\ndescription: Produce an offboarding access and asset checklist.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: MIT\nversion: 1.1.5\n---\n\nProduce an offboarding access and asset checklist.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-21T00:00:00.000Z"
@@ -1937,7 +1947,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
 		"teammateCount": 1432,
 		"verified": true,
-		"skillMd": "---\nname: team-building-planner\ndescription: Suggest and plan team rituals and activities.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.7\n---\n\n# Plan team activity\n\nSuggest and plan team rituals and activities.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: team-building-planner\ndescription: Suggest and plan team rituals and activities.\nallowed-tools:\n  - Slack\n  - Workday\nlicense: MIT\nversion: 1.4.7\n---\n\nSuggest and plan team rituals and activities.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack and Workday to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-06T00:00:00.000Z"
@@ -1962,7 +1972,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 24317,
 		"verified": true,
-		"skillMd": "---\nname: workday-people-lookup\ndescription: Find people, roles, and org details in Workday.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: Proprietary\nversion: 1.1.1\n---\n\n# Look up in Workday\n\nFind people, roles, and org details in Workday.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: workday-people-lookup\ndescription: Find people, roles, and org details in Workday.\nallowed-tools:\n  - Slack\n  - Workday\n  - Confluence\nlicense: Proprietary\nversion: 1.1.1\n---\n\nFind people, roles, and org details in Workday.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Slack, Workday, and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-02-06T00:00:00.000Z"
@@ -1986,7 +1996,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
 		"teammateCount": 18006,
 		"verified": false,
-		"skillMd": "---\nname: hiring-jd-drafter\ndescription: Write an inclusive, role-specific job description.\nallowed-tools:\n  - Workday\n  - Confluence\nlicense: Proprietary\nversion: 1.2.2\n---\n\n# Draft job description\n\nWrite an inclusive, role-specific job description.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Workday and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
+		"skillMd": "---\nname: hiring-jd-drafter\ndescription: Write an inclusive, role-specific job description.\nallowed-tools:\n  - Workday\n  - Confluence\nlicense: Proprietary\nversion: 1.2.2\n---\n\nWrite an inclusive, role-specific job description.\n\n## When to use\n\nUse this skill when the user is supporting people, teams, or culture work. It draws on Workday and Confluence to do the work.\n\n## Instructions\n\n1. Clarify the need and the people it affects.\n2. Gather the relevant context from the connected sources.\n3. Produce the output and flag anything that needs a human touch.\n\n## Output\n\nA thoughtful, people-first result ready to review.\n",
 		"createdBy": "Venn",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-09-14T00:00:00.000Z"
@@ -2011,7 +2021,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 23315,
 		"verified": true,
-		"skillMd": "---\nname: account-brief-builder\ndescription: Compile a one-page account summary before a call.\nallowed-tools:\n  - Slack\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.5.5\n---\n\n# Build account brief\n\nCompile a one-page account summary before a call.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Slack, Salesforce, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: account-brief-builder\ndescription: Compile a one-page account summary before a call.\nallowed-tools:\n  - Slack\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.5.5\n---\n\nCompile a one-page account summary before a call.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Slack, Salesforce, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-04-20T00:00:00.000Z"
@@ -2036,7 +2046,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 24570,
 		"verified": true,
-		"skillMd": "---\nname: renewal-risk-flagger\ndescription: Identify accounts at churn or renewal risk.\nallowed-tools:\n  - Jira\n  - Slack\nlicense: MIT\nversion: 1.4.3\n---\n\n# Flag renewal risk\n\nIdentify accounts at churn or renewal risk.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: renewal-risk-flagger\ndescription: Identify accounts at churn or renewal risk.\nallowed-tools:\n  - Jira\n  - Slack\nlicense: MIT\nversion: 1.4.3\n---\n\nIdentify accounts at churn or renewal risk.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-01-28T00:00:00.000Z"
@@ -2060,7 +2070,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 1633,
 		"verified": true,
-		"skillMd": "---\nname: customer-insights\ndescription: Summarize feedback themes across customer data.\nallowed-tools:\n  - Jira\n  - Slack\n  - Salesforce\nlicense: MIT\nversion: 1.1.3\n---\n\n# Customer insights\n\nSummarize feedback themes across customer data.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira, Slack, and Salesforce to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: customer-insights\ndescription: Summarize feedback themes across customer data.\nallowed-tools:\n  - Jira\n  - Slack\n  - Salesforce\nlicense: MIT\nversion: 1.1.3\n---\n\nSummarize feedback themes across customer data.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira, Slack, and Salesforce to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-07-11T00:00:00.000Z"
@@ -2085,7 +2095,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
 		"teammateCount": 17155,
 		"verified": true,
-		"skillMd": "---\nname: deal-desk\ndescription: Review deals and route approvals through the deal desk.\nallowed-tools:\n  - Slack\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.5.1\n---\n\n# Deal desk\n\nReview deals and route approvals through the deal desk.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Slack, Salesforce, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: deal-desk\ndescription: Review deals and route approvals through the deal desk.\nallowed-tools:\n  - Slack\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.5.1\n---\n\nReview deals and route approvals through the deal desk.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Slack, Salesforce, and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-29T00:00:00.000Z"
@@ -2109,7 +2119,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 14641,
 		"verified": true,
-		"skillMd": "---\nname: capture-insights\ndescription: Capture and structure insights from customer conversations.\nallowed-tools:\n  - Salesforce\n  - Jira\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\n# Capture insights\n\nCapture and structure insights from customer conversations.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce, Jira, and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: capture-insights\ndescription: Capture and structure insights from customer conversations.\nallowed-tools:\n  - Salesforce\n  - Jira\n  - Slack\nlicense: Apache-2.0\nversion: 1.3.4\n---\n\nCapture and structure insights from customer conversations.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce, Jira, and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-10-31T00:00:00.000Z"
@@ -2134,7 +2144,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 17016,
 		"verified": true,
-		"skillMd": "---\nname: salesforce-deal-finder\ndescription: Surface deals, leads, and account activity.\nallowed-tools:\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.0.0\n---\n\n# Find Salesforce deal\n\nSurface deals, leads, and account activity.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: salesforce-deal-finder\ndescription: Surface deals, leads, and account activity.\nallowed-tools:\n  - Salesforce\n  - Jira\nlicense: Proprietary\nversion: 1.0.0\n---\n\nSurface deals, leads, and account activity.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce and Jira to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Slack",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-08-23T00:00:00.000Z"
@@ -2159,7 +2169,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 1320,
 		"verified": true,
-		"skillMd": "---\nname: hubspot-contact-finder\ndescription: Locate contacts and deals across HubSpot.\nallowed-tools:\n  - Jira\n  - Slack\nlicense: Proprietary\nversion: 1.4.7\n---\n\n# Find HubSpot contact\n\nLocate contacts and deals across HubSpot.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: hubspot-contact-finder\ndescription: Locate contacts and deals across HubSpot.\nallowed-tools:\n  - Jira\n  - Slack\nlicense: Proprietary\nversion: 1.4.7\n---\n\nLocate contacts and deals across HubSpot.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Jira and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Atlassian",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-03-17T00:00:00.000Z"
@@ -2184,7 +2194,7 @@
 		"collectionDocsUrl": "https://marketplace.atlassian.com",
 		"teammateCount": 1199,
 		"verified": true,
-		"skillMd": "---\nname: zendesk-ticket-summary\ndescription: Summarize a support ticket and suggest next steps.\nallowed-tools:\n  - Salesforce\n  - Jira\n  - Slack\nlicense: Proprietary\nversion: 1.3.1\n---\n\n# Summarize Zendesk ticket\n\nSummarize a support ticket and suggest next steps.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce, Jira, and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
+		"skillMd": "---\nname: zendesk-ticket-summary\ndescription: Summarize a support ticket and suggest next steps.\nallowed-tools:\n  - Salesforce\n  - Jira\n  - Slack\nlicense: Proprietary\nversion: 1.3.1\n---\n\nSummarize a support ticket and suggest next steps.\n\n## When to use\n\nUse this skill when the user is managing deals, accounts, or customer relationships. It draws on Salesforce, Jira, and Slack to do the work.\n\n## Instructions\n\n1. Confirm the account, the stage, and the desired outcome.\n2. Pull the latest from the connected CRM and conversation history.\n3. Produce the output and recommend the next best action.\n\n## Output\n\nA customer-ready output with a recommended next step.\n",
 		"createdBy": "Zoom",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-01-22T00:00:00.000Z"
@@ -2208,7 +2218,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 20953,
 		"verified": true,
-		"skillMd": "---\nname: prioritize-ideas\ndescription: Score and rank ideas against impact and effort.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Trello\nlicense: Apache-2.0\nversion: 1.3.0\n---\n\n# Prioritize ideas\n\nScore and rank ideas against impact and effort.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira, Confluence, and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
+		"skillMd": "---\nname: prioritize-ideas\ndescription: Score and rank ideas against impact and effort.\nallowed-tools:\n  - Jira\n  - Confluence\n  - Trello\nlicense: Apache-2.0\nversion: 1.3.0\n---\n\nScore and rank ideas against impact and effort.\n\n## When to use\n\nUse this skill when the user needs to plan, break down, or track delivery work. It draws on Jira, Confluence, and Trello to do the work.\n\n## Instructions\n\n1. Clarify the goal, scope, and the timeframe you are planning against.\n2. Pull the current state from the connected apps and identify gaps or blockers.\n3. Produce the breakdown — work items, owners, and estimates — and confirm dependencies.\n\n## Output\n\nA delivery-ready plan with owned work items, estimates, and called-out risks.\n",
 		"createdBy": "Anthropic",
 		"addedBy": "You",
 		"lastUpdatedAt": "2026-05-11T00:00:00.000Z"
@@ -2232,7 +2242,7 @@
 		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
 		"teammateCount": 19823,
 		"verified": true,
-		"skillMd": "---\nname: prd-builder\ndescription: Draft a product requirements doc with goals and risks.\nallowed-tools:\n  - Loom\n  - Confluence\n  - Slack\nlicense: Proprietary\nversion: 1.5.3\n---\n\n# Build PRD\n\nDraft a product requirements doc with goals and risks.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Loom, Confluence, and Slack to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
+		"skillMd": "---\nname: prd-builder\ndescription: Draft a product requirements doc with goals and risks.\nallowed-tools:\n  - Loom\n  - Confluence\n  - Slack\nlicense: Proprietary\nversion: 1.5.3\n---\n\nDraft a product requirements doc with goals and risks.\n\n## When to use\n\nUse this skill when the user needs to draft, summarize, or shape written communication. It draws on Loom, Confluence, and Slack to do the work.\n\n## Instructions\n\n1. Read the source material and identify the audience and intent.\n2. Draft the content, leading with the outcome the reader cares about.\n3. Tighten for clarity and flag anything that needs a human decision.\n\n## Output\n\nAudience-ready copy you can edit before sharing.\n",
 		"createdBy": "GitHub",
 		"addedBy": "You",
 		"lastUpdatedAt": "2025-06-19T00:00:00.000Z"

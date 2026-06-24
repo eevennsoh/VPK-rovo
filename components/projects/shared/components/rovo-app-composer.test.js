@@ -173,14 +173,18 @@ test("shared composer forwards screen-assistant target prefixes to cursor contro
 
 test("RovoAppComposer forwards directory autocomplete control to both composer bodies", () => {
 	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible\?: boolean;/u);
+	assert.match(COMPOSER_SOURCE, /directoryAutocompleteLimit\?: number;/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteChange\?: \(state: DirectoryAutocompleteState \| null\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteControllerChange\?: \(controller: ComposerDirectoryAutocompleteController \| null\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible = false/u);
+	assert.match(COMPOSER_SOURCE, /directoryAutocompleteLimit,/u);
 	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible,/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteChange,/u);
 	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteControllerChange,/u);
-	assert.match(CARD_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
-	assert.match(FLOATING_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
+	assert.match(PROMPT_INPUT_SOURCE, /directoryAutocompleteLimit\?: number;/u);
+	assert.match(PROMPT_INPUT_SOURCE, /limit: directoryAutocompleteLimitRef\.current/u);
+	assert.match(CARD_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*directoryAutocompleteLimit=\{directoryAutocompleteLimit\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
+	assert.match(FLOATING_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*directoryAutocompleteLimit=\{directoryAutocompleteLimit\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
 });
 
 test("RovoAppComposer opts both shared bodies into visual trace auto-tagging", () => {

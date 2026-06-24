@@ -29,7 +29,7 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.ok(viewAllSkillsIndex > createSpaceIndex);
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<FolderAddIcon label="" \/>\}[\s\S]*Create space/u);
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<SkillIcon label="" \/>\}[\s\S]*View all skills/u);
-	assert.match(SOURCE, /<ChatPanel[\s\S]*addMenuItemsBefore=\{addMenuItemsBefore\}/u);
+	assert.match(SOURCE, /<ChatPanel[\s\S]*addMenuItemsBefore=\{addMenuItemsBefore\}[\s\S]*autoFocusComposer/u);
 	// The directory dialog is shared with the create-skill config view, so its
 	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
@@ -39,6 +39,8 @@ test("Skills project add menu opens the experimental skills directory", () => {
 
 test("Create-skill question traces collapse while awaiting user response", () => {
 	assert.match(TRACE_CARD_SOURCE, /const isAwaiting = payload\.awaiting === true;/u);
+	assert.match(TRACE_CARD_SOURCE, /const ACTIVE_BYLINE_CYCLE_MS = 1200;/u);
+	assert.match(TRACE_CARD_SOURCE, /step\.status === "active"[\s\S]*activeStepBylines\[activeBylineIndex/u);
 	assert.match(TRACE_CARD_SOURCE, /key=\{isAwaiting \? "awaiting" : "active"\}/u);
 	assert.match(TRACE_CARD_SOURCE, /<ChainOfThoughtScenario[\s\S]*defaultOpen=\{!isAwaiting\}/u);
 	assert.match(TRACE_CARD_SOURCE, /Awaiting user response/u);
@@ -51,17 +53,19 @@ test("Generated skill result card renders after the assistant description text",
 	);
 
 	assert.match(positionSource, /if \(widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE\) \{[\s\S]*return "after-content";[\s\S]*\}/u);
-	assert.match(positionSource, /widgetType === SKILL_INVOCATION_WIDGET_TYPE \|\|[\s\S]*widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE[\s\S]*return "before-content";/u);
+	assert.match(positionSource, /if \(widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE\) \{[\s\S]*return "before-content";[\s\S]*\}/u);
 });
 
-test("Create-skill commands are intercepted before the keyword invocation fallback", () => {
+test("Hard-coded skill starters fall through to normal Rovo chat", () => {
 	const interceptSource = SOURCE.slice(
 		SOURCE.indexOf("const onInterceptSubmit = useCallback"),
 		SOURCE.indexOf("const resolveComposerPlaceholder = useCallback"),
 	);
 	const createSkillIndex = interceptSource.indexOf("if (hasCreateSkillMention(text))");
-	const fallbackIndex = interceptSource.indexOf("return buildSkillInterceptOutcome(text)");
+	const normalChatFallbackIndex = interceptSource.indexOf("return { handled: false };");
 
 	assert.ok(createSkillIndex > -1);
-	assert.ok(fallbackIndex > createSkillIndex);
+	assert.ok(normalChatFallbackIndex > createSkillIndex);
+	assert.doesNotMatch(SOURCE, /buildSkillInterceptOutcome/u);
+	assert.doesNotMatch(SOURCE, /SKILL_INVOCATION_WIDGET_TYPE/u);
 });

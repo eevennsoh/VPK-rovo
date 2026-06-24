@@ -61,7 +61,6 @@
 	color: var(--ds-text-subtle, #6b778c);
 }
 
-.tiptap-editor h1:first-child,
 .tiptap-editor h2:first-child,
 .tiptap-editor h3:first-child,
 .tiptap-editor h4:first-child,
@@ -73,10 +72,10 @@
 /*
  * The frontmatter node is the document's structural first child (its card is
  * portaled above the toolbar in skill config), so the heading/element right
- * after it is the real first textual element. Drop its top margin so the body
- * starts flush — same intent as the `:first-child` rule above.
+ * after it is the real first textual element. Keep H1 body titles on the
+ * standard heading rhythm while non-H1 first textual elements start flush.
  */
-.tiptap-editor > .node-frontmatter + * {
+.tiptap-editor > .node-frontmatter + :not(h1) {
 	margin-top: 0;
 }
 

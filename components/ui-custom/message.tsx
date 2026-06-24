@@ -820,7 +820,7 @@ export const MessageResponse = memo(
 					easing: "ease-out",
 				}}
 				className={cn(
-					"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden",
+					"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h1]:mt-6 [&>h1:first-child]:mt-6 [&_[data-streamdown=mermaid-block]]:overflow-hidden",
 					className,
 				)}
 				mode="streaming"

@@ -253,6 +253,8 @@ interface ChatPanelProps {
 	 * 24px horizontal inset.
 	 */
 	composerContainerClassName?: string;
+	/** Opt-in first-render focus for host surfaces where the composer is primary. */
+	autoFocusComposer?: boolean;
 	/**
 	 * When true, the bottom-aligned Test greeting reserves vertical space equal
 	 * to a single-line chat context bar below its last conversation starter.
@@ -455,6 +457,7 @@ export default function ChatPanel({
 	onAgentVersionChange,
 	conversationContentClassName,
 	composerContainerClassName,
+	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
@@ -1831,6 +1834,7 @@ export default function ChatPanel({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						focusRequestKey={composerFocusRequestKey}
+						autoFocus={autoFocusComposer}
 						clickyActive={!hideAiCursor && (isClickyActive || isLocalConversationActive)}
 						onPromptChange={setPrompt}
 						onStartDictation={handleStartDictation}

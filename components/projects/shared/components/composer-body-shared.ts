@@ -14,6 +14,7 @@ export interface ComposerBodyBaseProps {
 	clickyActive: boolean;
 	composerStatus: ChatStatus;
 	directoryAutocompleteListVisible: boolean;
+	directoryAutocompleteLimit?: number;
 	dictationState: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
 	focusRequestKey: number | undefined;

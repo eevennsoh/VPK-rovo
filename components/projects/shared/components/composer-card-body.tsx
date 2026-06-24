@@ -48,6 +48,7 @@ export function ComposerCardBody({
 	compact,
 	composerStatus,
 	directoryAutocompleteListVisible,
+	directoryAutocompleteLimit,
 	dictationState,
 	dictationTranscriptPreview,
 	experimentalDarkCta,
@@ -166,6 +167,7 @@ export function ComposerCardBody({
 						autoResize={!composerHeight}
 						className={cn(composerTextareaClassName, composerHeight ? "h-full max-h-none min-h-0" : undefined)}
 						directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+						directoryAutocompleteLimit={directoryAutocompleteLimit}
 						enableVisualTraceAutoTagging
 						onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 						onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}

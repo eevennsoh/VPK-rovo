@@ -150,7 +150,8 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	assert.match(source, /function SkillMoreMenu/u);
 	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
 	assert.match(source, /Learn more/u);
-	assert.match(source, /elemBefore=\{favorite \? <StarStarredIcon label="" \/> : <StarUnstarredIcon label="" \/>\}/u);
+	assert.doesNotMatch(source, /StarStarredIcon/u);
+	assert.doesNotMatch(source, /StarUnstarredIcon/u);
 	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
 	assert.match(source, /function SelectedSkillsFooter/u);
 	assert.match(source, /<DialogFooter[\s\S]*aria-label="Selected skills actions"[\s\S]*role="toolbar"/u);
@@ -216,7 +217,7 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	// and a Save/Cancel footer; draft state lives in the shared useSkillMdDraft hook.
 	assert.match(source, /profileCover=\{<SkillProfileCover skill=\{skill\} \/>\}/u);
 	assert.match(source, /profileMetaSlot=\{<SkillProfileMeta skill=\{skill\} \/>\}/u);
-	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-4"/u);
+	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-0 \[&>\*:first-child\]:mt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-8"/u);
 	assert.match(source, /useSkillMdDraft\(skill, initialDraft\)/u);
 	assert.match(source, /function handleSave\(\)/u);
 	assert.match(source, /function handleCancel\(\)/u);

@@ -181,6 +181,18 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 	assert.match(sidebarComposer, /rounded-xl border border-border bg-surface px-3 pb-3 pt-4/u);
 });
 
+test("compact chat composer supports opt-in first-render autofocus", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /autoFocusComposer\?: boolean;/u);
+	assert.match(sidebarPanel, /autoFocusComposer = false/u);
+	assert.match(sidebarPanel, /autoFocus=\{autoFocusComposer\}/u);
+	assert.match(sidebarComposer, /autoFocus\?: boolean;/u);
+	assert.match(sidebarComposer, /autoFocus = false/u);
+	assert.match(sidebarComposer, /<PromptInputTextarea[\s\S]*autoFocus=\{autoFocus\}/u);
+});
+
 test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const promptInput = readProjectFile("components/ui-custom/prompt-input.tsx");

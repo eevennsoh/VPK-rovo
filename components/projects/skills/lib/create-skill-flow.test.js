@@ -70,12 +70,15 @@ test("stage 1 animates a trace then awaits with a question card", async () => {
 	assert.equal(pending[0].data.payload.headerState, "thinking");
 	assert.deepEqual(pending[0].data.payload.steps.map((step) => step.id), ["read"]);
 	assert.equal(pending[0].data.payload.steps[0].status, "active");
+	assert.equal(pending[0].data.payload.steps[0].bylines[0], pending[0].data.payload.steps[0].byline);
+	assert.ok(pending[0].data.payload.steps[0].bylines.length > 1);
 
 	assert.equal(stage.assistantPartStages.length, 3);
 	const invokeFrame = stage.assistantPartStages[0].getAssistantParts(ctx)[0].data.payload;
 	assert.deepEqual(invokeFrame.steps.map((step) => step.id), ["read", "invoke"]);
 	assert.deepEqual(invokeFrame.steps.map((step) => step.status), ["complete", "active"]);
 	assert.equal(invokeFrame.steps[1].skillMention, "create-skill");
+	assert.ok(invokeFrame.steps[1].bylines.length > 1);
 
 	const questionPrepFrame = stage.assistantPartStages[1].getAssistantParts(ctx)[0].data.payload;
 	assert.deepEqual(questionPrepFrame.steps.map((step) => step.id), ["read", "invoke", "questions"]);
@@ -100,6 +103,7 @@ test("stage 1 animates a trace then awaits with a question card", async () => {
 	assert.ok(questionPart.data.payload.maxRounds > questionPart.data.payload.round);
 	assert.ok(questionPart.data.payload.questions.length >= 1);
 	assert.ok(questionPart.data.payload.questions.length <= 4);
+	assert.equal(questionPart.data.payload.questions[2].label, "Which apps should it use?");
 });
 
 test("stage 2 reveals build steps sequentially before rendering the result", async () => {
@@ -111,6 +115,8 @@ test("stage 2 reveals build steps sequentially before rendering the result", asy
 	const pending = stage.getPendingAssistantParts(ctx)[0].data.payload;
 	assert.deepEqual(pending.steps.map((step) => step.id), ["review"]);
 	assert.deepEqual(pending.steps.map((step) => step.status), ["active"]);
+	assert.equal(pending.steps[0].bylines[0], pending.steps[0].byline);
+	assert.ok(pending.steps[0].bylines.length > 1);
 
 	const stagedStepIds = stage.assistantPartStages.slice(0, 3).map((step) =>
 		step.getAssistantParts(ctx)[0].data.payload.steps.map((traceStep) => traceStep.id),
@@ -138,6 +144,7 @@ test("derives a believable skill from a free-form prompt (deterministic)", async
 	assert.equal(a.source, "custom");
 	assert.equal(a.collectionId, "custom");
 	assert.ok(typeof a.skillMd === "string" && a.skillMd.includes(a.name));
+	assert.ok(!a.skillMd.includes(`\n# ${a.name}\n`), "skillMd body should not repeat the skill name as an H1");
 });
 
 test("stage 2 ends with the result card and fires onComplete", async () => {
