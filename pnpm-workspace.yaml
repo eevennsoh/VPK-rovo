@@ -4,6 +4,9 @@ packages:
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - undici
+  # Dev-only tooling; took latest ahead of the 7-day gate by explicit request.
+  - react-grab
+  - "@react-grab/*"
   # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
   # the public-supply-chain release-age gate does not apply.
   - "@atlassian/logo-third-party"

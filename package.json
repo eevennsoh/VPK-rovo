@@ -195,7 +195,7 @@
 		"eslint": "^10.5.0",
 		"eslint-config-next": "16.2.9",
 		"portless": "^0.13.1",
-		"react-grab": "^0.1.46",
+		"react-grab": "^0.1.47",
 		"shadcn": "^4.11.0",
 		"tailwindcss": "^4.3.1",
 		"typescript": "^6.0.3"
