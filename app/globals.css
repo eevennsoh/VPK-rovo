@@ -110,7 +110,11 @@
 
 	/* Global pointer cursor */
 	button:not(:disabled),
-	[role="button"]:not(:disabled) {
+	[role="button"]:not(:disabled),
+	[role="checkbox"]:not([aria-disabled="true"]),
+	[role="radio"]:not([aria-disabled="true"]),
+	[role="switch"]:not([aria-disabled="true"]),
+	input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"]):not(:disabled) {
 		cursor: pointer;
 	}
 

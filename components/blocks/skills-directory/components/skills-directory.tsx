@@ -20,6 +20,7 @@ import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkIcon from "@atlaskit/icon/core/link";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StarStarredIcon from "@atlaskit/icon/core/star-starred";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
@@ -44,7 +45,7 @@ import {
 } from "./skill-md-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -53,6 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { SplitButton } from "@/components/ui/split-button";
 import { Switch } from "@/components/ui/switch";
@@ -61,7 +63,6 @@ import {
 	type EntityCardSource,
 } from "@/components/ui-custom/entity-card";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import {
@@ -83,7 +84,6 @@ import {
 	getSkillPublisherName,
 	isSkillPublisherPerson,
 	slugifySkillName,
-	SKILL_COLLECTIONS,
 	type SkillCategory,
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
@@ -96,6 +96,7 @@ import {
 } from "../data/sidebar-groups";
 
 export type SkillsDirectoryAgent = AgentBrowserAgent;
+export type SkillsDirectorySelectionExperience = "checkbox-actions" | "studio-bulk-add" | "chat-single-add";
 export type SkillsDirectoryVariant = "default" | "experimental";
 export type { SkillsDirectorySkill } from "@/app/data/directory/skills";
 export type {
@@ -150,6 +151,14 @@ export interface SkillsDirectoryDialogProps {
 	open: boolean;
 	primaryItems?: readonly SkillsDirectoryPrimaryItem[];
 	selectedSkillIds?: readonly string[];
+	/**
+	 * Controls how browse-grid card clicks and selected-skill actions behave.
+	 * - `checkbox-actions`: legacy multi-select checkbox/actions flow.
+	 * - `studio-bulk-add`: card toggles multi-select; footer only confirms add.
+	 * - `chat-single-add`: card immediately adds one skill to the chat prompt; checkbox
+	 *   selection remains available for share/favourite/download actions.
+	 */
+	selectionExperience?: SkillsDirectorySelectionExperience;
 	sessionAgents?: readonly SkillsDirectoryAgent[];
 	sessionSkills?: readonly SkillsDirectorySkill[];
 	sidebarGroups?: readonly SkillsDirectorySidebarGroup[];
@@ -157,8 +166,8 @@ export interface SkillsDirectoryDialogProps {
 	title?: string;
 	/**
 	 * Opt-in layout variation. `"default"` keeps the left-sidebar directory.
-	 * `"experimental"` drops the sidebar and moves the collection/category/company
-	 * filters into a horizontal dropdown row above a flat, scroll-masked grid.
+	 * `"experimental"` drops the sidebar and moves user/company filters into a
+	 * horizontal row above a flat, scroll-masked grid.
 	 */
 	variant?: SkillsDirectoryVariant;
 }
@@ -318,6 +327,7 @@ export function SkillsDirectoryDialog({
 	open,
 	primaryItems = DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS,
 	selectedSkillIds,
+	selectionExperience = "checkbox-actions",
 	sessionAgents = EMPTY_AGENTS,
 	sessionSkills = EMPTY_SKILLS,
 	sidebarGroups = DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS,
@@ -334,10 +344,6 @@ export function SkillsDirectoryDialog({
 		() => [...sessionSkills, ...sessionAgents.map(normalizeAgentSkill)],
 		[sessionAgents, sessionSkills],
 	);
-	const directorySkills = useMemo(
-		() => [...baseSkills, ...normalizedSessionSkills],
-		[baseSkills, normalizedSessionSkills],
-	);
 	const [activeItem, setActiveItem] = useState<string>(primaryItems[0]?.id ?? "all-skills");
 	const [query, setQuery] = useState("");
 	// Experimental-variant filters live on the dialog (not inside
@@ -345,8 +351,14 @@ export function SkillsDirectoryDialog({
 	// unmounts while the detail page shows, mirroring how activeItem persists.
 	const [experimentalYourSkills, setExperimentalYourSkills] = useState(false);
 	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
-	const [experimentalCollections, setExperimentalCollections] = useState<readonly string[]>([]);
 	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
+	const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
+	const directorySkills = useMemo(
+		() => [...baseSkills, ...normalizedSessionSkills].map((skill) => (
+			skill.id in favoriteOverrides ? { ...skill, favorite: favoriteOverrides[skill.id] } : skill
+		)),
+		[baseSkills, favoriteOverrides, normalizedSessionSkills],
+	);
 	// Seeded from `initialDetailSkillId` so a chip click can open the dialog
 	// straight on a skill's detail/config view. Callers remount via `key` when the
 	// seed changes, so this initializer re-runs for each newly opened skill.
@@ -403,7 +415,7 @@ export function SkillsDirectoryDialog({
 		setSelectedDetailSkillId(null);
 	}
 
-	function handleSelectSkill(skill: SkillsDirectorySkill, checked?: boolean): void {
+	function handleToggleSelectedSkill(skill: SkillsDirectorySkill, checked?: boolean): void {
 		const nextSelectedIdSet = new Set(resolvedSelectedIds);
 		const nextChecked = checked ?? !nextSelectedIdSet.has(skill.id);
 
@@ -426,14 +438,35 @@ export function SkillsDirectoryDialog({
 		}
 	}
 
+	function handleCardSelectSkill(skill: SkillsDirectorySkill): void {
+		if (selectionExperience === "chat-single-add") {
+			onAddSkills?.([skill.id], [skill]);
+			onSelectSkill?.(skill);
+			handleOpenChange(false);
+			return;
+		}
+
+		if (selectionExperience === "studio-bulk-add") {
+			handleToggleSelectedSkill(skill);
+		}
+	}
+
+	function handleToggleFavoriteSkill(skill: SkillsDirectorySkill): void {
+		setFavoriteOverrides((current) => ({
+			...current,
+			[skill.id]: !skill.favorite,
+		}));
+	}
+
+	function handleSelectedSkillsAdd(): void {
+		handleBulkAction(onAddSkills);
+		commitSelectedIds([]);
+	}
+
 	function handleBulkAction(
 		callback?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void,
 	): void {
 		callback?.(resolvedSelectedIds, selectedSkills);
-	}
-
-	function handleClearSelection(): void {
-		commitSelectedIds([]);
 	}
 
 	function handleToggleSkillEnabled(skill: SkillsDirectorySkill, enabled: boolean): void {
@@ -477,7 +510,7 @@ export function SkillsDirectoryDialog({
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent
-				className="grid h-[min(800px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]"
+				className="grid h-[min(800px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-[1200px]"
 				showCloseButton={false}
 			>
 				{selectedDetailSkill ? (
@@ -513,17 +546,17 @@ export function SkillsDirectoryDialog({
 								addedIds={addedIdSet}
 								filterFavourites={experimentalFavourites}
 								filterYourSkills={experimentalYourSkills}
-								hasSelection={resolvedSelectedIds.length > 0}
 								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
-								onSelectSkill={handleSelectSkill}
+								onSelectSkill={handleCardSelectSkill}
+								onToggleFavoriteSkill={handleToggleFavoriteSkill}
+								onToggleSelectedSkill={handleToggleSelectedSkill}
 								query={query}
-								selectedCollections={experimentalCollections}
+								selectionExperience={selectionExperience}
 								selectedCompanies={experimentalCompanies}
 								selectedIds={selectedIdSet}
 								setFilterFavourites={setExperimentalFavourites}
 								setFilterYourSkills={setExperimentalYourSkills}
 								setQuery={setQuery}
-								setSelectedCollections={setExperimentalCollections}
 								setSelectedCompanies={setExperimentalCompanies}
 								skills={directorySkills}
 							/>
@@ -532,12 +565,14 @@ export function SkillsDirectoryDialog({
 								addedIds={addedIdSet}
 								activeItem={activeItem}
 								filteredSkills={filteredSkills}
-								hasSelection={resolvedSelectedIds.length > 0}
 								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
 								onSelectItem={setActiveItem}
-								onSelectSkill={handleSelectSkill}
+								onSelectSkill={handleCardSelectSkill}
+								onToggleFavoriteSkill={handleToggleFavoriteSkill}
+								onToggleSelectedSkill={handleToggleSelectedSkill}
 								primaryItems={primaryItems}
 								query={query}
+								selectionExperience={selectionExperience}
 								selectedIds={selectedIdSet}
 								setQuery={setQuery}
 								sidebarGroups={sidebarGroups}
@@ -545,13 +580,13 @@ export function SkillsDirectoryDialog({
 							/>
 						)}
 						{resolvedSelectedIds.length > 0 ? (
-							<SelectedSkillsToolbar
+							<SelectedSkillsFooter
 								count={resolvedSelectedIds.length}
-								onAddSkills={() => handleBulkAction(onAddSkills)}
-								onClear={handleClearSelection}
+								onAddSkills={handleSelectedSkillsAdd}
 								onCreateShareLink={() => handleBulkAction(onCreateShareLink)}
 								onDownloadSkills={() => handleBulkAction(onDownloadSkills)}
 								onFavoriteSkills={() => handleBulkAction(onFavoriteSkills)}
+								selectionExperience={selectionExperience}
 							/>
 						) : null}
 					</>
@@ -589,12 +624,14 @@ interface SkillsDirectoryViewProps {
 	addedIds: ReadonlySet<string>;
 	activeItem: string;
 	filteredSkills: readonly SkillsDirectorySkill[];
-	hasSelection: boolean;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
 	onSelectItem: (id: string) => void;
-	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
+	onSelectSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleFavoriteSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleSelectedSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
 	primaryItems: readonly SkillsDirectoryPrimaryItem[];
 	query: string;
+	selectionExperience: SkillsDirectorySelectionExperience;
 	selectedIds: ReadonlySet<string>;
 	setQuery: (query: string) => void;
 	sidebarGroups: readonly SkillsDirectorySidebarGroup[];
@@ -605,12 +642,14 @@ function SkillsDirectoryView({
 	addedIds,
 	activeItem,
 	filteredSkills,
-	hasSelection,
 	onLearnMore,
 	onSelectItem,
 	onSelectSkill,
+	onToggleFavoriteSkill,
+	onToggleSelectedSkill,
 	primaryItems,
 	query,
+	selectionExperience,
 	selectedIds,
 	setQuery,
 	sidebarGroups,
@@ -637,7 +676,6 @@ function SkillsDirectoryView({
 					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
 					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
 					"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
-					hasSelection && "pb-28",
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
@@ -670,6 +708,9 @@ function SkillsDirectoryView({
 						addedIds={addedIds}
 						onLearnMore={onLearnMore}
 						onSelectSkill={onSelectSkill}
+						onToggleFavoriteSkill={onToggleFavoriteSkill}
+						onToggleSelectedSkill={onToggleSelectedSkill}
+						selectionExperience={selectionExperience}
 						selectedIds={selectedIds}
 						skills={filteredSkills}
 					/>
@@ -685,7 +726,10 @@ interface SkillSectionProps {
 	/** Optional micro section header (e.g. "My skills"); omit for a single unlabeled grid. */
 	heading?: string;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
-	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
+	onSelectSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleFavoriteSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleSelectedSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
+	selectionExperience: SkillsDirectorySelectionExperience;
 	selectedIds: ReadonlySet<string>;
 	skills: readonly SkillsDirectorySkill[];
 }
@@ -696,9 +740,15 @@ function SkillSection({
 	heading,
 	onLearnMore,
 	onSelectSkill,
+	onToggleFavoriteSkill,
+	onToggleSelectedSkill,
+	selectionExperience,
 	selectedIds,
 	skills,
 }: Readonly<SkillSectionProps>) {
+	const checkboxSelectable = selectionExperience !== "studio-bulk-add";
+	const cardSelectable = selectionExperience !== "checkbox-actions";
+
 	return (
 		<section aria-label={heading ?? "Skills"} className={cn(heading && "flex flex-col gap-2")}>
 			{heading ? (
@@ -713,8 +763,11 @@ function SkillSection({
 						<li key={skill.id}>
 							<SkillsDirectoryEntityCard
 								added={addedIds.has(skill.id)}
+								checkboxSelectable={checkboxSelectable}
 								onLearnMore={() => onLearnMore(skill)}
-								onSelect={(checked) => onSelectSkill(skill, checked)}
+								onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+								onToggleFavorite={() => onToggleFavoriteSkill(skill)}
+								onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}
 								selected={selected}
 								skill={skill}
 							/>
@@ -729,8 +782,12 @@ function SkillSection({
 interface SkillsDirectoryEntityCardProps {
 	/** Skill is already on the agent — shows the persistent "added" check. */
 	added: boolean;
+	/** Shows the hover/focus checkbox affordance when the surface supports it. */
+	checkboxSelectable: boolean;
 	onLearnMore: () => void;
-	onSelect: (checked?: boolean) => void;
+	onSelect?: () => void;
+	onToggleFavorite: () => void;
+	onToggleSelected: (checked?: boolean) => void;
 	selected: boolean;
 	skill: SkillsDirectorySkill;
 }
@@ -757,7 +814,16 @@ function getSkillCardSource(skill: SkillsDirectorySkill): EntityCardSource {
 	};
 }
 
-function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
+function SkillsDirectoryEntityCard({
+	added,
+	checkboxSelectable,
+	onLearnMore,
+	onSelect,
+	onToggleFavorite,
+	onToggleSelected,
+	selected,
+	skill,
+}: Readonly<SkillsDirectoryEntityCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
 	return (
@@ -772,12 +838,16 @@ function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, ski
 				<SkillMoreMenu
 					onLearnMore={onLearnMore}
 					onOpenChange={setMoreMenuOpen}
+					onToggleFavorite={onToggleFavorite}
 					open={moreMenuOpen}
+					favorite={Boolean(skill.favorite)}
 					skillName={skill.name}
 				/>
 			}
 			name={skill.name}
+			onSelectedChange={onToggleSelected}
 			onSelect={onSelect}
+			selectable={checkboxSelectable}
 			selected={selected}
 			source={getSkillCardSource(skill)}
 			starCount={skill.starCount}
@@ -787,13 +857,17 @@ function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, ski
 }
 
 function SkillMoreMenu({
+	favorite,
 	onLearnMore,
 	onOpenChange,
+	onToggleFavorite,
 	open,
 	skillName,
 }: Readonly<{
+	favorite: boolean;
 	onLearnMore: () => void;
 	onOpenChange: (open: boolean) => void;
+	onToggleFavorite: () => void;
 	open: boolean;
 	skillName: string;
 }>) {
@@ -832,59 +906,76 @@ function SkillMoreMenu({
 				>
 					Learn more
 				</DropdownMenuItem>
+				<DropdownMenuItem
+					elemBefore={favorite ? <StarStarredIcon label="" /> : <StarUnstarredIcon label="" />}
+					onClick={stopPropagation}
+					onSelect={(event) => {
+						event.stopPropagation();
+						onToggleFavorite();
+					}}
+				>
+					{favorite ? "Unfavourite" : "Favourite"}
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
 }
 
-interface SelectedSkillsToolbarProps {
+interface SelectedSkillsFooterProps {
 	count: number;
 	onAddSkills: () => void;
-	onClear: () => void;
 	onCreateShareLink: () => void;
 	onDownloadSkills: () => void;
 	onFavoriteSkills: () => void;
+	selectionExperience: SkillsDirectorySelectionExperience;
 }
 
-function SelectedSkillsToolbar({
+function SelectedSkillsFooter({
 	count,
 	onAddSkills,
-	onClear,
 	onCreateShareLink,
 	onDownloadSkills,
 	onFavoriteSkills,
-}: Readonly<SelectedSkillsToolbarProps>) {
+	selectionExperience,
+}: Readonly<SelectedSkillsFooterProps>) {
+	const showUtilityActions = selectionExperience !== "studio-bulk-add";
+	const showAddButton = selectionExperience !== "chat-single-add";
+
 	return (
-		<div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6">
-			<div
-				aria-label="Selected skills actions"
-				aria-live="polite"
-				className="pointer-events-auto flex max-w-full items-center gap-2 overflow-x-auto rounded-lg bg-surface-overlay px-4 py-2 shadow-overlay"
-				role="toolbar"
-				style={{ boxShadow: token("elevation.shadow.overlay") }}
-			>
+		<DialogFooter
+			aria-label="Selected skills actions"
+			aria-live="polite"
+			className="flex-col items-stretch border-t border-border px-6 py-6 sm:flex-row sm:items-center sm:justify-between"
+			role="toolbar"
+		>
+			<div className="flex min-w-0 items-center gap-2">
 				<Badge>{count}</Badge>
 				<span className="shrink-0 text-sm font-medium leading-5 text-text">selected</span>
-				<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
-					<LinkIcon label="" />
-					Create link to share
-				</Button>
-				<Button onClick={onFavoriteSkills} size="default" type="button" variant="ghost">
-					<StarUnstarredIcon label="" />
-					Favorite
-				</Button>
-				<Button onClick={onDownloadSkills} size="default" type="button" variant="ghost">
-					<DownloadIcon label="" />
-					Download
-				</Button>
-				<Button onClick={onAddSkills} size="default" type="button">
-					Add skills
-				</Button>
-				<Button aria-label="Clear selected skills" onClick={onClear} size="icon" type="button" variant="ghost">
-					<CrossIcon label="" />
-				</Button>
 			</div>
-		</div>
+			<div className="flex max-w-full items-center gap-2 overflow-x-auto">
+				{showUtilityActions ? (
+					<>
+						<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
+							<LinkIcon label="" />
+							Create link to share
+						</Button>
+						<Button onClick={onFavoriteSkills} size="default" type="button" variant="ghost">
+							<StarUnstarredIcon label="" />
+							Favorite
+						</Button>
+						<Button onClick={onDownloadSkills} size="default" type="button" variant="ghost">
+							<DownloadIcon label="" />
+							Download
+						</Button>
+					</>
+				) : null}
+				{showAddButton ? (
+					<Button onClick={onAddSkills} size="default" type="button">
+						Add skills
+					</Button>
+				) : null}
+			</div>
+		</DialogFooter>
 	);
 }
 
@@ -921,7 +1012,7 @@ function SkillDetailHeader({
 	title,
 }: Readonly<SkillDetailHeaderProps>) {
 	return (
-		<div className="flex items-center justify-between border-b border-border px-6 py-4">
+		<div className="flex items-center justify-between border-b border-border px-6 py-6">
 			<div className="flex min-w-0 items-center gap-2">
 				<Button
 					aria-label="Back to skills"
@@ -1135,7 +1226,7 @@ function SkillDetailConfig({
 						    the fold and never shows. */}
 						<AgentContent className="flex min-h-0 flex-1 flex-col py-0">
 							<AgentConfigFields
-								compactScrollAreaClassName="pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
+								compactScrollAreaClassName="-mr-6 pr-6 pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
 								config={config}
 								idPrefix={`skill-detail-${skill.id}`}
 								profileCover={<SkillProfileCover skill={skill} />}
@@ -1148,7 +1239,7 @@ function SkillDetailConfig({
 					</Agent>
 				</div>
 			</div>
-			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-3">
+			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6">
 				<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
 				<div className="flex shrink-0 items-center gap-2">
 					<Button onClick={handleCancel} type="button" variant="outline">
@@ -1226,10 +1317,10 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 }
 
 // ---------------------------------------------------------------------------
-// Experimental variant: the sidebar's primary items + Collection/Category/Company
-// groups become a horizontal filter row of toggles and searchable multi-select
-// dropdowns, above a pinned-header + scroll-masked results grid (mirrors the
-// experimental apps/agent directories).
+// Experimental variant: the sidebar's primary items + company groups become a
+// horizontal filter row of toggles and searchable multi-select dropdowns, above
+// a pinned-header + scroll-masked results grid (mirrors the experimental apps/
+// agent directories).
 // ---------------------------------------------------------------------------
 
 interface ExperimentalSkillFilterOption extends ExperimentalDirectoryFilterOption {
@@ -1237,15 +1328,9 @@ interface ExperimentalSkillFilterOption extends ExperimentalDirectoryFilterOptio
 	label: string;
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: ReturnType<typeof getSkillPublisherLogoName>;
+	/** When set, renders the upstream 3P brand mark instead of an `avatarSrc` image. */
+	brandName?: ThirdPartyLogoName;
 	avatarSrc?: string;
-}
-
-// Collections present in the catalog, in the canonical SKILL_COLLECTIONS order.
-function getSkillCollectionOptions(skills: readonly SkillsDirectorySkill[]): readonly ExperimentalSkillFilterOption[] {
-	const present = new Set(skills.map((skill) => getSkillCollectionId(skill)));
-	return Object.values(SKILL_COLLECTIONS)
-		.filter((collection) => present.has(collection.id))
-		.map((collection) => ({ id: collection.id, label: collection.label }));
 }
 
 // Company publishers present in the catalog (excludes self-authored "you" skills),
@@ -1262,8 +1347,9 @@ function getSkillCompanyOptions(skills: readonly SkillsDirectorySkill[]): readon
 		byId.set(id, {
 			id,
 			label: getSkillPublisherName(skill),
-			logoName: getSkillPublisherLogoName(skill),
-			avatarSrc: getSkillPublisherAvatarSrc(skill),
+			logoName: id === "atlassian" ? "atlassian" : getSkillPublisherLogoName(skill),
+			brandName: skill.publisherBrandName,
+			avatarSrc: id === "atlassian" ? undefined : getSkillPublisherAvatarSrc(skill),
 		});
 	}
 
@@ -1273,7 +1359,6 @@ function getSkillCompanyOptions(skills: readonly SkillsDirectorySkill[]): readon
 interface ExperimentalSkillsFilters {
 	yourSkills: boolean;
 	favourites: boolean;
-	collectionIds: readonly string[];
 	companyIds: readonly string[];
 }
 
@@ -1286,13 +1371,11 @@ function filterSkillsExperimental(
 	filters: ExperimentalSkillsFilters,
 ): readonly SkillsDirectorySkill[] {
 	const normalizedQuery = query.trim().toLowerCase();
-	const collectionSet = new Set(filters.collectionIds);
 	const companySet = new Set(filters.companyIds);
 
 	return skills.filter((skill) => {
 		if (filters.yourSkills && !isYourSkill(skill)) return false;
 		if (filters.favourites && !skill.favorite) return false;
-		if (collectionSet.size > 0 && !collectionSet.has(getSkillCollectionId(skill))) return false;
 		if (companySet.size > 0 && !(skill.companyId && companySet.has(skill.companyId))) return false;
 
 		if (!normalizedQuery) return true;
@@ -1349,17 +1432,17 @@ interface ExperimentalSkillsDirectoryViewProps {
 	addedIds: ReadonlySet<string>;
 	filterFavourites: boolean;
 	filterYourSkills: boolean;
-	hasSelection: boolean;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
-	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
+	onSelectSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleFavoriteSkill: (skill: SkillsDirectorySkill) => void;
+	onToggleSelectedSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
 	query: string;
-	selectedCollections: readonly string[];
+	selectionExperience: SkillsDirectorySelectionExperience;
 	selectedCompanies: readonly string[];
 	selectedIds: ReadonlySet<string>;
 	setFilterFavourites: Dispatch<SetStateAction<boolean>>;
 	setFilterYourSkills: Dispatch<SetStateAction<boolean>>;
 	setQuery: (query: string) => void;
-	setSelectedCollections: Dispatch<SetStateAction<readonly string[]>>;
 	setSelectedCompanies: Dispatch<SetStateAction<readonly string[]>>;
 	skills: readonly SkillsDirectorySkill[];
 }
@@ -1368,21 +1451,20 @@ function ExperimentalSkillsDirectoryView({
 	addedIds,
 	filterFavourites,
 	filterYourSkills,
-	hasSelection,
 	onLearnMore,
 	onSelectSkill,
+	onToggleFavoriteSkill,
+	onToggleSelectedSkill,
 	query,
-	selectedCollections,
+	selectionExperience,
 	selectedCompanies,
 	selectedIds,
 	setFilterFavourites,
 	setFilterYourSkills,
 	setQuery,
-	setSelectedCollections,
 	setSelectedCompanies,
 	skills,
 }: Readonly<ExperimentalSkillsDirectoryViewProps>) {
-	const collectionOptions = useMemo(() => getSkillCollectionOptions(skills), [skills]);
 	const companyOptions = useMemo(() => getSkillCompanyOptions(skills), [skills]);
 
 	const filteredSkills = useMemo(
@@ -1390,7 +1472,6 @@ function ExperimentalSkillsDirectoryView({
 			const matched = filterSkillsExperimental(skills, query, {
 				yourSkills: filterYourSkills,
 				favourites: filterFavourites,
-				collectionIds: selectedCollections,
 				companyIds: selectedCompanies,
 			});
 			// Alphabetical by name: the catalog front-loads grey (custom/marketplace)
@@ -1398,7 +1479,7 @@ function ExperimentalSkillsDirectoryView({
 			// keeps the first rows multi-coloured rather than a block of grey.
 			return [...matched].sort((a, b) => a.name.localeCompare(b.name, "en"));
 		},
-		[filterFavourites, filterYourSkills, query, selectedCollections, selectedCompanies, skills],
+		[filterFavourites, filterYourSkills, query, selectedCompanies, skills],
 	);
 
 	// Split results into the user's own skills and everything else, each under its
@@ -1427,16 +1508,6 @@ function ExperimentalSkillsDirectoryView({
 			onToggle: () => setFilterFavourites((current) => !current),
 		},
 		{
-			activeLabel: "Filter by collections",
-			id: "collections",
-			kind: "dropdown",
-			label: "Collections",
-			onToggle: (value) => setSelectedCollections((current) => toggleSelectedValue(current, value)),
-			options: collectionOptions,
-			renderOptionLeading: (option) => <ExperimentalSkillOptionAvatar option={option} />,
-			selectedValues: selectedCollections,
-		},
-		{
 			activeLabel: "Filter by companies",
 			id: "companies",
 			kind: "dropdown",
@@ -1452,13 +1523,15 @@ function ExperimentalSkillsDirectoryView({
 		setQuery("");
 		setFilterYourSkills(false);
 		setFilterFavourites(false);
-		setSelectedCollections([]);
 		setSelectedCompanies([]);
 	}
 
+	const checkboxSelectable = selectionExperience !== "studio-bulk-add";
+	const cardSelectable = selectionExperience !== "checkbox-actions";
+
 	return (
 		<ExperimentalDirectoryView
-			contentClassName={hasSelection ? "pb-28" : "pb-8"}
+			contentClassName="pb-8"
 			emptyState={emptyState}
 			facets={facets}
 			isEmpty={filteredSkills.length === 0}
@@ -1477,8 +1550,11 @@ function ExperimentalSkillsDirectoryView({
 						renderItem={(skill) => (
 							<SkillsDirectoryEntityCard
 								added={addedIds.has(skill.id)}
+								checkboxSelectable={checkboxSelectable}
 								onLearnMore={() => onLearnMore(skill)}
-								onSelect={(checked) => onSelectSkill(skill, checked)}
+								onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+								onToggleFavorite={() => onToggleFavoriteSkill(skill)}
+								onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}
 								selected={selectedIds.has(skill.id)}
 								skill={skill}
 							/>
@@ -1492,8 +1568,11 @@ function ExperimentalSkillsDirectoryView({
 						renderItem={(skill) => (
 							<SkillsDirectoryEntityCard
 								added={addedIds.has(skill.id)}
+								checkboxSelectable={checkboxSelectable}
 								onLearnMore={() => onLearnMore(skill)}
-								onSelect={(checked) => onSelectSkill(skill, checked)}
+								onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+								onToggleFavorite={() => onToggleFavoriteSkill(skill)}
+								onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}
 								selected={selectedIds.has(skill.id)}
 								skill={skill}
 							/>
@@ -1508,6 +1587,9 @@ function ExperimentalSkillsDirectoryView({
 function ExperimentalSkillOptionAvatar({ option }: Readonly<{ option: ExperimentalSkillFilterOption }>) {
 	if (option.logoName) {
 		return <AtlassianLogoMark name={option.logoName} size="small" transparent label={option.label} />;
+	}
+	if (option.brandName) {
+		return <BrandLogoMark name={option.brandName} size="small" transparent label={option.label} />;
 	}
 	if (option.avatarSrc) {
 		return <BrandLogoMark src={option.avatarSrc} size="small" transparent label={option.label} />;

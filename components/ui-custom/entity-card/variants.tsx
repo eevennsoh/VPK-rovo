@@ -154,7 +154,7 @@ export interface EntityCardSkillCardProps extends EntityCardSkillProps {
 	/** Keeps the shell hover treatment active while nested menus/popovers are open. */
 	active?: boolean;
 	moreAction?: ReactNode;
-	/** See `EntityCardAppCardProps.onSelect`. */
+	/** Whole-card action. See `EntityCardAppCardProps.onSelect`. */
 	onSelect?: (checked?: boolean) => void;
 }
 
@@ -164,12 +164,14 @@ export function EntityCardSkillCard({
 	className,
 	moreAction,
 	name,
+	onSelectedChange,
 	onSelect,
 	selected,
+	selectable,
 	action,
 	...entityProps
 }: Readonly<EntityCardSkillCardProps>) {
-	const selectable = selected !== undefined;
+	const checkboxSelectable = selectable ?? selected !== undefined;
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
 		<EntityCardShell
@@ -183,9 +185,9 @@ export function EntityCardSkillCard({
 				{...entityProps}
 				action={moreAction ?? action}
 				name={name}
-				onSelectedChange={onSelect}
+				onSelectedChange={onSelectedChange ?? onSelect}
 				selectLabel={selectLabel}
-				selectable={selectable}
+				selectable={checkboxSelectable}
 				selected={selected}
 			/>
 		</EntityCardShell>

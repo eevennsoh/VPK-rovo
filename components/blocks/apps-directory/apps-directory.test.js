@@ -33,6 +33,24 @@ test("Apps Directory docs demo starts closed until the trigger is clicked", () =
 	);
 });
 
+test("Apps Directory detail header uses 24px vertical padding", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+
+	assert.match(source, /function AppsDirectoryHeader[\s\S]*className="flex items-center justify-between px-6 py-6"/u);
+});
+
+test("Apps Directory card menu can toggle favourites", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+
+	assert.match(source, /const \[favoriteOverrides, setFavoriteOverrides\] = useState<Record<string, boolean>>\(\{\}\);/u);
+	assert.match(source, /tool\.id in favoriteOverrides \? \{ \.\.\.tool, favorite: favoriteOverrides\[tool\.id\] \} : tool/u);
+	assert.match(source, /function handleToggleFavoriteTool\(tool: AppsDirectoryTool\): void \{[\s\S]*\[tool\.id\]: !tool\.favorite/u);
+	assert.match(source, /<AppCard[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
+	assert.match(source, /favorite=\{Boolean\(tool\.favorite\)\}/u);
+	assert.match(source, /elemBefore=\{favorite \? <StarStarredIcon label="" \/> : <StarUnstarredIcon label="" \/>\}/u);
+	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
+});
+
 test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
 	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
@@ -49,11 +67,17 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /Search for an app by name, or describe it/u);
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
-	assert.match(source, /<AppCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
+	assert.match(source, /const \[favoriteOverrides, setFavoriteOverrides\] = useState<Record<string, boolean>>\(\{\}\);/u);
+	assert.match(source, /tool\.id in favoriteOverrides \? \{ \.\.\.tool, favorite: favoriteOverrides\[tool\.id\] \} : tool/u);
+	assert.match(source, /function handleToggleFavoriteTool\(tool: AppsDirectoryTool\): void \{[\s\S]*\[tool\.id\]: !tool\.favorite/u);
+	assert.match(source, /<AppCard[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /import \{ EntityCardAppCard \} from "@\/components\/ui-custom\/entity-card";/u);
-	assert.match(source, /const knowledgeApp = findKnowledgeAppForTool\(tool\);/u);
+	assert.match(source, /const knowledgeApp = getKnowledgeAppForTool\(tool\);/u);
 	assert.match(source, /<EntityCardAppCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /favorite=\{Boolean\(tool\.favorite\)\}/u);
+	assert.match(source, /elemBefore=\{favorite \? <StarStarredIcon label="" \/> : <StarUnstarredIcon label="" \/>\}/u);
+	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
 	assert.match(source, /knowledgeCount=\{knowledgeApp\?\.contents\.length\}/u);
 	assert.doesNotMatch(source, /<EntityCardToolCard/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
@@ -125,10 +149,8 @@ test("Apps Directory keeps compatible types while adding tool detail fields", ()
 		}
 	// The component re-exports the loader's tool/permission types and keeps the
 	// sidebar-group alias to AgentBrowserSidebarGroup.
-	assert.match(
-		componentSource,
-		/ToolsDirectoryPermission as AppsDirectoryPermission,[\s\S]*ToolsDirectoryTool as AppsDirectoryTool,/u,
-	);
+	assert.match(componentSource, /export type \{ ToolsDirectoryPermission as AppsDirectoryPermission \} from "@\/app\/data\/directory\/tools";/u);
+	assert.match(componentSource, /export type \{ DirectoryApp as AppsDirectoryTool \} from "@\/app\/data\/directory\/apps";/u);
 	assert.match(componentSource, /export type AppsDirectorySidebarGroup = AgentBrowserSidebarGroup;/u);
 });
 
@@ -147,7 +169,8 @@ test("Apps Directory supports controlled and uncontrolled added tool state", () 
 	assert.doesNotMatch(source, /<ToolDetailView[\s\S]*onAddTool=\{\(\) => handleAddTool\(selectedTool\)\}/u);
 	assert.doesNotMatch(source, /<ToolDetailView[\s\S]*onRemoveTool=\{\(\) => handleRemoveTool\(selectedTool\)\}/u);
 	assert.doesNotMatch(source, /\{added \? null : \(/u);
-	assert.match(source, /const presentation = resolveBrandLogoPresentation\(src\);[\s\S]*presentation\.hasBorder && src\.startsWith\("\/3p\/"\)[\s\S]*<Image[\s\S]*src=\{presentation\.src\}/u);
+	assert.match(source, /tool\.brandName[\s\S]*<LogoThirdParty label=\{tool\.name\} name=\{tool\.brandName\} size="xlarge" \/>/u);
+	assert.match(source, /const ThirdPartyIcon = getThirdPartyLogoIconFromSrc\(item\.avatarSrc\);[\s\S]*<ThirdPartyIcon label=\{item\.label\} size="small" \/>/u);
 	assert.doesNotMatch(source, /size="sm"/u);
 	assert.doesNotMatch(source, /className="h-px bg-border"/u);
 });
@@ -216,8 +239,9 @@ test("Apps Directory docs demo includes added and non-added detail states", () =
 	const allTools = [...toolsData.tools, ...toolsData.sessionTools];
 	const sidebarGroupsSource = readProjectFile("components/blocks/apps-directory/data/sidebar-groups.ts");
 
-	assert.match(source, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
-	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
+	assert.match(source, /import \{ DIRECTORY_APPS \} from "@\/app\/data\/directory\/apps";/u);
+	assert.match(source, /const DEMO_PERSONAL_APPS: readonly AppsDirectoryTool\[\] = \[/u);
+	assert.match(source, /defaultAddedToolIds=\{DEMO_ADDED_APP_IDS\}/u);
 	assert.ok(allTools.some((tool) => tool.logoName === "atlassian"), "a tool should use the Atlassian brand logo");
 	assert.equal(
 		allTools.find((tool) => tool.id === "outlook")?.brandName,
@@ -243,7 +267,7 @@ test("Apps Directory docs demo includes added and non-added detail states", () =
 	assert.match(componentSource, /aria-label="Custom content"[\s\S]*value="custom"[\s\S]*Select content/u);
 	assert.doesNotMatch(componentSource, /mode === "custom" \? "Select content" : "Custom content"/u);
 	assert.match(componentSource, /aria-label="No knowledge"[\s\S]*value="none"[\s\S]*None/u);
-	assert.match(componentSource, /if \(nextMode === "none"\) \{[\s\S]*setSelectedKnowledgeContentIds\(\[\]\);[\s\S]*return;/u);
+	assert.match(componentSource, /if \(nextMode === "none"\) \{[\s\S]*nextContentIds = \[\];[\s\S]*selectedContentIds: nextContentIds/u);
 	assert.match(componentSource, /Search for content by name, or describe it/u);
 	assert.match(componentSource, /<SelectedKnowledgeContentList/u);
 	assert.match(componentSource, /aria-label=\{`Remove \$\{content\.name\}`\}[\s\S]*className="hover:bg-bg-danger hover:text-text-danger hover:\[&_svg\]:text-icon-danger active:bg-bg-danger-pressed active:\[&_svg\]:text-icon-danger focus-visible:border-border-danger"[\s\S]*size="icon"[\s\S]*<DeleteIcon label="" color="currentColor" \/>/u);
@@ -252,7 +276,7 @@ test("Apps Directory docs demo includes added and non-added detail states", () =
 	assert.match(componentSource, /teammateCount=\{tool\.teammateCount\}/u);
 	assert.match(componentSource, /toolCount=\{tool\.toolCount\}/u);
 	assert.match(componentSource, /<p className="flex items-center gap-1">[\s\S]*<span>By<\/span>[\s\S]*<span className="truncate text-link">\{publisher\}<\/span>[\s\S]*StatusVerifiedIcon label="Verified"/u);
-	assert.doesNotMatch(componentSource, /<div className="flex items-center gap-2">[\s\S]*<h2 className="text-2xl font-semibold leading-7 text-text">\{tool\.name\}<\/h2>[\s\S]*StatusVerifiedIcon label="Verified"/u);
+	assert.doesNotMatch(componentSource, /<h2 className="text-2xl font-semibold leading-7 text-text">\{tool\.name\}<\/h2>\s*\{verified \?/u);
 	assert.match(componentSource, /\{tool\.teammateCount\.toLocaleString\("en-US"\)\} teammates/u);
 	assert.doesNotMatch(componentSource, /Used by \{tool\.teammateCount/u);
 	assert.doesNotMatch(componentSource, /teammateCount=\{tool\.teammateCount \?\? 258\}/u);

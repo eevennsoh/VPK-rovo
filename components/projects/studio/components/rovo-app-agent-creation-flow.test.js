@@ -868,7 +868,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const existing = new Set\(current\.map\(\(value\) => getAgentConfigListLookupValue\(field, value\)\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const additions = nextValues\.filter\(\(value\) => !existing\.has\(getAgentConfigListLookupValue\(field, value\)\)\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*setActiveDirectory\(null\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
@@ -877,7 +877,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{addedToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Memory[\s\S]*open=\{activeDirectory === "memory"\}[\s\S]*showTrigger=\{false\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
