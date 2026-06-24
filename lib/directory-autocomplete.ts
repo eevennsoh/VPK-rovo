@@ -450,7 +450,11 @@ export function getDirectoryAutocompleteState({
 
 	return {
 		activeIndex: boundedActiveIndex,
-		ghostText: getGhostText(selectedSuffix.query, matches),
+		// Ghost text is a flush inline continuation, so it is only valid when the
+		// caret sits immediately after the matched word. Once whitespace separates
+		// them (e.g. the user pressed space), the slice would render detached and
+		// slide along with the caret — show no hint instead.
+		ghostText: /\s$/u.test(segment) ? "" : getGhostText(selectedSuffix.query, matches),
 		matches,
 		query: selectedSuffix.query,
 		queryFrom,
