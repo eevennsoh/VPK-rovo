@@ -18,7 +18,8 @@ test("ChainOfThoughtScenario composes the primitive chain-of-thought parts", () 
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioStep/u);
 	assert.match(COMPONENT_SOURCE, /export interface ChainOfThoughtScenarioProps/u);
 	assert.match(COMPONENT_SOURCE, /export const ChainOfThoughtScenario = memo/u);
-	assert.match(COMPONENT_SOURCE, /<ChainOfThought[\s\S]*defaultOpen=\{state === "thinking"\}/u);
+	assert.match(COMPONENT_SOURCE, /defaultOpen,\s*animateStepEntrance = false,\s*duration,/u);
+	assert.match(COMPONENT_SOURCE, /<ChainOfThought[\s\S]*defaultOpen=\{defaultOpen \?\? state === "thinking"\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtHeader[\s\S]*showChevron=\{state !== "preload" && steps\.length > 0\}[\s\S]*state=\{state\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtContent[\s\S]*className=\{contentClassName\}/u);
 	assert.match(COMPONENT_SOURCE, /<ChainOfThoughtStep[\s\S]*status=\{step\.status\}/u);

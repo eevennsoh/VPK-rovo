@@ -36,13 +36,18 @@ async function loadCreateSkillFlowModule() {
 	return loadCjsModuleFromText(result.outputFiles[0].text, "create-skill-flow-harness.js");
 }
 
-test("detects the create-skill mention (sigil + label) and builds prefill text", async () => {
+test("detects the create-skill mention or leading command and builds prefill text", async () => {
 	const { hasCreateSkillMention, buildSkillMentionText } = await loadCreateSkillFlowModule();
 	// The composer serializes a skill mention as "/<label>", not @[skill:id].
 	assert.equal(hasCreateSkillMention("/Create skill summarize my daily standups"), true);
+	assert.equal(hasCreateSkillMention("/create-skill summarize my daily standups"), true);
 	assert.equal(hasCreateSkillMention("/create skill do a thing"), true);
+	assert.equal(hasCreateSkillMention("create skill summarize my daily standups"), true);
+	assert.equal(hasCreateSkillMention("create a skill to summarize my daily standups"), true);
+	assert.equal(hasCreateSkillMention("create-skill summarize my daily standups"), true);
+	assert.equal(hasCreateSkillMention("Create skill do a thing"), true);
 	assert.equal(hasCreateSkillMention("/Review a pull request do a thing"), false);
-	assert.equal(hasCreateSkillMention("I want to create a skill someday"), false); // no slash → no false match
+	assert.equal(hasCreateSkillMention("I want to create a skill someday"), false);
 	assert.equal(buildSkillMentionText("Standup digest"), "/Standup digest ");
 });
 
@@ -107,7 +112,7 @@ test("stage 2 reveals build steps sequentially before rendering the result", asy
 	assert.deepEqual(pending.steps.map((step) => step.id), ["review"]);
 	assert.deepEqual(pending.steps.map((step) => step.status), ["active"]);
 
-	const stagedStepIds = stage.assistantPartStages.slice(0, -1).map((step) =>
+	const stagedStepIds = stage.assistantPartStages.slice(0, 3).map((step) =>
 		step.getAssistantParts(ctx)[0].data.payload.steps.map((traceStep) => traceStep.id),
 	);
 	assert.deepEqual(stagedStepIds, [
@@ -119,9 +124,13 @@ test("stage 2 reveals build steps sequentially before rendering the result", asy
 
 test("derives a believable skill from a free-form prompt (deterministic)", async () => {
 	const { deriveSkillFromPrompt } = await loadCreateSkillFlowModule();
-	const a = deriveSkillFromPrompt("/Create skill summarize my standups");
-	const b = deriveSkillFromPrompt("/Create skill summarize my standups");
+	const a = deriveSkillFromPrompt("create skill summarize my standups");
+	const b = deriveSkillFromPrompt("create skill summarize my standups");
+	const c = deriveSkillFromPrompt("create-skill summarize my standups");
+	const d = deriveSkillFromPrompt("create a skill to summarize my standups");
 	assert.deepEqual(a, b); // deterministic
+	assert.deepEqual(a.id, c.id);
+	assert.deepEqual(a.id, d.id);
 
 	assert.ok(a.id.length > 0);
 	assert.ok(a.name.length > 0);
@@ -142,11 +151,45 @@ test("stage 2 ends with the result card and fires onComplete", async () => {
 		completed += 1;
 	});
 
-	const finalStage = stage.assistantPartStages.at(-1);
-	const finalParts = finalStage.getAssistantParts(ctx);
-	assert.equal(finalParts.at(-1).data.type, SKILL_CREATION_RESULT_WIDGET_TYPE);
-	assert.equal(finalParts.at(-1).data.payload.skillId, skill.id);
+	const pending = stage.getPendingAssistantParts(ctx);
+	assert.deepEqual(pending[0].data.payload.steps.map((step) => step.id), ["review"]);
 
-	finalStage.onApply();
+	const draftFrame = stage.assistantPartStages[0].getAssistantParts(ctx)[0];
+	assert.deepEqual(draftFrame.data.payload.steps.map((step) => step.id), ["review", "draft"]);
+
+	const wireFrame = stage.assistantPartStages[1].getAssistantParts(ctx)[0];
+	assert.deepEqual(wireFrame.data.payload.steps.map((step) => step.id), ["review", "draft", "wire"]);
+
+	const saveFrame = stage.assistantPartStages[2].getAssistantParts(ctx)[0];
+	assert.deepEqual(saveFrame.data.payload.steps.map((step) => step.id), ["review", "draft", "wire", "save"]);
+
+	const resultStages = stage.assistantPartStages.filter((candidate) =>
+		candidate.getAssistantParts(ctx).some(
+			(part) => part.type === "data-widget-data" && part.data.type === SKILL_CREATION_RESULT_WIDGET_TYPE,
+		)
+	);
+	assert.ok(resultStages.length >= 2);
+
+	const firstResultStage = resultStages[0];
+	const firstResultParts = firstResultStage.getAssistantParts(ctx);
+	const firstTextPart = firstResultParts.find((part) => part.type === "text");
+	assert.ok(firstTextPart);
+	assert.equal(firstTextPart.state, "streaming");
+	assert.match(firstTextPart.text, new RegExp(skill.name, "u"));
+
+	await firstResultStage.onApply();
+	assert.equal(completed, 1);
+
+	const finalParts = resultStages.at(-1).getAssistantParts(ctx);
+	const resultPart = finalParts.find(
+		(part) => part.type === "data-widget-data" && part.data.type === SKILL_CREATION_RESULT_WIDGET_TYPE,
+	);
+	assert.ok(resultPart);
+	assert.equal(resultPart.data.payload.skillId, skill.id);
+
+	const finalTextPart = finalParts.find((part) => part.type === "text");
+	assert.ok(finalTextPart);
+	assert.equal(finalTextPart.state, "done");
+	assert.match(finalTextPart.text, /prefilled the composer/u);
 	assert.equal(completed, 1);
 });

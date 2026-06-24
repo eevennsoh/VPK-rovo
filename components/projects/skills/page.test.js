@@ -4,6 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 
 const SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
+const TRACE_CARD_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components", "skill-creation-trace-card.tsx"),
+	"utf8",
+);
 
 test("Skills project add menu opens the experimental skills directory", () => {
 	const addMenuIndex = SOURCE.indexOf("const addMenuItemsBefore = (");
@@ -31,4 +35,33 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
 	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillsDirectoryOpen/u);
 	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"[\s\S]*onAddSkills=\{handleAddDirectorySkills\}[\s\S]*selectionExperience="chat-single-add"/u);
+});
+
+test("Create-skill question traces collapse while awaiting user response", () => {
+	assert.match(TRACE_CARD_SOURCE, /const isAwaiting = payload\.awaiting === true;/u);
+	assert.match(TRACE_CARD_SOURCE, /key=\{isAwaiting \? "awaiting" : "active"\}/u);
+	assert.match(TRACE_CARD_SOURCE, /<ChainOfThoughtScenario[\s\S]*defaultOpen=\{!isAwaiting\}/u);
+	assert.match(TRACE_CARD_SOURCE, /Awaiting user response/u);
+});
+
+test("Generated skill result card renders after the assistant description text", () => {
+	const positionSource = SOURCE.slice(
+		SOURCE.indexOf("const getWidgetPosition = useCallback"),
+		SOURCE.indexOf("const onInterceptSubmit = useCallback"),
+	);
+
+	assert.match(positionSource, /if \(widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE\) \{[\s\S]*return "after-content";[\s\S]*\}/u);
+	assert.match(positionSource, /widgetType === SKILL_INVOCATION_WIDGET_TYPE \|\|[\s\S]*widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE[\s\S]*return "before-content";/u);
+});
+
+test("Create-skill commands are intercepted before the keyword invocation fallback", () => {
+	const interceptSource = SOURCE.slice(
+		SOURCE.indexOf("const onInterceptSubmit = useCallback"),
+		SOURCE.indexOf("const resolveComposerPlaceholder = useCallback"),
+	);
+	const createSkillIndex = interceptSource.indexOf("if (hasCreateSkillMention(text))");
+	const fallbackIndex = interceptSource.indexOf("return buildSkillInterceptOutcome(text)");
+
+	assert.ok(createSkillIndex > -1);
+	assert.ok(fallbackIndex > createSkillIndex);
 });
