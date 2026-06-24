@@ -73,6 +73,11 @@ test("active voice controls do not use border beam visual effects", () => {
 	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"/u);
 });
 
+test("shared composer voice waveform uses ADS motion duration tokens", () => {
+	assert.match(SEND_CONTROLS_SOURCE, /className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-slow"/u);
+	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /duration-300/u);
+});
+
 test("Rovo Cursor is gated behind active live voice in shared composer chrome", () => {
 	assert.doesNotMatch(CARD_BODY_SOURCE, /<PromptInputButton[\s\S]*aria-label="Rovo cursor"/u);
 	assert.doesNotMatch(FLOATING_BODY_SOURCE, /<PromptInputButton[\s\S]*aria-label="Rovo Cursor"/u);
