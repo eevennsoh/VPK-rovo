@@ -66,7 +66,7 @@ test("composer directory autocomplete accepts the active visible list item on Ta
 	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
 
 	assert.match(extensionSource, /acceptActiveListItem: \(\) => boolean;/u);
-	assert.match(extensionSource, /event\.key === "Tab" && controller\.hasAcceptableList\(\)[\s\S]*event\.preventDefault\(\);[\s\S]*return controller\.acceptActiveListItem\(\);/u);
+	assert.match(extensionSource, /event\.key === "Tab" && !event\.shiftKey && controller\.hasAcceptableList\(\)[\s\S]*event\.preventDefault\(\);[\s\S]*return controller\.acceptActiveListItem\(\);/u);
 	assert.match(promptInputSource, /acceptActiveListItem: \(\) =>[\s\S]*acceptDirectoryAutocompleteIndexRef\.current\([\s\S]*directoryAutocompleteStateRef\.current\?\.activeIndex \?\? 0[\s\S]*\)/u);
-	assert.match(extensionSource, /\(event\.key === "Tab" \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
+	assert.match(extensionSource, /\(\(event\.key === "Tab" && !event\.shiftKey\) \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
 });
