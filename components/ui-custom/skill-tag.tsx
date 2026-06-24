@@ -34,6 +34,8 @@ function toKebabSkillLabel(value: string): string {
 interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	icon?: React.ReactNode;
 	color?: SkillTagColor;
+	focused?: boolean;
+	focusable?: boolean;
 	onRemove?: () => void;
 	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
@@ -51,12 +53,15 @@ function SkillTag({
 	children,
 	icon,
 	color = "default",
+	focused = false,
+	focusable = false,
 	onClick,
 	onRemove,
 	removeVariant = "inline",
 	removeButtonLabel = "Remove",
 	overlayAction,
 	className,
+	tabIndex,
 	...props
 }: Readonly<SkillTagProps>) {
 	const isInteractive = Boolean(onClick);
@@ -105,17 +110,18 @@ function SkillTag({
 		if (!label) {
 			return;
 		}
+		const labelElement = label;
 
 		function updateLabelOverflow() {
-			setLabelHasOverflow(label.scrollWidth > label.clientWidth + 1);
+			setLabelHasOverflow(labelElement.scrollWidth > labelElement.clientWidth + 1);
 		}
 
 		updateLabelOverflow();
 
 		const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateLabelOverflow) : null;
-		observer?.observe(label);
-		if (label.parentElement) {
-			observer?.observe(label.parentElement);
+		observer?.observe(labelElement);
+		if (labelElement.parentElement) {
+			observer?.observe(labelElement.parentElement);
 		}
 
 		window.addEventListener("resize", updateLabelOverflow);
@@ -130,12 +136,16 @@ function SkillTag({
 		<span
 			{...props}
 			onClick={onClick}
+			tabIndex={focusable ? (tabIndex ?? 0) : tabIndex}
 			className={cn(
-				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm bg-bg-neutral py-1 pl-2.5 align-middle text-xs leading-4 font-normal text-text transition-colors",
+				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm border border-transparent bg-bg-neutral bg-clip-padding py-1 pl-2.5 align-middle text-xs leading-4 font-normal text-text outline-none transition-[background-color,border-color,box-shadow,color]",
 				onRemove && !isOverlayRemove ? "pr-1" : "pr-1.5",
+				"focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				focused && "border-ring ring-3 ring-ring/50",
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "cursor-default",
 				className,
 			)}
+			data-focused={focused ? "true" : undefined}
 			data-slot="skill-tag"
 		>
 			{/* Colored slash bar */}

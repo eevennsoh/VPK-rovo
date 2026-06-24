@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type RefCallback } from "reac
 
 export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	hasVerticalOverflow: boolean;
+	hasReachedVerticalLimit: boolean;
 	hasScrolledFromTop: boolean;
 	hasScrolledToBottom: boolean;
 	ref: RefCallback<T>;
@@ -15,13 +16,17 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 	const elementRef = useRef<T | null>(null);
 	const [element, setElement] = useState<T | null>(null);
 	const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
+	const [hasReachedVerticalLimit, setHasReachedVerticalLimit] = useState(false);
 	const [hasScrolledFromTop, setHasScrolledFromTop] = useState(false);
 	const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
 	const updateScrollState = useCallback(() => {
 		const element = elementRef.current;
+		const maxHeight = element ? Number.parseFloat(getComputedStyle(element).maxHeight) : Number.NaN;
+		const hasFiniteMaxHeight = Number.isFinite(maxHeight) && maxHeight > 0;
 
 		setHasVerticalOverflow(element ? element.scrollHeight - element.clientHeight > 1 : false);
+		setHasReachedVerticalLimit(element ? hasFiniteMaxHeight && element.clientHeight >= maxHeight - 1 : false);
 		setHasScrolledFromTop(element ? element.scrollTop > 1 : false);
 		setHasScrolledToBottom(
 			element ? element.scrollHeight - element.clientHeight - element.scrollTop <= 1 : true,
@@ -98,6 +103,7 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 
 	return {
 		hasVerticalOverflow,
+		hasReachedVerticalLimit,
 		hasScrolledFromTop,
 		hasScrolledToBottom,
 		ref,

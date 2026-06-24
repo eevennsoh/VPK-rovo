@@ -2,7 +2,7 @@
 
 import type { Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { TextSelection } from "@tiptap/pm/state";
+import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import { useCallback, useRef } from "react";
 
 import {
@@ -82,6 +82,12 @@ function isAutoTaggedMention(
 	);
 }
 
+function isMentionNode(
+	node: { type: { name: string } } | null | undefined,
+): node is ProseMirrorNode {
+	return node?.type.name === "mention";
+}
+
 /**
  * Resolve the document position of an auto-tagged mention a Backspace should
  * revert, or null. Handles the caret sitting directly after the chip, and the
@@ -90,6 +96,10 @@ function isAutoTaggedMention(
  */
 function getBackspaceRevertPos(editor: Editor): number | null {
 	const { selection } = editor.state;
+	if (selection instanceof NodeSelection && isAutoTaggedMention(selection.node)) {
+		return selection.from;
+	}
+
 	if (!selection.empty) {
 		return null;
 	}
@@ -105,6 +115,51 @@ function getBackspaceRevertPos(editor: Editor): number | null {
 		const beforeSpace = editor.state.doc.resolve(spaceStart).nodeBefore;
 		if (isAutoTaggedMention(beforeSpace)) {
 			return spaceStart - beforeSpace!.nodeSize;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Resolve a deliberate mention deletion range for Backspace. Mentions inserted
+ * from the directory or menu do not carry `sourceText`, so they should delete as
+ * a token instead of restoring to typed text. When the caret sits after the
+ * inserted trailing space, include that space in the same deletion.
+ */
+function getBackspaceMentionDeleteRange(editor: Editor): { from: number; to: number } | null {
+	const { selection } = editor.state;
+	if (selection instanceof NodeSelection) {
+		const nodeAfter = editor.state.doc.resolve(selection.to).nodeAfter;
+		return isMentionNode(selection.node) && !isAutoTaggedMention(selection.node)
+			? {
+				from: selection.from,
+				to: selection.to + (nodeAfter?.isText && nodeAfter.text?.startsWith(" ") ? 1 : 0),
+			}
+			: null;
+	}
+
+	if (!selection.empty) {
+		return null;
+	}
+
+	const { $from } = selection;
+	const before = $from.nodeBefore;
+	if (isMentionNode(before) && !isAutoTaggedMention(before)) {
+		return {
+			from: $from.pos - before.nodeSize,
+			to: $from.pos,
+		};
+	}
+
+	if (before?.isText && before.text === " ") {
+		const spaceStart = $from.pos - before.nodeSize;
+		const beforeSpace = editor.state.doc.resolve(spaceStart).nodeBefore;
+		if (isMentionNode(beforeSpace) && !isAutoTaggedMention(beforeSpace)) {
+			return {
+				from: spaceStart - beforeSpace.nodeSize,
+				to: $from.pos,
+			};
 		}
 	}
 
@@ -777,6 +832,16 @@ export function useComposerVisualTraceAutoTagging({
 				? getBackspaceRevertPos(activeEditor)
 				: null;
 		if (backspaceRevertPos !== null && activeEditor.commands.restoreAutoTaggedMention(backspaceRevertPos)) {
+			return true;
+		}
+		const backspaceDeleteRange =
+			event.key === "Backspace" && !event.metaKey && !event.ctrlKey && !event.altKey
+				? getBackspaceMentionDeleteRange(activeEditor)
+				: null;
+		if (backspaceDeleteRange) {
+			const transaction = activeEditor.state.tr.delete(backspaceDeleteRange.from, backspaceDeleteRange.to);
+			transaction.setSelection(TextSelection.create(transaction.doc, backspaceDeleteRange.from));
+			activeEditor.view.dispatch(transaction);
 			return true;
 		}
 

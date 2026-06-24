@@ -33,6 +33,7 @@ import {
   getMentionNodeAttrs,
   RICH_TEXT_OBJECT_REPLACEMENT,
   type ComposerDirectoryAutocompleteController,
+  type RichTextMentionItem,
   type RichTextMentionSources,
 } from "@/components/ui-custom/rich-text-editor";
 import { useComposerVisualTraceAutoTagging } from "@/components/ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging";
@@ -1039,6 +1040,8 @@ export type PromptInputTextareaProps = ComponentProps<
   directoryAutocompleteListVisible?: boolean;
   /** Caps plain-text directory autocomplete matches before external rendering. */
   directoryAutocompleteLimit?: number;
+  /** Keyed request to replace the composer draft with a rich mention token. */
+  prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
   /** Receives composer-owned autocomplete state for external list rendering. */
   onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
   /** Receives imperative insertion/selection actions for external rows. */
@@ -1093,6 +1096,7 @@ export const PromptInputTextarea = ({
   enableDirectoryAutocomplete = true,
   directoryAutocompleteListVisible = false,
   directoryAutocompleteLimit,
+  prefillMentionRequest,
   onDirectoryAutocompleteChange,
   onDirectoryAutocompleteControllerChange,
   onChange,
@@ -1143,6 +1147,9 @@ export const PromptInputTextarea = ({
   const nameRef = useRef(name);
   const activeEditorRef = useRef<Editor | null>(null);
   const lastEditorPublishedTextRef = useRef<string | null>(null);
+  const lastMentionPrefillKeyRef = useRef(0);
+  const pendingMentionPrefillKeyRef = useRef(0);
+  const lastMentionPrefillTextRef = useRef<string | null>(null);
   const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
   const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
   const directoryAutocompleteLimitRef = useRef(directoryAutocompleteLimit);
@@ -1194,6 +1201,7 @@ export const PromptInputTextarea = ({
   });
   const {
     ref: composerScrollOverflowRef,
+    hasReachedVerticalLimit: hasComposerReachedScrollLimit,
     showBottomScrollMask: showComposerBottomScrollMask,
     showTopScrollMask: showComposerTopScrollMask,
   } = useHasVerticalOverflow<HTMLElement>();
@@ -1277,6 +1285,8 @@ export const PromptInputTextarea = ({
     refreshDirectoryAutocompleteRef,
     setDirectoryAutocompleteState,
   });
+  const showComposerTopMask = hasComposerReachedScrollLimit && showComposerTopScrollMask;
+  const showComposerBottomMask = hasComposerReachedScrollLimit && showComposerBottomScrollMask;
 
   const isAnySuggestionMenuOpen = useCallback((activeEditor: Editor): boolean => {
     for (const plugin of activeEditor.view.state.plugins) {
@@ -1477,7 +1487,7 @@ export const PromptInputTextarea = ({
   }, [composerScrollOverflowRef, editor]);
 
   useEffect(() => {
-    if (!editor || !enableVisualTraceAutoTagging) {
+    if (!editor) {
       return;
     }
 
@@ -1487,6 +1497,18 @@ export const PromptInputTextarea = ({
         event.stopPropagation();
       }
     };
+
+    editor.view.dom.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => {
+      editor.view.dom.removeEventListener("keydown", handleKeyDown, { capture: true });
+    };
+  }, [editor, handleVisualTraceKeyDown]);
+
+  useEffect(() => {
+    if (!editor || !enableVisualTraceAutoTagging) {
+      return;
+    }
+
     const handlePaste = () => {
       handleVisualTracePaste();
     };
@@ -1495,15 +1517,13 @@ export const PromptInputTextarea = ({
     };
     const form = editor.view.dom.closest("form");
 
-    editor.view.dom.addEventListener("keydown", handleKeyDown, { capture: true });
     editor.view.dom.addEventListener("paste", handlePaste, { capture: true });
     form?.addEventListener("submit", handleSubmit, { capture: true });
     return () => {
-      editor.view.dom.removeEventListener("keydown", handleKeyDown, { capture: true });
       editor.view.dom.removeEventListener("paste", handlePaste, { capture: true });
       form?.removeEventListener("submit", handleSubmit, { capture: true });
     };
-  }, [editor, enableVisualTraceAutoTagging, flushAutoTagging, handleVisualTraceKeyDown, handleVisualTracePaste]);
+  }, [editor, enableVisualTraceAutoTagging, flushAutoTagging, handleVisualTracePaste]);
 
   useEffect(() => () => {
     clearPendingAutoTagging();
@@ -1564,6 +1584,70 @@ export const PromptInputTextarea = ({
     };
   }, [editor, publishText, resetVisualTraceEditorState, setDirectoryAutocompleteState]);
 
+  useEffect(() => {
+    if (
+      !editor ||
+      !prefillMentionRequest ||
+      prefillMentionRequest.requestKey <= 0 ||
+      lastMentionPrefillKeyRef.current === prefillMentionRequest.requestKey ||
+      pendingMentionPrefillKeyRef.current === prefillMentionRequest.requestKey
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const requestKey = prefillMentionRequest.requestKey;
+    const mention = prefillMentionRequest.mention;
+    pendingMentionPrefillKeyRef.current = requestKey;
+
+    queueMicrotask(() => {
+      if (pendingMentionPrefillKeyRef.current === requestKey) {
+        pendingMentionPrefillKeyRef.current = 0;
+      }
+      if (cancelled || activeEditorRef.current !== editor) {
+        return;
+      }
+
+      lastMentionPrefillKeyRef.current = requestKey;
+      clearPendingAutoTagging();
+      resetVisualTraceEditorState(editor);
+      setDirectoryAutocompleteState(null);
+      editor.commands.setContent({
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "mention",
+                attrs: getMentionNodeAttrs(mention),
+              },
+              { type: "text", text: " " },
+            ],
+          },
+        ],
+      });
+      const prefillText = serializeComposerDoc(editor);
+      lastMentionPrefillTextRef.current = prefillText;
+      publishText(prefillText, editor.view.dom, true);
+      editor.commands.focus("end");
+    });
+
+    return () => {
+      cancelled = true;
+      if (pendingMentionPrefillKeyRef.current === requestKey) {
+        pendingMentionPrefillKeyRef.current = 0;
+      }
+    };
+  }, [
+    clearPendingAutoTagging,
+    editor,
+    prefillMentionRequest,
+    publishText,
+    resetVisualTraceEditorState,
+    setDirectoryAutocompleteState,
+  ]);
+
   // Sync external value (controller or controlled `value` prop) into the editor.
   // Compares against the serialized text so prefill/clear/setInput apply, while
   // a user's own keystrokes (already serialized) don't loop back through here.
@@ -1575,7 +1659,12 @@ export const PromptInputTextarea = ({
     }
 
     const currentText = serializeComposerDoc(editor);
+    if (lastMentionPrefillTextRef.current === currentText && resolvedValue !== currentText) {
+      return;
+    }
+
     if (currentText === resolvedValue) {
+      lastMentionPrefillTextRef.current = null;
       if (lastEditorPublishedTextRef.current === resolvedValue) {
         lastEditorPublishedTextRef.current = null;
       }
@@ -1626,19 +1715,19 @@ export const PromptInputTextarea = ({
           editor={editor}
           className={cn(
             "min-w-0 flex-1 self-stretch",
-            showComposerTopScrollMask &&
-              !showComposerBottomScrollMask &&
+            showComposerTopMask &&
+              !showComposerBottomMask &&
               "scroll-mask-top",
-            showComposerBottomScrollMask &&
-              !showComposerTopScrollMask &&
+            showComposerBottomMask &&
+              !showComposerTopMask &&
               "scroll-mask-bottom",
-            (showComposerTopScrollMask ||
-              showComposerBottomScrollMask) &&
+            (showComposerTopMask ||
+              showComposerBottomMask) &&
               "overscroll-contain"
           )}
           style={
-            showComposerTopScrollMask &&
-            showComposerBottomScrollMask
+            showComposerTopMask &&
+            showComposerBottomMask
               ? composerScrollMaskStyle
               : undefined
           }

@@ -151,38 +151,35 @@ export function EntityCardHeader({
 				{byline ?? null}
 			</div>
 			{action || added || hoverAdded ? (
-				<span className="relative flex shrink-0 items-center gap-2">
+				<span
+					className={cn(
+						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out",
+						added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px]" : "w-6",
+					)}
+				>
 					{action ? (
 						<span
 							className={cn(
-								"inline-flex",
-								!added && hoverAdded &&
-									"transition-transform duration-fast ease-out group-hover/card:-translate-x-8",
+								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out",
+								added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7" : "translate-x-0",
 							)}
 						>
 							{action}
 						</span>
 					) : null}
-					{added ? (
-						<span className="pointer-events-none relative inline-flex size-6 shrink-0 items-center justify-center">
-							<span
-								className={cn(
-									"absolute inset-0 inline-flex origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
-									added ? "scale-100 opacity-100" : "scale-75 opacity-0",
-								)}
-							>
-								<EntityCardAddedCheck label={added ? "Added" : ""} />
-							</span>
-						</span>
-					) : null}
-					{!added && hoverAdded ? (
-						<span
-							aria-hidden
-							className="pointer-events-none absolute inset-y-0 right-0 inline-flex size-6 scale-75 items-center justify-center opacity-0 transition-[opacity,transform] duration-fast ease-out group-hover/card:scale-100 group-hover/card:opacity-100"
-						>
-							<EntityCardAddedCheck className="text-icon-disabled" label="" />
-						</span>
-					) : null}
+					<span
+						aria-hidden={!added ? true : undefined}
+						className={cn(
+							"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
+							added
+								? "scale-100 opacity-100"
+								: hoverAdded
+									? "scale-75 opacity-0 group-hover/card:scale-100 group-hover/card:opacity-100"
+									: "scale-75 opacity-0",
+						)}
+					>
+						<EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />
+					</span>
 				</span>
 			) : null}
 		</div>

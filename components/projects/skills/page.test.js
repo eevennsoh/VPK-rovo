@@ -16,13 +16,17 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	const viewAllSkillsIndex = SOURCE.indexOf("View all skills", addMenuIndex);
 
 	assert.match(SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(SOURCE, /import \{ mapSkillToMentionItem \} from "@\/components\/blocks\/editor-palette\/data\/mention-sources";/u);
 	assert.match(SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
+	assert.match(SOURCE, /import type \{ RichTextMentionItem, RichTextMentionSources \} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(SOURCE, /import \{ PromptInputActionMenuItem \} from "@\/components\/ui-custom\/prompt-input";/u);
 	assert.match(SOURCE, /import FolderAddIcon from "@atlaskit\/icon-lab\/core\/folder-add";/u);
 	assert.match(SOURCE, /import SkillIcon from "@atlaskit\/icon-lab\/core\/skill";/u);
 	assert.match(SOURCE, /const \[isSkillsDirectoryOpen, setIsSkillsDirectoryOpen\] = useState\(false\);/u);
+	assert.match(SOURCE, /const \[prefillRequest, setPrefillRequest\] = useState<\{ mention\?: RichTextMentionItem; text\?: string; requestKey: number \}>/u);
 	assert.match(SOURCE, /const handleViewAllSkills = useCallback\(\(\) => \{[\s\S]*setIsSkillsDirectoryOpen\(true\);[\s\S]*\}, \[\]\);/u);
-	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ text: buildSkillMentionText\(skill\.name\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillsDirectoryOpen\(false\);/u);
+	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ mention: mapSkillToMentionItem\(skill\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillsDirectoryOpen\(false\);/u);
+	assert.doesNotMatch(SOURCE, /buildSkillMentionText/u);
 
 	assert.ok(addMenuIndex > -1);
 	assert.ok(createSpaceIndex > addMenuIndex);

@@ -873,21 +873,27 @@
 
 .prompt-input-composer .react-renderer.node-mention {
 	display: inline-flex;
-	height: 1.25rem;
-	line-height: 1.25rem;
+	height: 1.625rem;
+	align-items: center;
+	margin-inline: -0.5rem;
+	overflow: visible;
+	padding-inline: 0.5rem;
+	line-height: 1.625rem;
 	vertical-align: bottom;
 }
 
 .prompt-input-composer .rich-text-mention-node {
-	height: 1.25rem;
+	height: 1.625rem;
 	align-items: center;
-	line-height: 1.25rem;
+	overflow: visible;
+	line-height: 1.625rem;
 	vertical-align: bottom;
 }
 
 .prompt-input-composer .rich-text-mention-trigger-wrapper {
-	height: 1.25rem;
+	height: 1.625rem;
 	align-items: center;
+	overflow: visible;
 	line-height: 0;
 	vertical-align: top;
 }
@@ -895,7 +901,7 @@
 .prompt-input-composer .rich-text-mention-chip {
 	margin-top: 0;
 	margin-bottom: 0;
-	vertical-align: top;
+	vertical-align: middle;
 }
 
 .prompt-input-directory-autocomplete-ghost {

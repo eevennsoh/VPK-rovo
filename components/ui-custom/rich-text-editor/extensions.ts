@@ -268,6 +268,7 @@ export const RichTextMention = Mention.extend({
 	markdownTokenizer: mentionMarkdownTokenizer,
 	parseMarkdown: createMentionTokenParser(resolveMentionToken),
 	renderMarkdown: serializeMentionNode,
+	selectable: true,
 	addAttributes() {
 		return {
 			...(this.parent?.() ?? {}),
