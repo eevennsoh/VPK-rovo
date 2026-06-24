@@ -227,9 +227,10 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	// and a destructive Remove button for the configured skill.
 	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);
 	assert.match(source, /<Switch[\s\S]*checked=\{enabled\}[\s\S]*onCheckedChange=\{onToggleEnabled\}/u);
-	// Remove and the fallback Add button are gated on committed added state.
+	// Remove and the fallback add CTA are gated on committed added state.
 	assert.match(source, /onClick=\{onRemove\} type="button" variant="destructive"[\s\S]*Remove/u);
-	assert.match(source, /<Button onClick=\{onAdd\} type="button">[\s\S]*Add to agent/u);
+	assert.match(source, /addLabel=\{selectionExperience === "chat-single-add" \? "Try in chat" : "Add to agent"\}/u);
+	assert.match(source, /<Button onClick=\{onAdd\} type="button">[\s\S]*\{addLabel\}/u);
 	// Disable + Remove are gated on `added` (only skills on the agent), and the disable
 	// state is controlled/persisted via the agent config — not local-cosmetic.
 	assert.match(source, /added \? \(\s*<label/u);

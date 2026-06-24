@@ -531,6 +531,7 @@ export function SkillsDirectoryDialog({
 			>
 				{selectedDetailSkill ? (
 					<SkillDetailHeader
+						addLabel={selectionExperience === "chat-single-add" ? "Try in chat" : "Add to agent"}
 						added={addedIdSet.has(selectedDetailSkill.id)}
 						enabled={!disabledIdSet.has(selectedDetailSkill.id)}
 						onBack={handleExitDetail}
@@ -1020,6 +1021,7 @@ function SelectedSkillsFooter({
 }
 
 interface SkillDetailHeaderProps {
+	addLabel: string;
 	/** Whether the skill is on the agent — gates the disable Switch + Remove button. */
 	added: boolean;
 	/** Whether the skill is enabled on the agent — drives the disable Switch. */
@@ -1039,6 +1041,7 @@ interface SkillDetailHeaderProps {
 }
 
 function SkillDetailHeader({
+	addLabel,
 	added,
 	enabled,
 	onAdd,
@@ -1118,7 +1121,7 @@ function SkillDetailHeader({
 					</Button>
 				) : (
 					<Button onClick={onAdd} type="button">
-						Add to agent
+						{addLabel}
 					</Button>
 				)}
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
