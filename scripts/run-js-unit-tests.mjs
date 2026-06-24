@@ -36,9 +36,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// change left this colocated test stale until review, so keep it CI-gated.
 	"components/projects/sidebar-chat/components/agent-result-card.test.js",
 	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
-	// Skills project add-menu shortcuts open the opt-in experimental directory
-	// without changing the shared compact chat default.
+	// Skills project add-menu shortcuts and deterministic skill invocation matcher.
+	// Components are not included wholesale, so gate these focused contracts.
 	"components/projects/skills/page.test.js",
+	"components/projects/skills/lib/skill-intercept.test.js",
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/website/component-doc/components/demo-preview-shell.test.js",
