@@ -127,10 +127,13 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 
 	const getWidgetPosition = useCallback(
 		(widgetType: string): "before-content" | "after-content" | undefined => {
+			if (widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE) {
+				return "after-content";
+			}
+
 			if (
 				widgetType === SKILL_INVOCATION_WIDGET_TYPE ||
-				widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE ||
-				widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE
+				widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE
 			) {
 				return "before-content";
 			}

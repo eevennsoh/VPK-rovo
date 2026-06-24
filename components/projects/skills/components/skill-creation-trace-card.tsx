@@ -78,7 +78,9 @@ export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<Sk
 
 	return (
 		<ChainOfThoughtScenario
+			key={isAwaiting ? "awaiting" : "active"}
 			state={state}
+			defaultOpen={!isAwaiting}
 			headerLabel={headerLabel}
 			duration={payload.durationSeconds}
 			steps={steps}

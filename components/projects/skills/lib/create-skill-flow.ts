@@ -45,12 +45,15 @@ export const CREATE_SKILL_NAME = "Create skill";
  * The composer serializes a skill mention as `"/<Skill name>"` (sigil + label),
  * NOT a markdown token — see lib/composer-serialize.ts (`serializeComposerDoc`).
  * The external-value sync re-tags that same `/<label>` form back into a chip via
- * visual-trace auto-tagging. So both detection and prefill use the `/<label>`
- * form. We require the leading slash so plain prose like "create a skill" never
- * false-matches.
+ * visual-trace auto-tagging. So prefill still uses the `/<label>` form.
+ *
+ * Detection also accepts leading plain-text `create skill …`, `create a skill …`,
+ * and `create-skill …` commands. That keeps natural typed commands and editor
+ * auto-tagging on the same create-skill path as the slash mention, while prose
+ * like "I want to create a skill someday" still does not match.
  */
-const CREATE_SKILL_MENTION_RE = /(?:^|\s)\/create skill\b/iu;
-const CREATE_SKILL_MENTION_STRIP_RE = /^\s*\/create skill\b[\s:]*/iu;
+const CREATE_SKILL_MENTION_RE = /(?:^|\s)\/create[ -]skill\b|^\s*create(?:\s+a)?[ -]skill\b/iu;
+const CREATE_SKILL_MENTION_STRIP_RE = /^\s*\/?create(?:\s+a)?[ -]skill\b[\s:]*/iu;
 
 /** Builds the composer text that hydrates a skill's mention chip (prefill). */
 export function buildSkillMentionText(skillName: string): string {
@@ -75,6 +78,7 @@ const CLARIFY_TOOL_CALL_ID = "create-skill-clarify";
 // per-step beats.
 const TRACE_INITIAL_DELAY_MS = 3200;
 const TRACE_STEP_DELAYS_MS = [1200, 1400, 1500, 1300] as const;
+const RESULT_TEXT_STREAM_DELAYS_MS = [260, 320, 360] as const;
 
 type TraceStepStatus = "complete" | "active" | "pending";
 
@@ -131,7 +135,7 @@ function normalize(text: string): string {
 	return text.trim().toLowerCase();
 }
 
-/** True when the composer text contains the create-skill mention (`/Create skill`). */
+/** True when the composer text contains the create-skill mention or command. */
 export function hasCreateSkillMention(text: string): boolean {
 	return CREATE_SKILL_MENTION_RE.test(text);
 }
@@ -181,6 +185,10 @@ function resultWidgetPart(payload: SkillCreationResultPayload): AssistantParts[n
 		type: "data-widget-data",
 		data: { type: SKILL_CREATION_RESULT_WIDGET_TYPE, payload },
 	} as AssistantParts[number];
+}
+
+function textPart(text: string, state: "streaming" | "done"): AssistantParts[number] {
+	return { type: "text", text, state } as AssistantParts[number];
 }
 
 function buildQuestionCardPart(): AssistantParts[number] {
@@ -255,7 +263,11 @@ const STAGE_1_STEP_DEFS = [
 ] as const;
 
 function stage1Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
-	return STAGE_1_STEP_DEFS.map((step, index) => ({
+	const visibleSteps = allComplete
+		? STAGE_1_STEP_DEFS
+		: STAGE_1_STEP_DEFS.slice(0, activeIndex + 1);
+
+	return visibleSteps.map((step, index) => ({
 		...step,
 		status: allComplete || index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
 	}));
@@ -416,10 +428,28 @@ const STAGE_2_STEP_DEFS = [
 ] as const;
 
 function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
-	return STAGE_2_STEP_DEFS.map((step, index) => ({
+	const visibleSteps = allComplete
+		? STAGE_2_STEP_DEFS
+		: STAGE_2_STEP_DEFS.slice(0, activeIndex + 1);
+
+	return visibleSteps.map((step, index) => ({
 		...step,
 		status: allComplete || index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
 	}));
+}
+
+function buildCreatedSkillReplyText(skill: SkillsDirectorySkill): string {
+	return `Created **${skill.name}** and added it to your skills. I prefilled the composer with its skill tag so you can run it now, or open the card to edit the generated instructions.`;
+}
+
+function buildCreatedSkillReplyChunks(skill: SkillsDirectorySkill): string[] {
+	const fullText = buildCreatedSkillReplyText(skill);
+
+	return [
+		`Created **${skill.name}**`,
+		`Created **${skill.name}** and added it to your skills.`,
+		fullText,
+	];
 }
 
 export function buildCreateSkillStage2(
@@ -435,6 +465,16 @@ export function buildCreateSkillStage2(
 	};
 	const elapsedSeconds = (startedAt: Date) =>
 		Math.max(1, Math.round((Date.now() - startedAt.getTime()) / 1000));
+	const responseChunks = buildCreatedSkillReplyChunks(skill);
+	const buildResultParts = (
+		startedAt: Date,
+		text: string,
+		state: "streaming" | "done",
+	): AssistantParts => [
+		traceWidgetPart({ headerState: "completed", durationSeconds: elapsedSeconds(startedAt), steps: stage2Steps(0, true) }),
+		resultWidgetPart(resultPayload),
+		textPart(text, state),
+	];
 
 	return {
 		getPendingAssistantParts: () =>
@@ -457,13 +497,26 @@ export function buildCreateSkillStage2(
 			},
 			{
 				delayMs: TRACE_STEP_DELAYS_MS[2],
-				// All steps complete → header settles to "Thought for Xs"; the result
-				// card renders below the (collapsed) trace.
-				getAssistantParts: ({ startedAt }) => [
-					traceWidgetPart({ headerState: "completed", durationSeconds: elapsedSeconds(startedAt), steps: stage2Steps(0, true) }),
-					resultWidgetPart(resultPayload),
-				],
+				// All steps complete -> header settles to "Thought for Xs"; the result
+				// card appears with assistant text already streaming below it.
+				getAssistantParts: ({ startedAt }) =>
+					buildResultParts(startedAt, responseChunks[0], "streaming"),
 				onApply: onComplete,
+			},
+			{
+				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[0],
+				getAssistantParts: ({ startedAt }) =>
+					buildResultParts(startedAt, responseChunks[1], "streaming"),
+			},
+			{
+				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[1],
+				getAssistantParts: ({ startedAt }) =>
+					buildResultParts(startedAt, responseChunks[2], "streaming"),
+			},
+			{
+				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[2],
+				getAssistantParts: ({ startedAt }) =>
+					buildResultParts(startedAt, responseChunks[2], "done"),
 			},
 		],
 	};

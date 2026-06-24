@@ -495,7 +495,7 @@ export interface ChainOfThoughtScenarioStep {
 	children?: ReactNode;
 }
 
-export interface ChainOfThoughtScenarioProps extends Omit<ChainOfThoughtProps, "children" | "defaultOpen"> {
+export interface ChainOfThoughtScenarioProps extends Omit<ChainOfThoughtProps, "children"> {
 	state: ChainOfThoughtScenarioState;
 	duration?: number;
 	steps: readonly ChainOfThoughtScenarioStep[];
@@ -507,6 +507,7 @@ export const ChainOfThoughtScenario = memo(
 	({
 		className,
 		contentClassName,
+		defaultOpen,
 		duration,
 		headerLabel,
 		state,
@@ -515,7 +516,7 @@ export const ChainOfThoughtScenario = memo(
 	}: ChainOfThoughtScenarioProps) => (
 		<ChainOfThought
 			className={className}
-			defaultOpen={state === "thinking"}
+			defaultOpen={defaultOpen ?? state === "thinking"}
 			{...props}
 		>
 			<ChainOfThoughtHeader
