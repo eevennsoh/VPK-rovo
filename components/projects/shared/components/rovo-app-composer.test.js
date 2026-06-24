@@ -20,6 +20,7 @@ const SKILL_TAG_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custo
 const ROVO_CLICKY_OVERLAY_SOURCE = fs.readFileSync(path.join(__dirname, "../../rovo/components/clicky/clicky-overlay.tsx"), "utf8");
 const STUDIO_CLICKY_OVERLAY_SOURCE = fs.readFileSync(path.join(__dirname, "../../studio/components/clicky/clicky-overlay.tsx"), "utf8");
 const ROVO_CURSOR_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rovo-cursor.tsx"), "utf8");
+const VERTICAL_OVERFLOW_HOOK_SOURCE = fs.readFileSync(path.join(__dirname, "../../../hooks/use-has-vertical-overflow.ts"), "utf8");
 
 test("RovoAppComposer uses the shared edit context bar for open artifacts", () => {
 	assert.match(COMPOSER_SOURCE, /import ChatContextBar from "@\/components\/projects\/sidebar-chat\/components\/chat-context-bar";/u);
@@ -201,6 +202,13 @@ test("PromptInputTextarea fades overflowing Tiptap composer text with the shared
 	assert.match(PROMPT_INPUT_SOURCE, /buildScrollMaskStyle\(\{ fadeSize: "var\(--ds-space-200\)" \}\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /composerScrollOverflowRef\(editor\.view\.dom\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /<EditorContent[\s\S]*showComposerTopScrollMask[\s\S]*"scroll-mask-top"[\s\S]*showComposerBottomScrollMask[\s\S]*"scroll-mask-bottom"[\s\S]*style=\{[\s\S]*composerScrollMaskStyle/u);
+	// PromptInputTextarea attaches the scrollport after the editor mounts. The
+	// overflow hook must observe that late ref and recompute after layout settles;
+	// otherwise a temporary auto-tag trace overflow can leave a bottom fade stuck
+	// on a single-line composer chip.
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setElement\(node\);[\s\S]*window\.requestAnimationFrame\(updateScrollState\);/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /}, \[element, updateScrollState\]\);/u);
 });
 
 test("visual trace auto-tagging flushes before submit and cancels stale delayed ranges", () => {

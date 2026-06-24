@@ -105,6 +105,8 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	const skillSource = readProjectFile("components/ui-custom/entity-card/skill.tsx");
 	const partsSource = readProjectFile("components/ui-custom/entity-card/parts.tsx");
 	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
+	const skillsJson = JSON.parse(readProjectFile("app/data/directory/skills.json"));
+	const createSkill = skillsJson.find((skill) => skill.id === "create-skill");
 
 	assert.match(source, /EntityCardSkillCard/u);
 	assert.match(source, /<SkillsDirectoryHeader[\s\S]*onCreateSkill=\{createSkillHandler\}/u);
@@ -129,12 +131,32 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	assert.match(variantsSource, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(variantsSource, /onSelectedChange=\{onSelectedChange \?\? onSelect\}/u);
 	assert.match(source, /selectionExperience === "chat-single-add"[\s\S]*onAddSkills\?\.\(\[skill\.id\], \[skill\]\);[\s\S]*handleOpenChange\(false\);/u);
+	assert.doesNotMatch(source, /selectionExperience === "chat-single-add"[\s\S]*commitSelectedIds\(\[skill\.id\]\);/u);
 	assert.match(source, /selectionExperience === "studio-bulk-add"[\s\S]*handleToggleSelectedSkill\(skill\);/u);
-	assert.match(source, /const checkboxSelectable = selectionExperience !== "studio-bulk-add";/u);
+	assert.match(source, /const selectedAsAdded = selectionExperience === "studio-bulk-add";/u);
+	assert.match(source, /const checkboxSelectable = !selectedAsAdded;/u);
 	assert.match(source, /const cardSelectable = selectionExperience !== "checkbox-actions";/u);
+	assert.match(source, /const skillsToAdd = selectedSkills\.filter\(\(skill\) => !addedIdSet\.has\(skill\.id\)\);/u);
+	assert.match(source, /const skillsToRemove = selectedSkills\.filter\(\(skill\) => addedIdSet\.has\(skill\.id\)\);/u);
+	assert.match(source, /onRemoveSkills\?\.\(skillsToRemove\.map\(\(skill\) => skill\.id\), skillsToRemove\);/u);
+	assert.match(source, /onAddSkills\?\.\(skillsToAdd\.map\(\(skill\) => skill\.id\), skillsToAdd\);/u);
+	assert.match(source, /const selectedFooterCount = selectionExperience === "studio-bulk-add"[\s\S]*\? selectedSkills\.length[\s\S]*: resolvedSelectedIds\.length;/u);
+	assert.match(source, /const showSelectedSkillsFooter = selectedFooterCount > 0;/u);
+	assert.match(source, /showSelectedSkillsFooter \? \([\s\S]*<SelectedSkillsFooter[\s\S]*count=\{selectedFooterCount\}[\s\S]*onCancelSelection=\{\(\) => commitSelectedIds\(\[\]\)\}/u);
+	assert.match(source, /const showCancelButton = selectionExperience === "studio-bulk-add";/u);
+	assert.match(source, /const addButtonLabel = selectionExperience === "studio-bulk-add" \? "Save" : "Add skills";/u);
 	assert.match(source, /onSelect=\{cardSelectable \? \(\) => onSelectSkill\(skill\) : undefined\}/u);
 	assert.match(source, /onSelectedChange=\{onToggleSelected\}/u);
 	assert.match(source, /selectable=\{checkboxSelectable\}/u);
+	assert.match(source, /const effectiveAdded = selectionExperience === "studio-bulk-add"[\s\S]*\? addedIds\.has\(skill\.id\) !== selected[\s\S]*: addedIds\.has\(skill\.id\);/u);
+	assert.match(source, /added=\{effectiveAdded\}/u);
+	assert.match(source, /hoverAdded=\{selectedAsAdded && !effectiveAdded\}/u);
+	assert.match(source, /const showHoverAdded = hoverAdded && !moreMenuOpen;/u);
+	assert.match(source, /hoverAdded=\{showHoverAdded\}/u);
+	assert.doesNotMatch(source, /hover:after:border-border/u);
+	assert.match(source, /selected=\{selectedAsAdded \? false : selected\}/u);
+	assert.match(source, /const effectiveAdded = selectedAsAdded[\s\S]*\? addedIds\.has\(skill\.id\) !== selected[\s\S]*: addedIds\.has\(skill\.id\);/u);
+	assert.match(source, /const selected = selectedIds\.has\(skill\.id\);[\s\S]*selected=\{selectedAsAdded \? false : selected\}/u);
 	assert.match(variantsSource, /<EntityCardShell[\s\S]*active=\{active\}[\s\S]*selected=\{selected\}/u);
 	assert.match(partsSource, /function EntityCardSelectableLeading/u);
 	assert.match(partsSource, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
@@ -151,21 +173,33 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
 	assert.match(source, /Learn more/u);
 	assert.doesNotMatch(source, /StarStarredIcon/u);
-	assert.doesNotMatch(source, /StarUnstarredIcon/u);
 	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
 	assert.match(source, /function SelectedSkillsFooter/u);
 	assert.match(source, /<DialogFooter[\s\S]*aria-label="Selected skills actions"[\s\S]*role="toolbar"/u);
 	assert.match(source, /const showUtilityActions = selectionExperience !== "studio-bulk-add";/u);
+	assert.match(source, /import StarUnstarredIcon from "@atlaskit\/icon\/core\/star-unstarred";/u);
+	assert.match(source, /<Button onClick=\{onFavoriteSkills\} size="default" type="button" variant="ghost">\s*<StarUnstarredIcon label="" \/>\s*Favorite\s*<\/Button>/u);
 	assert.match(source, /const showAddButton = selectionExperience !== "chat-single-add";/u);
+	assert.match(source, /showCancelButton \? \([\s\S]*variant="outline"[\s\S]*Cancel/u);
+	assert.match(source, /const countLabel = selectionExperience === "studio-bulk-add"[\s\S]*\? count === 1 \? "skill" : "skills"[\s\S]*: "selected";/u);
+	assert.match(source, /<span className="shrink-0 text-sm font-medium leading-5 text-text">\{countLabel\}<\/span>/u);
+	assert.doesNotMatch(source, /Apply changes/u);
 	assert.doesNotMatch(source, /function SelectedSkillsToolbar/u);
 	assert.doesNotMatch(source, /pointer-events-none absolute inset-x-0 bottom-6/u);
 	assert.doesNotMatch(source, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.doesNotMatch(source, /function SkillPublisherAvatar/u);
 	assert.match(source, /function getSkillCardSource/u);
 	assert.match(source, /getSkillPublisherLogoName\(skill\)/u);
-	// Attribution marks are a uniform 16x16 through the canonical EntityCard source row.
-	assert.match(skillSource, /<AtlassianLogoMark name=\{source\.logoName\} size="xxsmall" transparent label=\{source\.name\} \/>/u);
-	assert.match(skillSource, /<BrandLogoMark src=\{source\.avatarSrc\} size="xxsmall" transparent label=\{source\.name\} \/>/u);
+	assert.equal(createSkill?.publisherName, "Atlassian");
+	assert.equal(createSkill?.companyId, "atlassian");
+	assert.equal(createSkill?.publisherAvatarSrc, undefined);
+	// Attribution marks are uniform, borderless 16x16 logos through the canonical EntityCard source row.
+	assert.match(skillSource, /import \{ AtlassianLogo, CustomLogo, type AtlassianLogoName \} from "@\/components\/ui\/logo";/u);
+	assert.match(skillSource, /import \{ LogoThirdParty \} from "@\/components\/ui\/logo-third-party";/u);
+	assert.doesNotMatch(skillSource, /@\/components\/ui\/logo-mark/u);
+	assert.match(skillSource, /<AtlassianLogo label="" name=\{source\.logoName\} size="xxsmall" themeAware \/>/u);
+	assert.match(skillSource, /<LogoThirdParty borderless label="" name=\{source\.brandName\} size="xxsmall" \/>/u);
+	assert.match(skillSource, /<CustomLogo borderless label="" size="xxsmall" src=\{source\.avatarSrc\} \/>/u);
 	assert.doesNotMatch(source, /size="xsmall" themeAware label=\{getSkillPublisherName/u);
 	// Only human avatars are rounded; company logos use the shared transparent logo mark.
 	assert.match(source, /if \(isSkillPublisherPerson\(skill\)\) \{/u);
@@ -217,7 +251,8 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	// and a Save/Cancel footer; draft state lives in the shared useSkillMdDraft hook.
 	assert.match(source, /profileCover=\{<SkillProfileCover skill=\{skill\} \/>\}/u);
 	assert.match(source, /profileMetaSlot=\{<SkillProfileMeta skill=\{skill\} \/>\}/u);
-	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-0 \[&>\*:first-child\]:mt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-8"/u);
+	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-8"/u);
+	assert.match(source, /instructionsToolbarClassName="-top-4"/u);
 	assert.match(source, /useSkillMdDraft\(skill, initialDraft\)/u);
 	assert.match(source, /function handleSave\(\)/u);
 	assert.match(source, /function handleCancel\(\)/u);
@@ -266,10 +301,25 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	const skillIds = new Set(skillsJson.map((skill) => skill.id));
 
 	assert.doesNotMatch(pageSource, /defaultSelectedSkillIds=/u);
+	assert.match(pageSource, /type SkillsDirectorySelectionExperience/u);
+	assert.match(pageSource, /const \[selectionExperience, setSelectionExperience\] = useState<SkillsDirectorySelectionExperience>\("studio-bulk-add"\);/u);
+	assert.match(pageSource, /Open Chat directory/u);
+	assert.match(pageSource, /Open Studio directory/u);
+	assert.match(pageSource, /onClick=\{\(\) => openDirectory\("chat-single-add"\)\}/u);
+	assert.match(pageSource, /onClick=\{\(\) => openDirectory\("studio-bulk-add"\)\}/u);
+	assert.match(pageSource, /selectionExperience=\{selectionExperience\}/u);
+	assert.match(pageSource, /variant="experimental"/u);
+	assert.match(pageSource, /if \(selectionExperience === "chat-single-add"\) \{\s*return;\s*\}/u);
+	assert.match(pageSource, /addedSkillIds=\{selectionExperience === "chat-single-add" \? \[\] : addedSkillIds\}/u);
 	assert.doesNotMatch(detailsSource, /defaultSelectedSkillIds=\{\[/u);
+	assert.match(detailsSource, /selectionExperience="studio-bulk-add"/u);
+	assert.match(detailsSource, /title: "Chat"[\s\S]*Single-select experience like \/skills/u);
+	assert.match(detailsSource, /title: "Studio"[\s\S]*blue selected checkmark/u);
 	assert.match(pageSource, /const DEMO_ADDED_USER_SKILL_IDS: readonly string\[\] = \[[\s\S]*"create-brand-identity"[\s\S]*"design-landing-page"[\s\S]*"develop-mobile-app-interface"/u);
 	assert.match(pageSource, /const DEMO_ADDED_CATALOG_SKILL_IDS: readonly string\[\] = \[[\s\S]*"access-review"[\s\S]*"analyze-root-cause"[\s\S]*"build-report"[\s\S]*"review-pull-request"/u);
-	assert.match(pageSource, /addedSkillIds=\{DEMO_ADDED_SKILL_IDS\}/u);
+	assert.match(pageSource, /const \[addedSkillIds, setAddedSkillIds\] = useState<readonly string\[\]>\(DEMO_ADDED_SKILL_IDS\);/u);
+	assert.match(pageSource, /addedSkillIds=\{selectionExperience === "chat-single-add" \? \[\] : addedSkillIds\}/u);
+	assert.match(pageSource, /setAddedSkillIds\(\(current\) => \[\.\.\.new Set\(\[\.\.\.current, \.\.\.skillIds\]\)\]\);/u);
 	assert.ok(skillIds.has("design-landing-page"));
 	assert.ok(skillIds.has("develop-mobile-app-interface"));
 	assert.ok(skillIds.has("create-brand-identity"));
@@ -414,9 +464,11 @@ test("Skills Directory experimental variation has searchable multi-select filter
 	assert.match(source, /contentClassName="pb-8"/u);
 	assert.doesNotMatch(source, /contentClassName=\{hasSelection \? "pb-28" : "pb-8"\}/u);
 
-	// Filter controls: Your skills + Added skills + Favourites toggles and Companies dropdown.
+	// Filter controls: Your skills + Favourites toggles and Companies dropdown.
+	// Added skills is omitted in chat-single-add mode because Chat adds to the prompt,
+	// not the agent config.
 	// Collections/Categories are internal taxonomy and not exposed in the experimental UI.
-	assert.match(source, /label: "Filter by your skills"[\s\S]*label: "Added skills"[\s\S]*label: "Favourites"/u);
+	assert.match(source, /label: "Filter by your skills"[\s\S]*selectionExperience === "chat-single-add"[\s\S]*label: "Added skills"[\s\S]*label: "Favourites"/u);
 	assert.match(source, /activeLabel: "Filter by companies"[\s\S]*label: "Companies"/u);
 	assert.doesNotMatch(source, /activeLabel: "Filter by collections"/u);
 	assert.doesNotMatch(source, /label: "Collections"/u);

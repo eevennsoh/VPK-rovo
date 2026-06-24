@@ -8,8 +8,8 @@ import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
-import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
-import type { AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo, CustomLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +64,8 @@ export interface EntityCardSkillProps {
 	onMoreActions?: () => void;
 	/** Renders the persistent "added" check when the skill is already on the agent. */
 	added?: boolean;
+	/** Renders a subtle added check only on card hover. */
+	hoverAdded?: boolean;
 	/** Swaps the leading icon for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -87,6 +89,24 @@ function getInitials(name: string): string {
 	);
 }
 
+function EntityCardSourceAppLogo({
+	source,
+}: Readonly<{ source: Extract<EntityCardSource, { type: "app" }> }>) {
+	if (source.logoName) {
+		return <AtlassianLogo label="" name={source.logoName} size="xxsmall" themeAware />;
+	}
+
+	if (source.brandName) {
+		return <LogoThirdParty borderless label="" name={source.brandName} size="xxsmall" />;
+	}
+
+	if (source.avatarSrc) {
+		return <CustomLogo borderless label="" size="xxsmall" src={source.avatarSrc} />;
+	}
+
+	return <span aria-hidden className="size-4 rounded-full bg-bg-neutral" />;
+}
+
 function EntityCardSourceRow({ source }: Readonly<{ source: EntityCardSource }>) {
 	return (
 		<div data-slot="entity-card-source" className="flex items-center gap-1">
@@ -102,15 +122,7 @@ function EntityCardSourceRow({ source }: Readonly<{ source: EntityCardSource }>)
 				</>
 			) : (
 				<>
-					{source.logoName ? (
-						<AtlassianLogoMark name={source.logoName} size="xxsmall" transparent label={source.name} />
-					) : source.brandName ? (
-						<BrandLogoMark name={source.brandName} size="xxsmall" label={source.name} />
-					) : source.avatarSrc ? (
-						<BrandLogoMark src={source.avatarSrc} size="xxsmall" transparent label={source.name} />
-					) : (
-						<span aria-hidden className="size-4 rounded-full bg-bg-neutral" />
-					)}
+					<EntityCardSourceAppLogo source={source} />
 					<p className="text-xs text-text-subtlest">{source.name}</p>
 				</>
 			)}
@@ -134,6 +146,7 @@ export function EntityCardSkill({
 	action,
 	onMoreActions,
 	added = false,
+	hoverAdded = false,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -176,6 +189,7 @@ export function EntityCardSkill({
 		<div data-slot="entity-card-skill" className={cn("contents", className)}>
 			<EntityCardHeader
 				added={added}
+				hoverAdded={hoverAdded}
 				action={
 					action ?? (onMoreActions ? (
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />

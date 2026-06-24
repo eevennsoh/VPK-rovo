@@ -96,6 +96,8 @@ export interface EntityCardHeaderProps {
 	 * Distinct from a hover/multi-select checkbox: this reflects committed state.
 	 */
 	added?: boolean;
+	/** Shows the added check only on hover, in a subtle color. */
+	hoverAdded?: boolean;
 	/**
 	 * Marks the card as multi-selectable. When set, the leading visual swaps to a
 	 * 16×16 checkbox on card hover and while selected — the directory "select"
@@ -117,6 +119,7 @@ export function EntityCardHeader({
 	reserveByline = false,
 	action,
 	added = false,
+	hoverAdded = false,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -147,10 +150,39 @@ export function EntityCardHeader({
 				</h3>
 				{byline ?? null}
 			</div>
-			{action || added ? (
-				<span className="flex shrink-0 items-center gap-2">
-					{action ?? null}
-					{added ? <EntityCardAddedCheck /> : null}
+			{action || added || hoverAdded ? (
+				<span className="relative flex shrink-0 items-center gap-2">
+					{action ? (
+						<span
+							className={cn(
+								"inline-flex",
+								!added && hoverAdded &&
+									"transition-transform duration-fast ease-out group-hover/card:-translate-x-8",
+							)}
+						>
+							{action}
+						</span>
+					) : null}
+					{added ? (
+						<span className="pointer-events-none relative inline-flex size-6 shrink-0 items-center justify-center">
+							<span
+								className={cn(
+									"absolute inset-0 inline-flex origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
+									added ? "scale-100 opacity-100" : "scale-75 opacity-0",
+								)}
+							>
+								<EntityCardAddedCheck label={added ? "Added" : ""} />
+							</span>
+						</span>
+					) : null}
+					{!added && hoverAdded ? (
+						<span
+							aria-hidden
+							className="pointer-events-none absolute inset-y-0 right-0 inline-flex size-6 scale-75 items-center justify-center opacity-0 transition-[opacity,transform] duration-fast ease-out group-hover/card:scale-100 group-hover/card:opacity-100"
+						>
+							<EntityCardAddedCheck className="text-icon-disabled" label="" />
+						</span>
+					) : null}
 				</span>
 			) : null}
 		</div>
@@ -211,6 +243,7 @@ function EntityCardSelectableLeading({
 }
 
 export interface EntityCardAddedCheckProps {
+	className?: string;
 	/** Accessible status label announced for the indicator. */
 	label?: string;
 }
@@ -221,10 +254,13 @@ export interface EntityCardAddedCheckProps {
  * `selected` token (the same #1868DB as `border-border-selected`) so the
  * affordance reads as selection, not the semantic green success state.
  */
-export function EntityCardAddedCheck({ label = "Added" }: Readonly<EntityCardAddedCheckProps>) {
+export function EntityCardAddedCheck({
+	className = "text-icon-selected",
+	label = "Added",
+}: Readonly<EntityCardAddedCheckProps>) {
 	return (
 		<Icon
-			className="text-icon-selected"
+			className={className}
 			render={<StatusSuccessIcon label={label} color="currentColor" />}
 		/>
 	);

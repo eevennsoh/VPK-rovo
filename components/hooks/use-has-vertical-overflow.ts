@@ -13,6 +13,7 @@ export interface HasVerticalOverflowResult<T extends HTMLElement> {
 
 export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOverflowResult<T> {
 	const elementRef = useRef<T | null>(null);
+	const [element, setElement] = useState<T | null>(null);
 	const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
 	const [hasScrolledFromTop, setHasScrolledFromTop] = useState(false);
 	const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -30,7 +31,13 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 	const ref = useCallback<RefCallback<T>>(
 		(node) => {
 			elementRef.current = node;
+			setElement(node);
 			updateScrollState();
+			// Layout can settle after a rich text editor or virtualized list attaches.
+			// Recompute once the browser has applied final dimensions.
+			if (node && typeof window !== "undefined") {
+				window.requestAnimationFrame(updateScrollState);
+			}
 		},
 		[updateScrollState],
 	);
@@ -40,7 +47,6 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 	});
 
 	useEffect(() => {
-		const element = elementRef.current;
 		if (!element) return undefined;
 
 		element.addEventListener("scroll", updateScrollState, { passive: true });
@@ -88,7 +94,7 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 			resizeObserver.disconnect();
 			mutationObserver?.disconnect();
 		};
-	}, [updateScrollState]);
+	}, [element, updateScrollState]);
 
 	return {
 		hasVerticalOverflow,

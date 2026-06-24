@@ -39,8 +39,11 @@ export function EntityCardShell({
 	className,
 	children,
 }: Readonly<EntityCardShellProps>) {
-	const { interactive, hoverAnimation, tapAnimation, handleSelect } =
-		useCardInteraction(onSelect);
+	const { interactive, hoverAnimation, handleSelect } = useCardInteraction(onSelect);
+	const cardVariants = {
+		rest: { boxShadow: "none" },
+		hover: hoverAnimation,
+	} as const;
 
 	const cardMotionProps = {
 		className: cn(
@@ -64,10 +67,11 @@ export function EntityCardShell({
 			className,
 		),
 		style: { willChange: "transform" },
-		animate: active ? hoverAnimation : { boxShadow: "none" },
+		animate: active ? "hover" : "rest",
+		initial: "rest",
 		transition: CARD_HOVER_TRANSITION,
-		whileHover: hoverAnimation,
-		whileTap: interactive ? tapAnimation : undefined,
+		variants: cardVariants,
+		whileHover: "hover",
 	};
 
 	if (interactive) {

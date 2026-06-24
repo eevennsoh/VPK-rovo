@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	SkillsDirectoryDialog,
+	type SkillsDirectorySelectionExperience,
 	type SkillsDirectorySkill,
 	type SkillsDirectoryVariant,
 } from "@/components/blocks/skills-directory";
@@ -68,27 +69,37 @@ const DEMO_ADDED_SKILL_IDS: readonly string[] = [
 
 export default function SkillsDirectoryPage() {
 	const [open, setOpen] = useState(false);
-	const [variant, setVariant] = useState<SkillsDirectoryVariant>("default");
+	const [selectionExperience, setSelectionExperience] = useState<SkillsDirectorySelectionExperience>("studio-bulk-add");
+	const [addedSkillIds, setAddedSkillIds] = useState<readonly string[]>(DEMO_ADDED_SKILL_IDS);
 
-	function openDirectory(nextVariant: SkillsDirectoryVariant) {
-		setVariant(nextVariant);
+	function openDirectory(nextExperience: SkillsDirectorySelectionExperience) {
+		setSelectionExperience(nextExperience);
 		setOpen(true);
+	}
+
+	function handleAddSkills(skillIds: readonly string[]) {
+		if (selectionExperience === "chat-single-add") {
+			return;
+		}
+		setAddedSkillIds((current) => [...new Set([...current, ...skillIds])]);
 	}
 
 	return (
 		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
-			<Button onClick={() => openDirectory("default")} variant="outline">
-				Open standard directory
+			<Button onClick={() => openDirectory("chat-single-add")} variant="outline">
+				Open Chat directory
 			</Button>
-			<Button onClick={() => openDirectory("experimental")}>
-				Open experimental directory
+			<Button onClick={() => openDirectory("studio-bulk-add")}>
+				Open Studio directory
 			</Button>
 			<SkillsDirectoryDialog
-				addedSkillIds={DEMO_ADDED_SKILL_IDS}
+				addedSkillIds={selectionExperience === "chat-single-add" ? [] : addedSkillIds}
+				onAddSkills={handleAddSkills}
 				open={open}
 				onOpenChange={setOpen}
+				selectionExperience={selectionExperience}
 				sessionSkills={DEMO_SESSION_SKILLS}
-				variant={variant}
+				variant="experimental"
 			/>
 		</div>
 	);
@@ -106,9 +117,11 @@ function SkillsDirectoryPageShell({
 	open,
 	onOpenChange,
 	variant,
+	selectionExperience = "studio-bulk-add",
 }: Readonly<{
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	selectionExperience?: SkillsDirectorySelectionExperience;
 	variant?: SkillsDirectoryVariant;
 }>) {
 	return (
@@ -120,6 +133,7 @@ function SkillsDirectoryPageShell({
 				addedSkillIds={DEMO_ADDED_SKILL_IDS}
 				open={open}
 				onOpenChange={onOpenChange}
+				selectionExperience={selectionExperience}
 				sessionSkills={DEMO_SESSION_SKILLS}
 				variant={variant}
 			/>

@@ -62,6 +62,8 @@ function SkillTag({
 	const isInteractive = Boolean(onClick);
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 	const collection = getSkillCollectionMetadata(normalizeSkillTagColor(color));
+	const labelRef = React.useRef<HTMLSpanElement>(null);
+	const [labelHasOverflow, setLabelHasOverflow] = React.useState(false);
 	// Resolve the single hover-reveal overlay control: a custom action takes
 	// precedence over the remove "×". `isOverlay` drives the floating reveal +
 	// label-fade scrim; a plain inline remove stays laid out after the label.
@@ -91,6 +93,38 @@ function SkillTag({
 			}
 			: null;
 	const hasOverlayReveal = Boolean(overlayControl?.isOverlay);
+	const shouldFadeOverlayLabel = hasOverlayReveal && labelHasOverflow;
+
+	React.useEffect(() => {
+		if (!hasOverlayReveal) {
+			setLabelHasOverflow(false);
+			return;
+		}
+
+		const label = labelRef.current;
+		if (!label) {
+			return;
+		}
+
+		function updateLabelOverflow() {
+			setLabelHasOverflow(label.scrollWidth > label.clientWidth + 1);
+		}
+
+		updateLabelOverflow();
+
+		const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateLabelOverflow) : null;
+		observer?.observe(label);
+		if (label.parentElement) {
+			observer?.observe(label.parentElement);
+		}
+
+		window.addEventListener("resize", updateLabelOverflow);
+
+		return () => {
+			observer?.disconnect();
+			window.removeEventListener("resize", updateLabelOverflow);
+		};
+	}, [children, hasOverlayReveal]);
 
 	return (
 		<span
@@ -116,16 +150,17 @@ function SkillTag({
 
 			{/* Label */}
 			<span
+				ref={labelRef}
 				className={cn(
 					"relative z-[1] min-w-0 skew-x-12 truncate whitespace-nowrap",
-					hasOverlayReveal && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
+					shouldFadeOverlayLabel && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
 				)}
 				data-slot="skill-tag-label"
 			>
 				{typeof children === "string" ? toKebabSkillLabel(children) : children}
 			</span>
 
-			{hasOverlayReveal ? (
+			{shouldFadeOverlayLabel ? (
 				<span
 					aria-hidden
 					className="pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-bg-neutral from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100"

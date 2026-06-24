@@ -9,9 +9,6 @@ const HOVER_ANIMATION = {
 const REDUCED_HOVER_ANIMATION = {
 	boxShadow: OVERLAY_SHADOW,
 } as const;
-const TAP_ANIMATION = {
-	scale: 0.998,
-} as const;
 
 export const CARD_HOVER_TRANSITION = {
 	type: "spring",
@@ -22,7 +19,6 @@ export const CARD_HOVER_TRANSITION = {
 export interface CardInteraction {
 	interactive: boolean;
 	hoverAnimation: typeof HOVER_ANIMATION | typeof REDUCED_HOVER_ANIMATION;
-	tapAnimation: typeof TAP_ANIMATION | undefined;
 	handleSelect: () => void;
 }
 
@@ -33,15 +29,14 @@ export interface CardInteraction {
  * (see `EntityCardShell`) that owns selection. The native button handles
  * Enter/Space and focus, so no manual key handling is needed here — keeping the
  * whole-card affordance free of an invalid `role="button"` wrapper around nested
- * controls. Hover/tap animations respect reduced motion.
+ * controls. Hover elevation respects reduced motion.
  */
 export function useCardInteraction(onSelect?: () => void): CardInteraction {
 	const interactive = Boolean(onSelect);
 	const shouldReduceMotion = useReducedMotion();
 	const hoverAnimation = shouldReduceMotion ? REDUCED_HOVER_ANIMATION : HOVER_ANIMATION;
-	const tapAnimation = shouldReduceMotion ? undefined : TAP_ANIMATION;
 
 	const handleSelect = () => onSelect?.();
 
-	return { interactive, hoverAnimation, tapAnimation, handleSelect };
+	return { interactive, hoverAnimation, handleSelect };
 }

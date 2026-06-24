@@ -5,7 +5,6 @@
 		"description": "Create a new Rovo skill from a plain-language description. Use when the user asks to build, create, scaffold, or author a new skill.",
 		"icon": "skill",
 		"publisherName": "Atlassian",
-		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
 		"companyId": "atlassian",
 		"categoryId": "software-development",
 		"starCount": 152,
