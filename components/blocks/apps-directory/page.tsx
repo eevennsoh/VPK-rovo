@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 
 // Personal, self-built productivity apps a maker would wire into their Studio
 // agent — deliberately NOT company integrations. They are session-scoped (kept
-// out of the shared catalog) and seed the "My apps" sidebar entry and the
-// experimental "Filter by my apps" facet. Avatars reuse the project-avatar art
-// in public/avatar-project so each reads as a hand-made tool, not a brand.
+// out of the shared catalog) and seed the "My apps" sidebar entry. Avatars
+// reuse the project-avatar art in public/avatar-project so each reads as a
+// hand-made tool, not a brand.
 const DEMO_PERSONAL_APPS: readonly AppsDirectoryTool[] = [
 	{
 		id: "focus-flow",
@@ -138,7 +138,23 @@ const DEMO_PERSONAL_APPS: readonly AppsDirectoryTool[] = [
 	},
 ];
 
-const DEMO_ADDED_APP_IDS: readonly string[] = DEMO_PERSONAL_APPS.map((app) => app.id);
+const DEMO_ADDED_PERSONAL_APP_IDS: readonly string[] = [
+	"focus-flow",
+	"standup-buddy",
+	"quick-capture",
+];
+
+const DEMO_ADDED_CATALOG_APP_IDS: readonly string[] = [
+	"atlassian",
+	"google-drive",
+	"jira",
+	"slack",
+];
+
+const DEMO_ADDED_APP_IDS: readonly string[] = [
+	...DEMO_ADDED_PERSONAL_APP_IDS,
+	...DEMO_ADDED_CATALOG_APP_IDS,
+];
 
 export default function AppsDirectoryPage() {
 	const [open, setOpen] = useState(false);

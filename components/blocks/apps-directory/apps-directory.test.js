@@ -70,7 +70,7 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /const \[favoriteOverrides, setFavoriteOverrides\] = useState<Record<string, boolean>>\(\{\}\);/u);
 	assert.match(source, /tool\.id in favoriteOverrides \? \{ \.\.\.tool, favorite: favoriteOverrides\[tool\.id\] \} : tool/u);
 	assert.match(source, /function handleToggleFavoriteTool\(tool: AppsDirectoryTool\): void \{[\s\S]*\[tool\.id\]: !tool\.favorite/u);
-	assert.match(source, /<AppCard[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
+	assert.match(source, /<AppCard[\s\S]*added=\{addedIds\.has\(tool\.id\)\}[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /import \{ EntityCardAppCard \} from "@\/components\/ui-custom\/entity-card";/u);
 	assert.match(source, /const knowledgeApp = getKnowledgeAppForTool\(tool\);/u);
@@ -89,6 +89,8 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /tool\.logoName \|\| tool\.id === "atlassian"/u);
 	assert.match(source, /const src = tool\.logoSrc \?\? tool\.avatarSrc;/u);
 	assert.match(source, /<BrandLogoMark frame="tile" label=\{tool\.name\} size="medium" src=\{src\} \/>/u);
+	assert.match(source, /<LogoThirdParty label=\{tool\.name\} name=\{tool\.brandName\} size="xlarge" \/>/u);
+	assert.match(source, /<CustomLogo label=\{tool\.name\} size="xlarge" src=\{src\} \/>/u);
 	assert.match(source, /<AtlassianLogoMark label=\{item\.label\} name=\{item\.logoName\} size="small" \/>/u);
 	assert.match(source, /<BrandLogoMark frame="tile" label=\{item\.label\} size="small" src=\{item\.avatarSrc\} \/>/u);
 	assert.doesNotMatch(source, /withUsageBorder/u);
@@ -171,6 +173,8 @@ test("Apps Directory supports controlled and uncontrolled added tool state", () 
 	assert.doesNotMatch(source, /\{added \? null : \(/u);
 	assert.match(source, /tool\.brandName[\s\S]*<LogoThirdParty label=\{tool\.name\} name=\{tool\.brandName\} size="xlarge" \/>/u);
 	assert.match(source, /const ThirdPartyIcon = getThirdPartyLogoIconFromSrc\(item\.avatarSrc\);[\s\S]*<ThirdPartyIcon label=\{item\.label\} size="small" \/>/u);
+	assert.match(source, /<BrandLogoMark frame="tile" label=\{tool\.name\} size="medium" src=\{src\} \/>/u);
+	assert.match(source, /<CustomLogo label=\{tool\.name\} size="xlarge" src=\{src\} \/>/u);
 	assert.doesNotMatch(source, /size="sm"/u);
 	assert.doesNotMatch(source, /className="h-px bg-border"/u);
 });
@@ -241,6 +245,8 @@ test("Apps Directory docs demo includes added and non-added detail states", () =
 
 	assert.match(source, /import \{ DIRECTORY_APPS \} from "@\/app\/data\/directory\/apps";/u);
 	assert.match(source, /const DEMO_PERSONAL_APPS: readonly AppsDirectoryTool\[\] = \[/u);
+	assert.match(source, /const DEMO_ADDED_PERSONAL_APP_IDS: readonly string\[\] = \[[\s\S]*"focus-flow"[\s\S]*"standup-buddy"[\s\S]*"quick-capture"/u);
+	assert.match(source, /const DEMO_ADDED_CATALOG_APP_IDS: readonly string\[\] = \[[\s\S]*"atlassian"[\s\S]*"google-drive"[\s\S]*"jira"[\s\S]*"slack"/u);
 	assert.match(source, /defaultAddedToolIds=\{DEMO_ADDED_APP_IDS\}/u);
 	assert.ok(allTools.some((tool) => tool.logoName === "atlassian"), "a tool should use the Atlassian brand logo");
 	assert.equal(
@@ -353,9 +359,8 @@ test("Apps Directory experimental variation has searchable multi-select filters"
 	assert.match(sharedSource, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2"/u);
 	assert.match(source, /contentClassName="pb-8"/u);
 
-	// All four filter controls: My apps + Favourites toggles, Categories + Companies dropdowns.
-	assert.match(source, /Filter by my apps/u);
-	assert.match(source, /Favourites/u);
+	// Filter controls are additive: Your apps remains first, then Added apps before Favourites.
+	assert.match(source, /label: "Filter by your apps"[\s\S]*label: "Added apps"[\s\S]*label: "Favourites"/u);
 	assert.match(source, /activeLabel: "Filter by categories"[\s\S]*label: "Categories"/u);
 	assert.match(source, /activeLabel: "Filter by companies"[\s\S]*label: "Companies"/u);
 
@@ -378,7 +383,7 @@ test("Apps Directory experimental variation has searchable multi-select filters"
 	assert.match(sharedSource, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
 	assert.match(source, /heading="My apps"/u);
 	assert.match(source, /heading="Other apps"/u);
-	assert.match(source, /const myApps = useMemo\(\(\) => filteredTools\.filter\(\(tool\) => addedIds\.has\(tool\.id\)\)/u);
+	assert.match(source, /const myApps = useMemo\(\(\) => filteredTools\.filter\(isYourApp\)/u);
 });
 
 test("Apps Directory experimental filters show one active facet at a time", () => {
@@ -388,7 +393,8 @@ test("Apps Directory experimental filters show one active facet at a time", () =
 	// Mirrors the experimental agent directory: engaging one filter hides the rest.
 	assert.match(sharedSource, /const activeFacet = facets\.find\(facetIsActive\)\?\.id \?\? null;/u);
 	assert.match(sharedSource, /const showFacet = \(facet: ExperimentalDirectoryFacet<TOption>\) => activeFacet === null \|\| activeFacet === facet\.id;/u);
-	assert.match(source, /id: "myApps"/u);
+	assert.match(source, /id: "yourApps"/u);
+	assert.match(source, /id: "addedApps"/u);
 	assert.match(source, /id: "favourites"/u);
 	assert.match(source, /id: "categories"/u);
 	assert.match(source, /id: "companies"/u);

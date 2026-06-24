@@ -223,6 +223,11 @@ function derivePublisher(tool: AppsDirectoryTool): string {
 	return (match?.[1] ?? tool.byline).trim();
 }
 
+function isYourApp(tool: AppsDirectoryTool): boolean {
+	const publisher = derivePublisher(tool).toLowerCase();
+	return tool.attributionKind === "person" || tool.attributionKind === "team" || publisher === "you";
+}
+
 function isVerifiedTool(tool: AppsDirectoryTool, publisher: string): boolean {
 	if (typeof tool.verified === "boolean") return tool.verified;
 	if (tool.attributionKind) return tool.attributionKind === "company";
@@ -396,7 +401,8 @@ export function AppsDirectoryDialog({
 	// Experimental-variant filters live on the dialog (not inside
 	// ExperimentalAppsDirectoryView) so they survive opening/closing an app's detail
 	// view — the view unmounts on detail navigation, mirroring how activeCategory persists.
-	const [experimentalMyApps, setExperimentalMyApps] = useState(false);
+	const [experimentalYourApps, setExperimentalYourApps] = useState(false);
+	const [experimentalAddedApps, setExperimentalAddedApps] = useState(false);
 	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
 	const [experimentalCategories, setExperimentalCategories] = useState<readonly string[]>([]);
 	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
@@ -593,15 +599,17 @@ export function AppsDirectoryDialog({
 				) : variant === "experimental" ? (
 					<ExperimentalAppsDirectoryView
 						addedIds={addedIds}
+						filterYourApps={experimentalYourApps}
 						filterFavourites={experimentalFavourites}
-						filterMyApps={experimentalMyApps}
+						filterAddedApps={experimentalAddedApps}
 						onSelectTool={handleSelectTool}
 						onToggleFavoriteTool={handleToggleFavoriteTool}
 						query={query}
 						selectedCategories={experimentalCategories}
 						selectedCompanies={experimentalCompanies}
+						setFilterYourApps={setExperimentalYourApps}
 						setFilterFavourites={setExperimentalFavourites}
-						setFilterMyApps={setExperimentalMyApps}
+						setFilterAddedApps={setExperimentalAddedApps}
 						setQuery={setQuery}
 						setSelectedCategories={setExperimentalCategories}
 						setSelectedCompanies={setExperimentalCompanies}
@@ -817,7 +825,8 @@ function getCompanyOptions(tools: readonly AppsDirectoryTool[]): readonly AgentB
 }
 
 interface ExperimentalAppsFilters {
-	myApps: boolean;
+	yourApps: boolean;
+	addedApps: boolean;
 	favourites: boolean;
 	categoryIds: readonly string[];
 	companyIds: readonly string[];
@@ -825,7 +834,7 @@ interface ExperimentalAppsFilters {
 
 // Experimental counterpart to filterTools: the query haystack is identical, but the
 // sidebar's single active category becomes multi-select category + company facets
-// plus the My apps / Favourites toggles.
+// plus the Your apps / Added apps / Favourites toggles.
 function filterToolsExperimental(
 	tools: readonly AppsDirectoryTool[],
 	query: string,
@@ -837,7 +846,8 @@ function filterToolsExperimental(
 	const companySet = new Set(filters.companyIds);
 
 	return tools.filter((tool) => {
-		if (filters.myApps && !addedIds.has(tool.id)) return false;
+		if (filters.yourApps && !isYourApp(tool)) return false;
+		if (filters.addedApps && !addedIds.has(tool.id)) return false;
 		if (filters.favourites && !tool.favorite) return false;
 		if (categorySet.size > 0 && !(tool.categoryId && categorySet.has(tool.categoryId))) return false;
 		if (companySet.size > 0 && !companySet.has(createOptionId(derivePublisher(tool)))) return false;
@@ -861,11 +871,11 @@ function filterToolsExperimental(
 	});
 }
 
-// Filter-aware empty copy: a query miss, an empty My apps / Favourites facet, or a
-// filter combination with no matches each read differently.
+// Filter-aware empty copy: a query miss, empty Your apps / Added apps /
+// Favourites facets, or a filter combination with no matches each read differently.
 function getExperimentalEmptyState(
 	query: string,
-	filters: Pick<ExperimentalAppsFilters, "myApps" | "favourites">,
+	filters: Pick<ExperimentalAppsFilters, "yourApps" | "addedApps" | "favourites">,
 ): { title: string; description: string } {
 	if (query.trim()) {
 		return {
@@ -873,10 +883,16 @@ function getExperimentalEmptyState(
 			description: "Try a different search or clear your filters.",
 		};
 	}
-	if (filters.myApps) {
+	if (filters.addedApps) {
 		return {
 			title: "No apps added yet",
 			description: "Apps you add to this agent will show up here.",
+		};
+	}
+	if (filters.yourApps) {
+		return {
+			title: "No apps of yours yet",
+			description: "Apps you create or own will show up here.",
 		};
 	}
 	if (filters.favourites) {
@@ -893,15 +909,17 @@ function getExperimentalEmptyState(
 
 interface ExperimentalAppsDirectoryViewProps {
 	addedIds: ReadonlySet<string>;
+	filterAddedApps: boolean;
 	filterFavourites: boolean;
-	filterMyApps: boolean;
+	filterYourApps: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
 	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	selectedCategories: readonly string[];
 	selectedCompanies: readonly string[];
+	setFilterAddedApps: Dispatch<SetStateAction<boolean>>;
 	setFilterFavourites: Dispatch<SetStateAction<boolean>>;
-	setFilterMyApps: Dispatch<SetStateAction<boolean>>;
+	setFilterYourApps: Dispatch<SetStateAction<boolean>>;
 	setQuery: (query: string) => void;
 	setSelectedCategories: Dispatch<SetStateAction<readonly string[]>>;
 	setSelectedCompanies: Dispatch<SetStateAction<readonly string[]>>;
@@ -910,15 +928,17 @@ interface ExperimentalAppsDirectoryViewProps {
 
 function ExperimentalAppsDirectoryView({
 	addedIds,
+	filterAddedApps,
 	filterFavourites,
-	filterMyApps,
+	filterYourApps,
 	onSelectTool,
 	onToggleFavoriteTool,
 	query,
 	selectedCategories,
 	selectedCompanies,
+	setFilterAddedApps,
 	setFilterFavourites,
-	setFilterMyApps,
+	setFilterYourApps,
 	setQuery,
 	setSelectedCategories,
 	setSelectedCompanies,
@@ -932,33 +952,42 @@ function ExperimentalAppsDirectoryView({
 			tools,
 			query,
 			{
-				myApps: filterMyApps,
+				yourApps: filterYourApps,
+				addedApps: filterAddedApps,
 				favourites: filterFavourites,
 				categoryIds: selectedCategories,
 				companyIds: selectedCompanies,
 			},
 			addedIds,
 		),
-		[addedIds, filterFavourites, filterMyApps, query, selectedCategories, selectedCompanies, tools],
+		[addedIds, filterAddedApps, filterFavourites, filterYourApps, query, selectedCategories, selectedCompanies, tools],
 	);
 
-	// Split results into the user's added apps and everything else, each under its
+	// Split results into the user's own apps and everything else, each under its
 	// own micro section header (mirrors the experimental agent directory).
-	const myApps = useMemo(() => filteredTools.filter((tool) => addedIds.has(tool.id)), [addedIds, filteredTools]);
-	const otherApps = useMemo(() => filteredTools.filter((tool) => !addedIds.has(tool.id)), [addedIds, filteredTools]);
+	const myApps = useMemo(() => filteredTools.filter(isYourApp), [filteredTools]);
+	const otherApps = useMemo(() => filteredTools.filter((tool) => !isYourApp(tool)), [filteredTools]);
 
 	const emptyState = getExperimentalEmptyState(query, {
-		myApps: filterMyApps,
+		yourApps: filterYourApps,
+		addedApps: filterAddedApps,
 		favourites: filterFavourites,
 	});
 
 	const facets: readonly ExperimentalDirectoryFacet<AgentBrowserSidebarItem>[] = [
 		{
-			active: filterMyApps,
-			id: "myApps",
+			active: filterYourApps,
+			id: "yourApps",
 			kind: "toggle",
-			label: "Filter by my apps",
-			onToggle: () => setFilterMyApps((current) => !current),
+			label: "Filter by your apps",
+			onToggle: () => setFilterYourApps((current) => !current),
+		},
+		{
+			active: filterAddedApps,
+			id: "addedApps",
+			kind: "toggle",
+			label: "Added apps",
+			onToggle: () => setFilterAddedApps((current) => !current),
 		},
 		{
 			active: filterFavourites,
@@ -991,7 +1020,8 @@ function ExperimentalAppsDirectoryView({
 
 	function resetFilters() {
 		setQuery("");
-		setFilterMyApps(false);
+		setFilterYourApps(false);
+		setFilterAddedApps(false);
 		setFilterFavourites(false);
 		setSelectedCategories([]);
 		setSelectedCompanies([]);
@@ -1017,7 +1047,7 @@ function ExperimentalAppsDirectoryView({
 						items={myApps}
 						renderItem={(tool) => (
 							<AppCard
-								added
+								added={addedIds.has(tool.id)}
 								onSelectTool={onSelectTool}
 								onToggleFavoriteTool={onToggleFavoriteTool}
 								tool={tool}
@@ -1031,6 +1061,7 @@ function ExperimentalAppsDirectoryView({
 						items={otherApps}
 						renderItem={(tool) => (
 							<AppCard
+								added={addedIds.has(tool.id)}
 								onSelectTool={onSelectTool}
 								onToggleFavoriteTool={onToggleFavoriteTool}
 								tool={tool}
