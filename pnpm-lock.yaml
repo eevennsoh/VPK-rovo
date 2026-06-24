@@ -688,7 +688,7 @@ packages:
       react: ^18.2.0
 
   '@atlaskit/theme@26.0.0':
-    resolution: {integrity: sha512-lkgwcB5ndXW6BWzQHyHkgkWLyRHVqgnybGJXfYoFWDCN9aJ+C8TizInZHgHgZsMrKopeikCu76KB5c/l/J1eGA==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/theme/-/@atlaskit/theme-26.0.0.tgz}
+    resolution: {integrity: sha512-lkgwcB5ndXW6BWzQHyHkgkWLyRHVqgnybGJXfYoFWDCN9aJ+C8TizInZHgHgZsMrKopeikCu76KB5c/l/J1eGA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/theme/-/theme-26.0.0.tgz}
     peerDependencies:
       react: ^18.2.0
 
