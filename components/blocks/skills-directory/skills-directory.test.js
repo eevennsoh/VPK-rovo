@@ -187,7 +187,7 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /<SplitButton/u);
 	assert.match(source, /label="Open"/u);
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
-	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton/u);
+	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton[\s\S]*label="Open"/u);
 	// The detail header mirrors the agent-2 config feature: an enable/disable Switch
 	// and a destructive Remove button for the configured skill.
 	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);
@@ -266,6 +266,9 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 
 	assert.doesNotMatch(pageSource, /defaultSelectedSkillIds=/u);
 	assert.doesNotMatch(detailsSource, /defaultSelectedSkillIds=\{\[/u);
+	assert.match(pageSource, /const DEMO_ADDED_USER_SKILL_IDS: readonly string\[\] = \[[\s\S]*"create-brand-identity"[\s\S]*"design-landing-page"[\s\S]*"develop-mobile-app-interface"/u);
+	assert.match(pageSource, /const DEMO_ADDED_CATALOG_SKILL_IDS: readonly string\[\] = \[[\s\S]*"access-review"[\s\S]*"analyze-root-cause"[\s\S]*"build-report"[\s\S]*"review-pull-request"/u);
+	assert.match(pageSource, /addedSkillIds=\{DEMO_ADDED_SKILL_IDS\}/u);
 	assert.ok(skillIds.has("design-landing-page"));
 	assert.ok(skillIds.has("develop-mobile-app-interface"));
 	assert.ok(skillIds.has("create-brand-identity"));
@@ -410,10 +413,9 @@ test("Skills Directory experimental variation has searchable multi-select filter
 	assert.match(source, /contentClassName="pb-8"/u);
 	assert.doesNotMatch(source, /contentClassName=\{hasSelection \? "pb-28" : "pb-8"\}/u);
 
-	// Filter controls: Your skills + Favourites toggles and Companies dropdown.
+	// Filter controls: Your skills + Added skills + Favourites toggles and Companies dropdown.
 	// Collections/Categories are internal taxonomy and not exposed in the experimental UI.
-	assert.match(source, /Filter by your skills/u);
-	assert.match(source, /Favourites/u);
+	assert.match(source, /label: "Filter by your skills"[\s\S]*label: "Added skills"[\s\S]*label: "Favourites"/u);
 	assert.match(source, /activeLabel: "Filter by companies"[\s\S]*label: "Companies"/u);
 	assert.doesNotMatch(source, /activeLabel: "Filter by collections"/u);
 	assert.doesNotMatch(source, /label: "Collections"/u);
@@ -423,6 +425,7 @@ test("Skills Directory experimental variation has searchable multi-select filter
 	assert.match(sharedSource, /const activeFacet = facets\.find\(facetIsActive\)\?\.id \?\? null;/u);
 	assert.match(sharedSource, /const showFacet = \(facet: ExperimentalDirectoryFacet<TOption>\) => activeFacet === null \|\| activeFacet === facet\.id;/u);
 	assert.match(source, /id: "yourSkills"/u);
+	assert.match(source, /id: "addedSkills"/u);
 	assert.match(source, /id: "companies"/u);
 	assert.doesNotMatch(source, /id: "collections"/u);
 
@@ -434,6 +437,7 @@ test("Skills Directory experimental variation has searchable multi-select filter
 	// Filter-aware empty state + a result count, reusing the shared experimental section grid
 	// at a 3-column layout (the default view stays 2-column).
 	assert.match(source, /function getExperimentalSkillsEmptyState\(/u);
+	assert.match(source, /title: "No skills added yet"/u);
 	assert.match(source, /title: "No favourite skills yet"/u);
 	assert.match(sharedSource, /Showing \{resultCount\.toLocaleString\("en-US"\)\} \{resultLabel\}/u);
 	assert.match(sharedSource, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">/u);

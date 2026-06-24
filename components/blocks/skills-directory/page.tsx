@@ -48,6 +48,24 @@ const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 	},
 ];
 
+const DEMO_ADDED_USER_SKILL_IDS: readonly string[] = [
+	"create-brand-identity",
+	"design-landing-page",
+	"develop-mobile-app-interface",
+];
+
+const DEMO_ADDED_CATALOG_SKILL_IDS: readonly string[] = [
+	"access-review",
+	"analyze-root-cause",
+	"build-report",
+	"review-pull-request",
+];
+
+const DEMO_ADDED_SKILL_IDS: readonly string[] = [
+	...DEMO_ADDED_USER_SKILL_IDS,
+	...DEMO_ADDED_CATALOG_SKILL_IDS,
+];
+
 export default function SkillsDirectoryPage() {
 	const [open, setOpen] = useState(false);
 	const [variant, setVariant] = useState<SkillsDirectoryVariant>("default");
@@ -66,6 +84,7 @@ export default function SkillsDirectoryPage() {
 				Open experimental directory
 			</Button>
 			<SkillsDirectoryDialog
+				addedSkillIds={DEMO_ADDED_SKILL_IDS}
 				open={open}
 				onOpenChange={setOpen}
 				sessionSkills={DEMO_SESSION_SKILLS}
@@ -98,6 +117,7 @@ function SkillsDirectoryPageShell({
 				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
 			</Button>
 			<SkillsDirectoryDialog
+				addedSkillIds={DEMO_ADDED_SKILL_IDS}
 				open={open}
 				onOpenChange={onOpenChange}
 				sessionSkills={DEMO_SESSION_SKILLS}

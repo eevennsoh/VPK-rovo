@@ -350,6 +350,7 @@ export function SkillsDirectoryDialog({
 	// ExperimentalSkillsDirectoryView) so they survive Learn more → Back; the view
 	// unmounts while the detail page shows, mirroring how activeItem persists.
 	const [experimentalYourSkills, setExperimentalYourSkills] = useState(false);
+	const [experimentalAddedSkills, setExperimentalAddedSkills] = useState(false);
 	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
 	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
 	const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
@@ -544,6 +545,7 @@ export function SkillsDirectoryDialog({
 						{variant === "experimental" ? (
 							<ExperimentalSkillsDirectoryView
 								addedIds={addedIdSet}
+								filterAddedSkills={experimentalAddedSkills}
 								filterFavourites={experimentalFavourites}
 								filterYourSkills={experimentalYourSkills}
 								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
@@ -554,6 +556,7 @@ export function SkillsDirectoryDialog({
 								selectionExperience={selectionExperience}
 								selectedCompanies={experimentalCompanies}
 								selectedIds={selectedIdSet}
+								setFilterAddedSkills={setExperimentalAddedSkills}
 								setFilterFavourites={setExperimentalFavourites}
 								setFilterYourSkills={setExperimentalYourSkills}
 								setQuery={setQuery}
@@ -1358,23 +1361,26 @@ function getSkillCompanyOptions(skills: readonly SkillsDirectorySkill[]): readon
 
 interface ExperimentalSkillsFilters {
 	yourSkills: boolean;
+	addedSkills: boolean;
 	favourites: boolean;
 	companyIds: readonly string[];
 }
 
 // Experimental counterpart to filterSkills: the query haystack is identical, but
 // the single active sidebar item becomes independent multi-select facets plus the
-// Your skills / Favourites toggles.
+// Your skills / Added skills / Favourites toggles.
 function filterSkillsExperimental(
 	skills: readonly SkillsDirectorySkill[],
 	query: string,
 	filters: ExperimentalSkillsFilters,
+	addedIds: ReadonlySet<string>,
 ): readonly SkillsDirectorySkill[] {
 	const normalizedQuery = query.trim().toLowerCase();
 	const companySet = new Set(filters.companyIds);
 
 	return skills.filter((skill) => {
 		if (filters.yourSkills && !isYourSkill(skill)) return false;
+		if (filters.addedSkills && !addedIds.has(skill.id)) return false;
 		if (filters.favourites && !skill.favorite) return false;
 		if (companySet.size > 0 && !(skill.companyId && companySet.has(skill.companyId))) return false;
 
@@ -1402,7 +1408,7 @@ function filterSkillsExperimental(
 
 function getExperimentalSkillsEmptyState(
 	query: string,
-	filters: Pick<ExperimentalSkillsFilters, "yourSkills" | "favourites">,
+	filters: Pick<ExperimentalSkillsFilters, "yourSkills" | "addedSkills" | "favourites">,
 ): { title: string; description: string } {
 	if (query.trim()) {
 		return {
@@ -1414,6 +1420,12 @@ function getExperimentalSkillsEmptyState(
 		return {
 			title: "No skills of yours yet",
 			description: "Skills you create or own will show up here.",
+		};
+	}
+	if (filters.addedSkills) {
+		return {
+			title: "No skills added yet",
+			description: "Skills you add to this agent will show up here.",
 		};
 	}
 	if (filters.favourites) {
@@ -1430,6 +1442,7 @@ function getExperimentalSkillsEmptyState(
 
 interface ExperimentalSkillsDirectoryViewProps {
 	addedIds: ReadonlySet<string>;
+	filterAddedSkills: boolean;
 	filterFavourites: boolean;
 	filterYourSkills: boolean;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
@@ -1440,6 +1453,7 @@ interface ExperimentalSkillsDirectoryViewProps {
 	selectionExperience: SkillsDirectorySelectionExperience;
 	selectedCompanies: readonly string[];
 	selectedIds: ReadonlySet<string>;
+	setFilterAddedSkills: Dispatch<SetStateAction<boolean>>;
 	setFilterFavourites: Dispatch<SetStateAction<boolean>>;
 	setFilterYourSkills: Dispatch<SetStateAction<boolean>>;
 	setQuery: (query: string) => void;
@@ -1449,6 +1463,7 @@ interface ExperimentalSkillsDirectoryViewProps {
 
 function ExperimentalSkillsDirectoryView({
 	addedIds,
+	filterAddedSkills,
 	filterFavourites,
 	filterYourSkills,
 	onLearnMore,
@@ -1459,6 +1474,7 @@ function ExperimentalSkillsDirectoryView({
 	selectionExperience,
 	selectedCompanies,
 	selectedIds,
+	setFilterAddedSkills,
 	setFilterFavourites,
 	setFilterYourSkills,
 	setQuery,
@@ -1469,17 +1485,23 @@ function ExperimentalSkillsDirectoryView({
 
 	const filteredSkills = useMemo(
 		() => {
-			const matched = filterSkillsExperimental(skills, query, {
-				yourSkills: filterYourSkills,
-				favourites: filterFavourites,
-				companyIds: selectedCompanies,
-			});
+			const matched = filterSkillsExperimental(
+				skills,
+				query,
+				{
+					yourSkills: filterYourSkills,
+					addedSkills: filterAddedSkills,
+					favourites: filterFavourites,
+					companyIds: selectedCompanies,
+				},
+				addedIds,
+			);
 			// Alphabetical by name: the catalog front-loads grey (custom/marketplace)
 			// skills, so alphabetising interleaves the collection-coloured tiles and
 			// keeps the first rows multi-coloured rather than a block of grey.
 			return [...matched].sort((a, b) => a.name.localeCompare(b.name, "en"));
 		},
-		[filterFavourites, filterYourSkills, query, selectedCompanies, skills],
+		[addedIds, filterAddedSkills, filterFavourites, filterYourSkills, query, selectedCompanies, skills],
 	);
 
 	// Split results into the user's own skills and everything else, each under its
@@ -1489,6 +1511,7 @@ function ExperimentalSkillsDirectoryView({
 
 	const emptyState = getExperimentalSkillsEmptyState(query, {
 		yourSkills: filterYourSkills,
+		addedSkills: filterAddedSkills,
 		favourites: filterFavourites,
 	});
 
@@ -1499,6 +1522,13 @@ function ExperimentalSkillsDirectoryView({
 			kind: "toggle",
 			label: "Filter by your skills",
 			onToggle: () => setFilterYourSkills((current) => !current),
+		},
+		{
+			active: filterAddedSkills,
+			id: "addedSkills",
+			kind: "toggle",
+			label: "Added skills",
+			onToggle: () => setFilterAddedSkills((current) => !current),
 		},
 		{
 			active: filterFavourites,
@@ -1522,6 +1552,7 @@ function ExperimentalSkillsDirectoryView({
 	function resetFilters() {
 		setQuery("");
 		setFilterYourSkills(false);
+		setFilterAddedSkills(false);
 		setFilterFavourites(false);
 		setSelectedCompanies([]);
 	}
