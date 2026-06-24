@@ -14,15 +14,17 @@ import {
 	THIRD_PARTY_LOGO_ICONS,
 	toThirdPartyLogoTileSize,
 } from "@/components/ui/data/logo-third-party-icons";
-import { CustomLogo, type CustomLogoProps } from "@/components/ui/logo";
+import { CustomLogo, type CustomLogoProps, type LogoSize } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
 export { THIRD_PARTY_LOGO_NAMES, THIRD_PARTY_LOGO_LABELS };
 export type { ThirdPartyLogoName };
 
-export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg"> {
+export interface LogoThirdPartyProps extends Omit<CustomLogoProps, "src" | "svg" | "size"> {
 	/** Third-party brand id from `THIRD_PARTY_LOGO_NAMES`. */
 	name: ThirdPartyLogoName;
+	/** Tile/logo size shared with `components/ui/tile`, including `xxsmall` (16x16). */
+	size?: LogoSize;
 	/**
 	 * Render the bare brand glyph without the upstream package's white tile +
 	 * 1px border. The package always wraps each mark in `<Tile hasBorder
@@ -78,7 +80,8 @@ export function LogoThirdParty({
 
 	// The package tile already encapsulates the accessible label and sizing. When
 	// `borderless`, wrap it so the Tile's white background + border are stripped.
-	const rawIcon = <Icon label={wordmark ? "" : accessibleLabel} size={toThirdPartyLogoTileSize(size)} />;
+	const resolvedSize = toThirdPartyLogoTileSize(size);
+	const rawIcon = <Icon label={wordmark ? "" : accessibleLabel} size={resolvedSize} />;
 	const icon = borderless ? (
 		<span className={cn("inline-flex", BORDERLESS_TILE_OVERRIDE)}>{rawIcon}</span>
 	) : (
@@ -89,7 +92,7 @@ export function LogoThirdParty({
 	}
 
 	// Lockup (icon + wordmark) or custom className — mirror CustomLogo's layout.
-	const px = CUSTOM_LOGO_SIZES[toThirdPartyLogoTileSize(size)] ?? CUSTOM_LOGO_SIZES.small;
+	const px = CUSTOM_LOGO_SIZES[resolvedSize] ?? CUSTOM_LOGO_SIZES.small;
 	return (
 		<span aria-label={accessibleLabel} className={cn("inline-flex items-center gap-1", className)} role="img">
 			{icon}

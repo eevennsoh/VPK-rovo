@@ -15,6 +15,11 @@ const { loadDirectoryModule } = require(path.join(
 ));
 
 let modulePromise;
+const LOGO_THIRD_PARTY_SOURCE = require("node:fs").readFileSync(path.join(__dirname, "logo-third-party.tsx"), "utf8");
+const LOGO_THIRD_PARTY_DEMO_SOURCE = require("node:fs").readFileSync(
+	path.join(process.cwd(), "components", "website", "demos", "ui", "logo-third-party-demo.tsx"),
+	"utf8",
+);
 
 function loadLogoThirdPartyData() {
 	modulePromise ??= loadDirectoryModule(`
@@ -127,4 +132,10 @@ test("thirdPartyLogoSrc resolves the canonical 24px asset path", async () => {
 
 	assert.equal(thirdPartyLogoSrc("slack"), "/3p/slack/24.svg");
 	assert.equal(thirdPartyLogoSrc("github"), "/3p/github/24.svg");
+});
+
+test("third-party logos use the shared tile size scale in tile demos", () => {
+	assert.match(LOGO_THIRD_PARTY_SOURCE, /toThirdPartyLogoTileSize\(size\)/u);
+	assert.match(LOGO_THIRD_PARTY_DEMO_SOURCE, /LOGO_TILE_SIZES/u);
+	assert.doesNotMatch(LOGO_THIRD_PARTY_DEMO_SOURCE, /const BRAND_TILE_SIZES/u);
 });

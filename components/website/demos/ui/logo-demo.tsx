@@ -37,8 +37,8 @@ import {
 	TalentIcon,
 	TeamsIcon,
 	TrelloIcon,
+	LOGO_TILE_SIZES,
 	type AtlassianLogoName,
-	type LogoProps,
 } from "@/components/ui/logo";
 
 const logoEntries: ReadonlyArray<{ name: AtlassianLogoName; label: string }> = [
@@ -168,20 +168,11 @@ export function LogoDemoLockups() {
 
 /* ── Demo: Sizes ──────────────────────────────────────────────── */
 
-const sizes: ReadonlyArray<NonNullable<LogoProps["size"]>> = [
-	"xxsmall",
-	"xsmall",
-	"small",
-	"medium",
-	"large",
-	"xlarge",
-];
-
 export function LogoDemoSizes() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-end gap-4">
-				{sizes.map((size) => (
+				{LOGO_TILE_SIZES.map((size) => (
 					<div key={size} className="flex flex-col items-center gap-1.5">
 						<JiraIcon label="Jira" size={size} />
 						<span className="text-xs text-text-subtle">{size}</span>
@@ -189,9 +180,17 @@ export function LogoDemoSizes() {
 				))}
 			</div>
 			<div className="flex flex-wrap items-end gap-4">
-				{sizes.map((size) => (
+				{LOGO_TILE_SIZES.map((size) => (
 					<div key={size} className="flex flex-col items-center gap-1.5">
 						<AtlassianLogo name="jira" label="Jira" variant="lockup" size={size} />
+						<span className="text-xs text-text-subtle">{size}</span>
+					</div>
+				))}
+			</div>
+			<div className="flex flex-wrap items-end gap-4">
+				{LOGO_TILE_SIZES.map((size) => (
+					<div key={size} className="flex flex-col items-center gap-1.5">
+						<AtlassianLogo name="atlassian" label="Atlassian" size={size} />
 						<span className="text-xs text-text-subtle">{size}</span>
 					</div>
 				))}
@@ -330,15 +329,12 @@ export function LogoDemoBrandLogos() {
 
 /* ── Demo: Brand logos in a Tile (picker / menu rows) ─────────── */
 
-// Tile sizes whose child-sizing exactly follows /components/ui/tile#sizes.
-const BRAND_TILE_SIZES = ["xsmall", "small", "medium", "large", "xlarge"] as const;
-
 export function LogoDemoInTile() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col gap-3">
 				<div className="flex items-end gap-3">
-					{BRAND_TILE_SIZES.map((size) => (
+					{LOGO_TILE_SIZES.map((size) => (
 						<AtlassianLogoMark
 							key={size}
 							label={`Atlassian ${size}`}
@@ -350,7 +346,7 @@ export function LogoDemoInTile() {
 				</div>
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<div key={sample.label} className="flex items-end gap-3">
-						{BRAND_TILE_SIZES.map((size) =>
+						{LOGO_TILE_SIZES.map((size) =>
 							sample.tier === "1p" ? (
 								<AtlassianLogoMark
 									key={size}
