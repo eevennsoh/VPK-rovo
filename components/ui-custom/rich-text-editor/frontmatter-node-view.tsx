@@ -242,7 +242,7 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 		</div>
 	);
 
-	// With a portal target (skill config renders one above the toolbar), render
+	// With a portal target (skill config renders one below the toolbar), render
 	// the card there and keep the node in the document via a hidden placeholder,
 	// so selection and the markdown round-trip are unaffected. Otherwise render
 	// the card inline as the editor's first node.
