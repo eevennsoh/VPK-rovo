@@ -557,8 +557,8 @@ importers:
         specifier: ^0.13.1
         version: 0.13.1
       react-grab:
-        specifier: ^0.1.46
-        version: 0.1.46(react@19.2.7)
+        specifier: ^0.1.47
+        version: 0.1.47(react@19.2.7)
       shadcn:
         specifier: ^4.11.0
         version: 4.11.0(typescript@6.0.3)
@@ -2429,8 +2429,8 @@ packages:
     resolution: {integrity: sha512-1ln28VkVHUbd5qy+ccXG68voWc0mgZMhBnwG0umxfD+wbkXUcvRzVrLjSqao7N8hCrDqp+Pt5j9Tsqef+9yQQQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@react-grab/cli/-/cli-0.1.37.tgz}
     hasBin: true
 
-  '@react-grab/cli@0.1.46':
-    resolution: {integrity: sha512-rNjGKeRY3HROku1J/a7y8RGHRGFR6ZnllSPqNLfFI5cUu6FCdjjxHvXf1TEXxW7I5REq8iKoLuzM9iYboXCRdg==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@react-grab/cli/-/cli-0.1.46.tgz}
+  '@react-grab/cli@0.1.47':
+    resolution: {integrity: sha512-Cc7d8mSwvoV8gpeTQbE8dMPdeXIyO6w+yIhzgi3jY06i03WLNhb/6jIxNBNF1cVRI7ujnFQXZA66BbnBNTpBSw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@react-grab/cli/-/cli-0.1.47.tgz}
     hasBin: true
 
   '@react-grab/mcp@0.1.37':
@@ -7186,8 +7186,8 @@ packages:
       react:
         optional: true
 
-  react-grab@0.1.46:
-    resolution: {integrity: sha512-i6sSSBGqW1yxZ5TZL9wX2m9qNMKOydpou5IMaXrK1iylJAJyr/npoqv4mhq3cO7480FBhmlEZbf5VF8KOCBlMQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/react-grab/-/react-grab-0.1.46.tgz}
+  react-grab@0.1.47:
+    resolution: {integrity: sha512-1GNy24KMJ4CY1IxorYO9mydItGi0L1HkQB19uYU3t0BMsJB0K+D/QYiaBz+rugRynyY8LzmXIuOcon1TykLlCg==, tarball: https://packages.atlassian.com/api/npm/npm-remote/react-grab/-/react-grab-0.1.47.tgz}
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -10537,7 +10537,7 @@ snapshots:
       smol-toml: 1.6.1
       tinyexec: 1.2.4
 
-  '@react-grab/cli@0.1.46':
+  '@react-grab/cli@0.1.47':
     dependencies:
       agent-install: 0.0.6
       commander: 14.0.3
@@ -16072,9 +16072,9 @@ snapshots:
     optionalDependencies:
       react: 19.2.7
 
-  react-grab@0.1.46(react@19.2.7):
+  react-grab@0.1.47(react@19.2.7):
     dependencies:
-      '@react-grab/cli': 0.1.46
+      '@react-grab/cli': 0.1.47
       bippy: 0.5.41(react@19.2.7)
     optionalDependencies:
       react: 19.2.7
