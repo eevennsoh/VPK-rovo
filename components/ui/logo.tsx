@@ -26,14 +26,24 @@ import { Tile, type TileProps } from "@/components/ui/tile";
 export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 export type { AtlassianLogoName };
 export type LogoVariant = "icon" | "lockup";
+export type LogoSize = NonNullable<TileProps["size"]>;
 export const ATLASSIAN_LOGO_SOURCE = "atlassian";
+export const LOGO_TILE_SIZES = [
+	"xxsmall",
+	"xsmall",
+	"small",
+	"medium",
+	"large",
+	"xlarge",
+] as const satisfies ReadonlyArray<LogoSize>;
 
 export function isAtlassianLogoSource(src: string | null | undefined): boolean {
 	return src === ATLASSIAN_LOGO_SOURCE;
 }
 
-export interface LogoProps extends AtlaskitLogoProps {
+export interface LogoProps extends Omit<AtlaskitLogoProps, "size"> {
 	color?: string;
+	size?: LogoSize;
 	themeAware?: boolean;
 	variant?: LogoVariant;
 	shouldUseHexLogo?: boolean;
@@ -73,17 +83,8 @@ function getThemeAwareAppearance(
 	return actualTheme === "dark" ? "inverse" : "brand";
 }
 
-function getLogoSizePx(size: AtlaskitLogoProps["size"]): number {
-	if (typeof size === "string") {
-		const numericSize = Number(size);
-		if (!Number.isNaN(numericSize)) {
-			return numericSize;
-		}
-
-		return CUSTOM_LOGO_SIZES[size] ?? CUSTOM_LOGO_SIZES.small;
-	}
-
-	return CUSTOM_LOGO_SIZES.small;
+function getLogoSizePx(size: LogoSize | undefined): number {
+	return size ? CUSTOM_LOGO_SIZES[size] ?? CUSTOM_LOGO_SIZES.small : CUSTOM_LOGO_SIZES.small;
 }
 
 export function AtlassianLogo({
@@ -176,7 +177,7 @@ export interface CustomLogoProps {
 }
 
 function isTileLogoSize(size: LogoProps["size"]): size is NonNullable<TileProps["size"]> {
-	return typeof size === "string" && size in CUSTOM_LOGO_SIZES;
+	return typeof size === "string" && LOGO_TILE_SIZES.includes(size);
 }
 
 export function CustomLogo({
