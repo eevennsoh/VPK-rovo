@@ -33,6 +33,12 @@ test("Tools Directory docs demo starts closed until the trigger is clicked", () 
 	);
 });
 
+test("Tools Directory detail header uses 24px vertical padding", () => {
+	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+
+	assert.match(source, /function ToolsDirectoryHeader[\s\S]*className="flex items-center justify-between px-6 py-6"/u);
+});
+
 test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
 	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");

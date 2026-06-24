@@ -582,7 +582,7 @@ interface KnowledgeDirectoryFooterProps {
 
 function KnowledgeDirectoryFooter({ onAdd, onCancel }: Readonly<KnowledgeDirectoryFooterProps>) {
 	return (
-		<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4 pb-6">
+		<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-6">
 			<Button onClick={onCancel} type="button" variant="ghost">
 				Cancel
 			</Button>

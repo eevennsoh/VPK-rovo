@@ -62,6 +62,13 @@ test("desktop sidebar keeps the expanded panel offset", () => {
 	);
 });
 
+test("global pointer cursor covers discrete interactive controls", () => {
+	assert.match(
+		GLOBALS_CSS_SOURCE,
+		/button:not\(:disabled\),\s*\[role="button"\]:not\(:disabled\),\s*\[role="checkbox"\]:not\(\[aria-disabled="true"\]\),\s*\[role="radio"\]:not\(\[aria-disabled="true"\]\),\s*\[role="switch"\]:not\(\[aria-disabled="true"\]\),\s*input:is\(\[type="button"\], \[type="submit"\], \[type="reset"\], \[type="checkbox"\], \[type="radio"\]\):not\(:disabled\)\s*\{\s*cursor:\s*pointer;/u,
+	);
+});
+
 test("shared UI surfaces do not reintroduce the old translucent overlay contract", () => {
 	const targetSources = [
 		readRepoFile("components.json"),

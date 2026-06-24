@@ -13,7 +13,7 @@ import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { addCreatedSkill, useCreatedSkills } from "@/app/data/directory/created-skills-store";
 import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
-import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
+import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
@@ -214,6 +214,19 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 		setConfigSkillId(null);
 		setIsSkillsDirectoryOpen(true);
 	}, []);
+	const handleAddDirectorySkills = useCallback(
+		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+			const skill = skills[0];
+			if (!skill) {
+				return;
+			}
+			prefillCounterRef.current += 1;
+			setPrefillRequest({ text: buildSkillMentionText(skill.name), requestKey: prefillCounterRef.current });
+			setConfigSkillId(null);
+			setIsSkillsDirectoryOpen(false);
+		},
+		[],
+	);
 	const handleCreateSpace = useCallback(() => {
 		setIsSkillsDirectoryOpen(false);
 	}, []);
@@ -264,6 +277,8 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				variant="experimental"
 				addedSkillIds={configSkillId ? [configSkillId] : []}
 				closeOnDetailExit={isDetailOpen}
+				onAddSkills={handleAddDirectorySkills}
+				selectionExperience="chat-single-add"
 			/>
 		</>
 	);
