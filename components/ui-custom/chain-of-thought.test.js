@@ -25,6 +25,14 @@ test("ChainOfThoughtScenario composes the primitive chain-of-thought parts", () 
 	assert.match(COMPONENT_SOURCE, /ChainOfThoughtScenario\.displayName = "ChainOfThoughtScenario"/u);
 });
 
+test("ChainOfThoughtScenario supports opt-in transform-only step entrance motion", () => {
+	assert.match(COMPONENT_SOURCE, /animateStepEntrance\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /animateOnMount\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /initial=\{shouldAnimateEntrance \? \{ opacity: 0, y: -6 \} : false\}/u);
+	assert.match(COMPONENT_SOURCE, /willChange: "opacity, transform"/u);
+	assert.match(COMPONENT_SOURCE, /entranceDelay=\{animateStepEntrance \? Math\.min\(index \* 0\.045, 0\.18\) : 0\}/u);
+});
+
 test("Chain of Thought docs include Studio-quality AI usage recipes", () => {
 	for (const demoSlug of [
 		"chain-of-thought-demo-studio-agent-generation-flow",
