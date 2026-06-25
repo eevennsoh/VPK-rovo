@@ -28,6 +28,7 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.match(SOURCE, /import SkillIcon from "@atlaskit\/icon-lab\/core\/skill";/u);
 	assert.match(SOURCE, /const \[isSkillsDirectoryOpen, setIsSkillsDirectoryOpen\] = useState\(false\);/u);
 	assert.match(SOURCE, /const \[prefillRequest, setPrefillRequest\] = useState<\{ mention\?: RichTextMentionItem; text\?: string; requestKey: number \}>/u);
+	assert.match(SOURCE, /const STATIC_SKILL_IDS = DEFAULT_SKILLS\.map\(\(skill\) => skill\.id\);/u);
 	assert.match(SOURCE, /const handleViewAllSkills = useCallback\(\(\) => \{[\s\S]*setIsSkillsDirectoryOpen\(true\);[\s\S]*\}, \[\]\);/u);
 	assert.match(SOURCE, /const handleAddDirectorySkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*setPrefillRequest\(\{ mention: mapSkillToMentionItem\(skill\), requestKey: prefillCounterRef\.current \}\);[\s\S]*setConfigSkillId\(null\);[\s\S]*setIsSkillsDirectoryOpen\(false\);/u);
 	assert.doesNotMatch(SOURCE, /buildSkillMentionText/u);
@@ -46,6 +47,15 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
 	assert.match(SOURCE, /const isDialogOpen = [\s\S]*isSkillsDirectoryOpen/u);
 	assert.match(SOURCE.slice(dialogIndex), /open=\{isDialogOpen\}[\s\S]*skills=\{dialogSkills\}[\s\S]*variant="experimental"[\s\S]*onAddSkills=\{handleAddDirectorySkills\}[\s\S]*selectionExperience="chat-single-add"/u);
+});
+
+test("Create-skill flow reserves static skill ids for runtime-generated skills", () => {
+	const interceptSource = SOURCE.slice(
+		SOURCE.indexOf("const onInterceptSubmit = useCallback"),
+		SOURCE.indexOf("const resolveComposerPlaceholder = useCallback"),
+	);
+
+	assert.match(interceptSource, /deriveSkillFromPrompt\(pendingCreatePromptRef\.current \|\| text, text, \{\s*reservedSkillIds: \[\.\.\.STATIC_SKILL_IDS, \.\.\.createdSkills\.map\(\(entry\) => entry\.id\)\],\s*\}\)/u);
 });
 
 test("Create-skill question traces collapse while awaiting user response", () => {

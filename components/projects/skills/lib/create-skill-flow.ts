@@ -121,6 +121,11 @@ export interface SkillCreationResultPayload {
 	showSuccessSummary?: boolean;
 }
 
+export interface DeriveSkillFromPromptOptions {
+	/** Skill ids already owned by the static catalog. Generated runtime ids must not collide with them. */
+	reservedSkillIds?: readonly string[];
+}
+
 type AssistantParts = RovoUIMessage["parts"];
 
 interface InterceptStage {
@@ -362,6 +367,21 @@ const NAME_STOP_WORDS = new Set([
 	"into", "to", "for", "a", "an", "the", "my", "our", "of", "and", "with", "on", "in", "that", "from", "all",
 ]);
 
+function uniquifySkillId(baseId: string, reservedSkillIds: readonly string[]): string {
+	const reservedIds = new Set(reservedSkillIds.map((id) => slugifySkillName(id)));
+	if (!reservedIds.has(baseId)) {
+		return baseId;
+	}
+
+	let suffix = 2;
+	let candidate = `${baseId}-${suffix}`;
+	while (reservedIds.has(candidate)) {
+		suffix += 1;
+		candidate = `${baseId}-${suffix}`;
+	}
+	return candidate;
+}
+
 /**
  * Derives a believable `SkillsDirectorySkill` from the user's free-form prompt
  * (and, optionally, the clarification summary text). Deterministic.
@@ -369,6 +389,7 @@ const NAME_STOP_WORDS = new Set([
 export function deriveSkillFromPrompt(
 	prompt: string,
 	clarificationText?: string,
+	options: DeriveSkillFromPromptOptions = {},
 ): SkillsDirectorySkill {
 	// Strip the leading "/Create skill" mention, then any "create a skill that…"
 	// filler and leading stop-words, leaving the user's actual intent.
@@ -383,7 +404,8 @@ export function deriveSkillFromPrompt(
 		nameWords.pop();
 	}
 	const name = titleCaseFirst(nameWords.join(" ")).replace(/[.?!,]+$/u, "") || "New skill";
-	const id = slugifySkillName(name) || "new-skill";
+	const baseId = slugifySkillName(name) || "new-skill";
+	const id = uniquifySkillId(baseId, options.reservedSkillIds ?? []);
 	const description = `${titleCaseFirst(intent.replace(/[.?!]+$/u, ""))}. Use when the user asks to ${intent.toLowerCase()}.`;
 	const iconKey = pickIconKey(`${prompt} ${clarificationText ?? ""}`);
 
