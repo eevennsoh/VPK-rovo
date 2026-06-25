@@ -48,7 +48,7 @@ test("Skills Directory uses the Agent Directory dialog header style", () => {
 
 	assert.match(
 		source,
-		/<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle className="text-base font-medium leading-5 text-text">[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<div className="flex items-center gap-2">[\s\S]*<Button onClick=\{onCreateSkill\} type="button">[\s\S]*New skill[\s\S]*<\/Button>[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
+		/<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle className="text-base font-medium leading-5 text-text">[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<div className="flex items-center gap-2">[\s\S]*\{onCreateSkill \? \([\s\S]*<Button onClick=\{onCreateSkill\} type="button">[\s\S]*New skill[\s\S]*<\/Button>[\s\S]*\) : null\}[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
 	);
 });
 
