@@ -136,6 +136,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Repo-owned extraction scaffolding lives under .agents, outside the broad
 	// test prefixes, but it is a stable node:test contract for vpk-build output.
 	".agents/skills/vpk-build/scripts/scaffold-target.test.js",
+	// Guards the memoized work-item due-date formatter reuse. Components are not
+	// included wholesale, so gate this focused contract explicitly.
+	"components/blocks/work-item-widget/work-item-widget.test.js",
 ]);
 
 export function getTestFileInclusion(filePath, {

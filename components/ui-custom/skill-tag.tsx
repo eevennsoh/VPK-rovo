@@ -106,14 +106,18 @@ function SkillTag({
 			return;
 		}
 
-		const label = labelRef.current;
-		if (!label) {
+		const labelElement = labelRef.current;
+		if (!labelElement) {
 			return;
 		}
-		const labelElement = label;
 
 		function updateLabelOverflow() {
-			setLabelHasOverflow(labelElement.scrollWidth > labelElement.clientWidth + 1);
+			const label = labelRef.current;
+			if (!label) {
+				setLabelHasOverflow(false);
+				return;
+			}
+			setLabelHasOverflow(label.scrollWidth > label.clientWidth + 1);
 		}
 
 		updateLabelOverflow();
