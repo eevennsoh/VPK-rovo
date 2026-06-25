@@ -28,8 +28,10 @@ export interface EntityCardAppProps {
 	active?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
-	/** Renders the persistent "added" check when the app is already on the agent. */
+	/** Marks the app as already on the agent. */
 	added?: boolean;
+	/** Renders the shared add/remove switch and toggles immediately. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Swaps the leading logo for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -54,6 +56,7 @@ export function EntityCardApp({
 	action,
 	onMoreActions,
 	added = false,
+	onAddedChange,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -101,6 +104,7 @@ export function EntityCardApp({
 	const header = (
 		<EntityCardHeader
 			added={added}
+			onAddedChange={onAddedChange}
 			action={
 				action ?? (onMoreActions ? (
 					<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />

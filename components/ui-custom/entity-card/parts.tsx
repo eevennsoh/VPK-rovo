@@ -62,6 +62,7 @@ import WarningIcon from "@atlaskit/icon/core/warning";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/components/ui/icon";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -91,11 +92,13 @@ export interface EntityCardHeaderProps {
 	/** Trailing action revealed on hover/focus (e.g. `EntityCardMoreButton`). */
 	action?: ReactNode;
 	/**
-	 * Marks the entity as already added to the agent — renders a persistent blue
-	 * success check at the trailing edge so added cards can be scanned at a glance.
-	 * Distinct from a hover/multi-select checkbox: this reflects committed state.
+	 * Marks the entity as already added to the agent. With `onAddedChange`, this
+	 * drives a switch that persists while added; otherwise it falls back to the
+	 * legacy blue added check.
 	 */
 	added?: boolean;
+	/** Immediate add/remove toggle shown as a hover-revealed switch. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Shows the added check only on hover, in a subtle color. */
 	hoverAdded?: boolean;
 	/**
@@ -125,6 +128,7 @@ export function EntityCardHeader({
 	reserveByline = false,
 	action,
 	added = false,
+	onAddedChange,
 	hoverAdded = false,
 	trailingStatus,
 	selectable = false,
@@ -132,7 +136,15 @@ export function EntityCardHeader({
 	onSelectedChange,
 	selectLabel,
 }: Readonly<EntityCardHeaderProps>) {
-	const hasTrailingStatus = Boolean(trailingStatus);
+	const defaultTrailingStatus = onAddedChange ? (
+		<EntityCardAddedSwitch
+			added={added}
+			onAddedChange={onAddedChange}
+			title={title}
+		/>
+	) : undefined;
+	const trailingStatusControl = trailingStatus ?? defaultTrailingStatus;
+	const hasTrailingStatus = Boolean(trailingStatusControl);
 
 	return (
 		<div
@@ -197,7 +209,7 @@ export function EntityCardHeader({
 							),
 						)}
 					>
-						{trailingStatus ?? <EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />}
+						{trailingStatusControl ?? <EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />}
 					</span>
 				</span>
 			) : null}
@@ -278,6 +290,42 @@ export function EntityCardAddedCheck({
 		<Icon
 			className={className}
 			render={<StatusSuccessIcon label={label} color="currentColor" />}
+		/>
+	);
+}
+
+export interface EntityCardAddedSwitchProps {
+	/** Current add/remove state. Added switches stay visible at rest. */
+	added: boolean;
+	/** Called immediately when the switch changes. */
+	onAddedChange: (checked: boolean) => void;
+	/** Entity title used to build the accessible Add/Remove label. */
+	title: string;
+}
+
+export function EntityCardAddedSwitch({
+	added,
+	onAddedChange,
+	title,
+}: Readonly<EntityCardAddedSwitchProps>) {
+	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+		event.stopPropagation();
+	}
+
+	return (
+		<Switch
+			aria-label={`${added ? "Remove" : "Add"} ${title}`}
+			checked={added}
+			className={cn(
+				"transition-opacity duration-fast ease-out after:inset-0",
+				added
+					? "pointer-events-auto opacity-100"
+					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
+			)}
+			onCheckedChange={onAddedChange}
+			onClick={stopPropagation}
+			onKeyDown={stopPropagation}
+			size="sm"
 		/>
 	);
 }

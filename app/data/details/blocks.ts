@@ -949,7 +949,7 @@ const tools: AppsDirectoryTool[] = [
 			{
 				name: "onAddedToolIdsChange",
 				type: "(toolIds: readonly string[]) => void",
-				description: "Called after Add to agent or Remove changes the selected app's added state.",
+				description: "Called after the card switch, Add to agent, or Remove changes an app's added state.",
 			},
 			{
 				name: "onCreateTool",

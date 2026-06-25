@@ -32,8 +32,10 @@ export interface EntityCardKnowledgeProps {
 	starCount?: number;
 	teammateCount?: number;
 	icon?: ReactNode;
-	/** Renders the persistent "added" check when the knowledge app is already on the agent. */
+	/** Marks the knowledge app as already on the agent. */
 	added?: boolean;
+	/** Renders the shared add/remove switch and toggles immediately. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Swaps the leading icon for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -55,6 +57,7 @@ export function EntityCardKnowledge({
 	teammateCount,
 	icon,
 	added = false,
+	onAddedChange,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -70,6 +73,7 @@ export function EntityCardKnowledge({
 			<div className="flex flex-col gap-2">
 				<EntityCardHeader
 					added={added}
+					onAddedChange={onAddedChange}
 					byline={bylinePublisher ? <EntityCardByline publisher={bylinePublisher} verified={verified} /> : undefined}
 					onSelectedChange={onSelectedChange}
 					selectLabel={selectLabel}

@@ -544,9 +544,33 @@ import PageIcon from "@atlaskit/icon/core/page"
 			},
 			{
 				name: "onSelect",
-				type: "() => void",
+				type: "(checked?: boolean) => void",
 				description:
-					"Optional whole-card selection handler owned by the EntityCardShell.",
+					"Optional whole-card action handler owned by the EntityCardShell.",
+			},
+			{
+				name: "cardActionLabel",
+				type: "string",
+				description:
+					"Accessible label for the whole-card action when it differs from the leading checkbox label.",
+			},
+			{
+				name: "added",
+				type: "boolean",
+				description:
+					"Marks the entity as already added and keeps the trailing status slot visible at rest.",
+			},
+			{
+				name: "onAddedChange",
+				type: "(checked: boolean) => void",
+				description:
+					"Renders the shared add/remove Switch. The switch appears on hover/focus when off and stays visible when added.",
+			},
+			{
+				name: "trailingStatus",
+				type: "ReactNode",
+				description:
+					"Advanced caller-owned trailing status control for custom add/remove affordances.",
 			},
 			{
 				name: "density",
@@ -612,6 +636,11 @@ import PageIcon from "@atlaskit/icon/core/page"
 		],
 		examples: [
 			{ title: "Directory cards", demoSlug: "entity-card-demo-default" },
+			{
+				title: "Add/remove",
+				description: "Skill cards with a hover-revealed Switch that persists when the skill is added.",
+				demoSlug: "entity-card-demo-add-remove",
+			},
 			{
 				title: "Skills",
 				description: "Skill cards through the EntityCardSkillCard directory card.",

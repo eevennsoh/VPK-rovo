@@ -53,6 +53,7 @@ function computeIdleFrame(idleT: number, totalT: number, illusId: string, pr: nu
 export interface ControlledSpotIllustrationProps {
   illusId: string;
   size?: number;
+  motionSize?: number;
   baseUrl?: string;
   wantExit?: boolean;
   onExitComplete?: () => void;
@@ -310,11 +311,14 @@ function GenericControlledSpotIllustration({
  */
 function ChatControlledIllustration({
   size = 320,
+  motionSize = size,
   baseUrl = "/",
   wantExit = false,
   onExitComplete,
   onPhaseChange,
 }: ControlledSpotIllustrationProps) {
+  const stageSize = Math.max(size, motionSize);
+  const stageScale = size / stageSize;
   const phaseRef = useRef<ControlledSpotIllustrationPhase>("enter");
   const wantExitRef = useRef(wantExit);
   const onExitCompleteRef = useRef(onExitComplete);
@@ -370,23 +374,32 @@ function ChatControlledIllustration({
       style={{
         width: size,
         height: size,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
+        overflow: "clip",
         position: "relative",
       }}
     >
-      <SpotIllustration
-        chatOnly
-        loop={false}
-        controlledChatLifecycle
-        wantChatExit={wantExit}
-        onChatExitComplete={handleChatExitComplete}
-        illusIds={["chat"]}
-        size={size}
-        baseUrl={baseUrl}
-      />
+      <div
+        style={{
+          width: stageSize,
+          height: stageSize,
+          position: "absolute",
+          bottom: 0,
+          left: "50%",
+          transform: `translateX(-50%) scale(${stageScale})`,
+          transformOrigin: "center bottom",
+        }}
+      >
+        <SpotIllustration
+          chatOnly
+          loop={false}
+          controlledChatLifecycle
+          wantChatExit={wantExit}
+          onChatExitComplete={handleChatExitComplete}
+          illusIds={["chat"]}
+          size={stageSize}
+          baseUrl={baseUrl}
+        />
+      </div>
     </div>
   );
 }

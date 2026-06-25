@@ -11,6 +11,7 @@ function readRepoFile(...segments) {
 
 const INDEX_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/index.tsx");
 const SPOT_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/spot-illustration.tsx");
+const CONTROLLED_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/controlled-spot-illustration.tsx");
 const ASSETS_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/assets.generated.ts");
 const DEMO_SOURCE = readRepoFile("components/website/demos/ui-custom/rovo-illustration-demo.tsx");
 const COMPONENTS_SOURCE = readRepoFile("app/data/components.ts");
@@ -56,4 +57,17 @@ test("Rovo Illustration demo exposes Chat and Brainstorm animations", () => {
 	assert.doesNotMatch(DEMO_SOURCE, /SUPPORTING_ILLUSTRATIONS/u);
 	assert.doesNotMatch(DEMO_SOURCE, /id !== "chat"/u);
 	assert.doesNotMatch(DEMO_SOURCE, /id: "create", label: "Brainstorm"/u);
+});
+
+test("Controlled chat illustration scales a default-sized scene into a compact render box", () => {
+	assert.match(SPOT_SOURCE, /const pr = size \/ 300;/u);
+	assert.doesNotMatch(SPOT_SOURCE, /motionSize/u);
+	assert.match(CONTROLLED_SOURCE, /motionSize\?: number;/u);
+	assert.match(CONTROLLED_SOURCE, /motionSize = size/u);
+	assert.match(CONTROLLED_SOURCE, /const stageSize = Math\.max\(size, motionSize\);/u);
+	assert.match(CONTROLLED_SOURCE, /const stageScale = size \/ stageSize;/u);
+	assert.match(CONTROLLED_SOURCE, /overflow: "clip"/u);
+	assert.match(CONTROLLED_SOURCE, /transform: `translateX\(-50%\) scale\(\$\{stageScale\}\)`/u);
+	assert.match(CONTROLLED_SOURCE, /transformOrigin: "center bottom"/u);
+	assert.match(CONTROLLED_SOURCE, /size=\{stageSize\}/u);
 });

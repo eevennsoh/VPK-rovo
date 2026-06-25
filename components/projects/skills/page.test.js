@@ -38,7 +38,8 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<FolderAddIcon label="" \/>\}[\s\S]*Create space/u);
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<SkillIcon label="" \/>\}[\s\S]*View all skills/u);
 	assert.match(SOURCE, /<ChatPanel[\s\S]*addMenuItemsBefore=\{addMenuItemsBefore\}[\s\S]*autoFocusComposer/u);
-	assert.match(SOURCE, /const SKILLS_GREETING: ChatPanelGreetingProps = \{[\s\S]*stabilizeHeroOnMount: true,[\s\S]*suggestions: SKILL_GREETING_SUGGESTIONS/u);
+	assert.match(SOURCE, /const SKILLS_GREETING: ChatPanelGreetingProps = \{[\s\S]*suggestions: SKILL_GREETING_SUGGESTIONS/u);
+	assert.doesNotMatch(SOURCE, /stabilizeHeroOnMount/u);
 	assert.doesNotMatch(SOURCE, /What skill should I run/u);
 	// The directory dialog is shared with the create-skill config view, so its
 	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)

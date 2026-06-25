@@ -904,7 +904,6 @@ function SkillsDirectoryEntityCard({
 		<EntityCardSkillCard
 			active={!moreActionsDisabled && moreMenuOpen}
 			added={added}
-			cardActionLabel={onToggleAdded ? `${added ? "Remove" : "Add"} ${skill.name}` : undefined}
 			className="min-h-[112px] gap-4"
 			description={skill.description}
 			hoverAdded={hoverAdded}
@@ -925,6 +924,7 @@ function SkillsDirectoryEntityCard({
 				)
 			}
 			name={skill.name}
+			onAddedChange={onToggleAdded}
 			onSelectedChange={onToggleSelected}
 			onSelect={onSelect}
 			selectable={checkboxSelectable}
@@ -932,46 +932,6 @@ function SkillsDirectoryEntityCard({
 			source={getSkillCardSource(skill)}
 			starCount={skill.starCount}
 			teammateCount={skill.teammateCount}
-			trailingStatus={
-				onToggleAdded ? (
-					<SkillAddedSwitch
-						added={added}
-						onToggleAdded={onToggleAdded}
-						skillName={skill.name}
-					/>
-				) : undefined
-			}
-		/>
-	);
-}
-
-function SkillAddedSwitch({
-	added,
-	onToggleAdded,
-	skillName,
-}: Readonly<{
-	added: boolean;
-	onToggleAdded: (checked: boolean) => void;
-	skillName: string;
-}>) {
-	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
-		event.stopPropagation();
-	}
-
-	return (
-		<Switch
-			aria-label={`${added ? "Remove" : "Add"} ${skillName}`}
-			checked={added}
-			className={cn(
-				"transition-opacity duration-fast ease-out after:inset-0",
-				added
-					? "pointer-events-auto opacity-100"
-					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
-			)}
-			onCheckedChange={onToggleAdded}
-			onClick={stopPropagation}
-			onKeyDown={stopPropagation}
-			size="sm"
 		/>
 	);
 }

@@ -34,7 +34,6 @@ import {
 import { SKILL_GREETING_SUGGESTIONS } from "./lib/skill-suggestions";
 
 const SKILLS_GREETING: ChatPanelGreetingProps = {
-	stabilizeHeroOnMount: true,
 	suggestions: SKILL_GREETING_SUGGESTIONS,
 };
 

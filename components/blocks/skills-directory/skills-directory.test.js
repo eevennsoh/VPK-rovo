@@ -127,7 +127,7 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(source, /starCount=\{skill\.starCount\}/u);
 	assert.match(source, /teammateCount=\{skill\.teammateCount\}/u);
 	assert.match(variantsSource, /export interface EntityCardSkillCardProps extends EntityCardSkillProps \{[\s\S]*active\?: boolean;[\s\S]*cardActionLabel\?: string;[\s\S]*moreAction\?: ReactNode;/u);
-	assert.match(variantsSource, /selectLabel=\{cardActionLabel \?\? selectLabel\}/u);
+	assert.match(variantsSource, /selectLabel=\{cardActionLabel \?\? \(onAddedChange \? addActionLabel : selectLabel\)\}/u);
 	assert.match(variantsSource, /onSelectedChange,/u);
 	assert.match(variantsSource, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(variantsSource, /onSelectedChange=\{onSelectedChange \?\? onSelect\}/u);
@@ -147,7 +147,8 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.doesNotMatch(source, /const addButtonLabel = selectionExperience === "studio-bulk-add" \? "Save" : "Add skills";/u);
 	assert.match(source, /onSelect=\{handleCardSelect\}/u);
 	assert.match(source, /onToggleAdded=\{showAddedSwitch \? \(checked\) => onToggleAddedSkill\(skill, checked\) : undefined\}/u);
-	assert.match(source, /cardActionLabel=\{onToggleAdded \? `\$\{added \? "Remove" : "Add"\} \$\{skill\.name\}` : undefined\}/u);
+	assert.match(source, /onAddedChange=\{onToggleAdded\}/u);
+	assert.doesNotMatch(source, /cardActionLabel=\{onToggleAdded \?/u);
 	assert.match(source, /onSelectedChange=\{onToggleSelected\}/u);
 	assert.match(source, /selectable=\{checkboxSelectable\}/u);
 	assert.match(source, /const effectiveAdded = addedIds\.has\(skill\.id\);/u);
@@ -166,8 +167,11 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(partsSource, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
 	assert.match(partsSource, /"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100"/u);
 	assert.match(partsSource, /trailingStatus\?: ReactNode/u);
+	assert.match(partsSource, /onAddedChange\?: \(checked: boolean\) => void/u);
+	assert.match(partsSource, /export function EntityCardAddedSwitch/u);
 	assert.match(partsSource, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
 	assert.match(skillSource, /trailingStatus\?: ReactNode/u);
+	assert.match(skillSource, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.doesNotMatch(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
 	assert.match(partsSource, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
@@ -177,10 +181,9 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.doesNotMatch(source, /selected && "border-border-selected hover:border-border-selected"/u);
 	assert.doesNotMatch(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /function SkillMoreMenu/u);
-	assert.match(source, /function SkillAddedSwitch/u);
-	assert.match(source, /"transition-opacity duration-fast ease-out after:inset-0"/u);
-	assert.match(source, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{skillName\}`\}[\s\S]*checked=\{added\}[\s\S]*className=\{cn\([\s\S]*added[\s\S]*\? "pointer-events-auto opacity-100"[\s\S]*: "pointer-events-none opacity-0 group-hover\/card:pointer-events-auto group-hover\/card:opacity-100[\s\S]*group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100[\s\S]*onCheckedChange=\{onToggleAdded\}[\s\S]*size="sm"/u);
-	assert.match(source, /trailingStatus=\{[\s\S]*<SkillAddedSwitch[\s\S]*added=\{added\}[\s\S]*onToggleAdded=\{onToggleAdded\}[\s\S]*skillName=\{skill\.name\}/u);
+	assert.doesNotMatch(source, /function SkillAddedSwitch/u);
+	assert.doesNotMatch(source, /trailingStatus=\{[\s\S]*<SkillAddedSwitch/u);
+	assert.match(partsSource, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*className=\{cn\([\s\S]*added[\s\S]*\? "pointer-events-auto opacity-100"[\s\S]*: "pointer-events-none opacity-0 group-hover\/card:pointer-events-auto group-hover\/card:opacity-100[\s\S]*group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100[\s\S]*onCheckedChange=\{onAddedChange\}[\s\S]*size="sm"/u);
 	assert.match(source, /added=\{added\}/u);
 	assert.match(source, /const moreActionsDisabled = selected;/u);
 	assert.match(source, /if \(moreActionsDisabled\) \{[\s\S]*setMoreMenuOpen\(false\);/u);

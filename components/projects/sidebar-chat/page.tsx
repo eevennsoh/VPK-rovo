@@ -126,8 +126,6 @@ export interface ChatPanelGreetingProps {
 	heading?: string;
 	illustrationSrc?: string;
 	illustrationDarkSrc?: string;
-	/** Keep the hero stable on first paint while preserving prompt-row staggering. */
-	stabilizeHeroOnMount?: boolean;
 	showHero?: boolean;
 	suggestions?: ReadonlyArray<RovoSuggestion>;
 	/**
@@ -1673,7 +1671,6 @@ export default function ChatPanel({
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
-							stabilizeHeroOnMount={resolvedGreeting?.stabilizeHeroOnMount}
 							showStarterGroupLabel={resolvedGreeting?.showStarterGroupLabel}
 							starterGroupLabel={resolvedGreeting?.starterGroupLabel}
 							agentTestSection={resolvedGreeting?.agentTestSection}

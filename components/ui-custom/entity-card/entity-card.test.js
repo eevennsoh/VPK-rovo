@@ -153,14 +153,21 @@ test("header swaps the leading visual for a default 16x16 checkbox in selectable
 
 test("header supports a wider trailing status control without using the added checkmark", () => {
 	assert.match(PARTS_SOURCE, /trailingStatus\?: ReactNode/u);
-	assert.match(PARTS_SOURCE, /const hasTrailingStatus = Boolean\(trailingStatus\);/u);
+	assert.match(PARTS_SOURCE, /onAddedChange\?: \(checked: boolean\) => void/u);
+	assert.match(PARTS_SOURCE, /const defaultTrailingStatus = onAddedChange \? \(/u);
+	assert.match(PARTS_SOURCE, /const trailingStatusControl = trailingStatus \?\? defaultTrailingStatus;/u);
+	assert.match(PARTS_SOURCE, /const hasTrailingStatus = Boolean\(trailingStatusControl\);/u);
 	assert.match(PARTS_SOURCE, /action \|\| added \|\| hoverAdded \|\| hasTrailingStatus/u);
 	assert.match(PARTS_SOURCE, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
 	assert.match(PARTS_SOURCE, /hasTrailingStatus[\s\S]*\? added \? "-translate-x-10" : "group-hover\/card:-translate-x-10 group-focus-within\/card:-translate-x-10 group-data-\[active=true\]\/card:-translate-x-10"/u);
 	assert.match(PARTS_SOURCE, /hasTrailingStatus\s*\? "pointer-events-auto absolute top-1\/2 right-0 inline-flex -translate-y-1\/2 items-center"/u);
-	assert.match(PARTS_SOURCE, /\{trailingStatus \?\? <EntityCardAddedCheck/u);
+	assert.match(PARTS_SOURCE, /\{trailingStatusControl \?\? <EntityCardAddedCheck/u);
+	assert.match(PARTS_SOURCE, /export function EntityCardAddedSwitch/u);
+	assert.match(PARTS_SOURCE, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*onCheckedChange=\{onAddedChange\}/u);
 	assert.match(SKILL_SOURCE, /trailingStatus\?: ReactNode/u);
+	assert.match(SKILL_SOURCE, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.match(SKILL_SOURCE, /trailingStatus=\{trailingStatus\}/u);
+	assert.match(SKILL_SOURCE, /onAddedChange=\{onAddedChange\}/u);
 });
 
 test("banner part draws the full-bleed cover and hexagon-outlined cover avatar", () => {
@@ -234,6 +241,7 @@ test("skill variant uses a 32px icon tile, header byline, and a teammate stat", 
 	assert.match(SKILL_SOURCE, /EntityCardByline/u);
 	assert.match(SKILL_SOURCE, /hoverAdded\?: boolean/u);
 	assert.match(SKILL_SOURCE, /hoverAdded=\{hoverAdded\}/u);
+	assert.match(SKILL_SOURCE, /onAddedChange=\{onAddedChange\}/u);
 	assert.match(PARTS_SOURCE, /hoverAdded\?: boolean/u);
 	assert.match(SKILL_SOURCE, /trailingStatus=\{trailingStatus\}/u);
 	assert.doesNotMatch(PARTS_SOURCE, /from "motion\/react"/u);
@@ -389,9 +397,11 @@ test("skill/app/tool/knowledge cards opt into multi-select when a `selected` boo
 	assert.equal(gateCount.length, 3);
 	assert.match(VARIANTS_SOURCE, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(VARIANTS_SOURCE, /cardActionLabel\?: string/u);
-	assert.match(VARIANTS_SOURCE, /selectLabel=\{cardActionLabel \?\? selectLabel\}/u);
+	assert.match(VARIANTS_SOURCE, /const addActionLabel = `\$\{added \? "Remove" : "Add"\} \$\{name\}`;/u);
+	assert.match(VARIANTS_SOURCE, /const handleSelect = onSelect \?\? \(onAddedChange \? \(\) => onAddedChange\(!added\) : undefined\);/u);
+	assert.match(VARIANTS_SOURCE, /selectLabel=\{cardActionLabel \?\? \(onAddedChange \? addActionLabel : selectLabel\)\}/u);
 	// Each selectable wrapper threads selection to BOTH the shell (border) and content (checkbox).
-	assert.match(VARIANTS_SOURCE, /onSelect=\{onSelect \? \(\) => onSelect\(\) : undefined\}\s*\n\s*selectLabel=\{selectLabel\}\s*\n\s*selected=\{selected\}/u);
+	assert.match(VARIANTS_SOURCE, /onSelect=\{handleSelect \? \(\) => handleSelect\(\) : undefined\}\s*\n\s*selectLabel=\{onAddedChange \? addActionLabel : selectLabel\}\s*\n\s*selected=\{selected\}/u);
 	assert.match(VARIANTS_SOURCE, /onSelectedChange=\{onSelect\}/u);
 	const labelCount = VARIANTS_SOURCE.match(/\$\{selected \? "Deselect" : "Select"\} \$\{name\}/gu) ?? [];
 	assert.equal(labelCount.length, 4);
