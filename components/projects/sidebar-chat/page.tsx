@@ -126,6 +126,8 @@ export interface ChatPanelGreetingProps {
 	heading?: string;
 	illustrationSrc?: string;
 	illustrationDarkSrc?: string;
+	/** Keep the hero stable on first paint while preserving prompt-row staggering. */
+	stabilizeHeroOnMount?: boolean;
 	showHero?: boolean;
 	suggestions?: ReadonlyArray<RovoSuggestion>;
 	/**
@@ -1653,6 +1655,8 @@ export default function ChatPanel({
 					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
 					conversationContentClassName
 				)}
+				reserveScrollbarGutter={hasMessages}
+				revealScrollbarOnScroll={hasMessages}
 				// In the Test empty state, messagesContainerStyle grows this content
 				// track to full height and bottom-aligns (or centers when there are no
 				// starters) the greeting (inline values win over Tailwind classes).
@@ -1669,6 +1673,7 @@ export default function ChatPanel({
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
+							stabilizeHeroOnMount={resolvedGreeting?.stabilizeHeroOnMount}
 							showStarterGroupLabel={resolvedGreeting?.showStarterGroupLabel}
 							starterGroupLabel={resolvedGreeting?.starterGroupLabel}
 							agentTestSection={resolvedGreeting?.agentTestSection}

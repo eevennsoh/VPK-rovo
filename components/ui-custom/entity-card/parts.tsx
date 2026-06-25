@@ -99,6 +99,12 @@ export interface EntityCardHeaderProps {
 	/** Shows the added check only on hover, in a subtle color. */
 	hoverAdded?: boolean;
 	/**
+	 * Replaces the trailing added-check/status slot with a caller-owned control.
+	 * Use for immediate add/remove affordances that need more width than the 24px
+	 * checkmark while preserving the header's reserved trailing space.
+	 */
+	trailingStatus?: ReactNode;
+	/**
 	 * Marks the card as multi-selectable. When set, the leading visual swaps to a
 	 * 16×16 checkbox on card hover and while selected — the directory "select"
 	 * affordance. Pair with `selected` + `onSelectedChange`.
@@ -120,11 +126,14 @@ export function EntityCardHeader({
 	action,
 	added = false,
 	hoverAdded = false,
+	trailingStatus,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
 	selectLabel,
 }: Readonly<EntityCardHeaderProps>) {
+	const hasTrailingStatus = Boolean(trailingStatus);
+
 	return (
 		<div
 			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
@@ -150,35 +159,43 @@ export function EntityCardHeader({
 				</h3>
 				{byline ?? null}
 			</div>
-			{action || added || hoverAdded ? (
+			{action || added || hoverAdded || hasTrailingStatus ? (
 				<span
 					className={cn(
 						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out",
-						added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px]" : "w-6",
+						hasTrailingStatus
+							? action ? "w-16" : "w-8"
+							: added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px] group-data-[active=true]/card:w-[52px]" : "w-6",
 					)}
 				>
 					{action ? (
 						<span
 							className={cn(
 								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out",
-								added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7" : "translate-x-0",
+								hasTrailingStatus
+									? "-translate-x-10"
+									: added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7 group-data-[active=true]/card:-translate-x-7" : "translate-x-0",
 							)}
 						>
 							{action}
 						</span>
 					) : null}
 					<span
-						aria-hidden={!added ? true : undefined}
+						aria-hidden={!hasTrailingStatus && !added ? true : undefined}
 						className={cn(
-							"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
-							added
-								? "scale-100 opacity-100"
-								: hoverAdded
-									? "scale-75 opacity-0 group-hover/card:scale-100 group-hover/card:opacity-100"
-									: "scale-75 opacity-0",
+							hasTrailingStatus
+								? "pointer-events-auto absolute top-1/2 right-0 inline-flex -translate-y-1/2 items-center"
+								: "pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
+							!hasTrailingStatus && (
+								added
+									? "scale-100 opacity-100"
+									: hoverAdded
+										? "scale-75 opacity-0 group-hover/card:scale-100 group-hover/card:opacity-100 group-data-[active=true]/card:scale-100 group-data-[active=true]/card:opacity-100"
+										: "scale-75 opacity-0"
+							),
 						)}
 					>
-						<EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />
+						{trailingStatus ?? <EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />}
 					</span>
 				</span>
 			) : null}

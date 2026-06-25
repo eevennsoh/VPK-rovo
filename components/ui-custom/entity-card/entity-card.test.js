@@ -24,6 +24,7 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
+	assert.match(SHELL_SOURCE, /data-active=\{active \|\| undefined\}/u);
 	// Resting fill is the overlay surface so cards match their elevated container
 	// (modals/dialogs sit on surface-overlay); identical to `surface` in light mode
 	// but correctly lighter in dark mode. See #966-followup.
@@ -225,13 +226,13 @@ test("skill variant uses a 32px icon tile, header byline, and a teammate stat", 
 	assert.doesNotMatch(PARTS_SOURCE, /AnimatePresence/u);
 	assert.doesNotMatch(PARTS_SOURCE, /motion\.span/u);
 	assert.match(PARTS_SOURCE, /"relative h-6 shrink-0 overflow-visible transition-\[width\] duration-fast ease-out"/u);
-	assert.match(PARTS_SOURCE, /added \? "w-\[52px\]" : hoverAdded \? "w-6 group-hover\/card:w-\[52px\]" : "w-6"/u);
+	assert.match(PARTS_SOURCE, /added \? "w-\[52px\]" : hoverAdded \? "w-6 group-hover\/card:w-\[52px\] group-data-\[active=true\]\/card:w-\[52px\]" : "w-6"/u);
 	assert.match(PARTS_SOURCE, /"absolute top-0 right-0 z-\[1\] inline-flex transition-transform duration-fast ease-out"/u);
-	assert.match(PARTS_SOURCE, /added \? "-translate-x-7" : hoverAdded \? "group-hover\/card:-translate-x-7" : "translate-x-0"/u);
+	assert.match(PARTS_SOURCE, /added \? "-translate-x-7" : hoverAdded \? "group-hover\/card:-translate-x-7 group-data-\[active=true\]\/card:-translate-x-7" : "translate-x-0"/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-focus-within\/card:-translate-x-6/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:pointer-events-none group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
 	assert.match(PARTS_SOURCE, /"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-\[opacity,transform\] duration-fast ease-out"/u);
-	assert.match(PARTS_SOURCE, /added\s*\? "scale-100 opacity-100"\s*: hoverAdded\s*\? "scale-75 opacity-0 group-hover\/card:scale-100 group-hover\/card:opacity-100"\s*: "scale-75 opacity-0"/u);
+	assert.match(PARTS_SOURCE, /added\s*\? "scale-100 opacity-100"\s*: hoverAdded\s*\? "scale-75 opacity-0 group-hover\/card:scale-100 group-hover\/card:opacity-100 group-data-\[active=true\]\/card:scale-100 group-data-\[active=true\]\/card:opacity-100"\s*: "scale-75 opacity-0"/u);
 	assert.match(PARTS_SOURCE, /<EntityCardAddedCheck className=\{added \? undefined : "text-icon-disabled"\} label=\{added \? "Added" : ""\} \/>/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:scale-100 group-hover\/card:opacity-100 group-focus-within\/card/u);
 	assert.doesNotMatch(PARTS_SOURCE, /absolute left-full inline-flex/u);

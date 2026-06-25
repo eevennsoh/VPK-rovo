@@ -34,7 +34,7 @@ import {
 import { SKILL_GREETING_SUGGESTIONS } from "./lib/skill-suggestions";
 
 const SKILLS_GREETING: ChatPanelGreetingProps = {
-	heading: "What skill should I run?",
+	stabilizeHeroOnMount: true,
 	suggestions: SKILL_GREETING_SUGGESTIONS,
 };
 

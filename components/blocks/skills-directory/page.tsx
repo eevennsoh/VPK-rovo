@@ -84,6 +84,14 @@ export default function SkillsDirectoryPage() {
 		setAddedSkillIds((current) => [...new Set([...current, ...skillIds])]);
 	}
 
+	function handleRemoveSkills(skillIds: readonly string[]) {
+		if (selectionExperience === "chat-single-add") {
+			return;
+		}
+		const removedIds = new Set(skillIds);
+		setAddedSkillIds((current) => current.filter((id) => !removedIds.has(id)));
+	}
+
 	return (
 		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
 			<Button onClick={() => openDirectory("chat-single-add")} variant="outline">
@@ -95,6 +103,7 @@ export default function SkillsDirectoryPage() {
 			<SkillsDirectoryDialog
 				addedSkillIds={selectionExperience === "chat-single-add" ? [] : addedSkillIds}
 				onAddSkills={handleAddSkills}
+				onRemoveSkills={handleRemoveSkills}
 				open={open}
 				onOpenChange={setOpen}
 				selectionExperience={selectionExperience}
@@ -124,15 +133,34 @@ function SkillsDirectoryPageShell({
 	selectionExperience?: SkillsDirectorySelectionExperience;
 	variant?: SkillsDirectoryVariant;
 }>) {
+	const [addedSkillIds, setAddedSkillIds] = useState<readonly string[]>(DEMO_ADDED_SKILL_IDS);
+
+	function handleAddSkills(skillIds: readonly string[]) {
+		if (selectionExperience === "chat-single-add") {
+			return;
+		}
+		setAddedSkillIds((current) => [...new Set([...current, ...skillIds])]);
+	}
+
+	function handleRemoveSkills(skillIds: readonly string[]) {
+		if (selectionExperience === "chat-single-add") {
+			return;
+		}
+		const removedIds = new Set(skillIds);
+		setAddedSkillIds((current) => current.filter((id) => !removedIds.has(id)));
+	}
+
 	return (
 		<div className="flex min-h-screen items-center justify-center p-4">
 			<Button onClick={() => onOpenChange(true)}>
 				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
 			</Button>
 			<SkillsDirectoryDialog
-				addedSkillIds={DEMO_ADDED_SKILL_IDS}
+				addedSkillIds={selectionExperience === "chat-single-add" ? [] : addedSkillIds}
+				onAddSkills={handleAddSkills}
 				open={open}
 				onOpenChange={onOpenChange}
+				onRemoveSkills={handleRemoveSkills}
 				selectionExperience={selectionExperience}
 				sessionSkills={DEMO_SESSION_SKILLS}
 				variant={variant}

@@ -11,7 +11,7 @@ function SkillsContent() {
 
 export default function SkillsPage() {
 	return (
-		<div className="flex min-h-dvh w-full">
+		<div className="flex h-dvh min-h-0 w-full overflow-hidden">
 			<Suspense>
 				<SkillsContent />
 			</Suspense>

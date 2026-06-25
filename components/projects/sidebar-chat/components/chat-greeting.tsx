@@ -31,13 +31,17 @@ const CHAT_GREETING_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
 const CHAT_GREETING_MODE_TRANSITION = {
 	type: "spring",
 	bounce: 0,
-	visualDuration: 0.14,
+	visualDuration: 0.22,
 } as const;
 const CHAT_GREETING_EXIT_TRANSITION = {
 	duration: 0.08,
 } as const;
 const CHAT_GREETING_REDUCED_TRANSITION = {
 	duration: 0.08,
+} as const;
+const CHAT_GREETING_HERO_ITEM_TRANSITION = {
+	duration: 0.44,
+	ease: [0.33, 1, 0.68, 1],
 } as const;
 const CHAT_GREETING_CONTAINER_VARIANTS = {
 	hidden: {},
@@ -53,10 +57,44 @@ const CHAT_GREETING_CONTAINER_VARIANTS = {
 		},
 	},
 } as const;
+const CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {},
+	exit: {},
+} as const;
+const CHAT_GREETING_HERO_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {
+		transition: {
+			staggerChildren: 0.04,
+		},
+	},
+	exit: {
+		transition: {
+			staggerChildren: 0.02,
+			staggerDirection: -1,
+		},
+	},
+} as const;
+const CHAT_GREETING_PROMPT_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {
+		transition: {
+			delayChildren: 0.16,
+			staggerChildren: 0.04,
+		},
+	},
+	exit: {
+		transition: {
+			staggerChildren: 0.02,
+			staggerDirection: -1,
+		},
+	},
+} as const;
 const CHAT_GREETING_ITEM_VARIANTS = {
 	hidden: {
 		opacity: 0,
-		transform: "translateY(6px)",
+		transform: "translateY(24px)",
 	},
 	visible: {
 		opacity: 1,
@@ -65,7 +103,23 @@ const CHAT_GREETING_ITEM_VARIANTS = {
 	},
 	exit: {
 		opacity: 0,
-		transform: "translateY(-6px)",
+		transform: "translateY(-24px)",
+		transition: CHAT_GREETING_EXIT_TRANSITION,
+	},
+} as const;
+const CHAT_GREETING_HERO_ITEM_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transform: "translateY(24px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: CHAT_GREETING_HERO_ITEM_TRANSITION,
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(-24px)",
 		transition: CHAT_GREETING_EXIT_TRANSITION,
 	},
 } as const;
@@ -80,6 +134,24 @@ const CHAT_GREETING_REDUCED_ITEM_VARIANTS = {
 	exit: {
 		opacity: 0,
 		transition: CHAT_GREETING_REDUCED_TRANSITION,
+	},
+} as const;
+const CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transform: "translateY(0px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: {
+			duration: 0.1,
+		},
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(0px)",
+		transition: CHAT_GREETING_EXIT_TRANSITION,
 	},
 } as const;
 const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS = {
@@ -107,11 +179,17 @@ const CHAT_GREETING_INSTANT_ITEM_VARIANTS = {
 		},
 	},
 } as const;
-type ChatGreetingItemVariants = typeof CHAT_GREETING_ITEM_VARIANTS | typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS;
+type ChatGreetingItemVariants =
+	| typeof CHAT_GREETING_ITEM_VARIANTS
+	| typeof CHAT_GREETING_HERO_ITEM_VARIANTS
+	| typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS
+	| typeof CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS;
 
 interface ChatGreetingProps {
 	/** Optional custom heading text */
 	heading?: string;
+	/** Keep the illustration stable on first paint while preserving heading/prompt motion. */
+	stabilizeHeroOnMount?: boolean;
 	/** Optional custom light-mode illustration src */
 	illustrationSrc?: string;
 	/** Optional custom dark-mode illustration src */
@@ -381,6 +459,7 @@ export default function ChatGreeting({
 	heading = "How can I help?",
 	illustrationSrc = DEFAULT_ILLUSTRATION_SRC,
 	illustrationDarkSrc,
+	stabilizeHeroOnMount = false,
 	isMaxMode = false,
 	isComposing = false,
 	selectedAgent = null,
@@ -439,8 +518,23 @@ export default function ChatGreeting({
 	// the illustration + heading above the default prompts.
 	const shouldShowHero =
 		showHero && (!isComposing || !shouldRenderDirectoryMatches);
-	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS;
+	const activeHeroContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_HERO_CONTAINER_VARIANTS;
+	const activePromptContainerVariants = isComposing
+		? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS
+		: shouldShowHero
+			? CHAT_GREETING_PROMPT_CONTAINER_VARIANTS
+			: CHAT_GREETING_CONTAINER_VARIANTS;
 	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
+	const heroItemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_HERO_ITEM_VARIANTS;
+	const heroIllustrationVariants = isComposing
+		? CHAT_GREETING_INSTANT_ITEM_VARIANTS
+		: stabilizeHeroOnMount
+			? CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS
+			: heroItemVariants;
+	const heroHeadingVariants = isComposing
+		? CHAT_GREETING_INSTANT_ITEM_VARIANTS
+		: heroItemVariants;
 
 	return (
 		<div className="w-full">
@@ -474,9 +568,9 @@ export default function ChatGreeting({
 									exit="exit"
 									initial="hidden"
 									key="hero"
-									variants={activeContainerVariants}
+									variants={activeHeroContainerVariants}
 								>
-									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
+									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={heroIllustrationVariants}>
 										{shouldUseControlledChatIllustration ? (
 											<ControlledRovoIllustration illusId="chat" size={74} />
 										) : shouldUseControlledAgentIllustration ? (
@@ -502,14 +596,14 @@ export default function ChatGreeting({
 											</>
 										)}
 									</motion.div>
-									<motion.div style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
+									<motion.div style={{ willChange: "transform, opacity" }} variants={heroHeadingVariants}>
 										<Heading size="large" className="text-center">{resolvedHeading}</Heading>
 									</motion.div>
 								</motion.div>
 							) : null}
 						</AnimatePresence>
 						{shouldShowSuggestionList ? (
-							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
+							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activePromptContainerVariants}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",

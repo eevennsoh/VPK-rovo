@@ -76,7 +76,7 @@ export function EntityCardShell({
 
 	if (interactive) {
 		return (
-			<motion.article data-slot="card-directory" {...cardMotionProps}>
+			<motion.article data-active={active || undefined} data-slot="card-directory" {...cardMotionProps}>
 				{/* Whole-card selection affordance. A real <button> gives native keyboard
 				    (Enter/Space) operation and focus management; it sits beneath the card
 				    content (z-0) so nested controls layered above (z-10) remain clickable
@@ -106,7 +106,7 @@ export function EntityCardShell({
 	}
 
 	return (
-		<motion.article data-slot="card-directory" {...cardMotionProps}>
+		<motion.article data-active={active || undefined} data-slot="card-directory" {...cardMotionProps}>
 			{children}
 		</motion.article>
 	);

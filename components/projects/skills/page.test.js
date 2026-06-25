@@ -8,6 +8,10 @@ const TRACE_CARD_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components", "skill-creation-trace-card.tsx"),
 	"utf8",
 );
+const RESULT_CARD_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components", "skill-creation-result-card.tsx"),
+	"utf8",
+);
 
 test("Skills project add menu opens the experimental skills directory", () => {
 	const addMenuIndex = SOURCE.indexOf("const addMenuItemsBefore = (");
@@ -34,6 +38,8 @@ test("Skills project add menu opens the experimental skills directory", () => {
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<FolderAddIcon label="" \/>\}[\s\S]*Create space/u);
 	assert.match(SOURCE.slice(addMenuIndex, dialogIndex), /elemBefore=\{<SkillIcon label="" \/>\}[\s\S]*View all skills/u);
 	assert.match(SOURCE, /<ChatPanel[\s\S]*addMenuItemsBefore=\{addMenuItemsBefore\}[\s\S]*autoFocusComposer/u);
+	assert.match(SOURCE, /const SKILLS_GREETING: ChatPanelGreetingProps = \{[\s\S]*stabilizeHeroOnMount: true,[\s\S]*suggestions: SKILL_GREETING_SUGGESTIONS/u);
+	assert.doesNotMatch(SOURCE, /What skill should I run/u);
 	// The directory dialog is shared with the create-skill config view, so its
 	// `open` is the combined `isDialogOpen` (which includes isSkillsDirectoryOpen)
 	// and it uses the runtime `dialogSkills` list. Still the experimental variant.
@@ -45,12 +51,22 @@ test("Create-skill question traces collapse while awaiting user response", () =>
 	assert.match(TRACE_CARD_SOURCE, /const isAwaiting = payload\.awaiting === true;/u);
 	assert.match(TRACE_CARD_SOURCE, /const ACTIVE_BYLINE_CYCLE_MS = 1200;/u);
 	assert.match(TRACE_CARD_SOURCE, /step\.status === "active"[\s\S]*activeStepBylines\[activeBylineIndex/u);
-	assert.match(TRACE_CARD_SOURCE, /key=\{isAwaiting \? "awaiting" : "active"\}/u);
-	assert.match(TRACE_CARD_SOURCE, /<ChainOfThoughtScenario[\s\S]*defaultOpen=\{!isAwaiting\}/u);
+	assert.match(TRACE_CARD_SOURCE, /const traceLifecycleKey = isAwaiting[\s\S]*answered \? "answered" : "awaiting"[\s\S]*state === "completed" \? "completed" : "active"/u);
+	assert.match(TRACE_CARD_SOURCE, /const shouldAutoOpen = state === "thinking" && !isAwaiting;/u);
+	assert.match(TRACE_CARD_SOURCE, /const \[isTraceOpen, setTraceOpen\] = useState\(shouldAutoOpen\);/u);
+	assert.match(TRACE_CARD_SOURCE, /setTraceOpen\(shouldAutoOpen\);[\s\S]*\[shouldAutoOpen, traceLifecycleKey\]/u);
+	assert.match(TRACE_CARD_SOURCE, /const hasByline = byline != null && byline\.trim\(\)\.length > 0;/u);
+	assert.match(TRACE_CARD_SOURCE, /description: step\.status === "complete" \? null : byline/u);
+	assert.match(TRACE_CARD_SOURCE, /collapsible: hasByline/u);
+	assert.match(TRACE_CARD_SOURCE, /defaultOpen: step\.status === "active"/u);
+	assert.match(TRACE_CARD_SOURCE, /children: hasByline \? \(/u);
+	assert.match(TRACE_CARD_SOURCE, /key=\{traceLifecycleKey\}/u);
+	assert.match(TRACE_CARD_SOURCE, /open=\{isTraceOpen\}/u);
+	assert.match(TRACE_CARD_SOURCE, /onOpenChange=\{setTraceOpen\}/u);
 	assert.match(TRACE_CARD_SOURCE, /Awaiting user response/u);
 });
 
-test("Generated skill result card renders after the assistant description text", () => {
+test("Generated skill result card renders with the tag-styled success summary", () => {
 	const positionSource = SOURCE.slice(
 		SOURCE.indexOf("const getWidgetPosition = useCallback"),
 		SOURCE.indexOf("const onInterceptSubmit = useCallback"),
@@ -58,6 +74,10 @@ test("Generated skill result card renders after the assistant description text",
 
 	assert.match(positionSource, /if \(widgetType === SKILL_CREATION_RESULT_WIDGET_TYPE\) \{[\s\S]*return "after-content";[\s\S]*\}/u);
 	assert.match(positionSource, /if \(widgetType === SKILL_CREATION_TRACE_WIDGET_TYPE\) \{[\s\S]*return "before-content";[\s\S]*\}/u);
+	assert.match(RESULT_CARD_SOURCE, /import \{ SkillTag \} from "@\/components\/ui-custom\/skill-tag";/u);
+	assert.match(RESULT_CARD_SOURCE, /payload\.showSuccessSummary \? \(/u);
+	assert.match(RESULT_CARD_SOURCE, /<SkillTag[\s\S]*color=\{skillTagColor\}[\s\S]*icon=\{getSkillIcon\(payload\.iconKey as SkillIconKey\)\}[\s\S]*\{payload\.name\}[\s\S]*<\/SkillTag>/u);
+	assert.doesNotMatch(RESULT_CARD_SOURCE, /showToggle=\{false\}/u);
 });
 
 test("Hard-coded skill starters fall through to normal Rovo chat", () => {

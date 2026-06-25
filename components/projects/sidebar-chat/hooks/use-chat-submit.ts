@@ -13,6 +13,7 @@ interface ChatSubmitInterceptStage {
 	delayMs: number;
 	getAssistantParts: (context: { startedAt: Date }) => RovoUIMessage["parts"];
 	onApply?: () => Promise<void> | void;
+	startsNewAssistantMessage?: boolean;
 }
 
 export interface ChatSubmitInterceptOutcome {
@@ -165,37 +166,58 @@ export function useChatSubmit({
 				text: promptText,
 				metadata: userMetadata,
 			});
-			const assistantMessageId = createId("rovo-chat-assistant");
-			const createAssistantMessage = (parts: RovoUIMessage["parts"]): RovoUIMessage => ({
-				id: assistantMessageId,
+			const firstAssistantMessageId = createId("rovo-chat-assistant");
+			const createAssistantMessage = (id: string, parts: RovoUIMessage["parts"]): RovoUIMessage => ({
+				id,
 				role: "assistant",
 				metadata: { origin: "rovo", createdAt, updatedAt: new Date().toISOString() },
 				parts,
 			});
 			const firstAssistantParts = getPendingAssistantParts?.({ startedAt }) ?? pendingAssistantParts ?? assistantParts;
-			replaceMessages([...baseMessages, userMessage, createAssistantMessage(firstAssistantParts)]);
+			let activeAssistantMessageId = firstAssistantMessageId;
+			let assistantMessages = [createAssistantMessage(firstAssistantMessageId, firstAssistantParts)];
+			replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
 
-			let stagedAssistantParts: RovoUIMessage["parts"] | null = null;
 			try {
 				if (assistantPartStages && assistantPartStages.length > 0) {
-					setLocalThinkingAssistantMessageId(assistantMessageId);
+					setLocalThinkingAssistantMessageId(activeAssistantMessageId);
 					for (const stage of assistantPartStages) {
 						if (stage.delayMs > 0) {
 							await waitForInterceptDelay(stage.delayMs);
 						}
 						await stage.onApply?.();
-						stagedAssistantParts = stage.getAssistantParts({ startedAt });
-						replaceMessages([...baseMessages, userMessage, createAssistantMessage(stagedAssistantParts)]);
+						const stagedAssistantParts = stage.getAssistantParts({ startedAt });
+						if (stage.startsNewAssistantMessage) {
+							activeAssistantMessageId = createId("rovo-chat-assistant");
+							setLocalThinkingAssistantMessageId(activeAssistantMessageId);
+							assistantMessages = [
+								...assistantMessages,
+								createAssistantMessage(activeAssistantMessageId, stagedAssistantParts),
+							];
+						} else {
+							assistantMessages = [
+								...assistantMessages.slice(0, -1),
+								createAssistantMessage(activeAssistantMessageId, stagedAssistantParts),
+							];
+						}
+						replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
 					}
 				} else if ((pendingAssistantParts || getPendingAssistantParts) && typeof delayMs === "number" && delayMs > 0) {
-					setLocalThinkingAssistantMessageId(assistantMessageId);
+					setLocalThinkingAssistantMessageId(activeAssistantMessageId);
 					await waitForInterceptDelay(delayMs);
 				}
 				await onApply?.();
 
-				const finalAssistantParts = getAssistantParts?.({ startedAt }) ?? stagedAssistantParts ?? assistantParts;
-				if (firstAssistantParts !== finalAssistantParts) {
-					replaceMessages([...baseMessages, userMessage, createAssistantMessage(finalAssistantParts)]);
+				const latestStagedAssistantParts = assistantPartStages && assistantPartStages.length > 0
+					? assistantMessages.at(-1)?.parts
+					: null;
+				const finalAssistantParts = getAssistantParts?.({ startedAt }) ?? latestStagedAssistantParts ?? assistantParts;
+				if (assistantMessages.at(-1)?.parts !== finalAssistantParts) {
+					assistantMessages = [
+						...assistantMessages.slice(0, -1),
+						createAssistantMessage(activeAssistantMessageId, finalAssistantParts),
+					];
+					replaceMessages([...baseMessages, userMessage, ...assistantMessages]);
 				}
 			} finally {
 				setLocalThinkingAssistantMessageId(null);

@@ -66,6 +66,8 @@ export interface EntityCardSkillProps {
 	added?: boolean;
 	/** Renders a subtle added check only on card hover. */
 	hoverAdded?: boolean;
+	/** Replaces the trailing added-check/status indicator, e.g. with an immediate add/remove switch. */
+	trailingStatus?: ReactNode;
 	/** Swaps the leading icon for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -147,6 +149,7 @@ export function EntityCardSkill({
 	onMoreActions,
 	added = false,
 	hoverAdded = false,
+	trailingStatus,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -190,6 +193,7 @@ export function EntityCardSkill({
 			<EntityCardHeader
 				added={added}
 				hoverAdded={hoverAdded}
+				trailingStatus={trailingStatus}
 				action={
 					action ?? (onMoreActions ? (
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />

@@ -351,17 +351,34 @@
 	}
 }
 
-/* Scrollbar hidden by default, revealed while actively scrolling.
-   Uses Firefox-style `scrollbar-color` / `scrollbar-width` (Chromium 121+,
-   Safari 18.2+, Firefox always). Older browsers degrade to the default
-   scrollbar — visible at all times, but functional. */
+/* Scrollbar hidden by default, revealed while actively scrolling. */
 @utility scrollbar-auto-hide {
 	scrollbar-width: thin;
 	scrollbar-gutter: stable both-edges;
 	scrollbar-color: transparent transparent;
 
+	&::-webkit-scrollbar {
+		width: 0;
+		height: 0;
+	}
+
+	&::-webkit-scrollbar-thumb,
+	&::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
 	&[data-scrolling] {
 		scrollbar-color: color-mix(in oklab, currentColor 20%, transparent) transparent;
+	}
+
+	&[data-scrolling]::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+
+	&[data-scrolling]::-webkit-scrollbar-thumb {
+		background-color: color-mix(in oklab, currentColor 20%, transparent);
+		border-radius: 999px;
 	}
 }
 
