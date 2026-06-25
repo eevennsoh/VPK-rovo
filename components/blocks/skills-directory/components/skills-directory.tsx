@@ -640,9 +640,11 @@ function SkillsDirectoryHeader({ onCreateSkill, title }: Readonly<SkillsDirector
 				{title}
 			</DialogTitle>
 			<div className="flex items-center gap-2">
-				<Button onClick={onCreateSkill} type="button">
-					New skill
-				</Button>
+				{onCreateSkill ? (
+					<Button onClick={onCreateSkill} type="button">
+						New skill
+					</Button>
+				) : null}
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
