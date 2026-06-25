@@ -59,10 +59,11 @@ test("Rovo Illustration demo exposes Chat and Brainstorm animations", () => {
 	assert.doesNotMatch(DEMO_SOURCE, /id: "create", label: "Brainstorm"/u);
 });
 
-test("Controlled chat illustration scales a default-sized scene into a compact render box", () => {
+test("Controlled Rovo Illustration scales a default-sized scene into a compact render box", () => {
 	assert.match(SPOT_SOURCE, /const pr = size \/ 300;/u);
 	assert.doesNotMatch(SPOT_SOURCE, /motionSize/u);
 	assert.match(CONTROLLED_SOURCE, /motionSize\?: number;/u);
+	assert.match(CONTROLLED_SOURCE, /function GenericControlledSpotIllustration\(\{[\s\S]*motionSize = size/u);
 	assert.match(CONTROLLED_SOURCE, /motionSize = size/u);
 	assert.match(CONTROLLED_SOURCE, /const stageSize = Math\.max\(size, motionSize\);/u);
 	assert.match(CONTROLLED_SOURCE, /const stageScale = size \/ stageSize;/u);
@@ -70,4 +71,16 @@ test("Controlled chat illustration scales a default-sized scene into a compact r
 	assert.match(CONTROLLED_SOURCE, /transform: `translateX\(-50%\) scale\(\$\{stageScale\}\)`/u);
 	assert.match(CONTROLLED_SOURCE, /transformOrigin: "center bottom"/u);
 	assert.match(CONTROLLED_SOURCE, /size=\{stageSize\}/u);
+});
+
+test("Rovo Illustration demo includes compact controlled 72 px variants with default motion", () => {
+	assert.match(DEMO_SOURCE, /const CONTROLLED_ILLUSTRATION_SIZE = 180;/u);
+	assert.match(DEMO_SOURCE, /const COMPACT_CONTROLLED_ILLUSTRATION_SIZE = 72;/u);
+	assert.match(DEMO_SOURCE, /className="flex h-\[min\(760px,calc\(100vh-160px\)\)\] w-full flex-col overflow-y-auto overscroll-contain"/u);
+	assert.match(DEMO_SOURCE, /className="sticky top-0 z-20 flex justify-end bg-surface pb-3"/u);
+	assert.match(DEMO_SOURCE, /aria-label="Replay illustration entrance animations"/u);
+	assert.doesNotMatch(DEMO_SOURCE, />\s*Refresh\s*</u);
+	assert.match(DEMO_SOURCE, /<IllustrationStage compact key=\{`compact-\$\{illustration\.id\}`\} label=\{`\$\{illustration\.label\} 72 px`\}>/u);
+	assert.match(DEMO_SOURCE, /motionSize=\{CONTROLLED_ILLUSTRATION_SIZE\}/u);
+	assert.match(DEMO_SOURCE, /size=\{COMPACT_CONTROLLED_ILLUSTRATION_SIZE\}/u);
 });

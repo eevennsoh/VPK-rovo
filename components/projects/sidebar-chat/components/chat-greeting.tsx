@@ -27,7 +27,7 @@ const LIGHT_SVG_SUFFIX = "/light.svg";
 const MAX_MODE_HEADING = "Let's plan your next move";
 const MAX_MODE_ILLUSTRATION_SRC = "/illustration-ai/max/light.gif";
 const MAX_MODE_ILLUSTRATION_DARK_SRC = "/illustration-ai/max/dark.gif";
-const CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE = 74;
+const CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE = 72;
 const CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE = 180;
 const CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
 const CHAT_GREETING_ILLUSTRATION_HEADING_STAGGER = 0.18;
@@ -565,7 +565,7 @@ export default function ChatGreeting({
 							</div>
 						) : null}
 						{shouldShowSuggestionList ? (
-							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activePromptContainerVariants}>
+							<motion.div className="w-full" variants={activePromptContainerVariants}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",
