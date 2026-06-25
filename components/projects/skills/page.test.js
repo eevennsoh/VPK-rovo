@@ -54,7 +54,7 @@ test("Create-skill flow reserves static skill ids for runtime-generated skills",
 		SOURCE.indexOf("const resolveComposerPlaceholder = useCallback"),
 	);
 
-	assert.match(interceptSource, /deriveSkillFromPrompt\(pendingCreatePromptRef\.current \|\| text, text, \{\s*reservedSkillIds: STATIC_SKILL_IDS,\s*\}\)/u);
+	assert.match(interceptSource, /deriveSkillFromPrompt\(pendingCreatePromptRef\.current \|\| text, text, \{\s*reservedSkillIds: \[\.\.\.STATIC_SKILL_IDS, \.\.\.createdSkills\.map\(\(entry\) => entry\.id\)\],\s*\}\)/u);
 });
 
 test("Create-skill question traces collapse while awaiting user response", () => {

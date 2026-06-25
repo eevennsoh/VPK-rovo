@@ -157,7 +157,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				return next;
 			});
 			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text, {
-				reservedSkillIds: STATIC_SKILL_IDS,
+				reservedSkillIds: [...STATIC_SKILL_IDS, ...createdSkills.map((entry) => entry.id)],
 			});
 			addCreatedSkill(skill);
 			const stage = buildCreateSkillStage2(skill, () => {
