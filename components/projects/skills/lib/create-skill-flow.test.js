@@ -147,6 +147,20 @@ test("derives a believable skill from a free-form prompt (deterministic)", async
 	assert.ok(!a.skillMd.includes(`\n# ${a.name}\n`), "skillMd body should not repeat the skill name as an H1");
 });
 
+test("derives runtime skill ids without colliding with reserved catalog ids", async () => {
+	const { deriveSkillFromPrompt } = await loadCreateSkillFlowModule();
+	const skill = deriveSkillFromPrompt("create skill review pull request", undefined, {
+		reservedSkillIds: ["review-pull-request", "review-pull-request-2"],
+	});
+
+	assert.equal(skill.name, "Review pull request");
+	assert.equal(skill.id, "review-pull-request-3");
+	assert.match(skill.skillMd, /^name: review-pull-request-3$/mu);
+
+	const unreservedSkill = deriveSkillFromPrompt("create skill review pull request");
+	assert.equal(unreservedSkill.id, "review-pull-request");
+});
+
 test("stage 2 ends with the result card and fires onComplete", async () => {
 	const { deriveSkillFromPrompt, buildCreateSkillStage2, SKILL_CREATION_RESULT_WIDGET_TYPE, SKILL_CREATION_TRACE_WIDGET_TYPE } =
 		await loadCreateSkillFlowModule();
