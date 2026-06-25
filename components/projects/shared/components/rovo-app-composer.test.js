@@ -73,6 +73,11 @@ test("active voice controls do not use border beam visual effects", () => {
 	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"/u);
 });
 
+test("shared composer voice waveform uses ADS motion duration tokens", () => {
+	assert.match(SEND_CONTROLS_SOURCE, /className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-slow"/u);
+	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /duration-300/u);
+});
+
 test("Rovo Cursor is gated behind active live voice in shared composer chrome", () => {
 	assert.doesNotMatch(CARD_BODY_SOURCE, /<PromptInputButton[\s\S]*aria-label="Rovo cursor"/u);
 	assert.doesNotMatch(FLOATING_BODY_SOURCE, /<PromptInputButton[\s\S]*aria-label="Rovo Cursor"/u);
@@ -198,17 +203,33 @@ test("RovoAppComposer opts both shared bodies into visual trace auto-tagging", (
 test("PromptInputTextarea fades overflowing Tiptap composer text with the shared scroll mask", () => {
 	assert.match(PROMPT_INPUT_SOURCE, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(PROMPT_INPUT_SOURCE, /import \{ buildScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
-	assert.match(PROMPT_INPUT_SOURCE, /ref: composerScrollOverflowRef,[\s\S]*showBottomScrollMask: showComposerBottomScrollMask,[\s\S]*showTopScrollMask: showComposerTopScrollMask,[\s\S]*= useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /ref: composerScrollOverflowRef,[\s\S]*hasReachedVerticalLimit: hasComposerReachedScrollLimit,[\s\S]*showBottomScrollMask: showComposerBottomScrollMask,[\s\S]*showTopScrollMask: showComposerTopScrollMask,[\s\S]*= useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /buildScrollMaskStyle\(\{ fadeSize: "var\(--ds-space-200\)" \}\)/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const showComposerTopMask = hasComposerReachedScrollLimit && showComposerTopScrollMask;/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const showComposerBottomMask = hasComposerReachedScrollLimit && showComposerBottomScrollMask;/u);
 	assert.match(PROMPT_INPUT_SOURCE, /composerScrollOverflowRef\(editor\.view\.dom\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /<EditorContent[\s\S]*showComposerTopScrollMask[\s\S]*"scroll-mask-top"[\s\S]*showComposerBottomScrollMask[\s\S]*"scroll-mask-bottom"[\s\S]*style=\{[\s\S]*composerScrollMaskStyle/u);
+	assert.match(PROMPT_INPUT_SOURCE, /<EditorContent[\s\S]*showComposerTopMask[\s\S]*"scroll-mask-top"[\s\S]*showComposerBottomMask[\s\S]*"scroll-mask-bottom"[\s\S]*style=\{[\s\S]*composerScrollMaskStyle/u);
 	// PromptInputTextarea attaches the scrollport after the editor mounts. The
 	// overflow hook must observe that late ref and recompute after layout settles;
 	// otherwise a temporary auto-tag trace overflow can leave a bottom fade stuck
 	// on a single-line composer chip.
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /hasReachedVerticalLimit: boolean;/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const maxHeight = element \? Number\.parseFloat\(getComputedStyle\(element\)\.maxHeight\) : Number\.NaN;/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setHasReachedVerticalLimit\(element \? hasFiniteMaxHeight && element\.clientHeight >= maxHeight - 1 : false\);/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setElement\(node\);[\s\S]*window\.requestAnimationFrame\(updateScrollState\);/u);
-	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /}, \[element, updateScrollState\]\);/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /\}, \[element, updateScrollState\]\);/u);
+});
+
+test("PromptInputTextarea applies directory prefill as a rich mention without visual tracing", () => {
+	assert.match(PROMPT_INPUT_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \};/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const lastMentionPrefillKeyRef = useRef\(0\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const pendingMentionPrefillKeyRef = useRef\(0\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const lastMentionPrefillTextRef = useRef<string \| null>\(null\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /pendingMentionPrefillKeyRef\.current === prefillMentionRequest\.requestKey/u);
+	assert.match(PROMPT_INPUT_SOURCE, /queueMicrotask\(\(\) => \{[\s\S]*if \(cancelled \|\| activeEditorRef\.current !== editor\) \{[\s\S]*lastMentionPrefillKeyRef\.current = requestKey;[\s\S]*clearPendingAutoTagging\(\);[\s\S]*resetVisualTraceEditorState\(editor\);[\s\S]*setDirectoryAutocompleteState\(null\);[\s\S]*type: "mention",[\s\S]*attrs: getMentionNodeAttrs\(mention\),[\s\S]*const prefillText = serializeComposerDoc\(editor\);[\s\S]*publishText\(prefillText, editor\.view\.dom, true\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /return \(\) => \{[\s\S]*cancelled = true;[\s\S]*pendingMentionPrefillKeyRef\.current = 0;[\s\S]*\};/u);
+	assert.match(PROMPT_INPUT_SOURCE, /if \(lastMentionPrefillTextRef\.current === currentText && resolvedValue !== currentText\) \{[\s\S]*return;[\s\S]*\}/u);
 });
 
 test("visual trace auto-tagging flushes before submit and cancels stale delayed ranges", () => {
@@ -312,8 +333,11 @@ test("visual trace auto-tagging uses mention nodes and hides autocomplete while 
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /pendingRef\.current \|\|[\s\S]*applyingRef\.current[\s\S]*setDirectoryAutocompleteState\(null\);/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /immediateUpdateRef\.current = true;/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /flushAutoTagging[\s\S]*publishText\(serializeComposerDoc\(activeEditor\), activeEditor\.view\.dom, true\);/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.react-renderer\.node-mention \{[\s\S]*display: inline-flex;[\s\S]*height: 1\.25rem;[\s\S]*vertical-align: bottom;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.25rem;[\s\S]*line-height: 1\.25rem;[\s\S]*vertical-align: bottom;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer\.ProseMirror \{[\s\S]*width: calc\(100% \+ 1\.5rem\);[\s\S]*margin-block: -0\.0625rem;[\s\S]*margin-inline: -0\.75rem;[\s\S]*padding-block: 0\.0625rem;[\s\S]*padding-inline: 0\.75rem;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.react-renderer\.node-mention \{[\s\S]*display: inline-flex;[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.5rem;[\s\S]*vertical-align: bottom;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.5rem;[\s\S]*vertical-align: bottom;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-trigger-wrapper \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 0;[\s\S]*vertical-align: top;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-chip \{[\s\S]*align-self: center;[\s\S]*vertical-align: middle;/u);
 });
 
 test("composer trace auto-tagging keeps native undo history available", () => {
@@ -365,17 +389,28 @@ test("auto-tagged tokens carry sourceText and a restore command on the mention n
 	assert.match(MENTION_EXTENSIONS_SOURCE, /rangeTextMatches\(newState\.doc, range\.from, range\.to, range\.text\)/u);
 });
 
-test("Backspace next to an auto-tagged token reverts it, including across a trailing space", () => {
-	// Scoped to auto-tagged nodes (sourceText present); deliberate mentions fall
-	// through to the mention extension's default delete-and-reinsert-"@".
+test("Backspace restores auto-tagged tokens but deletes deliberate mentions atomically", () => {
+	// Scoped to auto-tagged nodes (sourceText present); deliberate mentions from
+	// the directory or menu delete as an atomic chip without becoming text.
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /event\.key === "Backspace"/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /import \{ NodeSelection, TextSelection \} from "@tiptap\/pm\/state";/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getBackspaceRevertPos\(editor: Editor\): number \| null/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function isAutoTaggedMention\(/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /selection instanceof NodeSelection && isAutoTaggedMention\(selection\.node\)[\s\S]*return selection\.from;/u);
 	// Caret directly after the chip.
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /if \(isAutoTaggedMention\(before\)\) \{[\s\S]*return \$from\.pos - before!\.nodeSize;/u);
 	// Caret after the conversion-inserted trailing space (treat lone space as adjacency).
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /before\?\.isText && before\.text === " "/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /activeEditor\.commands\.restoreAutoTaggedMention\(backspaceRevertPos\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /function getBackspaceMentionDeleteRange\(editor: Editor\): \{ from: number; to: number \} \| null/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /selection instanceof NodeSelection[\s\S]*nodeAfter = editor\.state\.doc\.resolve\(selection\.to\)\.nodeAfter[\s\S]*to: selection\.to \+ \(nodeAfter\?\.isText && nodeAfter\.text\?\.startsWith\(" "\) \? 1 : 0\)/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /if \(isMentionNode\(before\) && !isAutoTaggedMention\(before\)\) \{[\s\S]*from: \$from\.pos - before\.nodeSize,[\s\S]*to: \$from\.pos,/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /if \(isMentionNode\(beforeSpace\) && !isAutoTaggedMention\(beforeSpace\)\) \{[\s\S]*from: spaceStart - beforeSpace\.nodeSize,[\s\S]*to: \$from\.pos,/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /const transaction = activeEditor\.state\.tr\.delete\(backspaceDeleteRange\.from, backspaceDeleteRange\.to\);/u);
+	// Backspace is installed for every prompt input, not only visual-trace
+	// surfaces, so directory/menu-inserted chips delete the same way everywhere.
+	assert.match(PROMPT_INPUT_SOURCE, /editor\.view\.dom\.addEventListener\("keydown", handleKeyDown, \{ capture: true \}\);[\s\S]*\}, \[editor, handleVisualTraceKeyDown\]\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /if \(!editor \|\| !enableVisualTraceAutoTagging\) \{[\s\S]*editor\.view\.dom\.addEventListener\("paste", handlePaste, \{ capture: true \}\);/u);
 });
 
 test("auto-tagger skips reverted spots by position and clears them on draft reset", () => {
@@ -395,15 +430,26 @@ test("auto-tagger skips reverted spots by position and clears them on draft rese
 	assert.doesNotMatch(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /getVisualTraceDocTraceRange/u);
 });
 
-test("auto-tagged chip exposes a swap-back-to-text overlay action", () => {
-	assert.match(MENTION_NODE_VIEW_SOURCE, /import SwapIcon from "@atlaskit\/icon-lab\/core\/swap";/u);
-	assert.match(MENTION_NODE_VIEW_SOURCE, /const isAutoTagged = Boolean\(attrs\.sourceText\);/u);
-	assert.match(MENTION_NODE_VIEW_SOURCE, /const overlayAction: TagOverlayAction \| undefined = isAutoTagged/u);
-	assert.match(MENTION_NODE_VIEW_SOURCE, /icon: <SwapIcon label="" size="small" \/>/u);
-	assert.match(MENTION_NODE_VIEW_SOURCE, /tooltip: "Switch back to text"/u);
-	assert.match(MENTION_NODE_VIEW_SOURCE, /editor\.commands\.restoreAutoTaggedMention\(pos\)/u);
-	// Passed to both tag primitives via the dedicated action prop (not onRemove).
-	assert.match(MENTION_NODE_VIEW_SOURCE, /overlayAction=\{overlayAction\}/u);
+test("auto-tagged chips do not expose the swap-back-to-text overlay action", () => {
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /SwapIcon/u);
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /Switch back to text/u);
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /const isAutoTagged = Boolean\(attrs\.sourceText\);/u);
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /const overlayAction/u);
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /restoreAutoTaggedMention\(pos\)/u);
+	assert.doesNotMatch(MENTION_NODE_VIEW_SOURCE, /overlayAction=\{overlayAction\}/u);
+});
+
+test("skill mention chips expose the skewed focus state for tab and node selection", () => {
+	assert.match(SKILL_TAG_SOURCE, /focused\?: boolean;/u);
+	assert.match(SKILL_TAG_SOURCE, /focusable\?: boolean;/u);
+	assert.match(SKILL_TAG_SOURCE, /tabIndex=\{focusable \? \(tabIndex \?\? 0\) : tabIndex\}/u);
+	assert.match(SKILL_TAG_SOURCE, /-skew-x-12[\s\S]*border border-transparent[\s\S]*focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
+	assert.match(SKILL_TAG_SOURCE, /focused && "border-ring ring-3 ring-ring\/50"/u);
+	assert.doesNotMatch(SKILL_TAG_SOURCE, /ring-inset/u);
+	assert.match(SKILL_TAG_SOURCE, /data-focused=\{focused \? "true" : undefined\}/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /RichTextMentionNodeView\(\{ node, selected \}: Readonly<ReactNodeViewProps>\)/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /<SkillTag[\s\S]*focused=\{selected\}[\s\S]*focusable[\s\S]*icon=\{skillTagProps\.icon\}/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export const RichTextMention = Mention\.extend\(\{[\s\S]*selectable: true,/u);
 });
 
 test("Tag and SkillTag expose a distinct overlayAction (separate from remove semantics)", () => {

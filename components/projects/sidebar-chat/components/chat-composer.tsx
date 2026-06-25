@@ -19,7 +19,7 @@ import {
 	type PromptInputMessage,
 	usePromptInputAttachments,
 } from "@/components/ui-custom/prompt-input";
-import type { ComposerDirectoryAutocompleteController, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
+import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
@@ -66,6 +66,7 @@ interface ChatComposerProps {
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	directoryAutocompleteListVisible?: boolean;
+	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
 	/** Composer placeholder. Defaults to the standard sidebar-chat prompt. */
 	placeholder?: string;
 	/**
@@ -172,7 +173,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -265,6 +266,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							directoryAutocompleteListVisible={directoryAutocompleteListVisible}
 							enableVisualTraceAutoTagging
 							mentionSources={mentionSources}
+							prefillMentionRequest={prefillMentionRequest}
 							onChange={(event) => onPromptChange(event.currentTarget.value)}
 							onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}

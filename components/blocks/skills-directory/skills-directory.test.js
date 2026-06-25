@@ -48,7 +48,7 @@ test("Skills Directory uses the Agent Directory dialog header style", () => {
 
 	assert.match(
 		source,
-		/<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle className="text-base font-medium leading-5 text-text">[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<div className="flex items-center gap-2">[\s\S]*<Button onClick=\{onCreateSkill\} type="button">[\s\S]*New skill[\s\S]*<\/Button>[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
+		/<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle className="text-base font-medium leading-5 text-text">[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<div className="flex items-center gap-2">[\s\S]*\{onCreateSkill \? \([\s\S]*<Button onClick=\{onCreateSkill\} type="button">[\s\S]*New skill[\s\S]*<\/Button>[\s\S]*\) : null\}[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
 	);
 });
 
@@ -100,7 +100,7 @@ test("Skills Directory sidebar does not include Collections as a default taxonom
 	assert.doesNotMatch(sidebarGroupsSource, /Project management/u);
 });
 
-test("Skills Directory uses contextual cards, hover learn-more, and selected footer", () => {
+test("Skills Directory uses contextual cards, immediate Studio switches, and legacy selected footer", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
 	const skillSource = readProjectFile("components/ui-custom/entity-card/skill.tsx");
 	const partsSource = readProjectFile("components/ui-custom/entity-card/parts.tsx");
@@ -112,7 +112,7 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	assert.match(source, /<SkillsDirectoryHeader[\s\S]*onCreateSkill=\{createSkillHandler\}/u);
 	assert.match(source, /Showing \{filteredSkills\.length\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /active=\{moreMenuOpen\}/u);
+	assert.match(source, /active=\{!moreActionsDisabled && moreMenuOpen\}/u);
 	assert.match(source, /<SkillMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /const \[favoriteOverrides, setFavoriteOverrides\] = useState<Record<string, boolean>>\(\{\}\);/u);
 	assert.match(source, /skill\.id in favoriteOverrides \? \{ \.\.\.skill, favorite: favoriteOverrides\[skill\.id\] \} : skill/u);
@@ -126,62 +126,86 @@ test("Skills Directory uses contextual cards, hover learn-more, and selected foo
 	assert.match(source, /source=\{getSkillCardSource\(skill\)\}/u);
 	assert.match(source, /starCount=\{skill\.starCount\}/u);
 	assert.match(source, /teammateCount=\{skill\.teammateCount\}/u);
-	assert.match(variantsSource, /export interface EntityCardSkillCardProps extends EntityCardSkillProps \{[\s\S]*active\?: boolean;[\s\S]*moreAction\?: ReactNode;/u);
+	assert.match(variantsSource, /export interface EntityCardSkillCardProps extends EntityCardSkillProps \{[\s\S]*active\?: boolean;[\s\S]*cardActionLabel\?: string;[\s\S]*moreAction\?: ReactNode;/u);
+	assert.match(variantsSource, /selectLabel=\{cardActionLabel \?\? \(onAddedChange \? addActionLabel : selectLabel\)\}/u);
 	assert.match(variantsSource, /onSelectedChange,/u);
 	assert.match(variantsSource, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(variantsSource, /onSelectedChange=\{onSelectedChange \?\? onSelect\}/u);
 	assert.match(source, /selectionExperience === "chat-single-add"[\s\S]*onAddSkills\?\.\(\[skill\.id\], \[skill\]\);[\s\S]*handleOpenChange\(false\);/u);
 	assert.doesNotMatch(source, /selectionExperience === "chat-single-add"[\s\S]*commitSelectedIds\(\[skill\.id\]\);/u);
-	assert.match(source, /selectionExperience === "studio-bulk-add"[\s\S]*handleToggleSelectedSkill\(skill\);/u);
-	assert.match(source, /const selectedAsAdded = selectionExperience === "studio-bulk-add";/u);
-	assert.match(source, /const checkboxSelectable = !selectedAsAdded;/u);
+	assert.match(source, /const handleCardSelect =[\s\S]*selectionExperience === "studio-bulk-add"[\s\S]*\? \(\) => onToggleAddedSkill\(skill, !effectiveAdded\)[\s\S]*: cardSelectable \? \(\) => onSelectSkill\(skill\) : undefined;/u);
+	assert.match(source, /function handleToggleAddedSkill\(skill: SkillsDirectorySkill, checked: boolean\): void \{[\s\S]*checked[\s\S]*onAddSkills\?\.\(\[skill\.id\], \[skill\]\);[\s\S]*onRemoveSkills\?\.\(\[skill\.id\], \[skill\]\);[\s\S]*notifySkillSelected\(skill\);/u);
+	assert.doesNotMatch(source, /const selectedAsAdded = selectionExperience === "studio-bulk-add";/u);
+	assert.match(source, /const checkboxSelectable = true;/u);
 	assert.match(source, /const cardSelectable = selectionExperience !== "checkbox-actions";/u);
-	assert.match(source, /const skillsToAdd = selectedSkills\.filter\(\(skill\) => !addedIdSet\.has\(skill\.id\)\);/u);
-	assert.match(source, /const skillsToRemove = selectedSkills\.filter\(\(skill\) => addedIdSet\.has\(skill\.id\)\);/u);
-	assert.match(source, /onRemoveSkills\?\.\(skillsToRemove\.map\(\(skill\) => skill\.id\), skillsToRemove\);/u);
-	assert.match(source, /onAddSkills\?\.\(skillsToAdd\.map\(\(skill\) => skill\.id\), skillsToAdd\);/u);
-	assert.match(source, /const selectedFooterCount = selectionExperience === "studio-bulk-add"[\s\S]*\? selectedSkills\.length[\s\S]*: resolvedSelectedIds\.length;/u);
+	assert.doesNotMatch(source, /const skillsToAdd = selectedSkills\.filter\(\(skill\) => !addedIdSet\.has\(skill\.id\)\);/u);
+	assert.doesNotMatch(source, /const skillsToRemove = selectedSkills\.filter\(\(skill\) => addedIdSet\.has\(skill\.id\)\);/u);
+	assert.match(source, /const selectedFooterCount = resolvedSelectedIds\.length;/u);
 	assert.match(source, /const showSelectedSkillsFooter = selectedFooterCount > 0;/u);
 	assert.match(source, /showSelectedSkillsFooter \? \([\s\S]*<SelectedSkillsFooter[\s\S]*count=\{selectedFooterCount\}[\s\S]*onCancelSelection=\{\(\) => commitSelectedIds\(\[\]\)\}/u);
-	assert.match(source, /const showCancelButton = selectionExperience === "studio-bulk-add";/u);
-	assert.match(source, /const addButtonLabel = selectionExperience === "studio-bulk-add" \? "Save" : "Add skills";/u);
-	assert.match(source, /onSelect=\{cardSelectable \? \(\) => onSelectSkill\(skill\) : undefined\}/u);
+	assert.doesNotMatch(source, /const showCancelButton = selectionExperience === "studio-bulk-add";/u);
+	assert.doesNotMatch(source, /const addButtonLabel = selectionExperience === "studio-bulk-add" \? "Save" : "Add skills";/u);
+	assert.match(source, /onSelect=\{handleCardSelect\}/u);
+	assert.match(source, /onToggleAdded=\{showAddedSwitch \? \(checked\) => onToggleAddedSkill\(skill, checked\) : undefined\}/u);
+	assert.match(source, /onAddedChange=\{onToggleAdded\}/u);
+	assert.doesNotMatch(source, /cardActionLabel=\{onToggleAdded \?/u);
 	assert.match(source, /onSelectedChange=\{onToggleSelected\}/u);
 	assert.match(source, /selectable=\{checkboxSelectable\}/u);
-	assert.match(source, /const effectiveAdded = selectionExperience === "studio-bulk-add"[\s\S]*\? addedIds\.has\(skill\.id\) !== selected[\s\S]*: addedIds\.has\(skill\.id\);/u);
+	assert.match(source, /const effectiveAdded = addedIds\.has\(skill\.id\);/u);
 	assert.match(source, /added=\{effectiveAdded\}/u);
-	assert.match(source, /hoverAdded=\{selectedAsAdded && !effectiveAdded\}/u);
-	assert.match(source, /const showHoverAdded = hoverAdded && !moreMenuOpen;/u);
-	assert.match(source, /hoverAdded=\{showHoverAdded\}/u);
+	assert.match(source, /hoverAdded=\{false\}/u);
+	assert.doesNotMatch(source, /const showHoverAdded = hoverAdded && !moreMenuOpen;/u);
+	assert.match(source, /hoverAdded=\{hoverAdded\}/u);
 	assert.doesNotMatch(source, /hover:after:border-border/u);
-	assert.match(source, /selected=\{selectedAsAdded \? false : selected\}/u);
-	assert.match(source, /const effectiveAdded = selectedAsAdded[\s\S]*\? addedIds\.has\(skill\.id\) !== selected[\s\S]*: addedIds\.has\(skill\.id\);/u);
-	assert.match(source, /const selected = selectedIds\.has\(skill\.id\);[\s\S]*selected=\{selectedAsAdded \? false : selected\}/u);
+	assert.doesNotMatch(source, /selected=\{selectedAsAdded \? false : selected\}/u);
+	assert.doesNotMatch(source, /const effectiveAdded = selectedAsAdded[\s\S]*\? addedIds\.has\(skill\.id\) !== selected[\s\S]*: addedIds\.has\(skill\.id\);/u);
+	assert.match(source, /const selected = selectedIds\.has\(skill\.id\);[\s\S]*selected=\{selected\}/u);
+	assert.doesNotMatch(source, /const handleToggleSelected = \(checked\?: boolean\) =>/u);
+	assert.match(source, /onToggleSelected=\{\(checked\) => onToggleSelectedSkill\(skill, checked\)\}/u);
 	assert.match(variantsSource, /<EntityCardShell[\s\S]*active=\{active\}[\s\S]*selected=\{selected\}/u);
 	assert.match(partsSource, /function EntityCardSelectableLeading/u);
 	assert.match(partsSource, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
+	assert.match(partsSource, /"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100"/u);
+	assert.match(partsSource, /trailingStatus\?: ReactNode/u);
+	assert.match(partsSource, /onAddedChange\?: \(checked: boolean\) => void/u);
+	assert.match(partsSource, /export function EntityCardAddedSwitch/u);
+	assert.match(partsSource, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
+	assert.match(skillSource, /trailingStatus\?: ReactNode/u);
+	assert.match(skillSource, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.doesNotMatch(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
 	assert.match(partsSource, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
 	assert.match(partsSource, /focus-visible:pointer-events-auto focus-visible:opacity-100/u);
 	assert.match(partsSource, /pointer-events-none group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
-	assert.doesNotMatch(source, /group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
 	assert.match(source, /selected=\{selected\}/u);
 	assert.doesNotMatch(source, /selected && "border-border-selected hover:border-border-selected"/u);
 	assert.doesNotMatch(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /function SkillMoreMenu/u);
+	assert.doesNotMatch(source, /function SkillAddedSwitch/u);
+	assert.doesNotMatch(source, /trailingStatus=\{[\s\S]*<SkillAddedSwitch/u);
+	assert.match(partsSource, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*className=\{cn\([\s\S]*added[\s\S]*\? "pointer-events-auto opacity-100"[\s\S]*: "pointer-events-none opacity-0 group-hover\/card:pointer-events-auto group-hover\/card:opacity-100[\s\S]*group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100[\s\S]*onCheckedChange=\{onAddedChange\}[\s\S]*size="sm"/u);
+	assert.match(source, /added=\{added\}/u);
+	assert.match(source, /const moreActionsDisabled = selected;/u);
+	assert.match(source, /if \(moreActionsDisabled\) \{[\s\S]*setMoreMenuOpen\(false\);/u);
+	assert.match(source, /active=\{!moreActionsDisabled && moreMenuOpen\}/u);
+	assert.match(source, /moreActionsDisabled \? null : \([\s\S]*<SkillMoreMenu/u);
 	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
 	assert.match(source, /Learn more/u);
+	assert.match(
+		source,
+		/function SkillMoreMenu[\s\S]*event\.stopPropagation\(\);\s+onDownloadSkills\(\);[\s\S]*Download[\s\S]*event\.stopPropagation\(\);\s+onCreateShareLink\(\);[\s\S]*Share/u,
+	);
 	assert.doesNotMatch(source, /StarStarredIcon/u);
 	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
 	assert.match(source, /function SelectedSkillsFooter/u);
 	assert.match(source, /<DialogFooter[\s\S]*aria-label="Selected skills actions"[\s\S]*role="toolbar"/u);
-	assert.match(source, /const showUtilityActions = selectionExperience !== "studio-bulk-add";/u);
+	assert.doesNotMatch(source, /const showUtilityActions = selectionExperience !== "studio-bulk-add";/u);
 	assert.match(source, /import StarUnstarredIcon from "@atlaskit\/icon\/core\/star-unstarred";/u);
+	assert.match(source, /<Badge>\{count\}<\/Badge>[\s\S]*<Button onClick=\{onCancelSelection\} size="default" type="button" variant="ghost">[\s\S]*Cancel[\s\S]*<Button onClick=\{onFavoriteSkills\} size="default" type="button" variant="ghost">[\s\S]*Favorite[\s\S]*<Button onClick=\{onDownloadSkills\} size="default" type="button" variant="ghost">[\s\S]*Download[\s\S]*<Button onClick=\{onCreateShareLink\} size="default" type="button" variant="ghost">\s*<LinkIcon label="" \/>\s*Create link to share\s*<\/Button>/u);
 	assert.match(source, /<Button onClick=\{onFavoriteSkills\} size="default" type="button" variant="ghost">\s*<StarUnstarredIcon label="" \/>\s*Favorite\s*<\/Button>/u);
-	assert.match(source, /const showAddButton = selectionExperience !== "chat-single-add";/u);
-	assert.match(source, /showCancelButton \? \([\s\S]*variant="outline"[\s\S]*Cancel/u);
-	assert.match(source, /const countLabel = selectionExperience === "studio-bulk-add"[\s\S]*\? count === 1 \? "skill" : "skills"[\s\S]*: "selected";/u);
+	assert.match(source, /const showAddButton = selectionExperience === "checkbox-actions";/u);
+	assert.doesNotMatch(source, /showCancelButton \? \(/u);
+	assert.match(source, /const countLabel = "selected";/u);
 	assert.match(source, /<span className="shrink-0 text-sm font-medium leading-5 text-text">\{countLabel\}<\/span>/u);
 	assert.doesNotMatch(source, /Apply changes/u);
 	assert.doesNotMatch(source, /function SelectedSkillsToolbar/u);
@@ -223,17 +247,20 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /label="Open"/u);
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
 	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton[\s\S]*label="Open"/u);
-	// The detail header mirrors the agent-2 config feature: an enable/disable Switch
-	// and a destructive Remove button for the configured skill.
+	// The detail header mirrors the agent-2 config feature: an enable/disable Switch,
+	// while chat swaps the added-state Remove action for a primary Try in chat CTA.
 	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);
 	assert.match(source, /<Switch[\s\S]*checked=\{enabled\}[\s\S]*onCheckedChange=\{onToggleEnabled\}/u);
-	// Remove and the fallback Add button are gated on committed added state.
+	// Remove and the fallback add CTA are gated on committed added state + surface.
 	assert.match(source, /onClick=\{onRemove\} type="button" variant="destructive"[\s\S]*Remove/u);
-	assert.match(source, /<Button onClick=\{onAdd\} type="button">[\s\S]*Add to agent/u);
-	// Disable + Remove are gated on `added` (only skills on the agent), and the disable
+	assert.match(source, /addLabel=\{selectionExperience === "chat-single-add" \? "Try in chat" : "Add to agent"\}/u);
+	assert.match(source, /showTryInChatAction=\{selectionExperience === "chat-single-add"\}/u);
+	assert.match(source, /added && !showTryInChatAction \? \(/u);
+	assert.match(source, /<Button onClick=\{onAdd\} type="button">[\s\S]*\{addLabel\}/u);
+	// Disable is gated on `added` (only skills on the agent), and the disable
 	// state is controlled/persisted via the agent config — not local-cosmetic.
 	assert.match(source, /added \? \(\s*<label/u);
-	assert.match(source, /added \? \(\s*<Button onClick=\{onRemove\}/u);
+	assert.match(source, /added && !showTryInChatAction \? \(\s*<Button onClick=\{onRemove\}/u);
 	assert.match(source, /onToggleSkillEnabled\?: \(skill: SkillsDirectorySkill, enabled: boolean\) => void/u);
 	assert.match(source, /const controlledDisabled = typeof disabledSkillIds !== "undefined"/u);
 	assert.match(source, /onToggleSkillEnabled\(skill, enabled\)/u);
@@ -248,7 +275,7 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /frontmatter=\{\{ enabled: true \}\}/u);
 	assert.match(source, /showConfigToolbar=\{false\}/u);
 	// Globe cover + Created/Added/Last-update meta row via the shared slot components,
-	// and a Save/Cancel footer; draft state lives in the shared useSkillMdDraft hook.
+	// and a Save/Cancel footer that only appears after the skill draft changes.
 	assert.match(source, /profileCover=\{<SkillProfileCover skill=\{skill\} \/>\}/u);
 	assert.match(source, /profileMetaSlot=\{<SkillProfileMeta skill=\{skill\} \/>\}/u);
 	assert.match(source, /compactScrollAreaClassName="-mr-6 pr-6 pt-6 \[&_\[data-agent-field=instructions\]_\.rich-text-editor-content\]:pb-8"/u);
@@ -257,7 +284,10 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /function handleSave\(\)/u);
 	assert.match(source, /function handleCancel\(\)/u);
 	assert.match(source, /saveSkillDraft\(skill\.id, current\)/u);
-	assert.match(source, /className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6"/u);
+	assert.match(
+		source,
+		/dirty \? \([\s\S]*className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-6"[\s\S]*Cancel[\s\S]*Save[\s\S]*\) : null/u,
+	);
 	// The editor is seeded with the full SKILL.md (frontmatter + body).
 	assert.match(source, /getSkillMarkdown\(skill\)/u);
 	// The shared cover + meta row + draft hook live in skill-md-editor.
@@ -311,10 +341,12 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.match(pageSource, /variant="experimental"/u);
 	assert.match(pageSource, /if \(selectionExperience === "chat-single-add"\) \{\s*return;\s*\}/u);
 	assert.match(pageSource, /addedSkillIds=\{selectionExperience === "chat-single-add" \? \[\] : addedSkillIds\}/u);
+	assert.match(pageSource, /function handleRemoveSkills\(skillIds: readonly string\[\]\) \{[\s\S]*const removedIds = new Set\(skillIds\);[\s\S]*setAddedSkillIds\(\(current\) => current\.filter\(\(id\) => !removedIds\.has\(id\)\)\);/u);
+	assert.match(pageSource, /onRemoveSkills=\{handleRemoveSkills\}/u);
 	assert.doesNotMatch(detailsSource, /defaultSelectedSkillIds=\{\[/u);
 	assert.match(detailsSource, /selectionExperience="studio-bulk-add"/u);
 	assert.match(detailsSource, /title: "Chat"[\s\S]*Single-select experience like \/skills/u);
-	assert.match(detailsSource, /title: "Studio"[\s\S]*blue selected checkmark/u);
+	assert.match(detailsSource, /title: "Studio"[\s\S]*card switch immediately adds or removes/u);
 	assert.match(pageSource, /const DEMO_ADDED_USER_SKILL_IDS: readonly string\[\] = \[[\s\S]*"create-brand-identity"[\s\S]*"design-landing-page"[\s\S]*"develop-mobile-app-interface"/u);
 	assert.match(pageSource, /const DEMO_ADDED_CATALOG_SKILL_IDS: readonly string\[\] = \[[\s\S]*"access-review"[\s\S]*"analyze-root-cause"[\s\S]*"build-report"[\s\S]*"review-pull-request"/u);
 	assert.match(pageSource, /const \[addedSkillIds, setAddedSkillIds\] = useState<readonly string\[\]>\(DEMO_ADDED_SKILL_IDS\);/u);

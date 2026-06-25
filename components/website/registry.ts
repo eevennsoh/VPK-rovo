@@ -5509,6 +5509,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/entity-card-demo"),
     { ssr: false },
   ),
+  "entity-card-demo-add-remove": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoAddRemove })),
+    { ssr: false },
+  ),
   "entity-card-demo-skills": dynamic(
     () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoSkills })),
     { ssr: false },

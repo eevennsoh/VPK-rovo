@@ -12,7 +12,7 @@ import { getRovoAgentProfile, ROVO_AGENT_ID } from "@/app/data/directory/agents"
 import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { addCreatedSkill, useCreatedSkills } from "@/app/data/directory/created-skills-store";
 import { mapSkillToMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
-import type { RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
+import type { RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { PromptInputActionMenuItem } from "@/components/ui-custom/prompt-input";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
@@ -22,7 +22,6 @@ import { SkillCreationResultCard } from "./components/skill-creation-result-card
 import {
 	buildCreateSkillStage1,
 	buildCreateSkillStage2,
-	buildSkillMentionText,
 	deriveSkillFromPrompt,
 	hasCreateSkillMention,
 	isCreateSkillClarification,
@@ -35,7 +34,6 @@ import {
 import { SKILL_GREETING_SUGGESTIONS } from "./lib/skill-suggestions";
 
 const SKILLS_GREETING: ChatPanelGreetingProps = {
-	heading: "What skill should I run?",
 	suggestions: SKILL_GREETING_SUGGESTIONS,
 };
 
@@ -48,6 +46,7 @@ const SKILLS_GREETING: ChatPanelGreetingProps = {
 const ROVO_GREETING_AGENT = getRovoAgentProfile(ROVO_AGENT_ID);
 
 const CREATE_SKILL_PLACEHOLDER = "Describe what you want";
+const STATIC_SKILL_IDS = DEFAULT_SKILLS.map((skill) => skill.id);
 
 interface SkillsPanelProps {
 	/** Mirrors `ChatPanel.onClose`; defaults to a no-op for the standalone demo. */
@@ -82,7 +81,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 	const pendingFlowIdRef = useRef<string>("");
 	const [configSkillId, setConfigSkillId] = useState<string | null>(null);
 	const [isSkillsDirectoryOpen, setIsSkillsDirectoryOpen] = useState(false);
-	const [prefillRequest, setPrefillRequest] = useState<{ text: string; requestKey: number }>();
+	const [prefillRequest, setPrefillRequest] = useState<{ mention?: RichTextMentionItem; text?: string; requestKey: number }>();
 	// Flow ids whose question round has been answered. Each awaiting trace flips
 	// to "Questions answered" only when its own flow id lands here.
 	const [answeredFlowIds, setAnsweredFlowIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -156,11 +155,13 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				}
 				return next;
 			});
-			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text);
+			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text, {
+				reservedSkillIds: [...STATIC_SKILL_IDS, ...createdSkills.map((entry) => entry.id)],
+			});
 			addCreatedSkill(skill);
 			const stage = buildCreateSkillStage2(skill, () => {
 				prefillCounterRef.current += 1;
-				setPrefillRequest({ text: buildSkillMentionText(skill.name), requestKey: prefillCounterRef.current });
+				setPrefillRequest({ mention: mapSkillToMentionItem(skill), requestKey: prefillCounterRef.current });
 			});
 			return {
 				handled: true,
@@ -214,7 +215,7 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				return;
 			}
 			prefillCounterRef.current += 1;
-			setPrefillRequest({ text: buildSkillMentionText(skill.name), requestKey: prefillCounterRef.current });
+			setPrefillRequest({ mention: mapSkillToMentionItem(skill), requestKey: prefillCounterRef.current });
 			setConfigSkillId(null);
 			setIsSkillsDirectoryOpen(false);
 		},

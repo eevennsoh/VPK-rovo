@@ -949,7 +949,7 @@ const tools: AppsDirectoryTool[] = [
 			{
 				name: "onAddedToolIdsChange",
 				type: "(toolIds: readonly string[]) => void",
-				description: "Called after Add to agent or Remove changes the selected app's added state.",
+				description: "Called after the card switch, Add to agent, or Remove changes an app's added state.",
 			},
 			{
 				name: "onCreateTool",
@@ -1082,7 +1082,7 @@ const tools: ToolsDirectoryTool[] = [
 		],
 	},
 	"skills-directory": {
-		description: "Skill-specific directory modal with Chat single-add and Studio bulk-select experiences plus a learn-more detail view for each skill.",
+		description: "Skill-specific directory modal with Chat single-add and Studio immediate add/remove experiences plus a learn-more detail view for each skill.",
 		importStatement: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";`,
 		usage: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
 import type { SkillsDirectorySkill } from "@/components/blocks/skills-directory";
@@ -1114,8 +1114,8 @@ const skills: SkillsDirectorySkill[] = [
   onOpenChange={setOpen}
   skills={skills}
   selectionExperience="studio-bulk-add"
-  onSelectedSkillIdsChange={(skillIds) => console.log(skillIds)}
   onAddSkills={(skillIds) => console.log("add", skillIds)}
+  onRemoveSkills={(skillIds) => console.log("remove", skillIds)}
   onCreateSkill={() => console.log("new skill")}
 />`,
 		demoLayout: { previewHeight: "fixed" },
@@ -1127,7 +1127,7 @@ const skills: SkillsDirectorySkill[] = [
 			},
 			{
 				title: "Studio",
-				description: "Bulk-select experience like /studio: clicking cards toggles the blue selected checkmark before adding skills to an agent.",
+				description: "Studio experience: each card switch immediately adds or removes that skill from an agent.",
 				demoSlug: "skills-directory-demo-experimental",
 			},
 		],
@@ -1147,7 +1147,7 @@ const skills: SkillsDirectorySkill[] = [
 				name: "selectionExperience",
 				type: "\"checkbox-actions\" | \"studio-bulk-add\" | \"chat-single-add\"",
 				default: "\"checkbox-actions\"",
-				description: "Controls card-click behavior: legacy checkbox actions, Studio whole-card bulk selection, or Chat single-add.",
+				description: "Controls card-click behavior: legacy checkbox actions, Studio immediate add/remove, or Chat single-add.",
 			},
 			{
 				name: "sessionSkills",

@@ -69,6 +69,21 @@ test("global pointer cursor covers discrete interactive controls", () => {
 	);
 });
 
+test("auto-hide scrollbars are zero-width in WebKit until actively scrolling", () => {
+	assert.match(
+		GLOBALS_CSS_SOURCE,
+		/&::-webkit-scrollbar\s*\{\s*width:\s*0;\s*height:\s*0;\s*\}/u,
+	);
+	assert.match(
+		GLOBALS_CSS_SOURCE,
+		/&\[data-scrolling\]::-webkit-scrollbar\s*\{\s*width:\s*10px;\s*height:\s*10px;\s*\}/u,
+	);
+	assert.match(
+		GLOBALS_CSS_SOURCE,
+		/&\[data-scrolling\]::-webkit-scrollbar-thumb\s*\{[\s\S]*background-color:\s*color-mix\(in oklab, currentColor 20%, transparent\);/u,
+	);
+});
+
 test("shared UI surfaces do not reintroduce the old translucent overlay contract", () => {
 	const targetSources = [
 		readRepoFile("components.json"),

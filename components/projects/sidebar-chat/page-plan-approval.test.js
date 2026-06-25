@@ -59,6 +59,17 @@ test("compact chat can suppress automatic custom agent tabs", () => {
 	);
 });
 
+test("compact chat only reserves the conversation scrollbar gutter after messages exist", () => {
+	assert.match(
+		CHAT_PANEL_SOURCE,
+		/<ConversationContent[\s\S]*reserveScrollbarGutter=\{hasMessages\}/,
+	);
+	assert.match(
+		CHAT_PANEL_SOURCE,
+		/<ConversationContent[\s\S]*revealScrollbarOnScroll=\{hasMessages\}/,
+	);
+});
+
 test("compact chat forwards opt-in add menu items without changing defaults", () => {
 	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore\?: ReactNode;/);
 	assert.match(CHAT_PANEL_SOURCE, /addMenuItemsBefore,/);
