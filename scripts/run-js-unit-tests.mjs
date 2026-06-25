@@ -58,6 +58,9 @@ const INCLUDED_TEST_FILES = new Set([
 	"components/ui/select.test.js",
 	// Shared message markdown heading spacing used by compact chat surfaces.
 	"components/ui-custom/message.test.js",
+	// Plan's hidden-until-found panel must not leave vertical content padding
+	// behind while collapsed.
+	"components/ui-custom/plan.test.js",
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",

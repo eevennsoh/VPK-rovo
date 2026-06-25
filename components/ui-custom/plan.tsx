@@ -81,7 +81,7 @@ export const Plan = ({ className, isStreaming = false, open, defaultOpen = false
 
 	return (
 		<PlanContext value={{ isStreaming, isOpen, setIsOpen, isContentExpanded, setIsContentExpanded }}>
-			<Collapsible data-slot="plan" open={isOpen} onOpenChange={setIsOpen} {...props} render={<Card className={cn("shadow-none", "transition-[opacity,transform] duration-normal ease-out data-starting-style:opacity-0 data-starting-style:-translate-y-1", className)} />}>
+			<Collapsible data-slot="plan" open={isOpen} onOpenChange={setIsOpen} {...props} render={<Card className={cn("shadow-none", "data-closed:gap-0", "transition-[opacity,transform] duration-normal ease-out data-starting-style:opacity-0 data-starting-style:-translate-y-1", className)} />}>
 				{children}
 			</Collapsible>
 		</PlanContext>
@@ -160,7 +160,11 @@ export const PlanAction = (props: Readonly<PlanActionProps>) => <CardAction data
 
 export type PlanContentProps = ComponentProps<typeof CardContent>;
 
-export const PlanContent = (props: Readonly<PlanContentProps>) => <CollapsibleContent render={<CardContent data-slot="plan-content" {...props} />} />;
+export const PlanContent = ({ className, ...props }: Readonly<PlanContentProps>) => (
+	<CollapsibleContent
+		render={<CardContent data-slot="plan-content" className={cn("data-closed:h-0 data-closed:overflow-hidden data-closed:py-0", className)} {...props} />}
+	/>
+);
 
 const COLLAPSED_CONTENT_MAX_HEIGHT_PX = 240;
 const COLLAPSED_CONTENT_HEIGHT_CLASS = "max-h-[240px]";

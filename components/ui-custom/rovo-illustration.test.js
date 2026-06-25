@@ -73,6 +73,18 @@ test("Controlled Rovo Illustration scales a default-sized scene into a compact r
 	assert.match(CONTROLLED_SOURCE, /size=\{stageSize\}/u);
 });
 
+test("Rovo Illustration keeps the chat overlap canvas in sync with browser zoom", () => {
+	assert.match(SPOT_SOURCE, /function getCanvasPixelSize\(devicePixelRatio: number\)/u);
+	assert.match(SPOT_SOURCE, /Math\.round\(size \* devicePixelRatio\)/u);
+	assert.match(SPOT_SOURCE, /function getResizedIntersectionContext\(canvas: HTMLCanvasElement, devicePixelRatio: number\)/u);
+	assert.match(SPOT_SOURCE, /canvas\.width !== pixelSize \|\| canvas\.height !== pixelSize/u);
+	assert.match(SPOT_SOURCE, /const dpr = window\.devicePixelRatio \|\| 1;/u);
+	assert.match(SPOT_SOURCE, /const \{ ctx, pixelSize \} = getResizedIntersectionContext\(cvs, dpr\);/u);
+	assert.match(SPOT_SOURCE, /ctx\.setTransform\(1, 0, 0, 1, 0, 0\);/u);
+	assert.match(SPOT_SOURCE, /ctx\.clearRect\(0, 0, pixelSize, pixelSize\);/u);
+	assert.doesNotMatch(SPOT_SOURCE, /if \(!intersectionCtxRef\.current\) \{[\s\S]*cvs\.width = size \* dpr/u);
+});
+
 test("Rovo Illustration demo includes compact controlled 72 px variants with default motion", () => {
 	assert.match(DEMO_SOURCE, /const CONTROLLED_ILLUSTRATION_SIZE = 180;/u);
 	assert.match(DEMO_SOURCE, /const COMPACT_CONTROLLED_ILLUSTRATION_SIZE = 72;/u);

@@ -344,6 +344,8 @@ test("ChatGreeting lets the illustration play before delayed heading and prompt 
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_ZOOM/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_SHELL_STYLE/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_STAGE_STYLE/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /PixelSnappedSidebarIllustration/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /getDevicePixelSnapOffset/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /relative overflow-visible/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /absolute left-1\/2 top-1\/2/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /translate\(-50%, -50%\) scale/u);
