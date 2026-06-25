@@ -311,14 +311,19 @@ test("ChatGreeting switches to Max heading and fixed illustration box", async ()
 
 test("ChatGreeting staggers the illustration before the heading", () => {
 	assert.match(CHAT_GREETING_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion \} from "motion\/react";/u);
-	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_CONTAINER_VARIANTS = \{[\s\S]*staggerChildren: 0\.04/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_CONTAINER_VARIANTS = \{[\s\S]*staggerChildren: 0\.06/u);
 	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_PROMPT_CONTAINER_VARIANTS = \{[\s\S]*delayChildren: 0\.16,[\s\S]*staggerChildren: 0\.04/u);
 	assert.match(CHAT_GREETING_SOURCE, /staggerChildren: 0\.04/u);
-	assert.match(CHAT_GREETING_SOURCE, /visualDuration: 0\.22/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_MODE_TRANSITION = \{[\s\S]*type: "spring",[\s\S]*bounce: 0,[\s\S]*visualDuration: 0\.22/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_ILLUSTRATION_TRANSITION = \{[\s\S]*type: "tween",[\s\S]*duration: 0\.36,[\s\S]*ease: "easeOut"/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_HEADING_TRANSITION = \{[\s\S]*type: "tween",[\s\S]*duration: 0\.44,[\s\S]*ease: "easeOut"/u);
 	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(24px\)"/u);
 	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(-24px\)"/u);
-	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_ITEM_TRANSITION = \{[\s\S]*duration: 0\.44,[\s\S]*ease: \[0\.33, 1, 0\.68, 1\]/u);
-	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_ITEM_VARIANTS = \{[\s\S]*transform: "translateY\(24px\)"[\s\S]*transition: CHAT_GREETING_HERO_ITEM_TRANSITION/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_ITEM_TRANSITION/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_TRANSITION/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_ILLUSTRATION_VARIANTS = \{[\s\S]*transform: "translateY\(12px\)"[\s\S]*transition: CHAT_GREETING_HERO_ILLUSTRATION_TRANSITION/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HERO_HEADING_VARIANTS = \{[\s\S]*transform: "translateY\(24px\)"[\s\S]*transition: CHAT_GREETING_HERO_HEADING_TRANSITION/u);
+	assert.match(CHAT_GREETING_SOURCE, /const activeHeroContainerVariants = isComposing[\s\S]*shouldReduceMotion[\s\S]*CHAT_GREETING_REDUCED_HERO_CONTAINER_VARIANTS[\s\S]*CHAT_GREETING_HERO_CONTAINER_VARIANTS;/u);
 	assert.match(CHAT_GREETING_SOURCE, /key="hero"[\s\S]*variants=\{activeHeroContainerVariants\}/u);
 	assert.match(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\} variants=\{activePromptContainerVariants\}/u);
 	assert.match(CHAT_GREETING_SOURCE, /greetingSuggestions\.map\(\(suggestion\) => \([\s\S]*<motion\.div key=\{suggestion\.id\} variants=\{activeItemVariants\}>/u);
@@ -328,10 +333,9 @@ test("ChatGreeting can stabilize the illustration while preserving heading and p
 	assert.match(CHAT_GREETING_SOURCE, /stabilizeHeroOnMount\?: boolean;/u);
 	assert.match(CHAT_GREETING_SOURCE, /stabilizeHeroOnMount = false/u);
 	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS = \{/u);
-	assert.match(CHAT_GREETING_SOURCE, /const heroItemVariants = shouldReduceMotion \? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_HERO_ITEM_VARIANTS;/u);
-	assert.match(CHAT_GREETING_SOURCE, /const heroIllustrationVariants = isComposing[\s\S]*stabilizeHeroOnMount[\s\S]*CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS[\s\S]*heroItemVariants;/u);
-	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_HEADING_ITEM_VARIANTS/u);
-	assert.match(CHAT_GREETING_SOURCE, /const heroHeadingVariants = isComposing[\s\S]*: heroItemVariants;/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /const heroItemVariants = /u);
+	assert.match(CHAT_GREETING_SOURCE, /const heroIllustrationVariants = isComposing[\s\S]*stabilizeHeroOnMount[\s\S]*CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS[\s\S]*CHAT_GREETING_HERO_ILLUSTRATION_VARIANTS;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const heroHeadingVariants = isComposing[\s\S]*CHAT_GREETING_HERO_HEADING_VARIANTS;/u);
 	assert.match(CHAT_GREETING_SOURCE, /variants=\{heroIllustrationVariants\}[\s\S]*<ControlledRovoIllustration/u);
 	assert.match(CHAT_GREETING_SOURCE, /variants=\{heroHeadingVariants\}[\s\S]*<Heading size="large"/u);
 	assert.match(CHAT_GREETING_SOURCE, /const activePromptContainerVariants = isComposing[\s\S]*CHAT_GREETING_PROMPT_CONTAINER_VARIANTS[\s\S]*CHAT_GREETING_CONTAINER_VARIANTS;/u);

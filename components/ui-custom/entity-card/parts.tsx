@@ -164,7 +164,9 @@ export function EntityCardHeader({
 					className={cn(
 						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out",
 						hasTrailingStatus
-							? action ? "w-16" : "w-8"
+							? action
+								? added ? "w-16" : "w-6 group-hover/card:w-16 group-focus-within/card:w-16 group-data-[active=true]/card:w-16"
+								: added ? "w-8" : "w-0 group-hover/card:w-8 group-focus-within/card:w-8"
 							: added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px] group-data-[active=true]/card:w-[52px]" : "w-6",
 					)}
 				>
@@ -173,7 +175,7 @@ export function EntityCardHeader({
 							className={cn(
 								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out",
 								hasTrailingStatus
-									? "-translate-x-10"
+									? added ? "-translate-x-10" : "group-hover/card:-translate-x-10 group-focus-within/card:-translate-x-10 group-data-[active=true]/card:-translate-x-10"
 									: added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7 group-data-[active=true]/card:-translate-x-7" : "translate-x-0",
 							)}
 						>
@@ -243,7 +245,7 @@ function EntityCardSelectableLeading({
 				aria-label={label}
 				checked={selected}
 				className={cn(
-					"opacity-0 transition-opacity duration-fast ease-out focus-visible:pointer-events-auto focus-visible:opacity-100",
+					"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100",
 					selected
 						? "pointer-events-auto opacity-100"
 						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",

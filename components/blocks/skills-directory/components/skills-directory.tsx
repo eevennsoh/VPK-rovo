@@ -381,8 +381,8 @@ export function SkillsDirectoryDialog({
 		() => getSelectedSkills(directorySkills, resolvedSelectedIds),
 		[directorySkills, resolvedSelectedIds],
 	);
-	const selectedFooterCount = selectionExperience === "checkbox-actions" ? resolvedSelectedIds.length : 0;
-	const showSelectedSkillsFooter = selectionExperience === "checkbox-actions" && selectedFooterCount > 0;
+	const selectedFooterCount = resolvedSelectedIds.length;
+	const showSelectedSkillsFooter = selectedFooterCount > 0;
 	const selectedDetailSkill = selectedDetailSkillId
 		? directorySkills.find((skill) => skill.id === selectedDetailSkillId) ?? null
 		: null;
@@ -462,11 +462,6 @@ export function SkillsDirectoryDialog({
 			onAddSkills?.([skill.id], [skill]);
 			onSelectSkill?.(skill);
 			handleOpenChange(false);
-			return;
-		}
-
-		if (selectionExperience === "studio-bulk-add") {
-			handleToggleAddedSkill(skill, !addedIdSet.has(skill.id));
 		}
 	}
 
@@ -798,7 +793,7 @@ function SkillSection({
 	selectedIds,
 	skills,
 }: Readonly<SkillSectionProps>) {
-	const checkboxSelectable = selectionExperience === "checkbox-actions";
+	const checkboxSelectable = true;
 	const cardSelectable = selectionExperience !== "checkbox-actions";
 	const showAddedSwitch = selectionExperience === "studio-bulk-add";
 
@@ -811,8 +806,12 @@ function SkillSection({
 			) : null}
 			<ul className={gridClassName}>
 				{skills.map((skill) => {
-					const selected = checkboxSelectable && selectedIds.has(skill.id);
+					const selected = selectedIds.has(skill.id);
 					const effectiveAdded = addedIds.has(skill.id);
+					const handleCardSelect =
+						selectionExperience === "studio-bulk-add"
+							? () => onToggleAddedSkill(skill, !effectiveAdded)
+							: cardSelectable ? () => onSelectSkill(skill) : undefined;
 					return (
 						<li key={skill.id}>
 							<SkillsDirectoryEntityCard
@@ -822,7 +821,7 @@ function SkillSection({
 								onCreateShareLink={() => onCreateShareLink(skill)}
 								onDownloadSkills={() => onDownloadSkills(skill)}
 								onLearnMore={() => onLearnMore(skill)}
-								onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+								onSelect={handleCardSelect}
 								onToggleAdded={showAddedSwitch ? (checked) => onToggleAddedSkill(skill, checked) : undefined}
 								onToggleFavorite={() => onToggleFavoriteSkill(skill)}
 								onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}
@@ -842,7 +841,7 @@ interface SkillsDirectoryEntityCardProps {
 	added: boolean;
 	/** Shows the hover/focus checkbox affordance when the surface supports it. */
 	checkboxSelectable: boolean;
-	/** Shows a subtle trailing check on hover before Studio applies the change. */
+	/** Shows a subtle trailing check on hover for deferred add flows. */
 	hoverAdded: boolean;
 	onCreateShareLink: () => void;
 	onDownloadSkills: () => void;
@@ -904,7 +903,8 @@ function SkillsDirectoryEntityCard({
 	return (
 		<EntityCardSkillCard
 			active={!moreActionsDisabled && moreMenuOpen}
-			added={onToggleAdded ? false : added}
+			added={added}
+			cardActionLabel={onToggleAdded ? `${added ? "Remove" : "Add"} ${skill.name}` : undefined}
 			className="min-h-[112px] gap-4"
 			description={skill.description}
 			hoverAdded={hoverAdded}
@@ -962,6 +962,12 @@ function SkillAddedSwitch({
 		<Switch
 			aria-label={`${added ? "Remove" : "Add"} ${skillName}`}
 			checked={added}
+			className={cn(
+				"transition-opacity duration-fast ease-out after:inset-0",
+				added
+					? "pointer-events-auto opacity-100"
+					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
+			)}
 			onCheckedChange={onToggleAdded}
 			onClick={stopPropagation}
 			onKeyDown={stopPropagation}
@@ -1028,15 +1034,6 @@ function SkillMoreMenu({
 					onClick={stopPropagation}
 					onSelect={(event) => {
 						event.stopPropagation();
-						onCreateShareLink();
-					}}
-				>
-					Share
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={stopPropagation}
-					onSelect={(event) => {
-						event.stopPropagation();
 						onToggleFavorite();
 					}}
 				>
@@ -1050,6 +1047,15 @@ function SkillMoreMenu({
 					}}
 				>
 					Download
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					onClick={stopPropagation}
+					onSelect={(event) => {
+						event.stopPropagation();
+						onCreateShareLink();
+					}}
+				>
+					Share
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
@@ -1089,14 +1095,10 @@ function SelectedSkillsFooter({
 				<Badge>{count}</Badge>
 				<span className="shrink-0 text-sm font-medium leading-5 text-text">{countLabel}</span>
 			</div>
-			<div className="flex max-w-full items-center gap-2 overflow-x-auto">
+			<div className="flex max-w-full items-center justify-end gap-2 overflow-x-auto">
 				<Button onClick={onCancelSelection} size="default" type="button" variant="ghost">
 					<CrossIcon label="" />
 					Cancel
-				</Button>
-				<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
-					<LinkIcon label="" />
-					Create link to share
 				</Button>
 				<Button onClick={onFavoriteSkills} size="default" type="button" variant="ghost">
 					<StarUnstarredIcon label="" />
@@ -1111,6 +1113,10 @@ function SelectedSkillsFooter({
 						Add skills
 					</Button>
 				) : null}
+				<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
+					<LinkIcon label="" />
+					Create link to share
+				</Button>
 			</div>
 		</DialogFooter>
 	);
@@ -1709,7 +1715,7 @@ function ExperimentalSkillsDirectoryView({
 		setSelectedCompanies([]);
 	}
 
-	const checkboxSelectable = selectionExperience === "checkbox-actions";
+	const checkboxSelectable = true;
 	const cardSelectable = selectionExperience !== "checkbox-actions";
 	const showAddedSwitch = selectionExperience === "studio-bulk-add";
 
@@ -1732,8 +1738,12 @@ function ExperimentalSkillsDirectoryView({
 						heading="My skills"
 						items={mySkills}
 						renderItem={(skill) => {
-							const selected = checkboxSelectable && selectedIds.has(skill.id);
+							const selected = selectedIds.has(skill.id);
 							const effectiveAdded = addedIds.has(skill.id);
+							const handleCardSelect =
+								selectionExperience === "studio-bulk-add"
+									? () => onToggleAddedSkill(skill, !effectiveAdded)
+									: cardSelectable ? () => onSelectSkill(skill) : undefined;
 							return (
 								<SkillsDirectoryEntityCard
 									added={effectiveAdded}
@@ -1742,7 +1752,7 @@ function ExperimentalSkillsDirectoryView({
 									onCreateShareLink={() => onCreateShareLink(skill)}
 									onDownloadSkills={() => onDownloadSkills(skill)}
 									onLearnMore={() => onLearnMore(skill)}
-									onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+									onSelect={handleCardSelect}
 									onToggleAdded={showAddedSwitch ? (checked) => onToggleAddedSkill(skill, checked) : undefined}
 									onToggleFavorite={() => onToggleFavoriteSkill(skill)}
 									onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}
@@ -1758,8 +1768,12 @@ function ExperimentalSkillsDirectoryView({
 						heading="Other skills"
 						items={otherSkills}
 						renderItem={(skill) => {
-							const selected = checkboxSelectable && selectedIds.has(skill.id);
+							const selected = selectedIds.has(skill.id);
 							const effectiveAdded = addedIds.has(skill.id);
+							const handleCardSelect =
+								selectionExperience === "studio-bulk-add"
+									? () => onToggleAddedSkill(skill, !effectiveAdded)
+									: cardSelectable ? () => onSelectSkill(skill) : undefined;
 							return (
 								<SkillsDirectoryEntityCard
 									added={effectiveAdded}
@@ -1768,7 +1782,7 @@ function ExperimentalSkillsDirectoryView({
 									onCreateShareLink={() => onCreateShareLink(skill)}
 									onDownloadSkills={() => onDownloadSkills(skill)}
 									onLearnMore={() => onLearnMore(skill)}
-									onSelect={cardSelectable ? () => onSelectSkill(skill) : undefined}
+									onSelect={handleCardSelect}
 									onToggleAdded={showAddedSwitch ? (checked) => onToggleAddedSkill(skill, checked) : undefined}
 									onToggleFavorite={() => onToggleFavoriteSkill(skill)}
 									onToggleSelected={(checked) => onToggleSelectedSkill(skill, checked)}

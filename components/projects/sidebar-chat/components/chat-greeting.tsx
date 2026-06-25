@@ -33,15 +33,21 @@ const CHAT_GREETING_MODE_TRANSITION = {
 	bounce: 0,
 	visualDuration: 0.22,
 } as const;
+const CHAT_GREETING_HERO_ILLUSTRATION_TRANSITION = {
+	type: "tween",
+	duration: 0.36,
+	ease: "easeOut",
+} as const;
+const CHAT_GREETING_HERO_HEADING_TRANSITION = {
+	type: "tween",
+	duration: 0.44,
+	ease: "easeOut",
+} as const;
 const CHAT_GREETING_EXIT_TRANSITION = {
 	duration: 0.08,
 } as const;
 const CHAT_GREETING_REDUCED_TRANSITION = {
 	duration: 0.08,
-} as const;
-const CHAT_GREETING_HERO_ITEM_TRANSITION = {
-	duration: 0.44,
-	ease: [0.33, 1, 0.68, 1],
 } as const;
 const CHAT_GREETING_CONTAINER_VARIANTS = {
 	hidden: {},
@@ -66,7 +72,7 @@ const CHAT_GREETING_HERO_CONTAINER_VARIANTS = {
 	hidden: {},
 	visible: {
 		transition: {
-			staggerChildren: 0.04,
+			staggerChildren: 0.06,
 		},
 	},
 	exit: {
@@ -74,6 +80,19 @@ const CHAT_GREETING_HERO_CONTAINER_VARIANTS = {
 			staggerChildren: 0.02,
 			staggerDirection: -1,
 		},
+	},
+} as const;
+const CHAT_GREETING_REDUCED_HERO_CONTAINER_VARIANTS = {
+	hidden: {
+		opacity: 0,
+	},
+	visible: {
+		opacity: 1,
+		transition: CHAT_GREETING_REDUCED_TRANSITION,
+	},
+	exit: {
+		opacity: 0,
+		transition: CHAT_GREETING_REDUCED_TRANSITION,
 	},
 } as const;
 const CHAT_GREETING_PROMPT_CONTAINER_VARIANTS = {
@@ -107,7 +126,23 @@ const CHAT_GREETING_ITEM_VARIANTS = {
 		transition: CHAT_GREETING_EXIT_TRANSITION,
 	},
 } as const;
-const CHAT_GREETING_HERO_ITEM_VARIANTS = {
+const CHAT_GREETING_HERO_ILLUSTRATION_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transform: "translateY(12px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: CHAT_GREETING_HERO_ILLUSTRATION_TRANSITION,
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(-12px)",
+		transition: CHAT_GREETING_EXIT_TRANSITION,
+	},
+} as const;
+const CHAT_GREETING_HERO_HEADING_VARIANTS = {
 	hidden: {
 		opacity: 0,
 		transform: "translateY(24px)",
@@ -115,7 +150,7 @@ const CHAT_GREETING_HERO_ITEM_VARIANTS = {
 	visible: {
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: CHAT_GREETING_HERO_ITEM_TRANSITION,
+		transition: CHAT_GREETING_HERO_HEADING_TRANSITION,
 	},
 	exit: {
 		opacity: 0,
@@ -181,7 +216,8 @@ const CHAT_GREETING_INSTANT_ITEM_VARIANTS = {
 } as const;
 type ChatGreetingItemVariants =
 	| typeof CHAT_GREETING_ITEM_VARIANTS
-	| typeof CHAT_GREETING_HERO_ITEM_VARIANTS
+	| typeof CHAT_GREETING_HERO_ILLUSTRATION_VARIANTS
+	| typeof CHAT_GREETING_HERO_HEADING_VARIANTS
 	| typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS
 	| typeof CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS;
 
@@ -519,22 +555,29 @@ export default function ChatGreeting({
 	const shouldShowHero =
 		showHero && (!isComposing || !shouldRenderDirectoryMatches);
 	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS;
-	const activeHeroContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_HERO_CONTAINER_VARIANTS;
+	const activeHeroContainerVariants = isComposing
+		? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS
+		: shouldReduceMotion
+			? CHAT_GREETING_REDUCED_HERO_CONTAINER_VARIANTS
+			: CHAT_GREETING_HERO_CONTAINER_VARIANTS;
 	const activePromptContainerVariants = isComposing
 		? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS
 		: shouldShowHero
 			? CHAT_GREETING_PROMPT_CONTAINER_VARIANTS
 			: CHAT_GREETING_CONTAINER_VARIANTS;
 	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
-	const heroItemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_HERO_ITEM_VARIANTS;
 	const heroIllustrationVariants = isComposing
 		? CHAT_GREETING_INSTANT_ITEM_VARIANTS
 		: stabilizeHeroOnMount
 			? CHAT_GREETING_STABLE_HERO_ITEM_VARIANTS
-			: heroItemVariants;
+			: shouldReduceMotion
+				? CHAT_GREETING_REDUCED_ITEM_VARIANTS
+				: CHAT_GREETING_HERO_ILLUSTRATION_VARIANTS;
 	const heroHeadingVariants = isComposing
 		? CHAT_GREETING_INSTANT_ITEM_VARIANTS
-		: heroItemVariants;
+		: shouldReduceMotion
+			? CHAT_GREETING_REDUCED_ITEM_VARIANTS
+			: CHAT_GREETING_HERO_HEADING_VARIANTS;
 
 	return (
 		<div className="w-full">
