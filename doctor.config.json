@@ -1,8 +1,6 @@
 {
 	"ignore": {
-		"files": [
-			"public/vad/**"
-		],
+		"files": [],
 		"rules": [
 			"jsx-a11y/anchor-is-valid",
 			"jsx-a11y/click-events-have-key-events",
