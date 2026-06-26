@@ -2,6 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState, type RefCallback } from "react";
 
+export interface VerticalOverflowMetrics {
+	clientHeight: number;
+	maxHeight: number;
+	scrollHeight: number;
+	scrollTop: number;
+}
+
+export interface VerticalOverflowState {
+	hasVerticalOverflow: boolean;
+	hasReachedVerticalLimit: boolean;
+	hasScrolledFromTop: boolean;
+	hasScrolledToBottom: boolean;
+	showTopScrollMask: boolean;
+	showBottomScrollMask: boolean;
+}
+
 export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	hasVerticalOverflow: boolean;
 	hasReachedVerticalLimit: boolean;
@@ -10,6 +26,49 @@ export interface HasVerticalOverflowResult<T extends HTMLElement> {
 	ref: RefCallback<T>;
 	showTopScrollMask: boolean;
 	showBottomScrollMask: boolean;
+}
+
+const EMPTY_VERTICAL_OVERFLOW_STATE: VerticalOverflowState = {
+	hasReachedVerticalLimit: false,
+	hasScrolledFromTop: false,
+	hasScrolledToBottom: true,
+	hasVerticalOverflow: false,
+	showBottomScrollMask: false,
+	showTopScrollMask: false,
+};
+
+export function getVerticalOverflowState(metrics: VerticalOverflowMetrics | null): VerticalOverflowState {
+	if (!metrics) {
+		return EMPTY_VERTICAL_OVERFLOW_STATE;
+	}
+
+	const hasVerticalOverflow = metrics.scrollHeight - metrics.clientHeight > 1;
+	const hasFiniteMaxHeight = Number.isFinite(metrics.maxHeight) && metrics.maxHeight > 0;
+	const hasReachedVerticalLimit = hasFiniteMaxHeight && metrics.clientHeight >= metrics.maxHeight - 1;
+	const hasScrolledFromTop = metrics.scrollTop > 1;
+	const hasScrolledToBottom = metrics.scrollHeight - metrics.clientHeight - metrics.scrollTop <= 1;
+
+	return {
+		hasReachedVerticalLimit,
+		hasScrolledFromTop,
+		hasScrolledToBottom,
+		hasVerticalOverflow,
+		showBottomScrollMask: hasVerticalOverflow && !hasScrolledToBottom,
+		showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop,
+	};
+}
+
+function getElementVerticalOverflowState(element: HTMLElement | null): VerticalOverflowState {
+	if (!element) {
+		return EMPTY_VERTICAL_OVERFLOW_STATE;
+	}
+
+	return getVerticalOverflowState({
+		clientHeight: element.clientHeight,
+		maxHeight: Number.parseFloat(getComputedStyle(element).maxHeight),
+		scrollHeight: element.scrollHeight,
+		scrollTop: element.scrollTop,
+	});
 }
 
 export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOverflowResult<T> {
@@ -21,16 +80,12 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 	const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
 	const updateScrollState = useCallback(() => {
-		const element = elementRef.current;
-		const maxHeight = element ? Number.parseFloat(getComputedStyle(element).maxHeight) : Number.NaN;
-		const hasFiniteMaxHeight = Number.isFinite(maxHeight) && maxHeight > 0;
+		const nextState = getElementVerticalOverflowState(elementRef.current);
 
-		setHasVerticalOverflow(element ? element.scrollHeight - element.clientHeight > 1 : false);
-		setHasReachedVerticalLimit(element ? hasFiniteMaxHeight && element.clientHeight >= maxHeight - 1 : false);
-		setHasScrolledFromTop(element ? element.scrollTop > 1 : false);
-		setHasScrolledToBottom(
-			element ? element.scrollHeight - element.clientHeight - element.scrollTop <= 1 : true,
-		);
+		setHasVerticalOverflow(nextState.hasVerticalOverflow);
+		setHasReachedVerticalLimit(nextState.hasReachedVerticalLimit);
+		setHasScrolledFromTop(nextState.hasScrolledFromTop);
+		setHasScrolledToBottom(nextState.hasScrolledToBottom);
 	}, []);
 
 	const ref = useCallback<RefCallback<T>>(
