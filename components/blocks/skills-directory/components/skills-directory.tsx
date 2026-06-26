@@ -906,6 +906,7 @@ function SkillsDirectoryEntityCard({
 		<EntityCardSkillCard
 			active={!moreActionsDisabled && moreMenuOpen}
 			added={added}
+			cardActionLabel={onToggleAdded ? `${added ? "Remove" : "Add"} ${skill.name}` : undefined}
 			className="min-h-[112px] gap-4"
 			description={skill.description}
 			hoverAdded={hoverAdded}

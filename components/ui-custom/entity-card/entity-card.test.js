@@ -397,11 +397,14 @@ test("skill/app/tool/knowledge cards opt into multi-select when a `selected` boo
 	assert.equal(gateCount.length, 3);
 	assert.match(VARIANTS_SOURCE, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(VARIANTS_SOURCE, /cardActionLabel\?: string/u);
+	assert.match(VARIANTS_SOURCE, /function getDefaultShellSelectLabel/u);
+	assert.match(VARIANTS_SOURCE, /return onSelect \|\| !onAddedChange \? selectLabel : addActionLabel;/u);
 	assert.match(VARIANTS_SOURCE, /const addActionLabel = `\$\{added \? "Remove" : "Add"\} \$\{name\}`;/u);
 	assert.match(VARIANTS_SOURCE, /const handleSelect = onSelect \?\? \(onAddedChange \? \(\) => onAddedChange\(!added\) : undefined\);/u);
-	assert.match(VARIANTS_SOURCE, /selectLabel=\{cardActionLabel \?\? \(onAddedChange \? addActionLabel : selectLabel\)\}/u);
+	assert.match(VARIANTS_SOURCE, /const shellSelectLabel = cardActionLabel \?\? getDefaultShellSelectLabel\(\{ onAddedChange, onSelect, addActionLabel, selectLabel \}\);/u);
 	// Each selectable wrapper threads selection to BOTH the shell (border) and content (checkbox).
-	assert.match(VARIANTS_SOURCE, /onSelect=\{handleSelect \? \(\) => handleSelect\(\) : undefined\}\s*\n\s*selectLabel=\{onAddedChange \? addActionLabel : selectLabel\}\s*\n\s*selected=\{selected\}/u);
+	const shellLabelCount = VARIANTS_SOURCE.match(/selectLabel=\{shellSelectLabel\}/gu) ?? [];
+	assert.equal(shellLabelCount.length, 4);
 	assert.match(VARIANTS_SOURCE, /onSelectedChange=\{onSelect\}/u);
 	const labelCount = VARIANTS_SOURCE.match(/\$\{selected \? "Deselect" : "Select"\} \$\{name\}/gu) ?? [];
 	assert.equal(labelCount.length, 4);

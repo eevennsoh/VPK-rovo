@@ -127,7 +127,7 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(source, /starCount=\{skill\.starCount\}/u);
 	assert.match(source, /teammateCount=\{skill\.teammateCount\}/u);
 	assert.match(variantsSource, /export interface EntityCardSkillCardProps extends EntityCardSkillProps \{[\s\S]*active\?: boolean;[\s\S]*cardActionLabel\?: string;[\s\S]*moreAction\?: ReactNode;/u);
-	assert.match(variantsSource, /selectLabel=\{cardActionLabel \?\? \(onAddedChange \? addActionLabel : selectLabel\)\}/u);
+	assert.match(variantsSource, /const shellSelectLabel = cardActionLabel \?\? getDefaultShellSelectLabel\(\{ onAddedChange, onSelect, addActionLabel, selectLabel \}\);/u);
 	assert.match(variantsSource, /onSelectedChange,/u);
 	assert.match(variantsSource, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
 	assert.match(variantsSource, /onSelectedChange=\{onSelectedChange \?\? onSelect\}/u);
@@ -148,7 +148,7 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(source, /onSelect=\{handleCardSelect\}/u);
 	assert.match(source, /onToggleAdded=\{showAddedSwitch \? \(checked\) => onToggleAddedSkill\(skill, checked\) : undefined\}/u);
 	assert.match(source, /onAddedChange=\{onToggleAdded\}/u);
-	assert.doesNotMatch(source, /cardActionLabel=\{onToggleAdded \?/u);
+	assert.match(source, /cardActionLabel=\{onToggleAdded \? `\$\{added \? "Remove" : "Add"\} \$\{skill\.name\}` : undefined\}/u);
 	assert.match(source, /onSelectedChange=\{onToggleSelected\}/u);
 	assert.match(source, /selectable=\{checkboxSelectable\}/u);
 	assert.match(source, /const effectiveAdded = addedIds\.has\(skill\.id\);/u);
