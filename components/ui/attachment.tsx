@@ -204,7 +204,7 @@ function AttachmentGroup({ className, ...props }: Readonly<AttachmentGroupProps>
 		<div
 			data-slot="attachment-group"
 			className={cn(
-				"flex min-w-0 snap-x snap-mandatory scroll-px-1 gap-3 overflow-x-auto overscroll-x-contain py-1 *:data-[slot=attachment]:flex-none *:data-[slot=attachment]:snap-start",
+				"scroll-fade-x scrollbar-none flex min-w-0 snap-x snap-mandatory scroll-px-1 gap-3 overflow-x-auto overscroll-x-contain p-1 *:data-[slot=attachment]:flex-none *:data-[slot=attachment]:snap-start",
 				className
 			)}
 			{...props}

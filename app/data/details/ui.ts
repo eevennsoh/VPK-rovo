@@ -4473,9 +4473,44 @@ import SearchIcon from "@atlaskit/icon/core/search";
     examples: [
       { title: "Default", demoSlug: "attachment-demo-default" },
       {
+        title: "Files",
+        description: "Horizontal and vertical file attachments.",
+        demoSlug: "attachment-demo-files",
+      },
+      {
+        title: "Content Only",
+        description: "Attachments with title-only and title-plus-description content.",
+        demoSlug: "attachment-demo-content-only",
+      },
+      {
         title: "States",
         description: "Idle, uploading, processing, done, and error states.",
         demoSlug: "attachment-demo-states",
+      },
+      {
+        title: "Images",
+        description: "Image media attachments with full-card triggers.",
+        demoSlug: "attachment-demo-images",
+      },
+      {
+        title: "Image States",
+        description: "Image attachments across upload lifecycle states.",
+        demoSlug: "attachment-demo-image-states",
+      },
+      {
+        title: "Sizes",
+        description: "Default, small, and extra-small attachment sizes.",
+        demoSlug: "attachment-demo-sizes",
+      },
+      {
+        title: "Group",
+        description: "Scrollable attachment group with snapping behavior.",
+        demoSlug: "attachment-demo-group",
+      },
+      {
+        title: "Trigger",
+        description: "Full-card link and dialog triggers with independent actions.",
+        demoSlug: "attachment-demo-trigger",
       },
       {
         title: "Orientation",

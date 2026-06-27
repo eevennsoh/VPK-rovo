@@ -453,7 +453,7 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDropdownTrigger })),
     { ssr: false },
   ),
-  // Button
+  // Attachment
   "attachment-demo-default": dynamic(
     () =>
       import("./demos/ui/attachment-demo").then((mod) => ({
@@ -461,10 +461,59 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "attachment-demo-files": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoFiles,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-content-only": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoContentOnly,
+      })),
+    { ssr: false },
+  ),
   "attachment-demo-states": dynamic(
     () =>
       import("./demos/ui/attachment-demo").then((mod) => ({
         default: mod.AttachmentDemoStates,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-images": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoImages,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-image-states": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoImageStates,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoSizes,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-group": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoGroup,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-trigger": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoTrigger,
       })),
     { ssr: false },
   ),
