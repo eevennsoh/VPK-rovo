@@ -10,11 +10,13 @@ const UI_DEMO: Record<string, ComponentType> = {
   "aspect-ratio": dynamic(() => import("./demos/ui/aspect-ratio-demo"), {
     ssr: false,
   }),
+  attachment: dynamic(() => import("./demos/ui/attachment-demo"), { ssr: false }),
   avatar: dynamic(() => import("./demos/ui/avatar-demo"), { ssr: false }),
   badge: dynamic(() => import("./demos/ui/badge-demo"), { ssr: false }),
   breadcrumb: dynamic(() => import("./demos/ui/breadcrumb-demo"), {
     ssr: false,
   }),
+  bubble: dynamic(() => import("./demos/ui/bubble-demo"), { ssr: false }),
   button: dynamic(() => import("./demos/ui/button-demo"), { ssr: false }),
   "button-group": dynamic(() => import("./demos/ui/button-group-demo"), {
     ssr: false,
@@ -53,7 +55,12 @@ const UI_DEMO: Record<string, ComponentType> = {
   item: dynamic(() => import("./demos/ui/item-demo"), { ssr: false }),
   kbd: dynamic(() => import("./demos/ui/kbd-demo"), { ssr: false }),
   label: dynamic(() => import("./demos/ui/label-demo"), { ssr: false }),
+  marker: dynamic(() => import("./demos/ui/marker-demo"), { ssr: false }),
   menubar: dynamic(() => import("./demos/ui/menubar-demo"), { ssr: false }),
+  message: dynamic(() => import("./demos/ui/message-demo"), { ssr: false }),
+  "message-scroller": dynamic(() => import("./demos/ui/message-scroller-demo"), {
+    ssr: false,
+  }),
   "native-select": dynamic(() => import("./demos/ui/native-select-demo"), {
     ssr: false,
   }),
@@ -445,6 +452,92 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDropdownTrigger })),
     { ssr: false },
   ),
+  // Button
+  "attachment-demo-default": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-states": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoStates,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-orientation": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoOrientation,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-default": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-variants": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoVariants,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-reactions": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoReactions,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-default": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-variants": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoVariants,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-default": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-group": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoGroup,
+      })),
+    { ssr: false },
+  ),
+  "message-scroller-demo-default": dynamic(
+    () =>
+      import("./demos/ui/message-scroller-demo").then((mod) => ({
+        default: mod.MessageScrollerDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "message-scroller-demo-button": dynamic(
+    () =>
+      import("./demos/ui/message-scroller-demo").then((mod) => ({
+        default: mod.MessageScrollerDemoButton,
+      })),
+    { ssr: false },
+  ),
+
   // Button
   "button-demo-default": dynamic(
     () =>
