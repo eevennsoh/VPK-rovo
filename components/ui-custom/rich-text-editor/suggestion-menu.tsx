@@ -1460,11 +1460,7 @@ export function createSlashSuggestionRenderer(
 			? []
 			: getVisibleItems(props.query);
 		selectedIndex = clampSelectedIndex(items, selectedIndex);
-		if (anchorToInput) {
-			positionComposerPopup(popupState.element, props.editor.view.dom);
-		} else {
-			positionPopup(popupState.element, props.clientRect);
-		}
+
 		// A nested drill-in (no header) shows the contextual empty state: the
 		// "No matching items" title plus, for directory-backed categories
 		// (everything but "format"), a "Browse all" button that opens that
@@ -1473,6 +1469,23 @@ export function createSlashSuggestionRenderer(
 		// that header — render an empty fragment so no "No commands found" row.
 		const nestedCategory = !isFlat && activeCategory ? activeCategory : null;
 		const shouldShowAskRovoHeader = showAskRovoPrompt && (isFlat || !activeCategory);
+
+		// When a "/" filter matches nothing and there is no Ask Rovo header to
+		// fall back on, hide the popup entirely instead of surfacing a "no
+		// results" box — the empty composer already signals there are no matches.
+		const shouldHidePopup = items.length === 0 && !shouldShowAskRovoHeader;
+		if (popupState.element) {
+			popupState.element.style.display = shouldHidePopup ? "none" : "";
+		}
+		if (shouldHidePopup) {
+			return;
+		}
+
+		if (anchorToInput) {
+			positionComposerPopup(popupState.element, props.editor.view.dom);
+		} else {
+			positionPopup(popupState.element, props.clientRect);
+		}
 		const nestedEmptyState = nestedCategory ? (
 			<RichTextSuggestionEmptyState
 				onBrowseAll={
@@ -1995,6 +2008,18 @@ export function createMentionSuggestionRenderer(
 		currentProps = props;
 		const items = getVisibleItems(props);
 		selectedIndex = clampSelectedIndex(items, selectedIndex);
+
+		// When an "@" filter matches nothing, hide the popup entirely instead of
+		// surfacing a "no results" box — the empty composer already signals there
+		// are no matches.
+		const shouldHidePopup = items.length === 0;
+		if (popupState.element) {
+			popupState.element.style.display = shouldHidePopup ? "none" : "";
+		}
+		if (shouldHidePopup) {
+			return;
+		}
+
 		if (anchorToInput) {
 			positionComposerPopup(popupState.element, props.editor.view.dom);
 		} else {
