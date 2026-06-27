@@ -4,6 +4,8 @@ packages:
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - undici
+  # New shadcn headless primitives required for current shadcn/base components.
+  - "@shadcn/react"
   # Dev-only tooling; took latest ahead of the 7-day gate by explicit request.
   - react-grab
   - "@react-grab/*"

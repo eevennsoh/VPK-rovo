@@ -4286,6 +4286,210 @@ import SearchIcon from "@atlaskit/icon/core/search";
     ],
   },
 
+  attachment: {
+    description:
+      "A compact file attachment primitive with media, metadata, actions, trigger overlay, grouped scrolling, and upload/error/done states.",
+    usage: `import { Attachment, AttachmentMedia, AttachmentContent, AttachmentTitle, AttachmentDescription } from "@/components/ui/attachment";
+
+<Attachment>
+  <AttachmentMedia />
+  <AttachmentContent>
+    <AttachmentTitle>roadmap.pdf</AttachmentTitle>
+    <AttachmentDescription>2.4 MB</AttachmentDescription>
+  </AttachmentContent>
+</Attachment>`,
+    props: [
+      {
+        name: "state",
+        type: '"idle" | "uploading" | "processing" | "error" | "done"',
+        default: '"done"',
+        description: "Attachment lifecycle state used for visual treatment.",
+      },
+      {
+        name: "size",
+        type: '"default" | "sm" | "xs"',
+        default: '"default"',
+        description: "Compactness of the attachment shell and media.",
+      },
+      {
+        name: "orientation",
+        type: '"horizontal" | "vertical"',
+        default: '"horizontal"',
+        description: "Layout direction for media and metadata.",
+      },
+    ],
+    subComponents: [
+      { name: "AttachmentGroup", description: "Scrollable row of attachments." },
+      { name: "AttachmentMedia", description: "Icon or image thumbnail." },
+      { name: "AttachmentContent", description: "Metadata container." },
+      { name: "AttachmentTitle", description: "Primary attachment label." },
+      { name: "AttachmentDescription", description: "Secondary metadata text." },
+      { name: "AttachmentActions", description: "Action button container." },
+      { name: "AttachmentAction", description: "Small action button." },
+      { name: "AttachmentTrigger", description: "Overlay trigger for click targets." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "attachment-demo-default" },
+      {
+        title: "States",
+        description: "Idle, uploading, processing, done, and error states.",
+        demoSlug: "attachment-demo-states",
+      },
+      {
+        title: "Orientation",
+        description: "Horizontal and vertical attachment layouts.",
+        demoSlug: "attachment-demo-orientation",
+      },
+    ],
+  },
+
+  bubble: {
+    description:
+      "A chat bubble primitive with ADS-tokenized variants, polymorphic content, alignment, grouping, and reaction overlays.",
+    usage: `import { Bubble, BubbleContent } from "@/components/ui/bubble";
+
+<Bubble variant="secondary">
+  <BubbleContent>Can you review this change?</BubbleContent>
+</Bubble>`,
+    props: [
+      {
+        name: "variant",
+        type: '"default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"',
+        default: '"default"',
+        description: "Visual treatment for bubble content.",
+      },
+      {
+        name: "align",
+        type: '"start" | "end"',
+        default: '"start"',
+        description: "Aligns the bubble within a message row.",
+      },
+    ],
+    subComponents: [
+      { name: "BubbleGroup", description: "Vertical stack of bubbles." },
+      { name: "BubbleContent", description: "Bubble body, with render support." },
+      { name: "BubbleReactions", description: "Reaction overlay positioned on a bubble." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "bubble-demo-default" },
+      { title: "Variants", demoSlug: "bubble-demo-variants" },
+      { title: "Reactions", demoSlug: "bubble-demo-reactions" },
+    ],
+  },
+
+  marker: {
+    description:
+      "A lightweight inline marker for timestamps, status notices, and separators in message streams.",
+    usage: `import { Marker, MarkerContent } from "@/components/ui/marker";
+
+<Marker variant="separator">
+  <MarkerContent>Today</MarkerContent>
+</Marker>`,
+    props: [
+      {
+        name: "variant",
+        type: '"default" | "border" | "separator"',
+        default: '"default"',
+        description: "Marker layout and divider treatment.",
+      },
+      {
+        name: "render",
+        type: "React.ReactElement",
+        description: "Optional element to render as the marker root.",
+      },
+    ],
+    subComponents: [
+      { name: "MarkerIcon", description: "Decorative marker icon slot." },
+      { name: "MarkerContent", description: "Marker text/content slot." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "marker-demo-default" },
+      { title: "Variants", demoSlug: "marker-demo-variants" },
+    ],
+  },
+
+  message: {
+    description:
+      "A composable message row primitive for chat layouts, with avatar, header, content, footer, grouping, and start/end alignment.",
+    usage: `import { Message, MessageContent } from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+
+<Message align="end">
+  <MessageContent>
+    <Bubble align="end">
+      <BubbleContent>Ship it.</BubbleContent>
+    </Bubble>
+  </MessageContent>
+</Message>`,
+    props: [
+      {
+        name: "align",
+        type: '"start" | "end"',
+        default: '"start"',
+        description: "Message row alignment.",
+      },
+    ],
+    subComponents: [
+      { name: "MessageGroup", description: "Stack of message rows." },
+      { name: "MessageAvatar", description: "Avatar slot aligned with the message." },
+      { name: "MessageContent", description: "Container for header, bubbles, and footer." },
+      { name: "MessageHeader", description: "Metadata above message content." },
+      { name: "MessageFooter", description: "Metadata below message content." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "message-demo-default" },
+      { title: "Group", demoSlug: "message-demo-group" },
+    ],
+  },
+
+  "message-scroller": {
+    description:
+      "A headless @shadcn/react message-scroller wrapper with VPK styling for chat logs, anchored items, and scroll-to-start/end controls.",
+    usage: `import { MessageScroller, MessageScrollerViewport, MessageScrollerContent, MessageScrollerItem } from "@/components/ui/message-scroller";
+
+<MessageScroller>
+  <MessageScrollerViewport>
+    <MessageScrollerContent>
+      <MessageScrollerItem>Message</MessageScrollerItem>
+    </MessageScrollerContent>
+  </MessageScrollerViewport>
+</MessageScroller>`,
+    props: [
+      {
+        name: "autoScroll",
+        type: "boolean",
+        description: "Provider option controlling automatic scrolling behavior.",
+      },
+      {
+        name: "scrollAnchor",
+        type: "boolean",
+        default: "false",
+        description: "Marks a MessageScrollerItem as a scroll anchor.",
+      },
+      {
+        name: "direction",
+        type: '"start" | "end"',
+        default: '"end"',
+        description: "MessageScrollerButton scroll target.",
+      },
+    ],
+    subComponents: [
+      { name: "MessageScrollerProvider", description: "Optional provider for scroll behavior configuration." },
+      { name: "MessageScrollerViewport", description: "Scrollable viewport." },
+      { name: "MessageScrollerContent", description: "Message list content area." },
+      { name: "MessageScrollerItem", description: "Virtualized-friendly message item." },
+      { name: "MessageScrollerButton", description: "Floating scroll button." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "message-scroller-demo-default" },
+      { title: "Button", demoSlug: "message-scroller-demo-button" },
+    ],
+    demoLayout: {
+      previewContentWidth: "full",
+      examplesContentWidth: "full",
+    },
+  },
+
   resizable: {
     description:
       "A draggable panel resize system built on react-resizable-panels with configurable orientations and visible handles.",
