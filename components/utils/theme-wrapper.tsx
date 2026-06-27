@@ -146,9 +146,7 @@ export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "u
 
 	// Sync theme across documents.
 	// - `storage` event handles tab ↔ tab (different windows).
-	// - `message` event handles parent ↔ iframe. The `storage` event is unreliable across
-	//   the iframe boundary under our COOP/COEP headers (set in next.config.ts for
-	//   SharedArrayBuffer), so the parent posts directly into each child iframe.
+	// - `message` event handles parent ↔ iframe, where storage events are unreliable.
 	useEffect(() => {
 		const handleStorage = (event: StorageEvent) => {
 			if (event.key !== storageKey) return;
