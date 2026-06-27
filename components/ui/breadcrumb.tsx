@@ -289,6 +289,7 @@ function BreadcrumbEllipsis({
 		>
 			<IconTile
 				aria-hidden
+				as="span"
 				className="text-icon-subtlest"
 				icon={
 					<Icon

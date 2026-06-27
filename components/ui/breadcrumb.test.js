@@ -53,6 +53,6 @@ test("Breadcrumb dropdown trigger uses the compact icon button size", () => {
 test("Breadcrumb ellipsis uses a 24px transparent tile with a 12px icon", () => {
 	assert.match(SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile"/);
 	assert.match(SOURCE, /ellipsis: \{\s*medium: "size-6",\s*small: "size-6"/);
-	assert.match(SOURCE, /<IconTile[\s\S]*className="text-icon-subtlest"[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/);
+	assert.match(SOURCE, /<IconTile[\s\S]*as="span"[\s\S]*className="text-icon-subtlest"[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"/);
 	assert.match(SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/);
 });

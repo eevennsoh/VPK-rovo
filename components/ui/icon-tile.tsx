@@ -26,6 +26,7 @@ export type IconTileVariant =
 	| "purpleBold"
 
 export type IconTileIconSize = "small" | "medium"
+export type IconTileRootElement = "div" | "span"
 
 const ICON_TILE_VARIANTS: Record<IconTileVariant, string> = {
 	transparent:
@@ -79,8 +80,9 @@ const iconTileVariants = cva(
 )
 
 export interface IconTileProps
-	extends Omit<React.ComponentProps<"div">, "children">,
+	extends Omit<React.HTMLAttributes<HTMLElement>, "children">,
 		VariantProps<typeof iconTileVariants> {
+	as?: IconTileRootElement
 	icon: React.ReactNode
 	iconSize?: IconTileIconSize
 	variant?: IconTileVariant
@@ -88,6 +90,7 @@ export interface IconTileProps
 }
 
 function IconTile({
+	as = "div",
 	icon,
 	variant = "gray",
 	label,
@@ -100,25 +103,25 @@ function IconTile({
 	const isDecorative = props["aria-hidden"] === true
 	const transparentIconSize =
 		iconSize ?? (size === "xxsmall" ? "small" : "medium")
+	const sharedProps = {
+		"data-slot": "icon-tile",
+		"data-size": size,
+		"data-transparent-icon-size":
+			variant === "transparent" ? transparentIconSize : undefined,
+		"data-variant": variant,
+		"aria-label": isDecorative ? undefined : label,
+		className: cn(
+			iconTileVariants({ size, shape }),
+			ICON_TILE_VARIANTS[variant],
+			className
+		),
+		...props,
+	}
 
-	return (
-		<div
-			data-slot="icon-tile"
-			data-size={size}
-			data-transparent-icon-size={
-				variant === "transparent" ? transparentIconSize : undefined
-			}
-			data-variant={variant}
-			aria-label={isDecorative ? undefined : label}
-			className={cn(
-				iconTileVariants({ size, shape }),
-				ICON_TILE_VARIANTS[variant],
-				className
-			)}
-			{...props}
-		>
-			{icon}
-		</div>
+	return as === "span" ? (
+		<span {...sharedProps}>{icon}</span>
+	) : (
+		<div {...sharedProps}>{icon}</div>
 	)
 }
 

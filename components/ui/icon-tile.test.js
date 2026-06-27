@@ -31,14 +31,18 @@ test("IconTile exposes a transparent, backgroundless tile variant", () => {
 	assert.match(ICON_TILE_SOURCE, /\| "transparent"/u);
 	assert.match(ICON_TILE_SOURCE, /transparent:\s*"bg-transparent text-icon/u);
 	assert.match(ICON_TILE_SOURCE, /type IconTileIconSize = "small" \| "medium"/u);
+	assert.match(ICON_TILE_SOURCE, /type IconTileRootElement = "div" \| "span"/u);
+	assert.match(ICON_TILE_SOURCE, /as\?: IconTileRootElement/u);
+	assert.match(ICON_TILE_SOURCE, /as = "div"/u);
 	assert.match(ICON_TILE_SOURCE, /iconSize\?: IconTileIconSize/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=small\]:\[font-size:12px\]/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=small\]:\[&_span\]:size-3!/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=medium\]:\[font-size:16px\]/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=medium\]:\[&_span\]:size-4!/u);
-	assert.match(ICON_TILE_SOURCE, /data-size=\{size\}/u);
-	assert.match(ICON_TILE_SOURCE, /data-transparent-icon-size=\{/u);
-	assert.match(ICON_TILE_SOURCE, /data-variant=\{variant\}/u);
+	assert.match(ICON_TILE_SOURCE, /"data-size": size/u);
+	assert.match(ICON_TILE_SOURCE, /"data-transparent-icon-size":/u);
+	assert.match(ICON_TILE_SOURCE, /"data-variant": variant/u);
+	assert.match(ICON_TILE_SOURCE, /return as === "span" \? \(\s*<span \{\.\.\.sharedProps\}>/u);
 	assert.match(ICON_TILE_SOURCE, /square: "rounded-tile"/u);
 });
 
