@@ -331,8 +331,8 @@ importers:
         specifier: ^12.11.0
         version: 12.11.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       agent-browser:
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.31.0
+        version: 0.31.0
       ai:
         specifier: ^6.0.207
         version: 6.0.207(zod@4.4.3)
@@ -3800,8 +3800,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/agent-base/-/agent-base-7.1.4.tgz}
     engines: {node: '>= 14'}
 
-  agent-browser@0.27.3:
-    resolution: {integrity: sha512-isQ1xWoYOnfR8BigYRlYmkFOrqw71tKEmUEMmFJGStQFOyCrLSsKoOAZEu8TjPZdmjD1nPQ/hLLYlxTwdHnA0Q==, tarball: https://packages.atlassian.com/api/npm/npm-remote/agent-browser/-/agent-browser-0.27.3.tgz}
+  agent-browser@0.31.0:
+    resolution: {integrity: sha512-jYS61RcLhb/TdkCShxkpiFvkKAfvrzIXuOIavDURdFJueC4+Koo6auUBlPLjllKM1q5xmEwy1RD20N/DPcu41Q==, tarball: https://packages.atlassian.com/api/npm/npm-remote/agent-browser/-/agent-browser-0.31.0.tgz}
     engines: {node: '>=24.0.0', pnpm: '>=11.0.0'}
     hasBin: true
 
@@ -12091,7 +12091,7 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  agent-browser@0.27.3: {}
+  agent-browser@0.31.0: {}
 
   agent-install@0.0.6:
     dependencies:
