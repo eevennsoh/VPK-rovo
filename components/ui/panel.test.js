@@ -45,6 +45,8 @@ test("Panel action variants use panel-system labels and icons", () => {
 	assert.match(PANEL_SOURCE, /@atlaskit\/icon\/core\/link-external/u);
 	assert.match(PANEL_SOURCE, /label \?\? "Close panel"/u);
 	assert.match(PANEL_SOURCE, /onBeforeClose/u);
+	assert.match(PANEL_SOURCE, /if \(href\)/u);
+	assert.doesNotMatch(PANEL_SOURCE, /href && !iconOnly/u);
 });
 
 test("Panel demos cover panel-system composition, not accordion state", () => {

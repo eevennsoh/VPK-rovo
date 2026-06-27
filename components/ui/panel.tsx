@@ -14,7 +14,7 @@ import {
 	type ReactNode,
 } from "react"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
 import { cn } from "@/lib/utils"
 
@@ -367,22 +367,32 @@ function PanelAction({
 			: "icon"
 		: "compact"
 
-	if (href && !iconOnly) {
+	if (href) {
 		return (
 			<a
 				data-slot="panel-action"
 				data-testid={testId}
+				aria-label={iconOnly ? label ?? props["aria-label"] : props["aria-label"]}
 				href={href}
 				onClick={onClick}
 				rel={rel}
 				target={target}
 				className={cn(
-					"inline-flex h-6 items-center justify-center rounded-md px-2 text-sm font-medium text-link outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					buttonVariants({ variant: panelButtonVariant(appearance), size }),
 					className
 				)}
 				{...(props as ComponentProps<"a">)}
 			>
-				{children}
+				{IconComponent ? (
+					<Icon
+						render={
+							<IconComponent label="" size="small" color="currentColor" />
+						}
+						aria-hidden
+					/>
+				) : (
+					children
+				)}
 			</a>
 		)
 	}
