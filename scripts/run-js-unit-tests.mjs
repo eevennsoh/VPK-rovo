@@ -98,6 +98,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Pure defaults/options/helpers behind the ASCII visual demo controls.
 	// Components are not included wholesale, so keep this model test gated.
 	"components/website/demos/visual/ascii-control-model.test.js",
+	// Ripple's image-shader wiring and Framer-style controls live under
+	// components/, so gate this focused source contract explicitly.
+	"components/website/demos/visual/ripple-demo.test.js",
 	// Liquid Glass shader utility math is shared by the visual demo and shader
 	// wrapper. Gate this pure utility coverage without the source-grep demo tests.
 	"components/website/demos/visual/shaders/liquid-glass-utils.test.js",

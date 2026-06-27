@@ -8533,6 +8533,7 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   ),
   bands: dynamic(() => import("./demos/visual/bands-demo"), { ssr: false }),
   rings: dynamic(() => import("./demos/visual/rings-demo"), { ssr: false }),
+  ripple: dynamic(() => import("./demos/visual/ripple-demo"), { ssr: false }),
   blockify: dynamic(() => import("./demos/visual/blockify-demo"), {
     ssr: false,
   }),
