@@ -128,6 +128,7 @@ const UI_DEMO: Record<string, ComponentType> = {
   "page-header": dynamic(() => import("./demos/ui/page-header-demo"), {
     ssr: false,
   }),
+  panel: dynamic(() => import("./demos/ui/panel-demo"), { ssr: false }),
   "progress-indicator": dynamic(
     () => import("./demos/ui/progress-indicator-demo"),
     { ssr: false },
@@ -2661,6 +2662,28 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/card-demo").then((mod) => ({
         default: mod.CardDemoWithImage,
+      })),
+    { ssr: false },
+  ),
+  // Panel
+  "panel-demo-default": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-with-subheader": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoWithSubheader,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-with-footer": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoWithFooter,
       })),
     { ssr: false },
   ),

@@ -2965,6 +2965,138 @@ import { Textarea } from "@/components/ui/textarea";
     ],
   },
 
+  panel: {
+    description:
+      "A dismissible side-panel surface based on @atlassian/panel-system, with fixed header/footer regions and a scrollable content body.",
+    adsUrl: "https://atlassian.design/components/panel/examples",
+    usage: `import {
+  Panel,
+  PanelActionClose,
+  PanelActionGroup,
+  PanelBody,
+  PanelContent,
+  PanelFooter,
+  PanelHeader,
+  PanelSubheader,
+  PanelTitle,
+} from "@/components/ui/panel";
+
+<Panel aria-label="Issue details">
+  <PanelHeader>
+    <PanelTitle>Jira</PanelTitle>
+    <PanelActionGroup>
+      <PanelActionClose onClick={closePanel} />
+    </PanelActionGroup>
+  </PanelHeader>
+  <PanelContent>
+    <PanelSubheader title="ENG-482 Improve import flow" />
+    <PanelBody>Panel content</PanelBody>
+  </PanelContent>
+  <PanelFooter>Footer actions</PanelFooter>
+</Panel>`,
+    props: [
+      {
+        name: "children",
+        type: "ReactNode",
+        description:
+          "Panel system building blocks, usually PanelHeader, PanelContent, and optional PanelFooter.",
+      },
+      {
+        name: "testId",
+        type: "string",
+        description: "Adds data-testid to the rendered panel-system part.",
+      },
+      {
+        name: "isFocusLockEnabled",
+        type: "boolean",
+        default: "false",
+        description:
+          "Marks the panel container as focus-lock enabled for parity with panel-system API.",
+      },
+      {
+        name: "spacing",
+        type: '"none" | "default"',
+        default: '"default"',
+        description: "Controls PanelBody horizontal padding.",
+      },
+      {
+        name: "disclaimer",
+        type: "ReactNode",
+        description: "Optional PanelFooter disclaimer slot.",
+      },
+      {
+        name: "onBeforeClose",
+        type: "() => boolean | Promise<boolean>",
+        description:
+          "Optional PanelActionClose guard. Returning false prevents onClick from running.",
+      },
+      {
+        name: "className",
+        type: "string",
+        description: "Additional classes for the rendered panel-system part.",
+      },
+    ],
+    subComponents: [
+      {
+        name: "Panel",
+        description: "Alias for PanelContainer.",
+      },
+      {
+        name: "PanelContainer",
+        description: "Panel surface wrapper for side-panel layouts.",
+      },
+      {
+        name: "PanelHeader",
+        description: "Fixed top panel header for title and actions.",
+      },
+      {
+        name: "PanelTitle",
+        description: "Header title with optional icon.",
+      },
+      {
+        name: "PanelContent",
+        description: "Scrollable region between fixed header and footer.",
+      },
+      {
+        name: "PanelSubheader",
+        description: "Optional secondary panel heading with cover image and breadcrumbs.",
+      },
+      {
+        name: "PanelBody",
+        description: "Main panel content area with standard 24px horizontal padding.",
+      },
+      {
+        name: "PanelFooter",
+        description: "Optional sticky footer for actions and disclaimer content.",
+      },
+      {
+        name: "PanelActionGroup",
+        description: "Header action cluster.",
+      },
+      {
+        name: "PanelActionClose",
+        description: "Close action with panel-system default label.",
+      },
+    ],
+    examples: [
+      {
+        title: "Default",
+        description: "Side panel with header actions and contextual issue content.",
+        demoSlug: "panel-demo-default",
+      },
+      {
+        title: "Subheader",
+        description: "Panel with subheader context and a cover image.",
+        demoSlug: "panel-demo-with-subheader",
+      },
+      {
+        title: "Footer",
+        description: "Task panel with footer actions and disclaimer.",
+        demoSlug: "panel-demo-with-footer",
+      },
+    ],
+  },
+
   table: {
     description:
       "A semantic HTML table component with styled header, body, footer, rows, and cells for data display.",

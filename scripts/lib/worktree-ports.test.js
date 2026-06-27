@@ -291,10 +291,18 @@ test("getPortlessRunArgs resolves [] on main/branch and --name when detached", (
 			),
 			[]
 		);
+		assert.equal(
+			runWorktreePortsExpression(fixture.worktreeAPath, "mod.getWorktreeName()"),
+			"feature-a"
+		);
 		// Flat detached worktree -> basename is unique -> --name <dir>
 		assert.deepEqual(
 			runWorktreePortsExpression(detachedPath, "mod.getPortlessRunArgs()"),
 			["--name", path.basename(detachedPath)]
+		);
+		assert.equal(
+			runWorktreePortsExpression(detachedPath, "mod.getWorktreeName()"),
+			path.basename(detachedPath)
 		);
 		// Nested detached worktree (basename == repo dir name) -> --name <parent>,
 		// NOT the repo dir name (which would collide with main and siblings).
@@ -304,6 +312,17 @@ test("getPortlessRunArgs resolves [] on main/branch and --name when detached", (
 				"mod.getPortlessRunArgs()"
 			),
 			["--name", path.basename(nestedHashDir)]
+		);
+		assert.equal(
+			runWorktreePortsExpression(nestedDetachedPath, "mod.getWorktreeName()"),
+			path.basename(nestedHashDir)
+		);
+		assert.equal(
+			runWorktreePortsExpression(
+				fixture.repoPath,
+				`mod.getPortInfoForPath(${JSON.stringify(fs.realpathSync(nestedDetachedPath))}).worktreeName`
+			),
+			path.basename(nestedHashDir)
 		);
 	} finally {
 		fixture.cleanup();
