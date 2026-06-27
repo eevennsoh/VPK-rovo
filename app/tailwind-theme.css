@@ -847,6 +847,24 @@
 		var(--scroll-mask-scrollbar-width) 100%;
 }
 
+@utility scroll-fade-x {
+	--scroll-fade-size: var(--ds-space-400);
+	mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		black var(--scroll-fade-size),
+		black calc(100% - var(--scroll-fade-size)),
+		transparent 100%
+	);
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		black var(--scroll-fade-size),
+		black calc(100% - var(--scroll-fade-size)),
+		transparent 100%
+	);
+}
+
 @utility bento-fade-bottom {
 	/* Height of the soft bottom edge shared by Studio bento surfaces. */
 	--bento-fade-height: 96px;
