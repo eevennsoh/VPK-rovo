@@ -102,16 +102,19 @@ function Avatar({
 	// avatar.enter (scale 80→100 + fade), avatar.exit (100→80 + fade), avatar.hovered (spring 100→112%).
 	// Exit only plays when a consumer wraps keyed avatars in their own <AnimatePresence>; enter + hover
 	// work everywhere. Pass `initial={false}` at a call site to skip mount-enter.
+	// Disabled avatars opt out entirely: animating opacity would write inline `opacity: 1` and override
+	// the `opacity-(--opacity-disabled)` dim class, and a disabled avatar should not react to hover.
 	const reduce = useReducedMotion()
-	const motionProps: MotionProps = reduce
-		? { initial: false }
-		: {
-				initial: { scale: 0.8, opacity: 0 },
-				animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
-				exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
-				whileHover: { scale: 1.12, zIndex: 10, transition: AVATAR_HOVER_SPRING },
-				style: { willChange: "transform, opacity" },
-			}
+	const motionProps: MotionProps =
+		reduce || disabled
+			? { initial: false }
+			: {
+					initial: { scale: 0.8, opacity: 0 },
+					animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
+					exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
+					whileHover: { scale: 1.12, zIndex: 10, transition: AVATAR_HOVER_SPRING },
+					style: { willChange: "transform, opacity" },
+				}
 
 	// Hexagon avatars shape their content with a clip-path. A clip-path also clips
 	// every descendant, so corner overlays (badges, presence/status dots) would be
