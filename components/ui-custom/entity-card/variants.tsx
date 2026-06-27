@@ -17,6 +17,22 @@ import { EntityCardTool, type EntityCardToolProps } from "./tool";
 // in directory/grid surfaces; use the bare content components (`EntityCard.Agent`,
 // `EntityCard.Skill`, …) when you need the content without the card shell.
 
+function getDefaultShellSelectLabel({
+	onAddedChange,
+	onSelect,
+	addActionLabel,
+	selectLabel,
+}: Readonly<{
+	onAddedChange?: unknown;
+	onSelect?: unknown;
+	addActionLabel: string;
+	selectLabel: string;
+}>): string {
+	// The shell label describes the overlay button. If callers pass both
+	// `onSelect` and `onAddedChange`, add/remove belongs to the nested switch.
+	return onSelect || !onAddedChange ? selectLabel : addActionLabel;
+}
+
 export interface EntityCardAgentCardProps extends EntityCardAgentProps {
 	moreAction?: ReactNode;
 	onSelect?: () => void;
@@ -97,12 +113,13 @@ export function EntityCardAppCard({
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	const addActionLabel = `${added ? "Remove" : "Add"} ${name}`;
 	const handleSelect = onSelect ?? (onAddedChange ? () => onAddedChange(!added) : undefined);
+	const shellSelectLabel = getDefaultShellSelectLabel({ onAddedChange, onSelect, addActionLabel, selectLabel });
 	return (
 		<EntityCardShell
 			active={active}
 			className={cn("gap-4", className)}
 			onSelect={handleSelect ? () => handleSelect() : undefined}
-			selectLabel={onAddedChange ? addActionLabel : selectLabel}
+			selectLabel={shellSelectLabel}
 			selected={selected}
 		>
 			<EntityCardApp
@@ -141,11 +158,12 @@ export function EntityCardKnowledgeCard({
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	const addActionLabel = `${added ? "Remove" : "Add"} ${name}`;
 	const handleSelect = onSelect ?? (onAddedChange ? () => onAddedChange(!added) : undefined);
+	const shellSelectLabel = getDefaultShellSelectLabel({ onAddedChange, onSelect, addActionLabel, selectLabel });
 	return (
 		<EntityCardShell
 			className={cn("gap-4", className)}
 			onSelect={handleSelect ? () => handleSelect() : undefined}
-			selectLabel={onAddedChange ? addActionLabel : selectLabel}
+			selectLabel={shellSelectLabel}
 			selected={selected}
 		>
 			<EntityCardKnowledge
@@ -192,12 +210,13 @@ export function EntityCardSkillCard({
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	const addActionLabel = `${added ? "Remove" : "Add"} ${name}`;
 	const handleSelect = onSelect ?? (onAddedChange ? () => onAddedChange(!added) : undefined);
+	const shellSelectLabel = cardActionLabel ?? getDefaultShellSelectLabel({ onAddedChange, onSelect, addActionLabel, selectLabel });
 	return (
 		<EntityCardShell
 			active={active}
 			className={className}
 			onSelect={handleSelect ? () => handleSelect() : undefined}
-			selectLabel={cardActionLabel ?? (onAddedChange ? addActionLabel : selectLabel)}
+			selectLabel={shellSelectLabel}
 			selected={selected}
 		>
 			<EntityCardSkill
@@ -238,12 +257,13 @@ export function EntityCardToolCard({
 	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	const addActionLabel = `${added ? "Remove" : "Add"} ${name}`;
 	const handleSelect = onSelect ?? (onAddedChange ? () => onAddedChange(!added) : undefined);
+	const shellSelectLabel = getDefaultShellSelectLabel({ onAddedChange, onSelect, addActionLabel, selectLabel });
 	return (
 		<EntityCardShell
 			active={active}
 			className={cn("gap-4", className)}
 			onSelect={handleSelect ? () => handleSelect() : undefined}
-			selectLabel={onAddedChange ? addActionLabel : selectLabel}
+			selectLabel={shellSelectLabel}
 			selected={selected}
 		>
 			<EntityCardTool

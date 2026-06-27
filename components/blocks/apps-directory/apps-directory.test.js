@@ -108,7 +108,8 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
 	assert.match(variantsSource, /onSelect=\{handleSelect \? \(\) => handleSelect\(\) : undefined\}/u);
-	assert.match(variantsSource, /selectLabel=\{onAddedChange \? addActionLabel : selectLabel\}/u);
+	assert.match(variantsSource, /return onSelect \|\| !onAddedChange \? selectLabel : addActionLabel;/u);
+	assert.match(variantsSource, /selectLabel=\{shellSelectLabel\}/u);
 	assert.match(variantsSource, /<EntityCardApp/u);
 	assert.match(variantsSource, /onAddedChange=\{onAddedChange\}/u);
 	assert.match(variantsSource, /action=\{moreAction\}/u);
