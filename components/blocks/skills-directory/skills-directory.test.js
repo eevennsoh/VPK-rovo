@@ -169,6 +169,7 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(partsSource, /trailingStatus\?: ReactNode/u);
 	assert.match(partsSource, /onAddedChange\?: \(checked: boolean\) => void/u);
 	assert.match(partsSource, /export function EntityCardAddedSwitch/u);
+	assert.match(partsSource, /"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0"/u);
 	assert.match(partsSource, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
 	assert.match(skillSource, /trailingStatus\?: ReactNode/u);
 	assert.match(skillSource, /onAddedChange\?: \(checked: boolean\) => void/u);

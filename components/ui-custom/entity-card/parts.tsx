@@ -174,7 +174,7 @@ export function EntityCardHeader({
 			{action || added || hoverAdded || hasTrailingStatus ? (
 				<span
 					className={cn(
-						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out",
+						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out motion-reduce:transition-none",
 						hasTrailingStatus
 							? action
 								? added ? "w-16" : "w-6 group-hover/card:w-16 group-focus-within/card:w-16 group-data-[active=true]/card:w-16"
@@ -185,7 +185,7 @@ export function EntityCardHeader({
 					{action ? (
 						<span
 							className={cn(
-								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out",
+								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none",
 								hasTrailingStatus
 									? added ? "-translate-x-10" : "group-hover/card:-translate-x-10 group-focus-within/card:-translate-x-10 group-data-[active=true]/card:-translate-x-10"
 									: added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7 group-data-[active=true]/card:-translate-x-7" : "translate-x-0",
@@ -199,7 +199,7 @@ export function EntityCardHeader({
 						className={cn(
 							hasTrailingStatus
 								? "pointer-events-auto absolute top-1/2 right-0 inline-flex -translate-y-1/2 items-center"
-								: "pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
+								: "pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out motion-reduce:transition-none",
 							!hasTrailingStatus && (
 								added
 									? "scale-100 opacity-100"
@@ -317,7 +317,7 @@ export function EntityCardAddedSwitch({
 			aria-label={`${added ? "Remove" : "Add"} ${title}`}
 			checked={added}
 			className={cn(
-				"transition-opacity duration-fast ease-out after:inset-0",
+				"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0",
 				added
 					? "pointer-events-auto opacity-100"
 					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
