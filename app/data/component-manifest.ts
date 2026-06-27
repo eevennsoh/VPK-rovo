@@ -589,6 +589,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent("svg-tracing", "SVG tracing", "@/components/visual/svg-tracing"),
 	visualComponent("visual-tracing", "Visual Tracing", "@/components/visual/visual-tracing"),
 	visualComponent("scroll-mask", "Scroll Mask", "@/components/visual/scroll-mask"),
+	visualComponent("motion", "Motion", "@/components/visual/motion"),
 	visualComponent("text-effects", "Text Effects", "@/components/visual/text-effects"),
 	visualComponent("text-morphing", "Text Morphing", "@/components/visual/text-morphing"),
 	visualComponent("ascii", "ASCII", "@/components/website/demos/visual/shaders/ascii"),
