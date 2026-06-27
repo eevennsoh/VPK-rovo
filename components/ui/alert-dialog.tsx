@@ -38,7 +38,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-	        "bg-blanket fixed inset-0 isolate z-[200] transition-[opacity] duration-medium ease-out data-starting-style:opacity-0 data-ending-style:opacity-0",
+	        "bg-blanket fixed inset-0 isolate z-[200] transition-[opacity] duration-slow ease-out motion-reduce:transition-none data-ending-style:duration-medium data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0",
         className
       )}
       {...props}
@@ -60,7 +60,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "bg-background ring-border gap-4 rounded-xl p-4 ring-1 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm group/alert-dialog-content fixed top-1/2 left-1/2 z-[200] grid w-full -translate-x-1/2 -translate-y-1/2 outline-none origin-center transition-[opacity,scale] duration-medium ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+          "bg-background ring-border gap-4 rounded-xl p-4 ring-1 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm group/alert-dialog-content fixed top-1/2 left-1/2 z-[200] grid w-full -translate-x-1/2 -translate-y-1/2 outline-none origin-center transition-[opacity,scale] duration-slow ease-in-out motion-reduce:transition-none data-ending-style:duration-medium data-ending-style:ease-in data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
           className
         )}
         {...props}

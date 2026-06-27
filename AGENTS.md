@@ -307,6 +307,7 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | `gotchas-react.md` | `**/*.tsx` | State updates, derived state, CSS gap |
 | `motion-base-ui.md` | `*.tsx`, `*.jsx` | Animating Base UI with Motion |
 | `motion-react.md` | `*.tsx`, `*.jsx` | Motion for React patterns |
+| `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `*.css` | Motion decision layer: which duration/easing token per role, bold vs practical fork, enter/exit asymmetry, per-role recipes |
 | `agent-operations.md` | `.agents/skills/**`, `.agents/agents/**` | Skills, parallel work, agent teams |
 | `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/skills/**` | Dir structure, env vars, providers, skills catalog |
 | `browser-screenshots.mdc` | `*` (always) | Keep browser screenshots out of workspace root |
