@@ -52,9 +52,10 @@ export function IconTileDemoTransparent() {
 		<div className="flex flex-col gap-4">
 			<div className="flex items-end gap-3 text-icon-subtle">
 				<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
-				<IconTile icon={tileIcon(<StarOutlineIcon label="" size="small" />)} label="Star" variant="transparent" size="xxsmall" />
-				<IconTile icon={tileIcon(<HomeIcon label="" size="small" />)} label="Home" variant="transparent" size="small" />
-				<IconTile icon={tileIcon(<AddIcon label="" />)} label="Add" variant="transparent" size="medium" />
+				<IconTile icon={tileIcon(<StarOutlineIcon label="" size="small" />)} iconSize="small" label="Star" variant="transparent" size="small" />
+				<IconTile icon={tileIcon(<HomeIcon label="" />)} iconSize="medium" label="Home" variant="transparent" size="small" />
+				<IconTile icon={tileIcon(<AddIcon label="" size="small" />)} iconSize="small" label="Add" variant="transparent" size="medium" />
+				<IconTile icon={tileIcon(<SettingsIcon label="" />)} iconSize="medium" label="Settings" variant="transparent" size="medium" />
 			</div>
 			{/* Logos: the transparent tile insets + centers a backgroundless mark to the
 			    tile's content scale — e.g. a 12px glyph in the xxsmall (16px) box. This
