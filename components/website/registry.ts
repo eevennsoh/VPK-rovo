@@ -2084,6 +2084,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "breadcrumb-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/breadcrumb-demo").then((mod) => ({
+        default: mod.BreadcrumbDemoSizes,
+      })),
+    { ssr: false },
+  ),
   "breadcrumb-demo-with-slots": dynamic(
     () =>
       import("./demos/ui/breadcrumb-demo").then((mod) => ({

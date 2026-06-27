@@ -89,6 +89,43 @@ export function BreadcrumbDemoDefault() {
 	);
 }
 
+export function BreadcrumbDemoSizes() {
+	return (
+		<div className="flex flex-col gap-3">
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink href="#">Home</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbLink href="#">Projects</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Website refresh</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+			<Breadcrumb size="small">
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink href="#">Home</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbLink href="#">Projects</BreadcrumbLink>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator />
+					<BreadcrumbItem>
+						<BreadcrumbPage>Website refresh</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+		</div>
+	);
+}
+
 export function BreadcrumbDemoWithSlots() {
 	return (
 		<Breadcrumb>
@@ -197,7 +234,7 @@ export function BreadcrumbDemoWithDropdown() {
 				<BreadcrumbItem>
 					<DropdownMenu>
 						<DropdownMenuTrigger
-							render={<Button size="icon" variant="ghost" />}
+							render={<Button size="icon-compact" variant="ghost" />}
 						>
 							<BreadcrumbEllipsis />
 							<span className="sr-only">Toggle menu</span>

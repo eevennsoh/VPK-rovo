@@ -25,9 +25,11 @@ export type IconTileVariant =
 	| "magentaBold"
 	| "purpleBold"
 
+export type IconTileIconSize = "small" | "medium"
+
 const ICON_TILE_VARIANTS: Record<IconTileVariant, string> = {
 	transparent:
-		"bg-transparent text-icon data-[size=xxsmall]:[font-size:12px] data-[size=xxsmall]:[&_img]:size-3! data-[size=xxsmall]:[&_span]:size-3! data-[size=xxsmall]:[&_svg]:size-3! data-[size=small]:[font-size:16px] data-[size=small]:[&_img]:size-4! data-[size=small]:[&_span]:size-4! data-[size=small]:[&_svg]:size-4! data-[size=medium]:[font-size:16px] data-[size=medium]:[&_img]:size-4! data-[size=medium]:[&_span]:size-4! data-[size=medium]:[&_svg]:size-4!",
+		"bg-transparent text-icon data-[transparent-icon-size=small]:[font-size:12px] data-[transparent-icon-size=small]:[&_img]:size-3! data-[transparent-icon-size=small]:[&_span]:size-3! data-[transparent-icon-size=small]:[&_svg]:size-3! data-[transparent-icon-size=medium]:[font-size:16px] data-[transparent-icon-size=medium]:[&_img]:size-4! data-[transparent-icon-size=medium]:[&_span]:size-4! data-[transparent-icon-size=medium]:[&_svg]:size-4!",
 	// Subtle
 	gray: "bg-neutral-50 text-neutral-600",
 	blue: "bg-blue-50 text-blue-600",
@@ -80,6 +82,7 @@ export interface IconTileProps
 	extends Omit<React.ComponentProps<"div">, "children">,
 		VariantProps<typeof iconTileVariants> {
 	icon: React.ReactNode
+	iconSize?: IconTileIconSize
 	variant?: IconTileVariant
 	label: string
 }
@@ -89,16 +92,22 @@ function IconTile({
 	variant = "gray",
 	label,
 	size = "medium",
+	iconSize,
 	shape = "square",
 	className,
 	...props
 }: Readonly<IconTileProps>) {
-	const isDecorative = props["aria-hidden"] === true;
+	const isDecorative = props["aria-hidden"] === true
+	const transparentIconSize =
+		iconSize ?? (size === "xxsmall" ? "small" : "medium")
 
 	return (
 		<div
 			data-slot="icon-tile"
 			data-size={size}
+			data-transparent-icon-size={
+				variant === "transparent" ? transparentIconSize : undefined
+			}
 			data-variant={variant}
 			aria-label={isDecorative ? undefined : label}
 			className={cn(

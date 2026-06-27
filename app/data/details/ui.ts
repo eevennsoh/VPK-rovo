@@ -2221,14 +2221,14 @@ import { Textarea } from "@/components/ui/textarea";
 
   breadcrumb: {
     description:
-      "A navigation breadcrumb component with semantic HTML, slash separators, label slots, and ellipsis support for deep paths.",
+      "A navigation breadcrumb component with semantic HTML, slash separators, medium and small sizes, label slots, and ellipsis support for deep paths.",
     adsUrl: "https://atlassian.design/components/breadcrumbs",
     usage: `import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem,
   BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-<Breadcrumb>
+<Breadcrumb size="medium">
   <BreadcrumbList>
     <BreadcrumbItem>
       <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -2240,6 +2240,11 @@ import { Textarea } from "@/components/ui/textarea";
   </BreadcrumbList>
 </Breadcrumb>`,
     subComponents: [
+      {
+        name: "Breadcrumb",
+        description:
+          "Navigation wrapper. Set size to medium or small; medium is the default.",
+      },
       {
         name: "BreadcrumbList",
         description: "Ordered list container for items.",
@@ -2280,6 +2285,11 @@ import { Textarea } from "@/components/ui/textarea";
         demoSlug: "breadcrumb-demo-custom-separator",
       },
       { title: "Basic", demoSlug: "breadcrumb-demo-basic" },
+      {
+        title: "Sizes",
+        description: "Medium and small breadcrumb sizes.",
+        demoSlug: "breadcrumb-demo-sizes",
+      },
       {
         title: "With label slots",
         description: "Breadcrumb labels with icons, tiles, and icon tiles.",
@@ -5276,7 +5286,7 @@ import { Icon } from "@/components/ui/icon";
 import SearchIcon from "@atlaskit/icon/core/search";
 
 <IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blue" />
-<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="transparent" size="xxsmall" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" size="small" />} />} iconSize="small" label="Search" variant="transparent" size="small" />
 <IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blueBold" size="large" shape="circle" />`,
     props: [
       {
@@ -5303,6 +5313,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
         type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"medium"',
         description: "Size of the tile. Colored examples use xsmall through xlarge; transparent uses xxsmall, small, and medium.",
+      },
+      {
+        name: "iconSize",
+        type: '"small" | "medium"',
+        default: 'transparent: "small" for xxsmall tiles, otherwise "medium"',
+        description:
+          'Transparent-only icon size override. Use iconSize="small" for a 12px icon and iconSize="medium" for a 16px icon inside 24px or 32px transparent tiles.',
       },
       {
         name: "shape",

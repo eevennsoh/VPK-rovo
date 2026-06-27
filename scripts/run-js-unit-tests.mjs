@@ -53,6 +53,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Breadcrumbs mirror the refreshed ADS medium/small sizing API. Components
+	// are not included wholesale, so gate this focused source contract explicitly.
+	"components/ui/breadcrumb.test.js",
 	// Shared select primitive keeps selected indicators aligned with dropdown menu
 	// affordances. Components are not included wholesale, so gate it explicitly.
 	"components/ui/select.test.js",
