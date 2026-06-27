@@ -64,6 +64,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",
+	// Shared scroll-mask overflow state is used by directory panes and composer
+	// textareas; keep the pure edge-case contract gated without broad hook tests.
+	"components/hooks/use-has-vertical-overflow.test.js",
 	// Personal Graph neural renderer/store/sound/layout contracts. This is a pure
 	// node:test file under components/arts, so gate it explicitly without enabling
 	// broad source-grep component tests.
