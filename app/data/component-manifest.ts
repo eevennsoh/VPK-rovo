@@ -647,6 +647,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	),
 	visualComponent("bands", "Bands", "@/components/website/demos/visual/shaders/bands"),
 	visualComponent("rings", "Rings", "@/components/website/demos/visual/shaders/rings"),
+	visualComponent("ripple", "Ripple", "@/components/website/demos/visual/shaders/ripple"),
 	visualComponent(
 		"blockify",
 		"Blockify",

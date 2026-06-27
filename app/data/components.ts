@@ -491,6 +491,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("logo-crystal", "Logo Crystal", "@/components/website/demos/visual/shaders/logo-crystal"),
 	visualComponent("bands", "Bands", "@/components/website/demos/visual/shaders/bands"),
 	visualComponent("rings", "Rings", "@/components/website/demos/visual/shaders/rings"),
+	visualComponent("ripple", "Ripple", "@/components/website/demos/visual/shaders/ripple"),
 	visualComponent("blockify", "Blockify", "@/components/website/demos/visual/shaders/blockify"),
 	visualComponent("pixels", "Pixels", "@/components/website/demos/visual/shaders/pixels"),
 	visualComponent("truchet", "Truchet", "@/components/website/demos/visual/shaders/truchet"),
