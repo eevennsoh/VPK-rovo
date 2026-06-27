@@ -81,11 +81,13 @@ test("shell uses a dedicated overlay <button> for selection, not a role=button w
 
 test("inert card content lets clicks fall through to the select button", () => {
 	assert.match(SHELL_SOURCE, /\[&>\*\]:pointer-events-none/u);
-	assert.match(SHELL_SOURCE, /\[&_button\]:pointer-events-auto/u);
-	assert.match(SHELL_SOURCE, /\[&_a\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:relative/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:z-10/u);
 	assert.match(SHELL_SOURCE, /\[&_\[role=button\]\]:pointer-events-auto/u);
 	assert.match(SHELL_SOURCE, /\[&_\[role=menuitem\]\]:pointer-events-auto/u);
-	assert.match(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
+	assert.doesNotMatch(SHELL_SOURCE, /\[&_button\]:pointer-events-auto/u);
+	assert.doesNotMatch(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
 });
 
 test("scrollable card body stays scrollable inside an interactive (selectable) card", () => {
