@@ -282,6 +282,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("native-select", "Native Select"),
 	uiComponent("navigation-menu", "Navigation Menu"),
 	uiComponent("page-header", "Page Header"),
+	uiComponent("panel"),
 	uiComponent("pagination"),
 	uiComponent("popover"),
 	uiComponent("progress"),
