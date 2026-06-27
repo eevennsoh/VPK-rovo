@@ -6,6 +6,7 @@
 
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
+import { motion, useReducedMotion, type MotionProps, type Transition } from "motion/react"
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new"
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent"
 import CrossCircleIcon from "@atlaskit/icon/core/cross-circle"
@@ -22,6 +23,11 @@ const HEXAGON_CLIP =
 
 const HEXAGON_POINTS =
 	"45,1.34 46.58,0.6 48.26,0.15 50,0 51.74,0.15 53.42,0.6 55,1.34 89.64,21.34 91.07,22.34 92.3,23.57 93.3,25 94.04,26.58 94.49,28.26 94.64,30 94.64,70 94.49,71.74 94.04,73.42 93.3,75 92.3,76.43 91.07,77.66 89.64,78.66 55,98.66 53.42,99.4 51.74,99.85 50,100 48.26,99.85 46.58,99.4 45,98.66 10.36,78.66 8.93,77.66 7.7,76.43 6.7,75 5.96,73.42 5.51,71.74 5.36,70 5.36,30 5.51,28.26 5.96,26.58 6.7,25 7.7,23.57 8.93,22.34 10.36,21.34"
+
+// motion.avatar.* recipe expressed in vpk tokens (Motion for React can't read var(), so use the resolved values — see motion-decisions.md).
+const AVATAR_ENTER_TRANSITION: Transition = { duration: 0.15, ease: [0.4, 1, 0.6, 1] } // duration-normal + ease-out-practical
+const AVATAR_EXIT_TRANSITION: Transition = { duration: 0.1, ease: [0.6, 0, 0.8, 0.6] } // duration-fast + ease-in
+const AVATAR_HOVER_SPRING: Transition = { type: "spring", stiffness: 300, damping: 18 } // mirrors ease-spring / motion.avatar.hovered
 
 const avatarVariants = cva(
 	"group/avatar relative flex shrink-0 select-none after:absolute after:inset-0 after:border after:mix-blend-darken dark:after:mix-blend-lighten after:border-border",
@@ -93,6 +99,20 @@ function Avatar({
 		className
 	)
 
+	// avatar.enter (scale 80→100 + fade), avatar.exit (100→80 + fade), avatar.hovered (spring 100→112%).
+	// Exit only plays when a consumer wraps keyed avatars in their own <AnimatePresence>; enter + hover
+	// work everywhere. Pass `initial={false}` at a call site to skip mount-enter.
+	const reduce = useReducedMotion()
+	const motionProps: MotionProps = reduce
+		? { initial: false }
+		: {
+				initial: { scale: 0.8, opacity: 0 },
+				animate: { scale: 1, opacity: 1, transition: AVATAR_ENTER_TRANSITION },
+				exit: { scale: 0.8, opacity: 0, transition: AVATAR_EXIT_TRANSITION },
+				whileHover: { scale: 1.12, zIndex: 10, transition: AVATAR_HOVER_SPRING },
+				style: { willChange: "transform, opacity" },
+			}
+
 	// Hexagon avatars shape their content with a clip-path. A clip-path also clips
 	// every descendant, so corner overlays (badges, presence/status dots) would be
 	// sliced along the hexagon edge. Apply the clip to an inner frame that holds the
@@ -110,6 +130,7 @@ function Avatar({
 				aria-label={label}
 				aria-disabled={disabled || undefined}
 				className={rootClassName}
+				render={<motion.span {...motionProps} />}
 				{...props}
 			>
 				<span className={cn("relative flex size-full items-center justify-center", HEXAGON_CLIP)}>
@@ -129,6 +150,7 @@ function Avatar({
 			aria-label={label}
 			aria-disabled={disabled || undefined}
 			className={rootClassName}
+			render={<motion.span {...motionProps} />}
 			{...props}
 		>
 			{children}
