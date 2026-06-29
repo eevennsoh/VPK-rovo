@@ -81,6 +81,12 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/blocks/agent-card");
 	}
 
+	// The React Flow overlay panel was renamed from panel to flow-panel to
+	// disambiguate it from the ui/panel chrome surface.
+	if (category === "ui-custom" && slug === "panel") {
+		redirect("/components/ui-custom/flow-panel");
+	}
+
 	// chat-configuration moved from utility to a blocks doc.
 	if (category === "utility" && slug === "chat-configuration") {
 		redirect("/components/blocks/chat-configuration");
