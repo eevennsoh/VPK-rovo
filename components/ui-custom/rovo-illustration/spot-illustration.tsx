@@ -359,10 +359,10 @@ const PARAMS = {
   mosaicScale: 1.7,
   mosaicOffsetX: 0,
   mosaicOffsetY: 0,
-  entranceDuration: 1.1,
+  entranceDuration: 0.65,
   holdDuration: 3.2,
   swapDuration: 0.8,
-  exitDuration: 0.5,
+  exitDuration: 0.4,
   gestureScale: 0.5,
   gestureOffset: { x: 63, y: -111 },
 };
@@ -371,9 +371,9 @@ export const ILLUS_ENTER_DURATION = 0.65;
 export const ILLUS_HOLD_DURATION = 3.2;
 export const ILLUS_EXIT_DURATION = 0.4;
 const ILLUS_PAUSE_BETWEEN = 0.04;
-export const CHAT_ENTER_DURATION = 1.1;
+export const CHAT_ENTER_DURATION = 0.65;
 export const CHAT_HOLD_DURATION = 3.2;
-export const CHAT_EXIT_DURATION = 0.5;
+export const CHAT_EXIT_DURATION = 0.4;
 export const CHAT_PAUSE_DURATION = 0.4;
 export const ILLUS_ENTER_Y_OFFSET = 30;
 export const ILLUS_EXIT_Y_OFFSET = -20;
