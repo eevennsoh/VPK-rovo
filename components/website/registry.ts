@@ -5991,6 +5991,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "rovo-generation-demo-highlight": dynamic(
+    () =>
+      import("./demos/ui-custom/rovo-generation-demo").then((mod) => ({
+        default: mod.RovoGenerationDemoHighlight,
+      })),
+    { ssr: false },
+  ),
   "attachments-demo-grid": dynamic(
     () =>
       import("./demos/ui-custom/attachments-demo").then((mod) => ({

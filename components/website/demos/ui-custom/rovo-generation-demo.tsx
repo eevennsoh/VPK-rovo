@@ -206,3 +206,30 @@ export function RovoGenerationDemoRainbowBorder() {
 export function RovoGenerationDemoRainbowGlowAndBorder() {
 	return <RovoGenerationExampleStage border glow />;
 }
+
+export function RovoGenerationDemoHighlight() {
+	const [runId, setRunId] = useState(0);
+	const handleReplay = useCallback(() => {
+		setRunId((currentRunId) => currentRunId + 1);
+	}, []);
+
+	return (
+		<div className="flex min-h-[180px] w-full flex-col items-center justify-center gap-5 rounded-lg bg-surface p-10">
+			<RovoGeneration.Highlight className="w-full max-w-sm" key={runId}>
+				<div className="rounded-lg border border-border bg-surface-raised p-4">
+					<p className="text-sm font-medium text-text">Draft an email about the Q3 launch</p>
+					<p className="mt-1 text-xs text-text-subtlest">
+						Rovo sweeps a perimeter shimmer to show it&apos;s available here.
+					</p>
+				</div>
+			</RovoGeneration.Highlight>
+			<button
+				type="button"
+				className={cn(buttonVariants({ variant: "outline", size: "default" }))}
+				onClick={handleReplay}
+			>
+				Replay
+			</button>
+		</div>
+	);
+}
