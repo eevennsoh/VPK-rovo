@@ -4574,18 +4574,18 @@ const sources: TwgToolSource[] = [
 		],
 	},
 
-	panel: {
+	"flow-panel": {
 		description:
 			"A positioned overlay container for React Flow canvases. Wraps @xyflow/react Panel with card styling, rounded corners, and border for status indicators, toolbars, or metadata overlays.",
 		usage: `import { Canvas } from "@/components/ui-custom/canvas";
-import { Panel } from "@/components/ui-custom/panel";
+import { FlowPanel } from "@/components/ui-custom/flow-panel";
 
 <Canvas nodes={nodes} edges={edges}>
-  <Panel position="top-right">
+  <FlowPanel position="top-right">
     <div className="flex items-center gap-2 px-2 py-1">
       <span className="text-xs">Status: Running</span>
     </div>
-  </Panel>
+  </FlowPanel>
 </Canvas>`,
 		demoLayout: {
 			previewContentWidth: "full",
@@ -4609,11 +4609,11 @@ import { Panel } from "@/components/ui-custom/panel";
 			},
 		],
 		subComponents: [
-			{ name: "Panel", description: "Themed React Flow panel with card background, rounded corners, border, and padding." },
+			{ name: "FlowPanel", description: "Themed React Flow panel with card background, rounded corners, border, and padding." },
 		],
 		examples: [
-			{ title: "Status lozenge", description: "Panel with a running status lozenge and graph stats.", demoSlug: "panel-demo-status-lozenge" },
-			{ title: "Positions", description: "Panels placed in all six canvas positions.", demoSlug: "panel-demo-positions" },
+			{ title: "Status lozenge", description: "Panel with a running status lozenge and graph stats.", demoSlug: "flow-panel-demo-status-lozenge" },
+			{ title: "Positions", description: "Panels placed in all six canvas positions.", demoSlug: "flow-panel-demo-positions" },
 		],
 	},
 

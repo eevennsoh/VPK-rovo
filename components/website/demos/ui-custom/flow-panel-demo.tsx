@@ -11,7 +11,7 @@ import {
 	NodeHeader,
 	NodeTitle,
 } from "@/components/ui-custom/node";
-import { Panel } from "@/components/ui-custom/panel";
+import { FlowPanel } from "@/components/ui-custom/flow-panel";
 import { Lozenge } from "@/components/ui/lozenge";
 
 // -- Shared data --
@@ -89,7 +89,7 @@ const edges = [
 // Demo: Status lozenge (default preview)
 // ============================================================
 
-export function PanelDemoStatusLozenge() {
+export function FlowPanelDemoStatusLozenge() {
 	return (
 		<div className="h-[400px] w-full">
 			<Canvas
@@ -100,14 +100,14 @@ export function PanelDemoStatusLozenge() {
 				nodeTypes={nodeTypes}
 			>
 				<Controls />
-				<Panel position="top-right">
+				<FlowPanel position="top-right">
 					<div className="flex items-center gap-2 px-2 py-1">
 						<Lozenge variant="success">Running</Lozenge>
 						<span className="text-xs text-muted-foreground">
 							3 nodes &middot; 2 edges
 						</span>
 					</div>
-				</Panel>
+				</FlowPanel>
 			</Canvas>
 		</div>
 	);
@@ -117,7 +117,7 @@ export function PanelDemoStatusLozenge() {
 // Demo: Positions (panels in all six positions)
 // ============================================================
 
-export function PanelDemoPositions() {
+export function FlowPanelDemoPositions() {
 	return (
 		<div className="h-[400px] w-full">
 			<Canvas
@@ -127,24 +127,24 @@ export function PanelDemoPositions() {
 				nodes={nodes}
 				nodeTypes={nodeTypes}
 			>
-				<Panel position="top-left">
+				<FlowPanel position="top-left">
 					<span className="px-2 py-1 text-xs">top-left</span>
-				</Panel>
-				<Panel position="top-center">
+				</FlowPanel>
+				<FlowPanel position="top-center">
 					<span className="px-2 py-1 text-xs">top-center</span>
-				</Panel>
-				<Panel position="top-right">
+				</FlowPanel>
+				<FlowPanel position="top-right">
 					<span className="px-2 py-1 text-xs">top-right</span>
-				</Panel>
-				<Panel position="bottom-left">
+				</FlowPanel>
+				<FlowPanel position="bottom-left">
 					<span className="px-2 py-1 text-xs">bottom-left</span>
-				</Panel>
-				<Panel position="bottom-center">
+				</FlowPanel>
+				<FlowPanel position="bottom-center">
 					<span className="px-2 py-1 text-xs">bottom-center</span>
-				</Panel>
-				<Panel position="bottom-right">
+				</FlowPanel>
+				<FlowPanel position="bottom-right">
 					<span className="px-2 py-1 text-xs">bottom-right</span>
-				</Panel>
+				</FlowPanel>
 			</Canvas>
 		</div>
 	);
@@ -154,6 +154,6 @@ export function PanelDemoPositions() {
 // Default export (shown as page preview)
 // ============================================================
 
-export default function PanelDemo() {
-	return <PanelDemoStatusLozenge />;
+export default function FlowPanelDemo() {
+	return <FlowPanelDemoStatusLozenge />;
 }
