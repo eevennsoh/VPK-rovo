@@ -24,11 +24,17 @@
  */
 
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
+import type { WorkItemAttachment, WorkItemData } from "@/app/contexts/context-work-item-modal";
+import { getAgentsWorkItemForCard } from "../data/rfp-work-items";
 import WorkItemModal from "./work-item-modal/index";
 
 interface JiraWorkItemModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	onAttachmentOpen?: (attachment: WorkItemAttachment) => void;
+	highlightedAttachmentId?: string | null;
+	highlightedAttachmentKey?: number;
+	workItem?: WorkItemData | null;
 	workItemTitle?: string;
 	workItemCode?: string;
 }
@@ -36,17 +42,26 @@ interface JiraWorkItemModalProps {
 export default function JiraWorkItemModal({
 	isOpen,
 	onClose,
-	workItemTitle = "Work item name",
-	workItemCode = "CAID-118",
+	onAttachmentOpen,
+	highlightedAttachmentId,
+	highlightedAttachmentKey,
+	workItem,
+	workItemTitle = "Acmecorp: Prepare for bid recommendation for ESM RFP",
+	workItemCode = "RFP-101",
 }: Readonly<JiraWorkItemModalProps>) {
+	const resolvedWorkItem = workItem ?? getAgentsWorkItemForCard({
+		title: workItemTitle,
+		code: workItemCode,
+	});
+
 	return (
 		<WorkItemModalProvider
 			isOpen={isOpen}
 			onClose={onClose}
-			workItem={{
-				title: workItemTitle,
-				code: workItemCode,
-			}}
+			onAttachmentOpen={onAttachmentOpen}
+			highlightedAttachmentId={highlightedAttachmentId}
+			highlightedAttachmentKey={highlightedAttachmentKey}
+			workItem={resolvedWorkItem}
 		>
 			<WorkItemModal.Backdrop />
 			<WorkItemModal.Container>
@@ -56,6 +71,7 @@ export default function JiraWorkItemModal({
 						<WorkItemModal.Title />
 						<WorkItemModal.Description />
 						<WorkItemModal.ChildItems />
+						<WorkItemModal.AgentPanel />
 						<WorkItemModal.Attachments />
 						<WorkItemModal.Activity />
 					</WorkItemModal.LeftColumn>

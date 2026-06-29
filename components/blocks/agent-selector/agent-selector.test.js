@@ -9,9 +9,9 @@ const PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	"components/blocks/agent-selector/page.tsx",
 	"components/blocks/kanban-board/index.tsx",
-	"components/projects/agents/components/column-agent-assignment.tsx",
-	"components/projects/agents/components/work-item-modal/agent-panel.tsx",
-	"components/projects/agents/components/work-item-modal/sidebar-stack.tsx",
+	"components/projects/jira/components/column-agent-assignment.tsx",
+	"components/projects/jira/components/work-item-modal/agent-panel.tsx",
+	"components/projects/jira/components/work-item-modal/sidebar-stack.tsx",
 	"components/projects/rovo/components/rovo-app-brand.tsx",
 	"components/projects/studio/components/rovo-app-brand.tsx",
 ].map((sourcePath) => ({

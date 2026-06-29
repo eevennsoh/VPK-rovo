@@ -21,7 +21,7 @@ const MESSAGE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const AGENTS_VIEW_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/agents/page.tsx"),
+	path.join(process.cwd(), "components/projects/jira/page.tsx"),
 	"utf8",
 );
 

@@ -881,7 +881,7 @@ function buildActiveJiraWorkItemContextForTicket(ticketCode, status = RFP_DRAFTI
 
 	return [
 		"[Active Jira Work Item Context]",
-		"Source: /agents Jira work item.",
+		"Source: /jira Jira work item.",
 		`Key: ${ticketCode}`,
 		`Title: ${ticketTitle}`,
 		`Status: ${status}`,

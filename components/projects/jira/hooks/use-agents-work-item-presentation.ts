@@ -6,7 +6,7 @@ import {
 	agentsWorkItemPresentationReducer,
 	type AgentsPresentedWorkItem,
 	type AgentsWorkItemPresentationState,
-} from "@/components/projects/agents/lib/agents-work-item-presentation";
+} from "@/components/projects/jira/lib/agents-work-item-presentation";
 
 export interface AgentsWorkItemPresentationController {
 	state: AgentsWorkItemPresentationState;

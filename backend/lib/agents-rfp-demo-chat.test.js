@@ -37,7 +37,7 @@ const RFP_REVIEW_COMPLETE_PROMPT = "Should Atlassian respond to this RFP?";
 
 const RFP_AGENT_CREATION_CONTEXT = [
 	"[Agents RFP Demo Local State]",
-	"Source: backend-persisted /agents RFP demo state.",
+	"Source: backend-persisted /jira RFP demo state.",
 	"Report stage: attached.",
 	"Generated attachments on RFP-101: Acmecorp RFP qualification DACI.pdf.",
 	"Custom agent: not created.",

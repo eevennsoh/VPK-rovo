@@ -5,7 +5,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useState } from "react";
 import { useWorkItemData } from "@/app/contexts/context-work-item-modal";
 import { AgentSelector } from "@/components/blocks/agent-selector";
-import { BOARD_AGENTS } from "@/components/projects/agents/data/board-agents";
+import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,

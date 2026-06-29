@@ -52,7 +52,7 @@ test("work item modal status header shows the agents action next to status", () 
 	assert.match(source, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/);
 	assert.match(source, /LozengeDropdownTrigger/);
 	assert.match(source, /type LozengeProps/);
-	assert.match(source, /import \{ BOARD_COLUMNS \} from "@\/components\/projects\/agents\/data\/board-data";/);
+	assert.match(source, /import \{ BOARD_COLUMNS \} from "@\/components\/projects\/jira\/data\/board-data";/);
 	assert.match(source, /<div className="flex min-w-0 flex-col gap-2">/);
 	assert.match(source, /const STATUS_PHASES = BOARD_COLUMNS\.map\(\(column\) => column\.title\);/);
 	assert.match(source, /const phaseToneVariants: Record<PhaseTone, LozengeProps\["variant"\]>/);
@@ -127,10 +127,10 @@ test("work item modal exposes the agent panel under child work items", () => {
 	assert.doesNotMatch(panelSource, /prefers-reduced-motion: reduce/);
 	assert.doesNotMatch(panelSource, /\.animate/);
 	assert.match(panelSource, /import \{ AgentSelector \} from "@\/components\/blocks\/agent-selector";/);
-	assert.match(panelSource, /import \{ BOARD_AGENTS \} from "@\/components\/projects\/agents\/data\/board-agents";/);
+	assert.match(panelSource, /import \{ BOARD_AGENTS \} from "@\/components\/projects\/jira\/data\/board-agents";/);
 	assert.match(panelSource, /DropdownMenu open=\{isSelectorOpen\} onOpenChange=\{handleSelectorOpenChange\}/);
 	assert.match(panelSource, /<DropdownMenuTrigger[\s\S]*aria-label=\{`Open agent selector for \$\{workItem\.code\}`\}[\s\S]*Start work/);
-	assert.match(panelSource, /<DropdownMenuContent[\s\S]*className="w-\[360px\] overflow-hidden p-0"[\s\S]*positionerClassName="z-\[502\]"/);
+	assert.match(panelSource, /<DropdownMenuContent[\s\S]*className="max-h-none w-\[360px\] overflow-hidden p-0"[\s\S]*positionerClassName="z-\[502\]"/);
 	assert.match(panelSource, /<AgentSelector[\s\S]*agents=\{BOARD_AGENTS\}[\s\S]*onAgentToggle=\{handleAgentToggle\}[\s\S]*onBrowseAgents=\{handleFooterAction\}[\s\S]*onCreateAgent=\{handleFooterAction\}/);
 	assert.match(panelSource, /const \[isSelectorOpen, setIsSelectorOpen\] = useState\(false\);/);
 	assert.match(panelSource, /const \[selectedAgentIds, setSelectedAgentIds\] = useState<readonly string\[\]>\(\[\]\);/);
@@ -229,10 +229,11 @@ test("work item modal child item rows render assignee avatars when provided", ()
 
 	assert.match(rowSource, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/);
 	assert.match(rowSource, /item\.assigneeAvatarUrl \? <AvatarImage src=\{item\.assigneeAvatarUrl\} alt=\{item\.assignee \?\? "Assignee"\} \/> : null/);
-	assert.match(dataSource, /assigneeAvatarUrl: "\/avatar-user\/andrea-wilson\/color\/asow-service-yellow\.png"/);
-	assert.match(dataSource, /assigneeAvatarUrl: "\/avatar-user\/annie-clare\/color\/asow-strategy-orange\.png"/);
-	assert.match(dataSource, /assigneeAvatarUrl: "\/avatar-user\/andrew-park\/color\/asow-dev-lime\.png"/);
-	assert.match(dataSource, /assigneeAvatarUrl: "\/avatar-user\/aoife-burke\/color\/asow-service-yellow\.png"/);
+	assert.match(dataSource, /assigneeAvatarUrl: assignee\.avatarUrl/);
+	assert.match(dataSource, /avatarUrl: "\/avatar-user\/andrea-wilson\/color\/asow-service-yellow\.png"/);
+	assert.match(dataSource, /avatarUrl: "\/avatar-user\/annie-clare\/color\/asow-strategy-orange\.png"/);
+	assert.match(dataSource, /avatarUrl: "\/avatar-user\/andrew-park\/color\/asow-dev-lime\.png"/);
+	assert.match(dataSource, /avatarUrl: "\/avatar-user\/aoife-burke\/color\/asow-service-yellow\.png"/);
 });
 
 test("work item modal description uses field layout and subtle inline edit styling", () => {

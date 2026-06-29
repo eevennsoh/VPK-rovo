@@ -20,36 +20,36 @@ interface JiraHeaderProps {
 export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHeaderProps>) {
 	return (
 		<div className="pt-4">
-			<div className="flex flex-col gap-0.5">
+			<div className="flex flex-col gap-1">
 				{/* Top row: Spaces label and heading with buttons */}
 				<div
 					className="flex justify-between items-center gap-2"
 				>
-					<div className="px-6">
+					<div className="px-4">
 						<div className="flex flex-col gap-0.5">
 							<span className="text-sm text-text-subtle font-medium">
 								Spaces
 							</span>
 							<div className="flex items-center gap-2">
-									<Image
-										src="/avatar-project/rocket.svg"
-										alt="Project avatar"
-										width={20}
-										height={20}
-										style={{ width: "20px", height: "20px", borderRadius: token("radius.xsmall") }}
-									/>
-								<Heading size="medium">Vitafleet Q4 launch</Heading>
-								<Button aria-label="Teams" size="icon" variant="ghost">
+								<Image
+									src="/avatar-project/rocket.svg"
+									alt="Project avatar"
+									width={16}
+									height={16}
+									style={{ width: "16px", height: "16px", borderRadius: token("radius.xsmall") }}
+								/>
+								<Heading size="medium">Enterprise RFP Response</Heading>
+								<Button aria-label="Teams" size="icon-compact" variant="ghost">
 									<TeamsIcon label="" size="small" />
 								</Button>
-								<Button aria-label="More options" size="icon" variant="ghost">
+								<Button aria-label="More options" size="icon-compact" variant="ghost">
 									<ShowMoreHorizontalIcon label="" size="small" />
 								</Button>
 							</div>
 						</div>
 					</div>
 
-					<div className="px-6">
+					<div className="px-4">
 						<div className="flex gap-2">
 							<Button aria-label="Share" size="icon" variant="ghost">
 								<ShareIcon label="" />
@@ -82,7 +82,7 @@ export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHe
 									<TabsTrigger
 										key={tab.label}
 										value={tab.label}
-										className={isFirst ? "ml-3 flex-none" : "flex-none"}
+										className={isFirst ? "ml-2 flex-none" : "flex-none"}
 									>
 										<div className="flex items-center gap-1.5">
 											<IconComponent
@@ -104,7 +104,7 @@ export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHe
 								) : (
 									<div style={{ padding: token("space.400") }}>
 										<span className="text-sm font-medium text-text-subtlest">
-											No content here
+											No RFP content here yet
 										</span>
 									</div>
 								)}

@@ -1,12 +1,6 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
-	"agents": {
-		description: "An Agents project placeholder based on the Jira Kanban board surface.",
-		demoLayout: {
-			previewHeight: "fixed",
-		},
-	},
 	"admin": {
 		description: "An Atlassian Administration surface with organization settings, users, billing, audit logs, Rovo settings, and security controls.",
 		demoLayout: {
@@ -20,7 +14,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira": {
-		description: "A Kanban board interface with draggable cards, column management, and detailed work item modals.",
+		description: "A Jira RFP response board with embedded agents, generated report workflows, and detailed work item modals.",
 		demoLayout: {
 			previewHeight: "fixed",
 		},

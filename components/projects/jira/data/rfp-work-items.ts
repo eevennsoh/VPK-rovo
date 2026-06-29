@@ -537,7 +537,7 @@ export function formatAgentsBoardContext(): string {
 
 	return [
 		"[Agents Board Context]",
-		"Source: /agents Jira board.",
+		"Source: /jira Jira board.",
 		`Project: ${AGENTS_BOARD_CONTEXT_LABEL}`,
 		"Workflow: RFP response board.",
 		"Visible columns:",
@@ -562,7 +562,7 @@ function formatLightweightActiveJiraWorkItemContext(workItem: WorkItemData): str
 
 	return [
 		"[Active Jira Work Item Context]",
-		"Source: /agents Jira work item.",
+		"Source: /jira Jira work item.",
 		`Key: ${workItem.code}`,
 		`Title: ${workItem.title}`,
 		workItem.status ? `Status: ${workItem.status}` : null,
@@ -610,7 +610,7 @@ export function formatActiveJiraWorkItemContext(
 
 	return [
 		"[Active Jira Work Item Context]",
-		"Source: /agents Jira work item modal.",
+		"Source: /jira Jira work item modal.",
 		`Key: ${workItem.code}`,
 		`Title: ${workItem.title}`,
 		workItem.description ? `Description: ${workItem.description}` : null,

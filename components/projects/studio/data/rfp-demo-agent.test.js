@@ -25,7 +25,7 @@ function loadModule() {
 	return modulePromise;
 }
 
-test("Studio RFP demo agent matches the /agents RFP story and starts with the Jira drafting trigger", async () => {
+test("Studio RFP demo agent matches the /jira RFP story and starts with the Jira drafting trigger", async () => {
 	const {
 		STUDIO_RFP_DEMO_AGENT_PROFILE_ID,
 		STUDIO_RFP_DEMO_AGENT_RESULT,

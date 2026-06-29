@@ -1,26 +1,41 @@
 "use client";
 
-import { useState } from "react";
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+import { useEffect, useState } from "react";
 import { token } from "@/lib/tokens";
-import Heading from "@/components/ui/heading";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { useWorkItemData } from "@/app/contexts/context-work-item-modal";
 
 export function Description() {
-	const [description, setDescription] = useState("");
+	const workItem = useWorkItemData();
+	const [description, setDescription] = useState(workItem.description ?? "");
+
+	useEffect(() => {
+		setDescription(workItem.description ?? "");
+	}, [workItem.description]);
 
 	return (
-		<div style={{ marginBottom: token("space.300") }}>
-			<Heading size="small" as="h3">
+		<Field className="min-w-0">
+			<FieldLabel
+				htmlFor="agents-description"
+				className="text-text"
+				style={{ font: token("font.heading.small") }}
+			>
 				Description
-			</Heading>
-			<div style={{ marginTop: token("space.100") }}>
-				<InlineEdit
-					value={description}
-					placeholder="Edit description"
-					onConfirm={setDescription}
-					className="-ml-2"
-				/>
-			</div>
-		</div>
+			</FieldLabel>
+			<InlineEdit
+				value={description}
+				placeholder="Add RFP requirements, buyer priorities, win themes, and response notes"
+				onConfirm={setDescription}
+				editButtonLabel="Edit description"
+				inputProps={{ id: "agents-description" }}
+				textareaProps={{ variant: "subtle", className: "-ml-1.5" }}
+				readViewClassName="-ml-1.5 border-transparent bg-transparent hover:bg-bg-input-hovered active:bg-bg-input-pressed"
+				className="min-w-0"
+				multiline
+			/>
+		</Field>
 	);
 }

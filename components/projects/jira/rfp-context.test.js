@@ -6,16 +6,16 @@ const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const AGENTS_VIEW_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
-const AGENTS_DEMO_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/website/demos/projects/agents-demo.tsx"),
+const JIRA_DEMO_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/website/demos/projects/jira-demo.tsx"),
 	"utf8",
 );
 const DETAILS_ACCORDION_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/agents/components/work-item-modal/details-accordion.tsx"),
+	path.join(process.cwd(), "components/projects/jira/components/work-item-modal/details-accordion.tsx"),
 	"utf8",
 );
 const ATTACHMENTS_SECTION_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/agents/components/work-item-modal/attachments-section.tsx"),
+	path.join(process.cwd(), "components/projects/jira/components/work-item-modal/attachments-section.tsx"),
 	"utf8",
 );
 const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
@@ -60,7 +60,7 @@ async function loadRfpContextHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { BOARD_COLUMNS, RFP_CLIENT_NAMES_BY_CODE } from "./components/projects/agents/data/board-data";
+				export { BOARD_COLUMNS, RFP_CLIENT_NAMES_BY_CODE } from "./components/projects/jira/data/board-data";
 				export {
 					AGENTS_BOARD_CONTEXT_LABEL,
 					RFP_101_WORK_ITEM,
@@ -68,7 +68,7 @@ async function loadRfpContextHarness() {
 					formatAgentsBoardContext,
 					getAgentsWorkItemForCard,
 					resolveAgentsChatScreenContext,
-				} from "./components/projects/agents/data/rfp-work-items";
+				} from "./components/projects/jira/data/rfp-work-items";
 				export { mergeRovoContextDescriptions } from "./lib/rovo-context";
 			`,
 			loader: "ts",
@@ -418,20 +418,20 @@ test("Agents view opens the richer active work item through the presentation con
 
 test("Agents demo feeds active work item context into RovoChatProvider defaults", () => {
 	assert.match(
-		AGENTS_DEMO_SOURCE,
+		JIRA_DEMO_SOURCE,
 		/resolveAgentsChatScreenContext\(workItemPresentation\.state\.workItem\)/,
 	);
-	assert.match(AGENTS_DEMO_SOURCE, /contextDescription: mergeRovoContextDescriptions/);
-	assert.match(AGENTS_DEMO_SOURCE, /agentsChatScreenContext\.contextDescription/);
-	assert.match(AGENTS_DEMO_SOURCE, /formatRfpDemoContext\(rfpDemo\.state\)/);
-	assert.match(AGENTS_DEMO_SOURCE, /rfpDemoContext/);
-	assert.match(AGENTS_DEMO_SOURCE, /const chatAgentProfiles = useMemo/);
-	assert.match(AGENTS_DEMO_SOURCE, /getAgentsDemoAgentProfiles\(rfpDemo\.state\)/);
+	assert.match(JIRA_DEMO_SOURCE, /contextDescription: mergeRovoContextDescriptions/);
+	assert.match(JIRA_DEMO_SOURCE, /agentsChatScreenContext\.contextDescription/);
+	assert.match(JIRA_DEMO_SOURCE, /formatRfpDemoContext\(rfpDemo\.state\)/);
+	assert.match(JIRA_DEMO_SOURCE, /rfpDemoContext/);
+	assert.match(JIRA_DEMO_SOURCE, /const chatAgentProfiles = useMemo/);
+	assert.match(JIRA_DEMO_SOURCE, /getAgentsDemoAgentProfiles\(rfpDemo\.state\)/);
 	assert.match(
-		AGENTS_DEMO_SOURCE,
+		JIRA_DEMO_SOURCE,
 		/<RovoChatProvider[\s\S]*agentProfiles=\{chatAgentProfiles\}[\s\S]*defaultPromptOptions=\{chatPromptOptions\}/,
 	);
-	assert.doesNotMatch(AGENTS_DEMO_SOURCE, /autoSelectAgentId/);
-	assert.match(AGENTS_DEMO_SOURCE, /chatContextBar=\{agentsChatScreenContext\.chatContextBar\}/);
-	assert.match(AGENTS_DEMO_SOURCE, /chatGreeting=\{agentsChatScreenContext\.greeting\}/);
+	assert.doesNotMatch(JIRA_DEMO_SOURCE, /autoSelectAgentId/);
+	assert.match(JIRA_DEMO_SOURCE, /chatContextBar=\{agentsChatScreenContext\.chatContextBar\}/);
+	assert.match(JIRA_DEMO_SOURCE, /chatGreeting=\{agentsChatScreenContext\.greeting\}/);
 });

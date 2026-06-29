@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { RFP_DRAFTING_AGENT_AVATAR_SRC } from "@/components/projects/agents/lib/rfp-demo-state";
+import { RFP_DRAFTING_AGENT_AVATAR_SRC } from "@/components/projects/jira/lib/rfp-demo-state";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
