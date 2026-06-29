@@ -119,7 +119,7 @@ function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): 
 				<AtlassianLogo name={agent.logoName} size="small" themeAware label={agent.name} />
 			) : agent.avatarSrc ? (
 				<Avatar shape="hexagon" size="sm" className="shrink-0">
-					<AvatarImage alt="" src={agent.avatarSrc} />
+					<AvatarImage alt="" src={agent.avatarSrc} className="object-contain" />
 					<AvatarFallback>{agent.name.slice(0, 2).toUpperCase()}</AvatarFallback>
 				</Avatar>
 			) : null}

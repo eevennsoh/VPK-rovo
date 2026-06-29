@@ -19,7 +19,6 @@ import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import { token } from "@/lib/tokens";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -31,6 +30,7 @@ import {
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { Tile, TileAvatar } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -170,13 +170,12 @@ function StudioSidebarAgentsCreateAction({ onClick }: Readonly<{ onClick: () => 
 	);
 }
 
-// Leading avatar for recent-agent rows. Standardizes on the shared `Avatar`
-// hexagon (`size="sm"` = 24px outer) holding either the Atlassian logo or the
-// agent's avatar image, so the 24px geometry comes from the component rather
-// than hand-tuned sizing.
+// Leading avatar for recent-agent rows. Standardizes on the shared `Tile` snug
+// variant: a transparent 24x24 tile (the leading slot) holding 20x20 content, so
+// the 24/20 geometry comes from the component rather than hand-tuned sizing.
 // `size` is accepted (and ignored) only because `SidebarNavItem`'s
 // `normalizeIconNode` injects it via `cloneElement` onto every leading node;
-// declaring it keeps the injected prop off the inner Avatar/DOM.
+// declaring it keeps the injected prop off the inner Tile/DOM.
 function StudioSidebarAgentAvatar({
 	label = "",
 	src,
@@ -187,18 +186,19 @@ function StudioSidebarAgentAvatar({
 }>) {
 	const isDecorative = label === "";
 	return (
-		<Avatar
-			shape="hexagon"
-			size="sm"
-			label={label || "Agent avatar"}
+		<Tile
 			aria-hidden={isDecorative ? true : undefined}
+			label={label || "Agent avatar"}
+			variant="transparent"
+			size="small"
+			isSnug
 		>
 			{isAtlassianLogoSource(src) ? (
-				<AtlassianLogo name="atlassian" label="" size="small" />
+				<AtlassianLogo name="atlassian" label="" size="xsmall" />
 			) : (
-				<AvatarImage src={src} alt="" />
+				<TileAvatar alt={label} aria-hidden={isDecorative ? true : undefined} shape="hexagon" src={src} />
 			)}
-		</Avatar>
+		</Tile>
 	);
 }
 

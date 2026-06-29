@@ -377,9 +377,11 @@ export const CHAT_EXIT_DURATION = 0.4;
 export const CHAT_PAUSE_DURATION = 0.4;
 export const ILLUS_ENTER_Y_OFFSET = 30;
 export const ILLUS_EXIT_Y_OFFSET = -20;
-// Continuous rotation speed (deg/sec) of the colored mosaic group, shared by
-// the chat scene and every illustration in the default loop so they stay in sync.
-const MOSAIC_SPIN_DEG_PER_SEC = 24;
+// Continuous rotation speed (deg/sec) of the colored mosaic group. Single source
+// of truth shared across every Rovo illustration surface: the looping scene here,
+// the chat lifecycle, the controlled idle frame, and frame.ts enter/exit. Import
+// this rather than redefining a local rate so all surfaces stay in sync.
+export const MOSAIC_SPIN_DEG_PER_SEC = 30;
 
 export function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);

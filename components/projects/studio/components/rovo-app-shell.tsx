@@ -1004,7 +1004,7 @@ function HomeStarterHeroTile({
 			<HomeStarterCardGlowLayers iconSrc={template.iconSrc} />
 			<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center">
 				<Avatar shape="hexagon" size="default">
-					<AvatarImage src={template.iconSrc} alt="" />
+					<AvatarImage src={template.iconSrc} alt="" className="object-contain" />
 					<AvatarFallback>{template.title.slice(0, 2).toUpperCase()}</AvatarFallback>
 				</Avatar>
 			</span>
@@ -1294,7 +1294,7 @@ function HomeStarterBento({
 										<HomeStarterCardGlowLayers iconSrc={template.iconSrc} />
 										<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover:opacity-90">
 											<Avatar shape="hexagon" size="default">
-												<AvatarImage src={template.iconSrc} alt="" />
+												<AvatarImage src={template.iconSrc} alt="" className="object-contain" />
 												<AvatarFallback>{template.title.slice(0, 2).toUpperCase()}</AvatarFallback>
 											</Avatar>
 										</span>

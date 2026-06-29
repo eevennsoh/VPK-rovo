@@ -29,6 +29,7 @@ import {
 	type MotionStyle,
 } from "motion/react";
 import { useRovoChat } from "@/app/contexts";
+import { AnimatedRovo } from "@/components/ui-custom/animated-rovo";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
@@ -124,6 +125,8 @@ const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;
 const FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE = 4;
 const FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD = 6;
 const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
+const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2.5;
+const FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS = FLOATING_ROVO_BUTTON_LOGO_CYCLE_S * 1000;
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 
 interface FloatingRovoButtonSnapTarget {
@@ -723,13 +726,17 @@ function FloatingRovoButtonInner({
 	onClick,
 	onDragMouseDown,
 	onDragPointerDown,
+	onLogoPointerEnter,
 	ariaLabel,
+	logoAnimating,
 	shouldReduceMotion,
 }: Readonly<{
 	onClick: () => void;
 	onDragMouseDown: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onDragPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+	onLogoPointerEnter: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	ariaLabel: string;
+	logoAnimating: boolean;
 	shouldReduceMotion: boolean;
 }>) {
 	return (
@@ -739,6 +746,7 @@ function FloatingRovoButtonInner({
 			className="flex h-full w-full items-center justify-center bg-bg-neutral-bold"
 			onClick={onClick}
 			onMouseDownCapture={onDragMouseDown}
+			onPointerEnter={onLogoPointerEnter}
 			onPointerDownCapture={onDragPointerDown}
 			type="button"
 			initial={shouldReduceMotion
@@ -757,7 +765,16 @@ function FloatingRovoButtonInner({
 				willChange: "opacity, filter",
 			}}
 		>
-			<RovoColorIcon size="small" />
+			{logoAnimating ? (
+				<AnimatedRovo.Root
+					key="animated-rovo-logo"
+					size={24}
+					preset="full-cycle"
+					cycleDurationS={FLOATING_ROVO_BUTTON_LOGO_CYCLE_S}
+				/>
+			) : (
+				<RovoColorIcon key="static-rovo-logo" size="small" />
+			)}
 		</motion.button>
 	);
 }
@@ -813,6 +830,9 @@ function FloatingRovoButtonSurface({
 		createInitialClickSuppressionState(),
 	);
 	const suppressDragClickTimeoutRef = useRef<number | null>(null);
+	const logoAnimationPlayedRef = useRef(false);
+	const logoAnimationTimeoutRef = useRef<number | null>(null);
+	const [logoAnimating, setLogoAnimating] = useState(false);
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
 		: { type: "spring" as const, bounce: 0, visualDuration: 0.28 };
@@ -851,6 +871,25 @@ function FloatingRovoButtonSurface({
 			suppressDragClickTimeoutRef.current = null;
 		}
 	}, []);
+	const clearLogoAnimationTimeout = useCallback(() => {
+		if (logoAnimationTimeoutRef.current !== null) {
+			window.clearTimeout(logoAnimationTimeoutRef.current);
+			logoAnimationTimeoutRef.current = null;
+		}
+	}, []);
+	const handleLogoPointerEnter = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+		if (event.pointerType !== "mouse" || shouldReduceMotion || logoAnimationPlayedRef.current) {
+			return;
+		}
+
+		logoAnimationPlayedRef.current = true;
+		setLogoAnimating(true);
+		clearLogoAnimationTimeout();
+		logoAnimationTimeoutRef.current = window.setTimeout(() => {
+			logoAnimationTimeoutRef.current = null;
+			setLogoAnimating(false);
+		}, FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS);
+	}, [clearLogoAnimationTimeout, shouldReduceMotion]);
 	// Arm suppression when a drag actually moves the button.
 	const armDragClickSuppression = useCallback(() => {
 		suppressDragClickStateRef.current = armClickSuppression();
@@ -925,6 +964,10 @@ function FloatingRovoButtonSurface({
 		return () => {
 			if (suppressDragClickTimeoutRef.current !== null) {
 				window.clearTimeout(suppressDragClickTimeoutRef.current);
+			}
+
+			if (logoAnimationTimeoutRef.current !== null) {
+				window.clearTimeout(logoAnimationTimeoutRef.current);
 			}
 		};
 	}, []);
@@ -1184,7 +1227,9 @@ function FloatingRovoButtonSurface({
 							onClick={handleButtonClick}
 							onDragMouseDown={handleDragMouseDown}
 							onDragPointerDown={handleDragPointerDown}
+							onLogoPointerEnter={handleLogoPointerEnter}
 							ariaLabel={ariaLabel}
+							logoAnimating={logoAnimating}
 							shouldReduceMotion={shouldReduceMotion}
 						/>
 					)}

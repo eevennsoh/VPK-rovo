@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority"
 
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 const tileVariants = cva(
@@ -89,6 +90,13 @@ export interface TileProps
 	hasBorder?: boolean
 }
 
+export interface TileAvatarProps
+	extends Omit<React.ComponentProps<typeof Avatar>, "children" | "shape"> {
+	alt?: string
+	shape: "square" | "hexagon"
+	src: string
+}
+
 function Tile({
 	label,
 	size = "medium",
@@ -123,5 +131,24 @@ function Tile({
 	)
 }
 
+function TileAvatar({
+	alt = "",
+	className,
+	shape,
+	src,
+	...props
+}: Readonly<TileAvatarProps>) {
+	return (
+		<Avatar
+			className={cn("bg-transparent", className)}
+			shape={shape}
+			size="sm"
+			{...props}
+		>
+			<AvatarImage alt={alt} src={src} />
+		</Avatar>
+	)
+}
+
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
-export { Tile, tileVariants }
+export { Tile, TileAvatar, tileVariants }

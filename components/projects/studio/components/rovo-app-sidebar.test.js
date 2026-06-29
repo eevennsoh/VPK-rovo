@@ -26,9 +26,10 @@ test("Studio sidebar recent agent children use one 12px indentation level withou
 	assert.doesNotMatch(SOURCE, />\s*Recent\s*<\/div>/u);
 });
 
-test("Studio sidebar recent agent avatar is 20px in the 24px leading slot", () => {
-	assert.match(SOURCE, /className="size-5 object-contain"/u);
-	assert.match(SOURCE, /height=\{20\}[\s\S]*width=\{20\}/u);
+test("Studio sidebar recent agent avatar uses the shared snug Tile avatar", () => {
+	assert.match(SOURCE, /import \{ Tile, TileAvatar \} from "@\/components\/ui\/tile";/u);
+	assert.match(SOURCE, /<Tile[\s\S]*variant="transparent"[\s\S]*size="small"[\s\S]*isSnug/u);
+	assert.match(SOURCE, /<TileAvatar alt=\{label\} aria-hidden=\{isDecorative \? true : undefined\} shape="hexagon" src=\{src\} \/>/u);
 	assert.match(SOURCE, /leadingSize="medium"/u);
 });
 

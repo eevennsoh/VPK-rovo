@@ -114,7 +114,7 @@ function renderBaseAgentSwitcherVisual(avatarSrc: string | undefined): ReactNode
 			className="flex size-6 shrink-0 items-center justify-center text-icon-selected"
 		>
 			<Avatar shape="hexagon" size="sm" className="shrink-0 size-5">
-				<AvatarImage alt="" src={avatarSrc} />
+				<AvatarImage alt="" src={avatarSrc} className="object-contain" />
 			</Avatar>
 		</span>
 	);

@@ -1102,7 +1102,7 @@ function ExperimentalFilterOptionAvatar({ option }: Readonly<{ option: Experimen
 	if (option.avatarSrc) {
 		return (
 			<Avatar size="sm" shape="hexagon" className="shrink-0">
-				<AvatarImage alt="" src={option.avatarSrc} />
+				<AvatarImage alt="" src={option.avatarSrc} className="object-contain" />
 				<AvatarFallback>{option.label.slice(0, 2).toUpperCase()}</AvatarFallback>
 			</Avatar>
 		);
@@ -1654,7 +1654,7 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	return (
 		<Avatar size="sm" shape="hexagon" className="shrink-0">
-			{item.avatarSrc ? <AvatarImage alt="" src={item.avatarSrc} /> : null}
+			{item.avatarSrc ? <AvatarImage alt="" src={item.avatarSrc} className="object-contain" /> : null}
 			<AvatarFallback>{item.label.slice(0, 2).toUpperCase()}</AvatarFallback>
 		</Avatar>
 	);
