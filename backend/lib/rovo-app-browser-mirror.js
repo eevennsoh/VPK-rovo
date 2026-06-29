@@ -2,10 +2,11 @@
  * Headless mirror browser for live-streaming a browsed page to the frontend.
  *
  * Launches a headless Chromium via @playwright/test, navigates to the same URLs
- * as Playwright MCP, and streams JPEG frames via WebSocket to the artifact panel.
+ * as the agent's browser workspace, and streams JPEG frames via WebSocket to the
+ * artifact panel.
  *
- * This is a read-only mirror — no interaction controls. The Playwright MCP
- * browser remains the authoritative browsing session for the agent.
+ * This is a read-only mirror — no interaction controls. The agent's backend
+ * browser workspace remains the authoritative browsing session for the agent.
  */
 
 const SCREENCAST_INTERVAL_MS = 200
