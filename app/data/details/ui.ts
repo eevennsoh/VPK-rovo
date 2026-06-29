@@ -2968,7 +2968,6 @@ import { Textarea } from "@/components/ui/textarea";
   panel: {
     description:
       "A dismissible side-panel surface based on @atlassian/panel-system, with fixed header/footer regions and a scrollable content body.",
-    adsUrl: "https://atlassian.design/components/panel/examples",
     usage: `import {
   Panel,
   PanelActionClose,

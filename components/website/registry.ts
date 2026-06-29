@@ -137,7 +137,6 @@ const UI_DEMO: Record<string, ComponentType> = {
     () => import("./demos/ui/progress-tracker-demo"),
     { ssr: false },
   ),
-  radio: dynamic(() => import("./demos/ui/radio-group-demo"), { ssr: false }),
   "split-button": dynamic(() => import("./demos/ui/split-button-demo"), {
     ssr: false,
   }),

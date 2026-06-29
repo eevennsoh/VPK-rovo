@@ -293,7 +293,6 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("progress"),
 	uiComponent("progress-indicator", "Progress Indicator"),
 	uiComponent("progress-tracker", "Progress Tracker"),
-	uiComponent("radio"),
 	uiComponent("radio-group", "Radio Group"),
 	uiComponent("resizable"),
 	uiComponent("scroll-area", "Scroll Area"),

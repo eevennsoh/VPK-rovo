@@ -59,6 +59,14 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared select primitive keeps selected indicators aligned with dropdown menu
 	// affordances. Components are not included wholesale, so gate it explicitly.
 	"components/ui/select.test.js",
+	// Shared checkbox primitive keeps a 16px visual box with a 24px hit target.
+	"components/ui/checkbox.test.js",
+	// Shared radio primitive and demos keep 24px hit/row geometry.
+	"components/ui/radio-group.test.js",
+	// Shared field rows keep checkbox/radio label lines aligned to 24px targets.
+	"components/ui/field.test.js",
+	// Checkbox docs group keeps checkbox rows contiguous under the group label.
+	"components/website/demos/ui/checkbox-demo.test.js",
 	// Shared message markdown heading spacing used by compact chat surfaces.
 	"components/ui-custom/message.test.js",
 	// Plan's hidden-until-found panel must not leave vertical content padding
