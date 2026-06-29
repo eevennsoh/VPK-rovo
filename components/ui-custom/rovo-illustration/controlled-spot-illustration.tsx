@@ -11,6 +11,7 @@ import SpotIllustration, {
   ILLUS_HOLD_DURATION,
   ILLUS_EXIT_DURATION,
   CHAT_ENTER_DURATION,
+  MOSAIC_SPIN_DEG_PER_SEC,
   easeOutCubic,
   processIllustrationSvg,
   getSpotIllustrationUrl,
@@ -21,7 +22,6 @@ import { getEmbeddedSpotIllustrationSvg } from "./assets.generated";
 
 const ENTER_END = ILLUS_ENTER_DURATION;
 const HOLD_END = ILLUS_ENTER_DURATION + ILLUS_HOLD_DURATION;
-const MOSAIC_IDLE_ROTATION_DEGREES_PER_SECOND = 30;
 const MOSAIC_IDLE_ROAM_SPEED = 1.25;
 
 export type ControlledSpotIllustrationPhase = "enter" | "idle" | "exit" | "done";
@@ -32,7 +32,7 @@ function computeIdleFrame(idleT: number, totalT: number, illusId: string, pr: nu
   const motion = ILLUS_MOTION[illusId];
   const rotConfig = ILLUS_ROTATE_GROUP[illusId];
   const out: Frame = { ...base };
-  out.mosaicRotation = (totalT * MOSAIC_IDLE_ROTATION_DEGREES_PER_SECOND) % 360;
+  out.mosaicRotation = (totalT * MOSAIC_SPIN_DEG_PER_SEC) % 360;
   if (motion?.idleMosaicRoam) {
     const { ax, ay, period } = motion.idleMosaicRoam;
     const roamT = idleT * MOSAIC_IDLE_ROAM_SPEED;

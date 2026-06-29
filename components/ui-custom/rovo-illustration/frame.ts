@@ -8,6 +8,7 @@ import {
 	ILLUS_EXIT_DURATION,
 	ILLUS_ENTER_Y_OFFSET,
 	ILLUS_EXIT_Y_OFFSET,
+	MOSAIC_SPIN_DEG_PER_SEC,
 	easeOutCubic,
 	easeInCubic,
 	easeOutQuart,
@@ -60,7 +61,7 @@ export function computeFrame(time: number, illusId: string, pr: number): FrameSt
   let greyClipTX = 0, greyClipTY = 0;
   const greyClipScale = 1;
   let telescopeAngle = 0;
-  const mosaicRotation = (t * 3) % 360;
+  const mosaicRotation = (t * MOSAIC_SPIN_DEG_PER_SEC) % 360;
 
   const greyEnterFrom = motion?.greyEnterFrom || { x: -2.5, y: 3 };
   const mosaicEnterFrom = motion?.mosaicEnterFrom || { x: 2.5, y: 3 };
