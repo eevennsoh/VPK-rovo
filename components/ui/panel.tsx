@@ -432,7 +432,6 @@ function PanelActionBack({
 			icon={ArrowLeftIcon}
 			label={label ?? "Go back"}
 			onClick={onClick}
-			spacing="compact"
 			testId={testId}
 		/>
 	)
@@ -448,7 +447,6 @@ function PanelActionExpand({
 			icon={GrowDiagonalIcon}
 			label={label ?? "Expand panel"}
 			onClick={onClick}
-			spacing="compact"
 			testId={testId}
 		/>
 	)
@@ -468,7 +466,6 @@ function PanelActionFilter({
 			icon={FilterIcon}
 			label={label ?? "Filter"}
 			onClick={onClick}
-			spacing="compact"
 			testId={testId}
 		/>
 	)
@@ -485,7 +482,6 @@ function PanelActionMore({
 			icon={ShowMoreHorizontalIcon}
 			label={label ?? "More actions"}
 			onClick={onClick}
-			spacing="compact"
 			testId={testId}
 		/>
 	)
@@ -504,7 +500,6 @@ function PanelActionNewTab({
 			label={label ?? "Open in new tab"}
 			onClick={onClick}
 			rel="noopener noreferrer"
-			spacing="compact"
 			target="_blank"
 			testId={testId}
 		/>
@@ -535,7 +530,6 @@ function PanelActionClose({
 			icon={CrossIcon}
 			label={label ?? "Close panel"}
 			onClick={handleClick}
-			spacing="compact"
 			testId={testId}
 		/>
 	)

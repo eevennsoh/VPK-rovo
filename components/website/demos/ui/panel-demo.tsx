@@ -354,10 +354,10 @@ export function PanelDemoWithFooter() {
 			<VariantCard>
 				<PanelFooter className="border-t-0">
 					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="compact">
+						<Button variant="ghost">
 							Secondary action
 						</Button>
-						<Button size="compact">Primary action</Button>
+						<Button>Primary action</Button>
 					</div>
 				</PanelFooter>
 			</VariantCard>
@@ -365,8 +365,8 @@ export function PanelDemoWithFooter() {
 			{/* Spread out actions */}
 			<VariantCard>
 				<PanelFooter className="border-t-0">
-					<Button size="compact">Primary action</Button>
-					<Button variant="outline" size="compact">
+					<Button>Primary action</Button>
+					<Button variant="outline">
 						Secondary action
 					</Button>
 				</PanelFooter>
@@ -382,7 +382,7 @@ export function PanelDemoWithFooter() {
 						</PanelDisclaimer>
 					}
 				>
-					<Button size="compact">Primary action</Button>
+					<Button>Primary action</Button>
 					<label className="flex items-center gap-2">
 						<Checkbox />
 						<span className="min-w-0 flex-1">Label</span>
@@ -432,7 +432,7 @@ export function PanelDemoWithFooter() {
 						</PanelDisclaimer>
 					}
 				>
-					<Button size="compact">Primary action</Button>
+					<Button>Primary action</Button>
 					<label className="flex items-center gap-2">
 						<Checkbox />
 						<span className="min-w-0 flex-1">Label</span>
@@ -453,7 +453,7 @@ export function PanelDemoWithFooter() {
 								<Checkbox />
 								<span className="min-w-0 flex-1">Watch this content</span>
 							</label>
-							<Button size="compact">Add comment</Button>
+							<Button>Add comment</Button>
 						</div>
 					</div>
 				</PanelFooter>
