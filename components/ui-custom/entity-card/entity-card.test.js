@@ -165,6 +165,7 @@ test("header supports a wider trailing status control without using the added ch
 	assert.match(PARTS_SOURCE, /hasTrailingStatus\s*\? "pointer-events-auto absolute top-1\/2 right-0 inline-flex -translate-y-1\/2 items-center"/u);
 	assert.match(PARTS_SOURCE, /\{trailingStatusControl \?\? <EntityCardAddedCheck/u);
 	assert.match(PARTS_SOURCE, /export function EntityCardAddedSwitch/u);
+	assert.match(PARTS_SOURCE, /"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0"/u);
 	assert.match(PARTS_SOURCE, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*onCheckedChange=\{onAddedChange\}/u);
 	assert.match(SKILL_SOURCE, /trailingStatus\?: ReactNode/u);
 	assert.match(SKILL_SOURCE, /onAddedChange\?: \(checked: boolean\) => void/u);
@@ -249,13 +250,13 @@ test("skill variant uses a 32px icon tile, header byline, and a teammate stat", 
 	assert.doesNotMatch(PARTS_SOURCE, /from "motion\/react"/u);
 	assert.doesNotMatch(PARTS_SOURCE, /AnimatePresence/u);
 	assert.doesNotMatch(PARTS_SOURCE, /motion\.span/u);
-	assert.match(PARTS_SOURCE, /"relative h-6 shrink-0 overflow-visible transition-\[width\] duration-fast ease-out"/u);
+	assert.match(PARTS_SOURCE, /"relative h-6 shrink-0 overflow-visible transition-\[width\] duration-fast ease-out motion-reduce:transition-none"/u);
 	assert.match(PARTS_SOURCE, /: added \? "w-\[52px\]" : hoverAdded \? "w-6 group-hover\/card:w-\[52px\] group-data-\[active=true\]\/card:w-\[52px\]" : "w-6"/u);
-	assert.match(PARTS_SOURCE, /"absolute top-0 right-0 z-\[1\] inline-flex transition-transform duration-fast ease-out"/u);
+	assert.match(PARTS_SOURCE, /"absolute top-0 right-0 z-\[1\] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none"/u);
 	assert.match(PARTS_SOURCE, /: added \? "-translate-x-7" : hoverAdded \? "group-hover\/card:-translate-x-7 group-data-\[active=true\]\/card:-translate-x-7" : "translate-x-0"/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-focus-within\/card:-translate-x-6/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:pointer-events-none group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
-	assert.match(PARTS_SOURCE, /"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-\[opacity,transform\] duration-fast ease-out"/u);
+	assert.match(PARTS_SOURCE, /"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-\[opacity,transform\] duration-fast ease-out motion-reduce:transition-none"/u);
 	assert.match(PARTS_SOURCE, /added\s*\? "scale-100 opacity-100"\s*: hoverAdded\s*\? "scale-75 opacity-0 group-hover\/card:scale-100 group-hover\/card:opacity-100 group-data-\[active=true\]\/card:scale-100 group-data-\[active=true\]\/card:opacity-100"\s*: "scale-75 opacity-0"/u);
 	assert.match(PARTS_SOURCE, /<EntityCardAddedCheck className=\{added \? undefined : "text-icon-disabled"\} label=\{added \? "Added" : ""\} \/>/u);
 	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:scale-100 group-hover\/card:opacity-100 group-focus-within\/card/u);
