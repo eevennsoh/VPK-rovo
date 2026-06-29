@@ -6,18 +6,18 @@ import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
 import { GUI } from "@/components/utils/gui";
 
 const EASE_OPTIONS = [
-	{ value: "backOut" as const, label: "backOut (default)" },
-	{ value: "easeInOut" as const, label: "easeInOut" },
+	{ value: "easeInOut" as const, label: "easeInOut (default)" },
+	{ value: "backOut" as const, label: "backOut" },
 	{ value: "circOut" as const, label: "circOut" },
 	{ value: "linear" as const, label: "linear" },
 ] as const;
 
 export default function MorphingRovoDemo() {
-	const [size, setSize] = useState(64);
-	const [duration, setDuration] = useState(0.6);
-	const [ease, setEase] = useState<(typeof EASE_OPTIONS)[number]["value"]>("backOut");
+	const [size, setSize] = useState(16);
+	const [duration, setDuration] = useState(0.8);
+	const [ease, setEase] = useState<(typeof EASE_OPTIONS)[number]["value"]>("easeInOut");
 	const [rotationPerStep, setRotationPerStep] = useState(180);
-	const [blur, setBlur] = useState(2);
+	const [blur, setBlur] = useState(1.25);
 
 	const config = useMemo(
 		() => ({
@@ -42,7 +42,7 @@ export default function MorphingRovoDemo() {
 					label="Size"
 					description="Width and height of the shape in pixels."
 					value={size}
-					defaultValue={64}
+					defaultValue={16}
 					min={16}
 					max={192}
 					step={1}
@@ -54,7 +54,7 @@ export default function MorphingRovoDemo() {
 					label="Duration"
 					description="Duration of each morph step in seconds."
 					value={duration}
-					defaultValue={0.6}
+					defaultValue={0.8}
 					min={0.2}
 					max={2}
 					step={0.1}
@@ -86,10 +86,10 @@ export default function MorphingRovoDemo() {
 					label="Blur"
 					description="Max blur radius at transition midpoints. 0 disables."
 					value={blur}
-					defaultValue={2}
+					defaultValue={1.25}
 					min={0}
 					max={8}
-					step={0.5}
+					step={0.25}
 					unit="px"
 					onChange={setBlur}
 				/>
