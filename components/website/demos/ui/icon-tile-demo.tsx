@@ -59,7 +59,7 @@ const TRANSPARENT_COLUMNS = [
 
 export function IconTileDemoTransparent() {
 	return (
-		<div className="flex items-start gap-10">
+		<div className="flex flex-wrap items-start justify-center gap-x-10 gap-y-6">
 			{TRANSPARENT_COLUMNS.map(({ label, size, logoSize }) => (
 				<div key={label} className="flex flex-col items-center gap-3">
 					<p className="text-xs font-medium text-text-subtle">{label}</p>
