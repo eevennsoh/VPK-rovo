@@ -91,7 +91,7 @@ export interface TileProps
 }
 
 export interface TileAvatarProps
-	extends Omit<React.ComponentProps<typeof Avatar>, "children" | "shape"> {
+	extends Omit<React.ComponentProps<typeof Avatar>, "children" | "shape" | "size"> {
 	alt?: string
 	shape: "square" | "hexagon"
 	src: string
@@ -140,10 +140,10 @@ function TileAvatar({
 }: Readonly<TileAvatarProps>) {
 	return (
 		<Avatar
+			{...props}
 			className={cn("bg-transparent", className)}
 			shape={shape}
 			size="sm"
-			{...props}
 		>
 			<AvatarImage alt={alt} src={src} />
 		</Avatar>
