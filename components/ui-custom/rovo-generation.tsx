@@ -436,7 +436,7 @@ function RovoGenerationHighlight({
 			data-rovo-generation-active={active ? "true" : "false"}
 			{...props}
 			ref={wrapperRef}
-			className={cn("relative", className)}
+			className={cn("relative inline-block", className)}
 			style={{ ...ROVO_GENERATION_GRADIENT_TOKENS, ...style }}
 		>
 			{children}
