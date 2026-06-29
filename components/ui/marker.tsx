@@ -53,7 +53,7 @@ function MarkerIcon({ className, ...props }: Readonly<MarkerIconProps>) {
 			data-slot="marker-icon"
 			aria-hidden="true"
 			className={cn(
-				"size-4 shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				"flex size-4 shrink-0 items-center justify-center leading-none [&_svg:not([class*='size-'])]:size-4",
 				className
 			)}
 			{...props}

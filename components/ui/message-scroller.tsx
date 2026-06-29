@@ -71,7 +71,7 @@ function MessageScrollerViewport({
 		<MessageScrollerPrimitive.Viewport
 			data-slot="message-scroller-viewport"
 			className={cn(
-				"size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain data-autoscrolling:scrollbar-none",
+				"scroll-fade-b scrollbar-thin scrollbar-gutter-stable size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none",
 				className
 			)}
 			{...props}
@@ -120,7 +120,7 @@ function MessageScrollerItem({
 
 export interface MessageScrollerButtonProps
 	extends React.ComponentProps<typeof MessageScrollerPrimitive.Button>,
-		Pick<ButtonProps, "variant" | "size"> {}
+		Pick<ButtonProps, "variant" | "size" | "shape"> {}
 
 function MessageScrollerButton({
 	direction = "end",
@@ -128,7 +128,8 @@ function MessageScrollerButton({
 	children,
 	render,
 	variant = "secondary",
-	size = "icon-compact",
+	size = "icon",
+	shape = "circle",
 	...props
 }: Readonly<MessageScrollerButtonProps>) {
 	return (
@@ -142,7 +143,7 @@ function MessageScrollerButton({
 				"absolute inset-s-1/2 -translate-x-1/2 border-border bg-surface text-text transition-[translate,scale,opacity] duration-200 hover:bg-bg-neutral-subtle-hovered data-[active=false]:pointer-events-none data-[active=false]:scale-95 data-[active=false]:opacity-0 data-[active=false]:duration-400 data-[active=false]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[active=true]:translate-y-0 data-[active=true]:scale-100 data-[active=true]:opacity-100 data-[active=true]:ease-[cubic-bezier(0.23,1,0.32,1)] data-[direction=end]:bottom-4 data-[direction=end]:data-[active=false]:translate-y-full data-[direction=start]:top-4 data-[direction=start]:data-[active=false]:-translate-y-full rtl:translate-x-1/2 data-[direction=start]:[&_[data-slot=icon]]:rotate-180",
 				className
 			)}
-			render={render ?? <Button variant={variant} size={size} />}
+			render={render ?? <Button variant={variant} size={size} shape={shape} />}
 			{...props}
 		>
 			{children ?? (
