@@ -386,7 +386,7 @@ function PanelAction({
 				{IconComponent ? (
 					<Icon
 						render={
-							<IconComponent label="" size="small" color="currentColor" />
+							<IconComponent label="" color="currentColor" />
 						}
 						aria-hidden
 					/>
@@ -411,7 +411,7 @@ function PanelAction({
 			{IconComponent ? (
 				<Icon
 					render={
-						<IconComponent label="" size="small" color="currentColor" />
+						<IconComponent label="" color="currentColor" />
 					}
 					aria-hidden
 				/>

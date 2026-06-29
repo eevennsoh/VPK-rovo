@@ -156,10 +156,8 @@ export function PanelDemoBasic() {
 					</PanelBody>
 				</PanelContent>
 				<PanelFooter>
-					<Button size="compact">Save</Button>
-					<Button variant="ghost" size="compact">
-						Cancel
-					</Button>
+					<Button>Save</Button>
+					<Button variant="ghost">Cancel</Button>
 				</PanelFooter>
 			</Panel>
 		</PanelFrame>
