@@ -184,7 +184,7 @@ export function RadioGroupDemoWithDescriptions() {
 				<Field orientation="horizontal" className={radioDescriptionFieldClassName}>
 					<FieldContent>
 						<div className="font-medium">Plus</div>
-					<FieldDescription>
+						<FieldDescription>
 							For individuals and small teams
 						</FieldDescription>
 					</FieldContent>
