@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState } from "react"
 
-import InformationIcon from "@atlaskit/icon/core/status-information"
+import InformationCircleIcon from "@atlaskit/icon/core/information-circle"
 import ThumbsDownIcon from "@atlaskit/icon/core/thumbs-down"
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up"
 
@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Icon } from "@/components/ui/icon"
 import { Input } from "@/components/ui/input"
 import { Lozenge } from "@/components/ui/lozenge"
+import { Tile } from "@/components/ui/tile"
 import {
 	Panel,
 	PanelActionBack,
@@ -65,7 +66,11 @@ function VariantCard({ children }: Readonly<{ children: React.ReactNode }>) {
 function JiraTitle({ label = "App name" }: Readonly<{ label?: string }>) {
 	return (
 		<PanelTitle
-			icon={<AtlassianLogo name="jira" size="xxsmall" variant="icon" />}
+			icon={
+				<Tile label="Jira" variant="transparent" size="small" isSnug>
+					<AtlassianLogo name="jira" size="small" themeAware label="" />
+				</Tile>
+			}
 		>
 			{label}
 		</PanelTitle>
@@ -187,10 +192,9 @@ export function PanelDemoHeader() {
 					<PanelTitle
 						icon={
 							<Icon
-								render={
-									<InformationIcon label="" size="small" color="currentColor" />
-								}
+								render={<InformationCircleIcon label="" color="currentColor" />}
 								aria-hidden
+								className="text-icon-subtle [&_svg]:size-4!"
 							/>
 						}
 					>
