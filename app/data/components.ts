@@ -121,6 +121,7 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("animated-dots", "Animated Dots"),
+	customComponent("animated-icon", "Animated Icons"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact-list", "Artifact List"),
 	customComponent("attachments"),

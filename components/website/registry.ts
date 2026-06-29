@@ -276,6 +276,9 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
+  "animated-icon": dynamic(() => import("./demos/ui-custom/animated-icon-demo"), {
+    ssr: false,
+  }),
   "artifact-list": dynamic(() => import("./demos/ui-custom/artifact-list-demo"), {
     ssr: false,
   }),
@@ -5368,6 +5371,11 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
 };
 
 const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
+
+  "animated-icon-demo-rainbow": dynamic(
+    () => import("./demos/ui-custom/animated-icon-demo").then((mod) => ({ default: mod.AnimatedIconDemoRainbow })),
+    { ssr: false },
+  ),
 
   // Migrated UI custom components
   "footer-demo-default": dynamic(
