@@ -3074,15 +3074,45 @@ import { Textarea } from "@/components/ui/textarea";
         description: "Header action cluster.",
       },
       {
+        name: "PanelActionBack",
+        description: "Back action for nested drill-in navigation.",
+      },
+      {
+        name: "PanelActionExpand",
+        description: "Expand action to widen the panel.",
+      },
+      {
+        name: "PanelActionMore",
+        description: "Overflow menu trigger for secondary actions.",
+      },
+      {
+        name: "PanelActionNewTab",
+        description: "Link action that opens content in a new tab.",
+      },
+      {
         name: "PanelActionClose",
-        description: "Close action with panel-system default label.",
+        description: "Close action with panel-system default label and optional onBeforeClose intercept.",
+      },
+      {
+        name: "PanelDisclaimer",
+        description: "Sunken note rendered below footer actions.",
       },
     ],
     examples: [
       {
         title: "Default",
-        description: "Side panel with header actions and contextual issue content.",
+        description: "Side panel with app header, actions, and contextual issue content.",
         demoSlug: "panel-demo-default",
+      },
+      {
+        title: "Basic",
+        description: "Minimal composition: header with actions, body, and footer.",
+        demoSlug: "panel-demo-basic",
+      },
+      {
+        title: "Header",
+        description: "Header composition variants: title, leading icon, app logo, back, and action groups.",
+        demoSlug: "panel-demo-header",
       },
       {
         title: "Subheader",
@@ -3090,9 +3120,24 @@ import { Textarea } from "@/components/ui/textarea";
         demoSlug: "panel-demo-with-subheader",
       },
       {
+        title: "Inline edit",
+        description: "Subheader title edited in place via the inlineEdit slot.",
+        demoSlug: "panel-demo-inline-edit",
+      },
+      {
         title: "Footer",
-        description: "Task panel with footer actions and disclaimer.",
+        description: "Footer action alignment and one- or two-zone disclaimer variants.",
         demoSlug: "panel-demo-with-footer",
+      },
+      {
+        title: "Loading",
+        description: "Default skeleton state for header, subheader, and body.",
+        demoSlug: "panel-demo-loading",
+      },
+      {
+        title: "Unsaved changes",
+        description: "Intercept close with onBeforeClose to confirm before discarding.",
+        demoSlug: "panel-demo-unsaved-changes",
       },
     ],
   },

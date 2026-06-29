@@ -2722,6 +2722,20 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "panel-demo-basic": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoBasic,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-header": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoHeader,
+      })),
+    { ssr: false },
+  ),
   "panel-demo-with-subheader": dynamic(
     () =>
       import("./demos/ui/panel-demo").then((mod) => ({
@@ -2729,10 +2743,31 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "panel-demo-inline-edit": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoInlineEdit,
+      })),
+    { ssr: false },
+  ),
   "panel-demo-with-footer": dynamic(
     () =>
       import("./demos/ui/panel-demo").then((mod) => ({
         default: mod.PanelDemoWithFooter,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-loading": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoLoading,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-unsaved-changes": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoUnsavedChanges,
       })),
     { ssr: false },
   ),
