@@ -239,7 +239,7 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	assert.doesNotMatch(FLOATING_ROVO_BUTTON_SOURCE, /useDragControls|dragControls|dragListener=\{false\}|drag=\{!onboardingOpen\}|dragConstraints=\{dragConstraints\}/u);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon size="small" \/>/u,
+		/import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon key="static-rovo-logo" size="small" \/>/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
@@ -283,7 +283,7 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<FloatingRovoButtonInner[\s\S]*onClick=\{handleButtonClick\}[\s\S]*onDragMouseDown=\{handleDragMouseDown\}[\s\S]*onDragPointerDown=\{handleDragPointerDown\}/u,
+		/<FloatingRovoButtonInner[\s\S]*onClick=\{handleButtonClick\}[\s\S]*onDragMouseDown=\{handleDragMouseDown\}[\s\S]*onDragPointerDown=\{handleDragPointerDown\}[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logoAnimating=\{logoAnimating\}/u,
 	);
 });
 
@@ -299,6 +299,29 @@ test("floating Rovo button applies collapsed elevation to the button surface", (
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
 		/onboardingOpen\s*\?\s*"w-\[295px\] max-w-\[calc\(100vw-32px\)\] overflow-hidden"\s*:\s*"size-12"/u,
+	);
+});
+
+test("floating Rovo button animates the logo once on first hover", () => {
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/import \{ AnimatedRovo \} from "@\/components\/ui-custom\/animated-rovo";[\s\S]*import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const FLOATING_ROVO_BUTTON_LOGO_CYCLE_S = 2\.5;[\s\S]*const FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS = FLOATING_ROVO_BUTTON_LOGO_CYCLE_S \* 1000;/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const logoAnimationPlayedRef = useRef\(false\);[\s\S]*const \[logoAnimating, setLogoAnimating\] = useState\(false\);[\s\S]*const handleLogoPointerEnter = useCallback\(\(event: ReactPointerEvent<HTMLButtonElement>\) => \{[\s\S]*event\.pointerType !== "mouse" \|\| shouldReduceMotion \|\| logoAnimationPlayedRef\.current[\s\S]*logoAnimationPlayedRef\.current = true;[\s\S]*setLogoAnimating\(true\);[\s\S]*setLogoAnimating\(false\);[\s\S]*FLOATING_ROVO_BUTTON_LOGO_CYCLE_MS/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/onPointerEnter=\{onLogoPointerEnter\}[\s\S]*logoAnimating \? \([\s\S]*<AnimatedRovo\.Root[\s\S]*preset="full-cycle"[\s\S]*cycleDurationS=\{FLOATING_ROVO_BUTTON_LOGO_CYCLE_S\}[\s\S]*<RovoColorIcon key="static-rovo-logo" size="small" \/>/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<FloatingRovoButtonInner[\s\S]*onLogoPointerEnter=\{handleLogoPointerEnter\}[\s\S]*logoAnimating=\{logoAnimating\}/u,
 	);
 });
 
