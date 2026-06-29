@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-
+import { Avatar, AvatarImage, type AvatarProps } from "@/components/ui/avatar";
 import { AtlassianLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -15,6 +14,18 @@ const PX_TO_LOGO_SIZE: Record<number, LogoProps["size"]> = {
 	40: "large",
 	48: "xlarge",
 };
+
+/** Maps a square pixel size to the nearest Avatar size token. */
+const PX_TO_AVATAR_SIZE: Record<number, NonNullable<AvatarProps["size"]>> = {
+	16: "xs",
+	20: "sm",
+	24: "sm",
+	32: "default",
+	40: "lg",
+	48: "xl",
+};
+
+const avatarSizeFromPx = (px: number): NonNullable<AvatarProps["size"]> => PX_TO_AVATAR_SIZE[px] ?? "sm";
 
 export interface AgentAvatarVisualProps {
 	avatarSrc?: string;
@@ -52,14 +63,8 @@ export function AgentAvatarVisual({
 	}
 
 	return avatarSrc ? (
-		<Image
-			alt=""
-			aria-hidden
-			className={className}
-			height={sizePx}
-			loading={loading}
-			src={avatarSrc}
-			width={sizePx}
-		/>
+		<Avatar shape="hexagon" size={avatarSizeFromPx(sizePx)} aria-hidden label={label}>
+			<AvatarImage alt="" className={className} loading={loading} src={avatarSrc} />
+		</Avatar>
 	) : null;
 }

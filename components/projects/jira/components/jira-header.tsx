@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Heading from "@/components/ui/heading";
 import { token } from "@/lib/tokens";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -31,13 +31,10 @@ export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHe
 								Spaces
 							</span>
 							<div className="flex items-center gap-2">
-								<Image
-									src="/avatar-project/rocket.svg"
-									alt="Project avatar"
-									width={16}
-									height={16}
-									style={{ width: "16px", height: "16px", borderRadius: token("radius.xsmall") }}
-								/>
+								<Avatar shape="square" size="xs">
+									<AvatarImage src="/avatar-project/rocket.svg" alt="" />
+									<AvatarFallback>ER</AvatarFallback>
+								</Avatar>
 								<Heading size="medium">Enterprise RFP Response</Heading>
 								<Button aria-label="Teams" size="icon-compact" variant="ghost">
 									<TeamsIcon label="" size="small" />

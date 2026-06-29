@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { token } from "@/lib/tokens";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Breadcrumb,
@@ -12,7 +12,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Icon } from "@/components/ui/icon";
-import { Tile } from "@/components/ui/tile";
 import Heading from "@/components/ui/heading";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
@@ -49,21 +48,12 @@ export function ModalHeader() {
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"
 							href="#"
 							before={
-								<Tile
-									aria-hidden
-									isInset={false}
-									label="Project"
-									className="size-3"
-									size="xsmall"
-									variant="transparent"
-								>
-									<Image
-										alt=""
-										height={12}
-										src="/avatar-project/rocket.svg"
-										width={12}
-									/>
-								</Tile>
+								<Avatar shape="square" size="xs" className="size-3" aria-hidden>
+									<AvatarImage src="/avatar-project/rocket.svg" alt="" />
+									<AvatarFallback>
+										{(workItem.parent?.title ?? "Enterprise RFP Response").slice(0, 2).toUpperCase()}
+									</AvatarFallback>
+								</Avatar>
 							}
 						>
 							{workItem.parent?.title ?? "Enterprise RFP Response"}

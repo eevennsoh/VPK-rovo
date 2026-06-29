@@ -25,7 +25,7 @@ import {
 import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
 import { TemplateBuildFlow } from "@/components/blocks/agent-browser/components/template-build-flow";
 import { TWGAgentCard, DEFAULT_TWG_AGENT_CARD_SUGGESTIONS } from "@/components/blocks/twg-agent-card";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -1092,23 +1092,18 @@ function ExperimentalFilterOptionAvatar({ option }: Readonly<{ option: Experimen
 
 	if (option.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
-			<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">
-				<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" height={20} src={option.avatarSrc} width={20} />
-			</Tile>
+			<Avatar size="sm" shape="square" className="shrink-0 size-5">
+				<AvatarImage alt="" src={option.avatarSrc} />
+				<AvatarFallback>{option.label.slice(0, 2).toUpperCase()}</AvatarFallback>
+			</Avatar>
 		);
 	}
 
 	if (option.avatarSrc) {
 		return (
-			<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-				<Image
-					alt=""
-					aria-hidden
-					className="size-full object-contain"
-					height={24}
-					src={option.avatarSrc}
-					width={24}
-				/>
+			<Avatar size="sm" shape="hexagon" className="shrink-0">
+				<AvatarImage alt="" src={option.avatarSrc} />
+				<AvatarFallback>{option.label.slice(0, 2).toUpperCase()}</AvatarFallback>
 			</Avatar>
 		);
 	}
@@ -1650,24 +1645,17 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	if (item.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
-			<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">
-				<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" height={20} src={item.avatarSrc} width={20} />
-			</Tile>
+			<Avatar size="sm" shape="square" className="shrink-0 size-5">
+				<AvatarImage alt="" src={item.avatarSrc} />
+				<AvatarFallback>{item.label.slice(0, 2).toUpperCase()}</AvatarFallback>
+			</Avatar>
 		);
 	}
 
 	return (
-		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			{item.avatarSrc ? (
-				<Image
-					alt=""
-					aria-hidden
-					className="size-full object-contain"
-					height={24}
-					src={item.avatarSrc}
-					width={24}
-				/>
-			) : null}
+		<Avatar size="sm" shape="hexagon" className="shrink-0">
+			{item.avatarSrc ? <AvatarImage alt="" src={item.avatarSrc} /> : null}
+			<AvatarFallback>{item.label.slice(0, 2).toUpperCase()}</AvatarFallback>
 		</Avatar>
 	);
 }

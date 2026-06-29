@@ -3,7 +3,6 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import * as React from "react";
-import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AppsIcon from "@atlaskit/icon/core/apps";
@@ -20,6 +19,7 @@ import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import { token } from "@/lib/tokens";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -31,7 +31,6 @@ import {
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -171,12 +170,13 @@ function StudioSidebarAgentsCreateAction({ onClick }: Readonly<{ onClick: () => 
 	);
 }
 
-// Leading avatar for recent-agent rows. Standardizes on the shared `Tile` snug
-// variant: a transparent 24x24 tile (the leading slot) holding 20x20 content, so
-// the 24/20 geometry comes from the component rather than hand-tuned sizing.
+// Leading avatar for recent-agent rows. Standardizes on the shared `Avatar`
+// hexagon (`size="sm"` = 24px outer) holding either the Atlassian logo or the
+// agent's avatar image, so the 24px geometry comes from the component rather
+// than hand-tuned sizing.
 // `size` is accepted (and ignored) only because `SidebarNavItem`'s
 // `normalizeIconNode` injects it via `cloneElement` onto every leading node;
-// declaring it keeps the injected prop off the inner Tile/DOM.
+// declaring it keeps the injected prop off the inner Avatar/DOM.
 function StudioSidebarAgentAvatar({
 	label = "",
 	src,
@@ -187,19 +187,18 @@ function StudioSidebarAgentAvatar({
 }>) {
 	const isDecorative = label === "";
 	return (
-		<Tile
-			aria-hidden={isDecorative ? true : undefined}
+		<Avatar
+			shape="hexagon"
+			size="sm"
 			label={label || "Agent avatar"}
-			variant="transparent"
-			size="small"
-			isSnug
+			aria-hidden={isDecorative ? true : undefined}
 		>
 			{isAtlassianLogoSource(src) ? (
-				<AtlassianLogo name="atlassian" label="" size="xsmall" />
+				<AtlassianLogo name="atlassian" label="" size="small" />
 			) : (
-				<Image alt={label} aria-hidden={isDecorative ? true : undefined} className="object-contain" height={20} src={src} width={20} />
+				<AvatarImage src={src} alt="" />
 			)}
-		</Tile>
+		</Avatar>
 	);
 }
 
