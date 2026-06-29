@@ -3,10 +3,9 @@
 import AppIcon from "@atlaskit/icon/core/app";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import SearchIcon from "@atlaskit/icon/core/search";
-import Image from "next/image";
 
 import { IconTile } from "@/components/ui/icon-tile";
-import { Tile } from "@/components/ui/tile";
+import { Tile, TileAvatar } from "@/components/ui/tile";
 import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
 
 export default function TileDemo() {
@@ -190,12 +189,12 @@ export function TileDemoSnug() {
 				</Tile>
 				{SNUG_AGENT_AVATARS.map((avatar) => (
 					<Tile key={avatar.src} label={avatar.label} variant="transparent" size="small" isSnug>
-						<Image src={avatar.src} alt="" aria-hidden width={20} height={20} />
+						<TileAvatar aria-hidden shape="hexagon" src={avatar.src} />
 					</Tile>
 				))}
 				{SNUG_PROJECT_AVATARS.map((avatar) => (
 					<Tile key={avatar.src} label={avatar.label} variant="transparent" size="small" isSnug>
-						<Image src={avatar.src} alt="" aria-hidden width={20} height={20} className="rounded-[6px] border border-border object-cover" />
+						<TileAvatar aria-hidden shape="square" src={avatar.src} />
 					</Tile>
 				))}
 				<IconTile

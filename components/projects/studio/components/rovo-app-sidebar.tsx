@@ -3,7 +3,6 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import * as React from "react";
-import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AppsIcon from "@atlaskit/icon/core/apps";
@@ -31,7 +30,7 @@ import {
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { Tile } from "@/components/ui/tile";
+import { Tile, TileAvatar } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -197,7 +196,7 @@ function StudioSidebarAgentAvatar({
 			{isAtlassianLogoSource(src) ? (
 				<AtlassianLogo name="atlassian" label="" size="xsmall" />
 			) : (
-				<Image alt={label} aria-hidden={isDecorative ? true : undefined} className="object-contain" height={20} src={src} width={20} />
+				<TileAvatar alt={label} aria-hidden={isDecorative ? true : undefined} shape="hexagon" src={src} />
 			)}
 		</Tile>
 	);
