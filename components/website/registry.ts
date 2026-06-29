@@ -524,10 +524,10 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "bubble-demo-default": dynamic(
+  "bubble-demo-sizes": dynamic(
     () =>
       import("./demos/ui/bubble-demo").then((mod) => ({
-        default: mod.BubbleDemoDefault,
+        default: mod.BubbleDemoSizes,
       })),
     { ssr: false },
   ),
@@ -538,31 +538,94 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "bubble-demo-reactions": dynamic(
+  "bubble-demo-alignment": dynamic(
     () =>
       import("./demos/ui/bubble-demo").then((mod) => ({
-        default: mod.BubbleDemoReactions,
+        default: mod.BubbleDemoAlignment,
       })),
     { ssr: false },
   ),
-  "marker-demo-default": dynamic(
+  "bubble-demo-grouped": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoGrouped,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-collapsible": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoCollapsible,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-button-links": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoButtonLinks,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-reaction-placement": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoReactionPlacement,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-reactions-buttons": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoReactionsButtons,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-markers": dynamic(
     () =>
       import("./demos/ui/marker-demo").then((mod) => ({
-        default: mod.MarkerDemoDefault,
+        default: mod.MarkerDemoMarkers,
       })),
     { ssr: false },
   ),
-  "marker-demo-variants": dynamic(
+  "marker-demo-border": dynamic(
     () =>
       import("./demos/ui/marker-demo").then((mod) => ({
-        default: mod.MarkerDemoVariants,
+        default: mod.MarkerDemoBorder,
       })),
     { ssr: false },
   ),
-  "message-demo-default": dynamic(
+  "marker-demo-separator": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoSeparator,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-accordion": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoAccordion,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-drawer": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoDrawer,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-message": dynamic(
     () =>
       import("./demos/ui/message-demo").then((mod) => ({
-        default: mod.MessageDemoDefault,
+        default: mod.MessageDemoMessage,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-avatar": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAvatar,
       })),
     { ssr: false },
   ),
@@ -573,17 +636,45 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "message-scroller-demo-default": dynamic(
+  "message-demo-group-chat": dynamic(
     () =>
-      import("./demos/ui/message-scroller-demo").then((mod) => ({
-        default: mod.MessageScrollerDemoDefault,
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoGroupChat,
       })),
     { ssr: false },
   ),
-  "message-scroller-demo-button": dynamic(
+  "message-demo-header-and-footer": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoHeaderAndFooter,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-actions": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoActions,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-attachment": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAttachment,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-attachment-group": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAttachmentGroup,
+      })),
+    { ssr: false },
+  ),
+  "message-scroller-demo-chat": dynamic(
     () =>
       import("./demos/ui/message-scroller-demo").then((mod) => ({
-        default: mod.MessageScrollerDemoButton,
+        default: mod.MessageScrollerDemoChat,
       })),
     { ssr: false },
   ),

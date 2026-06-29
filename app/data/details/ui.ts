@@ -4593,9 +4593,14 @@ import SearchIcon from "@atlaskit/icon/core/search";
       { name: "BubbleReactions", description: "Reaction overlay positioned on a bubble." },
     ],
     examples: [
-      { title: "Default", demoSlug: "bubble-demo-default" },
+      { title: "Sizes", demoSlug: "bubble-demo-sizes" },
       { title: "Variants", demoSlug: "bubble-demo-variants" },
-      { title: "Reactions", demoSlug: "bubble-demo-reactions" },
+      { title: "Alignment", demoSlug: "bubble-demo-alignment" },
+      { title: "Grouped", demoSlug: "bubble-demo-grouped" },
+      { title: "Collapsible", demoSlug: "bubble-demo-collapsible" },
+      { title: "Button & Links", id: "button-links", demoSlug: "bubble-demo-button-links" },
+      { title: "Reaction Placement", demoSlug: "bubble-demo-reaction-placement" },
+      { title: "Reactions Buttons", demoSlug: "bubble-demo-reactions-buttons" },
     ],
   },
 
@@ -4625,8 +4630,11 @@ import SearchIcon from "@atlaskit/icon/core/search";
       { name: "MarkerContent", description: "Marker text/content slot." },
     ],
     examples: [
-      { title: "Default", demoSlug: "marker-demo-default" },
-      { title: "Variants", demoSlug: "marker-demo-variants" },
+      { title: "Markers", demoSlug: "marker-demo-markers" },
+      { title: "Border", demoSlug: "marker-demo-border" },
+      { title: "Separator", demoSlug: "marker-demo-separator" },
+      { title: "Accordion", demoSlug: "marker-demo-accordion" },
+      { title: "Drawer", demoSlug: "marker-demo-drawer" },
     ],
   },
 
@@ -4659,8 +4667,14 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
       { name: "MessageFooter", description: "Metadata below message content." },
     ],
     examples: [
-      { title: "Default", demoSlug: "message-demo-default" },
+      { title: "Message", demoSlug: "message-demo-message" },
+      { title: "Avatar", demoSlug: "message-demo-avatar" },
       { title: "Group", demoSlug: "message-demo-group" },
+      { title: "Group Chat", demoSlug: "message-demo-group-chat" },
+      { title: "Header and Footer", demoSlug: "message-demo-header-and-footer" },
+      { title: "Actions", demoSlug: "message-demo-actions" },
+      { title: "Attachment", demoSlug: "message-demo-attachment" },
+      { title: "Attachment Group", demoSlug: "message-demo-attachment-group" },
     ],
   },
 
@@ -4703,8 +4717,7 @@ import { Bubble, BubbleContent } from "@/components/ui/bubble";
       { name: "MessageScrollerButton", description: "Floating scroll button." },
     ],
     examples: [
-      { title: "Default", demoSlug: "message-scroller-demo-default" },
-      { title: "Button", demoSlug: "message-scroller-demo-button" },
+      { title: "Chat", demoSlug: "message-scroller-demo-chat" },
     ],
     demoLayout: {
       previewContentWidth: "full",

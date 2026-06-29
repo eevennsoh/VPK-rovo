@@ -93,7 +93,7 @@ function BubbleContent({
 }
 
 const bubbleReactionsVariants = cva(
-	"absolute z-10 flex w-fit shrink-0 items-center justify-center gap-1 rounded-full bg-bg-neutral px-1.5 py-0.5 text-sm text-text ring-3 ring-card has-[button]:p-0",
+	"absolute z-10 flex w-fit shrink-0 items-center justify-center gap-1 rounded-full bg-secondary px-1.5 py-0.5 text-sm text-text-subtle ring-3 ring-card group-data-[variant=default]/bubble:bg-primary group-data-[variant=default]/bubble:text-primary-foreground group-data-[variant=tinted]/bubble:bg-bg-discovery-subtler group-data-[variant=tinted]/bubble:text-text-discovery-bolder group-data-[variant=outline]/bubble:bg-surface group-data-[variant=outline]/bubble:text-text group-data-[variant=ghost]/bubble:bg-surface group-data-[variant=ghost]/bubble:text-text group-data-[variant=destructive]/bubble:bg-bg-danger-subtler group-data-[variant=destructive]/bubble:text-text-danger-bolder has-[button]:p-0",
 	{
 		variants: {
 			side: {

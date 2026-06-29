@@ -63,7 +63,7 @@ function ExampleItem({
 	Demo,
 	demoLayout,
 }: Readonly<{ example: ExampleDefinition; Demo: ComponentType; demoLayout?: DemoLayout }>) {
-	const id = slugify(example.title);
+	const id = example.id ?? slugify(example.title);
 	return (
 		<div
 			id={id}
