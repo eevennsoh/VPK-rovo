@@ -55,6 +55,7 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
 	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
 	const entityCardAppSource = readProjectFile("components/ui-custom/entity-card/app.tsx");
+	const entityCardPartsSource = readProjectFile("components/ui-custom/entity-card/parts.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /className="grid h-\[min\(768px,calc\(100svh-2rem\)\)\][\s\S]*sm:!max-w-\[1200px\]"/u);
@@ -70,11 +71,14 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /const \[favoriteOverrides, setFavoriteOverrides\] = useState<Record<string, boolean>>\(\{\}\);/u);
 	assert.match(source, /tool\.id in favoriteOverrides \? \{ \.\.\.tool, favorite: favoriteOverrides\[tool\.id\] \} : tool/u);
 	assert.match(source, /function handleToggleFavoriteTool\(tool: AppsDirectoryTool\): void \{[\s\S]*\[tool\.id\]: !tool\.favorite/u);
-	assert.match(source, /<AppCard[\s\S]*added=\{addedIds\.has\(tool\.id\)\}[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
+	assert.match(source, /<AppCard[\s\S]*added=\{addedIds\.has\(tool\.id\)\}[\s\S]*onSelectTool=\{onSelectTool\}[\s\S]*onToggleAddedTool=\{onToggleAddedTool\}[\s\S]*onToggleFavoriteTool=\{onToggleFavoriteTool\}[\s\S]*tool=\{tool\}/u);
+	assert.match(source, /function handleToggleAddedTool\(tool: AppsDirectoryTool, checked: boolean\): void \{[\s\S]*checked[\s\S]*handleAddTool\(tool\);[\s\S]*handleRemoveTool\(tool\);/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /import \{ EntityCardAppCard \} from "@\/components\/ui-custom\/entity-card";/u);
 	assert.match(source, /const knowledgeApp = getKnowledgeAppForTool\(tool\);/u);
 	assert.match(source, /<EntityCardAppCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /const toggleAdded = \(checked: boolean\) => onToggleAddedTool\(tool, checked\);/u);
+	assert.match(source, /onAddedChange=\{toggleAdded\}/u);
 	assert.match(source, /favorite=\{Boolean\(tool\.favorite\)\}/u);
 	assert.match(source, /elemBefore=\{favorite \? <StarStarredIcon label="" \/> : <StarUnstarredIcon label="" \/>\}/u);
 	assert.match(source, /\{favorite \? "Unfavourite" : "Favourite"\}/u);
@@ -103,11 +107,17 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
-	assert.match(variantsSource, /<EntityCardShell active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(variantsSource, /onSelect=\{handleSelect \? \(\) => handleSelect\(\) : undefined\}/u);
+	assert.match(variantsSource, /return onSelect \|\| !onAddedChange \? selectLabel : addActionLabel;/u);
+	assert.match(variantsSource, /selectLabel=\{shellSelectLabel\}/u);
 	assert.match(variantsSource, /<EntityCardApp/u);
+	assert.match(variantsSource, /onAddedChange=\{onAddedChange\}/u);
 	assert.match(variantsSource, /action=\{moreAction\}/u);
 	assert.match(variantsSource, /onMoreActions=\{onMoreActions\}/u);
+	assert.match(entityCardPartsSource, /export function EntityCardAddedSwitch/u);
+	assert.match(entityCardPartsSource, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*onCheckedChange=\{onAddedChange\}/u);
 	assert.match(entityCardAppSource, /<EntityCardMoreButton active=\{active\}/u);
+	assert.match(entityCardAppSource, /onAddedChange=\{onAddedChange\}/u);
 	// The app card composes a header + description inside a tight gap-2 column. The
 	// header/description/footer are hoisted into locals so the hover prompt-swap
 	// branch can reuse them, so assert the pieces are present rather than a single
@@ -164,6 +174,8 @@ test("Apps Directory supports controlled and uncontrolled added tool state", () 
 	assert.match(source, /onAddedToolIdsChange\?: \(toolIds: readonly string\[\]\) => void;/u);
 	assert.match(source, /const controlledAddedIds = typeof addedToolIds !== "undefined";/u);
 	assert.match(source, /onAddedToolIdsChange\?\.\(\[\.\.\.nextAddedIds\]\);/u);
+	assert.match(source, /onToggleAddedTool: \(tool: AppsDirectoryTool, checked: boolean\) => void;/u);
+	assert.match(source, /onToggleAddedTool=\{handleToggleAddedTool\}/u);
 	assert.match(source, /Add to agent/u);
 	assert.match(source, /Remove/u);
 	assert.match(source, /\{onRemoveTool \? \([\s\S]*<Button variant="destructive" onClick=\{onRemoveTool\} type="button">[\s\S]*<DeleteIcon label="" size="small" \/>[\s\S]*Remove[\s\S]*\) : onAddTool \? \([\s\S]*<Button onClick=\{onAddTool\} type="button">[\s\S]*Add to agent[\s\S]*\) : \([\s\S]*New app/u);

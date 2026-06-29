@@ -100,6 +100,7 @@ export const VISUAL_GROUPS: Record<string, string[]> = {
 		"logo-crystal",
 		"bands",
 		"rings",
+		"ripple",
 		"blockify",
 		"pixels",
 		"truchet",

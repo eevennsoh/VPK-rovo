@@ -53,51 +53,52 @@ function DemoKnowledgeCard({
 	);
 }
 
-/**
- * Added state — `added` renders a persistent blue success checkmark at the
- * trailing edge of the header, marking an entity that is already on the agent.
- * Unlike the hover/multi-select checkbox, it always shows and is not interactive.
- */
-function AddedEntityCardsDemo() {
+function AddRemoveEntityCardsDemo() {
+	const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(() => new Set(["find-similar-work"]));
+
+	function setSkillAdded(id: string, checked: boolean): void {
+		setAddedIds((current) => {
+			const next = new Set(current);
+			if (checked) {
+				next.add(id);
+			} else {
+				next.delete(id);
+			}
+			return next;
+		});
+	}
+
+	const createPageAdded = addedIds.has("create-page");
+	const findSimilarWorkAdded = addedIds.has("find-similar-work");
+
 	return (
 		<div className="flex flex-col gap-3">
-			<p className="text-sm font-semibold leading-5 text-text-subtle">Added</p>
+			<p className="text-sm font-semibold leading-5 text-text-subtle">Add/remove</p>
 			<div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
 				<EntityCardSkillCard
-					added
+					added={createPageAdded}
 					description="Create a new formatted, rich text document or page in Confluence."
 					icon={<PageIcon label="" />}
 					iconVariant="blue"
 					name="Create page"
 					onMoreActions={() => {}}
-					onSelect={() => {}}
-					publisher="Atlassian"
+					onAddedChange={(checked) => setSkillAdded("create-page", checked)}
+					source={{ type: "custom", name: "Venn", avatarSrc: "/avatar-human/maia-ma.png" }}
 					starCount={38}
-					verified
 					teammateCount={6273}
 				/>
-				<EntityCardAppCard
-					added
-					appLogo={<ConfluenceLogo size="medium" />}
-					description="Create, search, and update pages across your Confluence sites."
-					knowledgeCount={4}
-					name="Confluence"
+				<EntityCardSkillCard
+					added={findSimilarWorkAdded}
+					description="Find related issues and pages across your team's workspace."
+					icon={<SearchIcon label="" />}
+					iconVariant="purple"
+					name="Find similar work"
 					onMoreActions={() => {}}
-					onSelect={() => {}}
-					teammateCount={258}
-					toolCount={36}
+					onAddedChange={(checked) => setSkillAdded("find-similar-work", checked)}
+					source={{ type: "app", name: "Slack", brandName: "slack" }}
+					starCount={120}
+					teammateCount={4100}
 				/>
-				<EntityCardToolCard
-					added
-					appLogo={<LogoThirdParty name="slack" size="medium" label="" />}
-					description="Send messages and search conversations from your workspace."
-					name="Slack"
-					onMoreActions={() => {}}
-					onSelect={() => {}}
-					teammateCount={540}
-					toolCount={12}
-				/>
-				<DemoKnowledgeCard added />
 			</div>
 		</div>
 	);
@@ -224,9 +225,13 @@ export default function EntityCardDemo() {
 
 			<SelectableEntityCardsDemo />
 
-			<AddedEntityCardsDemo />
+			<AddRemoveEntityCardsDemo />
 		</div>
 	);
+}
+
+export function EntityCardDemoAddRemove() {
+	return <AddRemoveEntityCardsDemo />;
 }
 
 export function EntityCardDemoSkills() {

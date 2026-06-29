@@ -1653,6 +1653,8 @@ export default function ChatPanel({
 					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
 					conversationContentClassName
 				)}
+				reserveScrollbarGutter={hasMessages}
+				revealScrollbarOnScroll={hasMessages}
 				// In the Test empty state, messagesContainerStyle grows this content
 				// track to full height and bottom-aligns (or centers when there are no
 				// starters) the greeting (inline values win over Tailwind classes).

@@ -62,6 +62,7 @@ import WarningIcon from "@atlaskit/icon/core/warning";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/components/ui/icon";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -91,13 +92,21 @@ export interface EntityCardHeaderProps {
 	/** Trailing action revealed on hover/focus (e.g. `EntityCardMoreButton`). */
 	action?: ReactNode;
 	/**
-	 * Marks the entity as already added to the agent — renders a persistent blue
-	 * success check at the trailing edge so added cards can be scanned at a glance.
-	 * Distinct from a hover/multi-select checkbox: this reflects committed state.
+	 * Marks the entity as already added to the agent. With `onAddedChange`, this
+	 * drives a switch that persists while added; otherwise it falls back to the
+	 * legacy blue added check.
 	 */
 	added?: boolean;
+	/** Immediate add/remove toggle shown as a hover-revealed switch. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Shows the added check only on hover, in a subtle color. */
 	hoverAdded?: boolean;
+	/**
+	 * Replaces the trailing added-check/status slot with a caller-owned control.
+	 * Use for immediate add/remove affordances that need more width than the 24px
+	 * checkmark while preserving the header's reserved trailing space.
+	 */
+	trailingStatus?: ReactNode;
 	/**
 	 * Marks the card as multi-selectable. When set, the leading visual swaps to a
 	 * 16×16 checkbox on card hover and while selected — the directory "select"
@@ -119,12 +128,24 @@ export function EntityCardHeader({
 	reserveByline = false,
 	action,
 	added = false,
+	onAddedChange,
 	hoverAdded = false,
+	trailingStatus,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
 	selectLabel,
 }: Readonly<EntityCardHeaderProps>) {
+	const defaultTrailingStatus = onAddedChange ? (
+		<EntityCardAddedSwitch
+			added={added}
+			onAddedChange={onAddedChange}
+			title={title}
+		/>
+	) : undefined;
+	const trailingStatusControl = trailingStatus ?? defaultTrailingStatus;
+	const hasTrailingStatus = Boolean(trailingStatusControl);
+
 	return (
 		<div
 			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
@@ -150,35 +171,45 @@ export function EntityCardHeader({
 				</h3>
 				{byline ?? null}
 			</div>
-			{action || added || hoverAdded ? (
+			{action || added || hoverAdded || hasTrailingStatus ? (
 				<span
 					className={cn(
-						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out",
-						added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px]" : "w-6",
+						"relative h-6 shrink-0 overflow-visible transition-[width] duration-fast ease-out motion-reduce:transition-none",
+						hasTrailingStatus
+							? action
+								? added ? "w-16" : "w-6 group-hover/card:w-16 group-focus-within/card:w-16 group-data-[active=true]/card:w-16"
+								: added ? "w-8" : "w-0 group-hover/card:w-8 group-focus-within/card:w-8"
+							: added ? "w-[52px]" : hoverAdded ? "w-6 group-hover/card:w-[52px] group-data-[active=true]/card:w-[52px]" : "w-6",
 					)}
 				>
 					{action ? (
 						<span
 							className={cn(
-								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out",
-								added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7" : "translate-x-0",
+								"absolute top-0 right-0 z-[1] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none",
+								hasTrailingStatus
+									? added ? "-translate-x-10" : "group-hover/card:-translate-x-10 group-focus-within/card:-translate-x-10 group-data-[active=true]/card:-translate-x-10"
+									: added ? "-translate-x-7" : hoverAdded ? "group-hover/card:-translate-x-7 group-data-[active=true]/card:-translate-x-7" : "translate-x-0",
 							)}
 						>
 							{action}
 						</span>
 					) : null}
 					<span
-						aria-hidden={!added ? true : undefined}
+						aria-hidden={!hasTrailingStatus && !added ? true : undefined}
 						className={cn(
-							"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out",
-							added
-								? "scale-100 opacity-100"
-								: hoverAdded
-									? "scale-75 opacity-0 group-hover/card:scale-100 group-hover/card:opacity-100"
-									: "scale-75 opacity-0",
+							hasTrailingStatus
+								? "pointer-events-auto absolute top-1/2 right-0 inline-flex -translate-y-1/2 items-center"
+								: "pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-[opacity,transform] duration-fast ease-out motion-reduce:transition-none",
+							!hasTrailingStatus && (
+								added
+									? "scale-100 opacity-100"
+									: hoverAdded
+										? "scale-75 opacity-0 group-hover/card:scale-100 group-hover/card:opacity-100 group-data-[active=true]/card:scale-100 group-data-[active=true]/card:opacity-100"
+										: "scale-75 opacity-0"
+							),
 						)}
 					>
-						<EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />
+						{trailingStatusControl ?? <EntityCardAddedCheck className={added ? undefined : "text-icon-disabled"} label={added ? "Added" : ""} />}
 					</span>
 				</span>
 			) : null}
@@ -226,7 +257,7 @@ function EntityCardSelectableLeading({
 				aria-label={label}
 				checked={selected}
 				className={cn(
-					"opacity-0 transition-opacity duration-fast ease-out focus-visible:pointer-events-auto focus-visible:opacity-100",
+					"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100",
 					selected
 						? "pointer-events-auto opacity-100"
 						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",
@@ -259,6 +290,42 @@ export function EntityCardAddedCheck({
 		<Icon
 			className={className}
 			render={<StatusSuccessIcon label={label} color="currentColor" />}
+		/>
+	);
+}
+
+export interface EntityCardAddedSwitchProps {
+	/** Current add/remove state. Added switches stay visible at rest. */
+	added: boolean;
+	/** Called immediately when the switch changes. */
+	onAddedChange: (checked: boolean) => void;
+	/** Entity title used to build the accessible Add/Remove label. */
+	title: string;
+}
+
+export function EntityCardAddedSwitch({
+	added,
+	onAddedChange,
+	title,
+}: Readonly<EntityCardAddedSwitchProps>) {
+	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+		event.stopPropagation();
+	}
+
+	return (
+		<Switch
+			aria-label={`${added ? "Remove" : "Add"} ${title}`}
+			checked={added}
+			className={cn(
+				"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0",
+				added
+					? "pointer-events-auto opacity-100"
+					: "pointer-events-none opacity-0 group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100 group-data-[active=true]/card:pointer-events-auto group-data-[active=true]/card:opacity-100",
+			)}
+			onCheckedChange={onAddedChange}
+			onClick={stopPropagation}
+			onKeyDown={stopPropagation}
+			size="sm"
 		/>
 	);
 }

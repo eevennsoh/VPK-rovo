@@ -62,10 +62,14 @@ export interface EntityCardSkillProps {
 	revealStatsOnHover?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
-	/** Renders the persistent "added" check when the skill is already on the agent. */
+	/** Marks the skill as already on the agent. */
 	added?: boolean;
+	/** Renders the shared add/remove switch and toggles immediately. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Renders a subtle added check only on card hover. */
 	hoverAdded?: boolean;
+	/** Replaces the trailing added-check/status indicator, e.g. with an immediate add/remove switch. */
+	trailingStatus?: ReactNode;
 	/** Swaps the leading icon for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -146,7 +150,9 @@ export function EntityCardSkill({
 	action,
 	onMoreActions,
 	added = false,
+	onAddedChange,
 	hoverAdded = false,
+	trailingStatus,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -189,7 +195,9 @@ export function EntityCardSkill({
 		<div data-slot="entity-card-skill" className={cn("contents", className)}>
 			<EntityCardHeader
 				added={added}
+				onAddedChange={onAddedChange}
 				hoverAdded={hoverAdded}
+				trailingStatus={trailingStatus}
 				action={
 					action ?? (onMoreActions ? (
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />

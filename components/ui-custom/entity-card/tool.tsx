@@ -26,8 +26,10 @@ export interface EntityCardToolProps {
 	active?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
-	/** Renders the persistent "added" check when the tool is already on the agent. */
+	/** Marks the tool as already on the agent. */
 	added?: boolean;
+	/** Renders the shared add/remove switch and toggles immediately. */
+	onAddedChange?: (checked: boolean) => void;
 	/** Swaps the leading logo for a 16×16 select checkbox on hover/select. */
 	selectable?: boolean;
 	/** Current selection state for the leading checkbox. */
@@ -49,6 +51,7 @@ export function EntityCardTool({
 	action,
 	onMoreActions,
 	added = false,
+	onAddedChange,
 	selectable = false,
 	selected = false,
 	onSelectedChange,
@@ -63,6 +66,7 @@ export function EntityCardTool({
 			<div className="flex flex-col gap-2">
 				<EntityCardHeader
 					added={added}
+					onAddedChange={onAddedChange}
 					action={
 						action ?? (onMoreActions ? (
 							<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />

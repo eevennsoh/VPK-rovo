@@ -27,11 +27,17 @@ const LIGHT_SVG_SUFFIX = "/light.svg";
 const MAX_MODE_HEADING = "Let's plan your next move";
 const MAX_MODE_ILLUSTRATION_SRC = "/illustration-ai/max/light.gif";
 const MAX_MODE_ILLUSTRATION_DARK_SRC = "/illustration-ai/max/dark.gif";
-const CHAT_GREETING_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
+const CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE = 72;
+const CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE = 180;
+const CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
+const CHAT_GREETING_ILLUSTRATION_HEADING_STAGGER = 0.18;
+const CHAT_GREETING_HEADING_PROMPT_STAGGER = 0.18;
+const CHAT_GREETING_HEADING_CHILD_DELAY = CHAT_GREETING_ILLUSTRATION_HEADING_STAGGER;
+const CHAT_GREETING_PROMPT_CHILD_DELAY = CHAT_GREETING_HEADING_CHILD_DELAY + CHAT_GREETING_HEADING_PROMPT_STAGGER;
 const CHAT_GREETING_MODE_TRANSITION = {
 	type: "spring",
 	bounce: 0,
-	visualDuration: 0.14,
+	visualDuration: 0.22,
 } as const;
 const CHAT_GREETING_EXIT_TRANSITION = {
 	duration: 0.08,
@@ -53,10 +59,30 @@ const CHAT_GREETING_CONTAINER_VARIANTS = {
 		},
 	},
 } as const;
+const CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {},
+	exit: {},
+} as const;
+const CHAT_GREETING_PROMPT_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {
+		transition: {
+			delayChildren: CHAT_GREETING_PROMPT_CHILD_DELAY,
+			staggerChildren: 0.04,
+		},
+	},
+	exit: {
+		transition: {
+			staggerChildren: 0.02,
+			staggerDirection: -1,
+		},
+	},
+} as const;
 const CHAT_GREETING_ITEM_VARIANTS = {
 	hidden: {
 		opacity: 0,
-		transform: "translateY(6px)",
+		transform: "translateY(24px)",
 	},
 	visible: {
 		opacity: 1,
@@ -65,7 +91,26 @@ const CHAT_GREETING_ITEM_VARIANTS = {
 	},
 	exit: {
 		opacity: 0,
-		transform: "translateY(-6px)",
+		transform: "translateY(-24px)",
+		transition: CHAT_GREETING_EXIT_TRANSITION,
+	},
+} as const;
+const CHAT_GREETING_HEADING_ITEM_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transform: "translateY(24px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: {
+			...CHAT_GREETING_MODE_TRANSITION,
+			delay: CHAT_GREETING_HEADING_CHILD_DELAY,
+		},
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(-24px)",
 		transition: CHAT_GREETING_EXIT_TRANSITION,
 	},
 } as const;
@@ -107,7 +152,10 @@ const CHAT_GREETING_INSTANT_ITEM_VARIANTS = {
 		},
 	},
 } as const;
-type ChatGreetingItemVariants = typeof CHAT_GREETING_ITEM_VARIANTS | typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS;
+type ChatGreetingItemVariants =
+	| typeof CHAT_GREETING_ITEM_VARIANTS
+	| typeof CHAT_GREETING_HEADING_ITEM_VARIANTS
+	| typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS;
 
 interface ChatGreetingProps {
 	/** Optional custom heading text */
@@ -168,6 +216,16 @@ interface SkillListItemProps {
 	suggestion: RovoSuggestion;
 	shortcut?: ReactNode;
 	onClick?: () => void;
+}
+
+function SidebarControlledRovoIllustration({ illusId }: Readonly<{ illusId: "ai" | "chat" }>) {
+	return (
+		<ControlledRovoIllustration
+			illusId={illusId}
+			motionSize={illusId === "chat" ? CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE : undefined}
+			size={CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE}
+		/>
+	);
 }
 
 function getPairedDarkIllustrationSrc(illustrationSrc: string): string {
@@ -439,9 +497,18 @@ export default function ChatGreeting({
 	// the illustration + heading above the default prompts.
 	const shouldShowHero =
 		showHero && (!isComposing || !shouldRenderDirectoryMatches);
-	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS;
+	const activePromptContainerVariants = isComposing
+		? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS
+		: shouldShowHero
+			? CHAT_GREETING_PROMPT_CONTAINER_VARIANTS
+			: CHAT_GREETING_CONTAINER_VARIANTS;
 	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
-
+	const headingItemVariants = isComposing
+		? CHAT_GREETING_INSTANT_ITEM_VARIANTS
+		: shouldReduceMotion
+			? CHAT_GREETING_REDUCED_ITEM_VARIANTS
+			: CHAT_GREETING_HEADING_ITEM_VARIANTS;
 	return (
 		<div className="w-full">
 			<AnimatePresence mode="wait">
@@ -466,50 +533,39 @@ export default function ChatGreeting({
 						key={`rovo-${heroKey}-${resolvedHeading}`}
 						variants={activeContainerVariants}
 					>
-						<AnimatePresence mode="popLayout" propagate>
-							{shouldShowHero ? (
-								<motion.div
-									animate="visible"
-									className="flex flex-col items-center gap-2"
-									exit="exit"
-									initial="hidden"
-									key="hero"
-									variants={activeContainerVariants}
-								>
-									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
-										{shouldUseControlledChatIllustration ? (
-											<ControlledRovoIllustration illusId="chat" size={74} />
-										) : shouldUseControlledAgentIllustration ? (
-											<ControlledRovoIllustration illusId="ai" size={74} />
-										) : (
-											<>
-												<Image
-													src={resolvedIllustrationSrc}
-													alt=""
-													width={74}
-													height={67}
-													priority
-													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
-												/>
-												<Image
-													src={resolvedIllustrationDarkSrc}
-													alt=""
-													width={74}
-													height={67}
-													priority
-													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
-												/>
-											</>
-										)}
-									</motion.div>
-									<motion.div style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
-										<Heading size="large" className="text-center">{resolvedHeading}</Heading>
-									</motion.div>
+						{shouldShowHero ? (
+							<div className="flex flex-col items-center gap-2">
+								{shouldUseControlledChatIllustration ? (
+									<SidebarControlledRovoIllustration illusId="chat" />
+								) : shouldUseControlledAgentIllustration ? (
+									<SidebarControlledRovoIllustration illusId="ai" />
+								) : (
+									<div className={cn(CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME, "relative")}>
+										<Image
+											src={resolvedIllustrationSrc}
+											alt=""
+											width={74}
+											height={67}
+											priority
+											className={cn(CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
+										/>
+										<Image
+											src={resolvedIllustrationDarkSrc}
+											alt=""
+											width={74}
+											height={67}
+											priority
+											className={cn(CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
+										/>
+									</div>
+								)}
+								<motion.div style={{ willChange: "transform, opacity" }} variants={headingItemVariants}>
+									<Heading size="large" className="text-center">{resolvedHeading}</Heading>
 								</motion.div>
-							) : null}
-						</AnimatePresence>
+							</div>
+						) : null}
 						{shouldShowSuggestionList ? (
-							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
+							<motion.div className="w-full" variants={activePromptContainerVariants}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",

@@ -147,8 +147,22 @@ test("derives a believable skill from a free-form prompt (deterministic)", async
 	assert.ok(!a.skillMd.includes(`\n# ${a.name}\n`), "skillMd body should not repeat the skill name as an H1");
 });
 
+test("derives runtime skill ids without colliding with reserved catalog ids", async () => {
+	const { deriveSkillFromPrompt } = await loadCreateSkillFlowModule();
+	const skill = deriveSkillFromPrompt("create skill review pull request", undefined, {
+		reservedSkillIds: ["review-pull-request", "review-pull-request-2"],
+	});
+
+	assert.equal(skill.name, "Review pull request");
+	assert.equal(skill.id, "review-pull-request-3");
+	assert.match(skill.skillMd, /^name: review-pull-request-3$/mu);
+
+	const unreservedSkill = deriveSkillFromPrompt("create skill review pull request");
+	assert.equal(unreservedSkill.id, "review-pull-request");
+});
+
 test("stage 2 ends with the result card and fires onComplete", async () => {
-	const { deriveSkillFromPrompt, buildCreateSkillStage2, SKILL_CREATION_RESULT_WIDGET_TYPE } =
+	const { deriveSkillFromPrompt, buildCreateSkillStage2, SKILL_CREATION_RESULT_WIDGET_TYPE, SKILL_CREATION_TRACE_WIDGET_TYPE } =
 		await loadCreateSkillFlowModule();
 	const ctx = { startedAt: new Date(0) };
 	const skill = deriveSkillFromPrompt("/Create skill draft release notes");
@@ -170,19 +184,26 @@ test("stage 2 ends with the result card and fires onComplete", async () => {
 	const saveFrame = stage.assistantPartStages[2].getAssistantParts(ctx)[0];
 	assert.deepEqual(saveFrame.data.payload.steps.map((step) => step.id), ["review", "draft", "wire", "save"]);
 
+	const completedTraceStage = stage.assistantPartStages[3];
+	const completedTraceParts = completedTraceStage.getAssistantParts(ctx);
+	assert.equal(completedTraceStage.startsNewAssistantMessage, undefined);
+	assert.equal(completedTraceParts.length, 1);
+	assert.equal(completedTraceParts[0].data.type, SKILL_CREATION_TRACE_WIDGET_TYPE);
+	assert.equal(completedTraceParts[0].data.payload.headerState, "completed");
+
 	const resultStages = stage.assistantPartStages.filter((candidate) =>
 		candidate.getAssistantParts(ctx).some(
 			(part) => part.type === "data-widget-data" && part.data.type === SKILL_CREATION_RESULT_WIDGET_TYPE,
 		)
 	);
-	assert.ok(resultStages.length >= 2);
+	assert.equal(resultStages.length, 1);
 
 	const firstResultStage = resultStages[0];
+	assert.equal(firstResultStage.startsNewAssistantMessage, true);
 	const firstResultParts = firstResultStage.getAssistantParts(ctx);
+	assert.equal(firstResultParts.length, 1);
 	const firstTextPart = firstResultParts.find((part) => part.type === "text");
-	assert.ok(firstTextPart);
-	assert.equal(firstTextPart.state, "streaming");
-	assert.match(firstTextPart.text, new RegExp(skill.name, "u"));
+	assert.equal(firstTextPart, undefined);
 
 	await firstResultStage.onApply();
 	assert.equal(completed, 1);
@@ -193,10 +214,9 @@ test("stage 2 ends with the result card and fires onComplete", async () => {
 	);
 	assert.ok(resultPart);
 	assert.equal(resultPart.data.payload.skillId, skill.id);
+	assert.equal(resultPart.data.payload.showSuccessSummary, true);
 
 	const finalTextPart = finalParts.find((part) => part.type === "text");
-	assert.ok(finalTextPart);
-	assert.equal(finalTextPart.state, "done");
-	assert.match(finalTextPart.text, /prefilled the composer/u);
+	assert.equal(finalTextPart, undefined);
 	assert.equal(completed, 1);
 });

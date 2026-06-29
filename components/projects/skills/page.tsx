@@ -34,7 +34,6 @@ import {
 import { SKILL_GREETING_SUGGESTIONS } from "./lib/skill-suggestions";
 
 const SKILLS_GREETING: ChatPanelGreetingProps = {
-	heading: "What skill should I run?",
 	suggestions: SKILL_GREETING_SUGGESTIONS,
 };
 
@@ -47,6 +46,7 @@ const SKILLS_GREETING: ChatPanelGreetingProps = {
 const ROVO_GREETING_AGENT = getRovoAgentProfile(ROVO_AGENT_ID);
 
 const CREATE_SKILL_PLACEHOLDER = "Describe what you want";
+const STATIC_SKILL_IDS = DEFAULT_SKILLS.map((skill) => skill.id);
 
 interface SkillsPanelProps {
 	/** Mirrors `ChatPanel.onClose`; defaults to a no-op for the standalone demo. */
@@ -155,7 +155,9 @@ export default function SkillsPanel({ onClose }: Readonly<SkillsPanelProps>) {
 				}
 				return next;
 			});
-			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text);
+			const skill = deriveSkillFromPrompt(pendingCreatePromptRef.current || text, text, {
+				reservedSkillIds: [...STATIC_SKILL_IDS, ...createdSkills.map((entry) => entry.id)],
+			});
 			addCreatedSkill(skill);
 			const stage = buildCreateSkillStage2(skill, () => {
 				prefillCounterRef.current += 1;

@@ -865,7 +865,7 @@ export function GenerativeCardDemoAnimatedExample() {
 				className="h-8"
 				onClick={() => setKey((prev) => prev + 1)}
 			>
-				Retry animation
+				Replay
 			</Button>
 		</div>
 	);
@@ -933,7 +933,7 @@ export function GenerativeCardDemoTrace() {
 					setKey((prev) => prev + 1);
 				}}
 			>
-				Retry animation
+				Replay
 			</Button>
 		</div>
 	);
@@ -1010,7 +1010,7 @@ export function GenerativeCardDemoInnerGlow() {
 					setKey((prev) => prev + 1);
 				}}
 			>
-				Retry animation
+				Replay
 			</Button>
 		</div>
 	);

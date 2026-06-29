@@ -2221,14 +2221,14 @@ import { Textarea } from "@/components/ui/textarea";
 
   breadcrumb: {
     description:
-      "A navigation breadcrumb component with semantic HTML, slash separators, label slots, and ellipsis support for deep paths.",
+      "A navigation breadcrumb component with semantic HTML, slash separators, medium and small sizes, label slots, and ellipsis support for deep paths.",
     adsUrl: "https://atlassian.design/components/breadcrumbs",
     usage: `import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem,
   BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-<Breadcrumb>
+<Breadcrumb size="medium">
   <BreadcrumbList>
     <BreadcrumbItem>
       <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -2240,6 +2240,11 @@ import { Textarea } from "@/components/ui/textarea";
   </BreadcrumbList>
 </Breadcrumb>`,
     subComponents: [
+      {
+        name: "Breadcrumb",
+        description:
+          "Navigation wrapper. Set size to medium or small; medium is the default.",
+      },
       {
         name: "BreadcrumbList",
         description: "Ordered list container for items.",
@@ -2280,6 +2285,11 @@ import { Textarea } from "@/components/ui/textarea";
         demoSlug: "breadcrumb-demo-custom-separator",
       },
       { title: "Basic", demoSlug: "breadcrumb-demo-basic" },
+      {
+        title: "Sizes",
+        description: "Medium and small breadcrumb sizes.",
+        demoSlug: "breadcrumb-demo-sizes",
+      },
       {
         title: "With label slots",
         description: "Breadcrumb labels with icons, tiles, and icon tiles.",
@@ -2951,6 +2961,182 @@ import { Textarea } from "@/components/ui/textarea";
         title: "With image",
         description: "Card with full-width image.",
         demoSlug: "card-demo-with-image",
+      },
+    ],
+  },
+
+  panel: {
+    description:
+      "A dismissible side-panel surface based on @atlassian/panel-system, with fixed header/footer regions and a scrollable content body.",
+    usage: `import {
+  Panel,
+  PanelActionClose,
+  PanelActionGroup,
+  PanelBody,
+  PanelContent,
+  PanelFooter,
+  PanelHeader,
+  PanelSubheader,
+  PanelTitle,
+} from "@/components/ui/panel";
+
+<Panel aria-label="Issue details">
+  <PanelHeader>
+    <PanelTitle>Jira</PanelTitle>
+    <PanelActionGroup>
+      <PanelActionClose onClick={closePanel} />
+    </PanelActionGroup>
+  </PanelHeader>
+  <PanelContent>
+    <PanelSubheader title="ENG-482 Improve import flow" />
+    <PanelBody>Panel content</PanelBody>
+  </PanelContent>
+  <PanelFooter>Footer actions</PanelFooter>
+</Panel>`,
+    props: [
+      {
+        name: "children",
+        type: "ReactNode",
+        description:
+          "Panel system building blocks, usually PanelHeader, PanelContent, and optional PanelFooter.",
+      },
+      {
+        name: "testId",
+        type: "string",
+        description: "Adds data-testid to the rendered panel-system part.",
+      },
+      {
+        name: "isFocusLockEnabled",
+        type: "boolean",
+        default: "false",
+        description:
+          "Marks the panel container as focus-lock enabled for parity with panel-system API.",
+      },
+      {
+        name: "spacing",
+        type: '"none" | "default"',
+        default: '"default"',
+        description: "Controls PanelBody horizontal padding.",
+      },
+      {
+        name: "disclaimer",
+        type: "ReactNode",
+        description: "Optional PanelFooter disclaimer slot.",
+      },
+      {
+        name: "onBeforeClose",
+        type: "() => boolean | Promise<boolean>",
+        description:
+          "Optional PanelActionClose guard. Returning false prevents onClick from running.",
+      },
+      {
+        name: "className",
+        type: "string",
+        description: "Additional classes for the rendered panel-system part.",
+      },
+    ],
+    subComponents: [
+      {
+        name: "Panel",
+        description: "Alias for PanelContainer.",
+      },
+      {
+        name: "PanelContainer",
+        description: "Panel surface wrapper for side-panel layouts.",
+      },
+      {
+        name: "PanelHeader",
+        description: "Fixed top panel header for title and actions.",
+      },
+      {
+        name: "PanelTitle",
+        description: "Header title with optional icon.",
+      },
+      {
+        name: "PanelContent",
+        description: "Scrollable region between fixed header and footer.",
+      },
+      {
+        name: "PanelSubheader",
+        description: "Optional secondary panel heading with cover image and breadcrumbs.",
+      },
+      {
+        name: "PanelBody",
+        description: "Main panel content area with standard 24px horizontal padding.",
+      },
+      {
+        name: "PanelFooter",
+        description: "Optional sticky footer for actions and disclaimer content.",
+      },
+      {
+        name: "PanelActionGroup",
+        description: "Header action cluster.",
+      },
+      {
+        name: "PanelActionBack",
+        description: "Back action for nested drill-in navigation.",
+      },
+      {
+        name: "PanelActionExpand",
+        description: "Expand action to widen the panel.",
+      },
+      {
+        name: "PanelActionMore",
+        description: "Overflow menu trigger for secondary actions.",
+      },
+      {
+        name: "PanelActionNewTab",
+        description: "Link action that opens content in a new tab.",
+      },
+      {
+        name: "PanelActionClose",
+        description: "Close action with panel-system default label and optional onBeforeClose intercept.",
+      },
+      {
+        name: "PanelDisclaimer",
+        description: "Sunken note rendered below footer actions.",
+      },
+    ],
+    examples: [
+      {
+        title: "Default",
+        description: "Side panel with app header, actions, and contextual issue content.",
+        demoSlug: "panel-demo-default",
+      },
+      {
+        title: "Basic",
+        description: "Minimal composition: header with actions, body, and footer.",
+        demoSlug: "panel-demo-basic",
+      },
+      {
+        title: "Header",
+        description: "Header composition variants: title, leading icon, app logo, back, and action groups.",
+        demoSlug: "panel-demo-header",
+      },
+      {
+        title: "Subheader",
+        description: "Panel with subheader context and a cover image.",
+        demoSlug: "panel-demo-with-subheader",
+      },
+      {
+        title: "Inline edit",
+        description: "Subheader title edited in place via the inlineEdit slot.",
+        demoSlug: "panel-demo-inline-edit",
+      },
+      {
+        title: "Footer",
+        description: "Footer action alignment and one- or two-zone disclaimer variants.",
+        demoSlug: "panel-demo-with-footer",
+      },
+      {
+        title: "Loading",
+        description: "Default skeleton state for header, subheader, and body.",
+        demoSlug: "panel-demo-loading",
+      },
+      {
+        title: "Unsaved changes",
+        description: "Intercept close with onBeforeClose to confirm before discarding.",
+        demoSlug: "panel-demo-unsaved-changes",
       },
     ],
   },
@@ -4286,6 +4472,258 @@ import SearchIcon from "@atlaskit/icon/core/search";
     ],
   },
 
+  attachment: {
+    description:
+      "A compact file attachment primitive with media, metadata, actions, trigger overlay, grouped scrolling, and upload/error/done states.",
+    usage: `import { Attachment, AttachmentMedia, AttachmentContent, AttachmentTitle, AttachmentDescription } from "@/components/ui/attachment";
+
+<Attachment>
+  <AttachmentMedia />
+  <AttachmentContent>
+    <AttachmentTitle>roadmap.pdf</AttachmentTitle>
+    <AttachmentDescription>2.4 MB</AttachmentDescription>
+  </AttachmentContent>
+</Attachment>`,
+    props: [
+      {
+        name: "state",
+        type: '"idle" | "uploading" | "processing" | "error" | "done"',
+        default: '"done"',
+        description: "Attachment lifecycle state used for visual treatment.",
+      },
+      {
+        name: "size",
+        type: '"default" | "sm" | "xs"',
+        default: '"default"',
+        description: "Compactness of the attachment shell and media.",
+      },
+      {
+        name: "orientation",
+        type: '"horizontal" | "vertical"',
+        default: '"horizontal"',
+        description: "Layout direction for media and metadata.",
+      },
+    ],
+    subComponents: [
+      { name: "AttachmentGroup", description: "Scrollable row of attachments." },
+      { name: "AttachmentMedia", description: "Icon or image thumbnail." },
+      { name: "AttachmentContent", description: "Metadata container." },
+      { name: "AttachmentTitle", description: "Primary attachment label." },
+      { name: "AttachmentDescription", description: "Secondary metadata text." },
+      { name: "AttachmentActions", description: "Action button container." },
+      { name: "AttachmentAction", description: "Small action button." },
+      { name: "AttachmentTrigger", description: "Overlay trigger for click targets." },
+    ],
+    examples: [
+      { title: "Default", demoSlug: "attachment-demo-default" },
+      {
+        title: "Files",
+        description: "Horizontal and vertical file attachments.",
+        demoSlug: "attachment-demo-files",
+      },
+      {
+        title: "Content Only",
+        description: "Attachments with title-only and title-plus-description content.",
+        demoSlug: "attachment-demo-content-only",
+      },
+      {
+        title: "States",
+        description: "Idle, uploading, processing, done, and error states.",
+        demoSlug: "attachment-demo-states",
+      },
+      {
+        title: "Images",
+        description: "Image media attachments with full-card triggers.",
+        demoSlug: "attachment-demo-images",
+      },
+      {
+        title: "Image States",
+        description: "Image attachments across upload lifecycle states.",
+        demoSlug: "attachment-demo-image-states",
+      },
+      {
+        title: "Sizes",
+        description: "Default, small, and extra-small attachment sizes.",
+        demoSlug: "attachment-demo-sizes",
+      },
+      {
+        title: "Group",
+        description: "Scrollable attachment group with snapping behavior.",
+        demoSlug: "attachment-demo-group",
+      },
+      {
+        title: "Trigger",
+        description: "Full-card link and dialog triggers with independent actions.",
+        demoSlug: "attachment-demo-trigger",
+      },
+      {
+        title: "Orientation",
+        description: "Horizontal and vertical attachment layouts.",
+        demoSlug: "attachment-demo-orientation",
+      },
+    ],
+  },
+
+  bubble: {
+    description:
+      "A chat bubble primitive with ADS-tokenized variants, polymorphic content, alignment, grouping, and reaction overlays.",
+    usage: `import { Bubble, BubbleContent } from "@/components/ui/bubble";
+
+<Bubble variant="secondary">
+  <BubbleContent>Can you review this change?</BubbleContent>
+</Bubble>`,
+    props: [
+      {
+        name: "variant",
+        type: '"default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive"',
+        default: '"default"',
+        description: "Visual treatment for bubble content.",
+      },
+      {
+        name: "align",
+        type: '"start" | "end"',
+        default: '"start"',
+        description: "Aligns the bubble within a message row.",
+      },
+    ],
+    subComponents: [
+      { name: "BubbleGroup", description: "Vertical stack of bubbles." },
+      { name: "BubbleContent", description: "Bubble body, with render support." },
+      { name: "BubbleReactions", description: "Reaction overlay positioned on a bubble." },
+    ],
+    examples: [
+      { title: "Sizes", demoSlug: "bubble-demo-sizes" },
+      { title: "Variants", demoSlug: "bubble-demo-variants" },
+      { title: "Alignment", demoSlug: "bubble-demo-alignment" },
+      { title: "Grouped", demoSlug: "bubble-demo-grouped" },
+      { title: "Collapsible", demoSlug: "bubble-demo-collapsible" },
+      { title: "Button & Links", id: "button-links", demoSlug: "bubble-demo-button-links" },
+      { title: "Reaction Placement", demoSlug: "bubble-demo-reaction-placement" },
+      { title: "Reactions Buttons", demoSlug: "bubble-demo-reactions-buttons" },
+    ],
+  },
+
+  marker: {
+    description:
+      "A lightweight inline marker for timestamps, status notices, and separators in message streams.",
+    usage: `import { Marker, MarkerContent } from "@/components/ui/marker";
+
+<Marker variant="separator">
+  <MarkerContent>Today</MarkerContent>
+</Marker>`,
+    props: [
+      {
+        name: "variant",
+        type: '"default" | "border" | "separator"',
+        default: '"default"',
+        description: "Marker layout and divider treatment.",
+      },
+      {
+        name: "render",
+        type: "React.ReactElement",
+        description: "Optional element to render as the marker root.",
+      },
+    ],
+    subComponents: [
+      { name: "MarkerIcon", description: "Decorative marker icon slot." },
+      { name: "MarkerContent", description: "Marker text/content slot." },
+    ],
+    examples: [
+      { title: "Markers", demoSlug: "marker-demo-markers" },
+      { title: "Border", demoSlug: "marker-demo-border" },
+      { title: "Separator", demoSlug: "marker-demo-separator" },
+      { title: "Accordion", demoSlug: "marker-demo-accordion" },
+      { title: "Drawer", demoSlug: "marker-demo-drawer" },
+    ],
+  },
+
+  message: {
+    description:
+      "A composable message row primitive for chat layouts, with avatar, header, content, footer, grouping, and start/end alignment.",
+    usage: `import { Message, MessageContent } from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+
+<Message align="end">
+  <MessageContent>
+    <Bubble align="end">
+      <BubbleContent>Ship it.</BubbleContent>
+    </Bubble>
+  </MessageContent>
+</Message>`,
+    props: [
+      {
+        name: "align",
+        type: '"start" | "end"',
+        default: '"start"',
+        description: "Message row alignment.",
+      },
+    ],
+    subComponents: [
+      { name: "MessageGroup", description: "Stack of message rows." },
+      { name: "MessageAvatar", description: "Avatar slot aligned with the message." },
+      { name: "MessageContent", description: "Container for header, bubbles, and footer." },
+      { name: "MessageHeader", description: "Metadata above message content." },
+      { name: "MessageFooter", description: "Metadata below message content." },
+    ],
+    examples: [
+      { title: "Message", demoSlug: "message-demo-message" },
+      { title: "Avatar", demoSlug: "message-demo-avatar" },
+      { title: "Group", demoSlug: "message-demo-group" },
+      { title: "Group Chat", demoSlug: "message-demo-group-chat" },
+      { title: "Header and Footer", demoSlug: "message-demo-header-and-footer" },
+      { title: "Actions", demoSlug: "message-demo-actions" },
+      { title: "Attachment", demoSlug: "message-demo-attachment" },
+      { title: "Attachment Group", demoSlug: "message-demo-attachment-group" },
+    ],
+  },
+
+  "message-scroller": {
+    description:
+      "A headless @shadcn/react message-scroller wrapper with VPK styling for chat logs, anchored items, and scroll-to-start/end controls.",
+    usage: `import { MessageScroller, MessageScrollerViewport, MessageScrollerContent, MessageScrollerItem } from "@/components/ui/message-scroller";
+
+<MessageScroller>
+  <MessageScrollerViewport>
+    <MessageScrollerContent>
+      <MessageScrollerItem>Message</MessageScrollerItem>
+    </MessageScrollerContent>
+  </MessageScrollerViewport>
+</MessageScroller>`,
+    props: [
+      {
+        name: "autoScroll",
+        type: "boolean",
+        description: "Provider option controlling automatic scrolling behavior.",
+      },
+      {
+        name: "scrollAnchor",
+        type: "boolean",
+        default: "false",
+        description: "Marks a MessageScrollerItem as a scroll anchor.",
+      },
+      {
+        name: "direction",
+        type: '"start" | "end"',
+        default: '"end"',
+        description: "MessageScrollerButton scroll target.",
+      },
+    ],
+    subComponents: [
+      { name: "MessageScrollerProvider", description: "Optional provider for scroll behavior configuration." },
+      { name: "MessageScrollerViewport", description: "Scrollable viewport." },
+      { name: "MessageScrollerContent", description: "Message list content area." },
+      { name: "MessageScrollerItem", description: "Virtualized-friendly message item." },
+      { name: "MessageScrollerButton", description: "Floating scroll button." },
+    ],
+    examples: [
+      { title: "Chat", demoSlug: "message-scroller-demo-chat" },
+    ],
+    demoLayout: {
+      previewContentWidth: "full",
+      examplesContentWidth: "full",
+    },
+  },
+
   resizable: {
     description:
       "A draggable panel resize system built on react-resizable-panels with configurable orientations and visible handles.",
@@ -5276,7 +5714,7 @@ import { Icon } from "@/components/ui/icon";
 import SearchIcon from "@atlaskit/icon/core/search";
 
 <IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blue" />
-<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="transparent" size="xxsmall" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" size="small" />} />} iconSize="small" label="Search" variant="transparent" size="small" />
 <IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blueBold" size="large" shape="circle" />`,
     props: [
       {
@@ -5303,6 +5741,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
         type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"medium"',
         description: "Size of the tile. Colored examples use xsmall through xlarge; transparent uses xxsmall, small, and medium.",
+      },
+      {
+        name: "iconSize",
+        type: '"small" | "medium"',
+        default: 'transparent: "small" for xxsmall tiles, otherwise "medium"',
+        description:
+          'Transparent-only icon size override. Use iconSize="small" for a 12px icon and iconSize="medium" for a 16px icon inside 24px or 32px transparent tiles.',
       },
       {
         name: "shape",
@@ -6406,6 +6851,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
         description: "Whether the tile has internal padding.",
       },
       {
+        name: "isSnug",
+        type: "boolean",
+        default: "false",
+        description:
+          "Snug 2px inset: a fixed 2px pad on every side while the content fills the rest of the box (e.g. a 24px small tile yields 20px of content). Takes precedence over isInset. Pair with variant=\"transparent\" for a bare container around logos, avatars, or icons.",
+      },
+      {
         name: "hasBorder",
         type: "boolean",
         default: "false",
@@ -6440,6 +6892,12 @@ import SearchIcon from "@atlaskit/icon/core/search";
         description:
           "With and without internal padding for edge-to-edge content.",
         demoSlug: "tile-demo-inset",
+      },
+      {
+        title: "Snug inset",
+        description:
+          "A 2px inset on a transparent box: a 24px tile holds 20px of content. Wraps 1P product logos, agent avatars, and automation/app icons.",
+        demoSlug: "tile-demo-snug",
       },
     ],
   },

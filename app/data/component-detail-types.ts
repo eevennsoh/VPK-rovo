@@ -14,6 +14,7 @@ export interface SubComponentDoc {
 
 export interface ExampleDefinition {
 	title: string;
+	id?: string;
 	description?: string;
 	demoSlug: string;
 	badge?: { label: string; variant: string };

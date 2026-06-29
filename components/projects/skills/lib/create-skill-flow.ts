@@ -78,7 +78,7 @@ const CLARIFY_TOOL_CALL_ID = "create-skill-clarify";
 // per-step beats.
 const TRACE_INITIAL_DELAY_MS = 3200;
 const TRACE_STEP_DELAYS_MS = [1200, 1400, 1500, 1300] as const;
-const RESULT_TEXT_STREAM_DELAYS_MS = [260, 320, 360] as const;
+const RESULT_CARD_DELAY_MS = 220;
 
 type TraceStepStatus = "complete" | "active" | "pending";
 
@@ -118,6 +118,12 @@ export interface SkillCreationResultPayload {
 	description: string;
 	iconKey: string;
 	collectionId: string;
+	showSuccessSummary?: boolean;
+}
+
+export interface DeriveSkillFromPromptOptions {
+	/** Skill ids already owned by the static catalog. Generated runtime ids must not collide with them. */
+	reservedSkillIds?: readonly string[];
 }
 
 type AssistantParts = RovoUIMessage["parts"];
@@ -126,6 +132,7 @@ interface InterceptStage {
 	delayMs: number;
 	getAssistantParts: (context: { startedAt: Date }) => AssistantParts;
 	onApply?: () => Promise<void> | void;
+	startsNewAssistantMessage?: boolean;
 }
 
 export interface CreateSkillStageOutcome {
@@ -187,10 +194,6 @@ function resultWidgetPart(payload: SkillCreationResultPayload): AssistantParts[n
 		type: "data-widget-data",
 		data: { type: SKILL_CREATION_RESULT_WIDGET_TYPE, payload },
 	} as AssistantParts[number];
-}
-
-function textPart(text: string, state: "streaming" | "done"): AssistantParts[number] {
-	return { type: "text", text, state } as AssistantParts[number];
 }
 
 function buildQuestionCardPart(): AssistantParts[number] {
@@ -364,6 +367,21 @@ const NAME_STOP_WORDS = new Set([
 	"into", "to", "for", "a", "an", "the", "my", "our", "of", "and", "with", "on", "in", "that", "from", "all",
 ]);
 
+function uniquifySkillId(baseId: string, reservedSkillIds: readonly string[]): string {
+	const reservedIds = new Set(reservedSkillIds.map((id) => slugifySkillName(id)));
+	if (!reservedIds.has(baseId)) {
+		return baseId;
+	}
+
+	let suffix = 2;
+	let candidate = `${baseId}-${suffix}`;
+	while (reservedIds.has(candidate)) {
+		suffix += 1;
+		candidate = `${baseId}-${suffix}`;
+	}
+	return candidate;
+}
+
 /**
  * Derives a believable `SkillsDirectorySkill` from the user's free-form prompt
  * (and, optionally, the clarification summary text). Deterministic.
@@ -371,6 +389,7 @@ const NAME_STOP_WORDS = new Set([
 export function deriveSkillFromPrompt(
 	prompt: string,
 	clarificationText?: string,
+	options: DeriveSkillFromPromptOptions = {},
 ): SkillsDirectorySkill {
 	// Strip the leading "/Create skill" mention, then any "create a skill that…"
 	// filler and leading stop-words, leaving the user's actual intent.
@@ -385,7 +404,8 @@ export function deriveSkillFromPrompt(
 		nameWords.pop();
 	}
 	const name = titleCaseFirst(nameWords.join(" ")).replace(/[.?!,]+$/u, "") || "New skill";
-	const id = slugifySkillName(name) || "new-skill";
+	const baseId = slugifySkillName(name) || "new-skill";
+	const id = uniquifySkillId(baseId, options.reservedSkillIds ?? []);
 	const description = `${titleCaseFirst(intent.replace(/[.?!]+$/u, ""))}. Use when the user asks to ${intent.toLowerCase()}.`;
 	const iconKey = pickIconKey(`${prompt} ${clarificationText ?? ""}`);
 
@@ -509,20 +529,6 @@ function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTra
 	}));
 }
 
-function buildCreatedSkillReplyText(skill: SkillsDirectorySkill): string {
-	return `Created **${skill.name}** and added it to your skills. I prefilled the composer with its skill tag so you can run it now, or open the card to edit the generated instructions.`;
-}
-
-function buildCreatedSkillReplyChunks(skill: SkillsDirectorySkill): string[] {
-	const fullText = buildCreatedSkillReplyText(skill);
-
-	return [
-		`Created **${skill.name}**`,
-		`Created **${skill.name}** and added it to your skills.`,
-		fullText,
-	];
-}
-
 export function buildCreateSkillStage2(
 	skill: SkillsDirectorySkill,
 	onComplete?: () => void,
@@ -536,16 +542,10 @@ export function buildCreateSkillStage2(
 	};
 	const elapsedSeconds = (startedAt: Date) =>
 		Math.max(1, Math.round((Date.now() - startedAt.getTime()) / 1000));
-	const responseChunks = buildCreatedSkillReplyChunks(skill);
-	const buildResultParts = (
-		startedAt: Date,
-		text: string,
-		state: "streaming" | "done",
-	): AssistantParts => [
+	const buildCompletedTraceParts = (startedAt: Date): AssistantParts => [
 		traceWidgetPart({ headerState: "completed", durationSeconds: elapsedSeconds(startedAt), steps: stage2Steps(0, true) }),
-		resultWidgetPart(resultPayload),
-		textPart(text, state),
 	];
+	const buildResultParts = (): AssistantParts => [resultWidgetPart({ ...resultPayload, showSuccessSummary: true })];
 
 	return {
 		getPendingAssistantParts: () =>
@@ -568,26 +568,18 @@ export function buildCreateSkillStage2(
 			},
 			{
 				delayMs: TRACE_STEP_DELAYS_MS[2],
-				// All steps complete -> header settles to "Thought for Xs"; the result
-				// card appears with assistant text already streaming below it.
+				// All steps complete -> header settles to "Thought for Xs". The result
+				// card is emitted in its own assistant message because ThreadMessageRoot
+				// intentionally renders only one widget per message.
 				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[0], "streaming"),
+					buildCompletedTraceParts(startedAt),
+			},
+			{
+				delayMs: RESULT_CARD_DELAY_MS,
+				getAssistantParts: () =>
+					buildResultParts(),
 				onApply: onComplete,
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[0],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[1], "streaming"),
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[1],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[2], "streaming"),
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[2],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[2], "done"),
+				startsNewAssistantMessage: true,
 			},
 		],
 	};

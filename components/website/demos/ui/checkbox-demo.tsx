@@ -6,6 +6,9 @@ import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldTit
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+const checkboxTitleFieldClassName = "items-center! gap-2";
+const checkboxTitleControlClassName = "flex size-6 shrink-0 items-center justify-center";
+
 export default function CheckboxDemo() {
 	const [checked, setChecked] = useState(true);
 
@@ -66,42 +69,44 @@ export function CheckboxDemoGroup() {
 	return (
 		<Field>
 			<FieldLabel>Show these items on the desktop:</FieldLabel>
-			<Field orientation="horizontal">
-				<Checkbox id="finder-pref-9k2-hard-disks-ljj" />
-				<FieldLabel
-					htmlFor="finder-pref-9k2-hard-disks-ljj"
-					className="font-normal"
-				>
-					Hard disks
-				</FieldLabel>
-			</Field>
-			<Field orientation="horizontal">
-				<Checkbox id="finder-pref-9k2-external-disks-1yg" />
-				<FieldLabel
-					htmlFor="finder-pref-9k2-external-disks-1yg"
-					className="font-normal"
-				>
-					External disks
-				</FieldLabel>
-			</Field>
-			<Field orientation="horizontal">
-				<Checkbox id="finder-pref-9k2-cds-dvds-fzt" />
-				<FieldLabel
-					htmlFor="finder-pref-9k2-cds-dvds-fzt"
-					className="font-normal"
-				>
-					CDs, DVDs, and iPods
-				</FieldLabel>
-			</Field>
-			<Field orientation="horizontal">
-				<Checkbox id="finder-pref-9k2-connected-servers-6l2" />
-				<FieldLabel
-					htmlFor="finder-pref-9k2-connected-servers-6l2"
-					className="font-normal"
-				>
-					Connected servers
-				</FieldLabel>
-			</Field>
+			<FieldGroup data-slot="checkbox-group" className="!gap-0">
+				<Field orientation="horizontal">
+					<Checkbox id="finder-pref-9k2-hard-disks-ljj" />
+					<FieldLabel
+						htmlFor="finder-pref-9k2-hard-disks-ljj"
+						className="font-normal"
+					>
+						Hard disks
+					</FieldLabel>
+				</Field>
+				<Field orientation="horizontal">
+					<Checkbox id="finder-pref-9k2-external-disks-1yg" />
+					<FieldLabel
+						htmlFor="finder-pref-9k2-external-disks-1yg"
+						className="font-normal"
+					>
+						External disks
+					</FieldLabel>
+				</Field>
+				<Field orientation="horizontal">
+					<Checkbox id="finder-pref-9k2-cds-dvds-fzt" />
+					<FieldLabel
+						htmlFor="finder-pref-9k2-cds-dvds-fzt"
+						className="font-normal"
+					>
+						CDs, DVDs, and iPods
+					</FieldLabel>
+				</Field>
+				<Field orientation="horizontal">
+					<Checkbox id="finder-pref-9k2-connected-servers-6l2" />
+					<FieldLabel
+						htmlFor="finder-pref-9k2-connected-servers-6l2"
+						className="font-normal"
+					>
+						Connected servers
+					</FieldLabel>
+				</Field>
+			</FieldGroup>
 		</Field>
 	);
 }
@@ -203,41 +208,45 @@ export function CheckboxDemoWithDescriptionFull() {
 
 export function CheckboxDemoWithDescription() {
 	return (
-		<div className="flex items-start gap-2">
-			<Checkbox id="notifications" className="mt-0.5" />
-			<div>
-				<Label htmlFor="notifications">Enable notifications</Label>
-				<p className="text-sm text-muted-foreground">
+		<Field orientation="horizontal">
+			<Checkbox id="notifications" />
+			<FieldContent>
+				<FieldLabel htmlFor="notifications" className="leading-6">Enable notifications</FieldLabel>
+				<FieldDescription>
 					Receive email notifications when updates are available.
-				</p>
-			</div>
-		</div>
+				</FieldDescription>
+			</FieldContent>
+		</Field>
 	);
 }
 
 export function CheckboxDemoWithTitle() {
 	return (
-		<FieldGroup>
+		<FieldGroup className="gap-2">
 			<FieldLabel htmlFor="toggle-2">
-				<Field orientation="horizontal">
-					<Checkbox id="toggle-2" defaultChecked />
+				<Field orientation="horizontal" className={checkboxTitleFieldClassName}>
 					<FieldContent>
 						<FieldTitle>Enable notifications</FieldTitle>
 						<FieldDescription>
 							You can enable or disable notifications at any time.
 						</FieldDescription>
 					</FieldContent>
+					<span className={checkboxTitleControlClassName}>
+						<Checkbox id="toggle-2" defaultChecked />
+					</span>
 				</Field>
 			</FieldLabel>
 			<FieldLabel htmlFor="toggle-4">
-				<Field orientation="horizontal" data-disabled>
-					<Checkbox id="toggle-4" disabled />
+				<Field orientation="horizontal" data-disabled className={checkboxTitleFieldClassName}>
 					<FieldContent>
 						<FieldTitle>Enable notifications</FieldTitle>
 						<FieldDescription>
 							You can enable or disable notifications at any time.
 						</FieldDescription>
 					</FieldContent>
+					<span className={checkboxTitleControlClassName}>
+						<Checkbox id="toggle-4" disabled />
+					</span>
 				</Field>
 			</FieldLabel>
 		</FieldGroup>

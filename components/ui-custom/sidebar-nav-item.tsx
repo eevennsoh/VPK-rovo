@@ -138,6 +138,14 @@ function SidebarNavItem({
 						"group-hover/sidebar-nav-item:static group-hover/sidebar-nav-item:translate-y-0",
 						"group-focus-within/sidebar-nav-item:static group-focus-within/sidebar-nav-item:translate-y-0",
 						"group-has-[[data-popup-open]]/sidebar-nav-item:static group-has-[[data-popup-open]]/sidebar-nav-item:translate-y-0",
+						// When a count/meta badge is present, the resting actions would
+						// overlap it (both anchor to the right edge). Hide actions at rest
+						// and reveal them on hover/focus so the badge shows cleanly.
+						// `pointer-events-none` at rest keeps the invisible buttons from
+						// intercepting taps over the badge on touch/no-hover devices;
+						// re-enabled together with opacity on reveal.
+						meta &&
+							"pointer-events-none opacity-0 transition-opacity duration-fast ease-out motion-reduce:transition-none group-hover/sidebar-nav-item:pointer-events-auto group-hover/sidebar-nav-item:opacity-100 group-focus-within/sidebar-nav-item:pointer-events-auto group-focus-within/sidebar-nav-item:opacity-100 group-has-[[data-popup-open]]/sidebar-nav-item:pointer-events-auto group-has-[[data-popup-open]]/sidebar-nav-item:opacity-100",
 					)}
 				>
 					{actions}

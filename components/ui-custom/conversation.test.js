@@ -92,7 +92,7 @@ test("Conversation resize follow uses the active follow target while content str
 test("Conversation gives its scroll viewport a constrained flex height", () => {
 	assert.match(
 		CONVERSATION_SOURCE,
-		/className=\{cn\("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-hidden", className\)\}/,
+		/className=\{cn\("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className\)\}/,
 	);
 	assert.match(
 		CONVERSATION_SOURCE,
@@ -101,6 +101,36 @@ test("Conversation gives its scroll viewport a constrained flex height", () => {
 	assert.doesNotMatch(
 		CONVERSATION_SOURCE,
 		/className="h-full w-full overflow-x-hidden overflow-y-auto scrollbar-auto-hide"/,
+	);
+});
+
+test("Conversation can opt out of the reserved scrollbar gutter", () => {
+	assert.match(
+		CONVERSATION_SOURCE,
+		/reserveScrollbarGutter\?: boolean/,
+	);
+	assert.match(
+		CONVERSATION_SOURCE,
+		/reserveScrollbarGutter = true/,
+	);
+	assert.match(
+		CONVERSATION_SOURCE,
+		/scrollbarGutter: reserveScrollbarGutter \? undefined : "auto"/,
+	);
+});
+
+test("Conversation can keep the auto-hidden scrollbar from revealing", () => {
+	assert.match(
+		CONVERSATION_SOURCE,
+		/revealScrollbarOnScroll\?: boolean/,
+	);
+	assert.match(
+		CONVERSATION_SOURCE,
+		/revealScrollbarOnScroll = true/,
+	);
+	assert.match(
+		CONVERSATION_SOURCE,
+		/if \(!revealScrollbarOnScroll\) \{[\s\S]*el\.removeAttribute\("data-scrolling"\)[\s\S]*return[\s\S]*\}/u,
 	);
 });
 

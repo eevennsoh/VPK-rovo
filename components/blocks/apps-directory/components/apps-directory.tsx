@@ -523,6 +523,14 @@ export function AppsDirectoryDialog({
 		});
 	}
 
+	function handleToggleAddedTool(tool: AppsDirectoryTool, checked: boolean): void {
+		if (checked) {
+			handleAddTool(tool);
+		} else {
+			handleRemoveTool(tool);
+		}
+	}
+
 	function handleToggleToolEnabled(tool: AppsDirectoryTool, enabled: boolean): void {
 		setDisabledToolIds((current) => {
 			const next = new Set(current);
@@ -603,6 +611,7 @@ export function AppsDirectoryDialog({
 						filterFavourites={experimentalFavourites}
 						filterAddedApps={experimentalAddedApps}
 						onSelectTool={handleSelectTool}
+						onToggleAddedTool={handleToggleAddedTool}
 						onToggleFavoriteTool={handleToggleFavoriteTool}
 						query={query}
 						selectedCategories={experimentalCategories}
@@ -622,6 +631,7 @@ export function AppsDirectoryDialog({
 						filteredTools={filteredTools}
 						onSelectCategory={setActiveCategory}
 						onSelectTool={handleSelectTool}
+						onToggleAddedTool={handleToggleAddedTool}
 						onToggleFavoriteTool={handleToggleFavoriteTool}
 						query={query}
 						setQuery={setQuery}
@@ -707,6 +717,7 @@ interface AppsDirectoryViewProps {
 	filteredTools: readonly AppsDirectoryTool[];
 	onSelectCategory: (categoryId: string) => void;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleAddedTool: (tool: AppsDirectoryTool, checked: boolean) => void;
 	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	setQuery: (query: string) => void;
@@ -720,6 +731,7 @@ function AppsDirectoryView({
 	filteredTools,
 	onSelectCategory,
 	onSelectTool,
+	onToggleAddedTool,
 	onToggleFavoriteTool,
 	query,
 	setQuery,
@@ -781,6 +793,7 @@ function AppsDirectoryView({
 								<AppCard
 									added={addedIds.has(tool.id)}
 									onSelectTool={onSelectTool}
+									onToggleAddedTool={onToggleAddedTool}
 									onToggleFavoriteTool={onToggleFavoriteTool}
 									tool={tool}
 								/>
@@ -913,6 +926,7 @@ interface ExperimentalAppsDirectoryViewProps {
 	filterFavourites: boolean;
 	filterYourApps: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleAddedTool: (tool: AppsDirectoryTool, checked: boolean) => void;
 	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	selectedCategories: readonly string[];
@@ -932,6 +946,7 @@ function ExperimentalAppsDirectoryView({
 	filterFavourites,
 	filterYourApps,
 	onSelectTool,
+	onToggleAddedTool,
 	onToggleFavoriteTool,
 	query,
 	selectedCategories,
@@ -1049,6 +1064,7 @@ function ExperimentalAppsDirectoryView({
 							<AppCard
 								added={addedIds.has(tool.id)}
 								onSelectTool={onSelectTool}
+								onToggleAddedTool={onToggleAddedTool}
 								onToggleFavoriteTool={onToggleFavoriteTool}
 								tool={tool}
 							/>
@@ -1063,6 +1079,7 @@ function ExperimentalAppsDirectoryView({
 							<AppCard
 								added={addedIds.has(tool.id)}
 								onSelectTool={onSelectTool}
+								onToggleAddedTool={onToggleAddedTool}
 								onToggleFavoriteTool={onToggleFavoriteTool}
 								tool={tool}
 							/>
@@ -1077,14 +1094,16 @@ function ExperimentalAppsDirectoryView({
 interface AppCardProps {
 	added?: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
+	onToggleAddedTool: (tool: AppsDirectoryTool, checked: boolean) => void;
 	onToggleFavoriteTool: (tool: AppsDirectoryTool) => void;
 	tool: AppsDirectoryTool;
 }
 
-function AppCard({ added = false, onSelectTool, onToggleFavoriteTool, tool }: Readonly<AppCardProps>) {
+function AppCard({ added = false, onSelectTool, onToggleAddedTool, onToggleFavoriteTool, tool }: Readonly<AppCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const knowledgeApp = getKnowledgeAppForTool(tool);
 	const selectTool = () => onSelectTool(tool);
+	const toggleAdded = (checked: boolean) => onToggleAddedTool(tool, checked);
 	const toggleFavorite = () => onToggleFavoriteTool(tool);
 
 	return (
@@ -1107,6 +1126,7 @@ function AppCard({ added = false, onSelectTool, onToggleFavoriteTool, tool }: Re
 			knowledgeCount={knowledgeApp?.contents.length}
 			mentionHandle={tool.id}
 			name={tool.name}
+			onAddedChange={toggleAdded}
 			onSelect={selectTool}
 			promptSuggestion={tool.promptSuggestion}
 			teammateCount={tool.teammateCount}

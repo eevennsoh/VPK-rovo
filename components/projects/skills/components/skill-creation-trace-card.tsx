@@ -80,6 +80,15 @@ export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<Sk
 			? "Questions answered"
 			: "Awaiting user response"
 		: payload.headerLabel;
+	const traceLifecycleKey = isAwaiting
+		? answered ? "answered" : "awaiting"
+		: state === "completed" ? "completed" : "active";
+	const shouldAutoOpen = state === "thinking" && !isAwaiting;
+	const [isTraceOpen, setTraceOpen] = useState(shouldAutoOpen);
+
+	useEffect(() => {
+		setTraceOpen(shouldAutoOpen);
+	}, [shouldAutoOpen, traceLifecycleKey]);
 
 	useEffect(() => {
 		setActiveBylineIndex(0);
@@ -95,22 +104,33 @@ export function SkillCreationTraceCard({ payload, answeredFlowIds }: Readonly<Sk
 		};
 	}, [activeStepBylines]);
 
-	const steps: ChainOfThoughtScenarioStep[] = payload.steps.map((step) => ({
-		id: step.id,
-		label: step.skillMention ? invokingSkillLabel(step.skillMention) : step.label,
-		description: step.status === "active"
+	const steps: ChainOfThoughtScenarioStep[] = payload.steps.map((step) => {
+		const byline = step.status === "active"
 			? activeStepBylines[activeBylineIndex % Math.max(activeStepBylines.length, 1)] ?? step.byline
-			: step.byline,
-		status: step.status,
-		icon: stepIcon(step.iconKey),
-	}));
+			: step.byline;
+		const hasByline = byline != null && byline.trim().length > 0;
+
+		return {
+			id: step.id,
+			label: step.skillMention ? invokingSkillLabel(step.skillMention) : step.label,
+			description: step.status === "complete" ? null : byline,
+			status: step.status,
+			icon: stepIcon(step.iconKey),
+			collapsible: hasByline,
+			defaultOpen: step.status === "active",
+			children: hasByline ? (
+				<p className="text-xs leading-4 text-text-subtle">{byline}</p>
+			) : undefined,
+		};
+	});
 
 	return (
 		<ChainOfThoughtScenario
-			key={isAwaiting ? "awaiting" : "active"}
+			key={traceLifecycleKey}
 			animateStepEntrance
 			state={state}
-			defaultOpen={!isAwaiting}
+			open={isTraceOpen}
+			onOpenChange={setTraceOpen}
 			headerLabel={headerLabel}
 			duration={payload.durationSeconds}
 			steps={steps}

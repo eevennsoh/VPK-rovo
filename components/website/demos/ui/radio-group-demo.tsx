@@ -4,18 +4,22 @@ import { Field, FieldContent, FieldDescription, FieldLabel, FieldLegend, FieldSe
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+const radioOptionClassName = "flex h-6 items-center gap-2";
+const radioDescriptionFieldClassName = "items-center! gap-2 [&>[role=radio]]:mt-0!";
+const radioDescriptionControlClassName = "flex size-6 shrink-0 items-center justify-center";
+
 export default function RadioGroupDemo() {
 	return (
 		<RadioGroup defaultValue="option-1">
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="option-1" id="r1" />
 				<Label htmlFor="r1">Default</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="option-2" id="r2" />
 				<Label htmlFor="r2">Comfortable</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="option-3" id="r3" />
 				<Label htmlFor="r3">Compact</Label>
 			</div>
@@ -51,15 +55,15 @@ export function RadioGroupDemoBasic() {
 export function RadioGroupDemoDefault() {
 	return (
 		<RadioGroup defaultValue="default">
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="default" id="r1" />
 				<Label htmlFor="r1">Default</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="comfortable" id="r2" />
 				<Label htmlFor="r2">Comfortable</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="compact" id="r3" />
 				<Label htmlFor="r3">Compact</Label>
 			</div>
@@ -126,15 +130,15 @@ export function RadioGroupDemoGridLayout() {
 export function RadioGroupDemoHorizontal() {
 	return (
 		<RadioGroup defaultValue="default" className="flex flex-row gap-4">
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="default" id="h1" />
 				<Label htmlFor="h1">Default</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="comfortable" id="h2" />
 				<Label htmlFor="h2">Comfortable</Label>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className={radioOptionClassName}>
 				<RadioGroupItem value="compact" id="h3" />
 				<Label htmlFor="h3">Compact</Label>
 			</div>
@@ -175,36 +179,42 @@ export function RadioGroupDemoInvalid() {
 
 export function RadioGroupDemoWithDescriptions() {
 	return (
-		<RadioGroup defaultValue="plus">
+		<RadioGroup defaultValue="plus" className="gap-2">
 			<FieldLabel htmlFor="plus-plan">
-				<Field orientation="horizontal">
+				<Field orientation="horizontal" className={radioDescriptionFieldClassName}>
 					<FieldContent>
 						<div className="font-medium">Plus</div>
-						<FieldDescription>
+					<FieldDescription>
 							For individuals and small teams
 						</FieldDescription>
 					</FieldContent>
-					<RadioGroupItem value="plus" id="plus-plan" />
+					<span className={radioDescriptionControlClassName}>
+						<RadioGroupItem value="plus" id="plus-plan" />
+					</span>
 				</Field>
 			</FieldLabel>
 			<FieldLabel htmlFor="pro-plan">
-				<Field orientation="horizontal">
+				<Field orientation="horizontal" className={radioDescriptionFieldClassName}>
 					<FieldContent>
 						<div className="font-medium">Pro</div>
 						<FieldDescription>For growing businesses</FieldDescription>
 					</FieldContent>
-					<RadioGroupItem value="pro" id="pro-plan" />
+					<span className={radioDescriptionControlClassName}>
+						<RadioGroupItem value="pro" id="pro-plan" />
+					</span>
 				</Field>
 			</FieldLabel>
 			<FieldLabel htmlFor="enterprise-plan">
-				<Field orientation="horizontal">
+				<Field orientation="horizontal" className={radioDescriptionFieldClassName}>
 					<FieldContent>
 						<div className="font-medium">Enterprise</div>
 						<FieldDescription>
 							For large teams and enterprises
 						</FieldDescription>
 					</FieldContent>
-					<RadioGroupItem value="enterprise" id="enterprise-plan" />
+					<span className={radioDescriptionControlClassName}>
+						<RadioGroupItem value="enterprise" id="enterprise-plan" />
+					</span>
 				</Field>
 			</FieldLabel>
 		</RadioGroup>

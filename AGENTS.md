@@ -169,6 +169,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - First-time Rovo bootstrap: run `pnpm run rovo` (or `rovo`) once, copy the printed `ROVO_SESSION_TOKEN` into `.env.local`, then restart the stack
 - Start everything: `pnpm run rovo` (starts 1 rovo serve instance + backend + frontend; use `pnpm run rovo -- 6` for full pool)
 - Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (worktree-aware detached tmux session; runs through `portless run` so this worktree gets a stable `.localhost` URL — read it from `pnpm ports` / `pnpm run dev:tmux:status`, or `.dev-frontend-port` / `.dev-backend-port` for raw ports)
+- Attach to the plain detached dev session for logs: `pnpm run dev:tmux:attach` (detach with `Ctrl-b` then `d`); use `pnpm run dev:tmux:status` for a non-interactive session/port snapshot.
 - Start frontend + backend in foreground: `pnpm run dev` (simple fallback when tmux is unavailable; AI Gateway-backed chat works when credentials are configured; Rovo-selected flows still need Rovo Serve)
 - Start with an explicit Portless URL for this worktree (vanilla — no wrapper): `portless run` gives `vpk-rovo.localhost` on main and `<branch>.vpk-rovo.localhost` on a branch automatically; add `--name <worktree-dir>` only when HEAD is detached (`portless run --name <worktree-dir>` → `<worktree-dir>.localhost`). The `/portless` command resolves this for you. Add `--script rovo` only when the surface needs Rovo Serve.
 - Start Rovo Serve only: `pnpm run dev:rovo`
@@ -307,6 +308,7 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | `gotchas-react.md` | `**/*.tsx` | State updates, derived state, CSS gap |
 | `motion-base-ui.md` | `*.tsx`, `*.jsx` | Animating Base UI with Motion |
 | `motion-react.md` | `*.tsx`, `*.jsx` | Motion for React patterns |
+| `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `*.css` | Motion decision layer: which duration/easing token per role, bold vs practical fork, enter/exit asymmetry, per-role recipes |
 | `agent-operations.md` | `.agents/skills/**`, `.agents/agents/**` | Skills, parallel work, agent teams |
 | `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/skills/**` | Dir structure, env vars, providers, skills catalog |
 | `browser-screenshots.mdc` | `*` (always) | Keep browser screenshots out of workspace root |

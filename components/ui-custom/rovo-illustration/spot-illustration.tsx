@@ -826,6 +826,27 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
     ctx.restore();
   }
 
+  function getCanvasPixelSize(devicePixelRatio: number) {
+    return Math.max(1, Math.round(size * devicePixelRatio));
+  }
+
+  function getResizedIntersectionContext(canvas: HTMLCanvasElement, devicePixelRatio: number) {
+    const pixelSize = getCanvasPixelSize(devicePixelRatio);
+    if (canvas.width !== pixelSize || canvas.height !== pixelSize) {
+      canvas.width = pixelSize;
+      canvas.height = pixelSize;
+      intersectionCtxRef.current = null;
+    }
+    if (!intersectionCtxRef.current) {
+      intersectionCtxRef.current = canvas.getContext("2d");
+    }
+
+    return {
+      ctx: intersectionCtxRef.current,
+      pixelSize,
+    };
+  }
+
   function computeMapping(viewBox: string, cx: number, cy: number, cw: number, ch: number) {
     const [vbx, vby, vbw, vbh] = viewBox.split(/\s+/).map(Number);
     const scale = Math.min(cw / vbw, ch / vbh);
@@ -1344,37 +1365,33 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
 
     if (intersectionRef.current && svg1 && svg2) {
       const dpr = window.devicePixelRatio || 1;
-      if (!intersectionCtxRef.current) {
-        const cvs = intersectionCanvasRef.current;
-        if (cvs) {
-          cvs.width = size * dpr;
-          cvs.height = size * dpr;
-          intersectionCtxRef.current = cvs.getContext("2d");
+      const cvs = intersectionCanvasRef.current;
+      if (cvs) {
+        const { ctx, pixelSize } = getResizedIntersectionContext(cvs, dpr);
+        if (ctx) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, pixelSize, pixelSize);
+          ctx.save();
+          ctx.scale(dpr, dpr);
+          const s1BaseW = size * 0.6, s1BaseH = size * 0.6;
+          const s1CenterX = size / 2 + svg1TX;
+          const s1CenterY = size / 2 + svg1TY;
+          const s1ScaledW = s1BaseW * svg1ScaleVal, s1ScaledH = s1BaseH * svg1ScaleVal;
+          const s1Map = computeMapping(svg1.viewBox, s1CenterX - s1ScaledW / 2, s1CenterY - s1ScaledH / 2, s1ScaledW, s1ScaledH);
+          const intColor = "#101214";
+          ctx.fillStyle = intColor;
+          drawPathsOnCtx(ctx, svg1.paths, s1Map);
+          ctx.globalCompositeOperation = "source-in";
+          const s2BaseW = size * 0.45, s2BaseH = size * 0.45;
+          const s2CenterX = size * 0.725 + svg2TX;
+          const s2CenterY = size * 0.725 + svg2TY;
+          const s2ScaledW = s2BaseW * svg2ScaleVal, s2ScaledH = s2BaseH * svg2ScaleVal;
+          const s2Map = computeMapping(svg2.viewBox, s2CenterX - s2ScaledW / 2, s2CenterY - s2ScaledH / 2, s2ScaledW, s2ScaledH);
+          ctx.fillStyle = intColor;
+          drawPathsOnCtx(ctx, svg2.paths, s2Map);
+          ctx.globalCompositeOperation = "source-over";
+          ctx.restore();
         }
-      }
-      const ctx = intersectionCtxRef.current;
-      if (ctx) {
-        ctx.clearRect(0, 0, size * dpr, size * dpr);
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        const s1BaseW = size * 0.6, s1BaseH = size * 0.6;
-        const s1CenterX = size / 2 + svg1TX;
-        const s1CenterY = size / 2 + svg1TY;
-        const s1ScaledW = s1BaseW * svg1ScaleVal, s1ScaledH = s1BaseH * svg1ScaleVal;
-        const s1Map = computeMapping(svg1.viewBox, s1CenterX - s1ScaledW / 2, s1CenterY - s1ScaledH / 2, s1ScaledW, s1ScaledH);
-        const intColor = "#101214";
-        ctx.fillStyle = intColor;
-        drawPathsOnCtx(ctx, svg1.paths, s1Map);
-        ctx.globalCompositeOperation = "source-in";
-        const s2BaseW = size * 0.45, s2BaseH = size * 0.45;
-        const s2CenterX = size * 0.725 + svg2TX;
-        const s2CenterY = size * 0.725 + svg2TY;
-        const s2ScaledW = s2BaseW * svg2ScaleVal, s2ScaledH = s2BaseH * svg2ScaleVal;
-        const s2Map = computeMapping(svg2.viewBox, s2CenterX - s2ScaledW / 2, s2CenterY - s2ScaledH / 2, s2ScaledW, s2ScaledH);
-        ctx.fillStyle = intColor;
-        drawPathsOnCtx(ctx, svg2.paths, s2Map);
-        ctx.globalCompositeOperation = "source-over";
-        ctx.restore();
       }
       const intAlpha = Math.max(0, Math.min(1, svg2Opacity * svg1Opacity));
       intersectionRef.current.style.opacity = String(intAlpha);
