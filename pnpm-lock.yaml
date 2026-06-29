@@ -183,9 +183,6 @@ importers:
       '@number-flow/react':
         specifier: ^0.6.0
         version: 0.6.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@playwright/mcp':
-        specifier: ^0.0.75
-        version: 0.0.75
       '@radix-ui/react-slider':
         specifier: ^1.4.1
         version: 1.4.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1881,11 +1878,6 @@ packages:
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@opentelemetry/api/-/api-1.9.1.tgz}
     engines: {node: '>=8.0.0'}
-
-  '@playwright/mcp@0.0.75':
-    resolution: {integrity: sha512-oBjzVXfEGZ9Ev45tKKQULNDVdF83B82lg0uPejEK3xsp/zWmdNdNVnPi032fmd/o20ZZXs+LX7cr77qRNbV4VA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@playwright/mcp/-/mcp-0.0.75.tgz}
-    engines: {node: '>=18'}
-    hasBin: true
 
   '@playwright/test@1.61.0':
     resolution: {integrity: sha512-cKA5B6lpFEMyMGjxF54QihfYpB4FkEGH+qZhtArDEG+wezQAJY8Pq6C7T1SjWz+FFzt3TbyoXBQYk/0292TdJA==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@playwright/test/-/test-1.61.0.tgz}
@@ -6973,18 +6965,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright-core@1.61.0-alpha-1778188671000:
-    resolution: {integrity: sha512-nsw2Crz0uZS3IRHiEcOXUt+RaKB/Hna+GAD4oD6cPqCHfJfW77cJdgktC0jzp3Ndyv23EJI3bcWSqFIiqSNE5A==, tarball: https://packages.atlassian.com/api/npm/npm-remote/playwright-core/-/playwright-core-1.61.0-alpha-1778188671000.tgz}
-    engines: {node: '>=18'}
-    hasBin: true
-
   playwright@1.61.0:
     resolution: {integrity: sha512-Z+7BeeqQPRRzklHsVFP4KTGIyMxKUmfeRA4WisM6G3/XW6nwGeX6fX9qYaDa+CiUqpOkb2f6X3nar05R3kSuJQ==, tarball: https://packages.atlassian.com/api/npm/npm-remote/playwright/-/playwright-1.61.0.tgz}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  playwright@1.61.0-alpha-1778188671000:
-    resolution: {integrity: sha512-A6fFc7ExLRmvm0ZHqCyY2uHXSvEdpb8W+/HyIPK4ecRqNil8Mc1Vig1WFYoqk82x3+U9Qb571fQE95wgKqIQ1g==, tarball: https://packages.atlassian.com/api/npm/npm-remote/playwright/-/playwright-1.61.0-alpha-1778188671000.tgz}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -10030,11 +10012,6 @@ snapshots:
       react-dom: 19.2.7(react@19.2.7)
 
   '@opentelemetry/api@1.9.1': {}
-
-  '@playwright/mcp@0.0.75':
-    dependencies:
-      playwright: 1.61.0-alpha-1778188671000
-      playwright-core: 1.61.0-alpha-1778188671000
 
   '@playwright/test@1.61.0':
     dependencies:
@@ -15816,17 +15793,9 @@ snapshots:
 
   playwright-core@1.61.0: {}
 
-  playwright-core@1.61.0-alpha-1778188671000: {}
-
   playwright@1.61.0:
     dependencies:
       playwright-core: 1.61.0
-    optionalDependencies:
-      fsevents: 2.3.2
-
-  playwright@1.61.0-alpha-1778188671000:
-    dependencies:
-      playwright-core: 1.61.0-alpha-1778188671000
     optionalDependencies:
       fsevents: 2.3.2
 

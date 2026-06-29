@@ -128,7 +128,6 @@ secrets*
 .idea/
 .vscode/settings.json
 .vscode/*.log
-.playwright-mcp/
 
 # ── GSD baseline (auto-generated) ──
 .gsd/activity/
