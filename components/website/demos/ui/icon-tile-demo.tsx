@@ -5,7 +5,6 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import SearchIcon from "@atlaskit/icon/core/search";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 import StarIcon from "@atlaskit/icon/core/star-starred";
-import StarOutlineIcon from "@atlaskit/icon/core/star-unstarred";
 import HomeIcon from "@atlaskit/icon/core/home";
 import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 import HeartIcon from "@atlaskit/icon/core/heart";
@@ -47,26 +46,31 @@ export function IconTileDemoSizes() {
 	);
 }
 
+// Each column demonstrates the transparent tile at one box size. The tile size
+// maps to a px value (xxsmall=16, small=24, medium=32) and insets + centers a
+// backgroundless mark to the tile's content scale — e.g. a 12px glyph in the
+// xxsmall (16px) box. This is the treatment inline chips use for the Atlassian
+// master logo and the Rovo family (see AtlassianLogoMark frame="chip").
+const TRANSPARENT_COLUMNS = [
+	{ label: "16", size: "xxsmall", logoSize: "xxsmall" },
+	{ label: "24", size: "small", logoSize: "small" },
+	{ label: "32", size: "medium", logoSize: "small" },
+] as const;
+
 export function IconTileDemoTransparent() {
 	return (
-		<div className="flex flex-col gap-4">
-			<div className="flex items-end gap-3 text-icon-subtle">
-				<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
-				<IconTile icon={tileIcon(<StarOutlineIcon label="" size="small" />)} iconSize="small" label="Star" variant="transparent" size="small" />
-				<IconTile icon={tileIcon(<HomeIcon label="" />)} iconSize="medium" label="Home" variant="transparent" size="small" />
-				<IconTile icon={tileIcon(<AddIcon label="" size="small" />)} iconSize="small" label="Add" variant="transparent" size="medium" />
-				<IconTile icon={tileIcon(<SettingsIcon label="" />)} iconSize="medium" label="Settings" variant="transparent" size="medium" />
-			</div>
-			{/* Logos: the transparent tile insets + centers a backgroundless mark to the
-			    tile's content scale — e.g. a 12px glyph in the xxsmall (16px) box. This
-			    is the treatment inline chips use for the Atlassian master logo and the
-			    Rovo family (see AtlassianLogoMark frame="chip"). */}
-			<div className="flex items-end gap-3">
-				<IconTile icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" themeAware />} label="Atlassian" variant="transparent" size="xxsmall" />
-				<IconTile icon={<RovoColorIcon aria-hidden />} label="Rovo" variant="transparent" size="xxsmall" />
-				<IconTile icon={<AtlassianLogo name="atlassian" label="Atlassian" size="small" themeAware />} label="Atlassian" variant="transparent" size="small" />
-				<IconTile icon={<RovoColorIcon aria-hidden />} label="Rovo" variant="transparent" size="medium" />
-			</div>
+		<div className="flex items-start gap-10">
+			{TRANSPARENT_COLUMNS.map(({ label, size, logoSize }) => (
+				<div key={label} className="flex flex-col items-center gap-3">
+					<p className="text-xs font-medium text-text-subtle">{label}</p>
+					<div className="flex items-center gap-3 text-icon-subtle">
+						<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size={size} />
+						<IconTile icon={tileIcon(<HomeIcon label="" />)} label="Home" variant="transparent" size={size} />
+						<IconTile icon={<AtlassianLogo name="atlassian" label="Atlassian" size={logoSize} themeAware />} label="Atlassian" variant="transparent" size={size} />
+						<IconTile icon={<RovoColorIcon aria-hidden />} label="Rovo" variant="transparent" size={size} />
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }
