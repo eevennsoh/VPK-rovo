@@ -69,9 +69,10 @@ const INSET_CHILD_SIZES = {
 
 // Snug-inset children stretch to fill the box left after a 2px pad. `!` is
 // required because ADS marks (@atlaskit/icon, @atlaskit/logo) set width/height
-// via unlayered CSS that beats plain layered utilities.
+// via unlayered CSS that beats plain layered utilities. The data-slot selector
+// makes the contract explicit for shared `Avatar` wrappers used by project marks.
 const SNUG_CHILD_CLASSES =
-	"[&_span]:flex [&_span]:size-full! [&_span]:items-center [&_span]:justify-center [&_img]:size-full! [&_svg]:size-full!"
+	"[&_span]:flex [&_span]:size-full! [&_span]:items-center [&_span]:justify-center [&_img]:size-full! [&_svg]:size-full! [&_[data-slot=avatar]]:size-full!"
 
 export interface TileProps
 	extends React.ComponentProps<"div">,

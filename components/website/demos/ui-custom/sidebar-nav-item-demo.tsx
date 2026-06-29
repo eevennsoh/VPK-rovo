@@ -24,6 +24,14 @@ function TileLeadingAvatar({ label = "" }: Readonly<{ label?: string; size?: "sm
 	);
 }
 
+function TileLeadingProjectAvatar() {
+	return (
+		<Tile aria-hidden label="" variant="transparent" size="small" isSnug>
+			<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" src="/avatar-project/rocket.svg" width={20} height={20} />
+		</Tile>
+	);
+}
+
 function ChevronAction() {
 	return (
 		<SidebarNavItemAction
@@ -76,13 +84,18 @@ export function SidebarNavItemDemoDefault() {
 
 export function SidebarNavItemDemoTileLeading() {
 	return (
-		<DemoFrame>
+		<div className="flex w-[276px] flex-col gap-1">
 			<SidebarNavItem
 				label="RFP Drafter"
 				leading={<TileLeadingAvatar />}
 				leadingSize="medium"
 			/>
-		</DemoFrame>
+			<SidebarNavItem
+				label="Launch planning"
+				leading={<TileLeadingProjectAvatar />}
+				leadingSize="medium"
+			/>
+		</div>
 	);
 }
 
