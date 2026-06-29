@@ -25,7 +25,7 @@ import {
 import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
 import { TemplateBuildFlow } from "@/components/blocks/agent-browser/components/template-build-flow";
 import { TWGAgentCard, DEFAULT_TWG_AGENT_CARD_SUGGESTIONS } from "@/components/blocks/twg-agent-card";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -1092,11 +1092,9 @@ function ExperimentalFilterOptionAvatar({ option }: Readonly<{ option: Experimen
 
 	if (option.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
-			<span className="flex size-6 shrink-0 items-center justify-center">
-				<Avatar size="sm" shape="square" label={option.label} className="size-5">
-					<AvatarImage alt="" aria-hidden src={option.avatarSrc} />
-				</Avatar>
-			</span>
+			<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">
+				<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" height={20} src={option.avatarSrc} width={20} />
+			</Tile>
 		);
 	}
 
@@ -1652,11 +1650,9 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	if (item.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
-			<span className="flex size-6 shrink-0 items-center justify-center">
-				<Avatar size="sm" shape="square" label={item.label} className="size-5">
-					<AvatarImage alt="" aria-hidden src={item.avatarSrc} />
-				</Avatar>
-			</span>
+			<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">
+				<Image alt="" aria-hidden className="rounded-[6px] border border-border object-cover" height={20} src={item.avatarSrc} width={20} />
+			</Tile>
 		);
 	}
 

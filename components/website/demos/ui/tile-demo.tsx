@@ -171,6 +171,10 @@ const SNUG_AGENT_AVATARS = [
 	{ label: "Code Planner", src: "/avatar-agent/dev-agents/code-planner.svg" },
 ] as const;
 
+const SNUG_PROJECT_AVATARS = [
+	{ label: "Launch project", src: "/avatar-project/rocket.svg" },
+] as const;
+
 export function TileDemoSnug() {
 	return (
 		<div className="flex flex-col gap-2">
@@ -187,6 +191,11 @@ export function TileDemoSnug() {
 				{SNUG_AGENT_AVATARS.map((avatar) => (
 					<Tile key={avatar.src} label={avatar.label} variant="transparent" size="small" isSnug>
 						<Image src={avatar.src} alt="" aria-hidden width={20} height={20} />
+					</Tile>
+				))}
+				{SNUG_PROJECT_AVATARS.map((avatar) => (
+					<Tile key={avatar.src} label={avatar.label} variant="transparent" size="small" isSnug>
+						<Image src={avatar.src} alt="" aria-hidden width={20} height={20} className="rounded-[6px] border border-border object-cover" />
 					</Tile>
 				))}
 				<IconTile

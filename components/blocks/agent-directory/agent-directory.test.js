@@ -350,7 +350,8 @@ test("Agent Directory sidebar nav uses the shared SidebarNavItem primitive", () 
 	// sidebar rows read consistently with the 3p logos (which carry their own tile).
 	assert.match(source, /if \(item\.logoName\)[\s\S]*<Tile label=\{item\.label\} variant="transparent" size="small" hasBorder className="shrink-0">[\s\S]*<AtlassianLogo name=\{item\.logoName\} label=\{item\.label\} size="xsmall" themeAware \/>[\s\S]*<\/Tile>/u);
 	assert.match(source, /if \(item\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)/u);
-	assert.match(source, /<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<Avatar size="sm" shape="square" label=\{item\.label\} className="size-5">[\s\S]*<AvatarImage alt="" aria-hidden src=\{item\.avatarSrc\} \/>/u);
+	assert.match(source, /if \(option\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)[\s\S]*<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-\[6px\] border border-border object-cover" height=\{20\} src=\{option\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
+	assert.match(source, /<Tile aria-hidden label="" variant="transparent" size="small" isSnug className="shrink-0">[\s\S]*<Image alt="" aria-hidden className="rounded-\[6px\] border border-border object-cover" height=\{20\} src=\{item\.avatarSrc\} width=\{20\} \/>[\s\S]*<\/Tile>/u);
 	assert.match(source, /<Avatar size="sm" shape="square" className="shrink-0 after:border-0">/u);
 	assert.match(source, /export interface AgentBrowserSidebarItem/u);
 	assert.match(source, /items\?: readonly AgentBrowserSidebarItem\[\];/u);

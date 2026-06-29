@@ -46,7 +46,7 @@ test("Tile snug inset pads 2px and fills children with !important sizing", () =>
 
 	assert.ok(snugMatch, "SNUG_CHILD_CLASSES constant should exist");
 	// ADS marks need `!` to override their unlayered width/height CSS.
-	for (const cls of ["[&_span]:size-full!", "[&_img]:size-full!", "[&_svg]:size-full!"]) {
+	for (const cls of ["[&_span]:size-full!", "[&_img]:size-full!", "[&_svg]:size-full!", "[&_[data-slot=avatar]]:size-full!"]) {
 		assert.ok(snugMatch[1].includes(cls), `snug fill should include ${cls}`);
 	}
 
@@ -57,4 +57,3 @@ test("Tile snug inset pads 2px and fills children with !important sizing", () =>
 		"isSnug branch should pad p-0.5 and take precedence over isInset",
 	);
 });
-
