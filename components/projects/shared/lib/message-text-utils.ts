@@ -26,13 +26,8 @@ function stripMermaidBlocksFromText(value: string): string {
 	return value.replace(createMermaidBlockRegex(), "").trim();
 }
 
-function hasDependencyEdgesInMermaid(value: string): boolean {
-	const mermaidBlocks = extractMermaidBlocksFromText(value);
-	if (mermaidBlocks.length === 0) {
-		return false;
-	}
-
-	return mermaidBlocks.some((block) => MERMAID_EDGE_REGEX.test(block));
+function hasDependencyEdgesInMermaidBlock(value: string): boolean {
+	return MERMAID_EDGE_REGEX.test(value);
 }
 
 /**
@@ -552,7 +547,7 @@ export function extractPlanRenderableText(
 	}
 
 	const mermaidBlocks = extractMermaidBlocksFromText(normalizedText).filter((block) =>
-		hasDependencyEdgesInMermaid(block)
+		hasDependencyEdgesInMermaidBlock(block)
 	);
 	const mermaidText = mermaidBlocks.join("\n\n").trim();
 	const narrativeText = stripMermaidBlocksFromText(normalizedText);
