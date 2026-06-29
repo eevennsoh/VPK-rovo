@@ -1188,7 +1188,7 @@ export function formatRfpDemoContext(state: AgentsRfpDemoState): string {
 
 	return [
 		"[Agents RFP Demo Local State]",
-		"Source: backend-persisted /agents RFP demo state.",
+		"Source: backend-persisted /jira RFP demo state.",
 		`Report stage: ${state.report.stage}.`,
 		generatedAttachments ? `Generated attachments on RFP-101: ${generatedAttachments}.` : "Generated attachments on RFP-101: none.",
 		`RFP-101 status: ${rfp101?.status ?? "unknown"}.`,

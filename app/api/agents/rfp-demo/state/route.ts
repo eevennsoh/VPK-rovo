@@ -4,7 +4,7 @@ import {
 	createDefaultAgentsRfpDemoState,
 	isValidAgentsRfpDemoState,
 	normalizeAgentsRfpDemoProfileMetadata,
-} from "@/components/projects/agents/lib/rfp-demo-state";
+} from "@/components/projects/jira/lib/rfp-demo-state";
 import { type NextRequest } from "next/server";
 import { readJsonBody } from "@/app/api/_utils/read-json-body";
 

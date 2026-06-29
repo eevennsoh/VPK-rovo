@@ -8113,7 +8113,6 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 };
 
 const PROJECT_DEMOS: Record<string, ComponentType> = {
-  agents: dynamic(() => import("./demos/projects/agents-demo"), { ssr: false }),
   admin: dynamic(() => import("./demos/projects/admin-demo"), { ssr: false }),
   confluence: dynamic(() => import("./demos/projects/confluence-demo"), {
     ssr: false,

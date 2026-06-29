@@ -14,7 +14,7 @@ import {
 	RFP_DRAFTING_COLUMN_NAME,
 	RFP_DRAFTING_EVENT_TRIGGER_LABEL,
 	RFP_DRAFTING_TRIGGER_PROMPT,
-} from "@/components/projects/agents/lib/rfp-demo-state";
+} from "@/components/projects/jira/lib/rfp-demo-state";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 
 export const STUDIO_RFP_DEMO_AGENT_PROFILE_ID = RFP_DRAFTING_AGENT_ID;

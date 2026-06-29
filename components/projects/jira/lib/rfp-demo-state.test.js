@@ -36,7 +36,7 @@ async function loadRfpDemoStateHarness() {
 					scheduleRfpDraftingAgent,
 					selectRfpReportVersion,
 					setRfpDraftingAgentTrigger,
-				} from "./components/projects/agents/lib/rfp-demo-state";
+				} from "./components/projects/jira/lib/rfp-demo-state";
 					export { ROVO_LOGO_DATA_URI } from "./components/ui/data/rovo-logo";
 			`,
 			loader: "ts",

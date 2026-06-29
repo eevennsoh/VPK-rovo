@@ -7,8 +7,8 @@ import {
 	type KanbanBoardCardData,
 	type KanbanBoardColumnData,
 } from "./index";
-import { BOARD_AGENTS } from "@/components/projects/agents/data/board-agents";
-import { BOARD_COLUMNS } from "@/components/projects/agents/data/board-data";
+import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
+import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 

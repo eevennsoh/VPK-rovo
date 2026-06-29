@@ -12,7 +12,7 @@ const {
 
 const ACTIVE_CONTEXT = [
 	"[Active Jira Work Item Context]",
-	"Source: /agents Jira work item modal.",
+	"Source: /jira Jira work item modal.",
 	"Key: RFP-101",
 	"Title: Acmecorp: Prepare for bid recommendation for ESM RFP",
 	"Description: Acmecorp is evaluating Atlassian as a replacement for its current service-management and work-management stack.",
