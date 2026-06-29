@@ -78,7 +78,7 @@ const CLARIFY_TOOL_CALL_ID = "create-skill-clarify";
 // per-step beats.
 const TRACE_INITIAL_DELAY_MS = 3200;
 const TRACE_STEP_DELAYS_MS = [1200, 1400, 1500, 1300] as const;
-const RESULT_TEXT_STREAM_DELAYS_MS = [260, 320, 360] as const;
+const RESULT_CARD_DELAY_MS = 220;
 
 type TraceStepStatus = "complete" | "active" | "pending";
 
@@ -88,6 +88,8 @@ export interface SkillCreationTraceStep {
 	label: string;
 	/** Canonical byline shown under the step. */
 	byline: string;
+	/** Optional active-step narration cycled by the renderer while the step runs. */
+	bylines?: readonly string[];
 	status: TraceStepStatus;
 	/** Icon key mapped to an icon component by the card. */
 	iconKey: string;
@@ -116,6 +118,12 @@ export interface SkillCreationResultPayload {
 	description: string;
 	iconKey: string;
 	collectionId: string;
+	showSuccessSummary?: boolean;
+}
+
+export interface DeriveSkillFromPromptOptions {
+	/** Skill ids already owned by the static catalog. Generated runtime ids must not collide with them. */
+	reservedSkillIds?: readonly string[];
 }
 
 type AssistantParts = RovoUIMessage["parts"];
@@ -124,6 +132,7 @@ interface InterceptStage {
 	delayMs: number;
 	getAssistantParts: (context: { startedAt: Date }) => AssistantParts;
 	onApply?: () => Promise<void> | void;
+	startsNewAssistantMessage?: boolean;
 }
 
 export interface CreateSkillStageOutcome {
@@ -187,10 +196,6 @@ function resultWidgetPart(payload: SkillCreationResultPayload): AssistantParts[n
 	} as AssistantParts[number];
 }
 
-function textPart(text: string, state: "streaming" | "done"): AssistantParts[number] {
-	return { type: "text", text, state } as AssistantParts[number];
-}
-
 function buildQuestionCardPart(): AssistantParts[number] {
 	return {
 		type: "data-widget-data",
@@ -234,7 +239,7 @@ function buildQuestionCardPart(): AssistantParts[number] {
 					},
 					{
 						id: "tools",
-						label: "Which tools should it use?",
+						label: "Which apps should it use?",
 						required: false,
 						kind: "multi-select",
 						options: [
@@ -257,9 +262,40 @@ const STAGE_1_HEADER = "Designing your skill";
 
 // Distinct icon per step (the card maps these keys to icon components).
 const STAGE_1_STEP_DEFS = [
-	{ id: "read", label: "Reading your request", byline: "Identifying what the skill should do, its inputs, and the outcome you want.", iconKey: "search" },
-	{ id: "invoke", label: "Invoking", byline: "Running the create-skill assistant to scaffold the skill.", iconKey: "skill", skillMention: CREATE_SKILL_ID },
-	{ id: "questions", label: "Preparing clarification questions", byline: "Asking a few targeted questions to shape the skill before drafting.", iconKey: "question" },
+	{
+		id: "read",
+		label: "Reading your request",
+		byline: "Identifying what the skill should do, its inputs, and the outcome you want.",
+		bylines: [
+			"Identifying what the skill should do, its inputs, and the outcome you want.",
+			"Parsing your request for task, audience, and success criteria.",
+			"Checking for constraints that should shape the generated skill.",
+		],
+		iconKey: "search",
+	},
+	{
+		id: "invoke",
+		label: "Invoking",
+		byline: "Running the create-skill assistant to scaffold the skill.",
+		bylines: [
+			"Running the create-skill assistant to scaffold the skill.",
+			"Translating the brief into a reusable skill shape.",
+			"Preparing the generated instructions and metadata.",
+		],
+		iconKey: "skill",
+		skillMention: CREATE_SKILL_ID,
+	},
+	{
+		id: "questions",
+		label: "Preparing clarification questions",
+		byline: "Asking a few targeted questions to shape the skill before drafting.",
+		bylines: [
+			"Asking a few targeted questions to shape the skill before drafting.",
+			"Spotting the choices that would change the skill design.",
+			"Keeping the question round short and actionable.",
+		],
+		iconKey: "question",
+	},
 ] as const;
 
 function stage1Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
@@ -331,6 +367,21 @@ const NAME_STOP_WORDS = new Set([
 	"into", "to", "for", "a", "an", "the", "my", "our", "of", "and", "with", "on", "in", "that", "from", "all",
 ]);
 
+function uniquifySkillId(baseId: string, reservedSkillIds: readonly string[]): string {
+	const reservedIds = new Set(reservedSkillIds.map((id) => slugifySkillName(id)));
+	if (!reservedIds.has(baseId)) {
+		return baseId;
+	}
+
+	let suffix = 2;
+	let candidate = `${baseId}-${suffix}`;
+	while (reservedIds.has(candidate)) {
+		suffix += 1;
+		candidate = `${baseId}-${suffix}`;
+	}
+	return candidate;
+}
+
 /**
  * Derives a believable `SkillsDirectorySkill` from the user's free-form prompt
  * (and, optionally, the clarification summary text). Deterministic.
@@ -338,6 +389,7 @@ const NAME_STOP_WORDS = new Set([
 export function deriveSkillFromPrompt(
 	prompt: string,
 	clarificationText?: string,
+	options: DeriveSkillFromPromptOptions = {},
 ): SkillsDirectorySkill {
 	// Strip the leading "/Create skill" mention, then any "create a skill that…"
 	// filler and leading stop-words, leaving the user's actual intent.
@@ -352,7 +404,8 @@ export function deriveSkillFromPrompt(
 		nameWords.pop();
 	}
 	const name = titleCaseFirst(nameWords.join(" ")).replace(/[.?!,]+$/u, "") || "New skill";
-	const id = slugifySkillName(name) || "new-skill";
+	const baseId = slugifySkillName(name) || "new-skill";
+	const id = uniquifySkillId(baseId, options.reservedSkillIds ?? []);
 	const description = `${titleCaseFirst(intent.replace(/[.?!]+$/u, ""))}. Use when the user asks to ${intent.toLowerCase()}.`;
 	const iconKey = pickIconKey(`${prompt} ${clarificationText ?? ""}`);
 
@@ -363,8 +416,6 @@ export function deriveSkillFromPrompt(
 		"license: MIT",
 		"version: 1.0.0",
 		"---",
-		"",
-		`# ${name}`,
 		"",
 		description,
 		"",
@@ -421,10 +472,50 @@ export function deriveSkillFromPrompt(
 const STAGE_2_HEADER = "Building your skill";
 
 const STAGE_2_STEP_DEFS = [
-	{ id: "review", label: "Reviewing your answers", byline: "Merging your answers into the skill design.", iconKey: "review" },
-	{ id: "draft", label: "Drafting the skill", byline: "Writing the name, description, and instructions.", iconKey: "draft" },
-	{ id: "wire", label: "Wiring tools and triggers", byline: "Connecting the tools and trigger you chose.", iconKey: "wire" },
-	{ id: "save", label: "Saving skill", byline: "Saving the skill so it's ready to use.", iconKey: "save" },
+	{
+		id: "review",
+		label: "Reviewing your answers",
+		byline: "Merging your answers into the skill design.",
+		bylines: [
+			"Merging your answers into the skill design.",
+			"Reconciling the clarification answers with the original request.",
+			"Locking in the confirmed goal, inputs, and output.",
+		],
+		iconKey: "review",
+	},
+	{
+		id: "draft",
+		label: "Drafting the skill",
+		byline: "Writing the name, description, and instructions.",
+		bylines: [
+			"Writing the name, description, and instructions.",
+			"Structuring when to use the skill and how it should respond.",
+			"Drafting reusable instructions for future runs.",
+		],
+		iconKey: "draft",
+	},
+	{
+		id: "wire",
+		label: "Wiring tools and triggers",
+		byline: "Connecting the tools and trigger you chose.",
+		bylines: [
+			"Connecting the tools and trigger you chose.",
+			"Mapping selected apps to the generated workflow.",
+			"Checking that the skill has the right execution context.",
+		],
+		iconKey: "wire",
+	},
+	{
+		id: "save",
+		label: "Saving skill",
+		byline: "Saving the skill so it's ready to use.",
+		bylines: [
+			"Saving the skill so it's ready to use.",
+			"Preparing the skill card and editor draft.",
+			"Finishing the generated skill setup.",
+		],
+		iconKey: "save",
+	},
 ] as const;
 
 function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTraceStep[] {
@@ -436,20 +527,6 @@ function stage2Steps(activeIndex: number, allComplete = false): SkillCreationTra
 		...step,
 		status: allComplete || index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
 	}));
-}
-
-function buildCreatedSkillReplyText(skill: SkillsDirectorySkill): string {
-	return `Created **${skill.name}** and added it to your skills. I prefilled the composer with its skill tag so you can run it now, or open the card to edit the generated instructions.`;
-}
-
-function buildCreatedSkillReplyChunks(skill: SkillsDirectorySkill): string[] {
-	const fullText = buildCreatedSkillReplyText(skill);
-
-	return [
-		`Created **${skill.name}**`,
-		`Created **${skill.name}** and added it to your skills.`,
-		fullText,
-	];
 }
 
 export function buildCreateSkillStage2(
@@ -465,16 +542,10 @@ export function buildCreateSkillStage2(
 	};
 	const elapsedSeconds = (startedAt: Date) =>
 		Math.max(1, Math.round((Date.now() - startedAt.getTime()) / 1000));
-	const responseChunks = buildCreatedSkillReplyChunks(skill);
-	const buildResultParts = (
-		startedAt: Date,
-		text: string,
-		state: "streaming" | "done",
-	): AssistantParts => [
+	const buildCompletedTraceParts = (startedAt: Date): AssistantParts => [
 		traceWidgetPart({ headerState: "completed", durationSeconds: elapsedSeconds(startedAt), steps: stage2Steps(0, true) }),
-		resultWidgetPart(resultPayload),
-		textPart(text, state),
 	];
+	const buildResultParts = (): AssistantParts => [resultWidgetPart({ ...resultPayload, showSuccessSummary: true })];
 
 	return {
 		getPendingAssistantParts: () =>
@@ -497,26 +568,18 @@ export function buildCreateSkillStage2(
 			},
 			{
 				delayMs: TRACE_STEP_DELAYS_MS[2],
-				// All steps complete -> header settles to "Thought for Xs"; the result
-				// card appears with assistant text already streaming below it.
+				// All steps complete -> header settles to "Thought for Xs". The result
+				// card is emitted in its own assistant message because ThreadMessageRoot
+				// intentionally renders only one widget per message.
 				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[0], "streaming"),
+					buildCompletedTraceParts(startedAt),
+			},
+			{
+				delayMs: RESULT_CARD_DELAY_MS,
+				getAssistantParts: () =>
+					buildResultParts(),
 				onApply: onComplete,
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[0],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[1], "streaming"),
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[1],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[2], "streaming"),
-			},
-			{
-				delayMs: RESULT_TEXT_STREAM_DELAYS_MS[2],
-				getAssistantParts: ({ startedAt }) =>
-					buildResultParts(startedAt, responseChunks[2], "done"),
+				startsNewAssistantMessage: true,
 			},
 		],
 	};

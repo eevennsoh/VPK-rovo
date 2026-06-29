@@ -30,15 +30,27 @@ test("IconTile size variants keep ADS tile and icon scaling aligned", () => {
 test("IconTile exposes a transparent, backgroundless tile variant", () => {
 	assert.match(ICON_TILE_SOURCE, /\| "transparent"/u);
 	assert.match(ICON_TILE_SOURCE, /transparent:\s*"bg-transparent text-icon/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=xxsmall\]:\[font-size:12px\]/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=xxsmall\]:\[&_span\]:size-3!/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=small\]:\[font-size:16px\]/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=small\]:\[&_span\]:size-4!/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=medium\]:\[font-size:16px\]/u);
-	assert.match(ICON_TILE_SOURCE, /data-\[size=medium\]:\[&_span\]:size-4!/u);
-	assert.match(ICON_TILE_SOURCE, /data-size=\{size\}/u);
-	assert.match(ICON_TILE_SOURCE, /data-variant=\{variant\}/u);
+	assert.match(ICON_TILE_SOURCE, /type IconTileIconSize = "small" \| "medium"/u);
+	assert.match(ICON_TILE_SOURCE, /type IconTileRootElement = "div" \| "span"/u);
+	assert.match(ICON_TILE_SOURCE, /as\?: IconTileRootElement/u);
+	assert.match(ICON_TILE_SOURCE, /as = "div"/u);
+	assert.match(ICON_TILE_SOURCE, /iconSize\?: IconTileIconSize/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=small\]:\[font-size:12px\]/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=small\]:\[&_span\]:size-3!/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=medium\]:\[font-size:16px\]/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[transparent-icon-size=medium\]:\[&_span\]:size-4!/u);
+	assert.match(ICON_TILE_SOURCE, /"data-size": size/u);
+	assert.match(ICON_TILE_SOURCE, /"data-transparent-icon-size":/u);
+	assert.match(ICON_TILE_SOURCE, /"data-variant": variant/u);
+	assert.match(ICON_TILE_SOURCE, /return as === "span" \? \(\s*<span \{\.\.\.sharedProps\}>/u);
 	assert.match(ICON_TILE_SOURCE, /square: "rounded-tile"/u);
+});
+
+test("IconTile transparent variant supports 24px and 32px tiles with 12px or 16px icons", () => {
+	assert.match(ICON_TILE_SOURCE, /small: "size-6/u);
+	assert.match(ICON_TILE_SOURCE, /medium: "size-8/u);
+	assert.match(ICON_TILE_SOURCE, /iconSize \?\? \(size === "xxsmall" \? "small" : "medium"\)/u);
+	assert.match(ICON_TILE_SOURCE, /variant === "transparent" \? transparentIconSize : undefined/u);
 });
 
 test("IconTile demos reserve the 16px size for transparent tiles only", () => {
@@ -53,6 +65,10 @@ test("IconTile demos reserve the 16px size for transparent tiles only", () => {
 	assert.match(sizesDemoMatch[0], /variant="blue" size="xlarge"/u);
 
 	assert.match(transparentDemoMatch[0], /variant="transparent" size="xxsmall"/u);
+	assert.match(transparentDemoMatch[0], /iconSize="small"[\s\S]*variant="transparent" size="small"/u);
+	assert.match(transparentDemoMatch[0], /iconSize="medium"[\s\S]*variant="transparent" size="small"/u);
+	assert.match(transparentDemoMatch[0], /iconSize="small"[\s\S]*variant="transparent" size="medium"/u);
+	assert.match(transparentDemoMatch[0], /iconSize="medium"[\s\S]*variant="transparent" size="medium"/u);
 	assert.match(transparentDemoMatch[0], /variant="transparent" size="small"/u);
 	assert.match(transparentDemoMatch[0], /variant="transparent" size="medium"/u);
 	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="xsmall"/u);

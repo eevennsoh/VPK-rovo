@@ -9,6 +9,7 @@ import { EntityCardKnowledge } from "./knowledge";
 import { EntityCardObjectTile } from "./object-tile";
 import {
 	EntityCardAddedCheck,
+	EntityCardAddedSwitch,
 	EntityCardBanner,
 	EntityCardByline,
 	EntityCardCapabilities,
@@ -44,6 +45,8 @@ export { EntityCardObjectTile, type EntityCardObjectTileProps } from "./object-t
 export {
 	EntityCardAddedCheck,
 	type EntityCardAddedCheckProps,
+	EntityCardAddedSwitch,
+	type EntityCardAddedSwitchProps,
 	EntityCardBanner,
 	type EntityCardBannerProps,
 	EntityCardByline,
@@ -115,4 +118,5 @@ export const EntityCard = {
 	Banner: EntityCardBanner,
 	Capabilities: EntityCardCapabilities,
 	AddedCheck: EntityCardAddedCheck,
+	AddedSwitch: EntityCardAddedSwitch,
 } as const;

@@ -12,7 +12,7 @@ import {
 	NodeHeader,
 	NodeTitle,
 } from "@/components/ui-custom/node";
-import { Panel } from "@/components/ui-custom/panel";
+import { FlowPanel } from "@/components/ui-custom/flow-panel";
 import { Toolbar } from "@/components/ui-custom/toolbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -239,14 +239,14 @@ export function CanvasDemoWithPanel() {
 				nodeTypes={workflowNodeTypes}
 			>
 				<Controls />
-				<Panel position="top-right">
+				<FlowPanel position="top-right">
 					<div className="flex items-center gap-2 px-2 py-1">
 						<Badge variant="success">Running</Badge>
 						<span className="text-xs text-muted-foreground">
 							6 nodes &middot; 6 edges
 						</span>
 					</div>
-				</Panel>
+				</FlowPanel>
 			</Canvas>
 		</div>
 	);

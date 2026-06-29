@@ -39,7 +39,7 @@ Run on every change:
 
 Run additionally for UI changes:
 
-1. Visual checks via `agent-browser` (`npx agent-browser`) first for local/isolated web work, screenshots, UI probes, visual debugging, and responsive checks, regardless of whether the session is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked; use `@Chrome` only when signed-in browser state, cookies, extensions, existing tabs, or multi-tab authenticated browser work matters. In parallel worktrees, prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree); fall back to the frontend URL from `.dev-frontend-port` only when no portless route exists. Do not assume the default frontend port.
+1. Visual checks via `agent-browser` (`npx agent-browser`) by default for local/isolated web work, screenshots, UI probes, visual debugging, and responsive checks. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright` skill before using that fallback. In parallel worktrees, prefer the worktree's Portless URL from `pnpm ports` (the `🌐 https://…` entry — it survives dev-server restarts and is origin-isolated per worktree); fall back to the frontend URL from `.dev-frontend-port` only when no portless route exists. Do not assume the default frontend port.
 2. Accessibility checks:
    - `ads_analyze_a11y` for component code
    - `ads_analyze_localhost_a11y` for live page

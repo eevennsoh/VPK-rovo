@@ -4,9 +4,7 @@ import type {
 } from "@/components/ui-custom/rich-text-editor";
 
 export const DIRECTORY_AUTOCOMPLETE_MIN_QUERY_LENGTH = 2;
-// Capped at 8 (not 9) so the fullscreen two-column suggestion grid stays balanced
-// (4 rows × 2). An odd 9th match left a lone trailing row that broke the layout.
-export const DIRECTORY_AUTOCOMPLETE_LIMIT = 8;
+export const DIRECTORY_AUTOCOMPLETE_LIMIT = 9;
 
 export interface DirectoryAutocompleteMatch {
 	mention: RichTextMentionItem;
@@ -26,6 +24,7 @@ export interface DirectoryAutocompleteState {
 export interface DirectoryAutocompleteInput {
 	activeIndex?: number;
 	cursorPosition: number;
+	limit?: number;
 	minQueryLength?: number;
 	sources: RichTextMentionSources | undefined;
 	textBeforeCursor: string;
@@ -412,6 +411,7 @@ function getGhostText(
 export function getDirectoryAutocompleteState({
 	activeIndex = 0,
 	cursorPosition,
+	limit = DIRECTORY_AUTOCOMPLETE_LIMIT,
 	minQueryLength = DIRECTORY_AUTOCOMPLETE_MIN_QUERY_LENGTH,
 	sources,
 	textBeforeCursor,
@@ -426,7 +426,7 @@ export function getDirectoryAutocompleteState({
 			continue;
 		}
 
-		const suffixMatches = getDirectoryAutocompleteMatches(suffix.query, sources);
+		const suffixMatches = getDirectoryAutocompleteMatches(suffix.query, sources, limit);
 		if (suffixMatches.length > 0) {
 			selectedSuffix = suffix;
 			matches = suffixMatches;
@@ -440,7 +440,7 @@ export function getDirectoryAutocompleteState({
 			return null;
 		}
 		selectedSuffix = fallback;
-		matches = getDirectoryAutocompleteMatches(fallback.query, sources);
+		matches = getDirectoryAutocompleteMatches(fallback.query, sources, limit);
 	}
 
 	const boundedActiveIndex = matches.length > 0

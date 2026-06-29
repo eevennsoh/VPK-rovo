@@ -3634,6 +3634,7 @@ function AgentInstructionsComposer({
 	screenAssistantTargetId,
 	showSectionLabel = true,
 	toolbarBelowSlot,
+	toolbarClassName,
 }: Readonly<{
 	bottomSlot?: ReactNode;
 	bottomSlotClassName?: string;
@@ -3653,6 +3654,7 @@ function AgentInstructionsComposer({
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
+	toolbarClassName?: string;
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
@@ -3806,6 +3808,7 @@ function AgentInstructionsComposer({
 				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
+				toolbarClassName={toolbarClassName}
 				toolbarReveal="hover"
 				padStuckToolbar
 				value={instructions}
@@ -4208,6 +4211,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	instructionsToolbarClassName?: string;
 	// Optional cover override + metadata slot, forwarded to AgentConfigProfile.
 	// Default-undefined → existing cover / no meta row, so other consumers are
 	// unchanged.
@@ -4268,6 +4272,7 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		instructionsToolbarClassName,
 		profileCover,
 		profileMetaSlot,
 		showConfigToolbar = true,
@@ -4523,6 +4528,7 @@ export const AgentConfigFields = memo(
 							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
+							toolbarClassName={instructionsToolbarClassName}
 						/>
 					</div>
 					{/* Bottom-anchored footer: always flush to the panel bottom. The

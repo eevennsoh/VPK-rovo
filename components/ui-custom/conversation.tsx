@@ -320,7 +320,7 @@ export function Conversation({
 	return (
 		<ConversationContext value={contextValue}>
 			<div
-				className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-hidden", className)}
+				className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden", className)}
 				role={role}
 				{...props}
 			>
@@ -330,10 +330,25 @@ export function Conversation({
 	)
 }
 
-export type ConversationContentProps = ComponentProps<"div">
+export type ConversationContentProps = ComponentProps<"div"> & {
+	/**
+	 * Reserve space for the auto-hiding scrollbar track. Message threads keep this
+	 * stable to avoid horizontal reflow, but empty greetings should not show a
+	 * scrollbar gutter before there is scrollable content.
+	 */
+	reserveScrollbarGutter?: boolean
+	/**
+	 * Reveal the auto-hidden scrollbar while the user scrolls. Empty greetings opt
+	 * out so programmatic scroll/resize events during entrance motion cannot flash
+	 * a scrollbar on first load.
+	 */
+	revealScrollbarOnScroll?: boolean
+}
 
 export function ConversationContent({
 	className,
+	reserveScrollbarGutter = true,
+	revealScrollbarOnScroll = true,
 	...props
 }: Readonly<ConversationContentProps>) {
 	const context = use(ConversationContext)
@@ -341,6 +356,10 @@ export function ConversationContent({
 	useEffect(() => {
 		const el = context?.scrollRef?.current
 		if (!el) return
+		if (!revealScrollbarOnScroll) {
+			el.removeAttribute("data-scrolling")
+			return
+		}
 		let timeout: ReturnType<typeof setTimeout>
 		function onScroll() {
 			el!.setAttribute("data-scrolling", "")
@@ -354,7 +373,7 @@ export function ConversationContent({
 			el.removeEventListener("scroll", onScroll)
 			clearTimeout(timeout)
 		}
-	}, [context?.scrollRef])
+	}, [context?.scrollRef, revealScrollbarOnScroll])
 
 	// Only fade the bottom edge when there is hidden content below (i.e. the
 	// user is scrolled up). When the conversation fits or is scrolled to the
@@ -370,6 +389,7 @@ export function ConversationContent({
 			style={{
 				maskImage,
 				WebkitMaskImage: maskImage,
+				scrollbarGutter: reserveScrollbarGutter ? undefined : "auto",
 			}}
 		>
 			<div

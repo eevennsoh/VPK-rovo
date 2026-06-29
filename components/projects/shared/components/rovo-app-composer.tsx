@@ -52,6 +52,7 @@ export interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	directoryAutocompleteListVisible?: boolean;
+	directoryAutocompleteLimit?: number;
 	dictationState?: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
 	errorMessage?: string | null;
@@ -104,6 +105,7 @@ function RovoAppComposerInner({
 	composerStatus,
 	compact = false,
 	directoryAutocompleteListVisible = false,
+	directoryAutocompleteLimit,
 	dictationState = "idle",
 	dictationTranscriptPreview = null,
 	errorMessage,
@@ -176,6 +178,7 @@ function RovoAppComposerInner({
 		clickyActive,
 		composerStatus,
 		directoryAutocompleteListVisible,
+		directoryAutocompleteLimit,
 		dictationState,
 		dictationTranscriptPreview,
 		focusRequestKey,

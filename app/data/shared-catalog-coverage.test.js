@@ -27,6 +27,16 @@ test("retired shared surfaces have explicit visible catalog demos", () => {
 	assert.doesNotMatch(manifestSource, /customComponent\("heading"/u);
 	assert.doesNotMatch(componentSource, /customComponent\("heading"/u);
 
+	// radio is folded into radio-group; it must NOT exist as a standalone UI catalog page.
+	assert.doesNotMatch(manifestSource, /uiComponent\("radio"\)/u);
+	assert.doesNotMatch(componentSource, /uiComponent\("radio"\)/u);
+	assert.doesNotMatch(registrySource, /\bradio: dynamic\(/u);
+	assert.match(manifestSource, /uiComponent\("radio-group", "Radio Group"\)/u);
+	assert.match(componentSource, /uiComponent\("radio-group", "Radio Group"\)/u);
+	assert.match(registrySource, /"radio-group": dynamic\(\(\) => import\("\.\/demos\/ui\/radio-group-demo"\)/u);
+	assert.equal(existsSync(path.join(ROOT, "components/ui/radio.tsx")), false);
+	assert.equal(existsSync(path.join(ROOT, "components/ui/radio-group.tsx")), true);
+
 	// elapsed-time was folded into the progress block docs (agent-progress + task-progress);
 	// it must NOT exist as a standalone utility catalog page anymore.
 	assert.doesNotMatch(manifestSource, /utilityComponent\("elapsed-time", "Elapsed Time"\)/u);

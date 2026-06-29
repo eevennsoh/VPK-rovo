@@ -194,8 +194,6 @@ function buildBody(skill, apps) {
 	const copy = CATEGORY_COPY[skill.categoryId] ?? DEFAULT_COPY;
 	const steps = copy.steps.map((step, i) => `${i + 1}. ${step}`).join("\n");
 	return [
-		`# ${skill.name}`,
-		"",
 		skill.description,
 		"",
 		"## When to use",

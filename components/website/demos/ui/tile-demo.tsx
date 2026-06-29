@@ -1,9 +1,13 @@
 "use client";
 
+import AppIcon from "@atlaskit/icon/core/app";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 import SearchIcon from "@atlaskit/icon/core/search";
+import Image from "next/image";
 
+import { IconTile } from "@/components/ui/icon-tile";
 import { Tile } from "@/components/ui/tile";
-import { RovoColorIcon } from "@/components/ui/logo";
+import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
 
 export default function TileDemo() {
 	return (
@@ -157,6 +161,46 @@ export function TileDemoInset() {
 					</Tile>
 				))}
 				<p className="text-xs text-text-subtle self-center">No inset</p>
+			</div>
+		</div>
+	);
+}
+
+const SNUG_AGENT_AVATARS = [
+	{ label: "Code Reviewer", src: "/avatar-agent/dev-agents/code-reviewer.svg" },
+	{ label: "Code Planner", src: "/avatar-agent/dev-agents/code-planner.svg" },
+] as const;
+
+export function TileDemoSnug() {
+	return (
+		<div className="flex flex-col gap-2">
+			<p className="text-xs font-medium text-text-subtle">
+				Snug 2px inset — 24×24 container, 20×20 content (transparent, borderless)
+			</p>
+			<div className="flex items-center gap-3">
+				<Tile label="Jira" variant="transparent" size="small" isSnug>
+					<AtlassianLogo name="jira" size="small" themeAware label="" />
+				</Tile>
+				<Tile label="Confluence" variant="transparent" size="small" isSnug>
+					<AtlassianLogo name="confluence" size="small" themeAware label="" />
+				</Tile>
+				{SNUG_AGENT_AVATARS.map((avatar) => (
+					<Tile key={avatar.src} label={avatar.label} variant="transparent" size="small" isSnug>
+						<Image src={avatar.src} alt="" aria-hidden width={20} height={20} />
+					</Tile>
+				))}
+				<IconTile
+					icon={<AutomationIcon label="" size="small" />}
+					label="Automation"
+					size="small"
+					variant="blue"
+				/>
+				<IconTile
+					icon={<AppIcon label="" size="small" />}
+					label="App"
+					size="small"
+					variant="purple"
+				/>
 			</div>
 		</div>
 	);

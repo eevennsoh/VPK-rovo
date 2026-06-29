@@ -4,14 +4,13 @@
 
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import PageIcon from "@atlaskit/icon/core/page";
-import SwapIcon from "@atlaskit/icon-lab/core/swap";
 import type { ReactNode } from "react";
 
 import { DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon, slugifySkillName } from "@/app/data/directory/skills";
 import { getCreatedSkills } from "@/app/data/directory/created-skills-store";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Tag, type TagOverlayAction } from "@/components/ui/tag";
+import { Tag } from "@/components/ui/tag";
 import { SkillTag, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { getMentionCategory } from "./extensions";
 import {
@@ -77,36 +76,20 @@ function getSkillMentionTagProps(label: string): { color: SkillTagColor; icon: R
 	};
 }
 
-export function RichTextMentionNodeView({ node, editor, getPos }: Readonly<ReactNodeViewProps>) {
+export function RichTextMentionNodeView({ node, selected }: Readonly<ReactNodeViewProps>) {
 	const attrs = node.attrs;
 	const category = getMentionCategory(attrs.id, attrs.category);
 	const label = String(attrs.label ?? attrs.id ?? "");
 	const visual = resolveMentionVisual(category, label, attrs);
 	const preview = isReferenceCategory(category) ? getRichTextReferencePreview(category, label) : undefined;
 	const skillTagProps = category === "skill" ? getSkillMentionTagProps(label) : undefined;
-	// Tokens created by the composer's auto-tagging carry `sourceText`. For those,
-	// expose a hover swap control that reverts the chip back to the exact text the
-	// user typed. Deliberate `@`/`/` mentions have no sourceText and stay static.
-	const isAutoTagged = Boolean(attrs.sourceText);
-	const overlayAction: TagOverlayAction | undefined = isAutoTagged
-		? {
-			icon: <SwapIcon label="" size="small" />,
-			label: "Switch back to text",
-			tooltip: "Switch back to text",
-			onClick: () => {
-				const pos = getPos();
-				if (typeof pos === "number") {
-					editor.commands.restoreAutoTaggedMention(pos);
-				}
-			},
-		}
-		: undefined;
 	const tag = skillTagProps ? (
 		<SkillTag
 			className="rich-text-mention-chip mx-0.5"
 			color={skillTagProps.color}
+			focused={selected}
+			focusable
 			icon={skillTagProps.icon}
-			overlayAction={overlayAction}
 		>
 			{label}
 		</SkillTag>
@@ -132,7 +115,6 @@ export function RichTextMentionNodeView({ node, editor, getPos }: Readonly<React
 				<PageIcon label="" size="small" />
 			)}
 			type={getRichTextMentionTagType(visual)}
-			overlayAction={overlayAction}
 		>
 			{label}
 		</Tag>

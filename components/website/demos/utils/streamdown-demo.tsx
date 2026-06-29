@@ -238,7 +238,7 @@ export default function StreamdownDemo(): ReactElement {
 
 				<div className="flex flex-wrap items-center gap-3">
 					<Button onClick={runStreamingDemo} type="button">
-						Replay animation
+						Replay
 					</Button>
 					<Button
 						onClick={() => {

@@ -1,18 +1,19 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 
 import AutomationIcon from "@atlaskit/icon/core/automation";
+import EditIcon from "@atlaskit/icon/core/edit";
 
 import {
 	GenerativeCard,
 	GenerativeCardBody,
 	GenerativeCardContent,
+	GenerativeCardFooter,
 	GenerativeCardHeader,
 } from "@/components/blocks/generative-card";
 import { Button } from "@/components/ui/button";
 import { Tile } from "@/components/ui/tile";
-import { ExternalLinkIcon } from "@/components/ui/vpk-icons";
 import type { AgentEditSummaryPayload } from "@/components/projects/shared/lib/agent-edit-summary";
 
 /**
@@ -23,33 +24,33 @@ import type { AgentEditSummaryPayload } from "@/components/projects/shared/lib/a
  *
  * The leading glyph mirrors the config's Flows/trigger row: a 32px automation
  * tile (lime), matching `AgentTriggerSummaryRow`'s automation icon. When `onOpen`
- * is supplied the header shows an external-link icon button — sitting to the left
- * of the expand chevron — that jumps to the automation trigger/flow dialog.
+ * is supplied the collapsed header shows an edit icon button — sitting to the left
+ * of the expand chevron — and the expanded footer shows the full edit button.
  */
 function AgentEditSummaryCardComponent({
 	payload,
 	onOpen,
 }: Readonly<{ payload: AgentEditSummaryPayload; onOpen?: () => void }>) {
+	const [isExpanded, setExpanded] = useState(false);
+
 	return (
-		<GenerativeCard className="w-full" defaultExpanded={false} size="sm">
+		<GenerativeCard className="w-full" expanded={isExpanded} onExpandedChange={setExpanded} size="sm">
 			<GenerativeCardHeader
 				collapseLabel="Hide change details"
 				description={payload.summary}
 				expandLabel="Show change details"
-				action={
-					onOpen ? (
+				action={!isExpanded && onOpen ? (
 						<Button
 							variant="ghost"
 							size="icon"
 							className="text-icon-subtle"
 							onClick={onOpen}
 							type="button"
-							aria-label="Open automation"
+							aria-label="Edit automation"
 						>
-							<ExternalLinkIcon size="small" />
+							<EditIcon label="" size="small" />
 						</Button>
-					) : null
-				}
+					) : null}
 				leading={
 					<Tile label="Automation" size="medium" variant="limeSubtle">
 						<AutomationIcon label="" color="currentColor" />
@@ -71,6 +72,13 @@ function AgentEditSummaryCardComponent({
 						))}
 					</dl>
 				</GenerativeCardContent>
+				{onOpen ? (
+					<GenerativeCardFooter>
+						<Button type="button" variant="outline" onClick={onOpen}>
+							Edit
+						</Button>
+					</GenerativeCardFooter>
+				) : null}
 			</GenerativeCardBody>
 		</GenerativeCard>
 	);

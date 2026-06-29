@@ -170,8 +170,37 @@ function findWorktreeByPath(worktrees, worktreePath) {
 	return worktrees.find((worktree) => worktree.path === worktreePath) ?? null;
 }
 
-function getWorktreeDisplayName(worktree) {
-	return worktree && !worktree.isMain ? worktree.identifier : "main";
+function getRepoDirName(worktrees) {
+	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
+	return mainWorktree ? path.basename(mainWorktree.path) : null;
+}
+
+function resolveDetachedWorktreeName(worktree, repoDirName = null) {
+	if (!worktree || typeof worktree.path !== "string" || worktree.path.length === 0) {
+		return null;
+	}
+
+	let name = path.basename(worktree.path);
+	if (repoDirName && name === repoDirName) {
+		const parent = path.basename(path.dirname(worktree.path));
+		if (parent && parent !== name) {
+			name = parent;
+		}
+	}
+
+	return name;
+}
+
+function getWorktreeDisplayName(worktree, repoDirName = null) {
+	if (!worktree || worktree.isMain) {
+		return "main";
+	}
+
+	if (typeof worktree.branch === "string" && worktree.branch.length > 0) {
+		return worktree.identifier;
+	}
+
+	return resolveDetachedWorktreeName(worktree, repoDirName) ?? worktree.identifier;
 }
 
 function getWorktreeSlotDetails(worktreePath) {
@@ -182,6 +211,7 @@ function getWorktreeSlotDetails(worktreePath) {
 
 	return {
 		worktree: findWorktreeByPath(worktrees, normalizedPath),
+		repoDirName: getRepoDirName(worktrees),
 		slot,
 		offset: getOffsetFromSlot(slot),
 	};
@@ -216,13 +246,14 @@ function getWorktreeName() {
 		return null;
 	}
 
-	const { worktree } = getWorktreeSlotDetails(currentWorktreePath);
+	const worktrees = getGitWorktrees();
+	const worktree = findWorktreeByPath(worktrees, currentWorktreePath);
 
-	if (worktree) {
-		return worktree.isMain ? null : worktree.identifier;
+	if (!worktree || worktree.isMain) {
+		return null;
 	}
 
-	return null;
+	return getWorktreeDisplayName(worktree, getRepoDirName(worktrees));
 }
 
 /**
@@ -271,14 +302,7 @@ function buildPortlessRunArgs(worktree, repoDirName = null) {
 		return [];
 	}
 
-	let name = path.basename(worktree.path);
-	if (repoDirName && name === repoDirName) {
-		const parent = path.basename(path.dirname(worktree.path));
-		if (parent && parent !== name) {
-			name = parent;
-		}
-	}
-
+	const name = resolveDetachedWorktreeName(worktree, repoDirName);
 	const sanitized = sanitizePortlessName(name);
 	return sanitized ? ["--name", sanitized] : [];
 }
@@ -296,9 +320,7 @@ function getPortlessRunArgs() {
 
 	const worktrees = getGitWorktrees();
 	const worktree = findWorktreeByPath(worktrees, currentWorktreePath);
-	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-	const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
-	return buildPortlessRunArgs(worktree, repoDirName);
+	return buildPortlessRunArgs(worktree, getRepoDirName(worktrees));
 }
 
 /**
@@ -326,11 +348,11 @@ function getBasePort(target) {
 		return defaultBase;
 	}
 
-	const { offset, worktree } = getWorktreeSlotDetails(currentWorktreePath);
+	const { offset, repoDirName, worktree } = getWorktreeSlotDetails(currentWorktreePath);
 	const basePort = defaultBase + offset;
 
 	if (worktree && !worktree.isMain && offset > 0) {
-		console.log(`[worktree: ${worktree.identifier}] ${label} base port: ${basePort}`);
+		console.log(`[worktree: ${getWorktreeDisplayName(worktree, repoDirName)}] ${label} base port: ${basePort}`);
 	}
 
 	return basePort;
@@ -370,18 +392,19 @@ function getPortInfo() {
 }
 
 function getPortInfoForPath(worktreePath) {
-	const { offset, slot, worktree } = getWorktreeSlotDetails(worktreePath);
-	return buildPortInfo(getWorktreeDisplayName(worktree), offset, slot);
+	const { offset, repoDirName, slot, worktree } = getWorktreeSlotDetails(worktreePath);
+	return buildPortInfo(getWorktreeDisplayName(worktree, repoDirName), offset, slot);
 }
 
 function getAllWorktreePortInfo() {
 	const worktrees = getGitWorktrees();
 	const { ordered, slots } = buildWorktreeSlotTable(worktrees);
+	const repoDirName = getRepoDirName(worktrees);
 
 	return ordered.map((worktree) => {
 		const slot = slots.get(worktree.path) ?? 0;
 		const offset = getOffsetFromSlot(slot);
-		const info = buildPortInfo(getWorktreeDisplayName(worktree), offset, slot);
+		const info = buildPortInfo(getWorktreeDisplayName(worktree, repoDirName), offset, slot);
 
 		return {
 			...info,

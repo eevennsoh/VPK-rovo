@@ -67,11 +67,24 @@ const INSET_CHILD_SIZES = {
 	xlarge: "[&_span]:size-6! [&_img]:size-6! [&_svg]:size-6! text-[24px]/[24px]",
 } as const satisfies Record<string, string>
 
+// Snug-inset children stretch to fill the box left after a 2px pad. `!` is
+// required because ADS marks (@atlaskit/icon, @atlaskit/logo) set width/height
+// via unlayered CSS that beats plain layered utilities.
+const SNUG_CHILD_CLASSES =
+	"[&_span]:flex [&_span]:size-full! [&_span]:items-center [&_span]:justify-center [&_img]:size-full! [&_svg]:size-full!"
+
 export interface TileProps
 	extends React.ComponentProps<"div">,
 		VariantProps<typeof tileVariants> {
 	label: string
 	isInset?: boolean
+	/**
+	 * Snug 2px inset: a fixed 2px pad on every side while the content fills the
+	 * rest of the box (e.g. a 24px `small` tile yields 20px of content). Takes
+	 * precedence over `isInset`. Pair with `variant="transparent"` for a bare
+	 * container around logos, avatars, or icons.
+	 */
+	isSnug?: boolean
 	hasBorder?: boolean
 }
 
@@ -80,6 +93,7 @@ function Tile({
 	size = "medium",
 	variant = "neutral",
 	isInset = true,
+	isSnug = false,
 	hasBorder = false,
 	className,
 	children,
@@ -93,9 +107,11 @@ function Tile({
 			aria-label={isDecorative ? undefined : label}
 			className={cn(
 				tileVariants({ size, variant }),
-			isInset
-			? cn("p-0.5", INSET_CHILD_SIZES[size ?? "medium"])
-			: "[&_span]:flex [&_span]:size-full [&_span]:items-center [&_span]:justify-center [&_img]:size-full [&_svg]:size-full",
+				isSnug
+					? cn("p-0.5", SNUG_CHILD_CLASSES)
+					: isInset
+						? cn("p-0.5", INSET_CHILD_SIZES[size ?? "medium"])
+						: "[&_span]:flex [&_span]:size-full [&_span]:items-center [&_span]:justify-center [&_img]:size-full [&_svg]:size-full",
 				hasBorder && "border border-border",
 				className
 			)}

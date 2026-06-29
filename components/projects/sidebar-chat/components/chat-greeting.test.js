@@ -98,10 +98,13 @@ async function loadChatGreetingHarness() {
 			`
 				import React from "react";
 
+				export const CHAT_ENTER_DURATION = 1.1;
+
 				export function ControlledRovoIllustration(props) {
 					return React.createElement("div", {
 						"data-testid": "controlled-rovo-illustration",
 						"data-illus-id": props.illusId,
+						"data-motion-size": String(props.motionSize),
 						"data-size": String(props.size),
 					});
 				}
@@ -275,7 +278,9 @@ test("ChatGreeting uses the animated controlled chat illustration for the defaul
 	assert.match(CHAT_GREETING_SOURCE, /resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC/u);
 	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
 	assert.match(markup, /data-illus-id="chat"/u);
-	assert.match(markup, /data-size="74"/u);
+	assert.match(markup, /data-size="72"/u);
+	assert.match(markup, /data-motion-size="180"/u);
+	assert.match(CHAT_GREETING_SOURCE, /motionSize=\{illusId === "chat" \? CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE : undefined\}/u);
 	// The static chat SVG must no longer render for the default greeting.
 	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/light\.svg"/u);
 	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/dark\.svg"/u);
@@ -289,7 +294,8 @@ test("ChatGreeting uses the Studio controlled agent illustration for the AI gree
 	assert.match(CHAT_GREETING_SOURCE, /resolvedIllustrationSrc === AGENT_ILLUSTRATION_SRC/u);
 	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
 	assert.match(markup, /data-illus-id="ai"/u);
-	assert.match(markup, /data-size="74"/u);
+	assert.match(markup, /data-size="72"/u);
+	assert.match(markup, /data-motion-size="undefined"/u);
 	assert.doesNotMatch(markup, /src="\/illustration-ai\/ai\/light\.svg"/u);
 });
 
@@ -309,12 +315,50 @@ test("ChatGreeting switches to Max heading and fixed illustration box", async ()
 	assert.match(markup, /height="67"/u);
 });
 
-test("ChatGreeting staggers the illustration before the heading", () => {
+test("ChatGreeting lets the illustration play before delayed heading and prompt rows", () => {
 	assert.match(CHAT_GREETING_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion \} from "motion\/react";/u);
+	assert.match(CHAT_GREETING_SOURCE, /import \{ ControlledRovoIllustration \} from "@\/components\/ui-custom\/rovo-illustration";/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_ILLUSTRATION_HEADING_STAGGER = 0\.18;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HEADING_PROMPT_STAGGER = 0\.18;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HEADING_CHILD_DELAY = CHAT_GREETING_ILLUSTRATION_HEADING_STAGGER;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_PROMPT_CHILD_DELAY = CHAT_GREETING_HEADING_CHILD_DELAY \+ CHAT_GREETING_HEADING_PROMPT_STAGGER;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_PROMPT_CONTAINER_VARIANTS = \{[\s\S]*delayChildren: CHAT_GREETING_PROMPT_CHILD_DELAY,[\s\S]*staggerChildren: 0\.04/u);
 	assert.match(CHAT_GREETING_SOURCE, /staggerChildren: 0\.04/u);
-	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(6px\)"/u);
-	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(-6px\)"/u);
-	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className=\{cn\(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{activeItemVariants\}>[\s\S]*<Heading size="large"/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_MODE_TRANSITION = \{[\s\S]*type: "spring",[\s\S]*bounce: 0,[\s\S]*visualDuration: 0\.22/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE = 72;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE = 180;/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME = "h-\[67px\] w-\[74px\]";/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_ITEM_VARIANTS = \{[\s\S]*transform: "translateY\(24px\)"[\s\S]*transform: "translateY\(0px\)"[\s\S]*transition: CHAT_GREETING_MODE_TRANSITION[\s\S]*transform: "translateY\(-24px\)"/u);
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_HEADING_ITEM_VARIANTS = \{[\s\S]*transform: "translateY\(24px\)"[\s\S]*delay: CHAT_GREETING_HEADING_CHILD_DELAY[\s\S]*transform: "translateY\(-24px\)"/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_ITEM_TRANSITION/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_TRANSITION/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_ILLUSTRATION/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_HEADING/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /stabilizeHeroOnMount/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_HERO_CONTAINER_VARIANTS/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_REDUCED_HERO_CONTAINER_VARIANTS/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /activeHeroContainerVariants/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /key="hero"/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_DISPLAY_SIZE/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_SCALE/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_ZOOM/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_SHELL_STYLE/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CHAT_GREETING_CONTROLLED_ILLUSTRATION_STAGE_STYLE/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /PixelSnappedSidebarIllustration/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /getDevicePixelSnapOffset/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /relative overflow-visible/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /absolute left-1\/2 top-1\/2/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /translate\(-50%, -50%\) scale/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /transformOrigin: "top left"/u);
+	assert.match(CHAT_GREETING_SOURCE, /function SidebarControlledRovoIllustration\(\{ illusId \}: Readonly<\{ illusId: "ai" \| "chat" \}>\)/u);
+	assert.match(CHAT_GREETING_SOURCE, /motionSize=\{illusId === "chat" \? CHAT_GREETING_CONTROLLED_CHAT_MOTION_SIZE : undefined\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /size=\{CHAT_GREETING_CONTROLLED_ILLUSTRATION_SIZE\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /shouldShowHero \? \(\s*<div className="flex flex-col items-center gap-2">[\s\S]*<SidebarControlledRovoIllustration illusId="chat" \/>/u);
+	assert.match(CHAT_GREETING_SOURCE, /<div className=\{cn\(CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME, "relative"\)\}>[\s\S]*className=\{cn\(CHAT_GREETING_STATIC_ILLUSTRATION_CLASS_NAME,/u);
+	assert.match(CHAT_GREETING_SOURCE, /variants=\{headingItemVariants\}>\s*<Heading size="large"/u);
+	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className="w-full" variants=\{activePromptContainerVariants\}>/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\} variants=\{activePromptContainerVariants\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /greetingSuggestions\.map\(\(suggestion\) => \([\s\S]*<motion\.div key=\{suggestion\.id\} variants=\{activeItemVariants\}>/u);
 });
 
 test("ChatGreeting falls back to the default prompts when a directory query has no matches", async () => {
@@ -322,8 +366,8 @@ test("ChatGreeting falls back to the default prompts when a directory query has 
 	const markup = harness.renderComposingEmptyDirectoryGreeting();
 
 	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS/u);
-	assert.match(CHAT_GREETING_SOURCE, /const activeContainerVariants = isComposing \? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;/u);
-	assert.match(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /const activeContainerVariants = isComposing \? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_SEQUENCE_CONTAINER_VARIANTS;/u);
+	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className="w-full" variants=\{activePromptContainerVariants\}>/u);
 	// The hero only collapses while composing when real directory matches exist;
 	// an empty-result fallback keeps the illustration + heading visible.
 	assert.match(CHAT_GREETING_SOURCE, /const shouldShowHero =\s*showHero && \(!isComposing \|\| !shouldRenderDirectoryMatches\);/u);

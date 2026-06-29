@@ -949,7 +949,7 @@ const tools: AppsDirectoryTool[] = [
 			{
 				name: "onAddedToolIdsChange",
 				type: "(toolIds: readonly string[]) => void",
-				description: "Called after Add to agent or Remove changes the selected app's added state.",
+				description: "Called after the card switch, Add to agent, or Remove changes an app's added state.",
 			},
 			{
 				name: "onCreateTool",
@@ -1082,7 +1082,7 @@ const tools: ToolsDirectoryTool[] = [
 		],
 	},
 	"skills-directory": {
-		description: "Skill-specific directory modal with multi-select cards, bulk selected-skill actions, and a learn-more detail view for each skill.",
+		description: "Skill-specific directory modal with Chat single-add and Studio immediate add/remove experiences plus a learn-more detail view for each skill.",
 		importStatement: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";`,
 		usage: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
 import type { SkillsDirectorySkill } from "@/components/blocks/skills-directory";
@@ -1113,20 +1113,21 @@ const skills: SkillsDirectorySkill[] = [
   open={open}
   onOpenChange={setOpen}
   skills={skills}
-  onSelectedSkillIdsChange={(skillIds) => console.log(skillIds)}
+  selectionExperience="studio-bulk-add"
   onAddSkills={(skillIds) => console.log("add", skillIds)}
+  onRemoveSkills={(skillIds) => console.log("remove", skillIds)}
   onCreateSkill={() => console.log("new skill")}
 />`,
 		demoLayout: { previewHeight: "fixed" },
 		examples: [
 			{
-				title: "Standard",
-				description: "Default sidebar directory with collection, category, and company navigation.",
+				title: "Chat",
+				description: "Single-select experience like /skills: clicking a card immediately adds that skill to the prompt composer.",
 				demoSlug: "skills-directory-demo-standard",
 			},
 			{
-				title: "Experimental",
-				description: "Dense browse layout with full-width search and searchable multi-select filter dropdowns.",
+				title: "Studio",
+				description: "Studio experience: each card switch immediately adds or removes that skill from an agent.",
 				demoSlug: "skills-directory-demo-experimental",
 			},
 		],
@@ -1141,6 +1142,12 @@ const skills: SkillsDirectorySkill[] = [
 				type: "\"default\" | \"experimental\"",
 				default: "\"default\"",
 				description: "Opt-in layout variation. The default sidebar directory remains unchanged.",
+			},
+			{
+				name: "selectionExperience",
+				type: "\"checkbox-actions\" | \"studio-bulk-add\" | \"chat-single-add\"",
+				default: "\"checkbox-actions\"",
+				description: "Controls card-click behavior: legacy checkbox actions, Studio immediate add/remove, or Chat single-add.",
 			},
 			{
 				name: "sessionSkills",

@@ -473,6 +473,12 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
         demoSlug: "sidebar-nav-item-demo-default",
       },
       {
+        title: "Tile leading avatar",
+        description:
+          "Leading avatar standardized on the Tile snug variant — a transparent 24x24 tile holding 20x20 content (the same treatment as the Studio agent rows).",
+        demoSlug: "sidebar-nav-item-demo-tile-leading",
+      },
+      {
         title: "Expanded",
         description: "Expanded disclosure row with add and drill-in actions.",
         demoSlug: "sidebar-nav-item-demo-expanded",
@@ -544,9 +550,33 @@ import PageIcon from "@atlaskit/icon/core/page"
 			},
 			{
 				name: "onSelect",
-				type: "() => void",
+				type: "(checked?: boolean) => void",
 				description:
-					"Optional whole-card selection handler owned by the EntityCardShell.",
+					"Optional whole-card action handler owned by the EntityCardShell.",
+			},
+			{
+				name: "cardActionLabel",
+				type: "string",
+				description:
+					"Accessible label for the whole-card action when it differs from the leading checkbox label.",
+			},
+			{
+				name: "added",
+				type: "boolean",
+				description:
+					"Marks the entity as already added and keeps the trailing status slot visible at rest.",
+			},
+			{
+				name: "onAddedChange",
+				type: "(checked: boolean) => void",
+				description:
+					"Renders the shared add/remove Switch. The switch appears on hover/focus when off and stays visible when added.",
+			},
+			{
+				name: "trailingStatus",
+				type: "ReactNode",
+				description:
+					"Advanced caller-owned trailing status control for custom add/remove affordances.",
 			},
 			{
 				name: "density",
@@ -612,6 +642,11 @@ import PageIcon from "@atlaskit/icon/core/page"
 		],
 		examples: [
 			{ title: "Directory cards", demoSlug: "entity-card-demo-default" },
+			{
+				title: "Add/remove",
+				description: "Skill cards with a hover-revealed Switch that persists when the skill is added.",
+				demoSlug: "entity-card-demo-add-remove",
+			},
 			{
 				title: "Skills",
 				description: "Skill cards through the EntityCardSkillCard directory card.",
@@ -862,6 +897,79 @@ import SearchIcon from "@atlaskit/icon/core/search"
 			{ title: "Custom colors", description: "Dots with alternative color palettes.", demoSlug: "animated-dots-demo-custom-colors" },
 			{ title: "Timing", description: "Fast, default, and slow animation speeds.", demoSlug: "animated-dots-demo-timing" },
 			{ title: "Sizes", description: "Dots at various text sizes from xs to lg.", demoSlug: "animated-dots-demo-sizes" },
+		],
+	},
+
+	"animated-icon": {
+		description:
+			"A set of SVG-level animated AI action icons (Generate text, Summarize text, Search, Code, Suggest, Rovo chat). Each icon stays static on mount and plays its bespoke per-stroke motion on hover or keyboard focus — or imperatively via a shared playToken, so a single control can replay a whole grid. Built with Motion for React; an optional singleColor=false mode reveals Rovo gradient accents.",
+		usage: `import { AnimatedIcon } from "@/components/ui-custom/animated-icon";
+
+// Render an animated icon by name; label it for assistive tech.
+<AnimatedIcon name="ai-search" label="Search" />
+<AnimatedIcon name="magic-wand" label="Suggest" size={32} />
+<AnimatedIcon name="rovo-chat" label="Rovo chat" singleColor={false} />
+
+// Replay many at once by bumping a shared token:
+<AnimatedIcon name="ai-generative-text" label="Generate text" playToken={token} />`,
+		props: [
+			{
+				name: "name",
+				type: '"ai-generative-text" | "ai-generative-text-summary" | "ai-search" | "angle-brackets" | "magic-wand" | "rovo-chat"',
+				description:
+					"Which animated icon to render. Use the animatedIconNames export to enumerate them.",
+			},
+			{
+				name: "label",
+				type: "string",
+				description:
+					"Accessible label for the icon. Omit (or leave empty) to render it decoratively (aria-hidden).",
+			},
+			{
+				name: "size",
+				type: "number",
+				default: "20",
+				description: "Icon size in pixels.",
+			},
+			{
+				name: "color",
+				type: "string",
+				default: '"currentColor"',
+				description: "Icon color. Defaults to currentColor so it inherits the text color.",
+			},
+			{
+				name: "singleColor",
+				type: "boolean",
+				default: "true",
+				description: "When false, the icon reveals its multi-color Rovo gradient accents instead of a single solid color.",
+			},
+			{
+				name: "replayOnHover",
+				type: "boolean",
+				default: "true",
+				description: "Replay the motion while the pointer is over the icon.",
+			},
+			{
+				name: "replayOnFocus",
+				type: "boolean",
+				default: "true",
+				description: "Replay the motion while the icon is keyboard-focused.",
+			},
+			{
+				name: "playToken",
+				type: "number",
+				description:
+					"Change this value to replay the motion imperatively (e.g. a \"Replay all\" button bumping a shared token across many icons).",
+			},
+			{
+				name: "className",
+				type: "string",
+				description: "Additional CSS classes applied to the wrapper (e.g. icon color).",
+			},
+		],
+		examples: [
+			{ title: "Basic", description: "AI action icons that stay static on mount, replay on hover, or replay all via a button.", demoSlug: "animated-icon-demo" },
+			{ title: "Gradient accents", description: "singleColor=false reveals each icon's Rovo gradient accents during the animation.", demoSlug: "animated-icon-demo-rainbow" },
 		],
 	},
 
@@ -4545,18 +4653,18 @@ const sources: TwgToolSource[] = [
 		],
 	},
 
-	panel: {
+	"flow-panel": {
 		description:
 			"A positioned overlay container for React Flow canvases. Wraps @xyflow/react Panel with card styling, rounded corners, and border for status indicators, toolbars, or metadata overlays.",
 		usage: `import { Canvas } from "@/components/ui-custom/canvas";
-import { Panel } from "@/components/ui-custom/panel";
+import { FlowPanel } from "@/components/ui-custom/flow-panel";
 
 <Canvas nodes={nodes} edges={edges}>
-  <Panel position="top-right">
+  <FlowPanel position="top-right">
     <div className="flex items-center gap-2 px-2 py-1">
       <span className="text-xs">Status: Running</span>
     </div>
-  </Panel>
+  </FlowPanel>
 </Canvas>`,
 		demoLayout: {
 			previewContentWidth: "full",
@@ -4580,11 +4688,11 @@ import { Panel } from "@/components/ui-custom/panel";
 			},
 		],
 		subComponents: [
-			{ name: "Panel", description: "Themed React Flow panel with card background, rounded corners, border, and padding." },
+			{ name: "FlowPanel", description: "Themed React Flow panel with card background, rounded corners, border, and padding." },
 		],
 		examples: [
-			{ title: "Status lozenge", description: "Panel with a running status lozenge and graph stats.", demoSlug: "panel-demo-status-lozenge" },
-			{ title: "Positions", description: "Panels placed in all six canvas positions.", demoSlug: "panel-demo-positions" },
+			{ title: "Status lozenge", description: "Panel with a running status lozenge and graph stats.", demoSlug: "flow-panel-demo-status-lozenge" },
+			{ title: "Positions", description: "Panels placed in all six canvas positions.", demoSlug: "flow-panel-demo-positions" },
 		],
 	},
 

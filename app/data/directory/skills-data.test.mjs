@@ -40,6 +40,7 @@ test("every skill carries a standard, round-tripping SKILL.md", () => {
 
 		// Body is pure markdown — no leading fence, no embedded frontmatter.
 		assert.ok(!/^---/u.test(body), `${skill.id}: body has no frontmatter fence`);
+		assert.ok(!/^#\s/u.test(body.trimStart()), `${skill.id}: body does not start with a redundant H1`);
 
 		// Round-trips through the codec the editor uses.
 		assert.equal(serializeSkillMd(frontmatter, body), skill.skillMd, `${skill.id}: skillMd round-trips`);

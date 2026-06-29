@@ -172,6 +172,8 @@ export interface CustomLogoProps {
 	size?: LogoProps["size"];
 	/** Accessible label */
 	label?: string;
+	/** Render only the mark, without a containing tile or outline. */
+	borderless?: boolean;
 	/** Additional CSS classes */
 	className?: string;
 }
@@ -186,6 +188,7 @@ export function CustomLogo({
 	wordmark,
 	size = "small",
 	label,
+	borderless = false,
 	className,
 }: Readonly<CustomLogoProps>) {
 	const px = getLogoSizePx(size ?? "small");
@@ -198,12 +201,13 @@ export function CustomLogo({
 	// Custom-app art (project avatars) are full-bleed square tiles, so soften the
 	// corners with the 8px (radius.large) tile radius. Brand marks are unaffected.
 	const isCustomAvatar = Boolean(src && src.startsWith("/avatar-project/"));
-	const shouldRenderBorderedTile = Boolean(brand?.hasBorder && isTileLogoSize(size));
+	const shouldRenderBorderedTile = Boolean(!borderless && brand?.hasBorder && isTileLogoSize(size));
+	const borderedTileSrc = shouldRenderBorderedTile ? brand?.src : undefined;
 	const borderClassName =
-		brand?.hasBorder && !shouldRenderBorderedTile &&
+		!borderless && brand?.hasBorder && !shouldRenderBorderedTile &&
 		"rounded-tile [outline:1px_solid_var(--color-border)] [outline-offset:-1px]";
 
-	const icon = brand?.hasBorder && isTileLogoSize(size) ? (
+	const icon = borderedTileSrc ? (
 		<Tile
 			aria-hidden
 			className="bg-surface"
@@ -212,7 +216,7 @@ export function CustomLogo({
 			size={size}
 			variant="transparent"
 		>
-			<Image src={brand.src} alt="" aria-hidden width={px} height={px} className="object-contain" />
+			<Image src={borderedTileSrc} alt="" aria-hidden width={px} height={px} className="object-contain" />
 		</Tile>
 	) : brand ? (
 		<Image

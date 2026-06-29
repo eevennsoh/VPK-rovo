@@ -63,6 +63,7 @@ interface RichTextEditorProps
 	contentClassName?: string;
 	toolbarEndSlot?: ReactNode;
 	toolbarBelowSlot?: ReactNode;
+	toolbarClassName?: string;
 	mentionSources?: RichTextMentionSources;
 	/**
 	 * Enables inline "ghost text" autocomplete for skill/tool mentions, mirroring
@@ -340,6 +341,7 @@ export function RichTextEditor({
 	contentClassName,
 	toolbarEndSlot,
 	toolbarBelowSlot,
+	toolbarClassName,
 	mentionSources,
 	enableDirectoryAutocomplete = false,
 	suggestionVariant = "nested",
@@ -768,6 +770,7 @@ export function RichTextEditor({
 						// `rich-text-editor.css`), so it follows the scroll.
 						toolbarReveal === "hover" &&
 							"sticky top-0 z-10 [container-type:scroll-state]",
+						toolbarClassName,
 					)}
 				>
 					<div

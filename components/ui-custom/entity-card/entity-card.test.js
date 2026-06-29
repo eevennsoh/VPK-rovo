@@ -24,6 +24,7 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
+	assert.match(SHELL_SOURCE, /data-active=\{active \|\| undefined\}/u);
 	// Resting fill is the overlay surface so cards match their elevated container
 	// (modals/dialogs sit on surface-overlay); identical to `surface` in light mode
 	// but correctly lighter in dark mode. See #966-followup.
@@ -41,7 +42,11 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /after:border-border hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
 	assert.match(SHELL_SOURCE, /active = false/u);
 	assert.match(SHELL_SOURCE, /active && !selected && "after:border-transparent"/u);
-	assert.match(SHELL_SOURCE, /animate: active \? hoverAnimation : \{ boxShadow: "none" \}/u);
+	assert.match(SHELL_SOURCE, /const cardVariants = \{[\s\S]*rest: \{ boxShadow: "none" \},[\s\S]*hover: hoverAnimation,[\s\S]*\} as const;/u);
+	assert.match(SHELL_SOURCE, /animate: active \? "hover" : "rest"/u);
+	assert.match(SHELL_SOURCE, /initial: "rest"/u);
+	assert.match(SHELL_SOURCE, /variants: cardVariants/u);
+	assert.match(SHELL_SOURCE, /whileHover: "hover"/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-selected/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
 });
@@ -69,18 +74,20 @@ test("shell uses a dedicated overlay <button> for selection, not a role=button w
 	// Overlay sits beneath card content so nested controls stay clickable.
 	assert.match(SHELL_SOURCE, /absolute inset-0 z-0 cursor-pointer/u);
 	assert.match(SHELL_SOURCE, /\[&>\*\]:relative \[&>\*\]:z-10/u);
-	assert.match(SHELL_SOURCE, /whileTap: interactive \? tapAnimation : undefined/u);
+	assert.doesNotMatch(SHELL_SOURCE, /whileTap/u);
 	// Focus ring follows the overlay button's focus-visible state, not the article's.
 	assert.match(SHELL_SOURCE, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3/u);
 });
 
 test("inert card content lets clicks fall through to the select button", () => {
 	assert.match(SHELL_SOURCE, /\[&>\*\]:pointer-events-none/u);
-	assert.match(SHELL_SOURCE, /\[&_button\]:pointer-events-auto/u);
-	assert.match(SHELL_SOURCE, /\[&_a\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:relative/u);
+	assert.match(SHELL_SOURCE, /\[&_:is\(a,button,input,select,textarea\)\]:z-10/u);
 	assert.match(SHELL_SOURCE, /\[&_\[role=button\]\]:pointer-events-auto/u);
 	assert.match(SHELL_SOURCE, /\[&_\[role=menuitem\]\]:pointer-events-auto/u);
-	assert.match(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
+	assert.doesNotMatch(SHELL_SOURCE, /\[&_button\]:pointer-events-auto/u);
+	assert.doesNotMatch(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
 });
 
 test("scrollable card body stays scrollable inside an interactive (selectable) card", () => {
@@ -94,6 +101,8 @@ test("scrollable card body stays scrollable inside an interactive (selectable) c
 test("interaction hook derives interactivity from onSelect and drops manual key handling", () => {
 	assert.match(INTERACTION_SOURCE, /const interactive = Boolean\(onSelect\)/u);
 	assert.match(INTERACTION_SOURCE, /useReducedMotion\(\)/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /TAP_ANIMATION/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /tapAnimation/u);
 	assert.doesNotMatch(INTERACTION_SOURCE, /handleKeyDown/u);
 	assert.doesNotMatch(INTERACTION_SOURCE, /event\.key/u);
 	assert.match(INTERACTION_SOURCE, /handleSelect/u);
@@ -141,6 +150,27 @@ test("header swaps the leading visual for a default 16x16 checkbox in selectable
 	// itself keeps its native 16x16 default (its className opens with opacity, not size-*).
 	assert.match(PARTS_SOURCE, /relative inline-flex size-8 shrink-0 items-center justify-center/u);
 	assert.match(PARTS_SOURCE, /<Checkbox\s+aria-label=\{label\}\s+checked=\{selected\}\s+className=\{cn\(\s*"opacity-0/u);
+	assert.match(PARTS_SOURCE, /after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100/u);
+});
+
+test("header supports a wider trailing status control without using the added checkmark", () => {
+	assert.match(PARTS_SOURCE, /trailingStatus\?: ReactNode/u);
+	assert.match(PARTS_SOURCE, /onAddedChange\?: \(checked: boolean\) => void/u);
+	assert.match(PARTS_SOURCE, /const defaultTrailingStatus = onAddedChange \? \(/u);
+	assert.match(PARTS_SOURCE, /const trailingStatusControl = trailingStatus \?\? defaultTrailingStatus;/u);
+	assert.match(PARTS_SOURCE, /const hasTrailingStatus = Boolean\(trailingStatusControl\);/u);
+	assert.match(PARTS_SOURCE, /action \|\| added \|\| hoverAdded \|\| hasTrailingStatus/u);
+	assert.match(PARTS_SOURCE, /action[\s\S]*\? added \? "w-16" : "w-6 group-hover\/card:w-16 group-focus-within\/card:w-16 group-data-\[active=true\]\/card:w-16"[\s\S]*: added \? "w-8" : "w-0 group-hover\/card:w-8 group-focus-within\/card:w-8"/u);
+	assert.match(PARTS_SOURCE, /hasTrailingStatus[\s\S]*\? added \? "-translate-x-10" : "group-hover\/card:-translate-x-10 group-focus-within\/card:-translate-x-10 group-data-\[active=true\]\/card:-translate-x-10"/u);
+	assert.match(PARTS_SOURCE, /hasTrailingStatus\s*\? "pointer-events-auto absolute top-1\/2 right-0 inline-flex -translate-y-1\/2 items-center"/u);
+	assert.match(PARTS_SOURCE, /\{trailingStatusControl \?\? <EntityCardAddedCheck/u);
+	assert.match(PARTS_SOURCE, /export function EntityCardAddedSwitch/u);
+	assert.match(PARTS_SOURCE, /"transition-opacity duration-fast ease-out motion-reduce:transition-none after:inset-0"/u);
+	assert.match(PARTS_SOURCE, /<Switch[\s\S]*aria-label=\{`\$\{added \? "Remove" : "Add"\} \$\{title\}`\}[\s\S]*checked=\{added\}[\s\S]*onCheckedChange=\{onAddedChange\}/u);
+	assert.match(SKILL_SOURCE, /trailingStatus\?: ReactNode/u);
+	assert.match(SKILL_SOURCE, /onAddedChange\?: \(checked: boolean\) => void/u);
+	assert.match(SKILL_SOURCE, /trailingStatus=\{trailingStatus\}/u);
+	assert.match(SKILL_SOURCE, /onAddedChange=\{onAddedChange\}/u);
 });
 
 test("banner part draws the full-bleed cover and hexagon-outlined cover avatar", () => {
@@ -212,6 +242,28 @@ test("skill variant uses a 32px icon tile, header byline, and a teammate stat", 
 	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
 	assert.match(SKILL_SOURCE, /\{formatCompact\(teammateCount\)\} teammates/u);
 	assert.match(SKILL_SOURCE, /EntityCardByline/u);
+	assert.match(SKILL_SOURCE, /hoverAdded\?: boolean/u);
+	assert.match(SKILL_SOURCE, /hoverAdded=\{hoverAdded\}/u);
+	assert.match(SKILL_SOURCE, /onAddedChange=\{onAddedChange\}/u);
+	assert.match(PARTS_SOURCE, /hoverAdded\?: boolean/u);
+	assert.match(SKILL_SOURCE, /trailingStatus=\{trailingStatus\}/u);
+	assert.doesNotMatch(PARTS_SOURCE, /from "motion\/react"/u);
+	assert.doesNotMatch(PARTS_SOURCE, /AnimatePresence/u);
+	assert.doesNotMatch(PARTS_SOURCE, /motion\.span/u);
+	assert.match(PARTS_SOURCE, /"relative h-6 shrink-0 overflow-visible transition-\[width\] duration-fast ease-out motion-reduce:transition-none"/u);
+	assert.match(PARTS_SOURCE, /: added \? "w-\[52px\]" : hoverAdded \? "w-6 group-hover\/card:w-\[52px\] group-data-\[active=true\]\/card:w-\[52px\]" : "w-6"/u);
+	assert.match(PARTS_SOURCE, /"absolute top-0 right-0 z-\[1\] inline-flex transition-transform duration-fast ease-out motion-reduce:transition-none"/u);
+	assert.match(PARTS_SOURCE, /: added \? "-translate-x-7" : hoverAdded \? "group-hover\/card:-translate-x-7 group-data-\[active=true\]\/card:-translate-x-7" : "translate-x-0"/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-focus-within\/card:-translate-x-6/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:pointer-events-none group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
+	assert.match(PARTS_SOURCE, /"pointer-events-none absolute top-0 right-0 inline-flex size-6 origin-center items-center justify-center transition-\[opacity,transform\] duration-fast ease-out motion-reduce:transition-none"/u);
+	assert.match(PARTS_SOURCE, /added\s*\? "scale-100 opacity-100"\s*: hoverAdded\s*\? "scale-75 opacity-0 group-hover\/card:scale-100 group-hover\/card:opacity-100 group-data-\[active=true\]\/card:scale-100 group-data-\[active=true\]\/card:opacity-100"\s*: "scale-75 opacity-0"/u);
+	assert.match(PARTS_SOURCE, /<EntityCardAddedCheck className=\{added \? undefined : "text-icon-disabled"\} label=\{added \? "Added" : ""\} \/>/u);
+	assert.doesNotMatch(PARTS_SOURCE, /group-hover\/card:scale-100 group-hover\/card:opacity-100 group-focus-within\/card/u);
+	assert.doesNotMatch(PARTS_SOURCE, /absolute left-full inline-flex/u);
+	assert.doesNotMatch(PARTS_SOURCE, /absolute left-full ml-2/u);
+	assert.doesNotMatch(PARTS_SOURCE, /absolute right-full mr-2/u);
+	assert.doesNotMatch(PARTS_SOURCE, /text-icon-disabled[^"]*group-focus-within/u);
 });
 
 test("app variant mirrors the tool card layout with tool, knowledge, and teammate counts", () => {
@@ -341,12 +393,21 @@ test("directory cards wrap entity-card content in the shared shell", () => {
 test("skill/app/tool/knowledge cards opt into multi-select when a `selected` boolean is passed", () => {
 	// `onSelect` toggles; `(checked?: boolean)` lets the checkbox forward its state.
 	assert.match(VARIANTS_SOURCE, /onSelect\?: \(checked\?: boolean\) => void/u);
-	// Multi-select mode (checkbox swap + blue border) is gated on `selected !== undefined`,
-	// so existing cards that pass only `onSelect` (open/navigate) keep today's behavior.
+	// App/tool/knowledge multi-select mode (checkbox swap + blue border) is gated on
+	// `selected !== undefined`; skill cards also accept an explicit `selectable`
+	// override for surfaces that use card clicks without the checkbox affordance.
 	const gateCount = VARIANTS_SOURCE.match(/const selectable = selected !== undefined;/gu) ?? [];
-	assert.equal(gateCount.length, 4);
+	assert.equal(gateCount.length, 3);
+	assert.match(VARIANTS_SOURCE, /const checkboxSelectable = selectable \?\? selected !== undefined;/u);
+	assert.match(VARIANTS_SOURCE, /cardActionLabel\?: string/u);
+	assert.match(VARIANTS_SOURCE, /function getDefaultShellSelectLabel/u);
+	assert.match(VARIANTS_SOURCE, /return onSelect \|\| !onAddedChange \? selectLabel : addActionLabel;/u);
+	assert.match(VARIANTS_SOURCE, /const addActionLabel = `\$\{added \? "Remove" : "Add"\} \$\{name\}`;/u);
+	assert.match(VARIANTS_SOURCE, /const handleSelect = onSelect \?\? \(onAddedChange \? \(\) => onAddedChange\(!added\) : undefined\);/u);
+	assert.match(VARIANTS_SOURCE, /const shellSelectLabel = cardActionLabel \?\? getDefaultShellSelectLabel\(\{ onAddedChange, onSelect, addActionLabel, selectLabel \}\);/u);
 	// Each selectable wrapper threads selection to BOTH the shell (border) and content (checkbox).
-	assert.match(VARIANTS_SOURCE, /onSelect=\{onSelect \? \(\) => onSelect\(\) : undefined\}\s*\n\s*selectLabel=\{selectLabel\}\s*\n\s*selected=\{selected\}/u);
+	const shellLabelCount = VARIANTS_SOURCE.match(/selectLabel=\{shellSelectLabel\}/gu) ?? [];
+	assert.equal(shellLabelCount.length, 4);
 	assert.match(VARIANTS_SOURCE, /onSelectedChange=\{onSelect\}/u);
 	const labelCount = VARIANTS_SOURCE.match(/\$\{selected \? "Deselect" : "Select"\} \$\{name\}/gu) ?? [];
 	assert.equal(labelCount.length, 4);

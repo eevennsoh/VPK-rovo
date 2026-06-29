@@ -10,11 +10,13 @@ const UI_DEMO: Record<string, ComponentType> = {
   "aspect-ratio": dynamic(() => import("./demos/ui/aspect-ratio-demo"), {
     ssr: false,
   }),
+  attachment: dynamic(() => import("./demos/ui/attachment-demo"), { ssr: false }),
   avatar: dynamic(() => import("./demos/ui/avatar-demo"), { ssr: false }),
   badge: dynamic(() => import("./demos/ui/badge-demo"), { ssr: false }),
   breadcrumb: dynamic(() => import("./demos/ui/breadcrumb-demo"), {
     ssr: false,
   }),
+  bubble: dynamic(() => import("./demos/ui/bubble-demo"), { ssr: false }),
   button: dynamic(() => import("./demos/ui/button-demo"), { ssr: false }),
   "button-group": dynamic(() => import("./demos/ui/button-group-demo"), {
     ssr: false,
@@ -53,7 +55,12 @@ const UI_DEMO: Record<string, ComponentType> = {
   item: dynamic(() => import("./demos/ui/item-demo"), { ssr: false }),
   kbd: dynamic(() => import("./demos/ui/kbd-demo"), { ssr: false }),
   label: dynamic(() => import("./demos/ui/label-demo"), { ssr: false }),
+  marker: dynamic(() => import("./demos/ui/marker-demo"), { ssr: false }),
   menubar: dynamic(() => import("./demos/ui/menubar-demo"), { ssr: false }),
+  message: dynamic(() => import("./demos/ui/message-demo"), { ssr: false }),
+  "message-scroller": dynamic(() => import("./demos/ui/message-scroller-demo"), {
+    ssr: false,
+  }),
   "native-select": dynamic(() => import("./demos/ui/native-select-demo"), {
     ssr: false,
   }),
@@ -121,6 +128,7 @@ const UI_DEMO: Record<string, ComponentType> = {
   "page-header": dynamic(() => import("./demos/ui/page-header-demo"), {
     ssr: false,
   }),
+  panel: dynamic(() => import("./demos/ui/panel-demo"), { ssr: false }),
   "progress-indicator": dynamic(
     () => import("./demos/ui/progress-indicator-demo"),
     { ssr: false },
@@ -129,7 +137,6 @@ const UI_DEMO: Record<string, ComponentType> = {
     () => import("./demos/ui/progress-tracker-demo"),
     { ssr: false },
   ),
-  radio: dynamic(() => import("./demos/ui/radio-group-demo"), { ssr: false }),
   "split-button": dynamic(() => import("./demos/ui/split-button-demo"), {
     ssr: false,
   }),
@@ -276,6 +283,9 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
+  "animated-icon": dynamic(() => import("./demos/ui-custom/animated-icon-demo"), {
+    ssr: false,
+  }),
   "artifact-list": dynamic(() => import("./demos/ui-custom/artifact-list-demo"), {
     ssr: false,
   }),
@@ -344,7 +354,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "package-info": dynamic(() => import("./demos/ui-custom/package-info-demo"), {
     ssr: false,
   }),
-  panel: dynamic(() => import("./demos/ui-custom/panel-demo"), { ssr: false }),
+  "flow-panel": dynamic(() => import("./demos/ui-custom/flow-panel-demo"), { ssr: false }),
   persona: dynamic(() => import("./demos/ui-custom/persona-demo"), { ssr: false }),
   plan: dynamic(() => import("./demos/ui-custom/plan-demo"), { ssr: false }),
   "prompt-input": dynamic(() => import("./demos/ui-custom/prompt-input-demo"), {
@@ -445,6 +455,232 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui/date-label-demo").then((mod) => ({ default: mod.DateLabelDemoDropdownTrigger })),
     { ssr: false },
   ),
+  // Attachment
+  "attachment-demo-default": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-files": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoFiles,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-content-only": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoContentOnly,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-states": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoStates,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-images": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoImages,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-image-states": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoImageStates,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoSizes,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-group": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoGroup,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-trigger": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoTrigger,
+      })),
+    { ssr: false },
+  ),
+  "attachment-demo-orientation": dynamic(
+    () =>
+      import("./demos/ui/attachment-demo").then((mod) => ({
+        default: mod.AttachmentDemoOrientation,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoSizes,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-variants": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoVariants,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-alignment": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoAlignment,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-grouped": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoGrouped,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-collapsible": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoCollapsible,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-button-links": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoButtonLinks,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-reaction-placement": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoReactionPlacement,
+      })),
+    { ssr: false },
+  ),
+  "bubble-demo-reactions-buttons": dynamic(
+    () =>
+      import("./demos/ui/bubble-demo").then((mod) => ({
+        default: mod.BubbleDemoReactionsButtons,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-markers": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoMarkers,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-border": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoBorder,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-separator": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoSeparator,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-accordion": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoAccordion,
+      })),
+    { ssr: false },
+  ),
+  "marker-demo-drawer": dynamic(
+    () =>
+      import("./demos/ui/marker-demo").then((mod) => ({
+        default: mod.MarkerDemoDrawer,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-message": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoMessage,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-avatar": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAvatar,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-group": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoGroup,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-group-chat": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoGroupChat,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-header-and-footer": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoHeaderAndFooter,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-actions": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoActions,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-attachment": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAttachment,
+      })),
+    { ssr: false },
+  ),
+  "message-demo-attachment-group": dynamic(
+    () =>
+      import("./demos/ui/message-demo").then((mod) => ({
+        default: mod.MessageDemoAttachmentGroup,
+      })),
+    { ssr: false },
+  ),
+  "message-scroller-demo-chat": dynamic(
+    () =>
+      import("./demos/ui/message-scroller-demo").then((mod) => ({
+        default: mod.MessageScrollerDemoChat,
+      })),
+    { ssr: false },
+  ),
+
   // Button
   "button-demo-default": dynamic(
     () =>
@@ -2084,6 +2320,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "breadcrumb-demo-sizes": dynamic(
+    () =>
+      import("./demos/ui/breadcrumb-demo").then((mod) => ({
+        default: mod.BreadcrumbDemoSizes,
+      })),
+    { ssr: false },
+  ),
   "breadcrumb-demo-with-slots": dynamic(
     () =>
       import("./demos/ui/breadcrumb-demo").then((mod) => ({
@@ -2561,6 +2804,63 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/card-demo").then((mod) => ({
         default: mod.CardDemoWithImage,
+      })),
+    { ssr: false },
+  ),
+  // Panel
+  "panel-demo-default": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoDefault,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-basic": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoBasic,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-header": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoHeader,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-with-subheader": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoWithSubheader,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-inline-edit": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoInlineEdit,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-with-footer": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoWithFooter,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-loading": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoLoading,
+      })),
+    { ssr: false },
+  ),
+  "panel-demo-unsaved-changes": dynamic(
+    () =>
+      import("./demos/ui/panel-demo").then((mod) => ({
+        default: mod.PanelDemoUnsavedChanges,
       })),
     { ssr: false },
   ),
@@ -5343,6 +5643,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tile-demo-snug": dynamic(
+    () =>
+      import("./demos/ui/tile-demo").then((mod) => ({
+        default: mod.TileDemoSnug,
+      })),
+    { ssr: false },
+  ),
   // Date Time Picker
   "date-time-picker-demo-default": dynamic(
     () =>
@@ -5368,6 +5675,11 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
 };
 
 const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
+
+  "animated-icon-demo-rainbow": dynamic(
+    () => import("./demos/ui-custom/animated-icon-demo").then((mod) => ({ default: mod.AnimatedIconDemoRainbow })),
+    { ssr: false },
+  ),
 
   // Migrated UI custom components
   "footer-demo-default": dynamic(
@@ -5449,6 +5761,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/sidebar-nav-item-demo").then((mod) => ({ default: mod.SidebarNavItemDemoDefault })),
     { ssr: false },
   ),
+  "sidebar-nav-item-demo-tile-leading": dynamic(
+    () => import("./demos/ui-custom/sidebar-nav-item-demo").then((mod) => ({ default: mod.SidebarNavItemDemoTileLeading })),
+    { ssr: false },
+  ),
   "sidebar-nav-item-demo-expanded": dynamic(
     () => import("./demos/ui-custom/sidebar-nav-item-demo").then((mod) => ({ default: mod.SidebarNavItemDemoExpanded })),
     { ssr: false },
@@ -5507,6 +5823,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "entity-card-demo-default": dynamic(
     () => import("./demos/ui-custom/entity-card-demo"),
+    { ssr: false },
+  ),
+  "entity-card-demo-add-remove": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoAddRemove })),
     { ssr: false },
   ),
   "entity-card-demo-skills": dynamic(
@@ -6476,17 +6796,17 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "panel-demo-status-lozenge": dynamic(
+  "flow-panel-demo-status-lozenge": dynamic(
     () =>
-      import("./demos/ui-custom/panel-demo").then((mod) => ({
-        default: mod.PanelDemoStatusLozenge,
+      import("./demos/ui-custom/flow-panel-demo").then((mod) => ({
+        default: mod.FlowPanelDemoStatusLozenge,
       })),
     { ssr: false },
   ),
-  "panel-demo-positions": dynamic(
+  "flow-panel-demo-positions": dynamic(
     () =>
-      import("./demos/ui-custom/panel-demo").then((mod) => ({
-        default: mod.PanelDemoPositions,
+      import("./demos/ui-custom/flow-panel-demo").then((mod) => ({
+        default: mod.FlowPanelDemoPositions,
       })),
     { ssr: false },
   ),
@@ -8384,6 +8704,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "scroll-mask": dynamic(() => import("./demos/visual/scroll-mask-demo"), {
     ssr: false,
   }),
+  motion: dynamic(() => import("./demos/visual/motion-demo"), {
+    ssr: false,
+  }),
   "text-effects": dynamic(() => import("./demos/visual/text-effects-demo"), {
     ssr: false,
   }),
@@ -8529,6 +8852,7 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   ),
   bands: dynamic(() => import("./demos/visual/bands-demo"), { ssr: false }),
   rings: dynamic(() => import("./demos/visual/rings-demo"), { ssr: false }),
+  ripple: dynamic(() => import("./demos/visual/ripple-demo"), { ssr: false }),
   blockify: dynamic(() => import("./demos/visual/blockify-demo"), {
     ssr: false,
   }),

@@ -160,7 +160,7 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 	const card = (
 		<div
 			data-frontmatter-card=""
-			className="mb-4 overflow-hidden rounded-2xl border border-border"
+			className="mb-6 overflow-hidden rounded-2xl border border-border"
 		>
 			<dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-6 gap-y-2 p-4 text-xs leading-4">
 				{entries.map((entry) => (

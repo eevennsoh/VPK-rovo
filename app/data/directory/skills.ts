@@ -243,6 +243,10 @@ export function slugifySkillName(name: string): string {
 		.replace(/^-|-$/gu, "");
 }
 
+function stripInitialH1(markdown: string): string {
+	return markdown.replace(/^#\s+.+\n+/u, "");
+}
+
 /**
  * The full raw SKILL.md for a skill. Returns the authored {@link SkillsDirectorySkill.skillMd}
  * when present; otherwise synthesizes a minimal standard-compliant file from the
@@ -256,7 +260,7 @@ export function getSkillMarkdown(skill: SkillsDirectorySkill): string {
 		{ key: "name", value: slugifySkillName(skill.name) },
 		{ key: "description", value: skill.description },
 	];
-	return serializeSkillMd(frontmatter, skill.instructions ?? `# ${skill.name}\n\n${skill.description}`);
+	return serializeSkillMd(frontmatter, stripInitialH1(skill.instructions ?? skill.description));
 }
 
 /** Authoring org for the detail "Created by" row (falls back to the publisher). */

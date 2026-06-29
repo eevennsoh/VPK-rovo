@@ -17,7 +17,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Backend/API edits are in `backend/server.js`, `backend/lib/*.js`, and nested `app/api/**/route.ts` handlers (dev proxy and route-local adapters).
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`.
 - For UI changes, also run visual + accessibility checks (see `.agents/docs/workflows-extended.md`).
-- Browser/computer control: use `agent-browser` (`npx agent-browser`) first for browser testing, local web-app verification, screenshots, UI probes, public pages, isolated sessions, visual debugging, responsive checks, and unauthenticated web verification, regardless of whether the session is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. Use `@Chrome` only when signed-in Chrome state, cookies, extensions, existing tabs, or multi-tab authenticated browser work matters, and use `@Computer` / app-specific Computer Use for native apps, OS workflows, and cross-app GUI flows. Put ad-hoc browser artifacts under ignored `output/agent-browser/`.
+- Browser testing and verification: use `agent-browser` (`npx agent-browser`) by default for browser testing, local web-app verification, screenshots, UI probes, public pages, isolated sessions, visual debugging, responsive checks, and unauthenticated web verification. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright` skill before using that fallback. Put ad-hoc browser artifacts under ignored `output/agent-browser/`.
 - Symphony browser evidence is the exception: use the repo-local `vpk-symphony` skill so issue-scoped screenshots, WebM recordings, and traces land under ignored `output/playwright/` for the workpad flow, as specified in `WORKFLOW.md` and `docs/SYMPHONY.md`.
 
 ## Documentation Index
@@ -169,6 +169,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - First-time Rovo bootstrap: run `pnpm run rovo` (or `rovo`) once, copy the printed `ROVO_SESSION_TOKEN` into `.env.local`, then restart the stack
 - Start everything: `pnpm run rovo` (starts 1 rovo serve instance + backend + frontend; use `pnpm run rovo -- 6` for full pool)
 - Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (worktree-aware detached tmux session; runs through `portless run` so this worktree gets a stable `.localhost` URL — read it from `pnpm ports` / `pnpm run dev:tmux:status`, or `.dev-frontend-port` / `.dev-backend-port` for raw ports)
+- Attach to the plain detached dev session for logs: `pnpm run dev:tmux:attach` (detach with `Ctrl-b` then `d`); use `pnpm run dev:tmux:status` for a non-interactive session/port snapshot.
 - Start frontend + backend in foreground: `pnpm run dev` (simple fallback when tmux is unavailable; AI Gateway-backed chat works when credentials are configured; Rovo-selected flows still need Rovo Serve)
 - Start with an explicit Portless URL for this worktree (vanilla — no wrapper): `portless run` gives `vpk-rovo.localhost` on main and `<branch>.vpk-rovo.localhost` on a branch automatically; add `--name <worktree-dir>` only when HEAD is detached (`portless run --name <worktree-dir>` → `<worktree-dir>.localhost`). The `/portless` command resolves this for you. Add `--script rovo` only when the surface needs Rovo Serve.
 - Start Rovo Serve only: `pnpm run dev:rovo`
@@ -209,8 +210,8 @@ static export used by deployment.
   required by branch protection on `main` — `/vpk-git-ship` auto-merge will wait
   for it to pass.
 - For UI changes, keep the observational checks too: `pnpm run lint`, `pnpm run
-  typecheck`, visual checks using the Codex App browser/computer routing above
-  when available, and accessibility checks via `ads_analyze_a11y` /
+  typecheck`, visual checks using the browser testing guidance above, and
+  accessibility checks via `ads_analyze_a11y` /
   `ads_analyze_localhost_a11y`.
 
 ### Debugging
@@ -276,7 +277,7 @@ Recurring thermo-nuclear reviews have shown that VPK stays healthiest when new b
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
-- After a UI edit, trace which source the target route actually imports/renders and confirm the change is visible on the live route (open it with the preferred Codex App browser route when available, then screenshot) before reporting done. Editing a component definition is not enough if the route renders a different instance or wrapper — verify the change reaches the actual usage/render path, not just the definition.
+- After a UI edit, trace which source the target route actually imports/renders and confirm the change is visible on the live route (open it with the browser testing guidance above, then screenshot) before reporting done. Editing a component definition is not enough if the route renders a different instance or wrapper — verify the change reaches the actual usage/render path, not just the definition.
 - When you change a UI pattern or make a new variant the default, update every instance of the old pattern and fully delete the old behavior/markup so old and new states never coexist (e.g. no leftover empty rows beside new single-line buttons). Strip any content the user explicitly excludes.
 - When fixing layout, check the whole surrounding region, not just the edited element: do not introduce spacing collisions with adjacent panels, viewport-level overflow/scroll, or clipping, and preserve existing visual effects (gradient fades, shadows). Verify across viewport sizes (collapsed sidebar, larger viewport, empty state), not just the first case.
 - When an element overlays content (hover-reveal control, remove button, scrim), implement the specified gradient/scrim so underlying text stays legible and no residual borders/edges of the underlying element peek through; keep padding symmetric after layout changes, and verify the overlay state visually.
@@ -307,6 +308,7 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | `gotchas-react.md` | `**/*.tsx` | State updates, derived state, CSS gap |
 | `motion-base-ui.md` | `*.tsx`, `*.jsx` | Animating Base UI with Motion |
 | `motion-react.md` | `*.tsx`, `*.jsx` | Motion for React patterns |
+| `motion-decisions.md` | `components/**/*.tsx`, `app/**/*.tsx`, `*.css` | Motion decision layer: which duration/easing token per role, bold vs practical fork, enter/exit asymmetry, per-role recipes |
 | `agent-operations.md` | `.agents/skills/**`, `.agents/agents/**` | Skills, parallel work, agent teams |
 | `appendix-reference.md` | `backend/**`, `app/contexts/**`, `app/providers.tsx`, `.agents/skills/**` | Dir structure, env vars, providers, skills catalog |
 | `browser-screenshots.mdc` | `*` (always) | Keep browser screenshots out of workspace root |

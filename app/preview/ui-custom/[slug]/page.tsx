@@ -17,5 +17,10 @@ export default async function PreviewUiCustomPage({ params }: PreviewUiCustomPag
 		redirect("/preview/ui-custom/entity-card");
 	}
 
+	// Renamed from panel to flow-panel to disambiguate from the ui/panel surface.
+	if (slug === "panel") {
+		redirect("/preview/ui-custom/flow-panel");
+	}
+
 	return <RenderPreviewCategoryPage slug={slug} category="ui-custom" />;
 }

@@ -24,6 +24,9 @@ export interface EntityCardShellProps {
 	children: ReactNode;
 }
 
+const SELECTABLE_CARD_CONTENT_CLASS_NAME =
+	"contents [&>*]:pointer-events-none [&>*]:relative [&>*]:z-10 [&_:is(a,button,input,select,textarea)]:pointer-events-auto [&_:is(a,button,input,select,textarea)]:relative [&_:is(a,button,input,select,textarea)]:z-10 [&_[role=button]]:pointer-events-auto [&_[role=button]]:relative [&_[role=button]]:z-10 [&_[role=menuitem]]:pointer-events-auto";
+
 /**
  * Base entity-card shell — a bordered surface with hover elevation and an
  * optional keyboard-operable button contract. Compose content with
@@ -39,8 +42,11 @@ export function EntityCardShell({
 	className,
 	children,
 }: Readonly<EntityCardShellProps>) {
-	const { interactive, hoverAnimation, tapAnimation, handleSelect } =
-		useCardInteraction(onSelect);
+	const { interactive, hoverAnimation, handleSelect } = useCardInteraction(onSelect);
+	const cardVariants = {
+		rest: { boxShadow: "none" },
+		hover: hoverAnimation,
+	} as const;
 
 	const cardMotionProps = {
 		className: cn(
@@ -64,15 +70,16 @@ export function EntityCardShell({
 			className,
 		),
 		style: { willChange: "transform" },
-		animate: active ? hoverAnimation : { boxShadow: "none" },
+		animate: active ? "hover" : "rest",
+		initial: "rest",
 		transition: CARD_HOVER_TRANSITION,
-		whileHover: hoverAnimation,
-		whileTap: interactive ? tapAnimation : undefined,
+		variants: cardVariants,
+		whileHover: "hover",
 	};
 
 	if (interactive) {
 		return (
-			<motion.article data-slot="card-directory" {...cardMotionProps}>
+			<motion.article data-active={active || undefined} data-slot="card-directory" {...cardMotionProps}>
 				{/* Whole-card selection affordance. A real <button> gives native keyboard
 				    (Enter/Space) operation and focus management; it sits beneath the card
 				    content (z-0) so nested controls layered above (z-10) remain clickable
@@ -85,16 +92,12 @@ export function EntityCardShell({
 					type="button"
 				/>
 				{/* Content sits above the select button so genuinely interactive nested
-				    controls (menus, checkboxes) stay clickable. Inert content is made
-				    pointer-events-none so clicks on text/logo fall through to the select
-				    button below; pointer events are re-enabled only on actual interactive
-				    descendants. Those descendants ALSO get `relative z-10`: the card
-				    variants root their content in a `display:contents` wrapper, which has
-				    no box, so the `[&>*]:z-10` lift never reaches the real controls — and
-				    a positioned `z-0` element (the select button) paints above static
-				    content, swallowing clicks on the "…" menu. Elevating each interactive
-				    descendant directly puts it back on top of the select overlay. */}
-				<div className="contents [&>*]:pointer-events-none [&>*]:relative [&>*]:z-10 [&_[role=button]]:pointer-events-auto [&_[role=button]]:relative [&_[role=button]]:z-10 [&_[role=menuitem]]:pointer-events-auto [&_a]:pointer-events-auto [&_a]:relative [&_a]:z-10 [&_button]:pointer-events-auto [&_button]:relative [&_button]:z-10 [&_input]:pointer-events-auto [&_input]:relative [&_input]:z-10 [&_select]:pointer-events-auto [&_select]:relative [&_select]:z-10 [&_textarea]:pointer-events-auto [&_textarea]:relative [&_textarea]:z-10">
+				    controls stay clickable. Inert content is made pointer-events-none so
+				    clicks on text/logo fall through to the select button below; pointer
+				    events are re-enabled only on actual interactive descendants. Native
+				    controls share the grouped `:is()` selector, while role-based controls
+				    stay explicit. */}
+				<div className={SELECTABLE_CARD_CONTENT_CLASS_NAME}>
 					{children}
 				</div>
 			</motion.article>
@@ -102,7 +105,7 @@ export function EntityCardShell({
 	}
 
 	return (
-		<motion.article data-slot="card-directory" {...cardMotionProps}>
+		<motion.article data-active={active || undefined} data-slot="card-directory" {...cardMotionProps}>
 			{children}
 		</motion.article>
 	);

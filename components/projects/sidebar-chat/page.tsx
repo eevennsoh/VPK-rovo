@@ -70,7 +70,7 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
-import type { ComposerDirectoryAutocompleteController, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
+import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
@@ -253,6 +253,8 @@ interface ChatPanelProps {
 	 * 24px horizontal inset.
 	 */
 	composerContainerClassName?: string;
+	/** Opt-in first-render focus for host surfaces where the composer is primary. */
+	autoFocusComposer?: boolean;
 	/**
 	 * When true, the bottom-aligned Test greeting reserves vertical space equal
 	 * to a single-line chat context bar below its last conversation starter.
@@ -313,7 +315,7 @@ interface ChatPanelProps {
 	 * (keyed-request idiom, like `startRealtimeVoiceRequestKey`). Used to
 	 * auto-prefill a newly-created skill's tag.
 	 */
-	composerPrefillRequest?: { text: string; requestKey: number };
+	composerPrefillRequest?: { mention?: RichTextMentionItem; text?: string; requestKey: number };
 	/**
 	 * Opt-in: route docked question-card answers back through `onInterceptSubmit`
 	 * (via the clarification summary prompt) instead of the model. Lets a
@@ -455,6 +457,7 @@ export default function ChatPanel({
 	onAgentVersionChange,
 	conversationContentClassName,
 	composerContainerClassName,
+	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
@@ -724,15 +727,18 @@ export default function ChatPanel({
 	const promptRef = useRef(prompt);
 	const lastComposerPrefillKeyRef = useRef(0);
 
-	// Opt-in imperative composer prefill (keyed-request idiom). Applies the
-	// requested text via setPrompt whenever requestKey increments.
+	// Opt-in imperative composer prefill (keyed-request idiom). Text requests
+	// route through setPrompt; mention requests are applied by the rich editor so
+	// deliberate directory selections skip the visual-trace auto-tagger.
 	useEffect(() => {
 		const requestKey = composerPrefillRequest?.requestKey ?? 0;
 		if (requestKey <= 0 || lastComposerPrefillKeyRef.current === requestKey) {
 			return;
 		}
 		lastComposerPrefillKeyRef.current = requestKey;
-		setPrompt(composerPrefillRequest?.text ?? "");
+		if (!composerPrefillRequest?.mention) {
+			setPrompt(composerPrefillRequest?.text ?? "");
+		}
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, [composerPrefillRequest, setPrompt]);
 	const screenAssistantPointerRef = useRef<{ x: number; y: number } | null>(null);
@@ -1647,6 +1653,8 @@ export default function ChatPanel({
 					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
 					conversationContentClassName
 				)}
+				reserveScrollbarGutter={hasMessages}
+				revealScrollbarOnScroll={hasMessages}
 				// In the Test empty state, messagesContainerStyle grows this content
 				// track to full height and bottom-aligns (or centers when there are no
 				// starters) the greeting (inline values win over Tailwind classes).
@@ -1831,6 +1839,7 @@ export default function ChatPanel({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						focusRequestKey={composerFocusRequestKey}
+						autoFocus={autoFocusComposer}
 						clickyActive={!hideAiCursor && (isClickyActive || isLocalConversationActive)}
 						onPromptChange={setPrompt}
 						onStartDictation={handleStartDictation}
@@ -1847,6 +1856,14 @@ export default function ChatPanel({
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
+						prefillMentionRequest={
+							composerPrefillRequest?.mention
+								? {
+										mention: composerPrefillRequest.mention,
+										requestKey: composerPrefillRequest.requestKey,
+									}
+								: undefined
+						}
 						placeholder={resolveComposerPlaceholder?.(prompt)}
 						mentionSources={composerMentionSources}
 						onContextBarOpenChange={setIsContextBarOpen}

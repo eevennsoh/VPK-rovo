@@ -154,7 +154,7 @@ function SpotlightTarget({
 				>
 					<PopoverPrimitive.Popup
 						data-slot="spotlight-popup"
-						className="relative origin-(--transform-origin) outline-hidden transition-[opacity,scale] duration-fast ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
+						className="relative origin-(--transform-origin) outline-hidden transition-[opacity,scale] duration-slow ease-in-out motion-reduce:transition-none data-ending-style:duration-medium data-ending-style:ease-in data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
 					>
 						{content}
 						{/* Notch: a rotated square sat ON the card edge and tucked behind it (negative z),

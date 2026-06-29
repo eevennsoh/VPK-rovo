@@ -36,9 +36,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// change left this colocated test stale until review, so keep it CI-gated.
 	"components/projects/sidebar-chat/components/agent-result-card.test.js",
 	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
-	// Skills project add-menu shortcuts open the opt-in experimental directory
-	// without changing the shared compact chat default.
+	// Skills project add-menu shortcuts and deterministic skill invocation matcher.
+	// Components are not included wholesale, so gate these focused contracts.
 	"components/projects/skills/page.test.js",
+	"components/projects/skills/lib/skill-intercept.test.js",
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/website/component-doc/components/demo-preview-shell.test.js",
@@ -52,12 +53,31 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Breadcrumbs mirror the refreshed ADS medium/small sizing API. Components
+	// are not included wholesale, so gate this focused source contract explicitly.
+	"components/ui/breadcrumb.test.js",
 	// Shared select primitive keeps selected indicators aligned with dropdown menu
 	// affordances. Components are not included wholesale, so gate it explicitly.
 	"components/ui/select.test.js",
+	// Shared checkbox primitive keeps a 16px visual box with a 24px hit target.
+	"components/ui/checkbox.test.js",
+	// Shared radio primitive and demos keep 24px hit/row geometry.
+	"components/ui/radio-group.test.js",
+	// Shared field rows keep checkbox/radio label lines aligned to 24px targets.
+	"components/ui/field.test.js",
+	// Checkbox docs group keeps checkbox rows contiguous under the group label.
+	"components/website/demos/ui/checkbox-demo.test.js",
+	// Shared message markdown heading spacing used by compact chat surfaces.
+	"components/ui-custom/message.test.js",
+	// Plan's hidden-until-found panel must not leave vertical content padding
+	// behind while collapsed.
+	"components/ui-custom/plan.test.js",
 	// Shared Teamwork Graph loader is server-rendered on pages like /personal-graph.
 	// Keep its SVG color attributes deterministic across SSR/client hydration.
 	"components/ui-custom/twg-loader/twg-loader.test.js",
+	// Shared scroll-mask overflow state is used by directory panes and composer
+	// textareas; keep the pure edge-case contract gated without broad hook tests.
+	"components/hooks/use-has-vertical-overflow.test.js",
 	// Personal Graph neural renderer/store/sound/layout contracts. This is a pure
 	// node:test file under components/arts, so gate it explicitly without enabling
 	// broad source-grep component tests.
@@ -92,6 +112,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Pure defaults/options/helpers behind the ASCII visual demo controls.
 	// Components are not included wholesale, so keep this model test gated.
 	"components/website/demos/visual/ascii-control-model.test.js",
+	// Ripple's image-shader wiring and Framer-style controls live under
+	// components/, so gate this focused source contract explicitly.
+	"components/website/demos/visual/ripple-demo.test.js",
 	// Liquid Glass shader utility math is shared by the visual demo and shader
 	// wrapper. Gate this pure utility coverage without the source-grep demo tests.
 	"components/website/demos/visual/shaders/liquid-glass-utils.test.js",
@@ -133,6 +156,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Repo-owned extraction scaffolding lives under .agents, outside the broad
 	// test prefixes, but it is a stable node:test contract for vpk-build output.
 	".agents/skills/vpk-build/scripts/scaffold-target.test.js",
+	// Guards the memoized work-item due-date formatter reuse. Components are not
+	// included wholesale, so gate this focused contract explicitly.
+	"components/blocks/work-item-widget/work-item-widget.test.js",
 ]);
 
 export function getTestFileInclusion(filePath, {

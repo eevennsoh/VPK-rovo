@@ -72,7 +72,7 @@ function ComposerVoiceWaveform({
 				barOpacityMin={1}
 				barWidth={2}
 				barRadius={0}
-				className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
+				className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-slow"
 				entranceAnimation="stagger"
 				entranceDurationMs={180}
 				entranceStaggerMs={14}

@@ -56,6 +56,11 @@ test("RovoAppShell adds side gutter for the compact artifact composer", () => {
 	assert.match(SHELL_SOURCE, /isArtifactOpen \? "max-w-none px-3" : "max-w-\[800px\]"/u);
 });
 
+test("RovoAppShell caps directory autocomplete to eight for the fullscreen two-column grid", () => {
+	assert.match(SHELL_SOURCE, /const ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT = 8;/u);
+	assert.match(SHELL_SOURCE, /directoryAutocompleteLimit=\{ROVO_APP_DIRECTORY_AUTOCOMPLETE_LIMIT\}/u);
+});
+
 test("RovoAppShell wires dictation separately from realtime live voice", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
 	assert.match(SHELL_SOURCE, /const dictationCommittedTextRef = useRef<string \| null>\(null\);/u);

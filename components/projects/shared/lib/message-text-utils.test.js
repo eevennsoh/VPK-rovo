@@ -177,6 +177,36 @@ graph TD
 	assert.match(output.mermaid, /task_1 --> task_2/);
 });
 
+test("keeps only dependency mermaid blocks in rendered plan text", () => {
+	const input = `# Plan
+
+Use the dependency diagram for execution order.
+
+\`\`\`mermaid
+graph TD
+  note["Context only"]
+\`\`\`
+
+\`\`\`mermaid
+graph TD
+  task_1["Define execution order"]
+  task_2["Communicate build phases"]
+  task_1 --> task_2
+\`\`\`
+
+Share with the team.`;
+
+	const output = extractPlanRenderableText(input, { summaryMode: "full" });
+	assert.match(output.mermaid, /task_1 --> task_2/);
+	assert.doesNotMatch(output.mermaid, /Context only/);
+	assert.equal(
+		output.summary,
+		`Use the dependency diagram for execution order.
+
+Share with the team.`
+	);
+});
+
 test("suppresses raw tool json and preserves summary narrative", () => {
 	const input = `I'll help you list your Google Calendar events.
 {
