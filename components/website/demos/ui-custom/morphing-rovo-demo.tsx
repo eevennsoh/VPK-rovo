@@ -13,7 +13,7 @@ const EASE_OPTIONS = [
 ] as const;
 
 export default function MorphingRovoDemo() {
-	const [size, setSize] = useState(16);
+	const [size, setSize] = useState(64);
 	const [duration, setDuration] = useState(0.8);
 	const [ease, setEase] = useState<(typeof EASE_OPTIONS)[number]["value"]>("easeInOut");
 	const [rotationPerStep, setRotationPerStep] = useState(180);
@@ -42,7 +42,7 @@ export default function MorphingRovoDemo() {
 					label="Size"
 					description="Width and height of the shape in pixels."
 					value={size}
-					defaultValue={16}
+					defaultValue={64}
 					min={16}
 					max={192}
 					step={1}
