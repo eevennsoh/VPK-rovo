@@ -1057,6 +1057,12 @@ test("Studio publish dropdown separates draft changes from version history", () 
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const publishedVersions = entry\.versionHistory\.filter\(\(version\) => version\.kind === "publish" \|\| version\.kind === "update"\);/u);
 });
 
+test("Studio publish profile link targets Studio agent deep links", () => {
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const STUDIO_AGENT_PROFILE_BASE_PATH = "\/studio";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /return `\$\{STUDIO_AGENT_PROFILE_BASE_PATH\}\?agent=\$\{encodeURIComponent\(profileId\)\}`;/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /const STUDIO_AGENT_PROFILE_BASE_PATH = "\/agents";/u);
+});
+
 test("Studio agent config panel persists base avatar edits through the draft", () => {
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseAvatarChange = useCallback\([\s\S]*avatarSrc: string[\s\S]*updateDraft\(\{ avatarSrc \}\);[\s\S]*\[updateDraft\]/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentConfigFields[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*profileAvatarSrc=\{agentAvatarSrc\}[\s\S]*onProfileAvatarChange=\{handleBaseAvatarChange\}/u);
