@@ -2,12 +2,11 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import Image from "next/image";
 import { type ReactNode } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -76,7 +75,7 @@ export function EntityCardAgent({
 					label={name}
 				/>
 			) : avatarSrc ? (
-				<Image
+				<AvatarImage
 					alt=""
 					aria-hidden
 					className={
@@ -84,11 +83,11 @@ export function EntityCardAgent({
 							? cn("size-4 object-contain", avatarImageClassName)
 							: cn("size-full object-contain", avatarImageClassName)
 					}
-					height={insetLogo ? 16 : 32}
 					src={avatarSrc}
-					width={insetLogo ? 16 : 32}
 				/>
-			) : null}
+			) : (
+				<AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+			)}
 		</Avatar>
 	);
 

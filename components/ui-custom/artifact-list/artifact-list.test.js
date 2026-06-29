@@ -55,7 +55,7 @@ test("Artifact List leading visual uses the ADS tile radius and neutral inset-im
 	assert.match(source, /variant=\{usesInsetImage \? "neutral" : item\.tileVariant \?\? "neutral"\}/u);
 	assert.match(source, /size="medium"[\s\S]*className=\{cn\([\s\S]*"rounded-tile"/u);
 	// Avatar/logo paths render inset on the same tile; icon is the fallback.
-	assert.match(source, /if \(item\.avatarSrc\)[\s\S]*<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.avatarSrc\}/u);
+	assert.match(source, /if \(item\.avatarSrc\)[\s\S]*<img[\s\S]*src=\{item\.avatarSrc\}/u);
 	assert.match(source, /if \(item\.logoSrc\)[\s\S]*<img[\s\S]*src=\{item\.logoSrc\}/u);
 	assert.match(source, /return item\.icon;/u);
 });

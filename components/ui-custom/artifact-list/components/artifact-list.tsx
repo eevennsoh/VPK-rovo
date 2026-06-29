@@ -2,7 +2,6 @@
 
 import { type ReactNode } from "react";
 
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -56,7 +55,8 @@ export interface ArtifactListProps extends React.ComponentProps<"div"> {
 
 function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>) {
 	if (item.avatarSrc) {
-		return <AgentAvatarVisual avatarSrc={item.avatarSrc} sizePx={20} className="object-contain" />;
+		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; agent avatars render 20px inset on the neutral tile, not as a standalone hexagon Avatar.
+		return <img alt="" aria-hidden className="object-contain" src={item.avatarSrc} />;
 	}
 	if (item.logoSrc) {
 		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx

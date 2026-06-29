@@ -17,6 +17,7 @@ import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
@@ -213,14 +214,10 @@ function HomeStarterHeroTile({
 		>
 			<CardGlowLayers iconSrc={template.iconSrc} />
 			<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center">
-				<Image
-					alt=""
-					aria-hidden
-					className="size-8 object-contain"
-					height={32}
-					src={template.iconSrc}
-					width={32}
-				/>
+				<Avatar shape="hexagon" size="default">
+					<AvatarImage src={template.iconSrc} alt="" className="object-contain" />
+					<AvatarFallback>{template.title.slice(0, 2).toUpperCase()}</AvatarFallback>
+				</Avatar>
 			</span>
 			<div className="relative z-[3] flex min-h-0 flex-1 flex-col gap-4">
 				<div className="flex flex-col gap-1">
@@ -559,14 +556,10 @@ export function HomeStarterBento({
 									>
 										<CardGlowLayers iconSrc={template.iconSrc} />
 										<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover:opacity-90">
-											<Image
-												alt=""
-												aria-hidden
-												className="size-8 object-contain"
-												height={32}
-												src={template.iconSrc}
-												width={32}
-											/>
+											<Avatar shape="hexagon" size="default">
+												<AvatarImage src={template.iconSrc} alt="" className="object-contain" />
+												<AvatarFallback>{template.title.slice(0, 2).toUpperCase()}</AvatarFallback>
+											</Avatar>
 										</span>
 										<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
 											<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">

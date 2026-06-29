@@ -3256,16 +3256,9 @@ function AgentProfileAvatarHexStroke() {
 
 function AgentAvatarOptionPreview({ src }: Readonly<{ src: string }>) {
 	return (
-		<span className="relative block h-10 w-[35px]">
-			<Image
-				alt=""
-				aria-hidden
-				className="h-10 w-[35px] object-contain"
-				height={40}
-				src={src}
-				width={35}
-			/>
-		</span>
+		<Avatar aria-hidden shape="hexagon" size="sm" className="h-10 w-[35px]">
+			<AvatarImage alt="" src={src} className="object-contain" />
+		</Avatar>
 	);
 }
 

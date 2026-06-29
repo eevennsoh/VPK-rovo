@@ -4,7 +4,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
-import Image from "next/image";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { ProgressTracker, type ProgressTrackerStep } from "@/components/ui/progress-tracker";
@@ -58,13 +58,10 @@ function TriggerDropdown({
 }>): React.ReactElement {
 	const labelContent = showProjectAvatar ? (
 		<span className="flex min-w-0 items-center gap-1">
-			<Image
-				src="/avatar-project/rocket.svg"
-				alt=""
-				width={12}
-				height={12}
-				className="size-3 shrink-0 rounded-[2px]"
-			/>
+			<Avatar shape="square" size="xs" className="size-3 shrink-0">
+				<AvatarImage src="/avatar-project/rocket.svg" alt="" />
+				<AvatarFallback>{value.slice(0, 2).toUpperCase()}</AvatarFallback>
+			</Avatar>
 			<span className="min-w-0 truncate">{value}</span>
 		</span>
 	) : (

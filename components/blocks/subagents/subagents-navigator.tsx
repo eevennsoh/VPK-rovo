@@ -7,7 +7,7 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import Image from "next/image";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import type { TagColor } from "@/components/ui/tag";
 import { DeleteIcon, PlusIcon } from "@/components/ui/vpk-icons";
@@ -111,16 +111,11 @@ function renderBaseAgentSwitcherVisual(avatarSrc: string | undefined): ReactNode
 		<span
 			data-slot="subagents-switcher-avatar"
 			aria-hidden="true"
-			className="flex size-6 shrink-0 items-center justify-center text-icon-selected [&_img]:shrink-0"
+			className="flex size-6 shrink-0 items-center justify-center text-icon-selected"
 		>
-			<Image
-				alt=""
-				aria-hidden="true"
-				className="size-5 object-contain"
-				height={20}
-				src={avatarSrc}
-				width={20}
-			/>
+			<Avatar shape="hexagon" size="sm" className="shrink-0 size-5">
+				<AvatarImage alt="" src={avatarSrc} className="object-contain" />
+			</Avatar>
 		</span>
 	);
 }

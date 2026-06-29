@@ -5,9 +5,9 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { motion, type Variants } from "motion/react";
-import Image from "next/image";
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
@@ -118,7 +118,10 @@ function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): 
 			{agent.logoName ? (
 				<AtlassianLogo name={agent.logoName} size="small" themeAware label={agent.name} />
 			) : agent.avatarSrc ? (
-				<Image alt="" aria-hidden className="mx-auto block size-6 object-contain object-center" height={24} src={agent.avatarSrc} width={24} />
+				<Avatar shape="hexagon" size="sm" className="shrink-0">
+					<AvatarImage alt="" src={agent.avatarSrc} className="object-contain" />
+					<AvatarFallback>{agent.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+				</Avatar>
 			) : null}
 		</span>
 	);
