@@ -352,7 +352,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "package-info": dynamic(() => import("./demos/ui-custom/package-info-demo"), {
     ssr: false,
   }),
-  panel: dynamic(() => import("./demos/ui-custom/panel-demo"), { ssr: false }),
+  "flow-panel": dynamic(() => import("./demos/ui-custom/flow-panel-demo"), { ssr: false }),
   persona: dynamic(() => import("./demos/ui-custom/persona-demo"), { ssr: false }),
   plan: dynamic(() => import("./demos/ui-custom/plan-demo"), { ssr: false }),
   "prompt-input": dynamic(() => import("./demos/ui-custom/prompt-input-demo"), {
@@ -6652,17 +6652,17 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "panel-demo-status-lozenge": dynamic(
+  "flow-panel-demo-status-lozenge": dynamic(
     () =>
-      import("./demos/ui-custom/panel-demo").then((mod) => ({
-        default: mod.PanelDemoStatusLozenge,
+      import("./demos/ui-custom/flow-panel-demo").then((mod) => ({
+        default: mod.FlowPanelDemoStatusLozenge,
       })),
     { ssr: false },
   ),
-  "panel-demo-positions": dynamic(
+  "flow-panel-demo-positions": dynamic(
     () =>
-      import("./demos/ui-custom/panel-demo").then((mod) => ({
-        default: mod.PanelDemoPositions,
+      import("./demos/ui-custom/flow-panel-demo").then((mod) => ({
+        default: mod.FlowPanelDemoPositions,
       })),
     { ssr: false },
   ),

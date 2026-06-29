@@ -159,7 +159,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("node"),
 	customComponent("open-in-chat", "Open in Chat"),
 	customComponent("package-info", "Package Info"),
-	customComponent("panel"),
+	customComponent("flow-panel", "Flow Panel"),
 	customComponent("persona"),
 	customComponent("plan"),
 	customComponent("prompt-input", "Prompt Input"),
