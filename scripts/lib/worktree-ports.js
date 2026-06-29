@@ -170,6 +170,11 @@ function findWorktreeByPath(worktrees, worktreePath) {
 	return worktrees.find((worktree) => worktree.path === worktreePath) ?? null;
 }
 
+function getRepoDirName(worktrees) {
+	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
+	return mainWorktree ? path.basename(mainWorktree.path) : null;
+}
+
 function resolveDetachedWorktreeName(worktree, repoDirName = null) {
 	if (!worktree || typeof worktree.path !== "string" || worktree.path.length === 0) {
 		return null;
@@ -206,6 +211,7 @@ function getWorktreeSlotDetails(worktreePath) {
 
 	return {
 		worktree: findWorktreeByPath(worktrees, normalizedPath),
+		repoDirName: getRepoDirName(worktrees),
 		slot,
 		offset: getOffsetFromSlot(slot),
 	};
@@ -247,9 +253,7 @@ function getWorktreeName() {
 		return null;
 	}
 
-	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-	const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
-	return getWorktreeDisplayName(worktree, repoDirName);
+	return getWorktreeDisplayName(worktree, getRepoDirName(worktrees));
 }
 
 /**
@@ -316,9 +320,7 @@ function getPortlessRunArgs() {
 
 	const worktrees = getGitWorktrees();
 	const worktree = findWorktreeByPath(worktrees, currentWorktreePath);
-	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-	const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
-	return buildPortlessRunArgs(worktree, repoDirName);
+	return buildPortlessRunArgs(worktree, getRepoDirName(worktrees));
 }
 
 /**
@@ -346,13 +348,10 @@ function getBasePort(target) {
 		return defaultBase;
 	}
 
-	const { offset, worktree } = getWorktreeSlotDetails(currentWorktreePath);
+	const { offset, repoDirName, worktree } = getWorktreeSlotDetails(currentWorktreePath);
 	const basePort = defaultBase + offset;
 
 	if (worktree && !worktree.isMain && offset > 0) {
-		const worktrees = getGitWorktrees();
-		const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-		const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
 		console.log(`[worktree: ${getWorktreeDisplayName(worktree, repoDirName)}] ${label} base port: ${basePort}`);
 	}
 
@@ -393,22 +392,18 @@ function getPortInfo() {
 }
 
 function getPortInfoForPath(worktreePath) {
-	const { offset, slot, worktree } = getWorktreeSlotDetails(worktreePath);
-	const worktrees = getGitWorktrees();
-	const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-	const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
+	const { offset, repoDirName, slot, worktree } = getWorktreeSlotDetails(worktreePath);
 	return buildPortInfo(getWorktreeDisplayName(worktree, repoDirName), offset, slot);
 }
 
 function getAllWorktreePortInfo() {
 	const worktrees = getGitWorktrees();
 	const { ordered, slots } = buildWorktreeSlotTable(worktrees);
+	const repoDirName = getRepoDirName(worktrees);
 
 	return ordered.map((worktree) => {
 		const slot = slots.get(worktree.path) ?? 0;
 		const offset = getOffsetFromSlot(slot);
-		const mainWorktree = worktrees.find((candidate) => candidate.isMain) ?? null;
-		const repoDirName = mainWorktree ? path.basename(mainWorktree.path) : null;
 		const info = buildPortInfo(getWorktreeDisplayName(worktree, repoDirName), offset, slot);
 
 		return {
