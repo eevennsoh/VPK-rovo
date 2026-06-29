@@ -4,8 +4,8 @@ import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ProjectIcon from "@atlaskit/icon/core/project";
+import Image from "next/image";
 import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/components/ui-custom/sidebar-nav-item";
-import { RovoColorIcon } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 
 function DemoFrame({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -19,7 +19,7 @@ function DemoFrame({ children }: Readonly<{ children: React.ReactNode }>) {
 function TileLeadingAvatar({ label = "" }: Readonly<{ label?: string; size?: "small" | "medium" }>) {
 	return (
 		<Tile aria-hidden label={label || "Agent"} variant="transparent" size="small" isSnug>
-			<RovoColorIcon label="" size="small" />
+			<Image alt="" aria-hidden src="/avatar-agent/teamwork-agents/release-notes-drafter.svg" width={24} height={24} />
 		</Tile>
 	);
 }
