@@ -3,8 +3,8 @@
 // oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
 
 import { animate, motion, useMotionValue, useReducedMotion, type Transition } from "motion/react";
-import { useEffect, useRef } from "react";
-import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties, ReactNode, RefObject } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,61 @@ const LINEAR_EASE: [number, number, number, number] = [0, 0, 1, 1];
 const ACTIVE_ROTATION_DURATION = 1.6;
 const ACTIVE_STATE_TRANSITION_DURATION = 0.24;
 const INACTIVE_STATE_TRANSITION_DURATION = 0.28;
+
+// The highlight is a faithful port of the reference "partial / hinting" perimeter
+// shimmer: a comet-like rainbow band travels once around the wrapped surface, fading in
+// then dissolving, to signal Rovo is available. Colors reuse the conic-gradient theme vars.
+const ROVO_GENERATION_HIGHLIGHT_STOPS = [
+	"var(--rovo-generation-stop-orange)",
+	"var(--rovo-generation-stop-lime)",
+	"var(--rovo-generation-stop-blue)",
+	"var(--rovo-generation-stop-purple)",
+] as const;
+
+// Timing + shape constants copied from the reference RovoPerimeterShimmer so the motion matches.
+const HIGHLIGHT_SUBSEGMENTS_PER_COLOR = 8;
+const HIGHLIGHT_TOTAL_SEGMENTS = ROVO_GENERATION_HIGHLIGHT_STOPS.length * HIGHLIGHT_SUBSEGMENTS_PER_COLOR;
+const HIGHLIGHT_DELAY_MS = 200; // pause before the band enters
+const HIGHLIGHT_DURATION_MS = 1200; // one travel around the perimeter
+const HIGHLIGHT_BAND_FRAC = 0.35; // band length as a fraction of the perimeter
+
+function highlightEaseInOut(value: number): number {
+	const clamped = Math.max(0, Math.min(1, value));
+	return clamped < 0.5 ? 4 * clamped * clamped * clamped : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+}
+
+function highlightRoundedRectPath(width: number, height: number, radius: number): string {
+	const rr = Math.max(0, Math.min(radius, width / 2, height / 2));
+	if (width <= 0 || height <= 0) return "";
+	return [
+		`M 0 ${height - rr}`,
+		`L 0 ${rr}`,
+		`A ${rr} ${rr} 0 0 1 ${rr} 0`,
+		`L ${width - rr} 0`,
+		`A ${rr} ${rr} 0 0 1 ${width} ${rr}`,
+		`L ${width} ${height - rr}`,
+		`A ${rr} ${rr} 0 0 1 ${width - rr} ${height}`,
+		`L ${rr} ${height}`,
+		`A ${rr} ${rr} 0 0 1 0 ${height - rr}`,
+		"Z",
+	].join(" ");
+}
+
+function highlightRoundedRectPerimeter(width: number, height: number, radius: number): number {
+	const rr = Math.max(0, Math.min(radius, width / 2, height / 2));
+	return 2 * Math.max(0, width - 2 * rr) + 2 * Math.max(0, height - 2 * rr) + 2 * Math.PI * rr;
+}
+
+// Trapezoid envelope along the band length so the head and tail feather to 0 (comet-trail look).
+function highlightSpatialEnvelope(position: number): number {
+	const FADE_IN_END = 0.18;
+	const FADE_OUT_START = 0.82;
+	if (position < FADE_IN_END) return highlightEaseInOut(position / FADE_IN_END);
+	if (position > FADE_OUT_START) {
+		return highlightEaseInOut(1 - (position - FADE_OUT_START) / (1 - FADE_OUT_START));
+	}
+	return 1;
+}
 
 export interface RovoGenerationRootProps extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
 	/** Width and height of the generated tile in pixels. @default 100 */
@@ -238,7 +293,197 @@ function RovoGenerationRoot({
 	);
 }
 
+export interface RovoGenerationHighlightProps extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
+	/** Plays one hinting lap when true. Toggle false → true (or remount via key) to replay. @default true */
+	active?: boolean;
+	/** Corner radius in pixels. When omitted, inferred from the wrapped child's computed border-radius. */
+	radius?: number;
+	/** Rainbow stroke thickness in pixels. @default 1 */
+	strokeWidth?: number;
+	/** Called once the band finishes traveling and dissolves. */
+	onHighlightComplete?: () => void;
+	/** Additional classes applied to the wrapper element. */
+	className?: string;
+	children?: ReactNode;
+}
+
+// react-doctor-disable-next-line react-doctor/only-export-components -- Module-private helper hook; keeping it unexported avoids widening the public API for Fast Refresh.
+function useAutoRadius(ref: RefObject<HTMLElement | null>, radiusProp: number | undefined): number {
+	const [autoRadius, setAutoRadius] = useState<number>(radiusProp ?? 12);
+
+	useLayoutEffect(() => {
+		if (radiusProp !== undefined) {
+			setAutoRadius(radiusProp);
+			return;
+		}
+		const firstChild = ref.current?.firstElementChild as HTMLElement | null;
+		if (!firstChild) return;
+		const parsed = Number.parseFloat(window.getComputedStyle(firstChild).borderRadius);
+		if (!Number.isNaN(parsed)) setAutoRadius(parsed);
+	}, [radiusProp, ref]);
+
+	return radiusProp ?? autoRadius;
+}
+
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
+function RovoGenerationHighlight({
+	active = true,
+	radius,
+	strokeWidth = 1,
+	onHighlightComplete,
+	className,
+	style,
+	children,
+	...props
+}: Readonly<RovoGenerationHighlightProps>) {
+	const wrapperRef = useRef<HTMLDivElement>(null);
+	const resolvedRadius = useAutoRadius(wrapperRef, radius);
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const pathRefs = useRef<(SVGPathElement | null)[]>(
+		Array.from({ length: HIGHLIGHT_TOTAL_SEGMENTS }, () => null),
+	);
+	const onCompleteRef = useRef(onHighlightComplete);
+	onCompleteRef.current = onHighlightComplete;
+
+	const normalizedStroke = Math.max(0.5, strokeWidth);
+
+	// Imperative rAF loop ported from the reference RovoPerimeterShimmer: a single rainbow
+	// band sweeps once around the perimeter, fading in then dissolving. Driving the 32 path
+	// slices via setAttribute keeps it off the React render path (no per-frame re-render).
+	useEffect(() => {
+		const wrapper = wrapperRef.current;
+		if (!active || !wrapper) return;
+
+		const paths = pathRefs.current;
+
+		if (shouldReduceMotion) {
+			for (const path of paths) path?.setAttribute("opacity", "0");
+			onCompleteRef.current?.();
+			return;
+		}
+
+		let raf = 0;
+		let startTime = 0;
+
+		const tick = (now: number) => {
+			if (!startTime) startTime = now;
+
+			const stroke = normalizedStroke;
+			const width = Math.max(0, wrapper.offsetWidth - stroke);
+			const height = Math.max(0, wrapper.offsetHeight - stroke);
+			const cornerRadius = Math.max(0, Math.min(resolvedRadius - stroke / 2, width / 2, height / 2));
+			const pathData = highlightRoundedRectPath(width, height, cornerRadius);
+			const perimeter = highlightRoundedRectPerimeter(width, height, cornerRadius);
+
+			for (const path of paths) path?.setAttribute("d", pathData);
+
+			const elapsed = now - startTime - HIGHLIGHT_DELAY_MS;
+			if (elapsed < 0) {
+				for (const path of paths) path?.setAttribute("opacity", "0");
+				raf = requestAnimationFrame(tick);
+				return;
+			}
+
+			const progress = Math.min(1, elapsed / HIGHLIGHT_DURATION_MS);
+			const eased = highlightEaseInOut(progress);
+
+			const bandWidth = perimeter * HIGHLIGHT_BAND_FRAC;
+			const head = -bandWidth + eased * (perimeter + bandWidth);
+			const visStart = Math.max(0, head);
+			const visEnd = Math.min(perimeter, head + bandWidth);
+			const visLen = Math.max(0, visEnd - visStart);
+
+			// Temporal envelope: fade the whole band in over the first 14% and out over the last 14%.
+			const FADE_IN_END = 0.14;
+			const FADE_OUT_START = 0.86;
+			let timeEnv = 1;
+			if (progress < FADE_IN_END) timeEnv = highlightEaseInOut(progress / FADE_IN_END);
+			else if (progress > FADE_OUT_START) {
+				timeEnv = highlightEaseInOut(1 - (progress - FADE_OUT_START) / (1 - FADE_OUT_START));
+			}
+
+			const subSegLen = visLen / HIGHLIGHT_TOTAL_SEGMENTS;
+			const gap = perimeter + 1;
+
+			for (let k = 0; k < HIGHLIGHT_TOTAL_SEGMENTS; k++) {
+				const path = paths[k];
+				if (!path) continue;
+				const segStart = visStart + (k / HIGHLIGHT_TOTAL_SEGMENTS) * visLen;
+				const segCentre = (k + 0.5) / HIGHLIGHT_TOTAL_SEGMENTS;
+				const spatialEnv = highlightSpatialEnvelope(segCentre);
+				path.setAttribute("stroke-dasharray", `${subSegLen.toFixed(3)} ${gap.toFixed(1)}`);
+				path.setAttribute("stroke-dashoffset", `${(-segStart).toFixed(3)}`);
+				path.setAttribute("opacity", visLen > 0.01 ? (timeEnv * spatialEnv).toFixed(3) : "0");
+			}
+
+			if (progress < 1) {
+				raf = requestAnimationFrame(tick);
+			} else {
+				for (const path of paths) path?.setAttribute("opacity", "0");
+				onCompleteRef.current?.();
+			}
+		};
+
+		raf = requestAnimationFrame(tick);
+		return () => {
+			if (raf) cancelAnimationFrame(raf);
+		};
+	}, [active, resolvedRadius, normalizedStroke, shouldReduceMotion]);
+
+	return (
+		<div
+			data-rovo-generation="highlight"
+			data-rovo-generation-active={active ? "true" : "false"}
+			{...props}
+			ref={wrapperRef}
+			className={cn("relative", className)}
+			style={{ ...ROVO_GENERATION_GRADIENT_TOKENS, ...style }}
+		>
+			{children}
+			{active ? (
+				<div
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0"
+					style={{ overflow: "visible" }}
+				>
+					<svg
+						width="100%"
+						height="100%"
+						style={{
+							position: "absolute",
+							left: 0,
+							top: 0,
+							overflow: "visible",
+							transform: `translate(${normalizedStroke / 2}px, ${normalizedStroke / 2}px)`,
+						}}
+					>
+						{Array.from({ length: HIGHLIGHT_TOTAL_SEGMENTS }).map((_, k) => {
+							const colorIndex = Math.floor(k / HIGHLIGHT_SUBSEGMENTS_PER_COLOR);
+							return (
+								<path
+									key={k}
+									ref={(element) => {
+										pathRefs.current[k] = element;
+									}}
+									fill="none"
+									opacity={0}
+									stroke={ROVO_GENERATION_HIGHLIGHT_STOPS[colorIndex]}
+									strokeLinecap="butt"
+									strokeLinejoin="round"
+									strokeWidth={normalizedStroke}
+								/>
+							);
+						})}
+					</svg>
+				</div>
+			) : null}
+		</div>
+	);
+}
+
 export const RovoGeneration = {
 	/** Tile surface with optional animated rainbow glow and border. */
 	Root: RovoGenerationRoot,
+	/** Wraps arbitrary UI and traces a quick rainbow stroke around its perimeter to highlight it. */
+	Highlight: RovoGenerationHighlight,
 } as const;

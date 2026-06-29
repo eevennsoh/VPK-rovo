@@ -1047,7 +1047,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"rovo-generation": {
 		description:
-			"A Rovo generation tile that moves from a default container into a rainbow glow/border state while generating, then returns to default after a configured duration.",
+			"A Rovo generation tile that moves from a default container into a rainbow glow/border state while generating, then returns to default after a configured duration. RovoGeneration.Highlight wraps arbitrary UI and sweeps a rainbow perimeter shimmer once around it — fading in then dissolving — to signal Rovo is available.",
 		demoLayout: {
 			previewContentWidth: "full",
 			examplesContentWidth: "full",
@@ -1059,7 +1059,14 @@ import SearchIcon from "@atlaskit/icon/core/search"
 <RovoGeneration.Root border />
 <RovoGeneration.Root glow border />
 <RovoGeneration.Root glow border generating duration={2.5} />
-<RovoGeneration.Root glow border generating={isGenerating} onGenerationComplete={() => setIsGenerating(false)} />`,
+<RovoGeneration.Root glow border generating={isGenerating} onGenerationComplete={() => setIsGenerating(false)} />
+
+<RovoGeneration.Highlight>
+  <YourCard />
+</RovoGeneration.Highlight>
+<RovoGeneration.Highlight active={isHinting} onHighlightComplete={() => setIsHinting(false)}>
+  <YourCard />
+</RovoGeneration.Highlight>`,
 		props: [
 			{
 				name: "size",
@@ -1130,15 +1137,34 @@ import SearchIcon from "@atlaskit/icon/core/search"
 				type: "string",
 				description: "Additional classes applied to the root element.",
 			},
+			{
+				name: "active",
+				type: "boolean",
+				default: "true",
+				description: "RovoGeneration.Highlight: plays the perimeter shimmer once when true. Toggle false → true (or remount via key) to replay.",
+			},
+			{
+				name: "strokeWidth",
+				type: "number",
+				default: "1",
+				description: "RovoGeneration.Highlight: thickness of the rainbow shimmer band in pixels.",
+			},
+			{
+				name: "onHighlightComplete",
+				type: "() => void",
+				description: "RovoGeneration.Highlight: called once the band finishes traveling and dissolves.",
+			},
 		],
 		subComponents: [
 			{ name: "RovoGeneration.Root", description: "Root tile surface with controlled generating state and optional animated rainbow glow and border layers." },
+			{ name: "RovoGeneration.Highlight", description: "Wraps arbitrary UI, measures its size and corner radius, and sweeps a rainbow perimeter shimmer once around it (fading in then dissolving) to signal Rovo is available." },
 		],
 		examples: [
 			{ title: "Default state", description: "Neutral surface and border with no rainbow effects.", demoSlug: "rovo-generation-demo-default" },
 			{ title: "Rainbow glow state", description: "Neutral surface and border with the blurred rainbow glow enabled.", demoSlug: "rovo-generation-demo-rainbow-glow" },
 			{ title: "Rainbow border state", description: "Neutral surface with the animated rainbow border enabled.", demoSlug: "rovo-generation-demo-rainbow-border" },
 			{ title: "Rainbow glow and border", description: "Combined glow and border state.", demoSlug: "rovo-generation-demo-rainbow-glow-and-border" },
+			{ title: "Highlight shimmer", description: "Sweeps a rainbow perimeter shimmer once around a wrapped surface — fading in then dissolving — to signal Rovo is available. Press Replay to play it again.", demoSlug: "rovo-generation-demo-highlight" },
 		],
 	},
 
