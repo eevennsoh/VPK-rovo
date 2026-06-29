@@ -377,6 +377,9 @@ export const CHAT_EXIT_DURATION = 0.4;
 export const CHAT_PAUSE_DURATION = 0.4;
 export const ILLUS_ENTER_Y_OFFSET = 30;
 export const ILLUS_EXIT_Y_OFFSET = -20;
+// Continuous rotation speed (deg/sec) of the colored mosaic group, shared by
+// the chat scene and every illustration in the default loop so they stay in sync.
+const MOSAIC_SPIN_DEG_PER_SEC = 24;
 
 export function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
@@ -937,7 +940,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
         if (wantChatExitRef.current) {
           stageRef.current = "chatExit";
           clock.accumulated = 0; clock.lastTimestamp = null;
-          exitMosaicRotRef.current = (totalTime * 3) % 360;
+          exitMosaicRotRef.current = (totalTime * MOSAIC_SPIN_DEG_PER_SEC) % 360;
         }
       } else if (t < PARAMS.entranceDuration + PARAMS.holdDuration) {
         mosaicProgress = 1; gestureOpacity = 1; gScale = 1;
@@ -946,7 +949,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
       } else {
         stageRef.current = "chatExit";
         clock.accumulated = 0; clock.lastTimestamp = null;
-        exitMosaicRotRef.current = (totalTime * 3) % 360;
+        exitMosaicRotRef.current = (totalTime * MOSAIC_SPIN_DEG_PER_SEC) % 360;
         mosaicProgress = 1; gestureOpacity = 1; gScale = 1;
         svg1Opacity = 1; svg2Opacity = 1;
         svg1ScaleVal = PARAMS.svg1End.scale; svg2ScaleVal = PARAMS.svg2End.scale;
@@ -1224,7 +1227,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
       if (illusVisible) {
         illusContainerRef.current.style.transform = `translate(${illusTX}px, ${illusTY}px) scale(${illusScale})${illusContainerRotation !== 0 ? ` rotate(${illusContainerRotation}deg)` : ''}`;
         const illusRotElapsed = illusMosaicRotStartRef.current !== null ? totalTime - illusMosaicRotStartRef.current : 0;
-        const illusRot = (illusRotElapsed * 3) % 360;
+        const illusRot = (illusRotElapsed * MOSAIC_SPIN_DEG_PER_SEC) % 360;
         illusMosaicRefs.current.forEach(el => {
           el.style.transform = `rotate(${illusRot}deg)`;
         });
@@ -1311,7 +1314,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
       }
     }
 
-    let rotationDeg = (totalTime * 3) % 360;
+    let rotationDeg = (totalTime * MOSAIC_SPIN_DEG_PER_SEC) % 360;
     if (stage === "chatExit" && exitMosaicRotRef.current !== null) {
       rotationDeg = exitMosaicRotRef.current;
     }
