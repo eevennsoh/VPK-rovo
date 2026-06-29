@@ -31,6 +31,7 @@ import {
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -170,10 +171,12 @@ function StudioSidebarAgentsCreateAction({ onClick }: Readonly<{ onClick: () => 
 	);
 }
 
-// Leading avatar for recent-agent rows. Renders at 20x20 inside the shared
-// 24x24 leading icon slot. `size` is accepted (and ignored) only because
-// `SidebarNavItem`'s `normalizeIconNode` injects it via `cloneElement` onto every
-// leading node — declaring it keeps the injected prop off the DOM.
+// Leading avatar for recent-agent rows. Standardizes on the shared `Tile` snug
+// variant: a transparent 24x24 tile (the leading slot) holding 20x20 content, so
+// the 24/20 geometry comes from the component rather than hand-tuned sizing.
+// `size` is accepted (and ignored) only because `SidebarNavItem`'s
+// `normalizeIconNode` injects it via `cloneElement` onto every leading node;
+// declaring it keeps the injected prop off the inner Tile/DOM.
 function StudioSidebarAgentAvatar({
 	label = "",
 	src,
@@ -182,19 +185,21 @@ function StudioSidebarAgentAvatar({
 	size?: "small" | "medium";
 	src: string;
 }>) {
-	if (isAtlassianLogoSource(src)) {
-		return <AtlassianLogo name="atlassian" label={label || "Atlassian"} size="xsmall" />;
-	}
-
+	const isDecorative = label === "";
 	return (
-		<Image
-			alt={label}
-			aria-hidden={label ? undefined : true}
-			className="size-5 object-contain"
-			height={20}
-			src={src}
-			width={20}
-		/>
+		<Tile
+			aria-hidden={isDecorative ? true : undefined}
+			label={label || "Agent avatar"}
+			variant="transparent"
+			size="small"
+			isSnug
+		>
+			{isAtlassianLogoSource(src) ? (
+				<AtlassianLogo name="atlassian" label="" size="xsmall" />
+			) : (
+				<Image alt={label} aria-hidden={isDecorative ? true : undefined} className="object-contain" height={20} src={src} width={20} />
+			)}
+		</Tile>
 	);
 }
 

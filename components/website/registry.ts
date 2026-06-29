@@ -5641,6 +5641,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tile-demo-snug": dynamic(
+    () =>
+      import("./demos/ui/tile-demo").then((mod) => ({
+        default: mod.TileDemoSnug,
+      })),
+    { ssr: false },
+  ),
   // Date Time Picker
   "date-time-picker-demo-default": dynamic(
     () =>
@@ -5745,6 +5752,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "sidebar-nav-item-demo-default": dynamic(
     () => import("./demos/ui-custom/sidebar-nav-item-demo").then((mod) => ({ default: mod.SidebarNavItemDemoDefault })),
+    { ssr: false },
+  ),
+  "sidebar-nav-item-demo-tile-leading": dynamic(
+    () => import("./demos/ui-custom/sidebar-nav-item-demo").then((mod) => ({ default: mod.SidebarNavItemDemoTileLeading })),
     { ssr: false },
   ),
   "sidebar-nav-item-demo-expanded": dynamic(

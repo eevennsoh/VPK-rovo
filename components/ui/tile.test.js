@@ -40,3 +40,21 @@ test("Tile inset child sizes match the tile font-size scale", () => {
 		assert.deepEqual(match[1].split(" "), [spanClass, imageClass, svgClass, textClass]);
 	}
 });
+
+test("Tile snug inset pads 2px and fills children with !important sizing", () => {
+	const snugMatch = TILE_SOURCE.match(/const SNUG_CHILD_CLASSES =\n\t"([^"]*)"/u);
+
+	assert.ok(snugMatch, "SNUG_CHILD_CLASSES constant should exist");
+	// ADS marks need `!` to override their unlayered width/height CSS.
+	for (const cls of ["[&_span]:size-full!", "[&_img]:size-full!", "[&_svg]:size-full!"]) {
+		assert.ok(snugMatch[1].includes(cls), `snug fill should include ${cls}`);
+	}
+
+	// isSnug wins over isInset and applies the 2px pad alongside the fill classes.
+	assert.match(
+		TILE_SOURCE,
+		/isSnug\s*\?\s*cn\("p-0\.5", SNUG_CHILD_CLASSES\)\s*:\s*isInset/u,
+		"isSnug branch should pad p-0.5 and take precedence over isInset",
+	);
+});
+
