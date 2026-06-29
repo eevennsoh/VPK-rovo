@@ -473,6 +473,12 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
         demoSlug: "sidebar-nav-item-demo-default",
       },
       {
+        title: "Tile leading avatar",
+        description:
+          "Leading avatar standardized on the Tile snug variant — a transparent 24x24 tile holding 20x20 content (the same treatment as the Studio agent rows).",
+        demoSlug: "sidebar-nav-item-demo-tile-leading",
+      },
+      {
         title: "Expanded",
         description: "Expanded disclosure row with add and drill-in actions.",
         demoSlug: "sidebar-nav-item-demo-expanded",

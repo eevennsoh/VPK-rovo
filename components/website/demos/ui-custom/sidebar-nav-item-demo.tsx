@@ -5,9 +5,23 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ProjectIcon from "@atlaskit/icon/core/project";
 import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/components/ui-custom/sidebar-nav-item";
+import { RovoColorIcon } from "@/components/ui/logo";
+import { Tile } from "@/components/ui/tile";
 
 function DemoFrame({ children }: Readonly<{ children: React.ReactNode }>) {
 	return <div className="flex w-[276px] justify-center">{children}</div>;
+}
+
+// Standardized leading avatar: the shared `Tile` snug variant renders a
+// transparent 24x24 tile (the leading slot) holding 20x20 content. Declared as a
+// wrapper so `SidebarNavItem`'s `normalizeIconNode` `cloneElement` injects its
+// `label`/`size` here (and they're ignored) rather than clobbering the Tile.
+function TileLeadingAvatar({ label = "" }: Readonly<{ label?: string; size?: "small" | "medium" }>) {
+	return (
+		<Tile aria-hidden label={label || "Agent"} variant="transparent" size="small" isSnug>
+			<RovoColorIcon label="" size="small" />
+		</Tile>
+	);
 }
 
 function ChevronAction() {
@@ -33,6 +47,7 @@ export default function SidebarNavItemDemo() {
 		<div className="flex justify-center px-6 py-8">
 			<div className="flex w-[276px] flex-col gap-4">
 				<SidebarNavItemDemoDefault />
+				<SidebarNavItemDemoTileLeading />
 				<SidebarNavItemDemoExpanded />
 				<SidebarNavItemDemoHovered />
 				<SidebarNavItemDemoSelected />
@@ -54,6 +69,18 @@ export function SidebarNavItemDemoDefault() {
 				leading={<ChevronRightIcon label="" />}
 				leadingSize="small"
 				actions={<ChevronAction />}
+			/>
+		</DemoFrame>
+	);
+}
+
+export function SidebarNavItemDemoTileLeading() {
+	return (
+		<DemoFrame>
+			<SidebarNavItem
+				label="RFP Drafter"
+				leading={<TileLeadingAvatar />}
+				leadingSize="medium"
 			/>
 		</DemoFrame>
 	);
