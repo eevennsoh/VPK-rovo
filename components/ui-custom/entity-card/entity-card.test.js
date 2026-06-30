@@ -143,8 +143,9 @@ test("header swaps the leading visual for a default 16x16 checkbox in selectable
 	assert.match(PARTS_SOURCE, /selectable\?: boolean/u);
 	assert.match(PARTS_SOURCE, /onSelectedChange\?: \(checked: boolean\) => void/u);
 	assert.match(PARTS_SOURCE, /<EntityCardSelectableLeading\b/u);
-	// Icon fades out on hover / while selected; the checkbox fades in.
-	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
+	// Icon fades out on hover / focus-within / while selected; the checkbox fades in.
+	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0 group-focus-within\/card:opacity-0"/u);
+	assert.match(PARTS_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100 group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
 	assert.match(PARTS_SOURCE, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
 	// Icon + checkbox share a fixed 32px box so the swap never shifts layout; the checkbox
 	// itself keeps its native 16x16 default (its className opens with opacity, not size-*).
