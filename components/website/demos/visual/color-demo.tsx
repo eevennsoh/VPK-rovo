@@ -285,6 +285,27 @@ export default function ColorDemo() {
 					<Swatch label="border-information" className="border-border-information" type="border" />
 				</Section>
 
+				<Section title="Border — Subtle">
+					<Swatch label="border-danger-subtle" className="border-border-danger-subtle" type="border" />
+					<Swatch label="border-warning-subtle" className="border-border-warning-subtle" type="border" />
+					<Swatch label="border-success-subtle" className="border-border-success-subtle" type="border" />
+					<Swatch label="border-discovery-subtle" className="border-border-discovery-subtle" type="border" />
+					<Swatch label="border-information-subtle" className="border-border-information-subtle" type="border" />
+				</Section>
+
+				<Section title="Border — Accent Subtle">
+					<Swatch label="border-accent-red-subtle" className="border-border-accent-red-subtle" type="border" />
+					<Swatch label="border-accent-orange-subtle" className="border-border-accent-orange-subtle" type="border" />
+					<Swatch label="border-accent-yellow-subtle" className="border-border-accent-yellow-subtle" type="border" />
+					<Swatch label="border-accent-lime-subtle" className="border-border-accent-lime-subtle" type="border" />
+					<Swatch label="border-accent-green-subtle" className="border-border-accent-green-subtle" type="border" />
+					<Swatch label="border-accent-teal-subtle" className="border-border-accent-teal-subtle" type="border" />
+					<Swatch label="border-accent-blue-subtle" className="border-border-accent-blue-subtle" type="border" />
+					<Swatch label="border-accent-purple-subtle" className="border-border-accent-purple-subtle" type="border" />
+					<Swatch label="border-accent-magenta-subtle" className="border-border-accent-magenta-subtle" type="border" />
+					<Swatch label="border-accent-gray-subtle" className="border-border-accent-gray-subtle" type="border" />
+				</Section>
+
 				<Section title="Surface">
 					<Swatch label="surface" className="bg-surface" type="bg" />
 					<Swatch label="surface-hovered" className="bg-surface-hovered" type="bg" />
@@ -316,6 +337,27 @@ export default function ColorDemo() {
 					<Swatch label="bg-information-pressed" className="bg-bg-information-pressed" type="bg" />
 				</Section>
 
+				<Section title="Background — Status Subtle">
+					<Swatch label="bg-danger-subtle" className="bg-bg-danger-subtle" type="bg" />
+					<Swatch label="bg-warning-subtle" className="bg-bg-warning-subtle" type="bg" />
+					<Swatch label="bg-success-subtle" className="bg-bg-success-subtle" type="bg" />
+					<Swatch label="bg-discovery-subtle" className="bg-bg-discovery-subtle" type="bg" />
+					<Swatch label="bg-information-subtle" className="bg-bg-information-subtle" type="bg" />
+				</Section>
+
+				<Section title="Background — Accent Subtle">
+					<Swatch label="bg-accent-red-subtle" className="bg-bg-accent-red-subtle" type="bg" />
+					<Swatch label="bg-accent-orange-subtle" className="bg-bg-accent-orange-subtle" type="bg" />
+					<Swatch label="bg-accent-yellow-subtle" className="bg-bg-accent-yellow-subtle" type="bg" />
+					<Swatch label="bg-accent-lime-subtle" className="bg-bg-accent-lime-subtle" type="bg" />
+					<Swatch label="bg-accent-green-subtle" className="bg-bg-accent-green-subtle" type="bg" />
+					<Swatch label="bg-accent-teal-subtle" className="bg-bg-accent-teal-subtle" type="bg" />
+					<Swatch label="bg-accent-blue-subtle" className="bg-bg-accent-blue-subtle" type="bg" />
+					<Swatch label="bg-accent-purple-subtle" className="bg-bg-accent-purple-subtle" type="bg" />
+					<Swatch label="bg-accent-magenta-subtle" className="bg-bg-accent-magenta-subtle" type="bg" />
+					<Swatch label="bg-accent-gray-subtle" className="bg-bg-accent-gray-subtle" type="bg" />
+				</Section>
+
 				<Section title="Background — Status Subtler">
 					<Swatch label="bg-danger-subtler" className="bg-bg-danger-subtler" type="bg" />
 					<Swatch label="bg-danger-subtler-hovered" className="bg-bg-danger-subtler-hovered" type="bg" />
@@ -332,6 +374,19 @@ export default function ColorDemo() {
 					<Swatch label="bg-information-subtler" className="bg-bg-information-subtler" type="bg" />
 					<Swatch label="bg-information-subtler-hovered" className="bg-bg-information-subtler-hovered" type="bg" />
 					<Swatch label="bg-information-subtler-pressed" className="bg-bg-information-subtler-pressed" type="bg" />
+				</Section>
+
+				<Section title="Background — Accent Subtler">
+					<Swatch label="bg-accent-red-subtler" className="bg-bg-accent-red-subtler" type="bg" />
+					<Swatch label="bg-accent-orange-subtler" className="bg-bg-accent-orange-subtler" type="bg" />
+					<Swatch label="bg-accent-yellow-subtler" className="bg-bg-accent-yellow-subtler" type="bg" />
+					<Swatch label="bg-accent-lime-subtler" className="bg-bg-accent-lime-subtler" type="bg" />
+					<Swatch label="bg-accent-green-subtler" className="bg-bg-accent-green-subtler" type="bg" />
+					<Swatch label="bg-accent-teal-subtler" className="bg-bg-accent-teal-subtler" type="bg" />
+					<Swatch label="bg-accent-blue-subtler" className="bg-bg-accent-blue-subtler" type="bg" />
+					<Swatch label="bg-accent-purple-subtler" className="bg-bg-accent-purple-subtler" type="bg" />
+					<Swatch label="bg-accent-magenta-subtler" className="bg-bg-accent-magenta-subtler" type="bg" />
+					<Swatch label="bg-accent-gray-subtler" className="bg-bg-accent-gray-subtler" type="bg" />
 				</Section>
 
 				<Section title="Background — Neutral">

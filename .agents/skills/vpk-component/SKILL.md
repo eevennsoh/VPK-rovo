@@ -1,22 +1,18 @@
 ---
 name: vpk-component
-description: Enrich shadcn components with ADS visual styling (state tokens, interaction feedback,
-  semantic colors) while preserving all existing shadcn conventions (prop names, variant values,
-  size values, sub-component names). Creates mapping tables, example demos, and doc site wiring.
-  This skill should be used when the user asks to
-  "map ADS to VPK", "ADS to shadcn", "ADS equivalent", "what's the VPK version of",
-  "enrich component", "add ADS states", "add hover/active/disabled states",
-  "add component demos", "create component examples", "document component mapping",
-  "migrate from ADS", "how does [X] map to VPK", "what's the shadcn equivalent of [X]",
-  "style component with ADS tokens", "which ADS component is [X] based on",
-  or references an ADS component name and wants to see how it maps to VPK.
+description: Harvest ADS and shadcn/Base UI components into VPK components, demos, docs metadata, and tests. Use for atlassian.design URLs, shadcn registry/docs components, ADS/shadcn to VPK mapping, visual enrichment, examples, and package/source parity. Use vpk-design for Figma.
 ---
 
-# VPK Component Visual Enrichment
+# VPK Component Harvesting and Visual Enrichment
 
-Enrich a shadcn component with ADS visual styling — state tokens, interaction feedback, and semantic colors — while preserving the existing shadcn API surface (prop names, variant names, size names, sub-component names, export patterns). Produce mapping tables, create example demos, and wire them into the doc site.
+Harvest upstream component patterns into production-ready VPK components. This skill covers both source lanes:
 
-**Foundational rule:** This skill only changes **visual and interaction styling**. All shadcn/Radix conventions are preserved:
+- **ADS lane:** `atlassian.design` / `@atlaskit/*` / `@atlassian/*` component parity, ADS token enrichment, package/source inspection, docs examples, and ADS-equivalent metadata.
+- **shadcn lane:** shadcn/ui, Base UI, `@shadcn/react`, registry examples, upstream utilities, demo parity, and VPK-standardized primitives.
+
+Use `vpk-design` only when the source of truth is a Figma file, screenshot, or bespoke mockup. Use this skill when the source of truth is an upstream component library or component docs page.
+
+**Foundational rule:** Preserve the VPK API shape while translating upstream visual and interaction behavior. Existing shadcn/Radix conventions are preserved:
 
 - **Prop names stay as-is:** `variant`, `size`, `disabled`, `className`, etc. — never rename to ADS equivalents (`appearance`, `isDisabled`, `spacing`)
 - **No-equivalent components still use shadcn names:** if there is no direct shadcn UI equivalent (for example `Tag`), map ADS concepts to shadcn-style prop names (`appearance` → `variant`, `spacing` → `size`, `isDisabled` → `disabled`)
@@ -28,16 +24,17 @@ Enrich a shadcn component with ADS visual styling — state tokens, interaction 
 
 **Gold standard:** `components/ui/button.tsx` — completed enrichment with all states, 8 variants, `isLoading`, and exported Props interface.
 
-For the canonical ADS-to-shadcn prop-name mapping, see `references/common-mappings.md` § "Canonical Prop Naming".
+For the canonical upstream-to-VPK prop-name mapping, see `references/common-mappings.md` § "Canonical Prop Naming".
 
 ## Quick Start
 
 ```
-/vpk-component button        # Map ADS Button → VPK Button
-/vpk-component modal-dialog  # Map ADS ModalDialog → VPK Dialog
-/vpk-component tabs          # Map ADS Tabs → VPK Tabs
-/vpk-component toggle        # Map + enrich ADS Toggle → VPK Switch
-/vpk-component radio         # Map ADS Radio → VPK RadioGroup
+/vpk-component badge              # Harvest ADS Badge → VPK Badge
+/vpk-component lozenge            # Harvest ADS Lozenge → VPK Lozenge
+/vpk-component button             # Map ADS Button → VPK Button
+/vpk-component attachment         # Harvest shadcn/Base Attachment → VPK Attachment
+/vpk-component message-scroller   # Harvest shadcn/Base MessageScroller → VPK MessageScroller
+/vpk-component toggle             # Map + enrich ADS Toggle → VPK Switch
 ```
 
 ---
@@ -46,33 +43,69 @@ For the canonical ADS-to-shadcn prop-name mapping, see `references/common-mappin
 
 ### Skill Pairing
 
-When the target is a shadcn/ui, Base UI, or `@shadcn/react` component, also read the global shadcn skill (`/Users/esoh/.agents/skills/shadcn/SKILL.md`) before coding. Use that skill for current shadcn CLI behavior, registry/source lookup, Base UI `render` composition, and shadcn composition rules. Use this VPK skill for the repo-specific translation layer: ADS token enrichment, VPK icon wrapping, Tailwind utility placement, demo registry wiring, and browser validation.
+When the target is a shadcn/ui, Base UI, or `@shadcn/react` component, also read the global shadcn skill (`/Users/esoh/.agents/skills/shadcn/SKILL.md`) before coding. Use that skill for current shadcn CLI behavior, registry/source lookup, Base UI `render` composition, and shadcn composition rules. Use this VPK skill for the repo-specific translation layer: VPK API conventions, ADS token enrichment where appropriate, VPK icon wrapping, Tailwind utility placement, demo registry wiring, and browser validation.
+
+When the target is an ADS component, prefer this skill directly. Do not use `vpk-design` unless a Figma file or screenshot is the source of truth.
 
 ### Phase 1 — Research
 
+First classify the source lane:
+
+| Source of truth | Skill/lane | Primary evidence |
+| --- | --- | --- |
+| Figma URL, screenshot, bespoke mockup | `vpk-design` | Figma screenshot + extracted spec |
+| ADS component URL/name/package | `vpk-component` ADS lane | `atlassian.design`, ADS MCP, package source, computed styles |
+| shadcn/ui, Base UI, `@shadcn/react`, registry component | `vpk-component` shadcn lane | shadcn docs, registry source/examples, computed styles |
+| Existing VPK component needs ADS visual states | `vpk-component` enrichment lane | VPK source + ADS or shadcn parity target |
+
 Gather the ADS component's visual specs when there is an ADS mapping. For shadcn/Base UI or `@shadcn/react` components with no ADS equivalent, gather upstream shadcn visual specs and treat them as the parity target before VPK enrichment.
 
-1. **ADS component + token research** — Use `ads_plan` first to understand the ADS component's visual states, colors, icons, and interaction patterns. Populate every field you know with at least 2 likely search terms (for example `components: ["button", "icon button"]`, `icons: ["add", "search"]`, `tokens: ["background neutral", "space 200"]`). If the ADS component name is explicit, set `exactName: true`. Use `ads_get_components` only to confirm ambiguous component/package matches, reserve `ads_get_all_tokens` / `ads_get_all_icons` for exhaustive fallback lookups when `ads_plan` still leaves ambiguity, and use `ads_migration_guides` when the target falls into the legacy spotlight/onboarding family so parity expectations come from the official migration path. Focus on **styling information only** — ignore ADS prop/variant naming.
-2. **ADS accessibility baseline** — For any interactive or form control, fetch `ads_get_a11y_guidelines` for the closest topic (`buttons`, `forms`, `focus`, `keyboard`, `screenReaders`, or `general`) before coding. If the change adds or rewrites user-facing literal strings in an intl-aware surface, run `ads_i18n_conversion_guide` before leaving hardcoded JSX/content behind. Treat those guidelines as implementation constraints, not optional cleanup.
-3. **shadcn source and examples** — Use `search_items_in_registries` / `view_items_in_registries` to understand the shadcn component's existing API surface. This API is the source of truth for naming. Also run `pnpm exec shadcn docs [component]` from the project root. If the CLI has no docs links or the component is a new Base UI / `@shadcn/react` component, fetch the official fallback sources directly:
-  - Docs markdown: `https://ui.shadcn.com/docs/components/base/[component].md`
-  - Registry UI source: `https://ui.shadcn.com/code/apps/v4/registry/bases/base/ui/[component].tsx`
-  - Registry examples: `https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/[component]-example.tsx`
-  Compare all three surfaces. Public docs may list demos that the registry names differently, and registry examples may contain demos missing from the public page. Do not stop after the first source.
+#### ADS harvest lane
+
+Use this path when the source of truth is an **Atlassian Design System component**: an `atlassian.design/components/<name>` URL, an ADS package, or a request like "replicate ADS Badge examples" / "cover all Lozenge states and variants". The goal is to mirror the component's useful presentational API, example catalog, visual states, and docs metadata as VPK components.
+
+Source hierarchy:
+
+1. **Live ADS examples page** — `atlassian.design` is JS-rendered. Use `agent-browser read --outline` for example headings, `agent-browser read --filter "<Section>"` for prose/source, and `agent-browser eval` with `getComputedStyle()` for exact CSS.
+2. **ADS MCP** — use for component/package lookup, token/icon mapping, migration guides, i18n, and accessibility guidance. Do not treat MCP silence as proof a new/Beta component does not exist.
+3. **Published package source** — when docs/MCP are ambiguous, inspect package code read-only with `npm view` / `npm pack` in a tmp directory. Read compiled ESM and JSDoc from the unpacked package. Never add `@atlaskit/*` or `@atlassian/*` packages to `package.json` just to inspect them.
+4. **Runtime vs presentational split** — replicate presentational components, states, variants, and examples. Skip provider/router/manager/Relay/navigation-system runtime layers unless VPK already has the owning runtime abstraction.
+
+#### shadcn harvest lane
+
+Use this path when the source of truth is **shadcn/ui, Base UI, `@shadcn/react`, or the shadcn registry**. The goal is to translate upstream composition into VPK-standardized primitives while preserving shadcn/Radix naming conventions.
+
+Source hierarchy:
+
+1. **Global shadcn skill** — read `/Users/esoh/.agents/skills/shadcn/SKILL.md` for current CLI, registry, and composition rules.
+2. **Project-aware shadcn CLI** — run `pnpm exec shadcn docs [component]` when available.
+3. **Registry source and examples** — use `search_items_in_registries`, `view_items_in_registries`, and `get_item_examples_from_registries`; fall back to official docs/source/example URLs when the CLI has no links.
+4. **Computed styles and behavior** — extract visual specs from rendered upstream examples when visual parity matters, then map reusable utility behavior into `app/tailwind-theme.css` with Tailwind v4 `@utility`.
+5. **VPK normalization** — keep shadcn prop/sub-component conventions, use VPK `Icon`, `Link`, `Button`, etc. where they preserve behavior, and wire demos/metadata/tests in the local docs system.
+
+Common research steps:
+
+1. **ADS component + token research** — For ADS lanes or ADS-enriched shadcn lanes, use `ads_plan` first to understand visual states, colors, icons, and interaction patterns. Populate every field you know with at least 2 likely search terms (for example `components: ["button", "icon button"]`, `icons: ["add", "search"]`, `tokens: ["background neutral", "space 200"]`). If the ADS component name is explicit, set `exactName: true`. Use `ads_get_components` only to confirm ambiguous component/package matches, reserve `ads_get_all_tokens` / `ads_get_all_icons` for exhaustive fallback lookups when `ads_plan` still leaves ambiguity, and use `ads_migration_guides` when the target falls into the legacy spotlight/onboarding family so parity expectations come from the official migration path.
+2. **Accessibility baseline** — For any interactive or form control, fetch `ads_get_a11y_guidelines` for the closest topic (`buttons`, `forms`, `focus`, `keyboard`, `screenReaders`, or `general`) before coding. If the change adds or rewrites user-facing literal strings in an intl-aware surface, run `ads_i18n_conversion_guide` before leaving hardcoded JSX/content behind. Treat those guidelines as implementation constraints, not optional cleanup.
+3. **shadcn source and examples** — For shadcn lanes, use `search_items_in_registries` / `view_items_in_registries` to understand the component's existing API surface. This API is the source of truth for naming. Also run `pnpm exec shadcn docs [component]` from the project root. If the CLI has no docs links or the component is a new Base UI / `@shadcn/react` component, fetch the official fallback sources directly:
+   - Docs markdown: `https://ui.shadcn.com/docs/components/base/[component].md`
+   - Registry UI source: `https://ui.shadcn.com/code/apps/v4/registry/bases/base/ui/[component].tsx`
+   - Registry examples: `https://ui.shadcn.com/code/apps/v4/registry/bases/base/examples/[component]-example.tsx`
+   Compare all three surfaces. Public docs may list demos that the registry names differently, and registry examples may contain demos missing from the public page. Do not stop after the first source.
 4. **Library docs** — Use `resolve-library-id` + `query-docs` (context7) for latest library docs if needed.
 5. **VPK source** — Read the existing VPK component:
-  - UI: `components/ui/[slug].tsx`
-  - Custom: `components/ui-custom/[slug].tsx`
+   - UI: `components/ui/[slug].tsx`
+   - Custom: `components/ui-custom/[slug].tsx`
 6. **Upstream utility and CSS audit** — shadcn Base components can depend on named utilities (`scroll-fade-x`, `scrollbar-none`, `shimmer`, `cn-*` classes, etc.) in addition to JSX classes. Before coding, list upstream class names that are not present in VPK. If a missing class is a reusable behavior, add it to the repo's Tailwind v4 utility file (`app/tailwind-theme.css`) with `@utility`; do not scatter one-off arbitrary CSS across demos unless the behavior is truly local.
-7. **Visual specs (mandatory)** — Extract exact computed styles from the ADS component using `/agent-browser` on the live `atlassian.design` examples page. Navigate to the page, then use `npx agent-browser eval` to run `getComputedStyle()`. **Never guess values from token name lookups** — token names like `radius.small` do not reliably map to computed pixel values. See `references/visual-spec-extraction.md` for the full methodology (computed styles, inner layout extraction, typography parity). For container/layout components (ButtonGroup, FieldGroup, etc.), also extract parent-level properties: `gap`, `display`, `flexDirection`, `alignItems`. If there is no ADS equivalent and the target is primarily shadcn/Base UI, extract computed styles from the shadcn example page instead and treat upstream shadcn visual behavior as the parity target before ADS token enrichment.
-8. **Identity gate (required)** — Confirm which shadcn component maps to the ADS component:
+7. **Visual specs (mandatory)** — Extract exact computed styles from the upstream rendered example using `/agent-browser`: `atlassian.design` for ADS lanes, shadcn docs/registry examples for shadcn lanes. Use `getComputedStyle()` for exact values. **Never guess values from token name lookups** — token names like `radius.small` do not reliably map to computed pixel values. See `references/visual-spec-extraction.md` for the full methodology (computed styles, inner layout extraction, typography parity). For container/layout components (ButtonGroup, FieldGroup, etc.), also extract parent-level properties: `gap`, `display`, `flexDirection`, `alignItems`.
+8. **Identity gate (required)** — Confirm which VPK component should own the upstream behavior:
   - ADS Toggle (`@atlaskit/toggle`) maps to VPK `Switch` (`components/ui/switch.tsx`)
   - VPK `Toggle` (`components/ui/toggle.tsx`) is a pressed toolbar button pattern, not ADS Toggle
   - ADS InlineDialog (`@atlaskit/inline-dialog`) maps to VPK `HoverCard` (`components/ui/hover-card.tsx`) — not a separate `inline-dialog` component
   - ADS InlineMessage (`@atlaskit/inline-message`) is covered by VPK `Alert` (component) and `HoverCard` (demos) — not a separate `inline-message` component
 9. **No-equivalent gate (required)** — If there is no direct shadcn component, choose the closest shadcn/Radix API shape and enforce the canonical prop-name mapping from `references/common-mappings.md`.
 
-**Scope reminder:** The ADS research is for **visual styling data** (colors, radii, spacing, state tokens). The existing shadcn prop names, variant names, and size names are never replaced. For no-equivalent components, normalize API naming to shadcn conventions using the canonical mapping table.
+**Scope reminder:** Upstream research is for **visual styling data, interaction behavior, composition, examples, and API translation**. Existing VPK prop names, variant names, size names, sub-component names, and export patterns are preserved unless the component is new and the new API follows VPK conventions.
 
 > MCP tools (`ads_`*, `search_items_in_registries`, etc.) require configured MCP servers. If unavailable, manually consult ADS docs at atlassian.design and the shadcn registry.
 
@@ -386,6 +419,31 @@ Create demo files demonstrating each key variant/feature.
 
 For shadcn/Base UI components with no ADS equivalent, mirror the official shadcn docs and registry examples instead. Build an explicit demo inventory from both public docs and registry example functions. Wire every public/registry demo that exercises a distinct component capability, including less obvious state demos such as `Content Only`, `Image States`, `Group`/`Scrollable Group`, `Trigger`, `Sizes`, and orientation/layout examples. If public docs and registry names differ, prefer the public docs title/anchor for VPK navigation and keep the registry behavior in the demo implementation.
 
+#### Docs Wiring and Contract Tests
+
+A harvested docs demo is never just one file. For each upstream component, keep these files in lockstep:
+
+1. `components/website/demos/<area>/<name>-demo.tsx` or `components/website/demos/<area>/<name>/...` — export one function per example. Match the file's existing style and factor shared frames/wrappers so repeated row styling lives in one place.
+2. `components/website/registry.ts` — add lazy `dynamic(() => import(...).then(m => ({ default: m.<Export> })), { ssr: false })` entries keyed by `demoSlug`.
+3. `app/data/details/<area>.ts` — add or update the component's `examples: [{ title, description, demoSlug }]`, `subComponents`, `adsUrl`, and related metadata.
+4. `app/data/ads-equivalents.ts` — add ADS package mapping when there is a true ADS equivalent. Do not add ADS metadata for shadcn-only components.
+5. `components/ui/<name>.test.js` — add or update a small source-contract test when the harvest depends on stable export names, demo slugs, package mappings, or structural pairings.
+
+#### Variant Galleries
+
+When an upstream docs section stacks many visual variants in one example, build a gallery demo instead of splitting every row into a separate docs section. Use a vertical stack of small bordered examples, each holding only the relevant sub-component or state. Preserve the upstream component layout behavior instead of re-implementing it with ad hoc wrappers.
+
+#### Assets
+
+- Never assume an asset path exists. Verify local assets with `ls` before referencing them.
+- Prefer equivalent assets from `public/` over brittle remote images. Render images with `next/image` and explicit `width` + `height`.
+- For ADS cover/banner imagery, use real landscape assets. Do not substitute 80x80 icon assets as banners.
+- When an upstream example uses product logos or illustrations, choose the nearest VPK asset and keep the upstream composition intact.
+
+#### Deprecated ADS Icons
+
+Before using an `@atlaskit/icon/core/<name>`, check whether the icon is deprecated. The editor may surface this as a diagnostic; otherwise grep `node_modules/@atlaskit/icon/core/<name>.d.ts` for `@deprecated` and use the replacement icon where available.
+
 **Two demo types exist:**
 
 - **Overview demo** — Single file `components/website/demos/ui/[slug]-demo.tsx`, registered in `UI_DEMO` / `UI_CUSTOM_DEMO`. Shows the component's primary use case. Should already exist.
@@ -455,7 +513,7 @@ For demo registration, metadata wiring, ADS equivalents setup, and component con
   - ADS-only filter still includes the component
 5. Pre-existing errors in unrelated files can be ignored
 6. **API preservation check (required)** — Verify no prop names, variant values, size values, or sub-component names were changed. Search the codebase for all usages of the modified component and confirm they still work without modification. Run `pnpm run typecheck` to catch any breakage. If any consumer needs updating, the enrichment introduced an API change — revert the API change and keep only the visual styling changes.
-7. **Typography parity check (required for text-bearing components)** — Compare local rendering against the `atlassian.design` example and computed typography values (`fontSize`, `lineHeight`, `fontWeight`). If local text appears larger/smaller, adjust classes to match ADS.
+7. **Typography parity check (required for text-bearing components)** — Compare local rendering against the upstream example and computed typography values (`fontSize`, `lineHeight`, `fontWeight`). For ADS lanes, use `atlassian.design`; for shadcn lanes, use the shadcn docs or registry example. If local text appears larger/smaller, adjust to the closest matching VPK utility class.
 8. **Example completeness check (required for shadcn/Base components)** — In the rendered docs page, verify every expected example anchor exists. Use absolute anchors that match VPK titles (for example `#files`, `#content-only`, `#states`, `#images`, `#image-states`, `#sizes`, `#group`, `#trigger`, `#orientation` for Attachment). Do not rely only on TypeScript exports or registry entries.
 9. **Interaction and focus proof (required for interactive demos)** — Use an explicit `agent-browser` session for multi-step checks so another active tab cannot corrupt the result. Click or focus real rendered elements, then assert DOM state (`aria-expanded`, `[role=dialog]`, active element label, computed styles). For trigger-over-card demos, verify card triggers and independent action buttons both remain reachable.
 10. **Scroll/fade proof (required for scroll containers)** — If adding scroll snapping, hidden scrollbars, masks, or edge fades, verify computed style in the browser:
@@ -464,6 +522,7 @@ For demo registration, metadata wiring, ADS equivalents setup, and component con
   - `scrollbarWidth: "none"` when scrollbars should be hidden
   - `maskImage` / `webkitMaskImage` includes the intended gradient
   - focused first/last child has positive clearance from the scroll container edge
+11. **Live docs proof (required for harvested components)** — Start or reuse the worktree dev server, open `/components/<category>/<slug>` via the Portless URL, run `agent-browser read --outline` to confirm all expected example sections render, and capture screenshots for custom/risky examples. Resize oversized screenshots before reading them.
 
 #### Migration Safety Gates (only needed if new variants were added)
 
@@ -527,7 +586,7 @@ See `references/common-mappings.md` for pre-built mapping tables covering Button
 | `view_items_in_registries`          | Get shadcn component details                                                                                                                         |
 | `get_item_examples_from_registries` | Get shadcn example code                                                                                                                              |
 | `resolve-library-id` + `query-docs` | Fetch library docs via context7                                                                                                                      |
-| `/agent-browser`                    | Navigate to `atlassian.design/components/[name]/examples` and run `getComputedStyle()` to extract visual specs from rendered ADS components          |
+| `/agent-browser`                    | Navigate to upstream examples (`atlassian.design` for ADS, shadcn docs/registry examples for shadcn) and run `getComputedStyle()` to extract visual specs |
 | `pnpm exec shadcn docs [component]` | Project-aware shadcn docs lookup; if it returns no links, use the official fallback docs/source URLs listed in Phase 1                               |
 
 
@@ -555,7 +614,11 @@ See `references/common-mappings.md` for pre-built mapping tables covering Button
 
 For the full 35-item checklist, see `references/checklist-full.md`.
 
-- ADS visual states or upstream shadcn parity target researched and visual specs extracted via computed styles
+- Upstream visual states or shadcn parity target researched and visual specs extracted via computed styles
+- Source lane classified as Figma (`vpk-design`), ADS harvest, shadcn harvest, or existing VPK enrichment
+- ADS harvests pulled the example catalog from live `atlassian.design` via `agent-browser read --outline`/`--filter`, not WebFetch or MCP alone
+- ADS harvests verified package/source details read-only with `npm view` / `npm pack` when docs or MCP were ambiguous; no package/lockfile changes were made just for inspection
+- ADS harvests covered presentational states/variants and explicitly skipped runtime-only provider/router/manager layers with a reason
 - Global shadcn skill read for shadcn/Base UI targets
 - Relevant `ads_get_a11y_guidelines` topic reviewed before coding interactive behavior
 - `ads_migration_guides` consulted when the mapping touches ADS spotlight/onboarding family components
@@ -573,8 +636,12 @@ For the full 35-item checklist, see `references/checklist-full.md`.
 - TypeScript interface named `[Component]Props`, exported, used as `Readonly<>`
 - **No prop names, variant values, size values, or sub-component names were renamed**
 - Demo files created, registered in registry, and examples added to detail entry; every official docs/registry demo variant is accounted for
-- `adsUrl` and ADS equivalents entry set
+- Demo file, `components/website/registry.ts`, `app/data/details/<area>.ts`, ADS metadata, and component source-contract tests updated in lockstep where applicable
+- `adsUrl` and ADS equivalents entry set only for true ADS equivalents
+- Asset paths verified to exist; local public assets preferred over brittle remote media
+- Deprecated atlaskit icons checked before use
 - Browser validation proves example anchors, trigger interactions, scroll fades/hidden scrollbars, and focus-ring clearance where applicable
+- Live docs outline confirms expected harvested example sections render at `/components/<category>/<slug>`
 - Material a11y findings validated with `ads_suggest_a11y_fixes` and resolved or explicitly classified as noise
 - `pnpm run lint` passes (0 new errors)
 - `pnpm run typecheck` passes (0 new errors)

@@ -56,6 +56,11 @@ const INCLUDED_TEST_FILES = new Set([
 	// Breadcrumbs mirror the refreshed ADS medium/small sizing API. Components
 	// are not included wholesale, so gate this focused source contract explicitly.
 	"components/ui/breadcrumb.test.js",
+	// Labelling components mirror the latest ADS visual-uplift package contracts.
+	"components/ui/badge.test.js",
+	"components/ui/date-label.test.js",
+	"components/ui/lozenge.test.js",
+	"components/ui/tag.test.js",
 	// Shared select primitive keeps selected indicators aligned with dropdown menu
 	// affordances. Components are not included wholesale, so gate it explicitly.
 	"components/ui/select.test.js",
@@ -109,6 +114,9 @@ const INCLUDED_TEST_FILES = new Set([
 	"components/visual/border-beam/data.test.js",
 	"components/visual/border-beam/registry.test.js",
 	"components/visual/border-beam/source.test.js",
+	// ADS semantic label color tokens should stay exposed by the visual Color
+	// demo and Tailwind theme aliases.
+	"components/website/demos/visual/color-demo.test.js",
 	// Pure defaults/options/helpers behind the ASCII visual demo controls.
 	// Components are not included wholesale, so keep this model test gated.
 	"components/website/demos/visual/ascii-control-model.test.js",

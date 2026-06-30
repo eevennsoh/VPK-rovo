@@ -79,18 +79,62 @@ const colorAliases: Record<TagColor, ResolvedTagColor> = {
 	tealLight: "teal",
 };
 
-const tagColorClasses: Record<ResolvedTagColor, { border: string; icon: string }> = {
-	gray: { border: "border-neutral-500", icon: "text-neutral-500" },
-	blue: { border: "border-blue-500", icon: "text-blue-500" },
-	green: { border: "border-green-500", icon: "text-green-400" },
-	red: { border: "border-red-500", icon: "text-red-600" },
-	yellow: { border: "border-yellow-400", icon: "text-yellow-400" },
-	purple: { border: "border-purple-500", icon: "text-purple-500" },
-	discovery: { border: "border-border-discovery", icon: "text-icon-discovery" },
-	lime: { border: "border-lime-400", icon: "text-lime-400" },
-	magenta: { border: "border-pink-500", icon: "text-pink-500" },
-	orange: { border: "border-orange-400", icon: "text-orange-400" },
-	teal: { border: "border-teal-400", icon: "text-teal-400" },
+const tagColorClasses: Record<ResolvedTagColor, { border: string; icon: string; metric: string }> = {
+	gray: {
+		border: "border-border-accent-gray-subtle",
+		icon: "text-icon-accent-gray group-hover/tag:text-text-accent-gray group-active/tag:text-text-accent-gray",
+		metric: "bg-bg-accent-gray-subtler",
+	},
+	blue: {
+		border: "border-border-accent-blue-subtle",
+		icon: "text-icon-accent-blue group-hover/tag:text-text-accent-blue group-active/tag:text-text-accent-blue",
+		metric: "bg-bg-accent-blue-subtler",
+	},
+	green: {
+		border: "border-border-accent-green-subtle",
+		icon: "text-icon-accent-green group-hover/tag:text-text-accent-green group-active/tag:text-text-accent-green",
+		metric: "bg-bg-accent-green-subtler",
+	},
+	red: {
+		border: "border-border-accent-red-subtle",
+		icon: "text-icon-accent-red group-hover/tag:text-text-accent-red group-active/tag:text-text-accent-red",
+		metric: "bg-bg-accent-red-subtler",
+	},
+	yellow: {
+		border: "border-border-accent-yellow-subtle",
+		icon: "text-icon-accent-yellow group-hover/tag:text-text-accent-yellow group-active/tag:text-text-accent-yellow",
+		metric: "bg-bg-accent-yellow-subtler",
+	},
+	purple: {
+		border: "border-border-accent-purple-subtle",
+		icon: "text-icon-accent-purple group-hover/tag:text-text-accent-purple group-active/tag:text-text-accent-purple",
+		metric: "bg-bg-accent-purple-subtler",
+	},
+	discovery: {
+		border: "border-border-discovery-subtle",
+		icon: "text-icon-discovery group-hover/tag:text-text-discovery group-active/tag:text-text-discovery",
+		metric: "bg-bg-discovery-subtler",
+	},
+	lime: {
+		border: "border-border-accent-lime-subtle",
+		icon: "text-icon-accent-lime group-hover/tag:text-text-accent-lime group-active/tag:text-text-accent-lime",
+		metric: "bg-bg-accent-lime-subtler",
+	},
+	magenta: {
+		border: "border-border-accent-magenta-subtle",
+		icon: "text-icon-accent-magenta group-hover/tag:text-text-accent-magenta group-active/tag:text-text-accent-magenta",
+		metric: "bg-bg-accent-magenta-subtler",
+	},
+	orange: {
+		border: "border-border-accent-orange-subtle",
+		icon: "text-icon-accent-orange group-hover/tag:text-text-accent-orange group-active/tag:text-text-accent-orange",
+		metric: "bg-bg-accent-orange-subtler",
+	},
+	teal: {
+		border: "border-border-accent-teal-subtle",
+		icon: "text-icon-accent-teal group-hover/tag:text-text-accent-teal group-active/tag:text-text-accent-teal",
+		metric: "bg-bg-accent-teal-subtler",
+	},
 };
 
 /** A non-remove control rendered in the tag's hover-reveal overlay slot. */
@@ -138,6 +182,8 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	 * the label keeps the ellipsis while the trailing element stays fully visible.
 	 */
 	elemAfter?: React.ReactNode;
+	/** Compact metric rendered after the tag text using the tag color's accent-subtler fill. */
+	trailingMetric?: string | number;
 	isVerified?: boolean;
 	maxWidth?: React.CSSProperties["maxWidth"];
 }
@@ -156,6 +202,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	overlayAction,
 	elemBefore,
 	elemAfter,
+	trailingMetric,
 	isVerified = false,
 	maxWidth,
 	className,
@@ -190,10 +237,23 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// right padding (matching non-removable logo/default tags).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
 	const hasOverlayControl = isOverlayRemove || Boolean(overlayAction);
+	const resolvedElemAfter = elemAfter ?? (
+		trailingMetric != null && trailingMetric !== "" ? (
+			<span
+				className={cn(
+					"inline-flex h-4 min-w-6 shrink-0 items-center justify-center rounded-xs px-1 text-xs leading-4 text-text",
+					colorClasses.metric,
+				)}
+				data-slot="tag-trailing-metric"
+			>
+				{trailingMetric}
+			</span>
+		) : null
+	);
 	// A trailing `elemAfter` (typically a count `<Badge>`) sits flush at the edge:
 	// it carries its own internal padding, so the tag only needs a hairline 1px
 	// inset to clear the inner border (no remove button reserving space here).
-	const hasElemAfter = Boolean(elemAfter);
+	const hasElemAfter = Boolean(resolvedElemAfter);
 	// Round the remove button to match the tag shape: pill tags (user avatars or
 	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
 	const removeButtonShapeClass = isUserAvatarTag || isRounded ? "rounded-full" : "rounded-xs";
@@ -250,7 +310,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// Front slot and avatar slot share one leading-padding/gap branch.
 					// 1px left padding so the visible inset reads correctly once the
 					// tag's 1px inner border is counted.
-					hasLeadingElement ? "gap-0.5 py-0 ps-px" : "gap-1 py-0.5 ps-[4px]",
+					hasLeadingElement
+						? cn(hasElemAfter ? "gap-1" : "gap-0.5", "py-0 ps-px")
+						: "gap-1 py-0.5 ps-[4px]",
 					// Avatar types keep their fixed rounding; everything else honors `isRounded`.
 					isUserAvatarTag ? "rounded-full" : isOtherAvatarTag || type === "agent" ? "rounded-sm" : isRounded ? "rounded-full" : "rounded-sm",
 					// Removable tags and logo/default tags get 4px right padding;
@@ -309,7 +371,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					<Icon render={<StatusVerifiedIcon label="" size="small" />} label="Verified" />
 				</span>
 			) : null}
-			{elemAfter ? (
+			{resolvedElemAfter ? (
 				<span
 					className={cn(
 						"inline-flex shrink-0 items-center",
@@ -323,7 +385,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					)}
 					data-slot="tag-after-content"
 				>
-					{elemAfter}
+					{resolvedElemAfter}
 				</span>
 			) : null}
 			{hasRemoveButton ? (

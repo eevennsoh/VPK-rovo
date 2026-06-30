@@ -21,9 +21,9 @@ const badgeVariants = cva(
 				// danger←important/removed, success←added.
 				// ===============================================================
 
-				// "neutral" — gray (color.background.neutral). Default appearance.
+				// "neutral" — gray (color.background.accent.gray.subtler). Default appearance.
 				neutral:
-					`bg-bg-neutral text-text-subtle hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed ${boldDisabled}`,
+					`bg-bg-accent-gray-subtler text-text hover:bg-bg-accent-gray-subtler active:bg-bg-accent-gray-subtler ${boldDisabled}`,
 
 				// "danger" — red (color.background.danger.subtler)
 				danger:
@@ -52,29 +52,28 @@ const badgeVariants = cva(
 					`bg-surface text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
 
 				// ---------------------------------------------------------------
-				// Bold appearances — opaque bold-tone fills with inverse text.
-				// (uses shadcn aliases mapping to color.background.{tone}.bold)
+				// Bold appearances — stronger label fills from the ADS visual uplift.
 				// ---------------------------------------------------------------
 
-				// "informationBold" — bold blue
+				// "informationBold" — color.background.information.subtle
 				informationBold:
-					`bg-info text-info-foreground hover:bg-info-hovered active:bg-info-pressed ${boldDisabled}`,
+					`bg-bg-information-subtle text-text-information-bolder hover:bg-bg-information-subtle active:bg-bg-information-subtle ${boldDisabled}`,
 
-				// "successBold" — bold green
+				// "successBold" — color.background.success.subtle
 				successBold:
-					`bg-success text-success-foreground hover:bg-success-hovered active:bg-success-pressed ${boldDisabled}`,
+					`bg-bg-success-subtle text-text-success-bolder hover:bg-bg-success-subtle active:bg-bg-success-subtle ${boldDisabled}`,
 
-				// "dangerBold" — bold red
+				// "dangerBold" — color.background.danger.subtle
 				dangerBold:
-					`bg-destructive text-destructive-foreground hover:bg-destructive-hovered active:bg-destructive-pressed ${boldDisabled}`,
+					`bg-bg-danger-subtle text-text-danger-bolder hover:bg-bg-danger-subtle active:bg-bg-danger-subtle ${boldDisabled}`,
 
-				// "warningBold" — bold yellow (dark inverse text)
+				// "warningBold" — color.background.warning.bold
 				warningBold:
-					`bg-warning text-warning-foreground hover:bg-warning-hovered active:bg-warning-pressed ${boldDisabled}`,
+					`bg-warning text-text-warning-bolder hover:bg-warning-hovered active:bg-warning-pressed ${boldDisabled}`,
 
-				// "discoveryBold" — bold purple
+				// "discoveryBold" — color.background.discovery.subtle
 				discoveryBold:
-					`bg-discovery text-discovery-foreground hover:bg-discovery-hovered active:bg-discovery-pressed ${boldDisabled}`,
+					`bg-bg-discovery-subtle text-text-discovery-bolder hover:bg-bg-discovery-subtle active:bg-bg-discovery-subtle ${boldDisabled}`,
 			},
 		},
 		defaultVariants: {

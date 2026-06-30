@@ -368,8 +368,9 @@ component expectations unless a nested design file says otherwise.
   request-level notices, not field validation.
 - **Tags:** Tags are decorative classification for categories, labels, and file
   types. They should not communicate semantic status.
-- **Lozenges:** Lozenges communicate semantic status and should keep a visible
-  semantic border, not a fill-only pill treatment.
+- **Lozenges:** Lozenges communicate semantic status. Use the ADS visual-uplift
+  treatment: a subtler status or accent fill, bolder status/accent text, and a
+  subtle decorative border.
 - **Badges:** Badges are compact count primitives. Use neutral badges for
   counts and semantic badges only when the count itself carries state.
 - **Tables:** Table cells use readable body text. Compact table density is for

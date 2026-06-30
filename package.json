@@ -46,7 +46,7 @@
 		"@atlaskit/icon": "^36.0.0",
 		"@atlaskit/icon-lab": "^7.0.0",
 		"@atlaskit/logo": "^21.0.0",
-		"@atlaskit/tokens": "^14.0.0",
+		"@atlaskit/tokens": "^15.2.0",
 		"@atlassian/logo-third-party": "0.1.2",
 		"@base-ui/react": "^1.5.0",
 		"@basementstudio/shader-lab": "^1.3.14",

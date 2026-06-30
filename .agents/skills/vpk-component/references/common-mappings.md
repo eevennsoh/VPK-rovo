@@ -1,12 +1,12 @@
-# Common ADS → VPK Mappings
+# Common Upstream → VPK Mappings
 
-Pre-built mapping tables for frequently mapped components. Use these as starting points — always verify against the actual VPK source.
+Pre-built mapping tables for frequently mapped ADS and shadcn/Base UI components. Use these as starting points — always verify against the actual VPK source.
 
 ---
 
 ## Canonical Prop Naming (Use For All Components)
 
-This is the **single source of truth** for ADS-to-shadcn prop naming. Apply this table even when there is no direct shadcn equivalent. For custom VPK components, normalize API names to shadcn conventions.
+This is the **single source of truth** for upstream-to-VPK prop naming. Apply this table even when there is no direct shadcn equivalent. For custom VPK components, normalize API names to shadcn conventions.
 
 | ADS Prop/Concept | shadcn/VPK Prop Name | Notes |
 |---|---|---|

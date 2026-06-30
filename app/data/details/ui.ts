@@ -167,7 +167,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         type: '"neutral" | "danger" | "success" | "warning" | "information" | "discovery" | "inverse" | "informationBold" | "successBold" | "dangerBold" | "warningBold" | "discoveryBold"',
         default: '"neutral"',
         description:
-          "Visual style variant of the badge, mirroring the full ADS Badge appearance API (new semantic naming convention). Bold appearances use opaque bold-tone fills.",
+          "Visual style variant of the badge, mirroring the full ADS Badge appearance API (new semantic naming convention). Bold appearances use the visual-uplift label fills such as color.background.danger.subtle; warningBold uses color.background.warning.bold.",
       },
       {
         name: "max",
@@ -6138,6 +6138,18 @@ import {
           "Date to display. Accepts a Date, epoch milliseconds, or a parseable date string.",
       },
       {
+        name: "label",
+        type: "string",
+        description:
+          "Package-compatible display text. If provided, this takes precedence over `date` formatting.",
+      },
+      {
+        name: "appearance",
+        type: '"neutral" | "warning" | "danger"',
+        description:
+          "Package-compatible alias for `variant`.",
+      },
+      {
         name: "variant",
         type: '"neutral" | "warning" | "danger"',
         default: '"neutral"',
@@ -6160,7 +6172,21 @@ import {
         name: "icon",
         type: "ReactNode",
         description:
-          "Optional leading icon. Wrap atlaskit icons in the VPK Icon component.",
+          "Optional leading icon. Wrap atlaskit icons in the VPK Icon component. When omitted, DateLabel renders the package-default icon for the current appearance.",
+      },
+      {
+        name: "hasIconBefore",
+        type: "boolean",
+        default: "true",
+        description:
+          "Package-compatible toggle for the default leading icon.",
+      },
+      {
+        name: "isSpacious",
+        type: "boolean",
+        default: "false",
+        description:
+          "Package-compatible alias for `size=\"spacious\"`.",
       },
       {
         name: "maxWidth",
@@ -6255,7 +6281,7 @@ const [date, setDate] = useState<Date>()
 
 <Lozenge>Neutral</Lozenge>
 <Lozenge variant="information">In progress</Lozenge>
-<Lozenge variant="success" metric="0.8">Completed</Lozenge>`,
+<Lozenge variant="success" trailingMetric="0.8">Completed</Lozenge>`,
     props: [
       {
         name: "variant",
@@ -6297,7 +6323,13 @@ const [date, setDate] = useState<Date>()
         name: "metric",
         type: "string | number",
         description:
-          "Trailing metric displayed inline inside the lozenge. Accent variants should avoid metrics to match ADS guidance.",
+          "Deprecated local alias for `trailingMetric`.",
+      },
+      {
+        name: "trailingMetric",
+        type: "string | number",
+        description:
+          "Trailing metric rendered as an embedded Badge. Semantic variants map metrics to bold Badge appearances; accent variants fall back to neutral to match ADS guidance.",
       },
     ],
     examples: [
@@ -6313,7 +6345,7 @@ const [date, setDate] = useState<Date>()
       },
       {
         title: "Trailing metric",
-        description: "Display inline metric text inside the lozenge.",
+        description: "Display a compact trailing metric inside the lozenge.",
         demoSlug: "lozenge-demo-trailing-metric",
       },
       { title: "Spacing", demoSlug: "lozenge-demo-spacing" },
@@ -6664,7 +6696,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         name: "elemAfter",
         type: "ReactNode",
         description:
-          "Element rendered after tag text, such as a count `<Badge>`. Sits in its own trailing slot (before any remove button) and stays fully visible while the label truncates.",
+          "Escape-hatch element rendered after tag text. Sits in its own trailing slot before any remove button and stays fully visible while the label truncates.",
+      },
+      {
+        name: "trailingMetric",
+        type: "string | number",
+        description:
+          "Package-compatible compact metric rendered after tag text using the tag color's accent-subtler fill.",
       },
       {
         name: "isVerified",
@@ -6710,9 +6748,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         demoSlug: "tag-demo-editor-tag",
       },
       {
-        title: "Badge",
+        title: "Trailing metric",
         description:
-          "Trailing count `<Badge>` via `elemAfter`. The badge sits in its own slot before any remove button and stays fully visible while the label truncates. Combine with `elemBefore` and `onRemove` as needed.",
+          "Trailing count via `trailingMetric`. The metric sits in its own slot before any remove button and stays fully visible while the label truncates. Combine with `elemBefore` and `onRemove` as needed.",
         demoSlug: "tag-demo-badge",
       },
       {

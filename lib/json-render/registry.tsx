@@ -624,7 +624,7 @@ const JSON_RENDER_BADGE_VARIANT_ALIASES: Record<string, BadgeVariant> = {
 	link: "neutral",
 	danger: "danger",
 	destructive: "danger",
-	important: "danger",
+	important: "dangerBold",
 	removed: "danger",
 	success: "success",
 	added: "success",

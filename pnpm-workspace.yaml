@@ -10,10 +10,19 @@ minimumReleaseAgeExclude:
   - react-grab
   - "@react-grab/*"
   - agent-browser
+  # ADS source-of-truth tokens; allow same-day design-system updates by request.
+  - "@atlaskit/tokens"
+  # Transitive runtime gate for current @atlaskit/tokens.
+  - "@atlaskit/react-compiler-gating"
   # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
   # the public-supply-chain release-age gate does not apply.
   - "@atlassian/logo-third-party"
 trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Existing transitive dependency blocks lockfile refresh under no-downgrade.
+  - semver@6.3.1
+  # Existing transitive dependency blocks lockfile refresh under no-downgrade.
+  - langium@3.3.1
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
 #   Cautious ~x.y.z - libs where minors have broken us; patch only

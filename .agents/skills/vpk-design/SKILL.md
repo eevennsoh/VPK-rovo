@@ -1,17 +1,6 @@
 ---
 name: vpk-design
-description: This skill should be used when the user asks to "implement this Figma design",
-  "build from Figma", "translate Figma to code", "convert Figma to React",
-  "implement this mockup", "create component from Figma", "build this UI",
-  "match this design", "Figma implementation", "code this Figma", "design to code",
-  "pixel perfect", "Figma to component", "how do I implement this design",
-  or provides a Figma URL. Also use when extracting an Atlassian Design System
-  component into the VPK docs site: "replicate the ADS <component> examples",
-  "cover all states and variants", "add component demos", "build the docs page for
-  <component>", or pointing at an atlassian.design component URL. Supports direct
-  implementation for small diffs and a provider-neutral 3-agent pipeline for
-  extraction, implementation, and visual validation when agent delegation is
-  available and appropriate.
+description: Translate Figma URLs, screenshots, mockups, and pixel-perfect design specs into VPK code. Use ADS MCP only for token/icon/a11y mapping inside Figma tasks. Use vpk-component for ADS or shadcn component harvesting.
 ---
 
 # VPK Design
@@ -23,8 +12,7 @@ description: This skill should be used when the user asks to "implement this Fig
 | Input                 | Action                               |
 | --------------------- | ------------------------------------ |
 | Figma URL             | Extract specs → Implement → Validate |
-| Component description  | Design → Implement → Validate        |
-| ADS component / URL    | See [Extracting an ADS component](#extracting-an-ads-component-into-the-vpk-docs-site) |
+| Figma screenshot/mockup | Extract specs → Implement → Validate |
 
 ```
 /vpk-design https://figma.com/design/abc123/File?node-id=1-2
@@ -64,59 +52,6 @@ Not every Figma design requires the full 3-agent pipeline. Choose the approach b
 **When to skip the pipeline:** If the Figma node shows a single component with < 5 differences from the current code, implement directly. Take a Figma screenshot, read the current code, identify differences, and apply them.
 
 ---
-
-## Extracting an ADS component into the VPK docs site
-
-Use this path when the source of truth is an **Atlassian Design System component** (an `atlassian.design/components/<name>` URL, or "replicate the ADS panel examples / cover all states and variants") rather than a Figma file. The goal is to mirror the component's example catalog — every state and variant — as demos on the VPK docs site (`/components/<category>/<slug>`).
-
-### Source-of-truth hierarchy (use in this order)
-
-1. **The atlassian.design examples page — but it is JS-rendered.** `WebFetch` returns only the nav shell. Drive it with `agent-browser` instead:
-   - `agent-browser read --outline` → the authoritative list of example section headings (Basic, Header, Footer, Subheader, Loading, …).
-   - `agent-browser read --filter "<Section>"` → that section's prose **and the example source code** (imports reveal the real package + sub-component names).
-2. **The ADS MCP is incomplete for newer/Beta components.** `ads_search_components` / `ads_get_components` did **not** carry the Beta `Panel` (it returned Calendar/Comment/DatePicker). Don't trust MCP silence as "doesn't exist" — fall back to the package below. MCP is still the right tool for tokens, icons, and a11y guidelines.
-3. **The published internal package is the construction ground truth.** Internal `@atlassian/*` packages aren't in `package.json`/`node_modules`, but they're on atlassian-npm and `~/.npmrc` is already authenticated. Read one **read-only without touching the lockfile**:
-   ```bash
-   cd "$CLAUDE_JOB_DIR/tmp" && npm pack @atlassian/<pkg> && tar -xzf *.tgz
-   # readable @compiled ESM + full JSDoc:
-   #   package/dist/esm/components/<name>/<name>.js
-   #   package/dist/esm/index.js   (public API surface)
-   ```
-   `npm view @atlassian/<pkg> version` confirms it exists first. **Never add it to `package.json`** — new `@atlassian/*`/`@atlaskit` deps rewrite the lockfile with atlassian-npm URLs that break CI's `verify-pnpm-lockfile.js`.
-
-### Presentational vs runtime layer (replicate the first, not the second)
-
-ADS components like `@atlassian/panel-system` split into two layers:
-
-- **Presentational** — `PanelContainer/Header/Title/Subheader/Body/Footer/Disclaimer/Action*`. VPK's `components/ui/*` mirrors these 1:1. **Replicate every presentational state/variant.**
-- **Runtime** — providers, routers, managers, context hooks, focus-lock, entry-point/Relay loading, `navigation-system` slots, resize splitters. VPK does **not** ship these. **Skip those example sections and say why** (e.g. "Resizing / Panel manager / Entry-point loading need navigation-system + PanelRouter + Relay"). Do **not** stub runtime behavior with fake UI.
-
-### Demo wiring — three files in lockstep (+ a contract test)
-
-A docs demo is never one file. For each example:
-
-1. `components/website/demos/<area>/<name>-demo.tsx` — export one function per example. Match the file's existing style (this area uses **no semicolons**). Factor shared frame/wrapper helpers so per-row styling lives in one place.
-2. `components/website/registry.ts` — a lazy `dynamic(() => import(...).then(m => ({ default: m.<Export> })), { ssr: false })` entry keyed by `demoSlug` (2-space indent here, not tabs).
-3. `app/data/details/<area>.ts` — the component's `examples: [{ title, description, demoSlug }]` array, plus the `subComponents` list. Keep `demoSlug` values matching the registry keys.
-
-Then check for `components/ui/<name>.test.js` — a **contract test** often asserts specific export names and structural patterns (e.g. `PanelDemoWithFooter` must exist and a `<PanelFooter … <PanelDisclaimer>` pairing must appear). Keep those export names stable when refactoring, and run `node --test components/ui/<name>.test.js`.
-
-### Variant galleries
-
-To mirror an ADS "Header"/"Footer" section that stacks many variants in one card, build a **gallery demo**: a vertical stack of bordered cards, each holding just that sub-component (header-only or footer-only). Exploit the real component's layout instead of re-implementing it — e.g. `PanelFooter`'s row-reverse space-between means **one grouped child → right-aligned**, **two children → spread apart**; a single full-width child hosts a composer.
-
-### Assets
-
-- **Never assume an asset path exists** — `ls` it first (the original panel cover pointed at a non-existent `/illustration-ai/hero/light.svg`).
-- Find real cover/banner imagery by dimension: `find public -name '*.png' | while read f; do sips -g pixelWidth -g pixelHeight "$f"; done`. Landscape Atlassian banners live under `public/ambient/atlassian/pictorial/…`; `public/illustration-ai/<name>/{light,dark}.svg` are **80×80 icons**, not banners.
-
-### Deprecated ADS icons
-
-Before using an `@atlaskit/icon/core/<name>`, check for deprecation — the editor surfaces it as a diagnostic, or grep `node_modules/@atlaskit/icon/core/<name>.d.ts` for `@deprecated` (e.g. `information` → `status-information`).
-
-### Live verification
-
-Route is `/components/<category>/<slug>`; the `<category>` comes from `app/data/component-manifest.ts` (`ui`, `ui-custom`, …). Start `pnpm run dev:tmux:start`, open the Portless URL, run `agent-browser read --outline` to confirm **all** example sections render, then screenshot the custom/risky ones (skeletons, inputs, galleries). Resize oversized screenshots with `sips -Z 1400` before reading them.
 
 ## Workflow
 
@@ -442,15 +377,6 @@ Before presenting to user:
 - [ ] Validator comparison shows APPROVE or all fixes applied
 - [ ] Component follows VPK architectural rules (<150 lines, etc.)
 - [ ] CTAs are wired to behavioral intent (focus, navigate, etc.) — not left as no-ops
-
-**When extracting an ADS component into the docs site, additionally:**
-
-- [ ] Example catalog pulled from the live atlassian.design page via `agent-browser read --outline`/`--filter` (not WebFetch, not MCP alone)
-- [ ] Construction verified against the published package (`npm pack @atlassian/<pkg>` in tmp) — nothing added to `package.json`/lockfile
-- [ ] Every **presentational** state/variant covered; runtime-only sections explicitly skipped with a reason
-- [ ] All three wiring files updated in lockstep (demo file, `registry.ts`, `app/data/details/<area>.ts`) and the `components/ui/<name>.test.js` contract test passes
-- [ ] Asset paths verified to exist (`ls`); cover/banner images sized to landscape, not 80×80 icons
-- [ ] All example sections confirmed rendering live via `agent-browser read --outline` at `/components/<category>/<slug>`
 
 ---
 
