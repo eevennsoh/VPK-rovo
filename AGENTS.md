@@ -57,6 +57,7 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Component design fundamentals   | `~/.agents/skills/building-components/references/`    |
 | React composition patterns      | `~/.agents/skills/vercel-composition-patterns/rules/` |
 | React/Next.js performance rules | `~/.agents/skills/vercel-react-best-practices/rules/` |
+| Motion-effect naming            | `~/.agents/skills/animation-vocabulary/SKILL.md`      |
 | AGENTS.md best practices        | `~/.agents/skills/claude-md-improver/references/`     |
 
 **External Documentation** — fetch via tools when needed:
@@ -154,6 +155,12 @@ In `components/ui/*`, use shadcn naming (`bg-card`, `text-foreground`).
 In VPK feature code, use ADS semantic naming (`bg-surface-raised`, `text-text-subtle`).
 
 > Full token mappings, motion tokens, and common mistakes are in the `token-priority` rule (always loaded for component/CSS files).
+
+Motion workflow:
+
+- Use `~/.agents/skills/animation-vocabulary/SKILL.md` when a user describes a motion effect vaguely or asks what an effect is called. Name or disambiguate the effect first; the skill is glossary help, not implementation guidance.
+- For implementation, reuse existing motion patterns and components before adding new ones, then follow `.agents/rules/motion-decisions.md`, `.agents/rules/token-priority.md`, and, when using Motion for React or Base UI, `.agents/rules/motion-react.md` or `.agents/rules/motion-base-ui.md`.
+- Use VPK duration/easing tokens, avoid layout-thrashing motion, and add explicit reduced-motion handling for any motion you introduce or modify.
 
 ### Browser Support
 
