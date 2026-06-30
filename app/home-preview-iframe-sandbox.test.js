@@ -22,3 +22,17 @@ test("first-party preview iframes keep a normal origin for Next dev assets", () 
 	assert.doesNotMatch(catalogSource, /sandbox="allow-scripts"/);
 	assert.doesNotMatch(homeSource, /sandbox="allow-scripts"/);
 });
+
+test("full-width preview catalogs defer only trailing offscreen cards", () => {
+	const catalogSource = readAppSource("home-catalog-section.tsx");
+	const homeSource = readAppSource("home-content.tsx");
+	const websiteCardSource = fs.readFileSync(
+		path.join(process.cwd(), "components/website/website-card.tsx"),
+		"utf8",
+	);
+
+	assert.match(websiteCardSource, /deferOffscreen \? "cv-auto" : null/);
+	assert.match(websiteCardSource, /containIntrinsicSize: "auto 1000px"/);
+	assert.match(catalogSource, /deferOffscreen=\{index > 0\}/);
+	assert.equal((homeSource.match(/deferOffscreen=\{index > 0\}/g) ?? []).length, 2);
+});

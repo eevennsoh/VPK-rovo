@@ -2,7 +2,7 @@
 
 import { type ReactNode } from "react";
 import Link from "next/link";
-
+import { cn } from "@/lib/utils";
 
 export interface WebsiteCardProps {
 	/** Display name for the component */
@@ -15,13 +15,22 @@ export interface WebsiteCardProps {
 	className?: string;
 	/** Full-width mode: single column, content-hugging height (no aspect-square) */
 	fullWidth?: boolean;
+	/** Defers full-width cards that are known to start below the initial viewport. */
+	deferOffscreen?: boolean;
 }
 
 /**
  * Card wrapper for displaying component demos in a grid.
  * Maintains aspect-square ratio with centered content.
  */
-export function WebsiteCard({ name, href, children, className, fullWidth }: Readonly<WebsiteCardProps>) {
+export function WebsiteCard({
+	name,
+	href,
+	children,
+	className,
+	fullWidth,
+	deferOffscreen,
+}: Readonly<WebsiteCardProps>) {
 	const Title = href ? (
 		<Link
 			href={href}
@@ -38,7 +47,16 @@ export function WebsiteCard({ name, href, children, className, fullWidth }: Read
 	if (fullWidth) {
 		return (
 			<li
-				className={`relative border-r border-b border-border bg-surface p-8 ${className ?? ""}`}
+				className={cn(
+					"relative border-r border-b border-border bg-surface p-8",
+					deferOffscreen ? "cv-auto" : null,
+					className,
+				)}
+				style={
+					deferOffscreen
+						? { containIntrinsicSize: "auto 1000px" }
+						: undefined
+				}
 			>
 				<span className="mb-4 block">
 					{Title}
@@ -52,7 +70,10 @@ export function WebsiteCard({ name, href, children, className, fullWidth }: Read
 
 	return (
 		<li
-			className={`cv-auto relative flex aspect-square items-center justify-center bg-surface border-r border-b border-border ${className ?? ""}`}
+			className={cn(
+				"cv-auto relative flex aspect-square items-center justify-center bg-surface border-r border-b border-border",
+				className,
+			)}
 			style={{ containIntrinsicSize: "auto 480px" }}
 		>
 			{/* Title positioned at top-left */}

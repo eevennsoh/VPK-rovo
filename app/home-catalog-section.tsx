@@ -135,12 +135,13 @@ export function HomeCatalogSection({
 			/>
 			<ul className="grid grid-cols-1 list-none m-0 p-0">
 				{sortedComponentEntries.length > 0 ? (
-					sortedComponentEntries.map((component) => (
+					sortedComponentEntries.map((component, index) => (
 						<WebsiteCard
 							key={component.slug}
 							name={component.name}
 							href={`${componentHrefPrefix}/${component.slug}`}
 							fullWidth
+							deferOffscreen={index > 0}
 						>
 							<iframe
 								src={`${previewHrefPrefix}/${component.slug}?embedded=1`}

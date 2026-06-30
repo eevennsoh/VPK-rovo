@@ -132,8 +132,14 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 								count={BLOCK_COMPONENTS.length}
 							/>
 							<ul className="grid grid-cols-1 list-none m-0 p-0">
-								{BLOCK_COMPONENTS.map((comp) => (
-									<WebsiteCard key={comp.slug} name={comp.name} href={`/components/blocks/${comp.slug}`} fullWidth>
+								{BLOCK_COMPONENTS.map((comp, index) => (
+									<WebsiteCard
+										key={comp.slug}
+										name={comp.name}
+										href={`/components/blocks/${comp.slug}`}
+										fullWidth
+										deferOffscreen={index > 0}
+									>
 										<iframe
 											src={`/preview/blocks/${comp.slug}`}
 											title={comp.name}
@@ -163,8 +169,14 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 								count={UTILITY_COMPONENTS.length}
 							/>
 							<ul className="grid grid-cols-1 list-none m-0 p-0">
-								{UTILITY_COMPONENTS.map((comp) => (
-									<WebsiteCard key={comp.slug} name={comp.name} href={`/components/utility/${comp.slug}`} fullWidth>
+								{UTILITY_COMPONENTS.map((comp, index) => (
+									<WebsiteCard
+										key={comp.slug}
+										name={comp.name}
+										href={`/components/utility/${comp.slug}`}
+										fullWidth
+										deferOffscreen={index > 0}
+									>
 										<iframe
 											src={`/preview/utility/${comp.slug}`}
 											title={comp.name}
