@@ -3,13 +3,11 @@
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { NavigationItemActions } from "./navigation-item-actions";
 import { NavigationItemProps } from "./types";
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 export function NavigationItem({
 	icon: Icon,
@@ -133,39 +131,7 @@ export function NavigationItem({
 			)}
 
 			{/* Actions */}
-			{hasActions && isHovered && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: token("space.050"),
-						marginRight: token("space.025"),
-					}}
-				>
-					<Button
-						aria-label={`Add to ${label}`}
-						size="icon"
-						type="button"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<AddIcon label="" size="small" />
-					</Button>
-					<Button
-						aria-label={`More actions for ${label}`}
-						size="icon"
-						type="button"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<ShowMoreHorizontalIcon label="" size="small" />
-					</Button>
-				</div>
-			)}
+			{hasActions && isHovered ? <NavigationItemActions label={label} /> : null}
 		</div>
 	);
 }

@@ -3,12 +3,10 @@
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import { Button } from "@/components/ui/button";
+import { NavigationItemActions } from "./navigation-item-actions";
 import { NavigationItemWithHoverChevronProps } from "./types";
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 export function NavigationItemWithHoverChevron({
 	icon: Icon,
@@ -94,39 +92,7 @@ export function NavigationItemWithHoverChevron({
 			</button>
 
 			{/* Right actions - only show on hover if hasActions */}
-			{hasActions && isHovered && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: token("space.050"),
-						marginRight: token("space.025"),
-					}}
-				>
-					<Button
-						aria-label={`Add to ${label}`}
-						size="icon"
-						type="button"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<AddIcon label="" size="small" />
-					</Button>
-					<Button
-						aria-label={`More actions for ${label}`}
-						size="icon"
-						type="button"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<ShowMoreHorizontalIcon label="" size="small" />
-					</Button>
-				</div>
-			)}
+			{hasActions && isHovered ? <NavigationItemActions label={label} /> : null}
 		</div>
 	);
 }
