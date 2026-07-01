@@ -113,7 +113,7 @@ function getSkillByConfigLabel(value: string): SkillsDirectorySkill | undefined 
 }
 
 const STUDIO_AGENT_PUBLISH_TOASTER_ID = "studio-agent-publish-toaster";
-const STUDIO_AGENT_PROFILE_BASE_PATH = "/agents";
+const STUDIO_AGENT_PROFILE_BASE_PATH = "/studio";
 
 // Capabilities a subagent can't own. Hidden from the config rows while a
 // subagent prompt is selected/created (these aren't configurable per-subagent).
