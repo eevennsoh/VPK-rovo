@@ -42,7 +42,7 @@ const REASONING_MODES = new Set([
 	"deep-auto",
 	"gemini-flash-3",
 	"gpt-5.4",
-	"sonnet-4.6",
+	"sonnet-5",
 	"opus-4.6",
 ]);
 const KNOWLEDGE_MODES = new Set(["all", "custom", "none"]);

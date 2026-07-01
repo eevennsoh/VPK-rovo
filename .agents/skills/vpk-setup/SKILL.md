@@ -131,7 +131,7 @@ node ./.agents/skills/vpk-setup/scripts/create-env-local.js YOUR-USE-CASE-ID
 
 ```bash
 # AI Gateway Configuration
-AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-4-6/invoke-with-response-stream
+AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream
 AI_GATEWAY_URL_GOOGLE=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/google/publishers/google/v1/chat/completions
 GOOGLE_IMAGE_MODEL=gemini-3-pro-image-preview
 GOOGLE_TTS_MODEL=tts-latest
@@ -266,7 +266,7 @@ separately via `STT_PRESET`.
 
 | Provider | Model | Endpoint |
 | -------- | ----- | -------- |
-| **Claude (Default)** | `anthropic.claude-sonnet-4-6` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
+| **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
 | **GPT** | `gpt-5.2-2025-12-11` | `/v1/openai/v1/chat/completions` |
 | **Gemini** | `gemini-3-pro-image-preview` | `/v1/google/publishers/google/v1/chat/completions` |
 

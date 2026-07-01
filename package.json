@@ -10,6 +10,7 @@
 		"lint": "eslint app components backend hooks lib rovo scripts tests types next.config.ts tailwind.config.ts twg-install.test.js",
 		"typecheck": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit",
 		"test:unit:js": "node scripts/run-js-unit-tests.mjs",
+		"test:e2e:install": "playwright install chromium",
 		"build:export": "node scripts/build-static-export.mjs",
 		"ci:pr": "pnpm run verify:root-artifacts && pnpm run lint && pnpm run typecheck && pnpm run test:unit:js",
 		"deploy:micros": "./scripts/dev-deploy-fast.sh",

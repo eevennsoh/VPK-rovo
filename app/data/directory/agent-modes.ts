@@ -13,7 +13,7 @@ export const REASONING_MODE_VALUES = [
 	"deep-auto",
 	"gemini-flash-3",
 	"gpt-5.4",
-	"sonnet-4.6",
+	"sonnet-5",
 	"opus-4.6",
 ] as const;
 

@@ -3248,7 +3248,7 @@ const REASONING_MODE_SECTIONS = [
 			{ value: "deep-auto", label: "Recommended" },
 			{ value: "gemini-flash-3", label: "Gemini Flash 3" },
 			{ value: "gpt-5.4", label: "GPT 5.4" },
-			{ value: "sonnet-4.6", label: "Sonnet 4.6" },
+			{ value: "sonnet-5", label: "Sonnet 5" },
 			{ value: "opus-4.6", label: "Opus 4.6" },
 		],
 	},

@@ -198,7 +198,7 @@ test("reasoningMode enumeration matches the agent editor's option set", async ()
 	const mod = await loadContextModule();
 	const text = mod.buildStudioAgentCreationContext("Build an agent");
 
-	for (const value of ["quick-auto", "deep-auto", "gemini-flash-3", "gpt-5.4", "sonnet-4.6", "opus-4.6"]) {
+	for (const value of ["quick-auto", "deep-auto", "gemini-flash-3", "gpt-5.4", "sonnet-5", "opus-4.6"]) {
 		assert.match(text, new RegExp(`"${value.replace(/\./g, "\\.")}"`, "u"), `reasoningMode should list "${value}"`);
 	}
 });

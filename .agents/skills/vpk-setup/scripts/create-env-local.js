@@ -116,7 +116,7 @@ const envContent = `# Chat routing
 # Default: Claude via Bedrock (to switch to OpenAI, see guide-model-switch.md)
 # Claude: /v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream
 # OpenAI: /v1/openai/v1/chat/completions
-AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-4-6/invoke-with-response-stream
+AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream
 
 # OpenAI model ID (used when AI_GATEWAY_URL points to an OpenAI endpoint)
 ${preservedOpenaiModel ? `OPENAI_MODEL=${preservedOpenaiModel}` : '# OPENAI_MODEL=gpt-5.2-2025-12-11'}
