@@ -142,6 +142,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// implemented in route shells/hooks; keep this focused source contract gated
 	// without enabling broad drift-prone component source tests.
 	"components/projects/studio/lib/clicky-voice-streaming-source.test.js",
+	// Rich-text "/" and "@" suggestion filters hide empty popups instead of
+	// rendering no-results rows in the composer. Keep this focused PR #1060
+	// regression gated without admitting the broader editor source-contract tests.
+	"components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js",
 	// Shared automation flow cover used by trigger config and the test landing
 	// page, so both surfaces keep the same trigger → agent visual treatment.
 	"components/blocks/triggers/components/agent-automation-flow-cover.test.js",
