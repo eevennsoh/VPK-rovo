@@ -53,7 +53,7 @@ function Comment({
 	type,
 	highlighted,
 	isSaving,
-	savingText = "Saving...",
+	savingText = "Saving…",
 	actions,
 	children,
 	...props

@@ -50,13 +50,13 @@ export function WorkItemHeader({ workItem }: WorkItemHeaderProps) {
 					)}
 				</div>
 				<div className="flex gap-2">
-					<Button size="icon" variant="ghost">
+					<Button aria-label="Copy link" size="icon" type="button" variant="ghost">
 						<LinkIcon label="" size="small" />
 					</Button>
-					<Button size="icon" variant="ghost">
+					<Button aria-label="Share work item" size="icon" type="button" variant="ghost">
 						<ShareIcon label="" size="small" />
 					</Button>
-					<Button size="icon" variant="ghost">
+					<Button aria-label="More actions" size="icon" type="button" variant="ghost">
 						<ShowMoreHorizontalIcon label="" size="small" />
 					</Button>
 				</div>

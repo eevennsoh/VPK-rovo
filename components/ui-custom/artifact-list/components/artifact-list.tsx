@@ -56,11 +56,11 @@ export interface ArtifactListProps extends React.ComponentProps<"div"> {
 function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>) {
 	if (item.avatarSrc) {
 		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; agent avatars render 20px inset on the neutral tile, not as a standalone hexagon Avatar.
-		return <img alt="" aria-hidden className="object-contain" src={item.avatarSrc} />;
+		return <img alt="" aria-hidden className="object-contain" height={20} src={item.avatarSrc} width={20} />;
 	}
 	if (item.logoSrc) {
 		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx
-		return <img alt="" aria-hidden className="object-contain" src={item.logoSrc} />;
+		return <img alt="" aria-hidden className="object-contain" height={24} src={item.logoSrc} width={24} />;
 	}
 	return item.icon;
 }
@@ -106,26 +106,8 @@ function ArtifactListRow({
 	onOpen?: (item: ArtifactListItem) => void;
 }>) {
 	const handleOpen = () => onOpen?.(item);
-
-	return (
-		<div
-			role={openOnRowClick ? "button" : undefined}
-			tabIndex={openOnRowClick ? 0 : undefined}
-			className={cn(
-				"flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
-				openOnRowClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-				!isLast && "border-b border-border",
-			)}
-			onClick={openOnRowClick ? handleOpen : undefined}
-			onKeyDown={openOnRowClick
-				? (event) => {
-						if (event.key === "Enter" || event.key === " ") {
-							event.preventDefault();
-							handleOpen();
-						}
-					}
-				: undefined}
-		>
+	const rowBody = (
+		<>
 			<ArtifactListLeadingTile item={item} />
 			<div className="min-w-0 flex-1">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
@@ -134,6 +116,27 @@ function ArtifactListRow({
 					<span className="shrink-0 text-text-subtlest">•</span>
 					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
 				</p>
+			</div>
+		</>
+	);
+
+	return (
+		<div
+			className={cn(
+				"flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
+				!isLast && "border-b border-border",
+			)}
+		>
+			<div className="relative flex min-w-0 flex-1 items-center gap-3">
+				{openOnRowClick ? (
+						<button
+							aria-label={`${openLabel} ${item.title}`}
+							className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-sm border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+							type="button"
+							onClick={handleOpen}
+						/>
+				) : null}
+				{rowBody}
 			</div>
 			<Button
 				className="ml-auto shrink-0 whitespace-nowrap"

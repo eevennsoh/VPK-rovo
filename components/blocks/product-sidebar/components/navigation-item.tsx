@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
@@ -22,20 +23,86 @@ export function NavigationItem({
 }: Readonly<NavigationItemProps>) {
 	const [isHovered, setIsHovered] = useState(false);
 
-	const content = (
+	const rowStyle = {
+		display: "flex",
+		alignItems: "center",
+		padding: token("space.050"),
+		borderRadius: token("radius.xsmall"),
+		backgroundColor: isSelected ? token("color.background.selected") : "transparent",
+		position: "relative",
+		gap: token("space.025"),
+		minHeight: "32px",
+	} satisfies CSSProperties;
+
+	const primaryControlStyle = {
+		alignItems: "center",
+		background: "transparent",
+		border: 0,
+		color: "inherit",
+		cursor: "pointer",
+		display: "flex",
+		flex: 1,
+		gap: token("space.025"),
+		minWidth: 0,
+		padding: 0,
+		textAlign: "left",
+		textDecoration: "none",
+	} satisfies CSSProperties;
+
+	const primaryContent = (
+		<>
+			{/* Icon */}
+			<span
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					width: "24px",
+					height: "24px",
+					marginLeft: token("space.025"),
+				}}
+			>
+				<Icon label={label} color={isSelected ? token("color.icon.selected") : token("color.icon.subtle")} />
+			</span>
+
+			{/* Label */}
+			<span
+				style={{
+					font: token("font.body"),
+					fontWeight: token("font.weight.medium"),
+					color: isSelected ? token("color.text.selected") : token("color.text.subtle"),
+					flex: 1,
+					paddingLeft: token("space.025"),
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap",
+				}}
+			>
+				{label}
+			</span>
+
+			{/* Right icons */}
+			{(hasChevron || hasExternalLink) && (
+				<span
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: token("space.050"),
+						marginRight: token("space.025"),
+					}}
+				>
+					{hasChevron && <ChevronRightIcon label="Expand" color={token("color.icon.subtle")} size="small" />}
+					{hasExternalLink && (
+						<LinkExternalIcon label="External link" color={token("color.icon.subtle")} size="small" />
+					)}
+				</span>
+			)}
+		</>
+	);
+
+	return (
 		<div
-			style={{
-				display: "flex",
-				alignItems: "center",
-				padding: token("space.050"),
-				borderRadius: token("radius.xsmall"),
-				cursor: "pointer",
-				backgroundColor: isSelected ? token("color.background.selected") : "transparent",
-				position: "relative",
-				gap: token("space.025"),
-				minHeight: "32px",
-			}}
-			onClick={onClick}
+			style={rowStyle}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
@@ -55,38 +122,18 @@ export function NavigationItem({
 				/>
 			)}
 
-			{/* Icon */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					width: "24px",
-					height: "24px",
-					marginLeft: token("space.025"),
-				}}
-			>
-				<Icon label={label} color={isSelected ? token("color.icon.selected") : token("color.icon.subtle")} />
-			</div>
+			{href ? (
+				<Link href={href} onClick={() => onClick?.()} style={primaryControlStyle}>
+					{primaryContent}
+				</Link>
+			) : (
+				<button type="button" onClick={onClick} style={primaryControlStyle}>
+					{primaryContent}
+				</button>
+			)}
 
-			{/* Label */}
-			<span
-				style={{
-					font: token("font.body"),
-					fontWeight: token("font.weight.medium"),
-					color: isSelected ? token("color.text.selected") : token("color.text.subtle"),
-					flex: 1,
-					paddingLeft: token("space.025"),
-					overflow: "hidden",
-					textOverflow: "ellipsis",
-					whiteSpace: "nowrap",
-				}}
-			>
-				{label}
-			</span>
-
-			{/* Right icons and actions */}
-			{(hasChevron || hasExternalLink || hasActions) && (
+			{/* Actions */}
+			{hasActions && isHovered && (
 				<div
 					style={{
 						display: "flex",
@@ -95,46 +142,30 @@ export function NavigationItem({
 						marginRight: token("space.025"),
 					}}
 				>
-					{hasActions && isHovered && (
-						<>
-							<Button
-								aria-label="Add"
-								size="icon"
-								variant="ghost"
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-							>
-								<AddIcon label="" size="small" />
-							</Button>
-							<Button
-								aria-label="More"
-								size="icon"
-								variant="ghost"
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-							>
-								<ShowMoreHorizontalIcon label="" size="small" />
-							</Button>
-						</>
-					)}
-					{hasChevron && <ChevronRightIcon label="Expand" color={token("color.icon.subtle")} size="small" />}
-					{hasExternalLink && (
-						<LinkExternalIcon label="External link" color={token("color.icon.subtle")} size="small" />
-					)}
+					<Button
+						aria-label={`Add to ${label}`}
+						size="icon"
+						type="button"
+						variant="ghost"
+						onClick={(e) => {
+							e.stopPropagation();
+						}}
+					>
+						<AddIcon label="" size="small" />
+					</Button>
+					<Button
+						aria-label={`More actions for ${label}`}
+						size="icon"
+						type="button"
+						variant="ghost"
+						onClick={(e) => {
+							e.stopPropagation();
+						}}
+					>
+						<ShowMoreHorizontalIcon label="" size="small" />
+					</Button>
 				</div>
 			)}
 		</div>
 	);
-
-	if (href) {
-		return (
-			<Link href={href} style={{ textDecoration: "none" }}>
-				{content}
-			</Link>
-		);
-	}
-
-	return content;
 }

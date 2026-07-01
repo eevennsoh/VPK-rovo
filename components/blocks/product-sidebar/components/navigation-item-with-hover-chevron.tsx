@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,20 @@ export function NavigationItemWithHoverChevron({
 }: Readonly<NavigationItemWithHoverChevronProps>) {
 	const [isHovered, setIsHovered] = useState(false);
 
+	const primaryControlStyle = {
+		alignItems: "center",
+		background: "transparent",
+		border: 0,
+		color: "inherit",
+		cursor: "pointer",
+		display: "flex",
+		flex: 1,
+		gap: token("space.025"),
+		minWidth: 0,
+		padding: 0,
+		textAlign: "left",
+	} satisfies CSSProperties;
+
 	return (
 		<div
 			style={{
@@ -25,53 +40,58 @@ export function NavigationItemWithHoverChevron({
 				alignItems: "center",
 				padding: token("space.050"),
 				borderRadius: token("radius.xsmall"),
-				cursor: "pointer",
 				backgroundColor: "transparent",
 				position: "relative",
 				gap: token("space.025"),
 				minHeight: "32px",
 			}}
-			onClick={onClick}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
-			{/* Icon - swaps to chevron on hover */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					width: "24px",
-					height: "24px",
-					marginLeft: token("space.025"),
-				}}
+			<button
+				type="button"
+				aria-expanded={isExpanded}
+				onClick={onClick}
+				style={primaryControlStyle}
 			>
-				{isHovered ? (
-					isExpanded ? (
-						<ChevronDownIcon label="Expanded" color={token("color.icon.subtle")} size="small" />
+				{/* Icon - swaps to chevron on hover */}
+				<span
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						width: "24px",
+						height: "24px",
+						marginLeft: token("space.025"),
+					}}
+				>
+					{isHovered ? (
+						isExpanded ? (
+							<ChevronDownIcon label="" color={token("color.icon.subtle")} size="small" />
+						) : (
+							<ChevronRightIcon label="" color={token("color.icon.subtle")} size="small" />
+						)
 					) : (
-						<ChevronRightIcon label="Collapsed" color={token("color.icon.subtle")} size="small" />
-					)
-				) : (
-					<Icon label={label} color={token("color.icon.subtle")} />
-				)}
-			</div>
+						<Icon label="" color={token("color.icon.subtle")} />
+					)}
+				</span>
 
-			{/* Label */}
-			<span
-				style={{
-					font: token("font.body"),
-					fontWeight: token("font.weight.medium"),
-					color: token("color.text.subtle"),
-					flex: 1,
-					paddingLeft: token("space.025"),
-					overflow: "hidden",
-					textOverflow: "ellipsis",
-					whiteSpace: "nowrap",
-				}}
-			>
-				{label}
-			</span>
+				{/* Label */}
+				<span
+					style={{
+						font: token("font.body"),
+						fontWeight: token("font.weight.medium"),
+						color: token("color.text.subtle"),
+						flex: 1,
+						paddingLeft: token("space.025"),
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+				>
+					{label}
+				</span>
+			</button>
 
 			{/* Right actions - only show on hover if hasActions */}
 			{hasActions && isHovered && (
@@ -84,8 +104,9 @@ export function NavigationItemWithHoverChevron({
 					}}
 				>
 					<Button
-						aria-label="Add"
+						aria-label={`Add to ${label}`}
 						size="icon"
+						type="button"
 						variant="ghost"
 						onClick={(e) => {
 							e.stopPropagation();
@@ -94,8 +115,9 @@ export function NavigationItemWithHoverChevron({
 						<AddIcon label="" size="small" />
 					</Button>
 					<Button
-						aria-label="More"
+						aria-label={`More actions for ${label}`}
 						size="icon"
+						type="button"
 						variant="ghost"
 						onClick={(e) => {
 							e.stopPropagation();

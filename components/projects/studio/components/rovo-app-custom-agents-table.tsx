@@ -334,8 +334,11 @@ export function StudioAgentsSection({
 					</InputGroupAddon>
 					<InputGroupInput
 						aria-label="Search agents"
+						autoComplete="off"
+						name="agent-search"
 						onChange={(event) => setSearchQuery(event.target.value)}
 						placeholder="Search agents"
+						spellCheck={false}
 						type="search"
 						value={searchQuery}
 					/>

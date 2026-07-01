@@ -595,13 +595,28 @@ export function SkillsSurfacePage({
 							<CardContent className="space-y-3">
 								<div className="grid gap-3 sm:grid-cols-[1fr_auto]">
 									<Input
-										placeholder={
+										aria-label={
 											activeView === "installed"
-												? "Search skills, categories, or descriptions"
+												? "Search installed skills"
 												: activeView === "hub"
-													? "Search the skills hub..."
-													: "Search drafts by target, rationale, or summary"
-										}
+													? "Search skills hub"
+													: "Search skill drafts"
+											}
+											autoComplete="off"
+											name={
+												activeView === "installed"
+													? "installed-skills-search"
+													: activeView === "hub"
+														? "skills-hub-search"
+														: "skill-drafts-search"
+											}
+											placeholder={
+												activeView === "installed"
+													? "Search skills, categories, or descriptions"
+													: activeView === "hub"
+														? "Search the skills hub…"
+														: "Search drafts by target, rationale, or summary"
+											}
 										value={activeView === "hub" ? hubQuery : query}
 										onChange={(event) => {
 											if (activeView === "hub") {
@@ -615,6 +630,8 @@ export function SkillsSurfacePage({
 												void loadHubSkills(1, hubSource, hubQuery);
 											}
 										} : undefined}
+										spellCheck={false}
+										type="search"
 									/>
 									{activeView === "installed" ? (
 										<Button
@@ -638,12 +655,12 @@ export function SkillsSurfacePage({
 									)}
 								</div>
 
-								<ScrollArea className="h-[calc(100vh-20rem)] pr-2">
-									{isLoading ? (
-										<div className="rounded-xl border border-border bg-surface-raised px-3 py-8 text-center text-sm text-text-subtle">
-											Loading Hermes skill data...
-										</div>
-									) : activeView === "installed" ? (
+									<ScrollArea className="h-[calc(100vh-20rem)] pr-2">
+										{isLoading ? (
+											<div className="rounded-xl border border-border bg-surface-raised px-3 py-8 text-center text-sm text-text-subtle">
+												Loading Hermes skill data…
+											</div>
+										) : activeView === "installed" ? (
 										<FileTree
 											className="bg-transparent"
 											defaultExpanded={new Set(groupedSkills.map((group) => group.category))}
@@ -677,16 +694,16 @@ export function SkillsSurfacePage({
 												</FileTreeFolder>
 											))}
 										</FileTree>
-									) : activeView === "hub" ? (
-										<div className="space-y-3">
-											{isHubLoading ? (
-												<div className="rounded-xl border border-border bg-surface-raised px-3 py-8 text-center text-sm text-text-subtle">
-													Searching the skills hub...
-												</div>
-											) : hubSkills.length === 0 ? (
-												<div className="rounded-xl border border-dashed border-border px-4 py-8 text-sm text-text-subtle">
-													No skills found. Try a different search term.
-												</div>
+										) : activeView === "hub" ? (
+											<div className="space-y-3">
+												{isHubLoading ? (
+													<div className="rounded-xl border border-border bg-surface-raised px-3 py-8 text-center text-sm text-text-subtle">
+														Searching the skills hub…
+													</div>
+												) : hubSkills.length === 0 ? (
+													<div className="rounded-xl border border-dashed border-border px-4 py-8 text-sm text-text-subtle">
+														No skills found. Try a different search term.
+													</div>
 											) : (
 												<>
 													{hubSkills.map((skill) => {
@@ -904,7 +921,7 @@ export function SkillsSurfacePage({
 														onClick={() => void handleHubInstall()}
 														disabled={isHubInstalling || !hubSelectedSkill.identifier}
 													>
-														{isHubInstalling ? "Installing..." : "Install"}
+														{isHubInstalling ? "Installing…" : "Install"}
 													</Button>
 												</div>
 											) : null}
