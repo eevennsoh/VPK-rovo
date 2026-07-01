@@ -23,6 +23,11 @@ trustPolicyExclude:
   - semver@6.3.1
   # Existing transitive dependency blocks lockfile refresh under no-downgrade.
   - langium@3.3.1
+  # Late 3.x backport (published after the attested 4.x line) lacks provenance;
+  # pnpm's publish-date trust heuristic flags it as a downgrade. Not a takeover
+  # (no advisory; maintained by un-ts). Pinned to the exact locked version so the
+  # guard re-applies automatically on any future change.
+  - eslint-import-resolver-typescript@3.10.1
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
 #   Cautious ~x.y.z - libs where minors have broken us; patch only
