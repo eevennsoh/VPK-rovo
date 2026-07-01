@@ -28,6 +28,10 @@ trustPolicyExclude:
   # (no advisory; maintained by un-ts). Pinned to the exact locked version so the
   # guard re-applies automatically on any future change.
   - eslint-import-resolver-typescript@3.10.1
+  # Transitive of recharts; publish-date trust heuristic flags 5.1.1 as a
+  # downgrade (lost provenance a later-published version carries). Reputable
+  # (Redux/reselect), no advisory. Version-pinned so the guard re-applies on change.
+  - reselect@5.1.1
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
 #   Cautious ~x.y.z - libs where minors have broken us; patch only
@@ -37,21 +41,21 @@ trustPolicyExclude:
 # and every member updates in lockstep.
 catalog:
   # tiptap - all @tiptap/* must share one version
-  '@tiptap/core': 3.26.1
-  '@tiptap/extension-color': 3.26.1
-  '@tiptap/extension-highlight': 3.26.1
-  '@tiptap/extension-link': 3.26.1
-  '@tiptap/extension-list': 3.26.1
-  '@tiptap/extension-mention': 3.26.1
-  '@tiptap/extension-table': 3.26.1
-  '@tiptap/extension-text-align': 3.26.1
-  '@tiptap/extension-text-style': 3.26.1
-  '@tiptap/extension-underline': 3.26.1
-  '@tiptap/markdown': 3.26.1
-  '@tiptap/pm': 3.26.1
-  '@tiptap/react': 3.26.1
-  '@tiptap/starter-kit': 3.26.1
-  '@tiptap/suggestion': 3.26.1
+  '@tiptap/core': 3.27.1
+  '@tiptap/extension-color': 3.27.1
+  '@tiptap/extension-highlight': 3.27.1
+  '@tiptap/extension-link': 3.27.1
+  '@tiptap/extension-list': 3.27.1
+  '@tiptap/extension-mention': 3.27.1
+  '@tiptap/extension-table': 3.27.1
+  '@tiptap/extension-text-align': 3.27.1
+  '@tiptap/extension-text-style': 3.27.1
+  '@tiptap/extension-underline': 3.27.1
+  '@tiptap/markdown': 3.27.1
+  '@tiptap/pm': 3.27.1
+  '@tiptap/react': 3.27.1
+  '@tiptap/starter-kit': 3.27.1
+  '@tiptap/suggestion': 3.27.1
   # json-render - published from one monorepo at a single version
   '@json-render/codegen': 0.19.0
   '@json-render/core': 0.19.0
@@ -63,8 +67,8 @@ catalog:
   '@json-render/remotion': 0.19.0
   '@json-render/yaml': 0.19.0
   # remotion - remotion + every @remotion/* must match exactly
-  'remotion': 4.0.478
-  '@remotion/player': 4.0.478
+  'remotion': 4.0.482
+  '@remotion/player': 4.0.482
 overrides:
   '@hono/node-server': ^1.19.10
   dompurify: ^3.3.2
