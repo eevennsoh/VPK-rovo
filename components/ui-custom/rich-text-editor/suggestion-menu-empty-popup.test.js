@@ -18,11 +18,17 @@ function getSourceBetween(startMarker, endMarker) {
 }
 
 function assertPopupHidesBeforeRenderingEmptyState(source) {
+	const displayAssignment = 'popupState.element.style.display = shouldHidePopup ? "none" : "";';
+	const displayAssignmentIndex = source.indexOf(displayAssignment);
 	const hideCheckIndex = source.indexOf("if (shouldHidePopup)");
 	const updatePropsIndex = source.indexOf("popupState.component?.updateProps");
 
-	assert.match(source, /popupState\.element\.style\.display = shouldHidePopup \? "none" : "";/u);
+	assert.ok(displayAssignmentIndex > -1, "expected the popup display assignment");
 	assert.ok(hideCheckIndex > -1, "expected an early shouldHidePopup guard");
+	assert.ok(
+		displayAssignmentIndex < hideCheckIndex,
+		"expected the popup display assignment before the early hide guard",
+	);
 	assert.ok(updatePropsIndex > hideCheckIndex, "expected popup rendering after the hide guard");
 	assert.match(
 		source.slice(hideCheckIndex, updatePropsIndex),
