@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 import { token } from "@/lib/tokens";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
@@ -15,29 +17,25 @@ export function FolderHeader({
 	isExpanded = true,
 	onClick,
 }: Readonly<FolderHeaderProps>) {
-	return (
-		<button
-			type="button"
-			aria-expanded={isExpanded}
-			aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
-			style={{
-				display: "flex",
-				alignItems: "center",
-				padding: token("space.050"),
-				borderRadius: token("radius.xsmall"),
-				border: 0,
-				cursor: "pointer",
-				backgroundColor: "transparent",
-				color: "inherit",
-				position: "relative",
-				gap: token("space.025"),
-				minHeight: "32px",
-				marginLeft: "-16px",
-				textAlign: "left",
-				width: "calc(100% + 16px)",
-			}}
-			onClick={onClick}
-		>
+	const headerStyle: CSSProperties = {
+		display: "flex",
+		alignItems: "center",
+		padding: token("space.050"),
+		borderRadius: token("radius.xsmall"),
+		border: 0,
+		cursor: onClick ? "pointer" : "default",
+		backgroundColor: "transparent",
+		color: "inherit",
+		position: "relative",
+		gap: token("space.025"),
+		minHeight: "32px",
+		marginLeft: "-16px",
+		textAlign: "left",
+		width: "calc(100% + 16px)",
+	};
+
+	const headerContent = (
+		<>
 			<span
 				style={{
 					display: "flex",
@@ -81,6 +79,22 @@ export function FolderHeader({
 			>
 				{name}
 			</span>
+		</>
+	);
+
+	if (!onClick) {
+		return <div style={headerStyle}>{headerContent}</div>;
+	}
+
+	return (
+		<button
+			type="button"
+			aria-expanded={isExpanded}
+			aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
+			style={headerStyle}
+			onClick={onClick}
+		>
+			{headerContent}
 		</button>
 	);
 }
