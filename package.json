@@ -156,7 +156,7 @@
 		"react-leaflet": "^5.0.0",
 		"react-resizable-panels": "^4.11.2",
 		"react-use-measure": "^2.1.7",
-		"recharts": "3.8.1",
+		"recharts": "3.9.0",
 		"remotion": "catalog:",
 		"shiki": "^4.2.0",
 		"sigma": "^3.0.3",
