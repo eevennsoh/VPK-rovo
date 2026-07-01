@@ -815,7 +815,7 @@ function SkillSection({
 							? () => onToggleAddedSkill(skill, !effectiveAdded)
 							: cardSelectable ? () => onSelectSkill(skill) : undefined;
 					return (
-						<li key={skill.id}>
+						<li key={skill.id} className="cv-auto" style={{ containIntrinsicSize: "auto 112px" }}>
 							<SkillsDirectoryEntityCard
 								added={effectiveAdded}
 								checkboxSelectable={checkboxSelectable}

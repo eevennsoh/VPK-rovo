@@ -75,7 +75,14 @@ export default function BoardToolbar({ avatars, onReset }: Readonly<BoardToolbar
 							<InputGroupAddon>
 								<SearchIcon label="" />
 							</InputGroupAddon>
-							<InputGroupInput placeholder="Search RFPs" />
+							<InputGroupInput
+								aria-label="Search RFPs"
+								autoComplete="off"
+								name="rfp-search"
+								placeholder="Search RFPs"
+								spellCheck={false}
+								type="search"
+							/>
 						</InputGroup>
 					</div>
 					<div style={{ display: "flex", marginLeft: token("space.negative.050") }}>

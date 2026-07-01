@@ -422,76 +422,74 @@ export function JobsSurfacePage() {
 						<CardContent className="space-y-3">
 							{isLoading ? (
 								<div className="rounded-xl border border-border bg-surface-raised px-3 py-8 text-center text-sm text-text-subtle">
-									Loading Hermes jobs...
+									Loading Hermes jobs…
 								</div>
 							) : sortedJobs.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-text-subtle">
 									No jobs are configured yet.
 								</div>
-							) : (
-								sortedJobs.map((job) => {
-									const isActive = job.id === selectedJobId;
+								) : (
+									sortedJobs.map((job) => {
+										const isActive = job.id === selectedJobId;
 
-									return (
-										<div
-											key={job.id}
-											onClick={() => handleSelectJob(job)}
-											className={`w-full cursor-pointer rounded-xl border px-3 py-3 text-left transition-colors ${isActive ? "border-border-selected bg-bg-selected" : "border-border bg-surface-raised hover:bg-bg-neutral-subtle-hovered"}`}
-										>
-											<div className="flex flex-wrap items-center justify-between gap-2">
-												<div className="min-w-0">
-													<div className="truncate text-sm font-medium">{job.name}</div>
-													<div className="truncate text-xs text-text-subtlest">{job.target}</div>
+										return (
+											<div
+												key={job.id}
+												className={`w-full rounded-xl border text-left transition-colors ${isActive ? "border-border-selected bg-bg-selected" : "border-border bg-surface-raised hover:bg-bg-neutral-subtle-hovered"}`}
+											>
+												<div className="relative px-3 py-3">
+													<button
+														type="button"
+														aria-label={`Select ${job.name}`}
+														className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-xl border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+														onClick={() => handleSelectJob(job)}
+													/>
+													<div className="flex flex-wrap items-center justify-between gap-2">
+														<div className="min-w-0">
+															<div className="truncate text-sm font-medium">{job.name}</div>
+															<div className="truncate text-xs text-text-subtlest">{job.target}</div>
+														</div>
+														<div className="flex items-center gap-2">
+															<Lozenge variant={getJobStatusTone(job.status)}>{job.status}</Lozenge>
+															{isEventTriggeredJob(job) ? (
+																<Badge variant="neutral">event</Badge>
+															) : null}
+															<Badge variant={job.enabled ? "success" : "neutral"}>{job.enabled ? "enabled" : "disabled"}</Badge>
+														</div>
+													</div>
+													<div className="mt-3 grid gap-2 text-xs text-text-subtle sm:grid-cols-3">
+														<span>{isEventTriggeredJob(job) ? "Trigger" : "Schedule"}: {getJobScheduleSummary(job)}</span>
+														<span>Last run: {formatJobDate(job.lastRunAt)}</span>
+														<span>Next run: {getJobNextRunSummary(job)}</span>
+													</div>
 												</div>
-												<div className="flex items-center gap-2">
-													<Lozenge variant={getJobStatusTone(job.status)}>{job.status}</Lozenge>
-													{isEventTriggeredJob(job) ? (
-														<Badge variant="neutral">event</Badge>
-													) : null}
-													<Badge variant={job.enabled ? "success" : "neutral"}>{job.enabled ? "enabled" : "disabled"}</Badge>
+												<div className="flex flex-wrap items-center gap-2 px-3 pb-3">
+													<Button
+														size="default"
+														variant="outline"
+														onClick={() => void handleRunNow(job.id)}
+														disabled={isMutating}
+													>
+														Run now
+													</Button>
+													<Button
+														size="default"
+														variant="ghost"
+														onClick={() => void handleTogglePause(job)}
+														disabled={isMutating}
+													>
+														{job.status === "paused" ? "Resume" : "Pause"}
+													</Button>
+													<Button
+														size="default"
+														variant="ghost"
+														onClick={() => void handleDeleteJob(job.id)}
+														disabled={isMutating}
+													>
+														Delete
+													</Button>
 												</div>
 											</div>
-											<div className="mt-3 grid gap-2 text-xs text-text-subtle sm:grid-cols-3">
-												<span>{isEventTriggeredJob(job) ? "Trigger" : "Schedule"}: {getJobScheduleSummary(job)}</span>
-												<span>Last run: {formatJobDate(job.lastRunAt)}</span>
-												<span>Next run: {getJobNextRunSummary(job)}</span>
-											</div>
-											<div className="mt-3 flex flex-wrap items-center gap-2">
-												<Button
-													size="default"
-													variant="outline"
-													onClick={(event) => {
-														event.stopPropagation();
-														void handleRunNow(job.id);
-													}}
-													disabled={isMutating}
-												>
-													Run now
-												</Button>
-												<Button
-													size="default"
-													variant="ghost"
-													onClick={(event) => {
-														event.stopPropagation();
-														void handleTogglePause(job);
-													}}
-													disabled={isMutating}
-												>
-													{job.status === "paused" ? "Resume" : "Pause"}
-												</Button>
-												<Button
-													size="default"
-													variant="ghost"
-													onClick={(event) => {
-														event.stopPropagation();
-														void handleDeleteJob(job.id);
-													}}
-													disabled={isMutating}
-												>
-													Delete
-												</Button>
-											</div>
-										</div>
 									);
 								})
 							)}
@@ -516,16 +514,23 @@ export function JobsSurfacePage() {
 					<CardContent className="space-y-4">
 						<div className="grid gap-4">
 							<div className="space-y-1.5">
-								<div className="text-sm font-medium">Name</div>
+								<label className="text-sm font-medium" htmlFor="control-plane-job-name">Name</label>
 								<Input
+									autoComplete="off"
+									id="control-plane-job-name"
+									name="job-name"
 									value={draft.name}
 									onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
 								/>
 							</div>
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-1.5">
-									<div className="text-sm font-medium">Schedule</div>
+									<label className="text-sm font-medium" htmlFor="control-plane-job-schedule">Schedule</label>
 									<Input
+										autoComplete="off"
+										id="control-plane-job-schedule"
+										name="job-schedule"
+										spellCheck={false}
 										value={draft.schedule}
 										onChange={(event) => setDraft((current) => ({ ...current, schedule: event.target.value }))}
 										disabled={isDraftEventJob}
@@ -537,8 +542,12 @@ export function JobsSurfacePage() {
 									) : null}
 								</div>
 								<div className="space-y-1.5">
-									<div className="text-sm font-medium">Surface</div>
+									<label className="text-sm font-medium" htmlFor="control-plane-job-surface">Surface</label>
 									<Input
+										autoComplete="off"
+										id="control-plane-job-surface"
+										name="job-surface"
+										spellCheck={false}
 										value={draft.surface ?? "rovo"}
 										onChange={(event) =>
 											setDraft((current) => ({
@@ -550,16 +559,23 @@ export function JobsSurfacePage() {
 								</div>
 							</div>
 							<div className="space-y-1.5">
-								<div className="text-sm font-medium">Target</div>
+								<label className="text-sm font-medium" htmlFor="control-plane-job-target">Target</label>
 								<Textarea
+									autoComplete="off"
+									id="control-plane-job-target"
+									name="job-target"
 									value={draft.target}
 									onChange={(event) => setDraft((current) => ({ ...current, target: event.target.value }))}
 								/>
 							</div>
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div className="space-y-1.5">
-									<div className="text-sm font-medium">Linked thread</div>
+									<label className="text-sm font-medium" htmlFor="control-plane-job-linked-thread">Linked thread</label>
 									<Input
+										autoComplete="off"
+										id="control-plane-job-linked-thread"
+										name="job-linked-thread"
+										spellCheck={false}
 										value={draft.linkedThreadId ?? ""}
 										onChange={(event) =>
 											setDraft((current) => ({ ...current, linkedThreadId: event.target.value }))
@@ -567,8 +583,12 @@ export function JobsSurfacePage() {
 									/>
 								</div>
 								<div className="space-y-1.5">
-									<div className="text-sm font-medium">Artifact target</div>
+									<label className="text-sm font-medium" htmlFor="control-plane-job-artifact-target">Artifact target</label>
 									<Input
+										autoComplete="off"
+										id="control-plane-job-artifact-target"
+										name="job-artifact-target"
+										spellCheck={false}
 										value={draft.artifactTarget ?? ""}
 										onChange={(event) =>
 											setDraft((current) => ({ ...current, artifactTarget: event.target.value }))
@@ -577,8 +597,11 @@ export function JobsSurfacePage() {
 								</div>
 							</div>
 							<div className="space-y-1.5">
-								<div className="text-sm font-medium">Notes</div>
+								<label className="text-sm font-medium" htmlFor="control-plane-job-notes">Notes</label>
 								<Textarea
+									autoComplete="off"
+									id="control-plane-job-notes"
+									name="job-notes"
 									value={draft.notes ?? ""}
 									onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
 								/>
@@ -603,6 +626,7 @@ export function JobsSurfacePage() {
 								<span>Enabled</span>
 								<input
 									checked={draft.enabled}
+									name="job-enabled"
 									onChange={(event) => setDraft((current) => ({ ...current, enabled: event.target.checked }))}
 									type="checkbox"
 								/>
@@ -611,6 +635,7 @@ export function JobsSurfacePage() {
 								<span>Post result to thread</span>
 								<input
 									checked={Boolean(draft.postResultToThread)}
+									name="job-post-result-to-thread"
 									onChange={(event) =>
 										setDraft((current) => ({ ...current, postResultToThread: event.target.checked }))
 									}

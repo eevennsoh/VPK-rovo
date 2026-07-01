@@ -100,8 +100,12 @@ export function AuditLogView() {
 					<label className="flex flex-col gap-1 text-xs font-semibold text-text">
 						User
 						<Input
+							autoComplete="off"
 							isCompact
-							placeholder="Filter by email..."
+							name="audit-log-user-filter"
+							placeholder="Filter by email…"
+							spellCheck={false}
+							type="search"
 							value={userFilter}
 							onChange={(event) => setUserFilter(event.currentTarget.value)}
 						/>
@@ -195,7 +199,7 @@ function FilterSelect({
 		<label className="flex flex-col gap-1 text-xs font-semibold text-text">
 			{label}
 			<Select value={value} onValueChange={(nextValue) => onValueChange(nextValue ?? "all")}>
-				<SelectTrigger>
+				<SelectTrigger aria-label={`Filter by ${label.toLowerCase()}`}>
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>

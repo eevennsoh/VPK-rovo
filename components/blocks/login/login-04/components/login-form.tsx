@@ -12,7 +12,7 @@ export function LoginForm({
 }: Readonly<LoginFormProps>) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden py-0">
         <CardContent className="grid p-0 md:grid-cols-2">
           <form className="p-6 md:p-8">
             <div className="flex flex-col gap-6">
@@ -34,12 +34,9 @@ export function LoginForm({
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
+                  <span className="ml-auto text-sm text-muted-foreground underline underline-offset-2">
                     Forgot your password?
-                  </a>
+                  </span>
                 </div>
                 <Input id="password" type="password" required />
               </div>
@@ -82,9 +79,9 @@ export function LoginForm({
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                <span className="underline underline-offset-4">
                   Sign up
-                </a>
+                </span>
               </div>
             </div>
           </form>
@@ -92,14 +89,16 @@ export function LoginForm({
             <img
               src="/illustration-ai/brainstorm/light.svg"
               alt="Brainstorming illustration"
+              width={80}
+              height={80}
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+      <div className="text-balance text-center text-xs text-muted-foreground [&_span]:underline [&_span]:underline-offset-4">
+        By clicking continue, you agree to our <span>Terms of Service</span>{" "}
+        and <span>Privacy Policy</span>.
       </div>
     </div>
   )

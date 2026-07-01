@@ -16,22 +16,29 @@ export function FolderHeader({
 	onClick,
 }: Readonly<FolderHeaderProps>) {
 	return (
-		<div
+		<button
+			type="button"
+			aria-expanded={isExpanded}
+			aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
 			style={{
 				display: "flex",
 				alignItems: "center",
 				padding: token("space.050"),
 				borderRadius: token("radius.xsmall"),
+				border: 0,
 				cursor: "pointer",
 				backgroundColor: "transparent",
+				color: "inherit",
 				position: "relative",
 				gap: token("space.025"),
 				minHeight: "32px",
 				marginLeft: "-16px",
+				textAlign: "left",
+				width: "calc(100% + 16px)",
 			}}
 			onClick={onClick}
 		>
-			<div
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -44,21 +51,21 @@ export function FolderHeader({
 				}}
 			>
 				<ChevronDownIcon
-					label={isExpanded ? "Collapse" : "Expand"}
+					label=""
 					color={token("color.icon.subtle")}
 					size="small"
 				/>
-			</div>
+			</span>
 
-			<div
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
 				}}
 			>
-				<FolderOpenIcon label={name} color={token("color.icon.subtle")} />
-			</div>
+				<FolderOpenIcon label="" color={token("color.icon.subtle")} />
+			</span>
 
 			<span
 				style={{
@@ -74,6 +81,6 @@ export function FolderHeader({
 			>
 				{name}
 			</span>
-		</div>
+		</button>
 	);
 }

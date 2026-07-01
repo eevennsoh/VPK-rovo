@@ -17,29 +17,44 @@ export default function CollapsedSummary({ onExpand }: Readonly<CollapsedSummary
 		onExpand();
 	}
 
-	function handleReadMoreClick(e: React.MouseEvent): void {
-		e.preventDefault();
-		e.stopPropagation();
+	function handleReadMoreClick(): void {
 		onExpand();
 	}
 
 	return (
-		<div onClick={handleClick} style={{ cursor: "pointer" }}>
+		<div>
 			<div className="flex flex-col gap-4">
 				{/* Preview Text - truncated with fade effect */}
-				<div style={{ position: "relative", marginRight: token("space.200") }}>
-					<div style={{ font: token("font.body") }}>
+				<button
+					type="button"
+					onClick={handleClick}
+					style={{
+						position: "relative",
+						marginRight: token("space.200"),
+						background: "transparent",
+						border: 0,
+						color: "inherit",
+						cursor: "pointer",
+						display: "block",
+						padding: 0,
+						textAlign: "left",
+						width: "100%",
+					}}
+				>
+					<span style={{ display: "block", font: token("font.body") }}>
 						<span className="text-sm">For detailed information on the OKRs for 2026, you can refer to the following resources:</span>
-					</div>
+					</span>
 
-					<div style={{ font: token("font.body"), paddingLeft: token("space.100") }}>
+					<span style={{ display: "block", font: token("font.body"), paddingLeft: token("space.100") }}>
 						<span className="text-sm font-semibold">1. 2026 OKR Planning</span>
 						<span className="text-sm">: This page captures the work related to crafting KRs and OKRs for L2 and L3 objectives for 2026. You can view it </span>
-					</div>
+					</span>
 
 					{/* Fade out gradient overlay */}
-					<div
+					<span
+						aria-hidden
 						style={{
+							display: "block",
 							position: "absolute",
 							bottom: 0,
 							left: 0,
@@ -49,13 +64,23 @@ export default function CollapsedSummary({ onExpand }: Readonly<CollapsedSummary
 							pointerEvents: "none",
 						}}
 					/>
-				</div>
+				</button>
 
 				{/* Read more button */}
 				<div>
-					<a href="#" onClick={handleReadMoreClick}>
+					<button
+						type="button"
+						className="rounded-xs p-0 text-link underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+						onClick={handleReadMoreClick}
+						style={{
+							background: "transparent",
+							border: 0,
+							cursor: "pointer",
+							font: token("font.body"),
+						}}
+					>
 						Read more
-					</a>
+					</button>
 				</div>
 
 				<SummaryFooter stopPropagation />
