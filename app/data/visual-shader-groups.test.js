@@ -47,10 +47,10 @@ test("Visual Mesh catalog uses default slug for Framer mesh and mesh-v2 for SVG 
 	assert.doesNotMatch(registrySource, /mesh-02/u);
 });
 
-test("Visual sidebar separates Framer shaders from general shaders", () => {
+test("Visual sidebar separates Shaders Framer from general shaders", () => {
 	const navUtilsSource = readProjectFile("app/data/nav-utils.ts");
 	const shaderSlugs = extractGroupSlugs(navUtilsSource, "shaders");
-	const framerShaderSlugs = extractGroupSlugs(navUtilsSource, "framer-shaders");
+	const framerShaderSlugs = extractGroupSlugs(navUtilsSource, "shaders-framer");
 	const expectedFramerShaderSlugs = [
 		"ripple",
 		"logo-gradient",

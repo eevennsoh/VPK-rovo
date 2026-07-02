@@ -119,7 +119,7 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 	};
 }
 
-const PAPER_SHADER_DEMO_IMPORT_PATH = "@/components/website/demos/visual/paper-shaders-demo";
+const PAPER_SHADER_DEMO_IMPORT_PATH = "@/components/website/demos/visual/shaders-paper-demo";
 
 const PAPER_SHADER_COMPONENTS = [
 	["paper-color-panels", "Color Panels"],

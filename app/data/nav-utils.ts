@@ -61,7 +61,7 @@ export const UI_GROUPS: Record<string, string[]> = {
 };
 
 export const VISUAL_GROUPS: Record<string, string[]> = {
-	"paper-shaders": [
+	"shaders-paper": [
 		"paper-color-panels",
 		"paper-dithering",
 		"paper-dot-grid",
@@ -123,7 +123,7 @@ export const VISUAL_GROUPS: Record<string, string[]> = {
 		"voxel",
 		"mesh-v2",
 	],
-	"framer-shaders": [
+	"shaders-framer": [
 		"ripple",
 		"logo-gradient",
 		"logo-glass",

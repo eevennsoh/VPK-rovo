@@ -23,7 +23,7 @@ test("Ripple is registered as a visual shader component", () => {
 	);
 	assert.match(REGISTRY_SOURCE, /ripple: dynamic\(\(\) => import\("\.\/demos\/visual\/ripple-demo"\)/u);
 	assert.match(DETAILS_SOURCE, /"ripple": \{/u);
-	assert.match(NAV_UTILS_SOURCE, /"framer-shaders": \[[^\]]*"ripple"/u);
+	assert.match(NAV_UTILS_SOURCE, /"shaders-framer": \[[^\]]*"ripple"/u);
 });
 
 test("Ripple demo exposes every Framer reference control", () => {

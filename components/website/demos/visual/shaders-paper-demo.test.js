@@ -9,7 +9,7 @@ const MANIFEST_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-mani
 const DETAILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/details/visual.ts"), "utf8");
 const NAV_UTILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/nav-utils.ts"), "utf8");
 const REGISTRY_SOURCE = fs.readFileSync(path.join(ROOT, "components/website/registry.ts"), "utf8");
-const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "paper-shaders-demo.tsx"), "utf8");
+const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "shaders-paper-demo.tsx"), "utf8");
 const PACKAGE_SOURCE = fs.readFileSync(path.join(ROOT, "package.json"), "utf8");
 
 const PAPER_SHADER_SLUGS = [
@@ -57,30 +57,30 @@ const IMAGE_BACKED_RUNTIME_SLUGS = [
 ];
 
 function getPaperShaderGroupBody() {
-	const match = NAV_UTILS_SOURCE.match(/"paper-shaders": \[([\s\S]*?)\n\t\],/u);
-	assert.ok(match, "Paper Shaders nav group should be present");
+	const match = NAV_UTILS_SOURCE.match(/"shaders-paper": \[([\s\S]*?)\n\t\],/u);
+	assert.ok(match, "Shaders Paper nav group should be present");
 	return match[1];
 }
 
-test("Paper Shaders dependency is declared", () => {
+test("Shaders Paper dependency is declared", () => {
 	assert.match(PACKAGE_SOURCE, /"@paper-design\/shaders-react": "\^0\.0\.76"/u);
 });
 
-test("Paper Shaders catalog wiring covers every shader route", () => {
+test("Shaders Paper catalog wiring covers every shader route", () => {
 	const navGroupBody = getPaperShaderGroupBody();
 
 	for (const slug of PAPER_SHADER_SLUGS) {
 		assert.ok(COMPONENTS_SOURCE.includes(`"${slug}"`), `components.ts missing ${slug}`);
 		assert.ok(MANIFEST_SOURCE.includes(`"${slug}"`), `component-manifest.ts missing ${slug}`);
 		assert.ok(DETAILS_SOURCE.includes(`slug: "${slug}"`), `visual details missing ${slug}`);
-		assert.ok(REGISTRY_SOURCE.includes(`"${slug}": dynamic(() => import("./demos/visual/paper-shaders-demo")`), `registry missing ${slug}`);
-		assert.ok(navGroupBody.includes(`"${slug}"`), `Paper Shaders nav group missing ${slug}`);
+		assert.ok(REGISTRY_SOURCE.includes(`"${slug}": dynamic(() => import("./demos/visual/shaders-paper-demo")`), `registry missing ${slug}`);
+		assert.ok(navGroupBody.includes(`"${slug}"`), `Shaders Paper nav group missing ${slug}`);
 		assert.ok(DEMO_SOURCE.includes(`"${slug}"`), `demo runtime missing ${slug}`);
 	}
 });
 
-test("Paper Shaders stay grouped and do not expose ShaderMount as a route", () => {
-	assert.match(NAV_UTILS_SOURCE, /"paper-shaders": \[/u);
+test("Shaders Paper stay grouped and do not expose ShaderMount as a route", () => {
+	assert.match(NAV_UTILS_SOURCE, /"shaders-paper": \[/u);
 	assert.doesNotMatch(COMPONENTS_SOURCE, /paper-shader-mount|ShaderMount/u);
 	assert.doesNotMatch(MANIFEST_SOURCE, /paper-shader-mount|ShaderMount/u);
 	assert.doesNotMatch(REGISTRY_SOURCE, /paper-shader-mount/u);
