@@ -119,7 +119,7 @@ credentials*
 secrets*
 .envrc
 .netrc
-.npmrc
+.npmrc.local
 .pypirc
 *service-account*.json
 
