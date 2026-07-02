@@ -88,14 +88,47 @@ test("Shaders Paper stay grouped and do not expose ShaderMount as a route", () =
 
 test("Paper image-backed runtime demos use a stable local image", () => {
 	assert.match(DEMO_SOURCE, /const DEMO_IMAGE = "\/ambient\/ado\/combo\/primary\/blue\.svg";/u);
+	const demosStart = DEMO_SOURCE.indexOf("const PAPER_SHADER_DEMOS");
+	assert.notEqual(demosStart, -1, "PAPER_SHADER_DEMOS should be present");
+	const demosSource = DEMO_SOURCE.slice(demosStart);
 
 	for (const slug of IMAGE_BACKED_RUNTIME_SLUGS) {
-		const start = DEMO_SOURCE.indexOf(`"${slug}":`);
+		const start = demosSource.indexOf(`"${slug}":`);
 		assert.notEqual(start, -1, `${slug} should be present`);
-		const end = DEMO_SOURCE.indexOf("\n\t},", start);
+		const end = demosSource.indexOf("\n\t},", start);
 		assert.notEqual(end, -1, `${slug} block should be parseable`);
-		assert.match(DEMO_SOURCE.slice(start, end), /image: DEMO_IMAGE/u, `${slug} should use DEMO_IMAGE`);
+		assert.match(demosSource.slice(start, end), /image: DEMO_IMAGE/u, `${slug} should use DEMO_IMAGE`);
 	}
+});
+
+test("Paper shader demos expose generated GUI controls", () => {
+	assert.match(DEMO_SOURCE, /import \{ GUI \} from "@\/components\/utils\/gui";/u);
+	assert.match(DEMO_SOURCE, /<GUI\.Panel title="Shader controls" values=\{values\}>/u);
+	assert.match(DEMO_SOURCE, /label="Preset"/u);
+	assert.match(DEMO_SOURCE, /<GUI\.ImageInput/u);
+	assert.match(DEMO_SOURCE, /<GUI\.ColorList/u);
+	assert.match(DEMO_SOURCE, /<GUI\.ColorInput/u);
+	assert.match(DEMO_SOURCE, /<GUI\.Toggle/u);
+	assert.match(DEMO_SOURCE, /<GUI\.Select/u);
+	assert.match(DEMO_SOURCE, /<GUI\.Control/u);
+	assert.match(DEMO_SOURCE, /valueKeys=\{controlKey\}/u);
+	assert.match(DEMO_SOURCE, /valueKeys="preset"/u);
+	assert.match(DEMO_SOURCE, /PAPER_SHADER_NUMBER_CONTROL_META/u);
+	assert.match(DEMO_SOURCE, /PAPER_SHADER_SELECT_OPTIONS/u);
+	assert.match(DEMO_SOURCE, /PAPER_SHADER_COLOR_LIMITS/u);
+	assert.doesNotMatch(DEMO_SOURCE, /rendered with the first/u);
+});
+
+test("Paper shader controls match the live site control surface", () => {
+	assert.match(DEMO_SOURCE, /fit: \["contain", "cover"\]/u);
+	assert.doesNotMatch(DEMO_SOURCE, /fit: \["none"/u);
+	assert.match(DEMO_SOURCE, /const INTERNAL_CONTROL_KEYS = new Set\(\["frame", "originX", "originY", "worldWidth", "worldHeight"\]\);/u);
+	assert.match(DEMO_SOURCE, /const PAPER_SHADER_VISIBLE_COMMON_CONTROL_KEYS/u);
+	assert.match(DEMO_SOURCE, /"paper-mesh-gradient": \["speed", "scale", "rotation", "offsetX", "offsetY"\]/u);
+	assert.match(DEMO_SOURCE, /"paper-static-radial-gradient": \["offsetX", "offsetY"\]/u);
+	assert.match(DEMO_SOURCE, /"paper-fluted-glass": \["marginLeft", "marginRight", "marginTop", "marginBottom"\]/u);
+	assert.match(DEMO_SOURCE, /"paper-pulsing-border": \["margin"\]/u);
+	assert.match(DEMO_SOURCE, /getPaperShaderControlGroups\(slug, params\)/u);
 });
 
 test("Paper shader route count matches the package export surface", () => {
