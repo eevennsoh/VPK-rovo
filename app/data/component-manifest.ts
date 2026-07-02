@@ -589,6 +589,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const ART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	artComponent("awake", "Awake"),
+	artComponent("cursors", "Cursors"),
 	artComponent("personal-graph", "Personal Graph"),
 ]);
 

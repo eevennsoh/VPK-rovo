@@ -93,7 +93,7 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /shouldShowRegionPaintControl/u);
 	assert.match(SEND_CONTROLS_SOURCE, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
-	assert.match(SEND_CONTROLS_SOURCE, /"absolute top-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all"[\s\S]*clickyActive \? "left-0\.5 right-0\.5" : "right-0\.5 w-8"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none"[\s\S]*clickyActive \? "w-16" : "w-8"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /aria-label="Paint screen area"/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /HighlightIcon/u);
