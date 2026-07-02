@@ -119,6 +119,10 @@ test("Paper shader demos expose generated GUI controls", () => {
 	assert.doesNotMatch(DEMO_SOURCE, /rendered with the first/u);
 });
 
+test("Paper shader preview centers inside the full-width docs shell", () => {
+	assert.match(DEMO_SOURCE, /className="mx-auto flex w-full max-w-2xl flex-col"/u);
+});
+
 test("Paper shader controls match the live site control surface", () => {
 	assert.match(DEMO_SOURCE, /fit: \["contain", "cover"\]/u);
 	assert.doesNotMatch(DEMO_SOURCE, /fit: \["none"/u);
