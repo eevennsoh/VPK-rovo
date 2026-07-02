@@ -685,8 +685,8 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	),
 	visualComponent("graph", "Graph", "@/components/website/demos/visual/graph"),
 	visualComponent("holo", "Holo", "@/components/website/demos/visual/shaders/holo"),
-	visualComponent("mesh", "Mesh SVG", "@/components/website/demos/visual/shaders/mesh"),
-	visualComponent("mesh-02", "Mesh", "@/components/website/demos/visual/shaders/mesh2"),
+	visualComponent("mesh", "Mesh", "@/components/website/demos/visual/shaders/mesh"),
+	visualComponent("mesh-v2", "Mesh v2", "@/components/website/demos/visual/shaders/mesh-v2"),
 	visualComponent(
 		"chromatic-aberration",
 		"Chromatic Aberration",
