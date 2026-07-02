@@ -187,6 +187,12 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 			if (burstActiveRef.current) {
 				return;
 			}
+			// The reply bubble is cursor UI — if cursor mode is off (voice-only,
+			// after toggling the cursor off while voice keeps running), don't
+			// render a floating cursor-following bubble with no cursor.
+			if (!clickyActiveRef.current) {
+				return;
+			}
 			const text = resolveDeltaText(payload);
 			if (!text) {
 				return;
