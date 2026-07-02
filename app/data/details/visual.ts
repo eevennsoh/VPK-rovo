@@ -790,10 +790,10 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 		description: "Iridescent holographic gradient with seeded turbulence, spectral band cycling, exposure shaping, and optional highlight tuning.",
 	},
 	"mesh": {
-		description: "SVG animated mesh gradient with 3-color palette, rotating linear gradients, and fractal noise blending.",
-	},
-	"mesh-02": {
 		description: "3D wireframe mesh with raymarched grid lines, seed-driven wave deformation, tilt camera, and configurable line style.",
+	},
+	"mesh-v2": {
+		description: "SVG animated mesh gradient with 3-color palette, rotating linear gradients, and fractal noise blending.",
 	},
 	"chromatic-aberration": {
 		description: "VPK-rovo chromatic aberration shader with radial, horizontal, vertical, and swirl modes, uploaded image support, animated pulse, and swirl controls.",

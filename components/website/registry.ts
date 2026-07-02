@@ -8882,7 +8882,7 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   }),
   holo: dynamic(() => import("./demos/visual/holo-demo"), { ssr: false }),
   mesh: dynamic(() => import("./demos/visual/mesh-demo"), { ssr: false }),
-  "mesh-02": dynamic(() => import("./demos/visual/mesh-02-demo"), {
+  "mesh-v2": dynamic(() => import("./demos/visual/mesh-v2-demo"), {
     ssr: false,
   }),
 };
