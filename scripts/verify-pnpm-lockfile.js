@@ -7,7 +7,12 @@ const BLOCKED_REGISTRY_PATTERNS = [
 	{
 		explanation:
 			"Use npm-remote tarball URLs instead; atlassian-npm lockfile URLs have broken CI installs.",
-		pattern: /packages\.atlassian\.com\/api\/npm\/atlassian-npm\//u,
+		pattern: /packages\.atlassian\.com\/(?:artifactory\/)?api\/npm\/atlassian-npm\//u,
+	},
+	{
+		explanation:
+			"Use registry.npmjs.org tarball URLs for public @atlaskit packages; pnpm 11 can reconstruct these npm-remote URLs with scoped filenames that 404 in CI.",
+		pattern: /packages\.atlassian\.com\/(?:artifactory\/)?api\/npm\/npm-remote\/@atlaskit\//u,
 	},
 ];
 
