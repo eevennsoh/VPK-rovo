@@ -32,7 +32,7 @@ export type AgentTemplateReasoningMode =
 	| "deep-auto"
 	| "gemini-flash-3"
 	| "gpt-5.4"
-	| "sonnet-4.6"
+	| "sonnet-5"
 	| "opus-4.6";
 
 /** Organizational-knowledge scope, mirroring `KNOWLEDGE_MODE_OPTIONS` in agent.tsx. */

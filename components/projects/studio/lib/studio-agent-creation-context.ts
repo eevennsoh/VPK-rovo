@@ -354,7 +354,7 @@ function enrichContextFromConfig(
 		"deep-auto": "deep step-by-step reasoning",
 		"gemini-flash-3": "the Gemini Flash 3 model",
 		"gpt-5.4": "the GPT-5.4 model",
-		"sonnet-4.6": "the Claude Sonnet 4.6 model",
+		"sonnet-5": "the Claude Sonnet 5 model",
 		"opus-4.6": "the Claude Opus 4.6 model",
 	}[config.reasoningMode];
 	if (reasoning) modeNarration.push(reasoning);
