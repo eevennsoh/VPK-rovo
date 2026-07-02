@@ -13,14 +13,16 @@ packages:
 	assert.deepEqual(findings, []);
 });
 
-test("accepts npm-remote tarball URLs for non-Atlaskit packages", () => {
+test("rejects npm-remote tarball URLs for public packages", () => {
 	const findings = findBlockedLockfileRegistryUrls(`
 packages:
   '@example/package@1.0.0':
     resolution: {tarball: https://packages.atlassian.com/api/npm/npm-remote/@example/package/-/package-1.0.0.tgz}
 `);
 
-	assert.deepEqual(findings, []);
+	assert.equal(findings.length, 1);
+	assert.equal(findings[0].line, 4);
+	assert.match(findings[0].text, /npm-remote/u);
 });
 
 test("rejects npm-remote tarball URLs for public Atlaskit packages", () => {

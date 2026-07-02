@@ -239,6 +239,7 @@ function LozengeContent({
 			{metric != null ? (
 				<Badge
 					variant={lozengeMetricBadgeVariants[variant]}
+					max={false}
 					className={cn(
 						"min-w-0 shrink-0",
 						size === "spacious" && "h-5 rounded-sm px-1.5 text-sm leading-5"
