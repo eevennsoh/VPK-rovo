@@ -123,9 +123,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Ripple's image-shader wiring and Framer-style controls live under
 	// components/, so gate this focused source contract explicitly.
 	"components/website/demos/visual/ripple-demo.test.js",
-	// Paper Shaders are generated from the upstream @paper-design/shaders-react
-	// export surface, so keep the runtime, catalog, nav, and details in lockstep.
-	"components/website/demos/visual/paper-shaders-demo.test.js",
+	// The Shaders Paper group is generated from the upstream
+	// @paper-design/shaders-react export surface, so keep runtime, catalog, nav,
+	// and details in lockstep.
+	"components/website/demos/visual/shaders-paper-demo.test.js",
 	// Liquid Glass shader utility math is shared by the visual demo and shader
 	// wrapper. Gate this pure utility coverage without the source-grep demo tests.
 	"components/website/demos/visual/shaders/liquid-glass-utils.test.js",
