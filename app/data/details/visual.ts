@@ -949,6 +949,10 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 			{ title: "Pulse outside", description: "Outward-blooming halo around an opaque chat input.", demoSlug: "border-beam-demo-pulse-outside" },
 			{ title: "Mono pulse search", description: "Grayscale pulse variant on a rounded search surface.", demoSlug: "border-beam-demo-mono-pulse-search" },
 			{ title: "Compact gallery", description: "Ocean, sunset, and colorful variants in a dense grid.", demoSlug: "border-beam-demo-compact-gallery" },
+			{ title: "Rovo brand", description: "Rovo brand palette (blue, orange, purple, lime) traveling around a chat input.", demoSlug: "border-beam-demo-rovo-brand" },
+			{ title: "Light theme", description: "Theme-adapted beam tuned for a light surface via theme=\"light\".", demoSlug: "border-beam-demo-light-theme" },
+			{ title: "Play / pause", description: "Toggle the active prop to fade the beam in and out with its built-in transitions.", demoSlug: "border-beam-demo-play-pause" },
+			{ title: "Strength ladder", description: "The same beam at strength 0.35, 0.65, and 1 to show intensity scaling.", demoSlug: "border-beam-demo-strength-ladder" },
 		],
 		props: [
 			{ name: "children", type: "React.ReactNode", description: "Opaque wrapped content. `pulse-outside` renders its core behind the child, so transparent children show the inner glow through the surface." },

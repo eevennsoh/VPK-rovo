@@ -9039,6 +9039,34 @@ const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "border-beam-demo-rovo-brand": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoRovoBrand,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-light-theme": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoLightTheme,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-play-pause": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPlayPause,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-strength-ladder": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoStrengthLadder,
+      })),
+    { ssr: false },
+  ),
   "ink-wash-demo-landscape": dynamic(
     () =>
       import("./demos/visual/ink-wash-demo").then((mod) => ({

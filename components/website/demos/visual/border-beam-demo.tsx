@@ -533,3 +533,58 @@ export function BorderBeamDemoCompactGallery() {
 		</div>
 	);
 }
+
+export function BorderBeamDemoRovoBrand() {
+	const config = getBorderBeamDefaultsForSize("md");
+	return (
+		<BorderBeamMiniDemo config={{ ...config, colorVariant: "rovo", strength: 0.85 }}>
+			<MockChatInput />
+		</BorderBeamMiniDemo>
+	);
+}
+
+export function BorderBeamDemoLightTheme() {
+	const config = getBorderBeamDefaultsForSize("md");
+	return (
+		<BorderBeamMiniDemo
+			config={{ ...config, theme: "light", strength: 0.9 }}
+			className="bg-[#F7F8F9]"
+		>
+			<MockCard theme="light" compact />
+		</BorderBeamMiniDemo>
+	);
+}
+
+export function BorderBeamDemoPlayPause() {
+	const config = getBorderBeamDefaultsForSize("md");
+	const [active, setActive] = useState(true);
+	return (
+		<div className="flex min-h-40 w-full flex-col items-center justify-center gap-4 rounded-lg bg-[#0C0D12] p-8">
+			<BorderBeam {...renderBeamConfig({ ...config, strength: 0.85, active })}>
+				<MockCard compact />
+			</BorderBeam>
+			<Button
+				type="button"
+				variant="secondary"
+				aria-pressed={active}
+				onClick={() => setActive((prev) => !prev)}
+			>
+				{active ? "Pause beam" : "Play beam"}
+			</Button>
+		</div>
+	);
+}
+
+export function BorderBeamDemoStrengthLadder() {
+	const config = getBorderBeamDefaultsForSize("md");
+	const strengths = [0.35, 0.65, 1] as const;
+	return (
+		<div className="grid w-full gap-3 bg-[#0C0D12] p-6 md:grid-cols-3">
+			{strengths.map((strength) => (
+				<BorderBeamMiniDemo key={strength} config={{ ...config, strength }} className="min-h-36 p-5">
+					<MockCard compact />
+				</BorderBeamMiniDemo>
+			))}
+		</div>
+	);
+}
