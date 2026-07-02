@@ -8164,6 +8164,10 @@ const ARTS_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/arts/personal-graph-demo"),
     { ssr: false },
   ),
+  "rovo-fable": dynamic(
+    () => import("./demos/arts/rovo-fable-demo"),
+    { ssr: false },
+  ),
 };
 
 const CHART_DEMOS: Record<string, ComponentType> = {

@@ -591,6 +591,7 @@ export const ART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	artComponent("awake", "Awake"),
 	artComponent("cursors", "Cursors"),
 	artComponent("personal-graph", "Personal Graph"),
+	artComponent("rovo-fable", "Rovo Fable"),
 ]);
 
 export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
