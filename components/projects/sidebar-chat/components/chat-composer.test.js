@@ -292,7 +292,7 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.doesNotMatch(source, /shouldShowRegionPaintControl/u);
 	assert.match(source, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
 	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
-	assert.match(source, /"absolute top-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all"[\s\S]*clickyActive \? "left-0\.5 right-0\.5" : "right-0\.5 w-8"/u);
+	assert.match(source, /"absolute top-0\.5 right-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-\[width\] duration-medium ease-in-out motion-reduce:transition-none"[\s\S]*clickyActive \? "w-16" : "w-8"/u);
 	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
 	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);
 	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:voice` : undefined\}/u);
@@ -356,23 +356,27 @@ test("shared composer keeps dictation beside typed submit and live voice empty-o
 	assert.match(source, /\{shouldShowRealtimeVoiceStart \? \([\s\S]*aria-label="Start live voice"[\s\S]*\) : null\}/u);
 });
 
-test("shared composer uses a dark live chat CTA while submit dark styling remains opt-in", () => {
+test("shared composer live chat CTA defaults to brand blue with opt-in dark styling", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
+	const brandClass = "bg-primary text-primary-foreground [&_svg]:text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed";
 	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
 	const dictationStartIndex = source.indexOf('aria-label="Start dictation"');
 	const voiceStartIndex = source.indexOf('aria-label="Start live voice"');
 
 	assert.match(source, /experimentalDarkCta\?: boolean/u);
 	assert.match(source, /experimentalDarkCta = false/u);
-	assert.match(source, new RegExp(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
-	assert.match(source, new RegExp(`const LIVE_VOICE_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
-	assert.match(source, /const liveVoiceCtaClassName = experimentalDarkCtaClassName \?\? LIVE_VOICE_CTA_CLASS_NAME;/u);
+	assert.ok(source.includes(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`));
+	assert.ok(source.includes(`const BRAND_CTA_CLASS_NAME = "${brandClass}"`));
+	// Live chat CTA defaults to the brand-blue primary style; dark styling is opt-in via experimentalDarkCta.
+	assert.match(source, /const liveVoiceCtaClassName = experimentalDarkCtaClassName \?\? BRAND_CTA_CLASS_NAME;/u);
+	assert.doesNotMatch(source, /LIVE_VOICE_CTA_CLASS_NAME/u);
 	assert.doesNotMatch(source, /<TooltipProvider delay=\{0\}>[\s\S]*aria-label="Start live voice"/u);
 	assert.match(source, /<PromptInputButton[\s\S]*aria-label="Start live voice"[\s\S]*tooltip=\{\{ content: "Live chat", delay: 0 \}\}/u);
 	assert.notEqual(submitIndex, -1);
 	assert.notEqual(dictationStartIndex, -1);
 	assert.notEqual(voiceStartIndex, -1);
+	// Submit dark styling stays opt-in (brand blue by default via the button's default variant).
 	assert.match(source.slice(submitIndex, source.indexOf("</PromptInputSubmit>", submitIndex)), /experimentalDarkCtaClassName/u);
 	const dictationButtonStartIndex = source.lastIndexOf("<PromptInputButton", dictationStartIndex);
 	assert.match(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /variant="ghost"/u);
