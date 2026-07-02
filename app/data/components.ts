@@ -463,6 +463,7 @@ export const PROJECT_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 export const ART_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	artComponent("awake", "Awake"),
 	artComponent("personal-graph", "Personal Graph"),
+	artComponent("rovo-fable", "Rovo Fable"),
 ]);
 
 export const UTILITY_COMPONENTS: ComponentEntry[] = sortEntriesByName([

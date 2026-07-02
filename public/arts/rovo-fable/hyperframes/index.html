@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=1080, height=1080">
+		<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+		<style>
+			* { box-sizing: border-box; margin: 0; padding: 0; }
+			html, body { width: 1080px; height: 1080px; overflow: hidden; background: #fff; }
+			body { font-family: "IBM Plex Mono", "Courier New", monospace; color: #221b16; }
+			#root { position: relative; width: 1080px; height: 1080px; overflow: hidden; background: #fff; }
+			.opener { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #fff; }
+			.opener-card { position: absolute; inset: 0; display: grid; width: 1080px; height: 1080px; place-items: center; overflow: hidden; background: #fff; }
+			.opener-figure { display: grid; width: 650px; height: 650px; place-items: center; transform-origin: center; }
+			.opener-asset { width: 560px; height: 560px; object-fit: contain; transform-origin: center; filter: drop-shadow(0 22px 30px rgba(34, 27, 22, 0.1)); }
+			.montage { position: absolute; inset: 0; z-index: 10; overflow: hidden; background: #221b16; }
+			.shot { position: absolute; inset: 0; width: 1080px; height: 1080px; overflow: hidden; background: #fff; will-change: opacity, transform, filter; }
+			.shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
+			.flash { position: absolute; inset: 0; z-index: 80; opacity: 0; background: #fff; pointer-events: none; }
+			.final-card { position: absolute; inset: 0; z-index: 60; display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; opacity: 0; background: #fff; color: #172b4d; filter: blur(14px); }
+			.logo-mark { width: 168px; height: 168px; overflow: visible; transform-origin: center; filter: drop-shadow(0 18px 28px rgba(23, 43, 77, 0.14)); }
+			.logo-gradient-sweep { opacity: 0; }
+		</style>
+	</head>
+	<body>
+		<div data-hf-id="hf-yp24" id="root" data-composition-id="rovo-fable" data-start="0" data-duration="16" data-width="1080" data-height="1080">
+			<div data-hf-id="hf-i3rn" id="opener" class="clip opener" data-start="0" data-duration="5" data-track-index="40" data-layout-allow-overlap="" data-layout-allow-occlusion=""></div>
+			<div data-hf-id="hf-1mjl" id="montage" class="clip montage" data-start="5" data-duration="8" data-track-index="41" data-layout-allow-overflow=""></div>
+			<div data-hf-id="hf-yjig" id="final-card" class="clip final-card" data-start="13" data-duration="3" data-track-index="30">
+				<svg data-hf-id="hf-c612" id="final-logo" class="logo-mark" viewBox="0 0 16 16" fill="none" aria-label="Rovo" role="img">
+					<defs>
+						<clipPath id="rovo-clip">
+							<rect width="16" height="16" />
+						</clipPath>
+						<mask id="rovo-mask-left" maskUnits="userSpaceOnUse">
+							<rect width="16" height="16" fill="black" />
+							<path d="M7.53088 10.4476L2.73535 13.2163L1.78016 12.6651C1.21921 12.3417 0.87207 11.7418 0.87207 11.0954V4.91065C0.87207 4.26171 1.21717 3.66436 1.77979 3.34113L5.80879 1.0166C5.79985 1.04169 5.79134 1.06695 5.78324 1.09236C5.70866 1.3238 5.66912 1.56833 5.66912 1.81827V8.00303C5.66912 8.85259 6.12167 9.63627 6.85915 10.0601L7.53088 10.4476Z" fill="white" fill-rule="evenodd" clip-rule="evenodd" />
+							<path d="M7.53088 10.4475L2.73535 13.2162L7.13997 15.7575C7.69088 16.075 8.36884 16.0807 8.92424 15.7743C8.9343 15.7665 8.945 15.7593 8.95634 15.7528C9.35211 15.5246 9.64153 15.1587 9.77761 14.7361C9.83299 14.5613 9.86226 14.3767 9.86226 14.1877V11.792L7.53088 10.4475Z" fill="white" fill-rule="evenodd" clip-rule="evenodd" />
+						</mask>
+						<mask id="rovo-mask-right" maskUnits="userSpaceOnUse">
+							<rect width="16" height="16" fill="black" />
+							<path d="M14.318 3.33493L13.2907 2.74219L8.49512 5.5109L9.23931 5.94007C9.97691 6.36392 10.4291 7.14744 10.4291 7.99708V14.1818C10.4291 14.4321 10.3895 14.677 10.3147 14.9087C10.3067 14.9338 10.2983 14.9587 10.2895 14.9835L14.3185 12.659C14.8811 12.3357 15.2262 11.7384 15.2262 11.0895V4.90471C15.2262 4.25833 14.879 3.65833 14.318 3.33493Z" fill="white" fill-rule="evenodd" clip-rule="evenodd" />
+							<path d="M8.49356 5.51082L6.23438 4.20796V1.81225C6.23438 1.62347 6.26358 1.43906 6.31885 1.26449C6.45471 0.841993 6.74369 0.476235 7.13903 0.247911L7.14023 0.247219C7.15156 0.240681 7.16234 0.233429 7.1724 0.225631C7.72783 -0.0807372 8.40575 -0.0751089 8.95668 0.242516L13.2891 2.74211L8.49356 5.51082Z" fill="white" fill-rule="evenodd" clip-rule="evenodd" />
+						</mask>
+						<linearGradient id="rovo-grad-left" x1="0" y1="-33.19" x2="27.7" y2="14.81" gradientUnits="userSpaceOnUse" spreadMethod="repeat">
+							<stop offset="0%" stop-color="#AF59E0" />
+							<stop offset="24.999%" stop-color="#AF59E0" />
+							<stop offset="25%" stop-color="#FCA700" />
+							<stop offset="49.999%" stop-color="#FCA700" />
+							<stop offset="50%" stop-color="#1868DB" />
+							<stop offset="74.999%" stop-color="#1868DB" />
+							<stop offset="75%" stop-color="#6A9A23" />
+							<stop offset="99.999%" stop-color="#6A9A23" />
+						</linearGradient>
+						<linearGradient id="rovo-grad-right" x1="0" y1="-37.57" x2="27.7" y2="10.43" gradientUnits="userSpaceOnUse" spreadMethod="repeat">
+							<stop offset="0%" stop-color="#6A9A23" />
+							<stop offset="24.999%" stop-color="#6A9A23" />
+							<stop offset="25%" stop-color="#1868DB" />
+							<stop offset="49.999%" stop-color="#1868DB" />
+							<stop offset="50%" stop-color="#FCA700" />
+							<stop offset="74.999%" stop-color="#FCA700" />
+							<stop offset="75%" stop-color="#AF59E0" />
+							<stop offset="99.999%" stop-color="#AF59E0" />
+						</linearGradient>
+					</defs>
+					<g clip-path="url(#rovo-clip)">
+						<g class="logo-rest-facets">
+							<path d="M7.53088 10.4476L2.73535 13.2163L1.78016 12.6651C1.21921 12.3417 0.87207 11.7418 0.87207 11.0954V4.91065C0.87207 4.26171 1.21717 3.66436 1.77979 3.34113L5.80879 1.0166C5.79985 1.04169 5.79134 1.06695 5.78324 1.09236C5.70866 1.3238 5.66912 1.56833 5.66912 1.81827V8.00303C5.66912 8.85259 6.12167 9.63627 6.85915 10.0601L7.53088 10.4476Z" fill="#1868DB" fill-rule="evenodd" clip-rule="evenodd" />
+							<path d="M7.53088 10.4475L2.73535 13.2162L7.13997 15.7575C7.69088 16.075 8.36884 16.0807 8.92424 15.7743C8.9343 15.7665 8.945 15.7593 8.95634 15.7528C9.35211 15.5246 9.64153 15.1587 9.77761 14.7361C9.83299 14.5613 9.86226 14.3767 9.86226 14.1877V11.792L7.53088 10.4475Z" fill="#6A9A23" fill-rule="evenodd" clip-rule="evenodd" />
+							<path d="M14.318 3.33493L13.2907 2.74219L8.49512 5.5109L9.23931 5.94007C9.97691 6.36392 10.4291 7.14744 10.4291 7.99708V14.1818C10.4291 14.4321 10.3895 14.677 10.3147 14.9087C10.3067 14.9338 10.2983 14.9587 10.2895 14.9835L14.3185 12.659C14.8811 12.3357 15.2262 11.7384 15.2262 11.0895V4.90471C15.2262 4.25833 14.879 3.65833 14.318 3.33493Z" fill="#AF59E0" fill-rule="evenodd" clip-rule="evenodd" />
+							<path d="M8.49356 5.51082L6.23438 4.20796V1.81225C6.23438 1.62347 6.26358 1.43906 6.31885 1.26449C6.45471 0.841993 6.74369 0.476235 7.13903 0.247911L7.14023 0.247219C7.15156 0.240681 7.16234 0.233429 7.1724 0.225631C7.72783 -0.0807372 8.40575 -0.0751089 8.95668 0.242516L13.2891 2.74211L8.49356 5.51082Z" fill="#FCA700" fill-rule="evenodd" clip-rule="evenodd" />
+						</g>
+						<g class="logo-gradient-sweep">
+							<g mask="url(#rovo-mask-left)">
+								<g id="rovo-grad-left-strip">
+									<rect x="0" y="-63.9852" width="16" height="191.9556" fill="url(#rovo-grad-left)" />
+								</g>
+							</g>
+							<g mask="url(#rovo-mask-right)">
+								<g id="rovo-grad-right-strip">
+									<rect x="0" y="-63.9852" width="16" height="191.9556" fill="url(#rovo-grad-right)" />
+								</g>
+							</g>
+						</g>
+					</g>
+				</svg>
+			</div>
+			<div data-hf-id="hf-4rjh" id="flash" class="flash" data-layout-ignore=""></div>
+			<audio data-hf-id="hf-bsox" id="song" data-start="0" data-duration="14.95" data-track-index="100" src="songs.mp3" data-volume="1"></audio>
+		</div>
+
+		<script>
+			window.__timelines = window.__timelines || {};
+			const openerIllustrations = ["chat","brainstorm","ai","create","code","write","search","enhanced-smart-answer","megaphone","help","summarize","chat","ai","create","code","write","search","enhanced-smart-answer","megaphone","brainstorm","help","summarize"];
+			const openerStarts = [0,0.72,1.34,1.86,2.3,2.68,3,3.28,3.52,3.73,3.91,4.07,4.21,4.34,4.46,4.57,4.66,4.74,4.81,4.87,4.92,4.96];
+			const frames = [["01-01-botanical.png","BOTANICAL"],["02-02-postage.png","POSTAGE"],["03-03-spectral.png","SPECTRAL"],["04-04-city-map.png","CITY MAP"],["05-05-mechanical.png","PATENT"],["06-06-coastline.png","COASTLINE"],["07-07-blueprint.png","BLUEPRINT"],["08-08-cyanotype.png","CYANOTYPE"],["09-09-root-network.png","ROOT NET"],["10-10-red-dot-grid.png","DOT GRID"],["11-11-fluorescent-cell.png","CELL"],["12-12-xray-circuit.png","X-RAY"],["13-13-antique-coin.png","COIN"],["14-14-sheet-music.png","MUSIC"],["15-15-specimen.png","SPECIMEN"],["16-16-proof.png","PROOF"],["17-17-butterfly-specimen.png","BUTTERFLY"],["18-18-medieval-text.png","MANUSCRIPT"]];
+			const montageStart = 5;
+			const finalStart = 13;
+			const order = [0,16,1,17,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,0,17,1,6,2,7,3,8,4,9,5,10,11,12,13,14,16,15,17];
+			const shotIntervals = order.slice(1).map((_, index) => {
+				const progress = index / Math.max(1, order.length - 2);
+				return 0.32 - progress * 0.22;
+			});
+			const shotStarts = order.reduce((starts, _, index) => {
+				if (index === 0) {
+					starts.push(montageStart);
+					return starts;
+				}
+				const nextStart = starts[index - 1] + shotIntervals[index - 1];
+				starts.push(Number(Math.min(nextStart, finalStart - 0.08).toFixed(2)));
+				return starts;
+			}, []);
+			const shotDurations = shotStarts.map((start, index) => {
+				const nextStart = shotStarts[index + 1] ?? finalStart;
+				const gap = Math.max(0.08, nextStart - start);
+				return Number(Math.min(0.42, Math.max(0.16, gap + 0.12)).toFixed(2));
+			});
+			const rotations = [-1.2,0.9,-0.45,1.35,-0.8,0.55,-1.05,0.35];
+			const xMoves = [-24,18,-12,20,-18,14,-8,10];
+			const yMoves = [10,-8,14,-12,8,-10,12,-6];
+			const opener = document.getElementById("opener");
+			const montage = document.getElementById("montage");
+			opener.innerHTML = openerIllustrations.map((item, index) => {
+				const id = String(index + 1).padStart(2, "0");
+				const start = openerStarts[index];
+				const nextStart = openerStarts[index + 1] ?? montageStart;
+				const duration = Number(Math.max(0.03, nextStart - start).toFixed(2));
+				return '<div id="illus-' + id + '" class="clip opener-card" data-start="' + start + '" data-duration="' + duration + '" data-track-index="' + (12 + index % 5) + '" data-layout-allow-overflow><div class="opener-figure"><img class="opener-asset" src="illustrations/' + item + '.svg" alt="" /></div></div>';
+			}).join("");
+			montage.innerHTML = order.map((frameIndex, index) => {
+				const frame = frames[frameIndex];
+				const id = String(index + 1).padStart(2, "0");
+				const start = shotStarts[index];
+				const duration = shotDurations[index];
+				const track = 1 + (index % 8);
+				return '<div id="shot-' + id + '" class="clip shot" data-start="' + start + '" data-duration="' + duration + '" data-track-index="' + track + '" data-layout-allow-overflow><img src="frames/' + frame[0] + '" alt="" data-layout-allow-overflow /></div>';
+			}).join("");
+
+			const tl = gsap.timeline({ paused: true });
+			openerStarts.forEach((start, index) => {
+				const id = '#illus-' + String(index + 1).padStart(2, "0");
+				const fastness = index / Math.max(1, openerStarts.length - 1);
+				if (index > 0) {
+					tl.from(id, { opacity: 0, filter: "blur(" + (8 - fastness * 5) + "px)", scale: 1.01, duration: Math.max(0.06, 0.13 - fastness * 0.05), ease: "sine.out" }, start);
+				}
+				tl.from(id + ' .opener-figure', { y: 20 - fastness * 14, scale: 0.9 + fastness * 0.06, rotation: index % 2 === 0 ? -4 : 4, duration: Math.max(0.12, 0.3 - fastness * 0.13), ease: "back.out(1.45)" }, start + (index === 0 ? 0 : 0.01));
+				if (index >= openerStarts.length - 4) {
+					tl.fromTo("#flash", { opacity: 0.22 }, { opacity: 0, duration: 0.09, ease: "power2.out", overwrite: "auto" }, start + 0.01);
+				}
+			});
+			tl.fromTo("#flash", { opacity: 0.32 }, { opacity: 0, duration: 0.16, ease: "power2.out", overwrite: "auto" }, montageStart - 0.03);
+			shotStarts.forEach((start, index) => {
+				const id = '#shot-' + String(index + 1).padStart(2, "0");
+				const shotFastness = index / Math.max(1, shotStarts.length - 1);
+				tl.from(id, { opacity: 0, filter: "blur(" + (9 - shotFastness * 4) + "px)", scale: 1.018, duration: Math.max(0.06, 0.12 - shotFastness * 0.04), ease: "sine.out" }, start);
+				tl.from(id + ' img', { x: xMoves[index % xMoves.length], y: yMoves[index % yMoves.length], scale: 1.08 + (index % 4) * 0.012, rotation: rotations[index % rotations.length], duration: Math.max(0.16, 0.42 - shotFastness * 0.18), ease: "power2.out" }, start);
+				if (index % 9 === 0) {
+					tl.fromTo("#flash", { opacity: 0.22 }, { opacity: 0, duration: 0.1, ease: "power2.out", overwrite: "auto" }, start + 0.01);
+				}
+			});
+
+			tl.fromTo("#flash", { backgroundColor: "#fff", opacity: 0.4 }, { backgroundColor: "#fff", opacity: 0, duration: 0.18, ease: "power2.out", overwrite: "auto" }, finalStart - 0.05);
+			tl.to("#final-card", { opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "sine.out" }, finalStart);
+			tl.from("#final-logo", { scale: 0.7, y: 18, rotation: -12, opacity: 0, duration: 0.44, ease: "back.out(1.45)" }, finalStart + 0.08);
+			tl.to(".logo-gradient-sweep", { opacity: 1, duration: 0.08, ease: "sine.out" }, finalStart + 0.2);
+			tl.fromTo("#rovo-grad-left-strip", { y: 0 }, { y: -63.9852, duration: 2.5, ease: "power2.inOut" }, finalStart + 0.2);
+			tl.fromTo("#rovo-grad-right-strip", { y: 0 }, { y: 63.9852, duration: 2.5, ease: "power2.inOut" }, finalStart + 0.2);
+			tl.to("#final-logo", { scale: 1.08, duration: 0.18, ease: "sine.inOut", yoyo: true, repeat: 1 }, finalStart + 0.56);
+			window.__timelines["rovo-fable"] = tl;
+		</script>
+	</body>
+</html>

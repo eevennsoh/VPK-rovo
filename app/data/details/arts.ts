@@ -15,4 +15,11 @@ export const ART_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"rovo-fable": {
+		description:
+			"HyperFrames archival glyph reel that turns the uploaded Rovo symbol into a rapid Claude Fable-style sequence of botanical, cartographic, scientific, and museum-specimen frames.",
+		demoLayout: {
+			previewHeight: "fixed",
+		},
+	},
 };
