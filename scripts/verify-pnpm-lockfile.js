@@ -11,8 +11,8 @@ const BLOCKED_REGISTRY_PATTERNS = [
 	},
 	{
 		explanation:
-			"Use registry.npmjs.org tarball URLs for public @atlaskit packages; pnpm 11 can reconstruct these npm-remote URLs with scoped filenames that 404 in CI.",
-		pattern: /packages\.atlassian\.com\/(?:artifactory\/)?api\/npm\/npm-remote\/@atlaskit\//u,
+			"Use registry.npmjs.org tarball URLs for public npm packages; npm-remote URLs fail pnpm tarball policy when the repo registry is npmjs.",
+		pattern: /packages\.atlassian\.com\/(?:artifactory\/)?api\/npm\/npm-remote\//u,
 	},
 ];
 

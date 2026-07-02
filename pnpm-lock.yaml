@@ -971,18 +971,6 @@ packages:
       react-dom: ^19.0.0
       three: ^0.183.0
 
-  '@paper-design/shaders-react@0.0.76':
-    resolution: {integrity: sha512-uPJWrYRf6cJdO2H+fuXlahaqz0QjYglNAyUTaRfIInpzCa/d6guxBIK003soAZQFuQ035yg9FhtfFzKNWm+a5A==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@paper-design/shaders-react/-/shaders-react-0.0.76.tgz}
-    peerDependencies:
-      '@types/react': ^18 || ^19
-      react: ^18 || ^19
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
-  '@paper-design/shaders@0.0.76':
-    resolution: {integrity: sha512-AcNDY4J66YQHUfQYFInkCP7M9VOje0od7wLpOR7LtCmc532opJy6ll+h1W9zBovz8tt9U7OADUmJ/qKEXyOX/A==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@paper-design/shaders/-/shaders-0.0.76.tgz}
-
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
 
@@ -1842,6 +1830,18 @@ packages:
   '@opentelemetry/semantic-conventions@1.41.1':
     resolution: {integrity: sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA==}
     engines: {node: '>=14'}
+
+  '@paper-design/shaders-react@0.0.76':
+    resolution: {integrity: sha512-uPJWrYRf6cJdO2H+fuXlahaqz0QjYglNAyUTaRfIInpzCa/d6guxBIK003soAZQFuQ035yg9FhtfFzKNWm+a5A==, tarball: https://registry.npmjs.org/@paper-design/shaders-react/-/shaders-react-0.0.76.tgz}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@paper-design/shaders@0.0.76':
+    resolution: {integrity: sha512-AcNDY4J66YQHUfQYFInkCP7M9VOje0od7wLpOR7LtCmc532opJy6ll+h1W9zBovz8tt9U7OADUmJ/qKEXyOX/A==, tarball: https://registry.npmjs.org/@paper-design/shaders/-/shaders-0.0.76.tgz}
 
   '@playwright/test@1.61.1':
     resolution: {integrity: sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==}
@@ -6460,7 +6460,7 @@ packages:
     resolution: {integrity: sha512-8JgwbaUe5i3YF03/YtBlm0ZbOs8ihCzaZJYJr3g85P1l3AqGCZLlgJ92I/bIhwNB26jP+jY4D0Amj6mYh6Ha6g==}
 
   motion-plus@https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=fc0a8c2295343956b76bd070a01a9863c7a11d012c3983c9a7bf9720642e239f:
-    resolution: {tarball: https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=fc0a8c2295343956b76bd070a01a9863c7a11d012c3983c9a7bf9720642e239f}
+    resolution: {integrity: sha512-WAmMJ8YMJvXSbdyzg9d7SESp+WrlbN39Svbxf/nVqoX7ZBhlHMt/Y/4jtozmnVWyDh3oN1DDdYlj89JBE7PqeQ==, tarball: https://api.motion.dev/registry?package=motion-plus&version=2.11.2&token=fc0a8c2295343956b76bd070a01a9863c7a11d012c3983c9a7bf9720642e239f}
     version: 2.11.2
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
@@ -9037,15 +9037,6 @@ snapshots:
       three: 0.184.0
       typescript: 5.9.3
 
-  '@paper-design/shaders-react@0.0.76(@types/react@19.2.17)(react@19.2.7)':
-    dependencies:
-      '@paper-design/shaders': 0.0.76
-      react: 19.2.7
-    optionalDependencies:
-      '@types/react': 19.2.17
-
-  '@paper-design/shaders@0.0.76': {}
-
   '@borewit/text-codec@0.2.2': {}
 
   '@braintree/sanitize-url@6.0.2': {}
@@ -9852,6 +9843,15 @@ snapshots:
   '@opentelemetry/api@1.9.1': {}
 
   '@opentelemetry/semantic-conventions@1.41.1': {}
+
+  '@paper-design/shaders-react@0.0.76(@types/react@19.2.17)(react@19.2.7)':
+    dependencies:
+      '@paper-design/shaders': 0.0.76
+      react: 19.2.7
+    optionalDependencies:
+      '@types/react': 19.2.17
+
+  '@paper-design/shaders@0.0.76': {}
 
   '@playwright/test@1.61.1':
     dependencies:
