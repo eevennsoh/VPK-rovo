@@ -46,3 +46,13 @@ packages:
 	assert.equal(findings[0].line, 4);
 	assert.match(findings[0].text, /atlassian-npm/u);
 });
+
+test("accepts atlassian-npm tarball URLs for allowed internal packages", () => {
+	const findings = findBlockedLockfileRegistryUrls(`
+packages:
+  '@atlassian/logo-third-party@0.1.2':
+    resolution: {tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlassian/logo-third-party/-/@atlassian/logo-third-party-0.1.2.tgz}
+`);
+
+	assert.deepEqual(findings, []);
+});
