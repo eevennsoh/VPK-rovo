@@ -1356,7 +1356,9 @@ export function useRealtimeVoice({
 			try {
 				message = JSON.parse(event.data as string) as ServerMessage;
 			} catch {
-				console.error("[RealtimeVoice] Failed to parse server message");
+				// A partial/garbled frame is recoverable — skip it. Use warn so it
+				// doesn't surface as a dev-overlay Console Error.
+				console.warn("[RealtimeVoice] Ignored an unparseable server message");
 				return;
 			}
 
@@ -1695,7 +1697,7 @@ export function useRealtimeVoice({
 							});
 							resetGenerationStateSoon();
 						} catch (error) {
-							console.error("[RealtimeVoice] Failed to parse delegate_to_rovo arguments:", error);
+							console.warn("[RealtimeVoice] Ignored unparseable delegate_to_rovo arguments:", error);
 						}
 					} else if (SCREEN_ASSISTANT_TOOL_NAMES.has(message.name)) {
 						// App-owned screen-assistant tool. Hand it to the registered
@@ -1705,7 +1707,7 @@ export function useRealtimeVoice({
 						try {
 							args = message.arguments ? JSON.parse(message.arguments) : {};
 						} catch (error) {
-							console.error(`[RealtimeVoice] Failed to parse ${message.name} arguments:`, error);
+							console.warn(`[RealtimeVoice] Ignored unparseable ${message.name} arguments:`, error);
 						}
 						onToolCallRef.current?.({
 							name: message.name,

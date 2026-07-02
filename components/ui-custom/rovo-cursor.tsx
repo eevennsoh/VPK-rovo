@@ -142,6 +142,12 @@ export interface RovoCursorProps {
 	 */
 	animated?: boolean;
 	/**
+	 * Solid fill for the `painting` glyph. When set, the painting arrow is a flat
+	 * solid fill of this color instead of the Rovo rainbow, and does not spin.
+	 * Undefined = the default rainbow (unchanged). Only affects `painting`.
+	 */
+	color?: string;
+	/**
 	 * Accessible label. When provided the glyph is `role="img"`; otherwise it is
 	 * `aria-hidden` (decorative, sitting alongside visible text).
 	 */
@@ -171,6 +177,7 @@ export const RovoCursor = memo(
 		state = "cursor",
 		size = 16,
 		animated = true,
+		color,
 		className,
 		...props
 	}: Readonly<RovoCursorProps>) => {
@@ -190,7 +197,7 @@ export const RovoCursor = memo(
 					className={cn("inline-flex shrink-0 items-center justify-center", className)}
 					{...a11y}
 				>
-					{cursorModeState ? <CursorMode state={cursorModeState} scale={scale} animated={animated} /> : null}
+					{cursorModeState ? <CursorMode state={cursorModeState} scale={scale} animated={animated} color={color} /> : null}
 					{state === "typing" ? <Typing scale={scale} animated={animated} /> : null}
 					{state === "telepointer" ? <Telepointer scale={scale} animated={animated} /> : null}
 					{state === "loading" ? <Loading scale={scale} /> : null}
@@ -211,7 +218,8 @@ function CursorMode({
 	state,
 	scale,
 	animated,
-}: Readonly<{ state: "cursor" | "painting"; scale: number; animated: boolean }>) {
+	color,
+}: Readonly<{ state: "cursor" | "painting"; scale: number; animated: boolean; color?: string }>) {
 	const reducedMotion = useReducedMotion();
 	const shouldAnimateMode = animated && !reducedMotion;
 	const s = 16 * scale;
@@ -244,7 +252,7 @@ function CursorMode({
 					}}
 				>
 					{state === "painting" ? (
-						<PaintingCursor scale={scale} animated={animated} />
+						<PaintingCursor scale={scale} animated={animated} color={color} />
 					) : (
 						<Cursor scale={scale} animated={animated} />
 					)}
@@ -314,16 +322,16 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
  * cursor, but restored to the full Rovo gradient fill so painting mode reads as
  * a deliberate capability switch without affecting idle hover.
  */
-function PaintingCursor({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
+function PaintingCursor({ scale, animated, color }: Readonly<{ scale: number; animated: boolean; color?: string }>) {
 	const s = 16 * scale;
 	const fillMask = maskStyle(ARROW_MASK);
-	const gradientClassName = animated ? "motion-reduce:[animation:none]" : undefined;
+	const gradientClassName = animated && !color ? "motion-reduce:[animation:none]" : undefined;
 	const gradientStyle = {
 		position: "absolute",
 		inset: "-50%",
-		background: ROVO_CONIC,
-		animation: animated ? "rovo-cursor-spin 2.4s linear infinite" : undefined,
-		willChange: animated ? "transform" : undefined,
+		background: color ?? ROVO_CONIC,
+		animation: animated && !color ? "rovo-cursor-spin 2.4s linear infinite" : undefined,
+		willChange: animated && !color ? "transform" : undefined,
 	} as const;
 
 	return (

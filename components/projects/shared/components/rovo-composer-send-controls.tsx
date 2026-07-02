@@ -28,7 +28,10 @@ import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
 const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
-const LIVE_VOICE_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
+// Default CTA styling: matches the VPK primary button (brand blue). Applied when the
+// experimental dark CTA flag is off. The [&_svg] override re-tints the icon because the
+// underlying ghost button pins it to text-icon-subtle.
+const BRAND_CTA_CLASS_NAME = "bg-primary text-primary-foreground [&_svg]:text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed";
 const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";
 const ROVO_CURSOR_BUTTON_TRANSITION = { type: "spring", bounce: 0.18, visualDuration: 0.22 } as const;
 const ROVO_CURSOR_BUTTON_VARIANTS = {
@@ -232,7 +235,7 @@ export function RovoComposerActionButton({
 	const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && realtimeVoiceActive;
 	const isDictationRecording = dictationState === "recording" && micStream !== null;
 	const experimentalDarkCtaClassName = experimentalDarkCta ? EXPERIMENTAL_DARK_CTA_CLASS_NAME : undefined;
-	const liveVoiceCtaClassName = experimentalDarkCtaClassName ?? LIVE_VOICE_CTA_CLASS_NAME;
+	const liveVoiceCtaClassName = experimentalDarkCtaClassName ?? BRAND_CTA_CLASS_NAME;
 	const shouldShowDictationStart = Boolean(onStartDictation) && !resolvedComposerBusy && !realtimeVoiceActive && !submitDisabled;
 	const shouldShowRealtimeVoiceStart = idleAction === "voice-start" && !canSubmit && Boolean(onToggleRealtimeVoice);
 	const shouldShowRealtimeVoiceRail = realtimeVoiceActive && Boolean(onToggleClicky);
@@ -346,8 +349,8 @@ export function RovoComposerActionButton({
 							<span
 								aria-hidden="true"
 								className={cn(
-									"absolute top-0.5 bottom-0.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all",
-									clickyActive ? "left-0.5 right-0.5" : "right-0.5 w-8",
+									"absolute top-0.5 right-0.5 bottom-0.5 rounded-md bg-bg-neutral-bold shadow-sm transition-[width] duration-medium ease-in-out motion-reduce:transition-none",
+									clickyActive ? "w-16" : "w-8",
 								)}
 							/>
 							<div className="relative z-10 flex h-8 w-16 items-center gap-0">

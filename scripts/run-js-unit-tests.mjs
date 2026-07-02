@@ -123,6 +123,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Ripple's image-shader wiring and Framer-style controls live under
 	// components/, so gate this focused source contract explicitly.
 	"components/website/demos/visual/ripple-demo.test.js",
+	// The Shaders Paper group is generated from the upstream
+	// @paper-design/shaders-react export surface, so keep runtime, catalog, nav,
+	// and details in lockstep.
+	"components/website/demos/visual/shaders-paper-demo.test.js",
 	// Liquid Glass shader utility math is shared by the visual demo and shader
 	// wrapper. Gate this pure utility coverage without the source-grep demo tests.
 	"components/website/demos/visual/shaders/liquid-glass-utils.test.js",
@@ -165,6 +169,12 @@ const INCLUDED_TEST_FILES = new Set([
 	// selection, and debounced writes without gating the broad source-grep UI tests.
 	"components/arts/awake/city-storage.test.js",
 	"components/arts/awake/use-cities.test.js",
+	// Cursors art: voice intent → cursor fan-out trigger. Stable pure-function
+	// contract; gate it explicitly without enabling the broad UI source tests.
+	"components/arts/cursors/agent-team-intent.test.js",
+	"components/arts/cursors/agent-team-lines.test.js",
+	"components/arts/cursors/cursor-agents.test.js",
+	"components/arts/cursors/launch-intent.test.js",
 	// Repo-owned extraction scaffolding lives under .agents, outside the broad
 	// test prefixes, but it is a stable node:test contract for vpk-build output.
 	".agents/skills/vpk-build/scripts/scaffold-target.test.js",

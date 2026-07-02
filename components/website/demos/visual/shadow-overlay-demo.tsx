@@ -68,12 +68,7 @@ export default function ShadowOverlayDemo() {
 
 	return (
 			<div className="flex w-full max-w-2xl flex-col" style={{ gap: token("space.400") }}>
-				<div
-					className="relative overflow-hidden rounded-lg border border-border bg-surface"
-					style={{
-						boxShadow: token("elevation.shadow.raised"),
-					}}
-				>
+				<div className="relative overflow-hidden rounded-lg border border-border bg-surface">
 					<div
 						className="relative min-h-[28rem] overflow-hidden rounded-lg"
 						style={{
