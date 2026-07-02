@@ -119,6 +119,40 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 	};
 }
 
+const PAPER_SHADER_DEMO_IMPORT_PATH = "@/components/website/demos/visual/paper-shaders-demo";
+
+const PAPER_SHADER_COMPONENTS = [
+	["paper-color-panels", "Color Panels"],
+	["paper-dithering", "Dithering"],
+	["paper-dot-grid", "Dot Grid"],
+	["paper-dot-orbit", "Dot Orbit"],
+	["paper-fluted-glass", "Fluted Glass"],
+	["paper-gem-smoke", "Gem Smoke"],
+	["paper-god-rays", "God Rays"],
+	["paper-grain-gradient", "Grain Gradient"],
+	["paper-halftone-cmyk", "Halftone CMYK"],
+	["paper-halftone-dots", "Halftone Dots"],
+	["paper-heatmap", "Heatmap"],
+	["paper-image-dithering", "Image Dithering"],
+	["paper-liquid-metal", "Liquid Metal"],
+	["paper-mesh-gradient", "Mesh Gradient"],
+	["paper-metaballs", "Metaballs"],
+	["paper-neuro-noise", "Neuro Noise"],
+	["paper-paper-texture", "Paper Texture"],
+	["paper-perlin-noise", "Perlin Noise"],
+	["paper-pulsing-border", "Pulsing Border"],
+	["paper-simplex-noise", "Simplex Noise"],
+	["paper-smoke-ring", "Smoke Ring"],
+	["paper-spiral", "Spiral"],
+	["paper-static-mesh-gradient", "Static Mesh Gradient"],
+	["paper-static-radial-gradient", "Static Radial Gradient"],
+	["paper-swirl", "Swirl"],
+	["paper-voronoi", "Voronoi"],
+	["paper-warp", "Warp"],
+	["paper-water", "Water"],
+	["paper-waves", "Waves"],
+] as const;
+
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-icon", "Animated Icons"),
@@ -521,6 +555,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("mesh-v2", "Mesh v2", "@/components/website/demos/visual/shaders/mesh-v2"),
 	visualComponent("chromatic-aberration", "Chromatic Aberration", "@/components/website/demos/visual/shaders/chromatic-aberration"),
 	visualComponent("chromatic-aberration-v2", "Chromatic Aberration v2", "@/components/website/demos/visual/shader-lab-effect-demo"),
+	...PAPER_SHADER_COMPONENTS.map(([slug, name]) => visualComponent(slug, name, PAPER_SHADER_DEMO_IMPORT_PATH)),
 	]);
 
 const ALL_COMPONENTS = [...AUDIO_COMPONENTS, ...UI_CHART_COMPONENTS, ...CUSTOM_COMPONENTS, ...UI_COMPONENTS, ...BLOCK_COMPONENTS, ...PROJECT_COMPONENTS, ...ART_COMPONENTS, ...UTILITY_COMPONENTS, ...VISUAL_COMPONENTS];

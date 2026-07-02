@@ -8885,6 +8885,93 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "mesh-v2": dynamic(() => import("./demos/visual/mesh-v2-demo"), {
     ssr: false,
   }),
+	"paper-color-panels": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-dithering": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-dot-grid": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-dot-orbit": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-fluted-glass": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-gem-smoke": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-god-rays": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-grain-gradient": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-halftone-cmyk": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-halftone-dots": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-heatmap": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-image-dithering": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-liquid-metal": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-mesh-gradient": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-metaballs": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-neuro-noise": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-paper-texture": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-perlin-noise": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-pulsing-border": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-simplex-noise": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-smoke-ring": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-spiral": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-static-mesh-gradient": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-static-radial-gradient": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-swirl": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-voronoi": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-warp": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-water": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
+	"paper-waves": dynamic(() => import("./demos/visual/paper-shaders-demo"), {
+		ssr: false,
+	}),
 };
 
 const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
