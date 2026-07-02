@@ -56,3 +56,15 @@ packages:
 
 	assert.deepEqual(findings, []);
 });
+
+test("rejects atlassian-npm tarball URLs for other Atlassian packages", () => {
+	const findings = findBlockedLockfileRegistryUrls(`
+packages:
+  '@atlassian/platform-feature-flags@2.0.0':
+    resolution: {tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlassian/platform-feature-flags/-/@atlassian/platform-feature-flags-2.0.0.tgz}
+`);
+
+	assert.equal(findings.length, 1);
+	assert.equal(findings[0].line, 4);
+	assert.match(findings[0].text, /atlassian-npm/u);
+});
