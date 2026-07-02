@@ -184,12 +184,13 @@ export default function Mesh({
 		};
 	}, []);
 
-	const shouldAnimate = !reduced && inView && tabVisible;
+	const shouldRender = inView && tabVisible;
+	const shouldAnimate = shouldRender && !reduced;
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
-		if (!shouldAnimate) return;
+		if (!shouldRender) return;
 
 		const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
 		if (!gl) return;
@@ -249,12 +250,14 @@ export default function Mesh({
 			gl.uniform1f(uTime, (performance.now() - start) / 1000);
 			gl.uniform1f(gl.getUniformLocation(prog, "u_pixelRatio"), dpr);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-			animRef.current = requestAnimationFrame(render);
+			if (shouldAnimate) {
+				animRef.current = requestAnimationFrame(render);
+			}
 		};
 		animRef.current = requestAnimationFrame(render);
 
 		return () => cancelAnimationFrame(animRef.current);
-	}, [backgroundColor, lineColor, lineWidth, lineBlur, seed, speed, amplitude, tilt, zoom, cameraHeight, lightIntensity, shouldAnimate]);
+	}, [backgroundColor, lineColor, lineWidth, lineBlur, seed, speed, amplitude, tilt, zoom, cameraHeight, lightIntensity, shouldRender, shouldAnimate]);
 
 	return (
 		<canvas

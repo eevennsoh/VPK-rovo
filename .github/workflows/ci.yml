@@ -35,15 +35,18 @@ jobs:
 
       - name: Authenticate to the internal Atlassian npm registry
         # `@atlassian/logo-third-party` (Platform Labs) is internal-only and not in
-        # the public npm-remote mirror, so it resolves from `atlassian-npm`, which
-        # (unlike npm-remote) requires auth. The project `.npmrc` supplies the
-        # registry mapping; this supplies the token, mirroring local `~/.npmrc`.
+        # the public npm-remote mirror, so it resolves from `atlassian-npm`.
+        # Atlassian npm tarball URLs can also require auth when they resolve through
+        # `npm-remote`. The project `.npmrc` supplies registry mapping; this supplies
+        # the token, mirroring local `~/.npmrc`.
         # Cover both registry path variants: metadata uses `/artifactory/api/npm/`,
-        # the lockfile tarball URL uses `/api/npm/`.
+        # lockfile tarball URLs use `/api/npm/`.
         run: |
           {
             echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
             echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=${ATLASSIAN_NPM_TOKEN}"
+            echo "//packages.atlassian.com/artifactory/api/npm/npm-remote/:_authToken=${ATLASSIAN_NPM_TOKEN}"
+            echo "//packages.atlassian.com/api/npm/npm-remote/:_authToken=${ATLASSIAN_NPM_TOKEN}"
           } >> "$HOME/.npmrc"
         env:
           ATLASSIAN_NPM_TOKEN: ${{ secrets.ATLASSIAN_NPM_TOKEN }}
