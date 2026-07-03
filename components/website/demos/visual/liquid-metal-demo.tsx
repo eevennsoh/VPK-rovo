@@ -233,7 +233,6 @@ function ShowcasePill({
 					<span className="text-sm font-semibold text-current">{label}</span>
 				</LiquidMetalHost>
 			</AnimatedShowcaseShell>
-			<MetalLabel>{label}</MetalLabel>
 		</div>
 	);
 }
@@ -256,7 +255,6 @@ function SendCircleShowcase({
 					<Icon render={<SendIcon label="" size="medium" />} aria-hidden />
 				</LiquidMetalHost>
 			</AnimatedShowcaseShell>
-			<MetalLabel>Gold send</MetalLabel>
 		</div>
 	);
 }
@@ -295,37 +293,34 @@ function ToolbarShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>
 					</Button>
 				</div>
 			</LiquidMetalHost>
-			<MetalLabel>Toolbar refs</MetalLabel>
 		</div>
 	);
 }
 
-function ChatShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
-	const promptRef = useRef<HTMLDivElement | null>(null);
-	const statusRef = useRef<HTMLDivElement | null>(null);
+function ProximityShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
+	const firstRef = useRef<HTMLDivElement | null>(null);
+	const secondRef = useRef<HTMLDivElement | null>(null);
+	const thirdRef = useRef<HTMLDivElement | null>(null);
 	const reflectionTargets = useMemo(
-		() => coerceReflectionTargets([promptRef, statusRef]),
+		() => coerceReflectionTargets([firstRef, secondRef, thirdRef]),
 		[],
 	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-sm flex-col gap-3">
-			<div ref={promptRef} className="ml-auto max-w-48 rounded-lg rounded-br-sm bg-bg-neutral px-3 py-2 text-xs text-text">
-				Review the shader state.
-			</div>
-			<div ref={statusRef} className="mr-auto max-w-52 rounded-lg rounded-bl-sm bg-bg-neutral-subtle px-3 py-2 text-xs text-text">
-				Ready.
+		<div className="flex flex-col items-center justify-center gap-3">
+			<div className="flex items-center gap-3">
+				<div ref={firstRef} className="size-12 rounded-xl bg-bg-neutral" />
+				<div ref={secondRef} className="size-12 rounded-xl bg-bg-neutral-hovered" />
+				<div ref={thirdRef} className="size-12 rounded-xl bg-bg-neutral" />
 			</div>
 			<LiquidMetalHost
 				config={config}
 				overrides={{ preset: "silver", variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
 				reflectionTargets={reflectionTargets}
-				className="ml-auto min-w-44 justify-between gap-3 px-3"
+				className="min-w-40 px-5 py-2"
 			>
-				<span className="text-xs text-text-subtle">Ask Rovo</span>
-				<Icon render={<SendIcon label="" size="small" />} aria-hidden />
+				<span className="text-sm font-semibold text-current">Proximity</span>
 			</LiquidMetalHost>
-			<MetalLabel className="text-left">Chat refs</MetalLabel>
 		</div>
 	);
 }
@@ -473,30 +468,13 @@ function MainPlayground({
 	motionActive: boolean;
 	onConfigChange: Dispatch<SetStateAction<LiquidMetalDemoConfig>>;
 }>) {
-	const searchRef = useRef<HTMLButtonElement | null>(null);
-	const copyRef = useRef<HTMLButtonElement | null>(null);
-	const settingsRef = useRef<HTMLButtonElement | null>(null);
-	const reflectionTargets = useMemo(
-		() => coerceReflectionTargets([searchRef, copyRef, settingsRef]),
-		[],
-	);
-
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
 			<div className="relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-3xl border border-border bg-surface px-6 py-8">
 				<div className="flex flex-col items-center justify-center gap-6">
 					<MetalLabel>Playground</MetalLabel>
-					<ReflectionToolbarTargets
-						copyRef={copyRef}
-						searchRef={searchRef}
-						settingsRef={settingsRef}
-					/>
 					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
-						<LiquidMetalHost
-							config={config}
-							reflectionTargets={reflectionTargets}
-							className="text-current"
-						>
+						<LiquidMetalHost config={config} className="text-current">
 							<PlaygroundContent variant={config.variant} />
 						</LiquidMetalHost>
 					</AnimatedShowcaseShell>
@@ -540,7 +518,7 @@ export function LiquidMetalDemoToolbarReflection() {
 }
 
 export function LiquidMetalDemoChatReflection() {
-	return <ChatShowcase config={{ ...DEFAULT_CONFIG, theme: "dark", reflectionTargetsMode: "refs" }} />;
+	return <ProximityShowcase config={{ ...DEFAULT_CONFIG, theme: "dark", reflectionTargetsMode: "refs" }} />;
 }
 
 export default function LiquidMetalDemo() {
