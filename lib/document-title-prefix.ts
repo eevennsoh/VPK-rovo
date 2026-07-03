@@ -1,6 +1,7 @@
 const LOCALHOST_SUFFIX = ".localhost";
 const DOCUMENT_TITLE_PREFIX_SEPARATOR = ":";
 const LEGACY_DOCUMENT_TITLE_PREFIX_SEPARATOR = " — ";
+const UNPREFIXED_DOCUMENT_TITLES = new Set(["⚠ Keep this page active"]);
 
 export type DocumentTitleLocation = {
 	host?: string | null;
@@ -66,6 +67,10 @@ export function formatDocumentTitleWithPrefix(title: string, prefix: string): st
 	}
 
 	const baseTitle = stripDocumentTitlePrefix(title, normalizedPrefix);
+
+	if (UNPREFIXED_DOCUMENT_TITLES.has(baseTitle)) {
+		return baseTitle;
+	}
 
 	return baseTitle
 		? `${normalizedPrefix}${DOCUMENT_TITLE_PREFIX_SEPARATOR}${baseTitle}`
