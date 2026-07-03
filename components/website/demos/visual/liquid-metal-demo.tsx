@@ -224,7 +224,7 @@ function ShowcasePill({
 	preset: MetalFxPreset;
 }>) {
 	return (
-		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+		<div className="flex flex-col items-center justify-center gap-3">
 			<AnimatedShowcaseShell active={active} mode={mode}>
 				<LiquidMetalHost
 					config={config}
@@ -246,7 +246,7 @@ function SendCircleShowcase({
 	config: LiquidMetalDemoConfig;
 }>) {
 	return (
-		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+		<div className="flex flex-col items-center justify-center gap-3">
 			<AnimatedShowcaseShell active={active} mode="pulse">
 				<LiquidMetalHost
 					config={config}
@@ -271,7 +271,7 @@ function ToolbarShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>
 	);
 
 	return (
-		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+		<div className="flex flex-col items-center justify-center gap-3">
 			<ReflectionToolbarTargets
 				copyRef={copyRef}
 				searchRef={searchRef}
@@ -309,7 +309,7 @@ function ChatShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
 	);
 
 	return (
-		<div className="flex min-h-40 flex-col justify-end gap-3 rounded-lg border border-border bg-surface p-4">
+		<div className="mx-auto flex w-full max-w-sm flex-col gap-3">
 			<div ref={promptRef} className="ml-auto max-w-48 rounded-lg rounded-br-sm bg-bg-neutral px-3 py-2 text-xs text-text">
 				Review the shader state.
 			</div>
@@ -326,38 +326,6 @@ function ChatShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
 				<Icon render={<SendIcon label="" size="small" />} aria-hidden />
 			</LiquidMetalHost>
 			<MetalLabel className="text-left">Chat refs</MetalLabel>
-		</div>
-	);
-}
-
-function ReflectionPanel({
-	config,
-	label,
-	preset,
-}: Readonly<{
-	config: LiquidMetalDemoConfig;
-	label: string;
-	preset: MetalFxPreset;
-}>) {
-	const topRef = useRef<HTMLDivElement | null>(null);
-	const dotRef = useRef<HTMLDivElement | null>(null);
-	const reflectionTargets = useMemo(
-		() => coerceReflectionTargets([topRef, dotRef]),
-		[],
-	);
-
-	return (
-		<div className="relative flex min-h-40 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-4">
-			<div ref={topRef} className="absolute inset-x-6 top-6 h-1 rounded-full bg-bg-neutral" />
-			<div ref={dotRef} className="absolute right-7 bottom-7 size-14 rounded-full bg-bg-neutral-hovered" />
-			<LiquidMetalHost
-				config={config}
-				overrides={{ preset, variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
-				reflectionTargets={reflectionTargets}
-				className="min-w-36 px-5 py-2"
-			>
-				<span className="text-xs font-semibold text-current">{label}</span>
-			</LiquidMetalHost>
 		</div>
 	);
 }
@@ -514,30 +482,28 @@ function MainPlayground({
 	);
 
 	return (
-		<section className="relative isolate min-h-[460px] overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-sm">
-			<div className="relative grid h-full min-h-[428px] gap-4 lg:grid-cols-[1fr_20rem]">
-				<div className="flex min-h-80 flex-col items-center justify-center gap-6 rounded-lg border border-border bg-surface-sunken p-6">
-					<MetalLabel>Playground</MetalLabel>
-					<ReflectionToolbarTargets
-						copyRef={copyRef}
-						searchRef={searchRef}
-						settingsRef={settingsRef}
-					/>
-					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
-						<LiquidMetalHost
-							config={config}
-							reflectionTargets={reflectionTargets}
-							className="text-current"
-						>
-							<PlaygroundContent variant={config.variant} />
-						</LiquidMetalHost>
-					</AnimatedShowcaseShell>
-				</div>
-				<div className="self-start rounded-lg border border-border bg-surface p-4 text-text shadow-sm">
-					<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
-				</div>
+		<div className="grid w-full items-center gap-8 lg:grid-cols-[1fr_18rem]">
+			<div className="flex min-h-72 flex-col items-center justify-center gap-6">
+				<MetalLabel>Playground</MetalLabel>
+				<ReflectionToolbarTargets
+					copyRef={copyRef}
+					searchRef={searchRef}
+					settingsRef={settingsRef}
+				/>
+				<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
+					<LiquidMetalHost
+						config={config}
+						reflectionTargets={reflectionTargets}
+						className="text-current"
+					>
+						<PlaygroundContent variant={config.variant} />
+					</LiquidMetalHost>
+				</AnimatedShowcaseShell>
 			</div>
-		</section>
+			<div className="lg:border-l lg:border-border lg:pl-8">
+				<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
+			</div>
+		</div>
 	);
 }
 
@@ -587,45 +553,10 @@ export default function LiquidMetalDemo() {
 	const motionActive = !resolvedConfig.paused;
 
 	return (
-		<div className="flex w-full max-w-6xl flex-col gap-4">
-			<MainPlayground
-				config={resolvedConfig}
-				motionActive={motionActive}
-				onConfigChange={setConfig}
-			/>
-
-			<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-				<ShowcasePill
-					active={motionActive}
-					config={resolvedConfig}
-					label="Chromatic"
-					mode="none"
-					preset="chromatic"
-				/>
-				<ShowcasePill
-					active={motionActive}
-					config={resolvedConfig}
-					label="Silver"
-					mode="pulse"
-					preset="silver"
-				/>
-				<SendCircleShowcase active={motionActive} config={resolvedConfig} />
-				<ToolbarShowcase config={resolvedConfig} />
-			</section>
-
-			<section className="grid gap-3 lg:grid-cols-[1fr_1fr_1.15fr]">
-				<ReflectionPanel
-					config={resolvedConfig}
-					label="Aurora"
-					preset="chromatic"
-				/>
-				<ReflectionPanel
-					config={resolvedConfig}
-					label="Goldline"
-					preset="gold"
-				/>
-				<ChatShowcase config={resolvedConfig} />
-			</section>
-		</div>
+		<MainPlayground
+			config={resolvedConfig}
+			motionActive={motionActive}
+			onConfigChange={setConfig}
+		/>
 	);
 }

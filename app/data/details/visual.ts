@@ -1045,10 +1045,10 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 		demoLayout: {
 			previewContentWidth: "full",
 			previewHeight: "fit",
-			examplesContentWidth: "full",
+			examplesContentWidth: "fit",
 		},
 		examples: [
-			{ title: "Chromatic pill", description: "The upstream chromatic preset on a rotating pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
+			{ title: "Chromatic pill", description: "The upstream chromatic preset on a pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
 			{ title: "Silver pill", description: "The upstream silver preset on a pulsing pill host.", demoSlug: "liquid-metal-demo-silver-pill" },
 			{ title: "Gold send", description: "The upstream circle variant with the gold preset.", demoSlug: "liquid-metal-demo-gold-send" },
 			{ title: "Toolbar reflection", description: "A silver toolbar with reflectionTargets wired to adjacent icon buttons.", demoSlug: "liquid-metal-demo-toolbar-reflection" },
