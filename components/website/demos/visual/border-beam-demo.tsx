@@ -21,9 +21,28 @@ import BorderBeam, {
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { GUI } from "@/components/utils/gui";
+import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
 
 type MockTheme = "dark" | "light";
+
+// Preview stage backdrops, tuned per theme so the beam glow reads correctly.
+const PREVIEW_SURFACE: Record<MockTheme, string> = {
+	dark: "bg-[#0C0D12]",
+	light: "bg-[#F7F8F9]",
+};
+
+/**
+ * Resolve a demo `theme` config to a concrete light/dark value. `"auto"` follows
+ * the app's active theme (the light/dark toggle) rather than only the OS setting,
+ * so the demo visibly reacts when the site theme is switched.
+ */
+function resolveDemoTheme(
+	theme: BorderBeamDemoConfig["theme"],
+	appTheme: MockTheme,
+): MockTheme {
+	return theme === "auto" ? appTheme : theme;
+}
 
 const TASKS = [
 	"Generate color palettes",
@@ -32,21 +51,17 @@ const TASKS = [
 	"Build section engine",
 ] as const;
 
-function getMockTheme(theme: BorderBeamDemoConfig["theme"]): MockTheme {
-	return theme === "light" ? "light" : "dark";
-}
-
 function getMockShellClassName(theme: MockTheme): string {
 	return theme === "light"
 		? "border-border bg-white text-[#172B4D] shadow-sm"
 		: "border-white/10 bg-[#161A22] text-white shadow-[0_24px_80px_rgb(0_0_0/0.38)]";
 }
 
-function renderBeamConfig(config: BorderBeamDemoConfig) {
+function renderBeamConfig(config: BorderBeamDemoConfig, themeOverride?: MockTheme) {
 	return {
 		size: config.size,
 		colorVariant: config.colorVariant,
-		theme: config.theme,
+		theme: themeOverride ?? config.theme,
 		staticColors: config.staticColors,
 		duration: config.duration,
 		active: config.active,
@@ -221,16 +236,18 @@ function BorderBeamPreview({
 	config,
 	children,
 	className,
+	resolvedTheme,
 }: Readonly<{
 	config: BorderBeamDemoConfig;
 	children: React.ReactNode;
 	className?: string;
+	resolvedTheme?: MockTheme;
 }>) {
 	return (
 		<div className={cn("min-w-0 p-8", className)} data-border-beam-preview="true">
 			<BorderBeam
 				className={config.size === "sm" || config.size === "line" ? "mx-auto w-fit" : "w-full"}
-				{...renderBeamConfig(config)}
+				{...renderBeamConfig(config, resolvedTheme)}
 			>
 				{children}
 			</BorderBeam>
@@ -261,8 +278,13 @@ function getNextSizeForFamily(family: BorderBeamFamily): BorderBeamSize {
 }
 
 export default function BorderBeamDemo() {
-	const [config, setConfig] = useState<BorderBeamDemoConfig>(BORDER_BEAM_DEFAULTS);
-	const mockTheme = getMockTheme(config.theme);
+	const [config, setConfig] = useState<BorderBeamDemoConfig>({
+		...BORDER_BEAM_DEFAULTS,
+		theme: "auto",
+	});
+	const { actualTheme } = useTheme();
+	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
+	const mockTheme = resolvedTheme;
 	const sizeOptions = useMemo(() => getBorderBeamSizeOptions(config.family), [config.family]);
 	const values = useMemo(() => ({
 		...config,
@@ -303,8 +325,13 @@ export default function BorderBeamDemo() {
 
 	return (
 		<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6">
-			<div className="overflow-hidden rounded-lg border border-border bg-[#0C0D12]">
-				<BorderBeamPreview config={config} className="mx-auto max-w-2xl">
+			<div
+				className={cn(
+					"overflow-hidden rounded-lg border border-border transition-colors duration-medium motion-reduce:transition-none",
+					PREVIEW_SURFACE[resolvedTheme],
+				)}
+			>
+				<BorderBeamPreview config={config} resolvedTheme={resolvedTheme} className="mx-auto max-w-2xl">
 					{config.size === "sm" ? (
 						<MockIconButton theme={mockTheme} />
 					) : config.size === "line" ? (
