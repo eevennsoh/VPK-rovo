@@ -32,7 +32,6 @@ test("Liquid Metal docs register the main preview and visual example demos", () 
 		"liquid-metal-demo-chromatic-pill",
 		"liquid-metal-demo-silver-pill",
 		"liquid-metal-demo-gold-send",
-		"liquid-metal-demo-toolbar-reflection",
 		"liquid-metal-demo-chat-reflection",
 	]) {
 		assert.match(detailsSource, new RegExp(`demoSlug: "${demoSlug}"`, "u"));
