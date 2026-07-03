@@ -472,3 +472,27 @@ export function BorderBeamDemoStrengthLadder() {
 		</div>
 	);
 }
+
+export function BorderBeamDemoReflection() {
+	const config = getBorderBeamDefaultsForSize("pulse-outside");
+	const { actualTheme } = useTheme();
+	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
+	const variants = ["colorful", "ocean"] as const;
+	return (
+		<div
+			className={cn(
+				"flex min-h-52 w-full flex-col items-center justify-center gap-3 rounded-lg p-10 transition-colors duration-medium motion-reduce:transition-none",
+				PREVIEW_SURFACE[resolvedTheme],
+			)}
+		>
+			{variants.map((colorVariant) => (
+				<BorderBeam
+					key={colorVariant}
+					{...renderBeamConfig({ ...config, colorVariant, strength: 0.95 }, resolvedTheme)}
+				>
+					<BeamShape theme={resolvedTheme} className="h-14 w-72 rounded-2xl" />
+				</BorderBeam>
+			))}
+		</div>
+	);
+}

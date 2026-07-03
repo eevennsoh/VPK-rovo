@@ -952,6 +952,7 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 			{ title: "Rovo brand", description: "Rovo brand palette (blue, orange, purple, lime) traveling around a surface.", demoSlug: "border-beam-demo-rovo-brand" },
 			{ title: "Play / pause", description: "Toggle the active prop to fade the beam in and out with its built-in transitions.", demoSlug: "border-beam-demo-play-pause" },
 			{ title: "Strength ladder", description: "The same beam at strength 0.35, 0.65, and 1 to show intensity scaling.", demoSlug: "border-beam-demo-strength-ladder" },
+			{ title: "Reflection", description: "Two pulse-outside surfaces placed close together so their outward halos bleed into the gap and glow onto each other.", demoSlug: "border-beam-demo-reflection" },
 		],
 		props: [
 			{ name: "children", type: "React.ReactNode", description: "Opaque wrapped content. `pulse-outside` renders its core behind the child, so transparent children show the inner glow through the surface." },

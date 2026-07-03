@@ -9060,6 +9060,13 @@ const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "border-beam-demo-reflection": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoReflection,
+      })),
+    { ssr: false },
+  ),
   "ink-wash-demo-landscape": dynamic(
     () =>
       import("./demos/visual/ink-wash-demo").then((mod) => ({
