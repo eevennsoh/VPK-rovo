@@ -67,7 +67,7 @@ export const BORDER_BEAM_DEFAULTS: BorderBeamDemoConfig = {
 	family: "rotate",
 	size: "md",
 	colorVariant: "colorful",
-	theme: "dark",
+	theme: "auto",
 	staticColors: false,
 	active: true,
 	duration: 1.96,
