@@ -32,7 +32,6 @@ import {
 	type LiquidMetalReflectionTargetsMode,
 	type MetalFxPreset,
 	type MetalFxProps,
-	type MetalFxTheme,
 	type MetalFxVariant,
 } from "@/components/visual/liquid-metal";
 import { cn } from "@/lib/utils";
@@ -44,7 +43,7 @@ type RequiredLiquidMetalControls = Required<Pick<
 type LiquidMetalDemoConfig = LiquidMetalControlConfig & RequiredLiquidMetalControls;
 type LiquidMetalConfigKey = keyof LiquidMetalDemoConfig;
 type LiquidMetalHostSurface = LiquidMetalDemoSurface | "panel";
-type ShowcaseMotion = "none" | "pulse" | "rotate";
+type ShowcaseMotion = "none" | "pulse";
 type ReflectionTargets = NonNullable<MetalFxProps["reflectionTargets"]>;
 
 const DEFAULT_CONFIG: LiquidMetalDemoConfig = {
@@ -52,18 +51,6 @@ const DEFAULT_CONFIG: LiquidMetalDemoConfig = {
 	borderRadius: LIQUID_METAL_CONTROL_RANGES.borderRadius.defaultValue,
 	ringCssPx: LIQUID_METAL_CONTROL_RANGES.ringCssPx.defaultValue,
 	shaderScale: LIQUID_METAL_CONTROL_RANGES.shaderScale.defaultValue,
-};
-
-const STAGE_BACKDROP_CLASS: Record<MetalFxTheme, string> = {
-	auto: "bg-neutral-950 text-white",
-	dark: "bg-neutral-950 text-white",
-	light: "bg-surface text-text",
-};
-
-const PRESET_GLOW_CLASS: Record<MetalFxPreset, string> = {
-	chromatic: "from-cyan-300/25 via-magenta-400/25 to-amber-200/25",
-	silver: "from-white/35 via-slate-200/25 to-zinc-500/30",
-	gold: "from-yellow-200/35 via-amber-400/30 to-rose-400/20",
 };
 
 function setConfigValue<K extends LiquidMetalConfigKey>(
@@ -158,25 +145,18 @@ function AnimatedShowcaseShell({
 	children: ReactNode;
 	mode: ShowcaseMotion;
 }>) {
-	const animate = active
-		? mode === "rotate"
-			? { rotate: 360, scale: 1 }
-			: mode === "pulse"
-				? { rotate: 0, scale: [1, 1.045, 1] }
-				: { rotate: 0, scale: 1 }
-		: { rotate: 0, scale: 1 };
-	const transition = active
-		? mode === "rotate"
-			? { duration: 16, ease: "linear" as const, repeat: Number.POSITIVE_INFINITY }
-			: mode === "pulse"
-				? { duration: 2.4, ease: "easeInOut" as const, repeat: Number.POSITIVE_INFINITY }
-				: { duration: 0 }
+	const animate = active && mode === "pulse"
+		? { scale: [1, 1.045, 1] }
+		: { scale: 1 };
+	const transition = active && mode === "pulse"
+		? { duration: 2.4, ease: "easeInOut" as const, repeat: Number.POSITIVE_INFINITY }
 		: { duration: 0 };
 
 	return (
 		<motion.div
 			animate={animate}
 			transition={transition}
+			style={{ willChange: "transform" }}
 			className="flex items-center justify-center"
 		>
 			{children}
@@ -354,12 +334,10 @@ function ReflectionPanel({
 	config,
 	label,
 	preset,
-	targetClassName,
 }: Readonly<{
 	config: LiquidMetalDemoConfig;
 	label: string;
 	preset: MetalFxPreset;
-	targetClassName: string;
 }>) {
 	const topRef = useRef<HTMLDivElement | null>(null);
 	const dotRef = useRef<HTMLDivElement | null>(null);
@@ -369,19 +347,14 @@ function ReflectionPanel({
 	);
 
 	return (
-		<div
-			className={cn(
-				"relative flex min-h-40 items-center justify-center overflow-hidden rounded-lg border border-border p-4",
-				targetClassName,
-			)}
-		>
-			<div ref={topRef} className="absolute inset-x-6 top-6 h-1 rounded-full bg-white/60" />
-			<div ref={dotRef} className="absolute right-7 bottom-7 size-14 rounded-full bg-white/35" />
+		<div className="relative flex min-h-40 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-4">
+			<div ref={topRef} className="absolute inset-x-6 top-6 h-1 rounded-full bg-bg-neutral" />
+			<div ref={dotRef} className="absolute right-7 bottom-7 size-14 rounded-full bg-bg-neutral-hovered" />
 			<LiquidMetalHost
 				config={config}
 				overrides={{ preset, variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
 				reflectionTargets={reflectionTargets}
-				className="min-w-36 bg-white/20 px-5 py-2"
+				className="min-w-36 px-5 py-2"
 			>
 				<span className="text-xs font-semibold text-current">{label}</span>
 			</LiquidMetalHost>
@@ -541,25 +514,16 @@ function MainPlayground({
 	);
 
 	return (
-		<section
-			className={cn(
-				"relative isolate min-h-[460px] overflow-hidden rounded-lg border border-border p-4 shadow-sm",
-				STAGE_BACKDROP_CLASS[config.theme],
-			)}
-		>
-			<div className={cn("absolute inset-0 bg-gradient-to-br opacity-80", PRESET_GLOW_CLASS[config.preset])} />
-			<div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,.08)_1px,transparent_1px)] bg-[size:44px_44px] opacity-25" />
+		<section className="relative isolate min-h-[460px] overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-sm">
 			<div className="relative grid h-full min-h-[428px] gap-4 lg:grid-cols-[1fr_20rem]">
-				<div className="flex min-h-80 flex-col items-center justify-center gap-6 rounded-lg border border-white/10 bg-black/10 p-6">
-					<MetalLabel className={config.theme === "light" ? "text-text-subtle" : "text-white/70"}>
-						Playground
-					</MetalLabel>
+				<div className="flex min-h-80 flex-col items-center justify-center gap-6 rounded-lg border border-border bg-surface-sunken p-6">
+					<MetalLabel>Playground</MetalLabel>
 					<ReflectionToolbarTargets
 						copyRef={copyRef}
 						searchRef={searchRef}
 						settingsRef={settingsRef}
 					/>
-					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "rotate"}>
+					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
 						<LiquidMetalHost
 							config={config}
 							reflectionTargets={reflectionTargets}
@@ -569,7 +533,7 @@ function MainPlayground({
 						</LiquidMetalHost>
 					</AnimatedShowcaseShell>
 				</div>
-				<div className="self-start rounded-lg border border-border bg-surface/95 p-4 text-text shadow-sm">
+				<div className="self-start rounded-lg border border-border bg-surface p-4 text-text shadow-sm">
 					<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
 				</div>
 			</div>
@@ -583,7 +547,7 @@ export function LiquidMetalDemoChromaticPill() {
 			active
 			config={DEFAULT_CONFIG}
 			label="Chromatic"
-			mode="rotate"
+			mode="none"
 			preset="chromatic"
 		/>
 	);
@@ -635,7 +599,7 @@ export default function LiquidMetalDemo() {
 					active={motionActive}
 					config={resolvedConfig}
 					label="Chromatic"
-					mode="rotate"
+					mode="none"
 					preset="chromatic"
 				/>
 				<ShowcasePill
@@ -654,13 +618,11 @@ export default function LiquidMetalDemo() {
 					config={resolvedConfig}
 					label="Aurora"
 					preset="chromatic"
-					targetClassName="bg-[linear-gradient(135deg,#38bdf8,#e879f9_48%,#fde68a)]"
 				/>
 				<ReflectionPanel
 					config={resolvedConfig}
 					label="Goldline"
 					preset="gold"
-					targetClassName="bg-[linear-gradient(135deg,#111827,#c084fc_46%,#f59e0b)]"
 				/>
 				<ChatShowcase config={resolvedConfig} />
 			</section>
