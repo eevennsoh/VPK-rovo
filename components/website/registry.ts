@@ -9102,13 +9102,6 @@ const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "liquid-metal-demo-toolbar-reflection": dynamic(
-    () =>
-      import("./demos/visual/liquid-metal-demo").then((mod) => ({
-        default: mod.LiquidMetalDemoToolbarReflection,
-      })),
-    { ssr: false },
-  ),
   "liquid-metal-demo-chat-reflection": dynamic(
     () =>
       import("./demos/visual/liquid-metal-demo").then((mod) => ({

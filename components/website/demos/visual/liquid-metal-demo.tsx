@@ -7,16 +7,11 @@ import {
 	type CSSProperties,
 	type Dispatch,
 	type ReactNode,
-	type RefObject,
 	type SetStateAction,
 } from "react";
-import CopyIcon from "@atlaskit/icon/core/copy";
-import SearchIcon from "@atlaskit/icon/core/search";
 import SendIcon from "@atlaskit/icon/core/send";
-import SettingsIcon from "@atlaskit/icon/core/settings";
 import { motion, useReducedMotion } from "motion/react";
 
-import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { GUI } from "@/components/utils/gui";
 import {
@@ -164,50 +159,12 @@ function AnimatedShowcaseShell({
 	);
 }
 
-function MetalLabel({
-	children,
-	className,
-}: Readonly<{
-	children: ReactNode;
-	className?: string;
-}>) {
-	return (
-		<span className={cn("text-[11px] font-semibold uppercase tracking-wide text-text-subtlest", className)}>
-			{children}
-		</span>
-	);
-}
-
 function PlaygroundContent({ variant }: Readonly<{ variant: MetalFxVariant }>) {
 	if (variant === "circle") {
 		return <Icon render={<SendIcon label="" size="medium" />} aria-hidden className="text-current" />;
 	}
 
 	return <span className="text-sm font-semibold text-current">Liquid Metal</span>;
-}
-
-function ReflectionToolbarTargets({
-	copyRef,
-	searchRef,
-	settingsRef,
-}: Readonly<{
-	copyRef: RefObject<HTMLButtonElement | null>;
-	searchRef: RefObject<HTMLButtonElement | null>;
-	settingsRef: RefObject<HTMLButtonElement | null>;
-}>) {
-	return (
-		<div className="flex items-center gap-2">
-			<Button ref={searchRef} type="button" aria-label="Search target" variant="secondary" size="icon">
-				<Icon render={<SearchIcon label="" size="small" />} aria-hidden />
-			</Button>
-			<Button ref={copyRef} type="button" aria-label="Copy target" variant="secondary" size="icon">
-				<Icon render={<CopyIcon label="" size="small" />} aria-hidden />
-			</Button>
-			<Button ref={settingsRef} type="button" aria-label="Settings target" variant="secondary" size="icon">
-				<Icon render={<SettingsIcon label="" size="small" />} aria-hidden />
-			</Button>
-		</div>
-	);
 }
 
 function ShowcasePill({
@@ -255,44 +212,6 @@ function SendCircleShowcase({
 					<Icon render={<SendIcon label="" size="medium" />} aria-hidden />
 				</LiquidMetalHost>
 			</AnimatedShowcaseShell>
-		</div>
-	);
-}
-
-function ToolbarShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
-	const searchRef = useRef<HTMLButtonElement | null>(null);
-	const copyRef = useRef<HTMLButtonElement | null>(null);
-	const settingsRef = useRef<HTMLButtonElement | null>(null);
-	const reflectionTargets = useMemo(
-		() => coerceReflectionTargets([searchRef, copyRef, settingsRef]),
-		[],
-	);
-
-	return (
-		<div className="flex flex-col items-center justify-center gap-3">
-			<ReflectionToolbarTargets
-				copyRef={copyRef}
-				searchRef={searchRef}
-				settingsRef={settingsRef}
-			/>
-			<LiquidMetalHost
-				config={config}
-				overrides={{ preset: "silver", variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
-				reflectionTargets={reflectionTargets}
-				surface="toolbar"
-			>
-				<div className="flex items-center gap-1">
-					<Button type="button" aria-label="Search" variant="ghost" size="icon">
-						<Icon render={<SearchIcon label="" size="small" />} aria-hidden />
-					</Button>
-					<Button type="button" aria-label="Copy" variant="ghost" size="icon">
-						<Icon render={<CopyIcon label="" size="small" />} aria-hidden />
-					</Button>
-					<Button type="button" aria-label="Settings" variant="ghost" size="icon">
-						<Icon render={<SettingsIcon label="" size="small" />} aria-hidden />
-					</Button>
-				</div>
-			</LiquidMetalHost>
 		</div>
 	);
 }
@@ -471,14 +390,11 @@ function MainPlayground({
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
 			<div className="relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-3xl border border-border bg-surface px-6 py-8">
-				<div className="flex flex-col items-center justify-center gap-6">
-					<MetalLabel>Playground</MetalLabel>
-					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
-						<LiquidMetalHost config={config} className="text-current">
-							<PlaygroundContent variant={config.variant} />
-						</LiquidMetalHost>
-					</AnimatedShowcaseShell>
-				</div>
+				<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
+					<LiquidMetalHost config={config} className="text-current">
+						<PlaygroundContent variant={config.variant} />
+					</LiquidMetalHost>
+				</AnimatedShowcaseShell>
 			</div>
 			<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
 		</div>
@@ -511,10 +427,6 @@ export function LiquidMetalDemoSilverPill() {
 
 export function LiquidMetalDemoGoldSend() {
 	return <SendCircleShowcase active config={DEFAULT_CONFIG} />;
-}
-
-export function LiquidMetalDemoToolbarReflection() {
-	return <ToolbarShowcase config={{ ...DEFAULT_CONFIG, theme: "dark", reflectionTargetsMode: "refs" }} />;
 }
 
 export function LiquidMetalDemoChatReflection() {
