@@ -31,10 +31,10 @@ const PREVIEW_SURFACE: Record<ResolvedTheme, string> = {
 // beam and the container shape only — no product copy or iconography.
 const SHAPE_BY_SIZE: Record<BorderBeamSize, string> = {
 	sm: "size-12 rounded-full",
-	md: "h-16 w-full max-w-md rounded-2xl",
+	md: "h-16 w-full rounded-2xl",
 	line: "h-11 w-72 rounded-full",
-	"pulse-inner": "h-28 w-full max-w-md rounded-2xl",
-	"pulse-outside": "h-16 w-full max-w-md rounded-2xl",
+	"pulse-inner": "h-28 w-full rounded-2xl",
+	"pulse-outside": "h-16 w-full rounded-2xl",
 };
 
 /**
@@ -94,7 +94,7 @@ function BorderBeamPreview({
 	return (
 		<div className={cn("min-w-0 p-8", className)} data-border-beam-preview="true">
 			<BorderBeam
-				className={config.size === "sm" || config.size === "line" ? "mx-auto w-fit" : "w-full"}
+				className={config.size === "sm" || config.size === "line" ? "mx-auto w-fit" : "mx-auto w-full max-w-md"}
 				{...renderBeamConfig(config, resolvedTheme)}
 			>
 				{children}
@@ -332,7 +332,7 @@ export function BorderBeamDemoRotateLarge() {
 	const config = getBorderBeamDefaultsForSize("md");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.8 }}>
-			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
+			{(theme) => <BeamShape theme={theme} className="h-16 w-96 rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -359,7 +359,7 @@ export function BorderBeamDemoPulseInnerWorking() {
 	const config = getBorderBeamDefaultsForSize("pulse-inner");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.76 }}>
-			{(theme) => <BeamShape theme={theme} className="h-28 w-full max-w-md rounded-2xl" />}
+			{(theme) => <BeamShape theme={theme} className="h-28 w-96 rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -377,7 +377,7 @@ export function BorderBeamDemoPulseOutside() {
 	const config = getBorderBeamDefaultsForSize("pulse-outside");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.8 }}>
-			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
+			{(theme) => <BeamShape theme={theme} className="h-16 w-96 rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -405,7 +405,7 @@ export function BorderBeamDemoCompactGallery() {
 			)}
 		>
 			<BorderBeamMiniDemo config={{ ...rotate, colorVariant: "ocean", strength: 0.8 }} className="min-h-36 p-5">
-				{(theme) => <BeamShape theme={theme} className="h-20 w-full rounded-2xl" />}
+				{(theme) => <BeamShape theme={theme} className="h-16 w-44 rounded-2xl" />}
 			</BorderBeamMiniDemo>
 			<BorderBeamMiniDemo config={{ ...pulse, colorVariant: "sunset", strength: 0.85 }} className="min-h-36 p-5">
 				{(theme) => <BeamShape theme={theme} className="h-11 w-40 rounded-full" />}
@@ -421,7 +421,7 @@ export function BorderBeamDemoRovoBrand() {
 	const config = getBorderBeamDefaultsForSize("md");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, colorVariant: "rovo", strength: 0.85 }}>
-			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
+			{(theme) => <BeamShape theme={theme} className="h-16 w-96 rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -439,7 +439,7 @@ export function BorderBeamDemoPlayPause() {
 			)}
 		>
 			<BorderBeam {...renderBeamConfig({ ...config, strength: 0.85, active }, resolvedTheme)}>
-				<BeamShape theme={resolvedTheme} className="h-16 w-full max-w-md rounded-2xl" />
+				<BeamShape theme={resolvedTheme} className="h-16 w-96 rounded-2xl" />
 			</BorderBeam>
 			<Button
 				type="button"
@@ -466,7 +466,7 @@ export function BorderBeamDemoStrengthLadder() {
 		>
 			{strengths.map((strength) => (
 				<BorderBeamMiniDemo key={strength} config={{ ...config, strength }} className="min-h-36 p-5">
-					{(theme) => <BeamShape theme={theme} className="h-20 w-full rounded-2xl" />}
+					{(theme) => <BeamShape theme={theme} className="h-16 w-44 rounded-2xl" />}
 				</BorderBeamMiniDemo>
 			))}
 		</div>
