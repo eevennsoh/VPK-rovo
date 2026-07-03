@@ -99,6 +99,7 @@ test("Card Glow tracks pointer position from each tile center", () => {
 });
 
 test("Card Glow duplicates avatars for the glow and renders a masked border ring", () => {
+	assert.match(DEMO_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/);
 	assert.match(DEMO_SOURCE, /getCardGlowFilter/);
 	assert.match(DEMO_SOURCE, /url\(#\$\{filterId\}\)/);
 	assert.match(DEMO_SOURCE, /<feGaussianBlur in="SourceGraphic" stdDeviation=\{config\.iconBlur\}/);
@@ -121,6 +122,15 @@ test("Card Glow duplicates avatars for the glow and renders a masked border ring
 	assert.match(DEMO_SOURCE, /getCardBorderClassName\(config\.theme\)/);
 	assert.match(DEMO_SOURCE, /absolute inset-0 z-\[1\] rounded-\[inherit\] border/);
 	assert.match(DEMO_SOURCE, /absolute inset-0 z-\[2\] overflow-hidden rounded-\[inherit\] border border-transparent/);
+	assert.match(DEMO_SOURCE, /<Avatar shape="hexagon" size="default">/);
+	assert.match(DEMO_SOURCE, /<AvatarImage[\s\S]*src=\{tile\.iconSrc\}[\s\S]*className=\{cn\("object-contain", tile\.iconClassName\)\}[\s\S]*\/>/);
+	assert.match(DEMO_SOURCE, /<AvatarFallback>\{tile\.title\.slice\(0, 2\)\.toUpperCase\(\)\}<\/AvatarFallback>/);
+	assert.match(DEMO_SOURCE, /text-sm font-semibold leading-5 text-text/);
+	assert.match(DEMO_SOURCE, /text-sm leading-5 text-text-subtle/);
+	assert.match(DEMO_SOURCE, /function getPreviewTextStyle/);
+	assert.match(DEMO_SOURCE, /"--ds-text": "#F7F8FA"/);
+	assert.match(DEMO_SOURCE, /"--ds-text-subtle": "rgb\(255 255 255 \/ 62%\)"/);
+	assert.match(DEMO_SOURCE, /style=\{\{ \.\.\.effectStyle, \.\.\.getPreviewTextStyle\(config\.theme\) \}\}/);
 	assert.match(DEMO_SOURCE, /style=\{borderGlowStyle\}/);
 	assert.match(DEMO_SOURCE, /borderColor: "transparent"/);
 	assert.match(DEMO_SOURCE, /maskComposite: "exclude"/);
@@ -133,4 +143,5 @@ test("Card Glow duplicates avatars for the glow and renders a masked border ring
 	assert.doesNotMatch(DEMO_SOURCE, /hover:border/);
 	assert.doesNotMatch(DEMO_SOURCE, /hover:bg/);
 	assert.doesNotMatch(DEMO_SOURCE, /rounded-lg border p-4/);
+	assert.doesNotMatch(DEMO_SOURCE, /function getSubtleTextClassName/);
 });

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,7 @@ export const CARD_GLOW_DEFAULT_CONFIG: CardGlowConfig = {
 };
 
 type CardGlowCSSProperties = CSSProperties & Record<`--card-glow-${string}`, string | number>;
+type CardGlowPreviewCSSProperties = CardGlowCSSProperties & Partial<Record<"--ds-text" | "--ds-text-subtle", string>>;
 
 interface CardGlowTile {
 	accentColor: string;
@@ -163,16 +165,22 @@ function getCardBorderClassName(theme: CardGlowTheme): string {
 	return "border-border";
 }
 
-function getSubtleTextClassName(theme: CardGlowTheme): string {
+function getPreviewTextStyle(theme: CardGlowTheme): Pick<CardGlowPreviewCSSProperties, "--ds-text" | "--ds-text-subtle"> {
 	if (theme === "light") {
-		return "text-[#44546F]";
+		return {
+			"--ds-text": "#172B4D",
+			"--ds-text-subtle": "#44546F",
+		};
 	}
 
 	if (theme === "dark") {
-		return "text-white/62";
+		return {
+			"--ds-text": "#F7F8FA",
+			"--ds-text-subtle": "rgb(255 255 255 / 62%)",
+		};
 	}
 
-	return "text-text-subtle";
+	return {};
 }
 
 function resetTilePointer(tile: HTMLElement) {
@@ -267,7 +275,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 			data-card-glow-theme={config.theme}
 			onPointerLeave={resetPointer}
 			onPointerMove={handlePointerMove}
-			style={{ ...effectStyle }}
+			style={{ ...effectStyle, ...getPreviewTextStyle(config.theme) }}
 		>
 			<svg
 				aria-hidden
@@ -328,26 +336,21 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 							className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit] border border-transparent"
 							style={borderGlowStyle}
 						/>
-						<span className="relative z-[3] inline-flex size-12 shrink-0 items-center justify-center">
-							<Image
-								alt=""
-								aria-hidden
-								className={cn("size-12 object-contain", tile.iconClassName)}
-								height={tile.iconHeight}
-								src={tile.iconSrc}
-								width={tile.iconWidth}
-							/>
+						<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center">
+							<Avatar shape="hexagon" size="default">
+								<AvatarImage
+									src={tile.iconSrc}
+									alt=""
+									className={cn("object-contain", tile.iconClassName)}
+								/>
+								<AvatarFallback>{tile.title.slice(0, 2).toUpperCase()}</AvatarFallback>
+							</Avatar>
 						</span>
 						<span className="relative z-[3] flex w-full min-w-0 flex-col gap-1">
-							<span className="block w-full min-w-0 text-sm leading-5 font-semibold">
+							<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 								{tile.title}
 							</span>
-							<span
-								className={cn(
-									"line-clamp-2 w-full min-w-0 text-sm leading-5",
-									getSubtleTextClassName(config.theme),
-								)}
-							>
+							<span className="line-clamp-2 w-full min-w-0 text-sm leading-5 text-text-subtle">
 								{tile.description}
 							</span>
 						</span>
