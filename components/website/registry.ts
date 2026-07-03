@@ -9046,13 +9046,6 @@ const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "border-beam-demo-light-theme": dynamic(
-    () =>
-      import("./demos/visual/border-beam-demo").then((mod) => ({
-        default: mod.BorderBeamDemoLightTheme,
-      })),
-    { ssr: false },
-  ),
   "border-beam-demo-play-pause": dynamic(
     () =>
       import("./demos/visual/border-beam-demo").then((mod) => ({

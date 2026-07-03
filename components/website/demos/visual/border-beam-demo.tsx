@@ -1,10 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import AddIcon from "@atlaskit/icon/core/add";
-import AiSparkleIcon from "@atlaskit/icon/core/ai-sparkle";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import SearchIcon from "@atlaskit/icon/core/search";
 
 import BorderBeam, {
 	BORDER_BEAM_COLOR_VARIANT_OPTIONS,
@@ -19,45 +15,56 @@ import BorderBeam, {
 	type BorderBeamSize,
 } from "@/components/visual/border-beam";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { GUI } from "@/components/utils/gui";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
 
-type MockTheme = "dark" | "light";
+type ResolvedTheme = "dark" | "light";
 
-// Preview stage backdrops, tuned per theme so the beam glow reads correctly.
-const PREVIEW_SURFACE: Record<MockTheme, string> = {
+// Preview stage backdrops, tuned per theme so the beam glow reads on both.
+const PREVIEW_SURFACE: Record<ResolvedTheme, string> = {
 	dark: "bg-[#0C0D12]",
 	light: "bg-[#F7F8F9]",
+};
+
+// The wrapped element is intentionally an empty surface: these demos showcase the
+// beam and the container shape only — no product copy or iconography.
+const SHAPE_BY_SIZE: Record<BorderBeamSize, string> = {
+	sm: "size-12 rounded-full",
+	md: "h-16 w-full max-w-md rounded-2xl",
+	line: "h-11 w-72 rounded-full",
+	"pulse-inner": "h-28 w-full max-w-md rounded-2xl",
+	"pulse-outside": "h-16 w-full max-w-md rounded-2xl",
 };
 
 /**
  * Resolve a demo `theme` config to a concrete light/dark value. `"auto"` follows
  * the app's active theme (the light/dark toggle) rather than only the OS setting,
- * so the demo visibly reacts when the site theme is switched.
+ * so every preview visibly reacts when the site theme is switched.
  */
-function resolveDemoTheme(
-	theme: BorderBeamDemoConfig["theme"],
-	appTheme: MockTheme,
-): MockTheme {
+function resolveDemoTheme(theme: BorderBeamDemoConfig["theme"], appTheme: ResolvedTheme): ResolvedTheme {
 	return theme === "auto" ? appTheme : theme;
 }
 
-const TASKS = [
-	"Generate color palettes",
-	"Recommend font pairings",
-	"Create layout templates",
-	"Build section engine",
-] as const;
-
-function getMockShellClassName(theme: MockTheme): string {
-	return theme === "light"
-		? "border-border bg-white text-[#172B4D] shadow-sm"
-		: "border-white/10 bg-[#161A22] text-white shadow-[0_24px_80px_rgb(0_0_0/0.38)]";
+/**
+ * Empty, opaque container the beam wraps. Themed so it reads on both preview
+ * stages; `pulse-outside` uses this 1px border as its idle hairline, so the
+ * border is always present.
+ */
+function BeamShape({ theme, className }: Readonly<{ theme: ResolvedTheme; className?: string }>) {
+	return (
+		<div
+			aria-hidden
+			className={cn(
+				"border",
+				theme === "light" ? "border-black/10 bg-white" : "border-white/10 bg-[#1D1D1D]",
+				className,
+			)}
+		/>
+	);
 }
 
-function renderBeamConfig(config: BorderBeamDemoConfig, themeOverride?: MockTheme) {
+function renderBeamConfig(config: BorderBeamDemoConfig, themeOverride?: ResolvedTheme) {
 	return {
 		size: config.size,
 		colorVariant: config.colorVariant,
@@ -73,165 +80,6 @@ function renderBeamConfig(config: BorderBeamDemoConfig, themeOverride?: MockThem
 	};
 }
 
-function MockChatInput({ theme = "dark" }: Readonly<{ theme?: MockTheme }>) {
-	const isLight = theme === "light";
-	return (
-		<div
-			role="img"
-			aria-label="Chat input example with border beam effect"
-			className={cn(
-				"flex h-14 w-full min-w-0 items-center gap-3 rounded-2xl border px-4",
-				isLight
-					? "border-border bg-white text-[#172B4D]"
-					: "border-white/10 bg-[#1D1D1D] text-white",
-			)}
-		>
-			<span
-				className={cn(
-					"flex size-8 shrink-0 items-center justify-center rounded-full border",
-					isLight ? "border-border bg-surface-raised" : "border-white/10 bg-white/8",
-				)}
-			>
-				<Icon render={<AddIcon label="" size="small" />} aria-hidden />
-			</span>
-			<span className={cn("min-w-0 flex-1 text-sm", isLight ? "text-text-subtle" : "text-white/62")}>
-				Ask anything...
-			</span>
-			<span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-				<Icon render={<AiSparkleIcon label="" size="small" />} aria-hidden />
-			</span>
-		</div>
-	);
-}
-
-function MockIconButton({ theme = "dark" }: Readonly<{ theme?: MockTheme }>) {
-	const isLight = theme === "light";
-	return (
-		<button
-			type="button"
-			aria-label="Generate"
-			className={cn(
-				"flex size-12 items-center justify-center rounded-full border",
-				isLight
-					? "border-border bg-white text-icon"
-					: "border-white/10 bg-[#1D1D1D] text-white",
-			)}
-		>
-			<Icon render={<AiSparkleIcon label="" size="small" />} aria-hidden />
-		</button>
-	);
-}
-
-function MockSearchBar({ theme = "dark" }: Readonly<{ theme?: MockTheme }>) {
-	const isLight = theme === "light";
-	return (
-		<div
-			role="img"
-			aria-label="Search input example with border beam effect"
-			className={cn(
-				"flex h-11 w-72 items-center gap-2 rounded-full border px-4 text-sm",
-				isLight
-					? "border-border bg-white text-text-subtle"
-					: "border-white/10 bg-[#1D1D1D] text-white/62",
-			)}
-		>
-			<Icon render={<SearchIcon label="" size="small" />} aria-hidden />
-			<span>Search or ask</span>
-		</div>
-	);
-}
-
-function MockSubscribeButton({ theme = "dark" }: Readonly<{ theme?: MockTheme }>) {
-	const isLight = theme === "light";
-	return (
-		<button
-			type="button"
-			className={cn(
-				"h-11 rounded-full border px-5 text-sm font-semibold",
-				isLight
-					? "border-border bg-white text-text"
-					: "border-white/10 bg-[#1D1D1D] text-white",
-			)}
-		>
-			Use template
-		</button>
-	);
-}
-
-function MockWorkingCard({ theme = "dark" }: Readonly<{ theme?: MockTheme }>) {
-	const isLight = theme === "light";
-	return (
-		<div
-			role="img"
-			aria-label="Working task list example with border beam effect"
-			className={cn(
-				"w-full rounded-2xl border p-4",
-				getMockShellClassName(theme),
-			)}
-		>
-			<div className="mb-3 flex items-center justify-between gap-3">
-				<div>
-					<p className="text-sm font-semibold">Working...</p>
-					<p className={cn("text-xs", isLight ? "text-text-subtle" : "text-white/55")}>
-						Composing agent output
-					</p>
-				</div>
-				<span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-discovery text-icon-discovery">
-					<Icon render={<AiSparkleIcon label="" size="small" />} aria-hidden />
-				</span>
-			</div>
-			<div className="space-y-2">
-				{TASKS.map((task) => (
-					<div
-						key={task}
-						className={cn(
-							"flex items-center gap-2 rounded-lg border px-3 py-2 text-xs",
-							isLight ? "border-border bg-surface" : "border-white/8 bg-white/5",
-						)}
-					>
-						<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-success text-icon-inverse">
-							<Icon render={<CheckMarkIcon label="" size="small" />} aria-hidden />
-						</span>
-						<span className="min-w-0 truncate">{task}</span>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
-
-function MockCard({ theme = "dark", compact = false }: Readonly<{ theme?: MockTheme; compact?: boolean }>) {
-	const isLight = theme === "light";
-	return (
-		<div
-			role="img"
-			aria-label="Card example with border beam effect"
-			className={cn(
-				"rounded-2xl border p-5",
-				compact ? "w-56" : "w-full",
-				getMockShellClassName(theme),
-			)}
-		>
-			<div className="mb-5 flex items-center gap-3">
-				<span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-					<Icon render={<AiSparkleIcon label="" size="small" />} aria-hidden />
-				</span>
-				<div className="min-w-0">
-					<p className="truncate text-sm font-semibold">Build anything...</p>
-					<p className={cn("truncate text-xs", isLight ? "text-text-subtle" : "text-white/55")}>
-						Design system motion surface
-					</p>
-				</div>
-			</div>
-			<div className="grid gap-2">
-				<div className={cn("h-2 rounded-full", isLight ? "bg-bg-neutral" : "bg-white/12")} />
-				<div className={cn("h-2 w-4/5 rounded-full", isLight ? "bg-bg-neutral" : "bg-white/12")} />
-				<div className={cn("h-2 w-2/3 rounded-full", isLight ? "bg-bg-neutral" : "bg-white/12")} />
-			</div>
-		</div>
-	);
-}
-
 function BorderBeamPreview({
 	config,
 	children,
@@ -241,7 +89,7 @@ function BorderBeamPreview({
 	config: BorderBeamDemoConfig;
 	children: React.ReactNode;
 	className?: string;
-	resolvedTheme?: MockTheme;
+	resolvedTheme?: ResolvedTheme;
 }>) {
 	return (
 		<div className={cn("min-w-0 p-8", className)} data-border-beam-preview="true">
@@ -261,14 +109,20 @@ function BorderBeamMiniDemo({
 	className,
 }: Readonly<{
 	config: BorderBeamDemoConfig;
-	children: React.ReactNode;
+	children: (theme: ResolvedTheme) => React.ReactNode;
 	className?: string;
 }>) {
+	const { actualTheme } = useTheme();
+	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
 	return (
-		<div className={cn("flex min-h-40 w-full items-center justify-center rounded-lg bg-[#0C0D12] p-8", className)}>
-			<BorderBeam {...renderBeamConfig(config)}>
-				{children}
-			</BorderBeam>
+		<div
+			className={cn(
+				"flex min-h-40 w-full items-center justify-center rounded-lg p-8 transition-colors duration-medium motion-reduce:transition-none",
+				PREVIEW_SURFACE[resolvedTheme],
+				className,
+			)}
+		>
+			<BorderBeam {...renderBeamConfig(config, resolvedTheme)}>{children(resolvedTheme)}</BorderBeam>
 		</div>
 	);
 }
@@ -278,13 +132,9 @@ function getNextSizeForFamily(family: BorderBeamFamily): BorderBeamSize {
 }
 
 export default function BorderBeamDemo() {
-	const [config, setConfig] = useState<BorderBeamDemoConfig>({
-		...BORDER_BEAM_DEFAULTS,
-		theme: "auto",
-	});
+	const [config, setConfig] = useState<BorderBeamDemoConfig>(BORDER_BEAM_DEFAULTS);
 	const { actualTheme } = useTheme();
 	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
-	const mockTheme = resolvedTheme;
 	const sizeOptions = useMemo(() => getBorderBeamSizeOptions(config.family), [config.family]);
 	const values = useMemo(() => ({
 		...config,
@@ -332,17 +182,7 @@ export default function BorderBeamDemo() {
 				)}
 			>
 				<BorderBeamPreview config={config} resolvedTheme={resolvedTheme} className="mx-auto max-w-2xl">
-					{config.size === "sm" ? (
-						<MockIconButton theme={mockTheme} />
-					) : config.size === "line" ? (
-						<MockSearchBar theme={mockTheme} />
-					) : config.size === "pulse-inner" ? (
-						<MockWorkingCard theme={mockTheme} />
-					) : config.size === "pulse-outside" ? (
-						<MockChatInput theme={mockTheme} />
-					) : (
-						<MockCard theme={mockTheme} />
-					)}
+					<BeamShape theme={resolvedTheme} className={SHAPE_BY_SIZE[config.size]} />
 				</BorderBeamPreview>
 			</div>
 
@@ -482,7 +322,7 @@ export function BorderBeamDemoRotateLarge() {
 	const config = getBorderBeamDefaultsForSize("md");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.8 }}>
-			<MockChatInput />
+			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -491,7 +331,7 @@ export function BorderBeamDemoRotateSmall() {
 	const config = getBorderBeamDefaultsForSize("sm");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.9 }}>
-			<MockIconButton />
+			{(theme) => <BeamShape theme={theme} className="size-12 rounded-full" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -499,8 +339,8 @@ export function BorderBeamDemoRotateSmall() {
 export function BorderBeamDemoLineSearch() {
 	const config = getBorderBeamDefaultsForSize("line");
 	return (
-		<BorderBeamMiniDemo config={{ ...config, borderRadius: 20, autoBorderRadius: false, strength: 0.95 }}>
-			<MockSearchBar />
+		<BorderBeamMiniDemo config={{ ...config, strength: 0.95 }}>
+			{(theme) => <BeamShape theme={theme} className="h-11 w-72 rounded-full" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -509,7 +349,7 @@ export function BorderBeamDemoPulseInnerWorking() {
 	const config = getBorderBeamDefaultsForSize("pulse-inner");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.76 }}>
-			<MockWorkingCard />
+			{(theme) => <BeamShape theme={theme} className="h-28 w-full max-w-md rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -517,8 +357,8 @@ export function BorderBeamDemoPulseInnerWorking() {
 export function BorderBeamDemoPulsePill() {
 	const config = getBorderBeamDefaultsForSize("pulse-inner");
 	return (
-		<BorderBeamMiniDemo config={{ ...config, borderRadius: 22, autoBorderRadius: false, strength: 0.82 }}>
-			<MockSubscribeButton />
+		<BorderBeamMiniDemo config={{ ...config, strength: 0.82 }}>
+			{(theme) => <BeamShape theme={theme} className="h-11 w-40 rounded-full" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -527,7 +367,7 @@ export function BorderBeamDemoPulseOutside() {
 	const config = getBorderBeamDefaultsForSize("pulse-outside");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, strength: 0.8 }}>
-			<MockChatInput />
+			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -535,8 +375,8 @@ export function BorderBeamDemoPulseOutside() {
 export function BorderBeamDemoMonoPulseSearch() {
 	const config = getBorderBeamDefaultsForSize("pulse-inner");
 	return (
-		<BorderBeamMiniDemo config={{ ...config, colorVariant: "mono", borderRadius: 22, autoBorderRadius: false, strength: 0.9 }}>
-			<MockSearchBar />
+		<BorderBeamMiniDemo config={{ ...config, colorVariant: "mono", strength: 0.9 }}>
+			{(theme) => <BeamShape theme={theme} className="h-11 w-72 rounded-full" />}
 		</BorderBeamMiniDemo>
 	);
 }
@@ -545,17 +385,23 @@ export function BorderBeamDemoCompactGallery() {
 	const rotate = getBorderBeamDefaultsForSize("md");
 	const pulse = getBorderBeamDefaultsForSize("pulse-inner");
 	const outside = getBorderBeamDefaultsForSize("pulse-outside");
+	const { actualTheme } = useTheme();
 
 	return (
-		<div className="grid w-full gap-3 bg-[#0C0D12] p-6 md:grid-cols-3">
+		<div
+			className={cn(
+				"grid w-full gap-3 p-6 transition-colors duration-medium motion-reduce:transition-none md:grid-cols-3",
+				PREVIEW_SURFACE[actualTheme],
+			)}
+		>
 			<BorderBeamMiniDemo config={{ ...rotate, colorVariant: "ocean", strength: 0.8 }} className="min-h-36 p-5">
-				<MockCard compact />
+				{(theme) => <BeamShape theme={theme} className="h-20 w-full rounded-2xl" />}
 			</BorderBeamMiniDemo>
 			<BorderBeamMiniDemo config={{ ...pulse, colorVariant: "sunset", strength: 0.85 }} className="min-h-36 p-5">
-				<MockSubscribeButton />
+				{(theme) => <BeamShape theme={theme} className="h-11 w-40 rounded-full" />}
 			</BorderBeamMiniDemo>
 			<BorderBeamMiniDemo config={{ ...outside, colorVariant: "colorful", strength: 0.78 }} className="min-h-36 p-5">
-				<MockIconButton />
+				{(theme) => <BeamShape theme={theme} className="size-12 rounded-full" />}
 			</BorderBeamMiniDemo>
 		</div>
 	);
@@ -565,30 +411,25 @@ export function BorderBeamDemoRovoBrand() {
 	const config = getBorderBeamDefaultsForSize("md");
 	return (
 		<BorderBeamMiniDemo config={{ ...config, colorVariant: "rovo", strength: 0.85 }}>
-			<MockChatInput />
-		</BorderBeamMiniDemo>
-	);
-}
-
-export function BorderBeamDemoLightTheme() {
-	const config = getBorderBeamDefaultsForSize("md");
-	return (
-		<BorderBeamMiniDemo
-			config={{ ...config, theme: "light", strength: 0.9 }}
-			className="bg-[#F7F8F9]"
-		>
-			<MockCard theme="light" compact />
+			{(theme) => <BeamShape theme={theme} className="h-16 w-full max-w-md rounded-2xl" />}
 		</BorderBeamMiniDemo>
 	);
 }
 
 export function BorderBeamDemoPlayPause() {
 	const config = getBorderBeamDefaultsForSize("md");
+	const { actualTheme } = useTheme();
+	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
 	const [active, setActive] = useState(true);
 	return (
-		<div className="flex min-h-40 w-full flex-col items-center justify-center gap-4 rounded-lg bg-[#0C0D12] p-8">
-			<BorderBeam {...renderBeamConfig({ ...config, strength: 0.85, active })}>
-				<MockCard compact />
+		<div
+			className={cn(
+				"flex min-h-40 w-full flex-col items-center justify-center gap-4 rounded-lg p-8 transition-colors duration-medium motion-reduce:transition-none",
+				PREVIEW_SURFACE[resolvedTheme],
+			)}
+		>
+			<BorderBeam {...renderBeamConfig({ ...config, strength: 0.85, active }, resolvedTheme)}>
+				<BeamShape theme={resolvedTheme} className="h-16 w-full max-w-md rounded-2xl" />
 			</BorderBeam>
 			<Button
 				type="button"
@@ -605,11 +446,17 @@ export function BorderBeamDemoPlayPause() {
 export function BorderBeamDemoStrengthLadder() {
 	const config = getBorderBeamDefaultsForSize("md");
 	const strengths = [0.35, 0.65, 1] as const;
+	const { actualTheme } = useTheme();
 	return (
-		<div className="grid w-full gap-3 bg-[#0C0D12] p-6 md:grid-cols-3">
+		<div
+			className={cn(
+				"grid w-full gap-3 p-6 transition-colors duration-medium motion-reduce:transition-none md:grid-cols-3",
+				PREVIEW_SURFACE[actualTheme],
+			)}
+		>
 			{strengths.map((strength) => (
 				<BorderBeamMiniDemo key={strength} config={{ ...config, strength }} className="min-h-36 p-5">
-					<MockCard compact />
+					{(theme) => <BeamShape theme={theme} className="h-20 w-full rounded-2xl" />}
 				</BorderBeamMiniDemo>
 			))}
 		</div>
