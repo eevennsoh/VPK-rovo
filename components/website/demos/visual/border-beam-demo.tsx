@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import BorderBeam, {
 	BORDER_BEAM_COLOR_VARIANT_OPTIONS,
@@ -133,8 +133,18 @@ function getNextSizeForFamily(family: BorderBeamFamily): BorderBeamSize {
 
 export default function BorderBeamDemo() {
 	const [config, setConfig] = useState<BorderBeamDemoConfig>(BORDER_BEAM_DEFAULTS);
-	const { actualTheme } = useTheme();
+	const { actualTheme, setTheme } = useTheme();
 	const resolvedTheme = resolveDemoTheme(config.theme, actualTheme);
+
+	// Border Beam reads best on a dark surface, so switch the app to dark once on
+	// landing (persisted). Runs a single time so it never fights a manual toggle
+	// back to light for previewing.
+	const didForceDarkRef = useRef(false);
+	useEffect(() => {
+		if (didForceDarkRef.current) return;
+		didForceDarkRef.current = true;
+		setTheme("dark");
+	}, [setTheme]);
 	const sizeOptions = useMemo(() => getBorderBeamSizeOptions(config.family), [config.family]);
 	const values = useMemo(() => ({
 		...config,
