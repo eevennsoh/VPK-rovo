@@ -482,27 +482,27 @@ function MainPlayground({
 	);
 
 	return (
-		<div className="grid w-full items-center gap-8 lg:grid-cols-[1fr_18rem]">
-			<div className="flex min-h-72 flex-col items-center justify-center gap-6">
-				<MetalLabel>Playground</MetalLabel>
-				<ReflectionToolbarTargets
-					copyRef={copyRef}
-					searchRef={searchRef}
-					settingsRef={settingsRef}
-				/>
-				<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
-					<LiquidMetalHost
-						config={config}
-						reflectionTargets={reflectionTargets}
-						className="text-current"
-					>
-						<PlaygroundContent variant={config.variant} />
-					</LiquidMetalHost>
-				</AnimatedShowcaseShell>
+		<div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+			<div className="relative flex min-h-[420px] w-full items-center justify-center overflow-hidden rounded-3xl border border-border bg-surface px-6 py-8">
+				<div className="flex flex-col items-center justify-center gap-6">
+					<MetalLabel>Playground</MetalLabel>
+					<ReflectionToolbarTargets
+						copyRef={copyRef}
+						searchRef={searchRef}
+						settingsRef={settingsRef}
+					/>
+					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "none"}>
+						<LiquidMetalHost
+							config={config}
+							reflectionTargets={reflectionTargets}
+							className="text-current"
+						>
+							<PlaygroundContent variant={config.variant} />
+						</LiquidMetalHost>
+					</AnimatedShowcaseShell>
+				</div>
 			</div>
-			<div className="lg:border-l lg:border-border lg:pl-8">
-				<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
-			</div>
+			<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
 		</div>
 	);
 }

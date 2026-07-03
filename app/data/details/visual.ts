@@ -1042,11 +1042,6 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 		Liquid Metal
 	</button>
 </LiquidMetal>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			previewHeight: "fit",
-			examplesContentWidth: "fit",
-		},
 		examples: [
 			{ title: "Chromatic pill", description: "The upstream chromatic preset on a pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
 			{ title: "Silver pill", description: "The upstream silver preset on a pulsing pill host.", demoSlug: "liquid-metal-demo-silver-pill" },
