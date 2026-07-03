@@ -1042,17 +1042,11 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 		Liquid Metal
 	</button>
 </LiquidMetal>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			previewHeight: "fit",
-			examplesContentWidth: "full",
-		},
 		examples: [
-			{ title: "Chromatic pill", description: "The upstream chromatic preset on a rotating pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
+			{ title: "Chromatic pill", description: "The upstream chromatic preset on a pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
 			{ title: "Silver pill", description: "The upstream silver preset on a pulsing pill host.", demoSlug: "liquid-metal-demo-silver-pill" },
 			{ title: "Gold send", description: "The upstream circle variant with the gold preset.", demoSlug: "liquid-metal-demo-gold-send" },
-			{ title: "Toolbar reflection", description: "A silver toolbar with reflectionTargets wired to adjacent icon buttons.", demoSlug: "liquid-metal-demo-toolbar-reflection" },
-			{ title: "Chat reflection", description: "A compact chat composer with reflectionTargets wired to neighboring message surfaces.", demoSlug: "liquid-metal-demo-chat-reflection" },
+			{ title: "Proximity reflection", description: "A metal pill sitting close to a few neighboring surfaces wired as reflectionTargets.", demoSlug: "liquid-metal-demo-chat-reflection" },
 		],
 		props: [
 			{ name: "children", type: "React.ReactNode", description: "Single wrapped host element or node measured by metal-fx for the painted ring." },
