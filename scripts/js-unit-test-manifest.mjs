@@ -45,6 +45,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/control-plane/lib/memory-artifact-selection.test.ts",
 		"components/blocks/triggers/components/agent-automation-flow-cover.test.js",
 		"components/blocks/product-sidebar/components/navigation-item-actions.test.js",
+		"components/blocks/task-progress/lib/progress-bar-state.test.js",
 		"components/ui-audio/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
 		"components/utils/gui.test.js",
