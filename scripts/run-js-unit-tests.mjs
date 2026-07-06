@@ -90,6 +90,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Scheduled-trigger inference (daily-at-7am + NL → structured definitions).
 	// Lives under components/ so it must be included explicitly to run in CI.
 	"components/blocks/triggers/data/trigger-inference.test.js",
+	// Sidebar navigation-row keyboard-access reveal contract (focus-within keeps
+	// row actions reachable). Lives under components/ so include it explicitly.
+	"components/blocks/product-sidebar/components/navigation-item-actions.test.js",
 	// Pure LCS/digit reconcile logic behind the Text Morphing visual component.
 	// No source-grep assertions (so it won't drift like the wholesale component
 	// tests); included explicitly so the morph keying stays guarded in CI.
