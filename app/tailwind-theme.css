@@ -899,7 +899,7 @@
 	background-clip: text;
 	-webkit-background-clip: text;
 	color: transparent;
-	animation: expect-text-shimmer 4s ease-in-out infinite;
+	animation: var(--animate-expect-text-shimmer);
 }
 
 @utility bento-fade-bottom {
