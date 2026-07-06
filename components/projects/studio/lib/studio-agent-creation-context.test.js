@@ -190,6 +190,7 @@ test("both builders embed the catalog projection and the real-ids contract", asy
 		assert.match(text, /For knowledge arrays, use the bare app id/u, `${label} should map knowledge tokens to array ids`);
 		// Honor-named-sources rule (apps unification): every app the user names must be wired up.
 		assert.match(text, /Honor named sources:/u, `${label} should include the honor-named-sources rule`);
+		assert.match(text, /knowledge arrays store the bare app id such as `confluence`, never the two-segment `confluence:all`/u, `${label} honor-named-sources rule should keep knowledge arrays bare`);
 	}
 
 	// The initial turn uses the full catalog; the scoped continuation announces its scope.
