@@ -1,8 +1,8 @@
 # Codex Automations
 
-Generated on July 6, 2026 at 11:14 PM GMT+10 from saved Codex automation files in `/Users/esoh/.codex/automations`.
+Generated on July 7, 2026 at 1:24 AM GMT+10 from saved Codex automation files in `/Users/esoh/.codex/automations`.
 
-This file consolidates the current automation configs and companion memory notes into one Markdown inventory. Schedules are translated into plain English; raw recurrence strings are intentionally omitted.
+This file consolidates the current automation configs and companion memory notes into one Markdown inventory. Schedules are translated into plain English; raw recurrence strings are intentionally omitted. Regenerate this snapshot whenever a saved automation prompt or schedule changes.
 
 - Total automations: 13
 - Active automations: 13
@@ -22,7 +22,7 @@ This file consolidates the current automation configs and companion memory notes
 | Frontend runtime audit | `frontend-runtime-audit` | cron | ACTIVE | Weekly on Tuesday, Thursday, and Saturday at 1:30 AM | worktree | gpt-5.5 |
 | Interface contract audit | `interface-contract-audit` | cron | ACTIVE | Weekly on Monday and Thursday at 5:30 AM | worktree | gpt-5.5 |
 | Performance audit | `performance-audit` | cron | ACTIVE | Weekly on Wednesday and Sunday at 3:30 AM | worktree | gpt-5.5 |
-| Standup summary | `standup-summary` | heartbeat | ACTIVE | Every 4 hours | thread | Default |
+| Standup summary | `standup-summary` | heartbeat | ACTIVE | Daily at 9:30 AM, 1:30 PM, and 5:30 PM | thread | Default |
 | Test coverage | `test-coverage` | cron | ACTIVE | Weekly on Tuesday and Friday at 6:30 AM | worktree | gpt-5.5 |
 | UI design quality audit | `ui-design-quality-audit` | cron | ACTIVE | Weekly on Wednesday and Saturday at 7:30 AM | worktree | gpt-5.5 |
 | Update AGENTS.md | `update-agents-md` | cron | ACTIVE | Weekly on Sunday at 12:20 PM | worktree | gpt-5.5 |
@@ -89,6 +89,7 @@ Stop or skip a candidate if it is outside the repo, not ignored and not an eligi
 # Artifact Cleanup Memory
 
 - 2026-07-05T13:23:40Z: Persistent checkout `/Users/esoh/Documents/Labs/vpk-rovo`. Removed only exact idle ignored Symphony runtime logs: `.tmp/symphony/runtime/log/merge-guard.log` and `.tmp/symphony/runtime/log/log/symphony.log.{1,idx,siz}`; then removed empty dirs `.tmp/symphony/runtime/log/log` and `.tmp/symphony/runtime/log`. Preserved live `.next` and `.dev-*` because frontend PID 19993 listened on 4786 and held `.next` files; backend PID 20019 listened on 8080. Preserved dependencies, secrets/config, personal graph/qmd caches, backend app state, generated illustration assets imported by code/tests, public illustration assets, `.claude/worktrees`, and untracked `ARCHITECTURE_IMPROVEMENT_PLAN.md`.
+- 2026-07-06T13:25:16Z: Persistent checkout `/Users/esoh/Documents/Labs/vpk-rovo`. Removed only ignored, untracked, idle generated language artifact `next-env.d.ts`. Preserved tracked generated illustration source `components/ui-custom/rovo-illustration/assets.generated.ts` because it is tracked and imported by runtime/tests. Preserved `.tmp/personal-graph/*` and `.tmp/symphony/*` as protected or ambiguous personal/Symphony state, including the nested `.tmp/symphony/openai-symphony` clone. No `.dev-*`, `output/`, `.gsd/`, `.rovodev/`, coverage, Playwright report, or `*.tsbuildinfo` candidates were present. Validation showed no tracked deletions, no staged changes, and only unrelated untracked `CODEX_AUTOMATIONS.md` in ordinary status.
 ````
 
 ### Bug scan
@@ -104,7 +105,7 @@ Stop or skip a candidate if it is outside the repo, not ignored and not an eligi
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 18, 2026, 3:19 AM GMT+10 |
-| Updated | Jun 24, 2026, 3:24 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:19 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/bug-scan/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/bug-scan/memory.md` |
 
@@ -112,7 +113,7 @@ Stop or skip a candidate if it is outside the repo, not ignored and not an eligi
 
 ````markdown
 ## Task
-Scan recent commits or roughly the last 24 hours for one clearly evidenced VPK-rovo regression. If one review-ready fix exists, make the smallest root-cause patch and hand it off in a PR. If evidence is weak, stop with a brief no-PR report.
+Scan commits since the last successful run recorded in automation memory for one clearly evidenced VPK-rovo regression. If no usable last-run timestamp exists, fall back to the last 72 hours so weekend commits are covered. If one review-ready fix exists, make the smallest root-cause patch and hand it off in a PR. If evidence is weak, stop with a brief no-PR report.
 
 ## Commands
 Start with repo and branch safety:
@@ -122,16 +123,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Bug scan" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/bug-scan` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use concrete evidence commands before patching: recent `git log`/`git diff`, failing tests, `gh pr checks`, runtime logs, route/component/backend inspection, or browser reproduction when useful. For browser work, use `npx agent-browser` first for browser testing, local web verification, screenshots, UI probes, isolated/public pages, visual debugging, responsive checks, and unauthenticated verification, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `pnpm run dev:tmux:start` when needed and use `pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/bug-scan` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use concrete evidence commands before patching: recent `git log`/`git diff`, failing tests, `gh pr checks`, runtime logs, route/component/backend inspection, or browser reproduction when useful. For browser work, use `npx agent-browser` first for browser testing, local web verification, screenshots, UI probes, isolated/public pages, visual debugging, responsive checks, and unauthenticated verification, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `corepack pnpm run dev:tmux:start` when needed and use `corepack pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports.
 
 ## Judgment
 Fix only a high-confidence regression with user/system impact, narrow scope, and a validation path. Do not invent bugs, mask symptoms, weaken validation/security, or mix broad cleanup into the fix. CI triage must start from `gh pr checks`, isolate one actionable failure, patch one root cause, push, and recheck.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Prefer a regression test that would have failed before the fix. Recheck CI-derived failures.
+Run focused validation for the touched behavior. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus the verify gates relevant to the touched surface (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. Prefer a regression test that would have failed before the fix. Recheck CI-derived failures.
 
 ## Handoff
-Push the branch and create or update `[Automation] Bug scan: <short summary>` with labels `automation, bugfix` if available. Include evidence, root cause, fix, validation, regression guard status, CI-loop result when relevant, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Bug scan: <short summary>` with labels `automation, codex, bugfix`. Include evidence, root cause, fix, validation, regression guard status, CI-loop result when relevant, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or the bug is speculative, expected behavior is unclear, CI triage would be broad/speculative, or the change would weaken security or require broad refactoring.
@@ -165,7 +168,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 17, 2026, 10:12 PM GMT+10 |
-| Updated | Jul 5, 2026, 8:13 AM GMT+10 |
+| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/code-simplification/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/code-simplification/memory.md` |
 
@@ -183,6 +186,8 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Code simplification" --json number,title,headRefName,state,isDraft
 ```
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
 Before editing, do not work from detached HEAD. Create or switch to `automation/code-simplification` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run.
 
 After choosing a candidate, check for active overlap before editing. Inspect open PRs that may touch the same files, feature area, or route with `gh pr list --state open --base main --json number,title,headRefName,state,isDraft` and, for plausible overlaps, `gh pr view <number> --json files,title,body,headRefName`. Stop if another open PR makes behavior ownership unclear.
@@ -196,29 +201,26 @@ For the most relevant recent PRs, inspect changed files and diffs with `gh pr vi
 
 For each candidate, inspect recent diffs, call sites, adjacent tests, and nearby patterns before changing code. Prefer candidates where the simplification deletes real complexity: duplicated local JSX, unreachable branches, redundant abstractions, repeated conditionals, needless casts/optionality, or a narrow helper that can make behavior more direct. Do not choose a target just because it is the most recent file.
 
-## Thermo-Nuclear Review Input
-Before editing, consult `[$thermo-nuclear-code-quality-review](/Users/esoh/.agents/skills/thermo-nuclear-code-quality-review/SKILL.md)` and apply it as a read-only maintainability review over the candidate shortlist. Use the review questions as input to decide:
-- whether any candidate is worth simplifying at all;
-- which single candidate has the best complexity-reduction payoff with the lowest behavior risk;
-- whether there is a code-judo move that deletes branches, wrappers, casts, or concepts instead of merely rearranging them;
-- what structural concern the PR reviewer should focus on after handoff.
-After editing, apply the same thermo-nuclear lens to the branch diff. If the diff adds spaghetti branches, thin wrappers, unclear type boundaries, wrong-layer logic, or file-size/decomposition risk, refactor it before handoff or stop without a PR.
+## Architecture Quality Bar
+Use the `AGENTS.md` Architecture Quality Bar as the primary review lens: clear owners over busy files, behavior in the canonical layer, data normalized at boundaries, fewer repeated conditionals/null modes, 1000-line files treated as decomposition alarms, migrate-and-delete shared abstractions in one change, orchestration split from business logic, and deterministic contract tests for extracted helpers or boundaries.
 
-When the candidate involves reusable UI taxonomy, primitive/component/block/template classification, accessibility, design tokens, catalog/demo ownership, registry/docs expectations, or public prop typing, consult `[$building-components](/Users/esoh/.agents/skills/building-components/SKILL.md)` before making the component decision. When the simplification candidate involves reusable component API shape, boolean prop proliferation, compound components, context/provider boundaries, render-prop versus children patterns, or React 19 composition APIs, consult `[$vercel-composition-patterns](/Users/esoh/.agents/skills/vercel-composition-patterns/SKILL.md)`. When the candidate touches VPK React component surfaces under `app/**` or `components/**`, consult `[$vpk-tidy](/Users/esoh/Documents/Labs/vpk-rovo/.agents/skills/vpk-tidy/SKILL.md)` for route-local placement, component/hook/data split thresholds, retired shared-bucket gates, catalog/demo wiring, and UI validation expectations. When the candidate touches Next.js App Router route files, RSC/client boundaries, async route APIs, route handlers, metadata, image/font/script handling, Suspense boundaries, hydration, or bundling-sensitive imports, consult `[$vercel:nextjs](/Users/esoh/.codex/plugins/cache/openai-curated/vercel/3fdeeb49/skills/nextjs/SKILL.md)`.
+Use `$thermo-nuclear-code-quality-review` only as a supplementary read-only maintainability lens over the candidate shortlist and final diff. Use it to decide whether any candidate is worth simplifying, which single candidate has the best complexity-reduction payoff with the lowest behavior risk, whether there is a code-judo move that deletes branches/wrappers/casts/concepts, and what structural concern the reviewer should focus on. If the final diff adds spaghetti branches, thin wrappers, unclear type boundaries, wrong-layer logic, or file-size/decomposition risk, refactor it before handoff or stop without a PR.
+
+When the candidate involves reusable UI taxonomy, primitive/component/block/template classification, accessibility, design tokens, catalog/demo ownership, registry/docs expectations, or public prop typing, consult `$building-components` before making the component decision. When the simplification candidate involves reusable component API shape, boolean prop proliferation, compound components, context/provider boundaries, render-prop versus children patterns, or React 19 composition APIs, consult `$vercel-composition-patterns`. When the candidate touches VPK React component surfaces under `app/**` or `components/**`, consult `$vpk-tidy` for route-local placement, component/hook/data split thresholds, retired shared-bucket gates, catalog/demo wiring, and UI validation expectations. When the candidate touches Next.js App Router route files, RSC/client boundaries, async route APIs, route handlers, metadata, image/font/script handling, Suspense boundaries, hydration, or bundling-sensitive imports, consult `$vercel:nextjs`.
 
 ## Judgment
-Refine readability, control flow, names, or redundant abstractions only after understanding why the code exists. Inputs, outputs, errors, side effects, SSR/client behavior, accessibility behavior, and public contracts must remain unchanged. The broader recent-PR scan and thermo-nuclear review are discovery and design inputs; they are not permission for a broad redesign. Keep the final edit narrow and behavior-preserving.
+Refine readability, control flow, names, or redundant abstractions only after understanding why the code exists. Inputs, outputs, errors, side effects, SSR/client behavior, accessibility behavior, and public contracts must remain unchanged. The broader recent-PR scan and review lenses are discovery/design inputs; they are not permission for a broad redesign. Keep the final edit narrow and behavior-preserving.
 
 Use `building-components`, `vercel-composition-patterns`, `vpk-tidy`, and `vercel:nextjs` only as review/checklist inputs for the touched candidate. Do not let them expand a small simplification into a redesign, migration, new component system, or shared API extraction. Use composition or Next guidance only to reject risky simplifications or choose the narrowest local expression of an existing pattern, not to introduce a new architecture. Do not mix simplification with fixes, features, dependency updates, migrations, broad formatting, or unrelated cleanup.
 
 ## Validation
-For any VPK-rovo code edit, run `pnpm run lint` and `pnpm run typecheck` unless a clearly documented environment blocker prevents them. Run focused adjacent tests for the touched behavior when available. If a broad source-contract or adjacent test command fails on unrelated stale expectations, keep the focused touched-behavior test as the regression gate only after documenting why the failure is unrelated and after lint/typecheck are clean or separately blocked by known unrelated baseline issues.
+For any VPK-rovo code edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: focused adjacent tests for the touched behavior when available, `corepack pnpm run lint`, `corepack pnpm run typecheck`, `corepack pnpm run verify:file-size`, `corepack pnpm run verify:repo-map`, and `corepack pnpm run verify:route-manifest`, plus any other touched-surface gates (`corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes). Document which gates were skipped and why. If a broad source-contract or adjacent test command fails on unrelated stale expectations, keep the focused touched-behavior test as the regression gate only after documenting why the failure is unrelated and after lint/typecheck are clean or separately blocked by known unrelated baseline issues.
 
 ## Handoff
-Push the branch and create or update `[Automation] Code simplification: <short summary>` with labels `automation, refactor` if available. Include candidate-scan summary, overlap check, thermo-nuclear review findings used as input, rationale, preserved behavior, validation, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Code simplification: <short summary>` with labels `automation, codex, refactor`. Include candidate-scan summary, overlap check, Architecture Quality Bar findings, supplementary review findings if used, rationale, preserved behavior, validation, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
-Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, behavior preservation is uncertain, the abstraction purpose is unclear, the thermo-nuclear review finds no high-confidence simplification target, or the change expands beyond one cohesive simplification.
+Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, behavior preservation is uncertain, the abstraction purpose is unclear, the Architecture Quality Bar/review lens finds no high-confidence simplification target, or the change expands beyond one cohesive simplification.
 ````
 
 #### Memory Notes
@@ -260,7 +262,7 @@ Last run: 2026-07-04T22:56:15Z
 | Model | gpt-5.5 |
 | Reasoning effort | medium |
 | Created | Apr 18, 2026, 3:23 AM GMT+10 |
-| Updated | Jul 2, 2026, 9:36 AM GMT+10 |
+| Updated | Jul 7, 2026, 1:22 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/dependency-sweep/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/dependency-sweep/memory.md` |
 
@@ -269,33 +271,32 @@ Last run: 2026-07-04T22:56:15Z
 ````markdown
 # Dependency Hygiene — VPK-rovo
 
-> Automation spec for periodically sweeping, retiring, and updating dependencies in VPK-rovo.
-> This kit lives in **two dependency worlds**, and no single pass spans both — so this doc defines **two lanes**. Run the one that fits the task; never try to do Lane B's work through Lane A's tools.
+> Periodically sweep, retire, and update dependencies in VPK-rovo. This kit lives in two dependency worlds, and no single pass spans both. Pick the lane that fits the task; never try to do Lane B's work through Lane A tools.
 >
-> - **Lane A — npm dependency hygiene** (the *install world*): normal deps, catalog, overrides, removals. Bounded by the repo `.npmrc` (→ `npm-remote`) and the lockfile CI guard.
-> - **Lane B — Atlassian logo asset harvest** (the *fetch world*): keeps Atlassian **visual assets** current by vendoring SVGs via `npm pack` when package installs are blocked or not the goal. This is the default path for `@atlassian/logo-third-party` asset freshness because current latest versions are not reachable through Lane A. For `@atlaskit/logo`, try Lane A first and use Lane B only when install reachability, release-age, trust, or lockfile policy blocks a package bump.
+> - **Lane A — npm dependency hygiene**: normal deps, catalog, overrides, removals. Bounded by repo `.npmrc` (`npm-remote`), lockfile CI guardrails, trust policy, and `minimumReleaseAge`.
+> - **Lane B — Atlassian logo asset harvest**: keeps Atlassian visual assets current by vendoring SVGs via `npm pack` when package installs are blocked or not the goal. This is the default path for `@atlassian/logo-third-party` asset freshness unless a current repo-registry probe proves the target is reachable through Lane A. For `@atlaskit/logo`, try Lane A first and use Lane B only when install reachability, release-age, trust, or lockfile policy blocks a package bump.
+
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
 
 ---
 
-## Why two lanes (read this first)
-
-VPK-rovo resolves packages two different ways depending on the tool:
+## Why two lanes
 
 | | Install world (Lane A) | Fetch world (Lane B) |
 |---|---|---|
-| Tool | `pnpm install` / `pnpm update` / `pnpm add` | `npm pack` (run **outside** the repo) |
-| Config used | repo `.npmrc` → `packages.atlassian.com/api/npm/**npm-remote**` | user `~/.npmrc` → `.../artifactory/api/npm/**atlassian-npm**` (authed) |
-| `@atlaskit` / `@atlassian` scopes | forced to `npm-remote` (incomplete mirror for some internal packages) | authenticated `atlassian-npm` (complete, latest) |
-| Gated by | `scripts/verify-pnpm-lockfile.js`, `trustPolicy`, `minimumReleaseAge`, lockfile | nothing — just downloads a tarball |
+| Tool | `corepack pnpm install` / `corepack pnpm update` / `corepack pnpm add` | `npm pack` run outside the repo |
+| Config used | repo `.npmrc` -> `packages.atlassian.com/api/npm/**npm-remote**` | user `~/.npmrc` -> `.../artifactory/api/npm/**atlassian-npm**` when authenticated |
+| `@atlaskit` / `@atlassian` scopes | forced to `npm-remote`, which may lag or omit packages | authenticated `atlassian-npm`, usually complete/latest |
+| Gated by | `scripts/verify-pnpm-lockfile.js`, `trustPolicy`, `minimumReleaseAge`, lockfile | no install-graph gate; downloads a tarball |
 
-**Consequence:** `pnpm outdated` can report versions that are not actually installable through the repo registry. `@atlassian/logo-third-party` is the clearest current example: `0.3.1` is fetchable through `npm pack` with `atlassian-npm`, but `pnpm view @atlassian/logo-third-party` from the repo registry 404s. `@atlaskit/logo` is different: current metadata and `@atlaskit/react-compiler-gating` can be reachable through Lane A, but a specific version may still be blocked by `minimumReleaseAge`, `trustPolicy`, or lockfile policy. Prove the current blocker before routing a package out of Lane A.
+`corepack pnpm outdated` can report versions that are not installable through the repo registry. Re-probe current reachability each run before treating any target as a Lane A candidate. Do not hardcode prior registry state as current truth.
 
 ---
 
 # Lane A — npm dependency hygiene
 
 ## Task
-Discover newer stable releases for direct dependencies, catalog families, overrides, and advisory-affected packages, then apply the smallest update set that is clearly safe and reviewable. Remove or replace old, unused, or superseded dependencies only when current source and lockfile evidence proves the change is safe. **Prefer no PR over a risky, broad, or weakly validated change.** Explicitly **exclude** `@atlassian/logo-third-party` version bumps here unless a future repo-registry probe proves the target is reachable through Lane A. Do not permanently exclude `@atlaskit/logo`; probe it like any other direct dependency and route only visual-asset freshness to Lane B when the install path is blocked.
+Discover newer stable releases for direct dependencies, catalog families, overrides, and advisory-affected packages, then apply the smallest update set that is clearly safe and reviewable. Remove or replace old, unused, or superseded dependencies only when current source and lockfile evidence proves the change is safe. Prefer no PR over a risky, broad, or weakly validated change. Explicitly exclude `@atlassian/logo-third-party` version bumps unless a fresh repo-registry probe proves the target is reachable through Lane A. Do not permanently exclude `@atlaskit/logo`; probe it like any other direct dependency and route only visual-asset freshness to Lane B when the install path is blocked.
 
 ## Repo and branch safety
 ```bash
@@ -306,141 +307,122 @@ gh pr list --state open --search "[Automation] Dependency hygiene" --json number
 gh pr list --state open --search "[Automation] Safe dependency updates" --json number,title,headRefName,state,isDraft
 gh pr list --state open --search "[Automation] Dependency sweep" --json number,title,headRefName,state,isDraft
 ```
-- Do **not** work from a detached HEAD. Create/switch to `automation/dependency-hygiene` only when that branch/worktree is safe and clean.
-- Treat `automation/safe-dependency-updates` / `automation/dependency-sweep` branches or PRs as **overlapping prior runs**, not separate workstreams.
-- The main checkout can be touched by concurrent tooling mid-session (files change under you, branch can flip). Re-verify `git status` is clean immediately before branching; if it is dirty with changes you did not make, **stop** — do not fold someone else's work into a dep PR.
-- Remotes: **GitHub `origin` is primary** (PRs, CI). `bitbucket` is a manual-push mirror — never push to it as part of this job.
+- Do not work from a detached HEAD. Create/switch to `automation/dependency-hygiene` only when that branch/worktree is safe and clean.
+- Treat `automation/safe-dependency-updates` / `automation/dependency-sweep` branches or PRs as overlapping prior runs, not separate workstreams.
+- The main checkout can be touched by concurrent tooling mid-session. Re-verify `git status` is clean immediately before branching; if it is dirty with changes you did not make, stop.
+- GitHub `origin` is primary for PRs/CI. `bitbucket` is a manual-push mirror; never push there as part of this job.
 
-## Inventory (before changing anything)
+## Inventory before changing anything
 ```bash
-pnpm run deps:check      # wrapper over `pnpm outdated` with a status line
-pnpm outdated --long
-pnpm audit --json
+corepack pnpm run deps:check
+corepack pnpm outdated --long
+corepack pnpm audit --json
 ```
-Also inspect `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and `.npmrc` for: direct ranges, exact pins, catalog families, overrides, peer constraints, registry sources, `minimumReleaseAge*` / `trustPolicy*` lists, unused packages, duplicate roles, and stale overrides.
+Also inspect `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and `.npmrc` for direct ranges, exact pins, catalog families, overrides, peer constraints, registry sources, `minimumReleaseAge*` / `trustPolicy*` lists, unused packages, duplicate roles, and stale overrides.
 
-## VPK registry & lockfile reality — the non-negotiable gotchas
+## Non-negotiable gotchas
 
-These bit every PR in practice. Bake them in as hard steps, not afterthoughts.
-
-### 1. Lockfile registry verification (MANDATORY after every non-frozen install)
-Your user npm config can cause `pnpm install`/`update`/`add` to write tarball URLs that differ from the repo registry contract. `scripts/verify-pnpm-lockfile.js` rejects any `atlassian-npm` tarball URL except the explicit `@atlassian/logo-third-party` allowance. After every install that touches the lockfile:
+### 1. Lockfile registry verification
+After every install/update/add that touches the lockfile:
 ```bash
-pnpm run verify:lockfile                                     # MUST print "Verified pnpm-lock.yaml"
+corepack pnpm run verify:lockfile
 ```
-If it reports blocked registry URLs, rewrite only the reported package URLs that are supposed to resolve from `npm-remote`, then rerun the verifier. Do **not** rewrite the allowed `@atlassian/logo-third-party` tarball URL; CI authenticates that package separately. `verify:lockfile` passing is a **required gate** before any PR.
+It must print `Verified pnpm-lock.yaml`. If it reports blocked registry URLs, rewrite only the reported package URLs that belong on `npm-remote`, then rerun the verifier. Do not rewrite the explicit allowed `@atlassian/logo-third-party` tarball URL. `verify:lockfile` passing is required before any PR.
 
-### 2. Reachability ≠ "outdated" report
-`pnpm outdated` / `deps:check` can list a version the **install path cannot reach** (e.g. `@atlassian/logo-third-party@0.3.1` is fetchable through `atlassian-npm`, but the repo registry path currently 404s). Before proposing any bump, confirm the target actually resolves via the repo registry — a dry scratch `pnpm install`/`pnpm add -w <pkg>@<target>` that succeeds, not just an `outdated` row. If it 404s / `NO_MATCHING_VERSION` from `npm-remote`, it is **not** a Lane A candidate.
+### 2. Reachability is not the outdated report
+Before proposing any bump, confirm the target resolves via the repo registry with a dry scratch install/add that succeeds, not just an outdated row. If it 404s or returns `NO_MATCHING_VERSION` from `npm-remote`, it is not a Lane A candidate.
 
-### 3. `pnpm add` needs `-w`
-The repo is a pnpm workspace; use `pnpm add -w <pkg>@<version>` (or edit `package.json` + `pnpm install`).
+### 3. Workspace root adds need `-w`
+Use `corepack pnpm add -w <pkg>@<version>` or edit `package.json` + `corepack pnpm install`.
 
 ## Latest-stable discovery
-Verify current/target from package metadata + official release notes, changelogs, migration guides, peer ranges, and advisories. Treat `latest` as stable only when it is **not** a prerelease/beta/alpha/rc/canary/nightly/experimental/next build. Ignore unstable dist-tags unless the repo already intentionally tracks that channel. Reconcile every candidate against reachability (§2 above).
+Verify current/target from package metadata plus official release notes, changelogs, migration guides, peer ranges, and advisories. Treat `latest` as stable only when it is not prerelease/beta/alpha/rc/canary/nightly/experimental/next. Ignore unstable dist-tags unless the repo already intentionally tracks that channel. Reconcile every candidate against reachability.
 
 ## Priority order
 1. Security-advisory or correctness fixes with a narrow package/override bump.
 2. Patch/minor in-range updates for Float and Cautious deps.
-3. Evidence-backed removals of unused direct deps, obsolete overrides, or superseded packages (all consumers gone).
+3. Evidence-backed removals of unused direct deps, obsolete overrides, or superseded packages.
 4. Safe latest-stable direct bumps needing a small deliberate manifest edit.
 5. Catalog-family bumps when every member moves together via the `catalog:` block.
 6. Locked exact bumps only when release evidence, peer compatibility, and validation make them clearly review-ready.
 
-## Update & removal rules (respect the tiers)
-- **Float `^x.y.z`** / **Cautious `~x.y.z`**: `pnpm run deps:update` or targeted `pnpm update <pkg>` when the lockfile diff is narrow and explainable.
-  - Note: `pnpm update` does a **full re-resolve** and can trip trust/registry blockers on *unrelated* subtrees (see Trust handling). A scoped `pnpm update <pkg …>` or per-package `package.json` edit + `pnpm install` is often cleaner.
-- **Locked exact** (`react`, `react-dom`, `next`, `eslint-config-next`, `recharts`, `@modelcontextprotocol/sdk`, and coordinated families): deliberate manifest edit + `pnpm install` only, with release/peer evidence.
-- **Catalog families** (`tiptap`, `json-render`, `remotion`): bump **only** in the `catalog:` block of `pnpm-workspace.yaml`; never edit individual `"catalog:"` refs in `package.json`. All members move in lockstep.
-- **Overrides**: acceptable only for documented security, compatibility, or dedupe reasons.
-- **Removals** require: zero tracked imports/usages, no runtime/config/script references, no generated/vendored consumer, and lockfile validation after removal. Do not remove a package just because it "looks old." Do not bundle unrelated packages because the lockfile *can* update them — **revert unrelated lockfile churn** unless a chosen package requires it and you can explain it.
+## Update and removal rules
+- Float `^x.y.z` / Cautious `~x.y.z`: use `corepack pnpm run deps:update` or targeted `corepack pnpm update <pkg>` when the lockfile diff is narrow and explainable. A scoped update or per-package `package.json` edit plus `corepack pnpm install` is often cleaner than a full re-resolve.
+- Locked exact deps (`react`, `react-dom`, `next`, `eslint-config-next`, `recharts`, `@modelcontextprotocol/sdk`, and coordinated families): deliberate manifest edit plus `corepack pnpm install` only.
+- Catalog families (`tiptap`, `json-render`, `remotion`): bump only in the `catalog:` block of `pnpm-workspace.yaml`; never edit individual `"catalog:"` refs in `package.json`.
+- Overrides: acceptable only for documented security, compatibility, or dedupe reasons.
+- Removals require zero tracked imports/usages, no runtime/config/script references, no generated/vendored consumer, and lockfile validation after removal. Do not remove a package just because it looks old. Revert unrelated lockfile churn unless the chosen package requires it and you can explain it.
 
-## Trust-downgrade handling (route, don't blanket-stop)
-`trustPolicy: no-downgrade` will abort resolution with `ERR_PNPM_TRUST_DOWNGRADE` when a package version has weaker provenance than an **earlier-published** one. This is usually pnpm's **publish-date heuristic firing on a benign backport** (a late `3.x` release published after an attested `4.x`, or a maintainer who stopped signing) — not a real takeover. Existing precedent lives in `trustPolicyExclude` (`semver@6.3.1`, `langium@3.3.1`, `eslint-import-resolver-typescript@3.10.1`, `reselect@5.1.1`).
-
-Decision:
-- **Benign false-positive** (reputable package, no advisory, "earlier version had provenance" pattern): propose a **version-pinned** `trustPolicyExclude` entry (`name@exact-version`, with a one-line comment) as a **separate, human-reviewed infra PR**. Version-pinning means the waiver evaporates if the version ever changes. Do **not** silently bundle it into a feature bump, and never use `--config.trustPolicy=none` (that disables the guard globally).
-- **Uncertain or real signal**: **stop**, report the package/version and the evidence, open no PR.
-
-Also treat `minimumReleaseAge` (currently 7 days), registry mismatches, private-auth failures, and unexplained tarball-URL churn as valid **no-PR stop conditions** unless there is explicit evidence and approval.
+## Trust-downgrade handling
+`trustPolicy: no-downgrade` can abort resolution with `ERR_PNPM_TRUST_DOWNGRADE`. If evidence shows a benign false positive for a reputable package and exact version, propose a version-pinned `trustPolicyExclude` entry as a separate, human-reviewed infra PR. Do not silently bundle it into a feature bump and never use `--config.trustPolicy=none`. If uncertain or real signal, stop and report evidence with no PR. Treat `minimumReleaseAge`, registry mismatches, private-auth failures, and unexplained tarball-URL churn as no-PR stop conditions unless there is explicit evidence and approval.
 
 ## Validation
-After any dependency/config/lockfile/code edit:
+After any dependency/config/lockfile/code edit, run in order:
 ```bash
-pnpm install                 # or the scoped update; then the §1 URL rewrite
-pnpm run verify:lockfile     # required
-pnpm run lint
-pnpm run typecheck
-pnpm run test:unit:js
+corepack pnpm install                 # or the scoped update/add used for the chosen change
+corepack pnpm run verify:lockfile     # required before any PR
+corepack pnpm run ci:pr
 ```
-Add a **focused** check for major / framework / build-tool / React-Next / AI-SDK / Rovo / Tailwind / eslint / TypeScript / rendering / browser / Atlassian bumps that exercises the touched surface. If a required check cannot run, document the exact blocker; do not claim readiness unless remaining evidence is strong enough for review.
+If `ci:pr` cannot run in the sandbox, run at minimum: `corepack pnpm run verify:lockfile`, the focused check for the touched surface, `corepack pnpm run lint`, `corepack pnpm run typecheck`, `corepack pnpm run test:unit:js`, plus relevant verify gates (`corepack pnpm run verify:file-size`, `corepack pnpm run verify:repo-map`, `corepack pnpm run verify:route-manifest`, `corepack pnpm run verify:catalog`, `corepack pnpm run verify:lazy-load`, `corepack pnpm run verify:api-surfaces`, or `corepack pnpm run verify:doc-scripts` as applicable), and document which gates were skipped and why. Add a focused check for major/framework/build-tool/React-Next/AI-SDK/Rovo/Tailwind/eslint/TypeScript/rendering/browser/Atlassian bumps that exercises the touched surface.
 
-## PR serialization (lockfile conflicts)
-Every dep PR touches `pnpm-lock.yaml`, so parallel branches off the same base **mutually conflict**. Ship serially: create PR → enable auto-merge (CI-gated) → wait for merge → `git checkout main && git pull` → branch the next off the updated main. Keep each PR to **one related change set** (one tier / one family / one theme).
+## PR serialization
+Every dep PR touches `pnpm-lock.yaml`, so parallel branches off the same base mutually conflict. Ship serially: create PR, enable auto-merge when allowed, wait for merge, sync main, then branch the next off updated main. Keep each PR to one related change set.
 
-## Handoff
-Push the branch and create/update `[Automation] Dependency hygiene: <short summary>` with labels `automation, dependencies` if available. Include: before/after versions or removed packages, why selected, latest-stable / unused / superseded evidence, advisory or changelog notes, peer & migration risk, the exact validation run (incl. `verify:lockfile`), any trust waiver added and its justification, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do **not** merge from this producer job unless explicitly authorized; the review/merge workflow owns merge. (Trivial *enabling* infra PRs — e.g. a reviewed trust exclude that unblocks the batch — may be merged first when authorized, since later PRs depend on it.)
+## Lane A handoff
+Push the branch and create/update `[Automation] Dependency hygiene: <short summary>` with labels `automation, codex, dependencies`. Include before/after versions or removed packages, why selected, latest-stable/unused/superseded evidence, advisory or changelog notes, peer and migration risk, exact validation including `verify:lockfile`, any trust waiver and its justification, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job unless explicitly authorized.
 
-## Stop conditions
-Stop without editing or PR if: branch/worktree state is unsafe or dirty from other tooling; overlap makes behavior unclear; validation cannot support readiness; the change is speculative; unrelated packages would be bundled; migration risk is unclear; removal usage-evidence is incomplete; the stable release cannot be confirmed **or is not reachable via `npm-remote`**; a pnpm supply-chain policy blocks it without an approved, version-pinned waiver; or security/correctness would weaken.
+## Lane A stop conditions
+Stop without editing or PR if branch/worktree state is unsafe or dirty from other tooling; overlap makes behavior unclear; validation cannot support readiness; the change is speculative; unrelated packages would be bundled; migration risk is unclear; removal usage-evidence is incomplete; stable release cannot be confirmed or is not reachable via `npm-remote`; a pnpm supply-chain policy blocks it without an approved, version-pinned waiver; or security/correctness would weaken.
 
 ---
 
 # Lane B — Atlassian logo asset harvest
 
-Keeps VPK's Atlassian **visual assets** current even though the packages can't be installed. Uses `npm pack` (fetch world), so it needs **no** `pnpm install`, lockfile change, trust waiver, or registry mirror. Run on its own cadence.
+Keeps VPK's Atlassian visual assets current even when packages cannot be installed. It uses `npm pack` outside the repo, so it needs no `corepack pnpm install`, lockfile change, trust waiver, or registry mirror. Run on its own cadence and keep Lane B PRs separate from Lane A PRs.
 
 ## When to use
-- You want the latest `@atlassian/logo-third-party` (3p brand logos) assets, because current latest package versions are not reachable through Lane A.
-- You want latest `@atlaskit/logo` (1p product logos) assets and Lane A has just proven a package bump is blocked by release-age, trust, registry, or lockfile policy.
+- Latest `@atlassian/logo-third-party` 3p brand logos are needed and Lane A reachability is blocked.
+- Latest `@atlaskit/logo` 1p product logos are needed and Lane A has just proven a package bump is blocked by release-age, trust, registry, or lockfile policy.
 - You are refreshing visual assets only and do not want a package or lockfile change.
 
 ## Steps
-1. **Fetch latest into a temp dir OUTSIDE the repo** (so `~/.npmrc` → `atlassian-npm` auth applies, not the repo `.npmrc`). In CI, use the `ATLASSIAN_NPM_TOKEN` secret.
-   ```bash
-   cd "$(mktemp -d)"
-   npm pack @atlaskit/logo@latest
-   npm pack @atlassian/logo-third-party@latest
-   tar -xzf atlaskit-logo-*.tgz -C logo && tar -xzf atlassian-logo-third-party-*.tgz -C tp
-   ```
-2. **Extract the SVG string literals** (no rendering, no deps). The geometry is stored verbatim in the compiled artifacts:
-   - `@atlaskit/logo`: `dist/esm/artifacts/logo-components/<brand>/{icon,logo}.js` → `var svg = "…";` (double-quoted, `\n`/`\"` escaped → `JSON.parse`).
-   - `@atlassian/logo-third-party`: `dist/esm/**` files containing `var markup = '…';` (single-quoted → re-quote then parse).
-   - Colors are CSS custom properties with baked defaults (`fill="var(--tile-color,#1868db)"`), so SVGs render standalone **and** stay themeable.
-3. **Write assets** to `public/1p/<brand>-{icon,logo}.svg` and `public/3p/<brand>.svg` (normalize brand names; strip `entry-points-`/`index` artifacts).
-4. **Update the demos**: refresh the VPK **logo demo** and **third-party logo demo** components to render from the harvested SVGs (inline SVG for 1p product logos so light/dark theming via the CSS vars works; `next/image`/`<img>` acceptable for 3p default-color marks).
-5. **Diff report**: list brands added / changed / removed vs. the current `public/` set.
+If the current checkout contains `scripts/harvest-atlassian-logos.mjs` and a `harvest:logos` package script, prefer `corepack pnpm run harvest:logos`. If those do not exist, follow the manual steps below and note the missing committed script as a follow-up rather than calling a nonexistent command.
 
-Prefer a committed script — `scripts/harvest-atlassian-logos.mjs` wired to `pnpm harvest:logos` — so the run is reproducible and re-runnable ("always latest" = re-run).
-
-## Validation
+1. Fetch latest into a temp dir outside the repo so user `~/.npmrc` / `atlassian-npm` auth applies, not the repo `.npmrc`:
 ```bash
-pnpm run lint
-pnpm run typecheck
-# spot-check a few rendered logos in the demos (browser/agent-browser), light + dark
+cd "$(mktemp -d)"
+npm pack @atlaskit/logo@latest
+npm pack @atlassian/logo-third-party@latest
 ```
-Because nothing enters the install graph, `verify:lockfile` / trust / `minimumReleaseAge` do not apply.
+2. Extract SVG string literals from the package artifacts (`@atlaskit/logo` logo-components `var svg = "..."`; `@atlassian/logo-third-party` `var markup = '...'`). Preserve CSS custom-property defaults so SVGs render standalone and stay themeable.
+3. Write assets to `public/1p/<brand>-{icon,logo}.svg` and `public/3p/<brand>.svg`, normalizing brand names and stripping entry-point/index artifacts.
+4. Refresh VPK logo demo and third-party logo demo components to render from harvested SVGs.
+5. Produce a diff report listing brands added, changed, and removed versus the current `public/` set.
 
-## Handoff
-Push and open `[Automation] Logo asset refresh: <n brands updated>` (labels `automation, dependencies` if available). Include the brand add/change/remove diff, source package versions harvested (e.g. `@atlaskit/logo@21.3.0`, `@atlassian/logo-third-party@0.3.1`), and screenshots of a few refreshed demos. Keep Lane B PRs separate from Lane A PRs.
+## Lane B validation
+```bash
+corepack pnpm run lint
+corepack pnpm run typecheck
+```
+Spot-check a few rendered logos in demos with `npx agent-browser`, including light and dark where theming matters. Because nothing enters the install graph, `verify:lockfile`, trust, and `minimumReleaseAge` do not apply.
 
----
+## Lane B handoff
+Push and open `[Automation] Logo asset refresh: <n brands updated>` with labels `automation, codex, dependencies`. Include the brand add/change/remove diff, source package versions harvested, and screenshots of a few refreshed demos. Keep Lane B PRs separate from Lane A PRs.
 
-## Quick reference — known blockers & remedies
-
+## Quick reference
 | Symptom | Cause | Remedy |
 |---|---|---|
-| `verify-pnpm-lockfile.js` fails on blocked `atlassian-npm` URLs | user npm config or a refresh wrote tarball URLs outside the repo registry contract | rewrite only the reported package URLs that belong on `npm-remote`, leave the allowed `@atlassian/logo-third-party` URL alone, re-run `verify:lockfile` |
-| `ERR_PNPM_TRUST_DOWNGRADE` on a locked transitive | publish-date heuristic on a benign backport | version-pinned `trustPolicyExclude` entry via reviewed infra PR; else stop |
-| `ERR_PNPM_FETCH_404` while installing a new `@atlaskit/*` target | target or transitive is not mirrored to `npm-remote` on this run | stop the Lane A bump; for visual-only logo freshness, harvest via Lane B |
-| `NO_MATCHING_VERSION @atlassian/logo-third-party@<new>` | `npm-remote` mirrors only the old version | Lane B harvest; keep the npm dep pinned at the reachable version |
-| `ERR_PNPM_ADDING_TO_ROOT` | workspace root | use `pnpm add -w …` |
-| Parallel dep PRs conflict | both touch `pnpm-lock.yaml` | serialize: merge → sync main → branch next |
-| Main checkout dirty with changes you didn't make | concurrent tooling | stop; re-verify clean before branching |
+| `verify-pnpm-lockfile.js` fails on blocked `atlassian-npm` URLs | user npm config or refresh wrote tarball URLs outside repo registry contract | rewrite only reported package URLs that belong on `npm-remote`, leave allowed `@atlassian/logo-third-party` URL alone, rerun verifier |
+| `ERR_PNPM_TRUST_DOWNGRADE` on a locked transitive | publish-date heuristic or provenance downgrade | version-pinned `trustPolicyExclude` via reviewed infra PR, otherwise stop |
+| `ERR_PNPM_FETCH_404` for new `@atlaskit/*` target | target or transitive not mirrored to `npm-remote` | stop Lane A; for visual-only logo freshness, harvest via Lane B |
+| `NO_MATCHING_VERSION @atlassian/logo-third-party@<new>` | `npm-remote` lacks the version | Lane B harvest; keep npm dep pinned at reachable version |
+| `ERR_PNPM_ADDING_TO_ROOT` | workspace root | use `corepack pnpm add -w ...` |
+| Parallel dep PRs conflict | both touch lockfile | serialize: merge, sync main, branch next |
+| Main checkout dirty with changes you did not make | concurrent tooling | stop; re-verify clean before branching |
 
 ## Cadence suggestion
-- **Lane A**: periodic sweep (e.g. weekly). One narrow PR per related change set; prefer patch/minor + proven removals.
-- **Lane B**: independent cadence (e.g. weekly/on-demand); it never conflicts with Lane A and never touches the lockfile.
+- Lane A: weekly narrow sweep; one PR per related change set.
+- Lane B: independent weekly or on-demand visual asset refresh; never conflicts with Lane A and never touches the lockfile.
 ````
 
 #### Memory Notes
@@ -462,7 +444,7 @@ Push and open `[Automation] Logo asset refresh: <n brands updated>` (labels `aut
 | Model | gpt-5.5 |
 | Reasoning effort | medium |
 | Created | Apr 30, 2026, 2:55 PM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:19 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/deprecation-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/deprecation-audit/memory.md` |
 
@@ -480,16 +462,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Deprecation audit" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/deprecation-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Prove unused or superseded status with callers, imports, routes, docs, config, tests, git/PR state, or runtime evidence. If removal touches compatibility, replacement paths, active consumers, public APIs, or a migration boundary, consult `[$deprecation-and-migration](/Users/esoh/.agents/skills/deprecation-and-migration/SKILL.md)` for safe deprecation/removal guidance. If the target is a VPK React component or local wrapper, consult `[$vpk-tidy](/Users/esoh/Documents/Labs/vpk-rovo/.agents/skills/vpk-tidy/SKILL.md)` for wrapper inventory, migrate-first gates, route impact, and validation expectations before removal.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/deprecation-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Prove unused or superseded status with callers, imports, routes, docs, config, tests, git/PR state, or runtime evidence. If removal touches compatibility, replacement paths, active consumers, public APIs, or a migration boundary, consult `$deprecation-and-migration` for safe deprecation/removal guidance. If the target is a VPK React component or local wrapper, consult `$vpk-tidy` for wrapper inventory, migrate-first gates, route impact, and validation expectations before removal.
 
 ## Judgment
 Keep one coherent removal or migration area per run. Prefer removing truly dead code over adding deprecation machinery. Use `deprecation-and-migration` only to verify replacement coverage, active-consumer risk, and migration completeness; do not turn one obsolete-surface cleanup into a broad migration program. Ignored local artifacts belong to `artifact-cleanup`, not this PR-producing job. Do not remove live compatibility paths or ambiguous surfaces. Do not delete retired shared UI wrappers or other local wrappers until every callsite is migrated, compilation succeeds, and no retired imports remain; follow current `vpk-tidy` inventory rather than stale path names.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Update only tests/docs that reference the removed or migrated surface.
+Run focused validation for the touched behavior. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for removals/moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. Update only tests/docs that reference the removed or migrated surface.
 
 ## Handoff
-Push the branch and create or update `[Automation] Deprecation audit: <short summary>` with labels `automation, cleanup` if available. Include unused/superseded evidence, compatibility risk, files changed, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Deprecation audit: <short summary>` with labels `automation, codex, cleanup`. Include unused/superseded evidence, compatibility risk, files changed, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or usage is ambiguous, the target is ignored local state, live callers remain, or the change becomes a broad migration/refactor.
@@ -535,7 +519,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 18, 2026, 3:20 AM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/engineering-improvement-map/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/engineering-improvement-map/memory.md` |
 
@@ -553,16 +537,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Engineering improvement map" --json number,title,headRefName,state,isDraft
 ```
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
 Before editing, do not work from detached HEAD. Create or switch to `automation/engineering-improvement-map` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use recent PRs, review comments, fix-up commits, validation failures, issues, docs, workflow rules, and automation outcomes as evidence.
 
 ## Judgment
 Avoid generic coaching and speculative trends. Classify each recommendation as one-off reminder, automation prompt rule, repo doc/AGENTS update, regression test, lint/check rule, or VPK-owned skill/rule update. Patch only small repo-owned docs, tests, checks, workflow rules, or VPK-owned rules with strong evidence and a validation path. Remain analysis-only when no patch is justified.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Trace every recommendation to concrete evidence and explain why its durability level fits the recurrence/risk.
+Trace every recommendation to concrete evidence and explain why its durability level fits the recurrence/risk. If a patch changes code, dependency, or config, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size`, `corepack pnpm run verify:repo-map`, `corepack pnpm run verify:route-manifest`, `corepack pnpm run verify:catalog`, `corepack pnpm run verify:lazy-load`, `corepack pnpm run verify:api-surfaces`, or `corepack pnpm run verify:doc-scripts` as applicable), and document which gates were skipped and why. For docs/rule-only patches, `corepack pnpm run verify:doc-scripts` is the default lightweight validation when script references or documented commands changed.
 
 ## Handoff
-If no patch is justified, do not push or create a PR; report the 3 to 5 recommendations with evidence, why now, durability level, next action, and repo example. If a patch is clearly safe, push the branch and create or update `[Automation] Engineering improvement map: <short summary>` with labels `automation, codex` if available. For a PR, include files changed, validation, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+If no patch is justified, do not push or create a PR; report the 3 to 5 recommendations with evidence, why now, durability level, next action, and repo example. If a patch is clearly safe, push the branch and create or update `[Automation] Engineering improvement map: <short summary>` with labels `automation, codex`. For a PR, include files changed, validation, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or evidence is unavailable or too thin, the fix would be speculative, non-repo-owned, broad, unsafe to validate, or better left to a human.
@@ -589,7 +575,7 @@ Recommendations carried forward from this run: (1) shared catalog previews need 
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | May 2, 2026, 8:08 PM GMT+10 |
-| Updated | Jul 3, 2026, 4:25 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/frontend-runtime-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/frontend-runtime-audit/memory.md` |
 
@@ -607,16 +593,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Frontend runtime audit" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/frontend-runtime-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use source inspection, route/component evidence, console logs, screenshots, a11y checks, reproducible interactions, and browser validation when practical. Use `npx agent-browser` first for browser testing, local web verification, screenshots, UI probes, isolated/public pages, visual debugging, responsive checks, and unauthenticated verification, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `pnpm run dev:tmux:start` when needed and use `pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports. For Next-specific root causes such as RSC/client boundaries, async `params`/`searchParams`, route handlers, metadata, image/script handling, Suspense boundaries, or hydration behavior, consult `[$vercel:nextjs](/Users/esoh/.codex/plugins/cache/openai-curated/vercel/3fdeeb49/skills/nextjs/SKILL.md)`. For CSS or browser-platform runtime issues such as dialogs/popovers, forms/autofill, scroll or motion behavior, container/anchor queries, content visibility, image priority, or other clientside web APIs, consult `[$modern-web-guidance](/Users/esoh/.agents/skills/modern-web-guidance/SKILL.md)` before implementing the fix. Use `[$motion](/Users/esoh/.agents/skills/motion/SKILL.md)` when reproducing or fixing issues in Motion for React code, `motion/react` imports, `MotionConfig`, `AnimatePresence`, MotionValues, variants, layout animations, drag/gesture motion, exit transitions, or reduced-motion handling. Use `[$motion-audit](/Users/esoh/.agents/skills/motion-audit/SKILL.md)` when the runtime issue involves animation jank, layout thrash, compositor/paint cost, `will-change`, frame drops, or missing reduced-motion safeguards. Use `[$userinterface-wiki](/Users/esoh/.agents/skills/userinterface-wiki/SKILL.md)` only when the reproducible regression is motion UX behavior such as confusing timing, broken staging, excessive/incorrect exit animation, or hover/press feel that violates an existing local contract. For Tailwind motion classes, treat `app/tailwind-theme.css` as the source of truth, keep semantic duration/easing utilities, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and do not replace semantic tokens with hardcoded timing values.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/frontend-runtime-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use source inspection, route/component evidence, console logs, screenshots, a11y checks, reproducible interactions, and browser validation when practical. Use `npx agent-browser` first for browser testing, local web verification, screenshots, UI probes, isolated/public pages, visual debugging, responsive checks, and unauthenticated verification, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `corepack pnpm run dev:tmux:start` when needed and use `corepack pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports. For Next-specific root causes such as RSC/client boundaries, async `params`/`searchParams`, route handlers, metadata, image/script handling, Suspense boundaries, or hydration behavior, consult `$vercel:nextjs`. For CSS or browser-platform runtime issues such as dialogs/popovers, forms/autofill, scroll or motion behavior, container/anchor queries, content visibility, image priority, or other clientside web APIs, consult `$modern-web-guidance` before implementing the fix. Use `$motion` when reproducing or fixing issues in Motion for React code, `motion/react` imports, `MotionConfig`, `AnimatePresence`, MotionValues, variants, layout animations, drag/gesture motion, exit transitions, or reduced-motion handling. Use `$motion-audit` when the runtime issue involves animation jank, layout thrash, compositor/paint cost, `will-change`, frame drops, or missing reduced-motion safeguards. Use `$userinterface-wiki` only when the reproducible regression is motion UX behavior such as confusing timing, broken staging, excessive/incorrect exit animation, or hover/press feel that violates an existing local contract. For Tailwind motion classes, treat `app/tailwind-theme.css` as the source of truth, keep semantic duration/easing utilities, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and do not replace semantic tokens with hardcoded timing values.
 
 ## Judgment
 Good targets include console errors, hydration/SSR mismatches, broken interactions, unusable loading/error/empty states, keyboard/focus failures, blank screens, obvious route crashes, and browser-only regressions. Restore runtime behavior without drifting into design polish or CSS organization. Use Next, web-platform, and motion guidance only to verify the narrow root cause and repair path; do not turn a runtime fix into a route migration, visual redesign, broad CSS cleanup, or subjective animation retuning. Preserve existing browser-backed tests, accessible-name assertions, route-local motion contracts, reduced-motion behavior, and focus contracts unless fresh evidence proves the contract changed.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Use browser validation when practical, and state which browser route was used or why browser proof was unavailable. Use ADS/localhost accessibility tooling such as `ads_analyze_localhost_a11y` when available for UI-affecting fixes, plus keyboard/focus and responsive notes when relevant. For motion/runtime fixes, include the specific route, interaction, reduced-motion or animation state checked, and any console evidence.
+Run focused validation for the touched behavior. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. Use browser validation when practical, and state which browser route was used or why browser proof was unavailable. Use ADS/localhost accessibility tooling such as `ads_analyze_localhost_a11y` when available for UI-affecting fixes, plus keyboard/focus and responsive notes when relevant. For motion/runtime fixes, include the specific route, interaction, reduced-motion or animation state checked, and any console evidence.
 
 ## Handoff
-Push the branch and create or update `[Automation] Frontend runtime audit: <short summary>` with labels `automation, bugfix` if available. Include reproduction evidence, root cause, fix, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Frontend runtime audit: <short summary>` with labels `automation, codex, bugfix`. Include reproduction evidence, root cause, fix, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or the issue is speculative, design-only, expected behavior is unclear, browser evidence cannot support the fix, animation feel is subjective without a runtime contract, or the change becomes broad UI redesign/CSS cleanup.
@@ -656,7 +644,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 30, 2026, 2:55 PM GMT+10 |
-| Updated | Jul 5, 2026, 8:13 AM GMT+10 |
+| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/interface-contract-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/interface-contract-audit/memory.md` |
 
@@ -674,16 +662,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Interface contract audit" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/interface-contract-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Inspect callers/callees, route handlers, API schemas, message/data parts, component props, config contracts, tests, and recent diffs. When the boundary is a REST/API, module, message/data, storage, config, or public type contract, consult `[$api-and-interface-design](/Users/esoh/.agents/skills/api-and-interface-design/SKILL.md)` for stable contract and boundary guidance. When the boundary is a component prop, context/provider, compound component, render-prop/children, reusable component API, or boolean-prop variant contract, consult `[$vercel-composition-patterns](/Users/esoh/.agents/skills/vercel-composition-patterns/SKILL.md)`. When the boundary is a Next.js route handler, server action, RSC/client boundary, async route API, metadata, image/font/script convention, Suspense boundary, hydration contract, or route file convention, consult `[$vercel:nextjs](/Users/esoh/.codex/plugins/cache/openai-curated/vercel/3fdeeb49/skills/nextjs/SKILL.md)`. When the boundary is a VPK component prop, context, or wrapper contract under `app/**` or `components/**`, consult `[$vpk-tidy](/Users/esoh/Documents/Labs/vpk-rovo/.agents/skills/vpk-tidy/SKILL.md)` for prop typing, placement, wrapper-migration gates, and route/accessibility validation expectations.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/interface-contract-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Inspect callers/callees, route handlers, API schemas, message/data parts, component props, config contracts, tests, and recent diffs. When the boundary is a REST/API, module, message/data, storage, config, or public type contract, consult `$api-and-interface-design` for stable contract and boundary guidance. When the boundary is a component prop, context/provider, compound component, render-prop/children, reusable component API, or boolean-prop variant contract, consult `$vercel-composition-patterns`. When the boundary is a Next.js route handler, server action, RSC/client boundary, async route API, metadata, image/font/script convention, Suspense boundary, hydration contract, or route file convention, consult `$vercel:nextjs`. When the boundary is a VPK component prop, context, or wrapper contract under `app/**` or `components/**`, consult `$vpk-tidy` for prop typing, placement, wrapper-migration gates, and route/accessibility validation expectations.
 
 ## Judgment
 Prefer boundaries where producer/consumer expectations can be proven: API request/response shape, UI message data, storage format, config/env semantics, component prop contract, or script CLI behavior. Use `api-and-interface-design` to clarify observable behavior, error semantics, validation-at-boundary expectations, and additive-versus-breaking contract changes; do not use it to invent broad API redesigns. Use composition and Next guidance to clarify the existing contract and avoid unsafe API shapes, not to rename public contracts or broaden into architecture work. Do not invent abstract interface cleanup, rename public contracts without migration need, or broaden into architecture work. Keep component contract fixes local unless evidence shows a shared primitive or migration is required.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Add or update focused contract coverage when practical.
+Run focused validation for the touched behavior and add or update focused contract coverage when practical. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why.
 
 ## Handoff
-Push the branch and create or update `[Automation] Interface contract audit: <short summary>` with labels `automation, bugfix` if available. Include contract evidence, mismatch or risk, fix, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Interface contract audit: <short summary>` with labels `automation, codex, bugfix`. Include contract evidence, mismatch or risk, fix, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or the contract is ambiguous, callers disagree intentionally, or the change would require a broad migration.
@@ -716,7 +706,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 18, 2026, 3:25 AM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/performance-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/performance-audit/memory.md` |
 
@@ -734,16 +724,20 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Performance audit" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/performance-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Gather baseline evidence with the narrowest useful tool: timing, trace, benchmark, bundle/source-size check, render count, repeated-work counter, logs, browser performance evidence, or source hot-path proof. For general frontend, backend, API, or runtime bottlenecks, consult `[$performance-optimization](/Users/esoh/.agents/skills/performance-optimization/SKILL.md)` for measure-identify-fix-verify guidance. For React/Next UI, data fetching, rendering, hydration, bundle size, or server components, consult `[$vercel-react-best-practices](/Users/esoh/.agents/skills/vercel-react-best-practices/SKILL.md)` while keeping repo rules and nearby conventions higher priority. For Next-specific hot paths such as RSC/server data waterfalls, route handlers, image/font/script handling, Suspense boundaries, metadata, bundling, or hydration behavior, consult `[$vercel:nextjs](/Users/esoh/.codex/plugins/cache/openai-curated/vercel/202e9242/skills/nextjs/SKILL.md)`. For browser-platform performance topics such as Core Web Vitals, LCP/INP, content visibility, Fetch Priority, image optimization, scroll/motion behavior, or other clientside web APIs, consult `[$modern-web-guidance](/Users/esoh/.agents/skills/modern-web-guidance/SKILL.md)` before implementing a browser-facing optimization. Use `[$motion-audit](/Users/esoh/.agents/skills/motion-audit/SKILL.md)` when the hot path involves CSS animations, Motion for React, `AnimatePresence`, MotionValues, layout animations, `will-change`, transform/opacity versus layout properties, reduced-motion behavior, compositor/paint/layout cost, or slow/janky animations. Use `[$motion](/Users/esoh/.agents/skills/motion/SKILL.md)` when implementing a Motion for React fix or changing `motion/react` code. Use `[$userinterface-wiki](/Users/esoh/.agents/skills/userinterface-wiki/SKILL.md)` only to check that a motion performance fix preserves interaction clarity and does not replace a proven perf issue with distracting or contract-breaking animation. For Tailwind motion classes, treat `app/tailwind-theme.css` as the source of truth, keep semantic duration/easing utilities, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and avoid hardcoded timing values unless no semantic token exists.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/performance-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Gather baseline evidence with the narrowest useful tool: timing, trace, benchmark, bundle/source-size check, render count, repeated-work counter, logs, browser performance evidence, or source hot-path proof. For bundle-sensitive work, start with `corepack pnpm run perf:budget:warn` as the default manual baseline. When route load timing is in scope, run `corepack pnpm run perf:baseline`, then pass this worktree's Portless URL to `corepack pnpm run perf:baseline:timing -- --base-url <URL>`. Do not commit `output/perf-baseline.json`.
+
+For general frontend, backend, API, or runtime bottlenecks, consult `$performance-optimization` for measure-identify-fix-verify guidance. For React/Next UI, data fetching, rendering, hydration, bundle size, or server components, consult `$vercel-react-best-practices` while keeping repo rules and nearby conventions higher priority. For Next-specific hot paths such as RSC/server data waterfalls, route handlers, image/font/script handling, Suspense boundaries, metadata, bundling, or hydration behavior, consult `$vercel:nextjs`. For browser-platform performance topics such as Core Web Vitals, LCP/INP, content visibility, Fetch Priority, image optimization, scroll/motion behavior, or other clientside web APIs, consult `$modern-web-guidance` before implementing a browser-facing optimization. Use `$motion-audit` when the hot path involves CSS animations, Motion for React, `AnimatePresence`, MotionValues, layout animations, `will-change`, transform/opacity versus layout properties, reduced-motion behavior, compositor/paint/layout cost, or slow/janky animations. Use `$motion` when implementing a Motion for React fix or changing `motion/react` code. Use `$userinterface-wiki` only to check that a motion performance fix preserves interaction clarity and does not replace a proven perf issue with distracting or contract-breaking animation. For Tailwind motion classes, treat `app/tailwind-theme.css` as the source of truth, keep semantic duration/easing utilities, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and avoid hardcoded timing values unless no semantic token exists.
 
 ## Judgment
 Optimize only when evidence identifies a real hot path, bottleneck, repeated cost, animation jank, frame-drop risk, or regression. Use `performance-optimization` and `motion-audit` to choose the right measurement and verify the before/after impact; do not use them to justify speculative memoization, caching, bundling, concurrency changes, blanket `will-change`, or animation rewrites. Use React, Next, modern web, and motion guidance only after evidence identifies the relevant layer, and keep the patch to the smallest proven bottleneck. Preserve correctness, security, accessibility, SSR determinism, maintainability, reduced-motion behavior, route-local motion contracts, and data integrity.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Record baseline/treatment evidence when proving a performance claim. For motion performance fixes, name the animated properties, the render-pipeline cost reduced, and the route/interaction checked. Name the invariant that stayed true and add a focused assertion when practical.
+Run focused validation for the touched behavior and record baseline/treatment evidence when proving a performance claim. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits or size-sensitive changes, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. For motion performance fixes, name the animated properties, the render-pipeline cost reduced, and the route/interaction checked. Name the invariant that stayed true and add a focused assertion when practical.
 
 ## Handoff
-Push the branch and create or update `[Automation] Performance audit: <short summary>` with labels `automation, performance` if available. Include evidence, expected impact, invariant preserved, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Performance audit: <short summary>` with labels `automation, codex, performance`. Include evidence, expected impact, invariant preserved, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or evidence is weak, optimization is speculative, correctness/accessibility/security could change, animation feel is subjective without measured cost, or the fix becomes a broad refactor.
@@ -771,11 +765,10 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | ID | `standup-summary` |
 | Kind | heartbeat |
 | Status | ACTIVE |
-| Schedule | Every 4 hours |
-| Destination | thread |
+| Schedule | Daily at 9:30 AM, 1:30 PM, and 5:30 PM |
 | Target thread ID | `019e7e5b-4b78-7d51-b68f-eae310323092` |
 | Created | May 31, 2026, 3:39 PM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:22 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/standup-summary/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/standup-summary/memory.md` |
 
@@ -802,7 +795,7 @@ High-signal areas include:
 Do not treat local-only worktrees, branches, Codex threads, Claude worktrees, or chat history as portfolio state unless the user explicitly asks to inspect them.
 
 ## Observation Window
-Use the time since the previous successful automation run only when it is current and supported by runtime or target-thread evidence. Do not trust stale memory windows. If that evidence is unavailable or older than the current cadence, use the 4-hour heartbeat cadence as the lookback window.
+Use the time since the previous successful automation run only when it is current and supported by runtime or target-thread evidence. Do not trust stale memory windows. If that evidence is unavailable or older than the current heartbeat cadence, use the current cadence interval as the lookback window.
 
 Use concrete timestamps in commands when needed, but translate them into plain language before showing them to the user. If a merged search looks suspiciously empty, retry with a broader recent window or inspect known recent PRs before concluding there were no merges.
 
@@ -819,22 +812,22 @@ Whenever a pull request appears in the user-facing summary or Watchlist, include
 Do not refer to a PR by number alone unless the title is genuinely unavailable after inspecting GitHub. If the same PR is mentioned multiple times, include the full number and title on first mention, then use a short natural reference afterward.
 
 ## Default Evidence Commands
-Use read-only commands only. Compute `<window-start>` from the Observation Window section. Run local repo commands with `git -C /Users/esoh/Documents/Labs/vpk-rovo` or from that repo. For merged PRs, fetch a broad recent list and apply the `<window-start>` cutoff locally instead of relying only on GitHub merged-search filters.
+Use read-only commands only. Run local repo commands from the automation working directory. Compute `<window-start>` from the Observation Window section. For merged PRs, fetch a broad recent list and apply the `<window-start>` cutoff locally instead of relying only on GitHub merged-search filters.
 
 ```bash
 gh pr list --state open --json number,title,author,isDraft,mergeStateStatus,reviewDecision,headRefName,updatedAt,labels,statusCheckRollup
 gh pr list --state merged --limit 80 --json number,title,author,mergedAt,files,labels,headRefName
 gh issue list --state open --json number,title,author,labels,updatedAt,assignees
 gh pr list --state all --search '"[Automation]" updated:>=<window-start>' --json number,title,author,state,isDraft,headRefName,updatedAt,mergedAt,closedAt,labels,reviewDecision,mergeStateStatus,statusCheckRollup
-git -C /Users/esoh/Documents/Labs/vpk-rovo log --since=<window-start> --oneline --decorate --max-count=50
-git -C /Users/esoh/Documents/Labs/vpk-rovo diff --name-only HEAD~20..HEAD
+git log --since=<window-start> --oneline --decorate --max-count=50
+git diff --name-only HEAD~20..HEAD
 ```
 
 For unclear or important items, inspect only the relevant PR, issue, check, run, commit, or local file details:
 
 ```bash
 gh pr view <number> --json number,title,author,state,mergedAt,mergeCommit,headRefName,labels,statusCheckRollup,url,files,body
-git -C /Users/esoh/Documents/Labs/vpk-rovo show --stat --oneline --no-renames <commit>
+git show --stat --oneline --no-renames <commit>
 ```
 
 Use local file inspection selectively. Do not scan broad generated directories or produce file-by-file inventories.
@@ -857,6 +850,8 @@ Notify only for actionable, surprising, blocked, stale, or summary-worthy change
 - Automation PRs changed state or need intervention.
 - Issues are new, recently updated, blocked, or prioritization-relevant.
 - Local high-signal repo changes affect dependencies, CI, docs/rules, runtime config, or release safety.
+
+Stay quiet when there are no open PRs needing attention, no meaningful merged PRs, no automation PR activity, no issue changes, no high-signal local changes, and no watchlist risks.
 
 ## Safety Boundaries
 Do not create branches, commits, PRs, labels, reviews, merges, issues, worktrees, cleanup actions, Slack posts, external messages, or destructive changes. Do not create, search, pin, rename, or send messages to Codex threads from this automation. Do not claim Slack, GitHub, Codex thread, repo, or automation facts unless current tool or command evidence supports them.
@@ -914,7 +909,7 @@ Stop rather than inventing details if PR data, commit history, or check evidence
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 19, 2026, 4:17 PM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/test-coverage/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/test-coverage/memory.md` |
 
@@ -932,16 +927,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Test coverage" --json number,title,headRefName,state,isDraft
 ```
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
 Before editing, do not work from detached HEAD. Create or switch to `automation/test-coverage` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Inspect recent merges, changed files, existing nearby tests, and public contracts before writing tests.
 
 ## Judgment
 Prioritize new untested paths, production bug fixes, edge-case logic, parsing, concurrency, permissions, auth, data validation, shared utilities, API contracts, and user-visible behavior. Tests should assert public contracts, observable behavior, state, output, or stable source declarations. Avoid trivial snapshots, cosmetic tests, brittle formatting assertions, skipped tests, flaky timing tests, and broad test sweeps.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Run the relevant test target. When adding JS unit or source-contract tests intended to gate PRs, verify they are included by `pnpm run test:unit:js` or update `scripts/run-js-unit-tests.mjs` deliberately. Production code changes must be limited to tiny testability refactors.
+Run the relevant focused test target. When adding JS unit or source-contract tests intended to gate PRs, verify they are included by `corepack pnpm run test:unit:js` or update `scripts/run-js-unit-tests.mjs` deliberately. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. Production code changes must be limited to tiny testability refactors.
 
 ## Handoff
-Push the branch and create or update `[Automation] Test coverage: <short summary>` with labels `automation, tests` if available. Include risk covered, tests added/updated, validation, freshness/overlap check, limitations, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Test coverage: <short summary>` with labels `automation, codex, tests`. Include risk covered, tests added/updated, validation, freshness/overlap check, limitations, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or the test would be low-signal or brittle, behavior is ambiguous, overlap makes the assertion unclear, or production changes would exceed tiny testability work.
@@ -983,7 +980,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | May 2, 2026, 8:01 PM GMT+10 |
-| Updated | Jun 24, 2026, 3:25 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/ui-design-quality-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/ui-design-quality-audit/memory.md` |
 
@@ -1001,16 +998,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] UI design quality audit" --json number,title,headRefName,state,isDraft
 ```
-Before editing, do not work from detached HEAD. Create or switch to `automation/ui-design-quality-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use `AGENTS.md`, token/design rules, `app/globals.css`, theme files, recent diffs, screenshots, browser checks, accessibility/focus behavior, and exact source evidence. Use `[$modern-web-guidance](/Users/esoh/.agents/skills/modern-web-guidance/SKILL.md)` before diagnosing CSS or browser-platform drift such as dialogs/popovers, forms/autofill, anchor or container queries, scroll/motion behavior, backdrop/filter effects, image priority, or other clientside web APIs. Use `[$motion](/Users/esoh/.agents/skills/motion/SKILL.md)` when touched code uses Motion for React, `motion/react`, `MotionConfig`, `AnimatePresence`, MotionValues, variants, layout animations, drag/gesture motion, or animation transitions. Use `[$motion-audit](/Users/esoh/.agents/skills/motion-audit/SKILL.md)` when the candidate issue involves animation performance, reduced-motion coverage, compositor-vs-layout cost, `will-change`, layout thrash, or slow/janky animations. Use `[$userinterface-wiki](/Users/esoh/.agents/skills/userinterface-wiki/SKILL.md)` when reviewing motion timing, easing, staging, exit animations, hover/press feel, or animation UX quality. Do not add `web-animation-design` to this recurring audit unless the task is explicitly animation-feel tuning rather than drift detection. Treat `app/tailwind-theme.css` as the Tailwind motion source of truth: keep semantic duration/easing utility names, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and do not replace semantic Tailwind tokens with hardcoded durations or raw curves. Use `[$building-components](/Users/esoh/.agents/skills/building-components/SKILL.md)` for reusable component API, focus, accessibility, state, and token/styling contracts. Use `[$vercel-composition-patterns](/Users/esoh/.agents/skills/vercel-composition-patterns/SKILL.md)` when reusable component quality involves boolean prop proliferation, compound components, context/provider shape, render-prop versus children API choices, or React 19 composition/API decisions. Use `[$shadcn](/Users/esoh/.agents/skills/shadcn/SKILL.md)` when touched code uses `components.json`, registry components, or `components/ui` primitives. Use `[$vpk-tidy](/Users/esoh/Documents/Labs/vpk-rovo/.agents/skills/vpk-tidy/SKILL.md)` when the likely fix is VPK component cleanup, wrapper migration, route-local versus shared placement, or splitting an overgrown component.
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
+Before editing, do not work from detached HEAD. Create or switch to `automation/ui-design-quality-audit` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Use `AGENTS.md`, token/design rules, `app/globals.css`, theme files, recent diffs, screenshots, browser checks, accessibility/focus behavior, and exact source evidence. Use `$modern-web-guidance` before diagnosing CSS or browser-platform drift such as dialogs/popovers, forms/autofill, anchor or container queries, scroll/motion behavior, backdrop/filter effects, image priority, or other clientside web APIs. Use `$motion` when touched code uses Motion for React, `motion/react`, `MotionConfig`, `AnimatePresence`, MotionValues, variants, layout animations, drag/gesture motion, or animation transitions. Use `$motion-audit` when the candidate issue involves animation performance, reduced-motion coverage, compositor-vs-layout cost, `will-change`, layout thrash, or slow/janky animations. Use `$userinterface-wiki` when reviewing motion timing, easing, staging, exit animations, hover/press feel, or animation UX quality. Do not add `web-animation-design` to this recurring audit unless the task is explicitly animation-feel tuning rather than drift detection. Treat `app/tailwind-theme.css` as the Tailwind motion source of truth: keep semantic duration/easing utility names, verify ADS values with official ADS docs or `@atlaskit/tokens` artifacts, and do not replace semantic Tailwind tokens with hardcoded durations or raw curves. Use `$building-components` for reusable component API, focus, accessibility, state, and token/styling contracts. Use `$vercel-composition-patterns` when reusable component quality involves boolean prop proliferation, compound components, context/provider shape, render-prop versus children API choices, or React 19 composition/API decisions. Use `$shadcn` when touched code uses `components.json`, registry components, or `components/ui` primitives. Use `$vpk-tidy` when the likely fix is VPK component cleanup, wrapper migration, route-local versus shared placement, or splitting an overgrown component.
 
 ## Judgment
 CSS convention drift should be handled through an issue/comment, not a PR. Code fixes are only for small, obvious, review-ready issues that are not CSS-structure decisions. Runtime failures belong to `frontend-runtime-audit` unless design-system or CSS drift is the root cause. For wrapper retirement, follow `vpk-tidy` inventory, migrate-first, compile, and no-retired-import gates before deleting wrapper files. Treat global skill guidance as a check on the narrow issue, not permission to redesign component APIs, reorganize CSS, bypass VPK/ADS primitives, or override repo token rules without local evidence. For motion findings, prefer token cleanup, reduced-motion fixes, import/API corrections, or proven performance repairs over subjective animation taste. Do not broadly reorganize CSS, create new component APIs, bypass primitives, or retune route-local motion contracts without a clear local pattern.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Use browser validation when practical. Use `npx agent-browser` first for visible checks, screenshots, UI probes, light/dark coverage, visual debugging, and responsive checks, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `pnpm run dev:tmux:start` when needed and use `pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports. Include light/dark coverage for color, surface-token, animation, or motion-token changes, plus keyboard/focus and responsive notes for UI-affecting fixes. Use ADS/localhost accessibility tooling such as `ads_analyze_localhost_a11y` when available, and state which browser route and a11y route were used or why proof was unavailable.
+Run focused validation for the touched behavior. After any code, dependency, or config edit, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum: the focused test for the touched behavior, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus relevant verify gates (`corepack pnpm run verify:file-size` and `corepack pnpm run verify:repo-map` for file moves/splits, `corepack pnpm run verify:route-manifest` for route changes, `corepack pnpm run verify:catalog` / `corepack pnpm run verify:lazy-load` for component/demo changes, `corepack pnpm run verify:api-surfaces` for backend route changes, `corepack pnpm run verify:doc-scripts` for docs changes), and document which gates were skipped and why. Use browser validation when practical. Use `npx agent-browser` first for visible checks, screenshots, UI probes, light/dark coverage, visual debugging, and responsive checks, regardless of whether the run is in Codex App. Do not use `@Browser` as the default path; treat it as unavailable unless the user explicitly asks for it. Use `@Chrome` only when signed-in state, cookies, extensions, existing browser tabs, or multi-tab authenticated browser work matters. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked. For local browser checks, start frontend/backend with `corepack pnpm run dev:tmux:start` when needed and use `corepack pnpm ports` or `.dev-frontend-port` / `.dev-backend-port` for actual URLs; do not assume default ports. Include light/dark coverage for color, surface-token, animation, or motion-token changes, plus keyboard/focus and responsive notes for UI-affecting fixes. Use ADS/localhost accessibility tooling such as `ads_analyze_localhost_a11y` when available, and state which browser route and a11y route were used or why proof was unavailable.
 
 ## Handoff
-Push the branch and create or update `[Automation] UI design quality audit: <short summary>` with labels `automation, ui` if available. For CSS drift, find or create a `css-drift` issue and comment with evidence. For a code PR, include evidence, root cause, validation, freshness/overlap check, and reviewer focus. If no issue is found, exit with exactly: `OK: no UI design, CSS, or component drift in last 7d`. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] UI design quality audit: <short summary>` with labels `automation, codex, ui`. For CSS drift, find or create a `css-drift` issue and comment with evidence. For a code PR, include evidence, root cause, validation, freshness/overlap check, and reviewer focus. If no issue is found, exit with exactly: `OK: no UI design, CSS, or component drift in last 7d`. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or evidence is weak, the change looks intentional, the issue is aesthetic preference, CSS structure needs a human decision, animation feel is subjective without contract drift, or overlap makes the UI contract ambiguous.
@@ -1037,7 +1036,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | Apr 18, 2026, 3:22 AM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/update-agents-md/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/update-agents-md/memory.md` |
 
@@ -1045,7 +1044,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 
 ````markdown
 ## Task
-Review VPK-rovo `AGENTS.md` against current repo scripts, commands, workflows, and conventions. Make only material, evidence-backed documentation updates.
+Review VPK-rovo `AGENTS.md` against current repo scripts, commands, workflows, and conventions. Make only material, evidence-backed documentation updates. Also refresh the `<!-- validation-freshness:begin/end -->` block when validation commands or referenced docs changed since the recorded date.
 
 ## Commands
 Start with repo and branch safety:
@@ -1055,16 +1054,18 @@ git branch --show-current
 git worktree list --porcelain
 gh pr list --state open --search "[Automation] Update AGENTS.md" --json number,title,headRefName,state,isDraft
 ```
+Run all pnpm commands via `corepack pnpm ...` so the repo-pinned pnpm version from `package.json#packageManager` is used instead of the runtime PATH pnpm.
+
 Before editing, do not work from detached HEAD. Create or switch to `automation/update-agents-md` only when that branch/worktree is safe and clean. Check for overlapping open or recent PRs before handoff. If a clean worktree cannot create Git lock files or switch branches safely, pivot to a fresh ignored scratch checkout or documented safe alternate worktree; if no PR is opened, clean up any temporary automation branch created by the run. Verify claims against `AGENTS.md`, package scripts, workflow docs, `.agents/rules/`, `.agents/docs/`, backend/app routes, provider directories, recent commits, and source files.
 
 ## Judgment
 Keep changes minimal, provider-neutral where appropriate, and focused on stale or missing guidance. Do not rewrite unrelated sections, document unused workflows, add obvious facts readers can infer from code, or invent details. Prefer local source evidence over memory or assumptions.
 
 ## Validation
-Run focused validation for the touched behavior. After any code, dependency, or config edit, run `pnpm run lint` and `pnpm run typecheck`; if either cannot run, document the blocker. For docs-only changes, run them only when configured checks make them relevant. Confirm every doc change against repo evidence. Run lightweight docs validation when available. Run lint/typecheck only when code changes or configured checks make them relevant.
+Confirm every doc change against repo evidence. For docs-only changes, run `corepack pnpm run verify:doc-scripts` by default, especially when script references, validation commands, workflow docs, or the validation-freshness block changed. If any code, dependency, or config changes are included, run `corepack pnpm run ci:pr`. If the full gate cannot run in the sandbox, run at minimum `corepack pnpm run verify:doc-scripts`, `corepack pnpm run lint`, `corepack pnpm run typecheck`, plus any touched-surface verify gates, and document which gates were skipped and why.
 
 ## Handoff
-Push the branch and create or update `[Automation] Update AGENTS.md: <short summary>` with labels `automation, agents-md` if available. Include why the change was needed, source evidence, files changed, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
+Push the branch and create or update `[Automation] Update AGENTS.md: <short summary>` with labels `automation, codex, agents-md`. Include why the change was needed, source evidence, files changed, validation, freshness/overlap check, and reviewer focus. Preserve unrelated local changes. Do not merge from this producer job; the separate review/merge workflow owns review and merge.
 
 ## Stop Conditions
 Stop without editing or PR if branch/worktree state is unsafe, overlap makes behavior unclear, validation cannot support readiness, or source evidence is incomplete, the change is speculative, overlap makes the correct doc unclear, or the edit would broaden into unrelated documentation cleanup.
@@ -1102,4 +1103,3 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 - Material edit: AGENTS.md static-export guidance now explicitly says to use `pnpm run build:export`, not raw `NEXT_OUTPUT=export pnpm run build`, because `scripts/build-static-export.mjs` temporarily moves runtime-only App Router routes before setting NEXT_OUTPUT.
 - Validation: `git diff --check`, `node --test scripts/build-static-export.test.js`, and GitHub CI / PR checks passed on PR #1116. Labels `automation` and `agents-md` were unavailable; applied `codex`.
 ````
-
