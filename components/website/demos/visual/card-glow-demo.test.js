@@ -2,20 +2,22 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { readWebsiteRegistrySource } = require(process.cwd() + "/components/website/registry/test-source.cjs");
+const { readDetailCategorySource } = require(process.cwd() + "/app/data/details/test-source.cjs");
 
 const ROOT = path.join(__dirname, "../../../..");
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "card-glow-demo.tsx"), "utf8");
-const REGISTRY_SOURCE = fs.readFileSync(path.join(ROOT, "components/website/registry.ts"), "utf8");
+const REGISTRY_SOURCE = readWebsiteRegistrySource();
 const COMPONENTS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/components.ts"), "utf8");
 const MANIFEST_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/component-manifest.ts"), "utf8");
 const NAV_UTILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/nav-utils.ts"), "utf8");
-const DETAILS_SOURCE = fs.readFileSync(path.join(ROOT, "app/data/details/visual.ts"), "utf8");
+const DETAILS_SOURCE = readDetailCategorySource("visual");
 
 test("Card Glow is registered as a top-level visual component", () => {
 	assert.match(REGISTRY_SOURCE, /"card-glow": dynamic\(\(\) => import\("\.\/demos\/visual\/card-glow-demo"\)/);
 	assert.ok(COMPONENTS_SOURCE.includes('visualComponent("card-glow", "Card Glow", "@/components/website/demos/visual/card-glow-demo")'));
 	assert.ok(MANIFEST_SOURCE.includes('visualComponent("card-glow", "Card Glow", "@/components/website/demos/visual/card-glow-demo")'));
-	assert.match(DETAILS_SOURCE, /"card-glow": \{/);
+	assert.match(DETAILS_SOURCE, /(?:"card-glow"): \{/);
 
 	const shadersStart = NAV_UTILS_SOURCE.indexOf("shaders: [");
 	const shadersEnd = NAV_UTILS_SOURCE.indexOf("],", shadersStart);
