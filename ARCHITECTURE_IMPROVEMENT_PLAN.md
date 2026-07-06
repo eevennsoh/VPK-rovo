@@ -59,6 +59,12 @@ The implementation pass was verified with:
 - `corepack pnpm run verify:root-artifacts`
 - `git diff --check`
 
+Independent review correction: at the original PR head (`b565d0f5`),
+`verify:file-size` and `verify:doc-scripts` failed deterministically after
+the final plan file and provider-chain docs drifted. The follow-up branch
+fixes both by correcting `.agents/docs/architecture-overview.md` and refreshing
+`scripts/file-size-allowlist.json` after the final plan edit.
+
 ## 4. Remaining Work
 
 The remaining work should be treated as follow-up, not as a reason to keep expanding this branch:
