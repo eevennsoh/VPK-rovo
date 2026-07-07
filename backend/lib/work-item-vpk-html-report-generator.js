@@ -347,7 +347,7 @@ function fillDaciOnePagerTemplate(templateHtml, reportFields) {
 	}
 
 	const body = [
-		"<body>",
+		'<body data-vpk-motion="document" data-vpk-docnav="true">',
 		"<main>",
 		"",
 		'<div class="header">',
@@ -439,7 +439,7 @@ function fillDaciOnePagerTemplate(templateHtml, reportFields) {
 		"</body>",
 	].join("\n");
 
-	return html.replace(/<body>[\s\S]*?<\/body>/u, body);
+	return html.replace(/<body\b[^>]*>[\s\S]*?<\/body>/u, body);
 }
 
 function assertVpkHtmlReportContract(html) {
