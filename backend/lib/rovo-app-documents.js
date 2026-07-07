@@ -26,6 +26,16 @@ function safeJsonParse(rawValue) {
 	}
 }
 
+function sortDocumentsByUpdatedAtDesc(documents) {
+	return documents
+		.map((document) => ({
+			document,
+			updatedAtMs: Date.parse(document.updatedAt),
+		}))
+		.sort((left, right) => right.updatedAtMs - left.updatedAtMs)
+		.map(({ document }) => document);
+}
+
 function normalizeDocumentKind(value, fallbackKind = "text") {
 	return (
 		value === "code" ||
@@ -271,10 +281,7 @@ function createRovoAppDocumentManager({ baseDir }) {
 				await Promise.all((await listThreadIds()).map((id) => readDocumentsForThread(id)))
 			).flat();
 
-		documents.sort((left, right) => {
-			return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
-		});
-		return documents;
+		return sortDocumentsByUpdatedAtDesc(documents);
 	};
 
 	const readDocument = async (documentId) => {
