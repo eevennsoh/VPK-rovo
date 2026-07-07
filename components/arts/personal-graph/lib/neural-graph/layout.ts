@@ -192,6 +192,10 @@ function getVisibleNeighbors({
 		.filter(({ node }) => visibleNodeIds.has(node.id));
 }
 
+function isAutomationWorkflowRootNode(node: NeuralGraphNode) {
+	return node.original.frontmatter?.type === "AutomationWorkflowRoot";
+}
+
 function getRadialClusterRootCandidates({
 	selectedNodeId,
 	store,
@@ -203,13 +207,23 @@ function getRadialClusterRootCandidates({
 }) {
 	const selected = selectedNodeId ? store.nodesById.get(selectedNodeId) : null;
 	const candidates: NeuralGraphNode[] = [];
-	if (selected && visibleNodeIds.has(selected.id)) {
-		candidates.push(selected);
+	const candidateIds = new Set<string>();
+	const addCandidate = (node: NeuralGraphNode | null | undefined) => {
+		if (!node || !visibleNodeIds.has(node.id) || candidateIds.has(node.id)) return;
+		candidates.push(node);
+		candidateIds.add(node.id);
+	};
+
+	addCandidate(selected);
+
+	for (const node of store.nodes) {
+		if (isAutomationWorkflowRootNode(node)) {
+			addCandidate(node);
+		}
 	}
 
 	for (const node of store.rankedNodes) {
-		if (!visibleNodeIds.has(node.id) || node.id === selected?.id) continue;
-		candidates.push(node);
+		addCandidate(node);
 	}
 
 	return candidates;

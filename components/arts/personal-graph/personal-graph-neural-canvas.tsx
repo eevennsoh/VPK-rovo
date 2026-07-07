@@ -56,7 +56,7 @@ import {
 	type NeuralRaySoundSettings,
 } from "./lib/neural-graph/ray-sound";
 import { createNeuralGraphStore, getNodeNeighbors, getSelectedNeighborhood, type NeuralGraphStore } from "./lib/neural-graph/store";
-import { drawNeuralGraph, type NeuralGraphThemeMode, type NeuralRayElasticState } from "./lib/neural-graph/renderer";
+import { drawNeuralGraph, type NeuralGraphLabelStrategy, type NeuralGraphThemeMode, type NeuralRayElasticState } from "./lib/neural-graph/renderer";
 import type { VaultExplorer } from "./lib/personal-graph-types";
 
 interface PersonalGraphNeuralCanvasProps {
@@ -64,6 +64,7 @@ interface PersonalGraphNeuralCanvasProps {
 	explorer: VaultExplorer | null;
 	isLoading?: boolean;
 	interactionSettings?: NeuralGraphInteractionSettings;
+	labelStrategy?: NeuralGraphLabelStrategy;
 	onClearSelection: () => void;
 	onSelectNode: (nodeId: string) => void;
 	params: NeuralGraphParams;
@@ -332,6 +333,7 @@ export function PersonalGraphNeuralCanvas({
 	explorer,
 	isLoading = false,
 	interactionSettings,
+	labelStrategy = "default",
 	onClearSelection,
 	onSelectNode,
 	params,
@@ -555,6 +557,7 @@ export function PersonalGraphNeuralCanvas({
 				focusProgress: focusProgressRef.current,
 				hoveredNodeId: hoveredNodeIdRef.current,
 				interaction: interactionRef.current,
+				labelStrategy,
 				labelNodeId: labelNodeIdRef.current,
 				labelRevealProgress: labelRevealProgressRef.current,
 				params,

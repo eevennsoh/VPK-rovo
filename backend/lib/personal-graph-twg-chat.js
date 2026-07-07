@@ -8,9 +8,10 @@ const MAX_TOOL_ROUNDTRIPS = 4;
 const SYSTEM_PROMPT = [
 	"You are an assistant for a Personal Graph view backed by Atlassian Team Work Graph (TWG).",
 	"You can call ONE tool: query_twg(slice, params).",
-	"Available slice values: \"context-user\".",
+	"Available slice values: \"context-user\", \"automation-workflows\".",
 	"Respond ONLY with a single JSON object on a single line. Two shapes are allowed:",
 	"  TOOL CALL:  {\"action\":\"tool_call\",\"name\":\"query_twg\",\"arguments\":{\"slice\":\"context-user\",\"params\":{\"since\":\"7d\"}}}",
+	"  TOOL CALL:  {\"action\":\"tool_call\",\"name\":\"query_twg\",\"arguments\":{\"slice\":\"automation-workflows\",\"params\":{\"since\":\"30d\"}}}",
 	"  ANSWER:     {\"action\":\"answer\",\"text\":\"…\",\"nodeIds\":[\"ari:…\",\"ari:…\"]}",
 	"Use a tool call to fetch fresh work data when you don't have what you need.",
 	"After receiving tool results, return an ANSWER referencing relevant node ARIs from the results in `nodeIds`.",
@@ -90,7 +91,36 @@ function getTopEdgeTargets(explorer, edgeKind, limit = 5) {
 	return targets;
 }
 
+function getAutomationWorkflowNodes(explorer) {
+	return (explorer.nodes ?? [])
+		.filter((node) => node?.frontmatter?.type === "AutomationWorkflowCandidate")
+		.sort((left, right) => (right.connectionCount ?? 0) - (left.connectionCount ?? 0) || left.title.localeCompare(right.title));
+}
+
+function buildAutomationWorkflowAnswerFromExplorer(explorer) {
+	const workflows = getAutomationWorkflowNodes(explorer);
+	if (workflows.length === 0) {
+		return null;
+	}
+	const lines = [
+		`I found ${workflows.length} repeated workflow candidate${workflows.length === 1 ? "" : "s"} worth automating from recent TWG signals.`,
+	];
+	for (const workflow of workflows.slice(0, 4)) {
+		const confidence = typeof workflow.frontmatter?.confidence === "string"
+			? ` (${workflow.frontmatter.confidence} confidence)`
+			: "";
+		lines.push(`- ${workflow.title}${confidence}`);
+	}
+	lines.push("I morphed the graph into a radial automation map: workflow candidates branch into supporting evidence leaves and highlighted draft automation actions.");
+	return lines.join("\n");
+}
+
 function buildFallbackAnswerFromExplorer(explorer) {
+	const automationAnswer = buildAutomationWorkflowAnswerFromExplorer(explorer);
+	if (automationAnswer) {
+		return automationAnswer;
+	}
+
 	const sourceNodes = (explorer.nodes ?? []).filter((node) => node.kind !== "entity");
 	if (sourceNodes.length === 0) {
 		return "I queried TWG, but did not find matching work items for that prompt.";
@@ -114,6 +144,31 @@ function buildFallbackAnswerFromExplorer(explorer) {
 	}
 
 	return lines.join("\n");
+}
+
+function isAutomationDiscoveryPrompt(prompt) {
+	const normalized = typeof prompt === "string" ? prompt.toLowerCase() : "";
+	if (!normalized.trim()) return false;
+	const hasTimeWindow =
+		/\b(?:last|past|recent)\s+(?:\d+\s*)?(?:day|days|week|weeks|month|months)\b/u.test(normalized) ||
+		/\b\d+\s*[dwm]\b/u.test(normalized);
+	const hasWorkflowSignal =
+		/\bmanual workflows?\b/u.test(normalized) ||
+		/\brepeated workflows?\b/u.test(normalized) ||
+		/\bworkflow candidates?\b/u.test(normalized) ||
+		/\bworkflows?\s+worth\s+automat/u.test(normalized) ||
+		/\bworth\s+automat/u.test(normalized);
+	const hasAutomationSignal = /\bautomat(?:e|ing|ion|ions|able)\b/u.test(normalized) || /\bagentic\b/u.test(normalized);
+	const hasGraphSignal =
+		/\bmorph\b/u.test(normalized) ||
+		/\bradial\b/u.test(normalized) ||
+		/\bradial workflow tree\b/u.test(normalized) ||
+		/\bautomation map\b/u.test(normalized) ||
+		/\bdendrogram\b/u.test(normalized) ||
+		/\btree chart\b/u.test(normalized) ||
+		/\bevidence as leaves\b/u.test(normalized) ||
+		/\bdraft automations?\b/u.test(normalized);
+	return (hasTimeWindow && hasWorkflowSignal && hasAutomationSignal) || (hasWorkflowSignal && hasAutomationSignal && hasGraphSignal);
 }
 
 function parseSinceFromPrompt(prompt) {
@@ -177,12 +232,13 @@ function frame(res, payload) {
 
 async function handleDirectTwgChat(req, res, { fetchSliceImpl, prompt }) {
 	const params = { since: parseSinceFromPrompt(prompt) };
+	const slice = isAutomationDiscoveryPrompt(prompt) ? "automation-workflows" : "context-user";
 	frame(res, { type: "thinking", step: 1 });
-	frame(res, { type: "tool", name: "query_twg", args: { slice: "context-user", params } });
+	frame(res, { type: "tool", name: "query_twg", args: { slice, params } });
 
 	let explorer;
 	try {
-		explorer = await fetchSliceImpl("context-user", params, { signal: req.signal });
+		explorer = await fetchSliceImpl(slice, params, { signal: req.signal });
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 		frame(res, { type: "tool_result", error: errorMessage, count: 0, summary: "(error)" });
@@ -224,7 +280,7 @@ async function handleTwgChat(req, res, { gateway = null, fetchSliceImpl = fetchS
 
 	const latestUserPrompt =
 		userMessages.findLast((message) => message.role === "user")?.content ?? userMessages.at(-1)?.content ?? "";
-	if (!preferGateway) {
+	if (!preferGateway || isAutomationDiscoveryPrompt(latestUserPrompt)) {
 		await handleDirectTwgChat(req, res, { fetchSliceImpl, prompt: latestUserPrompt });
 		return;
 	}
@@ -319,6 +375,7 @@ module.exports = {
 	buildFallbackAnswerFromExplorer,
 	filterExplorerByNodeIds,
 	handleTwgChat,
+	isAutomationDiscoveryPrompt,
 	mergeExplorers,
 	parseSinceFromPrompt,
 	tryParseEnvelope,

@@ -1,6 +1,14 @@
 "use strict";
 
+const fs = require("node:fs");
 const { spawn } = require("node:child_process");
+const {
+	DEFAULT_AUTOMATION_WORKFLOW_SINCE,
+	buildAutomationWorkflowExplorer,
+	buildAutomationWorkflowExplorerFromTwg: buildAutomationWorkflowExplorerFromTwgBase,
+	fetchAutomationContextUser: fetchAutomationContextUserBase,
+	fetchAutomationWorkQuery: fetchAutomationWorkQueryBase,
+} = require("./personal-graph-automation-workflows");
 
 const TWG_BIN = process.env.TWG_BIN || "twg";
 const DEFAULT_TWG_DEPTH = 2;
@@ -481,11 +489,75 @@ function runTwg(args, { signal, spawnImpl = spawn } = {}) {
 	});
 }
 
+function stripTwgEndMarker(stdout) {
+	return String(stdout ?? "").trim().replace(/\n---END---\s*$/u, "").trim();
+}
+
+function getTwgOutputFilePath(stdout) {
+	const cleaned = stripTwgEndMarker(stdout);
+	const quotedMatch = cleaned.match(/(?:^|\n)\s*stdout:\s*"([^"]+)"/u);
+	if (quotedMatch?.[1]) return quotedMatch[1];
+	const bareMatch = cleaned.match(/(?:^|\n)\s*stdout:\s*([^\n]+)/u);
+	return getNonEmptyString(bareMatch?.[1]?.trim());
+}
+
+function tryParseLeadingJson(text) {
+	const source = String(text ?? "").trimStart();
+	const firstJsonIndex = source.search(/[\[{]/u);
+	if (firstJsonIndex < 0) return null;
+	const opening = source[firstJsonIndex];
+	const closing = opening === "{" ? "}" : "]";
+	let depth = 0;
+	let isEscaped = false;
+	let isInsideString = false;
+	for (let index = firstJsonIndex; index < source.length; index += 1) {
+		const char = source[index];
+		if (isInsideString) {
+			if (isEscaped) {
+				isEscaped = false;
+			} else if (char === "\\") {
+				isEscaped = true;
+			} else if (char === "\"") {
+				isInsideString = false;
+			}
+			continue;
+		}
+		if (char === "\"") {
+			isInsideString = true;
+			continue;
+		}
+		if (char === opening) {
+			depth += 1;
+		} else if (char === closing) {
+			depth -= 1;
+			if (depth === 0) {
+				return JSON.parse(source.slice(firstJsonIndex, index + 1));
+			}
+		}
+	}
+	return null;
+}
+
 function parseJsonOrThrow(stdout, args) {
+	const cleaned = stripTwgEndMarker(stdout);
 	try {
-		return JSON.parse(stdout);
+		return JSON.parse(cleaned);
 	} catch (error) {
-		const snippet = stdout.slice(0, 200).replace(/\s+/gu, " ");
+		try {
+			const parsed = tryParseLeadingJson(cleaned);
+			if (parsed) return parsed;
+		} catch {}
+		const outputPath = getTwgOutputFilePath(cleaned);
+		if (outputPath) {
+			try {
+				return JSON.parse(fs.readFileSync(outputPath, "utf8"));
+			} catch (fileError) {
+				const wrapped = new Error(`twg ${args.join(" ")} output file contained malformed JSON: ${outputPath}`);
+				wrapped.cause = fileError;
+				throw wrapped;
+			}
+		}
+		const snippet = cleaned.slice(0, 200).replace(/\s+/gu, " ");
 		const wrapped = new Error(`twg ${args.join(" ")} returned malformed JSON: ${snippet}`);
 		wrapped.cause = error;
 		throw wrapped;
@@ -496,6 +568,24 @@ async function fetchContextUser({ signal, since = "7d", spawnImpl } = {}) {
 	const args = ["context", "user", "me", "--output", "json", "--since", since];
 	const stdout = await runTwg(args, { signal, spawnImpl });
 	return parseJsonOrThrow(stdout, args);
+}
+
+async function fetchAutomationContextUser(options = {}) {
+	return fetchAutomationContextUserBase({ ...options, parseJsonOrThrow, runTwg });
+}
+
+async function fetchAutomationWorkQuery(options = {}) {
+	return fetchAutomationWorkQueryBase({ ...options, parseJsonOrThrow, runTwg });
+}
+
+async function buildAutomationWorkflowExplorerFromTwg(options = {}) {
+	return buildAutomationWorkflowExplorerFromTwgBase({
+		...options,
+		TwgAuthError,
+		TwgNotFoundError,
+		parseJsonOrThrow,
+		runTwg,
+	});
 }
 
 function getTwgContextArgsForNode(node) {
@@ -631,6 +721,9 @@ async function fetchSlice(slice, params = {}, { hydrateArtifactTitles = true, si
 	if (slice === "context-user") {
 		return buildTwgExplorer({ hydrateArtifactTitles, signal, since: params.since, spawnImpl });
 	}
+	if (slice === "automation-workflows") {
+		return buildAutomationWorkflowExplorerFromTwg({ signal, since: params.since, spawnImpl });
+	}
 	throw new Error(`Unknown TWG slice: ${slice}`);
 }
 
@@ -638,6 +731,7 @@ module.exports = {
 	DEFAULT_TWG_DEPTH,
 	DEFAULT_TWG_DEPTH_ENV_KEY,
 	DEFAULT_TWG_FANOUT_LIMIT,
+	DEFAULT_AUTOMATION_WORKFLOW_SINCE,
 	FANOUT_LIMIT_ENV_KEY,
 	GENERIC_EDGE_KIND,
 	RELATIONSHIP_TO_EDGE_KIND,
@@ -645,8 +739,12 @@ module.exports = {
 	TARGET_TYPE_TO_NODE_KIND,
 	TwgAuthError,
 	TwgNotFoundError,
+	buildAutomationWorkflowExplorer,
+	buildAutomationWorkflowExplorerFromTwg,
 	buildTwgExplorer,
 	expandTwgExplorerNode,
+	fetchAutomationContextUser,
+	fetchAutomationWorkQuery,
 	fetchContextForNode,
 	fetchContextUser,
 	fetchSlice,
