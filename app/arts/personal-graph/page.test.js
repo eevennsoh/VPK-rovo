@@ -31,6 +31,13 @@ const SURFACE_SOURCE = fs.readFileSync(
 	),
 	"utf8",
 );
+const SURFACE_HELPERS_SOURCE = fs.readFileSync(
+	path.join(
+		__dirname,
+		"../../../components/arts/personal-graph/personal-graph-surface-helpers.tsx",
+	),
+	"utf8",
+);
 const TITLE_SOURCE = fs.readFileSync(
 	path.join(
 		__dirname,
@@ -497,11 +504,11 @@ test("Personal Graph surfaces a per-node loading indicator while a TWG expansion
 });
 
 test("Personal Graph dedupes related neighbor ids before slicing", () => {
-	assert.match(SURFACE_SOURCE, /const seenRelatedIds = new Set<string>\(\);/);
-	assert.match(SURFACE_SOURCE, /seenRelatedIds\.has\(neighborId\)/);
-	assert.match(SURFACE_SOURCE, /seenRelatedIds\.add\(neighborId\);/);
+	assert.match(SURFACE_HELPERS_SOURCE, /const seenRelatedIds = new Set<string>\(\);/);
+	assert.match(SURFACE_HELPERS_SOURCE, /seenRelatedIds\.has\(neighborId\)/);
+	assert.match(SURFACE_HELPERS_SOURCE, /seenRelatedIds\.add\(neighborId\);/);
 	assert.doesNotMatch(
-		SURFACE_SOURCE,
+		SURFACE_HELPERS_SOURCE,
 		/const relatedIds = explorer\.edges\.flatMap\(\(edge\) => \{[\s\S]*if \(edge\.source === node\.id\) return \[edge\.target\];[\s\S]*if \(edge\.target === node\.id\) return \[edge\.source\];/,
 	);
 });
@@ -638,8 +645,8 @@ test("Personal Graph keeps the idle radial graph unselected until explicit node 
 	assert.match(SURFACE_SOURCE, /setSelectedNodeId\(null\);/);
 	assert.match(SURFACE_SOURCE, /setIsInspectorOpen\(false\);/);
 	assert.match(SURFACE_SOURCE, /allowEmptySelection/);
-	assert.match(SURFACE_SOURCE, /function getSelectedNode\(explorer: VaultExplorer \| null, selectedNodeId: string \| null\)/);
-	assert.match(SURFACE_SOURCE, /if \(!explorer \|\| !selectedNodeId\) return null;/);
+	assert.match(SURFACE_HELPERS_SOURCE, /function getSelectedNode\(explorer: VaultExplorer \| null, selectedNodeId: string \| null\)/);
+	assert.match(SURFACE_HELPERS_SOURCE, /if \(!explorer \|\| !selectedNodeId\) return null;/);
 	assert.match(NEURAL_STORE_SOURCE, /function getDefaultNeuralGraphSelectedNodeId/);
 	assert.match(NEURAL_STORE_SOURCE, /store\.rankedNodes\[0\]\?\.id \?\? null/);
 	assert.doesNotMatch(SURFACE_SOURCE, /right\.connectionCount - left\.connectionCount/);
