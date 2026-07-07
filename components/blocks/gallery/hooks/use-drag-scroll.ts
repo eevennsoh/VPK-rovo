@@ -46,7 +46,10 @@ export function useDragScroll(
 			wasDraggedRef.current = false;
 			startXRef.current = event.clientX;
 			startScrollLeftRef.current = container.scrollLeft;
-			container.setPointerCapture(event.pointerId);
+			// NOTE: capture is deliberately NOT taken here. A container holding
+			// pointer capture also receives the follow-up `click`, which would steal
+			// it from the pressed card and break click-to-expand. We capture lazily
+			// in onPointerMove only once the press becomes a real pan.
 		},
 		[scrollContainerRef],
 	);
@@ -60,6 +63,9 @@ export function useDragScroll(
 			if (!wasDraggedRef.current && Math.abs(delta) > DRAG_THRESHOLD) {
 				wasDraggedRef.current = true;
 				setDragging(true);
+				// Now that it's a genuine pan, capture so tracking continues even if
+				// the pointer leaves the strip. Clicks never reach this branch.
+				container.setPointerCapture(event.pointerId);
 			}
 			if (wasDraggedRef.current) {
 				container.scrollLeft = startScrollLeftRef.current - delta;
