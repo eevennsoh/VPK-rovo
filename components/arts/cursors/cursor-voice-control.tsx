@@ -49,7 +49,7 @@ export function CursorVoiceControl({
 	return (
 		<div
 			className={cn(
-				"group relative flex h-9 items-center justify-end overflow-hidden rounded-[8px] transition-[width] duration-medium ease-in-out motion-reduce:transition-none",
+				"group relative flex h-9 items-center justify-center overflow-hidden rounded-[8px] transition-[width] duration-medium ease-in-out motion-reduce:transition-none",
 				working ? "w-[68px] hover:w-[168px] focus-within:w-[168px]" : "w-[68px]",
 			)}
 		>
@@ -58,13 +58,13 @@ export function CursorVoiceControl({
 			    collapsed; width grows in step with the rail when working + hovered/focused. */}
 			<div
 				className={cn(
-					"relative z-10 flex h-full items-center overflow-hidden pl-1 transition-[width,opacity] duration-medium ease-in-out motion-reduce:transition-none",
+					"relative z-10 flex h-full items-center overflow-hidden transition-[width,opacity] duration-medium ease-in-out motion-reduce:transition-none",
 					working
 						? "w-0 opacity-0 group-hover:w-[100px] group-hover:opacity-100 group-focus-within:w-[100px] group-focus-within:opacity-100"
 						: "w-0 opacity-0",
 				)}
 			>
-				{working ? <CursorWorkingTeam /> : null}
+				{working ? <CursorWorkingTeam className="pl-1" /> : null}
 			</div>
 			{/* Dark background pinned to the right (voice) button. Turning on cursor mode
 			    grows its width leftward so it extends to cover the cursor too. */}
