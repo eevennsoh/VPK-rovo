@@ -399,6 +399,7 @@ function HomeStarterBento({
 		}
 	}, [onPreviewEnd, onPreviewStart]);
 	const handleBentoPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+		const pointerUpdates: Array<{ tile: HTMLButtonElement; x: string; y: string }> = [];
 		for (const tile of tileRefs.current) {
 			if (!tile) {
 				continue;
@@ -411,9 +412,16 @@ function HomeStarterBento({
 			const relativeY = event.clientY - centerY;
 			const normalizedX = relativeX / (rect.width / 2);
 			const normalizedY = relativeY / (rect.height / 2);
+			pointerUpdates.push({
+				tile,
+				x: normalizedX.toFixed(3),
+				y: normalizedY.toFixed(3),
+			});
+		}
 
-			tile.style.setProperty("--card-glow-pointer-x", normalizedX.toFixed(3));
-			tile.style.setProperty("--card-glow-pointer-y", normalizedY.toFixed(3));
+		for (const { tile, x, y } of pointerUpdates) {
+			tile.style.setProperty("--card-glow-pointer-x", x);
+			tile.style.setProperty("--card-glow-pointer-y", y);
 		}
 	}, []);
 	const resetBentoPointer = useCallback(() => {
