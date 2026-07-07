@@ -25,6 +25,8 @@ const {
 	buildCompactThreadPersistKey,
 	buildSendMessageBody,
 	deriveCompactThreadTitle,
+	didAssistantCompleteActivePrompt,
+	hasTurnCompleteForPrompt,
 	isPayloadTooLargeError,
 	mergeSendPromptOptions,
 	sanitizeMessagesForTransport,
@@ -143,4 +145,112 @@ test("chat request body and payload errors stay normalized", () => {
 		},
 	);
 	assert.equal(isPayloadTooLargeError(JSON.stringify({ error: { message: "PayloadTooLargeError" } })), true);
+});
+
+test("turn-complete matching ignores stale timestamps before the active prompt", () => {
+	const prompt = {
+		id: "queued-1",
+		text: "Generate the report",
+		files: [],
+		createdAt: Date.parse("2026-07-07T00:00:02.000Z"),
+	};
+
+	assert.equal(
+		hasTurnCompleteForPrompt({
+			id: "assistant-current",
+			role: "assistant",
+			parts: [
+				{
+					type: "data-turn-complete",
+					data: { timestamp: "2026-07-07T00:00:01.000Z" },
+				},
+			],
+		}, prompt),
+		true,
+	);
+	assert.equal(
+		hasTurnCompleteForPrompt({
+			id: "assistant-stale",
+			role: "assistant",
+			parts: [
+				{
+					type: "data-turn-complete",
+					data: { timestamp: "2026-07-07T00:00:00.999Z" },
+				},
+			],
+		}, prompt),
+		false,
+	);
+	assert.equal(
+		hasTurnCompleteForPrompt({
+			id: "assistant-legacy",
+			role: "assistant",
+			parts: [{ type: "data-turn-complete", data: {} }],
+		}, prompt),
+		true,
+	);
+});
+
+test("assistant completion matches the active queued prompt by nearest user text or files", () => {
+	const filePart = {
+		type: "file",
+		url: "https://example.test/report.png",
+		filename: "report.png",
+		mediaType: "image/png",
+	};
+	const assistantMessage = {
+		id: "assistant",
+		role: "assistant",
+		parts: [{ type: "data-turn-complete", data: {} }],
+	};
+
+	assert.equal(
+		didAssistantCompleteActivePrompt([
+			{
+				id: "user-text",
+				role: "user",
+				parts: [{ type: "text", text: "Generate the report" }],
+			},
+			assistantMessage,
+		], 1, {
+			id: "queued-text",
+			text: "  Generate the report  ",
+			files: [],
+			createdAt: 0,
+		}),
+		true,
+	);
+	assert.equal(
+		didAssistantCompleteActivePrompt([
+			{
+				id: "user-file",
+				role: "user",
+				parts: [filePart],
+			},
+			assistantMessage,
+		], 1, {
+			id: "queued-file",
+			text: "",
+			files: [filePart],
+			createdAt: 0,
+		}),
+		true,
+	);
+	assert.equal(
+		didAssistantCompleteActivePrompt([
+			{
+				id: "user-previous",
+				role: "user",
+				parts: [{ type: "text", text: "Generate the report" }],
+			},
+			assistantMessage,
+			assistantMessage,
+		], 2, {
+			id: "queued-blocked",
+			text: "Generate the report",
+			files: [],
+			createdAt: 0,
+		}),
+		false,
+	);
 });
