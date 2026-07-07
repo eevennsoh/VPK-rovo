@@ -3,7 +3,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 export const GALLERY_DETAIL: ComponentDetail = {
 	description:
 		"A bottom-pinned dock carousel: a horizontally scrollable strip of mixed-size cards pinned to the viewport bottom, sitting on a progressive backdrop blur of the page behind it. Cards magnify with cursor proximity (macOS-dock style), click to expand into a centered shared-element morph over a dimmed scrim, and a built-in toggle pill slides the strip in and out. Scaffolding only — card faces are decorative gradient placeholders.",
-	demoLayout: { previewContentWidth: "full" },
+	demoLayout: { previewHeight: "fixed", previewContentWidth: "full" },
 	importStatement: `import { Gallery, type GalleryItem } from "@/components/blocks/gallery";`,
 	usage: `const items: GalleryItem[] = [
   {

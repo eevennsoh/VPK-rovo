@@ -39,6 +39,10 @@ export function useDragScroll(
 		(event: PointerEvent<HTMLElement>) => {
 			// Primary button only; leave middle/right-click and native wheel alone.
 			if (event.button !== 0) return;
+			// Mouse/trackpad only — touch (and pen) keep the browser's native
+			// momentum scroll of the overflow-x container; manually writing
+			// scrollLeft would fight it and jitter.
+			if (event.pointerType !== "mouse") return;
 			const container = scrollContainerRef.current;
 			if (!container) return;
 			activeRef.current = true;
@@ -83,8 +87,16 @@ export function useDragScroll(
 			if (container?.hasPointerCapture(event.pointerId)) {
 				container.releasePointerCapture(event.pointerId);
 			}
-			// `wasDraggedRef` intentionally NOT reset here — the click that follows
-			// pointerup must still see it. It resets on the next pointerdown.
+			// Clear the drag flag AFTER the trailing synthetic click (which must
+			// still bail), but before any later interaction. Without this async
+			// reset the flag would linger until the next pointerdown and swallow a
+			// keyboard (Enter/Space) activation of a card — pointer drags that end
+			// over a gap never produce a click to consume it.
+			if (wasDraggedRef.current && typeof requestAnimationFrame !== "undefined") {
+				requestAnimationFrame(() => {
+					wasDraggedRef.current = false;
+				});
+			}
 		},
 		[scrollContainerRef],
 	);

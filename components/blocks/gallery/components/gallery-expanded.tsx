@@ -53,6 +53,16 @@ export function GalleryExpanded({ item, layoutId, onClose }: Readonly<GalleryExp
 		closeRef.current?.focus();
 	}, []);
 
+	// Lock body scroll while the dialog is open so wheel/trackpad over the scrim
+	// can't scroll the page (and the live dock) behind it.
+	useEffect(() => {
+		const previous = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = previous;
+		};
+	}, []);
+
 	// Dismiss on Escape while open.
 	useEffect(() => {
 		const onKey = (event: KeyboardEvent) => {

@@ -94,6 +94,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/website/demos/visual/shaders/liquid-glass-utils.test.js",
 		"components/blocks/skill-config/skill-config.test.js",
 		"components/blocks/trigger-config/trigger-config.test.js",
+		"components/blocks/gallery/gallery.test.js",
 		"components/projects/rovo/components/rovo-app-messages-empty-state.test.js",
 		"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
 		"components/projects/studio/hooks/use-rovo-app.test.js",

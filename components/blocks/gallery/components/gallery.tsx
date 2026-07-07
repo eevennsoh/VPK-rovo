@@ -62,6 +62,9 @@ export function Gallery({
 		const next = !(open ?? internalOpen);
 		if (open === undefined) setInternalOpen(next);
 		onOpenChange?.(next);
+		// Closing the strip must also dismiss any expanded card, or its morph-back
+		// target and focus-registry entry would be stranded when the strip unmounts.
+		if (!next) setExpandedId(null);
 	}, [open, internalOpen, onOpenChange]);
 
 	// Card DOM registry for focus restoration on close.
@@ -102,6 +105,10 @@ export function Gallery({
 						animate={stripVariants.animate}
 						exit={stripVariants.exit}
 						style={{ willChange: "transform, opacity" }}
+						// While a card is expanded, take the strip (and its cards) out of
+						// the tab order and a11y tree so keyboard/AT users can't reach
+						// behind the modal scrim.
+						inert={expandedId !== null ? true : undefined}
 					>
 						<GalleryBackdrop />
 						<GalleryTrack
@@ -115,14 +122,21 @@ export function Gallery({
 				) : null}
 			</AnimatePresence>
 
-			<GalleryToggle
-				open={isOpen}
-				onToggle={handleToggle}
-				className={isOpen ? "bottom-64" : undefined}
-			/>
+			<div
+				// Toggle sits behind the scrim while a card is expanded — keep it out
+				// of the tab order / a11y tree until the dialog closes. (Wrapper box
+				// has no layout impact; the toggle inside is position:fixed.)
+				inert={expandedId !== null ? true : undefined}
+			>
+				<GalleryToggle
+					open={isOpen}
+					onToggle={handleToggle}
+					className={isOpen ? "bottom-64" : undefined}
+				/>
+			</div>
 
 			<AnimatePresence>
-				{expandedItem ? (
+				{isOpen && expandedItem ? (
 					<GalleryExpanded
 						key="gallery-expanded"
 						item={expandedItem}
