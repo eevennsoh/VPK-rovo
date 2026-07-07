@@ -582,7 +582,15 @@ test("Personal Graph reveals the radial graph with Motion blur and scale", () =>
 	assert.match(SURFACE_SOURCE, /transform: isGraphRevealed \|\| shouldReduceMotion \? "translateY\(0px\) scale\(1\)" : "translateY\(72px\) scale\(0\.94\)"/);
 	assert.match(SURFACE_SOURCE, /filter: isGraphRevealed \|\| shouldReduceMotion \? "blur\(0px\)" : "blur\(24px\)"/);
 	assert.match(SURFACE_SOURCE, /style=\{\{ transformOrigin: "50% 92%", willChange: "transform, opacity, filter" \}\}/);
-	assert.doesNotMatch(SURFACE_SOURCE, /clipPath: "circle/);
+	assert.match(
+		SURFACE_SOURCE,
+		/const incomingGraphInitial = outgoingGraphSnapshot && !shouldReduceMotion[\s\S]*clipPath: visualMode === "automation-workflow-radial" \? "circle\(12% at 50% 50%\)" : "circle\(150% at 50% 50%\)"/,
+	);
+	assert.match(
+		SURFACE_SOURCE,
+		/animate=\{\{ clipPath: "circle\(150% at 50% 50%\)", filter: "blur\(0px\)", opacity: 1, scale: 1 \}\}/,
+	);
+	assert.match(SURFACE_SOURCE, /const incomingGraphTransition = shouldReduceMotion\s+\? \{ duration: 0\.18, ease: easeOut \}/);
 });
 
 test("Personal Graph uses theme-aware editor-style surrounding chrome", () => {
@@ -662,8 +670,10 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(SURFACE_SOURCE, /showControls=\{false\}/);
 	assert.match(SURFACE_SOURCE, /background="transparent"/);
 	assert.match(SURFACE_SOURCE, /const responsiveGraphParams = useResponsivePersonalGraphParams\(graphStageRef\);/);
+	assert.match(SURFACE_SOURCE, /const graphParams = useMemo\(/);
+	assert.match(SURFACE_SOURCE, /getPersonalGraphParamsForVisualMode\(responsiveGraphParams, visualMode, explorer\)/);
 	assert.doesNotMatch(SURFACE_SOURCE, /showOriginMarker: false/);
-	assert.match(SURFACE_SOURCE, /params=\{responsiveGraphParams\}/);
+	assert.match(SURFACE_SOURCE, /params=\{graphParams\}/);
 	assert.match(SURFACE_SOURCE, /rayOriginBottomOffset=\{PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX\}/);
 	assert.match(SURFACE_SOURCE, /DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS/);
 	assert.match(SURFACE_SOURCE, /interactionSettings=\{DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS\}/);

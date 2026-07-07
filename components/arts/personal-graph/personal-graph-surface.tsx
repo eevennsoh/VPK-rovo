@@ -10,7 +10,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CopyIcon from "@atlaskit/icon/core/copy";
@@ -41,6 +41,13 @@ import {
 import { createNeuralGraphStore } from "./lib/neural-graph/store";
 import { expandTwgNode } from "./lib/personal-graph-api";
 import { mergeSelectedNodeExpansion } from "./lib/personal-graph-explorer-merge";
+import {
+	getPersonalGraphLabelStrategy,
+	getPersonalGraphParamsForVisualMode,
+	getPersonalGraphVisualMode,
+	isAutomationWorkflowExplorer,
+	type PersonalGraphVisualMode,
+} from "./lib/personal-graph-visual-mode";
 import type { NeuralGraphParams } from "./lib/neural-graph/params";
 import type { VaultExplorer, VaultNode, VaultNodeKind } from "./lib/personal-graph-types";
 import { PersonalGraphBackdrop } from "./personal-graph-backdrop";
@@ -131,6 +138,22 @@ const PERSONAL_GRAPH_RESPONSIVE_INITIAL_VIEWPORT = {
 const PERSONAL_GRAPH_RESET_FLYOUT_COLLAPSE_DELAY_MS = 420;
 const PERSONAL_GRAPH_UNCONFIGURED_BYLINE = "Select a folder to get started.";
 const PERSONAL_GRAPH_DEFAULT_TWG_WORK_WINDOW = "7d";
+const PERSONAL_GRAPH_MODE_TRANSITION_MS = 900;
+const PERSONAL_GRAPH_REDUCED_MODE_TRANSITION_MS = 180;
+
+interface PersonalGraphModeTransitionSnapshot {
+	explorer: VaultExplorer;
+	key: string;
+	labelStrategy: "default" | "workflowTree";
+	params: NeuralGraphParams;
+	visualMode: PersonalGraphVisualMode;
+}
+
+interface PersonalGraphModeTransitionState {
+	isActive: boolean;
+	key: string;
+	snapshot: PersonalGraphModeTransitionSnapshot | null;
+}
 
 function GraphNodeMarker({
 	className,
@@ -488,6 +511,10 @@ export function PersonalGraphSurface({
 	const twgChat = useTwgChat({
 		onGraph: (focusedExplorer) => {
 			if (focusedExplorer.nodes.length > 0) {
+				if (isAutomationWorkflowExplorer(focusedExplorer)) {
+					setSelectedNodeId(null);
+					setIsInspectorOpen(false);
+				}
 				setChatExplorer(focusedExplorer);
 			}
 		},
@@ -528,22 +555,87 @@ export function PersonalGraphSurface({
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+	const visualMode = isTwgMode ? getPersonalGraphVisualMode(chatExplorer) : "default";
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [isCaptureQueueOpen, setIsCaptureQueueOpen] = useState(false);
 	const liquidGlassStageRef = useRef<HTMLElement | null>(null);
 	const graphStageRef = useRef<HTMLDivElement | null>(null);
 	const resetFlyoutCollapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const graphModeTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const explorerRef = useRef<VaultExplorer | null>(null);
 	const chatExplorerRef = useRef<VaultExplorer | null>(null);
+	const previousGraphTransitionSnapshotRef = useRef<PersonalGraphModeTransitionSnapshot | null>(null);
 	const expandedTwgNodeIdsRef = useLazyRef<Set<string>>(() => new Set());
 	const expandingTwgNodeIdsRef = useLazyRef<Set<string>>(() => new Set());
 	const twgExpansionGenerationRef = useRef(0);
 	const previousSourceRef = useRef(source);
 	const responsiveGraphParams = useResponsivePersonalGraphParams(graphStageRef);
+	const graphParams = useMemo(
+		() => getPersonalGraphParamsForVisualMode(responsiveGraphParams, visualMode, explorer),
+		[explorer, responsiveGraphParams, visualMode],
+	);
+	const graphLabelStrategy = getPersonalGraphLabelStrategy(visualMode);
+	const currentGraphTransitionSnapshot = useMemo<PersonalGraphModeTransitionSnapshot | null>(() => {
+		if (!explorer) return null;
+		return {
+			explorer,
+			key: "current",
+			labelStrategy: graphLabelStrategy,
+			params: graphParams,
+			visualMode,
+		};
+	}, [explorer, graphLabelStrategy, graphParams, visualMode]);
+	const [graphModeTransition, setGraphModeTransition] = useState<PersonalGraphModeTransitionState | null>(null);
 	const accessibleGraph = useMemo(() => createNeuralGraphStore(explorer), [explorer]);
 	const displayedNode = useMemo(() => getSelectedNode(explorer, selectedNodeId), [explorer, selectedNodeId]);
 	const isExpandingDisplayedNode =
 		isTwgMode && displayedNode?.provider === "twg" && expandingTwgNodeIds.has(displayedNode.id);
+
+	useLayoutEffect(() => {
+		const previousSnapshot = previousGraphTransitionSnapshotRef.current;
+		if (
+			currentGraphTransitionSnapshot &&
+			previousSnapshot &&
+			previousSnapshot.visualMode !== currentGraphTransitionSnapshot.visualMode
+		) {
+			const key = `${previousSnapshot.visualMode}-${currentGraphTransitionSnapshot.visualMode}-${Date.now()}`;
+			if (graphModeTransitionTimerRef.current) {
+				clearTimeout(graphModeTransitionTimerRef.current);
+			}
+			setGraphModeTransition({
+				isActive: true,
+				key,
+				snapshot: { ...previousSnapshot, key },
+			});
+			const completeGraphModeTransition = () => {
+				setGraphModeTransition((currentTransition) =>
+					currentTransition?.key === key
+						? { ...currentTransition, isActive: false, snapshot: null }
+						: currentTransition,
+				);
+			};
+			graphModeTransitionTimerRef.current = setTimeout(
+				completeGraphModeTransition,
+				shouldReduceMotion ? PERSONAL_GRAPH_REDUCED_MODE_TRANSITION_MS : PERSONAL_GRAPH_MODE_TRANSITION_MS,
+			);
+		}
+		previousGraphTransitionSnapshotRef.current = currentGraphTransitionSnapshot;
+	}, [currentGraphTransitionSnapshot, shouldReduceMotion]);
+
+	useEffect(() => {
+		return () => {
+			if (graphModeTransitionTimerRef.current) {
+				clearTimeout(graphModeTransitionTimerRef.current);
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		if (visualMode === "automation-workflow-radial") {
+			setSelectedNodeId(null);
+			setIsInspectorOpen(false);
+		}
+	}, [visualMode]);
 
 	useEffect(() => {
 		if (selectedNodeId && !accessibleGraph.nodesById.has(selectedNodeId)) {
@@ -912,6 +1004,20 @@ export function PersonalGraphSurface({
 		};
 	}, []);
 
+	const outgoingGraphSnapshot = graphModeTransition?.isActive ? graphModeTransition.snapshot : null;
+	const graphTransitionKey = graphModeTransition?.key ?? "steady";
+	const incomingGraphInitial = outgoingGraphSnapshot && !shouldReduceMotion
+		? {
+			clipPath: visualMode === "automation-workflow-radial" ? "circle(12% at 50% 50%)" : "circle(150% at 50% 50%)",
+			filter: "blur(12px)",
+			opacity: 0,
+			scale: visualMode === "automation-workflow-radial" ? 0.88 : 1.03,
+		}
+		: false;
+	const incomingGraphTransition = shouldReduceMotion
+		? { duration: 0.18, ease: easeOut }
+		: { clipPath: { duration: 0.9, ease: [0.16, 1, 0.3, 1] }, filter: { duration: 0.56, ease: easeOut }, opacity: { duration: 0.48, ease: easeOut }, scale: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } };
+
 	return (
 		<main
 			aria-label="Personal Graph"
@@ -1086,27 +1192,68 @@ export function PersonalGraphSurface({
 					style={{ transformOrigin: "50% 92%", willChange: "transform, opacity, filter" }}
 				>
 					<div
-						className="h-full"
+						className="relative h-full overflow-hidden"
+						data-personal-graph-visual-mode={visualMode}
 						ref={graphStageRef}
 						style={{ transform: `translateY(${PERSONAL_GRAPH_STAGE_TRANSLATE_Y_PX}px)` }}
 					>
-						<Graph
-							allowEmptySelection
-							background="transparent"
-							className="h-full"
-							explorer={explorer}
-							isLoading={isLoading}
-							interactionSettings={DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS}
-							onSelectedNodeIdChange={handleSelectedNodeIdChange}
-							params={responsiveGraphParams}
-							rayOriginBottomOffset={PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX}
-							raySoundSettings={DEFAULT_NEURAL_RAY_SOUND_SETTINGS}
-							selectedNodeId={selectedNodeId}
-							showControls={false}
-							showSelectionOverlay={false}
-							store={accessibleGraph}
-							variant="fill"
-						/>
+						{outgoingGraphSnapshot ? (
+							<motion.div
+								aria-hidden="true"
+								className="pointer-events-none absolute inset-0 z-0"
+								initial={false}
+								animate={shouldReduceMotion
+									? { opacity: 0 }
+									: { filter: "blur(18px)", opacity: 0, scale: 0.84 }}
+								transition={shouldReduceMotion
+									? { duration: 0.18, ease: easeOut }
+									: { filter: { duration: 0.6, ease: easeOut }, opacity: { duration: 0.54, ease: easeOut }, scale: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } }}
+								key={outgoingGraphSnapshot.key}
+							>
+								<Graph
+									allowEmptySelection
+									background="transparent"
+									className="h-full"
+									explorer={outgoingGraphSnapshot.explorer}
+									interactionSettings={DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS}
+									isLoading={false}
+									labelStrategy={outgoingGraphSnapshot.labelStrategy}
+									params={outgoingGraphSnapshot.params}
+									rayOriginBottomOffset={PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX}
+									raySoundSettings={DEFAULT_NEURAL_RAY_SOUND_SETTINGS}
+									selectedNodeId={null}
+									showControls={false}
+									showSelectionOverlay={false}
+									variant="fill"
+								/>
+							</motion.div>
+						) : null}
+						<motion.div
+							className="absolute inset-0 z-10"
+							initial={incomingGraphInitial}
+							animate={{ clipPath: "circle(150% at 50% 50%)", filter: "blur(0px)", opacity: 1, scale: 1 }}
+							transition={incomingGraphTransition}
+							key={`${visualMode}-${graphTransitionKey}`}
+						>
+							<Graph
+								allowEmptySelection
+								background="transparent"
+								className="h-full"
+								explorer={explorer}
+								isLoading={isLoading}
+								interactionSettings={DEFAULT_NEURAL_GRAPH_INTERACTION_SETTINGS}
+								labelStrategy={graphLabelStrategy}
+								onSelectedNodeIdChange={handleSelectedNodeIdChange}
+								params={graphParams}
+								rayOriginBottomOffset={PERSONAL_GRAPH_RAY_TAIL_BOTTOM_OFFSET_PX}
+								raySoundSettings={DEFAULT_NEURAL_RAY_SOUND_SETTINGS}
+								selectedNodeId={selectedNodeId}
+								showControls={false}
+								showSelectionOverlay={false}
+								store={accessibleGraph}
+								variant="fill"
+							/>
+						</motion.div>
 					</div>
 				</motion.section>
 
