@@ -16,6 +16,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* vpk-shared:start */
 :root {
 	color-scheme: light dark;
 	--paper: var(--ds-surface, #ffffff);
@@ -32,6 +33,12 @@
 	--primary-blue: var(--ds-background-accent-blue-bold, #0c66e4);
 	--primary-blue-tint: var(--ds-background-accent-blue-subtlest, #e9f2ff);
 	--primary-blue-tint-strong: var(--ds-background-accent-blue-subtler, #cce0ff);
+	--ill-line: var(--ds-text-accent-blue-bolder, #0055cc);
+	--ill-tone1: var(--ds-background-accent-blue-subtlest, #e9f2ff);
+	--ill-tone2: var(--ds-background-accent-blue-subtler, #cce0ff);
+	--ill-tone3: var(--ds-background-accent-blue-subtle, #579dff);
+	--ill-hatch: var(--ds-border-accent-blue, #85b8ff);
+	--ill-ink50: var(--ds-text-subtle, #44546f);
 	--rule: var(--ds-border, #091e4224);
 	--rule-strong: var(--ds-border-bold, #758195);
 	--link: var(--ds-text-accent-blue, #0c66e4);
@@ -71,6 +78,13 @@
 	--accent: var(--primary-blue);
 	--primary: var(--primary-blue);
 	--accent-primary: var(--primary-blue);
+	--ease-out: cubic-bezier(0.23,1,0.32,1);
+	--ease-in-out: cubic-bezier(0.77,0,0.175,1);
+	--vpk-dur-fast: 160ms;
+	--vpk-dur-enter: 280ms;
+	--vpk-dur-slide-out: 180ms;
+	--vpk-stagger: 40ms;
+	--vpk-enter-y: 12px;
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
@@ -97,6 +111,12 @@
 	--primary-blue: var(--ds-background-accent-blue-bold, #579dff);
 	--primary-blue-tint: var(--ds-background-accent-blue-subtlest, #092957);
 	--primary-blue-tint-strong: var(--ds-background-accent-blue-subtler, #09326c);
+	--ill-line: var(--ds-text-accent-blue-bolder, #cce0ff);
+	--ill-tone1: var(--ds-background-accent-blue-subtlest, #092957);
+	--ill-tone2: var(--ds-background-accent-blue-subtler, #09326c);
+	--ill-tone3: var(--ds-background-accent-blue-subtle, #1c4b8f);
+	--ill-hatch: var(--ds-border-accent-blue, #579dff);
+	--ill-ink50: var(--ds-text-subtle, #9fadbc);
 	--rule: var(--ds-border, #a6c5e229);
 	--rule-strong: var(--ds-border-bold, #738496);
 	--link: var(--ds-text-accent-blue, #85b8ff);
@@ -136,6 +156,13 @@
 	--accent: var(--primary-blue);
 	--primary: var(--primary-blue);
 	--accent-primary: var(--primary-blue);
+	--ease-out: cubic-bezier(0.23,1,0.32,1);
+	--ease-in-out: cubic-bezier(0.77,0,0.175,1);
+	--vpk-dur-fast: 160ms;
+	--vpk-dur-enter: 280ms;
+	--vpk-dur-slide-out: 180ms;
+	--vpk-stagger: 40ms;
+	--vpk-enter-y: 12px;
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
@@ -157,7 +184,107 @@
 	}
 }
 
-  :root {
+/* vpk motion system */
+@keyframes vpk-enter {
+	from {
+		opacity: 0;
+		transform: translateY(var(--vpk-enter-y));
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes vpk-slide-in {
+	from {
+		opacity: 0;
+		transform: var(--vpk-slide-enter-from, translateX(24px));
+	}
+	to {
+		opacity: 1;
+		transform: var(--vpk-slide-enter-to, translateX(0));
+	}
+}
+
+@keyframes vpk-slide-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+body[data-vpk-motion] main > * {
+	animation: vpk-enter var(--vpk-dur-enter) var(--ease-out) both;
+}
+
+body[data-vpk-motion] main > *:nth-child(1) { animation-delay: 0ms; }
+body[data-vpk-motion] main > *:nth-child(2) { animation-delay: calc(var(--vpk-stagger) * 1); }
+body[data-vpk-motion] main > *:nth-child(3) { animation-delay: calc(var(--vpk-stagger) * 2); }
+body[data-vpk-motion] main > *:nth-child(4) { animation-delay: calc(var(--vpk-stagger) * 3); }
+body[data-vpk-motion] main > *:nth-child(5) { animation-delay: calc(var(--vpk-stagger) * 4); }
+body[data-vpk-motion] main > *:nth-child(n + 6) { animation-delay: calc(var(--vpk-stagger) * 5); }
+
+@supports (animation-timeline: view()) {
+	body[data-vpk-motion="document"] main section {
+		animation-name: vpk-enter;
+		animation-duration: var(--vpk-dur-enter);
+		animation-fill-mode: both;
+		animation-timing-function: var(--ease-out);
+		animation-timeline: view();
+		animation-range: entry 0% entry 40%;
+	}
+}
+
+a,
+button,
+summary,
+[role="button"],
+.toc a,
+.demo-row {
+	transition:
+		background-color var(--vpk-dur-fast) var(--ease-out),
+		border-color var(--vpk-dur-fast) var(--ease-out),
+		box-shadow var(--vpk-dur-fast) var(--ease-out),
+		color var(--vpk-dur-fast) var(--ease-out),
+		opacity var(--vpk-dur-fast) var(--ease-out),
+		transform var(--vpk-dur-fast) var(--ease-out);
+}
+
+button:active,
+[role="button"]:active,
+.demo-row:active {
+	transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--vpk-enter-y: 0px;
+		--vpk-stagger: 0ms;
+	}
+
+	body[data-vpk-motion] *,
+	body[data-vpk-motion] *::before,
+	body[data-vpk-motion] *::after {
+		animation-duration: 200ms !important;
+		transition-duration: 200ms !important;
+	}
+
+	body[data-vpk-motion] .slide.is-active,
+	body[data-vpk-motion] .slide.is-leaving {
+		transform: var(--vpk-slide-enter-to, none) !important;
+	}
+}
+
+@media print {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
+		opacity: 1 !important;
+	}
+}
+/* vpk-shared:end */  :root {
     --font-sans: "Charlie Text", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "Atlassian Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
     --font-display: "Charlie Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -303,7 +430,7 @@
   }
 </style>
 </head>
-<body>
+<body data-vpk-motion="document" data-vpk-docnav="true">
 <main aria-label="vpk-html diagram mock preview">
   <div class="frame">
     <p class="eyebrow">waterfall · vpk-html diagram</p>
@@ -416,6 +543,33 @@
 
     <p class="caption">Waterfall preview showing how document and diagram mocks reduce raw landing exposure to zero.</p>
   </div>
-</main>
+</main><script data-vpk-docnav-runtime>
+(() => {
+	if (!document.body.matches('[data-vpk-docnav]')) return;
+	const targets = [...document.querySelectorAll('main h1, main h2, main section[id]')]
+		.filter(el => el.getBoundingClientRect().height > 0);
+	if (targets.length < 2) return;
+
+	function currentIndex() {
+		const y = window.scrollY + 80;
+		let selected = 0;
+		targets.forEach((target, index) => {
+			if (target.getBoundingClientRect().top + window.scrollY <= y) selected = index;
+		});
+		return selected;
+	}
+
+	document.addEventListener('keydown', event => {
+		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
+		if (editable) return;
+		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+		event.preventDefault();
+		const delta = event.key === 'ArrowDown' ? 1 : -1;
+		const next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
+		targets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+	});
+})();
+</script>
 </body>
 </html>

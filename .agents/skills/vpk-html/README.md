@@ -34,13 +34,16 @@ status readouts, and implementation briefs.
 - **14 SVG diagram primitives** at `assets/diagrams/` — architecture, flowchart,
   swimlane, tree, waterfall, candlestick, and friends. Extract the `<svg>` block
   and embed inside any long-form template.
-- **28 demos** at `assets/demos/`:
-  - 8 screenshot-backed showcases: 4 ported from kami and 4 vpk-native.
-  - 20 Phase 2 ports from `html-effectiveness`, grouped first on the homepage
-    like the upstream demo index and restyled with the vpk-html visual shell.
+- **5 technical illustration exemplars** at `assets/illustrations/` —
+  isometric, exploded, annotated, cross-section, and pipeline SVGs built for
+  remixing inside technical docs.
+- **52 demos** at `assets/demos/`: filled document showcases, Phase 2
+  `html-effectiveness` ports, diagram previews, technical illustration previews,
+  and vpk-native examples.
 - **A reference-manual homepage** at [`index.html`](index.html).
-- **3 LLM-facing reference docs**: `anti-patterns.md`, `diagrams.md`,
-  `resume-writing.md` — consult before drafting.
+- **LLM-facing reference docs** for writing, anti-patterns, diagrams,
+  illustrations, presentation mode, video export, PDF export, quality gates, and
+  production troubleshooting.
 
 ## Quick start
 
@@ -77,12 +80,14 @@ node scripts/ensure-fonts.mjs                     # fetch fonts to assets/fonts/
 
 node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF (Chromium, Node-only)
 node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]  # landing companions + responsive verify
-node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
+node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
 
 node scripts/port-kami.mjs [--templates|--diagrams|--demos]  # re-port templates + diagrams + curated demos from kami
+node scripts/retrofit.mjs                        # idempotently refresh committed HTML with shared CSS + presentation/docnav
 node scripts/port-engineering.mjs                 # regenerate Phase 2 engineering templates
 node scripts/build-demos.mjs [--curated|--landing]  # regenerate curated demos + landing mock previews
 node scripts/port-engineering-demos.mjs           # copy + restyle direct Phase 2 upstream demo ports
+node scripts/build-illustrations.mjs              # regenerate technical illustration exemplars + gallery demos
 node scripts/landing.mjs                          # regenerate assets/landing/ shells
 ```
 
@@ -97,12 +102,13 @@ node scripts/landing.mjs                          # regenerate assets/landing/ s
 | `LICENSE`, `llms.txt`, `.gitignore`, `.claude-plugin/` | Top-level metadata |
 | `assets/templates/` | 28 offline HTML templates: 8 base document shells + 20 Phase 2 engineering shells |
 | `assets/diagrams/` | 14 standalone SVG diagram primitives |
+| `assets/illustrations/` | 5 technical illustration exemplars for remixing |
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
-| `assets/demos/` | Demo HTML outputs plus the embedded media needed by individual demos |
+| `assets/demos/` | 52 demo HTML outputs plus the embedded media needed by individual demos |
 | `assets/fonts/` | Charlie Display, Charlie Text, and Atlassian Mono (inlined as base64 at port time) |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
-| `references/` | Anti-patterns, diagrams, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
-| `scripts/` | build (validator), check-html, shared helpers, port-*.mjs, build-demos (regenerate demos), landing, gates, pdf, ensure-fonts |
+| `references/` | Anti-patterns, diagrams, illustrations, presentation, video-export, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
+| `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road
 
@@ -114,6 +120,11 @@ node scripts/landing.mjs                          # regenerate assets/landing/ s
 - **Theme stays shared.** Author semantic colors in `references/tokens.json`,
   mirror them to root `styles.css`, and import `scripts/shared.mjs` from
   generators instead of hard-coding palette or font blocks per demo.
+- **Motion stays shared.** Templates opt into `data-vpk-motion`; the shared CSS
+  owns entrance, document reveal, micro-interaction, reduced-motion, and print
+  neutralizer behavior.
+- **Presentation is screen-only.** Deck runtime and speaker notes are injected by
+  `scripts/presentation.mjs`; print/PDF geometry stays unchanged.
 - **Fill every placeholder.** Run `build.mjs --check-placeholders` before
   shipping. Unfilled `{{...}}` slots fail the check.
 - **Visible sources.** When external research or copied material is used,
@@ -139,6 +150,7 @@ The visual identity diverges; the workflow does not.
 | Output | Single offline HTML | HTML + PDF + optional PPTX + PNG |
 | Templates | 28 (8 kami-ported base shells + 20 original Phase 2 engineering shells) | 8 |
 | Diagrams | 14 SVG primitives (kami-ported) | 14 SVG primitives |
+| Technical illustrations | 5 vpk-native exemplars | N/A |
 | Languages | EN | CN primary, EN, JA best-effort |
 
 vpk-html's theme source of truth is `references/tokens.json` -> root
@@ -165,9 +177,24 @@ Research & Learning, Reports, and Custom Editing Interfaces.
 
 The Phase 2 templates remain original vpk-html template shells. The Phase 2
 demos preserve upstream structure, JavaScript, and sample content, then add the
-local vpk-html overlay: embedded Charlie and Atlassian Mono font declarations, primary-blue/paper
-tokens, source comments, a dark-token stub, and accessibility landmarks where
-the upstream page omitted them.
+local vpk-html overlay: embedded Charlie and Atlassian Mono font declarations,
+primary-blue/paper tokens, source comments, shared motion, presentation/docnav
+runtime where applicable, and accessibility landmarks where the upstream page
+omitted them.
+
+## Motion, Presentation, Illustrations, Video
+
+- Motion tokens and shared CSS live in `references/tokens.json`,
+  `scripts/shared.mjs`, and `styles.css`. Run `--write-styles`, `retrofit.mjs`,
+  and `--check-templates` after changes.
+- Decks use `scripts/presentation.mjs` for Left/Right slide navigation,
+  `#slide-N` deep links, hidden speaker notes, and a synced presenter window.
+  See `references/presentation.md`.
+- Technical illustrations use `assets/illustrations/` plus
+  `references/illustrations.md`. Ordinary diagrams still keep the one-blue
+  focal rule; illustrations may use the full `--ill-*` ADS blue ramp.
+- MP4 export is intentionally a Hyperframes re-authoring contract, not the deck
+  runtime. See `references/video-export.md`.
 
 ## License
 

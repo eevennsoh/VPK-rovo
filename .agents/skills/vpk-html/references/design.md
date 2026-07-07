@@ -24,9 +24,10 @@ Tokens are authored once in `references/tokens.json` and mirrored in root
 HTML document instead of letting individual templates own hard-coded palettes.
 
 Token groups cover paper/background, headline/body ink, muted text, primary
-blue, collection accents, chart/diagram accents, grid dots/lines, rule, raised
-surfaces, focus ring, code surface, math highlight, and
-success/warning/danger/info accents for light and dark modes.
+blue, collection accents, chart/diagram accents, technical-illustration ramp
+tokens (`--ill-*`), grid dots/lines, rule, raised surfaces, focus ring, code
+surface, math highlight, motion tokens, and success/warning/danger/info accents
+for light and dark modes.
 
 ## Dark Mode
 
@@ -86,3 +87,25 @@ Use the semantic alias layer (`--paper`, `--ink`, `--primary-blue`,
 template. Accent ramps are **decoration only**; semantic role colors
 (success/warning/danger/info) carry meaning and must not be used for mere
 decoration. In a diagram, one focal node gets the accent; demote the rest.
+
+Technical illustrations are the exception to the one-blue diagram rule. SVGs
+marked `data-vpk-illustration` may use the full `--ill-line`, `--ill-tone1`,
+`--ill-tone2`, `--ill-tone3`, `--ill-hatch`, and `--ill-ink50` ramp for object
+faces, hatching, labels, and dimension lines. They still stay flat: no
+gradients, blur, glow, or decorative color outside the ADS blue ramp.
+
+### Motion discipline
+
+Shared motion comes from `scripts/shared.mjs`, not per-template timing tweaks.
+Use `--ease-out`, `--ease-in-out`, and the `--vpk-dur-*` tokens. Do not use
+bare `ease-in`; entrance and slide motion should stay at or under 300ms unless
+the advisory `motion-budget` gate is intentionally waived. Print CSS must
+neutralize animation/transition/transform, and reduced-motion must remove
+movement while preserving readable opacity changes.
+
+### Presentation layer
+
+Deck screen behavior is additive. Presentation CSS and JS live behind
+`@media screen` and `data-vpk-presentation-runtime`; print/PDF geometry remains
+the template source of truth. Speaker notes are hidden in the main deck and
+print output, then read only by the presenter window.

@@ -110,6 +110,7 @@
 
 	unicode-range: U+0030-0039;}
 
+/* vpk-shared:start */
 :root {
 	color-scheme: light dark;
 	--paper: var(--ds-surface, #ffffff);
@@ -126,6 +127,12 @@
 	--primary-blue: var(--ds-background-accent-blue-bold, #0c66e4);
 	--primary-blue-tint: var(--ds-background-accent-blue-subtlest, #e9f2ff);
 	--primary-blue-tint-strong: var(--ds-background-accent-blue-subtler, #cce0ff);
+	--ill-line: var(--ds-text-accent-blue-bolder, #0055cc);
+	--ill-tone1: var(--ds-background-accent-blue-subtlest, #e9f2ff);
+	--ill-tone2: var(--ds-background-accent-blue-subtler, #cce0ff);
+	--ill-tone3: var(--ds-background-accent-blue-subtle, #579dff);
+	--ill-hatch: var(--ds-border-accent-blue, #85b8ff);
+	--ill-ink50: var(--ds-text-subtle, #44546f);
 	--rule: var(--ds-border, #091e4224);
 	--rule-strong: var(--ds-border-bold, #758195);
 	--link: var(--ds-text-accent-blue, #0c66e4);
@@ -165,6 +172,13 @@
 	--accent: var(--primary-blue);
 	--primary: var(--primary-blue);
 	--accent-primary: var(--primary-blue);
+	--ease-out: cubic-bezier(0.23,1,0.32,1);
+	--ease-in-out: cubic-bezier(0.77,0,0.175,1);
+	--vpk-dur-fast: 160ms;
+	--vpk-dur-enter: 280ms;
+	--vpk-dur-slide-out: 180ms;
+	--vpk-stagger: 40ms;
+	--vpk-enter-y: 12px;
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
@@ -191,6 +205,12 @@
 	--primary-blue: var(--ds-background-accent-blue-bold, #579dff);
 	--primary-blue-tint: var(--ds-background-accent-blue-subtlest, #092957);
 	--primary-blue-tint-strong: var(--ds-background-accent-blue-subtler, #09326c);
+	--ill-line: var(--ds-text-accent-blue-bolder, #cce0ff);
+	--ill-tone1: var(--ds-background-accent-blue-subtlest, #092957);
+	--ill-tone2: var(--ds-background-accent-blue-subtler, #09326c);
+	--ill-tone3: var(--ds-background-accent-blue-subtle, #1c4b8f);
+	--ill-hatch: var(--ds-border-accent-blue, #579dff);
+	--ill-ink50: var(--ds-text-subtle, #9fadbc);
 	--rule: var(--ds-border, #a6c5e229);
 	--rule-strong: var(--ds-border-bold, #738496);
 	--link: var(--ds-text-accent-blue, #85b8ff);
@@ -230,6 +250,13 @@
 	--accent: var(--primary-blue);
 	--primary: var(--primary-blue);
 	--accent-primary: var(--primary-blue);
+	--ease-out: cubic-bezier(0.23,1,0.32,1);
+	--ease-in-out: cubic-bezier(0.77,0,0.175,1);
+	--vpk-dur-fast: 160ms;
+	--vpk-dur-enter: 280ms;
+	--vpk-dur-slide-out: 180ms;
+	--vpk-stagger: 40ms;
+	--vpk-enter-y: 12px;
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
@@ -251,7 +278,107 @@
 	}
 }
 
-  :root {
+/* vpk motion system */
+@keyframes vpk-enter {
+	from {
+		opacity: 0;
+		transform: translateY(var(--vpk-enter-y));
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes vpk-slide-in {
+	from {
+		opacity: 0;
+		transform: var(--vpk-slide-enter-from, translateX(24px));
+	}
+	to {
+		opacity: 1;
+		transform: var(--vpk-slide-enter-to, translateX(0));
+	}
+}
+
+@keyframes vpk-slide-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+body[data-vpk-motion] main > * {
+	animation: vpk-enter var(--vpk-dur-enter) var(--ease-out) both;
+}
+
+body[data-vpk-motion] main > *:nth-child(1) { animation-delay: 0ms; }
+body[data-vpk-motion] main > *:nth-child(2) { animation-delay: calc(var(--vpk-stagger) * 1); }
+body[data-vpk-motion] main > *:nth-child(3) { animation-delay: calc(var(--vpk-stagger) * 2); }
+body[data-vpk-motion] main > *:nth-child(4) { animation-delay: calc(var(--vpk-stagger) * 3); }
+body[data-vpk-motion] main > *:nth-child(5) { animation-delay: calc(var(--vpk-stagger) * 4); }
+body[data-vpk-motion] main > *:nth-child(n + 6) { animation-delay: calc(var(--vpk-stagger) * 5); }
+
+@supports (animation-timeline: view()) {
+	body[data-vpk-motion="document"] main section {
+		animation-name: vpk-enter;
+		animation-duration: var(--vpk-dur-enter);
+		animation-fill-mode: both;
+		animation-timing-function: var(--ease-out);
+		animation-timeline: view();
+		animation-range: entry 0% entry 40%;
+	}
+}
+
+a,
+button,
+summary,
+[role="button"],
+.toc a,
+.demo-row {
+	transition:
+		background-color var(--vpk-dur-fast) var(--ease-out),
+		border-color var(--vpk-dur-fast) var(--ease-out),
+		box-shadow var(--vpk-dur-fast) var(--ease-out),
+		color var(--vpk-dur-fast) var(--ease-out),
+		opacity var(--vpk-dur-fast) var(--ease-out),
+		transform var(--vpk-dur-fast) var(--ease-out);
+}
+
+button:active,
+[role="button"]:active,
+.demo-row:active {
+	transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--vpk-enter-y: 0px;
+		--vpk-stagger: 0ms;
+	}
+
+	body[data-vpk-motion] *,
+	body[data-vpk-motion] *::before,
+	body[data-vpk-motion] *::after {
+		animation-duration: 200ms !important;
+		transition-duration: 200ms !important;
+	}
+
+	body[data-vpk-motion] .slide.is-active,
+	body[data-vpk-motion] .slide.is-leaving {
+		transform: var(--vpk-slide-enter-to, none) !important;
+	}
+}
+
+@media print {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
+		opacity: 1 !important;
+	}
+}
+/* vpk-shared:end */  :root {
     --parchment:  var(--paper);
     --ivory:      var(--paper);
     --near-black: var(--ink);
@@ -530,9 +657,147 @@
     border: 2px solid var(--ink) !important;
     box-shadow: var(--shadow) !important;
   }
+
+/* vpk presentation mode */
+.speaker-notes {
+	display: none !important;
+}
+
+@media screen {
+	body[data-vpk-motion="deck"] {
+		background: var(--paper-background);
+		overflow: hidden;
+	}
+
+	body[data-vpk-motion="deck"] main {
+		height: 100vh;
+		padding: 0;
+		position: relative;
+		width: 100vw;
+	}
+
+	body[data-vpk-motion="deck"] .slide {
+		--vpk-slide-rest-transform: translate(-50%, -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-from: translate(calc(-50% + 24px), -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-to: var(--vpk-slide-rest-transform);
+		display: none;
+		left: 50%;
+		position: absolute;
+		top: 50%;
+		transform: var(--vpk-slide-rest-transform);
+		transform-origin: center center;
+	}
+
+	body[data-vpk-motion="deck"] .slide:first-of-type,
+	body[data-vpk-motion="deck"] .slide.is-active {
+		display: block;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-active {
+		animation: vpk-slide-in var(--vpk-dur-enter) var(--ease-out) both;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-leaving {
+		animation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
+	}
+
+	.vpk-slide-counter {
+		align-items: center;
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		bottom: 18px;
+		box-shadow: var(--shadow);
+		color: var(--muted-text);
+		display: inline-flex;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		gap: 6px;
+		letter-spacing: 0.04em;
+		padding: 8px 10px;
+		position: fixed;
+		right: 18px;
+		z-index: 20;
+	}
+
+	html[data-vpk-presenter="true"],
+	html[data-vpk-presenter="true"] body {
+		height: 100%;
+		overflow: hidden;
+	}
+
+	body.vpk-presenter-window {
+		background: var(--paper-background);
+		color: var(--ink);
+		font-family: var(--font-body);
+	}
+
+	.vpk-presenter {
+		display: grid;
+		gap: 24px;
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+		height: 100vh;
+		padding: 24px;
+	}
+
+	.vpk-presenter-preview,
+	.vpk-presenter-notes {
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		box-shadow: var(--shadow);
+		min-width: 0;
+		padding: 18px;
+	}
+
+	.vpk-presenter-preview-frame {
+		align-items: center;
+		aspect-ratio: 280 / 158;
+		background: var(--paper);
+		border: 1px solid var(--rule);
+		display: flex;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.vpk-presenter-preview-frame .slide {
+		display: block !important;
+		position: static !important;
+		transform: scale(0.28) !important;
+		transform-origin: center center !important;
+	}
+
+	.vpk-presenter-kicker {
+		color: var(--primary-blue);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.08em;
+		margin-bottom: 10px;
+		text-transform: uppercase;
+	}
+
+	.vpk-presenter-notes-text {
+		font-size: 22px;
+		line-height: 1.45;
+		white-space: pre-wrap;
+	}
+
+	.vpk-presenter-timer {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 14px;
+		margin-top: 20px;
+	}
+}
+
+@media print {
+	.speaker-notes,
+	.vpk-slide-counter,
+	.vpk-presenter {
+		display: none !important;
+	}
+}
 </style>
 </head>
-<body>
+<body data-vpk-motion="deck">
 <main aria-label="vpk-html curated demo">
 
 <!-- ═══════════ 01 · Cover ═══════════ -->
@@ -562,6 +827,8 @@
   </div>
   <div class="page-num">01</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 02 · Agent loop ═══════════ -->
@@ -642,6 +909,8 @@
   </div>
   <div class="page-num">02</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 03 · Harness over models ═══════════ -->
@@ -677,6 +946,8 @@
 
   <div class="page-num">03</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 04 · Context ═══════════ -->
@@ -732,6 +1003,8 @@
 
   <div class="page-num">04</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 05 · Tools + Memory ═══════════ -->
@@ -766,6 +1039,8 @@
 
   <div class="page-num">05</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 06 · Code Card demo ═══════════ -->
@@ -802,6 +1077,8 @@
 
   <div class="page-num">06</div>
   <div class="footer-mark">Agent Engineering</div>
+
+<aside class="speaker-notes" aria-hidden="true"></aside>
 </section>
 
 <!-- ═══════════ 07 · Closing ═══════════ -->
@@ -811,8 +1088,146 @@
   <div class="sub">Fix your evals before you tweak the Agent. Most of what looks like model failure is infrastructure noise in disguise.</div>
   <div class="page-num">07</div>
   <div class="footer-mark">End of Deck</div>
-</section>
-</main>
 
+<aside class="speaker-notes" aria-hidden="true"></aside>
+</section>
+</main><script data-vpk-presentation-runtime>
+(() => {
+	const slides = [...document.querySelectorAll('section.slide')];
+	if (slides.length < 2) return;
+
+	const channel = (() => {
+		try { return new BroadcastChannel('vpk-deck'); }
+		catch { return null; }
+	})();
+	let index = readIndexFromHash();
+	let startedAt = Date.now();
+	let presenterWindow = null;
+
+	function readIndexFromHash() {
+		const match = location.hash.match(/slide-(\d+)/);
+		if (!match) return 0;
+		return Math.max(0, Math.min(slides.length - 1, Number(match[1]) - 1));
+	}
+
+	function slideTitle(slide) {
+		return (slide.querySelector('h1,h2,h3,.title')?.textContent || 'Slide').trim();
+	}
+
+	function slideNotes(slide) {
+		return (slide.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this slide.';
+	}
+
+	function ensureCounter() {
+		let counter = document.querySelector('[data-vpk-slide-counter]');
+		if (counter) return counter;
+		counter = document.createElement('div');
+		counter.className = 'vpk-slide-counter';
+		counter.dataset.vpkSlideCounter = 'true';
+		document.body.append(counter);
+		return counter;
+	}
+
+	function fitSlide() {
+		const slide = slides[0];
+		if (!slide) return;
+		const scale = Math.min(window.innerWidth / slide.offsetWidth, window.innerHeight / slide.offsetHeight) * 0.96;
+		document.documentElement.style.setProperty('--vpk-slide-scale', String(Math.max(0.1, scale)));
+	}
+
+	function broadcast() {
+		const payload = { type: 'state', index, total: slides.length, title: slideTitle(slides[index]), notes: slideNotes(slides[index]) };
+		try { channel?.postMessage(payload); } catch { /* noop */ }
+		try { presenterWindow?.postMessage({ source: 'vpk-deck', ...payload }, '*'); } catch { /* noop */ }
+	}
+
+	function show(next, shouldBroadcast = true) {
+		const bounded = Math.max(0, Math.min(slides.length - 1, next));
+		if (bounded === index && document.querySelector('.slide.is-active')) {
+			if (shouldBroadcast) broadcast();
+			return;
+		}
+		const previous = slides[index];
+		index = bounded;
+		slides.forEach(slide => slide.classList.remove('is-active', 'is-leaving'));
+		if (previous && previous !== slides[index]) previous.classList.add('is-leaving');
+		slides[index].classList.add('is-active');
+		ensureCounter().textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+		if (!location.hash.startsWith('#presenter')) history.replaceState(null, '', '#slide-' + String(index + 1));
+		if (shouldBroadcast) broadcast();
+	}
+
+	function openPresenter() {
+		const url = new URL(location.href);
+		url.hash = 'presenter-slide-' + String(index + 1);
+		try { presenterWindow = window.open(url.href, 'vpk-presenter', 'popup,width=1180,height=760'); }
+		catch { /* noop */ }
+	}
+
+	function buildPresenter() {
+		document.documentElement.dataset.vpkPresenter = 'true';
+		document.body.className = (document.body.className + ' vpk-presenter-window').trim();
+		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next slide</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+		const title = document.querySelector('[data-vpk-presenter-title]');
+		const notes = document.querySelector('[data-vpk-presenter-notes]');
+		const timer = document.querySelector('[data-vpk-presenter-timer]');
+		const preview = document.querySelector('[data-vpk-next-preview]');
+		function render(payload = {}) {
+			const current = payload.index ?? index;
+			const next = slides[Math.min(slides.length - 1, current + 1)]?.cloneNode(true);
+			if (title) title.textContent = 'Slide ' + String(current + 1) + ' / ' + slides.length + ' - ' + (payload.title || slideTitle(slides[current]));
+			if (notes) notes.textContent = payload.notes || slideNotes(slides[current]);
+			if (preview) {
+				preview.textContent = '';
+				if (next) preview.append(next);
+			}
+		}
+		render();
+		setInterval(() => {
+			const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+			if (timer) timer.textContent = Math.floor(elapsed / 60) + ':' + String(elapsed % 60).padStart(2, '0');
+		}, 500);
+		channel?.addEventListener('message', event => {
+			if (event.data?.type === 'state') render(event.data);
+		});
+		window.addEventListener('message', event => {
+			if (event.data?.source === 'vpk-deck' && event.data?.type === 'state') render(event.data);
+		});
+		document.addEventListener('keydown', event => {
+			if (event.key === 'ArrowRight') {
+				if (channel) channel.postMessage({ type: 'request', delta: 1 });
+				else { index = Math.min(slides.length - 1, index + 1); render(); }
+			}
+			if (event.key === 'ArrowLeft') {
+				if (channel) channel.postMessage({ type: 'request', delta: -1 });
+				else { index = Math.max(0, index - 1); render(); }
+			}
+		});
+	}
+
+	if (location.hash.startsWith('#presenter')) {
+		buildPresenter();
+		return;
+	}
+
+	window.addEventListener('resize', fitSlide);
+	document.addEventListener('keydown', event => {
+		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
+		if (editable) return;
+		if (event.key === 'ArrowRight') { event.preventDefault(); show(index + 1); }
+		else if (event.key === 'ArrowLeft') { event.preventDefault(); show(index - 1); }
+		else if (event.key === 'Home') { event.preventDefault(); show(0); }
+		else if (event.key === 'End') { event.preventDefault(); show(slides.length - 1); }
+		else if (event.key.toLowerCase() === 'p') { event.preventDefault(); openPresenter(); }
+	});
+	channel?.addEventListener('message', event => {
+		if (event.data?.type === 'request') show(index + Number(event.data.delta || 0));
+	});
+	window.addEventListener('hashchange', () => show(readIndexFromHash()));
+	fitSlide();
+	show(index);
+})();
+</script>
 </body>
 </html>

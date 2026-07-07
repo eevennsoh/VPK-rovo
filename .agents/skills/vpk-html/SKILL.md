@@ -24,8 +24,9 @@ changelog, portfolio, resume, or engineering workflow surface.
 
 **Architecture:** kami-style template editing. The skill ships 28 HTML
 templates at `assets/templates/`: 8 base document shells plus 20 Phase 2
-engineering shells mapped from the `html-effectiveness` use-case catalog. To
-produce a document, copy a template into a working directory and fill its
+engineering shells mapped from the `html-effectiveness` use-case catalog, plus
+14 diagram primitives and 5 technical illustration exemplars. To produce a
+document, copy a template into a working directory and fill its
 `{{placeholders}}`. The renderer is a validator, not a JSON-to-HTML compiler.
 
 ---
@@ -149,6 +150,18 @@ portfolio / equity-report.
 
 Before drawing, always ask: **would a well-written paragraph teach the
 reader less than this diagram?** If no, don't draw.
+
+### Technical illustrations (object/mechanism SVGs)
+
+Use `assets/illustrations/` when the user asks for an isometric object,
+exploded assembly, annotated mechanism, cutaway/cross-section, or pipeline
+illustration. These are not data-shape diagrams: they may use the full
+`--ill-*` ADS blue ramp for linework, shaded faces, hatching, and labels.
+
+Read `references/illustrations.md` before drawing. If an illustration uses
+SMIL, every `animateTransform` must use `begin="indefinite"` and the document
+must include the reduced-motion-aware `<script data-vpk-smil-starter>` starter.
+`check-html.mjs` enforces that policy.
 
 ---
 
@@ -296,6 +309,9 @@ node .agents/skills/vpk-html/scripts/build.mjs --check-density <slug>.html
 node .agents/skills/vpk-html/scripts/build.mjs --check-orphans <slug>.html
 node .agents/skills/vpk-html/scripts/build.mjs --check-rhythm <slug>.html
 node .agents/skills/vpk-html/scripts/build.mjs --check-resume-balance <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-focal <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-motion-budget <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo <slug>.html
 
 # Landing / product-site export (companions + responsive verify). See references/landing.md
 node .agents/skills/vpk-html/scripts/build.mjs --landing <file>.html [--out <dir>] [--origin <url>]
@@ -316,6 +332,9 @@ node .agents/skills/vpk-html/scripts/build.mjs --check-templates
 # Re-port from kami source (idempotent): templates + diagrams + curated demos
 node .agents/skills/vpk-html/scripts/port-kami.mjs   # or --templates / --diagrams / --demos
 
+# Retrofit committed HTML when kami source is absent or after shared runtime edits
+node .agents/skills/vpk-html/scripts/retrofit.mjs
+
 # Regenerate original Phase 2 shells from the html-effectiveness use-case map
 node .agents/skills/vpk-html/scripts/port-engineering.mjs
 
@@ -324,6 +343,9 @@ node .agents/skills/vpk-html/scripts/port-engineering-demos.mjs
 
 # Regenerate curated vpk-native demos + landing mock previews (catalog)
 node .agents/skills/vpk-html/scripts/build-demos.mjs   # or --curated / --landing
+
+# Regenerate technical illustration exemplars + matching gallery demos
+node .agents/skills/vpk-html/scripts/build-illustrations.mjs
 
 # Regenerate landing shells (landing-page.html, docs-site.html)
 node .agents/skills/vpk-html/scripts/landing.mjs
@@ -347,6 +369,26 @@ template script.
 This keeps every future demo and template on the same colors, dark-mode
 fallbacks, font families, and reduced-motion rule without editing one inline
 CSS block at a time.
+
+## Motion, Presentation, and Video Contracts
+
+Motion is generated centrally from `scripts/shared.mjs` and
+`references/tokens.json`. Do not author one-off easing curves in individual
+templates. Use the shared `--ease-out`, `--ease-in-out`, `--vpk-dur-*`, and
+`data-vpk-motion` contract; print output must stay neutralized and
+reduced-motion must remove movement while preserving legible opacity changes.
+
+Decks are dual-layer artifacts. The print layer keeps the fixed page geometry
+for PDF export; the screen layer is injected by `scripts/presentation.mjs` and
+supports whole-slide Left/Right navigation, `#slide-N` deep links, hidden
+speaker notes, and a synced presenter window. Speaker notes belong in
+`<aside class="speaker-notes" aria-hidden="true">` as the last child of each
+slide and must never appear in the main projected window or print output.
+
+MP4 export is not part of the browser deck runtime. When the user asks for
+video, read `references/video-export.md` and re-author the deck into a
+Hyperframes general-video composition only after confirming the user wants a
+render.
 
 ## Identity
 
@@ -433,6 +475,9 @@ resolved theme block — don't redefine it per document.
 
 - `references/anti-patterns.md` — 6 AI-output failure modes
 - `references/diagrams.md` — diagram selection guide + focal rule
+- `references/illustrations.md` — technical illustration recipe + SMIL policy
+- `references/presentation.md` — deck runtime, presenter window, speaker notes
+- `references/video-export.md` — Hyperframes MP4 conversion contract
 - `references/resume-writing.md` — Action + Scope + Result + Outcome
 - `references/writing.md` — general prose rules + quality bars per doc type
 - `references/design.md` — visual rules

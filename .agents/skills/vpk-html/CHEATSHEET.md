@@ -65,6 +65,25 @@ These original shells map the document patterns from
 
 Read `references/diagrams.md` for the selection guide and focal rule.
 
+## Technical illustrations
+
+Use `assets/illustrations/` when the reader needs to inspect an object,
+assembly, mechanism, cross-section, or pipeline topology. These are SVG
+exemplars to remix, not data-shape diagrams.
+
+| Visual job | Exemplar |
+|---|---|
+| Hardware shell / product surface | `assets/illustrations/isometric-device.html` |
+| Layered component stack | `assets/illustrations/exploded-assembly.html` |
+| Mechanism with dimension/leader lines | `assets/illustrations/annotated-mechanism.html` |
+| Cutaway material section | `assets/illustrations/hatched-cross-section.html` |
+| Architecture pipeline / module flow | `assets/illustrations/isometric-pipeline.html` |
+
+Read `references/illustrations.md` before drawing. Ordinary diagrams keep one
+primary-blue focal element; technical illustrations may use the full `--ill-*`
+blue ramp. SMIL motion must use `begin="indefinite"` plus the
+`data-vpk-smil-starter` guard.
+
 ## Workflow at a glance
 
 ```
@@ -102,6 +121,12 @@ node .agents/skills/vpk-html/scripts/build.mjs --sync
 
 # After editing references/tokens.json
 node .agents/skills/vpk-html/scripts/build.mjs --write-styles
+
+# Refresh committed HTML after shared CSS / presentation / docnav edits
+node .agents/skills/vpk-html/scripts/retrofit.mjs
+
+# Regenerate technical illustration sources + gallery demos
+node .agents/skills/vpk-html/scripts/build-illustrations.mjs
 ```
 
 Future templates, demos, and diagrams should import `scripts/shared.mjs` from
@@ -122,6 +147,25 @@ faces into each output path by hand.
   <figcaption>One primary-blue node marks the focal component.</figcaption>
 </figure>
 ```
+
+## Presentation mode
+
+Decks (`section.slide` count >= 2) include a screen-only runtime and preserve
+their print/PDF page geometry.
+
+| Key | Action |
+|---|---|
+| Left / Right | Previous / next whole slide |
+| Home / End | First / last slide |
+| `p` | Open synced presenter window |
+
+Speaker notes go in `<aside class="speaker-notes" aria-hidden="true">` as the
+last child of each slide. They stay hidden in the main window and print/PDF.
+Read `references/presentation.md` for presenter sync and recording rules.
+
+For narrated MP4 output, do not use the browser deck runtime. Follow
+`references/video-export.md` and re-author the deck into a Hyperframes
+general-video composition after user approval.
 
 ## Identity
 
@@ -152,6 +196,10 @@ document.documentElement.setAttribute('data-theme', 'dark');
 1. `references/anti-patterns.md` (before drafting any document)
 2. `references/writing.md` (for prose rules)
 3. Template-specific: `references/resume-writing.md` for resumes,
-   `references/diagrams.md` for diagrams
-4. `references/design.md` (only if touching CSS)
-5. `references/production.md` (only when troubleshooting)
+   `references/diagrams.md` for diagrams,
+   `references/illustrations.md` for technical illustrations,
+   `references/presentation.md` for decks
+4. `references/design.md` (only if touching CSS, tokens, or motion)
+5. `references/video-export.md` (only for user-approved MP4 conversion)
+6. `references/quality-gates.md` (when running advisory polish gates)
+7. `references/production.md` (only when troubleshooting)

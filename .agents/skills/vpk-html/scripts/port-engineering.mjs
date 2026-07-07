@@ -10,7 +10,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildFaviconLinkBlock, buildFontFaceBlock, FONT_STACKS, readStylesCss } from "./shared.mjs";
+import { buildFaviconLinkBlock, buildFontFaceBlock, FONT_STACKS, readStylesCss, wrapSharedCss } from "./shared.mjs";
+import { retrofitDocumentNav } from "./presentation.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = path.resolve(__dirname, "..");
@@ -342,7 +343,7 @@ function renderStats(items) {
 }
 
 function renderTemplate(def, sharedCss) {
-	return `<!doctype html>
+	const html = `<!doctype html>
 <!--
 TEMPLATE · ${def.title} (vpk-html Phase 2)
 Pattern reference: ${UPSTREAM}/blob/main/${def.source}
@@ -617,11 +618,12 @@ ${renderChecklist(def.checklist)}
 </body>
 </html>
 `;
+	return retrofitDocumentNav(html);
 }
 
 function main() {
 	fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
-	const sharedCss = `${buildFontFaceBlock()}\n${readStylesCss()}`;
+	const sharedCss = `${buildFontFaceBlock()}\n${wrapSharedCss(readStylesCss())}`;
 	for (const entry of CATALOG) {
 		const target = path.join(TEMPLATES_DIR, `${entry.slug}.html`);
 		fs.writeFileSync(target, renderTemplate(entry, sharedCss), "utf8");
