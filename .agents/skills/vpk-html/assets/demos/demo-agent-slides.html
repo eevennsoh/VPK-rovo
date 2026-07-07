@@ -688,7 +688,7 @@ button:active,
 		transform-origin: center center;
 	}
 
-	body[data-vpk-motion="deck"] .slide:first-of-type,
+	body[data-vpk-motion="deck"]:not([data-vpk-deck-ready="true"]) .slide:first-of-type,
 	body[data-vpk-motion="deck"] .slide.is-active {
 		display: block;
 	}
@@ -1226,6 +1226,7 @@ button:active,
 	});
 	window.addEventListener('hashchange', () => show(readIndexFromHash()));
 	fitSlide();
+	document.body.dataset.vpkDeckReady = 'true';
 	show(index);
 })();
 </script>

@@ -82,7 +82,7 @@ export function buildPresentationCss() {
 \t\ttransform-origin: center center;
 \t}
 
-\tbody[data-vpk-motion="deck"] .slide:first-of-type,
+\tbody[data-vpk-motion="deck"]:not([data-vpk-deck-ready="true"]) .slide:first-of-type,
 \tbody[data-vpk-motion="deck"] .slide.is-active {
 \t\tdisplay: block;
 \t}
@@ -326,6 +326,7 @@ export function buildPresentationJs() {
 \t});
 \twindow.addEventListener('hashchange', () => show(readIndexFromHash()));
 \tfitSlide();
+\tdocument.body.dataset.vpkDeckReady = 'true';
 \tshow(index);
 })();`;
 }

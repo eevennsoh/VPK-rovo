@@ -122,6 +122,8 @@ test("presentation injector detects decks and is idempotent", async () => {
 	assert.match(once, /data-vpk-presentation-runtime/);
 	assert.match(once, /--vpk-slide-rest-transform:\s*translate\(-50%, -50%\) scale\(var\(--vpk-slide-scale, 1\)\);/);
 	assert.match(once, /transform:\s*var\(--vpk-slide-rest-transform\);/);
+	assert.match(once, /:not\(\[data-vpk-deck-ready="true"\]\) \.slide:first-of-type/);
+	assert.match(once, /document\.body\.dataset\.vpkDeckReady = 'true'/);
 	assert.match(once, /presenterWindow\?\.postMessage/);
 	assert.match(once, /presenterWindow = window\.open/);
 	assert.match(once, /\.speaker-notes\s*\{[\s\S]*display:\s*none\s*!important/);
