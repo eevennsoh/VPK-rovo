@@ -286,6 +286,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	generative: dynamic(() => import("../demos/blocks/generative-demo"), {
 		ssr: false,
 	}),
+	gallery: dynamic(() => import("../demos/blocks/gallery-demo"), {
+		ssr: false,
+	}),
 	"kanban-board": dynamic(() => import("../demos/blocks/kanban-board-demo"), {
 		ssr: false,
 	}),

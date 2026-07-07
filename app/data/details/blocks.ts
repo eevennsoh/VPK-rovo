@@ -85,6 +85,7 @@ import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { KANBAN_BOARD_DETAIL } from "./blocks/kanban-board";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
+import { GALLERY_DETAIL } from "./blocks/gallery";
 import { WORKFLOW_DETAIL } from "./blocks/workflow";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
@@ -173,5 +174,6 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	chatbot: CHATBOT_DETAIL,
 	"kanban-board": KANBAN_BOARD_DETAIL,
 	generative: GENERATIVE_DETAIL,
+	gallery: GALLERY_DETAIL,
 	workflow: WORKFLOW_DETAIL,
 };
