@@ -9,6 +9,7 @@ import { getClosestPointOnOrganicRay, getNodeViewportRadius, getOrganicRayCurve,
 import type { NeuralGraphLayout, NeuralLayoutEdge, NeuralLayoutNode, NeuralLayoutTreeBranch } from "./layout";
 import { getPersonalGraphNodeTypeAccentToken } from "./node-type-colors";
 import type { NeuralGraphParams } from "./params";
+import { getAutomationWorkflowNodeType, getRadialLeafNodeIds, shouldLabelWorkflowTreeNode } from "./workflow-label-strategy";
 
 const KIND_COLOR_PARAM_KEY: Record<VaultNodeKind, keyof NeuralGraphParams> = {
 	concept: "colorConcept",
@@ -375,10 +376,6 @@ function getShortestAngleDelta(startAngle: number, endAngle: number) {
 	while (delta > Math.PI) delta -= Math.PI * 2;
 	while (delta < -Math.PI) delta += Math.PI * 2;
 	return delta;
-}
-
-function getAutomationWorkflowNodeType(node: NeuralLayoutNode) {
-	return typeof node.node.original.frontmatter?.type === "string" ? node.node.original.frontmatter.type : null;
 }
 
 function getRadialBranchStrokeColor(
@@ -873,27 +870,6 @@ function drawLabels(
 const RADIAL_LABEL_ALL_NODES_MIN_WIDTH = 700;
 const RADIAL_WORKFLOW_LABEL_ALL_NODES_MIN_WIDTH = 1600;
 const RADIAL_LABEL_OFFSET = 11;
-
-function getRadialLeafNodeIds(layout: NeuralGraphLayout) {
-	const branchSourceIds = new Set<string>();
-	for (const branch of layout.treeBranches ?? []) {
-		if (branch.sourceId) branchSourceIds.add(branch.sourceId);
-	}
-	return new Set(
-		layout.nodes
-			.filter((node) => !branchSourceIds.has(node.id))
-			.map((node) => node.id),
-	);
-}
-
-function shouldLabelWorkflowTreeNode(node: NeuralLayoutNode) {
-	const nodeType = getAutomationWorkflowNodeType(node);
-	return (
-		nodeType === "AutomationWorkflowRoot" ||
-		nodeType === "AutomationWorkflowCandidate" ||
-		nodeType === "AutomationDraftAction"
-	);
-}
 
 export function getRadialLabelNodes(
 	layout: NeuralGraphLayout,

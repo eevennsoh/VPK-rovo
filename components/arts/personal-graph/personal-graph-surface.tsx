@@ -10,7 +10,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CopyIcon from "@atlaskit/icon/core/copy";
@@ -46,10 +46,13 @@ import {
 	getPersonalGraphParamsForVisualMode,
 	getPersonalGraphVisualMode,
 	isAutomationWorkflowExplorer,
-	type PersonalGraphVisualMode,
 } from "./lib/personal-graph-visual-mode";
+import {
+	usePersonalGraphModeTransition,
+	type PersonalGraphModeTransitionSnapshot,
+} from "./lib/use-personal-graph-mode-transition";
 import type { NeuralGraphParams } from "./lib/neural-graph/params";
-import type { VaultExplorer, VaultNode, VaultNodeKind } from "./lib/personal-graph-types";
+import type { VaultExplorer, VaultNode } from "./lib/personal-graph-types";
 import { PersonalGraphBackdrop } from "./personal-graph-backdrop";
 import type { PersonalGraphControlFlyoutAction } from "./personal-graph-control-flyout";
 import { PersonalGraphDropzone } from "./personal-graph-dropzone";
@@ -73,16 +76,16 @@ import { PersonalGraphSourcePicker } from "./personal-graph-source-picker";
 import { PersonalGraphSummaryPanel } from "./personal-graph-summary-panel";
 import { PersonalGraphTitle } from "./personal-graph-title-scramble";
 import { PersonalGraphTwgAuthError } from "./personal-graph-twg-auth-error";
+import {
+	GraphNodeMarker,
+	getGraphStatsText,
+	getRelatedNodes,
+	getSelectedNode,
+	getTwgGraphStatsText,
+	isTwgAuthRequiredError,
+} from "./personal-graph-surface-helpers";
 
 type PersonalGraphSurfaceProps = React.ComponentProps<"main">;
-
-const NODE_KIND_MARKERS: Record<VaultNodeKind, string> = {
-	concept: "rotate-45 rounded-[2px] bg-orange-300",
-	entity: "rounded-full bg-green-500",
-	raw: "rounded-[2px] bg-red-500",
-	source: "rounded-full bg-blue-600",
-	synthesis: "rotate-45 rounded-[2px] bg-purple-600",
-};
 
 const PERSONAL_GRAPH_TITLE_FONT_STYLE = {
 	fontFamily: "var(--font-affigere), Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
@@ -138,100 +141,6 @@ const PERSONAL_GRAPH_RESPONSIVE_INITIAL_VIEWPORT = {
 const PERSONAL_GRAPH_RESET_FLYOUT_COLLAPSE_DELAY_MS = 420;
 const PERSONAL_GRAPH_UNCONFIGURED_BYLINE = "Select a folder to get started.";
 const PERSONAL_GRAPH_DEFAULT_TWG_WORK_WINDOW = "7d";
-const PERSONAL_GRAPH_MODE_TRANSITION_MS = 900;
-const PERSONAL_GRAPH_REDUCED_MODE_TRANSITION_MS = 180;
-
-interface PersonalGraphModeTransitionSnapshot {
-	explorer: VaultExplorer;
-	key: string;
-	labelStrategy: "default" | "workflowTree";
-	params: NeuralGraphParams;
-	visualMode: PersonalGraphVisualMode;
-}
-
-interface PersonalGraphModeTransitionState {
-	isActive: boolean;
-	key: string;
-	snapshot: PersonalGraphModeTransitionSnapshot | null;
-}
-
-function GraphNodeMarker({
-	className,
-	kind,
-}: Readonly<{
-	className?: string;
-	kind: VaultNodeKind;
-}>) {
-	return <span aria-hidden="true" className={cn("inline-block size-3 shrink-0", NODE_KIND_MARKERS[kind], className)} />;
-}
-
-function getSelectedNode(explorer: VaultExplorer | null, selectedNodeId: string | null) {
-	if (!explorer || !selectedNodeId) return null;
-	return explorer.nodes.find((node) => node.id === selectedNodeId) ?? null;
-}
-
-function getRelatedNodes(explorer: VaultExplorer | null, node: VaultNode | null) {
-	if (!explorer || !node) return [];
-	const seenRelatedIds = new Set<string>();
-	const relatedIds: string[] = [];
-	for (const edge of explorer.edges) {
-		const neighborId = edge.source === node.id
-			? edge.target
-			: edge.target === node.id
-				? edge.source
-				: null;
-		if (neighborId === null || seenRelatedIds.has(neighborId)) continue;
-		seenRelatedIds.add(neighborId);
-		relatedIds.push(neighborId);
-	}
-	const nodesById = new Map(explorer.nodes.map((candidate) => [candidate.id, candidate]));
-	return relatedIds
-		.flatMap((nodeId) => {
-			const relatedNode = nodesById.get(nodeId);
-			return relatedNode ? [relatedNode] : [];
-		})
-		.slice(0, 3);
-}
-
-function getGraphStatsText(explorer: VaultExplorer | null) {
-	return explorer
-		? `${explorer.stats.wikiCount} wiki pages · ${explorer.stats.rawCount} raw sources`
-		: "Obsidian-backed second-brain graph";
-}
-
-function isTwgAuthRequiredError(error: Error | null): boolean {
-	return /twg_auth_required/iu.test(error?.message ?? "");
-}
-
-function formatRelativeTime(iso: string | null): string | null {
-	if (!iso) return null;
-	const then = new Date(iso).getTime();
-	if (Number.isNaN(then)) return null;
-	const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
-	if (seconds < 60) return "just now";
-	const minutes = Math.round(seconds / 60);
-	if (minutes < 60) return `${minutes}m ago`;
-	const hours = Math.round(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.round(hours / 24);
-	return `${days}d ago`;
-}
-
-function getTwgGraphStatsText(explorer: VaultExplorer | null, generatedAt: string | null) {
-	if (!explorer) return "Team Work Graph view";
-	const byKind = new Map<string, number>();
-	for (const node of explorer.nodes) {
-		byKind.set(node.kind, (byKind.get(node.kind) ?? 0) + 1);
-	}
-	const counts = [
-		byKind.get("source") ? `${byKind.get("source")} artifacts` : null,
-		byKind.get("entity") ? `${byKind.get("entity")} people` : null,
-	].filter(Boolean).join(" · ");
-	const updated = formatRelativeTime(generatedAt);
-	return [counts || `${explorer.stats.nodeCount} items`, updated && `updated ${updated}`]
-		.filter(Boolean)
-		.join(" · ");
-}
 
 function useResponsivePersonalGraphParams(stageRef: React.RefObject<HTMLDivElement | null>) {
 	const reduceMotion = Boolean(useReducedMotion());
@@ -561,10 +470,8 @@ export function PersonalGraphSurface({
 	const liquidGlassStageRef = useRef<HTMLElement | null>(null);
 	const graphStageRef = useRef<HTMLDivElement | null>(null);
 	const resetFlyoutCollapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const graphModeTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const explorerRef = useRef<VaultExplorer | null>(null);
 	const chatExplorerRef = useRef<VaultExplorer | null>(null);
-	const previousGraphTransitionSnapshotRef = useRef<PersonalGraphModeTransitionSnapshot | null>(null);
 	const expandedTwgNodeIdsRef = useLazyRef<Set<string>>(() => new Set());
 	const expandingTwgNodeIdsRef = useLazyRef<Set<string>>(() => new Set());
 	const twgExpansionGenerationRef = useRef(0);
@@ -585,50 +492,11 @@ export function PersonalGraphSurface({
 			visualMode,
 		};
 	}, [explorer, graphLabelStrategy, graphParams, visualMode]);
-	const [graphModeTransition, setGraphModeTransition] = useState<PersonalGraphModeTransitionState | null>(null);
+	const graphModeTransition = usePersonalGraphModeTransition(currentGraphTransitionSnapshot, shouldReduceMotion);
 	const accessibleGraph = useMemo(() => createNeuralGraphStore(explorer), [explorer]);
 	const displayedNode = useMemo(() => getSelectedNode(explorer, selectedNodeId), [explorer, selectedNodeId]);
 	const isExpandingDisplayedNode =
 		isTwgMode && displayedNode?.provider === "twg" && expandingTwgNodeIds.has(displayedNode.id);
-
-	useLayoutEffect(() => {
-		const previousSnapshot = previousGraphTransitionSnapshotRef.current;
-		if (
-			currentGraphTransitionSnapshot &&
-			previousSnapshot &&
-			previousSnapshot.visualMode !== currentGraphTransitionSnapshot.visualMode
-		) {
-			const key = `${previousSnapshot.visualMode}-${currentGraphTransitionSnapshot.visualMode}-${Date.now()}`;
-			if (graphModeTransitionTimerRef.current) {
-				clearTimeout(graphModeTransitionTimerRef.current);
-			}
-			setGraphModeTransition({
-				isActive: true,
-				key,
-				snapshot: { ...previousSnapshot, key },
-			});
-			const completeGraphModeTransition = () => {
-				setGraphModeTransition((currentTransition) =>
-					currentTransition?.key === key
-						? { ...currentTransition, isActive: false, snapshot: null }
-						: currentTransition,
-				);
-			};
-			graphModeTransitionTimerRef.current = setTimeout(
-				completeGraphModeTransition,
-				shouldReduceMotion ? PERSONAL_GRAPH_REDUCED_MODE_TRANSITION_MS : PERSONAL_GRAPH_MODE_TRANSITION_MS,
-			);
-		}
-		previousGraphTransitionSnapshotRef.current = currentGraphTransitionSnapshot;
-	}, [currentGraphTransitionSnapshot, shouldReduceMotion]);
-
-	useEffect(() => {
-		return () => {
-			if (graphModeTransitionTimerRef.current) {
-				clearTimeout(graphModeTransitionTimerRef.current);
-			}
-		};
-	}, []);
 
 	useEffect(() => {
 		if (visualMode === "automation-workflow-radial") {

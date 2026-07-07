@@ -27,6 +27,14 @@ const NEURAL_RENDERER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "lib", "neural-graph", "renderer.ts"),
 	"utf8",
 );
+const NEURAL_WORKFLOW_LABEL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "lib", "neural-graph", "workflow-label-strategy.ts"),
+	"utf8",
+);
+const SURFACE_HELPERS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "personal-graph-surface-helpers.tsx"),
+	"utf8",
+);
 
 test("Personal Graph keeps source actions visible when settings are unavailable", () => {
 	assert.match(SURFACE_SOURCE, /error: vaultSettingsError,/);
@@ -88,9 +96,11 @@ test("Personal Graph threads workflowTree label strategy through the graph rende
 	assert.match(NEURAL_CANVAS_SOURCE, /labelStrategy,/);
 	assert.match(NEURAL_RENDERER_SOURCE, /export type NeuralGraphLabelStrategy = "default" \| "workflowTree";/);
 	assert.match(NEURAL_RENDERER_SOURCE, /options\.labelStrategy === "workflowTree"/);
-	assert.match(NEURAL_RENDERER_SOURCE, /function shouldLabelWorkflowTreeNode/);
-	assert.match(NEURAL_RENDERER_SOURCE, /AutomationWorkflowCandidate/);
-	assert.match(NEURAL_RENDERER_SOURCE, /AutomationDraftAction/);
+	assert.match(NEURAL_RENDERER_SOURCE, /shouldLabelWorkflowTreeNode/);
+	assert.match(NEURAL_RENDERER_SOURCE, /getRadialLeafNodeIds/);
+	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /function shouldLabelWorkflowTreeNode/);
+	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /AutomationWorkflowCandidate/);
+	assert.match(NEURAL_WORKFLOW_LABEL_SOURCE, /AutomationDraftAction/);
 	assert.match(NEURAL_RENDERER_SOURCE, /AutomationWorkflowEvidence/);
 });
 
@@ -109,7 +119,8 @@ test("Personal Graph refresh surfaces TWG auth failures from source refreshes", 
 		GRAPH_SOURCE_HOOK_SOURCE,
 		/fetchActiveSource\(\{ signal: controller\.signal \}\);[\s\S]{0,160}setTwgRefreshError\(null\);/,
 	);
-	assert.match(SURFACE_SOURCE, /function isTwgAuthRequiredError\(error: Error \| null\): boolean/);
+	assert.match(SURFACE_HELPERS_SOURCE, /function isTwgAuthRequiredError\(error: Error \| null\): boolean/);
+	assert.match(SURFACE_SOURCE, /isTwgAuthRequiredError,/);
 	assert.match(SURFACE_SOURCE, /const isTwgAuthError = isTwgMode && isTwgAuthRequiredError\(error\);/);
 	assert.match(SURFACE_SOURCE, /twgRefreshError,/);
 	assert.match(SURFACE_SOURCE, /const isTwgRefreshAuthError = isTwgMode && isTwgAuthRequiredError\(twgRefreshError\);/);
