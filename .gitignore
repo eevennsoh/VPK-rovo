@@ -35,6 +35,9 @@ test-results/
 !/docs/html/.gitkeep
 /media/videos/tmp*/
 /media/videos/**/partial_movie_files/
+public/**/hyperframes/.hyperframes/
+public/**/hyperframes/.thumbnails/
+public/**/hyperframes/.waveform-cache/
 
 # root-level screenshots/images (keep nested assets tracked)
 /*.png
@@ -116,7 +119,7 @@ credentials*
 secrets*
 .envrc
 .netrc
-.npmrc
+.npmrc.local
 .pypirc
 *service-account*.json
 

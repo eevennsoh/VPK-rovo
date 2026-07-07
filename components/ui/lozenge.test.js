@@ -34,6 +34,7 @@ test("Lozenge trailing metrics render via Badge bold semantic mapping", () => {
 	assert.match(LOZENGE_SOURCE, /size === "compact" \? "gap-1" : "gap-1\.5"/u);
 	assert.match(LOZENGE_SOURCE, /resolvedMetric != null && \(resolvedSize === "compact" \? "pr-px" : "pr-1"\)/u);
 	assert.match(LOZENGE_SOURCE, /<Badge[\s\S]*variant=\{lozengeMetricBadgeVariants\[variant\]\}/u);
+	assert.match(LOZENGE_SOURCE, /<Badge[\s\S]*variant=\{lozengeMetricBadgeVariants\[variant\]\}[\s\S]*max=\{false\}[\s\S]*\{metric\}/u);
 	assert.doesNotMatch(LOZENGE_DEMO_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge"/u);
 	assert.match(LOZENGE_DEMO_SOURCE, /<Lozenge variant="danger"[\s\S]*trailingMetric="0\.3"/u);
 });

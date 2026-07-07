@@ -213,11 +213,12 @@ The workflow keeps the upstream defaults visible where local choices matter:
   cap, so merge work does not run in parallel across several issues.
 - `codex.command`: upstream-style `codex ... app-server` with inherited shell
   environment plus explicit `gpt-5.5` and `xhigh` reasoning settings.
-- `codex.approval_policy`: object-form `reject` for sandbox approvals, rule
-  approvals, and MCP elicitations, matching upstream's safer unattended default.
+- `codex.approval_policy`: `never`, so unattended Symphony workers can continue
+  through Codex app-server approval prompts with the current Codex policy schema.
 - `codex.thread_sandbox`: `workspace-write`, matching upstream's safer default.
-- `codex.turn_sandbox_policy`: intentionally omitted so upstream derives a
-  `workspaceWrite` policy rooted at the current issue workspace.
+- `codex.turn_sandbox_policy`: explicit `workspaceWrite` with
+  `networkAccess: true`, matching upstream guidance for workflows that run
+  package managers or commands that resolve external hosts.
 - `codex.turn_timeout_ms`: `300000`, `codex.read_timeout_ms`: `5000`, and
   `codex.stall_timeout_ms`: `120000`, local guards that prevent long-running or
   silent turns from burning indefinitely.

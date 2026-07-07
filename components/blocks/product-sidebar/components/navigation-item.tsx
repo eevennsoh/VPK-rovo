@@ -1,14 +1,13 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { NavigationItemActions } from "./navigation-item-actions";
 import { NavigationItemProps } from "./types";
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 export function NavigationItem({
 	icon: Icon,
@@ -21,42 +20,39 @@ export function NavigationItem({
 	onClick,
 }: Readonly<NavigationItemProps>) {
 	const [isHovered, setIsHovered] = useState(false);
+	const [isFocusedWithin, setIsFocusedWithin] = useState(false);
+	const isActionAreaVisible = isHovered || isFocusedWithin;
 
-	const content = (
-		<div
-			style={{
-				display: "flex",
-				alignItems: "center",
-				padding: token("space.050"),
-				borderRadius: token("radius.xsmall"),
-				cursor: "pointer",
-				backgroundColor: isSelected ? token("color.background.selected") : "transparent",
-				position: "relative",
-				gap: token("space.025"),
-				minHeight: "32px",
-			}}
-			onClick={onClick}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-		>
-			{/* Selected indicator */}
-			{isSelected && (
-				<div
-					style={{
-						position: "absolute",
-						left: 0,
-						top: "50%",
-						transform: "translateY(-50%)",
-						width: "2px",
-						height: "12px",
-						backgroundColor: token("color.border.selected"),
-						borderRadius: token("radius.xsmall"),
-					}}
-				/>
-			)}
+	const rowStyle = {
+		display: "flex",
+		alignItems: "center",
+		padding: token("space.050"),
+		borderRadius: token("radius.xsmall"),
+		backgroundColor: isSelected ? token("color.background.selected") : "transparent",
+		position: "relative",
+		gap: token("space.025"),
+		minHeight: "32px",
+	} satisfies CSSProperties;
 
+	const primaryControlStyle = {
+		alignItems: "center",
+		background: "transparent",
+		border: 0,
+		color: "inherit",
+		cursor: "pointer",
+		display: "flex",
+		flex: 1,
+		gap: token("space.025"),
+		minWidth: 0,
+		padding: 0,
+		textAlign: "left",
+		textDecoration: "none",
+	} satisfies CSSProperties;
+
+	const primaryContent = (
+		<>
 			{/* Icon */}
-			<div
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -67,7 +63,7 @@ export function NavigationItem({
 				}}
 			>
 				<Icon label={label} color={isSelected ? token("color.icon.selected") : token("color.icon.subtle")} />
-			</div>
+			</span>
 
 			{/* Label */}
 			<span
@@ -85,9 +81,9 @@ export function NavigationItem({
 				{label}
 			</span>
 
-			{/* Right icons and actions */}
-			{(hasChevron || hasExternalLink || hasActions) && (
-				<div
+			{/* Right icons */}
+			{(hasChevron || hasExternalLink) && (
+				<span
 					style={{
 						display: "flex",
 						alignItems: "center",
@@ -95,46 +91,56 @@ export function NavigationItem({
 						marginRight: token("space.025"),
 					}}
 				>
-					{hasActions && isHovered && (
-						<>
-							<Button
-								aria-label="Add"
-								size="icon"
-								variant="ghost"
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-							>
-								<AddIcon label="" size="small" />
-							</Button>
-							<Button
-								aria-label="More"
-								size="icon"
-								variant="ghost"
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-							>
-								<ShowMoreHorizontalIcon label="" size="small" />
-							</Button>
-						</>
-					)}
 					{hasChevron && <ChevronRightIcon label="Expand" color={token("color.icon.subtle")} size="small" />}
 					{hasExternalLink && (
 						<LinkExternalIcon label="External link" color={token("color.icon.subtle")} size="small" />
 					)}
-				</div>
+				</span>
 			)}
-		</div>
+		</>
 	);
 
-	if (href) {
-		return (
-			<Link href={href} style={{ textDecoration: "none" }}>
-				{content}
-			</Link>
-		);
-	}
+	return (
+		<div
+			style={rowStyle}
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
+			onFocusCapture={() => setIsFocusedWithin(true)}
+			onBlurCapture={(event) => {
+				const nextTarget = event.relatedTarget;
+				if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+					setIsFocusedWithin(false);
+				}
+			}}
+		>
+			{/* Selected indicator */}
+			{isSelected && (
+				<div
+					style={{
+						position: "absolute",
+						left: 0,
+						top: "50%",
+						transform: "translateY(-50%)",
+						width: "2px",
+						height: "12px",
+						backgroundColor: token("color.border.selected"),
+						borderRadius: token("radius.xsmall"),
+					}}
+				/>
+			)}
 
-	return content;
+			{href ? (
+				<Link href={href} onClick={() => onClick?.()} style={primaryControlStyle}>
+					{primaryContent}
+				</Link>
+			) : (
+				<button type="button" onClick={onClick} style={primaryControlStyle}>
+					{primaryContent}
+				</button>
+			)}
+
+			{/* Actions */}
+			{hasActions && isActionAreaVisible ? <NavigationItemActions label={label} /> : null}
+		</div>
+	);
 }

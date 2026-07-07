@@ -218,7 +218,7 @@ export function EntityCardAgentExpanded({
 					{publisherBrandName ? (
 						<LogoThirdParty label="" name={publisherBrandName} size="xsmall" />
 					) : publisherLogoSrc ? (
-						<img alt="" aria-hidden src={publisherLogoSrc} />
+						<img alt="" aria-hidden height={16} src={publisherLogoSrc} width={16} />
 					) : (
 						<AtlassianLogo
 							appearance="inverse"
@@ -236,7 +236,7 @@ export function EntityCardAgentExpanded({
 		if (attributionKind === "team") {
 			return (
 				<AvatarProjectBadge>
-					<img alt="" aria-hidden src={publisherLogoSrc ?? projectBadgeAvatarSrc} />
+					<img alt="" aria-hidden height={16} src={publisherLogoSrc ?? projectBadgeAvatarSrc} width={16} />
 				</AvatarProjectBadge>
 			);
 		}

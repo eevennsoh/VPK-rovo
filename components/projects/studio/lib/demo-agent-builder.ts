@@ -548,7 +548,7 @@ function extractModeChanges(
 		/\b(use|switch to|run on|run it on)\b[^.!?]*\b(opus|sonnet|gpt|gemini)\b/.test(lower);
 	if (wantsReasoning) {
 		if (/\bopus\b/.test(lower)) changes.reasoningMode = "opus-4.6";
-		else if (/\bsonnet\b/.test(lower)) changes.reasoningMode = "sonnet-4.6";
+		else if (/\bsonnet\b/.test(lower)) changes.reasoningMode = "sonnet-5";
 		else if (/\bgpt\b/.test(lower)) changes.reasoningMode = "gpt-5.4";
 		else if (/\bgemini\b/.test(lower)) changes.reasoningMode = "gemini-flash-3";
 		else if (/\bdeep\b/.test(lower)) changes.reasoningMode = "deep-auto";
@@ -923,7 +923,7 @@ const REASONING_MODE_LABELS: Record<string, string> = {
 	"deep-auto": "Deep reasoning",
 	"gemini-flash-3": "Gemini Flash 3",
 	"gpt-5.4": "GPT-5.4",
-	"sonnet-4.6": "Claude Sonnet 4.6",
+	"sonnet-5": "Claude Sonnet 5",
 	"opus-4.6": "Claude Opus 4.6",
 };
 

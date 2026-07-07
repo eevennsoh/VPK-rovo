@@ -23,7 +23,7 @@ export const AGENT_TEMPLATE_CATEGORY_IDS: readonly AgentTemplateCategoryId[] = [
 
 /**
  * Reasoning model preset, mirroring the `REASONING_MODE_SECTIONS` value union in
- * `components/blocks/agent/components/agent.tsx`. Templates default to a section
+ * `components/blocks/agent-2/components/agent-2.tsx`. Templates default to a section
  * default (`quick-auto` for fast Q&A, `deep-auto` for analysis-heavy work) but a
  * specific model is allowed.
  */
@@ -32,7 +32,7 @@ export type AgentTemplateReasoningMode =
 	| "deep-auto"
 	| "gemini-flash-3"
 	| "gpt-5.4"
-	| "sonnet-4.6"
+	| "sonnet-5"
 	| "opus-4.6";
 
 /** Organizational-knowledge scope, mirroring `KNOWLEDGE_MODE_OPTIONS` in agent.tsx. */

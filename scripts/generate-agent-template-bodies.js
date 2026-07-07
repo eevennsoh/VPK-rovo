@@ -64,7 +64,7 @@ const REASONING_BEHAVIOR = {
 	"deep-auto": "Reason step-by-step before you commit to an answer.",
 	"gemini-flash-3": "Use the Gemini Flash 3 reasoning model for this work.",
 	"gpt-5.4": "Use the GPT-5.4 reasoning model for this work.",
-	"sonnet-4.6": "Use the Claude Sonnet 4.6 reasoning model for this work.",
+	"sonnet-5": "Use the Claude Sonnet 5 reasoning model for this work.",
 	"opus-4.6": "Use the Claude Opus 4.6 reasoning model for this work.",
 };
 

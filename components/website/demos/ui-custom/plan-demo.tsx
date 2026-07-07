@@ -62,7 +62,7 @@ function PlanDemoHeader() {
 	);
 }
 
-// Sonnet 4.6 pricing: $3/MTok input, $15/MTok output
+// Sonnet 5 pricing: $3/MTok input, $15/MTok output
 // 10 tasks, ~2K input + ~1K output per task, +~1K input overhead per extra agent
 const AGENT_ESTIMATES: Record<string, { cost: string; time: string }> = {
 	"1": { cost: "$0.32", time: "~5 min" },

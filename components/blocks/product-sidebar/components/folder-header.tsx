@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 import { token } from "@/lib/tokens";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
@@ -15,23 +17,26 @@ export function FolderHeader({
 	isExpanded = true,
 	onClick,
 }: Readonly<FolderHeaderProps>) {
-	return (
-		<div
-			style={{
-				display: "flex",
-				alignItems: "center",
-				padding: token("space.050"),
-				borderRadius: token("radius.xsmall"),
-				cursor: "pointer",
-				backgroundColor: "transparent",
-				position: "relative",
-				gap: token("space.025"),
-				minHeight: "32px",
-				marginLeft: "-16px",
-			}}
-			onClick={onClick}
-		>
-			<div
+	const headerStyle: CSSProperties = {
+		display: "flex",
+		alignItems: "center",
+		padding: token("space.050"),
+		borderRadius: token("radius.xsmall"),
+		border: 0,
+		cursor: onClick ? "pointer" : "default",
+		backgroundColor: "transparent",
+		color: "inherit",
+		position: "relative",
+		gap: token("space.025"),
+		minHeight: "32px",
+		marginLeft: "-16px",
+		textAlign: "left",
+		width: "calc(100% + 16px)",
+	};
+
+	const headerContent = (
+		<>
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -44,21 +49,21 @@ export function FolderHeader({
 				}}
 			>
 				<ChevronDownIcon
-					label={isExpanded ? "Collapse" : "Expand"}
+					label=""
 					color={token("color.icon.subtle")}
 					size="small"
 				/>
-			</div>
+			</span>
 
-			<div
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
 				}}
 			>
-				<FolderOpenIcon label={name} color={token("color.icon.subtle")} />
-			</div>
+				<FolderOpenIcon label="" color={token("color.icon.subtle")} />
+			</span>
 
 			<span
 				style={{
@@ -74,6 +79,22 @@ export function FolderHeader({
 			>
 				{name}
 			</span>
-		</div>
+		</>
+	);
+
+	if (!onClick) {
+		return <div style={headerStyle}>{headerContent}</div>;
+	}
+
+	return (
+		<button
+			type="button"
+			aria-expanded={isExpanded}
+			aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
+			style={headerStyle}
+			onClick={onClick}
+		>
+			{headerContent}
+		</button>
 	);
 }

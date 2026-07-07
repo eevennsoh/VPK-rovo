@@ -1,13 +1,12 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { token } from "@/lib/tokens";
-import { Button } from "@/components/ui/button";
+import { NavigationItemActions } from "./navigation-item-actions";
 import { NavigationItemWithHoverChevronProps } from "./types";
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 export function NavigationItemWithHoverChevron({
 	icon: Icon,
@@ -17,6 +16,22 @@ export function NavigationItemWithHoverChevron({
 	onClick,
 }: Readonly<NavigationItemWithHoverChevronProps>) {
 	const [isHovered, setIsHovered] = useState(false);
+	const [isFocusedWithin, setIsFocusedWithin] = useState(false);
+	const isActionAreaVisible = isHovered || isFocusedWithin;
+
+	const primaryControlStyle = {
+		alignItems: "center",
+		background: "transparent",
+		border: 0,
+		color: "inherit",
+		cursor: "pointer",
+		display: "flex",
+		flex: 1,
+		gap: token("space.025"),
+		minWidth: 0,
+		padding: 0,
+		textAlign: "left",
+	} satisfies CSSProperties;
 
 	return (
 		<div
@@ -25,86 +40,68 @@ export function NavigationItemWithHoverChevron({
 				alignItems: "center",
 				padding: token("space.050"),
 				borderRadius: token("radius.xsmall"),
-				cursor: "pointer",
 				backgroundColor: "transparent",
 				position: "relative",
 				gap: token("space.025"),
 				minHeight: "32px",
 			}}
-			onClick={onClick}
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
+			onFocusCapture={() => setIsFocusedWithin(true)}
+			onBlurCapture={(event) => {
+				const nextTarget = event.relatedTarget;
+				if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+					setIsFocusedWithin(false);
+				}
+			}}
 		>
-			{/* Icon - swaps to chevron on hover */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					width: "24px",
-					height: "24px",
-					marginLeft: token("space.025"),
-				}}
+			<button
+				type="button"
+				aria-expanded={isExpanded}
+				onClick={onClick}
+				style={primaryControlStyle}
 			>
-				{isHovered ? (
-					isExpanded ? (
-						<ChevronDownIcon label="Expanded" color={token("color.icon.subtle")} size="small" />
-					) : (
-						<ChevronRightIcon label="Collapsed" color={token("color.icon.subtle")} size="small" />
-					)
-				) : (
-					<Icon label={label} color={token("color.icon.subtle")} />
-				)}
-			</div>
-
-			{/* Label */}
-			<span
-				style={{
-					font: token("font.body"),
-					fontWeight: token("font.weight.medium"),
-					color: token("color.text.subtle"),
-					flex: 1,
-					paddingLeft: token("space.025"),
-					overflow: "hidden",
-					textOverflow: "ellipsis",
-					whiteSpace: "nowrap",
-				}}
-			>
-				{label}
-			</span>
-
-			{/* Right actions - only show on hover if hasActions */}
-			{hasActions && isHovered && (
-				<div
+				{/* Icon - swaps to chevron while actions are available */}
+				<span
 					style={{
 						display: "flex",
 						alignItems: "center",
-						gap: token("space.050"),
-						marginRight: token("space.025"),
+						justifyContent: "center",
+						width: "24px",
+						height: "24px",
+						marginLeft: token("space.025"),
 					}}
 				>
-					<Button
-						aria-label="Add"
-						size="icon"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<AddIcon label="" size="small" />
-					</Button>
-					<Button
-						aria-label="More"
-						size="icon"
-						variant="ghost"
-						onClick={(e) => {
-							e.stopPropagation();
-						}}
-					>
-						<ShowMoreHorizontalIcon label="" size="small" />
-					</Button>
-				</div>
-			)}
+					{isActionAreaVisible ? (
+						isExpanded ? (
+							<ChevronDownIcon label="" color={token("color.icon.subtle")} size="small" />
+						) : (
+							<ChevronRightIcon label="" color={token("color.icon.subtle")} size="small" />
+						)
+					) : (
+						<Icon label="" color={token("color.icon.subtle")} />
+					)}
+				</span>
+
+				{/* Label */}
+				<span
+					style={{
+						font: token("font.body"),
+						fontWeight: token("font.weight.medium"),
+						color: token("color.text.subtle"),
+						flex: 1,
+						paddingLeft: token("space.025"),
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
+				>
+					{label}
+				</span>
+			</button>
+
+			{/* Right actions - shown on pointer hover or keyboard focus */}
+			{hasActions && isActionAreaVisible ? <NavigationItemActions label={label} /> : null}
 		</div>
 	);
 }

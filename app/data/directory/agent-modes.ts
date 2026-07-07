@@ -2,7 +2,7 @@
  * Canonical allowed values for the agent "mode" selectors, in the data layer so
  * both the generation prompt (`studio-agent-creation-context`) and the ingest
  * validator (`repair-agent-result`) share one source of truth. The UI option
- * lists in `components/blocks/agent/components/agent.tsx` (MEMORY_MODE_OPTIONS /
+ * lists in `components/blocks/agent-2/components/agent-2.tsx` (MEMORY_MODE_OPTIONS /
  * KNOWLEDGE_MODE_OPTIONS / REASONING_MODE_SECTIONS) carry the display labels;
  * these are the bare values, kept in lockstep with them.
  */
@@ -13,7 +13,7 @@ export const REASONING_MODE_VALUES = [
 	"deep-auto",
 	"gemini-flash-3",
 	"gpt-5.4",
-	"sonnet-4.6",
+	"sonnet-5",
 	"opus-4.6",
 ] as const;
 

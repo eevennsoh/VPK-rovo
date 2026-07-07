@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,14 @@ export const CARD_GLOW_DEFAULT_CONFIG: CardGlowConfig = {
 };
 
 type CardGlowCSSProperties = CSSProperties & Record<`--card-glow-${string}`, string | number>;
+type CardGlowPreviewTextStyle = Partial<Record<"--ds-text" | "--ds-text-subtle", string>>;
+
+interface CardGlowThemeStyles {
+	borderClassName: string;
+	cardClassName: string;
+	previewClassName: string;
+	previewTextStyle: CardGlowPreviewTextStyle;
+}
 
 interface CardGlowTile {
 	accentColor: string;
@@ -113,6 +122,33 @@ const THEME_OPTIONS: ReadonlyArray<{ value: CardGlowTheme; label: string }> = [
 	{ value: "dark", label: "Dark" },
 ];
 
+const CARD_GLOW_THEME_STYLES: Record<CardGlowTheme, CardGlowThemeStyles> = {
+	system: {
+		borderClassName: "border-border",
+		cardClassName: "bg-background text-text",
+		previewClassName: "bg-background text-text",
+		previewTextStyle: {},
+	},
+	light: {
+		borderClassName: "border-black/10",
+		cardClassName: "bg-white text-[#172B4D]",
+		previewClassName: "bg-[#F7F8FA] text-[#172B4D]",
+		previewTextStyle: {
+			"--ds-text": "#172B4D",
+			"--ds-text-subtle": "#44546F",
+		},
+	},
+	dark: {
+		borderClassName: "border-white/12",
+		cardClassName: "bg-[#12151D] text-[#F7F8FA]",
+		previewClassName: "bg-[#08090D] text-[#F7F8FA]",
+		previewTextStyle: {
+			"--ds-text": "#F7F8FA",
+			"--ds-text-subtle": "rgb(255 255 255 / 62%)",
+		},
+	},
+};
+
 function getCardGlowFilter(config: CardGlowConfig, filterId: string): string {
 	const colorFilters = [
 		`saturate(var(--card-glow-icon-saturate))`,
@@ -127,54 +163,6 @@ function getCardGlowFilter(config: CardGlowConfig, filterId: string): string {
 	return `url(#${filterId}) ${colorFilters}`;
 }
 
-function getPreviewThemeClassName(theme: CardGlowTheme): string {
-	if (theme === "light") {
-		return "bg-[#F7F8FA] text-[#172B4D]";
-	}
-
-	if (theme === "dark") {
-		return "bg-[#08090D] text-[#F7F8FA]";
-	}
-
-	return "bg-background text-text";
-}
-
-function getCardThemeClassName(theme: CardGlowTheme): string {
-	if (theme === "light") {
-		return "bg-white text-[#172B4D]";
-	}
-
-	if (theme === "dark") {
-		return "bg-[#12151D] text-[#F7F8FA]";
-	}
-
-	return "bg-background text-text";
-}
-
-function getCardBorderClassName(theme: CardGlowTheme): string {
-	if (theme === "light") {
-		return "border-black/10";
-	}
-
-	if (theme === "dark") {
-		return "border-white/12";
-	}
-
-	return "border-border";
-}
-
-function getSubtleTextClassName(theme: CardGlowTheme): string {
-	if (theme === "light") {
-		return "text-[#44546F]";
-	}
-
-	if (theme === "dark") {
-		return "text-white/62";
-	}
-
-	return "text-text-subtle";
-}
-
 function resetTilePointer(tile: HTMLElement) {
 	tile.style.setProperty("--card-glow-pointer-x", "-10");
 	tile.style.setProperty("--card-glow-pointer-y", "-10");
@@ -184,6 +172,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 	const rawFilterId = useId();
 	const filterId = `card-glow-blur-${rawFilterId.replaceAll(":", "")}`;
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const themeStyles = CARD_GLOW_THEME_STYLES[config.theme];
 
 	const effectStyle = useMemo<CardGlowCSSProperties>(() => ({
 		"--card-glow-icon-blur": config.iconBlur,
@@ -262,12 +251,12 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 		<div
 			className={cn(
 				"relative w-full overflow-hidden rounded-lg border border-border p-4 sm:p-6",
-				getPreviewThemeClassName(config.theme),
+				themeStyles.previewClassName,
 			)}
 			data-card-glow-theme={config.theme}
 			onPointerLeave={resetPointer}
 			onPointerMove={handlePointerMove}
-			style={{ ...effectStyle }}
+			style={{ ...effectStyle, ...themeStyles.previewTextStyle }}
 		>
 			<svg
 				aria-hidden
@@ -284,7 +273,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 						aria-label={tile.title}
 						className={cn(
 							"group/card-glow relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg p-4 text-left outline-none transition-[background-color,box-shadow,translate,scale] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px active:scale-[0.99]",
-							getCardThemeClassName(config.theme),
+							themeStyles.cardClassName,
 							tile.layoutClassName,
 						)}
 						key={tile.title}
@@ -320,7 +309,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 							aria-hidden
 							className={cn(
 								"pointer-events-none absolute inset-0 z-[1] rounded-[inherit] border",
-								getCardBorderClassName(config.theme),
+								themeStyles.borderClassName,
 							)}
 						/>
 						<span
@@ -328,26 +317,21 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 							className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit] border border-transparent"
 							style={borderGlowStyle}
 						/>
-						<span className="relative z-[3] inline-flex size-12 shrink-0 items-center justify-center">
-							<Image
-								alt=""
-								aria-hidden
-								className={cn("size-12 object-contain", tile.iconClassName)}
-								height={tile.iconHeight}
-								src={tile.iconSrc}
-								width={tile.iconWidth}
-							/>
+						<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center">
+							<Avatar shape="hexagon" size="default">
+								<AvatarImage
+									src={tile.iconSrc}
+									alt=""
+									className={cn("object-contain", tile.iconClassName)}
+								/>
+								<AvatarFallback>{tile.title.slice(0, 2).toUpperCase()}</AvatarFallback>
+							</Avatar>
 						</span>
 						<span className="relative z-[3] flex w-full min-w-0 flex-col gap-1">
-							<span className="block w-full min-w-0 text-sm leading-5 font-semibold">
+							<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 								{tile.title}
 							</span>
-							<span
-								className={cn(
-									"line-clamp-2 w-full min-w-0 text-sm leading-5",
-									getSubtleTextClassName(config.theme),
-								)}
-							>
+							<span className="line-clamp-2 w-full min-w-0 text-sm leading-5 text-text-subtle">
 								{tile.description}
 							</span>
 						</span>

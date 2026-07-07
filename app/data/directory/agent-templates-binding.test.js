@@ -35,14 +35,14 @@ function loadFixture() {
 }
 
 // Allowed mode value sets, mirrored from
-// components/blocks/agent/components/agent.tsx (REASONING_MODE_SECTIONS,
+// components/blocks/agent-2/components/agent-2.tsx (REASONING_MODE_SECTIONS,
 // KNOWLEDGE_MODE_OPTIONS, MEMORY_MODE_OPTIONS).
 const REASONING_MODES = new Set([
 	"quick-auto",
 	"deep-auto",
 	"gemini-flash-3",
 	"gpt-5.4",
-	"sonnet-4.6",
+	"sonnet-5",
 	"opus-4.6",
 ]);
 const KNOWLEDGE_MODES = new Set(["all", "custom", "none"]);

@@ -60,8 +60,8 @@ test("Tile snug inset pads 2px and fills children with !important sizing", () =>
 
 test("TileAvatar routes agent and project tile images through the Avatar primitive", () => {
 	assert.match(TILE_SOURCE, /import \{ Avatar, AvatarImage \} from "@\/components\/ui\/avatar"/u);
-	assert.match(TILE_SOURCE, /export interface TileAvatarProps[\s\S]*shape: "square" \| "hexagon"[\s\S]*src: string/u);
+	assert.match(TILE_SOURCE, /export interface TileAvatarProps[\s\S]*Omit<React\.ComponentProps<typeof Avatar>, "children" \| "shape" \| "size">[\s\S]*shape: "square" \| "hexagon"[\s\S]*src: string/u);
 	assert.match(TILE_SOURCE, /function TileAvatar\(/u);
-	assert.match(TILE_SOURCE, /<Avatar[\s\S]*shape=\{shape\}[\s\S]*size="sm"[\s\S]*<AvatarImage alt=\{alt\} src=\{src\} \/>/u);
+	assert.match(TILE_SOURCE, /<Avatar[\s\S]*\{\.\.\.props\}[\s\S]*shape=\{shape\}[\s\S]*size="sm"[\s\S]*<AvatarImage alt=\{alt\} src=\{src\} \/>/u);
 	assert.match(TILE_SOURCE, /export \{ Tile, TileAvatar, tileVariants \}/u);
 });

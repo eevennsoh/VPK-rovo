@@ -17,24 +17,31 @@ export function ProjectItem({
 	onClick,
 }: Readonly<ProjectItemProps>) {
 	return (
-		<div
+		<button
+			type="button"
+			aria-pressed={isSelected}
 			style={{
 				display: "flex",
 				alignItems: "center",
 				padding: token("space.050"),
 				borderRadius: token("radius.xsmall"),
+				border: 0,
 				cursor: "pointer",
 				backgroundColor: isSelected
 					? token("color.background.selected")
 					: "transparent",
+				color: "inherit",
 				position: "relative",
 				gap: token("space.025"),
 				minHeight: "32px",
+				textAlign: "left",
+				width: "100%",
 			}}
 			onClick={onClick}
 		>
 			{isSelected && (
-				<div
+				<span
+					aria-hidden
 					style={{
 						position: "absolute",
 						left: 0,
@@ -48,7 +55,7 @@ export function ProjectItem({
 				/>
 			)}
 
-			<div
+			<span
 				style={{
 					display: "flex",
 					alignItems: "center",
@@ -61,7 +68,7 @@ export function ProjectItem({
 				}}
 			>
 				<Image src={imageSrc} alt="" width={24} height={24} />
-			</div>
+			</span>
 
 			<span
 				style={{
@@ -79,6 +86,6 @@ export function ProjectItem({
 			>
 				{name}
 			</span>
-		</div>
+		</button>
 	);
 }

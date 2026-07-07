@@ -6,6 +6,15 @@ description: This skill should be used when the user asks to "set up", "get star
   "env setup", "how do I start", "how do I set up the project", "get this working",
   or wants to set up a new VPK project from scratch. Also triggered by errors like
   "ASAP key not working", "credentials not found", "env not configured".
+purpose: Guide first-time or repaired VPK local setup for dependencies, credentials, env files, Rovo Serve, AI Gateway, and dev servers.
+owner: VPK
+category: setup
+inputs: Current checkout state, package manager state, env files, credentials, desired runtime mode, and dev-server requirements.
+outputs: Installed dependencies, configured env files, started or documented dev servers, Portless URL, and setup verification notes.
+required_tools: shell, pnpm, rovo, portless
+validation_command: pnpm run dev:tmux:status
+generated_artifacts: .env.local and runtime port files when setup is approved.
+common_failure_modes: Assuming default ports, double-quoting private keys, running Rovo in unavailable environments, or overwriting existing local env secrets.
 ---
 
 # VPK Setup - Initial Repository Setup
@@ -131,7 +140,7 @@ node ./.agents/skills/vpk-setup/scripts/create-env-local.js YOUR-USE-CASE-ID
 
 ```bash
 # AI Gateway Configuration
-AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-4-6/invoke-with-response-stream
+AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/model/anthropic.claude-sonnet-5/invoke-with-response-stream
 AI_GATEWAY_URL_GOOGLE=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/google/publishers/google/v1/chat/completions
 GOOGLE_IMAGE_MODEL=gemini-3-pro-image-preview
 GOOGLE_TTS_MODEL=tts-latest
@@ -266,7 +275,7 @@ separately via `STT_PRESET`.
 
 | Provider | Model | Endpoint |
 | -------- | ----- | -------- |
-| **Claude (Default)** | `anthropic.claude-sonnet-4-6` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
+| **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
 | **GPT** | `gpt-5.2-2025-12-11` | `/v1/openai/v1/chat/completions` |
 | **Gemini** | `gemini-3-pro-image-preview` | `/v1/google/publishers/google/v1/chat/completions` |
 

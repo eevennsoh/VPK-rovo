@@ -114,6 +114,40 @@ function visualComponent(
 	};
 }
 
+const PAPER_SHADER_DEMO_IMPORT_PATH = "@/components/website/demos/visual/shaders-paper-demo";
+
+const PAPER_SHADER_COMPONENTS = [
+	["paper-color-panels", "Color Panels"],
+	["paper-dithering", "Dithering"],
+	["paper-dot-grid", "Dot Grid"],
+	["paper-dot-orbit", "Dot Orbit"],
+	["paper-fluted-glass", "Fluted Glass"],
+	["paper-gem-smoke", "Gem Smoke"],
+	["paper-god-rays", "God Rays"],
+	["paper-grain-gradient", "Grain Gradient"],
+	["paper-halftone-cmyk", "Halftone CMYK"],
+	["paper-halftone-dots", "Halftone Dots"],
+	["paper-heatmap", "Heatmap"],
+	["paper-image-dithering", "Image Dithering"],
+	["paper-liquid-metal", "Liquid Metal"],
+	["paper-mesh-gradient", "Mesh Gradient"],
+	["paper-metaballs", "Metaballs"],
+	["paper-neuro-noise", "Neuro Noise"],
+	["paper-paper-texture", "Paper Texture"],
+	["paper-perlin-noise", "Perlin Noise"],
+	["paper-pulsing-border", "Pulsing Border"],
+	["paper-simplex-noise", "Simplex Noise"],
+	["paper-smoke-ring", "Smoke Ring"],
+	["paper-spiral", "Spiral"],
+	["paper-static-mesh-gradient", "Static Mesh Gradient"],
+	["paper-static-radial-gradient", "Static Radial Gradient"],
+	["paper-swirl", "Swirl"],
+	["paper-voronoi", "Voronoi"],
+	["paper-warp", "Warp"],
+	["paper-water", "Water"],
+	["paper-waves", "Waves"],
+] as const;
+
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-icon", "Animated Icons"),
@@ -555,7 +589,9 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const ART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	artComponent("awake", "Awake"),
+	artComponent("cursors", "Cursors"),
 	artComponent("personal-graph", "Personal Graph"),
+	artComponent("rovo-fable", "Rovo Fable"),
 ]);
 
 export const UTILITY_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
@@ -685,8 +721,8 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	),
 	visualComponent("graph", "Graph", "@/components/website/demos/visual/graph"),
 	visualComponent("holo", "Holo", "@/components/website/demos/visual/shaders/holo"),
-	visualComponent("mesh", "Mesh SVG", "@/components/website/demos/visual/shaders/mesh"),
-	visualComponent("mesh-02", "Mesh", "@/components/website/demos/visual/shaders/mesh2"),
+	visualComponent("mesh", "Mesh", "@/components/website/demos/visual/shaders/mesh"),
+	visualComponent("mesh-v2", "Mesh v2", "@/components/website/demos/visual/shaders/mesh-v2"),
 	visualComponent(
 		"chromatic-aberration",
 		"Chromatic Aberration",
@@ -697,6 +733,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 		"Chromatic Aberration v2",
 		"@/components/website/demos/visual/shader-lab-effect-demo",
 	),
+	...PAPER_SHADER_COMPONENTS.map(([slug, name]) => visualComponent(slug, name, PAPER_SHADER_DEMO_IMPORT_PATH)),
 	]);
 
 const ALL_COMPONENTS = [
