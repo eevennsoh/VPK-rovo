@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { collectFaviconIssues } from "./shared.mjs";
+import { isDeck } from "./presentation.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -71,6 +72,36 @@ export function collectSelfReferentialCustomPropertyIssues(source) {
 	return [];
 }
 
+export function collectPresentationIssues(source) {
+	if (!isDeck(source)) return [];
+	const issues = [];
+	if (!/<script\b[^>]*\bdata-vpk-presentation-runtime\b/i.test(source)) {
+		issues.push("deck is missing the shared presentation runtime script");
+	}
+	if (!/\.speaker-notes\s*\{[\s\S]*?display:\s*none\s*!important/i.test(source)) {
+		issues.push("deck does not hide .speaker-notes by default");
+	}
+	if (!/@media\s+print\s*\{[\s\S]*?(?:animation|transition|transform):\s*none\s*!important/i.test(source)) {
+		issues.push("deck is missing the print motion neutralizer");
+	}
+	return issues;
+}
+
+export function collectSmilMotionIssues(source) {
+	const animations = collectMatches(/<animateTransform\b[^>]*>/gi, source);
+	if (animations.length === 0) return [];
+
+	const issues = [];
+	const unsafe = animations.find(tag => !/\bbegin=["']indefinite["']/i.test(tag));
+	if (unsafe) {
+		issues.push(`animateTransform must use begin="indefinite": ${unsafe}`);
+	}
+	if (!/<script\b[^>]*\bdata-vpk-smil-starter\b/i.test(source)) {
+		issues.push("animateTransform requires a data-vpk-smil-starter script");
+	}
+	return issues;
+}
+
 function hasAttribute(tag, attribute) {
 	return new RegExp(`\\s${attribute}(?:\\s*=|\\s|>)`, "i").test(tag);
 }
@@ -125,6 +156,8 @@ export function validateHtmlString(html, label = "document") {
 	failures.push(...collectColorTokenIssues(html, label));
 	failures.push(...collectSelfReferentialCustomPropertyIssues(html));
 	failures.push(...collectFaviconIssues(html));
+	failures.push(...collectPresentationIssues(html));
+	failures.push(...collectSmilMotionIssues(html));
 
 	if (!/\[data-theme="dark"\]/.test(html) || !/color-scheme:\s*light dark/.test(html)) {
 		failures.push("does not contain the dark-mode token block");

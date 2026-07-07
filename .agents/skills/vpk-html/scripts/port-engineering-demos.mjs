@@ -12,8 +12,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { addLabeledMainLandmark, buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss } from "./shared.mjs";
+import { addLabeledMainLandmark, buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss, wrapSharedCss } from "./shared.mjs";
 import { rewriteKamiColors } from "./kami-color-map.mjs";
+import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = path.resolve(__dirname, "..");
@@ -51,7 +52,7 @@ ${buildFontFaceBlock()}
 
 function vpkVisualCss() {
 	return `/* vpk-html visual overlay: Atlassian deck system over upstream demos. */
-${readStylesCss()}
+${wrapSharedCss(readStylesCss())}
 
 :root {
   --ivory: var(--paper);
@@ -476,7 +477,7 @@ function addGeneratedButtonLabels(html) {
 }
 
 function adapt(html, sourceFile) {
-	return ensureFaviconLinks(addGeneratedButtonLabels(
+	const adapted = ensureFaviconLinks(addGeneratedButtonLabels(
 		markDecorativeSvgs(
 			addLabeledMainLandmark(
 				addVpkVisualCss(
@@ -492,6 +493,7 @@ function adapt(html, sourceFile) {
 			),
 		),
 	));
+	return isDeck(adapted) ? retrofitDeck(adapted) : retrofitDocumentNav(adapted);
 }
 
 function main() {

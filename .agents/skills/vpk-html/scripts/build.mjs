@@ -19,7 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectColorTokenIssues, collectSelfReferentialCustomPropertyIssues } from "./check-html.mjs";
+import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues } from "./check-html.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +58,9 @@ function parseArgs(argv) {
 		"--check-resume-balance": "resume-balance",
 		"--check-rhythm": "rhythm",
 		"--check-orphans": "orphans",
+		"--check-focal": "focal",
+		"--check-motion-budget": "motion-budget",
+		"--check-caption-echo": "caption-echo",
 	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
@@ -145,6 +148,27 @@ function checkTemplate(filePath) {
 
 	failures.push(...collectColorTokenIssues(content, filePath));
 	failures.push(...collectSelfReferentialCustomPropertyIssues(content));
+	failures.push(...collectPresentationIssues(content));
+	failures.push(...collectSmilMotionIssues(content));
+
+	if (!/--ease-out:\s*cubic-bezier\(0\.23,1,0\.32,1\)/.test(content)) {
+		failures.push("missing vpk motion easing token --ease-out");
+	}
+	if (!/--vpk-dur-enter:\s*280ms/.test(content)) {
+		failures.push("missing vpk motion duration token --vpk-dur-enter");
+	}
+	if (!/@media\s+print\s*\{[\s\S]*?(?:animation|transition|transform):\s*none\s*!important/i.test(content)) {
+		failures.push("missing print motion neutralizer");
+	}
+	if (!/@media\s+\(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?--vpk-enter-y:\s*0px/i.test(content)) {
+		failures.push("missing reduced-motion movement override");
+	}
+	if (/(^|[^-])ease-in(?!-)/i.test(content)) {
+		failures.push("contains bare ease-in timing; use --ease-out or --ease-in-out");
+	}
+	if (!/<body\b[^>]*\bdata-vpk-motion=/i.test(content)) {
+		failures.push("missing data-vpk-motion body attribute");
+	}
 
 	if (!/<meta\s+name="generator"\s+content="vpk-html"/i.test(content)) {
 		failures.push("missing or wrong <meta name=\"generator\"> (should be \"vpk-html\")");
@@ -255,7 +279,7 @@ Usage:
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
-  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
+  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }

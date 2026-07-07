@@ -31,10 +31,22 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
   20 Phase 2 engineering shells mapped from the html-effectiveness use-case
   catalog.
 - 14 standalone SVG diagram primitives at assets/diagrams/.
-- 28 demos at assets/demos/: 8 screenshot-backed showcases plus 20 restyled
-  html-effectiveness demo ports.
+- 5 technical illustration exemplars at assets/illustrations/:
+  isometric-device, exploded-assembly, annotated-mechanism,
+  hatched-cross-section, and isometric-pipeline.
+- 52 demos at assets/demos/: filled document showcases, restyled
+  html-effectiveness demo ports, diagram previews, illustration previews, and
+  vpk-native examples.
+- Shared motion layer across generated HTML: entrance choreography, document
+  section reveal, micro-interactions, slide transitions, reduced-motion
+  movement reduction, and print neutralization.
+- Presentation mode for decks: Left/Right navigation, #slide-N deep links,
+  hidden speaker notes, and a synced presenter window.
+- Video export is documented as a user-gated Hyperframes conversion track, not
+  the browser presentation runtime.
 - LLM-facing reference docs for anti-patterns, diagrams, writing,
-  resume-writing, design, production, source policy, accessibility, and tokens.
+  resume-writing, design, illustrations, presentation, video export,
+  production, source policy, accessibility, quality gates, and tokens.
 - Single offline HTML output — no remote fonts, stylesheets, scripts, or images.
 
 ## Key files
@@ -45,9 +57,13 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 - index.html — Marketing landing page
 - assets/templates/*.html — 28 offline document templates
 - assets/diagrams/*.html — 14 SVG diagram primitives
-- assets/demos/ — 28 curated and restyled showcase documents
+- assets/illustrations/*.html — 5 technical illustration exemplars
+- assets/demos/ — 52 curated, restyled, diagram, and illustration showcases
 - references/anti-patterns.md — 6 AI-output failure modes (consult before drafting)
 - references/diagrams.md — Diagram selection guide + focal rule
+- references/illustrations.md — Technical illustration recipe + SMIL policy
+- references/presentation.md — Deck runtime, presenter window, speaker notes
+- references/video-export.md — Hyperframes MP4 conversion contract
 - references/resume-writing.md — Resume quality bar (Action + Scope + Result + Outcome)
 - references/writing.md — General prose rules + per-doc-type quality bars
 - references/design.md — Visual identity rules
@@ -70,10 +86,13 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 - node scripts/build.mjs --pdf <file> [--out <f.pdf>]   (optional derived PDF export)
 - node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   (landing companions + responsive verify)
 - node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]   (advisory gates)
+- node scripts/build.mjs --check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]   (advisory polish gates)
 - node scripts/port-kami.mjs [--templates|--diagrams|--demos]  (re-port templates + diagrams + curated demos from kami)
+- node scripts/retrofit.mjs                           (refresh committed HTML with shared CSS + presentation/docnav)
 - node scripts/port-engineering.mjs                  (regenerate Phase 2 engineering templates)
 - node scripts/build-demos.mjs [--curated|--landing]  (regenerate curated vpk-native demos + landing mock previews)
 - node scripts/port-engineering-demos.mjs            (copy + restyle Phase 2 upstream demo ports)
+- node scripts/build-illustrations.mjs                (regenerate technical illustration exemplars + gallery demos)
 - node scripts/landing.mjs                           (regenerate assets/landing/ shells)
 
 ## Workflow

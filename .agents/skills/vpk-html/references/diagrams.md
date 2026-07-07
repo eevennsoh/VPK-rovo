@@ -3,6 +3,9 @@
 vpk-html ships 14 standalone SVG diagram primitives at `assets/diagrams/*.html`,
 ported from [tw93/kami](https://github.com/tw93/Kami) and restyled with the
 vpk-html identity (semantic white paper, primary-blue accent, and flat technical rules).
+These are data-shape diagrams. For object/assembly/mechanism/cross-section
+drawings, use the technical illustration vocabulary in
+`references/illustrations.md` and `assets/illustrations/`.
 
 ## How to use a diagram
 
@@ -83,6 +86,10 @@ and demote the rest.
 This single rule is why the accent actually means something. A page with five
 primary-blue boxes is decoration; a page with one is direction.
 
+`svg[data-vpk-illustration]` is exempt because technical illustrations need a
+blue ramp for faces and hatching. Do not use that exemption for ordinary
+architecture, chart, flow, hierarchy, or timeline diagrams.
+
 ## Token map (inside the diagrams)
 
 The ported SVGs use vpk-html's palette directly:
@@ -127,3 +134,10 @@ node .agents/skills/vpk-html/scripts/port-kami.mjs --diagrams
 
 The port script preserves SVG geometry verbatim and rewrites only the chrome
 (fonts, colors, borders, background) to match vpk-html's identity.
+
+For advisory checks against finished documents:
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --check-focal <file>
+node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo <file>
+```

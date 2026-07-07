@@ -14,5 +14,17 @@
 	"orphans": {
 		"minLastLineChars": 12,
 		"minLastLineWidthRatio": 0.15
+	},
+	"focal": {
+		"maxPrimaryBlueElements": 1
+	},
+	"motionBudget": {
+		"maxDurationMs": 300,
+		"maxFindings": 12
+	},
+	"captionEcho": {
+		"minCaptionChars": 16,
+		"minSharedWords": 3,
+		"maxFindings": 12
 	}
 }

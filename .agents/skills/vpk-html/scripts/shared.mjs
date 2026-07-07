@@ -8,10 +8,13 @@ const __dirname = path.dirname(__filename);
 export const ROOT = path.resolve(__dirname, "..");
 export const TEMPLATES = path.join(ROOT, "assets", "templates");
 export const DIAGRAMS = path.join(ROOT, "assets", "diagrams");
+export const ILLUSTRATIONS = path.join(ROOT, "assets", "illustrations");
 export const DEMOS = path.join(ROOT, "assets", "demos");
 export const FONTS_DIR = path.join(ROOT, "assets", "fonts");
 export const TOKENS_FILE = path.join(ROOT, "references", "tokens.json");
 export const STYLES_FILE = path.join(ROOT, "styles.css");
+export const SHARED_CSS_START = "/* vpk-shared:start */";
+export const SHARED_CSS_END = "/* vpk-shared:end */";
 
 export const FONT_STACKS = {
 	display: '"Charlie Display", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
@@ -136,6 +139,12 @@ const TOKEN_ORDER = [
 	"primaryBlue",
 	"primaryBlueTint",
 	"primaryBlueTintStrong",
+	"illLine",
+	"illTone1",
+	"illTone2",
+	"illTone3",
+	"illHatch",
+	"illInk50",
 	"rule",
 	"ruleStrong",
 	"link",
@@ -200,6 +209,13 @@ function pushThemeAliases(lines) {
 	lines.push("\t--accent: var(--primary-blue);");
 	lines.push("\t--primary: var(--primary-blue);");
 	lines.push("\t--accent-primary: var(--primary-blue);");
+	lines.push("\t--ease-out: cubic-bezier(0.23,1,0.32,1);");
+	lines.push("\t--ease-in-out: cubic-bezier(0.77,0,0.175,1);");
+	lines.push("\t--vpk-dur-fast: 160ms;");
+	lines.push("\t--vpk-dur-enter: 280ms;");
+	lines.push("\t--vpk-dur-slide-out: 180ms;");
+	lines.push("\t--vpk-stagger: 40ms;");
+	lines.push("\t--vpk-enter-y: 12px;");
 	lines.push("\t--collection-accent-software: var(--collection-software);");
 	lines.push("\t--collection-accent-product: var(--collection-product);");
 	lines.push("\t--collection-accent-service: var(--collection-service);");
@@ -208,6 +224,109 @@ function pushThemeAliases(lines) {
 	lines.push("\t--grid-dot-gap: 12px;");
 	lines.push("\t--grid-background: radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px), radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px);");
 	lines.push("\t--grid-background-size: var(--grid-major-size) var(--grid-dot-gap), var(--grid-dot-gap) var(--grid-major-size);");
+}
+
+export function buildMotionCssBlock() {
+	return `/* vpk motion system */
+@keyframes vpk-enter {
+\tfrom {
+\t\topacity: 0;
+\t\ttransform: translateY(var(--vpk-enter-y));
+\t}
+\tto {
+\t\topacity: 1;
+\t\ttransform: translateY(0);
+\t}
+}
+
+@keyframes vpk-slide-in {
+\tfrom {
+\t\topacity: 0;
+\t\ttransform: var(--vpk-slide-enter-from, translateX(24px));
+\t}
+\tto {
+\t\topacity: 1;
+\t\ttransform: var(--vpk-slide-enter-to, translateX(0));
+\t}
+}
+
+@keyframes vpk-slide-out {
+\tfrom { opacity: 1; }
+\tto { opacity: 0; }
+}
+
+body[data-vpk-motion] main > * {
+\tanimation: vpk-enter var(--vpk-dur-enter) var(--ease-out) both;
+}
+
+body[data-vpk-motion] main > *:nth-child(1) { animation-delay: 0ms; }
+body[data-vpk-motion] main > *:nth-child(2) { animation-delay: calc(var(--vpk-stagger) * 1); }
+body[data-vpk-motion] main > *:nth-child(3) { animation-delay: calc(var(--vpk-stagger) * 2); }
+body[data-vpk-motion] main > *:nth-child(4) { animation-delay: calc(var(--vpk-stagger) * 3); }
+body[data-vpk-motion] main > *:nth-child(5) { animation-delay: calc(var(--vpk-stagger) * 4); }
+body[data-vpk-motion] main > *:nth-child(n + 6) { animation-delay: calc(var(--vpk-stagger) * 5); }
+
+@supports (animation-timeline: view()) {
+\tbody[data-vpk-motion="document"] main section {
+\t\tanimation-name: vpk-enter;
+\t\tanimation-duration: var(--vpk-dur-enter);
+\t\tanimation-fill-mode: both;
+\t\tanimation-timing-function: var(--ease-out);
+\t\tanimation-timeline: view();
+\t\tanimation-range: entry 0% entry 40%;
+\t}
+}
+
+a,
+button,
+summary,
+[role="button"],
+.toc a,
+.demo-row {
+\ttransition:
+\t\tbackground-color var(--vpk-dur-fast) var(--ease-out),
+\t\tborder-color var(--vpk-dur-fast) var(--ease-out),
+\t\tbox-shadow var(--vpk-dur-fast) var(--ease-out),
+\t\tcolor var(--vpk-dur-fast) var(--ease-out),
+\t\topacity var(--vpk-dur-fast) var(--ease-out),
+\t\ttransform var(--vpk-dur-fast) var(--ease-out);
+}
+
+button:active,
+[role="button"]:active,
+.demo-row:active {
+\ttransform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+\t:root {
+\t\t--vpk-enter-y: 0px;
+\t\t--vpk-stagger: 0ms;
+\t}
+
+\tbody[data-vpk-motion] *,
+\tbody[data-vpk-motion] *::before,
+\tbody[data-vpk-motion] *::after {
+\t\tanimation-duration: 200ms !important;
+\t\ttransition-duration: 200ms !important;
+\t}
+
+\tbody[data-vpk-motion] .slide.is-active,
+\tbody[data-vpk-motion] .slide.is-leaving {
+\t\ttransform: var(--vpk-slide-enter-to, none) !important;
+\t}
+}
+
+@media print {
+\t*,
+\t*::before,
+\t*::after {
+\t\tanimation: none !important;
+\t\ttransition: none !important;
+\t\ttransform: none !important;
+\t\topacity: 1 !important;
+\t}
+}`;
 }
 
 function listHtmlFiles(directory) {
@@ -285,6 +404,8 @@ export function buildStylesCssFromTokens(tokens = loadTokens()) {
 	lines.push("\t\ttransition-duration: 0.001ms !important;");
 	lines.push("\t}");
 	lines.push("}");
+	lines.push("");
+	lines.push(buildMotionCssBlock());
 	return `${lines.join("\n")}\n`;
 }
 
@@ -293,6 +414,11 @@ export function readStylesCss() {
 		throw new Error(`Styles file not found: ${STYLES_FILE}`);
 	}
 	return fs.readFileSync(STYLES_FILE, "utf8").trim();
+}
+
+export function wrapSharedCss(css = readStylesCss()) {
+	if (css.includes(SHARED_CSS_START) && css.includes(SHARED_CSS_END)) return css;
+	return `${SHARED_CSS_START}\n${css.trim()}\n${SHARED_CSS_END}`;
 }
 
 export function checkStyleSource() {
@@ -315,6 +441,7 @@ export function checkStyleConsumers() {
 	const files = [
 		...listHtmlFiles(TEMPLATES),
 		...listHtmlFiles(DIAGRAMS),
+		...listHtmlFiles(ILLUSTRATIONS),
 		...listHtmlFiles(DEMOS),
 	];
 	const drift = [];
@@ -347,7 +474,7 @@ ${unicodeRangeRule}}`;
 }
 
 export function buildSharedCssBlock() {
-	return `${buildFontFaceBlock()}\n${readStylesCss()}`;
+	return `${buildFontFaceBlock()}\n${wrapSharedCss()}`;
 }
 
 // Wrap the body's visible content in a <main> landmark, closing before any

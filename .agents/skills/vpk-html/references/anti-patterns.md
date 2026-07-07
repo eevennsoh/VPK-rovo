@@ -13,6 +13,7 @@ A document with all the slots filled but no content worth reading.
 | Bullet that names a concept without saying anything about it | "• Caching" | Replace with the specific cache (Redis), the specific operation (token validation), and the specific outcome (p99 from 480ms to 312ms). |
 | Description that could apply to any project | "We built a scalable, modern, user-friendly system." | Name what makes *this* project different. If it's the same as ten others, you don't need the document. |
 | Section header with one sentence under it | "Risk." "Some risks exist." | Either list the risks concretely or remove the section. Don't leave a hollow section. |
+| Caption that repeats the figure title | Heading: "Architecture". Caption: "Architecture diagram of the system." | State the insight: "Auth is the only cross-zone dependency." |
 
 > The rule: **every paragraph must do work.** If removing the paragraph
 > wouldn't lose information, remove it.

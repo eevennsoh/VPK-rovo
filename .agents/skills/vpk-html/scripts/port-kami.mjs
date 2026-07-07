@@ -29,8 +29,10 @@ import {
 	FONT_STACKS,
 	readStylesCss,
 	stripSelfReferentialCustomProperties,
+	wrapSharedCss,
 } from "./shared.mjs";
 import { rewriteKamiColors } from "./kami-color-map.mjs";
+import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -248,6 +250,7 @@ function transformTemplate(rawHtml, slug, fontFaceBlock, themeBlock) {
 	out = ensureFaviconLinks(out);
 	out = out.replace(/<\/style>/, `${VPK_OVERRIDES}</style>`);
 	out = addMainLandmark(out);
+	out = isDeck(out) ? retrofitDeck(out, { speakerNotePlaceholders: slug === "slides" }) : retrofitDocumentNav(out);
 	return out;
 }
 
@@ -257,7 +260,7 @@ function portTemplates() {
 	}
 	fs.mkdirSync(VPK_TEMPLATES, { recursive: true });
 	const fontFaceBlock = buildFontFaceBlock();
-	const themeBlock = readStylesCss();
+	const themeBlock = wrapSharedCss(readStylesCss());
 	let missing = [];
 	for (const { source, slug } of TEMPLATES) {
 		const sourcePath = path.join(KAMI_TEMPLATES, source);
@@ -291,7 +294,7 @@ function buildDiagramHead() {
 	return `<style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-${readStylesCss()}
+${wrapSharedCss(readStylesCss())}
 
   :root {
     --font-sans: ${FONT_STACKS.body};
@@ -384,7 +387,9 @@ function transformDiagram(rawHtml, slug, headBlock) {
      primary blue focal accent. Drop the <svg> block into a
      long-doc, portfolio, or design-system payload via section.trustedHtml.
      ================================================================== -->`;
-	return faviconed.replace(/<!--[\s\S]*?-->\n?/, `${headerComment}\n`);
+	return faviconed
+		.replace(/<body\b(?![^>]*\bdata-vpk-motion=)([^>]*)>/i, `<body$1 data-vpk-motion="document">`)
+		.replace(/<!--[\s\S]*?-->\n?/, `${headerComment}\n`);
 }
 
 function portDiagrams() {
@@ -527,6 +532,7 @@ function transformDemo(rawHtml, slug, fontFaceBlock, themeBlock) {
 	out = rewriteDemoBodyAccent(out);
 	out = addLabeledMainLandmark(out, "vpk-html curated demo");
 	out = markDecorativeSvgs(out);
+	out = isDeck(out) ? retrofitDeck(out) : retrofitDocumentNav(out);
 	return out;
 }
 
@@ -536,7 +542,7 @@ function portDemos() {
 	}
 	fs.mkdirSync(VPK_DEMOS, { recursive: true });
 	const fontFaceBlock = buildFontFaceBlock();
-	const themeBlock = readStylesCss();
+	const themeBlock = wrapSharedCss(readStylesCss());
 	let missing = [];
 	for (const file of DEMOS) {
 		const slug = file.replace(/\.html$/, "");
