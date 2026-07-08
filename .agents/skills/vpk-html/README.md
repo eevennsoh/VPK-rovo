@@ -18,7 +18,7 @@ stay locked across all documents.
 - **Surface:** `--paper`, backed by VPK/ADS surface semantics with offline fallbacks.
 - **Accent:** `--primary-blue`, with lime, purple, saffron, orange, navy, green, and red semantic accents for collections, charts, diagrams, and status.
 - **Status:** `--success`, `--warning`, `--danger`, and `--info` for meaning-bearing accents.
-- **Grid canvas:** light neutral dotted grid inspired by `image.098`, with dark-mode grid counterparts.
+- **Canvas:** plain `--paper-background` page backdrop with flat surfaces and opt-in raised cards.
 
 The look is deliberately *Atlassian deck × technical editorial*. It is compact,
 readable, and unambiguous while leaving enough structure for strategy decks,

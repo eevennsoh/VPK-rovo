@@ -92,6 +92,7 @@ test("buildStylesCssFromTokens emits the shared motion contract", async () => {
 	assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*--vpk-enter-y:\s*0px;/);
 	assert.match(css, /@media print[\s\S]*animation:\s*none !important;/);
 	assert.doesNotMatch(css, /(^|[^-])ease-in(?!-)/i);
+	assert.doesNotMatch(css, /--grid-(?:background|dot|line|major|dot-gap)/);
 
 	const enterDuration = Number(css.match(/--vpk-dur-enter:\s*(\d+)ms;/)?.[1]);
 	assert.ok(enterDuration <= 300, "entrance duration stays under 300ms");

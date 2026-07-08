@@ -350,8 +350,6 @@
 	--collection-software: var(--ds-background-accent-lime-subtle, #82b536);
 	--collection-product: var(--ds-background-accent-purple-subtle, #af59e6);
 	--collection-service: var(--ds-background-accent-yellow-subtle, #f5cd47);
-	--grid-dot: var(--ds-border, #dcdfe4);
-	--grid-line: var(--ds-border, #eef1f5);
 	--focus-ring: var(--ds-border-focused, #0c66e4);
 	--code-surface: var(--ds-background-neutral-subtle, #f1f2f4);
 	--code-ink: var(--ds-text, #172b4d);
@@ -384,11 +382,7 @@
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
-	--paper-rule: var(--grid-dot);
-	--grid-major-size: 72px;
-	--grid-dot-gap: 12px;
-	--grid-background: radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px), radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px);
-	--grid-background-size: var(--grid-major-size) var(--grid-dot-gap), var(--grid-dot-gap) var(--grid-major-size);
+	--paper-rule: var(--rule);
 	--shadow: var(--ds-shadow-raised, 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31));
 }
 
@@ -428,8 +422,6 @@
 	--collection-software: var(--ds-background-accent-lime-subtle, #b3df72);
 	--collection-product: var(--ds-background-accent-purple-subtle, #c97cf4);
 	--collection-service: var(--ds-background-accent-yellow-subtle, #f5cd47);
-	--grid-dot: var(--ds-border, #2c333a);
-	--grid-line: var(--ds-border, #22272b);
 	--focus-ring: var(--ds-border-focused, #85b8ff);
 	--code-surface: var(--ds-background-neutral-subtle, #161a1d);
 	--code-ink: var(--ds-text, #dee4ea);
@@ -462,11 +454,7 @@
 	--collection-accent-software: var(--collection-software);
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
-	--paper-rule: var(--grid-dot);
-	--grid-major-size: 72px;
-	--grid-dot-gap: 12px;
-	--grid-background: radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px), radial-gradient(circle at 1px 1px, var(--grid-dot) 1.25px, transparent 1.5px);
-	--grid-background-size: var(--grid-major-size) var(--grid-dot-gap), var(--grid-dot-gap) var(--grid-major-size);
+	--paper-rule: var(--rule);
 	--shadow: var(--ds-shadow-raised, 0 1px 1px rgba(0, 0, 0, 0.32), 0 0 1px rgba(0, 0, 0, 0.42));
 }
 
@@ -620,10 +608,7 @@ button:active,
 
 html,
 body {
-  background:
-    var(--grid-background),
-    var(--ivory) !important;
-  background-size: var(--grid-background-size) !important;
+  background: var(--paper-background) !important;
   color: var(--slate) !important;
   font-family: "Atlassian Mono Numeric", var(--sans) !important;
   letter-spacing: 0 !important;

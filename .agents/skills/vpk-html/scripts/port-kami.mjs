@@ -305,10 +305,7 @@ ${wrapSharedCss(readStylesCss())}
 ${buildFontFaceBlock()}
 
   body {
-    background:
-      var(--grid-background),
-      var(--paper-background);
-    background-size: var(--grid-background-size);
+    background: var(--paper-background);
     color: var(--ink);
     font-family: "Atlassian Mono Numeric", var(--font-sans);
     font-size: 16px;
@@ -493,10 +490,7 @@ function rewriteDemoBodyAccent(text) {
   /* vpk-html identity overrides */
   html { background: var(--paper-background); }
   body {
-    background:
-      var(--grid-background),
-      var(--paper-background);
-    background-size: var(--grid-background-size);
+    background: var(--paper-background);
   }
   /* Frame the document with vpk-html chrome when a kami .page or .frame exists */
   .page, .frame {

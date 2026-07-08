@@ -32,8 +32,7 @@ const LANDING_CSS = `
   *, *::before, *::after { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--grid-background), var(--paper-background);
-    background-size: var(--grid-background-size);
+    background: var(--paper-background);
     color: var(--ink);
     font-family: "Atlassian Mono Numeric", var(--font-body);
     font-size: 16px;
@@ -97,7 +96,7 @@ function landingPageBody() {
 	return `<div class="wrap">
   <p class="eyebrow">vpk-html · product site</p>
   <h1>Ship an offline-first product page with the Atlassian deck identity.</h1>
-  <p class="lead">A screen-first landing shell that shares vpk-html's tokens, type, and dotted-grid canvas — responsive from 1280 down to 480, with embedded fonts so it renders anywhere.</p>
+  <p class="lead">A screen-first landing shell that shares vpk-html's tokens, type, and calm paper canvas — responsive from 1280 down to 480, with embedded fonts so it renders anywhere.</p>
   <a class="cta" href="#features">See what's included</a>
   <hr class="rule">
   <h2 id="features">What's in the box</h2>

@@ -6,7 +6,7 @@
 
 ## Identity
 
-- Surface: semantic paper via `--paper` and `--paper-background` with the `image.098`-style dotted grid
+- Surface: semantic paper via `--paper` and a plain `--paper-background` page backdrop
 - Accent: `--primary-blue` with ADS-style lime, purple, saffron, orange, navy, green, and red accents for collections, charts, diagrams, and status
 - Display: Charlie Display
 - Body: Charlie Text

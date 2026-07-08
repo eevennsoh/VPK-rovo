@@ -452,7 +452,7 @@ function assertVpkHtmlReportContract(html) {
 	if (!/<meta\s+name="generator"\s+content="vpk-html">/iu.test(html)) {
 		throw new Error("vpk-html report generation did not preserve the generator metadata.");
 	}
-	if (!/font-family:\s*"Charlie Display"/u.test(html) || !/--grid-background/u.test(html) || !/(class="masthead"|class="header")/u.test(html)) {
+	if (!/font-family:\s*"Charlie Display"/u.test(html) || !/--paper-background/u.test(html) || !/(class="masthead"|class="header")/u.test(html)) {
 		throw new Error("vpk-html report generation did not preserve the template visual identity.");
 	}
 	if (!/<main\b/iu.test(html)) {

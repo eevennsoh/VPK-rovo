@@ -483,7 +483,7 @@ still preserve the offline single-file HTML contract.
 - **Primary blue:** `--primary-blue` — deck accent, links, and diagram focal strokes.
 - **Collection accents:** `--accent-lime`, `--accent-purple`, `--accent-saffron`, `--accent-orange`, `--accent-navy`, `--accent-green`, and `--accent-red` for charts, collection labels, diagrams, and status accents.
 - **Margin / figure tags:** `--primary-blue` unless a status meaning requires `--success`, `--warning`, or `--danger`.
-- **Grid background:** `var(--grid-background)` with `var(--grid-background-size)` — a light neutral dotted grid inspired by `image.098`, with matching dark-mode tokens.
+- **Background canvas:** plain `--paper-background` for the browser/page backdrop; do not add dotted grid canvases to templates, demos, landing shells, or generated artifacts.
 - **Hard shadow:** `var(--shadow)` — reserved for opt-in `.card / .callout / .takeaway / .surface-raised / .shadow-hard`. Other surfaces are flat.
 
 **Dark mode** (activate via `<html data-theme="dark">`):

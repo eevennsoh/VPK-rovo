@@ -102,7 +102,7 @@ The ported SVGs use vpk-html's palette directly:
 | Accent / focal node fill | `--primary-blue-tint` |
 | Accent / focal node stroke + primary arrow | `--primary-blue` |
 | Cool gray surface variants | `--surface-sunken`, `--rule`, `--rule-strong` |
-| Faint grid dot pattern | `--paper-rule` |
+| Faint rule / secondary stroke | `--paper-rule` |
 | Error / regression | `--danger` |
 
 Display headlines above each diagram use **Charlie Display**. Labels, chart

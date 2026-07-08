@@ -182,7 +182,7 @@ Editorial / engineering manual — implementation cousin: [aiengineeringfromscra
 - Fonts: **Charlie Display** for mastheads, slide titles, headline stats, and section heads; **Charlie Text** for body, labels, tables, and ordinary document text; **Atlassian Mono** for code, metrics, dates, counters, figure/table numbers, chart labels, and technical identifiers
 - Numerals: **Atlassian Mono Numeric** is embedded with `unicode-range: U+0030-0039` so digits inside Charlie text render in Atlassian Mono
 - All headings: Charlie Display, no negative tracking, in `var(--headline)` or `var(--primary-blue)`
-- Body bg: semantic paper + `var(--grid-background)` / `var(--grid-background-size)` dotted grid inspired by `image.098`
+- Body bg: plain `var(--paper-background)` with flat document surfaces and opt-in raised cards
 - Type scale: cover-title 56px / h1 36px / h2 26px / h3 18px / h4-h6 14px / body+p 18px / fig-label 10px
 - Hard shadows opt-in: add `.card / .callout / .takeaway / .surface-raised / .shadow-hard` for `box-shadow: 3px 3px 0 var(--near-black)` + 1px ink border
 - Deck rule: `<hr class="ascii">` for primary-blue dotted separator

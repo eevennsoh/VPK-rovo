@@ -25,7 +25,7 @@ HTML document instead of letting individual templates own hard-coded palettes.
 
 Token groups cover paper/background, headline/body ink, muted text, primary
 blue, collection accents, chart/diagram accents, technical-illustration ramp
-tokens (`--ill-*`), grid dots/lines, rule, raised surfaces, focus ring, code
+tokens (`--ill-*`), rules, raised surfaces, focus ring, code
 surface, math highlight, motion tokens, and success/warning/danger/info accents
 for light and dark modes.
 

@@ -22,7 +22,7 @@ completely unaffected — without the attribute, the strict single-file rules ho
 - `docs-site.html` — sticky two-column nav + content.
 
 Both use the shared vpk-html identity (Charlie + Atlassian Mono, ADS tokens,
-dotted-grid canvas), inline their fonts, and are responsive at **1280 / 880 /
+plain paper canvas), inline their fonts, and are responsive at **1280 / 880 /
 480** with `prefers-reduced-motion` honored. They are starting points — replace
 the copy with real content.
 
