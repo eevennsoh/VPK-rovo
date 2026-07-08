@@ -26,13 +26,24 @@ function safeJsonParse(rawValue) {
 	}
 }
 
+function getDocumentUpdatedAtMs(document) {
+	const updatedAtMs = Date.parse(document.updatedAt);
+	return Number.isFinite(updatedAtMs) ? updatedAtMs : Number.NEGATIVE_INFINITY;
+}
+
 function sortDocumentsByUpdatedAtDesc(documents) {
 	return documents
 		.map((document) => ({
 			document,
-			updatedAtMs: Date.parse(document.updatedAt),
+			updatedAtMs: getDocumentUpdatedAtMs(document),
 		}))
-		.sort((left, right) => right.updatedAtMs - left.updatedAtMs)
+		.sort((left, right) => {
+			if (left.updatedAtMs === right.updatedAtMs) {
+				return 0;
+			}
+
+			return right.updatedAtMs - left.updatedAtMs;
+		})
 		.map(({ document }) => document);
 }
 

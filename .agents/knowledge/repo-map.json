@@ -7506,7 +7506,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
 			},
 			{
-				"description": "Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets, Linear issue execution, Codex Workpad updates, raw linear_graphql operations, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.",
+				"description": "Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.",
 				"name": "vpk-symphony",
 				"path": ".agents/skills/vpk-symphony/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-symphony"
