@@ -8,11 +8,13 @@ use `/agent-browser` as directed by `AGENTS.md`.
 1. Check whether `playwright-cli --version` succeeds.
 2. Treat browser launch as part of availability. If the version check passes
    but every attempted `playwright-cli open` path fails because browser
-   binaries, cache writes, or sandbox permissions are unavailable, skip browser
-   media capture, record the exact launch limitation in the workpad
-   `Validation` section, and continue with the best non-browser proof.
-3. If unavailable, skip browser media capture, record the limitation in the
-   workpad `Validation` section, and continue with the best non-browser proof.
+   binaries, cache writes, or sandbox permissions are unavailable, treat it as
+   a Symphony setup gap. Patch the workflow when the issue requires browser
+   evidence; otherwise record the exact launch limitation in the workpad
+   `Validation` section and continue with the best non-browser proof.
+3. If `playwright-cli` is unavailable, skip browser media capture, record the
+   limitation in the workpad `Validation` section, and continue with the best
+   non-browser proof.
 4. If available, use `playwright-cli` for browser validation and consult
    `references/playwright-cli/quickstart.md` only as needed.
 5. Store artifacts under `output/playwright/<issue-identifier>/`.

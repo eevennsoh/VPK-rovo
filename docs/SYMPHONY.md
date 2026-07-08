@@ -224,10 +224,11 @@ The workflow keeps the upstream defaults visible where local choices matter:
   environment plus explicit `gpt-5.5` and `xhigh` reasoning settings.
 - `codex.approval_policy`: `never`, so unattended Symphony workers can continue
   through Codex app-server approval prompts with the current Codex policy schema.
-- `codex.thread_sandbox`: `workspace-write`, matching upstream's safer default.
-- `codex.turn_sandbox_policy`: explicit `workspaceWrite` with
-  `networkAccess: true`, matching upstream guidance for workflows that run
-  package managers or commands that resolve external hosts.
+- `codex.thread_sandbox`: `danger-full-access`, so unattended local Symphony
+  workers can launch Playwright CLI browsers for issue evidence on macOS.
+- `codex.turn_sandbox_policy`: explicit `dangerFullAccess`, matching the
+  thread sandbox. Browser evidence requires OS-level browser launch access that
+  `workspaceWrite` does not provide in the managed macOS Codex sandbox.
 - `codex.turn_timeout_ms`: `300000`, `codex.read_timeout_ms`: `5000`, and
   `codex.stall_timeout_ms`: `120000`, local guards that prevent long-running or
   silent turns from burning indefinitely.
