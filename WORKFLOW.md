@@ -476,11 +476,14 @@ moving the issue to `Agent Review`.
    private data, unrelated browser tabs, terminal panes, and devtools output.
 10. Upload only the required media through `linear_graphql` using `fileUpload`,
    then update the single `## Codex Workpad` comment with a compact
-   `### Evidence` section. Render screenshot uploads with markdown image syntax
-   (`![alt text](<asset-url>)`) so Linear shows an inline image preview. Put
-   uploaded WebM asset URLs on their own line instead of hiding them behind
-   inline markdown link text, so Linear can render a file/video preview when
-   supported.
+   `### Evidence` section. Render screenshot and animated GIF preview uploads
+   with markdown image syntax (`![alt text](<asset-url>)`) so Linear shows an
+   inline image preview. Upload WebM recordings as downloadable evidence and put
+   the asset URL on its own line; do not rely on Linear to render WebM
+   `fileUpload` assets as playable inline video. When the issue needs inline
+   motion proof, also generate a short `image/gif` preview from the recording,
+   upload it as public image evidence, and keep the WebM link as the canonical
+   recording.
 11. Do not create separate "evidence" or "done" comments. Keep progress,
    validation, and media links in the workpad.
 12. If upload fails, record the local artifact path and exact upload error in
@@ -496,7 +499,9 @@ Recommended workpad evidence format:
   ![Before screenshot](<asset-url>)
 - After:
   ![After screenshot](<asset-url>)
-- Video preview:
+- Motion preview:
+  ![Scroll preview](<gif-asset-url>)
+- WebM recording:
   https://uploads.linear.app/...
 ```
 

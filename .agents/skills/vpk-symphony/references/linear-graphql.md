@@ -444,13 +444,13 @@ Do this in three steps:
    include the resulting `assetUrl` in the comment body.
 
 Use the actual MIME type and size of the file. Common Symphony evidence types
-are `image/png` for screenshots and `video/webm` for recordings. For screenshots,
-embed the uploaded asset with markdown image syntax (`![alt text](assetUrl)`) so
-Linear shows the image inline. For videos uploaded through `fileUpload`, place
-the `assetUrl` on its own line instead of hiding it behind inline markdown link
-text, so Linear can render a file/video preview when supported. Public uploads
-are for images; if a WebM upload is rejected with `makePublic: true`, retry with
-`makePublic: false`.
+are `image/png` for screenshots, `image/gif` for short inline motion previews,
+and `video/webm` for recordings. For screenshots and GIF previews, request a
+public upload and embed the uploaded asset with markdown image syntax
+(`![alt text](assetUrl)`) so Linear shows the image inline. Public uploads are
+for images, so upload WebM recordings with `makePublic: false`, place the
+`assetUrl` on its own line, and treat it as downloadable recording evidence
+rather than a guaranteed playable Linear preview.
 
 Useful mutations:
 

@@ -31,4 +31,8 @@ use `/agent-browser` as directed by `AGENTS.md`.
 ## Upload Formatting
 
 - Screenshots: `![alt text](<asset-url>)`
-- WebM recordings: put the asset URL on its own line.
+- Inline motion proof: generate a short animated GIF from the recording, upload
+  it as `image/gif`, and embed it with `![alt text](<asset-url>)`
+- WebM recordings: upload as downloadable evidence and put the asset URL on its
+  own line. Do not rely on Linear to render WebM `fileUpload` assets as playable
+  inline video.

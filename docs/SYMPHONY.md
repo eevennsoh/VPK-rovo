@@ -176,11 +176,13 @@ injected `linear_graphql` tool. The uploaded links belong in the single
 `## Codex Workpad` comment, not in separate progress comments. A before artifact
 is only required when it proves the bug or requested baseline; an after artifact
 is expected before moving app-touching work to `Agent Review` when browser media
-capture is available. Screenshot uploads should use markdown image syntax
+capture is available. Screenshot uploads, plus short animated GIF previews when
+inline motion proof is needed, should use markdown image syntax
 (`![alt text](<asset-url>)`) in the workpad so Linear renders an inline preview.
-Uploaded WebM recordings should be placed as standalone asset URLs rather than
-hidden behind inline markdown link text, so Linear can render a file/video
-preview when supported.
+Uploaded WebM recordings should be kept as the canonical recording evidence, but
+Linear `fileUpload` WebM assets may render only as downloadable links. Place the
+WebM asset URL on its own line and include an inline GIF preview separately when
+the ticket or demo needs motion evidence to be visible inside Linear.
 
 Upstream Symphony re-dispatches an issue when a Codex turn completes while the
 issue is still in an active state. For that reason, VPK workers should not end a
