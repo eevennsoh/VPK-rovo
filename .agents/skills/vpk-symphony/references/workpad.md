@@ -11,7 +11,7 @@ Use one active Linear comment headed exactly:
 Keep the workpad compact and current:
 
 - Environment stamp: `<host>:<abs-workdir>@<short-sha>`.
-- Plan checklist.
+- Hierarchical plan checklist with parent tasks and child tasks.
 - Acceptance criteria copied from issue `Validation`, `Test Plan`, or
   `Testing` sections when present.
 - Validation results with exact commands or browser evidence.
@@ -23,6 +23,7 @@ Keep the workpad compact and current:
 
 - Reuse the live unresolved workpad; do not create duplicate progress comments.
 - Check off completed items as the run progresses.
+- Preserve the parent/child task structure as scope evolves.
 - Record sync evidence before edits: merge source, result, and resulting short
   SHA.
 - For app-touching work, record browser evidence availability and artifact

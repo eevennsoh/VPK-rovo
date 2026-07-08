@@ -259,6 +259,47 @@ otherwise proceed to Step 6.
    resume bullet needs Action + Scope + Result + Business Outcome (see
    `references/resume-writing.md`); an equity report needs variant
    perception + quantified catalysts; slides need assertion-evidence titles.
+6. For screen-read long docs, make the table of contents real internal links
+   to stable section IDs, add visible `#` self-links to major `h1`/`h2`
+   headings, and give anchor targets `scroll-margin-top` so copied links land
+   cleanly. If the TOC shows both section numbers and page-like references,
+   prefix the page values (`Pg 03`) so they cannot be mistaken for another
+   section number, and style them as the smallest/lightest metadata in the row.
+7. When a print-oriented long-doc template is used as an on-screen explainer,
+   add enough screen-only rhythm between chapters for direct anchor jumps to
+   feel intentional.
+   Keep cover-title counts aligned with the primary document structure; do not
+   introduce a bold count such as "7 moments" when the TOC is organized around
+   a different number of sections.
+8. For presentation-style long docs, use a `data-vpk-docnav` runtime with
+   visible Up/Down controls, keyboard Up/Down navigation, and active-section
+   focus treatment so non-active sections recede without disappearing. Keep
+   dimming scoped to a keyboard/control navigation focus state and release that
+   state immediately on manual wheel/touch scrolling.
+9. In SVG diagrams, never rely on long single-line text inside fixed boxes.
+   Split labels into multiple `<text>` lines or widen the node/viewBox before
+   text reaches the container edge. Keep short node titles on one line when
+   they fit cleanly; do not split two-word labels such as "Update workpad"
+   without a layout need. Connector endpoints should meet the source and
+   target container edges exactly, with the arrow tip landing on the target
+   edge and the tail beginning at the source edge. Do not leave stray visual
+   gaps, and do not let markers protrude into boxes or labels. When the gap
+   between nodes is too tight for a meaningful arrow shaft, use an open chevron
+   connector instead of a filled triangle marker, and keep that chevron compact
+   enough to read as a separator rather than a dominant arrow.
+10. Center diagrams and technical illustrations by default. The SVG element
+   should center in the figure, and the visible art inside the SVG viewBox
+   should also be optically centered unless the prompt explicitly asks for a
+   left/right-aligned layout. If a full-width canvas creates dead space, set a
+   figure width that hugs the SVG artboard instead.
+11. Drop caps should read as intentional letterforms, not decorative rules.
+   Avoid starting drop-capped leads with thin letters such as `I`; use a
+   moderate weight and two-line float metrics so the third text line clears
+   back underneath the initial instead of continuing beside it.
+12. Code samples, command blocks, markdown templates, `pre`, and inline `code`
+   must explicitly use the mono face after any document-level typography
+   overrides. Do not let presentation/body text rules pull code back into the
+   body or display font.
 
 ### Do not generate
 
@@ -432,7 +473,7 @@ still preserve the offline single-file HTML contract.
 
 **Other identity rules:**
 
-- **Drop cap:** Charlie Display, 48px, 700-weight, on the first paragraph after each section break (works in both modes via `var(--near-black)`)
+- **Drop cap:** Charlie Display, moderate weight, two-line float, on the first paragraph after each section break (works in both modes via `var(--near-black)`)
 - **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead
 - **Deck rule:** apply class `.ascii-rule` to `<hr>` for a primary-blue dotted separator (two-layer repeating-linear-gradient)
 - **Frames:** sections, articles, figures, tables are flat by default. Cards / callouts opt in to hard shadow + 1px ink border.
