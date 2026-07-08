@@ -270,12 +270,21 @@ otherwise proceed to Step 6.
    feel intentional.
    Keep cover-title counts aligned with the primary document structure; do not
    introduce a bold count such as "7 moments" when the TOC is organized around
-   a different number of sections.
+   a different number of sections. If the audience needs problem framing, add
+   a concise TLDR/preface page between the cover and contents, then update TOC
+   page labels so section links still read correctly. For short orchestration
+   explainers, prefer a direct Problem/Solution pair over extra middle cards
+   unless the user explicitly asks for more framing. In the Solution side,
+   keep the answer concise; if the deck has later mechanics sections, the
+   TLDR solution can focus on the new human role while downstream pages explain
+   the system/control-plane details.
 8. For presentation-style long docs, use a `data-vpk-docnav` runtime with
    visible Up/Down controls, keyboard Up/Down navigation, and active-section
    focus treatment so non-active sections recede without disappearing. Keep
    dimming scoped to a keyboard/control navigation focus state and release that
-   state immediately on manual wheel/touch scrolling.
+   state immediately on manual wheel/touch scrolling. Opacity focus changes
+   should ease over roughly 500-700ms with a gentle curve; avoid abrupt jumps
+   from dimmed sections back to full opacity.
 9. In SVG diagrams, never rely on long single-line text inside fixed boxes.
    Split labels into multiple `<text>` lines or widen the node/viewBox before
    text reaches the container edge. Keep short node titles on one line when
@@ -283,19 +292,37 @@ otherwise proceed to Step 6.
    without a layout need. Connector endpoints should meet the source and
    target container edges exactly, with the arrow tip landing on the target
    edge and the tail beginning at the source edge. Do not leave stray visual
-   gaps, and do not let markers protrude into boxes or labels. When the gap
-   between nodes is too tight for a meaningful arrow shaft, use an open chevron
-   connector instead of a filled triangle marker, and keep that chevron compact
-   enough to read as a separator rather than a dominant arrow.
+   gaps, and do not let markers protrude into boxes or labels. Use filled
+   triangle markers consistently. When the gap between nodes is tight, keep the
+   same filled-triangle language but use a smaller marker rather than an open
+   chevron. If a connector crosses or terminates on a card/legend, draw that
+   connector in a later SVG layer so the line and arrowhead remain visible
+   above the card.
 10. Center diagrams and technical illustrations by default. The SVG element
    should center in the figure, and the visible art inside the SVG viewBox
    should also be optically centered unless the prompt explicitly asks for a
    left/right-aligned layout. If a full-width canvas creates dead space, set a
-   figure width that hugs the SVG artboard instead.
+   figure width that hugs the SVG artboard instead. When adjusting vertical
+   centering inside an SVG, move related node and connector groups together so
+   arrows, labels, and boxes keep their internal alignment.
+   Use status color consistently across related diagrams. Human-needed,
+   human-review, or approval-gate states are warning/yellow states by default,
+   not danger/red states, unless the node means an actual error or destructive
+   failure.
 11. Drop caps should read as intentional letterforms, not decorative rules.
    Avoid starting drop-capped leads with thin letters such as `I`; use a
    moderate weight and two-line float metrics so the third text line clears
-   back underneath the initial instead of continuing beside it.
+   back underneath the initial instead of continuing beside it. In
+   presentation-style explainers, reserve the drop cap for the cover subtitle
+   or opening deck statement, not every chapter lead. Tune uppercase drop caps
+   so they do not protrude high above the first line, so their bottom edge
+   sits close to the second line baseline, and so the letter color inherits
+   the surrounding text unless it is intentionally acting as a focal mark. If
+   the initial sits visually high, use a small top offset while compensating
+   the float height so the third text line still clears beneath the letter.
+   Prefer the regular display weight for cover drop caps; heavier weights can
+   overpower adjacent subtitle text. Tune the right gutter by eye so adjacent
+   first- and second-line text sits close to the glyph without touching it.
 12. Code samples, command blocks, markdown templates, `pre`, and inline `code`
    must explicitly use the mono face after any document-level typography
    overrides. Do not let presentation/body text rules pull code back into the
@@ -473,7 +500,7 @@ still preserve the offline single-file HTML contract.
 
 **Other identity rules:**
 
-- **Drop cap:** Charlie Display, moderate weight, two-line float, on the first paragraph after each section break (works in both modes via `var(--near-black)`)
+- **Drop cap:** Charlie Display regular weight, two-line float, inheriting the surrounding text color by default. For presentation-style explainers, reserve it for the cover subtitle or opening deck statement; do not repeat drop caps on every chapter lead. Prose-heavy long docs may use one opening drop cap when it supports the editorial tone.
 - **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead
 - **Deck rule:** apply class `.ascii-rule` to `<hr>` for a primary-blue dotted separator (two-layer repeating-linear-gradient)
 - **Frames:** sections, articles, figures, tables are flat by default. Cards / callouts opt in to hard shadow + 1px ink border.
