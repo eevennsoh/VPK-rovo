@@ -7434,7 +7434,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 14
+			"localSkillCount": 15
 		},
 		"localSkills": [
 			{
@@ -7472,6 +7472,12 @@
 				"name": "vpk-design",
 				"path": ".agents/skills/vpk-design/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
+			},
+			{
+				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and fan out parallel Sonnet 5 worker subagents (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, or asks how to use Fable 5 economically.",
+				"name": "vpk-fable",
+				"path": ".agents/skills/vpk-fable/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-fable"
 			},
 			{
 				"description": "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"delete the branch after merge\\\", \\\"prune stale refs\\\", \\\"tidy worktrees\\\", \\\"sweep landed worktrees\\\", \\\"my worktrees are piling up\\\", \\\"remove this worktree\\\", \\\"free worktree ports\\\", \\\"kill the dev server for a worktree\\\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed.",
