@@ -23,9 +23,10 @@ Default requirements:
   HTTP errors, sandbox/network allowlist failures, or top-level GraphQL
   `errors` as real blockers only after this direct path has been attempted.
 - If the HTTPS request is blocked by the current sandbox or network allowlist,
-  request the required approval/escalation for `api.linear.app`. Do not skip
-  Linear issue creation and do not continue as Symphony-managed work without an
-  issue.
+  immediately rerun the same request with the required approval/escalation for
+  `api.linear.app` in the same turn. Do not stop at a status update, skip Linear
+  issue creation, or continue as Symphony-managed work without an issue. Report
+  Linear as blocked only if the escalated request is denied or still fails.
 
 Default creation sequence:
 

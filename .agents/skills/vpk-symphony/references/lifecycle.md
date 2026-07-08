@@ -17,9 +17,14 @@ existing Linear issue identifier or URL.
   1. direct Linear GraphQL over HTTPS with local `LINEAR_API_KEY` and
      `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or `.env.local`;
   2. if direct HTTPS is blocked by the current sandbox or network allowlist,
-     request the required approval/escalation for the Linear API route;
+     immediately rerun the same direct GraphQL bootstrap with the required
+     approval/escalation for the Linear API route in the same turn;
   3. blocked-access handling only after the available paths fail with a real
      auth, project, schema, sandbox, or network blocker.
+- Do not stop at a status update after a sandbox or network allowlist failure.
+  The required next action is the escalated rerun of the same GraphQL request.
+  Report Linear as blocked only if the escalated request is denied or still
+  fails.
 - Do not wait for or prefer an injected `linear_graphql` tool. Company policy
   does not expose that tool to Codex workers, so direct Linear GraphQL with
   local auth is the normal path.

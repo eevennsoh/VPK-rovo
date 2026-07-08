@@ -129,10 +129,12 @@ GraphQL over HTTPS with local `LINEAR_API_KEY` and
 `linear_graphql` tool to Codex workers. This applies to tiny direct file edits,
 generated artifact updates, meta support, answer-only work, and implementation
 work. If the current sandbox or network allowlist blocks `api.linear.app`, the
-worker should request the required approval/escalation or record the exact
-blocker; it should not bypass Linear issue creation. If the user explicitly
-says not to create Linear work items for a meta/setup correction to the Symphony
-harness itself, honor that instruction. After the issue exists, the normal
+worker should immediately rerun the same direct GraphQL bootstrap with the
+required approval/escalation in the same turn. It should record a blocker only
+when the escalated request is denied or still fails; it should not bypass Linear
+issue creation. If the user explicitly says not to create Linear work items for
+a meta/setup correction to the Symphony harness itself, honor that instruction.
+After the issue exists, the normal
 workflow decides whether the ticket is answer-only work that ends in the workpad
 or implementation work that needs a branch, PR, Agent Review, and merge. The
 launcher itself still polls Linear for existing active issues.

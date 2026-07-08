@@ -29,10 +29,12 @@ over HTTPS with the local `LINEAR_API_KEY` and
 `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or `.env.local`. Company policy
 does not expose an injected `linear_graphql` tool to Codex workers, so do not
 wait for it, search for it, or present it as the default. If direct HTTPS to
-`api.linear.app` is blocked by the current sandbox or network allowlist, request
-the required approval/escalation and state that Linear issue creation is blocked
-until the route is available. Do not treat that block as permission to skip
-Linear.
+`api.linear.app` is blocked by the current sandbox or network allowlist,
+immediately rerun the same direct GraphQL bootstrap with the required
+approval/escalation in the same turn. Do not pause to explain the block before
+requesting escalation unless the tool cannot request it. Only state that Linear
+issue creation is blocked after the escalated request is denied or still fails.
+Do not treat that block as permission to skip Linear.
 
 Skip issue creation only when the user provides an existing Linear issue
 identifier or URL; fetch that issue fresh instead. Also honor an explicit user
@@ -54,15 +56,17 @@ Playwright CLI evidence path.
    before doing the work. Use `references/lifecycle.md` for classification and
    `references/linear-graphql.md` for schema-safe issue creation. Use direct
    Linear GraphQL with local auth as the preferred path. Do not wait for
-   injected `linear_graphql`; it is not expected to be available. Request
-   sandbox/network approval when direct HTTPS to Linear is blocked. If Linear
-   access or project configuration is still missing, report the exact blocker
-   instead of silently continuing as non-Symphony local work for repo-changing
-   tasks. After a successful ad-hoc bootstrap, default to leaving the issue in
-   `Todo` for `pnpm run symphony` to claim in a fresh workspace. Continue in the
-   current checkout only when the user explicitly asks for immediate local
-   execution or the current checkout is already a Symphony issue workspace, and
-   record that decision in the workpad.
+   injected `linear_graphql`; it is not expected to be available. When direct
+   HTTPS to Linear is blocked by sandbox or network policy, immediately request
+   sandbox/network approval by rerunning the same GraphQL bootstrap with
+   escalation. If Linear access or project configuration is still missing after
+   that escalated attempt, report the exact blocker instead of silently
+   continuing as non-Symphony local work for repo-changing tasks. After a
+   successful ad-hoc bootstrap, default to leaving the issue in `Todo` for
+   `pnpm run symphony` to claim in a fresh workspace. Continue in the current
+   checkout only when the user explicitly asks for immediate local execution or
+   the current checkout is already a Symphony issue workspace, and record that
+   decision in the workpad.
 3. Fetch fresh Linear issue details and use exactly one active
    `## Codex Workpad` comment.
 4. Classify the issue before editing:

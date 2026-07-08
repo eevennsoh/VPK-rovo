@@ -115,11 +115,14 @@ The preferred Linear path is direct Linear GraphQL over HTTPS with local
 `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
 `.env.local`. Company policy does not expose an injected `linear_graphql` tool
 to Codex workers, so do not wait for that tool or treat it as the default path.
-If the current sandbox or network allowlist blocks `api.linear.app`, request the
-required approval/escalation or use the blocked-access escape hatch with the
-exact missing capability and unblock action. Do not bypass Linear issue creation
-after `vpk-symphony` invocation unless the user explicitly says not to create
-Linear work items for a meta/setup correction to the Symphony harness itself.
+If the current sandbox or network allowlist blocks `api.linear.app`, immediately
+rerun the same direct GraphQL bootstrap with the required approval/escalation in
+the same turn. Do not stop at a status update after the block. Use the
+blocked-access escape hatch with the exact missing capability and unblock action
+only if the escalated request is denied or still fails. Do not bypass Linear
+issue creation after `vpk-symphony` invocation unless the user explicitly says
+not to create Linear work items for a meta/setup correction to the Symphony
+harness itself.
 
 ## Execution rules
 
