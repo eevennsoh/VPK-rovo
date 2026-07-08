@@ -194,6 +194,9 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.equal(retrofitDocumentNav(once), once);
 	assert.match(once, /data-vpk-motion="document"/);
 	assert.match(once, /data-vpk-docnav-runtime/);
+	assert.match(once, /className = 'docnav-controls'/);
+	assert.match(once, /data-vpk-docnav-style/);
+	assert.match(once, /is-docnav-active/);
 	assert.equal(retrofitDocumentNav(deck), deck);
 });
 

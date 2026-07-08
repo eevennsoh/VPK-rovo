@@ -334,9 +334,142 @@ export function buildPresentationJs() {
 export function buildDocNavJs() {
 	return `(() => {
 \tif (!document.body.matches('[data-vpk-docnav]')) return;
-\tconst targets = [...document.querySelectorAll('main h1, main h2, main section[id]')]
+\tconst sectionTargets = [...document.querySelectorAll('main > section')]
 \t\t.filter(el => el.getBoundingClientRect().height > 0);
+\tconst targets = sectionTargets.length >= 2
+\t\t? sectionTargets
+\t\t: [...document.querySelectorAll('main h1, main h2, main section[id]')]
+\t\t\t.filter(el => el.getBoundingClientRect().height > 0);
 \tif (targets.length < 2) return;
+\tlet activeIndex = 0;
+\tlet focusTimer = 0;
+\tlet manualTimer = 0;
+
+\tif (!document.querySelector('style[data-vpk-docnav-style]')) {
+\t\tconst style = document.createElement('style');
+\t\tstyle.dataset.vpkDocnavStyle = 'true';
+\t\tstyle.textContent = \`
+@media screen {
+\tbody[data-vpk-docnav] main > section {
+\t\tscroll-margin-top: 32px;
+\t\ttransition:
+\t\t\topacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+\t\t\tfilter 560ms cubic-bezier(0.16, 1, 0.3, 1),
+\t\t\ttransform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+\t}
+
+\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+\t\topacity: 0.34 !important;
+\t\tfilter: grayscale(0.14) !important;
+\t}
+
+\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+\t\topacity: 1 !important;
+\t\tfilter: none !important;
+\t\ttransform: translateY(-2px) !important;
+\t}
+
+\t.docnav-controls {
+\t\tposition: fixed;
+\t\tright: 24px;
+\t\tbottom: 24px;
+\t\tz-index: 50;
+\t\tdisplay: flex;
+\t\talign-items: center;
+\t\tgap: 6px;
+\t\tpadding: 6px;
+\t\tbackground: color-mix(in srgb, var(--paper) 88%, transparent);
+\t\tborder: 0;
+\t\tborder-radius: 999px;
+\t\tbox-shadow: var(--shadow);
+\t\tbackdrop-filter: blur(10px);
+\t}
+
+\t.docnav-controls button {
+\t\twidth: 36px;
+\t\theight: 36px;
+\t\tborder: 1px solid var(--rule);
+\t\tborder-radius: 999px;
+\t\tbackground: var(--surface-raised);
+\t\tcolor: var(--ink);
+\t\tfont-family: var(--font-mono);
+\t\tfont-size: 18px;
+\t\tline-height: 1;
+\t\tcursor: pointer;
+\t}
+
+\t.docnav-controls button:hover,
+\t.docnav-controls button:focus-visible {
+\t\tcolor: var(--primary-blue);
+\t\tborder-color: var(--primary-blue);
+\t\toutline: none;
+\t}
+
+\t.docnav-controls button:disabled {
+\t\topacity: 0.35;
+\t\tcursor: default;
+\t}
+
+\t.docnav-counter {
+\t\tmin-width: 46px;
+\t\ttext-align: center;
+\t\tcolor: var(--muted-text);
+\t\tfont-family: var(--font-mono);
+\t\tfont-size: 12px;
+\t\tfont-variant-numeric: tabular-nums;
+\t}
+}
+
+@media print {
+\t.docnav-controls { display: none !important; }
+\tbody[data-vpk-docnav] main > section {
+\t\topacity: 1 !important;
+\t\tfilter: none !important;
+\t\ttransform: none !important;
+\t}
+}\`;
+\t\tdocument.head.appendChild(style);
+\t}
+
+\tconst controls = document.createElement('nav');
+\tcontrols.className = 'docnav-controls';
+\tcontrols.setAttribute('aria-label', 'Document section navigation');
+\tcontrols.innerHTML = \`
+\t\t<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button>
+\t\t<span class="docnav-counter" aria-live="polite"></span>
+\t\t<button type="button" data-docnav-next aria-label="Next section">&darr;</button>
+\t\`;
+\tdocument.body.appendChild(controls);
+
+\tconst prevButton = controls.querySelector('[data-docnav-prev]');
+\tconst nextButton = controls.querySelector('[data-docnav-next]');
+\tconst counter = controls.querySelector('.docnav-counter');
+
+\tfunction setActive(index) {
+\t\tactiveIndex = Math.max(0, Math.min(targets.length - 1, index));
+\t\ttargets.forEach((target, targetIndex) => {
+\t\t\ttarget.classList.toggle('is-docnav-active', targetIndex === activeIndex);
+\t\t});
+\t\tprevButton.disabled = activeIndex === 0;
+\t\tnextButton.disabled = activeIndex === targets.length - 1;
+\t\tcounter.textContent = \`\${String(activeIndex + 1).padStart(2, '0')} / \${String(targets.length).padStart(2, '0')}\`;
+\t\tdocument.body.dataset.docnavReady = 'true';
+\t}
+
+\tfunction setFocusMode() {
+\t\tdocument.body.dataset.docnavFocus = 'true';
+\t\tclearTimeout(focusTimer);
+\t\tfocusTimer = window.setTimeout(() => {
+\t\t\tdelete document.body.dataset.docnavFocus;
+\t\t}, 1800);
+\t}
+
+\tfunction releaseFocusModeSoon() {
+\t\tclearTimeout(manualTimer);
+\t\tmanualTimer = window.setTimeout(() => {
+\t\t\tdelete document.body.dataset.docnavFocus;
+\t\t}, 120);
+\t}
 
 \tfunction currentIndex() {
 \t\tconst y = window.scrollY + 80;
@@ -347,6 +480,16 @@ export function buildDocNavJs() {
 \t\treturn selected;
 \t}
 
+\tfunction go(delta) {
+\t\tconst next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
+\t\tsetActive(next);
+\t\tsetFocusMode();
+\t\ttargets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+\t}
+
+\tprevButton.addEventListener('click', () => go(-1));
+\tnextButton.addEventListener('click', () => go(1));
+
 \tdocument.addEventListener('keydown', event => {
 \t\tif (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 \t\tconst editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
@@ -354,9 +497,13 @@ export function buildDocNavJs() {
 \t\tif (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 \t\tevent.preventDefault();
 \t\tconst delta = event.key === 'ArrowDown' ? 1 : -1;
-\t\tconst next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
-\t\ttargets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+\t\tgo(delta);
 \t});
+
+\tdocument.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
+\tdocument.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
+\tdocument.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
+\tsetActive(currentIndex());
 })();`;
 }
 

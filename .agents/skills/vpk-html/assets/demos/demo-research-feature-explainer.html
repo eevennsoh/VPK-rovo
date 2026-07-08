@@ -1104,9 +1104,142 @@ document.querySelectorAll("[data-tabs]").forEach(box => {
 </script><script data-vpk-docnav-runtime>
 (() => {
 	if (!document.body.matches('[data-vpk-docnav]')) return;
-	const targets = [...document.querySelectorAll('main h1, main h2, main section[id]')]
+	const sectionTargets = [...document.querySelectorAll('main > section')]
 		.filter(el => el.getBoundingClientRect().height > 0);
+	const targets = sectionTargets.length >= 2
+		? sectionTargets
+		: [...document.querySelectorAll('main h1, main h2, main section[id]')]
+			.filter(el => el.getBoundingClientRect().height > 0);
 	if (targets.length < 2) return;
+	let activeIndex = 0;
+	let focusTimer = 0;
+	let manualTimer = 0;
+
+	if (!document.querySelector('style[data-vpk-docnav-style]')) {
+		const style = document.createElement('style');
+		style.dataset.vpkDocnavStyle = 'true';
+		style.textContent = `
+@media screen {
+	body[data-vpk-docnav] main > section {
+		scroll-margin-top: 32px;
+		transition:
+			opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+			filter 560ms cubic-bezier(0.16, 1, 0.3, 1),
+			transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+		opacity: 0.34 !important;
+		filter: grayscale(0.14) !important;
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: translateY(-2px) !important;
+	}
+
+	.docnav-controls {
+		position: fixed;
+		right: 24px;
+		bottom: 24px;
+		z-index: 50;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px;
+		background: color-mix(in srgb, var(--paper) 88%, transparent);
+		border: 0;
+		border-radius: 999px;
+		box-shadow: var(--shadow);
+		backdrop-filter: blur(10px);
+	}
+
+	.docnav-controls button {
+		width: 36px;
+		height: 36px;
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		background: var(--surface-raised);
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: 18px;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.docnav-controls button:hover,
+	.docnav-controls button:focus-visible {
+		color: var(--primary-blue);
+		border-color: var(--primary-blue);
+		outline: none;
+	}
+
+	.docnav-controls button:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+
+	.docnav-counter {
+		min-width: 46px;
+		text-align: center;
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+	}
+}
+
+@media print {
+	.docnav-controls { display: none !important; }
+	body[data-vpk-docnav] main > section {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: none !important;
+	}
+}`;
+		document.head.appendChild(style);
+	}
+
+	const controls = document.createElement('nav');
+	controls.className = 'docnav-controls';
+	controls.setAttribute('aria-label', 'Document section navigation');
+	controls.innerHTML = `
+		<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button>
+		<span class="docnav-counter" aria-live="polite"></span>
+		<button type="button" data-docnav-next aria-label="Next section">&darr;</button>
+	`;
+	document.body.appendChild(controls);
+
+	const prevButton = controls.querySelector('[data-docnav-prev]');
+	const nextButton = controls.querySelector('[data-docnav-next]');
+	const counter = controls.querySelector('.docnav-counter');
+
+	function setActive(index) {
+		activeIndex = Math.max(0, Math.min(targets.length - 1, index));
+		targets.forEach((target, targetIndex) => {
+			target.classList.toggle('is-docnav-active', targetIndex === activeIndex);
+		});
+		prevButton.disabled = activeIndex === 0;
+		nextButton.disabled = activeIndex === targets.length - 1;
+		counter.textContent = `${String(activeIndex + 1).padStart(2, '0')} / ${String(targets.length).padStart(2, '0')}`;
+		document.body.dataset.docnavReady = 'true';
+	}
+
+	function setFocusMode() {
+		document.body.dataset.docnavFocus = 'true';
+		clearTimeout(focusTimer);
+		focusTimer = window.setTimeout(() => {
+			delete document.body.dataset.docnavFocus;
+		}, 1800);
+	}
+
+	function releaseFocusModeSoon() {
+		clearTimeout(manualTimer);
+		manualTimer = window.setTimeout(() => {
+			delete document.body.dataset.docnavFocus;
+		}, 120);
+	}
 
 	function currentIndex() {
 		const y = window.scrollY + 80;
@@ -1117,6 +1250,16 @@ document.querySelectorAll("[data-tabs]").forEach(box => {
 		return selected;
 	}
 
+	function go(delta) {
+		const next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
+		setActive(next);
+		setFocusMode();
+		targets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+	}
+
+	prevButton.addEventListener('click', () => go(-1));
+	nextButton.addEventListener('click', () => go(1));
+
 	document.addEventListener('keydown', event => {
 		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
@@ -1124,9 +1267,13 @@ document.querySelectorAll("[data-tabs]").forEach(box => {
 		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 		event.preventDefault();
 		const delta = event.key === 'ArrowDown' ? 1 : -1;
-		const next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
-		targets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+		go(delta);
 	});
+
+	document.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
+	document.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
+	document.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
+	setActive(currentIndex());
 })();
 </script>
 </body>
