@@ -391,10 +391,7 @@ html {
 }
 
 body {
-\tbackground:
-\t\tvar(--grid-background),
-\t\tvar(--paper-background);
-\tbackground-size: var(--grid-background-size);
+\tbackground: var(--paper-background);
 \tfont-size: 18px;
 \tmin-height: 100vh;
 }
@@ -501,17 +498,16 @@ section {
 \tborder-bottom: 1px solid var(--border);
 \tdisplay: grid;
 \tgap: 16px;
-\tgrid-template-columns: minmax(140px, 0.28fr) minmax(0, 1fr);
+\tgrid-template-columns: minmax(0, 1fr);
 \tpadding-bottom: 30px;
 }
 
 section h2 {
 \tfont-size: clamp(24px, 3.2vw, 36px);
-\tgrid-column: 1 / -1;
 }
 
 .prompt-list {
-\tgrid-column: 2;
+\tgrid-column: 1;
 \tdisplay: grid;
 \tgap: 10px;
 }

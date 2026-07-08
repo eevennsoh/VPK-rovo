@@ -92,6 +92,7 @@ test("buildStylesCssFromTokens emits the shared motion contract", async () => {
 	assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*--vpk-enter-y:\s*0px;/);
 	assert.match(css, /@media print[\s\S]*animation:\s*none !important;/);
 	assert.doesNotMatch(css, /(^|[^-])ease-in(?!-)/i);
+	assert.doesNotMatch(css, /--grid-(?:background|dot|line|major|dot-gap)/);
 
 	const enterDuration = Number(css.match(/--vpk-dur-enter:\s*(\d+)ms;/)?.[1]);
 	assert.ok(enterDuration <= 300, "entrance duration stays under 300ms");
@@ -193,6 +194,9 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.equal(retrofitDocumentNav(once), once);
 	assert.match(once, /data-vpk-motion="document"/);
 	assert.match(once, /data-vpk-docnav-runtime/);
+	assert.match(once, /className = 'docnav-controls'/);
+	assert.match(once, /data-vpk-docnav-style/);
+	assert.match(once, /is-docnav-active/);
 	assert.equal(retrofitDocumentNav(deck), deck);
 });
 

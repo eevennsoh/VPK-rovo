@@ -33,10 +33,7 @@ html {
 }
 
 body {
-\tbackground:
-\t\tvar(--grid-background),
-\t\tvar(--paper-background);
-\tbackground-size: var(--grid-background-size);
+\tbackground: var(--paper-background);
 \tmin-height: 100vh;
 \tpadding: clamp(24px, 5vw, 56px);
 }

@@ -92,10 +92,7 @@ ${wrapSharedCss(readStylesCss())}
 
 html,
 body {
-  background:
-    var(--grid-background),
-    var(--ivory) !important;
-  background-size: var(--grid-background-size) !important;
+  background: var(--paper-background) !important;
   color: var(--slate) !important;
   font-family: "Atlassian Mono Numeric", var(--sans) !important;
   letter-spacing: 0 !important;
