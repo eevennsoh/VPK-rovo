@@ -28,9 +28,13 @@ Keep the workpad compact and current:
   SHA.
 - For app-touching work, record browser evidence availability and artifact
   links when available.
-- Put uploaded screenshots and WebM links in the workpad `### Evidence` section.
-- Use markdown image syntax for screenshots so Linear renders inline previews.
-- Put uploaded WebM asset URLs on their own line.
+- Put uploaded screenshots, inline GIF previews, and WebM links in the workpad
+  `### Evidence` section.
+- Use markdown image syntax for screenshots and GIF previews so Linear renders
+  inline image previews.
+- Put uploaded WebM asset URLs on their own line as downloadable recording
+  evidence; do not rely on Linear to render WebM uploads as playable inline
+  video.
 
 ## Answer-Only Issues
 
