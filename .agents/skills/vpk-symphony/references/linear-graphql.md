@@ -1,6 +1,7 @@
 # Linear GraphQL
 
-Use this skill for raw Linear GraphQL work during Symphony app-server sessions.
+Use this skill for raw Linear GraphQL work during Symphony app-server sessions
+and local `vpk-symphony` invocations that need to bootstrap or update Linear.
 
 ## Primary tool
 
@@ -25,10 +26,30 @@ Tool behavior:
   tool call itself completed.
 - Keep queries/mutations narrowly scoped; ask only for the fields you need.
 
+## Direct local-auth fallback
+
+When `vpk-symphony` is invoked from a desktop/local Codex thread and the
+injected `linear_graphql` tool is not exposed, default to direct Linear GraphQL
+over HTTPS before reporting a blocker.
+
+Fallback requirements:
+
+- Load `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell
+  environment or ignored `.env.local`.
+- POST one GraphQL operation at a time to `https://api.linear.app/graphql` with
+  `Authorization: <LINEAR_API_KEY>` and `Content-Type: application/json`.
+- Never print, commit, or include the token in issue text, comments, logs, or
+  final responses.
+- Use the same query and mutation documents in this reference. The transport
+  changes; the schema-safe operation shapes do not.
+- Treat missing local auth, missing project slug, unresolved project/team/state,
+  HTTP errors, or top-level GraphQL `errors` as real blockers only after this
+  fallback has been attempted.
+
 ## Discovering unfamiliar operations
 
 When you need an unfamiliar mutation, input type, or object field, use targeted
-introspection through `linear_graphql`.
+introspection through `linear_graphql` or the direct local-auth fallback.
 
 List mutation names:
 
@@ -305,7 +326,7 @@ query IssueTeamStates($id: String!) {
 
 ### Edit an existing comment
 
-Use `commentUpdate` through `linear_graphql`:
+Use `commentUpdate` through the active Linear GraphQL transport:
 
 ```graphql
 mutation UpdateComment($id: String!, $body: String!) {
@@ -321,7 +342,7 @@ mutation UpdateComment($id: String!, $body: String!) {
 
 ### Create a comment
 
-Use `commentCreate` through `linear_graphql`:
+Use `commentCreate` through the active Linear GraphQL transport:
 
 ```graphql
 mutation CreateComment($issueId: String!, $body: String!) {
@@ -436,12 +457,12 @@ query IssueFieldArgs {
 
 Do this in three steps:
 
-1. Call `linear_graphql` with `fileUpload` to get `uploadUrl`, `assetUrl`, and
-   any required upload headers.
+1. Call `fileUpload` through the active Linear GraphQL transport to get
+   `uploadUrl`, `assetUrl`, and any required upload headers.
 2. Upload the local file bytes to `uploadUrl` with `curl -X PUT` and the exact
    headers returned by `fileUpload`.
-3. Call `linear_graphql` again with `commentCreate` (or `commentUpdate`) and
-   include the resulting `assetUrl` in the comment body.
+3. Call the active Linear GraphQL transport again with `commentCreate` (or
+   `commentUpdate`) and include the resulting `assetUrl` in the comment body.
 
 Use the actual MIME type and size of the file. Common Symphony evidence types
 are `image/png` for screenshots, `image/gif` for short inline motion previews,
@@ -484,14 +505,15 @@ mutation FileUpload(
 
 - For task-like `vpk-symphony` invocations without an issue identifier, attempt
   `issueCreate` before doing local work.
-- Use `linear_graphql` for comment edits, uploads, and ad-hoc Linear API
-  queries.
+- Use the active Linear GraphQL transport for comment edits, uploads, and
+  ad-hoc Linear API queries. Prefer injected `linear_graphql`; when it is not
+  exposed, use the direct local-auth fallback.
 - Prefer the narrowest issue lookup that matches what you already know:
   key -> identifier search -> internal id.
 - For state transitions, fetch team states first and use the exact `stateId`
   instead of hardcoding names inside mutations.
 - Prefer `attachmentLinkGitHubPR` over a generic URL attachment when linking a
   GitHub PR to a Linear issue.
-- Do not introduce new raw-token shell helpers for GraphQL access.
+- Do not introduce committed raw-token shell helpers for GraphQL access.
 - If you need shell work for uploads, only use it for signed upload URLs
   returned by `fileUpload`; those URLs already carry the needed authorization.

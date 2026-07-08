@@ -47,7 +47,9 @@ the best non-browser validation available for the issue.
 
 `LINEAR_API_KEY` can live in ignored `.env.local` or the shell environment. Never
 commit a real Linear key to `.env.local.example`, docs, issues, or comments. The
-project slug comes from the Linear project URL.
+project slug comes from the Linear project URL. Local `vpk-symphony` invocations
+should also use these values as the default direct Linear GraphQL fallback when
+the injected `linear_graphql` tool is not exposed by the current Codex thread.
 
 Optional overrides:
 
@@ -122,10 +124,20 @@ Ad-hoc `vpk-symphony` invocations are an agent-side ticket bootstrap, not a
 launcher flag. When the skill is invoked with a task-like request and no
 existing Linear issue, the worker should first try to create a `Todo` Linear
 issue in the configured Symphony project using Linear MCP or `linear_graphql`.
-After the issue exists, the normal workflow decides whether the ticket is
-answer-only work that ends in the workpad or implementation work that needs a
-branch, PR, Agent Review, and merge. The launcher itself still polls Linear for
-existing active issues.
+If neither is exposed in the current Codex thread, the worker should default to
+direct Linear GraphQL with local `LINEAR_API_KEY` and
+`SYMPHONY_LINEAR_PROJECT_SLUG` before reporting blocked access. After the issue
+exists, the normal workflow decides whether the ticket is answer-only work that
+ends in the workpad or implementation work that needs a branch, PR, Agent
+Review, and merge. The launcher itself still polls Linear for existing active
+issues.
+
+After an ad-hoc ticket is created, the safer default is to leave it in `Todo`
+for `pnpm run symphony` to claim. That path creates a fresh issue workspace via
+the launcher hook. A local Codex thread may continue executing immediately only
+when the user explicitly asks for that or when the current checkout is already a
+Symphony issue workspace; the workpad should then say that no new workspace was
+created and why local execution was used.
 
 Recommended Linear flow:
 
@@ -167,17 +179,20 @@ adversarial code review, `Human Review` is a narrow super-risk waiting gate,
 `Merging` is guarded landing, and terminal states do nothing. These prompts are
 part of the runtime worker prompt, not only documentation.
 
-For UI or browser-observable changes, workers use the repo-local `vpk-symphony`
-browser evidence reference during `In Progress` when
-`playwright-cli` is available. Artifacts are kept under
+For UI, browser-observable, generated/offline HTML, or visual artifact changes,
+workers use the repo-local `vpk-symphony` browser evidence reference during
+`In Progress` when `playwright-cli` is available. Artifacts are kept under
 `output/playwright/<issue-identifier>/` in the issue workspace and only the
 required screenshots or short WebM recordings are uploaded to Linear through the
-injected `linear_graphql` tool. The uploaded links belong in the single
+injected `linear_graphql` tool, or through the direct Linear GraphQL fallback
+when the injected client is unavailable. The uploaded links belong in the single
 `## Codex Workpad` comment, not in separate progress comments. A before artifact
 is only required when it proves the bug or requested baseline; an after artifact
-is expected before moving app-touching work to `Agent Review` when browser media
-capture is available. Screenshot uploads, plus short animated GIF previews when
-inline motion proof is needed, should use markdown image syntax
+is required before moving browser-observable work to `Agent Review` or `Done`
+when browser media capture is available. Ignored `output/` HTML is still
+browser-observable; source search alone is not enough evidence. Screenshot
+uploads, plus short animated GIF previews when inline motion proof is needed,
+should use markdown image syntax
 (`![alt text](<asset-url>)`) in the workpad so Linear renders an inline preview.
 Uploaded WebM recordings should be kept as the canonical recording evidence, but
 Linear `fileUpload` WebM assets may render only as downloadable links. Place the
