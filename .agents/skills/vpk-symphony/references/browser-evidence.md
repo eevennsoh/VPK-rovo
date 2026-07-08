@@ -29,9 +29,8 @@ use `/agent-browser` as directed by `AGENTS.md`.
    timing-sensitive behavior, drag/drop, keyboard flows, or hover/focus states.
 10. Inspect artifacts for secrets, tokens, local file paths, private data,
     unrelated browser tabs, terminal panes, and devtools output before upload.
-11. Upload only required media through `linear_graphql` using `fileUpload`, or
-   through the direct Linear GraphQL fallback when the injected client is not
-   exposed, then update the single `## Codex Workpad` comment.
+11. Upload only required media through direct Linear GraphQL using `fileUpload`,
+   then update the single `## Codex Workpad` comment.
 12. Before moving the issue to `Agent Review` or `Done`, the workpad must show
    either uploaded after evidence or the exact browser launch/capture blocker.
 

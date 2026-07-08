@@ -48,8 +48,8 @@ the best non-browser validation available for the issue.
 `LINEAR_API_KEY` can live in ignored `.env.local` or the shell environment. Never
 commit a real Linear key to `.env.local.example`, docs, issues, or comments. The
 project slug comes from the Linear project URL. Local `vpk-symphony` invocations
-should also use these values as the default direct Linear GraphQL fallback when
-the injected `linear_graphql` tool is not exposed by the current Codex thread.
+use these values as the default direct Linear GraphQL path because company
+policy does not expose an injected `linear_graphql` tool to Codex workers.
 
 Optional overrides:
 
@@ -121,16 +121,21 @@ With `--port`, upstream Symphony exposes:
 ## Workflow
 
 Ad-hoc `vpk-symphony` invocations are an agent-side ticket bootstrap, not a
-launcher flag. When the skill is invoked with a task-like request and no
-existing Linear issue, the worker should first try to create a `Todo` Linear
-issue in the configured Symphony project using Linear MCP or `linear_graphql`.
-If neither is exposed in the current Codex thread, the worker should default to
-direct Linear GraphQL with local `LINEAR_API_KEY` and
-`SYMPHONY_LINEAR_PROJECT_SLUG` before reporting blocked access. After the issue
-exists, the normal workflow decides whether the ticket is answer-only work that
-ends in the workpad or implementation work that needs a branch, PR, Agent
-Review, and merge. The launcher itself still polls Linear for existing active
-issues.
+launcher flag. When the skill is invoked and no existing Linear issue is
+provided, the worker should first try to create a `Todo` Linear issue in the
+configured Symphony project. The best proven creation path is direct Linear
+GraphQL over HTTPS with local `LINEAR_API_KEY` and
+`SYMPHONY_LINEAR_PROJECT_SLUG`; company policy does not expose an injected
+`linear_graphql` tool to Codex workers. This applies to tiny direct file edits,
+generated artifact updates, meta support, answer-only work, and implementation
+work. If the current sandbox or network allowlist blocks `api.linear.app`, the
+worker should request the required approval/escalation or record the exact
+blocker; it should not bypass Linear issue creation. If the user explicitly
+says not to create Linear work items for a meta/setup correction to the Symphony
+harness itself, honor that instruction. After the issue exists, the normal
+workflow decides whether the ticket is answer-only work that ends in the workpad
+or implementation work that needs a branch, PR, Agent Review, and merge. The
+launcher itself still polls Linear for existing active issues.
 
 After an ad-hoc ticket is created, the safer default is to leave it in `Todo`
 for `pnpm run symphony` to claim. That path creates a fresh issue workspace via
@@ -183,9 +188,8 @@ For UI, browser-observable, generated/offline HTML, or visual artifact changes,
 workers use the repo-local `vpk-symphony` browser evidence reference during
 `In Progress` when `playwright-cli` is available. Artifacts are kept under
 `output/playwright/<issue-identifier>/` in the issue workspace and only the
-required screenshots or short WebM recordings are uploaded to Linear through the
-injected `linear_graphql` tool, or through the direct Linear GraphQL fallback
-when the injected client is unavailable. The uploaded links belong in the single
+required screenshots or short WebM recordings are uploaded to Linear through
+direct Linear GraphQL. The uploaded links belong in the single
 `## Codex Workpad` comment, not in separate progress comments. A before artifact
 is only required when it proves the bug or requested baseline; an after artifact
 is required before moving browser-observable work to `Agent Review` or `Done`

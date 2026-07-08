@@ -1,6 +1,6 @@
 ---
 name: vpk-symphony
-description: Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets, Linear issue execution, Codex Workpad updates, raw linear_graphql operations, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.
+description: Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.
 purpose: Create, execute, and debug VPK Symphony-managed Linear work with workpad discipline, git lifecycle rules, and issue-scoped browser evidence.
 owner: VPK
 category: orchestration
@@ -9,7 +9,7 @@ outputs: Created or reused Linear ticket, updated workpad, implementation or inv
 required_tools: shell, git, gh, pnpm, Linear GraphQL auth, Playwright CLI
 validation_command: pnpm run symphony
 generated_artifacts: Workpad updates, branches, PRs, and ignored output/playwright evidence when approved.
-common_failure_modes: Skipping ad-hoc ticket bootstrap, doing task work outside a Symphony ticket after skill invocation, creating multiple active workpad comments, using normal browser tooling for Symphony evidence, skipping Linear freshness, or landing without guarded checks.
+common_failure_modes: Skipping ad-hoc ticket bootstrap after vpk-symphony invocation, waiting for an injected linear_graphql tool that company policy does not expose, treating sandbox/network blocks as permission to bypass Linear, creating multiple active workpad comments, using normal browser tooling for Symphony evidence, skipping Linear freshness, or landing without guarded checks.
 ---
 
 # vpk-symphony
@@ -21,17 +21,25 @@ Linear workpad, git lifecycle, browser evidence, PR handoff, and stuck-run
 debugging rules in one discoverable place.
 
 When invoked without an existing Linear issue identifier or URL, first try to
-bootstrap a Linear ticket for any task-like request. Task-like requests include
-repo changes, investigations, reviews, audits, triage, operational guidance, and
-answer-only work such as codebase tours or explanations. Prefer the injected
-`linear_graphql` client when it is exposed by a Symphony app-server session. If
-it is not exposed, default to direct Linear GraphQL with the local
-`LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
-`.env.local`. Treat ticket creation as blocked only after both the injected
-client and the direct local-auth fallback are unavailable or fail with a real
-auth/project/schema error. Skip ticket bootstrap only when the user explicitly
-says not to, provides an existing Linear issue, or is asking a meta question
-about using or debugging Symphony itself in the current conversation.
+bootstrap a Linear ticket for the request. This applies to task-like requests,
+tiny local file edits, generated artifact edits, investigations, reviews,
+audits, triage, operational guidance, and answer-only work such as codebase
+tours or explanations. The best proven creation path is direct Linear GraphQL
+over HTTPS with the local `LINEAR_API_KEY` and
+`SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or `.env.local`. Company policy
+does not expose an injected `linear_graphql` tool to Codex workers, so do not
+wait for it, search for it, or present it as the default. If direct HTTPS to
+`api.linear.app` is blocked by the current sandbox or network allowlist, request
+the required approval/escalation and state that Linear issue creation is blocked
+until the route is available. Do not treat that block as permission to skip
+Linear.
+
+Skip issue creation only when the user provides an existing Linear issue
+identifier or URL; fetch that issue fresh instead. Also honor an explicit user
+instruction not to create Linear work items for meta/setup corrections to the
+Symphony harness itself. If the user wants normal local work without Linear for
+ordinary repo work, they must avoid invoking `vpk-symphony` or explicitly
+redirect the task out of the Symphony flow before work begins.
 
 This skill is for Symphony-managed Linear work. For normal local UI work outside
 Symphony, follow `AGENTS.md` and use `/agent-browser` instead of the
@@ -41,12 +49,13 @@ Playwright CLI evidence path.
 
 1. Read `AGENTS.md`, `WORKFLOW.md`, and `docs/SYMPHONY.md` before changing the
    harness or executing an issue.
-2. If the skill was invoked with a task-like request but no Linear issue,
-   attempt to create a `Todo` issue in the configured Symphony Linear project
+2. If the skill was invoked with no Linear issue, attempt to create a `Todo`
+   issue in the configured Symphony Linear project
    before doing the work. Use `references/lifecycle.md` for classification and
-   `references/linear-graphql.md` for schema-safe issue creation. If
-   `linear_graphql` is missing from the current tool surface, use the direct
-   Linear GraphQL fallback with local auth before declaring a blocker. If Linear
+   `references/linear-graphql.md` for schema-safe issue creation. Use direct
+   Linear GraphQL with local auth as the preferred path. Do not wait for
+   injected `linear_graphql`; it is not expected to be available. Request
+   sandbox/network approval when direct HTTPS to Linear is blocked. If Linear
    access or project configuration is still missing, report the exact blocker
    instead of silently continuing as non-Symphony local work for repo-changing
    tasks. After a successful ad-hoc bootstrap, default to leaving the issue in
@@ -82,7 +91,7 @@ Read only the reference needed for the current task:
 - `references/workpad.md`: workpad structure, update rules, and evidence fields.
 - `references/lifecycle.md`: ad-hoc ticket bootstrap, Linear state handling, and issue execution flow.
 - `references/browser-evidence.md`: Symphony-only Playwright CLI evidence policy.
-- `references/linear-graphql.md`: raw `linear_graphql` queries, direct Linear GraphQL fallback, issue creation, comments, and uploads.
+- `references/linear-graphql.md`: direct Linear GraphQL issue creation, comments, uploads, and schema-safe queries.
 - `references/git/pull.md`: sync current branch with `origin/main`.
 - `references/git/commit.md`: create commit messages from actual changes.
 - `references/git/push.md`: push branches and create/update PRs.

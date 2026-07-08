@@ -7,30 +7,35 @@ Use this reference when executing or updating the VPK-rovo Symphony workflow.
 Use this before the state flow when `vpk-symphony` is invoked without an
 existing Linear issue identifier or URL.
 
-- If the user request is task-like, first try to create a Linear issue in the
+- If the user invoked `vpk-symphony`, first try to create a Linear issue in the
   configured Symphony project and put it in `Todo` so Symphony can claim it.
-  Task-like requests include implementation, docs, investigation, review, audit,
-  triage, operational guidance, codebase tours, and answer-only explanations.
-- Use the Linear transport in this order:
-  1. injected `linear_graphql` client from the Symphony app-server session;
-  2. direct Linear GraphQL over HTTPS with local `LINEAR_API_KEY` and
+  This applies to implementation, docs, tiny local edits, generated artifact
+  edits, investigation, review, audit, triage, operational guidance, codebase
+  tours, and answer-only explanations.
+- Use the Linear transport in this order. The first path is the preferred,
+  proven path:
+  1. direct Linear GraphQL over HTTPS with local `LINEAR_API_KEY` and
      `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or `.env.local`;
-  3. blocked-access handling only after both paths are unavailable or fail with
-     a real auth, project, or schema blocker.
+  2. if direct HTTPS is blocked by the current sandbox or network allowlist,
+     request the required approval/escalation for the Linear API route;
+  3. blocked-access handling only after the available paths fail with a real
+     auth, project, schema, sandbox, or network blocker.
+- Do not wait for or prefer an injected `linear_graphql` tool. Company policy
+  does not expose that tool to Codex workers, so direct Linear GraphQL with
+  local auth is the normal path.
 - Do not hardcode prompt examples. Derive a concise imperative title and a
   scoped description from the actual request, including any explicit validation
   or acceptance criteria the user provided.
 - If the user provides an existing issue key or URL, skip creation and fetch
   that issue fresh.
-- If the user explicitly says not to create a ticket, or is asking a meta
-  support question about how to use/debug Symphony in the current conversation,
-  answer directly without creating a new issue.
+- If the user explicitly says not to create Linear work items for a meta/setup
+  correction to the Symphony harness itself, honor that instruction and update
+  the setup docs directly.
 - If Linear access, local Linear auth, or the configured project cannot be
-  resolved after trying the fallback order, report the exact missing capability.
-  For repo-changing tasks, do not continue as Symphony-managed work without a
-  ticket unless the user explicitly redirects to normal local work. For
-  answer-only support, you may answer directly after saying ticket creation
-  could not be completed.
+  resolved after trying the direct GraphQL path, report the exact missing capability.
+  Do not continue as Symphony-managed work without a ticket. If the user wants
+  normal local work without Linear, they must redirect the task out of the
+  Symphony flow before work begins.
 - After creating the ticket, report the issue identifier/URL. Default to
   leaving the issue in `Todo` so `pnpm run symphony` can claim it and create the
   issue workspace through the launcher `after_create` hook.
@@ -64,8 +69,9 @@ existing Linear issue identifier or URL.
 
 ## Execution Rules
 
-1. Bootstrap a Linear issue first for task-like ad-hoc requests that do not
-   already name an issue.
+1. Bootstrap a Linear issue first for every `vpk-symphony` ad-hoc invocation
+   that does not already name an issue. Do not skip bootstrap for direct local
+   file edits, generated artifacts, meta support, or answer-only work.
 2. Fetch fresh Linear issue details before planning.
 3. Reuse the active `## Codex Workpad` comment if it exists.
 4. Classify answer-only issues before creating branches or PRs; write the

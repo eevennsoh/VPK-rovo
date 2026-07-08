@@ -113,13 +113,15 @@ Work only in the provided repository copy. Do not touch any other path.
 
 ## Prerequisite: Linear access is available
 
-The agent should be able to talk to Linear through a configured Linear MCP
-server, the injected `linear_graphql` tool, or the direct Linear GraphQL fallback
-using local `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell
-or `.env.local`. If the MCP/tool path is absent, try the direct local-auth
-fallback before blocked-access handling. If no Linear path is available, use the
-blocked-access escape hatch with the exact missing capability and unblock
-action.
+The preferred Linear path is direct Linear GraphQL over HTTPS with local
+`LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
+`.env.local`. Company policy does not expose an injected `linear_graphql` tool
+to Codex workers, so do not wait for that tool or treat it as the default path.
+If the current sandbox or network allowlist blocks `api.linear.app`, request the
+required approval/escalation or use the blocked-access escape hatch with the
+exact missing capability and unblock action. Do not bypass Linear issue creation
+after `vpk-symphony` invocation unless the user explicitly says not to create
+Linear work items for a meta/setup correction to the Symphony harness itself.
 
 ## Execution rules
 
@@ -486,9 +488,8 @@ it during `In Progress`, before moving the issue to `Agent Review` or `Done`.
    that a screenshot cannot prove.
 9. Before uploading, inspect the artifact for secrets, tokens, local file paths,
    private data, unrelated browser tabs, terminal panes, and devtools output.
-10. Upload only the required media through `linear_graphql` using `fileUpload`,
-   or through the direct Linear GraphQL fallback when the injected client is not
-   exposed, then update the single `## Codex Workpad` comment with a compact
+10. Upload only the required media through direct Linear GraphQL using
+   `fileUpload`, then update the single `## Codex Workpad` comment with a compact
    `### Evidence` section. Render screenshot and animated GIF preview uploads
    with markdown image syntax (`![alt text](<asset-url>)`) so Linear shows an
    inline image preview. Upload WebM recordings as downloadable evidence and put

@@ -1,38 +1,15 @@
 # Linear GraphQL
 
-Use this skill for raw Linear GraphQL work during Symphony app-server sessions
-and local `vpk-symphony` invocations that need to bootstrap or update Linear.
+Use this skill for raw Linear GraphQL work during local `vpk-symphony`
+invocations that need to bootstrap or update Linear.
 
-## Primary tool
+## Preferred creation path
 
-Use the `linear_graphql` client tool exposed by Symphony's app-server session.
-It reuses Symphony's configured Linear auth for the session.
+Use direct Linear GraphQL over HTTPS with local auth. This is the default and
+best proven path for this repository because company policy does not expose an
+injected `linear_graphql` tool to Codex workers.
 
-Tool input:
-
-```json
-{
-  "query": "query or mutation document",
-  "variables": {
-    "optional": "graphql variables object"
-  }
-}
-```
-
-Tool behavior:
-
-- Send one GraphQL operation per tool call.
-- Treat a top-level `errors` array as a failed GraphQL operation even if the
-  tool call itself completed.
-- Keep queries/mutations narrowly scoped; ask only for the fields you need.
-
-## Direct local-auth fallback
-
-When `vpk-symphony` is invoked from a desktop/local Codex thread and the
-injected `linear_graphql` tool is not exposed, default to direct Linear GraphQL
-over HTTPS before reporting a blocker.
-
-Fallback requirements:
+Default requirements:
 
 - Load `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell
   environment or ignored `.env.local`.
@@ -43,13 +20,29 @@ Fallback requirements:
 - Use the same query and mutation documents in this reference. The transport
   changes; the schema-safe operation shapes do not.
 - Treat missing local auth, missing project slug, unresolved project/team/state,
-  HTTP errors, or top-level GraphQL `errors` as real blockers only after this
-  fallback has been attempted.
+  HTTP errors, sandbox/network allowlist failures, or top-level GraphQL
+  `errors` as real blockers only after this direct path has been attempted.
+- If the HTTPS request is blocked by the current sandbox or network allowlist,
+  request the required approval/escalation for `api.linear.app`. Do not skip
+  Linear issue creation and do not continue as Symphony-managed work without an
+  issue.
+
+Default creation sequence:
+
+1. Load `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
+   ignored `.env.local`.
+2. Query `ProjectBySlug` using `SYMPHONY_LINEAR_PROJECT_SLUG`.
+3. Resolve a team from that project and choose that team's `Todo` state.
+4. Derive a concise title and scoped description from the actual user request.
+5. Run `issueCreate` with `teamId`, `projectId`, `stateId`, `title`, and
+   `description`.
+6. Print only the created issue identifier, URL, and state. Never print the
+   token or raw request headers.
 
 ## Discovering unfamiliar operations
 
 When you need an unfamiliar mutation, input type, or object field, use targeted
-introspection through `linear_graphql` or the direct local-auth fallback.
+introspection through direct local-auth GraphQL.
 
 List mutation names:
 
@@ -505,9 +498,8 @@ mutation FileUpload(
 
 - For task-like `vpk-symphony` invocations without an issue identifier, attempt
   `issueCreate` before doing local work.
-- Use the active Linear GraphQL transport for comment edits, uploads, and
-  ad-hoc Linear API queries. Prefer injected `linear_graphql`; when it is not
-  exposed, use the direct local-auth fallback.
+- Use direct local-auth Linear GraphQL for comment edits, uploads, and ad-hoc
+  Linear API queries. Do not wait for injected `linear_graphql`.
 - Prefer the narrowest issue lookup that matches what you already know:
   key -> identifier search -> internal id.
 - For state transitions, fetch team states first and use the exact `stateId`
