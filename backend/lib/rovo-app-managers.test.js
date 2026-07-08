@@ -268,6 +268,66 @@ test("rovo app document manager versions artifacts over time", async () => {
 	assert.equal(listedDocuments[0].versions[1].content, "Version two");
 });
 
+test("rovo app document manager parses list timestamps once per document", async () => {
+	const baseDir = await createTempBaseDir();
+	const documentsDir = path.join(
+		baseDir,
+		"rovo-app",
+		"threads",
+		"thread-1",
+		"documents",
+	);
+	await fs.mkdir(documentsDir, { recursive: true });
+
+	for (const document of [
+		{
+			id: "older-doc",
+			updatedAt: "2026-03-09T00:05:00.000Z",
+		},
+		{
+			id: "newer-doc",
+			updatedAt: "2026-03-09T00:10:00.000Z",
+		},
+		{
+			id: "middle-doc",
+			updatedAt: "2026-03-09T00:07:00.000Z",
+		},
+	]) {
+		await fs.writeFile(
+			path.join(documentsDir, `${document.id}.json`),
+			JSON.stringify({
+				...document,
+				threadId: "thread-1",
+				title: document.id,
+				kind: "text",
+				createdAt: "2026-03-09T00:00:00.000Z",
+				versions: [],
+			}),
+			"utf8",
+		);
+	}
+
+	const manager = createRovoAppDocumentManager({ baseDir });
+	const originalDateParse = Date.parse;
+	let parseCalls = 0;
+	Date.parse = (value) => {
+		parseCalls += 1;
+		return originalDateParse(value);
+	};
+
+	try {
+		const listedDocuments = await manager.listDocuments();
+
+		assert.deepEqual(
+			listedDocuments.map((document) => document.id),
+			["newer-doc", "middle-doc", "older-doc"],
+		);
+		assert.equal(parseCalls, listedDocuments.length);
+	} finally {
+		Date.parse = originalDateParse;
+	}
+});
+
 test("rovo app document manager can create and finalize streaming document shells", async () => {
 	const baseDir = await createTempBaseDir();
 	const manager = createRovoAppDocumentManager({ baseDir });
