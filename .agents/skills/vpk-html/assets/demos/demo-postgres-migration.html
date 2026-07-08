@@ -490,9 +490,6 @@ button:active,
     font-size: 22pt;
     font-weight: 500;
     margin-bottom: var(--rhythm-module);
-    border-left: 2.5pt solid var(--brand);
-    border-radius: 1.5pt;
-    padding-left: 8pt;
   }
   .toc-item {
     display: flex;
@@ -515,8 +512,64 @@ button:active,
     padding-left: 6pt;
   }
   .toc-page {
-    color: var(--stone);
+    color: color-mix(in srgb, var(--subtlest-text) 68%, var(--paper) 32%);
+    font-size: 0.72em;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
+    min-width: 42pt;
+    text-align: right;
+  }
+  .toc a.toc-item {
+    color: inherit;
+    text-decoration: none;
+  }
+  .toc a.toc-item:hover .toc-title,
+  .toc a.toc-item:focus-visible .toc-title {
+    color: var(--brand);
+  }
+
+  .tldr-page {
+    min-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    break-after: page;
+  }
+  .tldr-page h1 {
+    max-width: 780px;
+    margin-bottom: 14pt;
+  }
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12pt;
+    max-width: 840px;
+  }
+  .tldr-card {
+    border: 1px solid var(--rule);
+    border-radius: 6pt;
+    padding: 14pt;
+    background: var(--paper);
+  }
+  .tldr-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 8pt;
+  }
+  .tldr-card p {
+    margin: 0;
+    color: var(--near-black);
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+  @media (max-width: 720px) {
+    .tldr-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* HEADINGS */
@@ -526,9 +579,6 @@ button:active,
     line-height: 1.15;
     letter-spacing: -0.3pt;
     margin: 0 0 10pt 0;
-    border-left: 2.5pt solid var(--brand);
-    border-radius: 1.5pt;
-    padding-left: 8pt;
     color: var(--near-black);
     break-after: avoid;
   }
@@ -558,6 +608,23 @@ button:active,
     text-transform: uppercase;
     font-weight: 500;
     margin-bottom: 6pt;
+  }
+  .heading-anchor {
+    color: var(--stone);
+    font-family: var(--font-mono);
+    font-size: 0.78em;
+    margin-left: 6pt;
+    text-decoration: none;
+    opacity: 0.65;
+  }
+  h1:hover .heading-anchor,
+  h2:hover .heading-anchor,
+  .heading-anchor:focus-visible {
+    color: var(--brand);
+    opacity: 1;
+  }
+  h2[id] {
+    scroll-margin-top: 32px;
   }
 
   /* PARAGRAPHS */
@@ -713,6 +780,13 @@ button:active,
   /* FIGURE */
   figure { margin: 14pt 0; break-inside: avoid; }
   figure img { max-width: 100%; border-radius: 4pt; }
+  figure > svg {
+    display: block !important;
+    width: min(100%, var(--figure-width, 960px)) !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin-inline: auto !important;
+  }
   figcaption {
     font-family: var(--sans);
     font-size: 9pt;
@@ -723,6 +797,96 @@ button:active,
 
   /* CHAPTER BREAK */
   .chapter { break-before: page; }
+  @media screen {
+    .toc + .chapter,
+    .chapter + .chapter {
+      margin-top: 42pt;
+      padding-top: 6pt;
+    }
+
+    .chapter[id] {
+      scroll-margin-top: 32px;
+    }
+
+    body[data-vpk-docnav] main > section {
+      scroll-margin-top: 32px;
+      transition:
+        opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 560ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, filter, transform;
+    }
+
+    body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+      opacity: 0.34 !important;
+      filter: grayscale(0.14) !important;
+    }
+
+    body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+      opacity: 1 !important;
+      filter: none !important;
+      transform: translateY(-2px) !important;
+    }
+
+    .docnav-controls {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      background: color-mix(in srgb, var(--paper) 88%, transparent);
+      border: 0;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .docnav-controls button {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      background: var(--surface-raised);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .docnav-controls button:hover,
+    .docnav-controls button:focus-visible {
+      color: var(--primary-blue);
+      border-color: var(--primary-blue);
+      outline: none;
+    }
+
+    .docnav-controls button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .docnav-counter {
+      min-width: 46px;
+      text-align: center;
+      color: var(--muted-text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  @media print {
+    .docnav-controls { display: none !important; }
+    body[data-vpk-docnav] main > section {
+      opacity: 1 !important;
+      filter: none !important;
+      transform: none !important;
+    }
+  }
 
 
   /* ===== vpk-html Atlassian deck identity overrides ===== */
@@ -804,6 +968,58 @@ button:active,
     color: var(--muted-text) !important;
   }
 
+  pre, code, kbd, samp,
+  pre code,
+  .language-markdown {
+    font-family: var(--font-mono) !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  .cover {
+    justify-content: center !important;
+    gap: 32px !important;
+    padding-top: 0 !important;
+  }
+
+  .cover-title {
+    font-size: clamp(64px, 8vw, 104px) !important;
+    line-height: 0.96 !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    color: var(--headline) !important;
+    margin-bottom: 24px !important;
+  }
+
+  .cover-eyebrow {
+    font-family: var(--font-mono) !important;
+    font-size: 14px !important;
+    line-height: 18px !important;
+    letter-spacing: 0.28em !important;
+    color: var(--primary-blue) !important;
+    font-weight: 700 !important;
+    margin-bottom: 36px !important;
+  }
+
+  .cover-eyebrow::before {
+    width: 28px !important;
+    height: 4px !important;
+    border-radius: 999px !important;
+  }
+
+  .cover-sub {
+    max-width: 780px !important;
+    font-size: 28px !important;
+    line-height: 1.32 !important;
+    color: var(--muted-text) !important;
+    font-weight: 500 !important;
+  }
+
+  .cover-meta {
+    margin-top: 80px !important;
+    font-size: 14px !important;
+    line-height: 22px !important;
+  }
+
   /* Links: primary blue with restrained editorial underline. */
   a, a:visited {
     color: var(--link) !important;
@@ -831,18 +1047,16 @@ button:active,
     margin: 32px 0 !important;
   }
 
-  /* Drop cap on the first paragraph after a section break. */
-  section > p:first-child::first-letter,
-  .lead::first-letter,
-  .cover + p::first-letter {
+  /* Cover-only drop cap; chapter leads stay clean. */
+  .cover-sub::first-letter {
     font-family: var(--font-display) !important;
-    color: var(--ink) !important;
+    color: inherit !important;
     float: left !important;
-    font-size: 48px !important;
-    line-height: 1 !important;
-    padding-right: 8px !important;
-    padding-top: 4px !important;
-    font-weight: 600 !important;
+    font-size: 3.2em !important;
+    line-height: 0.72 !important;
+    margin: 0.12em 0.07em -0.06em 0 !important;
+    padding: 0 !important;
+    font-weight: 400 !important;
   }
 </style>
 </head>
@@ -850,7 +1064,7 @@ button:active,
 <main>
 
 <!-- COVER -->
-<section class="cover">
+<section class="cover" id="cover">
   <div>
     <div class="cover-eyebrow">Technical Report · Database Platform</div>
     <div class="cover-title">Postgres 15 → 16<br>on reports-primary</div>
@@ -863,20 +1077,36 @@ button:active,
   </div>
 </section>
 
+<!-- TLDR -->
+<section class="tldr-page" id="tldr">
+  <div class="chapter-num">00 · TLDR</div>
+  <h1>Problem and solution <a class="heading-anchor" href="#tldr" aria-label="Copy link to TLDR" title="Copy link to this section">#</a></h1>
+  <div class="tldr-grid">
+    <article class="tldr-card">
+      <span class="tldr-label">Problem</span>
+      <p>pg15 EOL approaches in late 2027. Waiting risks an emergency upgrade; doing it online requires careful phasing to avoid disrupting the analytics workload that drives morning reporting.</p>
+    </article>
+    <article class="tldr-card">
+      <span class="tldr-label">Solution</span>
+      <p>Aurora pg16 GA in February 2026 enabled <span class="hl">parallel VACUUM</span> and JSON-path indexing improvements we needed on reports-primary. We ran the cutover online via logical replication, with a 7-day rollback window, and observed <span class="hl">zero parity mismatches</span> across 142 tables.</p>
+    </article>
+  </div>
+</section>
+
 <!-- TOC -->
-<section class="toc">
+<section class="toc" id="contents-section">
   <h2>Contents</h2>
-  <div class="toc-item"><span class="toc-num">01</span><span class="toc-title">Executive Summary</span><span class="toc-page">03</span></div>
-  <div class="toc-item"><span class="toc-num">02</span><span class="toc-title">Background &amp; Problem Statement</span><span class="toc-page">04</span></div>
-  <div class="toc-item"><span class="toc-num">03</span><span class="toc-title">Methodology &amp; Findings</span><span class="toc-page">06</span></div>
-  <div class="toc-item"><span class="toc-num">04</span><span class="toc-title">Conclusions &amp; Recommendations</span><span class="toc-page">09</span></div>
-  <div class="toc-item"><span class="toc-num">05</span><span class="toc-title">Appendix</span><span class="toc-page">11</span></div>
+  <a class="toc-item" href="#executive-summary"><span class="toc-num">01</span><span class="toc-title">Executive Summary</span><span class="toc-page">Pg 04</span></a>
+  <a class="toc-item" href="#background-problem"><span class="toc-num">02</span><span class="toc-title">Background &amp; Problem Statement</span><span class="toc-page">Pg 05</span></a>
+  <a class="toc-item" href="#methodology-findings"><span class="toc-num">03</span><span class="toc-title">Methodology &amp; Findings</span><span class="toc-page">Pg 07</span></a>
+  <a class="toc-item" href="#conclusions-recommendations"><span class="toc-num">04</span><span class="toc-title">Conclusions &amp; Recommendations</span><span class="toc-page">Pg 10</span></a>
+  <a class="toc-item" href="#appendix"><span class="toc-num">05</span><span class="toc-title">Appendix</span><span class="toc-page">Pg 12</span></a>
 </section>
 
 <!-- Chapter 01 -->
-<section class="chapter">
+<section class="chapter" id="executive-summary">
   <div class="chapter-num">01 · Executive Summary</div>
-  <h1>Executive Summary</h1>
+  <h1>Executive Summary <a class="heading-anchor" href="#executive-summary" aria-label="Copy link to Executive Summary" title="Copy link to this section">#</a></h1>
 
   <p class="lead">
     Aurora pg16 GA in February 2026 enabled <span class="hl">parallel VACUUM</span> and JSON-path indexing improvements we needed on reports-primary. We ran the cutover online via logical replication, with a 7-day rollback window, and observed <span class="hl">zero parity mismatches</span> across 142 tables.
@@ -896,25 +1126,25 @@ button:active,
 </section>
 
 <!-- Chapter 02 -->
-<section class="chapter">
+<section class="chapter" id="background-problem">
   <div class="chapter-num">02 · Background</div>
-  <h1>Background &amp; Problem Statement</h1>
+  <h1>Background &amp; Problem Statement <a class="heading-anchor" href="#background-problem" aria-label="Copy link to Background and Problem Statement" title="Copy link to this section">#</a></h1>
 
   <p class="lead">
     The reports-primary database carried 1.8 TB of analytics-workload data on pg15.6. Aurora pg16 was GA in February; we wanted the JSON path indexing improvements and the parallel VACUUM enhancements. Doing this online (no scheduled downtime) was the headline constraint.
   </p>
 
-  <h2>Current State</h2>
+  <h2 id="current-state">Current State <a class="heading-anchor" href="#current-state" aria-label="Copy link to Current State" title="Copy link to this section">#</a></h2>
   <p>reports-primary was pg15.6 carrying <span class="hl">1.8 TB</span> across 142 tables. Analytics workload, p99 query latency 480ms. Aurora pg16 was GA on 2026-02-14 with backwards-compatible client libraries.</p>
 
-  <h2>The Core Problem</h2>
+  <h2 id="core-problem">The Core Problem <a class="heading-anchor" href="#core-problem" aria-label="Copy link to The Core Problem" title="Copy link to this section">#</a></h2>
   <p>pg15 EOL approaches in late 2027. Waiting risks an emergency upgrade; doing it online requires careful phasing to avoid disrupting the analytics workload that drives morning reporting.</p>
 
   <div class="callout">
     Logical replication does not capture sequences. We almost forgot. Bullet-pointed reminders saved the cutover.
   </div>
 
-  <h2>Metrics of Success</h2>
+  <h2 id="metrics-of-success">Metrics of Success <a class="heading-anchor" href="#metrics-of-success" aria-label="Copy link to Metrics of Success" title="Copy link to this section">#</a></h2>
   <table>
     <thead>
       <tr>
@@ -932,20 +1162,20 @@ button:active,
 </section>
 
 <!-- Chapter 03 -->
-<section class="chapter">
+<section class="chapter" id="methodology-findings">
   <div class="chapter-num">03 · Methodology</div>
-  <h1>Methodology &amp; Findings</h1>
+  <h1>Methodology &amp; Findings <a class="heading-anchor" href="#methodology-findings" aria-label="Copy link to Methodology and Findings" title="Copy link to this section">#</a></h1>
 
   <p class="lead">How we built the parallel pg16 cluster and copied schema before turning on replication.</p>
 
-  <h2>Approach</h2>
+  <h2 id="approach">Approach <a class="heading-anchor" href="#approach" aria-label="Copy link to Approach" title="Copy link to this section">#</a></h2>
   <p>Row-parity check across all 142 tables, sample 1000 rows per table, compare md5(row::text). Run pre-cutover, post-cutover, and again 24h later. Zero mismatches across all three runs.</p>
 
   <pre><code class="language-python">def analyze(data):
     """Transform raw data."""
     return transform(data)</code></pre>
 
-  <h2>Key Findings</h2>
+  <h2 id="key-findings">Key Findings <a class="heading-anchor" href="#key-findings" aria-label="Copy link to Key Findings" title="Copy link to this section">#</a></h2>
 
   <h3>Finding 1 - Postgres 15 → 16 Migration</h3>
   <p>Logical replication caught up in <span class="hl">4h 22m</span> for the initial sync across 142 tables. Replication lag at cutover was <span class="hl">1.4s</span> — well under our 5s threshold. The traffic flip via PgBouncer drained the existing connection pool in <span class="hl">41 seconds</span>.</p>
@@ -960,20 +1190,20 @@ button:active,
 </section>
 
 <!-- Chapter 04 -->
-<section class="chapter">
+<section class="chapter" id="conclusions-recommendations">
   <div class="chapter-num">04 · Conclusions</div>
-  <h1>Conclusions &amp; Recommendations</h1>
+  <h1>Conclusions &amp; Recommendations <a class="heading-anchor" href="#conclusions-recommendations" aria-label="Copy link to Conclusions and Recommendations" title="Copy link to this section">#</a></h1>
 
   <p class="lead">The migration succeeded because we separated the cluster-build, schema-copy, and traffic-flip phases. Each had its own gate. Each gate caught something.</p>
 
-  <h2>Core Conclusions</h2>
+  <h2 id="core-conclusions">Core Conclusions <a class="heading-anchor" href="#core-conclusions" aria-label="Copy link to Core Conclusions" title="Copy link to this section">#</a></h2>
   <ol>
     <li>Online cutovers are possible at 1.8 TB scale, but only with phase-gated tooling.</li>
     <li>Logical replication's blind spots (sequences, LOs) are real but well-documented — pre-checks catch them.</li>
     <li>Keeping the old cluster warm for 7 days cost ~$2k. Cheap insurance.</li>
   </ol>
 
-  <h2>Recommended Next Steps</h2>
+  <h2 id="recommended-next-steps">Recommended Next Steps <a class="heading-anchor" href="#recommended-next-steps" aria-label="Copy link to Recommended Next Steps" title="Copy link to this section">#</a></h2>
   <p>Adopt this 5-phase template (cluster, schema, replication, parity, flip) as standard procedure for tier-0 pg upgrades. Codify in `runbooks/pg-upgrade.md`.</p>
 
   <div class="takeaway">
@@ -983,21 +1213,21 @@ button:active,
 </section>
 
 <!-- Chapter 05 -->
-<section class="chapter">
+<section class="chapter" id="appendix">
   <div class="chapter-num">05 · Appendix</div>
-  <h1>Appendix</h1>
+  <h1>Appendix <a class="heading-anchor" href="#appendix" aria-label="Copy link to Appendix" title="Copy link to this section">#</a></h1>
 
-  <h2>A. References</h2>
+  <h2 id="references">A. References <a class="heading-anchor" href="#references" aria-label="Copy link to References" title="Copy link to this section">#</a></h2>
   <ul>
     <li>PostgreSQL 16 Release Notes — postgresql.org/docs/16/release-16.html</li>
     <li>Aurora pg16 Compatibility Matrix — docs.aws.amazon.com/AmazonRDS</li>
   </ul>
 
-  <h2>B. Glossary</h2>
+  <h2 id="glossary">B. Glossary <a class="heading-anchor" href="#glossary" aria-label="Copy link to Glossary" title="Copy link to this section">#</a></h2>
   <p><strong>logical replication</strong> - logical replication</p>
   <p><strong>logical replication</strong> - logical replication</p>
 
-  <h2>C. Acknowledgements</h2>
+  <h2 id="acknowledgements">C. Acknowledgements <a class="heading-anchor" href="#acknowledgements" aria-label="Copy link to Acknowledgements" title="Copy link to this section">#</a></h2>
   <p>Thanks to the on-call rotation who watched metrics through the 90-minute canary, and to the analytics team for shifting their morning queries to the post-flip window.</p>
 </section>
 
