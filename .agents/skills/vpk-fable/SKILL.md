@@ -23,8 +23,8 @@ server tool nor Managed Agents exist in the desktop app / CLI.
 
 The mechanism here is per-agent `model:` overrides:
 
-- `vpk-fable-advisor` (`.claude/agents/vpk-fable-advisor.md`) — `model: fable`, read-only.
-- `vpk-fable-worker` (`.claude/agents/vpk-fable-worker.md`) — `model: sonnet`, full tools.
+- `vpk-agent-advisor` (`.claude/agents/vpk-agent-advisor.md`) — `model: fable`, read-only.
+- `vpk-agent-worker` (`.claude/agents/vpk-agent-worker.md`) — `model: sonnet`, full tools.
 
 A named subagent keeps its own context and prompt cache across `SendMessage`
 calls, which mirrors the "each sub-agent keeps its own cache" property of
@@ -32,12 +32,12 @@ Managed Agents.
 
 **Agent availability fallback.** Subagent definitions load at session start,
 and some clients do not expose project agents as named `subagent_type`s at
-all. If `vpk-fable-advisor` / `vpk-fable-worker` are not in the available
+all. If `vpk-agent-advisor` / `vpk-agent-worker` are not in the available
 agent list, spawn `subagent_type: "general-purpose"` with the explicit
 `model` parameter instead (`model: "fable"` for the advisor, `model:
 "sonnet"` for workers — both verified working in this harness) and begin the
-prompt with: "First read `.agents/agents/vpk-fable-advisor.md` (or
-`vpk-fable-worker.md`) and adopt its `## Instructions` as your role, then:".
+prompt with: "First read `.agents/agents/vpk-agent-advisor.md` (or
+`vpk-agent-worker.md`) and adopt its `## Instructions` as your role, then:".
 Everything else in this skill applies unchanged.
 
 ## Mode dispatch
@@ -87,7 +87,7 @@ First consult in a session — spawn it named so it can be re-used:
 
 ```
 Agent(
-  subagent_type: "vpk-fable-advisor",
+  subagent_type: "vpk-agent-advisor",
   name: "fable-advisor",
   run_in_background: false,
   description: "Consult Fable advisor",
@@ -129,7 +129,7 @@ the raw material itself. For a poor fit, say so and just do the task solo.
    Right-size them: each worker spawn has fixed overhead, so a brief should be
    worth minutes of reading, not one fact. 2–5 workers is the usual sweet spot.
 2. **Fan out.** Spawn all workers in **one message** (parallel tool calls),
-   each `subagent_type: "vpk-fable-worker"` with a self-contained brief:
+   each `subagent_type: "vpk-agent-worker"` with a self-contained brief:
    objective, scope boundaries, exact paths/URLs, and the required output
    shape (distilled findings with `file:line` or URL evidence — never raw dumps).
    Use `run_in_background: true` for long briefs; the harness notifies on completion.

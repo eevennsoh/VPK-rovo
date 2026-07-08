@@ -6,7 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const scriptPath = fileURLToPath(new URL("./validate-agent.mjs", import.meta.url));
+const scriptPath = fileURLToPath(new URL("./validate-agent-definitions.mjs", import.meta.url));
 
 function runValidator(root, target = ".agents/agents") {
 	return new Promise((resolve) => {
@@ -21,7 +21,7 @@ function runValidator(root, target = ".agents/agents") {
 }
 
 async function withFixture(files, callback) {
-	const root = await fs.mkdtemp(path.join(os.tmpdir(), "agent-creator-"));
+	const root = await fs.mkdtemp(path.join(os.tmpdir(), "agent-definitions-"));
 	try {
 		await fs.mkdir(path.join(root, ".agents", "agents"), { recursive: true });
 		await fs.mkdir(path.join(root, ".agents", "knowledge"), { recursive: true });
@@ -40,7 +40,7 @@ const validAgent = `---
 name: report-agent
 description: Reviews metrics inputs and drafts a concise weekly report.
 tools: ["Read", "Grep", "Glob"]
-skills: ["agent-creator"]
+skills: []
 memory: project
 ---
 

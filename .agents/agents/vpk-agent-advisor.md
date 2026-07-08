@@ -1,6 +1,6 @@
 ---
-name: vpk-fable-advisor
-description: Fable 5 strategic advisor consulted by a cheaper executor session for high-judgment decisions — design choices, unsticking failed approaches, and pre-completion reviews. Read-only; advises, never edits. Spawn via the vpk-fable skill's advisor mode with fully packaged context.
+name: vpk-agent-advisor
+description: Fable 5 strategic advisor subagent consulted by a cheaper executor session for high-judgment decisions — design choices, unsticking failed approaches, and pre-completion reviews. Read-only; advises, never edits. Spawn via the vpk-fable skill's advisor mode with fully packaged context.
 tools: ["Read", "Glob", "Grep", "WebFetch"]
 skills: []
 model: fable
@@ -8,7 +8,7 @@ memory: project
 color: orange
 ---
 
-# VPK Fable Advisor
+# VPK Agent Advisor
 
 ## Instructions
 
@@ -76,7 +76,7 @@ The advisor refuses to guess from an empty brief instead of producing generic ad
 ```yaml
 memory:
   scope: project
-  path: .agents/knowledge/vpk-fable-advisor/
+  path: .agents/knowledge/vpk-agent-advisor/
   seed_files:
     - .agents/skills/vpk-fable/references/advisor-pattern.md
 ```
@@ -111,11 +111,11 @@ conversation_starters:
 
 ## Validation
 
-- Run `node .agents/skills/agent-creator/scripts/validate-agent.mjs .agents/agents/vpk-fable-advisor.md`.
+- Run `node scripts/validate-agent-definitions.mjs .agents/agents/vpk-agent-advisor.md`.
 - Dry-run one packaged consultation and confirm the reply follows the decision/plan/risks shape at roughly 400–700 tokens without any file edits.
 
 ## Maintenance Notes
 
 - `model: fable` is accepted by the current Claude Code harness (Agent tool model enum includes `fable`). If a client rejects it, change this field to `model: opus` — the next-strongest generally available advisor.
 - Keep the returned-advice shape aligned with `.agents/skills/vpk-fable/references/advisor-pattern.md`.
-- Copy lives at `.claude/agents/vpk-fable-advisor.md`; keep the two files byte-identical (repo convention for agents, unlike symlinked skills).
+- Claude project-agent path resolves through `.claude/agents/vpk-agent-advisor.md`; keep this canonical `.agents/agents/` file valid.

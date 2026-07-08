@@ -297,7 +297,7 @@ conversation_starters:
 
 ## Validation
 
-- Run `node .agents/skills/agent-creator/scripts/validate-agent.mjs .agents/agents/vpk-agent-validator.md`.
+- Run `node scripts/validate-agent-definitions.mjs .agents/agents/vpk-agent-validator.md`.
 - Dry-run the validation prompt with a mock Figma reference, component path, route, and selector; confirm it returns the required report shape without editing code.
 - When browser tools are available during a real validation task, capture light and dark screenshots under `output/agent-browser/`.
 

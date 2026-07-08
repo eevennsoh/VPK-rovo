@@ -36,7 +36,6 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Deployment guide                       | `.agents/skills/vpk-deploy/references/guide-deployment.md`  |
 | Setup walkthrough                      | `.agents/skills/vpk-setup/references/guide-setup.md`        |
 | Offline HTML artifacts                 | `.agents/skills/vpk-html/SKILL.md`                          |
-| Repo-local agent creation              | `.agents/skills/agent-creator/SKILL.md`                     |
 | VPK git ship (PR create + merge-back)  | `.agents/skills/vpk-git-ship/SKILL.md`             |
 | VPK git ship fast (commit + push to main, no PR) | `.agents/skills/vpk-git-ship-fast/SKILL.md`   |
 | VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-git-clean/SKILL.md`            |

@@ -1,6 +1,6 @@
 ---
-name: vpk-fable-worker
-description: Sonnet 5 execution worker for the vpk-fable orchestrator pattern. Executes one focused, self-contained brief (reading, searching, verifying, or implementing) in its own context and returns distilled findings with evidence — never raw dumps. Spawn several in parallel for coverage tasks.
+name: vpk-agent-worker
+description: Sonnet 5 execution subagent for the vpk-fable orchestrator pattern. Executes one focused, self-contained brief (reading, searching, verifying, or implementing) in its own context and returns distilled findings with evidence — never raw dumps. Spawn several in parallel for coverage tasks.
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebFetch", "WebSearch"]
 skills: []
 model: sonnet
@@ -8,7 +8,7 @@ memory: project
 color: blue
 ---
 
-# VPK Fable Worker
+# VPK Agent Worker
 
 ## Instructions
 
@@ -77,7 +77,7 @@ The worker reports the blocker instead of guessing which directory the orchestra
 ```yaml
 memory:
   scope: project
-  path: .agents/knowledge/vpk-fable-worker/
+  path: .agents/knowledge/vpk-agent-worker/
   seed_files:
     - .agents/skills/vpk-fable/references/orchestrator-pattern.md
 ```
@@ -112,10 +112,10 @@ conversation_starters:
 
 ## Validation
 
-- Run `node .agents/skills/agent-creator/scripts/validate-agent.mjs .agents/agents/vpk-fable-worker.md`.
+- Run `node scripts/validate-agent-definitions.mjs .agents/agents/vpk-agent-worker.md`.
 - Dry-run one small brief and confirm the final message uses the ## Findings report format and stays within scope.
 
 ## Maintenance Notes
 
 - If the worker definition's capabilities change, update `.agents/skills/vpk-fable/references/orchestrator-pattern.md` — the orchestrator's assumptions about workers come entirely from that doc plus this description.
-- Copy lives at `.claude/agents/vpk-fable-worker.md`; keep the two files byte-identical (repo convention for agents, unlike symlinked skills).
+- Claude project-agent path resolves through `.claude/agents/vpk-agent-worker.md`; keep this canonical `.agents/agents/` file valid.

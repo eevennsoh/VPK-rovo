@@ -7368,8 +7368,10 @@
 		},
 		"slices": [
 			{
-				"command": "node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
-				"files": [],
+				"command": "node --test scripts/validate-agent-definitions.test.mjs && node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
+				"files": [
+					"scripts/validate-agent-definitions.test.mjs"
+				],
 				"name": "test:agents",
 				"prefixes": [
 					".agents/",
@@ -7434,15 +7436,9 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 15
+			"localSkillCount": 14
 		},
 		"localSkills": [
-			{
-				"description": "Create or update repo-local Markdown agent definitions with YAML frontmatter, project memory, structured workspace-agent sections, schedule handoff notes, and validation. Use when the user asks to create, define, draft, improve, or maintain an agent, subagent, workspace agent, scheduled agent, agent profile, or reusable agent persona in `.agents/agents/`.",
-				"name": "agent-creator",
-				"path": ".agents/skills/agent-creator/SKILL.md",
-				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/agent-creator"
-			},
 			{
 				"description": "Extract VPK routes to standalone apps.",
 				"name": "vpk-build",

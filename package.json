@@ -21,7 +21,7 @@
 		"validate:local": "node scripts/validate-local-preflight.js && corepack pnpm run verify:lockfile && corepack pnpm run verify:route-manifest && corepack pnpm run verify:api-surfaces && corepack pnpm run verify:repo-map && corepack pnpm run verify:file-size && corepack pnpm run verify:catalog && corepack pnpm run verify:lazy-load && corepack pnpm run verify:source-guardrails && corepack pnpm run verify:doc-scripts && corepack pnpm run validate:agents && corepack pnpm run validate:skills && corepack pnpm run lint && corepack pnpm run typecheck && corepack pnpm run test:rovo-core && corepack pnpm run test:unit:js",
 		"test:unit:js": "node scripts/run-js-unit-tests.mjs",
 		"test:api": "node scripts/run-js-unit-tests.mjs --prefix app/api/",
-		"test:agents": "node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
+		"test:agents": "node --test scripts/validate-agent-definitions.test.mjs && node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
 		"test:skills": "node scripts/run-js-unit-tests.mjs --prefix scripts/validate-skills",
 		"test:backend": "node scripts/run-js-unit-tests.mjs --prefix backend/",
 		"test:catalog": "node --test scripts/verify-component-catalog.test.js && node scripts/verify-component-catalog.js --strict-warnings && node scripts/run-js-unit-tests.mjs --prefix app/data/",

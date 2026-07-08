@@ -382,7 +382,7 @@ conversation_starters:
 
 ## Validation
 
-- Run `node .agents/skills/agent-creator/scripts/validate-agent.mjs .agents/agents/vpk-agent-extractor.md`.
+- Run `node scripts/validate-agent-definitions.mjs .agents/agents/vpk-agent-extractor.md`.
 - Dry-run a Figma URL prompt and confirm the response includes source, layout, colors, typography, borders, shadows, components, icons, interactive states, accessibility, and screenshot reference sections.
 - Confirm no implementation instructions or code edits are emitted by this agent.
 

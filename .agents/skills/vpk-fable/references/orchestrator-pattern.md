@@ -41,7 +41,7 @@ pure overhead).
 1. Break the task into **focused, independent sub-briefs**.
 2. Run several workers **in parallel** on independent briefs — in Claude Code
    that means all `Agent` calls in one message, `subagent_type:
-   "vpk-fable-worker"`.
+   "vpk-agent-worker"`.
 3. **Always wait for every worker before drawing any conclusion.** In the CMA
    API this is `wait_for_agents`; in Claude Code, background workers notify on
    completion — do not synthesize until all have reported.
@@ -76,7 +76,7 @@ report). Over-sharding **raises** cost. Rules of thumb:
 
 In CMA the coordinator cannot see its workers' prompts or capabilities — all
 of its beliefs about workers come from its own system prompt. Claude Code has
-the same failure shape: the orchestrator only knows what `vpk-fable-worker`
+the same failure shape: the orchestrator only knows what `vpk-agent-worker`
 does from this skill and the agent's description. If you change the worker
 definition, update this reference so the orchestrator's assumptions stay true.
 

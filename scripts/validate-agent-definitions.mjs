@@ -230,7 +230,7 @@ function inspectConversationStarters(sections) {
 	};
 }
 
-function usesStructuredAgentCreatorSchema(frontmatter, sections) {
+function usesStructuredAgentDefinitionSchema(frontmatter, sections) {
 	return frontmatter.memory === "project" || REQUIRED_SECTIONS.some((section) => sections.has(section));
 }
 
@@ -307,7 +307,7 @@ async function validateAgentFile(filePath, allAgentFiles, rootDir) {
 	}
 
 	const sections = collectSections(body);
-	const structuredSchema = usesStructuredAgentCreatorSchema(frontmatter, sections);
+	const structuredSchema = usesStructuredAgentDefinitionSchema(frontmatter, sections);
 
 	if (structuredSchema) {
 		for (const section of REQUIRED_SECTIONS) {
@@ -342,7 +342,7 @@ async function validateAgentFile(filePath, allAgentFiles, rootDir) {
 			}
 		}
 	} else {
-		warnings.push(`${relativeFile}: legacy Claude-style agent; structured agent-creator body sections were not enforced.`);
+		warnings.push(`${relativeFile}: legacy Claude-style agent; structured agent definition body sections were not enforced.`);
 	}
 
 	if (frontmatter.memory === "project") {
@@ -379,7 +379,7 @@ async function main() {
 	const json = args.includes("--json");
 
 	if (!targetArg) {
-		console.error("Usage: validate-agent.mjs <agent-file-or-directory> [--root <repo-root>] [--json]");
+		console.error("Usage: validate-agent-definitions.mjs <agent-file-or-directory> [--root <repo-root>] [--json]");
 		process.exit(2);
 	}
 

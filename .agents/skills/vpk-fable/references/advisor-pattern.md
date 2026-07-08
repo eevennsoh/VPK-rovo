@@ -31,7 +31,7 @@ The advisor must be at least as capable as the executor. VPK defaults:
 | Role | Model | Notes |
 | --- | --- | --- |
 | Executor | Sonnet 5 (main session, `/model`) | Opus 4.8 if Sonnet 5 is unavailable |
-| Advisor | Fable 5 (`vpk-fable-advisor`, `model: fable`) | Fall back to `model: opus` if a client rejects `fable` |
+| Advisor | Fable 5 (`vpk-agent-advisor`, `model: fable`) | Fall back to `model: opus` if a client rejects `fable` |
 
 Fable advising Fable is valid on the API but pointless here — skip the
 pattern when the main session already runs Fable 5.
