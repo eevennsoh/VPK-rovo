@@ -1175,7 +1175,6 @@ export function RovoAppAgentConfigPanel({
 		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
 			appendListValues("skills", skills.map((skill) => getSkillConfigLabel(skill.name)));
 			setDirectorySkillIds([]);
-			setActiveDirectory(null);
 		},
 		[appendListValues],
 	);

@@ -320,6 +320,13 @@ test("skill tag group collapses wrapped rows into the overflow count", () => {
 	assert.match(SKILL_TAG_SOURCE, /ResizeObserver/u);
 });
 
+test("skill tag overlay remove always fades the trailing edge behind the control", () => {
+	assert.match(SKILL_TAG_SOURCE, /const shouldShowOverlayScrim = hasOverlayReveal;/u);
+	assert.match(SKILL_TAG_SOURCE, /data-slot="skill-tag-overlay-scrim"/u);
+	assert.match(SKILL_TAG_SOURCE, /shouldShowOverlayScrim && "group-hover\/skill-tag:\[mask-image:linear-gradient/u);
+	assert.doesNotMatch(SKILL_TAG_SOURCE, /labelHasOverflow/u);
+});
+
 test("barrel exports the shell, parts, content components, and directory cards", () => {
 	for (const symbol of [
 		"EntityCardShell",

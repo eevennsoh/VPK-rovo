@@ -943,7 +943,6 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const existing = new Set\(current\.map\(\(value\) => getAgentConfigListLookupValue\(field, value\)\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const additions = nextValues\.filter\(\(value\) => !existing\.has\(getAgentConfigListLookupValue\(field, value\)\)\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*setActiveDirectory\(null\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
@@ -1104,6 +1103,15 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /conversationStarterIcons: Array\.isArray\(config\.conversationStarterIcons\)[\s\S]*config\.conversationStarterIcons\.filter\(\(_, itemIndex\) => itemIndex !== index\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /saveLabel=\{conversationStarterDialogValue\.length > 0 \? "Save" : "Add"\}/u);
+});
+
+test("Studio skills directory add keeps the Browse Skills dialog open", () => {
+	const handleAddSkillsSource = AGENT_CONFIG_PANEL_SOURCE.match(/const handleAddSkills = useCallback\([\s\S]*?\n\t\);/u)?.[0] ?? "";
+	assert.match(handleAddSkillsSource, /skills: readonly SkillsDirectorySkill\[\]/u);
+	assert.match(handleAddSkillsSource, /appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
+	assert.match(handleAddSkillsSource, /setDirectorySkillIds\(\[\]\);/u);
+	assert.doesNotMatch(handleAddSkillsSource, /setActiveDirectory\(null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}/u);
 });
 
 test("Studio publish dropdown separates draft changes from version history", () => {
