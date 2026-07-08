@@ -243,13 +243,14 @@ The workflow keeps the upstream defaults visible where local choices matter:
   cap, so merge work does not run in parallel across several issues.
 - `codex.command`: upstream-style `codex ... app-server` with inherited shell
   environment plus explicit `gpt-5.5` and `xhigh` reasoning settings.
-- `codex.approval_policy`: `never`, so unattended Symphony workers can continue
-  through Codex app-server approval prompts with the current Codex policy schema.
-- `codex.thread_sandbox`: `danger-full-access`, so unattended local Symphony
-  workers can launch Playwright CLI browsers for issue evidence on macOS.
-- `codex.turn_sandbox_policy`: explicit `dangerFullAccess`, matching the
-  thread sandbox. Browser evidence requires OS-level browser launch access that
-  `workspaceWrite` does not provide in the managed macOS Codex sandbox.
+- `codex.approval_policy`: `on-request`, matching the enterprise-managed Codex
+  policy set that rejects `never` for app-server thread settings.
+- `codex.thread_sandbox`: `workspace-write`, matching the enterprise-managed
+  Codex sandbox set. The per-turn sandbox policy is omitted so upstream
+  Symphony generates its workspace-write default for each issue workspace.
+  Browser evidence that requires broader OS access may be unavailable in this
+  mode; workers should record that limitation in the workpad and continue with
+  the best non-browser validation available.
 - `codex.turn_timeout_ms`: `300000`, `codex.read_timeout_ms`: `5000`, and
   `codex.stall_timeout_ms`: `120000`, local guards that prevent long-running or
   silent turns from burning indefinitely.

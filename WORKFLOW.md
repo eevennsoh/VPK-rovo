@@ -56,10 +56,8 @@ agent:
     Merging: 1
 codex:
   command: codex --config shell_environment_policy.inherit=all --config 'model="gpt-5.5"' --config model_reasoning_effort=xhigh app-server
-  approval_policy: never
-  thread_sandbox: danger-full-access
-  turn_sandbox_policy:
-    type: dangerFullAccess
+  approval_policy: on-request
+  thread_sandbox: workspace-write
   turn_timeout_ms: 300000
   read_timeout_ms: 5000
   stall_timeout_ms: 120000
