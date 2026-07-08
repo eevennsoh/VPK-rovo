@@ -88,5 +88,5 @@ profile is absent, render no logo.
 A document baked from a profile must still pass the full offline gate:
 
 ```bash
-node scripts/check-html.mjs <output>.html   # no {{...}}, no remote refs, brand override clean
+node scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html   # no {{...}}, no remote refs, brand override clean
 ```

@@ -36,4 +36,7 @@ Keep the workpad compact and current:
 
 For explanation, triage, codebase-tour, or operational-guidance tickets with no
 requested repo change, write the answer in the workpad handoff, move the issue
-to `Done`, and do not create a branch, commit, PR, or follow-up issue.
+to `Done`, and do not create a branch, commit, PR, or follow-up issue. If the
+skill was invoked ad-hoc without an existing issue, still create or attempt to
+create the Linear ticket first; do not skip ticketing just because the final
+deliverable is an answer.

@@ -48,16 +48,21 @@ status readouts, and implementation briefs.
 ## Quick start
 
 ```bash
-# 1. Pick a template and copy it
-cp .agents/skills/vpk-html/assets/templates/one-pager.html docs/html/my-doc.html
+# 1. Pick a template and create one folder for this generated artifact
+mkdir -p output/vpk-html/my-doc
+cp .agents/skills/vpk-html/assets/templates/one-pager.html output/vpk-html/my-doc/my-doc.html
 
 # 2. Open my-doc.html and replace every {{placeholder}} with real content.
 #    CSS stays untouched — only edit the body.
 
 # 3. Validate
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders docs/html/my-doc.html
-node .agents/skills/vpk-html/scripts/build.mjs --verify docs/html/my-doc.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/my-doc/my-doc.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/my-doc/my-doc.html
 ```
+
+Generated user artifacts are grouped per slug under `output/vpk-html/<slug>/`.
+Keep the HTML source at `output/vpk-html/<slug>/<slug>.html`, with optional
+PDFs, screenshots, and validation captures inside the same slug folder.
 
 ## Invoking the skill
 
@@ -106,6 +111,7 @@ node scripts/landing.mjs                          # regenerate assets/landing/ s
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
 | `assets/demos/` | 52 demo HTML outputs plus the embedded media needed by individual demos |
 | `assets/fonts/` | Charlie Display, Charlie Text, and Atlassian Mono (inlined as base64 at port time) |
+| `output/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
 | `references/` | Anti-patterns, diagrams, illustrations, presentation, video-export, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
 | `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, landing, gates, pdf, ensure-fonts |

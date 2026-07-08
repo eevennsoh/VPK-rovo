@@ -118,6 +118,15 @@ With `--port`, upstream Symphony exposes:
 
 ## Workflow
 
+Ad-hoc `vpk-symphony` invocations are an agent-side ticket bootstrap, not a
+launcher flag. When the skill is invoked with a task-like request and no
+existing Linear issue, the worker should first try to create a `Todo` Linear
+issue in the configured Symphony project using Linear MCP or `linear_graphql`.
+After the issue exists, the normal workflow decides whether the ticket is
+answer-only work that ends in the workpad or implementation work that needs a
+branch, PR, Agent Review, and merge. The launcher itself still polls Linear for
+existing active issues.
+
 Recommended Linear flow:
 
 ```text

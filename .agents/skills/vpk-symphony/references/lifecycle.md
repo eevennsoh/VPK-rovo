@@ -2,6 +2,35 @@
 
 Use this reference when executing or updating the VPK-rovo Symphony workflow.
 
+## Ad-Hoc Request Bootstrap
+
+Use this before the state flow when `vpk-symphony` is invoked without an
+existing Linear issue identifier or URL.
+
+- If the user request is task-like, first try to create a Linear issue in the
+  configured Symphony project and put it in `Todo` so Symphony can claim it.
+  Task-like requests include implementation, docs, investigation, review, audit,
+  triage, operational guidance, codebase tours, and answer-only explanations.
+- Do not hardcode prompt examples. Derive a concise imperative title and a
+  scoped description from the actual request, including any explicit validation
+  or acceptance criteria the user provided.
+- If the user provides an existing issue key or URL, skip creation and fetch
+  that issue fresh.
+- If the user explicitly says not to create a ticket, or is asking a meta
+  support question about how to use/debug Symphony in the current conversation,
+  answer directly without creating a new issue.
+- If Linear access, the `linear_graphql` tool, or the configured project cannot
+  be resolved, report the exact missing capability. For repo-changing tasks, do
+  not continue as Symphony-managed work without a ticket unless the user
+  explicitly redirects to normal local work. For answer-only support, you may
+  answer directly after saying ticket creation could not be completed.
+- After creating the ticket, report the issue identifier/URL and follow the
+  normal issue flow from fresh issue details. If the same agent will execute the
+  ticket immediately, move through the `Todo` kickoff sequence; if the
+  orchestrator should pick it up, leave it in `Todo`.
+- During active issue execution, do not create follow-up issues for discovered
+  adjacent work. Record those notes in the workpad instead.
+
 ## States
 
 - `Backlog`: not routed for implementation.
@@ -22,15 +51,17 @@ Use this reference when executing or updating the VPK-rovo Symphony workflow.
 
 ## Execution Rules
 
-1. Fetch fresh Linear issue details before planning.
-2. Reuse the active `## Codex Workpad` comment if it exists.
-3. Classify answer-only issues before creating branches or PRs; write the
+1. Bootstrap a Linear issue first for task-like ad-hoc requests that do not
+   already name an issue.
+2. Fetch fresh Linear issue details before planning.
+3. Reuse the active `## Codex Workpad` comment if it exists.
+4. Classify answer-only issues before creating branches or PRs; write the
    answer to the workpad and move them to `Done`.
-4. Keep project-specific context in issue descriptions and comments, not in the
+5. Keep project-specific context in issue descriptions and comments, not in the
    shared workflow files.
-5. Do not advance dependent work until the previous PR is actually merged to the
+6. Do not advance dependent work until the previous PR is actually merged to the
    default branch.
-6. If an issue becomes terminal while a run is active, stop implementation work
+7. If an issue becomes terminal while a run is active, stop implementation work
    and let cleanup/landing logic respect the terminal state.
 
 ## Phase Prompts

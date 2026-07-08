@@ -93,7 +93,7 @@ blue ramp. SMIL motion must use `begin="indefinite"` plus the
 4. Source + material pass (for branded / fact-heavy docs)
 5. Distill raw content (if input is unstructured)
 6. Layout note (≤80 words, transparent)
-7. Copy template to working dir, fill placeholders
+7. Copy template to `output/vpk-html/<slug>/<slug>.html`, fill placeholders
 8. Build & verify:
    node scripts/build.mjs --check-placeholders <file>
    node scripts/build.mjs --verify <file>
@@ -103,15 +103,20 @@ blue ramp. SMIL motion must use `begin="indefinite"` plus the
 
 ```bash
 # Start a new document
-cp .agents/skills/vpk-html/assets/templates/<doc>.html docs/html/<slug>.html
+mkdir -p output/vpk-html/<slug>
+cp .agents/skills/vpk-html/assets/templates/<doc>.html output/vpk-html/<slug>/<slug>.html
 
 # Edit only the body; CSS stays untouched.
 # Replace every {{placeholder}} with real content.
 
 # Validate
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders docs/html/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --verify docs/html/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/<slug>/<slug>.html
 ```
+
+Keep every generated artifact in its own slug folder. Related PDFs,
+screenshots, and review captures stay beside that HTML file or in a nested
+`screenshots/` folder when the capture set is large.
 
 ## Shared theme
 

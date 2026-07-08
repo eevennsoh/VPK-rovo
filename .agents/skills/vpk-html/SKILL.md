@@ -8,7 +8,7 @@ inputs: User source material, requested document type, optional brand profile, H
 outputs: Single-file HTML artifact, optional PDF export, validation report, and local output path.
 required_tools: shell, node, browser verification tools
 validation_command: node .agents/skills/vpk-html/scripts/check-html.mjs
-generated_artifacts: HTML files, optional PDFs, screenshots, and local output assets under the approved artifact path.
+generated_artifacts: HTML files, optional PDFs, screenshots, and local output assets under output/vpk-html/<slug>/.
 common_failure_modes: Auto-triggering without explicit invocation, overfitting the wrong template, breaking offline constraints, or skipping HTML quality gates.
 ---
 
@@ -28,6 +28,16 @@ engineering shells mapped from the `html-effectiveness` use-case catalog, plus
 14 diagram primitives and 5 technical illustration exemplars. To produce a
 document, copy a template into a working directory and fill its
 `{{placeholders}}`. The renderer is a validator, not a JSON-to-HTML compiler.
+
+## Artifact layout
+
+Every generated user artifact gets its own ignored folder:
+`output/vpk-html/<slug>/`. The finished HTML source of truth lives at
+`output/vpk-html/<slug>/<slug>.html`. Keep optional PDFs, screenshots,
+iteration captures, validation images, and other local review assets for that
+artifact inside the same slug folder; use `screenshots/` under the slug folder
+when there are many browser captures. Do not put generated HTML directly in the
+repo root, `docs/html/`, or the top level of `output/vpk-html/`.
 
 ---
 
@@ -248,7 +258,8 @@ otherwise proceed to Step 6.
 
 ## Step 6 · Fill the template
 
-1. Copy the template into your working directory: `cp assets/templates/<id>.html <slug>.html`
+1. Create a per-artifact output folder: `mkdir -p output/vpk-html/<slug>`
+   Then copy the template there: `cp .agents/skills/vpk-html/assets/templates/<id>.html output/vpk-html/<slug>/<slug>.html`
 2. **CSS stays untouched**; only edit the body, preserving the single `<main>` landmark around visible content
 3. Content follows `references/writing.md` — data over adjectives, distinctive
    phrasing over industry clichés
@@ -357,32 +368,32 @@ Every template has meta placeholders. Fill all four before saving:
 
 ```bash
 # Placeholder coverage (catches unfilled {{...}})
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/<slug>/<slug>.html
 
 # Render in chromium, verify fonts + no console errors
-node .agents/skills/vpk-html/scripts/build.mjs --verify <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/<slug>/<slug>.html
 
 # Static HTML validity
-node .agents/skills/vpk-html/scripts/check-html.mjs <slug>.html
+node .agents/skills/vpk-html/scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html
 ```
 
 Optional, on demand:
 
 ```bash
 # Derived PDF export (Chromium print-to-PDF; HTML stays source of truth)
-node .agents/skills/vpk-html/scripts/build.mjs --pdf <slug>.html [--out <file.pdf>]
+node .agents/skills/vpk-html/scripts/build.mjs --pdf output/vpk-html/<slug>/<slug>.html [--out output/vpk-html/<slug>/<slug>.pdf]
 
 # Advisory content-quality gates (warnings; --strict to fail). See references/quality-gates.md
-node .agents/skills/vpk-html/scripts/build.mjs --check-density <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-orphans <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-rhythm <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-resume-balance <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-focal <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-motion-budget <slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo <slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-density output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-orphans output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-rhythm output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-resume-balance output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-focal output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-motion-budget output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo output/vpk-html/<slug>/<slug>.html
 
 # Landing / product-site export (companions + responsive verify). See references/landing.md
-node .agents/skills/vpk-html/scripts/build.mjs --landing <file>.html [--out <dir>] [--origin <url>]
+node .agents/skills/vpk-html/scripts/build.mjs --landing output/vpk-html/<slug>/<slug>.html [--out output/vpk-html/<slug>/site] [--origin <url>]
 ```
 
 For template-library changes (color sweeps, font swaps, port-script edits):

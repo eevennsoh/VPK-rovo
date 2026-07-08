@@ -64,6 +64,111 @@ query CommentCreateInputShape {
 
 ## Common workflows
 
+### Create a Symphony issue from an ad-hoc request
+
+Use this when `vpk-symphony` is invoked with a task-like request but no existing
+Linear issue identifier or URL.
+
+1. Resolve the configured Symphony project from `SYMPHONY_LINEAR_PROJECT_SLUG`
+   or the rendered `WORKFLOW.md`.
+2. Resolve a team for that project and the team's `Todo` state.
+3. Create one issue with a concise title, scoped description, project id, team
+   id, and `Todo` state id.
+4. Return the created issue identifier and URL before continuing.
+
+Do not hardcode examples or project/team ids. When the exact schema shape is
+unclear, use the introspection patterns in this file to inspect `IssueCreateInput`,
+`Project`, `ProjectFilter`, and relevant connection fields before mutating.
+
+Useful project lookup pattern:
+
+```graphql
+query ProjectBySlug($slug: String!) {
+  projects(filter: { slugId: { eq: $slug } }, first: 1) {
+    nodes {
+      id
+      name
+      slugId
+      teams {
+        nodes {
+          id
+          key
+          name
+          states {
+            nodes {
+              id
+              name
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+If the project lookup does not expose a usable team, infer the team from an
+existing issue in the same project or stop with a precise blocker. Do not create
+an issue in an arbitrary team.
+
+Create the issue only after resolving the real ids:
+
+```graphql
+mutation CreateIssue(
+  $teamId: String!
+  $projectId: String
+  $stateId: String
+  $title: String!
+  $description: String!
+) {
+  issueCreate(
+    input: {
+      teamId: $teamId
+      projectId: $projectId
+      stateId: $stateId
+      title: $title
+      description: $description
+    }
+  ) {
+    success
+    issue {
+      id
+      identifier
+      title
+      url
+      state {
+        id
+        name
+      }
+      project {
+        id
+        name
+      }
+    }
+  }
+}
+```
+
+If the current schema rejects nullable optional fields, omit `projectId` or
+`stateId` from the input instead of passing `null`.
+
+Use this description shape for ticket bootstrap:
+
+```markdown
+Requested through `vpk-symphony` ad-hoc bootstrap.
+
+Original request:
+> <verbatim user request>
+
+Scope:
+- Classification: <implementation | answer-only | investigation | review>
+- Expected output: <workpad answer | PR | browser evidence | other>
+
+Acceptance / validation:
+- <explicit user-provided checks, or "derive during kickoff">
+```
+
 ### Query an issue by key, identifier, or id
 
 Use these progressively:
@@ -377,6 +482,8 @@ mutation FileUpload(
 
 ## Usage rules
 
+- For task-like `vpk-symphony` invocations without an issue identifier, attempt
+  `issueCreate` before doing local work.
 - Use `linear_graphql` for comment edits, uploads, and ad-hoc Linear API
   queries.
 - Prefer the narrowest issue lookup that matches what you already know:

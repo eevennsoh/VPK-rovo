@@ -110,6 +110,25 @@ test("quality gate command surface includes focal and tidy audit gates", async (
 	assert.match(buildSource, /--check-caption-echo/);
 });
 
+test("user render docs route generated HTML into per-slug output folders", () => {
+	const docs = [
+		"SKILL.md",
+		"README.md",
+		"CHEATSHEET.md",
+		"references/brand-profile.md",
+		"references/landing.md",
+		"references/pdf-export.md",
+		"references/production.md",
+	];
+	const skillRoot = path.join(__dirname, "..");
+
+	for (const relativePath of docs) {
+		const source = fs.readFileSync(path.join(skillRoot, relativePath), "utf8");
+		assert.match(source, /output\/vpk-html\//, `${relativePath} should use the vpk-html output artifact root`);
+		assert.doesNotMatch(source, /docs\/html\/(?:<slug>|my-doc)\.html/, `${relativePath} should not revive the legacy flat docs/html render path`);
+	}
+});
+
 test("presentation injector detects decks and is idempotent", async () => {
 	const { isDeck, retrofitDeck } = await import("./presentation.mjs");
 	const html = `<!doctype html><html><head><style>:root { color-scheme: light dark; }</style></head><body><main><section class="slide"><h1>One</h1></section><section class="slide"><h1>Two</h1></section></main></body></html>`;

@@ -257,6 +257,32 @@ clean_upstream_checkout() {
 		":!elixir/bin"
 }
 
+apply_upstream_patches() {
+	local patches_dir="$repo_root/scripts/symphony-patches"
+	local patch_file
+
+	if [ ! -d "$patches_dir" ]; then
+		return 0
+	fi
+
+	for patch_file in "$patches_dir"/*.patch; do
+		if [ ! -e "$patch_file" ]; then
+			continue
+		fi
+
+		if git -C "$upstream_dir" apply --check --whitespace=nowarn "$patch_file"; then
+			echo "Applying Symphony upstream patch: ${patch_file#$repo_root/}" >&2
+			git -C "$upstream_dir" apply --whitespace=nowarn "$patch_file"
+		elif git -C "$upstream_dir" apply --reverse --check --whitespace=nowarn "$patch_file"; then
+			echo "Symphony upstream patch already present: ${patch_file#$repo_root/}" >&2
+		else
+			echo "Failed to apply Symphony upstream patch: ${patch_file#$repo_root/}" >&2
+			git -C "$upstream_dir" apply --check --whitespace=nowarn "$patch_file"
+			exit 1
+		fi
+	done
+}
+
 export SYMPHONY_SOURCE_REPO_URL="${SYMPHONY_SOURCE_REPO_URL:-$(git -C "$repo_root" remote get-url origin)}"
 if [ -z "${SYMPHONY_GITHUB_REPO:-}" ]; then
 	SYMPHONY_GITHUB_REPO="$(derive_github_repo "$SYMPHONY_SOURCE_REPO_URL")"
@@ -295,6 +321,7 @@ git -C "$upstream_dir" fetch --depth 1 origin "$upstream_ref"
 git -C "$upstream_dir" checkout --detach FETCH_HEAD
 git -C "$upstream_dir" reset --hard FETCH_HEAD
 clean_upstream_checkout
+apply_upstream_patches
 
 export SYMPHONY_ELIXIR_DIR="$upstream_dir/elixir"
 if [ ! -d "$SYMPHONY_ELIXIR_DIR" ]; then
