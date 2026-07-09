@@ -5,6 +5,8 @@
 # Shared by:
 #   - Claude Code SessionStart hooks
 #   - Cursor .cursor/worktrees.json setup-worktree
+#   - Codex + Superset setup scripts (explicit env prefix, or the
+#     CODEX_*/SUPERSET_* fallbacks below)
 #
 # Mirrors the Codex setup-script behavior for local worktrees by delegating to
 # the shared bootstrap helper:
@@ -29,8 +31,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 . "$SCRIPT_DIR/lib/worktree-bootstrap.sh"
 
-PROJECT_DIR="${PROJECT_DIR:-${CODEX_WORKTREE_PATH:-${CURSOR_WORKTREE_PATH:-${CLAUDE_PROJECT_DIR:-$PWD}}}}"
-SOURCE_TREE_PATH="${SOURCE_TREE_PATH:-${CODEX_SOURCE_TREE_PATH:-${CURSOR_SOURCE_TREE_PATH:-}}}"
+PROJECT_DIR="${PROJECT_DIR:-${CODEX_WORKTREE_PATH:-${SUPERSET_WORKSPACE_PATH:-${CURSOR_WORKTREE_PATH:-${CLAUDE_PROJECT_DIR:-$PWD}}}}}"
+SOURCE_TREE_PATH="${SOURCE_TREE_PATH:-${CODEX_SOURCE_TREE_PATH:-${SUPERSET_ROOT_PATH:-${CURSOR_SOURCE_TREE_PATH:-}}}}"
 IS_CLAUDE_HOOK=0
 
 if [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
