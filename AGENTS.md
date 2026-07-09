@@ -348,7 +348,7 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | Secret | Purpose |
 |--------|---------|
 | `ATLASSIAN_NPM_TOKEN` | Auth for `@atlassian/logo-third-party` from the private registry — **required for `pnpm install`** |
-| `ROVODEV_SESSION_TOKEN` | Backend → Rovo Serve auth (only needed for Rovo chat flows) |
+| `ROVO_SESSION_TOKEN` | Backend → Rovo Serve auth (only needed for Rovo chat flows) |
 | `ASAP_PRIVATE_KEY` | AI Gateway ASAP auth |
 | `ASAP_KID` | AI Gateway ASAP key ID |
 | `ASAP_ISSUER` | AI Gateway ASAP issuer |
