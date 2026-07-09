@@ -25,7 +25,7 @@ paths:
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 156; runtime-admin routes: 41; Next API routes: 132.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 158; runtime-admin routes: 41; Next API routes: 134.
 
 ### Backend Routes
 
@@ -173,6 +173,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 156; runtim
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:64` |
 | `POST` | `/api/studio/agent-data-flow` | no | `backend/routes/ai-utilities.js:144` |
 | `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:79` |
+| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:90` |
+| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:91` |
 | `POST` | `/api/wiki/captures` | yes | `backend/routes/wiki.js:20` |
 | `GET` | `/api/wiki/memories` | no | `backend/routes/wiki.js:23` |
 | `DELETE` | `/api/wiki/memories/:scope/blocks/:blockId` | yes | `backend/routes/wiki.js:28` |
@@ -313,6 +315,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 156; runtim
 | `GET` | `/api/status/rovo` | `GET /api/status/rovo` | `app/api/status/rovo/route.ts:3` |
 | `POST` | `/api/studio/agent-data-flow` | `POST /api/studio/agent-data-flow` | `app/api/studio/agent-data-flow/route.ts:6` |
 | `POST` | `/api/ticket-classify` | `POST /api/ticket-classify` | `app/api/ticket-classify/route.ts:5` |
+| `GET` | `/api/vpk-html` | `GET /api/vpk-html` | `app/api/vpk-html/route.ts:4` |
+| `GET` | `/api/vpk-html/*assetPath` | `GET /api/vpk-html/*assetPath` | `app/api/vpk-html/[...assetPath]/route.ts:10` |
 | `DELETE` | `/api/wiki/memories` | `DELETE /api/wiki/memories/proposals/:proposalId` | `app/api/wiki/memories/route.ts:11` |
 | `GET` | `/api/wiki/memories` | `GET /api/wiki/memories` | `app/api/wiki/memories/route.ts:4` |
 | `DELETE` | `/api/wiki/memories/:scope/blocks/:blockId` | `DELETE /api/wiki/memories/:scope/blocks/:blockId` | `app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts:12` |

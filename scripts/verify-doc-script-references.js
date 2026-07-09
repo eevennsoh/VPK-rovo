@@ -4,7 +4,20 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const ts = require("typescript");
+const {
+	assertWorkspaceDependencies,
+} = require("./lib/dependency-health");
+
+let ts;
+try {
+	assertWorkspaceDependencies(["typescript"], {
+		commandName: "node scripts/verify-doc-script-references.js",
+	});
+	ts = require("typescript");
+} catch (error) {
+	console.error(error instanceof Error ? error.message : String(error));
+	process.exit(1);
+}
 
 const DEFAULT_DOC_TARGETS = [
 	"AGENTS.md",

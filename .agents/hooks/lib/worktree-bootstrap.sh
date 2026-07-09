@@ -237,8 +237,8 @@ vpk_bootstrap_install_dependencies() {
 		return 0
 	fi
 
-	vpk_bootstrap_log "Fresh worktree detected - running pnpm install --prefer-offline..."
-	if (cd "$project_dir" && pnpm install --prefer-offline >&2); then
+	vpk_bootstrap_log "Fresh worktree detected - running CI=true pnpm install --prefer-offline..."
+	if (cd "$project_dir" && CI=true pnpm install --prefer-offline >&2); then
 		VPK_BOOTSTRAP_DEPS_WARMED="install"
 		vpk_bootstrap_add_message "Bootstrapped node_modules via pnpm install."
 		return 0

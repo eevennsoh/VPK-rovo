@@ -27,7 +27,7 @@ Rovo App live voice mode.
 ## Quick Workflow
 
 1. **Preflight cleanup** → If `node_modules` exists, clean Next.js cache (see below)
-2. **Install dependencies** → `pnpm install` (skip if `node_modules` already exists)
+2. **Install dependencies** → `CI=true pnpm install --prefer-offline` in noninteractive/provider worktrees, or `pnpm install` in an interactive shell (skip if `node_modules` already exists)
 3. **Collect AI Gateway credentials** → Ask for use case ID and Atlassian email
 4. **Configure AI Gateway + Voice STT** → Generate ASAP keys and create `.env.local` with Google endpoint values and the current STT preset block
 5. **Set Rovo Session Token** → First launch of `pnpm run rovo` prints a session token; copy it to `ROVO_SESSION_TOKEN` in `.env.local` (one-time, does not expire)
@@ -310,6 +310,7 @@ For full model switching details, see [references/guide-model-switch.md](referen
 | Next.js lock error | Remove stale lock: `rm -f .next/dev/lock` then restart |
 | Turbopack cache corrupted | Clear cache: `rm -rf .next` then restart |
 | Zombie processes blocking ports | `ROVO_FORCE_CLEAN_START=true pnpm run rovo` (graceful SIGTERM then SIGKILL fallback) |
+| `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` during dependency bootstrap | Use the noninteractive install path: `CI=true pnpm install --prefer-offline`. Do not start multiple `pnpm run ...` validations in parallel until dependency warmup has finished, because pnpm bootstraps share the same `node_modules` tree. |
 | Config keeps resetting (`~/.rovo/config.yaml`) | Ensure you're using `pnpm run rovo` (not `rovo:setup`); setup is a one-off |
 | Frontend 500 (providers) | Ensure `components/providers.tsx` matches import casing |
 | "ASAP_PRIVATE_KEY: MISSING" | Check .env.local format - private key must be quoted and escaped |

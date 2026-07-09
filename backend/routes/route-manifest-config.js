@@ -5,6 +5,7 @@ const SERVER_ROUTE_FILES = [
 	{ calleeName: "router", filePath: "backend/routes/wiki.js", prefix: "/api/wiki" },
 	{ calleeName: "router", filePath: "backend/routes/status.js", prefix: "/api/status" },
 	{ calleeName: "app", filePath: "backend/routes/status.js", prefix: "" },
+	{ calleeName: "router", filePath: "backend/routes/vpk-html.js", prefix: "/api/vpk-html" },
 	{ calleeName: "router", filePath: "backend/routes/jobs.js", prefix: "/api/jobs" },
 	{ calleeName: "router", filePath: "backend/routes/skills.js", prefix: "/api/skills" },
 	{ calleeName: "router", filePath: "backend/routes/media.js", prefix: "/api" },
