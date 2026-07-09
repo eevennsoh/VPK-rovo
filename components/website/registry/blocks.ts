@@ -600,6 +600,13 @@ export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 	),
 
 	// Agent Selector
+	"agent-selector-demo-standalone": dynamic(
+		() =>
+			import("../demos/blocks/agent-selector-demo").then((mod) => ({
+				default: mod.AgentSelectorDemoStandalone,
+			})),
+		{ ssr: false },
+	),
 	"agent-selector-demo-selected-agent-actions": dynamic(
 		() =>
 			import("../demos/blocks/agent-selector-demo").then((mod) => ({
