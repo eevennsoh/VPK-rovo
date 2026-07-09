@@ -7470,7 +7470,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
 			},
 			{
-				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and fan out parallel Sonnet 5 worker subagents (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, or asks how to use Fable 5 economically.",
+				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.5 xhigh via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically.",
 				"name": "vpk-fable",
 				"path": ".agents/skills/vpk-fable/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-fable"
@@ -7494,7 +7494,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-ship-fast"
 			},
 			{
-				"description": "Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus an optional derived PDF export and a landing/product-site track. Invoked explicitly via /vpk-html (optionally with a doc-type hint, e.g. /vpk-html resume); does not auto-trigger on casual mentions of HTML or documents.",
+				"description": "Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Algebrica editorial identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.",
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
