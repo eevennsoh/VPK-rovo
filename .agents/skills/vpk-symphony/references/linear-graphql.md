@@ -1,34 +1,49 @@
 # Linear GraphQL
 
-Use this skill for raw Linear GraphQL work during Symphony app-server sessions.
+Use this skill for raw Linear GraphQL work during local `vpk-symphony`
+invocations that need to bootstrap or update Linear.
 
-## Primary tool
+## Preferred creation path
 
-Use the `linear_graphql` client tool exposed by Symphony's app-server session.
-It reuses Symphony's configured Linear auth for the session.
+Use direct Linear GraphQL over HTTPS with local auth. This is the default and
+best proven path for this repository because company policy does not expose an
+injected `linear_graphql` tool to Codex workers.
 
-Tool input:
+Default requirements:
 
-```json
-{
-  "query": "query or mutation document",
-  "variables": {
-    "optional": "graphql variables object"
-  }
-}
-```
+- Load `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell
+  environment or ignored `.env.local`.
+- POST one GraphQL operation at a time to `https://api.linear.app/graphql` with
+  `Authorization: <LINEAR_API_KEY>` and `Content-Type: application/json`.
+- Never print, commit, or include the token in issue text, comments, logs, or
+  final responses.
+- Use the same query and mutation documents in this reference. The transport
+  changes; the schema-safe operation shapes do not.
+- Treat missing local auth, missing project slug, unresolved project/team/state,
+  HTTP errors, sandbox/network allowlist failures, or top-level GraphQL
+  `errors` as real blockers only after this direct path has been attempted.
+- If the HTTPS request is blocked by the current sandbox or network allowlist,
+  immediately rerun the same request with the required approval/escalation for
+  `api.linear.app` in the same turn. Do not stop at a status update, skip Linear
+  issue creation, or continue as Symphony-managed work without an issue. Report
+  Linear as blocked only if the escalated request is denied or still fails.
 
-Tool behavior:
+Default creation sequence:
 
-- Send one GraphQL operation per tool call.
-- Treat a top-level `errors` array as a failed GraphQL operation even if the
-  tool call itself completed.
-- Keep queries/mutations narrowly scoped; ask only for the fields you need.
+1. Load `LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
+   ignored `.env.local`.
+2. Query `ProjectBySlug` using `SYMPHONY_LINEAR_PROJECT_SLUG`.
+3. Resolve a team from that project and choose that team's `Todo` state.
+4. Derive a concise title and scoped description from the actual user request.
+5. Run `issueCreate` with `teamId`, `projectId`, `stateId`, `title`, and
+   `description`.
+6. Print only the created issue identifier, URL, and state. Never print the
+   token or raw request headers.
 
 ## Discovering unfamiliar operations
 
 When you need an unfamiliar mutation, input type, or object field, use targeted
-introspection through `linear_graphql`.
+introspection through direct local-auth GraphQL.
 
 List mutation names:
 
@@ -305,7 +320,7 @@ query IssueTeamStates($id: String!) {
 
 ### Edit an existing comment
 
-Use `commentUpdate` through `linear_graphql`:
+Use `commentUpdate` through the active Linear GraphQL transport:
 
 ```graphql
 mutation UpdateComment($id: String!, $body: String!) {
@@ -321,7 +336,7 @@ mutation UpdateComment($id: String!, $body: String!) {
 
 ### Create a comment
 
-Use `commentCreate` through `linear_graphql`:
+Use `commentCreate` through the active Linear GraphQL transport:
 
 ```graphql
 mutation CreateComment($issueId: String!, $body: String!) {
@@ -436,12 +451,12 @@ query IssueFieldArgs {
 
 Do this in three steps:
 
-1. Call `linear_graphql` with `fileUpload` to get `uploadUrl`, `assetUrl`, and
-   any required upload headers.
+1. Call `fileUpload` through the active Linear GraphQL transport to get
+   `uploadUrl`, `assetUrl`, and any required upload headers.
 2. Upload the local file bytes to `uploadUrl` with `curl -X PUT` and the exact
    headers returned by `fileUpload`.
-3. Call `linear_graphql` again with `commentCreate` (or `commentUpdate`) and
-   include the resulting `assetUrl` in the comment body.
+3. Call the active Linear GraphQL transport again with `commentCreate` (or
+   `commentUpdate`) and include the resulting `assetUrl` in the comment body.
 
 Use the actual MIME type and size of the file. Common Symphony evidence types
 are `image/png` for screenshots, `image/gif` for short inline motion previews,
@@ -484,14 +499,14 @@ mutation FileUpload(
 
 - For task-like `vpk-symphony` invocations without an issue identifier, attempt
   `issueCreate` before doing local work.
-- Use `linear_graphql` for comment edits, uploads, and ad-hoc Linear API
-  queries.
+- Use direct local-auth Linear GraphQL for comment edits, uploads, and ad-hoc
+  Linear API queries. Do not wait for injected `linear_graphql`.
 - Prefer the narrowest issue lookup that matches what you already know:
   key -> identifier search -> internal id.
 - For state transitions, fetch team states first and use the exact `stateId`
   instead of hardcoding names inside mutations.
 - Prefer `attachmentLinkGitHubPR` over a generic URL attachment when linking a
   GitHub PR to a Linear issue.
-- Do not introduce new raw-token shell helpers for GraphQL access.
+- Do not introduce committed raw-token shell helpers for GraphQL access.
 - If you need shell work for uploads, only use it for signed upload URLs
   returned by `fileUpload`; those URLs already carry the needed authorization.

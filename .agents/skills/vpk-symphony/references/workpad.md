@@ -26,8 +26,10 @@ Keep the workpad compact and current:
 - Preserve the parent/child task structure as scope evolves.
 - Record sync evidence before edits: merge source, result, and resulting short
   SHA.
-- For app-touching work, record browser evidence availability and artifact
-  links when available.
+- For visible UI, browser-observable behavior, generated/offline HTML output,
+  or visual artifact changes, record browser evidence availability and artifact
+  links. If evidence is skipped, record the exact capture blocker before
+  closing or review handoff.
 - Put uploaded screenshots, inline GIF previews, and WebM links in the workpad
   `### Evidence` section.
 - Use markdown image syntax for screenshots and GIF previews so Linear renders

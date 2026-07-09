@@ -47,7 +47,9 @@ the best non-browser validation available for the issue.
 
 `LINEAR_API_KEY` can live in ignored `.env.local` or the shell environment. Never
 commit a real Linear key to `.env.local.example`, docs, issues, or comments. The
-project slug comes from the Linear project URL.
+project slug comes from the Linear project URL. Local `vpk-symphony` invocations
+use these values as the default direct Linear GraphQL path because company
+policy does not expose an injected `linear_graphql` tool to Codex workers.
 
 Optional overrides:
 
@@ -119,13 +121,30 @@ With `--port`, upstream Symphony exposes:
 ## Workflow
 
 Ad-hoc `vpk-symphony` invocations are an agent-side ticket bootstrap, not a
-launcher flag. When the skill is invoked with a task-like request and no
-existing Linear issue, the worker should first try to create a `Todo` Linear
-issue in the configured Symphony project using Linear MCP or `linear_graphql`.
-After the issue exists, the normal workflow decides whether the ticket is
-answer-only work that ends in the workpad or implementation work that needs a
-branch, PR, Agent Review, and merge. The launcher itself still polls Linear for
-existing active issues.
+launcher flag. When the skill is invoked and no existing Linear issue is
+provided, the worker should first try to create a `Todo` Linear issue in the
+configured Symphony project. The best proven creation path is direct Linear
+GraphQL over HTTPS with local `LINEAR_API_KEY` and
+`SYMPHONY_LINEAR_PROJECT_SLUG`; company policy does not expose an injected
+`linear_graphql` tool to Codex workers. This applies to tiny direct file edits,
+generated artifact updates, meta support, answer-only work, and implementation
+work. If the current sandbox or network allowlist blocks `api.linear.app`, the
+worker should immediately rerun the same direct GraphQL bootstrap with the
+required approval/escalation in the same turn. It should record a blocker only
+when the escalated request is denied or still fails; it should not bypass Linear
+issue creation. If the user explicitly says not to create Linear work items for
+a meta/setup correction to the Symphony harness itself, honor that instruction.
+After the issue exists, the normal
+workflow decides whether the ticket is answer-only work that ends in the workpad
+or implementation work that needs a branch, PR, Agent Review, and merge. The
+launcher itself still polls Linear for existing active issues.
+
+After an ad-hoc ticket is created, the safer default is to leave it in `Todo`
+for `pnpm run symphony` to claim. That path creates a fresh issue workspace via
+the launcher hook. A local Codex thread may continue executing immediately only
+when the user explicitly asks for that or when the current checkout is already a
+Symphony issue workspace; the workpad should then say that no new workspace was
+created and why local execution was used.
 
 Recommended Linear flow:
 
@@ -167,17 +186,19 @@ adversarial code review, `Human Review` is a narrow super-risk waiting gate,
 `Merging` is guarded landing, and terminal states do nothing. These prompts are
 part of the runtime worker prompt, not only documentation.
 
-For UI or browser-observable changes, workers use the repo-local `vpk-symphony`
-browser evidence reference during `In Progress` when
-`playwright-cli` is available. Artifacts are kept under
+For UI, browser-observable, generated/offline HTML, or visual artifact changes,
+workers use the repo-local `vpk-symphony` browser evidence reference during
+`In Progress` when `playwright-cli` is available. Artifacts are kept under
 `output/playwright/<issue-identifier>/` in the issue workspace and only the
-required screenshots or short WebM recordings are uploaded to Linear through the
-injected `linear_graphql` tool. The uploaded links belong in the single
+required screenshots or short WebM recordings are uploaded to Linear through
+direct Linear GraphQL. The uploaded links belong in the single
 `## Codex Workpad` comment, not in separate progress comments. A before artifact
 is only required when it proves the bug or requested baseline; an after artifact
-is expected before moving app-touching work to `Agent Review` when browser media
-capture is available. Screenshot uploads, plus short animated GIF previews when
-inline motion proof is needed, should use markdown image syntax
+is required before moving browser-observable work to `Agent Review` or `Done`
+when browser media capture is available. Ignored `output/` HTML is still
+browser-observable; source search alone is not enough evidence. Screenshot
+uploads, plus short animated GIF previews when inline motion proof is needed,
+should use markdown image syntax
 (`![alt text](<asset-url>)`) in the workpad so Linear renders an inline preview.
 Uploaded WebM recordings should be kept as the canonical recording evidence, but
 Linear `fileUpload` WebM assets may render only as downloadable links. Place the
@@ -224,13 +245,14 @@ The workflow keeps the upstream defaults visible where local choices matter:
   cap, so merge work does not run in parallel across several issues.
 - `codex.command`: upstream-style `codex ... app-server` with inherited shell
   environment plus explicit `gpt-5.5` and `xhigh` reasoning settings.
-- `codex.approval_policy`: `never`, so unattended Symphony workers can continue
-  through Codex app-server approval prompts with the current Codex policy schema.
-- `codex.thread_sandbox`: `danger-full-access`, so unattended local Symphony
-  workers can launch Playwright CLI browsers for issue evidence on macOS.
-- `codex.turn_sandbox_policy`: explicit `dangerFullAccess`, matching the
-  thread sandbox. Browser evidence requires OS-level browser launch access that
-  `workspaceWrite` does not provide in the managed macOS Codex sandbox.
+- `codex.approval_policy`: `on-request`, matching the enterprise-managed Codex
+  policy set that rejects `never` for app-server thread settings.
+- `codex.thread_sandbox`: `workspace-write`, matching the enterprise-managed
+  Codex sandbox set. The per-turn sandbox policy is omitted so upstream
+  Symphony generates its workspace-write default for each issue workspace.
+  Browser evidence that requires broader OS access may be unavailable in this
+  mode; workers should record that limitation in the workpad and continue with
+  the best non-browser validation available.
 - `codex.turn_timeout_ms`: `300000`, `codex.read_timeout_ms`: `5000`, and
   `codex.stall_timeout_ms`: `120000`, local guards that prevent long-running or
   silent turns from burning indefinitely.

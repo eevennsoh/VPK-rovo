@@ -248,7 +248,7 @@ function EntityCardSelectableLeading({
 				aria-hidden
 				className={cn(
 					"absolute inset-0 flex items-center justify-center transition-opacity duration-fast ease-out",
-					selected ? "opacity-0" : "opacity-100 group-hover/card:opacity-0",
+					selected ? "opacity-0" : "opacity-100 group-hover/card:opacity-0 group-focus-within/card:opacity-0",
 				)}
 			>
 				{children}
@@ -260,7 +260,7 @@ function EntityCardSelectableLeading({
 					"opacity-0 transition-opacity duration-fast ease-out after:inset-0 focus-visible:pointer-events-auto focus-visible:opacity-100",
 					selected
 						? "pointer-events-auto opacity-100"
-						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",
+						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100",
 				)}
 				onCheckedChange={(checked) => onSelectedChange?.(Boolean(checked))}
 				onClick={stopPropagation}

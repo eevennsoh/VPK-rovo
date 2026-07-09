@@ -56,10 +56,8 @@ agent:
     Merging: 1
 codex:
   command: codex --config shell_environment_policy.inherit=all --config 'model="gpt-5.5"' --config model_reasoning_effort=xhigh app-server
-  approval_policy: never
-  thread_sandbox: danger-full-access
-  turn_sandbox_policy:
-    type: dangerFullAccess
+  approval_policy: on-request
+  thread_sandbox: workspace-write
   turn_timeout_ms: 300000
   read_timeout_ms: 5000
   stall_timeout_ms: 120000
@@ -108,12 +106,23 @@ Work only in the provided repository copy. Do not touch any other path.
 - Use tabs in TS/JS files, `@/` imports when configured, React 19 patterns, and semantic token classes.
 - There is no single `pnpm test`; run targeted `node --test` or Playwright specs for touched code.
 - Run `pnpm run lint` and `pnpm run typecheck` when the issue, touched surface, or PR feedback requires broad repo validation.
-- For UI changes, capture browser evidence with the repo `vpk-symphony` skill's Playwright CLI guidance when available and keep artifacts under `output/playwright/<issue-identifier>/`.
+- For UI changes, browser-observable behavior, generated/offline HTML output, or visual artifact changes, capture browser evidence with the repo `vpk-symphony` skill's Playwright CLI guidance when available and keep artifacts under `output/playwright/<issue-identifier>/`.
 - If `playwright-cli` is unavailable, skip browser media capture, record the limitation in the workpad, and continue with the best non-browser validation available.
 
-## Prerequisite: Linear MCP or `linear_graphql` tool is available
+## Prerequisite: Linear access is available
 
-The agent should be able to talk to Linear, either via a configured Linear MCP server or injected `linear_graphql` tool. If none are present, use the blocked-access escape hatch with the exact missing capability and unblock action.
+The preferred Linear path is direct Linear GraphQL over HTTPS with local
+`LINEAR_API_KEY` and `SYMPHONY_LINEAR_PROJECT_SLUG` from the shell or
+`.env.local`. Company policy does not expose an injected `linear_graphql` tool
+to Codex workers, so do not wait for that tool or treat it as the default path.
+If the current sandbox or network allowlist blocks `api.linear.app`, immediately
+rerun the same direct GraphQL bootstrap with the required approval/escalation in
+the same turn. Do not stop at a status update after the block. Use the
+blocked-access escape hatch with the exact missing capability and unblock action
+only if the escalated request is denied or still fails. Do not bypass Linear
+issue creation after `vpk-symphony` invocation unless the user explicitly says
+not to create Linear work items for a meta/setup correction to the Symphony
+harness itself.
 
 ## Execution rules
 
@@ -368,7 +377,8 @@ Use this only when completion is blocked by missing required tools or missing au
     - Revert every temporary proof edit before commit/push.
     - Document these temporary proof steps and outcomes in the workpad `Validation`/`Notes` sections so reviewers can follow the evidence.
     - If app-touching, run the relevant local dev/build path from `AGENTS.md`.
-      For UI behavior, follow `App runtime validation (required)`.
+      For UI behavior, browser-observable behavior, generated/offline HTML, or
+      visual artifact changes, follow `App runtime validation (required)`.
 6.  Re-check all acceptance criteria and close any gaps.
 7.  Before every `git push` attempt, run the required validation for your scope and confirm it passes; if it fails, address issues and rerun until green, then commit and push changes.
 8.  Attach PR URL to the issue (prefer attachment; use the workpad comment only if attachment is unavailable).
@@ -450,13 +460,16 @@ Use this only when completion is blocked by missing required tools or missing au
 - PR checks are green, branch is pushed, and PR is linked on the issue.
 - Required PR metadata is present (`symphony` label; `automerge:allowed` is
   neither required nor meaningful for Symphony PRs).
-- If app-touching, runtime validation requirements from `App runtime validation (required)` are complete, including browser media capture only when available.
+- If app-touching, browser-observable, generated/offline HTML, or visual
+  artifact work is in scope, runtime validation requirements from
+  `App runtime validation (required)` are complete, including browser media
+  capture when available or a concrete capture blocker in the workpad.
 
 ## App runtime validation (required)
 
 Use this section for issues that touch visible UI, browser-observable behavior,
-or user interaction flows. Run it during `In Progress`, before
-moving the issue to `Agent Review`.
+generated/offline HTML output, visual artifacts, or user interaction flows. Run
+it during `In Progress`, before moving the issue to `Agent Review` or `Done`.
 
 1. Check whether `playwright-cli --version` succeeds.
 2. If `playwright-cli` is unavailable, skip browser media capture, record that
@@ -468,14 +481,16 @@ moving the issue to `Agent Review`.
 5. Capture one before artifact only when it proves the reported bug or requested
    visual baseline.
 6. Capture one after artifact for the changed behavior before handoff.
+   Generated/offline HTML under ignored `output/` directories still requires
+   after evidence when `playwright-cli` can capture it.
 7. Prefer screenshots for static UI and final state checks.
 8. Use short WebM recordings only for multi-step interactions, animation,
    timing-sensitive behavior, drag/drop, keyboard flows, or hover/focus states
    that a screenshot cannot prove.
 9. Before uploading, inspect the artifact for secrets, tokens, local file paths,
    private data, unrelated browser tabs, terminal panes, and devtools output.
-10. Upload only the required media through `linear_graphql` using `fileUpload`,
-   then update the single `## Codex Workpad` comment with a compact
+10. Upload only the required media through direct Linear GraphQL using
+   `fileUpload`, then update the single `## Codex Workpad` comment with a compact
    `### Evidence` section. Render screenshot and animated GIF preview uploads
    with markdown image syntax (`![alt text](<asset-url>)`) so Linear shows an
    inline image preview. Upload WebM recordings as downloadable evidence and put
@@ -489,6 +504,10 @@ moving the issue to `Agent Review`.
 12. If upload fails, record the local artifact path and exact upload error in
     `Validation`; do not mark the UI validation complete until the required
     proof is either uploaded or the blocker is clearly documented.
+13. If `playwright-cli` blocks `file://` navigation for a local HTML artifact,
+    serve the artifact directory on a temporary localhost port, capture from
+    that URL, record the server path/command in the workpad, and stop the
+    temporary server after capture.
 
 Recommended workpad evidence format:
 
@@ -552,7 +571,7 @@ Use this exact structure for the persistent workpad comment and keep it updated 
 
 ### Evidence
 
-- <only include for UI/browser-observable changes>
+- <required for UI/browser-observable/generated HTML/visual artifact changes; include uploaded after evidence or exact capture blocker>
 
 ### Notes
 

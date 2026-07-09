@@ -600,8 +600,24 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 	assert.match(HOME_STARTER_BENTO_SOURCE, /const tileRefs = useRef<Array<HTMLButtonElement \| null>>\(\[\]\);/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerLeave=\{resetBentoPointer\}/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-x", normalizedX\.toFixed\(3\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-y", normalizedY\.toFixed\(3\)/u);
+	const pointerMoveStart = HOME_STARTER_BENTO_SOURCE.indexOf("const handleBentoPointerMove");
+	const pointerMoveSource = HOME_STARTER_BENTO_SOURCE.slice(
+		pointerMoveStart,
+		HOME_STARTER_BENTO_SOURCE.indexOf("const resetBentoPointer", pointerMoveStart),
+	);
+	const pointerReadIndex = pointerMoveSource.indexOf("const rect = tile.getBoundingClientRect();");
+	const pointerBatchIndex = pointerMoveSource.indexOf("pointerUpdates.push({");
+	const pointerWriteLoopIndex = pointerMoveSource.indexOf("for (const { tile, x, y } of pointerUpdates)");
+	const pointerWriteIndex = pointerMoveSource.indexOf("tile.style.setProperty");
+	assert.notEqual(pointerMoveStart, -1);
+	assert.ok(pointerReadIndex !== -1 && pointerReadIndex < pointerBatchIndex, "pointer tracking should read tile geometry before batching pointer updates");
+	assert.ok(pointerBatchIndex !== -1 && pointerBatchIndex < pointerWriteLoopIndex, "pointer tracking should batch every tile update before writing styles");
+	assert.ok(pointerWriteLoopIndex !== -1 && pointerWriteLoopIndex < pointerWriteIndex, "pointer tracking should write CSS variables from a separate loop");
+	assert.equal(pointerMoveSource.slice(0, pointerWriteLoopIndex).includes("style.setProperty"), false);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /x: normalizedX\.toFixed\(3\)/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /y: normalizedY\.toFixed\(3\)/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-x", x/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-y", y/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-tile-accent": accentColor/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-core": 36/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-spread": 120/u);

@@ -19,14 +19,27 @@ use `/agent-browser` as directed by `AGENTS.md`.
    `references/playwright-cli/quickstart.md` only as needed.
 5. Store artifacts under `output/playwright/<issue-identifier>/`.
 6. Capture a before artifact only when it proves the bug or requested baseline.
-7. Capture an after artifact for app-touching work before handoff.
+7. Capture an after artifact before handoff for any visible UI,
+   browser-observable behavior, generated/offline HTML output, or visual
+   artifact change. Ignored `output/` HTML is still browser-observable; source
+   search is useful validation but cannot replace after evidence when
+   `playwright-cli` can capture the result.
 8. Prefer screenshots for static UI and final state checks.
 9. Use short WebM recordings for multi-step interactions, animation,
    timing-sensitive behavior, drag/drop, keyboard flows, or hover/focus states.
 10. Inspect artifacts for secrets, tokens, local file paths, private data,
-   unrelated browser tabs, terminal panes, and devtools output before upload.
-11. Upload only required media through `linear_graphql` using `fileUpload`, then
-   update the single `## Codex Workpad` comment.
+    unrelated browser tabs, terminal panes, and devtools output before upload.
+11. Upload only required media through direct Linear GraphQL using `fileUpload`,
+   then update the single `## Codex Workpad` comment.
+12. Before moving the issue to `Agent Review` or `Done`, the workpad must show
+   either uploaded after evidence or the exact browser launch/capture blocker.
+
+## Local HTML Artifacts
+
+- If `playwright-cli` blocks a `file://` URL, serve the artifact directory on a
+  temporary localhost port and navigate to that URL instead.
+- Record the static-server path or command in the workpad validation notes.
+- Stop the temporary server after capture.
 
 ## Upload Formatting
 
