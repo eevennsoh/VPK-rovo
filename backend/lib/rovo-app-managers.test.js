@@ -328,6 +328,55 @@ test("rovo app document manager parses list timestamps once per document", async
 	}
 });
 
+test("rovo app document manager sorts malformed persisted timestamps last", async () => {
+	const baseDir = await createTempBaseDir();
+	const documentsDir = path.join(
+		baseDir,
+		"rovo-app",
+		"threads",
+		"thread-1",
+		"documents",
+	);
+	await fs.mkdir(documentsDir, { recursive: true });
+
+	for (const document of [
+		{
+			id: "invalid-doc",
+			updatedAt: "not-a-date",
+		},
+		{
+			id: "newer-doc",
+			updatedAt: "2026-03-09T00:10:00.000Z",
+		},
+		{
+			id: "older-doc",
+			updatedAt: "2026-03-09T00:05:00.000Z",
+		},
+	]) {
+		await fs.writeFile(
+			path.join(documentsDir, `${document.id}.json`),
+			JSON.stringify({
+				...document,
+				threadId: "thread-1",
+				title: document.id,
+				kind: "text",
+				createdAt: "2026-03-09T00:00:00.000Z",
+				versions: [],
+			}),
+			"utf8",
+		);
+	}
+
+	const manager = createRovoAppDocumentManager({ baseDir });
+	const listedDocuments = await manager.listDocuments({ threadId: "thread-1" });
+
+	assert.deepEqual(
+		listedDocuments.map((document) => document.id),
+		["newer-doc", "older-doc", "invalid-doc"],
+	);
+	assert.equal(listedDocuments.at(-1)?.updatedAt, "not-a-date");
+});
+
 test("rovo app document manager can create and finalize streaming document shells", async () => {
 	const baseDir = await createTempBaseDir();
 	const manager = createRovoAppDocumentManager({ baseDir });
