@@ -111,6 +111,10 @@ try {
 NODE
 }
 
+check_workspace_deps() {
+	node scripts/check-workspace-deps.js --command "pnpm run dev:tmux:start" portless concurrently next express --bin portless --bin concurrently
+}
+
 SESSION_NAME="$(resolve_session_name)"
 
 # Seed .env.local the same way the non-tmux launchers do, preferring the main
@@ -188,6 +192,7 @@ print_controls() {
 }
 
 launch_session() {
+	check_workspace_deps
 	# Clear stale port files so wait_for_frontend doesn't latch onto a dead
 	# port from a previous run.
 	rm -f "$FRONTEND_PORT_FILE" "$BACKEND_PORT_FILE"
@@ -199,7 +204,7 @@ launch_session() {
 	# .localhost URL. `portless run` with no command runs the package.json
 	# "dev" script (frontend + backend); ${portless_args} adds `--name <dir>`
 	# only when HEAD is detached.
-	tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && pnpm exec portless run ${portless_args}" C-m
+	tm send-keys -t "$SESSION_NAME" "cd \"$REPO_ROOT\" && CI=true pnpm exec portless run ${portless_args}" C-m
 	echo "Started tmux session '$SESSION_NAME' (socket: $SOCKET)."
 }
 

@@ -1,4 +1,7 @@
 const { spawn } = require("node:child_process");
+const {
+	assertWorkspaceDependencies,
+} = require("./lib/dependency-health");
 
 const usage = [
 	"Usage: pnpm run rovo -- <positive-integer>",
@@ -25,6 +28,16 @@ const parsePoolSize = (argv) => {
 };
 
 const poolSize = parsePoolSize(process.argv.slice(2));
+try {
+	assertWorkspaceDependencies(["concurrently", "next", "express"], {
+		binaryNames: ["concurrently"],
+		commandName: "pnpm run rovo",
+	});
+} catch (error) {
+	console.error(error instanceof Error ? error.message : String(error));
+	process.exit(1);
+}
+
 const pnpmBin = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
 const child = spawn(
@@ -45,6 +58,7 @@ const child = spawn(
 		stdio: "inherit",
 		env: {
 			...process.env,
+			CI: process.env.CI || "true",
 			ROVO_POOL_SIZE: poolSize,
 		},
 	}

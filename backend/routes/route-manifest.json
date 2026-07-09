@@ -854,6 +854,18 @@
 			"source": "backend/routes/demos.js:79"
 		},
 		{
+			"method": "GET",
+			"path": "/api/vpk-html",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:90"
+		},
+		{
+			"method": "GET",
+			"path": "/api/vpk-html/*assetPath",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:91"
+		},
+		{
 			"method": "POST",
 			"path": "/api/wiki/captures",
 			"runtimeAdmin": true,
@@ -2396,6 +2408,30 @@
 					"method": "POST",
 					"path": "/api/ticket-classify",
 					"source": "app/api/ticket-classify/route.ts:9"
+				}
+			]
+		},
+		{
+			"method": "GET",
+			"nextPath": "/api/vpk-html",
+			"source": "app/api/vpk-html/route.ts:4",
+			"targets": [
+				{
+					"method": "GET",
+					"path": "/api/vpk-html",
+					"source": "app/api/vpk-html/route.ts:7"
+				}
+			]
+		},
+		{
+			"method": "GET",
+			"nextPath": "/api/vpk-html/*assetPath",
+			"source": "app/api/vpk-html/[...assetPath]/route.ts:10",
+			"targets": [
+				{
+					"method": "GET",
+					"path": "/api/vpk-html/*assetPath",
+					"source": "app/api/vpk-html/[...assetPath]/route.ts:15"
 				}
 			]
 		},

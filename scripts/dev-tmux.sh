@@ -74,6 +74,10 @@ NODE
 
 SESSION_NAME="$(resolve_session_name)"
 
+check_workspace_deps() {
+	node scripts/check-workspace-deps.js --command "pnpm run rovo:tmux:start" next express
+}
+
 prepare_port_files() {
 	node - <<'NODE' "$POOL_SIZE"
 const fs = require("node:fs");
@@ -240,6 +244,7 @@ start_session() {
 		echo "tmux is not installed. Install tmux first."
 		exit 1
 	fi
+	check_workspace_deps
 
 	if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
 		# Ensure port files exist even when reattaching — they may have been
@@ -303,8 +308,8 @@ start_session() {
 
 	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.0" -T "frontend:${frontend_port}"
 	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.1" -T "backend:${backend_port}"
-	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.1" "cd \"$REPO_ROOT\" && VPK_TMUX_OWNED=1 pnpm run dev:backend" C-m
-	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.0" "cd \"$REPO_ROOT\" && VPK_TMUX_OWNED=1 pnpm run dev:frontend" C-m
+	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.1" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:backend" C-m
+	tmux send-keys -t "$SESSION_NAME:$WINDOW_NAME.0" "cd \"$REPO_ROOT\" && CI=true VPK_TMUX_OWNED=1 pnpm run dev:frontend" C-m
 
 	tmux select-layout -t "$SESSION_NAME:$WINDOW_NAME" tiled
 	tmux select-pane -t "$SESSION_NAME:$WINDOW_NAME.0"

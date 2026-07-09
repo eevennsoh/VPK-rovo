@@ -13,6 +13,13 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"html": {
+		description: "The vpk-html reference index embedded as a project surface, pointing at the checked-in `.agents/skills/vpk-html/index.html` catalog and demos.",
+		importStatement: `import HtmlDemo from "@/components/website/demos/projects/html-demo";`,
+		demoLayout: {
+			previewHeight: "fixed",
+		},
+	},
 	"jira": {
 		description: "A Jira RFP response board with embedded agents, generated report workflows, and detailed work item modals.",
 		demoLayout: {

@@ -12,7 +12,7 @@
 # the shared bootstrap helper:
 #   - ignored .env* files are copied from another local worktree when available.
 #   - node_modules is warmed from a matching source checkout when possible,
-#     falling back to pnpm install --prefer-offline.
+#     falling back to CI=true pnpm install --prefer-offline.
 #
 # Wired via .claude/settings.json -> hooks.SessionStart with
 # matcher: "startup", so this fires once when a new session enters a

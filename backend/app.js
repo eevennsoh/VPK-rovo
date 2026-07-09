@@ -21,6 +21,9 @@ const {
 	registerStatusRoutes,
 } = require("./routes/status");
 const {
+	registerVpkHtmlRoutes,
+} = require("./routes/vpk-html");
+const {
 	registerJobsRoutes,
 } = require("./routes/jobs");
 const {
@@ -201,6 +204,8 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 		generateTextViaGateway,
 		sendGatewayErrorResponse,
 	});
+
+	registerVpkHtmlRoutes(app);
 
 	registerDemosRoutes(app, {
 		advanceAgentsRfpDemoProcessing,

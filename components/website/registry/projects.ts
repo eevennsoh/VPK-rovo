@@ -6,6 +6,7 @@ export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	confluence: dynamic(() => import("../demos/projects/confluence-demo"), {
 		ssr: false,
 	}),
+	html: dynamic(() => import("../demos/projects/html-demo"), { ssr: false }),
 	jira: dynamic(() => import("../demos/projects/jira-demo"), { ssr: false }),
 	rovo: dynamic(() => import("../demos/projects/rovo-demo"), {
 		ssr: false,
