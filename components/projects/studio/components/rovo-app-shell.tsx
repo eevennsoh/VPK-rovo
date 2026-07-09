@@ -3945,6 +3945,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onCancelThreadRun={async (threadId) => {
 					await chat.cancelThreadRun(threadId);
 				}}
+				onCreateAgent={handleStartAgentFromScratch}
 				onDeleteAgent={handleDeleteStudioAgent}
 				onDeleteThread={async (threadId) => {
 					// Clear any in-progress agent-creation tracking first. Otherwise the

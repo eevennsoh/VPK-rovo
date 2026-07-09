@@ -1634,6 +1634,7 @@ test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt va
 	// artifact views the prop is undefined, so the composer renders no reveal even
 	// on hover/focus.
 	assert.match(SHELL_SOURCE, /onStartFromScratch=\{isDefaultAgentHomeState \? handleStartAgentFromScratch : undefined\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onCreateAgent=\{handleStartAgentFromScratch\}[\s\S]*onNewChat=\{handleReturnToAgentsHome\}/u);
 	// The from-scratch handler opens the same config pane the AI-result flow uses.
 	const fromScratchHandlerSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStartAgentFromScratch = useCallback"),
