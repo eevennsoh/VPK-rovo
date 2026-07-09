@@ -1,6 +1,6 @@
 ---
 name: vpk-html
-description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.'
+description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Algebrica editorial identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.'
 purpose: Render explicitly requested documents, reports, decks, resumes, and engineering artifacts into offline single-file HTML with VPK/Kami quality gates.
 owner: VPK
 category: artifact-generation
@@ -26,7 +26,7 @@ changelog, portfolio, resume, or engineering workflow surface.
 **Architecture:** kami-style template editing. The skill ships 28 HTML
 templates at `assets/templates/`: 8 base document shells plus 20 Phase 2
 engineering shells mapped from the `html-effectiveness` use-case catalog, plus
-14 diagram primitives and 5 technical illustration exemplars. To produce a
+39 diagram/chart primitives and 5 technical illustration exemplars. To produce a
 document, copy a template into a working directory and fill its
 `{{placeholders}}`. The renderer is a validator, not a JSON-to-HTML compiler.
 
@@ -77,7 +77,7 @@ failure handling.
 
 Before extracting intent, check for a brand profile at
 `~/.config/vpk-html/brand.md` (fallback `~/.vpk-html/brand.md`). It is optional —
-if absent, render with the built-in Atlassian identity (blue accent) and skip
+if absent, render with the built-in Algebrica identity (grayscale ink chrome, no accent hue) and skip
 this step. There is no runtime; **you bake the profile into the output as you
 fill the template.**
 
@@ -89,15 +89,17 @@ notes > frontmatter > built-in default.**
 - **Identity placeholders** — substitute `{{AUTHOR}}`, `{{NAME}}`, role, email,
   `{{PAGE / CONTACT}}`, company, etc. from frontmatter when the prompt doesn't
   override them.
-- **Brand color (hue-on-accent only)** — if `brand_color: #HEX` is set, change the
-  inline brand alias from `--brand: var(--primary-blue);` to
-  `--brand: var(--ds-brand-override, #HEX);`. This stays offline and check-clean
-  (the `--ds-*` semantic-fallback exemption in `check-html.mjs`). It re-tints the
-  accent only — the ADS palette (`--primary-blue`, status colors, neutrals) stays
-  in force. Do **not** rewrite the whole palette.
+- **Brand color (explicit override only)** — read `brand_color: #HEX` as
+  customer metadata. Do not tint the built-in Algebrica identity from it:
+  default `--accent` resolves to ink, content links underline only on
+  hover/focus, and chrome stays grayscale. Only when the prompt explicitly requests a customer-branded
+  page may the inline alias become
+  `--accent: var(--ds-brand-override, #HEX);`. That override is offline and
+  check-clean, but it must not rewrite `--focal`, `--ill-*`, status tokens, or
+  neutral paper/ink tokens.
 - **Logo** — if `logo:` points at a local image, base64-inline it into the header
   slot as a `data:image/*` URI (already exempt from the remote-asset check). Never
-  reference a remote or local file path. Missing logo/profile → no logo, ADS blue.
+  reference a remote or local file path. Missing logo/profile → no logo, built-in grayscale ink chrome.
 
 Full format and examples: `references/brand-profile.md`.
 
@@ -184,6 +186,31 @@ equity-report, route to `assets/diagrams/` rather than picking a new template:
 | "donut / pie / distribution" | Donut Chart | `assets/diagrams/donut-chart.html` |
 | "candlestick / OHLC / stock price" | Candlestick | `assets/diagrams/candlestick.html` |
 | "waterfall / revenue bridge / decomposition" | Waterfall | `assets/diagrams/waterfall.html` |
+| "box plot / quartiles / outliers" | Box Plot | `assets/diagrams/box-plot.html` |
+| "histogram / frequency distribution" | Histogram | `assets/diagrams/histogram.html` |
+| "ridgeline / stacked distributions" | Ridgeline | `assets/diagrams/ridgeline.html` |
+| "beeswarm / individual observations" | Beeswarm | `assets/diagrams/beeswarm.html` |
+| "dot strip / one-dimensional scatter" | Dot Strip | `assets/diagrams/dot-strip.html` |
+| "slope chart / before after rank" | Slope Chart | `assets/diagrams/slope-chart.html` |
+| "dumbbell / current vs target gaps" | Dumbbell | `assets/diagrams/dumbbell.html` |
+| "lollipop / ranked values" | Lollipop | `assets/diagrams/lollipop.html` |
+| "bullet chart / actual vs target" | Bullet | `assets/diagrams/bullet.html` |
+| "population pyramid / mirrored cohorts" | Population Pyramid | `assets/diagrams/population-pyramid.html` |
+| "annotated line / events on trend" | Annotated Line | `assets/diagrams/annotated-line.html` |
+| "index chart / baseline 100" | Index Chart | `assets/diagrams/index-chart.html` |
+| "small multiples / repeated panels" | Small Multiples | `assets/diagrams/small-multiples.html` |
+| "band chart / range band" | Band Chart | `assets/diagrams/band-chart.html` |
+| "stacked area / composition over time" | Stacked Area | `assets/diagrams/stacked-area.html` |
+| "calendar heatmap / daily intensity" | Calendar Heatmap | `assets/diagrams/calendar-heatmap.html` |
+| "matrix heatmap / grid intensity" | Matrix Heatmap | `assets/diagrams/matrix-heatmap.html` |
+| "waffle / fixed-count parts of whole" | Waffle | `assets/diagrams/waffle.html` |
+| "grid choropleth / regional intensity grid" | Grid Choropleth | `assets/diagrams/grid-choropleth.html` |
+| "treemap / hierarchical share" | Treemap | `assets/diagrams/treemap.html` |
+| "sankey / flow volumes" | Sankey | `assets/diagrams/sankey.html` |
+| "arc diagram / ordered relationships" | Arc Diagram | `assets/diagrams/arc-diagram.html` |
+| "scatter / two-variable relationship" | Scatter | `assets/diagrams/scatter.html` |
+| "connected scatter / trajectory" | Connected Scatter | `assets/diagrams/connected-scatter.html` |
+| "icicle / hierarchical composition" | Icicle | `assets/diagrams/icicle.html` |
 
 Read `references/diagrams.md` before drawing — it has the data-shape decision
 tree, the focal rule, and the anti-patterns table. Extract the `<svg>` block
@@ -197,8 +224,8 @@ reader less than this diagram?** If no, don't draw.
 
 Use `assets/illustrations/` when the user asks for an isometric object,
 exploded assembly, annotated mechanism, cutaway/cross-section, or pipeline
-illustration. These are not data-shape diagrams: they may use the full
-`--ill-*` ADS blue ramp for linework, shaded faces, hatching, and labels.
+illustration. These are not data-shape diagrams: they use the grayscale
+`--ill-*` figure ramp for linework, shaded faces, hatching, and labels.
 
 Read `references/illustrations.md` before drawing. If an illustration uses
 SMIL, every `animateTransform` must use `begin="indefinite"` and the document
@@ -237,7 +264,7 @@ brand.
 | Logo | Any branded document | User file or official SVG/PNG |
 | Product image | Physical product / venue | Official image, user image, or marked gap |
 | UI screenshot | App / SaaS / website | Current screenshot, official product image |
-| Brand colors | Branded portfolio / one-pager | Official value, extracted asset value, or keep the vpk primary-blue semantic accent |
+| Brand colors | Branded portfolio / one-pager | Official value, extracted asset value, or keep the built-in grayscale ink chrome |
 
 If a required item is missing, use a compact gap table and ask once. Do not
 replace missing material with generic imagery, approximate logo drawings, or
@@ -357,7 +384,7 @@ otherwise proceed to Step 6.
    moderate weight and two-line float metrics so the third text line clears
    back underneath the initial instead of continuing beside it. In
    presentation-style explainers, reserve the drop cap for the cover subtitle
-   or opening deck statement, not every chapter lead. Tune uppercase drop caps
+   or opening deck statement, not every chapter lead. Tune tall drop caps
    so they do not protrude high above the first line, so their bottom edge
    sits close to the second line baseline, and so the letter color inherits
    the surrounding text unless it is intentionally acting as a focal mark. If
@@ -506,50 +533,57 @@ render.
 
 ## Identity
 
-Atlassian deck / editorial manual. Tuned for concise strategy decks,
+Algebrica editorial manual: warm paper, near-monochrome ink, restrained rules,
+and typography-led technical figures. Tuned for concise strategy decks,
 engineering narratives, status readouts, and long-form technical briefs that
 still preserve the offline single-file HTML contract.
 
 **Light mode (default):**
 
-- **Surface:** `--paper` and `--paper-background` — neutral ADS-style canvas surfaces with embedded offline fallbacks.
-- **Raised surface:** `--surface-raised` for cards / callouts when they need to lift.
+- **Surface:** `--paper` and `--paper-background` — warm paper and browser canvas.
+- **Raised surface:** `--surface-raised` for cards / callouts when they need separation.
 - **Ink:** `--headline` for mastheads/stat heads, `--ink` / `--body-text` for body copy, and `--muted-text` / `--subtlest-text` for metadata.
-- **Primary blue:** `--primary-blue` — deck accent, links, and diagram focal strokes.
-- **Collection accents:** `--accent-lime`, `--accent-purple`, `--accent-saffron`, `--accent-orange`, `--accent-navy`, `--accent-green`, and `--accent-red` for charts, collection labels, diagrams, and status accents.
-- **Margin / figure tags:** `--primary-blue` unless a status meaning requires `--success`, `--warning`, or `--danger`.
+- **Chrome:** `--accent` resolves to ink; `--accent-soft` and `--accent-soft-strong` are warm gray washes for pill controls, selection, focus, and key-insight emphasis. There is no hue accent in the built-in identity.
+- **Focal:** `--focal` — the single darkest-ink figure emphasis token.
+- **Figure ramp:** `--ill-line`, `--ill-ink50`, `--ill-guide`, `--ill-guide-dashed`, `--ill-frame`, `--ill-fill`, `--ill-fill-alt`, and the `--ill-tone*` aliases for diagrams, charts, and technical illustrations.
+- **Component chrome:** `--table-header`, `--chip-*`, `--pill-*`, `--search-*`, `--code-surface`, and `--heat0` through `--heat4` carry the Algebrica table, vote-chip, pill, search, code-card, and heatmap roles.
 - **Background canvas:** plain `--paper-background` for the browser/page backdrop; do not add dotted grid canvases to templates, demos, landing shells, or generated artifacts.
-- **Hard shadow:** `var(--shadow)` — reserved for opt-in `.card / .callout / .takeaway / .surface-raised / .shadow-hard`. Other surfaces are flat.
+- **Elevation:** flat by default. Prefer hairline borders, whitespace, and subtle surface shifts over shadows.
 
 **Dark mode** (activate via `<html data-theme="dark">`):
 
-- **Surface / raised / ink / accent:** the same unprefixed aliases switch to dark semantic fallbacks under `[data-theme="dark"]`.
+- The same unprefixed aliases switch to warm paper-dark fallbacks under `[data-theme="dark"]`; figures invert through tokens, not raw colors.
 
-**Fonts** (Charlie and Atlassian Mono, all self-hosted in `assets/fonts/`):
+**Fonts** (Geist family, all self-hosted in `assets/fonts/`):
 
-- **Display:** Charlie Display for mastheads, slide titles, headline stats, and section heads.
-- **Body:** Charlie Text for prose, labels, ordinary UI/document text, and tables.
-- **Mono:** Atlassian Mono for code, metrics, dates, counters, figure numbers, table numbers, chart labels, and technical identifiers.
-- **Numerals:** Atlassian Mono Numeric is embedded with `unicode-range: U+0030-0039`; place it before Charlie Text/Display in mixed text stacks so visible digits render in Atlassian Mono while letters stay Charlie.
+- **Display and body:** Geist for mastheads, slide titles, prose, labels, ordinary UI/document text, and tables.
+- **Mono:** Geist Mono for code, metrics, dates, counters, figure numbers, table numbers, chart labels, and technical identifiers.
+- **Numerals:** Geist Mono Numeric is embedded with `unicode-range: U+0030-0039`; place it before Geist in mixed text stacks so visible digits render in Geist Mono while letters stay Geist.
 
 **Type scale (screen):**
 
 | Role | Size | Family | Color |
 |---|---|---|---|
-| Cover title / masthead | 56px | Charlie Display | headline |
-| h1 (chapter title) | 36px | Charlie Display | headline / primary blue |
-| h2 (section) | 26px | Charlie Display | headline |
-| h3 | 18px | Charlie Display | ink |
-| h4-h6 | 14px | Charlie Display | ink |
-| Body, p, li | 18px | Charlie Text + numeric face | ink |
-| Margin label / fig-tag | 10px | Atlassian Mono | primary blue |
+| Page title / masthead | 36px | Geist 400-500 | headline |
+| h1 (chapter title) | 36px | Geist 400-500 | headline |
+| h2 (section) | 26px | Geist 500 | headline |
+| h3 | 19px | Geist 500 | ink |
+| h4-h6 | 15px | Geist 500 | ink |
+| Body, p, li | 17px / 23px in long-form prose | Geist + numeric face | ink |
+| Breadcrumb / eyebrow | 12px | Geist Mono 600, uppercase, 2px tracking | muted ink |
+| Margin label / fig-tag | 13px | Geist or Geist Mono for numbers/files | muted ink |
 
 **Other identity rules:**
 
-- **Drop cap:** Charlie Display regular weight, two-line float, inheriting the surrounding text color by default. For presentation-style explainers, reserve it for the cover subtitle or opening deck statement; do not repeat drop caps on every chapter lead. Prose-heavy long docs may use one opening drop cap when it supports the editorial tone.
-- **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead
-- **Deck rule:** apply class `.ascii-rule` to `<hr>` for a primary-blue dotted separator (two-layer repeating-linear-gradient)
-- **Frames:** sections, articles, figures, tables are flat by default. Cards / callouts opt in to hard shadow + 1px ink border.
+- **Drop cap:** Geist regular or medium weight, two-line float, inheriting the surrounding text color by default. For presentation-style explainers, reserve it for the cover subtitle or opening deck statement; do not repeat drop caps on every chapter lead. Prose-heavy long docs may use one opening drop cap when it supports the editorial tone.
+- **Long-form prose:** `.post-section` content is justified, hyphenated, and `overflow-wrap: break-word`, with 25px paragraph spacing, 60px bottom padding, a warm hairline, and 50px between sections. Long docs may use `.post-paragraph-number` in the left margin; it hides on narrow screens.
+- **Tables:** Geist 12px, collapsed 1px `--rule` borders on every cell, `8px 12px` centered padding, `th` weight 500, and `--table-header` header wash. No radius, zebra rows, or hover treatment.
+- **Components:** prefer the Algebrica vocabulary for reusable surfaces: 12px-radius bordered list-table cards, 22px vote/count chips, 10px heatmap dots using `--heat0` → `--heat4`, 8px-radius tinted code cards, 34px pill buttons, centered 32px section heads, and steps lists with a vertical connector.
+- **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead.
+- **Deck rule:** apply class `.ascii-rule` to `<hr>` for a quiet dotted separator.
+- **Frames:** sections, articles, figures, and tables are flat by default. Cards / callouts opt in to a 1px ink/rule border and radius no larger than 6px.
+- **Links:** no visible default underline. Content links animate an underline in on hover/focus; chrome links (sidebar nav, header/meta, footer, breadcrumbs, docnav controls) never underline and shift only opacity or muted/ink color. Focus rings use ink.
+- **SVGs:** every generated SVG must follow `references/svg-style.md`: token-only grayscale, no gradients/filters, Geist Mono labels, numeric stroke widths 0.5-2.5, and no `--accent*` or `--link*` inside figures.
 
 ### Side stripes are banned
 
@@ -590,6 +624,8 @@ resolved theme block — don't redefine it per document.
 - `references/anti-patterns.md` — 6 AI-output failure modes
 - `references/diagrams.md` — diagram selection guide + focal rule
 - `references/illustrations.md` — technical illustration recipe + SMIL policy
+- `references/svg-style.md` — required grayscale SVG grammar + lint rules
+- `references/charts.md` — chart animation, interaction, and catalog foundation
 - `references/presentation.md` — deck runtime, presenter window, speaker notes
 - `references/video-export.md` — Hyperframes MP4 conversion contract
 - `references/resume-writing.md` — Action + Scope + Result + Outcome
@@ -610,6 +646,6 @@ resolved theme block — don't redefine it per document.
 - User wants Material / Fluent / Tailwind default — different visual language
 - Need dark / cyberpunk / futurist aesthetic (vpk-html is deliberately
   editorial and deck-like)
-- Need saturated freeform color (vpk-html uses ADS-style semantic accents)
+- Need saturated freeform color (vpk-html uses near-monochrome editorial tokens plus muted semantic status colors)
 - Web dynamic app UI (vpk-html is for static documents)
 - Output must be PDF or PPTX (vpk-html is HTML-only)

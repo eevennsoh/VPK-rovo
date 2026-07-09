@@ -29,8 +29,7 @@ used under the Apache License 2.0.
 The fonts shipped under `assets/fonts/` are committed local font assets used
 to preserve the offline HTML artifact contract:
 
-  - Charlie Display
-  - Charlie Text
-  - Atlassian Mono
+  - Geist
+  - Geist Mono
 
 Attribution is preserved in README.md.

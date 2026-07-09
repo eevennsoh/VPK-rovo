@@ -42,15 +42,15 @@
   .eyebrow {
     font-family: var(--mono);
     font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    
     color: var(--gray-500);
   }
   h1 {
     font-family: var(--serif);
     font-weight: 500;
     font-size: 30px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     margin: 6px 0 4px;
   }
   .sub {
@@ -76,7 +76,7 @@
     font-family: var(--mono);
     font-size: 11px;
     color: var(--gray-500);
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
   }
   button {
     font-family: var(--mono);
@@ -137,9 +137,9 @@
   .ed-label {
     font-family: var(--mono);
     font-size: 11px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0;
     color: var(--gray-500);
-    text-transform: uppercase;
+    
   }
   .ed-toolbar .spacer { flex: 1; }
   .counter {
@@ -178,7 +178,9 @@
   .slot.warn {
     background: rgba(217, 119, 87, 0.14);
     color: var(--clay-d);
-    text-decoration: underline dashed var(--clay) 1.5px;
+    text-decoration-line: underline;
+	text-decoration-style: dashed;
+	text-decoration-color: transparent;
     text-underline-offset: 3px;
   }
 
@@ -190,8 +192,8 @@
   .legend-label {
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    
     color: var(--gray-500);
     margin-bottom: 8px;
   }
@@ -211,8 +213,8 @@
   .preview-head {
     font-family: var(--mono);
     font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    
     color: var(--gray-500);
     padding: 0 2px 2px;
   }
@@ -232,21 +234,21 @@
   .badge {
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
     color: var(--gray-500);
   }
   .cust {
     font-family: var(--serif);
     font-size: 14px;
     font-weight: 500;
-    letter-spacing: -0.005em;
+    letter-spacing: 0;
   }
   .sample-head .spacer { flex: 1; }
   .plan {
     font-family: var(--mono);
     font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    
     border-radius: 999px;
     padding: 2px 8px;
     border: 1.5px solid var(--gray-200);
@@ -283,7 +285,7 @@
     font-family: var(--mono);
     font-size: 11px;
     color: var(--gray-500);
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
   }
 </style>
 </head>

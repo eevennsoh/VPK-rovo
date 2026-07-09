@@ -1,18 +1,21 @@
 # vpk-html
 
-> Atlassian deck/editorial document design skill for AI agents. Built on kami's
+> Algebrica editorial document design skill for AI agents. Built on kami's
 > template-edit architecture: the LLM copies an HTML template, fills
 > {{placeholders}} with real content, and ships a single offline HTML file.
 
 ## Identity
 
-- Surface: semantic paper via `--paper` and a plain `--paper-background` page backdrop
-- Accent: `--primary-blue` with ADS-style lime, purple, saffron, orange, navy, green, and red accents for collections, charts, diagrams, and status
-- Display: Charlie Display
-- Body: Charlie Text
-- Mono: Atlassian Mono
-- Numeric: Atlassian Mono Numeric with `unicode-range: U+0030-0039`
-- Frame: 2px ink-black border + hard 1px shadow
+- Surface: warm paper via `--paper` and a plain `--paper-background` page backdrop
+- Chrome: grayscale ink `--accent`; warm gray `--accent-soft` washes for pill controls, selection, focus, and key-insight emphasis
+- Figures: sampled grayscale token ramp only; `--focal` marks the single darkest-ink element, with tone/dash/marker series differentiation
+- Components: collapsed 12px article tables, 12px-radius list-table cards, vote chips, grayscale pill buttons, tinted code cards, centered section heads, steps lists, and warm heatmap dots
+- Display/body: Geist
+- Mono: Geist Mono
+- Numeric: Geist Mono Numeric with `unicode-range: U+0030-0039`
+- Type scale: 13px labels/UI, 17px / 23px justified long-form prose, 36px normal-weight page titles
+- Case: normal case except the breadcrumb/eyebrow role, which is Geist Mono 12px / 600 uppercase with 2px tracking
+- Frame: flat surfaces, hairline borders, 6px generic radius, 12px list-table radius, borders over shadows
 
 Local font files are inlined as base64 data URIs in every template, so filled
 documents are fully portable.
@@ -30,11 +33,11 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 - 28 HTML document templates at assets/templates/: 8 base document shells plus
   20 Phase 2 engineering shells mapped from the html-effectiveness use-case
   catalog.
-- 14 standalone SVG diagram primitives at assets/diagrams/.
+- 39 standalone SVG diagram/chart primitives at assets/diagrams/.
 - 5 technical illustration exemplars at assets/illustrations/:
   isometric-device, exploded-assembly, annotated-mechanism,
   hatched-cross-section, and isometric-pipeline.
-- 52 demos at assets/demos/: filled document showcases, restyled
+- 77 demos at assets/demos/: filled document showcases, restyled
   html-effectiveness demo ports, diagram previews, illustration previews, and
   vpk-native examples.
 - Shared motion layer across generated HTML: entrance choreography, document
@@ -58,14 +61,16 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 - SKILL.md — Agent-facing skill manifest (kami Step 1–7 workflow)
 - README.md — Human-facing introduction
 - CHEATSHEET.md — Route table mapping user intent → template file
-- index.html — Marketing landing page
+- index.html — Local Algebrica-style reference index
 - assets/templates/*.html — 28 offline document templates
-- assets/diagrams/*.html — 14 SVG diagram primitives
+- assets/diagrams/*.html — 39 SVG diagram/chart primitives
 - assets/illustrations/*.html — 5 technical illustration exemplars
-- assets/demos/ — 52 curated, restyled, diagram, and illustration showcases
+- assets/demos/ — 77 curated, restyled, diagram, and illustration showcases
 - references/anti-patterns.md — 6 AI-output failure modes (consult before drafting)
 - references/diagrams.md — Diagram selection guide + focal rule
 - references/illustrations.md — Technical illustration recipe + SMIL policy
+- references/svg-style.md — Required token-only grayscale SVG grammar + lint rules
+- references/charts.md — Chart animation, interaction, and chart catalog foundation
 - references/presentation.md — Deck runtime, presenter window, speaker notes
 - references/video-export.md — Hyperframes MP4 conversion contract
 - references/github-pages.md — Optional live GitHub Pages publishing
@@ -116,8 +121,8 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 
 ## License
 
-Inherits the VPK-Rovo monorepo. The 8 base HTML templates and 14 diagram
-primitives in assets/templates/ and assets/diagrams/ are ported from tw93/kami
-(MIT) and re-skinned with vpk-html's identity. The 20 Phase 2 engineering
-templates are original vpk-html shells based on the html-effectiveness use-case
-catalog.
+Inherits the VPK-Rovo monorepo. The 8 base HTML templates and the original 14
+diagram primitives in assets/templates/ and assets/diagrams/ are ported from
+tw93/kami (MIT) and re-skinned with vpk-html's identity. The 20 Phase 2
+engineering templates and 25 Phase E chart additions are original vpk-html
+shells/primitives based on the local effectiveness and chart-catalog work.

@@ -1,109 +1,129 @@
 # vpk-html Design System
 
-The visual system is a portable editorial manual. It is type-led, technical,
-slightly raw, and suitable for long-form explanations as well as compact
-business documents.
+The visual system is the Algebrica editorial identity: warm paper, black-ink
+typography, quiet rules, and figures that look like media-library line art
+rather than product UI chrome. It is built for technical briefs, strategy
+decks, reports, and code explanations that need to feel printed and precise.
 
 ## Fonts
 
-Generated HTML declares these families and embeds local OTF/TTF files as data
-URIs:
+Generated HTML embeds local OFL font files as data URIs:
 
-- Display: `Charlie Display`
-- Body: `Charlie Text`
-- Mono: `Atlassian Mono`
-- Numeric: `Atlassian Mono Numeric`, sourced from Atlassian Mono with `unicode-range: U+0030-0039`
-
-System fallbacks remain in the CSS so the file is readable even if a browser
-declines a font face.
+- Display and body: `Geist`
+- Mono: `Geist Mono`
+- Numeric: `Geist Mono Numeric`, sourced from Geist Mono with
+  `unicode-range: U+0030-0039`
+SVG text must use Geist Mono. Do not put the body face inside figures.
 
 ## Tokens
 
 Tokens are authored once in `references/tokens.json` and mirrored in root
-`styles.css`, matching Kami's top-level stylesheet shape. The renderer embeds the resolved theme block in every
-HTML document instead of letting individual templates own hard-coded palettes.
+`styles.css`. The renderer embeds the resolved theme block in every HTML
+document; individual templates do not own independent palettes.
 
-Token groups cover paper/background, headline/body ink, muted text, primary
-blue, collection accents, chart/diagram accents, technical-illustration ramp
-tokens (`--ill-*`), rules, raised surfaces, focus ring, code
-surface, math highlight, motion tokens, and success/warning/danger/info accents
-for light and dark modes.
+The core groups are paper/background, ink, muted ink, rules, raised/sunken
+surfaces, grayscale `--accent` chrome, `--focal` figure emphasis, the sampled
+Algebrica `--ill-*` figure ramp, table header wash, pill/search/chip chrome,
+warm heatmap ramp, tinted code cards, and muted success/warning/danger status
+tokens. Values are plain offline colors, not `var(--ds-*)` wrappers.
 
 ## Dark Mode
 
-Every rendered document includes `color-scheme: light dark`, initializes from
-`prefers-color-scheme`, renders a visible toggle when `theme.allowToggle` is
-true, persists only that user override in `localStorage`, and respects
-`prefers-reduced-motion`. Light and dark must reach **parity** — every token
-group in `references/tokens.json` defines both a `light` and a `dark` value, so
-no surface is left unstyled in either mode.
+Every rendered document includes `color-scheme: light dark` and a full
+`[data-theme="dark"]` token block. Dark mode is warm paper-dark
+(`#171614`-biased), never cold gray. Figure colors must route through tokens so
+SVGs invert correctly under `data-theme="dark"`.
 
-## Operative rules
+## Operative Rules
 
-These are the load-bearing visual rules for every generated document. Values
-live in `references/tokens.json`; this section names *how* to apply them. (For
-*content* quality — emptiness, fabrication, tone — see
-`references/anti-patterns.md`.)
+### Type Hierarchy
 
-### Type hierarchy
-
-Hierarchy comes from **family, weight, and position — not size inflation**.
-Headlines use `Charlie Display`, body uses `Charlie Text`, code/figures use
-`Atlassian Mono`. Keep the type scale collapsed: separate a heading from body by
-switching family and weight before reaching for a larger font-size. Avoid
-overlines/eyebrows and decorative all-caps labels.
+Hierarchy comes from position, measure, weight, and whitespace. Display
+headings use Geist at weight 400-500; do not use 600+ for page titles. Body
+copy is 17px / 23px in long-form prose. Long-form `.post-section` content is
+justified, hyphenated, and break-word safe, with 25px paragraph spacing and the
+Algebrica section rhythm: 60px bottom padding, a `--rule-strong` hairline, and
+50px margin before the next section. Use a 42rem reading measure for document
+prose unless the template has a specific page or deck geometry.
 
 ### Case
 
-Headings and UI labels are **title case** (sentence-case body). No SCREAMING
-CAPS headings; small-caps/letter-spacing tricks are not a substitute for real
-hierarchy.
+Use normal case and direct technical labels. The single uppercase role is the
+breadcrumb/eyebrow: Geist Mono, 12px, weight 600, 2px letter-spacing, muted ink,
+and `text-transform: uppercase`. Metadata, figure tags, counters, and route
+labels are 13px muted Geist; use Geist Mono only when the label is a number,
+file name, date, or technical identifier.
 
-### Spacing rhythm
+### Spacing Rhythm
 
-Spacing follows an 8px-based rhythm (4px for tight inline gaps). Vertical
-rhythm between sections should be consistent across a document — uneven gaps
-read as accidental. Prefer one generous, repeated spacing step over many
-bespoke margins.
+Spacing follows an 8px rhythm except where Algebrica components define fixed
+rhythm: post sections use 60px / 50px separation, tables and figures end with
+30px margin, bordered list-table cards start 40px below their centered section
+head, and centered section heads use a 500px measure. Screen-first long docs
+should leave enough air around anchor jumps to feel intentional.
 
-### Borders & elevation — flat editorial surface
+### Borders And Elevation
 
-The surface is **flat**. Banned outright (enforced by
-`scripts/build.mjs --check-templates` and `references/anti-patterns.md`):
+The surface is flat. Separate content with whitespace, hairline borders, and
+subtle `--surface-sunken` or `--surface-raised` shifts. Prefer borders over
+shadows. Generic cards and callouts may use a 1px ink/rule border and radius no
+larger than 6px; the Algebrica bordered list-table card is the explicit 12px
+radius exception. Hard shadows are not part of the default identity.
 
-- No `border-left`/`border-top` accent **side-stripes** on sections, cards,
-  callouts, or figures.
-- No rounded-corner frames or `box-shadow` chrome on content blocks.
+Side stripes remain banned: no `border-left` or `border-right` greater than 1px
+as a colored accent on cards, list items, callouts, or alerts.
 
-Separation is achieved with whitespace, a single hairline `rule` token, or a
-`surfaceSunken`/`surfaceRaised` token shift — never a decorative frame. The one
-sanctioned elevation is the opt-in raised-surface `shadow` token; use it
-sparingly and only where a true overlay plane exists.
+### Color Discipline
 
-### Color discipline
+Use semantic aliases, never raw color literals in authored or generated
+surfaces. Links never show a default underline. Content links (prose links,
+table-of-contents rows, index/list-row titles) use `text-decoration-line:
+underline` with transparent decoration that transitions to ink on hover/focus
+over about 180ms and keeps a 4px underline offset. Chrome links (sidebar nav,
+header/meta, footer links, breadcrumbs, and docnav controls) never underline;
+they shift opacity or muted/ink color on hover. Focus-visible states keep the
+ink focus ring and do not rely on hover-only affordance. `--accent` resolves to
+ink, while `--accent-soft` and
+`--accent-soft-strong` are warm gray washes for pill controls, selection, and
+key-insight emphasis.
 
-Use the semantic alias layer (`--paper`, `--ink`, `--primary-blue`,
-`--accent-*`, `--success`/`--warning`/`--danger`/`--info`) — never raw hex in a
-template. Accent ramps are **decoration only**; semantic role colors
-(success/warning/danger/info) carry meaning and must not be used for mere
-decoration. In a diagram, one focal node gets the accent; demote the rest.
+There is no hue accent in the built-in identity. Figure emphasis uses `--focal`
+plus stroke-width 2-2.5. Series are distinguished by tone, dash, and markers,
+not hue. Heatmap and intensity charts use the official warm ramp
+`--heat0` -> `--heat4`.
 
-Technical illustrations are the exception to the one-blue diagram rule. SVGs
-marked `data-vpk-illustration` may use the full `--ill-line`, `--ill-tone1`,
-`--ill-tone2`, `--ill-tone3`, `--ill-hatch`, and `--ill-ink50` ramp for object
-faces, hatching, labels, and dimension lines. They still stay flat: no
-gradients, blur, glow, or decorative color outside the ADS blue ramp.
+Status colors are meaning-bearing only. Success is grayscale; warning and
+danger keep their semantic tints and dark variants. Do not use them as
+decoration.
 
-### Motion discipline
+### Figure Grammar
+
+All generated SVGs follow `references/svg-style.md`: token-only grayscale
+fills/strokes, no gradients, no filters, Geist Mono labels, numeric
+stroke-widths from 0.5 to 2.5, and no `--accent*` or `--link*` tokens. User
+logos/screenshots can opt out with `data-vpk-external-asset` on the SVG root.
+
+Tables follow the Algebrica article treatment: Geist 12px, collapsed borders,
+all cells `1px solid var(--rule)`, `8px 12px` centered padding, `th` weight
+500, `--table-header` header wash, no radius, no zebra striping, and no hover
+row treatment.
+
+### Motion Discipline
 
 Shared motion comes from `scripts/shared.mjs`, not per-template timing tweaks.
-Use `--ease-out`, `--ease-in-out`, and the `--vpk-dur-*` tokens. Do not use
-bare `ease-in`; entrance and slide motion should stay at or under 300ms unless
-the advisory `motion-budget` gate is intentionally waived. Print CSS must
-neutralize animation/transition/transform, and reduced-motion must remove
-movement while preserving readable opacity changes.
+Use `--ease-out`, `--ease-in-out`, and the `--vpk-dur-*` tokens. Entrance and
+micro-interaction motion should sit around 140ms unless a document-specific
+runtime has a reason to go slower. Print CSS neutralizes motion, and
+reduced-motion removes movement while preserving legibility.
 
-### Presentation layer
+Chart motion uses the shared `.vpk-chart-*` utilities only: draw strokes with
+`--vpk-draw-length`, grow bars/areas with transform-based scale, reveal points
+with `--vpk-stagger-index`, and reserve the focal pulse for a single focal
+value. Charts must render complete static SVGs when JavaScript is disabled and
+must snap to their final state under reduced motion. See `references/charts.md`
+before adding chart templates.
+
+### Presentation Layer
 
 Deck screen behavior is additive. Presentation CSS and JS live behind
 `@media screen` and `data-vpk-presentation-runtime`; print/PDF geometry remains

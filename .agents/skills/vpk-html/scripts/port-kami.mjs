@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /*
- * port-kami — re-skins kami's editorial sources into vpk-html's Atlassian deck
- * identity (Charlie Display mastheads + Charlie Text body + Atlassian Mono
- * numerals/code). Consolidates the former port-templates.mjs, port-diagrams.mjs,
+ * port-kami — re-skins kami's editorial sources into vpk-html's Algebrica
+ * identity (Geist text + Geist Mono numerals/code). Consolidates the former port-templates.mjs, port-diagrams.mjs,
  * and port-demos.mjs into one CLI; layout, @page rules, SVG geometry, and
  * {{placeholders}} are preserved verbatim — only chrome (fonts, colors,
  * @font-face/theme blocks) changes, plus mode-specific identity overrides.
@@ -77,7 +76,7 @@ const TEMPLATES = [
 
 const VPK_OVERRIDES = `
 
-  /* ===== vpk-html Atlassian deck identity overrides ===== */
+  /* ===== vpk-html Algebrica editorial identity overrides ===== */
 
   html, body { background: var(--paper-background) !important; }
 
@@ -106,9 +105,9 @@ const VPK_OVERRIDES = `
   }
 
   body, p, li, dd, dt, blockquote, td, th, .body, .lead, .prose {
-    font-family: "Atlassian Mono Numeric", var(--font-body) !important;
-    font-size: 16px !important;
-    line-height: 1.8 !important;
+    font-family: "Geist Mono Numeric", var(--font-body) !important;
+    font-size: 17px !important;
+    line-height: 1.6 !important;
     color: var(--ink) !important;
   }
   h1, h2, h3, h4, h5, h6,
@@ -117,58 +116,67 @@ const VPK_OVERRIDES = `
   .section-title {
     font-family: var(--font-display) !important;
     font-size: 16px !important;
-    line-height: 1.8 !important;
-    font-weight: 700 !important;
+    line-height: 1.6 !important;
+    font-weight: 500 !important;
     letter-spacing: 0 !important;
     color: var(--ink) !important;
     margin: 0 !important;
   }
 
-  /* Masthead role: cover-title / first h1 carries the primary deck accent. */
+  /* Masthead role: cover-title / first h1 carries the editorial title role. */
   .cover h1:first-child, .cover-title:first-child,
   .hero h1:first-child, .doc-title h1:first-child,
   .resume-name {
     font-family: var(--font-display) !important;
     color: var(--headline) !important;
-    font-weight: 900 !important;
+    font-weight: 500 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
   }
 
-  /* Margin labels / eyebrows / figure tags: Atlassian Mono, 10-12px, primary blue. */
+  /* Margin labels / eyebrows / figure tags: Geist Mono, 10-13px, quiet grayscale chrome. */
   .eyebrow, .label, .meta-mono, .kicker,
   .figure-tag, .margin-label, .fig-num, .stage-name {
-    font-family: var(--font-mono) !important;
-    font-size: 10px !important;
-    line-height: 14px !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    color: var(--primary-blue) !important;
+    font-family: var(--font-body) !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--muted-text) !important;
     font-weight: 400 !important;
   }
 
   /* Secondary metadata / captions: 14px, ink-muted. */
   .caption, .meta, .footnote, .annotation, .subtitle, .cover-sub, .cover-meta,
   .doc-meta, .release-meta, .stage-detail, .stage-meta {
-    font-family: "Atlassian Mono Numeric", var(--font-body) !important;
+    font-family: "Geist Mono Numeric", var(--font-body) !important;
     font-size: 14px !important;
     line-height: 22px !important;
     color: var(--muted-text) !important;
   }
 
-  /* Links: primary blue with restrained editorial underline. */
+  /* Links: ink by default, grayscale on interaction. */
   a, a:visited {
     color: var(--link) !important;
-    text-decoration: none !important;
+    text-decoration-line: underline !important;
+    text-decoration-color: transparent !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 4px !important;
+    transition: color 180ms var(--ease-out), text-decoration-color 180ms var(--ease-out) !important;
   }
   a:hover {
-    text-decoration: underline !important;
-    text-decoration-thickness: 1px !important;
-    text-underline-offset: 3px !important;
+    color: var(--ink) !important;
+    text-decoration-color: currentColor !important;
+  }
+  a:focus-visible {
+    border-radius: 2px !important;
+    box-shadow: 0 0 0 2px var(--focus-ring) !important;
+    outline: 0 !important;
+    text-decoration-color: currentColor !important;
   }
 
   /* Emphasis: italic preferred; bold reserved for headings. */
-  .hl, mark, strong { color: var(--primary-blue) !important; background: transparent !important; font-weight: 600 !important; }
+  .hl, mark, strong { color: var(--ink) !important; background: var(--accent-soft) !important; font-weight: 500 !important; }
   em, i { font-style: italic !important; color: var(--ink) !important; }
 
   /* Dotted rule utility. */
@@ -190,11 +198,11 @@ const VPK_OVERRIDES = `
     font-family: var(--font-display) !important;
     color: var(--ink) !important;
     float: left !important;
-    font-size: 48px !important;
+    font-size: 36px !important;
     line-height: 1 !important;
     padding-right: 8px !important;
     padding-top: 4px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
   }
 `;
 
@@ -208,9 +216,9 @@ function rewriteFontStacksTemplates(text) {
 	out = out.replace(/Charter,\s*Georgia,\s*Palatino,\s*"Songti SC",\s*serif/g, FONT_STACKS.sans);
 	out = out.replace(
 		/"TsangerJinKai02"[^;]*serif/g,
-		'"Charlie Text", "Noto Sans CJK SC", ui-sans-serif, system-ui, sans-serif',
+		FONT_STACKS.body,
 	);
-	out = out.replace(/JetBrainsMono\.woff2/g, "AtlassianMono.v2.ttf");
+	out = out.replace(/JetBrainsMono\.woff2/g, "GeistMono[wght].woff2");
 	out = out.replace(/"JetBrains Mono",\s*"SF Mono",\s*Consolas,\s*monospace/g, FONT_STACKS.mono);
 	out = out.replace(/"JetBrains Mono",\s*"SF Mono",\s*"Fira Code"[^;]*/g, FONT_STACKS.mono);
 	return out;
@@ -219,16 +227,16 @@ function rewriteFontStacksTemplates(text) {
 function rewriteTemplateHeader(text, slug) {
 	const friendly = slug.replace(/-/g, " ");
 	const headerComment = `<!-- ==================================================================
-     TEMPLATE · ${friendly} (vpk-html · Atlassian deck identity)
+     TEMPLATE · ${friendly} (vpk-html · Algebrica editorial identity)
      Ported from kami's editorial template library, restyled with the
      vpk-html semantic aliases: paper (var(--paper)), ink
-     (var(--ink)), primary blue (var(--primary-blue)),
+     (var(--ink)), grayscale ink chrome (var(--accent)),
      status accents, and muted text (var(--muted-text)).
-     Charlie Display mastheads, Charlie Text body, Atlassian Mono numerals and labels.
+     Geist mastheads/body, Geist Mono numerals and labels.
      No section borders. No shadows. No grid. No rounded corners.
      Layout and double-curly placeholders preserved verbatim from kami.
      Source: https://github.com/tw93/Kami (MIT)
-     Design language: Atlassian deck/editorial language
+     Design language: Algebrica editorial grayscale
      ================================================================== -->`;
 	let out = text;
 	out = out.replace(/<!--[\s\S]*?-->\n?/, `${headerComment}\n`);
@@ -287,7 +295,7 @@ const DIAGRAM_FONT_REPLACEMENTS = [
 			/'JetBrains Mono',\s*"SF Mono",\s*Consolas,\s*"TsangerJinKai02",\s*"Source Han Serif SC",\s*"Noto Serif CJK SC",\s*"Songti SC",\s*monospace/g,
 		replacement: FONT_STACKS.mono,
 	},
-	{ pattern: /'JetBrains Mono',\s*monospace/g, replacement: "'Atlassian Mono', monospace" },
+	{ pattern: /'JetBrains Mono',\s*monospace/g, replacement: "'Geist Mono', monospace" },
 ];
 
 function buildDiagramHead() {
@@ -307,9 +315,9 @@ ${buildFontFaceBlock()}
   body {
     background: var(--paper-background);
     color: var(--ink);
-    font-family: "Atlassian Mono Numeric", var(--font-sans);
-    font-size: 16px;
-    line-height: 1.8;
+    font-family: "Geist Mono Numeric", var(--font-sans);
+    font-size: 17px;
+    line-height: 1.6;
     min-height: 100vh;
     padding: clamp(2rem, 4vw, 4rem);
   }
@@ -321,13 +329,13 @@ ${buildFontFaceBlock()}
   }
 
   .eyebrow {
-    color: var(--primary-blue);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    line-height: 14px;
-    letter-spacing: 0.18em;
+    color: var(--muted-text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.4;
+    letter-spacing: 0;
     margin-bottom: 12px;
-    text-transform: uppercase;
+    text-transform: none;
   }
 
   h1 {
@@ -335,7 +343,7 @@ ${buildFontFaceBlock()}
     font-family: var(--font-display);
     font-size: 16px;
     line-height: 1.8;
-    font-weight: 900;
+    font-weight: 500;
     letter-spacing: 0;
     text-transform: none;
     margin-bottom: 24px;
@@ -380,8 +388,8 @@ function transformDiagram(rawHtml, slug, headBlock) {
 	const headerComment = `<!-- ==================================================================
      DIAGRAM · ${slug.replace(/-/g, " ")} (vpk-html palette)
      SVG primitive ported from kami's diagram library, restyled with the
-     vpk-html identity: Charlie Display headline, Charlie Text body,
-     primary blue focal accent. Drop the <svg> block into a
+     vpk-html identity: Geist headline/body, Geist Mono labels,
+     token-only grayscale figure palette. Drop the <svg> block into a
      long-doc, portfolio, or design-system payload via section.trustedHtml.
      ================================================================== -->`;
 	return faviconed
@@ -422,30 +430,30 @@ const KAKU_HERO_FIGURE = `<svg viewBox="0 0 480 320" xmlns="http://www.w3.org/20
       <circle cx="62" cy="65" r="4" fill="var(--danger)"/>
       <circle cx="78" cy="65" r="4" fill="var(--warning)"/>
       <circle cx="94" cy="65" r="4" fill="var(--success)"/>
-      <text x="240" y="69" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="10" fill="var(--inverse-text)">kaku</text>
-      <text x="64" y="112" font-family="Atlassian Mono, ui-monospace, monospace" font-size="12" fill="var(--primary-blue)">$ kaku ai</text>
-      <text x="64" y="140" font-family="Atlassian Mono, ui-monospace, monospace" font-size="11" fill="var(--ink)">assistant.toml loaded</text>
-      <text x="64" y="162" font-family="Atlassian Mono, ui-monospace, monospace" font-size="11" fill="var(--muted-text)">mode: command recovery</text>
-      <rect x="246" y="104" width="154" height="82" rx="6" fill="var(--primary-blue-tint)" stroke="var(--primary-blue)"/>
-      <text x="323" y="134" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="11" fill="var(--primary-blue)">AI recovery</text>
-      <text x="323" y="156" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">explain and patch</text>
+      <text x="240" y="69" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="10" fill="var(--inverse-text)">kaku</text>
+      <text x="64" y="112" font-family="Geist Mono, ui-monospace, monospace" font-size="12" fill="var(--focal)">$ kaku ai</text>
+      <text x="64" y="140" font-family="Geist Mono, ui-monospace, monospace" font-size="11" fill="var(--ink)">assistant.toml loaded</text>
+      <text x="64" y="162" font-family="Geist Mono, ui-monospace, monospace" font-size="11" fill="var(--muted-text)">mode: command recovery</text>
+      <rect x="246" y="104" width="154" height="82" rx="6" fill="var(--ill-tone1)" stroke="var(--focal)"/>
+      <text x="323" y="134" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="11" fill="var(--focal)">AI recovery</text>
+      <text x="323" y="156" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">explain and patch</text>
       <path d="M64 210h300" fill="none" stroke="var(--rule-strong)" stroke-width="1"/>
-      <text x="64" y="236" font-family="Atlassian Mono, ui-monospace, monospace" font-size="10" fill="var(--muted-text)">Cmd + Shift + E applies the suggested command</text>
+      <text x="64" y="236" font-family="Geist Mono, ui-monospace, monospace" font-size="10" fill="var(--muted-text)">Cmd + Shift + E applies the suggested command</text>
     </svg>`;
 
 const KAKU_ACTION_FIGURE = `<svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kaku workflow from shell command to assistant suggestion and confirmed action.">
       <rect x="0.5" y="0.5" width="479" height="319" fill="none" stroke="var(--rule)"/>
       <rect x="42" y="96" width="112" height="74" rx="6" fill="var(--surface-sunken)" stroke="var(--rule-strong)"/>
-      <rect x="184" y="96" width="112" height="74" rx="6" fill="var(--primary-blue-tint)" stroke="var(--primary-blue)"/>
+      <rect x="184" y="96" width="112" height="74" rx="6" fill="var(--ill-tone1)" stroke="var(--focal)"/>
       <rect x="326" y="96" width="112" height="74" rx="6" fill="var(--surface-sunken)" stroke="var(--rule-strong)"/>
-      <path d="M154 133h30M296 133h30" fill="none" stroke="var(--primary-blue)" stroke-width="2"/>
-      <text x="98" y="126" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="12" fill="var(--ink)">shell</text>
-      <text x="98" y="146" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">failed command</text>
-      <text x="240" y="126" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="12" fill="var(--primary-blue)">assistant</text>
-      <text x="240" y="146" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">safe suggestion</text>
-      <text x="382" y="126" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="12" fill="var(--ink)">apply</text>
-      <text x="382" y="146" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">confirmed action</text>
-      <text x="240" y="220" text-anchor="middle" font-family="Atlassian Mono, ui-monospace, monospace" font-size="10" fill="var(--muted-text)">Kaku keeps the loop inside the command session.</text>
+      <path d="M154 133h30M296 133h30" fill="none" stroke="var(--focal)" stroke-width="2"/>
+      <text x="98" y="126" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="12" fill="var(--ink)">shell</text>
+      <text x="98" y="146" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">failed command</text>
+      <text x="240" y="126" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="12" fill="var(--focal)">assistant</text>
+      <text x="240" y="146" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">safe suggestion</text>
+      <text x="382" y="126" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="12" fill="var(--ink)">apply</text>
+      <text x="382" y="146" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="9" fill="var(--muted-text)">confirmed action</text>
+      <text x="240" y="220" text-anchor="middle" font-family="Geist Mono, ui-monospace, monospace" font-size="10" fill="var(--muted-text)">Kaku keeps the loop inside the command session.</text>
     </svg>`;
 
 function rewriteFontStacksDemos(text) {
@@ -454,15 +462,15 @@ function rewriteFontStacksDemos(text) {
 	out = out.replace(/Charter,\s*Georgia,\s*Palatino,\s*"Songti SC",\s*serif/g, FONT_STACKS.sans);
 	out = out.replace(
 		/"TsangerJinKai02",\s*"Source Han Serif SC",\s*"Noto Serif CJK SC",\s*"Songti SC",\s*"STSong",\s*Georgia,\s*serif/g,
-		'"Charlie Text", "Noto Sans CJK SC", ui-sans-serif, system-ui, sans-serif',
+		FONT_STACKS.body,
 	);
 	out = out.replace(
 		/"TsangerJinKai02",\s*"Source Han Serif SC",\s*"Noto Serif CJK SC",\s*"Songti SC",\s*Georgia,\s*serif/g,
-		'"Charlie Text", "Noto Sans CJK SC", ui-sans-serif, system-ui, sans-serif',
+		FONT_STACKS.body,
 	);
 	out = out.replace(
 		/"YuMincho",\s*"Yu Mincho",\s*"Hiragino Mincho ProN",\s*"Noto Serif CJK JP",\s*"Source Han Serif JP",\s*"TsangerJinKai02",\s*Georgia,\s*serif/g,
-		'"Charlie Text", "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", ui-sans-serif, system-ui, sans-serif',
+		FONT_STACKS.body,
 	);
 	out = out.replace(/"JetBrains Mono",\s*"SF Mono",\s*"Fira Code"[^;]*/g, FONT_STACKS.mono);
 	out = out.replace(/"JetBrains Mono",\s*"SF Mono",\s*Consolas,\s*monospace/g, FONT_STACKS.mono);
@@ -473,8 +481,8 @@ function rewriteDemoHeader(text, slug) {
 	const headerComment = `<!-- ==================================================================
      DEMO · ${slug.replace(/^demo-/, "").replace(/-/g, " ")} (vpk-html palette)
      Ported from kami's curated demos library and restyled with the
-     vpk-html identity: Charlie display/body type, Atlassian Mono numbers,
-     and primary blue accents. Layout, content, and SVG
+     vpk-html identity: Geist display/body type, Geist Mono numbers,
+     and Algebrica grayscale figure tokens. Layout, content, and SVG
      geometry are preserved verbatim from kami.
      Source: https://github.com/tw93/Kami
      ================================================================== -->`;
@@ -494,8 +502,8 @@ function rewriteDemoBodyAccent(text) {
   }
   /* Frame the document with vpk-html chrome when a kami .page or .frame exists */
   .page, .frame {
-    border: 2px solid var(--ink) !important;
-    box-shadow: var(--shadow) !important;
+    border: 1px solid var(--rule-strong) !important;
+    box-shadow: none !important;
   }
 `;
 	return text.replace(/<\/style>/, `${gridOverride}</style>`);
@@ -568,7 +576,7 @@ function main() {
 		return;
 	}
 	const selected = args.length > 0 ? args : ["--templates", "--diagrams", "--demos"];
-	console.log("Inlining local Atlassian fonts as base64 data URIs…");
+	console.log("Inlining local Geist fonts as base64 data URIs…");
 	for (const mode of selected) {
 		try {
 			MODES[mode]();

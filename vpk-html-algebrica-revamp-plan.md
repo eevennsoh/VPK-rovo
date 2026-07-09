@@ -81,6 +81,37 @@ pnpm run validate:skills && pnpm run verify:root-artifacts
 
 Acceptance demo: fill `long-doc.html` with a 2-series bar/line chart (tone + dash differentiation), run `check-html` + `--check-focal --strict`, screenshot 1280px light **and** `data-theme="dark"` — warm paper both ways, grayscale figures, ink links with green hover, Geist everywhere. Negative tests: inject `#0c66e4` fill, a gradient, and `font-family="Charlie Text"` into a scratch file → three distinct hard failures; add `data-vpk-external-asset` → passes. Migration idempotency: run `migrate-identity.mjs` twice → byte-identical.
 
+## Phase D — algebrica.org fidelity pass (added 2026-07-09 after v1 review)
+
+User reviewed v1 side-by-side with algebrica.org and requested a much closer
+match. Supersedes decision 6 (green accent) and v1 display typography.
+
+**Locked v2 decisions:** kill the green accent entirely (grayscale chrome —
+algebrica has no accent hue); no ALL-CAPS anywhere; compact scale (13–14px UI,
+17px prose, 36px normal-weight titles); all-Geist (user re-confirmed — map
+algebrica's EB Garamond roles to Geist, keep prose left-aligned); drop Geist
+Pixel; palette from algebrica's shipped CSS (paper `#f4efee`, ink `#312f2f`,
+hairlines `#e9e3e2`/`#ded5d4`, muted `#706e6e`/`#9b9998`, gray pills
+`#dadada`/`#7a7474`); dark parity re-derived warm; index.html rebuilt to their
+sidebar + numbered-index layout.
+
+**In-depth study (parallel read-only codex workers, reports under
+`output/fable-codex/study-{a,b,c}.md`):** sample many algebrica pages —
+homepage/index, glossary, updates, 3–4 entry pages, community — and extract
+exact component specs: sidebar + search + history, index/list rows with
+right-aligned meta, prose measure/links, tables, figures/charts + captions
+(including their warm-tinted data ramp), math blocks, bordered list-table
+cards, numbered chips, contribution-heatmap dot ramp, pink-wash code cards,
+pill buttons, centered heading + muted lede sections.
+
+**Component-fidelity implementation:** consolidate study findings into a
+follow-up brief for the same codex session (resume by explicit session id
+`019f4513-3070-7401-b0b8-e62d756d8dfc`; ephemeral study workers keep
+`--last` clean); apply across tokens, styles, all templates (tables,
+paragraphs, charts), generators, migration script, index.html, and reference
+docs, with the same gates, idempotency, and never-coexist enforcement
+(green family joins the legacy ban list).
+
 ## Risks
 
 - The `--ds-` exemption redesign and token de-wrapping must land together or every file fails lint.

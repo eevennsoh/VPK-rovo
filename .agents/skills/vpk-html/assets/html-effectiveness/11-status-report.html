@@ -62,14 +62,14 @@
     font-family: var(--serif);
     font-weight: 500;
     font-size: 38px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     margin: 0;
   }
   .auto-pill {
     font-family: var(--mono);
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    
+    letter-spacing: 0;
     color: var(--gray-500);
     background: var(--gray-100);
     border: var(--border);
@@ -95,7 +95,7 @@
     font-family: var(--serif);
     font-weight: 500;
     font-size: 24px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     margin: 0 0 6px;
   }
   hr.rule {
@@ -125,7 +125,7 @@
   }
   .stat-num {
     font-family: var(--serif);
-    font-size: 44px;
+    font-size: 36px;
     font-weight: 500;
     line-height: 1;
     color: var(--slate);
@@ -134,8 +134,8 @@
   .stat-label {
     font-family: var(--sans);
     font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    
+    letter-spacing: 0;
     color: var(--gray-500);
   }
   .stat-delta {
@@ -188,8 +188,8 @@
     font-family: var(--sans);
     font-size: 11px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    
+    letter-spacing: 0;
     color: var(--gray-500);
     background: var(--gray-100);
     padding: 12px 16px;
@@ -274,8 +274,8 @@
   .carry-tag {
     font-family: var(--mono);
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    
+    letter-spacing: 0;
     color: var(--gray-700);
     background: var(--ivory);
     border-radius: 4px;
@@ -444,10 +444,10 @@
           <line x1="48" y1="140" x2="620" y2="140" stroke="#D1CFC5" stroke-width="1.5"/>
 
           <!-- y-axis labels -->
-          <text x="40" y="144" text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">0</text>
-          <text x="40" y="104" text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">1</text>
-          <text x="40" y="64"  text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">2</text>
-          <text x="40" y="24"  text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">3</text>
+          <text x="40" y="144" text-anchor="end" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">0</text>
+          <text x="40" y="104" text-anchor="end" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">1</text>
+          <text x="40" y="64"  text-anchor="end" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">2</text>
+          <text x="40" y="24"  text-anchor="end" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">3</text>
 
           <!-- bars: 7 days, values 2,3,1,4,2,1,1 (sum 14)
                baseline y=140, unit=40px, bar width=56, gap=24, start x=64 -->
@@ -467,22 +467,22 @@
           <rect x="544" y="100" width="56" height="40"  rx="6" fill="#E3DACC"/>
 
           <!-- value labels -->
-          <text x="92"  y="54"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">2</text>
-          <text x="172" y="14"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">3</text>
-          <text x="252" y="94"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">1</text>
-          <text x="332" y="14"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#3D3D3A" font-weight="600">4</text>
-          <text x="412" y="54"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">2</text>
-          <text x="492" y="94"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">1</text>
-          <text x="572" y="94"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">1</text>
+          <text x="92"  y="54"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">2</text>
+          <text x="172" y="14"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">3</text>
+          <text x="252" y="94"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">1</text>
+          <text x="332" y="14"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#3D3D3A" font-weight="600">4</text>
+          <text x="412" y="54"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">2</text>
+          <text x="492" y="94"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">1</text>
+          <text x="572" y="94"  text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">1</text>
 
           <!-- x-axis labels -->
-          <text x="92"  y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Mon</text>
-          <text x="172" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Tue</text>
-          <text x="252" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Wed</text>
-          <text x="332" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Thu</text>
-          <text x="412" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Fri</text>
-          <text x="492" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Sat</text>
-          <text x="572" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">Sun</text>
+          <text x="92"  y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Mon</text>
+          <text x="172" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Tue</text>
+          <text x="252" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Wed</text>
+          <text x="332" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Thu</text>
+          <text x="412" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Fri</text>
+          <text x="492" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Sat</text>
+          <text x="572" y="158" text-anchor="middle" font-family="Geist Mono, monospace" font-size="11" fill="#87867F">Sun</text>
         </svg>
         <div class="chart-caption">
           PRs merged per day. Thursday spike is the bulk-edit feature train (4 PRs landed together).

@@ -1,15 +1,15 @@
 ---
 name: vpk-fable
-description: "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and fan out parallel Sonnet 5 worker subagents (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, or asks how to use Fable 5 economically."
-purpose: Reproduce Anthropic's advisor-tool and plan-big/execute-small patterns with Claude Code subagents and per-agent model overrides, so most tokens burn at Sonnet 5 rates while Fable 5 handles only high-judgment moments.
+description: "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.5 xhigh via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically."
+purpose: Reproduce Anthropic's advisor-tool and plan-big/execute-small patterns inside Claude Code, so most tokens burn at executor rates — GPT-5.5 via Codex CLI or Sonnet 5 subagents — while Fable 5 handles only planning, synthesis, and high-judgment moments.
 owner: VPK
 category: agent-operations
-inputs: The user's mode choice (advisor, orchestrate, or bare), the current task context, and for advisor mode the specific decision or blocker to escalate.
-outputs: Advisor consultations (decision + plan + risks) fed back into the executor loop, or a Fable-planned fan-out of Sonnet worker results synthesized into one answer.
-required_tools: Agent tool (subagent spawn with model override), SendMessage (re-consult a warm advisor)
+inputs: The user's mode choice (advisor, orchestrate, or bare), an optional executor flag for orchestrate mode (--codex default, --claude for Sonnet workers), the current task context, and for advisor mode the specific decision or blocker to escalate.
+outputs: Advisor consultations (decision + plan + risks) fed back into the executor loop, or a Fable-planned delegation — codex run reports or Sonnet worker findings — synthesized into one answer.
+required_tools: Agent tool (subagent spawn with model override), SendMessage (re-consult a warm advisor), Bash (codex exec executor runs)
 validation_command: node scripts/validate-skills.js
-generated_artifacts: None on disk by default; advisor advice and worker findings live in conversation. Workers may edit files when the brief asks for implementation.
-common_failure_modes: Spawning the advisor cold without packaged context, consulting the advisor on trivial turns, over-sharding orchestration briefs so delegation overhead exceeds savings, concluding before all workers return, and running the advisor pattern when the main session is already Fable 5.
+generated_artifacts: Advisor advice and worker findings live in conversation; codex executor briefs and reports land under gitignored output/fable-codex/. Workers may edit files when the brief asks for implementation.
+common_failure_modes: Spawning the advisor cold without packaged context, consulting the advisor on trivial turns, over-sharding orchestration briefs so delegation overhead exceeds savings, concluding before all workers return, running the advisor pattern when the main session is already Fable 5, dispatching parallel codex briefs with overlapping write scopes, parsing the codex JSONL stream instead of the --output-last-message file, using codex resume --last while multiple codex runs are live, and not falling back to Claude workers when the codex CLI is missing or unauthenticated.
 ---
 
 # VPK Fable — Advisor and Orchestrator Patterns
@@ -21,10 +21,15 @@ and the Claude Managed Agents
 rebuilt on plain Claude Code subagents because neither the beta `advisor_20260301`
 server tool nor Managed Agents exist in the desktop app / CLI.
 
-The mechanism here is per-agent `model:` overrides:
+Two executor mechanisms exist:
 
-- `vpk-agent-advisor` (`.claude/agents/vpk-agent-advisor.md`) — `model: fable`, read-only.
-- `vpk-agent-worker` (`.claude/agents/vpk-agent-worker.md`) — `model: sonnet`, full tools.
+- **Claude subagents** with per-agent `model:` overrides:
+  - `vpk-agent-advisor` (`.claude/agents/vpk-agent-advisor.md`) — `model: fable`, read-only.
+  - `vpk-agent-worker` (`.claude/agents/vpk-agent-worker.md`) — `model: sonnet`, full tools.
+- **Codex CLI processes** (`codex exec`, GPT-5.5 at xhigh reasoning effort) —
+  the default executor for orchestrate mode, run via background Bash rather
+  than the Agent tool. See
+  [references/codex-executor.md](references/codex-executor.md).
 
 A named subagent keeps its own context and prompt cache across `SendMessage`
 calls, which mirrors the "each sub-agent keeps its own cache" property of
@@ -45,8 +50,12 @@ Everything else in this skill applies unchanged.
 | Invocation | Mode |
 | --- | --- |
 | `/vpk-fable advisor [question]` | Consult the Fable 5 advisor about the current work |
-| `/vpk-fable orchestrate <task>` | Plan big, execute small: fan out Sonnet 5 workers |
+| `/vpk-fable orchestrate <task>` | Plan big, execute small: delegate to the **codex executor** (GPT-5.5 xhigh, default) |
+| `/vpk-fable orchestrate --claude <task>` | Same pattern, Sonnet 5 subagent workers instead |
 | `/vpk-fable` (bare) | Explain both patterns and help the user pick |
+
+`--claude` and `--codex` (the explicit form of the default) may appear
+anywhere in the invocation text; strip the flag before reading the task.
 
 ## Mode: advisor
 
@@ -112,36 +121,64 @@ Full escalation rules, the pairing table, and the raw-API equivalent:
 ## Mode: orchestrate
 
 Intended shape: the **main session is Fable 5** (check with the user or
-suggest `/model` → Fable) and does only planning and synthesis; token-heavy
-mechanical work runs in parallel Sonnet 5 workers. The pattern still works
-from a Sonnet main session — planning quality is just lower.
+suggest `/model` → Fable) and does only planning, review, and synthesis;
+token-heavy mechanical work runs on a cheaper executor. The pattern still
+works from a Sonnet main session — planning quality is just lower.
 
 ### Fit check first
 
 Good fit: coverage tasks — verify N facts across sources, sweep many files,
-review large docs/logs, run the same check across many routes. Poor fit:
-narrow tasks with little reading, or tasks where the frontier model must judge
-the raw material itself. For a poor fit, say so and just do the task solo.
+review large docs/logs, run the same check across many routes — and
+well-specified implementation tasks the orchestrator can spec precisely and
+verify cheaply. Poor fit: narrow tasks with little reading, or tasks where
+the frontier model must judge the raw material itself. For a poor fit, say so
+and just do the task solo.
+
+### Pick the executor
+
+- **codex (default)** — `codex exec` CLI processes running GPT-5.5 at xhigh
+  reasoning effort, launched via background Bash. Full mechanics, canonical
+  command, and brief template:
+  [references/codex-executor.md](references/codex-executor.md).
+- **claude (`--claude`)** — parallel `vpk-agent-worker` Sonnet 5 subagents via
+  the Agent tool, as below.
+- If the codex CLI is missing from PATH or a run reports auth errors, fall
+  back to Claude workers and tell the user you did.
+
+### Pick the shape
+
+- **Fan-out** (coverage/research): several parallel executors, each with an
+  independent brief.
+- **Single executor** (implementation): one executor run that Fable reviews
+  and iterates. Parallel executors share this worktree, so briefs that edit
+  overlapping files must never fan out — with codex, iterate one session via
+  `codex exec resume --last` instead (see the codex reference).
 
 ### Procedure
 
 1. **Plan.** Decompose the task into focused, **independent** sub-briefs.
    Right-size them: each worker spawn has fixed overhead, so a brief should be
    worth minutes of reading, not one fact. 2–5 workers is the usual sweet spot.
-2. **Fan out.** Spawn all workers in **one message** (parallel tool calls),
-   each `subagent_type: "vpk-agent-worker"` with a self-contained brief:
-   objective, scope boundaries, exact paths/URLs, and the required output
-   shape (distilled findings with `file:line` or URL evidence — never raw dumps).
-   Use `run_in_background: true` for long briefs; the harness notifies on completion.
+2. **Fan out.** Dispatch all workers in **one message** (parallel tool calls),
+   each with a self-contained brief: objective, scope boundaries, exact
+   paths/URLs, and the required output shape (distilled findings with
+   `file:line` or URL evidence — never raw dumps).
+   - codex: one background Bash `codex exec` per brief, report read from its
+     `--output-last-message` file (canonical command in the codex reference).
+   - claude: one `subagent_type: "vpk-agent-worker"` per brief;
+     `run_in_background: true` for long briefs.
 3. **Wait for all workers before concluding.** Never synthesize from a partial
    set. If a worker fails on infrastructure (not on the merits), re-dispatch
    that brief to a fresh worker.
 4. **Synthesize.** Combine distilled findings into the final answer or edit
-   plan. Raw material stays in worker contexts; only conclusions reach the
-   main context — that is where both the cost and context-window savings come from.
+   plan. For implementation briefs, review the diff and run the proof command
+   yourself — no executor self-certifies. Raw material stays in worker
+   contexts; only conclusions reach the main context — that is where both the
+   cost and context-window savings come from.
 
 Economics, prompt essentials, and the Managed Agents equivalent:
 [references/orchestrator-pattern.md](references/orchestrator-pattern.md).
+Codex invocation details: [references/codex-executor.md](references/codex-executor.md).
 
 ## Mode: bare (`/vpk-fable`)
 
@@ -150,10 +187,15 @@ Explain, briefly and concretely:
 - **Advisor** — cheap executor loop, Fable consulted on demand. Best when the
   work is mostly mechanical but a few decisions are hard. Executor Sonnet 5
   (Opus 4.8 fallback), advisor Fable 5.
-- **Orchestrator** — Fable plans/synthesizes, Sonnet workers grind. Best for
-  coverage tasks with lots of reading. In the cookbook's benchmark the split
-  was ~2.5× cheaper and ~3× faster than a solo frontier agent, with 84% of
-  input tokens billed at worker rates.
+- **Orchestrator** — Fable plans/synthesizes, cheaper executors grind. Best
+  for coverage tasks with lots of reading, or implementation tasks Fable can
+  spec and verify. In the cookbook's benchmark the split was ~2.5× cheaper and
+  ~3× faster than a solo frontier agent, with 84% of input tokens billed at
+  worker rates.
+- **Executor choice** — orchestrate defaults to the codex executor (GPT-5.5
+  xhigh via `codex exec`); pass `--claude` to use Sonnet 5 subagent workers
+  instead. Codex tokens bill to the user's ChatGPT/Codex plan, not the Claude
+  quota, so the codex default also spreads load across subscriptions.
 - **Cost framing** — on the API these are per-token savings; on a Claude
   subscription the win is rate-limit burn: Sonnet tokens consume the usage
   quota far more slowly than Fable/Opus tokens, so sessions stretch further.
@@ -163,6 +205,12 @@ Explain, briefly and concretely:
 ## Boundaries
 
 - The advisor never edits files; only the executor (or workers) do.
+- Codex runs use `--dangerously-bypass-approvals-and-sandbox` (no sandbox, no
+  prompts), so every codex brief must carry explicit scope boundaries and
+  non-goals — the brief is the only guardrail.
+- The orchestrator owns verification: review the diff and run the proof
+  command after every implementation run; never accept an executor's own
+  "done" as evidence.
 - Do not stack patterns by default (a Fable orchestrator does not also need a
   Fable advisor). Escalate a *worker* to the advisor only if it hits a genuine
   design wall.

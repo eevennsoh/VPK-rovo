@@ -2,42 +2,52 @@
 
 vpk-html has two SVG families:
 
-- **Diagram primitives** in `assets/diagrams/`: keep the one-primary-blue focal
-  rule.
-- **Technical illustrations** in `assets/illustrations/`: may use the full
-  ADS blue ramp through the `--ill-*` tokens for linework, faces, hatching,
-  and labels.
+- **Diagram primitives** in `assets/diagrams/`: data shapes with one
+  `--focal` element.
+- **Technical illustrations** in `assets/illustrations/`: object, mechanism,
+  assembly, cross-section, and pipeline figures using the grayscale `--ill-*`
+  ramp.
 
-Use a technical illustration when the reader needs to inspect object structure,
-assembly, mechanism, pipeline topology, or cross-section detail. Use a diagram
-when the reader needs a data shape, flow, hierarchy, timeline, or system map.
+Use a technical illustration when the reader needs to inspect structure or
+mechanics. Use a diagram when the reader needs a data shape, flow, hierarchy,
+timeline, or system map.
 
-## Tokens
+Read `references/svg-style.md` before drawing or modifying any SVG.
 
-| Role | Token |
-|---|---|
-| Darkest linework | `--ill-line` |
-| Light face | `--ill-tone1` |
-| Mid face | `--ill-tone2` |
-| Deep face | `--ill-tone3` |
-| Hatching | `--ill-hatch` |
-| 50 percent label ink | `--ill-ink50` |
+## Grayscale Ramp
 
-These tokens are generated from `references/tokens.json` into `styles.css` and
-into every committed template/demo through the shared CSS generator.
+| Role | Token | Faithful light value |
+|---|---|---|
+| Darkest linework | `--ill-line` | `#333333` |
+| Secondary label ink | `--ill-ink50` | `#636363` |
+| Guide / axis | `--ill-guide` | `#bababa` |
+| Dashed guide | `--ill-guide-dashed` | `#d3d3d3` |
+| Frame | `--ill-frame` | `#c9c9c9` |
+| Light face | `--ill-fill-alt`, `--ill-tone1` | `#f6f6f6` |
+| Mid face | `--ill-fill`, `--ill-tone2` | `#eaeaea` |
+| Construction / hatch line | `--ill-hatch` | `#bababa` |
+| Focal stroke/fill | `--focal` | `#000000` |
+
+Use tokens, not raw hex. Raw grayscale literals fail the SVG lint because they
+cannot invert under `data-theme="dark"`.
 
 ## Recipe
 
-- SVGs are inline and use `fill="none"` at the root.
-- Outlines are uniform 1px strokes in `var(--ill-line)`.
-- Face shading uses flat two- or three-tone fills; do not use gradients.
+- SVG roots use `fill="none"`.
+- Outlines are 1-2px strokes, usually `var(--ill-line)`.
+- One focal construction path may use `var(--focal)` at stroke-width 2.
+- Face shading uses flat two- or three-tone fills; never gradients.
 - Isometric faces are built from parallelogram paths.
-- Hatching is a bundle of repeated parallel strokes using `var(--ill-hatch)`.
-- Dimension lines use `stroke-dasharray="24 6"` and filled triangle arrowheads.
-- Leader lines can curl into their target; labels use uppercase Atlassian Mono
-  around 10px with `var(--ill-ink50)`.
-- Figure frames can use a dotted 3x3 or 9x9 tile at low opacity through
-  `color-mix(... var(--ill-hatch) ...)`.
+- Hatching is repeated parallel strokes using `var(--ill-hatch)`.
+- Dimension lines use `var(--ill-guide)` / `var(--ill-guide-dashed)` and filled triangle arrowheads.
+- Leader lines can curl into their target.
+- Labels use Geist Mono around 11-13px when space allows and
+  `var(--ill-ink50)` for secondary text.
+- Frames use hairline `--ill-frame` borders and `rx <= 9`.
+
+Do not use shadows, blur, glow, gradients, `filter`, or hue as decoration.
+Status colors are allowed only when the figure is explicitly communicating a
+status state.
 
 ## Motion Policy
 

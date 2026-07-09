@@ -82,11 +82,17 @@ test("buildStylesCssFromTokens emits the shared motion contract", async () => {
 	const { buildStylesCssFromTokens } = await loadShared();
 	const css = buildStylesCssFromTokens();
 
-	assert.match(css, /--ease-out:\s*cubic-bezier\(0\.23,1,0\.32,1\);/);
-	assert.match(css, /--ease-in-out:\s*cubic-bezier\(0\.77,0,0\.175,1\);/);
-	assert.match(css, /--vpk-dur-enter:\s*280ms;/);
+	assert.match(css, /--ease-out:\s*cubic-bezier\(0\.16,1,0\.3,1\);/);
+	assert.match(css, /--ease-in-out:\s*cubic-bezier\(0\.65,0,0\.35,1\);/);
+	assert.match(css, /--vpk-dur-enter:\s*140ms;/);
 	assert.match(css, /@keyframes vpk-enter/);
 	assert.match(css, /@keyframes vpk-slide-in/);
+	assert.match(css, /@keyframes vpk-chart-draw/);
+	assert.match(css, /@keyframes vpk-chart-grow/);
+	assert.match(css, /@keyframes vpk-chart-focal-pulse/);
+	assert.match(css, /\.vpk-chart-draw[\s\S]*stroke-dasharray:\s*var\(--vpk-draw-length, 1\);/);
+	assert.match(css, /\.vpk-chart-grow[\s\S]*transform-origin:\s*center bottom;/);
+	assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vpk-chart-draw[\s\S]*stroke-dashoffset:\s*0 !important;/);
 	assert.match(css, /transform:\s*var\(--vpk-slide-enter-from, translateX\(24px\)\);/);
 	assert.match(css, /transform:\s*var\(--vpk-slide-enter-to, translateX\(0\)\);/);
 	assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*--vpk-enter-y:\s*0px;/);
@@ -103,7 +109,7 @@ test("quality gate command surface includes focal and tidy audit gates", async (
 	const thresholds = loadThresholds();
 	const buildSource = fs.readFileSync(path.join(__dirname, "build.mjs"), "utf8");
 
-	assert.equal(thresholds.focal.maxPrimaryBlueElements, 1);
+	assert.equal(thresholds.focal.maxFocalElements, 1);
 	assert.equal(thresholds.motionBudget.maxDurationMs, 300);
 	assert.equal(thresholds.captionEcho.minSharedWords, 3);
 	assert.match(buildSource, /--check-focal/);
@@ -226,7 +232,7 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 
 test("check-html enforces the SMIL starter contract", async () => {
 	const { validateHtmlString } = await import("./check-html.mjs");
-	const base = `<!doctype html><html><head><style>@font-face { font-family: "Charlie Text"; src: url(data:font/otf;base64,AA==); } :root { color-scheme: light dark; } [data-theme="dark"] { color-scheme: light dark; }</style></head><body><main><svg aria-label="demo"><animateTransform attributeName="transform" type="translate" begin="indefinite"/></svg></main></body></html>`;
+	const base = `<!doctype html><html><head><style>@font-face { font-family: "Geist"; src: url(data:font/woff2;base64,AA==); } :root { color-scheme: light dark; } [data-theme="dark"] { color-scheme: light dark; }</style></head><body><main><svg aria-label="demo"><animateTransform attributeName="transform" type="translate" begin="indefinite"/></svg></main></body></html>`;
 
 	assert.match(
 		validateHtmlString(base).failures.join("\n"),
@@ -235,5 +241,53 @@ test("check-html enforces the SMIL starter contract", async () => {
 	assert.match(
 		validateHtmlString(base.replace('begin="indefinite"', 'begin="0s"')).failures.join("\n"),
 		/begin="indefinite"/,
+	);
+});
+
+test("check-html enforces the Algebrica SVG grammar", async () => {
+	const { collectColorTokenIssues, collectSvgGrammarIssues } = await import("./check-html.mjs");
+	const valid = `<svg aria-label="ok" fill="none"><path d="M0 0h10" stroke="var(--focal)" stroke-width="2"/><text x="0" y="12" fill="var(--ill-ink50)" font-family="Geist Mono, monospace">label</text></svg>`;
+	const animatedInteractive = `<svg class="vpk-chart" data-vpk-chart aria-label="chart" fill="none" viewBox="0 0 120 80">
+		<g data-series="alpha" aria-label="Alpha">
+			<path class="vpk-chart-draw" style="--vpk-draw-length: 120; --vpk-stagger-index: 1;" d="M10 60 L50 30 L100 20" stroke="var(--focal)" stroke-width="2" fill="none" transform="translate(0 0)"/>
+			<circle class="vpk-chart-reveal" data-vpk-point data-series="alpha" tabindex="0" role="button" aria-label="Alpha point" aria-describedby="chart-tooltip" data-tooltip="Alpha · 10" cx="100" cy="20" r="4" fill="var(--focal)" stroke="var(--paper)" stroke-width="1.5"/>
+			<text x="104" y="24" fill="var(--ill-ink50)" font-family="Geist Mono, monospace">10</text>
+		</g>
+		<script data-vpk-chart-runtime>document.currentScript.closest("svg").setAttribute("data-ready","true");</script>
+	</svg>`;
+	assert.deepEqual(collectSvgGrammarIssues(valid), []);
+	assert.deepEqual(collectSvgGrammarIssues(animatedInteractive), []);
+
+	assert.match(
+		collectSvgGrammarIssues(valid.replace('stroke="var(--focal)"', 'stroke="#0c66e4"')).join("\n"),
+		/grayscale figure tokens/,
+	);
+	assert.match(
+		collectSvgGrammarIssues(valid.replace("</svg>", "<linearGradient id=\"g\"></linearGradient></svg>")).join("\n"),
+		/gradients, filters, or drop shadows/,
+	);
+	assert.match(
+		collectSvgGrammarIssues(animatedInteractive.replace("</svg>", "<linearGradient id=\"g\"></linearGradient></svg>")).join("\n"),
+		/gradients, filters, or drop shadows/,
+	);
+	assert.match(
+		collectSvgGrammarIssues(valid.replace("Geist Mono, monospace", "Charlie Text")).join("\n"),
+		/SVG font-family must resolve to Geist Mono/,
+	);
+	assert.match(
+		collectSvgGrammarIssues(valid.replace('stroke-width="2"', 'stroke-width="3"')).join("\n"),
+		/stroke-width "3" must be numeric within 0.5-2.5/,
+	);
+	assert.match(
+		collectSvgGrammarIssues(valid.replace("var(--focal)", "var(--accent)")).join("\n"),
+		/must not use accent or link tokens/,
+	);
+	assert.deepEqual(
+		collectSvgGrammarIssues(valid.replace("<svg ", "<svg data-vpk-external-asset ")),
+		[],
+	);
+	assert.deepEqual(
+		collectColorTokenIssues(valid.replace("<svg ", "<svg data-vpk-external-asset ").replace('stroke="var(--focal)"', 'stroke="#0c66e4"')),
+		[],
 	);
 });

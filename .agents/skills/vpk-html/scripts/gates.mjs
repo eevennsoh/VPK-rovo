@@ -12,7 +12,7 @@
  *   resume-balance content spilling slightly onto a near-empty extra page
  *   rhythm         >=N consecutive slides with an identical layout fingerprint
  *   orphans        widowed last lines (a single short word ending a paragraph)
- *   focal          ordinary SVG diagrams with too many primary-blue elements
+ *   focal          ordinary SVG diagrams with too many darkest-ink focal elements
  *   motion-budget  long authored CSS durations that make artifacts feel slow
  *   caption-echo   figure captions that restate the nearby title
  *
@@ -123,17 +123,17 @@ function measureFocal(t) {
 	const svgs = [...document.querySelectorAll("svg:not([data-vpk-illustration])")];
 	const findings = [];
 	for (const [index, svg] of svgs.entries()) {
-		const blueElements = [...svg.querySelectorAll("*")].filter(el => {
+		const focalElements = [...svg.querySelectorAll("*")].filter(el => {
 			const value = [
 				el.getAttribute("fill"),
 				el.getAttribute("stroke"),
 				el.getAttribute("style"),
 			].filter(Boolean).join(" ");
-			return /var\(--primary-blue\)/.test(value);
+			return /var\(--focal\)/.test(value);
 		});
-		if (blueElements.length > t.maxPrimaryBlueElements) {
+		if (focalElements.length > t.maxFocalElements) {
 			const label = svg.getAttribute("aria-label") || svg.getAttribute("aria-labelledby") || `svg #${index + 1}`;
-			findings.push(`${label}: ${blueElements.length} primary-blue elements (ordinary diagrams should keep one focal element)`);
+			findings.push(`${label}: ${focalElements.length} focal elements (ordinary diagrams should keep one darkest-ink focal element)`);
 		}
 	}
 	return findings;
