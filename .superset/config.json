@@ -1,4 +1,10 @@
 {
-	"setup": ["pnpm install"],
-	"teardown": []
+  "setup": [
+    "set -euo pipefail",
+    "PROJECT_DIR=\"$SUPERSET_WORKSPACE_PATH\" \\",
+    "SOURCE_TREE_PATH=\"$SUPERSET_ROOT_PATH\" \\",
+    "bash \"$SUPERSET_WORKSPACE_PATH/.agents/hooks/setup-worktree.sh\""
+  ],
+  "teardown": [],
+  "run": []
 }
