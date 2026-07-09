@@ -51,10 +51,16 @@ test("Studio sidebar Agents parent can collapse while a recent agent is selected
 
 test("Studio sidebar Agents accordion keeps a create action on the parent row", () => {
 	assert.match(SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
+	assert.match(SOURCE, /onCreateAgent\?: \(\) => void;/u);
 	assert.match(SOURCE, /function StudioSidebarAgentsCreateAction\(\{ onClick \}: Readonly<\{ onClick: \(\) => void \}>\) \{/u);
 	assert.match(SOURCE, /className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover\/sidebar-nav-item:!opacity-100 focus-visible:opacity-100 hover:text-icon"/u);
 	assert.match(SOURCE, /aria-label="Create agent"[\s\S]*event\.stopPropagation\(\);[\s\S]*onClick\(\);[\s\S]*<AddIcon label="" size="small" \/>/u);
-	assert.match(SOURCE, /const actions = shouldShowRecentAgents && onNewChat \? \([\s\S]*<StudioSidebarAgentsCreateAction onClick=\{onNewChat\} \/>[\s\S]*\) : item\.actions;/u);
+	assert.match(SOURCE, /const actions = shouldShowRecentAgents && onCreateAgent \? \([\s\S]*<StudioSidebarAgentsCreateAction onClick=\{onCreateAgent\} \/>[\s\S]*\) : item\.actions;/u);
+	const createActionSource = SOURCE.slice(
+		SOURCE.indexOf("const actions = shouldShowRecentAgents"),
+		SOURCE.indexOf("<StudioSidebarNavItem", SOURCE.indexOf("const actions = shouldShowRecentAgents")),
+	);
+	assert.doesNotMatch(createActionSource, /onNewChat/u);
 	assert.match(SOURCE, /<StudioSidebarNavItem[\s\S]*actions=\{actions\}[\s\S]*isExpanded=\{shouldShowRecentAgents \? isAgentsExpanded : item\.isExpanded\}/u);
 });
 

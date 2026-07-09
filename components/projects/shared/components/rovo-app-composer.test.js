@@ -7,6 +7,7 @@ const COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-composer.
 const CARD_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-card-body.tsx"), "utf8");
 const FLOATING_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-floating-body.tsx"), "utf8");
 const FLOATING_COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-composer.tsx"), "utf8");
+const ROVO_COMPOSER_STYLES_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-styles.ts"), "utf8");
 const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-send-controls.tsx"), "utf8");
 const LIVE_WAVEFORM_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-audio/live-waveform.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
@@ -62,6 +63,11 @@ test("FloatingComposer restores compact mode and expands from compact-width meas
 	assert.match(FLOATING_COMPOSER_SOURCE, /isExpanded \? "order-1 basis-full" : "order-2 flex-1"/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className="order-3 ml-auto flex shrink-0 items-center gap-1"/u);
 	assert.doesNotMatch(FLOATING_COMPOSER_SOURCE, /isMultiline/u);
+});
+
+test("floating composer keeps the empty editor caret aligned with the placeholder", () => {
+	assert.match(ROVO_COMPOSER_STYLES_SOURCE, /floatingComposerTextareaClassName =\s*\n\t"prompt-input-composer-floating min-h-8 flex-1 leading-5";/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer\.ProseMirror\.prompt-input-composer-floating \{\s*padding-block: var\(--ds-space-075\);\s*\}/u);
 });
 
 test("active voice controls do not use border beam visual effects", () => {

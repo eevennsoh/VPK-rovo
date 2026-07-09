@@ -13,7 +13,7 @@ export const composerTextareaClassName =
 // the leading/trailing icon buttons so a single line sits vertically centered on the flex
 // row, while `flex-1` lets it fill the width between the "+" and the action cluster.
 export const floatingComposerTextareaClassName =
-	"min-h-8 flex-1 py-1.5 leading-5";
+	"prompt-input-composer-floating min-h-8 flex-1 leading-5";
 
 // Note: `text-overflow: ellipsis` is ignored on a multi-line <textarea>
 // placeholder, so long placeholders hard-clip instead of truncating. The real

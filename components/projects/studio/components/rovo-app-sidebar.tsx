@@ -50,6 +50,7 @@ interface RovoAppSidebarProps {
 	headerOffsetPx?: number;
 	isAgentsHomeActive?: boolean;
 	isResizing?: boolean;
+	onCreateAgent?: () => void;
 	onDeleteAgent?: (agentId: string) => void;
 	onDeleteThread: (threadId: string) => Promise<void>;
 	onNewChat: () => void;
@@ -289,6 +290,7 @@ function StudioSidebarNavigation({
 	agentCreationThreads = [],
 	generatingAgents = [],
 	isAgentsHomeActive = false,
+	onCreateAgent,
 	onDeleteAgent,
 	onDeleteAgentCreationThread,
 	onNewChat,
@@ -302,6 +304,7 @@ function StudioSidebarNavigation({
 	agentCreationThreads?: ReadonlyArray<StudioAgentCreationThread>;
 	generatingAgents?: ReadonlyArray<StudioSidebarGeneratingAgent>;
 	isAgentsHomeActive?: boolean;
+	onCreateAgent?: () => void;
 	onDeleteAgent?: (agentId: string) => void;
 	onDeleteAgentCreationThread?: (threadId: string) => void;
 	onNewChat?: () => void;
@@ -383,8 +386,8 @@ function StudioSidebarNavigation({
 									: isAgentsItem
 										? onNewChat
 										: item.onClick;
-								const actions = shouldShowRecentAgents && onNewChat ? (
-									<StudioSidebarAgentsCreateAction onClick={onNewChat} />
+								const actions = shouldShowRecentAgents && onCreateAgent ? (
+									<StudioSidebarAgentsCreateAction onClick={onCreateAgent} />
 								) : item.actions;
 
 								return (
@@ -493,6 +496,7 @@ export function RovoAppSidebar({
 	isAgentsHomeActive = false,
 	isResizing,
 	selectedAgentId,
+	onCreateAgent,
 	onDeleteAgent,
 	onDeleteThread,
 	onNewChat,
@@ -537,6 +541,7 @@ export function RovoAppSidebar({
 					agentCreationThreads={agentCreationThreads}
 					generatingAgents={generatingAgents}
 					isAgentsHomeActive={isAgentsHomeActive}
+					onCreateAgent={onCreateAgent}
 					onDeleteAgent={onDeleteAgent}
 					onDeleteAgentCreationThread={(threadId) => {
 						void onDeleteThread(threadId);
