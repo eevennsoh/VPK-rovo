@@ -8,11 +8,27 @@ are subagents instead.
 ## The idea
 
 A frontier model (Fable 5) handles **planning and synthesis** only. Cheaper
-models (Sonnet 5) execute the token-heavy mechanical work in **isolated
-parallel contexts**. Raw material — web pages, file contents, logs — stays in
-worker contexts; the orchestrator receives only distilled findings. Two wins
+models execute the token-heavy mechanical work in **isolated parallel
+contexts**. Raw material — web pages, file contents, logs — stays in worker
+contexts; the orchestrator receives only distilled findings. Two wins
 compound: most input tokens bill at worker rates, and the orchestrator's
 context window stays small enough to plan well late into a task.
+
+## Executor backends
+
+The pattern runs on either of two worker mechanisms; the orchestration rules
+below apply to both:
+
+- **Codex CLI (default)** — GPT-5.5 xhigh `codex exec` processes via
+  background Bash; reports are `--output-last-message` files. The
+  orchestrator's assumptions about these workers come from
+  `codex-executor.md`.
+- **Sonnet subagents (`--claude`)** — `vpk-agent-worker` via the Agent tool,
+  as described in the rest of this document.
+
+"Wait for every worker before concluding" applies equally to background Bash
+codex runs: collect every output file (or explicit failure) before
+synthesizing.
 
 ## Measured economics (cookbook benchmark, a source-verification coverage task)
 

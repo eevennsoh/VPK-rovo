@@ -51,10 +51,10 @@ the widest line) and a short word (< `minLastLineChars`) is flagged as a widow.
 Symptom: a lone short word dangling on its own line.
 
 ### focal
-Counts uses of `var(--primary-blue)` inside ordinary SVGs. More than
-`maxPrimaryBlueElements` warns because diagrams should keep one focal accent.
-SVGs marked `data-vpk-illustration` are exempt; they use the `--ill-*`
-technical illustration ramp instead.
+Counts uses of `var(--focal)` inside ordinary SVGs. More than
+`maxFocalElements` warns because diagrams should keep one darkest-ink focal
+element. SVGs marked `data-vpk-illustration` are exempt from this advisory
+count, but they still need to follow the grayscale `--ill-*` figure grammar.
 
 ### motion-budget
 Scans authored CSS motion durations in `<style>` blocks and inline styles. Any

@@ -20,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, validateHtmlFile } from "./check-html.mjs";
+import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, collectSvgGrammarIssues, validateHtmlFile } from "./check-html.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,23 +31,23 @@ const TEMPLATES_DIR = path.join(SKILL_ROOT, "assets", "templates");
 const PLACEHOLDER_PATTERN = /\{\{[^}]+\}\}/g;
 
 // vpk identity check — required tokens that should appear in templates.
-const REQUIRED_FONT_FACES = ["Charlie Display", "Charlie Text", "Atlassian Mono"];
-const legacyElectricBlueprint = new RegExp(`#${"3553ff"}`, "i");
-const legacyAccentBlue = new RegExp(`#${"1B3FE5"}`, "i");
-const legacyFontFamilyPattern = new RegExp(`\\b${"Ge"}${"ist"}(?:\\s+Mono|\\s+Pixel)?\\b`);
-const legacyFontUrlPattern = new RegExp(`${"vercel"}\\.com/font`, "i");
-const legacyIdentityPattern = new RegExp(`${"terminal"}\\s*(?:/|×|x|\\+|and)\\s*${"blue"}${"print"}`, "i");
+const REQUIRED_FONT_FACES = ["Geist", "Geist Mono", "Geist Mono Numeric"];
 const FORBIDDEN_KAMI_LEAKAGE = [
-	{ pattern: /#1B365D/i, label: "kami brand color #1B365D (should use vpk semantic brand aliases)" },
-	{ pattern: legacyElectricBlueprint, label: "legacy nonsemantic accent literal (should use semantic aliases)" },
-	{ pattern: legacyAccentBlue, label: "legacy vpk accent-blue literal (should use --primary-blue)" },
-	{ pattern: new RegExp(`--${"blue"}${"print"}(?:-tint(?:-strong)?)?\\b`), label: "legacy primary token alias (should use primary-blue tokens)" },
-	{ pattern: /#f5f4ed/i, label: "kami parchment #f5f4ed (should use --paper)" },
+	{ pattern: /Charlie (?:Display|Text)/, label: "legacy Charlie font family" },
+	{ pattern: /Atlassian Mono/, label: "legacy Atlassian Mono font family" },
+	{ pattern: /Geist Pixel|--font-pixel/, label: "legacy Geist Pixel garnish" },
+	{ pattern: /#0c66e4/i, label: "legacy ADS blue #0c66e4" },
+	{ pattern: /#579dff/i, label: "legacy ADS blue #579dff" },
+	{ pattern: /#0055cc/i, label: "legacy ADS blue #0055cc" },
+	{ pattern: /#e9f2ff/i, label: "legacy ADS blue tint #e9f2ff" },
+	{ pattern: /#2f6f4f/i, label: "legacy v1 green accent #2f6f4f" },
+	{ pattern: /#5a9e7c/i, label: "legacy v1 green accent #5a9e7c" },
+	{ pattern: /rgba\(\s*47\s*,\s*111\s*,\s*79\s*,\s*(?:0?\.\d+|1(?:\.0+)?)\s*\)/i, label: "legacy v1 green accent wash" },
+	{ pattern: /rgba\(\s*90\s*,\s*158\s*,\s*124\s*,\s*(?:0?\.\d+|1(?:\.0+)?)\s*\)/i, label: "legacy v1 dark green accent wash" },
+	{ pattern: /--primary-blue\b/, label: "legacy primary-blue token alias" },
+	{ pattern: /var\(--ds-(?!brand-override\b)/, label: "legacy ADS token wrapper" },
+	{ pattern: /font-family:\s*Charter\b/, label: "kami Charter serif (should be Geist)" },
 	{ pattern: /TsangerJinKai02/, label: "kami CJK font TsangerJinKai02" },
-	{ pattern: /font-family:\s*Charter\b/, label: "kami Charter serif (should be Charlie Text)" },
-	{ pattern: legacyFontFamilyPattern, label: "legacy font family" },
-	{ pattern: legacyFontUrlPattern, label: "legacy font URL" },
-	{ pattern: legacyIdentityPattern, label: "legacy identity phrase" },
 	{ pattern: /cdn\.jsdelivr\.net|cdnjs|fonts\.googleapis|fonts\.gstatic/i, label: "remote font/asset URL (violates offline rule)" },
 	{ pattern: /<meta\s+name="generator"\s+content="Kami"/i, label: "kami generator tag (should be vpk-html)" },
 ];
@@ -155,11 +155,12 @@ function checkTemplate(filePath) {
 	failures.push(...collectSelfReferentialCustomPropertyIssues(content));
 	failures.push(...collectPresentationIssues(content));
 	failures.push(...collectSmilMotionIssues(content));
+	failures.push(...collectSvgGrammarIssues(content));
 
-	if (!/--ease-out:\s*cubic-bezier\(0\.23,1,0\.32,1\)/.test(content)) {
+	if (!/--ease-out:\s*cubic-bezier\(0\.16,1,0\.3,1\)/.test(content)) {
 		failures.push("missing vpk motion easing token --ease-out");
 	}
-	if (!/--vpk-dur-enter:\s*280ms/.test(content)) {
+	if (!/--vpk-dur-enter:\s*140ms/.test(content)) {
 		failures.push("missing vpk motion duration token --vpk-dur-enter");
 	}
 	if (!/@media\s+print\s*\{[\s\S]*?(?:animation|transition|transform):\s*none\s*!important/i.test(content)) {
@@ -236,7 +237,7 @@ async function verify(filePath) {
 		await page.waitForTimeout(400);
 		const fontsReady = await page.evaluate(async () => {
 			try { await document.fonts.ready; } catch { /* noop */ }
-			const required = ["Charlie Display", "Charlie Text", "Atlassian Mono", "Atlassian Mono Numeric"];
+			const required = ["Geist", "Geist Mono", "Geist Mono Numeric"];
 			const results = [];
 			for (const family of required) {
 				try {

@@ -28,7 +28,7 @@ ${buildSharedCssBlock()}
 html {
 \tbackground: var(--paper-background);
 \tcolor: var(--ink);
-\tfont-family: "Atlassian Mono Numeric", var(--font-body);
+\tfont-family: "Geist Mono Numeric", var(--font-body);
 \tline-height: 1.6;
 }
 
@@ -46,33 +46,33 @@ main {
 }
 
 .eyebrow {
-\tcolor: var(--primary-blue);
-\tfont-family: var(--font-mono);
-\tfont-size: 10px;
-\tletter-spacing: 0.08em;
-\ttext-transform: uppercase;
+\tcolor: var(--muted-text);
+\tfont-family: var(--font-body);
+\tfont-size: 13px;
+\tletter-spacing: 0;
+\ttext-transform: none;
 }
 
 h1 {
 \tcolor: var(--headline);
 \tfont-family: var(--font-display);
-\tfont-size: clamp(34px, 6vw, 64px);
+\tfont-size: 36px;
+\tfont-weight: 500;
 \tletter-spacing: 0;
-\tline-height: 0.98;
+\tline-height: 1.14;
 }
 
 .summary {
 \tcolor: var(--muted-text);
-\tfont-size: 18px;
+\tfont-size: 17px;
+\tline-height: 1.6;
 \tmax-width: 64ch;
 }
 
 .figure-frame {
-\tbackground:
-\t\tradial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ill-hatch) 15%, transparent) 1px, transparent 1.5px),
-\t\tvar(--paper);
-\tbackground-size: 9px 9px;
+\tbackground: var(--paper);
 \tborder: 1px solid var(--rule);
+\tborder-radius: 6px;
 \tpadding: clamp(18px, 4vw, 36px);
 }
 
@@ -125,19 +125,19 @@ const examples = [
 	{
 		slug: "isometric-device",
 		title: "Isometric Device",
-		summary: "An isometric hardware shell using the full ADS blue ramp for faces, edges, and labels.",
+		summary: "An isometric hardware shell using the grayscale figure ramp for faces, edges, and labels.",
 		svg: `\t\t<svg data-vpk-illustration viewBox="0 0 720 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Isometric device shell with labeled screen, base, and connector rail.">
 \t\t\t<path d="M170 132 390 64 552 136 332 214Z" fill="var(--ill-tone1)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M332 214 552 136 552 264 332 342Z" fill="var(--ill-tone2)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M170 132 332 214 332 342 170 258Z" fill="var(--ill-tone3)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M228 148 390 100 494 144 332 198Z" fill="var(--paper)" stroke="var(--ill-line)"/>
-\t\t\t<path d="M252 232 302 256M252 250 302 274M252 268 302 292" stroke="var(--ill-hatch)" stroke-width="3"/>
+\t\t\t<path d="M252 232 302 256M252 250 302 274M252 268 302 292" stroke="var(--ill-hatch)" stroke-width="2"/>
 \t\t\t<path d="M426 246h82M426 264h60M426 282h72" stroke="var(--ill-line)" stroke-dasharray="24 6"/>
 \t\t\t<path d="M116 110h94" stroke="var(--ill-line)" stroke-dasharray="24 6"/>
 \t\t\t<path d="M210 110 196 102v16Z" fill="var(--ill-line)"/>
-\t\t\t<text x="72" y="114" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">SCREEN</text>
+\t\t\t<text x="72" y="114" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">screen</text>
 \t\t\t<path d="M556 304c34 0 42-18 64-18" stroke="var(--ill-line)"/>
-\t\t\t<text x="626" y="290" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">RAIL</text>
+\t\t\t<text x="626" y="290" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">rail</text>
 \t\t</svg>`,
 	},
 	{
@@ -151,7 +151,7 @@ const examples = [
 \t\t\t</g>
 \t\t\t<g>
 \t\t\t\t<path d="M180 216 350 162 520 216 350 278Z" fill="var(--ill-tone2)" stroke="var(--ill-line)"/>
-\t\t\t\t<path d="M250 218h200" stroke="var(--ill-hatch)" stroke-width="3" stroke-dasharray="10 10"/>
+\t\t\t\t<path d="M250 218h200" stroke="var(--ill-hatch)" stroke-width="2" stroke-dasharray="10 10"/>
 \t\t\t\t<animateTransform attributeName="transform" type="translate" begin="indefinite" dur="240ms" values="0 0; 0 0" keySplines="0.25 0.1 0.25 1" calcMode="spline" fill="freeze"/>
 \t\t\t</g>
 \t\t\t<g>
@@ -159,28 +159,28 @@ const examples = [
 \t\t\t\t<animateTransform attributeName="transform" type="translate" begin="indefinite" dur="240ms" values="0 46; 0 0" keySplines="0.25 0.1 0.25 1" calcMode="spline" fill="freeze"/>
 \t\t\t</g>
 \t\t\t<path d="M112 158h60M112 216h60M112 274h60" stroke="var(--ill-line)" stroke-dasharray="24 6"/>
-\t\t\t<text x="66" y="162" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">TOP</text>
-\t\t\t<text x="52" y="220" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">CORE</text>
-\t\t\t<text x="44" y="278" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">BASE</text>
+\t\t\t<text x="66" y="162" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">top</text>
+\t\t\t<text x="52" y="220" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">core</text>
+\t\t\t<text x="44" y="278" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">base</text>
 \t\t</svg>`,
 		script: smilStarter,
 	},
 	{
 		slug: "annotated-mechanism",
 		title: "Annotated Mechanism",
-		summary: "Dimension lines, leader curls, and uppercase mono labels for a compact mechanism diagram.",
+		summary: "Dimension lines, leader curls, and compact mono labels for a compact mechanism diagram.",
 		svg: `\t\t<svg data-vpk-illustration viewBox="0 0 720 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Annotated mechanism with dimension line, curled leader, actuator, and guide rail.">
 \t\t\t<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="var(--ill-line)"/></marker></defs>
 \t\t\t<rect x="180" y="164" width="300" height="82" rx="8" fill="var(--ill-tone1)" stroke="var(--ill-line)"/>
-\t\t\t<path d="M208 204h242" stroke="var(--ill-hatch)" stroke-width="3" stroke-dasharray="12 10"/>
+\t\t\t<path d="M208 204h242" stroke="var(--ill-hatch)" stroke-width="2" stroke-dasharray="12 10"/>
 \t\t\t<circle cx="268" cy="204" r="34" fill="var(--ill-tone2)" stroke="var(--ill-line)"/>
 \t\t\t<circle cx="396" cy="204" r="34" fill="var(--ill-tone3)" stroke="var(--ill-line)"/>
-\t\t\t<path d="M268 204h128" stroke="var(--ill-line)" stroke-width="4"/>
+\t\t\t<path d="M268 204h128" stroke="var(--ill-line)" stroke-width="2.5"/>
 \t\t\t<path d="M180 286h300" stroke="var(--ill-line)" stroke-dasharray="24 6" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
 \t\t\t<path d="M180 252v50M480 252v50" stroke="var(--ill-line)"/>
-\t\t\t<text x="330" y="312" text-anchor="middle" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">300 UNIT SPAN</text>
+\t\t\t<text x="330" y="312" text-anchor="middle" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">300 unit span</text>
 \t\t\t<path d="M520 154c34-18 52 2 40 22-10 16 8 28 36 20" stroke="var(--ill-line)"/>
-\t\t\t<text x="602" y="202" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">CURL LEADER</text>
+\t\t\t<text x="602" y="202" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">curl leader</text>
 \t\t</svg>`,
 	},
 	{
@@ -194,9 +194,9 @@ const examples = [
 \t\t\t<path d="M212 156h296v24H212Z" fill="var(--ill-tone2)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M212 226h296v24H212Z" fill="var(--ill-tone3)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M520 152h76" stroke="var(--ill-line)" stroke-dasharray="24 6"/>
-\t\t\t<text x="604" y="156" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">LAYER A</text>
+\t\t\t<text x="604" y="156" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">layer A</text>
 \t\t\t<path d="M520 240h76" stroke="var(--ill-line)" stroke-dasharray="24 6"/>
-\t\t\t<text x="604" y="244" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">LAYER B</text>
+\t\t\t<text x="604" y="244" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">layer B</text>
 \t\t</svg>`,
 	},
 	{
@@ -212,10 +212,10 @@ const examples = [
 \t\t\t<path d="M364 210v58l-84-42v-56M364 268l84-42v-56" fill="var(--ill-tone3)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M554 210v58l-84-42v-56M554 268l84-42v-56" fill="var(--ill-tone1)" stroke="var(--ill-line)"/>
 \t\t\t<path d="M248 204h58M438 204h58" stroke="var(--ill-line)" stroke-width="2" marker-end="url(#pipe-arrow)"/>
-\t\t\t<path d="M136 226h78M326 226h78M516 226h78" stroke="var(--ill-hatch)" stroke-width="3" stroke-dasharray="12 10"/>
-\t\t\t<text x="174" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">SOURCE</text>
-\t\t\t<text x="364" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">TRANSFORM</text>
-\t\t\t<text x="554" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Atlassian Mono, monospace" font-size="10" letter-spacing="0.08em">DELIVER</text>
+\t\t\t<path d="M136 226h78M326 226h78M516 226h78" stroke="var(--ill-hatch)" stroke-width="2" stroke-dasharray="12 10"/>
+\t\t\t<text x="174" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">source</text>
+\t\t\t<text x="364" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">transform</text>
+\t\t\t<text x="554" y="118" text-anchor="middle" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" letter-spacing="0">deliver</text>
 \t\t</svg>`,
 	},
 ];

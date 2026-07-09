@@ -16,7 +16,7 @@
 		"minLastLineWidthRatio": 0.15
 	},
 	"focal": {
-		"maxPrimaryBlueElements": 1
+		"maxFocalElements": 1
 	},
 	"motionBudget": {
 		"maxDurationMs": 300,

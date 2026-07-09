@@ -106,7 +106,7 @@ export function buildPresentationCss() {
 \t\tfont-family: var(--font-mono);
 \t\tfont-size: 12px;
 \t\tgap: 6px;
-\t\tletter-spacing: 0.04em;
+\t\tletter-spacing: 0;
 \t\tpadding: 8px 10px;
 \t\tposition: fixed;
 \t\tright: 18px;
@@ -160,12 +160,12 @@ export function buildPresentationCss() {
 \t}
 
 \t.vpk-presenter-kicker {
-\t\tcolor: var(--primary-blue);
-\t\tfont-family: var(--font-mono);
-\t\tfont-size: 11px;
-\t\tletter-spacing: 0.08em;
+\t\tcolor: var(--muted-text);
+\t\tfont-family: var(--font-body);
+\t\tfont-size: 13px;
+\t\tletter-spacing: 0;
 \t\tmargin-bottom: 10px;
-\t\ttext-transform: uppercase;
+\t\ttext-transform: none;
 \t}
 
 \t.vpk-presenter-notes-text {
@@ -400,8 +400,8 @@ export function buildDocNavJs() {
 
 \t.docnav-controls button:hover,
 \t.docnav-controls button:focus-visible {
-\t\tcolor: var(--primary-blue);
-\t\tborder-color: var(--primary-blue);
+\t\tcolor: var(--accent);
+\t\tborder-color: var(--accent);
 \t\toutline: none;
 \t}
 

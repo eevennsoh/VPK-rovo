@@ -1,21 +1,23 @@
-# Brand profile
+# Brand Profile
 
-An **optional**, offline personalization layer. When present, vpk-html documents
-adopt the author's identity and a single accent hue without leaving the Atlassian
-deck identity. There is **no runtime** — the skill agent reads this profile and
-bakes the values into the output while filling the template (see SKILL.md Step 0).
+An optional, offline personalization layer. When present, vpk-html documents
+can adopt author/contact details and a local logo without leaving the
+Algebrica editorial identity. A brand color may be recorded as customer
+metadata, but the built-in identity stays grayscale unless the prompt
+explicitly requests a branded override. There is no runtime; the agent reads
+this profile while filling the template and bakes values into the output.
 
 ## Location
 
 - Primary: `~/.config/vpk-html/brand.md`
 - Fallback: `~/.vpk-html/brand.md`
 
-If neither exists, render with the built-in identity (Atlassian blue accent, no
-logo). The profile is never required.
+If neither exists, render with the built-in identity: warm paper, ink links,
+grayscale ink chrome, grayscale figures, and no logo.
 
 ## Format
 
-YAML frontmatter + freeform Markdown habit notes:
+YAML frontmatter plus freeform Markdown habit notes:
 
 ```markdown
 ---
@@ -25,7 +27,7 @@ role: Staff Engineer
 email: jordan@example.com
 website: jordanlee.dev
 company: Northwind
-brand_color: "#6554C0"      # single accent hue (hex)
+brand_color: "#6554C0"      # customer brand metadata; not applied by default
 logo: ~/brand/northwind.png # local image; base64-inlined at fill time
 ---
 
@@ -36,57 +38,55 @@ logo: ~/brand/northwind.png # local image; base64-inlined at fill time
 - Never use exclamation marks in formal letters.
 ```
 
-Frontmatter keys are all optional. Habit notes are prose guidance you apply with
-editorial judgment — they are *defaults*, not hard rules.
+Frontmatter keys are optional. Habit notes are editorial defaults, not hard
+rules.
 
 ## Precedence
 
 Highest wins:
 
-1. **Explicit prompt** — what the user says for this specific document.
-2. **Editorial judgment** — the right call for this genre/audience.
-3. **Habit notes** — the prose preferences above.
-4. **Frontmatter** — the structured identity values.
-5. **Built-in default** — Atlassian identity, blue accent, no logo.
+1. Explicit prompt for this document.
+2. Editorial judgment for the genre and audience.
+3. Habit notes.
+4. Frontmatter.
+5. Built-in default.
 
-## How the agent bakes it (offline)
+## How The Agent Bakes It
 
-There is no build step that reads this file. While filling the template:
+### Identity Substitution
 
-### Layer A — identity substitution
+Fill `{{AUTHOR}}`, `{{NAME}}`, role, email, `{{PAGE / CONTACT}}`, company, and
+similar placeholders from frontmatter unless the prompt overrides them.
 
-Fill `{{AUTHOR}}` / `{{NAME}}` / role / `{{email}}` / `{{PAGE / CONTACT}}` /
-company placeholders from frontmatter, unless the prompt overrides them.
+### Brand Color
 
-### Layer C — brand color (hue-on-accent)
+If `brand_color` is set, keep it as customer metadata unless the prompt
+explicitly asks for a customer-branded page. The default Algebrica render does
+not change `--accent`; chrome stays grayscale, content links underline only on
+hover/focus, and figures stay grayscale.
 
-If `brand_color` is set, change the inline alias:
+For an explicit branded override only, change the inline chrome alias:
 
 ```css
-/* from */ --brand: var(--primary-blue);
-/* to   */ --brand: var(--ds-brand-override, #6554C0);
+/* from */ --accent: #312f2f;
+/* to   */ --accent: var(--ds-brand-override, #6554C0);
 ```
 
-- Stays **offline** (no remote) and **check-clean**: `check-html.mjs` exempts
-  `--x: var(--ds-…, #hex)` as a semantic fallback. `--ds-brand-override` is
-  intentionally undefined, so it resolves to the hex.
-- This is **hue-on-accent only.** It re-tints `var(--brand)` usages (mastheads,
-  emphasis, accent rules). It does **not** replace `--primary-blue`, status
-  colors, or neutrals — the ADS palette stays in force. Do not rewrite the
-  palette to match a brand; vpk-html is an Atlassian-identity system with a
-  tintable accent, not a white-label themer.
+`check-html.mjs` allows only this `--ds-brand-override` fallback shape. It stays
+offline and intentionally affects page chrome only. It must not rewrite
+`--focal`, `--ill-*`, status tokens, links, or neutral paper/ink tokens.
+Figures stay grayscale.
 
 ### Logo
 
-If `logo:` resolves to a local image, base64-inline it into the header slot as a
-`data:image/<type>;base64,…` URI (already exempt from the remote-asset check).
-Never emit a remote URL or a local file path. If the logo is missing or the
-profile is absent, render no logo.
+If `logo:` resolves to a local image, base64-inline it as a `data:image/*` URI
+in the header slot. Never emit a remote URL or local file path. If the logo is
+missing or the profile is absent, render no logo.
 
 ## Verification
 
 A document baked from a profile must still pass the full offline gate:
 
 ```bash
-node scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html   # no {{...}}, no remote refs, brand override clean
+node .agents/skills/vpk-html/scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html
 ```

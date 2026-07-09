@@ -63,8 +63,34 @@ These original shells map the document patterns from
 | Sums to ~100%, ≤ 6 items | `assets/diagrams/donut-chart.html` |
 | OHLC / stock price history | `assets/diagrams/candlestick.html` |
 | + and − bridge to a total | `assets/diagrams/waterfall.html` |
+| Quartiles, whiskers, outliers | `assets/diagrams/box-plot.html` |
+| Frequency distribution | `assets/diagrams/histogram.html` |
+| Multiple stacked distributions | `assets/diagrams/ridgeline.html` |
+| Individual observations with density | `assets/diagrams/beeswarm.html` |
+| One-dimensional individual observations | `assets/diagrams/dot-strip.html` |
+| Before/after rank or share change | `assets/diagrams/slope-chart.html` |
+| Current vs target gap by category | `assets/diagrams/dumbbell.html` |
+| Ranked values with lightweight stems | `assets/diagrams/lollipop.html` |
+| Actual value against target and bands | `assets/diagrams/bullet.html` |
+| Mirrored demographic cohorts | `assets/diagrams/population-pyramid.html` |
+| Time series with event callouts | `assets/diagrams/annotated-line.html` |
+| Relative change from baseline 100 | `assets/diagrams/index-chart.html` |
+| Repeated comparable time-series panels | `assets/diagrams/small-multiples.html` |
+| Observed trend against expected band | `assets/diagrams/band-chart.html` |
+| Changing composition over time | `assets/diagrams/stacked-area.html` |
+| Daily intensity over a calendar year | `assets/diagrams/calendar-heatmap.html` |
+| Two-category intensity matrix | `assets/diagrams/matrix-heatmap.html` |
+| Fixed-count part-to-whole units | `assets/diagrams/waffle.html` |
+| Regional intensity on a simple grid | `assets/diagrams/grid-choropleth.html` |
+| Hierarchical area share | `assets/diagrams/treemap.html` |
+| Flow volumes between stages | `assets/diagrams/sankey.html` |
+| Ordered node relationships | `assets/diagrams/arc-diagram.html` |
+| Two-variable relationship | `assets/diagrams/scatter.html` |
+| Two-variable trajectory over time | `assets/diagrams/connected-scatter.html` |
+| Hierarchical composition by depth | `assets/diagrams/icicle.html` |
 
-Read `references/diagrams.md` for the selection guide and focal rule.
+Read `references/diagrams.md` for the selection guide and focal rule. Read
+`references/charts.md` before editing animation or interaction behavior.
 
 ## Technical illustrations
 
@@ -80,9 +106,10 @@ exemplars to remix, not data-shape diagrams.
 | Cutaway material section | `assets/illustrations/hatched-cross-section.html` |
 | Architecture pipeline / module flow | `assets/illustrations/isometric-pipeline.html` |
 
-Read `references/illustrations.md` before drawing. Ordinary diagrams keep one
-primary-blue focal element; technical illustrations may use the full `--ill-*`
-blue ramp. SMIL motion must use `begin="indefinite"` plus the
+Read `references/illustrations.md` and `references/svg-style.md` before
+drawing. Ordinary diagrams keep one darkest-ink focal element; technical
+illustrations use the grayscale `--ill-*` figure ramp. SMIL motion must use
+`begin="indefinite"` plus the
 `data-vpk-smil-starter` guard.
 
 ## Workflow at a glance
@@ -166,7 +193,7 @@ faces into each output path by hand.
   <svg viewBox="0 0 960 460" xmlns="http://www.w3.org/2000/svg">
     <!-- pasted SVG content; replace {{System name}} etc. -->
   </svg>
-  <figcaption>One primary-blue node marks the focal component.</figcaption>
+  <figcaption>One darkest-ink node marks the focal component.</figcaption>
 </figure>
 ```
 
@@ -191,22 +218,34 @@ general-video composition after user approval.
 
 ## Identity
 
-Editorial / engineering manual — implementation cousin: [aiengineeringfromscratch.com](https://aiengineeringfromscratch.com/) (built in the [makingsoftware.com](https://www.makingsoftware.com/) lineage).
+Algebrica editorial / engineering manual: warm paper, near-monochrome ink,
+quiet borders, Geist typography, and grayscale figures.
 
-**Light (default):** `--paper`, `--ink`, `--primary-blue`, and `--surface-raised` resolve through VPK/ADS semantic tokens with embedded offline fallbacks.
-**Dark** (`<html data-theme="dark">`): the same unprefixed aliases switch to dark semantic fallbacks without importing runtime CSS.
+**Light (default):** `--paper`, `--paper-background`, `--ink`, grayscale
+`--accent` chrome, `--focal`, sampled `--ill-*` figure tokens, component
+chrome, and `--heat0` → `--heat4` resolve from embedded offline tokens.
+**Dark** (`<html data-theme="dark">`): the same unprefixed aliases switch to
+warm paper-dark fallbacks without importing runtime CSS.
 
-- Fonts: **Charlie Display** for mastheads, slide titles, headline stats, and section heads; **Charlie Text** for body, labels, tables, and ordinary document text; **Atlassian Mono** for code, metrics, dates, counters, figure/table numbers, chart labels, and technical identifiers
-- Numerals: **Atlassian Mono Numeric** is embedded with `unicode-range: U+0030-0039` so digits inside Charlie text render in Atlassian Mono
-- All headings: Charlie Display, no negative tracking, in `var(--headline)` or `var(--primary-blue)`
-- Body bg: plain `var(--paper-background)` with flat document surfaces and opt-in raised cards
-- Type scale: cover-title 56px / h1 36px / h2 26px / h3 18px / h4-h6 14px / body+p 18px / fig-label 10px
-- Hard shadows opt-in: add `.card / .callout / .takeaway / .surface-raised / .shadow-hard` for `box-shadow: 3px 3px 0 var(--near-black)` + 1px ink border
-- Deck rule: `<hr class="ascii">` for primary-blue dotted separator
-- Dotted divider: `<hr>` styled via radial-gradient row of 1px dots
-- `long-doc.html` only: `.spread` two-column primitive (prose left ~42%, figure right ~58%) with vertical `.gutter-tag` for FIG_NN labels
+- Fonts: **Geist** for mastheads, slide titles, prose, labels, tables, and ordinary document text; **Geist Mono** for code, metrics, dates, counters, figure/table numbers, chart labels, and technical identifiers.
+- Numerals: **Geist Mono Numeric** is embedded with `unicode-range: U+0030-0039` so digits inside Geist text render in Geist Mono.
+- Display headings: Geist 400-500, no negative tracking, in `var(--headline)` or `var(--ink)`.
+- Body bg: plain `var(--paper-background)` with flat document surfaces, hairline rules, and borders over shadows.
+- Type scale: page title 36px / h1 36px / h2 26px / h3 19px / h4-h6 15px / long-form body+p 17px / 23px / labels 13px.
+- Prose: `.post-section` content is justified, hyphenated, break-word safe, and separated by 60px padding, a hairline, and 50px margin.
+- Breadcrumb/eyebrow: the only uppercase role; Geist Mono 12px / 600 with 2px tracking in muted ink.
+- Tables: Geist 12px, collapsed 1px `--rule` cells, `8px 12px` centered padding, `--table-header` header wash, no radius/zebra/hover.
+- Links: no visible default underline. Content links animate a 4px-offset underline in on hover/focus; chrome links never underline and shift only opacity or muted/ink color. Focus rings use ink.
+- Figures: one `var(--focal)` element at `stroke-width="2"`; supporting series use grayscale tone, dash, marker, and layering. No hue in generated SVGs.
+- Components: use bordered list-table cards, vote chips, tinted code cards, grayscale pill buttons, centered section heads, steps lists, and the warm heatmap ramp.
+- Deck rule: `<hr class="ascii">` for a quiet dotted separator.
+- Dotted divider: `<hr>` styled via radial-gradient row of 1px dots.
+- `long-doc.html` only: `.spread` two-column primitive (prose left ~42%, figure right ~58%) with vertical `.gutter-tag` for FIG_NN labels.
 
-**Bans:** no `border-left/right > 1px` colored side stripes; no raw color literals in authored/generated surfaces — use the shared unprefixed aliases.
+**Bans:** no `border-left/right > 1px` colored side stripes; no raw color
+literals in authored/generated surfaces; no gradients, filters, `--accent*`,
+or `--link*` inside generated SVGs. Use `data-vpk-external-asset` only for
+user-supplied logos/screenshots.
 
 **Activate dark mode in any rendered doc:**
 ```js
@@ -220,6 +259,7 @@ document.documentElement.setAttribute('data-theme', 'dark');
 3. Template-specific: `references/resume-writing.md` for resumes,
    `references/diagrams.md` for diagrams,
    `references/illustrations.md` for technical illustrations,
+   `references/svg-style.md` for SVG grammar,
    `references/presentation.md` for decks
 4. `references/design.md` (only if touching CSS, tokens, or motion)
 5. `references/video-export.md` (only for user-approved MP4 conversion)
