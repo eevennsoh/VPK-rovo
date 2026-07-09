@@ -343,6 +343,32 @@ The following `.agents/rules/` files load automatically when editing matching fi
 
 ## Cursor Cloud specific instructions
 
+### Required secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `ATLASSIAN_NPM_TOKEN` | Auth for `@atlassian/logo-third-party` from the private registry — **required for `pnpm install`** |
+| `ROVODEV_SESSION_TOKEN` | Backend → Rovo Serve auth (only needed for Rovo chat flows) |
+| `ASAP_PRIVATE_KEY` | AI Gateway ASAP auth |
+| `ASAP_KID` | AI Gateway ASAP key ID |
+| `ASAP_ISSUER` | AI Gateway ASAP issuer |
+| `AI_GATEWAY_URL` | AI Gateway endpoint |
+| `AI_GATEWAY_USE_CASE_ID` | AI Gateway use case |
+
+### Update script (paste into the Update Script box)
+
+```
+{
+  echo "registry=https://registry.npmjs.org/"
+  echo "@atlaskit:registry=https://registry.npmjs.org/"
+  echo "@atlassian:registry=https://packages.atlassian.com/artifactory/api/npm/atlassian-npm/"
+  echo "//packages.atlassian.com/artifactory/api/npm/atlassian-npm/:_authToken=\${ATLASSIAN_NPM_TOKEN}"
+  echo "//packages.atlassian.com/api/npm/atlassian-npm/:_authToken=\${ATLASSIAN_NPM_TOKEN}"
+} > "$HOME/.npmrc"
+test -f .env.local || cp .env.local.example .env.local
+pnpm install
+```
+
 ### Services overview
 
 | Service | Command | Default Port | Required? |
@@ -351,10 +377,8 @@ The following `.agents/rules/` files load automatically when editing matching fi
 | Express Backend | `pnpm run dev:backend` | 8080 | Yes |
 | Rovo Serve | `pnpm run dev:rovo` | 8000 | Only for Rovo-selected chat/tool flows |
 
-Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (runs through `portless run` → stable `.localhost` URL via `pnpm ports`)
-Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
-Start all three locally when the Rovo CLI is available: `pnpm run rovo`
-Use vanilla `portless run` (bare on main/branch, `--name <worktree-dir>` when detached) when you want a Portless URL directly; the `/portless` command resolves the args for you.
+Start frontend + backend together: `pnpm run dev`
+Start all three (including Rovo): `pnpm run rovo` (requires `rovo` CLI on PATH)
 
 ### Running checks
 
@@ -365,11 +389,13 @@ Use vanilla `portless run` (bare on main/branch, `--name <worktree-dir>` when de
 
 ### Non-obvious caveats
 
-- The `.env.local` file is created from `.env.local.example` on first setup. The dev servers (backend + frontend) start without AI Gateway credentials; the UI renders fully, but AI Gateway-backed chat/media return config errors and Rovo-selected flows still need `ROVO_SESSION_TOKEN` plus Rovo Serve.
-- Backend port is written to `.dev-backend-port`, frontend to `.dev-frontend-port` at startup — these are useful for verifying which ports are in use.
-- `pnpm run dev` starts both backend and frontend via `concurrently`; do not run `pnpm run rovo` at the same time or you'll get port conflicts. In parallel worktrees, prefer `pnpm run dev:tmux:start` and read the actual ports from `.dev-*` files or `pnpm ports`.
-- The `pnpm install` warning about ignored build scripts (better-sqlite3, node-llama-cpp) is expected and does not affect the application — these are transitive deps from optional features.
-- Health endpoint: `curl http://localhost:<backend-port>/api/health` using the port in `.dev-backend-port` — returns JSON with service status and auth config summary.
-- The `rovo` CLI (Rovo Serve) is not available in cloud VMs — use `pnpm run dev` instead of `pnpm run rovo`. Rovo-selected chat/tool flows won't work without Rovo, but AI Gateway-backed chat, UI, component docs, and non-chat API routes can still function when credentials and egress are available.
-- AI Gateway endpoints require outbound HTTPS to `ai-gateway.us-east-1.staging.atl-paas.net`. If the cloud VM has restricted egress, gateway-backed chat/helper/media features return config or request errors gracefully.
-- When writing `ASAP_PRIVATE_KEY` to `.env.local`, the value already includes surrounding double quotes and literal `\n` escape sequences — do not add extra quotes around it or you'll get "Maximum call stack size exceeded" from Next.js env parsing.
+- `ATLASSIAN_NPM_TOKEN` must be configured as a secret and written to `~/.npmrc` before `pnpm install` will succeed. The CI workflow (`.github/workflows/ci.yml`) shows the exact pattern. Without it, the private `@atlassian/logo-third-party` package fails to resolve.
+- The backend reads secrets from `process.env` directly (with `.env.local` as fallback via dotenv). Cursor Cloud secrets injected as env vars are picked up without needing to write them to `.env.local`.
+- `.env.local` is still useful for `next dev` which reads it automatically; create from `.env.local.example` if missing.
+- Backend port is written to `.dev-backend-port`, frontend to `.dev-frontend-port` at startup.
+- `pnpm run dev` starts both backend and frontend via `concurrently`; do not run `pnpm run rovo` at the same time or you'll get port conflicts.
+- The `pnpm install` warning about ignored build scripts (better-sqlite3, node-llama-cpp) is expected and does not affect the application.
+- Health endpoint: `curl http://localhost:<backend-port>/api/health` — returns JSON with service status and auth config summary.
+- The `rovo` CLI (Rovo Serve) is not available in cloud VMs — use `pnpm run dev` instead. AI Gateway-backed routes can still function when credentials and egress are available.
+- AI Gateway endpoints require outbound HTTPS to `ai-gateway.us-east-1.staging.atl-paas.net`. If the cloud VM has restricted egress, gateway-backed features return errors gracefully.
+- When writing `ASAP_PRIVATE_KEY` to `.env.local`, the value already includes surrounding double quotes and literal `\n` escape sequences — do not add extra quotes.
