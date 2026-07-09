@@ -42,8 +42,8 @@ status readouts, and implementation briefs.
   and vpk-native examples.
 - **A reference-manual homepage** at [`index.html`](index.html).
 - **LLM-facing reference docs** for writing, anti-patterns, diagrams,
-  illustrations, presentation mode, video export, PDF export, quality gates, and
-  production troubleshooting.
+  illustrations, presentation mode, video export, PDF export, quality gates,
+  GitHub Pages publishing, and production troubleshooting.
 
 ## Quick start
 
@@ -67,7 +67,13 @@ PDFs, screenshots, and validation captures inside the same slug folder.
 ## Invoking the skill
 
 In Cursor / Claude Code, prefix your message with `/vpk-html`. Optional
-doc-type hints can follow: `/vpk-html resume`, `/vpk-html one-pager`.
+doc-type hints and flags can follow: `/vpk-html resume`,
+`/vpk-html one-pager`, `/vpk-html --github`.
+
+Use `/vpk-html --github` when the final artifact should be live on GitHub
+Pages. The publish helper validates the document, copies it to `index.html`,
+creates or reuses a GitHub repo, pushes `main`, enables Pages from `/`, and
+prints the public URL.
 
 See [`CHEATSHEET.md`](CHEATSHEET.md) for the route table that maps user intent
 to template file.
@@ -85,6 +91,7 @@ node scripts/ensure-fonts.mjs                     # fetch fonts to assets/fonts/
 
 node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF (Chromium, Node-only)
 node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]  # landing companions + responsive verify
+node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]  # publish to GitHub Pages
 node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
 
 node scripts/port-kami.mjs [--templates|--diagrams|--demos]  # re-port templates + diagrams + curated demos from kami
@@ -113,7 +120,7 @@ node scripts/landing.mjs                          # regenerate assets/landing/ s
 | `assets/fonts/` | Charlie Display, Charlie Text, and Atlassian Mono (inlined as base64 at port time) |
 | `output/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
-| `references/` | Anti-patterns, diagrams, illustrations, presentation, video-export, resume-writing, writing, design, production, source-policy, accessibility, tokens.json |
+| `references/` | Anti-patterns, diagrams, illustrations, presentation, video-export, resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
 | `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road

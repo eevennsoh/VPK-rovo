@@ -1,11 +1,11 @@
 ---
 name: vpk-html
-description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus an optional derived PDF export and a landing/product-site track. Invoked explicitly via /vpk-html (optionally with a doc-type hint, e.g. /vpk-html resume); does not auto-trigger on casual mentions of HTML or documents.'
+description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.'
 purpose: Render explicitly requested documents, reports, decks, resumes, and engineering artifacts into offline single-file HTML with VPK/Kami quality gates.
 owner: VPK
 category: artifact-generation
 inputs: User source material, requested document type, optional brand profile, HTML templates, and quality constraints.
-outputs: Single-file HTML artifact, optional PDF export, validation report, and local output path.
+outputs: Single-file HTML artifact, optional PDF export, optional GitHub Pages URL, validation report, and local output path.
 required_tools: shell, node, browser verification tools
 validation_command: node .agents/skills/vpk-html/scripts/check-html.mjs
 generated_artifacts: HTML files, optional PDFs, screenshots, and local output assets under output/vpk-html/<slug>/.
@@ -15,7 +15,8 @@ common_failure_modes: Auto-triggering without explicit invocation, overfitting t
 # vpk-html
 
 This skill is invoked **explicitly** via `/vpk-html` (optionally with a doc-type
-hint, e.g. `/vpk-html resume`, `/vpk-html one-pager`). It does **not**
+hint or flag, e.g. `/vpk-html resume`, `/vpk-html one-pager`,
+`/vpk-html --github`). It does **not**
 auto-trigger on natural-language mentions of HTML, documents, or reports — the
 monorepo ships sibling skills (`/vpk-design`, etc.) and kami itself, so
 activation is strict to avoid collisions. It produces an offline, single-file
@@ -38,6 +39,37 @@ iteration captures, validation images, and other local review assets for that
 artifact inside the same slug folder; use `screenshots/` under the slug folder
 when there are many browser captures. Do not put generated HTML directly in the
 repo root, `docs/html/`, or the top level of `output/vpk-html/`.
+
+## GitHub Pages flag
+
+When the user invokes `/vpk-html --github`, the deliverable is not complete at
+local HTML. Generate and validate the normal
+`output/vpk-html/<slug>/<slug>.html` artifact first, then publish that artifact
+to GitHub Pages as a browsable live page.
+
+Default publishing shape:
+
+- Publish from the artifact folder as a standalone nested Git repo.
+- Copy `<slug>.html` to `index.html`; the Pages root URL is canonical.
+- Add `.nojekyll`.
+- Stage and commit only `index.html` and `.nojekyll`.
+- Keep screenshots, PDFs, and the original `<slug>.html` local-only unless the
+  user explicitly asks to publish them.
+- Create or reuse a GitHub repo named from `<slug>` under the active `gh`
+  account, unless the user supplies `--repo owner/name`.
+- Enable GitHub Pages from branch `main` and path `/`.
+
+Command:
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
+```
+
+The `--github` mode runs placeholder coverage, browser render verification, and
+static HTML validity before it copies the artifact to `index.html` or touches
+GitHub. It requires a working `gh` login with repo permissions. See
+`references/github-pages.md` for the operational contract, rerun behavior, and
+failure handling.
 
 ---
 
@@ -394,6 +426,9 @@ node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo output/vpk-h
 
 # Landing / product-site export (companions + responsive verify). See references/landing.md
 node .agents/skills/vpk-html/scripts/build.mjs --landing output/vpk-html/<slug>/<slug>.html [--out output/vpk-html/<slug>/site] [--origin <url>]
+
+# GitHub Pages publish (validates, copies to index.html, pushes, enables Pages). See references/github-pages.md
+node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
 ```
 
 For template-library changes (color sweeps, font swaps, port-script edits):
@@ -564,6 +599,7 @@ resolved theme block — don't redefine it per document.
 - `references/pdf-export.md` — optional derived PDF export
 - `references/quality-gates.md` — advisory content-quality gates
 - `references/landing.md` — landing / product-site track
+- `references/github-pages.md` — optional live GitHub Pages publishing track
 - `references/production.md` — troubleshooting (page overflow, font issues)
 - `references/source-policy.md` — when and how to cite
 

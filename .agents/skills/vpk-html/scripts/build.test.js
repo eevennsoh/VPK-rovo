@@ -111,6 +111,30 @@ test("quality gate command surface includes focal and tidy audit gates", async (
 	assert.match(buildSource, /--check-caption-echo/);
 });
 
+test("github publishing helpers derive stable repo names and validate repo specs", async () => {
+	const { deriveRepoName, parseRepoSpec } = await import("./github-pages.mjs");
+
+	assert.equal(deriveRepoName("output/vpk-html/Symphony Explainer/symphony-explainer.html"), "symphony-explainer");
+	assert.equal(deriveRepoName("output/vpk-html/!!!/index.html"), "index");
+	assert.deepEqual(parseRepoSpec("eevennsoh/symphony-explainer"), {
+		owner: "eevennsoh",
+		name: "symphony-explainer",
+		fullName: "eevennsoh/symphony-explainer",
+	});
+	assert.throws(() => parseRepoSpec("symphony-explainer"), /owner\/name/);
+});
+
+test("github publishing command surface is documented in build and skill docs", () => {
+	const skillRoot = path.join(__dirname, "..");
+	const buildSource = fs.readFileSync(path.join(__dirname, "build.mjs"), "utf8");
+	const skillDoc = fs.readFileSync(path.join(skillRoot, "SKILL.md"), "utf8");
+
+	assert.match(buildSource, /--github <file>/);
+	assert.match(buildSource, /--repo owner\/name/);
+	assert.match(skillDoc, /\/vpk-html --github/);
+	assert.match(skillDoc, /GitHub Pages/);
+});
+
 test("user render docs route generated HTML into per-slug output folders", () => {
 	const docs = [
 		"SKILL.md",

@@ -12,6 +12,7 @@
  *   node scripts/build.mjs --check-templates       # CSS / token / font sanity across templates
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
  *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
+ *   node scripts/build.mjs --github <file> [--repo owner/name] [--private]  # publish to GitHub Pages
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
  */
 
@@ -19,7 +20,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues } from "./check-html.mjs";
+import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, validateHtmlFile } from "./check-html.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +53,7 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null };
+	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null, repo: null, visibility: "public" };
 	const GATE_FLAGS = {
 		"--check-density": "density",
 		"--check-resume-balance": "resume-balance",
@@ -71,9 +72,13 @@ function parseArgs(argv) {
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
 		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
+		else if (arg === "--github") { args.mode = "github"; args.file = argv[++i]; }
 		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
 		else if (arg === "--origin") { args.origin = argv[++i]; }
+		else if (arg === "--repo") { args.repo = argv[++i]; }
+		else if (arg === "--public") { args.visibility = "public"; }
+		else if (arg === "--private") { args.visibility = "private"; }
 		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
@@ -279,6 +284,7 @@ Usage:
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
+  node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   # publish index.html to GitHub Pages
   node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
@@ -338,6 +344,32 @@ async function main() {
 			console.log("✗ responsive verify");
 			for (const issue of verify.issues) console.log(`  ${issue}`);
 			process.exitCode = 1;
+		}
+		return;
+	}
+	if (args.mode === "github") {
+		if (!args.file) { console.error("--github requires a file path"); process.exitCode = 1; return; }
+		const placeholderResult = checkPlaceholders(args.file);
+		if (!placeholderResult.ok) { process.exitCode = 1; return; }
+		const verifyResult = await verify(args.file);
+		if (!verifyResult.ok) { process.exitCode = 1; return; }
+		const htmlResult = validateHtmlFile(path.resolve(args.file));
+		if (!htmlResult.ok) {
+			console.error(`not ok ${htmlResult.label}`);
+			for (const failure of htmlResult.failures) console.error(`- ${failure}`);
+			process.exitCode = 1;
+			return;
+		}
+		console.log(`ok ${htmlResult.label}`);
+		const { publishGithubPages } = await import("./github-pages.mjs");
+		const result = await publishGithubPages(args.file, { repo: args.repo, visibility: args.visibility });
+		console.log(`✓ published ${result.repo} from ${path.relative(process.cwd(), result.publishDir)}`);
+		console.log(`✓ GitHub Pages: ${result.htmlUrl}`);
+		if (result.build?.status) {
+			const buildError = result.build.error?.message ? ` (${result.build.error.message})` : "";
+			const marker = result.build.status === "built" ? "✓" : result.build.status === "errored" ? "✗" : "…";
+			console.log(`${marker} latest Pages build: ${result.build.status}${buildError}`);
+			if (result.build.status === "errored") process.exitCode = 1;
 		}
 		return;
 	}

@@ -1,7 +1,8 @@
 # vpk-html Cheatsheet
 
-`/vpk-html` is required to trigger the skill. Optional doc-type hints may
-follow, e.g. `/vpk-html resume`, `/vpk-html one-pager`.
+`/vpk-html` is required to trigger the skill. Optional doc-type hints and flags
+may follow, e.g. `/vpk-html resume`, `/vpk-html one-pager`,
+`/vpk-html --github`.
 
 ## Documents
 
@@ -97,6 +98,8 @@ blue ramp. SMIL motion must use `begin="indefinite"` plus the
 8. Build & verify:
    node scripts/build.mjs --check-placeholders <file>
    node scripts/build.mjs --verify <file>
+9. If invoked with `--github`, publish after validation:
+   node scripts/build.mjs --github <file> [--repo owner/name]
 ```
 
 ## Filling a template
@@ -117,6 +120,20 @@ node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/<slug>/<
 Keep every generated artifact in its own slug folder. Related PDFs,
 screenshots, and review captures stay beside that HTML file or in a nested
 `screenshots/` folder when the capture set is large.
+
+## GitHub Pages publish
+
+Use this only when the user invokes `/vpk-html --github` or otherwise asks for
+a live hosted page.
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
+```
+
+The helper validates the document, copies it to `index.html`, creates
+`.nojekyll`, commits only those two files in the artifact folder's nested repo,
+pushes to GitHub, enables Pages from `main` + `/`, and prints the Pages URL.
+Read `references/github-pages.md` before changing the publish shape.
 
 ## Shared theme
 
