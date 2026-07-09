@@ -47,7 +47,7 @@ Update `TOKEN_ORDER`, `pushThemeAliases` (`--brand/--accent` → accent; add `--
 1. **Fonts**: add `Geist[wght].woff2`, `GeistMono[wght].woff2`, one Geist Pixel face + `OFL.txt` to `assets/fonts/`; delete all Charlie/Atlassian files. Source: github.com/vercel/geist releases (fallback google/fonts `ofl/geist*`). Update `ensure-fonts.mjs` SOURCE_NOTES → regen MANIFEST.
 2. **`scripts/shared.mjs`**: FONT_STACKS (all-Geist + `pixel`), FONT_FILES (variable weight `"100 900"`; `Geist Mono Numeric` reuses the mono file with `unicode-range: U+0030-0039`; drop italics — Geist has none, synthetic oblique is fine), delete `semanticWithFallback`, emit plain token values, new TOKEN_ORDER.
 3. **`scripts/check-html.mjs`**: replace the `--ds-` exemption (token-declaration allowlist derived from `loadTokens()` + keep only `var(--ds-brand-override, #hex)` for the brand-profile mechanism) and add **`collectSvgGrammarIssues`** — the hard-fail SVG lint:
-   - Rule 1 palette: every fill/stroke/stop-color/style color must be `none|transparent|currentColor|inherit`, `var(--allowed-figure-token)`, `color-mix` of one, or raw hex from the fixed algebrica grayscale set.
+   - Rule 1 palette: every fill/stroke/stop-color/style color must be `none|transparent|currentColor|inherit`, `var(--allowed-figure-token)`, or a `color-mix` of one. **No raw hex is accepted, including the algebrica grayscale set** — a fixed hex can't invert under `data-theme="dark"`, so every figure color must route through a token to keep dark parity. (Superseded an earlier draft that allowlisted raw grayscale hex; closes the dark-mode contrast gap that would've created.)
    - Rule 2: no `<linearGradient>/<radialGradient>/<filter>/feDropShadow/filter=/drop-shadow(`.
    - Rule 3: `font-family` inside SVG must resolve to Geist Mono (`Geist Pixel` and body `Geist` rejected).
    - Rule 4: `stroke-width` numeric within 0.5–2.5.
@@ -65,7 +65,7 @@ Update `TOKEN_ORDER`, `pushThemeAliases` (`--brand/--accent` → accent; add `--
 
 ### Phase C — docs
 11. Rewrite `references/design.md` (algebrica identity: warm paper, quiet weight-600 headings, 42rem measure, 1.75 leading, hairline rules, borders-over-shadows, accent-as-garnish), `references/diagrams.md` (darkest-ink focal rule, grayscale token map, series-by-tone/dash/marker), `references/illustrations.md` (grayscale ramp), `references/brand-profile.md` (brand hue lands on `--accent` chrome only), `references/quality-gates.md` (focal wording).
-12. **New `references/svg-style.md`** — the figure grammar: palette table (token ↔ faithful hex), focal rule, multi-series-without-hue recipes, line grammar (linecap round, widths 1–2, `rx≤9` frames, root `fill="none"`), figure text (Geist Mono 11–13px, `var(--ill-ink50)`), dark parity (tokens not raw hex), status-color quarantine, opt-out attribute, lint rule list.
+12. **New `references/svg-style.md`** — the figure grammar: palette table (token ↔ faithful hex), focal rule, multi-series-without-hue recipes, line grammar (linecap round, widths 1–2, `rx≤9` frames, root `fill="none"`), figure text (Geist Mono 11–13px, `var(--ill-ink50)`), dark parity (**tokens only — the lint rejects raw hex outright, no exceptions**, so every figure inverts correctly under `data-theme="dark"`), status-color quarantine, opt-out attribute, lint rule list.
 13. Update `SKILL.md` Identity section (fonts, type scale 18px/1.75 body + weight-600 headings, accent rules, link style; add svg-style.md to references table), plus `CHEATSHEET.md`, `README.md`, `llms.txt` identity phrases.
 
 ## Verification
