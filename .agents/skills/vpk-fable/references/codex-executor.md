@@ -84,9 +84,26 @@ The codex-first loop — Fable plans and reviews, one codex session implements:
 3. Iterate on the **same session** so codex keeps its context:
 
 ```bash
-codex exec resume --last --dangerously-bypass-approvals-and-sandbox \
+codex exec --dangerously-bypass-approvals-and-sandbox \
   --output-last-message output/fable-codex/worker-1.md \
-  - < output/fable-codex/followup-1.md
+  resume --last - < output/fable-codex/followup-1.md
+```
+
+On **codex-cli 0.143.0**, exec-level flags (`--dangerously-bypass-approvals-and-sandbox`,
+`--sandbox`, `-c`, `-m`, `--output-last-message`) must come **before** the
+`resume` subcommand — `codex exec resume --last --dangerously-bypass-approvals-and-sandbox ...`
+fails with `error: unexpected argument '--sandbox' found` (and the equivalent
+for other exec flags) once `resume` has already been parsed. This applies to
+every `resume` invocation, not just this one.
+
+If a harness's permission classifier denies the bypass flag outright, fall
+back to a sandboxed resume instead of dropping to Claude workers:
+
+```bash
+codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true \
+  -m gpt-5.5 -c model_reasoning_effort="xhigh" \
+  --output-last-message output/fable-codex/worker-1.md \
+  resume --last - < output/fable-codex/followup-1.md
 ```
 
 `resume --last` filters sessions by cwd by default, so it is safe per
