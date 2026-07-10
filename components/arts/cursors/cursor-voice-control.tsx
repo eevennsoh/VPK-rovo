@@ -1,12 +1,20 @@
 "use client";
 
-import { CursorWorkingTeam } from "@/components/arts/cursors/cursor-working-team";
 import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { LiveWaveform } from "@/components/ui-audio/live-waveform";
 import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
+import { useTheme } from "@/components/utils/theme-wrapper";
+import { LiquidMetal } from "@/components/visual/liquid-metal";
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
+
+/**
+ * Soft top highlight + bottom shadow so flat glyphs read as embossed on the
+ * chrome face (voice icon idle glyph + the cursor-rail tracking icon).
+ */
+const EMBOSS_FILTER =
+	"drop-shadow(0 -0.5px 0 rgba(255,255,255,0.65)) drop-shadow(0 0.75px 0.75px rgba(0,0,0,0.35))";
 
 interface CursorVoiceControlProps {
 	/** Whether cursor (clicky) mode is on. */
@@ -15,27 +23,26 @@ interface CursorVoiceControlProps {
 	voiceActive: boolean;
 	/** Whether the mic is actively capturing the user's speech. */
 	listening: boolean;
-	/**
-	 * Whether the dispatched team is now working. Swaps the cursor glyph to the
-	 * rainbow painting cursor and lets the rail expand leftward on hover/focus to
-	 * reveal the {@link CursorWorkingTeam}.
-	 */
+	/** Whether the dispatched team is now working — swaps the cursor glyph to the rainbow painting cursor. */
 	working: boolean;
 	micStream: MediaStream | null;
 	onToggleCursor: () => void;
 	onToggleVoice: () => void;
+	/** Forwarded onto the voice button so the parent can measure its rect (the orbit's center). */
+	voiceButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
 /**
  * The Cursors art's always-visible cursor + voice rail.
  *
- * The active segment has a dark (neutral-bold) background that grows right-to-left to
- * cover the cursor when cursor mode turns on. Icons sit light on the dark segment. Stays
- * in an idle visual state until the human clicks: the voice button shows a calm
- * monochrome waveform glyph until a session connects, then swaps to the live colored
- * waveform. Once the team is `working`, the cursor glyph becomes the rainbow painting
- * cursor and the rail expands leftward on hover/focus to reveal {@link CursorWorkingTeam}
- * on the light base.
+ * The voice button is a liquid-metal chrome circle (the repo's `LiquidMetal`
+ * component); its idle glyph and the cursor-rail tracking icon wear a subtle
+ * emboss so flat glyphs read as pressed into the chrome. The active segment
+ * has a dark (neutral-bold) background that grows right-to-left to cover the
+ * cursor when cursor mode turns on. Once the team is `working`, the cursor
+ * glyph becomes the rainbow painting cursor (the team itself now renders as
+ * 3D orbiting satellites around the voice button — see `CursorSceneOrbit` —
+ * not as a rail reveal).
  */
 export function CursorVoiceControl({
 	clickyActive,
@@ -45,27 +52,13 @@ export function CursorVoiceControl({
 	micStream,
 	onToggleCursor,
 	onToggleVoice,
+	voiceButtonRef,
 }: Readonly<CursorVoiceControlProps>) {
+	const { actualTheme } = useTheme();
+
 	return (
-		<div
-			className={cn(
-				"group relative flex h-9 items-center justify-center overflow-hidden rounded-[8px] transition-[width] duration-medium ease-in-out motion-reduce:transition-none",
-				working ? "w-[68px] hover:w-[168px] focus-within:w-[168px]" : "w-[68px]",
-			)}
-		>
+		<div className="relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-[8px]">
 			<span aria-hidden="true" className="absolute inset-0 rounded-[8px] bg-bg-neutral" />
-			{/* Team revealed on the light base in the LEFT segment. Clipped to w-0 while
-			    collapsed; width grows in step with the rail when working + hovered/focused. */}
-			<div
-				className={cn(
-					"relative z-10 flex h-full items-center overflow-hidden transition-[width,opacity] duration-medium ease-in-out motion-reduce:transition-none",
-					working
-						? "w-0 opacity-0 group-hover:w-[100px] group-hover:opacity-100 group-focus-within:w-[100px] group-focus-within:opacity-100"
-						: "w-0 opacity-0",
-				)}
-			>
-				{working ? <CursorWorkingTeam className="pl-1" /> : null}
-			</div>
 			{/* Dark background pinned to the right (voice) button. Turning on cursor mode
 			    grows its width leftward so it extends to cover the cursor too. */}
 			<span
@@ -89,44 +82,64 @@ export function CursorVoiceControl({
 					{working ? (
 						<RovoCursor state="painting" size={20} />
 					) : (
-						<RovoCursorTrackingIcon active={clickyActive} />
-					)}
-				</button>
-				<button
-					type="button"
-					aria-label={voiceActive ? "Stop live voice" : "Start live voice"}
-					aria-pressed={voiceActive}
-					onClick={onToggleVoice}
-					className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 active:opacity-80"
-				>
-					{voiceActive ? (
-						<span className="flex h-full w-4 shrink-0 items-center">
-							<LiveWaveform
-								active={listening}
-								barColor="currentColor"
-								barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
-								barCount={4}
-								barGap={2}
-								barHeightScale={1}
-								barOpacityMax={1}
-								barOpacityMin={1}
-								barWidth={2}
-								barRadius={0}
-								className="min-h-0 min-w-0 flex-1"
-								fadeEdges={false}
-								fftSize={512}
-								height="100%"
-								mediaStream={listening ? micStream : null}
-								mode="static"
-								processing={voiceActive && !listening}
-								sensitivity={2.4}
-								smoothingTimeConstant={0.35}
-							/>
+						<span className="inline-flex" style={{ filter: EMBOSS_FILTER }}>
+							<RovoCursorTrackingIcon active={clickyActive} />
 						</span>
-					) : (
-						<AudioWaveformIcon label="" />
 					)}
 				</button>
+				{/* variant="button" (not "circle") — the circle variant forces a true
+				    circle and ignores borderRadius; the video reference is a rounded
+				    square. The chrome ring paints over the wrapper's own face, so the
+				    face background lives here (mirrors liquid-metal-demo's host). */}
+				<LiquidMetal
+					variant="button"
+					preset="silver"
+					theme={actualTheme}
+					borderRadius={6}
+					strength={0.9}
+					ringCssPx={2.5}
+					normalizeHostStyles={false}
+					className="relative isolate inline-flex size-8 shrink-0 items-center justify-center overflow-hidden bg-surface-raised shadow-sm"
+				>
+					<button
+						ref={voiceButtonRef}
+						type="button"
+						aria-label={voiceActive ? "Stop live voice" : "Start live voice"}
+						aria-pressed={voiceActive}
+						onClick={onToggleVoice}
+						className="flex size-full shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-icon outline-none transition-colors hover:opacity-90 focus-visible:ring-3 focus-visible:ring-ring/50 active:opacity-80"
+					>
+						{voiceActive ? (
+							<span className="flex h-full w-4 shrink-0 items-center">
+								<LiveWaveform
+									active={listening}
+									barColor="currentColor"
+									barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
+									barCount={4}
+									barGap={2}
+									barHeightScale={1}
+									barOpacityMax={1}
+									barOpacityMin={1}
+									barWidth={2}
+									barRadius={0}
+									className="min-h-0 min-w-0 flex-1"
+									fadeEdges={false}
+									fftSize={512}
+									height="100%"
+									mediaStream={listening ? micStream : null}
+									mode="static"
+									processing={voiceActive && !listening}
+									sensitivity={2.4}
+									smoothingTimeConstant={0.35}
+								/>
+							</span>
+						) : (
+							<span className="inline-flex" style={{ filter: EMBOSS_FILTER }}>
+								<AudioWaveformIcon label="" />
+							</span>
+						)}
+					</button>
+				</LiquidMetal>
 			</div>
 		</div>
 	);
