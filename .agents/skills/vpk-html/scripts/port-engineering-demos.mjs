@@ -240,8 +240,7 @@ svg text {
   border-radius: var(--radius-row) !important;
 }
 
-.code,
-pre,
+:is(.code, pre):not(.diff *),
 .diff,
 .code-block,
 .snippet {

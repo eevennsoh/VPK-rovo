@@ -37,10 +37,10 @@ function injectBodyScript(html, js, marker) {
 		const markerPattern = escapeRegExp(marker);
 		return html.replace(
 			new RegExp(`\\n?<script\\b(?=[^>]*\\b${markerPattern}\\b)[^>]*>[\\s\\S]*?</script>\\s*`, "i"),
-			`<script ${marker}>\n${js}\n</script>\n`,
+			`\n<script ${marker}>\n${js}\n</script>\n`,
 		);
 	}
-	return html.replace(/<\/body>/i, `<script ${marker}>\n${js}\n</script>\n</body>`);
+	return html.replace(/<\/body>/i, `\n<script ${marker}>\n${js}\n</script>\n</body>`);
 }
 
 function removeLegacyDeckRuntime(html) {
@@ -95,22 +95,124 @@ export function buildPresentationCss() {
 \t\tanimation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
 \t}
 
-\t.vpk-slide-counter {
+\t.vpk-slide-counter,
+\t.docnav-controls {
+\t\talign-items: center;
+\t\tbackdrop-filter: blur(10px);
+\t\tbackground: color-mix(in srgb, var(--paper) 88%, transparent);
+\t\tborder: 0;
+\t\tborder-radius: 999px;
+\t\tbottom: 24px;
+\t\tbox-shadow: var(--shadow);
+\t\tdisplay: flex;
+\t\tfont-family: var(--font-mono);
+\t\tgap: 6px;
+\t\tletter-spacing: 0;
+\t\tpadding: 6px;
+\t\tposition: fixed;
+\t\tright: 24px;
+\t\tz-index: 50;
+\t}
+
+\t.vpk-slide-counter button,
+\t.docnav-controls button {
 \t\talign-items: center;
 \t\tbackground: var(--surface-raised);
 \t\tborder: 1px solid var(--rule);
-\t\tbottom: 18px;
-\t\tbox-shadow: var(--shadow);
+\t\tborder-radius: 999px;
+\t\tcolor: var(--ink);
+\t\tcursor: pointer;
+\t\tdisplay: flex;
+\t\tfont-family: var(--font-mono);
+\t\tfont-size: 18px;
+\t\theight: 36px;
+\t\tjustify-content: center;
+\t\tline-height: 1;
+\t\tpadding: 0;
+\t\twidth: 36px;
+\t}
+
+\t.vpk-slide-counter button:hover,
+\t.vpk-slide-counter button:focus-visible,
+\t.docnav-controls button:hover,
+\t.docnav-controls button:focus-visible {
+\t\tborder-color: var(--accent);
+\t\tcolor: var(--accent);
+\t\toutline: none;
+\t}
+
+\t.vpk-slide-counter button:disabled,
+\t.docnav-controls button:disabled {
+\t\tcursor: default;
+\t\topacity: 0.35;
+\t}
+
+\t.vpk-nav-counter,
+\t.docnav-counter {
 \t\tcolor: var(--muted-text);
-\t\tdisplay: inline-flex;
 \t\tfont-family: var(--font-mono);
 \t\tfont-size: 12px;
-\t\tgap: 6px;
-\t\tletter-spacing: 0;
-\t\tpadding: 8px 10px;
-\t\tposition: fixed;
-\t\tright: 18px;
-\t\tz-index: 20;
+\t\tfont-variant-numeric: tabular-nums;
+\t\tmin-width: 46px;
+\t\ttext-align: center;
+\t}
+
+\t.vpk-nav-next-wrap {
+\t\talign-items: center;
+\t\tdisplay: grid;
+\t\theight: 44px;
+\t\tjustify-items: center;
+\t\tposition: relative;
+\t\twidth: 44px;
+\t}
+
+\t.vpk-nav-next-wrap button {
+\t\tposition: relative;
+\t\tz-index: 1;
+\t}
+
+\t.vpk-nav-progress {
+\t\tinset: 0;
+\t\tpointer-events: none;
+\t\tposition: absolute;
+\t\ttransform: rotate(-90deg);
+\t}
+
+\t.vpk-nav-progress__track,
+\t.vpk-nav-progress__arc {
+\t\tfill: none;
+\t\tstroke-width: 1.25;
+\t}
+
+\t.vpk-nav-progress__track {
+\t\tstroke: var(--rule);
+\t}
+
+\t.vpk-nav-progress__arc {
+\t\tstroke: var(--ink);
+\t\tstroke-dasharray: var(--vpk-progress-circumference, 113.1);
+\t\tstroke-dashoffset: var(--vpk-progress-offset, 113.1);
+\t\tstroke-linecap: round;
+\t\ttransition: stroke-dashoffset 180ms var(--ease-out);
+\t}
+
+\tbody[data-vpk-docnav] main > section {
+\t\tscroll-margin-top: 32px;
+\t\ttransition:
+\t\t\topacity 560ms var(--ease-out),
+\t\t\tfilter 560ms var(--ease-out),
+\t\t\ttransform 420ms var(--ease-out);
+\t}
+
+\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+\t\topacity: 0.34 !important;
+\t\tfilter: grayscale(0.14) !important;
+\t}
+
+\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+\t\topacity: 1 !important;
+\t\tfilter: none !important;
+\t\ttransform: translateY(-2px) !important;
 \t}
 
 \thtml[data-vpk-presenter="true"],
@@ -180,13 +282,36 @@ export function buildPresentationCss() {
 \t\tfont-size: 14px;
 \t\tmargin-top: 20px;
 \t}
+
+\tbody.vpk-presenter-window .vpk-theme-toggle {
+\t\tdisplay: none !important;
+\t}
+}
+
+@media (prefers-reduced-motion: reduce) {
+\t.vpk-nav-progress__arc {
+\t\ttransition: none !important;
+\t}
 }
 
 @media print {
 \t.speaker-notes,
 \t.vpk-slide-counter,
+\t.docnav-controls,
 \t.vpk-presenter {
 \t\tdisplay: none !important;
+\t}
+
+\tbody[data-vpk-motion="deck"] .slide,
+\tbody[data-vpk-docnav] main > section {
+\t\tanimation: none !important;
+\t\ttransition: none !important;
+\t\ttransform: none !important;
+\t}
+
+\tbody[data-vpk-docnav] main > section {
+\t\topacity: 1 !important;
+\t\tfilter: none !important;
 \t}
 }`;
 }
@@ -218,14 +343,40 @@ export function buildPresentationJs() {
 \t\treturn (slide.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this slide.';
 \t}
 
-\tfunction ensureCounter() {
-\t\tlet counter = document.querySelector('[data-vpk-slide-counter]');
-\t\tif (counter) return counter;
-\t\tcounter = document.createElement('div');
-\t\tcounter.className = 'vpk-slide-counter';
-\t\tcounter.dataset.vpkSlideCounter = 'true';
-\t\tdocument.body.append(counter);
-\t\treturn counter;
+\tfunction progressSvg() {
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
+\t}
+
+\tfunction ensureControls() {
+\t\tlet controls = document.querySelector('[data-vpk-slide-counter]');
+\t\tif (controls) return controls;
+\t\tcontrols = document.createElement('nav');
+\t\tcontrols.className = 'vpk-slide-counter';
+\t\tcontrols.dataset.vpkSlideCounter = 'true';
+\t\tcontrols.setAttribute('aria-label', 'Slide navigation');
+\t\tcontrols.innerHTML = '<button type="button" data-vpk-slide-prev aria-label="Previous slide">&larr;</button><span class="vpk-nav-counter" data-vpk-slide-count aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-vpk-slide-next aria-label="Next slide">&rarr;</button>' + progressSvg() + '</span>';
+\t\tcontrols.querySelector('[data-vpk-slide-prev]')?.addEventListener('click', () => show(index - 1));
+\t\tcontrols.querySelector('[data-vpk-slide-next]')?.addEventListener('click', () => show(index + 1));
+\t\tdocument.body.append(controls);
+\t\treturn controls;
+\t}
+
+\tfunction updateControls() {
+\t\tconst controls = ensureControls();
+\t\tconst previous = controls.querySelector('[data-vpk-slide-prev]');
+\t\tconst next = controls.querySelector('[data-vpk-slide-next]');
+\t\tconst counter = controls.querySelector('[data-vpk-slide-count]');
+\t\tconst arc = controls.querySelector('[data-vpk-progress-arc]');
+\t\tif (previous) previous.disabled = index === 0;
+\t\tif (next) next.disabled = index === slides.length - 1;
+\t\tif (counter) counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+\t\tif (arc) {
+\t\t\tconst radius = Number(arc.getAttribute('r') || 18);
+\t\t\tconst circumference = 2 * Math.PI * radius;
+\t\t\tconst progress = slides.length <= 1 ? 1 : (index + 1) / slides.length;
+\t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));
+\t\t\tarc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+\t\t}
 \t}
 
 \tfunction fitSlide() {
@@ -244,6 +395,7 @@ export function buildPresentationJs() {
 \tfunction show(next, shouldBroadcast = true) {
 \t\tconst bounded = Math.max(0, Math.min(slides.length - 1, next));
 \t\tif (bounded === index && document.querySelector('.slide.is-active')) {
+\t\t\tupdateControls();
 \t\t\tif (shouldBroadcast) broadcast();
 \t\t\treturn;
 \t\t}
@@ -252,7 +404,7 @@ export function buildPresentationJs() {
 \t\tslides.forEach(slide => slide.classList.remove('is-active', 'is-leaving'));
 \t\tif (previous && previous !== slides[index]) previous.classList.add('is-leaving');
 \t\tslides[index].classList.add('is-active');
-\t\tensureCounter().textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+\t\tupdateControls();
 \t\tif (!location.hash.startsWith('#presenter')) history.replaceState(null, '', '#slide-' + String(index + 1));
 \t\tif (shouldBroadcast) broadcast();
 \t}
@@ -267,7 +419,7 @@ export function buildPresentationJs() {
 \tfunction buildPresenter() {
 \t\tdocument.documentElement.dataset.vpkPresenter = 'true';
 \t\tdocument.body.className = (document.body.className + ' vpk-presenter-window').trim();
-\t\tdocument.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next slide</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+\t\tdocument.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next slide</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
 \t\tconst title = document.querySelector('[data-vpk-presenter-title]');
 \t\tconst notes = document.querySelector('[data-vpk-presenter-notes]');
 \t\tconst timer = document.querySelector('[data-vpk-presenter-timer]');
@@ -275,6 +427,7 @@ export function buildPresentationJs() {
 \t\tfunction render(payload = {}) {
 \t\t\tconst current = payload.index ?? index;
 \t\t\tconst next = slides[Math.min(slides.length - 1, current + 1)]?.cloneNode(true);
+\t\t\tnext?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
 \t\t\tif (title) title.textContent = 'Slide ' + String(current + 1) + ' / ' + slides.length + ' - ' + (payload.title || slideTitle(slides[current]));
 \t\t\tif (notes) notes.textContent = payload.notes || slideNotes(slides[current]);
 \t\t\tif (preview) {
@@ -341,119 +494,130 @@ export function buildDocNavJs() {
 \t\t: [...document.querySelectorAll('main h1, main h2, main section[id]')]
 \t\t\t.filter(el => el.getBoundingClientRect().height > 0);
 \tif (targets.length < 2) return;
-\tlet activeIndex = 0;
+\tconst channel = (() => {
+\t\ttry { return new BroadcastChannel('vpk-deck'); }
+\t\tcatch { return null; }
+\t})();
+\tlet activeIndex = readPresenterIndex();
 \tlet focusTimer = 0;
 \tlet manualTimer = 0;
+\tlet presenterWindow = null;
+\tlet startedAt = Date.now();
+\tlet controls = null;
+\tlet lastBroadcastIndex = -1;
 
-\tif (!document.querySelector('style[data-vpk-docnav-style]')) {
-\t\tconst style = document.createElement('style');
-\t\tstyle.dataset.vpkDocnavStyle = 'true';
-\t\tstyle.textContent = \`
-@media screen {
-\tbody[data-vpk-docnav] main > section {
-\t\tscroll-margin-top: 32px;
-\t\ttransition:
-\t\t\topacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
-\t\t\tfilter 560ms cubic-bezier(0.16, 1, 0.3, 1),
-\t\t\ttransform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+\tfunction readPresenterIndex() {
+\t\tconst match = location.hash.match(/presenter-section-(\\d+)/);
+\t\tif (!match) return 0;
+\t\treturn Math.max(0, Math.min(targets.length - 1, Number(match[1]) - 1));
 \t}
 
-\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
-\t\topacity: 0.34 !important;
-\t\tfilter: grayscale(0.14) !important;
+\tfunction sectionTitle(section) {
+\t\treturn (section.querySelector('h1,h2,h3,.title')?.textContent || 'Section').trim();
 \t}
 
-\tbody[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
-\t\topacity: 1 !important;
-\t\tfilter: none !important;
-\t\ttransform: translateY(-2px) !important;
+\tfunction sectionNotes(section) {
+\t\treturn (section.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this section.';
 \t}
 
-\t.docnav-controls {
-\t\tposition: fixed;
-\t\tright: 24px;
-\t\tbottom: 24px;
-\t\tz-index: 50;
-\t\tdisplay: flex;
-\t\talign-items: center;
-\t\tgap: 6px;
-\t\tpadding: 6px;
-\t\tbackground: color-mix(in srgb, var(--paper) 88%, transparent);
-\t\tborder: 0;
-\t\tborder-radius: 999px;
-\t\tbox-shadow: var(--shadow);
-\t\tbackdrop-filter: blur(10px);
+\tfunction progressSvg() {
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
 \t}
 
-\t.docnav-controls button {
-\t\twidth: 36px;
-\t\theight: 36px;
-\t\tborder: 1px solid var(--rule);
-\t\tborder-radius: 999px;
-\t\tbackground: var(--surface-raised);
-\t\tcolor: var(--ink);
-\t\tfont-family: var(--font-mono);
-\t\tfont-size: 18px;
-\t\tline-height: 1;
-\t\tcursor: pointer;
+\tfunction clonePreview(section) {
+\t\tconst clone = section?.cloneNode(true);
+\t\tclone?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
+\t\treturn clone;
 \t}
 
-\t.docnav-controls button:hover,
-\t.docnav-controls button:focus-visible {
-\t\tcolor: var(--accent);
-\t\tborder-color: var(--accent);
-\t\toutline: none;
+\tfunction broadcast() {
+\t\tif (activeIndex === lastBroadcastIndex) return;
+\t\tlastBroadcastIndex = activeIndex;
+\t\tconst payload = { type: 'state', index: activeIndex, total: targets.length, title: sectionTitle(targets[activeIndex]), notes: sectionNotes(targets[activeIndex]) };
+\t\ttry { channel?.postMessage(payload); } catch { /* noop */ }
+\t\ttry { presenterWindow?.postMessage({ source: 'vpk-deck', ...payload }, '*'); } catch { /* noop */ }
 \t}
 
-\t.docnav-controls button:disabled {
-\t\topacity: 0.35;
-\t\tcursor: default;
+\tfunction updateControls() {
+\t\tif (!controls) return;
+\t\tconst prevButton = controls.querySelector('[data-docnav-prev]');
+\t\tconst nextButton = controls.querySelector('[data-docnav-next]');
+\t\tconst counter = controls.querySelector('.docnav-counter');
+\t\tconst arc = controls.querySelector('[data-vpk-progress-arc]');
+\t\tif (prevButton) prevButton.disabled = activeIndex === 0;
+\t\tif (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
+\t\tif (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
+\t\tif (arc) {
+\t\t\tconst radius = Number(arc.getAttribute('r') || 18);
+\t\t\tconst circumference = 2 * Math.PI * radius;
+\t\t\tconst progress = targets.length <= 1 ? 1 : (activeIndex + 1) / targets.length;
+\t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));
+\t\t\tarc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+\t\t}
 \t}
 
-\t.docnav-counter {
-\t\tmin-width: 46px;
-\t\ttext-align: center;
-\t\tcolor: var(--muted-text);
-\t\tfont-family: var(--font-mono);
-\t\tfont-size: 12px;
-\t\tfont-variant-numeric: tabular-nums;
+\tfunction buildPresenter() {
+\t\tdocument.documentElement.dataset.vpkPresenter = 'true';
+\t\tdocument.body.className = (document.body.className + ' vpk-presenter-window').trim();
+\t\tdocument.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next section</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+\t\tconst title = document.querySelector('[data-vpk-presenter-title]');
+\t\tconst notes = document.querySelector('[data-vpk-presenter-notes]');
+\t\tconst timer = document.querySelector('[data-vpk-presenter-timer]');
+\t\tconst preview = document.querySelector('[data-vpk-next-preview]');
+\t\tfunction render(payload = {}) {
+\t\t\tconst current = payload.index ?? activeIndex;
+\t\t\tconst bounded = Math.max(0, Math.min(targets.length - 1, current));
+\t\t\tconst next = clonePreview(targets[Math.min(targets.length - 1, bounded + 1)]);
+\t\t\tif (title) title.textContent = 'Section ' + String(bounded + 1) + ' / ' + targets.length + ' - ' + (payload.title || sectionTitle(targets[bounded]));
+\t\t\tif (notes) notes.textContent = payload.notes || sectionNotes(targets[bounded]);
+\t\t\tif (preview) {
+\t\t\t\tpreview.textContent = '';
+\t\t\t\tif (next) preview.append(next);
+\t\t\t}
+\t\t}
+\t\trender();
+\t\tsetInterval(() => {
+\t\t\tconst elapsed = Math.floor((Date.now() - startedAt) / 1000);
+\t\t\tif (timer) timer.textContent = Math.floor(elapsed / 60) + ':' + String(elapsed % 60).padStart(2, '0');
+\t\t}, 500);
+\t\tchannel?.addEventListener('message', event => {
+\t\t\tif (event.data?.type === 'state') render(event.data);
+\t\t});
+\t\twindow.addEventListener('message', event => {
+\t\t\tif (event.data?.source === 'vpk-deck' && event.data?.type === 'state') render(event.data);
+\t\t});
+\t\tdocument.addEventListener('keydown', event => {
+\t\t\tif (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+\t\t\t\tif (channel) channel.postMessage({ type: 'request', delta: 1 });
+\t\t\t}
+\t\t\tif (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+\t\t\t\tif (channel) channel.postMessage({ type: 'request', delta: -1 });
+\t\t\t}
+\t\t});
 \t}
-}
 
-@media print {
-\t.docnav-controls { display: none !important; }
-\tbody[data-vpk-docnav] main > section {
-\t\topacity: 1 !important;
-\t\tfilter: none !important;
-\t\ttransform: none !important;
-\t}
-}\`;
-\t\tdocument.head.appendChild(style);
+\tif (location.hash.startsWith('#presenter')) {
+\t\tbuildPresenter();
+\t\treturn;
 \t}
 
-\tconst controls = document.createElement('nav');
+\tcontrols = document.createElement('nav');
 \tcontrols.className = 'docnav-controls';
 \tcontrols.setAttribute('aria-label', 'Document section navigation');
-\tcontrols.innerHTML = \`
-\t\t<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button>
-\t\t<span class="docnav-counter" aria-live="polite"></span>
-\t\t<button type="button" data-docnav-next aria-label="Next section">&darr;</button>
-\t\`;
+\tcontrols.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">&darr;</button>' + progressSvg() + '</span>';
 \tdocument.body.appendChild(controls);
 
 \tconst prevButton = controls.querySelector('[data-docnav-prev]');
 \tconst nextButton = controls.querySelector('[data-docnav-next]');
-\tconst counter = controls.querySelector('.docnav-counter');
 
-\tfunction setActive(index) {
+\tfunction setActive(index, shouldBroadcast = true) {
 \t\tactiveIndex = Math.max(0, Math.min(targets.length - 1, index));
 \t\ttargets.forEach((target, targetIndex) => {
 \t\t\ttarget.classList.toggle('is-docnav-active', targetIndex === activeIndex);
 \t\t});
-\t\tprevButton.disabled = activeIndex === 0;
-\t\tnextButton.disabled = activeIndex === targets.length - 1;
-\t\tcounter.textContent = \`\${String(activeIndex + 1).padStart(2, '0')} / \${String(targets.length).padStart(2, '0')}\`;
+\t\tupdateControls();
 \t\tdocument.body.dataset.docnavReady = 'true';
+\t\tif (shouldBroadcast) broadcast();
 \t}
 
 \tfunction setFocusMode() {
@@ -494,12 +658,23 @@ export function buildDocNavJs() {
 \t\tif (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 \t\tconst editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
 \t\tif (editable) return;
+\t\tif (event.key.toLowerCase() === 'p') { event.preventDefault(); openPresenter(); return; }
 \t\tif (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 \t\tevent.preventDefault();
 \t\tconst delta = event.key === 'ArrowDown' ? 1 : -1;
 \t\tgo(delta);
 \t});
 
+\tfunction openPresenter() {
+\t\tconst url = new URL(location.href);
+\t\turl.hash = 'presenter-section-' + String(activeIndex + 1);
+\t\ttry { presenterWindow = window.open(url.href, 'vpk-presenter', 'popup,width=1180,height=760'); }
+\t\tcatch { /* noop */ }
+\t}
+
+\tchannel?.addEventListener('message', event => {
+\t\tif (event.data?.type === 'request') go(Number(event.data.delta || 0));
+\t});
 \tdocument.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
 \tdocument.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
 \tdocument.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
@@ -532,6 +707,7 @@ export function retrofitDocumentNav(html) {
 	if (isDeck(html)) return html;
 	let out = ensureBodyAttribute(html, "data-vpk-motion", "document");
 	out = ensureBodyAttribute(out, "data-vpk-docnav", "true");
+	out = injectStyle(out, buildPresentationCss(), "vpk presentation mode");
 	out = injectBodyScript(out, buildDocNavJs(), "data-vpk-docnav-runtime");
 	return out;
 }

@@ -23,6 +23,35 @@
 <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3C%2Fsvg%3E">
+<!-- vpk-theme-init:start -->
+<script data-vpk-theme-init>
+(() => {
+	const key = "vpk-html-theme";
+	const valid = new Set(["light", "dark", "system"]);
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+	function systemPrefersDark() {
+		return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+	}
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+	}
+	apply(readChoice());
+})();
+</script>
+<!-- vpk-theme-init:end -->
 <style>
   /* Palatino is a system font, no @font-face needed */
   @page {
@@ -125,27 +154,36 @@
 	--selected: #e9e3e2;
 	--accent-lime: #cfc4c2;
 	--accent-purple: #b9afad;
-	--accent-saffron: #ded5d4;
+	--accent-saffron: #d8c7b0;
 	--accent-orange: #cfc4c2;
 	--accent-navy: #312f2f;
-	--accent-green: #ded5d4;
+	--accent-green: #d4d8c0;
 	--accent-red: #8c3a32;
-	--collection-software: #ded5d4;
+	--collection-software: #d7cbc9;
 	--collection-product: #cfc4c2;
 	--collection-service: #b9afad;
 	--focus-ring: #312f2f;
 	--code-surface: #ece3e2;
 	--code-ink: #312f2f;
 	--code-inverse: #f4efee;
+	--syntax-keyword: #3f3634;
+	--syntax-identifier: #312f2f;
+	--syntax-string: #5f4b21;
+	--syntax-comment: #6a625f;
+	--syntax-literal: #6f4039;
 	--math-highlight: #e9e3e2;
-	--success: #6f6a68;
-	--success-tint: #e9e3e2;
-	--warning: #8a6d1a;
-	--warning-tint: rgba(138, 109, 26, 0.14);
+	--success: #4f5d2d;
+	--success-tint: rgba(79, 93, 45, 0.14);
+	--warning: #765c16;
+	--warning-tint: rgba(118, 92, 22, 0.14);
 	--danger: #8c3a32;
 	--danger-tint: rgba(140, 58, 50, 0.12);
-	--info: #706e6e;
-	--info-tint: #e9e3e2;
+	--info: #5f5a58;
+	--info-tint: rgba(95, 90, 88, 0.12);
+	--diff-add-text: #3f4a27;
+	--diff-del-text: #71322c;
+	--diff-add-tint: rgba(79, 93, 45, 0.12);
+	--diff-del-tint: rgba(140, 58, 50, 0.10);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -168,6 +206,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -221,27 +264,36 @@
 	--selected: #2a2625;
 	--accent-lime: #413a38;
 	--accent-purple: #69605d;
-	--accent-saffron: #504846;
+	--accent-saffron: #5a4e45;
 	--accent-orange: #413a38;
 	--accent-navy: #d8d1cf;
-	--accent-green: #504846;
+	--accent-green: #4e5545;
 	--accent-red: #c98278;
-	--collection-software: #504846;
+	--collection-software: #584b50;
 	--collection-product: #413a38;
 	--collection-service: #69605d;
 	--focus-ring: #e9e3e2;
 	--code-surface: #2a2221;
 	--code-ink: #e9e3e2;
 	--code-inverse: #1a1817;
+	--syntax-keyword: #e9e3e2;
+	--syntax-identifier: #d8d1cf;
+	--syntax-string: #d0b967;
+	--syntax-comment: #aaa19e;
+	--syntax-literal: #d4938a;
 	--math-highlight: #2a2625;
-	--success: #bdb5b3;
-	--success-tint: #302b2a;
+	--success: #b8c17b;
+	--success-tint: rgba(184, 193, 123, 0.18);
 	--warning: #b89a3c;
 	--warning-tint: rgba(184, 154, 60, 0.18);
 	--danger: #c98278;
 	--danger-tint: rgba(201, 130, 120, 0.16);
-	--info: #bdb5b3;
-	--info-tint: #302b2a;
+	--info: #b8afac;
+	--info-tint: rgba(184, 175, 172, 0.16);
+	--diff-add-text: #c7d08a;
+	--diff-del-text: #d4938a;
+	--diff-add-tint: rgba(184, 193, 123, 0.16);
+	--diff-del-tint: rgba(201, 130, 120, 0.14);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -264,6 +316,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -1387,7 +1444,7 @@ button {
 
   /* QUOTE */
   blockquote, .quote {
-    border-left: 2pt solid var(--brand);
+    border-left: none;
     margin: 12pt 0;
     padding: 4pt 0 4pt 16pt;
     color: var(--olive);
@@ -1463,7 +1520,7 @@ button {
   /* CALLOUT / TAKEAWAY */
   .callout {
     background: var(--ivory);
-    border-left: 2pt solid var(--brand);
+    border-left: none;
     padding: 10pt 14pt;
     border-radius: 3pt;
     margin: 12pt 0;
@@ -2652,6 +2709,269 @@ section,
 	box-shadow: none !important;
 }
 /* vpk-algebrica-v2:end */
+
+/* vpk presentation mode */
+.speaker-notes {
+	display: none !important;
+}
+
+@media screen {
+	body[data-vpk-motion="deck"] {
+		background: var(--paper-background);
+		overflow: hidden;
+	}
+
+	body[data-vpk-motion="deck"] main {
+		height: 100vh;
+		padding: 0;
+		position: relative;
+		width: 100vw;
+	}
+
+	body[data-vpk-motion="deck"] .slide {
+		--vpk-slide-rest-transform: translate(-50%, -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-from: translate(calc(-50% + 24px), -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-to: var(--vpk-slide-rest-transform);
+		display: none;
+		left: 50%;
+		position: absolute;
+		top: 50%;
+		transform: var(--vpk-slide-rest-transform);
+		transform-origin: center center;
+	}
+
+	body[data-vpk-motion="deck"]:not([data-vpk-deck-ready="true"]) .slide:first-of-type,
+	body[data-vpk-motion="deck"] .slide.is-active {
+		display: block;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-active {
+		animation: vpk-slide-in var(--vpk-dur-enter) var(--ease-out) both;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-leaving {
+		animation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
+	}
+
+	.vpk-slide-counter,
+	.docnav-controls {
+		align-items: center;
+		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--paper) 88%, transparent);
+		border: 0;
+		border-radius: 999px;
+		bottom: 24px;
+		box-shadow: var(--shadow);
+		display: flex;
+		font-family: var(--font-mono);
+		gap: 6px;
+		letter-spacing: 0;
+		padding: 6px;
+		position: fixed;
+		right: 24px;
+		z-index: 50;
+	}
+
+	.vpk-slide-counter button,
+	.docnav-controls button {
+		align-items: center;
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		color: var(--ink);
+		cursor: pointer;
+		display: flex;
+		font-family: var(--font-mono);
+		font-size: 18px;
+		height: 36px;
+		justify-content: center;
+		line-height: 1;
+		padding: 0;
+		width: 36px;
+	}
+
+	.vpk-slide-counter button:hover,
+	.vpk-slide-counter button:focus-visible,
+	.docnav-controls button:hover,
+	.docnav-controls button:focus-visible {
+		border-color: var(--accent);
+		color: var(--accent);
+		outline: none;
+	}
+
+	.vpk-slide-counter button:disabled,
+	.docnav-controls button:disabled {
+		cursor: default;
+		opacity: 0.35;
+	}
+
+	.vpk-nav-counter,
+	.docnav-counter {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+		min-width: 46px;
+		text-align: center;
+	}
+
+	.vpk-nav-next-wrap {
+		align-items: center;
+		display: grid;
+		height: 44px;
+		justify-items: center;
+		position: relative;
+		width: 44px;
+	}
+
+	.vpk-nav-next-wrap button {
+		position: relative;
+		z-index: 1;
+	}
+
+	.vpk-nav-progress {
+		inset: 0;
+		pointer-events: none;
+		position: absolute;
+		transform: rotate(-90deg);
+	}
+
+	.vpk-nav-progress__track,
+	.vpk-nav-progress__arc {
+		fill: none;
+		stroke-width: 1.25;
+	}
+
+	.vpk-nav-progress__track {
+		stroke: var(--rule);
+	}
+
+	.vpk-nav-progress__arc {
+		stroke: var(--ink);
+		stroke-dasharray: var(--vpk-progress-circumference, 113.1);
+		stroke-dashoffset: var(--vpk-progress-offset, 113.1);
+		stroke-linecap: round;
+		transition: stroke-dashoffset 180ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav] main > section {
+		scroll-margin-top: 32px;
+		transition:
+			opacity 560ms var(--ease-out),
+			filter 560ms var(--ease-out),
+			transform 420ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+		opacity: 0.34 !important;
+		filter: grayscale(0.14) !important;
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: translateY(-2px) !important;
+	}
+
+	html[data-vpk-presenter="true"],
+	html[data-vpk-presenter="true"] body {
+		height: 100%;
+		overflow: hidden;
+	}
+
+	body.vpk-presenter-window {
+		background: var(--paper-background);
+		color: var(--ink);
+		font-family: var(--font-body);
+	}
+
+	.vpk-presenter {
+		display: grid;
+		gap: 24px;
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+		height: 100vh;
+		padding: 24px;
+	}
+
+	.vpk-presenter-preview,
+	.vpk-presenter-notes {
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		box-shadow: var(--shadow);
+		min-width: 0;
+		padding: 18px;
+	}
+
+	.vpk-presenter-preview-frame {
+		align-items: center;
+		aspect-ratio: 280 / 158;
+		background: var(--paper);
+		border: 1px solid var(--rule);
+		display: flex;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.vpk-presenter-preview-frame .slide {
+		display: block !important;
+		position: static !important;
+		transform: scale(0.28) !important;
+		transform-origin: center center !important;
+	}
+
+	.vpk-presenter-kicker {
+		color: var(--muted-text);
+		font-family: var(--font-body);
+		font-size: 13px;
+		letter-spacing: 0;
+		margin-bottom: 10px;
+		text-transform: none;
+	}
+
+	.vpk-presenter-notes-text {
+		font-size: 22px;
+		line-height: 1.45;
+		white-space: pre-wrap;
+	}
+
+	.vpk-presenter-timer {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 14px;
+		margin-top: 20px;
+	}
+
+	body.vpk-presenter-window .vpk-theme-toggle {
+		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.vpk-nav-progress__arc {
+		transition: none !important;
+	}
+}
+
+@media print {
+	.speaker-notes,
+	.vpk-slide-counter,
+	.docnav-controls,
+	.vpk-presenter {
+		display: none !important;
+	}
+
+	body[data-vpk-motion="deck"] .slide,
+	body[data-vpk-docnav] main > section {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
+	}
+
+	body[data-vpk-docnav] main > section {
+		opacity: 1 !important;
+		filter: none !important;
+	}
+}
 </style>
 </head>
 <body data-vpk-motion="document" data-vpk-docnav="true">
@@ -2846,7 +3166,8 @@ section,
 </section>
 
 
-</main><script data-vpk-docnav-runtime>
+</main>
+<script data-vpk-docnav-runtime>
 (() => {
 	if (!document.body.matches('[data-vpk-docnav]')) return;
 	const sectionTargets = [...document.querySelectorAll('main > section')]
@@ -2856,119 +3177,130 @@ section,
 		: [...document.querySelectorAll('main h1, main h2, main section[id]')]
 			.filter(el => el.getBoundingClientRect().height > 0);
 	if (targets.length < 2) return;
-	let activeIndex = 0;
+	const channel = (() => {
+		try { return new BroadcastChannel('vpk-deck'); }
+		catch { return null; }
+	})();
+	let activeIndex = readPresenterIndex();
 	let focusTimer = 0;
 	let manualTimer = 0;
+	let presenterWindow = null;
+	let startedAt = Date.now();
+	let controls = null;
+	let lastBroadcastIndex = -1;
 
-	if (!document.querySelector('style[data-vpk-docnav-style]')) {
-		const style = document.createElement('style');
-		style.dataset.vpkDocnavStyle = 'true';
-		style.textContent = `
-@media screen {
-	body[data-vpk-docnav] main > section {
-		scroll-margin-top: 32px;
-		transition:
-			opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
-			filter 560ms cubic-bezier(0.16, 1, 0.3, 1),
-			transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+	function readPresenterIndex() {
+		const match = location.hash.match(/presenter-section-(\d+)/);
+		if (!match) return 0;
+		return Math.max(0, Math.min(targets.length - 1, Number(match[1]) - 1));
 	}
 
-	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
-		opacity: 0.34 !important;
-		filter: grayscale(0.14) !important;
+	function sectionTitle(section) {
+		return (section.querySelector('h1,h2,h3,.title')?.textContent || 'Section').trim();
 	}
 
-	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
-		opacity: 1 !important;
-		filter: none !important;
-		transform: translateY(-2px) !important;
+	function sectionNotes(section) {
+		return (section.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this section.';
 	}
 
-	.docnav-controls {
-		position: fixed;
-		right: 24px;
-		bottom: 24px;
-		z-index: 50;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		padding: 6px;
-		background: color-mix(in srgb, var(--paper) 88%, transparent);
-		border: 0;
-		border-radius: 999px;
-		box-shadow: var(--shadow);
-		backdrop-filter: blur(10px);
+	function progressSvg() {
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
 	}
 
-	.docnav-controls button {
-		width: 36px;
-		height: 36px;
-		border: 1px solid var(--rule);
-		border-radius: 999px;
-		background: var(--surface-raised);
-		color: var(--ink);
-		font-family: var(--font-mono);
-		font-size: 17px;
-		line-height: 1;
-		cursor: pointer;
+	function clonePreview(section) {
+		const clone = section?.cloneNode(true);
+		clone?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
+		return clone;
 	}
 
-	.docnav-controls button:hover,
-	.docnav-controls button:focus-visible {
-		color: var(--accent);
-		border-color: var(--accent);
-		outline: none;
+	function broadcast() {
+		if (activeIndex === lastBroadcastIndex) return;
+		lastBroadcastIndex = activeIndex;
+		const payload = { type: 'state', index: activeIndex, total: targets.length, title: sectionTitle(targets[activeIndex]), notes: sectionNotes(targets[activeIndex]) };
+		try { channel?.postMessage(payload); } catch { /* noop */ }
+		try { presenterWindow?.postMessage({ source: 'vpk-deck', ...payload }, '*'); } catch { /* noop */ }
 	}
 
-	.docnav-controls button:disabled {
-		opacity: 0.35;
-		cursor: default;
+	function updateControls() {
+		if (!controls) return;
+		const prevButton = controls.querySelector('[data-docnav-prev]');
+		const nextButton = controls.querySelector('[data-docnav-next]');
+		const counter = controls.querySelector('.docnav-counter');
+		const arc = controls.querySelector('[data-vpk-progress-arc]');
+		if (prevButton) prevButton.disabled = activeIndex === 0;
+		if (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
+		if (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
+		if (arc) {
+			const radius = Number(arc.getAttribute('r') || 18);
+			const circumference = 2 * Math.PI * radius;
+			const progress = targets.length <= 1 ? 1 : (activeIndex + 1) / targets.length;
+			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
+			arc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+		}
 	}
 
-	.docnav-counter {
-		min-width: 46px;
-		text-align: center;
-		color: var(--muted-text);
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-variant-numeric: tabular-nums;
+	function buildPresenter() {
+		document.documentElement.dataset.vpkPresenter = 'true';
+		document.body.className = (document.body.className + ' vpk-presenter-window').trim();
+		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next section</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+		const title = document.querySelector('[data-vpk-presenter-title]');
+		const notes = document.querySelector('[data-vpk-presenter-notes]');
+		const timer = document.querySelector('[data-vpk-presenter-timer]');
+		const preview = document.querySelector('[data-vpk-next-preview]');
+		function render(payload = {}) {
+			const current = payload.index ?? activeIndex;
+			const bounded = Math.max(0, Math.min(targets.length - 1, current));
+			const next = clonePreview(targets[Math.min(targets.length - 1, bounded + 1)]);
+			if (title) title.textContent = 'Section ' + String(bounded + 1) + ' / ' + targets.length + ' - ' + (payload.title || sectionTitle(targets[bounded]));
+			if (notes) notes.textContent = payload.notes || sectionNotes(targets[bounded]);
+			if (preview) {
+				preview.textContent = '';
+				if (next) preview.append(next);
+			}
+		}
+		render();
+		setInterval(() => {
+			const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+			if (timer) timer.textContent = Math.floor(elapsed / 60) + ':' + String(elapsed % 60).padStart(2, '0');
+		}, 500);
+		channel?.addEventListener('message', event => {
+			if (event.data?.type === 'state') render(event.data);
+		});
+		window.addEventListener('message', event => {
+			if (event.data?.source === 'vpk-deck' && event.data?.type === 'state') render(event.data);
+		});
+		document.addEventListener('keydown', event => {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+				if (channel) channel.postMessage({ type: 'request', delta: 1 });
+			}
+			if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+				if (channel) channel.postMessage({ type: 'request', delta: -1 });
+			}
+		});
 	}
-}
 
-@media print {
-	.docnav-controls { display: none !important; }
-	body[data-vpk-docnav] main > section {
-		opacity: 1 !important;
-		filter: none !important;
-		transform: none !important;
-	}
-}`;
-		document.head.appendChild(style);
+	if (location.hash.startsWith('#presenter')) {
+		buildPresenter();
+		return;
 	}
 
-	const controls = document.createElement('nav');
+	controls = document.createElement('nav');
 	controls.className = 'docnav-controls';
 	controls.setAttribute('aria-label', 'Document section navigation');
-	controls.innerHTML = `
-		<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button>
-		<span class="docnav-counter" aria-live="polite"></span>
-		<button type="button" data-docnav-next aria-label="Next section">&darr;</button>
-	`;
+	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">&darr;</button>' + progressSvg() + '</span>';
 	document.body.appendChild(controls);
 
 	const prevButton = controls.querySelector('[data-docnav-prev]');
 	const nextButton = controls.querySelector('[data-docnav-next]');
-	const counter = controls.querySelector('.docnav-counter');
 
-	function setActive(index) {
+	function setActive(index, shouldBroadcast = true) {
 		activeIndex = Math.max(0, Math.min(targets.length - 1, index));
 		targets.forEach((target, targetIndex) => {
 			target.classList.toggle('is-docnav-active', targetIndex === activeIndex);
 		});
-		prevButton.disabled = activeIndex === 0;
-		nextButton.disabled = activeIndex === targets.length - 1;
-		counter.textContent = `${String(activeIndex + 1).padStart(2, '0')} / ${String(targets.length).padStart(2, '0')}`;
+		updateControls();
 		document.body.dataset.docnavReady = 'true';
+		if (shouldBroadcast) broadcast();
 	}
 
 	function setFocusMode() {
@@ -3009,17 +3341,109 @@ section,
 		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
 		if (editable) return;
+		if (event.key.toLowerCase() === 'p') { event.preventDefault(); openPresenter(); return; }
 		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 		event.preventDefault();
 		const delta = event.key === 'ArrowDown' ? 1 : -1;
 		go(delta);
 	});
 
+	function openPresenter() {
+		const url = new URL(location.href);
+		url.hash = 'presenter-section-' + String(activeIndex + 1);
+		try { presenterWindow = window.open(url.href, 'vpk-presenter', 'popup,width=1180,height=760'); }
+		catch { /* noop */ }
+	}
+
+	channel?.addEventListener('message', event => {
+		if (event.data?.type === 'request') go(Number(event.data.delta || 0));
+	});
 	document.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
 	document.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
 	document.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
 	setActive(currentIndex());
 })();
 </script>
+<!-- vpk-theme-runtime:start -->
+<script data-vpk-theme-runtime>
+(() => {
+	const key = "vpk-html-theme";
+	const states = ["system", "light", "dark"];
+	const labels = { system: "system", light: "light", dark: "dark" };
+	const valid = new Set(states);
+	const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+
+	function writeChoice(choice) {
+		try { localStorage.setItem(key, choice); }
+		catch { /* noop */ }
+	}
+
+	function systemPrefersDark() {
+		return media ? media.matches : false;
+	}
+
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+		updateToggle(next);
+	}
+
+	function ensureToggle() {
+		let button = document.querySelector("[data-vpk-theme-toggle]");
+		if (button) return button;
+		button = document.createElement("button");
+		button.type = "button";
+		button.className = "vpk-theme-toggle";
+		button.setAttribute("data-vpk-theme-toggle", "true");
+		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.addEventListener("click", () => {
+			const current = readChoice();
+			const next = states[(states.indexOf(current) + 1) % states.length];
+			writeChoice(next);
+			apply(next);
+		});
+		document.body.appendChild(button);
+		return button;
+	}
+
+	function updateToggle(choice) {
+		const button = ensureToggle();
+		const state = button.querySelector(".vpk-theme-toggle__state");
+		const next = states[(states.indexOf(choice) + 1) % states.length];
+		if (state) state.textContent = labels[choice];
+		button.dataset.vpkThemeChoice = choice;
+		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
+		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+	}
+
+	function init() {
+		apply(readChoice());
+		if (!media) return;
+		const onChange = () => {
+			if (readChoice() === "system") apply("system");
+		};
+		if (media.addEventListener) media.addEventListener("change", onChange);
+		else if (media.addListener) media.addListener(onChange);
+	}
+
+	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+	else init();
+})();
+</script>
+<!-- vpk-theme-runtime:end -->
 </body>
 </html>

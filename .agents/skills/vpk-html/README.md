@@ -47,7 +47,8 @@ status readouts, and implementation briefs.
   and vpk-native examples.
 - **A reference-manual homepage** at [`index.html`](index.html).
 - **LLM-facing reference docs** for writing, anti-patterns, diagrams,
-  illustrations, charts, SVG grammar, presentation mode, video export, PDF export,
+  illustrations, charts, SVG grammar, presentation mode, video export with a
+  worked example at `assets/video/landing-demo-separation/`, PDF export,
   quality gates, GitHub Pages publishing, and production troubleshooting.
 
 ## Quick start
@@ -105,6 +106,7 @@ node scripts/port-engineering.mjs                 # regenerate Phase 2 engineeri
 node scripts/build-demos.mjs [--curated|--landing]  # regenerate curated demos + landing mock previews
 node scripts/port-engineering-demos.mjs           # copy + restyle direct Phase 2 upstream demo ports
 node scripts/build-illustrations.mjs              # regenerate technical illustration exemplars + gallery demos
+node scripts/build-video-demos.mjs                # regenerate the Video catalog demos (embeds rendered MP4s)
 node scripts/landing.mjs                          # regenerate assets/landing/ shells
 node scripts/build-index.mjs                      # regenerate the local Algebrica-style catalog index
 ```
@@ -126,7 +128,7 @@ node scripts/build-index.mjs                      # regenerate the local Algebri
 | `assets/fonts/` | Geist and Geist Mono (inlined as base64 at port time, with a numeric Geist Mono face) |
 | `output/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
-| `references/` | Anti-patterns, diagrams, illustrations, SVG style, presentation, video-export, resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
+| `references/` | Anti-patterns, diagrams, illustrations, SVG style, presentation, video-export (worked example: `assets/video/landing-demo-separation/`), resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
 | `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, build-index, landing, gates, pdf, ensure-fonts |
 
 ## Rules of the road
@@ -216,7 +218,8 @@ omitted them.
 - Charts use `references/charts.md` for the shared animation classes,
   progressive tooltip/legend pattern, and 30-chart catalog.
 - MP4 export is intentionally a Hyperframes re-authoring contract, not the deck
-  runtime. See `references/video-export.md`.
+  runtime. See `references/video-export.md` and the worked example at
+  `assets/video/landing-demo-separation/`.
 
 ## License
 

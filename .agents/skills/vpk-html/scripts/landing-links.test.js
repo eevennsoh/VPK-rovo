@@ -39,6 +39,12 @@ function readCssBlock(html, selector) {
 	return match[1];
 }
 
+function readCssBlocks(html, selector) {
+	const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return [...html.matchAll(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`, "g"))]
+		.map(match => match[1]);
+}
+
 test("landing rows link only to demo files", async () => {
 	const { ROOT } = await loadModules();
 	const rows = readLandingRows(path.join(ROOT, "index.html"));
@@ -63,6 +69,23 @@ test("landing removes decorative section separators", async () => {
 	for (const selector of [".hero", ".hero-intro", ".demo-contents", ".demo-category", ".demo-category:last-child"]) {
 		assert.doesNotMatch(readCssBlock(landing, selector), /border-(?:top|bottom)\s*:/);
 	}
+
+	const titleBlocks = readCssBlocks(landing, ".module-index__title");
+	assert.ok(titleBlocks.length > 0, "missing module index title CSS");
+	const pageTitleBlock = titleBlocks.at(-1);
+	assert.match(pageTitleBlock, /border-top:\s*0;/);
+	assert.match(pageTitleBlock, /padding-top:\s*0;/);
+});
+
+test("landing omits logo and search chrome", async () => {
+	const { ROOT } = await loadModules();
+	const landing = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+
+	assert.doesNotMatch(landing, /sidebar__logo/);
+	assert.doesNotMatch(landing, /sidebar__search/);
+	assert.doesNotMatch(landing, /search-input/);
+	assert.doesNotMatch(landing, /search__icon/);
+	assert.doesNotMatch(landing, /aria-label="Search catalog"/);
 });
 
 test("landing has no footer", async () => {

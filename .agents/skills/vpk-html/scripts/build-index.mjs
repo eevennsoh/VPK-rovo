@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildFaviconLinkBlock, buildSharedCssBlock, ROOT } from "./shared.mjs";
+import { retrofitThemeRuntime } from "./theme.mjs";
 
 const DEMOS_DIR = path.join(ROOT, "assets", "demos");
 const INDEX_FILE = path.join(ROOT, "index.html");
@@ -20,6 +21,18 @@ const SECTIONS = [
 			["demo-slides.html", "Slides"],
 			["demo-tesla.html", "Equity Report"],
 			["demo-changelog.html", "Changelog"],
+			["demo-broadsheet.html", "Broadsheet Front Page"],
+			["demo-annual-report.html", "Annual Report"],
+			["demo-interview.html", "Interview"],
+			["demo-lookbook.html", "Lookbook"],
+			["demo-feature-essay.html", "Feature Essay"],
+		],
+	},
+	{
+		id: "video",
+		title: "Video",
+		items: [
+			["demo-video-landing-demo-separation.html", "Landing Demo Separation"],
 		],
 	},
 	{
@@ -130,6 +143,7 @@ const SECTIONS = [
 			["demo-diagram-ridgeline.html", "Ridgeline"],
 			["demo-diagram-beeswarm.html", "Beeswarm"],
 			["demo-diagram-dot-strip.html", "Dot Strip"],
+			["demo-diagram-violin-plot.html", "Violin Plot"],
 		],
 	},
 	{
@@ -142,6 +156,8 @@ const SECTIONS = [
 			["demo-diagram-lollipop.html", "Lollipop"],
 			["demo-diagram-bullet.html", "Bullet"],
 			["demo-diagram-population-pyramid.html", "Population Pyramid"],
+			["demo-diagram-bump-chart.html", "Bump Chart"],
+			["demo-diagram-isotype.html", "Isotype"],
 		],
 	},
 	{
@@ -156,6 +172,12 @@ const SECTIONS = [
 			["demo-diagram-stacked-area.html", "Stacked Area"],
 			["demo-diagram-candlestick.html", "Candlestick"],
 			["demo-diagram-waterfall.html", "Waterfall"],
+			["demo-diagram-streamgraph.html", "Streamgraph"],
+			["demo-diagram-horizon-chart.html", "Horizon Chart"],
+			["demo-diagram-fan-chart.html", "Fan Chart"],
+			["demo-diagram-priestley-timeline.html", "Priestley Timeline"],
+			["demo-diagram-seismogram.html", "Seismogram"],
+			["demo-diagram-gantt.html", "Gantt"],
 		],
 	},
 	{
@@ -168,6 +190,14 @@ const SECTIONS = [
 			["demo-diagram-waffle.html", "Waffle"],
 			["demo-diagram-grid-choropleth.html", "Grid Choropleth"],
 			["demo-diagram-treemap.html", "Treemap"],
+			["demo-diagram-marimekko.html", "Marimekko"],
+			["demo-diagram-polar-area.html", "Polar Area"],
+			["demo-diagram-sunburst.html", "Sunburst"],
+			["demo-diagram-circle-packing.html", "Circle Packing"],
+			["demo-diagram-hexbin.html", "Hexbin"],
+			["demo-diagram-voronoi-treemap.html", "Voronoi Treemap"],
+			["demo-diagram-contour-density.html", "Contour Density"],
+			["demo-diagram-grid-cartogram.html", "Grid Cartogram"],
 		],
 	},
 	{
@@ -179,6 +209,11 @@ const SECTIONS = [
 			["demo-diagram-scatter.html", "Scatter"],
 			["demo-diagram-connected-scatter.html", "Connected Scatter"],
 			["demo-diagram-icicle.html", "Icicle"],
+			["demo-diagram-parallel-coordinates.html", "Parallel Coordinates"],
+			["demo-diagram-chord-diagram.html", "Chord Diagram"],
+			["demo-diagram-upset-plot.html", "UpSet Plot"],
+			["demo-diagram-edge-bundling.html", "Edge Bundling"],
+			["demo-diagram-force-network.html", "Force Network"],
 		],
 	},
 ];
@@ -207,16 +242,11 @@ function renderSidebar() {
 	return `<aside id="site-sidebar-right" aria-label="Catalog navigation">
 	<div class="sidebar">
 		<div class="sidebar__brand">
-			<div class="sidebar__logo" aria-hidden="true">v</div>
 			<div>
 				<div class="sidebar__title">vpk-html</div>
 				<p>Offline editorial HTML artifacts.</p>
 			</div>
 		</div>
-		<form class="sidebar__search" role="search" aria-label="Catalog search">
-			<input class="search-input -desktop" type="search" placeholder="Search" aria-label="Search catalog" disabled>
-			<button class="search__icon -desktop" type="button" aria-label="Search" disabled>⌕</button>
-		</form>
 		<nav class="sidebar__section" aria-label="Catalog sections">
 			<div class="sidebar-list">
 				${nav}
@@ -259,7 +289,7 @@ function renderSections() {
 }
 
 function buildIndexHtml() {
-	return `<!doctype html>
+	return retrofitThemeRuntime(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -340,20 +370,6 @@ a:hover {
 	margin-bottom: 40px;
 }
 
-.sidebar__logo {
-	align-items: center;
-	background: var(--ink);
-	border-radius: 12px;
-	color: var(--inverse-text);
-	display: flex;
-	font-family: var(--font-mono);
-	font-size: 18px;
-	font-weight: 600;
-	height: 40px;
-	justify-content: center;
-	width: 40px;
-}
-
 .sidebar__title {
 	color: var(--ink);
 	font-size: 15px;
@@ -366,49 +382,6 @@ a:hover {
 	font-size: 13px;
 	line-height: 1.35;
 	margin: 0;
-}
-
-.sidebar__search {
-	margin-bottom: 30px;
-	position: relative;
-}
-
-.search-input {
-	background: transparent;
-	border: 1px solid var(--search-border);
-	border-radius: 24px;
-	color: var(--ink);
-	font: 14px var(--font-body);
-	height: 38px;
-	padding: 0 58px 2px 14px;
-	width: 100%;
-}
-
-.search-input::placeholder {
-	color: var(--subtlest-text);
-}
-
-.search-input:focus {
-	border-color: var(--search-focus);
-	box-shadow: 0 0 0 2px var(--accent-soft);
-	outline: 0;
-}
-
-.search__icon {
-	align-items: center;
-	background: transparent;
-	border: 0;
-	color: var(--muted-text);
-	display: flex;
-	font: 18px var(--font-mono);
-	height: 38px;
-	justify-content: center;
-	opacity: .8;
-	padding: 0;
-	position: absolute;
-	right: 14px;
-	top: 0;
-	width: 22px;
 }
 
 .sidebar__section {
@@ -486,14 +459,14 @@ main {
 }
 
 .module-index__title {
-	border-top: 1px solid var(--rule-strong);
+	border-top: 0;
 	color: var(--headline);
 	font-family: var(--font-display);
 	font-size: 36px;
 	font-weight: 500;
 	line-height: 1.2;
 	margin: 0 0 30px;
-	padding-top: 40px;
+	padding-top: 0;
 }
 
 .demo-category {
@@ -561,10 +534,6 @@ main {
 		padding: 24px;
 	}
 
-	.sidebar__search {
-		display: none;
-	}
-
 	.sidebar-list {
 		display: grid;
 		gap: 2px 18px;
@@ -597,7 +566,7 @@ main {
 }
 </style>
 </head>
-<body data-vpk-motion="document">
+<body data-vpk-motion="document" data-vpk-chrome="catalog">
 <div class="container">
 	<div class="site-container">
 		${renderSidebar()}
@@ -614,7 +583,7 @@ main {
 </div>
 </body>
 </html>
-`;
+`);
 }
 
 function main() {

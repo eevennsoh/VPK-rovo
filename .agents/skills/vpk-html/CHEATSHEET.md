@@ -214,7 +214,8 @@ Read `references/presentation.md` for presenter sync and recording rules.
 
 For narrated MP4 output, do not use the browser deck runtime. Follow
 `references/video-export.md` and re-author the deck into a Hyperframes
-general-video composition after user approval.
+general-video composition after user approval. Use
+`assets/video/landing-demo-separation/` as the worked example.
 
 ## Identity
 
@@ -262,6 +263,6 @@ document.documentElement.setAttribute('data-theme', 'dark');
    `references/svg-style.md` for SVG grammar,
    `references/presentation.md` for decks
 4. `references/design.md` (only if touching CSS, tokens, or motion)
-5. `references/video-export.md` (only for user-approved MP4 conversion)
+5. `references/video-export.md` (only for user-approved MP4 conversion; worked example: `assets/video/landing-demo-separation/`)
 6. `references/quality-gates.md` (when running advisory polish gates)
 7. `references/production.md` (only when troubleshooting)

@@ -8,6 +8,35 @@
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3C%2Fsvg%3E">
 <title>Landing demos use filled mock previews</title>
+<!-- vpk-theme-init:start -->
+<script data-vpk-theme-init>
+(() => {
+	const key = "vpk-html-theme";
+	const valid = new Set(["light", "dark", "system"]);
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+	function systemPrefersDark() {
+		return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+	}
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+	}
+	apply(readChoice());
+})();
+</script>
+<!-- vpk-theme-init:end -->
 <style>
   @page {
     size: 280mm 158mm;
@@ -91,12 +120,12 @@
 	--selected: #e9e3e2;
 	--accent-lime: #cfc4c2;
 	--accent-purple: #b9afad;
-	--accent-saffron: #ded5d4;
+	--accent-saffron: #d8c7b0;
 	--accent-orange: #cfc4c2;
 	--accent-navy: #312f2f;
-	--accent-green: #ded5d4;
+	--accent-green: #d4d8c0;
 	--accent-red: #8c3a32;
-	--collection-software: #ded5d4;
+	--collection-software: #d7cbc9;
 	--collection-product: #cfc4c2;
 	--collection-service: #b9afad;
 	--focus-ring: #312f2f;
@@ -104,14 +133,14 @@
 	--code-ink: #312f2f;
 	--code-inverse: #f4efee;
 	--math-highlight: #e9e3e2;
-	--success: #6f6a68;
-	--success-tint: #e9e3e2;
-	--warning: #8a6d1a;
-	--warning-tint: rgba(138, 109, 26, 0.14);
+	--success: #4f5d2d;
+	--success-tint: rgba(79, 93, 45, 0.14);
+	--warning: #765c16;
+	--warning-tint: rgba(118, 92, 22, 0.14);
 	--danger: #8c3a32;
 	--danger-tint: rgba(140, 58, 50, 0.12);
-	--info: #706e6e;
-	--info-tint: #e9e3e2;
+	--info: #5f5a58;
+	--info-tint: rgba(95, 90, 88, 0.12);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -187,12 +216,12 @@
 	--selected: #2a2625;
 	--accent-lime: #413a38;
 	--accent-purple: #69605d;
-	--accent-saffron: #504846;
+	--accent-saffron: #5a4e45;
 	--accent-orange: #413a38;
 	--accent-navy: #d8d1cf;
-	--accent-green: #504846;
+	--accent-green: #4e5545;
 	--accent-red: #c98278;
-	--collection-software: #504846;
+	--collection-software: #584b50;
 	--collection-product: #413a38;
 	--collection-service: #69605d;
 	--focus-ring: #e9e3e2;
@@ -200,14 +229,14 @@
 	--code-ink: #e9e3e2;
 	--code-inverse: #1a1817;
 	--math-highlight: #2a2625;
-	--success: #bdb5b3;
-	--success-tint: #302b2a;
+	--success: #b8c17b;
+	--success-tint: rgba(184, 193, 123, 0.18);
 	--warning: #b89a3c;
 	--warning-tint: rgba(184, 154, 60, 0.18);
 	--danger: #c98278;
 	--danger-tint: rgba(201, 130, 120, 0.16);
-	--info: #bdb5b3;
-	--info-tint: #302b2a;
+	--info: #b8afac;
+	--info-tint: rgba(184, 175, 172, 0.16);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -1500,22 +1529,124 @@ button {
 		animation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
 	}
 
-	.vpk-slide-counter {
+	.vpk-slide-counter,
+	.docnav-controls {
+		align-items: center;
+		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--paper) 88%, transparent);
+		border: 0;
+		border-radius: 999px;
+		bottom: 24px;
+		box-shadow: var(--shadow);
+		display: flex;
+		font-family: var(--font-mono);
+		gap: 6px;
+		letter-spacing: 0;
+		padding: 6px;
+		position: fixed;
+		right: 24px;
+		z-index: 50;
+	}
+
+	.vpk-slide-counter button,
+	.docnav-controls button {
 		align-items: center;
 		background: var(--surface-raised);
 		border: 1px solid var(--rule);
-		bottom: 18px;
-		box-shadow: var(--shadow);
+		border-radius: 999px;
+		color: var(--ink);
+		cursor: pointer;
+		display: flex;
+		font-family: var(--font-mono);
+		font-size: 18px;
+		height: 36px;
+		justify-content: center;
+		line-height: 1;
+		padding: 0;
+		width: 36px;
+	}
+
+	.vpk-slide-counter button:hover,
+	.vpk-slide-counter button:focus-visible,
+	.docnav-controls button:hover,
+	.docnav-controls button:focus-visible {
+		border-color: var(--accent);
+		color: var(--accent);
+		outline: none;
+	}
+
+	.vpk-slide-counter button:disabled,
+	.docnav-controls button:disabled {
+		cursor: default;
+		opacity: 0.35;
+	}
+
+	.vpk-nav-counter,
+	.docnav-counter {
 		color: var(--muted-text);
-		display: inline-flex;
 		font-family: var(--font-mono);
 		font-size: 12px;
-		gap: 6px;
-		letter-spacing: 0;
-		padding: 8px 10px;
-		position: fixed;
-		right: 18px;
-		z-index: 20;
+		font-variant-numeric: tabular-nums;
+		min-width: 46px;
+		text-align: center;
+	}
+
+	.vpk-nav-next-wrap {
+		align-items: center;
+		display: grid;
+		height: 44px;
+		justify-items: center;
+		position: relative;
+		width: 44px;
+	}
+
+	.vpk-nav-next-wrap button {
+		position: relative;
+		z-index: 1;
+	}
+
+	.vpk-nav-progress {
+		inset: 0;
+		pointer-events: none;
+		position: absolute;
+		transform: rotate(-90deg);
+	}
+
+	.vpk-nav-progress__track,
+	.vpk-nav-progress__arc {
+		fill: none;
+		stroke-width: 1.25;
+	}
+
+	.vpk-nav-progress__track {
+		stroke: var(--rule);
+	}
+
+	.vpk-nav-progress__arc {
+		stroke: var(--ink);
+		stroke-dasharray: var(--vpk-progress-circumference, 113.1);
+		stroke-dashoffset: var(--vpk-progress-offset, 113.1);
+		stroke-linecap: round;
+		transition: stroke-dashoffset 180ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav] main > section {
+		scroll-margin-top: 32px;
+		transition:
+			opacity 560ms var(--ease-out),
+			filter 560ms var(--ease-out),
+			transform 420ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+		opacity: 0.34 !important;
+		filter: grayscale(0.14) !important;
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: translateY(-2px) !important;
 	}
 
 	html[data-vpk-presenter="true"],
@@ -1570,7 +1701,7 @@ button {
 		font-size: 13px;
 		letter-spacing: 0;
 		margin-bottom: 10px;
-		
+		text-transform: none;
 	}
 
 	.vpk-presenter-notes-text {
@@ -1585,873 +1716,38 @@ button {
 		font-size: 14px;
 		margin-top: 20px;
 	}
+
+	body.vpk-presenter-window .vpk-theme-toggle {
+		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.vpk-nav-progress__arc {
+		transition: none !important;
+	}
 }
 
 @media print {
 	.speaker-notes,
 	.vpk-slide-counter,
+	.docnav-controls,
 	.vpk-presenter {
 		display: none !important;
 	}
-}
-/* vpk-algebrica-v2:start */
-/* algebrica component vocabulary */
-.post-header {
-	margin-bottom: 50px;
-}
 
-.post-header-breadcrumb,
-.breadcrumb-eyebrow,
-.eyebrow,
-.kicker,
-.cover-eyebrow {
-	color: var(--muted-text);
-	font-family: var(--font-mono);
-	font-size: 12px;
-	font-weight: 600;
-	letter-spacing: 2px;
-	line-height: 1.4;
-	margin-bottom: 60px;
-	text-transform: uppercase;
-}
-
-.post-header-title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.4;
-	margin: 0 0 20px;
-}
-
-.post-header-meta {
-	color: var(--muted-text);
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 13px;
-	gap: 20px;
-	line-height: 1.4;
-}
-
-.post-content {
-	color: var(--ink);
-	font-family: "Geist Mono Numeric", var(--font-body);
-}
-
-.post-section {
-	color: var(--ink);
-	font-family: "Geist Mono Numeric", var(--font-body);
-	font-size: 17px;
-	hyphens: auto;
-	line-height: 23px;
-	overflow-wrap: break-word;
-	padding-bottom: 60px;
-	text-align: justify;
-}
-
-.post-section:not(:last-child) {
-	border-bottom: 1px solid var(--rule-strong);
-	margin-bottom: 50px;
-}
-
-.post-section h2 {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 24px;
-	font-weight: 500;
-	line-height: 1.3;
-	margin: 0 0 20px;
-	text-align: left;
-}
-
-.post-section p:not(:last-child),
-.post-content p:not(:last-child) {
-	margin-bottom: 25px;
-}
-
-.post-paragraph {
-	position: relative;
-}
-
-.post-paragraph-content {
-	hyphens: auto;
-	overflow-wrap: break-word;
-	text-align: justify;
-}
-
-.post-paragraph-number {
-	color: var(--subtlest-text);
-	font-size: 17px;
-	left: -56px;
-	position: absolute;
-	text-align: right;
-	top: 0;
-	transform: translateY(1px);
-	width: 26px;
-}
-
-a,
-a:visited {
-	color: var(--link);
-	text-decoration-line: none;
-	text-decoration-color: transparent;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 4px;
-}
-
-a:hover {
-	color: var(--ink);
-}
-
-.post-content a,
-.post-section a,
-.prose a,
-article a,
-.toc a,
-.toc-item,
-.module-index-post__title a,
-.demo-row,
-.in-review-item__title {
-	color: var(--link);
-	text-decoration-line: underline;
-	text-decoration-color: transparent;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 4px;
-}
-
-.post-content a:hover,
-.post-section a:hover,
-.prose a:hover,
-article a:hover,
-.toc a:hover,
-.toc-item:hover,
-.module-index-post__title a:hover,
-.demo-row:hover,
-.in-review-item__title:hover {
-	color: var(--ink);
-	text-decoration-color: currentColor;
-}
-
-.post-content a:focus-visible,
-.post-section a:focus-visible,
-.prose a:focus-visible,
-article a:focus-visible,
-.toc a:focus-visible,
-.toc-item:focus-visible,
-.module-index-post__title a:focus-visible,
-.demo-row:focus-visible,
-.in-review-item__title:focus-visible {
-	text-decoration-color: currentColor;
-}
-
-.post-header-breadcrumb a,
-.breadcrumb-eyebrow a,
-.eyebrow a,
-.kicker a,
-.cover-eyebrow a,
-.post-header-meta a,
-.sidebar-list a,
-.sidebar__bottom-links a,
-.docnav-controls a,
-.docnav-controls button,
-footer a,
-.footer-list-vertical a,
-.header-users-btn,
-.pill-button,
-.button,
-.btn {
-	text-decoration-line: none;
-}
-
-.post-header-breadcrumb a:hover,
-.breadcrumb-eyebrow a:hover,
-.eyebrow a:hover,
-.kicker a:hover,
-.cover-eyebrow a:hover,
-.post-header-meta a:hover,
-.sidebar-list a:hover,
-.sidebar__bottom-links a:hover,
-.docnav-controls a:hover,
-.docnav-controls button:hover,
-footer a:hover,
-.footer-list-vertical a:hover {
-	color: var(--muted-text);
-}
-
-a:focus-visible,
-button:focus-visible,
-[role="button"]:focus-visible {
-	border-radius: 2px;
-	box-shadow: 0 0 0 2px var(--focus-ring);
-	outline: 0;
-}
-
-table,
-.kami-table {
-	border: 1px solid var(--rule);
-	border-collapse: collapse;
-	border-radius: 0;
-	box-shadow: none;
-	font-family: var(--font-body);
-	font-size: 12px;
-	margin: 0 auto 30px;
-	width: auto;
-}
-
-th,
-td,
-.kami-table th,
-.kami-table td {
-	border: 1px solid var(--rule);
-	padding: 8px 12px;
-	text-align: center;
-	vertical-align: middle;
-	white-space: nowrap;
-}
-
-th,
-.kami-table th {
-	background: var(--table-header);
-	font-weight: 500;
-}
-
-figure,
-.pb-svg {
-	display: flex;
-	justify-content: center;
-	margin: 0 0 30px;
-	text-align: center;
-}
-
-figure {
-	align-items: center;
-	flex-direction: column;
-}
-
-figure > svg,
-.pb-svg > svg {
-	display: block;
-	height: auto;
-	max-width: 100%;
-}
-
-figcaption {
-	color: var(--muted-text);
-	font-size: 13px;
-	line-height: 1.4;
-	margin-top: 12px;
-	max-width: 62ch;
-	text-align: center;
-}
-
-.MathJax {
-	font-size: 17px !important;
-}
-
-.post-section .MathJax {
-	margin: 0 !important;
-	text-align: center !important;
-}
-
-table .MathJax,
-blockquote .MathJax {
-	font-size: 13px !important;
-}
-
-.module-index__title {
-	border-top: 1px solid var(--rule-strong);
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.2;
-	margin-bottom: 30px;
-	padding-top: 40px;
-}
-
-.module-index-section {
-	margin-bottom: 50px;
-}
-
-.module-index-section:last-child {
-	margin-bottom: 0;
-}
-
-.module-index-section-header {
-	height: 32px;
-	line-height: 32px;
-}
-
-.module-index-heading {
-	align-items: baseline;
-	display: flex;
-	font-size: 15px;
-	font-weight: 600;
-	padding-bottom: 6px;
-}
-
-.module-index-number {
-	color: var(--muted-text);
-	flex: 0 0 52px;
-	font-variant-numeric: tabular-nums;
-	width: 52px;
-}
-
-.module-index-posts {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-}
-
-.module-index-post {
-	align-items: center;
-	display: flex;
-	font-size: 15px;
-	gap: 5px;
-	min-height: 32px;
-}
-
-.module-index-post__number {
-	font-size: 13px;
-}
-
-.module-index-post__title {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.in-review-item__count {
-	align-items: center;
-	color: var(--meta-text);
-	display: flex;
-	flex: 0 0 auto;
-	font-size: 13px;
-	gap: 20px;
-	line-height: 1.35;
-	white-space: nowrap;
-}
-
-.module-index-post__views {
-	color: var(--muted-text);
-	font-weight: 500;
-	min-width: 32px;
-	text-align: right;
-}
-
-.in-review {
-	border: 1px solid var(--rule);
-	border-radius: 12px;
-	margin-top: 40px;
-	overflow: hidden;
-}
-
-.in-review-item {
-	align-items: center;
-	border-top: 1px solid var(--rule);
-	display: flex;
-	font-size: 15px;
-	gap: 20px;
-	justify-content: space-between;
-	line-height: 1.35;
-	padding: 14px;
-}
-
-.in-review-item:first-child {
-	border-top: 0;
-}
-
-.in-review-item__title {
-	color: var(--ink);
-}
-
-.reviews-vote-count,
-.vote-chip {
-	border: 1px solid var(--chip-border);
-	border-radius: 4px;
-	color: var(--chip-text);
-	display: inline-block;
-	font-size: 13px;
-	font-weight: 700;
-	height: 22px;
-	line-height: 22px;
-	min-width: 22px;
-	overflow: hidden;
-	text-align: center;
-}
-
-.is-voted .reviews-vote-count,
-.vote-chip.is-active {
-	background: var(--chip-border);
-	color: var(--chip-selected);
-}
-
-.module-contributions {
-	border-top: 1px solid var(--rule-strong);
-	color: var(--ink);
-	font-size: 12px;
-	line-height: 1.2;
-	margin: 20px 0 30px;
-	padding: 40px 0 30px;
-}
-
-.module-contributions__title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.2;
-	margin-bottom: 30px;
-}
-
-.module-contributions__total {
-	color: var(--ink);
-	font-size: 14px;
-	font-weight: 500;
-	margin-bottom: 20px;
-	min-height: 18px;
-}
-
-.module-contributions table {
-	border: 0;
-	border-collapse: separate;
-	border-spacing: 4px;
-	margin-bottom: 0;
-	table-layout: fixed;
-}
-
-.module-contributions td {
-	border: 0;
-	height: 10px;
-	line-height: 10px;
-	padding: 0;
-}
-
-.heat-dot,
-.module-contributions__cell {
-	border-radius: 50%;
-	display: inline-block;
-	height: 10px;
-	margin: 0 auto;
-	width: 10px;
-}
-
-.heat-0 { background: var(--heat0); }
-.heat-1 { background: var(--heat1); }
-.heat-2 { background: var(--heat2); }
-.heat-3 { background: var(--heat3); }
-.heat-4 { background: var(--heat4); }
-
-.review-code,
-.code-card {
-	background: var(--code-surface);
-	border: 0;
-	border-radius: 8px;
-	color: var(--code-ink);
-	font-family: var(--font-mono);
-	font-size: 14px;
-	font-weight: 500;
-	margin: 0 auto;
-	max-width: 547px;
-	padding: 30px;
-}
-
-.header-users-btn,
-.pill-button,
-.button,
-.btn,
-button {
-	align-items: center;
-	background: transparent;
-	border: 2px solid var(--pill-border);
-	border-radius: 24px;
-	color: var(--muted-text);
-	display: inline-flex;
-	font-family: var(--font-body);
-	font-size: 13px;
-	font-weight: 500;
-	height: 34px;
-	justify-content: center;
-	padding: 0 14px;
-	transition: background-color 180ms ease, opacity 180ms ease;
-}
-
-.support-button,
-.pill-button.is-filled,
-.button.primary,
-.btn.primary {
-	background: var(--pill-fill);
-	border-color: var(--pill-fill);
-	color: var(--inverse-text);
-}
-
-.support-button:hover,
-.pill-button.is-filled:hover,
-.button.primary:hover,
-.btn.primary:hover {
-	background: var(--pill-fill-hover);
-	border-color: var(--pill-fill-hover);
-}
-
-.in-review-head,
-.centered-section-head {
-	margin: 0 auto 20px;
-	max-width: 500px;
-	text-align: center;
-}
-
-.in-review-head-title,
-.centered-section-title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 32px;
-	font-weight: 500;
-	line-height: 1.25;
-	margin-bottom: 20px;
-}
-
-.in-review-head-content,
-.centered-section-lede {
-	color: var(--meta-text);
-	font-size: 15px;
-	line-height: 1.5;
-}
-
-.pb-steps-community ul,
-.steps-list {
-	font-size: 14px;
-	list-style: none;
-	margin: 0 0 30px;
-	overflow: hidden;
-	padding-left: 30px;
-	position: relative;
-}
-
-.pb-steps-community ul::before,
-.steps-list::before {
-	border-left: 1px solid var(--rule-strong);
-	content: "";
-	height: 1000px;
-	left: 10px;
-	position: absolute;
-	top: 0;
-}
-
-.pb-steps-community li,
-.steps-list li {
-	position: relative;
-}
-
-.pb-steps-community li:not(:last-child),
-.steps-list li:not(:last-child) {
-	margin-bottom: 10px;
-}
-
-.pb-steps-community li::before,
-.steps-list li::before {
-	background: var(--subtlest-text);
-	border: 2px solid var(--paper-background);
-	border-radius: 50%;
-	content: "";
-	height: 8px;
-	left: -37px;
-	position: absolute;
-	top: 8px;
-	width: 8px;
-}
-
-@media (max-width: 1130px) {
-	.post-header-breadcrumb,
-	.breadcrumb-eyebrow,
-	.eyebrow,
-	.kicker,
-	.cover-eyebrow {
-		margin-bottom: 60px;
+	body[data-vpk-motion="deck"] .slide,
+	body[data-vpk-docnav] main > section {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
 	}
 
-	.post-paragraph-number {
-		display: none;
-	}
-
-	.in-review {
-		padding: 14px;
-	}
-
-	.in-review-item {
-		align-items: flex-start;
-		gap: 6px;
+	body[data-vpk-docnav] main > section {
+		opacity: 1 !important;
+		filter: none !important;
 	}
 }
-
-html,
-body {
-	background: var(--paper-background) !important;
-	color: var(--ink) !important;
-	font-family: "Geist Mono Numeric", var(--font-body) !important;
-	font-size: 17px !important;
-	line-height: 23px !important;
-	letter-spacing: 0 !important;
-}
-
-body {
-	min-height: 100vh;
-}
-
-p,
-li,
-dd,
-dt,
-blockquote {
-	font-family: "Geist Mono Numeric", var(--font-body) !important;
-	font-size: 17px !important;
-	hyphens: auto !important;
-	line-height: 23px !important;
-	overflow-wrap: break-word !important;
-}
-
-.post-content p,
-.post-section p,
-.prose p,
-article p {
-	text-align: justify !important;
-}
-
-h1,
-.cover-title,
-.doc-title,
-.resume-name,
-.deck-cover .title,
-.hero h1,
-.title-block h1,
-.letter-subject,
-.masthead-title {
-	color: var(--headline) !important;
-	font-family: var(--font-display) !important;
-	font-size: 36px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.4 !important;
-}
-
-h2,
-.section-title,
-.module-title,
-.panel-title {
-	color: var(--headline) !important;
-	font-family: var(--font-display) !important;
-	font-size: 24px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.3 !important;
-}
-
-h3,
-.card-title,
-.metric-title {
-	color: var(--ink) !important;
-	font-family: var(--font-display) !important;
-	font-size: 19px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.28 !important;
-}
-
-h4,
-h5,
-h6 {
-	color: var(--ink) !important;
-	font-family: var(--font-display) !important;
-	font-size: 15px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.35 !important;
-}
-
-.post-header-breadcrumb,
-.breadcrumb-eyebrow,
-.eyebrow,
-.kicker,
-.cover-eyebrow {
-	color: var(--muted-text) !important;
-	font-family: var(--font-mono) !important;
-	font-size: 12px !important;
-	font-weight: 600 !important;
-	letter-spacing: 2px !important;
-	line-height: 1.4 !important;
-	text-transform: uppercase !important;
-}
-
-.label,
-.meta,
-.meta-mono,
-.figure-tag,
-.fig-num,
-.gutter-tag,
-.margin-label,
-.section-kicker,
-.source-label,
-.caption,
-.tag,
-.badge,
-.pill,
-.chip,
-.stat-label,
-.vpk-presenter-kicker {
-	color: var(--muted-text) !important;
-	font-family: var(--font-body) !important;
-	font-size: 13px !important;
-	font-weight: 400 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.4 !important;
-}
-
-code,
-kbd,
-samp,
-pre,
-.mono,
-.meta-mono,
-.fig-num,
-.gutter-tag,
-svg text {
-	font-family: var(--font-mono) !important;
-}
-
-a,
-a:visited {
-	color: var(--link) !important;
-	text-decoration-line: none !important;
-	text-decoration-color: transparent !important;
-	text-decoration-thickness: 1px !important;
-	text-underline-offset: 4px !important;
-}
-
-a:hover {
-	color: var(--ink) !important;
-}
-
-.post-content a,
-.post-section a,
-.prose a,
-article a,
-.toc a,
-.toc-item,
-.module-index-post__title a,
-.demo-row,
-.in-review-item__title {
-	text-decoration-line: underline !important;
-	text-decoration-color: transparent !important;
-}
-
-.post-content a:hover,
-.post-section a:hover,
-.prose a:hover,
-article a:hover,
-.toc a:hover,
-.toc-item:hover,
-.module-index-post__title a:hover,
-.demo-row:hover,
-.in-review-item__title:hover,
-.post-content a:focus-visible,
-.post-section a:focus-visible,
-.prose a:focus-visible,
-article a:focus-visible,
-.toc a:focus-visible,
-.toc-item:focus-visible,
-.module-index-post__title a:focus-visible,
-.demo-row:focus-visible,
-.in-review-item__title:focus-visible {
-	text-decoration-color: currentColor !important;
-}
-
-.post-header-breadcrumb a,
-.breadcrumb-eyebrow a,
-.eyebrow a,
-.kicker a,
-.cover-eyebrow a,
-.post-header-meta a,
-.sidebar-list a,
-.sidebar__bottom-links a,
-.docnav-controls a,
-.docnav-controls button,
-footer a,
-.footer-list-vertical a,
-.header-users-btn,
-.pill-button,
-.button,
-.btn {
-	text-decoration-line: none !important;
-}
-
-table,
-.kami-table {
-	border: 1px solid var(--rule) !important;
-	border-collapse: collapse !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
-	font-family: var(--font-body) !important;
-	font-size: 12px !important;
-	margin: 0 auto 30px !important;
-	width: auto !important;
-}
-
-th,
-td,
-.kami-table th,
-.kami-table td {
-	border: 1px solid var(--rule) !important;
-	padding: 8px 12px !important;
-	text-align: center !important;
-	vertical-align: middle !important;
-	white-space: nowrap !important;
-}
-
-th,
-.kami-table th {
-	background: var(--table-header) !important;
-	font-weight: 500 !important;
-}
-
-figure,
-.pb-svg {
-	display: flex !important;
-	justify-content: center !important;
-	margin: 0 0 30px !important;
-	text-align: center !important;
-}
-
-figure {
-	align-items: center !important;
-	flex-direction: column !important;
-}
-
-.review-code,
-.code-card {
-	background: var(--code-surface) !important;
-	border-radius: 8px !important;
-	font-family: var(--font-mono) !important;
-	font-size: 14px !important;
-	font-weight: 500 !important;
-	padding: 30px !important;
-}
-
-.frame,
-.page,
-section,
-.card,
-.metric,
-.metric-card,
-.header,
-.hero,
-.cover,
-.doc-cover,
-.quote,
-.pull-quote,
-.callout,
-.verdict,
-.panel {
-	box-shadow: none !important;
-}
-/* vpk-algebrica-v2:end */
 </style>
 </head>
 <body data-vpk-motion="deck">
@@ -2477,7 +1773,7 @@ section,
   <div class="sub">Reusable templates and diagrams stay in their source folders.</div>
   <div class="meta">VPK Maintainers · 2026.05.12</div>
 
-<aside class="speaker-notes" aria-hidden="true">Filled mock content for the landing preview.</aside>
+<aside class="speaker-notes" aria-hidden="true">Open with the problem, not the implementation. Spend about 20 seconds on why raw placeholders were jarring in a catalog context, then transition to the separation rule.</aside>
 </section>
 
 <!-- Content slide · two-column -->
@@ -2500,7 +1796,7 @@ section,
   <div class="page-num">01</div>
   <div class="footer-mark">vpk-html</div>
 
-<aside class="speaker-notes" aria-hidden="true">Filled mock content for the landing preview.</aside>
+<aside class="speaker-notes" aria-hidden="true">Use this slide to draw the audience's eye from left to right: before meant raw source exposure, after means filled demos for browsing. Keep the distinction between authoring and browsing crisp.</aside>
 </section>
 
 <!-- Content slide · 2×2 modules -->
@@ -2534,7 +1830,7 @@ section,
   <div class="page-num">02</div>
   <div class="footer-mark">vpk-html</div>
 
-<aside class="speaker-notes" aria-hidden="true">Filled mock content for the landing preview.</aside>
+<aside class="speaker-notes" aria-hidden="true">Move through the four cells clockwise. Emphasize that document mocks and diagram mocks are separate assets, and that the regression guard is the durable contract.</aside>
 </section>
 
 <!-- Content slide · pinned callout -->
@@ -2549,7 +1845,7 @@ section,
   <div class="page-num">03</div>
   <div class="footer-mark">vpk-html</div>
 
-<aside class="speaker-notes" aria-hidden="true">Filled mock content for the landing preview.</aside>
+<aside class="speaker-notes" aria-hidden="true">Pause on the pinned callout for a beat. The main point is that placeholders are healthy in source templates and wrong in landing demos.</aside>
 </section>
 
 <!-- Content slide · data table -->
@@ -2573,11 +1869,12 @@ section,
   <div class="page-num">04</div>
   <div class="footer-mark">vpk-html</div>
 
-<aside class="speaker-notes" aria-hidden="true">Filled mock content for the landing preview.</aside>
+<aside class="speaker-notes" aria-hidden="true">Close with the numbers: five document rows, thirty-nine diagram rows, and one test boundary. Leave time for questions about where future template additions should be linked.</aside>
 </section>
 
 
-</main><script data-vpk-presentation-runtime>
+</main>
+<script data-vpk-presentation-runtime>
 (() => {
 	const slides = [...document.querySelectorAll('section.slide')];
 	if (slides.length < 2) return;
@@ -2604,14 +1901,40 @@ section,
 		return (slide.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this slide.';
 	}
 
-	function ensureCounter() {
-		let counter = document.querySelector('[data-vpk-slide-counter]');
-		if (counter) return counter;
-		counter = document.createElement('div');
-		counter.className = 'vpk-slide-counter';
-		counter.dataset.vpkSlideCounter = 'true';
-		document.body.append(counter);
-		return counter;
+	function progressSvg() {
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
+	}
+
+	function ensureControls() {
+		let controls = document.querySelector('[data-vpk-slide-counter]');
+		if (controls) return controls;
+		controls = document.createElement('nav');
+		controls.className = 'vpk-slide-counter';
+		controls.dataset.vpkSlideCounter = 'true';
+		controls.setAttribute('aria-label', 'Slide navigation');
+		controls.innerHTML = '<button type="button" data-vpk-slide-prev aria-label="Previous slide">&larr;</button><span class="vpk-nav-counter" data-vpk-slide-count aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-vpk-slide-next aria-label="Next slide">&rarr;</button>' + progressSvg() + '</span>';
+		controls.querySelector('[data-vpk-slide-prev]')?.addEventListener('click', () => show(index - 1));
+		controls.querySelector('[data-vpk-slide-next]')?.addEventListener('click', () => show(index + 1));
+		document.body.append(controls);
+		return controls;
+	}
+
+	function updateControls() {
+		const controls = ensureControls();
+		const previous = controls.querySelector('[data-vpk-slide-prev]');
+		const next = controls.querySelector('[data-vpk-slide-next]');
+		const counter = controls.querySelector('[data-vpk-slide-count]');
+		const arc = controls.querySelector('[data-vpk-progress-arc]');
+		if (previous) previous.disabled = index === 0;
+		if (next) next.disabled = index === slides.length - 1;
+		if (counter) counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+		if (arc) {
+			const radius = Number(arc.getAttribute('r') || 18);
+			const circumference = 2 * Math.PI * radius;
+			const progress = slides.length <= 1 ? 1 : (index + 1) / slides.length;
+			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
+			arc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+		}
 	}
 
 	function fitSlide() {
@@ -2630,6 +1953,7 @@ section,
 	function show(next, shouldBroadcast = true) {
 		const bounded = Math.max(0, Math.min(slides.length - 1, next));
 		if (bounded === index && document.querySelector('.slide.is-active')) {
+			updateControls();
 			if (shouldBroadcast) broadcast();
 			return;
 		}
@@ -2638,7 +1962,7 @@ section,
 		slides.forEach(slide => slide.classList.remove('is-active', 'is-leaving'));
 		if (previous && previous !== slides[index]) previous.classList.add('is-leaving');
 		slides[index].classList.add('is-active');
-		ensureCounter().textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+		updateControls();
 		if (!location.hash.startsWith('#presenter')) history.replaceState(null, '', '#slide-' + String(index + 1));
 		if (shouldBroadcast) broadcast();
 	}
@@ -2653,7 +1977,7 @@ section,
 	function buildPresenter() {
 		document.documentElement.dataset.vpkPresenter = 'true';
 		document.body.className = (document.body.className + ' vpk-presenter-window').trim();
-		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next slide</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next slide</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
 		const title = document.querySelector('[data-vpk-presenter-title]');
 		const notes = document.querySelector('[data-vpk-presenter-notes]');
 		const timer = document.querySelector('[data-vpk-presenter-timer]');
@@ -2661,6 +1985,7 @@ section,
 		function render(payload = {}) {
 			const current = payload.index ?? index;
 			const next = slides[Math.min(slides.length - 1, current + 1)]?.cloneNode(true);
+			next?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
 			if (title) title.textContent = 'Slide ' + String(current + 1) + ' / ' + slides.length + ' - ' + (payload.title || slideTitle(slides[current]));
 			if (notes) notes.textContent = payload.notes || slideNotes(slides[current]);
 			if (preview) {
@@ -2716,5 +2041,86 @@ section,
 	show(index);
 })();
 </script>
+<!-- vpk-theme-runtime:start -->
+<script data-vpk-theme-runtime>
+(() => {
+	const key = "vpk-html-theme";
+	const states = ["system", "light", "dark"];
+	const labels = { system: "system", light: "light", dark: "dark" };
+	const valid = new Set(states);
+	const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+
+	function writeChoice(choice) {
+		try { localStorage.setItem(key, choice); }
+		catch { /* noop */ }
+	}
+
+	function systemPrefersDark() {
+		return media ? media.matches : false;
+	}
+
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+		updateToggle(next);
+	}
+
+	function ensureToggle() {
+		let button = document.querySelector("[data-vpk-theme-toggle]");
+		if (button) return button;
+		button = document.createElement("button");
+		button.type = "button";
+		button.className = "vpk-theme-toggle";
+		button.setAttribute("data-vpk-theme-toggle", "true");
+		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.addEventListener("click", () => {
+			const current = readChoice();
+			const next = states[(states.indexOf(current) + 1) % states.length];
+			writeChoice(next);
+			apply(next);
+		});
+		document.body.appendChild(button);
+		return button;
+	}
+
+	function updateToggle(choice) {
+		const button = ensureToggle();
+		const state = button.querySelector(".vpk-theme-toggle__state");
+		const next = states[(states.indexOf(choice) + 1) % states.length];
+		if (state) state.textContent = labels[choice];
+		button.dataset.vpkThemeChoice = choice;
+		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
+		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+	}
+
+	function init() {
+		apply(readChoice());
+		if (!media) return;
+		const onChange = () => {
+			if (readChoice() === "system") apply("system");
+		};
+		if (media.addEventListener) media.addEventListener("change", onChange);
+		else if (media.addListener) media.addListener(onChange);
+	}
+
+	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+	else init();
+})();
+</script>
+<!-- vpk-theme-runtime:end -->
 </body>
 </html>

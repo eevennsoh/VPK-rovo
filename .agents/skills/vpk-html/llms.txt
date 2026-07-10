@@ -46,14 +46,16 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 - Presentation mode for decks: Left/Right navigation, #slide-N deep links,
   hidden speaker notes, and a synced presenter window.
 - Video export is documented as a user-gated Hyperframes conversion track, not
-  the browser presentation runtime.
+  the browser presentation runtime; model the worked example at
+  assets/video/landing-demo-separation/.
 - GitHub Pages publish is an opt-in live-hosting track: validate the artifact,
   publish it as index.html from a standalone repo, enable Pages from main /,
   and return the hosted URL.
 - LLM-facing reference docs for anti-patterns, diagrams, writing,
-  resume-writing, design, illustrations, presentation, video export,
-  GitHub Pages publishing, production, source policy, accessibility, quality
-  gates, and tokens.
+  resume-writing, design, illustrations, presentation, video export
+  (worked example: assets/video/landing-demo-separation/), GitHub Pages
+  publishing, production, source policy, accessibility, quality gates, and
+  tokens.
 - Single offline HTML output — no remote fonts, stylesheets, scripts, or images.
 
 ## Key files
@@ -72,7 +74,7 @@ Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
 - references/svg-style.md — Required token-only grayscale SVG grammar + lint rules
 - references/charts.md — Chart animation, interaction, and chart catalog foundation
 - references/presentation.md — Deck runtime, presenter window, speaker notes
-- references/video-export.md — Hyperframes MP4 conversion contract
+- references/video-export.md — Hyperframes MP4 conversion contract and worked example
 - references/github-pages.md — Optional live GitHub Pages publishing
 - references/resume-writing.md — Resume quality bar (Action + Scope + Result + Outcome)
 - references/writing.md — General prose rules + per-doc-type quality bars

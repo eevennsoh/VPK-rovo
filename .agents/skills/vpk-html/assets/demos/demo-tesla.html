@@ -7,18 +7,47 @@
      geometry are preserved verbatim from kami.
      Source: https://github.com/tw93/Kami
      ================================================================== -->
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>特斯拉 · Q1 2026 投资分析</title>
+<title>Tesla · Q1 2026 Investment Analysis</title>
 <meta name="author" content="Tw93">
-<meta name="description" content="特斯拉 Q1 2026 财报分析：营收 $22.4B 超预期，毛利率恢复至 21.1%，Robotaxi 落地 Dallas/Houston，$25B 资本开支指引引发市场分歧">
-<meta name="keywords" content="特斯拉, TSLA, Q1 2026, 财报, 投资分析, Robotaxi, 电动车">
+<meta name="description" content="Tesla Q1 2026 earnings analysis: revenue of $22.4B beat expectations, gross margin recovered to 21.1%, and $25B capex guidance split the market">
+<meta name="keywords" content="Tesla, TSLA, Q1 2026, earnings, investment analysis, Robotaxi, electric vehicles">
 <meta name="generator" content="vpk-html">
 
 <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3C%2Fsvg%3E">
+<!-- vpk-theme-init:start -->
+<script data-vpk-theme-init>
+(() => {
+	const key = "vpk-html-theme";
+	const valid = new Set(["light", "dark", "system"]);
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+	function systemPrefersDark() {
+		return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+	}
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+	}
+	apply(readChoice());
+})();
+</script>
+<!-- vpk-theme-init:end -->
 <style>
   @page {
     size: A4;
@@ -26,7 +55,7 @@
     background: var(--paper);
 
     @bottom-center {
-      content: counter(page) "  ·  特斯拉 Q1 2026 投资分析";
+      content: counter(page) "  ·  Tesla Q1 2026 investment analysis";
       font-family: "Geist", "Noto Sans CJK SC", ui-sans-serif, system-ui, sans-serif;
       font-size: 9pt;
       color: var(--subtlest-text);
@@ -109,12 +138,12 @@
 	--selected: #e9e3e2;
 	--accent-lime: #cfc4c2;
 	--accent-purple: #b9afad;
-	--accent-saffron: #ded5d4;
+	--accent-saffron: #d8c7b0;
 	--accent-orange: #cfc4c2;
 	--accent-navy: #312f2f;
-	--accent-green: #ded5d4;
+	--accent-green: #d4d8c0;
 	--accent-red: #8c3a32;
-	--collection-software: #ded5d4;
+	--collection-software: #d7cbc9;
 	--collection-product: #cfc4c2;
 	--collection-service: #b9afad;
 	--focus-ring: #312f2f;
@@ -122,14 +151,14 @@
 	--code-ink: #312f2f;
 	--code-inverse: #f4efee;
 	--math-highlight: #e9e3e2;
-	--success: #6f6a68;
-	--success-tint: #e9e3e2;
-	--warning: #8a6d1a;
-	--warning-tint: rgba(138, 109, 26, 0.14);
+	--success: #4f5d2d;
+	--success-tint: rgba(79, 93, 45, 0.14);
+	--warning: #765c16;
+	--warning-tint: rgba(118, 92, 22, 0.14);
 	--danger: #8c3a32;
 	--danger-tint: rgba(140, 58, 50, 0.12);
-	--info: #706e6e;
-	--info-tint: #e9e3e2;
+	--info: #5f5a58;
+	--info-tint: rgba(95, 90, 88, 0.12);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -205,12 +234,12 @@
 	--selected: #2a2625;
 	--accent-lime: #413a38;
 	--accent-purple: #69605d;
-	--accent-saffron: #504846;
+	--accent-saffron: #5a4e45;
 	--accent-orange: #413a38;
 	--accent-navy: #d8d1cf;
-	--accent-green: #504846;
+	--accent-green: #4e5545;
 	--accent-red: #c98278;
-	--collection-software: #504846;
+	--collection-software: #584b50;
 	--collection-product: #413a38;
 	--collection-service: #69605d;
 	--focus-ring: #e9e3e2;
@@ -218,14 +247,14 @@
 	--code-ink: #e9e3e2;
 	--code-inverse: #1a1817;
 	--math-highlight: #2a2625;
-	--success: #bdb5b3;
-	--success-tint: #302b2a;
+	--success: #b8c17b;
+	--success-tint: rgba(184, 193, 123, 0.18);
 	--warning: #b89a3c;
 	--warning-tint: rgba(184, 154, 60, 0.18);
 	--danger: #c98278;
 	--danger-tint: rgba(201, 130, 120, 0.16);
-	--info: #bdb5b3;
-	--info-tint: #302b2a;
+	--info: #b8afac;
+	--info-tint: rgba(184, 175, 172, 0.16);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -1131,10 +1160,12 @@ button {
   html, body { background: var(--parchment); }
 
   @media screen {
-    body { max-width: 210mm; margin: 0 auto; padding: 12mm 16mm; }
+    body { max-width: 210mm; margin: 0 auto; padding: var(--page-pad-y) var(--page-pad-x); }
   }
 
   body {
+    --page-pad-y: 16mm;
+    --page-pad-x: 18mm;
     color: var(--near-black);
     font-family: var(--serif);
     font-size: 9.5pt;
@@ -1299,7 +1330,7 @@ button {
   /* ========== CALLOUT ========== */
   .callout {
     background: var(--ivory);
-    border-left: 2pt solid var(--brand);
+    border-top: 1px solid var(--brand);
     padding: 8pt 12pt;
     border-radius: 3pt;
     margin: 8pt 0;
@@ -2239,6 +2270,269 @@ section,
 	box-shadow: none !important;
 }
 /* vpk-algebrica-v2:end */
+
+/* vpk presentation mode */
+.speaker-notes {
+	display: none !important;
+}
+
+@media screen {
+	body[data-vpk-motion="deck"] {
+		background: var(--paper-background);
+		overflow: hidden;
+	}
+
+	body[data-vpk-motion="deck"] main {
+		height: 100vh;
+		padding: 0;
+		position: relative;
+		width: 100vw;
+	}
+
+	body[data-vpk-motion="deck"] .slide {
+		--vpk-slide-rest-transform: translate(-50%, -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-from: translate(calc(-50% + 24px), -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-to: var(--vpk-slide-rest-transform);
+		display: none;
+		left: 50%;
+		position: absolute;
+		top: 50%;
+		transform: var(--vpk-slide-rest-transform);
+		transform-origin: center center;
+	}
+
+	body[data-vpk-motion="deck"]:not([data-vpk-deck-ready="true"]) .slide:first-of-type,
+	body[data-vpk-motion="deck"] .slide.is-active {
+		display: block;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-active {
+		animation: vpk-slide-in var(--vpk-dur-enter) var(--ease-out) both;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-leaving {
+		animation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
+	}
+
+	.vpk-slide-counter,
+	.docnav-controls {
+		align-items: center;
+		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--paper) 88%, transparent);
+		border: 0;
+		border-radius: 999px;
+		bottom: 24px;
+		box-shadow: var(--shadow);
+		display: flex;
+		font-family: var(--font-mono);
+		gap: 6px;
+		letter-spacing: 0;
+		padding: 6px;
+		position: fixed;
+		right: 24px;
+		z-index: 50;
+	}
+
+	.vpk-slide-counter button,
+	.docnav-controls button {
+		align-items: center;
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		border-radius: 999px;
+		color: var(--ink);
+		cursor: pointer;
+		display: flex;
+		font-family: var(--font-mono);
+		font-size: 18px;
+		height: 36px;
+		justify-content: center;
+		line-height: 1;
+		padding: 0;
+		width: 36px;
+	}
+
+	.vpk-slide-counter button:hover,
+	.vpk-slide-counter button:focus-visible,
+	.docnav-controls button:hover,
+	.docnav-controls button:focus-visible {
+		border-color: var(--accent);
+		color: var(--accent);
+		outline: none;
+	}
+
+	.vpk-slide-counter button:disabled,
+	.docnav-controls button:disabled {
+		cursor: default;
+		opacity: 0.35;
+	}
+
+	.vpk-nav-counter,
+	.docnav-counter {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+		min-width: 46px;
+		text-align: center;
+	}
+
+	.vpk-nav-next-wrap {
+		align-items: center;
+		display: grid;
+		height: 44px;
+		justify-items: center;
+		position: relative;
+		width: 44px;
+	}
+
+	.vpk-nav-next-wrap button {
+		position: relative;
+		z-index: 1;
+	}
+
+	.vpk-nav-progress {
+		inset: 0;
+		pointer-events: none;
+		position: absolute;
+		transform: rotate(-90deg);
+	}
+
+	.vpk-nav-progress__track,
+	.vpk-nav-progress__arc {
+		fill: none;
+		stroke-width: 1.25;
+	}
+
+	.vpk-nav-progress__track {
+		stroke: var(--rule);
+	}
+
+	.vpk-nav-progress__arc {
+		stroke: var(--ink);
+		stroke-dasharray: var(--vpk-progress-circumference, 113.1);
+		stroke-dashoffset: var(--vpk-progress-offset, 113.1);
+		stroke-linecap: round;
+		transition: stroke-dashoffset 180ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav] main > section {
+		scroll-margin-top: 32px;
+		transition:
+			opacity 560ms var(--ease-out),
+			filter 560ms var(--ease-out),
+			transform 420ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+		opacity: 0.34 !important;
+		filter: grayscale(0.14) !important;
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: translateY(-2px) !important;
+	}
+
+	html[data-vpk-presenter="true"],
+	html[data-vpk-presenter="true"] body {
+		height: 100%;
+		overflow: hidden;
+	}
+
+	body.vpk-presenter-window {
+		background: var(--paper-background);
+		color: var(--ink);
+		font-family: var(--font-body);
+	}
+
+	.vpk-presenter {
+		display: grid;
+		gap: 24px;
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+		height: 100vh;
+		padding: 24px;
+	}
+
+	.vpk-presenter-preview,
+	.vpk-presenter-notes {
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		box-shadow: var(--shadow);
+		min-width: 0;
+		padding: 18px;
+	}
+
+	.vpk-presenter-preview-frame {
+		align-items: center;
+		aspect-ratio: 280 / 158;
+		background: var(--paper);
+		border: 1px solid var(--rule);
+		display: flex;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.vpk-presenter-preview-frame .slide {
+		display: block !important;
+		position: static !important;
+		transform: scale(0.28) !important;
+		transform-origin: center center !important;
+	}
+
+	.vpk-presenter-kicker {
+		color: var(--muted-text);
+		font-family: var(--font-body);
+		font-size: 13px;
+		letter-spacing: 0;
+		margin-bottom: 10px;
+		text-transform: none;
+	}
+
+	.vpk-presenter-notes-text {
+		font-size: 22px;
+		line-height: 1.45;
+		white-space: pre-wrap;
+	}
+
+	.vpk-presenter-timer {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 14px;
+		margin-top: 20px;
+	}
+
+	body.vpk-presenter-window .vpk-theme-toggle {
+		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.vpk-nav-progress__arc {
+		transition: none !important;
+	}
+}
+
+@media print {
+	.speaker-notes,
+	.vpk-slide-counter,
+	.docnav-controls,
+	.vpk-presenter {
+		display: none !important;
+	}
+
+	body[data-vpk-motion="deck"] .slide,
+	body[data-vpk-docnav] main > section {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
+	}
+
+	body[data-vpk-docnav] main > section {
+		opacity: 1 !important;
+		filter: none !important;
+	}
+}
 </style>
 </head>
 <body data-vpk-motion="document" data-vpk-docnav="true">
@@ -2247,14 +2541,14 @@ section,
 <!-- ========== HEADER ========== -->
 <div class="report-header">
   <div class="ticker-block">
-    <div class="ticker-eyebrow">Q1 2026 财报点评</div>
-    <div class="ticker-name">特斯拉 <span style="font-size: 14pt; color: var(--stone);">TSLA</span></div>
-    <div class="ticker-sub">汽车与能源 · NASDAQ · 利润率在恢复，但资本开支的账单到了</div>
+    <div class="ticker-eyebrow">Q1 2026 earnings review</div>
+    <div class="ticker-name">Tesla <span style="font-size: 14pt; color: var(--stone);">TSLA</span></div>
+    <div class="ticker-sub">Auto &amp; Energy · NASDAQ · Margins are recovering, but the capex bill has arrived</div>
   </div>
   <div class="price-block">
     <div class="price-current">$373.72</div>
-    <div class="price-change">财报后 -3.56%</div>
-    <div class="price-date">2026.04.23 收盘</div>
+    <div class="price-change">Post-earnings -3.56%</div>
+    <div class="price-date">2026.04.23 close</div>
   </div>
 </div>
 
@@ -2262,39 +2556,39 @@ section,
 <div class="metrics">
   <div class="metric">
     <div class="metric-value">$1.2T</div>
-    <div class="metric-label">市值</div>
+    <div class="metric-label">Market cap</div>
   </div>
   <div class="metric">
     <div class="metric-value">~220x</div>
-    <div class="metric-label">前瞻 P/E</div>
+    <div class="metric-label">Forward P/E</div>
   </div>
   <div class="metric">
     <div class="metric-value">$22.4B</div>
-    <div class="metric-label">Q1 营收</div>
+    <div class="metric-label">Q1 revenue</div>
   </div>
   <div class="metric">
     <div class="metric-value">21.1%</div>
-    <div class="metric-label">毛利率</div>
+    <div class="metric-label">Gross margin</div>
   </div>
 </div>
 
-<!-- ========== 投资逻辑 ========== -->
-<h2>投资逻辑</h2>
-<p>特斯拉 Q1 2026 营收 <span class="hl">$22.39B（同比 +16%）</span>，超市场预期的 $21.92B；Non-GAAP EPS <span class="hl">$0.41，高于预期的 $0.37</span>。毛利率从去年同期的 16.3% 恢复到 21.1%（+478 bps），能源业务毛利率创历史新高 39.5%。汽车业务释放了矛盾信号：交付 358,023 辆，低于市场预期约 7,600 辆，但利润率扩张的叙事依然成立。</p>
+<!-- ========== Investment thesis ========== -->
+<h2>Investment thesis</h2>
+<p>Tesla Q1 2026 revenue was <span class="hl">$22.39B (YoY +16%)</span>, ahead of consensus at $21.92B; Non-GAAP EPS was <span class="hl">$0.41, above the expected $0.37</span>. Gross margin recovered from 16.3% a year ago to 21.1% (+478 bps), and Energy gross margin reached a record 39.5%. Automotive sent a mixed signal: deliveries were 358,023 vehicles, about 7,600 below consensus, but the margin-expansion thesis still holds.</p>
 
-<p>核心矛盾：短期利润率恢复 vs 2026 全年 $25B+ 资本开支承诺。管理层预期全年自由现金流转负。财报后股价下跌 3.56%，市场定价的是资本开支冲击而非盈利超预期。</p>
+<p>The core tension is short-term margin recovery versus management's $25B+ full-year capex commitment for 2026. Management expects full-year free cash flow to turn negative. The stock fell 3.56% after earnings, suggesting the market is pricing the capex shock rather than the earnings beat.</p>
 
 <div class="callout">
-  <strong>持有。</strong>Q1 利润率恢复验证了降本能力，但 $25B capex + 负 FCF 指引意味着当前股价定价了 AI/Robotaxi 的期权价值，而这部分尚无规模化收入贡献。建议等 Q2 交付数据和 Robotaxi 单位经济学落地后再做加仓决策。
+  <strong>Hold.</strong> Q1 margin recovery validates cost discipline, but $25B capex + negative FCF guidance means the current stock price is already pricing AI/Robotaxi option value before scaled revenue contribution. Wait for Q2 delivery data and Robotaxi unit economics before adding.
 </div>
 
-<!-- ========== K 线图 ========== -->
-<h2>近期价格走势</h2>
+<!-- ========== Candlestick chart ========== -->
+<h2>Recent price action</h2>
 <figure>
   <svg aria-hidden="true" viewBox="0 0 760 270" xmlns="http://www.w3.org/2000/svg">
     <rect width="100%" height="100%" fill="var(--paper)"/>
 
-    <!-- 网格：价格区间 335-410，图表区 x=56 y=20 w=660 h=220，基线 y=240 -->
+    <!-- Grid: price range 335-410, chart area x=56 y=20 w=660 h=220, baseline y=240 -->
     <!-- scale: 1 dollar = 2.93px (220/75) -->
     <line x1="56" y1="240" x2="716" y2="240" stroke="var(--rule)" stroke-width="0.8"/>
     <line x1="56" y1="211" x2="716" y2="211" stroke="var(--rule)" stroke-width="0.8"/>
@@ -2305,7 +2599,7 @@ section,
     <line x1="56" y1="64"  x2="716" y2="64"  stroke="var(--rule)" stroke-width="0.8"/>
     <line x1="56" y1="35"  x2="716" y2="35"  stroke="var(--rule)" stroke-width="0.8"/>
 
-    <!-- Y 轴标签 -->
+    <!-- Y-axis labels -->
     <text x="48" y="244" fill="var(--subtlest-text)" font-size="9" text-anchor="end" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">335</text>
     <text x="48" y="215" fill="var(--subtlest-text)" font-size="9" text-anchor="end" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">345</text>
     <text x="48" y="185" fill="var(--subtlest-text)" font-size="9" text-anchor="end" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">355</text>
@@ -2315,7 +2609,7 @@ section,
     <text x="48" y="68"  fill="var(--subtlest-text)" font-size="9" text-anchor="end" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">395</text>
     <text x="48" y="39"  fill="var(--subtlest-text)" font-size="9" text-anchor="end" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">405</text>
 
-    <!-- 20 K 线, y = 240 - (price-335)*2.93 -->
+    <!-- 20 candlesticks, y = 240 - (price-335)*2.93 -->
 
     <!-- Day 1 Mar 26: O=381.60 H=384.44 L=371.87 C=372.11 DOWN -->
     <line x1="72" y1="95" x2="72" y2="132" stroke="var(--subtlest-text)" stroke-width="1.2"/>
@@ -2397,18 +2691,18 @@ section,
     <line x1="699" y1="91" x2="699" y2="143" stroke="var(--subtlest-text)" stroke-width="1.2"/>
     <rect x="691" y="101" width="16" height="22" fill="var(--subtlest-text)" rx="1"/>
 
-    <!-- X 轴 -->
+    <!-- X-axis -->
     <text x="72"  y="260" fill="var(--subtlest-text)" font-size="8" text-anchor="middle" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">3/26</text>
     <text x="237" y="260" fill="var(--subtlest-text)" font-size="8" text-anchor="middle" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">4/2</text>
     <text x="402" y="260" fill="var(--subtlest-text)" font-size="8" text-anchor="middle" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">4/10</text>
     <text x="567" y="260" fill="var(--subtlest-text)" font-size="8" text-anchor="middle" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">4/17</text>
     <text x="699" y="260" fill="var(--subtlest-text)" font-size="8" text-anchor="middle" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">4/23</text>
 
-    <!-- 财报标注 -->
+    <!-- Earnings annotation -->
     <line x1="682" y1="24" x2="682" y2="82" stroke="var(--focal)" stroke-width="0.8" stroke-dasharray="3,2"/>
     <text x="680" y="20" fill="var(--focal)" font-size="8" text-anchor="end" font-weight="500" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">Earnings</text>
 
-    <!-- 图例 -->
+    <!-- Legend -->
     <line x1="56" y1="280" x2="716" y2="280" stroke="var(--rule)" stroke-width="0.8"/>
     <rect x="56" y="290" width="10" height="10" fill="var(--focal)" rx="2"/>
     <text x="72" y="299" fill="var(--muted-text)" font-size="9" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">Up</text>
@@ -2416,104 +2710,105 @@ section,
     <text x="136" y="299" fill="var(--muted-text)" font-size="9" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">Down</text>
     <text x="240" y="299" fill="var(--muted-text)" font-size="9" font-family="Geist Mono, monospace"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif">20 trading days | $337 - $409</text>
   </svg>
-  <figcaption>图 1. TSLA 近 20 个交易日走势（3/26 - 4/23）。4/17 冲高 $409 后回落，财报后因 capex 指引下跌。</figcaption>
+  <figcaption>Figure 1. TSLA price action over the last 20 trading days (3/26 - 4/23). After reaching $409 on 4/17, shares retraced; post-earnings selling reflected capex guidance.</figcaption>
 </figure>
 
-<!-- ========== 财务概览 ========== -->
-<h2>财务概览</h2>
+<!-- ========== Financial overview ========== -->
+<h2>Financial overview</h2>
 <table class="financial striped">
   <thead>
     <tr>
-      <th>指标</th>
+      <th>Metric</th>
       <th>FY2024</th>
       <th>FY2025</th>
       <th>Q1 2026</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td>营收</td><td>$97.7B</td><td>$97.0B</td><td>$22.39B</td></tr>
-    <tr><td>GAAP 净利润</td><td>$7.1B</td><td>~$3.0B</td><td>$477M</td></tr>
+    <tr><td>Revenue</td><td>$97.7B</td><td>$97.0B</td><td>$22.39B</td></tr>
+    <tr><td>GAAP net income</td><td>$7.1B</td><td>~$3.0B</td><td>$477M</td></tr>
     <tr><td>GAAP EPS</td><td>$2.04</td><td>~$0.86</td><td>$0.13</td></tr>
     <tr><td>Non-GAAP EPS</td><td>--</td><td>--</td><td>$0.41</td></tr>
-    <tr><td>毛利率</td><td>17.9%</td><td>~17%</td><td>21.1%</td></tr>
-    <tr><td>经营利润率</td><td>7.2%</td><td>~4%</td><td>4.2%</td></tr>
-    <tr><td>自由现金流</td><td>--</td><td>--</td><td>$1.4B</td></tr>
-    <tr><td>资本开支</td><td>--</td><td>--</td><td>$2.49B</td></tr>
+    <tr><td>Gross margin</td><td>17.9%</td><td>~17%</td><td>21.1%</td></tr>
+    <tr><td>Operating margin</td><td>7.2%</td><td>~4%</td><td>4.2%</td></tr>
+    <tr><td>Free cash flow</td><td>--</td><td>--</td><td>$1.4B</td></tr>
+    <tr><td>Capital expenditures</td><td>--</td><td>--</td><td>$2.49B</td></tr>
   </tbody>
 </table>
 
-<p>毛利率恢复到 <span class="hl">21.1%</span> 是本季最重要的数字，COGS 优化和能源业务混合效应驱动了扩张。但 Electrek 指出，Q1 经营利润增长有一部分来自保修准备金调整和关税退税的一次性收益，意味着底层利润率改善可能更接近 19-20%。</p>
+<p>The recovery in gross margin to <span class="hl">21.1%</span> is the most important number this quarter, driven by COGS optimization and the Energy mix effect. But Electrek noted that part of Q1 operating-profit growth came from one-time benefits tied to warranty reserve adjustments and tariff refunds, implying underlying margin improvement may be closer to 19-20%.</p>
 
-<!-- ========== 分部表现 ========== -->
-<h2>分部表现</h2>
+<!-- ========== Segment performance ========== -->
+<h2>Segment performance</h2>
 
-<h3>汽车业务</h3>
-<p>交付 <span class="hl">358,023</span> 辆，低于市场预期 365,645 辆。产量 408,386 辆超过交付约 5 万辆，库存在积累。Model 3/Y 贡献 341,893 辆，Cybertruck 及其他车型 16,130 辆。监管积分收入 $380M（占汽车收入 1.9%），占比继续下降（去年同期 3.7%），说明核心业务的利润质量在提升。</p>
+<h3>Automotive</h3>
+<p>Deliveries were <span class="hl">358,023</span> vehicles, below market expectations of 365,645. Production of 408,386 exceeded deliveries by about 50,000 vehicles, indicating inventory build. Model 3/Y contributed 341,893 vehicles, with Cybertruck and other models at 16,130. Regulatory-credit revenue was $380M (1.9% of automotive revenue), continuing to decline as a share of revenue (3.7% a year ago), which suggests better earnings quality in the core business.</p>
 
-<h3>能源业务</h3>
-<p>能源收入 <span class="hl">$2.41B</span>，同比下降 12%（去年同期 $2.73B 为高基数），但毛利率创历史新高 <span class="hl">39.5%</span>。储能部署 8.8 GWh。这个业务正在成为利润发动机：39.5% 毛利率 vs 汽车业务的 ~17%。Megapack 3 量产预计 2026 年下半年启动。</p>
+<h3>Energy</h3>
+<p>Energy revenue was <span class="hl">$2.41B</span>, down 12% YoY from a high base of $2.73B, but gross margin reached a record <span class="hl">39.5%</span>. Storage deployments were 8.8 GWh. This segment is becoming a profit engine: 39.5% gross margin versus roughly ~17% for Automotive. Megapack 3 volume production is expected to start in H2 2026.</p>
 
-<!-- ========== 催化剂 ========== -->
-<h2>近期催化剂</h2>
-<p><strong>Robotaxi（Q2-Q3）：</strong>4 月在 Dallas/Houston 上线无人驾驶付费服务，零事故。付费里程环比翻倍，Q2 首次披露单位经济学。</p>
-<p><strong>FSD 国际化（Q3）：</strong>荷兰和中国已获批，欧洲更大范围推广预计 Q3。FSD 转纯订阅，Q1 新增订阅创纪录。</p>
-<p><strong>Cybercab + Q2 交付：</strong>Cybercab H2 量产，预期取代 Model Y 成为自动驾驶网络主力。Q2 交付受益于 Model Y 产线爬坡。</p>
+<!-- ========== Catalysts ========== -->
+<h2>Catalysts</h2>
+<p><strong>Robotaxi (Q2-Q3):</strong> Paid driverless service launched in Dallas/Houston in April with zero accidents. Paid miles doubled quarter over quarter, and Q2 will include the first disclosure of unit economics.</p>
+<p><strong>FSD internationalization (Q3):</strong> The Netherlands and China have approved deployment, with broader European rollout expected in Q3. FSD shifted to subscription-only, and Q1 new subscriptions reached a record.</p>
+<p><strong>Cybercab + Q2 deliveries:</strong> Cybercab volume production is scheduled for H2, with expectations that it replaces Model Y as the primary vehicle for the autonomous-driving network. Q2 deliveries should benefit from Model Y line ramp.</p>
 
-<!-- ========== 竞争格局 ========== -->
-<h2>竞争格局</h2>
+<!-- ========== Competitive landscape ========== -->
+<h2>Competitive landscape</h2>
 
 <table class="financial compact striped">
   <thead>
     <tr>
-      <th>公司</th>
-      <th>市值</th>
-      <th>前瞻 P/E</th>
-      <th>营收增速</th>
-      <th>毛利率</th>
+      <th>Company</th>
+      <th>Market cap</th>
+      <th>Forward P/E</th>
+      <th>Revenue growth</th>
+      <th>Gross margin</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td><strong>特斯拉</strong></td><td>$1.2T</td><td>~220x</td><td>+16%</td><td>21.1%</td></tr>
-    <tr><td>比亚迪</td><td>~$120B</td><td>~22x</td><td>+33%</td><td>~22%</td></tr>
+    <tr><td><strong>Tesla</strong></td><td>$1.2T</td><td>~220x</td><td>+16%</td><td>21.1%</td></tr>
+    <tr><td>BYD</td><td>~$120B</td><td>~22x</td><td>+33%</td><td>~22%</td></tr>
     <tr><td>Rivian</td><td>~$18B</td><td>N/A</td><td>+8%</td><td>-10%</td></tr>
-    <tr><td>GM（EV）</td><td>$48B</td><td>~5x</td><td>+12%</td><td>~8%</td></tr>
+    <tr><td>GM (EV)</td><td>$48B</td><td>~5x</td><td>+12%</td><td>~8%</td></tr>
   </tbody>
 </table>
 
-<p>特斯拉前瞻 P/E 是比亚迪的 <span class="hl">10 倍</span>，但营收增速更低、毛利率接近。溢价完全建立在 AI/Robotaxi 期权价值上。向自动驾驶和储能的战略转型是要跳出单位销量竞争，但如果 Robotaxi 单位经济学在 Q2-Q3 未能验证，估值有明显压缩空间。</p>
+<p>Tesla's forward P/E is <span class="hl">10x</span> BYD's, despite lower revenue growth and similar gross margin. The premium is built entirely on AI/Robotaxi option value. The strategic shift toward autonomous driving and storage is meant to escape unit-volume competition, but if Robotaxi unit economics are not validated in Q2-Q3, there is meaningful room for valuation compression.</p>
 
-<!-- ========== 风险 + 总结 ========== -->
-<h2>风险与总结</h2>
+<!-- ========== Risks + summary ========== -->
+<h2>Risks &amp; summary</h2>
 <div class="risk-grid">
   <div class="risk-item">
-    <div class="risk-label">资本开支</div>
-    <div class="risk-desc">$25B+ capex 指引，全年 FCF 预计转负。AI/Robotaxi 变现延迟将损害资本配置信任度。</div>
+    <div class="risk-label">Capital spending</div>
+    <div class="risk-desc">$25B+ capex guidance, with full-year FCF expected to turn negative. Delayed AI/Robotaxi monetization would damage confidence in capital allocation.</div>
   </div>
   <div class="risk-item">
-    <div class="risk-label">交付疲软</div>
-    <div class="risk-desc">年度交付连续两年下滑（峰值 181 万 -> 164 万）。Q1 再次 miss 共识预期。</div>
+    <div class="risk-label">Soft deliveries</div>
+    <div class="risk-desc">Annual deliveries have declined for two consecutive years (peak 1.81M -> 1.64M). Q1 missed consensus again.</div>
   </div>
   <div class="risk-item">
-    <div class="risk-label">HW3 淘汰</div>
-    <div class="risk-desc">HW3 车辆无法支持无监督 FSD。2024 年前车主面临硬件升级壁垒。</div>
+    <div class="risk-label">HW3 sunset</div>
+    <div class="risk-desc">HW3 vehicles cannot support unsupervised FSD. Pre-2024 owners face a hardware-upgrade barrier.</div>
   </div>
   <div class="risk-item">
-    <div class="risk-label">竞争与关税</div>
-    <div class="risk-desc">比亚迪 $20-30K 价位段成本优势 35%。美国关税政策增加供应链不确定性。</div>
+    <div class="risk-label">Competition &amp; tariffs</div>
+    <div class="risk-desc">BYD has a 35% cost advantage in the $20-30K price band. U.S. tariff policy adds supply-chain uncertainty.</div>
   </div>
 </div>
 
 <div class="analyst-box">
-  <div class="analyst-label">总结</div>
-  利润率恢复了，营收超预期了，但股价跌了，因为 $25B capex + 负 FCF 在 Robotaxi 尚无规模收入时是硬伤。多头核心：Dallas/Houston Robotaxi 数据会在 Q2 验证单位经济学并触发重估。空头核心：$25B/年烧在 3-5 年才能变现的项目上，而核心汽车业务在萎缩。已持有者：继续持有到 Q2，等 Robotaxi 数据再评估。新建仓：建议等 7 月交付和 Robotaxi 数据再决定。
+  <div class="analyst-label">Summary</div>
+  Margins recovered and revenue beat expectations, but the stock fell because $25B capex + negative FCF is a hard sell while Robotaxi still has no scaled revenue. Bull case: Dallas/Houston Robotaxi data validates unit economics in Q2 and triggers a rerating. Bear case: $25B/year is being spent on projects that may take 3-5 years to monetize while the core auto business is shrinking. Existing holders: keep holding through Q2 and reassess after Robotaxi data. New positions: wait for July delivery and Robotaxi data before deciding.
 </div>
 
 <!-- ========== FOOTER ========== -->
 <div class="report-footer">
-  <span>仅供个人投资参考，不构成投资建议</span>
+  <span>For personal investment reference only; not investment advice</span>
   <span>Tw93 · 2026.04.24</span>
 </div>
-</main><script data-vpk-docnav-runtime>
+</main>
+<script data-vpk-docnav-runtime>
 (() => {
 	if (!document.body.matches('[data-vpk-docnav]')) return;
 	const sectionTargets = [...document.querySelectorAll('main > section')]
@@ -2523,119 +2818,130 @@ section,
 		: [...document.querySelectorAll('main h1, main h2, main section[id]')]
 			.filter(el => el.getBoundingClientRect().height > 0);
 	if (targets.length < 2) return;
-	let activeIndex = 0;
+	const channel = (() => {
+		try { return new BroadcastChannel('vpk-deck'); }
+		catch { return null; }
+	})();
+	let activeIndex = readPresenterIndex();
 	let focusTimer = 0;
 	let manualTimer = 0;
+	let presenterWindow = null;
+	let startedAt = Date.now();
+	let controls = null;
+	let lastBroadcastIndex = -1;
 
-	if (!document.querySelector('style[data-vpk-docnav-style]')) {
-		const style = document.createElement('style');
-		style.dataset.vpkDocnavStyle = 'true';
-		style.textContent = `
-@media screen {
-	body[data-vpk-docnav] main > section {
-		scroll-margin-top: 32px;
-		transition:
-			opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
-			filter 560ms cubic-bezier(0.16, 1, 0.3, 1),
-			transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+	function readPresenterIndex() {
+		const match = location.hash.match(/presenter-section-(\d+)/);
+		if (!match) return 0;
+		return Math.max(0, Math.min(targets.length - 1, Number(match[1]) - 1));
 	}
 
-	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
-		opacity: 0.34 !important;
-		filter: grayscale(0.14) !important;
+	function sectionTitle(section) {
+		return (section.querySelector('h1,h2,h3,.title')?.textContent || 'Section').trim();
 	}
 
-	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
-		opacity: 1 !important;
-		filter: none !important;
-		transform: translateY(-2px) !important;
+	function sectionNotes(section) {
+		return (section.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this section.';
 	}
 
-	.docnav-controls {
-		position: fixed;
-		right: 24px;
-		bottom: 24px;
-		z-index: 50;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		padding: 6px;
-		background: color-mix(in srgb, var(--paper) 88%, transparent);
-		border: 0;
-		border-radius: 999px;
-		box-shadow: var(--shadow);
-		backdrop-filter: blur(10px);
+	function progressSvg() {
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
 	}
 
-	.docnav-controls button {
-		width: 36px;
-		height: 36px;
-		border: 1px solid var(--rule);
-		border-radius: 999px;
-		background: var(--surface-raised);
-		color: var(--ink);
-		font-family: var(--font-mono);
-		font-size: 17px;
-		line-height: 1;
-		cursor: pointer;
+	function clonePreview(section) {
+		const clone = section?.cloneNode(true);
+		clone?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
+		return clone;
 	}
 
-	.docnav-controls button:hover,
-	.docnav-controls button:focus-visible {
-		color: var(--accent);
-		border-color: var(--accent);
-		outline: none;
+	function broadcast() {
+		if (activeIndex === lastBroadcastIndex) return;
+		lastBroadcastIndex = activeIndex;
+		const payload = { type: 'state', index: activeIndex, total: targets.length, title: sectionTitle(targets[activeIndex]), notes: sectionNotes(targets[activeIndex]) };
+		try { channel?.postMessage(payload); } catch { /* noop */ }
+		try { presenterWindow?.postMessage({ source: 'vpk-deck', ...payload }, '*'); } catch { /* noop */ }
 	}
 
-	.docnav-controls button:disabled {
-		opacity: 0.35;
-		cursor: default;
+	function updateControls() {
+		if (!controls) return;
+		const prevButton = controls.querySelector('[data-docnav-prev]');
+		const nextButton = controls.querySelector('[data-docnav-next]');
+		const counter = controls.querySelector('.docnav-counter');
+		const arc = controls.querySelector('[data-vpk-progress-arc]');
+		if (prevButton) prevButton.disabled = activeIndex === 0;
+		if (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
+		if (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
+		if (arc) {
+			const radius = Number(arc.getAttribute('r') || 18);
+			const circumference = 2 * Math.PI * radius;
+			const progress = targets.length <= 1 ? 1 : (activeIndex + 1) / targets.length;
+			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
+			arc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+		}
 	}
 
-	.docnav-counter {
-		min-width: 46px;
-		text-align: center;
-		color: var(--muted-text);
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-variant-numeric: tabular-nums;
+	function buildPresenter() {
+		document.documentElement.dataset.vpkPresenter = 'true';
+		document.body.className = (document.body.className + ' vpk-presenter-window').trim();
+		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next section</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+		const title = document.querySelector('[data-vpk-presenter-title]');
+		const notes = document.querySelector('[data-vpk-presenter-notes]');
+		const timer = document.querySelector('[data-vpk-presenter-timer]');
+		const preview = document.querySelector('[data-vpk-next-preview]');
+		function render(payload = {}) {
+			const current = payload.index ?? activeIndex;
+			const bounded = Math.max(0, Math.min(targets.length - 1, current));
+			const next = clonePreview(targets[Math.min(targets.length - 1, bounded + 1)]);
+			if (title) title.textContent = 'Section ' + String(bounded + 1) + ' / ' + targets.length + ' - ' + (payload.title || sectionTitle(targets[bounded]));
+			if (notes) notes.textContent = payload.notes || sectionNotes(targets[bounded]);
+			if (preview) {
+				preview.textContent = '';
+				if (next) preview.append(next);
+			}
+		}
+		render();
+		setInterval(() => {
+			const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+			if (timer) timer.textContent = Math.floor(elapsed / 60) + ':' + String(elapsed % 60).padStart(2, '0');
+		}, 500);
+		channel?.addEventListener('message', event => {
+			if (event.data?.type === 'state') render(event.data);
+		});
+		window.addEventListener('message', event => {
+			if (event.data?.source === 'vpk-deck' && event.data?.type === 'state') render(event.data);
+		});
+		document.addEventListener('keydown', event => {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+				if (channel) channel.postMessage({ type: 'request', delta: 1 });
+			}
+			if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+				if (channel) channel.postMessage({ type: 'request', delta: -1 });
+			}
+		});
 	}
-}
 
-@media print {
-	.docnav-controls { display: none !important; }
-	body[data-vpk-docnav] main > section {
-		opacity: 1 !important;
-		filter: none !important;
-		transform: none !important;
-	}
-}`;
-		document.head.appendChild(style);
+	if (location.hash.startsWith('#presenter')) {
+		buildPresenter();
+		return;
 	}
 
-	const controls = document.createElement('nav');
+	controls = document.createElement('nav');
 	controls.className = 'docnav-controls';
 	controls.setAttribute('aria-label', 'Document section navigation');
-	controls.innerHTML = `
-		<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button>
-		<span class="docnav-counter" aria-live="polite"></span>
-		<button type="button" data-docnav-next aria-label="Next section">&darr;</button>
-	`;
+	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">&darr;</button>' + progressSvg() + '</span>';
 	document.body.appendChild(controls);
 
 	const prevButton = controls.querySelector('[data-docnav-prev]');
 	const nextButton = controls.querySelector('[data-docnav-next]');
-	const counter = controls.querySelector('.docnav-counter');
 
-	function setActive(index) {
+	function setActive(index, shouldBroadcast = true) {
 		activeIndex = Math.max(0, Math.min(targets.length - 1, index));
 		targets.forEach((target, targetIndex) => {
 			target.classList.toggle('is-docnav-active', targetIndex === activeIndex);
 		});
-		prevButton.disabled = activeIndex === 0;
-		nextButton.disabled = activeIndex === targets.length - 1;
-		counter.textContent = `${String(activeIndex + 1).padStart(2, '0')} / ${String(targets.length).padStart(2, '0')}`;
+		updateControls();
 		document.body.dataset.docnavReady = 'true';
+		if (shouldBroadcast) broadcast();
 	}
 
 	function setFocusMode() {
@@ -2676,17 +2982,109 @@ section,
 		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
 		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
 		if (editable) return;
+		if (event.key.toLowerCase() === 'p') { event.preventDefault(); openPresenter(); return; }
 		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
 		event.preventDefault();
 		const delta = event.key === 'ArrowDown' ? 1 : -1;
 		go(delta);
 	});
 
+	function openPresenter() {
+		const url = new URL(location.href);
+		url.hash = 'presenter-section-' + String(activeIndex + 1);
+		try { presenterWindow = window.open(url.href, 'vpk-presenter', 'popup,width=1180,height=760'); }
+		catch { /* noop */ }
+	}
+
+	channel?.addEventListener('message', event => {
+		if (event.data?.type === 'request') go(Number(event.data.delta || 0));
+	});
 	document.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
 	document.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
 	document.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
 	setActive(currentIndex());
 })();
 </script>
+<!-- vpk-theme-runtime:start -->
+<script data-vpk-theme-runtime>
+(() => {
+	const key = "vpk-html-theme";
+	const states = ["system", "light", "dark"];
+	const labels = { system: "system", light: "light", dark: "dark" };
+	const valid = new Set(states);
+	const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+
+	function writeChoice(choice) {
+		try { localStorage.setItem(key, choice); }
+		catch { /* noop */ }
+	}
+
+	function systemPrefersDark() {
+		return media ? media.matches : false;
+	}
+
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+		updateToggle(next);
+	}
+
+	function ensureToggle() {
+		let button = document.querySelector("[data-vpk-theme-toggle]");
+		if (button) return button;
+		button = document.createElement("button");
+		button.type = "button";
+		button.className = "vpk-theme-toggle";
+		button.setAttribute("data-vpk-theme-toggle", "true");
+		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.addEventListener("click", () => {
+			const current = readChoice();
+			const next = states[(states.indexOf(current) + 1) % states.length];
+			writeChoice(next);
+			apply(next);
+		});
+		document.body.appendChild(button);
+		return button;
+	}
+
+	function updateToggle(choice) {
+		const button = ensureToggle();
+		const state = button.querySelector(".vpk-theme-toggle__state");
+		const next = states[(states.indexOf(choice) + 1) % states.length];
+		if (state) state.textContent = labels[choice];
+		button.dataset.vpkThemeChoice = choice;
+		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
+		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+	}
+
+	function init() {
+		apply(readChoice());
+		if (!media) return;
+		const onChange = () => {
+			if (readChoice() === "system") apply("system");
+		};
+		if (media.addEventListener) media.addEventListener("change", onChange);
+		else if (media.addListener) media.addListener(onChange);
+	}
+
+	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+	else init();
+})();
+</script>
+<!-- vpk-theme-runtime:end -->
 </body>
 </html>

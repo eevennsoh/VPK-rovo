@@ -177,6 +177,11 @@ const TOKEN_ORDER = [
 	"codeSurface",
 	"codeInk",
 	"codeInverse",
+	"syntaxKeyword",
+	"syntaxIdentifier",
+	"syntaxString",
+	"syntaxComment",
+	"syntaxLiteral",
 	"mathHighlight",
 	"success",
 	"successTint",
@@ -186,6 +191,10 @@ const TOKEN_ORDER = [
 	"dangerTint",
 	"info",
 	"infoTint",
+	"diffAddText",
+	"diffDelText",
+	"diffAddTint",
+	"diffDelTint",
 ];
 
 const ROOT_BLOCK = /:root\s*\{([^}]*)\}/s;
@@ -227,6 +236,11 @@ function pushThemeAliases(lines) {
 	lines.push("\t--collection-accent-product: var(--collection-product);");
 	lines.push("\t--collection-accent-service: var(--collection-service);");
 	lines.push("\t--paper-rule: var(--rule);");
+	lines.push("\t--page-max-width: 210mm;");
+	lines.push("\t--page-pad-x: 22mm;");
+	lines.push("\t--page-pad-y: 20mm;");
+	lines.push("\t--page-pad-x-compact: clamp(18px, 5vw, 32px);");
+	lines.push("\t--page-pad-y-compact: clamp(24px, 6vw, 40px);");
 }
 
 export function buildMotionCssBlock() {
@@ -499,8 +513,10 @@ button:active,
 
 export function buildAlgebricaComponentCssBlock() {
 	return `/* algebrica component vocabulary */
+/* Prose rhythm scale: base 8px. Eyebrow gap 40, heading after content 48/40/32,
+   heading bottom 32/24/16, paragraph gap 24, section gap 56. */
 .post-header {
-\tmargin-bottom: 50px;
+\tmargin-bottom: 56px;
 }
 
 .post-header-breadcrumb,
@@ -514,7 +530,7 @@ export function buildAlgebricaComponentCssBlock() {
 \tfont-weight: 600;
 \tletter-spacing: 2px;
 \tline-height: 1.4;
-\tmargin-bottom: 60px;
+\tmargin-bottom: 40px;
 \ttext-transform: uppercase;
 }
 
@@ -524,7 +540,7 @@ export function buildAlgebricaComponentCssBlock() {
 \tfont-size: 36px;
 \tfont-weight: 500;
 \tline-height: 1.4;
-\tmargin: 0 0 20px;
+\tmargin: 0 0 28px;
 }
 
 .post-header-meta {
@@ -548,28 +564,64 @@ export function buildAlgebricaComponentCssBlock() {
 \thyphens: auto;
 \tline-height: 23px;
 \toverflow-wrap: break-word;
-\tpadding-bottom: 60px;
+\tpadding-bottom: 56px;
 \ttext-align: justify;
 }
 
 .post-section:not(:last-child) {
 \tborder-bottom: 1px solid var(--rule-strong);
-\tmargin-bottom: 50px;
+\tmargin-bottom: 56px;
 }
 
 .post-section h2 {
 \tcolor: var(--headline);
 \tfont-family: var(--font-display);
-\tfont-size: 24px;
+\tfont-size: 26px;
 \tfont-weight: 500;
 \tline-height: 1.3;
-\tmargin: 0 0 20px;
+\tmargin: 0 0 32px;
 \ttext-align: left;
+}
+
+.post-section h3 {
+\tcolor: var(--ink);
+\tfont-family: var(--font-display);
+\tfont-size: 19px;
+\tfont-weight: 500;
+\tline-height: 1.35;
+\tmargin: 0 0 24px;
+\ttext-align: left;
+}
+
+.post-section h4,
+.post-section h5,
+.post-section h6 {
+\tcolor: var(--ink);
+\tfont-family: var(--font-display);
+\tfont-size: 15px;
+\tfont-weight: 500;
+\tline-height: 1.4;
+\tmargin: 0 0 16px;
+\ttext-align: left;
+}
+
+.post-section > * + h2 {
+\tmargin-top: 48px;
+}
+
+.post-section > * + h3 {
+\tmargin-top: 40px;
+}
+
+.post-section > * + h4,
+.post-section > * + h5,
+.post-section > * + h6 {
+\tmargin-top: 32px;
 }
 
 .post-section p:not(:last-child),
 .post-content p:not(:last-child) {
-\tmargin-bottom: 25px;
+\tmargin-bottom: 24px;
 }
 
 .post-paragraph {
@@ -975,7 +1027,9 @@ button {
 \theight: 34px;
 \tjustify-content: center;
 \tpadding: 0 14px;
-\ttransition: background-color 180ms ease, opacity 180ms ease;
+\ttransition:
+\t\tbackground-color var(--vpk-dur-fast) var(--ease-out),
+\t\topacity var(--vpk-dur-fast) var(--ease-out);
 }
 
 .support-button,
@@ -1068,7 +1122,7 @@ button {
 \t.eyebrow,
 \t.kicker,
 \t.cover-eyebrow {
-\t\tmargin-bottom: 60px;
+\t\tmargin-bottom: 40px;
 \t}
 
 \t.post-paragraph-number {
@@ -1082,6 +1136,108 @@ button {
 \t.in-review-item {
 \t\talign-items: flex-start;
 \t\tgap: 6px;
+\t}
+}`;
+}
+
+export function buildResponsiveCssBlock() {
+	return `/* vpk compact page tier */
+@media screen and (max-width: 840px) {
+\thtml {
+\t\tbackground: var(--paper-background);
+\t}
+
+\tbody:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) {
+\t\tmax-width: 100% !important;
+\t\tmin-width: 0 !important;
+\t\toverflow-x: hidden;
+\t\tpadding: var(--page-pad-y-compact) var(--page-pad-x-compact) !important;
+\t\twidth: 100% !important;
+\t}
+
+\tbody[data-vpk-motion="deck"] {
+\t\tmax-width: 100% !important;
+\t\twidth: 100% !important;
+\t}
+
+\tmain,
+\t.page,
+\t.sheet,
+\t.doc-page,
+\t.document-page {
+\t\tmax-width: 100% !important;
+\t\tmin-width: 0 !important;
+\t}
+
+\tbody:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .page,
+\tbody:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .sheet,
+\tbody:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .doc-page,
+\tbody:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .document-page {
+\t\tpadding-left: var(--page-pad-x-compact) !important;
+\t\tpadding-right: var(--page-pad-x-compact) !important;
+\t}
+
+\timg,
+\tsvg,
+\tcanvas,
+\tvideo,
+\tpre,
+\ttable {
+\t\tmax-width: 100%;
+\t}
+
+\tpre,
+\tcode {
+\t\toverflow-wrap: anywhere;
+\t}
+
+\t.post-section,
+\t.post-paragraph-content {
+\t\ttext-align: left;
+\t}
+}`;
+}
+
+export function buildThemeToggleCssBlock() {
+	return `/* vpk theme toggle */
+.vpk-theme-toggle {
+\talign-items: center;
+\tbackdrop-filter: blur(10px);
+\tbackground: color-mix(in srgb, var(--paper) 88%, transparent);
+\tborder: 1px solid var(--rule);
+\tborder-radius: 999px;
+\tbottom: 18px;
+\tbox-shadow: var(--shadow);
+\tcolor: var(--ink);
+\tcursor: pointer;
+\tdisplay: inline-flex;
+\tfont-family: var(--font-mono);
+\tfont-size: 12px;
+\tfont-weight: 500;
+\tgap: 6px;
+\theight: 34px;
+\tleft: 18px;
+\tletter-spacing: 0;
+\tline-height: 1;
+\tpadding: 0 10px;
+\tposition: fixed;
+\tz-index: 60;
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+\tborder-color: var(--focus-ring);
+\tcolor: var(--ink);
+}
+
+.vpk-theme-toggle__state {
+\tcolor: var(--muted-text);
+\tfont-variant-numeric: tabular-nums;
+}
+
+@media print {
+\t.vpk-theme-toggle {
+\t\tdisplay: none !important;
 \t}
 }`;
 }
@@ -1252,6 +1408,10 @@ export function buildStylesCssFromTokens(tokens = loadTokens()) {
 	lines.push(buildMotionCssBlock());
 	lines.push("");
 	lines.push(buildAlgebricaComponentCssBlock());
+	lines.push("");
+	lines.push(buildResponsiveCssBlock());
+	lines.push("");
+	lines.push(buildThemeToggleCssBlock());
 	return `${lines.join("\n")}\n`;
 }
 

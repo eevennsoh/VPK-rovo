@@ -134,6 +134,11 @@ Never ask all four as a checklist.
 | "slides / deck / keynote" | Slides | `slides.html` |
 | "equity report / investment memo / valuation" | Equity Report | `equity-report.html` |
 | "release notes / changelog" | Changelog | `changelog.html` |
+| "broadsheet / front page / index / issue opener" | Broadsheet Front Page/Index | `broadsheet.html` |
+| "annual report / brand book / studio report / colophon" | Annual Report/Brand Book | `annual-report.html` |
+| "interview / Q&A / profile / conversation" | Interview/Q&A Feature | `interview.html` |
+| "lookbook / gallery / portfolio plates / artifact collection" | Lookbook/Gallery Portfolio | `lookbook.html` |
+| "feature essay / long-form essay / data essay" | Long-Form Feature Essay | `feature-essay.html` |
 
 If unsure, ask a one-liner about the scenario rather than guess.
 
@@ -348,13 +353,18 @@ otherwise proceed to Step 6.
    keep the answer concise; if the deck has later mechanics sections, the
    TLDR solution can focus on the new human role while downstream pages explain
    the system/control-plane details.
-8. For presentation-style long docs, use a `data-vpk-docnav` runtime with
-   visible Up/Down controls, keyboard Up/Down navigation, and active-section
-   focus treatment so non-active sections recede without disappearing. Keep
-   dimming scoped to a keyboard/control navigation focus state and release that
-   state immediately on manual wheel/touch scrolling. Opacity focus changes
-   should ease over roughly 500-700ms with a gentle curve; avoid abrupt jumps
-   from dimmed sections back to full opacity.
+8. For presentation-style long docs, use a `data-vpk-docnav` runtime with the
+   shared round-button document navigation cluster: visible Up/Down controls,
+   Geist Mono `NN / NN` counter, circular progress ring, keyboard Up/Down
+   navigation, and active-section focus treatment so non-active sections recede
+   without disappearing. Pressing `p` opens the presenter window for the current
+   section. Per-section notes belong in
+   `<aside class="speaker-notes" aria-hidden="true">...</aside>` as the last
+   child of `main > section`; they stay hidden from the audience window and
+   print output. Keep dimming scoped to a keyboard/control navigation focus
+   state and release that state immediately on manual wheel/touch scrolling.
+   Opacity focus changes should ease over roughly 500-700ms with a gentle
+   curve; avoid abrupt jumps from dimmed sections back to full opacity.
 9. In SVG diagrams, never rely on long single-line text inside fixed boxes.
    Split labels into multiple `<text>` lines or widen the node/viewBox before
    text reaches the container edge. Keep short node titles on one line when
@@ -456,6 +466,9 @@ node .agents/skills/vpk-html/scripts/build.mjs --landing output/vpk-html/<slug>/
 
 # GitHub Pages publish (validates, copies to index.html, pushes, enables Pages). See references/github-pages.md
 node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
+
+# Refresh theme + presentation/docnav runtime in explicit artifact files
+node .agents/skills/vpk-html/scripts/build.mjs --inject-runtime output/vpk-html/<slug>/<slug>.html [output/vpk-html/<other>/<other>.html ...]
 ```
 
 For template-library changes (color sweeps, font swaps, port-script edits):
@@ -504,6 +517,7 @@ template script.
 - Author semantic colors once in `references/tokens.json`.
 - Regenerate `styles.css` with `node .agents/skills/vpk-html/scripts/build.mjs --write-styles`.
 - Use `scripts/shared.mjs` for generated CSS: `buildFontFaceBlock()`, `readStylesCss()`, `FONT_STACKS`, `KAMI_COLOR_MAP`, or `buildSharedCssBlock()`.
+- Use `scripts/theme.mjs` for the light / dark / system runtime. Keep the early head script before the shared style block and the visible toggle script before `</body>`.
 - Run `node .agents/skills/vpk-html/scripts/build.mjs --sync` before and after any token/style edit.
 - Individual templates may define layout aliases such as `--brand`, `--paper`, or `--mono`, but those aliases must point back to the shared unprefixed variables.
 
@@ -522,14 +536,25 @@ reduced-motion must remove movement while preserving legible opacity changes.
 Decks are dual-layer artifacts. The print layer keeps the fixed page geometry
 for PDF export; the screen layer is injected by `scripts/presentation.mjs` and
 supports whole-slide Left/Right navigation, `#slide-N` deep links, hidden
-speaker notes, and a synced presenter window. Speaker notes belong in
-`<aside class="speaker-notes" aria-hidden="true">` as the last child of each
-slide and must never appear in the main projected window or print output.
+speaker notes, and a synced presenter window. Decks and `data-vpk-docnav`
+documents share the same round-button navigation cluster: circular Previous /
+Next buttons, Geist Mono `NN / NN` counter with `aria-live="polite"`, and an
+SVG circular progress ring whose `stroke-dashoffset` follows current progress.
+The ring animates with shared motion tokens and jumps without animation under
+reduced motion.
+
+Speaker notes belong in `<aside class="speaker-notes" aria-hidden="true">` as
+the last child of each slide or `main > section`. They must never appear in the
+main projected/audience window or print output. Pressing `p` opens a synced
+presenter window with the current slide/section title, editable speaker notes,
+next-slide/next-section preview, and elapsed timer. The regular theme toggle is
+hidden from the presenter window. Screen recordings of the audience window
+exclude notes; video conversion may consume notes as narration input only.
 
 MP4 export is not part of the browser deck runtime. When the user asks for
-video, read `references/video-export.md` and re-author the deck into a
-Hyperframes general-video composition only after confirming the user wants a
-render.
+video, read `references/video-export.md` and model the worked example at
+`assets/video/landing-demo-separation/`; re-author the deck into a Hyperframes
+general-video composition only after confirming the user wants a render.
 
 ## Identity
 
@@ -547,12 +572,35 @@ still preserve the offline single-file HTML contract.
 - **Focal:** `--focal` — the single darkest-ink figure emphasis token.
 - **Figure ramp:** `--ill-line`, `--ill-ink50`, `--ill-guide`, `--ill-guide-dashed`, `--ill-frame`, `--ill-fill`, `--ill-fill-alt`, and the `--ill-tone*` aliases for diagrams, charts, and technical illustrations.
 - **Component chrome:** `--table-header`, `--chip-*`, `--pill-*`, `--search-*`, `--code-surface`, and `--heat0` through `--heat4` carry the Algebrica table, vote-chip, pill, search, code-card, and heatmap roles.
+- **Functional text:** `--syntax-*`, `--success`, `--warning`, `--danger`, `--info`, and `--diff-*` are the meaning-bearing roles. Do not substitute decorative accent fills for code, state, or diff text.
 - **Background canvas:** plain `--paper-background` for the browser/page backdrop; do not add dotted grid canvases to templates, demos, landing shells, or generated artifacts.
 - **Elevation:** flat by default. Prefer hairline borders, whitespace, and subtle surface shifts over shadows.
 
 **Dark mode** (activate via `<html data-theme="dark">`):
 
 - The same unprefixed aliases switch to warm paper-dark fallbacks under `[data-theme="dark"]`; figures invert through tokens, not raw colors.
+- Theme runtime state is `light`, `dark`, or `system`, persisted at `localStorage["vpk-html-theme"]`. `system` follows `prefers-color-scheme` and removes `data-theme` unless the system is dark. The fixed control uses `.vpk-theme-toggle` / `data-vpk-theme-toggle`; video export and print flows may exclude that class/attribute.
+
+**Functional roles (AA):**
+
+| Role | Purpose | Contrast guarantee |
+|---|---|---|
+| `syntaxKeyword` | Code keywords and operators | ≥4.5:1 on `codeSurface` |
+| `syntaxIdentifier` | Ordinary code names | ≥4.5:1 on `codeSurface` |
+| `syntaxString` | Strings / paths / quoted values | ≥4.5:1 on `codeSurface` |
+| `syntaxComment` | Code comments and muted annotations | ≥4.5:1 on `codeSurface` |
+| `syntaxLiteral` | Numbers, booleans, and literal values | ≥4.5:1 on `codeSurface` |
+| `success` | Completed / healthy state text and dots | ≥4.5:1 on `paper` and `successTint`; indicator use is ≥3:1 on paper/surfaces |
+| `warning` | Human-needed / risky state text and dots | ≥4.5:1 on `paper` and `warningTint`; indicator use is ≥3:1 on paper/surfaces |
+| `danger` | Error / destructive / failed state text and dots | ≥4.5:1 on `paper` and `dangerTint`; indicator use is ≥3:1 on paper/surfaces |
+| `info` | Neutral state text and dots | ≥4.5:1 on `paper` and `infoTint`; indicator use is ≥3:1 on paper/surfaces |
+| `diffAddText` | Added-line diff text | ≥4.5:1 on paper-composited `diffAddTint` |
+| `diffDelText` | Deleted-line diff text | ≥4.5:1 on paper-composited `diffDelTint` |
+| `diffAddTint` / `diffDelTint` | Subtle diff row washes | Paired only with their diff text roles |
+
+Decorative fills remain soft: `accentSaffron`, `accentGreen`, and
+`collectionSoftware` are visually distinct swatches, not text colors. `ruleStrong`
+stays a hairline rule color.
 
 **Fonts** (Geist family, all self-hosted in `assets/fonts/`):
 
@@ -576,9 +624,10 @@ still preserve the offline single-file HTML contract.
 **Other identity rules:**
 
 - **Drop cap:** Geist regular or medium weight, two-line float, inheriting the surrounding text color by default. For presentation-style explainers, reserve it for the cover subtitle or opening deck statement; do not repeat drop caps on every chapter lead. Prose-heavy long docs may use one opening drop cap when it supports the editorial tone.
-- **Long-form prose:** `.post-section` content is justified, hyphenated, and `overflow-wrap: break-word`, with 25px paragraph spacing, 60px bottom padding, a warm hairline, and 50px between sections. Long docs may use `.post-paragraph-number` in the left margin; it hides on narrow screens.
+- **Long-form prose:** `.post-section` content is justified, hyphenated, and `overflow-wrap: break-word`, using the shared base-8 rhythm: eyebrow gap 40px, paragraph gap 24px, h2 bottom gap 32px, h3 bottom gap 24px, heading top gaps 48/40/32px after content, section padding/gap 56px, and a warm hairline between sections. Long docs may use `.post-paragraph-number` in the left margin; it hides on narrow screens.
 - **Tables:** Geist 12px, collapsed 1px `--rule` borders on every cell, `8px 12px` centered padding, `th` weight 500, and `--table-header` header wash. No radius, zebra rows, or hover treatment.
 - **Components:** prefer the Algebrica vocabulary for reusable surfaces: 12px-radius bordered list-table cards, 22px vote/count chips, 10px heatmap dots using `--heat0` → `--heat4`, 8px-radius tinted code cards, 34px pill buttons, centered 32px section heads, and steps lists with a vertical connector.
+- **Compact screens:** shared CSS defines `--page-max-width`, `--page-pad-x/y`, and compact `--page-pad-x/y-compact`. Under 840px, document bodies and page wrappers step down to `max-width: 100%` with clamp-based padding so content keeps an edge gutter and avoids horizontal overflow. Chrome shells may opt out with `data-vpk-chrome`.
 - **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead.
 - **Deck rule:** apply class `.ascii-rule` to `<hr>` for a quiet dotted separator.
 - **Frames:** sections, articles, figures, and tables are flat by default. Cards / callouts opt in to a 1px ink/rule border and radius no larger than 6px.
@@ -627,7 +676,7 @@ resolved theme block — don't redefine it per document.
 - `references/svg-style.md` — required grayscale SVG grammar + lint rules
 - `references/charts.md` — chart animation, interaction, and catalog foundation
 - `references/presentation.md` — deck runtime, presenter window, speaker notes
-- `references/video-export.md` — Hyperframes MP4 conversion contract
+- `references/video-export.md` — Hyperframes MP4 conversion contract and worked example (`assets/video/landing-demo-separation/`)
 - `references/resume-writing.md` — Action + Scope + Result + Outcome
 - `references/writing.md` — general prose rules + quality bars per doc type
 - `references/design.md` — visual rules

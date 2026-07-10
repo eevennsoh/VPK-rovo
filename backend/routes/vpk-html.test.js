@@ -43,11 +43,13 @@ function createFixtureRoot(t) {
 		fs.rmSync(rootDir, { force: true, recursive: true });
 	});
 
-	fs.mkdirSync(path.join(rootDir, "assets", "demos"), { recursive: true });
+	fs.mkdirSync(path.join(rootDir, "assets", "demos", "media"), { recursive: true });
 	fs.mkdirSync(path.join(rootDir, "scripts"), { recursive: true });
 	fs.writeFileSync(path.join(rootDir, "index.html"), "<!doctype html><title>vpk-html</title>");
 	fs.writeFileSync(path.join(rootDir, "SKILL.md"), "# vpk-html");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "<!doctype html><title>Demo</title>");
+	fs.writeFileSync(path.join(rootDir, "assets", "demos", "media", "clip.mp4"), "fake-mp4-bytes");
+	fs.writeFileSync(path.join(rootDir, "assets", "demos", "notes.txt"), "not servable");
 	fs.writeFileSync(path.join(rootDir, "scripts", "build.mjs"), "console.log('internal')");
 	return rootDir;
 }
@@ -97,6 +99,26 @@ test("vpk-html route does not serve unlisted skill source files", async (t) => {
 
 	await withServer(rootDir, async (baseUrl) => {
 		const response = await fetch(`${baseUrl}/api/vpk-html/scripts/build.mjs`);
+		assert.equal(response.status, 400);
+		assert.deepEqual(await response.json(), { error: "Invalid vpk-html asset path" });
+	});
+});
+
+test("vpk-html route serves video media under assets/demos", async (t) => {
+	const rootDir = createFixtureRoot(t);
+
+	await withServer(rootDir, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/vpk-html/assets/demos/media/clip.mp4`);
+		assert.equal(response.status, 200);
+		assert.equal(await response.text(), "fake-mp4-bytes");
+	});
+});
+
+test("vpk-html route rejects non-media, non-html files under assets/demos", async (t) => {
+	const rootDir = createFixtureRoot(t);
+
+	await withServer(rootDir, async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/vpk-html/assets/demos/notes.txt`);
 		assert.equal(response.status, 400);
 		assert.deepEqual(await response.json(), { error: "Invalid vpk-html asset path" });
 	});
