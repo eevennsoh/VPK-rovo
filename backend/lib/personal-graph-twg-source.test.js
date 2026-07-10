@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const { EventEmitter } = require("node:events");
@@ -9,6 +10,7 @@ const { EventEmitter } = require("node:events");
 const {
 	TwgAuthError,
 	TwgNotFoundError,
+	buildAutomationWorkflowExplorer,
 	buildTwgExplorer,
 	expandTwgExplorerNode,
 	fetchSlice,
@@ -82,6 +84,21 @@ function createSpawnImplForArgs(resolvePayload, calls = []) {
 	};
 }
 
+function createSpawnImplForStdout(resolveStdout, calls = []) {
+	return (_bin, args) => {
+		calls.push(args);
+		const stdout = resolveStdout(args);
+		const child = new EventEmitter();
+		child.stdout = new EventEmitter();
+		child.stderr = new EventEmitter();
+		queueMicrotask(() => {
+			child.stdout.emit("data", Buffer.from(stdout));
+			child.emit("close", 0);
+		});
+		return child;
+	};
+}
+
 const ROOT_USER = {
 	ari: "ari:cloud:identity::user/me",
 	name: "Me",
@@ -117,6 +134,82 @@ const LOOM_ONE = {
 	ari: "ari:cloud:loom:site:video/6",
 	type: "LoomVideo",
 };
+
+const AUTOMATION_WORK_PAYLOAD = {
+	data: {
+		comments: [
+			{
+				content: "Prototype link: https://vpk-studio.example.test",
+				id: "comment-prototype",
+				url: "https://loom.example.test/comment",
+			},
+		],
+		devActivity: [
+			{
+				displayName: "d36f040",
+				id: "commit-review",
+				message: "Address PR review feedback",
+				url: "https://bitbucket.example.test/commit",
+			},
+		],
+		pages: [
+			{
+				id: "page-feedback",
+				title: "Agent builder feedback and themes",
+				webUrl: "https://hello.example.test/feedback",
+			},
+			{
+				id: "page-weekly",
+				title: "Rovo Chat Triad [Recurring]",
+				webUrl: "https://hello.example.test/triad",
+			},
+		],
+		projects: [
+			{
+				key: "ATLAS-1",
+				name: "Agents creation experience vision",
+				url: "https://home.example.test/project",
+			},
+		],
+		videos: [
+			{
+				id: "loom-agent-builder",
+				name: "Agent builder — 5 Jun",
+				url: "https://loom.example.test/agent-builder",
+			},
+			{
+				id: "loom-custom-skills",
+				name: "Custom skills — 25 June",
+				url: "https://loom.example.test/custom-skills",
+			},
+		],
+	},
+};
+
+const AUTOMATION_CONTEXT_PAYLOAD = createContextPayload(ROOT_USER, [
+	{
+		direction: "outbound",
+		relationshipName: "atlassian_user_created_loom_video",
+		targets: [
+			{
+				ari: "ari:cloud:loom:site:video/agent-builder",
+				name: "Creating AI Agents in Studio, End to End",
+				url: "https://loom.example.test/end-to-end",
+			},
+		],
+	},
+	{
+		direction: "outbound",
+		relationshipName: "atlassian_user_invited_to_loom_meeting",
+		targets: [
+			{
+				ari: "ari:cloud:loom:site:meeting/weekly",
+				name: "Rovo Agents Leads",
+				url: "https://loom.example.test/meeting",
+			},
+		],
+	},
+]);
 
 test("normalizeContextResponse builds root + targets from fixture", () => {
 	const explorer = normalizeContextResponse(FIXTURE);
@@ -257,6 +350,71 @@ test("normalizeContextResponse handles empty relationships → root only", () =>
 	assert.equal(explorer.stats.nodeCount, 1);
 });
 
+test("buildAutomationWorkflowExplorer creates a curated workflow dendrogram", () => {
+	const explorer = buildAutomationWorkflowExplorer({
+		contextPayload: AUTOMATION_CONTEXT_PAYLOAD,
+		generatedAt: "2026-06-30T00:00:00.000Z",
+		since: "30d",
+		workPayload: AUTOMATION_WORK_PAYLOAD,
+	});
+	const root = explorer.nodes.find((node) => node.id === "personal-graph:automation:root");
+	const workflowNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationWorkflowCandidate");
+	const actionNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationDraftAction");
+	const evidenceNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationWorkflowEvidence");
+
+	assert.equal(root.title, "Repeated manual workflows");
+	assert.equal(root.kind, "synthesis");
+	assert.equal(root.frontmatter.since, "30d");
+	assert.equal(workflowNodes.length, 4);
+	assert.equal(actionNodes.length, 4);
+	assert.ok(evidenceNodes.length >= 4, "each workflow has at least one evidence node");
+	assert.ok(evidenceNodes.some((node) => node.kind === "source"), "live TWG evidence uses source nodes");
+	assert.ok(explorer.nodes.every((node) => node.provider === "twg"));
+	assert.ok(explorer.edges.every((edge) => edge.kind === "related"));
+	assert.ok(explorer.edges.some((edge) =>
+		edge.source === "personal-graph:automation:root" &&
+		edge.target === "personal-graph:automation:workflow:loom-shareback-distribution"
+	));
+	assert.ok(explorer.edges.some((edge) =>
+		edge.source === "personal-graph:automation:workflow:loom-shareback-distribution" &&
+		edge.target === "personal-graph:automation:action:loom-shareback-distribution"
+	));
+
+	const loomWorkflow = explorer.nodes.find((node) => node.id === "personal-graph:automation:workflow:loom-shareback-distribution");
+	const loomAction = explorer.nodes.find((node) => node.id === "personal-graph:automation:action:loom-shareback-distribution");
+	const reviewEvidence = explorer.nodes.find((node) => node.title === "Address PR review feedback");
+	assert.equal(loomWorkflow.kind, "synthesis");
+	assert.equal(loomWorkflow.title, "Loom shareback distribution");
+	assert.equal(loomWorkflow.frontmatter.confidence, "high");
+	assert.equal(loomAction.kind, "concept");
+	assert.equal(loomAction.title, "Draft Loom shareback pack");
+	assert.equal(reviewEvidence.kind, "source");
+	assert.equal(reviewEvidence.externalUrl, "https://bitbucket.example.test/commit");
+	assert.equal(explorer.generatedAt, "2026-06-30T00:00:00.000Z");
+	assert.equal(explorer.stats.nodeCount, explorer.nodes.length);
+	assert.equal(explorer.stats.edgeCount, explorer.edges.length);
+});
+
+test("buildAutomationWorkflowExplorer returns fallback workflow nodes for sparse TWG data", () => {
+	const explorer = buildAutomationWorkflowExplorer({
+		contextPayload: createContextPayload(ROOT_USER, []),
+		generatedAt: "2026-06-30T00:00:00.000Z",
+		since: "30d",
+		workPayload: { data: {} },
+	});
+	const workflowNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationWorkflowCandidate");
+	const actionNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationDraftAction");
+	const evidenceNodes = explorer.nodes.filter((node) => node.frontmatter?.type === "AutomationWorkflowEvidence");
+
+	assert.equal(explorer.nodes.some((node) => node.id === "personal-graph:automation:root"), true);
+	assert.equal(workflowNodes.length, 4);
+	assert.equal(actionNodes.length, 4);
+	assert.equal(evidenceNodes.length, 4);
+	assert.equal(evidenceNodes.every((node) => node.title === "More evidence needed"), true);
+	assert.equal(evidenceNodes.every((node) => node.kind === "source"), true);
+	assert.equal(explorer.edges.length, 12);
+});
+
 test("normalizeContextResponse throws on missing root object", () => {
 	assert.throws(() => normalizeContextResponse({ data: {} }), /missing `data.object.ari`/u);
 	assert.throws(() => normalizeContextResponse(null), /no JSON payload/u);
@@ -296,6 +454,80 @@ test("buildTwgExplorer wires CLI output through normalize", async () => {
 	const explorer = await buildTwgExplorer({ hydrateArtifactTitles: false, spawnImpl });
 	assert.ok(explorer.nodes.length > 1);
 	assert.equal(explorer.nodes[0].provider, "twg");
+});
+
+test("fetchSlice automation-workflows queries work and context TWG summaries", async () => {
+	const calls = [];
+	const spawnImpl = createSpawnImplForArgs((args) => {
+		if (args[0] === "work") return AUTOMATION_WORK_PAYLOAD;
+		if (args[0] === "context") return AUTOMATION_CONTEXT_PAYLOAD;
+		throw new Error(`Unexpected fake twg call: ${args.join(" ")}`);
+	}, calls);
+
+	const explorer = await fetchSlice("automation-workflows", { since: "30d" }, { spawnImpl });
+
+	assert.ok(explorer.nodes.some((node) => node.id === "personal-graph:automation:workflow:weekly-recurring-synthesis"));
+	assert.ok(calls.some((args) => args.join(" ") === "work query --since 30d --include-viewed --hydrate summary --output json"));
+	assert.ok(calls.some((args) => args.join(" ") === "context user me --output json --since 30d --detail summary"));
+	assert.equal(calls.length, 2);
+});
+
+test("fetchSlice automation-workflows reads TWG agent envelope output files", async (t) => {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "personal-graph-twg-envelope-"));
+	t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+	const workOutputPath = path.join(tempDir, "work.json");
+	const contextOutputPath = path.join(tempDir, "context.json");
+	fs.writeFileSync(workOutputPath, JSON.stringify(AUTOMATION_WORK_PAYLOAD), "utf8");
+	fs.writeFileSync(contextOutputPath, JSON.stringify(AUTOMATION_CONTEXT_PAYLOAD), "utf8");
+	const calls = [];
+	const spawnImpl = createSpawnImplForStdout((args) => {
+		const outputPath = args[0] === "work" ? workOutputPath : contextOutputPath;
+		return [
+			"output_files:",
+			`  stdout: "${outputPath}"`,
+			"command: \"projection\"",
+			"agent_output:",
+			"  summary: \"stats\"",
+			"---END---",
+		].join("\n");
+	}, calls);
+
+	const explorer = await fetchSlice("automation-workflows", { since: "30d" }, { spawnImpl });
+
+	assert.equal(calls.length, 2);
+	assert.ok(explorer.nodes.some((node) => node.id === "personal-graph:automation:root"));
+	assert.ok(explorer.nodes.some((node) => node.title === "Weekly recurring synthesis"));
+});
+
+test("fetchSlice automation-workflows accepts TWG JSON with trailing CLI framing", async () => {
+	const calls = [];
+	const spawnImpl = createSpawnImplForStdout((args) => {
+		const payload = args[0] === "work" ? AUTOMATION_WORK_PAYLOAD : AUTOMATION_CONTEXT_PAYLOAD;
+		return `${JSON.stringify(payload)}\ncommand: "projection"\n---END---`;
+	}, calls);
+
+	const explorer = await fetchSlice("automation-workflows", { since: "30d" }, { spawnImpl });
+
+	assert.equal(calls.length, 2);
+	assert.ok(explorer.nodes.some((node) => node.id === "personal-graph:automation:root"));
+	assert.ok(explorer.nodes.some((node) => node.title === "Agent builder feedback synthesis"));
+});
+
+test("fetchSlice automation-workflows falls back when one TWG source is malformed", async () => {
+	const calls = [];
+	const spawnImpl = (_bin, args) => {
+		calls.push(args);
+		return createFakeChild({
+			stdout: args[0] === "work" ? JSON.stringify(AUTOMATION_WORK_PAYLOAD) : "{\"apiVersion\":\"v2\",",
+		})();
+	};
+
+	const explorer = await fetchSlice("automation-workflows", { since: "30d" }, { spawnImpl });
+
+	assert.equal(calls.length, 2);
+	assert.ok(explorer.nodes.some((node) => node.id === "personal-graph:automation:root"));
+	assert.ok(explorer.nodes.some((node) => node.title === "Loom shareback distribution"));
+	assert.ok(explorer.nodes.some((node) => node.title === "Rovo Chat Triad [Recurring]"));
 });
 
 test("buildTwgExplorer hydrates Confluence artifact titles from native get commands", async () => {

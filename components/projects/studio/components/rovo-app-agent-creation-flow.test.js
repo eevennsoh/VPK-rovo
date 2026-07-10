@@ -600,8 +600,24 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 	assert.match(HOME_STARTER_BENTO_SOURCE, /const tileRefs = useRef<Array<HTMLButtonElement \| null>>\(\[\]\);/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /onPointerLeave=\{resetBentoPointer\}/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-x", normalizedX\.toFixed\(3\)/u);
-	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-y", normalizedY\.toFixed\(3\)/u);
+	const pointerMoveStart = HOME_STARTER_BENTO_SOURCE.indexOf("const handleBentoPointerMove");
+	const pointerMoveSource = HOME_STARTER_BENTO_SOURCE.slice(
+		pointerMoveStart,
+		HOME_STARTER_BENTO_SOURCE.indexOf("const resetBentoPointer", pointerMoveStart),
+	);
+	const pointerReadIndex = pointerMoveSource.indexOf("const rect = tile.getBoundingClientRect();");
+	const pointerBatchIndex = pointerMoveSource.indexOf("pointerUpdates.push({");
+	const pointerWriteLoopIndex = pointerMoveSource.indexOf("for (const { tile, x, y } of pointerUpdates)");
+	const pointerWriteIndex = pointerMoveSource.indexOf("tile.style.setProperty");
+	assert.notEqual(pointerMoveStart, -1);
+	assert.ok(pointerReadIndex !== -1 && pointerReadIndex < pointerBatchIndex, "pointer tracking should read tile geometry before batching pointer updates");
+	assert.ok(pointerBatchIndex !== -1 && pointerBatchIndex < pointerWriteLoopIndex, "pointer tracking should batch every tile update before writing styles");
+	assert.ok(pointerWriteLoopIndex !== -1 && pointerWriteLoopIndex < pointerWriteIndex, "pointer tracking should write CSS variables from a separate loop");
+	assert.equal(pointerMoveSource.slice(0, pointerWriteLoopIndex).includes("style.setProperty"), false);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /x: normalizedX\.toFixed\(3\)/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /y: normalizedY\.toFixed\(3\)/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-x", x/u);
+	assert.match(HOME_STARTER_BENTO_SOURCE, /--card-glow-pointer-y", y/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-tile-accent": accentColor/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-core": 36/u);
 	assert.match(HOME_STARTER_BENTO_SOURCE, /"--card-glow-border-spread": 120/u);
@@ -943,7 +959,6 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const existing = new Set\(current\.map\(\(value\) => getAgentConfigListLookupValue\(field, value\)\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const additions = nextValues\.filter\(\(value\) => !existing\.has\(getAgentConfigListLookupValue\(field, value\)\)\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*setActiveDirectory\(null\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /import \{ slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
@@ -1104,6 +1119,15 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /conversationStarterIcons: Array\.isArray\(config\.conversationStarterIcons\)[\s\S]*config\.conversationStarterIcons\.filter\(\(_, itemIndex\) => itemIndex !== index\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /saveLabel=\{conversationStarterDialogValue\.length > 0 \? "Save" : "Add"\}/u);
+});
+
+test("Studio skills directory add keeps the Browse Skills dialog open", () => {
+	const handleAddSkillsSource = AGENT_CONFIG_PANEL_SOURCE.match(/const handleAddSkills = useCallback\([\s\S]*?\n\t\);/u)?.[0] ?? "";
+	assert.match(handleAddSkillsSource, /skills: readonly SkillsDirectorySkill\[\]/u);
+	assert.match(handleAddSkillsSource, /appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
+	assert.match(handleAddSkillsSource, /setDirectorySkillIds\(\[\]\);/u);
+	assert.doesNotMatch(handleAddSkillsSource, /setActiveDirectory\(null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}/u);
 });
 
 test("Studio publish dropdown separates draft changes from version history", () => {
@@ -1610,6 +1634,7 @@ test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt va
 	// artifact views the prop is undefined, so the composer renders no reveal even
 	// on hover/focus.
 	assert.match(SHELL_SOURCE, /onStartFromScratch=\{isDefaultAgentHomeState \? handleStartAgentFromScratch : undefined\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onCreateAgent=\{handleStartAgentFromScratch\}[\s\S]*onNewChat=\{handleReturnToAgentsHome\}/u);
 	// The from-scratch handler opens the same config pane the AI-result flow uses.
 	const fromScratchHandlerSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStartAgentFromScratch = useCallback"),

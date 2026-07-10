@@ -12,8 +12,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { addLabeledMainLandmark, buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss } from "./shared.mjs";
+import { addLabeledMainLandmark, buildFontFaceBlock, ensureFaviconLinks, FONT_STACKS, readStylesCss, wrapSharedCss } from "./shared.mjs";
 import { rewriteKamiColors } from "./kami-color-map.mjs";
+import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = path.resolve(__dirname, "..");
@@ -50,8 +51,8 @@ ${buildFontFaceBlock()}
 }
 
 function vpkVisualCss() {
-	return `/* vpk-html visual overlay: Atlassian deck system over upstream demos. */
-${readStylesCss()}
+	return `/* vpk-html visual overlay: Algebrica editorial system over upstream demos. */
+${wrapSharedCss(readStylesCss())}
 
 :root {
   --ivory: var(--paper);
@@ -72,32 +73,30 @@ ${readStylesCss()}
   --g300: var(--rule);
   --g500: var(--muted-text);
   --g700: var(--ink);
-  --clay: var(--primary-blue);
+  --clay: var(--accent);
   --clay-d: var(--link-pressed);
-  --oat: var(--primary-blue-tint);
+  --oat: var(--accent-soft);
   --olive: var(--success);
   --rust: var(--danger);
-  --sky: var(--primary-blue);
+  --sky: var(--focal);
   --serif: ${FONT_STACKS.body};
   --sans: ${FONT_STACKS.body};
   --mono: ${FONT_STACKS.mono};
   --display: ${FONT_STACKS.display};
   --numeric: ${FONT_STACKS.numeric};
   --border: 1px solid var(--gray-300);
-  --radius-panel: 0;
-  --radius-row: 0;
-  --card-shadow: 4px 4px 0 var(--primary-blue-tint);
+  --radius-panel: 6px;
+  --radius-row: 6px;
+  --card-shadow: none;
 }
 
 html,
 body {
-  background:
-    var(--grid-background),
-    var(--ivory) !important;
-  background-size: var(--grid-background-size) !important;
+  background: var(--paper-background) !important;
   color: var(--slate) !important;
-  font-family: "Atlassian Mono Numeric", var(--sans) !important;
+  font-family: "Geist Mono Numeric", var(--sans) !important;
   letter-spacing: 0 !important;
+  line-height: 1.6 !important;
 }
 
 *,
@@ -121,12 +120,11 @@ h1,
 .title,
 .hero-title,
 .deck-title {
-  color: var(--clay) !important;
+  color: var(--headline) !important;
   font-family: var(--display) !important;
-  font-weight: 900 !important;
+  font-weight: 500 !important;
   letter-spacing: 0 !important;
-  line-height: 0.98 !important;
-  text-transform: none !important;
+  line-height: 1.14 !important;
 }
 
 h2,
@@ -137,10 +135,9 @@ h4,
 .panel-title {
   color: var(--slate) !important;
   font-family: var(--display) !important;
-  font-weight: 700 !important;
+  font-weight: 500 !important;
   letter-spacing: 0 !important;
-  line-height: 1.08 !important;
-  text-transform: none !important;
+  line-height: 1.22 !important;
 }
 
 p,
@@ -153,7 +150,6 @@ select {
   font-family: var(--sans) !important;
 }
 
-.eyebrow,
 .label,
 .num,
 .chip,
@@ -163,11 +159,23 @@ select {
 .meta,
 .caption,
 .hint,
-.nav,
-.tabs,
-.stat-label {
+  .nav,
+  .tabs,
+  .stat-label {
+  color: var(--muted-text) !important;
+  font-family: var(--sans) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+.eyebrow {
+  color: var(--muted-text) !important;
   font-family: var(--mono) !important;
-  letter-spacing: 0.08em !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
 }
 
 .num,
@@ -178,14 +186,12 @@ svg text {
   font-family: var(--numeric) !important;
 }
 
-.eyebrow,
 .label,
 .num,
 .tag,
 .badge,
 .stat-label {
-  color: var(--clay) !important;
-  text-transform: uppercase !important;
+  color: var(--muted-text) !important;
 }
 
 :is(
@@ -225,25 +231,28 @@ svg text {
 ) {
   background: color-mix(in srgb, var(--white) 94%, transparent) !important;
   border-color: var(--gray-300) !important;
-  border-radius: 0 !important;
+  border-radius: var(--radius-panel) !important;
   box-shadow: var(--card-shadow) !important;
 }
 
 :is(.stage, .browser, .mock, .flow, .matrix, .table, table, .diff, .code, pre) {
   border-color: var(--gray-300) !important;
-  border-radius: 0 !important;
+  border-radius: var(--radius-row) !important;
 }
 
-.code,
-pre,
+:is(.code, pre):not(.diff *),
 .diff,
 .code-block,
 .snippet {
-  background: var(--ink) !important;
-  color: var(--code-inverse) !important;
+  background: var(--code-surface) !important;
+  border-radius: 8px !important;
+  color: var(--code-ink) !important;
   font-family: var(--mono) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
   max-width: 100% !important;
   overflow-x: auto !important;
+  padding: 30px !important;
 }
 
 code,
@@ -255,29 +264,51 @@ samp {
 a,
 a:visited {
   color: var(--clay-d) !important;
-  text-decoration-color: color-mix(in srgb, var(--clay) 45%, transparent) !important;
+  text-decoration-line: underline !important;
+  text-decoration-color: transparent !important;
+  text-decoration-thickness: 1px !important;
   text-underline-offset: 0.18em !important;
+  transition: color 180ms var(--ease-out), text-decoration-color 180ms var(--ease-out) !important;
+}
+
+a:hover {
+  color: var(--ink) !important;
+  text-decoration-color: currentColor !important;
+}
+
+a:focus-visible {
+  border-radius: 2px !important;
+  box-shadow: 0 0 0 2px var(--focus-ring) !important;
+  outline: 0 !important;
+  text-decoration-color: currentColor !important;
 }
 
 button,
 .button,
 .btn,
 [role="button"] {
-  background: var(--clay) !important;
-  border: 1px solid var(--slate) !important;
-  border-radius: 0 !important;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent) !important;
-  color: var(--inverse-text) !important;
-  font-family: var(--mono) !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: 2px solid var(--pill-border) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  color: var(--muted-text) !important;
+  display: inline-flex !important;
+  font-family: var(--sans) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  height: 34px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  padding: 0 14px !important;
+  transition: background-color 180ms ease, opacity 180ms ease !important;
 }
 
 button.secondary,
 .button.secondary,
 .btn.secondary {
-  background: var(--white) !important;
-  color: var(--clay-d) !important;
+  background: transparent !important;
+  color: var(--muted-text) !important;
 }
 
 input,
@@ -285,25 +316,40 @@ textarea,
 select {
   background: var(--white) !important;
   border: 1px solid var(--gray-300) !important;
-  border-radius: 0 !important;
+  border-radius: var(--radius-row) !important;
   color: var(--slate) !important;
 }
 
 table,
 th,
 td {
+  border: 1px solid var(--rule) !important;
   border-color: var(--gray-300) !important;
+  text-align: center !important;
+  white-space: nowrap !important;
 }
 
 table {
+  border-collapse: collapse !important;
+  border-radius: 0 !important;
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  margin: 0 auto 30px !important;
   max-width: 100% !important;
+  width: auto !important;
+}
+
+th,
+td {
+  padding: 8px 12px !important;
 }
 
 th,
 .head,
 .table-head {
-  background: var(--oat) !important;
+  background: var(--table-header) !important;
   color: var(--slate) !important;
+  font-weight: 500 !important;
 }
 
 .hl,
@@ -319,8 +365,8 @@ mark,
 .tag,
 .badge {
   background: var(--oat) !important;
-  border-color: color-mix(in srgb, var(--clay) 35%, var(--gray-300)) !important;
-  border-radius: 0 !important;
+  border-color: var(--rule-strong) !important;
+  border-radius: var(--radius-row) !important;
 }
 
 svg text {
@@ -331,21 +377,21 @@ svg [fill="#D97757"],
 svg [fill="#B85C3E"],
 svg [fill="#d97757"],
 svg [fill="#b85c3e"] {
-  fill: var(--clay) !important;
+  fill: var(--focal) !important;
 }
 
 svg [stroke="#D97757"],
 svg [stroke="#B85C3E"],
 svg [stroke="#d97757"],
 svg [stroke="#b85c3e"] {
-  stroke: var(--clay) !important;
+  stroke: var(--focal) !important;
 }
 
 svg [fill="#E3DACC"],
 svg [fill="#F0EEE6"],
 svg [fill="#e3dacc"],
 svg [fill="#f0eee6"] {
-  fill: var(--oat) !important;
+  fill: var(--ill-tone1) !important;
 }
 
 svg [stroke="#E3DACC"],
@@ -452,6 +498,36 @@ function markDecorativeSvgs(html) {
 	return html.replace(/<svg\b(?![^>]*\baria-(?:label|hidden|labelledby)=)([^>]*)>/gi, "<svg aria-hidden=\"true\"$1>");
 }
 
+function sanitizeSvgIdentity(html) {
+	return html.replace(/<svg\b[\s\S]*?<\/svg>/gi, svg => svg
+		.replace(/var\(--primary-blue-tint-strong\)/g, "var(--ill-tone2)")
+		.replace(/var\(--primary-blue-tint\)/g, "var(--ill-tone1)")
+		.replace(/var\(--primary-blue\)/g, "var(--focal)")
+		.replace(/var\(--panel\)/g, "var(--surface-raised)")
+		.replace(/var\(--line\)/g, "var(--ill-line)")
+		.replace(/var\(--oat\)/g, "var(--ill-tone1)")
+		.replace(/var\(--slate\)/g, "var(--ill-line)")
+		.replace(/var\(--clay\)/g, "var(--focal)")
+		.replace(/var\(--accent-(?:lime|purple|saffron|orange|navy|green|red)\)/g, "var(--ill-tone2)")
+		.replace(/var\(--collection-(?:software|product|service)\)/g, "var(--ill-tone3)")
+		.replace(/var\(--link(?:-pressed)?\)/g, "var(--focal)")
+		.replace(/(fill|stroke)=["']white["']/gi, '$1="var(--paper)"')
+		.replace(/font-family=(["'])[^"']*?\1/gi, 'font-family="Geist Mono, monospace"')
+		.replace(/font-family\s*:\s*[^;"']+/gi, "font-family: var(--font-mono)")
+		.replace(/stroke-width=(["'])3(?:\.0+)?\1/g, 'stroke-width="2"')
+		.replace(/stroke-width=(["'])4(?:\.0+)?\1/g, 'stroke-width="2.5"')
+		.replace(/stroke-width\s*:\s*3(?:\.0+)?/g, "stroke-width: 2")
+		.replace(/stroke-width\s*:\s*4(?:\.0+)?/g, "stroke-width: 2.5"));
+}
+
+function neutralizeLegacyType(html) {
+	return html
+		.replace(/text-transform:\s*uppercase(\s*!important)?\s*;/gi, "")
+		.replace(/text-transform:\s*none(\s*!important)?\s*;/gi, "")
+		.replace(/letter-spacing:\s*(?!0(?:\s*!important)?\s*;)[^;]+;/gi, "letter-spacing: 0;")
+		.replace(/font-size:\s*(?:4[0-9]|5[0-9]|6[0-9])px(\s*!important)?\s*;/gi, (_, important = "") => `font-size: 36px${important};`);
+}
+
 function addSourceComment(html, sourceFile) {
 	if (html.includes("Source: https://github.com/ThariqS/html-effectiveness")) return html;
 	return html.replace(
@@ -476,22 +552,23 @@ function addGeneratedButtonLabels(html) {
 }
 
 function adapt(html, sourceFile) {
-	return ensureFaviconLinks(addGeneratedButtonLabels(
+	const adapted = ensureFaviconLinks(addGeneratedButtonLabels(
 		markDecorativeSvgs(
-			addLabeledMainLandmark(
+			sanitizeSvgIdentity(addLabeledMainLandmark(
 				addVpkVisualCss(
 					addValidationCss(
 						addGeneratorMeta(
 							markUpstreamDemo(
-								addSourceComment(rewriteKamiColors(html), sourceFile),
+								addSourceComment(neutralizeLegacyType(rewriteKamiColors(html)), sourceFile),
 							),
 						),
 					),
 				),
 				"html-effectiveness demo",
-			),
+			)),
 		),
 	));
+	return isDeck(adapted) ? retrofitDeck(adapted) : retrofitDocumentNav(adapted);
 }
 
 function main() {

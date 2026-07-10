@@ -347,6 +347,10 @@
 	padding-inline: 0.75rem;
 }
 
+.prompt-input-composer.ProseMirror.prompt-input-composer-floating {
+	padding-block: var(--ds-space-075);
+}
+
 /*
  * The tall authoring min-height applies to the document editor only — every
  * document surface tags its editor with `.tiptap-editor`. Scoping to that

@@ -1,0 +1,13 @@
+{
+	"provider": "kokoro",
+	"lang": "en",
+	"speed": 1.0,
+	"lines": [
+		{ "id": "s1", "text": "Raw placeholders were jarring in a catalog context. When a landing page links straight to source templates, browsers see unfilled scaffolding instead of the finished document. The fix is a separation rule: authoring artifacts and browsing artifacts are different things." },
+		{ "id": "s2", "text": "Before, landing rows exposed raw source files. After, every row opens a filled demo built for browsing. Authoring stays in templates; browsing gets representative, finished mock content." },
+		{ "id": "s3", "text": "The catalog contract has four parts. Document mocks give every core type a filled preview. Diagram mocks keep chart primitives separate. And the regression guard, landing-links dot test, is the durable contract: it rejects raw source folders and validates every linked file." },
+		{ "id": "s4", "text": "One principle to take away: placeholders are healthy in source templates, and wrong in landing demos. Keep the seam explicit and the catalog stays honest." },
+		{ "id": "s5", "text": "The numbers: five document rows, thirty nine diagram rows, one test boundary. Future template additions link through the same contract." }
+	],
+	"bgm": { "mode": "none" }
+}

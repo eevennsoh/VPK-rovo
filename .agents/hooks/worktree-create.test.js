@@ -100,7 +100,7 @@ function createPnpmStub(tempRoot, exitCode = 0) {
 		pnpmPath,
 		[
 			"#!/usr/bin/env bash",
-			"printf '%s\\n' \"$*\" >> \"$PNPM_RECORD\"",
+			"printf 'CI=%s %s\\n' \"${CI:-}\" \"$*\" >> \"$PNPM_RECORD\"",
 			`exit ${exitCode}`,
 			"",
 		].join("\n"),
@@ -180,7 +180,7 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(result.stdout, `${worktreeDir}\n`);
-	assert.match(result.stderr, /running pnpm install --prefer-offline/u);
+	assert.match(result.stderr, /running CI=true pnpm install --prefer-offline/u);
 	assert.equal(
 		fs.readFileSync(path.join(worktreeDir, ".env.local"), "utf8"),
 		"ROVO_SESSION_TOKEN=test-token\n",
@@ -200,7 +200,7 @@ test("WorktreeCreate creates the requested worktree while keeping stdout path-on
 			false,
 		);
 	}
-	assert.equal(fs.readFileSync(recordPath, "utf8"), "install --prefer-offline\n");
+	assert.equal(fs.readFileSync(recordPath, "utf8"), "CI=true install --prefer-offline\n");
 
 	const branch = run("git", ["branch", "--show-current"], { cwd: worktreeDir });
 	assert.equal(branch.stdout.trim(), "claude/agent-worktree");
@@ -280,7 +280,7 @@ test("WorktreeCreate falls back to pnpm install when clonefile copy fails", (t) 
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(result.stdout, `${worktreeDir}\n`);
 	assert.match(result.stderr, /falling back to pnpm install/u);
-	assert.equal(fs.readFileSync(pnpm.recordPath, "utf8"), "install --prefer-offline\n");
+	assert.equal(fs.readFileSync(pnpm.recordPath, "utf8"), "CI=true install --prefer-offline\n");
 	assert.equal(fs.existsSync(path.join(worktreeDir, "node_modules", "fixture", "index.js")), false);
 });
 
@@ -306,7 +306,7 @@ test("WorktreeCreate creates a named branch when worktree_ref is omitted", (t) =
 	assert.equal(result.stdout, `${worktreeDir}\n`);
 	assert.match(result.stderr, /pnpm install failed/u);
 	assert.match(result.stderr, /\.env files missing/u);
-	assert.equal(fs.readFileSync(recordPath, "utf8"), "install --prefer-offline\n");
+	assert.equal(fs.readFileSync(recordPath, "utf8"), "CI=true install --prefer-offline\n");
 	assert.ok(fs.existsSync(path.join(worktreeDir, "README.md")));
 
 	const branch = run("git", ["branch", "--show-current"], { cwd: worktreeDir });

@@ -1,18 +1,21 @@
 # vpk-html
 
-> Atlassian deck/editorial document design skill for AI agents. Built on kami's
+> Algebrica editorial document design skill for AI agents. Built on kami's
 > template-edit architecture: the LLM copies an HTML template, fills
 > {{placeholders}} with real content, and ships a single offline HTML file.
 
 ## Identity
 
-- Surface: semantic paper via `--paper` and `--paper-background` with the `image.098`-style dotted grid
-- Accent: `--primary-blue` with ADS-style lime, purple, saffron, orange, navy, green, and red accents for collections, charts, diagrams, and status
-- Display: Charlie Display
-- Body: Charlie Text
-- Mono: Atlassian Mono
-- Numeric: Atlassian Mono Numeric with `unicode-range: U+0030-0039`
-- Frame: 2px ink-black border + hard 1px shadow
+- Surface: warm paper via `--paper` and a plain `--paper-background` page backdrop
+- Chrome: grayscale ink `--accent`; warm gray `--accent-soft` washes for pill controls, selection, focus, and key-insight emphasis
+- Figures: sampled grayscale token ramp only; `--focal` marks the single darkest-ink element, with tone/dash/marker series differentiation
+- Components: collapsed 12px article tables, 12px-radius list-table cards, vote chips, grayscale pill buttons, tinted code cards, centered section heads, steps lists, and warm heatmap dots
+- Display/body: Geist
+- Mono: Geist Mono
+- Numeric: Geist Mono Numeric with `unicode-range: U+0030-0039`
+- Type scale: 13px labels/UI, 17px / 23px justified long-form prose, 36px normal-weight page titles
+- Case: normal case except the breadcrumb/eyebrow role, which is Geist Mono 12px / 600 uppercase with 2px tracking
+- Frame: flat surfaces, hairline borders, 6px generic radius, 12px list-table radius, borders over shadows
 
 Local font files are inlined as base64 data URIs in every template, so filled
 documents are fully portable.
@@ -22,19 +25,37 @@ documents are fully portable.
 Strict — only on the literal `/vpk-html` command. Opening a Markdown file or
 asking for HTML in natural language does not trigger the skill.
 
-Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
-`/vpk-html slides`.
+Optional doc-type hints and flags: `/vpk-html resume`, `/vpk-html one-pager`,
+`/vpk-html slides`, `/vpk-html --github`.
 
 ## Capabilities
 
 - 28 HTML document templates at assets/templates/: 8 base document shells plus
   20 Phase 2 engineering shells mapped from the html-effectiveness use-case
   catalog.
-- 14 standalone SVG diagram primitives at assets/diagrams/.
-- 28 demos at assets/demos/: 8 screenshot-backed showcases plus 20 restyled
-  html-effectiveness demo ports.
+- 39 standalone SVG diagram/chart primitives at assets/diagrams/.
+- 5 technical illustration exemplars at assets/illustrations/:
+  isometric-device, exploded-assembly, annotated-mechanism,
+  hatched-cross-section, and isometric-pipeline.
+- 77 demos at assets/demos/: filled document showcases, restyled
+  html-effectiveness demo ports, diagram previews, illustration previews, and
+  vpk-native examples.
+- Shared motion layer across generated HTML: entrance choreography, document
+  section reveal, micro-interactions, slide transitions, reduced-motion
+  movement reduction, and print neutralization.
+- Presentation mode for decks: Left/Right navigation, #slide-N deep links,
+  hidden speaker notes, and a synced presenter window.
+- Video export is documented as a user-gated Hyperframes conversion track, not
+  the browser presentation runtime; model the worked example at
+  assets/video/landing-demo-separation/.
+- GitHub Pages publish is an opt-in live-hosting track: validate the artifact,
+  publish it as index.html from a standalone repo, enable Pages from main /,
+  and return the hosted URL.
 - LLM-facing reference docs for anti-patterns, diagrams, writing,
-  resume-writing, design, production, source policy, accessibility, and tokens.
+  resume-writing, design, illustrations, presentation, video export
+  (worked example: assets/video/landing-demo-separation/), GitHub Pages
+  publishing, production, source policy, accessibility, quality gates, and
+  tokens.
 - Single offline HTML output — no remote fonts, stylesheets, scripts, or images.
 
 ## Key files
@@ -42,12 +63,19 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 - SKILL.md — Agent-facing skill manifest (kami Step 1–7 workflow)
 - README.md — Human-facing introduction
 - CHEATSHEET.md — Route table mapping user intent → template file
-- index.html — Marketing landing page
+- index.html — Local Algebrica-style reference index
 - assets/templates/*.html — 28 offline document templates
-- assets/diagrams/*.html — 14 SVG diagram primitives
-- assets/demos/ — 28 curated and restyled showcase documents
+- assets/diagrams/*.html — 39 SVG diagram/chart primitives
+- assets/illustrations/*.html — 5 technical illustration exemplars
+- assets/demos/ — 77 curated, restyled, diagram, and illustration showcases
 - references/anti-patterns.md — 6 AI-output failure modes (consult before drafting)
 - references/diagrams.md — Diagram selection guide + focal rule
+- references/illustrations.md — Technical illustration recipe + SMIL policy
+- references/svg-style.md — Required token-only grayscale SVG grammar + lint rules
+- references/charts.md — Chart animation, interaction, and chart catalog foundation
+- references/presentation.md — Deck runtime, presenter window, speaker notes
+- references/video-export.md — Hyperframes MP4 conversion contract and worked example
+- references/github-pages.md — Optional live GitHub Pages publishing
 - references/resume-writing.md — Resume quality bar (Action + Scope + Result + Outcome)
 - references/writing.md — General prose rules + per-doc-type quality bars
 - references/design.md — Visual identity rules
@@ -69,11 +97,15 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 - node scripts/ensure-fonts.mjs
 - node scripts/build.mjs --pdf <file> [--out <f.pdf>]   (optional derived PDF export)
 - node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   (landing companions + responsive verify)
+- node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   (publish to GitHub Pages)
 - node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]   (advisory gates)
+- node scripts/build.mjs --check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]   (advisory polish gates)
 - node scripts/port-kami.mjs [--templates|--diagrams|--demos]  (re-port templates + diagrams + curated demos from kami)
+- node scripts/retrofit.mjs                           (refresh committed HTML with shared CSS + presentation/docnav)
 - node scripts/port-engineering.mjs                  (regenerate Phase 2 engineering templates)
 - node scripts/build-demos.mjs [--curated|--landing]  (regenerate curated vpk-native demos + landing mock previews)
 - node scripts/port-engineering-demos.mjs            (copy + restyle Phase 2 upstream demo ports)
+- node scripts/build-illustrations.mjs                (regenerate technical illustration exemplars + gallery demos)
 - node scripts/landing.mjs                           (regenerate assets/landing/ shells)
 
 ## Workflow
@@ -91,8 +123,8 @@ Optional doc-type hints: `/vpk-html resume`, `/vpk-html one-pager`,
 
 ## License
 
-Inherits the VPK-Rovo monorepo. The 8 base HTML templates and 14 diagram
-primitives in assets/templates/ and assets/diagrams/ are ported from tw93/kami
-(MIT) and re-skinned with vpk-html's identity. The 20 Phase 2 engineering
-templates are original vpk-html shells based on the html-effectiveness use-case
-catalog.
+Inherits the VPK-Rovo monorepo. The 8 base HTML templates and the original 14
+diagram primitives in assets/templates/ and assets/diagrams/ are ported from
+tw93/kami (MIT) and re-skinned with vpk-html's identity. The 20 Phase 2
+engineering templates and 25 Phase E chart additions are original vpk-html
+shells/primitives based on the local effectiveness and chart-catalog work.

@@ -143,8 +143,9 @@ test("header swaps the leading visual for a default 16x16 checkbox in selectable
 	assert.match(PARTS_SOURCE, /selectable\?: boolean/u);
 	assert.match(PARTS_SOURCE, /onSelectedChange\?: \(checked: boolean\) => void/u);
 	assert.match(PARTS_SOURCE, /<EntityCardSelectableLeading\b/u);
-	// Icon fades out on hover / while selected; the checkbox fades in.
-	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
+	// Icon fades out on hover / focus-within / while selected; the checkbox fades in.
+	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0 group-focus-within\/card:opacity-0"/u);
+	assert.match(PARTS_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100 group-focus-within\/card:pointer-events-auto group-focus-within\/card:opacity-100/u);
 	assert.match(PARTS_SOURCE, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
 	// Icon + checkbox share a fixed 32px box so the swap never shifts layout; the checkbox
 	// itself keeps its native 16x16 default (its className opens with opacity, not size-*).
@@ -318,6 +319,13 @@ test("skill tag group collapses wrapped rows into the overflow count", () => {
 	assert.match(SKILL_TAG_SOURCE, /calculateVisibleSkillTagCount/u);
 	assert.match(SKILL_TAG_SOURCE, /<SkillTagCount count=\{hiddenCount\} \/>/u);
 	assert.match(SKILL_TAG_SOURCE, /ResizeObserver/u);
+});
+
+test("skill tag overlay remove always fades the trailing edge behind the control", () => {
+	assert.match(SKILL_TAG_SOURCE, /const shouldShowOverlayScrim = hasOverlayReveal;/u);
+	assert.match(SKILL_TAG_SOURCE, /data-slot="skill-tag-overlay-scrim"/u);
+	assert.match(SKILL_TAG_SOURCE, /shouldShowOverlayScrim && "group-hover\/skill-tag:\[mask-image:linear-gradient/u);
+	assert.doesNotMatch(SKILL_TAG_SOURCE, /labelHasOverflow/u);
 });
 
 test("barrel exports the shell, parts, content components, and directory cards", () => {

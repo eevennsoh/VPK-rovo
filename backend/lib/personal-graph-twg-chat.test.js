@@ -8,6 +8,7 @@ const {
 	buildFallbackAnswerFromExplorer,
 	filterExplorerByNodeIds,
 	handleTwgChat,
+	isAutomationDiscoveryPrompt,
 	mergeExplorers,
 	parseSinceFromPrompt,
 	tryParseEnvelope,
@@ -120,6 +121,25 @@ test("parseSinceFromPrompt extracts the TWG lookback window from natural prompts
 	assert.equal(parseSinceFromPrompt("what did I work on?"), "7d");
 });
 
+test("isAutomationDiscoveryPrompt detects workflow automation graph prompts", () => {
+	assert.equal(
+		isAutomationDiscoveryPrompt("Yo Rovo, for the last 30 days, identify any repeated manual workflows worth automating and present them in a radial tree chart"),
+		true,
+	);
+	assert.equal(
+		isAutomationDiscoveryPrompt("Yo Rovo, for the last 30 days, identify repeated manual workflows worth automating and morph this graph into a radial workflow tree: workflow candidates as main branches, evidence as leaves, and draft automations as highlighted action nodes."),
+		true,
+	);
+	assert.equal(
+		isAutomationDiscoveryPrompt("Show repeated workflows worth automation as a dendrogram"),
+		true,
+	);
+	assert.equal(
+		isAutomationDiscoveryPrompt("What did I work on for the last 30 days?"),
+		false,
+	);
+});
+
 test("handleTwgChat: default path queries TWG directly and streams a visible answer", async () => {
 	const fakeExplorer = {
 		edges: [{ id: "e1", source: "u", target: "ari:cloud:jira:c1:issue/1", kind: "worked-on" }],
@@ -144,6 +164,73 @@ test("handleTwgChat: default path queries TWG directly and streams a visible ans
 	assert.deepEqual(frames.map((frame) => frame.type), ["thinking", "tool", "tool_result", "text_delta", "graph", "done"]);
 	assert.equal(frames.find((frame) => frame.type === "tool").args.params.since, "7d");
 	assert.match(frames.find((frame) => frame.type === "text_delta").delta, /Worked on: ISSUE-1/u);
+	assert.equal(res.getEnded(), true);
+});
+
+test("handleTwgChat: automation prompt routes to the workflow slice and streams its graph", async () => {
+	const fakeExplorer = {
+		edges: [
+			{
+				id: "related:personal-graph:automation:root->personal-graph:automation:workflow:loom-shareback-distribution",
+				kind: "related",
+				source: "personal-graph:automation:root",
+				target: "personal-graph:automation:workflow:loom-shareback-distribution",
+			},
+		],
+		generatedAt: "2026-06-30",
+		nodes: [
+			{
+				frontmatter: { type: "AutomationWorkflowRoot" },
+				id: "personal-graph:automation:root",
+				kind: "synthesis",
+				title: "Repeated manual workflows",
+			},
+			{
+				connectionCount: 1,
+				frontmatter: { confidence: "high", type: "AutomationWorkflowCandidate" },
+				id: "personal-graph:automation:workflow:loom-shareback-distribution",
+				kind: "synthesis",
+				title: "Loom shareback distribution",
+			},
+		],
+		stats: { nodeCount: 2 },
+	};
+	const calls = [];
+	const fetchSliceImpl = async (slice, params) => {
+		calls.push({ params, slice });
+		return fakeExplorer;
+	};
+	const req = {
+		body: {
+			messages: [{
+				role: "user",
+				content: "Yo Rovo, for the last 30 days, identify repeated manual workflows worth automating and morph this graph into a radial workflow tree: workflow candidates as main branches, evidence as leaves, and draft automations as highlighted action nodes.",
+			}],
+		},
+		signal: undefined,
+	};
+	const res = createMockRes();
+	await handleTwgChat(req, res, {
+		fetchSliceImpl,
+		gateway: {
+			generateText() {
+				throw new Error("automation prompts should use deterministic direct routing");
+			},
+		},
+		preferGateway: true,
+	});
+
+	assert.deepEqual(calls, [{ slice: "automation-workflows", params: { since: "30d" } }]);
+	const frames = res.frames();
+	const toolFrame = frames.find((frame) => frame.type === "tool");
+	const textDelta = frames.find((frame) => frame.type === "text_delta");
+	const graphFrame = frames.find((frame) => frame.type === "graph");
+	assert.equal(toolFrame.args.slice, "automation-workflows");
+	assert.equal(toolFrame.args.params.since, "30d");
+	assert.match(textDelta.delta, /repeated workflow candidate/u);
+	assert.match(textDelta.delta, /Loom shareback distribution \(high confidence\)/u);
+	assert.match(textDelta.delta, /morphed the graph into a radial automation map/u);
+	assert.deepEqual(graphFrame.explorer, fakeExplorer);
 	assert.equal(res.getEnded(), true);
 });
 

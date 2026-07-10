@@ -1,19 +1,21 @@
 "use client";
 
-import { ClickyOverlay } from "@/components/projects/rovo-core/components/clicky/clicky-overlay";
 import { useClicky } from "@/components/projects/rovo-core/hooks/use-clicky";
 import { useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { detectAgentTeamIntent } from "./agent-team-intent";
 import { pickAgentTeamLine } from "./agent-team-lines";
-import { CURSOR_AGENT_COUNT } from "./cursor-agents";
-import { CursorFanOut, type CursorFanOutBurst } from "./cursor-fan-out";
+import { CURSOR_AGENTS } from "./cursor-agents";
+import type { CursorFanOutBurst } from "./cursor-fan-math";
+import { CursorLaunchTooltips } from "./cursor-launch-tooltips";
+import { CursorOrbitSatellitesDom, TRACE_CYCLE_MS } from "./cursor-orbit-satellites-dom";
 import { CursorSpeechBubble } from "./cursor-speech-bubble";
 import { CursorVoiceControl } from "./cursor-voice-control";
 import { detectLaunchIntent } from "./launch-intent";
+import { CursorScene } from "./three/cursor-scene";
 
 interface CursorsProps {
 	className?: string;
@@ -21,8 +23,6 @@ interface CursorsProps {
 
 // Stable empty thread context — this art has no chat surface to summarize.
 const NO_CHAT_MESSAGES: RovoUIMessage[] = [];
-// Number of companion cursors in a team (kept in sync with CursorFanOut).
-const FAN_COUNT = CURSOR_AGENT_COUNT;
 // Total time for the staggered launch send-off before the team is cleared.
 const LAUNCH_SEQUENCE_MS = 2500;
 // How long Rovo's reply lingers (in the cursor-following bubble) after the last
@@ -33,6 +33,11 @@ const SPEECH_LINGER_MS = 3000;
 // the cursor's "Yo, let's cook" welcome, which auto-dismisses while the cursor
 // persists).
 const TEAM_CAPTION_HOLD_MS = 2600;
+// The 3D follower's welcome line, shown once on the off → idle activation
+// transition (this art no longer renders the shared `ClickyOverlay`, which
+// used to own this message).
+const WELCOME_MESSAGE = "Yo, let's cook";
+const WELCOME_HOLD_MS = 2400;
 
 function resolveDeltaText(payload: { text?: string; transcript?: string } | string): string | undefined {
 	if (typeof payload === "string") {
@@ -44,23 +49,46 @@ function resolveDeltaText(payload: { text?: string; transcript?: string } | stri
 /**
  * Cursors — the live-voice + Rovo cursor control (no text composer).
  *
- * Voice uses the same `useRealtimeVoice` hook as the Studio composer, streaming to the
- * realtime GPT model through the AI Gateway-backed `/api/realtime/audio-conversation`
- * socket. The cursor + voice rail is always visible. The floating Rovo cursor is rendered
- * by `ClickyOverlay` (driven by `useClicky`). Say "create me a team of agents" and the
- * cursor multiplies into a fanned-out team; say "let's go" and the team launches off-
- * screen one-by-one with tiny send-off tooltips.
+ * Every cursor in this art is a 3D WebGL mesh rendered by the single
+ * full-viewport `CursorScene` canvas: the pointer-following iridescent
+ * cursor (driven by `useClicky()`'s `state`, replacing the shared
+ * `ClickyOverlay`), the 4 agent-colored fan-out cursors ("create me a team
+ * of agents"), and — once the team launches — 4 mini cursors orbiting the
+ * liquid-metal voice button ("team at work"). `CursorScene` mounts once (on
+ * first activation) and stays mounted for the session to avoid WebGL context
+ * churn; each child mesh group self-gates its own visibility. DOM companions
+ * (`CursorLaunchTooltips`, `CursorOrbitSatellitesDom`) supply the send-off
+ * chips and accessible hover/focus proxies for the 3D content. Hovering a
+ * satellite proxy pauses the orbit and surfaces that agent's trace as the
+ * caption.
  */
 export default function Cursors({ className }: Readonly<CursorsProps>) {
 	const clicky = useClicky();
+	const reducedMotion = useReducedMotion();
 	const [burst, setBurst] = useState<CursorFanOutBurst | null>(null);
 	const [launching, setLaunching] = useState(false);
-	// Whether the dispatched team is now "working" (rail reveals the team on hover).
+	// Whether the dispatched team is now "working" (orbits the voice button).
 	const [working, setWorking] = useState(false);
 	// Rovo's streamed reply, shown in a cursor-following bubble (null = silent).
 	const [speech, setSpeech] = useState<string | null>(null);
 	// The team caption, shown briefly then auto-dismissed (team cursors persist).
 	const [teamCaption, setTeamCaption] = useState<string | null>(null);
+	// The one-time welcome line on activation (replaces ClickyOverlay's).
+	const [welcome, setWelcome] = useState<string | null>(null);
+	// Which orbiting agent (if any) is currently hovered/focused via the DOM proxies.
+	const [hoveredAgent, setHoveredAgent] = useState<number | null>(null);
+	// Cycles the hovered-agent caption trace on the same cadence as the DOM
+	// proxies' own tooltips (a separate concern — see TRACE_CYCLE_MS).
+	const [traceTick, setTraceTick] = useState(0);
+	// Whether the R3F scene has ever been needed — once true it stays mounted
+	// for the session (never torn down/rebuilt per toggle: WebGL context churn).
+	const [sceneMounted, setSceneMounted] = useState(false);
+	// Measured voice-button center: a plain ref for the R3F orbit (no
+	// re-render) plus mirrored state for the DOM satellite proxies.
+	const voiceButtonElRef = useRef<HTMLButtonElement>(null);
+	const voiceCenterRef = useRef<{ x: number; y: number } | null>(null);
+	const [voiceCenter, setVoiceCenter] = useState<{ x: number; y: number } | null>(null);
+
 	const burstIdRef = useRef(0);
 	const pointerRef = useRef<{ x: number; y: number } | null>(null);
 	const clickyActiveRef = useRef(false);
@@ -75,6 +103,62 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 	const launchTimerRef = useRef<number | null>(null);
 	const speechTimerRef = useRef<number | null>(null);
 	const captionTimerRef = useRef<number | null>(null);
+	const welcomeTimerRef = useRef<number | null>(null);
+	const prevClickyStateRef = useRef(clicky.state);
+
+	// Mount the R3F scene once activity begins, then never unmount it.
+	useEffect(() => {
+		if (!sceneMounted && (clicky.isActive || burst !== null || working)) {
+			setSceneMounted(true);
+		}
+	}, [sceneMounted, clicky.isActive, burst, working]);
+
+	// Measure the voice button's viewport rect center for the 3D orbit + its
+	// DOM accessibility proxies. Re-measures on resize and whenever `working`
+	// flips (the rail's content can shift the button's box).
+	useEffect(() => {
+		const measure = () => {
+			const el = voiceButtonElRef.current;
+			if (!el) {
+				return;
+			}
+			const rect = el.getBoundingClientRect();
+			const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+			voiceCenterRef.current = center;
+			setVoiceCenter(center);
+		};
+		measure();
+		window.addEventListener("resize", measure);
+		return () => window.removeEventListener("resize", measure);
+	}, [working]);
+
+	// One-time welcome line on the off → idle activation transition.
+	useEffect(() => {
+		const previous = prevClickyStateRef.current;
+		prevClickyStateRef.current = clicky.state;
+		if (previous !== "off" || clicky.state !== "idle") {
+			return;
+		}
+		setWelcome(WELCOME_MESSAGE);
+		if (welcomeTimerRef.current !== null) {
+			window.clearTimeout(welcomeTimerRef.current);
+		}
+		welcomeTimerRef.current = window.setTimeout(() => {
+			welcomeTimerRef.current = null;
+			setWelcome(null);
+		}, WELCOME_HOLD_MS);
+	}, [clicky.state]);
+
+	// Cycle the hovered-agent caption trace while the team is working.
+	useEffect(() => {
+		if (!working || reducedMotion) {
+			return;
+		}
+		const id = window.setInterval(() => {
+			setTraceTick((prev) => prev + 1);
+		}, TRACE_CYCLE_MS);
+		return () => window.clearInterval(id);
+	}, [working, reducedMotion]);
 
 	// Track the pointer so the fan-out can originate where the Rovo cursor is.
 	useEffect(() => {
@@ -96,6 +180,9 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 			}
 			if (captionTimerRef.current !== null) {
 				window.clearTimeout(captionTimerRef.current);
+			}
+			if (welcomeTimerRef.current !== null) {
+				window.clearTimeout(welcomeTimerRef.current);
 			}
 		},
 		[],
@@ -144,10 +231,11 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 		setWorking(false);
 		setSpeech(null);
 		setTeamCaption(null);
+		setHoveredAgent(null);
 	}, []);
 
 	// The team has been dispatched — drop the launch visuals and enter the
-	// "working" state (the rail now reveals the team on hover). burstActiveRef
+	// "working" state (the team now orbits the voice button). burstActiveRef
 	// is cleared so Rovo replies flow back into the cursor-following bubble.
 	const enterWorking = useCallback(() => {
 		if (launchTimerRef.current !== null) {
@@ -258,9 +346,17 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 		startRealtimeVoice();
 	}, [clearTeam, clicky, startRealtimeVoice]);
 
-	// Rovo's line: the auto-dismissing team caption while a team is up, otherwise
-	// the streamed reply. Shown in a bubble that trails the cursor.
-	const captionText = teamCaption ?? speech;
+	// The trace currently shown for a hovered/focused orbiting agent, if any —
+	// takes priority over every other caption source.
+	const hoveredAgentData = hoveredAgent !== null ? CURSOR_AGENTS[hoveredAgent] : undefined;
+	const hoveredTrace = hoveredAgentData
+		? hoveredAgentData.traces[(reducedMotion ? 0 : traceTick) % hoveredAgentData.traces.length]
+		: null;
+
+	// Rovo's line: hovering an orbiting agent wins, then the auto-dismissing
+	// team caption while a team is up, then the one-time welcome, then the
+	// streamed reply. Shown in a bubble that trails the cursor.
+	const captionText = hoveredTrace ?? teamCaption ?? welcome ?? speech;
 
 	return (
 		<div className={cn("flex items-center justify-center bg-surface px-6 py-16", className)}>
@@ -274,16 +370,23 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 				working={working}
 				onToggleCursor={handleToggleClicky}
 				onToggleVoice={handleToggleRealtimeVoice}
+				voiceButtonRef={voiceButtonElRef}
 			/>
 
-			<ClickyOverlay
-				state={clicky.state}
-				pointTarget={clicky.pointTarget}
-				responseText={clicky.responseText}
-				onReturnToIdle={clicky.returnToIdle}
-			/>
+			{sceneMounted ? (
+				<CursorScene
+					followerState={clicky.state}
+					burst={burst}
+					launching={launching}
+					working={working}
+					orbitPaused={hoveredAgent !== null}
+					orbitCenterRef={voiceCenterRef}
+				/>
+			) : null}
 
-			<CursorFanOut burst={burst} count={FAN_COUNT} launching={launching} />
+			<CursorLaunchTooltips burst={burst} launching={launching} />
+
+			<CursorOrbitSatellitesDom working={working} center={voiceCenter} onHoverAgent={setHoveredAgent} />
 
 			<AnimatePresence>
 				{captionText ? <CursorSpeechBubble key="rovo-speech" text={captionText} /> : null}

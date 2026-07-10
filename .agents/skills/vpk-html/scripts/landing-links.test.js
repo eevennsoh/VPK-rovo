@@ -39,6 +39,12 @@ function readCssBlock(html, selector) {
 	return match[1];
 }
 
+function readCssBlocks(html, selector) {
+	const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	return [...html.matchAll(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`, "g"))]
+		.map(match => match[1]);
+}
+
 test("landing rows link only to demo files", async () => {
 	const { ROOT } = await loadModules();
 	const rows = readLandingRows(path.join(ROOT, "index.html"));
@@ -63,6 +69,23 @@ test("landing removes decorative section separators", async () => {
 	for (const selector of [".hero", ".hero-intro", ".demo-contents", ".demo-category", ".demo-category:last-child"]) {
 		assert.doesNotMatch(readCssBlock(landing, selector), /border-(?:top|bottom)\s*:/);
 	}
+
+	const titleBlocks = readCssBlocks(landing, ".module-index__title");
+	assert.ok(titleBlocks.length > 0, "missing module index title CSS");
+	const pageTitleBlock = titleBlocks.at(-1);
+	assert.match(pageTitleBlock, /border-top:\s*0;/);
+	assert.match(pageTitleBlock, /padding-top:\s*0;/);
+});
+
+test("landing omits logo and search chrome", async () => {
+	const { ROOT } = await loadModules();
+	const landing = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+
+	assert.doesNotMatch(landing, /sidebar__logo/);
+	assert.doesNotMatch(landing, /sidebar__search/);
+	assert.doesNotMatch(landing, /search-input/);
+	assert.doesNotMatch(landing, /search__icon/);
+	assert.doesNotMatch(landing, /aria-label="Search catalog"/);
 });
 
 test("landing has no footer", async () => {
@@ -74,27 +97,14 @@ test("landing has no footer", async () => {
 	assert.doesNotMatch(landing, /local-only demo catalog/);
 });
 
-test("landing backdrop uses dotted grid strokes without interior dots", async () => {
+test("landing backdrop uses plain paper background", async () => {
 	const { ROOT } = await loadModules();
-	const styles = fs.readFileSync(path.join(ROOT, "styles.css"), "utf8");
 	const landing = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+	const bodyStyles = readCssBlock(landing, "body");
 
-	for (const source of [styles, landing]) {
-		assert.match(source, /--grid-dot-gap:\s*12px;/);
-		assert.match(
-			source,
-			/--grid-background:\s*radial-gradient\(circle at 1px 1px, var\(--grid-dot\) 1\.25px, transparent 1\.5px\), radial-gradient\(circle at 1px 1px, var\(--grid-dot\) 1\.25px, transparent 1\.5px\);/,
-		);
-		assert.match(
-			source,
-			/--grid-background-size:\s*var\(--grid-major-size\) var\(--grid-dot-gap\), var\(--grid-dot-gap\) var\(--grid-major-size\);/,
-		);
-		assert.doesNotMatch(
-			source,
-			/radial-gradient\(circle at 1px 1px, var\(--grid-dot\) 1px, transparent 1\.25px\)/,
-		);
-		assert.doesNotMatch(source, /linear-gradient\(to (right|bottom), var\(--grid-line\) 1px, transparent 1px\)/);
-	}
+	assert.match(bodyStyles, /background:\s*var\(--paper-background\);/);
+	assert.doesNotMatch(bodyStyles, /grid-background/);
+	assert.doesNotMatch(bodyStyles, /background-size\s*:/);
 });
 
 test("landing demo targets exist and validate", async () => {

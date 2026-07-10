@@ -10,9 +10,9 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 156,
-			"nextApiRouteCount": 132,
-			"ownerCount": 127,
+			"backendRouteCount": 158,
+			"nextApiRouteCount": 134,
+			"ownerCount": 130,
 			"runtimeAdminRouteCount": 41
 		},
 		"owners": [
@@ -1003,6 +1003,25 @@
 						"method": "GET",
 						"path": "/healthcheck",
 						"source": "backend/routes/status.js:204",
+						"runtimeAdmin": false
+					}
+				]
+			},
+			{
+				"kind": "backend",
+				"owner": "backend/routes/vpk-html.js",
+				"routeCount": 2,
+				"routes": [
+					{
+						"method": "GET",
+						"path": "/api/vpk-html",
+						"source": "backend/routes/vpk-html.js:101",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "GET",
+						"path": "/api/vpk-html/*assetPath",
+						"source": "backend/routes/vpk-html.js:102",
 						"runtimeAdmin": false
 					}
 				]
@@ -3233,6 +3252,44 @@
 			},
 			{
 				"kind": "next-api",
+				"owner": "app/api/vpk-html/[...assetPath]/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "GET",
+						"path": "/api/vpk-html/*assetPath",
+						"source": "app/api/vpk-html/[...assetPath]/route.ts:10",
+						"targets": [
+							{
+								"method": "GET",
+								"path": "/api/vpk-html/*assetPath",
+								"source": "app/api/vpk-html/[...assetPath]/route.ts:15"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/vpk-html/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "GET",
+						"path": "/api/vpk-html",
+						"source": "app/api/vpk-html/route.ts:4",
+						"targets": [
+							{
+								"method": "GET",
+								"path": "/api/vpk-html",
+								"source": "app/api/vpk-html/route.ts:7"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
 				"owner": "app/api/wiki/memories/[scope]/blocks/[blockId]/route.ts",
 				"routeCount": 1,
 				"routes": [
@@ -3437,8 +3494,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 79,
-			"pageCount": 55
+			"ownerImportCount": 80,
+			"pageCount": 56
 		},
 		"pages": [
 			{
@@ -3731,6 +3788,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/cursors/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/html",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/html/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5514,7 +5587,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 9,
+				"entryCount": 10,
 				"entries": [
 					{
 						"category": "projects",
@@ -5527,6 +5600,12 @@
 						"slug": "confluence",
 						"name": "Confluence",
 						"importPath": "@/components/projects/confluence"
+					},
+					{
+						"category": "projects",
+						"slug": "html",
+						"name": "HTML",
+						"importPath": "@/components/projects/html"
 					},
 					{
 						"category": "projects",
@@ -7374,8 +7453,10 @@
 		},
 		"slices": [
 			{
-				"command": "node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
-				"files": [],
+				"command": "node --test scripts/validate-agent-definitions.test.mjs && node scripts/run-js-unit-tests.mjs --prefix .agents/,scripts/validate-agents",
+				"files": [
+					"scripts/validate-agent-definitions.test.mjs"
+				],
 				"name": "test:agents",
 				"prefixes": [
 					".agents/",
@@ -7444,12 +7525,6 @@
 		},
 		"localSkills": [
 			{
-				"description": "Create or update repo-local Markdown agent definitions with YAML frontmatter, project memory, structured workspace-agent sections, schedule handoff notes, and validation. Use when the user asks to create, define, draft, improve, or maintain an agent, subagent, workspace agent, scheduled agent, agent profile, or reusable agent persona in `.agents/agents/`.",
-				"name": "agent-creator",
-				"path": ".agents/skills/agent-creator/SKILL.md",
-				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/agent-creator"
-			},
-			{
 				"description": "Extract VPK routes to standalone apps.",
 				"name": "vpk-build",
 				"path": ".agents/skills/vpk-build/SKILL.md",
@@ -7480,6 +7555,12 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
 			},
 			{
+				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.5 xhigh via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically.",
+				"name": "vpk-fable",
+				"path": ".agents/skills/vpk-fable/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-fable"
+			},
+			{
 				"description": "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"delete the branch after merge\\\", \\\"prune stale refs\\\", \\\"tidy worktrees\\\", \\\"sweep landed worktrees\\\", \\\"my worktrees are piling up\\\", \\\"remove this worktree\\\", \\\"free worktree ports\\\", \\\"kill the dev server for a worktree\\\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed.",
 				"name": "vpk-git-clean",
 				"path": ".agents/skills/vpk-git-clean/SKILL.md",
@@ -7498,7 +7579,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-ship-fast"
 			},
 			{
-				"description": "Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Atlassian deck identity, plus an optional derived PDF export and a landing/product-site track. Invoked explicitly via /vpk-html (optionally with a doc-type hint, e.g. /vpk-html resume); does not auto-trigger on casual mentions of HTML or documents.",
+				"description": "Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Algebrica editorial identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.",
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
@@ -7510,7 +7591,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
 			},
 			{
-				"description": "Repo-local VPK-rovo Symphony workflow for Linear issue execution, Codex Workpad updates, raw linear_graphql operations, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever working on VPK-rovo Symphony issues, updating WORKFLOW.md or docs/SYMPHONY.md, diagnosing Symphony runs, syncing or landing Symphony PRs, or capturing Symphony UI evidence.",
+				"description": "Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.",
 				"name": "vpk-symphony",
 				"path": ".agents/skills/vpk-symphony/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-symphony"

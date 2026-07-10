@@ -13,6 +13,7 @@ A document with all the slots filled but no content worth reading.
 | Bullet that names a concept without saying anything about it | "• Caching" | Replace with the specific cache (Redis), the specific operation (token validation), and the specific outcome (p99 from 480ms to 312ms). |
 | Description that could apply to any project | "We built a scalable, modern, user-friendly system." | Name what makes *this* project different. If it's the same as ten others, you don't need the document. |
 | Section header with one sentence under it | "Risk." "Some risks exist." | Either list the risks concretely or remove the section. Don't leave a hollow section. |
+| Caption that repeats the figure title | Heading: "Architecture". Caption: "Architecture diagram of the system." | State the insight: "Auth is the only cross-zone dependency." |
 
 > The rule: **every paragraph must do work.** If removing the paragraph
 > wouldn't lose information, remove it.
@@ -41,7 +42,7 @@ Imitating the *surface* of a genre without inheriting its *substance*.
 |---|---|---|
 | Status report with only positive deltas | Every metric is up-and-to-the-right; nothing slipped | Real status reports include slippage. If everything went well, say why and what you learned. If nothing slipped, you're not reporting honestly. |
 | Resume with vague verbs | "Drove cross-functional alignment" | Replace with Action + Scope + Result + Outcome. "Led 3-person team that migrated 142 tables from pg15 to pg16 in 47 minutes, saving $48k/mo." |
-| Architecture diagram with every box primary blue | The accent doesn't mean anything | Pick one focal node, demote the rest. (See `references/diagrams.md`.) |
+| Architecture diagram with every box darkest ink | The focal treatment doesn't mean anything | Pick one focal node, demote the rest. (See `references/diagrams.md`.) |
 | Post-mortem with no root cause | "Action: improve monitoring." | The action items are downstream of root cause, which is downstream of contributing factors. Don't skip the analysis. |
 
 > Mimicry passes a casual reader's "looks like the right shape" test. It

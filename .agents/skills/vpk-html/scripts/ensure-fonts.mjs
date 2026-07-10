@@ -13,10 +13,9 @@ const SKILL_ROOT = path.resolve(__dirname, "..");
 const FONT_DIR = path.join(SKILL_ROOT, "assets", "fonts");
 
 const SOURCE_NOTES = {
-	"Charlie Display": "Atlassian Charlie Display asset committed to the repo.",
-	"Charlie Text": "Atlassian Charlie Text asset committed to the repo.",
-	"Atlassian Mono": "Atlassian Mono asset committed to the repo.",
-	"Atlassian Mono Numeric": "Atlassian Mono regular face reused with unicode-range U+0030-0039.",
+	"Geist": "Geist Sans variable WOFF2 from vercel/geist-font, OFL 1.1.",
+	"Geist Mono": "Geist Mono variable WOFF2 from vercel/geist-font, OFL 1.1.",
+	"Geist Mono Numeric": "Geist Mono variable face reused with unicode-range U+0030-0039.",
 };
 
 function hashFile(filePath) {

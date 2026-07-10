@@ -142,7 +142,7 @@ They should be rechecked before implementation begins if the repo has moved on.
   start-here file and an encyclopedia. That makes it harder for agents to
   distinguish mandatory instructions from background reference material.
 - Existing `.agents/agents/*.md` files validate only as legacy Claude-style
-  agents. They do not yet follow the stricter structured `agent-creator` body
+  agents. They do not yet follow the stricter structured agent definition body
   shape with `Instructions`, `Knowledge`, `Triggers`, `Channels`,
   `Conversation Starters`, `Validation`, and `Maintenance Notes`.
 
@@ -612,13 +612,13 @@ guidance into smaller indexed documents and validated local skills.
 1. Migrate existing agents to the structured agent shape.
    - Convert `vpk-agent-extractor`, `vpk-agent-implementer`, and
      `vpk-agent-validator` from legacy Claude-style bodies to the structured
-     `agent-creator` format.
+     agent definition format.
    - Preserve their Figma pipeline roles and examples.
    - Add `Knowledge`, `Triggers`, `Channels`, `Conversation Starters`,
      `Validation`, and `Maintenance Notes`.
 
 2. Add `validate:agents`.
-   - Run the existing `agent-creator` validator against `.agents/agents`.
+   - Run the structured agent definition validator against `.agents/agents`.
    - Fail once legacy migration is complete.
    - Until then, report legacy agents as warnings with a migration issue.
 
@@ -1261,7 +1261,7 @@ lists — parameterize instead of duplicating the script).
   two known failure modes. The add-component-demo playbook should be written
   *after* the §6 split so it documents the new one-folder flow.
 - Agent migration (`vpk-agent-{extractor,implementer,validator}.md` →
-  structured `agent-creator` shape) and `validate:agents`/`validate:skills`
+  structured agent definition shape) and `validate:agents`/`validate:skills`
   stand as planned; they are small and independent — good first-PR
   candidates for any contributor.
 - Drop the "shorten AGENTS.md" task (§1.2).

@@ -10,7 +10,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildFaviconLinkBlock, buildFontFaceBlock, FONT_STACKS, readStylesCss } from "./shared.mjs";
+import { buildFaviconLinkBlock, buildFontFaceBlock, FONT_STACKS, readStylesCss, wrapSharedCss } from "./shared.mjs";
+import { retrofitDocumentNav } from "./presentation.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = path.resolve(__dirname, "..");
@@ -342,7 +343,7 @@ function renderStats(items) {
 }
 
 function renderTemplate(def, sharedCss) {
-	return `<!doctype html>
+	const html = `<!doctype html>
 <!--
 TEMPLATE · ${def.title} (vpk-html Phase 2)
 Pattern reference: ${UPSTREAM}/blob/main/${def.source}
@@ -369,9 +370,9 @@ ${sharedCss}
 \t--dark-warm: var(--ink);
 \t--olive: var(--muted-text);
 \t--stone: var(--subtlest-text);
-\t--brand: var(--primary-blue);
+\t--brand: var(--accent);
 \t--border: var(--rule);
-\t--tag-bg: var(--primary-blue-tint);
+\t--tag-bg: var(--accent-soft);
 \t--shadow-hard: var(--shadow);
 \t--serif: ${FONT_STACKS.body};
 \t--sans: var(--serif);
@@ -385,24 +386,40 @@ ${sharedCss}
 html {
 \tbackground: var(--paper-background);
 \tcolor: var(--near-black);
-\tfont-family: "Atlassian Mono Numeric", var(--serif);
-\tline-height: 1.62;
+\tfont-family: "Geist Mono Numeric", var(--serif);
+\tline-height: 1.6;
 }
 
 body {
-\tbackground:
-\t\tvar(--grid-background),
-\t\tvar(--paper-background);
-\tbackground-size: var(--grid-background-size);
-\tfont-size: 18px;
+\tbackground: var(--paper-background);
+\tfont-size: 17px;
 \tmin-height: 100vh;
 }
 
-a { color: var(--brand); text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+a {
+\tcolor: var(--link);
+\ttext-decoration-line: underline;
+\ttext-decoration-color: transparent;
+\ttext-decoration-thickness: 0.08em;
+\ttext-underline-offset: 0.18em;
+\ttransition: color 180ms var(--ease-out), text-decoration-color 180ms var(--ease-out);
+}
+
+a:hover {
+\tcolor: var(--ink);
+\ttext-decoration-color: currentColor;
+}
+
+a:focus-visible {
+\tborder-radius: 2px;
+\tbox-shadow: 0 0 0 2px var(--focus-ring);
+\toutline: 0;
+\ttext-decoration-color: currentColor;
+}
 
 .page {
 \tmargin: 0 auto;
-\tmax-width: 1040px;
+\tmax-width: 48rem;
 \tpadding: clamp(24px, 4vw, 48px);
 }
 
@@ -415,39 +432,47 @@ a { color: var(--brand); text-decoration-thickness: 0.08em; text-underline-offse
 }
 
 .eyebrow,
-.section-kicker,
+.section-kicker {
+\tcolor: var(--muted-text);
+\tfont-family: var(--mono);
+\tfont-size: 12px;
+\tfont-weight: 600;
+\tletter-spacing: 2px;
+\tline-height: 1.4;
+\ttext-transform: uppercase;
+}
+
 .source-label,
 .stat span,
 .prompt-row span,
 .checklist h2 {
-\tcolor: var(--brand);
-\tfont-family: var(--display);
-\tfont-size: 10px;
-\tletter-spacing: 0.08em;
-\tline-height: 1.2;
-\ttext-transform: uppercase;
+\tcolor: var(--muted-text);
+\tfont-family: var(--serif);
+\tfont-size: 13px;
+\tfont-weight: 400;
+\tletter-spacing: 0;
+\tline-height: 1.4;
 }
 
 h1,
 h2,
 h3 {
-\tcolor: var(--brand);
+\tcolor: var(--headline);
 \tfont-family: var(--display);
-\tfont-weight: 900;
+\tfont-weight: 500;
 \tletter-spacing: 0;
-\tline-height: 0.98;
-\ttext-transform: none;
+\tline-height: 1.18;
 }
 
 h1 {
-\tfont-size: clamp(42px, 8vw, 76px);
+\tfont-size: 36px;
 \tmargin: 10px 0 16px;
 }
 
 .summary {
 \tcolor: var(--dark-warm);
-\tfont-size: clamp(20px, 2.4vw, 28px);
-\tline-height: 1.35;
+\tfont-size: 17px;
+\tline-height: 1.6;
 \tmax-width: 26em;
 }
 
@@ -455,7 +480,8 @@ h1 {
 \talign-self: end;
 \tbackground: var(--ivory);
 \tborder: 1px solid var(--near-black);
-\tbox-shadow: var(--shadow-hard);
+\tborder-radius: 6px;
+\tbox-shadow: none;
 \tpadding: 16px;
 }
 
@@ -500,17 +526,16 @@ section {
 \tborder-bottom: 1px solid var(--border);
 \tdisplay: grid;
 \tgap: 16px;
-\tgrid-template-columns: minmax(140px, 0.28fr) minmax(0, 1fr);
+\tgrid-template-columns: minmax(0, 1fr);
 \tpadding-bottom: 30px;
 }
 
 section h2 {
-\tfont-size: clamp(24px, 3.2vw, 36px);
-\tgrid-column: 1 / -1;
+\tfont-size: 26px;
 }
 
 .prompt-list {
-\tgrid-column: 2;
+\tgrid-column: 1;
 \tdisplay: grid;
 \tgap: 10px;
 }
@@ -518,6 +543,7 @@ section h2 {
 .prompt-row {
 \tbackground: color-mix(in srgb, var(--ivory) 82%, transparent);
 \tborder: 1px solid var(--border);
+\tborder-radius: 6px;
 \tdisplay: grid;
 \tgap: 12px;
 \tgrid-template-columns: 32px minmax(0, 1fr);
@@ -526,14 +552,15 @@ section h2 {
 
 .prompt-row p {
 \tcolor: var(--near-black);
-\tfont-size: 16px;
-\tline-height: 1.55;
+\tfont-size: 17px;
+\tline-height: 1.6;
 }
 
 .checklist {
 \tbackground: var(--ivory);
 \tborder: 1px solid var(--near-black);
-\tbox-shadow: var(--shadow-hard);
+\tborder-radius: 6px;
+\tbox-shadow: none;
 \tpadding: 18px;
 }
 
@@ -617,11 +644,12 @@ ${renderChecklist(def.checklist)}
 </body>
 </html>
 `;
+	return retrofitDocumentNav(html);
 }
 
 function main() {
 	fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
-	const sharedCss = `${buildFontFaceBlock()}\n${readStylesCss()}`;
+	const sharedCss = `${buildFontFaceBlock()}\n${wrapSharedCss(readStylesCss())}`;
 	for (const entry of CATALOG) {
 		const target = path.join(TEMPLATES_DIR, `${entry.slug}.html`);
 		fs.writeFileSync(target, renderTemplate(entry, sharedCss), "utf8");

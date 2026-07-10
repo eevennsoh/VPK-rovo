@@ -136,8 +136,9 @@ test("generateWorkItemVpkHtmlReport fills the real one-pager template for RFP qu
 	assert.equal(report.skill.templatePath, DACI_ONE_PAGER_TEMPLATE_PATH);
 	assert.match(report.html, /Acmecorp RFP qualification DACI/);
 	assert.match(report.html, /<meta name="generator" content="vpk-html">/);
-	assert.match(report.html, /font-family:\s*"Charlie Display"/);
-	assert.match(report.html, /--grid-background/);
+	assert.match(report.html, /font-family:\s*"Geist"/);
+	assert.match(report.html, /--paper-background/);
+	assert.doesNotMatch(report.html, /--grid-background/);
 	assert.match(report.html, /class="header"/);
 	assert.match(report.html, /aria-label="Atlassian"/);
 	assert.match(report.html, /<main>/);

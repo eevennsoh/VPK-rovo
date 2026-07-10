@@ -106,6 +106,24 @@ test("symphony wrapper forwards one resolved custom logs root", () => {
 		assert.match(invocation, /:!elixir\/bin/);
 	}
 
+	const patchInvocations = fs
+		.readFileSync(gitLog, "utf8")
+		.trim()
+		.split("\n")
+		.filter((line) => line.includes(" apply "));
+	assert(
+		patchInvocations.some((line) =>
+			line.includes("apply --check --whitespace=nowarn")
+				&& line.includes("dashboard-live-badge-title-flow.patch"),
+		),
+	);
+	assert(
+		patchInvocations.some((line) =>
+			line.includes("apply --whitespace=nowarn")
+				&& line.includes("dashboard-live-badge-title-flow.patch"),
+		),
+	);
+
 	fs.rmSync(tempDir, { recursive: true, force: true });
 });
 

@@ -1,129 +1,175 @@
 # Diagrams
 
-vpk-html ships 14 standalone SVG diagram primitives at `assets/diagrams/*.html`,
-ported from [tw93/kami](https://github.com/tw93/Kami) and restyled with the
-vpk-html identity (semantic white paper, primary-blue accent, and flat technical rules).
+vpk-html ships 39 standalone SVG diagram and chart primitives at
+`assets/diagrams/*.html`: 14 original structural/chart primitives plus 25 Phase
+E chart additions. They are data-shape diagrams in the Algebrica figure
+language: grayscale, token-only, flat, precise, and typography-led. For
+object/assembly/mechanism drawings, use `references/illustrations.md` and
+`assets/illustrations/`.
 
-## How to use a diagram
+Read `references/svg-style.md` before drawing or modifying any SVG. For chart
+work, also read `references/charts.md` before editing animation, interaction,
+or chart-type behavior.
 
-Each diagram file is a complete standalone HTML page with an inline `<svg>`.
-To embed a diagram in a long-doc, portfolio, design-system, or other rich
+## How To Use A Diagram
+
+Each diagram file is a complete standalone HTML page with an inline SVG. To
+embed a diagram in a long-doc, portfolio, design-system, or other rich
 template:
 
 1. Open `assets/diagrams/<type>.html`.
-2. Copy the `<svg>` block (everything from `<svg viewBox=…>` through `</svg>`).
-3. Pass it into a payload section via `section.trustedHtml`:
+2. Copy the SVG block.
+3. Place it inside a `<figure>` in the filled document.
+4. Replace placeholder labels inside the SVG with real values.
+5. Run `check-html.mjs` on the finished artifact.
 
-```json
-{
-	"type": "figure",
-	"heading": "Production architecture",
-	"trustedHtml": "<figure><svg …>…</svg><figcaption>One primary-blue node marks the focal component.</figcaption></figure>"
-}
+```html
+<figure>
+	<svg viewBox="0 0 960 460" aria-label="Production architecture" fill="none">
+		<!-- pasted SVG content -->
+	</svg>
+	<figcaption>FIG_001 - The origin path is the only focal path.</figcaption>
+</figure>
 ```
 
-Replace placeholder text inside the SVG (e.g., `{{System name}}`,
-`{{Cat A}}`, `{{Chart Title}}`) with real values before embedding.
+Before drawing, ask: would a well-written paragraph teach the reader less than
+this diagram? If no, skip the diagram.
 
-> **Quality bar:** before drawing, ask *would a well-written paragraph teach
-> the reader less than this diagram?* If no, skip the diagram. The diagram has
-> to earn its space.
-
-## Selection guide — by data shape
-
-Data that needs visualization usually matches one of these shapes. First match
-wins.
+## Selection Guide - By Data Shape
 
 | Data shape | Diagram |
 |---|---|
 | Open / high / low / close fields, or per-day price | `candlestick` |
-| `+` and `−` contributions summing to a total (bridge, P&L) | `waterfall` |
-| One series, values sum to ~100%, ≤ 6 items | `donut-chart` |
-| One series, values sum to ~100%, ≥ 7 items | `bar-chart` (horizontal) |
-| Two or more series across time (months, quarters, years) | `line-chart` |
-| One series across time, large count changes (not rate) | `bar-chart` |
-| Multiple categories, same snapshot, 2+ series | `bar-chart` (grouped) |
-| 2×2 strategic or priority positioning | `quadrant` |
-| Hierarchical data with depth ≥ 2 | `tree` |
+| `+` and `-` contributions summing to a total | `waterfall` |
+| One series, values sum to ~100%, <= 6 items | `donut-chart` |
+| One series, values sum to ~100%, many fixed-count units | `waffle` |
+| One series, values sum to a hierarchy | `treemap`, `icicle` |
+| One series, values sum to ~100%, >= 7 items | `bar-chart` |
+| Two or more series across time | `line-chart`, `small-multiples` |
+| One annotated series across time | `annotated-line` |
+| Relative change from a baseline | `index-chart` |
+| Observed value within expected range | `band-chart` |
+| Composition changing over time | `stacked-area` |
+| One series across time, large count changes | `bar-chart` |
+| Multiple categories, same snapshot, 2+ series | `bar-chart` |
+| Before/after values by category | `slope-chart`, `dumbbell` |
+| Actual value against target and qualitative bands | `bullet` |
+| Ranked values where labels dominate | `lollipop` |
+| Mirrored cohorts, age/sex, or opposing populations | `population-pyramid` |
+| Distribution summary by group | `box-plot` |
+| Distribution frequency | `histogram` |
+| Multiple comparable distributions | `ridgeline` |
+| Individual observations along one measure | `beeswarm`, `dot-strip` |
+| Heat or intensity by day | `calendar-heatmap` |
+| Heat or intensity by two categories | `matrix-heatmap` |
+| Region-like intensity on a simplified grid | `grid-choropleth` |
+| Flow volumes between stages | `sankey` |
+| Ordered node relationships | `arc-diagram` |
+| Relationship between two quantitative variables | `scatter` |
+| Ordered trajectory across two quantitative variables | `connected-scatter` |
+| 2x2 strategic or priority positioning | `quadrant` |
+| Hierarchical data with depth >= 2 | `tree` |
 | Process with decision branches | `flowchart` |
-| Cross-team or cross-role process with ≥ 3 actors | `swimlane` |
-| Lifecycle with named states + transitions | `state-machine` |
+| Cross-team or cross-role process with >= 3 actors | `swimlane` |
+| Lifecycle with named states and transitions | `state-machine` |
 | Time-ordered events with milestones | `timeline` |
-| Set overlaps or shared attributes between 2–3 groups | `venn` |
-| Layered architecture (OSI, stack, tier) | `layer-stack` |
-| Components + connections in a system (one focal) | `architecture` |
+| Set overlaps or shared attributes between 2-3 groups | `venn` |
+| Layered architecture, stack, or tier | `layer-stack` |
+| Components and connections in a system | `architecture` |
 | Category comparison, single series, no time axis | `bar-chart` |
 
-When data fits multiple types, prefer the one that shows variance most clearly.
+## Selection Guide - By Intent
 
-## Selection guide — by intent
-
-If the data shape is ambiguous, pick by what the reader should learn.
-
-| Reader should learn… | Diagram |
+| Reader should learn... | Diagram |
 |---|---|
-| "What talks to what" | `architecture` |
-| "What happens in what order" | `flowchart`, `timeline` |
-| "Who owns each step" | `swimlane` |
-| "How the parts nest" | `tree`, `layer-stack` |
-| "What overlaps with what" | `venn` |
-| "What's bigger / smaller / changing" | `bar-chart`, `line-chart`, `waterfall` |
-| "What's in each quadrant of a 2×2" | `quadrant` |
-| "What state are we in, and how do we move" | `state-machine` |
-| "How does this break down into parts of a whole" | `donut-chart` |
-| "How did this price move over time" | `candlestick` |
+| What talks to what | `architecture` |
+| What happens in what order | `flowchart`, `timeline` |
+| Who owns each step | `swimlane` |
+| How the parts nest | `tree`, `layer-stack` |
+| What overlaps with what | `venn` |
+| What's bigger / smaller / changing | `bar-chart`, `line-chart`, `waterfall`, `slope-chart`, `dumbbell`, `lollipop`, `bullet` |
+| How observations are distributed | `box-plot`, `histogram`, `ridgeline`, `beeswarm`, `dot-strip` |
+| How a trend compares to events, baseline, range, or peers | `annotated-line`, `index-chart`, `band-chart`, `small-multiples`, `stacked-area` |
+| Where intensity concentrates | `calendar-heatmap`, `matrix-heatmap`, `grid-choropleth` |
+| How parts fill a total or hierarchy | `donut-chart`, `waffle`, `treemap`, `icicle` |
+| How entities relate or flow | `sankey`, `arc-diagram`, `scatter`, `connected-scatter` |
+| What's in each quadrant of a 2x2 | `quadrant` |
+| What state are we in, and how do we move | `state-machine` |
+| How this breaks down into parts of a whole | `donut-chart` |
+| How this price moved over time | `candlestick` |
 
-## The focal rule
+## The Focal Rule
 
-Every diagram has *one* primary-blue element. That's the component, state, or value
-the reader should look at first. Everything else stays in cool neutrals. If you
-catch yourself coloring more than one node primary blue, pick the most important
-and demote the rest.
+Every ordinary diagram gets one darkest-ink focal element:
 
-This single rule is why the accent actually means something. A page with five
-primary-blue boxes is decoration; a page with one is direction.
+- focal stroke/fill: `var(--focal)`
+- focal stroke-width: `2`
+- everything else: `--ill-*`, `--rule*`, `--muted-text`, or `--subtlest-text`
 
-## Token map (inside the diagrams)
+If more than one node feels important, the diagram is probably doing too much.
+Split it or demote the supporting nodes. `build.mjs --check-focal --strict`
+counts `var(--focal)` in ordinary SVGs and fails when a diagram exceeds the
+configured threshold.
 
-The ported SVGs use vpk-html's palette directly:
+## Token Map
 
 | Role | Token |
 |---|---|
 | Paper / SVG background | `--paper` |
-| Ink (default text, hard borders, primary stroke) | `--ink` |
-| Muted text, secondary strokes, default arrow heads | `--muted-text` / `--subtlest-text` |
-| Accent / focal node fill | `--primary-blue-tint` |
-| Accent / focal node stroke + primary arrow | `--primary-blue` |
-| Cool gray surface variants | `--surface-sunken`, `--rule`, `--rule-strong` |
-| Faint grid dot pattern | `--paper-rule` |
-| Error / regression | `--danger` |
+| Default ink | `--ink` |
+| Focal node/path | `--focal` |
+| Primary linework | `--ill-line` |
+| Secondary label | `--ill-ink50` |
+| Guide / axis | `--ill-guide` |
+| Dashed guide | `--ill-guide-dashed` |
+| Frame | `--ill-frame` |
+| Primary fill | `--ill-fill`, `--ill-tone2` |
+| Alternate fill | `--ill-fill-alt`, `--ill-tone1` |
+| Deep fill / construction tone | `--ill-tone3`, `--ill-hatch` |
+| Heatmap intensity | `--heat0` through `--heat4` |
 
-Display headlines above each diagram use **Charlie Display**. Labels, chart
-numbers, figure identifiers, and technical callouts inside the SVG use
-**Atlassian Mono**. The caption below uses **Charlie Text** with the numeric
-face first in the stack so digits remain mono.
+Labels, chart numbers, figure identifiers, and technical callouts inside SVGs
+use Geist Mono at 11-13px when possible. Smaller labels are allowed only when
+the diagram geometry demands it.
 
-## Anti-patterns to avoid
+## Multi-Series Without Hue
 
-When generating or selecting a diagram, watch for these failure modes:
+Do not use color to distinguish series. Use combinations of:
+
+- tone: `--ill-line`, `--ill-ink50`, `--rule-strong`
+- dash: solid, `stroke-dasharray="4"`, `stroke-dasharray="8 6"`
+- marker: circle, square, triangle, hollow point
+- ordering: put the focal series on top and draw it with stroke-width 2
+
+For bars, combine fill tone and a small marker or direct label. For lines,
+combine stroke tone, dash pattern, and point marker. For heatmap-like
+intensity charts, use the warm mauve ramp `--heat0` through `--heat4`.
+
+## Anti-Patterns
 
 | Anti-pattern | Symptom | Fix |
 |---|---|---|
-| **Two accents** | More than one primary-blue node | Demote all but one to neutral |
-| **Decorative chart** | Pie or donut with 8+ slices | Switch to horizontal bar |
-| **Mystery axis** | Y-axis without units, X-axis without time anchor | Label both, or remove the chart |
-| **Bidirectional arrows everywhere** | Every node connected both ways | Pick a primary direction; the diagram is a story, not a map |
-| **Overlapping nodes** | Visual overlap means semantic overlap is unclear | Move nodes apart; if you can't, the diagram is too dense — split it |
-| **Caption restates the title** | Caption is "Architecture diagram of the system" | Caption should state the *insight*, not the data range |
+| Two focal elements | Multiple `--focal` nodes compete | Pick one, demote the rest |
+| Hue series | Lines differ only by color | Use tone, dash, and marker |
+| Mystery axis | Units or time anchors missing | Label the axis or remove it |
+| Overlapping nodes | Semantic overlap is unclear | Move nodes apart or split the diagram |
+| Decorative chart | It repeats the paragraph | Delete it |
+| Caption echo | Caption restates the title | State the insight |
 
-## Regenerating diagrams
+## Regenerating Diagrams
 
-The ported diagrams are committed. If you want to refresh from kami's source
-(e.g., kami released a new diagram type), run:
+The committed diagrams are migrated in place because the local Kami upstream
+has no source assets. For shared CSS/font/token refreshes, use:
 
 ```bash
-node .agents/skills/vpk-html/scripts/port-kami.mjs --diagrams
+node .agents/skills/vpk-html/scripts/migrate-identity.mjs
+node .agents/skills/vpk-html/scripts/retrofit.mjs
+node .agents/skills/vpk-html/scripts/build.mjs --check-templates
 ```
 
-The port script preserves SVG geometry verbatim and rewrites only the chrome
-(fonts, colors, borders, background) to match vpk-html's identity.
+For advisory checks against finished documents:
+
+```bash
+node .agents/skills/vpk-html/scripts/build.mjs --check-focal <file> --strict
+node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo <file>
+```

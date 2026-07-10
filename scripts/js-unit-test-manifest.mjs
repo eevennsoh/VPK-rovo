@@ -57,6 +57,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/arts/cursors/agent-team-intent.test.js",
 		"components/arts/cursors/agent-team-lines.test.js",
 		"components/arts/cursors/cursor-agents.test.js",
+		"components/arts/cursors/cursor-fan-math.test.js",
+		"components/arts/cursors/cursor-orbit-math.test.js",
 		"components/arts/cursors/launch-intent.test.js",
 		".agents/skills/vpk-build/scripts/scaffold-target.test.js",
 		"components/blocks/work-item-widget/work-item-widget.test.js",

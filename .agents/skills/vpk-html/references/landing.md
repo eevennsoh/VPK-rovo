@@ -18,13 +18,15 @@ completely unaffected — without the attribute, the strict single-file rules ho
 `assets/landing/` ships two generated shells (regenerate with
 `node scripts/landing.mjs`):
 
-- `landing-page.html` — hero + features + CTA + footer.
+- `landing-page.html` — hero + features + grayscale pill CTA + footer.
 - `docs-site.html` — sticky two-column nav + content.
 
-Both use the shared vpk-html identity (Charlie + Atlassian Mono, ADS tokens,
-dotted-grid canvas), inline their fonts, and are responsive at **1280 / 880 /
-480** with `prefers-reduced-motion` honored. They are starting points — replace
-the copy with real content.
+Both use the shared vpk-html identity (Geist + Geist Mono, warm paper/ink
+tokens, grayscale ink chrome), inline their fonts, and are responsive at
+**1280 / 880 / 480** with `prefers-reduced-motion` honored. The page eyebrow
+uses the single breadcrumb-style uppercase role; CTA chrome uses the 34px
+grayscale pill-button tokens. They are starting points — replace the copy with
+real content.
 
 ## Companion files
 
@@ -39,8 +41,8 @@ the copy with real content.
 ## Export
 
 ```bash
-node scripts/build.mjs --landing assets/landing/landing-page.html \
-  --out ./dist --origin https://yoursite.com
+node scripts/build.mjs --landing output/vpk-html/acme-site/acme-site.html \
+  --out output/vpk-html/acme-site/site --origin https://yoursite.com
 ```
 
 This:

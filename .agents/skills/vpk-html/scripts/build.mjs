@@ -12,15 +12,19 @@
  *   node scripts/build.mjs --check-templates       # CSS / token / font sanity across templates
  *   node scripts/build.mjs --verify <file>         # Playwright render + load check
  *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
+ *   node scripts/build.mjs --github <file> [--repo owner/name] [--private]  # publish to GitHub Pages
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
+ *   node scripts/build.mjs --inject-runtime <file...>  # refresh theme + presentation/docnav runtime
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectColorTokenIssues, collectSelfReferentialCustomPropertyIssues } from "./check-html.mjs";
+import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, collectSvgGrammarIssues, validateHtmlFile } from "./check-html.mjs";
+import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
+import { retrofitThemeRuntime } from "./theme.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,34 +34,37 @@ const TEMPLATES_DIR = path.join(SKILL_ROOT, "assets", "templates");
 const PLACEHOLDER_PATTERN = /\{\{[^}]+\}\}/g;
 
 // vpk identity check — required tokens that should appear in templates.
-const REQUIRED_FONT_FACES = ["Charlie Display", "Charlie Text", "Atlassian Mono"];
-const legacyElectricBlueprint = new RegExp(`#${"3553ff"}`, "i");
-const legacyAccentBlue = new RegExp(`#${"1B3FE5"}`, "i");
-const legacyFontFamilyPattern = new RegExp(`\\b${"Ge"}${"ist"}(?:\\s+Mono|\\s+Pixel)?\\b`);
-const legacyFontUrlPattern = new RegExp(`${"vercel"}\\.com/font`, "i");
-const legacyIdentityPattern = new RegExp(`${"terminal"}\\s*(?:/|×|x|\\+|and)\\s*${"blue"}${"print"}`, "i");
+const REQUIRED_FONT_FACES = ["Geist", "Geist Mono", "Geist Mono Numeric"];
 const FORBIDDEN_KAMI_LEAKAGE = [
-	{ pattern: /#1B365D/i, label: "kami brand color #1B365D (should use vpk semantic brand aliases)" },
-	{ pattern: legacyElectricBlueprint, label: "legacy nonsemantic accent literal (should use semantic aliases)" },
-	{ pattern: legacyAccentBlue, label: "legacy vpk accent-blue literal (should use --primary-blue)" },
-	{ pattern: new RegExp(`--${"blue"}${"print"}(?:-tint(?:-strong)?)?\\b`), label: "legacy primary token alias (should use primary-blue tokens)" },
-	{ pattern: /#f5f4ed/i, label: "kami parchment #f5f4ed (should use --paper)" },
+	{ pattern: /Charlie (?:Display|Text)/, label: "legacy Charlie font family" },
+	{ pattern: /Atlassian Mono/, label: "legacy Atlassian Mono font family" },
+	{ pattern: /Geist Pixel|--font-pixel/, label: "legacy Geist Pixel garnish" },
+	{ pattern: /#0c66e4/i, label: "legacy ADS blue #0c66e4" },
+	{ pattern: /#579dff/i, label: "legacy ADS blue #579dff" },
+	{ pattern: /#0055cc/i, label: "legacy ADS blue #0055cc" },
+	{ pattern: /#e9f2ff/i, label: "legacy ADS blue tint #e9f2ff" },
+	{ pattern: /#2f6f4f/i, label: "legacy v1 green accent #2f6f4f" },
+	{ pattern: /#5a9e7c/i, label: "legacy v1 green accent #5a9e7c" },
+	{ pattern: /rgba\(\s*47\s*,\s*111\s*,\s*79\s*,\s*(?:0?\.\d+|1(?:\.0+)?)\s*\)/i, label: "legacy v1 green accent wash" },
+	{ pattern: /rgba\(\s*90\s*,\s*158\s*,\s*124\s*,\s*(?:0?\.\d+|1(?:\.0+)?)\s*\)/i, label: "legacy v1 dark green accent wash" },
+	{ pattern: /--primary-blue\b/, label: "legacy primary-blue token alias" },
+	{ pattern: /var\(--ds-(?!brand-override\b)/, label: "legacy ADS token wrapper" },
+	{ pattern: /font-family:\s*Charter\b/, label: "kami Charter serif (should be Geist)" },
 	{ pattern: /TsangerJinKai02/, label: "kami CJK font TsangerJinKai02" },
-	{ pattern: /font-family:\s*Charter\b/, label: "kami Charter serif (should be Charlie Text)" },
-	{ pattern: legacyFontFamilyPattern, label: "legacy font family" },
-	{ pattern: legacyFontUrlPattern, label: "legacy font URL" },
-	{ pattern: legacyIdentityPattern, label: "legacy identity phrase" },
 	{ pattern: /cdn\.jsdelivr\.net|cdnjs|fonts\.googleapis|fonts\.gstatic/i, label: "remote font/asset URL (violates offline rule)" },
 	{ pattern: /<meta\s+name="generator"\s+content="Kami"/i, label: "kami generator tag (should be vpk-html)" },
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null };
+	const args = { mode: "default", file: null, files: [], out: null, gate: null, strict: false, origin: null, repo: null, visibility: "public" };
 	const GATE_FLAGS = {
 		"--check-density": "density",
 		"--check-resume-balance": "resume-balance",
 		"--check-rhythm": "rhythm",
 		"--check-orphans": "orphans",
+		"--check-focal": "focal",
+		"--check-motion-budget": "motion-budget",
+		"--check-caption-echo": "caption-echo",
 	};
 	for (let i = 0; i < argv.length; i++) {
 		const arg = argv[i];
@@ -68,9 +75,14 @@ function parseArgs(argv) {
 		else if (arg === "--verify") { args.mode = "verify"; args.file = argv[++i]; }
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
 		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
+		else if (arg === "--github") { args.mode = "github"; args.file = argv[++i]; }
+		else if (arg === "--inject-runtime") { args.mode = "inject-runtime"; args.files = argv.slice(i + 1); break; }
 		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
 		else if (arg === "--origin") { args.origin = argv[++i]; }
+		else if (arg === "--repo") { args.repo = argv[++i]; }
+		else if (arg === "--public") { args.visibility = "public"; }
+		else if (arg === "--private") { args.visibility = "private"; }
 		else if (arg === "--strict") { args.strict = true; }
 		else if (arg === "--help" || arg === "-h") { args.mode = "help"; }
 		else throw new Error(`Unknown argument: ${arg}`);
@@ -112,6 +124,34 @@ function checkPlaceholders(filePath) {
 	return { ok: false, count: matches.length };
 }
 
+/* ============ --inject-runtime ============ */
+
+function injectRuntime(filePaths) {
+	if (!filePaths || filePaths.length === 0) throw new Error("--inject-runtime requires at least one file path");
+
+	let changed = 0;
+	let unchanged = 0;
+	for (const filePath of filePaths) {
+		const abs = path.resolve(filePath);
+		if (!fs.existsSync(abs)) throw new Error(`File not found: ${abs}`);
+
+		const before = fs.readFileSync(abs, "utf8");
+		let after = retrofitThemeRuntime(before);
+		after = isDeck(after) ? retrofitDeck(after) : retrofitDocumentNav(after);
+
+		if (after === before) {
+			unchanged += 1;
+			continue;
+		}
+
+		fs.writeFileSync(abs, after, "utf8");
+		changed += 1;
+	}
+
+	console.log(`✓ injected runtime into ${changed} changed, ${unchanged} unchanged file${filePaths.length === 1 ? "" : "s"}`);
+	return { ok: true, changed, unchanged };
+}
+
 /* ============ --check-templates ============ */
 
 function syncCheck() {
@@ -145,6 +185,28 @@ function checkTemplate(filePath) {
 
 	failures.push(...collectColorTokenIssues(content, filePath));
 	failures.push(...collectSelfReferentialCustomPropertyIssues(content));
+	failures.push(...collectPresentationIssues(content));
+	failures.push(...collectSmilMotionIssues(content));
+	failures.push(...collectSvgGrammarIssues(content));
+
+	if (!/--ease-out:\s*cubic-bezier\(0\.16,1,0\.3,1\)/.test(content)) {
+		failures.push("missing vpk motion easing token --ease-out");
+	}
+	if (!/--vpk-dur-enter:\s*140ms/.test(content)) {
+		failures.push("missing vpk motion duration token --vpk-dur-enter");
+	}
+	if (!/@media\s+print\s*\{[\s\S]*?(?:animation|transition|transform):\s*none\s*!important/i.test(content)) {
+		failures.push("missing print motion neutralizer");
+	}
+	if (!/@media\s+\(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?--vpk-enter-y:\s*0px/i.test(content)) {
+		failures.push("missing reduced-motion movement override");
+	}
+	if (/(^|[^-])ease-in(?!-)/i.test(content)) {
+		failures.push("contains bare ease-in timing; use --ease-out or --ease-in-out");
+	}
+	if (!/<body\b[^>]*\bdata-vpk-motion=/i.test(content)) {
+		failures.push("missing data-vpk-motion body attribute");
+	}
 
 	if (!/<meta\s+name="generator"\s+content="vpk-html"/i.test(content)) {
 		failures.push("missing or wrong <meta name=\"generator\"> (should be \"vpk-html\")");
@@ -207,7 +269,7 @@ async function verify(filePath) {
 		await page.waitForTimeout(400);
 		const fontsReady = await page.evaluate(async () => {
 			try { await document.fonts.ready; } catch { /* noop */ }
-			const required = ["Charlie Display", "Charlie Text", "Atlassian Mono", "Atlassian Mono Numeric"];
+			const required = ["Geist", "Geist Mono", "Geist Mono Numeric"];
 			const results = [];
 			for (const family of required) {
 				try {
@@ -255,7 +317,9 @@ Usage:
   node scripts/build.mjs --verify <file>
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
-  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans <file> [--strict]
+  node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   # publish index.html to GitHub Pages
+  node scripts/build.mjs --inject-runtime <file...>   # refresh theme + presentation/docnav runtime in artifacts
+  node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
 }
@@ -269,6 +333,10 @@ async function main() {
 	if (args.mode === "placeholders") {
 		const result = checkPlaceholders(args.file);
 		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+	if (args.mode === "inject-runtime") {
+		injectRuntime(args.files);
 		return;
 	}
 	if (args.mode === "sync") {
@@ -314,6 +382,32 @@ async function main() {
 			console.log("✗ responsive verify");
 			for (const issue of verify.issues) console.log(`  ${issue}`);
 			process.exitCode = 1;
+		}
+		return;
+	}
+	if (args.mode === "github") {
+		if (!args.file) { console.error("--github requires a file path"); process.exitCode = 1; return; }
+		const placeholderResult = checkPlaceholders(args.file);
+		if (!placeholderResult.ok) { process.exitCode = 1; return; }
+		const verifyResult = await verify(args.file);
+		if (!verifyResult.ok) { process.exitCode = 1; return; }
+		const htmlResult = validateHtmlFile(path.resolve(args.file));
+		if (!htmlResult.ok) {
+			console.error(`not ok ${htmlResult.label}`);
+			for (const failure of htmlResult.failures) console.error(`- ${failure}`);
+			process.exitCode = 1;
+			return;
+		}
+		console.log(`ok ${htmlResult.label}`);
+		const { publishGithubPages } = await import("./github-pages.mjs");
+		const result = await publishGithubPages(args.file, { repo: args.repo, visibility: args.visibility });
+		console.log(`✓ published ${result.repo} from ${path.relative(process.cwd(), result.publishDir)}`);
+		console.log(`✓ GitHub Pages: ${result.htmlUrl}`);
+		if (result.build?.status) {
+			const buildError = result.build.error?.message ? ` (${result.build.error.message})` : "";
+			const marker = result.build.status === "built" ? "✓" : result.build.status === "errored" ? "✗" : "…";
+			console.log(`${marker} latest Pages build: ${result.build.status}${buildError}`);
+			if (result.build.status === "errored") process.exitCode = 1;
 		}
 		return;
 	}

@@ -21,6 +21,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildFaviconLinkBlock, buildSharedCssBlock } from "./shared.mjs";
+import { retrofitThemeRuntime } from "./theme.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,26 +33,27 @@ const LANDING_CSS = `
   *, *::before, *::after { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--grid-background), var(--paper-background);
-    background-size: var(--grid-background-size);
+    background: var(--paper-background);
     color: var(--ink);
-    font-family: "Atlassian Mono Numeric", var(--font-body);
-    font-size: 16px;
-    line-height: 1.7;
+    font-family: "Geist Mono Numeric", var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 880px; margin: 0 auto; padding: clamp(2rem, 5vw, 5rem) clamp(1.25rem, 4vw, 2.5rem); }
   .eyebrow {
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--primary-blue); margin: 0 0 12px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted-text); margin: 0 0 60px;
   }
-  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 6vw, 44px); line-height: 1.1; margin: 0 0 16px; color: var(--headline); }
-  h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(20px, 3.5vw, 26px); margin: 48px 0 12px; color: var(--headline); }
-  .lead { font-size: clamp(16px, 2.4vw, 19px); color: var(--muted-text); max-width: 60ch; }
-  a { color: var(--link); text-decoration: none; }
-  a:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .cta { display: inline-block; margin-top: 24px; padding: 10px 18px; background: var(--brand); color: var(--inverse-text); border-radius: 3px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em; }
-  .cta:hover { text-decoration: none; filter: brightness(1.05); }
+  h1 { font-family: var(--font-display); font-weight: 500; font-size: 36px; line-height: 1.14; margin: 0 0 16px; color: var(--headline); }
+  h2 { font-family: var(--font-display); font-weight: 500; font-size: 26px; margin: 48px 0 12px; color: var(--headline); }
+  .lead { font-size: 17px; color: var(--muted-text); max-width: 60ch; }
+  a { color: var(--link); text-decoration-line: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: 4px; transition: color 180ms ease, text-decoration-color 180ms ease, opacity 180ms ease; }
+  a:hover { color: var(--ink); text-decoration-color: currentColor; }
+  a:focus-visible { border-radius: 2px; box-shadow: 0 0 0 2px var(--focus-ring); outline: 0; text-decoration-color: currentColor; }
+  .cta { display: inline-flex; align-items: center; height: 34px; margin-top: 24px; padding: 0 14px; background: var(--pill-fill); color: var(--inverse-text); border: 2px solid var(--pill-fill); border-radius: 24px; font-family: var(--font-body); font-size: 13px; font-weight: 500; letter-spacing: 0; transition: background-color 180ms ease; }
+  .cta, .cta:hover, .docs nav a, footer a { text-decoration-line: none; }
+  .cta:hover { background: var(--pill-fill-hover); border-color: var(--pill-fill-hover); color: var(--inverse-text); }
   .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 24px; }
   .feature h3 { font-family: var(--font-display); font-size: 16px; margin: 0 0 6px; color: var(--headline); }
   .feature p { margin: 0; color: var(--muted-text); font-size: 15px; }
@@ -68,7 +70,7 @@ const LANDING_CSS = `
 `;
 
 function shell({ title, description, bodyHtml }) {
-	return `<!DOCTYPE html>
+	return retrofitThemeRuntime(`<!DOCTYPE html>
 <html lang="en" data-vpk-landing="true">
 <head>
 <meta charset="utf-8">
@@ -84,26 +86,26 @@ ${buildSharedCssBlock()}
 ${LANDING_CSS}
 </style>
 </head>
-<body>
+<body data-vpk-chrome="landing">
 <main>
 ${bodyHtml}
 </main>
 </body>
 </html>
-`;
+`);
 }
 
 function landingPageBody() {
 	return `<div class="wrap">
   <p class="eyebrow">vpk-html · product site</p>
-  <h1>Ship an offline-first product page with the Atlassian deck identity.</h1>
-  <p class="lead">A screen-first landing shell that shares vpk-html's tokens, type, and dotted-grid canvas — responsive from 1280 down to 480, with embedded fonts so it renders anywhere.</p>
+  <h1>Ship an offline-first product page with the Algebrica editorial identity.</h1>
+  <p class="lead">A screen-first landing shell that shares vpk-html's tokens, type, and calm paper canvas — responsive from 1280 down to 480, with embedded fonts so it renders anywhere.</p>
   <a class="cta" href="#features">See what's included</a>
   <hr class="rule">
   <h2 id="features">What's in the box</h2>
   <div class="features">
-    <div class="feature"><h3>Tokenised theme</h3><p>Light and dark via the same <code>--ds-*</code> token layer the documents use.</p></div>
-    <div class="feature"><h3>Embedded fonts</h3><p>Charlie + Atlassian Mono inlined as data URIs — no network fetch.</p></div>
+    <div class="feature"><h3>Tokenised theme</h3><p>Light and dark via the same warm paper, ink, and figure-tone tokens the documents use.</p></div>
+    <div class="feature"><h3>Embedded fonts</h3><p>Geist and Geist Mono are inlined as data URIs — no network fetch.</p></div>
     <div class="feature"><h3>Companion files</h3><p>sitemap, robots, llms.txt, and vercel.json emitted on export.</p></div>
   </div>
   <footer>Generated by vpk-html · landing track</footer>
@@ -162,7 +164,7 @@ Sitemap: {{SITE_ORIGIN}}/sitemap.xml
 export function buildLandingShells() {
 	fs.mkdirSync(COMPANION_DIR, { recursive: true });
 	fs.writeFileSync(path.join(LANDING_DIR, "landing-page.html"),
-		shell({ title: "vpk-html — product site", description: "Offline-first product landing shell with the Atlassian deck identity.", bodyHtml: landingPageBody() }));
+		shell({ title: "vpk-html — product site", description: "Offline-first product landing shell with the Algebrica editorial identity.", bodyHtml: landingPageBody() }));
 	fs.writeFileSync(path.join(LANDING_DIR, "docs-site.html"),
 		shell({ title: "vpk-html — docs site", description: "Two-column documentation shell on the vpk-html identity.", bodyHtml: docsSiteBody() }));
 	for (const [name, body] of Object.entries(COMPANIONS)) {

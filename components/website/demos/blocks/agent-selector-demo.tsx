@@ -22,3 +22,12 @@ export function AgentSelectorDemoSelectedAgentActions(): ReactElement {
 		</div>
 	);
 }
+
+export function AgentSelectorDemoStandalone(): ReactElement {
+	return (
+		<div className="flex min-h-[32rem] w-full flex-col items-center justify-center gap-4 p-6 md:flex-row md:items-start">
+			<AgentSelectorPage presentation="standalone" />
+			<AgentSelectorPage presentation="standalone" variant="selected-agent-actions" />
+		</div>
+	);
+}

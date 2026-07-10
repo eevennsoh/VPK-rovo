@@ -347,16 +347,16 @@ function fillDaciOnePagerTemplate(templateHtml, reportFields) {
 	}
 
 	const body = [
-		"<body>",
+		'<body data-vpk-motion="document" data-vpk-docnav="true">',
 		"<main>",
 		"",
 		'<div class="header">',
 		reportFields.includeAtlassianLogo
 			? [
 					'\t<div aria-label="Atlassian" style="align-items:center;display:flex;gap:8px;margin-right:24px;min-width:132px;">',
-					'\t\t<svg aria-hidden="true" focusable="false" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">',
-					'\t\t\t<path d="M7.4 4.2c.5-.9 1.8-.9 2.3 0l6.6 11.6c.5.9-.1 2-1.1 2h-3.1c-.5 0-1-.3-1.2-.7L7.4 11 4 17.1c-.2.4-.7.7-1.2.7H.9c-1 0-1.6-1.1-1.1-2L7.4 4.2Z" fill="var(--primary-blue)" transform="translate(2 1)"/>',
-					'\t\t\t<path d="M14.3 4.2c.5-.9 1.8-.9 2.3 0l7.6 13.6h-4.1c-.5 0-1-.3-1.2-.7L12.5 5.7l1.8-1.5Z" fill="var(--link)" transform="translate(-2 1)"/>',
+					'\t\t<svg aria-hidden="true" focusable="false" data-vpk-external-asset="true" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">',
+					'\t\t\t<path d="M7.4 4.2c.5-.9 1.8-.9 2.3 0l6.6 11.6c.5.9-.1 2-1.1 2h-3.1c-.5 0-1-.3-1.2-.7L7.4 11 4 17.1c-.2.4-.7.7-1.2.7H.9c-1 0-1.6-1.1-1.1-2L7.4 4.2Z" fill="#0C66E4" transform="translate(2 1)"/>',
+					'\t\t\t<path d="M14.3 4.2c.5-.9 1.8-.9 2.3 0l7.6 13.6h-4.1c-.5 0-1-.3-1.2-.7L12.5 5.7l1.8-1.5Z" fill="#0C66E4" transform="translate(-2 1)"/>',
 					"\t\t</svg>",
 					'\t\t<span style="color:var(--body-text);font-size:13px;font-weight:700;letter-spacing:0;">Atlassian</span>',
 					"\t</div>",
@@ -439,7 +439,7 @@ function fillDaciOnePagerTemplate(templateHtml, reportFields) {
 		"</body>",
 	].join("\n");
 
-	return html.replace(/<body>[\s\S]*?<\/body>/u, body);
+	return html.replace(/<body\b[^>]*>[\s\S]*?<\/body>/u, body);
 }
 
 function assertVpkHtmlReportContract(html) {
@@ -452,7 +452,7 @@ function assertVpkHtmlReportContract(html) {
 	if (!/<meta\s+name="generator"\s+content="vpk-html">/iu.test(html)) {
 		throw new Error("vpk-html report generation did not preserve the generator metadata.");
 	}
-	if (!/font-family:\s*"Charlie Display"/u.test(html) || !/--grid-background/u.test(html) || !/(class="masthead"|class="header")/u.test(html)) {
+	if (!/font-family:\s*"Geist"/u.test(html) || !/--paper-background/u.test(html) || !/(class="masthead"|class="header")/u.test(html)) {
 		throw new Error("vpk-html report generation did not preserve the template visual identity.");
 	}
 	if (!/<main\b/iu.test(html)) {

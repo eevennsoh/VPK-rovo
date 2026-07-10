@@ -47,7 +47,7 @@ test("validateAgents reports a missing canonical validator", () => {
 			errors.push(String(message));
 		};
 		assert.equal(validateAgents({ cwd }), 1);
-		assert.deepEqual(errors, ["Agent validator not found: .agents/skills/agent-creator/scripts/validate-agent.mjs"]);
+		assert.deepEqual(errors, ["Agent validator not found: scripts/validate-agent-definitions.mjs"]);
 	} finally {
 		console.error = originalError;
 		rmSync(cwd, { recursive: true, force: true });

@@ -7,7 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DEFAULT_TARGET = ".agents/agents";
-const VALIDATOR_PATH = ".agents/skills/agent-creator/scripts/validate-agent.mjs";
+const VALIDATOR_PATH = "scripts/validate-agent-definitions.mjs";
 
 function buildValidateAgentsCommand({
 	cwd = process.cwd(),

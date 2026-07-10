@@ -22,8 +22,9 @@ const agents: AgentSelectorAgent[] = [
   onBrowseAgents={() => console.log("browse agents")}
   onCreateAgent={() => console.log("create agent")}
 />`,
-		demoLayout: { previewHeight: "fixed" },
+		demoLayout: { previewHeight: "fixed", examplesContentWidth: "full" },
 		examples: [
+			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
 		],
 		props: [

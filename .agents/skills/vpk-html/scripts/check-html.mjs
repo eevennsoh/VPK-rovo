@@ -4,7 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { collectFaviconIssues } from "./shared.mjs";
+import { collectFaviconIssues, cssVarName, loadTokens } from "./shared.mjs";
+import { isDeck } from "./presentation.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -22,6 +23,7 @@ export function collectColorTokenIssues(source, label = "document") {
 	if (/data-vpk-raw-colors-allowed=["']true["']/.test(source)) return [];
 
 	const stripped = source
+		.replace(/<svg\b(?=[^>]*\bdata-vpk-external-asset\b)[\s\S]*?<\/svg>/gi, "<svg data-vpk-external-asset></svg>")
 		.replace(/url\(["']?data:font\/(?:woff2|otf|ttf);base64,[^)]+?\)/g, "url(data:font/...,...)")
 		.replace(/url\(["']?data:image\/[^)]+?\)/g, "url(data:image/...)")
 		.replace(/\[[^\]]*(?:fill|stroke)=["']#[0-9A-Fa-f]{3,8}["'][^\]]*\]/g, "[svg-color-selector]")
@@ -39,11 +41,11 @@ export function collectColorTokenIssues(source, label = "document") {
 			.filter(match => !(line.includes("<") && /^#[0-9]{3,8}$/.test(match)));
 		if (matches.length === 0) continue;
 
-		const isSemanticFallback = /--[\w-]+\s*:\s*var\(--ds-[\w-]+,\s*#[0-9A-Fa-f]{3,8}\)/.test(line);
-		const isShadowFallback = /--shadow\s*:\s*var\(--ds-shadow-[\w-]+,\s*[^;]*(?:rgba\([^)]*\)|#[0-9A-Fa-f]{3,8})/.test(line);
+		const isTokenDeclaration = isAllowedTokenColorDeclaration(line);
+		const isBrandOverrideFallback = /var\(--ds-brand-override,\s*#[0-9A-Fa-f]{3,8}\)/.test(line);
 		const isAllowedGeneratedNoise = /sourceMappingURL=/.test(line);
 
-		if (!isSemanticFallback && !isShadowFallback && !isAllowedGeneratedNoise) {
+		if (!isTokenDeclaration && !isBrandOverrideFallback && !isAllowedGeneratedNoise) {
 			issues.push(`line ${index + 1}: ${[...new Set(matches)].join(", ")}`);
 			if (issues.length >= 12) break;
 		}
@@ -53,6 +55,183 @@ export function collectColorTokenIssues(source, label = "document") {
 		return [`contains raw color literals outside the vpk semantic alias layer (${issues.join("; ")})`];
 	}
 	return [];
+}
+
+function normalizeColorDeclarationValue(value) {
+	return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function buildAllowedTokenDeclarations() {
+	const tokens = loadTokens();
+	const declarations = new Map();
+	for (const mode of ["semantic", "light", "dark"]) {
+		for (const [key, value] of Object.entries(tokens[mode] ?? {})) {
+			const cssName = key === "shadow" ? "--shadow" : cssVarName(key);
+			if (!declarations.has(cssName)) declarations.set(cssName, new Set());
+			declarations.get(cssName).add(normalizeColorDeclarationValue(value));
+		}
+	}
+	return declarations;
+}
+
+let allowedTokenDeclarations;
+
+function isAllowedTokenColorDeclaration(line) {
+	const match = line.match(/^\s*(--[\w-]+)\s*:\s*([^;]+);/);
+	if (!match) return false;
+	allowedTokenDeclarations ??= buildAllowedTokenDeclarations();
+	const allowedValues = allowedTokenDeclarations.get(match[1]);
+	return allowedValues?.has(normalizeColorDeclarationValue(match[2])) ?? false;
+}
+
+const ALLOWED_FIGURE_TOKENS = new Set([
+	"--paper",
+	"--paper-background",
+	"--surface-raised",
+	"--surface-overlay",
+	"--surface-sunken",
+	"--headline",
+	"--body-text",
+	"--ink",
+	"--muted-text",
+	"--subtlest-text",
+	"--inverse-text",
+	"--focal",
+	"--ill-line",
+	"--ill-tone1",
+	"--ill-tone2",
+	"--ill-tone3",
+	"--ill-hatch",
+	"--ill-ink50",
+	"--ill-guide",
+	"--ill-guide-dashed",
+	"--ill-frame",
+	"--ill-fill",
+	"--ill-fill-alt",
+	"--rule",
+	"--rule-strong",
+	"--selected",
+	"--heat0",
+	"--heat1",
+	"--heat2",
+	"--heat3",
+	"--heat4",
+	"--code-surface",
+	"--code-ink",
+	"--code-inverse",
+	"--math-highlight",
+	"--success",
+	"--success-tint",
+	"--warning",
+	"--warning-tint",
+	"--danger",
+	"--danger-tint",
+	"--info",
+	"--info-tint",
+]);
+
+function isAllowedFigureColorValue(value) {
+	const normalized = value.trim().replace(/\s+/g, " ");
+	if (/^(none|transparent|currentColor|inherit)$/i.test(normalized)) return true;
+	const token = normalized.match(/^var\((--[\w-]+)\)$/);
+	if (token) return ALLOWED_FIGURE_TOKENS.has(token[1]);
+	const mix = normalized.match(/^color-mix\(\s*in\s+srgb\s*,\s*var\((--[\w-]+)\)\s+[\d.]+%\s*,\s*(?:transparent|var\((--[\w-]+)\))\s*\)$/i);
+	if (mix) {
+		return ALLOWED_FIGURE_TOKENS.has(mix[1]) && (!mix[2] || ALLOWED_FIGURE_TOKENS.has(mix[2]));
+	}
+	return false;
+}
+
+function findLineNumber(source, index) {
+	return source.slice(0, index).split("\n").length;
+}
+
+function collectSvgColorIssues(svg, baseLine) {
+	const issues = [];
+	const attrPattern = /\b(fill|stroke|stop-color|color)=["']([^"']+)["']/gi;
+	let match;
+	while ((match = attrPattern.exec(svg)) !== null) {
+		if (match[1].toLowerCase() === "fill") {
+			const tagStart = svg.lastIndexOf("<", match.index);
+			const tag = tagStart >= 0 ? svg.slice(tagStart, match.index) : "";
+			if (/^<\s*(?:animate|animateTransform|animateMotion|set)\b/i.test(tag)) continue;
+		}
+		if (!isAllowedFigureColorValue(match[2])) {
+			issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${match[1]}="${match[2]}" must use grayscale figure tokens`);
+		}
+	}
+
+	const styleAttrPattern = /\bstyle=["']([^"']+)["']/gi;
+	while ((match = styleAttrPattern.exec(svg)) !== null) {
+		const style = match[1];
+		for (const property of style.matchAll(/\b(fill|stroke|stop-color|color)\s*:\s*([^;]+)/gi)) {
+			if (!isAllowedFigureColorValue(property[2])) {
+				issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${property[1]}:${property[2].trim()} must use grayscale figure tokens`);
+			}
+		}
+	}
+
+	const styleBlockPattern = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+	while ((match = styleBlockPattern.exec(svg)) !== null) {
+		for (const property of match[1].matchAll(/\b(fill|stroke|stop-color|color)\s*:\s*([^;}]+)/gi)) {
+			if (!isAllowedFigureColorValue(property[2])) {
+				issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: ${property[1]}:${property[2].trim()} must use grayscale figure tokens`);
+			}
+		}
+	}
+	return issues;
+}
+
+function collectSvgFontIssues(svg, baseLine) {
+	const issues = [];
+	const pattern = /\bfont-family=["']([^"']+)["']|\bfont-family\s*:\s*([^;}"']+)/gi;
+	let match;
+	while ((match = pattern.exec(svg)) !== null) {
+		const family = (match[1] ?? match[2] ?? "").trim();
+		if (!/(Geist Mono|var\(--font-mono\)|var\(--font-numeric\)|Geist Mono Numeric)/i.test(family)) {
+			issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: SVG font-family must resolve to Geist Mono, got "${family}"`);
+		}
+	}
+	return issues;
+}
+
+function collectSvgStrokeWidthIssues(svg, baseLine) {
+	const issues = [];
+	const pattern = /\bstroke-width=["']?([^"'\s>]+)["']?|\bstroke-width\s*:\s*([^;}"']+)/gi;
+	let match;
+	while ((match = pattern.exec(svg)) !== null) {
+		const raw = (match[1] ?? match[2] ?? "").trim();
+		if (/^(?:var|calc)\(/i.test(raw)) continue;
+		const value = Number(raw);
+		if (!Number.isFinite(value) || value < 0.5 || value > 2.5) {
+			issues.push(`line ${baseLine + findLineNumber(svg, match.index) - 1}: stroke-width "${raw}" must be numeric within 0.5-2.5`);
+		}
+	}
+	return issues;
+}
+
+export function collectSvgGrammarIssues(source) {
+	const issues = [];
+	const svgPattern = /<svg\b[\s\S]*?<\/svg>/gi;
+	let match;
+	while ((match = svgPattern.exec(source)) !== null) {
+		const svg = match[0];
+		const root = svg.match(/^<svg\b[^>]*>/i)?.[0] ?? "";
+		if (/\bdata-vpk-external-asset\b/i.test(root)) continue;
+		const baseLine = findLineNumber(source, match.index);
+
+		if (/<(?:linearGradient|radialGradient|filter|feDropShadow)\b|filter\s*=|drop-shadow\(/i.test(svg)) {
+			issues.push(`line ${baseLine}: SVG must not use gradients, filters, or drop shadows`);
+		}
+		if (/var\(--(?:accent|link)[\w-]*\)/i.test(svg)) {
+			issues.push(`line ${baseLine}: SVG must not use accent or link tokens`);
+		}
+		issues.push(...collectSvgColorIssues(svg, baseLine));
+		issues.push(...collectSvgFontIssues(svg, baseLine));
+		issues.push(...collectSvgStrokeWidthIssues(svg, baseLine));
+		if (issues.length >= 12) return [`SVG grammar violations (${issues.slice(0, 12).join("; ")})`];
+	}
+	return issues.length > 0 ? [`SVG grammar violations (${issues.slice(0, 12).join("; ")})`] : [];
 }
 
 export function collectSelfReferentialCustomPropertyIssues(source) {
@@ -69,6 +248,117 @@ export function collectSelfReferentialCustomPropertyIssues(source) {
 		return [`contains self-referential custom properties that invalidate theme tokens (${issues.join("; ")})`];
 	}
 	return [];
+}
+
+function cssLengthToPx(value) {
+	const normalized = value.trim().toLowerCase();
+	if (normalized === "thin") return 1;
+	if (normalized === "medium") return 3;
+	if (normalized === "thick") return 5;
+	const match = normalized.match(/^(-?\d*\.?\d+)(px|pt|rem|em|mm|cm|in)?$/);
+	if (!match) return null;
+	const numeric = Number(match[1]);
+	if (!Number.isFinite(numeric)) return null;
+	const unit = match[2] || "px";
+	const multipliers = {
+		px: 1,
+		pt: 96 / 72,
+		rem: 16,
+		em: 16,
+		mm: 96 / 25.4,
+		cm: 96 / 2.54,
+		in: 96,
+	};
+	return numeric * multipliers[unit];
+}
+
+function firstBorderWidthPx(value) {
+	for (const part of value.trim().split(/\s+/)) {
+		const px = cssLengthToPx(part);
+		if (px !== null) return px;
+	}
+	return null;
+}
+
+function borderWidthSides(value) {
+	const parts = value.trim().split(/\s+/).map(cssLengthToPx);
+	if (parts.some(part => part === null)) return [];
+	if (parts.length === 1) return [["left", parts[0]], ["right", parts[0]]];
+	if (parts.length === 2) return [["left", parts[1]], ["right", parts[1]]];
+	if (parts.length === 3) return [["left", parts[1]], ["right", parts[1]]];
+	return [["left", parts[3]], ["right", parts[1]]];
+}
+
+function collectBorderStripeDeclarations(css, baseLine, label) {
+	const issues = [];
+	const pattern = /\b(border-(left|right)(?:-width)?|border-width)\s*:\s*([^;{}]+);/gi;
+	let match;
+	while ((match = pattern.exec(css)) !== null) {
+		const property = match[1].toLowerCase();
+		const line = baseLine + findLineNumber(css, match.index) - 1;
+		const sides = property === "border-width"
+			? borderWidthSides(match[3])
+			: [[match[2].toLowerCase(), firstBorderWidthPx(match[3])]];
+		for (const [side, width] of sides) {
+			if (width === null || width <= 1.6) continue;
+			issues.push(`${label} line ${line}: ${property} sets ${side} border to ${Number(width.toFixed(2))}px`);
+			if (issues.length >= 12) return issues;
+		}
+	}
+	return issues;
+}
+
+export function collectBorderStripeIssues(source) {
+	const issues = [];
+	const styleBlockPattern = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+	let match;
+	while ((match = styleBlockPattern.exec(source)) !== null) {
+		issues.push(...collectBorderStripeDeclarations(match[1], findLineNumber(source, match.index), "style block"));
+		if (issues.length >= 12) break;
+	}
+
+	if (issues.length < 12) {
+		const styleAttrPattern = /\bstyle=["']([^"']+)["']/gi;
+		while ((match = styleAttrPattern.exec(source)) !== null) {
+			issues.push(...collectBorderStripeDeclarations(match[1], findLineNumber(source, match.index), "style attribute"));
+			if (issues.length >= 12) break;
+		}
+	}
+
+	if (issues.length > 0) {
+		return [`contains decorative side-border stripes over 1.6px (${issues.slice(0, 12).join("; ")})`];
+	}
+	return [];
+}
+
+export function collectPresentationIssues(source) {
+	if (!isDeck(source)) return [];
+	const issues = [];
+	if (!/<script\b[^>]*\bdata-vpk-presentation-runtime\b/i.test(source)) {
+		issues.push("deck is missing the shared presentation runtime script");
+	}
+	if (!/\.speaker-notes\s*\{[\s\S]*?display:\s*none\s*!important/i.test(source)) {
+		issues.push("deck does not hide .speaker-notes by default");
+	}
+	if (!/@media\s+print\s*\{[\s\S]*?(?:animation|transition|transform):\s*none\s*!important/i.test(source)) {
+		issues.push("deck is missing the print motion neutralizer");
+	}
+	return issues;
+}
+
+export function collectSmilMotionIssues(source) {
+	const animations = collectMatches(/<animateTransform\b[^>]*>/gi, source);
+	if (animations.length === 0) return [];
+
+	const issues = [];
+	const unsafe = animations.find(tag => !/\bbegin=["']indefinite["']/i.test(tag));
+	if (unsafe) {
+		issues.push(`animateTransform must use begin="indefinite": ${unsafe}`);
+	}
+	if (!/<script\b[^>]*\bdata-vpk-smil-starter\b/i.test(source)) {
+		issues.push("animateTransform requires a data-vpk-smil-starter script");
+	}
+	return issues;
 }
 
 function hasAttribute(tag, attribute) {
@@ -124,7 +414,11 @@ export function validateHtmlString(html, label = "document") {
 
 	failures.push(...collectColorTokenIssues(html, label));
 	failures.push(...collectSelfReferentialCustomPropertyIssues(html));
+	failures.push(...collectBorderStripeIssues(html));
 	failures.push(...collectFaviconIssues(html));
+	failures.push(...collectPresentationIssues(html));
+	failures.push(...collectSmilMotionIssues(html));
+	failures.push(...collectSvgGrammarIssues(html));
 
 	if (!/\[data-theme="dark"\]/.test(html) || !/color-scheme:\s*light dark/.test(html)) {
 		failures.push("does not contain the dark-mode token block");

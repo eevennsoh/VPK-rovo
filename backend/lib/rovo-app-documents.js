@@ -26,6 +26,27 @@ function safeJsonParse(rawValue) {
 	}
 }
 
+function getDocumentUpdatedAtMs(document) {
+	const updatedAtMs = Date.parse(document.updatedAt);
+	return Number.isFinite(updatedAtMs) ? updatedAtMs : Number.NEGATIVE_INFINITY;
+}
+
+function sortDocumentsByUpdatedAtDesc(documents) {
+	return documents
+		.map((document) => ({
+			document,
+			updatedAtMs: getDocumentUpdatedAtMs(document),
+		}))
+		.sort((left, right) => {
+			if (left.updatedAtMs === right.updatedAtMs) {
+				return 0;
+			}
+
+			return right.updatedAtMs - left.updatedAtMs;
+		})
+		.map(({ document }) => document);
+}
+
 function normalizeDocumentKind(value, fallbackKind = "text") {
 	return (
 		value === "code" ||
@@ -271,10 +292,7 @@ function createRovoAppDocumentManager({ baseDir }) {
 				await Promise.all((await listThreadIds()).map((id) => readDocumentsForThread(id)))
 			).flat();
 
-		documents.sort((left, right) => {
-			return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
-		});
-		return documents;
+		return sortDocumentsByUpdatedAtDesc(documents);
 	};
 
 	const readDocument = async (documentId) => {

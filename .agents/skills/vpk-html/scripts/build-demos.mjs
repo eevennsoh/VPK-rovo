@@ -23,15 +23,15 @@ const PLACEHOLDER_PATTERN = /\{\{[^}]+\}\}/g;
 
 const inlineDemoSvg = `<svg viewBox="0 0 620 220" aria-label="Landing demo separation flow" xmlns="http://www.w3.org/2000/svg">
 	<rect x="20" y="44" width="160" height="72" rx="6" fill="var(--surface-sunken)" stroke="var(--rule-strong)"/>
-	<rect x="230" y="44" width="160" height="72" rx="6" fill="var(--primary-blue-tint)" stroke="var(--primary-blue)"/>
+	<rect x="230" y="44" width="160" height="72" rx="6" fill="var(--ill-tone1)" stroke="var(--focal)"/>
 	<rect x="440" y="44" width="160" height="72" rx="6" fill="var(--surface-sunken)" stroke="var(--rule-strong)"/>
-	<path d="M180 80h50M390 80h50" fill="none" stroke="var(--primary-blue)" stroke-width="2"/>
-	<text x="100" y="75" fill="var(--ink)" font-size="13" text-anchor="middle">raw sources</text>
-	<text x="100" y="95" fill="var(--muted-text)" font-size="10" text-anchor="middle">templates and diagrams</text>
-	<text x="310" y="75" fill="var(--primary-blue)" font-size="13" text-anchor="middle">mock previews</text>
-	<text x="310" y="95" fill="var(--muted-text)" font-size="10" text-anchor="middle">filled landing demos</text>
-	<text x="520" y="75" fill="var(--ink)" font-size="13" text-anchor="middle">authoring flow</text>
-	<text x="520" y="95" fill="var(--muted-text)" font-size="10" text-anchor="middle">copy and fill source</text>
+	<path d="M180 80h50M390 80h50" fill="none" stroke="var(--focal)" stroke-width="2"/>
+	<text x="100" y="75" fill="var(--ink)" font-family="Geist Mono, monospace" font-size="13" text-anchor="middle">raw sources</text>
+	<text x="100" y="95" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" text-anchor="middle">templates and diagrams</text>
+	<text x="310" y="75" fill="var(--focal)" font-family="Geist Mono, monospace" font-size="13" text-anchor="middle">mock previews</text>
+	<text x="310" y="95" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" text-anchor="middle">filled landing demos</text>
+	<text x="520" y="75" fill="var(--ink)" font-family="Geist Mono, monospace" font-size="13" text-anchor="middle">authoring flow</text>
+	<text x="520" y="95" fill="var(--ill-ink50)" font-family="Geist Mono, monospace" font-size="10" text-anchor="middle">copy and fill source</text>
 </svg>`;
 
 const documentDemos = [
@@ -48,7 +48,7 @@ const documentDemos = [
 			["{{One-line subtitle or the single sharpest claim.}}", "The catalog is for previewing finished shapes; authoring sources stay in templates and diagrams."],
 			["{{YYYY.MM.DD}}", "2026.05.12"],
 			["{{VERSION / STATUS}}", "Mock preview"],
-			["{{~30-40 words. The one paragraph that sets the whole document's tone. Use <span class=\"hl\">brand-color emphasis</span> on the sharpest claim or number. Everything below is in service of this.}}", "The landing page now links to <span class=\"hl\">filled mock previews</span> instead of raw placeholder-bearing sources. Authors can still copy templates from the documented source tables when they need a reusable starting point."],
+			["{{~30-40 words. The one paragraph that sets the whole document's tone. Use <span class=\"hl\">ink emphasis</span> on the sharpest claim or number. Everything below is in service of this.}}", "The landing page now links to <span class=\"hl\">filled mock previews</span> instead of raw placeholder-bearing sources. Authors can still copy templates from the documented source tables when they need a reusable starting point."],
 			["{{Key quote / critical note / the single takeaway that must not be missed.}}", "Preview files are demos. Source files are authoring materials. The landing page should never blur those roles."],
 			["{{CONFIDENTIALITY - internal / public / draft}}", "LOCAL DEMO"],
 			["{{PAGE / CONTACT}}", "1 of 1 - vpk-html"],
@@ -56,12 +56,12 @@ const documentDemos = [
 			["{{Section two}}", "Why it matters"],
 		],
 		sequences: [
-			["{{NUMBER}}", ["19", "14", "5", "0"]],
-			["{{LABEL}}", ["new mock demos", "diagram previews", "document previews", "raw landing links"]],
+			["{{NUMBER}}", ["44", "39", "5", "0"]],
+			["{{LABEL}}", ["landing mock demos", "diagram/chart previews", "document previews", "raw landing links"]],
 			["{{One or two sentences expanding the claim.}}", ["Every landing row points at an `assets/demos/demo-*.html` file with representative content already filled in. The reusable source templates remain available through documentation and direct file paths."]],
 			["{{One or two sentences.}}", ["This prevents visible `{{...}}` tokens from appearing when a user opens a demo from the catalog. It also keeps diagram primitives cleanly separated from landing previews."]],
 			["{{Short bullet: a data point, observation, or judgment.}}", ["Five base document rows now use explicit mock demo files."]],
-			["{{Short bullet with <span class=\"hl\">key figure</span>.}}", ["All <span class=\"hl\">14 diagram primitives</span> now have demo counterparts."]],
+			["{{Short bullet with <span class=\"hl\">key figure</span>.}}", ["All <span class=\"hl\">39 diagram and chart primitives</span> now have demo counterparts."]],
 			["{{Short bullet.}}", [
 				"Documentation tables still point at source templates for actual authoring.",
 				"The landing regression test fails if a row points back into templates or diagrams.",
@@ -92,16 +92,18 @@ const documentDemos = [
 			["{{Version 1.0}}", "v1.0"],
 			["{{YYYY.MM}}", "2026.05"],
 			["{{PUBLISHER / ORGANIZATION}}", "Venn Prototype Kit"],
-			["{{Two or three sentences opening the whole thesis. Use <span class=\"hl\">brand-color emphasis</span> to grab attention on the sharpest claim. A reader of only this paragraph should understand what the document argues.}}", "The vpk-html landing page is a catalog of finished shapes, not a shelf of raw authoring sources. Moving every raw link to a <span class=\"hl\">filled mock preview</span> makes the first click representative while preserving the template workflow for real documents."],
+			["{{Problem summary - one sentence that states why this document exists.}}", "Landing rows used to blur finished demos and reusable source files, so catalog clicks could expose authoring placeholders."],
+			["{{Solution summary - one sentence that states the recommended move.}}", "Keep the catalog pointed at filled mock previews while templates and diagrams remain documented authoring sources."],
+			["{{Two or three sentences opening the whole thesis. Use <span class=\"hl\">ink emphasis</span> to grab attention on the sharpest claim. A reader of only this paragraph should understand what the document argues.}}", "The vpk-html landing page is a catalog of finished shapes, not a shelf of raw authoring sources. Moving every raw link to a <span class=\"hl\">filled mock preview</span> makes the first click representative while preserving the template workflow for real documents."],
 			["{{List the three core questions as actual questions - so the reader can decide in ten seconds whether to read on.}}", "Which landing rows exposed raw sources? Where should reusable authoring files continue to live? What test prevents template placeholders from leaking back into the demo path?"],
-			["{{Three to five lines describing the status quo. Use <span class=\"hl\">specific figures</span> rather than adjectives.}}", "Before this cleanup, five document rows and fourteen diagram rows opened source files directly. Those files intentionally contain placeholder tokens because they are meant to be copied and filled, not browsed as demos."],
+			["{{Three to five lines describing the status quo. Use <span class=\"hl\">specific figures</span> rather than adjectives.}}", "The catalog now carries five document mock rows and thirty-nine diagram/chart rows. Source files may contain reusable placeholder tokens, but browse-time demo rows should open filled previews."],
 			["{{State the problem specifically. Use a callout to emphasize a key observation:}}", "The landing route made the source/template distinction invisible. A user could click a catalog row and see raw curly-brace tokens that were correct for authoring but wrong for a demo."],
 			["{{TERM}}", "demo separation"],
 			["{{SOURCE / PERSON}}", "vpk-html implementation note"],
 			["{{TITLE}}", "Landing Demo Separation"],
 			["{{If the reader does one thing, what is it? Specific enough to start Monday morning.}}", "When adding a landing row, link to `assets/demos/demo-*.html`; when documenting the authoring workflow, point to `assets/templates/` or `assets/diagrams/`."],
 			["{{Chapter intro - what this chapter is solving, why it matters. One or two sentences.}}", "This pass separates browse-time previews from authoring-time sources. The source files remain reusable; the landing page now opens filled artifacts only."],
-			["{{A paragraph with data: <span class=\"hl\">specific numbers or ratios</span>.}}", "The cleanup adds <span class=\"hl\">19 landing-only mocks</span>: five document previews and fourteen diagram previews. Existing real demos remain unchanged and continue to validate through `check-html.mjs`."],
+			["{{A paragraph with data: <span class=\"hl\">specific numbers or ratios</span>.}}", "The landing set now includes <span class=\"hl\">44 landing-only mocks</span>: five document previews and thirty-nine diagram/chart previews. Existing real demos remain unchanged and continue to validate through `check-html.mjs`."],
 			["{{A short quoted line or key observation. Different in tone from the body so the reader gets a breath.}}", "A template with curly braces is healthy. A landing demo with unresolved curly braces is noise."],
 			["{{Spread heading - what this figure proves}}", "Landing links now stop at demos"],
 			["{{INSERT DIAGRAM SVG}}", inlineDemoSvg],
@@ -117,10 +119,10 @@ const documentDemos = [
 			["{{GAP}}", "Future landing rows need the same demo-first path discipline."],
 		],
 		sequences: [
-			["{{Takeaway 1 - a quantified conclusion in one line.}}", ["Nineteen raw landing targets now have filled demo counterparts."]],
+			["{{Takeaway 1 - a quantified conclusion in one line.}}", ["Forty-four landing mock targets now cover document and diagram/chart previews."]],
 			["{{Takeaway 2 - an insight backed by data.}}", ["The landing page can validate every row without allowing source-template links."]],
 			["{{Takeaway 3 - a forward-looking judgment.}}", ["The next source file added to vpk-html should receive a demo file before it appears in the catalog."]],
-			["{{VAL}}", ["5", "14", "19", "0", "1", "28", "2026.05", "100%"]],
+			["{{VAL}}", ["5", "39", "44", "0", "1", "28", "2026.05", "100%"]],
 			["{{Chapter intro.}}", [
 				"The document rows now map to one-pager, long-doc, letter, slides, and changelog mock files in `assets/demos/`.",
 				"The diagram rows now map to mock preview files named `demo-diagram-*.html`.",
@@ -191,11 +193,11 @@ const documentDemos = [
 			["{{Module title}}", ["Document mocks", "Diagram mocks", "Regression guard"]],
 			["{{Module body}}", [
 				"One-pager, long-doc, letter, slides, and changelog now have filled landing previews.",
-				"Fourteen inline SVG primitives now have matching `demo-diagram-*` previews.",
+				"Thirty-nine inline diagram/chart primitives now have matching `demo-diagram-*` previews.",
 				"`landing-links.test.js` rejects raw source folders and validates every linked file.",
 			]],
 			["{{Dimension}}", ["Document rows", "Diagram rows", "Raw source links"]],
-			["{{Value}}", ["5", "14", "0"]],
+			["{{Value}}", ["5", "39", "0"]],
 			["{{Note}}", ["Authoring route tables remain unchanged in the skill documentation.", "Literal brace demos must opt in with `data-vpk-literal-double-braces=\"true\"`.", "Run `check-html.mjs` before publishing new demo files."]],
 			["{{Body content}}", ["Source templates still keep their placeholders. That is correct for authoring and wrong for the landing demo path."]],
 		],
@@ -215,7 +217,7 @@ const documentDemos = [
 			["{{One-line project description.}}", "Offline HTML artifact templates for polished local documents and diagrams."],
 			["{{One-line release highlight.}}", "Landing rows now open filled mock previews instead of raw placeholder-bearing sources."],
 			["{{New feature 1: one-line description.}}", "Added explicit mock demo files for five base document templates."],
-			["{{New feature 2: one-line description.}}", "Added mock preview files for all fourteen inline diagram primitives."],
+			["{{New feature 2: one-line description.}}", "Added mock preview files for all thirty-nine inline diagram and chart primitives."],
 			["{{New feature 3: one-line description.}}", "Updated the landing copy and row labels to describe the demo-only path."],
 			["{{Fix 1: one-line description.}}", "Removed direct landing links to `assets/templates/`."],
 			["{{Fix 2: one-line description.}}", "Removed direct landing links to `assets/diagrams/`."],
@@ -285,13 +287,13 @@ const diagramDemos = [
 		"{{Chart Title}}": "Landing link targets by type",
 		"{{Series A label}}": "Raw links",
 		"{{Series B label}}": "Demo links",
-		"{{Caption text. The focal series in primary blue carries the primary argument. State the takeaway here, not a description of what is plotted.}}": "After separation, every landing target is a filled demo file.",
+		"{{Caption text. The darkest-ink focal series carries the primary argument. State the takeaway here, not a description of what is plotted.}}": "The darkest-ink demo-link series confirms every landing target is now a filled demo file.",
 	}],
 	["line-chart", "Line Chart", {
 		"{{Chart Title}}": "Placeholder leakage over cleanup",
 		"{{Line 1 label}}": "Raw-source exposure",
 		"{{Line 2 label}}": "Demo coverage",
-		"{{Caption text. The primary blue line carries the primary trend argument. State what the trend means, not what was plotted.}}": "Demo coverage rises to full catalog coverage as raw source exposure drops to zero.",
+		"{{Caption text. The darkest-ink line carries the primary trend argument. State what the trend means, not what was plotted.}}": "The darkest-ink coverage line reaches full catalog coverage as raw source exposure drops to zero.",
 	}],
 	["donut-chart", "Donut Chart", {
 		"{{Chart Title}}": "Landing catalog makeup",
@@ -303,7 +305,7 @@ const diagramDemos = [
 		"{{Category E}}": "editors",
 		"{{Category F}}": "decks",
 		"{{Source / period}}": "vpk-html landing mock set",
-		"{{Caption text. The primary blue segment is the focal category. Lead with the insight, not the breakdown.}}": "The new mock set covers all previously raw landing targets.",
+		"{{Caption text. The darkest-ink segment is the focal category. Lead with the insight, not the breakdown.}}": "The darkest-ink mock segment covers all previously raw landing targets.",
 	}],
 	["candlestick", "Candlestick", {
 		"{{Chart Title}}": "Demo coverage check",
@@ -325,6 +327,31 @@ const diagramDemos = [
 		"{{End}}": "Demo-only",
 		"{{Caption: e.g. \"Revenue bridge from FY2024 to FY2025, showing growth drivers and headwinds.\"}}": "Waterfall preview showing how document and diagram mocks reduce raw landing exposure to zero.",
 	}],
+	["box-plot", "Box Plot", {}],
+	["histogram", "Histogram", {}],
+	["ridgeline", "Ridgeline", {}],
+	["beeswarm", "Beeswarm", {}],
+	["dot-strip", "Dot Strip", {}],
+	["slope-chart", "Slope Chart", {}],
+	["dumbbell", "Dumbbell", {}],
+	["lollipop", "Lollipop", {}],
+	["bullet", "Bullet", {}],
+	["population-pyramid", "Population Pyramid", {}],
+	["annotated-line", "Annotated Line", {}],
+	["index-chart", "Index Chart", {}],
+	["small-multiples", "Small Multiples", {}],
+	["band-chart", "Band Chart", {}],
+	["stacked-area", "Stacked Area", {}],
+	["calendar-heatmap", "Calendar Heatmap", {}],
+	["matrix-heatmap", "Matrix Heatmap", {}],
+	["waffle", "Waffle", {}],
+	["grid-choropleth", "Grid Choropleth", {}],
+	["treemap", "Treemap", {}],
+	["sankey", "Sankey", {}],
+	["arc-diagram", "Arc Diagram", {}],
+	["scatter", "Scatter", {}],
+	["connected-scatter", "Connected Scatter", {}],
+	["icicle", "Icicle", {}],
 ];
 
 function readSource(directory, slug) {
@@ -509,7 +536,7 @@ function q2Status() {
 		["{{One-line subtitle or the single sharpest claim.}}", "Three of four committed milestones landed on time. Tracing rollout slipped to Q3 after the OTel collector saturated staging."],
 		["{{YYYY.MM.DD}}", "2026.07.01"],
 		["{{VERSION / STATUS}}", "Quarter close"],
-		["{{~30-40 words. The one paragraph that sets the whole document's tone. Use <span class=\"hl\">brand-color emphasis</span> on the sharpest claim or number. Everything below is in service of this.}}", "API gateway v2 dropped p99 by <span class=\"hl\">35 percent</span> and unlocked $48k/mo of headroom. Distributed tracing slipped one quarter — the OTel collector pattern we chose did not scale past three services in staging."],
+		["{{~30-40 words. The one paragraph that sets the whole document's tone. Use <span class=\"hl\">ink emphasis</span> on the sharpest claim or number. Everything below is in service of this.}}", "API gateway v2 dropped p99 by <span class=\"hl\">35 percent</span> and unlocked $48k/mo of headroom. Distributed tracing slipped one quarter — the OTel collector pattern we chose did not scale past three services in staging."],
 		["{{Key quote / critical note / the single takeaway that must not be missed.}}", "Capacity work delivered 28% additional headroom, ahead of the 15% target. Observability work needs a sidecar redesign before Q3 closes."],
 		["{{CONFIDENTIALITY - internal / public / draft}}", "INTERNAL · Q2 CLOSE"],
 		["{{PAGE / CONTACT}}", "1 of 1 · platform-team@"],
@@ -549,7 +576,9 @@ function fillLongDocCommon(h, demo) {
 		["{{Version 1.0}}", demo.version],
 		["{{YYYY.MM}}", demo.yearMonth],
 		["{{PUBLISHER / ORGANIZATION}}", demo.publisher],
-		["{{Two or three sentences opening the whole thesis. Use <span class=\"hl\">brand-color emphasis</span> to grab attention on the sharpest claim. A reader of only this paragraph should understand what the document argues.}}", demo.thesis],
+		["{{Problem summary - one sentence that states why this document exists.}}", demo.tldrProblem ?? demo.problem],
+		["{{Solution summary - one sentence that states the recommended move.}}", demo.tldrSolution ?? demo.thesis],
+		["{{Two or three sentences opening the whole thesis. Use <span class=\"hl\">ink emphasis</span> to grab attention on the sharpest claim. A reader of only this paragraph should understand what the document argues.}}", demo.thesis],
 		["{{List the three core questions as actual questions - so the reader can decide in ten seconds whether to read on.}}", demo.questions],
 		["{{Three to five lines describing the status quo. Use <span class=\"hl\">specific figures</span> rather than adjectives.}}", demo.statusQuo],
 		["{{State the problem specifically. Use a callout to emphasize a key observation:}}", demo.problem],

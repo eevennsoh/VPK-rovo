@@ -412,7 +412,7 @@ conversation_starters:
 
 ## Validation
 
-- Run `node .agents/skills/agent-creator/scripts/validate-agent.mjs .agents/agents/vpk-agent-implementer.md`.
+- Run `node scripts/validate-agent-definitions.mjs .agents/agents/vpk-agent-implementer.md`.
 - For implementation tasks, run `pnpm run lint` and `pnpm run typecheck`; if baseline failures exist, also run scoped lint on changed files.
 - Confirm the final report lists changed files, tokens used, accessibility status, and readiness for the Validator agent.
 

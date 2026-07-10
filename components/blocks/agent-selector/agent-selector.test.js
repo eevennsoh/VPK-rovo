@@ -6,6 +6,9 @@ const test = require("node:test");
 const COMPONENT_SOURCE = fs.readFileSync(path.join(__dirname, "components/agent-selector.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(__dirname, "data/demo-agents.ts"), "utf8");
 const PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
+const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/demos/blocks/agent-selector-demo.tsx"), "utf8");
+const DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/details/blocks/agent-selector.ts"), "utf8");
+const REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks.ts"), "utf8");
 const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	"components/blocks/agent-selector/page.tsx",
 	"components/blocks/kanban-board/index.tsx",
@@ -28,6 +31,16 @@ test("AgentSelector demo uses single selection without multi-select toggling", (
 	assert.match(PAGE_SOURCE, /function selectAgent\(agentId: string\) \{[\s\S]*setSelectedAgentIds\(\[agentId\]\);[\s\S]*\}/u);
 	assert.match(PAGE_SOURCE, /selectionMode="single"/u);
 	assert.doesNotMatch(PAGE_SOURCE, /currentIds\.includes\(agentId\)[\s\S]*currentIds\.filter/u);
+});
+
+test("AgentSelector exposes a standalone picker demo for inspection", () => {
+	assert.match(PAGE_SOURCE, /presentation\?: "dropdown" \| "standalone";/u);
+	assert.match(PAGE_SOURCE, /presentation === "standalone"[\s\S]*data-agent-selector-demo="standalone"[\s\S]*\{selector\}/u);
+	assert.match(DEMO_SOURCE, /export function AgentSelectorDemoStandalone/u);
+	assert.match(DEMO_SOURCE, /<AgentSelectorPage presentation="standalone" \/>/u);
+	assert.match(DEMO_SOURCE, /<AgentSelectorPage presentation="standalone" variant="selected-agent-actions" \/>/u);
+	assert.match(DETAILS_SOURCE, /demoSlug: "agent-selector-demo-standalone"/u);
+	assert.match(REGISTRY_SOURCE, /"agent-selector-demo-standalone"[\s\S]*default: mod\.AgentSelectorDemoStandalone/u);
 });
 
 test("AgentSelector hides command checkmarks for single-select usage", () => {

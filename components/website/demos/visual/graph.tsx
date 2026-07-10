@@ -31,7 +31,7 @@ import {
 	getDefaultNeuralGraphSelectedNodeId,
 	type NeuralGraphStore,
 } from "@/components/arts/personal-graph/lib/neural-graph/store";
-import type { NeuralGraphThemeMode } from "@/components/arts/personal-graph/lib/neural-graph/renderer";
+import type { NeuralGraphLabelStrategy, NeuralGraphThemeMode } from "@/components/arts/personal-graph/lib/neural-graph/renderer";
 import type {
 	VaultEdgeKind,
 	VaultExplorer,
@@ -49,6 +49,7 @@ interface GraphProps extends Omit<ComponentProps<"div">, "children"> {
 	initialParams?: Partial<NeuralGraphParams>;
 	initialSelectedNodeId?: string | null;
 	isLoading?: boolean;
+	labelStrategy?: NeuralGraphLabelStrategy;
 	onParamsChange?: (params: NeuralGraphParams) => void;
 	onSelectedNodeIdChange?: (nodeId: string | null) => void;
 	interactionSettings?: Partial<NeuralGraphInteractionSettings>;
@@ -869,6 +870,7 @@ export default function Graph({
 	initialParams = ROVO_GRAPH_DEFAULT_PARAMS,
 	initialSelectedNodeId = null,
 	isLoading = false,
+	labelStrategy = "default",
 	interactionSettings: explicitInteractionSettings,
 	onParamsChange,
 	onSelectedNodeIdChange,
@@ -985,6 +987,7 @@ export default function Graph({
 							explorer={explorer}
 							isLoading={isLoading}
 							interactionSettings={canvasInteractionSettings}
+							labelStrategy={labelStrategy}
 							onClearSelection={handleClearSelection}
 							onSelectNode={handleSelectNode}
 							params={params}

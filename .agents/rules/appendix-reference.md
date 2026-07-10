@@ -127,7 +127,7 @@ Optional environment variables:
 | Tidy         | `/vpk-tidy`         | Utility  | Refactor React components for reusability             |
 | Component    | `/vpk-component`    | Utility  | Map ADS components to VPK equivalents                 |
 | Component Ext | `/vpk-component-ext` | Utility  | Migrate custom AI components to ui-custom                 |
-| Agent Creator | `/agent-creator`   | Workflow | Create or update repo-local Markdown agents           |
+| Fable        | `/vpk-fable`        | Workflow | Fable 5 advisor/orchestrator cost-tiering via codex CLI executors (default) or subagents |
 
 Symphony worker skills:
 
@@ -140,6 +140,11 @@ Figma pipeline agents:
 - `vpk-agent-extractor` (haiku)
 - `vpk-agent-implementer` (opus)
 - `vpk-agent-validator` (haiku)
+
+Fable pattern agents (see `/vpk-fable`):
+
+- `vpk-agent-advisor` (fable, read-only)
+- `vpk-agent-worker` (sonnet)
 
 ## Agent Team Workflow Reference
 

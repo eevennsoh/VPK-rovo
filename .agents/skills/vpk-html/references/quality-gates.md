@@ -17,8 +17,11 @@ node scripts/build.mjs --check-density        <file> [--strict]
 node scripts/build.mjs --check-resume-balance <file> [--strict]
 node scripts/build.mjs --check-rhythm         <file> [--strict]
 node scripts/build.mjs --check-orphans        <file> [--strict]
+node scripts/build.mjs --check-focal          <file> [--strict]
+node scripts/build.mjs --check-motion-budget  <file> [--strict]
+node scripts/build.mjs --check-caption-echo   <file> [--strict]
 # or run several directly:
-node scripts/gates.mjs <file> --check-density --check-orphans
+node scripts/gates.mjs <file> --check-density --check-orphans --check-focal
 ```
 
 ## The gates
@@ -46,6 +49,23 @@ Measures each paragraph/list-item with `Range.getClientRects()`. A block longer
 than one line whose **last line** is both narrow (< `minLastLineWidthRatio` of
 the widest line) and a short word (< `minLastLineChars`) is flagged as a widow.
 Symptom: a lone short word dangling on its own line.
+
+### focal
+Counts uses of `var(--focal)` inside ordinary SVGs. More than
+`maxFocalElements` warns because diagrams should keep one darkest-ink focal
+element. SVGs marked `data-vpk-illustration` are exempt from this advisory
+count, but they still need to follow the grayscale `--ill-*` figure grammar.
+
+### motion-budget
+Scans authored CSS motion durations in `<style>` blocks and inline styles. Any
+resolved numeric duration above `maxDurationMs` (default 300ms) warns. This is a
+polish gate for slow-feeling artifacts; use shared `--vpk-dur-*` tokens when
+possible.
+
+### caption-echo
+Compares figure captions with nearby headings, SVG titles, and `aria-label`
+text. A caption that repeats the title without adding an insight warns. Fix by
+stating what the reader should learn from the figure, not what the figure is.
 
 ## Tuning
 

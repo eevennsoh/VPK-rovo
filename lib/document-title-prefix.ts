@@ -1,5 +1,6 @@
 const LOCALHOST_SUFFIX = ".localhost";
-const DOCUMENT_TITLE_PREFIX_SEPARATOR = ":";
+const DOCUMENT_TITLE_PREFIX_SEPARATOR = " : ";
+const LEGACY_COMPACT_DOCUMENT_TITLE_PREFIX_SEPARATOR = ":";
 const LEGACY_DOCUMENT_TITLE_PREFIX_SEPARATOR = " — ";
 const UNPREFIXED_DOCUMENT_TITLES = new Set(["⚠ Keep this page active"]);
 
@@ -49,7 +50,11 @@ export function stripDocumentTitlePrefix(title: string, prefix: string): string 
 		return "";
 	}
 
-	for (const separator of [DOCUMENT_TITLE_PREFIX_SEPARATOR, LEGACY_DOCUMENT_TITLE_PREFIX_SEPARATOR]) {
+	for (const separator of [
+		DOCUMENT_TITLE_PREFIX_SEPARATOR,
+		LEGACY_COMPACT_DOCUMENT_TITLE_PREFIX_SEPARATOR,
+		LEGACY_DOCUMENT_TITLE_PREFIX_SEPARATOR,
+	]) {
 		const prefixWithSeparator = `${normalizedPrefix}${separator}`;
 		if (normalizedTitle.startsWith(prefixWithSeparator)) {
 			return normalizedTitle.slice(prefixWithSeparator.length).trim();

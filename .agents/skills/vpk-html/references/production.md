@@ -26,7 +26,12 @@ Kami-to-VPK color map from there.
 Routine user renders require:
 
 ```bash
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders docs/html/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --verify docs/html/<slug>.html
-node .agents/skills/vpk-html/scripts/check-html.mjs docs/html/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html
 ```
+
+Each generated user artifact should live in its own ignored folder at
+`output/vpk-html/<slug>/`. Keep PDFs, screenshots, and local validation captures
+for that artifact inside the same folder, using a nested `screenshots/` folder
+when there are many images.

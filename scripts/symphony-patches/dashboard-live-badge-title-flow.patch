@@ -1,0 +1,110 @@
+diff --git a/elixir/lib/symphony_elixir_web/live/dashboard_live.ex b/elixir/lib/symphony_elixir_web/live/dashboard_live.ex
+index 7439e3a..b5c862c 100644
+--- a/elixir/lib/symphony_elixir_web/live/dashboard_live.ex
++++ b/elixir/lib/symphony_elixir_web/live/dashboard_live.ex
+@@ -47,24 +47,26 @@ defmodule SymphonyElixirWeb.DashboardLive do
+             <p class="eyebrow">
+               Symphony Observability
+             </p>
+-            <h1 class="hero-title">
+-              Operations Dashboard
+-            </h1>
++            <div class="hero-heading-row">
++              <h1 class="hero-title">
++                Operations Dashboard
++              </h1>
++
++              <div class="status-stack">
++                <span class="status-badge status-badge-live">
++                  <span class="status-badge-dot"></span>
++                  Live
++                </span>
++                <span class="status-badge status-badge-offline">
++                  <span class="status-badge-dot"></span>
++                  Offline
++                </span>
++              </div>
++            </div>
+             <p class="hero-copy">
+               Current state, retry pressure, token usage, and orchestration health for the active Symphony runtime.
+             </p>
+           </div>
+-
+-          <div class="status-stack">
+-            <span class="status-badge status-badge-live">
+-              <span class="status-badge-dot"></span>
+-              Live
+-            </span>
+-            <span class="status-badge status-badge-offline">
+-              <span class="status-badge-dot"></span>
+-              Offline
+-            </span>
+-          </div>
+         </div>
+       </header>
+ 
+diff --git a/elixir/priv/static/dashboard.css b/elixir/priv/static/dashboard.css
+index d5b453d..0cc2add 100644
+--- a/elixir/priv/static/dashboard.css
++++ b/elixir/priv/static/dashboard.css
+@@ -155,10 +155,15 @@ pre,
+ }
+ 
+ .hero-grid {
+-  display: grid;
+-  grid-template-columns: minmax(0, 1fr) auto;
+-  gap: 1.25rem;
+-  align-items: start;
++  display: block;
++}
++
++.hero-heading-row {
++  display: flex;
++  align-items: center;
++  flex-wrap: wrap;
++  gap: 0.9rem;
++  margin-top: 0.35rem;
+ }
+ 
+ .eyebrow {
+@@ -171,7 +176,7 @@ pre,
+ }
+ 
+ .hero-title {
+-  margin: 0.35rem 0 0;
++  margin: 0;
+   font-size: clamp(2rem, 4vw, 3.3rem);
+   line-height: 0.98;
+   letter-spacing: -0.04em;
+@@ -187,8 +192,9 @@ pre,
+ .status-stack {
+   display: grid;
+   justify-items: end;
+-  align-content: start;
+-  min-width: min(100%, 9rem);
++  align-content: center;
++  min-width: 0;
++  flex: 0 0 auto;
+ }
+ 
+ .status-badge {
+diff --git a/elixir/test/symphony_elixir/extensions_test.exs b/elixir/test/symphony_elixir/extensions_test.exs
+index c83fbf1..dd852c7 100644
+--- a/elixir/test/symphony_elixir/extensions_test.exs
++++ b/elixir/test/symphony_elixir/extensions_test.exs
+@@ -540,6 +540,7 @@ defmodule SymphonyElixir.ExtensionsTest do
+     dashboard_css = response(get(build_conn(), "/dashboard.css"), 200)
+     assert dashboard_css =~ ":root {"
+     assert dashboard_css =~ ".status-badge-live"
++    assert dashboard_css =~ ".hero-heading-row"
+     assert dashboard_css =~ "[data-phx-main].phx-connected .status-badge-live"
+     assert dashboard_css =~ "[data-phx-main].phx-connected .status-badge-offline"
+     assert dashboard_css =~ "text-decoration-thickness: 1px"
+@@ -599,6 +600,7 @@ defmodule SymphonyElixir.ExtensionsTest do
+     refute html =~ "Refresh now"
+     refute html =~ "Transport"
+     assert html =~ "status-badge-live"
++    assert html =~ "hero-heading-row"
+     assert html =~ "status-badge-offline"
+ 
+     updated_snapshot =

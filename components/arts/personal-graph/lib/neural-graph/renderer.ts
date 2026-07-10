@@ -9,6 +9,7 @@ import { getClosestPointOnOrganicRay, getNodeViewportRadius, getOrganicRayCurve,
 import type { NeuralGraphLayout, NeuralLayoutEdge, NeuralLayoutNode, NeuralLayoutTreeBranch } from "./layout";
 import { getPersonalGraphNodeTypeAccentToken } from "./node-type-colors";
 import type { NeuralGraphParams } from "./params";
+import { getAutomationWorkflowNodeType, getRadialLeafNodeIds, shouldLabelWorkflowTreeNode } from "./workflow-label-strategy";
 
 const KIND_COLOR_PARAM_KEY: Record<VaultNodeKind, keyof NeuralGraphParams> = {
 	concept: "colorConcept",
@@ -20,6 +21,7 @@ const KIND_COLOR_PARAM_KEY: Record<VaultNodeKind, keyof NeuralGraphParams> = {
 
 export type NeuralGraphThemeMode = "light" | "dark";
 export type NeuralGraphBackgroundMode = "default" | "transparent";
+export type NeuralGraphLabelStrategy = "default" | "workflowTree";
 
 export interface NeuralRayElasticState {
 	distance?: number;
@@ -38,6 +40,7 @@ export interface NeuralGraphRenderOptions {
 	focusProgress: number;
 	hoveredNodeId: string | null;
 	interaction?: NeuralGraphInteractionState | null;
+	labelStrategy?: NeuralGraphLabelStrategy;
 	labelNodeId?: string | null;
 	labelRevealProgress?: number;
 	params: NeuralGraphParams;
@@ -154,10 +157,12 @@ function getLabelNodeId(options: NeuralGraphRenderOptions) {
 }
 
 function getLabelRevealProgress(options: NeuralGraphRenderOptions) {
+	if (options.labelStrategy === "workflowTree") return 1;
 	return clampAlpha(options.labelRevealProgress ?? (options.hoveredNodeId ? 1 : 0));
 }
 
 function shouldRevealLabels(options: NeuralGraphRenderOptions) {
+	if (options.labelStrategy === "workflowTree") return true;
 	return getLabelRevealProgress(options) > 0.001 && getLabelNodeId(options) !== null;
 }
 
@@ -165,7 +170,7 @@ function getNodeColor(
 	node: NeuralLayoutNode,
 	options: NeuralGraphRenderOptions,
 ) {
-	if (shouldRevealNodeTypeColors(options)) return getNodeTypeColor(node, options);
+	if (options.labelStrategy === "workflowTree" || shouldRevealNodeTypeColors(options)) return getNodeTypeColor(node, options);
 	return getResolvedColor(options.params.nodeColor, options);
 }
 
@@ -373,6 +378,41 @@ function getShortestAngleDelta(startAngle: number, endAngle: number) {
 	return delta;
 }
 
+function getRadialBranchStrokeColor(
+	branch: NeuralLayoutTreeBranch,
+	options: NeuralGraphFrameRenderOptions,
+	fallbackColor: string,
+) {
+	if (options.labelStrategy !== "workflowTree") return fallbackColor;
+	const nodeType = getAutomationWorkflowNodeType(branch.target);
+	if (nodeType === "AutomationWorkflowRoot" || nodeType === "AutomationWorkflowCandidate") {
+		return getResolvedColor(options.params.colorSynthesis, options);
+	}
+	if (nodeType === "AutomationDraftAction") {
+		return getResolvedColor(options.params.colorConcept, options);
+	}
+	if (nodeType === "AutomationWorkflowEvidence") {
+		return getResolvedColor(options.params.colorSource, options);
+	}
+	return fallbackColor;
+}
+
+function getRadialBranchLineWidth(branch: NeuralLayoutTreeBranch, options: NeuralGraphFrameRenderOptions) {
+	const baseWidth = Math.max(options.params.rayWidth * 0.9, options.params.edgeWidth * 0.62);
+	if (options.labelStrategy !== "workflowTree") return baseWidth;
+	const nodeType = getAutomationWorkflowNodeType(branch.target);
+	if (nodeType === "AutomationWorkflowCandidate") {
+		return Math.max(baseWidth, options.params.edgeWidth * 1.12);
+	}
+	if (nodeType === "AutomationDraftAction") {
+		return Math.max(baseWidth * 0.92, options.params.edgeWidth * 0.82);
+	}
+	if (nodeType === "AutomationWorkflowEvidence") {
+		return Math.max(baseWidth * 0.82, options.params.edgeWidth * 0.72);
+	}
+	return baseWidth;
+}
+
 function drawRadialBranchPath(
 	ctx: CanvasRenderingContext2D,
 	origin: NeuralPoint,
@@ -405,7 +445,9 @@ function drawRadialBranches(
 	const origin = worldToViewport(layout.origin, options.camera, options.viewport, options.params);
 	const focusProgress = getFocusProgress(options);
 	const activeNodeId = options.selectedNodeId ?? options.hoveredNodeId;
-	const baseAlpha = Math.max(0.24, options.params.rayOpacity * 6, options.params.edgeOpacity * 1.25);
+	const baseAlpha = options.labelStrategy === "workflowTree"
+		? Math.max(0.68, options.params.rayOpacity * 6, options.params.edgeOpacity * 1.18)
+		: Math.max(0.24, options.params.rayOpacity * 6, options.params.edgeOpacity * 1.25);
 	const activeAlpha = Math.max(baseAlpha, options.params.edgeOpacityActive);
 	const rayColor = getResolvedColor(options.params.rayColor, options);
 	const selectedColor = getResolvedColor(options.params.edgeSelectedColor, options);
@@ -413,11 +455,11 @@ function drawRadialBranches(
 
 	ctx.save();
 	ctx.lineCap = "round";
-	ctx.lineWidth = Math.max(options.params.rayWidth * 0.9, options.params.edgeWidth * 0.62);
 
 	for (const branch of branches) {
 		const target = worldToViewport(branch.target, options.camera, options.viewport, options.params);
 		const source = getRadialBranchSource(branch, origin, options);
+		const branchColor = getRadialBranchStrokeColor(branch, options, rayColor);
 		const isRelated = selectedRelationships.nodeIds.has(branch.targetId)
 			|| Boolean(branch.sourceId && selectedRelationships.nodeIds.has(branch.sourceId));
 		const isSelectedEdge = Boolean(branch.edge && selectedRelationships.edgeIds.has(branch.edge.id));
@@ -429,7 +471,8 @@ function drawRadialBranches(
 			: 1;
 
 		ctx.globalAlpha = clampAlpha((isActive ? activeAlpha : baseAlpha) * focusAlpha);
-		ctx.strokeStyle = isSelectedEdge ? selectedColor : isActive ? hoverColor : rayColor;
+		ctx.lineWidth = getRadialBranchLineWidth(branch, options);
+		ctx.strokeStyle = isSelectedEdge ? selectedColor : isActive ? hoverColor : branchColor;
 		drawRadialBranchPath(ctx, origin, source, target);
 		ctx.stroke();
 	}
@@ -478,12 +521,14 @@ function drawRays(
 	options: NeuralGraphRenderOptions,
 	selectedRelationships: SelectedRelationshipIds,
 ) {
-	if (!options.params.showRays) return;
 	if (isRadialClusterLayout(layout)) {
-		drawRadialRayTails(ctx, layout, options, selectedRelationships);
+		if (options.params.showRays) {
+			drawRadialRayTails(ctx, layout, options, selectedRelationships);
+		}
 		drawRadialBranches(ctx, layout, options, selectedRelationships);
 		return;
 	}
+	if (!options.params.showRays) return;
 	const origin = getRayOrigin(options.viewport, options.params, options.rayOriginY);
 	const focusProgress = getFocusProgress(options);
 	const interactionIntensity = getInteractionIntensity(options);
@@ -823,18 +868,42 @@ function drawLabels(
 }
 
 const RADIAL_LABEL_ALL_NODES_MIN_WIDTH = 700;
+const RADIAL_WORKFLOW_LABEL_ALL_NODES_MIN_WIDTH = 1600;
 const RADIAL_LABEL_OFFSET = 11;
 
-function getRadialLeafNodeIds(layout: NeuralGraphLayout) {
-	const branchSourceIds = new Set<string>();
-	for (const branch of layout.treeBranches ?? []) {
-		if (branch.sourceId) branchSourceIds.add(branch.sourceId);
+export function getRadialLabelNodes(
+	layout: NeuralGraphLayout,
+	{
+		activeNodeId,
+		labelStrategy = "default",
+		shouldDrawAllLabels,
+	}: {
+		activeNodeId?: string | null;
+		labelStrategy?: NeuralGraphLabelStrategy;
+		shouldDrawAllLabels: boolean;
+	},
+) {
+	const leafNodeIds = getRadialLeafNodeIds(layout);
+	if (labelStrategy !== "workflowTree") {
+		return shouldDrawAllLabels
+			? layout.nodes.filter((node) => leafNodeIds.has(node.id))
+			: activeNodeId
+				? layout.nodes.filter((node) => node.id === activeNodeId)
+				: [];
 	}
-	return new Set(
-		layout.nodes
-			.filter((node) => !branchSourceIds.has(node.id))
-			.map((node) => node.id),
-	);
+
+	const nodesById = new Map<string, NeuralLayoutNode>();
+	for (const node of layout.nodes) {
+		const nodeType = getAutomationWorkflowNodeType(node);
+		if (
+			shouldLabelWorkflowTreeNode(node) ||
+			(shouldDrawAllLabels && nodeType === "AutomationWorkflowEvidence" && leafNodeIds.has(node.id)) ||
+			node.id === activeNodeId
+		) {
+			nodesById.set(node.id, node);
+		}
+	}
+	return layout.nodes.filter((node) => nodesById.has(node.id));
 }
 
 function drawRadialLabels(
@@ -845,13 +914,15 @@ function drawRadialLabels(
 ) {
 	const palette = PALETTES[options.theme];
 	const activeNodeId = getLabelNodeId(options);
-	const shouldDrawAllLabels = options.viewport.width >= RADIAL_LABEL_ALL_NODES_MIN_WIDTH;
-	const leafNodeIds = getRadialLeafNodeIds(layout);
-	const nodes = shouldDrawAllLabels
-		? layout.nodes.filter((node) => leafNodeIds.has(node.id))
-		: activeNodeId
-			? layout.nodes.filter((node) => node.id === activeNodeId)
-			: [];
+	const labelAllNodesMinWidth = options.labelStrategy === "workflowTree"
+		? RADIAL_WORKFLOW_LABEL_ALL_NODES_MIN_WIDTH
+		: RADIAL_LABEL_ALL_NODES_MIN_WIDTH;
+	const shouldDrawAllLabels = options.viewport.width >= labelAllNodesMinWidth;
+	const nodes = getRadialLabelNodes(layout, {
+		activeNodeId,
+		labelStrategy: options.labelStrategy,
+		shouldDrawAllLabels,
+	});
 	if (nodes.length === 0) return;
 
 	const origin = getNeuralOrigin(options.viewport, options.params);

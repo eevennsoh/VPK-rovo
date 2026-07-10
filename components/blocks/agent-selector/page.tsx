@@ -16,10 +16,17 @@ import { Icon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
 
 interface AgentSelectorPageProps {
+	presentation?: "dropdown" | "standalone";
 	variant?: "default" | "selected-agent-actions";
 }
 
-export default function AgentSelectorPage({ variant = "default" }: Readonly<AgentSelectorPageProps> = {}): ReactElement {
+const AGENT_SELECTOR_STANDALONE_SURFACE_CLASS =
+	"w-[360px] overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl";
+
+export default function AgentSelectorPage({
+	presentation = "dropdown",
+	variant = "default",
+}: Readonly<AgentSelectorPageProps> = {}): ReactElement {
 	const [open, setOpen] = useState(true);
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>(
 		variant === "selected-agent-actions" ? ["ai-insights-agent"] : ["github-copilot"]
@@ -46,6 +53,27 @@ export default function AgentSelectorPage({ variant = "default" }: Readonly<Agen
 		setSelectedAgentIds([agentId]);
 	}
 
+	const selector = (
+		<AgentSelector
+			agents={agents}
+			heading={variant === "selected-agent-actions" ? "Switch to another agent" : undefined}
+			onAgentToggle={selectAgent}
+			onBrowseAgents={() => undefined}
+			onCreateAgent={() => undefined}
+			selectionMode="single"
+			selectedAgentActions={selectedAgentActions}
+			selectedAgentIds={selectedAgentIds}
+		/>
+	);
+
+	if (presentation === "standalone") {
+		return (
+			<div className={AGENT_SELECTOR_STANDALONE_SURFACE_CLASS} data-agent-selector-demo="standalone">
+				{selector}
+			</div>
+		);
+	}
+
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger
@@ -57,16 +85,7 @@ export default function AgentSelectorPage({ variant = "default" }: Readonly<Agen
 				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="max-h-none w-[360px] overflow-hidden p-0" portalled={false} sideOffset={8}>
-				<AgentSelector
-					agents={agents}
-					heading={variant === "selected-agent-actions" ? "Switch to another agent" : undefined}
-					onAgentToggle={selectAgent}
-					onBrowseAgents={() => undefined}
-					onCreateAgent={() => undefined}
-					selectionMode="single"
-					selectedAgentActions={selectedAgentActions}
-					selectedAgentIds={selectedAgentIds}
-				/>
+				{selector}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

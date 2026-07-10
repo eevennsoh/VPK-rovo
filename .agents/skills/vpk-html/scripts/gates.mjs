@@ -12,6 +12,9 @@
  *   resume-balance content spilling slightly onto a near-empty extra page
  *   rhythm         >=N consecutive slides with an identical layout fingerprint
  *   orphans        widowed last lines (a single short word ending a paragraph)
+ *   focal          ordinary SVG diagrams with too many darkest-ink focal elements
+ *   motion-budget  long authored CSS durations that make artifacts feel slow
+ *   caption-echo   figure captions that restate the nearby title
  *
  * Thresholds: references/checks-thresholds.json
  * Semantics:  references/quality-gates.md
@@ -21,6 +24,9 @@
  *   node scripts/build.mjs --check-resume-balance <file> [--strict]
  *   node scripts/build.mjs --check-rhythm <file> [--strict]
  *   node scripts/build.mjs --check-orphans <file> [--strict]
+ *   node scripts/build.mjs --check-focal <file> [--strict]
+ *   node scripts/build.mjs --check-motion-budget <file> [--strict]
+ *   node scripts/build.mjs --check-caption-echo <file> [--strict]
  */
 
 import fs from "node:fs";
@@ -113,13 +119,128 @@ function measureOrphans(t) {
 	return findings;
 }
 
+function measureFocal(t) {
+	const svgs = [...document.querySelectorAll("svg:not([data-vpk-illustration])")];
+	const findings = [];
+	for (const [index, svg] of svgs.entries()) {
+		const focalElements = [...svg.querySelectorAll("*")].filter(el => {
+			const value = [
+				el.getAttribute("fill"),
+				el.getAttribute("stroke"),
+				el.getAttribute("style"),
+			].filter(Boolean).join(" ");
+			return /var\(--focal\)/.test(value);
+		});
+		if (focalElements.length > t.maxFocalElements) {
+			const label = svg.getAttribute("aria-label") || svg.getAttribute("aria-labelledby") || `svg #${index + 1}`;
+			findings.push(`${label}: ${focalElements.length} focal elements (ordinary diagrams should keep one darkest-ink focal element)`);
+		}
+	}
+	return findings;
+}
+
+function measureMotionBudget(t) {
+	const findings = [];
+	const durationPattern = /\b(?:animation|transition)(?:-duration)?\s*:\s*([^;}]*)/gi;
+	const tokenPattern = /var\((--[^),\s]+)/g;
+	const numericPattern = /(\d*\.?\d+)\s*(ms|s)\b/gi;
+	const toMs = (value, unit) => unit.toLowerCase() === "s" ? Number(value) * 1000 : Number(value);
+	const customProperties = getComputedStyle(document.documentElement);
+	const seen = new Set();
+	const scan = (css, label) => {
+		durationPattern.lastIndex = 0;
+		let match;
+		while ((match = durationPattern.exec(css)) !== null) {
+			const propertyValue = match[1];
+			const durations = [];
+			numericPattern.lastIndex = 0;
+			let numeric;
+			while ((numeric = numericPattern.exec(propertyValue)) !== null) {
+				durations.push(toMs(numeric[1], numeric[2]));
+			}
+			tokenPattern.lastIndex = 0;
+			let token;
+			while ((token = tokenPattern.exec(propertyValue)) !== null) {
+				const resolved = customProperties.getPropertyValue(token[1]);
+				numericPattern.lastIndex = 0;
+				while ((numeric = numericPattern.exec(resolved)) !== null) {
+					durations.push(toMs(numeric[1], numeric[2]));
+				}
+			}
+			for (const duration of durations) {
+				if (duration <= t.maxDurationMs) continue;
+				const key = `${label}:${match[0]}:${duration}`;
+				if (seen.has(key)) continue;
+				seen.add(key);
+				findings.push(`${label}: ${Math.round(duration)}ms exceeds ${t.maxDurationMs}ms motion budget`);
+				if (findings.length >= t.maxFindings) return;
+			}
+		}
+	};
+	document.querySelectorAll("style").forEach((style, index) => scan(style.textContent || "", `style block #${index + 1}`));
+	document.querySelectorAll("[style]").forEach((el, index) => scan(el.getAttribute("style") || "", `inline style #${index + 1}`));
+	return findings;
+}
+
+function measureCaptionEcho(t) {
+	const normalize = (value) => (value || "")
+		.toLowerCase()
+		.replace(/\b(?:fig(?:ure)?|diagram|chart|table|illustration|of|the|a|an|this|that|shows?|showing|illustrates?|illustrating)\b/g, " ")
+		.replace(/[^a-z0-9]+/g, " ")
+		.trim();
+	const words = (value) => normalize(value).split(/\s+/).filter(Boolean);
+	const findHeading = (figure) => {
+		const scope = figure.closest("section, article, main") || document.body;
+		const headings = [...scope.querySelectorAll("h1,h2,h3,h4,h5,h6")].filter(heading => {
+			const order = heading.compareDocumentPosition(figure);
+			return order & Node.DOCUMENT_POSITION_FOLLOWING;
+		});
+		return headings.at(-1);
+	};
+	const findings = [];
+	for (const figure of document.querySelectorAll("figure")) {
+		const caption = figure.querySelector("figcaption");
+		if (!caption) continue;
+		const captionText = caption.textContent.trim();
+		if (captionText.length < t.minCaptionChars) continue;
+		const references = [
+			findHeading(figure)?.textContent || "",
+			figure.querySelector("svg title")?.textContent || "",
+			figure.querySelector("svg")?.getAttribute("aria-label") || "",
+		].filter(Boolean);
+		for (const reference of references) {
+			const captionWords = new Set(words(captionText));
+			const referenceWords = words(reference);
+			if (referenceWords.length < t.minSharedWords) continue;
+			const shared = referenceWords.filter(word => captionWords.has(word));
+			if (shared.length >= Math.min(t.minSharedWords, referenceWords.length)) {
+				findings.push(`caption echoes "${reference.trim().slice(0, 60)}": "${captionText.slice(0, 72)}${captionText.length > 72 ? "..." : ""}"`);
+				break;
+			}
+		}
+		if (findings.length >= t.maxFindings) break;
+	}
+	return findings;
+}
+
 const GATES = {
 	density: { label: "density", key: "density" },
 	"resume-balance": { label: "resume-balance", key: "resumeBalance" },
 	rhythm: { label: "rhythm", key: "rhythm" },
 	orphans: { label: "orphans", key: "orphans" },
+	focal: { label: "focal", key: "focal" },
+	"motion-budget": { label: "motion-budget", key: "motionBudget" },
+	"caption-echo": { label: "caption-echo", key: "captionEcho" },
 };
-const MEASURERS = { density: measureDensity, "resume-balance": measureResumeBalance, rhythm: measureRhythm, orphans: measureOrphans };
+const MEASURERS = {
+	density: measureDensity,
+	"resume-balance": measureResumeBalance,
+	rhythm: measureRhythm,
+	orphans: measureOrphans,
+	focal: measureFocal,
+	"motion-budget": measureMotionBudget,
+	"caption-echo": measureCaptionEcho,
+};
 
 /**
  * Run one or more gates against a single HTML file.
@@ -166,7 +287,7 @@ async function main() {
 	const flagGates = argv.filter(a => a.startsWith("--check-")).map(a => a.replace("--check-", ""));
 	const file = positional[0];
 	if (!file) {
-		console.error("Usage: gates.mjs <file.html> [--check-density|--check-resume-balance|--check-rhythm|--check-orphans] [--strict]");
+		console.error("Usage: gates.mjs <file.html> [--check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo] [--strict]");
 		process.exitCode = 1;
 		return;
 	}
