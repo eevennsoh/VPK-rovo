@@ -14,6 +14,7 @@
  *   node scripts/build.mjs --pdf <file> [--out <f.pdf>]  # optional derived PDF export
  *   node scripts/build.mjs --github <file> [--repo owner/name] [--private]  # publish to GitHub Pages
  *   node scripts/build.mjs --write-styles          # regenerate styles.css from tokens.json
+ *   node scripts/build.mjs --inject-runtime <file...>  # refresh theme + presentation/docnav runtime
  */
 
 import fs from "node:fs";
@@ -21,7 +22,9 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { collectColorTokenIssues, collectPresentationIssues, collectSelfReferentialCustomPropertyIssues, collectSmilMotionIssues, collectSvgGrammarIssues, validateHtmlFile } from "./check-html.mjs";
+import { isDeck, retrofitDeck, retrofitDocumentNav } from "./presentation.mjs";
 import { checkStyleConsumers, checkStyleSource, collectFaviconIssues, writeStylesCssFromTokens } from "./shared.mjs";
+import { retrofitThemeRuntime } from "./theme.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,7 +56,7 @@ const FORBIDDEN_KAMI_LEAKAGE = [
 ];
 
 function parseArgs(argv) {
-	const args = { mode: "default", file: null, out: null, gate: null, strict: false, origin: null, repo: null, visibility: "public" };
+	const args = { mode: "default", file: null, files: [], out: null, gate: null, strict: false, origin: null, repo: null, visibility: "public" };
 	const GATE_FLAGS = {
 		"--check-density": "density",
 		"--check-resume-balance": "resume-balance",
@@ -73,6 +76,7 @@ function parseArgs(argv) {
 		else if (arg === "--pdf") { args.mode = "pdf"; args.file = argv[++i]; }
 		else if (arg === "--landing") { args.mode = "landing"; args.file = argv[++i]; }
 		else if (arg === "--github") { args.mode = "github"; args.file = argv[++i]; }
+		else if (arg === "--inject-runtime") { args.mode = "inject-runtime"; args.files = argv.slice(i + 1); break; }
 		else if (arg in GATE_FLAGS) { args.mode = "gate"; args.gate = GATE_FLAGS[arg]; args.file = argv[++i]; }
 		else if (arg === "--out") { args.out = argv[++i]; }
 		else if (arg === "--origin") { args.origin = argv[++i]; }
@@ -118,6 +122,34 @@ function checkPlaceholders(filePath) {
 		console.log(`  …and ${matches.length - samples.length} more`);
 	}
 	return { ok: false, count: matches.length };
+}
+
+/* ============ --inject-runtime ============ */
+
+function injectRuntime(filePaths) {
+	if (!filePaths || filePaths.length === 0) throw new Error("--inject-runtime requires at least one file path");
+
+	let changed = 0;
+	let unchanged = 0;
+	for (const filePath of filePaths) {
+		const abs = path.resolve(filePath);
+		if (!fs.existsSync(abs)) throw new Error(`File not found: ${abs}`);
+
+		const before = fs.readFileSync(abs, "utf8");
+		let after = retrofitThemeRuntime(before);
+		after = isDeck(after) ? retrofitDeck(after) : retrofitDocumentNav(after);
+
+		if (after === before) {
+			unchanged += 1;
+			continue;
+		}
+
+		fs.writeFileSync(abs, after, "utf8");
+		changed += 1;
+	}
+
+	console.log(`✓ injected runtime into ${changed} changed, ${unchanged} unchanged file${filePaths.length === 1 ? "" : "s"}`);
+	return { ok: true, changed, unchanged };
 }
 
 /* ============ --check-templates ============ */
@@ -286,6 +318,7 @@ Usage:
   node scripts/build.mjs --pdf <file> [--out <file.pdf>]   # optional derived PDF export
   node scripts/build.mjs --landing <file> [--out <dir>] [--origin <url>]   # emit companions + responsive verify
   node scripts/build.mjs --github <file> [--repo owner/name] [--public|--private]   # publish index.html to GitHub Pages
+  node scripts/build.mjs --inject-runtime <file...>   # refresh theme + presentation/docnav runtime in artifacts
   node scripts/build.mjs --check-density|--check-resume-balance|--check-rhythm|--check-orphans|--check-focal|--check-motion-budget|--check-caption-echo <file> [--strict]
   node scripts/build.mjs --write-styles
   node scripts/build.mjs --help`);
@@ -300,6 +333,10 @@ async function main() {
 	if (args.mode === "placeholders") {
 		const result = checkPlaceholders(args.file);
 		if (!result.ok) process.exitCode = 1;
+		return;
+	}
+	if (args.mode === "inject-runtime") {
+		injectRuntime(args.files);
 		return;
 	}
 	if (args.mode === "sync") {

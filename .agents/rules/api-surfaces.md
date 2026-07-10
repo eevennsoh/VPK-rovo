@@ -173,8 +173,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 158; runtim
 | `GET` | `/api/status/rovo` | no | `backend/routes/status.js:64` |
 | `POST` | `/api/studio/agent-data-flow` | no | `backend/routes/ai-utilities.js:144` |
 | `POST` | `/api/ticket-classify` | no | `backend/routes/demos.js:79` |
-| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:90` |
-| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:91` |
+| `GET` | `/api/vpk-html` | no | `backend/routes/vpk-html.js:101` |
+| `GET` | `/api/vpk-html/*assetPath` | no | `backend/routes/vpk-html.js:102` |
 | `POST` | `/api/wiki/captures` | yes | `backend/routes/wiki.js:20` |
 | `GET` | `/api/wiki/memories` | no | `backend/routes/wiki.js:23` |
 | `DELETE` | `/api/wiki/memories/:scope/blocks/:blockId` | yes | `backend/routes/wiki.js:28` |

@@ -1,0 +1,47 @@
+{
+  "tts_provider": "kokoro",
+  "voice_id": "am_michael",
+  "bgm": null,
+  "bgm_pending": false,
+  "bgm_provider": null,
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": null,
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [
+    {
+      "id": "s1",
+      "path": "assets/voice/s1.wav",
+      "duration_s": 18.283,
+      "words": []
+    },
+    {
+      "id": "s2",
+      "path": "assets/voice/s2.wav",
+      "duration_s": 14.08,
+      "words": []
+    },
+    {
+      "id": "s3",
+      "path": "assets/voice/s3.wav",
+      "duration_s": 19.371,
+      "words": []
+    },
+    {
+      "id": "s4",
+      "path": "assets/voice/s4.wav",
+      "duration_s": 10.667,
+      "words": []
+    },
+    {
+      "id": "s5",
+      "path": "assets/voice/s5.wav",
+      "duration_s": 9.493,
+      "words": []
+    }
+  ],
+  "sfx": [],
+  "total_duration_s": 71.894
+}

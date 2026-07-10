@@ -9,6 +9,35 @@
 <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2221%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2211%22%20r%3D%225%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: light)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22%23121212%22%2F%3E%3C%2Fsvg%3E">
 <link rel="icon" type="image/svg+xml" sizes="any" media="(prefers-color-scheme: dark)" href="data:image/svg+xml,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%229%22%20r%3D%225%22%20fill%3D%22white%22%20stroke%3D%22%23121212%22%20stroke-width%3D%221.25%22%2F%3E%3C%2Fsvg%3E">
+<!-- vpk-theme-init:start -->
+<script data-vpk-theme-init>
+(() => {
+	const key = "vpk-html-theme";
+	const valid = new Set(["light", "dark", "system"]);
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+	function systemPrefersDark() {
+		return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+	}
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+	}
+	apply(readChoice());
+})();
+</script>
+<!-- vpk-theme-init:end -->
 <style>
 @font-face {
 	font-family: "Geist";
@@ -84,27 +113,36 @@
 	--selected: #e9e3e2;
 	--accent-lime: #cfc4c2;
 	--accent-purple: #b9afad;
-	--accent-saffron: #ded5d4;
+	--accent-saffron: #d8c7b0;
 	--accent-orange: #cfc4c2;
 	--accent-navy: #312f2f;
-	--accent-green: #ded5d4;
+	--accent-green: #d4d8c0;
 	--accent-red: #8c3a32;
-	--collection-software: #ded5d4;
+	--collection-software: #d7cbc9;
 	--collection-product: #cfc4c2;
 	--collection-service: #b9afad;
 	--focus-ring: #312f2f;
 	--code-surface: #ece3e2;
 	--code-ink: #312f2f;
 	--code-inverse: #f4efee;
+	--syntax-keyword: #3f3634;
+	--syntax-identifier: #312f2f;
+	--syntax-string: #5f4b21;
+	--syntax-comment: #6a625f;
+	--syntax-literal: #6f4039;
 	--math-highlight: #e9e3e2;
-	--success: #6f6a68;
-	--success-tint: #e9e3e2;
-	--warning: #8a6d1a;
-	--warning-tint: rgba(138, 109, 26, 0.14);
+	--success: #4f5d2d;
+	--success-tint: rgba(79, 93, 45, 0.14);
+	--warning: #765c16;
+	--warning-tint: rgba(118, 92, 22, 0.14);
 	--danger: #8c3a32;
 	--danger-tint: rgba(140, 58, 50, 0.12);
-	--info: #706e6e;
-	--info-tint: #e9e3e2;
+	--info: #5f5a58;
+	--info-tint: rgba(95, 90, 88, 0.12);
+	--diff-add-text: #3f4a27;
+	--diff-del-text: #71322c;
+	--diff-add-tint: rgba(79, 93, 45, 0.12);
+	--diff-del-tint: rgba(140, 58, 50, 0.10);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -127,6 +165,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -180,27 +223,36 @@
 	--selected: #2a2625;
 	--accent-lime: #413a38;
 	--accent-purple: #69605d;
-	--accent-saffron: #504846;
+	--accent-saffron: #5a4e45;
 	--accent-orange: #413a38;
 	--accent-navy: #d8d1cf;
-	--accent-green: #504846;
+	--accent-green: #4e5545;
 	--accent-red: #c98278;
-	--collection-software: #504846;
+	--collection-software: #584b50;
 	--collection-product: #413a38;
 	--collection-service: #69605d;
 	--focus-ring: #e9e3e2;
 	--code-surface: #2a2221;
 	--code-ink: #e9e3e2;
 	--code-inverse: #1a1817;
+	--syntax-keyword: #e9e3e2;
+	--syntax-identifier: #d8d1cf;
+	--syntax-string: #d0b967;
+	--syntax-comment: #aaa19e;
+	--syntax-literal: #d4938a;
 	--math-highlight: #2a2625;
-	--success: #bdb5b3;
-	--success-tint: #302b2a;
+	--success: #b8c17b;
+	--success-tint: rgba(184, 193, 123, 0.18);
 	--warning: #b89a3c;
 	--warning-tint: rgba(184, 154, 60, 0.18);
 	--danger: #c98278;
 	--danger-tint: rgba(201, 130, 120, 0.16);
-	--info: #bdb5b3;
-	--info-tint: #302b2a;
+	--info: #b8afac;
+	--info-tint: rgba(184, 175, 172, 0.16);
+	--diff-add-text: #c7d08a;
+	--diff-del-text: #d4938a;
+	--diff-add-tint: rgba(184, 193, 123, 0.16);
+	--diff-del-tint: rgba(201, 130, 120, 0.14);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -223,6 +275,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -503,8 +560,10 @@ button:active,
 }
 
 /* algebrica component vocabulary */
+/* Prose rhythm scale: base 8px. Eyebrow gap 40, heading after content 48/40/32,
+   heading bottom 32/24/16, paragraph gap 24, section gap 56. */
 .post-header {
-	margin-bottom: 50px;
+	margin-bottom: 56px;
 }
 
 .post-header-breadcrumb,
@@ -518,7 +577,7 @@ button:active,
 	font-weight: 600;
 	letter-spacing: 2px;
 	line-height: 1.4;
-	margin-bottom: 60px;
+	margin-bottom: 40px;
 	text-transform: uppercase;
 }
 
@@ -528,7 +587,7 @@ button:active,
 	font-size: 36px;
 	font-weight: 500;
 	line-height: 1.4;
-	margin: 0 0 20px;
+	margin: 0 0 28px;
 }
 
 .post-header-meta {
@@ -552,28 +611,64 @@ button:active,
 	hyphens: auto;
 	line-height: 23px;
 	overflow-wrap: break-word;
-	padding-bottom: 60px;
+	padding-bottom: 56px;
 	text-align: justify;
 }
 
 .post-section:not(:last-child) {
 	border-bottom: 1px solid var(--rule-strong);
-	margin-bottom: 50px;
+	margin-bottom: 56px;
 }
 
 .post-section h2 {
 	color: var(--headline);
 	font-family: var(--font-display);
-	font-size: 24px;
+	font-size: 26px;
 	font-weight: 500;
 	line-height: 1.3;
-	margin: 0 0 20px;
+	margin: 0 0 32px;
 	text-align: left;
+}
+
+.post-section h3 {
+	color: var(--ink);
+	font-family: var(--font-display);
+	font-size: 19px;
+	font-weight: 500;
+	line-height: 1.35;
+	margin: 0 0 24px;
+	text-align: left;
+}
+
+.post-section h4,
+.post-section h5,
+.post-section h6 {
+	color: var(--ink);
+	font-family: var(--font-display);
+	font-size: 15px;
+	font-weight: 500;
+	line-height: 1.4;
+	margin: 0 0 16px;
+	text-align: left;
+}
+
+.post-section > * + h2 {
+	margin-top: 48px;
+}
+
+.post-section > * + h3 {
+	margin-top: 40px;
+}
+
+.post-section > * + h4,
+.post-section > * + h5,
+.post-section > * + h6 {
+	margin-top: 32px;
 }
 
 .post-section p:not(:last-child),
 .post-content p:not(:last-child) {
-	margin-bottom: 25px;
+	margin-bottom: 24px;
 }
 
 .post-paragraph {
@@ -979,7 +1074,9 @@ button {
 	height: 34px;
 	justify-content: center;
 	padding: 0 14px;
-	transition: background-color 180ms ease, opacity 180ms ease;
+	transition:
+		background-color var(--vpk-dur-fast) var(--ease-out),
+		opacity var(--vpk-dur-fast) var(--ease-out);
 }
 
 .support-button,
@@ -1072,7 +1169,7 @@ button {
 	.eyebrow,
 	.kicker,
 	.cover-eyebrow {
-		margin-bottom: 60px;
+		margin-bottom: 40px;
 	}
 
 	.post-paragraph-number {
@@ -1086,6 +1183,104 @@ button {
 	.in-review-item {
 		align-items: flex-start;
 		gap: 6px;
+	}
+}
+
+/* vpk compact page tier */
+@media screen and (max-width: 840px) {
+	html {
+		background: var(--paper-background);
+	}
+
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		overflow-x: hidden;
+		padding: var(--page-pad-y-compact) var(--page-pad-x-compact) !important;
+		width: 100% !important;
+	}
+
+	body[data-vpk-motion="deck"] {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	main,
+	.page,
+	.sheet,
+	.doc-page,
+	.document-page {
+		max-width: 100% !important;
+		min-width: 0 !important;
+	}
+
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .page,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .sheet,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .doc-page,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .document-page {
+		padding-left: var(--page-pad-x-compact) !important;
+		padding-right: var(--page-pad-x-compact) !important;
+	}
+
+	img,
+	svg,
+	canvas,
+	video,
+	pre,
+	table {
+		max-width: 100%;
+	}
+
+	pre,
+	code {
+		overflow-wrap: anywhere;
+	}
+
+	.post-section,
+	.post-paragraph-content {
+		text-align: left;
+	}
+}
+
+/* vpk theme toggle */
+.vpk-theme-toggle {
+	align-items: center;
+	backdrop-filter: blur(10px);
+	background: color-mix(in srgb, var(--paper) 88%, transparent);
+	border: 1px solid var(--rule);
+	border-radius: 999px;
+	bottom: 18px;
+	box-shadow: var(--shadow);
+	color: var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 500;
+	gap: 6px;
+	height: 34px;
+	left: 18px;
+	letter-spacing: 0;
+	line-height: 1;
+	padding: 0 10px;
+	position: fixed;
+	z-index: 60;
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+	border-color: var(--focus-ring);
+	color: var(--ink);
+}
+
+.vpk-theme-toggle__state {
+	color: var(--muted-text);
+	font-variant-numeric: tabular-nums;
+}
+
+@media print {
+	.vpk-theme-toggle {
+		display: none !important;
 	}
 }
 /* vpk-shared:end */
@@ -1159,20 +1354,6 @@ a:hover {
 	margin-bottom: 40px;
 }
 
-.sidebar__logo {
-	align-items: center;
-	background: var(--ink);
-	border-radius: 12px;
-	color: var(--inverse-text);
-	display: flex;
-	font-family: var(--font-mono);
-	font-size: 17px;
-	font-weight: 600;
-	height: 40px;
-	justify-content: center;
-	width: 40px;
-}
-
 .sidebar__title {
 	color: var(--ink);
 	font-size: 15px;
@@ -1185,49 +1366,6 @@ a:hover {
 	font-size: 13px;
 	line-height: 1.35;
 	margin: 0;
-}
-
-.sidebar__search {
-	margin-bottom: 30px;
-	position: relative;
-}
-
-.search-input {
-	background: transparent;
-	border: 1px solid var(--search-border);
-	border-radius: 24px;
-	color: var(--ink);
-	font: 14px var(--font-body);
-	height: 38px;
-	padding: 0 58px 2px 14px;
-	width: 100%;
-}
-
-.search-input::placeholder {
-	color: var(--subtlest-text);
-}
-
-.search-input:focus {
-	border-color: var(--search-focus);
-	box-shadow: 0 0 0 2px var(--accent-soft);
-	outline: 0;
-}
-
-.search__icon {
-	align-items: center;
-	background: transparent;
-	border: 0;
-	color: var(--muted-text);
-	display: flex;
-	font: 18px var(--font-mono);
-	height: 38px;
-	justify-content: center;
-	opacity: .8;
-	padding: 0;
-	position: absolute;
-	right: 14px;
-	top: 0;
-	width: 22px;
 }
 
 .sidebar__section {
@@ -1305,14 +1443,14 @@ main {
 }
 
 .module-index__title {
-	border-top: 1px solid var(--rule-strong);
+	border-top: 0;
 	color: var(--headline);
 	font-family: var(--font-display);
 	font-size: 36px;
 	font-weight: 500;
 	line-height: 1.2;
 	margin: 0 0 30px;
-	padding-top: 40px;
+	padding-top: 0;
 }
 
 .demo-category {
@@ -1380,10 +1518,6 @@ main {
 		padding: 24px;
 	}
 
-	.sidebar__search {
-		display: none;
-	}
-
 	.sidebar-list {
 		display: grid;
 		gap: 2px 18px;
@@ -1414,900 +1548,38 @@ main {
 		align-items: flex-start;
 	}
 }
-/* vpk-algebrica-v2:start */
-/* algebrica component vocabulary */
-.post-header {
-	margin-bottom: 50px;
-}
-
-.post-header-breadcrumb,
-.breadcrumb-eyebrow,
-.eyebrow,
-.kicker,
-.cover-eyebrow {
-	color: var(--muted-text);
-	font-family: var(--font-mono);
-	font-size: 12px;
-	font-weight: 600;
-	letter-spacing: 2px;
-	line-height: 1.4;
-	margin-bottom: 60px;
-	text-transform: uppercase;
-}
-
-.post-header-title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.4;
-	margin: 0 0 20px;
-}
-
-.post-header-meta {
-	color: var(--muted-text);
-	display: flex;
-	flex-wrap: wrap;
-	font-size: 13px;
-	gap: 20px;
-	line-height: 1.4;
-}
-
-.post-content {
-	color: var(--ink);
-	font-family: "Geist Mono Numeric", var(--font-body);
-}
-
-.post-section {
-	color: var(--ink);
-	font-family: "Geist Mono Numeric", var(--font-body);
-	font-size: 17px;
-	hyphens: auto;
-	line-height: 23px;
-	overflow-wrap: break-word;
-	padding-bottom: 60px;
-	text-align: justify;
-}
-
-.post-section:not(:last-child) {
-	border-bottom: 1px solid var(--rule-strong);
-	margin-bottom: 50px;
-}
-
-.post-section h2 {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 24px;
-	font-weight: 500;
-	line-height: 1.3;
-	margin: 0 0 20px;
-	text-align: left;
-}
-
-.post-section p:not(:last-child),
-.post-content p:not(:last-child) {
-	margin-bottom: 25px;
-}
-
-.post-paragraph {
-	position: relative;
-}
-
-.post-paragraph-content {
-	hyphens: auto;
-	overflow-wrap: break-word;
-	text-align: justify;
-}
-
-.post-paragraph-number {
-	color: var(--subtlest-text);
-	font-size: 17px;
-	left: -56px;
-	position: absolute;
-	text-align: right;
-	top: 0;
-	transform: translateY(1px);
-	width: 26px;
-}
-
-a,
-a:visited {
-	color: var(--link);
-	text-decoration-line: none;
-	text-decoration-color: transparent;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 4px;
-}
-
-a:hover {
-	color: var(--ink);
-}
-
-.post-content a,
-.post-section a,
-.prose a,
-article a,
-.toc a,
-.toc-item,
-.module-index-post__title a,
-.demo-row,
-.in-review-item__title {
-	color: var(--link);
-	text-decoration-line: underline;
-	text-decoration-color: transparent;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 4px;
-}
-
-.post-content a:hover,
-.post-section a:hover,
-.prose a:hover,
-article a:hover,
-.toc a:hover,
-.toc-item:hover,
-.module-index-post__title a:hover,
-.demo-row:hover,
-.in-review-item__title:hover {
-	color: var(--ink);
-	text-decoration-color: currentColor;
-}
-
-.post-content a:focus-visible,
-.post-section a:focus-visible,
-.prose a:focus-visible,
-article a:focus-visible,
-.toc a:focus-visible,
-.toc-item:focus-visible,
-.module-index-post__title a:focus-visible,
-.demo-row:focus-visible,
-.in-review-item__title:focus-visible {
-	text-decoration-color: currentColor;
-}
-
-.post-header-breadcrumb a,
-.breadcrumb-eyebrow a,
-.eyebrow a,
-.kicker a,
-.cover-eyebrow a,
-.post-header-meta a,
-.sidebar-list a,
-.sidebar__bottom-links a,
-.docnav-controls a,
-.docnav-controls button,
-footer a,
-.footer-list-vertical a,
-.header-users-btn,
-.pill-button,
-.button,
-.btn {
-	text-decoration-line: none;
-}
-
-.post-header-breadcrumb a:hover,
-.breadcrumb-eyebrow a:hover,
-.eyebrow a:hover,
-.kicker a:hover,
-.cover-eyebrow a:hover,
-.post-header-meta a:hover,
-.sidebar-list a:hover,
-.sidebar__bottom-links a:hover,
-.docnav-controls a:hover,
-.docnav-controls button:hover,
-footer a:hover,
-.footer-list-vertical a:hover {
-	color: var(--muted-text);
-}
-
-a:focus-visible,
-button:focus-visible,
-[role="button"]:focus-visible {
-	border-radius: 2px;
-	box-shadow: 0 0 0 2px var(--focus-ring);
-	outline: 0;
-}
-
-table,
-.kami-table {
-	border: 1px solid var(--rule);
-	border-collapse: collapse;
-	border-radius: 0;
-	box-shadow: none;
-	font-family: var(--font-body);
-	font-size: 12px;
-	margin: 0 auto 30px;
-	width: auto;
-}
-
-th,
-td,
-.kami-table th,
-.kami-table td {
-	border: 1px solid var(--rule);
-	padding: 8px 12px;
-	text-align: center;
-	vertical-align: middle;
-	white-space: nowrap;
-}
-
-th,
-.kami-table th {
-	background: var(--table-header);
-	font-weight: 500;
-}
-
-figure,
-.pb-svg {
-	display: flex;
-	justify-content: center;
-	margin: 0 0 30px;
-	text-align: center;
-}
-
-figure {
-	align-items: center;
-	flex-direction: column;
-}
-
-figure > svg,
-.pb-svg > svg {
-	display: block;
-	height: auto;
-	max-width: 100%;
-}
-
-figcaption {
-	color: var(--muted-text);
-	font-size: 13px;
-	line-height: 1.4;
-	margin-top: 12px;
-	max-width: 62ch;
-	text-align: center;
-}
-
-.MathJax {
-	font-size: 17px !important;
-}
-
-.post-section .MathJax {
-	margin: 0 !important;
-	text-align: center !important;
-}
-
-table .MathJax,
-blockquote .MathJax {
-	font-size: 13px !important;
-}
-
-.module-index__title {
-	border-top: 1px solid var(--rule-strong);
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.2;
-	margin-bottom: 30px;
-	padding-top: 40px;
-}
-
-.module-index-section {
-	margin-bottom: 50px;
-}
-
-.module-index-section:last-child {
-	margin-bottom: 0;
-}
-
-.module-index-section-header {
-	height: 32px;
-	line-height: 32px;
-}
-
-.module-index-heading {
-	align-items: baseline;
-	display: flex;
-	font-size: 15px;
-	font-weight: 600;
-	padding-bottom: 6px;
-}
-
-.module-index-number {
-	color: var(--muted-text);
-	flex: 0 0 52px;
-	font-variant-numeric: tabular-nums;
-	width: 52px;
-}
-
-.module-index-posts {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-}
-
-.module-index-post {
-	align-items: center;
-	display: flex;
-	font-size: 15px;
-	gap: 5px;
-	min-height: 32px;
-}
-
-.module-index-post__number {
-	font-size: 13px;
-}
-
-.module-index-post__title {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.in-review-item__count {
-	align-items: center;
-	color: var(--meta-text);
-	display: flex;
-	flex: 0 0 auto;
-	font-size: 13px;
-	gap: 20px;
-	line-height: 1.35;
-	white-space: nowrap;
-}
-
-.module-index-post__views {
-	color: var(--muted-text);
-	font-weight: 500;
-	min-width: 32px;
-	text-align: right;
-}
-
-.in-review {
-	border: 1px solid var(--rule);
-	border-radius: 12px;
-	margin-top: 40px;
-	overflow: hidden;
-}
-
-.in-review-item {
-	align-items: center;
-	border-top: 1px solid var(--rule);
-	display: flex;
-	font-size: 15px;
-	gap: 20px;
-	justify-content: space-between;
-	line-height: 1.35;
-	padding: 14px;
-}
-
-.in-review-item:first-child {
-	border-top: 0;
-}
-
-.in-review-item__title {
-	color: var(--ink);
-}
-
-.reviews-vote-count,
-.vote-chip {
-	border: 1px solid var(--chip-border);
-	border-radius: 4px;
-	color: var(--chip-text);
-	display: inline-block;
-	font-size: 13px;
-	font-weight: 700;
-	height: 22px;
-	line-height: 22px;
-	min-width: 22px;
-	overflow: hidden;
-	text-align: center;
-}
-
-.is-voted .reviews-vote-count,
-.vote-chip.is-active {
-	background: var(--chip-border);
-	color: var(--chip-selected);
-}
-
-.module-contributions {
-	border-top: 1px solid var(--rule-strong);
-	color: var(--ink);
-	font-size: 12px;
-	line-height: 1.2;
-	margin: 20px 0 30px;
-	padding: 40px 0 30px;
-}
-
-.module-contributions__title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 36px;
-	font-weight: 500;
-	line-height: 1.2;
-	margin-bottom: 30px;
-}
-
-.module-contributions__total {
-	color: var(--ink);
-	font-size: 14px;
-	font-weight: 500;
-	margin-bottom: 20px;
-	min-height: 18px;
-}
-
-.module-contributions table {
-	border: 0;
-	border-collapse: separate;
-	border-spacing: 4px;
-	margin-bottom: 0;
-	table-layout: fixed;
-}
-
-.module-contributions td {
-	border: 0;
-	height: 10px;
-	line-height: 10px;
-	padding: 0;
-}
-
-.heat-dot,
-.module-contributions__cell {
-	border-radius: 50%;
-	display: inline-block;
-	height: 10px;
-	margin: 0 auto;
-	width: 10px;
-}
-
-.heat-0 { background: var(--heat0); }
-.heat-1 { background: var(--heat1); }
-.heat-2 { background: var(--heat2); }
-.heat-3 { background: var(--heat3); }
-.heat-4 { background: var(--heat4); }
-
-.review-code,
-.code-card {
-	background: var(--code-surface);
-	border: 0;
-	border-radius: 8px;
-	color: var(--code-ink);
-	font-family: var(--font-mono);
-	font-size: 14px;
-	font-weight: 500;
-	margin: 0 auto;
-	max-width: 547px;
-	padding: 30px;
-}
-
-.header-users-btn,
-.pill-button,
-.button,
-.btn,
-button {
-	align-items: center;
-	background: transparent;
-	border: 2px solid var(--pill-border);
-	border-radius: 24px;
-	color: var(--muted-text);
-	display: inline-flex;
-	font-family: var(--font-body);
-	font-size: 13px;
-	font-weight: 500;
-	height: 34px;
-	justify-content: center;
-	padding: 0 14px;
-	transition: background-color 180ms ease, opacity 180ms ease;
-}
-
-.support-button,
-.pill-button.is-filled,
-.button.primary,
-.btn.primary {
-	background: var(--pill-fill);
-	border-color: var(--pill-fill);
-	color: var(--inverse-text);
-}
-
-.support-button:hover,
-.pill-button.is-filled:hover,
-.button.primary:hover,
-.btn.primary:hover {
-	background: var(--pill-fill-hover);
-	border-color: var(--pill-fill-hover);
-}
-
-.in-review-head,
-.centered-section-head {
-	margin: 0 auto 20px;
-	max-width: 500px;
-	text-align: center;
-}
-
-.in-review-head-title,
-.centered-section-title {
-	color: var(--headline);
-	font-family: var(--font-display);
-	font-size: 32px;
-	font-weight: 500;
-	line-height: 1.25;
-	margin-bottom: 20px;
-}
-
-.in-review-head-content,
-.centered-section-lede {
-	color: var(--meta-text);
-	font-size: 15px;
-	line-height: 1.5;
-}
-
-.pb-steps-community ul,
-.steps-list {
-	font-size: 14px;
-	list-style: none;
-	margin: 0 0 30px;
-	overflow: hidden;
-	padding-left: 30px;
-	position: relative;
-}
-
-.pb-steps-community ul::before,
-.steps-list::before {
-	border-left: 1px solid var(--rule-strong);
-	content: "";
-	height: 1000px;
-	left: 10px;
-	position: absolute;
-	top: 0;
-}
-
-.pb-steps-community li,
-.steps-list li {
-	position: relative;
-}
-
-.pb-steps-community li:not(:last-child),
-.steps-list li:not(:last-child) {
-	margin-bottom: 10px;
-}
-
-.pb-steps-community li::before,
-.steps-list li::before {
-	background: var(--subtlest-text);
-	border: 2px solid var(--paper-background);
-	border-radius: 50%;
-	content: "";
-	height: 8px;
-	left: -37px;
-	position: absolute;
-	top: 8px;
-	width: 8px;
-}
-
-@media (max-width: 1130px) {
-	.post-header-breadcrumb,
-	.breadcrumb-eyebrow,
-	.eyebrow,
-	.kicker,
-	.cover-eyebrow {
-		margin-bottom: 60px;
-	}
-
-	.post-paragraph-number {
-		display: none;
-	}
-
-	.in-review {
-		padding: 14px;
-	}
-
-	.in-review-item {
-		align-items: flex-start;
-		gap: 6px;
-	}
-}
-
-html,
-body {
-	background: var(--paper-background) !important;
-	color: var(--ink) !important;
-	font-family: "Geist Mono Numeric", var(--font-body) !important;
-	font-size: 17px !important;
-	line-height: 23px !important;
-	letter-spacing: 0 !important;
-}
-
-body {
-	min-height: 100vh;
-}
-
-p,
-li,
-dd,
-dt,
-blockquote {
-	font-family: "Geist Mono Numeric", var(--font-body) !important;
-	font-size: 17px !important;
-	hyphens: auto !important;
-	line-height: 23px !important;
-	overflow-wrap: break-word !important;
-}
-
-.post-content p,
-.post-section p,
-.prose p,
-article p {
-	text-align: justify !important;
-}
-
-h1,
-.cover-title,
-.doc-title,
-.resume-name,
-.deck-cover .title,
-.hero h1,
-.title-block h1,
-.letter-subject,
-.masthead-title {
-	color: var(--headline) !important;
-	font-family: var(--font-display) !important;
-	font-size: 36px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.4 !important;
-}
-
-h2,
-.section-title,
-.module-title,
-.panel-title {
-	color: var(--headline) !important;
-	font-family: var(--font-display) !important;
-	font-size: 24px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.3 !important;
-}
-
-h3,
-.card-title,
-.metric-title {
-	color: var(--ink) !important;
-	font-family: var(--font-display) !important;
-	font-size: 19px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.28 !important;
-}
-
-h4,
-h5,
-h6 {
-	color: var(--ink) !important;
-	font-family: var(--font-display) !important;
-	font-size: 15px !important;
-	font-weight: 500 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.35 !important;
-}
-
-.post-header-breadcrumb,
-.breadcrumb-eyebrow,
-.eyebrow,
-.kicker,
-.cover-eyebrow {
-	color: var(--muted-text) !important;
-	font-family: var(--font-mono) !important;
-	font-size: 12px !important;
-	font-weight: 600 !important;
-	letter-spacing: 2px !important;
-	line-height: 1.4 !important;
-	text-transform: uppercase !important;
-}
-
-.label,
-.meta,
-.meta-mono,
-.figure-tag,
-.fig-num,
-.gutter-tag,
-.margin-label,
-.section-kicker,
-.source-label,
-.caption,
-.tag,
-.badge,
-.pill,
-.chip,
-.stat-label,
-.vpk-presenter-kicker {
-	color: var(--muted-text) !important;
-	font-family: var(--font-body) !important;
-	font-size: 13px !important;
-	font-weight: 400 !important;
-	letter-spacing: 0 !important;
-	line-height: 1.4 !important;
-}
-
-code,
-kbd,
-samp,
-pre,
-.mono,
-.meta-mono,
-.fig-num,
-.gutter-tag,
-svg text {
-	font-family: var(--font-mono) !important;
-}
-
-a,
-a:visited {
-	color: var(--link) !important;
-	text-decoration-line: none !important;
-	text-decoration-color: transparent !important;
-	text-decoration-thickness: 1px !important;
-	text-underline-offset: 4px !important;
-}
-
-a:hover {
-	color: var(--ink) !important;
-}
-
-.post-content a,
-.post-section a,
-.prose a,
-article a,
-.toc a,
-.toc-item,
-.module-index-post__title a,
-.demo-row,
-.in-review-item__title {
-	text-decoration-line: underline !important;
-	text-decoration-color: transparent !important;
-}
-
-.post-content a:hover,
-.post-section a:hover,
-.prose a:hover,
-article a:hover,
-.toc a:hover,
-.toc-item:hover,
-.module-index-post__title a:hover,
-.demo-row:hover,
-.in-review-item__title:hover,
-.post-content a:focus-visible,
-.post-section a:focus-visible,
-.prose a:focus-visible,
-article a:focus-visible,
-.toc a:focus-visible,
-.toc-item:focus-visible,
-.module-index-post__title a:focus-visible,
-.demo-row:focus-visible,
-.in-review-item__title:focus-visible {
-	text-decoration-color: currentColor !important;
-}
-
-.post-header-breadcrumb a,
-.breadcrumb-eyebrow a,
-.eyebrow a,
-.kicker a,
-.cover-eyebrow a,
-.post-header-meta a,
-.sidebar-list a,
-.sidebar__bottom-links a,
-.docnav-controls a,
-.docnav-controls button,
-footer a,
-.footer-list-vertical a,
-.header-users-btn,
-.pill-button,
-.button,
-.btn {
-	text-decoration-line: none !important;
-}
-
-table,
-.kami-table {
-	border: 1px solid var(--rule) !important;
-	border-collapse: collapse !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
-	font-family: var(--font-body) !important;
-	font-size: 12px !important;
-	margin: 0 auto 30px !important;
-	width: auto !important;
-}
-
-th,
-td,
-.kami-table th,
-.kami-table td {
-	border: 1px solid var(--rule) !important;
-	padding: 8px 12px !important;
-	text-align: center !important;
-	vertical-align: middle !important;
-	white-space: nowrap !important;
-}
-
-th,
-.kami-table th {
-	background: var(--table-header) !important;
-	font-weight: 500 !important;
-}
-
-figure,
-.pb-svg {
-	display: flex !important;
-	justify-content: center !important;
-	margin: 0 0 30px !important;
-	text-align: center !important;
-}
-
-figure {
-	align-items: center !important;
-	flex-direction: column !important;
-}
-
-.review-code,
-.code-card {
-	background: var(--code-surface) !important;
-	border-radius: 8px !important;
-	font-family: var(--font-mono) !important;
-	font-size: 14px !important;
-	font-weight: 500 !important;
-	padding: 30px !important;
-}
-
-.frame,
-.page,
-section,
-.card,
-.metric,
-.metric-card,
-.header,
-.hero,
-.cover,
-.doc-cover,
-.quote,
-.pull-quote,
-.callout,
-.verdict,
-.panel {
-	box-shadow: none !important;
-}
-/* vpk-algebrica-v2:end */
 </style>
 </head>
-<body data-vpk-motion="document">
+<body data-vpk-motion="document" data-vpk-chrome="catalog">
 <div class="container">
 	<div class="site-container">
 		<aside id="site-sidebar-right" aria-label="Catalog navigation">
 	<div class="sidebar">
 		<div class="sidebar__brand">
-			<div class="sidebar__logo" aria-hidden="true">v</div>
 			<div>
 				<div class="sidebar__title">vpk-html</div>
 				<p>Offline editorial HTML artifacts.</p>
 			</div>
 		</div>
-		<form class="sidebar__search" role="search" aria-label="Catalog search">
-			<input class="search-input -desktop" type="search" placeholder="Search" aria-label="Search catalog" disabled>
-			<button class="search__icon -desktop" type="button" aria-label="Search" disabled>⌕</button>
-		</form>
 		<nav class="sidebar__section" aria-label="Catalog sections">
 			<div class="sidebar-list">
 				<a href="#document-types"><span>1.</span>Document types</a>
-				<a href="#exploration"><span>2.</span>Exploration and planning</a>
-				<a href="#review"><span>3.</span>Code review and understanding</a>
-				<a href="#design"><span>4.</span>Design</a>
-				<a href="#prototyping"><span>5.</span>Prototyping</a>
-				<a href="#illustrations"><span>6.</span>Illustrations and diagrams</a>
-				<a href="#decks"><span>7.</span>Decks</a>
-				<a href="#research"><span>8.</span>Research and learning</a>
-				<a href="#reports"><span>9.</span>Reports</a>
-				<a href="#editors"><span>10.</span>Custom editing interfaces</a>
-				<a href="#diagrams"><span>11.</span>Diagrams</a>
-				<a href="#charts-distribution"><span>12.</span>Charts - distributions</a>
-				<a href="#charts-comparison"><span>13.</span>Charts - comparison</a>
-				<a href="#charts-time-series"><span>14.</span>Charts - time series</a>
-				<a href="#charts-parts-intensity"><span>15.</span>Charts - parts and intensity</a>
-				<a href="#charts-relationships"><span>16.</span>Charts - relationships</a>
+				<a href="#video"><span>2.</span>Video</a>
+				<a href="#exploration"><span>3.</span>Exploration and planning</a>
+				<a href="#review"><span>4.</span>Code review and understanding</a>
+				<a href="#design"><span>5.</span>Design</a>
+				<a href="#prototyping"><span>6.</span>Prototyping</a>
+				<a href="#illustrations"><span>7.</span>Illustrations and diagrams</a>
+				<a href="#decks"><span>8.</span>Decks</a>
+				<a href="#research"><span>9.</span>Research and learning</a>
+				<a href="#reports"><span>10.</span>Reports</a>
+				<a href="#editors"><span>11.</span>Custom editing interfaces</a>
+				<a href="#diagrams"><span>12.</span>Diagrams</a>
+				<a href="#charts-distribution"><span>13.</span>Charts - distributions</a>
+				<a href="#charts-comparison"><span>14.</span>Charts - comparison</a>
+				<a href="#charts-time-series"><span>15.</span>Charts - time series</a>
+				<a href="#charts-parts-intensity"><span>16.</span>Charts - parts and intensity</a>
+				<a href="#charts-relationships"><span>17.</span>Charts - relationships</a>
 			</div>
 		</nav>
 		<div class="sidebar__bottom-links" aria-label="Reference links">
@@ -2333,537 +1605,687 @@ section,
 				<div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-one-pager.html">One-Pager</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">337 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">350 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-long-doc.html">Long Document</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">350 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">365 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-letter.html">Letter</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">332 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">345 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-kaku.html">Portfolio</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">347 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">353 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-musk-resume.html">Resume</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">345 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">358 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.6</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-slides.html">Slides</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">324 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">332 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.7</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-tesla.html">Equity Report</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">345 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">358 KB</span></div>
 				</div>
 <div class="module-index-post">
 					<span class="module-index-number module-index-post__number">1.8</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-changelog.html">Changelog</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">346 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">1.9</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-broadsheet.html">Broadsheet Front Page</a></div>
 					<div class="in-review-item__count"><span class="module-index-post__views">332 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">1.10</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-annual-report.html">Annual Report</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">330 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">1.11</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-interview.html">Interview</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">329 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">1.12</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-lookbook.html">Lookbook</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">333 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">1.13</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-feature-essay.html">Feature Essay</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">331 KB</span></div>
+				</div>
+			</div>
+		</section>
+<section class="module-index-section demo-category" id="video" aria-labelledby="video-title">
+			<div class="module-index-section-header demo-category-head">
+				<div class="module-index-heading">
+					<span class="module-index-number">2.</span>
+					<h2 class="module-index-heading__title" id="video-title">Video</h2>
+				</div>
+			</div>
+			<div class="module-index-posts">
+				<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">2.1</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-video-landing-demo-separation.html">Landing Demo Separation</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">314 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="exploration" aria-labelledby="exploration-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">2.</span>
+					<span class="module-index-number">3.</span>
 					<h2 class="module-index-heading__title" id="exploration-title">Exploration and planning</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">2.1</span>
+					<span class="module-index-number module-index-post__number">3.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-exploration-code-approaches.html">Code Approaches</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">343 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">359 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">2.2</span>
+					<span class="module-index-number module-index-post__number">3.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-exploration-visual-designs.html">Visual Designs</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">343 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">359 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">2.3</span>
+					<span class="module-index-number module-index-post__number">3.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-implementation-plan.html">Implementation Plan</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">357 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">373 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="review" aria-labelledby="review-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">3.</span>
+					<span class="module-index-number">4.</span>
 					<h2 class="module-index-heading__title" id="review-title">Code review and understanding</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">3.1</span>
+					<span class="module-index-number module-index-post__number">4.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-code-review-pr.html">Code Review</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">355 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">371 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">3.2</span>
+					<span class="module-index-number module-index-post__number">4.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-pr-writeup.html">PR Writeup</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">353 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">369 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">3.3</span>
+					<span class="module-index-number module-index-post__number">4.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-code-understanding.html">Code Understanding</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">347 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">363 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">3.4</span>
+					<span class="module-index-number module-index-post__number">4.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-postgres-migration.html">Postgres Migration</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">351 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">365 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="design" aria-labelledby="design-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">4.</span>
+					<span class="module-index-number">5.</span>
 					<h2 class="module-index-heading__title" id="design-title">Design</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">4.1</span>
+					<span class="module-index-number module-index-post__number">5.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-design-system.html">Design System</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">347 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">366 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">4.2</span>
+					<span class="module-index-number module-index-post__number">5.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-component-variants.html">Component Variants</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">345 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">361 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="prototyping" aria-labelledby="prototyping-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">5.</span>
+					<span class="module-index-number">6.</span>
 					<h2 class="module-index-heading__title" id="prototyping-title">Prototyping</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">5.1</span>
+					<span class="module-index-number module-index-post__number">6.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-prototype-animation.html">Animation Prototype</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">341 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">357 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">5.2</span>
+					<span class="module-index-number module-index-post__number">6.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-prototype-interaction.html">Interaction Prototype</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">340 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">355 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="illustrations" aria-labelledby="illustrations-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">6.</span>
+					<span class="module-index-number">7.</span>
 					<h2 class="module-index-heading__title" id="illustrations-title">Illustrations and diagrams</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.1</span>
+					<span class="module-index-number module-index-post__number">7.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-svg-illustrations.html">SVG Illustrations</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">348 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">364 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.2</span>
+					<span class="module-index-number module-index-post__number">7.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-flowchart-diagram.html">Flowchart Diagram</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">344 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">360 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.3</span>
+					<span class="module-index-number module-index-post__number">7.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-illustration-isometric-device.html">Isometric Device</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">324 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">340 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.4</span>
+					<span class="module-index-number module-index-post__number">7.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-illustration-exploded-assembly.html">Exploded Assembly</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">325 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">341 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.5</span>
+					<span class="module-index-number module-index-post__number">7.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-illustration-annotated-mechanism.html">Annotated Mechanism</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">324 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">340 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.6</span>
+					<span class="module-index-number module-index-post__number">7.6</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-illustration-hatched-cross-section.html">Hatched Cross Section</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">324 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">340 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">6.7</span>
+					<span class="module-index-number module-index-post__number">7.7</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-illustration-isometric-pipeline.html">Isometric Pipeline</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">325 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">340 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="decks" aria-labelledby="decks-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">7.</span>
+					<span class="module-index-number">8.</span>
 					<h2 class="module-index-heading__title" id="decks-title">Decks</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">7.1</span>
+					<span class="module-index-number module-index-post__number">8.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-slide-deck.html">Engineering Slide Deck</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">333 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">341 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">7.2</span>
+					<span class="module-index-number module-index-post__number">8.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-agent-slides.html">Agent Keynote</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">334 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">342 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="research" aria-labelledby="research-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">8.</span>
+					<span class="module-index-number">9.</span>
 					<h2 class="module-index-heading__title" id="research-title">Research and learning</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">8.1</span>
+					<span class="module-index-number module-index-post__number">9.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-research-feature-explainer.html">Feature Explainer</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">341 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">357 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">8.2</span>
+					<span class="module-index-number module-index-post__number">9.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-research-concept-explainer.html">Concept Explainer</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">342 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">358 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">8.3</span>
+					<span class="module-index-number module-index-post__number">9.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-rag-explainer.html">RAG Explainer</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">351 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">364 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="reports" aria-labelledby="reports-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">9.</span>
+					<span class="module-index-number">10.</span>
 					<h2 class="module-index-heading__title" id="reports-title">Reports</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">9.1</span>
+					<span class="module-index-number module-index-post__number">10.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-status-report.html">Weekly Status</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">346 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">361 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">9.2</span>
+					<span class="module-index-number module-index-post__number">10.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-incident-report.html">Incident Timeline</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">344 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">360 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">9.3</span>
+					<span class="module-index-number module-index-post__number">10.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-q2-status.html">Q2 Status Report</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">337 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">350 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">9.4</span>
+					<span class="module-index-number module-index-post__number">10.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-auth-incident.html">Auth Incident</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">351 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">367 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="editors" aria-labelledby="editors-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">10.</span>
+					<span class="module-index-number">11.</span>
 					<h2 class="module-index-heading__title" id="editors-title">Custom editing interfaces</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">10.1</span>
+					<span class="module-index-number module-index-post__number">11.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-editor-triage-board.html">Ticket Triage Board</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">347 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">363 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">10.2</span>
+					<span class="module-index-number module-index-post__number">11.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-editor-feature-flags.html">Feature Flag Editor</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">348 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">363 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">10.3</span>
+					<span class="module-index-number module-index-post__number">11.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-editor-prompt-tuner.html">Prompt Tuner</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">350 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">366 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="diagrams" aria-labelledby="diagrams-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">11.</span>
+					<span class="module-index-number">12.</span>
 					<h2 class="module-index-heading__title" id="diagrams-title">Diagrams</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.1</span>
+					<span class="module-index-number module-index-post__number">12.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-architecture.html">Architecture</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1516 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.2</span>
+					<span class="module-index-number module-index-post__number">12.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-flowchart.html">Flowchart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1515 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.3</span>
+					<span class="module-index-number module-index-post__number">12.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-swimlane.html">Swimlane</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1516 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.4</span>
+					<span class="module-index-number module-index-post__number">12.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-state-machine.html">State Machine</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1516 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.5</span>
+					<span class="module-index-number module-index-post__number">12.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-timeline.html">Timeline</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1514 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1535 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.6</span>
+					<span class="module-index-number module-index-post__number">12.6</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-tree.html">Tree</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1517 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1538 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.7</span>
+					<span class="module-index-number module-index-post__number">12.7</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-layer-stack.html">Layer Stack</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1515 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.8</span>
+					<span class="module-index-number module-index-post__number">12.8</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-quadrant.html">Quadrant</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1515 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">11.9</span>
+					<span class="module-index-number module-index-post__number">12.9</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-venn.html">Venn</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1512 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1533 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="charts-distribution" aria-labelledby="charts-distribution-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">12.</span>
+					<span class="module-index-number">13.</span>
 					<h2 class="module-index-heading__title" id="charts-distribution-title">Charts - distributions</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">12.1</span>
+					<span class="module-index-number module-index-post__number">13.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-box-plot.html">Box Plot</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1520 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1542 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">12.2</span>
+					<span class="module-index-number module-index-post__number">13.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-histogram.html">Histogram</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1523 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1544 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">12.3</span>
+					<span class="module-index-number module-index-post__number">13.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-ridgeline.html">Ridgeline</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1522 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1543 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">12.4</span>
+					<span class="module-index-number module-index-post__number">13.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-beeswarm.html">Beeswarm</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1523 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1544 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">12.5</span>
+					<span class="module-index-number module-index-post__number">13.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-dot-strip.html">Dot Strip</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1520 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1541 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">13.6</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-violin-plot.html">Violin Plot</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="charts-comparison" aria-labelledby="charts-comparison-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">13.</span>
+					<span class="module-index-number">14.</span>
 					<h2 class="module-index-heading__title" id="charts-comparison-title">Charts - comparison</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.1</span>
+					<span class="module-index-number module-index-post__number">14.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-bar-chart.html">Bar Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1515 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.2</span>
+					<span class="module-index-number module-index-post__number">14.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-slope-chart.html">Slope Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1519 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1540 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.3</span>
+					<span class="module-index-number module-index-post__number">14.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-dumbbell.html">Dumbbell</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1519 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1541 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.4</span>
+					<span class="module-index-number module-index-post__number">14.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-lollipop.html">Lollipop</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1518 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1539 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.5</span>
+					<span class="module-index-number module-index-post__number">14.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-bullet.html">Bullet</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1518 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1539 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">13.6</span>
+					<span class="module-index-number module-index-post__number">14.6</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-population-pyramid.html">Population Pyramid</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1521 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1542 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">14.7</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-bump-chart.html">Bump Chart</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1552 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">14.8</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-isotype.html">Isotype</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">339 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="charts-time-series" aria-labelledby="charts-time-series-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">14.</span>
+					<span class="module-index-number">15.</span>
 					<h2 class="module-index-heading__title" id="charts-time-series-title">Charts - time series</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.1</span>
+					<span class="module-index-number module-index-post__number">15.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-line-chart.html">Line Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1523 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1544 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.2</span>
+					<span class="module-index-number module-index-post__number">15.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-annotated-line.html">Annotated Line</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1525 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1546 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.3</span>
+					<span class="module-index-number module-index-post__number">15.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-index-chart.html">Index Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1526 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1547 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.4</span>
+					<span class="module-index-number module-index-post__number">15.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-small-multiples.html">Small Multiples</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1527 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1548 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.5</span>
+					<span class="module-index-number module-index-post__number">15.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-band-chart.html">Band Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1519 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1540 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.6</span>
+					<span class="module-index-number module-index-post__number">15.6</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-stacked-area.html">Stacked Area</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1519 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1540 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.7</span>
+					<span class="module-index-number module-index-post__number">15.7</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-candlestick.html">Candlestick</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1517 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1538 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">14.8</span>
+					<span class="module-index-number module-index-post__number">15.8</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-waterfall.html">Waterfall</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1515 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.9</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-streamgraph.html">Streamgraph</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1535 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.10</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-horizon-chart.html">Horizon Chart</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.11</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-fan-chart.html">Fan Chart</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1532 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.12</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-priestley-timeline.html">Priestley Timeline</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1535 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.13</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-seismogram.html">Seismogram</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">327 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">15.14</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-gantt.html">Gantt</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">330 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="charts-parts-intensity" aria-labelledby="charts-parts-intensity-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">15.</span>
+					<span class="module-index-number">16.</span>
 					<h2 class="module-index-heading__title" id="charts-parts-intensity-title">Charts - parts and intensity</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.1</span>
+					<span class="module-index-number module-index-post__number">16.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-donut-chart.html">Donut Chart</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1514 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1535 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.2</span>
+					<span class="module-index-number module-index-post__number">16.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-calendar-heatmap.html">Calendar Heatmap</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1609 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1630 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.3</span>
+					<span class="module-index-number module-index-post__number">16.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-matrix-heatmap.html">Matrix Heatmap</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1555 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.4</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-waffle.html">Waffle</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1568 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.5</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-grid-choropleth.html">Grid Choropleth</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1564 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.6</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-treemap.html">Treemap</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1542 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.7</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-marimekko.html">Marimekko</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.8</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-polar-area.html">Polar Area</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1537 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.9</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-sunburst.html">Sunburst</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1536 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.10</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-circle-packing.html">Circle Packing</a></div>
 					<div class="in-review-item__count"><span class="module-index-post__views">1534 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.4</span>
-					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-waffle.html">Waffle</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1545 KB</span></div>
+					<span class="module-index-number module-index-post__number">16.11</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-hexbin.html">Hexbin</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1546 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.5</span>
-					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-grid-choropleth.html">Grid Choropleth</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1543 KB</span></div>
+					<span class="module-index-number module-index-post__number">16.12</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-voronoi-treemap.html">Voronoi Treemap</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">329 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">15.6</span>
-					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-treemap.html">Treemap</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1521 KB</span></div>
+					<span class="module-index-number module-index-post__number">16.13</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-contour-density.html">Contour Density</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">329 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">16.14</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-grid-cartogram.html">Grid Cartogram</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">334 KB</span></div>
 				</div>
 			</div>
 		</section>
 <section class="module-index-section demo-category" id="charts-relationships" aria-labelledby="charts-relationships-title">
 			<div class="module-index-section-header demo-category-head">
 				<div class="module-index-heading">
-					<span class="module-index-number">16.</span>
+					<span class="module-index-number">17.</span>
 					<h2 class="module-index-heading__title" id="charts-relationships-title">Charts - relationships</h2>
 				</div>
 			</div>
 			<div class="module-index-posts">
 				<div class="module-index-post">
-					<span class="module-index-number module-index-post__number">16.1</span>
+					<span class="module-index-number module-index-post__number">17.1</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-sankey.html">Sankey</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1520 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1541 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">16.2</span>
+					<span class="module-index-number module-index-post__number">17.2</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-arc-diagram.html">Arc Diagram</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1522 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1543 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">16.3</span>
+					<span class="module-index-number module-index-post__number">17.3</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-scatter.html">Scatter</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1522 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1543 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">16.4</span>
+					<span class="module-index-number module-index-post__number">17.4</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-connected-scatter.html">Connected Scatter</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1520 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1541 KB</span></div>
 				</div>
 <div class="module-index-post">
-					<span class="module-index-number module-index-post__number">16.5</span>
+					<span class="module-index-number module-index-post__number">17.5</span>
 					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-icicle.html">Icicle</a></div>
-					<div class="in-review-item__count"><span class="module-index-post__views">1520 KB</span></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">1542 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">17.6</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-parallel-coordinates.html">Parallel Coordinates</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">334 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">17.7</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-chord-diagram.html">Chord Diagram</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">329 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">17.8</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-upset-plot.html">UpSet Plot</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">336 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">17.9</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-edge-bundling.html">Edge Bundling</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">332 KB</span></div>
+				</div>
+<div class="module-index-post">
+					<span class="module-index-number module-index-post__number">17.10</span>
+					<div class="module-index-post__title"><a class="demo-row" href="assets/demos/demo-diagram-force-network.html">Force Network</a></div>
+					<div class="in-review-item__count"><span class="module-index-post__views">334 KB</span></div>
 				</div>
 			</div>
 		</section>
@@ -2872,5 +2294,86 @@ section,
 		</main>
 	</div>
 </div>
+<!-- vpk-theme-runtime:start -->
+<script data-vpk-theme-runtime>
+(() => {
+	const key = "vpk-html-theme";
+	const states = ["system", "light", "dark"];
+	const labels = { system: "system", light: "light", dark: "dark" };
+	const valid = new Set(states);
+	const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+	function readChoice() {
+		try {
+			const stored = localStorage.getItem(key);
+			return valid.has(stored) ? stored : "system";
+		} catch {
+			return "system";
+		}
+	}
+
+	function writeChoice(choice) {
+		try { localStorage.setItem(key, choice); }
+		catch { /* noop */ }
+	}
+
+	function systemPrefersDark() {
+		return media ? media.matches : false;
+	}
+
+	function apply(choice) {
+		const next = valid.has(choice) ? choice : "system";
+		document.documentElement.dataset.vpkThemeChoice = next;
+		if (next === "dark" || (next === "system" && systemPrefersDark())) {
+			document.documentElement.dataset.theme = "dark";
+		} else {
+			document.documentElement.removeAttribute("data-theme");
+		}
+		updateToggle(next);
+	}
+
+	function ensureToggle() {
+		let button = document.querySelector("[data-vpk-theme-toggle]");
+		if (button) return button;
+		button = document.createElement("button");
+		button.type = "button";
+		button.className = "vpk-theme-toggle";
+		button.setAttribute("data-vpk-theme-toggle", "true");
+		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.addEventListener("click", () => {
+			const current = readChoice();
+			const next = states[(states.indexOf(current) + 1) % states.length];
+			writeChoice(next);
+			apply(next);
+		});
+		document.body.appendChild(button);
+		return button;
+	}
+
+	function updateToggle(choice) {
+		const button = ensureToggle();
+		const state = button.querySelector(".vpk-theme-toggle__state");
+		const next = states[(states.indexOf(choice) + 1) % states.length];
+		if (state) state.textContent = labels[choice];
+		button.dataset.vpkThemeChoice = choice;
+		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
+		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+	}
+
+	function init() {
+		apply(readChoice());
+		if (!media) return;
+		const onChange = () => {
+			if (readChoice() === "system") apply("system");
+		};
+		if (media.addEventListener) media.addEventListener("change", onChange);
+		else if (media.addListener) media.addListener(onChange);
+	}
+
+	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+	else init();
+})();
+</script>
+<!-- vpk-theme-runtime:end -->
 </body>
 </html>

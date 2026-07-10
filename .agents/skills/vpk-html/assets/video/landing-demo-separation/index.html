@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=1920, height=1080">
+		<title>Landing Demo Separation</title>
+		<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+		<style>
+			@font-face {
+				font-family: "Geist";
+				src: local("Geist");
+				font-style: normal;
+				font-weight: 100 900;
+			}
+
+			@font-face {
+				font-family: "Geist Mono";
+				src: local("Geist Mono");
+				font-style: normal;
+				font-weight: 100 900;
+			}
+
+			@font-face {
+				font-family: "SFMono-Regular";
+				src: local("SFMono-Regular");
+				font-style: normal;
+				font-weight: 400;
+			}
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			html,
+			body {
+				width: 1920px;
+				height: 1080px;
+				overflow: hidden;
+				background: #f4efee;
+			}
+
+			body {
+				font-family: "Geist", -apple-system, "Helvetica Neue", sans-serif;
+				color: #312f2f;
+				text-rendering: optimizeLegibility;
+			}
+
+			#root {
+				position: relative;
+				width: 1920px;
+				height: 1080px;
+				overflow: hidden;
+				background: #f4efee;
+				color: #312f2f;
+			}
+
+			.clip {
+				position: absolute;
+				inset: 0;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+				background: #f4efee;
+			}
+
+			.scene {
+				opacity: 0;
+			}
+
+			.scene-content {
+				position: relative;
+				z-index: 2;
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				height: 100%;
+				padding: 104px 128px 96px;
+				gap: 38px;
+			}
+
+			.scene-chrome {
+				position: absolute;
+				inset: 64px;
+				z-index: 1;
+				border: 1px solid #ded5d4;
+				pointer-events: none;
+			}
+
+			.scene-chrome::before,
+			.scene-chrome::after {
+				position: absolute;
+				content: "";
+				background: #312f2f;
+				opacity: 0.12;
+			}
+
+			.scene-chrome::before {
+				top: 0;
+				left: 0;
+				width: 240px;
+				height: 1px;
+			}
+
+			.scene-chrome::after {
+				right: 0;
+				bottom: 0;
+				width: 1px;
+				height: 240px;
+			}
+
+			.eyebrow,
+			.meta,
+			.footer-mark,
+			.page-num,
+			.cell-letter,
+			code {
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-variant-numeric: tabular-nums;
+			}
+
+			.eyebrow {
+				display: inline-flex;
+				align-items: center;
+				width: max-content;
+				min-height: 28px;
+				border-top: 1px solid #312f2f;
+				padding-top: 12px;
+				color: #625f5e;
+				font-size: 22px;
+				font-weight: 600;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			h1,
+			h2 {
+				color: #312f2f;
+				font-weight: 500;
+				letter-spacing: 0;
+			}
+
+			h1 {
+				max-width: 1320px;
+				font-size: 126px;
+				line-height: 0.94;
+			}
+
+			h2 {
+				max-width: 1040px;
+				font-size: 88px;
+				line-height: 0.98;
+			}
+
+			h3 {
+				color: #312f2f;
+				font-size: 34px;
+				font-weight: 500;
+				line-height: 1.08;
+			}
+
+			p {
+				color: #312f2f;
+				font-size: 34px;
+				font-weight: 400;
+				line-height: 1.22;
+			}
+
+			code {
+				color: #312f2f;
+				font-size: 0.82em;
+			}
+
+			.cover-grid {
+				display: grid;
+				grid-template-columns: minmax(0, 0.98fr) minmax(480px, 0.52fr);
+				align-items: end;
+				height: 100%;
+				gap: 88px;
+			}
+
+			.cover-copy {
+				display: flex;
+				flex-direction: column;
+				gap: 34px;
+			}
+
+			.sub {
+				max-width: 940px;
+				color: #5f5a58;
+				font-size: 42px;
+				line-height: 1.16;
+			}
+
+			.meta {
+				color: #625f5e;
+				font-size: 24px;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+
+			.mock-stack {
+				display: grid;
+				gap: 18px;
+				align-self: stretch;
+				padding-bottom: 18px;
+			}
+
+			.mock-row {
+				display: grid;
+				grid-template-columns: 92px minmax(0, 1fr);
+				align-items: center;
+				min-height: 112px;
+				border: 1px solid #ded5d4;
+				background: #fffaf8;
+			}
+
+			.mock-index {
+				display: grid;
+				height: 100%;
+				place-items: center;
+				border-right: 1px solid #ded5d4;
+				color: #625f5e;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 24px;
+			}
+
+			.mock-text {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				padding: 22px 26px;
+			}
+
+			.mock-label {
+				color: #312f2f;
+				font-size: 28px;
+				font-weight: 500;
+			}
+
+			.mock-path {
+				color: #625f5e;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 18px;
+			}
+
+			.split-grid {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 28px;
+				margin-top: 18px;
+			}
+
+			.panel {
+				display: flex;
+				flex-direction: column;
+				min-height: 430px;
+				border: 1px solid #ded5d4;
+				background: #fffaf8;
+			}
+
+			.panel-heading {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				border-bottom: 1px solid #ded5d4;
+				padding: 28px 32px;
+			}
+
+			.panel-label {
+				color: #625f5e;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 20px;
+				text-transform: uppercase;
+			}
+
+			.panel-body {
+				display: flex;
+				flex: 1;
+				flex-direction: column;
+				justify-content: space-between;
+				padding: 38px 42px 42px;
+				gap: 40px;
+			}
+
+			.panel-body p {
+				max-width: 640px;
+				font-size: 36px;
+			}
+
+			.route-line {
+				display: flex;
+				align-items: center;
+				gap: 18px;
+				color: #625f5e;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 21px;
+			}
+
+			.route-line::before {
+				display: block;
+				width: 108px;
+				height: 1px;
+				background: #cfc4c2;
+				content: "";
+			}
+
+			.module-grid {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 24px;
+				margin-top: 8px;
+			}
+
+			.module-cell {
+				display: grid;
+				grid-template-columns: 74px minmax(0, 1fr);
+				min-height: 260px;
+				border: 1px solid #ded5d4;
+				background: #fffaf8;
+			}
+
+			.cell-letter {
+				display: grid;
+				place-items: center;
+				border-right: 1px solid #ded5d4;
+				color: #625f5e;
+				font-size: 24px;
+			}
+
+			.cell-copy {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				padding: 30px 34px;
+				gap: 16px;
+			}
+
+			.cell-copy p {
+				max-width: 670px;
+				color: #5f5a58;
+				font-size: 28px;
+				line-height: 1.26;
+			}
+
+			.callout-layout {
+				display: grid;
+				grid-template-columns: minmax(0, 0.62fr) minmax(620px, 0.38fr);
+				align-items: stretch;
+				gap: 34px;
+				margin-top: 20px;
+				flex: 1;
+			}
+
+			.callout-copy {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				border-top: 1px solid #ded5d4;
+				border-bottom: 1px solid #ded5d4;
+				padding: 52px 0;
+			}
+
+			.callout-copy p {
+				max-width: 860px;
+				font-size: 48px;
+				line-height: 1.12;
+			}
+
+			.pinned-callout {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				border: 1px solid #312f2f;
+				background: #ece3e2;
+				padding: 44px;
+			}
+
+			.pin-label {
+				color: #625f5e;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 22px;
+				text-transform: uppercase;
+			}
+
+			.pin-text {
+				color: #312f2f;
+				font-size: 58px;
+				font-weight: 500;
+				line-height: 1.03;
+			}
+
+			.stat-layout {
+				display: grid;
+				grid-template-columns: minmax(0, 0.48fr) minmax(0, 0.52fr);
+				gap: 34px;
+				margin-top: 18px;
+				flex: 1;
+			}
+
+			.stat-stack {
+				display: grid;
+				grid-template-rows: repeat(3, 1fr);
+				gap: 18px;
+			}
+
+			.stat-card {
+				display: grid;
+				grid-template-columns: 184px minmax(0, 1fr);
+				border: 1px solid #ded5d4;
+				background: #fffaf8;
+			}
+
+			.stat-value {
+				display: grid;
+				place-items: center;
+				border-right: 1px solid #ded5d4;
+				color: #312f2f;
+				font-family: "Geist Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+				font-size: 76px;
+				font-variant-numeric: tabular-nums;
+				font-weight: 500;
+			}
+
+			.stat-copy {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				padding: 30px 36px;
+				gap: 10px;
+			}
+
+			.stat-copy h3 {
+				font-size: 32px;
+			}
+
+			.stat-copy p {
+				color: #5f5a58;
+				font-size: 25px;
+				line-height: 1.24;
+			}
+
+			.closing-panel {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				border: 1px solid #312f2f;
+				background: #ece3e2;
+				padding: 42px;
+			}
+
+			.closing-panel p {
+				font-size: 42px;
+				line-height: 1.18;
+			}
+
+			.footer-mark,
+			.page-num {
+				position: absolute;
+				z-index: 3;
+				bottom: 46px;
+				color: #625f5e;
+				font-size: 22px;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+
+			.footer-mark {
+				left: 128px;
+			}
+
+			.page-num {
+				right: 128px;
+			}
+
+			.rule {
+				width: 100%;
+				height: 1px;
+				background: #ded5d4;
+				transform-origin: left center;
+			}
+		</style>
+	</head>
+	<body>
+		<div data-hf-id="hf-landing-root" id="root" data-composition-id="landing-demo-separation" data-start="0" data-duration="82" data-width="1920" data-height="1080">
+			<div data-hf-id="hf-scene-1" id="scene-1" class="clip scene scene-cover" data-start="0" data-duration="20.3" data-track-index="0">
+				<div class="scene-chrome"></div>
+				<div class="scene-content cover-grid">
+					<div class="cover-copy">
+						<div class="eyebrow">Landing catalog</div>
+						<h1>Landing demos use filled mock previews</h1>
+						<p class="sub">Reusable templates and diagrams stay in their source folders.</p>
+						<div class="meta">VPK Maintainers / 2026.05.12</div>
+					</div>
+					<div class="mock-stack" aria-label="Browse surface example">
+						<div class="mock-row">
+							<div class="mock-index">01</div>
+							<div class="mock-text">
+								<div class="mock-label">Authoring source</div>
+								<div class="mock-path">assets/templates/*.html</div>
+							</div>
+						</div>
+						<div class="mock-row">
+							<div class="mock-index">02</div>
+							<div class="mock-text">
+								<div class="mock-label">Browse preview</div>
+								<div class="mock-path">assets/demos/demo-*.html</div>
+							</div>
+						</div>
+						<div class="mock-row">
+							<div class="mock-index">03</div>
+							<div class="mock-text">
+								<div class="mock-label">Contract check</div>
+								<div class="mock-path">landing-links.test.js</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="footer-mark">vpk-html</div>
+				<div class="page-num">00</div>
+			</div>
+
+			<div data-hf-id="hf-scene-2" id="scene-2" class="clip scene" data-start="20.3" data-duration="16.1" data-track-index="0">
+				<div class="scene-chrome"></div>
+				<div class="scene-content">
+					<div class="eyebrow">01 / Catalog contract</div>
+					<h2>Landing Demo Separation</h2>
+					<p>The landing catalog is a browse surface. It should show representative filled content while the documented authoring workflow points agents to reusable placeholders.</p>
+					<div class="rule"></div>
+					<div class="split-grid">
+						<section class="panel">
+							<div class="panel-heading">
+								<h3>Before</h3>
+								<div class="panel-label">raw source</div>
+							</div>
+							<div class="panel-body">
+								<p>Raw template and diagram files opened directly from the landing page.</p>
+								<div class="route-line">placeholder syntax exposed</div>
+							</div>
+						</section>
+						<section class="panel">
+							<div class="panel-heading">
+								<h3>After</h3>
+								<div class="panel-label">filled demo</div>
+							</div>
+							<div class="panel-body">
+								<p>Landing rows open filled mock files under <code>assets/demos/</code>.</p>
+								<div class="route-line">docs still reference raw sources</div>
+							</div>
+						</section>
+					</div>
+				</div>
+				<div class="footer-mark">vpk-html</div>
+				<div class="page-num">01</div>
+			</div>
+
+			<div data-hf-id="hf-scene-3" id="scene-3" class="clip scene" data-start="36.4" data-duration="21.4" data-track-index="0">
+				<div class="scene-chrome"></div>
+				<div class="scene-content">
+					<div class="eyebrow">02 / Catalog contract</div>
+					<h2>Landing Demo Separation</h2>
+					<div class="module-grid">
+						<section class="module-cell">
+							<div class="cell-letter">A</div>
+							<div class="cell-copy">
+								<h3>Document mocks</h3>
+								<p>One-pager, long-doc, letter, slides, and changelog have filled landing previews.</p>
+							</div>
+						</section>
+						<section class="module-cell">
+							<div class="cell-letter">B</div>
+							<div class="cell-copy">
+								<h3>Diagram mocks</h3>
+								<p>Thirty-nine inline diagram and chart primitives have matching <code>demo-diagram-*</code> previews.</p>
+							</div>
+						</section>
+						<section class="module-cell">
+							<div class="cell-letter">C</div>
+							<div class="cell-copy">
+								<h3>Regression guard</h3>
+								<p><code>landing-links.test.js</code> rejects raw source folders.</p>
+							</div>
+						</section>
+						<section class="module-cell">
+							<div class="cell-letter">D</div>
+							<div class="cell-copy">
+								<h3>Linked-file validation</h3>
+								<p><code>landing-links.test.js</code> validates every linked demo file.</p>
+							</div>
+						</section>
+					</div>
+				</div>
+				<div class="footer-mark">vpk-html</div>
+				<div class="page-num">02</div>
+			</div>
+
+			<div data-hf-id="hf-scene-4" id="scene-4" class="clip scene" data-start="57.8" data-duration="12.7" data-track-index="0">
+				<div class="scene-chrome"></div>
+				<div class="scene-content">
+					<div class="eyebrow">03 / Catalog contract</div>
+					<h2>Landing Demo Separation</h2>
+					<div class="callout-layout">
+						<div class="callout-copy">
+							<p>Source templates keep their placeholders. That is correct for authoring and wrong for the landing demo path.</p>
+						</div>
+						<div class="pinned-callout">
+							<div class="pin-label">Pinned rule</div>
+							<div class="pin-text">Every landing row should open a demo file, not a raw source file.</div>
+						</div>
+					</div>
+				</div>
+				<div class="footer-mark">vpk-html</div>
+				<div class="page-num">03</div>
+			</div>
+
+			<div data-hf-id="hf-scene-5" id="scene-5" class="clip scene" data-start="70.5" data-duration="11.5" data-track-index="0">
+				<div class="scene-chrome"></div>
+				<div class="scene-content">
+					<div class="eyebrow">04 / Catalog contract</div>
+					<h2>Landing Demo Separation</h2>
+					<div class="stat-layout">
+						<div class="stat-stack">
+							<section class="stat-card">
+								<div class="stat-value">5</div>
+								<div class="stat-copy">
+									<h3>Document rows</h3>
+									<p>Authoring route tables remain unchanged in the skill documentation.</p>
+								</div>
+							</section>
+							<section class="stat-card">
+								<div class="stat-value">39</div>
+								<div class="stat-copy">
+									<h3>Diagram rows</h3>
+									<p>Literal brace demos opt in with <code>data-vpk-literal-double-braces</code>.</p>
+								</div>
+							</section>
+							<section class="stat-card">
+								<div class="stat-value">1</div>
+								<div class="stat-copy">
+									<h3>Test boundary</h3>
+									<p>The catalog link contract stays in one focused regression check.</p>
+								</div>
+							</section>
+						</div>
+						<div class="closing-panel">
+							<div class="pin-label">Future additions</div>
+							<p>New templates and diagrams join the catalog through the same filled-demo contract.</p>
+							<div class="rule"></div>
+						</div>
+					</div>
+				</div>
+				<div class="footer-mark">vpk-html</div>
+				<div class="page-num">04</div>
+			</div>
+
+			<audio data-hf-id="hf-vo-s1" id="vo-s1" data-start="1.2" data-duration="18.28" data-track-index="100" src="audio/s1.mp3" data-volume="1"></audio>
+			<audio data-hf-id="hf-vo-s2" id="vo-s2" data-start="21.5" data-duration="14.08" data-track-index="101" src="audio/s2.mp3" data-volume="1"></audio>
+			<audio data-hf-id="hf-vo-s3" id="vo-s3" data-start="37.6" data-duration="19.37" data-track-index="102" src="audio/s3.mp3" data-volume="1"></audio>
+			<audio data-hf-id="hf-vo-s4" id="vo-s4" data-start="59" data-duration="10.67" data-track-index="103" src="audio/s4.mp3" data-volume="1"></audio>
+			<audio data-hf-id="hf-vo-s5" id="vo-s5" data-start="71.7" data-duration="9.49" data-track-index="104" src="audio/s5.mp3" data-volume="1"></audio>
+			<!-- User-provided track slot: drop a user file at audio/bgm.mp3, or register one with `media-use resolve --from`. Keep data-volume low, or duck it under narration with the `audio-duck.mjs` helper before rendering.
+			Unescape this line after the user file exists:
+			&lt;audio id="bgm" src="audio/bgm.mp3" data-start="0" data-duration="82" data-volume="0.18"&gt;&lt;/audio&gt;
+			-->
+		</div>
+
+		<script>
+			window.__timelines = window.__timelines || {};
+			const tl = gsap.timeline({ paused: true });
+
+			function enterScene(sceneId, start) {
+				tl.fromTo(sceneId, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "sine.out" }, start + 0.08);
+				tl.from(sceneId + " .scene-chrome", { opacity: 0, scale: 0.992, duration: 0.62, ease: "power1.out" }, start + 0.16);
+				tl.from(sceneId + " .eyebrow", { opacity: 0, y: 10, duration: 0.44, ease: "power2.out" }, start + 0.2);
+				tl.from(sceneId + " h1, " + sceneId + " h2", { opacity: 0, y: 14, duration: 0.66, ease: "power3.out" }, start + 0.3);
+			}
+
+			enterScene("#scene-1", 0);
+			tl.from("#scene-1 .sub", { opacity: 0, y: 12, duration: 0.56, ease: "power2.out" }, 0.48);
+			tl.from("#scene-1 .meta", { opacity: 0, y: 8, duration: 0.48, ease: "sine.out" }, 0.62);
+			tl.from("#scene-1 .mock-row", { opacity: 0, x: 16, duration: 0.54, stagger: 0.09, ease: "power2.out" }, 0.56);
+			tl.from("#scene-1 .footer-mark, #scene-1 .page-num", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 0.86);
+
+			enterScene("#scene-2", 20.3);
+			tl.from("#scene-2 p", { opacity: 0, y: 10, duration: 0.54, ease: "power2.out" }, 20.76);
+			tl.from("#scene-2 .rule", { opacity: 0, scaleX: 0, duration: 0.52, ease: "power1.out" }, 20.9);
+			tl.from("#scene-2 .panel", { opacity: 0, y: 14, duration: 0.58, stagger: 0.12, ease: "power3.out" }, 21.02);
+			tl.from("#scene-2 .route-line", { opacity: 0, x: -12, duration: 0.44, stagger: 0.08, ease: "sine.out" }, 21.38);
+			tl.from("#scene-2 .footer-mark, #scene-2 .page-num", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 21.5);
+
+			enterScene("#scene-3", 36.4);
+			tl.from("#scene-3 .module-cell", { opacity: 0, y: 16, duration: 0.58, stagger: 0.1, ease: "power3.out" }, 36.88);
+			tl.from("#scene-3 .cell-letter", { opacity: 0, x: -10, duration: 0.44, stagger: 0.08, ease: "power2.out" }, 37.06);
+			tl.from("#scene-3 .cell-copy p", { opacity: 0, y: 8, duration: 0.5, stagger: 0.07, ease: "sine.out" }, 37.24);
+			tl.from("#scene-3 .footer-mark, #scene-3 .page-num", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 37.64);
+
+			enterScene("#scene-4", 57.8);
+			tl.from("#scene-4 .callout-copy", { opacity: 0, x: -14, duration: 0.56, ease: "power2.out" }, 58.24);
+			tl.from("#scene-4 .pinned-callout", { opacity: 0, y: 16, duration: 0.62, ease: "power3.out" }, 58.36);
+			tl.from("#scene-4 .pin-label", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 58.58);
+			tl.from("#scene-4 .pin-text", { opacity: 0, y: 12, duration: 0.58, ease: "power2.out" }, 58.68);
+			tl.from("#scene-4 .footer-mark, #scene-4 .page-num", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 58.94);
+
+			enterScene("#scene-5", 70.5);
+			tl.from("#scene-5 .stat-card", { opacity: 0, x: -16, duration: 0.56, stagger: 0.1, ease: "power3.out" }, 70.98);
+			tl.from("#scene-5 .stat-value", { opacity: 0, y: 12, duration: 0.48, stagger: 0.08, ease: "power2.out" }, 71.16);
+			tl.from("#scene-5 .closing-panel", { opacity: 0, x: 14, duration: 0.62, ease: "power2.out" }, 71.24);
+			tl.from("#scene-5 .closing-panel .rule", { opacity: 0, scaleX: 0, duration: 0.52, ease: "power1.out" }, 71.58);
+			tl.from("#scene-5 .footer-mark, #scene-5 .page-num", { opacity: 0, y: 8, duration: 0.42, ease: "sine.out" }, 71.78);
+
+			window.__timelines["landing-demo-separation"] = tl;
+		</script>
+	</body>
+</html>

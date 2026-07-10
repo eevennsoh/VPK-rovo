@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 const assert = require("node:assert/strict");
+const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -176,6 +178,13 @@ test("presentation injector detects decks and is idempotent", async () => {
 	assert.match(once, /document\.body\.dataset\.vpkDeckReady = 'true'/);
 	assert.match(once, /presenterWindow\?\.postMessage/);
 	assert.match(once, /presenterWindow = window\.open/);
+	assert.match(once, /data-vpk-slide-prev/);
+	assert.match(once, /data-vpk-slide-next/);
+	assert.match(once, /vpk-nav-counter/);
+	assert.match(once, /data-vpk-progress-arc/);
+	assert.match(once, /stroke-dashoffset 180ms var\(--ease-out\)/);
+	assert.match(once, /aria-live="polite"/);
+	assert.match(once, /contenteditable="true" role="textbox" aria-label="Speaker notes"/);
 	assert.match(once, /\.speaker-notes\s*\{[\s\S]*display:\s*none\s*!important/);
 	assert.doesNotMatch(once, /[ \t]+$/m);
 
@@ -204,6 +213,7 @@ test("presentation injector detects decks and is idempotent", async () => {
 	assert.equal((refreshed.match(/data-vpk-presentation-runtime/g) || []).length, 1);
 	assert.match(refreshed, /--vpk-slide-rest-transform:\s*translate\(-50%, -50%\) scale\(var\(--vpk-slide-scale, 1\)\);/);
 	assert.match(refreshed, /presenterWindow\?\.postMessage/);
+	assert.match(refreshed, /data-vpk-progress-arc/);
 	assert.doesNotMatch(refreshed, /window\.opener\?\.postMessage/);
 
 	const existingNotes = [
@@ -225,9 +235,74 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.match(once, /data-vpk-motion="document"/);
 	assert.match(once, /data-vpk-docnav-runtime/);
 	assert.match(once, /className = 'docnav-controls'/);
-	assert.match(once, /data-vpk-docnav-style/);
+	assert.match(once, /vpk presentation mode/);
+	assert.match(once, /data-vpk-progress-arc/);
+	assert.match(once, /presenter-section-/);
+	assert.match(once, /contenteditable="true" role="textbox" aria-label="Speaker notes"/);
+	assert.match(once, /BroadcastChannel\('vpk-deck'\)/);
 	assert.match(once, /is-docnav-active/);
+	assert.doesNotMatch(once, /data-vpk-docnav-style/);
 	assert.equal(retrofitDocumentNav(deck), deck);
+});
+
+test("presentation CSS hides speaker notes for decks and docnav without duplicating note text", async () => {
+	const { retrofitDeck, retrofitDocumentNav } = await import("./presentation.mjs");
+	const deck = `<!doctype html><html><head><style>:root { color-scheme: light dark; }</style></head><body><main><section class="slide"><h1>One</h1><aside class="speaker-notes" aria-hidden="true">Deck private note</aside></section><section class="slide"><h1>Two</h1></section></main></body></html>`;
+	const doc = `<!doctype html><html><head><style>:root { color-scheme: light dark; }</style></head><body><main><section><h2>One</h2><p>Visible copy.</p><aside class="speaker-notes" aria-hidden="true">Doc private note</aside></section><section><h2>Two</h2><p>More visible copy.</p></section></main></body></html>`;
+
+	const deckOut = retrofitDeck(deck);
+	const docOut = retrofitDocumentNav(doc);
+
+	for (const output of [deckOut, docOut]) {
+		assert.match(output, /\.speaker-notes\s*\{[\s\S]*display:\s*none\s*!important/);
+		assert.match(output, /@media print\s*\{[\s\S]*\.speaker-notes,[\s\S]*display:\s*none\s*!important/);
+	}
+
+	assert.equal((deckOut.match(/Deck private note/g) || []).length, 1);
+	assert.equal((docOut.match(/Doc private note/g) || []).length, 1);
+	assert.match(docOut, /<aside class="speaker-notes" aria-hidden="true">Doc private note<\/aside>/);
+	assert.doesNotMatch(docOut, /Doc private note[\s\S]*Doc private note/);
+});
+
+test("theme runtime injector is idempotent and applies before the shared style block", async () => {
+	const { retrofitThemeRuntime } = await import("./theme.mjs");
+	const html = `<!doctype html><html><head><style>:root { color-scheme: light dark; }</style></head><body><main><section>Report</section></main></body></html>`;
+	const once = retrofitThemeRuntime(html);
+	const twice = retrofitThemeRuntime(once);
+
+	assert.equal(twice, once, "theme runtime must not duplicate on repeated generation");
+	assert.ok(once.indexOf("data-vpk-theme-init") < once.indexOf("<style>"), "theme init runs before CSS paint");
+	assert.match(once, /localStorage\.getItem\(key\)/);
+	assert.match(once, /vpk-html-theme/);
+	assert.match(once, /data-vpk-theme-runtime/);
+	assert.match(once, /data-vpk-theme-toggle/);
+	assert.match(once, /aria-pressed/);
+});
+
+test("inject-runtime CLI refreshes theme and presentation runtimes idempotently", () => {
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vpk-html-runtime-"));
+	const fixture = path.join(tmp, "artifact.html");
+	const buildScript = path.join(__dirname, "build.mjs");
+
+	try {
+		fs.writeFileSync(fixture, `<!doctype html><html><head><style>:root { color-scheme: light dark; } [data-theme="dark"] { color-scheme: light dark; }</style></head><body><main><section><h2>One</h2><p>Visible copy.</p></section><section><h2>Two</h2><p>More visible copy.</p></section></main></body></html>`);
+
+		const first = execFileSync(process.execPath, [buildScript, "--inject-runtime", fixture], { encoding: "utf8" });
+		const once = fs.readFileSync(fixture, "utf8");
+		const second = execFileSync(process.execPath, [buildScript, "--inject-runtime", fixture], { encoding: "utf8" });
+		const twice = fs.readFileSync(fixture, "utf8");
+
+		assert.match(first, /1 changed, 0 unchanged/);
+		assert.match(second, /0 changed, 1 unchanged/);
+		assert.equal(twice, once);
+		assert.match(once, /data-vpk-theme-init/);
+		assert.match(once, /data-vpk-theme-runtime/);
+		assert.match(once, /data-vpk-docnav-runtime/);
+		assert.match(once, /vpk presentation mode/);
+		assert.match(once, /data-vpk-progress-arc/);
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
 });
 
 test("check-html enforces the SMIL starter contract", async () => {
@@ -241,6 +316,27 @@ test("check-html enforces the SMIL starter contract", async () => {
 	assert.match(
 		validateHtmlString(base.replace('begin="indefinite"', 'begin="0s"')).failures.join("\n"),
 		/begin="indefinite"/,
+	);
+});
+
+test("check-html flags decorative side stripes while allowing hairline separators", async () => {
+	const { collectBorderStripeIssues } = await import("./check-html.mjs");
+
+	assert.deepEqual(
+		collectBorderStripeIssues(`<style>.ok { border-left: 1.5px solid var(--rule-strong); }</style>`),
+		[],
+	);
+	assert.match(
+		collectBorderStripeIssues(`<style>.bad { border-left: 2px solid var(--danger); }</style>`).join("\n"),
+		/side-border stripes over 1\.6px/,
+	);
+	assert.match(
+		collectBorderStripeIssues(`<div style="border-right-width: 0.14rem; border-right-style: solid;"></div>`).join("\n"),
+		/border-right-width sets right border/,
+	);
+	assert.match(
+		collectBorderStripeIssues(`<style>.bad { border-width: 0 2px 0 1px; }</style>`).join("\n"),
+		/border-width sets right border/,
 	);
 });
 

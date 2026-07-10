@@ -250,6 +250,87 @@ export function collectSelfReferentialCustomPropertyIssues(source) {
 	return [];
 }
 
+function cssLengthToPx(value) {
+	const normalized = value.trim().toLowerCase();
+	if (normalized === "thin") return 1;
+	if (normalized === "medium") return 3;
+	if (normalized === "thick") return 5;
+	const match = normalized.match(/^(-?\d*\.?\d+)(px|pt|rem|em|mm|cm|in)?$/);
+	if (!match) return null;
+	const numeric = Number(match[1]);
+	if (!Number.isFinite(numeric)) return null;
+	const unit = match[2] || "px";
+	const multipliers = {
+		px: 1,
+		pt: 96 / 72,
+		rem: 16,
+		em: 16,
+		mm: 96 / 25.4,
+		cm: 96 / 2.54,
+		in: 96,
+	};
+	return numeric * multipliers[unit];
+}
+
+function firstBorderWidthPx(value) {
+	for (const part of value.trim().split(/\s+/)) {
+		const px = cssLengthToPx(part);
+		if (px !== null) return px;
+	}
+	return null;
+}
+
+function borderWidthSides(value) {
+	const parts = value.trim().split(/\s+/).map(cssLengthToPx);
+	if (parts.some(part => part === null)) return [];
+	if (parts.length === 1) return [["left", parts[0]], ["right", parts[0]]];
+	if (parts.length === 2) return [["left", parts[1]], ["right", parts[1]]];
+	if (parts.length === 3) return [["left", parts[1]], ["right", parts[1]]];
+	return [["left", parts[3]], ["right", parts[1]]];
+}
+
+function collectBorderStripeDeclarations(css, baseLine, label) {
+	const issues = [];
+	const pattern = /\b(border-(left|right)(?:-width)?|border-width)\s*:\s*([^;{}]+);/gi;
+	let match;
+	while ((match = pattern.exec(css)) !== null) {
+		const property = match[1].toLowerCase();
+		const line = baseLine + findLineNumber(css, match.index) - 1;
+		const sides = property === "border-width"
+			? borderWidthSides(match[3])
+			: [[match[2].toLowerCase(), firstBorderWidthPx(match[3])]];
+		for (const [side, width] of sides) {
+			if (width === null || width <= 1.6) continue;
+			issues.push(`${label} line ${line}: ${property} sets ${side} border to ${Number(width.toFixed(2))}px`);
+			if (issues.length >= 12) return issues;
+		}
+	}
+	return issues;
+}
+
+export function collectBorderStripeIssues(source) {
+	const issues = [];
+	const styleBlockPattern = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+	let match;
+	while ((match = styleBlockPattern.exec(source)) !== null) {
+		issues.push(...collectBorderStripeDeclarations(match[1], findLineNumber(source, match.index), "style block"));
+		if (issues.length >= 12) break;
+	}
+
+	if (issues.length < 12) {
+		const styleAttrPattern = /\bstyle=["']([^"']+)["']/gi;
+		while ((match = styleAttrPattern.exec(source)) !== null) {
+			issues.push(...collectBorderStripeDeclarations(match[1], findLineNumber(source, match.index), "style attribute"));
+			if (issues.length >= 12) break;
+		}
+	}
+
+	if (issues.length > 0) {
+		return [`contains decorative side-border stripes over 1.6px (${issues.slice(0, 12).join("; ")})`];
+	}
+	return [];
+}
+
 export function collectPresentationIssues(source) {
 	if (!isDeck(source)) return [];
 	const issues = [];
@@ -333,6 +414,7 @@ export function validateHtmlString(html, label = "document") {
 
 	failures.push(...collectColorTokenIssues(html, label));
 	failures.push(...collectSelfReferentialCustomPropertyIssues(html));
+	failures.push(...collectBorderStripeIssues(html));
 	failures.push(...collectFaviconIssues(html));
 	failures.push(...collectPresentationIssues(html));
 	failures.push(...collectSmilMotionIssues(html));

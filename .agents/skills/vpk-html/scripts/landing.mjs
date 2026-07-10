@@ -21,6 +21,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildFaviconLinkBlock, buildSharedCssBlock } from "./shared.mjs";
+import { retrofitThemeRuntime } from "./theme.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,7 +70,7 @@ const LANDING_CSS = `
 `;
 
 function shell({ title, description, bodyHtml }) {
-	return `<!DOCTYPE html>
+	return retrofitThemeRuntime(`<!DOCTYPE html>
 <html lang="en" data-vpk-landing="true">
 <head>
 <meta charset="utf-8">
@@ -85,13 +86,13 @@ ${buildSharedCssBlock()}
 ${LANDING_CSS}
 </style>
 </head>
-<body>
+<body data-vpk-chrome="landing">
 <main>
 ${bodyHtml}
 </main>
 </body>
 </html>
-`;
+`);
 }
 
 function landingPageBody() {

@@ -1015,13 +1015,13 @@
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:90",
+						"source": "backend/routes/vpk-html.js:101",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:91",
+						"source": "backend/routes/vpk-html.js:102",
 						"runtimeAdmin": false
 					}
 				]

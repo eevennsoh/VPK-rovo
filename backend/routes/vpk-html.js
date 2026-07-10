@@ -46,12 +46,23 @@ function resolveVpkHtmlFilePath(assetPath, {
 	return resolvedPath;
 }
 
+const CATALOG_MEDIA_EXTENSIONS = new Set([".mp4", ".webm", ".mov"]);
+
 function isAllowedVpkHtmlAssetPath(relativePath) {
 	if (CATALOG_ROOT_FILES.has(relativePath)) {
 		return true;
 	}
 
-	return relativePath.startsWith("assets/demos/") && relativePath.endsWith(".html");
+	if (!relativePath.startsWith("assets/demos/")) {
+		return false;
+	}
+
+	if (relativePath.endsWith(".html")) {
+		return true;
+	}
+
+	const extension = path.extname(relativePath).toLowerCase();
+	return CATALOG_MEDIA_EXTENSIONS.has(extension);
 }
 
 function createVpkHtmlRouter({
