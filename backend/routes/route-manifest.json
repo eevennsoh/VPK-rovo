@@ -857,13 +857,13 @@
 			"method": "GET",
 			"path": "/api/vpk-html",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:90"
+			"source": "backend/routes/vpk-html.js:101"
 		},
 		{
 			"method": "GET",
 			"path": "/api/vpk-html/*assetPath",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:91"
+			"source": "backend/routes/vpk-html.js:102"
 		},
 		{
 			"method": "POST",
