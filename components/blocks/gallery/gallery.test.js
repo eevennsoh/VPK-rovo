@@ -71,8 +71,9 @@ test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	);
 });
 
-test("Gallery backdrop uses Safari-prefixed backdrop-filter and is pointer-transparent", () => {
+test("Gallery backdrop uses masked surface veils and is pointer-transparent", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-backdrop.tsx");
-	assert.match(source, /WebkitBackdropFilter/u);
+	assert.match(source, /WebkitMaskImage/u);
+	assert.doesNotMatch(source, /BackdropFilter/u);
 	assert.match(source, /pointer-events-none/u);
 });
