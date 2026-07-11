@@ -141,11 +141,34 @@ No other files change, so rollback is a one-line revert.
 - Use the `vpk-system-clean` skill for runaway `next-server` + oversized `.next`
   cleanup.
 
+## Outcome (implemented & verified 2026-07-11)
+
+The recommendation above was implemented, plus systemic guardrails:
+
+- **Next 16.3.0-preview.5 adopted** (`next` + `eslint-config-next` in lockstep,
+  React unchanged). **Gate passed**: after warming 15 routes (incl. `/rovo`,
+  `/studio`), footprint peaked at 12.9 GB during the compile burst, then
+  eviction reclaimed it to a **steady 1.7 GB at idle** — measured while a
+  16.2.9 control server on the same machine sat pinned at 11.1 GB. Webpack prod
+  build, perf budget, lint, typecheck, and HMR all pass.
+- **Memory watchdog added to `vpk-system-clean`** (new guard 2): kills any
+  `next-server` at ≥ `NEXT_MEM_MAX_GB` (6). Critical detail discovered during
+  verification: the guard must use **vmmap Physical footprint, not `ps` RSS** —
+  the MAP_JIT leak barely counts toward RSS (the 11.1 GB server reported
+  0.19 GB RSS, a ~50× undercount). `doctor.sh` was fixed the same way.
+- **Sweep paths fixed** (`~/Documents/Labs` → `~/Labs`; they had been matching
+  nothing since the repo moved) — the first corrected run reclaimed **42 GB**
+  of dead `.next` caches. The stale-tmux guard now also sweeps the private
+  `vpk-dev` socket used by `dev-tmux-plain.sh`.
+- **`pnpm run mem`** — the lightweight dev-RAM check this doc asked for; lists
+  every live `next-server` with CPU, physical footprint, port, and worktree.
+- **Warn-only concurrency notice** in `pnpm run dev:tmux:start`
+  (`VPK_DEV_STACK_WARN`, default 2): lists other live stacks and their stop
+  commands before starting another one.
+
 ## Follow-up (not part of the fix)
 
 - Track 16.3 stable; move off the preview pin when released.
-- Consider a lightweight dev-RAM check (current `perf:*` tooling only measures
-  shipped-JS/build time, not dev-server RSS).
 - Reserve `vpk-build` extraction / Multi-Zones for if a single prototype ever
   genuinely needs to run independently — not as a general memory fix.
 

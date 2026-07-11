@@ -117,6 +117,63 @@ check_workspace_deps() {
 
 SESSION_NAME="$(resolve_session_name)"
 
+cwd_of_pid() {
+	lsof -a -d cwd -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1
+}
+
+warn_about_other_dev_stacks() {
+	local warn_threshold="${VPK_DEV_STACK_WARN:-2}"
+	case "$warn_threshold" in
+		"" | *[!0-9]*) return 0 ;;
+	esac
+	if (( warn_threshold < 1 )); then
+		return 0
+	fi
+	if ! command -v pgrep >/dev/null 2>&1 || ! command -v lsof >/dev/null 2>&1; then
+		return 0
+	fi
+
+	local pids
+	pids="$(pgrep -f 'next-server' 2>/dev/null || true)"
+	if [[ -z "$pids" ]]; then
+		return 0
+	fi
+
+	local roots=()
+	local roots_count=0
+	local pid root existing
+	while IFS= read -r pid; do
+		[[ -n "$pid" ]] || continue
+		root="$(cwd_of_pid "$pid" || true)"
+		[[ -n "$root" ]] || continue
+		[[ "$root" == "$REPO_ROOT" ]] && continue
+		if (( roots_count > 0 )); then
+			for existing in "${roots[@]}"; do
+				[[ "$existing" == "$root" ]] && continue 2
+			done
+		fi
+		roots[roots_count]="$root"
+		roots_count=$(( roots_count + 1 ))
+	done <<<"$pids"
+
+	if (( roots_count < warn_threshold )); then
+		return 0
+	fi
+
+	echo "" >&2
+	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+	echo "[dev:tmux] WARNING: ${roots_count} other VPK dev stack(s) already live." >&2
+	echo "[dev:tmux] Each warmed stack can hold multiple GB of RAM." >&2
+	echo "[dev:tmux] Stop unneeded stacks with:" >&2
+	for root in "${roots[@]}"; do
+		echo "[dev:tmux]   $root" >&2
+		echo "[dev:tmux]     cd \"$root\" && pnpm run dev:tmux:stop" >&2
+	done
+	echo "[dev:tmux] Continuing with start anyway." >&2
+	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+	echo "" >&2
+}
+
 # Seed .env.local the same way the non-tmux launchers do, preferring the main
 # worktree's copy and falling back to the example file.
 seed_env_local() {
@@ -192,6 +249,7 @@ print_controls() {
 }
 
 launch_session() {
+	warn_about_other_dev_stacks
 	check_workspace_deps
 	# Clear stale port files so wait_for_frontend doesn't latch onto a dead
 	# port from a previous run.
@@ -295,6 +353,7 @@ usage() {
 	echo "  VPK_TMUX_SOCKET            Private socket name (default: vpk-dev)"
 	echo "  VPK_DEV_TMUX_SESSION       Exact session name override"
 	echo "  VPK_DEV_TMUX_SESSION_PREFIX Prefix for the auto session name (default: vpk-dev)"
+	echo "  VPK_DEV_STACK_WARN         Warn when this many other stacks are live (default: 2)"
 }
 
 command="${1:-start}"

@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
 	},
 
 	turbopack: {
+		// 16.3 Turbopack memory eviction is default-on; disable with experimental.turbopackMemoryEviction: false if it regresses.
 		// Prevent Turbopack from inferring the wrong workspace root.
 		root: projectRoot,
 	},

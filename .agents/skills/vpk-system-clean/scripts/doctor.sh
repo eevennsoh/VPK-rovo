@@ -2,7 +2,7 @@
 # doctor.sh — inspect (and optionally fix) runaway Next.js dev servers live.
 #
 # Usage:
-#   doctor.sh            # list every next-server: CPU, RSS, port, worktree
+#   doctor.sh            # list every next-server: CPU, memory, port, worktree
 #   doctor.sh --kill     # kill servers sustained-hot above the CPU threshold
 #                        # (and their `next dev` parents) so you can restart clean
 #
@@ -16,7 +16,17 @@ NEXT_CPU_HOT=150
 DO_KILL=0; [[ "${1:-}" == "--kill" ]] && DO_KILL=1
 
 cpu_of()  { ps -o %cpu= -p "$1" 2>/dev/null | tr -d ' '; }
-rssmb_of(){ ps -o rss=  -p "$1" 2>/dev/null | awk '{print int($1/1024)}'; }
+# vmmap Physical footprint, not ps RSS — the MAP_JIT leak barely counts toward
+# RSS (11.1GB footprint showed 0.19GB RSS). ~1s per pid; fine for inspection.
+memgb_of(){
+	local gb
+	gb=$(vmmap -summary "$1" 2>/dev/null | awk '/^Physical footprint:/{v=$3; u=substr(v,length(v)); if (u=="G") print int(v+0); else print 0; exit}')
+	if [[ -n "$gb" ]]; then
+		print -r -- "$gb"
+	else
+		ps -o rss= -p "$1" 2>/dev/null | awk '{print int($1/1024/1024)}'
+	fi
+}
 cwd_of()  { lsof -a -p "$1" -d cwd -Fn 2>/dev/null | grep '^n' | sed 's/^n//'; }
 port_of() { ps -o command= -p "$1" 2>/dev/null | grep -oE -- '--port [0-9]+' | awk '{print $2}'; }
 
@@ -28,11 +38,11 @@ fi
 
 print -- "next-server processes (hot threshold ${NEXT_CPU_HOT}% CPU):"
 print -- ""
-printf "  %-7s %-7s %-7s %-7s %s\n" PID CPU% RSSGB PORT WORKTREE
+printf "  %-7s %-7s %-7s %-7s %s\n" PID CPU% MEMGB PORT WORKTREE
 hot=()
 for p in $pids; do
 	c=$(cpu_of "$p"); c=${c:-0}
-	r=$(rssmb_of "$p"); rg=$(( ${r:-0} / 1024 ))
+	rg=$(memgb_of "$p"); rg=${rg:-0}
 	port=$(port_of "$p"); cwd=$(cwd_of "$p")
 	flag=""; (( ${c%%.*} >= NEXT_CPU_HOT )) && { flag="  ⚠ HOT"; hot+="$p"; }
 	printf "  %-7s %-7s %-7s %-7s %s%s\n" "$p" "$c" "$rg" "${port:-?}" "${cwd:-?}" "$flag"
