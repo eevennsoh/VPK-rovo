@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useId, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type JSX } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -58,6 +58,10 @@ export function Gallery({
 	// Controlled when `open` is provided; otherwise track internal state. Always
 	// notify via `onOpenChange`; use functional updates for the next value.
 	const isOpen = open ?? internalOpen;
+	useEffect(() => {
+		if (!isOpen && expandedId !== null) setExpandedId(null);
+	}, [expandedId, isOpen]);
+
 	const handleToggle = useCallback(() => {
 		const next = !(open ?? internalOpen);
 		if (open === undefined) setInternalOpen(next);
@@ -92,6 +96,7 @@ export function Gallery({
 	}, []);
 
 	const expandedItem = expandedId ? (items.find((item) => item.id === expandedId) ?? null) : null;
+	const hasExpandedOverlay = isOpen && expandedItem !== null;
 	const stripVariants = shouldReduceMotion ? STRIP_REDUCED : STRIP;
 
 	return (
@@ -108,7 +113,7 @@ export function Gallery({
 						// While a card is expanded, take the strip (and its cards) out of
 						// the tab order and a11y tree so keyboard/AT users can't reach
 						// behind the modal scrim.
-						inert={expandedId !== null ? true : undefined}
+						inert={hasExpandedOverlay ? true : undefined}
 					>
 						<GalleryBackdrop />
 						<GalleryTrack
@@ -126,7 +131,7 @@ export function Gallery({
 				// Toggle sits behind the scrim while a card is expanded — keep it out
 				// of the tab order / a11y tree until the dialog closes. (Wrapper box
 				// has no layout impact; the toggle inside is position:fixed.)
-				inert={expandedId !== null ? true : undefined}
+				inert={hasExpandedOverlay ? true : undefined}
 			>
 				<GalleryToggle
 					open={isOpen}

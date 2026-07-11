@@ -71,6 +71,23 @@ test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	);
 });
 
+test("Gallery clears expanded state when the controlled strip closes", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	assert.match(source, /useEffect/u);
+	assert.match(source, /!isOpen && expandedId !== null/u);
+	assert.match(source, /setExpandedId\(null\)/u);
+	assert.match(source, /hasExpandedOverlay/u);
+});
+
+test("Gallery drag scroll cancels stale pending presses", () => {
+	const hookSource = readProjectFile("components/blocks/gallery/hooks/use-drag-scroll.ts");
+	const trackSource = readProjectFile("components/blocks/gallery/components/gallery-track.tsx");
+	assert.match(hookSource, /event\.buttons & 1/u);
+	assert.match(hookSource, /onPointerLeave/u);
+	assert.match(hookSource, /onLostPointerCapture/u);
+	assert.match(trackSource, /onLostPointerCapture/u);
+});
+
 test("Gallery backdrop uses masked surface veils and is pointer-transparent", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-backdrop.tsx");
 	assert.match(source, /WebkitMaskImage/u);

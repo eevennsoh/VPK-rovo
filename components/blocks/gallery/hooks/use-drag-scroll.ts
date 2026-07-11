@@ -18,6 +18,8 @@ export interface UseDragScrollResult {
 	onPointerDown: (event: PointerEvent<HTMLElement>) => void;
 	onPointerMove: (event: PointerEvent<HTMLElement>) => void;
 	onPointerUp: (event: PointerEvent<HTMLElement>) => void;
+	onPointerLeave: (event: PointerEvent<HTMLElement>) => void;
+	onLostPointerCapture: (event: PointerEvent<HTMLElement>) => void;
 }
 
 /**
@@ -34,6 +36,35 @@ export function useDragScroll(
 	const activeRef = useRef(false);
 	const startXRef = useRef(0);
 	const startScrollLeftRef = useRef(0);
+
+	const clearWasDraggedAfterClick = useCallback(() => {
+		if (!wasDraggedRef.current) return;
+		// Clear the drag flag AFTER the trailing synthetic click (which must
+		// still bail), but before any later interaction. Without this async
+		// reset the flag would linger until the next pointerdown and swallow a
+		// keyboard (Enter/Space) activation of a card — pointer drags that end
+		// over a gap never produce a click to consume it.
+		if (typeof requestAnimationFrame !== "undefined") {
+			requestAnimationFrame(() => {
+				wasDraggedRef.current = false;
+			});
+			return;
+		}
+		wasDraggedRef.current = false;
+	}, []);
+
+	const resetActivePress = useCallback(
+		(pointerId: number) => {
+			activeRef.current = false;
+			setDragging(false);
+			const container = scrollContainerRef.current;
+			if (container?.hasPointerCapture(pointerId)) {
+				container.releasePointerCapture(pointerId);
+			}
+			clearWasDraggedAfterClick();
+		},
+		[clearWasDraggedAfterClick, scrollContainerRef],
+	);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>) => {
@@ -61,6 +92,10 @@ export function useDragScroll(
 	const onPointerMove = useCallback(
 		(event: PointerEvent<HTMLElement>) => {
 			if (!activeRef.current) return;
+			if ((event.buttons & 1) !== 1) {
+				resetActivePress(event.pointerId);
+				return;
+			}
 			const container = scrollContainerRef.current;
 			if (!container) return;
 			const delta = event.clientX - startXRef.current;
@@ -75,31 +110,40 @@ export function useDragScroll(
 				container.scrollLeft = startScrollLeftRef.current - delta;
 			}
 		},
-		[scrollContainerRef],
+		[resetActivePress, scrollContainerRef],
 	);
 
 	const onPointerUp = useCallback(
 		(event: PointerEvent<HTMLElement>) => {
 			if (!activeRef.current) return;
-			activeRef.current = false;
-			setDragging(false);
-			const container = scrollContainerRef.current;
-			if (container?.hasPointerCapture(event.pointerId)) {
-				container.releasePointerCapture(event.pointerId);
-			}
-			// Clear the drag flag AFTER the trailing synthetic click (which must
-			// still bail), but before any later interaction. Without this async
-			// reset the flag would linger until the next pointerdown and swallow a
-			// keyboard (Enter/Space) activation of a card — pointer drags that end
-			// over a gap never produce a click to consume it.
-			if (wasDraggedRef.current && typeof requestAnimationFrame !== "undefined") {
-				requestAnimationFrame(() => {
-					wasDraggedRef.current = false;
-				});
-			}
+			resetActivePress(event.pointerId);
 		},
-		[scrollContainerRef],
+		[resetActivePress],
 	);
 
-	return { dragging, wasDraggedRef, onPointerDown, onPointerMove, onPointerUp };
+	const onPointerLeave = useCallback(
+		(event: PointerEvent<HTMLElement>) => {
+			if (!activeRef.current || wasDraggedRef.current) return;
+			resetActivePress(event.pointerId);
+		},
+		[resetActivePress],
+	);
+
+	const onLostPointerCapture = useCallback(
+		(event: PointerEvent<HTMLElement>) => {
+			if (!activeRef.current) return;
+			resetActivePress(event.pointerId);
+		},
+		[resetActivePress],
+	);
+
+	return {
+		dragging,
+		wasDraggedRef,
+		onPointerDown,
+		onPointerMove,
+		onPointerUp,
+		onPointerLeave,
+		onLostPointerCapture,
+	};
 }

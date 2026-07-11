@@ -93,9 +93,19 @@ export function GalleryTrack({
 		[drag, pointerX],
 	);
 
-	const handlePointerLeave = useCallback(() => {
-		pointerX.set(Number.POSITIVE_INFINITY);
-	}, [pointerX]);
+	const handlePointerLeave = useCallback(
+		(event: PointerEvent<HTMLDivElement>) => {
+			drag.onPointerLeave(event);
+			pointerX.set(Number.POSITIVE_INFINITY);
+		},
+		[drag, pointerX],
+	);
+	const handleLostPointerCapture = useCallback(
+		(event: PointerEvent<HTMLDivElement>) => {
+			drag.onLostPointerCapture(event);
+		},
+		[drag],
+	);
 
 	return (
 		<div
@@ -105,6 +115,7 @@ export function GalleryTrack({
 			onPointerUp={handlePointerUp}
 			onPointerCancel={handlePointerUp}
 			onPointerLeave={handlePointerLeave}
+			onLostPointerCapture={handleLostPointerCapture}
 			className={cn(
 				// Bottom-aligned scroll strip with top headroom so magnified cards
 				// grow upward without clipping. Scrollbar hidden; edge fades via mask.
