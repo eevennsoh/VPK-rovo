@@ -1,12 +1,12 @@
 # Codex Automations
 
-Generated on July 7, 2026 at 1:24 AM GMT+10 from saved Codex automation files in `/Users/esoh/.codex/automations`.
+Generated on July 11, 2026 at 11:17 PM GMT+10 from saved Codex automation files in `/Users/esoh/.codex/automations`.
 
 This file consolidates the current automation configs and companion memory notes into one Markdown inventory. Schedules are translated into plain English; raw recurrence strings are intentionally omitted. Regenerate this snapshot whenever a saved automation prompt or schedule changes.
 
-- Total automations: 13
-- Active automations: 13
-- Cron automations: 12
+- Total automations: 14
+- Active automations: 14
+- Cron automations: 13
 - Heartbeat automations: 1
 
 ## Summary
@@ -23,6 +23,7 @@ This file consolidates the current automation configs and companion memory notes
 | Interface contract audit | `interface-contract-audit` | cron | ACTIVE | Weekly on Monday and Thursday at 5:30 AM | worktree | gpt-5.5 |
 | Performance audit | `performance-audit` | cron | ACTIVE | Weekly on Wednesday and Sunday at 3:30 AM | worktree | gpt-5.5 |
 | Standup summary | `standup-summary` | heartbeat | ACTIVE | Daily at 9:30 AM, 1:30 PM, and 5:30 PM | thread | Default |
+| System clean | `vpk-system-clean` | cron | ACTIVE | Every 30 minutes | local | gpt-5.5 |
 | Test coverage | `test-coverage` | cron | ACTIVE | Weekly on Tuesday and Friday at 6:30 AM | worktree | gpt-5.5 |
 | UI design quality audit | `ui-design-quality-audit` | cron | ACTIVE | Weekly on Wednesday and Saturday at 7:30 AM | worktree | gpt-5.5 |
 | Update AGENTS.md | `update-agents-md` | cron | ACTIVE | Weekly on Sunday at 12:20 PM | worktree | gpt-5.5 |
@@ -38,11 +39,12 @@ This file consolidates the current automation configs and companion memory notes
 | Status | ACTIVE |
 | Schedule | Daily at 11:20 PM |
 | Execution environment | local |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | medium |
 | Created | May 1, 2026, 11:24 AM GMT+10 |
-| Updated | Jun 21, 2026, 10:28 PM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/artifact-cleanup/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/artifact-cleanup/memory.md` |
 
@@ -86,10 +88,13 @@ Stop or skip a candidate if it is outside the repo, not ignored and not an eligi
 #### Memory Notes
 
 ````markdown
-# Artifact Cleanup Memory
-
-- 2026-07-05T13:23:40Z: Persistent checkout `/Users/esoh/Documents/Labs/vpk-rovo`. Removed only exact idle ignored Symphony runtime logs: `.tmp/symphony/runtime/log/merge-guard.log` and `.tmp/symphony/runtime/log/log/symphony.log.{1,idx,siz}`; then removed empty dirs `.tmp/symphony/runtime/log/log` and `.tmp/symphony/runtime/log`. Preserved live `.next` and `.dev-*` because frontend PID 19993 listened on 4786 and held `.next` files; backend PID 20019 listened on 8080. Preserved dependencies, secrets/config, personal graph/qmd caches, backend app state, generated illustration assets imported by code/tests, public illustration assets, `.claude/worktrees`, and untracked `ARCHITECTURE_IMPROVEMENT_PLAN.md`.
-- 2026-07-06T13:25:16Z: Persistent checkout `/Users/esoh/Documents/Labs/vpk-rovo`. Removed only ignored, untracked, idle generated language artifact `next-env.d.ts`. Preserved tracked generated illustration source `components/ui-custom/rovo-illustration/assets.generated.ts` because it is tracked and imported by runtime/tests. Preserved `.tmp/personal-graph/*` and `.tmp/symphony/*` as protected or ambiguous personal/Symphony state, including the nested `.tmp/symphony/openai-symphony` clone. No `.dev-*`, `output/`, `.gsd/`, `.rovodev/`, coverage, Playwright report, or `*.tsbuildinfo` candidates were present. Validation showed no tracked deletions, no staged changes, and only unrelated untracked `CODEX_AUTOMATIONS.md` in ordinary status.
+2026-07-11T13:09:33Z run:
+- Repo root verified as /Users/esoh/Labs/vpk-rovo.
+- Removed root .DS_Store, tsconfig.tsbuildinfo, next-env.d.ts, ignored output/playwright, output/fable-codex, output/vpk-html/symphony-explainer, then empty output/vpk-html and output.
+- Skipped protected/ambiguous ignored state: node_modules, backend/node_modules, .pnpm-store, .venv, .env.local, .asap-config, .deploy.local, .cache personal/qmd data, .tmp personal graph/Symphony data, backend/data runtime state, public ignored product assets, .claude worktrees, .next and .dev-* active runtime metadata.
+- .dev-frontend-port 4109 and .dev-backend-port 8080 had listening node processes, so .next and .dev-* were preserved.
+- Could not remove .agents/.DS_Store, .agents/skills/.DS_Store, or .agents/hooks/state/worktree-create.log: sandbox denied writes under .agents despite paths being ignored and idle.
+- Final validation: no tracked deletions, nothing staged; only pre-existing tracked edits remained in .agents/skills/INDEX.md, .agents/skills/vpk-sol/SKILL.md, and .agents/skills/vpk-sol/references/gateway-executor.md.
 ````
 
 ### Bug scan
@@ -101,11 +106,12 @@ Stop or skip a candidate if it is outside the repo, not ignored and not an eligi
 | Status | ACTIVE |
 | Schedule | Weekly on Monday, Wednesday, and Friday at 12:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 18, 2026, 3:19 AM GMT+10 |
-| Updated | Jul 7, 2026, 1:19 AM GMT+10 |
+| Created | April 18, 2026, 3:19 AM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/bug-scan/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/bug-scan/memory.md` |
 
@@ -143,16 +149,10 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 #### Memory Notes
 
 ````markdown
-# Bug Scan Automation Memory
+# Bug scan automation memory
 
-## 2026-07-05T14:38:07Z
-
-- Started in `/Users/esoh/.codex/worktrees/d348/vpk-rovo` at detached `HEAD`; did not edit or create a PR.
-- `automation/bug-scan` was already checked out in `/Users/esoh/.codex/worktrees/62b5/vpk-rovo`, clean, with `origin/automation/bug-scan` gone, so this run stayed read-only unless a high-confidence fix emerged.
-- No open `[Automation] Bug scan` PRs. Open automation PRs #1111-#1116 all had passing `gh pr checks`.
-- `origin/main` had no first-parent commits in the last 24 hours. Since the prior run, recent merged surfaces were title prefixing, visual demos, product sidebar actions, lozenge metrics, and lockfile verification.
-- Evidence checks: targeted recent tests passed after warming dependencies; `pnpm run test:unit:js` passed; `pnpm run verify:root-artifacts` passed; `git diff --check origin/main~8..origin/main` passed.
-- Decision: no clearly evidenced VPK-rovo regression found; no branch/PR created.
+- Last successful run: 2026-07-07T14:37:16Z
+- Run summary: Worktree was clean but detached at `origin/main` (`06ee3a5e0a71fd53be08de2073673b586413c6fd`); no existing open `[Automation] Bug scan` PR; fallback 72-hour first-parent scan covered recent mainline PRs through #1123. Full `corepack pnpm run ci:pr` passed, including structural verifiers, lint, typecheck, Rovo-core tests, and JS unit tests. No high-confidence regression surfaced, so no branch was created and no PR was opened.
 ````
 
 ### Code simplification
@@ -164,11 +164,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Thursday and Sunday at 8:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 17, 2026, 10:12 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
+| Created | April 17, 2026, 10:12 PM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/code-simplification/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/code-simplification/memory.md` |
 
@@ -258,11 +259,12 @@ Last run: 2026-07-04T22:56:15Z
 | Status | ACTIVE |
 | Schedule | Weekly on Tuesday at 4:45 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `6e61909f-80cc-4447-9e48-8e5ef8e4b0f0` |
 | Model | gpt-5.5 |
 | Reasoning effort | medium |
-| Created | Apr 18, 2026, 3:23 AM GMT+10 |
-| Updated | Jul 7, 2026, 1:22 AM GMT+10 |
+| Created | April 18, 2026, 3:23 AM GMT+10 |
+| Updated | July 7, 2026, 1:22 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/dependency-sweep/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/dependency-sweep/memory.md` |
 
@@ -429,6 +431,7 @@ Push and open `[Automation] Logo asset refresh: <n brands updated>` with labels 
 
 ````markdown
 2026-06-30T11:49:38Z - No PR opened. Worktree was clean but detached at 99c20acd, so a temporary automation/dependency-sweep branch was created and later deleted. Open dependency-sweep PR check was empty; recent dependency-sweep PRs were already merged. `pnpm run deps:check` reported 33 newer releases. `pnpm audit --json` reported four advisories: nanoid via Excalidraw paths, dompurify 3.4.10 via Mermaid paths, and high-severity linkify-it 3.0.3 via ansi-to-react. The narrow candidate was dompurify 3.4.10 -> 3.4.11 because the existing override permits it and 3.4.11 is past the 7-day maturity gate. `pnpm update dompurify --store-dir .pnpm-store` produced unrelated lockfile tarball URL churn without changing dompurify, so the churn was reverted. A narrower public-registry lockfile refresh `pnpm update dompurify@3.4.11 --lockfile-only --store-dir .pnpm-store --registry=https://registry.npmjs.org` stopped on `ERR_PNPM_TRUST_DOWNGRADE` for eslint-import-resolver-typescript@3.10.1 while resolving eslint-config-next@16.2.9. Per policy, no trust-policy exception or risky transitive major override was added. Final worktree status was clean and detached at main.
+2026-07-06T18:55:45Z - PR opened: https://github.com/eevennsoh/vpk-rovo/pull/1120 (`automation/dependency-hygiene`, commit 5cf350f3a). Worktree started clean but detached at origin/main 3befc3f8; no overlapping open PRs for Dependency hygiene / Safe dependency updates / Dependency sweep. `corepack pnpm run deps:check` reported 25 newer releases. `corepack pnpm audit --json` still reported nanoid via Excalidraw, dompurify 3.4.10 via Mermaid paths, and linkify-it 3.0.3 via ansi-to-react. Scratch repo-registry probe for `dompurify@3.4.11` succeeded, npm metadata showed 3.4.11 as latest stable published 2026-06-17, and tightening the existing override from `^3.3.2` to `^3.4.11` resolved the DOMPurify advisory. Initial lockfile refresh normalized unrelated public tarball fields, which were restored so the final diff is only `pnpm-workspace.yaml` plus dompurify lockfile resolution. Validation passed: `corepack pnpm run verify:lockfile`, post-change `corepack pnpm audit --json` (DOMPurify advisory gone; nanoid and linkify-it remain), and `corepack pnpm run ci:pr`. PR labels: automation, codex, dependencies; no `codex-automation` label existed. Remote CI had started and was in progress at handoff.
 ````
 
 ### Deprecation audit
@@ -440,11 +443,12 @@ Push and open `[Automation] Logo asset refresh: <n brands updated>` with labels 
 | Status | ACTIVE |
 | Schedule | Weekly on Saturday at 4:40 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | medium |
-| Created | Apr 30, 2026, 2:55 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:19 AM GMT+10 |
+| Created | April 30, 2026, 2:55 PM GMT+10 |
+| Updated | July 11, 2026, 10:26 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/deprecation-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/deprecation-audit/memory.md` |
 
@@ -515,11 +519,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Friday at 10:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 18, 2026, 3:20 AM GMT+10 |
-| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
+| Created | April 18, 2026, 3:20 AM GMT+10 |
+| Updated | July 11, 2026, 10:26 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/engineering-improvement-map/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/engineering-improvement-map/memory.md` |
 
@@ -571,11 +576,12 @@ Recommendations carried forward from this run: (1) shared catalog previews need 
 | Status | ACTIVE |
 | Schedule | Weekly on Tuesday, Thursday, and Saturday at 1:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | May 2, 2026, 8:08 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/frontend-runtime-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/frontend-runtime-audit/memory.md` |
 
@@ -629,6 +635,24 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 - Runtime evidence: root title rendered as `frontend-runtime-audit.vpk-rovo:V—P—K: Venn Prototype Kit`; client navigation to `/components/projects/studio` updated to `frontend-runtime-audit.vpk-rovo:Studio — Projects — VPK`; `agent-browser errors` was empty and console output was limited to dev HMR/React Grab logs.
 - Artifact: saved ignored screenshot `output/agent-browser/frontend-runtime-audit-studio.png`.
 - Outcome: no reproducible browser-visible regression, no tracked edits, no PR. Stopped dev tmux and closed the browser session.
+
+## 2026-07-06T15:47:17Z
+
+- Run target: recently merged product sidebar keyboard action reveal work from PR #1112 (`components/blocks/product-sidebar/components/navigation-item.tsx`, `navigation-item-with-hover-chevron.tsx`) with live route coverage through `/confluence`.
+- Safety: initial worktree was clean but detached at `3befc3f8a`; created `automation/frontend-runtime-audit`, found no open matching automation PR and no open main PR overlap, then deleted the temporary branch because no PR was opened.
+- Browser tooling: loaded `agent-browser` core guidance, started `corepack pnpm run dev:tmux:start`, and used `npx agent-browser` against `https://frontend-runtime-audit.vpk-rovo.localhost/confluence`.
+- Runtime evidence: initial `/confluence` snapshot had no Content row action buttons; hover revealed `Add to Content` and `More actions for Content`; keyboard Tab focus on Content revealed both actions, and the next Tab moved focus to `Add to Content`. `agent-browser errors` was empty.
+- Validation/artifact: focused test `corepack pnpm exec node --test components/blocks/product-sidebar/components/navigation-item-actions.test.js` passed; saved ignored screenshot `output/agent-browser/frontend-runtime-audit-confluence-content-actions.png`.
+- Outcome: no reproducible browser-visible regression, no tracked edits, no PR. Stopped dev tmux and closed the browser session.
+
+## 2026-07-08T15:38:13Z
+
+- Run target: recently merged document title separator work from PR #1128 (`lib/document-title-prefix.ts`) with route probes for `/` and `/components/projects/studio`.
+- Safety: prompt cwd `/Users/esoh/Documents/Labs/vpk-rovo` was unavailable; actual main checkout was clean at `/Users/esoh/Labs/vpk-rovo`. Created a fresh scratch clone in `/Users/esoh/.codex/automations/frontend-runtime-audit/vpk-rovo`, switched to `automation/frontend-runtime-audit`, confirmed no open matching automation PR, then deleted the temporary branch because no PR was opened.
+- Browser tooling: loaded `modern-web-guidance`, `agent-browser`, and Playwright fallback guidance. `modern-web-guidance` had no relevant high-similarity title guide. `agent-browser` failed to launch Chrome (`DevToolsActivePort` / early Chrome exit) even with a shorter socket path and `--no-sandbox`; Playwright fallback hit cache redirection requirements, missing bundled Chromium, then system Chrome aborted with `SIGABRT`.
+- Runtime evidence: `corepack pnpm run dev:tmux:start` served the scratch clone at frontend `http://localhost:4954`; direct HTTP probes returned 200 for `/` and `/components/projects/studio`. SSR `<title>` values were `V—P—K: Venn Prototype Kit` and `Studio — Projects — VPK`; server logs showed only expected startup/config warnings and successful 200 route hits.
+- Validation: focused `corepack pnpm exec node --test lib/document-title-prefix.test.js` passed after scratch dependency installation. No tracked edits, so no lint/typecheck/ci gate was run.
+- Outcome: no browser-supported reproducible regression and no review-ready fix. Stopped dev tmux, closed browser sessions, left scratch clone clean on `main`, and opened no PR.
 ````
 
 ### Interface contract audit
@@ -640,11 +664,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Monday and Thursday at 5:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 30, 2026, 2:55 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
+| Created | April 30, 2026, 2:55 PM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/interface-contract-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/interface-contract-audit/memory.md` |
 
@@ -691,6 +716,15 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 - Added focused assertions in `components/projects/studio/lib/studio-agent-creation-context.test.js`.
 - Validation passed: `node --test components/projects/studio/lib/studio-agent-creation-context.test.js`; `node --test app/data/directory/repair-agent-result.test.js app/data/directory/agent-generation-e2e.test.js`; `pnpm run lint`; `pnpm run typecheck`.
 - Opened PR #1117: `[Automation] Interface contract audit: tighten Studio knowledge prompt contract`. Requested `automation`, `bugfix`, and `codex-automation` labels were unavailable; PR has `codex`.
+
+## 2026-07-08T19:43:11Z
+- Started from clean live checkout at `origin/main` on `/Users/esoh/Labs/vpk-rovo`; avoided touching the live `symphony/VEN-97` checkout by creating scratch worktree `/private/tmp/vpk-rovo-interface-contract-audit` on `automation/interface-contract-audit`.
+- Audited the recently touched Rovo document list boundary from merged PR #1125 (`backend/lib/rovo-app-documents.js` / `backend/lib/rovo-app-managers.test.js`): persisted document JSON can preserve malformed non-empty `updatedAt`, while `GET /api/rovo/documents` consumers rely on newest-first ordering.
+- Patched the sorter to treat malformed persisted `updatedAt` values as oldest instead of leaking `NaN` from the comparator; preserved the one-parse-per-document optimization for valid timestamps.
+- Added a focused storage-boundary regression in `backend/lib/rovo-app-managers.test.js` with direct JSON fixtures including `updatedAt: "not-a-date"`.
+- Regenerated `.agents/knowledge/repo-map.json` because `corepack pnpm run ci:pr` initially failed `verify:repo-map` on a one-line existing VPK Symphony skill description drift.
+- Validation passed: `node --test backend/lib/rovo-app-managers.test.js`; `corepack pnpm install --prefer-offline`; `corepack pnpm run ci:pr`.
+- Opened PR #1135: `[Automation] Interface contract audit: harden Rovo document timestamps` with labels `automation`, `codex`, and `bugfix`. Open-overlap check found only unrelated draft PR #1124; related PR #1125 was merged.
 ````
 
 ### Performance audit
@@ -702,11 +736,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Wednesday and Sunday at 3:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 18, 2026, 3:25 AM GMT+10 |
-| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
+| Created | April 18, 2026, 3:25 AM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/performance-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/performance-audit/memory.md` |
 
@@ -746,16 +781,16 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 #### Memory Notes
 
 ````markdown
-# Performance Audit Automation Memory
+## 2026-07-07T17:41:54Z
 
-## 2026-07-04T17:43:43Z
-
-- Created `automation/performance-audit` from a clean detached worktree after confirming no open matching PR and no local/remote branch collision.
-- Shipped PR #1114, `[Automation] Performance audit: precompute skill draft sort timestamps`, for `backend/lib/hermes-skill-drafts.js`.
-- Evidence: `createHermesSkillDraftManager().listDrafts()` over a 3,000-record synthetic draft index improved from median/p90 `8.361ms` / `9.339ms` to `2.552ms` / `3.211ms`; checksum stayed `150850`.
-- Guard: added `backend/lib/hermes-skill-drafts.test.js` coverage for newest-first order and exactly one `Date.parse` call per normalized draft.
-- Validation passed: `node --test backend/lib/hermes-skill-drafts.test.js`, `pnpm run lint`, `pnpm run typecheck`, and `git diff --check`.
-- Labels: only `codex` was available; `automation`, `performance`, and `codex-automation` were not present in the repo label list.
+- Started from clean detached worktree `f7a0` at `06ee3a5`; created `automation/performance-audit` before editing.
+- Open overlap check for `[Automation] Performance audit` returned `[]`; recent merged PRs covered skill draft sorting, preview cards, Mermaid parsing, and date formatter/shared sort work.
+- Shipped PR #1125: `[Automation] Performance audit: precompute document sort timestamps`.
+- Change: `backend/lib/rovo-app-documents.js` now decorates documents with one parsed `updatedAtMs` before sorting, replacing `Date.parse` inside the comparator.
+- Guard: `backend/lib/rovo-app-managers.test.js` asserts newest-first document order and exactly one `Date.parse` call per listed document.
+- Evidence: 3,200-doc `listDocuments()` benchmark dropped parse calls from `66,156` to `3,200` per round; median moved `123.433ms` to `112.413ms` with checksum `736600` unchanged. Isolated sort benchmark dropped median/p90 from `6.838ms` / `7.615ms` to `0.614ms` / `0.716ms`, parse calls from `66,316` to `3,200`, checksum `1841500` unchanged.
+- Validation passed: `corepack pnpm run perf:budget:warn`, `node --test backend/lib/rovo-app-managers.test.js`, focused eslint, `git diff --check`, and `corepack pnpm run ci:pr`.
+- Note: `output/perf-baseline.json` was produced by `perf:budget:warn` and left ignored/uncommitted.
 ````
 
 ### Standup summary
@@ -766,9 +801,11 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Kind | heartbeat |
 | Status | ACTIVE |
 | Schedule | Daily at 9:30 AM, 1:30 PM, and 5:30 PM |
+| Execution environment | thread |
 | Target thread ID | `019e7e5b-4b78-7d51-b68f-eae310323092` |
+| Model | Default |
 | Created | May 31, 2026, 3:39 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:22 AM GMT+10 |
+| Updated | July 10, 2026, 10:00 AM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/standup-summary/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/standup-summary/memory.md` |
 
@@ -777,6 +814,9 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 ````markdown
 ## Role
 Create a read-only standup summary for the VPK-rovo repository. Keep the user current on high-signal repo activity without managing Codex threads or doing implementation work.
+
+## Repository Root
+Use `/Users/esoh/Labs/vpk-rovo` as the current VPK-rovo checkout. Treat `/Users/esoh/Documents/Labs/VPK-rovo` and `/Users/esoh/Documents/Labs/vpk-rovo` as stale historical paths. If heartbeat or environment context points to either stale path, switch to `/Users/esoh/Labs/vpk-rovo` before running evidence commands.
 
 ## Goal
 Produce a concise, high-signal summary of what changed since the last successful automation run. Prioritize impact and follow-up risk over completeness.
@@ -812,7 +852,7 @@ Whenever a pull request appears in the user-facing summary or Watchlist, include
 Do not refer to a PR by number alone unless the title is genuinely unavailable after inspecting GitHub. If the same PR is mentioned multiple times, include the full number and title on first mention, then use a short natural reference afterward.
 
 ## Default Evidence Commands
-Use read-only commands only. Run local repo commands from the automation working directory. Compute `<window-start>` from the Observation Window section. For merged PRs, fetch a broad recent list and apply the `<window-start>` cutoff locally instead of relying only on GitHub merged-search filters.
+Use read-only commands only. Run local repo commands from `/Users/esoh/Labs/vpk-rovo`. Compute `<window-start>` from the Observation Window section. For merged PRs, fetch a broad recent list and apply the `<window-start>` cutoff locally instead of relying only on GitHub merged-search filters.
 
 ```bash
 gh pr list --state open --json number,title,author,isDraft,mergeStateStatus,reviewDecision,headRefName,updatedAt,labels,statusCheckRollup
@@ -896,6 +936,51 @@ Stop rather than inventing details if PR data, commit history, or check evidence
 - Outcome: no open PRs, no open issues, no merged PRs or PR/issue updates in the exact window, and no automation PR activity. Latest local/GitHub activity remained PR #529 / commit f03998d5 before the window. Local checkout was dirty in six UI/test files; treated as local-only work, not completed portfolio state.
 ````
 
+### System clean
+
+| Field | Value |
+| --- | --- |
+| ID | `vpk-system-clean` |
+| Kind | cron |
+| Status | ACTIVE |
+| Schedule | Every 30 minutes |
+| Execution environment | local |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
+| Model | gpt-5.5 |
+| Reasoning effort | medium |
+| Created | July 11, 2026, 11:13 PM GMT+10 |
+| Updated | July 11, 2026, 11:16 PM GMT+10 |
+| Config source | `/Users/esoh/.codex/automations/vpk-system-clean/automation.toml` |
+| Memory source | (none) |
+
+#### Prompt
+
+````markdown
+## Task
+Run the repo-local `vpk-system-clean` maintenance flow for this Mac. Use `[$vpk-system-clean](/Users/esoh/Labs/vpk-rovo/.agents/skills/vpk-system-clean/SKILL.md)` as the canonical contract for what the cleanup may inspect, restart, or delete.
+
+## Commands
+Use `/Users/esoh/Labs/vpk-rovo` as the working directory.
+
+Read the skill first, then run exactly:
+```bash
+/bin/zsh /Users/esoh/.local/bin/vpk-system-clean.sh
+```
+
+## Judgment
+This is local housekeeping only. Do not create branches, commits, pushes, PRs, staged changes, plist files, launchd schedules, or repo edits. Do not hand-write automation or launchd configuration. Do not run extra cleanup commands; the installed script owns the cleanup logic, live-build cache checks, and logging. The script is idempotent, takes seconds, never deletes live build caches, and logs to `/Users/esoh/Library/Logs/vpk-system-clean.log`.
+
+## Validation
+Report whether the command exited successfully. If it fails, include the exit status and the last relevant error output. No lint, typecheck, git validation, or browser validation is needed unless the automation unexpectedly edits repo files, which it should not do.
+
+## Handoff
+Keep the response brief: state success or failure, mention the log path, and call out only actionable warnings from the script output.
+
+## Stop Conditions
+Stop without remediation if the skill file or installed script is missing, the working directory is unavailable, or the command cannot run. Do not repair the installation or change schedules from this automation run.
+````
+
 ### Test coverage
 
 | Field | Value |
@@ -905,11 +990,12 @@ Stop rather than inventing details if PR data, commit history, or check evidence
 | Status | ACTIVE |
 | Schedule | Weekly on Tuesday and Friday at 6:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 19, 2026, 4:17 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
+| Created | April 19, 2026, 4:17 PM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/test-coverage/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/test-coverage/memory.md` |
 
@@ -947,24 +1033,16 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 #### Memory Notes
 
 ````markdown
-# Test Coverage Automation Memory
+# Test coverage automation memory
 
-## 2026-06-30T16:58:26Z
+## 2026-07-06T20:44:48Z
 
-- Started in `/Users/esoh/.codex/worktrees/847a/vpk-rovo` on a clean detached HEAD at `99c20acd0`, created `automation/test-coverage`, fetched `origin/main`, and confirmed no open `[Automation] Test coverage` PR overlapped.
-- Inspected recent merged work since the previous run. Selected PR #1060 (`Hide empty-result popup for / and @ suggestion filters`) because the user-visible editor regression had browser validation but no durable unit/source contract.
-- Added `components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js` to assert slash and mention empty filters set popup `display: none` and return before rendering no-results rows. Added only that exact file to `scripts/run-js-unit-tests.mjs` so CI gates it without broadening to all rich-text editor source-contract tests.
-- Validation passed: `node --test components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js`, `pnpm run test:unit:js`, `pnpm run lint`, `pnpm run typecheck`, and `git diff --check`.
-- Opened PR #1086: `[Automation] Test coverage: empty suggestion popups` from `automation/test-coverage` to `main`. Applied available `codex` label; `automation`, `tests`, and `codex-automation` labels were not present. CI `PR checks` was in progress at handoff.
-
-## 2026-07-02T21:39:12Z
-
-- Started in `/Users/esoh/.codex/worktrees/4f80/vpk-rovo` on a clean detached HEAD at `eca58c67d`, created `automation/test-coverage`, fetched `origin/main`, and confirmed no open `[Automation] Test coverage` PR overlapped.
-- Inspected recent merged work since the previous run and selected the CI lockfile registry verifier path from the registry-resolution changes because `@atlassian/logo-third-party` is a narrow allowed `atlassian-npm` exception without direct test coverage.
-- Added one focused assertion to `scripts/verify-pnpm-lockfile.test.js` proving `@atlassian/logo-third-party` tarball URLs from `atlassian-npm` produce no findings while existing broad blocked-registry tests remain intact.
-- Validation passed: `node --test scripts/verify-pnpm-lockfile.test.js`, `node scripts/verify-pnpm-lockfile.js`, `git diff --check`, and with repo-pinned pnpm via Corepack: `corepack pnpm install --frozen-lockfile --prefer-offline`, `corepack pnpm run test:unit:js`, `corepack pnpm run lint`, and `corepack pnpm run typecheck`.
-- Bare `pnpm run test:unit:js`, `pnpm run lint`, and `pnpm run typecheck` failed before repo scripts because PATH resolved to Codex runtime pnpm 11.7.0, whose supply-chain preflight rejects nine existing Atlaskit tarball URL metadata mismatches; Corepack resolved the repo-pinned pnpm 11.1.2 and passed.
-- Opened PR #1105: `[Automation] Test coverage: lockfile allowlist` from `automation/test-coverage` to `main`. Applied available `codex` label; `automation`, `tests`, and `codex-automation` labels were not present. CI `PR checks` was in progress at handoff.
+- Current run time: 2026-07-06T20:44:48Z.
+- The managed worktree `/Users/esoh/.codex/worktrees/d908/vpk-rovo` was clean but detached; branch creation failed because the shared worktree `.git` lock was not writable, so the run used the isolated scratch checkout `/Users/esoh/.codex/automations/test-coverage/vpk-rovo-scratch-20260707`.
+- Opened PR #1122, `[Automation] Test coverage: Rovo queued prompt completion`, from `automation/test-coverage-20260707` with labels `automation`, `codex`, and `tests`.
+- Added focused source-contract coverage in `app/contexts/rovo-chat-helpers.test.js` for `hasTurnCompleteForPrompt` stale timestamp handling and `didAssistantCompleteActivePrompt` text/file matching for queued prompt release.
+- Validation passed: `corepack pnpm exec node --test app/contexts/rovo-chat-helpers.test.js`, `corepack pnpm run test:unit:js`, and `corepack pnpm run ci:pr`.
+- Freshness/overlap: based on `origin/main` `8f777693`; no open `[Automation] Test coverage` PR; only open PR was #1120 dependency hygiene with no touched-file overlap.
 ````
 
 ### UI design quality audit
@@ -976,11 +1054,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Wednesday and Saturday at 7:30 AM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
 | Created | May 2, 2026, 8:01 PM GMT+10 |
-| Updated | Jul 7, 2026, 1:21 AM GMT+10 |
+| Updated | July 11, 2026, 10:26 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/ui-design-quality-audit/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/ui-design-quality-audit/memory.md` |
 
@@ -1021,6 +1100,7 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 # UI Design Quality Audit Memory
 
 - 2026-07-03T21:44:37Z: Audited recent VPK-rovo UI/CSS changes from clean branch `automation/ui-design-quality-audit`. Found one high-confidence reusable component accessibility drift in the recently extracted product-sidebar row actions: `NavigationItemActions` remained mouse-hover only, so keyboard focus on the Confluence `Content` row could not reveal/tab into `Add to Content` or `More actions for Content`. Fixed both row owners with focus-within visibility state, added `components/blocks/product-sidebar/components/navigation-item-actions.test.js`, validated focused test, lint, typecheck, and `agent-browser` keyboard proof on `/preview/projects/confluence`. Opened PR #1112: `[Automation] UI design quality audit: restore sidebar action keyboard access`. Labels `automation`, `ui`, and `codex-automation` were unavailable; applied `codex`.
+- 2026-07-07T21:48:15Z: Audited recent VPK-rovo UI/CSS changes from clean branch `automation/ui-design-quality-audit`. Found one high-confidence motion/CSS-variable performance drift in `components/projects/studio/components/rovo-app-home-starter-bento.tsx`: the Studio home starter bento pointer loop read `getBoundingClientRect()` and wrote `--card-glow-pointer-x/y` per tile in the same pointermove loop. Batched geometry reads before CSS variable writes, tightened the existing source-contract test, validated the focused bento test, full `corepack pnpm run ci:pr`, and `agent-browser` hover proof on `/studio` at `https://ui-design-quality-audit.vpk-rovo.localhost/studio`. Opened PR #1126: `[Automation] UI design quality audit: batch Studio starter glow pointer updates`. Applied labels `automation`, `codex`, and `ui`; `codex-automation` label was not available.
 ````
 
 ### Update AGENTS.md
@@ -1032,11 +1112,12 @@ Stop without editing or PR if branch/worktree state is unsafe, overlap makes beh
 | Status | ACTIVE |
 | Schedule | Weekly on Sunday at 12:20 PM |
 | Execution environment | worktree |
-| Working directory | `/Users/esoh/Documents/Labs/vpk-rovo` |
+| Working directory | `/Users/esoh/Labs/vpk-rovo` |
+| Project ID | `/Users/esoh/Labs/vpk-rovo` |
 | Model | gpt-5.5 |
 | Reasoning effort | xhigh |
-| Created | Apr 18, 2026, 3:22 AM GMT+10 |
-| Updated | Jul 7, 2026, 1:20 AM GMT+10 |
+| Created | April 18, 2026, 3:22 AM GMT+10 |
+| Updated | July 11, 2026, 10:25 PM GMT+10 |
 | Config source | `/Users/esoh/.codex/automations/update-agents-md/automation.toml` |
 | Memory source | `/Users/esoh/.codex/automations/update-agents-md/memory.md` |
 

@@ -2,7 +2,7 @@
 
 Use this exact routing contract for `/vpk-sol` workers. It is intentionally
 self-contained and does not rely on the user's aliases, current provider,
-global config, or OAuth login.
+global config, or planner login state.
 
 ## Preflight
 
@@ -14,8 +14,8 @@ curl -fsS http://localhost:29576/openai/v1/models \
   | grep -F 'gpt-5.5-2026-04-23'
 ```
 
-Failure is a blocker. Do not substitute a model from the planner's OAuth
-provider.
+Failure is a blocker. Do not substitute a model from the planner's OpenAI
+provider, OAuth login, or API-key login.
 
 ## Canonical first run
 
@@ -44,12 +44,13 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
 
 Why each isolation layer exists:
 
-- `CODEX_HOME` keeps worker sessions and state away from Desktop's OAuth home.
+- `CODEX_HOME` keeps worker sessions and state away from the planner's Codex
+  home, whether the planner is running in Desktop or CLI.
 - `--ignore-user-config` prevents provider, model, plugin, or approval drift.
 - Unsetting API-key variables prevents ambient credentials from changing the
   request path.
 - `requires_openai_auth=false` prevents Codex from requiring or attaching the
-  personal ChatGPT login. Proximity authenticates upstream itself.
+  planner login. Proximity authenticates upstream itself.
 - The exact model and xhigh effort avoid alias or default drift.
 - Workspace-write contains implementation to the current worktree.
 

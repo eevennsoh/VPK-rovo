@@ -1,22 +1,25 @@
 ---
 name: vpk-sol
-description: "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants personal ChatGPT OAuth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from Codex Desktop."
-purpose: Keep high-judgment planning on a personal GPT-5.6 Sol session while routing execution to GPT-5.5 xhigh through Proximity without exposing or changing the planner's OAuth state.
+description: "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants the current Sol planner auth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from any Codex surface."
+purpose: Keep high-judgment planning in the current GPT-5.6 Sol Codex session while routing execution to GPT-5.5 xhigh through Proximity without exposing or changing the planner's auth state.
 owner: VPK
 category: agent-operations
-inputs: A task for Sol to plan and orchestrate from a Codex Desktop session running gpt-5.6-sol.
+inputs: A task for Sol to plan and orchestrate from any Codex session running gpt-5.6-sol.
 outputs: Frozen worker briefs, isolated GPT-5.5 worker reports, reviewed implementation diffs, orchestrator-owned verification, and one synthesized result.
 required_tools: Shell access to codex and curl, a running Proximity endpoint on localhost:29576, and workspace-write access to the current worktree.
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-sol
 generated_artifacts: Briefs, reports, and isolated worker homes live under gitignored output/sol-codex/.
-common_failure_modes: Running from a non-Sol planner session, inheriting the planner's CODEX_HOME or OAuth environment, using a global provider-switch helper, falling back to OAuth when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
+common_failure_modes: Running from a non-Sol planner session, inheriting the planner's CODEX_HOME or auth environment, using a global provider-switch helper, falling back to the planner provider when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
 ---
 
 # VPK Sol — Personal Planner, Gateway Workers
 
-Use a personal GPT-5.6 Sol Codex Desktop session for planning, review, and
-synthesis. Delegate execution to isolated GPT-5.5 xhigh `codex exec` workers
-whose requests go only to Proximity's localhost AI Gateway endpoint.
+Use the current GPT-5.6 Sol Codex session for planning, review, and synthesis.
+That planner can be in Codex Desktop or the Codex CLI, and Desktop can be
+logged in with OAuth or API-key auth. The routing rule is surface-agnostic:
+Sol plans, reviews, and synthesizes; implementation and token-heavy exploration
+go to isolated GPT-5.5 xhigh `codex exec` workers whose requests go only to
+Proximity's localhost AI Gateway endpoint.
 
 This is the Codex counterpart to the proven `/vpk-fable` split. It is an
 orchestrator workflow only; it has no advisor mode or Claude-worker fallback.
@@ -39,13 +42,13 @@ Before planning:
    contains `gpt-5.5-2026-04-23`.
 
 If any worker precondition fails, report the blocker. Never fall back to the
-planner's OpenAI provider or personal OAuth account; that defeats the budget
-and account boundary this skill exists to preserve.
+planner's OpenAI provider, OAuth login, or API-key login for implementation;
+that defeats the budget and account boundary this skill exists to preserve.
 
 ## Account boundary
 
-- **Planner:** the current Codex Desktop process, personal ChatGPT OAuth,
-  `gpt-5.6-sol`.
+- **Planner:** the current Codex session, Desktop or CLI, running
+  `gpt-5.6-sol` with the user's intended planner auth.
 - **Worker:** a `codex exec` process with its own ignored `CODEX_HOME`, no
   copied `auth.json`, and explicit Proximity provider settings.
 - **Upstream credential:** owned by Proximity. Do not put it in briefs,
