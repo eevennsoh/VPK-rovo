@@ -1,0 +1,108 @@
+---
+name: vpk-sol
+description: "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants personal ChatGPT OAuth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from Codex Desktop."
+purpose: Keep high-judgment planning on a personal GPT-5.6 Sol session while routing execution to GPT-5.5 xhigh through Proximity without exposing or changing the planner's OAuth state.
+owner: VPK
+category: agent-operations
+inputs: A task for Sol to plan and orchestrate from a Codex Desktop session running gpt-5.6-sol.
+outputs: Frozen worker briefs, isolated GPT-5.5 worker reports, reviewed implementation diffs, orchestrator-owned verification, and one synthesized result.
+required_tools: Shell access to codex and curl, a running Proximity endpoint on localhost:29576, and workspace-write access to the current worktree.
+validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-sol
+generated_artifacts: Briefs, reports, and isolated worker homes live under gitignored output/sol-codex/.
+common_failure_modes: Running from a non-Sol planner session, inheriting the planner's CODEX_HOME or OAuth environment, using a global provider-switch helper, falling back to OAuth when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
+---
+
+# VPK Sol — Personal Planner, Gateway Workers
+
+Use a personal GPT-5.6 Sol Codex Desktop session for planning, review, and
+synthesis. Delegate execution to isolated GPT-5.5 xhigh `codex exec` workers
+whose requests go only to Proximity's localhost AI Gateway endpoint.
+
+This is the Codex counterpart to the proven `/vpk-fable` split. It is an
+orchestrator workflow only; it has no advisor mode or Claude-worker fallback.
+
+## Invocation
+
+| Invocation | Behavior |
+| --- | --- |
+| `/vpk-sol <task>` | Plan the task, delegate execution, verify the result, and synthesize |
+| `/vpk-sol` | Explain the account split and ask for a task |
+
+## Hard preconditions
+
+Before planning:
+
+1. Confirm the current main session reports model `gpt-5.6-sol`. If it does
+   not, stop and ask the user to switch the planner session to Sol.
+2. Confirm `codex --version` succeeds.
+3. Confirm Proximity is reachable and its unauthenticated model catalog
+   contains `gpt-5.5-2026-04-23`.
+
+If any worker precondition fails, report the blocker. Never fall back to the
+planner's OpenAI provider or personal OAuth account; that defeats the budget
+and account boundary this skill exists to preserve.
+
+## Account boundary
+
+- **Planner:** the current Codex Desktop process, personal ChatGPT OAuth,
+  `gpt-5.6-sol`.
+- **Worker:** a `codex exec` process with its own ignored `CODEX_HOME`, no
+  copied `auth.json`, and explicit Proximity provider settings.
+- **Upstream credential:** owned by Proximity. Do not put it in briefs,
+  environment overrides, worker homes, reports, or repository files.
+
+Do not invoke `vpk-codex`, `vpk-codex-gw`, `codex-gw`,
+`codex-use-openai`, or `codex-use-gw` from this workflow. The canonical worker
+command is self-contained so an alias or global config change cannot redirect
+billing. Read [references/gateway-executor.md](references/gateway-executor.md)
+before dispatching any worker.
+
+## Orchestration procedure
+
+1. **Ground.** Read only enough primary repo context to identify the real
+   owner, constraints, success criteria, and proof commands. Sol should judge
+   the plan, not consume its scarce context on mechanical coverage.
+2. **Freeze the plan.** Choose the worker shape and write self-contained
+   briefs before dispatch. Each brief names its goal, exact scope,
+   constraints, non-goals, proof, and report format.
+3. **Delegate.** Use one persistent worker for implementation. Use 2–5
+   parallel workers only when every brief is substantial and independent.
+4. **Collect all reports.** Never synthesize from a partial fan-out. Missing
+   or empty report files are infrastructure failures; a supported "not found"
+   result is a valid finding.
+5. **Review as Sol.** Read the reports, inspect the actual diff, and run the
+   final proof commands yourself. A worker never self-certifies completion.
+6. **Correct once or twice.** Send focused follow-ups to the same single
+   implementation worker so it retains context. After two unsuccessful
+   correction cycles, stop and report the blocker; Sol does not silently take
+   over implementation.
+7. **Synthesize.** Return the outcome, proof, and any genuine blockers. Keep
+   raw worker material in worker contexts and report files.
+
+Full shape, brief, and report rules:
+[references/orchestration-pattern.md](references/orchestration-pattern.md).
+
+## Worker shapes
+
+### Single implementation worker
+
+Use one worker home for the full implementation loop. Resume it only when no
+other worker for this worktree is active. Inspect the diff after every run,
+then write a narrow follow-up for anything incomplete.
+
+### Parallel coverage workers
+
+Fan out only for independent research, audits, or truly disjoint write scopes.
+Give each process a unique worker directory and `CODEX_HOME`. Never use
+`resume --last` during or immediately after fan-out because the selected
+session is ambiguous.
+
+## Boundaries
+
+- Sol owns decisions, worker briefs, review, final proof, and synthesis.
+- Workers own repo mutation and token-heavy exploration.
+- Worker homes and reports stay under `output/sol-codex/`.
+- Workspace sandboxing is the default. Do not bypass approvals or the sandbox.
+- Never copy, link, or read the planner's `~/.codex/auth.json` into a worker.
+- Never change `~/.codex/config.toml` or automation model pins as part of a
+  `/vpk-sol` run.

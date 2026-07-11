@@ -7521,7 +7521,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 14
+			"localSkillCount": 15
 		},
 		"localSkills": [
 			{
@@ -7589,6 +7589,12 @@
 				"name": "vpk-setup",
 				"path": ".agents/skills/vpk-setup/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
+			},
+			{
+				"description": "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants personal ChatGPT OAuth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from Codex Desktop.",
+				"name": "vpk-sol",
+				"path": ".agents/skills/vpk-sol/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-sol"
 			},
 			{
 				"description": "Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.",
