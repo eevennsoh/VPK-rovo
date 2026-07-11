@@ -140,29 +140,30 @@ warn_about_other_dev_stacks() {
 	fi
 
 	local roots=()
-	local roots_count=0
-	local pid root existing
+	local pid root existing duplicate
 	while IFS= read -r pid; do
 		[[ -n "$pid" ]] || continue
 		root="$(cwd_of_pid "$pid" || true)"
 		[[ -n "$root" ]] || continue
 		[[ "$root" == "$REPO_ROOT" ]] && continue
-		if (( roots_count > 0 )); then
-			for existing in "${roots[@]}"; do
-				[[ "$existing" == "$root" ]] && continue 2
-			done
-		fi
-		roots[roots_count]="$root"
-		roots_count=$(( roots_count + 1 ))
+		duplicate=0
+		for existing in "${roots[@]}"; do
+			if [[ "$existing" == "$root" ]]; then
+				duplicate=1
+				break
+			fi
+		done
+		(( duplicate )) && continue
+		roots+=("$root")
 	done <<<"$pids"
 
-	if (( roots_count < warn_threshold )); then
+	if (( ${#roots[@]} < warn_threshold )); then
 		return 0
 	fi
 
 	echo "" >&2
 	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-	echo "[dev:tmux] WARNING: ${roots_count} other VPK dev stack(s) already live." >&2
+	echo "[dev:tmux] WARNING: ${#roots[@]} other VPK dev stack(s) already live." >&2
 	echo "[dev:tmux] Each warmed stack can hold multiple GB of RAM." >&2
 	echo "[dev:tmux] Stop unneeded stacks with:" >&2
 	for root in "${roots[@]}"; do
