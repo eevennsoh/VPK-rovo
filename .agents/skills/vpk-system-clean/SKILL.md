@@ -25,22 +25,29 @@ common_failure_modes: Killing unrelated active work, deleting ambiguous workspac
 
 # vpk-system-clean
 
-A 24/7 Mac running Next.js dev (Turbopack) hits four linked CPU/RAM problems:
+A 24/7 Mac running Next.js dev (Turbopack) hits five linked CPU/RAM problems:
 
 1. **Runaway dev server (the big one).** `next-server` gets stuck in a
    watch → recompile → write → FSEvent → re-watch feedback loop and pegs the CPU
    (observed: **477%**). A healthy compile is *bursty*; a runaway stays hot. The
    only reliable live fix is to restart that dev server.
-2. **Runaway `.next` caches.** Turbopack's `.next/dev` grows unbounded (15 GB /
+2. **Bloated dev server (memory).** `next-server` can also idle at huge memory
+   while CPU is quiet. Measured as **vmmap Physical footprint**, not `ps` RSS —
+   the arm64 `MAP_JIT` leak lives in JIT/native mappings that RSS barely counts
+   (an 11.1 GB-footprint server showed 0.19 GB RSS). Post-Next-16.3, a healthy
+   dev server sits in the low single-digit GB range; **≥6 GB** means the leak
+   is back and the safest fix is to restart that dev server.
+3. **Runaway `.next` caches.** Turbopack's `.next/dev` grows unbounded (15 GB /
    39k files seen). Every file feeds macOS FSEvents and *amplifies* the loop in
    (1). Keeping it small is the prevention.
-3. **Stale tmux dev sessions.** The worktree launchers — `scripts/dev-tmux-plain.sh` (plain frontend + backend, run **through `portless run`**) and `scripts/dev-tmux.sh` (the Rovo pool) — each run a per-worktree session named `vpk-dev-<worktree>` on the shared `vpk-dev` socket. Nothing auto-stops them, so a deleted worktree leaves an **orphaned** session burning CPU/RAM/ports indefinitely. Killed when its worktree path no longer exists (and you are not attached).
-4. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
+4. **Stale tmux dev sessions.** The worktree launchers — `scripts/dev-tmux-plain.sh` (plain frontend + backend, run **through `portless run`**) and `scripts/dev-tmux.sh` (the Rovo pool) — each run a per-worktree session named `vpk-dev-<worktree>`. Sessions may live on the default tmux socket or the private `vpk-dev` socket used by the plain stack. Nothing auto-stops them, so a deleted worktree leaves an **orphaned** session burning CPU/RAM/ports indefinitely. Killed through the same socket that listed it when its worktree path no longer exists (and you are not attached).
+5. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
    (22 GB / 100%+ seen). It auto-respawns clean when killed.
 
-They reinforce each other, so the skill addresses all four: it **fixes** a live
-runaway by restarting it, and **prevents** recurrence by clearing the bloat —
-stale caches and orphaned dev sessions — that drives the loop.
+They reinforce each other, so the skill addresses all five: it **fixes** a live
+runaway or bloated server by restarting it, and **prevents** recurrence by
+clearing the bloat — stale caches and orphaned dev sessions — that drives the
+loop.
 
 The setup: a guard **script** (`scripts/vpk-system-clean.sh`) run on a schedule
 by a per-user **launchd agent** (`com.<user>.vpk-system-clean`). The skill is the
@@ -66,8 +73,9 @@ act on whatever it flags.
 
 ## Doctor — fix a runaway dev server (the CPU spike)
 
-`scripts/doctor.sh` lists every `next-server` with its CPU%, RSS, port, and
-worktree, flagging any **sustained** above `NEXT_CPU_HOT` (150%). `--kill`
+`scripts/doctor.sh` lists every `next-server` with its CPU%, physical footprint
+(GB), port, and worktree, flagging any **sustained** above `NEXT_CPU_HOT`
+(150%). Also exposed as `pnpm run mem` from the vpk-rovo repo root. `--kill`
 re-checks they're still hot, then kills each runaway *and its `next dev` parent*
 so it can be restarted clean:
 
@@ -87,12 +95,15 @@ zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
 Order: (1) detect a *sustained*-hot `next-server` (sampled twice so a normal
-burst isn't killed) and restart it if `KILL_RUNAWAY_NEXT=1`; (2) delete `.next`
-caches over `NEXT_MAX_GB` **only when no dev server is running** — it never
-deletes a live build's cache; (3) kill orphaned `vpk-dev-*` tmux sessions whose
-worktree path is gone (skipping any session you're attached to); (4) restart
-`fseventsd` if over `FSEVENTS_MAX_MB` *and* the sudoers rule exists. Afterward
-show `scripts/records.sh` or the log.
+burst isn't killed) and restart it if `KILL_RUNAWAY_NEXT=1`; (2) detect a
+bloated `next-server` at or above `NEXT_MEM_MAX_GB` physical footprint (one
+sample — memory is steady) and restart it if `KILL_BLOATED_NEXT=1`; (3) delete
+`.next` caches over
+`NEXT_MAX_GB` **only when no dev server is running** — it never deletes a live
+build's cache; (4) kill orphaned `vpk-dev-*` tmux sessions whose worktree path
+is gone, on both the default and private `vpk-dev` tmux sockets (skipping any
+session you're attached to); (5) restart `fseventsd` if over `FSEVENTS_MAX_MB`
+*and* the sudoers rule exists. Afterward show `scripts/records.sh` or the log.
 
 If `fseventsd` is bloated but the sudoers rule is missing, the script logs that
 it skipped. The user can fix the current balloon now with `sudo pkill -x
@@ -132,6 +143,11 @@ privilege). Confirm with Status afterward.
 Top of `scripts/vpk-system-clean.sh`:
 - `NEXT_CPU_HOT` (150) — %CPU above which a sustained `next-server` is a runaway.
 - `KILL_RUNAWAY_NEXT` (1) — set 0 to only report runaways, never kill them.
+- `NEXT_MEM_MAX_GB` (6) — physical footprint (GB, via `vmmap`) at or above
+  which a `next-server` is bloated. Post-Next-16.3 a healthy dev server sits at
+  low single-digit GB, so ≥6 GB means the arm64 `MAP_JIT` leak is back. Do not
+  switch this to `ps` RSS — RSS undercounts the leak ~50x.
+- `KILL_BLOATED_NEXT` (1) — set 0 to only report bloated servers, never kill them.
 - `NEXT_MAX_GB` (3) — delete a `.next` cache only past this size.
 - `FSEVENTS_MAX_MB` (2048) — restart `fseventsd` only past this RSS.
 
@@ -159,7 +175,7 @@ Two things it does not remove automatically:
 ## Notes
 
 - **Portless awareness.** Browser-verification dev servers run **through `portless run`** inside the `vpk-dev-<worktree>` tmux session, so each worktree has a stable `.localhost` URL (`pnpm ports`). When this skill kills a runaway `next-server` (Doctor) or an orphaned session, that worktree's `~/.portless/routes.json` entry is left behind as a harmless stale route — reaped by `pnpm run dev:tmux:stop`'s Ctrl-C on next clean stop, or a deliberate `portless prune`. This cleanup only ever targets `next-server` / `next dev` / `vpk-dev-*` tmux sessions, so it never touches the portless `:443` proxy (a separate long-lived daemon, not a `next-server`); other worktrees' `.localhost` routing keeps working. Do **not** add a global `portless prune` to the sweep — it kills by port and could hit a live worktree.
-- Paths assume vpk-rovo at `~/Documents/Labs/vpk-rovo` plus `~/.codex/worktrees/*`
+- Paths assume vpk-rovo at `~/Labs/vpk-rovo` plus `~/.codex/worktrees/*`
   and `.../.claude/worktrees/*`. Adjust `NEXT_DIRS` if your layout differs.
 - `KILL_RUNAWAY_NEXT=1` can, in principle, kill a genuinely-busy build that
   sustains >150% for the ~4s sample window. That is rare (compiles are bursty),

@@ -256,6 +256,7 @@ static export used by deployment.
 ## Gotchas
 
 - Worktree ports are deterministic; check with `pnpm ports` or keep a live dashboard open with `pnpm ports watch`. Browser tools should navigate to this worktree's stable Portless URL (`pnpm ports` prints it as `🌐 https://…`), falling back to the actual frontend URL from `.dev-frontend-port` only when no portless route exists — never a hardcoded default.
+- Check dev-server memory with `pnpm run mem` — lists every live `next-server` with CPU, physical footprint (vmmap, the number that matters for the Turbopack leak; `ps` RSS undercounts it ~50x), port, and worktree. A healthy dev server on Next ≥16.3 sits at low single-digit GB; the scheduled `vpk-system-clean` sweep auto-restarts any server at ≥6 GB.
 - Browser automation across worktrees is isolated by design — three orthogonal layers keep parallel agents from clashing or cross-killing: deterministic per-worktree ports (`scripts/lib/worktree-ports.js`) prevent port clashes; vanilla `portless run` gives each worktree a unique `.localhost` URL; and the detached `vpk-dev-<worktree>` tmux session persists each server across turns. Stopping one worktree with `pnpm run dev:tmux:stop` uses `kill-session` and leaves the others running. The only actions that cascade across all worktrees are `tmux kill-server` (kills every session on the shared `vpk-dev` socket) and `portless prune` (global — kills whatever listens on each stale route's port) — never use either for per-worktree cleanup; use `pnpm run dev:tmux:stop` or `portless alias --remove <name>` instead.
 - Runtime port files: `.dev-rovo-port`, `.dev-rovo-ports`, `.dev-frontend-port`, `.dev-backend-port`
 - Dev API calls traverse Next.js proxy then Express; debug both layers.
@@ -400,3 +401,11 @@ Start all three (including Rovo): `pnpm run rovo` (requires `rovo` CLI on PATH)
 - The `rovo` CLI (Rovo Serve) is not available in cloud VMs — use `pnpm run dev` instead. AI Gateway-backed routes can still function when credentials and egress are available.
 - AI Gateway endpoints require outbound HTTPS to `ai-gateway.us-east-1.staging.atl-paas.net`. If the cloud VM has restricted egress, gateway-backed features return errors gracefully.
 - When writing `ASAP_PRIVATE_KEY` to `.env.local`, the value already includes surrounding double quotes and literal `\n` escape sequences — do not add extra quotes.
+
+<!-- BEGIN:nextjs-agent-rules -->
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
+**Keep this block, including in commits.** It is part of the project's agent setup, maintained by `next dev` for every agent that works here. If it appears as an uncommitted change, that is intentional — commit it as-is. Do not remove it to clean up a diff; it will be regenerated.
+<!-- END:nextjs-agent-rules -->

@@ -8,9 +8,9 @@ LOG="$HOME/Library/Logs/vpk-system-clean.log"
 SUDOERS="/etc/sudoers.d/vpk-system-clean"
 NEXT_CPU_HOT=150
 NEXT_DIRS=(
-	"$HOME/Documents/Labs/vpk-rovo/.next"
+	"$HOME/Labs/vpk-rovo/.next"
 	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
-	"$HOME"/Documents/Labs/vpk-rovo/.claude/worktrees/*/.next
+	"$HOME"/Labs/vpk-rovo/.claude/worktrees/*/.next
 )
 
 print -- "── dev servers (next-server) ──"

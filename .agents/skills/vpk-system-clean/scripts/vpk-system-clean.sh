@@ -1,26 +1,32 @@
 #!/bin/zsh
 # vpk-system-clean.sh
-# Keeps a 24/7 Mac from drowning in Next.js/Turbopack dev churn. Three guards:
-#  1. RUNAWAY DEV SERVER (the big one): a `next-server` stuck at high CPU is a
+# Keeps a 24/7 Mac from drowning in Next.js/Turbopack dev churn. Five guards:
+#  1. RUNAWAY DEV SERVER (CPU): a `next-server` stuck at high CPU is a
 #     Turbopack watch/recompile thrash loop. Detected by sampling CPU twice so a
 #     normal bursty compile is NOT mistaken for a runaway. Killed (with its
 #     `next dev` parent) so it can be restarted clean. This is the live "fix".
-#  2. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
+#  2. BLOATED DEV SERVER (MEMORY): a `next-server` idling at multi-GB memory is
+#     a leaking server (arm64 MAP_JIT leak). Measured as vmmap Physical
+#     footprint, NOT ps RSS — the JIT/native mappings barely count toward RSS
+#     (an 11.1GB-footprint server showed 0.19GB RSS). Memory is steady, so one
+#     sample is enough; killed (with its `next dev` parent) to restart clean.
+#  3. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
 #     every file feeds macOS FSEvents and amplifies the thrash. Deleted PER
 #     WORKTREE when over threshold AND that worktree has no live dev server (each
 #     running server's cwd is matched to the cache's worktree root) — so idle
 #     caches are reclaimed even while OTHER worktrees keep a live build. This is
 #     the "prevention". The old all-or-nothing skip reclaimed nothing in
 #     practice, because a 24/7 box always has at least one server up somewhere.
-#  3. STALE TMUX SESSIONS: dev-tmux.sh leaves a vpk-dev-<worktree> session (with
-#     frontend, backend, and a Rovo port pool) alive per worktree. When a worktree
-#     is deleted the session is orphaned and keeps burning resources. Killed when
-#     its worktree path is gone AND no client is attached.
-#  4. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
+#  4. STALE TMUX SESSIONS: dev-tmux.sh and dev-tmux-plain.sh leave a
+#     vpk-dev-<worktree> session alive per worktree. When a worktree is deleted
+#     the session is orphaned and keeps burning resources. Killed when its
+#     worktree path is gone AND no client is attached.
+#  5. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
 #     (22GB seen). Restarted if ballooned (needs the sudoers rule from install).
 #
 # Safe unattended: never deletes a live build's cache, and only kills a server
-# that is *sustained* hot. Each run appends a parseable "summary:" line.
+# that is *sustained* hot or certainly bloated. Each run appends a parseable
+# "summary:" line.
 set -u
 setopt NULL_GLOB
 
@@ -29,16 +35,30 @@ NEXT_MAX_GB=3            # delete .next only once it grows past this
 FSEVENTS_MAX_MB=2048     # restart fseventsd only above this RSS
 NEXT_CPU_HOT=150         # a next-server sustained above this %CPU is a runaway
 KILL_RUNAWAY_NEXT=1      # 1 = kill sustained-hot dev servers; 0 = report only
+NEXT_MEM_MAX_GB=6        # a next-server above this physical footprint (GB) is bloated/leaking
+KILL_BLOATED_NEXT=1      # 1 = kill bloated dev servers; 0 = report only
 
 NEXT_DIRS=(
-	"$HOME/Documents/Labs/vpk-rovo/.next"
+	"$HOME/Labs/vpk-rovo/.next"
 	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
-	"$HOME"/Documents/Labs/vpk-rovo/.claude/worktrees/*/.next
+	"$HOME"/Labs/vpk-rovo/.claude/worktrees/*/.next
 )
 
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { print -r -- "[$(ts)] $*" >> "$LOG"; }
 cpu_of() { ps -o %cpu= -p "$1" 2>/dev/null | tr -d ' '; }   # decaying avg %CPU
+# Whole GB of real memory. vmmap Physical footprint is the truth for the MAP_JIT
+# leak (ps RSS undercounts it ~50x); ~1s per pid is fine for a scheduled sweep.
+# Falls back to ps RSS if vmmap is unavailable or fails.
+mem_gb_of() {
+	local gb
+	gb=$(vmmap -summary "$1" 2>/dev/null | awk '/^Physical footprint:/{v=$3; u=substr(v,length(v)); if (u=="G") print int(v+0); else print 0; exit}')
+	if [[ -n "$gb" ]]; then
+		print -r -- "$gb"
+	else
+		ps -o rss= -p "$1" 2>/dev/null | awk '{print int($1/1024/1024)}'
+	fi
+}
 
 # Keep the log bounded on a 24/7 box (cap ~500 lines).
 if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
@@ -46,7 +66,7 @@ if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
 fi
 
 log "run start"
-freed=0; count=0; killed=0
+freed=0; count=0; killed=0; bloated=0
 
 # --- 1. runaway dev server -----------------------------------------------------
 # First pass: which next-server pids are hot right now?
@@ -74,7 +94,26 @@ if (( ${#hot1} )); then
 	done
 fi
 
-# --- 2. .next cleanup (per-worktree) ------------------------------------------
+# --- 2. bloated dev server -----------------------------------------------------
+# Memory is steady, unlike CPU, so one sample is enough; no double-sampling
+# needed. Measured as vmmap Physical footprint — ps RSS misses the MAP_JIT leak.
+for p in ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"}; do
+	gb=$(mem_gb_of "$p")
+	[[ -n "$gb" ]] || continue
+	if (( gb >= NEXT_MEM_MAX_GB )); then
+		bloated=$(( bloated + 1 ))
+		if (( KILL_BLOATED_NEXT )); then
+			pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+			kill "$p" 2>/dev/null
+			[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
+			log "killed bloated next-server pid $p (~${gb}GB physical footprint, parent $pp) — restart dev server to recover"
+		else
+			log "bloated next-server pid $p (~${gb}GB physical footprint) — KILL_BLOATED_NEXT=0, left running"
+		fi
+	fi
+done
+
+# --- 3. .next cleanup (per-worktree) ------------------------------------------
 # Map each running dev server to the worktree it serves (by its cwd), then
 # delete only the .next caches whose OWN worktree has no live server. This keeps
 # the "never touch a live build" guarantee while still reclaiming idle caches —
@@ -109,35 +148,53 @@ for nx in ${(u)NEXT_DIRS}; do
 	fi
 done
 
-# --- 3. stale tmux sessions ----------------------------------------------------
-# dev-tmux.sh names each session vpk-dev-<worktree> and points session_path at
-# the worktree root. When a worktree is deleted its session is orphaned: it keeps
-# a frontend, backend, and a pool of Rovo port processes alive against a path
-# that no longer exists. Kill those (skipping any session you're attached to —
-# never tear down a session in active use). Self-correcting: a live worktree's
-# path still exists, so it is never touched.
+# --- 4. stale tmux sessions ----------------------------------------------------
+# dev-tmux.sh and dev-tmux-plain.sh name each session vpk-dev-<worktree> and
+# point session_path at the worktree root. Check both the default tmux socket and
+# the private vpk-dev socket used by the plain stack. When a worktree is deleted
+# its session is orphaned: it keeps a frontend/backend and sometimes a Rovo port
+# pool alive against a path that no longer exists. Kill those (skipping any
+# session you're attached to — never tear down a session in active use).
+# Self-correcting: a live worktree's path still exists, so it is never touched.
 tmux_action="not-checked"
 if command -v tmux >/dev/null 2>&1; then
 	stale_killed=0
-	while IFS='|' read -r sname spath sattached; do
-		[[ -n "$sname" ]] || continue
-		[[ "$sname" == vpk-dev-* ]] || continue
-		[[ -n "$spath" && -d "$spath" ]] && continue   # worktree still exists
-		if [[ "$sattached" == 1 ]]; then
-			log "kept tmux session $sname (orphaned path '$spath' but attached)"
-			continue
-		fi
-		if tmux kill-session -t "$sname" 2>/dev/null; then
-			stale_killed=$(( stale_killed + 1 ))
-			log "killed stale tmux session $sname (worktree path '$spath' gone)"
+	for socket in default vpk-dev; do
+		socket_killed=0
+		if [[ "$socket" == "default" ]]; then
+			rows=( ${(f)"$(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)"} )
 		else
-			log "FAILED to kill tmux session $sname"
+			rows=( ${(f)"$(tmux -L "$socket" list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)"} )
 		fi
-	done < <(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)
-	tmux_action="${stale_killed} stale session(s) killed"
+		for row in $rows; do
+			sname="${row%%|*}"; rest="${row#*|}"
+			spath="${rest%%|*}"; sattached="${rest##*|}"
+			[[ -n "$sname" ]] || continue
+			[[ "$sname" == vpk-dev-* ]] || continue
+			[[ -n "$spath" && -d "$spath" ]] && continue   # worktree still exists
+			if [[ "$sattached" == 1 ]]; then
+				log "kept tmux session $sname on $socket socket (orphaned path '$spath' but attached)"
+				continue
+			fi
+			if [[ "$socket" == "default" ]]; then
+				tmux kill-session -t "$sname" 2>/dev/null
+			else
+				tmux -L "$socket" kill-session -t "$sname" 2>/dev/null
+			fi
+			if (( $? == 0 )); then
+				stale_killed=$(( stale_killed + 1 ))
+				socket_killed=$(( socket_killed + 1 ))
+				log "killed stale tmux session $sname on $socket socket (worktree path '$spath' gone)"
+			else
+				log "FAILED to kill tmux session $sname on $socket socket"
+			fi
+		done
+		log "checked tmux socket $socket (${socket_killed} stale session(s) killed)"
+	done
+	tmux_action="checked default+vpk-dev sockets; ${stale_killed} stale session(s) killed"
 fi
 
-# --- 4. fseventsd reset --------------------------------------------------------
+# --- 5. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
 fp=$(pgrep -x fseventsd | head -1)
 if [[ -n "$fp" ]]; then
@@ -153,5 +210,5 @@ if [[ -n "$fp" ]]; then
 	fi
 fi
 
-log "summary: killed ${killed} runaway server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; fseventsd ${fse_action}"
+log "summary: killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; fseventsd ${fse_action}"
 log "run done"
