@@ -81,7 +81,9 @@ The codex-first loop — Fable plans and reviews, one codex session implements:
 1. Freeze the spec into a brief (all six items above) and dispatch one run.
 2. When it exits, review as the orchestrator: read the report file, inspect
    `git diff`, and run the proof command yourself. Codex never self-certifies.
-3. Iterate on the **same session** so codex keeps its context:
+3. Iterate on the **same session** so codex keeps its context — this is the
+   prompt-cache-reuse rule: resuming keeps the session's cache warm, while a
+   fresh `codex exec` re-pays the whole cold-start context read:
 
 ```bash
 codex exec --dangerously-bypass-approvals-and-sandbox \

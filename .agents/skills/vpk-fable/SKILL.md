@@ -9,7 +9,7 @@ outputs: Advisor consultations (decision + plan + risks) fed back into the execu
 required_tools: Agent tool (subagent spawn with model override), SendMessage (re-consult a warm advisor), Bash (codex exec executor runs)
 validation_command: node scripts/validate-skills.js
 generated_artifacts: Advisor advice and worker findings live in conversation; codex executor briefs and reports land under gitignored output/fable-codex/. Workers may edit files when the brief asks for implementation.
-common_failure_modes: Spawning the advisor cold without packaged context, consulting the advisor on trivial turns, over-sharding orchestration briefs so delegation overhead exceeds savings, concluding before all workers return, running the advisor pattern when the main session is already Fable 5, dispatching parallel codex briefs with overlapping write scopes, parsing the codex JSONL stream instead of the --output-last-message file, using codex resume --last while multiple codex runs are live, and not falling back to Claude workers when the codex CLI is missing or unauthenticated.
+common_failure_modes: Spawning the advisor cold without packaged context, consulting the advisor on trivial turns, front-loading all judgment into one upfront consult on exploratory tasks instead of scheduled checkpoints, over-sharding orchestration briefs so delegation overhead exceeds savings, delegating low-reading-volume tasks where coordination cost exceeds worker savings, spawning cold workers for sequential follow-up briefs instead of re-messaging a warm one, concluding before all workers return, running the advisor pattern when the main session is already Fable 5, dispatching parallel codex briefs with overlapping write scopes, parsing the codex JSONL stream instead of the --output-last-message file, using codex resume --last while multiple codex runs are live, and not falling back to Claude workers when the codex CLI is missing or unauthenticated.
 ---
 
 # VPK Fable — Advisor and Orchestrator Patterns
@@ -74,6 +74,19 @@ Consult the advisor at these moments — ported from the advisor-tool guidance:
 2. **When stuck** — after roughly two failed attempts at the same problem,
    before trying a third variation of the same idea.
 3. **Before declaring a complex task done** — a final plan/diff sanity review.
+   This is also the skill's **verifier** shape: Fable checking cheaper work
+   rather than producing it.
+4. **At scheduled checkpoints on long exploratory loops** — N-iteration
+   experiment/tuning tasks where each result reshapes what is worth trying
+   next. Agree the cadence up front (initial plan + 2–3 checkpoints spread
+   across the run) and consult for **re-ranking and steering**, not new
+   ideas. This counters the cheap-executor failure mode of hill-climbing on
+   marginal gains without ever stepping back to re-prioritize.
+
+On exploratory tasks, treat the advisor's *initial* plan as weakly
+predictive — in Lance Martin's Parameter Golf test Fable's upfront ranking
+was anti-correlated with what worked; the checkpoints carried the value
+(see [references/advisor-pattern.md](references/advisor-pattern.md)).
 
 Reserve it for genuine uncertainty. Do not consult for single-step questions,
 mechanical edits, or anything the executor can verify cheaply by running code.
@@ -134,6 +147,15 @@ verify cheaply. Poor fit: narrow tasks with little reading, or tasks where
 the frontier model must judge the raw material itself. For a poor fit, say so
 and just do the task solo.
 
+Part of the fit check is a **reading-volume test**: estimate how many tokens
+the workers would actually absorb. Every handoff carries a roughly fixed
+coordination cost — the brief and the report are each billed twice (written
+by one side, read by the other) — and Fable 5 is often more *token-efficient*
+than cheaper models, so $/token alone overstates the savings. Delegation only
+pays when worker reading volume clearly dwarfs that overhead; the BrowseComp
+threshold data is in
+[references/orchestrator-pattern.md](references/orchestrator-pattern.md).
+
 ### Pick the executor
 
 - **codex (default)** — `codex exec` CLI processes running GPT-5.5 at xhigh
@@ -162,11 +184,17 @@ and just do the task solo.
 2. **Fan out.** Dispatch all workers in **one message** (parallel tool calls),
    each with a self-contained brief: objective, scope boundaries, exact
    paths/URLs, and the required output shape (distilled findings with
-   `file:line` or URL evidence — never raw dumps).
+   `file:line` or URL evidence — never raw dumps). Keep parallel briefs'
+   **reading scopes** disjoint too, not just write scopes — workers cannot
+   see each other, so overlapping briefs pay for the same research twice.
    - codex: one background Bash `codex exec` per brief, report read from its
      `--output-last-message` file (canonical command in the codex reference).
    - claude: one `subagent_type: "vpk-agent-worker"` per brief;
-     `run_in_background: true` for long briefs.
+     `run_in_background: true` for long briefs. If follow-up briefs in the
+     same area are plausible, pass a `name:` at spawn and send the follow-up
+     via `SendMessage` to that warm worker — its context and prompt cache
+     persist, so you skip re-paying the cold-start reading (codex analogue:
+     `resume` the same session, per the codex reference).
 3. **Wait for all workers before concluding.** Never synthesize from a partial
    set. If a worker fails on infrastructure (not on the merits), re-dispatch
    that brief to a fresh worker.
@@ -182,10 +210,16 @@ Codex invocation details: [references/codex-executor.md](references/codex-execut
 
 ## Mode: bare (`/vpk-fable`)
 
-Explain, briefly and concretely:
+Explain, briefly and concretely. The triage question is **where the judgment
+lives in the task**: judgment *scattered across* the task (each result
+reshapes the next step) → advisor; judgment *upfront* (decompose, spec) or
+*at review* → orchestrator, with the review end of that spectrum being the
+**verifier** shape — Fable checking cheap work, covered here by advisor
+consult moment 3 and the orchestrator's own-the-verification rule.
 
 - **Advisor** — cheap executor loop, Fable consulted on demand. Best when the
-  work is mostly mechanical but a few decisions are hard. Executor Sonnet 5
+  work is mostly mechanical but a few decisions are hard, or when a long
+  exploratory loop needs periodic re-ranking checkpoints. Executor Sonnet 5
   (Opus 4.8 fallback), advisor Fable 5.
 - **Orchestrator** — Fable plans/synthesizes, cheaper executors grind. Best
   for coverage tasks with lots of reading, or implementation tasks Fable can

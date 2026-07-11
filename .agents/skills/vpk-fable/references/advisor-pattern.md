@@ -51,6 +51,30 @@ pattern when the main session already runs Fable 5.
 - Restraint language and nudges conflict; this skill uses restraint
   ("reserve for genuine uncertainty"), so do not add automatic nudging on top.
 
+## Distributed judgment on exploratory tasks
+
+The "consult after orientation, before committing" rule above is for
+**decision-shaped** tasks — one hard choice, then mechanical execution.
+**Exploration-shaped** tasks (iterative experiment loops where each result
+reshapes what is worth trying next) need judgment *scattered* across the run
+instead, per Lance Martin's Parameter Golf test
+(`https://x.com/RLanceMartin/status/2075641284635799865`, July 2026):
+
+- A Sonnet 5 executor consulting a Fable 5 advisor (initial plan + 2
+  checkpoints over 20 ML-tuning experiments) reached **~90% of Fable-solo's
+  improvement at ~34% of the token cost**.
+- The upfront advising step was *not* the primary benefit — Fable's initial
+  ranking of approaches was **anti-correlated** with what actually worked.
+- The value came from the **checkpoints**: the cheap executor hill-climbed on
+  marginal gains with no tendency to step back, and the advisor's periodic
+  re-ranking steered it toward more promising directions.
+
+Practical consequences for this skill: on an exploratory loop, agree a
+checkpoint cadence with the executor up front (SKILL.md consult moment 4),
+frame checkpoint consults as "re-rank the live options given these results"
+rather than "produce a plan", and hold the advisor's initial plan loosely —
+it is a starting orientation, not the payload.
+
 ## Context packaging (the big difference from the API tool)
 
 The API advisor receives the executor's **full transcript** server-side —
