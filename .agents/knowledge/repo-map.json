@@ -5023,7 +5023,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 393,
+			"manifestEntryCount": 394,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5059,7 +5059,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 86,
+				"entryCount": 87,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5246,6 +5246,12 @@
 						"slug": "editor-toolbar",
 						"name": "Editor toolbar",
 						"importPath": "@/components/blocks/editor-toolbar"
+					},
+					{
+						"category": "blocks",
+						"slug": "gallery",
+						"name": "Gallery",
+						"importPath": "@/components/blocks/gallery"
 					},
 					{
 						"category": "blocks",

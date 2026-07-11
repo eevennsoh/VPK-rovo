@@ -401,6 +401,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("data-table", "Data Table"),
 	blockComponent("generative-card", "Generative Card"),
 	blockComponent("generative", "Generative UI"),
+	blockComponent("gallery", "Gallery"),
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("apps-directory", "Apps Directory"),
 	blockComponent("artifact"),
