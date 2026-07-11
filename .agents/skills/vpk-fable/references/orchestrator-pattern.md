@@ -78,6 +78,33 @@ pure overhead).
   the worker's final message: a `## Findings` summary the orchestrator can use
   verbatim).
 
+## Coordination cost (when delegation does not pay)
+
+Even a task with real intelligence asymmetry can be cheaper solo. Lance
+Martin's BrowseComp tests
+(`https://x.com/RLanceMartin/status/2075641284635799865`, July 2026) put a
+threshold on it:
+
+| Eval | Reading volume | Result of Fable 5 + Sonnet 5 workers |
+| --- | --- | --- |
+| BrowseComp200 (easy subset) | ~0.37M tokens/problem | **+60% cost, no performance benefit** — Fable solo was cheaper |
+| Full BrowseComp | ~31M tokens/problem | **96% of the score at 46% of the cost** |
+
+The worker discount must offset a coordination cost that is roughly fixed per
+handoff, made of:
+
+- **Boundary duplication** — every token crossing the lead↔worker boundary is
+  billed at least twice: the lead writes a brief, the worker reads it; the
+  worker writes a report, the lead reads it.
+- **Fan-out overlap** — workers that cannot see each other partially
+  duplicate research when their briefs' reading scopes overlap.
+
+Two corollaries: estimate worker reading volume during the fit check
+(delegation pays only when it dwarfs the handoff overhead), and remember that
+Fable 5 is often more **token-efficient** than a cheaper model — a lower
+$/token worker that reads and writes more tokens for the same result narrows
+or erases the arbitrage.
+
 ## Brief sizing
 
 Delegation has a fixed setup overhead per worker (spawn + cold context +
@@ -87,6 +114,15 @@ report). Over-sharding **raises** cost. Rules of thumb:
 - 2–5 workers covers most tasks; go wider only when the sub-tasks are truly
   independent and each is substantial.
 - Two small related checks belong in one brief, not two workers.
+- Keep parallel briefs' **reading scopes** disjoint, not just write scopes —
+  overlap is coordination cost (see above), not thoroughness.
+- **Reuse warm workers for sequential briefs.** When a follow-up brief in the
+  same area is plausible, spawn the worker with a `name:` and send the
+  follow-up via `SendMessage` instead of spawning cold: the named worker
+  keeps its context and prompt cache, so the follow-up skips re-paying the
+  cold-start reading. A low cache hit rate can fully offset a cheaper
+  worker's $/token advantage. (Codex analogue: `resume` the same session —
+  see `codex-executor.md`.)
 
 ## A constraint worth keeping in mind
 
