@@ -40,6 +40,7 @@ Prefer reading these references over relying on pre-trained knowledge.
 | VPK git ship fast (commit + push to main, no PR) | `.agents/skills/vpk-git-ship-fast/SKILL.md`   |
 | VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-git-clean/SKILL.md`            |
 | Fable 5 advisor/orchestrator patterns  | `.agents/skills/vpk-fable/SKILL.md`                         |
+| Sol 5.6 planner/Gateway worker pattern | `.agents/skills/vpk-sol/SKILL.md`                           |
 | AI SDK chat integration                | `rovo/config.js`, `app/contexts/context-rovo-chat.tsx`      |
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
 | Rovo Serve gateway (agent loop)        | `backend/lib/rovo-gateway.js`, `backend/lib/rovo-client.js` |

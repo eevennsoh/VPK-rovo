@@ -128,6 +128,7 @@ Optional environment variables:
 | Component    | `/vpk-component`    | Utility  | Map ADS components to VPK equivalents                 |
 | Component Ext | `/vpk-component-ext` | Utility  | Migrate custom AI components to ui-custom                 |
 | Fable        | `/vpk-fable`        | Workflow | Fable 5 advisor/orchestrator cost-tiering via codex CLI executors (default) or subagents |
+| Sol          | `/vpk-sol`          | Workflow | Sol 5.6 planning with isolated GPT-5.5 xhigh workers through Proximity |
 
 Symphony worker skills:
 
