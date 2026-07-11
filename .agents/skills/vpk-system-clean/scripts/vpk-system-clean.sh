@@ -5,11 +5,16 @@
 #     Turbopack watch/recompile thrash loop. Detected by sampling CPU twice so a
 #     normal bursty compile is NOT mistaken for a runaway. Killed (with its
 #     `next dev` parent) so it can be restarted clean. This is the live "fix".
-#  2. BLOATED DEV SERVER (MEMORY): a `next-server` idling at multi-GB memory is
+#  2. BLOATED DEV SERVER (MEMORY): a `next-server` IDLING at multi-GB memory is
 #     a leaking server (arm64 MAP_JIT leak). Measured as vmmap Physical
 #     footprint, NOT ps RSS — the JIT/native mappings barely count toward RSS
-#     (an 11.1GB-footprint server showed 0.19GB RSS). Memory is steady, so one
-#     sample is enough; killed (with its `next dev` parent) to restart clean.
+#     (an 11.1GB-footprint server showed 0.19GB RSS). A healthy compile burst
+#     can also peak in the double digits before Turbopack's eviction reclaims
+#     it (observed 12.9GB -> 1.7GB in one run), so this is sampled twice with a
+#     settle window and only killed if still bloated AND idle (low CPU) on the
+#     second sample — an idle server holding this much memory is the leak; a
+#     busy one is a normal burst. Killed (with its `next dev` parent) to
+#     restart clean.
 #  3. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
 #     every file feeds macOS FSEvents and amplifies the thrash. Deleted PER
 #     WORKTREE when over threshold AND that worktree has no live dev server (each
@@ -37,6 +42,8 @@ NEXT_CPU_HOT=150         # a next-server sustained above this %CPU is a runaway
 KILL_RUNAWAY_NEXT=1      # 1 = kill sustained-hot dev servers; 0 = report only
 NEXT_MEM_MAX_GB=6        # a next-server above this physical footprint (GB) is bloated/leaking
 KILL_BLOATED_NEXT=1      # 1 = kill bloated dev servers; 0 = report only
+NEXT_MEM_SETTLE_SECS=30  # settle window before re-checking a bloated candidate
+NEXT_MEM_IDLE_CPU_MAX=20 # %CPU below which a still-bloated server counts as idle (leak, not a compile burst)
 
 NEXT_DIRS=(
 	"$HOME/Labs/vpk-rovo/.next"
@@ -95,23 +102,35 @@ if (( ${#hot1} )); then
 fi
 
 # --- 2. bloated dev server -----------------------------------------------------
-# Memory is steady, unlike CPU, so one sample is enough; no double-sampling
-# needed. Measured as vmmap Physical footprint — ps RSS misses the MAP_JIT leak.
+# First pass: which next-server pids are over the memory threshold right now?
+# Measured as vmmap Physical footprint — ps RSS misses the MAP_JIT leak.
+bloat1=()
 for p in ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"}; do
-	gb=$(mem_gb_of "$p")
-	[[ -n "$gb" ]] || continue
-	if (( gb >= NEXT_MEM_MAX_GB )); then
-		bloated=$(( bloated + 1 ))
-		if (( KILL_BLOATED_NEXT )); then
-			pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
-			kill "$p" 2>/dev/null
-			[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
-			log "killed bloated next-server pid $p (~${gb}GB physical footprint, parent $pp) — restart dev server to recover"
-		else
-			log "bloated next-server pid $p (~${gb}GB physical footprint) — KILL_BLOATED_NEXT=0, left running"
-		fi
-	fi
+	gb=$(mem_gb_of "$p"); [[ -n "$gb" ]] || continue
+	(( gb >= NEXT_MEM_MAX_GB )) && bloat1+="$p"
 done
+# Second pass after a settle window: kill only if still bloated AND idle (low
+# CPU) — a busy compile burst is not a leak, even at double-digit GB.
+if (( ${#bloat1} )); then
+	sleep "$NEXT_MEM_SETTLE_SECS"
+	for p in $bloat1; do
+		gb=$(mem_gb_of "$p"); [[ -n "$gb" ]] || continue
+		c=$(cpu_of "$p"); c=${c:-0}
+		if (( gb >= NEXT_MEM_MAX_GB )) && (( ${c%%.*} < NEXT_MEM_IDLE_CPU_MAX )); then
+			bloated=$(( bloated + 1 ))
+			if (( KILL_BLOATED_NEXT )); then
+				pp=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+				kill "$p" 2>/dev/null
+				[[ -n "$pp" && "$pp" != 1 ]] && kill "$pp" 2>/dev/null
+				log "killed bloated next-server pid $p (~${gb}GB physical footprint, idle at ${c}% CPU, parent $pp) — restart dev server to recover"
+			else
+				log "bloated next-server pid $p (~${gb}GB physical footprint, idle at ${c}% CPU) — KILL_BLOATED_NEXT=0, left running"
+			fi
+		else
+			log "next-server pid $p still elevated (~${gb}GB) but actively compiling (~${c}% CPU) or settled below threshold — deferred to next sweep"
+		fi
+	done
+fi
 
 # --- 3. .next cleanup (per-worktree) ------------------------------------------
 # Map each running dev server to the worktree it serves (by its cwd), then

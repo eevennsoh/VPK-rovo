@@ -96,9 +96,12 @@ zsh ~/.local/bin/vpk-system-clean.sh
 
 Order: (1) detect a *sustained*-hot `next-server` (sampled twice so a normal
 burst isn't killed) and restart it if `KILL_RUNAWAY_NEXT=1`; (2) detect a
-bloated `next-server` at or above `NEXT_MEM_MAX_GB` physical footprint (one
-sample — memory is steady) and restart it if `KILL_BLOATED_NEXT=1`; (3) delete
-`.next` caches over
+bloated `next-server` at or above `NEXT_MEM_MAX_GB` physical footprint,
+re-checked after a `NEXT_MEM_SETTLE_SECS` settle window and only killed if
+still bloated **and idle** (CPU below `NEXT_MEM_IDLE_CPU_MAX`) on the second
+sample — a busy compile burst can also peak in the double digits, so this
+avoids killing a healthy warmup — and restart it if `KILL_BLOATED_NEXT=1`;
+(3) delete `.next` caches over
 `NEXT_MAX_GB` **only when no dev server is running** — it never deletes a live
 build's cache; (4) kill orphaned `vpk-dev-*` tmux sessions whose worktree path
 is gone, on both the default and private `vpk-dev` tmux sockets (skipping any
@@ -144,8 +147,10 @@ Top of `scripts/vpk-system-clean.sh`:
 - `NEXT_CPU_HOT` (150) — %CPU above which a sustained `next-server` is a runaway.
 - `KILL_RUNAWAY_NEXT` (1) — set 0 to only report runaways, never kill them.
 - `NEXT_MEM_MAX_GB` (6) — physical footprint (GB, via `vmmap`) at or above
-  which a `next-server` is bloated. Post-Next-16.3 a healthy dev server sits at
-  low single-digit GB, so ≥6 GB means the arm64 `MAP_JIT` leak is back. Do not
+  which a `next-server` is a bloated candidate. Post-Next-16.3 a healthy dev
+  server sits at low single-digit GB, so ≥6 GB means the arm64 `MAP_JIT` leak
+  is back — but a busy compile burst can also peak this high, so it only kills
+  if still bloated **and idle** after settling (see next two). Do not
   switch this to `ps` RSS — RSS undercounts the leak ~50x.
 - `KILL_BLOATED_NEXT` (1) — set 0 to only report bloated servers, never kill them.
 - `NEXT_MAX_GB` (3) — delete a `.next` cache only past this size.
