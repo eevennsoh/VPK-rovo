@@ -7,6 +7,7 @@ import { HTML_SELECTOR_SHORTCUTS } from "../lib/shortcuts";
 import type {
 	AgentId,
 	ElementContextPayload,
+	HtmlSelectorBridge,
 	HtmlSelectorBridgeState,
 	SelectorPin,
 	SelectorPinsMeta,
@@ -23,6 +24,16 @@ interface SelectorBridgeCallbacks {
 	onSendRequested: () => void;
 	onStaleSelectorsChange: (pagePath: string, selectors: string[]) => void;
 	onStateChange: (payload: HtmlSelectorBridgeState) => void;
+}
+
+function getPinsForPage(pins: ReadonlyArray<SelectorPin>, pagePath: string): SelectorPin[] {
+	return pins.filter((pin) => pin.pagePath === pagePath);
+}
+
+function getStaleSelectors(bridge: HtmlSelectorBridge, pins: ReadonlyArray<SelectorPin>): string[] {
+	return pins
+		.filter((pin) => !bridge.inspect(pin.id))
+		.map((pin) => pin.selector);
 }
 
 export function useSelectorBridge({
@@ -101,12 +112,13 @@ export function useSelectorBridge({
 					callbacks: stableCallbacks,
 				});
 				bridge.setEnabled(true);
-				bridge.setPins(pagePinsRef.current, pinMetaRef.current);
+				const activePagePins = getPinsForPage(pagePinsRef.current, page.pagePath);
+				bridge.setPins(activePagePins, pinMetaRef.current);
 
-				const staleSelectors = pagePinsRef.current
-					.filter((pin) => !bridge.inspect(pin.id))
-					.map((pin) => pin.selector);
-				callbacksRef.current.onStaleSelectorsChange(page.pagePath, staleSelectors);
+				callbacksRef.current.onStaleSelectorsChange(
+					page.pagePath,
+					getStaleSelectors(bridge, activePagePins),
+				);
 			} catch {
 				// Same-origin iframe injection is best-effort for local tooling.
 			}
@@ -139,6 +151,17 @@ export function useSelectorBridge({
 		if (!enabled) {
 			return;
 		}
-		getBridge(iframeRef.current)?.setPins(pagePins, pinMeta);
+		const iframe = iframeRef.current;
+		const bridge = getBridge(iframe);
+		if (!iframe || !bridge) {
+			return;
+		}
+		const page = resolveIframePage(iframe);
+		const activePagePins = getPinsForPage(pagePins, page.pagePath);
+		bridge.setPins(activePagePins, pinMeta);
+		callbacksRef.current.onStaleSelectorsChange(
+			page.pagePath,
+			getStaleSelectors(bridge, activePagePins),
+		);
 	}, [enabled, iframeRef, pagePins, pinMeta]);
 }

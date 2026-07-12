@@ -67,3 +67,14 @@ test("HTML Selector uses the vanilla overlay UI instead of parent panels", () =>
 		);
 	}
 });
+
+test("HTML Selector bridge recomputes stale pins after page-specific pin sync", () => {
+	const hookSource = readProjectFile("components/blocks/html-selector/hooks/use-selector-bridge.ts");
+
+	assert.match(hookSource, /function getPinsForPage\(/u);
+	assert.match(hookSource, /function getStaleSelectors\(/u);
+	assert.match(
+		hookSource,
+		/const page = resolveIframePage\(iframe\);[\s\S]*const activePagePins = getPinsForPage\(pagePins, page\.pagePath\);[\s\S]*bridge\.setPins\(activePagePins, pinMeta\);[\s\S]*onStaleSelectorsChange\([\s\S]*page\.pagePath,[\s\S]*getStaleSelectors\(bridge, activePagePins\)/u,
+	);
+});
