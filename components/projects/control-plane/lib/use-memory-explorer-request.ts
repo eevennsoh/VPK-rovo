@@ -129,6 +129,7 @@ export function useMemoryExplorerRequest({
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const explorerRequestRef = useRef<ExplorerRequestState>({ controller: null, requestId: 0 });
+	const memoryDocumentsRef = useRef<WikiCanonicalMemoryDocuments | null>(null);
 
 	const filterInput = useMemo(() => buildExplorerFilterInput({
 		includeLinkedKnowledge: filters.includeLinkedKnowledge,
@@ -156,7 +157,8 @@ export function useMemoryExplorerRequest({
 		};
 		setIsLoading(true);
 		try {
-			const shouldRefreshMemories = options.includeMemories === true || memoryDocuments === null;
+			const shouldRefreshMemories =
+				options.includeMemories === true || memoryDocumentsRef.current === null;
 			const [nextExplorer, nextMemories] = await Promise.all([
 				fetchWikiMemoryExplorerSnapshot(nextFilters, controller.signal),
 				shouldRefreshMemories
@@ -171,6 +173,7 @@ export function useMemoryExplorerRequest({
 			}
 			setExplorer(nextExplorer);
 			if (nextMemories) {
+				memoryDocumentsRef.current = nextMemories;
 				setMemoryDocuments(nextMemories);
 			}
 			setErrorMessage(null);
@@ -192,7 +195,7 @@ export function useMemoryExplorerRequest({
 				setIsLoading(false);
 			}
 		}
-	}, [filterInput, memoryDocuments, onExplorerReceived]);
+	}, [filterInput, onExplorerReceived]);
 
 	useEffect(() => {
 		const debounceTimer = window.setTimeout(() => {
@@ -207,8 +210,7 @@ export function useMemoryExplorerRequest({
 
 	useEffect(() => {
 		void refreshExplorer(filterInput);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- filters are fully represented by filterInput
-	}, [filterInput.kind, filterInput.scope, filterInput.status, filterInput.tag, filterInput.threadId, filterInput.includeLinkedKnowledge]);
+	}, [filterInput, refreshExplorer]);
 
 	useEffect(() => {
 		return () => {
