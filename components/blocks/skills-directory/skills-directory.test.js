@@ -336,6 +336,8 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.doesNotMatch(pageSource, /defaultSelectedSkillIds=/u);
 	assert.match(pageSource, /type SkillsDirectorySelectionExperience/u);
 	assert.match(pageSource, /const \[selectionExperience, setSelectionExperience\] = useState<SkillsDirectorySelectionExperience>\("studio-bulk-add"\);/u);
+	assert.match(pageSource, /className="flex h-full min-h-\[400px\] items-center justify-center gap-3 p-4"/u);
+	assert.match(pageSource, /className="flex h-full min-h-\[400px\] items-center justify-center p-4"/u);
 	assert.match(pageSource, /Open Chat directory/u);
 	assert.match(pageSource, /Open Studio directory/u);
 	assert.match(pageSource, /onClick=\{\(\) => openDirectory\("chat-single-add"\)\}/u);

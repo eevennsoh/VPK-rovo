@@ -147,12 +147,16 @@ warn_about_other_dev_stacks() {
 		[[ -n "$root" ]] || continue
 		[[ "$root" == "$REPO_ROOT" ]] && continue
 		duplicate=0
-		for existing in "${roots[@]}"; do
-			if [[ "$existing" == "$root" ]]; then
-				duplicate=1
-				break
-			fi
-		done
+		# macOS /bin/bash 3.2 with `set -u` treats expanding an empty
+		# array in a `for` loop as an unbound variable.
+		if (( ${#roots[@]} > 0 )); then
+			for existing in "${roots[@]}"; do
+				if [[ "$existing" == "$root" ]]; then
+					duplicate=1
+					break
+				fi
+			done
+		fi
 		(( duplicate )) && continue
 		roots+=("$root")
 	done <<<"$pids"

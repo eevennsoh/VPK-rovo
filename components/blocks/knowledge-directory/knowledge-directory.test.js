@@ -53,6 +53,7 @@ test("Knowledge Directory docs demo starts closed until the trigger is clicked",
 	const source = readProjectFile("components/blocks/knowledge-directory/page.tsx");
 
 	assert.match(source, /const \[open, setOpen\] = useState\(false\);/u);
+	assert.match(source, /className="flex h-full min-h-\[400px\] items-center justify-center p-4"/u);
 	assert.match(source, /Browse knowledge/u);
 	assert.doesNotMatch(source, /Browse skills/u);
 });
