@@ -1,0 +1,251 @@
+"use client";
+
+import { useCallback, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+import { getBridge } from "../lib/bridge";
+import { getDiskPathForPage, resolveIframePage } from "../lib/page-path";
+import { composeHtmlSelectorPrompt } from "../lib/prompt-composer";
+import { useAgentPreference } from "../hooks/use-agent-preference";
+import { useSelectorBridge } from "../hooks/use-selector-bridge";
+import { useSelectorPins } from "../hooks/use-selector-pins";
+import type {
+	AgentId,
+	ElementContextPayload,
+	HtmlSelectorBridgeState,
+	HtmlSelectorNotification,
+	SelectorPin,
+	SelectorPinSavePayload,
+	SelectorPinsMeta,
+	SelectorStyleEdit,
+} from "../lib/types";
+
+const EMPTY_PINS: SelectorPin[] = [];
+
+export interface HtmlSelectorProps {
+	className?: string;
+	src?: string;
+	srcDoc?: string;
+	title?: string;
+}
+
+function mergeStyleEdits(
+	current: ReadonlyArray<SelectorStyleEdit> | undefined,
+	next: ReadonlyArray<SelectorStyleEdit> | undefined,
+): SelectorStyleEdit[] | undefined {
+	if (!next || next.length === 0) {
+		return current ? [...current] : undefined;
+	}
+
+	const edits = new Map<string, SelectorStyleEdit>();
+	for (const edit of current ?? []) {
+		edits.set(edit.property, { ...edit });
+	}
+	for (const edit of next) {
+		edits.set(edit.property, { ...edit });
+	}
+	return [...edits.values()];
+}
+
+async function copyText(text: string): Promise<void> {
+	if (!text) {
+		return;
+	}
+	await navigator.clipboard.writeText(text);
+}
+
+export function HtmlSelector({
+	className,
+	src,
+	srcDoc,
+	title = "HTML selector preview",
+}: Readonly<HtmlSelectorProps>) {
+	const iframeRef = useRef<HTMLIFrameElement | null>(null);
+	const [pagePath, setPagePath] = useState("srcdoc");
+	const [bridgeState, setBridgeState] = useState<HtmlSelectorBridgeState>({
+		active: false,
+		activationMode: "toggle",
+		enabled: false,
+		hoveredSelector: null,
+	});
+	const { agent, setAgent } = useAgentPreference();
+	const {
+		addPin,
+		markStalePins,
+		pinsByPage,
+		removePin,
+		updatePinComment,
+		updatePinScope,
+		updatePinStyleEdits,
+		updatePinStyleFindings,
+	} = useSelectorPins();
+
+	const currentPins = pinsByPage[pagePath] ?? EMPTY_PINS;
+	const allPins = useMemo(() => Object.values(pinsByPage).flat(), [pinsByPage]);
+	const pinMeta = useMemo<SelectorPinsMeta>(() => {
+		const otherPages = Object.entries(pinsByPage)
+			.filter(([candidatePagePath, pins]) => candidatePagePath !== pagePath && pins.length > 0);
+		return {
+			agent,
+			otherPagesCount: otherPages.length,
+			otherPagesPinCount: otherPages.reduce((total, [, pins]) => total + pins.length, 0),
+		};
+	}, [agent, pagePath, pinsByPage]);
+
+	const notifyBridge = useCallback((notification: HtmlSelectorNotification) => {
+		getBridge(iframeRef.current)?.notify(notification);
+	}, []);
+
+	const savePinFromPayload = useCallback((payload: SelectorPinSavePayload): SelectorPin => {
+		const resolvedPagePath = payload.pagePath || pagePath;
+		const existingPin = (pinsByPage[resolvedPagePath] ?? []).find((pin) => pin.selector === payload.selector);
+		if (existingPin) {
+			const nextComment = payload.comment ?? existingPin.comment;
+			const nextScope = payload.scope ?? existingPin.scope;
+			const nextStyleEdits = mergeStyleEdits(existingPin.styleEdits, payload.styleEdits);
+			if (nextComment !== existingPin.comment) {
+				updatePinComment(existingPin.id, nextComment);
+			}
+			if (nextScope !== existingPin.scope) {
+				updatePinScope(existingPin.id, nextScope);
+			}
+			if (payload.styleFindings) {
+				updatePinStyleFindings(existingPin.id, payload.styleFindings);
+			}
+			if (nextStyleEdits) {
+				updatePinStyleEdits(existingPin.id, nextStyleEdits);
+			}
+			return {
+				...existingPin,
+				comment: nextComment,
+				scope: nextScope,
+				styleEdits: nextStyleEdits,
+				styleFindings: payload.styleFindings ?? existingPin.styleFindings,
+			};
+		}
+
+		return addPin({
+			comment: payload.comment ?? "",
+			diskPath: getDiskPathForPage(resolvedPagePath),
+			outerHtmlSnippet: payload.outerHtmlSnippet,
+			pagePath: resolvedPagePath,
+			scope: payload.scope ?? "element",
+			selector: payload.selector,
+			styleEdits: payload.styleEdits,
+			styleFindings: payload.styleFindings,
+			tagSummary: payload.tagSummary,
+		});
+	}, [
+		addPin,
+		pagePath,
+		pinsByPage,
+		updatePinComment,
+		updatePinScope,
+		updatePinStyleEdits,
+		updatePinStyleFindings,
+	]);
+
+	const handlePromptCopy = useCallback(() => {
+		const prompt = composeHtmlSelectorPrompt(allPins);
+		if (!prompt) {
+			notifyBridge({ type: "error", message: "No HTML selector pins to copy." });
+			return;
+		}
+
+		void copyText(prompt).then(() => {
+			notifyBridge({ type: "success", message: "Copied composed prompt." });
+		}).catch((error) => {
+			notifyBridge({ type: "error", message: error instanceof Error ? error.message : String(error) });
+		});
+	}, [allPins, notifyBridge]);
+
+	const handleSend = useCallback(() => {
+		const prompt = composeHtmlSelectorPrompt(allPins);
+		if (!prompt) {
+			notifyBridge({ type: "error", message: "No HTML selector pins to send." });
+			return;
+		}
+
+		notifyBridge({ type: "pending", message: "Opening agent window..." });
+		void fetch("/api/html-selector/dispatch", {
+			body: JSON.stringify({ agent, prompt }),
+			headers: { "Content-Type": "application/json" },
+			method: "POST",
+		})
+			.then(async (response) => {
+				const payload = await response.json() as { error?: string; sessionName?: string; windowName?: string };
+				if (!response.ok) {
+					throw new Error(payload.error ?? "Failed to dispatch prompt.");
+				}
+				notifyBridge({
+					type: "success",
+					message: `Opened tmux window ${payload.windowName} in ${payload.sessionName}`,
+				});
+			})
+			.catch((error) => {
+				notifyBridge({ type: "error", message: error instanceof Error ? error.message : String(error) });
+			});
+	}, [agent, allPins, notifyBridge]);
+
+	const callbacks = useMemo(() => ({
+		onAgentChange: ({ agent: nextAgent }: { agent: AgentId }) => setAgent(nextAgent),
+		onCopyAllRequested: handlePromptCopy,
+		onElementContextCopied: (payload: ElementContextPayload) => {
+			void copyText(`${payload.selector}\n\n${payload.outerHtmlSnippet}`)
+				.then(() => notifyBridge({ type: "success", message: "Copied element context." }))
+				.catch((error) => notifyBridge({ type: "error", message: error instanceof Error ? error.message : String(error) }));
+		},
+		onPageChange: (page: { diskPath?: string; pagePath: string; url: string }) => {
+			setPagePath(page.pagePath);
+		},
+		onPinRemoved: ({ id }: { id: string }) => {
+			removePin(id);
+		},
+		onPinSaved: savePinFromPayload,
+		onSendRequested: handleSend,
+		onStaleSelectorsChange: markStalePins,
+		onStateChange: setBridgeState,
+	}), [
+		handlePromptCopy,
+		handleSend,
+		markStalePins,
+		notifyBridge,
+		removePin,
+		savePinFromPayload,
+		setAgent,
+	]);
+
+	useSelectorBridge({
+		agent,
+		callbacks,
+		enabled: process.env.NODE_ENV === "development",
+		iframeRef,
+		pagePins: currentPins,
+		pinMeta,
+	});
+
+	if (process.env.NODE_ENV === "production") {
+		return (
+			<div className={cn("flex h-dvh min-h-[560px] flex-col bg-surface", className)}>
+				<div className="border-b border-border bg-bg-neutral px-3 py-2 text-sm text-text-subtle">
+					HTML Selector is a dev-only tool.
+				</div>
+				<iframe src={src} srcDoc={srcDoc} title={title} className="min-h-0 flex-1 border-0 bg-surface" />
+			</div>
+		);
+	}
+
+	return (
+		<iframe
+			ref={iframeRef}
+			src={src}
+			srcDoc={srcDoc}
+			title={title}
+			data-html-selector-active={bridgeState.enabled ? "true" : "false"}
+			className={cn("block h-dvh min-h-[560px] w-full border-0 bg-surface", className)}
+			onLoad={() => {
+				const page = resolveIframePage(iframeRef.current);
+				setPagePath(page.pagePath);
+			}}
+		/>
+	);
+}

@@ -24,6 +24,9 @@ const {
 	registerVpkHtmlRoutes,
 } = require("./routes/vpk-html");
 const {
+	registerHtmlSelectorRoutes,
+} = require("./routes/html-selector");
+const {
 	registerJobsRoutes,
 } = require("./routes/jobs");
 const {
@@ -206,6 +209,7 @@ function registerBackendAppRoutes(app, dependencies = {}) {
 	});
 
 	registerVpkHtmlRoutes(app);
+	registerHtmlSelectorRoutes(app);
 
 	registerDemosRoutes(app, {
 		advanceAgentsRfpDemoProcessing,

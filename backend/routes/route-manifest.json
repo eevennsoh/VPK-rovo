@@ -326,6 +326,18 @@
 			"source": "backend/routes/status.js:205"
 		},
 		{
+			"method": "POST",
+			"path": "/api/html-selector/dispatch",
+			"runtimeAdmin": false,
+			"source": "backend/routes/html-selector.js:99"
+		},
+		{
+			"method": "GET",
+			"path": "/api/html-selector/tokens",
+			"runtimeAdmin": false,
+			"source": "backend/routes/html-selector.js:168"
+		},
+		{
 			"method": "GET",
 			"path": "/api/image-proxy",
 			"runtimeAdmin": false,
@@ -1404,6 +1416,30 @@
 					"method": "GET",
 					"path": "/api/health",
 					"source": "app/api/health/route.ts:4"
+				}
+			]
+		},
+		{
+			"method": "POST",
+			"nextPath": "/api/html-selector/dispatch",
+			"source": "app/api/html-selector/dispatch/route.ts:5",
+			"targets": [
+				{
+					"method": "POST",
+					"path": "/api/html-selector/dispatch",
+					"source": "app/api/html-selector/dispatch/route.ts:11"
+				}
+			]
+		},
+		{
+			"method": "GET",
+			"nextPath": "/api/html-selector/tokens",
+			"source": "app/api/html-selector/tokens/route.ts:3",
+			"targets": [
+				{
+					"method": "GET",
+					"path": "/api/html-selector/tokens",
+					"source": "app/api/html-selector/tokens/route.ts:4"
 				}
 			]
 		},
