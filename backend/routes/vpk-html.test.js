@@ -49,7 +49,7 @@ function createFixtureRoot(t) {
 	fs.mkdirSync(path.join(rootDir, "scripts"), { recursive: true });
 	fs.writeFileSync(path.join(rootDir, "index.html"), "<!doctype html><style>:root { --accent: red; --ink: black; }</style><title>vpk-html</title>");
 	fs.writeFileSync(path.join(rootDir, "SKILL.md"), "# vpk-html");
-	fs.writeFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "<!doctype html><style>.demo { --accent: blue; }</style><title>Demo</title>");
+	fs.writeFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "<!doctype html><style>:root { --accent: blue; }\n[data-theme=\"dark\"] { --accent: navy; }</style><title>Demo</title>");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "untouched.html"), "<!doctype html><style>.demo { --other: blue; }</style><title>Untouched</title>");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "media", "clip.mp4"), "fake-mp4-bytes");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "notes.txt"), "not servable");
@@ -166,9 +166,31 @@ test("vpk-html apply-tokens rewrites existing custom properties in catalog html 
 	});
 
 	assert.match(fs.readFileSync(path.join(rootDir, "index.html"), "utf8"), /--accent: #123456;/u);
-	assert.match(fs.readFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "utf8"), /--accent: #123456;/u);
+	const demoHtml = fs.readFileSync(path.join(rootDir, "assets", "demos", "demo.html"), "utf8");
+	assert.match(demoHtml, /:root \{ --accent: #123456; \}/u);
+	assert.match(demoHtml, /\[data-theme="dark"\] \{ --accent: navy; \}/u);
 	assert.doesNotMatch(fs.readFileSync(path.join(rootDir, "assets", "demos", "untouched.html"), "utf8"), /--missing/u);
 	assert.match(fs.readFileSync(path.join(rootDir, "assets", "templates", "template.html"), "utf8"), /--accent: template;/u);
+});
+
+test("vpk-html apply-tokens leaves scoped theme overrides untouched", () => {
+	const { applyTokenOverridesToHtml } = require("./vpk-html");
+	const html = [
+		"<style>",
+		":root {",
+		"\t--focal: #000000;",
+		"}",
+		"[data-theme=\"dark\"] {",
+		"\t--focal: #ffffff;",
+		"}",
+		"</style>",
+	].join("\n");
+
+	const result = applyTokenOverridesToHtml(html, [["--focal", "#101044"]]);
+
+	assert.equal(result.changed, true);
+	assert.match(result.html, /:root \{\n\t--focal: #101044;\n\}/u);
+	assert.match(result.html, /\[data-theme="dark"\] \{\n\t--focal: #ffffff;\n\}/u);
 });
 
 test("vpk-html apply-tokens validates payloads and is dev-only", async (t) => {

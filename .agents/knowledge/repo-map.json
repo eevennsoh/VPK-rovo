@@ -10,9 +10,9 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 160,
-			"nextApiRouteCount": 136,
-			"ownerCount": 133,
+			"backendRouteCount": 164,
+			"nextApiRouteCount": 140,
+			"ownerCount": 136,
 			"runtimeAdminRouteCount": 41
 		},
 		"owners": [
@@ -1029,18 +1029,42 @@
 			{
 				"kind": "backend",
 				"owner": "backend/routes/vpk-html.js",
-				"routeCount": 2,
+				"routeCount": 6,
 				"routes": [
 					{
 						"method": "GET",
 						"path": "/api/vpk-html",
-						"source": "backend/routes/vpk-html.js:101",
+						"source": "backend/routes/vpk-html.js:406",
 						"runtimeAdmin": false
 					},
 					{
 						"method": "GET",
 						"path": "/api/vpk-html/*assetPath",
-						"source": "backend/routes/vpk-html.js:102",
+						"source": "backend/routes/vpk-html.js:407",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "POST",
+						"path": "/api/vpk-html/apply-tokens",
+						"source": "backend/routes/vpk-html.js:299",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "GET",
+						"path": "/api/vpk-html/notes",
+						"source": "backend/routes/vpk-html.js:324",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "PUT",
+						"path": "/api/vpk-html/notes",
+						"source": "backend/routes/vpk-html.js:345",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "POST",
+						"path": "/api/vpk-html/publish-gist",
+						"source": "backend/routes/vpk-html.js:372",
 						"runtimeAdmin": false
 					}
 				]
@@ -3321,6 +3345,75 @@
 								"method": "GET",
 								"path": "/api/vpk-html/*assetPath",
 								"source": "app/api/vpk-html/[...assetPath]/route.ts:15"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/vpk-html/apply-tokens/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "POST",
+						"path": "/api/vpk-html/apply-tokens",
+						"source": "app/api/vpk-html/apply-tokens/route.ts:5",
+						"targets": [
+							{
+								"method": "POST",
+								"path": "/api/vpk-html/apply-tokens",
+								"source": "app/api/vpk-html/apply-tokens/route.ts:11"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/vpk-html/notes/route.ts",
+				"routeCount": 2,
+				"routes": [
+					{
+						"method": "GET",
+						"path": "/api/vpk-html/notes",
+						"source": "app/api/vpk-html/notes/route.ts:5",
+						"targets": [
+							{
+								"method": "GET",
+								"path": "/api/vpk-html/notes",
+								"source": "app/api/vpk-html/notes/route.ts:8"
+							}
+						]
+					},
+					{
+						"method": "PUT",
+						"path": "/api/vpk-html/notes",
+						"source": "app/api/vpk-html/notes/route.ts:14",
+						"targets": [
+							{
+								"method": "PUT",
+								"path": "/api/vpk-html/notes",
+								"source": "app/api/vpk-html/notes/route.ts:22"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/vpk-html/publish-gist/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "POST",
+						"path": "/api/vpk-html/publish-gist",
+						"source": "app/api/vpk-html/publish-gist/route.ts:5",
+						"targets": [
+							{
+								"method": "POST",
+								"path": "/api/vpk-html/publish-gist",
+								"source": "app/api/vpk-html/publish-gist/route.ts:11"
 							}
 						]
 					}
