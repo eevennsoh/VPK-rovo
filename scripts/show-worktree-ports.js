@@ -3,8 +3,9 @@
  * Show active port assignments + Portless URLs for git worktrees.
  *
  * Usage:
- *   node scripts/show-worktree-ports.js          one-shot snapshot
- *   node scripts/show-worktree-ports.js watch    live dashboard (1s tick, Ctrl+C to exit)
+ *   node scripts/show-worktree-ports.js              one-shot snapshot
+ *   node scripts/show-worktree-ports.js watch        live dashboard (1s tick, Ctrl+C to exit)
+ *   node scripts/show-worktree-ports.js kill <id>    stop a worktree's dev session from anywhere
  *
  * Main worktree is always shown. Other worktrees are shown only when they
  * have at least one of .dev-frontend-port / .dev-backend-port / .dev-rovo-port
@@ -13,10 +14,12 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const { Worker } = require("node:worker_threads");
 const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
 const { probePortAlive } = require("./lib/port-liveness");
 const { loadPortlessRoutes, findPortlessUrl } = require("./lib/portless-routes");
+const { matchWorktree, sessionNameForWorktree } = require("./lib/worktree-kill");
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
@@ -249,15 +252,76 @@ async function runWatch() {
 	});
 }
 
+function describeWorktree(worktree) {
+	const name = path.basename(worktree.path);
+	const branch = worktree.isMain ? "main" : worktree.branch || worktree.identifier;
+	return `${name} (${branch})  →  ${sessionNameForWorktree(worktree)}`;
+}
+
+function printKillCandidates(worktrees) {
+	for (const worktree of worktrees) {
+		console.error(`   • ${describeWorktree(worktree)}`);
+		console.error(`     📂 ${worktree.path}`);
+	}
+}
+
+function runKill(query) {
+	let worktrees;
+	try {
+		worktrees = getAllWorktreePortInfo();
+	} catch (error) {
+		console.error(`Failed to enumerate worktrees: ${error.message}`);
+		process.exit(1);
+	}
+
+	if (!query) {
+		console.error("Usage: pnpm ports kill <identifier>");
+		console.error("Matches a worktree by name, branch, identifier, or session name:\n");
+		printKillCandidates(worktrees);
+		process.exit(2);
+	}
+
+	const result = matchWorktree(query, worktrees);
+	if (!result.ok) {
+		if (result.reason === "ambiguous") {
+			console.error(`"${query}" matches multiple worktrees — be more specific:\n`);
+			printKillCandidates(result.candidates);
+		} else {
+			console.error(`No worktree matches "${query}". Available worktrees:\n`);
+			printKillCandidates(worktrees);
+		}
+		process.exit(result.reason === "ambiguous" ? 2 : 1);
+	}
+
+	const { worktree } = result;
+	// Delegate to the target worktree's OWN launcher so its cwd-scoped cleanup
+	// (SIGINT so portless removes its route, kill-session, listener backstop,
+	// port-file removal) runs against the right worktree. Never a raw
+	// kill-session here — that would leave a stale portless route behind.
+	const scriptPath = path.join(worktree.path, "scripts", "dev-tmux-plain.sh");
+	console.log(`🔪 Stopping ${describeWorktree(worktree)}\n`);
+	const { status, error } = spawnSync("bash", [scriptPath, "stop"], {
+		cwd: worktree.path,
+		stdio: "inherit",
+	});
+	if (error) {
+		console.error(`Failed to run ${scriptPath}: ${error.message}`);
+		process.exit(1);
+	}
+	process.exit(status ?? 0);
+}
+
 const subcommand = process.argv[2];
 if (subcommand === "watch") {
 	runWatch().catch((error) => {
 		console.error(error.message);
 		process.exit(1);
 	});
+} else if (subcommand === "kill") {
+	runKill(process.argv[3]);
 } else if (subcommand && subcommand !== "once") {
 	console.error(
-		`Unknown subcommand: ${subcommand}. Use \`pnpm ports\` or \`pnpm ports watch\`.`
+		`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports watch\`, or \`pnpm ports kill <identifier>\`.`
 	);
 	process.exit(2);
 } else {
