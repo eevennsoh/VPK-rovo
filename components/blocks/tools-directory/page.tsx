@@ -10,7 +10,7 @@ export default function ToolsDirectoryPage() {
 	const [open, setOpen] = useState(false);
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
+		<div className="flex h-full min-h-screen items-center justify-center p-4">
 			<Button onClick={() => setOpen(true)}>Open tools directory</Button>
 			<ToolsDirectoryDialog
 				defaultAddedToolIds={["atlassian"]}

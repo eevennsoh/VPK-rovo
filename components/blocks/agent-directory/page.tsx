@@ -51,7 +51,7 @@ export default function AgentsDirectoryPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
+		<div className="flex h-full min-h-screen items-center justify-center gap-3 p-4">
 			<Button onClick={() => openDirectory("default")} variant="outline">
 				Open standard directory
 			</Button>
@@ -97,7 +97,7 @@ function AgentsDirectoryPageShell({
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
+		<div className="flex h-full min-h-screen items-center justify-center p-4">
 			<Button onClick={() => onOpenChange(true)}>
 				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
 			</Button>

@@ -42,6 +42,8 @@ test("Agent Directory docs demo starts closed until the trigger is clicked", () 
 	assert.match(pageSource, /const \[variant, setVariant\] = useState<AgentsDirectoryVariant>\("default"\);/u);
 	assert.match(pageSource, /function openDirectory\(nextVariant: AgentsDirectoryVariant\)[\s\S]*setVariant\(nextVariant\);[\s\S]*setOpen\(true\);/u);
 	assert.match(pageSource, /function handleSelectAgent\(\)[\s\S]*setOpen\(false\);/u);
+	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center gap-3 p-4"/u);
+	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center p-4"/u);
 	assert.match(pageSource, />\s*Open standard directory\s*<\/Button>/u);
 	assert.match(pageSource, />\s*Open experimental directory\s*<\/Button>/u);
 	assert.match(pageSource, /onSelectAgent=\{handleSelectAgent\}/u);

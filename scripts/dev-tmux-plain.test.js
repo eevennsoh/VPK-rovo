@@ -51,6 +51,7 @@ function createFakeLauncherEnvironment() {
 	const tmuxPath = path.join(tempDir, "tmux");
 	const lsofPath = path.join(tempDir, "lsof");
 	const nodePath = path.join(tempDir, "node");
+	const pgrepPath = path.join(tempDir, "pgrep");
 	const tmuxLogPath = path.join(tempDir, "tmux.log");
 	const cleanupLogPath = path.join(tempDir, "cleanup.log");
 
@@ -77,7 +78,20 @@ function createFakeLauncherEnvironment() {
 
 	writeExecutable(lsofPath, [
 		"#!/usr/bin/env bash",
+		"if [ -n \"${FAKE_CWD_PID:-}\" ] && [[ \" $* \" == *\" -d cwd \"* ]] && [[ \" $* \" == *\" -p ${FAKE_CWD_PID} \"* ]]; then",
+		"\techo \"n${FAKE_CWD_ROOT}\"",
+		"\texit 0",
+		"fi",
 		"if [ -n \"${FAKE_LISTEN_PORT:-}\" ] && [[ \" $* \" == *\":${FAKE_LISTEN_PORT}\"* ]]; then",
+		"\texit 0",
+		"fi",
+		"exit 1",
+	]);
+
+	writeExecutable(pgrepPath, [
+		"#!/usr/bin/env bash",
+		"if [ -n \"${FAKE_PGREP_PIDS:-}\" ] && [[ \" $* \" == *\"next-server\"* ]]; then",
+		"\tprintf '%s\\n' ${FAKE_PGREP_PIDS}",
 		"\texit 0",
 		"fi",
 		"exit 1",
@@ -167,6 +181,32 @@ test("dev-tmux plain start restarts an existing session with no listening fronte
 			fs.readFileSync(fake.cleanupLogPath, "utf8").trim(),
 			"./scripts/cleanup-worktree-listeners.js"
 		);
+	} finally {
+		fake.cleanup();
+	}
+});
+
+test("dev-tmux plain start tolerates the first discovered other stack root", () => {
+	const fake = createFakeLauncherEnvironment();
+	try {
+		const output = withPortFiles("49127", "49128", () =>
+			runLauncher({
+				PATH: `${fake.tempDir}:${process.env.PATH}`,
+				VPK_TMUX_BIN: fake.tmuxPath,
+				VPK_DEV_TMUX_SESSION: "vpk-dev-plain-test",
+				VPK_DEV_TMUX_WAIT: "1",
+				VPK_DEV_STACK_WARN: "2",
+				FAKE_TMUX_HAS_SESSION: "1",
+				FAKE_LISTEN_PORT: "49127",
+				FAKE_PGREP_PIDS: "12345",
+				FAKE_CWD_PID: "12345",
+				FAKE_CWD_ROOT: "/tmp/other-vpk-rovo",
+				FAKE_TMUX_LOG: fake.tmuxLogPath,
+				NODE_CLEANUP_LOG: fake.cleanupLogPath,
+			})
+		);
+
+		assert.match(output, /Session 'vpk-dev-plain-test' already running/);
 	} finally {
 		fake.cleanup();
 	}
