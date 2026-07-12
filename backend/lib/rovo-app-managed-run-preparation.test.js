@@ -212,8 +212,6 @@ test("prepareRovoAppManagedRunRequest routes Work Item report intents into HTML 
 			{
 				hermesContext: {
 					autoSelectedSkillIds: ["vpk-html"],
-					pendingDraftIds: [],
-					selectedSkillIds: ["pinned-skill"],
 				},
 			},
 		],
