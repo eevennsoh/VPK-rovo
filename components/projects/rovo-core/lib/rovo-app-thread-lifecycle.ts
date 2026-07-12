@@ -39,6 +39,13 @@ interface MutableRef<T> {
 type SetState<T> = (value: T | ((previousValue: T) => T)) => void;
 type SetThreads = SetState<RovoAppThread[]>;
 
+export type RovoAppThreadNavigationIdentity = number;
+
+interface RovoAppThreadNavigationCurrentness {
+	isNavigationCurrent: (navigationIdentity: RovoAppThreadNavigationIdentity) => boolean;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
+}
+
 export interface RovoAppRefreshThreadsOptions {
 	reportBackendUnavailable?: boolean;
 }
@@ -64,7 +71,9 @@ export interface HydrateRovoAppThreadStateInput {
 	clearStreamingArtifactState: () => void;
 	completeThreadHydration: () => void;
 	hasHydratedActiveThreadRef: MutableRef<boolean>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
 	lastPersistedKeyRef: MutableRef<string | null>;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	nextDocuments: RovoAppDocument[];
 	nextVotes: RovoAppVote[];
 	pendingRouteReadyRef: MutableRef<boolean>;
@@ -99,9 +108,12 @@ export interface HydrateRovoAppThreadByIdInput {
 		thread: RovoAppThread,
 		nextDocuments: RovoAppDocument[],
 		nextVotes: RovoAppVote[],
+		navigationIdentity: RovoAppThreadNavigationIdentity,
 	) => void;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
 	listDocuments: (threadId: string) => Promise<RovoAppDocument[]>;
 	listVotes: (threadId: string) => Promise<RovoAppVote[]>;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	reconcileThreadWithLocalTitle: (thread: RovoAppThread) => RovoAppThread;
 	setThreads: SetThreads;
 	threadId: string;
@@ -126,6 +138,8 @@ export interface SubscribeToRovoAppRunLifecycleInput {
 	) => Promise<Response>;
 	handleAttachedRunChunk: (chunk: UIMessageChunk) => void;
 	hydrateThreadById: (threadId: string) => Promise<unknown>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	runSubscriptionAbortControllerRef: MutableRef<AbortController | null>;
 	runSubscriptionThreadIdRef: MutableRef<string | null>;
 	setAttachedRunStatus: (status: RovoAppRunStatus | null) => void;
@@ -145,7 +159,9 @@ export interface ResetRovoAppToBlankThreadStateInput {
 	clearStreamingArtifactState: () => void;
 	completeThreadHydration: () => void;
 	hasHydratedActiveThreadRef: MutableRef<boolean>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
 	lastPersistedKeyRef: MutableRef<string | null>;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	nextDraftId: string;
 	pendingRouteReadyRef: MutableRef<boolean>;
 	pendingRouteThreadIdRef: MutableRef<string | null>;
@@ -166,6 +182,7 @@ export interface ResetRovoAppToBlankThreadStateInput {
 	setDraftThreadId: (threadId: string) => void;
 	setEditingMessageId: (messageId: string | null) => void;
 	setHasActiveDispatch: (hasActiveDispatch: boolean) => void;
+	setIsLoadingThread: (isLoading: boolean) => void;
 	setRovoMessages: SetState<RovoUIMessage[]>;
 	setThreadVisibility: (visibility: RovoAppVisibility) => void;
 	setVotes: SetState<Record<string, "up" | "down">>;
@@ -182,6 +199,8 @@ export interface LeaveRovoAppActiveThreadForBackgroundInput {
 	detachStream: (threadId: string) => Promise<unknown>;
 	realtimeMessagesRef: MutableRef<ReadonlyArray<RovoUIMessage>>;
 	rovoMessagesRef: MutableRef<ReadonlyArray<RovoUIMessage>>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	runSubscriptionAbortControllerRef: MutableRef<AbortController | null>;
 	runSubscriptionThreadIdRef: MutableRef<string | null>;
 	setAttachedRunStatus: (status: RovoAppRunStatus | null) => void;
@@ -214,17 +233,27 @@ export interface LoadRovoAppThreadLifecycleInput {
 		thread: RovoAppThread,
 		nextDocuments: RovoAppDocument[],
 		nextVotes: RovoAppVote[],
+		navigationIdentity: RovoAppThreadNavigationIdentity,
 	) => void;
-	leaveActiveThreadForBackground: () => Promise<unknown>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
+	leaveActiveThreadForBackground: (navigationIdentity: RovoAppThreadNavigationIdentity) => Promise<unknown>;
 	listDocuments: (threadId: string) => Promise<RovoAppDocument[]>;
 	listVotes: (threadId: string) => Promise<RovoAppVote[]>;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	reconcileThreadWithLocalTitle: (thread: RovoAppThread) => RovoAppThread;
 	replaceRootRoute: () => void;
-	resetToBlankChatState: (nextDraftId: string) => void;
+	resetToBlankChatState: (
+		nextDraftId: string,
+		navigationIdentity: RovoAppThreadNavigationIdentity,
+	) => void;
 	setInputError: (message: string | null) => void;
 	setIsLoadingThread: (isLoading: boolean) => void;
 	setThreads: SetThreads;
-	subscribeToRun: (threadId: string, activeRun: RovoAppActiveRun | null) => Promise<unknown>;
+	subscribeToRun: (
+		threadId: string,
+		activeRun: RovoAppActiveRun | null,
+		navigationIdentity: RovoAppThreadNavigationIdentity,
+	) => Promise<unknown>;
 	threadId: string;
 	toUserErrorMessage: (error: unknown) => string;
 }
@@ -232,9 +261,14 @@ export interface LoadRovoAppThreadLifecycleInput {
 export interface ActivateBlankRovoAppThreadStateInput {
 	createThreadId: () => string;
 	embedded: boolean;
-	leaveActiveThreadForBackground: () => Promise<unknown>;
+	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
+	leaveActiveThreadForBackground: (navigationIdentity: RovoAppThreadNavigationIdentity) => Promise<unknown>;
+	navigationIdentity: RovoAppThreadNavigationIdentity;
 	pushRootPath: () => void;
-	resetToBlankChatState: (nextDraftId: string) => void;
+	resetToBlankChatState: (
+		nextDraftId: string,
+		navigationIdentity: RovoAppThreadNavigationIdentity,
+	) => void;
 	syncHistory?: boolean;
 }
 
@@ -283,6 +317,13 @@ function defaultScheduleComplete(callback: () => void): void {
 
 function isRovoAppChatBusy(status: ChatStatus): boolean {
 	return status === "submitted" || status === "streaming";
+}
+
+function isRovoAppThreadNavigationCurrent({
+	isNavigationCurrent,
+	navigationIdentity,
+}: RovoAppThreadNavigationCurrentness): boolean {
+	return isNavigationCurrent(navigationIdentity);
 }
 
 function resetRovoAppRunSubscription({
@@ -353,7 +394,9 @@ export function hydrateRovoAppThreadStateWithLifecycle({
 	clearStreamingArtifactState,
 	completeThreadHydration,
 	hasHydratedActiveThreadRef,
+	isNavigationCurrent,
 	lastPersistedKeyRef,
+	navigationIdentity,
 	nextDocuments,
 	nextVotes,
 	pendingRouteReadyRef,
@@ -377,6 +420,10 @@ export function hydrateRovoAppThreadStateWithLifecycle({
 	setVotes,
 	thread,
 }: HydrateRovoAppThreadStateInput): void {
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
+
 	beginThreadHydration();
 	pendingThreadCreationRef.current = null;
 	activeThreadIdRef.current = thread.id;
@@ -415,15 +462,21 @@ export function hydrateRovoAppThreadStateWithLifecycle({
 	clearPendingPlanMetadataGeneration();
 	pendingRouteThreadIdRef.current = null;
 	pendingRouteReadyRef.current = false;
-	scheduleComplete(completeThreadHydration);
+	scheduleComplete(() => {
+		if (isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			completeThreadHydration();
+		}
+	});
 }
 
 export async function hydrateRovoAppThreadByIdWithLifecycle({
 	deletedThreadIdsRef,
 	getThread,
 	hydrateThreadState,
+	isNavigationCurrent,
 	listDocuments,
 	listVotes,
+	navigationIdentity,
 	reconcileThreadWithLocalTitle,
 	setThreads,
 	threadId,
@@ -433,12 +486,18 @@ export async function hydrateRovoAppThreadByIdWithLifecycle({
 		listDocuments(threadId),
 		listVotes(threadId),
 	]);
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
 	if (!thread) {
 		return;
 	}
 
 	const resolvedThread = reconcileThreadWithLocalTitle(thread);
-	hydrateThreadState(resolvedThread, nextDocuments, nextVotes);
+	hydrateThreadState(resolvedThread, nextDocuments, nextVotes, navigationIdentity);
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
 	setThreads((previousThreads) =>
 		upsertRovoAppThreadRecord(previousThreads, resolvedThread, {
 			deletedThreadIds: deletedThreadIdsRef.current,
@@ -481,6 +540,8 @@ export async function subscribeToRovoAppRunWithLifecycle({
 	fetchRunStream,
 	handleAttachedRunChunk,
 	hydrateThreadById,
+	isNavigationCurrent,
+	navigationIdentity,
 	runSubscriptionAbortControllerRef,
 	runSubscriptionThreadIdRef,
 	setAttachedRunStatus,
@@ -490,6 +551,10 @@ export async function subscribeToRovoAppRunWithLifecycle({
 	threadId,
 	toUserErrorMessage,
 }: SubscribeToRovoAppRunLifecycleInput): Promise<void> {
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
+
 	runSubscriptionAbortControllerRef.current?.abort();
 	const abortController = new AbortController();
 	runSubscriptionAbortControllerRef.current = abortController;
@@ -498,6 +563,10 @@ export async function subscribeToRovoAppRunWithLifecycle({
 
 	try {
 		const response = await fetchRunStream(threadId, abortController.signal);
+		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			abortController.abort();
+			return;
+		}
 		if (response.status === 404) {
 			setAttachedRunStatus(null);
 			setLocalThreadActiveRun(threadId, null);
@@ -515,18 +584,29 @@ export async function subscribeToRovoAppRunWithLifecycle({
 
 		for await (const streamedMessage of readRovoAppDelegationResponseStream({
 			stream: response.body,
-			onChunk: handleAttachedRunChunk,
+			onChunk: (chunk) => {
+				if (isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+					handleAttachedRunChunk(chunk);
+				}
+			},
 			onError: (error) => {
 				console.error("[RovoApp] Failed to read attached run stream:", error);
 			},
 			terminateOnError: true,
 		})) {
+			if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+				abortController.abort();
+				return;
+			}
 			setAttachedRunStatus("streaming");
 			setRovoMessages((previousMessages) =>
 				upsertRealtimeMessage(previousMessages, streamedMessage),
 			);
 		}
 
+		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			return;
+		}
 		setAttachedRunStatus(null);
 		setLocalThreadActiveRun(threadId, null);
 		if (activeThreadIdRef.current === threadId) {
@@ -537,12 +617,13 @@ export async function subscribeToRovoAppRunWithLifecycle({
 			return;
 		}
 
+		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			return;
+		}
 		setInputError(toUserErrorMessage(error));
 	} finally {
 		if (runSubscriptionAbortControllerRef.current === abortController) {
 			runSubscriptionAbortControllerRef.current = null;
-		}
-		if (runSubscriptionThreadIdRef.current === threadId) {
 			runSubscriptionThreadIdRef.current = null;
 		}
 	}
@@ -557,7 +638,9 @@ export function resetRovoAppToBlankThreadState({
 	clearStreamingArtifactState,
 	completeThreadHydration,
 	hasHydratedActiveThreadRef,
+	isNavigationCurrent,
 	lastPersistedKeyRef,
+	navigationIdentity,
 	nextDraftId,
 	pendingRouteReadyRef,
 	pendingRouteThreadIdRef,
@@ -575,10 +658,15 @@ export function resetRovoAppToBlankThreadState({
 	setDraftThreadId,
 	setEditingMessageId,
 	setHasActiveDispatch,
+	setIsLoadingThread,
 	setRovoMessages,
 	setThreadVisibility,
 	setVotes,
 }: ResetRovoAppToBlankThreadStateInput): void {
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
+
 	beginThreadHydration();
 	pendingThreadCreationRef.current = null;
 	setDraftThreadId(nextDraftId);
@@ -616,7 +704,12 @@ export function resetRovoAppToBlankThreadState({
 	});
 	pendingRouteThreadIdRef.current = null;
 	pendingRouteReadyRef.current = false;
-	scheduleComplete(completeThreadHydration);
+	setIsLoadingThread(false);
+	scheduleComplete(() => {
+		if (isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			completeThreadHydration();
+		}
+	});
 }
 
 export async function leaveRovoAppActiveThreadForBackground({
@@ -628,6 +721,8 @@ export async function leaveRovoAppActiveThreadForBackground({
 	delegationAbortControllerRef,
 	detachRun,
 	detachStream,
+	isNavigationCurrent,
+	navigationIdentity,
 	realtimeMessagesRef,
 	rovoMessagesRef,
 	runSubscriptionAbortControllerRef,
@@ -640,6 +735,10 @@ export async function leaveRovoAppActiveThreadForBackground({
 	updateThread,
 	warn = console.warn,
 }: LeaveRovoAppActiveThreadForBackgroundInput): Promise<void> {
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
+
 	const threadId = activeThreadIdRef.current;
 	const activeRun = currentActiveRun ?? null;
 	const hasActiveTurn =
@@ -663,9 +762,18 @@ export async function leaveRovoAppActiveThreadForBackground({
 		const detachThreadId = transitionPlan.threadId;
 		await detachRun(detachThreadId)
 			.catch(() => detachStream(detachThreadId).catch(() => false));
+		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+			return;
+		}
 	}
 
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
 	await stopUseChat();
+	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
+		return;
+	}
 	resetRovoAppRunSubscription({
 		runSubscriptionAbortControllerRef,
 		runSubscriptionThreadIdRef,
@@ -719,9 +827,11 @@ export async function loadRovoAppThreadWithLifecycle({
 	getThread,
 	hasHydratedActiveThreadRef,
 	hydrateThreadState,
+	isNavigationCurrent,
 	leaveActiveThreadForBackground,
 	listDocuments,
 	listVotes,
+	navigationIdentity,
 	reconcileThreadWithLocalTitle,
 	replaceRootRoute,
 	resetToBlankChatState,
@@ -732,6 +842,13 @@ export async function loadRovoAppThreadWithLifecycle({
 	threadId,
 	toUserErrorMessage,
 }: LoadRovoAppThreadLifecycleInput): Promise<void> {
+	const isCurrent = () =>
+		isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity });
+
+	if (!isCurrent()) {
+		return;
+	}
+
 	if (
 		shouldSkipRovoAppThreadLoad({
 			activeThreadId: activeThreadIdRef.current,
@@ -739,10 +856,16 @@ export async function loadRovoAppThreadWithLifecycle({
 			requestedThreadId: threadId,
 		})
 	) {
+		if (isCurrent()) {
+			setIsLoadingThread(false);
+		}
 		return;
 	}
 
-	await leaveActiveThreadForBackground();
+	await leaveActiveThreadForBackground(navigationIdentity);
+	if (!isCurrent()) {
+		return;
+	}
 
 	setInputError(null);
 	setIsLoadingThread(true);
@@ -752,8 +875,11 @@ export async function loadRovoAppThreadWithLifecycle({
 			listDocuments(threadId),
 			listVotes(threadId),
 		]);
+		if (!isCurrent()) {
+			return;
+		}
 		if (!thread) {
-			resetToBlankChatState(createThreadId());
+			resetToBlankChatState(createThreadId(), navigationIdentity);
 			if (!embedded) {
 				replaceRootRoute();
 			}
@@ -773,41 +899,63 @@ export async function loadRovoAppThreadWithLifecycle({
 		const recoveredDocuments = (
 			await Promise.all(missingDocumentIds.map((documentId) => getDocument(documentId)))
 		).filter((document): document is RovoAppDocument => Boolean(document));
+		if (!isCurrent()) {
+			return;
+		}
 		const hydratedDocuments = recoveredDocuments.reduce(
 			(previousDocuments, document) => upsertDocumentRecord(previousDocuments, document),
 			nextDocuments,
 		);
 
 		const resolvedThread = reconcileThreadWithLocalTitle(thread);
-		hydrateThreadState(resolvedThread, hydratedDocuments, nextVotes);
+		hydrateThreadState(resolvedThread, hydratedDocuments, nextVotes, navigationIdentity);
+		if (!isCurrent()) {
+			return;
+		}
 		setThreads((previousThreads) =>
 			upsertRovoAppThreadRecord(previousThreads, resolvedThread, {
 				deletedThreadIds: deletedThreadIdsRef.current,
 			}),
 		);
 		if (resolvedThread.activeRun) {
-			void subscribeToRun(resolvedThread.id, resolvedThread.activeRun);
+			void subscribeToRun(resolvedThread.id, resolvedThread.activeRun, navigationIdentity);
 		} else {
 			clearRunSubscription();
 		}
 	} catch (error) {
-		setInputError(toUserErrorMessage(error));
+		if (isCurrent()) {
+			setInputError(toUserErrorMessage(error));
+		}
 	} finally {
-		setIsLoadingThread(false);
+		if (isCurrent()) {
+			setIsLoadingThread(false);
+		}
 	}
 }
 
 export async function activateBlankRovoAppThreadState({
 	createThreadId,
 	embedded,
+	isNavigationCurrent,
 	leaveActiveThreadForBackground,
+	navigationIdentity,
 	pushRootPath,
 	resetToBlankChatState,
 	syncHistory = true,
 }: ActivateBlankRovoAppThreadStateInput): Promise<void> {
-	await leaveActiveThreadForBackground();
+	const isCurrent = () =>
+		isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity });
 
-	resetToBlankChatState(createThreadId());
+	if (!isCurrent()) {
+		return;
+	}
+
+	await leaveActiveThreadForBackground(navigationIdentity);
+	if (!isCurrent()) {
+		return;
+	}
+
+	resetToBlankChatState(createThreadId(), navigationIdentity);
 	if (!embedded && syncHistory) {
 		pushRootPath();
 	}

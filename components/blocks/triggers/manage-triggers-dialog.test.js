@@ -8,11 +8,11 @@ const DIALOG_SOURCE = readFileSync(
 	"utf8",
 );
 const AGENT_FIELDS_SOURCE = readFileSync(
-	join(__dirname, "..", "agent-2", "components", "agent-2.tsx"),
+	join(__dirname, "..", "agent", "components", "agent.tsx"),
 	"utf8",
 );
 const AUTOMATION_DIALOGS_HOOK_SOURCE = readFileSync(
-	join(__dirname, "..", "agent-2", "hooks", "use-agent-automation-dialogs.ts"),
+	join(__dirname, "..", "agent", "hooks", "use-agent-automation-dialogs.ts"),
 	"utf8",
 );
 const DEMO_SOURCE = readFileSync(
@@ -63,7 +63,7 @@ test("ManageTriggersDialog rows manage automation rules, not individual event tr
 
 test('agent config fallback wires "Manage flows" to ManageTriggersDialog', () => {
 	assert.match(AGENT_FIELDS_SOURCE, /import \{ ManageTriggersDialog \}/u);
-	assert.match(AGENT_FIELDS_SOURCE, /from "@\/components\/blocks\/agent-2\/hooks\/use-agent-automation-dialogs";/u);
+	assert.match(AGENT_FIELDS_SOURCE, /from "@\/components\/blocks\/agent\/hooks\/use-agent-automation-dialogs";/u);
 	assert.match(AGENT_FIELDS_SOURCE, /<ManageTriggersDialog/u);
 	assert.match(AGENT_FIELDS_SOURCE, /automationRules=\{currentAutomationRules\}/u);
 	assert.match(AGENT_FIELDS_SOURCE, /onEditAutomation=\{handleEditAutomationFromManage\}/u);

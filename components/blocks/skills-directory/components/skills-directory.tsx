@@ -364,7 +364,7 @@ export function SkillsDirectoryDialog({
 	// seed changes, so this initializer re-runs for each newly opened skill.
 	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(initialDetailSkillId);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
-	// Per-skill enable/disable state for the detail view — mirrors the agent-2
+	// Per-skill enable/disable state for the detail view — mirrors the agent
 	// config toggle, where a configured skill can be parked disabled while staying
 	// on the agent until explicitly removed. Controlled by `disabledSkillIds` when
 	// the host wires it to the agent config; otherwise a local set (demo use). Keyed

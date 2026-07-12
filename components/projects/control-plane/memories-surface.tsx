@@ -6,7 +6,7 @@
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
-import { startTransition, useEffect, useMemo, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -42,8 +42,6 @@ import { ControlPlanePageShell } from "./control-plane-page-shell";
 import {
 	deleteWikiMemoryBlock,
 	deleteWikiMemoryProposal,
-	fetchWikiMemories,
-	fetchWikiMemoryExplorer,
 	generateWikiMemoryBrief,
 	generateWikiMemoryDeck,
 	resetWikiMemory,
@@ -94,6 +92,17 @@ type PendingBlockRemoval = {
 	block: WikiCanonicalMemoryBlock;
 	document: WikiCanonicalMemoryDocument;
 };
+
+type ExplorerRequestState = {
+	controller: AbortController | null;
+	requestId: number;
+};
+
+type ExplorerRefreshOptions = {
+	includeMemories?: boolean;
+};
+
+const EXPLORER_FILTER_DEBOUNCE_MS = 250;
 
 const EXPLORER_VIEWS: Array<{ icon: ReactNode; label: string; value: ExplorerView }> = [
 	{ icon: <BranchIcon label="" />, label: "Graph", value: "graph" },
@@ -214,11 +223,76 @@ function createDownload(fileName: string, content: BlobPart, contentType: string
 	window.URL.revokeObjectURL(url);
 }
 
+async function getApiErrorMessage(response: Response): Promise<string> {
+	const fallback = `Request failed with status ${response.status}`;
+	const body = await response.text().catch(() => "");
+	if (!body.trim()) {
+		return fallback;
+	}
+
+	try {
+		const payload = JSON.parse(body) as { details?: unknown; error?: unknown };
+		if (typeof payload.error === "string" && payload.error.trim()) {
+			return payload.error.trim();
+		}
+		if (typeof payload.details === "string" && payload.details.trim()) {
+			return payload.details.trim();
+		}
+	} catch {
+		return body.trim();
+	}
+
+	return fallback;
+}
+
+function isAbortError(error: unknown): boolean {
+	return error instanceof DOMException && error.name === "AbortError";
+}
+
+async function fetchWikiMemoryExplorerSnapshot(
+	filters: Partial<WikiMemoryExplorerFilters>,
+	signal: AbortSignal,
+): Promise<WikiMemoryExplorerResponse> {
+	const response = await fetch(API_ENDPOINTS.wikiMemoryExplorer(filters), {
+		method: "GET",
+		signal,
+	});
+	if (!response.ok) {
+		throw new Error(await getApiErrorMessage(response));
+	}
+
+	const payload = await response.json() as { explorer?: WikiMemoryExplorerResponse };
+	if (!payload.explorer) {
+		throw new Error("Wiki memory explorer response was empty.");
+	}
+	return payload.explorer;
+}
+
+async function fetchWikiMemoryDocumentsSnapshot(signal: AbortSignal): Promise<WikiCanonicalMemoryDocuments> {
+	const response = await fetch(API_ENDPOINTS.WIKI_MEMORIES, {
+		method: "GET",
+		signal,
+	});
+	if (!response.ok) {
+		throw new Error(await getApiErrorMessage(response));
+	}
+
+	const payload = await response.json() as { memories?: WikiCanonicalMemoryDocuments };
+	if (!payload.memories) {
+		throw new Error("Wiki memory response was empty.");
+	}
+	return payload.memories;
+}
+
 export function MemoriesSurfacePage() {
 	const searchParams = useSearchParams();
 	const [explorer, setExplorer] = useState<WikiMemoryExplorerResponse | null>(null);
 	const [memoryDocuments, setMemoryDocuments] = useState<WikiCanonicalMemoryDocuments | null>(null);
 	const [filters, setFilters] = useState<FilterState>(() => buildInitialFilterState(searchParams));
+	const [debouncedTextFilters, setDebouncedTextFilters] = useState<Pick<FilterState, "tag" | "threadId">>(() => ({
+		tag: filters.tag,
+		threadId: filters.threadId,
+	}));
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
@@ -233,8 +307,23 @@ export function MemoriesSurfacePage() {
 	const [isGeneratingDeck, setIsGeneratingDeck] = useState(false);
 	const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
+	const explorerRequestRef = useRef<ExplorerRequestState>({ controller: null, requestId: 0 });
 
-	const filterInput = useMemo(() => buildExplorerFilterInput(filters), [filters]);
+	const filterInput = useMemo(() => buildExplorerFilterInput({
+		includeLinkedKnowledge: filters.includeLinkedKnowledge,
+		kind: filters.kind,
+		scope: filters.scope,
+		status: filters.status,
+		tag: debouncedTextFilters.tag,
+		threadId: debouncedTextFilters.threadId,
+	}), [
+		debouncedTextFilters.tag,
+		debouncedTextFilters.threadId,
+		filters.includeLinkedKnowledge,
+		filters.kind,
+		filters.scope,
+		filters.status,
+	]);
 	const selectedNode = useMemo(
 		() => resolveExplicitMemoryArtifactNode(explorer?.nodes, selectedNodeId),
 		[explorer?.nodes, selectedNodeId],
@@ -247,23 +336,53 @@ export function MemoriesSurfacePage() {
 		() => (explorer ? buildTimelineSeries(explorer) : []),
 		[explorer],
 	);
-	async function refreshExplorer(nextFilters = filterInput) {
+	async function refreshExplorer(nextFilters = filterInput, options: ExplorerRefreshOptions = {}) {
+		const nextRequestId = explorerRequestRef.current.requestId + 1;
+		explorerRequestRef.current.controller?.abort();
+		const controller = new AbortController();
+		explorerRequestRef.current = {
+			controller,
+			requestId: nextRequestId,
+		};
 		setIsLoading(true);
 		try {
+			const shouldRefreshMemories = options.includeMemories === true || memoryDocuments === null;
 			const [nextExplorer, nextMemories] = await Promise.all([
-				fetchWikiMemoryExplorer(nextFilters),
-				fetchWikiMemories(),
+				fetchWikiMemoryExplorerSnapshot(nextFilters, controller.signal),
+				shouldRefreshMemories
+					? fetchWikiMemoryDocumentsSnapshot(controller.signal)
+					: Promise.resolve(null),
 			]);
+			if (
+				controller.signal.aborted
+				|| explorerRequestRef.current.requestId !== nextRequestId
+			) {
+				return;
+			}
 			setExplorer(nextExplorer);
-			setMemoryDocuments(nextMemories);
+			if (nextMemories) {
+				setMemoryDocuments(nextMemories);
+			}
 			setErrorMessage(null);
 			startTransition(() => {
 				setSelectedNodeId((current) => nextExplorer.nodes.some((node) => node.id === current) ? current : null);
 			});
 		} catch (error) {
+			if (
+				isAbortError(error)
+				|| explorerRequestRef.current.requestId !== nextRequestId
+			) {
+				return;
+			}
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
-			setIsLoading(false);
+			if (explorerRequestRef.current.requestId === nextRequestId) {
+				explorerRequestRef.current = {
+					controller: null,
+					requestId: nextRequestId,
+				};
+				setIsLoading(false);
+			}
 		}
 	}
 
@@ -271,7 +390,7 @@ export function MemoriesSurfacePage() {
 		setIsSyncing(true);
 		try {
 			await syncWiki(true);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 			setErrorMessage(null);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -285,7 +404,7 @@ export function MemoriesSurfacePage() {
 		try {
 			await resetWikiMemory();
 			setIsResetDialogOpen(false);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 			setErrorMessage(null);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -303,7 +422,7 @@ export function MemoriesSurfacePage() {
 		try {
 			await deleteWikiMemoryProposal(pendingProposalRemove.id);
 			setPendingProposalRemove(null);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -324,7 +443,7 @@ export function MemoriesSurfacePage() {
 				pendingBlockRemove.document.revision,
 			);
 			setPendingBlockRemove(null);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -397,11 +516,33 @@ export function MemoriesSurfacePage() {
 	}, [searchParams]);
 
 	useEffect(() => {
+		const debounceTimer = window.setTimeout(() => {
+			setDebouncedTextFilters({
+				tag: filters.tag,
+				threadId: filters.threadId,
+			});
+		}, EXPLORER_FILTER_DEBOUNCE_MS);
+
+		return () => window.clearTimeout(debounceTimer);
+	}, [filters.tag, filters.threadId]);
+
+	useEffect(() => {
 		void refreshExplorer(filterInput);
 		setBriefArtifact(null);
 		setDeckArtifact(null);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- filters are fully represented by filterInput
 	}, [filterInput.kind, filterInput.scope, filterInput.status, filterInput.tag, filterInput.threadId, filterInput.includeLinkedKnowledge]);
+
+	useEffect(() => {
+		return () => {
+			const requestId = explorerRequestRef.current.requestId + 1;
+			explorerRequestRef.current.controller?.abort();
+			explorerRequestRef.current = {
+				controller: null,
+				requestId,
+			};
+		};
+	}, []);
 
 	useEffect(() => {
 		setBriefArtifact(null);
@@ -429,7 +570,7 @@ export function MemoriesSurfacePage() {
 						<Badge variant="neutral">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
 						<Button
 							variant="outline"
-							onClick={() => void refreshExplorer(filterInput)}
+							onClick={() => void refreshExplorer(filterInput, { includeMemories: true })}
 							disabled={isLoading || isSyncing || removingKey !== null}
 						>
 							<RefreshIcon label="" />

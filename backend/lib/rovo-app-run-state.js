@@ -38,6 +38,10 @@ function buildRovoAppActiveRunPayload(run, thread) {
 	};
 }
 
+function buildRovoAppActiveRunThreadPatch(run) {
+	return buildRovoAppActiveRunPayload(run, null);
+}
+
 function createRovoAppRunStateService({
 	activeRequests,
 	rovoAppRunManager,
@@ -49,7 +53,6 @@ function createRovoAppRunStateService({
 	requireFunction("rovoAppRunManager.clearRun", rovoAppRunManager?.clearRun);
 	requireFunction("rovoAppRunManager.hasRun", rovoAppRunManager?.hasRun);
 	requireFunction("rovoAppRunManager.setRunBackend", rovoAppRunManager?.setRunBackend);
-	requireFunction("rovoAppThreadManager.getThread", rovoAppThreadManager?.getThread);
 	requireFunction("rovoAppThreadManager.updateThread", rovoAppThreadManager?.updateThread);
 	requireFunction("startNextQueuedRun", startNextQueuedRun);
 	requireFunction("synchronizeRovoAppThreadGeneratedFiles", synchronizeRovoAppThreadGeneratedFiles);
@@ -59,13 +62,8 @@ function createRovoAppRunStateService({
 			return null;
 		}
 
-		const thread = await rovoAppThreadManager.getThread(threadId);
-		if (!thread) {
-			return null;
-		}
-
 		return rovoAppThreadManager.updateThread(threadId, {
-			activeRun: buildRovoAppActiveRunPayload(run, thread),
+			activeRun: buildRovoAppActiveRunThreadPatch(run),
 		});
 	}
 
@@ -90,11 +88,6 @@ function createRovoAppRunStateService({
 
 	async function persistRovoAppRunMessagesSnapshot(threadId, messages) {
 		if (!threadId || !Array.isArray(messages)) {
-			return null;
-		}
-
-		const thread = await rovoAppThreadManager.getThread(threadId);
-		if (!thread) {
 			return null;
 		}
 

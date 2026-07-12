@@ -5,19 +5,19 @@ const { test } = require("node:test");
 
 const DIALOG_SOURCE = readFileSync(join(__dirname, "agent-triggers-dialog.tsx"), "utf8");
 const AGENT_FIELDS_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "agent-2", "components", "agent-2.tsx"),
+	join(__dirname, "..", "blocks", "agent", "components", "agent.tsx"),
 	"utf8",
 );
 const AUTOMATION_DIALOGS_HOOK_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "agent-2", "hooks", "use-agent-automation-dialogs.ts"),
+	join(__dirname, "..", "blocks", "agent", "hooks", "use-agent-automation-dialogs.ts"),
 	"utf8",
 );
 const COMPACT_CONFIG_NAV_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "agent-2", "components", "agent-compact-config-nav.tsx"),
+	join(__dirname, "..", "blocks", "agent", "components", "agent-compact-config-nav.tsx"),
 	"utf8",
 );
 const FILLED_CONFIG_SUMMARY_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "agent-2", "components", "agent-filled-config-summary.tsx"),
+	join(__dirname, "..", "blocks", "agent", "components", "agent-filled-config-summary.tsx"),
 	"utf8",
 );
 const TRIGGERS_PAGE_SOURCE = readFileSync(
@@ -76,7 +76,7 @@ test("Trigger summary row routes add-event selections to a new automation draft"
 
 test("AgentConfigFields hosts a single automation dialog and commits via onAutomationRulesChange", () => {
 	assert.match(AGENT_FIELDS_SOURCE, /import \{ AgentTriggersDialog \} from "@\/components\/ui-custom\/agent-triggers-dialog"/u);
-	assert.match(AGENT_FIELDS_SOURCE, /from "@\/components\/blocks\/agent-2\/hooks\/use-agent-automation-dialogs";/u);
+	assert.match(AGENT_FIELDS_SOURCE, /from "@\/components\/blocks\/agent\/hooks\/use-agent-automation-dialogs";/u);
 	assert.match(AGENT_FIELDS_SOURCE, /<AgentTriggersDialog/u);
 	assert.match(AGENT_FIELDS_SOURCE, /automationRule=\{triggersEditor\.seed\}/u);
 	assert.match(AGENT_FIELDS_SOURCE, /onSave=\{handleTriggersSave\}/u);

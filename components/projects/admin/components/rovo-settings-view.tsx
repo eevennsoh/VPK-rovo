@@ -26,6 +26,7 @@ import {
 	AdminToggleRow,
 	AdminViewHeader,
 } from "./view-primitives";
+import { AdminRovoPrototypeNotice } from "./rovo-admin-cluster-primitives";
 
 export function RovoSettingsView() {
 	const { rovoChatEnabled, setRovoChatEnabled } = useAdmin();
@@ -60,6 +61,11 @@ export function RovoSettingsView() {
 				title="Rovo settings"
 				description="Manage settings for Rovo features and search preferences in your organization."
 			/>
+
+			<AdminRovoPrototypeNotice>
+				Settings in this prototype are simulated. The Administration chat toggle is stored
+				locally in this browser and does not update organization configuration.
+			</AdminRovoPrototypeNotice>
 
 			<Tabs defaultValue="rovo-chat" className="w-full">
 				<TabsList variant="line">

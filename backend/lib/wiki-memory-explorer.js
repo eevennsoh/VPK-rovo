@@ -71,6 +71,15 @@ const EDGE_KIND_PRIORITY = Object.freeze({
 	inferred_topic: 5,
 	same_scope: 6,
 });
+const RELATION_HUB_KIND_PRIORITY = Object.freeze({
+	"canonical-memory": 0,
+	"compiled-context": 1,
+	"raw-proposal": 2,
+	"linked-knowledge": 3,
+});
+const MEMORY_EXPLORER_SNAPSHOT_CACHE_LIMIT = 8;
+const memoryExplorerSnapshotCache = new Map();
+const memoryExplorerRootRevisions = new Map();
 
 function normalizeText(value) {
 	return typeof value === "string"
@@ -193,6 +202,66 @@ async function walkMarkdownFiles(dirPath) {
 	}
 
 	return files;
+}
+
+function getMemoryExplorerCacheKey({ includeLinkedKnowledge, revision, rootDir }) {
+	return [
+		path.resolve(rootDir),
+		includeLinkedKnowledge ? "linked" : "memory",
+		revision,
+	].join("\0");
+}
+
+function getCachedMemoryExplorerSnapshot(cacheKey) {
+	const cached = memoryExplorerSnapshotCache.get(cacheKey);
+	if (!cached) {
+		return null;
+	}
+
+	memoryExplorerSnapshotCache.delete(cacheKey);
+	memoryExplorerSnapshotCache.set(cacheKey, cached);
+	return cached;
+}
+
+function setCachedMemoryExplorerSnapshot(cacheKey, snapshotPromise) {
+	memoryExplorerSnapshotCache.set(cacheKey, snapshotPromise);
+	while (memoryExplorerSnapshotCache.size > MEMORY_EXPLORER_SNAPSHOT_CACHE_LIMIT) {
+		const oldestKey = memoryExplorerSnapshotCache.keys().next().value;
+		if (!oldestKey) {
+			break;
+		}
+		memoryExplorerSnapshotCache.delete(oldestKey);
+	}
+}
+
+function getMemoryExplorerRootRevision(rootDir) {
+	return memoryExplorerRootRevisions.get(rootDir) ?? 0;
+}
+
+function incrementMemoryExplorerRootRevision(rootDir) {
+	const nextRevision = getMemoryExplorerRootRevision(rootDir) + 1;
+	memoryExplorerRootRevisions.set(rootDir, nextRevision);
+	return nextRevision;
+}
+
+function invalidateWikiMemoryExplorerCache({ wikiDir } = {}) {
+	if (!wikiDir) {
+		for (const rootDir of memoryExplorerRootRevisions.keys()) {
+			incrementMemoryExplorerRootRevision(rootDir);
+		}
+		memoryExplorerSnapshotCache.clear();
+		return;
+	}
+
+	const paths = resolveLlmWikiPaths({ wikiDir });
+	const rootDir = path.resolve(paths.rootDir);
+	incrementMemoryExplorerRootRevision(rootDir);
+	const rootPrefix = `${rootDir}\0`;
+	for (const cacheKey of memoryExplorerSnapshotCache.keys()) {
+		if (cacheKey.startsWith(rootPrefix)) {
+			memoryExplorerSnapshotCache.delete(cacheKey);
+		}
+	}
 }
 
 async function readMarkdownDocument(filePath) {
@@ -593,6 +662,43 @@ function createEdgeStore(nodes) {
 	};
 }
 
+function sortNodeIdsForRelationHub(nodeIds, nodeById) {
+	return Array.from(new Set(nodeIds))
+		.filter((nodeId) => nodeById.has(nodeId))
+		.sort((leftId, rightId) => {
+			const left = nodeById.get(leftId);
+			const right = nodeById.get(rightId);
+			const leftPriority = RELATION_HUB_KIND_PRIORITY[left?.kind] ?? Number.MAX_SAFE_INTEGER;
+			const rightPriority = RELATION_HUB_KIND_PRIORITY[right?.kind] ?? Number.MAX_SAFE_INTEGER;
+			if (leftPriority !== rightPriority) {
+				return leftPriority - rightPriority;
+			}
+
+			const leftUpdated = left?.updatedAt ?? left?.createdAt ?? "";
+			const rightUpdated = right?.updatedAt ?? right?.createdAt ?? "";
+			return rightUpdated.localeCompare(leftUpdated)
+				|| (left?.title ?? "").localeCompare(right?.title ?? "")
+				|| leftId.localeCompare(rightId);
+		});
+}
+
+function addHubRelationshipEdges({ edgeStore, groups, kind, metadataKey, nodeById }) {
+	for (const [metadataValue, nodeIds] of groups.entries()) {
+		const sortedNodeIds = sortNodeIdsForRelationHub(nodeIds, nodeById);
+		if (sortedNodeIds.length < 2) {
+			continue;
+		}
+
+		const hubNodeId = sortedNodeIds[0];
+		for (const nodeId of sortedNodeIds.slice(1)) {
+			edgeStore.addEdge(hubNodeId, nodeId, kind, {
+				[metadataKey]: metadataValue,
+				hubNodeId,
+			});
+		}
+	}
+}
+
 function buildExplorerGraph(nodes) {
 	const edgeStore = createEdgeStore(nodes);
 	const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -674,19 +780,13 @@ function buildExplorerGraph(nodes) {
 		}
 	}
 
-	for (const [tag, nodeIds] of nodesByTag.entries()) {
-		if (nodeIds.length < 2) {
-			continue;
-		}
-
-		for (let index = 0; index < nodeIds.length; index += 1) {
-			for (let offset = index + 1; offset < nodeIds.length; offset += 1) {
-				edgeStore.addEdge(nodeIds[index], nodeIds[offset], "shared_tag", {
-					tag,
-				});
-			}
-		}
-	}
+	addHubRelationshipEdges({
+		edgeStore,
+		groups: nodesByTag,
+		kind: "shared_tag",
+		metadataKey: "tag",
+		nodeById,
+	});
 
 	for (const [scope, nodeIds] of nodesByScope.entries()) {
 		const scopeNodes = nodeIds.map((nodeId) => nodeById.get(nodeId)).filter(Boolean);
@@ -707,19 +807,13 @@ function buildExplorerGraph(nodes) {
 		}
 	}
 
-	for (const [topic, nodeIds] of nodesByTopic.entries()) {
-		if (nodeIds.length < 2) {
-			continue;
-		}
-
-		for (let index = 0; index < nodeIds.length; index += 1) {
-			for (let offset = index + 1; offset < nodeIds.length; offset += 1) {
-				edgeStore.addEdge(nodeIds[index], nodeIds[offset], "inferred_topic", {
-					topic,
-				});
-			}
-		}
-	}
+	addHubRelationshipEdges({
+		edgeStore,
+		groups: nodesByTopic,
+		kind: "inferred_topic",
+		metadataKey: "topic",
+		nodeById,
+	});
 
 	const edges = edgeStore.getEdges();
 	const connectionCounts = edgeStore.getNodeConnectionCounts();
@@ -898,17 +992,16 @@ function sortNodesForOutput(nodes) {
 	});
 }
 
-async function buildWikiMemoryExplorer({
-	filters,
+async function buildUnfilteredWikiMemoryExplorerSnapshot({
+	includeLinkedKnowledge,
+	paths,
 	wikiDir = DEFAULT_WIKI_DIR,
 } = {}) {
-	const normalizedFilters = normalizeExplorerFilters(filters);
-	const paths = resolveLlmWikiPaths({ wikiDir });
 	const [memoryDocuments, proposals, compiledContexts, linkedKnowledgeNodes] = await Promise.all([
 		getCanonicalWikiMemoryDocuments({ wikiDir }),
 		listWikiMemoryProposals({ wikiDir }),
 		readCompiledContextDocuments({ wikiDir }),
-		normalizedFilters.includeLinkedKnowledge
+		includeLinkedKnowledge
 			? buildLinkedKnowledgeNodes({ rootDir: paths.rootDir, wikiDir: paths.wikiDir })
 			: Promise.resolve([]),
 	]);
@@ -920,15 +1013,63 @@ async function buildWikiMemoryExplorer({
 		...linkedKnowledgeNodes,
 	];
 	const graph = buildExplorerGraph(allNodes);
-	const filtered = applyExplorerFilters(graph, normalizedFilters);
+
+	return {
+		edges: graph.edges,
+		facets: buildExplorerFacets(graph.nodes),
+		nodes: graph.nodes,
+	};
+}
+
+async function getWikiMemoryExplorerSnapshot({
+	includeLinkedKnowledge,
+	wikiDir = DEFAULT_WIKI_DIR,
+} = {}) {
+	const paths = resolveLlmWikiPaths({ wikiDir });
+	const rootDir = path.resolve(paths.rootDir);
+	const revision = getMemoryExplorerRootRevision(rootDir);
+	const cacheKey = getMemoryExplorerCacheKey({
+		includeLinkedKnowledge,
+		revision,
+		rootDir,
+	});
+	const cachedSnapshot = getCachedMemoryExplorerSnapshot(cacheKey);
+	if (cachedSnapshot) {
+		return cachedSnapshot;
+	}
+
+	const snapshotPromise = buildUnfilteredWikiMemoryExplorerSnapshot({
+		includeLinkedKnowledge,
+		paths,
+		wikiDir,
+	});
+	setCachedMemoryExplorerSnapshot(cacheKey, snapshotPromise);
+	try {
+		return await snapshotPromise;
+	} catch (error) {
+		memoryExplorerSnapshotCache.delete(cacheKey);
+		throw error;
+	}
+}
+
+async function buildWikiMemoryExplorer({
+	filters,
+	wikiDir = DEFAULT_WIKI_DIR,
+} = {}) {
+	const normalizedFilters = normalizeExplorerFilters(filters);
+	const snapshot = await getWikiMemoryExplorerSnapshot({
+		includeLinkedKnowledge: normalizedFilters.includeLinkedKnowledge,
+		wikiDir,
+	});
+	const filtered = applyExplorerFilters(snapshot, normalizedFilters);
 
 	return {
 		edges: filtered.edges,
-		facets: buildExplorerFacets(graph.nodes),
+		facets: snapshot.facets,
 		filters: normalizedFilters,
 		generatedAt: new Date().toISOString(),
 		nodes: sortNodesForOutput(filtered.nodes),
-		stats: buildExplorerStats(graph.nodes, graph.edges, filtered.nodes, filtered.edges),
+		stats: buildExplorerStats(snapshot.nodes, snapshot.edges, filtered.nodes, filtered.edges),
 	};
 }
 
@@ -1100,5 +1241,6 @@ module.exports = {
 	buildWikiMemoryDeck,
 	buildWikiMemoryExplorer,
 	buildWikiMemoryExplorerCsv,
+	invalidateWikiMemoryExplorerCache,
 	normalizeExplorerFilters,
 };

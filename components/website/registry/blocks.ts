@@ -3,7 +3,6 @@ import type { ComponentType } from "react";
 
 export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	agent: dynamic(() => import("../demos/blocks/agent-demo"), { ssr: false }),
-	"agent-2": dynamic(() => import("../demos/blocks/agent-2-demo"), { ssr: false }),
 	"skill-config": dynamic(() => import("../demos/blocks/skill-config-demo"), {
 		ssr: false,
 	}),
@@ -451,22 +450,6 @@ export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/agent-demo").then((mod) => ({
 				default: mod.AgentDemoEmpty,
-			})),
-		{ ssr: false },
-	),
-
-	// Agent 2
-	"agent-2-demo-full": dynamic(
-		() =>
-			import("../demos/blocks/agent-2-demo").then((mod) => ({
-				default: mod.AgentDemo2Full,
-			})),
-		{ ssr: false },
-	),
-	"agent-2-demo-empty": dynamic(
-		() =>
-			import("../demos/blocks/agent-2-demo").then((mod) => ({
-				default: mod.AgentDemo2Empty,
 			})),
 		{ ssr: false },
 	),

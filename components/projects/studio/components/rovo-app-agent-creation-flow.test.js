@@ -112,19 +112,39 @@ const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const AGENT_BLOCK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/agent-2/components/agent-2.tsx"),
+	path.join(process.cwd(), "components/blocks/agent/components/agent.tsx"),
 	"utf8",
 );
 const AGENT_COMPACT_HEADER_NAV_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/agent-2/components/agent-compact-header-nav.tsx"),
+	path.join(process.cwd(), "components/blocks/agent/components/agent-compact-header-nav.tsx"),
+	"utf8",
+);
+const AGENT_COMPACT_CONFIG_NAV_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent-compact-config-nav.tsx"),
+	"utf8",
+);
+const AGENT_COMPACT_CONFIG_PANEL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent-compact-config-panel.tsx"),
+	"utf8",
+);
+const AGENT_CONFIG_PROFILE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent-config-profile.tsx"),
+	"utf8",
+);
+const AGENT_FILLED_CONFIG_SUMMARY_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent-filled-config-summary.tsx"),
 	"utf8",
 );
 const AGENT_PROFILE_COVER_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/agent-2/components/agent-profile-cover.tsx"),
+	path.join(process.cwd(), "components/blocks/agent/components/agent-profile-cover.tsx"),
+	"utf8",
+);
+const AGENT_INSTRUCTIONS_COMPOSER_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent-instructions-composer.tsx"),
 	"utf8",
 );
 const AGENT_CONFIG_MODEL_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/agent-2/lib/agent-config-model.ts"),
+	path.join(process.cwd(), "components/blocks/agent/lib/agent-config-model.ts"),
 	"utf8",
 );
 const NAV_HOOK_SOURCE = fs.readFileSync(
@@ -891,7 +911,7 @@ test("Studio agent insights panel frames agent performance and improvement oppor
 });
 
 test("Studio agent config moves Details into compact nav and removes the config toggle group", () => {
-	assert.match(AGENT_BLOCK_SOURCE, /from "@\/components\/blocks\/agent-2\/components\/agent-compact-header-nav";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /from "@\/components\/blocks\/agent\/components\/agent-compact-header-nav";/u);
 	assert.match(AGENT_COMPACT_HEADER_NAV_SOURCE, /import \{ LayoutDashboardIcon, MoreHorizontalIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(AGENT_COMPACT_HEADER_NAV_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*<LayoutDashboardIcon size="small" \/>[\s\S]*label: "Details"[\s\S]*label: "Insights"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const lastCompactSectionRef = useRef<AgentCompactHeaderSection>\("details"\);/u);
@@ -906,25 +926,26 @@ test("Studio agent config moves Details into compact nav and removes the config 
 
 test("Studio agent config panel renders the shared block agent config fields", () => {
 	assert.match(AGENT_BLOCK_SOURCE, /export const AgentConfigFields = memo/u);
-	assert.match(AGENT_BLOCK_SOURCE, /import \{ AGENT_AVATAR_SRC, AgentProfileCover \} from "@\/components\/blocks\/agent-2\/components\/agent-profile-cover";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /import \{ AGENT_AVATAR_SRC \} from "@\/components\/blocks\/agent\/components\/agent-profile-cover";/u);
+	assert.match(AGENT_CONFIG_PROFILE_SOURCE, /import \{ AgentProfileCover \} from "@\/components\/blocks\/agent\/components\/agent-profile-cover";/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /"product-agents": "#BF63F3"/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /style=\{\{[\s\S]*backgroundColor: coverBackgroundColor,[\s\S]*backgroundImage: `url\("\$\{bannerSrc\}"\)`,[\s\S]*\}\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Add flows for when this agent runs/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
-	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
-	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me create the agent/u);
+	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /Add flows for when this agent runs/u);
+	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /Add prompts to help people start/u);
+	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
+	assert.match(AGENT_COMPACT_CONFIG_PANEL_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
+	assert.match(AGENT_INSTRUCTIONS_COMPOSER_SOURCE, /Press \/ to help me create the agent/u);
 	// The data-flow diagram tab is hidden for now: the agent config no longer
 	// passes dataFlowConfig, so the Rich Text editor's showDataFlowMode stays false.
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
-	assert.match(AGENT_BLOCK_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
+	assert.match(AGENT_CONFIG_MODEL_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onAutomationRulesChange\?: \(automationRules: readonly AgentAutomationRule\[\]\) => void;/u);
-	assert.match(AGENT_BLOCK_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
-	assert.match(AGENT_BLOCK_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
+	assert.match(AGENT_CONFIG_PROFILE_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
+	assert.match(AGENT_CONFIG_PROFILE_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
+	assert.match(AGENT_CONFIG_PROFILE_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentSurfaces/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type AgentCompactHeaderSection/u);
@@ -940,7 +961,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/app\/data\/directory\/knowledge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ getAgentConfigListLookupValue, getSkillConfigLabel \} from "@\/components\/blocks\/agent-2\/lib\/agent-config-model";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ getAgentConfigListLookupValue, getSkillConfigLabel \} from "@\/components\/blocks\/agent\/lib\/agent-config-model";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsights \} from "@\/components\/blocks\/agent-insights";/u);
@@ -963,8 +984,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getAgentConfigListLookupValue\(field: AgentConfigListFieldName, value: string\): string \{[\s\S]*return field === "skills" \? getSkillConfigLabel\(value\) : getNormalizedAgentReferenceValue\(value\);/u);
 	assert.match(AGENT_CONFIG_MODEL_SOURCE, /export function getSkillConfigItems\(items: readonly string\[\] \| undefined\): readonly string\[\] \{[\s\S]*\.map\(getSkillConfigLabel\)/u);
-	assert.match(AGENT_BLOCK_SOURCE, /getSkillConfigItems,[\s\S]*getSkillConfigLabel,/u);
-	assert.match(AGENT_BLOCK_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
+	assert.match(AGENT_COMPACT_CONFIG_NAV_SOURCE, /getSkillConfigItems,[\s\S]*getSkillConfigLabel,/u);
+	assert.match(AGENT_FILLED_CONFIG_SUMMARY_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{addedToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*setDirectorySkillIds\(\[\]\);[\s\S]*selectionExperience="studio-bulk-add"[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
@@ -1366,7 +1387,7 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(AGENT_BLOCK_SOURCE, /screenAssistantTargetPrefix=\{screenAssistantTargetPrefix\}/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /data-screen-assistant-target=\{screenAssistantTargetPrefix \? `\$\{screenAssistantTargetPrefix\}:avatar` : undefined\}/u);
 	assert.match(AGENT_PROFILE_COVER_SOURCE, /getAgentAvatarOptionTargetId\(screenAssistantTargetPrefix, group\.id, option\.src\)/u);
-	assert.match(AGENT_BLOCK_SOURCE, /data-agent-field="instructions"/u);
+	assert.match(AGENT_INSTRUCTIONS_COMPOSER_SOURCE, /data-agent-field="instructions"/u);
 });
 
 test("Studio cursor overlay streams assistant text only through the cursor tooltip", () => {

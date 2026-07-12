@@ -12,30 +12,30 @@ function readProjectFile(relativePath) {
 const AGENT_INDEX_SOURCE = readProjectFile("components/blocks/agent/index.ts");
 const AGENT_PAGE_SOURCE = readProjectFile("components/blocks/agent/page.tsx");
 const AGENT_PREVIEW_PAGE_SOURCE = readProjectFile("app/preview/blocks/agent/page.tsx");
+const AGENT_2_PREVIEW_PAGE_SOURCE = readProjectFile("app/preview/blocks/agent-2/page.tsx");
 const AGENT_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/agent-demo.tsx");
-const AGENT_2_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/agent-2-demo.tsx");
 const AGENT_DETAIL_SOURCE = readProjectFile("app/data/details/blocks/agent.ts");
-const AGENT_2_DETAIL_SOURCE = readProjectFile("app/data/details/blocks/agent-2.ts");
 const AGENT_DETAIL_HELPER_SOURCE = readProjectFile("app/data/details/blocks/agent-detail.ts");
 const BLOCK_DETAILS_SOURCE = readDetailCategorySource("blocks");
 const COMPONENTS_SOURCE = readProjectFile("app/data/components.ts");
 const COMPONENT_MANIFEST_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const WEBSITE_REGISTRY_SOURCE = readWebsiteRegistrySource();
 
-test("Agent compatibility facade re-exports Agent 2", () => {
-	assert.equal(AGENT_INDEX_SOURCE.trim(), 'export * from "@/components/blocks/agent-2";');
+test("Agent index re-exports the canonical implementation", () => {
+	assert.equal(AGENT_INDEX_SOURCE.trim(), 'export * from "./components/agent";');
 	assert.match(AGENT_DETAIL_SOURCE, /createAgentDetail\(\{\s*demoSlugPrefix: "agent",\s*importPath: "@\/components\/blocks\/agent",\s*\}\)/u);
-	assert.match(AGENT_2_DETAIL_SOURCE, /createAgentDetail\(\{\s*demoSlugPrefix: "agent-2",\s*importPath: "@\/components\/blocks\/agent-2",\s*\}\)/u);
 });
 
-test("Agent page and preview route keep the legacy route compatibility layer", () => {
+test("Agent page and preview routes keep the compatibility layer", () => {
 	assert.match(AGENT_PAGE_SOURCE, /import AgentDemo from "@\/components\/website\/demos\/blocks\/agent-demo";/u);
 	assert.match(AGENT_PAGE_SOURCE, /export default function AgentPage\(\): React\.ReactElement \{\s*return <AgentDemo \/>;\s*\}/u);
 	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /import AgentPage from "@\/components\/blocks\/agent\/page";/u);
 	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /return <AgentPage \/>;/u);
+	assert.match(AGENT_2_PREVIEW_PAGE_SOURCE, /import \{ redirect \} from "next\/navigation";/u);
+	assert.match(AGENT_2_PREVIEW_PAGE_SOURCE, /redirect\("\/preview\/blocks\/agent"\);/u);
 });
 
-test("Agent remains registered as a block demo through the facade", () => {
+test("Agent remains registered as a block demo through the canonical owner", () => {
 	assert.match(COMPONENTS_SOURCE, /blockComponent\("agent"\)/u);
 	assert.match(COMPONENT_MANIFEST_SOURCE, /blockComponent\("agent"\)/u);
 	assert.match(
@@ -53,12 +53,4 @@ test("Agent demo consumes the legacy facade and exposes configured variants", ()
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull\(\)/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty\(\)/u);
 	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentCompactSurfacesPanel \/>/u);
-});
-
-test("Agent 2 demo delegates to the canonical Agent demo owner", () => {
-	assert.match(AGENT_2_DEMO_SOURCE, /AgentDemoFull as AgentDemo2Full/u);
-	assert.match(AGENT_2_DEMO_SOURCE, /AgentDemoEmpty as AgentDemo2Empty/u);
-	assert.match(AGENT_2_DEMO_SOURCE, /from "\.\/agent-demo";/u);
-	assert.doesNotMatch(AGENT_2_DEMO_SOURCE, /useAgentDemoConfig/u);
-	assert.doesNotMatch(AGENT_2_DEMO_SOURCE, /function AgentDemo2Full/u);
 });

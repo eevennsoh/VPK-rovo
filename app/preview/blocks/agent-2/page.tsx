@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import Agent2Page from "@/components/blocks/agent-2/page";
-import { getPreviewPageTitle } from "@/lib/project-page-title";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-	title: getPreviewPageTitle("agent-2", "blocks"),
-};
-
-export default function Agent2PreviewPage() {
-	return <Agent2Page />;
+export default function AgentPreviewRedirect() {
+	redirect("/preview/blocks/agent");
 }

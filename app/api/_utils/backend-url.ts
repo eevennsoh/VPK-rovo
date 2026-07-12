@@ -22,10 +22,34 @@ interface BackendResponseRetryContext {
 
 interface FetchBackendInit extends RequestInit {
 	backendUrls?: string[];
+	hasIdempotencyContract?: boolean;
 	shouldRetryResponse?: (
 		response: Response,
 		context: BackendResponseRetryContext,
 	) => boolean | Promise<boolean>;
+}
+
+interface BackendConnectionErrorOptions {
+	backendUrls: string[];
+	attemptedBackendUrls: string[];
+	cause: unknown;
+	hasIdempotencyContract: boolean;
+	method: string;
+}
+
+const READ_ONLY_BACKEND_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function normalizeRequestMethod(method: RequestInit["method"]): string {
+	if (typeof method !== "string") {
+		return "GET";
+	}
+
+	const trimmedMethod = method.trim();
+	return trimmedMethod.length > 0 ? trimmedMethod.toUpperCase() : "GET";
+}
+
+function isReadOnlyBackendMethod(method: string): boolean {
+	return READ_ONLY_BACKEND_METHODS.has(method);
 }
 
 function getNonEmptyString(value: string | null | undefined): string | null {
@@ -124,13 +148,28 @@ export function getBackendUrl(): string {
 
 export class BackendConnectionError extends Error {
 	backendUrls: string[];
+	attemptedBackendUrls: string[];
+	hasIdempotencyContract: boolean;
+	method: string;
 	override cause: unknown;
+	stateChangingTransportFailure: boolean;
 
-	constructor(backendUrls: string[], cause: unknown) {
+	constructor({
+		backendUrls,
+		attemptedBackendUrls,
+		cause,
+		hasIdempotencyContract,
+		method,
+	}: BackendConnectionErrorOptions) {
 		super("Cannot connect to backend server");
 		this.name = "BackendConnectionError";
 		this.backendUrls = backendUrls;
+		this.attemptedBackendUrls = attemptedBackendUrls;
 		this.cause = cause;
+		this.hasIdempotencyContract = hasIdempotencyContract;
+		this.method = method;
+		this.stateChangingTransportFailure =
+			!isReadOnlyBackendMethod(method) && !hasIdempotencyContract;
 	}
 }
 
@@ -140,13 +179,19 @@ export async function fetchBackend(
 ): Promise<{ backendUrl: string; response: Response }> {
 	const {
 		backendUrls: backendUrlOverrides,
+		hasIdempotencyContract = false,
 		shouldRetryResponse,
 		...fetchInit
 	} = init ?? {};
 	const backendUrls = backendUrlOverrides ?? getBackendUrlCandidates();
+	const requestMethod = normalizeRequestMethod(fetchInit.method);
+	const canRetryTransportError =
+		isReadOnlyBackendMethod(requestMethod) || hasIdempotencyContract;
+	const attemptedBackendUrls: string[] = [];
 	let lastError: unknown = new Error("Backend request failed");
 
 	for (const [responseIndex, backendUrl] of backendUrls.entries()) {
+		attemptedBackendUrls.push(backendUrl);
 		try {
 			const response = await fetch(`${backendUrl}${backendPath}`, fetchInit);
 			if (
@@ -169,8 +214,23 @@ export async function fetchBackend(
 			}
 
 			lastError = error;
+			if (!canRetryTransportError) {
+				throw new BackendConnectionError({
+					backendUrls,
+					attemptedBackendUrls,
+					cause: lastError,
+					hasIdempotencyContract,
+					method: requestMethod,
+				});
+			}
 		}
 	}
 
-	throw new BackendConnectionError(backendUrls, lastError);
+	throw new BackendConnectionError({
+		backendUrls,
+		attemptedBackendUrls,
+		cause: lastError,
+		hasIdempotencyContract,
+		method: requestMethod,
+	});
 }

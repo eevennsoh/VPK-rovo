@@ -9,6 +9,9 @@ const {
 const {
 	resolveLlmWikiPaths,
 } = require("./qmd");
+const {
+	invalidateWikiMemoryExplorerCache,
+} = require("./wiki-memory-explorer");
 
 function getFirstQueryValue(value) {
 	if (Array.isArray(value)) {
@@ -132,6 +135,9 @@ function createWikiRouteHandlers({
 	}
 
 	const llmWikiPaths = resolveLlmWikiPaths({ wikiDir });
+	function invalidateMemoryExplorerSnapshot() {
+		invalidateWikiMemoryExplorerCache({ wikiDir });
+	}
 
 	async function handleWikiStatus(_req, res) {
 		try {
@@ -179,6 +185,7 @@ function createWikiRouteHandlers({
 				captureResult?.captureStatus === "existing"
 					? "existing"
 					: "created";
+			invalidateMemoryExplorerSnapshot();
 
 			return res.status(captureStatus === "created" ? 201 : 200).json({
 				canonicalUrl:
@@ -277,6 +284,7 @@ function createWikiRouteHandlers({
 				title,
 				wikiDir,
 			});
+			invalidateMemoryExplorerSnapshot();
 			return res.status(201).json({
 				path: toRelativeWikiPath(result.path, llmWikiPaths.rootDir),
 				slug: result.slug,
@@ -446,6 +454,7 @@ function createWikiRouteHandlers({
 				revision,
 				scope: req.params?.scope,
 			});
+			invalidateMemoryExplorerSnapshot();
 			return res.json({
 				memories: result.memories,
 				removedBlock: result.removedBlock,
@@ -481,6 +490,7 @@ function createWikiRouteHandlers({
 				logger,
 				proposalId: req.params?.proposalId,
 			});
+			invalidateMemoryExplorerSnapshot();
 			return res.json({
 				memories: result.memories,
 				proposal: result.proposal,
@@ -508,6 +518,7 @@ function createWikiRouteHandlers({
 	async function handleWikiMemoryReset(req, res) {
 		try {
 			const result = await resetWikiMemoryImpl({ logger });
+			invalidateMemoryExplorerSnapshot();
 			return res.json({
 				memories: result.memories,
 				removedBlockCount: result.removedBlockCount,
@@ -545,6 +556,7 @@ function createWikiRouteHandlers({
 				logger,
 			});
 			const lint = await lintWikiImpl({ wikiDir });
+			invalidateMemoryExplorerSnapshot();
 			return res.json({
 				lint,
 				memory: memorySync,

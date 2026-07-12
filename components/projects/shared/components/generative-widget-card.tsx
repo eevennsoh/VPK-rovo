@@ -28,7 +28,7 @@ import {
 	parseGenerativeWidget,
 	resolveGenerativeWidgetMetadata,
 	createBodyOnlySpec,
-	fetchDescriptionSummary,
+	formatGenerativeWidgetCardDescription,
 	type ParsedGenerativeWidget,
 	type GenerativeWidgetMetadata,
 } from "@/components/projects/shared/lib/generative-widget";
@@ -481,23 +481,15 @@ export function GenerativeWidgetCard({
 		() => (resolvedWidget ? resolveGenerativeWidgetMetadata(resolvedWidget) : null),
 		[resolvedWidget]
 	);
-	const [shortDescription, setShortDescription] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!metadata) return;
-		let cancelled = false;
-		fetchDescriptionSummary(metadata.title, metadata.description).then((result) => {
-			if (!cancelled && result) setShortDescription(result);
-		});
-		return () => { cancelled = true; };
-	}, [metadata]);
-
 	const displayMetadata = useMemo(
 		() =>
-			metadata && shortDescription
-				? { ...metadata, description: shortDescription }
-				: metadata,
-		[metadata, shortDescription],
+			metadata
+				? {
+					...metadata,
+					description: formatGenerativeWidgetCardDescription(metadata.description),
+				}
+				: null,
+		[metadata],
 	);
 	const contentTypeLabel = displayMetadata ? formatContentTypeLabel(displayMetadata.contentType) : "";
 	const [genuiState, setGenuiState] = useState<Record<string, unknown>>(

@@ -2,7 +2,7 @@
 
 import { isKnowledgeMode, isMemoryMode, isReasoningMode } from "@/app/data/directory/agent-modes";
 import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
-import { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent-2/data/agent-avatar-options";
+import { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent/data/agent-avatar-options";
 import { getDerivedSubagentNames } from "@/components/blocks/subagents/lib/subagent-prompts";
 import {
 	createAgentAutomationRule,

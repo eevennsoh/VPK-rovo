@@ -8,7 +8,7 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
-import { getSkillConfigLabel } from "@/components/blocks/agent-2/lib/agent-config-model";
+import { getSkillConfigLabel } from "@/components/blocks/agent/lib/agent-config-model";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";

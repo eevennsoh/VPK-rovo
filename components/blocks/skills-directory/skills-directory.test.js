@@ -250,7 +250,7 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /label="Open"/u);
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
 	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton[\s\S]*label="Open"/u);
-	// The detail header mirrors the agent-2 config feature: an enable/disable Switch,
+	// The detail header mirrors the agent config feature: an enable/disable Switch,
 	// while chat swaps the added-state Remove action for a primary Try in chat CTA.
 	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);
 	assert.match(source, /<Switch[\s\S]*checked=\{enabled\}[\s\S]*onCheckedChange=\{onToggleEnabled\}/u);

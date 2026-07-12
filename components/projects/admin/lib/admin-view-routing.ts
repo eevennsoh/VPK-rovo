@@ -5,6 +5,8 @@ export type AdminViewKind =
 	| "encryption"
 	| "placeholder"
 	| "projects"
+	| "rovo-insights"
+	| "rovo-mcp"
 	| "rovo-settings"
 	| "settings"
 	| "spaces"
@@ -68,9 +70,9 @@ const ADMIN_VIEW_KIND_BY_ITEM: Record<string, AdminViewKind> = {
 	"Profile": "settings",
 	"Projects": "projects",
 	"Release tracks": "placeholder",
-	"Rovo MCP server": "placeholder",
+	"Rovo MCP server": "rovo-mcp",
 	"Rovo access": "placeholder",
-	"Rovo insights": "placeholder",
+	"Rovo insights": "rovo-insights",
 	"Rovo settings": "rovo-settings",
 	"Sandboxes": "placeholder",
 	"Security guide": "placeholder",
