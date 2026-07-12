@@ -65,15 +65,23 @@ function createRovoPool(ports, options = {}) {
 		unhealthyQuarantineMs = DEFAULT_UNHEALTHY_QUARANTINE_MS,
 	} = options;
 
+	const entryGenerations = new WeakMap();
+
+	function createEntry(port) {
+		const entry = {
+			port,
+			status: "available",
+			lastHealthCheck: Date.now(),
+			acquiredAt: null,
+			quarantinedUntil: null,
+			reserved: false,
+		};
+		entryGenerations.set(entry, 0);
+		return entry;
+	}
+
 	/** @type {PortEntry[]} */
-	const entries = ports.map((port) => ({
-		port,
-		status: "available",
-		lastHealthCheck: Date.now(),
-		acquiredAt: null,
-		quarantinedUntil: null,
-		reserved: false,
-	}));
+	const entries = ports.map(createEntry);
 
 	/** @type {Array<{ resolve: (handle: PortHandle) => void; reject: (err: Error) => void; preferences?: { preferredPort?: number; avoidPorts?: number[] } }>} */
 	const waiters = [];
@@ -82,6 +90,24 @@ function createRovoPool(ports, options = {}) {
 	let shuttingDown = false;
 
 	// ── Notify pattern ──────────────────────────────────────────────────
+
+	function getEntryGeneration(entry) {
+		return entryGenerations.get(entry) || 0;
+	}
+
+	function advanceEntryGeneration(entry) {
+		const generation = getEntryGeneration(entry) + 1;
+		entryGenerations.set(entry, generation);
+		return generation;
+	}
+
+	function isCurrentEntryState(entry, generation, status) {
+		return (
+			entries.includes(entry) &&
+			getEntryGeneration(entry) === generation &&
+			entry.status === status
+		);
+	}
 
 	function isEntryQuarantined(entry, now = Date.now()) {
 		return typeof entry.quarantinedUntil === "number" && entry.quarantinedUntil > now;
@@ -154,6 +180,7 @@ function createRovoPool(ports, options = {}) {
 
 	function markEntryBusy(entry) {
 		const now = Date.now();
+		advanceEntryGeneration(entry);
 		entry.status = "busy";
 		entry.acquiredAt = now;
 		entry.quarantinedUntil = null;
@@ -161,6 +188,17 @@ function createRovoPool(ports, options = {}) {
 
 	function clearBusyLease(entry) {
 		entry.acquiredAt = null;
+	}
+
+	function quarantineEntry(entry, quarantineMs = unhealthyQuarantineMs) {
+		advanceEntryGeneration(entry);
+		entry.status = "unhealthy";
+		clearBusyLease(entry);
+		entry.reserved = false;
+		entry.quarantinedUntil =
+			entries.length > 1
+				? Date.now() + Math.max(0, Number.isFinite(quarantineMs) ? quarantineMs : unhealthyQuarantineMs)
+				: null;
 	}
 
 	function createHandle(entry) {
@@ -176,9 +214,16 @@ function createRovoPool(ports, options = {}) {
 					return;
 				}
 				released = true;
+				if (shuttingDown) {
+					return;
+				}
 				entry.reserved = false;
+				const releaseGeneration = advanceEntryGeneration(entry);
 
-				const makeAvailable = () => {
+				const makeAvailable = (expectedStatus) => {
+					if (!isCurrentEntryState(entry, releaseGeneration, expectedStatus)) {
+						return;
+					}
 					entry.status = "available";
 					clearBusyLease(entry);
 					entry.quarantinedUntil = null;
@@ -192,20 +237,20 @@ function createRovoPool(ports, options = {}) {
 				if (typeof waitForReady === "function") {
 					entry.status = "cooldown";
 					clearBusyLease(entry);
-					waitForReady(entry.port).then(makeAvailable, () => {
+					waitForReady(entry.port).then(() => makeAvailable("cooldown"), () => {
+						if (!isCurrentEntryState(entry, releaseGeneration, "cooldown")) {
+							return;
+						}
 						// Readiness check failed — mark unhealthy so the
 						// periodic health check recovers it later.
-						entry.status = "unhealthy";
-						clearBusyLease(entry);
-						entry.quarantinedUntil =
-							entries.length > 1 ? Date.now() + unhealthyQuarantineMs : null;
+						quarantineEntry(entry);
 					});
 				} else if (cooldownMs > 0) {
 					entry.status = "cooldown";
 					clearBusyLease(entry);
-					setTimeout(makeAvailable, cooldownMs);
+					setTimeout(() => makeAvailable("cooldown"), cooldownMs);
 				} else {
-					makeAvailable();
+					makeAvailable("busy");
 				}
 			},
 			releaseAsUnhealthy: ({ quarantineMs = unhealthyQuarantineMs } = {}) => {
@@ -213,13 +258,10 @@ function createRovoPool(ports, options = {}) {
 					return;
 				}
 				released = true;
-				entry.status = "unhealthy";
-				clearBusyLease(entry);
-				entry.reserved = false;
-				entry.quarantinedUntil =
-					entries.length > 1
-						? Date.now() + Math.max(0, Number.isFinite(quarantineMs) ? quarantineMs : unhealthyQuarantineMs)
-						: null;
+				if (shuttingDown) {
+					return;
+				}
+				quarantineEntry(entry, quarantineMs);
 				// Don't notify waiters — port is not available.
 				// The periodic health check will recover it.
 			},
@@ -319,31 +361,42 @@ function createRovoPool(ports, options = {}) {
 	async function runHealthChecks() {
 		// ── Standard health checks ──────────────────────────────────────
 		for (const entry of entries) {
+			if (shuttingDown) {
+				return;
+			}
 			if (entry.status === "busy" || entry.status === "cooldown") {
 				continue;
 			}
 
+			const checkedGeneration = getEntryGeneration(entry);
+			const checkedStatus = entry.status;
+
 			try {
 				await healthCheck(entry.port);
+				if (!isCurrentEntryState(entry, checkedGeneration, checkedStatus)) {
+					continue;
+				}
 				if (entry.status === "unhealthy") {
 					console.log(`[ROVO-POOL] Port ${entry.port} recovered`);
+					advanceEntryGeneration(entry);
 				}
 				entry.status = "available";
 				entry.quarantinedUntil = null;
+				entry.lastHealthCheck = Date.now();
 				tryNotifyWaiter();
 				if (typeof onPortAvailable === "function") {
 					try { onPortAvailable(); } catch {}
 				}
 			} catch {
+				if (!isCurrentEntryState(entry, checkedGeneration, checkedStatus)) {
+					continue;
+				}
 				if (entry.status !== "unhealthy") {
 					console.warn(`[ROVO-POOL] Port ${entry.port} is unhealthy`);
 				}
-				entry.status = "unhealthy";
-				entry.quarantinedUntil =
-					entries.length > 1 ? Date.now() + unhealthyQuarantineMs : null;
+				quarantineEntry(entry);
+				entry.lastHealthCheck = Date.now();
 			}
-
-			entry.lastHealthCheck = Date.now();
 		}
 	}
 
@@ -372,6 +425,7 @@ function createRovoPool(ports, options = {}) {
 		for (let i = entries.length - 1; i >= 0; i--) {
 			const entry = entries[i];
 			if (!newSet.has(entry.port) && entry.status !== "busy" && entry.status !== "cooldown") {
+				advanceEntryGeneration(entry);
 				entries.splice(i, 1);
 			}
 		}
@@ -380,14 +434,7 @@ function createRovoPool(ports, options = {}) {
 		const existingPorts = new Set(entries.map((e) => e.port));
 		for (const port of newPorts) {
 			if (!existingPorts.has(port)) {
-				entries.push({
-					port,
-					status: "available",
-					lastHealthCheck: Date.now(),
-					acquiredAt: null,
-					quarantinedUntil: null,
-					reserved: false,
-				});
+				entries.push(createEntry(port));
 			}
 		}
 
@@ -434,6 +481,7 @@ function createRovoPool(ports, options = {}) {
 		}
 		// Release all busy entries
 		for (const entry of entries) {
+			advanceEntryGeneration(entry);
 			entry.status = "available";
 			clearBusyLease(entry);
 			entry.quarantinedUntil = null;

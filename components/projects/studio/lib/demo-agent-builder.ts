@@ -24,7 +24,7 @@
 import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { convertBareMentionsToTokens, resolveCatalogNames } from "@/app/data/directory/resolve-ids";
-import { AGENT_AVATAR_OPTION_GROUPS } from "@/components/blocks/agent-2/data/agent-avatar-options";
+import { AGENT_AVATAR_OPTION_GROUPS } from "@/components/blocks/agent/data/agent-avatar-options";
 import {
 	AGENT_EDIT_SUMMARY_WIDGET_TYPE,
 	type AgentEditSummaryChange,

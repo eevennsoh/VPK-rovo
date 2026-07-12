@@ -7,6 +7,8 @@ import { DashboardView } from "./dashboard-view";
 import { EncryptionView } from "./encryption-view";
 import { PlaceholderView } from "./placeholder-view";
 import { ProjectsView } from "./projects-view";
+import { RovoInsightsView } from "./rovo-insights-view";
+import { RovoMcpConnectivityView } from "./rovo-mcp-connectivity-view";
 import { RovoSettingsView } from "./rovo-settings-view";
 import { SettingsView } from "./settings-view";
 import { SpacesView } from "./spaces-view";
@@ -31,6 +33,10 @@ export function AdminView({ selectedItem }: Readonly<AdminViewProps>) {
 			return <EncryptionView />;
 		case "projects":
 			return <ProjectsView />;
+		case "rovo-insights":
+			return <RovoInsightsView />;
+		case "rovo-mcp":
+			return <RovoMcpConnectivityView />;
 		case "rovo-settings":
 			return <RovoSettingsView />;
 		case "settings":

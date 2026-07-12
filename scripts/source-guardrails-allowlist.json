@@ -149,69 +149,6 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 2,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 3,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 4,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 5,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 6,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 7,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 8,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/blocks/trigger-config/components/trigger-config.tsx",
-			"occurrence": 9,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable-next-line @typescript-eslint/no-unused-vars */",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/blocks/visual-waveform/page.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
@@ -230,13 +167,6 @@
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/projects/control-plane/memories-surface.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps -- filters are fully represented by filterInput",
 			"type": "eslint-disable"
 		},
 		{

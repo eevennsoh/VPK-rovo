@@ -11,7 +11,7 @@ function readProjectFile(relativePath) {
 
 const SCREEN = "components/blocks/agent-surfaces/components/agent-surfaces.tsx";
 const INDEX = "components/blocks/agent-surfaces/index.ts";
-const AGENT_2_BLOCK = "components/blocks/agent-2/components/agent-2.tsx";
+const AGENT_FRAME = "components/blocks/agent/components/agent-frame.tsx";
 
 test("Agent Surfaces is exposed as a website block", () => {
 	assert.match(
@@ -50,7 +50,7 @@ test("Agent Surfaces keeps default and extended surface rows", () => {
 });
 
 test("Agent block exposes Agent Surfaces through its compact section wrapper", () => {
-	const source = readProjectFile(AGENT_2_BLOCK);
+	const source = readProjectFile(AGENT_FRAME);
 	assert.match(source, /import \{ AgentSurfaces \} from "@\/components\/blocks\/agent-surfaces";/u);
 	assert.match(source, /export type AgentCompactSurfacesPanelProps = ComponentProps<typeof AgentSurfaces>;/u);
 	assert.match(source, /return <AgentSurfaces \{\.\.\.props\} \/>;/u);

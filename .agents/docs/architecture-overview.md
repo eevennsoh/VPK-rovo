@@ -65,8 +65,10 @@ Provider order in `app/providers.tsx`:
 MotionConfig
   -> ThemeWrapper
     -> SidebarProvider
-      -> RovoChatProvider
 ```
+
+`RovoChatProvider` is mounted by chat-capable route shells instead of the
+global provider tree.
 
 ## Route Overview
 

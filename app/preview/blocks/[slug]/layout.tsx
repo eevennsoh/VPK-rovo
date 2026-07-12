@@ -1,8 +1,23 @@
 import type { Metadata } from "next";
 import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutProps } from "@/app/preview/_shared/preview-metadata";
 
+const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set(["terminal-switch"]);
+
 export async function generateMetadata({ params }: PreviewLayoutProps): Promise<Metadata> {
 	return getCategoryPreviewMetadata(params, "blocks");
 }
 
-export default PreviewCategoryLayout;
+export default async function BlockPreviewLayout(props: Readonly<PreviewLayoutProps>) {
+	const { slug } = await props.params;
+
+	if (!CHAT_CAPABLE_BLOCK_PREVIEWS.has(slug)) {
+		return <PreviewCategoryLayout {...props} />;
+	}
+
+	const { BlockPreviewChatRuntimeProvider } = await import("./chat-runtime-provider");
+	return (
+		<BlockPreviewChatRuntimeProvider>
+			<PreviewCategoryLayout {...props} />
+		</BlockPreviewChatRuntimeProvider>
+	);
+}

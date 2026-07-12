@@ -2914,57 +2914,51 @@ export function createBodyOnlySpec(
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Description summarization                                                 */
+/*  Card description formatting                                               */
 /* -------------------------------------------------------------------------- */
 
-const CONTEXT_DRIVEN_DESCRIPTION_PATTERN = /^\d+\s+\w+.*\b(found|available|in this)\b/i;
-const descriptionSummaryCache = new Map<string, string>();
-const descriptionSummaryInflight = new Map<string, Promise<string | null>>();
+const CARD_DESCRIPTION_MAX_LENGTH = 96;
+const ASSISTANT_PROCESS_LEAD_PATTERN =
+	/^(?:let me|i(?:'ll|’ll| will| am going to| can| need to))\s+(?:now\s+)?(?:(?:go\s+)?(?:fetch|get|look up|retrieve|find|gather|pull|check|load|inspect|analy[sz]e|summari[sz]e|generate|create|build|make)\s+)/i;
+const ASSISTANT_PROCESS_FOLLOWUP_PATTERN =
+	/\s+and\s+(?:then\s+)?(?:summari[sz]e|show|display|render|present)\b.*$/i;
+const ASSISTANT_PROCESS_PURPOSE_PATTERN =
+	/\s+(?:to|so i can)\s+(?:get|summari[sz]e|show|display|understand|find|identify|review)\b.*$/i;
 
-export function shouldSummarizeDescription(description: string): boolean {
-	const trimmed = description.trim();
-	if (trimmed.length <= 60) return false;
-	if (trimmed === DEFAULT_DESCRIPTION) return false;
-	if (isLowSignalWidgetDescription(trimmed)) return false;
-	if (CONTEXT_DRIVEN_DESCRIPTION_PATTERN.test(trimmed)) return false;
-	return true;
+function capitalizeFirstCharacter(value: string): string {
+	return value.length > 0 ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
 }
 
-export async function fetchDescriptionSummary(
-	title: string,
-	description: string,
-): Promise<string | null> {
-	if (!shouldSummarizeDescription(description)) return null;
+function stripAssistantProcessLanguage(value: string): string {
+	const compact = value.replace(/\s+/g, " ").trim();
+	const withoutLead = compact.replace(ASSISTANT_PROCESS_LEAD_PATTERN, "").trim();
+	if (withoutLead === compact || !withoutLead) {
+		return compact;
+	}
 
-	const cacheKey = `${title}::${description}`;
-	const cached = descriptionSummaryCache.get(cacheKey);
-	if (cached) return cached;
+	const withoutFollowup = withoutLead
+		.replace(ASSISTANT_PROCESS_FOLLOWUP_PATTERN, "")
+		.replace(ASSISTANT_PROCESS_PURPOSE_PATTERN, "")
+		.replace(/^(?:the|a|an)\s+/i, "")
+		.trim();
 
-	const inflight = descriptionSummaryInflight.get(cacheKey);
-	if (inflight) return inflight;
+	return withoutFollowup
+		? capitalizeFirstCharacter(withoutFollowup)
+		: compact;
+}
 
-	const promise = (async (): Promise<string | null> => {
-		try {
-			const res = await fetch("/api/genui-description-summary", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ title, description }),
-			});
-			if (!res.ok) return null;
-			const data = (await res.json()) as { shortDescription?: string };
-			const short = data?.shortDescription?.trim();
-			if (short) {
-				descriptionSummaryCache.set(cacheKey, short);
-				return short;
-			}
-			return null;
-		} catch {
-			return null;
-		} finally {
-			descriptionSummaryInflight.delete(cacheKey);
-		}
-	})();
+export function formatGenerativeWidgetCardDescription(description: string): string {
+	const compact = (getNonEmptyString(description) ?? DEFAULT_DESCRIPTION)
+		.replace(/\s+/g, " ")
+		.trim();
+	const displayDescription = stripAssistantProcessLanguage(compact);
+	const firstSentence = displayDescription.match(/^(.+?[.!?])(?:\s|$)/u)?.[1]?.trim();
+	const sentenceCandidate =
+		firstSentence &&
+		firstSentence.length >= 24 &&
+		firstSentence.length <= CARD_DESCRIPTION_MAX_LENGTH
+			? firstSentence
+			: displayDescription;
 
-	descriptionSummaryInflight.set(cacheKey, promise);
-	return promise;
+	return clipText(sentenceCandidate, CARD_DESCRIPTION_MAX_LENGTH);
 }

@@ -1,8 +1,8 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 type AgentDetailOptions = Readonly<{
-	demoSlugPrefix: "agent" | "agent-2";
-	importPath: "@/components/blocks/agent" | "@/components/blocks/agent-2";
+	demoSlugPrefix: "agent";
+	importPath: "@/components/blocks/agent";
 }>;
 
 export function createAgentDetail({ demoSlugPrefix, importPath }: AgentDetailOptions): ComponentDetail {

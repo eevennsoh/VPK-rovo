@@ -41,7 +41,7 @@ function getBannerColorFromAvatarSrc(src: string): string {
 // The decorative avatar bleeding across the banner uses the container-less
 // ("unmasked") illustration so it floats on the smart-folder artwork without its
 // own hexagon tile — a solid tile would otherwise sit as a block on top of the
-// patterned backdrop. Mirrors agent-2's AgentProfileCover treatment.
+// patterned backdrop. Mirrors AgentProfileCover treatment.
 function getUnmaskedAvatarSrc(src: string): string {
 	return src.startsWith("/avatar-agent/")
 		? src.replace("/avatar-agent/", "/avatar-agent-unmasked/")
@@ -132,7 +132,7 @@ export function EntityCardAgentProfile({
 		coverBackgroundColor ?? getBannerColorFromAvatarSrc(avatarSrc);
 	// Smart-folder cover artwork picked deterministically per agent; its color
 	// follows the avatar family so it matches the solid fallback shown until the
-	// SVG paints. Mirrors agent-2's AgentProfileCover backdrop.
+	// SVG paints. Mirrors AgentProfileCover backdrop.
 	const resolvedBannerSrc = getDeterministicAgentBannerSrc(avatarSrc, avatarSrc);
 	const isAtlassianCover = isAtlassianLogoSource(coverSrc);
 

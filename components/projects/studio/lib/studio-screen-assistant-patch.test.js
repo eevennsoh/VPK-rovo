@@ -28,7 +28,7 @@ test.before(async () => {
 	const mod = await loadDirectoryModule(`
 		export { normalizeAgentDraftPatch, prepareStudioAgentDraftPatch } from "@/components/projects/studio/lib/studio-agent-draft-patch";
 		export { DEFAULT_SKILLS } from "@/app/data/directory";
-		export { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent-2/data/agent-avatar-options";
+		export { AGENT_AVATAR_OPTION_SRCS } from "@/components/blocks/agent/data/agent-avatar-options";
 	`);
 	normalizeAgentDraftPatch = mod.normalizeAgentDraftPatch;
 	prepareStudioAgentDraftPatch = mod.prepareStudioAgentDraftPatch;

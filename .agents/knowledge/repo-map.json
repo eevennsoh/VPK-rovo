@@ -3644,7 +3644,7 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 80,
+			"ownerImportCount": 79,
 			"pageCount": 56
 		},
 		"pages": [
@@ -4098,27 +4098,11 @@
 				"source": "app/preview/blocks/agent/page.tsx"
 			},
 			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/blocks/agent-2/page",
-						"source": "components/blocks/agent-2/page",
-						"symbols": [
-							"Agent2Page"
-						]
-					}
-				],
+				"ownerCount": 0,
+				"owners": [],
 				"routePath": "/preview/blocks/agent-2",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/blocks/agent-2/page",
-						"source": "components/blocks/agent-2/page",
-						"symbols": [
-							"Agent2Page"
-						]
-					}
-				],
+				"shellOwnerCount": 0,
+				"shellOwners": [],
 				"source": "app/preview/blocks/agent-2/page.tsx"
 			},
 			{
@@ -5173,7 +5157,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 396,
+			"manifestEntryCount": 395,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5209,19 +5193,13 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 89,
+				"entryCount": 88,
 				"entries": [
 					{
 						"category": "blocks",
 						"slug": "agent",
 						"name": "Agent",
 						"importPath": "@/components/blocks/agent"
-					},
-					{
-						"category": "blocks",
-						"slug": "agent-2",
-						"name": "Agent 2",
-						"importPath": "@/components/blocks/agent-2"
 					},
 					{
 						"category": "blocks",

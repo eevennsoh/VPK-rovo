@@ -6,7 +6,7 @@
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
-import { startTransition, useEffect, useMemo, useState, type ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -42,8 +42,6 @@ import { ControlPlanePageShell } from "./control-plane-page-shell";
 import {
 	deleteWikiMemoryBlock,
 	deleteWikiMemoryProposal,
-	fetchWikiMemories,
-	fetchWikiMemoryExplorer,
 	generateWikiMemoryBrief,
 	generateWikiMemoryDeck,
 	resetWikiMemory,
@@ -51,6 +49,11 @@ import {
 } from "./lib/control-plane-api";
 import { formatControlPlaneDateTime } from "./lib/control-plane-utils";
 import { buildMemoryArtifactSelection, resolveExplicitMemoryArtifactNode } from "./lib/memory-artifact-selection";
+import {
+	buildInitialFilterState,
+	useMemoryExplorerRequest,
+	type FilterState,
+} from "./lib/use-memory-explorer-request";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import type {
 	WikiCanonicalMemoryBlock,
@@ -58,7 +61,6 @@ import type {
 	WikiCanonicalMemoryDocuments,
 	WikiMemoryExplorerEdge,
 	WikiMemoryExplorerFacet,
-	WikiMemoryExplorerFilters,
 	WikiMemoryExplorerNode,
 	WikiMemoryExplorerResponse,
 	WikiMemoryGeneratedArtifact,
@@ -80,15 +82,6 @@ const MemoryExplorerSigmaGraph = dynamic(
 );
 
 type ExplorerView = "brief" | "deck" | "graph" | "table" | "timeline";
-
-type FilterState = {
-	includeLinkedKnowledge: boolean;
-	kind: string;
-	scope: string;
-	status: string;
-	tag: string;
-	threadId: string;
-};
 
 type PendingBlockRemoval = {
 	block: WikiCanonicalMemoryBlock;
@@ -161,28 +154,6 @@ function getScopeDocument(
 	return scope === "profile" ? memoryDocuments.profile : scope === "work" ? memoryDocuments.work : null;
 }
 
-function buildInitialFilterState(searchParams: { get(name: string): string | null } | null): FilterState {
-	return {
-		includeLinkedKnowledge: searchParams?.get("includeLinkedKnowledge") !== "false",
-		kind: searchParams?.get("kind") ?? "all",
-		scope: searchParams?.get("scope") ?? "all",
-		status: searchParams?.get("status") ?? "all",
-		tag: searchParams?.get("tag") ?? "",
-		threadId: searchParams?.get("threadId") ?? "",
-	};
-}
-
-function buildExplorerFilterInput(filters: FilterState): Partial<WikiMemoryExplorerFilters> {
-	return {
-		includeLinkedKnowledge: filters.includeLinkedKnowledge,
-		kind: filters.kind === "all" ? null : filters.kind,
-		scope: filters.scope === "all" ? null : filters.scope,
-		status: filters.status === "all" ? null : filters.status,
-		tag: filters.tag.trim() || null,
-		threadId: filters.threadId.trim() || null,
-	};
-}
-
 function buildTimelineSeries(explorer: WikiMemoryExplorerResponse) {
 	const buckets = new Map<string, { created: number; updated: number; label: string }>();
 
@@ -216,14 +187,27 @@ function createDownload(fileName: string, content: BlobPart, contentType: string
 
 export function MemoriesSurfacePage() {
 	const searchParams = useSearchParams();
-	const [explorer, setExplorer] = useState<WikiMemoryExplorerResponse | null>(null);
-	const [memoryDocuments, setMemoryDocuments] = useState<WikiCanonicalMemoryDocuments | null>(null);
 	const [filters, setFilters] = useState<FilterState>(() => buildInitialFilterState(searchParams));
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isSyncing, setIsSyncing] = useState(false);
 	const [activeView, setActiveView] = useState<ExplorerView>("graph");
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+	const handleExplorerReceived = useCallback((nextExplorer: WikiMemoryExplorerResponse) => {
+		startTransition(() => {
+			setSelectedNodeId((current) => nextExplorer.nodes.some((node) => node.id === current) ? current : null);
+		});
+	}, []);
+	const {
+		explorer,
+		filterInput,
+		errorMessage,
+		isLoading,
+		memoryDocuments,
+		refreshExplorer,
+		setErrorMessage,
+	} = useMemoryExplorerRequest({
+		filters,
+		onExplorerReceived: handleExplorerReceived,
+	});
+	const [isSyncing, setIsSyncing] = useState(false);
 	const [pendingProposalRemove, setPendingProposalRemove] = useState<WikiMemoryProposalSummary | null>(null);
 	const [pendingBlockRemove, setPendingBlockRemove] = useState<PendingBlockRemoval | null>(null);
 	const [removingKey, setRemovingKey] = useState<string | null>(null);
@@ -234,7 +218,6 @@ export function MemoriesSurfacePage() {
 	const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
 
-	const filterInput = useMemo(() => buildExplorerFilterInput(filters), [filters]);
 	const selectedNode = useMemo(
 		() => resolveExplicitMemoryArtifactNode(explorer?.nodes, selectedNodeId),
 		[explorer?.nodes, selectedNodeId],
@@ -247,31 +230,12 @@ export function MemoriesSurfacePage() {
 		() => (explorer ? buildTimelineSeries(explorer) : []),
 		[explorer],
 	);
-	async function refreshExplorer(nextFilters = filterInput) {
-		setIsLoading(true);
-		try {
-			const [nextExplorer, nextMemories] = await Promise.all([
-				fetchWikiMemoryExplorer(nextFilters),
-				fetchWikiMemories(),
-			]);
-			setExplorer(nextExplorer);
-			setMemoryDocuments(nextMemories);
-			setErrorMessage(null);
-			startTransition(() => {
-				setSelectedNodeId((current) => nextExplorer.nodes.some((node) => node.id === current) ? current : null);
-			});
-		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : String(error));
-		} finally {
-			setIsLoading(false);
-		}
-	}
 
 	async function handleSync() {
 		setIsSyncing(true);
 		try {
 			await syncWiki(true);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 			setErrorMessage(null);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -285,7 +249,7 @@ export function MemoriesSurfacePage() {
 		try {
 			await resetWikiMemory();
 			setIsResetDialogOpen(false);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 			setErrorMessage(null);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -303,7 +267,7 @@ export function MemoriesSurfacePage() {
 		try {
 			await deleteWikiMemoryProposal(pendingProposalRemove.id);
 			setPendingProposalRemove(null);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -324,7 +288,7 @@ export function MemoriesSurfacePage() {
 				pendingBlockRemove.document.revision,
 			);
 			setPendingBlockRemove(null);
-			await refreshExplorer(filterInput);
+			await refreshExplorer(filterInput, { includeMemories: true });
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -397,10 +361,8 @@ export function MemoriesSurfacePage() {
 	}, [searchParams]);
 
 	useEffect(() => {
-		void refreshExplorer(filterInput);
 		setBriefArtifact(null);
 		setDeckArtifact(null);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- filters are fully represented by filterInput
 	}, [filterInput.kind, filterInput.scope, filterInput.status, filterInput.tag, filterInput.threadId, filterInput.includeLinkedKnowledge]);
 
 	useEffect(() => {
@@ -429,7 +391,7 @@ export function MemoriesSurfacePage() {
 						<Badge variant="neutral">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
 						<Button
 							variant="outline"
-							onClick={() => void refreshExplorer(filterInput)}
+							onClick={() => void refreshExplorer(filterInput, { includeMemories: true })}
 							disabled={isLoading || isSyncing || removingKey !== null}
 						>
 							<RefreshIcon label="" />

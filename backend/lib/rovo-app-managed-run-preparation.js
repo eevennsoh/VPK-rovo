@@ -4,9 +4,6 @@ const {
 	buildRovoAppHermesContextDescription: defaultBuildRovoAppHermesContextDescription,
 } = require("./hermes-rovo-context");
 const {
-	buildNextHermesThreadContext,
-} = require("./hermes-thread-context");
-const {
 	rankHermesSkillCandidates,
 	selectHermesSkillIdsFromRankedCandidates,
 	shouldDisambiguateRankedCandidates,
@@ -159,8 +156,11 @@ function createRovoAppManagedRunRequestPreparer({
 			contextDescription: baseContextDescription,
 			promptText: latestUserMessage,
 		});
-		const selectedHermesSkillIds = Array.isArray(requestHermesContext?.selectedSkillIds)
+		const requestSelectedHermesSkillIds = Array.isArray(requestHermesContext?.selectedSkillIds)
 			? requestHermesContext.selectedSkillIds
+			: null;
+		const selectedHermesSkillIds = requestSelectedHermesSkillIds
+			? requestSelectedHermesSkillIds
 			: Array.isArray(threadForSession?.hermesContext?.selectedSkillIds)
 				? threadForSession.hermesContext.selectedSkillIds
 				: [];
@@ -222,13 +222,16 @@ function createRovoAppManagedRunRequestPreparer({
 		} catch (error) {
 			logger.warn("[WIKI] Failed to build per-turn wiki query context:", error instanceof Error ? error.message : String(error));
 		}
-		if (threadId && threadForSession) {
+		if (threadId) {
+			const hermesContextPatch = {
+				autoSelectedSkillIds: autoSelectedHermesSkillIds,
+			};
+			if (requestSelectedHermesSkillIds) {
+				hermesContextPatch.selectedSkillIds = requestSelectedHermesSkillIds;
+			}
+
 			void rovoAppThreadManager.updateThread(threadId, {
-				hermesContext: buildNextHermesThreadContext({
-					currentHermesContext: threadForSession.hermesContext,
-					autoSelectedSkillIds: autoSelectedHermesSkillIds,
-					selectedSkillIds: selectedHermesSkillIds,
-				}),
+				hermesContext: hermesContextPatch,
 			}).catch((error) => {
 				logger.warn("[HERMES] Failed to persist resolved Hermes thread context:", error instanceof Error ? error.message : String(error));
 			});

@@ -47,9 +47,26 @@ function createHarness(overrides = {}) {
 			},
 			updateThread: async (threadId, patch) => {
 				calls.push(["updateThread", threadId, patch]);
+				const currentThread = threads.get(threadId);
+				if (!currentThread) {
+					return null;
+				}
+				const activeRun =
+					patch.activeRun && typeof patch.activeRun === "object"
+						? {
+							...patch.activeRun,
+							sessionId: patch.activeRun.sessionId ?? currentThread.sessionId ?? null,
+							sessionMode:
+								patch.activeRun.sessionMode ??
+								(currentThread.sessionId
+									? currentThread.sessionMode ?? "persistent"
+									: null),
+						}
+						: patch.activeRun;
 				const nextThread = {
-					...(threads.get(threadId) || { id: threadId }),
+					...currentThread,
 					...patch,
+					...(Object.hasOwn(patch, "activeRun") ? { activeRun } : {}),
 				};
 				threads.set(threadId, nextThread);
 				return nextThread;
@@ -154,8 +171,9 @@ test("persistRovoAppRunState writes the normalized active run payload", async ()
 	const result = await service.persistRovoAppRunState("thread-1", run);
 
 	assert.equal(result.activeRun.id, "run-1");
+	assert.equal(result.activeRun.sessionId, "session-1");
+	assert.equal(result.activeRun.sessionMode, "persistent");
 	assert.deepEqual(calls, [
-		["getThread", "thread-1"],
 		[
 			"updateThread",
 			"thread-1",
@@ -166,8 +184,8 @@ test("persistRovoAppRunState writes the normalized active run payload", async ()
 					status: "streaming",
 					portIndex: null,
 					rovoPort: 8100,
-					sessionId: "session-1",
-					sessionMode: "persistent",
+					sessionId: null,
+					sessionMode: null,
 					startedAt: undefined,
 					updatedAt: undefined,
 				},
@@ -181,7 +199,9 @@ test("persistRovoAppRunState returns null for missing inputs or missing threads"
 
 	assert.equal(await service.persistRovoAppRunState("", { id: "run-1" }), null);
 	assert.equal(await service.persistRovoAppRunState("missing", { id: "run-1" }), null);
-	assert.deepEqual(calls, [["getThread", "missing"]]);
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0][0], "updateThread");
+	assert.equal(calls[0][1], "missing");
 });
 
 test("persistRovoAppRunBackend updates the run backend before persisting state", async () => {
@@ -195,7 +215,6 @@ test("persistRovoAppRunBackend updates the run backend before persisting state",
 	assert.equal(result.activeRun.backend, "rovo");
 	assert.deepEqual(calls.map(([name]) => name), [
 		"setRunBackend",
-		"getThread",
 		"updateThread",
 	]);
 	assert.equal(await service.persistRovoAppRunBackend("missing", "rovo"), null);
@@ -233,8 +252,7 @@ test("persistRovoAppRunMessagesSnapshot updates only valid existing thread snaps
 
 	assert.equal(result.messages, messages);
 	assert.deepEqual(calls, [
-		["getThread", "missing"],
-		["getThread", "thread-1"],
+		["updateThread", "missing", { messages }],
 		["updateThread", "thread-1", { messages }],
 	]);
 });

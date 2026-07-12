@@ -1,4 +1,4 @@
-import type { AgentConfigFormValue } from "@/components/blocks/agent-2";
+import type { AgentConfigFormValue } from "@/components/blocks/agent";
 
 export interface SubagentsBaseAgent {
 	id: string;

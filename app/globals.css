@@ -308,7 +308,7 @@
 	}
 }
 
-/* Suppress the one-frame "hover flash" when an agent-2 compact nav dropdown
+/* Suppress the one-frame "hover flash" when an agent compact nav dropdown
    opens under a stationary cursor: the popup materializes over an item, that
    item fires `pointerenter`, and Base UI highlights it before the reset can
    react. While `data-agent-suppress-initial-highlight` is set (added on open by

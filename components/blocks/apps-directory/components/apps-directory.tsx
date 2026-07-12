@@ -429,7 +429,7 @@ export function AppsDirectoryDialog({
 		() => new Set(defaultAddedToolIds),
 	);
 	const [permissionSelections, setPermissionSelections] = useState<Record<string, Record<string, boolean>>>({});
-	// Per-app enable/disable state for the detail header — mirrors the agent-2 config
+	// Per-app enable/disable state for the detail header — mirrors the agent config
 	// toggle: a disabled app stays added but is parked off until re-enabled or removed.
 	const [disabledToolIds, setDisabledToolIds] = useState<ReadonlySet<string>>(() => new Set());
 	// Per-app knowledge selection (All / Select content / None), mirrored up from
@@ -678,7 +678,7 @@ function AppsDirectoryHeader({ enabled = true, onAddTool, onBack, onCreateTool, 
 			</div>
 			<div className="flex items-center gap-2">
 				{onToggleEnabled ? (
-					// Enable/disable the added app — mirrors the agent-2 config toggle.
+					// Enable/disable the added app — mirrors the agent config toggle.
 					<label className="flex items-center gap-2 text-sm leading-5 text-text-subtle">
 						<span aria-hidden>{enabled ? "Enabled" : "Disabled"}</span>
 						<Switch

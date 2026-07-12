@@ -353,7 +353,6 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent"),
-	blockComponent("agent-2", "Agent 2"),
 	blockComponent("skill-config", "Skill Config"),
 	blockComponent("trigger-config", "Trigger Config"),
 	blockComponent("agent-bento", "Agent Bento"),

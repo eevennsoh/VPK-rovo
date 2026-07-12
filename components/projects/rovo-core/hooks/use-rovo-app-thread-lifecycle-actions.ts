@@ -4,6 +4,7 @@ import type { ChatStatus, UIMessageChunk } from "ai";
 import {
 	startTransition,
 	useCallback,
+	useRef,
 	type Dispatch,
 	type MutableRefObject,
 	type SetStateAction,
@@ -33,8 +34,10 @@ import {
 	refreshRovoAppThreadsWithLifecycle,
 	resetRovoAppToBlankThreadState,
 	subscribeToRovoAppRunWithLifecycle,
+	type RovoAppThreadNavigationIdentity,
 	type RovoAppRefreshThreadsOptions,
 } from "@/components/projects/rovo-core/lib/rovo-app-thread-lifecycle";
+import { shouldSkipRovoAppThreadLoad } from "@/components/projects/rovo-core/lib/rovo-app-thread-route-sync";
 import { pushRovoAppHistoryPath } from "@/components/projects/rovo-core/lib/rovo-app-hook-helpers";
 import {
 	type RovoAppActiveRun,
@@ -184,6 +187,21 @@ export function useRovoAppThreadLifecycleActions({
 	stopUseChat,
 	threadVisibility,
 }: UseRovoAppThreadLifecycleActionsOptions): UseRovoAppThreadLifecycleActionsResult {
+	const navigationIdentityRef = useRef<RovoAppThreadNavigationIdentity>(0);
+	const beginNavigation = useCallback(() => {
+		navigationIdentityRef.current += 1;
+		return navigationIdentityRef.current;
+	}, []);
+	const getCurrentNavigationIdentity = useCallback(
+		() => navigationIdentityRef.current,
+		[],
+	);
+	const isNavigationCurrent = useCallback(
+		(navigationIdentity: RovoAppThreadNavigationIdentity) =>
+			navigationIdentityRef.current === navigationIdentity,
+		[],
+	);
+
 	const refreshThreads = useCallback(async (options: RovoAppRefreshThreadsOptions = {}) => {
 		await refreshRovoAppThreadsWithLifecycle({
 			deletedThreadIdsRef,
@@ -205,7 +223,12 @@ export function useRovoAppThreadLifecycleActions({
 	]);
 
 	const hydrateThreadState = useCallback(
-		(thread: RovoAppThread, nextDocuments: RovoAppDocument[], nextVotes: RovoAppVote[]) => {
+		(
+			thread: RovoAppThread,
+			nextDocuments: RovoAppDocument[],
+			nextVotes: RovoAppVote[],
+			navigationIdentity: RovoAppThreadNavigationIdentity,
+		) => {
 			hydrateRovoAppThreadStateWithLifecycle({
 				activeThreadIdRef,
 				beginThreadHydration,
@@ -214,7 +237,9 @@ export function useRovoAppThreadLifecycleActions({
 				clearStreamingArtifactState,
 				completeThreadHydration,
 				hasHydratedActiveThreadRef,
+				isNavigationCurrent,
 				lastPersistedKeyRef,
+				navigationIdentity,
 				nextDocuments,
 				nextVotes,
 				pendingRouteReadyRef,
@@ -249,6 +274,7 @@ export function useRovoAppThreadLifecycleActions({
 			clearStreamingArtifactState,
 			completeThreadHydration,
 			hasHydratedActiveThreadRef,
+			isNavigationCurrent,
 			lastPersistedKeyRef,
 			pendingRouteReadyRef,
 			pendingRouteThreadIdRef,
@@ -273,24 +299,35 @@ export function useRovoAppThreadLifecycleActions({
 
 	const hydrateThreadById = useCallback(
 		async (threadId: string) => {
+			const navigationIdentity = getCurrentNavigationIdentity();
 			await hydrateRovoAppThreadByIdWithLifecycle({
 				deletedThreadIdsRef,
 				getThread: getRovoAppThread,
 				hydrateThreadState,
+				isNavigationCurrent,
 				listDocuments: listRovoAppDocuments,
 				listVotes: listRovoAppVotes,
+				navigationIdentity,
 				reconcileThreadWithLocalTitle,
 				setThreads,
 				threadId,
 			});
 		},
-		[deletedThreadIdsRef, hydrateThreadState, reconcileThreadWithLocalTitle, setThreads],
+		[
+			deletedThreadIdsRef,
+			getCurrentNavigationIdentity,
+			hydrateThreadState,
+			isNavigationCurrent,
+			reconcileThreadWithLocalTitle,
+			setThreads,
+		],
 	);
 
 	const subscribeToRovoAppRun = useCallback(
 		async (
 			threadId: string,
 			activeRun: RovoAppActiveRun | null,
+			navigationIdentity: RovoAppThreadNavigationIdentity,
 		) => {
 			await subscribeToRovoAppRunWithLifecycle({
 				activeRun,
@@ -302,6 +339,8 @@ export function useRovoAppThreadLifecycleActions({
 					}),
 				handleAttachedRunChunk,
 				hydrateThreadById,
+				isNavigationCurrent,
+				navigationIdentity,
 				runSubscriptionAbortControllerRef,
 				runSubscriptionThreadIdRef,
 				setAttachedRunStatus,
@@ -316,6 +355,7 @@ export function useRovoAppThreadLifecycleActions({
 			activeThreadIdRef,
 			handleAttachedRunChunk,
 			hydrateThreadById,
+			isNavigationCurrent,
 			runSubscriptionAbortControllerRef,
 			runSubscriptionThreadIdRef,
 			setAttachedRunStatus,
@@ -325,7 +365,10 @@ export function useRovoAppThreadLifecycleActions({
 		],
 	);
 
-	const resetToBlankChatState = useCallback((nextDraftId: string) => {
+	const resetToBlankChatState = useCallback((
+		nextDraftId: string,
+		navigationIdentity: RovoAppThreadNavigationIdentity,
+	) => {
 		resetRovoAppToBlankThreadState({
 			activeThreadIdRef,
 			beginThreadHydration,
@@ -335,7 +378,9 @@ export function useRovoAppThreadLifecycleActions({
 			clearStreamingArtifactState,
 			completeThreadHydration,
 			hasHydratedActiveThreadRef,
+			isNavigationCurrent,
 			lastPersistedKeyRef,
+			navigationIdentity,
 			nextDraftId,
 			pendingRouteReadyRef,
 			pendingRouteThreadIdRef,
@@ -355,6 +400,7 @@ export function useRovoAppThreadLifecycleActions({
 			setDraftThreadId,
 			setEditingMessageId,
 			setHasActiveDispatch,
+			setIsLoadingThread,
 			setRovoMessages,
 			setThreadVisibility,
 			setVotes,
@@ -368,6 +414,7 @@ export function useRovoAppThreadLifecycleActions({
 		clearStreamingArtifactState,
 		completeThreadHydration,
 		hasHydratedActiveThreadRef,
+		isNavigationCurrent,
 		lastPersistedKeyRef,
 		pendingRouteReadyRef,
 		pendingRouteThreadIdRef,
@@ -384,12 +431,15 @@ export function useRovoAppThreadLifecycleActions({
 		setDraftThreadId,
 		setEditingMessageId,
 		setHasActiveDispatch,
+		setIsLoadingThread,
 		setRovoMessages,
 		setThreadVisibility,
 		setVotes,
 	]);
 
-	const leaveActiveThreadForBackground = useCallback(async () => {
+	const leaveActiveThreadForBackground = useCallback(async (
+		navigationIdentity: RovoAppThreadNavigationIdentity,
+	) => {
 		await leaveRovoAppActiveThreadForBackground({
 			activeDocumentId,
 			activeThreadIdRef,
@@ -399,6 +449,8 @@ export function useRovoAppThreadLifecycleActions({
 			delegationAbortControllerRef,
 			detachRun: detachRovoAppRun,
 			detachStream: detachRovoAppStream,
+			isNavigationCurrent,
+			navigationIdentity,
 			realtimeMessagesRef,
 			rovoMessagesRef,
 			runSubscriptionAbortControllerRef,
@@ -417,6 +469,7 @@ export function useRovoAppThreadLifecycleActions({
 		clearDirectDelegationState,
 		currentActiveRun,
 		delegationAbortControllerRef,
+		isNavigationCurrent,
 		realtimeMessagesRef,
 		rovoMessagesRef,
 		runSubscriptionAbortControllerRef,
@@ -430,6 +483,18 @@ export function useRovoAppThreadLifecycleActions({
 
 	const loadThread = useCallback(
 		async (threadId: string) => {
+			if (
+				shouldSkipRovoAppThreadLoad({
+					activeThreadId: activeThreadIdRef.current,
+					hasHydratedThreadState: hasHydratedActiveThreadRef.current,
+					requestedThreadId: threadId,
+				})
+			) {
+				setIsLoadingThread(false);
+				return;
+			}
+
+			const navigationIdentity = beginNavigation();
 			await loadRovoAppThreadWithLifecycle({
 				activeThreadIdRef,
 				clearRunSubscription: () => {
@@ -445,9 +510,11 @@ export function useRovoAppThreadLifecycleActions({
 				getThread: getRovoAppThread,
 				hasHydratedActiveThreadRef,
 				hydrateThreadState,
+				isNavigationCurrent,
 				leaveActiveThreadForBackground,
 				listDocuments: listRovoAppDocuments,
 				listVotes: listRovoAppVotes,
+				navigationIdentity,
 				reconcileThreadWithLocalTitle,
 				replaceRootRoute: () => {
 					startTransition(() => {
@@ -465,10 +532,12 @@ export function useRovoAppThreadLifecycleActions({
 		},
 		[
 			activeThreadIdRef,
+			beginNavigation,
 			deletedThreadIdsRef,
 			embedded,
 			hasHydratedActiveThreadRef,
 			hydrateThreadState,
+			isNavigationCurrent,
 			leaveActiveThreadForBackground,
 			reconcileThreadWithLocalTitle,
 			replaceRoute,
@@ -488,10 +557,13 @@ export function useRovoAppThreadLifecycleActions({
 		async ({
 			syncHistory = true,
 		}: ActivateBlankChatStateOptions = {}) => {
+			const navigationIdentity = beginNavigation();
 			await activateBlankRovoAppThreadState({
 				createThreadId: createRovoAppId,
 				embedded,
+				isNavigationCurrent,
 				leaveActiveThreadForBackground,
+				navigationIdentity,
 				pushRootPath: () => {
 					pushRovoAppHistoryPath(rootPath);
 				},
@@ -499,7 +571,14 @@ export function useRovoAppThreadLifecycleActions({
 				syncHistory,
 			});
 		},
-		[embedded, leaveActiveThreadForBackground, resetToBlankChatState, rootPath],
+		[
+			beginNavigation,
+			embedded,
+			isNavigationCurrent,
+			leaveActiveThreadForBackground,
+			resetToBlankChatState,
+			rootPath,
+		],
 	);
 
 	const openNewChat = useCallback(async () => {

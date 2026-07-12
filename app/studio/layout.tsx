@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RovoAppQueueProvider } from "@/app/studio/rovo-queue-provider";
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { getProjectPageTitle } from "@/lib/project-page-title";
 
 export const metadata: Metadata = {
@@ -13,6 +14,8 @@ export const metadata: Metadata = {
 
 export default function StudioAppLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<RovoAppQueueProvider>{children}</RovoAppQueueProvider>
+		<RovoChatProvider>
+			<RovoAppQueueProvider>{children}</RovoAppQueueProvider>
+		</RovoChatProvider>
 	);
 }

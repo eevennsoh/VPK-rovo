@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 
 export const metadata: Metadata = {
 	title: "Administration",
@@ -11,5 +12,5 @@ export default function AdminLayout({
 }: Readonly<{
 	children: ReactNode;
 }>) {
-	return children;
+	return <RovoChatProvider>{children}</RovoChatProvider>;
 }

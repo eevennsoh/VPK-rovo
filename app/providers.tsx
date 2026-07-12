@@ -4,7 +4,6 @@ import { MotionConfig } from "motion/react";
 import { ThemeWrapper } from "@/components/utils/theme-wrapper";
 import { UserInvalidSync } from "@/components/utils/user-invalid-sync";
 import { SidebarProvider } from "@/app/contexts/context-sidebar";
-import * as RovoChatContext from "@/app/contexts/context-rovo-chat";
 
 // VPK does not initialize Atlassian Feature Gates in local prototype mode.
 // Override the problematic Rovo logo gate locally to avoid uninitialized FG client warnings.
@@ -32,10 +31,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 		<MotionConfig reducedMotion="user">
 			<ThemeWrapper>
 				<SidebarProvider>
-					<RovoChatContext.RovoChatProvider>
-						<UserInvalidSync />
-						{children}
-					</RovoChatContext.RovoChatProvider>
+					<UserInvalidSync />
+					{children}
 				</SidebarProvider>
 			</ThemeWrapper>
 		</MotionConfig>

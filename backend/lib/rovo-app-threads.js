@@ -1,3 +1,4 @@
+const { randomUUID } = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -202,7 +203,7 @@ function omitUndefinedFields(fields) {
 	return definedFields;
 }
 
-function normalizeActiveRun(rawActiveRun, updatedAtFallback) {
+function normalizeActiveRun(rawActiveRun, updatedAtFallback, threadSessionFallback = {}) {
 	if (!rawActiveRun || typeof rawActiveRun !== "object") {
 		return null;
 	}
@@ -233,9 +234,9 @@ function normalizeActiveRun(rawActiveRun, updatedAtFallback) {
 		typeof rawActiveRun.updatedAt === "string" && rawActiveRun.updatedAt.trim()
 			? rawActiveRun.updatedAt.trim()
 			: startedAt;
-	const sessionId = normalizeSessionId(
-		rawActiveRun.sessionId ?? rawActiveRun.session_id,
-	);
+	const sessionId =
+		normalizeSessionId(rawActiveRun.sessionId ?? rawActiveRun.session_id) ??
+		normalizeSessionId(threadSessionFallback.sessionId ?? threadSessionFallback.session_id);
 	const rovoPort =
 		typeof rawActiveRun.rovoPort === "number"
 		&& Number.isInteger(rawActiveRun.rovoPort)
@@ -262,7 +263,10 @@ function normalizeActiveRun(rawActiveRun, updatedAtFallback) {
 		rovoPort,
 		sessionId,
 		sessionMode: normalizeSessionMode(
-			rawActiveRun.sessionMode ?? rawActiveRun.session_mode,
+			rawActiveRun.sessionMode ??
+				rawActiveRun.session_mode ??
+				threadSessionFallback.sessionMode ??
+				threadSessionFallback.session_mode,
 			Boolean(sessionId),
 		),
 		startedAt,
@@ -317,7 +321,10 @@ function normalizeThreadRecord(rawThread) {
 			rawThread.sessionMode ?? rawThread.session_mode,
 			Boolean(sessionId),
 		),
-		activeRun: normalizeActiveRun(rawThread.activeRun, updatedAt),
+		activeRun: normalizeActiveRun(rawThread.activeRun, updatedAt, {
+			sessionId,
+			sessionMode: rawThread.sessionMode ?? rawThread.session_mode,
+		}),
 		createdAt,
 		updatedAt,
 	};
@@ -325,10 +332,48 @@ function normalizeThreadRecord(rawThread) {
 
 function createRovoAppThreadManager({ baseDir, logger }) {
 	const threadsRootDir = getRovoAppThreadsRootDir(baseDir);
+	const mutationQueues = new Map();
+
+	const getMutationQueueKey = (threadId) =>
+		typeof threadId === "string" && threadId.trim()
+			? threadId.trim()
+			: threadId;
+
+	const enqueueThreadMutation = (threadId, operation) => {
+		const queueKey = getMutationQueueKey(threadId);
+		const previousQueue = mutationQueues.get(queueKey) || Promise.resolve();
+		const operationPromise = previousQueue.catch(() => {}).then(operation);
+		const queueTail = operationPromise.catch(() => {});
+
+		mutationQueues.set(queueKey, queueTail);
+		queueTail.finally(() => {
+			if (mutationQueues.get(queueKey) === queueTail) {
+				mutationQueues.delete(queueKey);
+			}
+		});
+
+		return operationPromise;
+	};
 
 	const writeJsonFile = async (filePath, payload) => {
-		await fs.mkdir(path.dirname(filePath), { recursive: true });
-		await fs.writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+		const fileDir = path.dirname(filePath);
+		const tempFilePath = path.join(
+			fileDir,
+			`.${path.basename(filePath)}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`,
+		);
+
+		await fs.mkdir(fileDir, { recursive: true });
+		try {
+			await fs.writeFile(
+				tempFilePath,
+				`${JSON.stringify(payload, null, 2)}\n`,
+				{ encoding: "utf8", flag: "wx" },
+			);
+			await fs.rename(tempFilePath, filePath);
+		} catch (error) {
+			await fs.rm(tempFilePath, { force: true }).catch(() => {});
+			throw error;
+		}
 	};
 
 	const readThread = async (threadId) => {
@@ -376,21 +421,87 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		return threads.slice(0, resolvedLimit);
 	};
 
-	const pruneOldThreads = async () => {
+	const deleteThreadDir = async (threadId) => {
+		const { threadDir } = buildRovoAppThreadPaths(baseDir, threadId);
+		await fs.rm(threadDir, { recursive: true, force: true });
+	};
+
+	const mergeHermesContextFields = (currentHermesContext, nextHermesContext) => {
+		if (!nextHermesContext || typeof nextHermesContext !== "object") {
+			return nextHermesContext;
+		}
+
+		return {
+			selectedSkillIds:
+				nextHermesContext.selectedSkillIds ?? currentHermesContext?.selectedSkillIds,
+			autoSelectedSkillIds:
+				nextHermesContext.autoSelectedSkillIds ?? currentHermesContext?.autoSelectedSkillIds,
+			pendingDraftIds:
+				nextHermesContext.pendingDraftIds ?? currentHermesContext?.pendingDraftIds,
+			recentMemoryProposalIds:
+				nextHermesContext.recentMemoryProposalIds ??
+				currentHermesContext?.recentMemoryProposalIds,
+		};
+	};
+
+	const prepareThreadUpdateFields = (currentThread, fields) => {
+		const definedFields = omitUndefinedFields(fields);
+		if (Object.hasOwn(definedFields, "hermesContext")) {
+			definedFields.hermesContext = mergeHermesContextFields(
+				currentThread.hermesContext,
+				definedFields.hermesContext,
+			);
+		}
+		return definedFields;
+	};
+
+	const persistUpdatedThread = async (threadId, currentThread, fields = {}) => {
+		const definedFields = prepareThreadUpdateFields(currentThread, fields);
+		const nextThread = normalizeThreadRecord({
+			...currentThread,
+			...definedFields,
+			id: currentThread.id,
+			createdAt: currentThread.createdAt,
+			updatedAt:
+				typeof definedFields.updatedAt === "string" && definedFields.updatedAt.trim()
+					? definedFields.updatedAt
+					: toIsoDate(),
+		});
+		const { threadFilePath } = buildRovoAppThreadPaths(baseDir, threadId);
+		await writeJsonFile(threadFilePath, nextThread);
+		return nextThread;
+	};
+
+	const updateThreadRecord = async (threadId, fields = {}) => {
+		const currentThread = await readThread(threadId);
+		if (!currentThread) {
+			return null;
+		}
+
+		return persistUpdatedThread(threadId, currentThread, fields);
+	};
+
+	const deleteThread = async (threadId) =>
+		enqueueThreadMutation(threadId, () => deleteThreadDir(threadId));
+
+	const pruneOldThreads = async ({ skipThreadId } = {}) => {
 		const threads = await listThreads({ limit: RETENTION_LIMIT + 20 });
 		if (threads.length <= RETENTION_LIMIT) {
 			return;
 		}
 
 		const staleThreads = threads.slice(RETENTION_LIMIT);
-		for (const thread of staleThreads) {
+		await Promise.all(staleThreads.map(async (thread) => {
+			if (thread.id === skipThreadId) {
+				return;
+			}
+
 			try {
-				const { threadDir } = buildRovoAppThreadPaths(baseDir, thread.id);
-				await fs.rm(threadDir, { recursive: true, force: true });
+				await deleteThread(thread.id);
 			} catch (error) {
 				logger.error?.(`[FUTURE-CHAT] Failed to prune thread ${thread.id}:`, error);
 			}
-		}
+		}));
 	};
 
 	const createThread = async ({
@@ -429,33 +540,17 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 			updatedAt: updatedAt || now,
 		});
 
-		const { threadFilePath } = buildRovoAppThreadPaths(baseDir, threadId);
-		await writeJsonFile(threadFilePath, nextThread);
-		await pruneOldThreads();
-		return nextThread;
-	};
-
-	const updateThread = async (threadId, fields = {}) => {
-		const currentThread = await readThread(threadId);
-		if (!currentThread) {
-			return null;
-		}
-
-		const definedFields = omitUndefinedFields(fields);
-		const nextThread = normalizeThreadRecord({
-			...currentThread,
-			...definedFields,
-			id: currentThread.id,
-			createdAt: currentThread.createdAt,
-			updatedAt:
-				typeof definedFields.updatedAt === "string" && definedFields.updatedAt.trim()
-					? definedFields.updatedAt
-					: toIsoDate(),
+		const createdThread = await enqueueThreadMutation(threadId, async () => {
+			const { threadFilePath } = buildRovoAppThreadPaths(baseDir, threadId);
+			await writeJsonFile(threadFilePath, nextThread);
+			return nextThread;
 		});
-		const { threadFilePath } = buildRovoAppThreadPaths(baseDir, threadId);
-		await writeJsonFile(threadFilePath, nextThread);
-		return nextThread;
+		await pruneOldThreads({ skipThreadId: threadId });
+		return createdThread;
 	};
+
+	const updateThread = async (threadId, fields = {}) =>
+		enqueueThreadMutation(threadId, () => updateThreadRecord(threadId, fields));
 
 	const getRealtimeMessages = async (threadId) => {
 		const thread = await readThread(threadId);
@@ -466,51 +561,65 @@ function createRovoAppThreadManager({ baseDir, logger }) {
 		return normalizeRealtimeMessages(thread.realtimeMessages);
 	};
 
-	const replaceRealtimeMessages = async (threadId, realtimeMessages) => {
-		const currentThread = await readThread(threadId);
-		if (!currentThread) {
-			return null;
-		}
+	const replaceRealtimeMessages = async (threadId, realtimeMessages) =>
+		enqueueThreadMutation(threadId, async () => {
+			const currentThread = await readThread(threadId);
+			if (!currentThread) {
+				return null;
+			}
 
-		const nextRealtimeMessages = normalizeRealtimeMessages(realtimeMessages);
-		return updateThread(threadId, {
-			realtimeMessages: nextRealtimeMessages,
+			const nextRealtimeMessages = normalizeRealtimeMessages(realtimeMessages);
+			return persistUpdatedThread(threadId, currentThread, {
+				realtimeMessages: nextRealtimeMessages,
+			});
 		});
-	};
 
-	const upsertRealtimeMessage = async (threadId, realtimeMessage) => {
-		const currentThread = await readThread(threadId);
-		if (!currentThread) {
-			return null;
-		}
+	const upsertRealtimeMessage = async (threadId, realtimeMessage) =>
+		enqueueThreadMutation(threadId, async () => {
+			const currentThread = await readThread(threadId);
+			if (!currentThread) {
+				return null;
+			}
 
-		const [nextRealtimeMessage] = normalizeRealtimeMessages([realtimeMessage]);
-		if (!nextRealtimeMessage) {
-			return currentThread;
-		}
+			const [nextRealtimeMessage] = normalizeRealtimeMessages([realtimeMessage]);
+			if (!nextRealtimeMessage) {
+				return currentThread;
+			}
 
-		const existingMessages = normalizeRealtimeMessages(currentThread.realtimeMessages);
-		const existingIndex = existingMessages.findIndex(
-			(message) => message.id === nextRealtimeMessage.id,
-		);
-		if (existingIndex === -1) {
-			existingMessages.push(nextRealtimeMessage);
-		} else {
-			existingMessages.splice(existingIndex, 1, nextRealtimeMessage);
-		}
+			const existingMessages = normalizeRealtimeMessages(currentThread.realtimeMessages);
+			const existingIndex = existingMessages.findIndex(
+				(message) => message.id === nextRealtimeMessage.id,
+			);
+			if (existingIndex === -1) {
+				existingMessages.push(nextRealtimeMessage);
+			} else {
+				existingMessages.splice(existingIndex, 1, nextRealtimeMessage);
+			}
 
-		return updateThread(threadId, {
-			realtimeMessages: existingMessages,
+			return persistUpdatedThread(threadId, currentThread, {
+				realtimeMessages: existingMessages,
+			});
 		});
-	};
-
-	const deleteThread = async (threadId) => {
-		const { threadDir } = buildRovoAppThreadPaths(baseDir, threadId);
-		await fs.rm(threadDir, { recursive: true, force: true });
-	};
 
 	const deleteAllThreads = async () => {
-		await fs.rm(threadsRootDir, { recursive: true, force: true });
+		let entries;
+		try {
+			entries = await fs.readdir(threadsRootDir);
+		} catch (error) {
+			if (error && error.code === "ENOENT") {
+				return;
+			}
+
+			throw error;
+		}
+
+		await Promise.all(entries.map((entry) => deleteThread(entry)));
+		await fs.rmdir(threadsRootDir).catch((error) => {
+			if (error && (error.code === "ENOENT" || error.code === "ENOTEMPTY")) {
+				return;
+			}
+			throw error;
+		});
 	};
 
 	return {

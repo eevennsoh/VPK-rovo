@@ -71,8 +71,8 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
-} from "@/components/blocks/agent-2";
-import { getAgentConfigListLookupValue, getSkillConfigLabel } from "@/components/blocks/agent-2/lib/agent-config-model";
+} from "@/components/blocks/agent";
+import { getAgentConfigListLookupValue, getSkillConfigLabel } from "@/components/blocks/agent/lib/agent-config-model";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPersistentBar,

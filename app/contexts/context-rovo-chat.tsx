@@ -105,6 +105,10 @@ import {
 	type SendPromptOptions,
 } from "@/app/contexts/rovo-chat-helpers";
 import {
+	type RovoChatTransitionToken,
+} from "@/app/contexts/rovo-chat-transition-coordinator";
+import { useRovoChatTransitionCoordinator } from "@/app/contexts/use-rovo-chat-transition-coordinator";
+import {
 	isRateLimitError,
 	isChatInProgressError,
 	getRateLimitRetryCountdownMessage,
@@ -334,6 +338,13 @@ export function RovoChatProvider({
 	// meaningful content to save yet, so the save progression would be noise.
 	const suppressNextSessionAgentSaveStatusRef = useRef(false);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
+	const {
+		beginTransition,
+		finishTransition,
+		hasCancellationOwner,
+		isCurrentTransition,
+		syncTransitionCancellation,
+	} = useRovoChatTransitionCoordinator({ isCancellingRef });
 	const applySessionAgentMutation = useCallback((
 		result: SessionAgentEntryMutationResult,
 		options?: { silentSave?: boolean }
@@ -1161,16 +1172,22 @@ export function RovoChatProvider({
 		[currentThread, rawUiMessages]
 	);
 
-	const refreshThreads = useCallback(async () => {
+	const refreshThreads = useCallback(async (transitionToken?: RovoChatTransitionToken) => {
 		try {
 			const nextThreads = await listRovoAppThreads(COMPACT_HISTORY_LIMIT);
+			if (transitionToken && !isCurrentTransition(transitionToken)) {
+				return;
+			}
 			setThreads(nextThreads);
 			setThreadsLoaded(true);
 		} catch (error) {
+			if (transitionToken && !isCurrentTransition(transitionToken)) {
+				return;
+			}
 			console.warn("[RovoChatProvider] Failed to refresh Rovo thread history:", error);
 			setThreadsLoaded(true);
 		}
-	}, []);
+	}, [isCurrentTransition]);
 
 	useEffect(() => {
 		const wasStreaming = wasStreamingRef.current;
@@ -1775,6 +1792,10 @@ export function RovoChatProvider({
 		try {
 			await cancelCurrentStream();
 		} finally {
+			if (hasCancellationOwner()) {
+				syncTransitionCancellation();
+				return;
+			}
 			isCancellingRef.current = false;
 			void refreshThreads();
 			queueTick();
@@ -1785,6 +1806,8 @@ export function RovoChatProvider({
 		clearSubmitPending,
 		queueTick,
 		refreshThreads,
+		hasCancellationOwner,
+		syncTransitionCancellation,
 	]);
 
 	const detachCurrentThreadForSwitch = useCallback(async () => {
@@ -1805,47 +1828,89 @@ export function RovoChatProvider({
 
 	const selectThread = useCallback(
 		async (threadId: string) => {
-			await detachCurrentThreadForSwitch();
-			const thread = await getRovoAppThread(threadId);
-			if (!thread) {
-				activeThreadIdRef.current = null;
-				setActiveThreadId(null);
-				setMessages([]);
-				await refreshThreads();
-				return;
-			}
+			const transitionToken = beginTransition("select-thread");
+			try {
+				await detachCurrentThreadForSwitch();
+				if (!isCurrentTransition(transitionToken)) {
+					return;
+				}
 
-			activeThreadIdRef.current = thread.id;
-			setActiveThreadId(thread.id);
-			lastPersistedThreadKeyRef.current = buildCompactThreadPersistKey(thread.id, thread.messages);
-			setThreads((previousThreads) => [thread, ...previousThreads.filter((item) => item.id !== thread.id)]);
-			setSubmissionErrorMessage(null);
-			setMessages(sanitizeRovoUiMessages(thread.messages));
-			setIsHistoryOpen(false);
+				const thread = await getRovoAppThread(threadId);
+				if (!isCurrentTransition(transitionToken)) {
+					return;
+				}
+				if (!thread) {
+					activeThreadIdRef.current = null;
+					setActiveThreadId(null);
+					setMessages([]);
+					await refreshThreads(transitionToken);
+					return;
+				}
+
+				activeThreadIdRef.current = thread.id;
+				setActiveThreadId(thread.id);
+				lastPersistedThreadKeyRef.current = buildCompactThreadPersistKey(thread.id, thread.messages);
+				setThreads((previousThreads) => [thread, ...previousThreads.filter((item) => item.id !== thread.id)]);
+				setSubmissionErrorMessage(null);
+				setMessages(sanitizeRovoUiMessages(thread.messages));
+				setIsHistoryOpen(false);
+			} finally {
+				if (finishTransition(transitionToken)) {
+					queueTick();
+				}
+			}
 		},
-		[detachCurrentThreadForSwitch, refreshThreads, setMessages]
+		[
+			beginTransition,
+			detachCurrentThreadForSwitch,
+			finishTransition,
+			isCurrentTransition,
+			queueTick,
+			refreshThreads,
+			setMessages,
+		]
 	);
 
 	const deleteThread = useCallback(
 		async (threadId: string) => {
-			if (threadId === activeThreadIdRef.current) {
-				await detachCurrentThreadForSwitch();
-				activeThreadIdRef.current = null;
-				setActiveThreadId(null);
-				setMessages([]);
-				setSubmissionErrorMessage(null);
-				lastPersistedThreadKeyRef.current = "";
-			}
+			const transitionToken = beginTransition("delete-thread");
+			try {
+				if (threadId === activeThreadIdRef.current) {
+					await detachCurrentThreadForSwitch();
+					if (isCurrentTransition(transitionToken)) {
+						activeThreadIdRef.current = null;
+						setActiveThreadId(null);
+						setMessages([]);
+						setSubmissionErrorMessage(null);
+						lastPersistedThreadKeyRef.current = "";
+					}
+				}
 
-			await deleteRovoAppThread(threadId);
-			setThreads((previousThreads) => previousThreads.filter((thread) => thread.id !== threadId));
-			await refreshThreads();
+				await deleteRovoAppThread(threadId);
+				if (!isCurrentTransition(transitionToken)) {
+					return;
+				}
+				setThreads((previousThreads) => previousThreads.filter((thread) => thread.id !== threadId));
+				await refreshThreads(transitionToken);
+			} finally {
+				if (finishTransition(transitionToken)) {
+					queueTick();
+				}
+			}
 		},
-		[detachCurrentThreadForSwitch, refreshThreads, setMessages]
+		[
+			beginTransition,
+			detachCurrentThreadForSwitch,
+			finishTransition,
+			isCurrentTransition,
+			queueTick,
+			refreshThreads,
+			setMessages,
+		]
 	);
 
 	const deleteAllThreads = useCallback(async () => {
-		isCancellingRef.current = true;
+		const transitionToken = beginTransition("delete-all-threads");
 		cancelRetryTimer();
 		clearMediaGenerating();
 		clearSubmitPending();
@@ -1863,22 +1928,30 @@ export function RovoChatProvider({
 
 		try {
 			await detachCurrentThreadForSwitch();
-			activeThreadIdRef.current = null;
-			setActiveThreadId(null);
-			lastPersistedThreadKeyRef.current = "";
-			setThreads([]);
-			setThreadsLoaded(true);
+			if (isCurrentTransition(transitionToken)) {
+				activeThreadIdRef.current = null;
+				setActiveThreadId(null);
+				lastPersistedThreadKeyRef.current = "";
+				setThreads([]);
+				setThreadsLoaded(true);
+			}
 			await deleteAllRovoAppThreads();
-			await refreshThreads();
+			if (isCurrentTransition(transitionToken)) {
+				await refreshThreads(transitionToken);
+			}
 		} finally {
-			isCancellingRef.current = false;
-			queueTick();
+			if (finishTransition(transitionToken)) {
+				queueTick();
+			}
 		}
 	}, [
+		beginTransition,
 		cancelRetryTimer,
 		clearMediaGenerating,
 		clearSubmitPending,
 		detachCurrentThreadForSwitch,
+		finishTransition,
+		isCurrentTransition,
 		queueTick,
 		refreshThreads,
 		setMessages,
@@ -1907,7 +1980,7 @@ export function RovoChatProvider({
 	}, []);
 
 	const resetChat = useCallback(() => {
-		isCancellingRef.current = true;
+		const transitionToken = beginTransition("reset-chat");
 		cancelRetryTimer();
 		clearMediaGenerating();
 		clearSubmitPending();
@@ -1924,6 +1997,9 @@ export function RovoChatProvider({
 		setSubmissionErrorMessage(null);
 
 		void detachCurrentThreadForSwitch().finally(() => {
+			if (!finishTransition(transitionToken)) {
+				return;
+			}
 			// Old stream chunks can still arrive briefly while cancellation settles.
 			// Clear message state one more time so the next session starts clean.
 			activeThreadIdRef.current = null;
@@ -1931,15 +2007,16 @@ export function RovoChatProvider({
 			lastPersistedThreadKeyRef.current = "";
 			setMessages([]);
 			setSubmissionErrorMessage(null);
-			isCancellingRef.current = false;
-			void refreshThreads();
+			void refreshThreads(transitionToken);
 			queueTick();
 		});
 	}, [
+		beginTransition,
 		detachCurrentThreadForSwitch,
 		cancelRetryTimer,
 		clearMediaGenerating,
 		clearSubmitPending,
+		finishTransition,
 		queueTick,
 		refreshThreads,
 		setMessages,
@@ -2074,7 +2151,7 @@ export function RovoChatProvider({
 
 	const replaceMessages = useCallback(
 		(messages: ReadonlyArray<RovoUIMessage>) => {
-			isCancellingRef.current = false;
+			const transitionToken = beginTransition("replace-messages");
 			cancelRetryTimer();
 			clearMediaGenerating();
 			clearSubmitPending();
@@ -2089,14 +2166,24 @@ export function RovoChatProvider({
 			setActivePrompt(null);
 			setSubmissionErrorMessage(null);
 			setMessages(sanitizeRovoUiMessages([...messages]));
-			queueTick();
+			if (finishTransition(transitionToken)) {
+				queueTick();
+			}
 		},
-		[cancelRetryTimer, clearMediaGenerating, clearSubmitPending, queueTick, setMessages]
+		[
+			beginTransition,
+			cancelRetryTimer,
+			clearMediaGenerating,
+			clearSubmitPending,
+			finishTransition,
+			queueTick,
+			setMessages,
+		]
 	);
 
 	const hydrateThreadSnapshot = useCallback(
 		({ markPersisted = true, messages, threadId }: RovoThreadSnapshot) => {
-			isCancellingRef.current = false;
+			const transitionToken = beginTransition("hydrate-thread-snapshot");
 			cancelRetryTimer();
 			clearMediaGenerating();
 			clearSubmitPending();
@@ -2117,9 +2204,19 @@ export function RovoChatProvider({
 				lastPersistedThreadKeyRef.current = buildCompactThreadPersistKey(threadId, sanitized);
 			}
 			setMessages(sanitized);
-			queueTick();
+			if (finishTransition(transitionToken)) {
+				queueTick();
+			}
 		},
-		[cancelRetryTimer, clearMediaGenerating, clearSubmitPending, queueTick, setMessages]
+		[
+			beginTransition,
+			cancelRetryTimer,
+			clearMediaGenerating,
+			clearSubmitPending,
+			finishTransition,
+			queueTick,
+			setMessages,
+		]
 	);
 	const queueCount = queuedPrompts.length;
 	const hasInFlightTurn =

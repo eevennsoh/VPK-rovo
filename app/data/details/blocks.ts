@@ -1,7 +1,6 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 import { AGENT_DETAIL } from "./blocks/agent";
-import { AGENT_2_DETAIL } from "./blocks/agent-2";
 import { SKILL_CONFIG_DETAIL } from "./blocks/skill-config";
 import { TRIGGER_CONFIG_DETAIL } from "./blocks/trigger-config";
 import { AGENT_BENTO_DETAIL } from "./blocks/agent-bento";
@@ -92,7 +91,6 @@ import { WORKFLOW_DETAIL } from "./blocks/workflow";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	agent: AGENT_DETAIL,
-	"agent-2": AGENT_2_DETAIL,
 	"skill-config": SKILL_CONFIG_DETAIL,
 	"trigger-config": TRIGGER_CONFIG_DETAIL,
 	"agent-bento": AGENT_BENTO_DETAIL,

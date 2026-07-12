@@ -6,12 +6,13 @@ import {
 } from "@/app/api/_utils/backend-url";
 
 interface ProxyRequestOptions {
-	method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+	method: "GET" | "HEAD" | "OPTIONS" | "POST" | "PUT" | "PATCH" | "DELETE";
 	path: string;
 	body?: unknown;
 	rawBody?: string;
 	contentType?: string;
 	expectEventStream?: boolean;
+	hasIdempotencyContract?: boolean;
 	signal?: AbortSignal;
 }
 
@@ -54,6 +55,17 @@ async function isBackendApiRouteNotFoundResponse(
 	return buildErrorMessage(await response.text()) === `API route not found: ${path}`;
 }
 
+function getBackendConnectionDetails(error: BackendConnectionError): string {
+	if (error.stateChangingTransportFailure) {
+		return [
+			`Backend request result is unknown after a ${error.method} transport failure.`,
+			"Automatic replay is disabled for state-changing methods without an idempotency contract.",
+		].join(" ");
+	}
+
+	return error.message;
+}
+
 export async function proxyToBackend(
 	options: Readonly<ProxyRequestOptions>
 ): Promise<NextResponse> {
@@ -81,6 +93,7 @@ export async function proxyToBackend(
 					"Content-Type": resolvedContentType,
 				},
 				body: resolvedBody,
+				hasIdempotencyContract: options.hasIdempotencyContract === true,
 				signal: options.signal,
 				shouldRetryResponse: (candidateResponse) =>
 					isBackendApiRouteNotFoundResponse(candidateResponse, options.path),
@@ -95,12 +108,20 @@ export async function proxyToBackend(
 			error instanceof BackendConnectionError
 				? error.backendUrls
 				: getBackendUrlCandidates();
+		const attemptedBackendUrls =
+			error instanceof BackendConnectionError
+				? error.attemptedBackendUrls
+				: backendUrls;
 
 		return NextResponse.json(
 			{
 				error: "Cannot connect to backend server",
-				details: error instanceof Error ? error.message : String(error),
+				details:
+					error instanceof BackendConnectionError
+						? getBackendConnectionDetails(error)
+						: error instanceof Error ? error.message : String(error),
 				backendUrls,
+				attemptedBackendUrls,
 				path: options.path,
 			},
 			{ status: 503 }
