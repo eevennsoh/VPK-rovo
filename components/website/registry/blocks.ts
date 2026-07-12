@@ -289,6 +289,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	gallery: dynamic(() => import("../demos/blocks/gallery-demo"), {
 		ssr: false,
 	}),
+	"html-selector": dynamic(() => import("../demos/blocks/html-selector-demo"), {
+		ssr: false,
+	}),
 	"kanban-board": dynamic(() => import("../demos/blocks/kanban-board-demo"), {
 		ssr: false,
 	}),

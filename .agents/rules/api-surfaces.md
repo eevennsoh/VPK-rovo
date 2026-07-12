@@ -25,7 +25,7 @@ paths:
 <!-- generated:begin -->
 <!-- Do not edit this section by hand. Run `node scripts/generate-api-surfaces.js`. -->
 
-Generated from `backend/routes/route-manifest.json`. Backend routes: 158; runtime-admin routes: 41; Next API routes: 134.
+Generated from `backend/routes/route-manifest.json`. Backend routes: 160; runtime-admin routes: 41; Next API routes: 136.
 
 ### Backend Routes
 
@@ -85,6 +85,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 158; runtim
 | `POST` | `/api/genui-description-summary` | no | `backend/routes/ai-utilities.js:246` |
 | `POST` | `/api/genui-export` | no | `backend/routes/genui.js:39` |
 | `GET` | `/api/health` | no | `backend/routes/status.js:205` |
+| `POST` | `/api/html-selector/dispatch` | no | `backend/routes/html-selector.js:99` |
+| `GET` | `/api/html-selector/tokens` | no | `backend/routes/html-selector.js:168` |
 | `GET` | `/api/image-proxy` | no | `backend/routes/media.js:184` |
 | `GET` | `/api/jobs` | no | `backend/routes/jobs.js:66` |
 | `POST` | `/api/jobs` | yes | `backend/routes/jobs.js:83` |
@@ -232,6 +234,8 @@ Generated from `backend/routes/route-manifest.json`. Backend routes: 158; runtim
 | `POST` | `/api/genui-description-summary` | `POST /api/genui-description-summary` | `app/api/genui-description-summary/route.ts:5` |
 | `POST` | `/api/genui-export` | `POST /api/genui-export` | `app/api/genui-export/route.ts:13` |
 | `GET` | `/api/health` | `GET /api/health` | `app/api/health/route.ts:3` |
+| `POST` | `/api/html-selector/dispatch` | `POST /api/html-selector/dispatch` | `app/api/html-selector/dispatch/route.ts:5` |
+| `GET` | `/api/html-selector/tokens` | `GET /api/html-selector/tokens` | `app/api/html-selector/tokens/route.ts:3` |
 | `GET` | `/api/jobs` | `GET /api/jobs` | `app/api/jobs/route.ts:5` |
 | `POST` | `/api/jobs` | `POST /api/jobs` | `app/api/jobs/route.ts:12` |
 | `DELETE` | `/api/jobs/:id` | `DELETE /api/jobs/:id` | `app/api/jobs/[id]/route.ts:33` |

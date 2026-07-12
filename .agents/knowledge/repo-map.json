@@ -10,9 +10,9 @@
 	},
 	"routes": {
 		"summary": {
-			"backendRouteCount": 158,
-			"nextApiRouteCount": 134,
-			"ownerCount": 130,
+			"backendRouteCount": 160,
+			"nextApiRouteCount": 136,
+			"ownerCount": 133,
 			"runtimeAdminRouteCount": 41
 		},
 		"owners": [
@@ -442,6 +442,25 @@
 						"method": "POST",
 						"path": "/api/genui-export",
 						"source": "backend/routes/genui.js:39",
+						"runtimeAdmin": false
+					}
+				]
+			},
+			{
+				"kind": "backend",
+				"owner": "backend/routes/html-selector.js",
+				"routeCount": 2,
+				"routes": [
+					{
+						"method": "POST",
+						"path": "/api/html-selector/dispatch",
+						"source": "backend/routes/html-selector.js:99",
+						"runtimeAdmin": false
+					},
+					{
+						"method": "GET",
+						"path": "/api/html-selector/tokens",
+						"source": "backend/routes/html-selector.js:168",
 						"runtimeAdmin": false
 					}
 				]
@@ -1772,6 +1791,44 @@
 								"method": "GET",
 								"path": "/api/health",
 								"source": "app/api/health/route.ts:4"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/html-selector/dispatch/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "POST",
+						"path": "/api/html-selector/dispatch",
+						"source": "app/api/html-selector/dispatch/route.ts:5",
+						"targets": [
+							{
+								"method": "POST",
+								"path": "/api/html-selector/dispatch",
+								"source": "app/api/html-selector/dispatch/route.ts:11"
+							}
+						]
+					}
+				]
+			},
+			{
+				"kind": "next-api",
+				"owner": "app/api/html-selector/tokens/route.ts",
+				"routeCount": 1,
+				"routes": [
+					{
+						"method": "GET",
+						"path": "/api/html-selector/tokens",
+						"source": "app/api/html-selector/tokens/route.ts:3",
+						"targets": [
+							{
+								"method": "GET",
+								"path": "/api/html-selector/tokens",
+								"source": "app/api/html-selector/tokens/route.ts:4"
 							}
 						]
 					}
@@ -5023,7 +5080,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 394,
+			"manifestEntryCount": 395,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5059,7 +5116,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 87,
+				"entryCount": 88,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5264,6 +5321,12 @@
 						"slug": "generative-card",
 						"name": "Generative Card",
 						"importPath": "@/components/blocks/generative-card"
+					},
+					{
+						"category": "blocks",
+						"slug": "html-selector",
+						"name": "HTML Selector",
+						"importPath": "@/components/blocks/html-selector"
 					},
 					{
 						"category": "blocks",

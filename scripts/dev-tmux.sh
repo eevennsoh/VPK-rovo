@@ -47,28 +47,9 @@ fi
 
 resolve_session_name() {
 	node - <<'NODE'
-const { getWorktreeName } = require("./scripts/lib/worktree-ports");
+const { resolveDevTmuxSessionName } = require("./scripts/lib/dev-tmux-session");
 
-const sanitizeToken = (value, fallback) => {
-	const normalized = String(value ?? "")
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9_-]+/g, "-")
-		.replace(/^-+|-+$/g, "")
-		.replace(/-{2,}/g, "-");
-
-	return normalized.length > 0 ? normalized : fallback;
-};
-
-const explicitName = process.env.ROVO_TMUX_SESSION;
-if (typeof explicitName === "string" && explicitName.trim().length > 0) {
-	process.stdout.write(explicitName.trim());
-	process.exit(0);
-}
-
-const prefix = sanitizeToken(process.env.ROVO_TMUX_SESSION_PREFIX || "vpk-dev", "vpk-dev");
-const worktree = sanitizeToken(getWorktreeName() || "main", "main");
-process.stdout.write(`${prefix}-${worktree}`);
+process.stdout.write(resolveDevTmuxSessionName());
 NODE
 }
 
