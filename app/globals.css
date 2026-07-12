@@ -15,6 +15,7 @@
 
 @import "./tailwind-theme.css";
 @import "./shadcn-theme.css";
+@import "./typeset.css";
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -61,6 +62,51 @@
 	--legend-muted: var(--ds-background-neutral);
 	--legend-muted-foreground: var(--ds-text-subtle);
 	--legend-track: var(--ds-background-neutral);
+}
+
+/* -----------------------------------------------------------------
+   Typeset presets (shadcn/typeset)
+
+   Map typeset's font tokens to VPK's ADS-backed families (no Geist)
+   and tune rhythm per surface. Unlayered so these override the
+   layered `.typeset` defaults from typeset.css. Apply alongside the
+   base `.typeset` class, e.g. class="typeset typeset-chat".
+   ----------------------------------------------------------------- */
+.typeset-chat {
+	--typeset-font-body: var(--font-sans);
+	--typeset-font-heading: var(--font-sans);
+	--typeset-font-mono: var(--font-mono);
+	--typeset-leading: 1.6;
+	--typeset-flow: 1em;
+}
+.typeset-docs {
+	--typeset-font-body: var(--font-sans);
+	--typeset-font-heading: var(--font-sans);
+	--typeset-font-mono: var(--font-mono);
+	--typeset-size: 15px;
+	--typeset-leading: 1.75;
+	--typeset-flow: 1.25em;
+}
+
+/* User-role message bubbles stay flat.
+   User and assistant messages render through the same MessageResponse
+   (and thus the baked-in `.typeset` container); only the `.is-user`
+   ancestor that <Message> sets distinguishes them. Inside the
+   primary-colored bubble, typeset's own `color` must not override the
+   inherited inverse text color, and prompt headings should not gain the
+   prose hierarchy. `.is-user` scoping outranks typeset's single-class
+   rules, so this reliably flattens every user bubble regardless of any
+   `plain` opt-out. */
+.is-user .typeset,
+.is-user
+	.typeset
+	:where(h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, a, code, kbd, pre, table, th, td) {
+	color: inherit;
+}
+.is-user .typeset :where(h1, h2, h3, h4, h5, h6) {
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
 }
 
 /* -----------------------------------------------------------------

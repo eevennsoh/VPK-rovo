@@ -260,7 +260,7 @@ function UserMessage({
 			) : (
 				<>
 					<MessageContent>
-						<MessageResponse className="font-medium text-inherit [&_*]:text-inherit">{getMessageText(message)}</MessageResponse>
+						<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">{getMessageText(message)}</MessageResponse>
 					</MessageContent>
 					<MessageActions reveal="hover" className="justify-end text-text-subtle">
 						<MessageCopyAction text={getMessageText(message)} />

@@ -128,7 +128,7 @@ export function UserMessageBubble({
 				) : (
 					<>
 						<MessageContent>
-							<MessageResponse className="font-medium text-inherit [&_*]:text-inherit">
+							<MessageResponse plain className="font-medium text-inherit [&>*+*]:mt-3">
 								{messageText}
 							</MessageResponse>
 						</MessageContent>

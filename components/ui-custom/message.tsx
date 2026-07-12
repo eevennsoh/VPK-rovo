@@ -1,28 +1,15 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
-
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
 import type { UIMessage } from "ai";
 import type {
 	ComponentProps,
 	HTMLAttributes,
-	MouseEvent,
 	ReactElement,
-	ReactNode,
 } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-	CodeBlock,
-	CodeBlockActions,
-	CodeBlockCopyButton,
-	CodeBlockDownloadButton,
-	CodeBlockFilename,
-	CodeBlockHeader,
-	CodeBlockTitle,
-} from "@/components/ui-custom/code-block";
 import {
 	ButtonGroup,
 	ButtonGroupText,
@@ -33,41 +20,24 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { resolveImageRenderSrc } from "@/lib/image-proxy";
 import { cn } from "@/lib/utils";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import EditIcon from "@atlaskit/icon/core/edit";
 import RetryIcon from "@atlaskit/icon/core/retry";
 import ThumbsDownIcon from "@atlaskit/icon/core/thumbs-down";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
-import { cjk } from "@streamdown/cjk";
-import { code as baseCodePlugin } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
 import {
 	ChevronLeftIcon,
 	ChevronRightIcon,
 } from "@/components/ui/vpk-icons";
 import {
-	Children,
-	Fragment,
 	createContext,
-	isValidElement,
-	memo,
 	useCallback,
 	use,
 	useEffect,
 	useMemo,
 	useState,
 } from "react";
-import type { LinkSafetyConfig } from "streamdown";
-import { Streamdown, StreamdownContext } from "streamdown";
-import type { BundledLanguage } from "shiki";
-
-const linkSafetyConfig: LinkSafetyConfig = {
-	enabled: true,
-	onLinkCheck: () => true,
-};
 
 export interface MessageProps extends HTMLAttributes<HTMLDivElement> {
 	animate?: boolean;
@@ -486,352 +456,9 @@ export function MessageBranchPage({
 	);
 }
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown>;
-
-/**
- * Wraps the Shiki code plugin to skip languages not in the Shiki bundle.
- * Without this, languages like "spec" (used by GenUI) cause a ShikiError
- * when Shiki tries to create a highlighter for an unknown language.
- */
-const safeCodePlugin: typeof baseCodePlugin = {
-	...baseCodePlugin,
-	highlight(options, callback) {
-		if (!baseCodePlugin.supportsLanguage(options.language)) {
-			return null;
-		}
-		return baseCodePlugin.highlight(options, callback);
-	},
-};
-
-// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
-export const streamdownPlugins = { cjk, code: safeCodePlugin, math, mermaid };
-
-const inlineStreamTags = new Set([
-	"a",
-	"abbr",
-	"acronym",
-	"b",
-	"bdi",
-	"bdo",
-	"br",
-	"cite",
-	"code",
-	"data",
-	"del",
-	"em",
-	"i",
-	"kbd",
-	"mark",
-	"q",
-	"rp",
-	"rt",
-	"ruby",
-	"s",
-	"samp",
-	"small",
-	"span",
-	"strong",
-	"sub",
-	"sup",
-	"time",
-	"u",
-	"var",
-	"img",
-]);
-
-function hasBlockMarkdownContent(children: ReactNode): boolean {
-	return Children.toArray(children).some((child) => {
-		if (
-			child === null ||
-			child === undefined ||
-			typeof child === "boolean" ||
-			typeof child === "string" ||
-			typeof child === "number"
-		) {
-			return false;
-		}
-
-		if (!isValidElement(child)) {
-			return false;
-		}
-
-		const element = child as ReactElement<{ children?: ReactNode }>;
-
-		if (element.type === Fragment) {
-			return hasBlockMarkdownContent(element.props.children);
-		}
-
-		if (typeof element.type === "string") {
-			return !inlineStreamTags.has(element.type);
-		}
-
-		return true;
-	});
-}
-
-type MarkdownParagraphProps = ComponentProps<"p"> & { node?: unknown };
-
-function MarkdownParagraph({
-	children,
-	className,
-	...props
-}: Readonly<MarkdownParagraphProps>) {
-	const { node, ...htmlProps } = props;
-	void node;
-
-	const blockContent = hasBlockMarkdownContent(children);
-
-	const Element = blockContent ? "div" : "p";
-
-	return (
-		<Element className={className} {...htmlProps}>
-			{children}
-		</Element>
-	);
-}
-
-type MarkdownImageProps = ComponentProps<"img"> & { node?: unknown };
-type MarkdownAnchorProps = ComponentProps<"a"> & { node?: unknown };
-
-type MarkdownInlineCodeProps = ComponentProps<"code"> & { node?: unknown };
-
-type MarkdownCodeBlockProps = ComponentProps<"code"> & {
-	node?: {
-		properties?: {
-			metastring?: unknown;
-		};
-	};
-};
-
-const CODE_LANGUAGE_PATTERN = /language-([^\s]+)/u;
-const CODE_TITLE_PATTERN =
-	/(?:^|\s)(?:title|filename)=["']([^"']+)["']/u;
-const CODE_NO_LINE_NUMBERS_PATTERN = /(?:^|\s)noLineNumbers(?:\s|$)/u;
-const INLINE_CODE_BACKTICK_PATTERN = /`+/gu;
-
-const getCodeFenceLanguage = (className?: string) => {
-	const match = className?.match(CODE_LANGUAGE_PATTERN);
-	return match?.[1]?.toLowerCase() ?? "text";
-};
-
-const getCodeFenceTitle = (meta?: string) => {
-	const match = meta?.match(CODE_TITLE_PATTERN);
-	return match?.[1];
-};
-
-const getCodeFenceMeta = (node?: MarkdownCodeBlockProps["node"]) => {
-	const metastring = node?.properties?.metastring;
-	return typeof metastring === "string" ? metastring : undefined;
-};
-
-const getInlineCodeText = (children: ReactNode) =>
-	Children.toArray(children)
-		.map((child) => {
-			if (typeof child === "string" || typeof child === "number") {
-				return String(child);
-			}
-
-			return "";
-		})
-		.join("");
-
-const getInlineCodeFence = (content: string) => {
-	let longestBacktickRun = 0;
-
-	for (const match of content.matchAll(INLINE_CODE_BACKTICK_PATTERN)) {
-		longestBacktickRun = Math.max(longestBacktickRun, match[0].length);
-	}
-
-	return "`".repeat(longestBacktickRun + 1);
-};
-
-const toBundledLanguage = (language: string): BundledLanguage =>
-	safeCodePlugin.supportsLanguage(language as BundledLanguage)
-		? (language as BundledLanguage)
-		: "markdown";
-
-function MarkdownInlineCode({
-	children,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownInlineCodeProps>) {
-	void node;
-	const { isAnimating, mode } = use(StreamdownContext);
-	const isStreamingInlineCode = mode === "streaming" && isAnimating;
-
-	if (isStreamingInlineCode) {
-		const inlineCodeText = getInlineCodeText(children);
-		const inlineCodeFence = getInlineCodeFence(inlineCodeText);
-
-		return (
-			<code
-				className={cn(
-					"rounded-none bg-transparent px-0 py-0 font-mono text-inherit",
-					className,
-				)}
-				data-inline-code-state="streaming"
-				{...props}
-			>
-				{inlineCodeFence}{children}{inlineCodeFence}
-			</code>
-		);
-	}
-
-	return (
-		<code
-			className={cn(
-				"rounded bg-muted px-1.5 py-0.5 font-mono text-sm",
-				className,
-			)}
-			data-inline-code-state="complete"
-			{...props}
-		>
-			{children}
-		</code>
-	);
-}
-
-function MarkdownCodeBlock({
-	children,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownCodeBlockProps>) {
-	const code = typeof children === "string" ? children : "";
-	const rawLanguage = getCodeFenceLanguage(className);
-	const meta = getCodeFenceMeta(node);
-
-	if (rawLanguage === "mermaid" || rawLanguage === "mmd") {
-		const mermaidMarkdown = ["```mermaid", code.trim(), "```"].join("\n");
-
-		return (
-			<Streamdown
-				className="text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_p]:m-0"
-				components={{
-					img: MarkdownImage,
-					inlineCode: MarkdownInlineCode,
-					p: MarkdownParagraph,
-				}}
-				controls
-				linkSafety={linkSafetyConfig}
-				mode="static"
-				plugins={streamdownPlugins}
-			>
-				{mermaidMarkdown}
-			</Streamdown>
-		);
-	}
-
-	const language = toBundledLanguage(rawLanguage);
-	const title = getCodeFenceTitle(meta) ?? rawLanguage;
-	const showLineNumbers = meta ? !CODE_NO_LINE_NUMBERS_PATTERN.test(meta) : true;
-
-	return (
-		<CodeBlock
-			code={code}
-			language={language}
-			showLineNumbers={showLineNumbers}
-			{...props}
-		>
-			<CodeBlockHeader>
-				<CodeBlockTitle>
-					<CodeBlockFilename>{title}</CodeBlockFilename>
-				</CodeBlockTitle>
-				<CodeBlockActions>
-					<CodeBlockDownloadButton />
-					<CodeBlockCopyButton />
-				</CodeBlockActions>
-			</CodeBlockHeader>
-		</CodeBlock>
-	);
-}
-
-function MarkdownImage({
-	src,
-	alt,
-	className,
-	node,
-	...props
-}: Readonly<MarkdownImageProps>) {
-	void node;
-	const resolvedSrc = resolveImageRenderSrc(src);
-	if (!resolvedSrc) {
-		return null;
-	}
-
-	return (
-		<img
-			{...props}
-			src={resolvedSrc}
-			alt={typeof alt === "string" ? alt : ""}
-			loading={props.loading ?? "lazy"}
-			referrerPolicy={props.referrerPolicy ?? "no-referrer"}
-			className={cn("h-auto max-w-full rounded-md", className)}
-		/>
-	);
-}
-
-function MarkdownAnchor({
-	href,
-	onClick,
-	node,
-	...props
-}: Readonly<MarkdownAnchorProps>) {
-	void node;
-	const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-		onClick?.(event);
-		if (event.defaultPrevented || typeof href !== "string") {
-			return;
-		}
-
-		const prefix = "#rovo-canvas-";
-		if (!href.startsWith(prefix)) {
-			return;
-		}
-
-		event.preventDefault();
-		window.dispatchEvent(new CustomEvent("rovo:open-canvas-artifact", {
-			cancelable: true,
-			detail: {
-				documentId: decodeURIComponent(href.slice(prefix.length)),
-			},
-		}));
-	};
-
-		return <a aria-label={typeof props.children === "string" ? props.children : href} {...props} href={href} onClick={handleClick} />;
-}
-
-const streamdownComponents = {
-	a: MarkdownAnchor,
-	code: MarkdownCodeBlock,
-	inlineCode: MarkdownInlineCode,
-	p: MarkdownParagraph,
-	img: MarkdownImage,
-};
-
-export const MessageResponse = memo(
-	function MessageResponse({ className, ...props }: Readonly<MessageResponseProps>) {
-		return (
-			<Streamdown
-				animated={{
-					animation: "blurIn",
-					duration: 220,
-					easing: "ease-out",
-				}}
-				className={cn(
-					"size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h1]:mt-6 [&>h1:first-child]:mt-6 [&_[data-streamdown=mermaid-block]]:overflow-hidden",
-					className,
-				)}
-				mode="streaming"
-				plugins={streamdownPlugins}
-				components={streamdownComponents}
-				linkSafety={linkSafetyConfig}
-				{...props}
-			/>
-		);
-	},
-);
+// react-doctor-disable-next-line react-doctor/only-export-components -- Re-exporting colocated markdown API from the shared module so existing message.tsx consumers keep working.
+export { MessageResponse, streamdownComponents, streamdownPlugins } from "./message-markdown";
+export type { MessageResponseProps } from "./message-markdown";
 
 export type MessageToolbarProps = ComponentProps<"div">;
 

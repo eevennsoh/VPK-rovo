@@ -927,7 +927,7 @@ export const { registry } = defineRegistry(catalog, {
 			if (hasMermaidFenceBlock(content)) {
 				return (
 					<div className="rounded-md border border-border bg-surface p-3">
-						<MessageResponse mode="static" controls={false} className="text-sm [&_p]:m-0">
+						<MessageResponse plain mode="static" controls={false} className="text-sm [&_p]:m-0">
 							{content}
 						</MessageResponse>
 					</div>
@@ -1735,7 +1735,7 @@ export const { registry } = defineRegistry(catalog, {
 				}
 
 				return (
-					<MessageResponse mode="static" controls={false} className="text-sm [&_p]:m-0">
+					<MessageResponse plain mode="static" controls={false} className="text-sm [&_p]:m-0">
 						{mermaidMarkdown}
 					</MessageResponse>
 				);
