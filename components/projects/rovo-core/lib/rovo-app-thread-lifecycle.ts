@@ -1,4 +1,4 @@
-import type { ChatStatus, UIMessageChunk } from "ai";
+import type { ChatStatus } from "ai";
 import type {
 	RovoAppActiveRun,
 	RovoAppDocument,
@@ -13,11 +13,6 @@ import {
 } from "@/lib/rovo-ui-messages";
 import { buildRovoAppActiveThreadTransitionPlan } from "@/components/projects/rovo-core/lib/rovo-app-active-thread-transition";
 import {
-	isRovoAppDelegationAbortError,
-	readRovoAppDelegationResponseStream,
-} from "@/components/projects/rovo-core/lib/rovo-app-delegation-stream";
-import { upsertRealtimeMessage } from "@/components/projects/rovo-core/lib/rovo-app-realtime-message-state";
-import {
 	filterDeletedRovoAppThreads,
 	upsertRovoAppThreadRecord,
 } from "@/components/projects/rovo-core/lib/rovo-app-thread-state";
@@ -31,6 +26,13 @@ import {
 	getRovoAppArtifactDocumentIdsFromMessages,
 	upsertDocumentRecord,
 } from "@/components/projects/rovo-core/lib/rovo-app-hook-helpers";
+
+export {
+	subscribeToRovoAppRunWithLifecycle,
+} from "@/components/projects/rovo-core/lib/rovo-app-run-subscription-lifecycle";
+export type {
+	SubscribeToRovoAppRunLifecycleInput,
+} from "@/components/projects/rovo-core/lib/rovo-app-run-subscription-lifecycle";
 
 interface MutableRef<T> {
 	current: T;
@@ -127,27 +129,6 @@ export interface HydrateCompletedRovoAppActiveRunInput {
 	messages: ReadonlyArray<RovoUIMessage>;
 	setLocalThreadActiveRun: (threadId: string, activeRun: RovoAppActiveRun | null) => void;
 	useChatStatus: ChatStatus;
-}
-
-export interface SubscribeToRovoAppRunLifecycleInput {
-	activeRun: RovoAppActiveRun | null;
-	activeThreadIdRef: MutableRef<string | null>;
-	fetchRunStream: (
-		threadId: string,
-		signal: AbortSignal,
-	) => Promise<Response>;
-	handleAttachedRunChunk: (chunk: UIMessageChunk) => void;
-	hydrateThreadById: (threadId: string) => Promise<unknown>;
-	isNavigationCurrent: RovoAppThreadNavigationCurrentness["isNavigationCurrent"];
-	navigationIdentity: RovoAppThreadNavigationIdentity;
-	runSubscriptionAbortControllerRef: MutableRef<AbortController | null>;
-	runSubscriptionThreadIdRef: MutableRef<string | null>;
-	setAttachedRunStatus: (status: RovoAppRunStatus | null) => void;
-	setInputError: (message: string | null) => void;
-	setLocalThreadActiveRun: (threadId: string, activeRun: RovoAppActiveRun | null) => void;
-	setRovoMessages: SetState<RovoUIMessage[]>;
-	threadId: string;
-	toUserErrorMessage: (error: unknown) => string;
 }
 
 export interface ResetRovoAppToBlankThreadStateInput {
@@ -323,6 +304,9 @@ function isRovoAppThreadNavigationCurrent({
 	isNavigationCurrent,
 	navigationIdentity,
 }: RovoAppThreadNavigationCurrentness): boolean {
+	if (typeof isNavigationCurrent !== "function") {
+		return true;
+	}
 	return isNavigationCurrent(navigationIdentity);
 }
 
@@ -534,101 +518,6 @@ export function hydrateCompletedRovoAppActiveRun({
 	return true;
 }
 
-export async function subscribeToRovoAppRunWithLifecycle({
-	activeRun,
-	activeThreadIdRef,
-	fetchRunStream,
-	handleAttachedRunChunk,
-	hydrateThreadById,
-	isNavigationCurrent,
-	navigationIdentity,
-	runSubscriptionAbortControllerRef,
-	runSubscriptionThreadIdRef,
-	setAttachedRunStatus,
-	setInputError,
-	setLocalThreadActiveRun,
-	setRovoMessages,
-	threadId,
-	toUserErrorMessage,
-}: SubscribeToRovoAppRunLifecycleInput): Promise<void> {
-	if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-		return;
-	}
-
-	runSubscriptionAbortControllerRef.current?.abort();
-	const abortController = new AbortController();
-	runSubscriptionAbortControllerRef.current = abortController;
-	runSubscriptionThreadIdRef.current = threadId;
-	setAttachedRunStatus(activeRun?.status === "queued" ? "queued" : "streaming");
-
-	try {
-		const response = await fetchRunStream(threadId, abortController.signal);
-		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-			abortController.abort();
-			return;
-		}
-		if (response.status === 404) {
-			setAttachedRunStatus(null);
-			setLocalThreadActiveRun(threadId, null);
-			if (activeThreadIdRef.current === threadId) {
-				setInputError("The previous run is no longer active.");
-				void hydrateThreadById(threadId);
-			}
-			return;
-		}
-		if (!response.ok || !response.body) {
-			throw new Error(
-				(await response.text().catch(() => "")) || "Failed to attach Rovo run.",
-			);
-		}
-
-		for await (const streamedMessage of readRovoAppDelegationResponseStream({
-			stream: response.body,
-			onChunk: (chunk) => {
-				if (isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-					handleAttachedRunChunk(chunk);
-				}
-			},
-			onError: (error) => {
-				console.error("[RovoApp] Failed to read attached run stream:", error);
-			},
-			terminateOnError: true,
-		})) {
-			if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-				abortController.abort();
-				return;
-			}
-			setAttachedRunStatus("streaming");
-			setRovoMessages((previousMessages) =>
-				upsertRealtimeMessage(previousMessages, streamedMessage),
-			);
-		}
-
-		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-			return;
-		}
-		setAttachedRunStatus(null);
-		setLocalThreadActiveRun(threadId, null);
-		if (activeThreadIdRef.current === threadId) {
-			void hydrateThreadById(threadId);
-		}
-	} catch (error) {
-		if (isRovoAppDelegationAbortError(error) || abortController.signal.aborted) {
-			return;
-		}
-
-		if (!isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
-			return;
-		}
-		setInputError(toUserErrorMessage(error));
-	} finally {
-		if (runSubscriptionAbortControllerRef.current === abortController) {
-			runSubscriptionAbortControllerRef.current = null;
-			runSubscriptionThreadIdRef.current = null;
-		}
-	}
-}
-
 export function resetRovoAppToBlankThreadState({
 	activeThreadIdRef,
 	beginThreadHydration,
@@ -704,7 +593,7 @@ export function resetRovoAppToBlankThreadState({
 	});
 	pendingRouteThreadIdRef.current = null;
 	pendingRouteReadyRef.current = false;
-	setIsLoadingThread(false);
+	setIsLoadingThread?.(false);
 	scheduleComplete(() => {
 		if (isRovoAppThreadNavigationCurrent({ isNavigationCurrent, navigationIdentity })) {
 			completeThreadHydration();

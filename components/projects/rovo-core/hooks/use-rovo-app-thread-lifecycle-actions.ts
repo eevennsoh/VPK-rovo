@@ -37,6 +37,7 @@ import {
 	type RovoAppThreadNavigationIdentity,
 	type RovoAppRefreshThreadsOptions,
 } from "@/components/projects/rovo-core/lib/rovo-app-thread-lifecycle";
+import { shouldSkipRovoAppThreadLoad } from "@/components/projects/rovo-core/lib/rovo-app-thread-route-sync";
 import { pushRovoAppHistoryPath } from "@/components/projects/rovo-core/lib/rovo-app-hook-helpers";
 import {
 	type RovoAppActiveRun,
@@ -482,6 +483,17 @@ export function useRovoAppThreadLifecycleActions({
 
 	const loadThread = useCallback(
 		async (threadId: string) => {
+			if (
+				shouldSkipRovoAppThreadLoad({
+					activeThreadId: activeThreadIdRef.current,
+					hasHydratedThreadState: hasHydratedActiveThreadRef.current,
+					requestedThreadId: threadId,
+				})
+			) {
+				setIsLoadingThread(false);
+				return;
+			}
+
 			const navigationIdentity = beginNavigation();
 			await loadRovoAppThreadWithLifecycle({
 				activeThreadIdRef,

@@ -105,10 +105,9 @@ import {
 	type SendPromptOptions,
 } from "@/app/contexts/rovo-chat-helpers";
 import {
-	RovoChatTransitionCoordinator,
-	type RovoChatTransitionKind,
 	type RovoChatTransitionToken,
 } from "@/app/contexts/rovo-chat-transition-coordinator";
+import { useRovoChatTransitionCoordinator } from "@/app/contexts/use-rovo-chat-transition-coordinator";
 import {
 	isRateLimitError,
 	isChatInProgressError,
@@ -324,8 +323,6 @@ export function RovoChatProvider({
 	const isDispatchingPromptRef = useRef(false);
 	const isCancellingRef = useRef(false);
 	const cancelStreamPromiseRef = useRef<Promise<void> | null>(null);
-	const transitionCoordinatorRef = useLazyRef(() => new RovoChatTransitionCoordinator());
-	const transitionCoordinator = transitionCoordinatorRef.current;
 	const autoSelectedAgentIdRef = useRef<string | null>(null);
 	const lastExplicitCancelAtRef = useRef(0);
 	const lastExplicitCancelKeyRef = useRef("");
@@ -341,31 +338,13 @@ export function RovoChatProvider({
 	// meaningful content to save yet, so the save progression would be noise.
 	const suppressNextSessionAgentSaveStatusRef = useRef(false);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
-	const syncTransitionCancellation = useCallback(() => {
-		isCancellingRef.current = transitionCoordinator.hasCancellationOwner();
-	}, [transitionCoordinator]);
-	const beginTransition = useCallback(
-		(kind: RovoChatTransitionKind) => {
-			const token = transitionCoordinator.begin(kind, {
-				ownsCancellation: true,
-			});
-			syncTransitionCancellation();
-			return token;
-		},
-		[syncTransitionCancellation, transitionCoordinator]
-	);
-	const isCurrentTransition = useCallback(
-		(token: RovoChatTransitionToken) => transitionCoordinator.isCurrent(token),
-		[transitionCoordinator]
-	);
-	const finishTransition = useCallback(
-		(token: RovoChatTransitionToken) => {
-			transitionCoordinator.releaseCancellation(token);
-			syncTransitionCancellation();
-			return transitionCoordinator.isCurrent(token);
-		},
-		[syncTransitionCancellation, transitionCoordinator]
-	);
+	const {
+		beginTransition,
+		finishTransition,
+		hasCancellationOwner,
+		isCurrentTransition,
+		syncTransitionCancellation,
+	} = useRovoChatTransitionCoordinator({ isCancellingRef });
 	const applySessionAgentMutation = useCallback((
 		result: SessionAgentEntryMutationResult,
 		options?: { silentSave?: boolean }
@@ -1813,7 +1792,7 @@ export function RovoChatProvider({
 		try {
 			await cancelCurrentStream();
 		} finally {
-			if (transitionCoordinator.hasCancellationOwner()) {
+			if (hasCancellationOwner()) {
 				syncTransitionCancellation();
 				return;
 			}
@@ -1827,8 +1806,8 @@ export function RovoChatProvider({
 		clearSubmitPending,
 		queueTick,
 		refreshThreads,
+		hasCancellationOwner,
 		syncTransitionCancellation,
-		transitionCoordinator,
 	]);
 
 	const detachCurrentThreadForSwitch = useCallback(async () => {
