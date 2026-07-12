@@ -33,6 +33,11 @@ function createPayloadTooLargeHandler() {
 					"The request included more data than this endpoint can process, often from inline image/file data in chat history. You can continue chatting after starting a new thread or trimming history.",
 			});
 		}
+		if (error?.type === "entity.parse.failed" || (error instanceof SyntaxError && error?.status === 400)) {
+			return res.status(400).json({
+				error: "Invalid JSON request body.",
+			});
+		}
 
 		return next(error);
 	};
