@@ -114,6 +114,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
 	),
+	"agent-sessions": dynamic(
+		() => import("../demos/blocks/agent-sessions-demo"),
+		{ ssr: false },
+	),
 	"task-progress": dynamic(
 		() => import("../demos/blocks/task-progress-demo"),
 		{ ssr: false },
