@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
 
-import { createContext, use, useEffect, useRef, useState } from "react";
+import { createContext, use, useEffect, useState } from "react";
 import { setGlobalTheme } from "@atlaskit/tokens";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import ThemeIcon from "@atlaskit/icon/core/theme";
@@ -62,48 +62,37 @@ const getStoredTheme = (storageKey: string): Theme | undefined => {
 	}
 };
 
+const resolveActualTheme = (theme: Theme): "light" | "dark" => {
+	if (theme === "system") {
+		return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+	}
+	return theme;
+};
+
 export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "ui-theme" }: Readonly<ThemeWrapperProps>) {
+	// Initial render must match the server, which always renders `defaultTheme`
+	// (it has no access to localStorage). The stored theme is applied in the
+	// effect below, once the component has mounted on the client.
 	const [theme, setTheme] = useState<Theme>(defaultTheme);
-	const [actualTheme, setActualTheme] = useState<"light" | "dark">(defaultTheme === "dark" ? "dark" : "light");
-	const hasHydratedThemeRef = useRef(false);
+	const [actualTheme, setActualTheme] = useState<"light" | "dark">(() => resolveActualTheme(defaultTheme));
+
+	// Apply the stored theme preference after mount. Runs unconditionally (no
+	// ref-gating) so React's dev-mode double-invoke of effects can't drop the
+	// update — every invocation reads storage fresh and calls setTheme with the
+	// same result.
+	useEffect(() => {
+		const storedTheme = getStoredTheme(storageKey);
+		if (storedTheme) {
+			setTheme(storedTheme);
+		}
+	}, [storageKey]);
 
 	// Update actual theme based on current theme setting
 	useEffect(() => {
 		let unbind: (() => void) | undefined;
-		let isUnmounted = false;
-		let effectiveTheme = theme;
-
-		if (!hasHydratedThemeRef.current) {
-			hasHydratedThemeRef.current = true;
-
-			const storedTheme = getStoredTheme(storageKey);
-			if (storedTheme) {
-				effectiveTheme = storedTheme;
-				if (storedTheme !== theme) {
-					const syncStoredTheme = () => {
-						if (!isUnmounted) {
-							setTheme(storedTheme);
-						}
-					};
-
-					if (typeof queueMicrotask === "function") {
-						queueMicrotask(syncStoredTheme);
-					} else {
-						setTimeout(syncStoredTheme, 0);
-					}
-				}
-			}
-		}
 
 		const updateActualTheme = () => {
-			let newActualTheme: "light" | "dark" = "light";
-
-			if (effectiveTheme === "system") {
-				newActualTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-			} else {
-				newActualTheme = effectiveTheme;
-			}
-
+			const newActualTheme = resolveActualTheme(theme);
 			setActualTheme(newActualTheme);
 
 			// Update document class for Tailwind dark mode + color-scheme
@@ -117,7 +106,7 @@ export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "u
 
 		updateActualTheme();
 		void setGlobalTheme({
-			colorMode: effectiveTheme === "system" ? "auto" : effectiveTheme,
+			colorMode: theme === "system" ? "auto" : theme,
 			light: "light",
 			dark: "dark",
 			spacing: "spacing",
@@ -128,18 +117,16 @@ export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "u
 		});
 
 		// Listen for system theme changes when in system mode
-		if (effectiveTheme === "system") {
+		if (theme === "system") {
 			const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 			mediaQuery.addEventListener("change", updateActualTheme);
 			return () => {
-				isUnmounted = true;
 				mediaQuery.removeEventListener("change", updateActualTheme);
 				unbind?.();
 			};
 		}
 
 		return () => {
-			isUnmounted = true;
 			unbind?.();
 		};
 	}, [storageKey, theme]);
