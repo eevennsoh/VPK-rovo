@@ -5,6 +5,11 @@ const projectRoot = process.cwd();
 const nextConfig: NextConfig = {
 	devIndicators: false,
 	allowedDevOrigins: ["vpk-rovo.localhost", "*.vpk-rovo.localhost"],
+	...(process.env.NODE_ENV === "development" && {
+		env: {
+			NEXT_PUBLIC_VPK_REPO_ROOT: projectRoot,
+		},
+	}),
 
 	experimental: {
 		viewTransition: true,

@@ -3,6 +3,24 @@ import type { SelectorPin, StyleReport } from "./types";
 
 const MAX_SNIPPET_CHARS = 500;
 
+export type VpkHtmlVideoNarration =
+	| { source: "notes"; content: string }
+	| { source: "script"; content: string }
+	| { source: "none" };
+
+export type VpkHtmlVideoSound =
+	| { source: "none" }
+	| { source: "description"; content: string }
+	| { source: "path"; content: string };
+
+export interface ComposeVpkHtmlVideoPromptOptions {
+	artifactAbsolutePath: string;
+	narration: VpkHtmlVideoNarration;
+	outputSlug?: string;
+	pagePath: string;
+	sound: VpkHtmlVideoSound;
+}
+
 function truncateSnippet(snippet: string): string {
 	if (snippet.length <= MAX_SNIPPET_CHARS) {
 		return snippet;
@@ -94,6 +112,67 @@ export function composeHtmlSelectorPrompt(pins: ReadonlyArray<SelectorPin>): str
 		lines.push(...formatStyleEdits(pin));
 		lines.push(...formatStyleFindings(pin.styleFindings));
 	});
+
+	return lines.join("\n");
+}
+
+export function getVpkHtmlOutputSlug(pagePath: string): string {
+	const fileName = pagePath.split("/").filter(Boolean).at(-1) ?? "index.html";
+	const withoutExtension = fileName.replace(/\.html$/iu, "") || "index";
+	return withoutExtension
+		.toLowerCase()
+		.replace(/[^a-z0-9-]+/gu, "-")
+		.replace(/^-+|-+$/gu, "") || "artifact";
+}
+
+function formatVideoNarration(narration: VpkHtmlVideoNarration): string[] {
+	if (narration.source === "none") {
+		return ["Narration: none. Build a silent visual video unless the artifact itself supplies text timing."];
+	}
+
+	const label = narration.source === "notes" ? "speaker notes" : "inline script";
+	const content = narration.content.trim() || "(empty)";
+	return [
+		`Narration source: ${label}.`,
+		"Use this narration content:",
+		"```text",
+		content,
+		"```",
+	];
+}
+
+function formatVideoSound(sound: VpkHtmlVideoSound): string {
+	if (sound.source === "description") {
+		return `Background sound: generate or source audio from this description: ${sound.content.trim() || "(empty description)"}.`;
+	}
+	if (sound.source === "path") {
+		return `Background sound: use this local file path if it exists: ${sound.content.trim() || "(empty path)"}.`;
+	}
+
+	return "Background sound: none.";
+}
+
+export function composeVpkHtmlVideoPrompt({
+	artifactAbsolutePath,
+	narration,
+	outputSlug,
+	pagePath,
+	sound,
+}: Readonly<ComposeVpkHtmlVideoPromptOptions>): string {
+	const slug = outputSlug || getVpkHtmlOutputSlug(pagePath);
+	const lines = [
+		"[vpk-html video conversion]",
+		"Load and follow the repo-local vpk-html skill and the hyperframes skill before starting.",
+		"Use the HTML artifact as the source of truth; do not rewrite the catalog source unless the video workflow absolutely requires a derived copy.",
+		`Artifact absolute path: ${artifactAbsolutePath}`,
+		`Served page path: /api/vpk-html/${pagePath}`,
+		`Write all generated video project files, captures, audio, and exports under output/vpk-html/${slug}/.`,
+		"Keep intermediate assets inside that output folder and report the final video/export path when finished.",
+		"",
+		...formatVideoNarration(narration),
+		"",
+		formatVideoSound(sound),
+	];
 
 	return lines.join("\n");
 }

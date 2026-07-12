@@ -869,13 +869,37 @@
 			"method": "GET",
 			"path": "/api/vpk-html",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:101"
+			"source": "backend/routes/vpk-html.js:399"
 		},
 		{
 			"method": "GET",
 			"path": "/api/vpk-html/*assetPath",
 			"runtimeAdmin": false,
-			"source": "backend/routes/vpk-html.js:102"
+			"source": "backend/routes/vpk-html.js:400"
+		},
+		{
+			"method": "POST",
+			"path": "/api/vpk-html/apply-tokens",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:292"
+		},
+		{
+			"method": "GET",
+			"path": "/api/vpk-html/notes",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:317"
+		},
+		{
+			"method": "PUT",
+			"path": "/api/vpk-html/notes",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:338"
+		},
+		{
+			"method": "POST",
+			"path": "/api/vpk-html/publish-gist",
+			"runtimeAdmin": false,
+			"source": "backend/routes/vpk-html.js:365"
 		},
 		{
 			"method": "POST",
@@ -2468,6 +2492,54 @@
 					"method": "GET",
 					"path": "/api/vpk-html/*assetPath",
 					"source": "app/api/vpk-html/[...assetPath]/route.ts:15"
+				}
+			]
+		},
+		{
+			"method": "POST",
+			"nextPath": "/api/vpk-html/apply-tokens",
+			"source": "app/api/vpk-html/apply-tokens/route.ts:5",
+			"targets": [
+				{
+					"method": "POST",
+					"path": "/api/vpk-html/apply-tokens",
+					"source": "app/api/vpk-html/apply-tokens/route.ts:11"
+				}
+			]
+		},
+		{
+			"method": "GET",
+			"nextPath": "/api/vpk-html/notes",
+			"source": "app/api/vpk-html/notes/route.ts:5",
+			"targets": [
+				{
+					"method": "GET",
+					"path": "/api/vpk-html/notes",
+					"source": "app/api/vpk-html/notes/route.ts:8"
+				}
+			]
+		},
+		{
+			"method": "PUT",
+			"nextPath": "/api/vpk-html/notes",
+			"source": "app/api/vpk-html/notes/route.ts:14",
+			"targets": [
+				{
+					"method": "PUT",
+					"path": "/api/vpk-html/notes",
+					"source": "app/api/vpk-html/notes/route.ts:22"
+				}
+			]
+		},
+		{
+			"method": "POST",
+			"nextPath": "/api/vpk-html/publish-gist",
+			"source": "app/api/vpk-html/publish-gist/route.ts:5",
+			"targets": [
+				{
+					"method": "POST",
+					"path": "/api/vpk-html/publish-gist",
+					"source": "app/api/vpk-html/publish-gist/route.ts:11"
 				}
 			]
 		},

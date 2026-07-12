@@ -2,12 +2,14 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getDispatchErrorMessage, parseDispatchResponseBody } from "@/components/blocks/html-selector/lib/dispatch-error";
 import { getBridge } from "../lib/bridge";
 import { getDiskPathForPage, resolveIframePage } from "../lib/page-path";
 import { composeHtmlSelectorPrompt } from "../lib/prompt-composer";
 import { useAgentPreference } from "../hooks/use-agent-preference";
 import { useSelectorBridge } from "../hooks/use-selector-bridge";
 import { useSelectorPins } from "../hooks/use-selector-pins";
+import { ArtifactActionBar } from "./artifact-action-bar";
 import type {
 	AgentId,
 	ElementContextPayload,
@@ -23,6 +25,7 @@ const EMPTY_PINS: SelectorPin[] = [];
 
 export interface HtmlSelectorProps {
 	className?: string;
+	repoRoot?: string;
 	src?: string;
 	srcDoc?: string;
 	title?: string;
@@ -55,6 +58,7 @@ async function copyText(text: string): Promise<void> {
 
 export function HtmlSelector({
 	className,
+	repoRoot = process.env.NEXT_PUBLIC_VPK_REPO_ROOT,
 	src,
 	srcDoc,
 	title = "HTML selector preview",
@@ -172,9 +176,9 @@ export function HtmlSelector({
 			method: "POST",
 		})
 			.then(async (response) => {
-				const payload = await response.json() as { error?: string; sessionName?: string; windowName?: string };
+				const payload = parseDispatchResponseBody(await response.text());
 				if (!response.ok) {
-					throw new Error(payload.error ?? "Failed to dispatch prompt.");
+					throw new Error(getDispatchErrorMessage(payload.error ?? "Failed to dispatch prompt."));
 				}
 				notifyBridge({
 					type: "success",
@@ -182,7 +186,10 @@ export function HtmlSelector({
 				});
 			})
 			.catch((error) => {
-				notifyBridge({ type: "error", message: error instanceof Error ? error.message : String(error) });
+				notifyBridge({
+					type: "error",
+					message: getDispatchErrorMessage(error instanceof Error ? error.message : String(error)),
+				});
 			});
 	}, [agent, allPins, notifyBridge]);
 
@@ -235,17 +242,26 @@ export function HtmlSelector({
 	}
 
 	return (
-		<iframe
-			ref={iframeRef}
-			src={src}
-			srcDoc={srcDoc}
-			title={title}
-			data-html-selector-active={bridgeState.enabled ? "true" : "false"}
-			className={cn("block h-dvh min-h-[560px] w-full border-0 bg-surface", className)}
-			onLoad={() => {
-				const page = resolveIframePage(iframeRef.current);
-				setPagePath(page.pagePath);
-			}}
-		/>
+		<div className={cn("relative h-dvh min-h-[560px] bg-surface", className)}>
+			<iframe
+				ref={iframeRef}
+				src={src}
+				srcDoc={srcDoc}
+				title={title}
+				data-html-selector-active={bridgeState.enabled ? "true" : "false"}
+				className="block h-full w-full border-0 bg-surface"
+				onLoad={() => {
+					const page = resolveIframePage(iframeRef.current);
+					setPagePath(page.pagePath);
+				}}
+			/>
+			<ArtifactActionBar
+				agent={agent}
+				iframeRef={iframeRef}
+				onNotify={notifyBridge}
+				pagePath={pagePath}
+				repoRoot={repoRoot}
+			/>
+		</div>
 	);
 }
