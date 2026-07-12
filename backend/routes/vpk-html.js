@@ -130,21 +130,28 @@ function escapeRegExp(value) {
 function applyTokenOverridesToHtml(html, tokenEntries) {
 	let changed = false;
 	const nextHtml = html.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/giu, (match, openTag, styleBody, closeTag) => {
-		let nextStyleBody = styleBody;
-		for (const [tokenName, tokenValue] of tokenEntries) {
-			const tokenPattern = new RegExp(
-				`(^|[\\s{;])(${escapeRegExp(tokenName)}\\s*:\\s*)([^;{}<>]*)(;)`,
-				"gimu",
-			);
-			nextStyleBody = nextStyleBody.replace(tokenPattern, (_declaration, prefix, declarationStart, oldValue, suffix) => {
-				if (oldValue === tokenValue) {
-					return `${prefix}${declarationStart}${oldValue}${suffix}`;
-				}
+		// Rewrite only inside base `:root { ... }` blocks. Scoped theme
+		// overrides (e.g. `[data-theme="dark"] { --focal: ... }`) keep their
+		// own values — flattening them breaks dark mode across artifacts.
+		const nextStyleBody = styleBody.replace(/(^|[\s}])(:root\s*\{)([^{}]*)(\})/gu, (_block, lead, blockOpen, blockBody, blockClose) => {
+			let nextBlockBody = blockBody;
+			for (const [tokenName, tokenValue] of tokenEntries) {
+				const tokenPattern = new RegExp(
+					`(^|[\\s{;])(${escapeRegExp(tokenName)}\\s*:\\s*)([^;{}<>]*)(;)`,
+					"gimu",
+				);
+				nextBlockBody = nextBlockBody.replace(tokenPattern, (_declaration, prefix, declarationStart, oldValue, suffix) => {
+					if (oldValue === tokenValue) {
+						return `${prefix}${declarationStart}${oldValue}${suffix}`;
+					}
 
-				changed = true;
-				return `${prefix}${declarationStart}${tokenValue}${suffix}`;
-			});
-		}
+					changed = true;
+					return `${prefix}${declarationStart}${tokenValue}${suffix}`;
+				});
+			}
+
+			return `${lead}${blockOpen}${nextBlockBody}${blockClose}`;
+		});
 
 		return `${openTag}${nextStyleBody}${closeTag}`;
 	});

@@ -93,7 +93,7 @@ export function ArtifactActionBar({
 				className,
 			)}
 		>
-			<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-lg border border-border bg-surface-raised/95 p-1 shadow-lg backdrop-blur">
+			<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-lg border border-border bg-surface-raised p-1 shadow-lg">
 				<Button type="button" variant="ghost" size="compact" onClick={handlePrint} title="Print or save as PDF">
 					<PrinterIcon label="" />
 					<span>Print / PDF</span>

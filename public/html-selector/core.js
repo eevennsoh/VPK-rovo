@@ -5,6 +5,10 @@
 	var utils = window.__VPK_HTML_SELECTOR_UTILS__;
 	var uiFactory = window.__VPK_HTML_SELECTOR_UI__;
 	var inspectApi = window.__VPK_HTML_SELECTOR_INSPECT__;
+	var ICONS = utils.selectorIcons;
+	var getRect = utils.getRect;
+	var summarizeTag = utils.summarizeTag;
+	var matchesShortcut = utils.matchesShortcut;
 	if (!utils || !inspectApi) {
 		return;
 	}
@@ -14,15 +18,6 @@
 		otherPagesCount: 0,
 		otherPagesPinCount: 0,
 	};
-	var ICONS = {
-		chevronLeft: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		chevronRight: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		comment: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M21 12a8 8 0 0 1-8 8H7l-4 3v-6.5A8 8 0 1 1 21 12Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		copy: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><rect x=\"8\" y=\"8\" width=\"11\" height=\"11\" rx=\"2\" stroke-width=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>",
-		cursor: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m4 3 7.8 18 2.2-7 7-2.2L4 3Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		send: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m22 2-7 20-4-9-9-4 20-7Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M22 2 11 13\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>",
-	};
-
 	var state = {
 		active: false,
 		activationMode: "toggle",
@@ -127,25 +122,6 @@
 		if (commentsListOpen && ui) {
 			ui.showCommentsList({ meta: state.pinsMeta, pins: state.pins });
 		}
-	}
-
-	function getRect(element) {
-		var rect = element.getBoundingClientRect();
-		return {
-			bottom: Math.round(rect.bottom),
-			height: Math.round(rect.height),
-			left: Math.round(rect.left),
-			right: Math.round(rect.right),
-			top: Math.round(rect.top),
-			width: Math.round(rect.width),
-		};
-	}
-
-	function summarizeTag(element) {
-		var tagName = (element.localName || element.tagName || "element").toLowerCase();
-		var id = element.id ? "#" + element.id : "";
-		var classes = Array.prototype.slice.call(element.classList || []).slice(0, 3);
-		return tagName + id + (classes.length ? "." + classes.join(".") : "");
 	}
 
 	function isSelectorChrome(element) {
@@ -318,25 +294,6 @@
 		}
 		controller.renderPins(items);
 	}
-
-	function matchesShortcut(shortcut, event) {
-		if (!shortcut || !shortcut.key) {
-			return false;
-		}
-		if (String(shortcut.key).toLowerCase() !== String(event.key).toLowerCase()) {
-			return false;
-		}
-		if (shortcut.metaOrCtrl !== undefined && Boolean(event.metaKey || event.ctrlKey) !== Boolean(shortcut.metaOrCtrl)) {
-			return false;
-		}
-		if (shortcut.shift !== undefined && Boolean(event.shiftKey) !== Boolean(shortcut.shift)) {
-			return false;
-		}
-		if (shortcut.alt !== undefined && Boolean(event.altKey) !== Boolean(shortcut.alt)) {
-			return false;
-			}
-			return true;
-		}
 
 		function isEditableTarget(target) {
 		if (!target || !target.closest) {
