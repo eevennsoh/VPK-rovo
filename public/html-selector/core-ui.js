@@ -79,10 +79,84 @@
 		var collapsed = false;
 		var lastBarData = {
 			active: false,
-			agent: "claude",
+			agent: "codex",
 			enabled: false,
 			pinCount: 0,
 		};
+
+		function getAgentLabel(agentId) {
+			for (var index = 0; index < AGENTS.length; index += 1) {
+				if (AGENTS[index].id === agentId) {
+					return AGENTS[index].label;
+				}
+			}
+			return "Codex";
+		}
+
+		function getSendLabel(agentId) {
+			return "Send to " + getAgentLabel(agentId);
+		}
+
+		function isLayerVisible(layer) {
+			return Boolean(layer && layer.classList.contains("vpkhs-visible"));
+		}
+
+		function getVisibleLayerForTarget(target) {
+			var node = target && target.nodeType === 1 ? target : target && target.parentElement;
+			if (!root || !node || !root.contains(node) || typeof node.closest !== "function") {
+				return null;
+			}
+			var layer = node.closest(".vpkhs-popover.vpkhs-visible, .vpkhs-tree.vpkhs-visible");
+			return layer && root.contains(layer) ? layer : null;
+		}
+
+		function canElementScroll(element, deltaX, deltaY) {
+			var canScrollY = element.scrollHeight > element.clientHeight + 1 && (
+				(deltaY < 0 && element.scrollTop > 0)
+				|| (deltaY > 0 && element.scrollTop + element.clientHeight < element.scrollHeight - 1)
+			);
+			var canScrollX = element.scrollWidth > element.clientWidth + 1 && (
+				(deltaX < 0 && element.scrollLeft > 0)
+				|| (deltaX > 0 && element.scrollLeft + element.clientWidth < element.scrollWidth - 1)
+			);
+			return canScrollY || canScrollX;
+		}
+
+		function canWheelScrollInside(layer, target, deltaX, deltaY) {
+			var node = target && target.nodeType === 1 ? target : target && target.parentElement;
+			while (node && root && root.contains(node)) {
+				if (canElementScroll(node, deltaX, deltaY)) {
+					return true;
+				}
+				if (node === layer) {
+					break;
+				}
+				node = node.parentElement;
+			}
+			return false;
+		}
+
+		function handlePopoverWheel(event) {
+			var layer = getVisibleLayerForTarget(event.target);
+			if (!layer) {
+				return;
+			}
+			if (!canWheelScrollInside(layer, event.target, event.deltaX, event.deltaY)) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+		}
+
+		function getOpenLayers() {
+			return {
+				agentPopover: isLayerVisible(agentPopover),
+				commentPopover: isLayerVisible(commentPopover),
+				commentsList: isLayerVisible(commentsList),
+				contextMenu: isLayerVisible(contextMenu),
+				stylePopover: isLayerVisible(stylePopover),
+				tree: isLayerVisible(tree),
+			};
+		}
 
 		function ensure() {
 			if (root) {
@@ -108,36 +182,43 @@
 			bar.className = "vpkhs-bar";
 			root.appendChild(bar);
 
-			tree = document.createElement("div");
-			tree.className = "vpkhs-tree";
-			root.appendChild(tree);
+				tree = document.createElement("div");
+				tree.className = "vpkhs-tree";
+				tree.tabIndex = -1;
+				root.appendChild(tree);
 
-			contextMenu = document.createElement("div");
-			contextMenu.className = "vpkhs-popover vpkhs-menu";
-			root.appendChild(contextMenu);
+				contextMenu = document.createElement("div");
+				contextMenu.className = "vpkhs-popover vpkhs-menu";
+				contextMenu.tabIndex = -1;
+				root.appendChild(contextMenu);
 
-			commentPopover = document.createElement("div");
-			commentPopover.className = "vpkhs-popover vpkhs-comment-popover";
-			root.appendChild(commentPopover);
+				commentPopover = document.createElement("div");
+				commentPopover.className = "vpkhs-popover vpkhs-comment-popover";
+				commentPopover.tabIndex = -1;
+				root.appendChild(commentPopover);
 
-			stylePopover = document.createElement("div");
-			stylePopover.className = "vpkhs-popover vpkhs-style-popover";
-			root.appendChild(stylePopover);
+				stylePopover = document.createElement("div");
+				stylePopover.className = "vpkhs-popover vpkhs-style-popover";
+				stylePopover.tabIndex = -1;
+				root.appendChild(stylePopover);
 
-			commentsList = document.createElement("div");
-			commentsList.className = "vpkhs-popover vpkhs-comments-list";
-			root.appendChild(commentsList);
+				commentsList = document.createElement("div");
+				commentsList.className = "vpkhs-popover vpkhs-comments-list";
+				commentsList.tabIndex = -1;
+				root.appendChild(commentsList);
 
-			agentPopover = document.createElement("div");
-			agentPopover.className = "vpkhs-popover vpkhs-agent-popover";
-			root.appendChild(agentPopover);
+				agentPopover = document.createElement("div");
+				agentPopover.className = "vpkhs-popover vpkhs-agent-popover";
+				agentPopover.tabIndex = -1;
+				root.appendChild(agentPopover);
 
 			toast = document.createElement("div");
 			toast.className = "vpkhs-toast";
 			root.appendChild(toast);
 
-			document.addEventListener("pointerdown", handleOutsidePointerDown, true);
-		}
+				document.addEventListener("pointerdown", handleOutsidePointerDown, true);
+				document.addEventListener("wheel", handlePopoverWheel, { capture: true, passive: false });
+			}
 
 		function handleOutsidePointerDown(event) {
 			if (!root || root.contains(event.target)) {
@@ -180,7 +261,12 @@
 				commentsButton.appendChild(badge);
 			}
 			bar.appendChild(commentsButton);
-			var sendButton = createButton("vpkhs-tool-button", "Send", icons.send, callbacks.onSend || function () {});
+			var sendButton = createButton(
+				"vpkhs-tool-button",
+				getSendLabel(lastBarData.agent) + " (right-click to switch agent)",
+				icons.send,
+				callbacks.onSend || function () {},
+			);
 			sendButton.addEventListener("contextmenu", function (event) {
 				event.preventDefault();
 				event.stopPropagation();
@@ -401,9 +487,18 @@
 					row.className = "vpkhs-style-row";
 					var labelWrap = document.createElement("div");
 					labelWrap.className = "vpkhs-style-label";
+					var labelText = document.createElement("div");
+					labelText.className = "vpkhs-style-label-text";
 					var name = document.createElement("span");
+					name.className = "vpkhs-style-name";
 					name.textContent = rowData.property;
-					labelWrap.appendChild(name);
+					labelText.appendChild(name);
+					var tokenBadge = document.createElement("span");
+					tokenBadge.className = "vpkhs-token-badge" + (rowData.provenanceCustom ? " vpkhs-token-badge-custom" : "");
+					tokenBadge.textContent = rowData.provenanceLabel || "Custom style";
+					tokenBadge.title = rowData.provenanceTitle || tokenBadge.textContent;
+					labelText.appendChild(tokenBadge);
+					labelWrap.appendChild(labelText);
 					if (rowData.origin) {
 						var badge = document.createElement("span");
 						badge.className = "vpkhs-origin-badge" + (rowData.override ? " vpkhs-origin-badge-warn" : "");
@@ -455,6 +550,8 @@
 
 		function showCommentsList(data) {
 			ensure();
+			var wasVisible = commentsList.classList.contains("vpkhs-visible");
+			var previousScrollTop = wasVisible ? commentsList.scrollTop : 0;
 			clear(commentsList);
 			commentsList.appendChild(createText("vpkhs-popover-title", data.pins.length + " pins on this page"));
 			var list = document.createElement("div");
@@ -495,13 +592,22 @@
 			}
 			var actions = document.createElement("div");
 			actions.className = "vpkhs-actions";
+			var agentId = data.meta && data.meta.agent ? data.meta.agent : lastBarData.agent;
+			var agentLabel = getAgentLabel(agentId);
 			var copy = createButton("vpkhs-secondary-button", "Copy all", "", callbacks.onCopyAll || function () {});
 			copy.textContent = "Copy all";
-			var send = createButton("vpkhs-primary-button", "Send", "", callbacks.onSend || function () {});
-			send.textContent = "Send";
-			actions.append(copy, send);
+			var agentButton = createButton("vpkhs-secondary-button vpkhs-agent-button", "Change agent, current " + agentLabel, "", function () {
+				showAgentPopover(agentButton.getBoundingClientRect());
+			});
+			agentButton.textContent = agentLabel;
+			var send = createButton("vpkhs-primary-button", "Send to " + agentLabel, "", callbacks.onSend || function () {});
+			send.textContent = "Send to " + agentLabel;
+			actions.append(copy, agentButton, send);
 			commentsList.appendChild(actions);
 			commentsList.classList.add("vpkhs-visible");
+			if (wasVisible) {
+				commentsList.scrollTop = previousScrollTop;
+			}
 		}
 
 		function hideCommentsList() {
@@ -570,21 +676,24 @@
 		function destroy() {
 			if (!root) {
 				return;
+				}
+				document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
+				document.removeEventListener("wheel", handlePopoverWheel, true);
+				window.clearTimeout(toastTimer);
+				root.remove();
+				root = null;
 			}
-			document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
-			window.clearTimeout(toastTimer);
-			root.remove();
-			root = null;
-		}
 
-		return {
-			closePopovers: closePopovers,
-			destroy: destroy,
-			hideCommentPopover: hideCommentPopover,
-			hideContextMenu: hideContextMenu,
-			hideCommentsList: hideCommentsList,
-			hideStylePopover: hideStylePopover,
-			hideTree: hideTree,
+			return {
+				closePopovers: closePopovers,
+				destroy: destroy,
+				getOpenLayers: getOpenLayers,
+				hideCommentPopover: hideCommentPopover,
+				hideContextMenu: hideContextMenu,
+				hideCommentsList: hideCommentsList,
+				hideAgentPopover: hideAgentPopover,
+				hideStylePopover: hideStylePopover,
+				hideTree: hideTree,
 			notify: notify,
 			renderBar: renderBar,
 			renderPins: renderPins,
