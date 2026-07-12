@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const express = require("express");
+const http = require("node:http");
 const test = require("node:test");
 
 const {
@@ -37,6 +39,33 @@ function createFakeApp() {
 			uses.push(args);
 		},
 	};
+}
+
+async function withServer(run) {
+	const app = express();
+	registerBodyLimitMiddleware(app);
+	app.post("/api/test", (_req, res) => {
+		res.json({ ok: true });
+	});
+
+	const server = http.createServer(app);
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address();
+	const baseUrl = `http://127.0.0.1:${address.port}`;
+
+	try {
+		await run(baseUrl);
+	} finally {
+		await new Promise((resolve, reject) => {
+			server.close((error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve();
+			});
+		});
+	}
 }
 
 test("body limit route table preserves exact scoped parser limits", () => {
@@ -124,4 +153,20 @@ test("payload-too-large handler preserves response shape and passes other errors
 		nextCalls.push(error);
 	});
 	assert.deepEqual(nextCalls, [passthroughError]);
+});
+
+test("body limit middleware maps JSON parse failures to structured API errors", async () => {
+	await withServer(async (baseUrl) => {
+		const response = await fetch(`${baseUrl}/api/test`, {
+			body: "{",
+			headers: { "Content-Type": "application/json" },
+			method: "POST",
+		});
+
+		assert.equal(response.status, 400);
+		assert.match(response.headers.get("content-type") ?? "", /application\/json/u);
+		assert.deepEqual(await response.json(), {
+			error: "Invalid JSON request body.",
+		});
+	});
 });
