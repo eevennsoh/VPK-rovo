@@ -295,7 +295,7 @@ export function RovoChatProvider({
 	const [sessionAgentSaveStatus, setSessionAgentSaveStatus] = useState<StudioSessionAgentSaveStatus>("idle");
 	const [sessionAgentSavedAt, setSessionAgentSavedAt] = useState<number | null>(null);
 	const hasRehydratedPublishedAgentsRef = useRef(false);
-	const hasInitializedSessionAgentsRef = useRef(false);
+	const lastSeenSessionAgentEntriesRef = useRef<SessionAgentEntry[] | null>(null);
 
 	const errorCounterRef = useRef(0);
 	const queueIdRef = useRef(0);
@@ -407,8 +407,22 @@ export function RovoChatProvider({
 
 	useEffect(() => {
 		sessionAgentEntriesRef.current = normalizedSessionAgentEntries;
-		if (!hasInitializedSessionAgentsRef.current) {
-			hasInitializedSessionAgentsRef.current = true;
+
+		// Skip the initial rehydration and React 19 StrictMode's dev-only mount
+		// double-invoke, which re-runs this effect with the *same* entries
+		// reference. Persisting on either would fire a spurious debounced save
+		// plus a "Saving…/Saved" flash for data the user never touched. A boolean
+		// "has initialized" flag does NOT survive the double-invoke: the first
+		// pass flips it and registers no cleanup, so the second pass sees it
+		// already set and falls through to a real save. Gating on the last-seen
+		// reference is resilient because both mount invocations carry the
+		// identical value, while genuine edits always produce a new array.
+		const previousSessionAgentEntries = lastSeenSessionAgentEntriesRef.current;
+		lastSeenSessionAgentEntriesRef.current = normalizedSessionAgentEntries;
+		if (
+			previousSessionAgentEntries === null ||
+			previousSessionAgentEntries === normalizedSessionAgentEntries
+		) {
 			return;
 		}
 
