@@ -6,6 +6,7 @@ import { code as baseCodePlugin } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import { Streamdown } from "streamdown";
+import { streamdownComponents } from "@/components/ui-custom/message-markdown";
 import { fetchPage, updatePage } from "./lib/personal-graph-api";
 import type { PageBody, VaultNode } from "./lib/personal-graph-types";
 
@@ -198,7 +199,8 @@ export function PersonalGraphPage({
 							</dl>
 						) : null}
 						<Streamdown
-							className="prose prose-sm max-w-none text-text [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+							className="typeset typeset-docs max-w-none text-text [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+							components={streamdownComponents}
 							mode="static"
 							plugins={streamdownPlugins}
 						>
