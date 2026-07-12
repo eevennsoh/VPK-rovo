@@ -166,7 +166,7 @@ export default function AppsDirectoryPage() {
 	}
 
 	return (
-		<div className="flex h-full min-h-[400px] items-center justify-center gap-3 p-4">
+		<div className="flex h-full min-h-screen items-center justify-center gap-3 p-4">
 			<Button onClick={() => openDirectory("default")} variant="outline">
 				Open standard directory
 			</Button>
@@ -203,7 +203,7 @@ function AppsDirectoryPageShell({
 	variant?: AppsDirectoryVariant;
 }>) {
 	return (
-		<div className="flex h-full min-h-[400px] items-center justify-center p-4">
+		<div className="flex h-full min-h-screen items-center justify-center p-4">
 			<Button onClick={() => onOpenChange(true)}>
 				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
 			</Button>

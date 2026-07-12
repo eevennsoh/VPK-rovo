@@ -32,7 +32,7 @@ test("Tools Directory docs demo starts closed until the trigger is clicked", () 
 	const pageSource = readProjectFile("components/blocks/tools-directory/page.tsx");
 
 	assert.match(pageSource, /const \[open, setOpen\] = useState\(false\);/u);
-	assert.match(pageSource, /className="flex h-full min-h-\[400px\] items-center justify-center p-4"/u);
+	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center p-4"/u);
 });
 
 test("Tools Directory detail header uses 24px vertical padding", () => {

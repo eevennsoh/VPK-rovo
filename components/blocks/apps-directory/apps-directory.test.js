@@ -349,8 +349,8 @@ test("Apps Directory exposes an opt-in experimental variation", () => {
 	// The docs page offers both entry points and a dedicated experimental page.
 	assert.match(pageSource, /export function AppsDirectoryExperimentalPage/u);
 	assert.match(pageSource, /variant="experimental"/u);
-	assert.match(pageSource, /className="flex h-full min-h-\[400px\] items-center justify-center gap-3 p-4"/u);
-	assert.match(pageSource, /className="flex h-full min-h-\[400px\] items-center justify-center p-4"/u);
+	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center gap-3 p-4"/u);
+	assert.match(pageSource, /className="flex h-full min-h-screen items-center justify-center p-4"/u);
 	assert.match(pageSource, /Open standard directory/u);
 	assert.match(pageSource, /Open experimental directory/u);
 });
