@@ -12,5 +12,5 @@ export function AgentSessionsDemoStandard() {
 }
 
 export function AgentSessionsDemoExperimental() {
-	return <AgentSessions variant="experimental" />;
+	return <AgentSessions variant="experimental" initialExperimentalPreset="filled" />;
 }

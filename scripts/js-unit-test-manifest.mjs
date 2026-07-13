@@ -66,6 +66,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/work-item-widget/work-item-widget.test.js",
 	],
 	"source-contract": [
+		"components/blocks/agent-sessions/agent-sessions.test.js",
 		"components/projects/rovo-core/lib/rovo-app-route-adapter.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.test.js",

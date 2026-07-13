@@ -9,6 +9,7 @@ export {
 	AgentSessions,
 	type AgentSessionsProps,
 	type AgentSessionsVariant,
+	type AgentSessionsExperimentalPreset,
 } from "./index";
 
 export default function AgentSessionsPage() {
@@ -17,8 +18,10 @@ export default function AgentSessionsPage() {
 	if (activeVariant) {
 		return (
 			<AgentSessions
+				key={activeVariant}
 				initialIssueOpen
 				variant={activeVariant}
+				initialExperimentalPreset="filled"
 				onIssueClose={() => setActiveVariant(null)}
 			/>
 		);
@@ -26,17 +29,10 @@ export default function AgentSessionsPage() {
 
 	return (
 		<div className="flex h-full min-h-screen items-center justify-center gap-3 p-4">
-			<Button
-				type="button"
-				variant="outline"
-				onClick={() => setActiveVariant("default")}
-			>
+			<Button type="button" variant="outline" onClick={() => setActiveVariant("default")}>
 				Open standard session
 			</Button>
-			<Button
-				type="button"
-				onClick={() => setActiveVariant("experimental")}
-			>
+			<Button type="button" onClick={() => setActiveVariant("experimental")}>
 				Open experimental session
 			</Button>
 		</div>
@@ -44,5 +40,5 @@ export default function AgentSessionsPage() {
 }
 
 export function AgentSessionsExperimentalPage() {
-	return <AgentSessions variant="experimental" />;
+	return <AgentSessions variant="experimental" initialExperimentalPreset="filled" />;
 }
