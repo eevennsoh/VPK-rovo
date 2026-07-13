@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutProps } from "@/app/preview/_shared/preview-metadata";
 
-const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set(["agent-sessions", "terminal-switch"]);
+const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set([
+	"agent-sessions",
+	"agent-sessions-demo-standard",
+	"agent-sessions-demo-experimental",
+	"terminal-switch",
+]);
 
 export async function generateMetadata({ params }: PreviewLayoutProps): Promise<Metadata> {
 	return getCategoryPreviewMetadata(params, "blocks");

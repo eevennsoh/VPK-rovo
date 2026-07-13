@@ -117,6 +117,20 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-sessions-demo"),
 		{ ssr: false },
 	),
+	"agent-sessions-demo-standard": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoStandard,
+			})),
+		{ ssr: false },
+	),
+	"agent-sessions-demo-experimental": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoExperimental,
+			})),
+		{ ssr: false },
+	),
 	"task-progress": dynamic(
 		() => import("../demos/blocks/task-progress-demo"),
 		{ ssr: false },
