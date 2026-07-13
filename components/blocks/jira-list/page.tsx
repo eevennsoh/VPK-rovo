@@ -72,19 +72,21 @@ export default function JiraListPage() {
 	};
 
 	return (
-		<div className="flex h-full min-h-[640px] flex-col bg-surface">
-			<JiraList
-				onCreate={() => undefined}
-				onIssueClick={() => undefined}
-				onIssueKeyClick={() => undefined}
-				onSelectAllRows={handleSelectAllRows}
-				onSelectRow={handleSelectRow}
-				onToggleExpand={handleToggleExpand}
-				rows={visibleRows}
-				selectedIssueKeys={selectedIssueKeys}
-				totalCountLabel="1000+"
-				visibleCount={50}
-			/>
+		<div className="flex h-full min-h-[640px] flex-col bg-surface p-4 md:p-5">
+			<div className="min-w-0 overflow-x-auto">
+				<JiraList
+					onCreate={() => undefined}
+					onIssueClick={() => undefined}
+					onIssueKeyClick={() => undefined}
+					onSelectAllRows={handleSelectAllRows}
+					onSelectRow={handleSelectRow}
+					onToggleExpand={handleToggleExpand}
+					rows={visibleRows}
+					selectedIssueKeys={selectedIssueKeys}
+					totalCountLabel="1000+"
+					visibleCount={50}
+				/>
+			</div>
 		</div>
 	);
 }
