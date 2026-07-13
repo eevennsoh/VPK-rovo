@@ -51,6 +51,12 @@ export interface AgentSelectorProps {
 	selectionMode?: "multiple" | "single";
 	selectedAgentActions?: readonly AgentSelectorAction[];
 	selectedAgentIds?: readonly string[];
+	/**
+	 * Agents that are already committed elsewhere and must not be re-selected.
+	 * Disabled rows get `aria-disabled`, a subtle trailing marker, and their
+	 * toggle is a no-op. Generic + domain-neutral; absent = no disabled rows.
+	 */
+	disabledAgentIds?: readonly string[];
 }
 
 // Keep the hover/focus reveal in lockstep with GreetingPromptRow so agent rows
@@ -80,6 +86,7 @@ const agentDescriptionVariants: Variants = {
 };
 
 const EMPTY_SELECTED_AGENT_IDS: readonly string[] = [];
+const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
 const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
@@ -130,11 +137,13 @@ function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): 
 function AgentSelectorItem({
 	agent,
 	isChecked,
+	isDisabled,
 	onToggle,
 	supportsMultipleSelection,
 }: Readonly<{
 	agent: AgentSelectorAgent;
 	isChecked: boolean;
+	isDisabled: boolean;
 	onToggle?: (agentId: string) => void;
 	supportsMultipleSelection: boolean;
 }>): ReactElement {
@@ -146,6 +155,7 @@ function AgentSelectorItem({
 	return (
 		<CommandItem
 			aria-checked={supportsMultipleSelection ? isChecked : undefined}
+			aria-disabled={isDisabled || undefined}
 			className={AGENT_ROW_CLASS}
 			data-checked={supportsMultipleSelection && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}
@@ -153,7 +163,12 @@ function AgentSelectorItem({
 			onFocus={() => setIsInteractionActive(true)}
 			onMouseEnter={() => setIsInteractionActive(true)}
 			onMouseLeave={() => setIsInteractionActive(false)}
-			onSelect={() => onToggle?.(agent.id)}
+			onSelect={() => {
+				if (isDisabled) {
+					return;
+				}
+				onToggle?.(agent.id);
+			}}
 			role={supportsMultipleSelection ? "menuitemcheckbox" : undefined}
 			showCheckIcon={supportsMultipleSelection}
 			value={agent.id}
@@ -179,6 +194,9 @@ function AgentSelectorItem({
 					{agent.byline}
 				</motion.span>
 			</motion.span>
+			{isDisabled ? (
+				<span className="shrink-0 text-xs font-medium text-text-subtlest">Working</span>
+			) : null}
 		</CommandItem>
 	);
 }
@@ -200,13 +218,16 @@ export function AgentSelector({
 	selectionMode = "multiple",
 	selectedAgentActions,
 	selectedAgentIds,
+	disabledAgentIds,
 }: Readonly<AgentSelectorProps>): ReactElement {
 	const [internalQuery, setInternalQuery] = useState(defaultQuery);
 	const selectedIds = selectedAgentIds ?? EMPTY_SELECTED_AGENT_IDS;
+	const disabledIds = disabledAgentIds ?? EMPTY_DISABLED_AGENT_IDS;
 	const selectedActions = selectedAgentActions ?? EMPTY_SELECTED_AGENT_ACTIONS;
 	const resolvedQuery = query ?? internalQuery;
 	const normalizedQuery = resolvedQuery.trim().toLowerCase();
 	const selectedAgentIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+	const disabledAgentIdSet = useMemo(() => new Set(disabledIds), [disabledIds]);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -269,6 +290,7 @@ export function AgentSelector({
 						<AgentSelectorItem
 							agent={agent}
 							isChecked={selectedAgentIdSet.has(agent.id)}
+							isDisabled={disabledAgentIdSet.has(agent.id)}
 							key={agent.id}
 							onToggle={onAgentToggle}
 							supportsMultipleSelection={supportsMultipleSelection}

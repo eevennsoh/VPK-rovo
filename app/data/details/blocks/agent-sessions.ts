@@ -1,11 +1,11 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
-	description: "Jira issue-detail modal starting point for the Agent sessions block, with a default current-state variant and an opt-in experimental variant.",
+	description: "Jira work-item surface for the Agent sessions block, with a standard current-state variant and an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents.",
 	importStatement: `import AgentSessions from "@/components/blocks/agent-sessions";`,
 	usage: `import AgentSessions from "@/components/blocks/agent-sessions";
 
-<AgentSessions variant="default" />`,
+<AgentSessions variant="experimental" initialExperimentalPreset="running" />`,
 	examples: [
 		{
 			title: "Standard",
@@ -14,7 +14,7 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 		},
 		{
 			title: "Experimental",
-			description: "Placeholder experimental entry point. It intentionally matches the standard surface until the redesign lands.",
+			description: "Work-item-scoped experimental variant: independent context/session state, deterministic Empty/Filled/Running presets, concurrent mock agents, and one shared floating chat/session experience.",
 			demoSlug: "agent-sessions-demo-experimental",
 		},
 	],
@@ -35,6 +35,12 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 			type: "\"default\" | \"experimental\"",
 			default: "\"default\"",
 			description: "Opt-in layout variation. The default variant keeps the current Jira sessions surface.",
+		},
+		{
+			name: "initialExperimentalPreset",
+			type: "\"empty\" | \"filled\" | \"running\"",
+			default: "\"filled\"",
+			description: "Deterministic starting state for the experimental variant: empty context, filled context, or filled context with concurrent running agents.",
 		},
 	],
 };
