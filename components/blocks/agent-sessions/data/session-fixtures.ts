@@ -1,0 +1,126 @@
+/**
+ * Deterministic seed content + fixed epoch for the experimental Agent Sessions
+ * presets. Imports from the state model are **type-only** (erased at build), so
+ * there is no runtime cycle: the model imports these fixtures for values; the
+ * fixtures only borrow the model's types.
+ */
+
+import type { WorkItemAttachment, WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
+import type {
+	AgentSessionAgent,
+	AgentSessionComment,
+	AgentSessionsContextResources,
+	ContextLinkedItem,
+	NextStep,
+} from "@/components/blocks/agent-sessions/data/session-state";
+
+/**
+ * Fixed base epoch for deterministic display timestamps. Never derive time from
+ * `Date.now()` / `new Date()` (breaks reproducibility + SSR hydration). All
+ * `createdAtMs` values are `SESSION_EPOCH_MS + <deterministic offset>`.
+ */
+export const SESSION_EPOCH_MS = Date.UTC(2026, 5, 8, 16, 0, 0); // Jun 8 2026, 16:00 UTC
+
+const FILLED_TITLE = "Acmecorp: Prepare for bid recommendation for ESM RFP";
+const FILLED_DESCRIPTION =
+	"Acmecorp is evaluating Atlassian as a replacement for its current service-management and work-management stack.\n\n• Consolidate regional IT, asset, knowledge, reporting, and business workflows.\n• Clarify CMDB and procurement requirements into must-haves, differentiators, and owners.\n• Map requirements to Atlassian strengths and flag product, legal, security, deal desk, or partner reviews.";
+
+const FILLED_TLDR = [
+	"Acmecorp wants to consolidate fragmented regional tools into one enterprise service-management operating model.",
+	"The response hinges on Assets/CMDB depth, a credible AI story via Rovo, and security/compliance readiness.",
+	"Deal size is multi-thousand users; budget qualification is still pending before a full bid.",
+];
+
+const FILLED_NEXT_STEPS: NextStep[] = [
+	{ id: "next-compliance", label: "Finish the requirement compliance matrix", command: "Build the Acmecorp requirement compliance matrix and mark every mandatory owner." },
+	{ id: "next-qualify", label: "Confirm budget and stakeholder access", command: "Assess whether Acmecorp budget, stakeholder access, and campaign fit justify a full response." },
+	{ id: "next-validate", label: "Validate Assets, CMDB, and security answers", command: "Validate Acmecorp Assets, CMDB, HAM/SAM, GRC, and data residency responses with product and legal owners." },
+	{ id: "next-recommend", label: "Draft the bid/no-bid recommendation", command: "Prepare a concise Acmecorp bid/no-bid recommendation with strengths, gaps, and follow-up questions." },
+];
+
+const FILLED_ATTACHMENTS: WorkItemAttachment[] = [
+	{
+		id: "att-intake-notes",
+		name: "rfp-intake-notes",
+		displayName: "RFP intake notes",
+		ext: "page",
+		date: "12 May 2026, 09:12 AM",
+		thumbnailKind: "document",
+		sourceLabel: "Confluence page",
+		sourceProduct: "confluence",
+	},
+	{
+		id: "att-requirements",
+		name: "acmecorp-requirements",
+		displayName: "Acmecorp requirements export",
+		ext: "xlsx",
+		date: "12 May 2026, 09:40 AM",
+		thumbnailKind: "document",
+		sourceLabel: "Spreadsheet",
+	},
+];
+
+const FILLED_SUBTASKS: WorkItemChildItem[] = [
+	{ type: "Subtask", key: "RFP-111", summary: "Confirm Acmecorp mandatory response sections", priority: "high", assignee: "Maya Chen", assigneeAvatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png", status: "inprogress" },
+	{ type: "Subtask", key: "RFP-112", summary: "Map Acmecorp reviewers and decision owners", priority: "medium", assignee: "Jordan Lee", assigneeAvatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png", status: "todo" },
+];
+
+const FILLED_LINKED_ITEMS: ContextLinkedItem[] = [
+	{ id: "link-rfp-100", key: "RFP-100", summary: "Enterprise RFP Response", type: "Epic", relationship: "relates to" },
+	{ id: "link-rfp-102", key: "RFP-102", summary: "Northstar Bank supplier packet review", type: "Task", relationship: "relates to" },
+];
+
+export const FILLED_COMMENTS: AgentSessionComment[] = [
+	{
+		id: "comment-seed-1",
+		authorName: "Jordan Lee",
+		authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+		content: "Flagging that Acmecorp budget qualification is still open — let's confirm before committing to a full response.",
+		createdAtMs: SESSION_EPOCH_MS - 3_600_000,
+	},
+];
+
+/** Reseed the generated TL;DR from the current context (deterministic rotation). */
+export function reseedGeneratedTldr(context: Readonly<AgentSessionsContextResources>): string[] {
+	if (context.tldr.length === 0) return FILLED_TLDR.slice(0, 2);
+	const [first, ...rest] = context.tldr;
+	return [...rest, first];
+}
+
+export function reseedGeneratedNextSteps(context: Readonly<AgentSessionsContextResources>): NextStep[] {
+	if (context.nextSteps.length === 0) return FILLED_NEXT_STEPS.slice(0, 3);
+	const [first, ...rest] = context.nextSteps;
+	return [...rest, first];
+}
+
+export function emptyContextResources(): AgentSessionsContextResources {
+	return {
+		title: FILLED_TITLE,
+		description: "",
+		tldr: [],
+		nextSteps: [],
+		attachments: [],
+		subtasks: [],
+		linkedItems: [],
+	};
+}
+
+export function filledContextResources(): AgentSessionsContextResources {
+	return {
+		title: FILLED_TITLE,
+		description: FILLED_DESCRIPTION,
+		tldr: [...FILLED_TLDR],
+		nextSteps: FILLED_NEXT_STEPS.map((step) => ({ ...step })),
+		attachments: FILLED_ATTACHMENTS.map((item) => ({ ...item })),
+		subtasks: FILLED_SUBTASKS.map((item) => ({ ...item })),
+		linkedItems: FILLED_LINKED_ITEMS.map((item) => ({ ...item })),
+	};
+}
+
+/** Seeded agents for preset sessions. */
+export const PRESET_AGENTS: Record<string, AgentSessionAgent> = {
+	readiness: { id: "readiness-checker", name: "Readiness Checker", avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg" },
+	requirements: { id: "product-requirements-guide", name: "Product Requirements Guide", avatarSrc: "/avatar-agent/teamwork-agents/product-requirements-guide.svg" },
+	feedback: { id: "feedback-analyzer", name: "Feedback Analyzer", avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
+	meeting: { id: "meeting-insights-reporter", name: "Meeting Insights Reporter", avatarSrc: "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg" },
+};

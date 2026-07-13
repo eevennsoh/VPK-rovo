@@ -6,12 +6,13 @@
  *   1. context  — derived `empty | filled` (see `selectContextStatus`)
  *   2. session  — per-session `running | waiting | completed`
  *
- * Everything here is pure and uses **type-only** imports so the module can be
- * required directly by `node --test` (Node 24 strip-types) without resolving the
- * `@/` alias or pulling a runtime graph. The reducer never touches the clock or
- * randomness: IDs come from `nextIdCounter`, time comes from `elapsedMs`, and the
- * timer engine (`advanceSessions`) takes an injected `deltaMs`. The React layer
+ * The model is deterministic and side-effect-free: the reducer never touches the
+ * clock or randomness (IDs come from `nextIdCounter`, time from `elapsedMs`, and
+ * the timer engine `advanceSessions` takes an injected `deltaMs`). The React layer
  * (see `../experimental/use-agent-sessions-controller.ts`) is only a metronome.
+ * Seed content lives in `./session-fixtures` and the scripted timelines in
+ * `./session-scripts`; behavioral tests load this module via the esbuild CJS
+ * loader (see `../agent-sessions.test.js`), which bundles those deps.
  *
  * This prototype model is intentionally SEPARATE from the persisted Jira RFP
  * backend lifecycle (`components/projects/jira/lib/rfp-demo-state.ts`); it follows
@@ -21,16 +22,24 @@
  */
 
 import type { WorkItemAttachment, WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
+import {
+	LAUNCH_SCRIPT_ROTATION,
+	SESSION_SCRIPTS,
+	type AgentSessionScript,
+} from "@/components/blocks/agent-sessions/data/session-scripts";
+import {
+	FILLED_COMMENTS,
+	PRESET_AGENTS,
+	SESSION_EPOCH_MS,
+	emptyContextResources,
+	filledContextResources,
+	reseedGeneratedNextSteps,
+	reseedGeneratedTldr,
+} from "@/components/blocks/agent-sessions/data/session-fixtures";
 
 export const AGENT_SESSIONS_STATE_VERSION = 1 as const;
 /** Metronome cadence used by the React controller and the default timing math. */
 export const AGENT_SESSIONS_TICK_MS = 400;
-/**
- * Fixed base epoch for deterministic display timestamps. Never derive time from
- * `Date.now()` / `new Date()` (breaks reproducibility + SSR hydration). All
- * `createdAtMs` values are `SESSION_EPOCH_MS + <deterministic offset>`.
- */
-const SESSION_EPOCH_MS = Date.UTC(2026, 5, 8, 16, 0, 0); // Jun 8 2026, 16:00 UTC
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types
@@ -199,103 +208,6 @@ export function formatSessionTimestamp(createdAtMs: number): string {
 	return SESSION_TIME_FORMATTER.format(new Date(createdAtMs));
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Scripts — deterministic timelines the tick engine plays
-// ────────────────────────────────────────────────────────────────────────────
-
-interface ScriptStepDef {
-	id: string;
-	label: string;
-	durationMs: number;
-	/** Optional agent message appended when this step completes. */
-	agentMessage?: string;
-}
-
-export interface AgentSessionScript {
-	id: string;
-	title: string;
-	defaultCommand: string;
-	runningPreview: string;
-	steps: ScriptStepDef[];
-	/** After completing this step index, the agent pauses in `waiting`. */
-	waitAfterIndex?: number;
-	waitingPrompt: string;
-	waitingPreview: string;
-	resumeMessage: string;
-	completionMessage: string;
-	completionPreview: string;
-}
-
-export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
-	"compliance-matrix": {
-		id: "compliance-matrix",
-		title: "Compliance matrix",
-		defaultCommand: "Build the Acmecorp requirement compliance matrix",
-		runningPreview: "Mapping mandatory RFP requirements to Atlassian capabilities…",
-		steps: [
-			{ id: "read", label: "Read RFP intake notes and requirements", durationMs: 1600, agentMessage: "Parsed 42 mandatory requirements from the Acmecorp RFP intake notes." },
-			{ id: "map", label: "Map requirements to Atlassian capabilities", durationMs: 2000, agentMessage: "Matched 38 requirements to native capabilities; 4 need partner or roadmap positioning." },
-			{ id: "owners", label: "Assign response owners", durationMs: 1600 },
-			{ id: "draft", label: "Draft the compliance matrix", durationMs: 2000, agentMessage: "Drafted the compliance matrix with owners and confidence flags." },
-		],
-		waitAfterIndex: 1,
-		waitingPrompt: "4 requirements need partner or roadmap positioning. Do you want me to flag them as gaps or draft mitigation language?",
-		waitingPreview: "Waiting: how should I handle the 4 partner/roadmap requirements?",
-		resumeMessage: "Understood — I'll continue with that approach.",
-		completionMessage: "The compliance matrix is ready with every mandatory requirement mapped and owned.",
-		completionPreview: "Compliance matrix complete — 42 requirements mapped and owned.",
-	},
-	"risk-review": {
-		id: "risk-review",
-		title: "Risk review",
-		defaultCommand: "Review the Acmecorp bid risks",
-		runningPreview: "Assessing bid/no-bid risks across security, CMDB, and timeline…",
-		steps: [
-			{ id: "scan", label: "Scan requirements for risk signals", durationMs: 1600, agentMessage: "Flagged security-ops depth, CMDB scale, and the short demo window as top risks." },
-			{ id: "weigh", label: "Weigh mitigation options", durationMs: 2000 },
-			{ id: "summary", label: "Summarize mitigations", durationMs: 1600, agentMessage: "Summarized each risk as a concrete mitigation action for leadership." },
-		],
-		waitingPrompt: "Should I escalate the CMDB scale risk to the product team before finalizing?",
-		waitingPreview: "Waiting: escalate the CMDB scale risk?",
-		resumeMessage: "Got it — proceeding on that basis.",
-		completionMessage: "Risk review complete — four risks with mitigation actions ready for the bid decision.",
-		completionPreview: "Risk review complete — 4 mitigations ready.",
-	},
-	"pricing-draft": {
-		id: "pricing-draft",
-		title: "Pricing draft",
-		defaultCommand: "Draft the Acmecorp pricing posture",
-		runningPreview: "Modeling licensing assumptions for a multi-thousand-user deployment…",
-		steps: [
-			{ id: "assumptions", label: "Gather licensing assumptions", durationMs: 1600, agentMessage: "Collected seat bands, product mix, and phased rollout assumptions." },
-			{ id: "model", label: "Model total cost of ownership", durationMs: 2000 },
-			{ id: "guardrails", label: "Apply discount guardrails", durationMs: 1600, agentMessage: "Applied deal-desk discount guardrails and flagged approvals." },
-		],
-		waitAfterIndex: 0,
-		waitingPrompt: "I need a target seat band to model pricing. Should I assume 5,000 seats or wait for qualification?",
-		waitingPreview: "Waiting: which seat band should I model?",
-		resumeMessage: "Thanks — modeling against that seat band now.",
-		completionMessage: "Pricing draft ready with TCO scenarios and approval flags for deal desk.",
-		completionPreview: "Pricing draft complete — TCO scenarios ready.",
-	},
-	"general-assist": {
-		id: "general-assist",
-		title: "Work item assistant",
-		defaultCommand: "Help me move this work item forward",
-		runningPreview: "Reviewing the work item and suggesting next steps…",
-		steps: [
-			{ id: "review", label: "Review the work item", durationMs: 1600, agentMessage: "Reviewed the work item details and current status." },
-			{ id: "suggest", label: "Suggest next steps", durationMs: 1600, agentMessage: "Here are a few next steps you can take to move this forward." },
-		],
-		waitingPrompt: "Want me to start on any of these, or add the required context first?",
-		waitingPreview: "Waiting: which next step should I start?",
-		resumeMessage: "On it.",
-		completionMessage: "Done — I've outlined the next steps for this work item.",
-		completionPreview: "Suggested next steps for this work item.",
-	},
-};
-
-const LAUNCH_SCRIPT_ROTATION = ["compliance-matrix", "risk-review", "pricing-draft"] as const;
 const GENERAL_AGENT: AgentSessionAgent = { id: "rovo", name: "Rovo", avatarSrc: "/1p/rovo.svg" };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -825,113 +737,6 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 	return [...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Seeded context content (deterministic)
-// ────────────────────────────────────────────────────────────────────────────
-
-const FILLED_TITLE = "Acmecorp: Prepare for bid recommendation for ESM RFP";
-const FILLED_DESCRIPTION =
-	"Acmecorp is evaluating Atlassian as a replacement for its current service-management and work-management stack.\n\n• Consolidate regional IT, asset, knowledge, reporting, and business workflows.\n• Clarify CMDB and procurement requirements into must-haves, differentiators, and owners.\n• Map requirements to Atlassian strengths and flag product, legal, security, deal desk, or partner reviews.";
-
-const FILLED_TLDR = [
-	"Acmecorp wants to consolidate fragmented regional tools into one enterprise service-management operating model.",
-	"The response hinges on Assets/CMDB depth, a credible AI story via Rovo, and security/compliance readiness.",
-	"Deal size is multi-thousand users; budget qualification is still pending before a full bid.",
-];
-
-const FILLED_NEXT_STEPS: NextStep[] = [
-	{ id: "next-compliance", label: "Finish the requirement compliance matrix", command: "Build the Acmecorp requirement compliance matrix and mark every mandatory owner." },
-	{ id: "next-qualify", label: "Confirm budget and stakeholder access", command: "Assess whether Acmecorp budget, stakeholder access, and campaign fit justify a full response." },
-	{ id: "next-validate", label: "Validate Assets, CMDB, and security answers", command: "Validate Acmecorp Assets, CMDB, HAM/SAM, GRC, and data residency responses with product and legal owners." },
-	{ id: "next-recommend", label: "Draft the bid/no-bid recommendation", command: "Prepare a concise Acmecorp bid/no-bid recommendation with strengths, gaps, and follow-up questions." },
-];
-
-const FILLED_ATTACHMENTS: WorkItemAttachment[] = [
-	{
-		id: "att-intake-notes",
-		name: "rfp-intake-notes",
-		displayName: "RFP intake notes",
-		ext: "page",
-		date: "12 May 2026, 09:12 AM",
-		thumbnailKind: "document",
-		sourceLabel: "Confluence page",
-		sourceProduct: "confluence",
-	},
-	{
-		id: "att-requirements",
-		name: "acmecorp-requirements",
-		displayName: "Acmecorp requirements export",
-		ext: "xlsx",
-		date: "12 May 2026, 09:40 AM",
-		thumbnailKind: "document",
-		sourceLabel: "Spreadsheet",
-	},
-];
-
-const FILLED_SUBTASKS: WorkItemChildItem[] = [
-	{ type: "Subtask", key: "RFP-111", summary: "Confirm Acmecorp mandatory response sections", priority: "high", assignee: "Maya Chen", assigneeAvatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png", status: "inprogress" },
-	{ type: "Subtask", key: "RFP-112", summary: "Map Acmecorp reviewers and decision owners", priority: "medium", assignee: "Jordan Lee", assigneeAvatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png", status: "todo" },
-];
-
-const FILLED_LINKED_ITEMS: ContextLinkedItem[] = [
-	{ id: "link-rfp-100", key: "RFP-100", summary: "Enterprise RFP Response", type: "Epic", relationship: "relates to" },
-	{ id: "link-rfp-102", key: "RFP-102", summary: "Northstar Bank supplier packet review", type: "Task", relationship: "relates to" },
-];
-
-const FILLED_COMMENTS: AgentSessionComment[] = [
-	{
-		id: "comment-seed-1",
-		authorName: "Jordan Lee",
-		authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-		content: "Flagging that Acmecorp budget qualification is still open — let's confirm before committing to a full response.",
-		createdAtMs: SESSION_EPOCH_MS - 3_600_000,
-	},
-];
-
-/** Reseed the generated TL;DR from the current context (deterministic rotation). */
-function reseedGeneratedTldr(context: Readonly<AgentSessionsContextResources>): string[] {
-	if (context.tldr.length === 0) return FILLED_TLDR.slice(0, 2);
-	const [first, ...rest] = context.tldr;
-	return [...rest, first];
-}
-
-function reseedGeneratedNextSteps(context: Readonly<AgentSessionsContextResources>): NextStep[] {
-	if (context.nextSteps.length === 0) return FILLED_NEXT_STEPS.slice(0, 3);
-	const [first, ...rest] = context.nextSteps;
-	return [...rest, first];
-}
-
-function emptyContextResources(): AgentSessionsContextResources {
-	return {
-		title: FILLED_TITLE,
-		description: "",
-		tldr: [],
-		nextSteps: [],
-		attachments: [],
-		subtasks: [],
-		linkedItems: [],
-	};
-}
-
-function filledContextResources(): AgentSessionsContextResources {
-	return {
-		title: FILLED_TITLE,
-		description: FILLED_DESCRIPTION,
-		tldr: [...FILLED_TLDR],
-		nextSteps: FILLED_NEXT_STEPS.map((step) => ({ ...step })),
-		attachments: FILLED_ATTACHMENTS.map((item) => ({ ...item })),
-		subtasks: FILLED_SUBTASKS.map((item) => ({ ...item })),
-		linkedItems: FILLED_LINKED_ITEMS.map((item) => ({ ...item })),
-	};
-}
-
-// Seeded agents for preset sessions (kept inline so this module stays pure).
-const PRESET_AGENTS: Record<string, AgentSessionAgent> = {
-	readiness: { id: "readiness-checker", name: "Readiness Checker", avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg" },
-	requirements: { id: "product-requirements-guide", name: "Product Requirements Guide", avatarSrc: "/avatar-agent/teamwork-agents/product-requirements-guide.svg" },
-	feedback: { id: "feedback-analyzer", name: "Feedback Analyzer", avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
-	meeting: { id: "meeting-insights-reporter", name: "Meeting Insights Reporter", avatarSrc: "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg" },
-};
 
 // ────────────────────────────────────────────────────────────────────────────
 // Presets
