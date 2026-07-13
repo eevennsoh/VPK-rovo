@@ -1,10 +1,10 @@
 import { inlineIcon } from "./icons.mjs";
 
 // Inline @atlaskit arrow glyphs baked in at build time for the pure-HTML pager (no React import).
-const ICON_ARROW_UP = inlineIcon("arrow-up");
-const ICON_ARROW_DOWN = inlineIcon("arrow-down");
-const ICON_ARROW_LEFT = inlineIcon("arrow-left");
-const ICON_ARROW_RIGHT = inlineIcon("arrow-right");
+const ICON_ARROW_UP = inlineIcon("arrow-up", { size: 12 });
+const ICON_ARROW_DOWN = inlineIcon("arrow-down", { size: 12 });
+const ICON_ARROW_LEFT = inlineIcon("arrow-left", { size: 12 });
+const ICON_ARROW_RIGHT = inlineIcon("arrow-right", { size: 12 });
 
 const SLIDE_SECTION = /<section\b[^>]*\bclass=["'][^"']*\bslide\b[^"']*["'][^>]*>/gi;
 
@@ -114,11 +114,11 @@ export function buildPresentationCss() {
 \t\tbox-shadow: none;
 \t\tdisplay: flex;
 \t\tfont-family: var(--font-mono);
-\t\tgap: 6px;
+\t\tgap: 4px;
 \t\tletter-spacing: 0;
-\t\tpadding: 6px;
+\t\tpadding: 4px;
 \t\tposition: fixed;
-\t\tright: 24px;
+\t\tright: var(--vpk-pager-right, 24px);
 \t\t/* Above the scroll fade, below the lightbox overlay. */
 \t\tz-index: 2147483001;
 \t}
@@ -134,11 +134,11 @@ export function buildPresentationCss() {
 \t\tdisplay: flex;
 \t\tfont-family: var(--font-mono);
 \t\tfont-size: 18px;
-\t\theight: 36px;
+\t\theight: 24px;
 \t\tjustify-content: center;
 \t\tline-height: 1;
 \t\tpadding: 0;
-\t\twidth: 36px;
+\t\twidth: 24px;
 \t}
 
 \t.vpk-slide-counter button svg,
@@ -165,19 +165,19 @@ export function buildPresentationCss() {
 \t.docnav-counter {
 \t\tcolor: var(--vpk-control-text, var(--muted-text));
 \t\tfont-family: var(--font-mono);
-\t\tfont-size: 12px;
+\t\tfont-size: 11px;
 \t\tfont-variant-numeric: tabular-nums;
-\t\tmin-width: 46px;
+\t\tmin-width: 40px;
 \t\ttext-align: center;
 \t}
 
 \t.vpk-nav-next-wrap {
 \t\talign-items: center;
 \t\tdisplay: grid;
-\t\theight: 36px;
+\t\theight: 24px;
 \t\tjustify-items: center;
 \t\tposition: relative;
-\t\twidth: 36px;
+\t\twidth: 24px;
 \t}
 
 \t.vpk-nav-next-wrap button {
@@ -200,8 +200,8 @@ export function buildPresentationCss() {
 
 \t.vpk-nav-progress__arc {
 \t\tstroke: var(--ink);
-\t\tstroke-dasharray: var(--vpk-progress-circumference, 109.96);
-\t\tstroke-dashoffset: var(--vpk-progress-offset, 109.96);
+\t\tstroke-dasharray: var(--vpk-progress-circumference, 72.26);
+\t\tstroke-dashoffset: var(--vpk-progress-offset, 72.26);
 \t\tstroke-linecap: round;
 \t\topacity: 0;
 \t\ttransition: stroke-dashoffset 180ms var(--ease-out);
@@ -355,7 +355,7 @@ export function buildPresentationJs() {
 \t}
 
 \tfunction progressSvg() {
-\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="12" cy="12" r="11.5"></circle></svg>';
 \t}
 
 \tfunction ensureControls() {
@@ -382,7 +382,7 @@ export function buildPresentationJs() {
 \t\tif (next) next.disabled = index === slides.length - 1;
 \t\tif (counter) counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
 \t\tif (arc) {
-\t\t\tconst radius = Number(arc.getAttribute('r') || 17.5);
+\t\t\tconst radius = Number(arc.getAttribute('r') || 11.5);
 \t\t\tconst circumference = 2 * Math.PI * radius;
 \t\t\tconst progress = slides.length <= 1 ? 0 : index / (slides.length - 1);
 \t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));
@@ -533,7 +533,7 @@ export function buildDocNavJs() {
 \t}
 
 \tfunction progressSvg() {
-\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="12" cy="12" r="11.5"></circle></svg>';
 \t}
 
 \tfunction clonePreview(section) {
@@ -560,7 +560,7 @@ export function buildDocNavJs() {
 \t\tif (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
 \t\tif (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
 \t\tif (arc) {
-\t\t\tconst radius = Number(arc.getAttribute('r') || 17.5);
+\t\t\tconst radius = Number(arc.getAttribute('r') || 11.5);
 \t\t\tconst circumference = 2 * Math.PI * radius;
 \t\t\tconst progress = targets.length <= 1 ? 0 : activeIndex / (targets.length - 1);
 \t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));

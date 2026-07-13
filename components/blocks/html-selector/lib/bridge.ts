@@ -6,11 +6,11 @@ export const HTML_SELECTOR_INSPECT_SCRIPT_ID = "vpk-html-selector-core-inspect";
 export const HTML_SELECTOR_UI_SCRIPT_ID = "vpk-html-selector-core-ui";
 export const HTML_SELECTOR_SCRIPT_ID = "vpk-html-selector-core";
 
-const HTML_SELECTOR_STYLE_HREF = "/html-selector/core.css";
-const HTML_SELECTOR_UTILS_SRC = "/html-selector/core-utils.js";
-const HTML_SELECTOR_INSPECT_SRC = "/html-selector/core-inspect.js";
-const HTML_SELECTOR_UI_SRC = "/html-selector/core-ui.js";
-const HTML_SELECTOR_SRC = "/html-selector/core.js";
+const HTML_SELECTOR_STYLE_HREF = "/api/vpk-html/assets/selector/core.css";
+const HTML_SELECTOR_UTILS_SRC = "/api/vpk-html/assets/selector/core-utils.js";
+const HTML_SELECTOR_INSPECT_SRC = "/api/vpk-html/assets/selector/core-inspect.js";
+const HTML_SELECTOR_UI_SRC = "/api/vpk-html/assets/selector/core-ui.js";
+const HTML_SELECTOR_SRC = "/api/vpk-html/assets/selector/core.js";
 
 type HtmlSelectorFrameWindow = Window & {
 	__VPK_HTML_SELECTOR__?: HtmlSelectorBridge;

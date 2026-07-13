@@ -364,14 +364,16 @@
 		return chain;
 	}
 
+	// SELECTOR_ICONS:start
 	var SELECTOR_ICONS = {
-		chevronLeft: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		chevronRight: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		comment: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M21 12a8 8 0 0 1-8 8H7l-4 3v-6.5A8 8 0 1 1 21 12Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		copy: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><rect x=\"8\" y=\"8\" width=\"11\" height=\"11\" rx=\"2\" stroke-width=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>",
-		cursor: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m4 3 7.8 18 2.2-7 7-2.2L4 3Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-		send: "<svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"m22 2-7 20-4-9-9-4 20-7Z\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M22 2 11 13\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>",
+		chevronUp: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" d=\"m14.53 9.97-6-6a.75.75 0 0 0-1.004-.052l-.056.052-6 6 1.06 1.06L8 5.56l5.47 5.47z\"/></svg>",
+		chevronDown: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" d=\"m14.53 6.03-6 6a.75.75 0 0 1-1.004.052l-.056-.052-6-6 1.06-1.06L8 10.44l5.47-5.47z\"/></svg>",
+		comment: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M0 3.125A2.625 2.625 0 0 1 2.625.5h10.75A2.625 2.625 0 0 1 16 3.125v8.25A2.625 2.625 0 0 1 13.375 14H4.449l-3.327 1.901A.75.75 0 0 1 0 15.25zM2.625 2C2.004 2 1.5 2.504 1.5 3.125v10.833L4.05 12.5h9.325c.621 0 1.125-.504 1.125-1.125v-8.25C14.5 2.504 13.996 2 13.375 2zM12 6.5H4V5h8zm-3 3H4V8h5z\" clip-rule=\"evenodd\"/></svg>",
+		copy: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M1 3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM16 6v6.75A3.25 3.25 0 0 1 12.75 16H6v-1.5h6.75a1.75 1.75 0 0 0 1.75-1.75V6z\" clip-rule=\"evenodd\"/></svg>",
+		cursor: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M2.827 2.827 6.914 13.23l1.272-4.134c.134-.436.474-.776.91-.91l4.134-1.272zm-1.5.282C.886 1.99 1.99.887 3.108 1.326L14.11 5.648c1.21.476 1.145 2.212-.099 2.594L9.6 9.6l-1.358 4.412c-.382 1.244-2.118 1.31-2.594.099z\" clip-rule=\"evenodd\"/></svg>",
+		send: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M14.78 1.22a.75.75 0 0 1 .173.79l-5 13.5a.75.75 0 0 1-1.361.1l-2.895-5.307L.391 7.408A.75.75 0 0 1 .49 6.047l13.5-5a.75.75 0 0 1 .79.173M7.177 9.884l1.942 3.56 3.237-8.74zm4.118-6.24L2.556 6.881l3.56 1.942z\" clip-rule=\"evenodd\"/></svg>",
 	};
+	// SELECTOR_ICONS:end
 
 	function getRect(element) {
 		var rect = element.getBoundingClientRect();

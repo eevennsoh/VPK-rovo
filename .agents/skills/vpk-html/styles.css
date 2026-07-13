@@ -825,6 +825,7 @@ blockquote .MathJax {
 	display: flex;
 	font-size: 15px;
 	font-weight: 600;
+	gap: 5px;
 	padding-bottom: 6px;
 }
 

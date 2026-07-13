@@ -842,6 +842,7 @@ blockquote .MathJax {
 \tdisplay: flex;
 \tfont-size: 15px;
 \tfont-weight: 600;
+\tgap: 5px;
 \tpadding-bottom: 6px;
 }
 
