@@ -18,6 +18,11 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
 	getJsonErrorMessage,
 	getVpkHtmlArtifactDiskPath,
 } from "@/components/blocks/html-selector/lib/artifact-actions";
@@ -67,6 +72,7 @@ export function ArtifactVideoDialog({
 	repoRoot,
 }: Readonly<ArtifactVideoDialogProps>) {
 	const [open, setOpen] = useState(false);
+	const triggerTitle = disabled ? "Video conversion is available for saved vpk-html artifacts." : "Convert to video";
 	const [narrationSource, setNarrationSource] = useState<NarrationSource>("notes");
 	const [script, setScript] = useState("");
 	const [soundSource, setSoundSource] = useState<SoundSource>("none");
@@ -140,20 +146,25 @@ export function ArtifactVideoDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger
-				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="compact"
-						disabled={disabled}
-						title={disabled ? "Video conversion is available for saved vpk-html artifacts." : "Convert to video"}
-					/>
-				}
-			>
-				<VideoIcon label="" />
-				<span>Convert to video</span>
-			</DialogTrigger>
+			<Tooltip>
+				<TooltipTrigger render={<span className="inline-flex" />}>
+					<DialogTrigger
+						render={
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-compact"
+								disabled={disabled}
+								title={triggerTitle}
+								aria-label="Convert to video"
+							/>
+						}
+					>
+						<VideoIcon label="" />
+					</DialogTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">{triggerTitle}</TooltipContent>
+			</Tooltip>
 			<DialogContent size="md" className="gap-4">
 				<DialogHeader>
 					<DialogTitle>Convert to video</DialogTitle>

@@ -1456,9 +1456,275 @@ body {
 	}
 }
 
+
+/* vpk presentation mode */
+.speaker-notes {
+	display: none !important;
+}
+
+@media screen {
+	body[data-vpk-motion="deck"] {
+		background: var(--paper-background);
+		overflow: hidden;
+	}
+
+	body[data-vpk-motion="deck"] main {
+		height: 100vh;
+		padding: 0;
+		position: relative;
+		width: 100vw;
+	}
+
+	body[data-vpk-motion="deck"] .slide {
+		--vpk-slide-rest-transform: translate(-50%, -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-from: translate(calc(-50% + 24px), -50%) scale(var(--vpk-slide-scale, 1));
+		--vpk-slide-enter-to: var(--vpk-slide-rest-transform);
+		display: none;
+		left: 50%;
+		position: absolute;
+		top: 50%;
+		transform: var(--vpk-slide-rest-transform);
+		transform-origin: center center;
+	}
+
+	body[data-vpk-motion="deck"]:not([data-vpk-deck-ready="true"]) .slide:first-of-type,
+	body[data-vpk-motion="deck"] .slide.is-active {
+		display: block;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-active {
+		animation: vpk-slide-in var(--vpk-dur-enter) var(--ease-out) both;
+	}
+
+	body[data-vpk-motion="deck"] .slide.is-leaving {
+		animation: vpk-slide-out var(--vpk-dur-slide-out) var(--ease-out) both;
+	}
+
+	.vpk-slide-counter,
+	.docnav-controls {
+		align-items: center;
+		backdrop-filter: blur(10px);
+		background: var(--vpk-control-surface, color-mix(in srgb, var(--paper) 88%, transparent));
+		border: 1px solid var(--vpk-control-border, var(--rule));
+		border-radius: 999px;
+		bottom: 24px;
+		box-shadow: none;
+		display: flex;
+		font-family: var(--font-mono);
+		gap: 6px;
+		letter-spacing: 0;
+		padding: 6px;
+		position: fixed;
+		right: 24px;
+		/* Above the scroll fade, below the lightbox overlay. */
+		z-index: 2147483001;
+	}
+
+	.vpk-slide-counter button,
+	.docnav-controls button {
+		align-items: center;
+		background: transparent;
+		border: 1px solid var(--vpk-control-border, var(--rule));
+		border-radius: 999px;
+		color: var(--vpk-control-text, var(--muted-text));
+		cursor: pointer;
+		display: flex;
+		font-family: var(--font-mono);
+		font-size: 18px;
+		height: 36px;
+		justify-content: center;
+		line-height: 1;
+		padding: 0;
+		width: 36px;
+	}
+
+	.vpk-slide-counter button svg,
+	.docnav-controls button svg {
+		display: block;
+	}
+
+	.vpk-slide-counter button:hover,
+	.vpk-slide-counter button:focus-visible,
+	.docnav-controls button:hover,
+	.docnav-controls button:focus-visible {
+		background: var(--vpk-control-surface-hover, var(--accent-soft));
+		color: var(--vpk-control-text-strong, var(--ink));
+		outline: none;
+	}
+
+	.vpk-slide-counter button:disabled,
+	.docnav-controls button:disabled {
+		cursor: default;
+		opacity: 0.35;
+	}
+
+	.vpk-nav-counter,
+	.docnav-counter {
+		color: var(--vpk-control-text, var(--muted-text));
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+		min-width: 46px;
+		text-align: center;
+	}
+
+	.vpk-nav-next-wrap {
+		align-items: center;
+		display: grid;
+		height: 36px;
+		justify-items: center;
+		position: relative;
+		width: 36px;
+	}
+
+	.vpk-nav-next-wrap button {
+		position: relative;
+		z-index: 1;
+	}
+
+	.vpk-nav-progress {
+		inset: 0;
+		pointer-events: none;
+		position: absolute;
+		transform: rotate(-90deg);
+		z-index: 2;
+	}
+
+	.vpk-nav-progress__arc {
+		fill: none;
+		stroke-width: 1;
+	}
+
+	.vpk-nav-progress__arc {
+		stroke: var(--ink);
+		stroke-dasharray: var(--vpk-progress-circumference, 109.96);
+		stroke-dashoffset: var(--vpk-progress-offset, 109.96);
+		stroke-linecap: round;
+		opacity: 0;
+		transition: stroke-dashoffset 180ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav] main > section {
+		scroll-margin-top: 32px;
+		transition:
+			opacity 560ms var(--ease-out),
+			filter 560ms var(--ease-out),
+			transform 420ms var(--ease-out);
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section:not(.is-docnav-active) {
+		opacity: 0.34 !important;
+		filter: grayscale(0.14) !important;
+	}
+
+	body[data-vpk-docnav][data-docnav-focus="true"] main > section.is-docnav-active {
+		opacity: 1 !important;
+		filter: none !important;
+		transform: translateY(-2px) !important;
+	}
+
+	html[data-vpk-presenter="true"],
+	html[data-vpk-presenter="true"] body {
+		height: 100%;
+		overflow: hidden;
+	}
+
+	body.vpk-presenter-window {
+		background: var(--paper-background);
+		color: var(--ink);
+		font-family: var(--font-body);
+	}
+
+	.vpk-presenter {
+		display: grid;
+		gap: 24px;
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+		height: 100vh;
+		padding: 24px;
+	}
+
+	.vpk-presenter-preview,
+	.vpk-presenter-notes {
+		background: var(--surface-raised);
+		border: 1px solid var(--rule);
+		box-shadow: var(--shadow);
+		min-width: 0;
+		padding: 18px;
+	}
+
+	.vpk-presenter-preview-frame {
+		align-items: center;
+		aspect-ratio: 280 / 158;
+		background: var(--paper);
+		border: 1px solid var(--rule);
+		display: flex;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.vpk-presenter-preview-frame .slide {
+		display: block !important;
+		position: static !important;
+		transform: scale(0.28) !important;
+		transform-origin: center center !important;
+	}
+
+	.vpk-presenter-kicker {
+		color: var(--muted-text);
+		font-family: var(--font-body);
+		font-size: 13px;
+		letter-spacing: 0;
+		margin-bottom: 10px;
+		text-transform: none;
+	}
+
+	.vpk-presenter-notes-text {
+		font-size: 22px;
+		line-height: 1.45;
+		white-space: pre-wrap;
+	}
+
+	.vpk-presenter-timer {
+		color: var(--muted-text);
+		font-family: var(--font-mono);
+		font-size: 14px;
+		margin-top: 20px;
+	}
+
+	body.vpk-presenter-window .vpk-theme-toggle {
+		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.vpk-nav-progress__arc {
+		transition: none !important;
+	}
+}
+
+@media print {
+	.speaker-notes,
+	.vpk-slide-counter,
+	.docnav-controls,
+	.vpk-presenter {
+		display: none !important;
+	}
+
+	body[data-vpk-motion="deck"] .slide,
+	body[data-vpk-docnav] main > section {
+		animation: none !important;
+		transition: none !important;
+		transform: none !important;
+	}
+
+	body[data-vpk-docnav] main > section {
+		opacity: 1 !important;
+		filter: none !important;
+	}
+}
 </style>
 </head>
-<body data-vpk-motion="document">
+<body data-vpk-motion="document" data-vpk-docnav="true">
 <main class="video-page" aria-label="Landing Demo Separation video">
 	<a class="video-page__back" href="../../index.html">← vpk-html catalog</a>
 	<p class="video-page__eyebrow">Rendered video</p>
@@ -1552,7 +1818,7 @@ body {
 		button.type = "button";
 		button.className = "vpk-theme-toggle";
 		button.setAttribute("data-vpk-theme-toggle", "true");
-		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-5H8a5 5 0 0 1 0 10h-.75z\" clip-rule=\"evenodd\"/></svg>";
 		button.addEventListener("click", () => {
 			const current = readChoice();
 			const next = states[(states.indexOf(current) + 1) % states.length];
@@ -1570,7 +1836,7 @@ body {
 		if (state) state.textContent = labels[choice];
 		button.dataset.vpkThemeChoice = choice;
 		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
-		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+		button.removeAttribute("aria-pressed");
 	}
 
 	function init() {
@@ -1588,14 +1854,279 @@ body {
 })();
 </script>
 <!-- vpk-theme-runtime:end -->
+<script data-vpk-docnav-runtime>
+(() => {
+	if (!document.body.matches('[data-vpk-docnav]')) return;
+	const sectionTargets = [...document.querySelectorAll('main > section')]
+		.filter(el => el.getBoundingClientRect().height > 0);
+	const targets = sectionTargets.length >= 2
+		? sectionTargets
+		: [...document.querySelectorAll('main h1, main h2, main section[id]')]
+			.filter(el => el.getBoundingClientRect().height > 0);
+	if (targets.length < 2) return;
+	const channel = (() => {
+		try { return new BroadcastChannel('vpk-deck'); }
+		catch { return null; }
+	})();
+	let activeIndex = readPresenterIndex();
+	let focusTimer = 0;
+	let manualTimer = 0;
+	let presenterWindow = null;
+	let startedAt = Date.now();
+	let controls = null;
+	let lastBroadcastIndex = -1;
+
+	function readPresenterIndex() {
+		const match = location.hash.match(/presenter-section-(\d+)/);
+		if (!match) return 0;
+		return Math.max(0, Math.min(targets.length - 1, Number(match[1]) - 1));
+	}
+
+	function sectionTitle(section) {
+		return (section.querySelector('h1,h2,h3,.title')?.textContent || 'Section').trim();
+	}
+
+	function sectionNotes(section) {
+		return (section.querySelector('.speaker-notes')?.textContent || '').trim() || 'No speaker notes for this section.';
+	}
+
+	function progressSvg() {
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
+	}
+
+	function clonePreview(section) {
+		const clone = section?.cloneNode(true);
+		clone?.querySelectorAll('.speaker-notes').forEach(note => note.remove());
+		return clone;
+	}
+
+	function broadcast() {
+		if (activeIndex === lastBroadcastIndex) return;
+		lastBroadcastIndex = activeIndex;
+		const payload = { type: 'state', index: activeIndex, total: targets.length, title: sectionTitle(targets[activeIndex]), notes: sectionNotes(targets[activeIndex]) };
+		try { channel?.postMessage(payload); } catch { /* noop */ }
+		try { presenterWindow?.postMessage({ source: 'vpk-deck', ...payload }, '*'); } catch { /* noop */ }
+	}
+
+	function updateControls() {
+		if (!controls) return;
+		const prevButton = controls.querySelector('[data-docnav-prev]');
+		const nextButton = controls.querySelector('[data-docnav-next]');
+		const counter = controls.querySelector('.docnav-counter');
+		const arc = controls.querySelector('[data-vpk-progress-arc]');
+		if (prevButton) prevButton.disabled = activeIndex === 0;
+		if (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
+		if (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
+		if (arc) {
+			const radius = Number(arc.getAttribute('r') || 17.5);
+			const circumference = 2 * Math.PI * radius;
+			const progress = targets.length <= 1 ? 0 : activeIndex / (targets.length - 1);
+			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
+			arc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+			arc.style.opacity = progress <= 0 ? '0' : '1';
+		}
+	}
+
+	function buildPresenter() {
+		document.documentElement.dataset.vpkPresenter = 'true';
+		document.body.className = (document.body.className + ' vpk-presenter-window').trim();
+		document.body.innerHTML = '<main class="vpk-presenter"><section class="vpk-presenter-preview"><p class="vpk-presenter-kicker">Next section</p><div class="vpk-presenter-preview-frame" data-vpk-next-preview></div></section><section class="vpk-presenter-notes"><p class="vpk-presenter-kicker" data-vpk-presenter-title></p><div class="vpk-presenter-notes-text" data-vpk-presenter-notes contenteditable="true" role="textbox" aria-label="Speaker notes" spellcheck="false"></div><p class="vpk-presenter-timer" data-vpk-presenter-timer></p></section></main>';
+		const title = document.querySelector('[data-vpk-presenter-title]');
+		const notes = document.querySelector('[data-vpk-presenter-notes]');
+		const timer = document.querySelector('[data-vpk-presenter-timer]');
+		const preview = document.querySelector('[data-vpk-next-preview]');
+		function render(payload = {}) {
+			const current = payload.index ?? activeIndex;
+			const bounded = Math.max(0, Math.min(targets.length - 1, current));
+			const next = clonePreview(targets[Math.min(targets.length - 1, bounded + 1)]);
+			if (title) title.textContent = 'Section ' + String(bounded + 1) + ' / ' + targets.length + ' - ' + (payload.title || sectionTitle(targets[bounded]));
+			if (notes) notes.textContent = payload.notes || sectionNotes(targets[bounded]);
+			if (preview) {
+				preview.textContent = '';
+				if (next) preview.append(next);
+			}
+		}
+		render();
+		setInterval(() => {
+			const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+			if (timer) timer.textContent = Math.floor(elapsed / 60) + ':' + String(elapsed % 60).padStart(2, '0');
+		}, 500);
+		channel?.addEventListener('message', event => {
+			if (event.data?.type === 'state') render(event.data);
+		});
+		window.addEventListener('message', event => {
+			if (event.data?.source === 'vpk-deck' && event.data?.type === 'state') render(event.data);
+		});
+		document.addEventListener('keydown', event => {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+				if (channel) channel.postMessage({ type: 'request', delta: 1 });
+			}
+			if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+				if (channel) channel.postMessage({ type: 'request', delta: -1 });
+			}
+		});
+	}
+
+	if (location.hash.startsWith('#presenter')) {
+		buildPresenter();
+		return;
+	}
+
+	controls = document.createElement('nav');
+	controls.className = 'docnav-controls';
+	controls.setAttribute('aria-label', 'Document section navigation');
+	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 15V3.56l3.72 3.72 1.06-1.06-5-5a.75.75 0 0 0-1.06 0l-5 5 1.06 1.06 3.72-3.72V15z\" clip-rule=\"evenodd\"/></svg>" + '</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 1v11.44l3.72-3.72 1.06 1.06-5 5a.75.75 0 0 1-1.06 0l-5-5 1.06-1.06 3.72 3.72V1z\" clip-rule=\"evenodd\"/></svg>" + '</button>' + progressSvg() + '</span>';
+	document.body.appendChild(controls);
+
+	const prevButton = controls.querySelector('[data-docnav-prev]');
+	const nextButton = controls.querySelector('[data-docnav-next]');
+
+	function setActive(index, shouldBroadcast = true) {
+		activeIndex = Math.max(0, Math.min(targets.length - 1, index));
+		targets.forEach((target, targetIndex) => {
+			target.classList.toggle('is-docnav-active', targetIndex === activeIndex);
+		});
+		updateControls();
+		document.body.dataset.docnavReady = 'true';
+		if (shouldBroadcast) broadcast();
+	}
+
+	function setFocusMode() {
+		document.body.dataset.docnavFocus = 'true';
+		clearTimeout(focusTimer);
+		focusTimer = window.setTimeout(() => {
+			delete document.body.dataset.docnavFocus;
+		}, 1800);
+	}
+
+	function releaseFocusModeSoon() {
+		clearTimeout(manualTimer);
+		manualTimer = window.setTimeout(() => {
+			delete document.body.dataset.docnavFocus;
+		}, 120);
+	}
+
+	function currentIndex() {
+		const doc = document.documentElement;
+		const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
+		// At (or effectively at) the bottom, the final sections sit in the non-scrollable
+		// zone and their tops never reach the activation line, so snap to the last target.
+		if (maxScroll - window.scrollY <= 2) return targets.length - 1;
+		const y = window.scrollY + 80;
+		let selected = 0;
+		targets.forEach((target, index) => {
+			if (target.getBoundingClientRect().top + window.scrollY <= y) selected = index;
+		});
+		return selected;
+	}
+
+	function go(delta) {
+		const next = Math.max(0, Math.min(targets.length - 1, currentIndex() + delta));
+		setActive(next);
+		setFocusMode();
+		targets[next].scrollIntoView({ block: 'start', behavior: 'smooth' });
+	}
+
+	prevButton.addEventListener('click', () => go(-1));
+	nextButton.addEventListener('click', () => go(1));
+
+	document.addEventListener('keydown', event => {
+		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+		const editable = event.target?.closest?.('input, textarea, select, [contenteditable="true"]');
+		if (editable) return;
+		if (event.key.toLowerCase() === 'p') { event.preventDefault(); openPresenter(); return; }
+		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+		event.preventDefault();
+		const delta = event.key === 'ArrowDown' ? 1 : -1;
+		go(delta);
+	});
+
+	function openPresenter() {
+		const url = new URL(location.href);
+		url.hash = 'presenter-section-' + String(activeIndex + 1);
+		try { presenterWindow = window.open(url.href, 'vpk-presenter', 'popup,width=1180,height=760'); }
+		catch { /* noop */ }
+	}
+
+	channel?.addEventListener('message', event => {
+		if (event.data?.type === 'request') go(Number(event.data.delta || 0));
+	});
+	document.addEventListener('scroll', () => setActive(currentIndex()), { passive: true });
+	document.addEventListener('wheel', releaseFocusModeSoon, { passive: true });
+	document.addEventListener('touchstart', releaseFocusModeSoon, { passive: true });
+	setActive(currentIndex());
+})();
+</script>
 <!-- vpkh-enhance:begin -->
 <style data-vpkh-enhance>
+/*
+ * Artifact control chrome palette. Shared by the pager, theme toggle, and lightbox controls,
+ * and mirrored by the host React toolbar. The aliases point to the artifact tokens so the
+ * control layer follows light/dark theme changes without its own raw palette.
+ */
+:root {
+	--vpk-control-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+	--vpk-control-surface-hover: var(--accent-soft);
+	--vpk-control-border: var(--rule);
+	--vpk-control-text: var(--muted-text);
+	--vpk-control-text-strong: var(--ink);
+	--vpk-control-focus: var(--focus-ring);
+}
+
+/*
+ * Theme toggle — icon-only circular control on the shared palette. Overrides the base rule from
+ * shared.mjs (this block cascades later, so it wins) to avoid a full artifact rebuild.
+ */
+.vpk-theme-toggle {
+	position: fixed;
+	bottom: 18px;
+	left: 18px;
+	z-index: 60;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid var(--vpk-control-border);
+	border-radius: 999px;
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
+	box-shadow: none;
+	cursor: pointer;
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+	border-color: var(--vpk-control-border);
+	outline: none;
+}
+
+.vpk-theme-toggle:focus-visible {
+	outline: 2px solid var(--vpk-control-focus);
+	outline-offset: 2px;
+}
+
+.vpk-theme-toggle svg {
+	display: block;
+}
+
+.vpk-theme-toggle__label,
+.vpk-theme-toggle__state {
+	display: none;
+}
+
 .vpkh-scroll-fade {
 	position: fixed;
-	left: 0;
-	right: 0;
+	left: var(--vpkh-scroll-fade-left, 0);
+	width: var(--vpkh-scroll-fade-width, 100vw);
 	z-index: 2147483000;
-	height: 64px;
+	height: 72px;
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity var(--vpk-dur-fast, 140ms) var(--ease-out, ease);
@@ -1603,20 +2134,110 @@ body {
 
 .vpkh-scroll-fade[data-edge="top"] {
 	top: 0;
-	background: linear-gradient(to bottom, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
 .vpkh-scroll-fade[data-edge="bottom"] {
 	bottom: 0;
-	background: linear-gradient(to top, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
-html.vpkh-has-scroll.vpkh-show-top .vpkh-scroll-fade[data-edge="top"],
-html.vpkh-has-scroll.vpkh-show-bottom .vpkh-scroll-fade[data-edge="bottom"] {
+/* Gentle paper wash on top of the blur so receding content stays legible under floating chrome. */
+.vpkh-scroll-fade::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"]::after {
+	background: linear-gradient(to bottom, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"]::after {
+	background: linear-gradient(to top, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+/*
+ * Progressive (variable) blur: stacked backdrop-filter layers, each masked with a feathered
+ * linear-gradient so the blur ramps up toward the edge instead of ending in a hard cutoff.
+ * Layers compound where they overlap (strongest at the edge, zero at the inner boundary).
+ */
+.vpkh-scroll-fade__layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-visible="true"] {
 	opacity: 1;
 }
 
@@ -1695,17 +2316,26 @@ body.vpkh-lightbox-open {
 	width: 42px;
 	height: 42px;
 	place-items: center;
-	border: 1px solid var(--rule-strong);
+	border: 1px solid var(--vpk-control-border);
 	border-radius: 999px;
-	background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
-	color: var(--ink);
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
 	font: 600 12px/1 var(--font-mono, ui-monospace, monospace);
-	box-shadow: var(--shadow);
+	box-shadow: none;
 	cursor: pointer;
 }
 
+.vpkh-lightbox__control:hover {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+}
+
+.vpkh-lightbox__control svg {
+	display: block;
+}
+
 .vpkh-lightbox__control:focus-visible {
-	outline: 2px solid var(--focus-ring, var(--ink));
+	outline: 2px solid var(--vpk-control-focus);
 	outline-offset: 2px;
 }
 
@@ -1734,6 +2364,7 @@ body.vpkh-lightbox-open {
 	const visualSelector = "img, svg, video, canvas";
 	const containerSelector = "figure, .chart-figure, .figure-frame, .frame, .diagram, .illustration, .visual, .media, .svg-frame";
 	const skipSelector = "a, button, input, select, textarea, summary, label, [role='button'], [contenteditable='true'], .vpkh-lightbox";
+	const scrollFades = new Map();
 	let lightbox = null;
 	let activeTrigger = null;
 
@@ -1772,8 +2403,38 @@ body.vpkh-lightbox-open {
 		const node = document.createElement("div");
 		node.className = "vpkh-scroll-fade";
 		node.dataset.edge = edge;
+		node.dataset.visible = "false";
 		node.setAttribute("aria-hidden", "true");
+		for (let i = 0; i < 5; i += 1) {
+			const layer = document.createElement("div");
+			layer.className = "vpkh-scroll-fade__layer";
+			node.appendChild(layer);
+		}
 		document.body.appendChild(node);
+		scrollFades.set(edge, node);
+		return node;
+	}
+
+	function documentScrollRegion() {
+		const candidate = document.querySelector(".site-column-main") || document.querySelector("main") || document.body;
+		const rect = candidate.getBoundingClientRect();
+		const left = clamp(rect.left || 0, 0, window.innerWidth);
+		const right = clamp(rect.right || window.innerWidth, left, window.innerWidth);
+		const width = Math.max(0, right - left);
+		if (width < 80) return { left: 0, width: window.innerWidth };
+		return { left, width };
+	}
+
+	function positionScrollFade(node, region) {
+		node.style.setProperty("--vpkh-scroll-fade-left", Math.round(region.left) + "px");
+		node.style.setProperty("--vpkh-scroll-fade-width", Math.round(region.width) + "px");
+	}
+
+	function setScrollFade(edge, visible, region) {
+		const node = scrollFades.get(edge);
+		if (!node) return;
+		positionScrollFade(node, region);
+		node.dataset.visible = visible ? "true" : "false";
 	}
 
 	function updateScrollFades() {
@@ -1781,9 +2442,22 @@ body.vpkh-lightbox-open {
 		const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
 		const current = window.scrollY || doc.scrollTop || 0;
 		const hasOverflow = maxScroll > 2;
+		const region = documentScrollRegion();
 		doc.classList.toggle("vpkh-has-scroll", hasOverflow);
 		doc.classList.toggle("vpkh-show-top", hasOverflow && current > 2);
 		doc.classList.toggle("vpkh-show-bottom", hasOverflow && current < maxScroll - 2);
+		setScrollFade("top", hasOverflow && current > 2, region);
+		setScrollFade("bottom", hasOverflow && current < maxScroll - 2, region);
+	}
+
+	let lastScrollFadeSignature = "";
+	function pollScrollFades() {
+		const doc = document.documentElement;
+		const current = window.scrollY || doc.scrollTop || 0;
+		const signature = [current, doc.scrollHeight, window.innerHeight, window.innerWidth].join(":");
+		if (signature === lastScrollFadeSignature) return;
+		lastScrollFadeSignature = signature;
+		updateScrollFades();
 	}
 
 	let scrollFrame = 0;
@@ -1883,12 +2557,12 @@ body.vpkh-lightbox-open {
 		const status = document.createElement("div");
 		status.className = "vpkh-lightbox__status";
 
-		function makeButton(label, text, action) {
+		function makeButton(label, html, action) {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.className = "vpkh-lightbox__control";
 			button.setAttribute("aria-label", label);
-			button.textContent = text;
+			button.innerHTML = html;
 			button.addEventListener("click", action);
 			controls.appendChild(button);
 			return button;
@@ -1915,8 +2589,8 @@ body.vpkh-lightbox-open {
 			panY = 0;
 			render();
 		});
-		makeButton("Zoom in", "+", () => setScale(scale * 1.25));
-		makeButton("Zoom out", "-", () => setScale(scale / 1.25));
+		makeButton("Zoom in", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9M1 7a6 6 0 1 1 10.74 3.68l3.29 3.29-1.06 1.06-3.29-3.29A6 6 0 0 1 1 7m5.25.75V10h1.5V7.75H10v-1.5H7.75V4h-1.5v2.25H4v1.5z\" clip-rule=\"evenodd\"/></svg>", () => setScale(scale * 1.25));
+		makeButton("Zoom out", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9M1 7a6 6 0 1 1 10.74 3.68l3.29 3.29-1.06 1.06-3.29-3.29A6 6 0 0 1 1 7m9 .75H4v-1.5h6z\" clip-rule=\"evenodd\"/></svg>", () => setScale(scale / 1.25));
 
 		stage.appendChild(visual);
 		lightbox.appendChild(stage);
@@ -2028,8 +2702,11 @@ body.vpkh-lightbox-open {
 		createScrollFade("bottom");
 		updateScrollFades();
 		refreshZoomables();
-		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
+		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.documentElement.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
 		window.addEventListener("resize", scheduleScrollUpdate, { passive: true });
+		window.setInterval(pollScrollFades, 250);
 		if ("ResizeObserver" in window) new ResizeObserver(scheduleScrollUpdate).observe(document.body);
 		new MutationObserver(scheduleScrollUpdate).observe(document.body, { childList: true, subtree: true, attributes: true });
 	}

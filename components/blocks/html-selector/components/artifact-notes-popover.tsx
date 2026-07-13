@@ -11,6 +11,11 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type NotesStatus = "idle" | "loading" | "saving" | "saved" | "error";
 
@@ -55,6 +60,7 @@ export function ArtifactNotesPopover({
 	status,
 }: Readonly<ArtifactNotesPopoverProps>) {
 	const [open, setOpen] = useState(false);
+	const triggerTitle = disabled ? "Speaker notes are available for saved vpk-html artifacts." : "Speaker notes";
 	const handleOpenChange = useCallback((nextOpen: boolean) => {
 		setOpen(nextOpen);
 		if (nextOpen) {
@@ -64,20 +70,25 @@ export function ArtifactNotesPopover({
 
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger
-				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="compact"
-						disabled={disabled}
-						title={disabled ? "Speaker notes are available for saved vpk-html artifacts." : "Speaker notes"}
-					/>
-				}
-			>
-				<NoteIcon label="" />
-				<span>Speaker notes</span>
-			</PopoverTrigger>
+			<Tooltip>
+				<TooltipTrigger render={<span className="inline-flex" />}>
+					<PopoverTrigger
+						render={
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-compact"
+								disabled={disabled}
+								title={triggerTitle}
+								aria-label="Speaker notes"
+							/>
+						}
+					>
+						<NoteIcon label="" />
+					</PopoverTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">{triggerTitle}</TooltipContent>
+			</Tooltip>
 			<PopoverContent align="end" side="bottom" className="w-[360px] gap-3 border border-border bg-surface-raised p-3 text-text shadow-lg">
 				<PopoverHeader>
 					<PopoverTitle>Speaker notes</PopoverTitle>

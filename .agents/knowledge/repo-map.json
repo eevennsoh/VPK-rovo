@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 79,
-			"pageCount": 56
+			"ownerImportCount": 78,
+			"pageCount": 55
 		},
 		"pages": [
 			{
@@ -4272,30 +4272,6 @@
 					}
 				],
 				"source": "app/preview/blocks/twg-agent-card/page.tsx"
-			},
-			{
-				"ownerCount": 1,
-				"owners": [
-					{
-						"importPath": "@/components/blocks/work-item-detail",
-						"source": "components/blocks/work-item-detail",
-						"symbols": [
-							"WorkItemDetail"
-						]
-					}
-				],
-				"routePath": "/preview/blocks/work-item-detail",
-				"shellOwnerCount": 1,
-				"shellOwners": [
-					{
-						"importPath": "@/components/blocks/work-item-detail",
-						"source": "components/blocks/work-item-detail",
-						"symbols": [
-							"WorkItemDetail"
-						]
-					}
-				],
-				"source": "app/preview/blocks/work-item-detail/page.tsx"
 			},
 			{
 				"ownerCount": 2,
@@ -5157,7 +5133,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 395,
+			"manifestEntryCount": 393,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5193,7 +5169,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 88,
+				"entryCount": 86,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5704,18 +5680,6 @@
 						"slug": "visual-waveform",
 						"name": "Visual Waveform",
 						"importPath": "@/components/blocks/visual-waveform"
-					},
-					{
-						"category": "blocks",
-						"slug": "work-item-detail",
-						"name": "Work Item Detail",
-						"importPath": "@/components/blocks/work-item-detail"
-					},
-					{
-						"category": "blocks",
-						"slug": "work-item-widget",
-						"name": "Work Item Widget",
-						"importPath": "@/components/blocks/work-item-widget"
 					},
 					{
 						"category": "blocks",

@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildHorizontalScrollMaskStyle, buildScrollMaskStyle } from "./lib.ts";
+import { buildHorizontalScrollMaskStyle, buildScrollMaskBlurLayerStyles, buildScrollMaskStyle, resolveFadeSize } from "./lib.ts";
 import { createRequire } from "node:module";
 
 const requireRegistrySource = createRequire(import.meta.url);
@@ -73,6 +73,70 @@ test("buildHorizontalScrollMaskStyle can fade the trailing edge without a gutter
 	assert.equal(style.maskSize, "100% 100%");
 });
 
+test("buildScrollMaskBlurLayerStyles stacks feathered backdrop-blur layers per edge", () => {
+	const top = buildScrollMaskBlurLayerStyles("top");
+	const bottom = buildScrollMaskBlurLayerStyles("bottom");
+
+	assert.equal(top.length, 5);
+	assert.equal(bottom.length, 5);
+
+	// Each layer is an absolutely-positioned overlay whose backdrop blur and CSS mask match.
+	for (const layer of top) {
+		assert.equal(layer.position, "absolute");
+		assert.equal(layer.inset, 0);
+		assert.equal(layer.backdropFilter, layer.WebkitBackdropFilter);
+		assert.equal(layer.maskImage, layer.WebkitMaskImage);
+	}
+
+	// Blur ramps up toward the edge and the mask band narrows so layers compound at the edge.
+	assert.equal(top[0].backdropFilter, "blur(0.5px)");
+	assert.equal(top[4].backdropFilter, "blur(6px)");
+	assert.equal(top[0].maskImage, "linear-gradient(to bottom, #000 0%, #000 68%, transparent 100%)");
+	assert.equal(top[4].maskImage, "linear-gradient(to bottom, #000 0%, #000 10%, transparent 26%)");
+
+	// The bottom edge mirrors the gradient direction.
+	assert.equal(bottom[4].maskImage, "linear-gradient(to top, #000 0%, #000 10%, transparent 26%)");
+});
+
+test("resolveFadeSize coerces numbers to pixels and defaults to the fade-size token", () => {
+	assert.equal(resolveFadeSize(), "var(--ds-space-400)");
+	assert.equal(resolveFadeSize(24), "24px");
+	assert.equal(resolveFadeSize("2rem"), "2rem");
+});
+
+test("ScrollMask renders opt-in progressive blur overlays behind a pinned region", () => {
+	assert.match(SCROLL_MASK_SOURCE, /edgeBlur = false/);
+	assert.match(SCROLL_MASK_SOURCE, /data-slot="scroll-mask-blur"/);
+	assert.match(SCROLL_MASK_SOURCE, /data-edge="top"[\s\S]*data-edge="bottom"/);
+});
+
+test("ScrollMask gates the edge fade and blur on real scroll overflow state", () => {
+	// The mask fades and the blur overlays only render for edges with content scrolled past them.
+	assert.match(SCROLL_MASK_SOURCE, /useHasVerticalOverflow/);
+	assert.match(SCROLL_MASK_SOURCE, /fadeTop: showTopScrollMask/);
+	assert.match(SCROLL_MASK_SOURCE, /fadeBottom: showBottomScrollMask/);
+	assert.match(SCROLL_MASK_SOURCE, /edgeBlur && showTopScrollMask/);
+	assert.match(SCROLL_MASK_SOURCE, /edgeBlur && showBottomScrollMask/);
+});
+
+test("buildScrollMaskStyle fades only the edges with content scrolled past them", () => {
+	const topOnly = buildScrollMaskStyle({ fadeTop: true, fadeBottom: false });
+	assert.equal(
+		topOnly.maskImage,
+		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%), linear-gradient(black, black)",
+	);
+
+	const bottomOnly = buildScrollMaskStyle({ fadeTop: false, fadeBottom: true });
+	assert.equal(
+		bottomOnly.maskImage,
+		"linear-gradient(to bottom, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%), linear-gradient(black, black)",
+	);
+
+	// At rest (nothing scrolled past either edge) the content mask is fully opaque — no fade.
+	const none = buildScrollMaskStyle({ fadeTop: false, fadeBottom: false });
+	assert.equal(none.maskImage, "linear-gradient(to bottom, black 0, black 100%), linear-gradient(black, black)");
+});
+
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {
 	assert.match(
 		readWorkspaceFile("app/data/components.ts"),
@@ -84,7 +148,11 @@ test("Scroll Mask is wired into the Visual catalog route and demo registry", () 
 	);
 	assert.match(
 		readWorkspaceFile("app/data/details/visual.ts"),
-		/"scroll-mask": \{[\s\S]*import \{ ScrollMask \} from "@\/components\/visual\/scroll-mask";/,
+		/import \{ SCROLL_MASK_DETAIL \} from "\.\/visual\/scroll-mask";[\s\S]*"scroll-mask": SCROLL_MASK_DETAIL,/,
+	);
+	assert.match(
+		readWorkspaceFile("app/data/details/visual/scroll-mask.ts"),
+		/import \{ ScrollMask \} from "@\/components\/visual\/scroll-mask";/,
 	);
 	assert.match(
 		readWebsiteRegistrySource(),

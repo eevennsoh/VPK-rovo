@@ -98,6 +98,7 @@ export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "u
 			// Update document class for Tailwind dark mode + color-scheme
 			if (typeof document !== "undefined") {
 				const root = document.documentElement;
+				root.setAttribute("data-color-mode", newActualTheme);
 				root.classList.remove("light", "dark");
 				root.classList.add(newActualTheme);
 				root.style.colorScheme = newActualTheme;

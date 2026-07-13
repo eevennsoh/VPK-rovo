@@ -445,8 +445,6 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	{ name: "Signup 05", slug: "signup-05", importPath: "@/components/blocks/signup/signup-05", category: "blocks", detail: BLOCK_DETAILS["signup-05"] },
 	blockComponent("top-navigation", "Top Navigation"),
 	blockComponent("terminal-switch", "Terminal Switch"),
-	blockComponent("work-item-widget", "Work Item Widget"),
-	blockComponent("work-item-detail", "Work Item Detail"),
 	blockComponent("workflow", "Workflow"),
 ]);
 

@@ -5,18 +5,85 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DEMOS, ROOT, TEMPLATES } from "./shared.mjs";
+import { inlineIcon } from "./icons.mjs";
 
 const START = "<!-- vpkh-enhance:begin -->";
 const END = "<!-- vpkh-enhance:end -->";
 
+// Inline @atlaskit glyphs baked in at build time (pure HTML — no React import).
+const ICON_ZOOM_IN = inlineIcon("zoom-in");
+const ICON_ZOOM_OUT = inlineIcon("zoom-out");
+
 const ENHANCEMENT_BLOCK = `${START}
 <style data-vpkh-enhance>
+/*
+ * Artifact control chrome palette. Shared by the pager, theme toggle, and lightbox controls,
+ * and mirrored by the host React toolbar. The aliases point to the artifact tokens so the
+ * control layer follows light/dark theme changes without its own raw palette.
+ */
+:root {
+	--vpk-control-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+	--vpk-control-surface-hover: var(--accent-soft);
+	--vpk-control-border: var(--rule);
+	--vpk-control-text: var(--muted-text);
+	--vpk-control-text-strong: var(--ink);
+	--vpk-control-focus: var(--focus-ring);
+}
+
+/*
+ * Theme toggle — icon-only circular control on the shared palette. Overrides the base rule from
+ * shared.mjs (this block cascades later, so it wins) to avoid a full artifact rebuild.
+ */
+.vpk-theme-toggle {
+	position: fixed;
+	bottom: 18px;
+	left: 18px;
+	z-index: 60;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid var(--vpk-control-border);
+	border-radius: 999px;
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
+	box-shadow: none;
+	cursor: pointer;
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+	border-color: var(--vpk-control-border);
+	outline: none;
+}
+
+.vpk-theme-toggle:focus-visible {
+	outline: 2px solid var(--vpk-control-focus);
+	outline-offset: 2px;
+}
+
+.vpk-theme-toggle svg {
+	display: block;
+}
+
+.vpk-theme-toggle__label,
+.vpk-theme-toggle__state {
+	display: none;
+}
+
 .vpkh-scroll-fade {
 	position: fixed;
-	left: 0;
-	right: 0;
+	left: var(--vpkh-scroll-fade-left, 0);
+	width: var(--vpkh-scroll-fade-width, 100vw);
 	z-index: 2147483000;
-	height: 64px;
+	height: 72px;
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity var(--vpk-dur-fast, 140ms) var(--ease-out, ease);
@@ -24,20 +91,110 @@ const ENHANCEMENT_BLOCK = `${START}
 
 .vpkh-scroll-fade[data-edge="top"] {
 	top: 0;
-	background: linear-gradient(to bottom, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
 .vpkh-scroll-fade[data-edge="bottom"] {
 	bottom: 0;
-	background: linear-gradient(to top, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
-html.vpkh-has-scroll.vpkh-show-top .vpkh-scroll-fade[data-edge="top"],
-html.vpkh-has-scroll.vpkh-show-bottom .vpkh-scroll-fade[data-edge="bottom"] {
+/* Gentle paper wash on top of the blur so receding content stays legible under floating chrome. */
+.vpkh-scroll-fade::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"]::after {
+	background: linear-gradient(to bottom, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"]::after {
+	background: linear-gradient(to top, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+/*
+ * Progressive (variable) blur: stacked backdrop-filter layers, each masked with a feathered
+ * linear-gradient so the blur ramps up toward the edge instead of ending in a hard cutoff.
+ * Layers compound where they overlap (strongest at the edge, zero at the inner boundary).
+ */
+.vpkh-scroll-fade__layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-visible="true"] {
 	opacity: 1;
 }
 
@@ -116,17 +273,26 @@ body.vpkh-lightbox-open {
 	width: 42px;
 	height: 42px;
 	place-items: center;
-	border: 1px solid var(--rule-strong);
+	border: 1px solid var(--vpk-control-border);
 	border-radius: 999px;
-	background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
-	color: var(--ink);
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
 	font: 600 12px/1 var(--font-mono, ui-monospace, monospace);
-	box-shadow: var(--shadow);
+	box-shadow: none;
 	cursor: pointer;
 }
 
+.vpkh-lightbox__control:hover {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+}
+
+.vpkh-lightbox__control svg {
+	display: block;
+}
+
 .vpkh-lightbox__control:focus-visible {
-	outline: 2px solid var(--focus-ring, var(--ink));
+	outline: 2px solid var(--vpk-control-focus);
 	outline-offset: 2px;
 }
 
@@ -155,6 +321,7 @@ body.vpkh-lightbox-open {
 	const visualSelector = "img, svg, video, canvas";
 	const containerSelector = "figure, .chart-figure, .figure-frame, .frame, .diagram, .illustration, .visual, .media, .svg-frame";
 	const skipSelector = "a, button, input, select, textarea, summary, label, [role='button'], [contenteditable='true'], .vpkh-lightbox";
+	const scrollFades = new Map();
 	let lightbox = null;
 	let activeTrigger = null;
 
@@ -193,8 +360,38 @@ body.vpkh-lightbox-open {
 		const node = document.createElement("div");
 		node.className = "vpkh-scroll-fade";
 		node.dataset.edge = edge;
+		node.dataset.visible = "false";
 		node.setAttribute("aria-hidden", "true");
+		for (let i = 0; i < 5; i += 1) {
+			const layer = document.createElement("div");
+			layer.className = "vpkh-scroll-fade__layer";
+			node.appendChild(layer);
+		}
 		document.body.appendChild(node);
+		scrollFades.set(edge, node);
+		return node;
+	}
+
+	function documentScrollRegion() {
+		const candidate = document.querySelector(".site-column-main") || document.querySelector("main") || document.body;
+		const rect = candidate.getBoundingClientRect();
+		const left = clamp(rect.left || 0, 0, window.innerWidth);
+		const right = clamp(rect.right || window.innerWidth, left, window.innerWidth);
+		const width = Math.max(0, right - left);
+		if (width < 80) return { left: 0, width: window.innerWidth };
+		return { left, width };
+	}
+
+	function positionScrollFade(node, region) {
+		node.style.setProperty("--vpkh-scroll-fade-left", Math.round(region.left) + "px");
+		node.style.setProperty("--vpkh-scroll-fade-width", Math.round(region.width) + "px");
+	}
+
+	function setScrollFade(edge, visible, region) {
+		const node = scrollFades.get(edge);
+		if (!node) return;
+		positionScrollFade(node, region);
+		node.dataset.visible = visible ? "true" : "false";
 	}
 
 	function updateScrollFades() {
@@ -202,9 +399,22 @@ body.vpkh-lightbox-open {
 		const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
 		const current = window.scrollY || doc.scrollTop || 0;
 		const hasOverflow = maxScroll > 2;
+		const region = documentScrollRegion();
 		doc.classList.toggle("vpkh-has-scroll", hasOverflow);
 		doc.classList.toggle("vpkh-show-top", hasOverflow && current > 2);
 		doc.classList.toggle("vpkh-show-bottom", hasOverflow && current < maxScroll - 2);
+		setScrollFade("top", hasOverflow && current > 2, region);
+		setScrollFade("bottom", hasOverflow && current < maxScroll - 2, region);
+	}
+
+	let lastScrollFadeSignature = "";
+	function pollScrollFades() {
+		const doc = document.documentElement;
+		const current = window.scrollY || doc.scrollTop || 0;
+		const signature = [current, doc.scrollHeight, window.innerHeight, window.innerWidth].join(":");
+		if (signature === lastScrollFadeSignature) return;
+		lastScrollFadeSignature = signature;
+		updateScrollFades();
 	}
 
 	let scrollFrame = 0;
@@ -304,12 +514,12 @@ body.vpkh-lightbox-open {
 		const status = document.createElement("div");
 		status.className = "vpkh-lightbox__status";
 
-		function makeButton(label, text, action) {
+		function makeButton(label, html, action) {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.className = "vpkh-lightbox__control";
 			button.setAttribute("aria-label", label);
-			button.textContent = text;
+			button.innerHTML = html;
 			button.addEventListener("click", action);
 			controls.appendChild(button);
 			return button;
@@ -336,8 +546,8 @@ body.vpkh-lightbox-open {
 			panY = 0;
 			render();
 		});
-		makeButton("Zoom in", "+", () => setScale(scale * 1.25));
-		makeButton("Zoom out", "-", () => setScale(scale / 1.25));
+		makeButton("Zoom in", ${JSON.stringify(ICON_ZOOM_IN)}, () => setScale(scale * 1.25));
+		makeButton("Zoom out", ${JSON.stringify(ICON_ZOOM_OUT)}, () => setScale(scale / 1.25));
 
 		stage.appendChild(visual);
 		lightbox.appendChild(stage);
@@ -449,8 +659,11 @@ body.vpkh-lightbox-open {
 		createScrollFade("bottom");
 		updateScrollFades();
 		refreshZoomables();
-		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
+		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.documentElement.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
 		window.addEventListener("resize", scheduleScrollUpdate, { passive: true });
+		window.setInterval(pollScrollFades, 250);
 		if ("ResizeObserver" in window) new ResizeObserver(scheduleScrollUpdate).observe(document.body);
 		new MutationObserver(scheduleScrollUpdate).observe(document.body, { childList: true, subtree: true, attributes: true });
 	}

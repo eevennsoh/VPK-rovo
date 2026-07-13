@@ -1,3 +1,8 @@
+import { inlineIcon } from "./icons.mjs";
+
+// Inline @atlaskit contrast/theme glyph baked in at build time (pure HTML — no React import).
+const ICON_THEME = inlineIcon("theme");
+
 const STORAGE_KEY = "vpk-html-theme";
 const INIT_START = "<!-- vpk-theme-init:start -->";
 const INIT_END = "<!-- vpk-theme-init:end -->";
@@ -86,7 +91,7 @@ export function buildThemeRuntimeScript() {
 \t\tbutton.type = "button";
 \t\tbutton.className = "vpk-theme-toggle";
 \t\tbutton.setAttribute("data-vpk-theme-toggle", "true");
-\t\tbutton.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+\t\tbutton.innerHTML = ${JSON.stringify(ICON_THEME)};
 \t\tbutton.addEventListener("click", () => {
 \t\t\tconst current = readChoice();
 \t\t\tconst next = states[(states.indexOf(current) + 1) % states.length];
@@ -104,7 +109,7 @@ export function buildThemeRuntimeScript() {
 \t\tif (state) state.textContent = labels[choice];
 \t\tbutton.dataset.vpkThemeChoice = choice;
 \t\tbutton.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
-\t\tbutton.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+\t\tbutton.removeAttribute("aria-pressed");
 \t}
 
 \tfunction init() {
