@@ -403,6 +403,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("generative", "Generative UI"),
 	blockComponent("gallery", "Gallery"),
 	blockComponent("html-selector", "HTML Selector"),
+	blockComponent("jira-issue", "Jira issue"),
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("apps-directory", "Apps Directory"),
 	blockComponent("artifact"),

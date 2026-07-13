@@ -5133,7 +5133,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 393,
+			"manifestEntryCount": 394,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5169,7 +5169,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 86,
+				"entryCount": 87,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5380,6 +5380,12 @@
 						"slug": "html-selector",
 						"name": "HTML Selector",
 						"importPath": "@/components/blocks/html-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-issue",
+						"name": "Jira issue",
+						"importPath": "@/components/blocks/jira-issue"
 					},
 					{
 						"category": "blocks",
