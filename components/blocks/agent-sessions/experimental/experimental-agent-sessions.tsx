@@ -45,7 +45,7 @@ export function ExperimentalAgentSessions({ open, onClose, initialPreset }: Read
 		// open/close lifecycle + enter/exit animation. Read-only reuse — the standard
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
-			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem}>
+			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem} active={open}>
 				<ExperimentalWorkItemDialog
 					open={open}
 					onClose={onClose}

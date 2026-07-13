@@ -42,10 +42,13 @@ interface AgentSessionsProviderProps {
 	children: ReactNode;
 	initialPreset: AgentSessionsPreset;
 	workItem: WorkItemData;
+	/** Whether the surface is open/visible; gates the running metronome so preset
+	 * sessions stay pristine until the viewer opens the surface. */
+	active?: boolean;
 }
 
-export function AgentSessionsProvider({ children, initialPreset, workItem }: Readonly<AgentSessionsProviderProps>) {
-	const { state, actions } = useAgentSessionsController(initialPreset);
+export function AgentSessionsProvider({ children, initialPreset, workItem, active = true }: Readonly<AgentSessionsProviderProps>) {
+	const { state, actions } = useAgentSessionsController(initialPreset, active);
 
 	const meta = useMemo<AgentSessionsMeta>(
 		() => ({

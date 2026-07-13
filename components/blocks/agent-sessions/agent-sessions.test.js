@@ -108,6 +108,27 @@ test("the experimental surface stays out of global Rovo history", () => {
 	assert.match(compositionSource, /<FloatingSessionSurface \/>/u);
 });
 
+test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {
+	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
+	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
+	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
+
+	// Controller: the metronome only ticks while the surface is active AND a session
+	// is running, and `active` is a dependency so it re-subscribes on open/close. This
+	// prevents the inline docs "running" launcher from ticking down to waiting/completed
+	// while its dialog is still closed.
+	assert.match(controllerSource, /active = true,?/u);
+	assert.match(controllerSource, /if \(!active \|\| !isRunning\) return undefined;/u);
+	assert.match(controllerSource, /\[active, isRunning, shouldReduceMotion\]/u);
+
+	// Provider forwards the gate to the controller.
+	assert.match(contextSource, /active\?: boolean;/u);
+	assert.match(contextSource, /useAgentSessionsController\(initialPreset, active\)/u);
+
+	// Composition drives the gate from the dialog open state.
+	assert.match(compositionSource, /<AgentSessionsProvider[\s\S]*active=\{open\}[\s\S]*>/u);
+});
+
 // ── Source shape: preset chooser page ────────────────────────────────────────
 
 test("page.tsx is the 2-button hero chooser (standard + experimental=filled) that remounts the block", () => {

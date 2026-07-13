@@ -50,16 +50,22 @@ function initState(preset: AgentSessionsPreset): AgentSessionsState {
 	return hydratePreset(preset);
 }
 
-export function useAgentSessionsController(initialPreset: AgentSessionsPreset): AgentSessionsController {
+export function useAgentSessionsController(
+	initialPreset: AgentSessionsPreset,
+	active = true,
+): AgentSessionsController {
 	const [state, dispatch] = useReducer(agentSessionsReducer, initialPreset, initState);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state);
 
-	// Metronome: while any session is running, advance the pure timer engine on a
-	// fixed cadence. Reduced motion collapses continuous progress to an instant
+	// Metronome: while the surface is active (open) AND any session is running,
+	// advance the pure timer engine on a fixed cadence. Gating on `active` keeps
+	// preset sessions pristine until the viewer opens the surface — the docs
+	// "running" launcher must not tick down to waiting/completed while its dialog
+	// is still closed. Reduced motion collapses continuous progress to an instant
 	// settle so state transitions still convey information without animation.
 	useEffect(() => {
-		if (!isRunning) return undefined;
+		if (!active || !isRunning) return undefined;
 		if (shouldReduceMotion) {
 			dispatch({ type: "settle-running" });
 			return undefined;
@@ -68,7 +74,7 @@ export function useAgentSessionsController(initialPreset: AgentSessionsPreset): 
 			dispatch({ type: "tick", deltaMs: AGENT_SESSIONS_TICK_MS });
 		}, AGENT_SESSIONS_TICK_MS);
 		return () => window.clearInterval(interval);
-	}, [isRunning, shouldReduceMotion]);
+	}, [active, isRunning, shouldReduceMotion]);
 
 	const run = useCallback((action: AgentSessionsAction) => dispatch(action), []);
 
