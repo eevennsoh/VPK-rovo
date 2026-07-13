@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
+
 import { token } from "@/lib/tokens";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Breadcrumb,
@@ -12,6 +13,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Icon } from "@/components/ui/icon";
+import { Tile } from "@/components/ui/tile";
 import Heading from "@/components/ui/heading";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
@@ -41,19 +43,29 @@ export function ModalHeader() {
 				backgroundColor: token("elevation.surface.overlay"),
 			}}
 		>
-			<Breadcrumb className="min-w-0 overflow-hidden">
+			<Breadcrumb className="min-w-0 overflow-hidden" size="small">
 				<BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
 					<BreadcrumbItem className="min-w-0 max-w-[240px] shrink">
 						<BreadcrumbLink
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"
 							href="#"
 							before={
-								<Avatar shape="square" size="xs" className="size-3" aria-hidden>
-									<AvatarImage src="/avatar-project/rocket.svg" alt="" />
-									<AvatarFallback>
-										{(workItem.parent?.title ?? "Enterprise RFP Response").slice(0, 2).toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
+								<Tile
+									aria-hidden
+									isInset={false}
+									label={workItem.parent?.title ?? "Enterprise RFP Response"}
+									size="xxsmall"
+									variant="transparent"
+								>
+									<Image
+										alt=""
+										aria-hidden
+										className="object-contain"
+										height={16}
+										src="/avatar-project/rocket.svg"
+										width={16}
+									/>
+								</Tile>
 							}
 						>
 							{workItem.parent?.title ?? "Enterprise RFP Response"}

@@ -3,8 +3,6 @@ import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, Breadcr
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { IconTile } from "@/components/ui/icon-tile";
-import { Tile } from "@/components/ui/tile";
 import HomeIcon from "@atlaskit/icon/core/home";
 import PageIcon from "@atlaskit/icon/core/page";
 import TaskIcon from "@atlaskit/icon/core/task";
@@ -148,18 +146,11 @@ export function BreadcrumbDemoWithSlots() {
 				<BreadcrumbItem>
 					<BreadcrumbLink
 						before={
-							<Tile
+							<Icon
 								aria-hidden
-								isInset={false}
-								label="RFP"
-								size="xsmall"
-								variant="blueSubtle"
-							>
-								<Icon
-									aria-hidden
-									render={<PageIcon label="" size="small" />}
-								/>
-							</Tile>
+								className="text-icon-subtle"
+								render={<PageIcon label="" size="small" />}
+							/>
 						}
 						href="#"
 					>
@@ -177,17 +168,10 @@ export function BreadcrumbDemoWithSlots() {
 							/>
 						}
 						before={
-							<IconTile
+							<Icon
 								aria-hidden
-								icon={
-									<Icon
-										aria-hidden
-										render={<TaskIcon label="" size="small" />}
-									/>
-								}
-								label="Task"
-								size="xsmall"
-								variant="blue"
+								className="text-icon-subtle"
+								render={<TaskIcon label="" size="small" />}
 							/>
 						}
 					>

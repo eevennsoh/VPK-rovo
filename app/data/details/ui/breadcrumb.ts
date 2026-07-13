@@ -73,7 +73,7 @@ export const BREADCRUMB_DETAIL: ComponentDetail = {
       },
       {
         title: "With label slots",
-        description: "Breadcrumb labels with icons, tiles, and icon tiles.",
+        description: "Breadcrumb labels with leading and trailing icons.",
         demoSlug: "breadcrumb-demo-with-slots",
       },
       {
