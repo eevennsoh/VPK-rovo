@@ -114,7 +114,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
 		<ol
 			data-slot="breadcrumb-list"
 			className={cn(
-				"text-text-subtlest flex min-w-0 list-none flex-nowrap items-baseline overflow-hidden p-0 font-normal",
+				"text-text-subtlest flex min-w-0 list-none flex-nowrap items-center overflow-hidden p-0 font-normal",
 				breadcrumbSizeClassNames.list[size],
 				className
 			)}

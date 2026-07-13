@@ -1,4 +1,5 @@
 const CHAT_CAPABLE_COMPONENT_DOCS = new Set([
+	"blocks/agent-sessions",
 	"blocks/terminal-switch",
 	"projects/admin",
 	"projects/rovo",
