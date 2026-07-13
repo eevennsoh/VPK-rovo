@@ -81,6 +81,7 @@ import { QUESTION_CARD_DETAIL } from "./blocks/question-card";
 import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
+import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { KANBAN_BOARD_DETAIL } from "./blocks/kanban-board";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { GALLERY_DETAIL } from "./blocks/gallery";
@@ -169,6 +170,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"approval-card": APPROVAL_CARD_DETAIL,
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
+	"jira-issue": JIRA_ISSUE_DETAIL,
 	"kanban-board": KANBAN_BOARD_DETAIL,
 	generative: GENERATIVE_DETAIL,
 	gallery: GALLERY_DETAIL,

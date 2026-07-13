@@ -301,6 +301,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"html-selector": dynamic(() => import("../demos/blocks/html-selector-demo"), {
 		ssr: false,
 	}),
+	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), {
+		ssr: false,
+	}),
 	"kanban-board": dynamic(() => import("../demos/blocks/kanban-board-demo"), {
 		ssr: false,
 	}),

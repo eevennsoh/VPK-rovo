@@ -7,12 +7,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
-import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
-import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
-import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
-import TaskIcon from "@atlaskit/icon/core/task";
 
-import { useIsMounted } from "@/components/hooks/use-is-mounted";
+import { JiraIssue, type JiraIssuePriority, type JiraIssueTag } from "@/components/blocks/jira-issue";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -21,7 +17,6 @@ import {
 	AvatarFallback,
 	AvatarGroup,
 	AvatarImage,
-	AvatarUnassigned,
 	type AvatarProps,
 	type AvatarUnassignedKind,
 } from "@/components/ui/avatar";
@@ -33,17 +28,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export type KanbanBoardPriority = "major" | "medium" | "minor";
+export type KanbanBoardPriority = JiraIssuePriority;
 
-export interface KanbanBoardCardTag {
-	text: string;
-	color: TagColor;
-}
+export type KanbanBoardCardTag = JiraIssueTag;
 
 export interface KanbanBoardCardData {
 	title: string;
@@ -99,18 +90,6 @@ export interface KanbanBoardProps {
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
 }
-
-const PRIORITY_ICONS = {
-	major: PriorityMajorIcon,
-	medium: PriorityMediumIcon,
-	minor: PriorityMinorIcon,
-} as const;
-
-const PRIORITY_COLORS = {
-	major: token("color.icon.danger"),
-	medium: token("color.icon.information"),
-	minor: token("color.icon.success"),
-} as const;
 
 export function createKanbanBoardColumns(
 	columns: readonly KanbanBoardColumnData[],
@@ -357,125 +336,6 @@ function BoardColumn({
 	);
 }
 
-function KanbanCard({
-	avatarPulse = false,
-	avatarShape = "circle",
-	avatarSrc,
-	avatarUnassignedKind,
-	code,
-	isDragging,
-	isSelected,
-	onClick,
-	onDragEnd,
-	onDragStart,
-	priority,
-	tags,
-	title,
-}: Readonly<{
-	avatarPulse?: boolean;
-	avatarShape?: NonNullable<AvatarProps["shape"]>;
-	avatarSrc?: string;
-	avatarUnassignedKind?: AvatarUnassignedKind;
-	code: string;
-	isDragging?: boolean;
-	isSelected?: boolean;
-	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-	onDragEnd?: () => void;
-	onDragStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
-	priority: KanbanBoardPriority;
-	tags?: readonly KanbanBoardCardTag[];
-	title: string;
-}>) {
-	const isMounted = useIsMounted();
-
-	const PriorityIcon = PRIORITY_ICONS[priority];
-	const priorityColor = PRIORITY_COLORS[priority];
-
-	const showSelectionRing = Boolean(isSelected);
-
-	return (
-		<button
-			type="button"
-			draggable
-			aria-pressed={showSelectionRing}
-			className={cn(
-				"relative border outline-none focus-visible:border-ring",
-				// Per-card hover handled via CSS (was onMouseEnter+setState which
-				// triggered re-renders across the column on every mouseenter).
-				showSelectionRing
-					? "border-border-selected bg-bg-selected"
-					: "border-transparent bg-surface hover:bg-bg-neutral-subtle-hovered",
-				// Entry animation for inserted cards. Matches existing codebase
-				// pattern (see `components/ui-custom/task.tsx`,
-				// `components/ui-custom/chain-of-thought.tsx`).
-				"transition-[opacity,transform,background-color,border-color] duration-normal ease-out",
-				"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
-			)}
-			onClick={onClick}
-			onDragStart={onDragStart}
-			onDragEnd={onDragEnd}
-			style={{
-				borderRadius: token("radius.small"),
-				padding: token("space.150"),
-				cursor: isDragging ? "grabbing" : "grab",
-				boxShadow: token("elevation.shadow.raised"),
-				textAlign: "left",
-				width: "100%",
-				opacity: isDragging ? 0.5 : 1,
-			}}
-		>
-			<div className="flex flex-col gap-2">
-				<span className="text-sm">{title}</span>
-
-				{tags && tags.length > 0 ? (
-					<TagGroup className="gap-1">
-						{tags.map((tag, index) => (
-							<Tag key={`${tag.text}-${index}`} color={tag.color}>
-								{tag.text}
-							</Tag>
-						))}
-					</TagGroup>
-				) : null}
-
-				<div className="pt-0.5">
-					<div className="flex justify-between items-center">
-						<div className="flex items-center gap-2">
-							<TaskIcon label="Task" color={token("color.icon.brand")} />
-							<span className="text-xs font-semibold text-text-subtlest">{code}</span>
-						</div>
-
-						<div className="flex items-center gap-1.5">
-							<PriorityIcon label={`${priority} priority`} color={priorityColor} />
-							{isMounted ? (
-								avatarUnassignedKind ? (
-									<AvatarUnassigned
-										className={cn(
-											avatarPulse && "motion-safe:animate-pulse ring-2 ring-border-focused ring-offset-2 ring-offset-surface"
-										)}
-										kind={avatarUnassignedKind}
-										size="sm"
-									/>
-								) : (
-									<Avatar
-										className={cn(
-											avatarPulse && "motion-safe:animate-pulse ring-2 ring-border-focused ring-offset-2 ring-offset-surface"
-										)}
-										shape={avatarShape}
-										size="sm"
-									>
-										{avatarSrc ? <AvatarImage src={avatarSrc} alt={code} /> : null}
-										<AvatarFallback>{code?.[0] ?? "U"}</AvatarFallback>
-									</Avatar>
-								)
-							) : null}
-						</div>
-					</div>
-				</div>
-			</div>
-		</button>
-	);
-}
-
 export function KanbanBoard({
 	agents,
 	ariaLabel = "Kanban board columns. Scroll horizontally to review all statuses.",
@@ -682,18 +542,18 @@ export function KanbanBoard({
 										onCardClick?.(card.title, card.code, card, column.title);
 									};
 									return (
-										<KanbanCard
+										<JiraIssue
 											key={card.code}
-											title={card.title}
-											code={card.code}
+											summary={card.title}
+											issueKey={card.code}
 											tags={card.tags}
 											priority={card.priority}
-											avatarSrc={card.avatarSrc}
-											avatarShape={card.avatarShape}
-											avatarUnassignedKind={card.avatarUnassignedKind}
-											avatarPulse={card.avatarPulse}
-											isDragging={isCardBeingDragged || isSelectedCardBeingDragged}
-											isSelected={isSelected}
+											assigneeAvatarSrc={card.avatarSrc}
+											assigneeAvatarShape={card.avatarShape}
+											assigneeUnassignedKind={card.avatarUnassignedKind}
+											assigneePulse={card.avatarPulse}
+											dragging={isCardBeingDragged || isSelectedCardBeingDragged}
+											selected={isSelected}
 											onClick={handleClick}
 											onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
 											onDragEnd={handleCardDragEndInternal}
