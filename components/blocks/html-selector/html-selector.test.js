@@ -75,20 +75,62 @@ test("HTML Selector uses the vanilla overlay UI instead of parent panels", () =>
 test("HTML Selector renders the artifact action bar in the React host", () => {
 	const rootSource = readProjectFile("components/blocks/html-selector/components/html-selector.tsx");
 	const actionBarSource = readProjectFile("components/blocks/html-selector/components/artifact-action-bar.tsx");
+	const artifactThemeHookSource = readProjectFile("components/blocks/html-selector/hooks/use-artifact-theme.ts");
+	const htmlDemoSource = readProjectFile("components/website/demos/projects/html-demo.tsx");
+	const notesSource = readProjectFile("components/blocks/html-selector/components/artifact-notes-popover.tsx");
+	const themeWrapperSource = readProjectFile("components/utils/theme-wrapper.tsx");
 	const videoSource = readProjectFile("components/blocks/html-selector/components/artifact-video-dialog.tsx");
 	const publishSource = readProjectFile("components/blocks/html-selector/components/artifact-publish-dialog.tsx");
 
 	assert.match(rootSource, /import \{ ArtifactActionBar \} from "\.\/artifact-action-bar";/u);
 	assert.match(rootSource, /process\.env\.NODE_ENV === "production"[\s\S]*HTML Selector is a dev-only tool/u);
+	assert.match(rootSource, /enabled: process\.env\.NODE_ENV === "development"/u);
+	assert.doesNotMatch(htmlDemoSource, /selectorEnabled=\{false\}/u);
 	assert.match(rootSource, /<div className=\{cn\("relative h-dvh min-h-\[560px\] bg-surface", className\)\}>[\s\S]*<iframe[\s\S]*<ArtifactActionBar/u);
 	assert.match(actionBarSource, /top-3 right-3/u);
-	assert.match(actionBarSource, /Print \/ PDF/u);
-	assert.match(actionBarSource, /Download HTML/u);
+	assert.doesNotMatch(actionBarSource, /bg-surface-raised p-1 shadow-lg/u);
+	assert.match(actionBarSource, /size="icon-compact"[\s\S]*aria-label="Print or save as PDF"/u);
+	assert.match(actionBarSource, /size="icon-compact"[\s\S]*aria-label="Download current HTML"/u);
+	assert.match(actionBarSource, /<TooltipProvider>[\s\S]*<ToolbarTooltip content="Print or save as PDF">/u);
+	assert.match(actionBarSource, /useArtifactTheme\(\{[\s\S]*iframeRef,[\s\S]*onNotify,[\s\S]*pagePath,/u);
+	// Control chrome follows the artifact's own theme, scoped — it must NOT flip the whole VPK app.
+	assert.doesNotMatch(actionBarSource, /useTheme|setHostTheme|onThemeChange/u);
+	assert.match(actionBarSource, /themeMode: artifactThemeMode/u);
+	assert.match(actionBarSource, /data-artifact-color-mode=\{artifactThemeMode\}/u);
+	assert.match(artifactThemeHookSource, /dataset\.theme === "dark" \? "dark" : "light"/u);
+	assert.match(artifactThemeHookSource, /VPK_HTML_THEME_STORAGE_KEY = "vpk-html-theme"/u);
+	assert.match(artifactThemeHookSource, /dark: "Dark mode"/u);
+	assert.match(artifactThemeHookSource, /light: "Light mode"/u);
+	assert.match(artifactThemeHookSource, /system: "System"/u);
+	assert.match(artifactThemeHookSource, /hideFrameThemeToggle/u);
+	assert.match(artifactThemeHookSource, /frameToggle\.hidden = true/u);
+	assert.match(artifactThemeHookSource, /frameToggle\.style\.setProperty\("display", "none", "important"\)/u);
+	assert.match(artifactThemeHookSource, /MutationObserver/u);
+	assert.match(themeWrapperSource, /root\.setAttribute\("data-color-mode", newActualTheme\)/u);
+	assert.match(actionBarSource, /<ToolbarTooltip content=\{artifactThemeLabel\}>/u);
+	assert.doesNotMatch(actionBarSource, /aria-pressed/u);
+	assert.doesNotMatch(actionBarSource, /title=\{artifactThemeLabel\}/u);
+	assert.doesNotMatch(actionBarSource, /<span>Print \/ PDF<\/span>|<span>Download HTML<\/span>/u);
+	assert.match(notesSource, /<TooltipContent side="bottom">\{triggerTitle\}<\/TooltipContent>/u);
+	assert.doesNotMatch(notesSource, /<span>Speaker notes<\/span>/u);
+	assert.match(videoSource, /<TooltipContent side="bottom">\{triggerTitle\}<\/TooltipContent>/u);
+	assert.doesNotMatch(videoSource, /<span>Convert to video<\/span>/u);
+	assert.match(publishSource, /<TooltipContent side="bottom">\{triggerTitle\}<\/TooltipContent>/u);
+	assert.doesNotMatch(publishSource, /<span>Publish<\/span>/u);
 	assert.match(actionBarSource, /getVpkHtmlArtifactApiPath\(pagePath\)/u);
 	assert.match(videoSource, /\/api\/html-selector\/dispatch/u);
 	assert.match(videoSource, /composeVpkHtmlVideoPrompt/u);
 	assert.match(publishSource, /This uploads the HTML to a secret Gist on your GitHub account\./u);
 	assert.doesNotMatch(readProjectFile("public/html-selector/core-ui.js"), /Publish to GitHub Gist|Convert to video|Speaker notes/u);
+});
+
+test("HTML Selector rail styling is isolated from vpk-html page button rules", () => {
+	const cssSource = readProjectFile("public/html-selector/core.css");
+
+	assert.match(cssSource, /\.vpkhs-root button\s*\{[\s\S]*appearance: none;/u);
+	assert.match(cssSource, /\.vpkhs-root button:active\s*\{[\s\S]*transform: none;/u);
+	assert.match(cssSource, /\.vpkhs-tool-button\s*\{[\s\S]*border: 0 !important;[\s\S]*padding: 0 !important;/u);
+	assert.match(cssSource, /\.vpkhs-tool-button svg\s*\{[\s\S]*fill: none !important;[\s\S]*stroke: currentColor !important;/u);
 });
 
 test("HTML Selector overlay exposes the current agent on send controls", () => {

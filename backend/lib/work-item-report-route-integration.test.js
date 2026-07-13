@@ -76,8 +76,8 @@ const FLOATING_CHAT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-floating-chat/components/rovo-floating-chat.tsx"),
 	"utf8",
 );
-const MESSAGE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/ui-custom/message.tsx"),
+const MESSAGE_MARKDOWN_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/message-markdown.tsx"),
 	"utf8",
 );
 const AGENTS_VIEW_SOURCE = fs.readFileSync(
@@ -144,8 +144,8 @@ test("backend Work Item artifact route uses the vpk-html runner and emits an htm
 	assert.match(DEMOS_ROUTE_SOURCE, /router\.post\("\/agents\/rfp-demo\/vpk-html-report"/u);
 	assert.match(DEMOS_ROUTE_SOURCE, /generateAgentsRfpDemoReportPreview\(req\.body \|\| \{\}\)/u);
 	assert.match(AGENTS_RFP_DEMO_CHAT_STREAM_SOURCE, /runSkillValidation:\s*false/u);
-	assert.match(MESSAGE_SOURCE, /const prefix = "#rovo-canvas-";/u);
-	assert.match(MESSAGE_SOURCE, /window\.dispatchEvent\(new CustomEvent\("rovo:open-canvas-artifact"/u);
+	assert.match(MESSAGE_MARKDOWN_SOURCE, /const prefix = "#rovo-canvas-";/u);
+	assert.match(MESSAGE_MARKDOWN_SOURCE, /window\.dispatchEvent\(new CustomEvent\("rovo:open-canvas-artifact"/u);
 	assert.match(AGENTS_VIEW_SOURCE, /window\.addEventListener\("rovo:open-canvas-artifact", handleOpenRfpCanvas\);/u);
 	assert.match(AGENTS_VIEW_SOURCE, /event\.preventDefault\(\);[\s\S]*rfpDemo\.actions\.setCanvasOpen\(true\);/u);
 });

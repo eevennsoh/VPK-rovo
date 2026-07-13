@@ -2,10 +2,16 @@
 
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-import { buildScrollMaskStyle } from "./lib";
+import { buildScrollMaskBlurLayerStyles, buildScrollMaskStyle, resolveFadeSize } from "./lib";
+
+// Progressive-blur layer stacks are static per edge, so build them once at module scope and
+// share the style objects across every instance and render (no per-render allocation).
+const TOP_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("top");
+const BOTTOM_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bottom");
 
 export interface ScrollMaskProps
 	extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
@@ -18,6 +24,11 @@ export interface ScrollMaskProps
 	footerClassName?: string;
 	fadeSize?: number | string;
 	scrollbarWidth?: number | string;
+	/**
+	 * Layer a progressive (variable) backdrop blur over the top and bottom fade bands so
+	 * overflow content softly blurs out toward the edges instead of only fading. Off by default.
+	 */
+	edgeBlur?: boolean;
 }
 
 export function ScrollMask({
@@ -31,10 +42,21 @@ export function ScrollMask({
 	footerClassName,
 	fadeSize,
 	scrollbarWidth,
+	edgeBlur = false,
 	style,
 	...props
 }: Readonly<ScrollMaskProps>) {
-	const maskStyle = buildScrollMaskStyle({ fadeSize, scrollbarWidth });
+	// Track real overflow + scroll position so an edge only fades/blurs when there is
+	// actually content hidden past it — a menu at rest (or one that fits) shows no effect.
+	const { ref: viewportRef, showTopScrollMask, showBottomScrollMask } =
+		useHasVerticalOverflow<HTMLDivElement>();
+	const maskStyle = buildScrollMaskStyle({
+		fadeSize,
+		scrollbarWidth,
+		fadeTop: showTopScrollMask,
+		fadeBottom: showBottomScrollMask,
+	});
+	const resolvedFadeSize = resolveFadeSize(fadeSize);
 
 	return (
 		<div
@@ -54,17 +76,51 @@ export function ScrollMask({
 					{header}
 				</div>
 			) : null}
+			{/* When edgeBlur is off this wrapper is display:contents, so the viewport keeps its
+			    original flex sizing against the outer surface — layout is unchanged for consumers. */}
 			<div
-				data-slot="scroll-mask-viewport"
-				className={cn(
-					"min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]",
-					viewportClassName,
-				)}
-				style={{ ...maskStyle, ...viewportStyle }}
+				data-slot={edgeBlur ? "scroll-mask-blur-region" : undefined}
+				className={edgeBlur ? "relative flex min-h-0 flex-1 flex-col" : "contents"}
 			>
-				<div data-slot="scroll-mask-content" className="py-1">
-					{children}
+				<div
+					ref={viewportRef}
+					data-slot="scroll-mask-viewport"
+					className={cn(
+						"min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]",
+						viewportClassName,
+					)}
+					style={{ ...maskStyle, ...viewportStyle }}
+				>
+					<div data-slot="scroll-mask-content" className="py-1">
+						{children}
+					</div>
 				</div>
+				{edgeBlur && showTopScrollMask ? (
+					<div
+						aria-hidden
+						data-slot="scroll-mask-blur"
+						data-edge="top"
+						className="pointer-events-none absolute inset-x-0 top-0"
+						style={{ height: resolvedFadeSize }}
+					>
+						{TOP_BLUR_LAYERS.map((layerStyle, index) => (
+							<div key={index} style={layerStyle} />
+						))}
+					</div>
+				) : null}
+				{edgeBlur && showBottomScrollMask ? (
+					<div
+						aria-hidden
+						data-slot="scroll-mask-blur"
+						data-edge="bottom"
+						className="pointer-events-none absolute inset-x-0 bottom-0"
+						style={{ height: resolvedFadeSize }}
+					>
+						{BOTTOM_BLUR_LAYERS.map((layerStyle, index) => (
+							<div key={index} style={layerStyle} />
+						))}
+					</div>
+				) : null}
 			</div>
 			{footer ? (
 				<div

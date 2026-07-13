@@ -1407,7 +1407,7 @@ button {
 		if (state) state.textContent = labels[choice];
 		button.dataset.vpkThemeChoice = choice;
 		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
-		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+		button.removeAttribute("aria-pressed");
 	}
 
 	function init() {
