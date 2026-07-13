@@ -60,11 +60,22 @@ function RecurSelect({
  */
 export function SetToRecurRow() {
 	const [open, setOpen] = useState(false);
+	// `config` is the committed recurrence; `draft` holds the open popover's edits
+	// so Cancel/dismiss abandons them and only Save commits.
 	const [config, setConfig] = useState<RecurConfig>(DEFAULT_RECUR);
+	const [draft, setDraft] = useState<RecurConfig>(DEFAULT_RECUR);
 	const [isRecurring, setIsRecurring] = useState(false);
 
+	const handleOpenChange = (next: boolean) => {
+		if (next) {
+			// Start each editing session from the committed config.
+			setDraft(config);
+		}
+		setOpen(next);
+	};
+
 	return (
-		<Popover onOpenChange={setOpen} open={open}>
+		<Popover onOpenChange={handleOpenChange} open={open}>
 			<PopoverTrigger
 				render={
 					<button
@@ -85,22 +96,22 @@ export function SetToRecurRow() {
 						<span className="text-xs text-text-subtle">Recur</span>
 						<RecurSelect
 							ariaLabel="Recur frequency"
-							onChange={(next) => setConfig((previous) => ({ ...previous, frequency: next }))}
+							onChange={(next) => setDraft((previous) => ({ ...previous, frequency: next }))}
 							options={RECUR_FREQUENCIES}
-							value={config.frequency}
+							value={draft.frequency}
 						/>
 					</div>
 					<RecurSelect
 						ariaLabel="Recur day"
-						onChange={(next) => setConfig((previous) => ({ ...previous, day: next }))}
+						onChange={(next) => setDraft((previous) => ({ ...previous, day: next }))}
 						options={RECUR_DAYS}
-						value={config.day}
+						value={draft.day}
 					/>
 					<RecurSelect
 						ariaLabel="Recur timing"
-						onChange={(next) => setConfig((previous) => ({ ...previous, timing: next }))}
+						onChange={(next) => setDraft((previous) => ({ ...previous, timing: next }))}
 						options={RECUR_TIMINGS}
-						value={config.timing}
+						value={draft.timing}
 					/>
 				</div>
 				<div className="mt-3 flex items-center justify-between gap-2">
@@ -110,6 +121,7 @@ export function SetToRecurRow() {
 						onClick={() => {
 							setIsRecurring(false);
 							setConfig(DEFAULT_RECUR);
+							setDraft(DEFAULT_RECUR);
 							setOpen(false);
 						}}
 						size="icon"
@@ -123,6 +135,7 @@ export function SetToRecurRow() {
 						</Button>
 						<Button
 							onClick={() => {
+								setConfig(draft);
 								setIsRecurring(true);
 								setOpen(false);
 							}}
