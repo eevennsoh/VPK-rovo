@@ -108,6 +108,27 @@ test("the experimental surface stays out of global Rovo history", () => {
 	assert.match(compositionSource, /<FloatingSessionSurface \/>/u);
 });
 
+test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {
+	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
+	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
+	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
+
+	// Controller: the metronome only ticks while the surface is active AND a session
+	// is running, and `active` is a dependency so it re-subscribes on open/close. This
+	// prevents the inline docs "running" launcher from ticking down to waiting/completed
+	// while its dialog is still closed.
+	assert.match(controllerSource, /active = true,?/u);
+	assert.match(controllerSource, /if \(!active \|\| !isRunning\) return undefined;/u);
+	assert.match(controllerSource, /\[active, isRunning, shouldReduceMotion\]/u);
+
+	// Provider forwards the gate to the controller.
+	assert.match(contextSource, /active\?: boolean;/u);
+	assert.match(contextSource, /useAgentSessionsController\(initialPreset, active\)/u);
+
+	// Composition drives the gate from the dialog open state.
+	assert.match(compositionSource, /<AgentSessionsProvider[\s\S]*active=\{open\}[\s\S]*>/u);
+});
+
 // ── Source shape: preset chooser page ────────────────────────────────────────
 
 test("page.tsx is the 2-button hero chooser (standard + experimental=filled) that remounts the block", () => {
@@ -132,7 +153,9 @@ test("AgentSessions keeps the standard + experimental registry, detail, demo, an
 	const previewLayoutSource = readProjectFile("app/preview/blocks/[slug]/layout.tsx");
 
 	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agent-sessions-demo-standard"/u);
-	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agent-sessions-demo-experimental"/u);
+	assert.match(detailsSource, /title: "Experimental · Filled context"[\s\S]*demoSlug: "agent-sessions-demo-experimental"/u);
+	assert.match(detailsSource, /title: "Experimental · Empty context"[\s\S]*demoSlug: "agent-sessions-demo-experimental-empty"/u);
+	assert.match(detailsSource, /title: "Experimental · Multiple agents running"[\s\S]*demoSlug: "agent-sessions-demo-experimental-running"/u);
 	assert.match(detailsSource, /name: "initialIssueOpen"[\s\S]*Opens the Jira work item modal on initial render/u);
 	assert.match(detailsSource, /name: "onIssueClose"[\s\S]*Called after the Jira work item modal closes/u);
 	assert.match(detailsSource, /name: "variant"[\s\S]*type: "\\"default\\" \| \\"experimental\\"/u);
@@ -141,13 +164,19 @@ test("AgentSessions keeps the standard + experimental registry, detail, demo, an
 	assert.match(registrySource, /"agent-sessions-demo-experimental": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimental/u);
 	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-standard": dynamic[\s\S]*default: mod\.AgentSessionsDemoStandard/u);
 	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-experimental": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimental/u);
+	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-experimental-empty": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimentalEmpty/u);
+	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-experimental-running": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimentalRunning/u);
 	assert.match(demoSource, /export function AgentSessionsDemoStandard/u);
 	assert.match(demoSource, /export function AgentSessionsDemoExperimental/u);
+	assert.match(demoSource, /export function AgentSessionsDemoExperimentalEmpty/u);
+	assert.match(demoSource, /export function AgentSessionsDemoExperimentalRunning/u);
 	assert.match(demoSource, /<AgentSessions variant="default" \/>/u);
 	// The hero demo is the 2-button chooser page; the experimental example is the filled variant.
 	assert.match(demoSource, /import AgentSessionsPage from "@\/components\/blocks\/agent-sessions\/page";/u);
 	assert.match(demoSource, /return <AgentSessionsPage \/>;/u);
 	assert.match(demoSource, /<AgentSessions variant="experimental" initialExperimentalPreset="filled" \/>/u);
+	assert.match(demoSource, /<AgentSessions variant="experimental" initialExperimentalPreset="empty" \/>/u);
+	assert.match(demoSource, /<AgentSessions variant="experimental" initialExperimentalPreset="running" \/>/u);
 	assert.match(previewLayoutSource, /"agent-sessions-demo-standard"/u);
 	assert.match(previewLayoutSource, /"agent-sessions-demo-experimental"/u);
 });

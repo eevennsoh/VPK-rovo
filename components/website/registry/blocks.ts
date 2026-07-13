@@ -340,6 +340,20 @@ export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-sessions-demo-experimental-empty": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoExperimentalEmpty,
+			})),
+		{ ssr: false },
+	),
+	"agent-sessions-demo-experimental-running": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoExperimentalRunning,
+			})),
+		{ ssr: false },
+	),
 	"agent-evaluation-demo-filled": dynamic(
 		() =>
 			import("../demos/blocks/agent-evaluation-demo").then((mod) => ({

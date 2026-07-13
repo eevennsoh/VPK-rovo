@@ -13,9 +13,19 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 			demoSlug: "agent-sessions-demo-standard",
 		},
 		{
-			title: "Experimental",
+			title: "Experimental · Filled context",
 			description: "Work-item-scoped experimental variant: independent context/session state, deterministic Empty/Filled/Running presets, concurrent mock agents, and one shared floating chat/session experience.",
 			demoSlug: "agent-sessions-demo-experimental",
+		},
+		{
+			title: "Experimental · Empty context",
+			description: "Experimental variant seeded with the empty-context preset: no linked resources or sessions yet, so the empty state and first-run affordances are visible.",
+			demoSlug: "agent-sessions-demo-experimental-empty",
+		},
+		{
+			title: "Experimental · Multiple agents running",
+			description: "Experimental variant seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
+			demoSlug: "agent-sessions-demo-experimental-running",
 		},
 	],
 	props: [
