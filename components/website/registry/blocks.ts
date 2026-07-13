@@ -259,14 +259,6 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"signup-05": dynamic(() => import("../demos/blocks/signup-05-demo"), {
 		ssr: false,
 	}),
-	"work-item-widget": dynamic(
-		() => import("../demos/blocks/work-item-widget-demo"),
-		{ ssr: false },
-	),
-	"work-item-detail": dynamic(
-		() => import("../demos/blocks/work-item-detail-demo"),
-		{ ssr: false },
-	),
 	"question-card": dynamic(() => import("../demos/blocks/question-card-demo"), {
 		ssr: false,
 	}),
