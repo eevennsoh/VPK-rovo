@@ -32,28 +32,28 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export type KanbanBoardPriority = JiraIssuePriority;
+export type JiraKanbanPriority = JiraIssuePriority;
 
-export type KanbanBoardCardTag = JiraIssueTag;
+export type JiraKanbanCardTag = JiraIssueTag;
 
-export interface KanbanBoardCardData {
+export interface JiraKanbanCardData {
 	title: string;
 	code: string;
-	tags: KanbanBoardCardTag[];
-	priority: KanbanBoardPriority;
+	tags: JiraKanbanCardTag[];
+	priority: JiraKanbanPriority;
 	avatarSrc?: string;
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
 	avatarUnassignedKind?: AvatarUnassignedKind;
 	avatarPulse?: boolean;
 }
 
-export interface KanbanBoardColumnData {
+export interface JiraKanbanColumnData {
 	title: string;
 	count: number;
-	cards: KanbanBoardCardData[];
+	cards: JiraKanbanCardData[];
 }
 
-export interface KanbanBoardAgentData {
+export interface JiraKanbanAgentData {
 	id: string;
 	name: string;
 	byline: string;
@@ -62,27 +62,27 @@ export interface KanbanBoardAgentData {
 	brandName?: ThirdPartyLogoName;
 }
 
-export interface KanbanBoardCardSelectModifiers {
+export interface JiraKanbanCardSelectModifiers {
 	shiftKey: boolean;
 	metaOrCtrlKey: boolean;
 }
 
-export interface KanbanBoardProps {
-	boardColumns: readonly KanbanBoardColumnData[];
-	agents?: readonly KanbanBoardAgentData[];
+export interface JiraKanbanProps {
+	boardColumns: readonly JiraKanbanColumnData[];
+	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIdsByColumn?: Readonly<Record<string, readonly string[]>>;
 	ariaLabel?: string;
 	columnHeaderPaddingBlock?: CSSProperties["paddingBlock"];
 	draggedCardCode?: string | null;
 	selectedCardCodes?: ReadonlySet<string>;
-	onCardClick?: (title: string, code: string, card: KanbanBoardCardData, columnTitle: string) => void;
+	onCardClick?: (title: string, code: string, card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardSelect?: (
 		code: string,
 		columnTitle: string,
 		indexInColumn: number,
-		modifiers: KanbanBoardCardSelectModifiers,
+		modifiers: JiraKanbanCardSelectModifiers,
 	) => void;
-	onCardDragStart?: (card: KanbanBoardCardData, sourceColumnTitle: string) => void;
+	onCardDragStart?: (card: JiraKanbanCardData, sourceColumnTitle: string) => void;
 	onCardDrop?: (targetColumnTitle: string) => void;
 	onCardDragEnd?: () => void;
 	onCreateAgent?: (columnTitle: string) => void;
@@ -91,9 +91,9 @@ export interface KanbanBoardProps {
 	paddingTop?: CSSProperties["paddingTop"];
 }
 
-export function createKanbanBoardColumns(
-	columns: readonly KanbanBoardColumnData[],
-): KanbanBoardColumnData[] {
+export function createJiraKanbanColumns(
+	columns: readonly JiraKanbanColumnData[],
+): JiraKanbanColumnData[] {
 	return columns.map((column) => ({
 		...column,
 		cards: column.cards.map((card) => ({
@@ -112,7 +112,7 @@ function getAgentInitials(name: string): string {
 		.join("");
 }
 
-function AgentAvatar({ agent, className }: Readonly<{ agent: KanbanBoardAgentData; className?: string }>) {
+function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
 	if (agent.brandName) {
 		// Brand-identity agent → self-framing package tile (no hexagon).
 		return <LogoThirdParty className={className} label={agent.name} name={agent.brandName} size="small" />;
@@ -125,7 +125,7 @@ function AgentAvatar({ agent, className }: Readonly<{ agent: KanbanBoardAgentDat
 	);
 }
 
-function AgentStack({ agents }: Readonly<{ agents: readonly KanbanBoardAgentData[] }>) {
+function AgentStack({ agents }: Readonly<{ agents: readonly JiraKanbanAgentData[] }>) {
 	const visibleAgents = agents.slice(0, 2);
 	const overflowCount = Math.max(0, agents.length - visibleAgents.length);
 	const label = agents.map((agent) => agent.name).join(", ");
@@ -157,7 +157,7 @@ function ColumnAgentAssignment({
 	onCreateAgent,
 	onToggleAgent,
 }: Readonly<{
-	agents: readonly KanbanBoardAgentData[];
+	agents: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	columnTitle: string;
 	onCreateAgent: (columnTitle: string) => void;
@@ -166,7 +166,7 @@ function ColumnAgentAssignment({
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const assignedAgents = useMemo(
-		() => assignedAgentIds.map((id) => agents.find((agent) => agent.id === id)).filter((agent): agent is KanbanBoardAgentData => Boolean(agent)),
+		() => assignedAgentIds.map((id) => agents.find((agent) => agent.id === id)).filter((agent): agent is JiraKanbanAgentData => Boolean(agent)),
 		[agents, assignedAgentIds],
 	);
 	const hasAssignedAgents = assignedAgents.length > 0;
@@ -262,7 +262,7 @@ function BoardColumn({
 	onToggleAgent,
 	title,
 }: Readonly<{
-	agents?: readonly KanbanBoardAgentData[];
+	agents?: readonly JiraKanbanAgentData[];
 	assignedAgentIds: readonly string[];
 	children: ReactNode;
 	count: number;
@@ -336,9 +336,9 @@ function BoardColumn({
 	);
 }
 
-export function KanbanBoard({
+export function JiraKanban({
 	agents,
-	ariaLabel = "Kanban board columns. Scroll horizontally to review all statuses.",
+	ariaLabel = "Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
 	boardColumns,
 	columnHeaderPaddingBlock = token("space.100"),
@@ -353,7 +353,7 @@ export function KanbanBoard({
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
-}: Readonly<KanbanBoardProps>) {
+}: Readonly<JiraKanbanProps>) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [canScrollRight, setCanScrollRight] = useState(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
@@ -453,7 +453,7 @@ export function KanbanBoard({
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const handleCardDragStartInternal = (
-		card: KanbanBoardCardData,
+		card: JiraKanbanCardData,
 		columnTitle: string,
 		event: React.DragEvent<HTMLButtonElement>,
 	) => {
@@ -530,7 +530,7 @@ export function KanbanBoard({
 									const isMultiSelection = (selectedCardCodes?.size ?? 0) > 1;
 									const isSelectedCardBeingDragged = Boolean(draggedCardCode && isMultiSelection && isSelected);
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-										const modifiers: KanbanBoardCardSelectModifiers = {
+										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
 											metaOrCtrlKey: event.metaKey || event.ctrlKey,
 										};

@@ -11,7 +11,7 @@ const DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/detail
 const REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks.ts"), "utf8");
 const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	"components/blocks/agent-selector/page.tsx",
-	"components/blocks/kanban-board/index.tsx",
+	"components/blocks/jira-kanban/index.tsx",
 	"components/projects/jira/components/column-agent-assignment.tsx",
 	"components/projects/jira/components/work-item-modal/agent-panel.tsx",
 	"components/projects/jira/components/work-item-modal/sidebar-stack.tsx",

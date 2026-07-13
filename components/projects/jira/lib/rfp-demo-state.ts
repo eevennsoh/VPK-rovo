@@ -1,7 +1,7 @@
 import type {
-	KanbanBoardAgentData,
-	KanbanBoardColumnData,
-} from "@/components/blocks/kanban-board";
+	JiraKanbanAgentData,
+	JiraKanbanColumnData,
+} from "@/components/blocks/jira-kanban";
 import { BOARD_COLUMNS } from "../data/board-data";
 
 export const AGENTS_RFP_DEMO_STORAGE_KEY = "vpk-rovo:agents-rfp-demo:v1";
@@ -299,7 +299,7 @@ const ATLASSIAN_LOGO_REPORT_VERSION: AgentsRfpDemoReportVersion = {
 	timestampLabel: "Now",
 };
 
-export const RFP_DRAFTING_AGENT: KanbanBoardAgentData = {
+export const RFP_DRAFTING_AGENT: JiraKanbanAgentData = {
 	id: RFP_DRAFTING_AGENT_ID,
 	name: RFP_DRAFTING_AGENT_NAME,
 	byline: "Local demo agent by Rovo",
@@ -374,7 +374,7 @@ function getRandomRfpDraftingAgentAvatarSrc(): string {
 	return RFP_DRAFTING_AGENT_AVATAR_SRC;
 }
 
-function getRfpDraftingAgentData(agent: AgentsRfpDemoAgent): KanbanBoardAgentData {
+function getRfpDraftingAgentData(agent: AgentsRfpDemoAgent): JiraKanbanAgentData {
 	return {
 		...RFP_DRAFTING_AGENT,
 		avatarSrc: agent.avatarSrc ?? RFP_DRAFTING_AGENT.avatarSrc,
@@ -1089,7 +1089,7 @@ function getResolvedColumnCardCodes(
 
 export function resolveRfpDemoBoardColumns(
 	state: AgentsRfpDemoState,
-): KanbanBoardColumnData[] {
+): JiraKanbanColumnData[] {
 	const baseCards = new Map(
 		BOARD_COLUMNS.flatMap((column) => column.cards.map((card) => [card.code, card])),
 	);
@@ -1146,7 +1146,7 @@ export function resolveRfpDemoBoardColumns(
 
 				return resolvedCard;
 			})
-			.filter((card): card is KanbanBoardColumnData["cards"][number] => card !== null);
+			.filter((card): card is JiraKanbanColumnData["cards"][number] => card !== null);
 
 		return {
 			title: column.title,
@@ -1170,8 +1170,8 @@ export function getRfpDemoColumnAgentAssignments(
 
 export function getRfpDemoAgents(
 	state: AgentsRfpDemoState,
-	baseAgents: readonly KanbanBoardAgentData[],
-): KanbanBoardAgentData[] {
+	baseAgents: readonly JiraKanbanAgentData[],
+): JiraKanbanAgentData[] {
 	if (!state.agent || baseAgents.some((agent) => agent.id === RFP_DRAFTING_AGENT_ID)) {
 		return [...baseAgents];
 	}
