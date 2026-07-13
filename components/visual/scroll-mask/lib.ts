@@ -6,6 +6,8 @@ export const SCROLL_MASK_DEFAULT_SCROLLBAR_WIDTH = "10px";
 export interface ScrollMaskStyleOptions {
 	fadeSize?: number | string;
 	scrollbarWidth?: number | string;
+	fadeTop?: boolean;
+	fadeBottom?: boolean;
 }
 
 export interface HorizontalScrollMaskStyleOptions {
@@ -27,14 +29,54 @@ function toCssLength(value: number | string): string {
 	return typeof value === "number" ? `${value}px` : value;
 }
 
+export function resolveFadeSize(fadeSize: number | string = SCROLL_MASK_DEFAULT_FADE_SIZE): string {
+	return toCssLength(fadeSize);
+}
+
+// Stacked, feathered backdrop-blur layers = progressive (variable) blur. Each layer blurs
+// a little more but is masked to a progressively narrower band near the edge, so the layers
+// compound toward the edge and taper to zero inward — no hard blur cutoff. Blur radii are kept
+// gentle because stacked backdrop-filters compound.
+const SCROLL_MASK_BLUR_LAYERS = [
+	{ blur: 0.5, mid: 68, end: 100 },
+	{ blur: 1, mid: 52, end: 82 },
+	{ blur: 2, mid: 38, end: 62 },
+	{ blur: 3.5, mid: 24, end: 44 },
+	{ blur: 6, mid: 10, end: 26 },
+] as const;
+
+export function buildScrollMaskBlurLayerStyles(edge: "top" | "bottom"): CSSProperties[] {
+	const direction = edge === "top" ? "to bottom" : "to top";
+	return SCROLL_MASK_BLUR_LAYERS.map(({ blur, mid, end }) => {
+		const maskImage = `linear-gradient(${direction}, #000 0%, #000 ${mid}%, transparent ${end}%)`;
+		const backdropFilter = `blur(${blur}px)`;
+		return {
+			position: "absolute",
+			inset: 0,
+			backdropFilter,
+			WebkitBackdropFilter: backdropFilter,
+			maskImage,
+			WebkitMaskImage: maskImage,
+		};
+	});
+}
+
 export function buildScrollMaskStyle({
 	fadeSize = SCROLL_MASK_DEFAULT_FADE_SIZE,
 	scrollbarWidth = SCROLL_MASK_DEFAULT_SCROLLBAR_WIDTH,
+	fadeTop = true,
+	fadeBottom = true,
 }: ScrollMaskStyleOptions = {}): VerticalScrollMaskCssProperties {
 	const resolvedFadeSize = toCssLength(fadeSize);
 	const resolvedScrollbarWidth = toCssLength(scrollbarWidth);
+	// Only fade an edge that has content scrolled past it, so a menu at rest (or one that
+	// does not overflow) shows no fade. Both default true to preserve the full both-edge mask.
+	const topStops = fadeTop ? "transparent 0, black var(--scroll-mask-fade-size)" : "black 0";
+	const bottomStops = fadeBottom
+		? "black calc(100% - var(--scroll-mask-fade-size)), transparent 100%"
+		: "black 100%";
 	const maskImage = [
-		"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
+		`linear-gradient(to bottom, ${topStops}, ${bottomStops})`,
 		"linear-gradient(black, black)",
 	].join(", ");
 	const maskSize = `calc(100% - ${resolvedScrollbarWidth}) 100%, ${resolvedScrollbarWidth} 100%`;

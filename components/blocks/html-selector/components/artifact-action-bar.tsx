@@ -1,16 +1,25 @@
 "use client";
 
 import { useCallback } from "react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
+import DevicesIcon from "@atlaskit/icon/core/devices";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import PrinterIcon from "@atlaskit/icon/core/printer";
+import ThemeIcon from "@atlaskit/icon/core/theme";
 import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
 	getHtmlDownloadFileName,
 	getJsonErrorMessage,
 	getVpkHtmlArtifactApiPath,
 } from "@/components/blocks/html-selector/lib/artifact-actions";
+import { useArtifactTheme } from "../hooks/use-artifact-theme";
 import { useArtifactNotes } from "../hooks/use-artifact-notes";
 import type { AgentId, HtmlSelectorNotification } from "../lib/types";
 import { ArtifactNotesPopover } from "./artifact-notes-popover";
@@ -35,6 +44,21 @@ async function getAssetErrorMessage(response: Response): Promise<string> {
 	}
 }
 
+function ToolbarTooltip({
+	children,
+	content,
+}: Readonly<{
+	children: ReactNode;
+	content: string;
+}>) {
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<span className="inline-flex">{children}</span>} />
+			<TooltipContent side="bottom">{content}</TooltipContent>
+		</Tooltip>
+	);
+}
+
 export function ArtifactActionBar({
 	agent,
 	className,
@@ -45,6 +69,16 @@ export function ArtifactActionBar({
 }: Readonly<ArtifactActionBarProps>) {
 	const isArtifactPage = pagePath !== "srcdoc";
 	const notesState = useArtifactNotes(pagePath, onNotify);
+	const {
+		cycleTheme,
+		themeChoice: artifactThemeChoice,
+		themeLabel: artifactThemeLabel,
+		themeMode: artifactThemeMode,
+	} = useArtifactTheme({
+		iframeRef,
+		onNotify,
+		pagePath,
+	});
 
 	const handlePrint = useCallback(() => {
 		try {
@@ -93,49 +127,77 @@ export function ArtifactActionBar({
 				className,
 			)}
 		>
-			<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-lg border border-border bg-surface-raised p-1 shadow-lg">
-				<Button type="button" variant="ghost" size="compact" onClick={handlePrint} title="Print or save as PDF">
-					<PrinterIcon label="" />
-					<span>Print / PDF</span>
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="compact"
-					onClick={() => {
-						void handleDownload();
-					}}
-					disabled={!isArtifactPage}
-					title={isArtifactPage ? "Download current HTML" : "Download is available for saved vpk-html artifacts."}
+			<TooltipProvider>
+				<div
+					data-artifact-control-bar=""
+					data-artifact-color-mode={artifactThemeMode}
+					className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-lg p-1"
 				>
-					<DownloadIcon label="" />
-					<span>Download HTML</span>
-				</Button>
-				<ArtifactNotesPopover
-					disabled={!isArtifactPage}
-					error={notesState.error}
-					isDirty={notesState.isDirty}
-					loadNotes={notesState.loadNotes}
-					notes={notesState.notes}
-					saveNotes={notesState.saveNotes}
-					setNotes={notesState.setNotes}
-					status={notesState.status}
-				/>
-				<ArtifactVideoDialog
-					agent={agent}
-					disabled={!isArtifactPage}
-					loadNotes={notesState.loadNotes}
-					notes={notesState.notes}
-					onNotify={onNotify}
-					pagePath={pagePath}
-					repoRoot={repoRoot}
-				/>
-				<ArtifactPublishDialog
-					disabled={!isArtifactPage}
-					onNotify={onNotify}
-					pagePath={pagePath}
-				/>
-			</div>
+					<ToolbarTooltip content="Print or save as PDF">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-compact"
+							onClick={handlePrint}
+							title="Print or save as PDF"
+							aria-label="Print or save as PDF"
+						>
+							<PrinterIcon label="" />
+						</Button>
+					</ToolbarTooltip>
+					<ToolbarTooltip content={isArtifactPage ? "Download current HTML" : "Download is available for saved vpk-html artifacts."}>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-compact"
+							onClick={() => {
+								void handleDownload();
+							}}
+							disabled={!isArtifactPage}
+							title={isArtifactPage ? "Download current HTML" : "Download is available for saved vpk-html artifacts."}
+							aria-label="Download current HTML"
+						>
+							<DownloadIcon label="" />
+						</Button>
+					</ToolbarTooltip>
+					<ArtifactNotesPopover
+						disabled={!isArtifactPage}
+						error={notesState.error}
+						isDirty={notesState.isDirty}
+						loadNotes={notesState.loadNotes}
+						notes={notesState.notes}
+						saveNotes={notesState.saveNotes}
+						setNotes={notesState.setNotes}
+						status={notesState.status}
+					/>
+					<ArtifactVideoDialog
+						agent={agent}
+						disabled={!isArtifactPage}
+						loadNotes={notesState.loadNotes}
+						notes={notesState.notes}
+						onNotify={onNotify}
+						pagePath={pagePath}
+						repoRoot={repoRoot}
+					/>
+					<ArtifactPublishDialog
+						disabled={!isArtifactPage}
+						onNotify={onNotify}
+						pagePath={pagePath}
+					/>
+					<ToolbarTooltip content={artifactThemeLabel}>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-compact"
+							onClick={cycleTheme}
+							aria-label={artifactThemeLabel}
+							className="ml-1"
+						>
+							{artifactThemeChoice === "system" ? <DevicesIcon label="" /> : <ThemeIcon label="" />}
+						</Button>
+					</ToolbarTooltip>
+				</div>
+			</TooltipProvider>
 		</div>
 	);
 }

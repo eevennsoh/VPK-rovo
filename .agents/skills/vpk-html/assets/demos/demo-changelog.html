@@ -147,6 +147,11 @@
 	--code-surface: #ece3e2;
 	--code-ink: #312f2f;
 	--code-inverse: #f4efee;
+	--syntax-keyword: #3f3634;
+	--syntax-identifier: #312f2f;
+	--syntax-string: #5f4b21;
+	--syntax-comment: #6a625f;
+	--syntax-literal: #6f4039;
 	--math-highlight: #e9e3e2;
 	--success: #4f5d2d;
 	--success-tint: rgba(79, 93, 45, 0.14);
@@ -156,6 +161,10 @@
 	--danger-tint: rgba(140, 58, 50, 0.12);
 	--info: #5f5a58;
 	--info-tint: rgba(95, 90, 88, 0.12);
+	--diff-add-text: #3f4a27;
+	--diff-del-text: #71322c;
+	--diff-add-tint: rgba(79, 93, 45, 0.12);
+	--diff-del-tint: rgba(140, 58, 50, 0.10);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -178,6 +187,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -243,6 +257,11 @@
 	--code-surface: #2a2221;
 	--code-ink: #e9e3e2;
 	--code-inverse: #1a1817;
+	--syntax-keyword: #e9e3e2;
+	--syntax-identifier: #d8d1cf;
+	--syntax-string: #d0b967;
+	--syntax-comment: #aaa19e;
+	--syntax-literal: #d4938a;
 	--math-highlight: #2a2625;
 	--success: #b8c17b;
 	--success-tint: rgba(184, 193, 123, 0.18);
@@ -252,6 +271,10 @@
 	--danger-tint: rgba(201, 130, 120, 0.16);
 	--info: #b8afac;
 	--info-tint: rgba(184, 175, 172, 0.16);
+	--diff-add-text: #c7d08a;
+	--diff-del-text: #d4938a;
+	--diff-add-tint: rgba(184, 193, 123, 0.16);
+	--diff-del-tint: rgba(201, 130, 120, 0.14);
 	--font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -274,6 +297,11 @@
 	--collection-accent-product: var(--collection-product);
 	--collection-accent-service: var(--collection-service);
 	--paper-rule: var(--rule);
+	--page-max-width: 210mm;
+	--page-pad-x: 22mm;
+	--page-pad-y: 20mm;
+	--page-pad-x-compact: clamp(18px, 5vw, 32px);
+	--page-pad-y-compact: clamp(24px, 6vw, 40px);
 	--shadow: none;
 }
 
@@ -554,8 +582,10 @@ button:active,
 }
 
 /* algebrica component vocabulary */
+/* Prose rhythm scale: base 8px. Eyebrow gap 40, heading after content 48/40/32,
+   heading bottom 32/24/16, paragraph gap 24, section gap 56. */
 .post-header {
-	margin-bottom: 50px;
+	margin-bottom: 56px;
 }
 
 .post-header-breadcrumb,
@@ -569,7 +599,7 @@ button:active,
 	font-weight: 600;
 	letter-spacing: 2px;
 	line-height: 1.4;
-	margin-bottom: 60px;
+	margin-bottom: 40px;
 	text-transform: uppercase;
 }
 
@@ -579,7 +609,7 @@ button:active,
 	font-size: 36px;
 	font-weight: 500;
 	line-height: 1.4;
-	margin: 0 0 20px;
+	margin: 0 0 28px;
 }
 
 .post-header-meta {
@@ -603,28 +633,64 @@ button:active,
 	hyphens: auto;
 	line-height: 23px;
 	overflow-wrap: break-word;
-	padding-bottom: 60px;
+	padding-bottom: 56px;
 	text-align: justify;
 }
 
 .post-section:not(:last-child) {
 	border-bottom: 1px solid var(--rule-strong);
-	margin-bottom: 50px;
+	margin-bottom: 56px;
 }
 
 .post-section h2 {
 	color: var(--headline);
 	font-family: var(--font-display);
-	font-size: 24px;
+	font-size: 26px;
 	font-weight: 500;
 	line-height: 1.3;
-	margin: 0 0 20px;
+	margin: 0 0 32px;
 	text-align: left;
+}
+
+.post-section h3 {
+	color: var(--ink);
+	font-family: var(--font-display);
+	font-size: 19px;
+	font-weight: 500;
+	line-height: 1.35;
+	margin: 0 0 24px;
+	text-align: left;
+}
+
+.post-section h4,
+.post-section h5,
+.post-section h6 {
+	color: var(--ink);
+	font-family: var(--font-display);
+	font-size: 15px;
+	font-weight: 500;
+	line-height: 1.4;
+	margin: 0 0 16px;
+	text-align: left;
+}
+
+.post-section > * + h2 {
+	margin-top: 48px;
+}
+
+.post-section > * + h3 {
+	margin-top: 40px;
+}
+
+.post-section > * + h4,
+.post-section > * + h5,
+.post-section > * + h6 {
+	margin-top: 32px;
 }
 
 .post-section p:not(:last-child),
 .post-content p:not(:last-child) {
-	margin-bottom: 25px;
+	margin-bottom: 24px;
 }
 
 .post-paragraph {
@@ -1030,7 +1096,9 @@ button {
 	height: 34px;
 	justify-content: center;
 	padding: 0 14px;
-	transition: background-color 180ms ease, opacity 180ms ease;
+	transition:
+		background-color var(--vpk-dur-fast) var(--ease-out),
+		opacity var(--vpk-dur-fast) var(--ease-out);
 }
 
 .support-button,
@@ -1123,7 +1191,7 @@ button {
 	.eyebrow,
 	.kicker,
 	.cover-eyebrow {
-		margin-bottom: 60px;
+		margin-bottom: 40px;
 	}
 
 	.post-paragraph-number {
@@ -1137,6 +1205,104 @@ button {
 	.in-review-item {
 		align-items: flex-start;
 		gap: 6px;
+	}
+}
+
+/* vpk compact page tier */
+@media screen and (max-width: 840px) {
+	html {
+		background: var(--paper-background);
+	}
+
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		overflow-x: hidden;
+		padding: var(--page-pad-y-compact) var(--page-pad-x-compact) !important;
+		width: 100% !important;
+	}
+
+	body[data-vpk-motion="deck"] {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	main,
+	.page,
+	.sheet,
+	.doc-page,
+	.document-page {
+		max-width: 100% !important;
+		min-width: 0 !important;
+	}
+
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .page,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .sheet,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .doc-page,
+	body:not([data-vpk-chrome]):not([data-vpk-motion="deck"]) .document-page {
+		padding-left: var(--page-pad-x-compact) !important;
+		padding-right: var(--page-pad-x-compact) !important;
+	}
+
+	img,
+	svg,
+	canvas,
+	video,
+	pre,
+	table {
+		max-width: 100%;
+	}
+
+	pre,
+	code {
+		overflow-wrap: anywhere;
+	}
+
+	.post-section,
+	.post-paragraph-content {
+		text-align: left;
+	}
+}
+
+/* vpk theme toggle */
+.vpk-theme-toggle {
+	align-items: center;
+	backdrop-filter: blur(10px);
+	background: color-mix(in srgb, var(--paper) 88%, transparent);
+	border: 1px solid var(--rule);
+	border-radius: 999px;
+	bottom: 18px;
+	box-shadow: var(--shadow);
+	color: var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	font-weight: 500;
+	gap: 6px;
+	height: 34px;
+	left: 18px;
+	letter-spacing: 0;
+	line-height: 1;
+	padding: 0 10px;
+	position: fixed;
+	z-index: 60;
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+	border-color: var(--focus-ring);
+	color: var(--ink);
+}
+
+.vpk-theme-toggle__state {
+	color: var(--muted-text);
+	font-variant-numeric: tabular-nums;
+}
+
+@media print {
+	.vpk-theme-toggle {
+		display: none !important;
 	}
 }
 /* vpk-shared:end */  :root {
@@ -2354,11 +2520,11 @@ section,
 	.docnav-controls {
 		align-items: center;
 		backdrop-filter: blur(10px);
-		background: color-mix(in srgb, var(--paper) 88%, transparent);
-		border: 0;
+		background: var(--vpk-control-surface);
+		border: 1px solid var(--vpk-control-border);
 		border-radius: 999px;
 		bottom: 24px;
-		box-shadow: var(--shadow);
+		box-shadow: none;
 		display: flex;
 		font-family: var(--font-mono);
 		gap: 6px;
@@ -2366,16 +2532,17 @@ section,
 		padding: 6px;
 		position: fixed;
 		right: 24px;
-		z-index: 50;
+		/* Above the scroll fade, below the lightbox overlay. */
+		z-index: 2147483001;
 	}
 
 	.vpk-slide-counter button,
 	.docnav-controls button {
 		align-items: center;
-		background: var(--surface-raised);
-		border: 1px solid var(--rule);
+		background: transparent;
+		border: 1px solid var(--vpk-control-border);
 		border-radius: 999px;
-		color: var(--ink);
+		color: var(--vpk-control-text);
 		cursor: pointer;
 		display: flex;
 		font-family: var(--font-mono);
@@ -2387,12 +2554,17 @@ section,
 		width: 36px;
 	}
 
+	.vpk-slide-counter button svg,
+	.docnav-controls button svg {
+		display: block;
+	}
+
 	.vpk-slide-counter button:hover,
 	.vpk-slide-counter button:focus-visible,
 	.docnav-controls button:hover,
 	.docnav-controls button:focus-visible {
-		border-color: var(--accent);
-		color: var(--accent);
+		background: var(--vpk-control-surface-hover);
+		color: var(--vpk-control-text-strong);
 		outline: none;
 	}
 
@@ -2404,7 +2576,7 @@ section,
 
 	.vpk-nav-counter,
 	.docnav-counter {
-		color: var(--muted-text);
+		color: var(--vpk-control-text);
 		font-family: var(--font-mono);
 		font-size: 12px;
 		font-variant-numeric: tabular-nums;
@@ -2415,10 +2587,10 @@ section,
 	.vpk-nav-next-wrap {
 		align-items: center;
 		display: grid;
-		height: 44px;
+		height: 36px;
 		justify-items: center;
 		position: relative;
-		width: 44px;
+		width: 36px;
 	}
 
 	.vpk-nav-next-wrap button {
@@ -2431,23 +2603,20 @@ section,
 		pointer-events: none;
 		position: absolute;
 		transform: rotate(-90deg);
+		z-index: 2;
 	}
 
-	.vpk-nav-progress__track,
 	.vpk-nav-progress__arc {
 		fill: none;
-		stroke-width: 1.25;
-	}
-
-	.vpk-nav-progress__track {
-		stroke: var(--rule);
+		stroke-width: 1;
 	}
 
 	.vpk-nav-progress__arc {
 		stroke: var(--ink);
-		stroke-dasharray: var(--vpk-progress-circumference, 113.1);
-		stroke-dashoffset: var(--vpk-progress-offset, 113.1);
+		stroke-dasharray: var(--vpk-progress-circumference, 109.96);
+		stroke-dashoffset: var(--vpk-progress-offset, 109.96);
 		stroke-linecap: round;
+		opacity: 0;
 		transition: stroke-dashoffset 180ms var(--ease-out);
 	}
 
@@ -2685,7 +2854,7 @@ section,
 	}
 
 	function progressSvg() {
-		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
 	}
 
 	function clonePreview(section) {
@@ -2712,11 +2881,12 @@ section,
 		if (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
 		if (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
 		if (arc) {
-			const radius = Number(arc.getAttribute('r') || 18);
+			const radius = Number(arc.getAttribute('r') || 17.5);
 			const circumference = 2 * Math.PI * radius;
-			const progress = targets.length <= 1 ? 1 : (activeIndex + 1) / targets.length;
+			const progress = targets.length <= 1 ? 0 : activeIndex / (targets.length - 1);
 			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
 			arc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+			arc.style.opacity = progress <= 0 ? '0' : '1';
 		}
 	}
 
@@ -2768,7 +2938,7 @@ section,
 	controls = document.createElement('nav');
 	controls.className = 'docnav-controls';
 	controls.setAttribute('aria-label', 'Document section navigation');
-	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">&darr;</button>' + progressSvg() + '</span>';
+	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 15V3.56l3.72 3.72 1.06-1.06-5-5a.75.75 0 0 0-1.06 0l-5 5 1.06 1.06 3.72-3.72V15z\" clip-rule=\"evenodd\"/></svg>" + '</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 1v11.44l3.72-3.72 1.06 1.06-5 5a.75.75 0 0 1-1.06 0l-5-5 1.06-1.06 3.72 3.72V1z\" clip-rule=\"evenodd\"/></svg>" + '</button>' + progressSvg() + '</span>';
 	document.body.appendChild(controls);
 
 	const prevButton = controls.querySelector('[data-docnav-prev]');
@@ -2800,6 +2970,11 @@ section,
 	}
 
 	function currentIndex() {
+		const doc = document.documentElement;
+		const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
+		// At (or effectively at) the bottom, the final sections sit in the non-scrollable
+		// zone and their tops never reach the activation line, so snap to the last target.
+		if (maxScroll - window.scrollY <= 2) return targets.length - 1;
 		const y = window.scrollY + 80;
 		let selected = 0;
 		targets.forEach((target, index) => {
@@ -2890,7 +3065,7 @@ section,
 		button.type = "button";
 		button.className = "vpk-theme-toggle";
 		button.setAttribute("data-vpk-theme-toggle", "true");
-		button.innerHTML = '<span class="vpk-theme-toggle__label">theme</span><span class="vpk-theme-toggle__state" aria-live="polite"></span>';
+		button.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-5H8a5 5 0 0 1 0 10h-.75z\" clip-rule=\"evenodd\"/></svg>";
 		button.addEventListener("click", () => {
 			const current = readChoice();
 			const next = states[(states.indexOf(current) + 1) % states.length];
@@ -2908,7 +3083,7 @@ section,
 		if (state) state.textContent = labels[choice];
 		button.dataset.vpkThemeChoice = choice;
 		button.setAttribute("aria-label", "Theme: " + labels[choice] + ". Activate for " + labels[next] + ".");
-		button.setAttribute("aria-pressed", choice === "system" ? "false" : "true");
+		button.removeAttribute("aria-pressed");
 	}
 
 	function init() {
@@ -2928,12 +3103,74 @@ section,
 <!-- vpk-theme-runtime:end -->
 <!-- vpkh-enhance:begin -->
 <style data-vpkh-enhance>
+/*
+ * Artifact control chrome palette. Shared by the pager, theme toggle, and lightbox controls,
+ * and mirrored by the host React toolbar. The aliases point to the artifact tokens so the
+ * control layer follows light/dark theme changes without its own raw palette.
+ */
+:root {
+	--vpk-control-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+	--vpk-control-surface-hover: var(--accent-soft);
+	--vpk-control-border: var(--rule);
+	--vpk-control-text: var(--muted-text);
+	--vpk-control-text-strong: var(--ink);
+	--vpk-control-focus: var(--focus-ring);
+}
+
+/*
+ * Theme toggle — icon-only circular control on the shared palette. Overrides the base rule from
+ * shared.mjs (this block cascades later, so it wins) to avoid a full artifact rebuild.
+ */
+.vpk-theme-toggle {
+	position: fixed;
+	bottom: 18px;
+	left: 18px;
+	z-index: 60;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid var(--vpk-control-border);
+	border-radius: 999px;
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
+	box-shadow: none;
+	cursor: pointer;
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+}
+
+.vpk-theme-toggle:hover,
+.vpk-theme-toggle:focus-visible {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+	border-color: var(--vpk-control-border);
+	outline: none;
+}
+
+.vpk-theme-toggle:focus-visible {
+	outline: 2px solid var(--vpk-control-focus);
+	outline-offset: 2px;
+}
+
+.vpk-theme-toggle svg {
+	display: block;
+}
+
+.vpk-theme-toggle__label,
+.vpk-theme-toggle__state {
+	display: none;
+}
+
 .vpkh-scroll-fade {
 	position: fixed;
-	left: 0;
-	right: 0;
+	left: var(--vpkh-scroll-fade-left, 0);
+	width: var(--vpkh-scroll-fade-width, 100vw);
 	z-index: 2147483000;
-	height: 64px;
+	height: 72px;
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity var(--vpk-dur-fast, 140ms) var(--ease-out, ease);
@@ -2941,20 +3178,110 @@ section,
 
 .vpkh-scroll-fade[data-edge="top"] {
 	top: 0;
-	background: linear-gradient(to bottom, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
 .vpkh-scroll-fade[data-edge="bottom"] {
 	bottom: 0;
-	background: linear-gradient(to top, var(--paper-background, var(--paper)) 0%, color-mix(in srgb, var(--paper-background, var(--paper)) 84%, transparent) 42%, transparent 100%);
-	-webkit-backdrop-filter: blur(10px);
-	backdrop-filter: blur(10px);
 }
 
-html.vpkh-has-scroll.vpkh-show-top .vpkh-scroll-fade[data-edge="top"],
-html.vpkh-has-scroll.vpkh-show-bottom .vpkh-scroll-fade[data-edge="bottom"] {
+/* Gentle paper wash on top of the blur so receding content stays legible under floating chrome. */
+.vpkh-scroll-fade::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"]::after {
+	background: linear-gradient(to bottom, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"]::after {
+	background: linear-gradient(to top, color-mix(in srgb, var(--paper-background, var(--paper)) 46%, transparent) 0%, transparent 72%);
+}
+
+/*
+ * Progressive (variable) blur: stacked backdrop-filter layers, each masked with a feathered
+ * linear-gradient so the blur ramps up toward the edge instead of ending in a hard cutoff.
+ * Layers compound where they overlap (strongest at the edge, zero at the inner boundary).
+ */
+.vpkh-scroll-fade__layer {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to bottom, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="top"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(1) {
+	-webkit-backdrop-filter: blur(0.5px);
+	backdrop-filter: blur(0.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+	mask-image: linear-gradient(to top, black 0%, black 68%, transparent 100%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(2) {
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+	mask-image: linear-gradient(to top, black 0%, black 52%, transparent 82%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(3) {
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+	mask-image: linear-gradient(to top, black 0%, black 38%, transparent 62%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(4) {
+	-webkit-backdrop-filter: blur(3.5px);
+	backdrop-filter: blur(3.5px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+	mask-image: linear-gradient(to top, black 0%, black 24%, transparent 44%);
+}
+
+.vpkh-scroll-fade[data-edge="bottom"] .vpkh-scroll-fade__layer:nth-child(5) {
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+	mask-image: linear-gradient(to top, black 0%, black 10%, transparent 26%);
+}
+
+.vpkh-scroll-fade[data-visible="true"] {
 	opacity: 1;
 }
 
@@ -3033,17 +3360,26 @@ body.vpkh-lightbox-open {
 	width: 42px;
 	height: 42px;
 	place-items: center;
-	border: 1px solid var(--rule-strong);
+	border: 1px solid var(--vpk-control-border);
 	border-radius: 999px;
-	background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
-	color: var(--ink);
+	background: var(--vpk-control-surface);
+	color: var(--vpk-control-text);
 	font: 600 12px/1 var(--font-mono, ui-monospace, monospace);
-	box-shadow: var(--shadow);
+	box-shadow: none;
 	cursor: pointer;
 }
 
+.vpkh-lightbox__control:hover {
+	background: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
+}
+
+.vpkh-lightbox__control svg {
+	display: block;
+}
+
 .vpkh-lightbox__control:focus-visible {
-	outline: 2px solid var(--focus-ring, var(--ink));
+	outline: 2px solid var(--vpk-control-focus);
 	outline-offset: 2px;
 }
 
@@ -3072,6 +3408,7 @@ body.vpkh-lightbox-open {
 	const visualSelector = "img, svg, video, canvas";
 	const containerSelector = "figure, .chart-figure, .figure-frame, .frame, .diagram, .illustration, .visual, .media, .svg-frame";
 	const skipSelector = "a, button, input, select, textarea, summary, label, [role='button'], [contenteditable='true'], .vpkh-lightbox";
+	const scrollFades = new Map();
 	let lightbox = null;
 	let activeTrigger = null;
 
@@ -3110,8 +3447,38 @@ body.vpkh-lightbox-open {
 		const node = document.createElement("div");
 		node.className = "vpkh-scroll-fade";
 		node.dataset.edge = edge;
+		node.dataset.visible = "false";
 		node.setAttribute("aria-hidden", "true");
+		for (let i = 0; i < 5; i += 1) {
+			const layer = document.createElement("div");
+			layer.className = "vpkh-scroll-fade__layer";
+			node.appendChild(layer);
+		}
 		document.body.appendChild(node);
+		scrollFades.set(edge, node);
+		return node;
+	}
+
+	function documentScrollRegion() {
+		const candidate = document.querySelector(".site-column-main") || document.querySelector("main") || document.body;
+		const rect = candidate.getBoundingClientRect();
+		const left = clamp(rect.left || 0, 0, window.innerWidth);
+		const right = clamp(rect.right || window.innerWidth, left, window.innerWidth);
+		const width = Math.max(0, right - left);
+		if (width < 80) return { left: 0, width: window.innerWidth };
+		return { left, width };
+	}
+
+	function positionScrollFade(node, region) {
+		node.style.setProperty("--vpkh-scroll-fade-left", Math.round(region.left) + "px");
+		node.style.setProperty("--vpkh-scroll-fade-width", Math.round(region.width) + "px");
+	}
+
+	function setScrollFade(edge, visible, region) {
+		const node = scrollFades.get(edge);
+		if (!node) return;
+		positionScrollFade(node, region);
+		node.dataset.visible = visible ? "true" : "false";
 	}
 
 	function updateScrollFades() {
@@ -3119,9 +3486,22 @@ body.vpkh-lightbox-open {
 		const maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
 		const current = window.scrollY || doc.scrollTop || 0;
 		const hasOverflow = maxScroll > 2;
+		const region = documentScrollRegion();
 		doc.classList.toggle("vpkh-has-scroll", hasOverflow);
 		doc.classList.toggle("vpkh-show-top", hasOverflow && current > 2);
 		doc.classList.toggle("vpkh-show-bottom", hasOverflow && current < maxScroll - 2);
+		setScrollFade("top", hasOverflow && current > 2, region);
+		setScrollFade("bottom", hasOverflow && current < maxScroll - 2, region);
+	}
+
+	let lastScrollFadeSignature = "";
+	function pollScrollFades() {
+		const doc = document.documentElement;
+		const current = window.scrollY || doc.scrollTop || 0;
+		const signature = [current, doc.scrollHeight, window.innerHeight, window.innerWidth].join(":");
+		if (signature === lastScrollFadeSignature) return;
+		lastScrollFadeSignature = signature;
+		updateScrollFades();
 	}
 
 	let scrollFrame = 0;
@@ -3221,12 +3601,12 @@ body.vpkh-lightbox-open {
 		const status = document.createElement("div");
 		status.className = "vpkh-lightbox__status";
 
-		function makeButton(label, text, action) {
+		function makeButton(label, html, action) {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.className = "vpkh-lightbox__control";
 			button.setAttribute("aria-label", label);
-			button.textContent = text;
+			button.innerHTML = html;
 			button.addEventListener("click", action);
 			controls.appendChild(button);
 			return button;
@@ -3253,8 +3633,8 @@ body.vpkh-lightbox-open {
 			panY = 0;
 			render();
 		});
-		makeButton("Zoom in", "+", () => setScale(scale * 1.25));
-		makeButton("Zoom out", "-", () => setScale(scale / 1.25));
+		makeButton("Zoom in", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9M1 7a6 6 0 1 1 10.74 3.68l3.29 3.29-1.06 1.06-3.29-3.29A6 6 0 0 1 1 7m5.25.75V10h1.5V7.75H10v-1.5H7.75V4h-1.5v2.25H4v1.5z\" clip-rule=\"evenodd\"/></svg>", () => setScale(scale * 1.25));
+		makeButton("Zoom out", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9M1 7a6 6 0 1 1 10.74 3.68l3.29 3.29-1.06 1.06-3.29-3.29A6 6 0 0 1 1 7m9 .75H4v-1.5h6z\" clip-rule=\"evenodd\"/></svg>", () => setScale(scale / 1.25));
 
 		stage.appendChild(visual);
 		lightbox.appendChild(stage);
@@ -3366,8 +3746,11 @@ body.vpkh-lightbox-open {
 		createScrollFade("bottom");
 		updateScrollFades();
 		refreshZoomables();
-		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
+		window.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.addEventListener("scroll", scheduleScrollUpdate, { passive: true, capture: true });
+		document.documentElement.addEventListener("scroll", scheduleScrollUpdate, { passive: true });
 		window.addEventListener("resize", scheduleScrollUpdate, { passive: true });
+		window.setInterval(pollScrollFades, 250);
 		if ("ResizeObserver" in window) new ResizeObserver(scheduleScrollUpdate).observe(document.body);
 		new MutationObserver(scheduleScrollUpdate).observe(document.body, { childList: true, subtree: true, attributes: true });
 	}

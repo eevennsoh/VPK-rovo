@@ -1,3 +1,11 @@
+import { inlineIcon } from "./icons.mjs";
+
+// Inline @atlaskit arrow glyphs baked in at build time for the pure-HTML pager (no React import).
+const ICON_ARROW_UP = inlineIcon("arrow-up");
+const ICON_ARROW_DOWN = inlineIcon("arrow-down");
+const ICON_ARROW_LEFT = inlineIcon("arrow-left");
+const ICON_ARROW_RIGHT = inlineIcon("arrow-right");
+
 const SLIDE_SECTION = /<section\b[^>]*\bclass=["'][^"']*\bslide\b[^"']*["'][^>]*>/gi;
 
 function escapeHtml(value) {
@@ -99,11 +107,11 @@ export function buildPresentationCss() {
 \t.docnav-controls {
 \t\talign-items: center;
 \t\tbackdrop-filter: blur(10px);
-\t\tbackground: color-mix(in srgb, var(--paper) 88%, transparent);
-\t\tborder: 0;
+\t\tbackground: var(--vpk-control-surface);
+\t\tborder: 1px solid var(--vpk-control-border);
 \t\tborder-radius: 999px;
 \t\tbottom: 24px;
-\t\tbox-shadow: var(--shadow);
+\t\tbox-shadow: none;
 \t\tdisplay: flex;
 \t\tfont-family: var(--font-mono);
 \t\tgap: 6px;
@@ -111,16 +119,17 @@ export function buildPresentationCss() {
 \t\tpadding: 6px;
 \t\tposition: fixed;
 \t\tright: 24px;
-\t\tz-index: 50;
+\t\t/* Above the scroll fade, below the lightbox overlay. */
+\t\tz-index: 2147483001;
 \t}
 
 \t.vpk-slide-counter button,
 \t.docnav-controls button {
 \t\talign-items: center;
-\t\tbackground: var(--surface-raised);
-\t\tborder: 1px solid var(--rule);
+\t\tbackground: transparent;
+\t\tborder: 1px solid var(--vpk-control-border);
 \t\tborder-radius: 999px;
-\t\tcolor: var(--ink);
+\t\tcolor: var(--vpk-control-text);
 \t\tcursor: pointer;
 \t\tdisplay: flex;
 \t\tfont-family: var(--font-mono);
@@ -132,12 +141,17 @@ export function buildPresentationCss() {
 \t\twidth: 36px;
 \t}
 
+\t.vpk-slide-counter button svg,
+\t.docnav-controls button svg {
+\t\tdisplay: block;
+\t}
+
 \t.vpk-slide-counter button:hover,
 \t.vpk-slide-counter button:focus-visible,
 \t.docnav-controls button:hover,
 \t.docnav-controls button:focus-visible {
-\t\tborder-color: var(--accent);
-\t\tcolor: var(--accent);
+\t\tbackground: var(--vpk-control-surface-hover);
+\t\tcolor: var(--vpk-control-text-strong);
 \t\toutline: none;
 \t}
 
@@ -149,7 +163,7 @@ export function buildPresentationCss() {
 
 \t.vpk-nav-counter,
 \t.docnav-counter {
-\t\tcolor: var(--muted-text);
+\t\tcolor: var(--vpk-control-text);
 \t\tfont-family: var(--font-mono);
 \t\tfont-size: 12px;
 \t\tfont-variant-numeric: tabular-nums;
@@ -160,10 +174,10 @@ export function buildPresentationCss() {
 \t.vpk-nav-next-wrap {
 \t\talign-items: center;
 \t\tdisplay: grid;
-\t\theight: 44px;
+\t\theight: 36px;
 \t\tjustify-items: center;
 \t\tposition: relative;
-\t\twidth: 44px;
+\t\twidth: 36px;
 \t}
 
 \t.vpk-nav-next-wrap button {
@@ -176,23 +190,20 @@ export function buildPresentationCss() {
 \t\tpointer-events: none;
 \t\tposition: absolute;
 \t\ttransform: rotate(-90deg);
+\t\tz-index: 2;
 \t}
 
-\t.vpk-nav-progress__track,
 \t.vpk-nav-progress__arc {
 \t\tfill: none;
-\t\tstroke-width: 1.25;
-\t}
-
-\t.vpk-nav-progress__track {
-\t\tstroke: var(--rule);
+\t\tstroke-width: 1;
 \t}
 
 \t.vpk-nav-progress__arc {
 \t\tstroke: var(--ink);
-\t\tstroke-dasharray: var(--vpk-progress-circumference, 113.1);
-\t\tstroke-dashoffset: var(--vpk-progress-offset, 113.1);
+\t\tstroke-dasharray: var(--vpk-progress-circumference, 109.96);
+\t\tstroke-dashoffset: var(--vpk-progress-offset, 109.96);
 \t\tstroke-linecap: round;
+\t\topacity: 0;
 \t\ttransition: stroke-dashoffset 180ms var(--ease-out);
 \t}
 
@@ -344,7 +355,7 @@ export function buildPresentationJs() {
 \t}
 
 \tfunction progressSvg() {
-\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
 \t}
 
 \tfunction ensureControls() {
@@ -354,7 +365,7 @@ export function buildPresentationJs() {
 \t\tcontrols.className = 'vpk-slide-counter';
 \t\tcontrols.dataset.vpkSlideCounter = 'true';
 \t\tcontrols.setAttribute('aria-label', 'Slide navigation');
-\t\tcontrols.innerHTML = '<button type="button" data-vpk-slide-prev aria-label="Previous slide">&larr;</button><span class="vpk-nav-counter" data-vpk-slide-count aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-vpk-slide-next aria-label="Next slide">&rarr;</button>' + progressSvg() + '</span>';
+\t\tcontrols.innerHTML = '<button type="button" data-vpk-slide-prev aria-label="Previous slide">' + ${JSON.stringify(ICON_ARROW_LEFT)} + '</button><span class="vpk-nav-counter" data-vpk-slide-count aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-vpk-slide-next aria-label="Next slide">' + ${JSON.stringify(ICON_ARROW_RIGHT)} + '</button>' + progressSvg() + '</span>';
 \t\tcontrols.querySelector('[data-vpk-slide-prev]')?.addEventListener('click', () => show(index - 1));
 \t\tcontrols.querySelector('[data-vpk-slide-next]')?.addEventListener('click', () => show(index + 1));
 \t\tdocument.body.append(controls);
@@ -371,11 +382,12 @@ export function buildPresentationJs() {
 \t\tif (next) next.disabled = index === slides.length - 1;
 \t\tif (counter) counter.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
 \t\tif (arc) {
-\t\t\tconst radius = Number(arc.getAttribute('r') || 18);
+\t\t\tconst radius = Number(arc.getAttribute('r') || 17.5);
 \t\t\tconst circumference = 2 * Math.PI * radius;
-\t\t\tconst progress = slides.length <= 1 ? 1 : (index + 1) / slides.length;
+\t\t\tconst progress = slides.length <= 1 ? 0 : index / (slides.length - 1);
 \t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));
 \t\t\tarc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+\t\t\tarc.style.opacity = progress <= 0 ? '0' : '1';
 \t\t}
 \t}
 
@@ -521,7 +533,7 @@ export function buildDocNavJs() {
 \t}
 
 \tfunction progressSvg() {
-\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 44 44" fill="none"><circle class="vpk-nav-progress__track" cx="22" cy="22" r="18"></circle><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="22" cy="22" r="18"></circle></svg>';
+\t\treturn '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
 \t}
 
 \tfunction clonePreview(section) {
@@ -548,11 +560,12 @@ export function buildDocNavJs() {
 \t\tif (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
 \t\tif (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
 \t\tif (arc) {
-\t\t\tconst radius = Number(arc.getAttribute('r') || 18);
+\t\t\tconst radius = Number(arc.getAttribute('r') || 17.5);
 \t\t\tconst circumference = 2 * Math.PI * radius;
-\t\t\tconst progress = targets.length <= 1 ? 1 : (activeIndex + 1) / targets.length;
+\t\t\tconst progress = targets.length <= 1 ? 0 : activeIndex / (targets.length - 1);
 \t\t\tarc.style.setProperty('--vpk-progress-circumference', String(circumference));
 \t\t\tarc.style.setProperty('--vpk-progress-offset', String(circumference * (1 - progress)));
+\t\t\tarc.style.opacity = progress <= 0 ? '0' : '1';
 \t\t}
 \t}
 
@@ -604,7 +617,7 @@ export function buildDocNavJs() {
 \tcontrols = document.createElement('nav');
 \tcontrols.className = 'docnav-controls';
 \tcontrols.setAttribute('aria-label', 'Document section navigation');
-\tcontrols.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">&uarr;</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">&darr;</button>' + progressSvg() + '</span>';
+\tcontrols.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">' + ${JSON.stringify(ICON_ARROW_UP)} + '</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">' + ${JSON.stringify(ICON_ARROW_DOWN)} + '</button>' + progressSvg() + '</span>';
 \tdocument.body.appendChild(controls);
 
 \tconst prevButton = controls.querySelector('[data-docnav-prev]');
@@ -636,6 +649,11 @@ export function buildDocNavJs() {
 \t}
 
 \tfunction currentIndex() {
+\t\tconst doc = document.documentElement;
+\t\tconst maxScroll = Math.max(0, doc.scrollHeight - window.innerHeight);
+\t\t// At (or effectively at) the bottom, the final sections sit in the non-scrollable
+\t\t// zone and their tops never reach the activation line, so snap to the last target.
+\t\tif (maxScroll - window.scrollY <= 2) return targets.length - 1;
 \t\tconst y = window.scrollY + 80;
 \t\tlet selected = 0;
 \t\ttargets.forEach((target, index) => {

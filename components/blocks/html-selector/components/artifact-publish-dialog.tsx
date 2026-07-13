@@ -14,6 +14,11 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { readJsonResponse } from "@/components/blocks/html-selector/lib/artifact-actions";
 import type { HtmlSelectorNotification } from "../lib/types";
 
@@ -36,6 +41,7 @@ export function ArtifactPublishDialog({
 	pagePath,
 }: Readonly<ArtifactPublishDialogProps>) {
 	const [open, setOpen] = useState(false);
+	const triggerTitle = disabled ? "Gist publishing is available for saved vpk-html artifacts." : "Publish to GitHub Gist";
 	const [status, setStatus] = useState<PublishStatus>("idle");
 	const [message, setMessage] = useState("");
 	const [url, setUrl] = useState("");
@@ -88,20 +94,25 @@ export function ArtifactPublishDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger
-				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="compact"
-						disabled={disabled}
-						title={disabled ? "Gist publishing is available for saved vpk-html artifacts." : "Publish to GitHub Gist"}
-					/>
-				}
-			>
-				<ShareIcon label="" />
-				<span>Publish</span>
-			</DialogTrigger>
+			<Tooltip>
+				<TooltipTrigger render={<span className="inline-flex" />}>
+					<DialogTrigger
+						render={
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-compact"
+								disabled={disabled}
+								title={triggerTitle}
+								aria-label="Publish to GitHub Gist"
+							/>
+						}
+					>
+						<ShareIcon label="" />
+					</DialogTrigger>
+				</TooltipTrigger>
+				<TooltipContent side="bottom">{triggerTitle}</TooltipContent>
+			</Tooltip>
 			<DialogContent size="sm" className="gap-4">
 				<DialogHeader>
 					<DialogTitle>Publish to GitHub Gist</DialogTitle>

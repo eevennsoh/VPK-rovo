@@ -119,6 +119,22 @@ test("quality gate command surface includes focal and tidy audit gates", async (
 	assert.match(buildSource, /--check-caption-echo/);
 });
 
+test("enhancement scroll fades are scoped to the active content region", () => {
+	const source = fs.readFileSync(path.join(__dirname, "inject-enhancements.mjs"), "utf8");
+
+	assert.match(source, /left:\s*var\(--vpkh-scroll-fade-left,\s*0\);/);
+	assert.match(source, /width:\s*var\(--vpkh-scroll-fade-width,\s*100vw\);/);
+	assert.match(source, /\.vpkh-scroll-fade\[data-visible="true"\]/);
+	assert.match(source, /const scrollFades = new Map\(\);/);
+	assert.match(source, /document\.querySelector\("\.site-column-main"\)/);
+	assert.match(source, /document\.querySelector\("main"\)/);
+	assert.match(source, /function setScrollFade\(edge, visible, region\)/);
+	assert.match(source, /function pollScrollFades\(\)/);
+	assert.match(source, /document\.addEventListener\("scroll", scheduleScrollUpdate, \{ passive: true, capture: true \}\);/);
+	assert.match(source, /window\.setInterval\(pollScrollFades, 250\);/);
+	assert.doesNotMatch(source, /html\.vpkh-has-scroll\.vpkh-show-top \.vpkh-scroll-fade/);
+});
+
 test("github publishing helpers derive stable repo names and validate repo specs", async () => {
 	const { deriveRepoName, parseRepoSpec } = await import("./github-pages.mjs");
 
@@ -182,7 +198,15 @@ test("presentation injector detects decks and is idempotent", async () => {
 	assert.match(once, /data-vpk-slide-next/);
 	assert.match(once, /vpk-nav-counter/);
 	assert.match(once, /data-vpk-progress-arc/);
+	assert.match(once, /\.vpk-nav-next-wrap\s*\{[\s\S]*height:\s*36px;[\s\S]*width:\s*36px;/);
+	assert.match(once, /viewBox="0 0 36 36"/);
+	assert.match(once, /data-vpk-progress-arc cx="18" cy="18" r="17\.5"/);
+	assert.match(once, /opacity:\s*0;/);
+	assert.match(once, /const progress = slides\.length <= 1 \? 0 : index \/ \(slides\.length - 1\);/);
+	assert.match(once, /arc\.style\.opacity = progress <= 0 \? '0' : '1';/);
 	assert.match(once, /stroke-dashoffset 180ms var\(--ease-out\)/);
+	assert.doesNotMatch(once, /viewBox="0 0 44 44"/);
+	assert.doesNotMatch(once, /vpk-nav-progress__track/);
 	assert.match(once, /aria-live="polite"/);
 	assert.match(once, /contenteditable="true" role="textbox" aria-label="Speaker notes"/);
 	assert.match(once, /\.speaker-notes\s*\{[\s\S]*display:\s*none\s*!important/);
@@ -237,10 +261,23 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.match(once, /className = 'docnav-controls'/);
 	assert.match(once, /vpk presentation mode/);
 	assert.match(once, /data-vpk-progress-arc/);
+	assert.match(once, /viewBox="0 0 36 36"/);
+	assert.match(once, /data-vpk-progress-arc cx="18" cy="18" r="17\.5"/);
+	assert.match(once, /const progress = targets\.length <= 1 \? 0 : activeIndex \/ \(targets\.length - 1\);/);
+	assert.match(once, /arc\.style\.opacity = progress <= 0 \? '0' : '1';/);
 	assert.match(once, /presenter-section-/);
 	assert.match(once, /contenteditable="true" role="textbox" aria-label="Speaker notes"/);
 	assert.match(once, /BroadcastChannel\('vpk-deck'\)/);
 	assert.match(once, /is-docnav-active/);
+	assert.match(once, /\.vpk-slide-counter,[\s\S]*\.docnav-controls\s*\{[\s\S]*z-index:\s*2147483001;/);
+	// Pager uses the shared control palette + inline @atlaskit SVG arrows (no HTML entities).
+	assert.match(once, /background: var\(--vpk-control-surface\)/);
+	assert.match(once, /color: var\(--vpk-control-text\)/);
+	assert.doesNotMatch(once, /&uarr;|&darr;/);
+	assert.match(once, /M8\.75 15V3\.56/);
+	assert.match(once, /currentColor/);
+	assert.doesNotMatch(once, /viewBox="0 0 44 44"/);
+	assert.doesNotMatch(once, /vpk-nav-progress__track/);
 	assert.doesNotMatch(once, /data-vpk-docnav-style/);
 	assert.equal(retrofitDocumentNav(deck), deck);
 });
@@ -276,7 +313,25 @@ test("theme runtime injector is idempotent and applies before the shared style b
 	assert.match(once, /vpk-html-theme/);
 	assert.match(once, /data-vpk-theme-runtime/);
 	assert.match(once, /data-vpk-theme-toggle/);
-	assert.match(once, /aria-pressed/);
+	// Theme toggle is icon-only: the @atlaskit contrast glyph, no visible "theme" text label.
+	assert.match(once, /M8 1\.5a6\.5 6\.5 0 1 0 0 13/);
+	assert.doesNotMatch(once, /vpk-theme-toggle__label">theme/);
+	assert.match(once, /removeAttribute\("aria-pressed"\)/);
+	assert.doesNotMatch(once, /setAttribute\("aria-pressed"/);
+});
+
+test("icons.mjs inlines @atlaskit glyphs as pure-HTML svg (viewBox 16, currentColor)", async () => {
+	const { inlineIcon } = await import("./icons.mjs");
+	const up = inlineIcon("arrow-up", { label: "Up" });
+	assert.match(up, /^<svg /);
+	assert.match(up, /viewBox="0 0 16 16"/);
+	assert.match(up, /fill="currentColor"/);
+	assert.match(up, /role="img" aria-label="Up"/);
+	assert.match(up, /<path[^>]*d="M8\.75 15V3\.56/);
+	// Decorative by default (aria-hidden, no role) and no React import in the output.
+	assert.match(inlineIcon("theme"), /aria-hidden="true"/);
+	assert.doesNotMatch(inlineIcon("theme"), /import|dangerouslySetGlyph/);
+	assert.throws(() => inlineIcon("definitely-not-a-real-icon-xyz"));
 });
 
 test("inject-runtime CLI refreshes theme and presentation runtimes idempotently", () => {

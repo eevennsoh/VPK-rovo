@@ -34,6 +34,7 @@ export default function ScrollMaskDemo() {
 			<ScrollMask
 				aria-label="Workspace menu"
 				className="w-full"
+				edgeBlur
 				header={<ScrollMaskHeader />}
 				footer={<ScrollMaskFooter />}
 			>
