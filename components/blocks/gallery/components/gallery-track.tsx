@@ -4,6 +4,7 @@ import { useCallback, useRef, type CSSProperties, type PointerEvent } from "reac
 import { motion, useReducedMotion } from "motion/react";
 
 import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";
+import { buildScrollMaskBlurLayerStyles } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
@@ -51,44 +52,14 @@ const TRACK_CONTAINER_REDUCED = {
 	exit: { transition: { staggerChildren: 0.015, staggerDirection: -1 } },
 } as const;
 
-// ── Progressive edge blur (mirrors components/visual/scroll-mask) ──
-// Stacked, feathered backdrop-blur layers = progressive (variable) blur: each layer
-// blurs a little more but is masked to a progressively narrower band toward the edge,
-// so the blur compounds at the edge and tapers to zero inward — no hard cutoff. This
-// is the left/right (horizontal) counterpart of scroll-mask's top/bottom builder, so
-// the dock's overflowing cards softly blur out rather than only fading. Radii stay
-// gentle because stacked backdrop-filters compound.
+// Progressive edge blur — the horizontal counterpart of ScrollMask's vertical edge builder,
+// which owns the layered-veil technique in @/components/visual/scroll-mask. The overlay width
+// is a dock-specific layout value, so it stays local here.
 const GALLERY_EDGE_BLUR_SIZE = "72px";
-const GALLERY_BLUR_LAYERS = [
-	{ blur: 0.5, mid: 68, end: 100 },
-	{ blur: 1, mid: 52, end: 82 },
-	{ blur: 2, mid: 38, end: 62 },
-	{ blur: 3.5, mid: 24, end: 44 },
-	{ blur: 6, mid: 10, end: 26 },
-] as const;
-
-function buildGalleryEdgeBlurLayerStyles(edge: "left" | "right"): CSSProperties[] {
-	// Strongest blur sits AT the edge and tapers inward, so the mask runs from the
-	// edge (#000) toward the interior (transparent): "to right" for the left edge,
-	// "to left" for the right edge.
-	const direction = edge === "left" ? "to right" : "to left";
-	return GALLERY_BLUR_LAYERS.map(({ blur, mid, end }) => {
-		const maskImage = `linear-gradient(${direction}, #000 0%, #000 ${mid}%, transparent ${end}%)`;
-		const backdropFilter = `blur(${blur}px)`;
-		return {
-			position: "absolute",
-			inset: 0,
-			backdropFilter,
-			WebkitBackdropFilter: backdropFilter,
-			maskImage,
-			WebkitMaskImage: maskImage,
-		};
-	});
-}
 
 // Static per edge → build once at module scope (no per-render allocation).
-const LEFT_BLUR_LAYERS = buildGalleryEdgeBlurLayerStyles("left");
-const RIGHT_BLUR_LAYERS = buildGalleryEdgeBlurLayerStyles("right");
+const LEFT_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("left");
+const RIGHT_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("right");
 
 export interface GalleryTrackProps {
 	items: readonly GalleryItem[];

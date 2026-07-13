@@ -45,8 +45,21 @@ const SCROLL_MASK_BLUR_LAYERS = [
 	{ blur: 6, mid: 10, end: 26 },
 ] as const;
 
-export function buildScrollMaskBlurLayerStyles(edge: "top" | "bottom"): CSSProperties[] {
-	const direction = edge === "top" ? "to bottom" : "to top";
+// Each edge's gradient runs from the edge (#000) toward the interior (transparent), so the
+// strongest blur sits AT the edge and tapers inward. Vertical edges (top/bottom) drive the
+// ScrollMask overlay; horizontal edges (left/right) are the same ramp rotated onto the x-axis
+// for horizontal scrollers such as the gallery dock.
+const SCROLL_MASK_BLUR_DIRECTION = {
+	top: "to bottom",
+	bottom: "to top",
+	left: "to right",
+	right: "to left",
+} as const;
+
+export type ScrollMaskBlurEdge = keyof typeof SCROLL_MASK_BLUR_DIRECTION;
+
+export function buildScrollMaskBlurLayerStyles(edge: ScrollMaskBlurEdge): CSSProperties[] {
+	const direction = SCROLL_MASK_BLUR_DIRECTION[edge];
 	return SCROLL_MASK_BLUR_LAYERS.map(({ blur, mid, end }) => {
 		const maskImage = `linear-gradient(${direction}, #000 0%, #000 ${mid}%, transparent ${end}%)`;
 		const backdropFilter = `blur(${blur}px)`;
