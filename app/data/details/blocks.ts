@@ -82,7 +82,8 @@ import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
-import { KANBAN_BOARD_DETAIL } from "./blocks/kanban-board";
+import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
+import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { GALLERY_DETAIL } from "./blocks/gallery";
 import { HTML_SELECTOR_DETAIL } from "./blocks/html-selector";
@@ -171,7 +172,8 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
-	"kanban-board": KANBAN_BOARD_DETAIL,
+	"jira-list": JIRA_LIST_DETAIL,
+	"jira-kanban": JIRA_KANBAN_DETAIL,
 	generative: GENERATIVE_DETAIL,
 	gallery: GALLERY_DETAIL,
 	"html-selector": HTML_SELECTOR_DETAIL,

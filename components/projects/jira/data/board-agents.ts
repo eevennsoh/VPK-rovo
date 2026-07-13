@@ -1,8 +1,8 @@
-import type { KanbanBoardAgentData } from "@/components/blocks/kanban-board";
+import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban";
 
-export type { KanbanBoardAgentData as BoardAgentData } from "@/components/blocks/kanban-board";
+export type { JiraKanbanAgentData as BoardAgentData } from "@/components/blocks/jira-kanban";
 
-export const BOARD_AGENTS: readonly KanbanBoardAgentData[] = [
+export const BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
 	{
 		id: "github-copilot",
 		name: "GitHub Copilot",

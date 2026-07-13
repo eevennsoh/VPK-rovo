@@ -1,11 +1,11 @@
-import type { KanbanBoardColumnData } from "@/components/blocks/kanban-board";
+import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 
 export type {
-	KanbanBoardCardData as KanbanCardData,
-	KanbanBoardCardTag as CardTag,
-	KanbanBoardColumnData as BoardColumnData,
-	KanbanBoardPriority as Priority,
-} from "@/components/blocks/kanban-board";
+	JiraKanbanCardData as KanbanCardData,
+	JiraKanbanCardTag as CardTag,
+	JiraKanbanColumnData as BoardColumnData,
+	JiraKanbanPriority as Priority,
+} from "@/components/blocks/jira-kanban";
 
 export const RFP_CLIENT_NAMES_BY_CODE = {
 	"RFP-101": "Acmecorp",
@@ -34,7 +34,7 @@ function createClientTitle(code: keyof typeof RFP_CLIENT_NAMES_BY_CODE, title: s
 	return `${RFP_CLIENT_NAMES_BY_CODE[code]}: ${title}`;
 }
 
-export const BOARD_COLUMNS: readonly KanbanBoardColumnData[] = [
+export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	{
 		title: "RFP Intake",
 		count: 7,

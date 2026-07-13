@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 78,
-			"pageCount": 55
+			"ownerImportCount": 79,
+			"pageCount": 56
 		},
 		"pages": [
 			{
@@ -4181,25 +4181,49 @@
 				"ownerCount": 1,
 				"owners": [
 					{
-						"importPath": "@/components/blocks/kanban-board/page",
-						"source": "components/blocks/kanban-board/page",
+						"importPath": "@/components/blocks/jira-kanban/page",
+						"source": "components/blocks/jira-kanban/page",
 						"symbols": [
-							"KanbanBoardPage"
+							"JiraKanbanPage"
 						]
 					}
 				],
-				"routePath": "/preview/blocks/kanban-board",
+				"routePath": "/preview/blocks/jira-kanban",
 				"shellOwnerCount": 1,
 				"shellOwners": [
 					{
-						"importPath": "@/components/blocks/kanban-board/page",
-						"source": "components/blocks/kanban-board/page",
+						"importPath": "@/components/blocks/jira-kanban/page",
+						"source": "components/blocks/jira-kanban/page",
 						"symbols": [
-							"KanbanBoardPage"
+							"JiraKanbanPage"
 						]
 					}
 				],
-				"source": "app/preview/blocks/kanban-board/page.tsx"
+				"source": "app/preview/blocks/jira-kanban/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/jira-list/page",
+						"source": "components/blocks/jira-list/page",
+						"symbols": [
+							"JiraListPage"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/jira-list",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/jira-list/page",
+						"source": "components/blocks/jira-list/page",
+						"symbols": [
+							"JiraListPage"
+						]
+					}
+				],
+				"source": "app/preview/blocks/jira-list/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5133,7 +5157,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 394,
+			"manifestEntryCount": 395,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5169,7 +5193,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 87,
+				"entryCount": 88,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5389,9 +5413,15 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "kanban-board",
-						"name": "Kanban Board",
-						"importPath": "@/components/blocks/kanban-board"
+						"slug": "jira-kanban",
+						"name": "Jira Kanban",
+						"importPath": "@/components/blocks/jira-kanban"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-list",
+						"name": "Jira List",
+						"importPath": "@/components/blocks/jira-list"
 					},
 					{
 						"category": "blocks",

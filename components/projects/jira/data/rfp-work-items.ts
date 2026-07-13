@@ -7,7 +7,7 @@ import type {
 	WorkItemPerson,
 	WorkItemRfpTeamMember,
 } from "@/app/contexts/context-work-item-modal";
-import type { KanbanBoardCardData, KanbanBoardCardTag } from "@/components/blocks/kanban-board";
+import type { JiraKanbanCardData, JiraKanbanCardTag } from "@/components/blocks/jira-kanban";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
@@ -17,7 +17,7 @@ export const RFP_101_WORK_ITEM_CODE = "RFP-101";
 export const AGENTS_BOARD_CONTEXT_LABEL = "Enterprise RFP Response";
 const AGENTS_BOARD_CONTEXT_SIGNATURE = "agents-board:enterprise-rfp-response";
 
-function findBoardCardByCode(code: string): KanbanBoardCardData | undefined {
+function findBoardCardByCode(code: string): JiraKanbanCardData | undefined {
 	for (const column of BOARD_COLUMNS) {
 		const card = column.cards.find((boardCard) => boardCard.code === code);
 		if (card) {
@@ -39,7 +39,7 @@ function findBoardColumnTitleByCardCode(code: string): string | undefined {
 }
 
 function createWorkItemLabelFields(
-	tags: readonly KanbanBoardCardTag[] | undefined,
+	tags: readonly JiraKanbanCardTag[] | undefined,
 ): Pick<WorkItemData, "labels" | "labelTags"> {
 	if (!tags || tags.length === 0) {
 		return {};
@@ -401,7 +401,7 @@ function getDemoDate(seed: number, index: number): string {
 	return `${day} May 2026, ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} AM`;
 }
 
-function getPriorityFromCard(card: KanbanBoardCardData | undefined): WorkItemData["priority"] {
+function getPriorityFromCard(card: JiraKanbanCardData | undefined): WorkItemData["priority"] {
 	switch (card?.priority) {
 		case "major":
 			return "High";
@@ -472,7 +472,7 @@ function createVariableComments(code: string, clientName: string): WorkItemComme
 function createVariableWorkItemFields(
 	code: string,
 	clientName: string,
-	boardCard: KanbanBoardCardData | undefined,
+	boardCard: JiraKanbanCardData | undefined,
 ): Pick<WorkItemData, "assignee" | "attachments" | "childItems" | "comments" | "priority" | "reporter" | "status"> {
 	const seed = getStableSeed(code);
 
@@ -507,7 +507,7 @@ function formatNameWithRole(name: string, role: string | undefined): string {
 export function getAgentsWorkItemForCard(params: {
 	code: string;
 	title: string;
-	tags?: readonly KanbanBoardCardTag[];
+	tags?: readonly JiraKanbanCardTag[];
 }): WorkItemData {
 	const boardCard = findBoardCardByCode(params.code);
 	const labelFields = createWorkItemLabelFields(params.tags ?? boardCard?.tags);

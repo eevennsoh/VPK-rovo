@@ -12,9 +12,9 @@ import { useRovoChat } from "@/app/contexts";
 import type { WorkItemAttachment, WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
-	KanbanBoard,
-	type KanbanBoardCardData,
-} from "@/components/blocks/kanban-board";
+	JiraKanban,
+	type JiraKanbanCardData,
+} from "@/components/blocks/jira-kanban";
 import JiraHeader from "./components/jira-header";
 import BoardToolbar from "./components/board-toolbar";
 import JiraWorkItemModal from "./components/jira-work-item-modal";
@@ -81,7 +81,7 @@ const RFP_DEMO_HUMAN_ASSIGNEES: Record<string, { avatarUrl: string; role: string
 };
 
 interface DraggedCardState {
-	card: KanbanBoardCardData;
+	card: JiraKanbanCardData;
 	sourceColumnTitle: string;
 }
 
@@ -320,7 +320,7 @@ export default function AgentsView({
 		];
 	}, [assignedAgentIdsByColumn, boardAgents, rfpDemo.state.workItems]);
 
-	const handleCardClick = (_title: string, _code: string, card: KanbanBoardCardData) => {
+	const handleCardClick = (_title: string, _code: string, card: JiraKanbanCardData) => {
 		clearSelection();
 		const workItem = applyRfpDemoWorkItemState(getAgentsWorkItemForCard(card), rfpDemo.state);
 		if (!workItem) {
@@ -329,7 +329,7 @@ export default function AgentsView({
 		workItemPresentation.openModal(workItem);
 	};
 
-	const handleCardDragStart = (card: KanbanBoardCardData, sourceColumnTitle: string) => {
+	const handleCardDragStart = (card: JiraKanbanCardData, sourceColumnTitle: string) => {
 		if (!selectedCardCodes.has(card.code)) {
 			selectionAnchorRef.current = null;
 			setSelectedCardCodes(new Set<string>());
@@ -496,7 +496,7 @@ export default function AgentsView({
 					<BoardToolbar avatars={toolbarAvatars} onReset={handleResetDemo} />
 
 					{/* Board columns */}
-					<KanbanBoard
+					<JiraKanban
 						agents={boardAgents}
 						ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
 						assignedAgentIdsByColumn={assignedAgentIdsByColumn}
