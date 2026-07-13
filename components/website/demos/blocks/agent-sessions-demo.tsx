@@ -14,3 +14,11 @@ export function AgentSessionsDemoStandard() {
 export function AgentSessionsDemoExperimental() {
 	return <AgentSessions variant="experimental" initialExperimentalPreset="filled" />;
 }
+
+export function AgentSessionsDemoExperimentalEmpty() {
+	return <AgentSessions variant="experimental" initialExperimentalPreset="empty" />;
+}
+
+export function AgentSessionsDemoExperimentalRunning() {
+	return <AgentSessions variant="experimental" initialExperimentalPreset="running" />;
+}
