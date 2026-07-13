@@ -47,6 +47,7 @@ test("AgentSessions exposes default and experimental variations", () => {
 	const pageSource = readProjectFile("components/blocks/agent-sessions/page.tsx");
 	const detailsSource = readDetailCategorySource("blocks");
 	const registrySource = readWebsiteRegistrySource();
+	const blockVariantRegistrySource = registrySource.slice(registrySource.indexOf("export const BLOCK_VARIANT_DEMOS"));
 	const demoSource = readProjectFile("components/website/demos/blocks/agent-sessions-demo.tsx");
 	const previewLayoutSource = readProjectFile("app/preview/blocks/[slug]/layout.tsx");
 	const defaultViewSource = AGENT_SESSIONS_SOURCE.slice(
@@ -89,6 +90,8 @@ test("AgentSessions exposes default and experimental variations", () => {
 	assert.match(detailsSource, /name: "variant"[\s\S]*type: "\\"default\\" \| \\"experimental\\"/u);
 	assert.match(registrySource, /"agent-sessions-demo-standard": dynamic[\s\S]*default: mod\.AgentSessionsDemoStandard/u);
 	assert.match(registrySource, /"agent-sessions-demo-experimental": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimental/u);
+	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-standard": dynamic[\s\S]*default: mod\.AgentSessionsDemoStandard/u);
+	assert.match(blockVariantRegistrySource, /"agent-sessions-demo-experimental": dynamic[\s\S]*default: mod\.AgentSessionsDemoExperimental/u);
 	assert.match(demoSource, /import AgentSessionsPage from "@\/components\/blocks\/agent-sessions\/page";/u);
 	assert.match(demoSource, /return <AgentSessionsPage \/>;/u);
 	assert.match(demoSource, /export function AgentSessionsDemoStandard/u);

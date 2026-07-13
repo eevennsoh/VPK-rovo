@@ -320,6 +320,20 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"agent-sessions-demo-standard": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoStandard,
+			})),
+		{ ssr: false },
+	),
+	"agent-sessions-demo-experimental": dynamic(
+		() =>
+			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
+				default: mod.AgentSessionsDemoExperimental,
+			})),
+		{ ssr: false },
+	),
 	"agent-evaluation-demo-filled": dynamic(
 		() =>
 			import("../demos/blocks/agent-evaluation-demo").then((mod) => ({
