@@ -17,6 +17,9 @@ minimumReleaseAgeExclude:
   # Trusted internal Platform Labs package (atlassian-npm, not public npm), so
   # the public-supply-chain release-age gate does not apply.
   - "@atlassian/logo-third-party"
+  # Well-established security-header middleware; 8.3.0 taken ahead of the 7-day
+  # gate by explicit request (minor CSP update).
+  - helmet
 trustPolicy: no-downgrade
 trustPolicyExclude:
   # Existing transitive dependency blocks lockfile refresh under no-downgrade.
