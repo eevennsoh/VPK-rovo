@@ -6,8 +6,8 @@ import { useEffect, useId, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import Squircle from "@/components/website/demos/visual/shaders/squircle";
 import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
 
@@ -33,6 +33,12 @@ const BLANKET = {
 // asymmetric-exit gotcha, so closing never runs at the enter timing.
 const DIALOG_ENTER_LAYOUT = { duration: DUR_SLOW, ease: EASE_IN_OUT } as const;
 const DIALOG_EXIT = { opacity: 0, transition: { duration: DUR_MEDIUM, ease: EASE_IN } } as const;
+
+// The expanded view is a larger light-grey squircle — the same surface as the strip
+// cards — so the shared-element morph stays grey→grey. A square keeps the superellipse
+// reading as a squircle (rather than the near-stadium the Squircle produces at
+// strongly non-square sizes). Squircle renders from explicit pixel dimensions.
+const DIALOG_SIZE = 320;
 
 export interface GalleryExpandedProps {
 	item: GalleryItem;
@@ -117,23 +123,33 @@ export function GalleryExpanded({ item, layoutId, onClose }: Readonly<GalleryExp
 				aria-modal="true"
 				aria-labelledby={titleId}
 				onClick={(event) => event.stopPropagation()}
-				className={cn(
-					"relative z-10 flex w-[min(90vw,640px)] flex-col overflow-hidden rounded-2xl bg-surface-raised",
-				)}
+				className="relative z-10"
 				// Under reduced motion there is no layoutId, so the dialog simply
 				// appears with the wrapper fade; otherwise the layout engine morphs it
 				// from the card using the bold in-place curve.
 				transition={shouldReduceMotion ? undefined : { layout: DIALOG_ENTER_LAYOUT }}
 				exit={DIALOG_EXIT}
-				style={{ willChange: "transform, opacity", boxShadow: token("elevation.shadow.overlay") }}
+				style={{ willChange: "transform, opacity" }}
 			>
-				<div aria-hidden="true" className={cn("h-64 w-full", item.surfaceClassName)} />
-				<div className="flex flex-col gap-1 p-5">
-					<h2 id={titleId} className="text-base font-semibold text-text">
+				{/* Light-grey squircle surface (default fill = color.background.neutral),
+				    matching the strip cards so the morph stays coherent. */}
+				<Squircle
+					width={DIALOG_SIZE}
+					height={DIALOG_SIZE}
+					strokeWidth={0}
+					fillColor={token("elevation.surface.sunken")}
+					contentClassName="flex flex-col justify-center gap-2 p-8"
+					style={{ boxShadow: token("elevation.shadow.overlay") }}
+				>
+					<h2
+						id={titleId}
+						className="text-text tracking-tight"
+						style={{ font: token("font.heading.large") }}
+					>
 						{item.title}
 					</h2>
 					<p className="text-sm text-text-subtle">{item.description}</p>
-				</div>
+				</Squircle>
 
 				<Button
 					ref={closeRef}
@@ -143,7 +159,7 @@ export function GalleryExpanded({ item, layoutId, onClose }: Readonly<GalleryExp
 					variant="ghost"
 					aria-label="Close"
 					onClick={onClose}
-					className="absolute top-3 right-3 bg-surface-overlay"
+					className="absolute top-4 right-4 bg-surface-overlay"
 					style={{ boxShadow: token("elevation.shadow.overlay") }}
 				>
 					<Icon render={<CrossIcon label="" color="currentColor" />} />

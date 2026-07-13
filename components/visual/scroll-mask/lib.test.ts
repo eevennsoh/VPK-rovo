@@ -98,6 +98,23 @@ test("buildScrollMaskBlurLayerStyles stacks feathered backdrop-blur layers per e
 	assert.equal(bottom[4].maskImage, "linear-gradient(to top, #000 0%, #000 10%, transparent 26%)");
 });
 
+test("buildScrollMaskBlurLayerStyles rotates the same ramp onto horizontal edges", () => {
+	const left = buildScrollMaskBlurLayerStyles("left");
+	const right = buildScrollMaskBlurLayerStyles("right");
+
+	assert.equal(left.length, 5);
+	assert.equal(right.length, 5);
+
+	// Horizontal edges reuse the identical blur ramp; only the gradient axis changes.
+	assert.equal(left[0].backdropFilter, "blur(0.5px)");
+	assert.equal(left[4].backdropFilter, "blur(6px)");
+	assert.equal(left[0].maskImage, "linear-gradient(to right, #000 0%, #000 68%, transparent 100%)");
+	assert.equal(left[4].maskImage, "linear-gradient(to right, #000 0%, #000 10%, transparent 26%)");
+
+	// The right edge mirrors the gradient direction (toward the leading interior).
+	assert.equal(right[4].maskImage, "linear-gradient(to left, #000 0%, #000 10%, transparent 26%)");
+});
+
 test("resolveFadeSize coerces numbers to pixels and defaults to the fade-size token", () => {
 	assert.equal(resolveFadeSize(), "var(--ds-space-400)");
 	assert.equal(resolveFadeSize(24), "24px");

@@ -16,9 +16,12 @@ import {
 // inside the per-frame transform.
 
 // Falloff radius (px) on each side of a card's center where magnification ramps.
-const DOCK_FALLOFF = 160;
+// Wide enough to span ~2 cards + gaps each side of the pointer, so the scale falls
+// off gradually across neighbors into a smooth macOS-dock wave (a narrow radius only
+// lifts the hovered card and reads as a single pop, not a wave).
+const DOCK_FALLOFF = 280;
 // Peak scale reached when the pointer sits exactly over a card's center.
-const DOCK_PEAK_SCALE = 1.25;
+const DOCK_PEAK_SCALE = 1.35;
 // Spring smoothing of the continuous, pointer-driven scale (the dock idiom —
 // distinct from the discrete enter/exit transition recipes).
 const DOCK_SPRING = { mass: 0.1, stiffness: 170, damping: 14 } as const;
@@ -87,14 +90,27 @@ export function useDockScale({
 		};
 	}, [cardRef, scrollContainerRef]);
 
-	// Function form: reads the MotionValue inside a callback (never during
-	// render). Recomputes whenever `pointerX` changes.
-	const distance = useTransform(() => pointerX.get() - centerRef.current);
-	const scaleTarget = useTransform(
-		distance,
-		[-DOCK_FALLOFF, 0, DOCK_FALLOFF],
-		[1, DOCK_PEAK_SCALE, 1],
-	);
+	// Continuous distance→scale mapping, recomputed whenever `pointerX` changes
+	// (the function form reads the MotionValue in a callback, never during render).
+	//
+	// CRITICAL: guard the non-finite "at rest" sentinel. Both `pointerX` and the
+	// initial `centerRef` start at Infinity, and `Infinity - Infinity` is NaN. A
+	// single NaN fed into the spring below poisons it permanently (NaN integrates to
+	// NaN every frame), which pinned every card to scale 1 and made the dock look
+	// like it was never wired up. When either value is non-finite the card is simply
+	// at rest (scale 1).
+	const scaleTarget = useTransform(() => {
+		const pointer = pointerX.get();
+		const center = centerRef.current;
+		if (!Number.isFinite(pointer) || !Number.isFinite(center)) return 1;
+		const distance = Math.abs(pointer - center);
+		if (distance >= DOCK_FALLOFF) return 1;
+		// Raised-cosine bell across the falloff: peak at the pointer, easing to 1 at
+		// the edge. Smoother than a linear ramp, so neighbours taper into the
+		// characteristic macOS-dock wave rather than a single hard pop.
+		const falloff = (Math.cos((distance / DOCK_FALLOFF) * Math.PI) + 1) / 2;
+		return 1 + (DOCK_PEAK_SCALE - 1) * falloff;
+	});
 	const smoothed = useSpring(scaleTarget, DOCK_SPRING);
 
 	// A static MotionValue for the inert path — both hooks always run, so this is
