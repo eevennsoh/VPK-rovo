@@ -136,6 +136,17 @@
 			return false;
 		}
 
+		function setPagerShift(enabled) {
+			if (!document.documentElement) {
+				return;
+			}
+			if (enabled) {
+				document.documentElement.dataset.vpkhsBar = "true";
+				return;
+			}
+			delete document.documentElement.dataset.vpkhsBar;
+		}
+
 		function handlePopoverWheel(event) {
 			var layer = getVisibleLayerForTarget(event.target);
 			if (!layer) {
@@ -235,12 +246,13 @@
 			lastBarData = Object.assign({}, lastBarData, data);
 			clear(bar);
 			bar.className = "vpkhs-bar" + (lastBarData.enabled ? "" : " vpkhs-hidden");
+			setPagerShift(lastBarData.enabled);
 			if (!lastBarData.enabled) {
 				return;
 			}
 			if (collapsed) {
 				bar.classList.add("vpkhs-bar-collapsed");
-				bar.appendChild(createButton("vpkhs-tool-button", "Expand HTML selector", icons.chevronRight, function () {
+				bar.appendChild(createButton("vpkhs-tool-button", "Expand HTML selector", icons.chevronUp, function () {
 					collapsed = false;
 					renderBar(lastBarData);
 				}));
@@ -274,7 +286,7 @@
 			});
 			bar.appendChild(sendButton);
 			bar.appendChild(createButton("vpkhs-tool-button", "Copy all", icons.copy, callbacks.onCopyAll || function () {}));
-			bar.appendChild(createButton("vpkhs-tool-button", "Collapse", icons.chevronLeft, function () {
+			bar.appendChild(createButton("vpkhs-tool-button", "Collapse", icons.chevronDown, function () {
 				collapsed = true;
 				hideAgentPopover();
 				renderBar(lastBarData);
@@ -680,6 +692,7 @@
 				document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
 				document.removeEventListener("wheel", handlePopoverWheel, true);
 				window.clearTimeout(toastTimer);
+				setPagerShift(false);
 				root.remove();
 				root = null;
 			}

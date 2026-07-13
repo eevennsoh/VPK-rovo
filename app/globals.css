@@ -278,45 +278,6 @@
 }
 
 @layer components {
-	/* Artifact control chrome (html-selector toolbar). A neutral control layer that follows the
-	   *artifact's* light/dark theme via data-artifact-color-mode — NOT the VPK app theme — so it
-	   stays matched to the artifact and to the in-artifact pager/toggle without flipping the app.
-	   Palette values mirror the artifact tokens used by the injected chrome. */
-	[data-artifact-control-bar] {
-		--vpk-control-surface: #ffffff;
-		--vpk-control-surface-hover: #e9e3e2;
-		--vpk-control-border: #e9e3e2;
-		--vpk-control-text: #706e6e;
-		--vpk-control-text-strong: #312f2f;
-		background-color: var(--vpk-control-surface);
-		border: 1px solid var(--vpk-control-border);
-	}
-
-	[data-artifact-control-bar][data-artifact-color-mode="dark"] {
-		--vpk-control-surface: #211f1e;
-		--vpk-control-surface-hover: #332d2c;
-		--vpk-control-border: #332d2c;
-		--vpk-control-text: #beb7b5;
-		--vpk-control-text-strong: #e9e3e2;
-	}
-
-	[data-artifact-control-bar] button {
-		background-color: transparent;
-		color: var(--vpk-control-text);
-	}
-
-	[data-artifact-control-bar] button svg {
-		color: currentColor;
-	}
-
-	[data-artifact-control-bar] button:hover,
-	[data-artifact-control-bar] button:focus-visible,
-	[data-artifact-control-bar] button[aria-expanded="true"],
-	[data-artifact-control-bar] button[aria-pressed="true"] {
-		background-color: var(--vpk-control-surface-hover);
-		color: var(--vpk-control-text-strong);
-	}
-
 	/* Streamdown Mermaid blocks render the title row and actions row as separate siblings.
 	   Recompose them into a single visual 32px header so the label and buttons align. */
 	[data-streamdown="mermaid-block"] {
@@ -391,6 +352,45 @@
 	[data-sonner-toast][data-styled="false"]:focus-visible {
 		box-shadow: none;
 	}
+}
+
+/* Artifact control chrome (html-selector toolbar). A neutral control layer that follows the
+   *artifact's* light/dark theme via data-artifact-color-mode, not the VPK app theme, so it
+   stays matched to the artifact and to the in-artifact pager/toggle without flipping the app.
+   Unlayered so these button rules beat the shared Button utility-layer color/background classes. */
+[data-artifact-control-bar] {
+	--vpk-control-surface: #ffffff;
+	--vpk-control-surface-hover: #e9e3e2;
+	--vpk-control-border: #e9e3e2;
+	--vpk-control-text: #312f2f;
+	--vpk-control-text-strong: #312f2f;
+	background-color: var(--vpk-control-surface);
+	border: 1px solid var(--vpk-control-border);
+}
+
+[data-artifact-control-bar][data-artifact-color-mode="dark"] {
+	--vpk-control-surface: #211f1e;
+	--vpk-control-surface-hover: #332d2c;
+	--vpk-control-border: #332d2c;
+	--vpk-control-text: #e9e3e2;
+	--vpk-control-text-strong: #e9e3e2;
+}
+
+[data-artifact-control-bar][data-artifact-control-bar] button {
+	background-color: transparent;
+	color: var(--vpk-control-text);
+}
+
+[data-artifact-control-bar][data-artifact-control-bar] button svg {
+	color: currentColor;
+}
+
+[data-artifact-control-bar][data-artifact-control-bar] button:hover,
+[data-artifact-control-bar][data-artifact-control-bar] button:focus-visible,
+[data-artifact-control-bar][data-artifact-control-bar] button[aria-expanded="true"],
+[data-artifact-control-bar][data-artifact-control-bar] button[aria-pressed="true"] {
+	background-color: var(--vpk-control-surface-hover);
+	color: var(--vpk-control-text-strong);
 }
 
 /* Suppress the one-frame "hover flash" when an agent compact nav dropdown

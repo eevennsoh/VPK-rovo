@@ -8,7 +8,7 @@ const {
 	resolveVarChain,
 	splitSharedAndLocalCss,
 	truncateOuterHtml,
-} = require(path.join(process.cwd(), "public/html-selector/core-utils.js"));
+} = require(path.join(process.cwd(), ".agents/skills/vpk-html/assets/selector/core-utils.js"));
 
 function createElement({
 	tagName,

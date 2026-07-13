@@ -45,6 +45,7 @@ function createFixtureRoot(t) {
 	});
 
 	fs.mkdirSync(path.join(rootDir, "assets", "demos", "media"), { recursive: true });
+	fs.mkdirSync(path.join(rootDir, "assets", "selector"), { recursive: true });
 	fs.mkdirSync(path.join(rootDir, "assets", "templates"), { recursive: true });
 	fs.mkdirSync(path.join(rootDir, "scripts"), { recursive: true });
 	fs.writeFileSync(path.join(rootDir, "index.html"), "<!doctype html><style>:root { --accent: red; --ink: black; }</style><title>vpk-html</title>");
@@ -53,6 +54,9 @@ function createFixtureRoot(t) {
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "untouched.html"), "<!doctype html><style>.demo { --other: blue; }</style><title>Untouched</title>");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "media", "clip.mp4"), "fake-mp4-bytes");
 	fs.writeFileSync(path.join(rootDir, "assets", "demos", "notes.txt"), "not servable");
+	fs.writeFileSync(path.join(rootDir, "assets", "selector", "core.css"), ".vpkhs-root { display: contents; }");
+	fs.writeFileSync(path.join(rootDir, "assets", "selector", "core.js"), "window.__VPK_HTML_SELECTOR__ = {};");
+	fs.writeFileSync(path.join(rootDir, "assets", "selector", "notes.txt"), "not servable");
 	fs.writeFileSync(path.join(rootDir, "assets", "templates", "template.html"), "<style>:root { --accent: template; }</style>");
 	fs.writeFileSync(path.join(rootDir, "scripts", "build.mjs"), "console.log('internal')");
 	return rootDir;
@@ -115,6 +119,36 @@ test("vpk-html route serves video media under assets/demos", async (t) => {
 		const response = await fetch(`${baseUrl}/api/vpk-html/assets/demos/media/clip.mp4`);
 		assert.equal(response.status, 200);
 		assert.equal(await response.text(), "fake-mp4-bytes");
+	});
+});
+
+test("vpk-html route serves selector css and js assets", async (t) => {
+	const rootDir = createFixtureRoot(t);
+
+	await withServer(rootDir, async (baseUrl) => {
+		const cssResponse = await fetch(`${baseUrl}/api/vpk-html/assets/selector/core.css`);
+		assert.equal(cssResponse.status, 200);
+		assert.match(cssResponse.headers.get("content-type") ?? "", /text\/css/u);
+		assert.match(await cssResponse.text(), /\.vpkhs-root/u);
+
+		const jsResponse = await fetch(`${baseUrl}/api/vpk-html/assets/selector/core.js`);
+		assert.equal(jsResponse.status, 200);
+		assert.match(jsResponse.headers.get("content-type") ?? "", /javascript/u);
+		assert.match(await jsResponse.text(), /__VPK_HTML_SELECTOR__/u);
+	});
+});
+
+test("vpk-html route rejects non-css/js selector assets", async (t) => {
+	const rootDir = createFixtureRoot(t);
+
+	await withServer(rootDir, async (baseUrl) => {
+		const textResponse = await fetch(`${baseUrl}/api/vpk-html/assets/selector/notes.txt`);
+		assert.equal(textResponse.status, 400);
+		assert.deepEqual(await textResponse.json(), { error: "Invalid vpk-html asset path" });
+
+		const nestedResponse = await fetch(`${baseUrl}/api/vpk-html/assets/selector/nested/core.js`);
+		assert.equal(nestedResponse.status, 400);
+		assert.deepEqual(await nestedResponse.json(), { error: "Invalid vpk-html asset path" });
 	});
 });
 

@@ -13,6 +13,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const ICON_CORE_DIR = path.join(path.dirname(require.resolve("@atlaskit/icon/package.json")), "core");
+const ICON_LAB_CORE_DIR = path.join(path.dirname(require.resolve("@atlaskit/icon-lab/package.json")), "core");
 
 const glyphCache = new Map();
 
@@ -21,7 +22,8 @@ function readGlyph(name) {
 	if (cached !== undefined) {
 		return cached;
 	}
-	const file = path.join(ICON_CORE_DIR, `${name}.js`);
+	const coreFile = path.join(ICON_CORE_DIR, `${name}.js`);
+	const file = fs.existsSync(coreFile) ? coreFile : path.join(ICON_LAB_CORE_DIR, `${name}.js`);
 	const source = fs.readFileSync(file, "utf8");
 	const match = /dangerouslySetGlyph:\s*`([\s\S]*?)`/.exec(source);
 	if (!match) {

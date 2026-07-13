@@ -11,6 +11,20 @@ async function loadShared() {
 	return import("./shared.mjs");
 }
 
+function cssRuleBlock(source, selector) {
+	const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const match = new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`, "m").exec(source);
+	assert.ok(match, `missing CSS rule: ${selector}`);
+	return match[1];
+}
+
+function cssDeclaration(block, property) {
+	const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const match = new RegExp(`${escaped}:\\s*([^;]+);`).exec(block);
+	assert.ok(match, `missing CSS declaration: ${property}`);
+	return match[1].trim();
+}
+
 test("addMainLandmark closes after body content when head contains a script", async () => {
 	const { addMainLandmark } = await loadShared();
 	const html = `<!doctype html>
@@ -119,20 +133,42 @@ test("quality gate command surface includes focal and tidy audit gates", async (
 	assert.match(buildSource, /--check-caption-echo/);
 });
 
-test("enhancement scroll fades are scoped to the active content region", () => {
+test("enhancement scroll fades are scoped to the active page container region", () => {
 	const source = fs.readFileSync(path.join(__dirname, "inject-enhancements.mjs"), "utf8");
 
 	assert.match(source, /left:\s*var\(--vpkh-scroll-fade-left,\s*0\);/);
 	assert.match(source, /width:\s*var\(--vpkh-scroll-fade-width,\s*100vw\);/);
 	assert.match(source, /\.vpkh-scroll-fade\[data-visible="true"\]/);
 	assert.match(source, /const scrollFades = new Map\(\);/);
-	assert.match(source, /document\.querySelector\("\.site-column-main"\)/);
-	assert.match(source, /document\.querySelector\("main"\)/);
+	assert.match(source, /function readScrollRegionCandidate\(selector\)/);
+	assert.match(source, /const selectors = \["\.site-container", "\.page", "\.sheet", "\.doc-page", "\.document-page", "\.post-content", "\.site-column-main", "main", "body"\];/);
+	assert.match(source, /for \(const selector of selectors\) \{[\s\S]*const region = readScrollRegionCandidate\(selector\);[\s\S]*if \(region\) return region;/);
+	assert.match(source, /return \{ left: 0, width: window\.innerWidth \};/);
+	assert.match(source, /const candidate = document\.querySelector\(selector\);/);
 	assert.match(source, /function setScrollFade\(edge, visible, region\)/);
 	assert.match(source, /function pollScrollFades\(\)/);
 	assert.match(source, /document\.addEventListener\("scroll", scheduleScrollUpdate, \{ passive: true, capture: true \}\);/);
 	assert.match(source, /window\.setInterval\(pollScrollFades, 250\);/);
 	assert.doesNotMatch(source, /html\.vpkh-has-scroll\.vpkh-show-top \.vpkh-scroll-fade/);
+});
+
+test("enhancement control chrome uses ink text and 34px theme toggle", () => {
+	const source = fs.readFileSync(path.join(__dirname, "inject-enhancements.mjs"), "utf8");
+	const root = cssRuleBlock(source, ":root");
+	const themeToggle = cssRuleBlock(source, ".vpk-theme-toggle");
+
+	assert.equal(cssDeclaration(root, "--vpk-control-text"), "var(--ink)");
+	assert.equal(cssDeclaration(themeToggle, "width"), "34px");
+	assert.equal(cssDeclaration(themeToggle, "height"), "34px");
+});
+
+test("module index heading and rows keep matching gap", () => {
+	const source = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
+	const heading = cssRuleBlock(source, ".module-index-heading");
+	const post = cssRuleBlock(source, ".module-index-post");
+
+	assert.equal(cssDeclaration(heading, "gap"), "5px");
+	assert.equal(cssDeclaration(post, "gap"), "5px");
 });
 
 test("github publishing helpers derive stable repo names and validate repo specs", async () => {
@@ -198,9 +234,14 @@ test("presentation injector detects decks and is idempotent", async () => {
 	assert.match(once, /data-vpk-slide-next/);
 	assert.match(once, /vpk-nav-counter/);
 	assert.match(once, /data-vpk-progress-arc/);
-	assert.match(once, /\.vpk-nav-next-wrap\s*\{[\s\S]*height:\s*36px;[\s\S]*width:\s*36px;/);
-	assert.match(once, /viewBox="0 0 36 36"/);
-	assert.match(once, /data-vpk-progress-arc cx="18" cy="18" r="17\.5"/);
+	assert.match(once, /\.vpk-slide-counter,[\s\S]*\.docnav-controls\s*\{[\s\S]*gap:\s*4px;[\s\S]*padding:\s*4px;[\s\S]*right:\s*var\(--vpk-pager-right, 24px\);/);
+	assert.match(once, /\.vpk-slide-counter button,[\s\S]*\.docnav-controls button\s*\{[\s\S]*height:\s*24px;[\s\S]*width:\s*24px;/);
+	assert.match(once, /\.vpk-nav-counter,[\s\S]*\.docnav-counter\s*\{[\s\S]*font-size:\s*11px;[\s\S]*min-width:\s*40px;/);
+	assert.match(once, /\.vpk-nav-next-wrap\s*\{[\s\S]*height:\s*24px;[\s\S]*width:\s*24px;/);
+	assert.match(once, /stroke-dasharray: var\(--vpk-progress-circumference, 72\.26\);/);
+	assert.match(once, /viewBox="0 0 24 24"/);
+	assert.match(once, /data-vpk-progress-arc cx="12" cy="12" r="11\.5"/);
+	assert.match(once, /width=\\"12\\" height=\\"12\\"/);
 	assert.match(once, /opacity:\s*0;/);
 	assert.match(once, /const progress = slides\.length <= 1 \? 0 : index \/ \(slides\.length - 1\);/);
 	assert.match(once, /arc\.style\.opacity = progress <= 0 \? '0' : '1';/);
@@ -261,8 +302,8 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.match(once, /className = 'docnav-controls'/);
 	assert.match(once, /vpk presentation mode/);
 	assert.match(once, /data-vpk-progress-arc/);
-	assert.match(once, /viewBox="0 0 36 36"/);
-	assert.match(once, /data-vpk-progress-arc cx="18" cy="18" r="17\.5"/);
+	assert.match(once, /viewBox="0 0 24 24"/);
+	assert.match(once, /data-vpk-progress-arc cx="12" cy="12" r="11\.5"/);
 	assert.match(once, /const progress = targets\.length <= 1 \? 0 : activeIndex \/ \(targets\.length - 1\);/);
 	assert.match(once, /arc\.style\.opacity = progress <= 0 \? '0' : '1';/);
 	assert.match(once, /presenter-section-/);
@@ -273,6 +314,7 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	// Pager uses the shared control palette + inline @atlaskit SVG arrows (no HTML entities).
 	assert.match(once, /background: var\(--vpk-control-surface, color-mix\(in srgb, var\(--paper\) 88%, transparent\)\)/);
 	assert.match(once, /border: 1px solid var\(--vpk-control-border, var\(--rule\)\)/);
+	assert.match(once, /right: var\(--vpk-pager-right, 24px\);/);
 	assert.match(once, /color: var\(--vpk-control-text, var\(--muted-text\)\)/);
 	assert.doesNotMatch(once, /&uarr;|&darr;/);
 	assert.match(once, /M8\.75 15V3\.56/);

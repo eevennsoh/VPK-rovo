@@ -1139,6 +1139,7 @@ blockquote .MathJax {
 	display: flex;
 	font-size: 15px;
 	font-weight: 600;
+	gap: 5px;
 	padding-bottom: 6px;
 }
 
@@ -2868,11 +2869,11 @@ section,
 		box-shadow: none;
 		display: flex;
 		font-family: var(--font-mono);
-		gap: 6px;
+		gap: 4px;
 		letter-spacing: 0;
-		padding: 6px;
+		padding: 4px;
 		position: fixed;
-		right: 24px;
+		right: var(--vpk-pager-right, 24px);
 		/* Above the scroll fade, below the lightbox overlay. */
 		z-index: 2147483001;
 	}
@@ -2888,11 +2889,11 @@ section,
 		display: flex;
 		font-family: var(--font-mono);
 		font-size: 18px;
-		height: 36px;
+		height: 24px;
 		justify-content: center;
 		line-height: 1;
 		padding: 0;
-		width: 36px;
+		width: 24px;
 	}
 
 	.vpk-slide-counter button svg,
@@ -2919,19 +2920,19 @@ section,
 	.docnav-counter {
 		color: var(--vpk-control-text, var(--muted-text));
 		font-family: var(--font-mono);
-		font-size: 12px;
+		font-size: 11px;
 		font-variant-numeric: tabular-nums;
-		min-width: 46px;
+		min-width: 40px;
 		text-align: center;
 	}
 
 	.vpk-nav-next-wrap {
 		align-items: center;
 		display: grid;
-		height: 36px;
+		height: 24px;
 		justify-items: center;
 		position: relative;
-		width: 36px;
+		width: 24px;
 	}
 
 	.vpk-nav-next-wrap button {
@@ -2954,8 +2955,8 @@ section,
 
 	.vpk-nav-progress__arc {
 		stroke: var(--ink);
-		stroke-dasharray: var(--vpk-progress-circumference, 109.96);
-		stroke-dashoffset: var(--vpk-progress-offset, 109.96);
+		stroke-dasharray: var(--vpk-progress-circumference, 72.26);
+		stroke-dashoffset: var(--vpk-progress-offset, 72.26);
 		stroke-linecap: round;
 		opacity: 0;
 		transition: stroke-dashoffset 180ms var(--ease-out);
@@ -3316,7 +3317,7 @@ section,
 	}
 
 	function progressSvg() {
-		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 36 36" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="18" cy="18" r="17.5"></circle></svg>';
+		return '<svg class="vpk-nav-progress" data-vpk-progress-ring aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle class="vpk-nav-progress__arc" data-vpk-progress-arc cx="12" cy="12" r="11.5"></circle></svg>';
 	}
 
 	function clonePreview(section) {
@@ -3343,7 +3344,7 @@ section,
 		if (nextButton) nextButton.disabled = activeIndex === targets.length - 1;
 		if (counter) counter.textContent = String(activeIndex + 1).padStart(2, '0') + ' / ' + String(targets.length).padStart(2, '0');
 		if (arc) {
-			const radius = Number(arc.getAttribute('r') || 17.5);
+			const radius = Number(arc.getAttribute('r') || 11.5);
 			const circumference = 2 * Math.PI * radius;
 			const progress = targets.length <= 1 ? 0 : activeIndex / (targets.length - 1);
 			arc.style.setProperty('--vpk-progress-circumference', String(circumference));
@@ -3400,7 +3401,7 @@ section,
 	controls = document.createElement('nav');
 	controls.className = 'docnav-controls';
 	controls.setAttribute('aria-label', 'Document section navigation');
-	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 15V3.56l3.72 3.72 1.06-1.06-5-5a.75.75 0 0 0-1.06 0l-5 5 1.06 1.06 3.72-3.72V15z\" clip-rule=\"evenodd\"/></svg>" + '</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 1v11.44l3.72-3.72 1.06 1.06-5 5a.75.75 0 0 1-1.06 0l-5-5 1.06-1.06 3.72 3.72V1z\" clip-rule=\"evenodd\"/></svg>" + '</button>' + progressSvg() + '</span>';
+	controls.innerHTML = '<button type="button" data-docnav-prev aria-label="Previous section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 15V3.56l3.72 3.72 1.06-1.06-5-5a.75.75 0 0 0-1.06 0l-5 5 1.06 1.06 3.72-3.72V15z\" clip-rule=\"evenodd\"/></svg>" + '</button><span class="docnav-counter" aria-live="polite"></span><span class="vpk-nav-next-wrap"><button type="button" data-docnav-next aria-label="Next section">' + "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" width=\"12\" height=\"12\" fill=\"currentColor\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentcolor\" fill-rule=\"evenodd\" d=\"M8.75 1v11.44l3.72-3.72 1.06 1.06-5 5a.75.75 0 0 1-1.06 0l-5-5 1.06-1.06 3.72 3.72V1z\" clip-rule=\"evenodd\"/></svg>" + '</button>' + progressSvg() + '</span>';
 	document.body.appendChild(controls);
 
 	const prevButton = controls.querySelector('[data-docnav-prev]');
@@ -3574,7 +3575,7 @@ section,
 	--vpk-control-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
 	--vpk-control-surface-hover: var(--accent-soft);
 	--vpk-control-border: var(--rule);
-	--vpk-control-text: var(--muted-text);
+	--vpk-control-text: var(--ink);
 	--vpk-control-text-strong: var(--ink);
 	--vpk-control-focus: var(--focus-ring);
 }
@@ -3592,8 +3593,8 @@ section,
 	align-items: center;
 	justify-content: center;
 	gap: 0;
-	width: 36px;
-	height: 36px;
+	width: 34px;
+	height: 34px;
 	padding: 0;
 	border: 1px solid var(--vpk-control-border);
 	border-radius: 999px;
@@ -3921,14 +3922,24 @@ body.vpkh-lightbox-open {
 		return node;
 	}
 
-	function documentScrollRegion() {
-		const candidate = document.querySelector(".site-column-main") || document.querySelector("main") || document.body;
+	function readScrollRegionCandidate(selector) {
+		const candidate = document.querySelector(selector);
+		if (!candidate) return null;
 		const rect = candidate.getBoundingClientRect();
 		const left = clamp(rect.left || 0, 0, window.innerWidth);
 		const right = clamp(rect.right || window.innerWidth, left, window.innerWidth);
 		const width = Math.max(0, right - left);
-		if (width < 80) return { left: 0, width: window.innerWidth };
+		if (width < 80) return null;
 		return { left, width };
+	}
+
+	function documentScrollRegion() {
+		const selectors = [".site-container", ".page", ".sheet", ".doc-page", ".document-page", ".post-content", ".site-column-main", "main", "body"];
+		for (const selector of selectors) {
+			const region = readScrollRegionCandidate(selector);
+			if (region) return region;
+		}
+		return { left: 0, width: window.innerWidth };
 	}
 
 	function positionScrollFade(node, region) {

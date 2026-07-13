@@ -55,6 +55,7 @@ function resolveVpkHtmlFilePath(assetPath, {
 }
 
 const CATALOG_MEDIA_EXTENSIONS = new Set([".mp4", ".webm", ".mov"]);
+const SELECTOR_ASSET_EXTENSIONS = new Set([".css", ".js"]);
 
 function isProduction(env) {
 	return env.NODE_ENV === "production";
@@ -63,6 +64,16 @@ function isProduction(env) {
 function isAllowedVpkHtmlAssetPath(relativePath) {
 	if (CATALOG_ROOT_FILES.has(relativePath)) {
 		return true;
+	}
+
+	if (relativePath.startsWith("assets/selector/")) {
+		const selectorFileName = relativePath.slice("assets/selector/".length);
+		if (!selectorFileName || selectorFileName.includes("/")) {
+			return false;
+		}
+
+		const extension = path.extname(selectorFileName).toLowerCase();
+		return SELECTOR_ASSET_EXTENSIONS.has(extension);
 	}
 
 	if (!relativePath.startsWith("assets/demos/")) {

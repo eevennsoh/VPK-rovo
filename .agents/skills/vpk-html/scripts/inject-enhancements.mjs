@@ -25,7 +25,7 @@ const ENHANCEMENT_BLOCK = `${START}
 	--vpk-control-surface: color-mix(in srgb, var(--surface-raised) 92%, transparent);
 	--vpk-control-surface-hover: var(--accent-soft);
 	--vpk-control-border: var(--rule);
-	--vpk-control-text: var(--muted-text);
+	--vpk-control-text: var(--ink);
 	--vpk-control-text-strong: var(--ink);
 	--vpk-control-focus: var(--focus-ring);
 }
@@ -43,8 +43,8 @@ const ENHANCEMENT_BLOCK = `${START}
 	align-items: center;
 	justify-content: center;
 	gap: 0;
-	width: 36px;
-	height: 36px;
+	width: 34px;
+	height: 34px;
 	padding: 0;
 	border: 1px solid var(--vpk-control-border);
 	border-radius: 999px;
@@ -372,14 +372,24 @@ body.vpkh-lightbox-open {
 		return node;
 	}
 
-	function documentScrollRegion() {
-		const candidate = document.querySelector(".site-column-main") || document.querySelector("main") || document.body;
+	function readScrollRegionCandidate(selector) {
+		const candidate = document.querySelector(selector);
+		if (!candidate) return null;
 		const rect = candidate.getBoundingClientRect();
 		const left = clamp(rect.left || 0, 0, window.innerWidth);
 		const right = clamp(rect.right || window.innerWidth, left, window.innerWidth);
 		const width = Math.max(0, right - left);
-		if (width < 80) return { left: 0, width: window.innerWidth };
+		if (width < 80) return null;
 		return { left, width };
+	}
+
+	function documentScrollRegion() {
+		const selectors = [".site-container", ".page", ".sheet", ".doc-page", ".document-page", ".post-content", ".site-column-main", "main", "body"];
+		for (const selector of selectors) {
+			const region = readScrollRegionCandidate(selector);
+			if (region) return region;
+		}
+		return { left: 0, width: window.innerWidth };
 	}
 
 	function positionScrollFade(node, region) {

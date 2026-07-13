@@ -51,9 +51,11 @@ test("HTML Selector uses the vanilla overlay UI instead of parent panels", () =>
 	const rootSource = readProjectFile("components/blocks/html-selector/components/html-selector.tsx");
 	const bridgeSource = readProjectFile("components/blocks/html-selector/lib/bridge.ts");
 
-	assert.ok(fs.existsSync(path.join(process.cwd(), "public/html-selector/core-ui.js")));
+	assert.ok(fs.existsSync(path.join(process.cwd(), ".agents/skills/vpk-html/assets/selector/core-ui.js")));
 	assert.doesNotMatch(rootSource, /SelectorToolbar|CommentListPanel|CommentPopover|StylesPanel|DispatchStatus/u);
 	assert.match(bridgeSource, /HTML_SELECTOR_UI_SCRIPT_ID/u);
+	assert.match(bridgeSource, /\/api\/vpk-html\/assets\/selector\/core\.css/u);
+	assert.match(bridgeSource, /\/api\/vpk-html\/assets\/selector\/core-utils\.js/u);
 	assert.match(
 		bridgeSource,
 		/HTML_SELECTOR_UTILS_SCRIPT_ID[\s\S]*HTML_SELECTOR_UI_SCRIPT_ID[\s\S]*HTML_SELECTOR_SCRIPT_ID/u,
@@ -81,6 +83,7 @@ test("HTML Selector renders the artifact action bar in the React host", () => {
 	const themeWrapperSource = readProjectFile("components/utils/theme-wrapper.tsx");
 	const videoSource = readProjectFile("components/blocks/html-selector/components/artifact-video-dialog.tsx");
 	const publishSource = readProjectFile("components/blocks/html-selector/components/artifact-publish-dialog.tsx");
+	const globalSource = readProjectFile("app/globals.css");
 
 	assert.match(rootSource, /import \{ ArtifactActionBar \} from "\.\/artifact-action-bar";/u);
 	assert.match(rootSource, /process\.env\.NODE_ENV === "production"[\s\S]*HTML Selector is a dev-only tool/u);
@@ -97,6 +100,8 @@ test("HTML Selector renders the artifact action bar in the React host", () => {
 	assert.doesNotMatch(actionBarSource, /useTheme|setHostTheme|onThemeChange/u);
 	assert.match(actionBarSource, /themeMode: artifactThemeMode/u);
 	assert.match(actionBarSource, /data-artifact-color-mode=\{artifactThemeMode\}/u);
+	assert.match(globalSource, /\[data-artifact-control-bar\]\[data-artifact-control-bar\] button\s*\{[\s\S]*color: var\(--vpk-control-text\);/u);
+	assert.match(globalSource, /\[data-artifact-control-bar\]\[data-artifact-control-bar\] button svg\s*\{[\s\S]*color: currentColor;/u);
 	assert.match(artifactThemeHookSource, /dataset\.theme === "dark" \? "dark" : "light"/u);
 	assert.match(artifactThemeHookSource, /VPK_HTML_THEME_STORAGE_KEY = "vpk-html-theme"/u);
 	assert.match(artifactThemeHookSource, /dark: "Dark mode"/u);
@@ -121,20 +126,33 @@ test("HTML Selector renders the artifact action bar in the React host", () => {
 	assert.match(videoSource, /\/api\/html-selector\/dispatch/u);
 	assert.match(videoSource, /composeVpkHtmlVideoPrompt/u);
 	assert.match(publishSource, /This uploads the HTML to a secret Gist on your GitHub account\./u);
-	assert.doesNotMatch(readProjectFile("public/html-selector/core-ui.js"), /Publish to GitHub Gist|Convert to video|Speaker notes/u);
+	assert.doesNotMatch(readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js"), /Publish to GitHub Gist|Convert to video|Speaker notes/u);
 });
 
 test("HTML Selector rail styling is isolated from vpk-html page button rules", () => {
-	const cssSource = readProjectFile("public/html-selector/core.css");
+	const cssSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core.css");
+	const utilsSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-utils.js");
+	const uiSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js");
 
 	assert.match(cssSource, /\.vpkhs-root button\s*\{[\s\S]*appearance: none;/u);
 	assert.match(cssSource, /\.vpkhs-root button:active\s*\{[\s\S]*transform: none;/u);
 	assert.match(cssSource, /\.vpkhs-tool-button\s*\{[\s\S]*border: 0 !important;[\s\S]*padding: 0 !important;/u);
-	assert.match(cssSource, /\.vpkhs-tool-button svg\s*\{[\s\S]*fill: none !important;[\s\S]*stroke: currentColor !important;/u);
+	assert.match(cssSource, /\.vpkhs-tool-button\s*\{[\s\S]*border-radius: 999px;/u);
+	assert.match(cssSource, /\.vpkhs-tool-button svg\s*\{[\s\S]*width: 12px;[\s\S]*height: 12px;[\s\S]*fill: currentColor;/u);
+	assert.doesNotMatch(cssSource, /stroke: currentColor !important/u);
+	assert.match(utilsSource, /\/\/ SELECTOR_ICONS:start[\s\S]*chevronUp:[\s\S]*chevronDown:[\s\S]*fill=\\"currentColor\\"[\s\S]*\/\/ SELECTOR_ICONS:end/u);
+	assert.doesNotMatch(utilsSource.match(/\/\/ SELECTOR_ICONS:start[\s\S]*\/\/ SELECTOR_ICONS:end/u)?.[0] ?? "", /stroke-width/u);
+	assert.match(uiSource, /icons\.chevronUp/u);
+	assert.match(uiSource, /icons\.chevronDown/u);
+	assert.match(uiSource, /dataset\.vpkhsBar = "true"/u);
+	assert.match(cssSource, /html\[data-vpkhs-bar="true"\]\s*\{[\s\S]*--vpk-pager-right: 68px;/u);
+	assert.match(cssSource, /\.vpkhs-bar\s*\{[\s\S]*right: 24px;[\s\S]*bottom: 24px;/u);
+	assert.match(cssSource, /html\[data-theme="dark"\]\s*\{[\s\S]*--vpkhs-control-text: var\(--vpk-control-text, #e9e3e2\);/u);
+	assert.doesNotMatch(cssSource, /prefers-color-scheme: dark/u);
 });
 
 test("HTML Selector overlay exposes the current agent on send controls", () => {
-	const uiSource = readProjectFile("public/html-selector/core-ui.js");
+	const uiSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js");
 
 	assert.match(uiSource, /agent: "codex"/u);
 	assert.match(uiSource, /function getAgentLabel\(agentId\)/u);
@@ -148,8 +166,8 @@ test("HTML Selector overlay exposes the current agent on send controls", () => {
 });
 
 test("HTML Selector popovers contain wheel scrolling inside overlay layers", () => {
-	const cssSource = readProjectFile("public/html-selector/core.css");
-	const uiSource = readProjectFile("public/html-selector/core-ui.js");
+	const cssSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core.css");
+	const uiSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js");
 
 	assert.match(
 		cssSource,
@@ -175,8 +193,8 @@ test("HTML Selector popovers contain wheel scrolling inside overlay layers", () 
 });
 
 test("HTML Selector Escape handling peels back one overlay layer at a time", () => {
-	const coreSource = readProjectFile("public/html-selector/core.js");
-	const uiSource = readProjectFile("public/html-selector/core-ui.js");
+	const coreSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core.js");
+	const uiSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js");
 	const ladder = coreSource.slice(coreSource.indexOf("function handleEscapeKey(event)"));
 	const orderedLayers = [
 		"layers.agentPopover",
@@ -204,9 +222,9 @@ test("HTML Selector Escape handling peels back one overlay layer at a time", () 
 });
 
 test("HTML Selector style rows render token provenance next to origin badges", () => {
-	const coreSource = readProjectFile("public/html-selector/core.js");
-	const inspectSource = readProjectFile("public/html-selector/core-inspect.js");
-	const uiSource = readProjectFile("public/html-selector/core-ui.js");
+	const coreSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core.js");
+	const inspectSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-inspect.js");
+	const uiSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core-ui.js");
 
 	assert.match(inspectSource, /function setSemanticTokens\(tokens\) \{/u);
 	assert.match(inspectSource, /function buildStyleProvenance\(report, declaration\) \{/u);
@@ -220,7 +238,7 @@ test("HTML Selector style rows render token provenance next to origin badges", (
 });
 
 test("HTML Selector bridge keeps the host agent preference as the overlay default", () => {
-	const coreSource = readProjectFile("public/html-selector/core.js");
+	const coreSource = readProjectFile(".agents/skills/vpk-html/assets/selector/core.js");
 	const preferenceSource = readProjectFile("components/blocks/html-selector/hooks/use-agent-preference.ts");
 	const bridgeSource = readProjectFile("components/blocks/html-selector/hooks/use-selector-bridge.ts");
 
