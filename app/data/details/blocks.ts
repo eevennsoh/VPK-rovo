@@ -76,8 +76,6 @@ import { SIGNUP_02_DETAIL } from "./blocks/signup-02";
 import { SIGNUP_03_DETAIL } from "./blocks/signup-03";
 import { SIGNUP_04_DETAIL } from "./blocks/signup-04";
 import { SIGNUP_05_DETAIL } from "./blocks/signup-05";
-import { WORK_ITEM_WIDGET_DETAIL } from "./blocks/work-item-widget";
-import { WORK_ITEM_DETAIL_DETAIL } from "./blocks/work-item-detail";
 import { VISUAL_WAVEFORM_DETAIL } from "./blocks/visual-waveform";
 import { QUESTION_CARD_DETAIL } from "./blocks/question-card";
 import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
@@ -166,8 +164,6 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"signup-03": SIGNUP_03_DETAIL,
 	"signup-04": SIGNUP_04_DETAIL,
 	"signup-05": SIGNUP_05_DETAIL,
-	"work-item-widget": WORK_ITEM_WIDGET_DETAIL,
-	"work-item-detail": WORK_ITEM_DETAIL_DETAIL,
 	"visual-waveform": VISUAL_WAVEFORM_DETAIL,
 	"question-card": QUESTION_CARD_DETAIL,
 	"approval-card": APPROVAL_CARD_DETAIL,

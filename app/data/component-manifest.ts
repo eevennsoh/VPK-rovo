@@ -572,8 +572,6 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	},
 	blockComponent("top-navigation", "Top Navigation"),
 	blockComponent("terminal-switch", "Terminal Switch"),
-	blockComponent("work-item-widget", "Work Item Widget"),
-	blockComponent("work-item-detail", "Work Item Detail"),
 	blockComponent("workflow", "Workflow"),
 ]);
 

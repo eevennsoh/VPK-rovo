@@ -35,7 +35,6 @@ const ADS_BLOCK_SLUGS = new Set([
 	"rovo-canvas",
 	"sidebar-rail",
 	"smart-link",
-	"work-item-widget",
 	"question-card",
 	"approval-card",
 	"terminal-switch",

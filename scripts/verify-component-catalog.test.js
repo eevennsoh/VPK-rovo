@@ -222,15 +222,15 @@ test("component catalog validator reports manifest entries without primary regis
 		components: [
 			{
 				category: "blocks",
-				detail: { description: "Work item detail" },
-				importPath: "@/components/blocks/work-item-detail",
-				name: "Work Item Detail",
-				slug: "work-item-detail",
+				detail: { description: "Example block" },
+				importPath: "@/components/blocks/example-block",
+				name: "Example Block",
+				slug: "example-block",
 			},
 		],
 		detailRecords: {
 			blocks: {
-				"work-item-detail": { description: "Work item detail" },
+				"example-block": { description: "Example block" },
 			},
 		},
 		registryData: {
@@ -244,7 +244,7 @@ test("component catalog validator reports manifest entries without primary regis
 	});
 	const summary = summarizeDiagnostics(diagnostics);
 
-	assert.match(summary.warnings.map((warning) => warning.message).join("\n"), /blocks\/work-item-detail has no primary registry entry/);
+	assert.match(summary.warnings.map((warning) => warning.message).join("\n"), /blocks\/example-block has no primary registry entry/);
 });
 
 test("component loader reads the editable manifest source", () => {
