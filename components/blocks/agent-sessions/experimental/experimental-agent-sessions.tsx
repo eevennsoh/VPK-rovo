@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
+import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSessionsPreset } from "@/components/blocks/agent-sessions/data/session-state";
 import { AgentSessionsProvider } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/agent-sessions/experimental/components/experimental-work-item-dialog";
@@ -39,23 +40,28 @@ export function ExperimentalAgentSessions({ open, onClose, initialPreset }: Read
 	);
 
 	return (
-		<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem}>
-			<ExperimentalWorkItemDialog
-				open={open}
-				onClose={onClose}
-				workItemCode={workItem.code}
-				workItemTitle={workItem.title}
-				parentCode={workItem.parent?.code}
-			>
-				<ExperimentalWorkItemLayout
-					context={<ContextPanel />}
-					activity={<ActivityPanel />}
-					sessions={<SessionsRail />}
-					metadata={<MetadataRail />}
-				/>
-				<FloatingSessionSurface />
-			</ExperimentalWorkItemDialog>
-		</AgentSessionsProvider>
+		// Keep the WorkItemModalProvider mounted (isOpen always true) so the reused
+		// standard ModalHeader has its context and the Base UI dialog owns its own
+		// open/close lifecycle + enter/exit animation. Read-only reuse — the standard
+		// modal itself is untouched.
+		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
+			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem}>
+				<ExperimentalWorkItemDialog
+					open={open}
+					onClose={onClose}
+					workItemCode={workItem.code}
+					workItemTitle={workItem.title}
+				>
+					<ExperimentalWorkItemLayout
+						context={<ContextPanel />}
+						activity={<ActivityPanel />}
+						sessions={<SessionsRail />}
+						metadata={<MetadataRail />}
+					/>
+					<FloatingSessionSurface />
+				</ExperimentalWorkItemDialog>
+			</AgentSessionsProvider>
+		</WorkItemModalProvider>
 	);
 }
 
