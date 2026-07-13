@@ -28,7 +28,9 @@ export function ContextSummary() {
 
 	const handleNextStep = (command: string) => {
 		actions.setComposerPrefill(command);
-		actions.openLatestOrCreateGeneralSession();
+		// Open/create a live general (non-completed) session so the prefilled command
+		// lands in an actionable chat — never reopen a completed latest session.
+		actions.openGeneralSession();
 	};
 
 	return (
