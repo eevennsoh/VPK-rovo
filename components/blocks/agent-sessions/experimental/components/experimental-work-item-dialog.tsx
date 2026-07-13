@@ -2,18 +2,16 @@
 
 import { type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 
 interface ExperimentalWorkItemDialogProps {
 	open: boolean;
 	onClose: () => void;
 	workItemCode: string;
 	workItemTitle: string;
-	parentCode?: string;
 	children: ReactNode;
 }
 
@@ -21,17 +19,19 @@ interface ExperimentalWorkItemDialogProps {
  * Accessible dialog shell for the experimental Agent Sessions work item.
  *
  * Composes low-level Base UI Dialog primitives (Root/Portal/Backdrop/Popup/
- * Title/Description/Close) rather than the shadcn `DialogContent`, so it can
- * mirror the standard work-item modal geometry (full-bleed, centered, 1200px
- * cap) while keeping Base UI's built-in role=dialog, aria-modal, focus
- * containment, focus restoration, and Escape-to-close.
+ * Title/Description) so it can mirror the standard work-item modal geometry
+ * (full-bleed, centered, 1200px cap) while keeping Base UI's built-in
+ * role=dialog, aria-modal, focus containment, focus restoration, and
+ * Escape-to-close. The visible header reuses the standard `ModalHeader` (via the
+ * surrounding `WorkItemModalProvider`) so the breadcrumb + actions match the
+ * default work item view exactly; the accessible name is supplied by the sr-only
+ * Dialog.Title/Description.
  */
 export function ExperimentalWorkItemDialog({
 	open,
 	onClose,
 	workItemCode,
 	workItemTitle,
-	parentCode,
 	children,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	return (
@@ -64,34 +64,7 @@ export function ExperimentalWorkItemDialog({
 						overflow: "hidden",
 					}}
 				>
-					<header
-						className="flex shrink-0 items-center justify-between gap-2"
-						style={{
-							paddingBlock: token("space.200"),
-							paddingInline: token("space.300"),
-						}}
-					>
-						<nav
-							aria-label="Breadcrumb"
-							className="flex min-w-0 items-center gap-1 text-sm"
-						>
-							{parentCode ? (
-								<>
-									<span className="truncate text-text-subtle">{parentCode}</span>
-									<span aria-hidden className="shrink-0 text-text-subtlest">
-										/
-									</span>
-								</>
-							) : null}
-							<span className="truncate font-medium text-text-subtle">{workItemCode}</span>
-						</nav>
-
-						<Dialog.Close
-							render={<Button aria-label="Close" size="icon" variant="ghost" />}
-						>
-							<CrossIcon label="" />
-						</Dialog.Close>
-					</header>
+					<ModalHeader />
 
 					<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 						{children}
