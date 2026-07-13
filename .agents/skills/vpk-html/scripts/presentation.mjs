@@ -107,8 +107,8 @@ export function buildPresentationCss() {
 \t.docnav-controls {
 \t\talign-items: center;
 \t\tbackdrop-filter: blur(10px);
-\t\tbackground: var(--vpk-control-surface);
-\t\tborder: 1px solid var(--vpk-control-border);
+\t\tbackground: var(--vpk-control-surface, color-mix(in srgb, var(--paper) 88%, transparent));
+\t\tborder: 1px solid var(--vpk-control-border, var(--rule));
 \t\tborder-radius: 999px;
 \t\tbottom: 24px;
 \t\tbox-shadow: none;
@@ -127,9 +127,9 @@ export function buildPresentationCss() {
 \t.docnav-controls button {
 \t\talign-items: center;
 \t\tbackground: transparent;
-\t\tborder: 1px solid var(--vpk-control-border);
+\t\tborder: 1px solid var(--vpk-control-border, var(--rule));
 \t\tborder-radius: 999px;
-\t\tcolor: var(--vpk-control-text);
+\t\tcolor: var(--vpk-control-text, var(--muted-text));
 \t\tcursor: pointer;
 \t\tdisplay: flex;
 \t\tfont-family: var(--font-mono);
@@ -150,8 +150,8 @@ export function buildPresentationCss() {
 \t.vpk-slide-counter button:focus-visible,
 \t.docnav-controls button:hover,
 \t.docnav-controls button:focus-visible {
-\t\tbackground: var(--vpk-control-surface-hover);
-\t\tcolor: var(--vpk-control-text-strong);
+\t\tbackground: var(--vpk-control-surface-hover, var(--accent-soft));
+\t\tcolor: var(--vpk-control-text-strong, var(--ink));
 \t\toutline: none;
 \t}
 
@@ -163,7 +163,7 @@ export function buildPresentationCss() {
 
 \t.vpk-nav-counter,
 \t.docnav-counter {
-\t\tcolor: var(--vpk-control-text);
+\t\tcolor: var(--vpk-control-text, var(--muted-text));
 \t\tfont-family: var(--font-mono);
 \t\tfont-size: 12px;
 \t\tfont-variant-numeric: tabular-nums;

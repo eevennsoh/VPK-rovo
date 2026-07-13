@@ -271,8 +271,9 @@ test("document nav retrofit is idempotent and skips decks", async () => {
 	assert.match(once, /is-docnav-active/);
 	assert.match(once, /\.vpk-slide-counter,[\s\S]*\.docnav-controls\s*\{[\s\S]*z-index:\s*2147483001;/);
 	// Pager uses the shared control palette + inline @atlaskit SVG arrows (no HTML entities).
-	assert.match(once, /background: var\(--vpk-control-surface\)/);
-	assert.match(once, /color: var\(--vpk-control-text\)/);
+	assert.match(once, /background: var\(--vpk-control-surface, color-mix\(in srgb, var\(--paper\) 88%, transparent\)\)/);
+	assert.match(once, /border: 1px solid var\(--vpk-control-border, var\(--rule\)\)/);
+	assert.match(once, /color: var\(--vpk-control-text, var\(--muted-text\)\)/);
 	assert.doesNotMatch(once, /&uarr;|&darr;/);
 	assert.match(once, /M8\.75 15V3\.56/);
 	assert.match(once, /currentColor/);

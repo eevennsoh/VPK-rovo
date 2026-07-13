@@ -2902,8 +2902,8 @@ section,
 	.docnav-controls {
 		align-items: center;
 		backdrop-filter: blur(10px);
-		background: var(--vpk-control-surface);
-		border: 1px solid var(--vpk-control-border);
+		background: var(--vpk-control-surface, color-mix(in srgb, var(--paper) 88%, transparent));
+		border: 1px solid var(--vpk-control-border, var(--rule));
 		border-radius: 999px;
 		bottom: 24px;
 		box-shadow: none;
@@ -2922,9 +2922,9 @@ section,
 	.docnav-controls button {
 		align-items: center;
 		background: transparent;
-		border: 1px solid var(--vpk-control-border);
+		border: 1px solid var(--vpk-control-border, var(--rule));
 		border-radius: 999px;
-		color: var(--vpk-control-text);
+		color: var(--vpk-control-text, var(--muted-text));
 		cursor: pointer;
 		display: flex;
 		font-family: var(--font-mono);
@@ -2945,8 +2945,8 @@ section,
 	.vpk-slide-counter button:focus-visible,
 	.docnav-controls button:hover,
 	.docnav-controls button:focus-visible {
-		background: var(--vpk-control-surface-hover);
-		color: var(--vpk-control-text-strong);
+		background: var(--vpk-control-surface-hover, var(--accent-soft));
+		color: var(--vpk-control-text-strong, var(--ink));
 		outline: none;
 	}
 
@@ -2958,7 +2958,7 @@ section,
 
 	.vpk-nav-counter,
 	.docnav-counter {
-		color: var(--vpk-control-text);
+		color: var(--vpk-control-text, var(--muted-text));
 		font-family: var(--font-mono);
 		font-size: 12px;
 		font-variant-numeric: tabular-nums;
