@@ -8,6 +8,7 @@ const {
 	sessionNameForWorktree,
 	sessionTokenForWorktree,
 	handlesForWorktree,
+	findCurrentWorktree,
 } = require("./worktree-kill");
 
 // Mirrors the object shape from getAllWorktreePortInfo(): `worktreeName` is the
@@ -107,4 +108,30 @@ test("handles include the strings a user is likely to type", () => {
 	assert.ok(handles.has("vpk-dev-0ebd")); // full session name
 	assert.ok(handles.has("vpk-rovo")); // basename + identifier
 	assert.ok([...handles].some((h) => h.includes("0ebd"))); // path carries the hash
+});
+
+test("findCurrentWorktree resolves the enclosing worktree from a cwd", () => {
+	// A dir inside main (but not inside the nested claude worktree) -> MAIN.
+	assert.equal(findCurrentWorktree("/Users/dev/Labs/vpk-rovo/components", WORKTREES), MAIN);
+	// The worktree path itself.
+	assert.equal(findCurrentWorktree(MAIN.path, WORKTREES), MAIN);
+});
+
+test("findCurrentWorktree picks the deepest match for nested worktrees", () => {
+	// CLAUDE_WT lives under MAIN's path; a cwd inside it must resolve to the
+	// more specific (deeper) worktree, not the enclosing main checkout.
+	assert.equal(findCurrentWorktree(`${CLAUDE_WT.path}/app`, WORKTREES), CLAUDE_WT);
+	assert.equal(findCurrentWorktree(CLAUDE_WT.path, WORKTREES), CLAUDE_WT);
+});
+
+test("findCurrentWorktree returns null when cwd is outside every worktree", () => {
+	assert.equal(findCurrentWorktree("/tmp/somewhere-else", WORKTREES), null);
+	// A sibling path that merely shares a string prefix is NOT inside.
+	assert.equal(findCurrentWorktree("/Users/dev/Labs/vpk-rovo-other", WORKTREES), null);
+});
+
+test("findCurrentWorktree handles empty/invalid input gracefully", () => {
+	assert.equal(findCurrentWorktree("", WORKTREES), null);
+	assert.equal(findCurrentWorktree(undefined, WORKTREES), null);
+	assert.equal(findCurrentWorktree("/Users/dev/Labs/vpk-rovo", null), null);
 });

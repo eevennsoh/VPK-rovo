@@ -98,10 +98,50 @@ function matchWorktree(query, worktrees) {
 	return { ok: false, reason: "not-found" };
 }
 
+/**
+ * Identify which worktree the given directory sits inside, so
+ * `pnpm ports kill` with no argument can default to "the one you're in".
+ *
+ * A worktree matches when `dir` equals its path or is nested under it. When
+ * several match (nested worktree layouts — e.g. a `.claude/worktrees/...` dir
+ * living under the main checkout), the deepest (longest) path wins, since that
+ * is the most specific enclosing worktree.
+ *
+ * Pure: no fs, no git. `dir` is normalized by the caller (typically
+ * process.cwd()).
+ *
+ * @returns {object | null} the enclosing worktree, or null when `dir` is not
+ *   inside any known worktree.
+ */
+function findCurrentWorktree(dir, worktrees) {
+	const normalizedDir = String(dir ?? "").trim();
+	if (normalizedDir.length === 0 || !Array.isArray(worktrees)) {
+		return null;
+	}
+
+	let best = null;
+	let bestLength = -1;
+	for (const worktree of worktrees) {
+		const wtPath = typeof worktree.path === "string" ? worktree.path : "";
+		if (wtPath.length === 0) {
+			continue;
+		}
+		const isInside =
+			normalizedDir === wtPath ||
+			normalizedDir.startsWith(wtPath.endsWith(path.sep) ? wtPath : `${wtPath}${path.sep}`);
+		if (isInside && wtPath.length > bestLength) {
+			best = worktree;
+			bestLength = wtPath.length;
+		}
+	}
+	return best;
+}
+
 module.exports = {
 	DEFAULT_SESSION_PREFIX,
 	sessionTokenForWorktree,
 	sessionNameForWorktree,
 	handlesForWorktree,
 	matchWorktree,
+	findCurrentWorktree,
 };
