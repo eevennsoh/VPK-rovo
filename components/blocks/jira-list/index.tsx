@@ -5,12 +5,9 @@ import {
 	useId,
 	useMemo,
 	useState,
-	type ComponentProps,
 	type KeyboardEvent as ReactKeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
-	type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import {
 	DndContext,
 	KeyboardSensor,
@@ -26,28 +23,18 @@ import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
 	SortableContext,
 	sortableKeyboardCoordinates,
-	useSortable,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import AppSwitcherIcon from "@atlaskit/icon/core/app-switcher";
-import BugIcon from "@atlaskit/icon/core/bug";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CopyIcon from "@atlaskit/icon/core/copy";
-import EpicIcon from "@atlaskit/icon/core/epic";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
-import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
-import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
-import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
-import StoryIcon from "@atlaskit/icon/core/story";
-import SubtasksIcon from "@atlaskit/icon/core/subtasks";
-import TaskIcon from "@atlaskit/icon/core/task";
 import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 
 import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
@@ -55,13 +42,6 @@ import {
 	JiraListColumnActions,
 	JiraListColumnBoundary,
 } from "@/components/blocks/jira-list/jira-list-column-controls";
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarGroup,
-	AvatarImage,
-} from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,22 +55,13 @@ import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tag, TagGroup } from "@/components/ui/tag";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type {
-	JiraListColumnAnchorId,
-	JiraListExtraColumn,
-	JiraListGoal,
-	JiraListInsertion,
-	JiraListInsertionPosition,
 	JiraListIssueType,
-	JiraListPerson,
-	JiraListPriority,
 	JiraListProps,
 	JiraListRowData,
-	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
 
 export type {
@@ -109,19 +80,34 @@ export type {
 	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
 
-const PRIORITY_ICONS = {
-	major: PriorityMajorIcon,
-	medium: PriorityMediumIcon,
-	minor: PriorityMinorIcon,
-} as const;
-
-const ISSUE_TYPE_ICONS = {
-	epic: EpicIcon,
-	task: TaskIcon,
-	story: StoryIcon,
-	subtask: SubtasksIcon,
-	bug: BugIcon,
-} as const;
+import {
+	getBodyCellClassName,
+	getColumnAnchorName,
+	getColumnBoundaryIndex,
+	getDragInsertionPosition,
+	getInsertionLineClassName,
+	getRowAnchorName,
+	getRowZone,
+	type JiraListColumnBoundaryIndex,
+	type JiraListInsertionTarget,
+	type JiraListRowTarget,
+} from "@/components/blocks/jira-list/jira-list-dnd";
+import {
+	getOrderedColumns,
+	HierarchyConnector,
+	IssueTypeGlyph,
+	JiraListAvatar,
+	PriorityGlyph,
+	renderAgentSessions,
+	renderContributors,
+	renderGoals,
+	renderLabels,
+	type JiraListColumnDefinition,
+} from "@/components/blocks/jira-list/jira-list-cells";
+import {
+	JiraListSortableRow,
+	RowBoundaryCreateControls,
+} from "@/components/blocks/jira-list/jira-list-rows";
 
 const ISSUE_TYPE_OPTIONS: readonly {
 	label: string;
@@ -136,510 +122,6 @@ const ISSUE_TYPE_OPTIONS: readonly {
 
 const HEADER_CELL_CLASS =
 	"h-10 border-b border-r border-border bg-surface-sunken px-3 py-0 text-left align-middle text-xs font-semibold text-text-subtle whitespace-nowrap last:border-r-0";
-const DEFAULT_EXTRA_COLUMN_WIDTH_CLASS = "w-[156px]";
-
-interface JiraListInsertionTarget {
-	issueKey: string;
-	position: JiraListInsertionPosition;
-}
-
-type JiraListRowZone = "before" | "drag" | "after";
-type JiraListColumnBoundaryIndex = number;
-
-interface JiraListRowTarget {
-	issueKey: string;
-	zone: JiraListRowZone;
-}
-
-function getColumnBoundaryIndex(
-	columnOffset: number,
-	columnWidth: number,
-	columnIndex: number,
-): JiraListColumnBoundaryIndex {
-	if (columnOffset < columnWidth / 2) {
-		return columnIndex;
-	}
-
-	return columnIndex + 1;
-}
-
-function getRowZone(rowOffset: number, rowHeight: number): JiraListRowZone {
-	const rowThird = rowHeight / 3;
-
-	if (rowOffset < rowThird) {
-		return "before";
-	}
-
-	if (rowOffset > rowThird * 2) {
-		return "after";
-	}
-
-	return "drag";
-}
-
-function getDragInsertionPosition(
-	isDropTarget: boolean,
-	draggingIndex: number,
-	dragOverIndex: number,
-): JiraListInsertionPosition | undefined {
-	if (!isDropTarget) {
-		return undefined;
-	}
-
-	return draggingIndex < dragOverIndex ? "after" : "before";
-}
-
-function getBodyCellClassName({
-	isSelected,
-	isLastColumn = false,
-	align = "left",
-}: Readonly<{
-	isSelected: boolean;
-	isLastColumn?: boolean;
-	align?: "left" | "center";
-}>) {
-	return cn(
-		"h-10 border-b border-r border-border px-3 py-0 align-middle whitespace-nowrap transition-colors",
-		align === "center" && "text-center",
-		isLastColumn && "border-r-0",
-		isSelected
-			? "bg-bg-selected"
-			: "bg-surface group-hover/row:bg-bg-neutral-subtle-hovered group-focus-within/row:bg-bg-neutral-subtle-hovered",
-	);
-}
-
-function isInsertionTarget(
-	target: JiraListInsertionTarget | null,
-	issueKey: string,
-	position: JiraListInsertionPosition,
-): boolean {
-	return target?.issueKey === issueKey && target.position === position;
-}
-
-function getInsertionLineClassName(
-	position: JiraListInsertionPosition | undefined,
-): string | undefined {
-	if (position === "before") {
-		return "shadow-[inset_0_2px_0_var(--ds-border-selected)]";
-	}
-
-	if (position === "after") {
-		return "shadow-[inset_0_-2px_0_var(--ds-border-selected)]";
-	}
-
-	return undefined;
-}
-
-function getRowAnchorName(instanceId: string, rowIndex: number): string {
-	return `--jira-list-${instanceId}-row-${rowIndex}`;
-}
-
-function getColumnAnchorName(instanceId: string, columnIndex: number): string {
-	return `--jira-list-${instanceId}-column-${columnIndex}`;
-}
-
-function RowBoundaryCreateControls({
-	activeTarget,
-	hoveredTarget,
-	instanceId,
-	onCreate,
-	onFocusedTargetChange,
-	onHoveredTargetChange,
-	overlayRef,
-	rows,
-}: Readonly<{
-	activeTarget: JiraListInsertionTarget | null;
-	hoveredTarget: JiraListRowTarget | null;
-	instanceId: string;
-	onCreate?: (insertion: JiraListInsertion) => void;
-	onFocusedTargetChange: (target: JiraListInsertionTarget | null) => void;
-	onHoveredTargetChange: (target: JiraListInsertionTarget | null) => void;
-	overlayRef: (element: HTMLDivElement | null) => void;
-	rows: readonly JiraListRowData[];
-}>) {
-	const renderControl = (
-		row: JiraListRowData,
-		rowIndex: number,
-		position: JiraListInsertionPosition,
-	) => {
-		const isActive = isInsertionTarget(activeTarget, row.issueKey, position);
-		const isVisible = (
-			hoveredTarget?.issueKey === row.issueKey && hoveredTarget.zone === position
-		) || isActive;
-		const insertAtIndex = position === "before" ? rowIndex : rowIndex + 1;
-		const target = { issueKey: row.issueKey, position };
-
-		return (
-			<Tooltip key={`${row.issueKey}-${position}`}>
-				<TooltipTrigger
-					render={
-						<Button
-							aria-label={`Create work item ${position} ${row.issueKey}`}
-							className={cn(
-								"absolute z-30 isolate size-8 -translate-x-1/2 -translate-y-1/2 border-border bg-surface! shadow-md opacity-0 transition-opacity duration-fast before:pointer-events-none before:absolute before:-inset-0.5 before:-z-10 before:rounded-lg before:bg-surface before:content-[''] hover:bg-surface! active:bg-surface! focus-visible:pointer-events-auto focus-visible:bg-surface! focus-visible:opacity-100",
-								isVisible && "pointer-events-auto opacity-100",
-							)}
-							data-insertion-position={position}
-							onBlur={() => onFocusedTargetChange(null)}
-							onClick={() => onCreate?.({
-								insertAtIndex,
-								position,
-								relativeToIssueKey: row.issueKey,
-							})}
-							onFocus={() => onFocusedTargetChange(target)}
-							onPointerEnter={() => onHoveredTargetChange(target)}
-							onPointerLeave={() => onHoveredTargetChange(null)}
-							onPointerMove={(event) => event.stopPropagation()}
-							size="icon"
-							style={{
-								left: "anchor(left)",
-								positionAnchor: getRowAnchorName(instanceId, rowIndex),
-								top: position === "before" ? "anchor(top)" : "anchor(bottom)",
-							}}
-							variant="outline"
-						/>
-					}
-				>
-					<Icon render={<AddIcon label="" size="small" />} />
-				</TooltipTrigger>
-				<TooltipContent side="right">Create</TooltipContent>
-			</Tooltip>
-		);
-	};
-
-	return (
-		<div
-			className="pointer-events-none contents"
-			data-testid="jira-list-row-boundary-overlay"
-			ref={overlayRef}
-		>
-			{onCreate
-				? rows.flatMap((row, rowIndex) => [
-						renderControl(row, rowIndex, "before"),
-						renderControl(row, rowIndex, "after"),
-					])
-				: null}
-		</div>
-	);
-}
-
-function JiraListSortableRow({
-	children,
-	handleOverlayElement,
-	instanceId,
-	isDropTarget,
-	isHandleVisible,
-	onMoveRow,
-	row,
-	rowIndex,
-	rowCount,
-	...rowProps
-}: Readonly<{
-	children: ReactNode;
-	handleOverlayElement: HTMLDivElement | null;
-	instanceId: string;
-	isDropTarget: boolean;
-	isHandleVisible: boolean;
-	onMoveRow?: (issueKey: string, targetIndex: number) => void;
-	row: JiraListRowData;
-	rowIndex: number;
-	rowCount: number;
-}> & Omit<ComponentProps<typeof TableRow>, "children">) {
-	const [isHandleFocused, setIsHandleFocused] = useState(false);
-	const [isHandleHovered, setIsHandleHovered] = useState(false);
-	const {
-		attributes,
-		isDragging,
-		listeners,
-		setActivatorNodeRef,
-		setNodeRef,
-		transform,
-		transition,
-	} = useSortable({ disabled: !onMoveRow, id: row.issueKey });
-	const showHandle = isHandleVisible || isHandleFocused || isHandleHovered || isDragging;
-
-	const handleKeyboardMove = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-		if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
-			return;
-		}
-
-		event.preventDefault();
-		event.stopPropagation();
-		const direction = event.key === "ArrowUp" ? -1 : 1;
-		const targetIndex = Math.min(Math.max(rowIndex + direction, 0), rowCount - 1);
-		if (targetIndex !== rowIndex) {
-			onMoveRow?.(row.issueKey, targetIndex);
-		}
-	};
-
-	const dragHandle = (
-		<Tooltip>
-			<TooltipTrigger
-				render={
-					<Button
-						{...attributes}
-						{...listeners}
-						aria-label="Drag to reorder"
-						className={cn(
-							"absolute z-30 isolate size-8 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none border-border bg-surface! shadow-md opacity-0 transition-opacity duration-fast before:pointer-events-none before:absolute before:-inset-0.5 before:-z-10 before:rounded-lg before:bg-surface before:content-[''] hover:bg-surface! active:cursor-grabbing active:bg-surface! focus-visible:bg-surface! focus-visible:opacity-100",
-							showHandle && "pointer-events-auto opacity-100",
-						)}
-						data-testid={`jira-list-drag-handle-${row.issueKey}`}
-						onBlur={() => setIsHandleFocused(false)}
-						onFocus={() => setIsHandleFocused(true)}
-						onKeyDownCapture={handleKeyboardMove}
-						onPointerEnter={() => setIsHandleHovered(true)}
-						onPointerLeave={() => setIsHandleHovered(false)}
-						ref={setActivatorNodeRef}
-						size="icon"
-						style={{
-							left: "anchor(left)",
-							positionAnchor: getRowAnchorName(instanceId, rowIndex),
-							top: "anchor(center)",
-						}}
-						variant="outline"
-					/>
-				}
-			>
-				<Icon render={<AppSwitcherIcon label="" size="small" />} />
-			</TooltipTrigger>
-			<TooltipContent side="right">Drag to reorder</TooltipContent>
-		</Tooltip>
-	);
-
-	return (
-		<>
-			<TableRow
-				{...rowProps}
-				className={cn(
-					rowProps.className,
-					isDragging && "z-30 opacity-80 shadow-lg [&>td]:bg-bg-selected",
-				)}
-				data-dragging={isDragging || undefined}
-				data-drop-target={isDropTarget || undefined}
-				ref={setNodeRef}
-				style={{
-					transform: CSS.Transform.toString(transform),
-					transition,
-				}}
-			>
-				{children}
-			</TableRow>
-			{handleOverlayElement && onMoveRow ? createPortal(dragHandle, handleOverlayElement) : null}
-		</>
-	);
-}
-
-function HierarchyConnector({
-	indentLevel,
-}: Readonly<{
-	indentLevel: number;
-}>) {
-	if (indentLevel <= 0) {
-		return null;
-	}
-
-	return (
-		<div
-			aria-hidden="true"
-			className="relative shrink-0"
-			style={{ width: `${indentLevel * 18}px` }}
-		>
-			<span className="absolute inset-y-0 left-2 w-px bg-border" />
-			<span className="absolute top-1/2 left-2 h-px w-3 -translate-y-1/2 bg-border" />
-		</div>
-	);
-}
-
-function getPersonInitials(name: string): string {
-	return name
-		.split(/\s+/u)
-		.filter(Boolean)
-		.slice(0, 2)
-		.map((part) => part[0]?.toUpperCase() ?? "")
-		.join("");
-}
-
-function JiraListAvatar({ person }: Readonly<{ person: JiraListPerson }>) {
-	if (person.avatarUnassignedKind) {
-		return (
-			<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size="sm">
-				<AvatarFallback>{person.avatarUnassignedKind === "agent" ? "AI" : "?"}</AvatarFallback>
-			</Avatar>
-		);
-	}
-
-	return (
-		<Avatar label={person.name} shape={person.avatarShape ?? "circle"} size="sm">
-			{person.avatarSrc ? <AvatarImage alt="" src={person.avatarSrc} /> : null}
-			<AvatarFallback>{getPersonInitials(person.name)}</AvatarFallback>
-		</Avatar>
-	);
-}
-
-function IssueTypeGlyph({ issueType }: Readonly<{ issueType: JiraListIssueType }>) {
-	const IssueTypeIcon = ISSUE_TYPE_ICONS[issueType];
-	return (
-		<Icon
-			className="text-icon-brand"
-			label={issueType}
-			render={<IssueTypeIcon label="" size="small" />}
-		/>
-	);
-}
-
-function PriorityGlyph({ priority }: Readonly<{ priority: JiraListPriority }>) {
-	const PriorityIcon = PRIORITY_ICONS[priority];
-	return (
-		<Icon
-			className={cn(
-				priority === "major" && "text-icon-danger",
-				priority === "medium" && "text-icon-information",
-				priority === "minor" && "text-icon-success",
-			)}
-			label={`${priority} priority`}
-			render={<PriorityIcon label="" size="small" />}
-		/>
-	);
-}
-
-function OverflowBadge({
-	count,
-	label,
-}: Readonly<{
-	count: number;
-	label: string;
-}>) {
-	return count > 0 ? <Badge aria-label={label}>+{count}</Badge> : null;
-}
-
-interface JiraListColumnDefinition {
-	id: JiraListColumnAnchorId;
-	label: string;
-	widthClassName: string;
-	align?: "left" | "center";
-	headerContent?: ReactNode;
-	renderCell: (row: JiraListRowData) => ReactNode;
-}
-
-function getOrderedColumns(
-	baseColumns: readonly JiraListColumnDefinition[],
-	extraColumns: readonly JiraListExtraColumn[],
-): JiraListColumnDefinition[] {
-	const orderedColumns = [...baseColumns];
-
-	for (const extraColumn of extraColumns) {
-		const anchorIndex = orderedColumns.findIndex((column) => column.id === extraColumn.afterColumnId);
-		orderedColumns.splice(anchorIndex === -1 ? orderedColumns.length : anchorIndex + 1, 0, {
-			id: extraColumn.id,
-			label: extraColumn.label,
-			widthClassName: extraColumn.widthClassName ?? DEFAULT_EXTRA_COLUMN_WIDTH_CLASS,
-			renderCell: (row) => (
-				<span className="text-sm text-text-subtle">
-					{extraColumn.valuesByIssueKey?.[row.issueKey] ?? "None"}
-				</span>
-			),
-		});
-	}
-
-	return orderedColumns;
-}
-
-function renderAgentSessions(agentSessions: readonly string[] | undefined): ReactNode {
-	if (!agentSessions || agentSessions.length === 0) {
-		return <span className="text-text-subtle text-sm">None</span>;
-	}
-
-	const visibleSessions = agentSessions.slice(0, 2);
-	return (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
-			<TagGroup className="min-w-0 gap-1">
-				{visibleSessions.map((session) => (
-					<Tag className="max-w-[7rem]" color="teal" key={session}>
-						{session}
-					</Tag>
-				))}
-			</TagGroup>
-			<OverflowBadge
-				count={Math.max(0, agentSessions.length - visibleSessions.length)}
-				label={`${agentSessions.length - visibleSessions.length} more agent sessions`}
-			/>
-		</div>
-	);
-}
-
-function renderGoals(goals: readonly JiraListGoal[] | undefined): ReactNode {
-	if (!goals || goals.length === 0) {
-		return <span className="text-text-subtle text-sm">None</span>;
-	}
-
-	const [primaryGoal, ...secondaryGoals] = goals;
-	return (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
-			<span
-				className={cn(
-					"truncate text-sm",
-					primaryGoal.emphasis === "warning" ? "text-text-warning" : "text-link",
-				)}
-			>
-				{primaryGoal.text}
-			</span>
-			<OverflowBadge
-				count={secondaryGoals.length}
-				label={`${secondaryGoals.length} more goals`}
-			/>
-		</div>
-	);
-}
-
-function renderLabels(labels: readonly JiraListTag[] | undefined): ReactNode {
-	if (!labels || labels.length === 0) {
-		return <span className="text-text-subtle text-sm">None</span>;
-	}
-
-	const visibleLabels = labels.slice(0, 2);
-	return (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
-			<TagGroup className="min-w-0 gap-1">
-				{visibleLabels.map((label) => (
-					<Tag className="max-w-[5.75rem]" color={label.color} key={`${label.text}-${label.color}`}>
-						{label.text}
-					</Tag>
-				))}
-			</TagGroup>
-			<OverflowBadge
-				count={Math.max(0, labels.length - visibleLabels.length)}
-				label={`${labels.length - visibleLabels.length} more labels`}
-			/>
-		</div>
-	);
-}
-
-function renderContributors(contributors: readonly JiraListPerson[] | undefined): ReactNode {
-	if (!contributors || contributors.length === 0) {
-		return <span className="text-text-subtle text-sm">None</span>;
-	}
-
-	const visibleContributors = contributors.slice(0, 3);
-	const overflowCount = Math.max(0, contributors.length - visibleContributors.length);
-	return (
-		<AvatarGroup
-			className="-space-x-1.5 *:data-[slot=avatar]:ring-0!"
-			label={`Contributors: ${contributors.map((contributor) => contributor.name).join(", ")}`}
-		>
-			{visibleContributors.map((contributor) => (
-				<JiraListAvatar key={contributor.id} person={contributor} />
-			))}
-			{overflowCount > 0 ? (
-				<Avatar aria-label={`${overflowCount} more contributors`} size="sm">
-					<AvatarFallback className="bg-bg-neutral-bold text-[10px] font-semibold text-text-inverse">
-						+{overflowCount}
-					</AvatarFallback>
-				</Avatar>
-			) : null}
-		</AvatarGroup>
-	);
-}
 
 export function JiraList({
 	rows,

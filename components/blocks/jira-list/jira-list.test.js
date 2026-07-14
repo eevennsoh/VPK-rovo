@@ -3,7 +3,16 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+// The JiraList block is split across focused sibling modules (DnD geometry,
+// presentational cells, and interactive rows). Behavior-contract assertions
+// below grep the module as a whole, so SOURCE concatenates every file that
+// owns part of that contract rather than a single file.
+const SOURCE = [
+	"index.tsx",
+	"jira-list-dnd.ts",
+	"jira-list-cells.tsx",
+	"jira-list-rows.tsx",
+].map((file) => readFileSync(join(__dirname, file), "utf8")).join("\n");
 const TYPES_SOURCE = readFileSync(join(__dirname, "jira-list-types.ts"), "utf8");
 const COLUMN_CONTROLS_SOURCE = readFileSync(
 	join(__dirname, "jira-list-column-controls.tsx"),
@@ -360,7 +369,7 @@ test("JiraList row boundary controls reserve no horizontal gutter", () => {
 
 test("JiraList row boundary controls are absolute opaque overlays", () => {
 	const controlsSource = SOURCE.match(
-		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\nfunction JiraListSortableRow/u,
+		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\n(?:export )?function JiraListSortableRow/u,
 	)?.[0] ?? "";
 
 	assert.match(controlsSource, /absolute z-30 isolate size-8 -translate-x-1\/2 -translate-y-1\/2/u);
