@@ -11,8 +11,15 @@ const COLUMN_DRAG_SOURCE = SOURCE.slice(
 );
 
 test("Kanban card focus border stays inside the card and uses the focused border token", () => {
-	assert.match(JIRA_ISSUE_SOURCE, /"relative border outline-none focus-visible:border-ring"/);
+	assert.match(JIRA_ISSUE_SOURCE, /"group\/jira-issue relative w-full border outline-none focus-visible:border-ring"/);
 	assert.doesNotMatch(JIRA_ISSUE_SOURCE, /border: "none"/);
+});
+
+test("Kanban card list gives the first card room for its raised edge", () => {
+	assert.match(
+		SOURCE,
+		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),/,
+	);
 });
 
 test("Kanban drag-over column border stays inside the column and uses the focused border token", () => {
@@ -34,14 +41,13 @@ test("Kanban agent assignment icons use selected icon color while the trigger is
 });
 
 test("Kanban card renders explicit unassigned avatars with the shared placeholder", () => {
-	const unassignedBranch = JIRA_ISSUE_SOURCE.match(/assigneeUnassignedKind \? \(([\s\S]*?)\) : \(/)?.[1] ?? "";
-
 	assert.match(JIRA_ISSUE_SOURCE, /AvatarUnassigned,/);
 	assert.match(JIRA_ISSUE_SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
 	assert.match(SOURCE, /assigneeUnassignedKind=\{card\.avatarUnassignedKind\}/);
-	assert.match(unassignedBranch, /<AvatarUnassigned/);
-	assert.match(unassignedBranch, /kind=\{assigneeUnassignedKind\}/);
-	assert.match(unassignedBranch, /size="sm"/);
+	assert.match(
+		JIRA_ISSUE_SOURCE,
+		/function JiraIssueAssignee[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size="sm"/,
+	);
 });
 
 test("Kanban multi-card drag fades every selected card", () => {

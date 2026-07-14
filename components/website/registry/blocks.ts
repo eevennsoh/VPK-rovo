@@ -301,6 +301,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"html-selector": dynamic(() => import("../demos/blocks/html-selector-demo"), {
 		ssr: false,
 	}),
+	"jira-epic": dynamic(() => import("../demos/blocks/jira-epic-demo"), {
+		ssr: false,
+	}),
 	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), {
 		ssr: false,
 	}),
@@ -647,6 +650,19 @@ export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+
+	"jira-issue-demo-subtasks-collapsed": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoSubtasksCollapsed,
+	})), { ssr: false }),
+	"jira-issue-demo-subtasks-expanded": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoSubtasksExpanded,
+	})), { ssr: false }),
+	"jira-issue-demo-parent-epic": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoParentEpic,
+	})), { ssr: false }),
+	"jira-issue-demo-agent-activity-states": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
+		default: mod.JiraIssueDemoAgentActivityStates,
+	})), { ssr: false }),
 
 	// Agent Progress
 	"agent-progress-demo-running": dynamic(

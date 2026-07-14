@@ -58,3 +58,10 @@ test("Tag exposes ADS visual-uplift color tokens and trailing metrics", () => {
 	assert.match(TAG_DEMO_SOURCE, /export function TagDemoBadge\(\)/u);
 	assert.match(TAG_DEMO_SOURCE, /<Tag color="red" trailingMetric=\{5\} onRemove=\{\(\) => \{\}\}>/u);
 });
+
+test("Tag removable demo centers its removable tag in the preview surface", () => {
+	assert.match(
+		TAG_DEMO_SOURCE,
+		/export function TagDemoRemovable\(\)[\s\S]*className="flex min-h-\[352px\] w-full items-center justify-center"/u,
+	);
+});

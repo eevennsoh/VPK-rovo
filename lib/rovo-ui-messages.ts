@@ -316,6 +316,7 @@ export interface RovoMessageMetadata {
 		| "clarification-submit"
 		| "plan-approval-submit"
 		| "agent-directive"
+		| "jira-issue-generative-action"
 		| "plan-retry"
 		| "plan-task-dispatch";
 	/** Internal provenance for unified voice/chat routing */

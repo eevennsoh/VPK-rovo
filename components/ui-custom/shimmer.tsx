@@ -52,6 +52,7 @@ export interface TextShimmerProps {
 	transition?: Transition;
 	baseColor?: string;
 	baseGradientColor?: string | readonly string[];
+	initialBackgroundPosition?: string;
 }
 
 const ShimmerComponent = ({
@@ -69,6 +70,7 @@ const ShimmerComponent = ({
 	transition,
 	baseColor,
 	baseGradientColor,
+	initialBackgroundPosition,
 }: TextShimmerProps) => {
 	const MotionComponent = getMotionComponent(
 		Component as keyof JSX.IntrinsicElements
@@ -100,6 +102,11 @@ const ShimmerComponent = ({
 				resolveWaveHighlightColor(baseGradientColor, index, characters.length)
 			),
 		[baseGradientColor, characters]
+	);
+	const resolvedInitialBackgroundPosition = initialBackgroundPosition ?? "100% center";
+	const shimmerBackgroundPosition = useMemo(
+		() => [resolvedInitialBackgroundPosition, "0% center"],
+		[resolvedInitialBackgroundPosition]
 	);
 
 	if (isWaveEnabled) {
@@ -205,13 +212,13 @@ const ShimmerComponent = ({
 
 	return (
 		<MotionComponent
-			animate={{ backgroundPosition: "0% center" }}
+			animate={{ backgroundPosition: shimmerBackgroundPosition }}
 			className={cn(
 				"relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent",
 				"[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--color-background),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]",
 				className
 			)}
-			initial={{ backgroundPosition: "100% center" }}
+			initial={false}
 			style={
 				{
 					"--spread": `${dynamicSpread}px`,
@@ -223,6 +230,7 @@ const ShimmerComponent = ({
 				duration: resolvedDuration,
 				ease: "linear",
 				repeat: Number.POSITIVE_INFINITY,
+				...transition,
 			}}
 		>
 			{children}

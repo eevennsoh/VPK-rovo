@@ -708,12 +708,14 @@ export function RichTextCommandMenuSearchField({
 	// beats the input's plain `autoFocus` attribute. Imperatively focus on mount
 	// (after the focus manager settles) so opening "Add automation", "Add apps",
 	// "Add skills", etc. lands the caret in the search box ready for typing.
+	// Use preventScroll because this field is often rendered in portalled
+	// popovers; native auto-focus can jump the surrounding page to the popup.
 	useEffect(() => {
 		if (!autoFocus) {
 			return;
 		}
 		const frame = requestAnimationFrame(() => {
-			inputRef.current?.focus();
+			inputRef.current?.focus({ preventScroll: true });
 		});
 		return () => cancelAnimationFrame(frame);
 	}, [autoFocus]);
@@ -729,7 +731,6 @@ export function RichTextCommandMenuSearchField({
 				value={value}
 				aria-label={label}
 				placeholder={placeholder}
-				autoFocus={autoFocus}
 				onChange={(event) => onValueChange(event.currentTarget.value)}
 				onKeyDown={(event) => {
 					onKeyDown?.(event);

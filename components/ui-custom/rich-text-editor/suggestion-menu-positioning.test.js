@@ -37,6 +37,16 @@ test("composer suggestions prefer above-input placement and only fall below when
 	assert.match(source, /rect\.bottom \+ COMPOSER_POPUP_GAP/u);
 });
 
+test("command menu search autofocus does not scroll portalled popovers into view", () => {
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const fieldStart = source.indexOf("export function RichTextCommandMenuSearchField");
+	const fieldSource = source.slice(fieldStart, source.indexOf("interface RichTextSuggestionMenuOptionProps", fieldStart));
+
+	assert.ok(fieldStart > -1, "expected RichTextCommandMenuSearchField source");
+	assert.match(fieldSource, /inputRef\.current\?\.focus\(\{ preventScroll: true \}\);/u);
+	assert.doesNotMatch(fieldSource, /autoFocus=\{autoFocus\}/u);
+});
+
 test("composer palette re-hugs the container on its own height change (not just window resize/scroll)", () => {
 	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
 

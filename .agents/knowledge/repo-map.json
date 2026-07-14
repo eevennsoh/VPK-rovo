@@ -5209,7 +5209,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 88,
+				"entryCount": 89,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5420,6 +5420,12 @@
 						"slug": "html-selector",
 						"name": "HTML Selector",
 						"importPath": "@/components/blocks/html-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-epic",
+						"name": "Jira epic",
+						"importPath": "@/components/blocks/jira-epic"
 					},
 					{
 						"category": "blocks",

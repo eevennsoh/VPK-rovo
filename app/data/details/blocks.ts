@@ -81,6 +81,7 @@ import { QUESTION_CARD_DETAIL } from "./blocks/question-card";
 import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
+import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
@@ -171,6 +172,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"approval-card": APPROVAL_CARD_DETAIL,
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
+	"jira-epic": JIRA_EPIC_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,
