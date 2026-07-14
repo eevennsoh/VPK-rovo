@@ -5407,6 +5407,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "jira-epic",
+						"name": "Jira epic",
+						"importPath": "@/components/blocks/jira-epic"
+					},
+					{
+						"category": "blocks",
 						"slug": "jira-issue",
 						"name": "Jira issue",
 						"importPath": "@/components/blocks/jira-issue"

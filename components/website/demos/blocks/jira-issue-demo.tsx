@@ -1,24 +1,43 @@
 "use client";
 
-import { JiraIssue } from "@/components/blocks/jira-issue";
-
-const DEMO_TAGS = [
-	{ text: "Acmecorp", color: "discovery" },
-	{ text: "qualification", color: "blue" },
-	{ text: "enterprise", color: "discovery" },
-] as const;
+import JiraIssuePage from "@/components/blocks/jira-issue/page";
 
 export default function JiraIssueDemo() {
 	return (
 		<div className="flex w-full justify-center p-6">
-			<JiraIssue
-				assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
-				className="w-full max-w-[464px]"
-				issueKey="RFP-101"
-				priority="major"
-				summary="Acmecorp: Prepare for bid recommendation for ESM RFP"
-				tags={DEMO_TAGS}
-			/>
+			<JiraIssuePage />
+		</div>
+	);
+}
+
+export function JiraIssueDemoSubtasksCollapsed() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="subtasks-collapsed" />
+		</div>
+	);
+}
+
+export function JiraIssueDemoSubtasksExpanded() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="subtasks-expanded" />
+		</div>
+	);
+}
+
+export function JiraIssueDemoParentEpic() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="parent-epic" />
+		</div>
+	);
+}
+
+export function JiraIssueDemoAgentActivityStates() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<JiraIssuePage variant="agent-activity-states" />
 		</div>
 	);
 }

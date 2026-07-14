@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 	description:
-		"Compact Jira issue card for kanban boards, with summary text, issue key, tags, priority signal, assignee avatar, selected state, and drag affordance.",
+		"Compact Jira issue card for kanban boards, with summary text, issue key, tags, priority signal, assignee avatar, selected state, drag affordance, subtasks, and parent epic composition.",
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraIssue } from "@/components/blocks/jira-issue";`,
 	usage: `import { JiraIssue } from "@/components/blocks/jira-issue";
@@ -18,14 +18,30 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
   priority="major"
   assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 />`,
+	examples: [
+		{ title: "Subtasks collapsed", description: "Issue card with a collapsed nested subtasks row.", demoSlug: "jira-issue-demo-subtasks-collapsed" },
+		{ title: "Subtasks expanded", description: "Expanded subtasks with nested issue cards.", demoSlug: "jira-issue-demo-subtasks-expanded" },
+		{ title: "Parent epic", description: "Issue card with a parent epic selector embedded through the Jira epic block.", demoSlug: "jira-issue-demo-parent-epic" },
+		{ title: "Agent activity states", description: "Interactive issue card states for agents working, awaiting input, and completed work.", demoSlug: "jira-issue-demo-agent-activity-states" },
+	],
 	props: [
 		{ name: "summary", type: "string", required: true, description: "Issue summary shown as the primary card text." },
 		{ name: "issueKey", type: "string", required: true, description: "Jira issue key shown beside the issue-type icon." },
 		{ name: "tags", type: "readonly JiraIssueTag[]", description: "Tags rendered below the summary." },
+		{ name: "parentEpicControl", type: "ReactNode", description: "Optional parent epic selector/control rendered in the issue metadata below the summary." },
+		{ name: "subtasks", type: "readonly JiraIssueSubtask[]", description: "Nested subtasks rendered behind the expandable subtasks row." },
+		{ name: "subtasksCompleted", type: "number", default: "0", description: "Completed subtask count used for the subtasks badge." },
+		{ name: "defaultSubtasksExpanded", type: "boolean", default: "false", description: "Initial uncontrolled expanded state for subtasks." },
 		{ name: "priority", type: '"major" | "medium" | "minor"', default: '"major"', description: "Priority icon and color." },
+		{ name: "showPriorityIndicator", type: "boolean", default: "true", description: "Controls whether the priority icon is shown in the issue metadata row." },
 		{ name: "selected", type: "boolean", default: "false", description: "Applies the selected border/background and aria-pressed state." },
 		{ name: "dragging", type: "boolean", default: "false", description: "Applies the drag cursor and faded drag state." },
 		{ name: "assigneeAvatarSrc", type: "string", description: "Assignee avatar image source." },
 		{ name: "assigneeUnassignedKind", type: '"person" | "agent"', description: "Renders the shared unassigned avatar placeholder instead of an assignee image." },
+		{ name: "agentActivities", type: "readonly JiraIssueAgentActivity[]", description: "Agent activity rows rendered in the gray activity backdrop below the issue body." },
+		{ name: "agentActivityMode", type: '"none" | "working" | "awaiting-input" | "completed"', default: '"none"', description: "Presentation mode for showing active agent rows or completed-work notification states." },
+		{ name: "agentDoneCount", type: "number", default: "0", description: "Number shown in the Agent done notification row inside the white issue body." },
+		{ name: "onAgentActivityViewChat", type: "(activity: JiraIssueAgentActivity) => void", description: "Called from the agent activity hover panel when the user selects View chat." },
+		{ name: "generativeAction", type: "JiraIssueGenerativeActionConfig", description: "Optional hover-revealed generative action menu that can submit Ask Rovo, skill, or agent prompts with issue context." },
 	],
 };

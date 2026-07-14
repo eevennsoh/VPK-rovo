@@ -53,8 +53,15 @@ export function TagDemoDefault() {
 
 export function TagDemoRemovable() {
 	const [visible, setVisible] = useState(true);
-	if (!visible) return <p className="text-sm text-text-subtle">Tag removed</p>;
-	return <Tag onRemove={() => setVisible(false)}>Removable</Tag>;
+	return (
+		<div className="flex min-h-[352px] w-full items-center justify-center">
+			{visible ? (
+				<Tag onRemove={() => setVisible(false)}>Removable</Tag>
+			) : (
+				<p className="text-sm text-text-subtle">Tag removed</p>
+			)}
+		</div>
+	);
 }
 
 export function TagDemoFrontSlot() {

@@ -316,6 +316,7 @@ function BoardColumn({
 				style={{
 					flexGrow: 1,
 					overflowY: "auto",
+					paddingTop: token("space.050"),
 					paddingBottom: token("space.100"),
 					paddingInline: token("space.050"),
 					display: "flex",
