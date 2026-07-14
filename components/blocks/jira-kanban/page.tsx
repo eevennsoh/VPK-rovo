@@ -110,8 +110,8 @@ export default function JiraKanbanPage() {
 	};
 
 	return (
-		<div className="flex h-full min-h-[640px] flex-col bg-surface p-4 md:p-5">
-			<div className="min-w-0 overflow-x-auto">
+		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface p-4 md:p-5">
+			<div className="min-w-0">
 				<JiraKanban
 					agents={BOARD_AGENTS}
 					ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
