@@ -5,19 +5,43 @@ const { test } = require("node:test");
 
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/work-item-stage.tsx"), "utf8");
+const DIALOG_SOURCE = readFileSync(
+	join(__dirname, "../../blocks/agent-sessions/experimental/components/experimental-work-item-dialog.tsx"),
+	"utf8",
+);
 const CONTROLLER_SOURCE = readFileSync(
 	join(__dirname, "../../blocks/agent-sessions/experimental/use-agent-sessions-controller.ts"),
 	"utf8",
 );
 
 test("ASX Work item opens the experimental Agent Sessions design from its state buttons", () => {
-	assert.match(PAGE_SOURCE, /item\.id === "work-item"[\s\S]*<WorkItemStage \/>/u);
+	assert.match(PAGE_SOURCE, /item\.id === "work-item"[\s\S]*<WorkItemStage controller=\{workItemController\} \/>/u);
+	assert.match(PAGE_SOURCE, /<WorkItemControls controller=\{workItemController\} \/>/u);
+	assert.match(PAGE_SOURCE, /topBarCenter=\{topBarCenter\}/u);
 	assert.match(STAGE_SOURCE, /<ExperimentalAgentSessions/u);
-	assert.match(STAGE_SOURCE, /function openPreset[\s\S]*setPreset\(nextPreset\);[\s\S]*setIsOpen\(true\);/u);
+	assert.match(STAGE_SOURCE, /const selectPreset = useCallback[\s\S]*setPreset\(nextPreset\);/u);
 	assert.match(STAGE_SOURCE, /setLaunchId\(\(currentLaunchId\) => currentLaunchId \+ 1\);/u);
-	assert.match(STAGE_SOURCE, /<ExperimentalAgentSessions[\s\S]*key=\{launchId\}/u);
+	assert.match(STAGE_SOURCE, /<ExperimentalAgentSessions[\s\S]*key=\{controller\.launchId\}/u);
+	assert.match(STAGE_SOURCE, /presentation="inline"/u);
+	assert.doesNotMatch(STAGE_SOURCE, /isOpen|setIsOpen|onClose=/u);
 	assert.match(STAGE_SOURCE, /aria-label="Open a work item state"/u);
+	assert.match(STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
+	assert.match(STAGE_SOURCE, /size="compact"/u);
+	assert.match(STAGE_SOURCE, /useState<AgentSessionsExperimentalPreset>\("empty"\)/u);
+	assert.match(STAGE_SOURCE, /aria-pressed=\{controller\.preset === option\.value\}/u);
+	assert.match(STAGE_SOURCE, /aria-pressed:z-10/u);
+	assert.match(STAGE_SOURCE, /border-l!/u);
+	assert.doesNotMatch(STAGE_SOURCE, /<button/u);
 	assert.doesNotMatch(STAGE_SOURCE, /Open work item/u);
+});
+
+test("ASX Work item renders the dialog surface inline without a blanket", () => {
+	const inlineIndex = DIALOG_SOURCE.indexOf('if (presentation === "inline")');
+	const backdropIndex = DIALOG_SOURCE.indexOf("<Dialog.Backdrop");
+
+	assert.ok(inlineIndex >= 0 && inlineIndex < backdropIndex);
+	assert.match(DIALOG_SOURCE, /<section[\s\S]*aria-label=\{workItemTitle\}/u);
+	assert.match(DIALOG_SOURCE, /<ModalHeader showClose=\{presentation !== "inline"\} \/>/u);
 });
 
 test("ASX Work item can jump between all requested presets", () => {

@@ -28,8 +28,10 @@ const PRODUCT_SIDEBAR_SOURCE = fs.readFileSync(
 );
 
 test("ASX maps only Kanban and Queue to implemented gallery stages", () => {
+	assert.match(ASX_PAGE_SOURCE, /title="Agent Sessions Experience"/u);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "kanban"\) return <KanbanStage \/>;/u);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "queue"\) return <QueueStage \/>;/u);
+	assert.match(ASX_PAGE_SOURCE, /flex h-full w-full items-center justify-center/u);
 	assert.match(ASX_PAGE_SOURCE, /\{item\.title\}/u);
 });
 
@@ -46,7 +48,9 @@ test("ASX stages fill the Gallery viewport without margin compensation", () => {
 test("Card Kanban controls use the compact Gallery top-bar slot", () => {
 	assert.match(ASX_PAGE_SOURCE, /topBarCenter=/u);
 	assert.match(ASX_PAGE_SOURCE, /<CardKanbanControls controller=\{cardKanbanController\} \/>/u);
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /<ButtonGroup variant="separated"/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /border-l!/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /aria-pressed:z-10/u);
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /variant="outline"/u);
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /size="compact"/u);
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /showProgress = true/u);

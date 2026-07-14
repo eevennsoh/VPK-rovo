@@ -14,11 +14,16 @@ import { SessionsRail } from "@/components/blocks/agent-sessions/experimental/co
 import { MetadataRail } from "@/components/blocks/agent-sessions/experimental/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/agent-sessions/experimental/components/floating-session-surface";
 
-export interface ExperimentalAgentSessionsProps {
-	open: boolean;
-	onClose: () => void;
+interface ExperimentalAgentSessionsBaseProps {
 	initialPreset: AgentSessionsPreset;
 }
+
+export type ExperimentalAgentSessionsProps = ExperimentalAgentSessionsBaseProps & (
+	| { presentation?: "modal"; open: boolean; onClose: () => void }
+	| { presentation: "inline"; open?: never; onClose?: never }
+);
+
+const NOOP = () => undefined;
 
 /**
  * Composition root for the experimental Agent Sessions surface.
@@ -29,7 +34,20 @@ export interface ExperimentalAgentSessionsProps {
  * session surface is mounted INSIDE the dialog subtree so Base UI's modal `inert`
  * treatment does not disable it.
  */
-export function ExperimentalAgentSessions({ open, onClose, initialPreset }: Readonly<ExperimentalAgentSessionsProps>) {
+export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessionsProps>) {
+	const { initialPreset } = props;
+	let presentation: "modal" | "inline";
+	let open: boolean;
+	let onClose: () => void;
+	if (props.presentation === "inline") {
+		presentation = "inline";
+		open = true;
+		onClose = NOOP;
+	} else {
+		presentation = "modal";
+		open = props.open;
+		onClose = props.onClose;
+	}
 	const workItem = useMemo(
 		() =>
 			getAgentsWorkItemForCard({
@@ -49,6 +67,7 @@ export function ExperimentalAgentSessions({ open, onClose, initialPreset }: Read
 				<ExperimentalWorkItemDialog
 					open={open}
 					onClose={onClose}
+					presentation={presentation}
 					workItemCode={workItem.code}
 					workItemTitle={workItem.title}
 				>

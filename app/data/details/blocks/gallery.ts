@@ -34,7 +34,7 @@ export const GALLERY_DETAIL: ComponentDetail = {
 // Add arbitrary compact controls to the mathematical center of the top bar.
 <Gallery
   items={items}
-  topBarCenter={<ButtonGroup variant="separated">{controls}</ButtonGroup>}
+  topBarCenter={<ButtonGroup variant="connected">{controls}</ButtonGroup>}
 />
 
 // Controlled visibility + controlled selection

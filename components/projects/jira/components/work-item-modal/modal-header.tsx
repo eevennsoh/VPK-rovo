@@ -26,7 +26,7 @@ import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TaskIcon from "@atlaskit/icon/core/task";
 
-export function ModalHeader() {
+export function ModalHeader({ showClose = true }: Readonly<{ showClose?: boolean }>) {
 	const { meta } = useWorkItemModal();
 	const { workItem } = meta;
 
@@ -103,9 +103,11 @@ export function ModalHeader() {
 				<Button aria-label="Actions" size="icon" variant="outline">
 					<ShowMoreHorizontalIcon label="" />
 				</Button>
-				<Button aria-label="Close" size="icon" variant="outline" onClick={meta.onClose}>
-					<CrossIcon label="" />
-				</Button>
+				{showClose ? (
+					<Button aria-label="Close" size="icon" variant="outline" onClick={meta.onClose}>
+						<CrossIcon label="" />
+					</Button>
+				) : null}
 			</div>
 		</div>
 	);

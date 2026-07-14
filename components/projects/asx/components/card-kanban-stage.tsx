@@ -51,7 +51,11 @@ export function CardKanbanControls({
 	const { activeIndex, setActiveIndex, progress, cycleRunning, pauseHandlers } = controller;
 
 	return (
-		<ButtonGroup variant="separated" {...pauseHandlers}>
+		<ButtonGroup
+			variant="connected"
+			className="[&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
+			{...pauseHandlers}
+		>
 			{ASX_CARD_KANBAN_STATES.map((option, index) => {
 				const isActive = index === activeIndex;
 				const showProgressFill = showProgress && isActive && cycleRunning;
@@ -63,7 +67,7 @@ export function CardKanbanControls({
 						size="compact"
 						aria-pressed={isActive}
 						onClick={() => setActiveIndex(index)}
-						className="relative isolate overflow-hidden"
+						className="relative isolate overflow-hidden aria-pressed:z-10"
 					>
 						<span className="relative z-[2]">{option.label}</span>
 						{showProgressFill ? (

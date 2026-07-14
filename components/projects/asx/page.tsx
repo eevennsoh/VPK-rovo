@@ -11,7 +11,12 @@ import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
-import { WorkItemStage } from "./components/work-item-stage";
+import {
+	useWorkItemStageController,
+	WorkItemControls,
+	WorkItemStage,
+	type WorkItemStageController,
+} from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -25,7 +30,7 @@ import { WorkItemStage } from "./components/work-item-stage";
 
 function ListStage(): React.ReactElement {
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8">
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col justify-center px-8 pb-28">
 			<JiraListPage />
 		</div>
 	);
@@ -34,36 +39,45 @@ function ListStage(): React.ReactElement {
 function renderAsxItem(
 	item: (typeof ASX_GALLERY_ITEMS)[number],
 	cardKanbanController: ReturnType<typeof useAutoCycle>,
+	workItemController: WorkItemStageController,
 ): React.ReactNode {
 	if (item.id === "card") return <CardKanbanStage controller={cardKanbanController} />;
 	if (item.id === "kanban") return <KanbanStage />;
 	if (item.id === "list") return <ListStage />;
 	if (item.id === "queue") return <QueueStage />;
-	if (item.id === "work-item") return <WorkItemStage />;
+	if (item.id === "work-item") return <WorkItemStage controller={workItemController} />;
 
 	return (
-		<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
-			{item.title}
-		</h2>
+		<div className="flex h-full w-full items-center justify-center">
+			<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
+				{item.title}
+			</h2>
+		</div>
 	);
 }
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
+	const workItemController = useWorkItemStageController();
+	const topBarCenter =
+		selectedId === "card" ? (
+			<CardKanbanControls controller={cardKanbanController} />
+		) : selectedId === "work-item" ? (
+			<WorkItemControls controller={workItemController} />
+		) : null;
 
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
 				items={ASX_GALLERY_ITEMS}
+				title="Agent Sessions Experience"
 				selectedId={selectedId}
 				onSelectedChange={setSelectedId}
-				topBarCenter={
-					selectedId === "card" ? (
-						<CardKanbanControls controller={cardKanbanController} />
-					) : null
+				topBarCenter={topBarCenter}
+				renderSelectedItem={(item) =>
+					renderAsxItem(item, cardKanbanController, workItemController)
 				}
-				renderSelectedItem={(item) => renderAsxItem(item, cardKanbanController)}
 			/>
 		</div>
 	);

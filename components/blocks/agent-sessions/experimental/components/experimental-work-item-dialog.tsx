@@ -10,6 +10,7 @@ import { ModalHeader } from "@/components/projects/jira/components/work-item-mod
 interface ExperimentalWorkItemDialogProps {
 	open: boolean;
 	onClose: () => void;
+	presentation: "modal" | "inline";
 	workItemCode: string;
 	workItemTitle: string;
 	children: ReactNode;
@@ -30,10 +31,43 @@ interface ExperimentalWorkItemDialogProps {
 export function ExperimentalWorkItemDialog({
 	open,
 	onClose,
+	presentation,
 	workItemCode,
 	workItemTitle,
 	children,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
+	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
+	const content = (
+		<>
+			<ModalHeader showClose={presentation !== "inline"} />
+
+			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
+				{children}
+			</div>
+		</>
+	);
+	const surfaceStyle = {
+		backgroundColor: token("elevation.surface.overlay"),
+		borderRadius: token("radius.xlarge"),
+		boxShadow: token("elevation.shadow.overlay"),
+		display: "grid",
+		gridTemplateRows: "auto minmax(0, 1fr)",
+		overflow: "hidden",
+	} as const;
+
+	if (presentation === "inline") {
+		return (
+			<section
+				aria-label={workItemTitle}
+				className="h-[calc(100%-24px)] max-h-[calc(100%-24px)] w-[calc(100%-24px)] max-w-[1200px] outline-none"
+				style={surfaceStyle}
+			>
+				{content}
+				<p className="sr-only">{description}</p>
+			</section>
+		);
+	}
+
 	return (
 		<Dialog.Root
 			open={open}
@@ -55,25 +89,12 @@ export function ExperimentalWorkItemDialog({
 						"data-ending-style:duration-medium data-ending-style:ease-in",
 						"data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0",
 					)}
-					style={{
-						backgroundColor: token("elevation.surface.overlay"),
-						borderRadius: token("radius.xlarge"),
-						boxShadow: token("elevation.shadow.overlay"),
-						display: "grid",
-						gridTemplateRows: "auto minmax(0, 1fr)",
-						overflow: "hidden",
-					}}
+					style={surfaceStyle}
 				>
-					<ModalHeader />
-
-					<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
-						{children}
-					</div>
+					{content}
 
 					<Dialog.Title className="sr-only">{workItemTitle}</Dialog.Title>
-					<Dialog.Description className="sr-only">
-						{`Details, agent sessions, and activity for work item ${workItemCode}.`}
-					</Dialog.Description>
+					<Dialog.Description className="sr-only">{description}</Dialog.Description>
 				</Dialog.Popup>
 			</Dialog.Portal>
 		</Dialog.Root>
