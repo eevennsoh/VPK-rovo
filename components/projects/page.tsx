@@ -26,6 +26,8 @@ type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "s
 interface AppLayoutProps {
 	product: Product;
 	children: React.ReactNode;
+	sidebarContent?: React.ReactNode;
+	topNavigationSearchAlignment?: "responsive" | "sidebar";
 	embedded?: boolean;
 	embeddedHeight?: "parent" | "viewport";
 	hideFloatingRovo?: boolean;
@@ -126,6 +128,8 @@ function useIsRovoCanvasOpen(): boolean {
 export default function AppLayout({
 	product,
 	children,
+	sidebarContent,
+	topNavigationSearchAlignment = "responsive",
 	embedded = false,
 	embeddedHeight = "viewport",
 	hideFloatingRovo,
@@ -277,11 +281,13 @@ export default function AppLayout({
 	return (
 		<TopNavigation
 			product={product}
+			searchAlignment={topNavigationSearchAlignment}
 			variant="shell"
 			hideRovoAction={shouldHideRovoAction}
 			sidebar={(slot) => (
 				<Sidebar
 					product={product}
+					content={sidebarContent}
 					asChromeSlot
 					resizeHandle={slot.resizeHandle}
 					isResizing={slot.isResizing}

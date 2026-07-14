@@ -15,6 +15,8 @@ type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "s
 
 interface SidebarProps {
 	product: Product;
+	/** Optional product-navigation body supplied by a host project prototype. */
+	content?: React.ReactNode;
 	embedded?: boolean;
 	/**
 	 * When true, renders the sidebar as a slotted component within a shell's
@@ -35,6 +37,7 @@ interface SidebarProps {
 
 export default function ProductSidebar({
 	product,
+	content,
 	embedded = false,
 	asChromeSlot = false,
 	resizeHandle,
@@ -53,6 +56,10 @@ export default function ProductSidebar({
 
 	// Render the appropriate sidebar based on product
 	const renderSidebarContent = () => {
+		if (content) {
+			return content;
+		}
+
 		switch (product) {
 			case "admin":
 				return <AdminSidebar />;

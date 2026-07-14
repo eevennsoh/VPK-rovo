@@ -56,6 +56,8 @@ export interface ShellSidebarSlotState {
 interface TopNavigationProps {
 	product?: Product;
 	showSearch?: boolean;
+	/** Keep search anchored beside the persistent sidebar instead of centering it at wide widths. */
+	searchAlignment?: "responsive" | "sidebar";
 	hideRovoAction?: boolean;
 	/**
 	 * Forces the "Ask Rovo" pill to render even for products that normally
@@ -111,6 +113,7 @@ interface TopNavigationProps {
 export default function TopNavigation({
 	product = "studio",
 	showSearch = true,
+	searchAlignment = "responsive",
 	hideRovoAction = false,
 	forceShowRovoAction = false,
 	variant = "shell",
@@ -152,8 +155,8 @@ export default function TopNavigation({
 	}, [isSearchCollapsible]);
 
 	// Center the search at wide widths (Figma), left-align it below the breakpoint.
-	const centerSearch =
-		nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX;
+	const centerSearch = searchAlignment === "responsive"
+		&& (nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
 
 	const handleExpandSearchIcon = useCallback(() => {
 		setIsSearchIconExpanded(true);
@@ -202,7 +205,10 @@ export default function TopNavigation({
 				showSearchField ? (
 					<div
 						ref={nav.searchContainerRef}
-						className="relative flex h-9 min-w-0 grow items-center"
+						className={cn(
+							"relative flex h-9 min-w-0 grow items-center",
+							searchAlignment === "sidebar" ? "ps-2" : undefined,
+						)}
 						style={{
 							// Preferred width is the min; the search grows to the cap when
 							// there's room and shrinks below the preferred width under

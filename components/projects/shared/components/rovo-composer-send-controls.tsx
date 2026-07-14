@@ -184,6 +184,7 @@ export interface RovoComposerActionButtonProps {
 	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
 	screenAssistantTargetPrefix?: string;
 	showBackgroundStop?: boolean;
+	showSubmitWhenEmpty?: boolean;
 	submitButtonClassName?: string;
 	submitDisabled?: boolean;
 	voiceStartButtonClassName?: string;
@@ -207,6 +208,7 @@ export function RovoComposerActionButton({
 	realtimeVoiceState = "idle",
 	screenAssistantTargetPrefix,
 	showBackgroundStop = false,
+	showSubmitWhenEmpty = false,
 	submitButtonClassName,
 	submitDisabled = false,
 	voiceStartButtonClassName,
@@ -217,15 +219,17 @@ export function RovoComposerActionButton({
 	const [isDictationOptimisticActive, setIsDictationOptimisticActive] = useState(false);
 	const resolvedComposerBusy = isComposerBusy ?? (composerStatus === "submitted" || composerStatus === "streaming");
 	const isDictationActive = dictationState !== "idle" || isDictationOptimisticActive;
-	const idleAction = resolveRovoAppComposerIdleAction({
-		canStartDictation: Boolean(onStartDictation),
-		canStartRealtimeVoice: Boolean(onToggleRealtimeVoice),
-		canSubmit,
-		isComposerBusy: resolvedComposerBusy,
-		realtimeVoiceActive,
-		showBackgroundStop,
-		submitDisabled,
-	});
+	const idleAction = showSubmitWhenEmpty && !resolvedComposerBusy && !realtimeVoiceActive && !showBackgroundStop
+		? "submit"
+		: resolveRovoAppComposerIdleAction({
+			canStartDictation: Boolean(onStartDictation),
+			canStartRealtimeVoice: Boolean(onToggleRealtimeVoice),
+			canSubmit,
+			isComposerBusy: resolvedComposerBusy,
+			realtimeVoiceActive,
+			showBackgroundStop,
+			submitDisabled,
+		});
 	const realtimeWaveformState = resolveRovoAppComposerWaveformState({
 		hasMicStream: micStream !== null,
 		isIntroActive: isRealtimeWaveformIntroActive,
@@ -543,6 +547,7 @@ export function RovoComposerSendControls({
 	screenAssistantTargetPrefix,
 	selectedReasoning,
 	showBackgroundStop,
+	showSubmitWhenEmpty,
 	submitButtonClassName,
 	submitDisabled,
 	voiceStartButtonClassName,
@@ -599,6 +604,7 @@ export function RovoComposerSendControls({
 				realtimeVoiceState={realtimeVoiceState}
 				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 				showBackgroundStop={showBackgroundStop}
+				showSubmitWhenEmpty={showSubmitWhenEmpty}
 				submitButtonClassName={submitButtonClassName}
 				submitDisabled={submitDisabled}
 				voiceStartButtonClassName={voiceStartButtonClassName}

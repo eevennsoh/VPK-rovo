@@ -6,6 +6,7 @@ import JiraListPage from "@/components/blocks/jira-list/page";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
+import { QueueStage } from "./components/queue-stage";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -13,8 +14,8 @@ import { KanbanStage } from "./components/kanban-stage";
 // The gallery dock is the base surface: each card is a design pattern for the
 // agent sessions experience. Selecting a card reveals its design in the gallery
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
-// Kanban and List show their full Jira blocks. The remaining patterns fall back
-// to a large title placeholder.
+// Kanban, List, and Queue show their full Jira experiences. The remaining
+// patterns fall back to a large title placeholder.
 // ---------------------------------------------------------------------------
 
 function ListStage(): React.ReactElement {
@@ -29,6 +30,7 @@ function renderAsxItem(item: (typeof ASX_GALLERY_ITEMS)[number]): React.ReactNod
 	if (item.id === "card") return <CardKanbanStage />;
 	if (item.id === "kanban") return <KanbanStage />;
 	if (item.id === "list") return <ListStage />;
+	if (item.id === "queue") return <QueueStage />;
 
 	return (
 		<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">

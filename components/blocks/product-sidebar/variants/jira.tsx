@@ -23,6 +23,25 @@ import SpacesIcon from "@atlaskit/icon-lab/core/spaces";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import BoardIcon from "@atlaskit/icon/core/board";
 import FolderIcon from "@atlaskit/icon/core/folder-closed";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+
+export type JiraSidebarSessionStatus = "queued" | "running" | "needs-input";
+
+export interface JiraSidebarSessionItem {
+	agentAvatarSrc?: string;
+	agentName: string;
+	id: string;
+	status: JiraSidebarSessionStatus;
+	title: string;
+}
+
+export interface JiraSidebarSessionNavigation {
+	activeSessionId: string;
+	onSelectSession: (sessionId: string) => void;
+	sessionsBySpaceId: Readonly<Record<string, readonly JiraSidebarSessionItem[]>>;
+}
 
 interface JiraSidebarNavItem {
 	actions?: React.ReactNode;
@@ -38,6 +57,45 @@ interface JiraSidebarNavItem {
 interface JiraSidebarProps {
 	selectedItem: string;
 	onSelectItem: (item: string) => void;
+	sessionNavigation?: JiraSidebarSessionNavigation;
+}
+
+const SESSION_STATUS_LABELS: Record<JiraSidebarSessionStatus, string> = {
+	queued: "Queued",
+	running: "Running",
+	"needs-input": "Needs input",
+};
+
+function JiraSessionAvatar({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const fallback = session.agentName
+		.split(/\s+/u)
+		.map((part) => part[0])
+		.join("")
+		.slice(0, 2)
+		.toUpperCase();
+
+	return (
+		<Avatar label={session.agentName} shape="hexagon" size="sm">
+			{session.agentAvatarSrc ? <AvatarImage alt="" src={session.agentAvatarSrc} /> : null}
+			<AvatarFallback>{fallback}</AvatarFallback>
+		</Avatar>
+	);
+}
+
+function JiraSessionStatus({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
+	if (status === "running") {
+		return <Spinner aria-label="Running" size="xs" className="text-icon-information" />;
+	}
+
+	return (
+		<span
+			aria-label={SESSION_STATUS_LABELS[status]}
+			className={cn(
+				"size-2 rounded-full",
+				status === "needs-input" ? "bg-bg-warning-bold" : "bg-bg-neutral-bold",
+			)}
+		/>
+	);
 }
 
 function JiraSidebarSection({
@@ -159,14 +217,29 @@ function JiraSidebarRow({
 export function JiraSidebar({
 	selectedItem,
 	onSelectItem,
+	sessionNavigation,
 }: Readonly<JiraSidebarProps>) {
 	const router = useRouter();
 	const [isSpacesExpanded, setIsSpacesExpanded] = useState(true);
+	const [expandedSpaceIds, setExpandedSpaceIds] = useState<ReadonlySet<string>>(
+		() => new Set(sessionNavigation ? [STARRED_PROJECTS[0]?.id].filter((id): id is string => Boolean(id)) : []),
+	);
 	const selectItem = (item: string, href?: string) => {
 		onSelectItem(item);
 		if (href) {
 			router.push(href);
 		}
+	};
+	const toggleSpace = (spaceId: string) => {
+		setExpandedSpaceIds((current) => {
+			const next = new Set(current);
+			if (next.has(spaceId)) {
+				next.delete(spaceId);
+			} else {
+				next.add(spaceId);
+			}
+			return next;
+		});
 	};
 
 	return (
@@ -239,17 +312,50 @@ export function JiraSidebar({
 			{isSpacesExpanded ? (
 				<JiraSidebarSection title="Starred">
 					<div className="flex flex-col pl-3">
-						{STARRED_PROJECTS.map((project) => (
-							<SidebarNavItem
-								key={project.id}
-								label={project.name}
-								leading={<JiraProjectAvatar src={project.imageSrc} />}
-								leadingSize="medium"
-								isSelected={selectedItem === project.name}
-								onClick={() => selectItem(project.name)}
-								className="min-h-7"
-							/>
-						))}
+						{STARRED_PROJECTS.map((project) => {
+							const sessions = sessionNavigation?.sessionsBySpaceId[project.id] ?? [];
+							const hasSessions = sessions.length > 0;
+							const isExpanded = hasSessions && expandedSpaceIds.has(project.id);
+
+							return (
+								<div key={project.id}>
+									<SidebarNavItem
+										label={project.name}
+										leading={hasSessions ? (
+											<JiraSidebarExpandableLeadingIcon
+												icon={<JiraProjectAvatar src={project.imageSrc} />}
+												isExpanded={isExpanded}
+											/>
+										) : <JiraProjectAvatar src={project.imageSrc} />}
+										leadingSize="medium"
+										isExpanded={hasSessions ? isExpanded : undefined}
+										isSelected={!hasSessions && selectedItem === project.name}
+										onClick={() => {
+											selectItem(project.name);
+											if (hasSessions) toggleSpace(project.id);
+										}}
+										className="min-h-7"
+									/>
+									{isExpanded ? (
+										<div className="flex flex-col pl-4">
+											{sessions.map((session) => (
+												<SidebarNavItem
+													key={session.id}
+													className="min-h-10"
+													description={`${session.agentName} · ${SESSION_STATUS_LABELS[session.status]}`}
+													isSelected={sessionNavigation?.activeSessionId === session.id}
+													label={session.title}
+													leading={<JiraSessionAvatar session={session} />}
+													leadingSize="medium"
+													meta={<JiraSessionStatus status={session.status} />}
+													onClick={() => sessionNavigation?.onSelectSession(session.id)}
+												/>
+											))}
+										</div>
+									) : null}
+								</div>
+							);
+						})}
 						<SidebarNavItem
 							label="View all plans"
 							leading={<AlignTextLeftIcon label="" />}
