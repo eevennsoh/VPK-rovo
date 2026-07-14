@@ -113,6 +113,19 @@ test("JiraList exposes the expected table headers and sticky footer content", ()
 	assert.match(SOURCE, /colSpan=\{orderedColumns\.length\}/u);
 });
 
+test("JiraList opens linked agent sessions from the Agent sessions cell", () => {
+	const agentSessionsCellSource = SOURCE.match(
+		/id: "agentSessions",([\s\S]*?)\n\t\t\{\n\t\t\tid: "goals"/u,
+	)?.[1] ?? "";
+
+	assert.match(SOURCE, /onOpenAgentSessions,/u);
+	assert.match(agentSessionsCellSource, /onOpenAgentSessions && row\.agentSessions\?\.length/u);
+	assert.match(agentSessionsCellSource, /onClick=\{\(\) => onOpenAgentSessions\(row\)\}/u);
+	assert.match(agentSessionsCellSource, /Open agent sessions for \$\{row\.issueKey\}/u);
+	assert.match(agentSessionsCellSource, /group-hover\/agent-sessions:opacity-100/u);
+	assert.match(agentSessionsCellSource, /group-focus-within\/agent-sessions:opacity-100/u);
+});
+
 test("JiraList maps each data column half to one deterministically owned boundary", () => {
 	assert.match(SOURCE, /type JiraListColumnBoundaryIndex = number/u);
 	assert.match(SOURCE, /function getColumnBoundaryIndex\(/u);

@@ -145,6 +145,7 @@ export function JiraList({
 	onIssueClick,
 	onIssueKeyClick,
 	onMoveRow,
+	onOpenAgentSessions,
 	onRefresh,
 	onSelectAllRows,
 	onSelectRow,
@@ -379,7 +380,29 @@ export function JiraList({
 			id: "agentSessions",
 			label: "Agent sessions",
 			widthClassName: "w-[247px]",
-			renderCell: (row) => renderAgentSessions(row.agentSessions),
+			renderCell: (row) => (
+				<div className="group/agent-sessions flex min-w-0 items-center gap-1">
+					<div className="min-w-0 flex-1">{renderAgentSessions(row.agentSessions)}</div>
+					{onOpenAgentSessions && row.agentSessions?.length ? (
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										aria-label={`Open agent sessions for ${row.issueKey}`}
+										className="shrink-0 text-text-subtle opacity-0 transition-opacity group-hover/agent-sessions:opacity-100 group-focus-within/agent-sessions:opacity-100 hover:text-text"
+										onClick={() => onOpenAgentSessions(row)}
+										size="icon-compact"
+										variant="ghost"
+									/>
+								}
+							>
+								<Icon render={<AppSwitcherIcon label="" size="small" />} />
+							</TooltipTrigger>
+							<TooltipContent>In Model</TooltipContent>
+						</Tooltip>
+					) : null}
+				</div>
+			),
 		},
 		{
 			id: "goals",
