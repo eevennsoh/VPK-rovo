@@ -807,6 +807,7 @@ export function JiraIssue({
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
 	const hasInteractiveContent = hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction);
+	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
 	const issueRowsClassName = cn("pt-1", (!(hasSubtasks && resolvedSubtasksExpanded) || hasAgentDoneNotification) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
@@ -922,7 +923,7 @@ export function JiraIssue({
 	);
 	const richIssueContent = (
 		<div className="relative z-10 flex flex-col">
-			{props.onClick ? (
+			{shouldRenderIssueClickButton ? (
 				<button
 					type={type}
 					aria-pressed={ariaPressed ?? selected}

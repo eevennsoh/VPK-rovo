@@ -31,6 +31,7 @@ test("JiraEpic renders a Tag-backed dropdown trigger", () => {
 test("JiraEpic exposes parent actions and selectable epics", () => {
 	assert.match(SOURCE, /onEpicSelect\?: \(epicId: string, epic: JiraEpicOption\) => void;/u);
 	assert.match(SOURCE, /selectedEpicId\?: string \| null;/u);
+	assert.match(SOURCE, /const initialSelectedEpicId = defaultSelectedEpicId === undefined \? firstEpicId : defaultSelectedEpicId;/u);
 	assert.match(SOURCE, /function handleRemoveParent\(\)[\s\S]*setInternalSelectedEpicId\(null\);[\s\S]*onRemoveParent\?\.\(\);/u);
 	assert.match(SOURCE, /\{addParentLabel\}/u);
 	assert.match(SOURCE, /\{viewParentLabel\}/u);

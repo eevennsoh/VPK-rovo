@@ -119,8 +119,9 @@ export function JiraEpic({
 	...props
 }: Readonly<JiraEpicProps>): ReactElement {
 	const firstEpicId = epics[0]?.id ?? null;
+	const initialSelectedEpicId = defaultSelectedEpicId === undefined ? firstEpicId : defaultSelectedEpicId;
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
-	const [internalSelectedEpicId, setInternalSelectedEpicId] = useState<string | null>(defaultSelectedEpicId ?? firstEpicId);
+	const [internalSelectedEpicId, setInternalSelectedEpicId] = useState<string | null>(initialSelectedEpicId);
 	const resolvedOpen = open ?? internalOpen;
 	const resolvedSelectedEpicId = selectedEpicId === undefined ? internalSelectedEpicId : selectedEpicId;
 	const selectedEpic = useMemo(

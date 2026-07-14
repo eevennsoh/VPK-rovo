@@ -56,9 +56,10 @@ test("Jira issue uses the 8px large radius token", () => {
 test("Jira issue switches rich variants to an article with internal controls", () => {
 	assert.match(SOURCE, /const hasAgentActivityPresentation = agentActivityMode !== undefined \|\| Boolean\(agentActivities\?\.length\) \|\| hasAgentDoneNotification;/);
 	assert.match(SOURCE, /const hasInteractiveContent = hasSubtasks \|\| Boolean\(parentEpicControl\) \|\| hasAgentActivityPresentation \|\| Boolean\(generativeAction\);/);
+	assert.match(SOURCE, /const shouldRenderIssueClickButton = Boolean\(props\.onClick && !parentEpicControl\);/);
 	assert.match(SOURCE, /<article[\s\S]*data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /draggable=\{draggable\}/);
-	assert.match(SOURCE, /props\.onClick \? \([\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
+	assert.match(SOURCE, /shouldRenderIssueClickButton \? \([\s\S]*aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /parentEpicControl\?: ReactNode;/);
 	assert.match(SOURCE, /parentEpicControl=\{parentEpicControl\}/);
 	assert.match(SOURCE, /<p className="text-sm font-semibold leading-5 text-text-subtle">Parent<\/p>/);
