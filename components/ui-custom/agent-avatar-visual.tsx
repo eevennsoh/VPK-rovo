@@ -112,12 +112,15 @@ export function AgentAvatarVisual({
 	) : brandName ? (
 		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize} />
 	) : avatarSrc ? (
-		<AvatarImage
-			alt=""
-			className={cn(shouldInsetImage ? insetImageClassName : "size-full", "object-contain", className)}
-			loading={loading}
-			src={avatarSrc}
-		/>
+		<>
+			<AvatarImage
+				alt=""
+				className={cn(shouldInsetImage ? insetImageClassName : "size-full", "object-contain", className)}
+				loading={loading}
+				src={avatarSrc}
+			/>
+			{fallbackText ? <AvatarFallback>{fallbackText}</AvatarFallback> : null}
+		</>
 	) : (
 		<AvatarFallback>{fallbackText}</AvatarFallback>
 	);

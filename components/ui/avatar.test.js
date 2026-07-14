@@ -107,6 +107,7 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
 	assert.match(AGENT_CARD_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
