@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/exhaustive-deps -- The metronome effect intentionally
 // re-subscribes only when the running gate flips, not on every state change.
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { useReducedMotion } from "motion/react";
 
 import {
@@ -55,17 +55,8 @@ export function useAgentSessionsController(
 	active = true,
 ): AgentSessionsController {
 	const [state, dispatch] = useReducer(agentSessionsReducer, initialPreset, initState);
-	const previousPresetRef = useRef(initialPreset);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state);
-
-	// ASX chooses a deterministic preset before opening a work item. Keep the
-	// mounted controller in sync when that launch choice changes.
-	useEffect(() => {
-		if (previousPresetRef.current === initialPreset) return;
-		previousPresetRef.current = initialPreset;
-		dispatch({ type: "hydrate-preset", preset: initialPreset });
-	}, [initialPreset]);
 
 	// Metronome: while the surface is active (open) AND any session is running,
 	// advance the pure timer engine on a fixed cadence. Gating on `active` keeps

@@ -18,9 +18,11 @@ const WORK_ITEM_STATES: readonly {
 export function WorkItemStage(): React.ReactElement {
 	const [preset, setPreset] = useState<AgentSessionsExperimentalPreset>("filled");
 	const [isOpen, setIsOpen] = useState(false);
+	const [launchId, setLaunchId] = useState(0);
 
 	function openPreset(nextPreset: AgentSessionsExperimentalPreset): void {
 		setPreset(nextPreset);
+		setLaunchId((currentLaunchId) => currentLaunchId + 1);
 		setIsOpen(true);
 	}
 
@@ -41,6 +43,7 @@ export function WorkItemStage(): React.ReactElement {
 				</div>
 			)}
 			<ExperimentalAgentSessions
+				key={launchId}
 				initialPreset={preset}
 				onClose={() => setIsOpen(false)}
 				open={isOpen}
