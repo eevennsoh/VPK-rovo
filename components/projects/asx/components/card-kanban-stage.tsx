@@ -41,9 +41,14 @@ import { cn } from "@/lib/utils";
  */
 export function CardKanbanStage(): React.ReactElement {
 	const { chatSurface, openChat, sendPrompt } = useRovoChat();
-	const { activeIndex, setActiveIndex, progress, cycleRunning, pauseHandlers } = useAutoCycle(
-		ASX_CARD_KANBAN_STATES.length,
-	);
+	const {
+		activeIndex,
+		setActiveIndex,
+		progress,
+		cycleRunning,
+		pauseHandlers,
+		setExternalInteractionActive,
+	} = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const state = ASX_CARD_KANBAN_STATES[activeIndex].value;
 
 	const agentActivities =
@@ -127,6 +132,7 @@ export function CardKanbanStage(): React.ReactElement {
 							className="w-full"
 							generativeAction={{ onSubmit: handleGenerativeActionSubmit }}
 							issueKey={ASX_CARD_KANBAN_CARD.issueKey}
+							onAgentActivityOpenChange={setExternalInteractionActive}
 							onAgentActivityViewChat={handleViewChat}
 							priority={ASX_CARD_KANBAN_CARD.priority}
 							subtasks={ASX_CARD_KANBAN_SUBTASKS}

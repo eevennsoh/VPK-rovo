@@ -130,7 +130,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PromptInputButton, PromptInputTextarea \} from "@\/components\/ui-custom\/prompt-input";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentCardHeader \} from "@\/components\/blocks\/agent-card";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ RovoComposerActionButton \} from "@\/components\/projects\/shared\/components\/rovo-composer-send-controls";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityRow\(\{\n\tactivity,\n\tindex,\n\tonViewChat,\n\trowCount,/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityRow\(\{\n\tactivity,\n\tindex,\n\tonOpenChange,\n\tonViewChat,\n\trowCount,/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowRadiusClassName = rowCount === 1[\s\S]*\? "rounded-sm"[\s\S]*index === 0[\s\S]*\? "rounded-tl-\[6px\] rounded-tr-\[6px\] rounded-bl-\[2px\] rounded-br-\[2px\]"[\s\S]*index === rowCount - 1[\s\S]*\? "rounded-tl-\[2px\] rounded-tr-\[2px\] rounded-bl-\[6px\] rounded-br-\[6px\]"[\s\S]*: "rounded-\[2px\]";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-surface-hovered/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /hover:bg-bg-neutral-hovered/);
@@ -173,7 +173,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">\s*<StatusInformationIcon label="" size="small" color="currentColor" \/>/);
 	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), panel is the
 	// 320px-family 400px overlay with no border, and the exit transition is zeroed.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel activity=\{activity\} onViewChat=\{onViewChat\} \/>/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel activity=\{activity\} onViewChat=\{onViewChat\} \/>/);
 	// Panel uses the agent-directory lockup + the dark-CTA compact composer.
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<p className="text-xs leading-4 text-text-subtle">Just now<\/p>\}[\s\S]*title=\{activity\.name\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View chat/);

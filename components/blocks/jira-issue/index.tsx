@@ -94,6 +94,7 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentDoneCount?: number;
 	agentActivityMode?: JiraIssueAgentActivityMode;
+	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
@@ -414,6 +415,7 @@ export function JiraIssue({
 	issueKey,
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
+	onAgentActivityOpenChange,
 	onAgentActivityViewChat,
 	parentEpicControl,
 	priority = "major",
@@ -683,6 +685,7 @@ export function JiraIssue({
 							</motion.div>
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
+								onOpenChange={onAgentActivityOpenChange}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 							/>

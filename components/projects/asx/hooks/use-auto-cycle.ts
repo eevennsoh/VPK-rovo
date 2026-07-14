@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FocusEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent } from "react";
 import {
 	animate,
 	useMotionValue,
@@ -27,6 +27,8 @@ export interface UseAutoCycleResult {
 	cycleRunning: boolean;
 	/** Spread onto the wrapper whose hover/focus should pause the cycle. */
 	pauseHandlers: AutoCyclePauseHandlers;
+	/** Pause for an interactive surface rendered outside the wrapper, such as a portal. */
+	setExternalInteractionActive: (active: boolean) => void;
 }
 
 /**
@@ -42,14 +44,27 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 	const cycleRunning = !shouldReduceMotion && count > 1;
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [interacting, setInteracting] = useState(false);
+	const wrapperInteractingRef = useRef(false);
+	const externalInteractingRef = useRef(false);
 	const interactingRef = useRef(false);
 	const progress = useMotionValue(0);
 	const controlsRef = useRef<AnimationPlaybackControls | null>(null);
 
-	function updateInteracting(next: boolean) {
+	const updateInteracting = useCallback(() => {
+		const next = wrapperInteractingRef.current || externalInteractingRef.current;
 		interactingRef.current = next;
 		setInteracting(next);
-	}
+	}, []);
+
+	const setWrapperInteractionActive = useCallback((active: boolean) => {
+		wrapperInteractingRef.current = active;
+		updateInteracting();
+	}, [updateInteracting]);
+
+	const setExternalInteractionActive = useCallback((active: boolean) => {
+		externalInteractingRef.current = active;
+		updateInteracting();
+	}, [updateInteracting]);
 
 	useEffect(() => {
 		if (!cycleRunning) {
@@ -97,14 +112,15 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 		progress,
 		cycleRunning,
 		pauseHandlers: {
-			onMouseEnter: () => updateInteracting(true),
-			onMouseLeave: () => updateInteracting(false),
-			onFocus: () => updateInteracting(true),
+			onMouseEnter: () => setWrapperInteractionActive(true),
+			onMouseLeave: () => setWrapperInteractionActive(false),
+			onFocus: () => setWrapperInteractionActive(true),
 			onBlur: (event) => {
 				if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-					updateInteracting(false);
+					setWrapperInteractionActive(false);
 				}
 			},
 		},
+		setExternalInteractionActive,
 	};
 }

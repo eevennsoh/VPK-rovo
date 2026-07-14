@@ -198,11 +198,13 @@ function JiraIssueAgentActivityPanel({
 function JiraIssueAgentActivityRow({
 	activity,
 	index,
+	onOpenChange,
 	onViewChat,
 	rowCount,
 }: Readonly<{
 	activity: JiraIssueAgentActivity;
 	index: number;
+	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	rowCount: number;
 }>) {
@@ -217,7 +219,7 @@ function JiraIssueAgentActivityRow({
 				: "rounded-[2px]";
 
 	return (
-		<HoverCard>
+		<HoverCard onOpenChange={onOpenChange}>
 			{/* Base UI reads open/close delay on the Trigger, not the Root; 0/0 makes the reveal
 			    and dismissal instant so switching between rows doesn't overlap two flyouts. */}
 			<HoverCardTrigger
@@ -340,10 +342,12 @@ function JiraIssueCyclingAgentLabel({
 
 export function JiraIssueAgentActivityRows({
 	activities,
+	onOpenChange,
 	onViewChat,
 	shouldReduceMotion,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
+	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
 }>) {
@@ -371,6 +375,7 @@ export function JiraIssueAgentActivityRows({
 						<JiraIssueAgentActivityRow
 							activity={activity}
 							index={index}
+							onOpenChange={onOpenChange}
 							onViewChat={onViewChat}
 							rowCount={activities.length}
 						/>
