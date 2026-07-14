@@ -11,12 +11,14 @@ const LAYOUT_EASE = [0.4, 0, 0, 1] as const; // --ease-in-out
 
 export interface GallerySelectedStageProps {
 	item: GalleryItem;
+	resetKey: number;
 	stageRef: RefObject<HTMLElement | null>;
 	renderSelectedItem: (item: GalleryItem) => ReactNode;
 }
 
 export function GallerySelectedStage({
 	item,
+	resetKey,
 	stageRef,
 	renderSelectedItem,
 }: Readonly<GallerySelectedStageProps>) {
@@ -33,7 +35,7 @@ export function GallerySelectedStage({
 		>
 			<AnimatePresence initial={false} mode="wait">
 				<motion.div
-					key={item.id}
+					key={`${item.id}:${resetKey}`}
 					initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
 					animate={{ opacity: 1, y: 0 }}
 					exit={

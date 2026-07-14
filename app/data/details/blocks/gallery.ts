@@ -40,6 +40,7 @@ export const GALLERY_DETAIL: ComponentDetail = {
 		{ name: "defaultSelectedId", type: "string", description: "Initial selected card id when the component manages its own selection." },
 		{ name: "onSelectedChange", type: "(selectedId: string) => void", description: "Called when a different card is selected from the pinned strip." },
 		{ name: "renderSelectedItem", type: "(item: GalleryItem) => ReactNode", description: "Renders the middle-page content for the currently selected item." },
+		{ name: "onReset", type: "(item: GalleryItem) => void", description: "Called after Reset remounts the selected prototype in its initial state." },
 		{ name: "className", type: "string", description: "Extra classes merged onto the block root." },
 	],
 };

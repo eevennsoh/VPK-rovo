@@ -8,6 +8,7 @@ import RetryIcon from "@atlaskit/icon/core/retry";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 
 import { Icon } from "@/components/ui/icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import Squircle from "@/components/website/demos/visual/shaders/squircle";
 import { token } from "@/lib/tokens";
@@ -25,16 +26,9 @@ export interface GalleryToggleProps {
 	onToggle: () => void;
 	className?: string;
 	/**
-	 * Handler for the Retry control (rendered to the left of the theme toggle).
-	 * Defaults to reloading the current page; pass a handler to override with
-	 * consumer-specific retry behavior (e.g. resetting demo state, refetching).
+	 * Resets the currently selected prototype to its initial state.
 	 */
-	onRetry?: () => void;
-}
-
-// Default retry action when a consumer does not supply one: reload the page.
-function reloadPage(): void {
-	if (typeof window !== "undefined") window.location.reload();
+	onReset: () => void;
 }
 
 function getThemeLabel(theme: GalleryTheme): string {
@@ -75,10 +69,11 @@ export function GalleryToggle({
 	open,
 	onToggle,
 	className,
-	onRetry = reloadPage,
+	onReset,
 }: Readonly<GalleryToggleProps>) {
 	const { theme, setTheme } = useTheme();
 	const themeLabel = getThemeLabel(theme);
+	const galleryToggleLabel = open ? "Close gallery" : "Open gallery";
 
 	return (
 		<div
@@ -88,53 +83,70 @@ export function GalleryToggle({
 				className,
 			)}
 		>
-			<button
-				type="button"
-				aria-label="Retry"
-				onClick={() => onRetry()}
-				className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-			>
-				<GalleryControlSquircle>
-					<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
-				</GalleryControlSquircle>
-			</button>
-
-			<button
-				type="button"
-				aria-label={`Cycle theme, current theme: ${themeLabel}`}
-				onClick={() => setTheme(getNextTheme(theme))}
-				className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-			>
-				<GalleryControlSquircle>
-					<Icon render={renderThemeIcon(theme)} />
-				</GalleryControlSquircle>
-			</button>
-
-			<button
-				type="button"
-				aria-expanded={open}
-				// Icon-only control → needs an explicit accessible name (it also states the
-				// action + current state).
-				aria-label={open ? "Close gallery" : "Open gallery"}
-				onClick={() => onToggle()}
-				className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-			>
-				{/* Dark "inverse" squircle matching the Rovo floating button: the
-				    color.background.neutral.bold token is DARK in light mode and LIGHT in
-				    dark mode, carrying the same subtle overlay drop shadow. The chevron
-				    points UP to reveal the strip (closed) and DOWN to dismiss it (open). */}
-				<GalleryControlSquircle>
-					<Icon
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger
 						render={
-							open ? (
-								<ChevronDownIcon label="" color="currentColor" size="small" />
-							) : (
-								<ChevronUpIcon label="" color="currentColor" size="small" />
-							)
+							<button
+								type="button"
+								aria-label="Reset"
+								onClick={onReset}
+								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+							>
+								<GalleryControlSquircle>
+									<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
+								</GalleryControlSquircle>
+							</button>
 						}
 					/>
-				</GalleryControlSquircle>
-			</button>
+					<TooltipContent side="bottom">Reset</TooltipContent>
+				</Tooltip>
+
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<button
+								type="button"
+								aria-label={`Cycle theme, current theme: ${themeLabel}`}
+								onClick={() => setTheme(getNextTheme(theme))}
+								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+							>
+								<GalleryControlSquircle>
+									<Icon render={renderThemeIcon(theme)} />
+								</GalleryControlSquircle>
+							</button>
+						}
+					/>
+					<TooltipContent side="bottom">{themeLabel}</TooltipContent>
+				</Tooltip>
+
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<button
+								type="button"
+								aria-expanded={open}
+								aria-label={galleryToggleLabel}
+								onClick={onToggle}
+								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+							>
+								<GalleryControlSquircle>
+									<Icon
+										render={
+											open ? (
+												<ChevronDownIcon label="" color="currentColor" size="small" />
+											) : (
+												<ChevronUpIcon label="" color="currentColor" size="small" />
+											)
+										}
+									/>
+								</GalleryControlSquircle>
+							</button>
+						}
+					/>
+					<TooltipContent side="bottom">{galleryToggleLabel}</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 		</div>
 	);
 }

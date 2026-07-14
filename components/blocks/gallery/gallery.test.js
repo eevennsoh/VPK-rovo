@@ -168,3 +168,18 @@ test("Gallery demo swaps middle content in place", () => {
 	assert.doesNotMatch(source, /Placeholder middle-page content/u);
 	assert.doesNotMatch(source, /Click any card to morph it into a centered detail view/u);
 });
+
+test("Gallery controls expose state-aware tooltips and reset the selected prototype", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const stageSource = readProjectFile("components/blocks/gallery/components/gallery-selected-stage.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+
+	assert.match(gallerySource, /setResetKey\(\(current\) => current \+ 1\)/u);
+	assert.match(gallerySource, /onReset\?\.\(selectedItem\)/u);
+	assert.match(stageSource, /key=\{`\$\{item\.id\}:\$\{resetKey\}`\}/u);
+	assert.match(toggleSource, /<TooltipContent side="bottom">Reset<\/TooltipContent>/u);
+	assert.match(toggleSource, /<TooltipContent side="bottom">\{themeLabel\}<\/TooltipContent>/u);
+	assert.match(toggleSource, /<TooltipContent side="bottom">\{galleryToggleLabel\}<\/TooltipContent>/u);
+	assert.match(toggleSource, /open \? "Close gallery" : "Open gallery"/u);
+	assert.doesNotMatch(toggleSource, /window\.location\.reload/u);
+});

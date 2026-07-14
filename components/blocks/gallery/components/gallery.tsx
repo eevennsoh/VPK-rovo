@@ -97,13 +97,8 @@ export interface GalleryProps {
 	onSelectedChange?: (selectedId: string) => void;
 	renderSelectedItem?: (item: GalleryItem) => ReactNode;
 	className?: string;
-	/**
-	 * Handler for the Retry control in the top-right controls (to the left of the
-	 * theme toggle). The control is always rendered; when omitted it defaults to
-	 * reloading the page. Pass a handler to override with consumer-specific retry
-	 * behavior (e.g. resetting demo state, refetching).
-	 */
-	onRetry?: () => void;
+	/** Called after the selected prototype is reset to its initial mounted state. */
+	onReset?: (item: GalleryItem) => void;
 }
 
 export function Gallery({
@@ -116,7 +111,7 @@ export function Gallery({
 	onSelectedChange,
 	renderSelectedItem = renderDefaultSelectedItem,
 	className,
-	onRetry,
+	onReset,
 }: Readonly<GalleryProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -126,6 +121,7 @@ export function Gallery({
 	const [visualState, setVisualState] = useState<GalleryVisualState>(() =>
 		createInitialVisualState(resolveSelectedId(items, selectedId ?? defaultSelectedId)),
 	);
+	const [resetKey, setResetKey] = useState(0);
 	const selectedStageRef = useRef<HTMLElement | null>(null);
 	const isOpenRef = useRef(open ?? internalOpen);
 	const previousSelectedIdRef = useRef<string | null>(resolveSelectedId(items, selectedId ?? defaultSelectedId));
@@ -162,6 +158,12 @@ export function Gallery({
 		},
 		[onSelectedChange, resolvedSelectedId, selectedId],
 	);
+
+	const handleReset = useCallback(() => {
+		if (!selectedItem) return;
+		setResetKey((current) => current + 1);
+		onReset?.(selectedItem);
+	}, [onReset, selectedItem]);
 
 	useEffect(() => {
 		if (!resolvedSelectedId) {
@@ -228,6 +230,7 @@ export function Gallery({
 			{selectedItem ? (
 				<GallerySelectedStage
 					item={selectedItem}
+					resetKey={resetKey}
 					stageRef={selectedStageRef}
 					renderSelectedItem={renderSelectedItem}
 				/>
@@ -256,7 +259,7 @@ export function Gallery({
 				) : null}
 			</AnimatePresence>
 
-			<GalleryToggle open={isOpen} onToggle={handleToggle} onRetry={onRetry} />
+			<GalleryToggle open={isOpen} onToggle={handleToggle} onReset={handleReset} />
 		</div>
 	);
 }
