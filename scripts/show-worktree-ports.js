@@ -27,6 +27,14 @@ const TICK_INTERVAL_MS = 120;
 const TICKS_PER_DATA_REFRESH = Math.max(1, Math.round(WATCH_INTERVAL_MS / TICK_INTERVAL_MS));
 const SPINNER_FRAMES = ["⠴", "⠦", "⠲", "⠖"];
 
+// Per-worktree "stop this session" affordance for the listing: the plain,
+// copy-paste-ready command that stops this worktree's dev session. We key it on
+// the tmux session name because that is guaranteed unambiguous (never collides
+// across worktrees) and is a handle `pnpm ports kill` matches exactly.
+function killCommand(worktree) {
+	return `pnpm ports kill ${sessionNameForWorktree(worktree)}`;
+}
+
 const SNAPSHOT_WORKER_SCRIPT = `
 const { parentPort } = require("node:worker_threads");
 const { getAllWorktreePortInfo } = require(${JSON.stringify(path.join(__dirname, "lib", "worktree-ports.js"))});
@@ -154,6 +162,7 @@ function renderRows(rows, { headerSuffix, footer } = {}) {
 		if (portlessUrl) {
 			console.log(`   🌐 ${portlessUrl}`);
 		}
+		console.log(`   🔪 ${killCommand(wt)}`);
 	}
 
 	if (footer) {
