@@ -7,6 +7,7 @@ import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
+import { WorkItemStage } from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -31,6 +32,7 @@ function renderAsxItem(item: (typeof ASX_GALLERY_ITEMS)[number]): React.ReactNod
 	if (item.id === "kanban") return <KanbanStage />;
 	if (item.id === "list") return <ListStage />;
 	if (item.id === "queue") return <QueueStage />;
+	if (item.id === "work-item") return <WorkItemStage />;
 
 	return (
 		<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
