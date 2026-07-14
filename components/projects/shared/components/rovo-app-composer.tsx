@@ -94,6 +94,8 @@ export interface RovoAppComposerProps {
 	screenAssistantTargetPrefix?: string;
 	clickyActive?: boolean;
 	showBackgroundStop?: boolean;
+	/** Card chrome: keep the disabled submit affordance visible while the composer is empty. */
+	showSubmitWhenEmpty?: boolean;
 	submitDisabled?: boolean;
 }
 
@@ -142,6 +144,7 @@ function RovoAppComposerInner({
 	screenAssistantTargetPrefix,
 	clickyActive = false,
 	showBackgroundStop = false,
+	showSubmitWhenEmpty = false,
 	submitDisabled = false,
 }: Readonly<RovoAppComposerProps>) {
 	const controller = usePromptInputController();
@@ -291,6 +294,7 @@ function RovoAppComposerInner({
 						isPlanMode={isPlanMode}
 						onTogglePlanMode={onTogglePlanMode}
 						previewPrompt={previewPrompt}
+						showSubmitWhenEmpty={showSubmitWhenEmpty}
 					/>
 				)}
 			</div>

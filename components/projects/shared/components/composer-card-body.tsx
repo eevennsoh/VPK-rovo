@@ -32,6 +32,7 @@ export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	isPlanMode: boolean;
 	onTogglePlanMode?: () => void;
 	previewPrompt: string | null;
+	showSubmitWhenEmpty: boolean;
 }
 
 /**
@@ -73,6 +74,7 @@ export function ComposerCardBody({
 	realtimeVoiceState,
 	screenAssistantTargetPrefix,
 	showBackgroundStop,
+	showSubmitWhenEmpty,
 	submitDisabled,
 	textValue,
 }: Readonly<ComposerCardBodyProps>) {
@@ -232,6 +234,7 @@ export function ComposerCardBody({
 						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						selectedReasoning={selectedReasoning}
 						showBackgroundStop={showBackgroundStop}
+						showSubmitWhenEmpty={showSubmitWhenEmpty}
 						submitDisabled={submitDisabled}
 						webResultsEnabled={webResultsEnabled}
 						onWebResultsChange={setWebResultsEnabled}

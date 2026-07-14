@@ -23,3 +23,14 @@ test("Jira sidebar uses the shared Studio-style side nav row contract", () => {
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /SectionHeading/u);
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /<Divider/u);
 });
+
+test("Jira sidebar session navigation is optional and nested beneath spaces", () => {
+	assert.match(JIRA_SIDEBAR_SOURCE, /sessionNavigation\?: JiraSidebarSessionNavigation;/u);
+	assert.match(
+		JIRA_SIDEBAR_SOURCE,
+		/const sessions = sessionNavigation\?\.sessionsBySpaceId\[project\.id\] \?\? \[\];/u,
+	);
+	assert.match(JIRA_SIDEBAR_SOURCE, /description=\{`\$\{session\.agentName\} · \$\{SESSION_STATUS_LABELS\[session\.status\]\}`\}/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /onClick=\{\(\) => sessionNavigation\?\.onSelectSession\(session\.id\)\}/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /const hasSessions = sessions\.length > 0;/u);
+});

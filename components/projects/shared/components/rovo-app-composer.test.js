@@ -45,6 +45,16 @@ test("RovoAppComposer renders both card and floating chrome bodies", () => {
 	assert.match(COMPOSER_SOURCE, /<ComposerCardBody/u);
 });
 
+test("card composer can opt into a visible disabled submit affordance while empty", () => {
+	assert.match(COMPOSER_SOURCE, /showSubmitWhenEmpty = false/u);
+	assert.match(COMPOSER_SOURCE, /showSubmitWhenEmpty=\{showSubmitWhenEmpty\}/u);
+	assert.match(CARD_BODY_SOURCE, /showSubmitWhenEmpty=\{showSubmitWhenEmpty\}/u);
+	assert.match(
+		SEND_CONTROLS_SOURCE,
+		/showSubmitWhenEmpty && !resolvedComposerBusy && !realtimeVoiceActive && !showBackgroundStop/u,
+	);
+});
+
 test("RovoAppComposer does not render the ambient response gradient around the composer", () => {
 	assert.doesNotMatch(COMPOSER_SOURCE, /RovoAppComposerResponseGradient/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /renderResponseGradient/u);

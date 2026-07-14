@@ -69,6 +69,13 @@ test("top navigation centers the capped search at wide widths and left-aligns it
 	assert.match(TOP_NAVIGATION_SOURCE, /flexBasis: `\$\{TOP_NAV_SEARCH_MIN_WIDTH_PX\}px`/);
 });
 
+test("top navigation can persist search beside the expanded sidebar", () => {
+	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment\?: "responsive" \| "sidebar";/);
+	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment = "responsive"/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const centerSearch = searchAlignment === "responsive"/);
+	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment === "sidebar" \? "ps-2" : undefined/);
+});
+
 test("top navigation collapses the search to an icon button on very narrow viewports", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/);
 	assert.match(TOP_NAVIGATION_SOURCE, /isSearchCollapsible/);
