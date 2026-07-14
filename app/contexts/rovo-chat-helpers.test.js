@@ -22,6 +22,7 @@ function loadHelpers() {
 }
 
 const {
+	buildSelectableAgents,
 	buildCompactThreadPersistKey,
 	buildSendMessageBody,
 	deriveCompactThreadTitle,
@@ -31,6 +32,45 @@ const {
 	mergeSendPromptOptions,
 	sanitizeMessagesForTransport,
 } = loadHelpers();
+
+test("buildSelectableAgents keeps static order while session profiles override matching ids", () => {
+	const agents = buildSelectableAgents(
+		[
+			{ id: "static-a", name: "Static A", byline: "Static", avatarSrc: "/static-a.png" },
+			{ id: "shared", name: "Static shared", byline: "Static", avatarSrc: "/static-shared.png" },
+		],
+		[
+			{
+				profile: {
+					id: "shared",
+					name: "Edited shared",
+					byline: "Session",
+					avatarSrc: "/session-shared.png",
+					logoName: "github-copilot",
+					brandName: "GitHub Copilot",
+				},
+			},
+			{
+				profile: {
+					id: "session-only",
+					name: "Session only",
+					byline: "Session",
+					avatarSrc: "/session-only.png",
+				},
+			},
+		],
+	);
+
+	assert.deepEqual(agents.map((agent) => agent.id), ["static-a", "shared", "session-only"]);
+	assert.deepEqual(agents[1], {
+		id: "shared",
+		name: "Edited shared",
+		byline: "Session",
+		avatarSrc: "/session-shared.png",
+		logoName: "github-copilot",
+		brandName: "GitHub Copilot",
+	});
+});
 
 test("mergeSendPromptOptions merges prompt context without dropping nested metadata", () => {
 	const merged = mergeSendPromptOptions(

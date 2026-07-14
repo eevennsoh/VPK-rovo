@@ -1,4 +1,5 @@
 import type { FileUIPart } from "ai";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import {
 	appendTurnCompleteToLastAssistantMessage,
 	markClarificationToolResolved,
@@ -61,6 +62,44 @@ const INLINE_DATA_PLACEHOLDER = "[inline data omitted]";
 const CHAT_REQUEST_MAX_BYTES = 4 * 1024 * 1024;
 const CHAT_REQUEST_MIN_MESSAGES = 8;
 const TURN_COMPLETE_TIMESTAMP_TOLERANCE_MS = 1_000;
+
+type AgentSelectorProfile = Pick<
+	RovoAgentProfile,
+	"avatarSrc" | "brandName" | "byline" | "id" | "logoName" | "name"
+>;
+
+function toAgentSelectorAgent(agent: AgentSelectorProfile): AgentSelectorAgent {
+	return {
+		id: agent.id,
+		name: agent.name,
+		byline: agent.byline,
+		avatarSrc: agent.avatarSrc,
+		logoName: agent.logoName,
+		brandName: agent.brandName,
+	};
+}
+
+export function buildSelectableAgents(
+	staticAgents: readonly AgentSelectorProfile[],
+	sessionEntries: readonly { profile: AgentSelectorProfile }[],
+): readonly AgentSelectorAgent[] {
+	const sessionAgentById = new Map(
+		sessionEntries.map((entry) => [
+			entry.profile.id,
+			toAgentSelectorAgent(entry.profile),
+		]),
+	);
+	const orderedAgents = staticAgents.map((agent) => {
+		const sessionOverride = sessionAgentById.get(agent.id);
+		if (sessionOverride) {
+			sessionAgentById.delete(agent.id);
+			return sessionOverride;
+		}
+		return toAgentSelectorAgent(agent);
+	});
+	orderedAgents.push(...sessionAgentById.values());
+	return orderedAgents;
+}
 
 function resolveClientTimeZone(explicitTimeZone?: string): string | undefined {
 	if (typeof explicitTimeZone === "string" && explicitTimeZone.trim().length > 0) {
