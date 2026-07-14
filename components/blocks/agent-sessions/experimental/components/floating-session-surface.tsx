@@ -1,6 +1,8 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useAgentSessionsMeta } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { FloatingSessionLauncher } from "@/components/blocks/agent-sessions/experimental/components/floating-session-launcher";
@@ -15,10 +17,17 @@ import { FloatingSessionPanel } from "@/components/blocks/agent-sessions/experim
  *
  * This is the single node the composition layer mounts inside the dialog subtree.
  */
-export function FloatingSessionSurface() {
+export function FloatingSessionSurface({
+	portalToViewport = false,
+}: Readonly<{ portalToViewport?: boolean }>) {
 	const { activeSession } = useAgentSessionsMeta();
+	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
-	return (
+	useEffect(() => {
+		setPortalRoot(portalToViewport ? document.body : null);
+	}, [portalToViewport]);
+
+	const surface = (
 		<>
 			{activeSession ? null : <FloatingSessionLauncher />}
 			<AnimatePresence>
@@ -26,4 +35,8 @@ export function FloatingSessionSurface() {
 			</AnimatePresence>
 		</>
 	);
+
+	if (!portalToViewport) return surface;
+	if (!portalRoot) return null;
+	return createPortal(surface, portalRoot);
 }

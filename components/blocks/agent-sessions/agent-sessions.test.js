@@ -129,7 +129,7 @@ test("the experimental surface stays out of global Rovo history", () => {
 		assert.doesNotMatch(source, /openChat\("floating"\)/u);
 	}
 	assert.match(compositionSource, /<AgentSessionsProvider/u);
-	assert.match(compositionSource, /<FloatingSessionSurface \/>/u);
+	assert.match(compositionSource, /<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>/u);
 });
 
 test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {

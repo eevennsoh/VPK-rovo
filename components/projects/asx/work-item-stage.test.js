@@ -9,6 +9,14 @@ const DIALOG_SOURCE = readFileSync(
 	join(__dirname, "../../blocks/agent-sessions/experimental/components/experimental-work-item-dialog.tsx"),
 	"utf8",
 );
+const COMPOSITION_SOURCE = readFileSync(
+	join(__dirname, "../../blocks/agent-sessions/experimental/experimental-agent-sessions.tsx"),
+	"utf8",
+);
+const FLOATING_SURFACE_SOURCE = readFileSync(
+	join(__dirname, "../../blocks/agent-sessions/experimental/components/floating-session-surface.tsx"),
+	"utf8",
+);
 const CONTROLLER_SOURCE = readFileSync(
 	join(__dirname, "../../blocks/agent-sessions/experimental/use-agent-sessions-controller.ts"),
 	"utf8",
@@ -42,6 +50,12 @@ test("ASX Work item renders the dialog surface inline without a blanket", () => 
 	assert.ok(inlineIndex >= 0 && inlineIndex < backdropIndex);
 	assert.match(DIALOG_SOURCE, /<section[\s\S]*aria-label=\{workItemTitle\}/u);
 	assert.match(DIALOG_SOURCE, /<ModalHeader showClose=\{presentation !== "inline"\} \/>/u);
+});
+
+test("ASX Work item portals its local Rovo surface to viewport coordinates", () => {
+	assert.match(COMPOSITION_SOURCE, /<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>/u);
+	assert.match(FLOATING_SURFACE_SOURCE, /createPortal\(surface, portalRoot\)/u);
+	assert.match(FLOATING_SURFACE_SOURCE, /portalToViewport \? document\.body : null/u);
 });
 
 test("ASX Work item can jump between all requested presets", () => {

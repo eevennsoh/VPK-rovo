@@ -77,7 +77,7 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 						sessions={<SessionsRail />}
 						metadata={<MetadataRail />}
 					/>
-					<FloatingSessionSurface />
+					<FloatingSessionSurface portalToViewport={presentation === "inline"} />
 				</ExperimentalWorkItemDialog>
 			</AgentSessionsProvider>
 		</WorkItemModalProvider>
