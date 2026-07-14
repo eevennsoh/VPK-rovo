@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const TYPES_SOURCE = readFileSync(join(__dirname, "jira-list-types.ts"), "utf8");
 const COLUMN_CONTROLS_SOURCE = readFileSync(
 	join(__dirname, "jira-list-column-controls.tsx"),
 	"utf8",
@@ -235,7 +236,7 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 });
 
 test("JiraList centers an accessible refresh button with the footer count", () => {
-	assert.match(SOURCE, /onRefresh\?: \(\) => void;/u);
+	assert.match(TYPES_SOURCE, /onRefresh\?: \(\) => void;/u);
 	assert.match(SOURCE, /data-testid="jira-list-footer-count"/u);
 	assert.match(SOURCE, /aria-label="Refresh work items"/u);
 	assert.match(SOURCE, /title="Refresh work items"/u);
@@ -283,7 +284,7 @@ test("JiraList keeps footer drafts out of TableBody and swaps the sticky footer 
 });
 
 test("JiraList exposes keyboard-accessible create controls at both row boundaries", () => {
-	assert.match(SOURCE, /type JiraListInsertionPosition = "before" \| "after"/u);
+	assert.match(TYPES_SOURCE, /type JiraListInsertionPosition = "before" \| "after"/u);
 	assert.match(SOURCE, /function RowBoundaryCreateControls/u);
 	assert.match(SOURCE, /Create work item \$\{position\} \$\{row\.issueKey\}/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Create<\/TooltipContent>/u);
@@ -391,8 +392,8 @@ test("JiraList anchors row controls in an unclipped frame overlay", () => {
 });
 
 test("JiraList uses an explicit insertion index for body drafts and submitted rows", () => {
-	assert.match(SOURCE, /insertAtIndex: number \| null/u);
-	assert.match(SOURCE, /onCreate\?: \(insertion\?: JiraListInsertion\) => void/u);
+	assert.match(TYPES_SOURCE, /insertAtIndex: number \| null/u);
+	assert.match(TYPES_SOURCE, /onCreate\?: \(insertion\?: JiraListInsertion\) => void/u);
 	assert.match(SOURCE, /renderDraftWorkItemRow\(rowIndex\)/u);
 	assert.match(SOURCE, /renderDraftWorkItemRow\(rows\.length\)/u);
 	assert.match(PAGE_SOURCE, /insertAtIndex: number \| null/u);
@@ -423,7 +424,11 @@ test("JiraList sample page submits all footer draft fields onto the created row"
 });
 
 test("JiraList uses shared Jira priority and issue-type icon maps", () => {
-	assert.match(SOURCE, /export type JiraListPriority = JiraIssuePriority;/u);
+	assert.match(TYPES_SOURCE, /export type JiraListPriority = JiraIssuePriority;/u);
+	assert.match(
+		SOURCE,
+		/export type \{[^}]*JiraListProps[^}]*\} from "@\/components\/blocks\/jira-list\/jira-list-types";/u,
+	);
 	assert.match(SOURCE, /const PRIORITY_ICONS = \{\s*major: PriorityMajorIcon,/u);
 	assert.match(SOURCE, /const ISSUE_TYPE_ICONS = \{\s*epic: EpicIcon,/u);
 	assert.match(SOURCE, /subtask: SubtasksIcon,/u);
