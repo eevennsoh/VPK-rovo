@@ -22,20 +22,44 @@ function readBlockFile(relativePath) {
 // bundle) so behavioral coverage can exercise the reducer/timer/selectors without
 // a DOM or React harness — mirroring components/projects/jira/lib/rfp-demo-state.test.js.
 let modelPromise;
+let detailsTabPromise;
+let detailFieldEditorsPromise;
+function loadBlockModule(relativePath, harnessName) {
+	return esbuild
+		.build({
+			entryPoints: [path.join(BLOCK_DIR, relativePath)],
+			bundle: true,
+			format: "cjs",
+			loader: { ".css": "empty" },
+			platform: "node",
+			tsconfig: path.join(process.cwd(), "tsconfig.json"),
+			write: false,
+		})
+		.then((result) => loadCjsModuleFromText(result.outputFiles[0].text, harnessName));
+}
+
 function loadSessionModel() {
 	if (!modelPromise) {
-		modelPromise = esbuild
-			.build({
-				entryPoints: [path.join(BLOCK_DIR, "data/session-state.ts")],
-				bundle: true,
-				format: "cjs",
-				platform: "node",
-				tsconfig: path.join(process.cwd(), "tsconfig.json"),
-				write: false,
-			})
-			.then((result) => loadCjsModuleFromText(result.outputFiles[0].text, "agent-sessions-model-harness.cjs"));
+		modelPromise = loadBlockModule("data/session-state.ts", "agent-sessions-model-harness.cjs");
 	}
 	return modelPromise;
+}
+
+function loadDetailsTabModule() {
+	if (!detailsTabPromise) {
+		detailsTabPromise = loadBlockModule("experimental/components/details-tab.tsx", "agent-sessions-details-tab-harness.cjs");
+	}
+	return detailsTabPromise;
+}
+
+function loadDetailFieldEditorsModule() {
+	if (!detailFieldEditorsPromise) {
+		detailFieldEditorsPromise = loadBlockModule(
+			"experimental/components/detail-field-editors.tsx",
+			"agent-sessions-detail-field-editors-harness.cjs",
+		);
+	}
+	return detailFieldEditorsPromise;
 }
 
 function tickUntil(model, state, predicate, maxTicks = 400) {
@@ -275,4 +299,50 @@ test("empty work item launcher opens a general session; filled launcher reopens 
 	running = model.agentSessionsReducer(running, { type: "open-latest-or-general" });
 	assert.ok(running.activeSessionId);
 	assert.equal(running.sessions.length, model.hydratePreset("running").sessions.length); // reopened, not created
+});
+
+test("details metadata draft preserves editable work item fields without aliasing labels", async () => {
+	const { seedMetadataDraft } = await loadDetailsTabModule();
+	const assignee = { id: "maya", name: "Maya Chen", avatarUrl: "/avatar-user/maya.png" };
+	const reporter = { id: "david", name: "David Hsieh", avatarUrl: "/avatar-user/david.png" };
+	const labels = ["security", "rfp"];
+
+	const draft = seedMetadataDraft({
+		assignee,
+		dueDate: "not-a-date",
+		labels,
+		parent: { code: "RFP-42" },
+		priority: "High",
+		reporter,
+		startDate: "2026-07-14",
+		status: "Review",
+	});
+
+	assert.equal(draft.status, "Review");
+	assert.equal(draft.priority, "High");
+	assert.equal(draft.assignee, assignee);
+	assert.equal(draft.reporter, reporter);
+	assert.equal(draft.startDate.toISOString(), "2026-07-14T00:00:00.000Z");
+	assert.equal(draft.dueDate, undefined);
+	assert.equal(draft.parent, "RFP-42");
+	assert.deepEqual(draft.labels, labels);
+	assert.notEqual(draft.labels, labels);
+	assert.equal(draft.atlassianProject, null);
+});
+
+test("details metadata draft and status variants use board lifecycle defaults", async () => {
+	const [{ seedMetadataDraft }, { STATUS_PHASES, statusVariant }] = await Promise.all([
+		loadDetailsTabModule(),
+		loadDetailFieldEditorsModule(),
+	]);
+
+	const draft = seedMetadataDraft({});
+
+	assert.equal(draft.status, STATUS_PHASES[0]);
+	assert.equal(draft.priority, "Medium");
+	assert.deepEqual(draft.labels, []);
+	assert.equal(statusVariant(STATUS_PHASES[0]), "neutral");
+	assert.equal(statusVariant(STATUS_PHASES[1]), "information");
+	assert.equal(statusVariant(STATUS_PHASES.at(-1)), "success");
+	assert.equal(statusVariant("Unmapped external status"), "neutral");
 });
