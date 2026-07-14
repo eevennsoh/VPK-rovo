@@ -183,3 +183,20 @@ test("Gallery controls expose state-aware tooltips and reset the selected protot
 	assert.match(toggleSource, /open \? "Close gallery" : "Open gallery"/u);
 	assert.doesNotMatch(toggleSource, /window\.location\.reload/u);
 });
+
+test("Gallery controls reserve an in-flow row with compact button geometry", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+	const toggleIndex = gallerySource.indexOf("<GalleryToggle");
+	const stageIndex = gallerySource.indexOf("<GallerySelectedStage");
+
+	assert.ok(toggleIndex >= 0 && toggleIndex < stageIndex);
+	assert.match(toggleSource, /const TOGGLE_SIZE = 24;/u);
+	assert.match(toggleSource, /flex h-12 items-center justify-between gap-4 p-3/u);
+	assert.match(toggleSource, /<Heading size="xsmall" className="truncate">/u);
+	assert.match(toggleSource, /flex shrink-0 items-center gap-1/u);
+	assert.match(gallerySource, /title = "Gallery"/u);
+	assert.match(gallerySource, /<GalleryToggle title=\{title\}/u);
+	assert.match(toggleSource, /GALLERY_CONTROL_ICON_CLASS_NAME = "size-3/u);
+	assert.doesNotMatch(toggleSource, /fixed top-4 right-4/u);
+});

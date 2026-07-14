@@ -87,6 +87,8 @@ function renderDefaultSelectedItem(item: GalleryItem): ReactNode {
 
 export interface GalleryProps {
 	items: readonly GalleryItem[];
+	/** Label displayed in the Gallery control bar. */
+	title?: string;
 	/** Controlled visibility of the pinned strip. */
 	open?: boolean;
 	/** Uncontrolled initial visibility (default true). */
@@ -103,6 +105,7 @@ export interface GalleryProps {
 
 export function Gallery({
 	items,
+	title = "Gallery",
 	open,
 	defaultOpen = true,
 	onOpenChange,
@@ -227,6 +230,8 @@ export function Gallery({
 
 	return (
 		<div className={cn(className)}>
+			<GalleryToggle title={title} open={isOpen} onToggle={handleToggle} onReset={handleReset} />
+
 			{selectedItem ? (
 				<GallerySelectedStage
 					item={selectedItem}
@@ -258,8 +263,6 @@ export function Gallery({
 					</motion.div>
 				) : null}
 			</AnimatePresence>
-
-			<GalleryToggle open={isOpen} onToggle={handleToggle} onReset={handleReset} />
 		</div>
 	);
 }

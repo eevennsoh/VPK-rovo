@@ -7,6 +7,7 @@ import DevicesIcon from "@atlaskit/icon/core/devices";
 import RetryIcon from "@atlaskit/icon/core/retry";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 
+import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/utils/theme-wrapper";
@@ -14,14 +15,16 @@ import Squircle from "@/components/website/demos/visual/shaders/squircle";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-// 32×32 squircle icon button.
-const TOGGLE_SIZE = 32;
+// 24×24 squircle button with a 12×12 icon.
+const TOGGLE_SIZE = 24;
 const GALLERY_CONTROL_BUTTON_CLASS_NAME =
 	"inline-flex cursor-pointer border-0 bg-transparent p-0 text-icon-inverse outline-none transition-opacity duration-normal ease-out-practical hover:opacity-90 active:opacity-80 motion-reduce:transition-none rounded-[10px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const GALLERY_CONTROL_ICON_CLASS_NAME = "size-3 [&>span]:size-3! [&_svg]:size-3!";
 
 type GalleryTheme = "light" | "dark" | "system";
 
 export interface GalleryToggleProps {
+	title: string;
 	open: boolean;
 	onToggle: () => void;
 	className?: string;
@@ -66,6 +69,7 @@ function GalleryControlSquircle({ children }: Readonly<{ children: ReactNode }>)
 }
 
 export function GalleryToggle({
+	title,
 	open,
 	onToggle,
 	className,
@@ -78,74 +82,83 @@ export function GalleryToggle({
 	return (
 		<div
 			className={cn(
-				// Anchored top-right, independent of the bottom-pinned strip.
-				"fixed top-4 right-4 z-40 inline-flex items-center gap-2",
+				// Reserve an in-flow control row so prototype navigation starts below it.
+				"flex h-12 items-center justify-between gap-4 p-3",
 				className,
 			)}
 		>
+			<Heading size="xsmall" className="truncate">
+				{title}
+			</Heading>
 			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<button
-								type="button"
-								aria-label="Reset"
-								onClick={onReset}
-								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-							>
-								<GalleryControlSquircle>
-									<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
-								</GalleryControlSquircle>
-							</button>
-						}
-					/>
-					<TooltipContent side="bottom">Reset</TooltipContent>
-				</Tooltip>
+				<div className="flex shrink-0 items-center gap-1">
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<button
+									type="button"
+									aria-label="Reset"
+									onClick={onReset}
+									className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+								>
+									<GalleryControlSquircle>
+										<Icon
+											className={GALLERY_CONTROL_ICON_CLASS_NAME}
+											render={<RetryIcon label="" color="currentColor" size="small" />}
+										/>
+									</GalleryControlSquircle>
+								</button>
+							}
+						/>
+						<TooltipContent side="bottom">Reset</TooltipContent>
+					</Tooltip>
 
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<button
-								type="button"
-								aria-label={`Cycle theme, current theme: ${themeLabel}`}
-								onClick={() => setTheme(getNextTheme(theme))}
-								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-							>
-								<GalleryControlSquircle>
-									<Icon render={renderThemeIcon(theme)} />
-								</GalleryControlSquircle>
-							</button>
-						}
-					/>
-					<TooltipContent side="bottom">{themeLabel}</TooltipContent>
-				</Tooltip>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<button
+									type="button"
+									aria-label={`Cycle theme, current theme: ${themeLabel}`}
+									onClick={() => setTheme(getNextTheme(theme))}
+									className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+								>
+									<GalleryControlSquircle>
+										<Icon className={GALLERY_CONTROL_ICON_CLASS_NAME} render={renderThemeIcon(theme)} />
+									</GalleryControlSquircle>
+								</button>
+							}
+						/>
+						<TooltipContent side="bottom">{themeLabel}</TooltipContent>
+					</Tooltip>
 
-				<Tooltip>
-					<TooltipTrigger
-						render={
-							<button
-								type="button"
-								aria-expanded={open}
-								aria-label={galleryToggleLabel}
-								onClick={onToggle}
-								className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-							>
-								<GalleryControlSquircle>
-									<Icon
-										render={
-											open ? (
-												<ChevronDownIcon label="" color="currentColor" size="small" />
-											) : (
-												<ChevronUpIcon label="" color="currentColor" size="small" />
-											)
-										}
-									/>
-								</GalleryControlSquircle>
-							</button>
-						}
-					/>
-					<TooltipContent side="bottom">{galleryToggleLabel}</TooltipContent>
-				</Tooltip>
+					<Tooltip>
+						<TooltipTrigger
+							render={
+								<button
+									type="button"
+									aria-expanded={open}
+									aria-label={galleryToggleLabel}
+									onClick={onToggle}
+									className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+								>
+									<GalleryControlSquircle>
+										<Icon
+											className={GALLERY_CONTROL_ICON_CLASS_NAME}
+											render={
+												open ? (
+													<ChevronDownIcon label="" color="currentColor" size="small" />
+												) : (
+													<ChevronUpIcon label="" color="currentColor" size="small" />
+												)
+											}
+										/>
+									</GalleryControlSquircle>
+								</button>
+							}
+						/>
+						<TooltipContent side="bottom">{galleryToggleLabel}</TooltipContent>
+					</Tooltip>
+				</div>
 			</TooltipProvider>
 		</div>
 	);
