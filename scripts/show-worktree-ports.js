@@ -4,17 +4,18 @@
  *
  * Usage:
  *   node scripts/show-worktree-ports.js              one-shot snapshot
- *   node scripts/show-worktree-ports.js watch        live dashboard (1s tick, Ctrl+C to exit)
+ *   node scripts/show-worktree-ports.js once         explicit one-shot snapshot alias
+ *   node scripts/show-worktree-ports.js watch        interactive/live dashboard (1s refresh)
  *   node scripts/show-worktree-ports.js kill [id]    stop a worktree's dev session
  *                                                    (no id -> the worktree you're currently in; id -> that specific worktree)
  *
- * Main worktree is always shown. Other worktrees are shown only when they
- * have at least one of .dev-frontend-port / .dev-backend-port / .dev-rovo-port
- * or .dev-rovo-ports.
+ * Main is always shown. Linked worktrees appear once they have dev-port state;
+ * the live dashboard discovers them automatically on its next refresh.
  */
 
 const fs = require("node:fs");
 const path = require("node:path");
+const readline = require("node:readline");
 const { spawnSync } = require("node:child_process");
 const { Worker } = require("node:worker_threads");
 const { getAllWorktreePortInfo } = require("./lib/worktree-ports");
@@ -24,9 +25,6 @@ const { matchWorktree, sessionNameForWorktree, findCurrentWorktree } = require("
 
 const SEPARATOR = "━".repeat(70);
 const WATCH_INTERVAL_MS = 1000;
-const TICK_INTERVAL_MS = 120;
-const TICKS_PER_DATA_REFRESH = Math.max(1, Math.round(WATCH_INTERVAL_MS / TICK_INTERVAL_MS));
-const SPINNER_FRAMES = ["⠴", "⠦", "⠲", "⠖"];
 
 // Per-worktree "stop this session" affordance for the listing: the plain,
 // copy-paste-ready command that stops this worktree's dev session. We key it on
@@ -126,7 +124,7 @@ function filterRowsForDisplay(rows) {
 	return rows.filter((row) => row.isMain || row.hasRecordedPorts);
 }
 
-function renderRows(rows, { headerSuffix, footer } = {}) {
+function renderRows(rows, { headerSuffix, footer, selectedIndex = null } = {}) {
 	const header = headerSuffix
 		? `📍 VPK Worktree Port Assignments  ${headerSuffix}`
 		: "📍 VPK Worktree Port Assignments";
@@ -137,7 +135,7 @@ function renderRows(rows, { headerSuffix, footer } = {}) {
 		console.log("\nNo git worktrees found.");
 	}
 
-	for (const row of rows) {
+	for (const [index, row] of rows.entries()) {
 		const {
 			wt,
 			name,
@@ -151,7 +149,8 @@ function renderRows(rows, { headerSuffix, footer } = {}) {
 		const branchLabel = isMain ? "(main)" : `(${wt.branch || wt.identifier})`;
 		const emoji = isMain ? "🌳" : "🪾";
 
-		console.log(`\n${emoji} ${name} ${branchLabel}`);
+		const selection = selectedIndex === index ? "❯" : " ";
+		console.log(`\n${selection} ${emoji} ${name} ${branchLabel}`);
 		console.log(`   📂 ${wt.path}`);
 		if (isRunning) {
 			console.log(
@@ -192,38 +191,105 @@ async function main() {
 	renderRows(rows);
 }
 
-async function runWatch() {
-	let frameIndex = 0;
-	let tickCount = 0;
+function reconcileSelectionIndex(rows, selectedPath, previousIndex = 0) {
+	if (rows.length === 0) return -1;
+	const matchingIndex = rows.findIndex((row) => row.wt.path === selectedPath);
+	if (matchingIndex >= 0) return matchingIndex;
+	return Math.min(Math.max(previousIndex, 0), rows.length - 1);
+}
+
+function moveSelectionIndex(currentIndex, direction, rowCount) {
+	if (rowCount <= 0) return -1;
+	const normalizedIndex = currentIndex < 0 ? 0 : currentIndex;
+	return (normalizedIndex + direction + rowCount) % rowCount;
+}
+
+function dashboardRowsSignature(rows) {
+	return JSON.stringify(
+		rows.map((row) => ({
+			path: row.wt.path,
+			branch: row.wt.branch,
+			identifier: row.wt.identifier,
+			name: row.name,
+			isMain: row.isMain,
+			hasRecordedPorts: row.hasRecordedPorts,
+			isRunning: row.isRunning,
+			runningFrontend: row.runningFrontend,
+			runningBackend: row.runningBackend,
+			runningRovo: row.runningRovo,
+			portlessUrl: row.portlessUrl,
+		})),
+	);
+}
+
+function browserUrlForRow(row) {
+	if (row?.portlessUrl) return row.portlessUrl;
+	if (row?.runningFrontend) return `http://localhost:${row.runningFrontend}`;
+	return null;
+}
+
+function defaultBrowserCommand(url, platform = process.platform) {
+	if (platform === "darwin") return { command: "open", args: [url] };
+	if (platform === "win32") return { command: "cmd", args: ["/c", "start", "", url] };
+	return { command: "xdg-open", args: [url] };
+}
+
+function openInDefaultBrowser(url) {
+	const { command, args } = defaultBrowserCommand(url);
+	const { status, error } = spawnSync(command, args, { stdio: "ignore" });
+	if (error) return { ok: false, message: error.message };
+	if (status !== 0) return { ok: false, message: `${command} exited with status ${status}` };
+	return { ok: true };
+}
+
+async function runWatch({ interactive = false } = {}) {
 	let lastRows = [];
 	let lastError = null;
 	let refreshInFlight = false;
+	let selectedIndex = -1;
+	let selectedPath = null;
+	let confirmingKill = false;
+	let statusMessage = null;
+	let stopped = false;
 
 	try {
 		lastRows = await snapshot();
+		selectedIndex = reconcileSelectionIndex(lastRows, selectedPath, selectedIndex);
+		selectedPath = lastRows[selectedIndex]?.wt.path ?? null;
 	} catch (error) {
 		lastError = error;
 	}
 
 	const worker = new Worker(SNAPSHOT_WORKER_SCRIPT, { eval: true });
 	worker.on("message", async (result) => {
+		let shouldRender = false;
 		if (result.ok) {
 			try {
 				const routes = loadPortlessRoutes();
 				const rows = await collectWorktreeRows(result.data, routes);
-				lastRows = filterRowsForDisplay(rows);
+				const nextRows = filterRowsForDisplay(rows);
+				shouldRender = dashboardRowsSignature(nextRows) !== dashboardRowsSignature(lastRows);
+				lastRows = nextRows;
+				selectedIndex = reconcileSelectionIndex(lastRows, selectedPath, selectedIndex);
+				selectedPath = lastRows[selectedIndex]?.wt.path ?? null;
+				shouldRender ||= lastError !== null;
 				lastError = null;
 			} catch (error) {
+				shouldRender = lastError?.message !== error.message;
 				lastError = error;
 			}
 		} else {
+			shouldRender = lastError?.message !== result.message;
 			lastError = new Error(result.message);
 		}
 		refreshInFlight = false;
+		if (shouldRender) render();
 	});
 	worker.on("error", (error) => {
 		refreshInFlight = false;
+		const shouldRender = lastError?.message !== error.message;
 		lastError = error;
+		if (shouldRender) render();
 	});
 
 	function requestRefresh() {
@@ -232,33 +298,117 @@ async function runWatch() {
 		worker.postMessage("refresh");
 	}
 
-	function tick() {
-		if (tickCount > 0 && tickCount % TICKS_PER_DATA_REFRESH === 0) {
-			requestRefresh();
-		}
+	function render() {
 		process.stdout.write("\x1b[2J\x1b[H");
 		if (lastError) {
 			console.error(`Failed to enumerate worktrees: ${lastError.message}`);
 		} else {
-			const now = new Date().toLocaleTimeString("en-US", { hour12: false });
-			const spinner = SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length];
-			renderRows(lastRows, {
-				headerSuffix: `·  ${spinner} watching`,
-				footer: `Last updated ${now} · Ctrl+C to exit`,
+			const visibleRowCount = interactive
+				? Math.max(1, Math.floor(((process.stdout.rows || 30) - 8) / 5))
+				: lastRows.length;
+			const maxStartIndex = Math.max(0, lastRows.length - visibleRowCount);
+			const startIndex = interactive
+				? Math.min(
+						Math.max(0, selectedIndex - Math.floor(visibleRowCount / 2)),
+						maxStartIndex,
+					)
+				: 0;
+			const visibleRows = lastRows.slice(startIndex, startIndex + visibleRowCount);
+			renderRows(visibleRows, {
+				headerSuffix: "· watching",
+				selectedIndex: interactive ? selectedIndex - startIndex : null,
+				footer: interactive
+					? confirmingKill
+						? `Kill ${describeWorktree(lastRows[selectedIndex].wt)}?  y/N`
+						: `${statusMessage ? `${statusMessage}\n` : ""}↑/↓ select · Enter Open · k Kill · q Quit`
+					: "Ctrl+C to exit",
 			});
 		}
-		frameIndex += 1;
-		tickCount += 1;
 	}
 
-	tick();
-	const interval = setInterval(tick, TICK_INTERVAL_MS);
+	function cleanup(exitCode = 0) {
+		if (stopped) return;
+		stopped = true;
+		clearInterval(pollInterval);
+		worker.terminate();
+		if (interactive) {
+			process.stdin.removeListener("keypress", handleKeypress);
+			if (process.stdin.isTTY) process.stdin.setRawMode(false);
+			process.stdin.pause();
+			process.stdout.write("\x1b[?25h\n");
+		}
+		process.exit(exitCode);
+	}
+
+	function handleKeypress(_input, key = {}) {
+		if (key.ctrl && key.name === "c") {
+			cleanup();
+			return;
+		}
+
+		if (confirmingKill) {
+			if (key.name === "y") {
+				const selected = lastRows[selectedIndex];
+				confirmingKill = false;
+				if (!selected) return;
+				if (process.stdin.isTTY) process.stdin.setRawMode(false);
+				process.stdout.write("\x1b[2J\x1b[H\x1b[?25h");
+				const status = stopWorktree(selected.wt);
+				if (process.stdin.isTTY) process.stdin.setRawMode(true);
+				process.stdout.write("\x1b[?25l");
+				statusMessage = status === 0 ? `✓ Killed ${selected.name}` : `Could not kill ${selected.name} (exit ${status})`;
+				requestRefresh();
+				render();
+				return;
+			}
+			confirmingKill = false;
+			render();
+			return;
+		}
+
+		if (key.name === "q") {
+			cleanup();
+		} else if (key.name === "up") {
+			selectedIndex = moveSelectionIndex(selectedIndex, -1, lastRows.length);
+			selectedPath = lastRows[selectedIndex]?.wt.path ?? null;
+			statusMessage = null;
+			render();
+		} else if (key.name === "down") {
+			selectedIndex = moveSelectionIndex(selectedIndex, 1, lastRows.length);
+			selectedPath = lastRows[selectedIndex]?.wt.path ?? null;
+			statusMessage = null;
+			render();
+		} else if (key.name === "return" && selectedIndex >= 0) {
+			const selected = lastRows[selectedIndex];
+			const url = browserUrlForRow(selected);
+			if (!url) {
+				statusMessage = `No active browser URL for ${selected.name}`;
+				render();
+				return;
+			}
+			const result = openInDefaultBrowser(url);
+			statusMessage = result.ok ? `✓ Opened ${url}` : `Could not open ${url}: ${result.message}`;
+			render();
+		} else if (key.name === "k" && selectedIndex >= 0) {
+			confirmingKill = true;
+			statusMessage = null;
+			render();
+		}
+	}
+
+	render();
+	const pollInterval = setInterval(requestRefresh, WATCH_INTERVAL_MS);
+
+	if (interactive) {
+		readline.emitKeypressEvents(process.stdin);
+		process.stdin.setRawMode(true);
+		process.stdin.resume();
+		process.stdin.on("keypress", handleKeypress);
+		process.stdout.write("\x1b[?25l");
+	}
 
 	process.on("SIGINT", () => {
-		clearInterval(interval);
-		worker.terminate();
-		process.stdout.write("\n");
-		process.exit(0);
+		cleanup();
 	});
 }
 
@@ -289,9 +439,9 @@ function stopWorktree(worktree) {
 	});
 	if (error) {
 		console.error(`Failed to run ${scriptPath}: ${error.message}`);
-		process.exit(1);
+		return 1;
 	}
-	process.exit(status ?? 0);
+	return status ?? 0;
 }
 
 function runKill(query) {
@@ -314,7 +464,7 @@ function runKill(query) {
 			printKillCandidates(worktrees);
 			process.exit(1);
 		}
-		stopWorktree(current);
+		process.exit(stopWorktree(current));
 		return;
 	}
 
@@ -330,25 +480,35 @@ function runKill(query) {
 		process.exit(result.reason === "ambiguous" ? 2 : 1);
 	}
 
-	stopWorktree(result.worktree);
+	process.exit(stopWorktree(result.worktree));
 }
 
-const subcommand = process.argv[2];
-if (subcommand === "watch") {
-	runWatch().catch((error) => {
-		console.error(error.message);
-		process.exit(1);
-	});
-} else if (subcommand === "kill") {
-	runKill(process.argv[3]);
-} else if (subcommand && subcommand !== "once") {
-	console.error(
-		`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
-	);
-	process.exit(2);
-} else {
-	main().catch((error) => {
-		console.error(error.message);
-		process.exit(1);
-	});
+if (require.main === module) {
+	const subcommand = process.argv[2];
+	if (subcommand === "watch") {
+		runWatch({ interactive: process.stdin.isTTY && process.stdout.isTTY }).catch((error) => {
+			console.error(error.message);
+			process.exit(1);
+		});
+	} else if (subcommand === "kill") {
+		runKill(process.argv[3]);
+	} else if (subcommand && subcommand !== "once") {
+		console.error(
+			`Unknown subcommand: ${subcommand}. Use \`pnpm ports\`, \`pnpm ports once\`, \`pnpm ports watch\`, or \`pnpm ports kill [identifier]\`.`
+		);
+		process.exit(2);
+	} else {
+		main().catch((error) => {
+			console.error(error.message);
+			process.exit(1);
+		});
+	}
 }
+
+module.exports = {
+	browserUrlForRow,
+	dashboardRowsSignature,
+	defaultBrowserCommand,
+	reconcileSelectionIndex,
+	moveSelectionIndex,
+};

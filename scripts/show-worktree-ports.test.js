@@ -7,6 +7,13 @@ const path = require("node:path");
 const test = require("node:test");
 
 const SHOW_WORKTREE_PORTS_SCRIPT = path.resolve(__dirname, "show-worktree-ports.js");
+const {
+	browserUrlForRow,
+	dashboardRowsSignature,
+	defaultBrowserCommand,
+	moveSelectionIndex,
+	reconcileSelectionIndex,
+} = require("./show-worktree-ports");
 
 function execGit(args, cwd) {
 	execFileSync("git", args, {
@@ -66,6 +73,67 @@ function closeServer(server) {
 		server.close(() => resolve());
 	});
 }
+
+test("interactive selection wraps around the worktree list", () => {
+	assert.equal(moveSelectionIndex(0, -1, 3), 2);
+	assert.equal(moveSelectionIndex(2, 1, 3), 0);
+	assert.equal(moveSelectionIndex(-1, 1, 3), 1);
+	assert.equal(moveSelectionIndex(0, 1, 0), -1);
+});
+
+test("interactive refresh preserves the selected worktree by path", () => {
+	const rows = [
+		{ wt: { path: "/repo/main" } },
+		{ wt: { path: "/repo/new" } },
+		{ wt: { path: "/repo/selected" } },
+	];
+
+	assert.equal(reconcileSelectionIndex(rows, "/repo/selected", 0), 2);
+	assert.equal(reconcileSelectionIndex(rows, "/repo/removed", 9), 2);
+	assert.equal(reconcileSelectionIndex([], "/repo/selected", 0), -1);
+});
+
+test("watch refresh detects meaningful dashboard row changes", () => {
+	const row = {
+		wt: { path: "/repo/main", branch: "main", identifier: "main" },
+		name: "repo",
+		isMain: true,
+		hasRecordedPorts: true,
+		isRunning: true,
+		runningFrontend: "4484",
+		runningBackend: "8080",
+		runningRovo: null,
+		portlessUrl: "https://repo.localhost",
+	};
+
+	assert.equal(dashboardRowsSignature([row]), dashboardRowsSignature([{ ...row }]));
+	assert.notEqual(
+		dashboardRowsSignature([row]),
+		dashboardRowsSignature([{ ...row, runningFrontend: "4485" }]),
+	);
+});
+
+test("interactive open prefers the Portless URL and falls back to the live frontend", () => {
+	assert.equal(
+		browserUrlForRow({
+			portlessUrl: "https://feature.vpk-rovo.localhost",
+			runningFrontend: "4321",
+		}),
+		"https://feature.vpk-rovo.localhost",
+	);
+	assert.equal(browserUrlForRow({ portlessUrl: null, runningFrontend: "4321" }), "http://localhost:4321");
+	assert.equal(browserUrlForRow({ portlessUrl: null, runningFrontend: null }), null);
+});
+
+test("interactive open uses the platform default-browser command", () => {
+	const url = "https://vpk-rovo.localhost";
+	assert.deepEqual(defaultBrowserCommand(url, "darwin"), { command: "open", args: [url] });
+	assert.deepEqual(defaultBrowserCommand(url, "linux"), { command: "xdg-open", args: [url] });
+	assert.deepEqual(defaultBrowserCommand(url, "win32"), {
+		command: "cmd",
+		args: ["/c", "start", "", url],
+	});
+});
 
 test("ports CLI shows pool ports that are actually listening", async () => {
 	const fixture = createGitWorktreeFixture();
