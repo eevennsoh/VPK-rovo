@@ -22,6 +22,7 @@ import {
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	getSlashCommandFormatItems,
+	type RichTextMentionItem,
 	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
@@ -52,6 +53,12 @@ export interface EditorPaletteProps {
 	/** Render a live editor where typing "@" or "/" opens the real menus. */
 	showLiveEditor?: boolean;
 	className?: string;
+}
+
+export interface EditorPaletteAssigneePickerProps {
+	className?: string;
+	mentionSources?: RichTextMentionSources;
+	onSelect: (item: RichTextMentionItem) => void;
 }
 
 function noop(): void {}
@@ -88,10 +95,10 @@ interface FlatSectionConfig {
 	hasDirectory: boolean;
 }
 
-const FLAT_MENTION_SECTIONS: readonly FlatSectionConfig[] = [
+const FLAT_MENTION_SECTIONS = [
 	{ category: "people-team", title: "People and team", hasDirectory: false },
 	{ category: "subagent", title: "Subagents", hasDirectory: true },
-];
+] as const satisfies readonly FlatSectionConfig[];
 
 const FLAT_COMMAND_SECTIONS: readonly FlatSectionConfig[] = [
 	{ category: "skill", title: "Skills", hasDirectory: true },
@@ -137,6 +144,46 @@ export default function EditorPalette({
 				</div>
 			) : null}
 		</div>
+	);
+}
+
+export function EditorPaletteAssigneePicker({
+	className,
+	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+	onSelect,
+}: Readonly<EditorPaletteAssigneePickerProps>) {
+	const items = FLAT_MENTION_SECTIONS.flatMap((section) =>
+		getFlatSectionRows(
+			section,
+			getMentionChildItems(mentionSources, section.category),
+			false,
+			section.title,
+		),
+	);
+
+	const handleSelect = (item: RichTextSuggestionMenuItem) => {
+		const mention = [
+			...(mentionSources.human ?? []),
+			...(mentionSources.team ?? []),
+			...(mentionSources.subagent ?? []),
+		].find((candidate) => candidate.id === item.id);
+		if (mention) {
+			onSelect(mention);
+		}
+	};
+
+	return (
+		<RichTextSuggestionMenu
+			className={cn(
+				"rich-text-command-menu-borderless max-h-80 w-72",
+				className,
+			)}
+			emptyLabel="No people or agents found"
+			items={items}
+			onSelect={handleSelect}
+			selectedIndex={-1}
+			title="Assign work item"
+		/>
 	);
 }
 

@@ -110,20 +110,22 @@ export default function JiraKanbanPage() {
 	};
 
 	return (
-		<div className="flex h-full min-h-[640px] flex-col bg-surface">
-			<JiraKanban
-				agents={BOARD_AGENTS}
-				ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
-				assignedAgentIdsByColumn={columnAgentAssignments}
-				boardColumns={boardColumns}
-				draggedCardCode={draggedCard?.card.code ?? null}
-				onCardDragStart={handleCardDragStart}
-				onCardDrop={handleCardDrop}
-				onCardDragEnd={handleCardDragEnd}
-				onCreateAgent={handleCreateColumnAgent}
-				onToggleColumnAgent={handleToggleColumnAgent}
-				paddingTop={0}
-			/>
+		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface p-4 md:p-5">
+			<div className="min-w-0">
+				<JiraKanban
+					agents={BOARD_AGENTS}
+					ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
+					assignedAgentIdsByColumn={columnAgentAssignments}
+					boardColumns={boardColumns}
+					draggedCardCode={draggedCard?.card.code ?? null}
+					onCardDragStart={handleCardDragStart}
+					onCardDrop={handleCardDrop}
+					onCardDragEnd={handleCardDragEnd}
+					onCreateAgent={handleCreateColumnAgent}
+					onToggleColumnAgent={handleToggleColumnAgent}
+					paddingTop={0}
+				/>
+			</div>
 		</div>
 	);
 }

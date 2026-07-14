@@ -1,8 +1,6 @@
 import type { JiraListRowData } from "./index";
 
-export interface JiraListSampleRow extends JiraListRowData {
-	parentIssueKey?: string;
-}
+export type JiraListSampleRow = JiraListRowData;
 
 export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 	{
@@ -12,9 +10,6 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		priority: "medium",
 		status: "In progress",
 		statusVariant: "information",
-		indentLevel: 0,
-		hasChildren: true,
-		isExpanded: true,
 		assignee: {
 			id: "maya-chen",
 			name: "Maya Chen",
@@ -52,13 +47,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 	},
 	{
 		issueKey: "PD-002",
-		parentIssueKey: "PD-001",
 		summary: "Capture survey response anomalies across enterprise accounts",
 		issueType: "task",
 		priority: "major",
 		status: "In review",
 		statusVariant: "warning",
-		indentLevel: 1,
 		assignee: {
 			id: "priya-shah",
 			name: "Priya Shah",
@@ -86,13 +79,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 	},
 	{
 		issueKey: "PD-003",
-		parentIssueKey: "PD-001",
 		summary: "Draft the threaded-ideas follow-up checklist",
 		issueType: "story",
 		priority: "minor",
 		status: "Done",
 		statusVariant: "success",
-		indentLevel: 1,
 		assignee: {
 			id: "jordan-lee",
 			name: "Jordan Lee",
@@ -120,9 +111,6 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		priority: "major",
 		status: "Blocked",
 		statusVariant: "danger",
-		indentLevel: 0,
-		hasChildren: true,
-		isExpanded: false,
 		assignee: {
 			id: "david-hsieh",
 			name: "David Hsieh",
@@ -150,13 +138,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 	},
 	{
 		issueKey: "PD-005",
-		parentIssueKey: "PD-004",
 		summary: "Collect approval notes from legal and security reviewers",
 		issueType: "subtask",
 		priority: "major",
 		status: "To do",
 		statusVariant: "neutral",
-		indentLevel: 1,
 		assignee: {
 			id: "elena-ruiz",
 			name: "Elena Ruiz",
@@ -181,7 +167,6 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		priority: "major",
 		status: "In progress",
 		statusVariant: "information",
-		indentLevel: 0,
 		assignee: {
 			id: "florence-garcia",
 			name: "Florence Garcia",
@@ -214,7 +199,6 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		priority: "minor",
 		status: "Done",
 		statusVariant: "success",
-		indentLevel: 0,
 		assignee: {
 			id: "maya-chen",
 			name: "Maya Chen",

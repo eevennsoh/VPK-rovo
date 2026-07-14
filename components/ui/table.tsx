@@ -4,11 +4,16 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-type TableProps = React.ComponentProps<"table">
+interface TableProps extends React.ComponentProps<"table"> {
+	containerClassName?: string
+}
 
-function Table({ className, ...props }: Readonly<TableProps>) {
+function Table({ className, containerClassName, ...props }: Readonly<TableProps>) {
 	return (
-		<div data-slot="table-container" className="relative w-full overflow-x-auto">
+		<div
+			data-slot="table-container"
+			className={cn("relative w-full overflow-x-auto", containerClassName)}
+		>
 			<table
 				data-slot="table"
 				className={cn("w-full caption-bottom text-sm", className)}
@@ -82,7 +87,7 @@ function TableHead({ className, ...props }: Readonly<TableHeadProps>) {
 			data-slot="table-head"
 			className={cn(
 				"h-9 px-2 text-left align-middle text-xs font-semibold text-text-subtlest whitespace-nowrap",
-				"[&:has([role=checkbox])]:pr-0",
+				"has-[[role=checkbox]]:pr-0",
 				className,
 			)}
 			{...props}
@@ -98,7 +103,7 @@ function TableCell({ className, ...props }: Readonly<TableCellProps>) {
 			data-slot="table-cell"
 			className={cn(
 				"p-2 align-middle whitespace-nowrap",
-				"[&:has([role=checkbox])]:pr-0",
+				"has-[[role=checkbox]]:pr-0",
 				className,
 			)}
 			{...props}
