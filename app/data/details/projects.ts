@@ -7,6 +7,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"asx": {
+		description: "Agent Sessions Experience — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		importStatement: `import AsxPage from "@/components/projects/asx";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"confluence": {
 		description: "A document editing interface inspired by Confluence with rich text editing, bubble menus, and collaboration features.",
 		demoLayout: {

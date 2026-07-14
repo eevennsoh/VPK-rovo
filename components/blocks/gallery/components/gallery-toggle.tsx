@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import DevicesIcon from "@atlaskit/icon/core/devices";
+import RetryIcon from "@atlaskit/icon/core/retry";
 import ThemeIcon from "@atlaskit/icon/core/theme";
 
 import { Icon } from "@/components/ui/icon";
@@ -23,6 +24,11 @@ export interface GalleryToggleProps {
 	open: boolean;
 	onToggle: () => void;
 	className?: string;
+	/**
+	 * Optional retry handler. When provided, a Retry icon button is rendered
+	 * next to the theme control.
+	 */
+	onRetry?: () => void;
 }
 
 function getThemeLabel(theme: GalleryTheme): string {
@@ -63,6 +69,7 @@ export function GalleryToggle({
 	open,
 	onToggle,
 	className,
+	onRetry,
 }: Readonly<GalleryToggleProps>) {
 	const { theme, setTheme } = useTheme();
 	const themeLabel = getThemeLabel(theme);
@@ -75,6 +82,19 @@ export function GalleryToggle({
 				className,
 			)}
 		>
+			{onRetry ? (
+				<button
+					type="button"
+					aria-label="Retry"
+					onClick={() => onRetry()}
+					className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+				>
+					<GalleryControlSquircle>
+						<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
+					</GalleryControlSquircle>
+				</button>
+			) : null}
+
 			<button
 				type="button"
 				aria-label={`Cycle theme, current theme: ${themeLabel}`}

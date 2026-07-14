@@ -97,6 +97,11 @@ export interface GalleryProps {
 	onSelectedChange?: (selectedId: string) => void;
 	renderSelectedItem?: (item: GalleryItem) => ReactNode;
 	className?: string;
+	/**
+	 * Optional retry handler. When provided, a Retry icon button is rendered in
+	 * the top-right controls next to the theme toggle.
+	 */
+	onRetry?: () => void;
 }
 
 export function Gallery({
@@ -109,6 +114,7 @@ export function Gallery({
 	onSelectedChange,
 	renderSelectedItem = renderDefaultSelectedItem,
 	className,
+	onRetry,
 }: Readonly<GalleryProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -248,7 +254,7 @@ export function Gallery({
 				) : null}
 			</AnimatePresence>
 
-			<GalleryToggle open={isOpen} onToggle={handleToggle} />
+			<GalleryToggle open={isOpen} onToggle={handleToggle} onRetry={onRetry} />
 		</div>
 	);
 }
