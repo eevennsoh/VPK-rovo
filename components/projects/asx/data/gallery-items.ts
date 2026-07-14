@@ -5,15 +5,17 @@ import type { GalleryItem } from "@/components/blocks/gallery";
  *
  * Each entry is one design pattern the gallery carousel showcases. The card is a
  * labeled dock tile; selecting it reveals the pattern's design in the gallery
- * stage (see the `renderSelectedItem` prop in `../page.tsx`). Kanban shows the
- * real jira-kanban board; the others are title placeholders until their design
- * is added. Order: Card Kanban, Kanban, List, Queue, Work item, Terminal.
+ * stage (see the `renderSelectedItem` prop in `../page.tsx`). Card Kanban shows a
+ * single jira-issue card transitioning across agent activity states, Kanban
+ * shows the real jira-kanban board; the others are title placeholders until
+ * their design is added. Order: Card Kanban, Kanban, List, Queue, Work item,
+ * Terminal.
  */
 export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
 		id: "card",
 		title: "Card Kanban",
-		description: "A grid of agent-session cards — one tile per session at a glance.",
+		description: "A single work-item card that transitions across agent activity states.",
 		size: "portrait",
 	},
 	{

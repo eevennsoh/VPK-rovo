@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
+import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import AttachmentIcon from "@atlaskit/icon/core/attachment";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
-import EmojiAddIcon from "@atlaskit/icon/core/emoji-add";
-import MentionIcon from "@atlaskit/icon/core/mention";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
+import { AgentCardHeader } from "@/components/blocks/agent-card";
 import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
-import { PromptInputButton, PromptInputSubmit, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Avatar, AvatarFallback, AvatarImage, AvatarUnassigned } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
@@ -118,71 +116,79 @@ function JiraIssueAgentActivityPanel({
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 }>) {
 	const panelMessage = getJiraIssueAgentPanelMessage(activity);
+	const [reply, setReply] = useState("");
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
+	const [clickyActive, setClickyActive] = useState(false);
+	const canSubmit = Boolean(reply.trim());
 
 	function handleViewChat() {
 		onViewChat?.(activity);
 	}
 
+	const handleToggleRealtimeVoice = useCallback(() => {
+		setClickyActive(false);
+		setRealtimeVoiceActive((active) => !active);
+	}, []);
+	const handleStop = useCallback(() => {
+		setRealtimeVoiceActive(false);
+		setClickyActive(false);
+	}, []);
+	const handleToggleClicky = useCallback(() => {
+		setRealtimeVoiceActive(true);
+		setClickyActive((active) => !active);
+	}, []);
+
 	return (
-		<div className="flex flex-col gap-4 p-4">
-			<div className="flex items-start justify-between gap-4">
-				<div className="flex min-w-0 items-center gap-2">
-					<Avatar label={activity.name} shape="hexagon" size="sm">
+		<div className="flex flex-col gap-3 p-3">
+			<AgentCardHeader
+				action={
+					onViewChat ? (
+						<Button type="button" onClick={handleViewChat} size="compact" variant="outline">
+							View chat
+						</Button>
+					) : null
+				}
+				byline={<p className="text-xs leading-4 text-text-subtle">Just now</p>}
+				leading={
+					<Avatar label={activity.name} shape="hexagon" size="default">
 						{activity.avatarSrc ? <AvatarImage src={activity.avatarSrc} alt="" /> : null}
 						<AvatarFallback>{getAgentInitial(activity.name)}</AvatarFallback>
 					</Avatar>
-					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-						<span className="truncate text-base font-semibold leading-6 text-text">{activity.name}</span>
-						<span className="text-sm leading-5 text-text-subtlest">Just now</span>
-						{onViewChat ? (
-							<Button
-								type="button"
-								className="-ml-1 px-2 text-text-subtle hover:text-text"
-								onClick={handleViewChat}
-								size="compact"
-								variant="ghost"
-							>
-								View chat
-							</Button>
-						) : null}
-					</div>
-				</div>
-				<div className="flex shrink-0 items-center gap-1 rounded-lg border border-border bg-surface p-1 shadow-sm">
-					<Button type="button" aria-label="Add reaction" size="icon-compact" variant="ghost">
-						<EmojiAddIcon label="" size="small" />
-					</Button>
-					<Button type="button" aria-label="Mark agent update as done" size="icon-compact" variant="ghost">
-						<CheckMarkIcon label="" size="small" />
-					</Button>
-					<Button type="button" aria-label="More agent actions" size="icon-compact" variant="ghost">
-						<ShowMoreHorizontalIcon label="" size="small" />
-					</Button>
-				</div>
-			</div>
-			<p className="pl-8 text-base leading-6 text-text">{panelMessage}</p>
-			<FloatingComposer
-				addButton={<AvatarUnassigned kind="person" size="sm" />}
-				aria-label="Reply to agent"
-				className="rounded-xl border border-border bg-bg-input p-2 shadow-none"
-				onSubmit={(_, event) => event.preventDefault()}
-				actions={
-					<>
-						<PromptInputButton type="button" aria-label="Attach file" size="icon-sm" variant="ghost">
-							<AttachmentIcon label="" size="small" />
-						</PromptInputButton>
-						<PromptInputButton type="button" aria-label="Mention someone" size="icon-sm" variant="ghost">
-							<MentionIcon label="" size="small" />
-						</PromptInputButton>
-						<PromptInputSubmit className="rounded-full" size="icon-sm" />
-					</>
 				}
+				title={activity.name}
+			/>
+			<p className="text-sm leading-5 text-text">{panelMessage}</p>
+			<FloatingComposer
+				actions={
+					<RovoComposerActionButton
+						canSubmit={canSubmit}
+						clickyActive={clickyActive}
+						composerStatus="ready"
+						experimentalDarkCta
+						onStop={handleStop}
+						onToggleClicky={handleToggleClicky}
+						onToggleRealtimeVoice={handleToggleRealtimeVoice}
+						realtimeVoiceActive={realtimeVoiceActive}
+					/>
+				}
+				addButton={
+					<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+						<AddIcon label="" />
+					</PromptInputButton>
+				}
+				allowOverflow
+				aria-label="Reply to agent"
+				className="shadow-none"
+				onSubmit={() => setReply("")}
 			>
 				<PromptInputTextarea
-					aria-label="Agent reply"
-					className={cn(floatingComposerTextareaClassName, "min-h-6 text-sm leading-5")}
+					aria-label="Reply to agent"
+					className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 					enableDirectoryAutocomplete={false}
-					placeholder="Add a comment..."
+					onChange={(event) => setReply(event.currentTarget.value)}
+					placeholder="Ask, @mention, or / for actions"
 					rows={1}
+					value={reply}
 				/>
 			</FloatingComposer>
 		</div>
@@ -192,11 +198,13 @@ function JiraIssueAgentActivityPanel({
 function JiraIssueAgentActivityRow({
 	activity,
 	index,
+	onOpenChange,
 	onViewChat,
 	rowCount,
 }: Readonly<{
 	activity: JiraIssueAgentActivity;
 	index: number;
+	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	rowCount: number;
 }>) {
@@ -211,8 +219,12 @@ function JiraIssueAgentActivityRow({
 				: "rounded-[2px]";
 
 	return (
-		<HoverCard closeDelay={120} openDelay={120}>
+		<HoverCard onOpenChange={onOpenChange}>
+			{/* Base UI reads open/close delay on the Trigger, not the Root; 0/0 makes the reveal
+			    and dismissal instant so switching between rows doesn't overlap two flyouts. */}
 			<HoverCardTrigger
+				closeDelay={0}
+				delay={0}
 				render={(
 					<button
 						type="button"
@@ -250,8 +262,8 @@ function JiraIssueAgentActivityRow({
 			/>
 			<HoverCardContent
 				align="start"
-				className="w-[520px] max-w-[calc(100vw-48px)] rounded-xl border border-border bg-surface-overlay p-0 text-text shadow-xl"
-				side="top"
+				className="w-[400px] max-w-[calc(100vw-48px)] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"
+				side="right"
 				sideOffset={8}
 			>
 				<JiraIssueAgentActivityPanel activity={activity} onViewChat={onViewChat} />
@@ -315,7 +327,6 @@ function JiraIssueCyclingAgentLabel({
 						<Shimmer
 							as="span"
 							duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
-							initialBackgroundPosition="50% center"
 							spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
 							wave={false}
 							className="block min-w-0 truncate text-sm leading-5"
@@ -331,10 +342,12 @@ function JiraIssueCyclingAgentLabel({
 
 export function JiraIssueAgentActivityRows({
 	activities,
+	onOpenChange,
 	onViewChat,
 	shouldReduceMotion,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
+	onOpenChange?: (open: boolean) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
 }>) {
@@ -362,6 +375,7 @@ export function JiraIssueAgentActivityRows({
 						<JiraIssueAgentActivityRow
 							activity={activity}
 							index={index}
+							onOpenChange={onOpenChange}
 							onViewChat={onViewChat}
 							rowCount={activities.length}
 						/>

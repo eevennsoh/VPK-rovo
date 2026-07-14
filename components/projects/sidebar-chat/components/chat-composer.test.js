@@ -557,7 +557,7 @@ test("compact chat merges selected custom agent context before queueing prompts"
 	assert.match(context, /selectableAgents: readonly AgentSelectorAgent\[\];/u);
 	assert.match(context, /autoSelectAgentId\?: string;/u);
 	assert.match(context, /const autoSelectedAgentIdRef = useRef<string \| null>\(null\);/u);
-	assert.match(context, /const selectableAgents = useMemo<readonly AgentSelectorAgent\[\]>/u);
+	assert.match(context, /const selectableAgents = useMemo\(\s*\(\) => buildSelectableAgents\(/u);
 	assert.match(context, /selectAgent: \(agentId: string, options\?: SelectAgentOptions\) => void;/u);
 	assert.match(context, /resetAgentToRovo: \(options\?: \{ preserveCurrentThread\?: boolean \}\) => void;/u);
 	assert.match(context, /const nextAgent = agentProfileById\.get\(autoSelectAgentId\);/u);
@@ -587,7 +587,8 @@ test("compact chat registers session-created agents from agent result payloads",
 	assert.match(SESSION_AGENT_ENTRY_SOURCE, /params\.sessionAgentEntries\.find\(\s*\(entry\) => entry\.resultKey === resultKey\s*\)/u);
 	assert.match(SESSION_AGENT_REGISTRY_SOURCE, /const existingEntry = entries\.find\(\(item\) => item\.resultKey === entry\.resultKey\);/u);
 	assert.match(context, /\.\.\.staticAgentProfiles,[\s\S]*\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => entry\.profile\)/u);
-	assert.match(context, /\.\.\.staticAgents\.map\(toAgentSelectorAgent\),[\s\S]*\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => toAgentSelectorAgent\(entry\.profile\)\)/u);
+	assert.match(context, /buildSelectableAgents\(\s*agentProfiles \?\? ROVO_AGENT_SELECTOR_AGENTS,\s*normalizedSessionAgentEntries,\s*\)/u);
+	assert.match(ROVO_CHAT_HELPERS_SOURCE, /export function buildSelectableAgents\([\s\S]*sessionEntries\.map\(\(entry\) => \[[\s\S]*toAgentSelectorAgent\(entry\.profile\)/u);
 	assert.match(context, /registerCreatedAgentFromResult: \([\s\S]*agentResult: RovoDataParts\["agent-result"\],[\s\S]*options\?: RegisterCreatedAgentOptions[\s\S]*\) => RovoAgentProfile \| null;/u);
 	assert.match(SESSION_AGENT_REGISTRY_SOURCE, /lastTouchedAt = Date\.now\(\)/u);
 	assert.match(context, /const result = registerSessionAgentFromResult\(\{[\s\S]*agentResult,[\s\S]*entries: sessionAgentEntriesRef\.current,[\s\S]*sourceKey: options\?\.sourceKey,[\s\S]*staticAgentProfiles,[\s\S]*\}\);/u);
@@ -609,7 +610,7 @@ test("compact chat exposes normalized Untitled agent names for session-created a
 	assert.match(contextsIndex, /getStudioSessionAgentDisplayName,[\s\S]*\} from "@\/components\/projects\/rovo-core\/lib\/agent-records\/session-agent-entry";/u);
 	assert.match(context, /const normalizedSessionAgentEntries = useMemo\(/u);
 	assert.match(context, /\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => entry\.profile\)/u);
-	assert.match(context, /\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => toAgentSelectorAgent\(entry\.profile\)\)/u);
+	assert.match(context, /buildSelectableAgents\([\s\S]*normalizedSessionAgentEntries/u);
 	assert.match(context, /sessionAgentEntriesRef\.current = normalizedSessionAgentEntries;/u);
 	assert.match(context, /persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\);/u);
 	assert.match(context, /sessionAgentEntries: normalizedSessionAgentEntries,/u);
