@@ -98,8 +98,10 @@ export interface GalleryProps {
 	renderSelectedItem?: (item: GalleryItem) => ReactNode;
 	className?: string;
 	/**
-	 * Optional retry handler. When provided, a Retry icon button is rendered in
-	 * the top-right controls next to the theme toggle.
+	 * Handler for the Retry control in the top-right controls (to the left of the
+	 * theme toggle). The control is always rendered; when omitted it defaults to
+	 * reloading the page. Pass a handler to override with consumer-specific retry
+	 * behavior (e.g. resetting demo state, refetching).
 	 */
 	onRetry?: () => void;
 }

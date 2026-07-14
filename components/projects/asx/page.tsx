@@ -24,7 +24,6 @@ export default function AsxPage(): React.ReactElement {
 			<div className="relative min-h-dvh w-full bg-surface">
 				<Gallery
 					items={ASX_GALLERY_ITEMS}
-					onRetry={() => window.location.reload()}
 					renderSelectedItem={(item) =>
 						item.id === "kanban" ? (
 							<KanbanStage />

@@ -25,10 +25,16 @@ export interface GalleryToggleProps {
 	onToggle: () => void;
 	className?: string;
 	/**
-	 * Optional retry handler. When provided, a Retry icon button is rendered
-	 * next to the theme control.
+	 * Handler for the Retry control (rendered to the left of the theme toggle).
+	 * Defaults to reloading the current page; pass a handler to override with
+	 * consumer-specific retry behavior (e.g. resetting demo state, refetching).
 	 */
 	onRetry?: () => void;
+}
+
+// Default retry action when a consumer does not supply one: reload the page.
+function reloadPage(): void {
+	if (typeof window !== "undefined") window.location.reload();
 }
 
 function getThemeLabel(theme: GalleryTheme): string {
@@ -69,7 +75,7 @@ export function GalleryToggle({
 	open,
 	onToggle,
 	className,
-	onRetry,
+	onRetry = reloadPage,
 }: Readonly<GalleryToggleProps>) {
 	const { theme, setTheme } = useTheme();
 	const themeLabel = getThemeLabel(theme);
@@ -82,18 +88,16 @@ export function GalleryToggle({
 				className,
 			)}
 		>
-			{onRetry ? (
-				<button
-					type="button"
-					aria-label="Retry"
-					onClick={() => onRetry()}
-					className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-				>
-					<GalleryControlSquircle>
-						<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
-					</GalleryControlSquircle>
-				</button>
-			) : null}
+			<button
+				type="button"
+				aria-label="Retry"
+				onClick={() => onRetry()}
+				className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+			>
+				<GalleryControlSquircle>
+					<Icon render={<RetryIcon label="" color="currentColor" size="small" />} />
+				</GalleryControlSquircle>
+			</button>
 
 			<button
 				type="button"
