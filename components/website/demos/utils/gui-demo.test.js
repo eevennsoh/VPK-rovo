@@ -73,7 +73,7 @@ test("GUI full-config example covers optional control configuration paths", () =
 
 test("GUI full-config preview binds interactive controls to visible shader output", () => {
 	for (const sourceFragment of [
-		'import LiquidGradient from "@/components/website/demos/visual/shaders/liquid-gradient";',
+		'import LiquidGradient from "@/components/visual/liquid-gradient";',
 		"parseGUIColorToRgbHex(value) ?? fallback",
 		"const selectedTheme = THEME_PREVIEW[theme];",
 		"const shaderPalette = useMemo(",

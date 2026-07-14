@@ -530,7 +530,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("pattern", "Pattern", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("noise", "Noise", "@/components/website/demos/visual/shaders/noise"),
 	visualComponent("wave-gradient", "Wave Gradient", "@/components/website/demos/visual/shaders/wave-gradient"),
-	visualComponent("liquid-gradient", "Liquid Gradient", "@/components/website/demos/visual/shaders/liquid-gradient"),
+	visualComponent("liquid-gradient", "Liquid Gradient", "@/components/visual/liquid-gradient"),
 	visualComponent("logo-gradient", "Logo Gradient", "@/components/website/demos/visual/shaders/logo-gradient"),
 	visualComponent("logo-spectrum", "Logo Spectrum", "@/components/website/demos/visual/shaders/logo-spectrum"),
 	visualComponent("logo-crystal", "Logo Crystal", "@/components/website/demos/visual/shaders/logo-crystal"),

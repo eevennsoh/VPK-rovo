@@ -1,13 +1,18 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useId, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
+import {
+	DEFAULT_GALLERY_SELECTION_ORIGIN,
+	type GallerySelectionOrigin,
+	type GallerySelectionVisual,
+} from "../lib/gallery-selection";
 import { GalleryBackdrop } from "./gallery-backdrop";
-import { GalleryExpanded } from "./gallery-expanded";
+import { GallerySelectedStage } from "./gallery-selected-stage";
 import { GalleryToggle } from "./gallery-toggle";
 import { GalleryTrack } from "./gallery-track";
 
@@ -40,6 +45,46 @@ const BACKDROP = {
 	exit: { opacity: 0, transition: { duration: DUR_FAST, ease: EASE_IN } },
 } as const;
 
+const STAGE_SCROLL_OFFSET = 80;
+const EXIT_OVERLAP_MS = 140;
+
+interface GalleryVisualState {
+	active: GallerySelectionVisual | null;
+	exiting: GallerySelectionVisual | null;
+}
+
+function createInitialVisualState(selectedId: string | null): GalleryVisualState {
+	if (!selectedId) {
+		return { active: null, exiting: null };
+	}
+
+	return {
+		active: {
+			id: selectedId,
+			key: 0,
+			origin: DEFAULT_GALLERY_SELECTION_ORIGIN,
+			phase: "settled",
+		},
+		exiting: null,
+	};
+}
+
+function resolveSelectedId(
+	items: readonly GalleryItem[],
+	selectedId: string | null | undefined,
+): string | null {
+	if (selectedId && items.some((item) => item.id === selectedId)) return selectedId;
+	return items[0]?.id ?? null;
+}
+
+function renderDefaultSelectedItem(item: GalleryItem): ReactNode {
+	return (
+		<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
+			{item.title}
+		</h2>
+	);
+}
+
 export interface GalleryProps {
 	items: readonly GalleryItem[];
 	/** Controlled visibility of the pinned strip. */
@@ -47,6 +92,10 @@ export interface GalleryProps {
 	/** Uncontrolled initial visibility (default true). */
 	defaultOpen?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	selectedId?: string;
+	defaultSelectedId?: string;
+	onSelectedChange?: (selectedId: string) => void;
+	renderSelectedItem?: (item: GalleryItem) => ReactNode;
 	className?: string;
 }
 
@@ -55,67 +104,126 @@ export function Gallery({
 	open,
 	defaultOpen = true,
 	onOpenChange,
+	selectedId,
+	defaultSelectedId,
+	onSelectedChange,
+	renderSelectedItem = renderDefaultSelectedItem,
 	className,
 }: Readonly<GalleryProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
-	const instanceId = useId();
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
-	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [internalSelectedId, setInternalSelectedId] = useState<string | null>(() =>
+		resolveSelectedId(items, defaultSelectedId),
+	);
+	const [visualState, setVisualState] = useState<GalleryVisualState>(() =>
+		createInitialVisualState(resolveSelectedId(items, selectedId ?? defaultSelectedId)),
+	);
+	const selectedStageRef = useRef<HTMLElement | null>(null);
+	const isOpenRef = useRef(open ?? internalOpen);
+	const previousSelectedIdRef = useRef<string | null>(resolveSelectedId(items, selectedId ?? defaultSelectedId));
+	const selectionOriginsRef = useRef<Map<string, GallerySelectionOrigin>>(new Map());
+	const visualKeyRef = useRef(1);
 
-	// Controlled when `open` is provided; otherwise track internal state. Always
-	// notify via `onOpenChange`.
 	const isOpen = open ?? internalOpen;
-	// Mirror the resolved open state in a ref so a rapidly-repeated toggle reads the
-	// value the PREVIOUS click just set. Reading `open ?? internalOpen` from the
-	// callback's closure is stale between a click and its commit, so two fast clicks
-	// (open→close→open) would compute the same `next` twice and collapse into one
-	// toggle — the "stuck when clicked too fast" bug.
-	const isOpenRef = useRef(isOpen);
 	isOpenRef.current = isOpen;
+	const resolvedSelectedId = resolveSelectedId(items, selectedId ?? internalSelectedId);
+	const selectedItem =
+		resolvedSelectedId ? (items.find((item) => item.id === resolvedSelectedId) ?? null) : null;
 
 	useEffect(() => {
-		if (!isOpen && expandedId !== null) setExpandedId(null);
-	}, [expandedId, isOpen]);
+		if (selectedId !== undefined) return;
+		const nextSelectedId = resolveSelectedId(items, internalSelectedId);
+		if (nextSelectedId !== internalSelectedId) {
+			setInternalSelectedId(nextSelectedId);
+		}
+	}, [internalSelectedId, items, selectedId]);
 
 	const handleToggle = useCallback(() => {
 		const next = !isOpenRef.current;
 		isOpenRef.current = next;
 		if (open === undefined) setInternalOpen(next);
 		onOpenChange?.(next);
-		// Closing the strip must also dismiss any expanded card, or its morph-back
-		// target and focus-registry entry would be stranded when the strip unmounts.
-		if (!next) setExpandedId(null);
 	}, [open, onOpenChange]);
 
-	// Card DOM registry for focus restoration on close.
-	const cardRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-	const registerCard = useCallback((id: string, node: HTMLButtonElement | null) => {
-		if (node) cardRefs.current.set(id, node);
-		else cardRefs.current.delete(id);
-	}, []);
-
-	const getLayoutId = useCallback(
-		(id: string) => (shouldReduceMotion ? undefined : `${instanceId}-card-${id}`),
-		[instanceId, shouldReduceMotion],
+	const handleSelect = useCallback(
+		(id: string, origin: GallerySelectionOrigin) => {
+			if (id === resolvedSelectedId) return;
+			selectionOriginsRef.current.set(id, origin);
+			if (selectedId === undefined) setInternalSelectedId(id);
+			onSelectedChange?.(id);
+		},
+		[onSelectedChange, resolvedSelectedId, selectedId],
 	);
 
-	const handleExpand = useCallback((id: string) => setExpandedId(id), []);
-	const handleClose = useCallback(() => {
-		setExpandedId((current) => {
-			// Restore focus to the originating card once it has re-mounted.
-			if (current) {
-				const id = current;
-				requestAnimationFrame(() => cardRefs.current.get(id)?.focus());
+	useEffect(() => {
+		if (!resolvedSelectedId) {
+			setVisualState({ active: null, exiting: null });
+			return;
+		}
+		const origin =
+			selectionOriginsRef.current.get(resolvedSelectedId) ?? DEFAULT_GALLERY_SELECTION_ORIGIN;
+		setVisualState((current) => {
+			if (current.active?.id === resolvedSelectedId) {
+				return current.active.origin === origin
+					? current
+					: { ...current, active: { ...current.active, origin } };
 			}
-			return null;
+			const nextActive: GallerySelectionVisual = {
+				id: resolvedSelectedId,
+				key: visualKeyRef.current,
+				origin,
+				phase: current.active ? "enter" : "settled",
+			};
+			visualKeyRef.current += 1;
+			return {
+				active: nextActive,
+				exiting:
+					current.active && current.active.id !== resolvedSelectedId
+						? { ...current.active, phase: "exit" }
+						: null,
+			};
 		});
-	}, []);
+	}, [resolvedSelectedId]);
 
-	const expandedItem = expandedId ? (items.find((item) => item.id === expandedId) ?? null) : null;
-	const hasExpandedOverlay = isOpen && expandedItem !== null;
+	useEffect(() => {
+		if (!visualState.exiting) return;
+		const exitingKey = visualState.exiting.key;
+		const timeout = window.setTimeout(() => {
+			setVisualState((current) =>
+				current.exiting?.key === exitingKey ? { ...current, exiting: null } : current,
+			);
+		}, shouldReduceMotion ? 0 : EXIT_OVERLAP_MS);
+		return () => window.clearTimeout(timeout);
+	}, [shouldReduceMotion, visualState.exiting]);
+
+	useEffect(() => {
+		if (!selectedItem) return;
+		const previousSelectedId = previousSelectedIdRef.current;
+		previousSelectedIdRef.current = selectedItem.id;
+		if (!previousSelectedId || previousSelectedId === selectedItem.id || typeof window === "undefined") {
+			return;
+		}
+		const stage = selectedStageRef.current;
+		if (!stage) return;
+		const { top, bottom } = stage.getBoundingClientRect();
+		const isOffscreen =
+			top < STAGE_SCROLL_OFFSET || bottom > window.innerHeight - STAGE_SCROLL_OFFSET;
+		if (!isOffscreen) return;
+		stage.scrollIntoView({
+			behavior: shouldReduceMotion ? "auto" : "smooth",
+			block: "center",
+		});
+	}, [selectedItem, shouldReduceMotion]);
 
 	return (
 		<div className={cn(className)}>
+			{selectedItem ? (
+				<GallerySelectedStage
+					item={selectedItem}
+					stageRef={selectedStageRef}
+					renderSelectedItem={renderSelectedItem}
+				/>
+			) : null}
 			<AnimatePresence>
 				{isOpen ? (
 					<motion.div
@@ -125,46 +233,22 @@ export function Gallery({
 						initial="hidden"
 						animate="visible"
 						exit="exit"
-						// While a card is expanded, take the strip (and its cards) out of
-						// the tab order and a11y tree so keyboard/AT users can't reach
-						// behind the modal scrim.
-						inert={hasExpandedOverlay ? true : undefined}
 					>
-						{/* Veil fades on its own layer (variants inherit the strip's active
-						    label), so closing no longer dims the cards mid reverse-stagger. */}
 						<motion.div variants={BACKDROP} style={{ willChange: "opacity" }}>
 							<GalleryBackdrop />
 						</motion.div>
 						<GalleryTrack
 							items={items}
-							getLayoutId={getLayoutId}
-							expandedId={expandedId}
-							onExpand={handleExpand}
-							registerCard={registerCard}
+							selectedId={resolvedSelectedId}
+							activeVisual={visualState.active}
+							exitingVisual={visualState.exiting}
+							onSelect={handleSelect}
 						/>
 					</motion.div>
 				) : null}
 			</AnimatePresence>
 
-			<div
-				// Toggle sits behind the scrim while a card is expanded — keep it out
-				// of the tab order / a11y tree until the dialog closes. (Wrapper box
-				// has no layout impact; the toggle inside is position:fixed.)
-				inert={hasExpandedOverlay ? true : undefined}
-			>
-				<GalleryToggle open={isOpen} onToggle={handleToggle} />
-			</div>
-
-			<AnimatePresence>
-				{isOpen && expandedItem ? (
-					<GalleryExpanded
-						key="gallery-expanded"
-						item={expandedItem}
-						layoutId={getLayoutId(expandedItem.id)}
-						onClose={handleClose}
-					/>
-				) : null}
-			</AnimatePresence>
+			<GalleryToggle open={isOpen} onToggle={handleToggle} />
 		</div>
 	);
 }

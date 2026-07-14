@@ -12,7 +12,7 @@ import {
 	rgbaUnitToRgbHex,
 	type GUIRGBAColor,
 } from "@/components/utils/gui-color";
-import LiquidGradient from "@/components/website/demos/visual/shaders/liquid-gradient";
+import LiquidGradient from "@/components/visual/liquid-gradient";
 
 const THEME_OPTIONS = [
 	{

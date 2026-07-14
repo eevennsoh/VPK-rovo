@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const GALLERY_DETAIL: ComponentDetail = {
 	description:
-		"A bottom-pinned dock carousel: a horizontally scrollable strip of mixed-size cards pinned to the viewport bottom, sitting on a progressive backdrop blur of the page behind it. Cards magnify with cursor proximity (macOS-dock style), click to expand into a centered shared-element morph over a dimmed scrim, and a built-in toggle pill slides the strip in and out. Each card is a light-grey squircle surface whose title auto-scales to fill it.",
+		"A bottom-pinned dock carousel that doubles as an in-page selector. The mixed-size cards stay pinned to the viewport bottom over a progressive surface veil, magnify with cursor proximity (macOS-dock style), and now swap middle-page content instead of opening a lightbox. The selected card gets an organic gradient reveal, text recolors where the reveal overlaps it, and a built-in toggle pill slides the strip in and out.",
 	demoLayout: { previewHeight: "fixed", previewContentWidth: "full" },
 	importStatement: `import { Gallery, type GalleryItem } from "@/components/blocks/gallery";`,
 	usage: `const items: GalleryItem[] = [
@@ -17,13 +17,29 @@ export const GALLERY_DETAIL: ComponentDetail = {
 
 <Gallery items={items} />
 
-// Controlled visibility
-<Gallery items={items} open={open} onOpenChange={setOpen} />`,
+// Provide in-page content for the selected item
+<Gallery
+  items={items}
+  renderSelectedItem={(item) => <article>{item.title}</article>}
+/>
+
+// Controlled visibility + controlled selection
+<Gallery
+  items={items}
+  open={open}
+  onOpenChange={setOpen}
+  selectedId={selectedId}
+  onSelectedChange={setSelectedId}
+/>`,
 	props: [
 		{ name: "items", type: "readonly GalleryItem[]", required: true, description: "Cards to render in the dock. Each item has an id, title, description, and size (\"portrait\" | \"landscape\" | \"1x1\")." },
 		{ name: "open", type: "boolean", description: "Controlled visibility of the pinned strip. Pair with onOpenChange." },
 		{ name: "defaultOpen", type: "boolean", default: "true", description: "Initial visibility when uncontrolled." },
 		{ name: "onOpenChange", type: "(open: boolean) => void", description: "Called whenever the strip is shown or hidden (via the toggle pill or controlled prop)." },
+		{ name: "selectedId", type: "string", description: "Controlled selected card id. Defaults to the first valid item when omitted." },
+		{ name: "defaultSelectedId", type: "string", description: "Initial selected card id when the component manages its own selection." },
+		{ name: "onSelectedChange", type: "(selectedId: string) => void", description: "Called when a different card is selected from the pinned strip." },
+		{ name: "renderSelectedItem", type: "(item: GalleryItem) => ReactNode", description: "Renders the middle-page content for the currently selected item." },
 		{ name: "className", type: "string", description: "Extra classes merged onto the block root." },
 	],
 };

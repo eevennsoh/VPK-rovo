@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useRef, type CSSProperties, type JSX, type PointerEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";
@@ -8,6 +8,7 @@ import { buildScrollMaskBlurLayerStyles } from "@/components/visual/scroll-mask/
 import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
+import type { GallerySelectionOrigin, GallerySelectionVisual } from "../lib/gallery-selection";
 import { useDockPointer } from "../hooks/use-dock-magnification";
 import { useDragScroll } from "../hooks/use-drag-scroll";
 import { GalleryCard } from "./gallery-card";
@@ -61,24 +62,33 @@ const GALLERY_EDGE_BLUR_SIZE = "72px";
 const LEFT_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("left");
 const RIGHT_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("right");
 
+function getSelectionVisual(
+	itemId: string,
+	activeVisual: GallerySelectionVisual | null,
+	exitingVisual: GallerySelectionVisual | null,
+): GallerySelectionVisual | null {
+	if (activeVisual?.id === itemId) return activeVisual;
+	if (exitingVisual?.id === itemId) return exitingVisual;
+	return null;
+}
+
 export interface GalleryTrackProps {
 	items: readonly GalleryItem[];
-	/** Maps an item id to its morph layoutId (undefined under reduced motion). */
-	getLayoutId: (id: string) => string | undefined;
-	expandedId: string | null;
-	onExpand: (id: string) => void;
-	registerCard: (id: string, node: HTMLButtonElement | null) => void;
+	selectedId: string | null;
+	activeVisual: GallerySelectionVisual | null;
+	exitingVisual: GallerySelectionVisual | null;
+	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 	className?: string;
 }
 
 export function GalleryTrack({
 	items,
-	getLayoutId,
-	expandedId,
-	onExpand,
-	registerCard,
+	selectedId,
+	activeVisual,
+	exitingVisual,
+	onSelect,
 	className,
-}: Readonly<GalleryTrackProps>) {
+}: Readonly<GalleryTrackProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
 	const containerVariants = shouldReduceMotion ? TRACK_CONTAINER_REDUCED : TRACK_CONTAINER;
 	const { ref: overflowRef, canScrollLeft, canScrollRight } =
@@ -144,6 +154,8 @@ export function GalleryTrack({
 			<motion.div
 				ref={setScrollRef}
 				variants={containerVariants}
+				role="group"
+				aria-label="Gallery items"
 				onPointerDown={handlePointerDown}
 				onPointerMove={handlePointerMove}
 				onPointerUp={handlePointerUp}
@@ -165,14 +177,13 @@ export function GalleryTrack({
 					<GalleryCard
 						key={item.id}
 						item={item}
-						layoutId={getLayoutId(item.id)}
 						pointerX={pointerX}
 						scrollContainerRef={scrollRef}
 						wasDraggedRef={drag.wasDraggedRef}
 						dragging={drag.dragging}
-						isExpanded={expandedId === item.id}
-						onExpand={onExpand}
-						registerCard={registerCard}
+						isSelected={selectedId === item.id}
+						selectionVisual={getSelectionVisual(item.id, activeVisual, exitingVisual)}
+						onSelect={onSelect}
 					/>
 				))}
 			</motion.div>

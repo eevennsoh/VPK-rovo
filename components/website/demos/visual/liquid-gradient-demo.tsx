@@ -6,7 +6,7 @@ import { GUI } from "@/components/utils/gui";
 import { ROVO_SHADER_COLOR_HEX } from "@/lib/rovo-colors";
 import { token } from "@/lib/tokens";
 
-import LiquidGradient from "./shaders/liquid-gradient";
+import LiquidGradient from "@/components/visual/liquid-gradient";
 
 const DEFAULT_COLORS = [...ROVO_SHADER_COLOR_HEX];
 const MAX_COLORS = 8;

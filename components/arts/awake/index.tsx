@@ -14,7 +14,7 @@ import * as React from "react";
 
 import { useTheme } from "@/components/utils/theme-wrapper";
 import Bands from "@/components/website/demos/visual/shaders/bands";
-import LiquidGradient from "@/components/website/demos/visual/shaders/liquid-gradient";
+import LiquidGradient from "@/components/visual/liquid-gradient";
 import Particles from "@/components/website/demos/visual/shaders/particles";
 import Rings from "@/components/website/demos/visual/shaders/rings";
 import Noise, {

@@ -46,20 +46,38 @@ test("Gallery animation sources declare an explicit reduced-motion guard", () =>
 		/useReducedMotion/u,
 	);
 	assert.match(
-		readProjectFile("components/blocks/gallery/components/gallery-expanded.tsx"),
+		readProjectFile("components/blocks/gallery/components/gallery-selected-stage.tsx"),
+		/useReducedMotion/u,
+	);
+	assert.match(
+		readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx"),
 		/useReducedMotion/u,
 	);
 });
 
-test("Gallery uses a shared layoutId for the click-to-expand morph", () => {
-	assert.match(
-		readProjectFile("components/blocks/gallery/components/gallery-card.tsx"),
-		/layoutId/u,
+test("Gallery is now an in-page selector instead of a lightbox morph", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	assert.match(gallerySource, /selectedId\?: string;/u);
+	assert.match(gallerySource, /defaultSelectedId\?: string;/u);
+	assert.match(gallerySource, /onSelectedChange\?: \(selectedId: string\) => void;/u);
+	assert.match(gallerySource, /renderSelectedItem\?: \(item: GalleryItem\) => ReactNode;/u);
+	assert.match(gallerySource, /GallerySelectedStage/u);
+	assert.match(gallerySource, /scrollIntoView/u);
+	assert.doesNotMatch(gallerySource, /GalleryExpanded/u);
+	assert.doesNotMatch(gallerySource, /expandedId/u);
+	assert.equal(
+		fs.existsSync(
+			path.join(process.cwd(), "components/blocks/gallery/components/gallery-expanded.tsx"),
+		),
+		false,
 	);
-	assert.match(
-		readProjectFile("components/blocks/gallery/components/gallery-expanded.tsx"),
-		/layoutId/u,
-	);
+});
+
+test("Gallery cards remain mounted toggle buttons with origin-aware selection state", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
+	assert.match(source, /aria-pressed/u);
+	assert.match(source, /getGallerySelectionOriginFromPoint/u);
+	assert.match(source, /DEFAULT_GALLERY_SELECTION_ORIGIN/u);
 });
 
 test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
@@ -71,12 +89,41 @@ test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	);
 });
 
-test("Gallery clears expanded state when the controlled strip closes", () => {
-	const source = readProjectFile("components/blocks/gallery/components/gallery.tsx");
-	assert.match(source, /useEffect/u);
-	assert.match(source, /!isOpen && expandedId !== null/u);
-	assert.match(source, /setExpandedId\(null\)/u);
-	assert.match(source, /hasExpandedOverlay/u);
+test("Gallery selected surface preserves the organic ink-bloom contract", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
+	assert.match(source, /const ENTER_EASE = \[0\.45, 0, 0\.55, 1\] as const;/u);
+	assert.match(source, /const DUR_ENTER = 1\.4;/u);
+	assert.match(source, /const inkMaskSeed = seed \+ visual\.key \* 7919;/u);
+	assert.match(
+		source,
+		/useMemo\(\(\) => createInkMaskImage\(inkMaskSeed\), \[inkMaskSeed\]\)/u,
+	);
+	assert.match(source, /feTurbulence/u);
+	assert.match(source, /feDisplacementMap/u);
+	assert.match(source, /feGaussianBlur/u);
+	assert.match(source, /const originX = \(width \* visual\.origin\.xPercent\) \/ 100;/u);
+	assert.match(source, /const originY = \(height \* visual\.origin\.yPercent\) \/ 100;/u);
+	assert.match(source, /return `\$\{originX - offset\}px \$\{originY - offset\}px`;/u);
+	assert.match(source, /const targetRadius = isExitPhase \? 0 : revealRadius;/u);
+	assert.match(source, /if \(shouldReduceMotion\) \{\s*radius\.set\(targetRadius\);/u);
+	assert.match(source, /MASK_FEATHER_PX/u);
+	assert.match(source, /maskPosition,/u);
+	assert.match(source, /maskSize,/u);
+	assert.match(source, /maskImage: inkMaskImage/u);
+	assert.equal((source.match(/\bmaskImage:/gu) ?? []).length, 1);
+	assert.match(source, /maskMode: "alpha"/u);
+	assert.match(source, /BLUE_PALETTE/u);
+	assert.match(source, /LiquidGradient/u);
+	assert.match(source, /highlightTextRef/u);
+	assert.match(source, /text-text-inverse/u);
+});
+
+test("Gallery keeps the WebGL shader timeline continuous during selection exit", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
+	assert.doesNotMatch(source, /speed=\{visual\.phase/u);
+	assert.match(source, /speed=\{0\.18\}/u);
+	assert.doesNotMatch(source, /colors=\{\[\.\.\.BLUE_PALETTE\]\}/u);
+	assert.match(source, /colors=\{BLUE_PALETTE\}/u);
 });
 
 test("Gallery drag scroll cancels stale pending presses", () => {
@@ -93,4 +140,13 @@ test("Gallery backdrop uses masked surface veils and is pointer-transparent", ()
 	assert.match(source, /WebkitMaskImage/u);
 	assert.doesNotMatch(source, /BackdropFilter/u);
 	assert.match(source, /pointer-events-none/u);
+});
+
+test("Gallery demo swaps middle content in place", () => {
+	const source = readProjectFile("components/blocks/gallery/page.tsx");
+	assert.match(source, /renderSelectedItem/u);
+	assert.match(source, /\{item\.title\}/u);
+	assert.doesNotMatch(source, /article/u);
+	assert.doesNotMatch(source, /Placeholder middle-page content/u);
+	assert.doesNotMatch(source, /Click any card to morph it into a centered detail view/u);
 });

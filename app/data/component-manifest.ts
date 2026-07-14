@@ -673,7 +673,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent(
 		"liquid-gradient",
 		"Liquid Gradient",
-		"@/components/website/demos/visual/shaders/liquid-gradient",
+		"@/components/visual/liquid-gradient",
 	),
 	visualComponent(
 		"logo-gradient",

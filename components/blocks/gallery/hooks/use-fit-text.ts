@@ -9,6 +9,8 @@ export interface UseFitTextOptions {
 	max?: number;
 	/** Search precision (px). Smaller = finer fit, more measurement passes. */
 	precision?: number;
+	/** Additional text elements that should mirror the fitted font size. */
+	syncTextRefs?: readonly RefObject<HTMLElement | null>[];
 }
 
 export interface UseFitTextResult<C extends HTMLElement, T extends HTMLElement> {
@@ -22,10 +24,8 @@ export interface UseFitTextResult<C extends HTMLElement, T extends HTMLElement> 
  * Scale a text element's font size up to the largest value where it still fits — in
  * BOTH width and height — inside its container, letting the text wrap onto multiple
  * lines. The container is attached via a CALLBACK ref so the fit re-runs every time
- * the element mounts — including a RE-MOUNT after the card collapses out of its
- * expanded overlay (the layoutId morph swaps the button for a spacer and back, which
- * a deps-keyed effect would miss, leaving the text at its default size). Also re-fits
- * on container resize (ResizeObserver) and when the `text` changes.
+ * the element mounts, and again on container resize (ResizeObserver) or when the
+ * `text` changes.
  *
  * The dock's magnification scales cards via CSS transform, which does NOT change
  * layout size, so hovering never triggers a re-fit. Font size is written imperatively
@@ -33,7 +33,7 @@ export interface UseFitTextResult<C extends HTMLElement, T extends HTMLElement> 
  */
 export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTMLElement = HTMLSpanElement>(
 	text: string,
-	{ min = 6, max = 200, precision = 0.5 }: Readonly<UseFitTextOptions> = {},
+	{ min = 6, max = 200, precision = 0.5, syncTextRefs = [] }: Readonly<UseFitTextOptions> = {},
 ): UseFitTextResult<C, T> {
 	const textRef = useRef<T | null>(null);
 	const containerElementRef = useRef<C | null>(null);
@@ -48,6 +48,14 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 		const availableHeight = container.clientHeight;
 		if (availableWidth === 0 || availableHeight === 0) return;
 
+		const applyFontSize = (size: number) => {
+			const fontSize = `${size}px`;
+			element.style.fontSize = fontSize;
+			for (const syncedRef of syncTextRefs) {
+				if (syncedRef.current) syncedRef.current.style.fontSize = fontSize;
+			}
+		};
+
 		// Binary-search the largest font size that fits both axes. `best` tracks the
 		// last size known to fit so we never leave the text overflowing.
 		let low = min;
@@ -55,7 +63,7 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 		let best = min;
 		while (high - low > precision) {
 			const mid = (low + high) / 2;
-			element.style.fontSize = `${mid}px`;
+			applyFontSize(mid);
 			const fits =
 				element.scrollWidth <= availableWidth && element.scrollHeight <= availableHeight;
 			if (fits) {
@@ -65,8 +73,8 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 				high = mid;
 			}
 		}
-		element.style.fontSize = `${best}px`;
-	}, [text, min, max, precision]);
+		applyFontSize(best);
+	}, [text, min, max, precision, syncTextRefs]);
 
 	const containerRef = useCallback(
 		(node: C | null) => {

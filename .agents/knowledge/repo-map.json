@@ -7161,7 +7161,7 @@
 						"category": "visual",
 						"slug": "liquid-gradient",
 						"name": "Liquid Gradient",
-						"importPath": "@/components/website/demos/visual/shaders/liquid-gradient"
+						"importPath": "@/components/visual/liquid-gradient"
 					},
 					{
 						"category": "visual",

@@ -1,7 +1,14 @@
 "use client";
 
 import { motion, useReducedMotion, useTransform, type MotionValue } from "motion/react";
-import { useCallback, useRef, type RefObject } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	type KeyboardEvent,
+	type PointerEvent,
+	type RefObject,
+} from "react";
 
 import Squircle from "@/components/website/demos/visual/shaders/squircle";
 import { token } from "@/lib/tokens";
@@ -10,6 +17,14 @@ import { cn } from "@/lib/utils";
 import type { GalleryItem } from "../data/gallery-items";
 import { useDockScale } from "../hooks/use-dock-magnification";
 import { useFitText } from "../hooks/use-fit-text";
+import {
+	DEFAULT_GALLERY_SELECTION_ORIGIN,
+	getGallerySelectionOriginFromPoint,
+	type GallerySelectionOrigin,
+	type GallerySelectionVisual,
+} from "../lib/gallery-selection";
+import { GallerySelectedSurface } from "./gallery-selected-surface";
+import { GalleryTitleLines } from "./gallery-title-lines";
 
 // Three fixed footprints (bottom-aligned in the track). Squircle needs pixel
 // dimensions, so these are numbers rather than Tailwind size classes. Cards grow
@@ -21,15 +36,9 @@ const SIZE_DIMS: Record<GalleryItem["size"], { width: number; height: number }> 
 	"1x1": { width: 112, height: 112 },
 };
 
-// ── vpk motion tokens as resolved cubic-bezier arrays (Motion cannot read var()) ──
 const EASE_IN = [0.6, 0, 0.8, 0.6] as const; // --ease-in (practical EXIT)
 const DUR_MEDIUM = 0.2; // --duration-medium
 const DUR_FAST = 0.1; // --duration-fast
-// Morph-back (close) timing: on dismiss the overlay unmounts and this strip card
-// re-mounts, so ITS layout transition owns the return morph. Use the faster
-// practical exit curve per the asymmetric-exit rule (the enter morph timing lives
-// on the expanded overlay). Without this the return would run Motion's default.
-const CARD_MORPH_BACK = { layout: { duration: DUR_MEDIUM, ease: EASE_IN } } as const;
 
 // Smooth glide-in for the staggered entrance. A bounce:0 spring (no overshoot)
 // decelerates naturally — much smoother than the bold ADS ease-out cubic-bezier,
@@ -72,143 +81,134 @@ const CARD_ITEM_REDUCED = {
 
 export interface GalleryCardProps {
 	item: GalleryItem;
-	/** Shared-element morph id (undefined under reduced motion → plain cross-fade). */
-	layoutId: string | undefined;
 	pointerX: MotionValue<number>;
 	scrollContainerRef: RefObject<HTMLDivElement | null>;
 	/** Read to bail the click that ends a drag. */
 	wasDraggedRef: RefObject<boolean>;
 	/** Pauses dock magnification while the track is being panned. */
 	dragging: boolean;
-	/** When true this card is morphed into the overlay; the strip keeps a spacer. */
-	isExpanded: boolean;
-	onExpand: (id: string) => void;
-	/** Registers the DOM node so the orchestrator can restore focus on close. */
-	registerCard: (id: string, node: HTMLButtonElement | null) => void;
+	isSelected: boolean;
+	selectionVisual: GallerySelectionVisual | null;
+	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 }
 
 export function GalleryCard({
 	item,
-	layoutId,
 	pointerX,
 	scrollContainerRef,
 	wasDraggedRef,
 	dragging,
-	isExpanded,
-	onExpand,
-	registerCard,
+	isSelected,
+	selectionVisual,
+	onSelect,
 }: Readonly<GalleryCardProps>) {
 	const { width, height } = SIZE_DIMS[item.size];
 	const cardRef = useRef<HTMLButtonElement | null>(null);
+	const highlightTextRef = useRef<HTMLSpanElement | null>(null);
+	const pendingOriginRef = useRef<GallerySelectionOrigin>(DEFAULT_GALLERY_SELECTION_ORIGIN);
 	const scale = useDockScale({ pointerX, cardRef, scrollContainerRef, disabled: dragging });
-	// The dock scale grows the button VISUALLY (transform), which does not reserve
-	// layout space — so magnified cards would overlap their neighbours. Driving the
-	// WRAPPER's layout width by the same scale makes the flex row reflow and push
-	// neighbours apart, preserving the gap (macOS-dock behaviour). Height is left at
-	// rest: cards grow UPWARD via the transform into the track's `pt-24` headroom, so
-	// vertical growth never needs to reserve layout space. Function form reads the
-	// MotionValue in a callback (never during render).
 	const scaledWidth = useTransform(() => width * scale.get());
-	// vpk mandates an explicit reduced-motion guard on every animation source. The
-	// dock scale (useDockScale) and the shared-element morph (layoutId, undefined
-	// under reduced motion from the orchestrator) both quiet themselves; this guard
-	// also collapses the layout transition so any residual morph resolves instantly.
 	const prefersReducedMotion = useReducedMotion();
 	const itemVariants = prefersReducedMotion ? CARD_ITEM_REDUCED : CARD_ITEM;
+	const { containerRef, textRef } = useFitText<HTMLDivElement, HTMLSpanElement>(item.title, {
+		syncTextRefs: [highlightTextRef],
+	});
 
-	// Scale the title to fill the card, wrapping onto multiple lines as needed.
-	const { containerRef, textRef } = useFitText<HTMLDivElement, HTMLSpanElement>(item.title);
+	useEffect(() => {
+		if (!selectionVisual || !textRef.current || !highlightTextRef.current) return;
+		highlightTextRef.current.style.fontSize = textRef.current.style.fontSize;
+	}, [selectionVisual, textRef]);
 
-	const setRef = useCallback(
-		(node: HTMLButtonElement | null) => {
-			cardRef.current = node;
-			registerCard(item.id, node);
-		},
-		[item.id, registerCard],
-	);
+	const setRef = useCallback((node: HTMLButtonElement | null) => {
+		cardRef.current = node;
+	}, []);
+
+	const setPointerOrigin = useCallback((clientX: number, clientY: number) => {
+		const rect = cardRef.current?.getBoundingClientRect();
+		if (!rect) {
+			pendingOriginRef.current = DEFAULT_GALLERY_SELECTION_ORIGIN;
+			return;
+		}
+		pendingOriginRef.current = getGallerySelectionOriginFromPoint(
+			rect.width,
+			rect.height,
+			clientX,
+			clientY,
+			rect.left,
+			rect.top,
+		);
+	}, []);
 
 	const handleClick = useCallback(() => {
-		// A press that ended a pan must not open the card.
 		if (wasDraggedRef.current) return;
-		onExpand(item.id);
-	}, [item.id, onExpand, wasDraggedRef]);
+		if (isSelected) return;
+		onSelect(item.id, pendingOriginRef.current);
+	}, [isSelected, item.id, onSelect, wasDraggedRef]);
 
-	// Three layers keep transform ownership cleanly separated so nothing clobbers
-	// anything else:
-	//   • WRAPPER (flex child / stagger item): entrance y + opacity, and the animated
-	//     layout WIDTH that reserves the magnified footprint. Stays mounted across
-	//     expand→collapse so it holds the track slot while the button morphs away.
-	//   • SCALE layer (non-layout): the dock `scale` from a bottom-centre origin —
-	//     decoupled from layoutId so the origin is never hijacked (grows upward only).
-	//   • BUTTON (layoutId): the shared-element morph target and click surface, at its
-	//     fixed base footprint; the scale layer sizes it visually.
+	const handlePointerDown = useCallback(
+		(event: PointerEvent<HTMLButtonElement>) => {
+			setPointerOrigin(event.clientX, event.clientY);
+		},
+		[setPointerOrigin],
+	);
+
+	const handleKeyDown = useCallback((event: KeyboardEvent<HTMLButtonElement>) => {
+		if (event.key !== "Enter" && event.key !== " ") return;
+		pendingOriginRef.current = DEFAULT_GALLERY_SELECTION_ORIGIN;
+	}, []);
+
 	return (
 		<motion.div
 			variants={itemVariants}
-			// Animated layout width (base × dock scale) reserves the magnified footprint
-			// so neighbours are pushed apart and the inter-card gap is preserved. The
-			// base-size button is centred inside and scaled on top of that. `items-end`
-			// keeps it bottom-aligned as it grows upward.
 			className="flex shrink-0 items-end justify-center"
 			style={{ width: scaledWidth, height, willChange: "transform, opacity" }}
 		>
-			{isExpanded ? null : (
-				<motion.div
-					// The dock scale lives on this NON-layout layer, deliberately decoupled
-					// from the button's `layoutId`. Motion's layout projection manages the
-					// transform-origin of a layoutId element (forcing it toward centre under
-					// a transformed ancestor, e.g. the docs preview), which made the card
-					// scale from its centre and clip at the strip's bottom edge. On a plain
-					// motion.div the `bottom center` origin is always honoured, so the card
-					// grows UPWARD into the track headroom and is never cut off.
-					style={{ scale, transformOrigin: "bottom center", willChange: "transform" }}
+			<motion.div
+				style={{ scale, transformOrigin: "bottom center", willChange: "transform" }}
+			>
+				<button
+					ref={setRef}
+					type="button"
+					aria-label={`Select ${item.title}`}
+					aria-pressed={isSelected ? true : undefined}
+					onClick={handleClick}
+					onPointerDown={handlePointerDown}
+					onKeyDown={handleKeyDown}
+					className={cn(
+						"relative block rounded-3xl text-left outline-none",
+						"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					)}
+					style={{ width, height }}
 				>
-					<motion.button
-						ref={setRef}
-						layoutId={layoutId}
-						transition={prefersReducedMotion ? { duration: 0 } : CARD_MORPH_BACK}
-						type="button"
-						aria-label={`Expand ${item.title}`}
-						onClick={handleClick}
-						className={cn(
-							"relative block rounded-3xl text-left outline-none",
-							"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-						)}
-						// Fixed base footprint; the surrounding layer scales it (the wrapper's
-						// animated width reserves the matching layout space).
-						style={{ width, height }}
-					>
-					{/* Opaque light-grey squircle surface (elevation.surface.sunken — the
-					    Squircle's own default fill is a semi-transparent neutral). */}
 					<Squircle
 						width={width}
 						height={height}
 						strokeWidth={0}
 						fillColor={token("elevation.surface.sunken")}
+						contentClassName="relative h-full w-full overflow-hidden"
 						style={{ boxShadow: token("elevation.shadow.raised") }}
-					/>
-					{/* Bottom-anchored, auto-fitting title on its own layer — a SIBLING of the
-					    Squircle, so it is untouched by the Squircle's internal fallback→
-					    corner-shape DOM swap (which would otherwise orphan the fit observer and
-					    leave the text at its default size). Each word gets its own line. The
-					    button's aria-label already names the card, so this text is decorative. */}
-					<div aria-hidden="true" className="pointer-events-none absolute inset-0 p-6">
-						<div ref={containerRef} className="flex h-full w-full flex-col justify-end">
-							<span
-								ref={textRef}
-								className="block w-full font-semibold leading-[1.02] tracking-tight text-text"
-							>
-								{item.title.split(/\s+/).map((word, index) => (
-									<span key={index} className="block">
-										{word}
-									</span>
-								))}
-							</span>
+					>
+						{selectionVisual ? (
+							<GallerySelectedSurface
+								itemId={item.id}
+								title={item.title}
+								width={width}
+								height={height}
+								visual={selectionVisual}
+								highlightTextRef={highlightTextRef}
+							/>
+						) : null}
+						<div
+							aria-hidden="true"
+							className="pointer-events-none absolute inset-0 z-0 p-6"
+						>
+							<div ref={containerRef} className="flex h-full w-full flex-col justify-end">
+								<GalleryTitleLines title={item.title} textRef={textRef} className="text-text" />
+							</div>
 						</div>
-					</div>
-					</motion.button>
-				</motion.div>
-			)}
+					</Squircle>
+				</button>
+			</motion.div>
 		</motion.div>
 	);
 }
