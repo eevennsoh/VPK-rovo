@@ -165,7 +165,10 @@ export function GalleryTrack({
 				className={cn(
 					// Bottom-aligned scroll strip with top headroom so magnified cards
 					// grow upward without clipping. Scrollbar hidden; edge fades via mask.
-					"relative flex items-end gap-3 overflow-x-auto px-6 pt-24 pb-4 [justify-content:safe_center]",
+					// `justify-center-safe` centers the cards when they fit; once they
+					// overflow, `safe` falls back to start alignment so none are clipped
+					// past the scroll origin and the strip stays fully scrollable.
+					"relative flex items-end justify-center-safe gap-3 overflow-x-auto px-6 pt-24 pb-4",
 					"[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 					"[mask-image:var(--gallery-edge-mask)] [-webkit-mask-image:var(--gallery-edge-mask)]",
 					drag.dragging ? "cursor-grabbing select-none" : "cursor-grab",

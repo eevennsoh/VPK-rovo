@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 79,
-			"pageCount": 56
+			"ownerImportCount": 80,
+			"pageCount": 57
 		},
 		"pages": [
 			{
@@ -3850,6 +3850,22 @@
 					}
 				],
 				"source": "app/arts/rovo-fable/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/asx",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/asx/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5157,7 +5173,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 395,
+			"manifestEntryCount": 396,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5727,13 +5743,19 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 10,
+				"entryCount": 11,
 				"entries": [
 					{
 						"category": "projects",
 						"slug": "admin",
 						"name": "Admin",
 						"importPath": "@/components/projects/admin"
+					},
+					{
+						"category": "projects",
+						"slug": "asx",
+						"name": "ASX",
+						"importPath": "@/components/projects/asx"
 					},
 					{
 						"category": "projects",
