@@ -94,17 +94,20 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(GENERATIVE_SOURCE, /RichTextCommandMenuSearchField,[\s\S]*RichTextSuggestionMenu,[\s\S]*getMentionChildItems,/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionConfig \{[\s\S]*ariaLabel\?: string;[\s\S]*onSubmit: \(request: JiraIssueGenerativeActionRequest\) => void \| Promise<void>;/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionRequest \{[\s\S]*kind: JiraIssueGenerativeActionKind;[\s\S]*prompt: string;[\s\S]*issue: JiraIssueGenerativeActionIssue;[\s\S]*selectedItem\?: JiraIssueGenerativeActionSelectedItem;/);
-	assert.match(GENERATIVE_SOURCE, /className=\{cn\([\s\S]*"absolute top-2 -right-6 z-20 inline-flex size-4[\s\S]*group-hover\/jira-issue:opacity-100 group-focus-within\/jira-issue:opacity-100 data-open:opacity-100/);
+	assert.match(GENERATIVE_SOURCE, /className=\{cn\([\s\S]*"absolute top-2 -right-6 z-20 inline-flex size-4[\s\S]*"opacity-0 transition-\[background-color,opacity\] duration-fast ease-in motion-reduce:transition-none"[\s\S]*group-hover\/jira-issue:opacity-100 group-hover\/jira-issue:duration-normal group-hover\/jira-issue:ease-out-practical group-focus-within\/jira-issue:opacity-100 group-focus-within\/jira-issue:duration-normal group-focus-within\/jira-issue:ease-out-practical/);
+	assert.doesNotMatch(GENERATIVE_SOURCE, /delay-200|translate-x/);
 	assert.match(GENERATIVE_SOURCE, /<GenerativeIndicatorIcon label="" size="small" spacing="none" color="currentColor" \/>/);
 	assert.match(GENERATIVE_SOURCE, /className="inline-flex size-3 items-center justify-center \[&>span\]:size-3 \[&_svg\]:size-3"/);
 	assert.match(GENERATIVE_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/);
-	assert.match(GENERATIVE_SOURCE, /<PopoverContent[\s\S]*align="start"[\s\S]*className="z-\[600\] w-\[360px\] gap-0 overflow-hidden border border-border bg-surface-overlay p-0 text-text shadow-xl"[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="right"[\s\S]*sideOffset=\{8\}/);
-	assert.match(GENERATIVE_SOURCE, /className="rich-text-command-menu-embedded"/);
+	assert.match(GENERATIVE_SOURCE, /<PopoverContent[\s\S]*align="start"[\s\S]*className="z-\[600\] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="right"[\s\S]*sideOffset=\{-16\}/);
+	assert.match(GENERATIVE_SOURCE, /className="rich-text-command-menu-borderless"/);
 	assert.match(GENERATIVE_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*icon=\{<RovoColorIcon size="xxsmall" \/>\}[\s\S]*label="Ask Rovo"/);
 	assert.match(GENERATIVE_SOURCE, /getMentionChildItems\(EDITOR_PALETTE_MENTION_SOURCES, "skill"\)/);
 	assert.match(GENERATIVE_SOURCE, /headingLabel: "Skills"/);
 	assert.match(GENERATIVE_SOURCE, /getMentionChildItems\(EDITOR_PALETTE_MENTION_SOURCES, "subagent"\)/);
 	assert.match(GENERATIVE_SOURCE, /headingLabel: "Agents"/);
+	assert.match(GENERATIVE_SOURCE, /JIRA_ISSUE_GENERATIVE_SECTION_LIMIT = 5/);
+	assert.match(GENERATIVE_SOURCE, /label: "Browse all"/);
 	assert.match(GENERATIVE_SOURCE, /return `\$\{prompt\.trim\(\)\}\\n\\nJira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}`;/);
 	assert.match(GENERATIVE_SOURCE, /return `Use the "\$\{item\.label\}" skill for Jira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}\.`;/);
 	assert.match(GENERATIVE_SOURCE, /return `Ask "\$\{item\.label\}" to help with Jira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}\.`;/);
@@ -124,7 +127,9 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ HoverCard, HoverCardContent, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ FloatingComposer \} from "@\/components\/projects\/shared\/components\/floating-composer";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PromptInputButton, PromptInputSubmit, PromptInputTextarea \} from "@\/components\/ui-custom\/prompt-input";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PromptInputButton, PromptInputTextarea \} from "@\/components\/ui-custom\/prompt-input";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentCardHeader \} from "@\/components\/blocks\/agent-card";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ RovoComposerActionButton \} from "@\/components\/projects\/shared\/components\/rovo-composer-send-controls";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityRow\(\{\n\tactivity,\n\tindex,\n\tonViewChat,\n\trowCount,/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowRadiusClassName = rowCount === 1[\s\S]*\? "rounded-sm"[\s\S]*index === 0[\s\S]*\? "rounded-tl-\[6px\] rounded-tr-\[6px\] rounded-bl-\[2px\] rounded-br-\[2px\]"[\s\S]*index === rowCount - 1[\s\S]*\? "rounded-tl-\[2px\] rounded-tr-\[2px\] rounded-bl-\[6px\] rounded-br-\[6px\]"[\s\S]*: "rounded-\[2px\]";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-surface-hovered/);
@@ -148,7 +153,8 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /window\.setTimeout\(\(\) => \{[\s\S]*getJiraIssueAgentCycleDelay\(cycleIntervalMs, cycleIntervalJitterMs\)/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">[\s\S]*key=\{label\}[\s\S]*initial=\{shouldReduceMotion \? false : \{ opacity: 0, y: -4 \}\}[\s\S]*exit=\{shouldReduceMotion \? undefined : \{ opacity: 0, y: 4 \}\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /duration=\{JIRA_ISSUE_AGENT_SHIMMER_DURATION\}[\s\S]*spread=\{JIRA_ISSUE_AGENT_SHIMMER_SPREAD\}[\s\S]*wave=\{false\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /initialBackgroundPosition="50% center"/);
+	// Shimmer sweeps from the default 100% (left→right, hits the first word); no 50% override.
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /initialBackgroundPosition=/);
 	assert.match(SHIMMER_SOURCE, /initialBackgroundPosition\?: string;/);
 	assert.match(SHIMMER_SOURCE, /const resolvedInitialBackgroundPosition = initialBackgroundPosition \?\? "100% center";/);
 	assert.match(SHIMMER_SOURCE, /const shimmerBackgroundPosition = useMemo\(/);
@@ -165,9 +171,16 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="inline-flex min-w-0 items-baseline text-sm leading-5 text-text-subtlest">[\s\S]*<AnimatedDots \/>/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AnimatedDots className="-ml-0\.5 \[&>span\]:text-sm" \/>/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">\s*<StatusInformationIcon label="" size="small" color="currentColor" \/>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard closeDelay=\{120\} openDelay=\{120\}>[\s\S]*<HoverCardTrigger[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-\[520px\] max-w-\[calc\(100vw-48px\)\] rounded-xl border border-border bg-surface-overlay p-0 text-text shadow-xl"[\s\S]*<JiraIssueAgentActivityPanel activity=\{activity\} onViewChat=\{onViewChat\} \/>/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<Button[\s\S]*onClick=\{handleViewChat\}[\s\S]*View chat/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<FloatingComposer[\s\S]*addButton=\{<AvatarUnassigned kind="person" size="sm" \/>}[\s\S]*aria-label="Reply to agent"[\s\S]*<PromptInputSubmit className="rounded-full" size="icon-sm" \/>[\s\S]*<PromptInputTextarea[\s\S]*placeholder="Add a comment\.\.\."/);
+	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), panel is the
+	// 320px-family 400px overlay with no border, and the exit transition is zeroed.
+	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel activity=\{activity\} onViewChat=\{onViewChat\} \/>/);
+	// Panel uses the agent-directory lockup + the dark-CTA compact composer.
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<p className="text-xs leading-4 text-text-subtle">Just now<\/p>\}[\s\S]*title=\{activity\.name\}/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View chat/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className="shadow-none"[\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleRealtimeVoice = useCallback\(\(\) => \{\s*setClickyActive\(false\);\s*setRealtimeVoiceActive\(\(active\) => !active\);/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleClicky = useCallback\(\(\) => \{\s*setRealtimeVoiceActive\(true\);\s*setClickyActive\(\(active\) => !active\);/);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /EmojiAddIcon|ShowMoreHorizontalIcon|PromptInputSubmit/);
 	assert.match(SOURCE, /"relative w-full overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full overflow-visible outline-none"/);
 	assert.match(SOURCE, /const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working" \|\| resolvedAgentActivityMode === "awaiting-input";/);

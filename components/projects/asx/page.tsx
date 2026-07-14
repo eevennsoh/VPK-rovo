@@ -3,6 +3,7 @@
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery } from "@/components/blocks/gallery";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
+import { CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 
 // ---------------------------------------------------------------------------
@@ -10,8 +11,9 @@ import { KanbanStage } from "./components/kanban-stage";
 //
 // The gallery dock is the base surface: each card is a design pattern for the
 // agent sessions experience. Selecting a card reveals its design in the gallery
-// stage via `renderSelectedItem`. Kanban shows the real jira-kanban board; other
-// patterns fall back to a large title placeholder until their design is added.
+// stage via `renderSelectedItem`. Card Kanban shows a single jira-issue card
+// transitioning across agent activity states, Kanban shows the real jira-kanban
+// board; the remaining patterns fall back to a large title placeholder.
 // ---------------------------------------------------------------------------
 
 export default function AsxPage(): React.ReactElement {
@@ -25,7 +27,9 @@ export default function AsxPage(): React.ReactElement {
 				<Gallery
 					items={ASX_GALLERY_ITEMS}
 					renderSelectedItem={(item) =>
-						item.id === "kanban" ? (
+						item.id === "card" ? (
+							<CardKanbanStage />
+						) : item.id === "kanban" ? (
 							<KanbanStage />
 						) : (
 							<h2 className="text-center font-semibold text-4xl tracking-tight text-text sm:text-6xl">
