@@ -7,13 +7,12 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { motion, type Variants } from "motion/react";
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
-import { LogoThirdParty } from "@/components/ui/logo-third-party";
+import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
@@ -117,20 +116,16 @@ function filterAgentsByQuery(
 }
 
 function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): ReactElement {
-	if (agent.brandName) {
-		return <LogoThirdParty className="shrink-0" label={agent.name} name={agent.brandName} size="small" />;
-	}
 	return (
-		<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
-			{agent.logoName ? (
-				<AtlassianLogo name={agent.logoName} size="small" themeAware label={agent.name} />
-			) : agent.avatarSrc ? (
-				<Avatar shape="hexagon" size="sm" className="shrink-0">
-					<AvatarImage alt="" src={agent.avatarSrc} className="object-contain" />
-					<AvatarFallback>{agent.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-				</Avatar>
-			) : null}
-		</span>
+		<AgentAvatarVisual
+			avatarClassName="shrink-0"
+			avatarSrc={agent.avatarSrc}
+			brandName={agent.brandName}
+			fallbackText={agent.name.slice(0, 2).toUpperCase()}
+			label={agent.name}
+			logoName={agent.logoName}
+			sizePx={24}
+		/>
 	);
 }
 

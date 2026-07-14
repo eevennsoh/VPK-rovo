@@ -21,6 +21,7 @@ import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { Separator } from "@/components/ui/separator";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { getSkillIcon } from "@/lib/skill-icons";
@@ -243,7 +244,7 @@ export interface AgentCardProps {
 	avatarSrc?: string;
 	insetLogo?: boolean;
 	logoName?: AtlassianLogoName;
-	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands), replacing the hexagon avatar. */
+	/** When set, renders the upstream `@atlassian/logo-third-party` borderless glyph inside the hexagon avatar. */
 	brandName?: ThirdPartyLogoName;
 	/** Flat icon shown by the `"template"` variant header (when there is no banner). */
 	iconSrc?: string;
@@ -496,34 +497,19 @@ export function AgentCard({
 						) : null)
 					}
 					byline={<AgentCardByline publisher={publisher} verified={verified} />}
-					leading={
-						brandName ? (
-							<LogoThirdParty label={name} name={brandName} size="large" />
-						) : (
-							<Avatar shape="hexagon" size="default">
-								{logoName ? (
-									<AtlassianLogo
-										name={logoName}
-										size={logoName === "atlassian" ? "xsmall" : "medium"}
-										themeAware
-										label={name}
-									/>
-								) : avatarSrc ? (
-									<Image
-										alt=""
-										aria-hidden
-										className={insetLogo ? "size-4 object-contain" : "size-full object-contain"}
-										height={insetLogo ? 16 : 32}
-										src={avatarSrc}
-										width={insetLogo ? 16 : 32}
-									/>
-								) : (
-									<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
-								)}
+						leading={
+							<AgentAvatarVisual
+								avatarSrc={avatarSrc}
+								brandName={brandName}
+								fallbackText={name.slice(0, 2)}
+								inset={insetLogo}
+								label={name}
+								logoName={logoName}
+								sizePx={32}
+							>
 								{avatarBadge}
-							</Avatar>
-						)
-					}
+							</AgentAvatarVisual>
+						}
 					title={name}
 				/>
 

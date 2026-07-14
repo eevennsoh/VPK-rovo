@@ -90,6 +90,11 @@ export const AVATAR_DETAIL: ComponentDetail = {
         demoSlug: "avatar-demo-shapes",
       },
       {
+        title: "Agent tiers",
+        description: "Hexagon avatars for 1P Atlassian art, 2P partner marks, and 3P borderless glyphs.",
+        demoSlug: "avatar-demo-agent-tiers",
+      },
+      {
         title: "Unassigned",
         description: "Grey person and agent placeholder states.",
         demoSlug: "avatar-demo-unassigned",

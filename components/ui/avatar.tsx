@@ -372,10 +372,15 @@ function AvatarProjectBadge({
 
 type AvatarStatus = "approved" | "declined" | "locked"
 
-const statusConfig: Record<AvatarStatus, { icon: typeof StatusVerifiedIcon; className: string; label: string }> = {
-	approved: { icon: StatusVerifiedIcon, className: "bg-success text-success-foreground", label: "Approved" },
-	declined: { icon: CrossCircleIcon, className: "bg-destructive text-destructive-foreground", label: "Declined" },
-	locked: { icon: LockLockedIcon, className: "bg-warning text-warning-foreground", label: "Locked" },
+const STATUS_ICON_CLASS_NAME =
+	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:[&>span>svg]:size-2 group-data-[size=lg]/avatar:[&>span>svg]:size-2 group-data-[size=xl]/avatar:[&>span>svg]:size-2.5 group-data-[size=2xl]/avatar:[&>span>svg]:size-4"
+const LOCKED_STATUS_ICON_CLASS_NAME =
+	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:scale-75 group-data-[size=lg]/avatar:scale-75 group-data-[size=xl]/avatar:scale-100 group-data-[size=2xl]/avatar:scale-125"
+
+const statusConfig: Record<AvatarStatus, { icon: typeof StatusVerifiedIcon; className: string; iconClassName: string; label: string }> = {
+	approved: { icon: StatusVerifiedIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Approved" },
+	declined: { icon: CrossCircleIcon, className: "bg-destructive text-destructive-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Declined" },
+	locked: { icon: LockLockedIcon, className: "bg-background text-icon-subtle", iconClassName: LOCKED_STATUS_ICON_CLASS_NAME, label: "Locked" },
 }
 
 interface AvatarStatusIndicatorProps extends React.ComponentProps<"span"> {
@@ -410,7 +415,7 @@ function AvatarStatusIndicator({
 		>
 			<Icon
 				aria-hidden
-				className="group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:[&>span>svg]:size-2 group-data-[size=lg]/avatar:[&>span>svg]:size-2 group-data-[size=xl]/avatar:[&>span>svg]:size-2.5 group-data-[size=2xl]/avatar:[&>span>svg]:size-4"
+				className={config.iconClassName}
 				render={<StatusIcon label="" size="small" color="currentColor" />}
 			/>
 		</span>

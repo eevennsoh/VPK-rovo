@@ -7,6 +7,7 @@ import { Avatar, AvatarBadge, AvatarCompanyBadge, AvatarFallback, AvatarGroup, A
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 
 const PRIMARY_AVATAR_SRC = "/avatar-user/venn/venn.png";
 const BADGE_ICON_AVATAR_SRC = "/avatar-user/ali/color/asow-teamwork-blue.png";
@@ -486,6 +487,32 @@ export function AvatarDemoShapes() {
 				</Avatar>
 				<span className="text-xs text-text-subtle">Hexagon</span>
 			</div>
+		</div>
+	);
+}
+
+export function AvatarDemoAgentTiers() {
+	return (
+		<div className="flex items-center gap-6">
+			{[
+				{
+					label: "1P",
+					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={40} />,
+				},
+				{
+					label: "2P",
+					avatar: <AgentAvatarVisual avatarSrc="/2p/appfire.png" label="Appfire agent" sizePx={40} />,
+				},
+				{
+					label: "3P",
+					avatar: <AgentAvatarVisual brandName="slack" label="Slack agent" sizePx={40} />,
+				},
+			].map(({ avatar, label }) => (
+				<div className="flex flex-col items-center gap-1.5" key={label}>
+					{avatar}
+					<span className="text-xs text-text-subtle">{label}</span>
+				</div>
+			))}
 		</div>
 	);
 }
