@@ -12,6 +12,18 @@ const AVATAR_DEMO_SOURCE = fs.readFileSync(
 );
 const AVATAR_DETAILS_SOURCE = readDetailCategorySource("ui");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
+const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "ui-custom", "agent-avatar-visual.tsx"),
+	"utf8",
+);
+const ENTITY_CARD_AGENT_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "ui-custom", "entity-card", "agent.tsx"),
+	"utf8",
+);
+const AGENT_CARD_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "blocks", "agent-card", "components", "agent-card.tsx"),
+	"utf8",
+);
 const PRIMARY_AVATAR_PATH = path.join(
 	__dirname,
 	"..",
@@ -66,6 +78,50 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /text-border!/);
 	assert.match(AVATAR_SOURCE, /<polygon[\s\S]*points=\{HEXAGON_POINTS\}[\s\S]*stroke="currentColor"/);
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
+});
+
+test("locked avatar status uses a white mask with an optically matched subtle icon", () => {
+	assert.match(
+		AVATAR_SOURCE,
+		/locked: \{ icon: LockLockedIcon, className: "bg-background text-icon-subtle", iconClassName: LOCKED_STATUS_ICON_CLASS_NAME, label: "Locked" \}/,
+	);
+	assert.doesNotMatch(AVATAR_SOURCE, /locked: \{[^\n]*bg-warning/);
+	assert.match(
+		AVATAR_SOURCE,
+		/const STATUS_ICON_CLASS_NAME =[\s\S]*group-data-\[size=default\]\/avatar:\[&>span>svg\]:size-2/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/const LOCKED_STATUS_ICON_CLASS_NAME =[\s\S]*group-data-\[size=default\]\/avatar:scale-75[\s\S]*group-data-\[size=2xl\]\/avatar:scale-125/,
+	);
+	assert.match(AVATAR_SOURCE, /<Icon[\s\S]*className=\{config\.iconClassName\}[\s\S]*render=\{<StatusIcon/);
+});
+
+test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", () => {
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<Avatar className=\{avatarClassName\} label=\{label\} shape="hexagon"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc\?\.startsWith\("\/2p\/"\)/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\}/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /32: "xsmall"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_EXTERNAL_LOGO_SIZE:[\s\S]*24: "small"[\s\S]*32: "small"[\s\S]*40: "small"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_INSET_IMAGE_CLASS_NAME:[\s\S]*24: "size-5"[\s\S]*32: "size-5"[\s\S]*40: "size-5"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
+	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);
+	assert.match(ENTITY_CARD_AGENT_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
+	assert.match(AGENT_CARD_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{brandName\}[\s\S]*sizePx=\{32\}/);
+	assert.doesNotMatch(ENTITY_CARD_AGENT_SOURCE, /Brand-identity agent.*no hexagon/);
+});
+
+test("avatar docs demonstrate 1P, 2P, and 3P agent tiers", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentTiers\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/avatar-agent\/teamwork-agents\/customer-insights\.svg"/);
+	assert.match(AVATAR_DEMO_SOURCE, /avatarSrc="\/2p\/appfire\.png"/);
+	assert.match(AVATAR_DEMO_SOURCE, /brandName="slack"/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-agent-tiers"/);
+	assert.match(REGISTRY_SOURCE, /"avatar-demo-agent-tiers"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoAgentTiers/);
 });
 
 test("avatar group overflow count uses 12px text and 14px text for large groups", () => {

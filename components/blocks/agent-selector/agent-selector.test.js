@@ -85,14 +85,17 @@ test("AgentSelector action labels use subtle text color", () => {
 	assert.doesNotMatch(COMPONENT_SOURCE, /<span className="text-text">\{(?:action\.label|browseAgentsLabel|createAgentLabel)\}<\/span>/u);
 });
 
-test("AgentSelector rows use greeting prompt text rhythm without enlarging agent logos", () => {
+test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
 	// Title + byline use the shared editor-palette type treatment (menu-row-*
 	// utilities) rather than re-deriving line-height with text-sm/leading-*.
 	assert.match(COMPONENT_SOURCE, /const AGENT_LABEL_CLASS = "menu-row-title text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_DESCRIPTION_CLASS = "menu-row-byline text-left";/u);
-	assert.match(COMPONENT_SOURCE, /className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm"/u);
+	assert.match(COMPONENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.match(COMPONENT_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*brandName=\{agent\.brandName\}[\s\S]*logoName=\{agent\.logoName\}[\s\S]*sizePx=\{24\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /<LogoThirdParty/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /<AtlassianLogo/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /grid-cols-\[32px_minmax\(0,1fr\)_auto\]/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-sm"/u);
 	assert.match(COMPONENT_SOURCE, /className=\{AGENT_ROW_CLASS\}/u);
