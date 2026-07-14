@@ -11,13 +11,16 @@ import { useEffect, useMemo, type JSX, type RefObject } from "react";
 
 import LiquidGradient from "@/components/visual/liquid-gradient";
 
-import { getGalleryItemSeed, type GallerySelectionVisual } from "../lib/gallery-selection";
+import {
+	GALLERY_SELECTION_SHADER_EXIT_SECONDS,
+	getGalleryItemSeed,
+	type GallerySelectionVisual,
+} from "../lib/gallery-selection";
 import { GalleryTitleLines } from "./gallery-title-lines";
 
 const ENTER_EASE = [0.45, 0, 0.55, 1] as const; // Deliberately even ink spread.
-const EXIT_EASE = [0.6, 0, 0.8, 0.6] as const; // --ease-in
+const EXIT_EASE = [0, 0.4, 0, 1] as const; // --ease-out; starts the shader exit immediately.
 const DUR_ENTER = 1.4; // Deliberately slow organic reveal.
-const DUR_EXIT = 0.1; // --duration-fast
 const MASK_FEATHER_PX = 18;
 const MASK_DIAMETER_SCALE = 2.6;
 const BLUE_PALETTE: string[] = ["#0747A6", "#0C66E4", "#1D7AFC", "#579DFF"];
@@ -91,7 +94,7 @@ export function GallerySelectedSurface({
 	const inkMaskSeed = seed + visual.key * 7919;
 	const inkMaskImage = useMemo(() => createInkMaskImage(inkMaskSeed), [inkMaskSeed]);
 	const isExitPhase = visual.phase === "exit";
-	const phaseDuration = isExitPhase ? DUR_EXIT : DUR_ENTER;
+	const phaseDuration = isExitPhase ? GALLERY_SELECTION_SHADER_EXIT_SECONDS : DUR_ENTER;
 	const phaseEase = isExitPhase ? EXIT_EASE : ENTER_EASE;
 	const originX = (width * visual.origin.xPercent) / 100;
 	const originY = (height * visual.origin.yPercent) / 100;

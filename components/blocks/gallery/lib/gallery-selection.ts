@@ -10,6 +10,10 @@ export interface GallerySelectionVisual {
 	phase: "enter" | "settled" | "exit";
 }
 
+export const GALLERY_SELECTION_SHADER_EXIT_SECONDS = 0.6; // --duration-slowest
+export const GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS =
+	GALLERY_SELECTION_SHADER_EXIT_SECONDS * 1000 + 40;
+
 export const DEFAULT_GALLERY_SELECTION_ORIGIN: GallerySelectionOrigin = {
 	xPercent: 50,
 	yPercent: 50,

@@ -80,6 +80,12 @@ test("Gallery cards remain mounted toggle buttons with origin-aware selection st
 	assert.match(source, /DEFAULT_GALLERY_SELECTION_ORIGIN/u);
 });
 
+test("Gallery centers the card strip by default without breaking overflow reachability", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-track.tsx");
+	assert.match(source, /\[justify-content:safe_center\]/u);
+	assert.match(source, /overflow-x-auto/u);
+});
+
 test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	const cardSource = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
 	const dragScrollSource = readProjectFile("components/blocks/gallery/hooks/use-drag-scroll.ts");
@@ -92,6 +98,7 @@ test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 test("Gallery selected surface preserves the organic ink-bloom contract", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
 	assert.match(source, /const ENTER_EASE = \[0\.45, 0, 0\.55, 1\] as const;/u);
+	assert.match(source, /const EXIT_EASE = \[0, 0\.4, 0, 1\] as const;/u);
 	assert.match(source, /const DUR_ENTER = 1\.4;/u);
 	assert.match(source, /const inkMaskSeed = seed \+ visual\.key \* 7919;/u);
 	assert.match(
@@ -120,10 +127,21 @@ test("Gallery selected surface preserves the organic ink-bloom contract", () => 
 
 test("Gallery keeps the WebGL shader timeline continuous during selection exit", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const selectionSource = readProjectFile("components/blocks/gallery/lib/gallery-selection.ts");
 	assert.doesNotMatch(source, /speed=\{visual\.phase/u);
 	assert.match(source, /speed=\{0\.18\}/u);
 	assert.doesNotMatch(source, /colors=\{\[\.\.\.BLUE_PALETTE\]\}/u);
 	assert.match(source, /colors=\{BLUE_PALETTE\}/u);
+	assert.doesNotMatch(source, /const DUR_EXIT = 0\.1/u);
+	assert.match(selectionSource, /GALLERY_SELECTION_SHADER_EXIT_SECONDS = 0\.6;/u);
+	assert.match(
+		selectionSource,
+		/GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS =\s*GALLERY_SELECTION_SHADER_EXIT_SECONDS \* 1000 \+ 40;/u,
+	);
+	assert.match(source, /GALLERY_SELECTION_SHADER_EXIT_SECONDS/u);
+	assert.match(gallerySource, /GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS/u);
+	assert.doesNotMatch(gallerySource, /EXIT_OVERLAP_MS = 140/u);
 });
 
 test("Gallery drag scroll cancels stale pending presses", () => {

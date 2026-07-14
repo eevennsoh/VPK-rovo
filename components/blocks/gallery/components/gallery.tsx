@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { GalleryItem } from "../data/gallery-items";
 import {
 	DEFAULT_GALLERY_SELECTION_ORIGIN,
+	GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS,
 	type GallerySelectionOrigin,
 	type GallerySelectionVisual,
 } from "../lib/gallery-selection";
@@ -46,7 +47,6 @@ const BACKDROP = {
 } as const;
 
 const STAGE_SCROLL_OFFSET = 80;
-const EXIT_OVERLAP_MS = 140;
 
 interface GalleryVisualState {
 	active: GallerySelectionVisual | null;
@@ -192,7 +192,7 @@ export function Gallery({
 			setVisualState((current) =>
 				current.exiting?.key === exitingKey ? { ...current, exiting: null } : current,
 			);
-		}, shouldReduceMotion ? 0 : EXIT_OVERLAP_MS);
+		}, shouldReduceMotion ? 0 : GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS);
 		return () => window.clearTimeout(timeout);
 	}, [shouldReduceMotion, visualState.exiting]);
 
