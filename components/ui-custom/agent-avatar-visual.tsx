@@ -57,15 +57,6 @@ const PX_TO_INSET_IMAGE_CLASS_NAME: Record<number, string> = {
 	48: "size-5",
 };
 
-const PX_TO_THIRD_PARTY_IMAGE_CLASS_NAME: Record<number, string> = {
-	16: "size-3",
-	20: "size-3",
-	24: "size-6",
-	32: "size-6",
-	40: "size-6",
-	48: "size-6",
-};
-
 const avatarSizeFromPx = (px: number): NonNullable<AvatarProps["size"]> => PX_TO_AVATAR_SIZE[px] ?? "sm";
 
 export interface AgentAvatarVisualProps {
@@ -109,13 +100,11 @@ export function AgentAvatarVisual({
 	if (!avatarSrc && !logoName && !brandName && !fallbackText) return null;
 
 	const isSecondPartyAgent = avatarSrc?.startsWith("/2p/") ?? false;
-	const isThirdPartyAgent = Boolean(brandName || avatarSrc?.startsWith("/3p/"));
+	const isThirdPartyAgent = Boolean(brandName);
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
 	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian";
 	const shouldInsetImage = inset || isExternalAgent;
-	const insetImageClassName = (
-		isThirdPartyAgent ? PX_TO_THIRD_PARTY_IMAGE_CLASS_NAME : PX_TO_INSET_IMAGE_CLASS_NAME
-	)[sizePx] ?? "size-4";
+	const insetImageClassName = PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
 	const externalLogoSize = PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
 	const visual = logoName ? (

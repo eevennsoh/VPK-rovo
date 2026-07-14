@@ -104,8 +104,6 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /32: "xsmall"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_EXTERNAL_LOGO_SIZE:[\s\S]*24: "small"[\s\S]*32: "small"[\s\S]*40: "small"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_INSET_IMAGE_CLASS_NAME:[\s\S]*24: "size-5"[\s\S]*32: "size-5"[\s\S]*40: "size-5"/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_THIRD_PARTY_IMAGE_CLASS_NAME:[\s\S]*24: "size-6"[\s\S]*32: "size-6"[\s\S]*40: "size-6"/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /isThirdPartyAgent \? PX_TO_THIRD_PARTY_IMAGE_CLASS_NAME : PX_TO_INSET_IMAGE_CLASS_NAME/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
