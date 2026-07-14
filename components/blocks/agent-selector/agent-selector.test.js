@@ -58,8 +58,23 @@ test("AgentSelector uses stable command values for duplicate agent names", () =>
 
 test("AgentSelector applies active search queries to selected and unselected agents", () => {
 	assert.match(COMPONENT_SOURCE, /function filterAgentsByQuery\([\s\S]*agents\.filter\(\(agent\) => matchesAgent\(agent, normalizedQuery\)\)[\s\S]*: \[\.\.\.agents\];/u);
-	assert.match(COMPONENT_SOURCE, /return \[\s*\.\.\.filterAgentsByQuery\(selectedAgents, normalizedQuery\),\s*\.\.\.filterAgentsByQuery\(unselectedAgents, normalizedQuery\),\s*\];/u);
+	assert.match(COMPONENT_SOURCE, /const ordered = \[\s*\.\.\.filterAgentsByQuery\(selectedAgents, normalizedQuery\),\s*\.\.\.filterAgentsByQuery\(unselectedAgents, normalizedQuery\),\s*\];/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /return \[\.\.\.selectedAgents, \.\.\.filteredUnselectedAgents\];/u);
+});
+
+test("AgentSelector de-duplicates visibleAgents by id so React keys stay unique", () => {
+	// Guards the "Encountered two children with the same key" crash: whether the
+	// duplicate arrives via repeated selectedIds or a duplicated agents list,
+	// the final list feeding the keyed .map must contain each id once.
+	assert.match(
+		COMPONENT_SOURCE,
+		/De-duplicate by id so each agent renders once with a unique React key/u,
+	);
+	assert.match(COMPONENT_SOURCE, /const seen = new Set<string>\(\);/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/return ordered\.filter\(\(agent\) => \{\s*if \(seen\.has\(agent\.id\)\) \{\s*return false;\s*\}\s*seen\.add\(agent\.id\);\s*return true;\s*\}\);/u,
+	);
 });
 
 test("AgentSelector action labels use subtle text color", () => {

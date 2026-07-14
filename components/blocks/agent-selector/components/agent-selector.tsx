@@ -235,10 +235,22 @@ export function AgentSelector({
 			.filter((agent): agent is AgentSelectorAgent => Boolean(agent));
 		const unselectedAgents = agents.filter((agent) => !selectedAgentIdSet.has(agent.id));
 
-		return [
+		const ordered = [
 			...filterAgentsByQuery(selectedAgents, normalizedQuery),
 			...filterAgentsByQuery(unselectedAgents, normalizedQuery),
 		];
+
+		// De-duplicate by id so each agent renders once with a unique React key.
+		// Duplicates can arise from repeated ids in `selectedIds` or from a
+		// caller passing an `agents` list that already contains the same id twice.
+		const seen = new Set<string>();
+		return ordered.filter((agent) => {
+			if (seen.has(agent.id)) {
+				return false;
+			}
+			seen.add(agent.id);
+			return true;
+		});
 	}, [agents, normalizedQuery, selectedAgentIdSet, selectedIds]);
 
 	function handleQueryChange(nextQuery: string) {

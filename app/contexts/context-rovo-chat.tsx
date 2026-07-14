@@ -257,12 +257,21 @@ interface RovoChatProviderProps {
 	portIndex?: number;
 }
 
-function toAgentSelectorAgent(agent: Pick<RovoAgentProfile, "avatarSrc" | "byline" | "id" | "name">): AgentSelectorAgent {
+function toAgentSelectorAgent(
+	agent: Pick<
+		RovoAgentProfile,
+		"avatarSrc" | "brandName" | "byline" | "id" | "logoName" | "name"
+	>,
+): AgentSelectorAgent {
 	return {
 		id: agent.id,
 		name: agent.name,
 		byline: agent.byline,
 		avatarSrc: agent.avatarSrc,
+		// Forward the brand marks so 3P agents (GitHub Copilot, Figma, Canva)
+		// and ADS-logo agents render their logo instead of a blank avatar.
+		logoName: agent.logoName,
+		brandName: agent.brandName,
 	};
 }
 
@@ -382,10 +391,27 @@ export function RovoChatProvider({
 	}, [normalizedSessionAgentEntries, staticAgentProfiles]);
 	const selectableAgents = useMemo<readonly AgentSelectorAgent[]>(() => {
 		const staticAgents = agentProfiles ?? ROVO_AGENT_SELECTOR_AGENTS;
-		return [
-			...staticAgents.map(toAgentSelectorAgent),
-			...normalizedSessionAgentEntries.map((entry) => toAgentSelectorAgent(entry.profile)),
-		];
+		// A session agent can share an id with a static one (e.g. editing a
+		// built-in agent in Studio persists a session entry under the same id).
+		// Collapse by id so each agent appears once — the session entry wins,
+		// since it is the user's edited version — and keep static ordering.
+		const sessionAgentById = new Map(
+			normalizedSessionAgentEntries.map((entry) => [
+				entry.profile.id,
+				toAgentSelectorAgent(entry.profile),
+			]),
+		);
+		const orderedAgents: AgentSelectorAgent[] = staticAgents.map((agent) => {
+			const sessionOverride = sessionAgentById.get(agent.id);
+			if (sessionOverride) {
+				sessionAgentById.delete(agent.id);
+				return sessionOverride;
+			}
+			return toAgentSelectorAgent(agent);
+		});
+		// Append any session-only agents that did not override a static one.
+		orderedAgents.push(...sessionAgentById.values());
+		return orderedAgents;
 	}, [agentProfiles, normalizedSessionAgentEntries]);
 	const selectedAgent = useMemo(
 		() => agentProfileById.get(selectedAgentId) ?? getRovoAgentProfile(selectedAgentId),
