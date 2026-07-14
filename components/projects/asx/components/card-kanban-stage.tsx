@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 
 import { useRovoChat } from "@/app/contexts";
 import {
@@ -17,10 +17,10 @@ import {
 	ASX_CARD_KANBAN_SUBTASKS,
 	ASX_CARD_KANBAN_WORKING_ACTIVITIES,
 } from "@/components/projects/asx/data/card-kanban-data";
-import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
-import { cn } from "@/lib/utils";
+import type { UseAutoCycleResult } from "@/components/projects/asx/hooks/use-auto-cycle";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { AsxRovoOverlay } from "./asx-rovo-overlay";
 
 /**
  * The "Card Kanban" design pattern for the Agent Sessions Experience gallery.
@@ -36,19 +36,61 @@ import { cn } from "@/lib/utils";
  * generative action both open the floating Rovo chat.
  *
  * Layout mirrors `KanbanStage`: the stage breaks out of the gallery's centered
- * `max-w-3xl` column to span the full viewport so the pinned dock floats over
- * the lower portion; the negative bottom margin cancels the stage's `pb-80`.
+ * `max-w-3xl` column to span the full viewport and fills the Gallery's available
+ * stage height while the pinned dock floats over the lower portion.
  */
-export function CardKanbanStage(): React.ReactElement {
-	const { chatSurface, openChat, sendPrompt } = useRovoChat();
+interface CardKanbanControlsProps {
+	controller: UseAutoCycleResult;
+	showProgress?: boolean;
+}
+
+export function CardKanbanControls({
+	controller,
+	showProgress = true,
+}: Readonly<CardKanbanControlsProps>): React.ReactElement {
+	const { activeIndex, setActiveIndex, progress, cycleRunning, pauseHandlers } = controller;
+
+	return (
+		<ButtonGroup variant="separated" {...pauseHandlers}>
+			{ASX_CARD_KANBAN_STATES.map((option, index) => {
+				const isActive = index === activeIndex;
+				const showProgressFill = showProgress && isActive && cycleRunning;
+				return (
+					<Button
+						key={option.value}
+						type="button"
+						variant="outline"
+						size="compact"
+						aria-pressed={isActive}
+						onClick={() => setActiveIndex(index)}
+						className="relative isolate overflow-hidden"
+					>
+						<span className="relative z-[2]">{option.label}</span>
+						{showProgressFill ? (
+							<motion.span
+								aria-hidden
+								className="pointer-events-none absolute inset-0 z-[1] origin-left bg-bg-selected-hovered"
+								style={{ scaleX: progress, willChange: "transform" }}
+							/>
+						) : null}
+					</Button>
+				);
+			})}
+		</ButtonGroup>
+	);
+}
+
+interface CardKanbanStageProps {
+	controller: UseAutoCycleResult;
+}
+
+export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>): React.ReactElement {
+	const { openChat, sendPrompt } = useRovoChat();
 	const {
 		activeIndex,
-		setActiveIndex,
-		progress,
-		cycleRunning,
 		pauseHandlers,
 		setExternalInteractionActive,
-	} = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
+	} = controller;
 	const state = ASX_CARD_KANBAN_STATES[activeIndex].value;
 
 	const agentActivities =
@@ -84,39 +126,10 @@ export function CardKanbanStage(): React.ReactElement {
 	);
 
 	return (
-		<div className="relative left-1/2 -mb-80 flex h-[calc(100dvh-6.5rem)] w-screen -translate-x-1/2 flex-col px-8">
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8">
 			<div className="flex flex-1 flex-col items-center justify-center pb-28">
-				{/* Tight wrapper so hover/focus only pauses the cycle over the demo, not the whole stage. */}
+				{/* Tight wrapper so hover/focus only pauses the cycle over the card. */}
 				<div className="flex flex-col items-center" {...pauseHandlers}>
-					<div className="flex flex-wrap items-center justify-center gap-2 pb-12">
-						{ASX_CARD_KANBAN_STATES.map((option, index) => {
-							const isActive = index === activeIndex;
-							const showProgress = isActive && cycleRunning;
-							return (
-								<button
-									key={option.value}
-									type="button"
-									aria-pressed={isActive}
-									onClick={() => setActiveIndex(index)}
-									className={cn(
-										"relative isolate inline-flex h-6 shrink-0 items-center overflow-hidden rounded-md border px-2.5 text-xs font-medium leading-4 outline-none transition-[border-color,color,box-shadow] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
-										isActive
-											? "border-border-selected bg-bg-selected text-text-selected"
-											: "border-border bg-surface text-text-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
-									)}
-								>
-									<span className="relative z-[2]">{option.label}</span>
-									{showProgress ? (
-										<motion.span
-											aria-hidden
-											className="pointer-events-none absolute inset-0 z-[1] origin-left bg-bg-selected-hovered"
-											style={{ scaleX: progress, willChange: "transform" }}
-										/>
-									) : null}
-								</button>
-							);
-						})}
-					</div>
 					{/*
 					 * Reserve the default card height so the demo reads as centered at
 					 * rest while the toggle bar + card top stay anchored: taller states
@@ -143,17 +156,7 @@ export function CardKanbanStage(): React.ReactElement {
 					</div>
 				</div>
 			</div>
-			{chatSurface === null ? (
-				<FloatingRovoButton
-					ariaLabel="Open Rovo chat"
-					forceVisible
-					positioning="container"
-					product="home"
-				/>
-			) : null}
-			<AnimatePresence>
-				{chatSurface === "floating" ? <RovoFloatingChat key="floating-chat" /> : null}
-			</AnimatePresence>
+			<AsxRovoOverlay />
 		</div>
 	);
 }

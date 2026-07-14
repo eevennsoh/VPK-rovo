@@ -62,7 +62,7 @@ test("Gallery is now an in-page selector instead of a lightbox morph", () => {
 	assert.match(gallerySource, /onSelectedChange\?: \(selectedId: string\) => void;/u);
 	assert.match(gallerySource, /renderSelectedItem\?: \(item: GalleryItem\) => ReactNode;/u);
 	assert.match(gallerySource, /GallerySelectedStage/u);
-	assert.match(gallerySource, /scrollIntoView/u);
+	assert.doesNotMatch(gallerySource, /scrollIntoView/u);
 	assert.doesNotMatch(gallerySource, /GalleryExpanded/u);
 	assert.doesNotMatch(gallerySource, /expandedId/u);
 	assert.equal(
@@ -71,6 +71,23 @@ test("Gallery is now an in-page selector instead of a lightbox morph", () => {
 		),
 		false,
 	);
+});
+
+test("Gallery owns one viewport without document scrolling", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const stageSource = readProjectFile("components/blocks/gallery/components/gallery-selected-stage.tsx");
+	const indexSource = readProjectFile("components/blocks/gallery/index.ts");
+
+	assert.match(gallerySource, /flex h-dvh min-h-0 flex-col overflow-hidden/u);
+	assert.doesNotMatch(gallerySource, /STAGE_SCROLL_OFFSET|previousSelectedIdRef|scrollIntoView/u);
+	assert.match(stageSource, /flex min-h-0[^\n]*flex-1/u);
+	assert.match(gallerySource, /stagePosition = "top"/u);
+	assert.match(gallerySource, /position=\{stagePosition\}/u);
+	assert.match(stageSource, /export type GalleryStagePosition = "top" \| "center";/u);
+	assert.match(stageSource, /origin-top flex-col/u);
+	assert.match(stageSource, /position === "center"[\s\S]*items-center justify-center[\s\S]*items-stretch justify-start/u);
+	assert.match(indexSource, /GalleryStagePosition/u);
+	assert.doesNotMatch(stageSource, /pt-20|pb-80|min-h-\[calc\(100dvh/u);
 });
 
 test("Gallery cards remain mounted toggle buttons with origin-aware selection state", () => {
@@ -192,11 +209,17 @@ test("Gallery controls reserve an in-flow row with compact button geometry", () 
 
 	assert.ok(toggleIndex >= 0 && toggleIndex < stageIndex);
 	assert.match(toggleSource, /const TOGGLE_SIZE = 24;/u);
-	assert.match(toggleSource, /flex h-12 items-center justify-between gap-4 p-3/u);
-	assert.match(toggleSource, /<Heading size="xsmall" className="truncate">/u);
-	assert.match(toggleSource, /flex shrink-0 items-center gap-1/u);
+	assert.match(toggleSource, /grid h-12 grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)\] items-center gap-4 p-3/u);
+	assert.match(toggleSource, /<Heading size="xsmall" className="truncate justify-self-start">/u);
+	assert.match(toggleSource, /min-w-0 justify-self-center/u);
+	assert.match(toggleSource, /flex shrink-0 items-center gap-1 justify-self-end/u);
 	assert.match(gallerySource, /title = "Gallery"/u);
-	assert.match(gallerySource, /<GalleryToggle title=\{title\}/u);
+	assert.match(gallerySource, /topBarCenter\?: ReactNode/u);
+	assert.match(gallerySource, /centerContent=\{topBarCenter\}/u);
+	assert.match(gallerySource, /showTopBarBorder = false/u);
+	assert.match(gallerySource, /showBottomBorder=\{showTopBarBorder\}/u);
+	assert.match(toggleSource, /showBottomBorder \? "border-b border-border" : null/u);
 	assert.match(toggleSource, /GALLERY_CONTROL_ICON_CLASS_NAME = "size-3/u);
 	assert.doesNotMatch(toggleSource, /fixed top-4 right-4/u);
+	assert.doesNotMatch(toggleSource, /boxShadow|elevation\.shadow/u);
 });

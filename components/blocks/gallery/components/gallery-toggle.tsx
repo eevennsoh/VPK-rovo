@@ -25,6 +25,8 @@ type GalleryTheme = "light" | "dark" | "system";
 
 export interface GalleryToggleProps {
 	title: string;
+	centerContent?: ReactNode;
+	showBottomBorder: boolean;
 	open: boolean;
 	onToggle: () => void;
 	className?: string;
@@ -61,7 +63,6 @@ function GalleryControlSquircle({ children }: Readonly<{ children: ReactNode }>)
 			height={TOGGLE_SIZE}
 			strokeWidth={0}
 			fillColor={token("color.background.neutral.bold")}
-			style={{ boxShadow: token("elevation.shadow.overlay") }}
 		>
 			{children}
 		</Squircle>
@@ -70,6 +71,8 @@ function GalleryControlSquircle({ children }: Readonly<{ children: ReactNode }>)
 
 export function GalleryToggle({
 	title,
+	centerContent,
+	showBottomBorder,
 	open,
 	onToggle,
 	className,
@@ -83,15 +86,21 @@ export function GalleryToggle({
 		<div
 			className={cn(
 				// Reserve an in-flow control row so prototype navigation starts below it.
-				"flex h-12 items-center justify-between gap-4 p-3",
+				"grid h-12 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 p-3",
+				showBottomBorder ? "border-b border-border" : null,
 				className,
 			)}
 		>
-			<Heading size="xsmall" className="truncate">
+			<Heading size="xsmall" className="truncate justify-self-start">
 				{title}
 			</Heading>
+			{centerContent ? (
+				<div className="min-w-0 justify-self-center">{centerContent}</div>
+			) : (
+				<div aria-hidden />
+			)}
 			<TooltipProvider>
-				<div className="flex shrink-0 items-center gap-1">
+				<div className="flex shrink-0 items-center gap-1 justify-self-end">
 					<Tooltip>
 						<TooltipTrigger
 							render={

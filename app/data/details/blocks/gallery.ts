@@ -23,6 +23,20 @@ export const GALLERY_DETAIL: ComponentDetail = {
   renderSelectedItem={(item) => <article>{item.title}</article>}
 />
 
+// Center selected content within the viewport below the 48px top bar.
+// The bottom dock remains an overlay and does not affect centering.
+<Gallery
+  items={items}
+  stagePosition="center"
+  renderSelectedItem={(item) => <article>{item.title}</article>}
+/>
+
+// Add arbitrary compact controls to the mathematical center of the top bar.
+<Gallery
+  items={items}
+  topBarCenter={<ButtonGroup variant="separated">{controls}</ButtonGroup>}
+/>
+
 // Controlled visibility + controlled selection
 <Gallery
   items={items}
@@ -40,6 +54,8 @@ export const GALLERY_DETAIL: ComponentDetail = {
 		{ name: "defaultSelectedId", type: "string", description: "Initial selected card id when the component manages its own selection." },
 		{ name: "onSelectedChange", type: "(selectedId: string) => void", description: "Called when a different card is selected from the pinned strip." },
 		{ name: "renderSelectedItem", type: "(item: GalleryItem) => ReactNode", description: "Renders the middle-page content for the currently selected item." },
+		{ name: "topBarCenter", type: "ReactNode", description: "Optional content centered in the 48px top bar, independent of the title and right-side controls. Accepts progress controls or regular compact buttons." },
+		{ name: "stagePosition", type: '"top" | "center"', default: '"top"', description: "Positions selected content below the 48px top bar. Center mode uses both-axis centering while the bottom dock remains an overlay; content keeps a top transform origin so it grows downward." },
 		{ name: "onReset", type: "(item: GalleryItem) => void", description: "Called after Reset remounts the selected prototype in its initial state." },
 		{ name: "className", type: "string", description: "Extra classes merged onto the block root." },
 	],

@@ -4,6 +4,18 @@ const path = require("node:path");
 const test = require("node:test");
 
 const ASX_PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
+const CARD_KANBAN_STAGE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/card-kanban-stage.tsx"),
+	"utf8",
+);
+const KANBAN_STAGE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/kanban-stage.tsx"),
+	"utf8",
+);
+const ROVO_OVERLAY_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/asx-rovo-overlay.tsx"),
+	"utf8",
+);
 const QUEUE_STAGE_SOURCE = fs.readFileSync(path.join(__dirname, "components/queue-stage.tsx"), "utf8");
 const QUEUE_WORKSPACE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-conversation-workspace.tsx"),
@@ -19,6 +31,36 @@ test("ASX maps only Kanban and Queue to implemented gallery stages", () => {
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "kanban"\) return <KanbanStage \/>;/u);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "queue"\) return <QueueStage \/>;/u);
 	assert.match(ASX_PAGE_SOURCE, /\{item\.title\}/u);
+});
+
+test("ASX stages fill the Gallery viewport without margin compensation", () => {
+	for (const source of [ASX_PAGE_SOURCE, CARD_KANBAN_STAGE_SOURCE, KANBAN_STAGE_SOURCE, QUEUE_STAGE_SOURCE]) {
+		assert.doesNotMatch(source, /-mt-20|-mb-80|100dvh/u);
+	}
+	assert.match(ASX_PAGE_SOURCE, /flex h-full min-h-0 w-screen/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-screen/u);
+	assert.match(KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-screen/u);
+	assert.match(QUEUE_STAGE_SOURCE, /h-full min-h-0 w-screen/u);
+});
+
+test("Card Kanban controls use the compact Gallery top-bar slot", () => {
+	assert.match(ASX_PAGE_SOURCE, /topBarCenter=/u);
+	assert.match(ASX_PAGE_SOURCE, /<CardKanbanControls controller=\{cardKanbanController\} \/>/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /<ButtonGroup variant="separated"/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /variant="outline"/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /size="compact"/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /showProgress = true/u);
+	assert.doesNotMatch(CARD_KANBAN_STAGE_SOURCE, /<button/u);
+});
+
+test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => {
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /<AsxRovoOverlay \/>/u);
+	assert.match(KANBAN_STAGE_SOURCE, /<AsxRovoOverlay \/>/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /createPortal/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /document\.body/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /<FloatingRovoButton/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /<RovoFloatingChat/u);
+	assert.doesNotMatch(ROVO_OVERLAY_SOURCE, /positioning="container"/u);
 });
 
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {

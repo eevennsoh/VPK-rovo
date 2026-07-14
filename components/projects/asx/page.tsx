@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery } from "@/components/blocks/gallery";
 import JiraListPage from "@/components/blocks/jira-list/page";
+import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
-import { CardKanbanStage } from "./components/card-kanban-stage";
+import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
+import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
 
@@ -20,14 +24,17 @@ import { QueueStage } from "./components/queue-stage";
 
 function ListStage(): React.ReactElement {
 	return (
-		<div className="relative left-1/2 -mb-80 flex h-[calc(100dvh-6.5rem)] w-screen -translate-x-1/2 flex-col px-8">
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8">
 			<JiraListPage />
 		</div>
 	);
 }
 
-function renderAsxItem(item: (typeof ASX_GALLERY_ITEMS)[number]): React.ReactNode {
-	if (item.id === "card") return <CardKanbanStage />;
+function renderAsxItem(
+	item: (typeof ASX_GALLERY_ITEMS)[number],
+	cardKanbanController: ReturnType<typeof useAutoCycle>,
+): React.ReactNode {
+	if (item.id === "card") return <CardKanbanStage controller={cardKanbanController} />;
 	if (item.id === "kanban") return <KanbanStage />;
 	if (item.id === "list") return <ListStage />;
 	if (item.id === "queue") return <QueueStage />;
@@ -39,19 +46,35 @@ function renderAsxItem(item: (typeof ASX_GALLERY_ITEMS)[number]): React.ReactNod
 	);
 }
 
+function AsxGallery(): React.ReactElement {
+	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
+	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
+
+	return (
+		<div className="relative h-dvh w-full overflow-hidden bg-surface">
+			<Gallery
+				items={ASX_GALLERY_ITEMS}
+				selectedId={selectedId}
+				onSelectedChange={setSelectedId}
+				topBarCenter={
+					selectedId === "card" ? (
+						<CardKanbanControls controller={cardKanbanController} />
+					) : null
+				}
+				renderSelectedItem={(item) => renderAsxItem(item, cardKanbanController)}
+			/>
+		</div>
+	);
+}
+
 export default function AsxPage(): React.ReactElement {
 	return (
 		// The provider lives here (not only in the /asx route layout) so the demo
 		// works on every render path — the standalone route, the catalog
 		// (`/components/projects/asx`), and preview (`/preview/projects/asx`).
-		// KanbanStage calls useRovoChat(), which throws without this provider.
+		// CardKanbanStage and KanbanStage use Rovo chat, which throws without it.
 		<RovoChatProvider>
-			<div className="relative min-h-dvh w-full bg-surface">
-				<Gallery
-					items={ASX_GALLERY_ITEMS}
-					renderSelectedItem={renderAsxItem}
-				/>
-			</div>
+			<AsxGallery />
 		</RovoChatProvider>
 	);
 }

@@ -13,7 +13,10 @@ import {
 	type GallerySelectionVisual,
 } from "../lib/gallery-selection";
 import { GalleryBackdrop } from "./gallery-backdrop";
-import { GallerySelectedStage } from "./gallery-selected-stage";
+import {
+	GallerySelectedStage,
+	type GalleryStagePosition,
+} from "./gallery-selected-stage";
 import { GalleryToggle } from "./gallery-toggle";
 import { GalleryTrack } from "./gallery-track";
 
@@ -45,8 +48,6 @@ const BACKDROP = {
 	visible: { opacity: 1, transition: { duration: DUR_SLOW, ease: EASE_OUT } },
 	exit: { opacity: 0, transition: { duration: DUR_FAST, ease: EASE_IN } },
 } as const;
-
-const STAGE_SCROLL_OFFSET = 80;
 
 interface GalleryVisualState {
 	active: GallerySelectionVisual | null;
@@ -89,6 +90,12 @@ export interface GalleryProps {
 	items: readonly GalleryItem[];
 	/** Label displayed in the Gallery control bar. */
 	title?: string;
+	/** Optional content centered in the Gallery control bar, such as a compact button group. */
+	topBarCenter?: ReactNode;
+	/** Shows a 1px semantic border below the Gallery control bar. */
+	showTopBarBorder?: boolean;
+	/** Positions selected content below the 48px top bar; the bottom dock remains an overlay. */
+	stagePosition?: GalleryStagePosition;
 	/** Controlled visibility of the pinned strip. */
 	open?: boolean;
 	/** Uncontrolled initial visibility (default true). */
@@ -106,6 +113,9 @@ export interface GalleryProps {
 export function Gallery({
 	items,
 	title = "Gallery",
+	topBarCenter,
+	showTopBarBorder = false,
+	stagePosition = "top",
 	open,
 	defaultOpen = true,
 	onOpenChange,
@@ -125,9 +135,7 @@ export function Gallery({
 		createInitialVisualState(resolveSelectedId(items, selectedId ?? defaultSelectedId)),
 	);
 	const [resetKey, setResetKey] = useState(0);
-	const selectedStageRef = useRef<HTMLElement | null>(null);
 	const isOpenRef = useRef(open ?? internalOpen);
-	const previousSelectedIdRef = useRef<string | null>(resolveSelectedId(items, selectedId ?? defaultSelectedId));
 	const selectionOriginsRef = useRef<Map<string, GallerySelectionOrigin>>(new Map());
 	const visualKeyRef = useRef(1);
 
@@ -209,34 +217,22 @@ export function Gallery({
 		return () => window.clearTimeout(timeout);
 	}, [shouldReduceMotion, visualState.exiting]);
 
-	useEffect(() => {
-		if (!selectedItem) return;
-		const previousSelectedId = previousSelectedIdRef.current;
-		previousSelectedIdRef.current = selectedItem.id;
-		if (!previousSelectedId || previousSelectedId === selectedItem.id || typeof window === "undefined") {
-			return;
-		}
-		const stage = selectedStageRef.current;
-		if (!stage) return;
-		const { top, bottom } = stage.getBoundingClientRect();
-		const isOffscreen =
-			top < STAGE_SCROLL_OFFSET || bottom > window.innerHeight - STAGE_SCROLL_OFFSET;
-		if (!isOffscreen) return;
-		stage.scrollIntoView({
-			behavior: shouldReduceMotion ? "auto" : "smooth",
-			block: "center",
-		});
-	}, [selectedItem, shouldReduceMotion]);
-
 	return (
-		<div className={cn(className)}>
-			<GalleryToggle title={title} open={isOpen} onToggle={handleToggle} onReset={handleReset} />
+		<div className={cn("flex h-dvh min-h-0 flex-col overflow-hidden", className)}>
+			<GalleryToggle
+				title={title}
+				centerContent={topBarCenter}
+				showBottomBorder={showTopBarBorder}
+				open={isOpen}
+				onToggle={handleToggle}
+				onReset={handleReset}
+			/>
 
 			{selectedItem ? (
 				<GallerySelectedStage
 					item={selectedItem}
+					position={stagePosition}
 					resetKey={resetKey}
-					stageRef={selectedStageRef}
 					renderSelectedItem={renderSelectedItem}
 				/>
 			) : null}

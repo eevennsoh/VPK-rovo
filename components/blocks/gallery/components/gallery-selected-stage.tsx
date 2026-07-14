@@ -1,7 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
 
 import type { GalleryItem } from "../data/gallery-items";
 
@@ -9,27 +11,28 @@ const ENTER_EASE = [0.4, 1, 0.6, 1] as const; // --ease-out-practical
 const EXIT_EASE = [0.6, 0, 0.8, 0.6] as const; // --ease-in
 const LAYOUT_EASE = [0.4, 0, 0, 1] as const; // --ease-in-out
 
+export type GalleryStagePosition = "top" | "center";
+
 export interface GallerySelectedStageProps {
 	item: GalleryItem;
+	position: GalleryStagePosition;
 	resetKey: number;
-	stageRef: RefObject<HTMLElement | null>;
 	renderSelectedItem: (item: GalleryItem) => ReactNode;
 }
 
 export function GallerySelectedStage({
 	item,
+	position,
 	resetKey,
-	stageRef,
 	renderSelectedItem,
 }: Readonly<GallerySelectedStageProps>) {
 	const shouldReduceMotion = useReducedMotion();
 
 	return (
 		<motion.section
-			ref={stageRef}
 			layout={shouldReduceMotion ? false : true}
 			aria-live="polite"
-			className="mx-auto flex min-h-[calc(100dvh-12rem)] w-full max-w-3xl items-center px-6 pt-20 pb-80"
+			className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 items-center px-6"
 			transition={shouldReduceMotion ? { duration: 0 } : { layout: { duration: 0.2, ease: LAYOUT_EASE } }}
 			style={{ willChange: "transform" }}
 		>
@@ -48,7 +51,12 @@ export function GallerySelectedStage({
 								}
 					}
 					transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15, ease: ENTER_EASE }}
-					className="w-full"
+					className={cn(
+						"flex h-full w-full origin-top flex-col",
+						position === "center"
+							? "items-center justify-center"
+							: "items-stretch justify-start",
+					)}
 					style={{ willChange: "transform, opacity" }}
 				>
 					{renderSelectedItem(item)}

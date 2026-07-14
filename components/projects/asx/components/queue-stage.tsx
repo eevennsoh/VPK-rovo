@@ -69,7 +69,7 @@ export function QueueStage(): React.ReactElement {
 
 	return (
 		<div
-			className="relative left-1/2 -mt-20 -mb-80 h-dvh w-screen -translate-x-1/2 overflow-hidden isolate"
+			className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-hidden isolate"
 			data-testid="asx-queue-stage"
 		>
 			<AppLayout
