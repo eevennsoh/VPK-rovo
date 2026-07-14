@@ -82,7 +82,7 @@ test("Gallery cards remain mounted toggle buttons with origin-aware selection st
 
 test("Gallery centers the card strip by default without breaking overflow reachability", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-track.tsx");
-	assert.match(source, /\[justify-content:safe_center\]/u);
+	assert.match(source, /justify-center-safe/u);
 	assert.match(source, /overflow-x-auto/u);
 });
 
