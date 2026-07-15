@@ -65,7 +65,7 @@ export function getBodyCellClassName({
 	align?: "left" | "center";
 }>) {
 	return cn(
-		"h-10 border-b border-r border-border px-3 py-0 align-middle whitespace-nowrap transition-colors",
+		"relative h-10 border-b border-r border-border px-3 py-0 align-middle whitespace-nowrap transition-colors",
 		align === "center" && "text-center",
 		isLastColumn && "border-r-0",
 		isSelected
@@ -86,11 +86,11 @@ export function getInsertionLineClassName(
 	position: JiraListInsertionPosition | undefined,
 ): string | undefined {
 	if (position === "before") {
-		return "shadow-[inset_0_2px_0_var(--ds-border-selected)]";
+		return "after:pointer-events-none after:absolute after:-top-px after:-inset-x-px after:z-30 after:h-0.5 after:bg-border-selected";
 	}
 
 	if (position === "after") {
-		return "shadow-[inset_0_-2px_0_var(--ds-border-selected)]";
+		return "after:pointer-events-none after:absolute after:-bottom-px after:-inset-x-px after:z-30 after:h-0.5 after:bg-border-selected";
 	}
 
 	return undefined;

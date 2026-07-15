@@ -13,6 +13,7 @@ const SOURCE = [
 	"jira-list-cells.tsx",
 	"jira-list-rows.tsx",
 ].map((file) => readFileSync(join(__dirname, file), "utf8")).join("\n");
+const CELLS_SOURCE = readFileSync(join(__dirname, "jira-list-cells.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "jira-list-types.ts"), "utf8");
 const COLUMN_CONTROLS_SOURCE = readFileSync(
 	join(__dirname, "jira-list-column-controls.tsx"),
@@ -88,16 +89,25 @@ test("JiraList frame constrains vertical overflow while preserving 40px footer g
 	);
 });
 
+test("JiraList sticky footer uses a 4px horizontal inset", () => {
+	const footerMarker = SOURCE.indexOf('data-testid="jira-list-sticky-footer"');
+	const footerStart = SOURCE.lastIndexOf("<div", footerMarker);
+	const footerSource = SOURCE.slice(footerStart, footerMarker);
+
+	assert.match(footerSource, /\bpx-1\b/u);
+	assert.doesNotMatch(footerSource, /\bpx-3\b/u);
+});
+
 test("JiraList exposes the expected table headers and sticky footer content", () => {
 	assert.match(SOURCE, /Work/u);
 	assert.match(SOURCE, /Status/u);
 	assert.match(SOURCE, /Assignee/u);
 	assert.match(SOURCE, /Agent sessions/u);
-	assert.match(SOURCE, /Goals/u);
-	assert.match(SOURCE, /Priority/u);
+	assert.doesNotMatch(SOURCE, /id: "goals"|label: "Goals"/u);
+	assert.match(SOURCE, /id: "priority",\s*label: "Priority",\s*widthClassName: "w-\[112px\]"/u);
 	assert.match(SOURCE, /Labels/u);
 	assert.match(SOURCE, /Due date/u);
-	assert.match(SOURCE, /Contributors/u);
+	assert.doesNotMatch(SOURCE, /id: "contributors"|label: "Contributors"/u);
 	assert.match(SOURCE, /Select all work items/u);
 	assert.match(SOURCE, /tabular-nums/u);
 	assert.match(SOURCE, /left-1\/2/u);
@@ -113,23 +123,66 @@ test("JiraList exposes the expected table headers and sticky footer content", ()
 	assert.match(SOURCE, /colSpan=\{orderedColumns\.length\}/u);
 });
 
-test("JiraList opens linked agent sessions from the Agent sessions cell", () => {
-	const agentSessionsCellSource = SOURCE.match(
-		/id: "agentSessions",([\s\S]*?)\n\t\t\{\n\t\t\tid: "goals"/u,
-	)?.[1] ?? "";
+test("JiraList contributors use the canonical avatar group count treatment", () => {
+	const contributorsSource = SOURCE.match(
+		/export function renderContributors[\s\S]*?\n\}/u,
+	)?.[0] ?? "";
 
-	assert.match(SOURCE, /onOpenAgentSessions,/u);
-	assert.match(agentSessionsCellSource, /onOpenAgentSessions && row\.agentSessions\?\.length/u);
-	assert.match(agentSessionsCellSource, /onClick=\{\(\) => onOpenAgentSessions\(row\)\}/u);
-	assert.match(agentSessionsCellSource, /Open agent sessions for \$\{row\.issueKey\}/u);
-	assert.match(agentSessionsCellSource, /group-hover\/agent-sessions:opacity-100/u);
-	assert.match(agentSessionsCellSource, /group-focus-within\/agent-sessions:opacity-100/u);
+	assert.match(contributorsSource, /<AvatarGroup label=/u);
+	assert.match(contributorsSource, /<AvatarGroupCount>\+\{overflowCount\}<\/AvatarGroupCount>/u);
+	assert.doesNotMatch(contributorsSource, /bg-bg-neutral-bold|text-text-inverse|ring-0!|-space-x-1\.5/u);
 });
 
-test("JiraList appends the remaining session count directly after one primary agent tag", () => {
-	assert.match(SOURCE, /const visibleSessions = agentSessions\.slice\(0, 1\)/u);
-	assert.match(SOURCE, /<TagGroup className="min-w-0 gap-1">[\s\S]*?<\/TagGroup>[\s\S]*?<OverflowBadge/u);
-	assert.doesNotMatch(SOURCE, /const visibleSessions = agentSessions\.slice\(0, 2\)/u);
+test("JiraList does not add a separate open-agent-sessions action", () => {
+	const agentSessionsCellSource = SOURCE.match(
+		/id: "agentSessions",([\s\S]*?)\n\t\t\{\n\t\t\tid: "priority"/u,
+	)?.[1] ?? "";
+
+	assert.match(agentSessionsCellSource, /renderCell: \(row\) => renderAgentSessions\(row\.agentSessions\)/u);
+	assert.doesNotMatch(SOURCE, /onOpenAgentSessions|Open agent sessions for/u);
+	assert.doesNotMatch(PAGE_SOURCE, /inModelRow|onOpenAgentSessions/u);
+});
+
+test("JiraList keeps agent sessions and labels on one line with accessible overflow menus", () => {
+	const agentSessionsSource = SOURCE.match(
+		/export function renderAgentSessions[\s\S]*?\n\}/u,
+	)?.[0] ?? "";
+	const labelsSource = SOURCE.match(
+		/export function renderLabels[\s\S]*?\n\}/u,
+	)?.[0] ?? "";
+
+	assert.match(SOURCE, /function OverflowMenu/u);
+	assert.match(SOURCE, /<PopoverTrigger/u);
+	assert.match(SOURCE, /<PopoverContent/u);
+	assert.match(SOURCE, /<ul aria-label=\{`More \$\{label\}`\}>\{children\}<\/ul>/u);
+	assert.doesNotMatch(CELLS_SOURCE, /DropdownMenuItem|DropdownMenuContent|DropdownMenuTrigger/u);
+	assert.match(SOURCE, /render=\{<button type="button" \/>\}/u);
+	assert.match(SOURCE, /aria-label=\{`Show \$\{count\} more \$\{label\}`\}/u);
+	assert.match(agentSessionsSource, /const \[visibleSession, \.\.\.overflowSessions\] = agentSessions/u);
+	assert.match(agentSessionsSource, /flex-nowrap[^"]*overflow-hidden/u);
+	assert.doesNotMatch(agentSessionsSource, /flex-1/u);
+	assert.match(agentSessionsSource, /<div className="flex min-w-0 items-center">/u);
+	assert.match(agentSessionsSource, /<AgentSessionTag session=\{visibleSession\} \/>/u);
+	assert.match(agentSessionsSource, /<OverflowMenu count=\{overflowSessions\.length\} label="agent sessions">/u);
+	assert.match(agentSessionsSource, /<li className="flex h-8 items-center px-1\.5" key=\{session\}>/u);
+	assert.match(SOURCE, /function AgentSessionTag/u);
+	assert.match(SOURCE, /<Tag[\s\S]*?className="max-w-full self-center"[\s\S]*?elemBefore=\{[\s\S]*?<Avatar label=\{`\$\{session\} agent`\} shape="hexagon" size="xs">/u);
+	assert.match(SOURCE, /avatarSrc \? <AvatarImage alt="" src=\{avatarSrc\} \/> : null/u);
+	const agentAvatarSources = [...SOURCE.matchAll(/"[^"]+":? "(\/avatar-agent\/[^"]+)"/gu)]
+		.map((match) => match[1]);
+	assert.equal(agentAvatarSources.length, 12);
+	assert.equal(new Set(agentAvatarSources).size, agentAvatarSources.length);
+	assert.doesNotMatch(SOURCE, /AgentSessionLozenge|variant="information"/u);
+	assert.match(labelsSource, /const overflowLabels = labels\.slice\(visibleLabels\.length\)/u);
+	assert.match(labelsSource, /flex-nowrap[^"]*overflow-hidden/u);
+	assert.doesNotMatch(labelsSource, /flex-1/u);
+	assert.match(labelsSource, /<OverflowMenu count=\{overflowLabels\.length\} label="labels">/u);
+	assert.match(labelsSource, /<li className="flex h-8 items-center px-1\.5" key=\{`\$\{label\.text\}-\$\{label\.color\}`\}>/u);
+	assert.match(labelsSource, /<Tag className="self-center" color=\{label\.color\}>\{label\.text\}<\/Tag>/u);
+	assert.match(SOURCE, /id: "labels",\s*label: "Labels",\s*widthClassName: "w-\[180px\]"/u);
+	assert.match(DATA_SOURCE, /\{ text: "VULN-1966436", color: "red" \}/u);
+	assert.match(DATA_SOURCE, /\{ text: "sales-css", color: "blue" \}/u);
+	assert.match(DATA_SOURCE, /\{ text: "user-initiated", color: "teal" \}/u);
 });
 
 test("JiraList maps each data column half to one deterministically owned boundary", () => {
@@ -162,7 +215,8 @@ test("JiraList column controls use outside-top overlay geometry without reservin
 	assert.match(SOURCE, /data-testid="jira-list-table-scroll"/u);
 	assert.doesNotMatch(SOURCE, /pt-4|pt-\[16px\]|paddingTop/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /absolute top-0 bottom-10 z-40/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /size-8 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /bg-surface-overlay! text-icon-subtle shadow-2xl/u);
 	assert.match(
 		COLUMN_CONTROLS_SOURCE,
 		/left: anchorSide === "left" \? "anchor\(left\)" : "anchor\(right\)"/u,
@@ -257,11 +311,21 @@ test("JiraList reveals copy link only beside the focused or hovered issue key", 
 	);
 	assert.doesNotMatch(issueKeyGroupSource, /open=\{[^}]*undefined[^}]*\}/u);
 	assert.match(issueKeyGroupSource, /aria-label=\{`\$\{isCopiedRow \? "Copied link" : "Copy link"\} for \$\{row\.issueKey\}`\}/u);
-	assert.match(issueKeyGroupSource, /<CopyIcon/u);
+	assert.match(issueKeyGroupSource, /<LinkIcon/u);
+	assert.doesNotMatch(issueKeyGroupSource, /<CopyIcon/u);
 	assert.match(issueKeyGroupSource, /<CheckMarkIcon/u);
 	assert.match(issueKeyGroupSource, /<TooltipContent>\{isCopiedRow \? "Copied" : "Copy link"\}<\/TooltipContent>/u);
-	assert.doesNotMatch(rowActionGroupSource, /CopyIcon|Copy link|In Model|Create work item below/u);
+	assert.doesNotMatch(rowActionGroupSource, /CopyIcon|LinkIcon|Copy link|In Model|Create work item below/u);
 	assert.match(rowActionGroupSource, /Open work item/u);
+});
+
+test("JiraList left-aligns top-level work items without an empty hierarchy spacer", () => {
+	const workCellSource = SOURCE.match(
+		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
+	)?.[1] ?? "";
+
+	assert.match(workCellSource, /row\.hasChildren \? \([\s\S]*?<Button[\s\S]*?\) : null/u);
+	assert.doesNotMatch(workCellSource, /aria-hidden="true" className="block size-5 shrink-0"/u);
 });
 
 test("JiraList centers an accessible refresh button with the footer count", () => {
@@ -284,7 +348,7 @@ test("JiraList sample refresh restores rows and transient demo state", () => {
 	assert.match(refreshSource, /setCopiedIssueKey\(null\)/u);
 	assert.match(refreshSource, /setDraftWorkItem\(null\)/u);
 	assert.doesNotMatch(refreshSource, /setExtraColumns/u);
-	assert.match(refreshSource, /setInModelRow\(null\)/u);
+	assert.doesNotMatch(refreshSource, /setInModelRow|inModelRow/u);
 	assert.match(PAGE_SOURCE, /onRefresh=\{handleRefresh\}/u);
 });
 
@@ -338,15 +402,20 @@ test("JiraList uses equal top, drag, and bottom row interaction zones", () => {
 	assert.match(SOURCE, /\{ issueKey: row\.issueKey, zone \}/u);
 	assert.match(SOURCE, /pointer-events-none/u);
 	assert.match(SOURCE, /sticky left-0/u);
-	assert.match(SOURCE, /shadow-\[inset_0_2px_0_var\(--ds-border-selected\)\]/u);
-	assert.match(SOURCE, /shadow-\[inset_0_-2px_0_var\(--ds-border-selected\)\]/u);
+	assert.match(SOURCE, /after:-top-px after:-inset-x-px after:z-30 after:h-0\.5 after:bg-border-selected/u);
+	assert.match(SOURCE, /after:-bottom-px after:-inset-x-px after:z-30 after:h-0\.5 after:bg-border-selected/u);
+	assert.doesNotMatch(SOURCE, /border-t-border-selected|border-b-border-selected|shadow-\[inset_0_[^\]]*--ds-border-selected/u);
 });
 
 test("JiraList middle zone exposes an anchored accessible drag handle", () => {
 	assert.match(SOURCE, /function JiraListSortableRow/u);
 	assert.match(SOURCE, /aria-label="Drag to reorder"/u);
 	assert.match(SOURCE, /<TooltipContent side="right">Drag to reorder<\/TooltipContent>/u);
-	assert.match(SOURCE, /<AppSwitcherIcon/u);
+	assert.match(SOURCE, /<DragHandleVerticalIcon/u);
+	assert.match(SOURCE, /cursor-grab touch-none border-0 bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(SOURCE, /absolute z-30 isolate size-6 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(SOURCE, /hover:bg-surface-overlay-hovered!/u);
+	assert.match(SOURCE, /active:cursor-grabbing active:bg-surface-overlay-pressed!/u);
 	assert.match(SOURCE, /top: "anchor\(center\)"/u);
 	assert.match(SOURCE, /positionAnchor: getRowAnchorName/u);
 	assert.match(SOURCE, /createPortal/u);
@@ -379,7 +448,7 @@ test("JiraList drag feedback raises the active row and marks its target boundary
 
 test("JiraList row boundary controls reserve no horizontal gutter", () => {
 	assert.match(SOURCE, /className="min-w-\[1570px\] table-fixed border-separate border-spacing-0"/u);
-	assert.match(SOURCE, /"sticky left-0 overflow-visible px-0"/u);
+	assert.match(SOURCE, /"sticky left-0 isolate overflow-visible bg-surface! px-0/u);
 	assert.match(SOURCE, /insertionLinePosition \? "z-30" : "z-10"/u);
 	assert.doesNotMatch(SOURCE, /ml-3 min-w-\[1594px\]/u);
 	assert.doesNotMatch(SOURCE, /<col className="w-6" \/>/u);
@@ -387,18 +456,27 @@ test("JiraList row boundary controls reserve no horizontal gutter", () => {
 	assert.doesNotMatch(SOURCE, /aria-hidden="true"[\s\S]{0,120}sticky left-/u);
 });
 
+test("JiraList sticky selection cells remain opaque while preserving row state tints", () => {
+	assert.match(SOURCE, /bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0/u);
+	assert.match(SOURCE, /\? "before:bg-bg-selected"/u);
+	assert.match(SOURCE, /group-hover\/row:before:bg-bg-neutral-subtle-hovered/u);
+	assert.match(SOURCE, /group-focus-within\/row:before:bg-bg-neutral-subtle-hovered/u);
+	assert.match(SOURCE, /className="relative z-10 flex items-center justify-center"/u);
+});
+
 test("JiraList row boundary controls are absolute opaque overlays", () => {
 	const controlsSource = SOURCE.match(
 		/function RowBoundaryCreateControls\([\s\S]*?\n\}\n\n(?:export )?function JiraListSortableRow/u,
 	)?.[0] ?? "";
 
-	assert.match(controlsSource, /absolute z-30 isolate size-8 -translate-x-1\/2 -translate-y-1\/2/u);
+	assert.match(controlsSource, /absolute z-30 isolate size-6 -translate-x-1\/2 -translate-y-1\/2/u);
 	assert.match(controlsSource, /isolate/u);
-	assert.match(controlsSource, /bg-surface!/u);
-	assert.match(controlsSource, /hover:bg-surface!/u);
-	assert.match(controlsSource, /focus-visible:bg-surface!/u);
+	assert.match(controlsSource, /bg-surface-overlay! text-icon-subtle shadow-2xl/u);
+	assert.match(controlsSource, /hover:bg-surface-overlay-hovered!/u);
+	assert.match(controlsSource, /active:bg-surface-overlay-pressed!/u);
+	assert.match(controlsSource, /focus-visible:bg-surface-overlay!/u);
 	assert.match(controlsSource, /before:-inset-0\.5/u);
-	assert.match(controlsSource, /before:bg-surface/u);
+	assert.match(controlsSource, /before:bg-surface-overlay/u);
 	assert.doesNotMatch(controlsSource, /bg-surface-raised/u);
 });
 
@@ -434,12 +512,25 @@ test("JiraList uses an explicit insertion index for body drafts and submitted ro
 
 test("JiraList footer editor wires issue type, due date, and editor-palette assignee controls", () => {
 	assert.match(SOURCE, /ISSUE_TYPE_OPTIONS/u);
+	assert.match(
+		SOURCE,
+		/aria-label=\{`Issue type: \$\{selectedIssueType\}`\}[\s\S]*?className="shrink-0 gap-1 px-2"[\s\S]*?size="compact"[\s\S]*?variant="ghost"/u,
+	);
 	assert.match(SOURCE, /onDraftWorkItemIssueTypeChange\?\.\(option\.value\)/u);
+	assert.match(SOURCE, /<InputGroup className="h-8 min-w-0 flex-1">/u);
+	assert.match(SOURCE, /<InputGroupInput/u);
+	assert.match(SOURCE, /<InputGroupAddon align="inline-end" className="gap-0\.5">/u);
+	assert.match(SOURCE, /<InputGroupButton/u);
 	assert.match(SOURCE, /<Calendar/u);
+	assert.match(SOURCE, /className=\{isDueDateOpen \? "text-icon-selected" : "text-icon-subtle"\}/u);
 	assert.match(SOURCE, /onDraftWorkItemDueDateChange\?\.\(/u);
 	assert.match(SOURCE, /<EditorPaletteAssigneePicker/u);
 	assert.match(SOURCE, /onDraftWorkItemAssigneeChange\?\.\(/u);
-	assert.match(SOURCE, /showFooterControls \? renderFooterMetadataControls\(\) : null/u);
+	assert.match(SOURCE, /<AvatarUnassigned aria-hidden="true" size="xs" \/>/u);
+	assert.doesNotMatch(SOURCE, /PersonAssigneeIcon/u);
+	assert.doesNotMatch(SOURCE, /<input\s/u);
+	assert.doesNotMatch(SOURCE, /className="h-7 px-2"/u);
+	assert.match(SOURCE, /className="px-2"[\s\S]*?size="compact"/u);
 	assert.match(SOURCE, /showFooterControls && "hidden sm:inline"/u);
 });
 
@@ -459,9 +550,16 @@ test("JiraList uses shared Jira priority and issue-type icon maps", () => {
 		/export type \{[^}]*JiraListProps[^}]*\} from "@\/components\/blocks\/jira-list\/jira-list-types";/u,
 	);
 	assert.match(SOURCE, /const PRIORITY_ICONS = \{\s*major: PriorityMajorIcon,/u);
+	assert.match(SOURCE, /const PRIORITY_LABELS = \{\s*major: "Major",\s*medium: "Medium",\s*minor: "Minor",/u);
+	assert.match(SOURCE, /<span className="text-sm text-text">\{PRIORITY_LABELS\[row\.priority\]\}<\/span>/u);
+	assert.match(SOURCE, /priority === "minor" && "text-icon-information"/u);
+	assert.doesNotMatch(SOURCE, /id: "priority",[\s\S]{0,100}align: "center"/u);
+	assert.match(SOURCE, /<span className="text-sm text-text">\{row\.dueDate \?\? "No due date"\}<\/span>/u);
 	assert.match(SOURCE, /const ISSUE_TYPE_ICONS = \{\s*epic: EpicIcon,/u);
 	assert.match(SOURCE, /subtask: SubtasksIcon,/u);
 	assert.match(SOURCE, /bug: BugIcon,/u);
+	assert.match(DATA_SOURCE, /dueDate: "Jul 18, 2026"/u);
+	assert.doesNotMatch(DATA_SOURCE, /dueDate: "Jul \d{1,2}"[,\n]/u);
 });
 
 test("JiraList sample page keeps every demo row top-level", () => {
@@ -475,7 +573,7 @@ test("JiraList sample page keeps every demo row top-level", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /const \[extraColumns, setExtraColumns\]/u);
 	assert.match(PAGE_SOURCE, /selectedIssueKeys=\{selectedIssueKeys\}/u);
 	assert.match(PAGE_SOURCE, /onDraftWorkItemSubmit=\{handleDraftWorkItemSubmit\}/u);
-	assert.match(PAGE_SOURCE, /onOpenAgentSessions=\{setInModelRow\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /onOpenAgentSessions|inModelRow/u);
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 });
 
