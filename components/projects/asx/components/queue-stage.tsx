@@ -91,6 +91,7 @@ export function QueueStage(): React.ReactElement {
 			>
 				<QueueConversationWorkspace
 					agent={activeAgent}
+					key={activeSession.id}
 					onSubmit={handleSubmit}
 					session={activeSession}
 				/>

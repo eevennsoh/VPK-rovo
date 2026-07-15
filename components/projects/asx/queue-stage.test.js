@@ -90,6 +90,7 @@ test("Queue stage hosts Jira chrome around ASX-local session navigation", () => 
 	assert.match(QUEUE_STAGE_SOURCE, /<JiraSidebar[\s\S]*sessionNavigation=/u);
 	assert.match(QUEUE_STAGE_SOURCE, /createInitialQueueSessions\(ASX_QUEUE_SESSION_SEEDS\)/u);
 	assert.match(QUEUE_STAGE_SOURCE, /appendQueueSessionUserMessage/u);
+	assert.match(QUEUE_STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*key=\{activeSession\.id\}/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /fetch\(|\/api\/rovo|RovoPage/u);
 });
 
