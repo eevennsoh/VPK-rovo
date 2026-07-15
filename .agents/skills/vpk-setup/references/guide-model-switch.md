@@ -15,7 +15,7 @@ model routing.
 | Provider | Model ID | Endpoint Path |
 |----------|----------|---------------|
 | **Claude (Default)** | `anthropic.claude-sonnet-5` | `/v1/bedrock/model/{MODEL_ID}/invoke-with-response-stream` |
-| **GPT** | `gpt-5.2-2025-12-11` | `/v1/openai/v1/chat/completions` |
+| **GPT** | `gpt-5.6-terra` | `/v1/openai/v1/chat/completions` |
 | **Gemini (Google)** | `gemini-3-pro-image-preview` | `/v1/google/publishers/google/v1/chat/completions` |
 | **TTS (Audio Speech)** | `tts-latest` | `/v1/google/v1/text:synthesize` (when model maps to `vendor: GOOGLE`) |
 
@@ -148,7 +148,7 @@ AI_GATEWAY_URL=https://ai-gateway.us-east-1.staging.atl-paas.net/v1/bedrock/mode
 ```javascript
 const DEFAULT_MODELS = {
   bedrock: "anthropic.claude-sonnet-5",  // Claude - model ID in URL
-  openai: "gpt-5.2-2025-12-11",                         // GPT - model ID in payload
+  openai: "gpt-5.6-terra",                              // GPT - model ID in payload
   google: "gemini-3-pro-image-preview",                 // Gemini - supports image generation
 };
 ```
@@ -209,7 +209,7 @@ Provider mappings can vary by environment, so treat Atlas CLI output as the sour
 - `anthropic.claude-opus-4-6` (most capable)
 
 **GPT:**
-- `gpt-5.2-2025-12-11` (latest)
+- `gpt-5.6-terra` (latest)
 
 **Gemini (Google):**
 - `gemini-3-pro-image-preview` (image generation + text)
@@ -301,7 +301,7 @@ pnpm run dev
 
 ```json
 {
-  "model": "gpt-5.2-2025-12-11",
+  "model": "gpt-5.6-terra",
   "messages": [
     { "role": "system", "content": "You are an AI assistant..." },
     { "role": "user", "content": "Hello" }
