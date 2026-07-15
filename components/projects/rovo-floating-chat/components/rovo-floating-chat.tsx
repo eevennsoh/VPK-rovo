@@ -22,6 +22,11 @@ interface RovoFloatingChatProps {
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	startRealtimeVoiceRequestKey?: number;
+	externalThinkingMessageId?: string | null;
+	showAgentBackButton?: boolean;
+	showAgentSelector?: boolean;
+	showChatHistory?: boolean;
+	showNewChatButton?: boolean;
 }
 
 export default function RovoFloatingChat({
@@ -35,6 +40,11 @@ export default function RovoFloatingChat({
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	startRealtimeVoiceRequestKey = 0,
+	externalThinkingMessageId,
+	showAgentBackButton = true,
+	showAgentSelector = true,
+	showChatHistory = true,
+	showNewChatButton = true,
 }: Readonly<RovoFloatingChatProps>) {
 	const { closeChat, isHistoryOpen, resetChat, toggleHistory } = useRovoChat();
 
@@ -56,6 +66,10 @@ export default function RovoFloatingChat({
 				onHistoryToggle={toggleHistory}
 				onNewChat={resetChat}
 				onSurfaceSwitch={onSurfaceSwitch}
+				showAgentBackButton={showAgentBackButton}
+				showAgentSelector={showAgentSelector}
+				showChatHistory={showChatHistory}
+				showNewChatButton={showNewChatButton}
 			/>
 			<div className="min-h-0 min-w-0 overflow-hidden">
 				<ChatPanel
@@ -82,9 +96,10 @@ export default function RovoFloatingChat({
 					onArtifactDialogOpen={onArtifactDialogOpen}
 					preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
 					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}
+					externalThinkingMessageId={externalThinkingMessageId}
 				/>
 			</div>
-			<ChatHistoryDrawer />
+			{showChatHistory ? <ChatHistoryDrawer /> : null}
 		</motion.div>
 	);
 }

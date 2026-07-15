@@ -74,7 +74,13 @@ const ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS = {
 	},
 } as const;
 
-export function RovoAppBrand() {
+export interface RovoAppBrandProps {
+	enableAgentSelector?: boolean;
+}
+
+export function RovoAppBrand({
+	enableAgentSelector = true,
+}: Readonly<RovoAppBrandProps>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -130,6 +136,45 @@ export function RovoAppBrand() {
 
 	const triggerLabel = isRovoAgentProfile(selectedAgent) ? "Rovo" : selectedAgent.name;
 	const identityItemVariants = shouldReduceMotion ? ROVO_APP_BRAND_REDUCED_ITEM_VARIANTS : ROVO_APP_BRAND_ITEM_VARIANTS;
+	const identity = (
+		<AnimatePresence initial={false} mode="wait">
+			<motion.span
+				animate="visible"
+				className="flex min-w-0 items-center gap-1.5"
+				exit="exit"
+				initial="hidden"
+				key={selectedAgentId}
+				variants={ROVO_APP_BRAND_CONTAINER_VARIANTS}
+			>
+				<motion.span
+					aria-hidden
+					className="flex size-4 items-center justify-center"
+					data-icon="inline-start"
+					variants={identityItemVariants}
+				>
+					<AgentAvatarVisual
+						avatarSrc={selectedAgent.avatarSrc}
+						brandName={selectedAgent.brandName}
+						className="size-4 object-contain"
+						label={selectedAgent.name}
+						logoName={selectedAgent.logoName}
+						sizePx={16}
+					/>
+				</motion.span>
+				<motion.span className="truncate font-semibold" variants={identityItemVariants}>
+					{triggerLabel}
+				</motion.span>
+			</motion.span>
+		</AnimatePresence>
+	);
+
+	if (!enableAgentSelector) {
+		return (
+			<div className="flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text">
+				{identity}
+			</div>
+		);
+	}
 
 	return (
 		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
@@ -143,33 +188,7 @@ export function RovoAppBrand() {
 					/>
 				}
 			>
-				<AnimatePresence initial={false} mode="wait">
-					<motion.span
-						animate="visible"
-						className="flex min-w-0 items-center gap-1.5"
-						exit="exit"
-						initial="hidden"
-						key={selectedAgentId}
-						variants={ROVO_APP_BRAND_CONTAINER_VARIANTS}
-					>
-						<motion.span
-							aria-hidden
-							className="flex size-4 items-center justify-center"
-							data-icon="inline-start"
-							variants={identityItemVariants}
-						>
-							<AgentAvatarVisual
-								avatarSrc={selectedAgent.avatarSrc}
-								brandName={selectedAgent.brandName}
-								logoName={selectedAgent.logoName}
-								label={selectedAgent.name}
-								sizePx={16}
-								className="size-4 object-contain"
-							/>
-						</motion.span>
-						<motion.span className="truncate font-semibold" variants={identityItemVariants}>{triggerLabel}</motion.span>
-					</motion.span>
-				</AnimatePresence>
+				{identity}
 				<Icon
 					aria-hidden
 					className="-ml-0.5 size-4 text-icon-subtle group-aria-expanded/button:text-icon-selected"

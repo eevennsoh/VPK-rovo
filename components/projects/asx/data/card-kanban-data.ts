@@ -4,7 +4,7 @@ import type {
 	JiraIssueSubtask,
 	JiraIssueTag,
 } from "@/components/blocks/jira-issue";
-import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
+import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 
 /**
  * ASX "Card Kanban" data.
@@ -51,7 +51,7 @@ const DEPENDENCY_MAPPER_LABELS = [
 const SERVICE_IMPACT_AGENT: JiraIssueAgentActivity = {
 	id: "service-impact-agent",
 	name: "Service impact agent",
-	avatarSrc: getDeterministicAgentAvatarSrc("service-impact-agent"),
+	avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
 	label: "Figuring out which services are affected",
 	labels: SERVICE_IMPACT_LABELS,
 	cycleIntervalMs: 5200,
@@ -62,12 +62,17 @@ const SERVICE_IMPACT_AGENT: JiraIssueAgentActivity = {
 const DEPENDENCY_MAPPER_AGENT: JiraIssueAgentActivity = {
 	id: "dependency-mapper",
 	name: "Dependency mapper",
-	avatarSrc: getDeterministicAgentAvatarSrc("dependency-mapper"),
+	avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
 	label: "Checking dependent components",
 	labels: DEPENDENCY_MAPPER_LABELS,
 	cycleIntervalMs: 6800,
 	cycleIntervalJitterMs: 2200,
 	state: "working",
+};
+
+const ASX_CARD_KANBAN_DEPLOYMENT_QUESTION = {
+	...QUESTION_CARD_SINGLE_SELECT_DEMO[0],
+	options: QUESTION_CARD_SINGLE_SELECT_DEMO[0].options.slice(0, 2),
 };
 
 /** Working agents, ordered so `slice(0, 1)` yields the single-agent state. */
@@ -78,7 +83,12 @@ export const ASX_CARD_KANBAN_WORKING_ACTIVITIES = [
 
 /** The lead agent pauses for input while the second keeps working. */
 export const ASX_CARD_KANBAN_AWAITING_ACTIVITIES = [
-	{ ...SERVICE_IMPACT_AGENT, label: "Awaiting user input", state: "awaiting-input" },
+	{
+		...SERVICE_IMPACT_AGENT,
+		label: "Awaiting user input",
+		question: ASX_CARD_KANBAN_DEPLOYMENT_QUESTION,
+		state: "awaiting-input",
+	},
 	DEPENDENCY_MAPPER_AGENT,
 ] as const satisfies readonly JiraIssueAgentActivity[];
 

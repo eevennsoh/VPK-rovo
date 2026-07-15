@@ -147,7 +147,7 @@ test("Gallery keeps the WebGL shader timeline continuous during selection exit",
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 	const selectionSource = readProjectFile("components/blocks/gallery/lib/gallery-selection.ts");
 	assert.doesNotMatch(source, /speed=\{visual\.phase/u);
-	assert.match(source, /speed=\{0\.18\}/u);
+	assert.match(source, /speed=\{shaderParameters\.speed\}/u);
 	assert.doesNotMatch(source, /colors=\{\[\.\.\.BLUE_PALETTE\]\}/u);
 	assert.match(source, /colors=\{BLUE_PALETTE\}/u);
 	assert.doesNotMatch(source, /const DUR_EXIT = 0\.1/u);
@@ -159,6 +159,32 @@ test("Gallery keeps the WebGL shader timeline continuous during selection exit",
 	assert.match(source, /GALLERY_SELECTION_SHADER_EXIT_SECONDS/u);
 	assert.match(gallerySource, /GALLERY_SELECTION_SHADER_EXIT_OVERLAP_MS/u);
 	assert.doesNotMatch(gallerySource, /EXIT_OVERLAP_MS = 140/u);
+});
+
+test("Gallery rolls bounded shader parameters for every selection visual", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
+	const cardSource = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
+
+	assert.match(source, /const GALLERY_SHADER_PARAMETER_RANGES = \{/u);
+	assert.match(
+		source,
+		/function createGalleryShaderParameters\(random: \(\) => number = Math\.random\)/u,
+	);
+	assert.match(source, /const \[shaderParameters\] = useState\(createGalleryShaderParameters\);/u);
+	assert.match(cardSource, /<GallerySelectedSurface[\s\S]*key=\{selectionVisual\.key\}/u);
+	for (const parameter of [
+		"seed",
+		"speed",
+		"scale",
+		"turbAmp",
+		"turbFreq",
+		"turbIter",
+		"waveFreq",
+		"distBias",
+	]) {
+		assert.match(source, new RegExp(`${parameter}=\\{shaderParameters\\.${parameter}\\}`, "u"));
+	}
+	assert.doesNotMatch(source, /seed=\{seed\}[\s\S]*speed=\{0\.18\}/u);
 });
 
 test("Gallery drag scroll cancels stale pending presses", () => {

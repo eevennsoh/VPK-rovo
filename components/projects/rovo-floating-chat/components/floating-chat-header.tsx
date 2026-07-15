@@ -25,6 +25,10 @@ interface FloatingChatHeaderProps {
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	onHistoryToggle?: () => void;
 	isHistoryOpen?: boolean;
+	showAgentBackButton?: boolean;
+	showAgentSelector?: boolean;
+	showChatHistory?: boolean;
+	showNewChatButton?: boolean;
 }
 
 const noop = () => {};
@@ -35,20 +39,28 @@ export default function FloatingChatHeader({
 	onSurfaceSwitch,
 	onHistoryToggle,
 	isHistoryOpen = false,
+	showAgentBackButton = true,
+	showAgentSelector = true,
+	showChatHistory = true,
+	showNewChatButton = true,
 }: Readonly<FloatingChatHeaderProps>) {
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
 	return (
 		<div className="flex shrink-0 items-center justify-between px-3 py-3">
 			<div className="flex items-center gap-1">
-				<RovoAgentBackButton />
-				<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
-				<RovoAppBrand />
+				{showAgentBackButton ? <RovoAgentBackButton /> : null}
+				{showChatHistory ? (
+					<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
+				) : null}
+				<RovoAppBrand enableAgentSelector={showAgentSelector} />
 			</div>
 			<div className="flex items-center gap-1">
-				<Button aria-label="New chat" size="icon" variant="ghost" onClick={onNewChat ?? noop}>
-					<EditIcon label="" />
-				</Button>
+				{showNewChatButton ? (
+					<Button aria-label="New chat" size="icon" variant="ghost" onClick={onNewChat ?? noop}>
+						<EditIcon label="" />
+					</Button>
+				) : null}
 				<DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
 					<DropdownMenuTrigger
 						render={

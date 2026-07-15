@@ -52,7 +52,7 @@ test("compact chat Rovo labels do not mount a dropdown menu", () => {
 			/<DropdownMenuContent align="start" sideOffset=\{4\} positionerClassName="z-\[600\]">[\s\S]*?<ChatSurfaceSwitcherItems/u,
 		);
 		assert.match(headerSource, /import \{ RovoAppBrand \} from "@\/components\/projects\/rovo-core\/components\/rovo-app-brand";/u);
-		assert.match(headerSource, /<RovoAppBrand \/>/u);
+		assert.match(headerSource, /<RovoAppBrand/u);
 		assert.match(
 			headerSource,
 			/<DropdownMenuContent align="end" sideOffset=\{4\} positionerClassName="z-\[600\]">[\s\S]*?<ChatSurfaceSwitcherItems/u,

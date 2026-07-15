@@ -58,12 +58,18 @@ test("Card Kanban controls use the compact Gallery top-bar slot", () => {
 });
 
 test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => {
-	assert.match(CARD_KANBAN_STAGE_SOURCE, /<AsxRovoOverlay \/>/u);
-	assert.match(KANBAN_STAGE_SOURCE, /<AsxRovoOverlay \/>/u);
+	assert.match(CARD_KANBAN_STAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}/u);
+	assert.match(KANBAN_STAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /createPortal/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.body/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<FloatingRovoButton/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<RovoFloatingChat/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /hideComposerSourceAndModelControls/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /showAgentBackButton=\{false\}/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /showAgentSelector=\{false\}/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /showChatHistory=\{false\}/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /showNewChatButton=\{false\}/u);
 	assert.doesNotMatch(ROVO_OVERLAY_SOURCE, /positioning="container"/u);
 });
 

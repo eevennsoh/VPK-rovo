@@ -12,4 +12,6 @@ export interface ChatContextBarDescriptor {
 	collapsible?: boolean;
 	/** Label shown on the collapsed pill trigger (e.g. "Edit agent"). */
 	collapsedLabel?: string;
+	/** Whether a non-interactive trailing X reserves dismiss-button space. */
+	showDismissPlaceholder?: boolean;
 }

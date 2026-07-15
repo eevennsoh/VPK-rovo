@@ -8,6 +8,8 @@ import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
 import { AgentCardHeader } from "@/components/blocks/agent-card";
 import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
+import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
+import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
@@ -30,6 +32,7 @@ export interface JiraIssueAgentActivity {
 	labels?: readonly string[];
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
+	question?: QuestionCardQuestion;
 	state: JiraIssueAgentActivityState;
 }
 
@@ -110,12 +113,15 @@ function getJiraIssueAgentPanelMessage(activity: JiraIssueAgentActivity): string
 
 function JiraIssueAgentActivityPanel({
 	activity,
+	onQuestionSubmit,
 	onViewChat,
 }: Readonly<{
 	activity: JiraIssueAgentActivity;
+	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 }>) {
 	const panelMessage = getJiraIssueAgentPanelMessage(activity);
+	const isRovoActivity = activity.name === "Rovo";
 	const [reply, setReply] = useState("");
 	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 	const [clickyActive, setClickyActive] = useState(false);
@@ -123,6 +129,10 @@ function JiraIssueAgentActivityPanel({
 
 	function handleViewChat() {
 		onViewChat?.(activity);
+	}
+
+	function handleQuestionSubmit(answers: QuestionCardAnswers) {
+		onQuestionSubmit?.(activity, answers);
 	}
 
 	const handleToggleRealtimeVoice = useCallback(() => {
@@ -150,47 +160,66 @@ function JiraIssueAgentActivityPanel({
 				}
 				byline={<p className="text-xs leading-4 text-text-subtle">Just now</p>}
 				leading={
-					<Avatar label={activity.name} shape="hexagon" size="default">
-						{activity.avatarSrc ? <AvatarImage src={activity.avatarSrc} alt="" /> : null}
+					<Avatar
+						className={isRovoActivity ? "[&>svg]:hidden" : undefined}
+						label={activity.name}
+						shape="hexagon"
+						size="default"
+					>
+						{activity.avatarSrc ? (
+							<AvatarImage
+								alt=""
+								className={isRovoActivity ? "size-6 object-contain" : undefined}
+								src={activity.avatarSrc}
+							/>
+						) : null}
 						<AvatarFallback>{getAgentInitial(activity.name)}</AvatarFallback>
 					</Avatar>
 				}
 				title={activity.name}
 			/>
 			<p className="text-sm leading-5 text-text">{panelMessage}</p>
-			<FloatingComposer
-				actions={
-					<RovoComposerActionButton
-						canSubmit={canSubmit}
-						clickyActive={clickyActive}
-						composerStatus="ready"
-						experimentalDarkCta
-						onStop={handleStop}
-						onToggleClicky={handleToggleClicky}
-						onToggleRealtimeVoice={handleToggleRealtimeVoice}
-						realtimeVoiceActive={realtimeVoiceActive}
-					/>
-				}
-				addButton={
-					<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
-						<AddIcon label="" />
-					</PromptInputButton>
-				}
-				allowOverflow
-				aria-label="Reply to agent"
-				className="shadow-none"
-				onSubmit={() => setReply("")}
-			>
-				<PromptInputTextarea
-					aria-label="Reply to agent"
-					className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-					enableDirectoryAutocomplete={false}
-					onChange={(event) => setReply(event.currentTarget.value)}
-					placeholder="Ask, @mention, or / for actions"
-					rows={1}
-					value={reply}
+			{activity.state === "awaiting-input" && activity.question ? (
+				<QuestionCard
+					className="shadow-none"
+					onSubmit={handleQuestionSubmit}
+					questions={[activity.question]}
 				/>
-			</FloatingComposer>
+			) : (
+				<FloatingComposer
+					actions={
+						<RovoComposerActionButton
+							canSubmit={canSubmit}
+							clickyActive={clickyActive}
+							composerStatus="ready"
+							experimentalDarkCta
+							onStop={handleStop}
+							onToggleClicky={handleToggleClicky}
+							onToggleRealtimeVoice={handleToggleRealtimeVoice}
+							realtimeVoiceActive={realtimeVoiceActive}
+						/>
+					}
+					addButton={
+						<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+							<AddIcon label="" />
+						</PromptInputButton>
+					}
+					allowOverflow
+					aria-label="Reply to agent"
+					className="shadow-none"
+					onSubmit={() => setReply("")}
+				>
+					<PromptInputTextarea
+						aria-label="Reply to agent"
+						className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+						enableDirectoryAutocomplete={false}
+						onChange={(event) => setReply(event.currentTarget.value)}
+						placeholder="Ask, @mention, or / for actions"
+						rows={1}
+						value={reply}
+					/>
+				</FloatingComposer>
+			)}
 		</div>
 	);
 }
@@ -199,12 +228,14 @@ function JiraIssueAgentActivityRow({
 	activity,
 	index,
 	onOpenChange,
+	onQuestionSubmit,
 	onViewChat,
 	rowCount,
 }: Readonly<{
 	activity: JiraIssueAgentActivity;
 	index: number;
 	onOpenChange?: (open: boolean) => void;
+	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	rowCount: number;
 }>) {
@@ -262,11 +293,12 @@ function JiraIssueAgentActivityRow({
 			/>
 			<HoverCardContent
 				align="start"
+				alignOffset={0}
 				className="w-[400px] max-w-[calc(100vw-48px)] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"
 				side="right"
 				sideOffset={8}
 			>
-				<JiraIssueAgentActivityPanel activity={activity} onViewChat={onViewChat} />
+				<JiraIssueAgentActivityPanel activity={activity} onQuestionSubmit={onQuestionSubmit} onViewChat={onViewChat} />
 			</HoverCardContent>
 		</HoverCard>
 	);
@@ -315,7 +347,7 @@ function JiraIssueCyclingAgentLabel({
 	return (
 		<span className="block min-w-0 flex-1 overflow-hidden text-sm leading-5 text-text-subtlest">
 			<span className="block min-h-5">
-				<AnimatePresence initial={false} mode="wait">
+				<AnimatePresence mode="wait">
 					<motion.span
 						key={label}
 						className="block truncate"
@@ -343,11 +375,13 @@ function JiraIssueCyclingAgentLabel({
 export function JiraIssueAgentActivityRows({
 	activities,
 	onOpenChange,
+	onQuestionSubmit,
 	onViewChat,
 	shouldReduceMotion,
 }: Readonly<{
 	activities: readonly JiraIssueAgentActivity[];
 	onOpenChange?: (open: boolean) => void;
+	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
 	shouldReduceMotion: boolean | null;
 }>) {
@@ -376,6 +410,7 @@ export function JiraIssueAgentActivityRows({
 							activity={activity}
 							index={index}
 							onOpenChange={onOpenChange}
+							onQuestionSubmit={onQuestionSubmit}
 							onViewChat={onViewChat}
 							rowCount={activities.length}
 						/>

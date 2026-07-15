@@ -3,7 +3,7 @@
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion, type Variants } from "motion/react";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { isValidElement, useId, useLayoutEffect, useRef, useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,6 +11,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import { computeContextBarOverflow } from "./overflow";
@@ -33,6 +35,7 @@ const CONTEXT_BAR_PILL_CLASS =
 interface ContextBarProps extends React.ComponentProps<"div"> {
 	onDismiss?: () => void;
 	dismissLabel?: string;
+	showDismissPlaceholder?: boolean;
 }
 
 interface ContextBarLeadProps {
@@ -70,12 +73,14 @@ interface CollapsibleContextBarProps {
 /**
  * The expanded contextual bar that sits above a composer input. Content (lead +
  * tag) is passed as children; the dismiss affordance is rendered on the right.
- * When `onDismiss` is omitted a non-interactive placeholder keeps the layout
- * stable, matching the original chat context bar behavior.
+ * When `onDismiss` is omitted, a non-interactive placeholder keeps the layout
+ * stable by default. Set `showDismissPlaceholder` to false when the context has
+ * no dismiss affordance at all.
  */
 export function ContextBar({
 	onDismiss,
 	dismissLabel = "Close",
+	showDismissPlaceholder = true,
 	className,
 	children,
 	...props
@@ -99,11 +104,11 @@ export function ContextBar({
 				>
 					<CrossIcon color="currentColor" label="" size="small" />
 				</button>
-			) : (
+			) : showDismissPlaceholder ? (
 				<span aria-hidden className={DISMISS_BUTTON_CLASS}>
 					<CrossIcon color="currentColor" label="" size="small" />
 				</span>
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -133,11 +138,28 @@ export function ContextBarTag({
 	title,
 	className,
 }: Readonly<ContextBarTagProps>): React.ReactElement {
+	const elemBeforeElement = isValidElement(elemBefore) ? elemBefore : null;
+	const usesAvatarSlot = type !== undefined && type !== "default";
+	const resolvedElemBefore = elemBeforeElement && !usesAvatarSlot && elemBeforeElement.type !== IconTile
+		? (
+			<IconTile
+				aria-hidden
+				as="span"
+				icon={elemBeforeElement.type === Icon
+					? elemBeforeElement
+					: <Icon aria-hidden render={elemBeforeElement} />}
+				label=""
+				size="xxsmall"
+				variant="transparent"
+			/>
+		)
+		: elemBefore;
+
 	return (
 		<Tag
 			className={cn("min-w-0 max-w-full shrink overflow-hidden", className)}
 			color={color}
-			elemBefore={elemBefore}
+			elemBefore={resolvedElemBefore}
 			maxWidth="100%"
 			title={title}
 			type={type}

@@ -104,10 +104,6 @@ const ShimmerComponent = ({
 		[baseGradientColor, characters]
 	);
 	const resolvedInitialBackgroundPosition = initialBackgroundPosition ?? "100% center";
-	const shimmerBackgroundPosition = useMemo(
-		() => [resolvedInitialBackgroundPosition, "0% center"],
-		[resolvedInitialBackgroundPosition]
-	);
 
 	if (isWaveEnabled) {
 		return (
@@ -212,13 +208,13 @@ const ShimmerComponent = ({
 
 	return (
 		<MotionComponent
-			animate={{ backgroundPosition: shimmerBackgroundPosition }}
+			animate={{ backgroundPosition: "0% center" }}
 			className={cn(
 				"relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent",
 				"[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--color-background),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]",
 				className
 			)}
-			initial={false}
+			initial={{ backgroundPosition: resolvedInitialBackgroundPosition }}
 			style={
 				{
 					"--spread": `${dynamicSpread}px`,
