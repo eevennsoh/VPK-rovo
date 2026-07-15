@@ -198,9 +198,10 @@ test("JiraList column add popover filters static options without changing table 
 
 test("JiraList gives every data column an accessible ellipsis action", () => {
 	assert.match(SOURCE, /<JiraListColumnActions label=\{column\.label\}/u);
+	assert.match(SOURCE, /className="group\/column-header flex min-w-0 items-center gap-2"/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /More actions for \$\{label\}/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /<ShowMoreHorizontalIcon/u);
-	assert.match(COLUMN_CONTROLS_SOURCE, /hover:opacity-100 focus-visible:opacity-100/u);
+	assert.match(COLUMN_CONTROLS_SOURCE, /group-hover\/column-header:opacity-100 group-focus-within\/column-header:opacity-100/u);
 	assert.match(COLUMN_CONTROLS_SOURCE, /<TooltipContent>\{actionLabel\}<\/TooltipContent>/u);
 });
 

@@ -749,7 +749,7 @@ export function JiraList({
 											anchorName: getColumnAnchorName(insertionAnchorId, columnIndex),
 										}}
 									>
-										<div className="flex min-w-0 items-center gap-2">
+										<div className="group/column-header flex min-w-0 items-center gap-2">
 											<div
 												className={cn(
 													"inline-flex min-w-0 items-center gap-1 truncate",
