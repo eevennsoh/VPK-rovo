@@ -7,7 +7,7 @@ import {
 	useReducedMotion,
 	useTransform,
 } from "motion/react";
-import { useEffect, useMemo, type JSX, type RefObject } from "react";
+import { useEffect, useMemo, useState, type JSX, type RefObject } from "react";
 
 import LiquidGradient from "@/components/visual/liquid-gradient";
 
@@ -24,6 +24,54 @@ const DUR_ENTER = 1.4; // Deliberately slow organic reveal.
 const MASK_FEATHER_PX = 18;
 const MASK_DIAMETER_SCALE = 2.6;
 const BLUE_PALETTE: string[] = ["#0747A6", "#0C66E4", "#1D7AFC", "#579DFF"];
+
+interface GalleryShaderParameters {
+	seed: number;
+	speed: number;
+	scale: number;
+	turbAmp: number;
+	turbFreq: number;
+	turbIter: number;
+	waveFreq: number;
+	distBias: number;
+}
+
+const GALLERY_SHADER_PARAMETER_RANGES = {
+	speed: [0.15, 0.21],
+	scale: [0.48, 0.56],
+	turbAmp: [0.65, 0.79],
+	turbFreq: [0.1, 0.14],
+	turbIter: [6, 8],
+	waveFreq: [2.8, 3.5],
+	distBias: [0.03, 0.13],
+} as const;
+
+function randomBetween(
+	range: readonly [number, number],
+	random: () => number,
+): number {
+	return range[0] + random() * (range[1] - range[0]);
+}
+
+function randomInteger(
+	range: readonly [number, number],
+	random: () => number,
+): number {
+	return Math.floor(randomBetween([range[0], range[1] + 1], random));
+}
+
+function createGalleryShaderParameters(random: () => number = Math.random): GalleryShaderParameters {
+	return {
+		seed: Math.floor(random() * 10000),
+		speed: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.speed, random),
+		scale: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.scale, random),
+		turbAmp: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.turbAmp, random),
+		turbFreq: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.turbFreq, random),
+		turbIter: randomInteger(GALLERY_SHADER_PARAMETER_RANGES.turbIter, random),
+		waveFreq: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.waveFreq, random),
+		distBias: randomBetween(GALLERY_SHADER_PARAMETER_RANGES.distBias, random),
+	};
+}
 
 function createSeededRandom(seed: number): () => number {
 	let state = seed >>> 0;
@@ -93,6 +141,7 @@ export function GallerySelectedSurface({
 	const seed = getGalleryItemSeed(itemId);
 	const inkMaskSeed = seed + visual.key * 7919;
 	const inkMaskImage = useMemo(() => createInkMaskImage(inkMaskSeed), [inkMaskSeed]);
+	const [shaderParameters] = useState(createGalleryShaderParameters);
 	const isExitPhase = visual.phase === "exit";
 	const phaseDuration = isExitPhase ? GALLERY_SELECTION_SHADER_EXIT_SECONDS : DUR_ENTER;
 	const phaseEase = isExitPhase ? EXIT_EASE : ENTER_EASE;
@@ -161,15 +210,15 @@ export function GallerySelectedSurface({
 			<LiquidGradient
 				className="absolute inset-0 h-full w-full"
 				colors={BLUE_PALETTE}
-				seed={seed}
-				speed={0.18}
+				seed={shaderParameters.seed}
+				speed={shaderParameters.speed}
 				loop={0}
-				scale={0.52}
-				turbAmp={0.72}
-				turbFreq={0.12}
-				turbIter={7}
-				waveFreq={3.1}
-				distBias={0.08}
+				scale={shaderParameters.scale}
+				turbAmp={shaderParameters.turbAmp}
+				turbFreq={shaderParameters.turbFreq}
+				turbIter={shaderParameters.turbIter}
+				waveFreq={shaderParameters.waveFreq}
+				distBias={shaderParameters.distBias}
 				jellify
 				ditherMode={1}
 				dither={0.03}

@@ -35,7 +35,7 @@ test("active compact chat surfaces own one contained history drawer", () => {
 	assert.match(chatPanelSource, /const shouldRenderHeaderHistory = isHeaderHistoryEnabled && chatSurface !== "floating";/u);
 	assert.match(chatPanelSource, /<ChatHistoryDrawer active=\{shouldRenderHeaderHistory\} \/>/u);
 	assert.match(chatPanelSource, /variant=\{headerVariant\}/u);
-	assert.match(floatingSource, /<ChatHistoryDrawer \/>/u);
+	assert.match(floatingSource, /showChatHistory \? <ChatHistoryDrawer \/> : null/u);
 	assert.match(chatPanelSource, /onHistoryToggle=\{toggleHistory\}/u);
 	assert.doesNotMatch(chatPanelSource, /currentThreadHasRichState/u);
 	assert.doesNotMatch(chatPanelSource, /This thread includes fullscreen-only state\./u);

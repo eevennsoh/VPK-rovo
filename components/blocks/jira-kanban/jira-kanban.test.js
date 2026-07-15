@@ -77,3 +77,48 @@ test("Kanban multi-card drag does not render an extra count badge on the source 
 	assert.doesNotMatch(SOURCE, /dragGroupCount/);
 	assert.doesNotMatch(SOURCE, /draggedCardCount/);
 });
+
+test("Kanban cards expose and render Jira issue agent lifecycle presentation", () => {
+	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
+	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
+	assert.match(SOURCE, /agentDoneCount\?: number;/);
+	assert.match(SOURCE, /agentActivities=\{card\.agentActivities\}/);
+	assert.match(SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/);
+	assert.match(SOURCE, /agentDoneCount=\{card\.agentDoneCount\}/);
+});
+
+test("Kanban card interactions preserve card and column context", () => {
+	assert.match(
+		SOURCE,
+		/onCardGenerativeActionSubmit\?: \([\s\S]*request: JiraIssueGenerativeActionRequest,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void \| Promise<void>;/,
+	);
+	assert.match(
+		SOURCE,
+		/onSubmit: \(request\) =>[\s\S]*onCardGenerativeActionSubmit\(request, card, column\.title\)/,
+	);
+	assert.match(
+		SOURCE,
+		/onCardAgentActivityViewChat\?: \([\s\S]*activity: JiraIssueAgentActivity,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void;/,
+	);
+	assert.match(
+		SOURCE,
+		/\? \(activity\) => onCardAgentActivityViewChat\(activity, card, column\.title\)/,
+	);
+	assert.match(
+		SOURCE,
+		/\? \(open\) => onCardAgentActivityOpenChange\(open, card, column\.title\)/,
+	);
+	assert.match(
+		SOURCE,
+		/onCardAgentActivityQuestionSubmit\?: \([\s\S]*activity: JiraIssueAgentActivity,[\s\S]*answers: QuestionCardAnswers,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void;/,
+	);
+	assert.match(
+		SOURCE,
+		/onAgentActivityQuestionSubmit=\{[\s\S]*\? \(activity, answers\) =>[\s\S]*onCardAgentActivityQuestionSubmit\(activity, answers, card, column\.title\)/,
+	);
+});
+
+test("Kanban derives visible column counts from rendered cards", () => {
+	assert.match(SOURCE, /count=\{column\.cards\.length\}/);
+	assert.doesNotMatch(SOURCE, /count=\{column\.count\}/);
+});

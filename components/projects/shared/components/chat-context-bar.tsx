@@ -10,6 +10,7 @@ import PersonIcon from "@atlaskit/icon/core/person";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import { token } from "@/lib/tokens";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Icon } from "@/components/ui/icon";
 import {
 	CollapsibleContextBar,
 	ContextBar,
@@ -59,7 +60,11 @@ export default function ChatContextBar({
 			<AvatarFallback>{context.label.slice(0, 2)}</AvatarFallback>
 		</Avatar>
 	) : (
-		<ContextIcon color={token("color.icon.brand")} label="" size="small" />
+		<Icon
+			aria-hidden
+			className="size-4"
+			render={<ContextIcon color={token("color.icon.brand")} label="" size="small" />}
+		/>
 	);
 
 	const tag = (
@@ -86,7 +91,12 @@ export default function ChatContextBar({
 	}
 
 	return (
-		<ContextBar data-chat-context-bar dismissLabel={dismissLabel} onDismiss={onDismiss}>
+		<ContextBar
+			data-chat-context-bar
+			dismissLabel={dismissLabel}
+			onDismiss={onDismiss}
+			showDismissPlaceholder={context.showDismissPlaceholder}
+		>
 			<ContextBarLead icon={<LeadIcon color={token("color.icon.subtle")} label="" size="small" />}>
 				{leadLabel}
 			</ContextBarLead>

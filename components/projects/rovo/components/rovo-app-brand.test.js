@@ -47,6 +47,12 @@ test("RovoAppBrand uses selected-agent actions while a custom agent is active", 
 	assert.doesNotMatch(SOURCE, /className="-ml-0\.5 size-4 text-icon-selected"/u);
 });
 
+test("RovoAppBrand can render a fixed identity without an agent selector", () => {
+	assert.match(SOURCE, /enableAgentSelector\?: boolean;/u);
+	assert.match(SOURCE, /if \(!enableAgentSelector\) \{/u);
+	assert.match(SOURCE, /<div className="flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text">[\s\S]*\{identity\}/u);
+});
+
 test("fullscreen Rovo header exposes a custom-agent back button", () => {
 	assert.match(HEADER_SOURCE, /<RovoAgentBackButton \/>/u);
 	assert.match(BACK_BUTTON_SOURCE, /useRovoSelectedAgent/u);

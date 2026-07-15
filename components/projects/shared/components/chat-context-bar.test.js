@@ -186,6 +186,7 @@ test("ChatContextBar renders a non-dismissible truncated context chip", async ()
 	assert.match(markup, /RFP-101: Prepare for bid recommendation for ESM RFP/);
 	assert.match(markup, /data-icon="location"/);
 	assert.match(markup, /data-icon="work-item"/);
+	assert.match(CHAT_CONTEXT_BAR_SOURCE, /<Icon[\s\S]*render=\{<ContextIcon[\s\S]*\/?>/u);
 	assert.match(markup, /data-color="standard"/);
 	assert.match(markup, /data-max-width="100%"/);
 	assert.match(markup, /data-class="[^"]*min-w-0[^"]*"/);
@@ -219,6 +220,19 @@ test("ChatContextBar renders artifact edit context with an active dismiss afford
 	assert.match(markup, /<button/);
 	assert.doesNotMatch(markup, /Context:/);
 	assert.doesNotMatch(markup, /data-icon="location"/);
+});
+
+test("ChatContextBar can omit the non-interactive dismiss placeholder", async () => {
+	const harness = await loadChatContextBarHarness();
+	const markup = harness.renderContextBar({
+		label: "PD-40: Implement advanced date-range filter",
+		iconName: "work-item",
+		showDismissPlaceholder: false,
+		signature: "asx-work-item:PD-40",
+	});
+
+	assert.doesNotMatch(markup, /data-icon="cross"/);
+	assert.doesNotMatch(markup, /<button/);
 });
 
 test("ChatContextBar stays presentational and delegates dismissal to props", async () => {

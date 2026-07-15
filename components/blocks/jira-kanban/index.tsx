@@ -8,8 +8,16 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
 
-import { JiraIssue, type JiraIssuePriority, type JiraIssueTag } from "@/components/blocks/jira-issue";
+import {
+	JiraIssue,
+	type JiraIssueAgentActivity,
+	type JiraIssueAgentActivityMode,
+	type JiraIssueGenerativeActionRequest,
+	type JiraIssuePriority,
+	type JiraIssueTag,
+} from "@/components/blocks/jira-issue";
 import { AgentSelector } from "@/components/blocks/agent-selector";
+import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
@@ -45,6 +53,9 @@ export interface JiraKanbanCardData {
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
 	avatarUnassignedKind?: AvatarUnassignedKind;
 	avatarPulse?: boolean;
+	agentActivities?: readonly JiraIssueAgentActivity[];
+	agentActivityMode?: JiraIssueAgentActivityMode;
+	agentDoneCount?: number;
 }
 
 export interface JiraKanbanColumnData {
@@ -85,6 +96,27 @@ export interface JiraKanbanProps {
 	onCardDragStart?: (card: JiraKanbanCardData, sourceColumnTitle: string) => void;
 	onCardDrop?: (targetColumnTitle: string) => void;
 	onCardDragEnd?: () => void;
+	onCardGenerativeActionSubmit?: (
+		request: JiraIssueGenerativeActionRequest,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void | Promise<void>;
+	onCardAgentActivityOpenChange?: (
+		open: boolean,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
+	onCardAgentActivityViewChat?: (
+		activity: JiraIssueAgentActivity,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
+	onCardAgentActivityQuestionSubmit?: (
+		activity: JiraIssueAgentActivity,
+		answers: QuestionCardAnswers,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleColumnAgent?: (columnTitle: string, agentId: string) => void;
 	paddingBottom?: CSSProperties["paddingBottom"];
@@ -99,6 +131,15 @@ export function createJiraKanbanColumns(
 		cards: column.cards.map((card) => ({
 			...card,
 			tags: card.tags.map((tag) => ({ ...tag })),
+			agentActivities: card.agentActivities?.map((activity) => ({
+				...activity,
+				question: activity.question
+					? {
+						...activity.question,
+						options: activity.question.options.map((option) => ({ ...option })),
+					}
+					: undefined,
+			})),
 		})),
 	}));
 }
@@ -350,6 +391,10 @@ export function JiraKanban({
 	onCardDragEnd,
 	onCardDragStart,
 	onCardDrop,
+	onCardGenerativeActionSubmit,
+	onCardAgentActivityOpenChange,
+	onCardAgentActivityQuestionSubmit,
+	onCardAgentActivityViewChat,
 	onCreateAgent,
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
@@ -515,7 +560,7 @@ export function JiraKanban({
 							<BoardColumn
 								agents={agents}
 								assignedAgentIds={assignedAgentIdsByColumn[column.title] ?? []}
-								count={column.count}
+								count={column.cards.length}
 								headerPaddingBlock={columnHeaderPaddingBlock}
 								onCreateAgent={onCreateAgent}
 								onToggleAgent={
@@ -553,6 +598,33 @@ export function JiraKanban({
 											assigneeAvatarShape={card.avatarShape}
 											assigneeUnassignedKind={card.avatarUnassignedKind}
 											assigneePulse={card.avatarPulse}
+											agentActivities={card.agentActivities}
+											agentActivityMode={card.agentActivityMode}
+											agentDoneCount={card.agentDoneCount}
+											generativeAction={
+												onCardGenerativeActionSubmit
+													? {
+														onSubmit: (request) =>
+															onCardGenerativeActionSubmit(request, card, column.title),
+													}
+													: undefined
+											}
+											onAgentActivityOpenChange={
+												onCardAgentActivityOpenChange
+													? (open) => onCardAgentActivityOpenChange(open, card, column.title)
+													: undefined
+											}
+											onAgentActivityViewChat={
+												onCardAgentActivityViewChat
+													? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
+													: undefined
+											}
+											onAgentActivityQuestionSubmit={
+												onCardAgentActivityQuestionSubmit
+													? (activity, answers) =>
+														onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
+													: undefined
+											}
 											dragging={isCardBeingDragged || isSelectedCardBeingDragged}
 											selected={isSelected}
 											onClick={handleClick}

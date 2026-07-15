@@ -21,6 +21,32 @@ async function loadContextBarHarness() {
 			`,
 		],
 		[
+			"@/components/ui/icon",
+			`
+				import React from "react";
+				export function Icon(props) {
+					return React.createElement("span", { "data-slot": "icon" }, props.render);
+				}
+			`,
+		],
+		[
+			"@/components/ui/icon-tile",
+			`
+				import React from "react";
+				export function IconTile(props) {
+					return React.createElement(
+						props.as ?? "div",
+						{
+							"data-slot": "icon-tile",
+							"data-size": props.size,
+							"data-variant": props.variant,
+						},
+						props.icon,
+					);
+				}
+			`,
+		],
+		[
 			"@atlaskit/icon/core/cross",
 			`
 				import React from "react";
@@ -107,11 +133,15 @@ async function loadContextBarHarness() {
 					ContextBarTrigger,
 				} from "./components/ui-custom/context-bar/context-bar.tsx";
 
-				export function renderBar(dismissible) {
+				export function renderBar(dismissible, showDismissPlaceholder = true) {
 					return renderToStaticMarkup(
 						React.createElement(
 							ContextBar,
-							{ onDismiss: dismissible ? () => {} : undefined, dismissLabel: "Close it" },
+							{
+								onDismiss: dismissible ? () => {} : undefined,
+								dismissLabel: "Close it",
+								showDismissPlaceholder,
+							},
 							React.createElement(ContextBarLead, { icon: React.createElement("svg", { "data-icon": "lead" }) }, "Edit:"),
 							React.createElement(ContextBarTag, { title: "Agent name" }, "Agent name"),
 						),
@@ -121,6 +151,20 @@ async function loadContextBarHarness() {
 				export function renderTrigger() {
 					return renderToStaticMarkup(
 						React.createElement(ContextBarTrigger, { onClick: () => {} }, "Edit agent"),
+					);
+				}
+
+				export function renderTagFrontSlot(type) {
+					return renderToStaticMarkup(
+						React.createElement(
+							ContextBarTag,
+							{
+								elemBefore: React.createElement("svg", { "data-icon": "front" }),
+								title: "Context",
+								type,
+							},
+							"Context",
+						),
 					);
 				}
 
@@ -188,6 +232,28 @@ test("ContextBar renders a non-interactive placeholder without onDismiss", async
 
 	assert.match(markup, /data-icon="cross"/);
 	assert.doesNotMatch(markup, /<button/);
+});
+
+test("ContextBar can omit the non-interactive dismiss placeholder", async () => {
+	const harness = await loadContextBarHarness();
+	const markup = harness.renderBar(false, false);
+
+	assert.doesNotMatch(markup, /data-icon="cross"/);
+	assert.doesNotMatch(markup, /<button/);
+});
+
+test("ContextBarTag reuses the Tag front-slot icon recipe", async () => {
+	const harness = await loadContextBarHarness();
+	const iconMarkup = harness.renderTagFrontSlot(undefined);
+	const avatarMarkup = harness.renderTagFrontSlot("agent");
+
+	assert.match(iconMarkup, /data-slot="icon-tile"/);
+	assert.match(iconMarkup, /data-size="xxsmall"/);
+	assert.match(iconMarkup, /data-variant="transparent"/);
+	assert.match(iconMarkup, /data-slot="icon"/);
+	assert.match(iconMarkup, /data-icon="front"/);
+	assert.doesNotMatch(avatarMarkup, /data-slot="icon-tile"/);
+	assert.match(avatarMarkup, /data-icon="front"/);
 });
 
 test("ContextBarTrigger renders a labelled pill button", async () => {

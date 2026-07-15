@@ -6,6 +6,7 @@ import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery } from "@/components/blocks/gallery";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
+import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
@@ -89,7 +90,7 @@ export default function AsxPage(): React.ReactElement {
 		// works on every render path — the standalone route, the catalog
 		// (`/components/projects/asx`), and preview (`/preview/projects/asx`).
 		// CardKanbanStage and KanbanStage use Rovo chat, which throws without it.
-		<RovoChatProvider>
+		<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
 			<AsxGallery />
 		</RovoChatProvider>
 	);

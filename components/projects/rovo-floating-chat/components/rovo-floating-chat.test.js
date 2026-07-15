@@ -108,6 +108,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-has-intercept-submit": String(typeof props.onInterceptSubmit === "function"),
 							"data-preserve-artifact-dialog": String(props.preserveFloatingSurfaceOnArtifactDialogOpen),
 							"data-start-realtime-key": String(props.startRealtimeVoiceRequestKey),
+							"data-external-thinking-message-id": props.externalThinkingMessageId ?? "",
 							className: props.containerClassName,
 						},
 						"Shared chat panel",
@@ -124,6 +125,10 @@ async function loadRovoFloatingChatHarness() {
 					return React.createElement("header", {
 						"data-testid": "floating-chat-header",
 						"data-has-new-chat": String(typeof props.onNewChat === "function"),
+						"data-show-agent-back-button": String(props.showAgentBackButton),
+						"data-show-agent-selector": String(props.showAgentSelector),
+						"data-show-chat-history": String(props.showChatHistory),
+						"data-show-new-chat-button": String(props.showNewChatButton),
 					});
 				}
 			`,
@@ -183,6 +188,27 @@ async function loadRovoFloatingChatHarness() {
 				export function renderFloatingChatWithRealtimeStartRequest() {
 					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
 						startRealtimeVoiceRequestKey: 3,
+					}));
+				}
+
+				export function renderFloatingChatWithExternalThinkingMessageId() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						externalThinkingMessageId: "asx-thinking-message",
+					}));
+				}
+
+				export function renderFloatingChatWithoutAgentBackButton() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						showAgentBackButton: false,
+					}));
+				}
+
+				export function renderFloatingChatWithRestrictedAgentHeader() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						showAgentBackButton: false,
+						showAgentSelector: false,
+						showChatHistory: false,
+						showNewChatButton: false,
 					}));
 				}
 
@@ -260,10 +286,41 @@ test("RovoFloatingChat renders the shared chat panel inside the floating shell",
 
 	assert.match(markup, /data-testid="floating-chat-header"/);
 	assert.match(markup, /data-has-new-chat="true"/);
+	assert.match(markup, /data-show-agent-back-button="true"/);
+	assert.match(markup, /data-show-agent-selector="true"/);
+	assert.match(markup, /data-show-chat-history="true"/);
+	assert.match(markup, /data-show-new-chat-button="true"/);
 	assert.match(markup, /data-testid="floating-history-drawer"/);
 	assert.match(markup, /data-testid="shared-chat-panel"/);
 	assert.match(markup, /data-hide-header="true"/);
 	assert.match(markup, /data-abort-on-unmount="false"/);
+});
+
+test("RovoFloatingChat can render a fixed single-thread agent header", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithRestrictedAgentHeader();
+
+	assert.match(markup, /data-show-agent-back-button="false"/);
+	assert.match(markup, /data-show-agent-selector="false"/);
+	assert.match(markup, /data-show-chat-history="false"/);
+	assert.match(markup, /data-show-new-chat-button="false"/);
+	assert.doesNotMatch(markup, /data-testid="floating-history-drawer"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showAgentSelector\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showChatHistory\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showNewChatButton\?: boolean;/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /<RovoAppBrand enableAgentSelector=\{showAgentSelector\} \/>/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showChatHistory \? \([\s\S]*<ChatHistoryButton/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showNewChatButton \? \(/u);
+});
+
+test("RovoFloatingChat can suppress the custom-agent back button", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithoutAgentBackButton();
+
+	assert.match(markup, /data-show-agent-back-button="false"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showAgentBackButton\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /showAgentBackButton=\{showAgentBackButton\}/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showAgentBackButton \? <RovoAgentBackButton \/> : null/u);
 });
 
 test("RovoFloatingChat bounds the shared chat panel inside an overflow-hidden scroll frame", async () => {
@@ -323,6 +380,15 @@ test("RovoFloatingChat forwards live voice start requests to the shared chat pan
 	assert.match(CHAT_PANEL_SOURCE, /startRealtimeVoiceRequestKey = 0/u);
 	assert.match(CHAT_PANEL_SOURCE, /const lastStartRealtimeVoiceRequestKeyRef = useRef\(0\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /lastStartRealtimeVoiceRequestKeyRef\.current = startRealtimeVoiceRequestKey;[\s\S]*realtime\.voiceState !== "idle"[\s\S]*startRealtimeVoice\(\);/u);
+});
+
+test("RovoFloatingChat forwards an external thinking message id to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithExternalThinkingMessageId();
+
+	assert.match(markup, /data-external-thinking-message-id="asx-thinking-message"/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /externalThinkingMessageId\?: string \| null;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /externalThinkingMessageId=\{externalThinkingMessageId\}/u);
 });
 
 test("RovoFloatingChat forwards custom agent tab content to the shared chat panel", async () => {
@@ -417,10 +483,11 @@ test("Floating chat thinking status uses ChainOfThought dots without literal ell
 
 test("Floating chat compact empty greeting does not force a full-height message area", () => {
 	assert.match(CHAT_PANEL_SOURCE, /const shouldHugEmptyGreeting = !hasMessages && greeting\?\.showHero === false/);
-	assert.match(CHAT_PANEL_SOURCE, /const shouldUseAutoMessageTrack = shouldHugEmptyGreeting && containerStyle\?\.display === "grid"/);
+	assert.match(CHAT_PANEL_SOURCE, /const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting \|\| isAgentTestEmptyState/);
+	assert.match(CHAT_PANEL_SOURCE, /const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle\?\.display === "grid"/);
 	assert.match(CHAT_PANEL_SOURCE, /gridTemplateRows: "auto auto"/);
-	assert.match(CHAT_PANEL_SOURCE, /justifyContent: hasMessages \|\| shouldHugEmptyGreeting \? "flex-start" : "flex-end"/);
-	assert.match(CHAT_PANEL_SOURCE, /minHeight: shouldHugEmptyGreeting \? "auto" : "100%"/);
+	assert.match(CHAT_PANEL_SOURCE, /: hasMessages \|\| shouldUseNaturalEmptyGreeting\s*\? "flex-start"\s*: "flex-end"/u);
+	assert.match(CHAT_PANEL_SOURCE, /minHeight: isAgentTestEmptyState \? "100%" : shouldUseNaturalEmptyGreeting \? "auto" : "100%"/u);
 	assert.match(CHAT_PANEL_SOURCE, /<div className="w-full" style=\{chatStyles\.emptyState\}>/);
 	assert.doesNotMatch(CHAT_PANEL_SOURCE, /<div className="w-\[90%\]" style=\{chatStyles\.emptyState\}>/);
 });

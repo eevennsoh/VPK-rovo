@@ -190,6 +190,7 @@ export function GalleryCard({
 					>
 						{selectionVisual ? (
 							<GallerySelectedSurface
+								key={selectionVisual.key}
 								itemId={item.id}
 								title={item.title}
 								width={width}

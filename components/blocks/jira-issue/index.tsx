@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ComponentProps, type CSSProperties, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type CSSProperties, type FocusEvent, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -17,6 +17,7 @@ import {
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityMode,
 } from "@/components/blocks/jira-issue/agent-activity";
+import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
 import {
 	JiraIssueGenerativeActionMenu,
@@ -95,6 +96,7 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	agentDoneCount?: number;
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	onAgentActivityOpenChange?: (open: boolean) => void;
+	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
@@ -324,6 +326,7 @@ function JiraIssueSubtasks({
 	completedCount,
 	controlId,
 	expanded,
+	hasInsetSurface,
 	label,
 	onToggle,
 	shouldReduceMotion,
@@ -332,6 +335,7 @@ function JiraIssueSubtasks({
 	completedCount: number;
 	controlId: string;
 	expanded: boolean;
+	hasInsetSurface: boolean;
 	label: string;
 	onToggle: () => void;
 	shouldReduceMotion: boolean | null;
@@ -380,7 +384,7 @@ function JiraIssueSubtasks({
 						id={controlId}
 						key="subtasks-panel"
 						animate={presenceMotion.animate}
-						className="flex flex-col gap-2 px-3 pb-3"
+						className={cn("flex flex-col gap-2 px-3 pt-1", hasInsetSurface ? "pb-2" : "pb-3")}
 						exit={presenceMotion.exit}
 						initial={presenceMotion.initial}
 						layout={shouldReduceMotion ? false : "position"}
@@ -416,6 +420,7 @@ export function JiraIssue({
 	issueTypeLabel = "Task",
 	onSubtasksExpandedChange,
 	onAgentActivityOpenChange,
+	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
 	parentEpicControl,
 	priority = "major",
@@ -437,6 +442,9 @@ export function JiraIssue({
 	const subtasksPanelId = useId();
 	const agentActivityLayoutGroupId = useId();
 	const [internalSubtasksExpanded, setInternalSubtasksExpanded] = useState(defaultSubtasksExpanded);
+	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
+	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
+	const generativeActionRevealActive = generativeActionPointerActive || generativeActionFocusActive;
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
 	const completedSubtaskCount = getCompletedCount(subtasksCompleted, subtasks?.length ?? 0);
@@ -554,6 +562,48 @@ export function JiraIssue({
 		onSubtasksExpandedChange?.(nextExpanded);
 	}
 
+	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
+		if (generativeAction && event.currentTarget.contains(event.target as Node)) {
+			setGenerativeActionPointerActive(true);
+		}
+	}
+
+	function handleGenerativeActionPointerOut(event: PointerEvent<HTMLElement>) {
+		if (!event.currentTarget.contains(event.target as Node)) {
+			return;
+		}
+
+		const nextTarget = event.relatedTarget as Node | null;
+		if (event.currentTarget.contains(nextTarget)) {
+			return;
+		}
+
+		setGenerativeActionPointerActive(false);
+	}
+
+	function handleGenerativeActionFocusCapture(event: FocusEvent<HTMLElement>) {
+		if (
+			generativeAction
+			&& event.target instanceof Element
+			&& event.currentTarget.contains(event.target)
+		) {
+			setGenerativeActionFocusActive(event.target.matches(":focus-visible"));
+		}
+	}
+
+	function handleGenerativeActionBlurCapture(event: FocusEvent<HTMLElement>) {
+		if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) {
+			return;
+		}
+
+		const nextTarget = event.relatedTarget as Node | null;
+		if (event.currentTarget.contains(nextTarget)) {
+			return;
+		}
+
+		setGenerativeActionFocusActive(false);
+	}
+
 	const summaryContent = (
 		<JiraIssueSummary
 			assigneeAvatarLabel={assigneeAvatarLabel}
@@ -606,6 +656,7 @@ export function JiraIssue({
 										completedCount={completedSubtaskCount}
 										controlId={subtasksPanelId}
 										expanded={resolvedSubtasksExpanded}
+										hasInsetSurface={hasActiveAgentActivityShell}
 										label={subtasksLabel}
 										onToggle={handleSubtasksToggle}
 										shouldReduceMotion={shouldReduceMotion}
@@ -633,7 +684,11 @@ export function JiraIssue({
 		</div>
 	);
 	const generativeActionMenu = generativeAction ? (
-		<JiraIssueGenerativeActionMenu action={generativeAction} issue={{ issueKey, summary }} />
+		<JiraIssueGenerativeActionMenu
+			action={generativeAction}
+			issue={{ issueKey, summary }}
+			revealActive={generativeActionRevealActive}
+		/>
 	) : null;
 
 	if (hasInteractiveContent) {
@@ -645,8 +700,12 @@ export function JiraIssue({
 					data-dragging={dragging || undefined}
 					data-selected={selected || undefined}
 					data-agent-activity-mode={resolvedAgentActivityMode}
+					onBlurCapture={handleGenerativeActionBlurCapture}
 					onDragEnd={props.onDragEnd as ComponentProps<"article">["onDragEnd"]}
 					onDragStart={props.onDragStart as ComponentProps<"article">["onDragStart"]}
+					onFocusCapture={handleGenerativeActionFocusCapture}
+					onPointerOut={handleGenerativeActionPointerOut}
+					onPointerOver={handleGenerativeActionPointerOver}
 					style={agentActivityArticleStyle}
 				>
 					<motion.div
@@ -686,6 +745,7 @@ export function JiraIssue({
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
 								onOpenChange={onAgentActivityOpenChange}
+								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 							/>
@@ -702,8 +762,12 @@ export function JiraIssue({
 				className={rootClassName}
 				data-dragging={dragging || undefined}
 				data-selected={selected || undefined}
+				onBlurCapture={handleGenerativeActionBlurCapture}
 				onDragEnd={props.onDragEnd as ComponentProps<"article">["onDragEnd"]}
 				onDragStart={props.onDragStart as ComponentProps<"article">["onDragStart"]}
+				onFocusCapture={handleGenerativeActionFocusCapture}
+				onPointerOut={handleGenerativeActionPointerOut}
+				onPointerOver={handleGenerativeActionPointerOver}
 				style={rootBaseStyle}
 			>
 				{richIssueContent}

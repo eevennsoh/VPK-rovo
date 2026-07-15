@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 
-import { useRovoChat } from "@/app/contexts";
+import { ROVO_AGENT_ID } from "@/app/data/directory";
 import {
 	JiraIssue,
+	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityMode,
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
@@ -17,7 +18,12 @@ import {
 	ASX_CARD_KANBAN_SUBTASKS,
 	ASX_CARD_KANBAN_WORKING_ACTIVITIES,
 } from "@/components/projects/asx/data/card-kanban-data";
+import {
+	createAsxKanbanActivity,
+	getAsxGenerativeActivityId,
+} from "@/components/projects/asx/data/kanban-data";
 import type { UseAutoCycleResult } from "@/components/projects/asx/hooks/use-auto-cycle";
+import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { AsxRovoOverlay } from "./asx-rovo-overlay";
@@ -32,8 +38,8 @@ import { AsxRovoOverlay } from "./asx-rovo-overlay";
  * `components/blocks/agent-bento` auto-cycling category bar: a linear progress
  * fill sweeps the active tab, then advances). Hovering or focusing the demo
  * pauses the cycle; clicking a tab selects that state and restarts it. The card
- * animates between states; the agent-row "View chat" action and the card's
- * generative action both open the floating Rovo chat.
+ * animates between states. The agent-row "View chat" action and Ask Rovo open
+ * floating chat; selecting a skill or custom agent adds a working activity row.
  *
  * Layout mirrors `KanbanStage`: the stage breaks out of the gallery's centered
  * `max-w-3xl` column to span the full viewport and fills the Gallery's available
@@ -53,7 +59,6 @@ export function CardKanbanControls({
 	return (
 		<ButtonGroup
 			variant="connected"
-			className="[&>[data-slot]~[data-slot]]:-ml-px [&>[data-slot]~[data-slot]]:border-l!"
 			{...pauseHandlers}
 		>
 			{ASX_CARD_KANBAN_STATES.map((option, index) => {
@@ -67,7 +72,7 @@ export function CardKanbanControls({
 						size="compact"
 						aria-pressed={isActive}
 						onClick={() => setActiveIndex(index)}
-						className="relative isolate overflow-hidden aria-pressed:z-10"
+						className="relative isolate overflow-hidden aria-pressed:-ml-px aria-pressed:border-l! aria-pressed:z-10"
 					>
 						<span className="relative z-[2]">{option.label}</span>
 						{showProgressFill ? (
@@ -89,15 +94,24 @@ interface CardKanbanStageProps {
 }
 
 export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>): React.ReactElement {
-	const { openChat, sendPrompt } = useRovoChat();
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
+	const completionTimeoutRef = useRef<number | null>(null);
+	const [addedAgentActivities, setAddedAgentActivities] = useState<readonly JiraIssueAgentActivity[]>([]);
 	const {
 		activeIndex,
 		pauseHandlers,
+		setActiveIndex,
 		setExternalInteractionActive,
 	} = controller;
 	const state = ASX_CARD_KANBAN_STATES[activeIndex].value;
 
-	const agentActivities =
+	useEffect(() => () => {
+		if (completionTimeoutRef.current !== null) {
+			window.clearTimeout(completionTimeoutRef.current);
+		}
+	}, []);
+
+	const presetAgentActivities =
 		state === "single-agent-working"
 			? ASX_CARD_KANBAN_WORKING_ACTIVITIES.slice(0, 1)
 			: state === "multiple-agents-working"
@@ -105,29 +119,64 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 				: state === "awaiting-user-input"
 					? ASX_CARD_KANBAN_AWAITING_ACTIVITIES
 					: undefined;
+	const agentActivities: JiraIssueAgentActivity[] = [...(presetAgentActivities ?? [])];
+	for (const activity of addedAgentActivities) {
+		if (!agentActivities.some((candidate) => candidate.id === activity.id)) {
+			agentActivities.push(activity);
+		}
+	}
 
 	const agentActivityMode: JiraIssueAgentActivityMode =
-		state === "single-agent-working" || state === "multiple-agents-working"
-			? "working"
-			: state === "awaiting-user-input"
-				? "awaiting-input"
+		state === "awaiting-user-input"
+			? "awaiting-input"
+			: agentActivities.length > 0
+				? "working"
 				: state === "agent-completed-work"
 					? "completed"
 					: "none";
 
-	const handleViewChat = useCallback(() => {
-		openChat("floating");
-	}, [openChat]);
+	const handleViewChat = useCallback((activity: JiraIssueAgentActivity) => {
+		openAgentChat({
+			agentId: activity.id,
+			agentName: activity.name,
+			issueKey: ASX_CARD_KANBAN_CARD.issueKey,
+			issueSummary: ASX_CARD_KANBAN_CARD.summary,
+			request: `Show me your progress on ${ASX_CARD_KANBAN_CARD.issueKey}.`,
+		});
+	}, [openAgentChat]);
 
 	const handleGenerativeActionSubmit = useCallback(
 		(request: JiraIssueGenerativeActionRequest) => {
-			openChat("floating");
-			void sendPrompt(request.prompt, {
-				messageMetadata: { source: "jira-issue-generative-action" },
-			});
+			if (request.kind === "ask-rovo") {
+				openAgentChat({
+					agentId: ROVO_AGENT_ID,
+					agentName: "Rovo",
+					issueKey: request.issue.issueKey,
+					issueSummary: request.issue.summary,
+					request: request.prompt,
+				});
+				return;
+			}
+
+			const activity = createAsxKanbanActivity(getAsxGenerativeActivityId(request));
+			setAddedAgentActivities((current) => current.some((candidate) => candidate.id === activity.id)
+				? current
+				: [...current, activity]);
 		},
-		[openChat, sendPrompt],
+		[openAgentChat],
 	);
+
+	const handleQuestionSubmit = useCallback(() => {
+		if (completionTimeoutRef.current !== null) {
+			window.clearTimeout(completionTimeoutRef.current);
+		}
+		setExternalInteractionActive(false);
+		setActiveIndex(1);
+		completionTimeoutRef.current = window.setTimeout(() => {
+			setActiveIndex(4);
+			completionTimeoutRef.current = null;
+		}, 2_500);
+	}, [setActiveIndex, setExternalInteractionActive]);
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8">
@@ -150,6 +199,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 							generativeAction={{ onSubmit: handleGenerativeActionSubmit }}
 							issueKey={ASX_CARD_KANBAN_CARD.issueKey}
 							onAgentActivityOpenChange={setExternalInteractionActive}
+							onAgentActivityQuestionSubmit={handleQuestionSubmit}
 							onAgentActivityViewChat={handleViewChat}
 							priority={ASX_CARD_KANBAN_CARD.priority}
 							subtasks={ASX_CARD_KANBAN_SUBTASKS}
@@ -160,7 +210,10 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 					</div>
 				</div>
 			</div>
-			<AsxRovoOverlay />
+			<AsxRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+			/>
 		</div>
 	);
 }
