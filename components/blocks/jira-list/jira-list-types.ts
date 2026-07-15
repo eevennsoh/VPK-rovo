@@ -50,6 +50,7 @@ export interface JiraListRowData {
 	hasChildren?: boolean;
 	isExpanded?: boolean;
 	assignee?: JiraListPerson;
+	// Display labels only; labels are not stable IDs and may repeat.
 	agentSessions?: readonly string[];
 	goals?: readonly JiraListGoal[];
 	labels?: readonly JiraListTag[];

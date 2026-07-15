@@ -132,6 +132,27 @@ test("JiraList appends the remaining session count directly after one primary ag
 	assert.doesNotMatch(SOURCE, /const visibleSessions = agentSessions\.slice\(0, 2\)/u);
 });
 
+test("JiraList treats agent session strings as display labels, not unique IDs", () => {
+	const agentSessionsRendererStart = SOURCE.indexOf("export function renderAgentSessions(");
+	const agentSessionsRendererEnd = SOURCE.indexOf("export function renderGoals", agentSessionsRendererStart);
+	const inModelDialogStart = PAGE_SOURCE.indexOf("inModelRow.agentSessions.map(");
+	const inModelDialogEnd = PAGE_SOURCE.indexOf("</TagGroup>", inModelDialogStart);
+	const agentSessionsRendererSource = SOURCE.slice(agentSessionsRendererStart, agentSessionsRendererEnd);
+	const inModelDialogSource = PAGE_SOURCE.slice(inModelDialogStart, inModelDialogEnd);
+
+	assert.ok(agentSessionsRendererStart > -1);
+	assert.ok(agentSessionsRendererEnd > agentSessionsRendererStart);
+	assert.ok(inModelDialogStart > -1);
+	assert.ok(inModelDialogEnd > inModelDialogStart);
+	assert.match(TYPES_SOURCE, /Display labels only; labels are not stable IDs and may repeat\.\n\tagentSessions\?: readonly string\[\];/u);
+	assert.match(agentSessionsRendererSource, /visibleSessions\.map\(\(session, sessionIndex\) =>/u);
+	assert.match(agentSessionsRendererSource, /key=\{`\$\{session\}-\$\{sessionIndex\}`\}/u);
+	assert.match(inModelDialogSource, /inModelRow\.agentSessions\.map\(\(session, sessionIndex\) =>/u);
+	assert.match(inModelDialogSource, /key=\{`\$\{session\}-\$\{sessionIndex\}`\}/u);
+	assert.doesNotMatch(agentSessionsRendererSource, /key=\{session\}/u);
+	assert.doesNotMatch(inModelDialogSource, /key=\{session\}/u);
+});
+
 test("JiraList maps each data column half to one deterministically owned boundary", () => {
 	assert.match(SOURCE, /type JiraListColumnBoundaryIndex = number/u);
 	assert.match(SOURCE, /function getColumnBoundaryIndex\(/u);

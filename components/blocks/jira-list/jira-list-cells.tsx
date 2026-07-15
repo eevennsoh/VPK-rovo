@@ -170,8 +170,8 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 	return (
 		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
 			<TagGroup className="min-w-0 gap-1">
-				{visibleSessions.map((session) => (
-					<Tag className="max-w-[7rem]" color="teal" key={session}>
+				{visibleSessions.map((session, sessionIndex) => (
+					<Tag className="max-w-[7rem]" color="teal" key={`${session}-${sessionIndex}`}>
 						{session}
 					</Tag>
 				))}

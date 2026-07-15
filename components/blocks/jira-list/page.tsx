@@ -252,8 +252,8 @@ export default function JiraListPage() {
 								</p>
 								{inModelRow.agentSessions?.length ? (
 									<TagGroup className="gap-1.5">
-										{inModelRow.agentSessions.map((session) => (
-											<Tag color="teal" key={session}>
+										{inModelRow.agentSessions.map((session, sessionIndex) => (
+											<Tag color="teal" key={`${session}-${sessionIndex}`}>
 												{session}
 											</Tag>
 										))}
