@@ -21,6 +21,14 @@ const QUEUE_WORKSPACE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-conversation-workspace.tsx"),
 	"utf8",
 );
+const QUEUE_HEADER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/queue-conversation-header.tsx"),
+	"utf8",
+);
+const QUEUE_ENVIRONMENT_PANEL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/queue-environment-panel.tsx"),
+	"utf8",
+);
 const PROJECT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../page.tsx"), "utf8");
 const PRODUCT_SIDEBAR_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/product-sidebar/page.tsx"),
@@ -43,6 +51,7 @@ test("ASX stages fill the Gallery viewport without margin compensation", () => {
 	assert.match(CARD_KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-screen/u);
 	assert.match(KANBAN_STAGE_SOURCE, /flex h-full min-h-0 w-screen/u);
 	assert.match(QUEUE_STAGE_SOURCE, /h-full min-h-0 w-screen/u);
+	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /pb-56/u);
 });
 
 test("Card Kanban controls use the compact Gallery top-bar slot", () => {
@@ -76,6 +85,7 @@ test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => 
 
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {
 	assert.match(QUEUE_STAGE_SOURCE, /<AppLayout[\s\S]*product="jira"[\s\S]*hideRovoAction/u);
+	assert.match(QUEUE_STAGE_SOURCE, /shellHeight="parent"/u);
 	assert.match(QUEUE_STAGE_SOURCE, /topNavigationSearchAlignment="sidebar"/u);
 	assert.match(QUEUE_STAGE_SOURCE, /<JiraSidebar[\s\S]*sessionNavigation=/u);
 	assert.match(QUEUE_STAGE_SOURCE, /createInitialQueueSessions\(ASX_QUEUE_SESSION_SEEDS\)/u);
@@ -85,6 +95,10 @@ test("Queue stage hosts Jira chrome around ASX-local session navigation", () => 
 
 test("project shell sidebar overrides retain the product-derived default", () => {
 	assert.match(PROJECT_LAYOUT_SOURCE, /sidebarContent\?: React\.ReactNode;/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /shellHeight\?: "viewport" \| "parent";/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /shellHeight=\{shellHeight\}/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /display: "flex", flex: 1, minHeight: 0/u);
+	assert.doesNotMatch(PROJECT_LAYOUT_SOURCE, /display: "flex", height: "100%", position: "relative"/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /topNavigationSearchAlignment = "responsive"/u);
 	assert.match(PROJECT_LAYOUT_SOURCE, /<Sidebar[\s\S]*product=\{product\}[\s\S]*content=\{sidebarContent\}/u);
 	assert.match(PRODUCT_SIDEBAR_SOURCE, /content\?: React\.ReactNode;/u);
@@ -94,7 +108,56 @@ test("project shell sidebar overrides retain the product-derived default", () =>
 test("Queue workspace reuses fullscreen message and Rovo composer primitives", () => {
 	assert.match(QUEUE_WORKSPACE_SOURCE, /import \{ ChatMessages \}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /import \{ RovoAppComposer \}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /AnimatePresence, motion, useReducedMotion, type Transition/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /useRealtimeVoice/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-conversation"/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /showFeedbackActions=\{false\}/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /showSubmitWhenEmpty/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /onToggleRealtimeVoice=\{handleToggleRealtimeVoice\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /realtimeVoiceState=\{realtime\.voiceState\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /hideSourceAndModelControls/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-chat-body"/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /const panelWidth = panel\?\.getBoundingClientRect\(\)\.width/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /new DOMMatrixReadOnly\(chatBodyTransform\)\.m41/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /const overlap = Math\.max\(0, unshiftedChatRight - panelLeft \+ PANEL_CLEARANCE_PX\)/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /Math\.min\(overlap, availableLeftSpace\)/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ transform: `translateX\(\$\{chatBodyShift\}px\)` \}\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /new ResizeObserver\(updateChatBodyShift\)/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /CHAT_BODY_REDUCED_MOTION_TRANSITION/u);
+	assert.doesNotMatch(QUEUE_WORKSPACE_SOURCE, /showSubmitWhenEmpty/u);
+});
+
+test("Queue header follows the Rovo custom-agent identity and toggles the environment panel", () => {
+	assert.match(QUEUE_HEADER_SOURCE, /flex shrink-0 items-center gap-3 px-3 py-3/u);
+	assert.match(QUEUE_HEADER_SOURCE, /<AgentAvatarVisual/u);
+	assert.match(QUEUE_HEADER_SOURCE, /\{agent\.name\}/u);
+	assert.match(QUEUE_HEADER_SOURCE, /<PanelRightIcon/u);
+	assert.match(QUEUE_HEADER_SOURCE, /isEnvironmentPanelOpen \? null : \(/u);
+	assert.match(QUEUE_HEADER_SOURCE, /aria-label="Open environment panel"/u);
+	assert.doesNotMatch(QUEUE_HEADER_SOURCE, /spaceName|statusPresentation|session\.title|<Lozenge/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /isEnvironmentPanelOpen \? \([\s\S]*<QueueEnvironmentPanel/u);
+});
+
+test("Queue environment panel uses VPK panel and item primitives", () => {
+	assert.match(QUEUE_WORKSPACE_SOURCE, /<AnimatePresence initial=\{false\}>[\s\S]*<QueueEnvironmentPanel/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelContainer/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelHeader/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<motion\.div/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /absolute inset-y-0 right-0 z-20 h-full w-80 max-w-full/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /h-full border-l border-border bg-surface/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /useReducedMotion\(\)/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /transform: "translateX\(100%\)"/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelActionClose label="Close environment panel" onClick=\{onClose\} \/>/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<ItemGroup/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, />Environment</u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Changes/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Create branch/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Commit or push/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Create pull request/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Side tasks/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Sources/u);
+	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /shrink-0|max-lg:absolute/u);
+	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /m-3|rounded-lg|border border-border/u);
+	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /bg-black|text-white|#[0-9a-f]{3,8}/iu);
 });

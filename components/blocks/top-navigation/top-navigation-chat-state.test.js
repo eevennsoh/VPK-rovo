@@ -76,6 +76,15 @@ test("top navigation can persist search beside the expanded sidebar", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment === "sidebar" \? "ps-2" : undefined/);
 });
 
+test("top navigation can fill a height-constrained parent", () => {
+	assert.match(TOP_NAVIGATION_SOURCE, /shellHeight\?: "viewport" \| "parent";/);
+	assert.match(TOP_NAVIGATION_SOURCE, /shellHeight = "viewport"/);
+	assert.match(
+		TOP_NAVIGATION_SOURCE,
+		/shellHeight === "parent" \? "h-full! min-h-0!" : "h-svh"/,
+	);
+});
+
 test("top navigation collapses the search to an icon button on very narrow viewports", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/);
 	assert.match(TOP_NAVIGATION_SOURCE, /isSearchCollapsible/);

@@ -24,6 +24,17 @@ test("Jira sidebar uses the shared Studio-style side nav row contract", () => {
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /<Divider/u);
 });
 
+test("Jira sidebar primary navigation matches the requested order", () => {
+	const labels = ["For you", "Recent", "Starred", "Apps", "Roadmaps", "Plans", "Spaces"];
+	const positions = labels.map((label) => JIRA_SIDEBAR_SOURCE.indexOf(`label="${label}"`));
+
+	assert.ok(positions.every((position) => position >= 0));
+	assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /label="Sprint Board"/u);
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /label="Projects"/u);
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /label="Analytics"/u);
+});
+
 test("Jira sidebar session navigation is optional and nested beneath spaces", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /sessionNavigation\?: JiraSidebarSessionNavigation;/u);
 	assert.match(
