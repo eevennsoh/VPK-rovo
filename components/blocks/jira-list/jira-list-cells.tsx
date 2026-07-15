@@ -166,7 +166,7 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 		return <span className="text-text-subtle text-sm">None</span>;
 	}
 
-	const visibleSessions = agentSessions.slice(0, 2);
+	const visibleSessions = agentSessions.slice(0, 1);
 	return (
 		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
 			<TagGroup className="min-w-0 gap-1">
@@ -256,4 +256,3 @@ export function renderContributors(contributors: readonly JiraListPerson[] | und
 		</AvatarGroup>
 	);
 }
-

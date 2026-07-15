@@ -126,6 +126,12 @@ test("JiraList opens linked agent sessions from the Agent sessions cell", () => 
 	assert.match(agentSessionsCellSource, /group-focus-within\/agent-sessions:opacity-100/u);
 });
 
+test("JiraList appends the remaining session count directly after one primary agent tag", () => {
+	assert.match(SOURCE, /const visibleSessions = agentSessions\.slice\(0, 1\)/u);
+	assert.match(SOURCE, /<TagGroup className="min-w-0 gap-1">[\s\S]*?<\/TagGroup>[\s\S]*?<OverflowBadge/u);
+	assert.doesNotMatch(SOURCE, /const visibleSessions = agentSessions\.slice\(0, 2\)/u);
+});
+
 test("JiraList maps each data column half to one deterministically owned boundary", () => {
 	assert.match(SOURCE, /type JiraListColumnBoundaryIndex = number/u);
 	assert.match(SOURCE, /function getColumnBoundaryIndex\(/u);
