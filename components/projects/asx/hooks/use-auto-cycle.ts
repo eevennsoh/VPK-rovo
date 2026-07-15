@@ -21,6 +21,8 @@ export interface AutoCyclePauseHandlers {
 export interface UseAutoCycleResult {
 	activeIndex: number;
 	setActiveIndex: (index: number) => void;
+	/** Return to the first index and start a fresh tick, clearing paused interaction state. */
+	restart: () => void;
 	/** 0 → 1 progress of the current tick; drive an active-indicator `scaleX`. */
 	progress: MotionValue<number>;
 	/** True while the timer is allowed to run (false under reduced motion). */
@@ -44,6 +46,7 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 	const cycleRunning = !shouldReduceMotion && count > 1;
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [interacting, setInteracting] = useState(false);
+	const [restartKey, setRestartKey] = useState(0);
 	const wrapperInteractingRef = useRef(false);
 	const externalInteractingRef = useRef(false);
 	const interactingRef = useRef(false);
@@ -65,6 +68,18 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 		externalInteractingRef.current = active;
 		updateInteracting();
 	}, [updateInteracting]);
+
+	const restart = useCallback(() => {
+		controlsRef.current?.stop();
+		controlsRef.current = null;
+		wrapperInteractingRef.current = false;
+		externalInteractingRef.current = false;
+		interactingRef.current = false;
+		setInteracting(false);
+		progress.set(0);
+		setActiveIndex(0);
+		setRestartKey((current) => current + 1);
+	}, [progress]);
 
 	useEffect(() => {
 		if (!cycleRunning) {
@@ -92,7 +107,7 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 			controls.stop();
 			controlsRef.current = null;
 		};
-	}, [activeIndex, cycleRunning, count, durationMs, progress]);
+	}, [activeIndex, cycleRunning, count, durationMs, progress, restartKey]);
 
 	useEffect(() => {
 		const controls = controlsRef.current;
@@ -109,6 +124,7 @@ export function useAutoCycle(count: number, durationMs = DEFAULT_CYCLE_DURATION_
 	return {
 		activeIndex,
 		setActiveIndex,
+		restart,
 		progress,
 		cycleRunning,
 		pauseHandlers: {

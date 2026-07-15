@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -44,8 +45,18 @@ export interface JiraIssueGenerativeActionConfig {
 
 interface JiraIssueGenerativeActionMenuProps {
 	action: JiraIssueGenerativeActionConfig;
+	anchor: HTMLElement | null;
 	issue: JiraIssueGenerativeActionIssue;
+	onTriggerBlur: () => void;
+	onTriggerFocus: () => void;
+	onTriggerPointerEnter: () => void;
+	onTriggerPointerLeave: () => void;
 	revealActive: boolean;
+}
+
+interface JiraIssueGenerativeActionPosition {
+	left: number;
+	top: number;
 }
 
 const JIRA_ISSUE_GENERATIVE_SKILLS_HEADING_ID = "jira-issue-generative-skills-heading";
@@ -169,14 +180,53 @@ function getJiraIssueGenerativeItemKind(item: RichTextSuggestionMenuItem): Exclu
 	return item.id.startsWith("subagent:") ? "agent" : "skill";
 }
 
+function getJiraIssueGenerativeTriggerPosition(anchor: HTMLElement): JiraIssueGenerativeActionPosition {
+	const rect = anchor.getBoundingClientRect();
+	return {
+		left: rect.right + 7,
+		top: rect.top,
+	};
+}
+
+function isJiraIssueGenerativeSelectableRow(item: RichTextSuggestionMenuItem | undefined): boolean {
+	return Boolean(item && item.headingLabel === undefined && !item.disabled);
+}
+
+function getJiraIssueGenerativeNextSelectedIndex(
+	items: readonly RichTextSuggestionMenuItem[],
+	currentIndex: number,
+	direction: -1 | 1,
+): number {
+	if (items.length === 0) {
+		return -1;
+	}
+
+	const startIndex = currentIndex < 0 ? (direction === 1 ? -1 : 0) : currentIndex;
+	for (let step = 1; step <= items.length; step += 1) {
+		const index = (startIndex + direction * step + items.length * step) % items.length;
+		if (isJiraIssueGenerativeSelectableRow(items[index])) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 export function JiraIssueGenerativeActionMenu({
 	action,
+	anchor,
 	issue,
+	onTriggerBlur,
+	onTriggerFocus,
+	onTriggerPointerEnter,
+	onTriggerPointerLeave,
 	revealActive,
 }: Readonly<JiraIssueGenerativeActionMenuProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [open, setOpen] = useState(false);
+	const [triggerPosition, setTriggerPosition] = useState<JiraIssueGenerativeActionPosition | null>(null);
 	const [askPrompt, setAskPrompt] = useState("");
+	const [selectedIndex, setSelectedIndex] = useState(-1);
 	const [showAllSkills, setShowAllSkills] = useState(false);
 	const [showAllAgents, setShowAllAgents] = useState(false);
 	const rows = useMemo(
@@ -185,11 +235,56 @@ export function JiraIssueGenerativeActionMenu({
 	);
 	const sparkleVisible = revealActive && !open;
 
+	useLayoutEffect(() => {
+		if (!anchor) {
+			return;
+		}
+
+		const updateTriggerPosition = () => {
+			setTriggerPosition(getJiraIssueGenerativeTriggerPosition(anchor));
+		};
+
+		updateTriggerPosition();
+		window.addEventListener("resize", updateTriggerPosition);
+		window.addEventListener("scroll", updateTriggerPosition, true);
+		const resizeObserver = typeof ResizeObserver === "undefined"
+			? null
+			: new ResizeObserver(updateTriggerPosition);
+		resizeObserver?.observe(anchor);
+
+		return () => {
+			resizeObserver?.disconnect();
+			window.removeEventListener("resize", updateTriggerPosition);
+			window.removeEventListener("scroll", updateTriggerPosition, true);
+		};
+	}, [anchor]);
+
+	useLayoutEffect(() => {
+		if (!anchor || (!revealActive && !open)) {
+			return;
+		}
+
+		let animationFrameId = 0;
+		const trackTriggerPosition = () => {
+			setTriggerPosition((currentPosition) => {
+				const nextPosition = getJiraIssueGenerativeTriggerPosition(anchor);
+				return currentPosition?.left === nextPosition.left && currentPosition.top === nextPosition.top
+					? currentPosition
+					: nextPosition;
+			});
+			animationFrameId = window.requestAnimationFrame(trackTriggerPosition);
+		};
+
+		trackTriggerPosition();
+		return () => window.cancelAnimationFrame(animationFrameId);
+	}, [anchor, open, revealActive]);
+
 	function handleOpenChange(nextOpen: boolean) {
 		setOpen(nextOpen);
 		if (!nextOpen) {
 			// Reset the palette back to its capped state for the next open.
 			setAskPrompt("");
+			setSelectedIndex(-1);
 			setShowAllSkills(false);
 			setShowAllAgents(false);
 		}
@@ -213,13 +308,37 @@ export function JiraIssueGenerativeActionMenu({
 		});
 	}
 
+	function handleAskPromptChange(value: string) {
+		setAskPrompt(value);
+		setSelectedIndex(-1);
+	}
+
+	function handleMenuKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			event.preventDefault();
+			setSelectedIndex((currentIndex) => getJiraIssueGenerativeNextSelectedIndex(
+				rows,
+				currentIndex,
+				event.key === "ArrowDown" ? 1 : -1,
+			));
+			return;
+		}
+
+		if (event.key === "Enter" && isJiraIssueGenerativeSelectableRow(rows[selectedIndex])) {
+			event.preventDefault();
+			handleSelectItem(rows[selectedIndex]);
+		}
+	}
+
 	function handleSelectItem(item: RichTextSuggestionMenuItem) {
 		if (item.id === JIRA_ISSUE_GENERATIVE_SKILLS_BROWSE_ALL_ID) {
 			setShowAllSkills(true);
+			setSelectedIndex(-1);
 			return;
 		}
 		if (item.id === JIRA_ISSUE_GENERATIVE_AGENTS_BROWSE_ALL_ID) {
 			setShowAllAgents(true);
+			setSelectedIndex(-1);
 			return;
 		}
 
@@ -237,44 +356,57 @@ export function JiraIssueGenerativeActionMenu({
 		});
 	}
 
+	const trigger = triggerPosition ? createPortal(
+		<PopoverTrigger
+			render={(
+				<button
+					type="button"
+					aria-label={action.ariaLabel ?? "Open Jira issue generative actions"}
+					data-open={open || undefined}
+					className="group/sparkle fixed z-[550] inline-flex h-6 w-4 items-start justify-center outline-none before:absolute before:inset-y-0 before:-left-2 before:w-2 before:content-[''] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+					onBlur={onTriggerBlur}
+					onClick={(event) => event.stopPropagation()}
+					onFocus={onTriggerFocus}
+					onPointerDown={(event) => event.stopPropagation()}
+					onPointerEnter={onTriggerPointerEnter}
+					onPointerLeave={onTriggerPointerLeave}
+					style={{
+						left: triggerPosition.left,
+						pointerEvents: open ? "none" : undefined,
+						top: triggerPosition.top,
+					}}
+				>
+					<motion.span
+						aria-hidden="true"
+						animate={{
+							opacity: sparkleVisible ? 1 : 0,
+							scale: shouldReduceMotion ? 1 : sparkleVisible ? 1 : 0.9,
+						}}
+						className="mt-2 inline-flex size-4 origin-center items-center justify-center rounded bg-bg-neutral-bold text-icon-inverse group-hover/sparkle:bg-bg-neutral-bold-hovered group-active/sparkle:bg-bg-neutral-bold-pressed"
+						initial={false}
+						style={{
+							boxShadow: token("elevation.shadow.overlay"),
+							willChange: "transform, opacity",
+						}}
+						transition={shouldReduceMotion
+							? JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_REDUCED
+							: sparkleVisible
+								? JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_ENTER
+								: JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_EXIT}
+					>
+						<span className="inline-flex size-3 items-center justify-center [&>span]:size-3 [&_svg]:size-3">
+							<GenerativeIndicatorIcon label="" size="small" spacing="none" color="currentColor" />
+						</span>
+					</motion.span>
+				</button>
+			)}
+		/>,
+		document.body,
+	) : null;
+
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger
-				render={(
-					<button
-						type="button"
-						aria-label={action.ariaLabel ?? "Open Jira issue generative actions"}
-						data-open={open || undefined}
-						className="group/sparkle absolute top-0 -right-6 z-20 inline-flex h-6 w-4 items-start justify-center outline-none before:absolute before:inset-y-0 before:-left-2 before:w-2 before:content-[''] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-						onClick={(event) => event.stopPropagation()}
-						onPointerDown={(event) => event.stopPropagation()}
-						style={open ? { pointerEvents: "none" } : undefined}
-					>
-						<motion.span
-							aria-hidden="true"
-							animate={{
-								opacity: sparkleVisible ? 1 : 0,
-								scale: shouldReduceMotion ? 1 : sparkleVisible ? 1 : 0.9,
-							}}
-							className="mt-2 inline-flex size-4 origin-center items-center justify-center rounded bg-bg-neutral-bold text-icon-inverse group-hover/sparkle:bg-bg-neutral-bold-hovered group-active/sparkle:bg-bg-neutral-bold-pressed"
-							initial={false}
-							style={{
-								boxShadow: token("elevation.shadow.overlay"),
-								willChange: "transform, opacity",
-							}}
-							transition={shouldReduceMotion
-								? JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_REDUCED
-								: sparkleVisible
-									? JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_ENTER
-									: JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_EXIT}
-						>
-							<span className="inline-flex size-3 items-center justify-center [&>span]:size-3 [&_svg]:size-3">
-								<GenerativeIndicatorIcon label="" size="small" spacing="none" color="currentColor" />
-							</span>
-						</motion.span>
-					</button>
-				)}
-			/>
+			{trigger}
 			<PopoverContent
 				align="start"
 				className="z-[600] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"
@@ -284,7 +416,7 @@ export function JiraIssueGenerativeActionMenu({
 			>
 				<PopoverTitle className="sr-only">Jira issue generative actions</PopoverTitle>
 				<RichTextSuggestionMenu
-					className="rich-text-command-menu-borderless"
+					className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"
 					emptyLabel="No Jira issue actions found"
 					emptyState={false}
 					header={(
@@ -292,17 +424,19 @@ export function JiraIssueGenerativeActionMenu({
 							autoFocus
 							icon={<RovoColorIcon size="xxsmall" />}
 							label="Ask Rovo"
-							onClear={() => setAskPrompt("")}
+							onClear={() => handleAskPromptChange("")}
 							onEscape={() => setOpen(false)}
+							onKeyDown={handleMenuKeyDown}
 							onSubmit={handleAskRovoSubmit}
-							onValueChange={setAskPrompt}
+							onValueChange={handleAskPromptChange}
 							placeholder="Ask Rovo"
 							value={askPrompt}
 						/>
 					)}
 					items={rows}
+					onHover={setSelectedIndex}
 					onSelect={handleSelectItem}
-					selectedIndex={-1}
+					selectedIndex={selectedIndex}
 					title="Jira issue actions"
 				/>
 			</PopoverContent>

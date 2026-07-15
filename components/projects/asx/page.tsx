@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery } from "@/components/blocks/gallery";
@@ -61,6 +61,13 @@ function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const workItemController = useWorkItemStageController();
+	const { restart: restartCardKanban } = cardKanbanController;
+	const handleSelectedChange = useCallback((nextSelectedId: string) => {
+		if (nextSelectedId === "card" && selectedId !== "card") {
+			restartCardKanban();
+		}
+		setSelectedId(nextSelectedId);
+	}, [restartCardKanban, selectedId]);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
@@ -74,7 +81,7 @@ function AsxGallery(): React.ReactElement {
 				items={ASX_GALLERY_ITEMS}
 				title="Agent Sessions Experience"
 				selectedId={selectedId}
-				onSelectedChange={setSelectedId}
+				onSelectedChange={handleSelectedChange}
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
 				renderSelectedItem={(item) =>

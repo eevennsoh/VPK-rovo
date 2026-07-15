@@ -73,11 +73,6 @@ export const ASX_RFP_QUESTION: readonly QuestionCardQuestion[] = [
 				label: "Service experience",
 				description: "Lead with faster employee support and self-service outcomes.",
 			},
-			{
-				id: "ai-productivity",
-				label: "AI productivity",
-				description: "Lead with Rovo-powered knowledge discovery and automation.",
-			},
 		],
 	},
 ] as const;

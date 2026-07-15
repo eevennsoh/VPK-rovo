@@ -323,10 +323,10 @@ function BoardColumn({
 				width: "100%",
 				height: "100%",
 				backgroundColor: token("elevation.surface.sunken"),
-				borderRadius: token("radius.large"),
+				borderRadius: token("radius.xlarge"),
 			}}
 		>
-			<div style={{ paddingBlock: headerPaddingBlock, paddingInline: token("space.150") }}>
+			<div style={{ paddingTop: token("space.150"), paddingBottom: headerPaddingBlock, paddingInline: token("space.150") }}>
 				<div className={cn("flex min-w-0 items-center gap-2", showAgentAssignment && "justify-between")}>
 					<div className="flex min-w-0 items-center gap-2">
 						<span
@@ -368,8 +368,8 @@ function BoardColumn({
 				{children}
 			</div>
 
-			<div style={{ paddingTop: token("space.100"), paddingBottom: "8px", paddingLeft: token("space.150") }}>
-				<Button className="gap-2" size="default" variant="ghost">
+			<div style={{ padding: token("space.050") }}>
+				<Button className="w-full justify-start gap-2 rounded-lg" size="default" variant="ghost">
 					<Icon render={<AddIcon label="" size="small" />} />
 					Create
 				</Button>
@@ -555,7 +555,7 @@ export function JiraKanban({
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
-							style={{ flex: "1 1 0", minWidth: "168px", borderRadius: token("radius.large") }}
+							style={{ flex: "1 1 0", minWidth: "168px", borderRadius: token("radius.xlarge") }}
 						>
 							<BoardColumn
 								agents={agents}

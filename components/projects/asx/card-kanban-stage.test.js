@@ -5,6 +5,7 @@ const { test } = require("node:test");
 
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/card-kanban-stage.tsx"), "utf8");
 const AUTO_CYCLE_SOURCE = readFileSync(join(__dirname, "hooks/use-auto-cycle.ts"), "utf8");
+const ASX_PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data/card-kanban-data.ts"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/agent-activity.tsx"), "utf8");
@@ -23,6 +24,14 @@ test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is op
 	assert.match(JIRA_ISSUE_SOURCE, /onAgentActivityOpenChange\?: \(open: boolean\) => void;/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{onAgentActivityOpenChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
+});
+
+test("Card Kanban restarts its progression when the gallery re-enters it", () => {
+	assert.match(AUTO_CYCLE_SOURCE, /restart: \(\) => void;/u);
+	assert.match(AUTO_CYCLE_SOURCE, /const restart = useCallback\(\(\) => \{[\s\S]*setActiveIndex\(0\);[\s\S]*setRestartKey/u);
+	assert.match(AUTO_CYCLE_SOURCE, /progress, restartKey/u);
+	assert.match(ASX_PAGE_SOURCE, /nextSelectedId === "card" && selectedId !== "card"[\s\S]*restartCardKanban\(\)/u);
+	assert.match(ASX_PAGE_SOURCE, /onSelectedChange=\{handleSelectedChange\}/u);
 });
 
 test("Card Kanban forwards persistent issue context to floating chat", () => {

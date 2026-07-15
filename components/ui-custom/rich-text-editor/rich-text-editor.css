@@ -675,6 +675,24 @@
 	display: none;
 }
 
+/* Search-led palettes can opt back into row selection when their input owns
+   Arrow Up/Down and Return. Restore the selected-row highlight and Return
+   affordance in that mode while leaving ordinary search fields submit-only. */
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected,
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected:hover,
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected {
+	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy,
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-item-selected:hover .rich-text-command-menu-copy {
+	padding-right: 28px;
+}
+
+.rich-text-command-menu-search-selects:focus-within .rich-text-command-menu-return-shortcut {
+	display: inline-flex;
+}
+
 .rich-text-command-menu-item:disabled {
 	color: var(--ds-text-disabled, #091e424f);
 	cursor: not-allowed;

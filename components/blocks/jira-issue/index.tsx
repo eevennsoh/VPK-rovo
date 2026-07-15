@@ -441,6 +441,7 @@ export function JiraIssue({
 	const shouldReduceMotion = useReducedMotion();
 	const subtasksPanelId = useId();
 	const agentActivityLayoutGroupId = useId();
+	const [generativeActionAnchor, setGenerativeActionAnchor] = useState<HTMLElement | null>(null);
 	const [internalSubtasksExpanded, setInternalSubtasksExpanded] = useState(defaultSubtasksExpanded);
 	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
 	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
@@ -686,7 +687,12 @@ export function JiraIssue({
 	const generativeActionMenu = generativeAction ? (
 		<JiraIssueGenerativeActionMenu
 			action={generativeAction}
+			anchor={generativeActionAnchor}
 			issue={{ issueKey, summary }}
+			onTriggerBlur={() => setGenerativeActionFocusActive(false)}
+			onTriggerFocus={() => setGenerativeActionFocusActive(true)}
+			onTriggerPointerEnter={() => setGenerativeActionPointerActive(true)}
+			onTriggerPointerLeave={() => setGenerativeActionPointerActive(false)}
 			revealActive={generativeActionRevealActive}
 		/>
 	) : null;
@@ -695,6 +701,7 @@ export function JiraIssue({
 		if (usesAgentActivityShell) {
 			return (
 				<article
+					ref={setGenerativeActionAnchor}
 					draggable={draggable}
 					className={agentActivityArticleClassName}
 					data-dragging={dragging || undefined}
@@ -718,7 +725,7 @@ export function JiraIssue({
 						<motion.div
 							aria-hidden="true"
 							animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
-							className="pointer-events-none absolute bg-surface-sunken"
+							className="pointer-events-none absolute bg-bg-accent-gray-subtlest"
 							initial={false}
 							style={shouldReduceMotion ? { ...agentActivityBackdropStyle, ...agentActivityBackdropAnimation } : agentActivityBackdropStyle}
 							transition={layoutTransition}
@@ -758,6 +765,7 @@ export function JiraIssue({
 
 		return (
 			<article
+				ref={setGenerativeActionAnchor}
 				draggable={draggable}
 				className={rootClassName}
 				data-dragging={dragging || undefined}

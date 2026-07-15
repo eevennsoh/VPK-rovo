@@ -7,6 +7,7 @@ import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-ka
 import { ASX_KANBAN_AGENTS, ASX_KANBAN_DEFAULT_AGENT_ID } from "@/components/projects/asx/data/kanban-data";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAsxKanbanLifecycle } from "@/components/projects/asx/hooks/use-kanban-lifecycle";
+import { token } from "@/lib/tokens";
 import { AsxRovoOverlay } from "./asx-rovo-overlay";
 
 /**
@@ -76,6 +77,7 @@ export function KanbanStage(): React.ReactElement {
 				onCardDrop={handleCardDrop}
 				onCardGenerativeActionSubmit={handleGenerativeActionSubmit}
 				onCardSelect={handleCardSelect}
+				paddingBottom={token("space.200")}
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}
 			/>
