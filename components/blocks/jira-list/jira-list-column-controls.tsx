@@ -183,7 +183,7 @@ export function JiraListColumnActions({ label }: Readonly<{ label: string }>) {
 				render={
 					<Button
 						aria-label={actionLabel}
-						className="ml-auto size-7 shrink-0 rounded-md bg-surface-sunken opacity-0 transition-[opacity,background-color] duration-fast hover:opacity-100 focus-visible:opacity-100"
+						className="ml-auto size-7 shrink-0 rounded-md bg-surface-sunken opacity-0 transition-[opacity,background-color] duration-fast hover:opacity-100 focus-visible:opacity-100 group-hover/column-header:opacity-100 group-focus-within/column-header:opacity-100"
 						data-column-action
 						size="icon-compact"
 						variant="ghost"
