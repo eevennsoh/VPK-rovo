@@ -28,10 +28,13 @@ test("Kanban lifecycle uses deterministic generation and completion delays", () 
 
 test("Kanban starts skill and custom-agent sparkle actions without opening chat", () => {
 	assert.match(HOOK_SOURCE, /if \(request\.kind === "ask-rovo"\) \{[\s\S]*onNonAgentAction\?\.\(request, card\);[\s\S]*return;[\s\S]*\}/u);
-	assert.match(HOOK_SOURCE, /startCards\(\[card\.code\], getAsxGenerativeActivityId\(request\)\);/u);
+	assert.match(HOOK_SOURCE, /startCards\(\[card\.code\], getAsxGenerativeAgentSelection\(request\)\);/u);
 });
 
 test("Kanban stage forwards chat thinking state to the ASX overlay", () => {
 	assert.match(STAGE_SOURCE, /useAsxAgentChatDemo\(\)/u);
 	assert.match(STAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}/u);
+	assert.match(STAGE_SOURCE, /question: activity\.question/u);
+	assert.match(STAGE_SOURCE, /intro: activity\.message/u);
+	assert.match(STAGE_SOURCE, /onQuestionAnswer=\{pendingChatQuestion \? handleChatQuestionAnswer : undefined\}/u);
 });

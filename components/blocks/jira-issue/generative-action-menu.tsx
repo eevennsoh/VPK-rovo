@@ -29,6 +29,7 @@ export interface JiraIssueGenerativeActionSelectedItem {
 	id: string;
 	label: string;
 	description?: string;
+	avatarSrc?: string;
 }
 
 export interface JiraIssueGenerativeActionRequest {
@@ -84,6 +85,9 @@ function getJiraIssueGenerativeActionItemMetadata(
 		id: item.id,
 		label: item.label,
 		description: item.description,
+		avatarSrc: item.visual?.kind === "avatar" || item.visual?.kind === "image"
+			? item.visual.src
+			: undefined,
 	};
 }
 

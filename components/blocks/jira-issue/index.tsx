@@ -13,10 +13,13 @@ import TaskIcon from "@atlaskit/icon/core/task";
 
 import {
 	JiraIssueAgentActivityRows,
-	JiraIssueAgentDone,
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityMode,
 } from "@/components/blocks/jira-issue/agent-activity";
+import {
+	JiraIssueAgentDone,
+	type JiraIssueCompletedAgentRun,
+} from "@/components/blocks/jira-issue/completed-agent-runs";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
 import {
@@ -45,6 +48,7 @@ export type {
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
 } from "@/components/blocks/jira-issue/agent-activity";
+export type { JiraIssueCompletedAgentRun } from "@/components/blocks/jira-issue/completed-agent-runs";
 export type {
 	JiraIssueGenerativeActionConfig,
 	JiraIssueGenerativeActionIssue,
@@ -93,7 +97,7 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	subtasksExpanded?: boolean;
 	onSubtasksExpandedChange?: (expanded: boolean) => void;
 	agentActivities?: readonly JiraIssueAgentActivity[];
-	agentDoneCount?: number;
+	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
@@ -405,7 +409,7 @@ export function JiraIssue({
 	"aria-pressed": ariaPressed,
 	agentActivities,
 	agentActivityMode,
-	agentDoneCount = 0,
+	agentDoneRuns = [],
 	assigneeAvatarLabel,
 	assigneeAvatarShape = "circle",
 	assigneeAvatarSrc,
@@ -454,7 +458,7 @@ export function JiraIssue({
 		? "awaiting-input"
 		: nonCompletedAgentActivities.length > 0
 			? "working"
-			: agentDoneCount > 0
+			: agentDoneRuns.length > 0
 				? "completed"
 				: "none";
 	const resolvedAgentActivityMode = agentActivityMode ?? inferredAgentActivityMode;
@@ -462,7 +466,7 @@ export function JiraIssue({
 		? []
 		: nonCompletedAgentActivities;
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working" || resolvedAgentActivityMode === "awaiting-input";
-	const hasAgentDoneNotification = agentDoneCount > 0;
+	const hasAgentDoneNotification = agentDoneRuns.length > 0;
 	const hasIssueRows = hasSubtasks || hasAgentDoneNotification;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
@@ -675,7 +679,7 @@ export function JiraIssue({
 									style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
 									transition={layoutTransition}
 								>
-									<JiraIssueAgentDone count={agentDoneCount} />
+									<JiraIssueAgentDone onOpenChange={onAgentActivityOpenChange} runs={agentDoneRuns} />
 								</motion.div>
 							) : null}
 						</AnimatePresence>

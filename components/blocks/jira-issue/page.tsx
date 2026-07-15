@@ -6,7 +6,12 @@ import { AnimatePresence } from "motion/react";
 import { RovoChatProvider, useRovoChat } from "@/app/contexts";
 import { JiraEpic } from "@/components/blocks/jira-epic";
 import { JIRA_EPIC_DEMO_EPICS } from "@/components/blocks/jira-epic/data/demo-epics";
-import { JiraIssue, type JiraIssueAgentActivity, type JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
+import {
+	JiraIssue,
+	type JiraIssueAgentActivity,
+	type JiraIssueCompletedAgentRun,
+	type JiraIssueGenerativeActionRequest,
+} from "@/components/blocks/jira-issue";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import { Button } from "@/components/ui/button";
@@ -74,6 +79,27 @@ const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	},
 	JIRA_ISSUE_AGENT_ACTIVITIES[1],
 ] as const satisfies readonly JiraIssueAgentActivity[];
+
+const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
+	{
+		id: "PD-40:service-impact-agent",
+		summary: "Mapped affected services and added the implementation impact summary.",
+		agentName: JIRA_ISSUE_AGENT_ACTIVITIES[0].name,
+		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[0].avatarSrc,
+		issueKey: "PD-40",
+		issueSummary: "Implement advanced date-range filter",
+		relativeTime: "Just now",
+	},
+	{
+		id: "PD-40:dependency-mapper",
+		summary: "Documented dependent components, owners, and blocked handoffs.",
+		agentName: JIRA_ISSUE_AGENT_ACTIVITIES[1].name,
+		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[1].avatarSrc,
+		issueKey: "PD-40",
+		issueSummary: "Implement advanced date-range filter",
+		relativeTime: "1 min ago",
+	},
+] as const satisfies readonly JiraIssueCompletedAgentRun[];
 
 type JiraIssueAgentActivityDemoState =
 	| "default"
@@ -199,7 +225,7 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 									? "completed"
 									: "none"
 					}
-					agentDoneCount={agentActivityState === "agent-completed-work" ? 2 : 0}
+					agentDoneRuns={agentActivityState === "agent-completed-work" ? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined}
 					assigneeAvatarSrc="/avatar-user/andrea-wilson/color/asow-service-yellow.png"
 					className="w-[260px]"
 					generativeAction={{

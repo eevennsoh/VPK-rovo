@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
 import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
@@ -31,6 +31,7 @@ import { AsxRovoOverlay } from "./asx-rovo-overlay";
  */
 export function KanbanStage(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
+	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
 	const openCardChat = useCallback((agentId: string, agentName: string, card: JiraKanbanCardData, request?: string) => {
 		openAgentChat({
 			agentId,
@@ -41,6 +42,7 @@ export function KanbanStage(): React.ReactElement {
 		});
 	}, [openAgentChat]);
 	const handleNonAgentAction = useCallback((request: JiraIssueGenerativeActionRequest, card: JiraKanbanCardData) => {
+		setPendingChatQuestion(null);
 		openCardChat(
 			ASX_KANBAN_DEFAULT_AGENT_ID,
 			"RFP Drafter",
@@ -60,8 +62,22 @@ export function KanbanStage(): React.ReactElement {
 		selectedCardCodes,
 	} = useAsxKanbanLifecycle({ onNonAgentAction: handleNonAgentAction });
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
-		openCardChat(activity.id, activity.name, card);
-	}, [openCardChat]);
+		setPendingChatQuestion(activity.question ? {
+			submit: () => handleQuestionSubmit(activity, {}, card),
+		} : null);
+		openAgentChat({
+			agentId: activity.id,
+			agentName: activity.name,
+			issueKey: card.code,
+			issueSummary: card.title,
+			intro: activity.message,
+			question: activity.question,
+		});
+	}, [handleQuestionSubmit, openAgentChat]);
+	const handleChatQuestionAnswer = useCallback(() => {
+		pendingChatQuestion?.submit();
+		setPendingChatQuestion(null);
+	}, [pendingChatQuestion]);
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
@@ -84,6 +100,7 @@ export function KanbanStage(): React.ReactElement {
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
+				onQuestionAnswer={pendingChatQuestion ? handleChatQuestionAnswer : undefined}
 			/>
 		</div>
 	);

@@ -81,10 +81,11 @@ test("Kanban multi-card drag does not render an extra count badge on the source 
 test("Kanban cards expose and render Jira issue agent lifecycle presentation", () => {
 	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
-	assert.match(SOURCE, /agentDoneCount\?: number;/);
+	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
 	assert.match(SOURCE, /agentActivities=\{card\.agentActivities\}/);
 	assert.match(SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/);
-	assert.match(SOURCE, /agentDoneCount=\{card\.agentDoneCount\}/);
+	assert.match(SOURCE, /agentDoneRuns=\{card\.agentDoneRuns\}/);
+	assert.match(SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
 });
 
 test("Kanban card interactions preserve card and column context", () => {

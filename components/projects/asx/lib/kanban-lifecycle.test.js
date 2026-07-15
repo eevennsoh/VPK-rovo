@@ -15,6 +15,7 @@ async function loadHarness() {
 				} from "./components/projects/asx/lib/kanban-lifecycle";
 				export {
 					createAsxKanbanActivity,
+					getAsxGenerativeAgentSelection,
 					getAsxGenerativeActivityId,
 				} from "./components/projects/asx/data/kanban-data";
 			`,
@@ -50,11 +51,15 @@ test("quick agent assignment moves an Intake card into Drafting and supports mul
 	const { asxKanbanReducer, createInitialAsxKanbanState, resolveAsxKanbanColumns } = await loadHarness();
 	let state = createInitialAsxKanbanState();
 
-	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-102"], agentId: "rfp-drafter" });
+	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-102"], agent: { id: "rfp-drafter" } });
 	assert.equal(column(state, "Drafting").cards[0].code, "RFP-102");
-	assert.deepEqual(state.lifecycleByCode["RFP-102"], { agentIds: ["rfp-drafter"], phase: "thinking" });
+	assert.deepEqual(state.lifecycleByCode["RFP-102"], {
+		agentIds: ["rfp-drafter"],
+		agentSelectionsById: { "rfp-drafter": { id: "rfp-drafter" } },
+		phase: "thinking",
+	});
 
-	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-102"], agentId: "dependency-mapper" });
+	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-102"], agent: { id: "dependency-mapper" } });
 	const presentedCard = resolveAsxKanbanColumns(state)
 		.find((candidate) => candidate.title === "Drafting").cards[0];
 	assert.equal(presentedCard.agentActivityMode, "working");
@@ -62,7 +67,7 @@ test("quick agent assignment moves an Intake card into Drafting and supports mul
 });
 
 test("skill and custom-agent actions resolve to distinct activity rows", async () => {
-	const { createAsxKanbanActivity, getAsxGenerativeActivityId } = await loadHarness();
+	const { createAsxKanbanActivity, getAsxGenerativeAgentSelection, getAsxGenerativeActivityId } = await loadHarness();
 	const skillRequest = {
 		kind: "skill",
 		issue: { issueKey: "RFP-102", summary: "Draft an RFP" },
@@ -73,19 +78,44 @@ test("skill and custom-agent actions resolve to distinct activity rows", async (
 		kind: "agent",
 		issue: { issueKey: "RFP-102", summary: "Draft an RFP" },
 		prompt: "Ask the agent",
-		selectedItem: { id: "subagent:readiness-checker", label: "Readiness Checker" },
+		selectedItem: {
+			id: "subagent:readiness-checker",
+			label: "Readiness Checker",
+			avatarSrc: "/avatar-agent/custom/selected-readiness.svg",
+		},
 	};
 
 	const skillActivity = createAsxKanbanActivity(getAsxGenerativeActivityId(skillRequest));
-	const agentActivity = createAsxKanbanActivity(getAsxGenerativeActivityId(agentRequest));
+	const agentSelection = getAsxGenerativeAgentSelection(agentRequest);
+	const agentActivity = createAsxKanbanActivity(agentSelection.id, false, agentSelection);
 
 	assert.equal(skillActivity.id, "skill:design-landing-page");
 	assert.equal(skillActivity.name, "Rovo");
 	assert.match(skillActivity.avatarSrc, /^data:image\/svg\+xml,/u);
-	assert.equal(skillActivity.label, "Running Design landing page");
+	assert.equal(skillActivity.label, "Auditing message hierarchy");
+	assert.match(skillActivity.message, /landing-page narrative/u);
 	assert.equal(agentActivity.id, "readiness-checker");
 	assert.equal(agentActivity.name, "Readiness Checker");
-	assert.match(agentActivity.avatarSrc, /readiness-checker\.svg$/u);
+	assert.equal(agentActivity.avatarSrc, "/avatar-agent/custom/selected-readiness.svg");
+	assert.equal(agentActivity.label, "Checking requirement coverage");
+	assert.match(agentActivity.message, /mandatory requirements/u);
+});
+
+test("agent and skill selections produce distinct thinking, flyout, and unblock copy", async () => {
+	const { createAsxKanbanActivity } = await loadHarness();
+	const aiInsights = createAsxKanbanActivity("ai-insights-agent", true);
+	const readiness = createAsxKanbanActivity("readiness-checker", true);
+	const landingPage = createAsxKanbanActivity("skill:design-landing-page", true);
+	const mobileInterface = createAsxKanbanActivity("skill:develop-mobile-app-interface", true);
+
+	assert.notDeepEqual(aiInsights.labels, readiness.labels);
+	assert.notEqual(aiInsights.message, readiness.message);
+	assert.equal(aiInsights.question.label, "Which AI narrative should lead the response?");
+	assert.equal(readiness.question.label, "Which readiness gap should we resolve first?");
+	assert.notDeepEqual(landingPage.labels, mobileInterface.labels);
+	assert.notEqual(landingPage.cycleIntervalMs, mobileInterface.cycleIntervalMs);
+	assert.equal(landingPage.question.label, "What should the landing page optimize for?");
+	assert.equal(mobileInterface.question.label, "Which mobile journey should we prototype first?");
 });
 
 test("multi-selected Intake cards batch-start when dropped into Drafting", async () => {
@@ -107,7 +137,7 @@ test("multi-selected Intake cards batch-start when dropped into Drafting", async
 test("RFP-101 resolves needs-input and completion states before moving to Review", async () => {
 	const { asxKanbanReducer, createInitialAsxKanbanState, resolveAsxKanbanColumns } = await loadHarness();
 	let state = createInitialAsxKanbanState();
-	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-101"], agentId: "rfp-drafter" });
+	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-101"], agent: { id: "rfp-drafter" } });
 	state = asxKanbanReducer(state, { type: "advance-generating", cardCode: "RFP-101" });
 	assert.equal(state.lifecycleByCode["RFP-101"].phase, "generating");
 
@@ -124,8 +154,39 @@ test("RFP-101 resolves needs-input and completion states before moving to Review
 		.find((candidate) => candidate.title === "Review").cards[0];
 	assert.equal(presentedCard.code, "RFP-101");
 	assert.equal(presentedCard.agentActivityMode, "completed");
-	assert.equal(presentedCard.agentDoneCount, 1);
+	assert.equal(presentedCard.agentDoneRuns.length, 1);
+	assert.deepEqual(presentedCard.agentDoneRuns[0], {
+		id: "RFP-101:rfp-drafter",
+		summary: "Draft ready",
+		agentName: "RFP Drafter",
+		agentAvatarSrc: presentedCard.agentDoneRuns[0].agentAvatarSrc,
+		issueKey: "RFP-101",
+		issueSummary: "Acmecorp: Prepare for bid recommendation for ESM RFP",
+		relativeTime: "Just now",
+	});
 	assert.equal(column(state, "Drafting").cards.length, 0);
+});
+
+test("completed runs preserve agent-specific summary and selected avatar", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState, resolveAsxKanbanColumns } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+	state = asxKanbanReducer(state, {
+		type: "assign-agent",
+		cardCodes: ["RFP-102"],
+		agent: {
+			id: "ai-insights-agent",
+			name: "AI Insights Agent",
+			avatarSrc: "/avatar-agent/custom/ai-insights.svg",
+		},
+	});
+	state = asxKanbanReducer(state, { type: "complete", cardCode: "RFP-102" });
+	const completedRun = resolveAsxKanbanColumns(state)
+		.find((candidate) => candidate.title === "Review").cards[0].agentDoneRuns[0];
+
+	assert.match(completedRun.summary, /credible AI innovation angle/u);
+	assert.equal(completedRun.agentName, "AI Insights Agent");
+	assert.equal(completedRun.agentAvatarSrc, "/avatar-agent/custom/ai-insights.svg");
+	assert.equal(completedRun.issueKey, "RFP-102");
 });
 
 test("drops outside Intake to Drafting do not start a lifecycle", async () => {

@@ -70,6 +70,7 @@ test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.match(ROVO_OVERLAY_SOURCE, /showAgentSelector=\{false\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /showChatHistory=\{false\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /showNewChatButton=\{false\}/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /suppressCustomAgentTabs/u);
 	assert.doesNotMatch(ROVO_OVERLAY_SOURCE, /positioning="container"/u);
 });
 

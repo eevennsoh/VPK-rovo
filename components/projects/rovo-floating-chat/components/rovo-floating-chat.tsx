@@ -23,10 +23,12 @@ interface RovoFloatingChatProps {
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	startRealtimeVoiceRequestKey?: number;
 	externalThinkingMessageId?: string | null;
+	interceptClarificationAnswers?: boolean;
 	showAgentBackButton?: boolean;
 	showAgentSelector?: boolean;
 	showChatHistory?: boolean;
 	showNewChatButton?: boolean;
+	suppressCustomAgentTabs?: boolean;
 }
 
 export default function RovoFloatingChat({
@@ -41,10 +43,12 @@ export default function RovoFloatingChat({
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	startRealtimeVoiceRequestKey = 0,
 	externalThinkingMessageId,
+	interceptClarificationAnswers = false,
 	showAgentBackButton = true,
 	showAgentSelector = true,
 	showChatHistory = true,
 	showNewChatButton = true,
+	suppressCustomAgentTabs = false,
 }: Readonly<RovoFloatingChatProps>) {
 	const { closeChat, isHistoryOpen, resetChat, toggleHistory } = useRovoChat();
 
@@ -54,7 +58,7 @@ export default function RovoFloatingChat({
 			animate={{ opacity: 1, y: 0 }}
 			exit={{ opacity: 0, y: 8 }}
 			transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
-			className="fixed right-6 bottom-6 z-[510] flex max-h-[min(720px,calc(100dvh-96px))] w-[400px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-2xl bg-surface-overlay"
+			className="fixed right-6 bottom-6 z-[560] flex max-h-[min(720px,calc(100dvh-96px))] w-[400px] max-w-[calc(100vw-48px)] flex-col overflow-hidden rounded-2xl bg-surface-overlay"
 			style={{
 				boxShadow: token("elevation.shadow.overlay"),
 				willChange: "transform, opacity",
@@ -97,6 +101,8 @@ export default function RovoFloatingChat({
 					preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
 					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}
 					externalThinkingMessageId={externalThinkingMessageId}
+					interceptClarificationAnswers={interceptClarificationAnswers}
+					suppressCustomAgentTabs={suppressCustomAgentTabs}
 				/>
 			</div>
 			{showChatHistory ? <ChatHistoryDrawer /> : null}

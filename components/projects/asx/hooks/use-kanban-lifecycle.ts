@@ -7,7 +7,8 @@ import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers } from "@/compon
 import {
 	ASX_KANBAN_DEFAULT_AGENT_ID,
 	ASX_KANBAN_DRAFTING_COLUMN,
-	getAsxGenerativeActivityId,
+	getAsxGenerativeAgentSelection,
+	type AsxKanbanAgentSelection,
 } from "../data/kanban-data";
 import {
 	asxKanbanReducer,
@@ -61,10 +62,10 @@ export function useAsxKanbanLifecycle({
 		timersRef.current.clear();
 	}, []);
 
-	const startCards = useCallback((cardCodes: readonly string[], agentId: string) => {
+	const startCards = useCallback((cardCodes: readonly string[], agent: AsxKanbanAgentSelection) => {
 		for (const cardCode of cardCodes) {
 			clearCardTimers(cardCode);
-			dispatch({ type: "assign-agent", cardCodes: [cardCode], agentId });
+			dispatch({ type: "assign-agent", cardCodes: [cardCode], agent });
 			schedule(cardCode, GENERATING_DELAY_MS, () => {
 				dispatch({ type: "advance-generating", cardCode });
 			});
@@ -82,7 +83,7 @@ export function useAsxKanbanLifecycle({
 			onNonAgentAction?.(request, card);
 			return;
 		}
-		startCards([card.code], getAsxGenerativeActivityId(request));
+		startCards([card.code], getAsxGenerativeAgentSelection(request));
 	}, [onNonAgentAction, startCards]);
 
 	const handleCardSelect = useCallback((
@@ -102,7 +103,7 @@ export function useAsxKanbanLifecycle({
 		const dragged = stateRef.current.dragged;
 		if (dragged && targetColumnTitle === ASX_KANBAN_DRAFTING_COLUMN) {
 			const codes = [...dragged.cardCodes];
-			dispatch({ type: "drop", targetColumnTitle, agentId: ASX_KANBAN_DEFAULT_AGENT_ID });
+			dispatch({ type: "drop", targetColumnTitle, agent: { id: ASX_KANBAN_DEFAULT_AGENT_ID } });
 			for (const cardCode of codes) {
 				clearCardTimers(cardCode);
 				schedule(cardCode, GENERATING_DELAY_MS, () => dispatch({ type: "advance-generating", cardCode }));

@@ -12,6 +12,7 @@ import {
 	JiraIssue,
 	type JiraIssueAgentActivity,
 	type JiraIssueAgentActivityMode,
+	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePriority,
 	type JiraIssueTag,
@@ -55,7 +56,7 @@ export interface JiraKanbanCardData {
 	avatarPulse?: boolean;
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
-	agentDoneCount?: number;
+	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
 }
 
 export interface JiraKanbanColumnData {
@@ -140,6 +141,7 @@ export function createJiraKanbanColumns(
 					}
 					: undefined,
 			})),
+			agentDoneRuns: card.agentDoneRuns?.map((run) => ({ ...run })),
 		})),
 	}));
 }
@@ -600,7 +602,7 @@ export function JiraKanban({
 											assigneePulse={card.avatarPulse}
 											agentActivities={card.agentActivities}
 											agentActivityMode={card.agentActivityMode}
-											agentDoneCount={card.agentDoneCount}
+											agentDoneRuns={card.agentDoneRuns}
 											generativeAction={
 												onCardGenerativeActionSubmit
 													? {

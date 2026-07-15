@@ -107,6 +107,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-has-artifact-dialog-open": String(typeof props.onArtifactDialogOpen === "function"),
 							"data-has-intercept-submit": String(typeof props.onInterceptSubmit === "function"),
 							"data-preserve-artifact-dialog": String(props.preserveFloatingSurfaceOnArtifactDialogOpen),
+							"data-suppress-custom-agent-tabs": String(props.suppressCustomAgentTabs),
 							"data-start-realtime-key": String(props.startRealtimeVoiceRequestKey),
 							"data-external-thinking-message-id": props.externalThinkingMessageId ?? "",
 							className: props.containerClassName,
@@ -294,6 +295,7 @@ test("RovoFloatingChat renders the shared chat panel inside the floating shell",
 	assert.match(markup, /data-testid="shared-chat-panel"/);
 	assert.match(markup, /data-hide-header="true"/);
 	assert.match(markup, /data-abort-on-unmount="false"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /z-\[560\]/u);
 });
 
 test("RovoFloatingChat can render a fixed single-thread agent header", async () => {
@@ -366,6 +368,7 @@ test("RovoFloatingChat forwards deterministic submit interception to the shared 
 	assert.match(markup, /data-has-intercept-submit="true"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit\?: \(text: string\) => ChatSubmitInterceptOutcome;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit=\{onInterceptSubmit\}/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /interceptClarificationAnswers=\{interceptClarificationAnswers\}/u);
 });
 
 test("RovoFloatingChat forwards live voice start requests to the shared chat panel", async () => {
@@ -398,6 +401,11 @@ test("RovoFloatingChat forwards custom agent tab content to the shared chat pane
 	assert.match(markup, /data-has-custom-agent-tabs="true"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /customAgentTabs\?: ChatPanelCustomAgentTabs;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /customAgentTabs=\{customAgentTabs\}/u);
+});
+
+test("RovoFloatingChat can suppress the automatic custom agent tab bar", () => {
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /suppressCustomAgentTabs\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /suppressCustomAgentTabs=\{suppressCustomAgentTabs\}/u);
 });
 
 test("RovoFloatingChat forwards artifact dialog lifecycle to the shared chat panel", async () => {

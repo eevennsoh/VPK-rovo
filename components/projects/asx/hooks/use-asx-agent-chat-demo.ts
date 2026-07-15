@@ -43,7 +43,7 @@ export function useAsxAgentChatDemo(): UseAsxAgentChatDemoResult {
 		selectAgent(scenario.agentId, { preserveCurrentThread: true });
 		setChatContextBar(buildAsxAgentChatContextBar(scenario));
 		openChat("floating");
-		setExternalThinkingMessageId(playback.assistantMessageId);
+		setExternalThinkingMessageId(scenario.question ? null : playback.assistantMessageId);
 
 		let elapsedMs = 0;
 		playback.frames.forEach((frame, index) => {

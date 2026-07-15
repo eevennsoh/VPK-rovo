@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
 import { AgentCardHeader } from "@/components/blocks/agent-card";
-import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
 import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
 import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
@@ -30,6 +28,7 @@ export interface JiraIssueAgentActivity {
 	avatarSrc?: string;
 	label: string;
 	labels?: readonly string[];
+	message?: string;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	question?: QuestionCardQuestion;
@@ -103,6 +102,10 @@ function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity): reado
 }
 
 function getJiraIssueAgentPanelMessage(activity: JiraIssueAgentActivity): string {
+	if (activity.message) {
+		return activity.message;
+	}
+
 	if (activity.state === "awaiting-input") {
 		return "I found a decision point that needs your input before I can continue with the implementation notes.";
 	}
@@ -418,21 +421,5 @@ export function JiraIssueAgentActivityRows({
 				))}
 			</AnimatePresence>
 		</motion.div>
-	);
-}
-
-export function JiraIssueAgentDone({ count }: Readonly<{ count: number }>) {
-	return (
-		<section aria-label="Agent done">
-			<div className="flex h-8 w-full items-center justify-between px-3 py-2">
-				<div className="flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle">
-					<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
-						<AiAgentIcon label="" size="medium" spacing="none" color="currentColor" />
-					</span>
-					<span>Agent done</span>
-					<JiraIssueCountBadge>{count}</JiraIssueCountBadge>
-				</div>
-			</div>
-		</section>
 	);
 }

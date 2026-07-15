@@ -65,6 +65,31 @@ test("ASX agent chat playback deterministically advances from thinking to final 
 	assert.equal(playback.frames[3].parts.at(-1).state, "done");
 });
 
+test("ASX awaiting-input chat playback exposes the same question as a chat question card", async () => {
+	const { buildAsxAgentChatPlayback } = await loadHarness();
+	const playback = buildAsxAgentChatPlayback({
+		agentId: "rfp-drafter",
+		agentName: "RFP Drafter",
+		issueKey: "RFP-101",
+		issueSummary: "Prepare bid recommendation",
+		intro: "I found two viable AI narratives. Choose how ambitious the response should sound.",
+		question: {
+			id: "rfp-response-strategy",
+			label: "Which response strategy should we lead with?",
+			kind: "single-select",
+			options: [{ id: "platform", label: "Platform consolidation" }],
+		},
+	}, "question-run", 0);
+
+	assert.equal(playback.frames.length, 1);
+	assert.equal(playback.frames[0].delayMs, 0);
+	assert.equal(playback.frames[0].parts[0].text, "I found two viable AI narratives. Choose how ambitious the response should sound.");
+	const widget = playback.frames[0].parts.find((part) => part.type === "data-widget-data");
+	assert.equal(widget.data.type, "question-card");
+	assert.equal(widget.data.payload.questions[0].label, "Which response strategy should we lead with?");
+	assert.equal(widget.data.payload.questions[0].required, true);
+});
+
 test("ASX agent chat exposes persistent work-item context for the floating composer", async () => {
 	const { buildAsxAgentChatContextBar } = await loadHarness();
 	const contextBar = buildAsxAgentChatContextBar({
@@ -88,4 +113,5 @@ test("ASX chat hook selects the agent before opening and cancels stale playback 
 	assert.match(HOOK_SOURCE, /for \(const timer of timersRef\.current\)[\s\S]*window\.clearTimeout\(timer\);/u);
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildAsxAgentChatContextBar\(scenario\)\);/u);
+	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
 });

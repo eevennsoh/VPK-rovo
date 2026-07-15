@@ -1,5 +1,6 @@
 import type {
 	JiraIssueAgentActivity,
+	JiraIssueCompletedAgentRun,
 	JiraIssuePriority,
 	JiraIssueSubtask,
 	JiraIssueTag,
@@ -28,9 +29,6 @@ export const ASX_CARD_KANBAN_STATES = [
 	{ value: "awaiting-user-input", label: "Needs input" },
 	{ value: "agent-completed-work", label: "Done" },
 ] as const satisfies readonly { value: AsxCardKanbanState; label: string }[];
-
-/** Completed agent updates surfaced by the "Done" state. */
-export const ASX_CARD_KANBAN_DONE_COUNT = 2;
 
 const SERVICE_IMPACT_LABELS = [
 	"Figuring out which services are affected",
@@ -91,6 +89,28 @@ export const ASX_CARD_KANBAN_AWAITING_ACTIVITIES = [
 	},
 	DEPENDENCY_MAPPER_AGENT,
 ] as const satisfies readonly JiraIssueAgentActivity[];
+
+/** Completed agent updates surfaced by the "Done" state. */
+export const ASX_CARD_KANBAN_DONE_RUNS = [
+	{
+		id: "PD-40:service-impact-agent",
+		summary: "Mapped the affected services and added a customer-facing impact summary.",
+		agentName: SERVICE_IMPACT_AGENT.name,
+		agentAvatarSrc: SERVICE_IMPACT_AGENT.avatarSrc,
+		issueKey: "PD-40",
+		issueSummary: "Implement advanced date-range filter",
+		relativeTime: "Just now",
+	},
+	{
+		id: "PD-40:dependency-mapper",
+		summary: "Documented dependent components, owners, and blocked handoffs.",
+		agentName: DEPENDENCY_MAPPER_AGENT.name,
+		agentAvatarSrc: DEPENDENCY_MAPPER_AGENT.avatarSrc,
+		issueKey: "PD-40",
+		issueSummary: "Implement advanced date-range filter",
+		relativeTime: "1 min ago",
+	},
+] as const satisfies readonly JiraIssueCompletedAgentRun[];
 
 export const ASX_CARD_KANBAN_SUBTASKS: readonly JiraIssueSubtask[] = [
 	{

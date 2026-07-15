@@ -13,14 +13,14 @@ import {
 import {
 	ASX_CARD_KANBAN_AWAITING_ACTIVITIES,
 	ASX_CARD_KANBAN_CARD,
-	ASX_CARD_KANBAN_DONE_COUNT,
+	ASX_CARD_KANBAN_DONE_RUNS,
 	ASX_CARD_KANBAN_STATES,
 	ASX_CARD_KANBAN_SUBTASKS,
 	ASX_CARD_KANBAN_WORKING_ACTIVITIES,
 } from "@/components/projects/asx/data/card-kanban-data";
 import {
 	createAsxKanbanActivity,
-	getAsxGenerativeActivityId,
+	getAsxGenerativeAgentSelection,
 } from "@/components/projects/asx/data/kanban-data";
 import type { UseAutoCycleResult } from "@/components/projects/asx/hooks/use-auto-cycle";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
@@ -158,7 +158,8 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 				return;
 			}
 
-			const activity = createAsxKanbanActivity(getAsxGenerativeActivityId(request));
+			const selection = getAsxGenerativeAgentSelection(request);
+			const activity = createAsxKanbanActivity(selection.id, false, selection);
 			setAddedAgentActivities((current) => current.some((candidate) => candidate.id === activity.id)
 				? current
 				: [...current, activity]);
@@ -193,7 +194,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 						<JiraIssue
 							agentActivities={agentActivities}
 							agentActivityMode={agentActivityMode}
-							agentDoneCount={state === "agent-completed-work" ? ASX_CARD_KANBAN_DONE_COUNT : 0}
+							agentDoneRuns={state === "agent-completed-work" ? ASX_CARD_KANBAN_DONE_RUNS : undefined}
 							assigneeAvatarSrc={ASX_CARD_KANBAN_CARD.assigneeAvatarSrc}
 							className="w-full"
 							generativeAction={{ onSubmit: handleGenerativeActionSubmit }}

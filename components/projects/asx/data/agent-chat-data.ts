@@ -5,12 +5,15 @@ import {
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
+import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 
 export interface AsxAgentChatScenario {
 	agentId: string;
 	agentName: string;
 	issueKey: string;
 	issueSummary: string;
+	intro?: string;
+	question?: QuestionCardQuestion;
 	request?: string;
 	result?: string;
 }
@@ -87,6 +90,38 @@ function getScenarioResult(scenario: AsxAgentChatScenario): string {
 	].join("\n\n");
 }
 
+function buildAsxQuestionCardParts(
+	scenario: AsxAgentChatScenario,
+	runId: string,
+): RovoUIMessage["parts"] | null {
+	if (!scenario.question) return null;
+
+	const toolCallId = `asx-agent-question-${runId}`;
+	return [
+		{
+			type: "text",
+			text: scenario.intro ?? "I found a decision point that needs your input before I can continue with the implementation notes.",
+			state: "done",
+		},
+		{
+			type: "data-widget-data",
+			data: {
+				type: "question-card",
+				payload: {
+					type: "question-card",
+					sessionId: toolCallId,
+					round: 1,
+					maxRounds: 1,
+					title: "Answer to continue",
+					requiredCount: 1,
+					toolCallId,
+					questions: [{ ...scenario.question, required: true }],
+				},
+			},
+		},
+	];
+}
+
 /**
  * Builds a deterministic local thinking -> generating -> completed transcript.
  * The ids vary per playback, while the visible content and timing stay stable.
@@ -97,6 +132,7 @@ export function buildAsxAgentChatPlayback(
 	now = Date.now(),
 ): AsxAgentChatPlayback {
 	const assistantMessageId = `asx-agent-assistant-${runId}`;
+	const questionCardParts = buildAsxQuestionCardParts(scenario, runId);
 	const toolCallId = `asx-agent-work-${runId}`;
 	const startedAt = new Date(now).toISOString();
 	const completedAt = new Date(now + 2_400).toISOString();
@@ -147,7 +183,7 @@ export function buildAsxAgentChatPlayback(
 			role: "user",
 			parts: [{ type: "text", text: getScenarioRequest(scenario), state: "done" }],
 		},
-		frames: [
+		frames: questionCardParts ? [{ delayMs: 0, parts: questionCardParts }] : [
 			{ delayMs: 0, parts: [thinkingStatus] },
 			{ delayMs: 700, parts: [thinkingStatus, toolStart] },
 			{

@@ -9,6 +9,7 @@ const ASX_PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data/card-kanban-data.ts"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/agent-activity.tsx"), "utf8");
+const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "../../blocks/jira-issue/completed-agent-runs.tsx"), "utf8");
 
 test("Card Kanban uses shared separators and restores only the selected left border", () => {
 	assert.match(STAGE_SOURCE, /<ButtonGroup\s+variant="connected"\s+\{\.\.\.pauseHandlers\}/u);
@@ -24,6 +25,7 @@ test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is op
 	assert.match(JIRA_ISSUE_SOURCE, /onAgentActivityOpenChange\?: \(open: boolean\) => void;/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{onAgentActivityOpenChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
 });
 
 test("Card Kanban restarts its progression when the gallery re-enters it", () => {
@@ -41,7 +43,7 @@ test("Card Kanban forwards persistent issue context to floating chat", () => {
 
 test("Card Kanban adds skill and custom-agent selections as working rows", () => {
 	assert.match(STAGE_SOURCE, /if \(request\.kind === "ask-rovo"\) \{[\s\S]*openAgentChat\([\s\S]*return;[\s\S]*\}/u);
-	assert.match(STAGE_SOURCE, /const activity = createAsxKanbanActivity\(getAsxGenerativeActivityId\(request\)\);/u);
+	assert.match(STAGE_SOURCE, /const selection = getAsxGenerativeAgentSelection\(request\);[\s\S]*const activity = createAsxKanbanActivity\(selection\.id, false, selection\);/u);
 	assert.match(STAGE_SOURCE, /setAddedAgentActivities\(\(current\) => current\.some\(\(candidate\) => candidate\.id === activity\.id\)[\s\S]*\[\.\.\.current, activity\]/u);
 	assert.match(STAGE_SOURCE, /agentActivities\.length > 0[\s\S]*\? "working"/u);
 });
@@ -49,4 +51,10 @@ test("Card Kanban adds skill and custom-agent selections as working rows", () =>
 test("Card Kanban limits its presentation question to two options", () => {
 	assert.match(DATA_SOURCE, /options: QUESTION_CARD_SINGLE_SELECT_DEMO\[0\]\.options\.slice\(0, 2\)/u);
 	assert.match(DATA_SOURCE, /question: ASX_CARD_KANBAN_DEPLOYMENT_QUESTION/u);
+});
+
+test("Card Kanban Done state exposes completed-run summaries and metadata", () => {
+	assert.match(DATA_SOURCE, /export const ASX_CARD_KANBAN_DONE_RUNS = \[/u);
+	assert.match(DATA_SOURCE, /summary: "Mapped the affected services[\s\S]*agentName: SERVICE_IMPACT_AGENT\.name[\s\S]*issueKey: "PD-40"[\s\S]*relativeTime: "Just now"/u);
+	assert.match(STAGE_SOURCE, /agentDoneRuns=\{state === "agent-completed-work" \? ASX_CARD_KANBAN_DONE_RUNS : undefined\}/u);
 });

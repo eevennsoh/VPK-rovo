@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useRovoChat } from "@/app/contexts";
@@ -12,12 +12,14 @@ import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/
 interface AsxRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	onQuestionAnswer?: () => void;
 }
 
 /** Keeps ASX Rovo surfaces in the viewport stacking context above the Gallery dock. */
 export function AsxRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	onQuestionAnswer,
 }: Readonly<AsxRovoOverlayProps>): React.ReactNode {
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -25,6 +27,13 @@ export function AsxRovoOverlay({
 	useEffect(() => {
 		setPortalRoot(document.body);
 	}, []);
+
+	const handleQuestionAnswer = useCallback(() => ({
+		handled: Boolean(onQuestionAnswer),
+		assistantReply: onQuestionAnswer ? "Thanks — I’ll continue with that direction." : undefined,
+		delayMs: 0,
+		onApply: onQuestionAnswer,
+	}), [onQuestionAnswer]);
 
 	if (!portalRoot) return null;
 
@@ -40,10 +49,13 @@ export function AsxRovoOverlay({
 						chatContextBar={chatContextBar}
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
+						interceptClarificationAnswers={Boolean(onQuestionAnswer)}
+						onInterceptSubmit={onQuestionAnswer ? handleQuestionAnswer : undefined}
 						showAgentBackButton={false}
 						showAgentSelector={false}
 						showChatHistory={false}
 						showNewChatButton={false}
+						suppressCustomAgentTabs
 					/>
 				) : null}
 			</AnimatePresence>

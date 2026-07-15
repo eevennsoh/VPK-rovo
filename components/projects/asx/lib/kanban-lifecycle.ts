@@ -1,11 +1,12 @@
 import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
-	ASX_RFP_QUESTION,
 	ASX_KANBAN_DEFAULT_AGENT_ID,
 	ASX_KANBAN_DRAFTING_COLUMN,
 	ASX_KANBAN_INTAKE_COLUMN,
 	ASX_KANBAN_REVIEW_COLUMN,
+	type AsxKanbanAgentSelection,
 	createAsxKanbanActivity,
+	createAsxKanbanCompletedRun,
 	createAsxKanbanColumns,
 } from "../data/kanban-data";
 
@@ -13,6 +14,7 @@ export type AsxKanbanLifecyclePhase = "default" | "thinking" | "generating" | "n
 
 export interface AsxKanbanLifecycle {
 	agentIds: string[];
+	agentSelectionsById: Record<string, AsxKanbanAgentSelection>;
 	generatedOutput?: string;
 	phase: AsxKanbanLifecyclePhase;
 }
@@ -31,7 +33,7 @@ export interface AsxKanbanState {
 }
 
 export type AsxKanbanAction =
-	| { type: "assign-agent"; cardCodes: readonly string[]; agentId: string }
+	| { type: "assign-agent"; cardCodes: readonly string[]; agent: AsxKanbanAgentSelection }
 	| { type: "advance-generating"; cardCode: string }
 	| { type: "request-input"; cardCode: string }
 	| { type: "answer-question"; cardCode: string }
@@ -39,7 +41,7 @@ export type AsxKanbanAction =
 	| { type: "select"; cardCode: string; columnTitle: string; indexInColumn: number; modifiers: JiraKanbanCardSelectModifiers }
 	| { type: "drag-start"; cardCode: string; sourceColumnTitle: string }
 	| { type: "drag-end" }
-	| { type: "drop"; targetColumnTitle: string; agentId?: string };
+	| { type: "drop"; targetColumnTitle: string; agent?: AsxKanbanAgentSelection };
 
 function withDerivedCounts(columns: readonly JiraKanbanColumnData[]): JiraKanbanColumnData[] {
 	return columns.map((column) => ({ ...column, count: column.cards.length }));
@@ -72,14 +74,22 @@ function moveCardsToTop(
 function assignAgents(
 	lifecycleByCode: Readonly<Record<string, AsxKanbanLifecycle>>,
 	cardCodes: readonly string[],
-	agentId: string,
+	agent: AsxKanbanAgentSelection,
 ): Record<string, AsxKanbanLifecycle> {
 	const next = { ...lifecycleByCode };
 	for (const cardCode of cardCodes) {
-		const current = next[cardCode] ?? { agentIds: [], phase: "default" as const };
+		const current = next[cardCode] ?? {
+			agentIds: [],
+			agentSelectionsById: {},
+			phase: "default" as const,
+		};
 		next[cardCode] = {
 			...current,
-			agentIds: current.agentIds.includes(agentId) ? current.agentIds : [...current.agentIds, agentId],
+			agentIds: current.agentIds.includes(agent.id) ? current.agentIds : [...current.agentIds, agent.id],
+			agentSelectionsById: {
+				...current.agentSelectionsById,
+				[agent.id]: agent,
+			},
 			phase: "thinking",
 		};
 	}
@@ -123,21 +133,29 @@ export function resolveAsxKanbanColumns(state: AsxKanbanState): JiraKanbanColumn
 					...card,
 					agentActivities: undefined,
 					agentActivityMode: "completed" as const,
-					agentDoneCount: lifecycle.agentIds.length,
+					agentDoneRuns: lifecycle.agentIds.map((agentId, index) => createAsxKanbanCompletedRun(
+						agentId,
+						{ issueKey: card.code, issueSummary: card.title },
+						lifecycle.agentSelectionsById[agentId],
+						index === 0 ? lifecycle.generatedOutput : undefined,
+					)),
 				};
 			}
 
 			const awaitingInput = lifecycle.phase === "needs-input";
-			const activities = lifecycle.agentIds.map((agentId, index) => ({
-				...createAsxKanbanActivity(agentId, awaitingInput && index === 0),
-				question: awaitingInput && index === 0 ? ASX_RFP_QUESTION[0] : undefined,
-			}));
+			const activities = lifecycle.agentIds.map((agentId, index) => (
+				createAsxKanbanActivity(
+					agentId,
+					awaitingInput && index === 0,
+					lifecycle.agentSelectionsById[agentId],
+				)
+			));
 
 			return {
 				...card,
 				agentActivities: activities,
 				agentActivityMode: awaitingInput ? "awaiting-input" as const : "working" as const,
-				agentDoneCount: 0,
+				agentDoneRuns: undefined,
 			};
 		}),
 	}));
@@ -149,7 +167,7 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 			return {
 				...state,
 				columns: moveCardsToTop(state.columns, action.cardCodes, ASX_KANBAN_DRAFTING_COLUMN),
-				lifecycleByCode: assignAgents(state.lifecycleByCode, action.cardCodes, action.agentId),
+				lifecycleByCode: assignAgents(state.lifecycleByCode, action.cardCodes, action.agent),
 			};
 		case "advance-generating":
 			return updateLifecycle(state, action.cardCode, (current) => ({ ...current, phase: "generating" }));
@@ -213,7 +231,7 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 				lifecycleByCode: assignAgents(
 					state.lifecycleByCode,
 					state.dragged.cardCodes,
-					action.agentId ?? ASX_KANBAN_DEFAULT_AGENT_ID,
+					action.agent ?? { id: ASX_KANBAN_DEFAULT_AGENT_ID },
 				),
 				selectedCardCodes: new Set(),
 			};
