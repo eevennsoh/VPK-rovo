@@ -69,7 +69,13 @@ export function QueueStage(): React.ReactElement {
 
 	return (
 		<div
-			className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-hidden isolate"
+			// Reserve the gallery dock footprint (fixed `inset-x-0 bottom-0` card strip,
+			// ~224px = the `h-56` backdrop veil) so the Jira app shell — and its
+			// sticky conversation composer at the bottom — stays above the dock instead
+			// of being clipped behind it. Padding tracks the viewport because the stage
+			// height flows from the gallery's `h-dvh` flex column, so this stays
+			// responsive to available height.
+			className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-hidden pb-56 isolate"
 			data-testid="asx-queue-stage"
 		>
 			<AppLayout

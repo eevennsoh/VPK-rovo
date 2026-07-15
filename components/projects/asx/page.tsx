@@ -75,6 +75,7 @@ function AsxGallery(): React.ReactElement {
 				selectedId={selectedId}
 				onSelectedChange={setSelectedId}
 				topBarCenter={topBarCenter}
+				showTopBarBorder={selectedId === "queue"}
 				renderSelectedItem={(item) =>
 					renderAsxItem(item, cardKanbanController, workItemController)
 				}
