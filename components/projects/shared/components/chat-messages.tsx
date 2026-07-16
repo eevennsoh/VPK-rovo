@@ -7,11 +7,10 @@ import {
 	ConversationContent,
 	type ConversationContextValue,
 } from "@/components/ui-custom/conversation";
-import { Message } from "@/components/ui-custom/message";
 import {
-	AdsReasoningTrigger,
-	Reasoning,
-} from "@/components/ui-custom/reasoning";
+	ChainOfThought,
+	ChainOfThoughtHeader,
+} from "@/components/ui-custom/chain-of-thought";
 import { cn } from "@/lib/utils";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
 import { ThreadMessage } from "@/components/projects/shared/thread-message";
@@ -38,6 +37,7 @@ export interface ChatMessagesProps {
 	contentTopPadding?: string;
 	contentBottomPadding?: string;
 	hideScrollbar?: boolean;
+	resizeTarget?: "bottom" | "follow";
 	isStreaming?: boolean;
 	isSubmitPending?: boolean;
 	messageMode?: "plan" | "ask";
@@ -115,6 +115,7 @@ export function ChatMessages({
 	contentTopPadding,
 	contentBottomPadding,
 	hideScrollbar = true,
+	resizeTarget = "follow",
 	isStreaming = false,
 	isSubmitPending = false,
 	messageMode = "plan",
@@ -169,6 +170,7 @@ export function ChatMessages({
 			className={cn("min-h-0 flex-1", hideScrollbar && styles.hideScrollbar)}
 			contextRef={conversationContextRef}
 			initial={false}
+			resizeTarget={resizeTarget}
 			targetScrollTop={handleTargetScrollTop}
 		>
 			<ConversationContent
@@ -262,11 +264,11 @@ export function ChatMessages({
 				) : null}
 				{!indicator.shouldShowPreloader && !indicator.shouldShowThinkingStatus && showAwaitingIndicator ? (
 					<div className="flex justify-start">
-						<Message from="assistant" className="max-w-full">
-							<Reasoning className="mb-0" isStreaming>
-								<AdsReasoningTrigger label={awaitingIndicatorLabel} showChevron={false} streaming />
-							</Reasoning>
-						</Message>
+						<ChainOfThought>
+							<ChainOfThoughtHeader showChevron={false} state="thinking">
+								{awaitingIndicatorLabel}
+							</ChainOfThoughtHeader>
+						</ChainOfThought>
 					</div>
 				) : null}
 				<div ref={scrollSpacerRef} aria-hidden className="h-0 shrink-0" />
