@@ -164,7 +164,7 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 	assert.match(agentSessionsSource, /<div className="flex min-w-0 items-center">/u);
 	assert.match(agentSessionsSource, /<AgentSessionTag session=\{visibleSession\} \/>/u);
 	assert.match(agentSessionsSource, /<OverflowMenu count=\{overflowSessions\.length\} label="agent sessions">/u);
-	assert.match(agentSessionsSource, /<li className="flex" key=\{session\}>/u);
+	assert.match(agentSessionsSource, /<li className="flex" key=\{`\$\{session\}-\$\{sessionIndex\}`\}>/u);
 	assert.match(SOURCE, /function AgentSessionTag/u);
 	assert.match(SOURCE, /<Tag[\s\S]*?className="max-w-full self-center"[\s\S]*?elemBefore=\{[\s\S]*?<Avatar label=\{`\$\{session\} agent`\} shape="hexagon" size="xs">/u);
 	assert.match(SOURCE, /avatarSrc \? <AvatarImage alt="" src=\{avatarSrc\} \/> : null/u);
@@ -183,6 +183,21 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 	assert.match(DATA_SOURCE, /\{ text: "VULN-1966436", color: "red" \}/u);
 	assert.match(DATA_SOURCE, /\{ text: "sales-css", color: "blue" \}/u);
 	assert.match(DATA_SOURCE, /\{ text: "user-initiated", color: "teal" \}/u);
+});
+
+test("JiraList treats agent session strings as display labels, not unique IDs", () => {
+	const agentSessionsRendererStart = SOURCE.indexOf("export function renderAgentSessions(");
+	const agentSessionsRendererEnd = SOURCE.indexOf("export function renderGoals", agentSessionsRendererStart);
+	const agentSessionsRendererSource = SOURCE.slice(agentSessionsRendererStart, agentSessionsRendererEnd);
+
+	assert.ok(agentSessionsRendererStart > -1);
+	assert.ok(agentSessionsRendererEnd > agentSessionsRendererStart);
+	assert.match(TYPES_SOURCE, /Display labels only; labels are not stable IDs and may repeat\.\n\tagentSessions\?: readonly string\[\];/u);
+	// Session labels may repeat, so overflow keys must be composited with the index
+	// rather than using the raw display string as a React key.
+	assert.match(agentSessionsRendererSource, /overflowSessions\.map\(\(session, sessionIndex\) =>/u);
+	assert.match(agentSessionsRendererSource, /key=\{`\$\{session\}-\$\{sessionIndex\}`\}/u);
+	assert.doesNotMatch(agentSessionsRendererSource, /key=\{session\}>/u);
 });
 
 test("JiraList maps each data column half to one deterministically owned boundary", () => {

@@ -252,8 +252,8 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 				<AgentSessionTag session={visibleSession} />
 			</div>
 			<OverflowMenu count={overflowSessions.length} label="agent sessions">
-				{overflowSessions.map((session) => (
-					<li className="flex" key={session}>
+				{overflowSessions.map((session, sessionIndex) => (
+					<li className="flex" key={`${session}-${sessionIndex}`}>
 						<AgentSessionTag session={session} />
 					</li>
 				))}
