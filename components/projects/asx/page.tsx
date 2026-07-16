@@ -12,6 +12,8 @@ import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
+import { TerminalControls, TerminalStage } from "./components/terminal-stage";
+import { useTerminalDemo, type TerminalDemoController } from "./hooks/use-terminal-demo";
 import {
 	useWorkItemStageController,
 	WorkItemControls,
@@ -41,12 +43,14 @@ function renderAsxItem(
 	item: (typeof ASX_GALLERY_ITEMS)[number],
 	cardKanbanController: ReturnType<typeof useAutoCycle>,
 	workItemController: WorkItemStageController,
+	terminalController: TerminalDemoController,
 ): React.ReactNode {
 	if (item.id === "card") return <CardKanbanStage controller={cardKanbanController} />;
 	if (item.id === "kanban") return <KanbanStage />;
 	if (item.id === "list") return <ListStage />;
 	if (item.id === "queue") return <QueueStage />;
 	if (item.id === "work-item") return <WorkItemStage controller={workItemController} />;
+	if (item.id === "terminal") return <TerminalStage controller={terminalController} />;
 
 	return (
 		<div className="flex h-full w-full items-center justify-center">
@@ -61,18 +65,25 @@ function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const workItemController = useWorkItemStageController();
+	const terminalController = useTerminalDemo(selectedId === "terminal");
 	const { restart: restartCardKanban } = cardKanbanController;
+	const { restart: restartTerminal } = terminalController;
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		if (nextSelectedId === "card" && selectedId !== "card") {
 			restartCardKanban();
 		}
+		if (nextSelectedId === "terminal" && selectedId !== "terminal") {
+			restartTerminal();
+		}
 		setSelectedId(nextSelectedId);
-	}, [restartCardKanban, selectedId]);
+	}, [restartCardKanban, restartTerminal, selectedId]);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
 		) : selectedId === "work-item" ? (
 			<WorkItemControls controller={workItemController} />
+		) : selectedId === "terminal" ? (
+			<TerminalControls controller={terminalController} />
 		) : null;
 
 	return (
@@ -85,7 +96,7 @@ function AsxGallery(): React.ReactElement {
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
 				renderSelectedItem={(item) =>
-					renderAsxItem(item, cardKanbanController, workItemController)
+					renderAsxItem(item, cardKanbanController, workItemController, terminalController)
 				}
 			/>
 		</div>
