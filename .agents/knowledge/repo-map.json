@@ -5173,7 +5173,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 397,
+			"manifestEntryCount": 398,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5209,7 +5209,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 89,
+				"entryCount": 90,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5426,6 +5426,12 @@
 						"slug": "jira-epic",
 						"name": "Jira epic",
 						"importPath": "@/components/blocks/jira-epic"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-for-you",
+						"name": "Jira for you",
+						"importPath": "@/components/blocks/jira-for-you"
 					},
 					{
 						"category": "blocks",

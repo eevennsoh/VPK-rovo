@@ -304,6 +304,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-epic": dynamic(() => import("../demos/blocks/jira-epic-demo"), {
 		ssr: false,
 	}),
+	"jira-for-you": dynamic(() => import("../demos/blocks/jira-for-you-demo"), {
+		ssr: false,
+	}),
 	"jira-issue": dynamic(() => import("../demos/blocks/jira-issue-demo"), {
 		ssr: false,
 	}),
