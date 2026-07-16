@@ -271,6 +271,8 @@ export function JiraList({
 										}
 									/>
 								</Button>
+							) : indentLevel > 0 ? (
+								<span aria-hidden="true" className="block size-5 shrink-0" />
 							) : null}
 							<IssueTypeGlyph issueType={row.issueType} />
 							<div className="group/issue-key flex shrink-0 items-center">

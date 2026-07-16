@@ -324,8 +324,11 @@ test("JiraList left-aligns top-level work items without an empty hierarchy space
 		/id: "work",([\s\S]*?)\n\t\t\{\n\t\t\tid: "status"/u,
 	)?.[1] ?? "";
 
-	assert.match(workCellSource, /row\.hasChildren \? \([\s\S]*?<Button[\s\S]*?\) : null/u);
-	assert.doesNotMatch(workCellSource, /aria-hidden="true" className="block size-5 shrink-0"/u);
+	assert.match(workCellSource, /row\.hasChildren \? \([\s\S]*?<Button/u);
+	assert.match(
+		workCellSource,
+		/\) : indentLevel > 0 \? \([\s\S]*?aria-hidden="true" className="block size-5 shrink-0"[\s\S]*?\) : null/u,
+	);
 });
 
 test("JiraList centers an accessible refresh button with the footer count", () => {
