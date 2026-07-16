@@ -73,10 +73,15 @@ export function getUnfinishedQueueSessions(sessions: readonly AsxQueueSession[])
 export function groupQueueSessionsBySpace(
 	sessions: readonly AsxQueueSession[],
 ): Record<string, AsxQueueSession[]> {
-	return sessions.reduce<Record<string, AsxQueueSession[]>>((groups, session) => {
-		groups[session.spaceId] = [...(groups[session.spaceId] ?? []), session];
-		return groups;
-	}, {});
+	const groups: Record<string, AsxQueueSession[]> = {};
+
+	for (const session of sessions) {
+		const spaceSessions = groups[session.spaceId] ?? [];
+		spaceSessions.push(session);
+		groups[session.spaceId] = spaceSessions;
+	}
+
+	return groups;
 }
 
 export function appendQueueSessionUserMessage(
