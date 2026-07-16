@@ -1,22 +1,26 @@
-import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChangesIcon from "@atlaskit/icon/core/changes";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import CommentIcon from "@atlaskit/icon/core/comment";
+import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
 import CommitIcon from "@atlaskit/icon/core/commit";
-import FileIcon from "@atlaskit/icon/core/file";
+import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import TaskIcon from "@atlaskit/icon/core/task";
+import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import { motion, useReducedMotion, type Variants } from "motion/react";
+import type { ReactElement, ReactNode } from "react";
 
+import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import {
 	Item,
-	ItemActions,
 	ItemContent,
 	ItemGroup,
 	ItemMedia,
-	ItemTitle,
 } from "@/components/ui/item";
 import {
 	PanelActionClose,
@@ -28,16 +32,16 @@ import {
 	PanelHeader,
 	PanelTitle,
 } from "@/components/ui/panel";
-import { Separator } from "@/components/ui/separator";
 import { PlayIcon } from "@/components/ui/vpk-icons";
+import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
 
-const ENVIRONMENT_ACTIONS = [
-	{ id: "changes", icon: ChangesIcon, label: "Changes" },
-	{ id: "worktree", icon: BranchIcon, label: "Worktree" },
-	{ id: "branch", icon: BranchIcon, label: "Create branch" },
-	{ id: "commit", icon: CommitIcon, label: "Commit or push" },
-	{ id: "pull-request", icon: PullRequestIcon, label: "Create pull request" },
-] as const;
+const STATUS_LABELS: Record<AsxQueueSessionStatus, string> = {
+	"awaiting-input": "Awaiting user response",
+	merged: "Pull request merged",
+	"pr-open": "Pull request open",
+	running: "Running",
+	stopped: "Stopped",
+};
 
 const PANEL_VARIANTS: Variants = {
 	closed: {
@@ -56,11 +60,51 @@ const REDUCED_MOTION_PANEL_VARIANTS: Variants = {
 };
 
 interface QueueEnvironmentPanelProps {
+	agent: RovoAgentProfile;
 	onClose: () => void;
+	session: AsxQueueSession;
 }
 
-export function QueueEnvironmentPanel({ onClose }: Readonly<QueueEnvironmentPanelProps>) {
+function QueueEnvironmentStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
+	switch (status) {
+		case "awaiting-input":
+			return <StatusInformationIcon label="" />;
+		case "pr-open":
+			return <PullRequestIcon label="" />;
+		case "merged":
+			return <MergeSuccessIcon label="" />;
+		case "running":
+			return <ChangesIcon label="" />;
+		case "stopped":
+			return <VideoStopIcon label="" />;
+	}
+}
+
+function QueueEnvironmentDetailRow({
+	icon,
+	label,
+	value,
+}: Readonly<{
+	icon: ReactElement;
+	label: string;
+	value: ReactNode;
+}>) {
+	return (
+		<Item className="min-h-9 flex-nowrap items-start rounded-md border-0 px-2 py-1.5">
+			<ItemMedia className="mt-0.5 text-icon-subtle" variant="icon">
+				<Icon aria-hidden render={icon} />
+			</ItemMedia>
+			<ItemContent className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-x-2">
+				<span className="text-sm leading-5 text-text-subtlest">{label}</span>
+				<span className="min-w-0 break-words text-sm leading-5 text-text-subtle">{value}</span>
+			</ItemContent>
+		</Item>
+	);
+}
+
+export function QueueEnvironmentPanel({ agent, onClose, session }: Readonly<QueueEnvironmentPanelProps>) {
 	const shouldReduceMotion = useReducedMotion();
+	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 
 	return (
 		<motion.div
@@ -88,72 +132,48 @@ export function QueueEnvironmentPanel({ onClose }: Readonly<QueueEnvironmentPane
 				</PanelHeader>
 
 				<PanelContent>
-					<PanelBody className="space-y-5 px-4 pb-5">
+					<PanelBody className="space-y-4 px-4 pb-5">
+						<div className="min-w-0 px-2">
+							<p className="truncate text-sm font-semibold leading-5 text-text" title={session.title}>
+								{session.title}
+							</p>
+							<p className="text-xs leading-4 text-text-subtlest">
+								{session.host === "cloud" ? "Cloud session" : "Local session"}
+							</p>
+						</div>
 						<ItemGroup className="gap-0">
-							{ENVIRONMENT_ACTIONS.map((action) => {
-								const ActionIcon = action.icon;
-								return (
-									<Item className="min-h-9 rounded-md border-0 px-2 py-1.5" key={action.id}>
-										<ItemMedia variant="icon">
-											<Icon aria-hidden render={<ActionIcon label="" />} />
-										</ItemMedia>
-										<ItemContent>
-											<ItemTitle className="font-normal">{action.label}</ItemTitle>
-										</ItemContent>
-										{action.id === "changes" ? (
-											<ItemActions className="gap-1 text-sm font-medium">
-												<span className="text-text-success">+76</span>
-												<span className="text-text-danger">-37</span>
-											</ItemActions>
-										) : null}
-										{action.id === "worktree" ? (
-											<ItemActions>
-												<Icon aria-hidden className="text-icon-subtle" render={<ChevronDownIcon label="" />} />
-											</ItemActions>
-										) : null}
-									</Item>
-								);
-							})}
+							<QueueEnvironmentDetailRow
+								icon={<QueueEnvironmentStatusIcon status={session.status} />}
+								label="Status"
+								value={STATUS_LABELS[session.status]}
+							/>
+							<QueueEnvironmentDetailRow
+								icon={session.host === "cloud" ? <CloudArrowUpIcon label="" /> : <FolderClosedIcon label="" />}
+								label="Host"
+								value={session.host === "cloud" ? "Cloud" : "Local"}
+							/>
+							<QueueEnvironmentDetailRow icon={<AiAgentIcon label="" />} label="Agent" value={agent.name} />
+							<QueueEnvironmentDetailRow icon={<TaskIcon label="" />} label="Jira" value={issueDescription} />
+							{session.repository ? <QueueEnvironmentDetailRow icon={<FolderClosedIcon label="" />} label="Repository" value={session.repository} /> : null}
+							{session.branch ? <QueueEnvironmentDetailRow icon={<BranchIcon label="" />} label="Branch" value={session.branch} /> : null}
+							{session.worktreePath ? <QueueEnvironmentDetailRow icon={<FolderClosedIcon label="" />} label="Worktree" value={session.worktreePath} /> : null}
+							{session.pullRequestNumber ? <QueueEnvironmentDetailRow icon={<PullRequestIcon label="" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
+							{session.commit ? <QueueEnvironmentDetailRow icon={<CommitIcon label="" />} label="Commit" value={session.commit} /> : null}
+							{session.checks ? <QueueEnvironmentDetailRow icon={<CheckCircleIcon label="" />} label="Checks" value={session.checks} /> : null}
+							{session.fileChanges ? (
+								<QueueEnvironmentDetailRow
+									icon={<ChangesIcon label="" />}
+									label="Changes"
+									value={(
+										<span className="inline-flex flex-wrap gap-1 font-medium">
+											<span>{session.fileChanges.files.length} files</span>
+											<span className="text-text-success">+{session.fileChanges.additions}</span>
+											<span className="text-text-danger">-{session.fileChanges.deletions}</span>
+										</span>
+									)}
+								/>
+							) : null}
 						</ItemGroup>
-
-						<Separator />
-
-						<section aria-labelledby="asx-side-tasks-heading" className="space-y-2">
-							<h3 className="text-base font-medium text-text-subtle" id="asx-side-tasks-heading">
-								Side tasks
-							</h3>
-							<Item className="min-h-9 rounded-md border-0 px-2 py-1.5">
-								<ItemMedia variant="icon">
-									<Icon aria-hidden render={<CommentIcon label="" />} />
-								</ItemMedia>
-								<ItemContent>
-									<ItemTitle className="font-normal">Side task</ItemTitle>
-								</ItemContent>
-							</Item>
-						</section>
-
-						<Separator />
-
-						<section aria-labelledby="asx-sources-heading" className="space-y-2">
-							<div className="flex items-center justify-between gap-2">
-								<h3 className="text-base font-medium text-text-subtle" id="asx-sources-heading">
-									Sources
-								</h3>
-								<Button aria-label="Add source" size="icon-compact" type="button" variant="ghost">
-									<Icon aria-hidden render={<AddIcon label="" />} />
-								</Button>
-							</div>
-							<Item className="min-h-9 rounded-md border-0 px-2 py-1.5">
-								<ItemMedia variant="icon">
-									<Icon aria-hidden render={<FileIcon label="" />} />
-								</ItemMedia>
-								<ItemContent className="min-w-0">
-									<ItemTitle className="max-w-full font-normal text-text-subtle">
-										<span className="truncate">codex-clipboard-b1551afa.png</span>
-									</ItemTitle>
-								</ItemContent>
-							</Item>
-						</section>
 					</PanelBody>
 				</PanelContent>
 			</PanelContainer>

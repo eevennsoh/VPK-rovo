@@ -15,6 +15,8 @@ const buttonGroupVariants = cva(
 			variant: {
 				connected:
 					"has-[>[data-slot=button-group]]:gap-2 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md",
+				split:
+					"[&>button[data-variant=default]]:border-primary has-[button[aria-expanded=true]]:[&>button:first-child]:border-r-border-selected",
 				separated: "gap-1",
 			},
 			orientation: {
@@ -24,7 +26,7 @@ const buttonGroupVariants = cva(
 		},
 		compoundVariants: [
 			{
-				variant: "connected",
+				variant: ["connected", "split"],
 				orientation: "horizontal",
 				className:
 					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 *:data-slot:rounded-r-none",

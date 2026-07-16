@@ -138,9 +138,6 @@ export const UI_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		() => import("../../demos/ui/progress-tracker-demo"),
 		{ ssr: false },
 	),
-	"split-button": dynamic(() => import("../../demos/ui/split-button-demo"), {
-		ssr: false,
-	}),
 	tag: dynamic(() => import("../../demos/ui/tag-demo"), { ssr: false }),
 
 	"time-picker": dynamic(() => import("../../demos/ui/time-picker-demo"), {

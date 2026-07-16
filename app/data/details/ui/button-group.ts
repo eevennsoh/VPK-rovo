@@ -3,9 +3,11 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 export const BUTTON_GROUP_DETAIL: ComponentDetail = {
     adsUrl: "https://atlassian.design/components/button/button-group",
     description:
-      'A group container for related buttons. Use variant="connected" (default) for toolbar-style merged borders, or variant="separated" for ADS-style spaced layout with 4px gaps.',
+      'A group container for related buttons. Use variant="connected" (default) for toolbar-style merged borders, variant="split" for a primary action with a dropdown trigger, or variant="separated" for ADS-style spaced layout with 4px gaps.',
     usage: `import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 <ButtonGroup>
   <Button variant="outline">Left</Button>
@@ -17,14 +19,23 @@ import { ButtonGroup } from "@/components/ui/button-group";
   <Button>Save</Button>
   <Button variant="destructive">Delete</Button>
   <Button variant="ghost">Cancel</Button>
+</ButtonGroup>
+
+<ButtonGroup variant="split">
+  <Button variant="outline">Link work item</Button>
+  <DropdownMenu>
+    <DropdownMenuTrigger render={<Button aria-label="More link actions" size="icon" variant="outline" />}>
+      <ChevronDownIcon />
+    </DropdownMenuTrigger>
+  </DropdownMenu>
 </ButtonGroup>`,
     props: [
       {
         name: "variant",
-        type: '"connected" | "separated"',
+        type: '"connected" | "split" | "separated"',
         default: '"connected"',
         description:
-          "Connected merges borders between children. Separated adds 4px gap (ADS style).",
+          "Connected merges borders between children. Split also highlights the shared seam while its dropdown is open. Separated adds a 4px gap.",
       },
       {
         name: "orientation",
@@ -40,7 +51,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
       },
       {
         name: "ButtonGroupSeparator",
-        description: "Visual separator for split buttons.",
+        description: "Visual separator for connected button actions.",
       },
     ],
     examples: [
@@ -70,8 +81,8 @@ import { ButtonGroup } from "@/components/ui/button-group";
         demoSlug: "button-group-demo-vertical",
       },
       {
-        title: "With separator",
-        description: "Split button with separator.",
+        title: "Split action",
+        description: "Outline and primary actions with a connected dropdown trigger.",
         demoSlug: "button-group-demo-with-separator",
       },
       { title: "Basic", demoSlug: "button-group-demo-basic" },
@@ -87,7 +98,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
       },
       {
         title: "Pagination split",
-        description: "Split button group for pagination.",
+        description: "Connected button groups for pagination.",
         demoSlug: "button-group-demo-pagination-split",
       },
       {
