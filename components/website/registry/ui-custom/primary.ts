@@ -55,6 +55,9 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"code-block": dynamic(() => import("../../demos/ui-custom/code-block-demo"), {
 		ssr: false,
 	}),
+	"code-list": dynamic(() => import("../../demos/ui-custom/code-list-demo"), {
+		ssr: false,
+	}),
 	commit: dynamic(() => import("../../demos/ui-custom/commit-demo"), { ssr: false }),
 	confirmation: dynamic(() => import("../../demos/ui-custom/confirmation-demo"), {
 		ssr: false,
