@@ -28,6 +28,7 @@ interface AppLayoutProps {
 	children: React.ReactNode;
 	sidebarContent?: React.ReactNode;
 	topNavigationSearchAlignment?: "responsive" | "sidebar";
+	shellHeight?: "viewport" | "parent";
 	embedded?: boolean;
 	embeddedHeight?: "parent" | "viewport";
 	hideFloatingRovo?: boolean;
@@ -130,6 +131,7 @@ export default function AppLayout({
 	children,
 	sidebarContent,
 	topNavigationSearchAlignment = "responsive",
+	shellHeight = "viewport",
 	embedded = false,
 	embeddedHeight = "viewport",
 	hideFloatingRovo,
@@ -281,6 +283,7 @@ export default function AppLayout({
 	return (
 		<TopNavigation
 			product={product}
+			shellHeight={shellHeight}
 			searchAlignment={topNavigationSearchAlignment}
 			variant="shell"
 			hideRovoAction={shouldHideRovoAction}
@@ -296,7 +299,7 @@ export default function AppLayout({
 				/>
 			)}
 		>
-			<div style={{ display: "flex", height: "100%", position: "relative" }}>
+			<div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
 				{mainContent}
 			</div>
 		</TopNavigation>

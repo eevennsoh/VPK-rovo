@@ -1,6 +1,6 @@
 import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon, AudioLinesIcon, CheckIcon, ChevronDownIcon, CopyIcon, FlipHorizontalIcon, FlipVerticalIcon, HeartIcon, MinusIcon, PlusIcon, RotateCwIcon, SearchIcon, ShareIcon, TrashIcon, UserRoundXIcon, VolumeXIcon as VolumeX } from "@/components/ui/vpk-icons";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from "@/components/ui/button-group";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -463,13 +463,36 @@ export function ButtonGroupDemoWithSelect() {
 
 export function ButtonGroupDemoWithSeparator() {
 	return (
-		<ButtonGroup>
-			<Button variant="outline">Save</Button>
-			<ButtonGroupSeparator />
-			<Button variant="outline" size="icon">
-				<span className="text-xs">▼</span>
-			</Button>
-		</ButtonGroup>
+		<div className="flex flex-wrap items-center gap-4">
+			<ButtonGroup variant="split">
+				<Button variant="outline">Link work item</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={<Button aria-label="More link actions" size="icon" variant="outline" />}
+					>
+						<ChevronDownIcon />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem>Option one</DropdownMenuItem>
+						<DropdownMenuItem>Option two</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</ButtonGroup>
+			<ButtonGroup variant="split">
+				<Button>Update</Button>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={<Button aria-label="More update actions" size="icon" />}
+					>
+						<ChevronDownIcon />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem>Option one</DropdownMenuItem>
+						<DropdownMenuItem>Option two</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</ButtonGroup>
+		</div>
 	);
 }
 

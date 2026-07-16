@@ -246,10 +246,11 @@ test("Skills Directory renders the skill detail view with the config screen and 
 
 	assert.match(source, /function SkillDetailHeader/u);
 	assert.match(source, /className="flex items-center justify-between border-b border-border px-6 py-6"/u);
-	assert.match(source, /<SplitButton/u);
-	assert.match(source, /label="Open"/u);
+	assert.match(source, /<ButtonGroup aria-label="Open skill" variant="split">/u);
+	assert.match(source, /<Button onClick=\{onOpenSkill\} variant="outline">[\s\S]*Open/u);
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
-	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton[\s\S]*label="Open"/u);
+	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<ButtonGroup aria-label="Open skill" variant="split"/u);
+	assert.match(source, /aria-label="More open actions"[\s\S]*Open in new tab[\s\S]*Copy link/u);
 	// The detail header mirrors the agent config feature: an enable/disable Switch,
 	// while chat swaps the added-state Remove action for a primary Try in chat CTA.
 	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);

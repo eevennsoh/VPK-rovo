@@ -56,10 +56,13 @@ export function ExperimentalWorkItemDialog({
 	} as const;
 
 	if (presentation === "inline") {
+		// Fill the full stage height (like the Kanban board) so the card is flush
+		// top AND bottom — its lower edge flows under the gallery dock. Only the
+		// horizontal 24px inset remains, mirroring the board's px-8.
 		return (
 			<section
 				aria-label={workItemTitle}
-				className="h-[calc(100%-24px)] max-h-[calc(100%-24px)] w-[calc(100%-24px)] max-w-[1200px] outline-none"
+				className="h-full w-[calc(100%-24px)] max-w-[1200px] outline-none"
 				style={surfaceStyle}
 			>
 				{content}

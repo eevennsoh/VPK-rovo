@@ -25,6 +25,8 @@ const sidebarNavItemVariants = cva("group/sidebar-nav-item relative flex min-h-8
 
 export interface SidebarNavItemProps extends Omit<React.ComponentProps<"div">, "onClick" | "title"> {
 	actions?: React.ReactNode;
+	buttonProps?: Omit<React.ComponentProps<"button">, "children" | "className" | "disabled" | "onClick" | "ref" | "type">;
+	buttonRef?: React.Ref<HTMLButtonElement>;
 	/** Optional secondary text rendered below the label (e.g. timestamps, metadata). */
 	description?: React.ReactNode;
 	disabled?: boolean;
@@ -52,6 +54,8 @@ function normalizeIconNode(node: React.ReactNode, size: "small" | "medium"): Rea
 
 function SidebarNavItem({
 	actions,
+	buttonProps,
+	buttonRef,
 	className,
 	description,
 	disabled = false,
@@ -91,8 +95,10 @@ function SidebarNavItem({
 			{isSelected ? <span aria-hidden="true" className="absolute top-1/2 left-0 h-3 w-0.5 -translate-y-1/2 bg-current text-icon-selected" /> : null}
 
 			<button
+				{...buttonProps}
 				type={type}
 				className="peer/sidebar-nav-item-button flex min-w-0 flex-1 items-center gap-0.5 rounded-md text-left outline-none"
+				ref={buttonRef}
 				onClick={onClick}
 				disabled={disabled}
 				aria-current={isSelected ? "page" : undefined}
@@ -136,7 +142,7 @@ function SidebarNavItem({
 					className={cn(
 						"absolute top-1/2 right-1 z-10 flex -translate-y-1/2 items-center gap-1",
 						"group-hover/sidebar-nav-item:static group-hover/sidebar-nav-item:translate-y-0",
-						"group-focus-within/sidebar-nav-item:static group-focus-within/sidebar-nav-item:translate-y-0",
+						"group-has-[[data-slot=button]:focus]/sidebar-nav-item:static group-has-[[data-slot=button]:focus]/sidebar-nav-item:translate-y-0",
 						"group-has-[[data-popup-open]]/sidebar-nav-item:static group-has-[[data-popup-open]]/sidebar-nav-item:translate-y-0",
 						// When a count/meta badge is present, the resting actions would
 						// overlap it (both anchor to the right edge). Hide actions at rest
@@ -145,7 +151,7 @@ function SidebarNavItem({
 						// intercepting taps over the badge on touch/no-hover devices;
 						// re-enabled together with opacity on reveal.
 						meta &&
-							"pointer-events-none opacity-0 transition-opacity duration-fast ease-out motion-reduce:transition-none group-hover/sidebar-nav-item:pointer-events-auto group-hover/sidebar-nav-item:opacity-100 group-focus-within/sidebar-nav-item:pointer-events-auto group-focus-within/sidebar-nav-item:opacity-100 group-has-[[data-popup-open]]/sidebar-nav-item:pointer-events-auto group-has-[[data-popup-open]]/sidebar-nav-item:opacity-100",
+							"pointer-events-none opacity-0 transition-opacity duration-fast ease-out motion-reduce:transition-none group-hover/sidebar-nav-item:pointer-events-auto group-hover/sidebar-nav-item:opacity-100 group-has-[[data-slot=button]:focus]/sidebar-nav-item:pointer-events-auto group-has-[[data-slot=button]:focus]/sidebar-nav-item:opacity-100 group-has-[[data-popup-open]]/sidebar-nav-item:pointer-events-auto group-has-[[data-popup-open]]/sidebar-nav-item:opacity-100",
 					)}
 				>
 					{actions}

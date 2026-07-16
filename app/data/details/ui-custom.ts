@@ -21,6 +21,7 @@ import { ATTACHMENTS_DETAIL } from "./ui-custom/attachments";
 import { CHECKPOINT_DETAIL } from "./ui-custom/checkpoint";
 import { COMMIT_DETAIL } from "./ui-custom/commit";
 import { CODE_BLOCK_DETAIL } from "./ui-custom/code-block";
+import { CODE_LIST_DETAIL } from "./ui-custom/code-list";
 import { CHAIN_OF_THOUGHT_DETAIL } from "./ui-custom/chain-of-thought";
 import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { LIST_DETAIL } from "./ui-custom/list";
@@ -91,6 +92,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	checkpoint: CHECKPOINT_DETAIL,
 	commit: COMMIT_DETAIL,
 	"code-block": CODE_BLOCK_DETAIL,
+	"code-list": CODE_LIST_DETAIL,
 	"chain-of-thought": CHAIN_OF_THOUGHT_DETAIL,
 	canvas: CANVAS_DETAIL,
 	list: LIST_DETAIL,

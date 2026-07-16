@@ -97,6 +97,35 @@ test("locked avatar status uses a white mask with an optically matched subtle ic
 	assert.match(AVATAR_SOURCE, /<Icon[\s\S]*className=\{config\.iconClassName\}[\s\S]*render=\{<StatusIcon/);
 });
 
+test("avatar badges optically scale wrapped Atlaskit icons", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add"/);
+	assert.match(AVATAR_DEMO_SOURCE, /import CheckMarkIcon from "@atlaskit\/icon\/core\/check-mark"/);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/<AvatarBadge>\s*<Icon aria-hidden render=\{<AddIcon label="" size="small" \/>\} \/>\s*<\/AvatarBadge>/,
+	);
+	assert.match(
+		AVATAR_DEMO_SOURCE,
+		/<AvatarBadge>\s*<Icon aria-hidden render=\{<CheckMarkIcon label="" size="small" \/>\} \/>\s*<\/AvatarBadge>/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/group-data-\[size=sm\]\/avatar:\[&>\[data-slot=icon\]\]:scale-50/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/group-data-\[size=default\]\/avatar:\[&>\[data-slot=icon\]\]:scale-75/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/group-data-\[size=lg\]\/avatar:\[&>\[data-slot=icon\]\]:scale-75/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/group-data-\[size=2xl\]\/avatar:\[&>\[data-slot=icon\]\]:scale-125/,
+	);
+});
+
 test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", () => {
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<Avatar className=\{avatarClassName\} label=\{label\} shape="hexagon"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc\?\.startsWith\("\/2p\/"\)/);
