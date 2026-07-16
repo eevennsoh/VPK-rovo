@@ -2,6 +2,16 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const BUTTON_GROUP_DETAIL: ComponentDetail = {
     adsUrl: "https://atlassian.design/components/button/button-group",
+    adsLinks: [
+      {
+        label: "{ SplitButton } from @atlaskit/button/new",
+        url: "https://atlassian.design/components/button/split-button",
+      },
+      {
+        label: "{ ButtonGroup } from @atlaskit/button/new",
+        url: "https://atlassian.design/components/button/button-group/",
+      },
+    ],
     description:
       'A group container for related buttons. Use variant="connected" (default) for toolbar-style merged borders, variant="split" for a primary action with a dropdown trigger, or variant="separated" for ADS-style spaced layout with 4px gaps.',
     usage: `import { Button } from "@/components/ui/button";

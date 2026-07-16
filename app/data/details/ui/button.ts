@@ -13,10 +13,6 @@ export const BUTTON_DETAIL: ComponentDetail = {
         label: "{ IconButton } from @atlaskit/button/new",
         url: "https://atlassian.design/components/button/icon-button/",
       },
-      {
-        label: "{ ButtonGroup } from @atlaskit/button/new",
-        url: "https://atlassian.design/components/button/button-group/",
-      },
     ],
     usage: `import { Button } from "@/components/ui/button";
 
