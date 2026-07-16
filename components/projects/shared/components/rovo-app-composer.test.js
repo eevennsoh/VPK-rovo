@@ -150,9 +150,9 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-halo/u);
 	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /borderRadius: barWidth \/ 2/u);
 	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"[\s\S]*className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md/u);
-	assert.match(CARD_BODY_SOURCE, /rounded-xl border border-border bg-surface px-4 py-2\.5/u);
-	assert.match(CARD_BODY_SOURCE, /compact \? "pb-2 pt-3" : undefined/u);
-	assert.match(FLOATING_COMPOSER_SOURCE, /className=\{cn\(composerPromptInputClassName, "px-4 py-3\.5", className\)\}/u);
+	assert.match(CARD_BODY_SOURCE, /rounded-xl border border-border bg-surface p-3/u);
+	assert.match(CARD_BODY_SOURCE, /compact \? "pb-2 pt-3" : "pt-4"/u);
+	assert.match(FLOATING_COMPOSER_SOURCE, /className=\{cn\(composerPromptInputClassName, "p-3", className\)\}/u);
 	assert.equal((SEND_CONTROLS_SOURCE.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 3);
 	assert.match(SEND_CONTROLS_SOURCE, /function ComposerVoiceWaveform/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount\?: 4 \| 8;/u);
@@ -223,8 +223,8 @@ test("PromptInputTextarea fades overflowing Tiptap composer text with the shared
 	// otherwise a temporary auto-tag trace overflow can leave a bottom fade stuck
 	// on a single-line composer chip.
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /hasReachedVerticalLimit: boolean;/u);
-	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const maxHeight = element \? Number\.parseFloat\(getComputedStyle\(element\)\.maxHeight\) : Number\.NaN;/u);
-	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setHasReachedVerticalLimit\(element \? hasFiniteMaxHeight && element\.clientHeight >= maxHeight - 1 : false\);/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /maxHeight: Number\.parseFloat\(getComputedStyle\(element\)\.maxHeight\),/u);
+	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const hasReachedVerticalLimit = hasFiniteMaxHeight && metrics\.clientHeight >= metrics\.maxHeight - 1;/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /setElement\(node\);[\s\S]*window\.requestAnimationFrame\(updateScrollState\);/u);
 	assert.match(VERTICAL_OVERFLOW_HOOK_SOURCE, /\}, \[element, updateScrollState\]\);/u);
@@ -265,7 +265,7 @@ test("visual trace auto-tagging flushes before submit and cancels stale delayed 
 });
 
 test("visual trace auto-tagging limits append-only dictation syncs to the appended range", () => {
-	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /import \{ TextSelection \} from "@tiptap\/pm\/state";/u);
+	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /import \{ NodeSelection, TextSelection \} from "@tiptap\/pm\/state";/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /serializeComposerMentionAttrs,/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /interface VisualTraceRangeScope \{[\s\S]*type: "range";[\s\S]*\}/u);
 	assert.match(VISUAL_TRACE_AUTO_TAGGING_SOURCE, /type VisualTraceAutoTagScope = "block" \| "document" \| VisualTraceRangeScope;/u);
@@ -312,7 +312,7 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowDown"[\s\S]*controller\.moveActive/u);
 	assert.doesNotMatch(COMPOSER_EXTENSIONS_SOURCE, /event\.key === "ArrowUp"[\s\S]*controller\.moveActive/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\^\[1-9\]\$[\s\S]*controller\.hasAcceptableList\(\)/u);
-	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\(event\.key === "Tab" \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /\(\(event\.key === "Tab" && !event\.shiftKey\) \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /acceptGhost: \(\) => !isAutoTaggingBusyRef\.current\(\) && acceptDirectoryAutocompleteIndexRef\.current\(0, true\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /hasVisibleList: \(\) =>[\s\S]*directoryAutocompleteListVisibleRef\.current &&[\s\S]*\(directoryAutocompleteStateRef\.current\?\.matches\.length \?\? 0\) > 0/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
