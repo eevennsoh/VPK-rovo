@@ -154,7 +154,7 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 	assert.match(SOURCE, /function OverflowMenu/u);
 	assert.match(SOURCE, /<PopoverTrigger/u);
 	assert.match(SOURCE, /<PopoverContent/u);
-	assert.match(SOURCE, /<ul aria-label=\{`More \$\{label\}`\}>\{children\}<\/ul>/u);
+	assert.match(SOURCE, /<ul aria-label=\{`More \$\{label\}`\} className="flex flex-col gap-1">\{children\}<\/ul>/u);
 	assert.doesNotMatch(CELLS_SOURCE, /DropdownMenuItem|DropdownMenuContent|DropdownMenuTrigger/u);
 	assert.match(SOURCE, /render=\{<button type="button" \/>\}/u);
 	assert.match(SOURCE, /aria-label=\{`Show \$\{count\} more \$\{label\}`\}/u);
@@ -164,7 +164,7 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 	assert.match(agentSessionsSource, /<div className="flex min-w-0 items-center">/u);
 	assert.match(agentSessionsSource, /<AgentSessionTag session=\{visibleSession\} \/>/u);
 	assert.match(agentSessionsSource, /<OverflowMenu count=\{overflowSessions\.length\} label="agent sessions">/u);
-	assert.match(agentSessionsSource, /<li className="flex h-8 items-center px-1\.5" key=\{session\}>/u);
+	assert.match(agentSessionsSource, /<li className="flex" key=\{session\}>/u);
 	assert.match(SOURCE, /function AgentSessionTag/u);
 	assert.match(SOURCE, /<Tag[\s\S]*?className="max-w-full self-center"[\s\S]*?elemBefore=\{[\s\S]*?<Avatar label=\{`\$\{session\} agent`\} shape="hexagon" size="xs">/u);
 	assert.match(SOURCE, /avatarSrc \? <AvatarImage alt="" src=\{avatarSrc\} \/> : null/u);
@@ -177,7 +177,7 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 	assert.match(labelsSource, /flex-nowrap[^"]*overflow-hidden/u);
 	assert.doesNotMatch(labelsSource, /flex-1/u);
 	assert.match(labelsSource, /<OverflowMenu count=\{overflowLabels\.length\} label="labels">/u);
-	assert.match(labelsSource, /<li className="flex h-8 items-center px-1\.5" key=\{`\$\{label\.text\}-\$\{label\.color\}`\}>/u);
+	assert.match(labelsSource, /<li className="flex" key=\{`\$\{label\.text\}-\$\{label\.color\}`\}>/u);
 	assert.match(labelsSource, /<Tag className="self-center" color=\{label\.color\}>\{label\.text\}<\/Tag>/u);
 	assert.match(SOURCE, /id: "labels",\s*label: "Labels",\s*widthClassName: "w-\[180px\]"/u);
 	assert.match(DATA_SOURCE, /\{ text: "VULN-1966436", color: "red" \}/u);

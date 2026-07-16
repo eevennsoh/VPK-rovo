@@ -183,7 +183,7 @@ function OverflowMenu({
 				className="w-auto min-w-36 gap-0 p-1 shadow-xl"
 				sideOffset={6}
 			>
-				<ul aria-label={`More ${label}`}>{children}</ul>
+				<ul aria-label={`More ${label}`} className="flex flex-col gap-1">{children}</ul>
 			</PopoverContent>
 		</Popover>
 	);
@@ -253,7 +253,7 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 			</div>
 			<OverflowMenu count={overflowSessions.length} label="agent sessions">
 				{overflowSessions.map((session) => (
-					<li className="flex h-8 items-center px-1.5" key={session}>
+					<li className="flex" key={session}>
 						<AgentSessionTag session={session} />
 					</li>
 				))}
@@ -304,7 +304,7 @@ export function renderLabels(labels: readonly JiraListTag[] | undefined): ReactN
 			</div>
 			<OverflowMenu count={overflowLabels.length} label="labels">
 				{overflowLabels.map((label) => (
-					<li className="flex h-8 items-center px-1.5" key={`${label.text}-${label.color}`}>
+					<li className="flex" key={`${label.text}-${label.color}`}>
 						<Tag className="self-center" color={label.color}>{label.text}</Tag>
 					</li>
 				))}

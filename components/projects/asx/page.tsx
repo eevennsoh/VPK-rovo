@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { Gallery } from "@/components/blocks/gallery";
+import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
 import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
@@ -77,6 +77,14 @@ function AsxGallery(): React.ReactElement {
 		}
 		setSelectedId(nextSelectedId);
 	}, [restartCardKanban, restartTerminal, selectedId]);
+	// The gallery Reset control remounts the selected stage's view, but the
+	// terminal demo's state is hoisted here (in `useTerminalDemo`), so a remount
+	// alone won't rewind it. Reset it explicitly when the terminal is active.
+	const handleReset = useCallback((item: GalleryItem) => {
+		if (item.id === "terminal") {
+			restartTerminal();
+		}
+	}, [restartTerminal]);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
@@ -95,6 +103,7 @@ function AsxGallery(): React.ReactElement {
 				onSelectedChange={handleSelectedChange}
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
+				onReset={handleReset}
 				renderSelectedItem={(item) =>
 					renderAsxItem(item, cardKanbanController, workItemController, terminalController)
 				}

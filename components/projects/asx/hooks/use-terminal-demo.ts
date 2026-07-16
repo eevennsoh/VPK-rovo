@@ -241,7 +241,7 @@ export function useTerminalDemo(enabled: boolean): TerminalDemoController {
 	}, [awaitingClick, advance]);
 
 	// Keyboard while this stage is active:
-	//   →/Space  advance a beat        Backspace  roll back a beat
+	//   →/Space       advance a beat        ←/Backspace  roll back a beat
 	//   ↑/↓      move the Jira row     Enter      open the row in Jira (narrated only)
 	//   r/R      restart
 	useEffect(() => {
@@ -254,7 +254,7 @@ export function useTerminalDemo(enabled: boolean): TerminalDemoController {
 				advance();
 				return;
 			}
-			if (event.key === "Backspace") {
+			if (event.key === "ArrowLeft" || event.key === "Backspace") {
 				event.preventDefault();
 				stepBack();
 				return;

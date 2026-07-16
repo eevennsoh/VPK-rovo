@@ -2,10 +2,9 @@
 
 import type { KeyboardEvent } from "react";
 import { useReducedMotion } from "motion/react";
-import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import type { TerminalDemoController } from "../hooks/use-terminal-demo";
 import { TmuxStatusBar } from "./terminal-stage-chrome";
 import { TerminalStageClaudePane } from "./terminal-stage-claude-pane";
@@ -19,8 +18,10 @@ import { TerminalStageJiraPane } from "./terminal-stage-jira-pane";
 // "Jira CLI" sessions dashboard (left) that live-updates as Claude works.
 // Presenter-paced: click the frame to split, then →/Space/click advances
 // each beat (see `useTerminalDemo`). Advance affordance lives inside the
-// frame (status-bar hint + keyboard) — the top bar only shows progress + a
-// restart escape hatch, matching `WorkItemControls`.
+// frame (status-bar hint + keyboard); the top bar only shows beat progress.
+// Reset is owned by the gallery's Reset control (wired to `restart` in
+// `page.tsx`), so there's no dedicated restart button here — `r`/`R` still
+// restarts from the keyboard.
 // ---------------------------------------------------------------------------
 
 export function TerminalControls({
@@ -28,14 +29,12 @@ export function TerminalControls({
 }: Readonly<{ controller: TerminalDemoController }>): React.ReactElement {
 	const currentBeat = Math.min(controller.state.beatIndex + 1, controller.beatCount);
 	return (
-		<div className="flex items-center gap-2">
-			<span className="text-xs text-text-subtle">
+		<div className="flex items-center gap-3 text-sm text-text">
+			<Kbd>left</Kbd>
+			<span>
 				Beat {currentBeat} / {controller.beatCount}
 			</span>
-			<Button type="button" variant="outline" size="compact" onClick={controller.restart}>
-				<RefreshIcon label="" size="small" />
-				Restart
-			</Button>
+			<Kbd>right</Kbd>
 		</div>
 	);
 }
@@ -55,7 +54,7 @@ export function TerminalStage({
 	};
 
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center px-8 pb-56">
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center px-8">
 			<div
 				role={awaitingClick ? "button" : undefined}
 				tabIndex={awaitingClick ? 0 : undefined}
