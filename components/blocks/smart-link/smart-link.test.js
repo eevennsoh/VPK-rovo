@@ -86,3 +86,8 @@ test("SmartLink visual rendering uses shared icon and logo primitives", () => {
 	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
 });
+
+test("SmartLink trigger icon tiles render as inline spans", () => {
+	assert.match(COMPONENT_SOURCE, /const iconTileElement = size === "trigger" \? "span" : "div";/u);
+	assert.equal((COMPONENT_SOURCE.match(/as=\{iconTileElement\}/gu) ?? []).length, 2);
+});

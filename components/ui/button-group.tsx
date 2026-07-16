@@ -16,7 +16,7 @@ const buttonGroupVariants = cva(
 				connected:
 					"has-[>[data-slot=button-group]]:gap-2 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md",
 				split:
-					"[&>button[data-variant=default]]:border-primary has-[button[aria-expanded=true]]:[&>button:first-child]:border-r-border-selected",
+					"[&>button[data-variant=default]]:border-primary [&>button[data-variant=default]:first-child]:border-r-border-inverse has-[button[aria-expanded=true]]:[&>button[data-variant=outline]:first-child]:border-r-border-selected",
 				separated: "gap-1",
 			},
 			orientation: {
