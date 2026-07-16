@@ -20,8 +20,11 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		labels: [
 			{ text: "research", color: "teal" },
 			{ text: "team-24", color: "discovery" },
+			{ text: "VULN-1966436", color: "red" },
+			{ text: "sales-css", color: "blue" },
+			{ text: "user-initiated", color: "teal" },
 		],
-		dueDate: "Jul 18",
+		dueDate: "Jul 18, 2026",
 		contributors: [
 			{
 				id: "maya-chen",
@@ -63,7 +66,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			{ text: "signals", color: "orange" },
 			{ text: "enterprise", color: "discovery" },
 		],
-		dueDate: "Jul 20",
+		dueDate: "Jul 20, 2026",
 		contributors: [
 			{
 				id: "priya-shah",
@@ -95,7 +98,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			{ text: "ops", color: "blue" },
 			{ text: "playbook", color: "green" },
 		],
-		dueDate: "Jul 14",
+		dueDate: "Jul 14, 2026",
 		contributors: [
 			{
 				id: "jordan-lee",
@@ -122,7 +125,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			{ text: "launch", color: "red" },
 			{ text: "narrative", color: "purple" },
 		],
-		dueDate: "Jul 24",
+		dueDate: "Jul 24, 2026",
 		contributors: [
 			{
 				id: "david-hsieh",
@@ -151,7 +154,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 		agentSessions: ["Approval tracker"],
 		goals: [{ text: "Unblock launch brief", emphasis: "warning" }],
 		labels: [{ text: "approvals", color: "yellow" }],
-		dueDate: "Jul 21",
+		dueDate: "Jul 21, 2026",
 		contributors: [
 			{
 				id: "elena-ruiz",
@@ -178,7 +181,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			{ text: "bug", color: "red" },
 			{ text: "export", color: "blue" },
 		],
-		dueDate: "Jul 16",
+		dueDate: "Jul 16, 2026",
 		contributors: [
 			{
 				id: "florence-garcia",
@@ -210,7 +213,7 @@ export const JIRA_LIST_SAMPLE_ROWS: readonly JiraListSampleRow[] = [
 			{ text: "analytics", color: "lime" },
 			{ text: "customer", color: "discovery" },
 		],
-		dueDate: "Jul 12",
+		dueDate: "Jul 12, 2026",
 		contributors: [
 			{
 				id: "maya-chen",
