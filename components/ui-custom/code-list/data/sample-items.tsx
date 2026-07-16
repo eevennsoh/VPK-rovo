@@ -35,12 +35,12 @@ export function UserMenu() {
 		path: "src/hooks/useAuth.ts",
 		additions: 12,
 		language: "typescript",
-		code: `import { useContext } from "react";
+		code: `import { use } from "react";
 
 import { AuthContext } from "../context/AuthContext";
 
 export function useAuth() {
-	const context = useContext(AuthContext);
+	const context = use(AuthContext);
 	if (!context) {
 		throw new Error("useAuth must be used within an AuthProvider");
 	}
