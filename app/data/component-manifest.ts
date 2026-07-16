@@ -168,6 +168,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("chain-of-thought", "Chain of Thought"),
 	customComponent("checkpoint"),
 	customComponent("code-block", "Code Block"),
+	customComponent("code-list", "Code List"),
 	customComponent("commit"),
 	customComponent("confirmation"),
 	customComponent("connection"),
