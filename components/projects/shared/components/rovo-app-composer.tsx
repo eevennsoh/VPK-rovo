@@ -57,6 +57,7 @@ export interface RovoAppComposerProps {
 	dictationTranscriptPreview?: string | null;
 	errorMessage?: string | null;
 	experimentalDarkCta?: boolean;
+	hideSourceAndModelControls?: boolean;
 	/** Floating chrome: bumps the prompt input to the in-session 800px width. */
 	fillWidth?: boolean;
 	/** Floating chrome: focus the textarea whenever this key increments. */
@@ -112,6 +113,7 @@ function RovoAppComposerInner({
 	dictationTranscriptPreview = null,
 	errorMessage,
 	experimentalDarkCta = false,
+	hideSourceAndModelControls = false,
 	fillWidth = false,
 	focusRequestKey,
 	galleryExpanded = false,
@@ -291,6 +293,7 @@ function RovoAppComposerInner({
 						compact={compact}
 						experimentalDarkCta={experimentalDarkCta}
 						galleryExpanded={galleryExpanded}
+						hideSourceAndModelControls={hideSourceAndModelControls}
 						isPlanMode={isPlanMode}
 						onTogglePlanMode={onTogglePlanMode}
 						previewPrompt={previewPrompt}

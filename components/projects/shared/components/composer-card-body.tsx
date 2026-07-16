@@ -29,6 +29,7 @@ export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	compact: boolean;
 	experimentalDarkCta: boolean;
 	galleryExpanded: boolean;
+	hideSourceAndModelControls: boolean;
 	isPlanMode: boolean;
 	onTogglePlanMode?: () => void;
 	previewPrompt: string | null;
@@ -55,6 +56,7 @@ export function ComposerCardBody({
 	experimentalDarkCta,
 	focusRequestKey,
 	galleryExpanded,
+	hideSourceAndModelControls,
 	isPlanMode,
 	micStream,
 	onDirectoryAutocompleteChange,
@@ -134,6 +136,12 @@ export function ComposerCardBody({
 		}
 	}, []);
 
+	useEffect(() => {
+		if (!hideSourceAndModelControls) return;
+		setIsCustomizeMenuOpen(false);
+		setIsAutoMenuOpen(false);
+	}, [hideSourceAndModelControls]);
+
 	if (isPlanMode && selectedReasoning !== "max") {
 		setSelectedReasoning("max");
 	} else if (!isPlanMode && selectedReasoning === "max") {
@@ -191,22 +199,24 @@ export function ComposerCardBody({
 								/>
 							</PromptInputActionMenuContent>
 						</PromptInputActionMenu>
-						<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
-							<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-							<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
-								<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
-								<CustomizeMenu
-									selectedReasoning={selectedReasoning}
-									onReasoningChange={handleReasoningChange}
-									showReasoning={false}
-									webResultsEnabled={webResultsEnabled}
-									onWebResultsChange={setWebResultsEnabled}
-									companyKnowledgeEnabled={companyKnowledgeEnabled}
-									onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
-									onClose={() => setIsCustomizeMenuOpen(false)}
-								/>
-							</PopoverContent>
-						</Popover>
+						{hideSourceAndModelControls ? null : (
+							<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
+								<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
+								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+									<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
+									<CustomizeMenu
+										selectedReasoning={selectedReasoning}
+										onReasoningChange={handleReasoningChange}
+										showReasoning={false}
+										webResultsEnabled={webResultsEnabled}
+										onWebResultsChange={setWebResultsEnabled}
+										companyKnowledgeEnabled={companyKnowledgeEnabled}
+										onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
+										onClose={() => setIsCustomizeMenuOpen(false)}
+									/>
+								</PopoverContent>
+							</Popover>
+						)}
 					</PromptInputTools>
 
 					<RovoComposerSendControls
@@ -217,6 +227,7 @@ export function ComposerCardBody({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
+						hideReasoningSelector={hideSourceAndModelControls}
 						isComposerBusy={isComposerBusy}
 						clickyActive={clickyActive}
 						micStream={micStream}

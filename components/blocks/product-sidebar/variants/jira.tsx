@@ -10,7 +10,6 @@ import { STARRED_PROJECTS, JIRA_EXTERNAL_LINKS } from "../data/jira-navigation";
 import AddIcon from "@atlaskit/icon/core/add";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AppsIcon from "@atlaskit/icon/core/apps";
-import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ClockIcon from "@atlaskit/icon/core/clock";
@@ -18,11 +17,10 @@ import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
 import PlanIcon from "@atlaskit/icon/core/list-checklist";
+import RoadmapIcon from "@atlaskit/icon/core/roadmap";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import SpacesIcon from "@atlaskit/icon-lab/core/spaces";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
-import BoardIcon from "@atlaskit/icon/core/board";
-import FolderIcon from "@atlaskit/icon/core/folder-closed";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -264,32 +262,16 @@ export function JiraSidebar({
 					onClick={() => selectItem("Starred")}
 				/>
 				<JiraSidebarRow
-					icon={<BoardIcon label="" />}
-					label="Sprint Board"
-					isSelected={selectedItem === "Sprint Board"}
-					onClick={() => selectItem("Sprint Board", "/sprint-board")}
-				/>
-				<JiraSidebarRow
-					icon={<FolderIcon label="" />}
-					label="Projects"
-					isSelected={selectedItem === "Projects"}
-					onClick={() => selectItem("Projects", "/projects")}
-				/>
-				<JiraSidebarRow
-					icon={<ChartTrendIcon label="" />}
-					label="Analytics"
-					isSelected={selectedItem === "Analytics"}
-					onClick={() => selectItem("Analytics", "/analytics")}
-				/>
-			</JiraSidebarSection>
-
-			<JiraSidebarSection>
-				<JiraSidebarRow
 					icon={<AppsIcon label="" />}
 					label="Apps"
 					hasChevron
 					isExpanded={false}
 					onClick={() => selectItem("Apps")}
+				/>
+				<JiraSidebarRow
+					icon={<RoadmapIcon label="" />}
+					label="Roadmaps"
+					onClick={() => selectItem("Roadmaps")}
 				/>
 				<JiraSidebarRow
 					actions={<JiraSidebarActions />}
