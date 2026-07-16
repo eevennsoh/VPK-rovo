@@ -31,42 +31,6 @@ export const UI_PROGRESS_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
-	// Split Button
-	"split-button-demo-default": dynamic(
-		() =>
-			import("../../demos/ui/split-button-demo").then((mod) => ({
-				default: mod.SplitButtonDemoDefault,
-			})),
-		{ ssr: false },
-	),
-	"split-button-demo-outline": dynamic(
-		() =>
-			import("../../demos/ui/split-button-demo").then((mod) => ({
-				default: mod.SplitButtonDemoOutline,
-			})),
-		{ ssr: false },
-	),
-	"split-button-demo-destructive": dynamic(
-		() =>
-			import("../../demos/ui/split-button-demo").then((mod) => ({
-				default: mod.SplitButtonDemoDestructive,
-			})),
-		{ ssr: false },
-	),
-	"split-button-demo-disabled": dynamic(
-		() =>
-			import("../../demos/ui/split-button-demo").then((mod) => ({
-				default: mod.SplitButtonDemoDisabled,
-			})),
-		{ ssr: false },
-	),
-	"split-button-demo-variants": dynamic(
-		() =>
-			import("../../demos/ui/split-button-demo").then((mod) => ({
-				default: mod.SplitButtonDemoVariants,
-			})),
-		{ ssr: false },
-	),
 	// Tag
 	"tag-demo-default": dynamic(
 		() =>

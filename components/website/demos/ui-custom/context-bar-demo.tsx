@@ -136,8 +136,10 @@ export function ContextBarDemoMultiPill() {
 			content: (
 				<ContextBarPill>
 					Review{" "}
-					<span className="font-semibold text-green-500">+6</span>{" "}
-					<span className="font-semibold text-red-500">-3</span>
+					<span className="inline-flex items-center gap-0.5">
+						<span className="font-mono font-normal text-green-500">+6</span>
+						<span className="font-mono font-normal text-red-500">-3</span>
+					</span>
 				</ContextBarPill>
 			),
 		},

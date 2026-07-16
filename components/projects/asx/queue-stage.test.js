@@ -17,6 +17,7 @@ const ROVO_OVERLAY_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const QUEUE_STAGE_SOURCE = fs.readFileSync(path.join(__dirname, "components/queue-stage.tsx"), "utf8");
+const QUEUE_SESSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "data/queue-sessions.ts"), "utf8");
 const QUEUE_WORKSPACE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-conversation-workspace.tsx"),
 	"utf8",
@@ -90,6 +91,12 @@ test("Queue stage hosts Jira chrome around ASX-local session navigation", () => 
 	assert.match(QUEUE_STAGE_SOURCE, /<JiraSidebar[\s\S]*sessionNavigation=/u);
 	assert.match(QUEUE_STAGE_SOURCE, /createInitialQueueSessions\(ASX_QUEUE_SESSION_SEEDS\)/u);
 	assert.match(QUEUE_STAGE_SOURCE, /appendQueueSessionUserMessage/u);
+	assert.match(QUEUE_STAGE_SOURCE, /question\?\.options\.find\(\(option\) => option\.id === selectedValue\)\?\.label \?\? selectedValue/u);
+	assert.match(QUEUE_STAGE_SOURCE, /issueKey: session\.issueKey,/u);
+	assert.match(QUEUE_STAGE_SOURCE, /issueSummary: session\.issueSummary,/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-101",/u);
+	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /relativeTime/u);
+	assert.doesNotMatch(QUEUE_SESSIONS_SOURCE, /relativeTime/u);
 	assert.match(QUEUE_STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*key=\{activeSession\.id\}/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /fetch\(|\/api\/rovo|RovoPage/u);
 });
@@ -119,8 +126,8 @@ test("Queue workspace reuses fullscreen message and Rovo composer primitives", (
 	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-chat-body"/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /const panelWidth = panel\?\.getBoundingClientRect\(\)\.width/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /new DOMMatrixReadOnly\(chatBodyTransform\)\.m41/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /const overlap = Math\.max\(0, unshiftedChatRight - panelLeft \+ PANEL_CLEARANCE_PX\)/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /Math\.min\(overlap, availableLeftSpace\)/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /const availableCenter = \(workspaceRect\.left \+ panelLeft\) \/ 2;/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /Math\.min\(0, Math\.max\(leftEdgeShift, centeredShift\)\)/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ transform: `translateX\(\$\{chatBodyShift\}px\)` \}\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /new ResizeObserver\(updateChatBodyShift\)/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /CHAT_BODY_REDUCED_MOTION_TRANSITION/u);
@@ -139,9 +146,14 @@ test("Queue header follows the Rovo custom-agent identity and toggles the enviro
 });
 
 test("Queue environment panel uses VPK panel and item primitives", () => {
-	assert.match(QUEUE_WORKSPACE_SOURCE, /<AnimatePresence initial=\{false\}>[\s\S]*<QueueEnvironmentPanel/u);
+	assert.match(
+		QUEUE_WORKSPACE_SOURCE,
+		/<AnimatePresence initial=\{false\}>[\s\S]*<QueueEnvironmentPanel[\s\S]*agent=\{agent\}[\s\S]*session=\{session\}/u,
+	);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelContainer/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelHeader/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session: AsxQueueSession/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /agent: RovoAgentProfile/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<motion\.div/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /absolute inset-y-0 right-0 z-20 h-full w-80 max-w-full/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /h-full border-l border-border bg-surface/u);
@@ -152,12 +164,20 @@ test("Queue environment panel uses VPK panel and item primitives", () => {
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<PanelActionClose label="Close environment panel" onClick=\{onClose\} \/>/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /<ItemGroup/u);
 	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, />Environment</u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Changes/u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Create branch/u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Commit or push/u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Create pull request/u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Side tasks/u);
-	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /Sources/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /"awaiting-input": "Awaiting user response"/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /"pr-open": "Pull request open"/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /merged: "Pull request merged"/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /label="Host"/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /label="Agent" value=\{agent\.name\}/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /label="Jira" value=\{issueDescription\}/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.repository \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.branch \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.worktreePath \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.pullRequestNumber \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.commit \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.checks \? <QueueEnvironmentDetailRow/u);
+	assert.match(QUEUE_ENVIRONMENT_PANEL_SOURCE, /session\.fileChanges \? \(/u);
+	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /\+76|Create branch|Commit or push|Create pull request|codex-clipboard-b1551afa/u);
 	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /shrink-0|max-lg:absolute/u);
 	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /m-3|rounded-lg|border border-border/u);
 	assert.doesNotMatch(QUEUE_ENVIRONMENT_PANEL_SOURCE, /bg-black|text-white|#[0-9a-f]{3,8}/iu);

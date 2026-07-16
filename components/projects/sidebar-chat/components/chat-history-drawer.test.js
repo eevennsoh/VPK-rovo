@@ -204,7 +204,9 @@ test("chat history drawer matches the Figma conversation-list content structure"
 	assert.match(sidebarNavItemSource, /group-hover\/sidebar-nav-item:!opacity-100/u);
 	assert.match(sidebarNavItemSource, /data-slot="sidebar-nav-item-actions"[\s\S]*"absolute top-1\/2 right-1 z-10 flex -translate-y-1\/2 items-center gap-1"/u);
 	assert.match(sidebarNavItemSource, /"group-hover\/sidebar-nav-item:static group-hover\/sidebar-nav-item:translate-y-0"/u);
-	assert.match(sidebarNavItemSource, /"group-focus-within\/sidebar-nav-item:static group-focus-within\/sidebar-nav-item:translate-y-0"/u);
+	assert.match(sidebarNavItemSource, /"group-has-\[\[data-slot=button\]:focus\]\/sidebar-nav-item:static group-has-\[\[data-slot=button\]:focus\]\/sidebar-nav-item:translate-y-0"/u);
+	assert.doesNotMatch(sidebarNavItemSource, /group-focus-within\/sidebar-nav-item:static/u);
+	assert.doesNotMatch(sidebarNavItemSource, /group-focus-within\/sidebar-nav-item:pointer-events-auto/u);
 	assert.match(sidebarNavItemSource, /"group-has-\[\[data-popup-open\]\]\/sidebar-nav-item:static group-has-\[\[data-popup-open\]\]\/sidebar-nav-item:translate-y-0"/u);
 	assert.doesNotMatch(sidebarNavItemSource, /data-slot="sidebar-nav-item-actions" className="flex shrink-0 items-center gap-1"/u);
 	assert.doesNotMatch(source, /group-data-\[selected=true\]\/sidebar-nav-item:opacity-100/u);

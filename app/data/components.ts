@@ -346,7 +346,6 @@ export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	uiComponent("skeleton"),
 	uiComponent("slider"),
 	uiComponent("sonner"),
-	uiComponent("split-button", "Split Button"),
 	uiComponent("spinner"),
 	uiComponent("switch"),
 	uiComponent("tag"),

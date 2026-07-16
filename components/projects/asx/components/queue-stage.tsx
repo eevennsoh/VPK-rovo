@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { FileUIPart } from "ai";
 import { JiraSidebar } from "@/components/blocks/product-sidebar/variants/jira";
 import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
+import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import AppLayout from "@/components/projects/page";
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { createId } from "@/lib/utils";
@@ -11,11 +12,21 @@ import {
 	ASX_QUEUE_SESSION_SEEDS,
 	ASX_QUEUE_SPACES,
 	getAsxQueueAgent,
+	type AsxQueueJiraColumn,
+	type AsxQueueLayoutMode,
+	type AsxQueueSortMode,
 } from "../data/queue-sessions";
 import {
 	appendQueueSessionUserMessage,
+	archiveQueueSession,
 	createInitialQueueSessions,
+	dismissQueueSessionFileChanges,
 	groupQueueSessionsBySpace,
+	reorderQueueSessions,
+	setQueueSessionJiraColumn,
+	setQueueSessionPinned,
+	sortQueueSessions,
+	stopQueueSession,
 } from "../lib/queue-session-state";
 import { QueueConversationWorkspace } from "./queue-conversation-workspace";
 
@@ -23,7 +34,14 @@ export function QueueStage(): React.ReactElement {
 	const [sessions, setSessions] = useState(() => createInitialQueueSessions(ASX_QUEUE_SESSION_SEEDS));
 	const [activeSessionId, setActiveSessionId] = useState(ASX_QUEUE_SESSION_SEEDS[0]?.id ?? "");
 	const [selectedItem, setSelectedItem] = useState(ASX_QUEUE_SPACES[0]?.name ?? "");
-	const groupedSessions = useMemo(() => groupQueueSessionsBySpace(sessions), [sessions]);
+	const [layoutMode, setLayoutMode] = useState<AsxQueueLayoutMode>("by-project");
+	const [sortMode, setSortMode] = useState<AsxQueueSortMode>("manual");
+	const orderedSessions = useMemo(() => sortQueueSessions(sessions, sortMode), [sessions, sortMode]);
+	const groupedSessions = useMemo(() => groupQueueSessionsBySpace(orderedSessions), [orderedSessions]);
+	const pinnedSessionIds = useMemo(
+		() => new Set(sessions.filter((session) => session.isPinned).map((session) => session.id)),
+		[sessions],
+	);
 	const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
 	const activeSpace = ASX_QUEUE_SPACES.find((space) => space.id === activeSession?.spaceId) ?? ASX_QUEUE_SPACES[0];
 	const activeAgent = activeSession ? getAsxQueueAgent(activeSession.agentId) : null;
@@ -36,9 +54,18 @@ export function QueueStage(): React.ReactElement {
 					return {
 						agentAvatarSrc: agent.avatarSrc,
 						agentName: agent.name,
+						branch: session.branch,
+						checks: session.checks,
+						commit: session.commit,
+						host: session.host,
 						id: session.id,
+						issueKey: session.issueKey,
+						issueSummary: session.issueSummary,
+						pullRequestNumber: session.pullRequestNumber,
+						repository: session.repository,
 						status: session.status,
 						title: session.title,
+						worktreePath: session.worktreePath,
 					};
 				}),
 			]),
@@ -51,19 +78,62 @@ export function QueueStage(): React.ReactElement {
 		setActiveSessionId(sessionId);
 		if (space) setSelectedItem(space.name);
 	}, [sessions]);
-
-	const handleSubmit = useCallback(async ({ files, text }: { files: FileUIPart[]; text: string }) => {
+	const appendUserMessage = useCallback((text: string, files: FileUIPart[] = []) => {
 		const trimmedText = text.trim();
 		if (!trimmedText && files.length === 0) return;
-		const createdAt = new Date().toISOString();
 		const message = createRovoAppUserMessage({
-			createdAt,
+			createdAt: new Date().toISOString(),
 			files,
 			id: createId("asx-queue-user"),
 			text: trimmedText,
 		});
 		setSessions((current) => appendQueueSessionUserMessage(current, activeSessionId, message));
 	}, [activeSessionId]);
+
+	const handleSubmit = useCallback(async ({ files, text }: { files: FileUIPart[]; text: string }) => {
+		appendUserMessage(text, files);
+	}, [appendUserMessage]);
+	const handleAnswerQuestion = useCallback((answers: QuestionCardAnswers) => {
+		const questions = activeSession?.question?.questions ?? [];
+		const answer = Object.entries(answers)
+			.flatMap(([questionId, value]) => {
+				const question = questions.find((candidate) => candidate.id === questionId);
+				const values = Array.isArray(value) ? value : [value];
+				return values.map((selectedValue) => (
+					question?.options.find((option) => option.id === selectedValue)?.label ?? selectedValue
+				));
+			})
+			.map((value) => value.trim())
+			.filter(Boolean)
+			.join(", ");
+		appendUserMessage(answer);
+	}, [activeSession?.question?.questions, appendUserMessage]);
+	const handleTogglePinSession = useCallback((sessionId: string) => {
+		setSessions((current) => {
+			const session = current.find((candidate) => candidate.id === sessionId);
+			return session ? setQueueSessionPinned(current, sessionId, !session.isPinned) : [...current];
+		});
+	}, []);
+	const handleStopSession = useCallback((sessionId: string) => {
+		setSessions((current) => stopQueueSession(current, sessionId));
+	}, []);
+	const handleArchiveSession = useCallback((sessionId: string) => {
+		const result = archiveQueueSession(sessions, sessionId, activeSessionId);
+		setSessions(result.sessions);
+		setActiveSessionId(result.activeSessionId);
+		const nextSession = result.sessions.find((session) => session.id === result.activeSessionId);
+		const nextSpace = ASX_QUEUE_SPACES.find((space) => space.id === nextSession?.spaceId);
+		if (nextSpace) setSelectedItem(nextSpace.name);
+	}, [activeSessionId, sessions]);
+	const handleDismissFileChanges = useCallback(() => {
+		setSessions((current) => dismissQueueSessionFileChanges(current, activeSessionId));
+	}, [activeSessionId]);
+	const handleJiraColumnChange = useCallback((jiraColumn: AsxQueueJiraColumn) => {
+		setSessions((current) => setQueueSessionJiraColumn(current, activeSessionId, jiraColumn));
+	}, [activeSessionId]);
+	const handleReorderSession = useCallback((activeId: string, overId: string) => {
+		setSessions((current) => reorderQueueSessions(current, activeId, overId, layoutMode));
+	}, [layoutMode]);
 
 	if (!activeSession || !activeSpace || !activeAgent) return <div />;
 
@@ -83,8 +153,17 @@ export function QueueStage(): React.ReactElement {
 						selectedItem={selectedItem}
 						sessionNavigation={{
 							activeSessionId,
+							layoutMode,
+							onArchiveSession: handleArchiveSession,
+							onLayoutModeChange: setLayoutMode,
+							onReorderSession: handleReorderSession,
 							onSelectSession: handleSelectSession,
+							onSortModeChange: setSortMode,
+							onStopSession: handleStopSession,
+							onTogglePinSession: handleTogglePinSession,
+							pinnedSessionIds,
 							sessionsBySpaceId,
+							sortMode,
 						}}
 					/>
 				)}
@@ -92,6 +171,9 @@ export function QueueStage(): React.ReactElement {
 				<QueueConversationWorkspace
 					agent={activeAgent}
 					key={activeSession.id}
+					onAnswerQuestion={handleAnswerQuestion}
+					onDismissFileChanges={handleDismissFileChanges}
+					onJiraColumnChange={handleJiraColumnChange}
 					onSubmit={handleSubmit}
 					session={activeSession}
 				/>

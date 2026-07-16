@@ -74,6 +74,7 @@ function Button({
 	return (
 		<ButtonPrimitive
 			data-slot="button"
+			data-variant={variant ?? "default"}
 			aria-busy={isLoading || undefined}
 			className={cn(
 				buttonVariants({ variant, size, shape }),

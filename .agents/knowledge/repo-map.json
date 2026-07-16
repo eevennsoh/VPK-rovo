@@ -5173,7 +5173,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 398,
+			"manifestEntryCount": 397,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5821,7 +5821,7 @@
 			},
 			{
 				"category": "ui",
-				"entryCount": 81,
+				"entryCount": 80,
 				"entries": [
 					{
 						"category": "ui",
@@ -6248,12 +6248,6 @@
 						"slug": "spinner",
 						"name": "Spinner",
 						"importPath": "@/components/ui/spinner"
-					},
-					{
-						"category": "ui",
-						"slug": "split-button",
-						"name": "Split Button",
-						"importPath": "@/components/ui/split-button"
 					},
 					{
 						"category": "ui",

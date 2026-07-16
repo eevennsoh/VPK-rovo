@@ -44,12 +44,12 @@ interface ContextBarLeadProps {
 	className?: string;
 }
 
-interface ContextBarTagProps {
+interface ContextBarTagProps extends Pick<
+	React.ComponentProps<typeof Tag>,
+	"color" | "onRemove" | "removeButtonLabel" | "removeVariant" | "type"
+> {
 	children: React.ReactNode;
-	color?: React.ComponentProps<typeof Tag>["color"];
 	elemBefore?: React.ReactNode;
-	/** Tag style variant forwarded to the underlying `Tag` (e.g. `"agent"` for an avatar chip). */
-	type?: React.ComponentProps<typeof Tag>["type"];
 	title?: string;
 	className?: string;
 }
@@ -134,6 +134,9 @@ export function ContextBarTag({
 	children,
 	color = "standard",
 	elemBefore,
+	onRemove,
+	removeButtonLabel,
+	removeVariant,
 	type,
 	title,
 	className,
@@ -161,6 +164,9 @@ export function ContextBarTag({
 			color={color}
 			elemBefore={resolvedElemBefore}
 			maxWidth="100%"
+			onRemove={onRemove}
+			removeButtonLabel={removeButtonLabel}
+			removeVariant={removeVariant}
 			title={title}
 			type={type}
 		>
@@ -413,25 +419,51 @@ const PILL_CLASS = cn(
 const OVERFLOW_BUTTON_CLASS =
 	"flex size-10 shrink-0 items-center justify-center rounded-xl bg-bg-neutral text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
-interface ContextBarPillProps extends React.ComponentProps<"button"> {
+type ContextBarPillProps = {
 	icon?: React.ReactNode;
-}
+} & (
+	| ({ interactive?: true } & React.ComponentProps<"button">)
+	| ({ interactive: false } & React.ComponentProps<"div">)
+);
 
 /**
  * Filled neutral action pill used inside `ContextBarTagGroup` (e.g. "Review +6
  * -3", "Move to Local"). Shares the `ContextBarTrigger` aesthetic via
- * `CONTEXT_BAR_PILL_CLASS`; a thin wrapper around a button so the group can
- * measure and overflow arbitrary pill content.
+ * `CONTEXT_BAR_PILL_CLASS`. It defaults to a button, while `interactive={false}`
+ * provides a neutral surface for compound pills whose inner control owns the
+ * hit area. Both forms remain measurable by the overflow group.
  */
 export function ContextBarPill({
 	icon,
 	children,
 	className,
-	type = "button",
+	interactive = true,
 	...props
 }: Readonly<ContextBarPillProps>): React.ReactElement {
+	if (!interactive) {
+		return (
+			<div
+				className={cn(
+					PILL_CLASS,
+					"cursor-default hover:bg-bg-neutral hover:text-text-subtle active:bg-bg-neutral",
+					className,
+				)}
+				data-context-bar-pill
+				{...props as React.ComponentProps<"div">}
+			>
+				{icon ? <span className={cn(LEAD_ICON_CLASS, "h-6")}>{icon}</span> : null}
+				{children}
+			</div>
+		);
+	}
+
 	return (
-		<button className={cn(PILL_CLASS, className)} data-context-bar-pill type={type} {...props}>
+		<button
+			className={cn(PILL_CLASS, className)}
+			data-context-bar-pill
+			type="button"
+			{...props as React.ComponentProps<"button">}
+		>
 			{icon ? <span className={cn(LEAD_ICON_CLASS, "h-6")}>{icon}</span> : null}
 			{children}
 		</button>

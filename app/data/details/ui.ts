@@ -76,7 +76,6 @@ import { MENU_GROUP_DETAIL } from "./ui/menu-group";
 import { PAGE_HEADER_DETAIL } from "./ui/page-header";
 import { PROGRESS_INDICATOR_DETAIL } from "./ui/progress-indicator";
 import { PROGRESS_TRACKER_DETAIL } from "./ui/progress-tracker";
-import { SPLIT_BUTTON_DETAIL } from "./ui/split-button";
 import { TAG_DETAIL } from "./ui/tag";
 import { TIME_PICKER_DETAIL } from "./ui/time-picker";
 import { TILE_DETAIL } from "./ui/tile";
@@ -159,7 +158,6 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 	"page-header": PAGE_HEADER_DETAIL,
 	"progress-indicator": PROGRESS_INDICATOR_DETAIL,
 	"progress-tracker": PROGRESS_TRACKER_DETAIL,
-	"split-button": SPLIT_BUTTON_DETAIL,
 	tag: TAG_DETAIL,
 	"time-picker": TIME_PICKER_DETAIL,
 	tile: TILE_DETAIL,

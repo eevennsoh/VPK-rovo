@@ -54,7 +54,6 @@ export const ADS_EQUIVALENTS: Record<string, AdsEquivalent> = {
 	slider: "@atlaskit/range",
 	sonner: "@atlaskit/flag",
 	spinner: "@atlaskit/spinner",
-	"split-button": { package: "@atlaskit/button", importPath: "@atlaskit/button/new", namedExport: "SplitButton" },
 	switch: "@atlaskit/toggle",
 	table: "@atlaskit/dynamic-table",
 	tabs: "@atlaskit/tabs",

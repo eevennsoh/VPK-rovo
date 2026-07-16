@@ -45,6 +45,7 @@ import {
 } from "./skill-md-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
@@ -56,7 +57,6 @@ import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
-import { SplitButton } from "@/components/ui/split-button";
 import { Switch } from "@/components/ui/switch";
 import {
 	EntityCardSkillCard,
@@ -1173,15 +1173,26 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
-				<SplitButton
-					items={[
-						{ label: "Open in new tab", onSelect: onOpenSkill },
-						{ label: "Copy link", onSelect: onCreateShareLink },
-					]}
-					label="Open"
-					onClick={onOpenSkill}
-					variant="outline"
-				/>
+				<ButtonGroup aria-label="Open skill" variant="split">
+					<Button onClick={onOpenSkill} variant="outline">
+						Open
+					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={<Button aria-label="More open actions" size="icon" variant="outline" />}
+						>
+							<ChevronDownIcon label="" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" sideOffset={6}>
+							<DropdownMenuItem onSelect={() => onOpenSkill()}>
+								Open in new tab
+							</DropdownMenuItem>
+							<DropdownMenuItem onSelect={() => onCreateShareLink()}>
+								Copy link
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</ButtonGroup>
 				{added && !showTryInChatAction ? (
 					<Button onClick={onRemove} type="button" variant="destructive">
 						<DeleteIcon label="" size="small" />

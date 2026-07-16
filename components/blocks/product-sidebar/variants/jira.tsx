@@ -2,43 +2,107 @@
 
 import * as React from "react";
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
+import {
+	DndContext,
+	KeyboardSensor,
+	PointerSensor,
+	closestCenter,
+	useSensor,
+	useSensors,
+	type DragEndEvent,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+	SortableContext,
+	sortableKeyboardCoordinates,
+	useSortable,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
-import { Tile } from "@/components/ui/tile";
+import { Shimmer } from "@/components/ui-custom/shimmer";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Tile, TileAvatar } from "@/components/ui/tile";
 import { STARRED_PROJECTS, JIRA_EXTERNAL_LINKS } from "../data/jira-navigation";
 import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AppsIcon from "@atlaskit/icon/core/apps";
+import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
+import BranchIcon from "@atlaskit/icon/core/branch";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ClockIcon from "@atlaskit/icon/core/clock";
+import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
+import CommitIcon from "@atlaskit/icon/core/commit";
 import DashboardIcon from "@atlaskit/icon/core/dashboard";
+import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
+import PinIcon from "@atlaskit/icon/core/pin";
+import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PlanIcon from "@atlaskit/icon/core/list-checklist";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import RoadmapIcon from "@atlaskit/icon/core/roadmap";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import SpacesIcon from "@atlaskit/icon-lab/core/spaces";
+import SortOptionsIcon from "@atlaskit/icon-lab/core/sort-options";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import TaskIcon from "@atlaskit/icon/core/task";
+import VideoStopIcon from "@atlaskit/icon/core/video-stop";
+import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
-export type JiraSidebarSessionStatus = "queued" | "running" | "needs-input";
+export type JiraSidebarSessionStatus = "awaiting-input" | "running" | "pr-open" | "merged" | "stopped";
+export type JiraSidebarSessionHost = "cloud" | "local";
+export type JiraSidebarLayoutMode = "by-project" | "one-list";
+export type JiraSidebarSortMode = "priority" | "last-updated" | "manual";
 
 export interface JiraSidebarSessionItem {
 	agentAvatarSrc?: string;
 	agentName: string;
+	branch?: string;
+	checks?: string;
+	commit?: string;
+	host: JiraSidebarSessionHost;
 	id: string;
+	issueKey: string;
+	issueSummary: string;
+	pullRequestNumber?: number;
+	repository?: string;
 	status: JiraSidebarSessionStatus;
 	title: string;
+	worktreePath?: string;
 }
 
 export interface JiraSidebarSessionNavigation {
 	activeSessionId: string;
+	layoutMode: JiraSidebarLayoutMode;
+	onArchiveSession: (sessionId: string) => void;
+	onLayoutModeChange: (mode: JiraSidebarLayoutMode) => void;
+	onReorderSession: (activeSessionId: string, overSessionId: string) => void;
 	onSelectSession: (sessionId: string) => void;
+	onSortModeChange: (mode: JiraSidebarSortMode) => void;
+	onStopSession: (sessionId: string) => void;
+	onTogglePinSession: (sessionId: string) => void;
+	pinnedSessionIds: ReadonlySet<string>;
 	sessionsBySpaceId: Readonly<Record<string, readonly JiraSidebarSessionItem[]>>;
+	sortMode: JiraSidebarSortMode;
 }
 
 interface JiraSidebarNavItem {
@@ -58,41 +122,69 @@ interface JiraSidebarProps {
 	sessionNavigation?: JiraSidebarSessionNavigation;
 }
 
-const SESSION_STATUS_LABELS: Record<JiraSidebarSessionStatus, string> = {
-	queued: "Queued",
-	running: "Running",
-	"needs-input": "Needs input",
-};
-
 function JiraSessionAvatar({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
-	const fallback = session.agentName
-		.split(/\s+/u)
-		.map((part) => part[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
+	const fallback = session.agentName.trim()[0]?.toUpperCase() ?? "A";
+	const isDecorative = true;
 
 	return (
-		<Avatar label={session.agentName} shape="hexagon" size="sm">
-			{session.agentAvatarSrc ? <AvatarImage alt="" src={session.agentAvatarSrc} /> : null}
-			<AvatarFallback>{fallback}</AvatarFallback>
-		</Avatar>
+		<Tile aria-hidden={isDecorative} label="Agent avatar" variant="transparent" size="xsmall" isSnug>
+			{session.agentAvatarSrc ? (
+				<TileAvatar alt="" aria-hidden shape="hexagon" src={session.agentAvatarSrc} />
+			) : (
+				<span className="grid size-full place-items-center text-xs font-semibold text-text-subtle">
+					{fallback}
+				</span>
+			)}
+		</Tile>
 	);
 }
 
-function JiraSessionStatus({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
-	if (status === "running") {
-		return <Spinner aria-label="Running" size="xs" className="text-icon-information" />;
+function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
+	switch (status) {
+		case "awaiting-input":
+			return (
+				<span className="grid size-4 shrink-0 place-items-center text-icon-information" title="Waiting for your response">
+					<StatusInformationIcon label="Waiting for your response" size="small" color="currentColor" />
+				</span>
+			);
+		case "running":
+			return <Spinner label="Running" size="xs" variant="rainbow" />;
+		case "pr-open":
+			return (
+				<span className="grid size-4 shrink-0 place-items-center text-icon-success" title="Pull request open">
+					<PullRequestIcon label="Pull request open" size="small" color="currentColor" />
+				</span>
+			);
+		case "merged":
+			return (
+				<span className="grid size-4 shrink-0 place-items-center text-icon-accent-purple" title="Pull request merged">
+					<MergeSuccessIcon label="Pull request merged" size="small" color="currentColor" />
+				</span>
+			);
+		case "stopped":
+			return (
+				<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" title="Stopped">
+					<VideoStopIcon label="Stopped" size="small" color="currentColor" />
+				</span>
+			);
 	}
+}
+
+function JiraSessionDescription({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 
 	return (
-		<span
-			aria-label={SESSION_STATUS_LABELS[status]}
-			className={cn(
-				"size-2 rounded-full",
-				status === "needs-input" ? "bg-bg-warning-bold" : "bg-bg-neutral-bold",
-			)}
-		/>
+		<span className="flex min-w-0 items-center gap-1">
+			<JiraSessionAvatar session={session} />
+			<span className="shrink-0" aria-hidden="true">·</span>
+			<span className="flex min-w-0 flex-1 items-center gap-0.5" title={issueDescription}>
+				<span className="grid size-4 shrink-0 place-items-center text-icon-brand" aria-hidden="true">
+					<TaskIcon label="" size="small" color="currentColor" />
+				</span>
+				<span className="shrink-0">{session.issueKey}:</span>
+				<span className="truncate">{session.issueSummary}</span>
+			</span>
+		</span>
 	);
 }
 
@@ -134,28 +226,273 @@ function JiraSidebarExpandableLeadingIcon({
 	);
 }
 
-function JiraSidebarActions() {
-	const handleActionClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
-		event.stopPropagation();
-	};
+const handleSidebarActionClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
+	event.stopPropagation();
+};
 
+function JiraSidebarActions() {
 	return (
 		<>
 			<SidebarNavItemAction
 				aria-label="Add"
 				className="opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
-				onClick={handleActionClick}
+				onClick={handleSidebarActionClick}
 			>
 				<AddIcon label="" size="small" />
 			</SidebarNavItemAction>
 			<SidebarNavItemAction
 				aria-label="More"
 				className="opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
-				onClick={handleActionClick}
+				onClick={handleSidebarActionClick}
 			>
 				<ShowMoreHorizontalIcon label="" size="small" />
 			</SidebarNavItemAction>
 		</>
+	);
+}
+
+function JiraSpacesOrganizeAction({
+	layoutMode,
+	onLayoutModeChange,
+	onSortModeChange,
+	sortMode,
+}: Readonly<{
+	layoutMode: JiraSidebarLayoutMode;
+	onLayoutModeChange: (mode: JiraSidebarLayoutMode) => void;
+	onSortModeChange: (mode: JiraSidebarSortMode) => void;
+	sortMode: JiraSidebarSortMode;
+}>) {
+	return (
+		<DropdownMenu modal={false}>
+			<DropdownMenuTrigger
+				render={(
+					<SidebarNavItemAction
+						aria-label="Organize spaces"
+						className="opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
+						onClick={(event) => event.stopPropagation()}
+					/>
+				)}
+			>
+				<SortOptionsIcon label="" size="small" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-52" side="right" sideOffset={8}>
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Organize</DropdownMenuLabel>
+					<DropdownMenuRadioGroup
+						value={layoutMode}
+						onValueChange={(value) => {
+							if (value === "by-project" || value === "one-list") onLayoutModeChange(value);
+						}}
+					>
+						<DropdownMenuRadioItem value="by-project">By project</DropdownMenuRadioItem>
+						<DropdownMenuRadioItem value="one-list">In one list</DropdownMenuRadioItem>
+					</DropdownMenuRadioGroup>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Sort by</DropdownMenuLabel>
+					<DropdownMenuRadioGroup
+						value={sortMode}
+						onValueChange={(value) => {
+							if (value === "priority" || value === "last-updated" || value === "manual") onSortModeChange(value);
+						}}
+					>
+						<DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
+						<DropdownMenuRadioItem value="last-updated">Last updated</DropdownMenuRadioItem>
+						<DropdownMenuRadioItem value="manual">Manual order</DropdownMenuRadioItem>
+					</DropdownMenuRadioGroup>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+function JiraSessionRowActions({
+	isPinned,
+	onArchive,
+	onStop,
+	onTogglePin,
+	status,
+	title,
+}: Readonly<{
+	isPinned: boolean;
+	onArchive: () => void;
+	onStop: () => void;
+	onTogglePin: () => void;
+	status: JiraSidebarSessionStatus;
+	title: string;
+}>) {
+	const isArchivable = status === "pr-open" || status === "merged" || status === "stopped";
+	const PinGlyph = isPinned ? PinFilledIcon : PinIcon;
+
+	return (
+		<>
+			<SidebarNavItemAction
+				aria-label={`${isPinned ? "Unpin" : "Pin"} ${title}`}
+				className="opacity-0 transition-opacity duration-normal ease-out group-data-[selected=true]/sidebar-nav-item:text-icon-subtle group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
+				onClick={(event) => {
+					event.stopPropagation();
+					onTogglePin();
+				}}
+			>
+				<PinGlyph label="" size="small" />
+			</SidebarNavItemAction>
+			<SidebarNavItemAction
+				aria-label={`${isArchivable ? "Archive" : "Stop"} ${title}`}
+				className={cn(
+					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100",
+					isArchivable
+						? "group-data-[selected=true]/sidebar-nav-item:text-icon-subtle"
+						: "text-icon-danger group-data-[selected=true]/sidebar-nav-item:text-icon-danger",
+				)}
+				onClick={(event) => {
+					event.stopPropagation();
+					if (isArchivable) onArchive();
+					else onStop();
+				}}
+			>
+				{isArchivable ? <ArchiveBoxIcon label="" size="small" /> : <VideoStopOverlayIcon label="" size="small" />}
+			</SidebarNavItemAction>
+		</>
+	);
+}
+
+function JiraSessionDetailRow({
+	icon,
+	label,
+	value,
+}: Readonly<{
+	icon: React.ReactNode;
+	label: string;
+	value: React.ReactNode;
+}>) {
+	return (
+		<div className="grid min-w-0 grid-cols-[16px_68px_minmax(0,1fr)] items-start gap-2 text-xs leading-4">
+			<span className="grid size-4 place-items-center text-icon-subtle" aria-hidden="true">{icon}</span>
+			<span className="text-text-subtlest">{label}</span>
+			<span className="min-w-0 break-words text-text-subtle">{value}</span>
+		</div>
+	);
+}
+
+function JiraSessionHoverDetails({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
+
+	return (
+		<div className="flex flex-col gap-3">
+			<div className="min-w-0">
+				<p className="truncate text-sm font-semibold leading-5 text-text" title={session.title}>{session.title}</p>
+				<p className="text-xs leading-4 text-text-subtlest">{session.host === "cloud" ? "Cloud session" : "Local session"}</p>
+			</div>
+			<div className="flex flex-col gap-2">
+				{session.status === "awaiting-input" ? (
+					<JiraSessionDetailRow
+						icon={<StatusInformationIcon label="" size="small" />}
+						label="Status"
+						value="Awaiting user response"
+					/>
+				) : null}
+				<JiraSessionDetailRow
+					icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
+					label="Host"
+					value={session.host === "cloud" ? "Cloud" : "Local"}
+				/>
+				<JiraSessionDetailRow icon={<AiAgentIcon label="" size="small" />} label="Agent" value={session.agentName} />
+				<JiraSessionDetailRow icon={<TaskIcon label="" size="small" />} label="Jira" value={issueDescription} />
+				{session.repository ? <JiraSessionDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Repository" value={session.repository} /> : null}
+				{session.branch ? <JiraSessionDetailRow icon={<BranchIcon label="" size="small" />} label="Branch" value={session.branch} /> : null}
+				{session.worktreePath ? <JiraSessionDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Worktree" value={session.worktreePath} /> : null}
+				{session.pullRequestNumber ? <JiraSessionDetailRow icon={<PullRequestIcon label="" size="small" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
+				{session.commit ? <JiraSessionDetailRow icon={<CommitIcon label="" size="small" />} label="Commit" value={session.commit} /> : null}
+				{session.checks ? <JiraSessionDetailRow icon={<CheckCircleIcon label="" size="small" />} label="Checks" value={session.checks} /> : null}
+			</div>
+		</div>
+	);
+}
+
+function JiraSessionRow({
+	canReorder,
+	isPinned,
+	isSelected,
+	onArchive,
+	onSelect,
+	onStop,
+	onTogglePin,
+	session,
+}: Readonly<{
+	canReorder: boolean;
+	isPinned: boolean;
+	isSelected: boolean;
+	onArchive: () => void;
+	onSelect: () => void;
+	onStop: () => void;
+	onTogglePin: () => void;
+	session: JiraSidebarSessionItem;
+}>) {
+	const {
+		attributes,
+		isDragging,
+		listeners,
+		setActivatorNodeRef,
+		setNodeRef,
+		transform,
+		transition,
+	} = useSortable({ disabled: !canReorder, id: session.id });
+	const label = session.status === "awaiting-input" ? (
+		<Shimmer as="span" duration={1.4} spread={2} className="block truncate text-left">
+			{session.title}
+		</Shimmer>
+	) : session.title;
+
+	return (
+		<div
+			className={cn("relative", isDragging && "z-20 opacity-80")}
+			data-dragging={isDragging || undefined}
+			ref={setNodeRef}
+			style={{ transform: CSS.Transform.toString(transform), transition }}
+		>
+			<HoverCard closeDelay={80} openDelay={240}>
+				<HoverCardTrigger render={<div className="w-full" />}>
+					<SidebarNavItem
+						buttonProps={canReorder ? {
+							...attributes,
+							...listeners,
+							style: { touchAction: "none" },
+						} : undefined}
+						buttonRef={setActivatorNodeRef}
+						actions={(
+							<JiraSessionRowActions
+								isPinned={isPinned}
+								onArchive={onArchive}
+								onStop={onStop}
+								onTogglePin={onTogglePin}
+								status={session.status}
+								title={session.title}
+							/>
+						)}
+						className={cn("min-h-11", canReorder && "cursor-grab active:cursor-grabbing")}
+						description={<JiraSessionDescription session={session} />}
+						isSelected={isSelected}
+						label={label}
+						meta={(
+							<span className="grid size-6 shrink-0 place-items-center group-hover/sidebar-nav-item:hidden group-has-[[data-slot=button]:focus-visible]/sidebar-nav-item:hidden">
+								<JiraSessionLifecycle status={session.status} />
+							</span>
+						)}
+						onClick={onSelect}
+					/>
+				</HoverCardTrigger>
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="w-80 border-0 bg-surface-overlay p-3 text-text shadow-overlay"
+					side="right"
+					sideOffset={8}
+				>
+					<JiraSessionHoverDetails session={session} />
+				</HoverCardContent>
+			</HoverCard>
+		</div>
 	);
 }
 
@@ -177,7 +514,12 @@ function JiraProjectAvatar({
 			size="small"
 			isSnug
 		>
-			<Image alt={label} aria-hidden={isDecorative ? true : undefined} className="object-contain" height={20} src={src} width={20} />
+			<TileAvatar
+				alt={label}
+				aria-hidden={isDecorative ? true : undefined}
+				shape="square"
+				src={src}
+			/>
 		</Tile>
 	);
 }
@@ -222,6 +564,10 @@ export function JiraSidebar({
 	const [expandedSpaceIds, setExpandedSpaceIds] = useState<ReadonlySet<string>>(
 		() => new Set(sessionNavigation ? [STARRED_PROJECTS[0]?.id].filter((id): id is string => Boolean(id)) : []),
 	);
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
 	const selectItem = (item: string, href?: string) => {
 		onSelectItem(item);
 		if (href) {
@@ -239,9 +585,44 @@ export function JiraSidebar({
 			return next;
 		});
 	};
+	const allSessions = STARRED_PROJECTS.flatMap((project) => sessionNavigation?.sessionsBySpaceId[project.id] ?? []);
+	const pinnedSessions = sessionNavigation
+		? allSessions.filter((session) => sessionNavigation.pinnedSessionIds.has(session.id))
+		: [];
+	const unpinnedSessions = sessionNavigation
+		? allSessions.filter((session) => !sessionNavigation.pinnedSessionIds.has(session.id))
+		: [];
+	const renderSessionRow = (session: JiraSidebarSessionItem) => (
+		<JiraSessionRow
+			key={session.id}
+			canReorder={sessionNavigation?.sortMode === "manual"}
+			isPinned={sessionNavigation?.pinnedSessionIds.has(session.id) ?? false}
+			isSelected={sessionNavigation?.activeSessionId === session.id}
+			onArchive={() => sessionNavigation?.onArchiveSession(session.id)}
+			onSelect={() => sessionNavigation?.onSelectSession(session.id)}
+			onStop={() => sessionNavigation?.onStopSession(session.id)}
+			onTogglePin={() => sessionNavigation?.onTogglePinSession(session.id)}
+			session={session}
+		/>
+	);
+	const handleSessionDragEnd = ({ active, over }: DragEndEvent) => {
+		if (!sessionNavigation || sessionNavigation.sortMode !== "manual" || !over) return;
+		const activeSessionId = String(active.id);
+		const overSessionId = String(over.id);
+		if (activeSessionId !== overSessionId) {
+			sessionNavigation.onReorderSession(activeSessionId, overSessionId);
+		}
+	};
 
 	return (
-		<nav aria-label="Jira" className="flex shrink-0 flex-col gap-3">
+		<DndContext
+			id="jira-session-navigation-dnd"
+			collisionDetection={closestCenter}
+			modifiers={[restrictToVerticalAxis]}
+			onDragEnd={handleSessionDragEnd}
+			sensors={sensors}
+		>
+			<nav aria-label="Jira" className="flex shrink-0 flex-col gap-3">
 			<JiraSidebarSection>
 				<JiraSidebarRow
 					icon={<PersonAvatarIcon label="" />}
@@ -282,7 +663,17 @@ export function JiraSidebar({
 					onClick={() => selectItem("Plans")}
 				/>
 				<JiraSidebarRow
-					actions={<JiraSidebarActions />}
+					actions={sessionNavigation ? (
+						<>
+							<JiraSpacesOrganizeAction
+								layoutMode={sessionNavigation.layoutMode}
+								onLayoutModeChange={sessionNavigation.onLayoutModeChange}
+								onSortModeChange={sessionNavigation.onSortModeChange}
+								sortMode={sessionNavigation.sortMode}
+							/>
+							<JiraSidebarActions />
+						</>
+					) : <JiraSidebarActions />}
 					icon={<SpacesIcon label="" />}
 					label="Spaces"
 					hasChevron
@@ -292,66 +683,88 @@ export function JiraSidebar({
 			</JiraSidebarSection>
 
 			{isSpacesExpanded ? (
-				<JiraSidebarSection title="Starred">
-					<div className="flex flex-col pl-3">
-						{STARRED_PROJECTS.map((project) => {
-							const sessions = sessionNavigation?.sessionsBySpaceId[project.id] ?? [];
-							const hasSessions = sessions.length > 0;
-							const isExpanded = hasSessions && expandedSpaceIds.has(project.id);
-
-							return (
-								<div key={project.id}>
-									<SidebarNavItem
-										label={project.name}
-										leading={hasSessions ? (
-											<JiraSidebarExpandableLeadingIcon
-												icon={<JiraProjectAvatar src={project.imageSrc} />}
-												isExpanded={isExpanded}
-											/>
-										) : <JiraProjectAvatar src={project.imageSrc} />}
-										leadingSize="medium"
-										isExpanded={hasSessions ? isExpanded : undefined}
-										isSelected={!hasSessions && selectedItem === project.name}
-										onClick={() => {
-											selectItem(project.name);
-											if (hasSessions) toggleSpace(project.id);
-										}}
-										className="min-h-7"
-									/>
-									{isExpanded ? (
-										<div className="flex flex-col pl-4">
-											{sessions.map((session) => (
-												<SidebarNavItem
-													key={session.id}
-													className="min-h-10"
-													description={`${session.agentName} · ${SESSION_STATUS_LABELS[session.status]}`}
-													isSelected={sessionNavigation?.activeSessionId === session.id}
-													label={session.title}
-													leading={<JiraSessionAvatar session={session} />}
-													leadingSize="medium"
-													meta={<JiraSessionStatus status={session.status} />}
-													onClick={() => sessionNavigation?.onSelectSession(session.id)}
-												/>
-											))}
-										</div>
-									) : null}
+				<div className="flex flex-col gap-3">
+					{pinnedSessions.length > 0 ? (
+						<JiraSidebarSection title="Pinned">
+							<SortableContext
+								items={pinnedSessions.map((session) => session.id)}
+								strategy={verticalListSortingStrategy}
+							>
+								<div className="flex flex-col gap-0.5 pl-3">
+									{pinnedSessions.map(renderSessionRow)}
 								</div>
-							);
-						})}
-						<SidebarNavItem
-							label="View all plans"
-							leading={<AlignTextLeftIcon label="" />}
-							leadingSize="medium"
-							onClick={() => selectItem("View all plans")}
-							className="min-h-7"
+							</SortableContext>
+						</JiraSidebarSection>
+					) : null}
+					<JiraSidebarSection title="Starred">
+						<div className="flex flex-col pl-3">
+							{sessionNavigation?.layoutMode === "one-list" ? (
+								<SortableContext
+									items={unpinnedSessions.map((session) => session.id)}
+									strategy={verticalListSortingStrategy}
+								>
+									<div className="flex flex-col gap-0.5">
+										{unpinnedSessions.map(renderSessionRow)}
+									</div>
+								</SortableContext>
+							) : (
+								STARRED_PROJECTS.map((project, projectIndex) => {
+									const sessions = (sessionNavigation?.sessionsBySpaceId[project.id] ?? [])
+										.filter((session) => !sessionNavigation?.pinnedSessionIds.has(session.id));
+									const hasSessions = sessions.length > 0;
+									const isExpanded = hasSessions && expandedSpaceIds.has(project.id);
+
+									return (
+										<div
+											key={project.id}
+											className={cn(isExpanded && projectIndex < STARRED_PROJECTS.length - 1 && "mb-3")}
+										>
+											<SidebarNavItem
+												label={project.name}
+												leading={hasSessions ? (
+													<JiraSidebarExpandableLeadingIcon
+														icon={<JiraProjectAvatar src={project.imageSrc} />}
+														isExpanded={isExpanded}
+													/>
+												) : <JiraProjectAvatar src={project.imageSrc} />}
+												leadingSize="medium"
+												isExpanded={hasSessions ? isExpanded : undefined}
+												isSelected={!hasSessions && selectedItem === project.name}
+												onClick={() => {
+													selectItem(project.name);
+													if (hasSessions) toggleSpace(project.id);
+												}}
+												className="min-h-7"
+											/>
+											{isExpanded ? (
+												<SortableContext
+													items={sessions.map((session) => session.id)}
+													strategy={verticalListSortingStrategy}
+												>
+													<div className="flex flex-col gap-0.5 pl-4">
+														{sessions.map(renderSessionRow)}
+													</div>
+												</SortableContext>
+											) : null}
+										</div>
+									);
+								})
+							)}
+							<SidebarNavItem
+								label="View all plans"
+								leading={<AlignTextLeftIcon label="" />}
+								leadingSize="medium"
+								onClick={() => selectItem("View all plans")}
+								className="min-h-7"
+							/>
+						</div>
+						<JiraSidebarRow
+							icon={<DashboardIcon label="" />}
+							label="Dashboards"
+							onClick={() => selectItem("Dashboards")}
 						/>
-					</div>
-					<JiraSidebarRow
-						icon={<DashboardIcon label="" />}
-						label="Dashboards"
-						onClick={() => selectItem("Dashboards")}
-					/>
-				</JiraSidebarSection>
+					</JiraSidebarSection>
+				</div>
 			) : null}
 
 			<JiraSidebarSection>
@@ -373,6 +786,7 @@ export function JiraSidebar({
 					onClick={() => selectItem("More")}
 				/>
 			</JiraSidebarSection>
-		</nav>
+			</nav>
+		</DndContext>
 	);
 }
