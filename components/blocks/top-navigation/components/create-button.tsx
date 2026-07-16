@@ -9,7 +9,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 export function CreateButton() {
 	return (
 		<Button variant="default" aria-label="Create" className="shrink-0 gap-2">
-			<AddIcon label="" size="small" />
+			<AddIcon label="" />
 			<span>Create</span>
 		</Button>
 	);

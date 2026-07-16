@@ -5,7 +5,7 @@ export const BUTTON_GROUP_DETAIL: ComponentDetail = {
     adsLinks: [
       {
         label: "{ SplitButton } from @atlaskit/button/new",
-        url: "https://atlassian.design/components/button/split-button",
+        url: "https://atlassian.design/components/button/split-button/",
       },
       {
         label: "{ ButtonGroup } from @atlaskit/button/new",
