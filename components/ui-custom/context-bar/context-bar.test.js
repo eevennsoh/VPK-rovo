@@ -1,8 +1,13 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+const CONTEXT_BAR_DEMO_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/website/demos/ui-custom/context-bar-demo.tsx"),
+	"utf8",
+);
 
 async function loadContextBarHarness() {
 	const mockModules = new Map([
@@ -13,9 +18,17 @@ async function loadContextBarHarness() {
 				export function Tag(props) {
 					return React.createElement(
 						"span",
-						{ "data-slot": "tag", "data-color": props.color },
+						{
+							"data-slot": "tag",
+							"data-color": props.color,
+							"data-remove-label": props.removeButtonLabel,
+							"data-remove-variant": props.removeVariant,
+						},
 						props.elemBefore,
 						React.createElement("span", { "data-tag-text": true }, props.children),
+						props.onRemove
+							? React.createElement("button", { "aria-label": props.removeButtonLabel, onClick: props.onRemove }, "Remove")
+							: null,
 					);
 				}
 			`,
@@ -129,6 +142,7 @@ async function loadContextBarHarness() {
 					CollapsibleContextBar,
 					ContextBar,
 					ContextBarLead,
+					ContextBarPill,
 					ContextBarTag,
 					ContextBarTrigger,
 				} from "./components/ui-custom/context-bar/context-bar.tsx";
@@ -154,6 +168,17 @@ async function loadContextBarHarness() {
 					);
 				}
 
+				export function renderNonInteractivePill() {
+					return renderToStaticMarkup(
+						React.createElement(
+							ContextBarPill,
+							{ interactive: false },
+							"Move to:",
+							React.createElement("button", { "aria-label": "Choose column" }, "Done"),
+						),
+					);
+				}
+
 				export function renderTagFrontSlot(type) {
 					return renderToStaticMarkup(
 						React.createElement(
@@ -164,6 +189,20 @@ async function loadContextBarHarness() {
 								type,
 							},
 							"Context",
+						),
+					);
+				}
+
+				export function renderRemovableTag() {
+					return renderToStaticMarkup(
+						React.createElement(
+							ContextBarTag,
+							{
+								onRemove: () => {},
+								removeButtonLabel: "Dismiss file changes",
+								removeVariant: "overlay",
+							},
+							"3 files changed",
 						),
 					);
 				}
@@ -256,6 +295,15 @@ test("ContextBarTag reuses the Tag front-slot icon recipe", async () => {
 	assert.match(avatarMarkup, /data-icon="front"/);
 });
 
+test("ContextBarTag forwards generic tag removal controls", async () => {
+	const harness = await loadContextBarHarness();
+	const markup = harness.renderRemovableTag();
+
+	assert.match(markup, /data-remove-label="Dismiss file changes"/);
+	assert.match(markup, /data-remove-variant="overlay"/);
+	assert.match(markup, /aria-label="Dismiss file changes"/);
+});
+
 test("ContextBarTrigger renders a labelled pill button", async () => {
 	const harness = await loadContextBarHarness();
 	const markup = harness.renderTrigger();
@@ -263,6 +311,22 @@ test("ContextBarTrigger renders a labelled pill button", async () => {
 	assert.match(markup, /data-context-bar-trigger/);
 	assert.match(markup, /<button/);
 	assert.match(markup, /Edit agent/);
+});
+
+test("ContextBarPill can render a non-interactive surface around an inner control", async () => {
+	const harness = await loadContextBarHarness();
+	const markup = harness.renderNonInteractivePill();
+
+	assert.match(markup, /^<div[^>]*data-context-bar-pill/u);
+	assert.match(markup, /<button aria-label="Choose column">Done<\/button>/u);
+	assert.equal((markup.match(/<button/g) ?? []).length, 1);
+});
+
+test("ContextBar multi-pill demo renders numeric deltas in regular monospace", () => {
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /className="inline-flex items-center gap-0\.5"/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /className="font-mono font-normal text-green-500">\+6/u);
+	assert.match(CONTEXT_BAR_DEMO_SOURCE, /className="font-mono font-normal text-red-500">-3/u);
+	assert.doesNotMatch(CONTEXT_BAR_DEMO_SOURCE, /font-semibold text-(?:green|red)-500/u);
 });
 
 test("CollapsibleContextBar starts expanded and can collapse to a trigger", async () => {

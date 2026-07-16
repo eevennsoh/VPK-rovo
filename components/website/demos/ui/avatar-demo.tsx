@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import AddIcon from "@atlaskit/icon/core/add";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
-import { CheckIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { PlusIcon } from "@/components/ui/vpk-icons";
 import { Avatar, AvatarBadge, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarPresenceIndicator, AvatarProjectBadge, AvatarStatusIndicator, AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -43,7 +46,7 @@ export function AvatarDemoBadgeWithIcon() {
 					/>
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<PlusIcon />
+						<Icon aria-hidden render={<AddIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 				<Avatar>
@@ -53,7 +56,7 @@ export function AvatarDemoBadgeWithIcon() {
 					/>
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<PlusIcon />
+						<Icon aria-hidden render={<AddIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 				<Avatar size="lg">
@@ -63,7 +66,7 @@ export function AvatarDemoBadgeWithIcon() {
 					/>
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<PlusIcon />
+						<Icon aria-hidden render={<AddIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 			</div>
@@ -71,19 +74,19 @@ export function AvatarDemoBadgeWithIcon() {
 				<Avatar size="sm">
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<CheckIcon />
+						<Icon aria-hidden render={<CheckMarkIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 				<Avatar>
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<CheckIcon />
+						<Icon aria-hidden render={<CheckMarkIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 				<Avatar size="lg">
 					<AvatarFallback>PP</AvatarFallback>
 					<AvatarBadge>
-						<CheckIcon />
+						<Icon aria-hidden render={<CheckMarkIcon label="" size="small" />} />
 					</AvatarBadge>
 				</Avatar>
 			</div>

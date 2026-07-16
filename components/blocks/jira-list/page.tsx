@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
 import {
 	JiraList,
@@ -10,17 +9,6 @@ import {
 	type JiraListPerson,
 } from "./index";
 import { JIRA_LIST_SAMPLE_ROWS, type JiraListSampleRow } from "./data";
-import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Icon } from "@/components/ui/icon";
-import { Tag, TagGroup } from "@/components/ui/tag";
 
 function getNextIssueKey(rows: readonly JiraListSampleRow[]): string {
 	const highestIssueNumber = rows.reduce((maxIssueNumber, row) => {
@@ -45,8 +33,6 @@ export default function JiraListPage() {
 		issueType: JiraListIssueType;
 		summary: string;
 	} | null>(null);
-	const [inModelRow, setInModelRow] = useState<JiraListSampleRow | null>(null);
-
 	const nextIssueKey = useMemo(() => getNextIssueKey(demoRows), [demoRows]);
 
 	useEffect(() => {
@@ -178,7 +164,6 @@ export default function JiraListPage() {
 		setSelectedIssueKeys(new Set());
 		setCopiedIssueKey(null);
 		setDraftWorkItem(null);
-		setInModelRow(null);
 	};
 
 	return (
@@ -212,7 +197,6 @@ export default function JiraListPage() {
 				onIssueClick={() => undefined}
 				onIssueKeyClick={() => undefined}
 				onMoveRow={handleMoveRow}
-				onOpenAgentSessions={setInModelRow}
 				onRefresh={handleRefresh}
 				onSelectAllRows={handleSelectAllRows}
 				onSelectRow={handleSelectRow}
@@ -221,56 +205,6 @@ export default function JiraListPage() {
 				totalCountLabel={`${demoRows.length}`}
 				visibleCount={demoRows.length}
 			/>
-			<Dialog open={Boolean(inModelRow)} onOpenChange={(open) => {
-				if (!open) {
-					setInModelRow(null);
-				}
-			}}>
-				<DialogContent size="sm">
-					<DialogHeader>
-						<DialogTitle>
-							<span className="inline-flex items-center gap-2">
-								<Icon render={<AiChatIcon label="" size="small" />} />
-								In Model
-							</span>
-						</DialogTitle>
-						<DialogDescription>
-							{inModelRow
-								? `${inModelRow.issueKey} keeps its linked agent sessions available from the list hover state in this block demo.`
-								: "Review the linked agent sessions for this work item."}
-						</DialogDescription>
-					</DialogHeader>
-					{inModelRow ? (
-						<div className="grid gap-3">
-							<div className="rounded-lg border border-border bg-surface-sunken px-3 py-2">
-								<p className="text-sm font-medium text-text">{inModelRow.summary}</p>
-								<p className="text-xs text-text-subtle">{inModelRow.issueKey}</p>
-							</div>
-							<div className="grid gap-2">
-								<p className="text-xs font-semibold tracking-[0.08em] text-text-subtle uppercase">
-									Agent sessions
-								</p>
-								{inModelRow.agentSessions?.length ? (
-									<TagGroup className="gap-1.5">
-										{inModelRow.agentSessions.map((session) => (
-											<Tag color="teal" key={session}>
-												{session}
-											</Tag>
-										))}
-									</TagGroup>
-								) : (
-									<p className="text-sm text-text-subtle">No linked sessions yet.</p>
-								)}
-							</div>
-						</div>
-					) : null}
-					<DialogFooter>
-						<Button onClick={() => setInModelRow(null)} variant="outline">
-							Close
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }

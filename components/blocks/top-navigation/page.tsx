@@ -56,6 +56,8 @@ export interface ShellSidebarSlotState {
 interface TopNavigationProps {
 	product?: Product;
 	showSearch?: boolean;
+	/** Size the shell to the viewport, or fill a height-constrained parent. */
+	shellHeight?: "viewport" | "parent";
 	/** Keep search anchored beside the persistent sidebar instead of centering it at wide widths. */
 	searchAlignment?: "responsive" | "sidebar";
 	hideRovoAction?: boolean;
@@ -113,6 +115,7 @@ interface TopNavigationProps {
 export default function TopNavigation({
 	product = "studio",
 	showSearch = true,
+	shellHeight = "viewport",
 	searchAlignment = "responsive",
 	hideRovoAction = false,
 	forceShowRovoAction = false,
@@ -359,7 +362,10 @@ export default function TopNavigation({
 
 	return (
 		<SidebarProvider
-			className="h-svh overflow-hidden"
+			className={cn(
+				"overflow-hidden",
+				shellHeight === "parent" ? "h-full! min-h-0!" : "h-svh",
+			)}
 			defaultOpen
 			onOpenChange={setSidebarOpen}
 			open={sidebarOpen}

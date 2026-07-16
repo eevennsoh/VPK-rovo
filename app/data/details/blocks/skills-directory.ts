@@ -128,7 +128,7 @@ const skills: SkillsDirectorySkill[] = [
 			{
 				name: "onOpenSkill",
 				type: "(skill: SkillsDirectorySkill) => void",
-				description: "Called by the skill info page Open split button.",
+				description: "Called by the skill info page Open button group.",
 			},
 			{
 				name: "onCreateSkill",

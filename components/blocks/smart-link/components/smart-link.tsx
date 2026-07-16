@@ -200,6 +200,7 @@ function cloneIcon(icon: ReactElement, iconSize?: AtlaskitIconSize, className?: 
 function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card") {
 	const logoSize = visualLogoSizes[size];
 	const iconSize = visualIconSizes[size];
+	const iconTileElement = size === "trigger" ? "span" : "div";
 
 	if (visual.kind === "atlassian") {
 		return <AtlassianLogo name={visual.name} label="" size={logoSize} withUsageBorder />;
@@ -224,6 +225,7 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 	if (visual.kind === "icon") {
 		return (
 			<IconTile
+				as={iconTileElement}
 				aria-hidden
 				icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
 				label=""
@@ -250,6 +252,7 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 
 	return (
 		<IconTile
+			as={iconTileElement}
 			aria-hidden
 			icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
 			label=""

@@ -1,0 +1,242 @@
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const test = require("node:test");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
+
+async function loadTerminalStateHarness() {
+	const result = await esbuild.build({
+		stdin: {
+			contents: `
+				export {
+					applyBoardEvent,
+					applyStep,
+					createInitialTerminalDemoState,
+					createTerminalDemoReducer,
+					foldBeats,
+					getBoardCounts,
+					getBoardSections,
+					getOrderedItemKeys,
+				} from "./components/projects/asx/lib/terminal-demo-state";
+				export { TERMINAL_DEMO_BEATS } from "./components/projects/asx/data/terminal-demo-script";
+			`,
+			loader: "ts",
+			resolveDir: process.cwd(),
+			sourcefile: "terminal-demo-state-harness.ts",
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+function item(key, status, overrides = {}) {
+	return { age: "now", key, status, summary: "summary", title: key, ...overrides };
+}
+
+/** Recursively steps a reducer through every beat/step in the script via commit-step,
+ * beginning a new beat whenever the previous one has settled. */
+function playThroughScript(harness) {
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	let state = harness.createInitialTerminalDemoState();
+
+	while (state.beatIndex < harness.TERMINAL_DEMO_BEATS.length - 1 || !state.settled) {
+		if (state.settled) {
+			state = reducer(state, { type: "begin-beat" });
+			continue;
+		}
+		state = reducer(state, { type: "commit-step" });
+	}
+
+	return state;
+}
+
+test("applyBoardEvent add-item appends without mutating the input array", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [item("WEB-1", "backlog")];
+	const next = harness.applyBoardEvent(items, { item: item("WEB-2", "backlog"), type: "add-item" });
+
+	assert.equal(items.length, 1);
+	assert.equal(next.length, 2);
+	assert.deepEqual(next[1], item("WEB-2", "backlog"));
+});
+
+test("applyBoardEvent move-item changes only the targeted item's status", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [item("WEB-1", "backlog"), item("WEB-2", "backlog")];
+	const next = harness.applyBoardEvent(items, { key: "WEB-1", to: "working", type: "move-item" });
+
+	assert.equal(next[0].status, "working");
+	assert.equal(next[1], items[1]);
+});
+
+test("applyBoardEvent set-summary updates summary and optional age", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [item("WEB-1", "working", { age: "3d", summary: "old" })];
+
+	const withoutAge = harness.applyBoardEvent(items, { key: "WEB-1", summary: "new", type: "set-summary" });
+	assert.equal(withoutAge[0].summary, "new");
+	assert.equal(withoutAge[0].age, "3d");
+
+	const withAge = harness.applyBoardEvent(items, { age: "now", key: "WEB-1", summary: "newer", type: "set-summary" });
+	assert.equal(withAge[0].age, "now");
+});
+
+test("applyBoardEvent set-pr attaches a PR label", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [item("WEB-1", "working")];
+	const next = harness.applyBoardEvent(items, { key: "WEB-1", number: 100, state: "open", type: "set-pr" });
+
+	assert.deepEqual(next[0].pr, { number: 100, state: "open" });
+});
+
+test("applyBoardEvent no-ops on an unknown key", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [item("WEB-1", "working")];
+	const next = harness.applyBoardEvent(items, { key: "WEB-404", to: "done", type: "move-item" });
+
+	assert.deepEqual(next, items);
+});
+
+test("stepping through the whole script equals folding to the final beat", async () => {
+	const harness = await loadTerminalStateHarness();
+	const stepped = playThroughScript(harness);
+	const folded = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, harness.TERMINAL_DEMO_BEATS.length - 1);
+
+	assert.deepEqual(stepped, folded);
+	assert.equal(stepped.finished, true);
+	assert.equal(stepped.settled, true);
+});
+
+test("script integrity: every board event key exists when applied", async () => {
+	const harness = await loadTerminalStateHarness();
+	let items = [];
+
+	for (const beat of harness.TERMINAL_DEMO_BEATS) {
+		for (const step of beat.steps) {
+			if (step.kind !== "board") continue;
+			for (const event of step.events) {
+				const key = event.type === "add-item" ? event.item.key : event.key;
+				if (event.type !== "add-item") {
+					assert.ok(
+						items.some((existing) => existing.key === key),
+						`event ${event.type} references unknown key ${key}`,
+					);
+				}
+				items = harness.applyBoardEvent(items, event);
+			}
+		}
+	}
+});
+
+test("script integrity: exactly one click-trigger beat and it is the split beat", async () => {
+	const harness = await loadTerminalStateHarness();
+	const clickBeats = harness.TERMINAL_DEMO_BEATS.filter((beat) => beat.trigger === "click");
+
+	assert.equal(clickBeats.length, 1);
+	assert.equal(clickBeats[0].id, "split");
+});
+
+test("script integrity: final board counts and every done item has a PR", async () => {
+	const harness = await loadTerminalStateHarness();
+	const final = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, harness.TERMINAL_DEMO_BEATS.length - 1);
+	const counts = harness.getBoardCounts(final.items);
+
+	assert.deepEqual(counts, { awaiting: 0, completed: 6, working: 0 });
+
+	const sections = harness.getBoardSections(final.items);
+	assert.equal(sections.done.length, 6);
+	for (const doneItem of sections.done) {
+		assert.ok(doneItem.pr, `${doneItem.key} is done but has no PR`);
+	}
+});
+
+test("reducer control flow: commit-step past the last step keeps state settled", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	let state = harness.createInitialTerminalDemoState();
+	state = reducer(state, { type: "begin-beat" });
+	state = reducer(state, { type: "finish-beat" });
+	assert.equal(state.settled, true);
+
+	const settledAgain = reducer(state, { type: "commit-step" });
+	assert.deepEqual(settledAgain, state);
+});
+
+test("reducer control flow: restart returns the initial state", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	let state = harness.createInitialTerminalDemoState();
+	state = reducer(state, { type: "begin-beat" });
+	state = reducer(state, { type: "commit-step" });
+
+	const restarted = reducer(state, { type: "restart" });
+	assert.deepEqual(restarted, harness.createInitialTerminalDemoState());
+});
+
+test("reducer control flow: step-back rolls back to the previous beat's settled state", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	const lastIndex = harness.TERMINAL_DEMO_BEATS.length - 1;
+
+	const final = playThroughScript(harness);
+	const back = reducer(final, { type: "step-back" });
+	assert.deepEqual(back, harness.foldBeats(harness.TERMINAL_DEMO_BEATS, lastIndex - 1));
+
+	// Mid-beat rollback discards in-flight progress and lands on the prior beat.
+	let mid = harness.createInitialTerminalDemoState();
+	mid = reducer(mid, { type: "begin-beat" }); // beat 0 (split)
+	mid = reducer(mid, { type: "commit-step" }); // settle split
+	mid = reducer(mid, { type: "begin-beat" }); // beat 1 (connect)
+	mid = reducer(mid, { type: "commit-step" }); // one step in, unsettled
+	assert.equal(mid.settled, false);
+	assert.deepEqual(reducer(mid, { type: "step-back" }), harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 0));
+});
+
+test("reducer control flow: step-back at the first beat returns the initial state", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	let state = harness.createInitialTerminalDemoState();
+	state = reducer(state, { type: "begin-beat" }); // beat 0 (split)
+	state = reducer(state, { type: "commit-step" }); // settled at beat 0
+
+	assert.deepEqual(reducer(state, { type: "step-back" }), harness.createInitialTerminalDemoState());
+	// And a step-back before anything has run stays at the initial state.
+	assert.deepEqual(
+		reducer(harness.createInitialTerminalDemoState(), { type: "step-back" }),
+		harness.createInitialTerminalDemoState(),
+	);
+});
+
+test("getOrderedItemKeys returns keys in needs-input → working → backlog → done order", async () => {
+	const harness = await loadTerminalStateHarness();
+	const items = [
+		item("A", "done"),
+		item("B", "backlog"),
+		item("C", "working"),
+		item("D", "needs-input"),
+		item("E", "working"),
+	];
+
+	assert.deepEqual(harness.getOrderedItemKeys(items), ["D", "C", "E", "B", "A"]);
+});
+
+test("reducer control flow: begin-beat while unsettled is a no-op", async () => {
+	const harness = await loadTerminalStateHarness();
+	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+	let state = harness.createInitialTerminalDemoState();
+	// Beat 0 ("split") is a single step, so settle it first, then begin beat 1
+	// ("connect", multi-step) and commit only its first step to land mid-beat.
+	state = reducer(state, { type: "begin-beat" });
+	state = reducer(state, { type: "commit-step" });
+	state = reducer(state, { type: "begin-beat" });
+	state = reducer(state, { type: "commit-step" });
+	assert.equal(state.settled, false);
+
+	const noop = reducer(state, { type: "begin-beat" });
+	assert.deepEqual(noop, state);
+});

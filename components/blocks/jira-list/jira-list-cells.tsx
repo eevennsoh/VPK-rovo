@@ -12,11 +12,13 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarGroup,
+	AvatarGroupCount,
 	AvatarImage,
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import { Tag, TagGroup } from "@/components/ui/tag";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -32,10 +34,31 @@ import type {
 
 const DEFAULT_EXTRA_COLUMN_WIDTH_CLASS = "w-[156px]";
 
+const AGENT_SESSION_AVATAR_SRCS: Readonly<Record<string, string>> = {
+	"Survey summarizer": "/avatar-agent/product-agents/feedback-analyzer.svg",
+	"Readiness checker": "/avatar-agent/teamwork-agents/readiness-checker.svg",
+	"Theme analyzer": "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
+	"Signal monitor": "/avatar-agent/dev-agents/code-observer-signalfx.svg",
+	"Checklist drafter": "/avatar-agent/teamwork-agents/workflow-builder.svg",
+	"Content reviewer": "/avatar-agent/dev-agents/code-reviewer.svg",
+	"Launch planner": "/avatar-agent/dev-agents/code-planner.svg",
+	"Release notes drafter": "/avatar-agent/teamwork-agents/release-notes-drafter.svg",
+	"Approval tracker": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+	"Bug triage": "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+	"Insight summarizer": "/avatar-agent/strategy-agents/strategic-insight.svg",
+	"Editor": "/avatar-agent/dev-agents/code-documentation-writer.svg",
+};
+
 export const PRIORITY_ICONS = {
 	major: PriorityMajorIcon,
 	medium: PriorityMediumIcon,
 	minor: PriorityMinorIcon,
+} as const;
+
+export const PRIORITY_LABELS = {
+	major: "Major",
+	medium: "Medium",
+	minor: "Minor",
 } as const;
 
 export const ISSUE_TYPE_ICONS = {
@@ -111,7 +134,7 @@ export function PriorityGlyph({ priority }: Readonly<{ priority: JiraListPriorit
 			className={cn(
 				priority === "major" && "text-icon-danger",
 				priority === "medium" && "text-icon-information",
-				priority === "minor" && "text-icon-success",
+				priority === "minor" && "text-icon-information",
 			)}
 			label={`${priority} priority`}
 			render={<PriorityIcon label="" size="small" />}
@@ -127,6 +150,62 @@ export function OverflowBadge({
 	label: string;
 }>) {
 	return count > 0 ? <Badge aria-label={label}>+{count}</Badge> : null;
+}
+
+function OverflowMenu({
+	children,
+	count,
+	label,
+}: Readonly<{
+	children: ReactNode;
+	count: number;
+	label: string;
+}>) {
+	if (count <= 0) {
+		return null;
+	}
+
+	return (
+		<Popover>
+			<PopoverTrigger
+				render={
+					<Badge
+						aria-label={`Show ${count} more ${label}`}
+						className="cursor-pointer"
+						render={<button type="button" />}
+					>
+						+{count}
+					</Badge>
+				}
+			/>
+			<PopoverContent
+				align="start"
+				className="w-auto min-w-36 gap-0 p-1 shadow-xl"
+				sideOffset={6}
+			>
+				<ul aria-label={`More ${label}`} className="flex flex-col gap-1">{children}</ul>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+function AgentSessionTag({ session }: Readonly<{ session: string }>) {
+	const avatarSrc = AGENT_SESSION_AVATAR_SRCS[session];
+
+	return (
+		<Tag
+			className="max-w-full self-center"
+			elemBefore={
+				<Avatar label={`${session} agent`} shape="hexagon" size="xs">
+					{avatarSrc ? <AvatarImage alt="" src={avatarSrc} /> : null}
+					<AvatarFallback>AI</AvatarFallback>
+				</Avatar>
+			}
+			maxWidth="100%"
+		>
+			{session}
+		</Tag>
+	);
 }
 
 export interface JiraListColumnDefinition {
@@ -166,20 +245,19 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 		return <span className="text-text-subtle text-sm">None</span>;
 	}
 
-	const visibleSessions = agentSessions.slice(0, 1);
+	const [visibleSession, ...overflowSessions] = agentSessions;
 	return (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
-			<TagGroup className="min-w-0 gap-1">
-				{visibleSessions.map((session) => (
-					<Tag className="max-w-[7rem]" color="teal" key={session}>
-						{session}
-					</Tag>
+		<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+			<div className="flex min-w-0 items-center">
+				<AgentSessionTag session={visibleSession} />
+			</div>
+			<OverflowMenu count={overflowSessions.length} label="agent sessions">
+				{overflowSessions.map((session) => (
+					<li className="flex" key={session}>
+						<AgentSessionTag session={session} />
+					</li>
 				))}
-			</TagGroup>
-			<OverflowBadge
-				count={Math.max(0, agentSessions.length - visibleSessions.length)}
-				label={`${agentSessions.length - visibleSessions.length} more agent sessions`}
-			/>
+			</OverflowMenu>
 		</div>
 	);
 }
@@ -214,19 +292,23 @@ export function renderLabels(labels: readonly JiraListTag[] | undefined): ReactN
 	}
 
 	const visibleLabels = labels.slice(0, 2);
+	const overflowLabels = labels.slice(visibleLabels.length);
 	return (
-		<div className="flex min-w-0 items-center gap-1 overflow-hidden">
-			<TagGroup className="min-w-0 gap-1">
+		<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+			<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
 				{visibleLabels.map((label) => (
-					<Tag className="max-w-[5.75rem]" color={label.color} key={`${label.text}-${label.color}`}>
+					<Tag className="max-w-[6.5rem] self-center" color={label.color} key={`${label.text}-${label.color}`}>
 						{label.text}
 					</Tag>
 				))}
-			</TagGroup>
-			<OverflowBadge
-				count={Math.max(0, labels.length - visibleLabels.length)}
-				label={`${labels.length - visibleLabels.length} more labels`}
-			/>
+			</div>
+			<OverflowMenu count={overflowLabels.length} label="labels">
+				{overflowLabels.map((label) => (
+					<li className="flex" key={`${label.text}-${label.color}`}>
+						<Tag className="self-center" color={label.color}>{label.text}</Tag>
+					</li>
+				))}
+			</OverflowMenu>
 		</div>
 	);
 }
@@ -239,19 +321,12 @@ export function renderContributors(contributors: readonly JiraListPerson[] | und
 	const visibleContributors = contributors.slice(0, 3);
 	const overflowCount = Math.max(0, contributors.length - visibleContributors.length);
 	return (
-		<AvatarGroup
-			className="-space-x-1.5 *:data-[slot=avatar]:ring-0!"
-			label={`Contributors: ${contributors.map((contributor) => contributor.name).join(", ")}`}
-		>
+		<AvatarGroup label={`Contributors: ${contributors.map((contributor) => contributor.name).join(", ")}`}>
 			{visibleContributors.map((contributor) => (
 				<JiraListAvatar key={contributor.id} person={contributor} />
 			))}
 			{overflowCount > 0 ? (
-				<Avatar aria-label={`${overflowCount} more contributors`} size="sm">
-					<AvatarFallback className="bg-bg-neutral-bold text-[10px] font-semibold text-text-inverse">
-						+{overflowCount}
-					</AvatarFallback>
-				</Avatar>
+				<AvatarGroupCount>+{overflowCount}</AvatarGroupCount>
 			) : null}
 		</AvatarGroup>
 	);

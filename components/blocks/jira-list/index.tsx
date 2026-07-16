@@ -26,22 +26,21 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import AddIcon from "@atlaskit/icon/core/add";
-import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import AppSwitcherIcon from "@atlaskit/icon/core/app-switcher";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import CopyIcon from "@atlaskit/icon/core/copy";
+import LinkIcon from "@atlaskit/icon/core/link";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
-import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 
 import { EditorPaletteAssigneePicker } from "@/components/blocks/editor-palette/page";
 import {
 	JiraListColumnActions,
 	JiraListColumnBoundary,
 } from "@/components/blocks/jira-list/jira-list-column-controls";
+import { AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,6 +51,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+} from "@/components/ui/input-group";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -98,9 +103,8 @@ import {
 	IssueTypeGlyph,
 	JiraListAvatar,
 	PriorityGlyph,
+	PRIORITY_LABELS,
 	renderAgentSessions,
-	renderContributors,
-	renderGoals,
 	renderLabels,
 	type JiraListColumnDefinition,
 } from "@/components/blocks/jira-list/jira-list-cells";
@@ -145,7 +149,6 @@ export function JiraList({
 	onIssueClick,
 	onIssueKeyClick,
 	onMoveRow,
-	onOpenAgentSessions,
 	onRefresh,
 	onSelectAllRows,
 	onSelectRow,
@@ -268,9 +271,9 @@ export function JiraList({
 										}
 									/>
 								</Button>
-							) : (
+							) : indentLevel > 0 ? (
 								<span aria-hidden="true" className="block size-5 shrink-0" />
-							)}
+							) : null}
 							<IssueTypeGlyph issueType={row.issueType} />
 							<div className="group/issue-key flex shrink-0 items-center">
 								<Button
@@ -313,7 +316,7 @@ export function JiraList({
 														isCopiedRow ? (
 															<CheckMarkIcon label="" size="small" />
 														) : (
-															<CopyIcon label="" size="small" />
+															<LinkIcon label="" size="small" />
 														)
 													}
 												/>
@@ -380,51 +383,25 @@ export function JiraList({
 			id: "agentSessions",
 			label: "Agent sessions",
 			widthClassName: "w-[247px]",
-			renderCell: (row) => (
-				<div className="group/agent-sessions flex min-w-0 items-center gap-1">
-					<div className="min-w-0 flex-1">{renderAgentSessions(row.agentSessions)}</div>
-					{onOpenAgentSessions && row.agentSessions?.length ? (
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										aria-label={`Open agent sessions for ${row.issueKey}`}
-										className="shrink-0 text-text-subtle opacity-0 transition-opacity group-hover/agent-sessions:opacity-100 group-focus-within/agent-sessions:opacity-100 hover:text-text"
-										onClick={() => onOpenAgentSessions(row)}
-										size="icon-compact"
-										variant="ghost"
-									/>
-								}
-							>
-								<Icon render={<AppSwitcherIcon label="" size="small" />} />
-							</TooltipTrigger>
-							<TooltipContent>In Model</TooltipContent>
-						</Tooltip>
-					) : null}
-				</div>
-			),
-		},
-		{
-			id: "goals",
-			label: "Goals",
-			widthClassName: "w-[132px]",
-			renderCell: (row) => renderGoals(row.goals),
+			renderCell: (row) => renderAgentSessions(row.agentSessions),
 		},
 		{
 			id: "priority",
 			label: "Priority",
-			widthClassName: "w-[61px]",
-			align: "center",
+			widthClassName: "w-[112px]",
 			renderCell: (row) => (
-				<div className="flex items-center justify-center">
-					<PriorityGlyph priority={row.priority} />
+				<div className="flex items-center gap-2">
+					<span aria-hidden="true">
+						<PriorityGlyph priority={row.priority} />
+					</span>
+					<span className="text-sm text-text">{PRIORITY_LABELS[row.priority]}</span>
 				</div>
 			),
 		},
 		{
 			id: "labels",
 			label: "Labels",
-			widthClassName: "w-[112px]",
+			widthClassName: "w-[180px]",
 			renderCell: (row) => renderLabels(row.labels),
 		},
 		{
@@ -432,20 +409,8 @@ export function JiraList({
 			label: "Due date",
 			widthClassName: "w-[114px]",
 			renderCell: (row) => (
-				<span className="text-sm text-text-subtle">{row.dueDate ?? "No due date"}</span>
+				<span className="text-sm text-text">{row.dueDate ?? "No due date"}</span>
 			),
-		},
-		{
-			id: "contributors",
-			label: "Contributors",
-			widthClassName: "w-[173px]",
-			headerContent: (
-				<span className="inline-flex items-center gap-1">
-					Contributors
-					<Icon className="text-icon-subtle" render={<ArrowUpIcon label="" size="small" />} />
-				</span>
-			),
-			renderCell: (row) => renderContributors(row.contributors),
 		},
 	];
 	const orderedColumns = getOrderedColumns(baseColumns, extraColumns);
@@ -500,9 +465,9 @@ export function JiraList({
 				render={
 					<Button
 						aria-label={`Issue type: ${selectedIssueType}`}
-						className="h-8 shrink-0 gap-1 px-2"
+						className="shrink-0 gap-1 px-2"
 						size="compact"
-						variant="outline"
+						variant="ghost"
 					/>
 				}
 			>
@@ -529,15 +494,17 @@ export function JiraList({
 			<Popover open={isDueDateOpen} onOpenChange={setIsDueDateOpen}>
 				<PopoverTrigger
 					render={
-						<Button
+						<InputGroupButton
 							aria-label={draftWorkItem?.dueDate ? `Due date: ${draftWorkItem.dueDate}` : "Set due date"}
-							className="h-8 shrink-0 gap-1.5 px-2"
-							size="compact"
-							variant={draftWorkItem?.dueDate ? "outline" : "ghost"}
+							className="shrink-0"
+							size={selectedDueDate ? "xs" : "icon-xs"}
 						/>
 					}
 				>
-					<Icon className="text-icon-subtle" render={<CalendarIcon label="" size="small" />} />
+					<Icon
+						className={isDueDateOpen ? "text-icon-selected" : "text-icon-subtle"}
+						render={<CalendarIcon label="" size="small" />}
+					/>
 					{selectedDueDate ? (
 						<span className="hidden text-text-subtle xl:inline">
 							{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(selectedDueDate)}
@@ -562,18 +529,17 @@ export function JiraList({
 			<Popover open={isAssigneeOpen} onOpenChange={setIsAssigneeOpen}>
 				<PopoverTrigger
 					render={
-						<Button
+						<InputGroupButton
 							aria-label={draftWorkItem?.assignee ? `Assignee: ${draftWorkItem.assignee.name}` : "Set assignee"}
-							className="h-8 shrink-0 gap-1.5 px-2"
-							size="compact"
-							variant={draftWorkItem?.assignee ? "outline" : "ghost"}
+							className="shrink-0"
+							size={draftWorkItem?.assignee ? "xs" : "icon-xs"}
 						/>
 					}
 				>
 					{draftWorkItem?.assignee ? (
 						<JiraListAvatar person={draftWorkItem.assignee} />
 					) : (
-						<Icon className="text-icon-subtle" render={<PersonAssigneeIcon label="" size="small" />} />
+						<AvatarUnassigned aria-hidden="true" size="xs" />
 					)}
 					{draftWorkItem?.assignee ? (
 						<span className="hidden max-w-28 truncate text-text-subtle xl:inline">
@@ -616,20 +582,25 @@ export function JiraList({
 			<label className="sr-only" htmlFor="jira-list-draft-summary">
 				New work item summary
 			</label>
-			<input
-				autoFocus
-				className="h-8 min-w-0 flex-1 rounded-md border border-border bg-surface px-2 text-sm text-text outline-none transition-colors focus:border-border-selected focus-visible:ring-3 focus-visible:ring-ring/20"
-				id="jira-list-draft-summary"
-				onChange={(event) => onDraftWorkItemSummaryChange?.(event.target.value)}
-				onKeyDown={handleDraftWorkItemKeyDown}
-				placeholder="What needs to be done?"
-				type="text"
-				value={draftWorkItem?.summary ?? ""}
-			/>
-			{showFooterControls ? renderFooterMetadataControls() : null}
+			<InputGroup className="h-8 min-w-0 flex-1">
+				<InputGroupInput
+					autoFocus
+					id="jira-list-draft-summary"
+					onChange={(event) => onDraftWorkItemSummaryChange?.(event.target.value)}
+					onKeyDown={handleDraftWorkItemKeyDown}
+					placeholder="What needs to be done?"
+					type="text"
+					value={draftWorkItem?.summary ?? ""}
+				/>
+				{showFooterControls ? (
+					<InputGroupAddon align="inline-end" className="gap-0.5">
+						{renderFooterMetadataControls()}
+					</InputGroupAddon>
+				) : null}
+			</InputGroup>
 			<div className="ml-auto flex shrink-0 items-center gap-1">
 				<Button
-					className="h-7 px-2"
+					className="px-2"
 					disabled={!draftWorkItem?.summary.trim()}
 					onClick={onDraftWorkItemSubmit}
 					size="compact"
@@ -637,7 +608,7 @@ export function JiraList({
 					Create
 				</Button>
 				<Button
-					className="h-7 px-2"
+					className="px-2"
 					onClick={onDraftWorkItemCancel}
 					size="compact"
 					variant="ghost"
@@ -807,14 +778,17 @@ export function JiraList({
 											<TableCell
 												className={cn(
 													getBodyCellClassName({ isSelected, align: "center" }),
-													"sticky left-0 overflow-visible px-0",
+													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
+													isSelected
+														? "before:bg-bg-selected"
+														: "before:bg-transparent group-hover/row:before:bg-bg-neutral-subtle-hovered group-focus-within/row:before:bg-bg-neutral-subtle-hovered",
 													insertionLinePosition ? "z-30" : "z-10",
 													insertionLineClassName,
 												)}
 												data-insertion-line={insertionLinePosition}
 												style={{ anchorName: getRowAnchorName(insertionAnchorId, rowIndex) }}
 											>
-												<div className="flex items-center justify-center">
+												<div className="relative z-10 flex items-center justify-center">
 													<Checkbox
 														aria-label={`Select ${row.issueKey}`}
 														checked={isSelected}
@@ -849,7 +823,7 @@ export function JiraList({
 					</DndContext>
 				</div>
 				<div
-					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 bg-surface px-3 py-1 text-[13px] shrink-0"
+					className="sticky bottom-0 z-20 flex h-10 min-h-10 items-center gap-3 bg-surface px-1 py-1 text-[13px] shrink-0"
 					data-footer-state={isFooterDraft ? "editing" : "default"}
 					data-testid="jira-list-sticky-footer"
 				>

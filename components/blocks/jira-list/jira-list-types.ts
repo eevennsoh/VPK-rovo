@@ -94,7 +94,6 @@ export interface JiraListProps {
 	onDraftWorkItemIssueTypeChange?: (issueType: JiraListIssueType) => void;
 	onDraftWorkItemSubmit?: () => void;
 	onDraftWorkItemSummaryChange?: (summary: string) => void;
-	onOpenAgentSessions?: (row: JiraListRowData) => void;
 	onIssueClick?: (row: JiraListRowData) => void;
 	onIssueKeyClick?: (row: JiraListRowData) => void;
 	onMoveRow?: (issueKey: string, targetIndex: number) => void;
