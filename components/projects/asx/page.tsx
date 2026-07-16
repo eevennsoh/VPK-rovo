@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 
+import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import JiraListPage from "@/components/blocks/jira-list/page";
@@ -12,6 +13,7 @@ import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
+import { RovoStage } from "./components/rovo-stage";
 import { TerminalControls, TerminalStage } from "./components/terminal-stage";
 import { useTerminalDemo, type TerminalDemoController } from "./hooks/use-terminal-demo";
 import {
@@ -27,8 +29,9 @@ import {
 // The gallery dock is the base surface: each card is a design pattern for the
 // agent sessions experience. Selecting a card reveals its design in the gallery
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
-// Kanban, List, and Queue show their full Jira experiences. The remaining
-// patterns fall back to a large title placeholder.
+// Kanban, List, and Queue show their full Jira experiences, and Rovo reuses the
+// sidebar-chat project as an in-stage chat panel. The remaining patterns fall
+// back to a large title placeholder.
 // ---------------------------------------------------------------------------
 
 function ListStage(): React.ReactElement {
@@ -51,6 +54,7 @@ function renderAsxItem(
 	if (item.id === "queue") return <QueueStage />;
 	if (item.id === "work-item") return <WorkItemStage controller={workItemController} />;
 	if (item.id === "terminal") return <TerminalStage controller={terminalController} />;
+	if (item.id === "rovo") return <RovoStage />;
 
 	return (
 		<div className="flex h-full w-full items-center justify-center">
@@ -63,6 +67,7 @@ function renderAsxItem(
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
+	const { resetChat } = useRovoChat();
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const workItemController = useWorkItemStageController();
 	const terminalController = useTerminalDemo(selectedId === "terminal");
@@ -75,16 +80,27 @@ function AsxGallery(): React.ReactElement {
 		if (nextSelectedId === "terminal" && selectedId !== "terminal") {
 			restartTerminal();
 		}
+		// Open the sidebar chat at its greeting rather than inheriting whatever
+		// conversation the shared ASX provider is holding (e.g. from the Kanban
+		// or Card Kanban demos).
+		if (nextSelectedId === "rovo" && selectedId !== "rovo") {
+			resetChat();
+		}
 		setSelectedId(nextSelectedId);
-	}, [restartCardKanban, restartTerminal, selectedId]);
+	}, [resetChat, restartCardKanban, restartTerminal, selectedId]);
 	// The gallery Reset control remounts the selected stage's view, but the
 	// terminal demo's state is hoisted here (in `useTerminalDemo`), so a remount
-	// alone won't rewind it. Reset it explicitly when the terminal is active.
+	// alone won't rewind it. Reset it explicitly when the terminal is active. The
+	// sidebar chat's state lives in the shared provider (not the remounted view),
+	// so reset it here too.
 	const handleReset = useCallback((item: GalleryItem) => {
 		if (item.id === "terminal") {
 			restartTerminal();
 		}
-	}, [restartTerminal]);
+		if (item.id === "rovo") {
+			resetChat();
+		}
+	}, [resetChat, restartTerminal]);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />

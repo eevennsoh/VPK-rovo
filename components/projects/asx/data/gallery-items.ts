@@ -7,9 +7,10 @@ import type { GalleryItem } from "@/components/blocks/gallery";
  * labeled dock tile; selecting it reveals the pattern's design in the gallery
  * stage (see the `renderSelectedItem` prop in `../page.tsx`). Card Kanban shows a
  * single jira-issue card transitioning across agent activity states, while
- * Kanban and List show their full Jira blocks. The others are title placeholders
- * until their design is added. Order: Card Kanban, Kanban, List, Queue, Work
- * item, Terminal.
+ * Kanban and List show their full Jira blocks. Rovo reuses the `sidebar-chat`
+ * project verbatim as an in-stage sidebar chat panel. The others (including For
+ * you) are title placeholders until their design is added. Order: Card Kanban,
+ * Kanban, List, Queue, Work item, Terminal, Rovo, For you.
  */
 export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
@@ -47,5 +48,17 @@ export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 		title: "Terminal",
 		description: "A terminal-style view of agent sessions driven from the command line.",
 		size: "landscape",
+	},
+	{
+		id: "rovo",
+		title: "Rovo",
+		description: "A sidebar chat panel for conversing with Rovo agents.",
+		size: "portrait",
+	},
+	{
+		id: "for-you",
+		title: "For you",
+		description: "A personalized feed of agent-session updates and suggestions.",
+		size: "1x1",
 	},
 ];
