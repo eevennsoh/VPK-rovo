@@ -49,11 +49,19 @@ export interface TerminalDemoController {
 
 const terminalDemoReducer = createTerminalDemoReducer(TERMINAL_DEMO_BEATS);
 
-function isEditableTarget(target: EventTarget | null): boolean {
+// The demo's window-level key handler must not steal keys from a focused
+// interactive control: Space/Enter on a focused button (top-bar Restart, the
+// gallery tiles, theme/reset controls) must still activate it, not advance the
+// demo. So bail whenever focus is within any editable field or activatable
+// control, not just text inputs.
+function isInteractiveTarget(target: EventTarget | null): boolean {
 	if (!(target instanceof HTMLElement)) return false;
 	if (target.isContentEditable) return true;
-	const tagName = target.tagName;
-	return tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT";
+	return Boolean(
+		target.closest(
+			'input, textarea, select, button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="tab"], [role="checkbox"], [role="switch"], [role="option"]',
+		),
+	);
 }
 
 /**
@@ -240,7 +248,7 @@ export function useTerminalDemo(enabled: boolean): TerminalDemoController {
 		if (!enabled) return;
 		function handleKeyDown(event: KeyboardEvent): void {
 			if (event.metaKey || event.ctrlKey || event.altKey) return;
-			if (isEditableTarget(event.target)) return;
+			if (isInteractiveTarget(event.target)) return;
 			if (event.key === "ArrowRight" || event.key === " " || event.key === "Spacebar") {
 				event.preventDefault();
 				advance();
