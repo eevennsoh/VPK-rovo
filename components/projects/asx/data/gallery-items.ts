@@ -8,9 +8,10 @@ import type { GalleryItem } from "@/components/blocks/gallery";
  * stage (see the `renderSelectedItem` prop in `../page.tsx`). Card Kanban shows a
  * single jira-issue card transitioning across agent activity states, while
  * Kanban and List show their full Jira blocks. Rovo reuses the `sidebar-chat`
- * project verbatim as an in-stage sidebar chat panel. The others (including For
- * you) are title placeholders until their design is added. Order: Card Kanban,
- * Kanban, List, Queue, Work item, Terminal, Rovo, For you.
+ * project verbatim as an in-stage sidebar chat panel. For you shows the
+ * personalized `jira-for-you` feed. The others are title placeholders until
+ * their design is added. Order: Card Kanban, Kanban, List, Queue, Work item,
+ * Terminal, Rovo, For you.
  */
 export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{

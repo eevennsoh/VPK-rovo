@@ -20,34 +20,17 @@ import {
 import { GalleryToggle } from "./gallery-toggle";
 import { GalleryTrack } from "./gallery-track";
 
-// ── vpk motion tokens as resolved cubic-bezier arrays (Motion cannot read var()) ──
-// Source: .agents/rules/motion-decisions.md "Consuming tokens" map. Durations in SECONDS.
-const EASE_OUT = [0, 0.4, 0, 1] as const; // --ease-out (BOLD; prominent-surface ENTER)
-const EASE_IN = [0.6, 0, 0.8, 0.6] as const; // --ease-in (practical EXIT — every exit)
-const DUR_SLOW = 0.25; // --duration-slow
-const DUR_FAST = 0.1; // --duration-fast
-
 // The pinned strip is a pure ORCHESTRATION node: it carries no visual style of its
 // own, only the active variant LABEL ("hidden"/"visible"/"exit") which propagates
-// through the track down to each card. Crucially it does NOT fade — a parent opacity
-// fade multiplies its children, which previously MASKED the per-card reverse-stagger
-// on close (the whole strip just dissolved as one block). With the fade moved to the
-// backdrop layer below, the cards' staggered rise/sink is the sole focal motion, and
-// AnimatePresence still keeps the strip mounted until every descendant's exit
-// completes. A card re-mounting after an expand→collapse does NOT replay the entrance
-// (the parent is already at rest in "visible"); only the layout morph runs.
+// through the track down to each card AND into the backdrop's veil fade. Crucially it
+// does NOT fade — a parent opacity fade multiplies its children, which previously
+// MASKED the per-card reverse-stagger on close (the whole strip just dissolved as one
+// block). With the fade owned by the backdrop layer (see gallery-backdrop.tsx), the
+// cards' staggered rise/sink is the sole focal motion, and AnimatePresence still keeps
+// the strip mounted until every descendant's exit completes. A card re-mounting after
+// an expand→collapse does NOT replay the entrance (the parent is already at rest in
+// "visible"); only the layout morph runs.
 const STRIP = { hidden: {}, visible: {}, exit: {} } as const;
-
-// Backdrop veil fade lives on its OWN layer behind the cards (its variants inherit the
-// strip's active label via context), so fading it out on close no longer dims the cards
-// mid-exit. Bold ease-out wash IN (prominent surface); fast ease-in OUT so the veil
-// clears ahead of the cards instead of lingering. Opacity-only → safe under reduced
-// motion as-is.
-const BACKDROP = {
-	hidden: { opacity: 0 },
-	visible: { opacity: 1, transition: { duration: DUR_SLOW, ease: EASE_OUT } },
-	exit: { opacity: 0, transition: { duration: DUR_FAST, ease: EASE_IN } },
-} as const;
 
 interface GalleryVisualState {
 	active: GallerySelectionVisual | null;
@@ -246,9 +229,7 @@ export function Gallery({
 						animate="visible"
 						exit="exit"
 					>
-						<motion.div variants={BACKDROP} style={{ willChange: "opacity" }}>
-							<GalleryBackdrop />
-						</motion.div>
+						<GalleryBackdrop />
 						<GalleryTrack
 							items={items}
 							selectedId={resolvedSelectedId}

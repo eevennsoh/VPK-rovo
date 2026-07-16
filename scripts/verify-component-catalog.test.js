@@ -8,6 +8,7 @@ const {
 	collectDemoFiles,
 	collectRegistryData,
 	getComponentAddPlan,
+	isTitleCaseName,
 	loadComponentEntries,
 	resolveProjectImport,
 	resolveRegistryImport,
@@ -109,7 +110,7 @@ test("component catalog validator reports missing registry imports and example s
 				category: "ui",
 				detail: { description: "Duplicate" },
 				importPath: "@/components/ui/button",
-				name: "Button duplicate",
+				name: "Button Duplicate",
 				slug: "button",
 			},
 		],
@@ -247,6 +248,69 @@ test("component catalog validator reports manifest entries without primary regis
 	assert.match(summary.warnings.map((warning) => warning.message).join("\n"), /blocks\/example-block has no primary registry entry/);
 });
 
+test("title case name checker accepts Chicago-style names and rejects sentence case", () => {
+	// Valid: capitalized words, lowercase minor words mid-title, acronyms, brands,
+	// version suffixes, and numeric segments.
+	for (const name of [
+		"Jira Issue",
+		"Jira for You",
+		"Chain of Thought",
+		"Open in Chat",
+		"SVG Tracing",
+		"Halftone CMYK",
+		"ChatGPT",
+		"Fluted Glass v2",
+		"Login 01",
+	]) {
+		assert.equal(isTitleCaseName(name), true, `expected "${name}" to be Title Case`);
+	}
+
+	// Invalid: lowercase content words, or a minor word leading the title.
+	for (const name of [
+		"Jira issue",
+		"Jira for you",
+		"Chat gallery",
+		"Editor toolbar",
+		"of Thought",
+		"",
+	]) {
+		assert.equal(isTitleCaseName(name), false, `expected "${name}" to fail Title Case`);
+	}
+});
+
+test("component catalog validator flags names that are not Title Case", () => {
+	const diagnostics = validateComponentCatalog({
+		cwd: process.cwd(),
+		components: [
+			{
+				category: "blocks",
+				detail: { description: "Jira issue" },
+				importPath: "@/components/blocks/jira-issue",
+				name: "Jira issue",
+				slug: "jira-issue",
+			},
+		],
+		detailRecords: {
+			blocks: {
+				"jira-issue": { description: "Jira issue" },
+			},
+		},
+		registryData: {
+			primary: {
+				blocks: {
+					"jira-issue": { imports: ["./demos/blocks/jira-issue-demo"] },
+				},
+			},
+			variants: {
+				blocks: {},
+			},
+		},
+	});
+	const summary = summarizeDiagnostics(diagnostics);
+
+	assert.match(summary.errors.map((error) => error.message).join("\n"), /blocks\/jira-issue name "Jira issue" is not Title Case/);
+});
+
 test("component loader reads the editable manifest source", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-catalog-manifest-source-"));
 	try {
@@ -347,7 +411,7 @@ test("component catalog validator reports orphan demo files absent from registry
 					category: "visual",
 					detail: { description: "Shared shader" },
 					importPath: "@/components/website/demos/visual/shared-shader-demo",
-					name: "Shared shader",
+					name: "Shared Shader",
 					slug: "shared-shader",
 				},
 			],

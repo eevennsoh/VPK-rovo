@@ -116,7 +116,7 @@ test("Gallery selected surface preserves the organic ink-bloom contract", () => 
 	const source = readProjectFile("components/blocks/gallery/components/gallery-selected-surface.tsx");
 	assert.match(source, /const ENTER_EASE = \[0\.45, 0, 0\.55, 1\] as const;/u);
 	assert.match(source, /const EXIT_EASE = \[0, 0\.4, 0, 1\] as const;/u);
-	assert.match(source, /const DUR_ENTER = 1\.4;/u);
+	assert.match(source, /const DUR_ENTER = 0\.8;/u);
 	assert.match(source, /const inkMaskSeed = seed \+ visual\.key \* 7919;/u);
 	assert.match(
 		source,
@@ -196,10 +196,15 @@ test("Gallery drag scroll cancels stale pending presses", () => {
 	assert.match(trackSource, /onLostPointerCapture/u);
 });
 
-test("Gallery backdrop uses masked surface veils and is pointer-transparent", () => {
+test("Gallery backdrop layers masked surface veils over a progressive page blur", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-backdrop.tsx");
 	assert.match(source, /WebkitMaskImage/u);
-	assert.doesNotMatch(source, /BackdropFilter/u);
+	// The white veil now sits over a progressive backdrop-filter blur reused from the
+	// shared ScrollMask blur builder, so underlying page content blurs toward the dock.
+	assert.match(source, /buildScrollMaskBlurLayerStyles\("bottom"\)/u);
+	// The blur must stay OUT of the veil's opacity fade — an ancestor opacity isolates
+	// backdrop-filter — so only the veil layers carry the fade variant.
+	assert.match(source, /variants=\{BACKDROP\}/u);
 	assert.match(source, /pointer-events-none/u);
 });
 

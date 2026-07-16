@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import JiraForYouPage from "@/components/blocks/jira-for-you/page";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
 import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
@@ -22,6 +23,7 @@ import {
 	WorkItemStage,
 	type WorkItemStageController,
 } from "./components/work-item-stage";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -29,9 +31,10 @@ import {
 // The gallery dock is the base surface: each card is a design pattern for the
 // agent sessions experience. Selecting a card reveals its design in the gallery
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
-// Kanban, List, and Queue show their full Jira experiences, and Rovo reuses the
-// sidebar-chat project as an in-stage chat panel. The remaining patterns fall
-// back to a large title placeholder.
+// Kanban, List, and Queue show their full Jira experiences, For you shows the
+// personalized jira-for-you feed, and Rovo reuses the sidebar-chat project as an
+// in-stage chat panel. The remaining patterns fall back to a large title
+// placeholder.
 // ---------------------------------------------------------------------------
 
 function ListStage(): React.ReactElement {
@@ -42,11 +45,32 @@ function ListStage(): React.ReactElement {
 	);
 }
 
+// The "For you" feed reads best as a constrained column, but the SCROLL should
+// belong to the viewport, not the column — so the stage breaks out to full width
+// (`w-screen`, the same trick the List/Queue stages use) and owns the
+// `overflow-y-auto`, keeping the scrollbar on the viewport edge. The feed itself
+// stays a centered `max-w-3xl` column inside the scroll area.
+//
+// Bottom clearance is only needed while the pinned dock is showing. Open, the
+// dock overlays the bottom ~224px (tallest portrait tile 208px + 16px strip
+// padding), so `pb-56` lets the final item scroll clear of it; closed, that pad
+// is pure dead space, so we drop to a small `pb-8` breathing gap.
+function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean }>): React.ReactElement {
+	return (
+		<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
+			<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
+				<JiraForYouPage />
+			</div>
+		</div>
+	);
+}
+
 function renderAsxItem(
 	item: (typeof ASX_GALLERY_ITEMS)[number],
 	cardKanbanController: ReturnType<typeof useAutoCycle>,
 	workItemController: WorkItemStageController,
 	terminalController: TerminalDemoController,
+	dockOpen: boolean,
 ): React.ReactNode {
 	if (item.id === "card") return <CardKanbanStage controller={cardKanbanController} />;
 	if (item.id === "kanban") return <KanbanStage />;
@@ -55,6 +79,7 @@ function renderAsxItem(
 	if (item.id === "work-item") return <WorkItemStage controller={workItemController} />;
 	if (item.id === "terminal") return <TerminalStage controller={terminalController} />;
 	if (item.id === "rovo") return <RovoStage />;
+	if (item.id === "for-you") return <ForYouStage dockOpen={dockOpen} />;
 
 	return (
 		<div className="flex h-full w-full items-center justify-center">
@@ -67,6 +92,9 @@ function renderAsxItem(
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
+	// The dock's open state is controlled here so stages can react to it — the
+	// "For you" feed drops its dock clearance padding when the dock is hidden.
+	const [dockOpen, setDockOpen] = useState(true);
 	const { resetChat, resetAgentToRovo } = useRovoChat();
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const workItemController = useWorkItemStageController();
@@ -126,11 +154,13 @@ function AsxGallery(): React.ReactElement {
 				title="Agent Sessions Experience"
 				selectedId={selectedId}
 				onSelectedChange={handleSelectedChange}
+				open={dockOpen}
+				onOpenChange={setDockOpen}
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
 				onReset={handleReset}
 				renderSelectedItem={(item) =>
-					renderAsxItem(item, cardKanbanController, workItemController, terminalController)
+					renderAsxItem(item, cardKanbanController, workItemController, terminalController, dockOpen)
 				}
 			/>
 		</div>

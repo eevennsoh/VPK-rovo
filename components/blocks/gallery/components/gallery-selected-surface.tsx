@@ -20,7 +20,7 @@ import { GalleryTitleLines } from "./gallery-title-lines";
 
 const ENTER_EASE = [0.45, 0, 0.55, 1] as const; // Deliberately even ink spread.
 const EXIT_EASE = [0, 0.4, 0, 1] as const; // --ease-out; starts the shader exit immediately.
-const DUR_ENTER = 1.4; // Deliberately slow organic reveal.
+const DUR_ENTER = 0.8; // Brisk organic reveal; still outlasts the 0.6s exit.
 const MASK_FEATHER_PX = 18;
 const MASK_DIAMETER_SCALE = 2.6;
 const BLUE_PALETTE: string[] = ["#0747A6", "#0C66E4", "#1D7AFC", "#579DFF"];

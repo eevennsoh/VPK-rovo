@@ -520,6 +520,28 @@ export function AvatarDemoAgentTiers() {
 	);
 }
 
+export function AvatarDemoAgentGroup() {
+	return (
+		<AvatarGroup label="Agents">
+			<AgentAvatarVisual
+				avatarSrc="/avatar-agent/dev-agents/code-planner.svg"
+				label="Code planner"
+				sizePx={24}
+			/>
+			<AgentAvatarVisual
+				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
+				label="Feedback analyzer"
+				sizePx={24}
+			/>
+			<AgentAvatarVisual
+				avatarSrc="/avatar-agent/service-agents/service-triage.svg"
+				label="Service triage"
+				sizePx={24}
+			/>
+		</AvatarGroup>
+	);
+}
+
 const AGENT_AVATAR_SRC = "/avatar-agent/dev-agents/code-planner.svg";
 const BADGE_SIZES = ["sm", "default", "lg", "xl", "2xl"] as const;
 

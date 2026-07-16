@@ -44,7 +44,7 @@ const avatarVariants = cva(
 			shape: {
 				circle: "rounded-full after:rounded-full",
 				square: "rounded-[6px] after:rounded-[6px]",
-				hexagon: "after:border-0",
+				hexagon: "isolate after:border-0",
 			},
 		},
 		defaultVariants: {
@@ -57,6 +57,8 @@ const avatarVariants = cva(
 type AvatarPresence = "online" | "busy" | "offline" | "focus"
 type AvatarUnassignedKind = "person" | "agent"
 type AvatarSize = NonNullable<VariantProps<typeof avatarVariants>["size"]>
+
+const AvatarGroupContext = React.createContext(false)
 
 interface AvatarProps
 	extends AvatarPrimitive.Root.Props,
@@ -93,6 +95,7 @@ function Avatar({
 	label,
 	...props
 }: Readonly<AvatarProps>) {
+	const isInAvatarGroup = React.use(AvatarGroupContext)
 	const rootClassName = cn(
 		avatarVariants({ size, shape }),
 		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
@@ -136,6 +139,13 @@ function Avatar({
 				render={<motion.span {...motionProps} />}
 				{...props}
 			>
+				{isInAvatarGroup ? (
+					<span
+						aria-hidden="true"
+						className={cn("pointer-events-none absolute -inset-0.5 -z-10 bg-background", HEXAGON_CLIP)}
+						data-slot="avatar-hexagon-group-border"
+					/>
+				) : null}
 				<span className={cn("relative flex size-full items-center justify-center", HEXAGON_CLIP)}>
 					{childArray.filter((child) => !isOverlay(child))}
 				</span>
@@ -426,18 +436,22 @@ interface AvatarGroupProps extends React.ComponentProps<"div"> {
 	label?: string
 }
 
-function AvatarGroup({ className, label, ...props }: Readonly<AvatarGroupProps>) {
+function AvatarGroup({ children, className, label, ...props }: Readonly<AvatarGroupProps>) {
 	return (
-		<div
-			data-slot="avatar-group"
-			role="group"
-			aria-label={label}
-			className={cn(
-				"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2",
-				className
-			)}
-			{...props}
-		/>
+		<AvatarGroupContext value>
+			<div
+				data-slot="avatar-group"
+				role="group"
+				aria-label={label}
+				className={cn(
+					"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+					className
+				)}
+				{...props}
+			>
+				{children}
+			</div>
+		</AvatarGroupContext>
 	)
 }
 

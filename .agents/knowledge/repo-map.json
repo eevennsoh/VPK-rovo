@@ -5340,7 +5340,7 @@
 					{
 						"category": "blocks",
 						"slug": "chat-gallery",
-						"name": "Chat gallery",
+						"name": "Chat Gallery",
 						"importPath": "@/components/blocks/chat-gallery"
 					},
 					{
@@ -5388,13 +5388,13 @@
 					{
 						"category": "blocks",
 						"slug": "editor-palette",
-						"name": "Editor palette",
+						"name": "Editor Palette",
 						"importPath": "@/components/blocks/editor-palette"
 					},
 					{
 						"category": "blocks",
 						"slug": "editor-toolbar",
-						"name": "Editor toolbar",
+						"name": "Editor Toolbar",
 						"importPath": "@/components/blocks/editor-toolbar"
 					},
 					{
@@ -5424,19 +5424,19 @@
 					{
 						"category": "blocks",
 						"slug": "jira-epic",
-						"name": "Jira epic",
+						"name": "Jira Epic",
 						"importPath": "@/components/blocks/jira-epic"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-for-you",
-						"name": "Jira for you",
+						"name": "Jira for You",
 						"importPath": "@/components/blocks/jira-for-you"
 					},
 					{
 						"category": "blocks",
 						"slug": "jira-issue",
-						"name": "Jira issue",
+						"name": "Jira Issue",
 						"importPath": "@/components/blocks/jira-issue"
 					},
 					{
@@ -7566,7 +7566,7 @@
 					{
 						"category": "visual",
 						"slug": "svg-tracing",
-						"name": "SVG tracing",
+						"name": "SVG Tracing",
 						"importPath": "@/components/visual/svg-tracing"
 					},
 					{

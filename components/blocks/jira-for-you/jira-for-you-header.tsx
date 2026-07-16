@@ -29,7 +29,7 @@ export function JiraForYouHeader({
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex items-center justify-between gap-4">
-				<h2 className="text-text" style={{ font: token("font.heading.large") }}>
+				<h2 className="text-text" style={{ font: token("font.heading.small") }}>
 					For you
 				</h2>
 				<Tabs onValueChange={(value) => onTabChange(String(value))} value={activeTabId}>

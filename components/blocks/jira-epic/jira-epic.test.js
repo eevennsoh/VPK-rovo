@@ -51,7 +51,7 @@ test("JiraEpic block is wired into docs detail, demo registry, and catalogs", ()
 	assert.match(DETAILS_SOURCE, /export const JIRA_EPIC_DETAIL/u);
 	assert.match(DETAILS_INDEX_SOURCE, /import \{ JIRA_EPIC_DETAIL \} from "\.\/blocks\/jira-epic";/u);
 	assert.match(DETAILS_INDEX_SOURCE, /"jira-epic": JIRA_EPIC_DETAIL/u);
-	assert.match(COMPONENTS_SOURCE, /blockComponent\("jira-epic", "Jira epic"\)/u);
-	assert.match(MANIFEST_SOURCE, /blockComponent\("jira-epic", "Jira epic"\)/u);
+	assert.match(COMPONENTS_SOURCE, /blockComponent\("jira-epic", "Jira Epic"\)/u);
+	assert.match(MANIFEST_SOURCE, /blockComponent\("jira-epic", "Jira Epic"\)/u);
 	assert.match(REGISTRY_SOURCE, /"jira-epic": dynamic\(\(\) => import\("\.\.\/demos\/blocks\/jira-epic-demo"\), \{\s*ssr: false,\s*\}\)/u);
 });

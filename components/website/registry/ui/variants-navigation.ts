@@ -205,6 +205,13 @@ export const UI_NAVIGATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"avatar-demo-agent-group": dynamic(
+		() =>
+			import("../../demos/ui/avatar-demo").then((mod) => ({
+				default: mod.AvatarDemoAgentGroup,
+			})),
+		{ ssr: false },
+	),
 	"avatar-demo-all-sizes": dynamic(
 		() =>
 			import("../../demos/ui/avatar-demo").then((mod) => ({

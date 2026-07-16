@@ -504,6 +504,38 @@ function toTitleCase(slug) {
 		.join(" ");
 }
 
+// Minor words that stay lowercase mid-title in Chicago-style title case
+// (e.g. "Chain of Thought", "Open in Chat", "Jira for You"). They must still
+// be capitalized when they are the first word of a name.
+const TITLE_CASE_MINOR_WORDS = new Set([
+	"a", "an", "and", "as", "at", "but", "by", "for", "if", "in", "nor",
+	"of", "on", "or", "per", "the", "to", "via", "vs", "with",
+]);
+
+function isTitleCaseWord(word, index) {
+	// Capitalized word, acronym, brand, or numeric segment (e.g. "Chat", "SVG", "ChatGPT", "01").
+	if (/^[A-Z0-9]/u.test(word)) {
+		return true;
+	}
+	// Version suffix, e.g. "v2".
+	if (/^v\d+$/u.test(word)) {
+		return true;
+	}
+	// Minor words may stay lowercase, but never as the first word.
+	return index > 0 && TITLE_CASE_MINOR_WORDS.has(word);
+}
+
+function isTitleCaseName(name) {
+	if (typeof name !== "string") {
+		return false;
+	}
+	const words = name.split(/\s+/u).filter(Boolean);
+	if (words.length === 0) {
+		return false;
+	}
+	return words.every((word, index) => isTitleCaseWord(word, index));
+}
+
 function getPrimaryRegistryTarget(category) {
 	return PRIMARY_REGISTRY_TARGETS[category] ?? `components/website/registry/${category}.ts`;
 }
@@ -699,6 +731,14 @@ function validateComponentCatalog({
 			}));
 		}
 		seenComponents.add(key);
+
+		if (!isTitleCaseName(component.name)) {
+			diagnostics.push(createDiagnostic("error", `Component ${key} name "${component.name}" is not Title Case (expected "${toTitleCase(component.slug)}"-style capitalization).`, {
+				category: component.category,
+				name: component.name,
+				slug: component.slug,
+			}));
+		}
 	}
 
 	for (const [registryKind, registries] of Object.entries(registryData)) {
@@ -902,6 +942,7 @@ module.exports = {
 	collectDemoFiles,
 	collectRegistryData,
 	getComponentAddPlan,
+	isTitleCaseName,
 	loadComponentEntries,
 	resolveRegistryImport,
 	resolveProjectImport,

@@ -127,7 +127,9 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{onAgentActivityOpenChange\}/);
 	assert.match(GENERATIVE_SOURCE, /import \{ createPortal \} from "react-dom";/);
+	assert.match(GENERATIVE_SOURCE, /triggerElement\?: ReactElement;/);
 	assert.match(GENERATIVE_SOURCE, /const trigger = triggerPosition \? createPortal\([\s\S]*document\.body/);
+	assert.match(GENERATIVE_SOURCE, /const resolvedTrigger = triggerElement \? \([\s\S]*<PopoverTrigger render=\{triggerElement\} \/>[\s\S]*\) : trigger;/);
 	assert.match(GENERATIVE_SOURCE, /className="group\/sparkle fixed z-\[550\] inline-flex h-6 w-4 items-start/);
 	assert.match(GENERATIVE_SOURCE, /window\.addEventListener\("scroll", updateTriggerPosition, true\);/);
 	assert.match(GENERATIVE_SOURCE, /if \(!anchor \|\| \(!revealActive && !open\)\) \{[\s\S]*window\.requestAnimationFrame\(trackTriggerPosition\)[\s\S]*window\.cancelAnimationFrame\(animationFrameId\)/);
@@ -146,7 +148,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(GENERATIVE_SOURCE, /<GenerativeIndicatorIcon label="" size="small" spacing="none" color="currentColor" \/>/);
 	assert.match(GENERATIVE_SOURCE, /className="inline-flex size-3 items-center justify-center \[&>span\]:size-3 \[&_svg\]:size-3"/);
 	assert.match(GENERATIVE_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/);
-	assert.match(GENERATIVE_SOURCE, /<PopoverContent[\s\S]*align="start"[\s\S]*className="z-\[600\] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="right"[\s\S]*sideOffset=\{-16\}/);
+	assert.match(GENERATIVE_SOURCE, /<PopoverContent[\s\S]*align="start"[\s\S]*className="z-\[600\] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="right"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -16\}/);
 	assert.match(GENERATIVE_SOURCE, /className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected,[\s\S]*\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover,[\s\S]*background-color: var\(--ds-background-neutral-subtle-hovered, #f1f2f4\);/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover \.rich-text-command-menu-copy \{\s*padding-right: 28px;/);

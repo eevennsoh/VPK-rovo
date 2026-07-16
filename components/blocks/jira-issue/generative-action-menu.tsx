@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useMemo, useState, type KeyboardEvent, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
@@ -46,13 +46,14 @@ export interface JiraIssueGenerativeActionConfig {
 
 interface JiraIssueGenerativeActionMenuProps {
 	action: JiraIssueGenerativeActionConfig;
-	anchor: HTMLElement | null;
+	anchor?: HTMLElement | null;
 	issue: JiraIssueGenerativeActionIssue;
-	onTriggerBlur: () => void;
-	onTriggerFocus: () => void;
-	onTriggerPointerEnter: () => void;
-	onTriggerPointerLeave: () => void;
-	revealActive: boolean;
+	onTriggerBlur?: () => void;
+	onTriggerFocus?: () => void;
+	onTriggerPointerEnter?: () => void;
+	onTriggerPointerLeave?: () => void;
+	revealActive?: boolean;
+	triggerElement?: ReactElement;
 }
 
 interface JiraIssueGenerativeActionPosition {
@@ -218,13 +219,14 @@ function getJiraIssueGenerativeNextSelectedIndex(
 
 export function JiraIssueGenerativeActionMenu({
 	action,
-	anchor,
+	anchor = null,
 	issue,
 	onTriggerBlur,
 	onTriggerFocus,
 	onTriggerPointerEnter,
 	onTriggerPointerLeave,
-	revealActive,
+	revealActive = false,
+	triggerElement,
 }: Readonly<JiraIssueGenerativeActionMenuProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [open, setOpen] = useState(false);
@@ -237,6 +239,7 @@ export function JiraIssueGenerativeActionMenu({
 		() => getJiraIssueGenerativeActionRows(askPrompt, showAllSkills, showAllAgents),
 		[askPrompt, showAllSkills, showAllAgents],
 	);
+	const hasTriggerElement = Boolean(triggerElement);
 	const sparkleVisible = revealActive && !open;
 
 	useLayoutEffect(() => {
@@ -407,16 +410,19 @@ export function JiraIssueGenerativeActionMenu({
 		/>,
 		document.body,
 	) : null;
+	const resolvedTrigger = triggerElement ? (
+		<PopoverTrigger render={triggerElement} />
+	) : trigger;
 
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			{trigger}
+			{resolvedTrigger}
 			<PopoverContent
 				align="start"
 				className="z-[600] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"
 				positionerClassName="z-[600]"
 				side="right"
-				sideOffset={-16}
+				sideOffset={hasTriggerElement ? 4 : -16}
 			>
 				<PopoverTitle className="sr-only">Jira issue generative actions</PopoverTitle>
 				<RichTextSuggestionMenu

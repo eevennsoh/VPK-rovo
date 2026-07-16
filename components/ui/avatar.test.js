@@ -68,7 +68,7 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 
 test("hexagon avatars clip an inner frame so corner overlays render unclipped", () => {
 	assert.match(AVATAR_SOURCE, /const HEXAGON_POINTS =/);
-	assert.match(AVATAR_SOURCE, /hexagon: "after:border-0"/);
+	assert.match(AVATAR_SOURCE, /hexagon: "isolate after:border-0"/);
 	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
 	assert.match(AVATAR_SOURCE, /<span className=\{cn\("relative flex size-full items-center justify-center", HEXAGON_CLIP\)\}>/);
 	assert.doesNotMatch(AVATAR_SOURCE, /isAgent && HEXAGON_CLIP/);
@@ -158,6 +158,28 @@ test("avatar group overflow count uses 12px text and 14px text for large groups"
 	assert.match(AVATAR_SOURCE, /rounded-full text-xs/);
 	assert.match(AVATAR_SOURCE, /group-has-data-\[size=lg\]\/avatar-group:text-sm/);
 	assert.doesNotMatch(AVATAR_SOURCE, /rounded-full text-sm/);
+});
+
+test("avatar groups give hexagon agents a shape-aware background separator", () => {
+	assert.match(AVATAR_SOURCE, /const AvatarGroupContext = React\.createContext\(false\)/);
+	assert.match(AVATAR_SOURCE, /const isInAvatarGroup = React\.use\(AvatarGroupContext\)/);
+	assert.match(
+		AVATAR_SOURCE,
+		/isInAvatarGroup \? \(\s*<span[\s\S]*bg-background[\s\S]*HEXAGON_CLIP[\s\S]*data-slot="avatar-hexagon-group-border"/,
+	);
+	assert.match(AVATAR_SOURCE, /<AvatarGroupContext value>/);
+	assert.match(
+		AVATAR_SOURCE,
+		/\[&>\[data-slot=avatar\]\[data-shape=hexagon\]\]:ring-0/,
+	);
+});
+
+test("avatar docs include the agent avatar group variant", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentGroup\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarGroup label="Agents">/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-agent-group"/);
+	assert.match(REGISTRY_SOURCE, /"avatar-demo-agent-group"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoAgentGroup/);
 });
 
 test("avatar group overflow icon scales down to 12px for small groups", () => {

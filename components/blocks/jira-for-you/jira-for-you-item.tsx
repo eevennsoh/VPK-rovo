@@ -8,8 +8,10 @@ import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 
+import { JiraIssueGenerativeActionMenu } from "@/components/blocks/jira-issue/generative-action-menu";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 
@@ -33,7 +35,7 @@ const ISSUE_TYPE_META: Record<
 function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="text-text-subtlest">
-			•
+			·
 		</span>
 	);
 }
@@ -41,42 +43,58 @@ function MetadataDot() {
 function AgentAvatarCluster({
 	agents,
 }: Readonly<{ agents: readonly JiraForYouAgent[] }>) {
+	const label = agents.map((agent) => agent.name).join(", ");
 	return (
-		<div className="flex shrink-0 items-center -space-x-1">
+		<AvatarGroup
+			className="shrink-0 -space-x-1 *:data-[slot=avatar]:ring-0!"
+			label={`Agents: ${label}`}
+		>
 			{agents.map((agent) => (
-				<Avatar key={agent.name} label={agent.name} shape="hexagon" size="xs">
-					<AvatarImage alt="" src={agent.avatarSrc} />
-					<AvatarFallback>{agent.name.slice(0, 2)}</AvatarFallback>
-				</Avatar>
+				<AgentAvatarVisual
+					avatarSrc={agent.avatarSrc}
+					fallbackText={agent.name.slice(0, 2)}
+					key={agent.name}
+					label={agent.name}
+					sizePx={16}
+				/>
 			))}
-		</div>
+		</AvatarGroup>
 	);
 }
 
 function ItemActions({
-	isRunning,
+	item,
 	onView,
-}: Readonly<{ isRunning?: boolean; onView?: () => void }>) {
+}: Readonly<{ item: JiraForYouItem; onView?: () => void }>) {
+	const generativeTrigger = (
+		<Button
+			aria-label="Ask Rovo about this work item"
+			className="bg-bg-neutral-bold text-text-inverse [&_svg]:text-text-inverse hover:bg-bg-neutral-bold-hovered"
+			onClick={(event) => event.stopPropagation()}
+			size="icon-compact"
+		>
+			<GenerativeIndicatorIcon label="" />
+		</Button>
+	);
+
 	return (
-		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-2 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 motion-reduce:transition-none">
-			<Button
-				aria-label="Ask Rovo about this work item"
-				className="bg-bg-neutral-bold text-text-inverse [&_svg]:text-text-inverse hover:bg-bg-neutral-bold-hovered"
-				size="icon"
-			>
-				<GenerativeIndicatorIcon label="" />
-			</Button>
-			{isRunning ? (
+		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 motion-reduce:transition-none">
+			<JiraIssueGenerativeActionMenu
+				action={{ onSubmit: () => undefined }}
+				issue={{ issueKey: item.issueKey, summary: item.title }}
+				triggerElement={generativeTrigger}
+			/>
+			{item.isRunning ? (
 				<Button
 					aria-label="Stop agents"
 					className="[&_svg]:text-icon-danger!"
-					size="icon"
+					size="icon-compact"
 					variant="outline"
 				>
 					<VideoStopOverlayIcon label="" />
 				</Button>
 			) : null}
-			<Button onClick={onView} variant="outline">
+			<Button onClick={onView} size="compact" variant="outline">
 				View
 			</Button>
 		</div>
@@ -142,7 +160,7 @@ export function JiraForYouItemRow({
 					<span className="truncate">{item.spaceName}</span>
 				</span>
 			</button>
-			<ItemActions isRunning={item.isRunning} onView={() => onItemClick?.(item)} />
+			<ItemActions item={item} onView={() => onItemClick?.(item)} />
 		</li>
 	);
 }

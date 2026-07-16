@@ -95,6 +95,11 @@ export const AVATAR_DETAIL: ComponentDetail = {
         demoSlug: "avatar-demo-agent-tiers",
       },
       {
+        title: "Agent group",
+        description: "Overlapping hexagon avatars with shape-aware separators.",
+        demoSlug: "avatar-demo-agent-group",
+      },
+      {
         title: "Unassigned",
         description: "Grey person and agent placeholder states.",
         demoSlug: "avatar-demo-unassigned",
