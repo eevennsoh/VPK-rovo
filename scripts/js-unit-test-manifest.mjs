@@ -73,6 +73,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/shared/components/chat-context-bar.test.js",
 		"components/projects/sidebar-chat/components/agent-result-card.test.js",
 		"components/projects/skills/page.test.js",
+		"components/projects/asx/queue-stage.test.js",
 		"components/website/component-doc/components/demo-preview-shell.test.js",
 		"components/website/website-preview-visibility.test.js",
 		"components/ui/data/logo-usage.test.js",
