@@ -84,6 +84,20 @@ test("ASX Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.doesNotMatch(ROVO_OVERLAY_SOURCE, /positioning="container"/u);
 });
 
+test("ASX Rovo gallery entry and reset restore the default agent plus greeting", () => {
+	assert.match(ASX_PAGE_SOURCE, /const \{ resetChat, resetAgentToRovo \} = useRovoChat\(\);/u);
+	assert.match(
+		ASX_PAGE_SOURCE,
+		/const resetRovoSurface = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*resetChat\(\);[\s\S]*\}, \[resetAgentToRovo, resetChat\]\);/u,
+	);
+	assert.match(
+		ASX_PAGE_SOURCE,
+		/if \(nextSelectedId === "rovo" && selectedId !== "rovo"\) \{\s*resetRovoSurface\(\);\s*\}/u,
+	);
+	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) \{\s*resetRovoSurface\(\);\s*\}/u);
+	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) return <RovoStage \/>;/u);
+});
+
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {
 	assert.match(QUEUE_STAGE_SOURCE, /<AppLayout[\s\S]*product="jira"[\s\S]*hideRovoAction/u);
 	assert.match(QUEUE_STAGE_SOURCE, /shellHeight="parent"/u);
