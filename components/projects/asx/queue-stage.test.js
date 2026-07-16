@@ -92,9 +92,9 @@ test("ASX Rovo gallery entry and reset restore the default agent plus greeting",
 	);
 	assert.match(
 		ASX_PAGE_SOURCE,
-		/nextSelectedId === "rovo" && selectedId !== "rovo"[\s\S]*resetRovoSurface\(\);/u,
+		/if \(nextSelectedId === "rovo" && selectedId !== "rovo"\) \{\s*resetRovoSurface\(\);\s*\}/u,
 	);
-	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) \{[\s\S]*resetRovoSurface\(\);[\s\S]*\}/u);
+	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) \{\s*resetRovoSurface\(\);\s*\}/u);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) return <RovoStage \/>;/u);
 });
 
