@@ -67,12 +67,24 @@ function renderAsxItem(
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
-	const { resetChat } = useRovoChat();
+	const { resetChat, resetAgentToRovo } = useRovoChat();
 	const cardKanbanController = useAutoCycle(ASX_CARD_KANBAN_STATES.length);
 	const workItemController = useWorkItemStageController();
 	const terminalController = useTerminalDemo(selectedId === "terminal");
 	const { restart: restartCardKanban } = cardKanbanController;
 	const { restart: restartTerminal } = terminalController;
+	// Show the default Rovo sidebar-chat experience when entering/resetting the
+	// Rovo card, regardless of what the shared ASX provider is currently holding.
+	// The Kanban/Card Kanban demos select an ASX scenario agent (e.g. RFP
+	// Drafter) on this same provider; `resetChat()` alone only clears the
+	// transcript, leaving that stale agent selected so the greeting shows the
+	// wrong (often starter-less) agent. `resetAgentToRovo()` restores the default
+	// Rovo agent (it early-returns when already on Rovo, so it can't clear the
+	// chat on its own), and `resetChat()` always rewinds to the greeting.
+	const resetRovoSurface = useCallback(() => {
+		resetAgentToRovo();
+		resetChat();
+	}, [resetAgentToRovo, resetChat]);
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		if (nextSelectedId === "card" && selectedId !== "card") {
 			restartCardKanban();
@@ -80,27 +92,24 @@ function AsxGallery(): React.ReactElement {
 		if (nextSelectedId === "terminal" && selectedId !== "terminal") {
 			restartTerminal();
 		}
-		// Open the sidebar chat at its greeting rather than inheriting whatever
-		// conversation the shared ASX provider is holding (e.g. from the Kanban
-		// or Card Kanban demos).
 		if (nextSelectedId === "rovo" && selectedId !== "rovo") {
-			resetChat();
+			resetRovoSurface();
 		}
 		setSelectedId(nextSelectedId);
-	}, [resetChat, restartCardKanban, restartTerminal, selectedId]);
+	}, [resetRovoSurface, restartCardKanban, restartTerminal, selectedId]);
 	// The gallery Reset control remounts the selected stage's view, but the
 	// terminal demo's state is hoisted here (in `useTerminalDemo`), so a remount
 	// alone won't rewind it. Reset it explicitly when the terminal is active. The
-	// sidebar chat's state lives in the shared provider (not the remounted view),
-	// so reset it here too.
+	// sidebar chat's agent + transcript live in the shared provider (not the
+	// remounted view), so reset those here too.
 	const handleReset = useCallback((item: GalleryItem) => {
 		if (item.id === "terminal") {
 			restartTerminal();
 		}
 		if (item.id === "rovo") {
-			resetChat();
+			resetRovoSurface();
 		}
-	}, [resetChat, restartTerminal]);
+	}, [resetRovoSurface, restartTerminal]);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
