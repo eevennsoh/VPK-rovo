@@ -94,6 +94,9 @@ test("Queue stage hosts Jira chrome around ASX-local session navigation", () => 
 	assert.match(QUEUE_STAGE_SOURCE, /question\?\.options\.find\(\(option\) => option\.id === selectedValue\)\?\.label \?\? selectedValue/u);
 	assert.match(QUEUE_STAGE_SOURCE, /issueKey: session\.issueKey,/u);
 	assert.match(QUEUE_STAGE_SOURCE, /issueSummary: session\.issueSummary,/u);
+	assert.match(QUEUE_STAGE_SOURCE, /function toJiraSidebarSessionItem\(session: AsxQueueSession\)/u);
+	assert.match(QUEUE_STAGE_SOURCE, /orderedSessions\.map\(toJiraSidebarSessionItem\)/u);
+	assert.match(QUEUE_STAGE_SOURCE, /orderedSessions: orderedSidebarSessions,/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-101",/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /relativeTime/u);
 	assert.doesNotMatch(QUEUE_SESSIONS_SOURCE, /relativeTime/u);

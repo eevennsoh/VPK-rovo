@@ -14,6 +14,7 @@ import {
 	getAsxQueueAgent,
 	type AsxQueueJiraColumn,
 	type AsxQueueLayoutMode,
+	type AsxQueueSession,
 	type AsxQueueSortMode,
 } from "../data/queue-sessions";
 import {
@@ -30,6 +31,26 @@ import {
 } from "../lib/queue-session-state";
 import { QueueConversationWorkspace } from "./queue-conversation-workspace";
 
+function toJiraSidebarSessionItem(session: AsxQueueSession): JiraSidebarSessionItem {
+	const agent = getAsxQueueAgent(session.agentId);
+	return {
+		agentAvatarSrc: agent.avatarSrc,
+		agentName: agent.name,
+		branch: session.branch,
+		checks: session.checks,
+		commit: session.commit,
+		host: session.host,
+		id: session.id,
+		issueKey: session.issueKey,
+		issueSummary: session.issueSummary,
+		pullRequestNumber: session.pullRequestNumber,
+		repository: session.repository,
+		status: session.status,
+		title: session.title,
+		worktreePath: session.worktreePath,
+	};
+}
+
 export function QueueStage(): React.ReactElement {
 	const [sessions, setSessions] = useState(() => createInitialQueueSessions(ASX_QUEUE_SESSION_SEEDS));
 	const [activeSessionId, setActiveSessionId] = useState(ASX_QUEUE_SESSION_SEEDS[0]?.id ?? "");
@@ -38,6 +59,10 @@ export function QueueStage(): React.ReactElement {
 	const [sortMode, setSortMode] = useState<AsxQueueSortMode>("manual");
 	const orderedSessions = useMemo(() => sortQueueSessions(sessions, sortMode), [sessions, sortMode]);
 	const groupedSessions = useMemo(() => groupQueueSessionsBySpace(orderedSessions), [orderedSessions]);
+	const orderedSidebarSessions = useMemo(
+		() => orderedSessions.map(toJiraSidebarSessionItem),
+		[orderedSessions],
+	);
 	const pinnedSessionIds = useMemo(
 		() => new Set(sessions.filter((session) => session.isPinned).map((session) => session.id)),
 		[sessions],
@@ -49,25 +74,7 @@ export function QueueStage(): React.ReactElement {
 		return Object.fromEntries(
 			Object.entries(groupedSessions).map(([spaceId, spaceSessions]) => [
 				spaceId,
-				spaceSessions.map((session) => {
-					const agent = getAsxQueueAgent(session.agentId);
-					return {
-						agentAvatarSrc: agent.avatarSrc,
-						agentName: agent.name,
-						branch: session.branch,
-						checks: session.checks,
-						commit: session.commit,
-						host: session.host,
-						id: session.id,
-						issueKey: session.issueKey,
-						issueSummary: session.issueSummary,
-						pullRequestNumber: session.pullRequestNumber,
-						repository: session.repository,
-						status: session.status,
-						title: session.title,
-						worktreePath: session.worktreePath,
-					};
-				}),
+				spaceSessions.map(toJiraSidebarSessionItem),
 			]),
 		);
 	}, [groupedSessions]);
@@ -161,6 +168,7 @@ export function QueueStage(): React.ReactElement {
 							onSortModeChange: setSortMode,
 							onStopSession: handleStopSession,
 							onTogglePinSession: handleTogglePinSession,
+							orderedSessions: orderedSidebarSessions,
 							pinnedSessionIds,
 							sessionsBySpaceId,
 							sortMode,

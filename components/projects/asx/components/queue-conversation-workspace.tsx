@@ -109,6 +109,7 @@ function QueueSessionContextBar({
 			id: "jira-column",
 			label: `Move to ${session.jiraColumn}`,
 			icon: <ProjectStatusIcon label="" size="small" />,
+			onSelect: () => onJiraColumnChange(session.jiraColumn),
 			content: (
 				<ContextBarPill
 					className="gap-2 pr-2"

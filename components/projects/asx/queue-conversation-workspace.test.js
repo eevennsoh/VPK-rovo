@@ -43,6 +43,7 @@ test("completed Queue sessions render the appropriate context above the composer
 	assert.match(WORKSPACE_SOURCE, /aria-label=\{`Move Jira issue to \$\{session\.jiraColumn\}`\}[\s\S]*onClick=\{\(\) => onJiraColumnChange\(session\.jiraColumn\)\}[\s\S]*size="compact"/u);
 	assert.match(WORKSPACE_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="Choose Jira column"[\s\S]*size="icon-compact"/u);
 	assert.match(WORKSPACE_SOURCE, /<Lozenge className="pointer-events-none" variant=\{QUEUE_JIRA_COLUMN_VARIANTS\[column\]\}>/u);
+	assert.match(WORKSPACE_SOURCE, /id: "jira-column",[\s\S]*onSelect: \(\) => onJiraColumnChange\(session\.jiraColumn\)/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag"/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /selected=\{column === session\.jiraColumn\}/u);
 	assert.match(WORKSPACE_SOURCE, /onSelect=\{\(\) => onJiraColumnChange\(column\)\}/u);

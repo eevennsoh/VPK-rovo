@@ -100,6 +100,7 @@ export interface JiraSidebarSessionNavigation {
 	onSortModeChange: (mode: JiraSidebarSortMode) => void;
 	onStopSession: (sessionId: string) => void;
 	onTogglePinSession: (sessionId: string) => void;
+	orderedSessions: readonly JiraSidebarSessionItem[];
 	pinnedSessionIds: ReadonlySet<string>;
 	sessionsBySpaceId: Readonly<Record<string, readonly JiraSidebarSessionItem[]>>;
 	sortMode: JiraSidebarSortMode;
@@ -585,7 +586,7 @@ export function JiraSidebar({
 			return next;
 		});
 	};
-	const allSessions = STARRED_PROJECTS.flatMap((project) => sessionNavigation?.sessionsBySpaceId[project.id] ?? []);
+	const allSessions = sessionNavigation?.orderedSessions ?? [];
 	const pinnedSessions = sessionNavigation
 		? allSessions.filter((session) => sessionNavigation.pinnedSessionIds.has(session.id))
 		: [];

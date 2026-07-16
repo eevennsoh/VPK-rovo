@@ -125,6 +125,9 @@ test("manual Queue sorting makes the session row draggable without a handle icon
 
 test("pinned and flattened sessions render once without project rows", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /pinnedSessionIds: ReadonlySet<string>;/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /orderedSessions: readonly JiraSidebarSessionItem\[\];/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /const allSessions = sessionNavigation\?\.orderedSessions \?\? \[\];/u);
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /STARRED_PROJECTS\.flatMap/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /allSessions\.filter\(\(session\) => sessionNavigation\.pinnedSessionIds\.has\(session\.id\)\)/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /title="Pinned"/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /\{pinnedSessions\.map\(renderSessionRow\)\}/u);
