@@ -20,20 +20,22 @@ export interface JiraForYouProps {
 	tabs?: readonly JiraForYouTab[];
 }
 
-function filterSectionsByQuery(
+function filterSections(
 	sections: readonly JiraForYouSection[],
+	activeTabId: string,
 	query: string,
 ): readonly JiraForYouSection[] {
 	const normalizedQuery = query.trim().toLowerCase();
-	if (!normalizedQuery) {
-		return sections;
-	}
+	const matchesTab = (item: JiraForYouItem) =>
+		activeTabId === "all" || (item.tabs?.includes(activeTabId) ?? false);
+	const matchesQuery = (item: JiraForYouItem) =>
+		!normalizedQuery || item.title.toLowerCase().includes(normalizedQuery);
 
 	return sections
 		.map((section) => ({
 			...section,
-			items: section.items.filter((item) =>
-				item.title.toLowerCase().includes(normalizedQuery),
+			items: section.items.filter(
+				(item) => matchesTab(item) && matchesQuery(item),
 			),
 		}))
 		.filter((section) => section.items.length > 0);
@@ -48,8 +50,8 @@ export function JiraForYou({
 	const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
 	const [query, setQuery] = useState("");
 	const visibleSections = useMemo(
-		() => filterSectionsByQuery(sections, query),
-		[sections, query],
+		() => filterSections(sections, activeTabId, query),
+		[sections, activeTabId, query],
 	);
 
 	return (
@@ -73,7 +75,9 @@ export function JiraForYou({
 				</div>
 			) : (
 				<p className="py-8 text-center text-sm text-text-subtlest">
-					No work items match “{query}”.
+					{query.trim()
+						? `No work items match “${query}”.`
+						: "No work items in this view."}
 				</p>
 			)}
 		</div>

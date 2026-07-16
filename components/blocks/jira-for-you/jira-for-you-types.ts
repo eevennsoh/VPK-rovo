@@ -21,6 +21,11 @@ export interface JiraForYouItem {
 	status?: string;
 	/** When true, the hover actions include a "Stop" control. */
 	isRunning?: boolean;
+	/**
+	 * Filter-tab ids this item belongs to (besides "all", which always matches).
+	 * Drives which items are shown when a tab other than "All" is selected.
+	 */
+	tabs?: readonly string[];
 }
 
 export interface JiraForYouSection {
