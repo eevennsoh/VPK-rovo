@@ -15,8 +15,6 @@ import {
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
 import {
-	JIRA_CLI_DISPATCH_PLACEHOLDER,
-	JIRA_CLI_FOOTER_HINTS,
 	JIRA_CLI_TITLE,
 	JIRA_CLI_WORKSPACE,
 	TERMINAL_SHELL_PROMPT,
@@ -136,8 +134,6 @@ export function TerminalStageJiraPane({
 	const previewItems = foldBoardPreview(items, activeStep, revealCount);
 	const sections = getBoardSections(previewItems);
 	const counts = getBoardCounts(previewItems);
-	const isReplyTyping = dashboardVisible && activeStep?.kind === "type" && activeStep.pane === "left";
-	const dispatchDraft = isReplyTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
 	const rowCount = sections.needsInput.length + sections.working.length + sections.backlog.length + sections.done.length;
 
 	useEffect(() => {
@@ -171,13 +167,6 @@ export function TerminalStageJiraPane({
 				{TERMINAL_SECTION_ORDER.map(({ key, label }) => (
 					<JiraSection key={key} label={label} items={sections[key]} selectedKey={selectedKey} />
 				))}
-			</div>
-			<div className="shrink-0 border-t border-zinc-800 px-4 py-3">
-				<div className="flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-zinc-300">
-					<span>{dispatchDraft || JIRA_CLI_DISPATCH_PLACEHOLDER}</span>
-					<BlinkCursor />
-				</div>
-				<p className="mt-1 text-[11px] text-zinc-500">{JIRA_CLI_FOOTER_HINTS}</p>
 			</div>
 		</motion.div>
 	);
