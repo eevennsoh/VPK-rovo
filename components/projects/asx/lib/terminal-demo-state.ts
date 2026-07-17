@@ -118,8 +118,8 @@ export function applyBoardEvent(
 
 /** Formats a submitted prompt draft into its transcript line. Documented convention:
  * the right pane (Claude Code) echoes prompts with a `> ` shell-style prefix; the left
- * pane (Jira CLI shell / dispatch line) echoes the command/reply verbatim. Both use
- * tone "bold" so submitted commands read distinctly from tool output. */
+ * pane only echoes the initial Jira shell command verbatim. Both use tone "bold" so
+ * submitted commands read distinctly from tool output. */
 function formatSubmittedLine(pane: "left" | "right", text: string): TerminalLine {
 	return pane === "right" ? [{ text: `> ${text}`, tone: "bold" }] : [{ text, tone: "bold" }];
 }

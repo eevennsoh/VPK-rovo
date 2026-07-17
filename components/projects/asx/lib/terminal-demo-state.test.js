@@ -141,6 +141,16 @@ test("script integrity: exactly one click-trigger beat and it is the split beat"
 	assert.equal(clickBeats[0].id, "split");
 });
 
+test("script integrity: beat 7 onward sends typed input through Claude Code", async () => {
+	const harness = await loadTerminalStateHarness();
+	const laterInputSteps = harness.TERMINAL_DEMO_BEATS.slice(6).flatMap((beat) => (
+		beat.steps.filter((step) => step.kind === "type" || step.kind === "submit")
+	));
+
+	assert.ok(laterInputSteps.length > 0);
+	assert.ok(laterInputSteps.every((step) => step.pane === "right"));
+});
+
 test("script integrity: final board counts and every done item has a PR", async () => {
 	const harness = await loadTerminalStateHarness();
 	const final = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, harness.TERMINAL_DEMO_BEATS.length - 1);
