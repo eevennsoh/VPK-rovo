@@ -11,6 +11,7 @@ import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
 import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
+import { AgentSessionStage } from "./components/agent-session-stage";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
@@ -32,9 +33,9 @@ import { cn } from "@/lib/utils";
 // agent sessions experience. Selecting a card reveals its design in the gallery
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
 // Kanban, List, and Queue show their full Jira experiences, For you shows the
-// personalized jira-for-you feed, and Rovo reuses the sidebar-chat project as an
-// in-stage chat panel. The remaining patterns fall back to a large title
-// placeholder.
+// personalized jira-for-you feed, Rovo reuses the sidebar-chat project as an
+// in-stage chat panel, and Agent session shows the jira-agent-session block. The
+// remaining patterns fall back to a large title placeholder.
 // ---------------------------------------------------------------------------
 
 function ListStage(): React.ReactElement {
@@ -80,6 +81,7 @@ function renderAsxItem(
 	if (item.id === "terminal") return <TerminalStage controller={terminalController} />;
 	if (item.id === "rovo") return <RovoStage />;
 	if (item.id === "for-you") return <ForYouStage dockOpen={dockOpen} />;
+	if (item.id === "agent-session") return <AgentSessionStage />;
 
 	return (
 		<div className="flex h-full w-full items-center justify-center">
@@ -147,8 +149,23 @@ function AsxGallery(): React.ReactElement {
 			<TerminalControls controller={terminalController} />
 		) : null;
 
+	// The Terminal pattern is a full dark-mode experience: the terminal frame is
+	// already dark (hardcoded zinc), so we flip the surrounding gallery chrome
+	// (top bar, dock, background) to dark too via ADS subtree theming. Every
+	// semantic token in the subtree resolves to its dark value — no `dark:`
+	// utilities or hardcoded colors. The dock strip is `position: fixed` but
+	// still a DOM descendant of this root, so the theme cascades to it.
+	const isTerminal = selectedId === "terminal";
+	const subtreeThemeProps = isTerminal
+		? {
+				"data-subtree-theme": "",
+				"data-color-mode": "dark",
+				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+			}
+		: {};
+
 	return (
-		<div className="relative h-dvh w-full overflow-hidden bg-surface">
+		<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 			<Gallery
 				items={ASX_GALLERY_ITEMS}
 				title="Agent Sessions Experience"
