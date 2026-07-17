@@ -235,6 +235,13 @@ export const UI_ACTION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"alert-demo-sizes": dynamic(
+		() =>
+			import("../../demos/ui/alert-demo").then((mod) => ({
+				default: mod.AlertDemoSizes,
+			})),
+		{ ssr: false },
+	),
 	"alert-demo-destructive": dynamic(
 		() =>
 			import("../../demos/ui/alert-demo").then((mod) => ({

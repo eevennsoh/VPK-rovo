@@ -24,6 +24,13 @@ import { Icon } from "@/components/ui/icon";
         description:
           "Visual style variant (`default` maps to information, and `destructive` is kept as an alias for backward compatibility).",
       },
+      {
+        name: "size",
+        type: '"default" | "small"',
+        default: '"default"',
+        description:
+          "Density of the alert. `default` uses 16px padding, 14px text, and a 16px icon; `small` uses 12px padding, 12px text, and a 12px icon.",
+      },
     ],
     subComponents: [
       { name: "AlertTitle", description: "Primary heading text." },
@@ -55,6 +62,11 @@ import { Icon } from "@/components/ui/icon";
         title: "All variants",
         description: "All alert variant types side by side.",
         demoSlug: "alert-demo-appearances",
+      },
+      {
+        title: "Sizes",
+        description: "Default and small density (12px icon and text).",
+        demoSlug: "alert-demo-sizes",
       },
       {
         title: "Destructive alias",
