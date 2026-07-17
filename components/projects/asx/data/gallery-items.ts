@@ -11,7 +11,7 @@ import type { GalleryItem } from "@/components/blocks/gallery";
  * project verbatim as an in-stage sidebar chat panel. For you shows the
  * personalized `jira-for-you` feed. The others are title placeholders until
  * their design is added. Order: Card Kanban, Kanban, List, Queue, Work item,
- * Terminal, Rovo, For you.
+ * Terminal, Rovo, For you, Agent session.
  */
 export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
@@ -60,6 +60,12 @@ export const ASX_GALLERY_ITEMS: readonly GalleryItem[] = [
 		id: "for-you",
 		title: "For you",
 		description: "A personalized feed of agent-session updates and suggestions.",
+		size: "1x1",
+	},
+	{
+		id: "agent-session",
+		title: "Agent session",
+		description: "A single agent session viewed end to end.",
 		size: "1x1",
 	},
 ];
