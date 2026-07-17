@@ -5173,7 +5173,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 398,
+			"manifestEntryCount": 399,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5209,7 +5209,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 90,
+				"entryCount": 91,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5420,6 +5420,12 @@
 						"slug": "html-selector",
 						"name": "HTML Selector",
 						"importPath": "@/components/blocks/html-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-agent-session",
+						"name": "Jira Agent Session",
+						"importPath": "@/components/blocks/jira-agent-session"
 					},
 					{
 						"category": "blocks",
