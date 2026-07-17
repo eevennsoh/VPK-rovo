@@ -296,7 +296,7 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /transform: "translateX\(100%\)"/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Detail<\/PanelTitle>/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Details<\/PanelTitle>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelActionClose label="Close detail panel" onClick=\{onClose\} \/>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /title="Session"/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /title="Development"/u);
