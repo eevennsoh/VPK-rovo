@@ -1,9 +1,14 @@
-import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type {
+	KeyboardEvent as ReactKeyboardEvent,
+	MouseEvent,
+	PointerEvent as ReactPointerEvent,
+} from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clamp } from "@/lib/utils";
 
 const COLLAPSE_THRESHOLD_OFFSET = 40;
 const COLLAPSE_VISUAL_MIN_WIDTH = 80;
+const KEYBOARD_RESIZE_STEP = 10;
 
 interface UseSidebarResizeOptions {
 	defaultWidth: number;
@@ -21,10 +26,13 @@ interface UseSidebarResizeOptions {
 interface UseSidebarResizeResult {
 	isResizeHandleHovered: boolean;
 	isResizing: boolean;
+	maxWidth: number;
 	onResizeHandleDoubleClick: (event: MouseEvent) => void;
+	onResizeHandleKeyDown: (event: ReactKeyboardEvent) => void;
 	onResizeHandlePointerDown: (event: ReactPointerEvent) => void;
 	onResizeHandlePointerEnter: () => void;
 	onResizeHandlePointerLeave: () => void;
+	minWidth: number;
 	sidebarWidth: number;
 	willCollapse: boolean;
 }
@@ -80,6 +88,38 @@ export function useSidebarResize({
 		[sidebarWidth],
 	);
 
+	const onResizeHandleKeyDown = useCallback(
+		(event: ReactKeyboardEvent) => {
+			let nextWidth: number;
+
+			switch (event.key) {
+				case "ArrowLeft":
+					nextWidth = sidebarWidth - KEYBOARD_RESIZE_STEP * deltaSign;
+					break;
+				case "ArrowRight":
+					nextWidth = sidebarWidth + KEYBOARD_RESIZE_STEP * deltaSign;
+					break;
+				case "Home":
+					nextWidth = minWidth;
+					break;
+				case "End":
+					nextWidth = maxWidth;
+					break;
+				default:
+					return;
+			}
+
+			event.preventDefault();
+			event.stopPropagation();
+			const clampedWidth = clamp(nextWidth, minWidth, maxWidth);
+			setSidebarWidth(clampedWidth);
+			lastValidWidthRef.current = clampedWidth;
+			willCollapseRef.current = false;
+			setWillCollapse(false);
+		},
+		[deltaSign, maxWidth, minWidth, sidebarWidth],
+	);
+
 	useEffect(() => {
 		if (!isResizing) {
 			return;
@@ -131,10 +171,13 @@ export function useSidebarResize({
 	return {
 		isResizeHandleHovered,
 		isResizing,
+		maxWidth,
 		onResizeHandleDoubleClick,
+		onResizeHandleKeyDown,
 		onResizeHandlePointerDown,
 		onResizeHandlePointerEnter,
 		onResizeHandlePointerLeave,
+		minWidth,
 		sidebarWidth,
 		willCollapse,
 	};
