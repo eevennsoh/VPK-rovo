@@ -192,7 +192,31 @@ test("chat history row actions are scoped to the hovered row", () => {
 
 	assert.match(source, /group\/chat-history-thread relative rounded-lg/u);
 	assert.match(source, /group-hover\/chat-history-thread:opacity-100/u);
+	assert.match(source, /threadActions \? \([\s\S]*group-hover\/chat-history-thread:pointer-events-auto/u);
+	assert.match(source, /threadActions && "group-hover\/chat-history-thread:grid-cols/u);
+	assert.match(source, /getThreadActions\?: \(thread: RovoAppThread\) => ReactNode;/u);
 	assert.doesNotMatch(source, /group-hover:opacity-100/u);
+});
+
+test("chat history supports an opt-in pinned thread group", () => {
+	const source = readProjectFile("components/projects/sidebar-chat/components/chat-history-drawer.tsx");
+	const pinnedSectionIndex = source.indexOf('aria-label="Pinned"');
+	const chatsHeadingIndex = source.indexOf("<ChatHistorySectionHeading", pinnedSectionIndex);
+	const chatsRegionIndex = source.indexOf('aria-label="Chats"', chatsHeadingIndex);
+	const chatsRegionEndIndex = source.indexOf("</section>", chatsRegionIndex);
+	const chatsRegionSource = source.slice(chatsRegionIndex, chatsRegionEndIndex);
+
+	assert.match(source, /pinnedThreadIds\?: ReadonlySet<string>;/u);
+	assert.match(source, /threads\.filter\(\(thread\) => pinnedThreadIds\.has\(thread\.id\)\)/u);
+	assert.match(source, /threads\.filter\(\(thread\) => !pinnedThreadIds\.has\(thread\.id\)\)/u);
+	assert.notEqual(pinnedSectionIndex, -1);
+	assert.ok(pinnedSectionIndex < chatsHeadingIndex);
+	assert.ok(chatsHeadingIndex < chatsRegionIndex);
+	assert.match(source, />\s*Pinned\s*<\/div>/u);
+	assert.match(source, /pinnedThreads\.map\(renderThread\)/u);
+	assert.match(source, /unpinnedThreads\.map\(renderThread\)/u);
+	assert.doesNotMatch(chatsRegionSource, /pinnedThreads\.map\(renderThread\)/u);
+	assert.match(chatsRegionSource, /unpinnedThreads\.map\(renderThread\)/u);
 });
 
 test("chat history drawer matches the Figma conversation-list content structure", () => {

@@ -1,5 +1,6 @@
 import { getRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { STARRED_PROJECTS } from "@/components/blocks/product-sidebar/data/jira-navigation";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
@@ -326,6 +327,28 @@ export function createAsxQueueHistoryThreads(
 			visibility: "private",
 		};
 	});
+}
+
+export function createAsxQueueSidebarSessionItem(
+	session: AsxQueueSession,
+): JiraSidebarSessionItem {
+	const agent = getAsxQueueAgent(session.agentId);
+	return {
+		agentAvatarSrc: agent.avatarSrc,
+		agentName: agent.name,
+		branch: session.branch,
+		checks: session.checks,
+		commit: session.commit,
+		host: session.host,
+		id: session.id,
+		issueKey: session.issueKey,
+		issueSummary: session.issueSummary,
+		pullRequestNumber: session.pullRequestNumber,
+		repository: session.repository,
+		status: session.status,
+		title: session.title,
+		worktreePath: session.worktreePath,
+	};
 }
 
 export function getAsxQueueAgent(agentId: string): RovoAgentProfile {

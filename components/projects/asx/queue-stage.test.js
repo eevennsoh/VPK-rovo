@@ -34,6 +34,18 @@ const QUEUE_ENVIRONMENT_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-environment-panel.tsx"),
 	"utf8",
 );
+const GALLERY_SELECTED_STAGE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../blocks/gallery/components/gallery-selected-stage.tsx"),
+	"utf8",
+);
+const JIRA_SIDEBAR_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../blocks/product-sidebar/variants/jira.tsx"),
+	"utf8",
+);
+const CHAT_HISTORY_DRAWER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../sidebar-chat/components/chat-history-drawer.tsx"),
+	"utf8",
+);
 const PROJECT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../page.tsx"), "utf8");
 const PRODUCT_SIDEBAR_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/product-sidebar/page.tsx"),
@@ -108,7 +120,22 @@ test("ASX Rovo stage matches the sidebar chat project dimensions", () => {
 });
 
 test("ASX Rovo history reuses the three Queue sessions and swaps agent plus transcript", () => {
+	assert.match(ROVO_STAGE_SOURCE, /useState<AsxQueueSession\[\]>\(\(\) => \([\s\S]*ASX_QUEUE_SESSION_SEEDS\.map/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(historySessions\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /description: <JiraSessionDescription session=\{session\} \/>/u);
+	assert.match(ROVO_STAGE_SOURCE, /meta: <JiraSessionLifecycle status=\{session\.status\} \/>/u);
+	assert.match(ROVO_STAGE_SOURCE, /session\.status === "awaiting-input"/u);
+	assert.match(ROVO_STAGE_SOURCE, /Awaiting user response/u);
+	assert.match(ROVO_STAGE_SOURCE, /<AnimatedDots \/>/u);
+	assert.match(ROVO_STAGE_SOURCE, /: <JiraSessionLabel session=\{session\} \/>/u);
+	assert.match(ROVO_STAGE_SOURCE, /getThreadPresentation,/u);
+	assert.match(ROVO_STAGE_SOURCE, /<JiraSessionRowActions/u);
+	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionPinned\(sessions, threadId, !session\.isPinned\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /stopQueueSession\(sessions, threadId\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /archiveQueueSession\(/u);
+	assert.match(ROVO_STAGE_SOURCE, /getThreadActions,/u);
+	assert.match(ROVO_STAGE_SOURCE, /pinnedThreadIds,/u);
 	assert.match(ROVO_STAGE_SOURCE, /chatHistory=\{chatHistory\}/u);
 	assert.match(
 		ROVO_STAGE_SOURCE,
@@ -116,7 +143,16 @@ test("ASX Rovo history reuses the three Queue sessions and swaps agent plus tran
 	);
 	assert.match(ROVO_STAGE_SOURCE, /resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*resetChat\(\);/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueHistoryThreads/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueSidebarSessionItem/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /type: "question-card"/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraSessionLabel/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraSessionDescription/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraSessionLifecycle/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraSessionRowActions/u);
+	assert.match(CHAT_HISTORY_DRAWER_SOURCE, /presentation\?\.description/u);
+	assert.match(CHAT_HISTORY_DRAWER_SOURCE, /presentation\?\.meta/u);
+	assert.match(CHAT_HISTORY_DRAWER_SOURCE, />\s*Pinned\s*<\/div>/u);
+	assert.match(GALLERY_SELECTED_STAGE_SOURCE, /key=\{`\$\{item\.id\}:\$\{resetKey\}`\}/u);
 });
 
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {
@@ -127,10 +163,10 @@ test("Queue stage hosts Jira chrome around ASX-local session navigation", () => 
 	assert.match(QUEUE_STAGE_SOURCE, /createInitialQueueSessions\(ASX_QUEUE_SESSION_SEEDS\)/u);
 	assert.match(QUEUE_STAGE_SOURCE, /appendQueueSessionUserMessage/u);
 	assert.match(QUEUE_STAGE_SOURCE, /question\?\.options\.find\(\(option\) => option\.id === selectedValue\)\?\.label \?\? selectedValue/u);
-	assert.match(QUEUE_STAGE_SOURCE, /issueKey: session\.issueKey,/u);
-	assert.match(QUEUE_STAGE_SOURCE, /issueSummary: session\.issueSummary,/u);
-	assert.match(QUEUE_STAGE_SOURCE, /function toJiraSidebarSessionItem\(session: AsxQueueSession\)/u);
-	assert.match(QUEUE_STAGE_SOURCE, /orderedSessions\.map\(toJiraSidebarSessionItem\)/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: session\.issueKey,/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /issueSummary: session\.issueSummary,/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /function createAsxQueueSidebarSessionItem/u);
+	assert.match(QUEUE_STAGE_SOURCE, /orderedSessions\.map\(createAsxQueueSidebarSessionItem\)/u);
 	assert.match(QUEUE_STAGE_SOURCE, /orderedSessions: orderedSidebarSessions,/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-101",/u);
 	assert.doesNotMatch(QUEUE_STAGE_SOURCE, /relativeTime/u);

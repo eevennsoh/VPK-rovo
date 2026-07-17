@@ -87,6 +87,7 @@ import { ArtifactResultCard, type ArtifactResult } from "./components/artifact-r
 import { AgentResultCard, isGeneratedAgentResult } from "./components/agent-result-card";
 import { StreamingThinkingIndicator } from "./components/streaming-thinking-indicator";
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
+import { AwaitingUserResponseIndicator } from "@/components/projects/shared/components/chat-messages";
 import { chatStyles } from "./data/styles";
 import { cn } from "@/lib/utils";
 import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
@@ -160,7 +161,10 @@ export type ChatPanelHistoryController = Pick<
 	| "activeThreadId"
 	| "cancelThreadRun"
 	| "deleteThread"
+	| "getThreadActions"
+	| "getThreadPresentation"
 	| "onNewChat"
+	| "pinnedThreadIds"
 	| "selectThread"
 	| "threads"
 	| "threadsLoaded"
@@ -349,6 +353,8 @@ interface ChatPanelProps {
 	 * Default false leaves other consumers unchanged.
 	 */
 	markAnsweredQuestionTraces?: boolean;
+	/** Opt-in Queue-style status shown above a docked clarification card. */
+	showAwaitingIndicator?: boolean;
 }
 
 const COMPACT_CHAT_WIDTH_MAX = 520;
@@ -500,6 +506,7 @@ export default function ChatPanel({
 	interceptClarificationAnswers = false,
 	composerMentionSources,
 	markAnsweredQuestionTraces = false,
+	showAwaitingIndicator = false,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
 		resetChat,
@@ -1817,6 +1824,12 @@ export default function ChatPanel({
 						phaseProps={thinking.reasoningPhaseProps}
 					/>
 				) : null}
+				{!thinking.shouldShowPreloader &&
+				!thinking.shouldShowThinkingStatus &&
+				showAwaitingIndicator &&
+				shouldShowQuestionCard ? (
+					<AwaitingUserResponseIndicator />
+				) : null}
 				{hasMessages ? <div ref={scrollSpacerRef} aria-hidden style={{ height: 0, flexShrink: 0 }} /> : null}
 			</ConversationContent>
 			<ConversationScrollButton className="z-10 transition-all" />
@@ -1916,8 +1929,11 @@ export default function ChatPanel({
 					cancelThreadRun={chatHistory.cancelThreadRun}
 					closeHistory={closeHistory}
 					deleteThread={chatHistory.deleteThread}
+					getThreadActions={chatHistory.getThreadActions}
+					getThreadPresentation={chatHistory.getThreadPresentation}
 					isHistoryOpen={isHistoryOpen}
 					onNewChat={chatHistory.onNewChat}
+					pinnedThreadIds={chatHistory.pinnedThreadIds}
 					selectThread={chatHistory.selectThread}
 					threads={chatHistory.threads}
 					threadsLoaded={chatHistory.threadsLoaded}

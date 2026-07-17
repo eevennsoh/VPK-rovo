@@ -96,6 +96,7 @@ test("Jira session lifecycle metadata reuses the established Rovo visuals", () =
 });
 
 test("Jira session rows expose pin and lifecycle actions", () => {
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraSessionRowActions/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /onTogglePinSession: \(sessionId: string\) => void;/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /onStopSession: \(sessionId: string\) => void;/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /onArchiveSession: \(sessionId: string\) => void;/u);

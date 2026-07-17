@@ -2,14 +2,28 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
+import {
+	JiraSessionDescription,
+	JiraSessionLabel,
+	JiraSessionLifecycle,
+	JiraSessionRowActions,
+} from "@/components/blocks/product-sidebar/variants/jira";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { Shimmer } from "@/components/ui-custom/shimmer";
 import ChatPanel, {
 	type ChatPanelHistoryController,
 } from "@/components/projects/sidebar-chat/page";
 import {
 	ASX_QUEUE_SESSION_SEEDS,
+	createAsxQueueSidebarSessionItem,
 	createAsxQueueHistoryThreads,
 	type AsxQueueSession,
 } from "../data/queue-sessions";
+import {
+	archiveQueueSession,
+	setQueueSessionPinned,
+	stopQueueSession,
+} from "../lib/queue-session-state";
 
 function ignoreThreadRun(): Promise<void> {
 	return Promise.resolve();
@@ -53,6 +67,32 @@ export function RovoStage(): React.ReactElement {
 		() => createAsxQueueHistoryThreads(historySessions),
 		[historySessions],
 	);
+	const historySessionItems = useMemo(() => new Map(
+		historySessions.map((session) => [session.id, createAsxQueueSidebarSessionItem(session)]),
+	), [historySessions]);
+	const pinnedThreadIds = useMemo(() => new Set(
+		historySessions.filter((session) => session.isPinned).map((session) => session.id),
+	), [historySessions]);
+	const activeHistorySession = historySessions.find((session) => session.id === activeHistorySessionId);
+	const getThreadPresentation = useCallback<
+		NonNullable<ChatPanelHistoryController["getThreadPresentation"]>
+	>((thread) => {
+		const session = historySessionItems.get(thread.id);
+		if (!session) return undefined;
+
+		return {
+			description: <JiraSessionDescription session={session} />,
+			meta: <JiraSessionLifecycle status={session.status} />,
+			title: session.status === "awaiting-input" ? (
+				<span className="flex min-w-0 items-baseline">
+					<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
+						Awaiting user response
+					</Shimmer>
+					<AnimatedDots />
+				</span>
+			) : <JiraSessionLabel session={session} />,
+		};
+	}, [historySessionItems]);
 
 	const handleNewChat = useCallback(() => {
 		setActiveHistorySessionId(null);
@@ -75,11 +115,60 @@ export function RovoStage(): React.ReactElement {
 		if (activeHistorySessionId === threadId) handleNewChat();
 		return Promise.resolve();
 	}, [activeHistorySessionId, handleNewChat]);
+	const handleTogglePinThread = useCallback((threadId: string) => {
+		setHistorySessions((sessions) => {
+			const session = sessions.find((item) => item.id === threadId);
+			return session
+				? setQueueSessionPinned(sessions, threadId, !session.isPinned)
+				: [...sessions];
+		});
+	}, []);
+	const handleStopThread = useCallback((threadId: string) => {
+		setHistorySessions((sessions) => stopQueueSession(sessions, threadId));
+	}, []);
+	const handleArchiveThread = useCallback((threadId: string) => {
+		const result = archiveQueueSession(
+			historySessions,
+			threadId,
+			activeHistorySessionId ?? "",
+		);
+		setHistorySessions(result.sessions);
+		if (activeHistorySessionId === threadId) {
+			if (result.activeSessionId) void handleSelectThread(result.activeSessionId);
+			else handleNewChat();
+		}
+	}, [activeHistorySessionId, handleNewChat, handleSelectThread, historySessions]);
+	const getThreadActions = useCallback<
+		NonNullable<ChatPanelHistoryController["getThreadActions"]>
+	>((thread) => {
+		const session = historySessionItems.get(thread.id);
+		if (!session) return null;
+
+		return (
+			<JiraSessionRowActions
+				isPinned={pinnedThreadIds.has(thread.id)}
+				onArchive={() => handleArchiveThread(thread.id)}
+				onStop={() => handleStopThread(thread.id)}
+				onTogglePin={() => handleTogglePinThread(thread.id)}
+				status={session.status}
+				title={session.status === "awaiting-input" ? "Awaiting user response" : session.title}
+			/>
+		);
+	}, [
+		handleArchiveThread,
+		handleStopThread,
+		handleTogglePinThread,
+		historySessionItems,
+		pinnedThreadIds,
+	]);
 	const chatHistory = useMemo<ChatPanelHistoryController>(() => ({
 		activeThreadId: activeHistorySessionId,
 		cancelThreadRun: ignoreThreadRun,
 		deleteThread: handleDeleteThread,
+		getThreadActions,
+		getThreadPresentation,
 		onNewChat: handleNewChat,
+		pinnedThreadIds,
 		selectThread: handleSelectThread,
 		threads: historyThreads,
 		threadsLoaded: true,
@@ -88,7 +177,10 @@ export function RovoStage(): React.ReactElement {
 		handleDeleteThread,
 		handleNewChat,
 		handleSelectThread,
+		getThreadActions,
+		getThreadPresentation,
 		historyThreads,
+		pinnedThreadIds,
 	]);
 
 	return (
@@ -98,6 +190,7 @@ export function RovoStage(): React.ReactElement {
 					chatHistory={chatHistory}
 					onClose={() => {}}
 					enableSmartWidgets
+					showAwaitingIndicator={activeHistorySession?.status === "awaiting-input"}
 					sendPromptOptions={{
 						smartGeneration: {
 							enabled: true,
