@@ -108,11 +108,11 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 	);
 }
 
-export function PriorityRowField({ value, onChange }: Readonly<{ value: PriorityValue; onChange: (next: PriorityValue) => void }>) {
+export function PriorityRowField({ value, onChange }: Readonly<{ value: PriorityValue | null; onChange: (next: PriorityValue) => void }>) {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger render={<DetailValueTrigger aria-label={`Change priority. Current priority: ${value}`} />}>
-				<PriorityLabel value={value} />
+			<DropdownMenuTrigger render={<DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
+				{value ? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56" positionerClassName="z-[502]" sideOffset={8}>
 				{PRIORITY_OPTIONS.map((option) => (

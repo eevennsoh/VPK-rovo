@@ -21,7 +21,20 @@
  * the backend does not model.
  */
 
-import type { WorkItemAttachment, WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
+import type { WorkItemAttachment, WorkItemChildItem, WorkItemData } from "@/app/contexts/context-work-item-modal";
+import {
+	advanceAgentPlanner,
+	createAgentPlannerState,
+	isPlannerProcessing,
+	prefillAgentPlannerProposal,
+	reduceAgentPlanner,
+	seedEmptyMetadataDraft,
+	seedMetadataDraft,
+	settleAgentPlanner,
+	type AgentPlannerAction,
+	type AgentPlannerMetadata,
+	type AgentPlannerState,
+} from "@/components/blocks/agent-sessions/data/planner-state";
 import {
 	LAUNCH_SCRIPT_ROTATION,
 	SESSION_SCRIPTS,
@@ -36,6 +49,8 @@ import {
 	reseedGeneratedNextSteps,
 	reseedGeneratedTldr,
 } from "@/components/blocks/agent-sessions/data/session-fixtures";
+
+export { countPendingPlannerFields } from "@/components/blocks/agent-sessions/data/planner-state";
 
 export const AGENT_SESSIONS_STATE_VERSION = 1 as const;
 /** Metronome cadence used by the React controller and the default timing math. */
@@ -136,6 +151,8 @@ export interface AgentSessionsState {
 	version: 1;
 	preset: AgentSessionsPreset;
 	contextResources: AgentSessionsContextResources;
+	metadata: AgentPlannerMetadata;
+	planner: AgentPlannerState;
 	comments: AgentSessionComment[];
 	sessions: AgentSession[];
 	activeSessionId: string | null;
@@ -176,7 +193,7 @@ export type AddContextResourceAction =
 	| { type: "add-context-resource"; kind: "link"; item: ContextLinkedItem };
 
 export type AgentSessionsAction =
-	| { type: "hydrate-preset"; preset: AgentSessionsPreset }
+	| { type: "hydrate-preset"; preset: AgentSessionsPreset; workItem: WorkItemData }
 	| { type: "launch-session"; agentId: string; agentName: string; agentAvatarSrc?: string; command?: string }
 	| { type: "tick"; deltaMs: number }
 	| { type: "settle-running" }
@@ -191,7 +208,8 @@ export type AgentSessionsAction =
 	| { type: "remove-context-resource"; kind: "attachment" | "subtask" | "link"; id: string }
 	| { type: "edit-context-text"; field: "title" | "description"; value: string }
 	| { type: "refresh-generated-context" }
-	| { type: "reset" };
+	| { type: "reset"; workItem: WorkItemData }
+	| AgentPlannerAction;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Deterministic display helpers
@@ -481,13 +499,25 @@ export function agentSessionsReducer(
 ): AgentSessionsState {
 	switch (action.type) {
 		case "hydrate-preset":
-			return hydratePreset(action.preset);
+			return hydratePreset(action.preset, action.workItem);
 		case "reset":
-			return hydratePreset(state.preset);
-		case "tick":
-			return advanceSessions(state, action.deltaMs);
-		case "settle-running":
-			return settleRunningSessions(state);
+			return hydratePreset(state.preset, action.workItem);
+		case "tick": {
+			const advanced = advanceSessions(state, action.deltaMs);
+			const planner = advanceAgentPlanner(advanced.planner, action.deltaMs);
+			const next = { ...advanced, planner };
+			return isPlannerProcessing(state.planner) && !isPlannerProcessing(planner)
+				? prefillAgentPlannerProposal(next)
+				: next;
+		}
+		case "settle-running": {
+			const settled = settleRunningSessions(state);
+			const planner = settleAgentPlanner(settled.planner);
+			const next = { ...settled, planner };
+			return isPlannerProcessing(state.planner) && !isPlannerProcessing(planner)
+				? prefillAgentPlannerProposal(next)
+				: next;
+		}
 		case "launch-session": {
 			const scriptId = LAUNCH_SCRIPT_ROTATION[state.nextOrder % LAUNCH_SCRIPT_ROTATION.length];
 			const id = `session-${state.nextIdCounter}`;
@@ -617,6 +647,13 @@ export function agentSessionsReducer(
 					nextSteps: reseedGeneratedNextSteps(state.contextResources),
 				},
 			};
+		case "accept-planner-field":
+		case "dismiss-planner-field":
+		case "apply-planner-proposal":
+		case "reject-planner-proposal":
+		case "refine-planner-proposal":
+		case "edit-metadata":
+			return reduceAgentPlanner(state, action);
 		default: {
 			// Exhaustiveness guard: adding an action without handling it is a type error.
 			const _exhaustive: never = action;
@@ -742,11 +779,14 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 // Presets
 // ────────────────────────────────────────────────────────────────────────────
 
-export function createEmptyPresetState(): AgentSessionsState {
+export function createEmptyPresetState(workItem: Readonly<WorkItemData>): AgentSessionsState {
+	const contextResources = emptyContextResources();
 	return {
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "empty",
-		contextResources: emptyContextResources(),
+		contextResources: { ...contextResources, title: workItem.title },
+		metadata: seedEmptyMetadataDraft(workItem),
+		planner: createAgentPlannerState("empty", workItem),
 		comments: [],
 		sessions: [],
 		activeSessionId: null,
@@ -757,7 +797,7 @@ export function createEmptyPresetState(): AgentSessionsState {
 	};
 }
 
-export function createFilledPresetState(): AgentSessionsState {
+export function createFilledPresetState(workItem: Readonly<WorkItemData>): AgentSessionsState {
 	const completed = instantiateSession({
 		id: "preset-session-done",
 		order: 0,
@@ -767,10 +807,13 @@ export function createFilledPresetState(): AgentSessionsState {
 		cursor: 3,
 		startedAtMs: SESSION_EPOCH_MS - 1_800_000,
 	});
+	const contextResources = filledContextResources();
 	return {
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "filled",
-		contextResources: filledContextResources(),
+		contextResources: { ...contextResources, title: workItem.title },
+		metadata: seedMetadataDraft(workItem),
+		planner: createAgentPlannerState("filled", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions: [completed],
 		activeSessionId: null,
@@ -781,7 +824,7 @@ export function createFilledPresetState(): AgentSessionsState {
 	};
 }
 
-export function createRunningPresetState(): AgentSessionsState {
+export function createRunningPresetState(workItem: Readonly<WorkItemData>): AgentSessionsState {
 	const sessions: AgentSession[] = [
 		instantiateSession({
 			id: "preset-session-1",
@@ -820,10 +863,13 @@ export function createRunningPresetState(): AgentSessionsState {
 			startedAtMs: SESSION_EPOCH_MS - 300_000,
 		}),
 	];
+	const contextResources = filledContextResources();
 	return {
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "running",
-		contextResources: filledContextResources(),
+		contextResources: { ...contextResources, title: workItem.title },
+		metadata: seedMetadataDraft(workItem),
+		planner: createAgentPlannerState("running", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions,
 		activeSessionId: null,
@@ -834,17 +880,20 @@ export function createRunningPresetState(): AgentSessionsState {
 	};
 }
 
-export function hydratePreset(preset: AgentSessionsPreset): AgentSessionsState {
+export function hydratePreset(
+	preset: AgentSessionsPreset,
+	workItem: Readonly<WorkItemData>,
+): AgentSessionsState {
 	switch (preset) {
 		case "empty":
-			return createEmptyPresetState();
+			return createEmptyPresetState(workItem);
 		case "filled":
-			return createFilledPresetState();
+			return createFilledPresetState(workItem);
 		case "running":
-			return createRunningPresetState();
+			return createRunningPresetState(workItem);
 		default: {
 			const _exhaustive: never = preset;
-			return _exhaustive ? createEmptyPresetState() : createEmptyPresetState();
+			return _exhaustive ? createEmptyPresetState(workItem) : createEmptyPresetState(workItem);
 		}
 	}
 }

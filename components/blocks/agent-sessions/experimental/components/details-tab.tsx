@@ -5,8 +5,9 @@ import { useState } from "react";
 import BoardIcon from "@atlaskit/icon/core/board";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 
-import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { PROJECT_OPTIONS } from "@/components/blocks/agent-sessions/data/metadata-fixtures";
+import type { AgentPlannerMetadata } from "@/components/blocks/agent-sessions/data/planner-state";
 import {
 	DetailEmptyRow,
 	DetailFieldRow,
@@ -18,8 +19,6 @@ import {
 	ParentRowField,
 	PersonRowField,
 	PriorityRowField,
-	STATUS_PHASES,
-	type PriorityValue,
 } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,37 +26,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export interface MetadataDraft {
-	status: string;
-	priority: PriorityValue;
-	assignee: WorkItemPerson | null;
-	reporter: WorkItemPerson | null;
-	startDate?: Date;
-	dueDate?: Date;
-	parent: string | null;
-	labels: string[];
-	atlassianProject: string | null;
-}
+export { seedMetadataDraft } from "@/components/blocks/agent-sessions/data/planner-state";
 
-function parseSeedDate(value?: string): Date | undefined {
-	if (!value) return undefined;
-	const parsed = new Date(value);
-	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
-
-export function seedMetadataDraft(workItem: WorkItemData): MetadataDraft {
-	return {
-		status: workItem.status ?? STATUS_PHASES[0] ?? "To do",
-		priority: workItem.priority ?? "Medium",
-		assignee: workItem.assignee ?? null,
-		reporter: workItem.reporter ?? null,
-		startDate: parseSeedDate(workItem.startDate),
-		dueDate: parseSeedDate(workItem.dueDate),
-		parent: workItem.parent?.code ?? null,
-		labels: workItem.labels ? [...workItem.labels] : [],
-		atlassianProject: null,
-	};
-}
+export type MetadataDraft = AgentPlannerMetadata;
 
 /** The empty-to-add "Atlassian Project" row (video's rocket row + project search). */
 function AtlassianProjectRow({ value, onChange }: Readonly<{ value: string | null; onChange: (id: string) => void }>) {

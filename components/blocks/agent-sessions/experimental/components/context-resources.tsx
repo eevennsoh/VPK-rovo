@@ -44,66 +44,66 @@ export function ContextResources() {
 	return (
 		<div className="flex flex-col gap-1">
 			<AgentFilledSummaryRow
-				label="Attachments"
+				addLabel="Add attachment"
 				agentFieldName="attachments"
 				items={attachments.map(getAttachmentLabel)}
-				addLabel="Add attachment"
-				tagColor="standard"
-				renderItem={({ item, index, onRemove }) => (
-					<AgentReferenceChip
-						label={item}
-						elemBefore={attachmentGlyph(attachments[index])}
-						tagColor="standard"
-						onRemove={onRemove}
-					/>
-				)}
-				renderAddControl={({ label, className }) => (
-					<AttachmentsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
-				)}
+				label="Attachments"
 				onRemoveItem={(index) => {
 					const attachment = attachments[index];
 					actions.removeContextResource("attachment", attachment.id ?? attachment.name);
 				}}
+				renderAddControl={({ label, className }) => (
+					<AttachmentsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
+				)}
+				renderItem={({ item, index, onRemove }) => (
+					<AgentReferenceChip
+						elemBefore={attachmentGlyph(attachments[index])}
+						label={item}
+						onRemove={onRemove}
+						tagColor="standard"
+					/>
+				)}
+				tagColor="standard"
 			/>
 
 			<AgentFilledSummaryRow
-				label="Subtasks"
+				addLabel="Add subtask"
 				agentFieldName="subtasks"
 				items={subtasks.map((item) => `${item.key}: ${item.summary}`)}
-				addLabel="Add subtask"
-				tagColor="blue"
-				renderItem={({ item, onRemove }) => (
-					<AgentReferenceChip
-						label={item}
-						elemBefore={<ChildWorkItemsIcon label="" size="small" color="currentColor" />}
-						tagColor="blue"
-						onRemove={onRemove}
-					/>
-				)}
+				label="Subtasks"
+				onRemoveItem={(index) => actions.removeContextResource("subtask", subtasks[index].key)}
 				renderAddControl={({ label, className }) => (
 					<SubtasksPopover trigger={<AgentAddValueButton className={className} label={label} />} />
 				)}
-				onRemoveItem={(index) => actions.removeContextResource("subtask", subtasks[index].key)}
+				renderItem={({ item, onRemove }) => (
+					<AgentReferenceChip
+						elemBefore={<ChildWorkItemsIcon color="currentColor" label="" size="small" />}
+						label={item}
+						onRemove={onRemove}
+						tagColor="blue"
+					/>
+				)}
+				tagColor="blue"
 			/>
 
 			<AgentFilledSummaryRow
-				label="Linked work items"
+				addLabel="Link work item"
 				agentFieldName="linkedItems"
 				items={linkedItems.map((item) => `${item.relationship} ${item.key}: ${item.summary}`)}
-				addLabel="Link work item"
-				tagColor="purple"
-				renderItem={({ item, onRemove }) => (
-					<AgentReferenceChip
-						label={item}
-						elemBefore={<LinkIcon label="" size="small" color="currentColor" />}
-						tagColor="purple"
-						onRemove={onRemove}
-					/>
-				)}
+				label="Linked work items"
+				onRemoveItem={(index) => actions.removeContextResource("link", linkedItems[index].id)}
 				renderAddControl={({ label, className }) => (
 					<LinkedWorkItemsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
 				)}
-				onRemoveItem={(index) => actions.removeContextResource("link", linkedItems[index].id)}
+				renderItem={({ item, onRemove }) => (
+					<AgentReferenceChip
+						elemBefore={<LinkIcon color="currentColor" label="" size="small" />}
+						label={item}
+						onRemove={onRemove}
+						tagColor="purple"
+					/>
+				)}
+				tagColor="purple"
 			/>
 		</div>
 	);

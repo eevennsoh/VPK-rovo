@@ -9,6 +9,18 @@ const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-
 
 const BLOCK_DIR = __dirname;
 const AGENT_SESSIONS_SOURCE = fs.readFileSync(path.join(BLOCK_DIR, "index.tsx"), "utf8");
+const TEST_WORK_ITEM = {
+	code: "RFP-101",
+	title: "Acmecorp: Prepare for bid recommendation for ESM RFP",
+	status: "RFP Intake",
+	priority: "High",
+	assignee: { name: "Maya Chen" },
+	reporter: { name: "Jordan Lee" },
+	startDate: "May 12, 2026",
+	dueDate: "Jun 8, 2026",
+	parent: { code: "RFP-100", title: "Enterprise RFP Response" },
+	labels: ["Acmecorp", "qualification", "enterprise"],
+};
 
 function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
@@ -132,6 +144,27 @@ test("the experimental surface stays out of global Rovo history", () => {
 	assert.match(compositionSource, /<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>/u);
 });
 
+test("AI Planner is composed below the title with shared TWG and prompt primitives", () => {
+	const contextPanelSource = readBlockFile("experimental/components/context-panel.tsx");
+	const plannerPanelSource = readBlockFile("experimental/components/ai-planner-panel.tsx");
+	const contextResourcesSource = readBlockFile("experimental/components/context-resources.tsx");
+	const detailsSource = readBlockFile("experimental/components/details-tab.tsx");
+	assert.ok(contextPanelSource.indexOf("<ContextEditableTitle />") < contextPanelSource.indexOf("<AiPlannerPanel />"));
+	assert.ok(contextPanelSource.indexOf("<AiPlannerPanel />") < contextPanelSource.indexOf("<AiPlannerScope>"));
+	assert.match(plannerPanelSource, /import \{ TwgTool, type TwgToolSource \} from "@\/components\/ui-custom\/twg-tool";/u);
+	assert.match(plannerPanelSource, /PromptInputTextarea[\s\S]*Tell Rovo what to change…/u);
+	assert.match(plannerPanelSource, /title=\{isApplied \? "Planned by Rovo" : "AI Planner"\}/u);
+	assert.match(plannerPanelSource, />\s*Reject all\s*</u);
+	assert.match(plannerPanelSource, />\s*Confirm all\s*</u);
+	assert.match(plannerPanelSource, /data-ai-planner-scope=\{isReviewing \? "active" : undefined\}/u);
+	assert.doesNotMatch(plannerPanelSource, /useRovoChat|launchSession/u);
+	for (const source of [contextResourcesSource, detailsSource]) {
+		assert.doesNotMatch(source, /PlannerSuggestion|planner\.proposal|isPlannerFieldPending/u);
+	}
+	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/context-summary.tsx")), false);
+	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/planner-suggestion.tsx")), false);
+});
+
 test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {
 	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
 	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
@@ -147,7 +180,8 @@ test("running metronome is gated on the open surface so preset sessions stay pri
 
 	// Provider forwards the gate to the controller.
 	assert.match(contextSource, /active\?: boolean;/u);
-	assert.match(contextSource, /useAgentSessionsController\(initialPreset, active\)/u);
+	assert.match(contextSource, /useAgentSessionsController\(initialPreset, workItem, active\)/u);
+	assert.match(controllerSource, /hasRunningSession\(state\) \|\| isPlannerProcessing\(state\.planner\)/u);
 
 	// Composition drives the gate from the dialog open state.
 	assert.match(compositionSource, /<AgentSessionsProvider[\s\S]*active=\{open\}[\s\S]*>/u);
@@ -209,24 +243,117 @@ test("AgentSessions keeps the standard + experimental registry, detail, demo, an
 
 test("preset initialization: empty/filled/running set up the two dimensions", async () => {
 	const model = await loadSessionModel();
-	const empty = model.hydratePreset("empty");
+	const empty = model.hydratePreset("empty", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(empty), "empty");
 	assert.equal(empty.sessions.length, 0);
+	assert.equal(empty.planner.status, "searching");
+	assert.equal(empty.metadata.status, "RFP Intake");
+	assert.equal(empty.metadata.priority, null);
 
-	const filled = model.hydratePreset("filled");
+	const filled = model.hydratePreset("filled", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(filled), "filled");
 	assert.equal(model.selectWorkingCount(filled), 0);
 	assert.ok(filled.sessions.some((session) => session.status === "completed"));
+	assert.equal(filled.planner.status, "inactive");
 
-	const running = model.hydratePreset("running");
+	const running = model.hydratePreset("running", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(running), "filled");
 	assert.equal(model.selectWorkingCount(running), 3); // 2 running + 1 waiting
 	assert.ok(running.sessions.some((session) => session.status === "waiting"));
+	assert.equal(running.planner.status, "inactive");
+});
+
+test("empty preset planner searches in phases and prefills the normal form when ready", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	assert.equal(state.planner.phaseIndex, 0);
+	assert.equal(state.contextResources.description, "");
+	assert.equal(state.planner.proposal.metadata.atlassianProject, "esm-rfp-response");
+
+	state = model.agentSessionsReducer(state, { type: "tick", deltaMs: 1200 });
+	assert.equal(state.planner.phaseIndex, 1);
+	state = model.agentSessionsReducer(state, { type: "tick", deltaMs: 1200 });
+	assert.equal(state.planner.phaseIndex, 2);
+	state = model.agentSessionsReducer(state, { type: "tick", deltaMs: 1200 });
+	assert.equal(state.planner.status, "ready");
+	assert.equal(model.countPendingPlannerFields(state.planner), 12);
+	assert.match(state.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+	assert.equal(state.metadata.assignee.name, "Maya Chen");
+	assert.equal(state.metadata.atlassianProject, "esm-rfp-response");
+});
+
+test("Confirm all preserves prefilled values and Reject all clears them", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, { type: "settle-running" });
+	assert.match(state.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+	assert.equal(state.metadata.reporter.name, "Jordan Lee");
+	state = model.agentSessionsReducer(state, { type: "apply-planner-proposal" });
+	assert.equal(state.planner.status, "applied");
+	assert.equal(state.planner.appliedCount, 12);
+	assert.equal(state.metadata.reporter.name, "Jordan Lee");
+	assert.equal(state.metadata.priority, "High");
+	assert.equal(state.metadata.atlassianProject, "esm-rfp-response");
+	assert.equal(model.selectContextStatus(state), "filled");
+
+	let rejected = model.hydratePreset("empty", TEST_WORK_ITEM);
+	rejected = model.agentSessionsReducer(rejected, { type: "settle-running" });
+	rejected = model.agentSessionsReducer(rejected, { type: "reject-planner-proposal" });
+	assert.equal(rejected.planner.status, "inactive");
+	assert.equal(rejected.contextResources.description, "");
+	assert.equal(rejected.metadata.priority, null);
+	assert.equal(model.selectContextStatus(rejected), "empty");
+});
+
+test("planner refinement stages deterministic deltas and reset restarts search", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, { type: "settle-running" });
+	state = model.agentSessionsReducer(state, { type: "apply-planner-proposal" });
+	state = model.agentSessionsReducer(state, {
+		type: "refine-planner-proposal",
+		prompt: "Prioritize security compliance, add assets-cmdb, and assign Maya Chen",
+	});
+	assert.equal(state.planner.status, "refining");
+	assert.equal(state.planner.proposal.metadata.priority, "Highest");
+	assert.ok(state.planner.proposal.metadata.labels.includes("security-review"));
+	assert.ok(state.planner.proposal.metadata.labels.includes("assets-cmdb"));
+	assert.equal(state.planner.decisions.priority, "pending");
+	assert.equal(state.planner.decisions.labels, "pending");
+	state = model.agentSessionsReducer(state, { type: "tick", deltaMs: 1200 });
+	assert.equal(state.planner.status, "ready");
+	assert.equal(state.metadata.priority, "Highest");
+	assert.ok(state.metadata.labels.includes("security-review"));
+	state = model.agentSessionsReducer(state, { type: "apply-planner-proposal" });
+	assert.equal(state.metadata.priority, "Highest");
+	assert.ok(state.metadata.labels.includes("security-review"));
+	assert.ok(state.metadata.labels.includes("assets-cmdb"));
+
+	let unapplied = model.hydratePreset("empty", TEST_WORK_ITEM);
+	unapplied = model.agentSessionsReducer(unapplied, { type: "settle-running" });
+	unapplied = model.agentSessionsReducer(unapplied, {
+		type: "refine-planner-proposal",
+		prompt: "Assign Maya Chen",
+	});
+	assert.equal(model.countPendingPlannerFields(unapplied.planner), 12);
+	unapplied = model.agentSessionsReducer(unapplied, { type: "settle-running" });
+	unapplied = model.agentSessionsReducer(unapplied, { type: "apply-planner-proposal" });
+	assert.match(unapplied.contextResources.description, /Acmecorp is evaluating Atlassian/u);
+
+	state = model.agentSessionsReducer(state, { type: "refine-planner-proposal", prompt: "Assign Maya Chen" });
+	assert.equal(model.countPendingPlannerFields(state.planner), 0);
+	state = model.agentSessionsReducer(state, { type: "settle-running" });
+	assert.equal(state.planner.status, "applied");
+
+	state = model.agentSessionsReducer(state, { type: "reset", workItem: TEST_WORK_ITEM });
+	assert.equal(state.planner.status, "searching");
+	assert.equal(state.contextResources.description, "");
+	assert.equal(state.metadata.priority, null);
 });
 
 test("context derivation flips empty <-> filled as resources change", async () => {
 	const model = await loadSessionModel();
-	let state = model.hydratePreset("empty");
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(state), "empty");
 	state = model.agentSessionsReducer(state, {
 		type: "add-context-resource",
@@ -240,7 +367,7 @@ test("context derivation flips empty <-> filled as resources change", async () =
 
 test("concurrent launch adds independent running sessions", async () => {
 	const model = await loadSessionModel();
-	let state = model.hydratePreset("empty");
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
 	state = model.agentSessionsReducer(state, { type: "launch-session", agentId: "a1", agentName: "Agent One" });
 	state = model.agentSessionsReducer(state, { type: "launch-session", agentId: "a2", agentName: "Agent Two" });
 	assert.equal(state.sessions.length, 2);
@@ -250,7 +377,7 @@ test("concurrent launch adds independent running sessions", async () => {
 
 test("deterministic running -> waiting -> running -> completed lifecycle + resume", async () => {
 	const model = await loadSessionModel();
-	let state = model.hydratePreset("empty");
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
 	state = model.agentSessionsReducer(state, { type: "launch-session", agentId: "a1", agentName: "Agent One" });
 	const sessionId = state.sessions[0].id;
 
@@ -269,7 +396,7 @@ test("deterministic running -> waiting -> running -> completed lifecycle + resum
 
 test("Activity @-reply and chat reply share one session state", async () => {
 	const model = await loadSessionModel();
-	let state = model.hydratePreset("running");
+	let state = model.hydratePreset("running", TEST_WORK_ITEM);
 	const waiting = state.sessions.find((s) => s.status === "waiting");
 	state = model.agentSessionsReducer(state, { type: "reply-session", sessionId: waiting.id, text: "5,000 seats" });
 	const resumed = state.sessions.find((s) => s.id === waiting.id);
@@ -279,7 +406,7 @@ test("Activity @-reply and chat reply share one session state", async () => {
 
 test("session switching sets and clears the active session", async () => {
 	const model = await loadSessionModel();
-	let state = model.hydratePreset("running");
+	let state = model.hydratePreset("running", TEST_WORK_ITEM);
 	assert.equal(model.selectActiveSession(state), null);
 	const target = state.sessions[1];
 	state = model.agentSessionsReducer(state, { type: "set-active-session", sessionId: target.id });
@@ -290,15 +417,15 @@ test("session switching sets and clears the active session", async () => {
 
 test("empty work item launcher opens a general session; filled launcher reopens the latest", async () => {
 	const model = await loadSessionModel();
-	let empty = model.hydratePreset("empty");
+	let empty = model.hydratePreset("empty", TEST_WORK_ITEM);
 	empty = model.agentSessionsReducer(empty, { type: "open-latest-or-general" });
 	assert.equal(empty.sessions.length, 1);
 	assert.equal(empty.activeSessionId, empty.sessions[0].id);
 
-	let running = model.hydratePreset("running");
+	let running = model.hydratePreset("running", TEST_WORK_ITEM);
 	running = model.agentSessionsReducer(running, { type: "open-latest-or-general" });
 	assert.ok(running.activeSessionId);
-	assert.equal(running.sessions.length, model.hydratePreset("running").sessions.length); // reopened, not created
+	assert.equal(running.sessions.length, model.hydratePreset("running", TEST_WORK_ITEM).sessions.length); // reopened, not created
 });
 
 test("details metadata draft preserves editable work item fields without aliasing labels", async () => {

@@ -16,7 +16,8 @@ import {
 	type AgentSessionsState,
 	type ContextLinkedItem,
 } from "@/components/blocks/agent-sessions/data/session-state";
-import type { WorkItemAttachment, WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
+import { isPlannerProcessing, type AgentPlannerMetadata } from "@/components/blocks/agent-sessions/data/planner-state";
+import type { WorkItemAttachment, WorkItemChildItem, WorkItemData } from "@/app/contexts/context-work-item-modal";
 
 export { AGENT_SESSIONS_TICK_MS };
 
@@ -38,6 +39,10 @@ export interface AgentSessionsActions {
 	removeContextResource(kind: "attachment" | "subtask" | "link", id: string): void;
 	editContextText(field: "title" | "description", value: string): void;
 	refreshGeneratedContext(): void;
+	applyPlannerProposal(): void;
+	rejectPlannerProposal(): void;
+	refinePlannerProposal(prompt: string): void;
+	updateMetadata(patch: Partial<AgentPlannerMetadata>): void;
 	reset(): void;
 }
 
@@ -46,24 +51,30 @@ export interface AgentSessionsController {
 	actions: AgentSessionsActions;
 }
 
-function initState(preset: AgentSessionsPreset): AgentSessionsState {
-	return hydratePreset(preset);
+interface AgentSessionsInit {
+	preset: AgentSessionsPreset;
+	workItem: WorkItemData;
+}
+
+function initState({ preset, workItem }: AgentSessionsInit): AgentSessionsState {
+	return hydratePreset(preset, workItem);
 }
 
 export function useAgentSessionsController(
 	initialPreset: AgentSessionsPreset,
+	workItem: WorkItemData,
 	active = true,
 ): AgentSessionsController {
-	const [state, dispatch] = useReducer(agentSessionsReducer, initialPreset, initState);
+	const [state, dispatch] = useReducer(agentSessionsReducer, { preset: initialPreset, workItem }, initState);
 	const shouldReduceMotion = useReducedMotion();
-	const isRunning = hasRunningSession(state);
+	const isRunning = hasRunningSession(state) || isPlannerProcessing(state.planner);
 
-	// Metronome: while the surface is active (open) AND any session is running,
-	// advance the pure timer engine on a fixed cadence. Gating on `active` keeps
-	// preset sessions pristine until the viewer opens the surface — the docs
-	// "running" launcher must not tick down to waiting/completed while its dialog
-	// is still closed. Reduced motion collapses continuous progress to an instant
-	// settle so state transitions still convey information without animation.
+	// Metronome: while the surface is active (open) AND a session or planner task
+	// is processing, advance the pure timer engine on a fixed cadence. Gating on
+	// `active` keeps preset sessions pristine until the viewer opens the surface.
+	// The docs "running" launcher must not tick down to waiting/completed while
+	// its dialog is still closed. Reduced motion collapses continuous progress to
+	// an instant settle so state transitions still convey information without animation.
 	useEffect(() => {
 		if (!active || !isRunning) return undefined;
 		if (shouldReduceMotion) {
@@ -101,9 +112,13 @@ export function useAgentSessionsController(
 			removeContextResource: (kind, id) => run({ type: "remove-context-resource", kind, id }),
 			editContextText: (field, value) => run({ type: "edit-context-text", field, value }),
 			refreshGeneratedContext: () => run({ type: "refresh-generated-context" }),
-			reset: () => run({ type: "reset" }),
+			applyPlannerProposal: () => run({ type: "apply-planner-proposal" }),
+			rejectPlannerProposal: () => run({ type: "reject-planner-proposal" }),
+			refinePlannerProposal: (prompt) => run({ type: "refine-planner-proposal", prompt }),
+			updateMetadata: (patch) => run({ type: "edit-metadata", patch }),
+			reset: () => run({ type: "reset", workItem }),
 		}),
-		[run],
+		[run, workItem],
 	);
 
 	return { state, actions };
