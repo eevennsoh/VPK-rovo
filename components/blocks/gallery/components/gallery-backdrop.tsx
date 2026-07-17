@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
  * Two effects ramp stronger toward the bottom of the viewport, where the pinned
  * strip lives, so page content reads as a frosted band beneath the dock:
  *
- * 1. A progressive `backdrop-filter` blur (reusing ScrollMask's layered-veil blur
+ * 1. A progressive backdrop blur (reusing ScrollMask's layered-veil blur
  *    builder) softens the underlying page content.
  * 2. Four stacked `bg-surface` layers, masked to downward bands, tint that band —
  *    the "white fade" — so it lightens as it blurs.
  *
- * Safari needs the `-webkit-` prefixed variants of `mask-image` / `backdrop-filter`;
+ * Safari needs the `-webkit-` prefixed variants of the mask and backdrop blur properties;
  * the builder and each veil layer set them inline alongside the standard property.
  */
 
@@ -33,7 +33,7 @@ const BLUR_NONE = "blur(0px)";
 // Only the white veil fades. It inherits the strip's active variant label
 // ("hidden"/"visible"/"exit") via context, so fading it here (rather than on a wrapper
 // around the whole backdrop) keeps the blur out of an opacity group — an ancestor
-// opacity isolates `backdrop-filter`, which would then sample an empty buffer and blur
+// opacity isolates the backdrop blur, which would then sample an empty buffer and blur
 // nothing. Bold ease-out wash IN (prominent surface); fast ease-in OUT so the veil
 // clears ahead of the cards. The reduced-motion variant below resolves immediately.
 const BACKDROP = {
