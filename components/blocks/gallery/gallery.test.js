@@ -204,7 +204,15 @@ test("Gallery backdrop layers masked surface veils over a progressive page blur"
 	assert.match(source, /buildScrollMaskBlurLayerStyles\("bottom"\)/u);
 	// The blur must stay OUT of the veil's opacity fade — an ancestor opacity isolates
 	// backdrop-filter — so only the veil layers carry the fade variant.
-	assert.match(source, /variants=\{BACKDROP\}/u);
+	assert.match(source, /variants=\{shouldReduceMotion \? BACKDROP_REDUCED : BACKDROP\}/u);
+	// The blur itself must resolve to zero during the dock exit. Keeping the blur
+	// static until AnimatePresence unmounts the strip makes it disappear in one frame.
+	assert.match(source, /const BLUR_NONE = "blur\(0px\)";/u);
+	assert.match(source, /exit:\s*\{\s*backdropFilter: BLUR_NONE,/u);
+	assert.match(
+		source,
+		/BOTTOM_BLUR_LAYERS\.map\([\s\S]*?<motion\.div[\s\S]*?variants=\{shouldReduceMotion \? reducedVariants : variants\}/u,
+	);
 	assert.match(source, /pointer-events-none/u);
 });
 

@@ -34,7 +34,7 @@ import { Lozenge } from "@/components/ui/lozenge";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import type { AsxQueueJiraColumn, AsxQueueSession } from "../data/queue-sessions";
 import { QueueConversationHeader } from "./queue-conversation-header";
-import { QueueEnvironmentPanel } from "./queue-environment-panel";
+import { QueueDetailPanel } from "./queue-detail-panel";
 
 const PANEL_FALLBACK_WIDTH_PX = 320;
 const CHAT_BODY_OPEN_TRANSITION: Transition = {
@@ -170,7 +170,7 @@ export function QueueConversationWorkspace({
 	onSubmit,
 	session,
 }: Readonly<QueueConversationWorkspaceProps>) {
-	const [isEnvironmentPanelOpen, setIsEnvironmentPanelOpen] = useState(false);
+	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 	const [chatBodyShift, setChatBodyShift] = useState(0);
 	const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
 	const workspaceRef = useRef<HTMLDivElement | null>(null);
@@ -227,7 +227,7 @@ export function QueueConversationWorkspace({
 	}, [awaitingQuestion]);
 
 	useLayoutEffect(() => {
-		if (!isEnvironmentPanelOpen) {
+		if (!isDetailPanelOpen) {
 			commitChatBodyShift(0);
 			return;
 		}
@@ -236,7 +236,7 @@ export function QueueConversationWorkspace({
 		const chatBody = chatBodyRef.current;
 		if (!workspace || !chatBody) return;
 
-		const panel = workspace.querySelector<HTMLElement>("#asx-queue-environment-panel");
+		const panel = workspace.querySelector<HTMLElement>("#asx-queue-detail-panel");
 		const updateChatBodyShift = () => {
 			const workspaceRect = workspace.getBoundingClientRect();
 			const chatBodyRect = chatBody.getBoundingClientRect();
@@ -263,11 +263,11 @@ export function QueueConversationWorkspace({
 		if (panel) resizeObserver.observe(panel);
 
 		return () => resizeObserver.disconnect();
-	}, [commitChatBodyShift, isEnvironmentPanelOpen]);
+	}, [commitChatBodyShift, isDetailPanelOpen]);
 
 	const chatBodyTransition = shouldReduceMotion
 		? CHAT_BODY_REDUCED_MOTION_TRANSITION
-		: isEnvironmentPanelOpen
+		: isDetailPanelOpen
 			? CHAT_BODY_OPEN_TRANSITION
 			: CHAT_BODY_CLOSE_TRANSITION;
 	const composerPlaceholder = session.status === "stopped"
@@ -292,8 +292,8 @@ export function QueueConversationWorkspace({
 			>
 				<QueueConversationHeader
 					agent={agent}
-					isEnvironmentPanelOpen={isEnvironmentPanelOpen}
-					onEnvironmentPanelToggle={() => setIsEnvironmentPanelOpen((current) => !current)}
+					isDetailPanelOpen={isDetailPanelOpen}
+					onDetailPanelToggle={() => setIsDetailPanelOpen((current) => !current)}
 				/>
 				<motion.div
 					animate={{ transform: `translateX(${chatBodyShift}px)` }}
@@ -353,11 +353,11 @@ export function QueueConversationWorkspace({
 				</motion.div>
 			</section>
 			<AnimatePresence initial={false}>
-				{isEnvironmentPanelOpen ? (
-					<QueueEnvironmentPanel
+				{isDetailPanelOpen ? (
+					<QueueDetailPanel
 						agent={agent}
-						key="environment-panel"
-						onClose={() => setIsEnvironmentPanelOpen(false)}
+						key="detail-panel"
+						onClose={() => setIsDetailPanelOpen(false)}
 						session={session}
 					/>
 				) : null}

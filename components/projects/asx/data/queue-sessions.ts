@@ -1,6 +1,8 @@
 import { getRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { STARRED_PROJECTS } from "@/components/blocks/product-sidebar/data/jira-navigation";
+import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
+import type { RovoAppThread } from "@/lib/rovo-app-types";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 export type AsxQueueSessionStatus =
@@ -264,6 +266,90 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		],
 	},
 ];
+
+const ASX_QUEUE_HISTORY_UPDATED_AT: Readonly<Record<string, string>> = {
+	"acme-qualification": "2026-07-17T00:30:00.000Z",
+	"northstar-evidence-pr": "2026-07-16T01:15:00.000Z",
+	"security-evidence-merged": "2026-07-15T02:45:00.000Z",
+};
+
+function getAsxQueueHistoryMessages(session: AsxQueueSession): RovoUIMessage[] {
+	const question = session.question;
+	const lastAssistantMessage = session.messages.findLast((item) => item.role === "assistant");
+	if (!question || !lastAssistantMessage) return [...session.messages];
+
+	const toolCallId = `asx-queue-question-${session.id}`;
+	return session.messages.map((item) => (
+		item.id === lastAssistantMessage.id
+			? {
+				...item,
+				parts: [
+					...item.parts,
+					{
+						type: "data-widget-data",
+						data: {
+							type: "question-card",
+							payload: {
+								type: "question-card",
+								maxRounds: 1,
+								questions: question.questions.map((item) => ({ ...item, required: true })),
+								requiredCount: question.questions.length,
+								round: 1,
+								sessionId: toolCallId,
+								title: "Answer to continue",
+								toolCallId,
+							},
+						},
+					},
+				],
+			}
+			: item
+	));
+}
+
+export function createAsxQueueHistoryThreads(
+	sessions: readonly AsxQueueSession[],
+): RovoAppThread[] {
+	return sessions.map((session) => {
+		const updatedAt = ASX_QUEUE_HISTORY_UPDATED_AT[session.id] ?? "2026-07-14T00:00:00.000Z";
+		return {
+			activeDocumentId: null,
+			createdAt: updatedAt,
+			id: session.id,
+			messages: getAsxQueueHistoryMessages(session),
+			modelId: null,
+			provider: null,
+			realtimeMessages: [],
+			sessionId: null,
+			sessionMode: null,
+			title: session.title,
+			updatedAt,
+			visibility: "private",
+		};
+	});
+}
+
+export function createAsxQueueSidebarSessionItem(
+	session: AsxQueueSession,
+): JiraSidebarSessionItem {
+	const agent = getAsxQueueAgent(session.agentId);
+	return {
+		agentAvatarSrc: agent.avatarSrc,
+		agentName: agent.name,
+		branch: session.branch,
+		checks: session.checks,
+		commit: session.commit,
+		host: session.host,
+		id: session.id,
+		issueKey: session.issueKey,
+		issueSummary: session.issueSummary,
+		pullRequestNumber: session.pullRequestNumber,
+		repository: session.repository,
+		status: session.status,
+		title: session.title,
+		worktreePath: session.worktreePath,
+	};
+}
 
 export function getAsxQueueAgent(agentId: string): RovoAgentProfile {
 	return getRovoAgentProfile(agentId);

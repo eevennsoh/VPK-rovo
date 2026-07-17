@@ -6,7 +6,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -69,14 +69,23 @@ interface ChatHistoryDrawerProps {
 
 type MaybePromise<T> = T | Promise<T>;
 
+export interface ChatHistoryThreadPresentation {
+	description?: ReactNode;
+	meta?: ReactNode;
+	title?: ReactNode;
+}
+
 export interface ControlledChatHistoryDrawerProps {
 	active?: boolean;
 	activeThreadId: string | null;
 	cancelThreadRun: (threadId: string) => Promise<void>;
 	closeHistory: () => void;
 	deleteThread: (threadId: string) => Promise<void>;
+	getThreadActions?: (thread: RovoAppThread) => ReactNode;
+	getThreadPresentation?: (thread: RovoAppThread) => ChatHistoryThreadPresentation | undefined;
 	isHistoryOpen: boolean;
 	onNewChat: () => MaybePromise<void>;
+	pinnedThreadIds?: ReadonlySet<string>;
 	selectThread: (threadId: string) => Promise<void>;
 	threads: ReadonlyArray<RovoAppThread>;
 	threadsLoaded: boolean;
@@ -87,7 +96,10 @@ export interface ControlledChatHistoryPanelProps {
 	cancelThreadRun: (threadId: string) => Promise<void>;
 	className?: string;
 	deleteThread: (threadId: string) => Promise<void>;
+	getThreadActions?: (thread: RovoAppThread) => ReactNode;
+	getThreadPresentation?: (thread: RovoAppThread) => ChatHistoryThreadPresentation | undefined;
 	onNewChat: () => MaybePromise<void>;
+	pinnedThreadIds?: ReadonlySet<string>;
 	selectThread: (threadId: string) => Promise<void>;
 	showNavigation?: boolean;
 	threads: ReadonlyArray<RovoAppThread>;
@@ -204,12 +216,16 @@ function ChatHistoryDeleteAllDialog({
 
 function ChatHistoryThreadRow({
 	activeThreadId,
+	getThreadActions,
+	getThreadPresentation,
 	onCancelThreadRun,
 	onDeleteThread,
 	onSelectThread,
 	thread,
 }: Readonly<{
 	activeThreadId: string | null;
+	getThreadActions?: (thread: RovoAppThread) => ReactNode;
+	getThreadPresentation?: (thread: RovoAppThread) => ChatHistoryThreadPresentation | undefined;
 	onCancelThreadRun: (threadId: string) => Promise<void>;
 	onDeleteThread: (threadId: string) => Promise<void>;
 	onSelectThread: (threadId: string) => Promise<void>;
@@ -217,6 +233,8 @@ function ChatHistoryThreadRow({
 }>) {
 	const showRunIndicator = shouldShowRovoAppSidebarRunIndicator(thread.activeRun?.status ?? null);
 	const isActive = thread.id === activeThreadId;
+	const threadActions = getThreadActions?.(thread);
+	const presentation = getThreadPresentation?.(thread);
 
 	return (
 		<div
@@ -227,51 +245,69 @@ function ChatHistoryThreadRow({
 		>
 			<button
 				type="button"
-				className="grid w-full grid-cols-[minmax(0,1fr)_24px] items-center gap-3 rounded-lg p-1.5 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused"
+				className={cn(
+					"grid w-full grid-cols-[minmax(0,1fr)_24px] items-center gap-3 rounded-lg p-1.5 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused",
+					threadActions && "group-hover/chat-history-thread:grid-cols-[minmax(0,1fr)_52px] group-focus-within/chat-history-thread:grid-cols-[minmax(0,1fr)_52px]",
+				)}
 				onClick={() => void onSelectThread(thread.id)}
 			>
 				<span className="min-w-0">
-					<span className="block truncate text-sm font-medium leading-5">{thread.title}</span>
-					<span className={cn("block truncate text-xs leading-4", isActive ? "text-text-selected" : "text-text-subtlest")}>
-						{formatDistanceToNowStrict(new Date(thread.updatedAt), { addSuffix: true })}
-					</span>
+					<span className="block truncate text-sm font-medium leading-5">{presentation?.title ?? thread.title}</span>
+					{presentation?.description !== undefined ? (
+						<span className="block truncate text-xs leading-4 text-text-subtlest">
+							{presentation.description}
+						</span>
+					) : (
+						<span className={cn("block truncate text-xs leading-4", isActive ? "text-text-selected" : "text-text-subtlest")}>
+							{formatDistanceToNowStrict(new Date(thread.updatedAt), { addSuffix: true })}
+						</span>
+					)}
 				</span>
-				<span className="relative flex size-6 items-center justify-center">
-					{showRunIndicator ? (
+				<span className={cn(
+					"relative flex size-6 items-center justify-center justify-self-end",
+					threadActions && "group-hover/chat-history-thread:hidden group-focus-within/chat-history-thread:hidden",
+				)}>
+					{presentation?.meta !== undefined ? presentation.meta : showRunIndicator ? (
 						<Spinner size="xs" aria-hidden="true" className="shrink-0 text-icon-subtle" />
 					) : null}
 				</span>
 			</button>
-			<DropdownMenu modal={false}>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							aria-label={`More actions for ${thread.title}`}
-							className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity duration-normal ease-out group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
-							size="icon"
-							variant="ghost"
-							onClick={(event) => event.stopPropagation()}
-						/>
-					}
-				>
-					<ShowMoreHorizontalIcon label="" size="small" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" positionerClassName="z-[760]">
-					<DropdownMenuGroup>
-						{showRunIndicator ? (
-							<DropdownMenuItem
-								elemBefore={<span aria-hidden className="size-3 rounded-[2px] bg-current" />}
-								onSelect={() => void onCancelThreadRun(thread.id)}
-							>
-								Cancel run
+			{threadActions ? (
+				<div className="pointer-events-none absolute top-1/2 right-1.5 z-10 flex -translate-y-1/2 items-center gap-1 group-hover/chat-history-thread:pointer-events-auto group-focus-within/chat-history-thread:pointer-events-auto">
+					{threadActions}
+				</div>
+			) : (
+				<DropdownMenu modal={false}>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								aria-label={`More actions for ${thread.title}`}
+								className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity duration-normal ease-out group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
+								size="icon"
+								variant="ghost"
+								onClick={(event) => event.stopPropagation()}
+							/>
+						}
+					>
+						<ShowMoreHorizontalIcon label="" size="small" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" positionerClassName="z-[760]">
+						<DropdownMenuGroup>
+							{showRunIndicator ? (
+								<DropdownMenuItem
+									elemBefore={<span aria-hidden className="size-3 rounded-[2px] bg-current" />}
+									onSelect={() => void onCancelThreadRun(thread.id)}
+								>
+									Cancel run
+								</DropdownMenuItem>
+							) : null}
+							<DropdownMenuItem variant="destructive" elemBefore={<DeleteIcon label="" />} onSelect={() => void onDeleteThread(thread.id)}>
+								Delete
 							</DropdownMenuItem>
-						) : null}
-						<DropdownMenuItem variant="destructive" elemBefore={<DeleteIcon label="" />} onSelect={() => void onDeleteThread(thread.id)}>
-							Delete
-						</DropdownMenuItem>
-					</DropdownMenuGroup>
-				</DropdownMenuContent>
-			</DropdownMenu>
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			)}
 		</div>
 	);
 }
@@ -281,10 +317,13 @@ function ChatHistoryPanelView({
 	cancelThreadRun,
 	className,
 	deleteThread,
+	getThreadActions,
+	getThreadPresentation,
 	isChatsOpen,
 	onNewChat,
 	onRequestDeleteAll,
 	onToggleChats,
+	pinnedThreadIds,
 	selectThread,
 	showNavigation = true,
 	threads,
@@ -301,6 +340,24 @@ function ChatHistoryPanelView({
 	const handleSelectThread = async (threadId: string) => {
 		await selectThread(threadId);
 	};
+	const pinnedThreads = pinnedThreadIds
+		? threads.filter((thread) => pinnedThreadIds.has(thread.id))
+		: [];
+	const unpinnedThreads = pinnedThreadIds
+		? threads.filter((thread) => !pinnedThreadIds.has(thread.id))
+		: threads;
+	const renderThread = (thread: RovoAppThread) => (
+		<ChatHistoryThreadRow
+			key={thread.id}
+			activeThreadId={activeThreadId}
+			getThreadActions={getThreadActions}
+			getThreadPresentation={getThreadPresentation}
+			onCancelThreadRun={cancelThreadRun}
+			onDeleteThread={deleteThread}
+			onSelectThread={handleSelectThread}
+			thread={thread}
+		/>
+	);
 
 	return (
 		<div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
@@ -338,6 +395,14 @@ function ChatHistoryPanelView({
 					/>
 					<div className="h-3 shrink-0" aria-hidden />
 				</div>
+			) : null}
+			{pinnedThreads.length > 0 ? (
+				<section aria-label="Pinned" className="flex shrink-0 flex-col pb-3">
+					<div className="px-1.5 py-1 text-xs font-semibold leading-4 text-text-subtlest">
+						Pinned
+					</div>
+					{pinnedThreads.map(renderThread)}
+				</section>
 			) : null}
 			<div className="flex shrink-0 flex-col">
 				<ChatHistorySectionHeading
@@ -377,16 +442,7 @@ function ChatHistoryPanelView({
 					</Empty>
 				) : (
 					<div className="flex flex-col">
-						{threads.map((thread) => (
-							<ChatHistoryThreadRow
-								key={thread.id}
-								activeThreadId={activeThreadId}
-								onCancelThreadRun={cancelThreadRun}
-								onDeleteThread={deleteThread}
-								onSelectThread={handleSelectThread}
-								thread={thread}
-							/>
-						))}
+						{unpinnedThreads.map(renderThread)}
 					</div>
 				)}
 			</section>
@@ -464,8 +520,11 @@ export function ControlledChatHistoryDrawer({
 	cancelThreadRun,
 	closeHistory,
 	deleteThread,
+	getThreadActions,
+	getThreadPresentation,
 	isHistoryOpen,
 	onNewChat,
+	pinnedThreadIds,
 	selectThread,
 	threads,
 	threadsLoaded,
@@ -546,10 +605,13 @@ export function ControlledChatHistoryDrawer({
 								cancelThreadRun={cancelThreadRun}
 								className="p-3 pt-14"
 								deleteThread={deleteThread}
+								getThreadActions={getThreadActions}
+								getThreadPresentation={getThreadPresentation}
 								isChatsOpen={panelState.isChatsOpen}
 								onNewChat={handleNewChat}
 								onRequestDeleteAll={() => panelState.setIsDeleteAllConfirmOpen(true)}
 								onToggleChats={panelState.handleChatsToggle}
+								pinnedThreadIds={pinnedThreadIds}
 								selectThread={handleSelectThread}
 								threads={threads}
 								threadsLoaded={threadsLoaded}

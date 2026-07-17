@@ -140,7 +140,15 @@ function JiraSessionAvatar({ session }: Readonly<{ session: JiraSidebarSessionIt
 	);
 }
 
-function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
+export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	return session.status === "awaiting-input" ? (
+		<Shimmer as="span" duration={1.4} spread={2} className="block truncate text-left">
+			{session.title}
+		</Shimmer>
+	) : session.title;
+}
+
+export function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
 	switch (status) {
 		case "awaiting-input":
 			return (
@@ -171,7 +179,7 @@ function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionS
 	}
 }
 
-function JiraSessionDescription({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+export function JiraSessionDescription({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
 	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 
 	return (
@@ -308,7 +316,7 @@ function JiraSpacesOrganizeAction({
 	);
 }
 
-function JiraSessionRowActions({
+export function JiraSessionRowActions({
 	isPinned,
 	onArchive,
 	onStop,
@@ -330,7 +338,7 @@ function JiraSessionRowActions({
 		<>
 			<SidebarNavItemAction
 				aria-label={`${isPinned ? "Unpin" : "Pin"} ${title}`}
-				className="opacity-0 transition-opacity duration-normal ease-out group-data-[selected=true]/sidebar-nav-item:text-icon-subtle group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
+				className="opacity-0 transition-opacity duration-normal ease-out group-data-[selected=true]/sidebar-nav-item:text-icon-subtle group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100"
 				onClick={(event) => {
 					event.stopPropagation();
 					onTogglePin();
@@ -341,7 +349,7 @@ function JiraSessionRowActions({
 			<SidebarNavItemAction
 				aria-label={`${isArchivable ? "Archive" : "Stop"} ${title}`}
 				className={cn(
-					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100",
+					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100",
 					isArchivable
 						? "group-data-[selected=true]/sidebar-nav-item:text-icon-subtle"
 						: "text-icon-danger group-data-[selected=true]/sidebar-nav-item:text-icon-danger",
@@ -439,12 +447,6 @@ function JiraSessionRow({
 		transform,
 		transition,
 	} = useSortable({ disabled: !canReorder, id: session.id });
-	const label = session.status === "awaiting-input" ? (
-		<Shimmer as="span" duration={1.4} spread={2} className="block truncate text-left">
-			{session.title}
-		</Shimmer>
-	) : session.title;
-
 	return (
 		<div
 			className={cn("relative", isDragging && "z-20 opacity-80")}
@@ -474,7 +476,7 @@ function JiraSessionRow({
 						className={cn("min-h-11", canReorder && "cursor-grab active:cursor-grabbing")}
 						description={<JiraSessionDescription session={session} />}
 						isSelected={isSelected}
-						label={label}
+						label={<JiraSessionLabel session={session} />}
 						meta={(
 							<span className="grid size-6 shrink-0 place-items-center group-hover/sidebar-nav-item:hidden group-has-[[data-slot=button]:focus-visible]/sidebar-nav-item:hidden">
 								<JiraSessionLifecycle status={session.status} />

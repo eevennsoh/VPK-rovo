@@ -8,7 +8,10 @@ async function loadQueueStateHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { ASX_QUEUE_SESSION_SEEDS } from "./components/projects/asx/data/queue-sessions";
+				export {
+					ASX_QUEUE_SESSION_SEEDS,
+					createAsxQueueHistoryThreads,
+				} from "./components/projects/asx/data/queue-sessions";
 				export {
 					appendQueueSessionUserMessage,
 					archiveQueueSession,
@@ -104,6 +107,31 @@ test("Queue seeds model the three confirmed lifecycle states in one Jira project
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => Number.isInteger(item.manualRank)));
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => !("relativeTime" in item)));
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => !item.branch || item.branch.startsWith("rovo/")));
+});
+
+test("Queue seeds become the exact three Rovo history threads with their full content", async () => {
+	const { ASX_QUEUE_SESSION_SEEDS, createAsxQueueHistoryThreads } = await loadQueueStateHarness();
+	const threads = createAsxQueueHistoryThreads(ASX_QUEUE_SESSION_SEEDS);
+
+	assert.deepEqual(
+		threads.map((thread) => thread.title),
+		[
+			"Confirm Acme rollout plan",
+			"Automate Northstar security evidence",
+			"Validate security response evidence",
+		],
+	);
+	assert.deepEqual(
+		ASX_QUEUE_SESSION_SEEDS.map((session) => session.agentId),
+		["readiness-checker", "pipeline-troubleshooter", "code-reviewer"],
+	);
+	assert.ok(threads.every((thread) => thread.messages.length === 2));
+	assert.ok(threads.every((thread) => thread.realtimeMessages.length === 0));
+	const questionWidget = threads[0].messages[1].parts.find((part) => (
+		part.type === "data-widget-data" && part.data.type === "question-card"
+	));
+	assert.equal(questionWidget.data.payload.questions[0].label, "What is the target go-live date?");
+	assert.equal(questionWidget.data.payload.questions[0].options.length, 3);
 });
 
 test("Queue sessions clone nested demo state so remounts restore the seeds", async () => {

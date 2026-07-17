@@ -57,6 +57,20 @@ export interface ChatMessagesProps {
 	) => ReactNode;
 }
 
+export function AwaitingUserResponseIndicator({
+	label = getAwaitingUserResponseLabel(),
+}: Readonly<{ label?: string }>): ReactNode {
+	return (
+		<div className="flex justify-start">
+			<ChainOfThought>
+				<ChainOfThoughtHeader showChevron={false} state="thinking">
+					{label}
+				</ChainOfThoughtHeader>
+			</ChainOfThought>
+		</div>
+	);
+}
+
 /**
  * Pixel offset from the top of the scroll container to position the latest
  * turn, giving visual breathing room above the newest message group.
@@ -263,13 +277,7 @@ export function ChatMessages({
 					/>
 				) : null}
 				{!indicator.shouldShowPreloader && !indicator.shouldShowThinkingStatus && showAwaitingIndicator ? (
-					<div className="flex justify-start">
-						<ChainOfThought>
-							<ChainOfThoughtHeader showChevron={false} state="thinking">
-								{awaitingIndicatorLabel}
-							</ChainOfThoughtHeader>
-						</ChainOfThought>
-					</div>
+					<AwaitingUserResponseIndicator label={awaitingIndicatorLabel} />
 				) : null}
 				<div ref={scrollSpacerRef} aria-hidden className="h-0 shrink-0" />
 			</ConversationContent>

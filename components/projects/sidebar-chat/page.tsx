@@ -74,7 +74,11 @@ import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, Rich
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
-import { ChatHistoryDrawer } from "./components/chat-history-drawer";
+import {
+	ChatHistoryDrawer,
+	ControlledChatHistoryDrawer,
+	type ControlledChatHistoryDrawerProps,
+} from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";
 import ChatComposer from "./components/chat-composer";
 import MessageBubble from "./components/message-bubble";
@@ -83,6 +87,7 @@ import { ArtifactResultCard, type ArtifactResult } from "./components/artifact-r
 import { AgentResultCard, isGeneratedAgentResult } from "./components/agent-result-card";
 import { StreamingThinkingIndicator } from "./components/streaming-thinking-indicator";
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
+import { AwaitingUserResponseIndicator } from "@/components/projects/shared/components/chat-messages";
 import { chatStyles } from "./data/styles";
 import { cn } from "@/lib/utils";
 import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
@@ -150,6 +155,20 @@ export interface ChatPanelCustomAgentTabs {
 	activity?: ReactNode;
 	trigger?: ReactNode;
 }
+
+export type ChatPanelHistoryController = Pick<
+	ControlledChatHistoryDrawerProps,
+	| "activeThreadId"
+	| "cancelThreadRun"
+	| "deleteThread"
+	| "getThreadActions"
+	| "getThreadPresentation"
+	| "onNewChat"
+	| "pinnedThreadIds"
+	| "selectThread"
+	| "threads"
+	| "threadsLoaded"
+>;
 
 export interface ChatPanelAgentVersionOption {
 	id: string;
@@ -221,6 +240,7 @@ interface ChatPanelProps {
 	cards?: ChatPanelCardsProps;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	chatHistory?: ChatPanelHistoryController;
 	/**
 	 * When true, renders the agent Test-mode-only controls in the custom
 	 * agent tab header: the version dropdown and the new-chat/edit button.
@@ -333,6 +353,8 @@ interface ChatPanelProps {
 	 * Default false leaves other consumers unchanged.
 	 */
 	markAnsweredQuestionTraces?: boolean;
+	/** Opt-in Queue-style status shown above a docked clarification card. */
+	showAwaitingIndicator?: boolean;
 }
 
 const COMPACT_CHAT_WIDTH_MAX = 520;
@@ -450,6 +472,7 @@ export default function ChatPanel({
 	greeting,
 	greetingSelectedAgent,
 	customAgentTabs,
+	chatHistory,
 	showAgentTestControls = false,
 	suppressCustomAgentTabs = false,
 	agentVersionOptions = DEFAULT_AGENT_VERSION_OPTIONS,
@@ -483,6 +506,7 @@ export default function ChatPanel({
 	interceptClarificationAnswers = false,
 	composerMentionSources,
 	markAnsweredQuestionTraces = false,
+	showAwaitingIndicator = false,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
 		resetChat,
@@ -501,6 +525,7 @@ export default function ChatPanel({
 		getSessionAgentEntry,
 		isCustomAgentSelected,
 		activePrompt,
+		closeHistory,
 		isHistoryOpen,
 		pinFloating,
 		toggleHistory,
@@ -1639,6 +1664,13 @@ export default function ChatPanel({
 		Boolean(customAgentTabs) ||
 		(isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent))
 	);
+	const handleNewChat = () => {
+		if (chatHistory) {
+			void chatHistory.onNewChat();
+			return;
+		}
+		resetChat();
+	};
 	const chatConversationBody = (
 		<Conversation
 			className="min-h-0 min-w-0 flex-1"
@@ -1792,6 +1824,12 @@ export default function ChatPanel({
 						phaseProps={thinking.reasoningPhaseProps}
 					/>
 				) : null}
+				{!thinking.shouldShowPreloader &&
+				!thinking.shouldShowThinkingStatus &&
+				showAwaitingIndicator &&
+				shouldShowQuestionCard ? (
+					<AwaitingUserResponseIndicator />
+				) : null}
 				{hasMessages ? <div ref={scrollSpacerRef} aria-hidden style={{ height: 0, flexShrink: 0 }} /> : null}
 			</ConversationContent>
 			<ConversationScrollButton className="z-10 transition-all" />
@@ -1884,7 +1922,25 @@ export default function ChatPanel({
 
 	return (
 		<div ref={panelRef} className={cn("relative overflow-hidden", containerClassName)} style={{ ...chatStyles.chatPanel, ...resolvedContainerStyle }}>
-			<ChatHistoryDrawer active={shouldRenderHeaderHistory} />
+			{chatHistory ? (
+				<ControlledChatHistoryDrawer
+					active={shouldRenderHeaderHistory}
+					activeThreadId={chatHistory.activeThreadId}
+					cancelThreadRun={chatHistory.cancelThreadRun}
+					closeHistory={closeHistory}
+					deleteThread={chatHistory.deleteThread}
+					getThreadActions={chatHistory.getThreadActions}
+					getThreadPresentation={chatHistory.getThreadPresentation}
+					isHistoryOpen={isHistoryOpen}
+					onNewChat={chatHistory.onNewChat}
+					pinnedThreadIds={chatHistory.pinnedThreadIds}
+					selectThread={chatHistory.selectThread}
+					threads={chatHistory.threads}
+					threadsLoaded={chatHistory.threadsLoaded}
+				/>
+			) : (
+				<ChatHistoryDrawer active={shouldRenderHeaderHistory} />
+			)}
 			{!hideHeader && (
 				<div className="shrink-0">
 					<ChatHeader
@@ -1892,7 +1948,7 @@ export default function ChatPanel({
 						isHistoryOpen={isHistoryOpen}
 						onClose={onClose}
 						onHistoryToggle={toggleHistory}
-						onNewChat={resetChat}
+						onNewChat={handleNewChat}
 						onSurfaceSwitch={onSurfaceSwitch}
 					/>
 				</div>

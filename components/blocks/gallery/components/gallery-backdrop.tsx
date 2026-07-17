@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
-import type { JSX } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import type { CSSProperties, JSX } from "react";
 
 import { buildScrollMaskBlurLayerStyles } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
  * Two effects ramp stronger toward the bottom of the viewport, where the pinned
  * strip lives, so page content reads as a frosted band beneath the dock:
  *
- * 1. A progressive `backdrop-filter` blur (reusing ScrollMask's layered-veil blur
+ * 1. A progressive backdrop blur (reusing ScrollMask's layered-veil blur
  *    builder) softens the underlying page content.
  * 2. Four stacked `bg-surface` layers, masked to downward bands, tint that band —
  *    the "white fade" — so it lightens as it blurs.
  *
- * Safari needs the `-webkit-` prefixed variants of `mask-image` / `backdrop-filter`;
+ * Safari needs the `-webkit-` prefixed variants of the mask and backdrop blur properties;
  * the builder and each veil layer set them inline alongside the standard property.
  */
 
@@ -26,25 +26,75 @@ import { cn } from "@/lib/utils";
 const EASE_OUT = [0, 0.4, 0, 1] as const; // --ease-out (BOLD; prominent-surface ENTER)
 const EASE_IN = [0.6, 0, 0.8, 0.6] as const; // --ease-in (practical EXIT — every exit)
 const DUR_SLOW = 0.25; // --duration-slow
+const DUR_MEDIUM = 0.2; // --duration-medium
 const DUR_FAST = 0.1; // --duration-fast
+const BLUR_NONE = "blur(0px)";
 
 // Only the white veil fades. It inherits the strip's active variant label
 // ("hidden"/"visible"/"exit") via context, so fading it here (rather than on a wrapper
 // around the whole backdrop) keeps the blur out of an opacity group — an ancestor
-// opacity isolates `backdrop-filter`, which would then sample an empty buffer and blur
+// opacity isolates the backdrop blur, which would then sample an empty buffer and blur
 // nothing. Bold ease-out wash IN (prominent surface); fast ease-in OUT so the veil
-// clears ahead of the cards. Opacity-only → safe under reduced motion as-is.
+// clears ahead of the cards. The reduced-motion variant below resolves immediately.
 const BACKDROP = {
 	hidden: { opacity: 0 },
 	visible: { opacity: 1, transition: { duration: DUR_SLOW, ease: EASE_OUT } },
 	exit: { opacity: 0, transition: { duration: DUR_FAST, ease: EASE_IN } },
 } as const;
+const BACKDROP_REDUCED = {
+	hidden: { opacity: 0 },
+	visible: { opacity: 1, transition: { duration: 0 } },
+	exit: { opacity: 0, transition: { duration: 0 } },
+} as const;
+
+function createBackdropBlurLayer(layerStyle: CSSProperties) {
+	const backdropFilter =
+		typeof layerStyle.backdropFilter === "string" ? layerStyle.backdropFilter : BLUR_NONE;
+	const {
+		backdropFilter: _backdropFilter,
+		WebkitBackdropFilter: _webkitBackdropFilter,
+		...style
+	} = layerStyle;
+
+	return {
+		style,
+		variants: {
+			hidden: { backdropFilter: BLUR_NONE, WebkitBackdropFilter: BLUR_NONE },
+			visible: {
+				backdropFilter,
+				WebkitBackdropFilter: backdropFilter,
+				transition: { duration: DUR_SLOW, ease: EASE_OUT },
+			},
+			exit: {
+				backdropFilter: BLUR_NONE,
+				WebkitBackdropFilter: BLUR_NONE,
+				transition: { duration: DUR_MEDIUM, ease: EASE_IN },
+			},
+		},
+		reducedVariants: {
+			hidden: { backdropFilter: BLUR_NONE, WebkitBackdropFilter: BLUR_NONE },
+			visible: {
+				backdropFilter,
+				WebkitBackdropFilter: backdropFilter,
+				transition: { duration: 0 },
+			},
+			exit: {
+				backdropFilter: BLUR_NONE,
+				WebkitBackdropFilter: BLUR_NONE,
+				transition: { duration: 0 },
+			},
+		},
+	} as const;
+}
 
 // Progressive backdrop blur ramped to the bottom edge (strongest at the floor, tapering
 // upward) using the shared ScrollMask blur builder — the same layered-veil technique the
 // gallery track uses on its horizontal edges. Static per mount → build once at module
-// scope (no per-render allocation) and NOT opacity-faded (see the BACKDROP note above).
-const BOTTOM_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bottom");
+// scope (no per-render allocation). Each layer eases its own filter strength to zero
+// on exit, avoiding the backdrop-root isolation caused by fading an ancestor opacity.
+const BOTTOM_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bottom").map(
+	createBackdropBlurLayer,
+);
 
 // Each layer's mask fades in where the previous one starts fading out, so the
 // overlapping surface bands compound into a smooth ramp from light tint (top) to
@@ -78,6 +128,8 @@ const TINT_MASK =
 	"linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)";
 
 export function GalleryBackdrop(props: Readonly<{ className?: string }>): JSX.Element {
+	const shouldReduceMotion = useReducedMotion();
+
 	return (
 		<div
 			aria-hidden="true"
@@ -88,12 +140,16 @@ export function GalleryBackdrop(props: Readonly<{ className?: string }>): JSX.El
 		>
 			{/* Progressive blur first (painted behind the tint) so the veil lightens the
 			    already-blurred page content — a frosted-glass band that ramps to the floor. */}
-			{BOTTOM_BLUR_LAYERS.map((layerStyle, index) => (
-				<div key={index} style={layerStyle} />
+			{BOTTOM_BLUR_LAYERS.map(({ style, variants, reducedVariants }, index) => (
+				<motion.div
+					key={index}
+					style={style}
+					variants={shouldReduceMotion ? reducedVariants : variants}
+				/>
 			))}
 			<motion.div
 				className="absolute inset-0"
-				variants={BACKDROP}
+				variants={shouldReduceMotion ? BACKDROP_REDUCED : BACKDROP}
 				style={{ willChange: "opacity" }}
 			>
 				{VEIL_LAYERS.map((layer) => (

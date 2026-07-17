@@ -1,18 +1,15 @@
 "use client";
 
-// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
-// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
-
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 
 import { token } from "@/lib/tokens";
+import { AttachmentPreviewCard } from "@/components/ui-custom/attachment-preview-card";
 import { Button } from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import { Badge } from "@/components/ui/badge";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo } from "@/components/ui/logo";
-import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { useWorkItemModal, type WorkItemAttachment } from "@/app/contexts/context-work-item-modal";
 import {
 	FileChartColumnIcon,
@@ -25,9 +22,6 @@ import {
 } from "@/components/ui/vpk-icons";
 
 const ATTACHMENT_ICON_CLASS_NAME = "size-3 text-icon-subtlest [&_svg]:size-3";
-const ATTACHMENT_CARD_RADIUS = 6;
-const ATTACHMENT_GENERATION_DURATION_SECONDS = 2;
-const ATTACHMENT_GENERATION_SIZE = 172;
 const ATTACHMENT_SOURCE_LABELS = {
 	confluence: "Confluence",
 	loom: "Loom",
@@ -170,109 +164,16 @@ function AttachmentCard({
 }: Readonly<AttachmentCardProps>) {
 	const title = getAttachmentTitle(file);
 	const canOpenPreview = Boolean(file.previewKind && onOpen);
-	const [isGenerationActive, setIsGenerationActive] = useState(isHighlighted);
-	const handleGenerationComplete = useCallback(() => {
-		setIsGenerationActive(false);
-	}, []);
-	const showGenerationEffect = isGenerationActive;
-	const containerStyle: CSSProperties = {
-		minWidth: 0,
-		borderRadius: token("radius.medium"),
-		overflow: "hidden",
-		boxShadow: token("elevation.shadow.raised"),
-		backgroundColor: token("elevation.surface"),
-		cursor: canOpenPreview ? "pointer" : undefined,
-	};
-	const highlightedContainerStyle: CSSProperties = {
-		minWidth: 0,
-		borderRadius: token("radius.medium"),
-		cursor: canOpenPreview ? "pointer" : undefined,
-	};
-	const generationSurfaceStyle: CSSProperties = {
-		minWidth: 0,
-		width: "100%",
-		height: "auto",
-		boxShadow: token("elevation.shadow.raised"),
-	};
-
-	useEffect(() => {
-		if (!isHighlighted) {
-			setIsGenerationActive(false);
-			return;
-		}
-
-		setIsGenerationActive(true);
-	}, [isHighlighted, highlightedAttachmentKey]);
-
-	const cardContent = (
-		<>
-			<div
-				style={{
-					position: "relative",
-					height: "104px",
-					backgroundColor: file.previewSrc || file.previewHtml ? "transparent" : getAttachmentColor(file),
-				}}
-			>
-				{renderAttachmentPreview(file, title)}
-			</div>
-			<div className="flex min-w-0 items-center gap-2" style={{ padding: token("space.075") }}>
-				<div
-					className="min-w-0 flex-1"
-					style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-					title={title}
-				>
-					<span className="text-xs font-normal">
-						{title}
-					</span>
-				</div>
-				{renderAttachmentIcon(file)}
-			</div>
-		</>
-	);
-	const visibleContent = showGenerationEffect ? (
-		<RovoGeneration.Root
-			key={highlightedAttachmentKey ?? "highlighted-attachment"}
-			animated={true}
-			border={true}
-			duration={ATTACHMENT_GENERATION_DURATION_SECONDS}
-			generating={isGenerationActive}
-			glow={true}
-			onGenerationComplete={handleGenerationComplete}
-			radius={ATTACHMENT_CARD_RADIUS}
-			size={ATTACHMENT_GENERATION_SIZE}
-			className="w-full"
-			style={generationSurfaceStyle}
-		>
-			<div className="w-full p-[var(--rovo-generation-border-width)]">
-				<div className="overflow-hidden rounded-[calc(var(--rovo-generation-radius)-var(--rovo-generation-border-width))] bg-surface">
-					{cardContent}
-				</div>
-			</div>
-		</RovoGeneration.Root>
-	) : cardContent;
-	const rootStyle = showGenerationEffect ? highlightedContainerStyle : containerStyle;
-
-	if (canOpenPreview) {
-		return (
-			<button
-				type="button"
-				onClick={() => onOpen?.(file)}
-				className="w-full p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-				style={rootStyle}
-				data-highlighted-attachment={isGenerationActive ? "true" : undefined}
-			>
-				{visibleContent}
-			</button>
-		);
-	}
-
 	return (
-		<div
-			style={rootStyle}
-			data-highlighted-attachment={isGenerationActive ? "true" : undefined}
-		>
-			{visibleContent}
-		</div>
+		<AttachmentPreviewCard
+			highlightedKey={highlightedAttachmentKey}
+			isHighlighted={isHighlighted}
+			onOpen={canOpenPreview ? () => onOpen?.(file) : undefined}
+			preview={renderAttachmentPreview(file, title)}
+			previewBackgroundColor={file.previewSrc || file.previewHtml ? "transparent" : getAttachmentColor(file)}
+			title={title}
+			trailingVisual={renderAttachmentIcon(file)}
+		/>
 	);
 }
 

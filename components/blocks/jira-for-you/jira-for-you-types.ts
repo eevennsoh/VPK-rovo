@@ -5,11 +5,6 @@ export interface JiraForYouAgent {
 	name: string;
 	/** Absolute path to the agent avatar SVG under `public/`. */
 	avatarSrc: string;
-	/**
-	 * This agent's live status (e.g. "In progress"). Used to build the grouped
-	 * "<count> <status>" byline copy when an item has multiple agents.
-	 */
-	status?: string;
 }
 
 export interface JiraForYouItem {
