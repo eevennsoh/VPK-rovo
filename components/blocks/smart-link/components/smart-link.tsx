@@ -324,7 +324,7 @@ function SmartLinkTrigger({
 				// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
 				// inline chip sits on a single text line; the large size scales the
 				// label to 16px. Per-size gaps/padding live in triggerSizeClasses.
-				"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-baseline font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 				triggerSizeClasses[size],
 				// Match the gap beside a trailing status lozenge to the chip's
 				// top/bottom gap (see triggerStatusPaddingClasses).
