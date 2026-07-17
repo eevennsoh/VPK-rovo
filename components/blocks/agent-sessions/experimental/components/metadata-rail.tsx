@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { METADATA_PEOPLE } from "@/components/blocks/agent-sessions/data/metadata-people";
-import { useAgentSessionsMeta } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import {
+	useAgentSessionsActions,
+	useAgentSessionsMeta,
+	useAgentSessionsState,
+} from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { StatusPill } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
 import {
 	DetailsTab,
-	seedMetadataDraft,
-	type MetadataDraft,
 } from "@/components/blocks/agent-sessions/experimental/components/details-tab";
 import { AutomationTab } from "@/components/blocks/agent-sessions/experimental/components/automation-tab";
 import { AppsSection, DevelopmentSection } from "@/components/blocks/agent-sessions/experimental/components/details-sections";
@@ -32,26 +34,20 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
 /**
  * Video-matched work-item Details right column for the experimental variant: a
  * status pill bar, a Details/Automation tabbed card (click-to-add + inline-edit
- * rows, See more), and collapsible Development + Apps sections. All state is
- * local presentation draft keyed by `workItem.code` — it never touches the
- * foundation session model.
+ * rows, See more), and collapsible Development + Apps sections. Metadata state
+ * lives in the shared block provider so planner decisions and manual edits stay
+ * coordinated without changing the public block API.
  */
 export function MetadataRail() {
 	const { workItem } = useAgentSessionsMeta();
-	const code = workItem.code;
-	const [draftByCode, setDraftByCode] = useState<Record<string, MetadataDraft>>({});
-	const draft = draftByCode[code] ?? seedMetadataDraft(workItem);
+	const { metadata: draft } = useAgentSessionsState();
+	const actions = useAgentSessionsActions();
 	const people = useMemo(
 		() => mergePeople(workItem.assignee, workItem.reporter),
 		[workItem.assignee, workItem.reporter],
 	);
 
-	const updateDraft = (patch: Partial<MetadataDraft>) => {
-		setDraftByCode((previous) => ({
-			...previous,
-			[code]: { ...(previous[code] ?? seedMetadataDraft(workItem)), ...patch },
-		}));
-	};
+	const updateDraft = actions.updateMetadata;
 
 	return (
 		<section aria-label="Work item details" className="flex flex-col gap-3">
