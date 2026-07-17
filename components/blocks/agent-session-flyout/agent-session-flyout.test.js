@@ -61,7 +61,7 @@ test("all four session lifecycle states are labeled", () => {
 // The four /asx seeds must cover the states shown in the flyout screenshots and
 // carry the PR metadata the flyout renders for local sessions.
 test("/asx seeds provide the four expected states with PR fields", () => {
-	const seeds = readRepoFile("components/projects/asx/data/queue-sessions.ts");
+	const seeds = readRepoFile("components/projects/jira-queue/data/queue-sessions.ts");
 
 	for (const status of ["awaiting-input", "running", "pr-open", "merged"]) {
 		assert.match(seeds, new RegExp(`status:\\s*"${status}"`, "u"), `missing seed with status "${status}"`);
