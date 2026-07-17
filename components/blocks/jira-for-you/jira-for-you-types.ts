@@ -1,4 +1,5 @@
 export type JiraForYouIssueType = "task" | "bug" | "subtask" | "epic" | "story";
+export type JiraForYouStatus = "Human review" | "In progress" | "In review" | "To do" | "Done";
 
 export interface JiraForYouAgent {
 	/** Display name, used for the avatar accessible label. */
@@ -15,6 +16,8 @@ export interface JiraForYouItem {
 	issueKey: string;
 	/** Space / project name shown in the metadata row. */
 	spaceName: string;
+	/** Jira workflow status shown in the row's trailing lozenge. */
+	jiraStatus: JiraForYouStatus;
 	/** Agents currently working the item; rendered as an overlapping cluster. */
 	agents?: readonly JiraForYouAgent[];
 	/** Live status copy shown with a shimmer effect (e.g. "In progress"). */

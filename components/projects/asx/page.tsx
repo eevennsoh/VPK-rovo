@@ -5,13 +5,19 @@ import { useCallback, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
 import JiraForYouPage from "@/components/blocks/jira-for-you/page";
 import JiraListPage from "@/components/blocks/jira-list/page";
+import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
-import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
+import {
+	ASX_CHAT_AGENT_PROFILES,
+	buildAsxForYouAgentChatScenario,
+} from "./data/agent-chat-data";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
 import { AgentSessionStage } from "./components/agent-session-stage";
+import { AsxRovoOverlay } from "./components/asx-rovo-overlay";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
 import { QueueStage } from "./components/queue-stage";
@@ -57,12 +63,23 @@ function ListStage(): React.ReactElement {
 // padding), so `pb-56` lets the final item scroll clear of it; closed, that pad
 // is pure dead space, so we drop to a small `pb-8` breathing gap.
 function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean }>): React.ReactElement {
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
+	const handleItemClick = useCallback((item: JiraForYouItem) => {
+		openAgentChat(buildAsxForYouAgentChatScenario(item));
+	}, [openAgentChat]);
+
 	return (
-		<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
-			<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
-				<JiraForYouPage />
+		<>
+			<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
+				<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
+					<JiraForYouPage onItemClick={handleItemClick} />
+				</div>
 			</div>
-		</div>
+			<AsxRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+			/>
+		</>
 	);
 }
 

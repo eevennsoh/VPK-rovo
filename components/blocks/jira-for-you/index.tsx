@@ -89,5 +89,6 @@ export type {
 	JiraForYouIssueType,
 	JiraForYouItem,
 	JiraForYouSection,
+	JiraForYouStatus,
 	JiraForYouTab,
 } from "./jira-for-you-types";

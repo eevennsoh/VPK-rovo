@@ -15,6 +15,7 @@ import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 
+import { JiraForYouStatusLozenge } from "./jira-for-you-status";
 import type {
 	JiraForYouAgent,
 	JiraForYouIssueType,
@@ -31,7 +32,6 @@ const ISSUE_TYPE_META: Record<
 	epic: { Glyph: EpicIcon, variant: "purple", label: "Epic" },
 	story: { Glyph: StoryIcon, variant: "green", label: "Story" },
 };
-
 function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="text-text-subtlest">
@@ -78,7 +78,10 @@ function ItemActions({
 	);
 
 	return (
-		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none">
+		<div
+			className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity duration-fast ease-out-practical hover:pointer-events-auto hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:hover]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:hover]:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
+			data-slot="jira-for-you-actions"
+		>
 			<JiraIssueGenerativeActionMenu
 				action={{ onSubmit: () => undefined }}
 				issue={{ issueKey: item.issueKey, summary: item.title }}
@@ -124,6 +127,7 @@ export function JiraForYouItemRow({
 			/>
 			<button
 				className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+				data-slot="jira-for-you-row-button"
 				onClick={() => onItemClick?.(item)}
 				type="button"
 			>
@@ -131,9 +135,10 @@ export function JiraForYouItemRow({
 					<span className="truncate text-sm font-medium text-text">
 						{item.title}
 					</span>
+				</span>
+				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 					{hasActivity ? (
 						<>
-							<MetadataDot />
 							<span className="flex shrink-0 items-center gap-1">
 								{item.agents?.length ? (
 									<AgentAvatarCluster agents={item.agents} />
@@ -149,10 +154,9 @@ export function JiraForYouItemRow({
 									</Shimmer>
 								) : null}
 							</span>
+							<MetadataDot />
 						</>
 					) : null}
-				</span>
-				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
 					<span className="shrink-0">{meta.label}</span>
 					<MetadataDot />
 					<span className="shrink-0">{item.issueKey}</span>
@@ -160,7 +164,12 @@ export function JiraForYouItemRow({
 					<span className="truncate">{item.spaceName}</span>
 				</span>
 			</button>
-			<ItemActions item={item} onView={() => onItemClick?.(item)} />
+			<div className="relative flex shrink-0 items-center">
+				<ItemActions item={item} onView={() => onItemClick?.(item)} />
+				<div className="transition-opacity duration-fast ease-out-practical group-has-[[data-slot=jira-for-you-row-button]:hover]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:hover]:opacity-0 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]:hover]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]:hover]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:opacity-0 motion-reduce:transition-none">
+					<JiraForYouStatusLozenge value={item.jiraStatus} />
+				</div>
+			</div>
 		</li>
 	);
 }
