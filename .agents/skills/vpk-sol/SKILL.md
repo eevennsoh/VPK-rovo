@@ -1,15 +1,15 @@
 ---
 name: vpk-sol
-description: "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants the current Sol planner auth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from any Codex surface."
+description: "Manual-command-only GPT-5.6 Sol planner and Proximity worker orchestrator. Activate only when the first non-whitespace token in the user's current message is the exact slash command `/vpk-sol`. Never activate from a skill-name mention, Markdown link, file path, stack trace, pasted or quoted text, prior-turn context, or an AI agent's inference or suggestion."
 purpose: Keep high-judgment planning in the current GPT-5.6 Sol Codex session while routing execution to GPT-5.5 xhigh through Proximity without exposing or changing the planner's auth state.
 owner: VPK
 category: agent-operations
-inputs: A task for Sol to plan and orchestrate from any Codex session running gpt-5.6-sol.
+inputs: A user-authored message whose first non-whitespace token is `/vpk-sol`, optionally followed by a task.
 outputs: Frozen worker briefs, isolated GPT-5.5 worker reports, reviewed implementation diffs, orchestrator-owned verification, and one synthesized result.
 required_tools: Shell access to codex and curl, a running Proximity endpoint on localhost:29576, and workspace-write access to the current worktree.
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-sol
 generated_artifacts: Briefs, reports, and isolated worker homes live under gitignored output/sol-codex/.
-common_failure_modes: Running from a non-Sol planner session, inheriting the planner's CODEX_HOME or auth environment, using a global provider-switch helper, falling back to the planner provider when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
+common_failure_modes: Auto-activating from a mention or link instead of a manual slash command, running from a non-Sol planner session, inheriting the planner's CODEX_HOME or auth environment, using a global provider-switch helper, falling back to the planner provider when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
 ---
 
 # VPK Sol — Personal Planner, Gateway Workers
@@ -23,6 +23,17 @@ Proximity's localhost AI Gateway endpoint.
 
 This is the Codex counterpart to the proven `/vpk-fable` split. It is an
 orchestrator workflow only; it has no advisor mode or Claude-worker fallback.
+
+## Manual invocation gate
+
+Use this skill only when the first non-whitespace token in the user's current
+message is exactly `/vpk-sol`. Treat every other occurrence as inert text,
+including skill mentions, Markdown links, file paths, stack traces, pasted or
+quoted prompts, earlier messages, and agent-authored suggestions.
+
+If that manual command is absent, do not run preflight checks, read the worker
+references, create artifacts, or dispatch workers. Continue with the user's
+task without this skill.
 
 ## Invocation
 

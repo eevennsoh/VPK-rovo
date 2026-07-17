@@ -15,6 +15,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Button } from "@/components/ui/button";
+import Heading from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import {
 	Item,
@@ -32,8 +33,10 @@ import {
 	PanelHeader,
 	PanelTitle,
 } from "@/components/ui/panel";
+import { Separator } from "@/components/ui/separator";
 import { PlayIcon } from "@/components/ui/vpk-icons";
 import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
+import { QueueDetailArtifacts } from "./queue-detail-artifacts";
 
 const STATUS_LABELS: Record<AsxQueueSessionStatus, string> = {
 	"awaiting-input": "Awaiting user response",
@@ -59,13 +62,13 @@ const REDUCED_MOTION_PANEL_VARIANTS: Variants = {
 	open: { transform: "translateX(0%)", transition: { duration: 0 } },
 };
 
-interface QueueEnvironmentPanelProps {
+interface QueueDetailPanelProps {
 	agent: RovoAgentProfile;
 	onClose: () => void;
 	session: AsxQueueSession;
 }
 
-function QueueEnvironmentStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
+function QueueDetailStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
 	switch (status) {
 		case "awaiting-input":
 			return <StatusInformationIcon label="" />;
@@ -80,7 +83,7 @@ function QueueEnvironmentStatusIcon({ status }: Readonly<{ status: AsxQueueSessi
 	}
 }
 
-function QueueEnvironmentDetailRow({
+function QueueDetailRow({
 	icon,
 	label,
 	value,
@@ -102,9 +105,35 @@ function QueueEnvironmentDetailRow({
 	);
 }
 
-export function QueueEnvironmentPanel({ agent, onClose, session }: Readonly<QueueEnvironmentPanelProps>) {
+function QueueDetailSection({
+	children,
+	id,
+	title,
+}: Readonly<{
+	children: ReactNode;
+	id: string;
+	title: string;
+}>) {
+	return (
+		<section aria-labelledby={id} className="space-y-2 px-4 py-4">
+			<Heading as="h3" className="px-2" id={id} size="xxsmall">
+				{title}
+			</Heading>
+			{children}
+		</section>
+	);
+}
+
+export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDetailPanelProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
+	const hasDevelopmentDetails = Boolean(session.repository || session.branch || session.worktreePath);
+	const hasDeliveryDetails = Boolean(
+		session.pullRequestNumber
+		|| session.commit
+		|| session.checks
+		|| session.fileChanges,
+	);
 
 	return (
 		<motion.div
@@ -116,64 +145,80 @@ export function QueueEnvironmentPanel({ agent, onClose, session }: Readonly<Queu
 			variants={shouldReduceMotion ? REDUCED_MOTION_PANEL_VARIANTS : PANEL_VARIANTS}
 		>
 			<PanelContainer
-				aria-label="Environment"
+				aria-label="Detail"
 				className="h-full border-l border-border bg-surface"
-				id="asx-queue-environment-panel"
+				id="asx-queue-detail-panel"
 			>
 				<PanelHeader className="h-14 px-4 py-3">
-					<PanelTitle>Environment</PanelTitle>
+					<PanelTitle>Detail</PanelTitle>
 					<PanelActionGroup>
 						<PanelActionMore />
 						<Button aria-label="Run" size="icon" type="button" variant="ghost">
 							<PlayIcon aria-hidden />
 						</Button>
-						<PanelActionClose label="Close environment panel" onClick={onClose} />
+						<PanelActionClose label="Close detail panel" onClick={onClose} />
 					</PanelActionGroup>
 				</PanelHeader>
 
 				<PanelContent>
-					<PanelBody className="space-y-4 px-4 pb-5">
-						<div className="min-w-0 px-2">
-							<p className="truncate text-sm font-semibold leading-5 text-text" title={session.title}>
-								{session.title}
-							</p>
-							<p className="text-xs leading-4 text-text-subtlest">
-								{session.host === "cloud" ? "Cloud session" : "Local session"}
-							</p>
-						</div>
-						<ItemGroup className="gap-0">
-							<QueueEnvironmentDetailRow
-								icon={<QueueEnvironmentStatusIcon status={session.status} />}
-								label="Status"
-								value={STATUS_LABELS[session.status]}
-							/>
-							<QueueEnvironmentDetailRow
-								icon={session.host === "cloud" ? <CloudArrowUpIcon label="" /> : <FolderClosedIcon label="" />}
-								label="Host"
-								value={session.host === "cloud" ? "Cloud" : "Local"}
-							/>
-							<QueueEnvironmentDetailRow icon={<AiAgentIcon label="" />} label="Agent" value={agent.name} />
-							<QueueEnvironmentDetailRow icon={<TaskIcon label="" />} label="Jira" value={issueDescription} />
-							{session.repository ? <QueueEnvironmentDetailRow icon={<FolderClosedIcon label="" />} label="Repository" value={session.repository} /> : null}
-							{session.branch ? <QueueEnvironmentDetailRow icon={<BranchIcon label="" />} label="Branch" value={session.branch} /> : null}
-							{session.worktreePath ? <QueueEnvironmentDetailRow icon={<FolderClosedIcon label="" />} label="Worktree" value={session.worktreePath} /> : null}
-							{session.pullRequestNumber ? <QueueEnvironmentDetailRow icon={<PullRequestIcon label="" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
-							{session.commit ? <QueueEnvironmentDetailRow icon={<CommitIcon label="" />} label="Commit" value={session.commit} /> : null}
-							{session.checks ? <QueueEnvironmentDetailRow icon={<CheckCircleIcon label="" />} label="Checks" value={session.checks} /> : null}
-							{session.fileChanges ? (
-								<QueueEnvironmentDetailRow
-									icon={<ChangesIcon label="" />}
-									label="Changes"
-									value={(
-										<span className="inline-flex flex-wrap gap-1 font-medium">
-											<span>{session.fileChanges.files.length} files</span>
-											<span className="text-text-success">+{session.fileChanges.additions}</span>
-											<span className="text-text-danger">-{session.fileChanges.deletions}</span>
-										</span>
-									)}
+					<PanelBody className="pb-5" spacing="none">
+						<QueueDetailSection id="asx-queue-session-heading" title="Session">
+							<ItemGroup className="gap-0">
+								<QueueDetailRow
+									icon={<QueueDetailStatusIcon status={session.status} />}
+									label="Status"
+									value={STATUS_LABELS[session.status]}
 								/>
-							) : null}
-						</ItemGroup>
+								<QueueDetailRow
+									icon={session.host === "cloud" ? <CloudArrowUpIcon label="" /> : <FolderClosedIcon label="" />}
+									label="Host"
+									value={session.host === "cloud" ? "Cloud" : "Local"}
+								/>
+								<QueueDetailRow icon={<AiAgentIcon label="" />} label="Agent" value={agent.name} />
+								<QueueDetailRow icon={<TaskIcon label="" />} label="Jira" value={issueDescription} />
+							</ItemGroup>
+						</QueueDetailSection>
+
+						{hasDevelopmentDetails ? (
+							<>
+								<Separator />
+								<QueueDetailSection id="asx-queue-development-heading" title="Development">
+									<ItemGroup className="gap-0">
+										{session.repository ? <QueueDetailRow icon={<FolderClosedIcon label="" />} label="Repository" value={session.repository} /> : null}
+										{session.branch ? <QueueDetailRow icon={<BranchIcon label="" />} label="Branch" value={session.branch} /> : null}
+										{session.worktreePath ? <QueueDetailRow icon={<FolderClosedIcon label="" />} label="Worktree" value={session.worktreePath} /> : null}
+									</ItemGroup>
+								</QueueDetailSection>
+							</>
+						) : null}
+
+						{hasDeliveryDetails ? (
+							<>
+								<Separator />
+								<QueueDetailSection id="asx-queue-delivery-heading" title="Delivery">
+									<ItemGroup className="gap-0">
+										{session.pullRequestNumber ? <QueueDetailRow icon={<PullRequestIcon label="" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
+										{session.commit ? <QueueDetailRow icon={<CommitIcon label="" />} label="Commit" value={session.commit} /> : null}
+										{session.checks ? <QueueDetailRow icon={<CheckCircleIcon label="" />} label="Checks" value={session.checks} /> : null}
+										{session.fileChanges ? (
+											<QueueDetailRow
+												icon={<ChangesIcon label="" />}
+												label="Changes"
+												value={(
+													<span className="inline-flex flex-wrap gap-1 font-medium">
+														<span>{session.fileChanges.files.length} files</span>
+														<span className="text-text-success">+{session.fileChanges.additions}</span>
+														<span className="text-text-danger">-{session.fileChanges.deletions}</span>
+													</span>
+												)}
+											/>
+										) : null}
+									</ItemGroup>
+								</QueueDetailSection>
+							</>
+						) : null}
+
+						<QueueDetailArtifacts session={session} />
 					</PanelBody>
 				</PanelContent>
 			</PanelContainer>

@@ -18,6 +18,10 @@ const ATTACHMENTS_SECTION_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira/components/work-item-modal/attachments-section.tsx"),
 	"utf8",
 );
+const ATTACHMENT_PREVIEW_CARD_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/attachment-preview-card.tsx"),
+	"utf8",
+);
 const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
 	"utf8",
@@ -313,7 +317,8 @@ test("work item details render the board tag model", () => {
 test("agents attachment grid mixes simple file icons with source product logos", () => {
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /from "@\/components\/ui\/icon-tile";/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /from "@\/components\/ui\/logo";/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /from "@\/components\/ui-custom\/rovo-generation";/);
+	assert.match(ATTACHMENTS_SECTION_SOURCE, /from "@\/components\/ui-custom\/attachment-preview-card";/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /from "@\/components\/ui-custom\/rovo-generation";/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /from "@\/components\/ui\/vpk-icons";/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /AtlassianLogo/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /ATTACHMENT_SOURCE_LABELS/);
@@ -329,21 +334,22 @@ test("agents attachment grid mixes simple file icons with source product logos",
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /size=\{12\}/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /if \(file\.previewHtml\)/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /srcDoc=\{file\.previewHtml\}/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /\{renderAttachmentIcon\(file\)\}/);
+	assert.match(ATTACHMENTS_SECTION_SOURCE, /trailingVisual=\{renderAttachmentIcon\(file\)\}/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /scrollIntoView\(\{[\s\S]*behavior: "smooth"[\s\S]*block: "center"/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /const ATTACHMENT_GENERATION_DURATION_SECONDS = 2;/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /const \[isGenerationActive, setIsGenerationActive\] = useState\(isHighlighted\);/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /const showGenerationEffect = isGenerationActive;/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /const handleGenerationComplete = useCallback\(\(\) => \{[\s\S]*setIsGenerationActive\(false\);[\s\S]*\}, \[\]\);/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /setIsGenerationActive\(true\);[\s\S]*\}, \[isHighlighted, highlightedAttachmentKey\]\);/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /<RovoGeneration\.Root[\s\S]*border=\{true\}[\s\S]*glow=\{true\}/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /duration=\{ATTACHMENT_GENERATION_DURATION_SECONDS\}/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /generating=\{isGenerationActive\}/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /onGenerationComplete=\{handleGenerationComplete\}/);
+	assert.match(ATTACHMENTS_SECTION_SOURCE, /highlightedKey=\{highlightedAttachmentKey\}/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const ATTACHMENT_GENERATION_DURATION_SECONDS = 2;/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const \[isGenerationActive, setIsGenerationActive\] = useState\(isHighlighted\);/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const showGenerationEffect = isGenerationActive;/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /const handleGenerationComplete = useCallback\(\(\) => \{[\s\S]*setIsGenerationActive\(false\);[\s\S]*\}, \[\]\);/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /setIsGenerationActive\(true\);[\s\S]*\}, \[highlightedKey, isHighlighted\]\);/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /<RovoGeneration\.Root[\s\S]*border[\s\S]*glow/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /duration=\{ATTACHMENT_GENERATION_DURATION_SECONDS\}/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /generating=\{isGenerationActive\}/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /onGenerationComplete=\{handleGenerationComplete\}/);
 	assert.match(ATTACHMENTS_SECTION_SOURCE, /highlightedAttachmentKey=\{meta\.highlightedAttachmentKey\}/);
-	assert.match(ATTACHMENTS_SECTION_SOURCE, /data-highlighted-attachment=\{isGenerationActive \? "true" : undefined\}/);
+	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /data-highlighted-attachment=\{isGenerationActive \? "true" : undefined\}/);
 	assert.doesNotMatch(ATTACHMENTS_SECTION_SOURCE, /animate-attachment-added-glow/);
-	assert.doesNotMatch(ATTACHMENTS_SECTION_SOURCE, /const showGenerationEffect = isHighlighted \|\| isGenerationActive;/);
+	assert.doesNotMatch(ATTACHMENT_PREVIEW_CARD_SOURCE, /const showGenerationEffect = isHighlighted \|\| isGenerationActive;/);
 	assert.doesNotMatch(ATTACHMENTS_SECTION_SOURCE, /icon=\{renderAttachmentIcon\(file\)\}/);
 	assert.doesNotMatch(ATTACHMENTS_SECTION_SOURCE, /\/website\/vpk-logo-dark\.svg/);
 	assert.doesNotMatch(ATTACHMENTS_SECTION_SOURCE, /label="VPK"/);

@@ -7765,7 +7765,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
 			},
 			{
-				"description": "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants the current Sol planner auth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from any Codex surface.",
+				"description": "Manual-command-only GPT-5.6 Sol planner and Proximity worker orchestrator. Activate only when the first non-whitespace token in the user's current message is the exact slash command `/vpk-sol`. Never activate from a skill-name mention, Markdown link, file path, stack trace, pasted or quoted text, prior-turn context, or an AI agent's inference or suggestion.",
 				"name": "vpk-sol",
 				"path": ".agents/skills/vpk-sol/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-sol"
