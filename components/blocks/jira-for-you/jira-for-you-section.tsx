@@ -39,7 +39,11 @@ function ItemList({
 	return (
 		<ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
 			{items.map((item) => (
-				<JiraForYouItemRow item={item} key={item.id} onItemClick={onItemClick} />
+				<JiraForYouItemRow
+					item={item}
+					key={item.id}
+					onItemClick={onItemClick}
+				/>
 			))}
 		</ul>
 	);

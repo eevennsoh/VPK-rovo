@@ -35,7 +35,7 @@ export const JIRA_FOR_YOU_TABS: readonly JiraForYouTab[] = [
 export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 	{
 		id: "needs-input",
-		label: "Needs input",
+		label: "Human review",
 		items: [
 			{
 				id: "vitafleet-presentation",
@@ -43,6 +43,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "task",
 				issueKey: "VITA-142",
 				spaceName: "Vitafleet",
+				jiraStatus: "Human review",
 				tabs: ["assigned", "worked-on"],
 				agents: [READINESS_AGENT],
 				status: "Awaiting user response",
@@ -60,6 +61,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "task",
 				issueKey: "CRM-318",
 				spaceName: "Revenue platform",
+				jiraStatus: "In progress",
 				tabs: ["assigned", "worked-on", "viewed"],
 				agents: [READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT],
 				status: "1 Awaiting user response, 2 In progress",
@@ -71,9 +73,11 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "task",
 				issueKey: "PERF-27",
 				spaceName: "Data platform",
+				jiraStatus: "In progress",
 				tabs: ["assigned", "worked-on"],
 				agents: [PROGRESS_AGENT],
 				status: "In progress",
+				isRunning: true,
 			},
 			{
 				id: "refactor-readability",
@@ -81,9 +85,11 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "bug",
 				issueKey: "WEB-461",
 				spaceName: "Web app",
+				jiraStatus: "In review",
 				tabs: ["worked-on", "viewed"],
 				agents: [PLANNER_AGENT],
 				status: "In review",
+				isRunning: true,
 			},
 		],
 	},
@@ -98,6 +104,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "bug",
 				issueKey: "PAY-88",
 				spaceName: "Payments",
+				jiraStatus: "To do",
 				tabs: ["assigned"],
 			},
 			{
@@ -106,6 +113,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "subtask",
 				issueKey: "GROW-204",
 				spaceName: "Growth",
+				jiraStatus: "To do",
 				tabs: ["assigned", "viewed"],
 			},
 			{
@@ -114,6 +122,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "task",
 				issueKey: "QA-56",
 				spaceName: "Quality",
+				jiraStatus: "To do",
 				tabs: ["worked-on"],
 			},
 		],
@@ -129,6 +138,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "epic",
 				issueKey: "PLAT-12",
 				spaceName: "Platform",
+				jiraStatus: "Done",
 				tabs: ["viewed"],
 			},
 			{
@@ -137,6 +147,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "story",
 				issueKey: "DS-73",
 				spaceName: "Design system",
+				jiraStatus: "Done",
 				tabs: ["assigned", "worked-on", "viewed"],
 			},
 			{
@@ -145,6 +156,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "story",
 				issueKey: "INT-119",
 				spaceName: "Integrations",
+				jiraStatus: "Done",
 				tabs: ["viewed"],
 			},
 		],
