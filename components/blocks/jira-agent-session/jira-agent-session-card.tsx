@@ -2,12 +2,15 @@
 
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -17,10 +20,14 @@ import type {
 } from "./jira-agent-session-types";
 
 /**
- * State → title-line treatment. `running` shimmers the work-item title (the
- * shimmer alone communicates "in progress"); `needs-input` overrides the title
- * with "Awaiting user response" plus animated dots; `complete` shows a solid
- * title. Only `running` exposes a Stop action.
+ * State → title-line + lifecycle treatment. `running` shows a solid title with a
+ * trailing rainbow spinner; `needs-input` overrides the title with "Awaiting
+ * user response" plus animated dots and a trailing info icon; `complete` shows a
+ * solid title with no lifecycle indicator. `running` and `needs-input` both
+ * expose a Stop action; `complete` does not.
+ *
+ * The trailing indicator itself is rendered by {@link LifecycleIndicator};
+ * `showLifecycle` only gates whether the row reserves that trailing slot.
  */
 const STATE_META: Record<
 	JiraAgentSessionState,
@@ -30,25 +37,30 @@ const STATE_META: Record<
 		shimmerTitle: boolean;
 		showDots: boolean;
 		showStop: boolean;
+		/** Whether the row renders a trailing lifecycle indicator. */
+		showLifecycle: boolean;
 	}
 > = {
 	running: {
 		titleOverride: null,
-		shimmerTitle: true,
+		shimmerTitle: false,
 		showDots: false,
 		showStop: true,
+		showLifecycle: true,
 	},
 	"needs-input": {
 		titleOverride: "Awaiting user response",
 		shimmerTitle: true,
 		showDots: true,
-		showStop: false,
+		showStop: true,
+		showLifecycle: true,
 	},
 	complete: {
 		titleOverride: null,
 		shimmerTitle: false,
 		showDots: false,
 		showStop: false,
+		showLifecycle: false,
 	},
 };
 
@@ -78,6 +90,51 @@ function MetadataDot() {
 			·
 		</span>
 	);
+}
+
+/**
+ * Trailing per-state lifecycle indicator, mirroring the Jira queue card
+ * (`components/blocks/product-sidebar/variants/jira.tsx`): `running` shows the
+ * Rovo rainbow spinner, `needs-input` an information icon, `complete` nothing.
+ * Each glyph sits in a 24×24 transparent {@link IconTile} (12px design inside),
+ * so the trailing slot reads at a consistent size across states.
+ */
+function LifecycleIndicator({
+	state,
+}: Readonly<{ state: JiraAgentSessionState }>) {
+	switch (state) {
+		case "running":
+			return (
+				<IconTile
+					icon={<Spinner label="Running" variant="rainbow" />}
+					iconSize="small"
+					label="Running"
+					size="small"
+					variant="transparent"
+				/>
+			);
+		case "needs-input":
+			return (
+				<IconTile
+					icon={
+						<span className="text-icon-information">
+							<StatusInformationIcon
+								color="currentColor"
+								label=""
+								size="small"
+							/>
+						</span>
+					}
+					iconSize="small"
+					label="Awaiting user response"
+					size="small"
+					title="Awaiting user response"
+					variant="transparent"
+				/>
+			);
+		case "complete":
+			return null;
+	}
 }
 
 function CardActions({
@@ -138,7 +195,7 @@ export function JiraAgentSessionCard({
 				onClick={() => onView?.(item)}
 				type="button"
 			>
-				<span className="flex w-full min-w-0 items-center gap-1">
+				<span className="flex w-full min-w-0 items-center gap-0">
 					{stateMeta.shimmerTitle ? (
 						<Shimmer
 							as="span"
@@ -177,6 +234,11 @@ export function JiraAgentSessionCard({
 					) : null}
 				</span>
 			</button>
+			{stateMeta.showLifecycle ? (
+				<span className="flex shrink-0 items-center transition-opacity duration-fast ease-out-practical group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none">
+					<LifecycleIndicator state={item.state} />
+				</span>
+			) : null}
 			<CardActions
 				item={item}
 				onStop={onStop}
