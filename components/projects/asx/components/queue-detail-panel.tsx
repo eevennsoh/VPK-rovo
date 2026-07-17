@@ -83,7 +83,10 @@ interface QueueDetailPanelProps {
 	resize: Pick<
 		ReturnType<typeof useSidebarResize>,
 		| "isResizing"
+		| "maxWidth"
+		| "minWidth"
 		| "onResizeHandleDoubleClick"
+		| "onResizeHandleKeyDown"
 		| "onResizeHandlePointerDown"
 		| "onResizeHandlePointerEnter"
 		| "onResizeHandlePointerLeave"
@@ -267,13 +270,22 @@ export function QueueDetailPanel({ agent, onClose, resize, session }: Readonly<Q
 				</PanelContent>
 			</PanelContainer>
 			<SidebarResizeHandle
+				aria-label="Resize details panel"
+				aria-orientation="vertical"
+				aria-valuemax={resize.maxWidth}
+				aria-valuemin={resize.minWidth}
+				aria-valuenow={resize.sidebarWidth}
+				className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				data-active={resize.isResizing ? "" : undefined}
 				data-testid="asx-queue-detail-resize-handle"
 				onDoubleClick={resize.onResizeHandleDoubleClick}
+				onKeyDown={resize.onResizeHandleKeyDown}
 				onPointerDown={resize.onResizeHandlePointerDown}
 				onPointerEnter={resize.onResizeHandlePointerEnter}
 				onPointerLeave={resize.onResizeHandlePointerLeave}
+				role="separator"
 				side="left"
+				tabIndex={0}
 			/>
 		</motion.div>
 	);

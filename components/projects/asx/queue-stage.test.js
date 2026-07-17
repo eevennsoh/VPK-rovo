@@ -34,6 +34,10 @@ const QUEUE_DETAIL_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-detail-panel.tsx"),
 	"utf8",
 );
+const SIDEBAR_RESIZE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../rovo-core/hooks/use-sidebar-resize.ts"),
+	"utf8",
+);
 const QUEUE_DETAIL_ARTIFACTS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/queue-detail-artifacts.tsx"),
 	"utf8",
@@ -344,6 +348,11 @@ test("Queue detail panel reuses the right-sidebar resize behavior on its separat
 		QUEUE_DETAIL_PANEL_SOURCE,
 		/<SidebarResizeHandle[\s\S]*data-active=\{resize\.isResizing \? "" : undefined\}[\s\S]*data-testid="asx-queue-detail-resize-handle"[\s\S]*onDoubleClick=\{resize\.onResizeHandleDoubleClick\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*side="left"/u,
 	);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /aria-label="Resize details panel"[\s\S]*aria-orientation="vertical"/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /aria-valuemax=\{resize\.maxWidth\}[\s\S]*aria-valuemin=\{resize\.minWidth\}[\s\S]*aria-valuenow=\{resize\.sidebarWidth\}/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /onKeyDown=\{resize\.onResizeHandleKeyDown\}[\s\S]*role="separator"[\s\S]*tabIndex=\{0\}/u);
+	assert.match(SIDEBAR_RESIZE_SOURCE, /case "ArrowLeft":[\s\S]*case "ArrowRight":[\s\S]*case "Home":[\s\S]*case "End":/u);
+	assert.match(SIDEBAR_RESIZE_SOURCE, /const clampedWidth = clamp\(nextWidth, minWidth, maxWidth\)/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /border-l border-border/u);
 });
 
