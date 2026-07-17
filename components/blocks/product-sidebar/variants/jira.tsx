@@ -388,7 +388,7 @@ function JiraSessionDetailRow({
 	);
 }
 
-function JiraSessionHoverDetails({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+export function JiraSessionHoverDetails({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
 	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 
 	return (

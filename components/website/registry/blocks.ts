@@ -117,6 +117,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-sessions-demo"),
 		{ ssr: false },
 	),
+	"agent-session-flyout": dynamic(
+		() => import("../demos/blocks/agent-session-flyout-demo"),
+		{ ssr: false },
+	),
 	"agent-sessions-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
