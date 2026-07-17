@@ -16,14 +16,14 @@ function getAgentInitials(agentName: string): string {
 
 interface QueueConversationHeaderProps {
 	agent: RovoAgentProfile;
-	isEnvironmentPanelOpen: boolean;
-	onEnvironmentPanelToggle: () => void;
+	isDetailPanelOpen: boolean;
+	onDetailPanelToggle: () => void;
 }
 
 export function QueueConversationHeader({
 	agent,
-	isEnvironmentPanelOpen,
-	onEnvironmentPanelToggle,
+	isDetailPanelOpen,
+	onDetailPanelToggle,
 }: Readonly<QueueConversationHeaderProps>) {
 	return (
 		<header className="flex shrink-0 items-center gap-3 px-3 py-3">
@@ -44,12 +44,12 @@ export function QueueConversationHeader({
 
 			<div className="min-h-px min-w-px flex-1" />
 
-			{isEnvironmentPanelOpen ? null : (
+			{isDetailPanelOpen ? null : (
 				<Button
-					aria-controls="asx-queue-environment-panel"
+					aria-controls="asx-queue-detail-panel"
 					aria-expanded={false}
-					aria-label="Open environment panel"
-					onClick={onEnvironmentPanelToggle}
+					aria-label="Open detail panel"
+					onClick={onDetailPanelToggle}
 					size="icon"
 					type="button"
 					variant="ghost"
