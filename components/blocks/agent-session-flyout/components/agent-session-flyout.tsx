@@ -23,7 +23,7 @@ import {
 import {
 	ASX_QUEUE_SESSION_SEEDS,
 	createAsxQueueSidebarSessionItem,
-} from "@/components/projects/asx/data/queue-sessions";
+} from "@/components/projects/jira-queue/data/queue-sessions";
 import {
 	HoverCard,
 	HoverCardContent,
