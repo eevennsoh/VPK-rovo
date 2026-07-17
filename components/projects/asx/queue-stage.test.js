@@ -20,18 +20,18 @@ const ROVO_STAGE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/rovo-stage.tsx"),
 	"utf8",
 );
-const QUEUE_STAGE_SOURCE = fs.readFileSync(path.join(__dirname, "components/queue-stage.tsx"), "utf8");
-const QUEUE_SESSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "data/queue-sessions.ts"), "utf8");
+const QUEUE_STAGE_SOURCE = fs.readFileSync(path.join(__dirname, "../jira-queue/components/queue-stage.tsx"), "utf8");
+const QUEUE_SESSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../jira-queue/data/queue-sessions.ts"), "utf8");
 const QUEUE_WORKSPACE_SOURCE = fs.readFileSync(
-	path.join(__dirname, "components/queue-conversation-workspace.tsx"),
+	path.join(__dirname, "../jira-queue/components/queue-conversation-workspace.tsx"),
 	"utf8",
 );
 const QUEUE_HEADER_SOURCE = fs.readFileSync(
-	path.join(__dirname, "components/queue-conversation-header.tsx"),
+	path.join(__dirname, "../jira-queue/components/queue-conversation-header.tsx"),
 	"utf8",
 );
 const QUEUE_DETAIL_PANEL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "components/queue-detail-panel.tsx"),
+	path.join(__dirname, "../jira-queue/components/queue-detail-panel.tsx"),
 	"utf8",
 );
 const SIDEBAR_RESIZE_SOURCE = fs.readFileSync(
@@ -39,7 +39,7 @@ const SIDEBAR_RESIZE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const QUEUE_DETAIL_ARTIFACTS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "components/queue-detail-artifacts.tsx"),
+	path.join(__dirname, "../jira-queue/components/queue-detail-artifacts.tsx"),
 	"utf8",
 );
 const ATTACHMENT_PREVIEW_CARD_SOURCE = fs.readFileSync(
@@ -194,7 +194,7 @@ test("ASX Rovo history uses Queue sorting and exposes its controller", () => {
 
 test("ASX Rovo reuses the Queue session context bar above its composer", () => {
 	assert.match(QUEUE_WORKSPACE_SOURCE, /export function QueueSessionContextBar/u);
-	assert.match(ROVO_STAGE_SOURCE, /import \{ QueueSessionContextBar \} from "\.\/queue-conversation-workspace";/u);
+	assert.match(ROVO_STAGE_SOURCE, /import \{ QueueSessionContextBar \} from "@\/components\/projects\/jira-queue\/components\/queue-conversation-workspace";/u);
 	assert.match(ROVO_STAGE_SOURCE, /dismissQueueSessionFileChanges\(sessions, activeHistorySessionId\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionJiraColumn\(sessions, activeHistorySessionId, jiraColumn\)/u);
 	assert.match(

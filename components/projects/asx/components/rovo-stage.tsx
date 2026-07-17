@@ -14,14 +14,14 @@ import ChatPanel, {
 	type ChatPanelHistoryController,
 } from "@/components/projects/sidebar-chat/page";
 import type { ChatHistorySortMode } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
-import { QueueSessionContextBar } from "./queue-conversation-workspace";
+import { QueueSessionContextBar } from "@/components/projects/jira-queue/components/queue-conversation-workspace";
 import {
 	ASX_QUEUE_SESSION_SEEDS,
 	createAsxQueueSidebarSessionItem,
 	createAsxQueueHistoryThreads,
 	type AsxQueueJiraColumn,
 	type AsxQueueSession,
-} from "../data/queue-sessions";
+} from "@/components/projects/jira-queue/data/queue-sessions";
 import {
 	archiveQueueSession,
 	dismissQueueSessionFileChanges,
@@ -29,7 +29,7 @@ import {
 	setQueueSessionPinned,
 	sortQueueSessions,
 	stopQueueSession,
-} from "../lib/queue-session-state";
+} from "@/components/projects/jira-queue/lib/queue-session-state";
 
 function ignoreThreadRun(): Promise<void> {
 	return Promise.resolve();

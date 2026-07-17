@@ -11,7 +11,7 @@ async function loadQueueStateHarness() {
 				export {
 					ASX_QUEUE_SESSION_SEEDS,
 					createAsxQueueHistoryThreads,
-				} from "./components/projects/asx/data/queue-sessions";
+				} from "./components/projects/jira-queue/data/queue-sessions";
 				export {
 					appendQueueSessionUserMessage,
 					archiveQueueSession,
@@ -25,7 +25,7 @@ async function loadQueueStateHarness() {
 					setQueueSessionPinned,
 					sortQueueSessions,
 					stopQueueSession,
-				} from "./components/projects/asx/lib/queue-session-state";
+				} from "./components/projects/jira-queue/lib/queue-session-state";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
