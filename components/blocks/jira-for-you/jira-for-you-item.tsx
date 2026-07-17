@@ -79,7 +79,7 @@ function ItemActions({
 
 	return (
 		<div
-			className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity duration-fast ease-out-practical hover:pointer-events-auto hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:hover]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:hover]:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
+			className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
 			data-slot="jira-for-you-actions"
 		>
 			<JiraIssueGenerativeActionMenu
@@ -166,7 +166,7 @@ export function JiraForYouItemRow({
 			</button>
 			<div className="relative flex shrink-0 items-center">
 				<ItemActions item={item} onView={() => onItemClick?.(item)} />
-				<div className="transition-opacity duration-fast ease-out-practical group-has-[[data-slot=jira-for-you-row-button]:hover]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:hover]:opacity-0 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]:hover]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]:hover]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:opacity-0 motion-reduce:transition-none">
+				<div className="transition-opacity duration-fast ease-out-practical group-hover:pointer-events-none group-hover:opacity-0 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:opacity-0 motion-reduce:transition-none">
 					<JiraForYouStatusLozenge value={item.jiraStatus} />
 				</div>
 			</div>

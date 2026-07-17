@@ -58,7 +58,7 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 		"the For You row actions should remain visible while the generative menu is open",
 	);
 	assert.match(ITEM_SOURCE, /data-slot="jira-for-you-actions"/);
-	assert.match(ITEM_SOURCE, /group-has-\[\[data-slot=jira-for-you-row-button\]:hover\]:pointer-events-auto/);
+	assert.match(ITEM_SOURCE, /group-hover:pointer-events-auto group-hover:opacity-100/);
 	assert.match(ITEM_SOURCE, /group-has-\[\[data-slot=jira-for-you-row-button\]:focus-visible\]:pointer-events-auto/);
 	assert.doesNotMatch(ITEM_SOURCE, /group-focus-within/);
 	assert.match(ITEM_SOURCE, /absolute top-1\/2 right-0 flex -translate-y-1\/2 items-center gap-1 opacity-0/);
