@@ -17,6 +17,7 @@ import { ChatMessages } from "@/components/projects/shared/components/chat-messa
 import ChatContextBar from "@/components/projects/shared/components/chat-context-bar";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
+import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import {
 	type DelegationRequest,
 	useRealtimeVoice,
@@ -37,7 +38,9 @@ import type { AsxQueueJiraColumn, AsxQueueSession } from "../data/queue-sessions
 import { QueueConversationHeader } from "./queue-conversation-header";
 import { QueueDetailPanel } from "./queue-detail-panel";
 
-const DETAIL_PANEL_WIDTH_PX = 320;
+const DETAIL_PANEL_DEFAULT_WIDTH_PX = 320;
+const DETAIL_PANEL_MIN_WIDTH_PX = 240;
+const DETAIL_PANEL_MAX_WIDTH_PX = 720;
 const CHAT_BODY_OPEN_TRANSITION: Transition = {
 	duration: 0.25,
 	ease: [0.4, 0, 0, 1], // duration-slow + ease-in-out
@@ -179,6 +182,12 @@ export function QueueConversationWorkspace({
 }: Readonly<QueueConversationWorkspaceProps>) {
 	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 	const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+	const detailPanelResize = useSidebarResize({
+		defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,
+		direction: "rtl",
+		maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,
+		minWidth: DETAIL_PANEL_MIN_WIDTH_PX,
+	});
 	const conversationContextRef = useRef<ConversationContextValue | null>(null);
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const shouldReduceMotion = useReducedMotion();
@@ -223,7 +232,7 @@ export function QueueConversationWorkspace({
 		return () => window.cancelAnimationFrame(frameId);
 	}, [awaitingQuestion]);
 
-	const chatBodyTransition = shouldReduceMotion
+	const chatBodyTransition = shouldReduceMotion || detailPanelResize.isResizing
 		? CHAT_BODY_REDUCED_MOTION_TRANSITION
 		: isDetailPanelOpen
 			? CHAT_BODY_OPEN_TRANSITION
@@ -251,7 +260,7 @@ export function QueueConversationWorkspace({
 					onDetailPanelToggle={() => setIsDetailPanelOpen((current) => !current)}
 				/>
 				<motion.div
-					animate={{ paddingRight: isDetailPanelOpen ? DETAIL_PANEL_WIDTH_PX : 0 }}
+					animate={{ paddingRight: isDetailPanelOpen ? detailPanelResize.sidebarWidth : 0 }}
 					className="flex min-h-0 w-full flex-1 flex-col"
 					data-testid="asx-queue-chat-body"
 					initial={false}
@@ -328,6 +337,7 @@ export function QueueConversationWorkspace({
 						agent={agent}
 						key="detail-panel"
 						onClose={() => setIsDetailPanelOpen(false)}
+						resize={detailPanelResize}
 						session={session}
 					/>
 				) : null}

@@ -259,7 +259,8 @@ test("Queue workspace reuses fullscreen message and Rovo composer primitives", (
 	assert.match(QUEUE_WORKSPACE_SOURCE, /realtimeVoiceState=\{realtime\.voiceState\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /hideSourceAndModelControls/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-chat-body"/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? DETAIL_PANEL_WIDTH_PX : 0 \}\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0 \}\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /shouldReduceMotion \|\| detailPanelResize\.isResizing/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);
 	assert.doesNotMatch(QUEUE_WORKSPACE_SOURCE, /DOMMatrixReadOnly|ResizeObserver|chatBodyShift/u);
@@ -288,8 +289,8 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /session: AsxQueueSession/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /agent: RovoAgentProfile/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<motion\.div/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /absolute inset-y-0 right-0 z-20 h-full w-80 max-w-full/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /h-full border-l border-border bg-surface/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /absolute inset-y-0 right-0 z-20 h-full max-w-full/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /h-full bg-surface/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /useReducedMotion\(\)/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /transform: "translateX\(100%\)"/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
@@ -329,6 +330,21 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 	assert.match(JIRA_ATTACHMENTS_SOURCE, /<AttachmentPreviewCard/u);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /h-\[104px\]/u);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /elevation\.shadow\.raised/u);
+});
+
+test("Queue detail panel reuses the right-sidebar resize behavior on its separator", () => {
+	assert.match(QUEUE_WORKSPACE_SOURCE, /import \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize"/u);
+	assert.match(
+		QUEUE_WORKSPACE_SOURCE,
+		/useSidebarResize\(\{[\s\S]*defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,[\s\S]*minWidth: DETAIL_PANEL_MIN_WIDTH_PX/u,
+	);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /<QueueDetailPanel[\s\S]*resize=\{detailPanelResize\}/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /width: resize\.sidebarWidth/u);
+	assert.match(
+		QUEUE_DETAIL_PANEL_SOURCE,
+		/<SidebarResizeHandle[\s\S]*data-active=\{resize\.isResizing \? "" : undefined\}[\s\S]*data-testid="asx-queue-detail-resize-handle"[\s\S]*onDoubleClick=\{resize\.onResizeHandleDoubleClick\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*side="left"/u,
+	);
+	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /border-l border-border/u);
 });
 
 test("ASX Queue seeds a perpetual running session with an in-progress thinking trace", () => {

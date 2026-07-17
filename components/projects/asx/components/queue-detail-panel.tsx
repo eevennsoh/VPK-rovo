@@ -14,6 +14,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
+import type { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import Heading from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
@@ -35,6 +36,7 @@ import {
 	PanelTitle,
 } from "@/components/ui/panel";
 import { Separator } from "@/components/ui/separator";
+import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { Tag } from "@/components/ui/tag";
 import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
@@ -78,6 +80,15 @@ const REDUCED_MOTION_PANEL_VARIANTS: Variants = {
 interface QueueDetailPanelProps {
 	agent: RovoAgentProfile;
 	onClose: () => void;
+	resize: Pick<
+		ReturnType<typeof useSidebarResize>,
+		| "isResizing"
+		| "onResizeHandleDoubleClick"
+		| "onResizeHandlePointerDown"
+		| "onResizeHandlePointerEnter"
+		| "onResizeHandlePointerLeave"
+		| "sidebarWidth"
+	>;
 	session: AsxQueueSession;
 }
 
@@ -137,7 +148,7 @@ function QueueDetailSection({
 	);
 }
 
-export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDetailPanelProps>) {
+export function QueueDetailPanel({ agent, onClose, resize, session }: Readonly<QueueDetailPanelProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 	const hasDevelopmentDetails = Boolean(session.repository || session.branch || session.worktreePath);
@@ -151,15 +162,18 @@ export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDeta
 	return (
 		<motion.div
 			animate="open"
-			className="absolute inset-y-0 right-0 z-20 h-full w-80 max-w-full shadow-overlay"
+			className="absolute inset-y-0 right-0 z-20 h-full max-w-full shadow-overlay"
 			exit="closed"
 			initial="closed"
-			style={shouldReduceMotion ? undefined : { willChange: "transform" }}
+			style={{
+				width: resize.sidebarWidth,
+				willChange: shouldReduceMotion ? undefined : "transform",
+			}}
 			variants={shouldReduceMotion ? REDUCED_MOTION_PANEL_VARIANTS : PANEL_VARIANTS}
 		>
 			<PanelContainer
 				aria-label="Details"
-				className="h-full border-l border-border bg-surface"
+				className="h-full bg-surface"
 				id="asx-queue-detail-panel"
 			>
 				<PanelHeader className="h-14 px-4 py-3">
@@ -252,6 +266,15 @@ export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDeta
 					</PanelBody>
 				</PanelContent>
 			</PanelContainer>
+			<SidebarResizeHandle
+				data-active={resize.isResizing ? "" : undefined}
+				data-testid="asx-queue-detail-resize-handle"
+				onDoubleClick={resize.onResizeHandleDoubleClick}
+				onPointerDown={resize.onResizeHandlePointerDown}
+				onPointerEnter={resize.onResizeHandlePointerEnter}
+				onPointerLeave={resize.onResizeHandlePointerLeave}
+				side="left"
+			/>
 		</motion.div>
 	);
 }
