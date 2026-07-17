@@ -15,6 +15,7 @@ import {
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
 import {
+	JIRA_CLI_FOOTER_HINTS,
 	JIRA_CLI_TITLE,
 	JIRA_CLI_WORKSPACE,
 	TERMINAL_SHELL_PROMPT,
@@ -168,6 +169,9 @@ export function TerminalStageJiraPane({
 					<JiraSection key={key} label={label} items={sections[key]} selectedKey={selectedKey} />
 				))}
 			</div>
+			<p className="shrink-0 border-t border-zinc-800 px-4 py-2 text-[11px] text-zinc-500">
+				{JIRA_CLI_FOOTER_HINTS}
+			</p>
 		</motion.div>
 	);
 }

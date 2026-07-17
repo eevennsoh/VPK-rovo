@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const esbuild = require("esbuild");
@@ -18,7 +19,7 @@ async function loadTerminalStateHarness() {
 					getBoardSections,
 					getOrderedItemKeys,
 				} from "./components/projects/asx/lib/terminal-demo-state";
-				export { TERMINAL_DEMO_BEATS } from "./components/projects/asx/data/terminal-demo-script";
+				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/asx/data/terminal-demo-script";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -33,6 +34,15 @@ async function loadTerminalStateHarness() {
 
 	return loadCjsModuleFromText(result.outputFiles[0].text);
 }
+
+const TERMINAL_HOOK_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/hooks/use-terminal-demo.ts"),
+	"utf8",
+);
+const TERMINAL_JIRA_PANE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/components/terminal-stage-jira-pane.tsx"),
+	"utf8",
+);
 
 function item(key, status, overrides = {}) {
 	return { age: "now", key, status, summary: "summary", title: key, ...overrides };
@@ -149,6 +159,18 @@ test("script integrity: beat 7 onward sends typed input through Claude Code", as
 
 	assert.ok(laterInputSteps.length > 0);
 	assert.ok(laterInputSteps.every((step) => step.pane === "right"));
+});
+
+test("Jira dashboard keeps shortcuts without restoring its dispatch box", async () => {
+	const harness = await loadTerminalStateHarness();
+
+	assert.equal(harness.getJiraIssueUrl("ASX-198"), "https://asx.atlassian.net/browse/ASX-198");
+	assert.match(TERMINAL_JIRA_PANE_SOURCE, /\{JIRA_CLI_FOOTER_HINTS\}/u);
+	assert.doesNotMatch(TERMINAL_JIRA_PANE_SOURCE, /JIRA_CLI_DISPATCH_PLACEHOLDER/u);
+	assert.match(
+		TERMINAL_HOOK_SOURCE,
+		/window\.open\(getJiraIssueUrl\(selectedKey\), "_blank", "noopener,noreferrer"\);/u,
+	);
 });
 
 test("script integrity: final board counts and every done item has a PR", async () => {
