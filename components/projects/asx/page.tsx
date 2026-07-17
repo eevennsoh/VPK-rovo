@@ -20,7 +20,7 @@ import { AgentSessionStage } from "./components/agent-session-stage";
 import { AsxRovoOverlay } from "./components/asx-rovo-overlay";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
-import { QueueStage } from "./components/queue-stage";
+import { QueueStage } from "@/components/projects/jira-queue/components/queue-stage";
 import { RovoStage } from "./components/rovo-stage";
 import { TerminalControls, TerminalStage } from "./components/terminal-stage";
 import { useTerminalDemo, type TerminalDemoController } from "./hooks/use-terminal-demo";

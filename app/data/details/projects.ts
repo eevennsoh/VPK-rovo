@@ -34,6 +34,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"jira-queue": {
+		description: "A Jira agent-session queue — a project sidebar of running, awaiting, and completed agent sessions beside a conversation workspace with a detail panel of sources and outputs. Harvested from the ASX gallery's Queue pattern as a standalone surface.",
+		importStatement: `import JiraQueuePage from "@/components/projects/jira-queue";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"rovo": {
 		description: "A Vercel-style AI chat workspace with persistent thread history, local attachments, artifact editing, and Rovo-backed streaming.",
 		importStatement: `import Rovo from "@/components/projects/rovo";`,

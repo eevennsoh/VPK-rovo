@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const WORKSPACE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/asx/components/queue-conversation-workspace.tsx"),
+	path.join(process.cwd(), "components/projects/jira-queue/components/queue-conversation-workspace.tsx"),
 	"utf8",
 );
 const CHAT_MESSAGES_SOURCE = fs.readFileSync(

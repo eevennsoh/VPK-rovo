@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 80,
-			"pageCount": 57
+			"ownerImportCount": 81,
+			"pageCount": 58
 		},
 		"pages": [
 			{
@@ -3986,6 +3986,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-queue",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-queue/page.tsx"
 			},
 			{
 				"ownerCount": 0,
@@ -5173,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 399,
+			"manifestEntryCount": 400,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5761,7 +5777,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 11,
+				"entryCount": 12,
 				"entries": [
 					{
 						"category": "projects",
@@ -5792,6 +5808,12 @@
 						"slug": "jira",
 						"name": "Jira",
 						"importPath": "@/components/projects/jira"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-queue",
+						"name": "Jira Queue",
+						"importPath": "@/components/projects/jira-queue"
 					},
 					{
 						"category": "projects",
