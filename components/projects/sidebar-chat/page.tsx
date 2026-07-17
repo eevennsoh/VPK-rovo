@@ -74,7 +74,11 @@ import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, Rich
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
-import { ChatHistoryDrawer } from "./components/chat-history-drawer";
+import {
+	ChatHistoryDrawer,
+	ControlledChatHistoryDrawer,
+	type ControlledChatHistoryDrawerProps,
+} from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";
 import ChatComposer from "./components/chat-composer";
 import MessageBubble from "./components/message-bubble";
@@ -151,6 +155,17 @@ export interface ChatPanelCustomAgentTabs {
 	trigger?: ReactNode;
 }
 
+export type ChatPanelHistoryController = Pick<
+	ControlledChatHistoryDrawerProps,
+	| "activeThreadId"
+	| "cancelThreadRun"
+	| "deleteThread"
+	| "onNewChat"
+	| "selectThread"
+	| "threads"
+	| "threadsLoaded"
+>;
+
 export interface ChatPanelAgentVersionOption {
 	id: string;
 	label: string;
@@ -221,6 +236,7 @@ interface ChatPanelProps {
 	cards?: ChatPanelCardsProps;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	chatHistory?: ChatPanelHistoryController;
 	/**
 	 * When true, renders the agent Test-mode-only controls in the custom
 	 * agent tab header: the version dropdown and the new-chat/edit button.
@@ -450,6 +466,7 @@ export default function ChatPanel({
 	greeting,
 	greetingSelectedAgent,
 	customAgentTabs,
+	chatHistory,
 	showAgentTestControls = false,
 	suppressCustomAgentTabs = false,
 	agentVersionOptions = DEFAULT_AGENT_VERSION_OPTIONS,
@@ -501,6 +518,7 @@ export default function ChatPanel({
 		getSessionAgentEntry,
 		isCustomAgentSelected,
 		activePrompt,
+		closeHistory,
 		isHistoryOpen,
 		pinFloating,
 		toggleHistory,
@@ -1639,6 +1657,13 @@ export default function ChatPanel({
 		Boolean(customAgentTabs) ||
 		(isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent))
 	);
+	const handleNewChat = () => {
+		if (chatHistory) {
+			void chatHistory.onNewChat();
+			return;
+		}
+		resetChat();
+	};
 	const chatConversationBody = (
 		<Conversation
 			className="min-h-0 min-w-0 flex-1"
@@ -1884,7 +1909,22 @@ export default function ChatPanel({
 
 	return (
 		<div ref={panelRef} className={cn("relative overflow-hidden", containerClassName)} style={{ ...chatStyles.chatPanel, ...resolvedContainerStyle }}>
-			<ChatHistoryDrawer active={shouldRenderHeaderHistory} />
+			{chatHistory ? (
+				<ControlledChatHistoryDrawer
+					active={shouldRenderHeaderHistory}
+					activeThreadId={chatHistory.activeThreadId}
+					cancelThreadRun={chatHistory.cancelThreadRun}
+					closeHistory={closeHistory}
+					deleteThread={chatHistory.deleteThread}
+					isHistoryOpen={isHistoryOpen}
+					onNewChat={chatHistory.onNewChat}
+					selectThread={chatHistory.selectThread}
+					threads={chatHistory.threads}
+					threadsLoaded={chatHistory.threadsLoaded}
+				/>
+			) : (
+				<ChatHistoryDrawer active={shouldRenderHeaderHistory} />
+			)}
 			{!hideHeader && (
 				<div className="shrink-0">
 					<ChatHeader
@@ -1892,7 +1932,7 @@ export default function ChatPanel({
 						isHistoryOpen={isHistoryOpen}
 						onClose={onClose}
 						onHistoryToggle={toggleHistory}
-						onNewChat={resetChat}
+						onNewChat={handleNewChat}
 						onSurfaceSwitch={onSurfaceSwitch}
 					/>
 				</div>

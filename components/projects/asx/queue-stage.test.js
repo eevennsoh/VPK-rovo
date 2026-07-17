@@ -16,6 +16,10 @@ const ROVO_OVERLAY_SOURCE = fs.readFileSync(
 	path.join(__dirname, "components/asx-rovo-overlay.tsx"),
 	"utf8",
 );
+const ROVO_STAGE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "components/rovo-stage.tsx"),
+	"utf8",
+);
 const QUEUE_STAGE_SOURCE = fs.readFileSync(path.join(__dirname, "components/queue-stage.tsx"), "utf8");
 const QUEUE_SESSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "data/queue-sessions.ts"), "utf8");
 const QUEUE_WORKSPACE_SOURCE = fs.readFileSync(
@@ -96,6 +100,23 @@ test("ASX Rovo gallery entry and reset restore the default agent plus greeting",
 	);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) \{\s*resetRovoSurface\(\);\s*\}/u);
 	assert.match(ASX_PAGE_SOURCE, /if \(item\.id === "rovo"\) return <RovoStage \/>;/u);
+});
+
+test("ASX Rovo stage matches the sidebar chat project dimensions", () => {
+	assert.match(ROVO_STAGE_SOURCE, /h-full max-h-\[800px\] min-h-0 w-\[400px\]/u);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /max-h-\[680px\]|max-w-\[440px\]/u);
+});
+
+test("ASX Rovo history reuses the three Queue sessions and swaps agent plus transcript", () => {
+	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(historySessions\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /chatHistory=\{chatHistory\}/u);
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/resetChat\(\);[\s\S]*selectAgent\(session\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*replaceMessages\(thread\.messages\);[\s\S]*setActiveHistorySessionId\(threadId\);/u,
+	);
+	assert.match(ROVO_STAGE_SOURCE, /resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*resetChat\(\);/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueHistoryThreads/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /type: "question-card"/u);
 });
 
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {

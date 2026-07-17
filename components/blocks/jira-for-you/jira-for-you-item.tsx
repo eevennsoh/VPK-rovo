@@ -78,7 +78,7 @@ function ItemActions({
 	);
 
 	return (
-		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 motion-reduce:transition-none">
+		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none">
 			<JiraIssueGenerativeActionMenu
 				action={{ onSubmit: () => undefined }}
 				issue={{ issueKey: item.issueKey, summary: item.title }}

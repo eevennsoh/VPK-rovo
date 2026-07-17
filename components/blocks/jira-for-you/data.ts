@@ -62,7 +62,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				spaceName: "Revenue platform",
 				tabs: ["assigned", "worked-on", "viewed"],
 				agents: [READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT],
-				status: "Awaiting user response",
+				status: "1 Awaiting user response, 2 In progress",
 				isRunning: true,
 			},
 			{
