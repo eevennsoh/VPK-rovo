@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 import {
@@ -10,6 +11,41 @@ import { Separator } from "@/components/ui/separator";
 import { FileChartColumnIcon, FileIcon } from "@/components/ui/vpk-icons";
 import { token } from "@/lib/tokens";
 import type { AsxQueueSession } from "../data/queue-sessions";
+
+const OUTPUT_ILLUSTRATIONS = [
+	"accessibility",
+	"certification",
+	"checklist",
+	"content-design",
+	"customer",
+	"design",
+	"develop",
+	"guidelines",
+	"integration",
+	"lightbulb",
+	"onboarding",
+	"platform",
+	"playbook",
+	"product-management",
+	"project-management",
+	"release-phases",
+	"resilience",
+	"search",
+	"software",
+	"trust",
+] as const;
+
+function OutputIllustration({ name, alt }: Readonly<{ name: string; alt: string }>) {
+	return (
+		<Image
+			alt={alt}
+			className="absolute inset-0 m-auto size-16 object-contain"
+			height={64}
+			src={`/illustration/rich-icon/${name}/standard.svg`}
+			width={64}
+		/>
+	);
+}
 
 const JIRA_STATUS_VARIANTS = {
 	"To do": "neutral",
@@ -58,7 +94,7 @@ function getQueueSourceItems(session: AsxQueueSession): SmartLinkItem[] {
 
 function QueueSources({ session }: Readonly<{ session: AsxQueueSession }>) {
 	return (
-		<ul className="space-y-2 px-2">
+		<ul className="space-y-1">
 			{getQueueSourceItems(session).map((source) => (
 				<li className="flex min-w-0" key={source.id}>
 					<SmartLink align="end" className="max-w-full" item={source} side="left" />
@@ -68,39 +104,49 @@ function QueueSources({ session }: Readonly<{ session: AsxQueueSession }>) {
 	);
 }
 
+function pickIllustration(seed: string): string {
+	let hash = 0;
+	for (let index = 0; index < seed.length; index += 1) {
+		hash = (hash * 31 + seed.charCodeAt(index)) | 0;
+	}
+	const position = Math.abs(hash) % OUTPUT_ILLUSTRATIONS.length;
+	return OUTPUT_ILLUSTRATIONS[position];
+}
+
 function QueueOutput({ session }: Readonly<{ session: AsxQueueSession }>) {
 	const filePrefix = session.issueKey.toLowerCase();
 	const outputItems = [
 		{
 			id: "readiness-report",
 			title: `${filePrefix}-readiness-report.pdf`,
-			backgroundColor: token("color.background.success"),
 			icon: <FileIcon className="size-3 text-icon-subtlest" size={12} />,
 		},
 		{
 			id: "evidence-matrix",
 			title: `${filePrefix}-evidence-matrix.xlsx`,
-			backgroundColor: token("color.background.warning"),
 			icon: <FileChartColumnIcon className="size-3 text-icon-subtlest" size={12} />,
 		},
 		{
 			id: "implementation-plan",
 			title: `${filePrefix}-implementation-plan.docx`,
-			backgroundColor: token("color.background.discovery"),
 			icon: <FileIcon className="size-3 text-icon-subtlest" size={12} />,
 		},
 	];
 
 	return (
 		<div className="grid grid-cols-2 gap-2 px-0.5">
-			{outputItems.map((item) => (
-				<AttachmentPreviewCard
-					key={item.id}
-					previewBackgroundColor={item.backgroundColor}
-					title={item.title}
-					trailingVisual={item.icon}
-				/>
-			))}
+			{outputItems.map((item) => {
+				const illustration = pickIllustration(`${session.id}-${item.id}`);
+				return (
+					<AttachmentPreviewCard
+						key={item.id}
+						preview={<OutputIllustration alt="" name={illustration} />}
+						previewBackgroundColor={token("elevation.surface.sunken")}
+						title={item.title}
+						trailingVisual={item.icon}
+					/>
+				);
+			})}
 		</div>
 	);
 }
@@ -115,8 +161,8 @@ function ArtifactSection({
 	title: string;
 }>) {
 	return (
-		<section aria-labelledby={id} className="space-y-2 px-4 py-4">
-			<Heading as="h3" className="px-2" id={id} size="xxsmall">
+		<section aria-labelledby={id} className="space-y-2 px-4 py-6">
+			<Heading as="h3" id={id} size="xxsmall">
 				{title}
 			</Heading>
 			{children}
@@ -127,11 +173,11 @@ function ArtifactSection({
 export function QueueDetailArtifacts({ session }: Readonly<{ session: AsxQueueSession }>) {
 	return (
 		<>
-			<Separator />
+			<Separator className="mx-4 data-horizontal:w-auto" />
 			<ArtifactSection id="asx-queue-sources-heading" title="Sources">
 				<QueueSources session={session} />
 			</ArtifactSection>
-			<Separator />
+			<Separator className="mx-4 data-horizontal:w-auto" />
 			<ArtifactSection id="asx-queue-output-heading" title="Output">
 				<QueueOutput session={session} />
 			</ArtifactSection>

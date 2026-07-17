@@ -13,15 +13,21 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import ChatPanel, {
 	type ChatPanelHistoryController,
 } from "@/components/projects/sidebar-chat/page";
+import type { ChatHistorySortMode } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
+import { QueueSessionContextBar } from "./queue-conversation-workspace";
 import {
 	ASX_QUEUE_SESSION_SEEDS,
 	createAsxQueueSidebarSessionItem,
 	createAsxQueueHistoryThreads,
+	type AsxQueueJiraColumn,
 	type AsxQueueSession,
 } from "../data/queue-sessions";
 import {
 	archiveQueueSession,
+	dismissQueueSessionFileChanges,
+	setQueueSessionJiraColumn,
 	setQueueSessionPinned,
+	sortQueueSessions,
 	stopQueueSession,
 } from "../lib/queue-session-state";
 
@@ -63,9 +69,14 @@ export function RovoStage(): React.ReactElement {
 		ASX_QUEUE_SESSION_SEEDS.map((session) => ({ ...session }))
 	));
 	const [activeHistorySessionId, setActiveHistorySessionId] = useState<string | null>(null);
+	const [sortMode, setSortMode] = useState<ChatHistorySortMode>("manual");
+	const orderedHistorySessions = useMemo(
+		() => sortQueueSessions(historySessions, sortMode),
+		[historySessions, sortMode],
+	);
 	const historyThreads = useMemo(
-		() => createAsxQueueHistoryThreads(historySessions),
-		[historySessions],
+		() => createAsxQueueHistoryThreads(orderedHistorySessions),
+		[orderedHistorySessions],
 	);
 	const historySessionItems = useMemo(() => new Map(
 		historySessions.map((session) => [session.id, createAsxQueueSidebarSessionItem(session)]),
@@ -99,6 +110,9 @@ export function RovoStage(): React.ReactElement {
 		resetAgentToRovo({ preserveCurrentThread: true });
 		resetChat();
 	}, [resetAgentToRovo, resetChat]);
+	const handleBackToRovo = useCallback(() => {
+		setActiveHistorySessionId(null);
+	}, []);
 	const handleSelectThread = useCallback((threadId: string) => {
 		const session = historySessions.find((item) => item.id === threadId);
 		const thread = historyThreads.find((item) => item.id === threadId);
@@ -126,6 +140,18 @@ export function RovoStage(): React.ReactElement {
 	const handleStopThread = useCallback((threadId: string) => {
 		setHistorySessions((sessions) => stopQueueSession(sessions, threadId));
 	}, []);
+	const handleDismissFileChanges = useCallback(() => {
+		if (!activeHistorySessionId) return;
+		setHistorySessions((sessions) => (
+			dismissQueueSessionFileChanges(sessions, activeHistorySessionId)
+		));
+	}, [activeHistorySessionId]);
+	const handleJiraColumnChange = useCallback((jiraColumn: AsxQueueJiraColumn) => {
+		if (!activeHistorySessionId) return;
+		setHistorySessions((sessions) => (
+			setQueueSessionJiraColumn(sessions, activeHistorySessionId, jiraColumn)
+		));
+	}, [activeHistorySessionId]);
 	const handleArchiveThread = useCallback((threadId: string) => {
 		const result = archiveQueueSession(
 			historySessions,
@@ -168,8 +194,10 @@ export function RovoStage(): React.ReactElement {
 		getThreadActions,
 		getThreadPresentation,
 		onNewChat: handleNewChat,
+		onSortModeChange: setSortMode,
 		pinnedThreadIds,
 		selectThread: handleSelectThread,
+		sortMode,
 		threads: historyThreads,
 		threadsLoaded: true,
 	}), [
@@ -181,6 +209,7 @@ export function RovoStage(): React.ReactElement {
 		getThreadPresentation,
 		historyThreads,
 		pinnedThreadIds,
+		sortMode,
 	]);
 
 	return (
@@ -188,6 +217,15 @@ export function RovoStage(): React.ReactElement {
 			<div className="h-full max-h-[800px] min-h-0 w-[400px]">
 				<ChatPanel
 					chatHistory={chatHistory}
+					composerContextBar={activeHistorySession ? (
+						<QueueSessionContextBar
+							compact
+							onDismissFileChanges={handleDismissFileChanges}
+							onJiraColumnChange={handleJiraColumnChange}
+							session={activeHistorySession}
+						/>
+					) : null}
+					onBackToRovo={handleBackToRovo}
 					onClose={() => {}}
 					enableSmartWidgets
 					showAwaitingIndicator={activeHistorySession?.status === "awaiting-input"}

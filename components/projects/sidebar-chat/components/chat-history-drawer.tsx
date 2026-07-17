@@ -17,6 +17,7 @@ import EditIcon from "@atlaskit/icon/core/edit";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import HistoryIcon from "@atlaskit/icon-lab/core/history";
+import SortOptionsIcon from "@atlaskit/icon-lab/core/sort-options";
 import { useRovoChat } from "@/app/contexts";
 import {
 	AlertDialog,
@@ -34,6 +35,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -69,6 +73,8 @@ interface ChatHistoryDrawerProps {
 
 type MaybePromise<T> = T | Promise<T>;
 
+export type ChatHistorySortMode = "priority" | "last-updated" | "manual";
+
 export interface ChatHistoryThreadPresentation {
 	description?: ReactNode;
 	meta?: ReactNode;
@@ -85,8 +91,10 @@ export interface ControlledChatHistoryDrawerProps {
 	getThreadPresentation?: (thread: RovoAppThread) => ChatHistoryThreadPresentation | undefined;
 	isHistoryOpen: boolean;
 	onNewChat: () => MaybePromise<void>;
+	onSortModeChange?: (mode: ChatHistorySortMode) => void;
 	pinnedThreadIds?: ReadonlySet<string>;
 	selectThread: (threadId: string) => Promise<void>;
+	sortMode?: ChatHistorySortMode;
 	threads: ReadonlyArray<RovoAppThread>;
 	threadsLoaded: boolean;
 }
@@ -99,9 +107,11 @@ export interface ControlledChatHistoryPanelProps {
 	getThreadActions?: (thread: RovoAppThread) => ReactNode;
 	getThreadPresentation?: (thread: RovoAppThread) => ChatHistoryThreadPresentation | undefined;
 	onNewChat: () => MaybePromise<void>;
+	onSortModeChange?: (mode: ChatHistorySortMode) => void;
 	pinnedThreadIds?: ReadonlySet<string>;
 	selectThread: (threadId: string) => Promise<void>;
 	showNavigation?: boolean;
+	sortMode?: ChatHistorySortMode;
 	threads: ReadonlyArray<RovoAppThread>;
 	threadsLoaded: boolean;
 }
@@ -115,6 +125,47 @@ function HoverAddAction({ label, onClick }: Readonly<{ label: string; onClick?: 
 		>
 			<AddIcon label="" />
 		</SidebarNavItemAction>
+	);
+}
+
+function ChatHistorySortAction({
+	onSortModeChange,
+	sortMode,
+}: Readonly<{
+	onSortModeChange: (mode: ChatHistorySortMode) => void;
+	sortMode: ChatHistorySortMode;
+}>) {
+	return (
+		<DropdownMenu modal={false}>
+			<DropdownMenuTrigger
+				render={(
+					<SidebarNavItemAction
+						aria-label="Sort chats"
+						className="opacity-0 transition-opacity duration-fast ease-out group-hover/sidebar-nav-item:!opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
+						onClick={(event) => event.stopPropagation()}
+					/>
+				)}
+			>
+				<SortOptionsIcon label="" size="small" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-52" side="right" sideOffset={8}>
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Sort by</DropdownMenuLabel>
+					<DropdownMenuRadioGroup
+						value={sortMode}
+						onValueChange={(value) => {
+							if (value === "priority" || value === "last-updated" || value === "manual") {
+								onSortModeChange(value);
+							}
+						}}
+					>
+						<DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
+						<DropdownMenuRadioItem value="last-updated">Last updated</DropdownMenuRadioItem>
+						<DropdownMenuRadioItem value="manual">Manual order</DropdownMenuRadioItem>
+					</DropdownMenuRadioGroup>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -322,10 +373,12 @@ function ChatHistoryPanelView({
 	isChatsOpen,
 	onNewChat,
 	onRequestDeleteAll,
+	onSortModeChange,
 	onToggleChats,
 	pinnedThreadIds,
 	selectThread,
 	showNavigation = true,
+	sortMode,
 	threads,
 	threadsLoaded,
 }: Readonly<ControlledChatHistoryPanelProps & {
@@ -391,7 +444,17 @@ function ChatHistoryPanelView({
 						label="Chats"
 						leading={<HistoryIcon label="" />}
 						leadingSize="medium"
-						actions={<HoverAddAction label="New chat" onClick={handleNewChat} />}
+						actions={(
+							<>
+								{sortMode && onSortModeChange ? (
+									<ChatHistorySortAction
+										onSortModeChange={onSortModeChange}
+										sortMode={sortMode}
+									/>
+								) : null}
+								<HoverAddAction label="New chat" onClick={handleNewChat} />
+							</>
+						)}
 					/>
 					<div className="h-3 shrink-0" aria-hidden />
 				</div>
@@ -524,8 +587,10 @@ export function ControlledChatHistoryDrawer({
 	getThreadPresentation,
 	isHistoryOpen,
 	onNewChat,
+	onSortModeChange,
 	pinnedThreadIds,
 	selectThread,
+	sortMode,
 	threads,
 	threadsLoaded,
 }: Readonly<ControlledChatHistoryDrawerProps>): ReactElement | null {
@@ -610,9 +675,11 @@ export function ControlledChatHistoryDrawer({
 								isChatsOpen={panelState.isChatsOpen}
 								onNewChat={handleNewChat}
 								onRequestDeleteAll={() => panelState.setIsDeleteAllConfirmOpen(true)}
+								onSortModeChange={onSortModeChange}
 								onToggleChats={panelState.handleChatsToggle}
 								pinnedThreadIds={pinnedThreadIds}
 								selectThread={handleSelectThread}
+								sortMode={sortMode}
 								threads={threads}
 								threadsLoaded={threadsLoaded}
 							/>

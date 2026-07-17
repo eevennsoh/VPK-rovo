@@ -164,8 +164,10 @@ export type ChatPanelHistoryController = Pick<
 	| "getThreadActions"
 	| "getThreadPresentation"
 	| "onNewChat"
+	| "onSortModeChange"
 	| "pinnedThreadIds"
 	| "selectThread"
+	| "sortMode"
 	| "threads"
 	| "threadsLoaded"
 >;
@@ -234,6 +236,7 @@ function getLocalConversationVoiceSuppressionMs(text: string): number {
 
 interface ChatPanelProps {
 	onClose: () => void;
+	onBackToRovo?: () => void;
 	addMenuItemsBefore?: ReactNode;
 	sendPromptOptions?: SendPromptOptions;
 	enableSmartWidgets?: boolean;
@@ -273,6 +276,8 @@ interface ChatPanelProps {
 	 * 24px horizontal inset.
 	 */
 	composerContainerClassName?: string;
+	/** Optional host-owned actions rendered directly above the composer. */
+	composerContextBar?: ReactNode;
 	/** Opt-in first-render focus for host surfaces where the composer is primary. */
 	autoFocusComposer?: boolean;
 	/**
@@ -465,6 +470,7 @@ function getViewportPointFromScreenAssistantTarget(
 
 export default function ChatPanel({
 	onClose,
+	onBackToRovo,
 	addMenuItemsBefore,
 	sendPromptOptions,
 	enableSmartWidgets = false,
@@ -480,6 +486,7 @@ export default function ChatPanel({
 	onAgentVersionChange,
 	conversationContentClassName,
 	composerContainerClassName,
+	composerContextBar,
 	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
@@ -1894,6 +1901,7 @@ export default function ChatPanel({
 						screenAssistantTargetPrefix="sidebar-composer"
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
+						composerContextBar={composerContextBar}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
 						prefillMentionRequest={
 							composerPrefillRequest?.mention
@@ -1933,8 +1941,10 @@ export default function ChatPanel({
 					getThreadPresentation={chatHistory.getThreadPresentation}
 					isHistoryOpen={isHistoryOpen}
 					onNewChat={chatHistory.onNewChat}
+					onSortModeChange={chatHistory.onSortModeChange}
 					pinnedThreadIds={chatHistory.pinnedThreadIds}
 					selectThread={chatHistory.selectThread}
+					sortMode={chatHistory.sortMode}
 					threads={chatHistory.threads}
 					threadsLoaded={chatHistory.threadsLoaded}
 				/>
@@ -1946,6 +1956,7 @@ export default function ChatPanel({
 					<ChatHeader
 						variant={headerVariant}
 						isHistoryOpen={isHistoryOpen}
+						onBackToRovo={onBackToRovo}
 						onClose={onClose}
 						onHistoryToggle={toggleHistory}
 						onNewChat={handleNewChat}

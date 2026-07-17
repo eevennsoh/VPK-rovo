@@ -14,6 +14,7 @@ import {
 	ContextBarTagGroup,
 } from "@/components/ui-custom/context-bar";
 import { ChatMessages } from "@/components/projects/shared/components/chat-messages";
+import ChatContextBar from "@/components/projects/shared/components/chat-context-bar";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
 import {
@@ -68,14 +69,19 @@ interface QueueConversationWorkspaceProps {
 	session: AsxQueueSession;
 }
 
-function QueueSessionContextBar({
+interface QueueSessionContextBarProps extends Pick<
+	QueueConversationWorkspaceProps,
+	"onDismissFileChanges" | "onJiraColumnChange" | "session"
+> {
+	compact?: boolean;
+}
+
+export function QueueSessionContextBar({
+	compact = false,
 	onDismissFileChanges,
 	onJiraColumnChange,
 	session,
-}: Readonly<Pick<
-	QueueConversationWorkspaceProps,
-	"onDismissFileChanges" | "onJiraColumnChange" | "session"
->>) {
+}: Readonly<QueueSessionContextBarProps>) {
 	const fileChanges = session.fileChanges?.isDismissed ? undefined : session.fileChanges;
 	const shouldShowJiraColumn = session.status === "pr-open";
 
@@ -91,6 +97,7 @@ function QueueSessionContextBar({
 			content: (
 				<ContextBarPill
 					aria-label="Dismiss file changes"
+					className={compact ? "px-2" : undefined}
 					icon={<ChangesIcon color="currentColor" label="" size="small" />}
 					onClick={onDismissFileChanges}
 					title={fileChanges.files.join("\n")}
@@ -112,7 +119,7 @@ function QueueSessionContextBar({
 			onSelect: () => onJiraColumnChange(session.jiraColumn),
 			content: (
 				<ContextBarPill
-					className="gap-2 pr-2"
+					className={compact ? "gap-2 px-2" : "gap-2 pr-2"}
 					icon={<ProjectStatusIcon color="currentColor" label="" size="small" />}
 					interactive={false}
 				>
@@ -309,6 +316,7 @@ export function QueueConversationWorkspace({
 						contentTopPadding="32px"
 						conversationContextRef={conversationContextRef}
 						hideScrollbar={false}
+						isStreaming={session.status === "running"}
 						messageMode="ask"
 						resizeTarget={awaitingQuestion ? "bottom" : "follow"}
 						scrollSpacerRef={scrollSpacerRef}
@@ -329,6 +337,18 @@ export function QueueConversationWorkspace({
 							</>
 						) : (
 							<>
+								{session.status === "running" ? (
+									<div className="mb-3">
+										<ChatContextBar
+											context={{
+												iconName: "work-item",
+												label: `${session.issueKey}: ${session.issueSummary}`,
+												showDismissPlaceholder: false,
+												signature: `asx-queue-work-item:${session.issueKey}`,
+											}}
+										/>
+									</div>
+								) : null}
 								<QueueSessionContextBar
 									onDismissFileChanges={onDismissFileChanges}
 									onJiraColumnChange={onJiraColumnChange}

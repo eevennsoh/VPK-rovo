@@ -58,6 +58,19 @@ const CHAT_HISTORY_DRAWER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../sidebar-chat/components/chat-history-drawer.tsx"),
 	"utf8",
 );
+const CHAT_COMPOSER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../sidebar-chat/components/chat-composer.tsx"),
+	"utf8",
+);
+const CHAT_PANEL_SOURCE = fs.readFileSync(path.join(__dirname, "../sidebar-chat/page.tsx"), "utf8");
+const CHAT_HEADER_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../sidebar-chat/components/chat-header.tsx"),
+	"utf8",
+);
+const ROVO_AGENT_BACK_BUTTON_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../rovo-core/components/rovo-agent-back-button.tsx"),
+	"utf8",
+);
 const PROJECT_LAYOUT_SOURCE = fs.readFileSync(path.join(__dirname, "../page.tsx"), "utf8");
 const PRODUCT_SIDEBAR_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/product-sidebar/page.tsx"),
@@ -133,7 +146,7 @@ test("ASX Rovo stage matches the sidebar chat project dimensions", () => {
 
 test("ASX Rovo history reuses the three Queue sessions and swaps agent plus transcript", () => {
 	assert.match(ROVO_STAGE_SOURCE, /useState<AsxQueueSession\[\]>\(\(\) => \([\s\S]*ASX_QUEUE_SESSION_SEEDS\.map/u);
-	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(historySessions\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(orderedHistorySessions\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /description: <JiraSessionDescription session=\{session\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /meta: <JiraSessionLifecycle status=\{session\.status\} \/>/u);
@@ -165,6 +178,42 @@ test("ASX Rovo history reuses the three Queue sessions and swaps agent plus tran
 	assert.match(CHAT_HISTORY_DRAWER_SOURCE, /presentation\?\.meta/u);
 	assert.match(CHAT_HISTORY_DRAWER_SOURCE, />\s*Pinned\s*<\/div>/u);
 	assert.match(GALLERY_SELECTED_STAGE_SOURCE, /key=\{`\$\{item\.id\}:\$\{resetKey\}`\}/u);
+});
+
+test("ASX Rovo history uses Queue sorting and exposes its controller", () => {
+	assert.match(ROVO_STAGE_SOURCE, /useState<ChatHistorySortMode>\("manual"\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /sortQueueSessions\(historySessions, sortMode\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(orderedHistorySessions\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /onSortModeChange: setSortMode,/u);
+	assert.match(ROVO_STAGE_SOURCE, /sortMode,/u);
+});
+
+test("ASX Rovo reuses the Queue session context bar above its composer", () => {
+	assert.match(QUEUE_WORKSPACE_SOURCE, /export function QueueSessionContextBar/u);
+	assert.match(ROVO_STAGE_SOURCE, /import \{ QueueSessionContextBar \} from "\.\/queue-conversation-workspace";/u);
+	assert.match(ROVO_STAGE_SOURCE, /dismissQueueSessionFileChanges\(sessions, activeHistorySessionId\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionJiraColumn\(sessions, activeHistorySessionId, jiraColumn\)/u);
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/composerContextBar=\{activeHistorySession \? \([\s\S]*<QueueSessionContextBar[\s\S]*compact[\s\S]*session=\{activeHistorySession\}/u,
+	);
+	assert.match(CHAT_PANEL_SOURCE, /composerContextBar=\{composerContextBar\}/u);
+	assert.match(CHAT_COMPOSER_SOURCE, /\{composerContextBar\}\s*<ChatContextBar/u);
+});
+
+test("ASX Rovo clears the active Queue session when returning to Rovo", () => {
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/const handleBackToRovo = useCallback\(\(\) => \{\s*setActiveHistorySessionId\(null\);\s*\}, \[\]\);/u,
+	);
+	assert.match(ROVO_STAGE_SOURCE, /onBackToRovo=\{handleBackToRovo\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /<ChatHeader[\s\S]*onBackToRovo=\{onBackToRovo\}/u);
+	assert.match(CHAT_HEADER_SOURCE, /<RovoAgentBackButton onBack=\{onBackToRovo\} \/>/u);
+	assert.match(
+		ROVO_AGENT_BACK_BUTTON_SOURCE,
+		/const handleBack = \(\) => \{\s*resetAgentToRovo\(\);\s*onBack\?\.\(\);\s*\};/u,
+	);
+	assert.match(ROVO_AGENT_BACK_BUTTON_SOURCE, /onClick=\{handleBack\}/u);
 });
 
 test("Queue stage hosts Jira chrome around ASX-local session navigation", () => {
@@ -277,4 +326,11 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 	assert.match(JIRA_ATTACHMENTS_SOURCE, /<AttachmentPreviewCard/u);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /h-\[104px\]/u);
 	assert.match(ATTACHMENT_PREVIEW_CARD_SOURCE, /elevation\.shadow\.raised/u);
+});
+
+test("ASX Queue seeds a perpetual running session with an in-progress thinking trace", () => {
+	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-104",/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /status: "running",/u);
+	assert.match(QUEUE_SESSIONS_SOURCE, /data-thinking-event/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /running: "Running"/u);
 });

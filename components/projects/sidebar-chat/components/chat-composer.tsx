@@ -65,6 +65,7 @@ interface ChatComposerProps {
 	selectedReasoning?: string;
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	composerContextBar?: ReactNode;
 	directoryAutocompleteListVisible?: boolean;
 	prefillMentionRequest?: { mention: RichTextMentionItem; requestKey: number };
 	/** Composer placeholder. Defaults to the standard sidebar-chat prompt. */
@@ -173,7 +174,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -222,6 +223,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 
 	return (
 		<div className={cn("relative min-w-0 px-3", containerClassName)}>
+			{composerContextBar}
 			<ChatContextBar key={chatContextBar?.signature} context={chatContextBar} onOpenChange={onContextBarOpenChange} />
 			{hasQueuedPrompts ? (
 				<div className="pointer-events-none absolute bottom-full left-4 right-4 z-0">

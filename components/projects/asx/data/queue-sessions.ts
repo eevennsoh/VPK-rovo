@@ -66,6 +66,97 @@ function message(id: string, role: "assistant" | "user", text: string): RovoUIMe
 	};
 }
 
+/**
+ * Builds the trailing chain-of-thought message for a "running" session: two
+ * completed tool steps plus a final tool call that stays pending. Because there
+ * is no `data-turn-complete` part, the final "start"-only tool event never
+ * resolves. It is the LAST assistant message in the turn — rendered after the
+ * typed response so the words appear first — and the workspace's `isStreaming`
+ * signal keeps its header animating: a perpetual live snapshot with no timers.
+ */
+function runningThinkingMessage(id: string): RovoUIMessage {
+	return {
+		id,
+		role: "assistant",
+		parts: [
+			{
+				type: "data-thinking-status",
+				data: {
+					label: "Working",
+					content:
+						"Cross-checking the Q3 pricing exceptions against the approved discount matrix before updating the readiness score.",
+					toolCallId: "rfp-104-work",
+					activity: "data",
+					source: "fallback",
+					timestamp: "2026-07-17T02:10:00.000Z",
+				},
+			},
+			{
+				type: "data-thinking-event",
+				id: "rfp-104-read-start",
+				data: {
+					eventId: "rfp-104-read-start",
+					phase: "start",
+					toolName: "jira.read_work_item_context",
+					label: "Reading the work item and linked context",
+					toolCallId: "rfp-104-read",
+					timestamp: "2026-07-17T02:10:01.000Z",
+				},
+			},
+			{
+				type: "data-thinking-event",
+				id: "rfp-104-read-result",
+				data: {
+					eventId: "rfp-104-read-result",
+					phase: "result",
+					toolName: "jira.read_work_item_context",
+					label: "Reading the work item and linked context",
+					toolCallId: "rfp-104-read",
+					outputPreview: "Work item and linked pricing context reviewed.",
+					timestamp: "2026-07-17T02:10:03.000Z",
+				},
+			},
+			{
+				type: "data-thinking-event",
+				id: "rfp-104-pricing-start",
+				data: {
+					eventId: "rfp-104-pricing-start",
+					phase: "start",
+					toolName: "finance.pull_pricing_tables",
+					label: "Pulling the Q3 pricing tables",
+					toolCallId: "rfp-104-pricing",
+					timestamp: "2026-07-17T02:10:04.000Z",
+				},
+			},
+			{
+				type: "data-thinking-event",
+				id: "rfp-104-pricing-result",
+				data: {
+					eventId: "rfp-104-pricing-result",
+					phase: "result",
+					toolName: "finance.pull_pricing_tables",
+					label: "Pulling the Q3 pricing tables",
+					toolCallId: "rfp-104-pricing",
+					outputPreview: "Loaded 42 pricing rows with 6 flagged exceptions.",
+					timestamp: "2026-07-17T02:10:06.000Z",
+				},
+			},
+			{
+				type: "data-thinking-event",
+				id: "rfp-104-approval-start",
+				data: {
+					eventId: "rfp-104-approval-start",
+					phase: "start",
+					toolName: "finance.check_discount_matrix",
+					label: "Running approval checks",
+					toolCallId: "rfp-104-approval",
+					timestamp: "2026-07-17T02:10:07.000Z",
+				},
+			},
+		],
+	};
+}
+
 export const ASX_QUEUE_SPACES = STARRED_PROJECTS;
 
 export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
@@ -265,9 +356,52 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 			),
 		],
 	},
+	{
+		id: "pricing-exception-review",
+		spaceId: "enterprise-rfp-qualification",
+		agentId: "deal-desk-reviewer",
+		host: "cloud",
+		issueKey: "RFP-104",
+		issueSummary: "Q3 pricing exception review",
+		title: "Validate Q3 pricing exceptions",
+		status: "running",
+		isPinned: false,
+		jiraColumn: "In progress",
+		manualRank: 4,
+		priorityRank: 4,
+		updatedRank: 4,
+		repository: "acme-corp/rfp-response-platform",
+		messages: [
+			message(
+				"pricing-user-1",
+				"user",
+				"Can you validate the Q3 pricing exceptions and confirm every non-standard discount has an accountable owner before we submit?",
+			),
+			message(
+				"pricing-agent-1",
+				"assistant",
+				[
+					"I'm partway through validating the Q3 pricing exceptions. Here is what I've confirmed so far while the final approval check runs.",
+					"",
+					"**Exceptions reviewed**",
+					"- 4 of the 6 flagged discounts sit within the approved threshold and already have an accountable owner recorded in the deal desk matrix.",
+					"- 2 exceptions exceed the standard discount band, so they need explicit finance sign-off before they can ship in the response.",
+					"",
+					"**Owners confirmed**",
+					"- Enterprise tier: Priya Shah (Finance) owns the non-standard pricing note and the volume discount rationale.",
+					"- Public sector tier: the discount is currently unassigned, so I'm matching it against the responsibility matrix now.",
+					"",
+					"**Still in progress**",
+					"I'm running the approval-matrix check on the two out-of-band exceptions to confirm whether they clear automatically or require a manual finance approval before I finalize the owner list.",
+				].join("\n"),
+			),
+			runningThinkingMessage("pricing-agent-2"),
+		],
+	},
 ];
 
 const ASX_QUEUE_HISTORY_UPDATED_AT: Readonly<Record<string, string>> = {
+	"pricing-exception-review": "2026-07-17T03:00:00.000Z",
 	"acme-qualification": "2026-07-17T00:30:00.000Z",
 	"northstar-evidence-pr": "2026-07-16T01:15:00.000Z",
 	"security-evidence-merged": "2026-07-15T02:45:00.000Z",
@@ -351,6 +485,24 @@ export function createAsxQueueSidebarSessionItem(
 	};
 }
 
+/**
+ * ASX-local agent profiles that are not in the shared Rovo directory. Keeps
+ * demo-only personas (e.g. the Deal Desk Reviewer used by the running session)
+ * scoped to the queue instead of polluting the global agent catalog.
+ */
+const ASX_QUEUE_LOCAL_AGENTS: Readonly<Record<string, RovoAgentProfile>> = {
+	"deal-desk-reviewer": {
+		id: "deal-desk-reviewer",
+		name: "Deal Desk Reviewer",
+		byline: "Agent by Rovo",
+		avatarSrc: "/avatar-agent/product-agents/wildcard-3.svg",
+		description:
+			"Reviews non-standard pricing and discount exceptions and confirms an accountable owner before a response goes out.",
+		starters: [],
+		contextDescription: "Answer as Deal Desk Reviewer for the selected ASX Jira issue.",
+	},
+};
+
 export function getAsxQueueAgent(agentId: string): RovoAgentProfile {
-	return getRovoAgentProfile(agentId);
+	return ASX_QUEUE_LOCAL_AGENTS[agentId] ?? getRovoAgentProfile(agentId);
 }

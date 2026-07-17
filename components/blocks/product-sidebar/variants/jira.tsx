@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import {
 	DropdownMenu,
@@ -142,9 +143,12 @@ function JiraSessionAvatar({ session }: Readonly<{ session: JiraSidebarSessionIt
 
 export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
 	return session.status === "awaiting-input" ? (
-		<Shimmer as="span" duration={1.4} spread={2} className="block truncate text-left">
-			{session.title}
-		</Shimmer>
+		<span className="flex min-w-0 items-baseline">
+			<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
+				Awaiting user response
+			</Shimmer>
+			<AnimatedDots />
+		</span>
 	) : session.title;
 }
 
@@ -391,7 +395,6 @@ function JiraSessionHoverDetails({ session }: Readonly<{ session: JiraSidebarSes
 		<div className="flex flex-col gap-3">
 			<div className="min-w-0">
 				<p className="truncate text-sm font-semibold leading-5 text-text" title={session.title}>{session.title}</p>
-				<p className="text-xs leading-4 text-text-subtlest">{session.host === "cloud" ? "Cloud session" : "Local session"}</p>
 			</div>
 			<div className="flex flex-col gap-2">
 				{session.status === "awaiting-input" ? (

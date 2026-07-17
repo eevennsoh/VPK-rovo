@@ -14,7 +14,6 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
-import { Button } from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -34,7 +33,6 @@ import {
 	PanelTitle,
 } from "@/components/ui/panel";
 import { Separator } from "@/components/ui/separator";
-import { PlayIcon } from "@/components/ui/vpk-icons";
 import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
 
@@ -71,15 +69,15 @@ interface QueueDetailPanelProps {
 function QueueDetailStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
 	switch (status) {
 		case "awaiting-input":
-			return <StatusInformationIcon label="" />;
+			return <StatusInformationIcon label="" size="small" />;
 		case "pr-open":
-			return <PullRequestIcon label="" />;
+			return <PullRequestIcon label="" size="small" />;
 		case "merged":
-			return <MergeSuccessIcon label="" />;
+			return <MergeSuccessIcon label="" size="small" />;
 		case "running":
-			return <ChangesIcon label="" />;
+			return <ChangesIcon label="" size="small" />;
 		case "stopped":
-			return <VideoStopIcon label="" />;
+			return <VideoStopIcon label="" size="small" />;
 	}
 }
 
@@ -93,13 +91,13 @@ function QueueDetailRow({
 	value: ReactNode;
 }>) {
 	return (
-		<Item className="min-h-9 flex-nowrap items-start rounded-md border-0 px-2 py-1.5">
-			<ItemMedia className="mt-0.5 text-icon-subtle" variant="icon">
+		<Item className="flex-nowrap items-start gap-2 rounded-md border-0 px-0 py-0">
+			<ItemMedia className="h-5 items-center text-icon-subtlest [&_span]:size-3 [&_svg]:size-3" variant="icon">
 				<Icon aria-hidden render={icon} />
 			</ItemMedia>
 			<ItemContent className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-x-2">
-				<span className="text-sm leading-5 text-text-subtlest">{label}</span>
-				<span className="min-w-0 break-words text-sm leading-5 text-text-subtle">{value}</span>
+				<span className="text-xs leading-5 text-text-subtlest">{label}</span>
+				<span className="min-w-0 break-words text-xs leading-5 text-text-subtle">{value}</span>
 			</ItemContent>
 		</Item>
 	);
@@ -115,8 +113,8 @@ function QueueDetailSection({
 	title: string;
 }>) {
 	return (
-		<section aria-labelledby={id} className="space-y-2 px-4 py-4">
-			<Heading as="h3" className="px-2" id={id} size="xxsmall">
+		<section aria-labelledby={id} className="space-y-2 px-4 py-6">
+			<Heading as="h3" id={id} size="xxsmall">
 				{title}
 			</Heading>
 			{children}
@@ -145,48 +143,45 @@ export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDeta
 			variants={shouldReduceMotion ? REDUCED_MOTION_PANEL_VARIANTS : PANEL_VARIANTS}
 		>
 			<PanelContainer
-				aria-label="Detail"
+				aria-label="Details"
 				className="h-full border-l border-border bg-surface"
 				id="asx-queue-detail-panel"
 			>
 				<PanelHeader className="h-14 px-4 py-3">
-					<PanelTitle>Detail</PanelTitle>
+					<PanelTitle>Details</PanelTitle>
 					<PanelActionGroup>
 						<PanelActionMore />
-						<Button aria-label="Run" size="icon" type="button" variant="ghost">
-							<PlayIcon aria-hidden />
-						</Button>
 						<PanelActionClose label="Close detail panel" onClick={onClose} />
 					</PanelActionGroup>
 				</PanelHeader>
 
 				<PanelContent>
 					<PanelBody className="pb-5" spacing="none">
-						<QueueDetailSection id="asx-queue-session-heading" title="Session">
-							<ItemGroup className="gap-0">
+						<section aria-label="Session" className="space-y-2 px-4 pb-6">
+							<ItemGroup className="gap-2">
 								<QueueDetailRow
 									icon={<QueueDetailStatusIcon status={session.status} />}
 									label="Status"
 									value={STATUS_LABELS[session.status]}
 								/>
 								<QueueDetailRow
-									icon={session.host === "cloud" ? <CloudArrowUpIcon label="" /> : <FolderClosedIcon label="" />}
+									icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
 									label="Host"
 									value={session.host === "cloud" ? "Cloud" : "Local"}
 								/>
-								<QueueDetailRow icon={<AiAgentIcon label="" />} label="Agent" value={agent.name} />
-								<QueueDetailRow icon={<TaskIcon label="" />} label="Jira" value={issueDescription} />
+								<QueueDetailRow icon={<AiAgentIcon label="" size="small" />} label="Agent" value={agent.name} />
+								<QueueDetailRow icon={<TaskIcon label="" size="small" />} label="Jira" value={issueDescription} />
 							</ItemGroup>
-						</QueueDetailSection>
+						</section>
 
 						{hasDevelopmentDetails ? (
 							<>
-								<Separator />
+								<Separator className="mx-4 data-horizontal:w-auto" />
 								<QueueDetailSection id="asx-queue-development-heading" title="Development">
-									<ItemGroup className="gap-0">
-										{session.repository ? <QueueDetailRow icon={<FolderClosedIcon label="" />} label="Repository" value={session.repository} /> : null}
-										{session.branch ? <QueueDetailRow icon={<BranchIcon label="" />} label="Branch" value={session.branch} /> : null}
-										{session.worktreePath ? <QueueDetailRow icon={<FolderClosedIcon label="" />} label="Worktree" value={session.worktreePath} /> : null}
+									<ItemGroup className="gap-2">
+										{session.repository ? <QueueDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Repository" value={session.repository} /> : null}
+										{session.branch ? <QueueDetailRow icon={<BranchIcon label="" size="small" />} label="Branch" value={session.branch} /> : null}
+										{session.worktreePath ? <QueueDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Worktree" value={session.worktreePath} /> : null}
 									</ItemGroup>
 								</QueueDetailSection>
 							</>
@@ -194,15 +189,15 @@ export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDeta
 
 						{hasDeliveryDetails ? (
 							<>
-								<Separator />
+								<Separator className="mx-4 data-horizontal:w-auto" />
 								<QueueDetailSection id="asx-queue-delivery-heading" title="Delivery">
-									<ItemGroup className="gap-0">
-										{session.pullRequestNumber ? <QueueDetailRow icon={<PullRequestIcon label="" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
-										{session.commit ? <QueueDetailRow icon={<CommitIcon label="" />} label="Commit" value={session.commit} /> : null}
-										{session.checks ? <QueueDetailRow icon={<CheckCircleIcon label="" />} label="Checks" value={session.checks} /> : null}
+									<ItemGroup className="gap-2">
+										{session.pullRequestNumber ? <QueueDetailRow icon={<PullRequestIcon label="" size="small" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
+										{session.commit ? <QueueDetailRow icon={<CommitIcon label="" size="small" />} label="Commit" value={session.commit} /> : null}
+										{session.checks ? <QueueDetailRow icon={<CheckCircleIcon label="" size="small" />} label="Checks" value={session.checks} /> : null}
 										{session.fileChanges ? (
 											<QueueDetailRow
-												icon={<ChangesIcon label="" />}
+												icon={<ChangesIcon label="" size="small" />}
 												label="Changes"
 												value={(
 													<span className="inline-flex flex-wrap gap-1 font-medium">

@@ -274,9 +274,10 @@ function SmartLinkTrigger({
 			aria-describedby={`smart-link-card-${item.id}`}
 			className={cn(
 				// Extends the VPK Tag visual contract: same compact pill metrics
-				// (h-5, text-xs/leading-4, rounded-sm, ps-px/pe-[3px], gap-0.5) so the
+				// (h-5, text-xs/leading-4, rounded-sm, ps-px/pe-[3px]) so the
 				// inline chip sits on a single text line instead of upscaling.
-				"group/smart-link relative inline-flex h-5 max-w-[11.25rem] min-w-0 shrink-0 items-center gap-0.5 self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 ps-px pe-[3px] align-baseline text-xs leading-4 font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				// gap-1 (4px) separates the app icon from the label.
+				"group/smart-link relative inline-flex h-5 max-w-[11.25rem] min-w-0 shrink-0 items-center gap-1 self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 ps-px pe-[3px] align-baseline text-xs leading-4 font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 				open && "border-border-selected",
 				className,
 			)}
