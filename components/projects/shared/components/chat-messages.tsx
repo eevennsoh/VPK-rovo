@@ -30,6 +30,7 @@ import styles from "./chat-messages.module.css";
 
 export interface ChatMessagesProps {
 	uiMessages: RovoUIMessage[];
+	contentClassName?: string;
 	onSuggestedQuestionClick?: (question: string) => void;
 	onDeleteMessage?: (messageId: string) => void;
 	conversationContextRef: React.RefObject<ConversationContextValue | null>;
@@ -122,6 +123,7 @@ function computeLatestTurnScrollTop(
 
 export function ChatMessages({
 	uiMessages,
+	contentClassName,
 	onSuggestedQuestionClick,
 	onDeleteMessage,
 	conversationContextRef,
@@ -188,7 +190,7 @@ export function ChatMessages({
 			targetScrollTop={handleTargetScrollTop}
 		>
 			<ConversationContent
-				className="flex w-full shrink-0 flex-col gap-6 p-3"
+				className={cn("flex w-full shrink-0 flex-col gap-6 p-3", contentClassName)}
 				style={{
 					paddingTop: contentTopPadding,
 					paddingBottom: contentBottomPadding ?? "80px",

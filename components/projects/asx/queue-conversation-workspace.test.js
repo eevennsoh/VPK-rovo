@@ -50,11 +50,12 @@ test("completed Queue sessions render the appropriate context above the composer
 	assert.match(WORKSPACE_SOURCE, /<QueueSessionContextBar[\s\S]*<RovoAppComposer[\s\S]*<Footer \/>/u);
 });
 
-test("the Queue chat body centers within the space beside the environment panel", () => {
-	assert.match(WORKSPACE_SOURCE, /const availableCenter = \(workspaceRect\.left \+ panelLeft\) \/ 2;/u);
-	assert.match(WORKSPACE_SOURCE, /const unshiftedChatCenter = \(unshiftedChatLeft \+ unshiftedChatRight\) \/ 2;/u);
-	assert.match(WORKSPACE_SOURCE, /const centeredShift = availableCenter - unshiftedChatCenter;/u);
-	assert.match(WORKSPACE_SOURCE, /const leftEdgeShift = workspaceRect\.left - unshiftedChatLeft;/u);
-	assert.match(WORKSPACE_SOURCE, /Math\.min\(0, Math\.max\(leftEdgeShift, centeredShift\)\)/u);
-	assert.doesNotMatch(WORKSPACE_SOURCE, /unshiftedChatRight - panelLeft/u);
+test("the Queue scroll viewport fills the available space while its content stays constrained", () => {
+	assert.match(CHAT_MESSAGES_SOURCE, /contentClassName\?: string;/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /className=\{cn\("flex w-full shrink-0 flex-col gap-6 p-3", contentClassName\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? DETAIL_PANEL_WIDTH_PX : 0 \}\}/u);
+	assert.match(WORKSPACE_SOURCE, /className="flex min-h-0 w-full flex-1 flex-col"/u);
+	assert.match(WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);
+	assert.match(WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);
+	assert.doesNotMatch(WORKSPACE_SOURCE, /DOMMatrixReadOnly|ResizeObserver|chatBodyShift/u);
 });

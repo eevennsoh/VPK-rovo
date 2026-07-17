@@ -3,7 +3,7 @@
 import ChangesIcon from "@atlaskit/icon/core/changes";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileUIPart } from "ai";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
@@ -37,7 +37,7 @@ import type { AsxQueueJiraColumn, AsxQueueSession } from "../data/queue-sessions
 import { QueueConversationHeader } from "./queue-conversation-header";
 import { QueueDetailPanel } from "./queue-detail-panel";
 
-const PANEL_FALLBACK_WIDTH_PX = 320;
+const DETAIL_PANEL_WIDTH_PX = 320;
 const CHAT_BODY_OPEN_TRANSITION: Transition = {
 	duration: 0.25,
 	ease: [0.4, 0, 0, 1], // duration-slow + ease-in-out
@@ -178,11 +178,7 @@ export function QueueConversationWorkspace({
 	session,
 }: Readonly<QueueConversationWorkspaceProps>) {
 	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
-	const [chatBodyShift, setChatBodyShift] = useState(0);
 	const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-	const workspaceRef = useRef<HTMLDivElement | null>(null);
-	const chatBodyRef = useRef<HTMLDivElement | null>(null);
-	const chatBodyShiftRef = useRef(0);
 	const conversationContextRef = useRef<ConversationContextValue | null>(null);
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const shouldReduceMotion = useReducedMotion();
@@ -213,12 +209,6 @@ export function QueueConversationWorkspace({
 			setIsSubmittingAnswer(false);
 		}
 	}, [onAnswerQuestion]);
-	const commitChatBodyShift = useCallback((nextShift: number) => {
-		if (chatBodyShiftRef.current === nextShift) return;
-		chatBodyShiftRef.current = nextShift;
-		setChatBodyShift(nextShift);
-	}, []);
-
 	useEffect(() => {
 		if (!awaitingQuestion) return;
 
@@ -232,45 +222,6 @@ export function QueueConversationWorkspace({
 
 		return () => window.cancelAnimationFrame(frameId);
 	}, [awaitingQuestion]);
-
-	useLayoutEffect(() => {
-		if (!isDetailPanelOpen) {
-			commitChatBodyShift(0);
-			return;
-		}
-
-		const workspace = workspaceRef.current;
-		const chatBody = chatBodyRef.current;
-		if (!workspace || !chatBody) return;
-
-		const panel = workspace.querySelector<HTMLElement>("#asx-queue-detail-panel");
-		const updateChatBodyShift = () => {
-			const workspaceRect = workspace.getBoundingClientRect();
-			const chatBodyRect = chatBody.getBoundingClientRect();
-			const chatBodyTransform = getComputedStyle(chatBody).transform;
-			const renderedChatShift = chatBodyTransform === "none"
-				? 0
-				: new DOMMatrixReadOnly(chatBodyTransform).m41;
-			const panelWidth = panel?.getBoundingClientRect().width ?? PANEL_FALLBACK_WIDTH_PX;
-			const panelLeft = workspaceRect.right - Math.min(panelWidth, workspaceRect.width);
-			const unshiftedChatLeft = chatBodyRect.left - renderedChatShift;
-			const unshiftedChatRight = chatBodyRect.right - renderedChatShift;
-			const availableCenter = (workspaceRect.left + panelLeft) / 2;
-			const unshiftedChatCenter = (unshiftedChatLeft + unshiftedChatRight) / 2;
-			const centeredShift = availableCenter - unshiftedChatCenter;
-			const leftEdgeShift = workspaceRect.left - unshiftedChatLeft;
-			const nextShift = Math.round(Math.min(0, Math.max(leftEdgeShift, centeredShift)));
-			commitChatBodyShift(nextShift);
-		};
-
-		updateChatBodyShift();
-		const resizeObserver = new ResizeObserver(updateChatBodyShift);
-		resizeObserver.observe(workspace);
-		resizeObserver.observe(chatBody);
-		if (panel) resizeObserver.observe(panel);
-
-		return () => resizeObserver.disconnect();
-	}, [commitChatBodyShift, isDetailPanelOpen]);
 
 	const chatBodyTransition = shouldReduceMotion
 		? CHAT_BODY_REDUCED_MOTION_TRANSITION
@@ -288,10 +239,7 @@ export function QueueConversationWorkspace({
 				: `Message ${agent.name}`;
 
 	return (
-		<div
-			className="relative flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground"
-			ref={workspaceRef}
-		>
+		<div className="relative flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground">
 			<section
 				aria-label={`Conversation: ${session.title}`}
 				className="flex min-h-0 min-w-0 flex-1 flex-col"
@@ -303,15 +251,15 @@ export function QueueConversationWorkspace({
 					onDetailPanelToggle={() => setIsDetailPanelOpen((current) => !current)}
 				/>
 				<motion.div
-					animate={{ transform: `translateX(${chatBodyShift}px)` }}
-					className="mx-auto flex min-h-0 w-full max-w-[800px] flex-1 flex-col px-3"
+					animate={{ paddingRight: isDetailPanelOpen ? DETAIL_PANEL_WIDTH_PX : 0 }}
+					className="flex min-h-0 w-full flex-1 flex-col"
 					data-testid="asx-queue-chat-body"
 					initial={false}
-					ref={chatBodyRef}
-					style={shouldReduceMotion ? undefined : { willChange: "transform" }}
+					style={shouldReduceMotion ? undefined : { willChange: "padding-right" }}
 					transition={chatBodyTransition}
 				>
 					<ChatMessages
+						contentClassName="mx-auto max-w-[800px] px-6"
 						contentBottomPadding="32px"
 						contentTopPadding="32px"
 						conversationContextRef={conversationContextRef}
@@ -326,49 +274,51 @@ export function QueueConversationWorkspace({
 						uiMessages={session.messages}
 					/>
 					<div className="sticky bottom-0 z-10 shrink-0 bg-background/90 backdrop-blur">
-						{awaitingQuestion ? (
-							<>
-								<QuestionCard
-									isSubmitting={isSubmittingAnswer}
-									onSubmit={(answers) => void handleAnswerQuestion(answers)}
-									questions={awaitingQuestion.questions}
-								/>
-								<QuestionCardShortcutsFooter />
-							</>
-						) : (
-							<>
-								{session.status === "running" ? (
-									<div className="mb-3">
-										<ChatContextBar
-											context={{
-												iconName: "work-item",
-												label: `${session.issueKey}: ${session.issueSummary}`,
-												showDismissPlaceholder: false,
-												signature: `asx-queue-work-item:${session.issueKey}`,
-											}}
-										/>
-									</div>
-								) : null}
-								<QueueSessionContextBar
-									onDismissFileChanges={onDismissFileChanges}
-									onJiraColumnChange={onJiraColumnChange}
-									session={session}
-								/>
-								<RovoAppComposer
-									composerStatus="ready"
-									experimentalDarkCta
-									hideSourceAndModelControls
-									micStream={realtime.micStream}
-									onStop={async () => realtime.disconnect()}
-									onSubmit={onSubmit}
-									onToggleRealtimeVoice={handleToggleRealtimeVoice}
-									placeholder={composerPlaceholder}
-									realtimeVoiceActive={realtime.voiceState !== "idle"}
+						<div className="mx-auto w-full max-w-[800px] px-3">
+							{awaitingQuestion ? (
+								<>
+									<QuestionCard
+										isSubmitting={isSubmittingAnswer}
+										onSubmit={(answers) => void handleAnswerQuestion(answers)}
+										questions={awaitingQuestion.questions}
+									/>
+									<QuestionCardShortcutsFooter />
+								</>
+							) : (
+								<>
+									{session.status === "running" ? (
+										<div className="mb-3">
+											<ChatContextBar
+												context={{
+													iconName: "work-item",
+													label: `${session.issueKey}: ${session.issueSummary}`,
+													showDismissPlaceholder: false,
+													signature: `asx-queue-work-item:${session.issueKey}`,
+												}}
+											/>
+										</div>
+									) : null}
+									<QueueSessionContextBar
+										onDismissFileChanges={onDismissFileChanges}
+										onJiraColumnChange={onJiraColumnChange}
+										session={session}
+									/>
+									<RovoAppComposer
+										composerStatus="ready"
+										experimentalDarkCta
+										hideSourceAndModelControls
+										micStream={realtime.micStream}
+										onStop={async () => realtime.disconnect()}
+										onSubmit={onSubmit}
+										onToggleRealtimeVoice={handleToggleRealtimeVoice}
+										placeholder={composerPlaceholder}
+										realtimeVoiceActive={realtime.voiceState !== "idle"}
 										realtimeVoiceState={realtime.voiceState}
 									/>
-								<Footer />
-							</>
-						)}
+									<Footer />
+								</>
+							)}
+						</div>
 					</div>
 				</motion.div>
 			</section>

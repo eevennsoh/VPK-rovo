@@ -43,6 +43,9 @@ export type SmartLinkVariant =
 	| "file"
 	| "generic";
 
+/** Inline chip size: "small" renders a 12px label, "large" a 16px label. */
+export type SmartLinkSize = "small" | "large";
+
 export type SmartLinkVisual =
 	| { kind: "atlassian"; name: AtlassianLogoName }
 	| { kind: "third-party"; name: ThirdPartyLogoName }
@@ -121,6 +124,10 @@ export interface SmartLinkProps {
 	item: SmartLinkItem;
 	side?: React.ComponentProps<typeof HoverCardContent>["side"];
 	align?: React.ComponentProps<typeof HoverCardContent>["align"];
+	/** Inline chip size: "small" (12px label, default) or "large" (16px label). */
+	size?: SmartLinkSize;
+	/** When true, render the item's status as a lozenge at the end of the inline chip. */
+	showStatus?: boolean;
 	openDelay?: number;
 	closeDelay?: number;
 	onOpenChange?: (open: boolean) => void;
@@ -172,6 +179,40 @@ const visualIconTileSizes: Record<SmartLinkVisualSize, SmartLinkIconTileSize> = 
 	trigger: "xxsmall",
 	card: "small",
 	footer: "xxsmall",
+};
+
+// Inline chip geometry per size. `small` keeps the original VPK Tag metrics
+// (12px label on a 20px pill); `large` scales the label to 16px on a 28px pill
+// for prominent references.
+const triggerSizeClasses: Record<SmartLinkSize, string> = {
+	small: "h-5 gap-1 ps-px pe-[3px] text-xs leading-4",
+	large: "h-7 gap-1.5 ps-1 pe-1 text-base leading-6",
+};
+
+// Icon wrapper size. App logos (AtlassianLogo/BrandLogoMark) render an
+// intrinsically 16px glyph at the trigger size, so both chip sizes keep a 16px
+// wrapper that hugs the glyph — a larger box leaves dead space to the right of
+// the left-aligned SVG. `[&>*]:size-full` stretches the logo's container span to
+// the wrapper (a no-op at 16px, but keeps other visual kinds filling the box).
+const triggerVisualClasses: Record<SmartLinkSize, string> = {
+	small: "size-4 [&>svg]:size-4",
+	large: "size-4 [&>svg]:size-4",
+};
+
+// Status lozenge height per chip size so it fits inside the pill's inner height
+// without being clipped by the chip's `overflow-hidden`.
+const triggerStatusClasses: Record<SmartLinkSize, string> = {
+	small: "h-4 text-[11px]",
+	large: "h-5 text-xs",
+};
+
+// Right padding when a status lozenge trails the label. A bare-text chip pads the
+// right more than its top/bottom gap; the lozenge already carries its own inset,
+// so tighten the right padding per size until the gap beside it equals the chip's
+// top/bottom gap (each value = top/bottom gap − 1px chip border).
+const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
+	small: "pe-px", // 1px pad + 1px border = 2px, matching the 2px top/bottom gap
+	large: "pe-[3px]", // 3px pad + 1px border = 4px, matching the 4px top/bottom gap
 };
 
 const previewToneClasses: Record<SmartLinkTone, string> = {
@@ -265,28 +306,51 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 function SmartLinkTrigger({
 	item,
 	open,
+	size = "small",
+	showStatus = false,
 	className,
 	...props
-}: Readonly<{ item: SmartLinkItem; open: boolean } & ComponentProps<"a">>) {
+}: Readonly<
+	{ item: SmartLinkItem; open: boolean; size?: SmartLinkSize; showStatus?: boolean } & ComponentProps<"a">
+>) {
+	const status = showStatus ? item.status : undefined;
+
 	return (
 		<a
 			{...props}
 			aria-describedby={`smart-link-card-${item.id}`}
 			className={cn(
-				// Extends the VPK Tag visual contract: same compact pill metrics
-				// (h-5, text-xs/leading-4, rounded-sm, ps-px/pe-[3px]) so the
-				// inline chip sits on a single text line instead of upscaling.
-				// gap-1 (4px) separates the app icon from the label.
-				"group/smart-link relative inline-flex h-5 max-w-[11.25rem] min-w-0 shrink-0 items-center gap-1 self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 ps-px pe-[3px] align-baseline text-xs leading-4 font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				// Extends the VPK Tag visual contract: the small size keeps the same
+				// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
+				// inline chip sits on a single text line; the large size scales the
+				// label to 16px. Per-size gaps/padding live in triggerSizeClasses.
+				"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-baseline font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				triggerSizeClasses[size],
+				// Match the gap beside a trailing status lozenge to the chip's
+				// top/bottom gap (see triggerStatusPaddingClasses).
+				status ? triggerStatusPaddingClasses[size] : null,
+				// Widen the max width when a status lozenge trails the title so it fits
+				// without prematurely truncating the label.
+				status ? "max-w-sm" : "max-w-[11.25rem]",
 				open && "border-border-selected",
 				className,
 			)}
 			href={item.href}
 		>
-			<span className="flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4">
+			<span
+				className={cn(
+					"flex shrink-0 items-center justify-center [&>*]:size-full",
+					triggerVisualClasses[size],
+				)}
+			>
 				{renderVisual(item.icon, "trigger")}
 			</span>
 			<span className="min-w-0 grow truncate whitespace-nowrap">{item.title}</span>
+			{status ? (
+				<Lozenge className={cn("shrink-0", triggerStatusClasses[size])} variant={status.variant ?? "neutral"}>
+					{status.label}
+				</Lozenge>
+			) : null}
 		</a>
 	);
 }
@@ -617,6 +681,8 @@ export function SmartLink({
 	item,
 	side = "bottom",
 	align = "start",
+	size = "small",
+	showStatus = false,
 	openDelay = 120,
 	closeDelay = 80,
 	onOpenChange,
@@ -638,7 +704,7 @@ export function SmartLink({
 			open={open}
 			openDelay={openDelay}
 		>
-			<HoverCardTrigger render={<SmartLinkTrigger className={className} item={item} open={open} />} />
+			<HoverCardTrigger render={<SmartLinkTrigger className={className} item={item} open={open} showStatus={showStatus} size={size} />} />
 			<HoverCardContent
 				align={align}
 				className="w-auto border-0 bg-transparent p-0 text-text shadow-none"

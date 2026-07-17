@@ -8,6 +8,7 @@ export type {
 	SmartLinkPreviewImage,
 	SmartLinkProps,
 	SmartLinkProvider,
+	SmartLinkSize,
 	SmartLinkVariant,
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link";

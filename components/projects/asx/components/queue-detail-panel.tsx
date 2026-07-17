@@ -5,15 +5,16 @@ import ChangesIcon from "@atlaskit/icon/core/changes";
 import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
 import CommitIcon from "@atlaskit/icon/core/commit";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
+import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import TaskIcon from "@atlaskit/icon/core/task";
 import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import Heading from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -22,6 +23,7 @@ import {
 	ItemGroup,
 	ItemMedia,
 } from "@/components/ui/item";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import {
 	PanelActionClose,
 	PanelActionGroup,
@@ -33,6 +35,7 @@ import {
 	PanelTitle,
 } from "@/components/ui/panel";
 import { Separator } from "@/components/ui/separator";
+import { Tag } from "@/components/ui/tag";
 import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
 
@@ -43,6 +46,18 @@ const STATUS_LABELS: Record<AsxQueueSessionStatus, string> = {
 	running: "Running",
 	stopped: "Stopped",
 };
+
+// Lozenge tone per status. Follows the neutral/information/success conventions
+// already used on this surface (`QUEUE_JIRA_COLUMN_VARIANTS`), adding `warning`
+// for the one state that is actively waiting on the user so it reads as
+// "needs attention" rather than blending in with the in-flight blues.
+const STATUS_VARIANTS = {
+	"awaiting-input": "warning",
+	merged: "success",
+	"pr-open": "information",
+	running: "information",
+	stopped: "neutral",
+} as const satisfies Record<AsxQueueSessionStatus, LozengeProps["variant"]>;
 
 const PANEL_VARIANTS: Variants = {
 	closed: {
@@ -69,7 +84,7 @@ interface QueueDetailPanelProps {
 function QueueDetailStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
 	switch (status) {
 		case "awaiting-input":
-			return <StatusInformationIcon label="" size="small" />;
+			return <InformationCircleIcon label="" size="small" />;
 		case "pr-open":
 			return <PullRequestIcon label="" size="small" />;
 		case "merged":
@@ -162,14 +177,34 @@ export function QueueDetailPanel({ agent, onClose, session }: Readonly<QueueDeta
 								<QueueDetailRow
 									icon={<QueueDetailStatusIcon status={session.status} />}
 									label="Status"
-									value={STATUS_LABELS[session.status]}
+									value={<Lozenge variant={STATUS_VARIANTS[session.status]}>{STATUS_LABELS[session.status]}</Lozenge>}
 								/>
 								<QueueDetailRow
 									icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
-									label="Host"
+									label="Session"
 									value={session.host === "cloud" ? "Cloud" : "Local"}
 								/>
-								<QueueDetailRow icon={<AiAgentIcon label="" size="small" />} label="Agent" value={agent.name} />
+								<QueueDetailRow
+									icon={<AiAgentIcon label="" size="small" />}
+									label="Agent"
+									value={(
+										<Tag
+											type="agent"
+											elemBefore={(
+												<AgentAvatarVisual
+													avatarSrc={agent.avatarSrc}
+													brandName={agent.brandName}
+													fallbackText={agent.name.slice(0, 2).toUpperCase()}
+													label=""
+													logoName={agent.logoName}
+													sizePx={16}
+												/>
+											)}
+										>
+											{agent.name}
+										</Tag>
+									)}
+								/>
 								<QueueDetailRow icon={<TaskIcon label="" size="small" />} label="Jira" value={issueDescription} />
 							</ItemGroup>
 						</section>

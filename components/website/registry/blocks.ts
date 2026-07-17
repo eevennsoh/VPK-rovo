@@ -641,6 +641,8 @@ export const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"smart-link-demo-status": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoStatus })), { ssr: false }),
+	"smart-link-demo-sizes": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoSizes })), { ssr: false }),
 
 	// Agent Selector
 	"agent-selector-demo-standalone": dynamic(

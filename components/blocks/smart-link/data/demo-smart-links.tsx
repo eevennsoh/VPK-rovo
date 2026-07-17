@@ -213,6 +213,48 @@ export const SMART_LINK_VARIANT_EXAMPLES = {
 	generic: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "file" || item.variant === "generic"),
 } as const;
 
+// Inline-status examples: work items whose status renders as a trailing lozenge
+// on the chip itself (via <SmartLink showStatus />). Plain statuses (no options)
+// so the inline indicator stays static, matching the Jira issue reference chip.
+export const SMART_LINK_STATUS_EXAMPLES = [
+	{
+		id: "jdsn-232",
+		href: "#jdsn-232",
+		title: "JDSN-232: test",
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "atlassian", name: "jira" },
+		assignee: { name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
+		status: { label: "To Do", variant: "neutral" },
+		description: "Reproduce the reported issue and capture a failing test before starting the fix.",
+		actions: DEFAULT_ACTIONS,
+	},
+	{
+		id: "jdsn-198",
+		href: "#jdsn-198",
+		title: "JDSN-198: Motion polish for hover cards",
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "atlassian", name: "jira" },
+		assignee: { name: "Veronica Rodriguez", src: "/avatar-human/veronica-rodriguez.png" },
+		status: { label: "In progress", variant: "information" },
+		description: "Tune enter/exit easing on the smart link hover card to match the motion guidelines.",
+		actions: DEFAULT_ACTIONS,
+	},
+	{
+		id: "jdsn-154",
+		href: "#jdsn-154",
+		title: "JDSN-154: Ship inline status lozenge",
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "atlassian", name: "jira" },
+		assignee: { name: "Anthony Chen", src: "/avatar-human/anthony-chen.png" },
+		status: { label: "Done", variant: "success" },
+		description: "Render the work item status at the end of the inline smart link chip.",
+		actions: DEFAULT_ACTIONS,
+	},
+] satisfies SmartLinkItem[];
+
 export const SMART_LINK_REQUIRED_VARIANTS = [
 	"confluence",
 	"jira",
