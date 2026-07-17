@@ -31,8 +31,8 @@ export function DemoPreviewShell({ children, contentWidth = "fit", fullPage, fit
 		return (
 			<div
 				className={cn(
-					"relative w-full",
-					!fitContent && "overflow-hidden [&>*]:h-full",
+					"relative w-full overflow-hidden",
+					!fitContent && "[&>*]:h-full",
 					"[&_[data-slot=sidebar-wrapper]]:!min-h-full [&_[data-slot=sidebar-wrapper]]:!h-full",
 					"[&_[data-slot=sidebar-container]]:!h-full",
 					"[&_[data-slot=sidebar-inset]]:!min-h-0 [&_[data-slot=sidebar-inset]]:!h-full",

@@ -151,7 +151,7 @@ function ChatHistorySectionHeading({
 					</span>
 				</span>
 			</button>
-			<div className="flex shrink-0 items-center gap-0.5">
+			<div className="flex shrink-0 items-center gap-0.5 pr-1.5">
 				{chatCount > 0 ? (
 					<button
 						type="button"
