@@ -61,7 +61,11 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueKey: "CRM-318",
 				spaceName: "Revenue platform",
 				tabs: ["assigned", "worked-on", "viewed"],
-				agents: [READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT],
+				agents: [
+					{ ...READINESS_AGENT, status: "Awaiting user response" },
+					{ ...REVIEWER_AGENT, status: "In progress" },
+					{ ...FEEDBACK_AGENT, status: "In progress" },
+				],
 				status: "Awaiting user response",
 				isRunning: true,
 			},
@@ -74,6 +78,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["assigned", "worked-on"],
 				agents: [PROGRESS_AGENT],
 				status: "In progress",
+				isRunning: true,
 			},
 			{
 				id: "refactor-readability",
@@ -84,6 +89,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["worked-on", "viewed"],
 				agents: [PLANNER_AGENT],
 				status: "In review",
+				isRunning: true,
 			},
 		],
 	},

@@ -40,6 +40,24 @@ function MetadataDot() {
 	);
 }
 
+/**
+ * Groups a multi-agent item's per-agent statuses into ordered
+ * "<count> <status>" segments, e.g. [{ status: "In progress", count: 2 }].
+ * First-seen order is preserved so the copy is stable.
+ */
+function groupAgentStatuses(
+	agents: readonly JiraForYouAgent[],
+): { status: string; count: number }[] {
+	const order: string[] = [];
+	const counts = new Map<string, number>();
+	for (const agent of agents) {
+		if (!agent.status) continue;
+		if (!counts.has(agent.status)) order.push(agent.status);
+		counts.set(agent.status, (counts.get(agent.status) ?? 0) + 1);
+	}
+	return order.map((status) => ({ status, count: counts.get(status) ?? 0 }));
+}
+
 function AgentAvatarCluster({
 	agents,
 }: Readonly<{ agents: readonly JiraForYouAgent[] }>) {
@@ -78,7 +96,7 @@ function ItemActions({
 	);
 
 	return (
-		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 bg-linear-to-l from-bg-neutral-subtle-hovered from-75% to-transparent pr-3 pl-12 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 motion-reduce:transition-none">
+		<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 pr-3 pl-4 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 motion-reduce:transition-none">
 			<JiraIssueGenerativeActionMenu
 				action={{ onSubmit: () => undefined }}
 				issue={{ issueKey: item.issueKey, summary: item.title }}
@@ -110,7 +128,18 @@ export function JiraForYouItemRow({
 }>) {
 	const meta = ISSUE_TYPE_META[item.issueType];
 	const Glyph = meta.Glyph;
-	const hasActivity = Boolean(item.agents?.length || item.status);
+	const agents = item.agents;
+	const hasAgents = Boolean(agents?.length);
+	const isMultiAgent = (agents?.length ?? 0) > 1;
+	const agentStatusGroups =
+		isMultiAgent && agents ? groupAgentStatuses(agents) : [];
+	// Multi-agent items read as one sentence of comma-joined "<count> <status>"
+	// segments; single-agent items keep the item-level status copy.
+	const statusText = isMultiAgent
+		? agentStatusGroups
+				.map(({ status, count }) => `${count} ${status}`)
+				.join(", ")
+		: (item.status ?? "");
 
 	return (
 		<li className="group relative flex items-center gap-3 p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered">
@@ -131,28 +160,24 @@ export function JiraForYouItemRow({
 					<span className="truncate text-sm font-medium text-text">
 						{item.title}
 					</span>
-					{hasActivity ? (
-						<>
-							<MetadataDot />
-							<span className="flex shrink-0 items-center gap-1">
-								{item.agents?.length ? (
-									<AgentAvatarCluster agents={item.agents} />
-								) : null}
-								{item.status ? (
-									<Shimmer
-										as="span"
-										className="text-xs leading-4"
-										duration={1.6}
-										spread={2}
-									>
-										{item.status}
-									</Shimmer>
-								) : null}
-							</span>
-						</>
-					) : null}
 				</span>
 				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
+					{hasAgents && agents ? (
+						<AgentAvatarCluster agents={agents} />
+					) : null}
+					{statusText ? (
+						<>
+							<Shimmer
+								as="span"
+								className="shrink-0 leading-4"
+								duration={1.6}
+								spread={2}
+							>
+								{statusText}
+							</Shimmer>
+							<MetadataDot />
+						</>
+					) : null}
 					<span className="shrink-0">{meta.label}</span>
 					<MetadataDot />
 					<span className="shrink-0">{item.issueKey}</span>
