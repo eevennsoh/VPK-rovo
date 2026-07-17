@@ -351,6 +351,33 @@ test("planner refinement stages deterministic deltas and reset restarts search",
 	assert.equal(state.metadata.priority, null);
 });
 
+test("planner refinement preserves manual edits made after prefill", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, { type: "settle-running" });
+	state = model.agentSessionsReducer(state, {
+		type: "edit-context-text",
+		field: "description",
+		value: "Manually revised response scope",
+	});
+	state = model.agentSessionsReducer(state, {
+		type: "edit-metadata",
+		patch: { assignee: { name: "Manual Owner" } },
+	});
+
+	state = model.agentSessionsReducer(state, {
+		type: "refine-planner-proposal",
+		prompt: "Prioritize security compliance",
+	});
+	assert.equal(state.planner.proposal.context.description, "Manually revised response scope");
+	assert.equal(state.planner.proposal.metadata.assignee.name, "Manual Owner");
+
+	state = model.agentSessionsReducer(state, { type: "tick", deltaMs: 1200 });
+	assert.equal(state.contextResources.description, "Manually revised response scope");
+	assert.equal(state.metadata.assignee.name, "Manual Owner");
+	assert.equal(state.metadata.priority, "Highest");
+});
+
 test("context derivation flips empty <-> filled as resources change", async () => {
 	const model = await loadSessionModel();
 	let state = model.hydratePreset("empty", TEST_WORK_ITEM);

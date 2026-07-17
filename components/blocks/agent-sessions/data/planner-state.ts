@@ -458,9 +458,10 @@ function beginPlannerRefinement<T extends AgentPlannerHostState>(
 	if (!trimmed || state.planner.status === "searching" || state.planner.status === "refining") {
 		return state as T;
 	}
-	const base = state.planner.status === "applied" || !state.planner.proposal
-		? { context: cloneContext(state.contextResources), metadata: cloneMetadata(state.metadata) }
-		: state.planner.proposal;
+	const base = {
+		context: cloneContext(state.contextResources),
+		metadata: cloneMetadata(state.metadata),
+	};
 	const proposal = refineProposal(base, trimmed);
 	const changed = changedPlannerFields(base, proposal);
 	const decisions = { ...state.planner.decisions };
