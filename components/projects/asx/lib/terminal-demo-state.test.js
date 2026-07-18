@@ -173,6 +173,18 @@ test("Jira dashboard keeps shortcuts without restoring its dispatch box", async 
 	);
 });
 
+test("Jira dashboard compositor hints are removed in reduced motion", () => {
+	assert.match(
+		TERMINAL_JIRA_PANE_SOURCE,
+		/style=\{shouldReduceMotion \? undefined : \{ willChange: "transform, opacity" \}\}/u,
+	);
+	assert.match(
+		TERMINAL_JIRA_PANE_SOURCE,
+		/style=\{shouldReduceMotion \? undefined : \{ willChange: "opacity" \}\}/u,
+	);
+	assert.doesNotMatch(TERMINAL_JIRA_PANE_SOURCE, /style=\{\{ willChange:/u);
+});
+
 test("script integrity: final board counts and every done item has a PR", async () => {
 	const harness = await loadTerminalStateHarness();
 	const final = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, harness.TERMINAL_DEMO_BEATS.length - 1);

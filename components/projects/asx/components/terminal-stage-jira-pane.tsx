@@ -46,7 +46,7 @@ function JiraRow({ item, selected }: Readonly<{ item: TerminalWorkItem; selected
 			initial={shouldReduceMotion ? false : { opacity: 0 }}
 			animate={{ opacity: 1 }}
 			transition={shouldReduceMotion ? { duration: 0 } : ROW_TRANSITION}
-			style={{ willChange: "transform, opacity" }}
+			style={shouldReduceMotion ? undefined : { willChange: "transform, opacity" }}
 			aria-selected={selected}
 			// `-mx-4 px-4` is applied unconditionally so only the background colour
 			// changes on selection — the row's geometry stays fixed, which keeps the
@@ -152,7 +152,7 @@ export function TerminalStageJiraPane({
 			initial={shouldReduceMotion ? false : { opacity: 0 }}
 			animate={{ opacity: 1 }}
 			transition={shouldReduceMotion ? { duration: 0 } : DASHBOARD_FADE_TRANSITION}
-			style={{ willChange: "opacity" }}
+			style={shouldReduceMotion ? undefined : { willChange: "opacity" }}
 			className="flex h-full flex-col overflow-hidden"
 		>
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
