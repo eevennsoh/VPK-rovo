@@ -14,6 +14,10 @@ const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
 const SCRIPT_PATH = join(__dirname, "vpk-system-clean.sh");
+const ZSH_PATH = ["/bin/zsh", "/usr/bin/zsh"].find(existsSync);
+const ZSH_TEST_OPTIONS = {
+	skip: ZSH_PATH ? false : "requires zsh for the macOS maintenance script",
+};
 
 function writeExecutable(path, source) {
 	writeFileSync(path, source);
@@ -62,7 +66,7 @@ fi
 printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 `);
 
-	const result = spawnSync("/bin/zsh", [SCRIPT_PATH], {
+	const result = spawnSync(ZSH_PATH, [SCRIPT_PATH], {
 		encoding: "utf8",
 		env: {
 			...process.env,
@@ -81,7 +85,7 @@ printf '%s\\n' "$*" >> "$FAKE_KILL_LOG"
 	return output;
 }
 
-test("resets an exact-path almd only after sustained high CPU", () => {
+test("resets an exact-path almd only after sustained high CPU", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, killLog, result } = runSweep();
 
 	assert.equal(result.status, 0, result.stderr);
@@ -90,7 +94,7 @@ test("resets an exact-path almd only after sustained high CPU", () => {
 	assert.match(cleanupLog, /summary: .*; almd reset 1; fseventsd/);
 });
 
-test("keeps almd during its protected startup window", () => {
+test("keeps almd during its protected startup window", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, killLog, result } = runSweep({ elapsed: "00:05:00" });
 
 	assert.equal(result.status, 0, result.stderr);
@@ -98,7 +102,7 @@ test("keeps almd during its protected startup window", () => {
 	assert.match(cleanupLog, /kept almd pid 4242 \(300s old < 900s minimum\)/);
 });
 
-test("keeps a same-named process from an unexpected executable path", () => {
+test("keeps a same-named process from an unexpected executable path", ZSH_TEST_OPTIONS, () => {
 	const { cleanupLog, killLog, result } = runSweep({ executable: "/tmp/almd" });
 
 	assert.equal(result.status, 0, result.stderr);
