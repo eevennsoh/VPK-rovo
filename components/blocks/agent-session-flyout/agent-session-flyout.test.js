@@ -16,6 +16,9 @@ function readRepoFile(relativePath) {
 // The rich flyout body is the canonical "latest" flyout and lives in the Jira
 // sidebar variant so both the live sidebar and this block render it.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
+const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
+const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
+const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
 // The shared body reuses the shared design-system components rather than
 // re-implementing them.
@@ -26,34 +29,73 @@ test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo",
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
-	assert.match(source, /<SmartLink item=\{toWorkItem\(session\)\}/u);
+	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session\)\}/u);
 	// Agent renders as an agent-type Tag pill; PR state renders as a Lozenge.
 	assert.match(source, /<Tag[\s\S]*?type="agent"/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
 });
 
-// The block only supplies demo chrome; it delegates to the shared body and
-// reuses the /asx seeds rather than re-declaring its own flyout body.
+test("Queue Details positions Agent, Work item, and Source previews left and centered", () => {
+	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
+	const panelSource = readRepoFile(QUEUE_DETAIL_PANEL_PATH);
+	const artifactsSource = readRepoFile(QUEUE_DETAIL_ARTIFACTS_PATH);
+
+	assert.match(flyoutSource, /previewPosition\?: JiraSessionPreviewPosition/u);
+	assert.match(flyoutSource, /const agentBannerSrc = getAgentProfileBannerSrc\(session\.agentAvatarSrc\);\s*preload\(agentBannerSrc, \{ as: "image" \}\);/u);
+	assert.match(flyoutSource, /<HoverCardContent[\s\S]*align=\{previewPosition\?\.align \?\? "start"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side \?\? "bottom"\}/u);
+	assert.match(flyoutSource, /<AgentProfileCard[\s\S]*surface="overlay"/u);
+	assert.match(flyoutSource, /<SmartLink[\s\S]*align=\{previewPosition\?\.align\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side\}/u);
+	assert.match(panelSource, /const DETAIL_PREVIEW_POSITION = \{\s*align: "center",\s*alignOffset: 0,\s*side: "left",\s*\} as const;/u);
+	assert.match(panelSource, /<JiraSessionFlyoutBody[\s\S]*previewPosition=\{DETAIL_PREVIEW_POSITION\}/u);
+	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
+});
+
+// The block delegates to the shared body and reuses the /asx seeds rather than
+// re-declaring its own flyout body or placeholder lifecycle copy.
 test("block delegates to the shared flyout body and reuses /asx data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	assert.match(
 		source,
-		/import\s*\{[^}]*JiraSessionFlyoutBody[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
+		/import\s*\{[^}]*JiraSessionFlyoutSurface[^}]*JiraSessionFlyoutTrigger[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
 	);
-	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(source, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
+	assert.match(source, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
 	assert.match(source, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
 	assert.doesNotMatch(source, /function AgentSessionFlyoutBody\b/u);
+	assert.doesNotMatch(source, /STATUS_META|<h3\b|<section\b/u);
+	assert.doesNotMatch(source, /paused for input|pull request is open|actively working/u);
 });
 
-// Each flyout must render inside the real anchored HoverCard chrome (the modal
-// menu), not a flat inline card, and each session gets its own <section>.
-test("each demo renders in a HoverCard popover inside its own section", () => {
+// The demo and live sidebar use detached triggers connected to one Preview Card
+// root. The shell follows the active trigger, immediately matches the incoming
+// content size, and crossfades without adding counter-directional movement.
+test("demo sessions share one moving shell with a fade-only content viewport", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
-	assert.match(source, /import\s*\{[^}]*HoverCardContent[^}]*\}\s*from\s*"@\/components\/ui\/hover-card"/u);
-	assert.match(source, /<HoverCardTrigger/u);
-	assert.match(source, /<HoverCardContent\b[\s\S]*?shadow-overlay[\s\S]*?\/>/u);
-	assert.match(source, /<HoverCardContent\b[\s\S]*?side="right"[\s\S]*?\/>/u);
-	assert.match(source, /<section\b/u);
+	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
+	const hoverCardSource = readRepoFile(HOVER_CARD_PATH);
+
+	assert.match(source, /useState\(createJiraSessionFlyoutHandle\)/u);
+	assert.equal(source.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
+	assert.match(source, /flex max-w-sm flex-col gap-0\.5 rounded-lg border/u);
+	assert.doesNotMatch(source, /<HoverCard\b/u);
+	assert.match(flyoutSource, /createHoverCardHandle<JiraSidebarSessionItem>\(\)/u);
+	assert.match(flyoutSource, /cloneElement\(childElement, \{[\s\S]*onFocusCapture: \(event\) => \{[\s\S]*handle\.open\(triggerId\);/u);
+	assert.match(flyoutSource, /event\.target\.matches\(":focus-visible"\)/u);
+	assert.match(flyoutSource, /<HoverCardViewport\b/u);
+	assert.match(flyoutSource, /\[&_\[data-current\]\]:transition-opacity/u);
+	assert.match(flyoutSource, /\[&_\[data-previous\]\]:transition-opacity/u);
+	assert.match(flyoutSource, /\[&_\[data-current\]\[data-starting-style\]\]:opacity-0/u);
+	assert.match(flyoutSource, /\[&_\[data-previous\]\[data-ending-style\]\]:opacity-0/u);
+	assert.doesNotMatch(flyoutSource, /data-\[activation-direction|translate-y-\[50%\]|will-change:transform/u);
+	assert.match(flyoutSource, /transition-\[opacity,scale,translate\] duration-medium ease-in-out/u);
+	assert.doesNotMatch(flyoutSource, /transition-\[[^\]]*(?:width|height)/u);
+	assert.match(flyoutSource, /transition-\[top,left,right,bottom\] duration-medium ease-in-out/u);
+	assert.doesNotMatch(flyoutSource, /\[&_\[(?:data-current|data-previous)\]\]:h-\(--popup-height\)/u);
+	assert.match(flyoutSource, /overflow-clip rounded-\[inherit\]/u);
+	assert.match(flyoutSource, /motion-reduce:\[&_\[data-current\]\]:transition-none/u);
+	assert.match(hoverCardSource, /const createHoverCardHandle = PreviewCardPrimitive\.createHandle/u);
+	assert.match(hoverCardSource, /function HoverCardViewport\b/u);
+	assert.match(hoverCardSource, /positionerClassName\?: string/u);
 });
 
 // SCM fields live in their own separated "Development" block using the normal
@@ -72,16 +114,17 @@ test("development fields are separated, complete, and use the normal body font",
 // compact hover body is fully removed (never coexisting).
 test("the live sidebar row renders the shared flyout body", () => {
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
-	assert.match(jiraSource, /import \{ JiraSessionFlyoutBody \} from "\.\/jira-session-flyout";/u);
-	assert.match(jiraSource, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(jiraSource, /JiraSessionFlyoutSurface,[\s\S]*JiraSessionFlyoutTrigger,[\s\S]*createJiraSessionFlyoutHandle/u);
+	assert.match(jiraSource, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
+	assert.match(jiraSource, /<JiraSessionFlyoutSurface handle=\{sessionFlyoutHandle\} \/>/u);
 	assert.doesNotMatch(jiraSource, /JiraSessionHoverDetails/u);
 });
 
-test("all four session lifecycle states are labeled", () => {
+test("demo presents the four sessions as one uninterrupted chat-history list", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
-	for (const label of ["Awaiting user response", "In progress", "PR open", "PR merged"]) {
-		assert.ok(source.includes(label), `expected label "${label}" in the block`);
-	}
+	assert.match(source, /sessions\.map\(\(session\) => \([\s\S]*<JiraSessionFlyoutTrigger/u);
+	assert.doesNotMatch(source, /AgentSessionFlyoutSection/u);
+	assert.doesNotMatch(source, /gap-8/u);
 });
 
 // The four /asx seeds must cover the states shown in the flyout screenshots and

@@ -1,6 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import {
+	cloneElement,
+	isValidElement,
+	useId,
+	type ComponentProps,
+	type FocusEventHandler,
+	type ReactNode,
+} from "react";
+import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
@@ -17,15 +25,91 @@ import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+	HoverCardViewport,
+	createHoverCardHandle,
+	type HoverCardHandle,
+	type HoverCardTriggerProps,
+} from "@/components/ui/hover-card";
 import { Icon } from "@/components/ui/icon";
 import { GithubLogo } from "@/components/ui/logo-third-party";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { TileAvatar } from "@/components/ui/tile";
+import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
+
+export type JiraSessionFlyoutHandle = HoverCardHandle<JiraSidebarSessionItem>;
+
+export type JiraSessionFlyoutTriggerProps = Omit<
+	HoverCardTriggerProps<JiraSidebarSessionItem>,
+	"handle" | "payload"
+> & {
+	handle: JiraSessionFlyoutHandle;
+	session: JiraSidebarSessionItem;
+};
+
+export interface JiraSessionFlyoutSurfaceProps {
+	handle: JiraSessionFlyoutHandle;
+}
+
+interface FocusCaptureChildProps {
+	onFocusCapture?: FocusEventHandler<HTMLElement>;
+}
+
+/** Creates one flyout store for a related list of Jira session triggers. */
+export function createJiraSessionFlyoutHandle(): JiraSessionFlyoutHandle {
+	return createHoverCardHandle<JiraSidebarSessionItem>();
+}
+
+/** Connects a session row to the list's shared flyout and carries its payload. */
+export function JiraSessionFlyoutTrigger({
+	closeDelay = 80,
+	children,
+	delay = 0,
+	handle,
+	id: idProp,
+	session,
+	...props
+}: Readonly<JiraSessionFlyoutTriggerProps>) {
+	const generatedId = useId();
+	const triggerId = idProp ?? generatedId;
+	const childElement = isValidElement<FocusCaptureChildProps>(children)
+		? children
+		: null;
+	const triggerChild = childElement
+		? cloneElement(childElement, {
+			onFocusCapture: (event) => {
+				childElement.props.onFocusCapture?.(event);
+				if (
+					!event.defaultPrevented &&
+					event.target.matches(":focus-visible") &&
+					!event.currentTarget.contains(event.relatedTarget as Node | null)
+				) {
+					handle.open(triggerId);
+				}
+			},
+		})
+		: children;
+
+	return (
+		<HoverCardTrigger<JiraSidebarSessionItem>
+			closeDelay={closeDelay}
+			delay={delay}
+			handle={handle}
+			id={triggerId}
+			payload={session}
+			{...props}
+		>
+			{triggerChild}
+		</HoverCardTrigger>
+	);
+}
 
 /**
  * The rich Jira agent-session flyout body — the canonical "latest" flyout for a
@@ -207,10 +291,16 @@ export function JiraSessionSectionHeading({
 	);
 }
 
+type JiraSessionPreviewPosition = Pick<
+	ComponentProps<typeof HoverCardContent>,
+	"align" | "alignOffset" | "side"
+>;
+
 /** The redesigned flyout body matching the reference mock. */
 export function JiraSessionFlyoutBody({
 	session,
 	hideHeader = false,
+	previewPosition,
 }: Readonly<{
 	session: JiraSidebarSessionItem;
 	/**
@@ -220,7 +310,12 @@ export function JiraSessionFlyoutBody({
 	 * this `false` because it has no separate header.
 	 */
 	hideHeader?: boolean;
+	/** Override nested Agent and Work item preview placement for constrained surfaces. */
+	previewPosition?: JiraSessionPreviewPosition;
 }>) {
+	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
+	preload(agentBannerSrc, { as: "image" });
+
 	const hasDevelopment = Boolean(
 		session.repository ??
 			session.pullRequestNumber ??
@@ -279,20 +374,28 @@ export function JiraSessionFlyoutBody({
 							}
 						/>
 						<HoverCardContent
-							align="start"
+							align={previewPosition?.align ?? "start"}
+							alignOffset={previewPosition?.alignOffset}
 							className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
-							side="bottom"
+							side={previewPosition?.side ?? "bottom"}
 							sideOffset={8}
 						>
 							<AgentProfileCard
 								avatarSrc={session.agentAvatarSrc}
 								name={session.agentName}
+								surface="overlay"
 							/>
 						</HoverCardContent>
 					</HoverCard>
 				</FlyoutRow>
 				<FlyoutRow icon={<TaskIcon label="" size="small" />} label="Work item">
-					<SmartLink item={toWorkItem(session)} showStatus />
+					<SmartLink
+						align={previewPosition?.align}
+						alignOffset={previewPosition?.alignOffset}
+						item={toWorkItem(session)}
+						showStatus
+						side={previewPosition?.side}
+					/>
 				</FlyoutRow>
 			</div>
 
@@ -354,6 +457,39 @@ export function JiraSessionFlyoutBody({
 				</div>
 			) : null}
 		</div>
+	);
+}
+
+/**
+ * One payload-aware flyout shared by every session row in a list. Base UI's
+ * viewport keeps the popup mounted while the anchor changes. The shell follows
+ * the new row, immediately adopts its measured size, and crossfades the old and
+ * new content without letting rapid hovers restart a stale size transition.
+ */
+export function JiraSessionFlyoutSurface({
+	handle,
+}: Readonly<JiraSessionFlyoutSurfaceProps>) {
+	return (
+		<HoverCard<JiraSidebarSessionItem> handle={handle}>
+			{({ payload }) => (
+				<HoverCardContent
+					align="start"
+					alignOffset={0}
+					className="h-(--popup-height) w-(--popup-width) border-0 bg-surface-overlay p-0 text-text shadow-overlay transition-[opacity,scale,translate] duration-medium ease-in-out motion-reduce:transition-none data-ending-style:duration-normal data-ending-style:ease-in data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
+					positionerClassName="h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) transition-[top,left,right,bottom] duration-medium ease-in-out motion-reduce:transition-none data-instant:transition-none"
+					side="right"
+					sideOffset={8}
+				>
+					<HoverCardViewport className="relative size-full overflow-clip rounded-[inherit] [&_[data-current]]:w-(--popup-width) [&_[data-current]]:opacity-100 [&_[data-current]]:transition-opacity [&_[data-current]]:duration-medium [&_[data-current]]:ease-in-out [&_[data-current]]:[will-change:opacity] [&_[data-current][data-starting-style]]:opacity-0 [&_[data-previous]]:w-(--popup-width) [&_[data-previous]]:opacity-100 [&_[data-previous]]:transition-opacity [&_[data-previous]]:duration-medium [&_[data-previous]]:ease-in-out [&_[data-previous]]:[will-change:opacity] [&_[data-previous][data-ending-style]]:opacity-0 motion-reduce:[&_[data-current]]:transition-none motion-reduce:[&_[data-current]]:[will-change:auto] motion-reduce:[&_[data-previous]]:transition-none motion-reduce:[&_[data-previous]]:[will-change:auto] data-instant:[&_[data-current]]:transition-none data-instant:[&_[data-previous]]:transition-none">
+						{payload ? (
+							<div className="w-[400px] bg-surface-overlay p-4 text-text">
+								<JiraSessionFlyoutBody session={payload} />
+							</div>
+						) : null}
+					</HoverCardViewport>
+				</HoverCardContent>
+			)}
+		</HoverCard>
 	);
 }
 

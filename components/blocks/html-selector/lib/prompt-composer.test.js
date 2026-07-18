@@ -90,7 +90,7 @@ test("composeHtmlSelectorPrompt includes recorded style edits", async () => {
 	assert.match(prompt, /- style change: text color rgb\(23, 43, 77\) -> #172b4d/u);
 });
 
-test("getVpkHtmlOutputSlug derives stable artifact output folders", async () => {
+test("getVpkHtmlOutputSlug derives stable artifact folders", async () => {
 	const { getVpkHtmlOutputSlug } = await loadComposer();
 
 	assert.equal(getVpkHtmlOutputSlug("assets/demos/demo-design-system.html"), "demo-design-system");
@@ -98,7 +98,7 @@ test("getVpkHtmlOutputSlug derives stable artifact output folders", async () => 
 	assert.equal(getVpkHtmlOutputSlug("assets/demos/Annual Report.html"), "annual-report");
 });
 
-test("composeVpkHtmlVideoPrompt includes skills, absolute artifact path, notes, sound, and output folder", async () => {
+test("composeVpkHtmlVideoPrompt includes skills, absolute artifact path, notes, sound, and artifact folder", async () => {
 	const { composeVpkHtmlVideoPrompt } = await loadComposer();
 	const prompt = composeVpkHtmlVideoPrompt({
 		artifactAbsolutePath: "/repo/.agents/skills/vpk-html/assets/demos/demo-design-system.html",
@@ -109,7 +109,7 @@ test("composeVpkHtmlVideoPrompt includes skills, absolute artifact path, notes, 
 
 	assert.match(prompt, /Load and follow the repo-local vpk-html skill and the hyperframes skill/u);
 	assert.match(prompt, /Artifact absolute path: \/repo\/\.agents\/skills\/vpk-html\/assets\/demos\/demo-design-system\.html/u);
-	assert.match(prompt, /Write all generated video project files[\s\S]*under output\/vpk-html\/demo-design-system\//u);
+	assert.match(prompt, /Write all generated video project files[\s\S]*under artifacts\/vpk-html\/demo-design-system\//u);
 	assert.match(prompt, /Narration source: speaker notes/u);
 	assert.match(prompt, /Explain the token shifts\./u);
 	assert.match(prompt, /Background sound: generate or source audio from this description: quiet mechanical pulse\./u);
@@ -128,5 +128,5 @@ test("composeVpkHtmlVideoPrompt supports inline scripts and path-based sound", a
 	assert.match(prompt, /Narration source: inline script/u);
 	assert.match(prompt, /Open on the catalog\./u);
 	assert.match(prompt, /Background sound: use this local file path if it exists: audio\/bed\.wav\./u);
-	assert.match(prompt, /output\/vpk-html\/catalog-video\//u);
+	assert.match(prompt, /artifacts\/vpk-html\/catalog-video\//u);
 });

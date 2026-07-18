@@ -88,5 +88,5 @@ missing or the profile is absent, render no logo.
 A document baked from a profile must still pass the full offline gate:
 
 ```bash
-node .agents/skills/vpk-html/scripts/check-html.mjs output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/check-html.mjs artifacts/vpk-html/<slug>/<slug>.html
 ```

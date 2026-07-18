@@ -18,15 +18,15 @@ fixed-page document (print, attachment, archival).
 ## Usage
 
 ```bash
-node scripts/build.mjs --pdf output/vpk-html/q2-status/q2-status.html
-node scripts/build.mjs --pdf output/vpk-html/q2-status/q2-status.html --out output/vpk-html/q2-status/q2-status.pdf
+node scripts/build.mjs --pdf artifacts/vpk-html/q2-status/q2-status.html
+node scripts/build.mjs --pdf artifacts/vpk-html/q2-status/q2-status.html --out artifacts/vpk-html/q2-status/q2-status.pdf
 ```
 
 Programmatic:
 
 ```js
 import { exportPdf } from "./scripts/pdf.mjs";
-await exportPdf("output/vpk-html/q2-status/q2-status.html", "output/vpk-html/q2-status/q2-status.pdf"); // → { ok, out, bytes }
+await exportPdf("artifacts/vpk-html/q2-status/q2-status.html", "artifacts/vpk-html/q2-status/q2-status.pdf"); // → { ok, out, bytes }
 ```
 
 ## Page sizing

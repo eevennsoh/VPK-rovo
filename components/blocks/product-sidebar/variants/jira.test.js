@@ -154,17 +154,14 @@ test("Spaces organize menu controls grouping and sorting", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /value="manual">Manual order/u);
 });
 
-test("session rows open the shared rich flyout body anchored to the right", () => {
+test("session rows share one direction-aware rich flyout anchored to the right", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /host: JiraSidebarSessionHost;/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /<HoverCard\b/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /<HoverCardTrigger render=\{<div className="w-full" \/>\}>/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ JiraSessionFlyoutBody \} from "\.\/jira-session-flyout";/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
-	assert.match(
-		JIRA_SIDEBAR_SOURCE,
-		/className="w-\[400px\] border-0 bg-surface-overlay p-4 text-text shadow-overlay/u,
-	);
-	assert.match(JIRA_SIDEBAR_SOURCE, /side="right"/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /useState\(createJiraSessionFlyoutHandle\)/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /flyoutHandle: JiraSessionFlyoutHandle;/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /<JiraSessionFlyoutTrigger[\s\S]*handle=\{flyoutHandle\}[\s\S]*render=\{<div className="w-full" \/>\}[\s\S]*session=\{session\}/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /<JiraSessionFlyoutSurface handle=\{sessionFlyoutHandle\} \/>/u);
+	assert.equal(JIRA_SIDEBAR_SOURCE.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /<HoverCard\b/u);
 	// The old compact hover body has been fully replaced, not left coexisting.
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /JiraSessionHoverDetails/u);
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /className="w-80 border-0 bg-surface-overlay p-3/u);

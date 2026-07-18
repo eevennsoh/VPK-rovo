@@ -174,8 +174,8 @@ test("module index heading and rows keep matching gap", () => {
 test("github publishing helpers derive stable repo names and validate repo specs", async () => {
 	const { deriveRepoName, parseRepoSpec } = await import("./github-pages.mjs");
 
-	assert.equal(deriveRepoName("output/vpk-html/Symphony Explainer/symphony-explainer.html"), "symphony-explainer");
-	assert.equal(deriveRepoName("output/vpk-html/!!!/index.html"), "index");
+	assert.equal(deriveRepoName("artifacts/vpk-html/Symphony Explainer/symphony-explainer.html"), "symphony-explainer");
+	assert.equal(deriveRepoName("artifacts/vpk-html/!!!/index.html"), "index");
 	assert.deepEqual(parseRepoSpec("eevennsoh/symphony-explainer"), {
 		owner: "eevennsoh",
 		name: "symphony-explainer",
@@ -195,7 +195,7 @@ test("github publishing command surface is documented in build and skill docs", 
 	assert.match(skillDoc, /GitHub Pages/);
 });
 
-test("user render docs route generated HTML into per-slug output folders", () => {
+test("user render docs route generated HTML into per-slug artifact folders", () => {
 	const docs = [
 		"SKILL.md",
 		"README.md",
@@ -209,7 +209,7 @@ test("user render docs route generated HTML into per-slug output folders", () =>
 
 	for (const relativePath of docs) {
 		const source = fs.readFileSync(path.join(skillRoot, relativePath), "utf8");
-		assert.match(source, /output\/vpk-html\//, `${relativePath} should use the vpk-html output artifact root`);
+		assert.match(source, /artifacts\/vpk-html\//, `${relativePath} should use the durable vpk-html artifact root`);
 		assert.doesNotMatch(source, /docs\/html\/(?:<slug>|my-doc)\.html/, `${relativePath} should not revive the legacy flat docs/html render path`);
 	}
 });

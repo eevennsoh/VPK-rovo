@@ -21,6 +21,7 @@ const DISMISS_BUTTON_CLASS =
 	"flex size-6 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
 const LEAD_ICON_CLASS = "flex size-4 shrink-0 items-center justify-center text-icon-subtle";
+const CONTEXT_BAR_HEIGHT_CLASS = "min-h-10";
 
 /**
  * Shared visual recipe for the filled neutral context-bar pill: `ContextBarTrigger`,
@@ -29,8 +30,10 @@ const LEAD_ICON_CLASS = "flex size-4 shrink-0 items-center justify-center text-i
  * pills with and without a leading icon keep an identical 40px height in a row.
  * Layout-only concerns (`mb-3`, `shrink-0`, `disabled:*`) are composed per call site.
  */
-const CONTEXT_BAR_PILL_CLASS =
-	"flex w-fit items-center gap-1.5 rounded-xl bg-bg-neutral px-3 py-2 text-sm font-medium leading-6 text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
+const CONTEXT_BAR_PILL_CLASS = cn(
+	"flex w-fit items-center gap-1.5 rounded-xl bg-bg-neutral px-3 py-2 text-sm font-medium leading-6 text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
+	CONTEXT_BAR_HEIGHT_CLASS,
+);
 
 interface ContextBarProps extends React.ComponentProps<"div"> {
 	onDismiss?: () => void;
@@ -89,6 +92,7 @@ export function ContextBar({
 		<div
 			className={cn(
 				"mb-3 flex min-w-0 items-center justify-between gap-3 rounded-xl bg-bg-neutral px-3 py-2",
+				CONTEXT_BAR_HEIGHT_CLASS,
 				className,
 			)}
 			data-context-bar
@@ -345,6 +349,7 @@ export function AnimatedCollapsibleContextBar({
 					// flashing. Pressed/cursor affordances stay collapsed-only since the
 					// container itself is only clickable in the pill state.
 					"mb-3 flex min-w-0 items-center overflow-hidden bg-bg-neutral transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered",
+					CONTEXT_BAR_HEIGHT_CLASS,
 					open
 						? "w-full justify-between"
 						: "w-fit cursor-pointer active:bg-bg-neutral-pressed",
@@ -544,7 +549,7 @@ export function ContextBarTagGroup({
 
 	return (
 		<div
-			className={cn("relative flex min-w-0 items-center", className)}
+			className={cn("relative flex min-w-0 items-center", CONTEXT_BAR_HEIGHT_CLASS, className)}
 			data-context-bar-tag-group
 			ref={containerRef}
 			style={{ gap }}

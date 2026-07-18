@@ -6,7 +6,7 @@ publish it as a live GitHub Pages site that a user can browse.
 ## Preconditions
 
 - `gh auth status` must show an active GitHub account with repo permissions.
-- The artifact must exist at `output/vpk-html/<slug>/<slug>.html`.
+- The artifact must exist at `artifacts/vpk-html/<slug>/<slug>.html`.
 - Run the normal vpk-html checks first; the publish helper does this
   automatically.
 - Use a public repo unless the user explicitly asks for private. Public is the
@@ -15,14 +15,14 @@ publish it as a live GitHub Pages site that a user can browse.
 ## Command
 
 ```bash
-node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html
 ```
 
 Optional:
 
 ```bash
-node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html --repo owner/name
-node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html --private
+node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html --repo owner/name
+node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html --private
 ```
 
 ## Publishing contract
@@ -55,7 +55,7 @@ published as `index.html`.
 ## Repo naming
 
 Default repo name comes from `<slug>`. For
-`output/vpk-html/symphony-explainer/symphony-explainer.html`, the default repo
+`artifacts/vpk-html/symphony-explainer/symphony-explainer.html`, the default repo
 is `<active-gh-login>/symphony-explainer`.
 
 Use `--repo owner/name` when the target owner or repository name matters.

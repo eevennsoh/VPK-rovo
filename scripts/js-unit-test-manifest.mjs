@@ -63,6 +63,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/arts/cursors/cursor-orbit-math.test.js",
 		"components/arts/cursors/launch-intent.test.js",
 		".agents/skills/vpk-build/scripts/scaffold-target.test.js",
+		".agents/skills/vpk-system-clean/scripts/vpk-system-clean.test.js",
 		"components/blocks/work-item-widget/work-item-widget.test.js",
 	],
 	"source-contract": [

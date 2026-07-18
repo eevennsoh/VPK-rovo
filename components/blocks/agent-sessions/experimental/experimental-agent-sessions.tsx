@@ -10,6 +10,7 @@ import { ExperimentalWorkItemDialog } from "@/components/blocks/agent-sessions/e
 import { ExperimentalWorkItemLayout } from "@/components/blocks/agent-sessions/experimental/components/experimental-work-item-layout";
 import { ContextPanel } from "@/components/blocks/agent-sessions/experimental/components/context-panel";
 import { ActivityPanel } from "@/components/blocks/agent-sessions/experimental/components/activity-panel";
+import { ActivityComposer } from "@/components/blocks/agent-sessions/experimental/components/activity-composer";
 import { SessionsRail } from "@/components/blocks/agent-sessions/experimental/components/sessions-rail";
 import { MetadataRail } from "@/components/blocks/agent-sessions/experimental/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/agent-sessions/experimental/components/floating-session-surface";
@@ -74,6 +75,7 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 					<ExperimentalWorkItemLayout
 						context={<ContextPanel />}
 						activity={<ActivityPanel />}
+						composer={<ActivityComposer />}
 						sessions={<SessionsRail />}
 						metadata={<MetadataRail />}
 					/>

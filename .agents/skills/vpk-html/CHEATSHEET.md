@@ -121,7 +121,7 @@ illustrations use the grayscale `--ill-*` figure ramp. SMIL motion must use
 4. Source + material pass (for branded / fact-heavy docs)
 5. Distill raw content (if input is unstructured)
 6. Layout note (≤80 words, transparent)
-7. Copy template to `output/vpk-html/<slug>/<slug>.html`, fill placeholders
+7. Copy template to `artifacts/vpk-html/<slug>/<slug>.html`, fill placeholders
 8. Build & verify:
    node scripts/build.mjs --check-placeholders <file>
    node scripts/build.mjs --verify <file>
@@ -133,15 +133,15 @@ illustrations use the grayscale `--ill-*` figure ramp. SMIL motion must use
 
 ```bash
 # Start a new document
-mkdir -p output/vpk-html/<slug>
-cp .agents/skills/vpk-html/assets/templates/<doc>.html output/vpk-html/<slug>/<slug>.html
+mkdir -p artifacts/vpk-html/<slug>
+cp .agents/skills/vpk-html/assets/templates/<doc>.html artifacts/vpk-html/<slug>/<slug>.html
 
 # Edit only the body; CSS stays untouched.
 # Replace every {{placeholder}} with real content.
 
 # Validate
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders artifacts/vpk-html/<slug>/<slug>.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify artifacts/vpk-html/<slug>/<slug>.html
 ```
 
 Keep every generated artifact in its own slug folder. Related PDFs,
@@ -154,7 +154,7 @@ Use this only when the user invokes `/vpk-html --github` or otherwise asks for
 a live hosted page.
 
 ```bash
-node .agents/skills/vpk-html/scripts/build.mjs --github output/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
+node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
 ```
 
 The helper validates the document, copies it to `index.html`, creates

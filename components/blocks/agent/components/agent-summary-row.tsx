@@ -162,6 +162,7 @@ export function AgentAddValueButton({
 
 export interface AgentFilledSummaryRowProps {
 	label: string;
+	labelClassName?: string;
 	items: readonly string[];
 	referenceCategory?: RichTextReferenceCategory;
 	agentFieldName?: string;
@@ -196,6 +197,7 @@ export function AgentFilledSummaryRow({
 	isItemDisabled,
 	items,
 	label,
+	labelClassName,
 	onAdd,
 	renderAddControl,
 	onItemClick,
@@ -231,7 +233,7 @@ export function AgentFilledSummaryRow({
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
 			<div className="flex flex-col gap-y-1 sm:flex-row sm:items-center sm:gap-x-6">
-				<div className="sm:w-20 sm:shrink-0">
+				<div className={cn("sm:w-20 sm:shrink-0", labelClassName)}>
 					<AgentSectionLabel>{label}</AgentSectionLabel>
 				</div>
 				<div className="flex min-w-0 flex-1 flex-col gap-2">

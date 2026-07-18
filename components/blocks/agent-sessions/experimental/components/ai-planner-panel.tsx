@@ -2,6 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
+import CrossIcon from "@atlaskit/icon/core/cross";
+
 import {
 	AGENT_PLANNER_SEARCH_PHASES,
 	countPendingPlannerFields,
@@ -11,14 +14,14 @@ import {
 	useAgentSessionsActions,
 	useAgentSessionsState,
 } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Button } from "@/components/ui/button";
-import {
-	PromptInput,
-	PromptInputFooter,
-	PromptInputSubmit,
-	PromptInputTextarea,
-} from "@/components/ui-custom/prompt-input";
+import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 const PLANNER_SOURCES = {
@@ -39,7 +42,7 @@ const ALL_PLANNER_SOURCES = [
 export function AiPlannerPanel() {
 	const { planner } = useAgentSessionsState();
 
-	if (planner.status === "inactive") return null;
+	if (planner.status === "inactive" || planner.status === "applied") return null;
 
 	if (planner.status === "searching") {
 		const phase = AGENT_PLANNER_SEARCH_PHASES[planner.phaseIndex] ?? AGENT_PLANNER_SEARCH_PHASES[0];
@@ -57,13 +60,10 @@ export function AiPlannerPanel() {
 	}
 
 	const isRefining = planner.status === "refining";
-	const isApplied = planner.status === "applied";
-	const suggestionCount = isApplied ? planner.appliedCount : countPendingPlannerFields(planner);
+	const suggestionCount = countPendingPlannerFields(planner);
 	const description = isRefining
 		? `Updating the plan based on “${planner.lastPrompt ?? "your direction"}”`
-		: isApplied
-			? `${suggestionCount} suggestions applied from 4 sources`
-			: `${suggestionCount} suggestions from 4 sources`;
+		: `${suggestionCount} suggestions from 4 sources`;
 
 	return (
 		<div aria-busy={isRefining || undefined} aria-live="polite" data-ai-planner-state={planner.status}>
@@ -73,7 +73,7 @@ export function AiPlannerPanel() {
 				showLoader={isRefining}
 				sources={ALL_PLANNER_SOURCES}
 				status={isRefining ? "active" : "complete"}
-				title={isApplied ? "Planned by Rovo" : "AI Planner"}
+				title="AI Planner"
 			/>
 		</div>
 	);
@@ -83,76 +83,103 @@ function AiPlannerActionBar() {
 	const { planner } = useAgentSessionsState();
 	const actions = useAgentSessionsActions();
 	const [prompt, setPrompt] = useState("");
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 	const isRefining = planner.status === "refining";
+	const canSubmit = Boolean(prompt.trim());
 
 	return (
-		<div className="sticky bottom-3 z-10 mt-3 px-2 pb-1">
-			<PromptInput
+		<div
+			className="absolute inset-x-0 top-[calc(100%+1rem)] z-20"
+			data-ai-planner-controls="floating"
+		>
+			<FloatingComposer
+				actions={(
+					<>
+						<Button
+							disabled={isRefining}
+							onClick={() => actions.rejectPlannerProposal()}
+							size="default"
+							type="button"
+							variant="outline"
+						>
+							<CrossIcon label="" size="small" />
+							Reject
+						</Button>
+						<Button
+							disabled={isRefining}
+							onClick={() => actions.applyPlannerProposal()}
+							size="default"
+							type="button"
+							variant="outline"
+						>
+							<CheckMarkIcon label="" size="small" />
+							Accept suggestions
+						</Button>
+						<RovoComposerActionButton
+							canSubmit={canSubmit}
+							composerStatus="ready"
+							experimentalDarkCta
+							onStop={() => setRealtimeVoiceActive(false)}
+							onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
+							realtimeVoiceActive={realtimeVoiceActive}
+							submitDisabled={isRefining}
+						/>
+					</>
+				)}
+				allowOverflow
 				aria-label="AI Planner controls"
-				className="bg-surface-overlay p-2"
+				className="border-0 bg-surface-overlay"
 				onSubmit={(message, event) => {
 					const nextPrompt = message.text.trim();
 					if (!nextPrompt || isRefining) return;
 					actions.refinePlannerProposal(nextPrompt);
 					setPrompt("");
+					setRealtimeVoiceActive(false);
 					event.currentTarget.reset();
 				}}
-				variant="floating"
+				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
 				<PromptInputTextarea
 					aria-label="Tell Rovo what to change"
-					className="min-h-8! max-h-20! py-1!"
+					autoResize
+					className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 					disabled={isRefining}
 					enableDirectoryAutocomplete={false}
 					onChange={(event) => setPrompt(event.currentTarget.value)}
 					placeholder="Tell Rovo what to change…"
+					rows={1}
 					value={prompt}
 				/>
-				<PromptInputFooter className="p-0 pt-1">
-					<div className="flex min-w-0 items-center gap-1">
-						<Button
-							disabled={isRefining}
-							onClick={() => actions.rejectPlannerProposal()}
-							size="compact"
-							type="button"
-							variant="ghost"
-						>
-							Reject all
-						</Button>
-						<Button
-							disabled={isRefining}
-							onClick={() => actions.applyPlannerProposal()}
-							size="compact"
-							type="button"
-						>
-							Confirm all
-						</Button>
-					</div>
-					<PromptInputSubmit
-						aria-label="Refine plan"
-						disabled={!prompt.trim() || isRefining}
-						status={isRefining ? "submitted" : undefined}
-					/>
-				</PromptInputFooter>
-			</PromptInput>
+			</FloatingComposer>
 		</div>
 	);
 }
 
-/** Discovery border and floating controls scoped to the fields Rovo populated. */
+/** One-shot Rovo highlight and floating controls scoped to the fields Rovo populated. */
 export function AiPlannerScope({ children }: Readonly<{ children: ReactNode }>) {
 	const { planner } = useAgentSessionsState();
 	const isReviewing = planner.status === "ready" || planner.status === "refining";
-
-	return (
+	const content = (
 		<div
 			className={cn(
 				"flex flex-col gap-3",
-				isReviewing ? "rounded-xl border border-border-discovery-subtle p-3" : null,
+				isReviewing ? "rounded-xl border border-border p-3" : null,
 			)}
-			data-ai-planner-scope={isReviewing ? "active" : undefined}
 		>
 			{children}
+		</div>
+	);
+
+	return (
+		<div
+			className={isReviewing ? "relative" : undefined}
+			data-ai-planner-scope={isReviewing ? "active" : undefined}
+		>
+			{isReviewing ? (
+				<RovoGeneration.Highlight active className="block w-full">
+					{content}
+				</RovoGeneration.Highlight>
+			) : content}
 			{isReviewing ? <AiPlannerActionBar /> : null}
 		</div>
 	);
