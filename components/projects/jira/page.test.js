@@ -216,6 +216,17 @@ test("AgentsView filters bulk move actions to cards that change columns", () => 
 	);
 });
 
+test("AgentsView replaces the inline selection bar with the shared Jira Toolbar", () => {
+	assert.match(
+		AGENTS_VIEW_SOURCE,
+		/selectionToolbar=\{\{[\s\S]*agents: assignableBoardAgents,[\s\S]*onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,[\s\S]*onClearSelection: clearSelection,[\s\S]*onStatusChange: handleSelectedCardsStatusChange,[\s\S]*selectedAgentIds: selectedCardAgentIds/u,
+	);
+	assert.match(AGENTS_VIEW_SOURCE, /rfpDemo\.actions\.setCardsAgentAssignment\(\[\.\.\.selectedCardCodes\], agentId, assigned\)/u);
+	assert.match(AGENTS_VIEW_SOURCE, /boardAgents\.filter\(\(agent\) => agent\.id !== RFP_DRAFTING_AGENT_ID\)/u);
+	assert.match(AGENTS_VIEW_SOURCE, /if \(agentId === RFP_DRAFTING_AGENT_ID\) \{\s*return;\s*\}/u);
+	assert.doesNotMatch(AGENTS_VIEW_SOURCE, /function KanbanSelectionActionBar/u);
+});
+
 test("Column agent assignment icons use selected icon color while the trigger is open", () => {
 	assert.match(
 		COLUMN_AGENT_ASSIGNMENT_SOURCE,

@@ -1,4 +1,8 @@
-import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import {
+	moveJiraKanbanCardsToColumn,
+	selectJiraKanbanCard,
+} from "@/components/blocks/jira-kanban/state";
 import {
 	ASX_KANBAN_DEFAULT_AGENT_ID,
 	ASX_KANBAN_DRAFTING_COLUMN,
@@ -42,34 +46,6 @@ export type AsxKanbanAction =
 	| { type: "drag-start"; cardCode: string; sourceColumnTitle: string }
 	| { type: "drag-end" }
 	| { type: "drop"; targetColumnTitle: string; agent?: AsxKanbanAgentSelection };
-
-function withDerivedCounts(columns: readonly JiraKanbanColumnData[]): JiraKanbanColumnData[] {
-	return columns.map((column) => ({ ...column, count: column.cards.length }));
-}
-
-function moveCardsToTop(
-	columns: readonly JiraKanbanColumnData[],
-	cardCodes: readonly string[],
-	targetColumnTitle: string,
-): JiraKanbanColumnData[] {
-	const codeSet = new Set(cardCodes);
-	const movingCards: JiraKanbanCardData[] = [];
-
-	for (const column of columns) {
-		for (const card of column.cards) {
-			if (codeSet.has(card.code)) movingCards.push(card);
-		}
-	}
-
-	if (movingCards.length === 0) return [...columns];
-
-	return withDerivedCounts(columns.map((column) => ({
-		...column,
-		cards: column.title === targetColumnTitle
-			? [...movingCards, ...column.cards.filter((card) => !codeSet.has(card.code))]
-			: column.cards.filter((card) => !codeSet.has(card.code)),
-	})));
-}
 
 function assignAgents(
 	lifecycleByCode: Readonly<Record<string, AsxKanbanLifecycle>>,
@@ -166,7 +142,7 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 		case "assign-agent":
 			return {
 				...state,
-				columns: moveCardsToTop(state.columns, action.cardCodes, ASX_KANBAN_DRAFTING_COLUMN),
+				columns: moveJiraKanbanCardsToColumn(state.columns, action.cardCodes, ASX_KANBAN_DRAFTING_COLUMN),
 				lifecycleByCode: assignAgents(state.lifecycleByCode, action.cardCodes, action.agent),
 			};
 		case "advance-generating":
@@ -183,31 +159,14 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 			}));
 			return {
 				...next,
-				columns: moveCardsToTop(next.columns, [action.cardCode], ASX_KANBAN_REVIEW_COLUMN),
+				columns: moveJiraKanbanCardsToColumn(next.columns, [action.cardCode], ASX_KANBAN_REVIEW_COLUMN),
 				selectedCardCodes: new Set([...next.selectedCardCodes].filter((code) => code !== action.cardCode)),
 			};
 		}
 		case "select": {
-			const nextSelection = new Set(state.selectedCardCodes);
-			const column = state.columns.find((candidate) => candidate.title === action.columnTitle);
-			const previousIndex = state.lastSelectedByColumn[action.columnTitle];
-
-			if (action.modifiers.shiftKey && column && previousIndex !== undefined) {
-				const start = Math.min(previousIndex, action.indexInColumn);
-				const end = Math.max(previousIndex, action.indexInColumn);
-				for (const card of column.cards.slice(start, end + 1)) nextSelection.add(card.code);
-			} else if (action.modifiers.metaOrCtrlKey) {
-				if (nextSelection.has(action.cardCode)) nextSelection.delete(action.cardCode);
-				else nextSelection.add(action.cardCode);
-			} else {
-				nextSelection.clear();
-				nextSelection.add(action.cardCode);
-			}
-
 			return {
 				...state,
-				lastSelectedByColumn: { ...state.lastSelectedByColumn, [action.columnTitle]: action.indexInColumn },
-				selectedCardCodes: nextSelection,
+				...selectJiraKanbanCard(state, state.columns, action),
 			};
 		}
 		case "drag-start": {
@@ -226,7 +185,7 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 			}
 			return {
 				...state,
-				columns: moveCardsToTop(state.columns, state.dragged.cardCodes, ASX_KANBAN_DRAFTING_COLUMN),
+				columns: moveJiraKanbanCardsToColumn(state.columns, state.dragged.cardCodes, ASX_KANBAN_DRAFTING_COLUMN),
 				dragged: null,
 				lifecycleByCode: assignAgents(
 					state.lifecycleByCode,

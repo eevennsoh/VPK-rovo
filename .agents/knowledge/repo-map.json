@@ -5481,6 +5481,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "jira-toolbar",
+						"name": "Jira Toolbar",
+						"importPath": "@/components/blocks/jira-toolbar"
+					},
+					{
+						"category": "blocks",
 						"slug": "knowledge-directory",
 						"name": "Knowledge Directory",
 						"importPath": "@/components/blocks/knowledge-directory"

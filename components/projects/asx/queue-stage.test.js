@@ -305,7 +305,10 @@ test("Queue detail panel reuses session details and adds sources and output", ()
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Details<\/PanelTitle>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelActionClose label="Close detail panel" onClick=\{onClose\} \/>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<JiraSessionFlyoutBody hideHeader session=\{sidebarSession\} \/>/u);
+	assert.match(
+		QUEUE_DETAIL_PANEL_SOURCE,
+		/<JiraSessionFlyoutBody[\s\S]*hideHeader[\s\S]*previewPosition=\{DETAIL_PREVIEW_POSITION\}[\s\S]*session=\{sidebarSession\}[\s\S]*\/>/u,
+	);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<QueueDetailArtifacts session=\{session\} \/>/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /shrink-0|max-lg:absolute/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /m-3|rounded-lg|border border-border/u);

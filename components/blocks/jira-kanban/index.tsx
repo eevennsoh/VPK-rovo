@@ -18,6 +18,7 @@ import {
 	type JiraIssueTag,
 } from "@/components/blocks/jira-issue";
 import { AgentSelector } from "@/components/blocks/agent-selector";
+import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -79,6 +80,22 @@ export interface JiraKanbanCardSelectModifiers {
 	metaOrCtrlKey: boolean;
 }
 
+export interface JiraKanbanSelectionToolbarConfig {
+	agents?: readonly JiraKanbanAgentData[];
+	className?: string;
+	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
+	onBrowseAgents?: () => void;
+	onClearSelection: () => void;
+	onCreateAgent?: () => void;
+	onDelete?: () => void;
+	onEditFields?: () => void;
+	onMerge?: () => void;
+	onSelectAll?: () => void;
+	onStatusChange: (status: string) => void;
+	onWatchOptions?: () => void;
+	selectedAgentIds?: readonly string[];
+}
+
 export interface JiraKanbanProps {
 	boardColumns: readonly JiraKanbanColumnData[];
 	agents?: readonly JiraKanbanAgentData[];
@@ -122,6 +139,7 @@ export interface JiraKanbanProps {
 	onToggleColumnAgent?: (columnTitle: string, agentId: string) => void;
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
+	selectionToolbar?: JiraKanbanSelectionToolbarConfig;
 }
 
 export function createJiraKanbanColumns(
@@ -380,6 +398,32 @@ function BoardColumn({
 	);
 }
 
+function getCommonSelectedCardStatus(
+	columns: readonly JiraKanbanColumnData[],
+	selectedCardCodes: ReadonlySet<string>,
+): string | null {
+	let commonStatus: string | null = null;
+	let foundSelectedCard = false;
+
+	for (const column of columns) {
+		for (const card of column.cards) {
+			if (!selectedCardCodes.has(card.code)) {
+				continue;
+			}
+			if (!foundSelectedCard) {
+				commonStatus = column.title;
+				foundSelectedCard = true;
+				continue;
+			}
+			if (commonStatus !== column.title) {
+				return null;
+			}
+		}
+	}
+
+	return foundSelectedCard ? commonStatus : null;
+}
+
 export function JiraKanban({
 	agents,
 	ariaLabel = "Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -401,10 +445,15 @@ export function JiraKanban({
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
+	selectionToolbar,
 }: Readonly<JiraKanbanProps>) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [canScrollRight, setCanScrollRight] = useState(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
+	const selectedCount = selectedCardCodes?.size ?? 0;
+	const selectedStatus = selectedCardCodes
+		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
+		: null;
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- scroll affordance depends on measured DOM dimensions.
 	useEffect(() => {
@@ -640,6 +689,26 @@ export function JiraKanban({
 					))}
 				</div>
 				</section>
+				{selectionToolbar ? (
+					<JiraToolbar
+						agents={selectionToolbar.agents ?? agents ?? []}
+						className={selectionToolbar.className}
+						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
+						onBrowseAgents={selectionToolbar.onBrowseAgents}
+						onClearSelection={selectionToolbar.onClearSelection}
+						onCreateAgent={selectionToolbar.onCreateAgent}
+						onDelete={selectionToolbar.onDelete}
+						onEditFields={selectionToolbar.onEditFields}
+						onMerge={selectionToolbar.onMerge}
+						onSelectAll={selectionToolbar.onSelectAll}
+						onStatusChange={selectionToolbar.onStatusChange}
+						onWatchOptions={selectionToolbar.onWatchOptions}
+						selectedAgentIds={selectionToolbar.selectedAgentIds}
+						selectedCount={selectedCount}
+						selectedStatus={selectedStatus}
+						statusOptions={boardColumns.map((column) => column.title)}
+					/>
+				) : null}
 			</div>
 	);
 }

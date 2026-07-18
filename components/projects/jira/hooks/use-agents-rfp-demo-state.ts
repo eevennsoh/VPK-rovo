@@ -18,6 +18,7 @@ import {
 	setRfpDraftingAgentTrigger,
 	setRfpDemoCanvasOpen,
 	setRfpDemoCanvasView,
+	setRfpDemoCardsAgentAssignment,
 	type AgentsRfpDemoCanvasViewId,
 	type AgentsRfpDemoState,
 } from "../lib/rfp-demo-state";
@@ -38,6 +39,7 @@ export interface AgentsRfpDemoActions {
 	clearAgentTrigger: () => void;
 	moveCard: (cardCode: string, targetColumnTitle: string) => void;
 	moveCards: (cardCodes: readonly string[], targetColumnTitle: string) => void;
+	setCardsAgentAssignment: (cardCodes: readonly string[], agentId: string, assigned: boolean) => void;
 	setAnswerSummary: (answerSummary: string) => void;
 	setCanvasOpen: (open: boolean, mode?: "editable" | "read-only") => void;
 	setCanvasView: (viewId: AgentsRfpDemoCanvasViewId) => void;
@@ -218,6 +220,20 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 		},
 		[postStateMutation],
 	);
+	const setCardsAgentAssignment = useCallback(
+		(cardCodes: readonly string[], agentId: string, assigned: boolean) => {
+			if (cardCodes.length === 0) {
+				return;
+			}
+			persistStateMutation((currentState) => setRfpDemoCardsAgentAssignment(
+				currentState,
+				cardCodes,
+				agentId,
+				assigned,
+			));
+		},
+		[persistStateMutation],
+	);
 	const setAnswerSummary = useCallback(
 		(answerSummary: string) => persistStateMutation((currentState) => setRfp101AnswerSummary(currentState, answerSummary)),
 		[persistStateMutation],
@@ -253,6 +269,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 		clearAgentTrigger,
 		moveCard,
 		moveCards,
+		setCardsAgentAssignment,
 		setAnswerSummary,
 		setCanvasOpen,
 		setCanvasView,
