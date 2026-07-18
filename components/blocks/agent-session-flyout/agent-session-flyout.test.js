@@ -63,6 +63,7 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.doesNotMatch(source, /<HoverCard\b/u);
 	assert.match(flyoutSource, /createHoverCardHandle<JiraSidebarSessionItem>\(\)/u);
 	assert.match(flyoutSource, /cloneElement\(childElement, \{[\s\S]*onFocusCapture: \(event\) => \{[\s\S]*handle\.open\(triggerId\);/u);
+	assert.match(flyoutSource, /event\.target\.matches\(":focus-visible"\)/u);
 	assert.match(flyoutSource, /<HoverCardViewport\b/u);
 	assert.match(flyoutSource, /\[&_\[data-current\]\]:transition-opacity/u);
 	assert.match(flyoutSource, /\[&_\[data-previous\]\]:transition-opacity/u);

@@ -85,6 +85,7 @@ export function JiraSessionFlyoutTrigger({
 				childElement.props.onFocusCapture?.(event);
 				if (
 					!event.defaultPrevented &&
+					event.target.matches(":focus-visible") &&
 					!event.currentTarget.contains(event.relatedTarget as Node | null)
 				) {
 					handle.open(triggerId);
