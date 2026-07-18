@@ -34,9 +34,11 @@ test("active compact chat surfaces own one contained history drawer", () => {
 	assert.match(chatPanelSource, /const isHeaderHistoryEnabled = !hideHeader && headerVariant === "default";/u);
 	assert.match(chatPanelSource, /const shouldRenderHeaderHistory = isHeaderHistoryEnabled && chatSurface !== "floating";/u);
 	assert.match(chatPanelSource, /<ChatHistoryDrawer active=\{shouldRenderHeaderHistory\} \/>/u);
+	assert.match(chatPanelSource, /chatHistory \? \([\s\S]*<ControlledChatHistoryDrawer[\s\S]*selectThread=\{chatHistory\.selectThread\}[\s\S]*threads=\{chatHistory\.threads\}/u);
 	assert.match(chatPanelSource, /variant=\{headerVariant\}/u);
 	assert.match(floatingSource, /showChatHistory \? <ChatHistoryDrawer \/> : null/u);
 	assert.match(chatPanelSource, /onHistoryToggle=\{toggleHistory\}/u);
+	assert.match(chatPanelSource, /onNewChat=\{handleNewChat\}/u);
 	assert.doesNotMatch(chatPanelSource, /currentThreadHasRichState/u);
 	assert.doesNotMatch(chatPanelSource, /This thread includes fullscreen-only state\./u);
 });
@@ -46,8 +48,9 @@ test("compact chat hamburger buttons open the shared history drawer", () => {
 	const floatingHeader = readProjectFile("components/projects/rovo-floating-chat/components/floating-chat-header.tsx");
 	const historyButton = readProjectFile("components/projects/sidebar-chat/components/chat-history-button.tsx");
 
+	assert.match(sidebarHeader, /<RovoAgentBackButton onBack=\{onBackToRovo\} \/>/u);
+	assert.match(floatingHeader, /<RovoAgentBackButton \/>/u);
 	for (const source of [sidebarHeader, floatingHeader]) {
-		assert.match(source, /<RovoAgentBackButton \/>/u);
 		assert.match(source, /<ChatHistoryButton isHistoryOpen=\{isHistoryOpen\} onToggle=\{onHistoryToggle\} \/>/u);
 	}
 
@@ -114,7 +117,7 @@ test("rovo app sidebar renders the shared chat history panel inline", () => {
 	assert.match(sidebarSource, /selectThread=\{onSelectThread\}/u);
 	assert.match(historySource, /label="Tasks"[\s\S]*actions=\{<HoverAddAction label="New task" \/>/u);
 	assert.match(historySource, /label="Agents"[\s\S]*actions=\{<HoverAddAction label="New agent" \/>/u);
-	assert.match(historySource, /label="Chats"[\s\S]*actions=\{<HoverAddAction label="New chat" onClick=\{handleNewChat\} \/>/u);
+	assert.match(historySource, /label="Chats"[\s\S]*<ChatHistorySortAction[\s\S]*<HoverAddAction label="New chat" onClick=\{handleNewChat\} \/>/u);
 	assert.doesNotMatch(sidebarSource, /showNavigation=\{false\}/u);
 	assert.doesNotMatch(sidebarSource, /RovoAppSidebarNavItem/u);
 	assert.doesNotMatch(sidebarSource, /RovoAppSidebarChatsThreadList/u);
@@ -124,6 +127,20 @@ test("rovo app sidebar renders the shared chat history panel inline", () => {
 	assert.doesNotMatch(sidebarSource, /isHistoryOpen/u);
 	assert.doesNotMatch(rovoAppShellSource, /onRefreshThreads=\{chat\.refreshThreads\}/u);
 	assert.doesNotMatch(surfaceShellSource, /onRefreshThreads=\{refreshThreads\}/u);
+});
+
+test("chat history exposes the Queue sorting menu beside the new-chat action", () => {
+	const source = readProjectFile("components/projects/sidebar-chat/components/chat-history-drawer.tsx");
+
+	assert.match(source, /export type ChatHistorySortMode = "priority" \| "last-updated" \| "manual";/u);
+	assert.match(source, /aria-label="Sort chats"/u);
+	assert.match(source, /<SortOptionsIcon label="" size="small" \/>/u);
+	assert.match(source, /<DropdownMenuLabel>Sort by<\/DropdownMenuLabel>/u);
+	assert.match(source, /value="priority">Priority/u);
+	assert.match(source, /value="last-updated">Last updated/u);
+	assert.match(source, /value="manual">Manual order/u);
+	assert.match(source, /\{sortMode && onSortModeChange \? \([\s\S]*<ChatHistorySortAction/u);
+	assert.match(source, /<ChatHistorySortAction[\s\S]*<HoverAddAction label="New chat"/u);
 });
 
 test("chat history drawer uses a contained left sheet with a local blanket", () => {
@@ -190,7 +207,31 @@ test("chat history row actions are scoped to the hovered row", () => {
 
 	assert.match(source, /group\/chat-history-thread relative rounded-lg/u);
 	assert.match(source, /group-hover\/chat-history-thread:opacity-100/u);
+	assert.match(source, /threadActions \? \([\s\S]*group-hover\/chat-history-thread:pointer-events-auto/u);
+	assert.match(source, /threadActions && "group-hover\/chat-history-thread:grid-cols/u);
+	assert.match(source, /getThreadActions\?: \(thread: RovoAppThread\) => ReactNode;/u);
 	assert.doesNotMatch(source, /group-hover:opacity-100/u);
+});
+
+test("chat history supports an opt-in pinned thread group", () => {
+	const source = readProjectFile("components/projects/sidebar-chat/components/chat-history-drawer.tsx");
+	const pinnedSectionIndex = source.indexOf('aria-label="Pinned"');
+	const chatsHeadingIndex = source.indexOf("<ChatHistorySectionHeading", pinnedSectionIndex);
+	const chatsRegionIndex = source.indexOf('aria-label="Chats"', chatsHeadingIndex);
+	const chatsRegionEndIndex = source.indexOf("</section>", chatsRegionIndex);
+	const chatsRegionSource = source.slice(chatsRegionIndex, chatsRegionEndIndex);
+
+	assert.match(source, /pinnedThreadIds\?: ReadonlySet<string>;/u);
+	assert.match(source, /threads\.filter\(\(thread\) => pinnedThreadIds\.has\(thread\.id\)\)/u);
+	assert.match(source, /threads\.filter\(\(thread\) => !pinnedThreadIds\.has\(thread\.id\)\)/u);
+	assert.notEqual(pinnedSectionIndex, -1);
+	assert.ok(pinnedSectionIndex < chatsHeadingIndex);
+	assert.ok(chatsHeadingIndex < chatsRegionIndex);
+	assert.match(source, />\s*Pinned\s*<\/div>/u);
+	assert.match(source, /pinnedThreads\.map\(renderThread\)/u);
+	assert.match(source, /unpinnedThreads\.map\(renderThread\)/u);
+	assert.doesNotMatch(chatsRegionSource, /\{pinnedThreads\.map\(renderThread\)/u);
+	assert.match(chatsRegionSource, /unpinnedThreads\.map\(renderThread\)/u);
 });
 
 test("chat history drawer matches the Figma conversation-list content structure", () => {

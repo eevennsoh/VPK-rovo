@@ -15,7 +15,6 @@ import {
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
 import {
-	JIRA_CLI_DISPATCH_PLACEHOLDER,
 	JIRA_CLI_FOOTER_HINTS,
 	JIRA_CLI_TITLE,
 	JIRA_CLI_WORKSPACE,
@@ -47,7 +46,7 @@ function JiraRow({ item, selected }: Readonly<{ item: TerminalWorkItem; selected
 			initial={shouldReduceMotion ? false : { opacity: 0 }}
 			animate={{ opacity: 1 }}
 			transition={shouldReduceMotion ? { duration: 0 } : ROW_TRANSITION}
-			style={{ willChange: "transform, opacity" }}
+			style={shouldReduceMotion ? undefined : { willChange: "transform, opacity" }}
 			aria-selected={selected}
 			// `-mx-4 px-4` is applied unconditionally so only the background colour
 			// changes on selection — the row's geometry stays fixed, which keeps the
@@ -136,8 +135,6 @@ export function TerminalStageJiraPane({
 	const previewItems = foldBoardPreview(items, activeStep, revealCount);
 	const sections = getBoardSections(previewItems);
 	const counts = getBoardCounts(previewItems);
-	const isReplyTyping = dashboardVisible && activeStep?.kind === "type" && activeStep.pane === "left";
-	const dispatchDraft = isReplyTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
 	const rowCount = sections.needsInput.length + sections.working.length + sections.backlog.length + sections.done.length;
 
 	useEffect(() => {
@@ -155,7 +152,7 @@ export function TerminalStageJiraPane({
 			initial={shouldReduceMotion ? false : { opacity: 0 }}
 			animate={{ opacity: 1 }}
 			transition={shouldReduceMotion ? { duration: 0 } : DASHBOARD_FADE_TRANSITION}
-			style={{ willChange: "opacity" }}
+			style={shouldReduceMotion ? undefined : { willChange: "opacity" }}
 			className="flex h-full flex-col overflow-hidden"
 		>
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
@@ -172,13 +169,9 @@ export function TerminalStageJiraPane({
 					<JiraSection key={key} label={label} items={sections[key]} selectedKey={selectedKey} />
 				))}
 			</div>
-			<div className="shrink-0 border-t border-zinc-800 px-4 py-3">
-				<div className="flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-zinc-300">
-					<span>{dispatchDraft || JIRA_CLI_DISPATCH_PLACEHOLDER}</span>
-					<BlinkCursor />
-				</div>
-				<p className="mt-1 text-[11px] text-zinc-500">{JIRA_CLI_FOOTER_HINTS}</p>
-			</div>
+			<p className="shrink-0 border-t border-zinc-800 px-4 py-2 text-[11px] text-zinc-500">
+				{JIRA_CLI_FOOTER_HINTS}
+			</p>
 		</motion.div>
 	);
 }

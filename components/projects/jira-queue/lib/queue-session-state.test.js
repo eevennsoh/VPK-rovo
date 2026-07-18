@@ -8,7 +8,10 @@ async function loadQueueStateHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export { ASX_QUEUE_SESSION_SEEDS } from "./components/projects/asx/data/queue-sessions";
+				export {
+					ASX_QUEUE_SESSION_SEEDS,
+					createAsxQueueHistoryThreads,
+				} from "./components/projects/jira-queue/data/queue-sessions";
 				export {
 					appendQueueSessionUserMessage,
 					archiveQueueSession,
@@ -22,7 +25,7 @@ async function loadQueueStateHarness() {
 					setQueueSessionPinned,
 					sortQueueSessions,
 					stopQueueSession,
-				} from "./components/projects/asx/lib/queue-session-state";
+				} from "./components/projects/jira-queue/lib/queue-session-state";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -68,16 +71,17 @@ function session(id, overrides = {}) {
 	};
 }
 
-test("Queue seeds model the three confirmed lifecycle states in one Jira project", async () => {
+test("Queue seeds model the four confirmed lifecycle states in one Jira project", async () => {
 	const { ASX_QUEUE_SESSION_SEEDS } = await loadQueueStateHarness();
 
-	assert.equal(ASX_QUEUE_SESSION_SEEDS.length, 3);
+	assert.equal(ASX_QUEUE_SESSION_SEEDS.length, 4);
 	assert.deepEqual(
 		ASX_QUEUE_SESSION_SEEDS.map(({ host, spaceId, status }) => ({ host, spaceId, status })),
 		[
 			{ host: "cloud", spaceId: "enterprise-rfp-qualification", status: "awaiting-input" },
 			{ host: "local", spaceId: "enterprise-rfp-qualification", status: "pr-open" },
 			{ host: "local", spaceId: "enterprise-rfp-qualification", status: "merged" },
+			{ host: "cloud", spaceId: "enterprise-rfp-qualification", status: "running" },
 		],
 	);
 	assert.equal(ASX_QUEUE_SESSION_SEEDS[0].question?.questions[0]?.kind, "single-select");
@@ -85,25 +89,64 @@ test("Queue seeds model the three confirmed lifecycle states in one Jira project
 	assert.equal(ASX_QUEUE_SESSION_SEEDS[1].pullRequestNumber, 1847);
 	assert.equal(ASX_QUEUE_SESSION_SEEDS[1].jiraColumn, "Done");
 	assert.equal(ASX_QUEUE_SESSION_SEEDS[2].pullRequestNumber, 1842);
-	assert.ok(ASX_QUEUE_SESSION_SEEDS.slice(1).every((item) => item.fileChanges?.files.length));
-	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => item.messages.length === 2));
+	assert.ok(ASX_QUEUE_SESSION_SEEDS.slice(1, 3).every((item) => item.fileChanges?.files.length));
+	assert.ok(ASX_QUEUE_SESSION_SEEDS.slice(0, 3).every((item) => item.messages.length === 2));
+	assert.equal(ASX_QUEUE_SESSION_SEEDS[3].messages.length, 3);
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => (
 		item.messages[0]?.role === "user" && item.messages[1]?.role === "assistant"
 	)));
-	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => (
+	assert.ok(ASX_QUEUE_SESSION_SEEDS.slice(0, 3).every((item) => (
 		item.messages[1].parts.reduce(
 			(text, part) => text + (part.type === "text" ? part.text : ""),
 			"",
 		).length > 800
 	)));
-	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => (
+	assert.ok(ASX_QUEUE_SESSION_SEEDS.slice(0, 3).every((item) => (
 		item.messages[1].parts.some((part) => (
 			part.type === "text" && /^\*\*.+\*\*$[\s\S]*^- /m.test(part.text)
 		))
 	)));
+	// The running seed is a live, in-progress turn: the agent types a response
+	// first (messages[1]), then a trailing assistant message (messages[2]) carries
+	// the chain of thought whose final tool call never resolves (no turn-complete
+	// part). This renders the perpetual "in progress" experience, words-first.
+	const runningSeed = ASX_QUEUE_SESSION_SEEDS[3];
+	assert.equal(runningSeed.status, "running");
+	assert.ok(runningSeed.messages[1].parts.some((part) => part.type === "text"));
+	const runningThinking = runningSeed.messages[2];
+	assert.equal(runningThinking.role, "assistant");
+	assert.ok(runningThinking.parts.some((part) => part.type === "data-thinking-event"));
+	assert.ok(runningThinking.parts.every((part) => part.type !== "data-turn-complete"));
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => Number.isInteger(item.manualRank)));
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => !("relativeTime" in item)));
 	assert.ok(ASX_QUEUE_SESSION_SEEDS.every((item) => !item.branch || item.branch.startsWith("rovo/")));
+});
+
+test("Queue seeds become the exact four Rovo history threads with their full content", async () => {
+	const { ASX_QUEUE_SESSION_SEEDS, createAsxQueueHistoryThreads } = await loadQueueStateHarness();
+	const threads = createAsxQueueHistoryThreads(ASX_QUEUE_SESSION_SEEDS);
+
+	assert.deepEqual(
+		threads.map((thread) => thread.title),
+		[
+			"Confirm Acme rollout plan",
+			"Automate Northstar security evidence",
+			"Validate security response evidence",
+			"Validate Q3 pricing exceptions",
+		],
+	);
+	assert.deepEqual(
+		ASX_QUEUE_SESSION_SEEDS.map((session) => session.agentId),
+		["readiness-checker", "pipeline-troubleshooter", "code-reviewer", "deal-desk-reviewer"],
+	);
+	assert.ok(threads.slice(0, 3).every((thread) => thread.messages.length === 2));
+	assert.equal(threads[3].messages.length, 3);
+	assert.ok(threads.every((thread) => thread.realtimeMessages.length === 0));
+	const questionWidget = threads[0].messages[1].parts.find((part) => (
+		part.type === "data-widget-data" && part.data.type === "question-card"
+	));
+	assert.equal(questionWidget.data.payload.questions[0].label, "What is the target go-live date?");
+	assert.equal(questionWidget.data.payload.questions[0].options.length, 3);
 });
 
 test("Queue sessions clone nested demo state so remounts restore the seeds", async () => {

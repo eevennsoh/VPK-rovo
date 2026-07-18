@@ -2,10 +2,15 @@ import type { TerminalBeat, TerminalWorkItem } from "../lib/terminal-demo-state"
 
 export const JIRA_CLI_TITLE = "Jira CLI v0.4.2";
 export const JIRA_CLI_WORKSPACE = "Agent Sessions Experience (ASX) · asx.atlassian.net";
-export const JIRA_CLI_DISPATCH_PLACEHOLDER = "describe a work item to start a new session";
-export const JIRA_CLI_FOOTER_HINTS = "↑↓ to move · enter to open · space to reply · ctrl+x to delete · ? for shortcuts";
+export const JIRA_CLI_FOOTER_HINTS = "↑↓ to move · enter to open Jira";
 export const TERMINAL_INITIAL_HINT = "click the terminal to open Jira";
 export const TERMINAL_SHELL_PROMPT = "~/dev/asx $";
+
+const JIRA_CLI_BASE_URL = "https://asx.atlassian.net";
+
+export function getJiraIssueUrl(issueKey: string): string {
+	return `${JIRA_CLI_BASE_URL}/browse/${encodeURIComponent(issueKey)}`;
+}
 
 /** Seeded backlog + done items, shown the moment the Jira dashboard appears (beat "connect"). */
 const SEED_WORK_ITEMS: readonly TerminalWorkItem[] = [
@@ -217,8 +222,8 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 		trigger: "key",
 		hint: "→ next: first PRs land",
 		steps: [
-			{ kind: "type", pane: "left", text: "ASX-198: yes — follow system preference, add a manual override" },
-			{ kind: "submit", pane: "left" },
+			{ kind: "type", pane: "right", text: "ASX-198: yes — follow system preference, add a manual override" },
+			{ kind: "submit", pane: "right" },
 			{
 				kind: "board",
 				events: [

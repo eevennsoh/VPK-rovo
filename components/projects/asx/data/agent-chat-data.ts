@@ -1,7 +1,9 @@
 import {
+	ROVO_AGENT_ID,
 	ROVO_AGENT_PROFILES,
 	type RovoAgentProfile,
 } from "@/app/data/directory/agents";
+import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
@@ -64,6 +66,41 @@ export const ASX_CHAT_AGENT_PROFILES: readonly RovoAgentProfile[] = [
 	...ROVO_AGENT_PROFILES,
 	...ASX_AGENT_PROFILES,
 ];
+
+const ASX_FOR_YOU_AGENT_BY_ITEM_ID: Readonly<Record<string, {
+	agentId: string;
+	agentName: string;
+}>> = {
+	"vitafleet-presentation": { agentId: "readiness-checker", agentName: "Readiness checker" },
+	"crm-analytics-dashboard": { agentId: "feedback-analyzer", agentName: "Feedback analyzer" },
+	"performance-benchmarking": { agentId: "progress-tracker", agentName: "Progress tracker" },
+	"refactor-readability": { agentId: "code-planner", agentName: "Code planner" },
+	"payment-suite-failures": { agentId: "code-reviewer", agentName: "Code reviewer" },
+	"onboarding-e2e-coverage": { agentId: "code-planner", agentName: "Code planner" },
+	"critical-component-testing": { agentId: "code-reviewer", agentName: "Code reviewer" },
+	"ci-pipeline": { agentId: "progress-tracker", agentName: "Progress tracker" },
+	"enhance-accessibility": { agentId: "feedback-analyzer", agentName: "Feedback analyzer" },
+	"third-party-apis": { agentId: "readiness-checker", agentName: "Readiness checker" },
+};
+
+/** Maps each For You fixture to a deterministic selected-agent chat playback. */
+export function buildAsxForYouAgentChatScenario(item: JiraForYouItem): AsxAgentChatScenario {
+	const agent = ASX_FOR_YOU_AGENT_BY_ITEM_ID[item.id] ?? {
+		agentId: ROVO_AGENT_ID,
+		agentName: "Rovo",
+	};
+
+	return {
+		...agent,
+		issueKey: item.issueKey,
+		issueSummary: item.title,
+		request: `Show me the latest update on ${item.issueKey}.`,
+		result: [
+			`${agent.agentName} checked **${item.issueKey}** and confirmed its current Jira status is **${item.jiraStatus}**.`,
+			`I reviewed the available ${item.spaceName} context and prepared the next useful handoff for this work item.`,
+		].join("\n\n"),
+	};
+}
 
 /** Builds the persistent, non-dismissible work-item context shown in ASX chat. */
 export function buildAsxAgentChatContextBar(

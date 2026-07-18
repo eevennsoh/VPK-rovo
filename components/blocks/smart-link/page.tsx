@@ -7,6 +7,10 @@ export interface SmartLinkPageProps {
 	items?: typeof SMART_LINK_DEMO_ITEMS;
 }
 
+function toTitleCase(value: string): string {
+	return value.replace(/\b\w/gu, (character) => character.toUpperCase());
+}
+
 export default function SmartLinkPage({
 	items = SMART_LINK_DEMO_ITEMS,
 }: Readonly<SmartLinkPageProps>): React.ReactElement {
@@ -32,7 +36,7 @@ export default function SmartLinkPage({
 						{items.map((item) => (
 							<div className="flex flex-col gap-2" key={item.id}>
 								<span className="text-xs font-medium leading-4 text-text-subtlest">
-									{item.variant}
+									{toTitleCase(item.provider.name)}
 								</span>
 								<SmartLinkCard item={item} />
 							</div>
@@ -53,6 +57,7 @@ export type {
 	SmartLinkPreviewImage,
 	SmartLinkProps,
 	SmartLinkProvider,
+	SmartLinkSize,
 	SmartLinkVariant,
 	SmartLinkVisual,
 } from "@/components/blocks/smart-link/components/smart-link";

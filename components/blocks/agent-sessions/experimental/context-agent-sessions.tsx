@@ -48,7 +48,7 @@ interface AgentSessionsProviderProps {
 }
 
 export function AgentSessionsProvider({ children, initialPreset, workItem, active = true }: Readonly<AgentSessionsProviderProps>) {
-	const { state, actions } = useAgentSessionsController(initialPreset, active);
+	const { state, actions } = useAgentSessionsController(initialPreset, workItem, active);
 
 	const meta = useMemo<AgentSessionsMeta>(
 		() => ({

@@ -30,6 +30,7 @@ import styles from "./chat-messages.module.css";
 
 export interface ChatMessagesProps {
 	uiMessages: RovoUIMessage[];
+	contentClassName?: string;
 	onSuggestedQuestionClick?: (question: string) => void;
 	onDeleteMessage?: (messageId: string) => void;
 	conversationContextRef: React.RefObject<ConversationContextValue | null>;
@@ -55,6 +56,20 @@ export interface ChatMessagesProps {
 		widget: { type: string; data: unknown },
 		message: RovoRenderableUIMessage
 	) => ReactNode;
+}
+
+export function AwaitingUserResponseIndicator({
+	label = getAwaitingUserResponseLabel(),
+}: Readonly<{ label?: string }>): ReactNode {
+	return (
+		<div className="flex justify-start">
+			<ChainOfThought>
+				<ChainOfThoughtHeader showChevron={false} state="thinking">
+					{label}
+				</ChainOfThoughtHeader>
+			</ChainOfThought>
+		</div>
+	);
 }
 
 /**
@@ -108,6 +123,7 @@ function computeLatestTurnScrollTop(
 
 export function ChatMessages({
 	uiMessages,
+	contentClassName,
 	onSuggestedQuestionClick,
 	onDeleteMessage,
 	conversationContextRef,
@@ -174,7 +190,7 @@ export function ChatMessages({
 			targetScrollTop={handleTargetScrollTop}
 		>
 			<ConversationContent
-				className="flex w-full shrink-0 flex-col gap-6 p-3"
+				className={cn("flex w-full shrink-0 flex-col gap-6 p-3", contentClassName)}
 				style={{
 					paddingTop: contentTopPadding,
 					paddingBottom: contentBottomPadding ?? "80px",
@@ -263,13 +279,7 @@ export function ChatMessages({
 					/>
 				) : null}
 				{!indicator.shouldShowPreloader && !indicator.shouldShowThinkingStatus && showAwaitingIndicator ? (
-					<div className="flex justify-start">
-						<ChainOfThought>
-							<ChainOfThoughtHeader showChevron={false} state="thinking">
-								{awaitingIndicatorLabel}
-							</ChainOfThoughtHeader>
-						</ChainOfThought>
-					</div>
+					<AwaitingUserResponseIndicator label={awaitingIndicatorLabel} />
 				) : null}
 				<div ref={scrollSpacerRef} aria-hidden className="h-0 shrink-0" />
 			</ConversationContent>

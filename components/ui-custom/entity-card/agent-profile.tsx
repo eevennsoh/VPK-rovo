@@ -1,13 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { type ComponentProps, type ReactElement } from "react";
+import { type ComponentProps, type ReactElement, useCallback, useState } from "react";
+import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import EditIcon from "@atlaskit/icon/core/edit";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
-import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
+import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
+import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import {
 	Avatar,
 	AvatarCompanyBadge,
@@ -84,7 +88,6 @@ export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"sectio
 	editActionLabel?: string;
 	moreActionLabel?: string;
 	swapActionLabel?: string;
-	voiceActionLabel?: string;
 	/** Visible label for the `"preview"` variant button. Defaults to `"View agent"`. */
 	previewActionLabel?: string;
 	onInputAction?: () => void;
@@ -114,7 +117,6 @@ export function EntityCardAgentProfile({
 	editActionLabel,
 	moreActionLabel,
 	swapActionLabel,
-	voiceActionLabel = "Start voice input",
 	previewActionLabel = "View agent",
 	onInputAction,
 	onEditAction,
@@ -135,6 +137,34 @@ export function EntityCardAgentProfile({
 	// SVG paints. Mirrors AgentProfileCover backdrop.
 	const resolvedBannerSrc = getDeterministicAgentBannerSrc(avatarSrc, avatarSrc);
 	const isAtlassianCover = isAtlassianLogoSource(coverSrc);
+
+	// Chat footer composer state. Mirrors the kanban card's
+	// JiraIssueAgentActivityPanel so the agent profile card's input matches the
+	// interactive FloatingComposer used across the app. `onVoiceInput` (legacy
+	// prop) is folded into the realtime-voice toggle so existing callers keep
+	// firing when voice is engaged.
+	const [reply, setReply] = useState("");
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
+	const [clickyActive, setClickyActive] = useState(false);
+	const canSubmit = Boolean(reply.trim());
+
+	const handleToggleRealtimeVoice = useCallback(() => {
+		setClickyActive(false);
+		setRealtimeVoiceActive((active) => !active);
+		onVoiceInput?.();
+	}, [onVoiceInput]);
+	const handleStop = useCallback(() => {
+		setRealtimeVoiceActive(false);
+		setClickyActive(false);
+	}, []);
+	const handleToggleClicky = useCallback(() => {
+		setRealtimeVoiceActive(true);
+		setClickyActive((active) => !active);
+	}, []);
+	const handleComposerSubmit = useCallback(() => {
+		setReply("");
+		onInputAction?.();
+	}, [onInputAction]);
 
 	// Attribution badge overlaid on the agent avatar. Mirrors agent-card's
 	// renderAvatarBadge: a company logo tile (Atlassian glyph when no logo is
@@ -271,8 +301,6 @@ export function EntityCardAgentProfile({
 					// second background band — `bg-surface` and `bg-surface-raised` diverge
 					// in dark mode (raised is lighter for elevation), which showed as a seam.
 					"flex bg-surface-raised px-3 pb-3",
-					// Chat reserves the input box's height; preview hugs the button.
-					variant === "preview" ? "" : "h-[60px] items-start",
 				)}
 			>
 				{variant === "preview" ? (
@@ -280,32 +308,39 @@ export function EntityCardAgentProfile({
 						{previewActionLabel}
 					</Button>
 				) : (
-					<div className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]">
-						{onInputAction ? (
-							<button
-								aria-label={inputActionLabel ?? inputPlaceholder}
-								className="min-w-0 flex-1 truncate rounded-md px-1.5 text-left text-sm leading-5 text-text-subtlest outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring"
-								onClick={onInputAction}
-								type="button"
-							>
-								{inputPlaceholder}
-							</button>
-						) : (
-							<p className="min-w-0 flex-1 truncate px-1.5 text-left text-sm leading-5 text-text-subtlest">
-								{inputPlaceholder}
-							</p>
-						)}
-						<Button
-							aria-label={voiceActionLabel}
-							className="size-8 rounded-md p-0 text-icon-subtle"
-							onClick={onVoiceInput}
-							size="icon"
-							type="button"
-							variant="ghost"
-						>
-							<AudioWaveformIcon label="" size="small" />
-						</Button>
-					</div>
+					<FloatingComposer
+						actions={
+							<RovoComposerActionButton
+								canSubmit={canSubmit}
+								clickyActive={clickyActive}
+								composerStatus="ready"
+								experimentalDarkCta
+								onStop={handleStop}
+								onToggleClicky={handleToggleClicky}
+								onToggleRealtimeVoice={handleToggleRealtimeVoice}
+								realtimeVoiceActive={realtimeVoiceActive}
+							/>
+						}
+						addButton={
+							<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+								<AddIcon label="" />
+							</PromptInputButton>
+						}
+						allowOverflow
+						aria-label={inputActionLabel ?? inputPlaceholder}
+						className="w-full rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]"
+						onSubmit={handleComposerSubmit}
+					>
+						<PromptInputTextarea
+							aria-label={inputActionLabel ?? inputPlaceholder}
+							className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+							enableDirectoryAutocomplete={false}
+							onChange={(event) => setReply(event.currentTarget.value)}
+							placeholder={inputPlaceholder}
+							rows={1}
+							value={reply}
+						/>
+					</FloatingComposer>
 				)}
 			</div>
 

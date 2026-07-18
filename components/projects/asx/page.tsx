@@ -5,15 +5,22 @@ import { useCallback, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
 import JiraForYouPage from "@/components/blocks/jira-for-you/page";
 import JiraListPage from "@/components/blocks/jira-list/page";
+import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
-import { ASX_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
+import {
+	ASX_CHAT_AGENT_PROFILES,
+	buildAsxForYouAgentChatScenario,
+} from "./data/agent-chat-data";
 import { ASX_GALLERY_ITEMS } from "./data/gallery-items";
 import { ASX_CARD_KANBAN_STATES } from "./data/card-kanban-data";
+import { AgentSessionStage } from "./components/agent-session-stage";
+import { AsxRovoOverlay } from "./components/asx-rovo-overlay";
 import { CardKanbanControls, CardKanbanStage } from "./components/card-kanban-stage";
 import { KanbanStage } from "./components/kanban-stage";
-import { QueueStage } from "./components/queue-stage";
+import { QueueStage } from "@/components/projects/jira-queue/components/queue-stage";
 import { RovoStage } from "./components/rovo-stage";
 import { TerminalControls, TerminalStage } from "./components/terminal-stage";
 import { useTerminalDemo, type TerminalDemoController } from "./hooks/use-terminal-demo";
@@ -32,9 +39,9 @@ import { cn } from "@/lib/utils";
 // agent sessions experience. Selecting a card reveals its design in the gallery
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
 // Kanban, List, and Queue show their full Jira experiences, For you shows the
-// personalized jira-for-you feed, and Rovo reuses the sidebar-chat project as an
-// in-stage chat panel. The remaining patterns fall back to a large title
-// placeholder.
+// personalized jira-for-you feed, Rovo reuses the sidebar-chat project as an
+// in-stage chat panel, and Agent session shows the jira-agent-session block. The
+// remaining patterns fall back to a large title placeholder.
 // ---------------------------------------------------------------------------
 
 function ListStage(): React.ReactElement {
@@ -56,12 +63,23 @@ function ListStage(): React.ReactElement {
 // padding), so `pb-56` lets the final item scroll clear of it; closed, that pad
 // is pure dead space, so we drop to a small `pb-8` breathing gap.
 function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean }>): React.ReactElement {
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
+	const handleItemClick = useCallback((item: JiraForYouItem) => {
+		openAgentChat(buildAsxForYouAgentChatScenario(item));
+	}, [openAgentChat]);
+
 	return (
-		<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
-			<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
-				<JiraForYouPage />
+		<>
+			<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
+				<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
+					<JiraForYouPage onItemClick={handleItemClick} />
+				</div>
 			</div>
-		</div>
+			<AsxRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+			/>
+		</>
 	);
 }
 
@@ -80,6 +98,7 @@ function renderAsxItem(
 	if (item.id === "terminal") return <TerminalStage controller={terminalController} />;
 	if (item.id === "rovo") return <RovoStage />;
 	if (item.id === "for-you") return <ForYouStage dockOpen={dockOpen} />;
+	if (item.id === "agent-session") return <AgentSessionStage />;
 
 	return (
 		<div className="flex h-full w-full items-center justify-center">
@@ -147,8 +166,23 @@ function AsxGallery(): React.ReactElement {
 			<TerminalControls controller={terminalController} />
 		) : null;
 
+	// The Terminal pattern is a full dark-mode experience: the terminal frame is
+	// already dark (hardcoded zinc), so we flip the surrounding gallery chrome
+	// (top bar, dock, background) to dark too via ADS subtree theming. Every
+	// semantic token in the subtree resolves to its dark value — no `dark:`
+	// utilities or hardcoded colors. The dock strip is `position: fixed` but
+	// still a DOM descendant of this root, so the theme cascades to it.
+	const isTerminal = selectedId === "terminal";
+	const subtreeThemeProps = isTerminal
+		? {
+				"data-subtree-theme": "",
+				"data-color-mode": "dark",
+				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+			}
+		: {};
+
 	return (
-		<div className="relative h-dvh w-full overflow-hidden bg-surface">
+		<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 			<Gallery
 				items={ASX_GALLERY_ITEMS}
 				title="Agent Sessions Experience"

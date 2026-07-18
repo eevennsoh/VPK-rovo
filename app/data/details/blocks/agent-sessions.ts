@@ -19,7 +19,7 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 		},
 		{
 			title: "Experimental · Empty context",
-			description: "Experimental variant seeded with the empty-context preset: no linked resources or sessions yet, so the empty state and first-run affordances are visible.",
+			description: "Experimental empty-context preset with an automatic deterministic AI Planner pass that immediately prefills the normal work-item fields, supports natural-language refinement, and keeps one explicit confirmation action.",
 			demoSlug: "agent-sessions-demo-experimental-empty",
 		},
 		{
@@ -50,7 +50,7 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 			name: "initialExperimentalPreset",
 			type: "\"empty\" | \"filled\" | \"running\"",
 			default: "\"filled\"",
-			description: "Deterministic starting state for the experimental variant: empty context, filled context, or filled context with concurrent running agents.",
+			description: "Deterministic starting state for the experimental variant: AI-planned empty context, filled context, or filled context with concurrent running agents.",
 		},
 	],
 };

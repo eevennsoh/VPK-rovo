@@ -47,10 +47,18 @@ const ROVO_AGENT_BACK_BUTTON_REDUCED_VARIANTS = {
 	},
 } as const;
 
-export function RovoAgentBackButton() {
+interface RovoAgentBackButtonProps {
+	onBack?: () => void;
+}
+
+export function RovoAgentBackButton({ onBack }: Readonly<RovoAgentBackButtonProps>) {
 	const { isCustomAgentSelected, resetAgentToRovo } = useRovoSelectedAgent();
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const buttonVariants = shouldReduceMotion ? ROVO_AGENT_BACK_BUTTON_REDUCED_VARIANTS : ROVO_AGENT_BACK_BUTTON_VARIANTS;
+	const handleBack = () => {
+		resetAgentToRovo();
+		onBack?.();
+	};
 
 	return (
 		<AnimatePresence initial={false}>
@@ -63,7 +71,7 @@ export function RovoAgentBackButton() {
 					key="back-to-rovo"
 					variants={buttonVariants}
 				>
-					<Button aria-label="Back to Rovo" size="icon" variant="ghost" onClick={() => resetAgentToRovo()}>
+					<Button aria-label="Back to Rovo" size="icon" variant="ghost" onClick={handleBack}>
 						<Icon aria-hidden render={<ArrowLeftIcon label="" />} />
 					</Button>
 				</motion.div>

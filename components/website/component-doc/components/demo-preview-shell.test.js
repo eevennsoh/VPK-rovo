@@ -21,6 +21,11 @@ async function loadDemoPreviewShellHarness() {
 						children: React.createElement("div", null, "demo"),
 						fullPage: true,
 					});
+					const fitFullPageShell = DemoPreviewShell({
+						children: React.createElement("div", null, "demo"),
+						fullPage: true,
+						fitContent: true,
+					});
 					const fullWidthShell = DemoPreviewShell({
 						children: React.createElement("div", null, "demo"),
 						contentWidth: "full",
@@ -31,6 +36,7 @@ async function loadDemoPreviewShellHarness() {
 						defaultStyle: defaultShell.props.style,
 						defaultPadding: defaultShell.props.children.props.style.padding,
 						fullPageStyle: fullPageShell.props.style,
+						fitFullPageClassName: fitFullPageShell.props.className,
 						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
 						fullWidthInnerStyle: fullWidthShell.props.children.props.children.props.style,
 					};
@@ -84,6 +90,13 @@ test("DemoPreviewShell uses a fallback-backed 1px border for preview outlines", 
 	assert.equal(defaultStyle.boxShadow, undefined);
 	assert.equal(fullPageStyle.border, defaultStyle.border);
 	assert.equal(fullPageStyle.boxShadow, undefined);
+});
+
+test("DemoPreviewShell clips fit-height full-page content to its rounded frame", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { fitFullPageClassName } = harness.getShellStyles();
+
+	assert.match(fitFullPageClassName, /(?:^|\s)overflow-hidden(?:\s|$)/u);
 });
 
 test("DemoPreviewShell insets full-width demos while preserving stretch layout", async () => {

@@ -28,6 +28,7 @@ import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
 import { AGENT_SESSIONS_DETAIL } from "./blocks/agent-sessions";
+import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
 import { TRIGGERS_DETAIL } from "./blocks/triggers";
 import { APP_SIDEBAR_DETAIL } from "./blocks/app-sidebar";
@@ -83,6 +84,7 @@ import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
 import { JIRA_FOR_YOU_DETAIL } from "./blocks/jira-for-you";
+import { JIRA_AGENT_SESSION_DETAIL } from "./blocks/jira-agent-session";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
@@ -120,6 +122,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
 	"agent-sessions": AGENT_SESSIONS_DETAIL,
+	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
 	triggers: TRIGGERS_DETAIL,
 	"app-sidebar": APP_SIDEBAR_DETAIL,
@@ -175,6 +178,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	chatbot: CHATBOT_DETAIL,
 	"jira-epic": JIRA_EPIC_DETAIL,
 	"jira-for-you": JIRA_FOR_YOU_DETAIL,
+	"jira-agent-session": JIRA_AGENT_SESSION_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,

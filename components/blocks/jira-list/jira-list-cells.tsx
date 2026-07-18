@@ -171,7 +171,7 @@ function OverflowMenu({
 				render={
 					<Badge
 						aria-label={`Show ${count} more ${label}`}
-						className="cursor-pointer"
+						className="cursor-pointer focus-visible:ring-inset"
 						render={<button type="button" />}
 					>
 						+{count}
@@ -180,7 +180,7 @@ function OverflowMenu({
 			/>
 			<PopoverContent
 				align="start"
-				className="w-auto min-w-36 gap-0 p-1 shadow-xl"
+				className="w-auto min-w-36 gap-0 p-1.5 shadow-xl"
 				sideOffset={6}
 			>
 				<ul aria-label={`More ${label}`} className="flex flex-col gap-1">{children}</ul>

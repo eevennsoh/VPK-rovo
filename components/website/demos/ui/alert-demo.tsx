@@ -150,6 +150,21 @@ export function AlertDemoAppearances() {
 	)
 }
 
+export function AlertDemoSizes() {
+	return (
+		<div className="mx-auto flex w-full max-w-lg flex-col gap-4">
+			<Alert size="default" variant="info">
+				<Icon render={<StatusInformationIcon label="" />} label="Information" />
+				<AlertTitle>Default size (16px icon, 14px text)</AlertTitle>
+			</Alert>
+			<Alert size="small" variant="info">
+				<Icon render={<StatusInformationIcon label="" />} label="Information" />
+				<AlertTitle>Small size (12px icon, 12px text)</AlertTitle>
+			</Alert>
+		</div>
+	)
+}
+
 export function AlertDemoDestructive() {
 	return (
 		<div className="mx-auto flex w-full max-w-lg flex-col gap-4">

@@ -86,6 +86,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui/checkbox.test.js",
 		"components/ui/radio-group.test.js",
 		"components/ui/field.test.js",
+		"components/ui/navigation-menu.test.js",
 		"components/website/demos/ui/checkbox-demo.test.js",
 		"components/ui-custom/message.test.js",
 		"components/ui-custom/plan.test.js",

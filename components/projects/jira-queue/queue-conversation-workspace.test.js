@@ -4,7 +4,11 @@ const path = require("node:path");
 const test = require("node:test");
 
 const WORKSPACE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/asx/components/queue-conversation-workspace.tsx"),
+	path.join(process.cwd(), "components/projects/jira-queue/components/queue-conversation-workspace.tsx"),
+	"utf8",
+);
+const STAGE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-queue/components/queue-stage.tsx"),
 	"utf8",
 );
 const CHAT_MESSAGES_SOURCE = fs.readFileSync(
@@ -50,11 +54,47 @@ test("completed Queue sessions render the appropriate context above the composer
 	assert.match(WORKSPACE_SOURCE, /<QueueSessionContextBar[\s\S]*<RovoAppComposer[\s\S]*<Footer \/>/u);
 });
 
-test("the Queue chat body centers within the space beside the environment panel", () => {
-	assert.match(WORKSPACE_SOURCE, /const availableCenter = \(workspaceRect\.left \+ panelLeft\) \/ 2;/u);
-	assert.match(WORKSPACE_SOURCE, /const unshiftedChatCenter = \(unshiftedChatLeft \+ unshiftedChatRight\) \/ 2;/u);
-	assert.match(WORKSPACE_SOURCE, /const centeredShift = availableCenter - unshiftedChatCenter;/u);
-	assert.match(WORKSPACE_SOURCE, /const leftEdgeShift = workspaceRect\.left - unshiftedChatLeft;/u);
-	assert.match(WORKSPACE_SOURCE, /Math\.min\(0, Math\.max\(leftEdgeShift, centeredShift\)\)/u);
-	assert.doesNotMatch(WORKSPACE_SOURCE, /unshiftedChatRight - panelLeft/u);
+test("the detail panel open/collapsed state is owned by the stage so it persists across session switches", () => {
+	// The workspace remounts on `key={activeSession.id}`, so any panel state it
+	// owned locally would reset on every session switch. The state must live in
+	// the persistent QueueStage and be passed down as controlled props.
+	assert.doesNotMatch(WORKSPACE_SOURCE, /useState\([^)]*\).*isDetailPanelOpen/u);
+	assert.doesNotMatch(WORKSPACE_SOURCE, /setIsDetailPanelOpen/u);
+	assert.match(WORKSPACE_SOURCE, /isDetailPanelOpen: boolean;/u);
+	assert.match(WORKSPACE_SOURCE, /onDetailPanelOpenChange: \(open: boolean\) => void;/u);
+	assert.match(WORKSPACE_SOURCE, /onDetailPanelToggle=\{\(\) => onDetailPanelOpenChange\(!isDetailPanelOpen\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /onClose=\{\(\) => onDetailPanelOpenChange\(false\)\}/u);
+
+	assert.match(STAGE_SOURCE, /const \[isDetailPanelOpen, setIsDetailPanelOpen\] = useState\(false\)/u);
+	assert.match(STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*isDetailPanelOpen=\{isDetailPanelOpen\}/u);
+	assert.match(STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*onDetailPanelOpenChange=\{setIsDetailPanelOpen\}/u);
+});
+
+test("the detail panel resize width is owned by the stage so a dragged width persists across session switches", () => {
+	// Same remount concern as the open/collapsed state above: the workspace
+	// remounts on `key={activeSession.id}`, so a locally-owned useSidebarResize
+	// would reset the dragged width on every session switch. The resize state must
+	// live in the persistent QueueStage and be handed down as a prop. It still
+	// resets on refresh (fresh state) and on double-click (the hook's handler).
+	assert.doesNotMatch(WORKSPACE_SOURCE, /useSidebarResize\(/u);
+	assert.match(WORKSPACE_SOURCE, /import type \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize"/u);
+	assert.match(WORKSPACE_SOURCE, /detailPanelResize: ReturnType<typeof useSidebarResize>;/u);
+
+	assert.match(STAGE_SOURCE, /import \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize"/u);
+	assert.match(
+		STAGE_SOURCE,
+		/const detailPanelResize = useSidebarResize\(\{[\s\S]*defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX[\s\S]*direction: "rtl"[\s\S]*\}\)/u,
+	);
+	assert.match(STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*detailPanelResize=\{detailPanelResize\}/u);
+});
+
+test("the Queue scroll viewport fills the available space while its content stays constrained", () => {
+	assert.match(CHAT_MESSAGES_SOURCE, /contentClassName\?: string;/u);
+	assert.match(CHAT_MESSAGES_SOURCE, /className=\{cn\("flex w-full shrink-0 flex-col gap-6 p-3", contentClassName\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0 \}\}/u);
+	assert.match(WORKSPACE_SOURCE, /shouldReduceMotion \|\| detailPanelResize\.isResizing/u);
+	assert.match(WORKSPACE_SOURCE, /className="flex min-h-0 w-full flex-1 flex-col"/u);
+	assert.match(WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);
+	assert.match(WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);
+	assert.doesNotMatch(WORKSPACE_SOURCE, /DOMMatrixReadOnly|ResizeObserver|chatBodyShift/u);
 });

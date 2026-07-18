@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 80,
-			"pageCount": 57
+			"ownerImportCount": 81,
+			"pageCount": 58
 		},
 		"pages": [
 			{
@@ -3986,6 +3986,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-queue",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-queue/page.tsx"
 			},
 			{
 				"ownerCount": 0,
@@ -5173,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 398,
+			"manifestEntryCount": 401,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5209,7 +5225,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 90,
+				"entryCount": 92,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5270,6 +5286,12 @@
 						"slug": "agent-selector",
 						"name": "Agent Selector",
 						"importPath": "@/components/blocks/agent-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "agent-session-flyout",
+						"name": "Agent Session Flyout",
+						"importPath": "@/components/blocks/agent-session-flyout"
 					},
 					{
 						"category": "blocks",
@@ -5420,6 +5442,12 @@
 						"slug": "html-selector",
 						"name": "HTML Selector",
 						"importPath": "@/components/blocks/html-selector"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-agent-session",
+						"name": "Jira Agent Session",
+						"importPath": "@/components/blocks/jira-agent-session"
 					},
 					{
 						"category": "blocks",
@@ -5755,7 +5783,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 11,
+				"entryCount": 12,
 				"entries": [
 					{
 						"category": "projects",
@@ -5786,6 +5814,12 @@
 						"slug": "jira",
 						"name": "Jira",
 						"importPath": "@/components/projects/jira"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-queue",
+						"name": "Jira Queue",
+						"importPath": "@/components/projects/jira-queue"
 					},
 					{
 						"category": "projects",
@@ -7765,7 +7799,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
 			},
 			{
-				"description": "Use GPT-5.6 Sol as the scarce planner, reviewer, and orchestrator while delegating implementation and token-heavy exploration to isolated GPT-5.5 xhigh Codex CLI workers through the Proximity AI Gateway. Use whenever the user says vpk-sol, asks Sol to plan while cheaper Codex workers execute, wants the current Sol planner auth separated from Atlassian AI Gateway worker usage, or wants plan-big-execute-small delegation from any Codex surface.",
+				"description": "Manual-command-only GPT-5.6 Sol planner and Proximity worker orchestrator. Activate only when the first non-whitespace token in the user's current message is the exact slash command `/vpk-sol`. Never activate from a skill-name mention, Markdown link, file path, stack trace, pasted or quoted text, prior-turn context, or an AI agent's inference or suggestion.",
 				"name": "vpk-sol",
 				"path": ".agents/skills/vpk-sol/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-sol"

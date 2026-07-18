@@ -32,6 +32,7 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 interface ChatHeaderProps {
 	onClose?: () => void;
+	onBackToRovo?: () => void;
 	onNewChat?: () => void;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	isStreaming?: boolean;
@@ -43,6 +44,7 @@ interface ChatHeaderProps {
 
 export default function ChatHeader({
 	onClose,
+	onBackToRovo,
 	onNewChat,
 	onSurfaceSwitch,
 	isStreaming,
@@ -62,7 +64,7 @@ export default function ChatHeader({
 			<div className="flex justify-between items-center">
 				{/* Left side: Menu icon and Title */}
 				<div className="flex items-center gap-1">
-					<RovoAgentBackButton />
+					<RovoAgentBackButton onBack={onBackToRovo} />
 					{showControls ? (
 						<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
 					) : null}

@@ -9,11 +9,8 @@ import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
 import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
-import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const arkEsSolidLight = localFont({
 	src: "../public/fonts/ark-es/ARK-ES-SolidLight.woff",
@@ -209,7 +206,6 @@ ${devStylesheetGuardScript}
 			className={cn(
 				colorMode,
 				"font-sans",
-				geist.variable,
 				arkEsSolidLight.variable,
 				affigere.variable,
 				departureMono.variable,

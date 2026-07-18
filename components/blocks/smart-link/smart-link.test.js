@@ -34,7 +34,7 @@ test("SmartLink exports the public component and type API", () => {
 });
 
 test("demo data covers every required production variant", () => {
-	for (const variant of ["confluence", "jira", "team", "goal", "loom", "article", "file", "generic"]) {
+	for (const variant of ["confluence", "jira", "team", "goal", "project", "loom", "article", "file", "generic"]) {
 		assert.match(DATA_SOURCE, new RegExp(`variant: "${variant}"`, "u"));
 	}
 
@@ -51,6 +51,7 @@ test("catalog details and registry expose smart-link demos", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-article/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-team/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-goal/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-project/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-loom/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-generic/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link": dynamic\(\(\) => import\("\.\/demos\/blocks\/smart-link-demo"\)/u);
@@ -60,6 +61,7 @@ test("catalog details and registry expose smart-link demos", () => {
 		"SmartLinkDemoArticle",
 		"SmartLinkDemoTeam",
 		"SmartLinkDemoGoal",
+		"SmartLinkDemoProject",
 		"SmartLinkDemoLoom",
 		"SmartLinkDemoGeneric",
 	]) {

@@ -60,7 +60,8 @@ test("fullscreen Rovo header exposes a custom-agent back button", () => {
 	assert.match(BACK_BUTTON_SOURCE, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(BACK_BUTTON_SOURCE, /<motion\.div[\s\S]*key="back-to-rovo"[\s\S]*variants=\{buttonVariants\}/u);
 	assert.match(BACK_BUTTON_SOURCE, /aria-label="Back to Rovo"/u);
-	assert.match(BACK_BUTTON_SOURCE, /onClick=\{\(\) => resetAgentToRovo\(\)\}/u);
+	assert.match(BACK_BUTTON_SOURCE, /resetAgentToRovo\(\);[\s\S]*onBack\?\.\(\);/u);
+	assert.match(BACK_BUTTON_SOURCE, /onClick=\{handleBack\}/u);
 });
 
 test("Rovo and Studio headers share the core header while Studio owns send mode", () => {

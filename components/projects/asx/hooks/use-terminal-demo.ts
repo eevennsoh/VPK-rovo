@@ -12,7 +12,11 @@ import {
 	type TerminalDemoState,
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
-import { TERMINAL_DEMO_BEATS, TERMINAL_INITIAL_HINT } from "../data/terminal-demo-script";
+import {
+	getJiraIssueUrl,
+	TERMINAL_DEMO_BEATS,
+	TERMINAL_INITIAL_HINT,
+} from "../data/terminal-demo-script";
 
 // ---------------------------------------------------------------------------
 // useTerminalDemo — presenter-paced controller for the ASX Terminal stage.
@@ -242,7 +246,7 @@ export function useTerminalDemo(enabled: boolean): TerminalDemoController {
 
 	// Keyboard while this stage is active:
 	//   →/Space       advance a beat        ←/Backspace  roll back a beat
-	//   ↑/↓      move the Jira row     Enter      open the row in Jira (narrated only)
+	//   ↑/↓      move the Jira row     Enter      open the row in Jira
 	//   r/R      restart
 	useEffect(() => {
 		if (!enabled) return;
@@ -270,9 +274,8 @@ export function useTerminalDemo(enabled: boolean): TerminalDemoController {
 				return;
 			}
 			if (event.key === "Enter" && state.dashboardVisible && selectedKey !== null) {
-				// Opening the issue in the real Jira app is narrated by the presenter,
-				// not built — the highlight is the only visual we own here.
 				event.preventDefault();
+				window.open(getJiraIssueUrl(selectedKey), "_blank", "noopener,noreferrer");
 				return;
 			}
 			if (event.key === "r" || event.key === "R") {

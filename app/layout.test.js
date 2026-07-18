@@ -92,6 +92,12 @@ function getDevStylesheetGuardScriptSource() {
 	return match[1];
 }
 
+test("RootLayout keeps the Atlassian font stack as the global sans family", () => {
+	assert.match(ROOT_LAYOUT_SOURCE, /className=\{cn\([\s\S]*?"font-sans"/);
+	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /from "next\/font\/google"/);
+	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /variable:\s*"--font-sans"/);
+});
+
 test("RootLayout keeps the default favicon fallback before color-scheme icons", () => {
 	assert.deepEqual(
 		getFaviconLinks().map(({ href }) => href),

@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import {
 	DropdownMenu,
@@ -36,19 +37,13 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Tile, TileAvatar } from "@/components/ui/tile";
 import { STARRED_PROJECTS, JIRA_EXTERNAL_LINKS } from "../data/jira-navigation";
 import AddIcon from "@atlaskit/icon/core/add";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AppsIcon from "@atlaskit/icon/core/apps";
 import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
-import BranchIcon from "@atlaskit/icon/core/branch";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import ClockIcon from "@atlaskit/icon/core/clock";
-import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
-import CommitIcon from "@atlaskit/icon/core/commit";
 import DashboardIcon from "@atlaskit/icon/core/dashboard";
-import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
@@ -67,23 +62,36 @@ import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { JiraSessionFlyoutBody } from "./jira-session-flyout";
 
 export type JiraSidebarSessionStatus = "awaiting-input" | "running" | "pr-open" | "merged" | "stopped";
 export type JiraSidebarSessionHost = "cloud" | "local";
 export type JiraSidebarLayoutMode = "by-project" | "one-list";
 export type JiraSidebarSortMode = "priority" | "last-updated" | "manual";
 
+export type JiraSidebarWorkItemPriority = "highest" | "high" | "medium" | "low" | "lowest";
+
+export interface JiraSidebarAssignee {
+	name: string;
+	src?: string;
+}
+
 export interface JiraSidebarSessionItem {
+	additions?: number;
 	agentAvatarSrc?: string;
 	agentName: string;
+	assignee?: JiraSidebarAssignee;
 	branch?: string;
 	checks?: string;
 	commit?: string;
+	deletions?: number;
 	host: JiraSidebarSessionHost;
 	id: string;
 	issueKey: string;
 	issueSummary: string;
+	priority?: JiraSidebarWorkItemPriority;
 	pullRequestNumber?: number;
+	pullRequestTitle?: string;
 	repository?: string;
 	status: JiraSidebarSessionStatus;
 	title: string;
@@ -140,7 +148,18 @@ function JiraSessionAvatar({ session }: Readonly<{ session: JiraSidebarSessionIt
 	);
 }
 
-function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
+export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+	return session.status === "awaiting-input" ? (
+		<span className="flex min-w-0 items-baseline">
+			<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
+				Awaiting user response
+			</Shimmer>
+			<AnimatedDots />
+		</span>
+	) : session.title;
+}
+
+export function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionStatus }>) {
 	switch (status) {
 		case "awaiting-input":
 			return (
@@ -171,7 +190,7 @@ function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarSessionS
 	}
 }
 
-function JiraSessionDescription({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
+export function JiraSessionDescription({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
 	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
 
 	return (
@@ -308,7 +327,7 @@ function JiraSpacesOrganizeAction({
 	);
 }
 
-function JiraSessionRowActions({
+export function JiraSessionRowActions({
 	isPinned,
 	onArchive,
 	onStop,
@@ -330,7 +349,7 @@ function JiraSessionRowActions({
 		<>
 			<SidebarNavItemAction
 				aria-label={`${isPinned ? "Unpin" : "Pin"} ${title}`}
-				className="opacity-0 transition-opacity duration-normal ease-out group-data-[selected=true]/sidebar-nav-item:text-icon-subtle group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
+				className="opacity-0 transition-opacity duration-normal ease-out group-data-[selected=true]/sidebar-nav-item:text-icon-subtle group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100"
 				onClick={(event) => {
 					event.stopPropagation();
 					onTogglePin();
@@ -341,7 +360,7 @@ function JiraSessionRowActions({
 			<SidebarNavItemAction
 				aria-label={`${isArchivable ? "Archive" : "Stop"} ${title}`}
 				className={cn(
-					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100",
+					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100",
 					isArchivable
 						? "group-data-[selected=true]/sidebar-nav-item:text-icon-subtle"
 						: "text-icon-danger group-data-[selected=true]/sidebar-nav-item:text-icon-danger",
@@ -355,59 +374,6 @@ function JiraSessionRowActions({
 				{isArchivable ? <ArchiveBoxIcon label="" size="small" /> : <VideoStopOverlayIcon label="" size="small" />}
 			</SidebarNavItemAction>
 		</>
-	);
-}
-
-function JiraSessionDetailRow({
-	icon,
-	label,
-	value,
-}: Readonly<{
-	icon: React.ReactNode;
-	label: string;
-	value: React.ReactNode;
-}>) {
-	return (
-		<div className="grid min-w-0 grid-cols-[16px_68px_minmax(0,1fr)] items-start gap-2 text-xs leading-4">
-			<span className="grid size-4 place-items-center text-icon-subtle" aria-hidden="true">{icon}</span>
-			<span className="text-text-subtlest">{label}</span>
-			<span className="min-w-0 break-words text-text-subtle">{value}</span>
-		</div>
-	);
-}
-
-function JiraSessionHoverDetails({ session }: Readonly<{ session: JiraSidebarSessionItem }>) {
-	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
-
-	return (
-		<div className="flex flex-col gap-3">
-			<div className="min-w-0">
-				<p className="truncate text-sm font-semibold leading-5 text-text" title={session.title}>{session.title}</p>
-				<p className="text-xs leading-4 text-text-subtlest">{session.host === "cloud" ? "Cloud session" : "Local session"}</p>
-			</div>
-			<div className="flex flex-col gap-2">
-				{session.status === "awaiting-input" ? (
-					<JiraSessionDetailRow
-						icon={<StatusInformationIcon label="" size="small" />}
-						label="Status"
-						value="Awaiting user response"
-					/>
-				) : null}
-				<JiraSessionDetailRow
-					icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
-					label="Host"
-					value={session.host === "cloud" ? "Cloud" : "Local"}
-				/>
-				<JiraSessionDetailRow icon={<AiAgentIcon label="" size="small" />} label="Agent" value={session.agentName} />
-				<JiraSessionDetailRow icon={<TaskIcon label="" size="small" />} label="Jira" value={issueDescription} />
-				{session.repository ? <JiraSessionDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Repository" value={session.repository} /> : null}
-				{session.branch ? <JiraSessionDetailRow icon={<BranchIcon label="" size="small" />} label="Branch" value={session.branch} /> : null}
-				{session.worktreePath ? <JiraSessionDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Worktree" value={session.worktreePath} /> : null}
-				{session.pullRequestNumber ? <JiraSessionDetailRow icon={<PullRequestIcon label="" size="small" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
-				{session.commit ? <JiraSessionDetailRow icon={<CommitIcon label="" size="small" />} label="Commit" value={session.commit} /> : null}
-				{session.checks ? <JiraSessionDetailRow icon={<CheckCircleIcon label="" size="small" />} label="Checks" value={session.checks} /> : null}
-			</div>
-		</div>
 	);
 }
 
@@ -439,12 +405,6 @@ function JiraSessionRow({
 		transform,
 		transition,
 	} = useSortable({ disabled: !canReorder, id: session.id });
-	const label = session.status === "awaiting-input" ? (
-		<Shimmer as="span" duration={1.4} spread={2} className="block truncate text-left">
-			{session.title}
-		</Shimmer>
-	) : session.title;
-
 	return (
 		<div
 			className={cn("relative", isDragging && "z-20 opacity-80")}
@@ -452,7 +412,7 @@ function JiraSessionRow({
 			ref={setNodeRef}
 			style={{ transform: CSS.Transform.toString(transform), transition }}
 		>
-			<HoverCard closeDelay={80} openDelay={240}>
+			<HoverCard closeDelay={0} openDelay={0}>
 				<HoverCardTrigger render={<div className="w-full" />}>
 					<SidebarNavItem
 						buttonProps={canReorder ? {
@@ -474,7 +434,7 @@ function JiraSessionRow({
 						className={cn("min-h-11", canReorder && "cursor-grab active:cursor-grabbing")}
 						description={<JiraSessionDescription session={session} />}
 						isSelected={isSelected}
-						label={label}
+						label={<JiraSessionLabel session={session} />}
 						meta={(
 							<span className="grid size-6 shrink-0 place-items-center group-hover/sidebar-nav-item:hidden group-has-[[data-slot=button]:focus-visible]/sidebar-nav-item:hidden">
 								<JiraSessionLifecycle status={session.status} />
@@ -486,11 +446,11 @@ function JiraSessionRow({
 				<HoverCardContent
 					align="start"
 					alignOffset={0}
-					className="w-80 border-0 bg-surface-overlay p-3 text-text shadow-overlay"
+					className="w-[400px] border-0 bg-surface-overlay p-4 text-text shadow-overlay transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100 data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
 					side="right"
 					sideOffset={8}
 				>
-					<JiraSessionHoverDetails session={session} />
+					<JiraSessionFlyoutBody session={session} />
 				</HoverCardContent>
 			</HoverCard>
 		</div>
