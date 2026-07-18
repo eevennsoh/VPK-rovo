@@ -14,13 +14,16 @@ import {
 	useAgentSessionsActions,
 	useAgentSessionsState,
 } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { AgentSessionsComposerMotion } from "@/components/blocks/agent-sessions/experimental/components/agent-sessions-composer-motion";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Button } from "@/components/ui/button";
+import { Tile } from "@/components/ui/tile";
 import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import { RovoGeneration } from "@/components/ui-custom/rovo-generation";
 import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +41,20 @@ const ALL_PLANNER_SOURCES = [
 	PLANNER_SOURCES["google-drive"],
 ] as const;
 
+function TeamworkGraphLoaderTile() {
+	return (
+		<Tile
+			className="relative z-10 bg-surface"
+			hasBorder
+			label="Teamwork Graph"
+			size="large"
+			variant="transparent"
+		>
+			<TWGLoader label="Teamwork Graph" size="small" />
+		</Tile>
+	);
+}
+
 /** Compact search/provenance banner; review controls live with the fields they affect. */
 export function AiPlannerPanel() {
 	const { planner } = useAgentSessionsState();
@@ -50,10 +67,11 @@ export function AiPlannerPanel() {
 			<div aria-busy="true" aria-live="polite" data-ai-planner-state="searching">
 				<TwgTool
 					description={phase.description}
+					loader={<TeamworkGraphLoaderTile />}
 					showChevron={false}
 					sources={phase.sources.map((source) => PLANNER_SOURCES[source])}
 					status="active"
-					title="AI Planner"
+					title="Teamwork Graph"
 				/>
 			</div>
 		);
@@ -69,11 +87,11 @@ export function AiPlannerPanel() {
 		<div aria-busy={isRefining || undefined} aria-live="polite" data-ai-planner-state={planner.status}>
 			<TwgTool
 				description={description}
+				loader={<TeamworkGraphLoaderTile />}
 				showChevron={false}
-				showLoader={isRefining}
 				sources={ALL_PLANNER_SOURCES}
 				status={isRefining ? "active" : "complete"}
-				title="AI Planner"
+				title="Teamwork Graph"
 			/>
 		</div>
 	);
@@ -89,91 +107,100 @@ function AiPlannerActionBar() {
 
 	return (
 		<div
-			className="absolute inset-x-0 top-[calc(100%+1rem)] z-20"
+			className="relative z-20 mt-4"
 			data-ai-planner-controls="floating"
 		>
-			<FloatingComposer
-				actions={(
-					<>
-						<Button
-							disabled={isRefining}
-							onClick={() => actions.rejectPlannerProposal()}
-							size="default"
-							type="button"
-							variant="outline"
-						>
-							<CrossIcon label="" size="small" />
-							Reject
-						</Button>
-						<Button
-							disabled={isRefining}
-							onClick={() => actions.applyPlannerProposal()}
-							size="default"
-							type="button"
-							variant="outline"
-						>
-							<CheckMarkIcon label="" size="small" />
-							Accept suggestions
-						</Button>
-						<RovoComposerActionButton
-							canSubmit={canSubmit}
-							composerStatus="ready"
-							experimentalDarkCta
-							onStop={() => setRealtimeVoiceActive(false)}
-							onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
-							realtimeVoiceActive={realtimeVoiceActive}
-							submitDisabled={isRefining}
-						/>
-					</>
-				)}
-				allowOverflow
-				aria-label="AI Planner controls"
-				className="border-0 bg-surface-overlay"
-				onSubmit={(message, event) => {
-					const nextPrompt = message.text.trim();
-					if (!nextPrompt || isRefining) return;
-					actions.refinePlannerProposal(nextPrompt);
-					setPrompt("");
-					setRealtimeVoiceActive(false);
-					event.currentTarget.reset();
-				}}
-				style={{ boxShadow: token("elevation.shadow.overlay") }}
-			>
-				<PromptInputTextarea
-					aria-label="Tell Rovo what to change"
-					autoResize
-					className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-					disabled={isRefining}
-					enableDirectoryAutocomplete={false}
-					onChange={(event) => setPrompt(event.currentTarget.value)}
-					placeholder="Tell Rovo what to change…"
-					rows={1}
-					value={prompt}
-				/>
-			</FloatingComposer>
+			<AgentSessionsComposerMotion>
+				<FloatingComposer
+					actions={(
+						<div className="flex items-center gap-2">
+							<Button
+								disabled={isRefining}
+								onClick={() => actions.rejectPlannerProposal()}
+								size="default"
+								type="button"
+								variant="outline"
+							>
+								<CrossIcon label="" size="small" />
+								Reject
+							</Button>
+							<Button
+								disabled={isRefining}
+								onClick={() => actions.applyPlannerProposal()}
+								size="default"
+								type="button"
+								variant="outline"
+							>
+								<CheckMarkIcon label="" size="small" />
+								Accept suggestions
+							</Button>
+							<RovoComposerActionButton
+								canSubmit={canSubmit}
+								composerStatus="ready"
+								experimentalDarkCta
+								onStop={() => setRealtimeVoiceActive(false)}
+								onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
+								realtimeVoiceActive={realtimeVoiceActive}
+									submitDisabled={isRefining}
+							/>
+						</div>
+					)}
+					allowOverflow
+					aria-label="Teamwork Graph controls"
+					className="border-0 bg-surface-overlay"
+					onSubmit={(message, event) => {
+						const nextPrompt = message.text.trim();
+						if (!nextPrompt || isRefining) return;
+						actions.refinePlannerProposal(nextPrompt);
+						setPrompt("");
+						setRealtimeVoiceActive(false);
+						event.currentTarget.reset();
+					}}
+					style={{ boxShadow: token("elevation.shadow.overlay") }}
+				>
+					<PromptInputTextarea
+						aria-label="Tell Rovo what to change"
+						autoResize
+						className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+						disabled={isRefining}
+						enableDirectoryAutocomplete={false}
+						onChange={(event) => setPrompt(event.currentTarget.value)}
+						placeholder="Tell Rovo what to change…"
+						rows={1}
+						value={prompt}
+					/>
+				</FloatingComposer>
+			</AgentSessionsComposerMotion>
 		</div>
 	);
 }
 
 /** One-shot Rovo highlight and floating controls scoped to the fields Rovo populated. */
-export function AiPlannerScope({ children }: Readonly<{ children: ReactNode }>) {
+export function AiPlannerScope({
+	children,
+	header,
+}: Readonly<{ children: ReactNode; header: ReactNode }>) {
 	const { planner } = useAgentSessionsState();
 	const isReviewing = planner.status === "ready" || planner.status === "refining";
+	const hasPlanner = planner.status === "searching" || isReviewing;
 	const content = (
 		<div
 			className={cn(
 				"flex flex-col gap-3",
-				isReviewing ? "rounded-xl border border-border p-3" : null,
+				hasPlanner ? "rounded-xl border border-border bg-bg-input p-1.5" : null,
 			)}
 		>
-			{children}
+			{header}
+			<div className={cn("flex flex-col gap-3", hasPlanner ? "px-2 pb-2" : null)}>
+				{children}
+			</div>
 		</div>
 	);
 
 	return (
 		<div
-			className={isReviewing ? "relative" : undefined}
-			data-ai-planner-scope={isReviewing ? "active" : undefined}
+			className={hasPlanner ? "relative" : undefined}
+			data-ai-planner-scope={hasPlanner ? "active" : undefined}
 		>
 			{isReviewing ? (
 				<RovoGeneration.Highlight active className="block w-full">

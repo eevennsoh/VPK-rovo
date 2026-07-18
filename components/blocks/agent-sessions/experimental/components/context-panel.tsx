@@ -14,11 +14,11 @@ export function ContextPanel() {
 	return (
 		<section aria-label="Work item context" className="flex flex-col gap-3">
 			<ContextEditableTitle />
-			<AiPlannerPanel />
-			<AiPlannerScope>
+			<AiPlannerScope header={<AiPlannerPanel />}>
 				<div className="flex flex-col gap-1">
 					<ContextResources />
 				</div>
+				<div aria-hidden className="h-px bg-border" />
 				<div className="flex flex-col gap-1">
 					<span className="px-0.5 text-xs font-semibold leading-4 text-text-subtlest">Description</span>
 					<ContextEditableDescription />

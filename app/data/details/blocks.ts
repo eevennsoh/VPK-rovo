@@ -27,6 +27,7 @@ import { MERMAID_DIAGRAM_DETAIL } from "./blocks/mermaid-diagram";
 import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
+import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
 import { AGENT_SESSIONS_DETAIL } from "./blocks/agent-sessions";
 import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
@@ -121,6 +122,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	cursor: CURSOR_DETAIL,
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
+	"skill-selector": SKILL_SELECTOR_DETAIL,
 	"agent-sessions": AGENT_SESSIONS_DETAIL,
 	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,

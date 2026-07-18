@@ -332,6 +332,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"skill-selector-demo-standalone": dynamic(
+		() =>
+			import("../demos/blocks/skill-selector-demo").then((mod) => ({
+				default: mod.SkillSelectorDemoStandalone,
+			})),
+		{ ssr: false },
+	),
 
 	"jira-issue-demo-subtasks-collapsed": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
 		default: mod.JiraIssueDemoSubtasksCollapsed,

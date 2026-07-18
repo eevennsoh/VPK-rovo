@@ -5189,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 401,
+			"manifestEntryCount": 402,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5225,7 +5225,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 92,
+				"entryCount": 93,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5694,6 +5694,12 @@
 						"slug": "skill-config",
 						"name": "Skill Config",
 						"importPath": "@/components/blocks/skill-config"
+					},
+					{
+						"category": "blocks",
+						"slug": "skill-selector",
+						"name": "Skill Selector",
+						"importPath": "@/components/blocks/skill-selector"
 					},
 					{
 						"category": "blocks",
