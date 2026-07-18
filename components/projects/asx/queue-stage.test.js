@@ -58,6 +58,10 @@ const JIRA_SIDEBAR_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../blocks/product-sidebar/variants/jira.tsx"),
 	"utf8",
 );
+const JIRA_SESSION_FLYOUT_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../blocks/product-sidebar/variants/jira-session-flyout.tsx"),
+	"utf8",
+);
 const CHAT_HISTORY_DRAWER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../sidebar-chat/components/chat-history-drawer.tsx"),
 	"utf8",
@@ -283,15 +287,14 @@ test("Queue header follows the Rovo custom-agent identity and toggles the detail
 	assert.match(QUEUE_WORKSPACE_SOURCE, /isDetailPanelOpen \? \([\s\S]*<QueueDetailPanel/u);
 });
 
-test("Queue detail panel groups session, development, delivery, sources, and output", () => {
+test("Queue detail panel reuses session details and adds sources and output", () => {
 	assert.match(
 		QUEUE_WORKSPACE_SOURCE,
-		/<AnimatePresence initial=\{false\}>[\s\S]*<QueueDetailPanel[\s\S]*agent=\{agent\}[\s\S]*session=\{session\}/u,
+		/<AnimatePresence initial=\{false\}>[\s\S]*<QueueDetailPanel[\s\S]*resize=\{detailPanelResize\}[\s\S]*session=\{session\}/u,
 	);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelContainer/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelHeader/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /session: AsxQueueSession/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /agent: RovoAgentProfile/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<motion\.div/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /absolute inset-y-0 right-0 z-20 h-full max-w-full/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /h-full bg-surface/u);
@@ -301,32 +304,20 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelTitle>Details<\/PanelTitle>/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<PanelActionClose label="Close detail panel" onClick=\{onClose\} \/>/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<section aria-label="Session"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /title="Development"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /title="Delivery"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<Separator className="mx-4 data-horizontal:w-auto" \/>/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /"awaiting-input": "Awaiting user response"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /"awaiting-input": "warning"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<Lozenge variant=\{STATUS_VARIANTS\[session\.status\]\}>/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /label="Session"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /label="Agent"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<Tag\s+type="agent"/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<AgentAvatarVisual[\s\S]*avatarSrc=\{agent\.avatarSrc\}[\s\S]*sizePx=\{16\}/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /\{agent\.name\}[\s\S]*<\/Tag>/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /label="Jira" value=\{issueDescription\}/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /session\.repository \? <QueueDetailRow/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /session\.pullRequestNumber \? <QueueDetailRow/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /session\.fileChanges \? \(/u);
-	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /session\.title|Cloud session|Local session/u);
-	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /Environment|environment/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<JiraSessionFlyoutBody hideHeader session=\{sidebarSession\} \/>/u);
+	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /<QueueDetailArtifacts session=\{session\} \/>/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /shrink-0|max-lg:absolute/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /m-3|rounded-lg|border border-border/u);
 	assert.doesNotMatch(QUEUE_DETAIL_PANEL_SOURCE, /bg-black|text-white|#[0-9a-f]{3,8}/iu);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Session"/u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /label="Agent"/u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /<Tag[\s\S]*type="agent"/u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, />Development</u);
 
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Sources"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /title="Output"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /<SmartLink[\s\S]*side="left"/u);
-	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /variant: "jira"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /variant: "confluence"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /variant: "loom"/u);
 	assert.match(QUEUE_DETAIL_ARTIFACTS_SOURCE, /grid grid-cols-2 gap-2/u);
@@ -337,11 +328,12 @@ test("Queue detail panel groups session, development, delivery, sources, and out
 });
 
 test("Queue detail panel reuses the right-sidebar resize behavior on its separator", () => {
-	assert.match(QUEUE_WORKSPACE_SOURCE, /import \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize"/u);
+	assert.match(QUEUE_STAGE_SOURCE, /import \{ useSidebarResize \} from "@\/components\/projects\/rovo-core\/hooks\/use-sidebar-resize"/u);
 	assert.match(
-		QUEUE_WORKSPACE_SOURCE,
+		QUEUE_STAGE_SOURCE,
 		/useSidebarResize\(\{[\s\S]*defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,[\s\S]*minWidth: DETAIL_PANEL_MIN_WIDTH_PX/u,
 	);
+	assert.match(QUEUE_STAGE_SOURCE, /<QueueConversationWorkspace[\s\S]*detailPanelResize=\{detailPanelResize\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /<QueueDetailPanel[\s\S]*resize=\{detailPanelResize\}/u);
 	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /width: resize\.sidebarWidth/u);
 	assert.match(
@@ -360,5 +352,5 @@ test("ASX Queue seeds a perpetual running session with an in-progress thinking t
 	assert.match(QUEUE_SESSIONS_SOURCE, /issueKey: "RFP-104",/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /status: "running",/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /data-thinking-event/u);
-	assert.match(QUEUE_DETAIL_PANEL_SOURCE, /running: "Running"/u);
+	assert.match(JIRA_SESSION_FLYOUT_SOURCE, /running: "3m ago"/u);
 });

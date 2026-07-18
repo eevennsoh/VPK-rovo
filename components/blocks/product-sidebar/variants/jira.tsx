@@ -33,7 +33,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tile, TileAvatar } from "@/components/ui/tile";
 import { STARRED_PROJECTS, JIRA_EXTERNAL_LINKS } from "../data/jira-navigation";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -62,7 +61,12 @@ import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { JiraSessionFlyoutBody } from "./jira-session-flyout";
+import {
+	JiraSessionFlyoutSurface,
+	JiraSessionFlyoutTrigger,
+	createJiraSessionFlyoutHandle,
+	type JiraSessionFlyoutHandle,
+} from "./jira-session-flyout";
 
 export type JiraSidebarSessionStatus = "awaiting-input" | "running" | "pr-open" | "merged" | "stopped";
 export type JiraSidebarSessionHost = "cloud" | "local";
@@ -379,6 +383,7 @@ export function JiraSessionRowActions({
 
 function JiraSessionRow({
 	canReorder,
+	flyoutHandle,
 	isPinned,
 	isSelected,
 	onArchive,
@@ -388,6 +393,7 @@ function JiraSessionRow({
 	session,
 }: Readonly<{
 	canReorder: boolean;
+	flyoutHandle: JiraSessionFlyoutHandle;
 	isPinned: boolean;
 	isSelected: boolean;
 	onArchive: () => void;
@@ -412,47 +418,40 @@ function JiraSessionRow({
 			ref={setNodeRef}
 			style={{ transform: CSS.Transform.toString(transform), transition }}
 		>
-			<HoverCard closeDelay={0} openDelay={0}>
-				<HoverCardTrigger render={<div className="w-full" />}>
-					<SidebarNavItem
-						buttonProps={canReorder ? {
+			<JiraSessionFlyoutTrigger
+				handle={flyoutHandle}
+				render={<div className="w-full" />}
+				session={session}
+			>
+				<SidebarNavItem
+					buttonProps={canReorder ? {
 							...attributes,
 							...listeners,
 							style: { touchAction: "none" },
 						} : undefined}
-						buttonRef={setActivatorNodeRef}
-						actions={(
-							<JiraSessionRowActions
-								isPinned={isPinned}
-								onArchive={onArchive}
-								onStop={onStop}
-								onTogglePin={onTogglePin}
-								status={session.status}
-								title={session.title}
-							/>
-						)}
-						className={cn("min-h-11", canReorder && "cursor-grab active:cursor-grabbing")}
-						description={<JiraSessionDescription session={session} />}
-						isSelected={isSelected}
-						label={<JiraSessionLabel session={session} />}
-						meta={(
-							<span className="grid size-6 shrink-0 place-items-center group-hover/sidebar-nav-item:hidden group-has-[[data-slot=button]:focus-visible]/sidebar-nav-item:hidden">
-								<JiraSessionLifecycle status={session.status} />
-							</span>
-						)}
-						onClick={onSelect}
-					/>
-				</HoverCardTrigger>
-				<HoverCardContent
-					align="start"
-					alignOffset={0}
-					className="w-[400px] border-0 bg-surface-overlay p-4 text-text shadow-overlay transition-none data-starting-style:opacity-100 data-starting-style:scale-100 data-ending-style:opacity-100 data-ending-style:scale-100 data-[side=right]:data-starting-style:translate-x-0 data-[side=right]:data-ending-style:translate-x-0"
-					side="right"
-					sideOffset={8}
-				>
-					<JiraSessionFlyoutBody session={session} />
-				</HoverCardContent>
-			</HoverCard>
+					buttonRef={setActivatorNodeRef}
+					actions={(
+						<JiraSessionRowActions
+							isPinned={isPinned}
+							onArchive={onArchive}
+							onStop={onStop}
+							onTogglePin={onTogglePin}
+							status={session.status}
+							title={session.title}
+						/>
+					)}
+					className={cn("min-h-11", canReorder && "cursor-grab active:cursor-grabbing")}
+					description={<JiraSessionDescription session={session} />}
+					isSelected={isSelected}
+					label={<JiraSessionLabel session={session} />}
+					meta={(
+						<span className="grid size-6 shrink-0 place-items-center group-hover/sidebar-nav-item:hidden group-has-[[data-slot=button]:focus-visible]/sidebar-nav-item:hidden">
+							<JiraSessionLifecycle status={session.status} />
+						</span>
+					)}
+					onClick={onSelect}
+				/>
+			</JiraSessionFlyoutTrigger>
 		</div>
 	);
 }
@@ -525,6 +524,7 @@ export function JiraSidebar({
 	const [expandedSpaceIds, setExpandedSpaceIds] = useState<ReadonlySet<string>>(
 		() => new Set(sessionNavigation ? [STARRED_PROJECTS[0]?.id].filter((id): id is string => Boolean(id)) : []),
 	);
+	const [sessionFlyoutHandle] = useState(createJiraSessionFlyoutHandle);
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
 		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -557,6 +557,7 @@ export function JiraSidebar({
 		<JiraSessionRow
 			key={session.id}
 			canReorder={sessionNavigation?.sortMode === "manual"}
+			flyoutHandle={sessionFlyoutHandle}
 			isPinned={sessionNavigation?.pinnedSessionIds.has(session.id) ?? false}
 			isSelected={sessionNavigation?.activeSessionId === session.id}
 			onArchive={() => sessionNavigation?.onArchiveSession(session.id)}
@@ -748,6 +749,9 @@ export function JiraSidebar({
 				/>
 			</JiraSidebarSection>
 			</nav>
+			{sessionNavigation ? (
+				<JiraSessionFlyoutSurface handle={sessionFlyoutHandle} />
+			) : null}
 		</DndContext>
 	);
 }
