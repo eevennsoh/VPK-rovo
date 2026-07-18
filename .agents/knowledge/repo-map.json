@@ -5189,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 402,
+			"manifestEntryCount": 403,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5225,7 +5225,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 93,
+				"entryCount": 94,
 				"entries": [
 					{
 						"category": "blocks",
