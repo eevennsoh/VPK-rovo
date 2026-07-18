@@ -25,7 +25,8 @@ async function loadRfpDemoStateHarness() {
 					createRfpDraftingAgent,
 					exportRfpReportPdf,
 					generateRfpReport,
-					getGeneratedRfpAttachments,
+						getGeneratedRfpAttachments,
+						getCommonRfpDemoCardAgentIds,
 					getRfpDemoAgents,
 					getRfpDemoColumnAgentAssignments,
 					moveRfpDemoCard,
@@ -35,7 +36,8 @@ async function loadRfpDemoStateHarness() {
 					resolveRfpDemoBoardColumns,
 					scheduleRfpDraftingAgent,
 					selectRfpReportVersion,
-					setRfpDraftingAgentTrigger,
+						setRfpDraftingAgentTrigger,
+						setRfpDemoCardsAgentAssignment,
 				} from "./components/projects/jira/lib/rfp-demo-state";
 					export { ROVO_LOGO_DATA_URI } from "./components/ui/data/rovo-logo";
 			`,
@@ -64,6 +66,25 @@ test("missing and invalid localStorage payloads seed default RFP demo state", as
 
 	const invalid = harness.parseAgentsRfpDemoState(JSON.stringify({ version: 99 }));
 	assert.deepEqual(invalid, missing);
+});
+
+test("bulk agent assignment persists across every selected RFP work item", async () => {
+	const harness = await loadRfpDemoStateHarness();
+	const selectedCodes = new Set(["RFP-101", "RFP-102"]);
+	let state = harness.setRfpDemoCardsAgentAssignment(
+		harness.createDefaultAgentsRfpDemoState(),
+		[...selectedCodes],
+		"readiness-checker",
+		true,
+	);
+
+	assert.deepEqual(
+		harness.getCommonRfpDemoCardAgentIds(state, selectedCodes),
+		["readiness-checker"],
+	);
+	state = harness.setRfpDemoCardsAgentAssignment(state, ["RFP-101"], "readiness-checker", false);
+	assert.deepEqual(harness.getCommonRfpDemoCardAgentIds(state, selectedCodes), []);
+	assert.deepEqual(state.workItems["RFP-102"].agentAssignmentIds, ["readiness-checker"]);
 });
 
 test("valid persisted payload resumes board, report, agent trigger, and activity", async () => {

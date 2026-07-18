@@ -326,6 +326,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-kanban": dynamic(() => import("../demos/blocks/jira-kanban-demo"), {
 		ssr: false,
 	}),
+	"jira-toolbar": dynamic(() => import("../demos/blocks/jira-toolbar-demo"), {
+		ssr: false,
+	}),
 	"visual-waveform": dynamic(
 		() => import("../demos/blocks/visual-waveform-demo"),
 		{ ssr: false },
