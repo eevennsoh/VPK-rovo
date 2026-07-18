@@ -1,5 +1,6 @@
 "use client";
 
+import { type ReactNode } from "react";
 import Image from "next/image";
 
 import { token } from "@/lib/tokens";
@@ -26,7 +27,10 @@ import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TaskIcon from "@atlaskit/icon/core/task";
 
-export function ModalHeader({ showClose = true }: Readonly<{ showClose?: boolean }>) {
+export function ModalHeader({
+	showClose = true,
+	actions,
+}: Readonly<{ showClose?: boolean; actions?: ReactNode }>) {
 	const { meta } = useWorkItemModal();
 	const { workItem } = meta;
 
@@ -90,19 +94,23 @@ export function ModalHeader({ showClose = true }: Readonly<{ showClose?: boolean
 			</Breadcrumb>
 
 			<div className="flex shrink-0 items-center gap-2">
-				<Button aria-label="No restrictions" size="icon" variant="outline">
-					<LockUnlockedIcon label="" />
-				</Button>
-				<Button className="gap-2" variant="outline">
-					<EyeOpenIcon label="" />
-					1
-				</Button>
-				<Button aria-label="Share" size="icon" variant="outline">
-					<ShareIcon label="" />
-				</Button>
-				<Button aria-label="Actions" size="icon" variant="outline">
-					<ShowMoreHorizontalIcon label="" />
-				</Button>
+				{actions ?? (
+					<>
+						<Button aria-label="No restrictions" size="icon" variant="outline">
+							<LockUnlockedIcon label="" />
+						</Button>
+						<Button className="gap-2" variant="outline">
+							<EyeOpenIcon label="" />
+							1
+						</Button>
+						<Button aria-label="Share" size="icon" variant="outline">
+							<ShareIcon label="" />
+						</Button>
+						<Button aria-label="Actions" size="icon" variant="outline">
+							<ShowMoreHorizontalIcon label="" />
+						</Button>
+					</>
+				)}
 				{showClose ? (
 					<Button aria-label="Close" size="icon" variant="outline" onClick={meta.onClose}>
 						<CrossIcon label="" />

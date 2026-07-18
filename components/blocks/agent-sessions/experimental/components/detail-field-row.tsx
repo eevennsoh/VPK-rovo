@@ -90,7 +90,7 @@ export function DetailValueTrigger({ className, ...props }: Readonly<React.Compo
 	return (
 		<button
 			className={cn(
-				"-mx-1 flex min-w-0 max-w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+				"-mx-1 flex w-full min-w-0 max-w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
 				className,
 			)}
 			type="button"
