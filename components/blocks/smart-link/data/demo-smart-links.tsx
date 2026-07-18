@@ -110,7 +110,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 		title: "By end of Q3FY25, we have formed a nucleus of motion design SMEs who are actively advising/consulting the broader design org on motion use",
 		variant: "goal",
 		provider: { name: "Goals", logo: { kind: "atlassian", name: "goals" } },
-		icon: { kind: "icon", icon: <TargetIcon label="" size="medium" /> },
+		icon: { kind: "icon", icon: <GoalIcon label="" size="medium" /> },
 		avatars: [{ name: "Omar Salah", src: "/avatar-human/omar-salah.png" }],
 		status: { label: "Completed", variant: "success", metric: "1.0" },
 		dueDate: "Jun 30, 2025",
@@ -119,7 +119,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 			{
 				id: "unfollow",
 				label: "Unfollow goal",
-				icon: <TargetIcon label="" size="medium" />,
+				icon: <GoalIcon label="" size="medium" />,
 			},
 		],
 	},
