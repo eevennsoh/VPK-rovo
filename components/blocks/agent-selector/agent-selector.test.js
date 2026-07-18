@@ -8,7 +8,7 @@ const DATA_SOURCE = fs.readFileSync(path.join(__dirname, "data/demo-agents.ts"),
 const PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/demos/blocks/agent-selector-demo.tsx"), "utf8");
 const DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app/data/details/blocks/agent-selector.ts"), "utf8");
-const REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks.ts"), "utf8");
+const VARIANT_REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components/website/registry/blocks-variants.ts"), "utf8");
 const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	"components/blocks/agent-selector/page.tsx",
 	"components/blocks/jira-kanban/index.tsx",
@@ -40,7 +40,13 @@ test("AgentSelector exposes a standalone picker demo for inspection", () => {
 	assert.match(DEMO_SOURCE, /<AgentSelectorPage presentation="standalone" \/>/u);
 	assert.match(DEMO_SOURCE, /<AgentSelectorPage presentation="standalone" variant="selected-agent-actions" \/>/u);
 	assert.match(DETAILS_SOURCE, /demoSlug: "agent-selector-demo-standalone"/u);
-	assert.match(REGISTRY_SOURCE, /"agent-selector-demo-standalone"[\s\S]*default: mod\.AgentSelectorDemoStandalone/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-selector-demo-standalone"[\s\S]*default: mod\.AgentSelectorDemoStandalone/u);
+});
+
+test("AgentSelector defaults to the unified Agent Directory catalog", () => {
+	assert.match(COMPONENT_SOURCE, /import \{ ROVO_AGENT_SELECTOR_AGENTS \} from "@\/app\/data\/directory\/agents";/u);
+	assert.match(COMPONENT_SOURCE, /agents = ROVO_AGENT_SELECTOR_AGENTS/u);
+	assert.match(DATA_SOURCE, /AGENT_SELECTOR_DEMO_AGENTS:[\s\S]*= ROVO_AGENT_SELECTOR_AGENTS;/u);
 });
 
 test("AgentSelector hides command checkmarks for single-select usage", () => {
@@ -86,7 +92,7 @@ test("AgentSelector action labels use subtle text color", () => {
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
-	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
 	// Title + byline use the shared editor-palette type treatment (menu-row-*
 	// utilities) rather than re-deriving line-height with text-sm/leading-*.
@@ -99,9 +105,26 @@ test("AgentSelector rows use greeting prompt text rhythm and shared agent avatar
 	assert.doesNotMatch(COMPONENT_SOURCE, /grid-cols-\[32px_minmax\(0,1fr\)_auto\]/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-sm"/u);
 	assert.match(COMPONENT_SOURCE, /className=\{AGENT_ROW_CLASS\}/u);
-	assert.match(COMPONENT_SOURCE, /className=\{AGENT_COPY_CLASS\}/u);
+	assert.match(COMPONENT_SOURCE, /className=\{cn\(AGENT_COPY_CLASS, "flex-1"\)\}/u);
 	assert.match(COMPONENT_SOURCE, /className=\{AGENT_LABEL_CLASS\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /block truncate text-sm font-normal leading-[45] text-text-subtle/u);
+});
+
+test("AgentSelector pin actions reveal without permanently reserving label space and split pinned rows", () => {
+	assert.match(COMPONENT_SOURCE, /import PinFilledIcon from "@atlaskit\/icon\/core\/pin-filled";/u);
+	assert.match(COMPONENT_SOURCE, /import PinIcon from "@atlaskit\/icon\/core\/pin";/u);
+	assert.match(COMPONENT_SOURCE, /const showPinButton = pinningEnabled && \(isPinned \|\| isInteractionActive\);/u);
+	assert.match(COMPONENT_SOURCE, /marginLeft: showPinButton \? 8 : 0,[\s\S]*opacity: showPinButton \? 1 : 0,[\s\S]*width: showPinButton \? 24 : 0/u);
+	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-hidden=\{!showPinButton\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-pressed=\{isPinned\}/u);
+	assert.match(COMPONENT_SOURCE, /tabIndex=\{showPinButton \? 0 : -1\}/u);
+	assert.match(COMPONENT_SOURCE, /event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*onTogglePinned\(agent\.id\);/u);
+	assert.match(COMPONENT_SOURCE, /heading=\{pinnedItemsLabel\}/u);
+	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \? moreItemsLabel : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /moreItemsLabel = "More agents"/u);
+	assert.match(COMPONENT_SOURCE, /pinnedItemsLabel = "Pinned"/u);
+	assert.match(COMPONENT_SOURCE, /useReducedMotion\(\)/u);
 });
 
 test("AgentSelector dropdowns do not inherit the generic menu height cap", () => {

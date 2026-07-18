@@ -73,6 +73,11 @@ const sources: TwgToolSource[] = [
 			description: "Sources shown as the overlapping right-side icon stack.",
 		},
 		{
+			name: "loader",
+			type: "ReactNode",
+			description: "Custom leading loader content. Falls back to the standard Teamwork Graph loader.",
+		},
+		{
 			name: "showChevron",
 			type: "boolean",
 			default: "true",

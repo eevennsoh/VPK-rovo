@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { AGENT_SESSIONS_ROSTER } from "@/components/blocks/agent-sessions/data/session-agents";
 import { useAgentSessions } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { ActivityComposerContextPills } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-context-pills";
+import { AgentSessionsComposerMotion } from "@/components/blocks/agent-sessions/experimental/components/agent-sessions-composer-motion";
 import { DEFAULT_SKILLS } from "@/app/data/directory";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
@@ -66,6 +68,7 @@ export function ActivityComposer() {
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [suppressed, setSuppressed] = useState(false);
 	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
+	const editorRef = useRef<HTMLTextAreaElement>(null);
 
 	const trigger = useMemo(() => detectTrigger(draft), [draft]);
 	const items = useMemo(() => buildItems(trigger), [trigger]);
@@ -81,13 +84,25 @@ export function ActivityComposer() {
 	const acceptSuggestion = (item: ActivitySuggestionItem) => {
 		setDraft((prev) => {
 			const match = TRAILING_TOKEN.exec(prev);
-			if (!match) return prev;
-			const tokenLength = 1 + match[2].length; // trigger char + query
-			const before = prev.slice(0, prev.length - tokenLength);
-			return `${before}${match[1]}${item.value} `;
+			if (match) {
+				const tokenLength = 1 + match[2].length; // trigger char + query
+				const before = prev.slice(0, prev.length - tokenLength);
+				return `${before}${match[1]}${item.value} `;
+			}
+			return prev;
 		});
 		setSuppressed(false);
 		setActiveIndex(0);
+	};
+
+	const insertContext = (prefix: "@" | "/", value: string) => {
+		setDraft((currentDraft) => {
+			const separator = currentDraft.length > 0 && !currentDraft.endsWith(" ") ? " " : "";
+			return `${currentDraft}${separator}${prefix}${value} `;
+		});
+		setSuppressed(false);
+		setActiveIndex(0);
+		requestAnimationFrame(() => editorRef.current?.focus());
 	};
 
 	const handleSubmit = () => {
@@ -140,44 +155,54 @@ export function ActivityComposer() {
 	};
 
 	return (
-		<div className="relative" onKeyDownCapture={handleKeyDownCapture}>
-			<FloatingComposer
-				allowOverflow
-				className="shadow-none"
-				onSubmit={handleSubmit}
-				actions={
-					<RovoComposerActionButton
-						canSubmit={Boolean(draft.trim())}
-						composerStatus="ready"
-						experimentalDarkCta
-						onStop={() => setRealtimeVoiceActive(false)}
-						onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
-						realtimeVoiceActive={realtimeVoiceActive}
-					/>
-				}
-			>
-				<PromptInputTextarea
-					value={draft}
-					onChange={(event) => handlePromptChange(event.currentTarget.value)}
-					placeholder="Comment, @mention an agent, or / for skills"
-					aria-label="Add a comment"
-					autoResize
-					rows={1}
-					enableDirectoryAutocomplete={false}
-					className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-				/>
-			</FloatingComposer>
-			<ActivitySuggestionMenu
-				items={items}
-				open={menuOpen}
-				onOpenChange={(open) => {
-					if (!open) setSuppressed(true);
-				}}
-				onSelect={acceptSuggestion}
-				activeIndex={boundedIndex}
-				onActiveIndexChange={setActiveIndex}
-				anchor={<span aria-hidden tabIndex={-1} className="pointer-events-none absolute left-2 top-0 h-0 w-0" />}
+		<div onKeyDownCapture={handleKeyDownCapture}>
+			<ActivityComposerContextPills
+				onSelectAgent={(agentName) => insertContext("@", agentName)}
+				onSelectSkill={(skillId) => insertContext("/", skillId)}
 			/>
+			<div className="relative" data-agent-sessions-composer-state="sticky">
+				<AgentSessionsComposerMotion>
+					<FloatingComposer
+						actions={
+							<RovoComposerActionButton
+								canSubmit={Boolean(draft.trim())}
+								composerStatus="ready"
+								experimentalDarkCta
+								onStop={() => setRealtimeVoiceActive(false)}
+								onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
+								realtimeVoiceActive={realtimeVoiceActive}
+							/>
+						}
+						allowOverflow
+						onSubmit={handleSubmit}
+					>
+						<PromptInputTextarea
+							aria-label="Add a comment"
+							autoResize
+							className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+							enableDirectoryAutocomplete={false}
+							onChange={(event) => handlePromptChange(event.currentTarget.value)}
+							placeholder="Comment, @mention an agent, or / for skills"
+							ref={editorRef}
+							rows={1}
+							value={draft}
+						/>
+					</FloatingComposer>
+				</AgentSessionsComposerMotion>
+				<ActivitySuggestionMenu
+					activeIndex={boundedIndex}
+					anchor={<span aria-hidden tabIndex={-1} className="pointer-events-none absolute left-2 top-0 h-0 w-0" />}
+					items={items}
+					onActiveIndexChange={setActiveIndex}
+					onOpenChange={(open) => {
+						if (!open) {
+							setSuppressed(true);
+						}
+					}}
+					onSelect={acceptSuggestion}
+					open={menuOpen}
+				/>
+			</div>
 		</div>
 	);
 }

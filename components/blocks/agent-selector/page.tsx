@@ -31,6 +31,7 @@ export default function AgentSelectorPage({
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>(
 		variant === "selected-agent-actions" ? ["ai-insights-agent"] : ["github-copilot"]
 	);
+	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>([]);
 	const agents = variant === "selected-agent-actions" ? AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS : AGENT_SELECTOR_DEMO_AGENTS;
 	const selectedAgentActions: readonly AgentSelectorAction[] = variant === "selected-agent-actions"
 		? [
@@ -61,6 +62,8 @@ export default function AgentSelectorPage({
 			onBrowseAgents={() => undefined}
 			onCreateAgent={() => undefined}
 			selectionMode="single"
+			onPinnedAgentIdsChange={setPinnedAgentIds}
+			pinnedAgentIds={pinnedAgentIds}
 			selectedAgentActions={selectedAgentActions}
 			selectedAgentIds={selectedAgentIds}
 		/>
