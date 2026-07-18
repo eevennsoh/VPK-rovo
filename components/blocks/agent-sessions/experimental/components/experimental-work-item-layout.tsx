@@ -9,23 +9,21 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 interface ExperimentalWorkItemLayoutProps {
 	context: ReactNode;
 	activity: ReactNode;
-	sessions: ReactNode;
 	metadata: ReactNode;
 	composer: ReactNode;
 }
 
 /**
- * Responsive 5-slot layout for the experimental work item dialog body.
+ * Responsive 4-slot layout for the experimental work item dialog body.
  *
  * Wide (container >= 860px): two scroll columns. The left column is a flex column
  * whose Context + Activity stack scrolls (`flex-1 overflow-y-auto`) while the
  * `composer` appears in a `shrink-0` footer after planner review, pinned to the
  * bottom of that column so it stays visible as the activity feed scrolls. The
- * right rail (clamp 320-408px)
- * stacks Sessions above Metadata and scrolls independently.
+ * right rail (clamp 320-408px) holds Metadata and scrolls independently.
  *
  * Narrow (< 860px): the columns collapse (`display: contents`) into a single
- * scroll flow ordered Context -> Sessions -> Activity -> Metadata -> Composer via
+ * scroll flow ordered Context -> Activity -> Metadata -> Composer via
  * `order`. The composer becomes `sticky bottom-0` on a translucent, blurred dock so
  * it stays visible at the bottom of the single scroll. The wide Context + Activity
  * scrollport adds a bottom fade only while more content remains below. The same order
@@ -37,7 +35,6 @@ interface ExperimentalWorkItemLayoutProps {
 export function ExperimentalWorkItemLayout({
 	context,
 	activity,
-	sessions,
 	metadata,
 	composer,
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
@@ -63,7 +60,7 @@ export function ExperimentalWorkItemLayout({
 						style={leftScrollMaskStyle}
 					>
 						<div className="order-1 min-w-0">{context}</div>
-						<div className="order-3 min-w-0">{activity}</div>
+						<div className="order-2 min-w-0">{activity}</div>
 					</div>
 					{showStickyComposer ? (
 						<div
@@ -75,8 +72,7 @@ export function ExperimentalWorkItemLayout({
 					) : null}
 				</div>
 				<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pt-1 @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2">
-					<div className="order-2 min-w-0">{sessions}</div>
-					<div className="order-4 min-w-0">{metadata}</div>
+					<div className="order-3 min-w-0">{metadata}</div>
 				</div>
 			</div>
 		</div>

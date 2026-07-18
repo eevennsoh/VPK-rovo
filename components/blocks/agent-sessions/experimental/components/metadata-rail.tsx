@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import { METADATA_PEOPLE } from "@/components/blocks/agent-sessions/data/metadata-people";
 import {
@@ -8,7 +8,6 @@ import {
 	useAgentSessionsMeta,
 	useAgentSessionsState,
 } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
-import { StatusPill } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
 import {
 	DetailsTab,
 } from "@/components/blocks/agent-sessions/experimental/components/details-tab";
@@ -31,10 +30,19 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
 	return [...byName.values()];
 }
 
+/** Shared bordered surface for the metadata rail's stacked cards. */
+function MetadataCard({ children }: Readonly<{ children: ReactNode }>) {
+	return (
+		<div className="rounded-lg border border-border p-3" style={{ backgroundColor: token("elevation.surface") }}>
+			{children}
+		</div>
+	);
+}
+
 /**
  * Video-matched work-item Details right column for the experimental variant: a
- * status pill bar, a Details/Automation tabbed card (click-to-add + inline-edit
- * rows, See more), and collapsible Development + Apps sections. Metadata state
+ * Details/Automation tabbed card (click-to-add + inline-edit rows, See more),
+ * and Development + Apps sections each in their own matching card. Metadata state
  * lives in the shared block provider so planner decisions and manual edits stay
  * coordinated without changing the public block API.
  */
@@ -51,14 +59,7 @@ export function MetadataRail() {
 
 	return (
 		<section aria-label="Work item details" className="flex flex-col gap-3">
-			<div className="flex items-center">
-				<StatusPill onChange={(next) => updateDraft({ status: next })} value={draft.status} />
-			</div>
-
-			<div
-				className="rounded-lg border border-border p-3"
-				style={{ backgroundColor: token("elevation.surface") }}
-			>
+			<MetadataCard>
 				<Tabs defaultValue="details">
 					<TabsList className="w-full">
 						<TabsTrigger value="details">Details</TabsTrigger>
@@ -71,10 +72,14 @@ export function MetadataRail() {
 						<AutomationTab />
 					</TabsContent>
 				</Tabs>
-			</div>
+			</MetadataCard>
 
-			<DevelopmentSection />
-			<AppsSection />
+			<MetadataCard>
+				<DevelopmentSection />
+			</MetadataCard>
+			<MetadataCard>
+				<AppsSection />
+			</MetadataCard>
 		</section>
 	);
 }

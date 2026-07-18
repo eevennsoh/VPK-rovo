@@ -10,9 +10,10 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 
 import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
+import { CREW_ROSTER, type CrewMember } from "@/components/blocks/agent-sessions/data/metadata-crew";
 import { LABEL_OPTIONS, PARENT_OPTIONS } from "@/components/blocks/agent-sessions/data/metadata-fixtures";
 import { DetailValueTrigger } from "@/components/blocks/agent-sessions/experimental/components/detail-field-row";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
 	DropdownMenu,
@@ -301,6 +302,81 @@ export function LabelsRowField({ value, onChange }: Readonly<{ value: readonly s
 								</CommandItem>
 							))}
 						</CommandGroup>
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+const MAX_CREW_AVATARS = 3;
+
+/** A single crew avatar: hexagon for agents, circle for people (mirrors the working stack). */
+function CrewAvatar({ member }: Readonly<{ member: CrewMember }>) {
+	const isAgent = member.kind === "agent";
+	return (
+		<Avatar className="shrink-0" shape={isAgent ? "hexagon" : "circle"} size="sm">
+			{member.avatarUrl ? (
+				<AvatarImage alt="" className={isAgent ? "object-contain" : undefined} src={member.avatarUrl} />
+			) : null}
+			<AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+		</Avatar>
+	);
+}
+
+/** Multi-select of people + agents, grouped in the popover; trigger shows a mixed avatar stack. */
+export function CrewRowField({ value, onChange }: Readonly<{ value: readonly CrewMember[]; onChange: (next: CrewMember[]) => void }>) {
+	const [open, setOpen] = useState(false);
+
+	const toggle = (member: CrewMember) => {
+		onChange(
+			value.some((item) => item.id === member.id)
+				? value.filter((item) => item.id !== member.id)
+				: [...value, member],
+		);
+	};
+
+	const people = CREW_ROSTER.filter((member) => member.kind === "person");
+	const agents = CREW_ROSTER.filter((member) => member.kind === "agent");
+	const shown = value.slice(0, MAX_CREW_AVATARS);
+	const overflow = value.length - shown.length;
+
+	const renderOption = (member: CrewMember) => (
+		<CommandItem
+			aria-checked={value.some((item) => item.id === member.id)}
+			key={member.id}
+			onSelect={() => toggle(member)}
+			showCheckIcon
+			value={member.name}
+		>
+			<span className="flex min-w-0 items-center gap-2">
+				<CrewAvatar member={member} />
+				<span className="min-w-0 truncate text-sm text-text">{member.name}</span>
+			</span>
+		</CommandItem>
+	);
+
+	return (
+		<Popover onOpenChange={setOpen} open={open}>
+			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit crew" />}>
+				{value.length > 0 ? (
+					<AvatarGroup className="shrink-0" label={`${value.length} crew members`}>
+						{shown.map((member) => (
+							<CrewAvatar key={member.id} member={member} />
+						))}
+						{overflow > 0 ? <AvatarGroupCount>+{overflow}</AvatarGroupCount> : null}
+					</AvatarGroup>
+				) : (
+					<span className="text-sm text-text-subtlest">Add crew</span>
+				)}
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-[16rem] p-0" positionerClassName="z-[502]">
+				<Command>
+					<CommandInput placeholder="Search people and agents" />
+					<CommandList>
+						<CommandEmpty>No crew found.</CommandEmpty>
+						<CommandGroup heading="People">{people.map(renderOption)}</CommandGroup>
+						<CommandGroup heading="Agents">{agents.map(renderOption)}</CommandGroup>
 					</CommandList>
 				</Command>
 			</PopoverContent>

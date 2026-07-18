@@ -6,6 +6,8 @@ import { Dialog } from "@base-ui/react/dialog";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import { ExperimentalBreadcrumbActions } from "@/components/blocks/agent-sessions/experimental/components/experimental-breadcrumb-actions";
+import { ContextTitleBar } from "@/components/blocks/agent-sessions/experimental/components/context-title-bar";
 
 interface ExperimentalWorkItemDialogProps {
 	open: boolean;
@@ -39,7 +41,8 @@ export function ExperimentalWorkItemDialog({
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const content = (
 		<>
-			<ModalHeader showClose={presentation !== "inline"} />
+			<ModalHeader showClose={presentation !== "inline"} actions={<ExperimentalBreadcrumbActions />} />
+			<ContextTitleBar />
 
 			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 				{children}
@@ -51,7 +54,7 @@ export function ExperimentalWorkItemDialog({
 		borderRadius: token("radius.xlarge"),
 		boxShadow: token("elevation.shadow.overlay"),
 		display: "grid",
-		gridTemplateRows: "auto minmax(0, 1fr)",
+		gridTemplateRows: "auto auto minmax(0, 1fr)",
 		overflow: "hidden",
 	} as const;
 

@@ -10,6 +10,7 @@ import type {
 	WorkItemData,
 	WorkItemPerson,
 } from "@/app/contexts/context-work-item-modal";
+import type { CrewMember } from "@/components/blocks/agent-sessions/data/metadata-crew";
 import { LABEL_OPTIONS, PROJECT_OPTIONS } from "@/components/blocks/agent-sessions/data/metadata-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/agent-sessions/data/metadata-people";
 import { filledContextResources } from "@/components/blocks/agent-sessions/data/session-fixtures";
@@ -46,6 +47,7 @@ export interface AgentPlannerMetadata {
 	parent: string | null;
 	labels: string[];
 	atlassianProject: string | null;
+	crew: CrewMember[];
 }
 
 export interface AgentPlannerProposal {
@@ -126,6 +128,7 @@ function cloneMetadata(metadata: Readonly<AgentPlannerMetadata>): AgentPlannerMe
 		startDate: metadata.startDate ? new Date(metadata.startDate) : undefined,
 		dueDate: metadata.dueDate ? new Date(metadata.dueDate) : undefined,
 		labels: [...metadata.labels],
+		crew: [...metadata.crew],
 	};
 }
 
@@ -151,6 +154,7 @@ export function seedMetadataDraft(workItem: Readonly<WorkItemData>): AgentPlanne
 		parent: workItem.parent?.code ?? null,
 		labels: workItem.labels ? [...workItem.labels] : [],
 		atlassianProject: null,
+		crew: [],
 	};
 }
 
@@ -165,6 +169,7 @@ export function seedEmptyMetadataDraft(workItem: Readonly<WorkItemData>): AgentP
 		parent: null,
 		labels: [],
 		atlassianProject: null,
+		crew: [],
 	};
 }
 
@@ -370,6 +375,7 @@ function rejectPlannerProposal<T extends AgentPlannerHostState>(state: Readonly<
 			parent: null,
 			labels: [],
 			atlassianProject: null,
+			crew: [],
 		},
 		planner: {
 			...state.planner,
