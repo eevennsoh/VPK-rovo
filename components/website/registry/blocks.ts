@@ -115,6 +115,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
 	),
+	"skill-selector": dynamic(
+		() => import("../demos/blocks/skill-selector-demo"),
+		{ ssr: false },
+	),
 	"agent-sessions": dynamic(
 		() => import("../demos/blocks/agent-sessions-demo"),
 		{ ssr: false },

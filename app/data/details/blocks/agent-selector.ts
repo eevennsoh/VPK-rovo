@@ -31,8 +31,17 @@ const agents: AgentSelectorAgent[] = [
 			{
 				name: "agents",
 				type: "readonly AgentSelectorAgent[]",
-				required: true,
-				description: "Agents to render in the selector.",
+				description: "Agents to render. Defaults to the complete Agent Directory catalog.",
+			},
+			{
+				name: "pinnedAgentIds",
+				type: "readonly string[]",
+				description: "Controlled pinned agent ids. Pinned agents move into a separate Pinned section.",
+			},
+			{
+				name: "onPinnedAgentIdsChange",
+				type: "(agentIds: readonly string[]) => void",
+				description: "Called when an agent is pinned or unpinned.",
 			},
 			{
 				name: "selectedAgentIds",

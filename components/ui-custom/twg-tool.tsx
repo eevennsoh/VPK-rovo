@@ -39,6 +39,7 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 	status?: TwgToolStatus;
 	description?: ReactNode;
 	sources?: ReadonlyArray<TwgToolSource>;
+	loader?: ReactNode;
 	showChevron?: boolean;
 	showLoader?: boolean;
 	chevronOpen?: boolean;
@@ -90,6 +91,7 @@ export function TwgTool({
 	children,
 	description,
 	chevronOpen,
+	loader,
 	onBannerClick,
 	showChevron = true,
 	showLoader = true,
@@ -104,9 +106,11 @@ export function TwgTool({
 	const bannerContent = (
 		<>
 			{showLoader ? (
-				<span className="relative z-10 flex size-8 shrink-0 items-center justify-center">
-					<TWGLoader label="Teamwork Graph" size="small" />
-				</span>
+				loader ?? (
+					<span className="relative z-10 flex size-8 shrink-0 items-center justify-center">
+						<TWGLoader label="Teamwork Graph" size="small" />
+					</span>
+				)
 			) : null}
 			<span className="relative z-10 grid min-w-0 flex-1 gap-0.5 text-sm text-text-subtle">
 				<span className="inline-flex min-w-0 items-start gap-1.5">

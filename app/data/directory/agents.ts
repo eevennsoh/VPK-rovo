@@ -224,6 +224,7 @@ export const ROVO_AGENT_SELECTOR_AGENTS: readonly AgentSelectorAgent[] = ROVO_AG
 		name: agent.name,
 		byline: agent.byline,
 		avatarSrc: agent.avatarSrc,
+		logoName: agent.logoName,
 		brandName: agent.brandName,
 	}));
 

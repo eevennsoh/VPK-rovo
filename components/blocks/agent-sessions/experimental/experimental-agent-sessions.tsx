@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { LayoutGroup } from "motion/react";
+import { useId, useMemo } from "react";
 
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
@@ -35,6 +36,7 @@ const NOOP = () => undefined;
  * treatment does not disable it.
  */
 export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessionsProps>) {
+	const composerLayoutGroupId = useId();
 	const { initialPreset } = props;
 	let presentation: "modal" | "inline";
 	let open: boolean;
@@ -64,21 +66,23 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
 			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem} active={open}>
-				<ExperimentalWorkItemDialog
-					open={open}
-					onClose={onClose}
-					presentation={presentation}
-					workItemCode={workItem.code}
-					workItemTitle={workItem.title}
-				>
-					<ExperimentalWorkItemLayout
-						context={<ContextPanel />}
-						activity={<ActivityPanel />}
-						composer={<ActivityComposer />}
-						metadata={<MetadataRail />}
-					/>
-					<FloatingSessionSurface portalToViewport={presentation === "inline"} />
-				</ExperimentalWorkItemDialog>
+				<LayoutGroup id={composerLayoutGroupId}>
+					<ExperimentalWorkItemDialog
+						open={open}
+						onClose={onClose}
+						presentation={presentation}
+						workItemCode={workItem.code}
+						workItemTitle={workItem.title}
+					>
+						<ExperimentalWorkItemLayout
+							context={<ContextPanel />}
+							activity={<ActivityPanel />}
+							composer={<ActivityComposer />}
+							metadata={<MetadataRail />}
+						/>
+						<FloatingSessionSurface portalToViewport={presentation === "inline"} />
+					</ExperimentalWorkItemDialog>
+				</LayoutGroup>
 			</AgentSessionsProvider>
 		</WorkItemModalProvider>
 	);
