@@ -26,6 +26,7 @@ test("Jira Toolbar owns functional status, agent assignment, and clear callbacks
 	assert.match(SOURCE, /onSelect=\{\(\) => onStatusChange\(status\)\}/u);
 	assert.match(SOURCE, /aria-label="Clear selection"[\s\S]*onClick=\{onClearSelection\}/u);
 	assert.match(SOURCE, /event\.key === "Escape"[\s\S]*onClearSelection\(\)/u);
+	assert.doesNotMatch(SOURCE, /addEventListener\("keydown", handleKeyDown, true\)/u);
 });
 
 test("Jira Toolbar uses token motion with a reduced-motion path", () => {

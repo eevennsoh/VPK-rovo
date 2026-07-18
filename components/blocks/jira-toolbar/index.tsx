@@ -132,8 +132,8 @@ export function JiraToolbar({
 			}
 		};
 
-		window.addEventListener("keydown", handleKeyDown, true);
-		return () => window.removeEventListener("keydown", handleKeyDown, true);
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [onClearSelection, selectedCount]);
 
 	return (

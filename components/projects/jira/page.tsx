@@ -124,6 +124,10 @@ export default function AgentsView({
 		() => getRfpDemoAgents(rfpDemo.state, BOARD_AGENTS),
 		[rfpDemo.state],
 	);
+	const assignableBoardAgents = useMemo(
+		() => boardAgents.filter((agent) => agent.id !== RFP_DRAFTING_AGENT_ID),
+		[boardAgents],
+	);
 	const rfpColumnAgentAssignments = useMemo(
 		() => getRfpDemoColumnAgentAssignments(rfpDemo.state),
 		[rfpDemo.state],
@@ -336,6 +340,9 @@ export default function AgentsView({
 	};
 
 	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
+		if (agentId === RFP_DRAFTING_AGENT_ID) {
+			return;
+		}
 		rfpDemo.actions.setCardsAgentAssignment([...selectedCardCodes], agentId, assigned);
 	};
 
@@ -509,6 +516,7 @@ export default function AgentsView({
 						onToggleColumnAgent={handleToggleColumnAgent}
 						paddingTop={0}
 						selectionToolbar={{
+							agents: assignableBoardAgents,
 							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
 							onClearSelection: clearSelection,
 							onStatusChange: handleSelectedCardsStatusChange,

@@ -81,6 +81,7 @@ export interface JiraKanbanCardSelectModifiers {
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
+	agents?: readonly JiraKanbanAgentData[];
 	className?: string;
 	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
 	onBrowseAgents?: () => void;
@@ -690,7 +691,7 @@ export function JiraKanban({
 				</section>
 				{selectionToolbar ? (
 					<JiraToolbar
-						agents={agents ?? []}
+						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
