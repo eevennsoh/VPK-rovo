@@ -18,7 +18,7 @@ Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), A
 - Validate every change with `pnpm run lint` and `pnpm run typecheck`.
 - For UI changes, also run visual + accessibility checks (see `.agents/docs/workflows-extended.md`).
 - Browser testing and verification: use `agent-browser` (`npx agent-browser`) by default for browser testing, local web-app verification, screenshots, UI probes, public pages, isolated sessions, visual debugging, responsive checks, and unauthenticated web verification. Load and follow the `agent-browser` skill before using it so command patterns match the installed version. Fall back to the Playwright CLI only when `agent-browser` is unavailable or blocked, and load the `playwright` skill before using that fallback. Put ad-hoc browser artifacts under ignored `output/agent-browser/`.
-- Symphony browser evidence is the exception: use the repo-local `vpk-symphony` skill so issue-scoped screenshots, WebM recordings, and traces land under ignored `output/playwright/` for the workpad flow, as specified in `WORKFLOW.md` and `docs/SYMPHONY.md`.
+- Symphony browser evidence is the exception: use the repo-local `vpk-symphony` skill so issue-scoped screenshots, WebM recordings, and traces land under ignored `output/playwright/` for the workpad flow, as specified in `WORKFLOW.md` and `.agents/docs/symphony.md`.
 
 ## Documentation Index
 
@@ -49,7 +49,8 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Architecture overview                  | `.agents/docs/architecture-overview.md`                     |
 | Extended workflows                     | `.agents/docs/workflows-extended.md`                        |
 | cmux inter-agent messaging             | `.agents/docs/cmux-messaging.md`                            |
-| Symphony orchestrator                  | `.agents/skills/vpk-symphony/SKILL.md`, `docs/SYMPHONY.md`, `WORKFLOW.md`, `scripts/symphony.sh` |
+| ASX Terminal presenter walkthrough     | `.agents/docs/playbooks/asx-terminal-demo.md`               |
+| Symphony orchestrator                  | `.agents/skills/vpk-symphony/SKILL.md`, `.agents/docs/symphony.md`, `WORKFLOW.md`, `scripts/symphony.sh` |
 
 **Global Skills** — installed agent skills (outside repo):
 
@@ -186,7 +187,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Start with Rovo tmux (frontend, backend, and Rovo pool): `pnpm run rovo:tmux:start --1` for one Rovo port or `pnpm run rovo:tmux:start --6` for the full pool
 - Stop plain tmux dev session: `pnpm run dev:tmux:stop`
 - Stop Rovo tmux dev session: `pnpm run rovo:tmux:stop`
-- Start Symphony issue orchestrator: `pnpm run symphony` (requires `LINEAR_API_KEY`, `SYMPHONY_LINEAR_PROJECT_SLUG`, and `mise`; see `docs/SYMPHONY.md`)
+- Start Symphony issue orchestrator: `pnpm run symphony` (requires `LINEAR_API_KEY`, `SYMPHONY_LINEAR_PROJECT_SLUG`, and `mise`; see `.agents/docs/symphony.md`)
 - Verify Hermes/control-plane status after the backend is running: `pnpm run verify:hermes`; refresh the local vendored upstream skills snapshot with `pnpm run import:hermes:upstream` if that check reports it missing.
 - Repair the Rovo skills overlay without refreshing upstream: `pnpm run sync:rovo:skills` (ensures `.rovo/skills` points at `.agents/skills`; `import:hermes:upstream` runs the same repair after importing).
 
@@ -255,6 +256,11 @@ static export used by deployment.
 
 ## Gotchas
 
+- Put durable generated deliverables under `artifacts/**`; keep disposable
+  browser screenshots, traces, and test captures under `output/**`. Automated
+  cleanup jobs must never delete, prune, rotate, empty, or modify anything under
+  `artifacts/`, even when it is ignored, untracked, old, or idle. Deletion
+  requires a separate, explicit user request naming the exact artifact path.
 - Worktree ports are deterministic; use `pnpm ports` for an immediate one-off snapshot or open the interactive dashboard with `pnpm ports watch` (arrow keys select, Enter opens the selected URL, `k` kills after confirmation, `q` quits). The dashboard auto-discovers newly added git worktrees once they have dev-port state, while omitting inactive worktrees that have nothing to manage. Browser tools should navigate to this worktree's stable Portless URL (`pnpm ports` prints it as `🌐 https://…`), falling back to the actual frontend URL from `.dev-frontend-port` only when no portless route exists — never a hardcoded default.
 - Check dev-server memory with `pnpm run mem` — lists every live `next-server` with CPU, physical footprint (vmmap, the number that matters for the Turbopack leak; `ps` RSS undercounts it ~50x), port, and worktree. A healthy dev server on Next ≥16.3 sits at low single-digit GB; the scheduled `vpk-system-clean` sweep auto-restarts any server at ≥6 GB.
 - Browser automation across worktrees is isolated by design — three orthogonal layers keep parallel agents from clashing or cross-killing: deterministic per-worktree ports (`scripts/lib/worktree-ports.js`) prevent port clashes; vanilla `portless run` gives each worktree a unique `.localhost` URL; and the detached `vpk-dev-<worktree>` tmux session persists each server across turns. Stopping one worktree with `pnpm run dev:tmux:stop` uses `kill-session` and leaves the others running. The only actions that cascade across all worktrees are `tmux kill-server` (kills every session on the shared `vpk-dev` socket) and `portless prune` (global — kills whatever listens on each stale route's port) — never use either for per-worktree cleanup; use `pnpm run dev:tmux:stop` or `portless alias --remove <name>` instead.

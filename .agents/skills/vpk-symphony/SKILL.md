@@ -1,6 +1,6 @@
 ---
 name: vpk-symphony
-description: Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or docs/SYMPHONY.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.
+description: Repo-local VPK-rovo Symphony workflow for turning task-like ad-hoc requests into Linear tickets via direct Linear GraphQL, Linear issue execution, Codex Workpad updates, git sync/commit/push/land flow, stuck-run debugging, and Playwright CLI browser evidence. Use whenever the user invokes vpk-symphony for a task-like request, works on VPK-rovo Symphony issues, updates WORKFLOW.md or .agents/docs/symphony.md, diagnoses Symphony runs, syncs or lands Symphony PRs, or captures Symphony UI evidence.
 purpose: Create, execute, and debug VPK Symphony-managed Linear work with workpad discipline, git lifecycle rules, and issue-scoped browser evidence.
 owner: VPK
 category: orchestration
@@ -49,7 +49,7 @@ Playwright CLI evidence path.
 
 ## Core Flow
 
-1. Read `AGENTS.md`, `WORKFLOW.md`, and `docs/SYMPHONY.md` before changing the
+1. Read `AGENTS.md`, `WORKFLOW.md`, and `.agents/docs/symphony.md` before changing the
    harness or executing an issue.
 2. If the skill was invoked with no Linear issue, attempt to create a `Todo`
    issue in the configured Symphony Linear project

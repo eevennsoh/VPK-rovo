@@ -31,8 +31,7 @@ test-results/
 
 # output
 /output
-/docs/html/*
-!/docs/html/.gitkeep
+/artifacts
 /media/videos/tmp*/
 /media/videos/**/partial_movie_files/
 public/**/hyperframes/.hyperframes/

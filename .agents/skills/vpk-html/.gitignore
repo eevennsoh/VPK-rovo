@@ -13,6 +13,7 @@
 /local/
 /.tmp/
 
-# Routine renders should live under docs/html/<slug>.html at the repo root, but
-# if anyone redirects local experiments inside this skill, keep them untracked.
+# Routine durable renders live under artifacts/vpk-html/<slug>/ at the repo
+# root. If anyone redirects local experiments inside this skill, keep them
+# untracked.
 /output-scratch/

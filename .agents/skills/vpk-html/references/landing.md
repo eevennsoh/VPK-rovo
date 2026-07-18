@@ -41,8 +41,8 @@ real content.
 ## Export
 
 ```bash
-node scripts/build.mjs --landing output/vpk-html/acme-site/acme-site.html \
-  --out output/vpk-html/acme-site/site --origin https://yoursite.com
+node scripts/build.mjs --landing artifacts/vpk-html/acme-site/acme-site.html \
+  --out artifacts/vpk-html/acme-site/site --origin https://yoursite.com
 ```
 
 This:

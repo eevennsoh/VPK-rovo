@@ -114,6 +114,13 @@ least 15 minutes old and remains at or above `ALMD_CPU_HOT` across three samples
 (6) restart `fseventsd` if over `FSEVENTS_MAX_MB` *and* the sudoers rule exists.
 Afterward show `scripts/records.sh` or the log.
 
+**Generated-artifact retention boundary:** this flow never inspects, deletes, or
+modifies `artifacts/**`. Generated deliverables remain protected even when they
+are ignored, untracked, old, or idle. The only repository directories this
+scheduled flow may delete are qualifying `.next` caches selected by the
+canonical script; deleting a generated artifact requires a separate, explicit
+user request naming the exact path.
+
 If `fseventsd` is bloated but the sudoers rule is missing, the script logs that
 it skipped. The user can fix the current balloon now with `sudo pkill -x
 fseventsd` (password; auto-respawns) and add the rule (Install) for automation.
@@ -200,4 +207,6 @@ Two things it does not remove automatically:
 - The `almd` guard does not touch `atlassian-otel-collector`, Jamf, osquery, or
   Apple's `ecosystem*` services. It verifies the executable path before acting,
   sends TERM first, and uses KILL only if that same executable remains alive.
+- `artifacts/**` is a durable generated-deliverable boundary. Never add it, or
+  any child path, to this skill's cleanup targets.
 - Scripts use `setopt NULL_GLOB` (zsh aborts on unmatched globs otherwise).

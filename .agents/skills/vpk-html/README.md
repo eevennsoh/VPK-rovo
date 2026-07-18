@@ -55,19 +55,19 @@ status readouts, and implementation briefs.
 
 ```bash
 # 1. Pick a template and create one folder for this generated artifact
-mkdir -p output/vpk-html/my-doc
-cp .agents/skills/vpk-html/assets/templates/one-pager.html output/vpk-html/my-doc/my-doc.html
+mkdir -p artifacts/vpk-html/my-doc
+cp .agents/skills/vpk-html/assets/templates/one-pager.html artifacts/vpk-html/my-doc/my-doc.html
 
 # 2. Open my-doc.html and replace every {{placeholder}} with real content.
 #    CSS stays untouched — only edit the body.
 
 # 3. Validate
-node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders output/vpk-html/my-doc/my-doc.html
-node .agents/skills/vpk-html/scripts/build.mjs --verify output/vpk-html/my-doc/my-doc.html
+node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders artifacts/vpk-html/my-doc/my-doc.html
+node .agents/skills/vpk-html/scripts/build.mjs --verify artifacts/vpk-html/my-doc/my-doc.html
 ```
 
-Generated user artifacts are grouped per slug under `output/vpk-html/<slug>/`.
-Keep the HTML source at `output/vpk-html/<slug>/<slug>.html`, with optional
+Generated user artifacts are grouped per slug under `artifacts/vpk-html/<slug>/`.
+Keep the HTML source at `artifacts/vpk-html/<slug>/<slug>.html`, with optional
 PDFs, screenshots, and validation captures inside the same slug folder.
 
 ## Invoking the skill
@@ -126,7 +126,7 @@ node scripts/build-index.mjs                      # regenerate the local Algebri
 | `assets/html-effectiveness/` | Snapshot of the 20 upstream html-effectiveness HTML demos plus index |
 | `assets/demos/` | 77 demo HTML outputs plus the embedded media needed by individual demos |
 | `assets/fonts/` | Geist and Geist Mono (inlined as base64 at port time, with a numeric Geist Mono face) |
-| `output/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
+| `artifacts/vpk-html/<slug>/` | Ignored per-artifact folders for generated user HTML, PDFs, screenshots, and review captures |
 | `styles.css` | Shared root stylesheet, matching Kami's top-level CSS contract |
 | `references/` | Anti-patterns, diagrams, illustrations, SVG style, presentation, video-export (worked example: `assets/video/landing-demo-separation/`), resume-writing, writing, design, GitHub Pages publishing, production, source-policy, accessibility, tokens.json |
 | `scripts/` | build (validator), check-html, shared helpers, presentation, retrofit, port-*.mjs, build-demos, build-illustrations, build-index, landing, gates, pdf, ensure-fonts |
