@@ -88,6 +88,7 @@ import { JIRA_AGENT_SESSION_DETAIL } from "./blocks/jira-agent-session";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
 import { JIRA_KANBAN_DETAIL } from "./blocks/jira-kanban";
+import { JIRA_TOOLBAR_DETAIL } from "./blocks/jira-toolbar";
 import { GENERATIVE_DETAIL } from "./blocks/generative";
 import { GALLERY_DETAIL } from "./blocks/gallery";
 import { HTML_SELECTOR_DETAIL } from "./blocks/html-selector";
@@ -182,6 +183,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
 	"jira-kanban": JIRA_KANBAN_DETAIL,
+	"jira-toolbar": JIRA_TOOLBAR_DETAIL,
 	generative: GENERATIVE_DETAIL,
 	gallery: GALLERY_DETAIL,
 	"html-selector": HTML_SELECTOR_DETAIL,

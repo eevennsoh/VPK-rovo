@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	JiraKanban,
 	createJiraKanbanColumns,
@@ -10,8 +10,10 @@ import {
 } from "./index";
 import {
 	createJiraKanbanSelectionState,
+	getCommonJiraKanbanAgentIds,
 	moveJiraKanbanCardsToColumn,
 	selectJiraKanbanCard,
+	updateJiraKanbanCardAgentAssignment,
 } from "./state";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
@@ -28,6 +30,11 @@ export default function JiraKanbanPage() {
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
+	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
+	const selectedAgentIds = useMemo(
+		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
+		[assignedAgentIdsByCard, selection.selectedCardCodes],
+	);
 
 	const handleCardSelect = (
 		cardCode: string,
@@ -79,6 +86,23 @@ export default function JiraKanbanPage() {
 		setDraggedCard(null);
 	};
 
+	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
+		setBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
+			currentColumns,
+			[...selection.selectedCardCodes],
+			targetColumnTitle,
+		));
+	};
+
+	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
+		setAssignedAgentIdsByCard((currentAssignments) => updateJiraKanbanCardAgentAssignment(
+			currentAssignments,
+			selection.selectedCardCodes,
+			agentId,
+			assigned,
+		));
+	};
+
 	const handleToggleColumnAgent = (columnTitle: string, agentId: string) => {
 		setColumnAgentAssignments((prevAssignments) => {
 			const assignedAgentIds = prevAssignments[columnTitle] ?? [];
@@ -126,6 +150,12 @@ export default function JiraKanbanPage() {
 					onCreateAgent={handleCreateColumnAgent}
 					onToggleColumnAgent={handleToggleColumnAgent}
 					paddingTop={0}
+					selectionToolbar={{
+						onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
+						onClearSelection: () => setSelection(createJiraKanbanSelectionState()),
+						onStatusChange: handleSelectedCardsStatusChange,
+						selectedAgentIds,
+					}}
 				/>
 			</div>
 		</div>

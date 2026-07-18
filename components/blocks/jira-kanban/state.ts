@@ -63,14 +63,19 @@ export function moveJiraKanbanCardsToColumn(
 	targetColumnTitle: string,
 ): JiraKanbanColumnData[] {
 	const codeSet = new Set(cardCodes);
-	const movingCards = columns.flatMap((column) => column.cards.filter((card) => codeSet.has(card.code)));
+	const movingCards = columns.flatMap((column) => (
+		column.title === targetColumnTitle
+			? []
+			: column.cards.filter((card) => codeSet.has(card.code))
+	));
 
 	if (movingCards.length === 0) {
 		return [...columns];
 	}
+	const movingCardCodes = new Set(movingCards.map((card) => card.code));
 
 	return columns.map((column) => {
-		const remainingCards = column.cards.filter((card) => !codeSet.has(card.code));
+		const remainingCards = column.cards.filter((card) => !movingCardCodes.has(card.code));
 		const cards = column.title === targetColumnTitle
 			? [...movingCards, ...remainingCards]
 			: remainingCards;
@@ -81,4 +86,39 @@ export function moveJiraKanbanCardsToColumn(
 			count: cards.length,
 		};
 	});
+}
+
+export function getCommonJiraKanbanAgentIds(
+	assignedAgentIdsByCard: Readonly<Record<string, readonly string[]>>,
+	selectedCardCodes: ReadonlySet<string>,
+): string[] {
+	const selectedCodes = [...selectedCardCodes];
+	if (selectedCodes.length === 0) {
+		return [];
+	}
+
+	const firstAssignments = assignedAgentIdsByCard[selectedCodes[0]] ?? [];
+	return firstAssignments.filter((agentId) => selectedCodes.every((cardCode) => (
+		assignedAgentIdsByCard[cardCode]?.includes(agentId) ?? false
+	)));
+}
+
+export function updateJiraKanbanCardAgentAssignment(
+	assignedAgentIdsByCard: Readonly<Record<string, readonly string[]>>,
+	selectedCardCodes: ReadonlySet<string>,
+	agentId: string,
+	assigned: boolean,
+): Record<string, string[]> {
+	const nextAssignments = Object.fromEntries(
+		Object.entries(assignedAgentIdsByCard).map(([cardCode, agentIds]) => [cardCode, [...agentIds]]),
+	);
+
+	for (const cardCode of selectedCardCodes) {
+		const currentAgentIds = nextAssignments[cardCode] ?? [];
+		nextAssignments[cardCode] = assigned
+			? Array.from(new Set([...currentAgentIds, agentId]))
+			: currentAgentIds.filter((currentAgentId) => currentAgentId !== agentId);
+	}
+
+	return nextAssignments;
 }

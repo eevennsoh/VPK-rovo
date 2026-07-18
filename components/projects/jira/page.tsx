@@ -24,16 +24,6 @@ import { RfpReportCanvas } from "./components/rfp-report-canvas";
 import type { ChatPanelCustomAgentTabs, ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import { SONNER_TOAST_AUTO_DISMISS_MS, SonnerToast, Toaster } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Icon } from "@/components/ui/icon";
-import CrossIcon from "@atlaskit/icon/core/cross";
 import { AVATARS } from "./data/avatars";
 import { BOARD_AGENTS } from "./data/board-agents";
 import { RFP_101_WORK_ITEM, getAgentsWorkItemForCard } from "./data/rfp-work-items";
@@ -44,6 +34,7 @@ import {
 	RFP_DRAFTING_AGENT_AVATAR_SRC,
 	RFP_DRAFTING_AGENT_ID,
 	RFP_DRAFTING_AGENT_NAME,
+	getCommonRfpDemoCardAgentIds,
 	getGeneratedRfpAttachments,
 	getRfpDemoAgents,
 	getRfpDemoColumnAgentAssignments,
@@ -219,6 +210,10 @@ export default function AgentsView({
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selectedCardCodes, setSelectedCardCodes] = useState<ReadonlySet<string>>(() => new Set<string>());
 	const selectionAnchorRef = useRef<{ code: string; columnTitle: string } | null>(null);
+	const selectedCardAgentIds = useMemo(
+		() => getCommonRfpDemoCardAgentIds(rfpDemo.state, selectedCardCodes),
+		[rfpDemo.state, selectedCardCodes],
+	);
 
 	const clearSelection = useCallback(() => {
 		selectionAnchorRef.current = null;
@@ -270,15 +265,6 @@ export default function AgentsView({
 		[boardColumns],
 	);
 
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape" && selectedCardCodes.size > 0) {
-				clearSelection();
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [clearSelection, selectedCardCodes.size]);
 	const assignedAgentIdsByColumn = useMemo(() => {
 		const mergedAssignments: Record<string, string[]> = { ...columnAgentAssignments };
 
@@ -341,6 +327,17 @@ export default function AgentsView({
 		const sourceColumn = boardColumns.find((column) => column.cards.some((card) => card.code === cardCode));
 		return sourceColumn ? sourceColumn.title !== targetColumnTitle : false;
 	});
+
+	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
+		const movableCodes = getMovableSelectedCardCodes(targetColumnTitle);
+		if (movableCodes.length > 0) {
+			rfpDemo.actions.moveCards(movableCodes, targetColumnTitle);
+		}
+	};
+
+	const handleSelectedCardsAgentAssignmentChange = (agentId: string, assigned: boolean) => {
+		rfpDemo.actions.setCardsAgentAssignment([...selectedCardCodes], agentId, assigned);
+	};
 
 	const handleCardDrop = (targetColumnTitle: string) => {
 		if (!draggedCard) {
@@ -511,19 +508,12 @@ export default function AgentsView({
 						onCardDragEnd={handleCardDragEnd}
 						onToggleColumnAgent={handleToggleColumnAgent}
 						paddingTop={0}
-					/>
-
-					<KanbanSelectionActionBar
-						boardColumns={boardColumns}
-						onClear={clearSelection}
-						onMoveTo={(targetColumnTitle) => {
-							const movableCodes = getMovableSelectedCardCodes(targetColumnTitle);
-							if (movableCodes.length > 0) {
-								rfpDemo.actions.moveCards(movableCodes, targetColumnTitle);
-							}
-							clearSelection();
+						selectionToolbar={{
+							onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,
+							onClearSelection: clearSelection,
+							onStatusChange: handleSelectedCardsStatusChange,
+							selectedAgentIds: selectedCardAgentIds,
 						}}
-						selectedCount={selectedCardCodes.size}
 					/>
 				</div>
 			) : null}
@@ -653,66 +643,4 @@ function applyRfpDemoWorkItemState(
 		],
 		comments: generatedComments.length ? [...generatedComments, ...baseComments] : workItem.comments,
 	};
-}
-
-interface KanbanSelectionActionBarProps {
-	boardColumns: readonly { title: string }[];
-	onClear: () => void;
-	onMoveTo: (targetColumnTitle: string) => void;
-	selectedCount: number;
-}
-
-function KanbanSelectionActionBar({
-	boardColumns,
-	onClear,
-	onMoveTo,
-	selectedCount,
-}: Readonly<KanbanSelectionActionBarProps>) {
-	if (selectedCount === 0) {
-		return null;
-	}
-
-	return (
-		<div
-			className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center"
-			role="region"
-			aria-label={`${selectedCount} card${selectedCount === 1 ? "" : "s"} selected. Bulk actions available.`}
-		>
-			<div className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-surface-raised pl-5 pr-2 py-2 shadow-2xl">
-				<div className="inline-flex items-center gap-2">
-					<span className="text-sm font-medium text-text-subtle">
-						{selectedCount} selected
-					</span>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={<Button variant="outline" className="w-fit" />}
-						>
-							Move to
-						</DropdownMenuTrigger>
-						<DropdownMenuContent>
-							<DropdownMenuGroup>
-								{boardColumns.map((column) => (
-									<DropdownMenuItem
-										key={column.title}
-										onSelect={() => onMoveTo(column.title)}
-									>
-										{column.title}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-				<Button
-					aria-label="Clear selection"
-					onClick={onClear}
-					shape="circle"
-					size="icon"
-					variant="ghost"
-				>
-					<Icon render={<CrossIcon label="" size="small" />} />
-				</Button>
-			</div>
-		</div>
-	);
 }

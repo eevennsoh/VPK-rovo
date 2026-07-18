@@ -915,6 +915,39 @@ export function clearRfpDraftingAgentTrigger(state: AgentsRfpDemoState): AgentsR
 	};
 }
 
+export function getCommonRfpDemoCardAgentIds(
+	state: AgentsRfpDemoState,
+	cardCodes: ReadonlySet<string>,
+): string[] {
+	const selectedCodes = [...cardCodes];
+	if (selectedCodes.length === 0) {
+		return [];
+	}
+
+	const firstAssignments = state.workItems[selectedCodes[0]]?.agentAssignmentIds ?? [];
+	return firstAssignments.filter((agentId) => selectedCodes.every((cardCode) => (
+		state.workItems[cardCode]?.agentAssignmentIds.includes(agentId) ?? false
+	)));
+}
+
+export function setRfpDemoCardsAgentAssignment(
+	state: AgentsRfpDemoState,
+	cardCodes: readonly string[],
+	agentId: string,
+	assigned: boolean,
+): AgentsRfpDemoState {
+	return cardCodes.reduce((currentState, cardCode) => updateWorkItem(
+		currentState,
+		cardCode,
+		(workItem) => ({
+			...workItem,
+			agentAssignmentIds: assigned
+				? Array.from(new Set([...workItem.agentAssignmentIds, agentId]))
+				: workItem.agentAssignmentIds.filter((currentAgentId) => currentAgentId !== agentId),
+		}),
+	), state);
+}
+
 function assignRfpDraftingAgentToCard(
 	state: AgentsRfpDemoState,
 	cardCode: string,
