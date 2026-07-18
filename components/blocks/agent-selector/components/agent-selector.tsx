@@ -233,6 +233,7 @@ function AgentSelectorItem({
 						transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 1, 0.6, 1] }}
 					>
 						<Button
+							aria-hidden={!showPinButton}
 							aria-label={`${isPinned ? "Unpin" : "Pin"} ${agent.name}`}
 							aria-pressed={isPinned}
 							className="size-6 text-icon-subtle aria-pressed:border-transparent! aria-pressed:bg-transparent!"
@@ -243,6 +244,7 @@ function AgentSelectorItem({
 							}}
 							onFocus={() => setIsInteractionActive(true)}
 							size="icon"
+							tabIndex={showPinButton ? 0 : -1}
 							type="button"
 							variant="ghost"
 						>

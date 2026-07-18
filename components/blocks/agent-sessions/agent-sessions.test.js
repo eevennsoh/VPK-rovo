@@ -211,7 +211,9 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(layoutSource, /useHasVerticalOverflow/u);
 	assert.match(layoutSource, /buildScrollMaskStyle\(\{ fadeTop: false, fadeBottom: showBottomScrollMask \}\)/u);
 	assert.match(layoutSource, /data-agent-sessions-scroll-region/u);
-	assert.match(layoutSource, /bg-background\/90[\s\S]*backdrop-blur/u);
+	assert.match(layoutSource, /data-agent-sessions-composer-dock/u);
+	assert.match(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-agent-sessions-composer-dock/u);
+	assert.doesNotMatch(layoutSource, /bg-background\/90|backdrop-blur/u);
 	assert.doesNotMatch(layoutSource, /agentlayout:border-t|agentlayout:border-border/u);
 	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onSelectAgent=\{\(agentName\) => insertContext\("@", agentName\)\}[\s\S]*onSelectSkill=\{\(skillId\) => insertContext\("\/", skillId\)\}/u);
 	assert.match(activityComposerSource, /<AgentSessionsComposerMotion>[\s\S]*<FloatingComposer/u);

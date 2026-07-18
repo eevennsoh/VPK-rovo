@@ -67,7 +67,7 @@ export function ExperimentalWorkItemLayout({
 					</div>
 					{showStickyComposer ? (
 						<div
-							className="order-5 min-w-0 sticky bottom-0 z-10 bg-background/90 px-4 pt-3 pb-4 backdrop-blur @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:py-4"
+							className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:py-4"
 							data-agent-sessions-composer-dock
 						>
 							{composer}

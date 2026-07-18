@@ -116,7 +116,9 @@ test("AgentSelector pin actions reveal without permanently reserving label space
 	assert.match(COMPONENT_SOURCE, /const showPinButton = pinningEnabled && \(isPinned \|\| isInteractionActive\);/u);
 	assert.match(COMPONENT_SOURCE, /marginLeft: showPinButton \? 8 : 0,[\s\S]*opacity: showPinButton \? 1 : 0,[\s\S]*width: showPinButton \? 24 : 0/u);
 	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`\}/u);
+	assert.match(COMPONENT_SOURCE, /aria-hidden=\{!showPinButton\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-pressed=\{isPinned\}/u);
+	assert.match(COMPONENT_SOURCE, /tabIndex=\{showPinButton \? 0 : -1\}/u);
 	assert.match(COMPONENT_SOURCE, /event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*onTogglePinned\(agent\.id\);/u);
 	assert.match(COMPONENT_SOURCE, /heading=\{pinnedItemsLabel\}/u);
 	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \? moreItemsLabel : undefined\}/u);
