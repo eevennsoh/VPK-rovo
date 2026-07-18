@@ -99,6 +99,7 @@ export const AGENT_AVATAR_SRCS = [
 export type AgentAvatarSrc = (typeof AGENT_AVATAR_SRCS)[number];
 
 const FALLBACK_AVATAR_SRC: AgentAvatarSrc = AGENT_AVATAR_SRCS[0];
+export const DEFAULT_AGENT_PROFILE_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg" satisfies AgentAvatarSrc;
 
 /**
  * Returns the family group segment (e.g. "teamwork-agents") for an avatar path,
@@ -307,4 +308,10 @@ export function getDeterministicAgentBannerSrc(
 	const hash = hashSeed(designSeed);
 	const designIndex = (hash >>> 16) % designs.length;
 	return designs[designIndex] ?? designs[0];
+}
+
+/** Resolves the exact banner used by Agent Profile cards, including their fallback avatar. */
+export function getAgentProfileBannerSrc(avatarSrc: string | null | undefined): SmartFolderBannerSrc {
+	const resolvedAvatarSrc = avatarSrc?.trim() || DEFAULT_AGENT_PROFILE_AVATAR_SRC;
+	return getDeterministicAgentBannerSrc(resolvedAvatarSrc, resolvedAvatarSrc);
 }

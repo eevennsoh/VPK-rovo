@@ -126,6 +126,7 @@ export interface SmartLinkProps {
 	item: SmartLinkItem;
 	side?: React.ComponentProps<typeof HoverCardContent>["side"];
 	align?: React.ComponentProps<typeof HoverCardContent>["align"];
+	alignOffset?: React.ComponentProps<typeof HoverCardContent>["alignOffset"];
 	/** Inline chip size: "small" (12px label, default) or "large" (16px label). */
 	size?: SmartLinkSize;
 	/** When true, render the item's status as a lozenge at the end of the inline chip. */
@@ -738,6 +739,7 @@ export function SmartLink({
 	item,
 	side = "bottom",
 	align = "start",
+	alignOffset,
 	size = "small",
 	showStatus = false,
 	openDelay = 120,
@@ -764,6 +766,7 @@ export function SmartLink({
 			<HoverCardTrigger render={<SmartLinkTrigger className={className} item={item} open={open} showStatus={showStatus} size={size} />} />
 			<HoverCardContent
 				align={align}
+				alignOffset={alignOffset}
 				className="w-auto border-0 bg-transparent p-0 text-text shadow-none"
 				side={side}
 				sideOffset={8}

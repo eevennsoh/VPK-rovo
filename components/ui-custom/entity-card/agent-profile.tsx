@@ -24,7 +24,7 @@ import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { getDeterministicAgentBannerSrc } from "@/lib/agent-avatars";
+import { DEFAULT_AGENT_PROFILE_AVATAR_SRC, getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
 const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
@@ -72,6 +72,8 @@ export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"sectio
 	partnerBrandName?: ThirdPartyLogoName;
 	/** Shows the verified check beside the partner name. Defaults to `true`. */
 	verified?: boolean;
+	/** Elevation treatment. Overlay is intended for floating preview surfaces. */
+	surface?: "raised" | "overlay";
 	/**
 	 * Footer affordance. `"chat"` (default) shows the AI input box for talking to
 	 * the agent; `"preview"` swaps it for a single "View agent" call-to-action
@@ -106,9 +108,10 @@ export function EntityCardAgentProfile({
 	partnerLogoSrc,
 	partnerBrandName,
 	verified = true,
+	surface = "raised",
 	variant = "chat",
 	description = "Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries.",
-	avatarSrc = "/avatar-agent/teamwork-agents/blocker-checker.svg",
+	avatarSrc = DEFAULT_AGENT_PROFILE_AVATAR_SRC,
 	coverSrc = avatarSrc,
 	avatarAlt = "",
 	coverBackgroundColor,
@@ -135,8 +138,10 @@ export function EntityCardAgentProfile({
 	// Smart-folder cover artwork picked deterministically per agent; its color
 	// follows the avatar family so it matches the solid fallback shown until the
 	// SVG paints. Mirrors AgentProfileCover backdrop.
-	const resolvedBannerSrc = getDeterministicAgentBannerSrc(avatarSrc, avatarSrc);
+	const resolvedBannerSrc = getAgentProfileBannerSrc(avatarSrc);
 	const isAtlassianCover = isAtlassianLogoSource(coverSrc);
+	const surfaceClassName = surface === "overlay" ? "bg-surface-overlay" : "bg-surface-raised";
+	const shadowClassName = surface === "overlay" ? "shadow-2xl" : "shadow-sm";
 
 	// Chat footer composer state. Mirrors the kanban card's
 	// JiraIssueAgentActivityPanel so the agent profile card's input matches the
@@ -210,7 +215,9 @@ export function EntityCardAgentProfile({
 		<section
 			aria-label={`${name} agent card`}
 			className={cn(
-				"relative flex !h-auto w-[360px] max-w-full self-start flex-col overflow-hidden rounded-xl bg-surface-raised shadow-sm",
+				"relative flex !h-auto w-[360px] max-w-full self-start flex-col overflow-hidden rounded-xl",
+				surfaceClassName,
+				shadowClassName,
 				className,
 			)}
 			data-slot="agent-card"
@@ -240,7 +247,7 @@ export function EntityCardAgentProfile({
 				)}
 			</div>
 
-			<div className="flex flex-col gap-4 bg-surface-raised pt-6">
+			<div className={cn("flex flex-col gap-4 pt-6", surfaceClassName)}>
 				<div className="flex w-full items-center justify-between gap-3 px-4 pt-2">
 					<div className="flex min-w-0 flex-col gap-0">
 						<h3 className="min-w-0 truncate text-base font-bold leading-5 text-text">
@@ -295,14 +302,7 @@ export function EntityCardAgentProfile({
 				</p>
 			</div>
 
-			<div
-				className={cn(
-					// Match the card's own raised surface so the footer doesn't read as a
-					// second background band — `bg-surface` and `bg-surface-raised` diverge
-					// in dark mode (raised is lighter for elevation), which showed as a seam.
-					"flex bg-surface-raised px-3 pb-3",
-				)}
-			>
+			<div className={cn("flex px-3 pb-3", surfaceClassName)}>
 				{variant === "preview" ? (
 					<Button className="w-full" onClick={onPreviewAction} type="button" variant="outline">
 						{previewActionLabel}

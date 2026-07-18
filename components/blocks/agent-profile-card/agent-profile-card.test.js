@@ -43,3 +43,11 @@ test("Agent Profile Card title actions use chat label and edit icon controls", (
 		/<Button[\s\S]*aria-label=\{resolvedEditActionLabel\}[\s\S]*onClick=\{onEditAction\}[\s\S]*size="icon-compact"[\s\S]*<EditIcon label="" size="small" \/>/u,
 	);
 });
+
+test("Agent Profile Card supports opt-in overlay elevation", () => {
+	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
+
+	assert.match(entitySource, /surface\?: "raised" \| "overlay";/u);
+	assert.match(entitySource, /surface === "overlay" \? "bg-surface-overlay" : "bg-surface-raised"/u);
+	assert.match(entitySource, /surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u);
+});

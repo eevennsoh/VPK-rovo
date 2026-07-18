@@ -148,16 +148,41 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	const contextPanelSource = readBlockFile("experimental/components/context-panel.tsx");
 	const plannerPanelSource = readBlockFile("experimental/components/ai-planner-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental/components/context-resources.tsx");
+	const agentSummaryRowSource = fs.readFileSync(
+		path.join(process.cwd(), "components", "blocks", "agent", "components", "agent-summary-row.tsx"),
+		"utf8",
+	);
 	const detailsSource = readBlockFile("experimental/components/details-tab.tsx");
 	assert.ok(contextPanelSource.indexOf("<ContextEditableTitle />") < contextPanelSource.indexOf("<AiPlannerPanel />"));
 	assert.ok(contextPanelSource.indexOf("<AiPlannerPanel />") < contextPanelSource.indexOf("<AiPlannerScope>"));
+	assert.ok(contextPanelSource.indexOf("<ContextResources />") < contextPanelSource.indexOf("<ContextEditableDescription />"));
+	assert.doesNotMatch(contextPanelSource, />Details</u);
 	assert.match(plannerPanelSource, /import \{ TwgTool, type TwgToolSource \} from "@\/components\/ui-custom\/twg-tool";/u);
-	assert.match(plannerPanelSource, /PromptInputTextarea[\s\S]*Tell Rovo what to change…/u);
-	assert.match(plannerPanelSource, /title=\{isApplied \? "Planned by Rovo" : "AI Planner"\}/u);
-	assert.match(plannerPanelSource, />\s*Reject all\s*</u);
-	assert.match(plannerPanelSource, />\s*Confirm all\s*</u);
+	assert.match(plannerPanelSource, /import \{ FloatingComposer \} from "@\/components\/projects\/shared\/components\/floating-composer";/u);
+	assert.match(plannerPanelSource, /import \{ RovoComposerActionButton \} from "@\/components\/projects\/shared\/components\/rovo-composer-send-controls";/u);
+	assert.match(plannerPanelSource, /<FloatingComposer[\s\S]*PromptInputTextarea[\s\S]*Tell Rovo what to change…/u);
+	assert.match(plannerPanelSource, /planner\.status === "inactive" \|\| planner\.status === "applied"/u);
+	assert.doesNotMatch(plannerPanelSource, /Planned by Rovo/u);
+	assert.match(plannerPanelSource, /<CrossIcon label="" size="small" \/>[\s\S]*Reject/u);
+	assert.match(plannerPanelSource, /<CheckMarkIcon label="" size="small" \/>[\s\S]*Accept suggestions/u);
+	assert.match(plannerPanelSource, /<RovoComposerActionButton[\s\S]*experimentalDarkCta/u);
+	assert.doesNotMatch(plannerPanelSource, /PromptInputFooter|PromptInputSubmit/u);
 	assert.match(plannerPanelSource, /data-ai-planner-scope=\{isReviewing \? "active" : undefined\}/u);
+	assert.match(plannerPanelSource, /import \{ RovoGeneration \} from "@\/components\/ui-custom\/rovo-generation";/u);
+	assert.match(plannerPanelSource, /<RovoGeneration\.Highlight active className="block w-full">/u);
+	assert.match(plannerPanelSource, /isReviewing \? "rounded-xl border border-border p-3" : null/u);
+	assert.doesNotMatch(plannerPanelSource, /border-border-discovery-subtle/u);
+	assert.match(plannerPanelSource, /data-ai-planner-controls="floating"/u);
+	assert.match(plannerPanelSource, /className="absolute inset-x-0 top-\[calc\(100%\+1rem\)\] z-20"/u);
+	assert.equal((plannerPanelSource.match(/size="default"/gu) ?? []).length, 2);
+	assert.match(plannerPanelSource, /className="border-0 bg-surface-overlay"/u);
+	assert.match(plannerPanelSource, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.doesNotMatch(plannerPanelSource, /useRovoChat|launchSession/u);
+	assert.match(contextResourcesSource, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
+	assert.equal((contextResourcesSource.match(/elemBefore=\{<Icon aria-hidden render=/gu) ?? []).length, 3);
+	assert.equal((contextResourcesSource.match(/labelClassName="whitespace-nowrap sm:w-28"/gu) ?? []).length, 3);
+	assert.match(agentSummaryRowSource, /labelClassName\?: string;/u);
+	assert.match(agentSummaryRowSource, /className=\{cn\("sm:w-20 sm:shrink-0", labelClassName\)\}/u);
 	for (const source of [contextResourcesSource, detailsSource]) {
 		assert.doesNotMatch(source, /PlannerSuggestion|planner\.proposal|isPlannerFieldPending/u);
 	}

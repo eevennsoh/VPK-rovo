@@ -6,9 +6,9 @@ import { ContextResources } from "@/components/blocks/agent-sessions/experimenta
 
 /**
  * Context section of the experimental work item: an editable title, compact AI
- * Planner status, then the editable description and resource rows. While a plan
- * awaits confirmation, one bordered scope and floating action bar connect the
- * refinement controls to the fields Rovo populated.
+ * Planner status, then the resource rows and editable description. While a plan
+ * awaits confirmation, a one-shot highlighted scope and elevated floating
+ * prompt connect the refinement controls to the fields Rovo populated.
  */
 export function ContextPanel() {
 	return (
@@ -17,12 +17,11 @@ export function ContextPanel() {
 			<AiPlannerPanel />
 			<AiPlannerScope>
 				<div className="flex flex-col gap-1">
-					<span className="px-0.5 text-xs font-semibold leading-4 text-text-subtlest">Description</span>
-					<ContextEditableDescription />
+					<ContextResources />
 				</div>
 				<div className="flex flex-col gap-1">
-					<span className="px-0.5 text-xs font-semibold leading-4 text-text-subtlest">Details</span>
-					<ContextResources />
+					<span className="px-0.5 text-xs font-semibold leading-4 text-text-subtlest">Description</span>
+					<ContextEditableDescription />
 				</div>
 			</AiPlannerScope>
 		</section>

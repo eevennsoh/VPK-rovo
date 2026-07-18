@@ -8,6 +8,19 @@ const CONTEXT_BAR_DEMO_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/website/demos/ui-custom/context-bar-demo.tsx"),
 	"utf8",
 );
+const CONTEXT_BAR_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/context-bar/context-bar.tsx"),
+	"utf8",
+);
+
+test("all context-bar surfaces share the 40px minimum-height contract", () => {
+	assert.match(CONTEXT_BAR_SOURCE, /const CONTEXT_BAR_HEIGHT_CLASS = "min-h-10";/u);
+	assert.match(CONTEXT_BAR_SOURCE, /CONTEXT_BAR_PILL_CLASS = cn\([\s\S]*CONTEXT_BAR_HEIGHT_CLASS/u);
+	assert.match(CONTEXT_BAR_SOURCE, /export function ContextBar\([\s\S]*CONTEXT_BAR_HEIGHT_CLASS[\s\S]*data-context-bar/u);
+	assert.match(CONTEXT_BAR_SOURCE, /export function AnimatedCollapsibleContextBar\([\s\S]*CONTEXT_BAR_HEIGHT_CLASS[\s\S]*data-context-bar=/u);
+	assert.match(CONTEXT_BAR_SOURCE, /export function ContextBarTagGroup\([\s\S]*CONTEXT_BAR_HEIGHT_CLASS[\s\S]*data-context-bar-tag-group/u);
+	assert.match(CONTEXT_BAR_SOURCE, /const OVERFLOW_BUTTON_CLASS =\s*"[^"]*size-10/u);
+});
 
 async function loadContextBarHarness() {
 	const mockModules = new Map([

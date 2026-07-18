@@ -20,7 +20,7 @@ test("SmartLink is powered by the shared HoverCard primitive", () => {
 	assert.match(COMPONENT_SOURCE, /HoverCard, HoverCardContent, HoverCardTrigger/u);
 	assert.match(COMPONENT_SOURCE, /<HoverCard[\s\S]*openDelay=\{openDelay\}/u);
 	assert.match(COMPONENT_SOURCE, /<HoverCardTrigger render=\{<SmartLinkTrigger/u);
-	assert.match(COMPONENT_SOURCE, /<HoverCardContent[\s\S]*<SmartLinkCard/u);
+	assert.match(COMPONENT_SOURCE, /<HoverCardContent[\s\S]*alignOffset=\{alignOffset\}[\s\S]*<SmartLinkCard/u);
 });
 
 test("SmartLink exports the public component and type API", () => {

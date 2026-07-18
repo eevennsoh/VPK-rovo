@@ -214,7 +214,7 @@ function QueueSources({ session }: Readonly<{ session: AsxQueueSession }>) {
 		<ul className="space-y-1">
 			{getQueueSourceItems(session).map((source) => (
 				<li className="flex min-w-0" key={source.id}>
-					<SmartLink align="end" className="max-w-full" item={source} side="left" />
+					<SmartLink align="center" alignOffset={0} className="max-w-full" item={source} side="left" />
 				</li>
 			))}
 		</ul>

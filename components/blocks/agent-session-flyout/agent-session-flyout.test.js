@@ -17,6 +17,8 @@ function readRepoFile(relativePath) {
 // sidebar variant so both the live sidebar and this block render it.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
 const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
+const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
+const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
 // The shared body reuses the shared design-system components rather than
 // re-implementing them.
@@ -27,10 +29,25 @@ test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo",
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
-	assert.match(source, /<SmartLink item=\{toWorkItem\(session\)\}/u);
+	assert.match(source, /<SmartLink[\s\S]*item=\{toWorkItem\(session\)\}/u);
 	// Agent renders as an agent-type Tag pill; PR state renders as a Lozenge.
 	assert.match(source, /<Tag[\s\S]*?type="agent"/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
+});
+
+test("Queue Details positions Agent, Work item, and Source previews left and centered", () => {
+	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
+	const panelSource = readRepoFile(QUEUE_DETAIL_PANEL_PATH);
+	const artifactsSource = readRepoFile(QUEUE_DETAIL_ARTIFACTS_PATH);
+
+	assert.match(flyoutSource, /previewPosition\?: JiraSessionPreviewPosition/u);
+	assert.match(flyoutSource, /const agentBannerSrc = getAgentProfileBannerSrc\(session\.agentAvatarSrc\);\s*preload\(agentBannerSrc, \{ as: "image" \}\);/u);
+	assert.match(flyoutSource, /<HoverCardContent[\s\S]*align=\{previewPosition\?\.align \?\? "start"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side \?\? "bottom"\}/u);
+	assert.match(flyoutSource, /<AgentProfileCard[\s\S]*surface="overlay"/u);
+	assert.match(flyoutSource, /<SmartLink[\s\S]*align=\{previewPosition\?\.align\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side\}/u);
+	assert.match(panelSource, /const DETAIL_PREVIEW_POSITION = \{\s*align: "center",\s*alignOffset: 0,\s*side: "left",\s*\} as const;/u);
+	assert.match(panelSource, /<JiraSessionFlyoutBody[\s\S]*previewPosition=\{DETAIL_PREVIEW_POSITION\}/u);
+	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);
 });
 
 // The block delegates to the shared body and reuses the /asx seeds rather than

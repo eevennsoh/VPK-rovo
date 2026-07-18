@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import FilesIcon from "@atlaskit/icon/core/files";
@@ -22,8 +22,9 @@ import { AttachmentsPopover } from "@/components/blocks/agent-sessions/experimen
 import { SubtasksPopover } from "@/components/blocks/agent-sessions/experimental/components/subtasks-popover";
 import { LinkedWorkItemsPopover } from "@/components/blocks/agent-sessions/experimental/components/linked-work-items-popover";
 import type { WorkItemAttachment } from "@/app/contexts/context-work-item-modal";
+import { Icon } from "@/components/ui/icon";
 
-function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactNode {
+function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
 	if (attachment.thumbnailKind === "video") return <VideoIcon label="" size="small" color="currentColor" />;
 	if (attachment.ext === "page" || attachment.ext === "doc") return <PageIcon label="" size="small" color="currentColor" />;
@@ -48,6 +49,7 @@ export function ContextResources() {
 				agentFieldName="attachments"
 				items={attachments.map(getAttachmentLabel)}
 				label="Attachments"
+				labelClassName="whitespace-nowrap sm:w-28"
 				onRemoveItem={(index) => {
 					const attachment = attachments[index];
 					actions.removeContextResource("attachment", attachment.id ?? attachment.name);
@@ -57,7 +59,7 @@ export function ContextResources() {
 				)}
 				renderItem={({ item, index, onRemove }) => (
 					<AgentReferenceChip
-						elemBefore={attachmentGlyph(attachments[index])}
+						elemBefore={<Icon aria-hidden render={attachmentGlyph(attachments[index])} />}
 						label={item}
 						onRemove={onRemove}
 						tagColor="standard"
@@ -71,13 +73,14 @@ export function ContextResources() {
 				agentFieldName="subtasks"
 				items={subtasks.map((item) => `${item.key}: ${item.summary}`)}
 				label="Subtasks"
+				labelClassName="whitespace-nowrap sm:w-28"
 				onRemoveItem={(index) => actions.removeContextResource("subtask", subtasks[index].key)}
 				renderAddControl={({ label, className }) => (
 					<SubtasksPopover trigger={<AgentAddValueButton className={className} label={label} />} />
 				)}
 				renderItem={({ item, onRemove }) => (
 					<AgentReferenceChip
-						elemBefore={<ChildWorkItemsIcon color="currentColor" label="" size="small" />}
+						elemBefore={<Icon aria-hidden render={<ChildWorkItemsIcon color="currentColor" label="" size="small" />} />}
 						label={item}
 						onRemove={onRemove}
 						tagColor="blue"
@@ -91,13 +94,14 @@ export function ContextResources() {
 				agentFieldName="linkedItems"
 				items={linkedItems.map((item) => `${item.relationship} ${item.key}: ${item.summary}`)}
 				label="Linked work items"
+				labelClassName="whitespace-nowrap sm:w-28"
 				onRemoveItem={(index) => actions.removeContextResource("link", linkedItems[index].id)}
 				renderAddControl={({ label, className }) => (
 					<LinkedWorkItemsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
 				)}
 				renderItem={({ item, onRemove }) => (
 					<AgentReferenceChip
-						elemBefore={<LinkIcon color="currentColor" label="" size="small" />}
+						elemBefore={<Icon aria-hidden render={<LinkIcon color="currentColor" label="" size="small" />} />}
 						label={item}
 						onRemove={onRemove}
 						tagColor="purple"

@@ -1,6 +1,6 @@
 #!/bin/zsh
 # vpk-system-clean.sh
-# Keeps a 24/7 Mac from drowning in Next.js/Turbopack dev churn. Five guards:
+# Keeps a 24/7 Mac from drowning in local-development churn. Six guards:
 #  1. RUNAWAY DEV SERVER (CPU): a `next-server` stuck at high CPU is a
 #     Turbopack watch/recompile thrash loop. Detected by sampling CPU twice so a
 #     normal bursty compile is NOT mistaken for a runaway. Killed (with its
@@ -26,11 +26,15 @@
 #     vpk-dev-<worktree> session alive per worktree. When a worktree is deleted
 #     the session is orphaned and keeps burning resources. Killed when its
 #     worktree path is gone AND no client is attached.
-#  5. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
+#  5. RUNAWAY ALMD: Atlassian's /usr/local/bin/almd can get stuck consuming a
+#     CPU core for hours. Restarted only after exact-path verification, a
+#     minimum process age, and three sustained-hot samples. Its user LaunchAgent
+#     retries it automatically.
+#  6. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
 #     (22GB seen). Restarted if ballooned (needs the sudoers rule from install).
 #
-# Safe unattended: never deletes a live build's cache, and only kills a server
-# that is *sustained* hot or certainly bloated. Each run appends a parseable
+# Safe unattended: never deletes a live build's cache, and only kills a process
+# that matches its exact guard conditions. Each run appends a parseable
 # "summary:" line.
 set -u
 setopt NULL_GLOB
@@ -44,6 +48,13 @@ NEXT_MEM_MAX_GB=6        # a next-server above this physical footprint (GB) is b
 KILL_BLOATED_NEXT=1      # 1 = kill bloated dev servers; 0 = report only
 NEXT_MEM_SETTLE_SECS=30  # settle window before re-checking a bloated candidate
 NEXT_MEM_IDLE_CPU_MAX=20 # %CPU below which a still-bloated server counts as idle (leak, not a compile burst)
+ALMD_PATH="/usr/local/bin/almd"
+ALMD_CPU_HOT=50          # minimum %CPU for every sample before almd is reset
+ALMD_MIN_AGE_SECS=900    # never reset almd during its first 15 minutes
+ALMD_SAMPLE_COUNT=3      # three observations avoid treating a brief burst as runaway
+ALMD_SAMPLE_SECS=10      # 20-second confirmation window after the first sample
+ALMD_TERM_GRACE_SECS=5   # allow graceful exit before a guarded SIGKILL fallback
+KILL_RUNAWAY_ALMD=1      # 1 = reset sustained-hot almd; 0 = report only
 
 NEXT_DIRS=(
 	"$HOME/Labs/vpk-rovo/.next"
@@ -54,6 +65,24 @@ NEXT_DIRS=(
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { print -r -- "[$(ts)] $*" >> "$LOG"; }
 cpu_of() { ps -o %cpu= -p "$1" 2>/dev/null | tr -d ' '; }   # decaying avg %CPU
+exe_of() { lsof -a -d txt -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; }
+elapsed_secs_of() {
+	local raw days=0 hours=0 minutes=0 seconds=0
+	local -a parts
+	raw=$(ps -o etime= -p "$1" 2>/dev/null | tr -d '[:space:]')
+	[[ -n "$raw" ]] || return 1
+	if [[ "$raw" == *-* ]]; then
+		days="${raw%%-*}"
+		raw="${raw#*-}"
+	fi
+	parts=( ${(s/:/)raw} )
+	case ${#parts} in
+		3) hours="${parts[1]}"; minutes="${parts[2]}"; seconds="${parts[3]}" ;;
+		2) minutes="${parts[1]}"; seconds="${parts[2]}" ;;
+		*) return 1 ;;
+	esac
+	print -- $(( days * 86400 + hours * 3600 + minutes * 60 + seconds ))
+}
 # Whole GB of real memory. vmmap Physical footprint is the truth for the MAP_JIT
 # leak (ps RSS undercounts it ~50x); ~1s per pid is fine for a scheduled sweep.
 # Falls back to ps RSS if vmmap is unavailable or fails.
@@ -73,7 +102,7 @@ if [[ -f "$LOG" ]] && (( $(wc -l < "$LOG") > 500 )); then
 fi
 
 log "run start"
-freed=0; count=0; killed=0; bloated=0
+freed=0; count=0; killed=0; bloated=0; almd_resets=0
 
 # --- 1. runaway dev server -----------------------------------------------------
 # First pass: which next-server pids are hot right now?
@@ -213,7 +242,81 @@ if command -v tmux >/dev/null 2>&1; then
 	tmux_action="checked default+vpk-dev sockets; ${stale_killed} stale session(s) killed"
 fi
 
-# --- 5. fseventsd reset --------------------------------------------------------
+# --- 5. runaway almd ----------------------------------------------------------
+# almd is a user LaunchAgent that retries every five minutes. Reset only the
+# exact deployed binary, only after it is old enough to be past startup work,
+# and only when every sample in a 20-second window remains hot.
+almd_action="not-running"
+almd_pids=( ${(f)"$(pgrep -x almd 2>/dev/null)"} )
+if (( ${#almd_pids} )); then
+	almd_action="ok"
+	for p in $almd_pids; do
+		exe=$(exe_of "$p")
+		if [[ "$exe" != "$ALMD_PATH" ]]; then
+			almd_action="kept-unrecognized"
+			log "kept almd pid $p (unexpected executable '${exe:-unknown}', expected $ALMD_PATH)"
+			continue
+		fi
+
+		age=$(elapsed_secs_of "$p"); age=${age:-0}
+		if (( age < ALMD_MIN_AGE_SECS )); then
+			almd_action="warming"
+			log "kept almd pid $p (${age}s old < ${ALMD_MIN_AGE_SECS}s minimum)"
+			continue
+		fi
+
+		c=$(cpu_of "$p"); [[ -n "$c" ]] || continue
+		(( ${c%%.*} >= ALMD_CPU_HOT )) || continue
+
+		sustained=1
+		for (( sample = 2; sample <= ALMD_SAMPLE_COUNT; sample++ )); do
+			sleep "$ALMD_SAMPLE_SECS"
+			if [[ "$(exe_of "$p")" != "$ALMD_PATH" ]]; then
+				sustained=0
+				almd_action="exited-during-check"
+				break
+			fi
+			c=$(cpu_of "$p"); [[ -n "$c" ]] || { sustained=0; break; }
+			if (( ${c%%.*} < ALMD_CPU_HOT )); then
+				sustained=0
+				almd_action="settled"
+				log "kept almd pid $p (settled to ${c}% CPU during confirmation)"
+				break
+			fi
+		done
+
+		(( sustained )) || continue
+		if (( ! KILL_RUNAWAY_ALMD )); then
+			almd_action="hot-report-only"
+			log "runaway almd pid $p (~${c}% CPU, ${age}s old) — KILL_RUNAWAY_ALMD=0, left running"
+			continue
+		fi
+
+		if ! kill "$p" 2>/dev/null; then
+			almd_action="reset-failed"
+			log "FAILED to terminate runaway almd pid $p (~${c}% CPU, ${age}s old)"
+			continue
+		fi
+
+		signal="TERM"
+		sleep "$ALMD_TERM_GRACE_SECS"
+		if kill -0 "$p" 2>/dev/null; then
+			if [[ "$(exe_of "$p")" != "$ALMD_PATH" ]] || ! kill -9 "$p" 2>/dev/null; then
+				almd_action="reset-failed"
+				log "FAILED to force-stop runaway almd pid $p after TERM"
+				continue
+			fi
+			signal="KILL"
+		fi
+
+		almd_resets=$(( almd_resets + 1 ))
+		almd_action="reset ${almd_resets}"
+		log "stopped runaway almd pid $p with $signal (~${c}% CPU, ${age}s old; LaunchAgent will retry)"
+	done
+	(( almd_resets > 0 )) && almd_action="reset ${almd_resets}"
+fi
+
+# --- 6. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
 fp=$(pgrep -x fseventsd | head -1)
 if [[ -n "$fp" ]]; then
@@ -229,5 +332,5 @@ if [[ -n "$fp" ]]; then
 	fi
 fi
 
-log "summary: killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; fseventsd ${fse_action}"
+log "summary: killed ${killed} runaway server(s); bloated ${bloated} server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; almd ${almd_action}; fseventsd ${fse_action}"
 log "run done"

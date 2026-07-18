@@ -16,6 +16,12 @@ import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { createAsxQueueSidebarSessionItem, type AsxQueueSession } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
 
+const DETAIL_PREVIEW_POSITION = {
+	align: "center",
+	alignOffset: 0,
+	side: "left",
+} as const;
+
 const PANEL_VARIANTS: Variants = {
 	closed: {
 		transform: "translateX(100%)",
@@ -88,7 +94,11 @@ export function QueueDetailPanel({ onClose, resize, session }: Readonly<QueueDet
 				<PanelContent>
 					<PanelBody className="pb-4" spacing="none">
 						<div className="px-4">
-							<JiraSessionFlyoutBody hideHeader session={sidebarSession} />
+							<JiraSessionFlyoutBody
+								hideHeader
+								previewPosition={DETAIL_PREVIEW_POSITION}
+								session={sidebarSession}
+							/>
 						</div>
 						<QueueDetailArtifacts session={session} />
 					</PanelBody>

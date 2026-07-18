@@ -7,6 +7,8 @@ LABEL="com.$(id -un).vpk-system-clean"
 LOG="$HOME/Library/Logs/vpk-system-clean.log"
 SUDOERS="/etc/sudoers.d/vpk-system-clean"
 NEXT_CPU_HOT=150
+ALMD_CPU_HOT=50
+ALMD_PATH="/usr/local/bin/almd"
 NEXT_DIRS=(
 	"$HOME/Labs/vpk-rovo/.next"
 	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
@@ -23,6 +25,25 @@ if (( ${#np} )); then
 	done
 else
 	print -- "(none running)"
+fi
+
+print -- "\n── Atlassian local monitoring (almd) ──"
+ap=( ${(f)"$(pgrep -x almd 2>/dev/null)"} )
+if (( ${#ap} )); then
+	for p in $ap; do
+		c=$(ps -o %cpu= -p "$p" 2>/dev/null | tr -d ' '); c=${c:-0}
+		age=$(ps -o etime= -p "$p" 2>/dev/null | tr -d ' '); age=${age:-?}
+		exe=$(lsof -a -d txt -p "$p" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1)
+		flag=""
+		if [[ "$exe" != "$ALMD_PATH" ]]; then
+			flag="  ⚠ unexpected executable: ${exe:-unknown}; sweep will keep it"
+		elif (( ${c%%.*} >= ALMD_CPU_HOT )); then
+			flag="  ⚠ hot candidate — sweep verifies age + 3 sustained samples"
+		fi
+		print -- "pid $p  ${c}% CPU  age $age$flag"
+	done
+else
+	print -- "(not running; its LaunchAgent retries every 5 minutes)"
 fi
 
 print -- "\n── launchd agent ──"

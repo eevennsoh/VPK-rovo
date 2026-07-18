@@ -4,9 +4,11 @@ import {
 	cloneElement,
 	isValidElement,
 	useId,
+	type ComponentProps,
 	type FocusEventHandler,
 	type ReactNode,
 } from "react";
+import { preload } from "react-dom";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
@@ -37,6 +39,7 @@ import { GithubLogo } from "@/components/ui/logo-third-party";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { TileAvatar } from "@/components/ui/tile";
+import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
 import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
@@ -288,10 +291,16 @@ export function JiraSessionSectionHeading({
 	);
 }
 
+type JiraSessionPreviewPosition = Pick<
+	ComponentProps<typeof HoverCardContent>,
+	"align" | "alignOffset" | "side"
+>;
+
 /** The redesigned flyout body matching the reference mock. */
 export function JiraSessionFlyoutBody({
 	session,
 	hideHeader = false,
+	previewPosition,
 }: Readonly<{
 	session: JiraSidebarSessionItem;
 	/**
@@ -301,7 +310,12 @@ export function JiraSessionFlyoutBody({
 	 * this `false` because it has no separate header.
 	 */
 	hideHeader?: boolean;
+	/** Override nested Agent and Work item preview placement for constrained surfaces. */
+	previewPosition?: JiraSessionPreviewPosition;
 }>) {
+	const agentBannerSrc = getAgentProfileBannerSrc(session.agentAvatarSrc);
+	preload(agentBannerSrc, { as: "image" });
+
 	const hasDevelopment = Boolean(
 		session.repository ??
 			session.pullRequestNumber ??
@@ -360,20 +374,28 @@ export function JiraSessionFlyoutBody({
 							}
 						/>
 						<HoverCardContent
-							align="start"
+							align={previewPosition?.align ?? "start"}
+							alignOffset={previewPosition?.alignOffset}
 							className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
-							side="bottom"
+							side={previewPosition?.side ?? "bottom"}
 							sideOffset={8}
 						>
 							<AgentProfileCard
 								avatarSrc={session.agentAvatarSrc}
 								name={session.agentName}
+								surface="overlay"
 							/>
 						</HoverCardContent>
 					</HoverCard>
 				</FlyoutRow>
 				<FlyoutRow icon={<TaskIcon label="" size="small" />} label="Work item">
-					<SmartLink item={toWorkItem(session)} showStatus />
+					<SmartLink
+						align={previewPosition?.align}
+						alignOffset={previewPosition?.alignOffset}
+						item={toWorkItem(session)}
+						showStatus
+						side={previewPosition?.side}
+					/>
 				</FlyoutRow>
 			</div>
 
