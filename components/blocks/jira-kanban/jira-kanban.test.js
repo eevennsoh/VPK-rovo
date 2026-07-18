@@ -2,6 +2,8 @@ const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
@@ -10,6 +12,41 @@ const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
 	SOURCE.indexOf("<BoardColumn", SOURCE.indexOf("const handleColumnDragOver")),
 );
+
+async function loadStateHarness() {
+	const result = await esbuild.build({
+		stdin: {
+			contents: `
+				export {
+					createJiraKanbanSelectionState,
+					moveJiraKanbanCardsToColumn,
+					selectJiraKanbanCard,
+					getCommonJiraKanbanAgentIds,
+					updateJiraKanbanCardAgentAssignment,
+				} from "./components/blocks/jira-kanban/state";
+			`,
+			loader: "ts",
+			resolveDir: process.cwd(),
+			sourcefile: "jira-kanban-state-harness.ts",
+		},
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+const SELECTION_COLUMNS = [
+	{
+		title: "Intake",
+		count: 3,
+		cards: ["RFP-101", "RFP-102", "RFP-103"].map((code) => ({ code })),
+	},
+	{ title: "Drafting", count: 0, cards: [] },
+];
 
 test("Kanban demo preserves the rounded docs frame and leaves scrolling to the board", () => {
 	assert.match(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
@@ -76,6 +113,90 @@ test("Kanban multi-card drag does not render an extra count badge on the source 
 	assert.doesNotMatch(SOURCE, /groupBadgeCount/);
 	assert.doesNotMatch(SOURCE, /dragGroupCount/);
 	assert.doesNotMatch(SOURCE, /draggedCardCount/);
+});
+
+test("Kanban selection supports a first Shift-click and a subsequent Shift range", async () => {
+	const { createJiraKanbanSelectionState, selectJiraKanbanCard } = await loadStateHarness();
+	let selection = createJiraKanbanSelectionState();
+
+	selection = selectJiraKanbanCard(selection, SELECTION_COLUMNS, {
+		cardCode: "RFP-101",
+		columnTitle: "Intake",
+		indexInColumn: 0,
+		modifiers: { shiftKey: true, metaOrCtrlKey: false },
+	});
+	assert.deepEqual([...selection.selectedCardCodes], ["RFP-101"]);
+
+	selection = selectJiraKanbanCard(selection, SELECTION_COLUMNS, {
+		cardCode: "RFP-103",
+		columnTitle: "Intake",
+		indexInColumn: 2,
+		modifiers: { shiftKey: true, metaOrCtrlKey: false },
+	});
+	assert.deepEqual([...selection.selectedCardCodes], ["RFP-101", "RFP-102", "RFP-103"]);
+});
+
+test("Kanban selected cards move together and keep derived column counts accurate", async () => {
+	const { moveJiraKanbanCardsToColumn } = await loadStateHarness();
+	const columns = moveJiraKanbanCardsToColumn(
+		SELECTION_COLUMNS,
+		["RFP-101", "RFP-102"],
+		"Drafting",
+	);
+
+	assert.deepEqual(columns.find((column) => column.title === "Intake").cards.map((card) => card.code), ["RFP-103"]);
+	assert.deepEqual(columns.find((column) => column.title === "Drafting").cards.map((card) => card.code), ["RFP-101", "RFP-102"]);
+	assert.equal(columns.find((column) => column.title === "Intake").count, 1);
+	assert.equal(columns.find((column) => column.title === "Drafting").count, 2);
+});
+
+test("Kanban status changes leave selected cards already in the target column in place", async () => {
+	const { moveJiraKanbanCardsToColumn } = await loadStateHarness();
+	const columns = moveJiraKanbanCardsToColumn(
+		[
+			{ title: "Intake", count: 1, cards: [{ code: "RFP-101" }] },
+			{ title: "Drafting", count: 2, cards: [{ code: "RFP-141" }, { code: "RFP-142" }] },
+		],
+		["RFP-101", "RFP-142"],
+		"Drafting",
+	);
+
+	assert.deepEqual(
+		columns.find((column) => column.title === "Drafting").cards.map((card) => card.code),
+		["RFP-101", "RFP-141", "RFP-142"],
+	);
+	assert.equal(columns.find((column) => column.title === "Intake").count, 0);
+	assert.equal(columns.find((column) => column.title === "Drafting").count, 3);
+});
+
+test("Kanban demo wires controlled selection and grouped drag state", () => {
+	assert.match(PAGE_SOURCE, /selectedCardCodes=\{selection\.selectedCardCodes\}/u);
+	assert.match(PAGE_SOURCE, /onCardSelect=\{handleCardSelect\}/u);
+	assert.match(PAGE_SOURCE, /const isMultiDrag = selection\.selectedCardCodes\.has\(draggedCard\.card\.code\)/u);
+});
+
+test("Kanban composes the Jira Toolbar through explicit selection actions", () => {
+	assert.match(SOURCE, /selectionToolbar\?: JiraKanbanSelectionToolbarConfig;/u);
+	assert.match(SOURCE, /<JiraToolbar[\s\S]*selectedCount=\{selectedCount\}[\s\S]*selectedStatus=\{selectedStatus\}/u);
+	assert.match(PAGE_SOURCE, /selectionToolbar=\{\{[\s\S]*onAgentAssignmentChange: handleSelectedCardsAgentAssignmentChange,[\s\S]*onStatusChange: handleSelectedCardsStatusChange/u);
+});
+
+test("Kanban agent assignment helpers apply toggles to every selected card", async () => {
+	const {
+		getCommonJiraKanbanAgentIds,
+		updateJiraKanbanCardAgentAssignment,
+	} = await loadStateHarness();
+	const selected = new Set(["RFP-101", "RFP-102"]);
+	let assignments = updateJiraKanbanCardAgentAssignment({}, selected, "agent-1", true);
+
+	assert.deepEqual(assignments, {
+		"RFP-101": ["agent-1"],
+		"RFP-102": ["agent-1"],
+	});
+	assert.deepEqual(getCommonJiraKanbanAgentIds(assignments, selected), ["agent-1"]);
+
+	assignments = updateJiraKanbanCardAgentAssignment(assignments, new Set(["RFP-101"]), "agent-1", false);
+	assert.deepEqual(getCommonJiraKanbanAgentIds(assignments, selected), []);
 });
 
 test("Kanban cards expose and render Jira issue agent lifecycle presentation", () => {
