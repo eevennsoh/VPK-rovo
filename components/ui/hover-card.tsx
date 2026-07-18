@@ -2,30 +2,46 @@
 
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
 
+import * as React from "react"
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card"
 
 import { cn } from "@/lib/utils"
 
-type HoverCardProps = Omit<PreviewCardPrimitive.Root.Props, "openDelay" | "closeDelay"> & {
+type HoverCardProps = PreviewCardPrimitive.Root.Props & {
   openDelay?: number
   closeDelay?: number
 }
 
+// Base UI's PreviewCard reads hover delays on the Trigger (`delay`/`closeDelay`),
+// not the Root. Bridge the Root-level `openDelay`/`closeDelay` props down to the
+// Trigger via context so existing call sites keep their intended delays.
+const HoverCardDelayContext = React.createContext<{
+  openDelay?: number
+  closeDelay?: number
+}>({})
+
 function HoverCard({ openDelay, closeDelay, ...props }: HoverCardProps) {
-  const Root = PreviewCardPrimitive.Root as React.ComponentType<HoverCardProps>
+  const delays = React.useMemo(() => ({ openDelay, closeDelay }), [openDelay, closeDelay])
   return (
-    <Root
-      data-slot="hover-card"
-      openDelay={openDelay}
-      closeDelay={closeDelay}
-      {...props}
-    />
+    <HoverCardDelayContext value={delays}>
+      <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />
+    </HoverCardDelayContext>
   )
 }
 
-function HoverCardTrigger(props: PreviewCardPrimitive.Trigger.Props) {
+function HoverCardTrigger({
+  delay,
+  closeDelay,
+  ...props
+}: PreviewCardPrimitive.Trigger.Props) {
+  const contextDelays = React.use(HoverCardDelayContext)
   return (
-    <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
+    <PreviewCardPrimitive.Trigger
+      data-slot="hover-card-trigger"
+      closeDelay={closeDelay ?? contextDelays.closeDelay}
+      delay={delay ?? contextDelays.openDelay}
+      {...props}
+    />
   )
 }
 

@@ -293,6 +293,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"smart-link-demo-project": dynamic(
+		() =>
+			import("../demos/blocks/smart-link-demo").then((mod) => ({
+				default: mod.SmartLinkDemoProject,
+			})),
+		{ ssr: false },
+	),
 	"smart-link-demo-loom": dynamic(
 		() =>
 			import("../demos/blocks/smart-link-demo").then((mod) => ({

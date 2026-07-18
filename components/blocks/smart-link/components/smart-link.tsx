@@ -38,6 +38,7 @@ export type SmartLinkVariant =
 	| "jira"
 	| "team"
 	| "goal"
+	| "project"
 	| "loom"
 	| "article"
 	| "file"
@@ -50,6 +51,7 @@ export type SmartLinkVisual =
 	| { kind: "atlassian"; name: AtlassianLogoName }
 	| { kind: "third-party"; name: ThirdPartyLogoName }
 	| { kind: "image"; src: string; alt: string }
+	| { kind: "avatar"; src: string; alt: string }
 	| { kind: "icon"; icon: ReactElement }
 	| { kind: "icon-tile"; icon: ReactElement; tone?: SmartLinkTone }
 	| { kind: "text"; label: string; tone?: SmartLinkTone };
@@ -215,6 +217,28 @@ const triggerStatusPaddingClasses: Record<SmartLinkSize, string> = {
 	large: "pe-[3px]", // 3px pad + 1px border = 4px, matching the 4px top/bottom gap
 };
 
+// Goal chips tint their leading icon to match the trailing status lozenge tone
+// (e.g. an "On track"/success goal renders a green target), so the icon and
+// score lozenge read as one status signal. Keyed by the item's status variant.
+const goalIconToneClasses: Record<NonNullable<LozengeProps["variant"]>, string> = {
+	neutral: "text-icon-subtle",
+	success: "text-icon-success",
+	danger: "text-icon-danger",
+	information: "text-icon-information",
+	discovery: "text-icon-discovery",
+	warning: "text-icon-warning",
+	"accent-red": "text-icon-accent-red",
+	"accent-orange": "text-icon-accent-orange",
+	"accent-yellow": "text-icon-accent-yellow",
+	"accent-lime": "text-icon-accent-lime",
+	"accent-green": "text-icon-accent-green",
+	"accent-teal": "text-icon-accent-teal",
+	"accent-blue": "text-icon-accent-blue",
+	"accent-purple": "text-icon-accent-purple",
+	"accent-magenta": "text-icon-accent-magenta",
+	"accent-gray": "text-icon-accent-gray",
+};
+
 const previewToneClasses: Record<SmartLinkTone, string> = {
 	neutral: "bg-bg-neutral text-text",
 	information: "bg-blue-700 text-white",
@@ -238,7 +262,7 @@ function cloneIcon(icon: ReactElement, iconSize?: AtlaskitIconSize, className?: 
 	});
 }
 
-function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card") {
+function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card", iconClassName?: string) {
 	const logoSize = visualLogoSizes[size];
 	const iconSize = visualIconSizes[size];
 	const iconTileElement = size === "trigger" ? "span" : "div";
@@ -263,11 +287,23 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 		);
 	}
 
+	if (visual.kind === "avatar") {
+		// Project references use a rounded-square avatar in the front slot (chip and
+		// card), matching how project avatars render across the app.
+		return (
+			<Avatar shape="square" size={size === "card" ? "sm" : "xs"}>
+				<AvatarImage alt={visual.alt} src={visual.src} />
+				<AvatarFallback>{getInitials(visual.alt)}</AvatarFallback>
+			</Avatar>
+		);
+	}
+
 	if (visual.kind === "icon") {
 		return (
 			<IconTile
 				as={iconTileElement}
 				aria-hidden
+				className={iconClassName}
 				icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
 				label=""
 				size={visualIconTileSizes[size]}
@@ -314,6 +350,10 @@ function SmartLinkTrigger({
 	{ item: SmartLinkItem; open: boolean; size?: SmartLinkSize; showStatus?: boolean } & ComponentProps<"a">
 >) {
 	const status = showStatus ? item.status : undefined;
+	// A goal chip's leading target icon takes the status lozenge tone so the icon
+	// and score badge read as one signal (e.g. green target + "On track" 0.7).
+	const goalIconTone =
+		item.variant === "goal" && status ? goalIconToneClasses[status.variant ?? "neutral"] : null;
 
 	return (
 		<a
@@ -329,9 +369,11 @@ function SmartLinkTrigger({
 				// Match the gap beside a trailing status lozenge to the chip's
 				// top/bottom gap (see triggerStatusPaddingClasses).
 				status ? triggerStatusPaddingClasses[size] : null,
-				// Widen the max width when a status lozenge trails the title so it fits
-				// without prematurely truncating the label.
-				status ? "max-w-sm" : "max-w-[11.25rem]",
+				// Cap the chip at the parent's available width (`max-w-full`) so a long
+				// label truncates in place instead of pushing a trailing status lozenge
+				// outside the container. Without a status the chip keeps its own
+				// content-hugging cap so short inline references stay compact.
+				status ? "max-w-full" : "max-w-[11.25rem]",
 				open && "border-border-selected",
 				className,
 			)}
@@ -343,11 +385,15 @@ function SmartLinkTrigger({
 					triggerVisualClasses[size],
 				)}
 			>
-				{renderVisual(item.icon, "trigger")}
+				{renderVisual(item.icon, "trigger", goalIconTone ?? undefined)}
 			</span>
 			<span className="min-w-0 grow truncate whitespace-nowrap">{item.title}</span>
 			{status ? (
-				<Lozenge className={cn("shrink-0", triggerStatusClasses[size])} variant={status.variant ?? "neutral"}>
+				<Lozenge
+					className={cn("shrink-0", triggerStatusClasses[size])}
+					metric={status.metric}
+					variant={status.variant ?? "neutral"}
+				>
 					{status.label}
 				</Lozenge>
 			) : null}
@@ -492,6 +538,17 @@ function SmartLinkStatusDropdown({
 
 function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 	if (metadata.metric != null) {
+		// Icon-only metrics (e.g. reactions, comment counts) render as a bare
+		// icon + number, not wrapped in a lozenge/badge.
+		if (!metadata.label) {
+			return (
+				<span className="inline-flex min-h-5 items-center gap-1 text-sm leading-5 text-text-subtle">
+					{metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} aria-hidden /> : null}
+					{metadata.metric}
+				</span>
+			);
+		}
+
 		const variant = metadata.metricVariant ?? "neutral";
 
 		return (
@@ -500,7 +557,7 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 				icon={metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} aria-hidden /> : undefined}
 				variant={variant}
 			>
-				{metadata.label ? metadata.label : null}
+				{metadata.label}
 				<Badge className="ml-1 min-w-0" variant="neutral">
 					{metadata.metric}
 				</Badge>

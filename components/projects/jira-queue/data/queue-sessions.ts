@@ -32,8 +32,17 @@ export interface AsxQueueQuestion {
 	questions: readonly QuestionCardQuestion[];
 }
 
+export interface AsxQueueAssignee {
+	name: string;
+	src?: string;
+}
+
+export type AsxQueueWorkItemPriority = "highest" | "high" | "medium" | "low" | "lowest";
+
 export interface AsxQueueSession {
 	agentId: string;
+	/** Human accountable for the Jira work item (shown in the work-item smart link). */
+	assignee?: AsxQueueAssignee;
 	branch?: string;
 	checks?: string;
 	commit?: string;
@@ -46,6 +55,8 @@ export interface AsxQueueSession {
 	jiraColumn: AsxQueueJiraColumn;
 	manualRank: number;
 	messages: RovoUIMessage[];
+	/** Jira work-item priority (shown in the work-item smart link). */
+	priority?: AsxQueueWorkItemPriority;
 	priorityRank: number;
 	pullRequestNumber?: number;
 	pullRequestTitle?: string;
@@ -172,8 +183,10 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		isPinned: false,
 		jiraColumn: "In progress",
 		manualRank: 1,
+		priority: "high",
 		priorityRank: 1,
 		updatedRank: 2,
+		assignee: { name: "Priya Hansra", src: "/avatar-user/priya-hansra/color/asow-service-yellow.png" },
 		repository: "acme-corp/rfp-response-platform",
 		question: {
 			prompt: "What target go-live date should I use for the readiness assessment?",
@@ -244,8 +257,10 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		isPinned: false,
 		jiraColumn: "Done",
 		manualRank: 2,
+		priority: "medium",
 		priorityRank: 2,
 		updatedRank: 1,
+		assignee: { name: "Darius Pavri", src: "/avatar-user/darius-pavri/color/asow-strategy-orange.png" },
 		repository: "acme-corp/rfp-response-platform",
 		branch: "rovo/rfp-102-evidence-sync",
 		worktreePath: "~/src/rfp-response-platform/.worktrees/rfp-102",
@@ -306,8 +321,10 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		isPinned: false,
 		jiraColumn: "Done",
 		manualRank: 3,
+		priority: "highest",
 		priorityRank: 3,
 		updatedRank: 3,
+		assignee: { name: "Olivia Yang", src: "/avatar-user/olivia-yang/color/asow-service-yellow.png" },
 		repository: "acme-corp/rfp-response-platform",
 		branch: "rovo/rfp-103-response-validation",
 		worktreePath: "~/src/rfp-response-platform/.worktrees/rfp-103",
@@ -368,8 +385,10 @@ export const ASX_QUEUE_SESSION_SEEDS: readonly AsxQueueSession[] = [
 		isPinned: false,
 		jiraColumn: "In progress",
 		manualRank: 4,
+		priority: "low",
 		priorityRank: 4,
 		updatedRank: 4,
+		assignee: { name: "Michael Chu", src: "/avatar-user/michael-chu/color/asow-service-yellow.png" },
 		repository: "acme-corp/rfp-response-platform",
 		messages: [
 			message(
@@ -468,16 +487,21 @@ export function createAsxQueueSidebarSessionItem(
 ): JiraSidebarSessionItem {
 	const agent = getAsxQueueAgent(session.agentId);
 	return {
+		additions: session.fileChanges?.additions,
 		agentAvatarSrc: agent.avatarSrc,
 		agentName: agent.name,
+		assignee: session.assignee,
 		branch: session.branch,
 		checks: session.checks,
 		commit: session.commit,
+		deletions: session.fileChanges?.deletions,
 		host: session.host,
 		id: session.id,
 		issueKey: session.issueKey,
 		issueSummary: session.issueSummary,
+		priority: session.priority,
 		pullRequestNumber: session.pullRequestNumber,
+		pullRequestTitle: session.pullRequestTitle,
 		repository: session.repository,
 		status: session.status,
 		title: session.title,

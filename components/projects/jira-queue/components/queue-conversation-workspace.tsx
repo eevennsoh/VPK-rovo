@@ -17,7 +17,7 @@ import { ChatMessages } from "@/components/projects/shared/components/chat-messa
 import ChatContextBar from "@/components/projects/shared/components/chat-context-bar";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
-import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import type { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import {
 	type DelegationRequest,
 	useRealtimeVoice,
@@ -38,9 +38,6 @@ import type { AsxQueueJiraColumn, AsxQueueSession } from "../data/queue-sessions
 import { QueueConversationHeader } from "./queue-conversation-header";
 import { QueueDetailPanel } from "./queue-detail-panel";
 
-const DETAIL_PANEL_DEFAULT_WIDTH_PX = 320;
-const DETAIL_PANEL_MIN_WIDTH_PX = 240;
-const DETAIL_PANEL_MAX_WIDTH_PX = 720;
 const CHAT_BODY_OPEN_TRANSITION: Transition = {
 	duration: 0.25,
 	ease: [0.4, 0, 0, 1], // duration-slow + ease-in-out
@@ -65,7 +62,16 @@ const QUEUE_JIRA_COLUMN_VARIANTS = {
 
 interface QueueConversationWorkspaceProps {
 	agent: RovoAgentProfile;
+	/**
+	 * Detail-panel resize state, owned by the persistent QueueStage. The workspace
+	 * remounts on `key={activeSession.id}`, so a locally-owned resize hook would
+	 * reset its width on every session switch; keeping it in the stage lets the
+	 * dragged width persist across switches (and still reset on refresh / double-click).
+	 */
+	detailPanelResize: ReturnType<typeof useSidebarResize>;
+	isDetailPanelOpen: boolean;
 	onAnswerQuestion: (answers: QuestionCardAnswers) => Promise<void> | void;
+	onDetailPanelOpenChange: (open: boolean) => void;
 	onDismissFileChanges: () => void;
 	onJiraColumnChange: (column: AsxQueueJiraColumn) => void;
 	onSubmit: (payload: { files: FileUIPart[]; text: string }) => Promise<void>;
@@ -174,20 +180,16 @@ export function QueueSessionContextBar({
 
 export function QueueConversationWorkspace({
 	agent,
+	detailPanelResize,
+	isDetailPanelOpen,
 	onAnswerQuestion,
+	onDetailPanelOpenChange,
 	onDismissFileChanges,
 	onJiraColumnChange,
 	onSubmit,
 	session,
 }: Readonly<QueueConversationWorkspaceProps>) {
-	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 	const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-	const detailPanelResize = useSidebarResize({
-		defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,
-		direction: "rtl",
-		maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,
-		minWidth: DETAIL_PANEL_MIN_WIDTH_PX,
-	});
 	const conversationContextRef = useRef<ConversationContextValue | null>(null);
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const shouldReduceMotion = useReducedMotion();
@@ -257,7 +259,7 @@ export function QueueConversationWorkspace({
 				<QueueConversationHeader
 					agent={agent}
 					isDetailPanelOpen={isDetailPanelOpen}
-					onDetailPanelToggle={() => setIsDetailPanelOpen((current) => !current)}
+					onDetailPanelToggle={() => onDetailPanelOpenChange(!isDetailPanelOpen)}
 				/>
 				<motion.div
 					animate={{ paddingRight: isDetailPanelOpen ? detailPanelResize.sidebarWidth : 0 }}
@@ -334,9 +336,8 @@ export function QueueConversationWorkspace({
 			<AnimatePresence initial={false}>
 				{isDetailPanelOpen ? (
 					<QueueDetailPanel
-						agent={agent}
 						key="detail-panel"
-						onClose={() => setIsDetailPanelOpen(false)}
+						onClose={() => onDetailPanelOpenChange(false)}
 						resize={detailPanelResize}
 						session={session}
 					/>

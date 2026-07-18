@@ -1,30 +1,7 @@
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import BranchIcon from "@atlaskit/icon/core/branch";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import ChangesIcon from "@atlaskit/icon/core/changes";
-import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
-import CommitIcon from "@atlaskit/icon/core/commit";
-import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
-import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
-import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
-import PullRequestIcon from "@atlaskit/icon/core/pull-request";
-import TaskIcon from "@atlaskit/icon/core/task";
-import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import type { ReactElement, ReactNode } from "react";
 
-import type { RovoAgentProfile } from "@/app/data/directory/agents";
+import { JiraSessionFlyoutBody } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
 import type { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import Heading from "@/components/ui/heading";
-import { Icon } from "@/components/ui/icon";
-import {
-	Item,
-	ItemContent,
-	ItemGroup,
-	ItemMedia,
-} from "@/components/ui/item";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import {
 	PanelActionClose,
 	PanelActionGroup,
@@ -35,31 +12,9 @@ import {
 	PanelHeader,
 	PanelTitle,
 } from "@/components/ui/panel";
-import { Separator } from "@/components/ui/separator";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
-import { Tag } from "@/components/ui/tag";
-import type { AsxQueueSession, AsxQueueSessionStatus } from "../data/queue-sessions";
+import { createAsxQueueSidebarSessionItem, type AsxQueueSession } from "../data/queue-sessions";
 import { QueueDetailArtifacts } from "./queue-detail-artifacts";
-
-const STATUS_LABELS: Record<AsxQueueSessionStatus, string> = {
-	"awaiting-input": "Awaiting user response",
-	merged: "Pull request merged",
-	"pr-open": "Pull request open",
-	running: "Running",
-	stopped: "Stopped",
-};
-
-// Lozenge tone per status. Follows the neutral/information/success conventions
-// already used on this surface (`QUEUE_JIRA_COLUMN_VARIANTS`), adding `warning`
-// for the one state that is actively waiting on the user so it reads as
-// "needs attention" rather than blending in with the in-flight blues.
-const STATUS_VARIANTS = {
-	"awaiting-input": "warning",
-	merged: "success",
-	"pr-open": "information",
-	running: "information",
-	stopped: "neutral",
-} as const satisfies Record<AsxQueueSessionStatus, LozengeProps["variant"]>;
 
 const PANEL_VARIANTS: Variants = {
 	closed: {
@@ -78,7 +33,6 @@ const REDUCED_MOTION_PANEL_VARIANTS: Variants = {
 };
 
 interface QueueDetailPanelProps {
-	agent: RovoAgentProfile;
 	onClose: () => void;
 	resize: Pick<
 		ReturnType<typeof useSidebarResize>,
@@ -95,72 +49,16 @@ interface QueueDetailPanelProps {
 	session: AsxQueueSession;
 }
 
-function QueueDetailStatusIcon({ status }: Readonly<{ status: AsxQueueSessionStatus }>) {
-	switch (status) {
-		case "awaiting-input":
-			return <InformationCircleIcon label="" size="small" />;
-		case "pr-open":
-			return <PullRequestIcon label="" size="small" />;
-		case "merged":
-			return <MergeSuccessIcon label="" size="small" />;
-		case "running":
-			return <ChangesIcon label="" size="small" />;
-		case "stopped":
-			return <VideoStopIcon label="" size="small" />;
-	}
-}
-
-function QueueDetailRow({
-	icon,
-	label,
-	value,
-}: Readonly<{
-	icon: ReactElement;
-	label: string;
-	value: ReactNode;
-}>) {
-	return (
-		<Item className="flex-nowrap items-start gap-2 rounded-md border-0 px-0 py-0">
-			<ItemMedia className="h-5 items-center text-icon-subtlest [&_span]:size-3 [&_svg]:size-3" variant="icon">
-				<Icon aria-hidden render={icon} />
-			</ItemMedia>
-			<ItemContent className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-x-2">
-				<span className="text-xs leading-5 text-text-subtlest">{label}</span>
-				<span className="min-w-0 break-words text-xs leading-5 text-text-subtle">{value}</span>
-			</ItemContent>
-		</Item>
-	);
-}
-
-function QueueDetailSection({
-	children,
-	id,
-	title,
-}: Readonly<{
-	children: ReactNode;
-	id: string;
-	title: string;
-}>) {
-	return (
-		<section aria-labelledby={id} className="space-y-2 px-4 py-6">
-			<Heading as="h3" id={id} size="xxsmall">
-				{title}
-			</Heading>
-			{children}
-		</section>
-	);
-}
-
-export function QueueDetailPanel({ agent, onClose, resize, session }: Readonly<QueueDetailPanelProps>) {
+/**
+ * The queue detail panel. Its session-info + Development block renders the exact
+ * same `JiraSessionFlyoutBody` used by the sidebar hover flyout, so the two
+ * surfaces share one implementation and cannot drift in content or layout. The
+ * panel adds its own Sources and Output sections (which the compact flyout can't
+ * show) below that shared body.
+ */
+export function QueueDetailPanel({ onClose, resize, session }: Readonly<QueueDetailPanelProps>) {
 	const shouldReduceMotion = useReducedMotion();
-	const issueDescription = `${session.issueKey}: ${session.issueSummary}`;
-	const hasDevelopmentDetails = Boolean(session.repository || session.branch || session.worktreePath);
-	const hasDeliveryDetails = Boolean(
-		session.pullRequestNumber
-		|| session.commit
-		|| session.checks
-		|| session.fileChanges,
-	);
+	const sidebarSession = createAsxQueueSidebarSessionItem(session);
 
 	return (
 		<motion.div
@@ -188,83 +86,10 @@ export function QueueDetailPanel({ agent, onClose, resize, session }: Readonly<Q
 				</PanelHeader>
 
 				<PanelContent>
-					<PanelBody className="pb-5" spacing="none">
-						<section aria-label="Session" className="space-y-2 px-4 pb-6">
-							<ItemGroup className="gap-2">
-								<QueueDetailRow
-									icon={<QueueDetailStatusIcon status={session.status} />}
-									label="Status"
-									value={<Lozenge variant={STATUS_VARIANTS[session.status]}>{STATUS_LABELS[session.status]}</Lozenge>}
-								/>
-								<QueueDetailRow
-									icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
-									label="Session"
-									value={session.host === "cloud" ? "Cloud" : "Local"}
-								/>
-								<QueueDetailRow
-									icon={<AiAgentIcon label="" size="small" />}
-									label="Agent"
-									value={(
-										<Tag
-											type="agent"
-											elemBefore={(
-												<AgentAvatarVisual
-													avatarSrc={agent.avatarSrc}
-													brandName={agent.brandName}
-													fallbackText={agent.name.slice(0, 2).toUpperCase()}
-													label=""
-													logoName={agent.logoName}
-													sizePx={16}
-												/>
-											)}
-										>
-											{agent.name}
-										</Tag>
-									)}
-								/>
-								<QueueDetailRow icon={<TaskIcon label="" size="small" />} label="Jira" value={issueDescription} />
-							</ItemGroup>
-						</section>
-
-						{hasDevelopmentDetails ? (
-							<>
-								<Separator className="mx-4 data-horizontal:w-auto" />
-								<QueueDetailSection id="asx-queue-development-heading" title="Development">
-									<ItemGroup className="gap-2">
-										{session.repository ? <QueueDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Repository" value={session.repository} /> : null}
-										{session.branch ? <QueueDetailRow icon={<BranchIcon label="" size="small" />} label="Branch" value={session.branch} /> : null}
-										{session.worktreePath ? <QueueDetailRow icon={<FolderClosedIcon label="" size="small" />} label="Worktree" value={session.worktreePath} /> : null}
-									</ItemGroup>
-								</QueueDetailSection>
-							</>
-						) : null}
-
-						{hasDeliveryDetails ? (
-							<>
-								<Separator className="mx-4 data-horizontal:w-auto" />
-								<QueueDetailSection id="asx-queue-delivery-heading" title="Delivery">
-									<ItemGroup className="gap-2">
-										{session.pullRequestNumber ? <QueueDetailRow icon={<PullRequestIcon label="" size="small" />} label="Pull request" value={`#${session.pullRequestNumber}`} /> : null}
-										{session.commit ? <QueueDetailRow icon={<CommitIcon label="" size="small" />} label="Commit" value={session.commit} /> : null}
-										{session.checks ? <QueueDetailRow icon={<CheckCircleIcon label="" size="small" />} label="Checks" value={session.checks} /> : null}
-										{session.fileChanges ? (
-											<QueueDetailRow
-												icon={<ChangesIcon label="" size="small" />}
-												label="Changes"
-												value={(
-													<span className="inline-flex flex-wrap gap-1 font-medium">
-														<span>{session.fileChanges.files.length} files</span>
-														<span className="text-text-success">+{session.fileChanges.additions}</span>
-														<span className="text-text-danger">-{session.fileChanges.deletions}</span>
-													</span>
-												)}
-											/>
-										) : null}
-									</ItemGroup>
-								</QueueDetailSection>
-							</>
-						) : null}
-
+					<PanelBody className="pb-4" spacing="none">
+						<div className="px-4">
+							<JiraSessionFlyoutBody hideHeader session={sidebarSession} />
+						</div>
 						<QueueDetailArtifacts session={session} />
 					</PanelBody>
 				</PanelContent>

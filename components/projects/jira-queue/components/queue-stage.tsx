@@ -6,6 +6,7 @@ import { JiraSidebar } from "@/components/blocks/product-sidebar/variants/jira";
 import type { JiraSidebarSessionItem } from "@/components/blocks/product-sidebar/variants/jira";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import AppLayout from "@/components/projects/page";
+import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { createId } from "@/lib/utils";
 import {
@@ -31,12 +32,26 @@ import {
 } from "../lib/queue-session-state";
 import { QueueConversationWorkspace } from "./queue-conversation-workspace";
 
+const DETAIL_PANEL_DEFAULT_WIDTH_PX = 320;
+const DETAIL_PANEL_MIN_WIDTH_PX = 240;
+const DETAIL_PANEL_MAX_WIDTH_PX = 720;
+
 export function QueueStage(): React.ReactElement {
 	const [sessions, setSessions] = useState(() => createInitialQueueSessions(ASX_QUEUE_SESSION_SEEDS));
 	const [activeSessionId, setActiveSessionId] = useState(ASX_QUEUE_SESSION_SEEDS[0]?.id ?? "");
 	const [selectedItem, setSelectedItem] = useState(ASX_QUEUE_SPACES[0]?.name ?? "");
 	const [layoutMode, setLayoutMode] = useState<AsxQueueLayoutMode>("by-project");
 	const [sortMode, setSortMode] = useState<AsxQueueSortMode>("manual");
+	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+	// Owned here (not in the keyed workspace) so a dragged detail-panel width
+	// persists across session switches; it still resets on refresh (fresh state)
+	// and on double-click (the hook's onResizeHandleDoubleClick).
+	const detailPanelResize = useSidebarResize({
+		defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,
+		direction: "rtl",
+		maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,
+		minWidth: DETAIL_PANEL_MIN_WIDTH_PX,
+	});
 	const orderedSessions = useMemo(() => sortQueueSessions(sessions, sortMode), [sessions, sortMode]);
 	const groupedSessions = useMemo(() => groupQueueSessionsBySpace(orderedSessions), [orderedSessions]);
 	const orderedSidebarSessions = useMemo(
@@ -158,8 +173,11 @@ export function QueueStage(): React.ReactElement {
 			>
 				<QueueConversationWorkspace
 					agent={activeAgent}
+					detailPanelResize={detailPanelResize}
+					isDetailPanelOpen={isDetailPanelOpen}
 					key={activeSession.id}
 					onAnswerQuestion={handleAnswerQuestion}
+					onDetailPanelOpenChange={setIsDetailPanelOpen}
 					onDismissFileChanges={handleDismissFileChanges}
 					onJiraColumnChange={handleJiraColumnChange}
 					onSubmit={handleSubmit}

@@ -1,0 +1,360 @@
+"use client";
+
+import type { ReactNode } from "react";
+
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import BranchIcon from "@atlaskit/icon/core/branch";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
+import CloudArrowUpIcon from "@atlaskit/icon/core/cloud-arrow-up";
+import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
+import StatusInformationIcon from "@atlaskit/icon/core/status-information";
+import TaskIcon from "@atlaskit/icon/core/task";
+import IfElseIcon from "@atlaskit/icon-lab/core/if-else";
+
+import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
+import { SmartLink, SMART_LINK_MODAL_ACTIONS, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Icon } from "@/components/ui/icon";
+import { GithubLogo } from "@/components/ui/logo-third-party";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { Tag } from "@/components/ui/tag";
+import { TileAvatar } from "@/components/ui/tile";
+import { cn } from "@/lib/utils";
+
+import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
+
+/**
+ * The rich Jira agent-session flyout body — the canonical "latest" flyout for a
+ * queue session. It is rendered both by the live product sidebar
+ * (`JiraSessionRow` in `./jira`) and by the `agent-session-flyout` block
+ * showcase, so it lives here as a shared owner rather than inside the block.
+ *
+ * The body reuses the shared design-system components: the work item is a
+ * SmartLink, the agent is an agent-type Tag pill, PR state is a Lozenge, and the
+ * SCM ("Development") fields sit in their own separated block behind the
+ * third-party GitHub logo, rendered in the normal 12px body font.
+ *
+ * It depends on `./jira` for TYPES ONLY (erased at build time) so that `./jira`
+ * can import this body back without creating a runtime import cycle.
+ */
+
+/** Stable relative "updated" label per session state (demo data only). */
+const STATUS_UPDATED_LABEL: Record<JiraSidebarSessionStatus, string> = {
+	"awaiting-input": "2d ago",
+	running: "3m ago",
+	"pr-open": "1h ago",
+	merged: "5h ago",
+	stopped: "1d ago",
+};
+
+/** Work-item status lozenge derived from the session lifecycle. */
+const STATUS_WORK_ITEM: Record<
+	JiraSidebarSessionStatus,
+	{ label: string; variant: LozengeProps["variant"] }
+> = {
+	"awaiting-input": { label: "To Do", variant: "neutral" },
+	running: { label: "In progress", variant: "information" },
+	"pr-open": { label: "In review", variant: "information" },
+	merged: { label: "Done", variant: "success" },
+	stopped: { label: "Stopped", variant: "neutral" },
+};
+
+/** Pull-request state lozenge derived from the session lifecycle. */
+export function prStateLozenge(status: JiraSidebarSessionStatus): { label: string; variant: LozengeProps["variant"] } {
+	return status === "merged"
+		? { label: "Merged", variant: "discovery" }
+		: { label: "Open", variant: "success" };
+}
+
+/**
+ * Pull-request row icon, contextual to the merge outcome:
+ * - `merged` → merge success
+ * - `stopped` → merge failure (the PR ended without landing)
+ * - everything else (open PR, running, …) → the generic pull-request glyph
+ */
+export function prStateIcon(status: JiraSidebarSessionStatus): ReactNode {
+	if (status === "merged") return <MergeSuccessIcon label="" size="small" />;
+	if (status === "stopped") return <MergeFailureIcon label="" size="small" />;
+	return <PullRequestIcon label="" size="small" />;
+}
+
+/** The Jira status workflow offered by the work-item status dropdown. */
+const WORK_ITEM_STATUS_OPTIONS: ReadonlyArray<{ label: string; variant: LozengeProps["variant"] }> = [
+	{ label: "To Do", variant: "neutral" },
+	{ label: "In progress", variant: "information" },
+	{ label: "In review", variant: "information" },
+	{ label: "Done", variant: "success" },
+];
+
+/** Builds the SmartLink work-item link (issue key + summary + assignee, priority,
+ * and an interactive status dropdown). */
+export function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
+	const workItemStatus = STATUS_WORK_ITEM[session.status];
+
+	return {
+		id: `${session.id}-work-item`,
+		href: "#work-item",
+		title: `${session.issueKey}: ${session.issueSummary}`,
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "atlassian", name: "jira" },
+		description: `Primary work item for ${session.title}.`,
+		assignee: session.assignee,
+		priority: session.priority,
+		status: {
+			label: workItemStatus.label,
+			variant: workItemStatus.variant,
+			options: WORK_ITEM_STATUS_OPTIONS,
+		},
+		actions: SMART_LINK_MODAL_ACTIONS,
+	};
+}
+
+/** A flyout value rendered as a hover-underlined link. Development metadata
+ * (repository, branch, commit, worktree) uses this so the value reads as
+ * actionable: the underline only appears on hover. */
+function FlyoutLink({
+	className,
+	title,
+	segmented = false,
+	children,
+}: Readonly<{
+	className?: string;
+	title?: string;
+	/**
+	 * When the link wraps a multi-color `PathValue`, the underline is drawn by
+	 * each segment (via `group-hover`) so it matches that segment's color.
+	 * The `<a>` itself must then NOT underline, or it would paint one flat
+	 * single-color line over the whole value. Plain single-color links leave
+	 * this `false` and underline on the anchor directly.
+	 */
+	segmented?: boolean;
+	children: ReactNode;
+}>) {
+	return (
+		<a
+			className={cn(
+				// `group` so nested PathValue segments can react to this link's hover.
+				// `decoration-current` keeps a plain link's underline in its text color.
+				"group min-w-0 truncate rounded-[3px] no-underline decoration-current outline-none",
+				segmented ? null : "hover:underline focus-visible:underline",
+				className,
+			)}
+			href="#"
+			title={title}
+		>
+			{children}
+		</a>
+	);
+}
+
+/** Renders a slash-delimited path where every segment before the final one
+ * (the `path-before/` prefix) is dimmed to `text-text-subtlest`, keeping the
+ * final segment at the normal value color. Used for repository and branch
+ * paths so the meaningful tail stands out. Each segment underlines in its own
+ * text color on hover (`group-hover`) so the underline never diverges from the
+ * text above it. */
+function PathValue({ path }: Readonly<{ path: string }>) {
+	const lastSlash = path.lastIndexOf("/");
+	if (lastSlash === -1) return <span className="text-text">{path}</span>;
+	const prefix = path.slice(0, lastSlash + 1);
+	const tail = path.slice(lastSlash + 1);
+	return (
+		<>
+			<span className="text-text-subtlest decoration-current group-hover:underline group-focus-visible:underline">
+				{prefix}
+			</span>
+			<span className="text-text decoration-current group-hover:underline group-focus-visible:underline">
+				{tail}
+			</span>
+		</>
+	);
+}
+
+/** A labeled row inside the flyout: fixed label column + value column. */
+export function FlyoutRow({
+	icon,
+	label,
+	children,
+}: Readonly<{ icon: ReactNode; label: string; children: ReactNode }>) {
+	return (
+		<div className="grid min-w-0 grid-cols-[16px_84px_minmax(0,1fr)] items-center gap-2 text-xs leading-5">
+			<span className="grid size-4 place-items-center text-icon-subtle" aria-hidden="true">
+				{icon}
+			</span>
+			<span className="text-text-subtlest">{label}</span>
+			<span className="flex min-w-0 items-center text-text">{children}</span>
+		</div>
+	);
+}
+
+/** A section divider heading ("Label ────") used inside the flyout body. It is
+ * exported so the detail panel's Sources/Output sections reuse the exact same
+ * heading composition, keeping every section header identical across surfaces. */
+export function JiraSessionSectionHeading({
+	id,
+	children,
+}: Readonly<{ id?: string; children: ReactNode }>) {
+	return (
+		<div className="mb-1 flex items-center gap-3">
+			<span className="shrink-0 text-xs font-semibold text-text-subtlest" id={id}>{children}</span>
+			<span className="h-px flex-1 bg-border" aria-hidden="true" />
+		</div>
+	);
+}
+
+/** The redesigned flyout body matching the reference mock. */
+export function JiraSessionFlyoutBody({
+	session,
+	hideHeader = false,
+}: Readonly<{
+	session: JiraSidebarSessionItem;
+	/**
+	 * Hide the in-body title + relative-time header. Used by the queue detail
+	 * panel, which already surfaces the session title in its own PanelHeader, so
+	 * repeating it inside the body is redundant. The sidebar hover flyout leaves
+	 * this `false` because it has no separate header.
+	 */
+	hideHeader?: boolean;
+}>) {
+	const hasDevelopment = Boolean(
+		session.repository ??
+			session.pullRequestNumber ??
+			session.branch ??
+			session.worktreePath ??
+			session.checks,
+	);
+	const prState = prStateLozenge(session.status);
+	const hasCodeChanges = session.additions !== undefined && session.deletions !== undefined;
+
+	return (
+		<div className="flex flex-col gap-4">
+			{hideHeader ? null : (
+				<div className="flex items-center justify-between gap-3">
+					<p className="min-w-0 truncate text-sm font-semibold leading-5 text-text" title={session.title}>
+						{session.title}
+					</p>
+					<span className="shrink-0 text-[12px] leading-4 text-text-subtlest">
+						{STATUS_UPDATED_LABEL[session.status]}
+					</span>
+				</div>
+			)}
+
+			{session.status === "awaiting-input" ? (
+				<Alert size="small" variant="info">
+					<Icon render={<StatusInformationIcon label="" />} label="Information" />
+					<AlertTitle>Awaiting user response</AlertTitle>
+				</Alert>
+			) : null}
+
+			<div className="flex flex-col gap-2">
+				<FlyoutRow
+					icon={session.host === "cloud" ? <CloudArrowUpIcon label="" size="small" /> : <FolderClosedIcon label="" size="small" />}
+					label="Session"
+				>
+					{session.host === "cloud" ? "Cloud" : "Local"}
+				</FlyoutRow>
+				<FlyoutRow icon={<AiAgentIcon label="" size="small" />} label="Agent">
+					<HoverCard closeDelay={120} openDelay={0}>
+						{/* Base UI reads delays on the Trigger, not the Root. Set them here
+						    too so this nested agent card opens instantly and tolerates the
+						    pointer travel from the surrounding session flyout (which itself
+						    closes with 0ms delay) without dismissing before it appears. */}
+						<HoverCardTrigger
+							closeDelay={120}
+							delay={0}
+							render={
+								<Tag
+									elemBefore={session.agentAvatarSrc ? (
+										<TileAvatar alt="" aria-hidden shape="hexagon" src={session.agentAvatarSrc} />
+									) : undefined}
+									type="agent"
+								>
+									{session.agentName}
+								</Tag>
+							}
+						/>
+						<HoverCardContent
+							align="start"
+							className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
+							side="bottom"
+							sideOffset={8}
+						>
+							<AgentProfileCard
+								avatarSrc={session.agentAvatarSrc}
+								name={session.agentName}
+							/>
+						</HoverCardContent>
+					</HoverCard>
+				</FlyoutRow>
+				<FlyoutRow icon={<TaskIcon label="" size="small" />} label="Work item">
+					<SmartLink item={toWorkItem(session)} showStatus />
+				</FlyoutRow>
+			</div>
+
+			{hasDevelopment ? (
+				<div className="flex flex-col gap-2">
+					<JiraSessionSectionHeading>Development</JiraSessionSectionHeading>
+					{session.pullRequestNumber ? (
+						<FlyoutRow icon={prStateIcon(session.status)} label="Pull request">
+							<span className="flex min-w-0 flex-1 items-center gap-1">
+								<Lozenge variant={prState.variant}>{prState.label}</Lozenge>
+								<FlyoutLink
+									className="text-text"
+									title={
+										session.pullRequestTitle
+											? `#${session.pullRequestNumber}: ${session.pullRequestTitle}`
+											: `#${session.pullRequestNumber}`
+									}
+								>
+									{session.pullRequestTitle
+										? `#${session.pullRequestNumber}: ${session.pullRequestTitle}`
+										: `#${session.pullRequestNumber}`}
+								</FlyoutLink>
+								{hasCodeChanges ? (
+									<span className="ml-auto flex shrink-0 items-center gap-1">
+										<span className="text-text-success">+{session.additions}</span>
+										<span className="text-text-danger">-{session.deletions}</span>
+									</span>
+								) : null}
+							</span>
+						</FlyoutRow>
+					) : null}
+					{session.checks ? (
+						<FlyoutRow icon={<CheckCircleIcon label="" size="small" />} label="Checks">
+							<span className="min-w-0 truncate text-text" title={session.checks}>{session.checks}</span>
+						</FlyoutRow>
+					) : null}
+					{session.repository ? (
+						<FlyoutRow icon={<FolderClosedIcon label="" size="small" />} label="Repository">
+							<span className="flex min-w-0 items-center gap-1">
+								<GithubLogo aria-hidden borderless label="" size="xxsmall" />
+								<FlyoutLink segmented title={session.repository}>
+									<PathValue path={session.repository} />
+								</FlyoutLink>
+							</span>
+						</FlyoutRow>
+					) : null}
+					{session.branch ? (
+						<FlyoutRow icon={<BranchIcon label="" size="small" />} label="Branch">
+							<FlyoutLink segmented title={session.branch}>
+								<PathValue path={session.branch} />
+							</FlyoutLink>
+						</FlyoutRow>
+					) : null}
+					{session.worktreePath ? (
+						<FlyoutRow icon={<IfElseIcon label="" size="small" />} label="Worktree">
+							<FlyoutLink className="text-text" title={session.worktreePath}>{session.worktreePath}</FlyoutLink>
+						</FlyoutRow>
+					) : null}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+export default JiraSessionFlyoutBody;

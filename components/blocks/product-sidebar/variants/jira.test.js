@@ -154,19 +154,20 @@ test("Spaces organize menu controls grouping and sorting", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /value="manual">Manual order/u);
 });
 
-test("session flyovers distinguish cloud and local execution details", () => {
+test("session rows open the shared rich flyout body anchored to the right", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /host: JiraSidebarSessionHost;/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /<HoverCard closeDelay=\{80\} openDelay=\{240\}>/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /<HoverCard\b/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /<HoverCardTrigger render=\{<div className="w-full" \/>\}>/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /session\.host === "cloud" \? "Cloud session" : "Local session"/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /session\.status === "awaiting-input" \? \([\s\S]*label="Status"[\s\S]*value="Awaiting user response"/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Repository" value=\{session\.repository\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Branch" value=\{session\.branch\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Worktree" value=\{session\.worktreePath\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Pull request" value=\{`#\$\{session\.pullRequestNumber\}`\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Commit" value=\{session\.commit\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /label="Checks" value=\{session\.checks\}/u);
-	assert.match(JIRA_SIDEBAR_SOURCE, /className="w-80 border-0 bg-surface-overlay p-3 text-text shadow-overlay"/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ JiraSessionFlyoutBody \} from "\.\/jira-session-flyout";/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(
+		JIRA_SIDEBAR_SOURCE,
+		/className="w-\[400px\] border-0 bg-surface-overlay p-4 text-text shadow-overlay/u,
+	);
+	assert.match(JIRA_SIDEBAR_SOURCE, /side="right"/u);
+	// The old compact hover body has been fully replaced, not left coexisting.
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /JiraSessionHoverDetails/u);
+	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /className="w-80 border-0 bg-surface-overlay p-3/u);
 });
 
 test("expanded project session spacing follows the compact queue rhythm", () => {

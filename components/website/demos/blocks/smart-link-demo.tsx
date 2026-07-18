@@ -9,13 +9,17 @@ import {
 
 function SmartLinkExampleSet({
 	items,
-}: Readonly<{ items: (typeof SMART_LINK_VARIANT_EXAMPLES)[keyof typeof SMART_LINK_VARIANT_EXAMPLES] }>) {
+	showStatus = false,
+}: Readonly<{
+	items: (typeof SMART_LINK_VARIANT_EXAMPLES)[keyof typeof SMART_LINK_VARIANT_EXAMPLES];
+	showStatus?: boolean;
+}>) {
 	return (
 		<div className="min-h-[260px] w-full bg-surface px-6 py-12 text-text">
 			<div className="mx-auto flex max-w-3xl flex-col gap-5 text-xl leading-9">
 				{items.map((item) => (
 					<p key={item.id}>
-						<SmartLink item={item} />
+						<SmartLink item={item} showStatus={showStatus} />
 					</p>
 				))}
 			</div>
@@ -40,7 +44,11 @@ export function SmartLinkDemoTeam() {
 }
 
 export function SmartLinkDemoGoal() {
-	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.goal} />;
+	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.goal} showStatus />;
+}
+
+export function SmartLinkDemoProject() {
+	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.project} showStatus />;
 }
 
 export function SmartLinkDemoLoom() {

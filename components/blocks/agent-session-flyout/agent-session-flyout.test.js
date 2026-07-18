@@ -13,19 +13,36 @@ function readRepoFile(relativePath) {
 	return fs.readFileSync(path.join(BLOCK_DIR, "..", "..", "..", relativePath), "utf8");
 }
 
-// The block reuses the shared design-system components and /asx session data
-// rather than re-implementing them.
-test("component reuses SmartLink, agent Tag, Lozenge, GitHub logo, and /asx data", () => {
-	const source = readBlockFile("components/agent-session-flyout.tsx");
+// The rich flyout body is the canonical "latest" flyout and lives in the Jira
+// sidebar variant so both the live sidebar and this block render it.
+const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
+
+// The shared body reuses the shared design-system components rather than
+// re-implementing them.
+test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
+	assert.match(source, /export function JiraSessionFlyoutBody\b/u);
 	assert.match(source, /import\s*\{[^}]*SmartLink[^}]*\}\s*from\s*"@\/components\/blocks\/smart-link"/u);
 	assert.match(source, /import\s*\{[^}]*GithubLogo[^}]*\}\s*from\s*"@\/components\/ui\/logo-third-party"/u);
 	assert.match(source, /import\s*\{[^}]*Lozenge[^}]*\}\s*from\s*"@\/components\/ui\/lozenge"/u);
 	assert.match(source, /import\s*\{[^}]*Tag[^}]*\}\s*from\s*"@\/components\/ui\/tag"/u);
-	assert.match(source, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
-	assert.match(source, /<SmartLink item=\{toWorkItem\(session\)\} \/>/u);
+	assert.match(source, /<SmartLink item=\{toWorkItem\(session\)\}/u);
 	// Agent renders as an agent-type Tag pill; PR state renders as a Lozenge.
 	assert.match(source, /<Tag[\s\S]*?type="agent"/u);
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
+});
+
+// The block only supplies demo chrome; it delegates to the shared body and
+// reuses the /asx seeds rather than re-declaring its own flyout body.
+test("block delegates to the shared flyout body and reuses /asx data", () => {
+	const source = readBlockFile("components/agent-session-flyout.tsx");
+	assert.match(
+		source,
+		/import\s*\{[^}]*JiraSessionFlyoutBody[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
+	);
+	assert.match(source, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.match(source, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
+	assert.doesNotMatch(source, /function AgentSessionFlyoutBody\b/u);
 });
 
 // Each flyout must render inside the real anchored HoverCard chrome (the modal
@@ -39,16 +56,25 @@ test("each demo renders in a HoverCard popover inside its own section", () => {
 	assert.match(source, /<section\b/u);
 });
 
-// SCM fields live in their own separated "Development" block using mono font.
-test("development fields are separated and use mono font", () => {
-	const source = readBlockFile("components/agent-session-flyout.tsx");
+// SCM fields live in their own separated "Development" block using the normal
+// 12px body font (not mono), and the block preserves every field the legacy
+// compact flyout carried.
+test("development fields are separated, complete, and use the normal body font", () => {
+	const source = readRepoFile(FLYOUT_BODY_PATH);
 	assert.match(source, />Development</u);
-	assert.match(source, /font-mono/u);
+	assert.doesNotMatch(source, /font-mono/u);
+	for (const label of ["Pull request", "Checks", "Repository", "Branch", "Worktree"]) {
+		assert.match(source, new RegExp(`label="${label}"`, "u"), `missing Development field "${label}"`);
+	}
 });
 
-test("the flyout body is exported from the Jira sidebar variant", () => {
+// The live Jira sidebar row renders the same shared flyout body, and the old
+// compact hover body is fully removed (never coexisting).
+test("the live sidebar row renders the shared flyout body", () => {
 	const jiraSource = readRepoFile("components/blocks/product-sidebar/variants/jira.tsx");
-	assert.match(jiraSource, /export function JiraSessionHoverDetails\b/u);
+	assert.match(jiraSource, /import \{ JiraSessionFlyoutBody \} from "\.\/jira-session-flyout";/u);
+	assert.match(jiraSource, /<JiraSessionFlyoutBody session=\{session\} \/>/u);
+	assert.doesNotMatch(jiraSource, /JiraSessionHoverDetails/u);
 });
 
 test("all four session lifecycle states are labeled", () => {
