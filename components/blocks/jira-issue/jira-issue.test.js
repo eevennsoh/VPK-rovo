@@ -11,7 +11,7 @@ const GENERATIVE_SOURCE = readFileSync(join(__dirname, "generative-action-menu.t
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(join(__dirname, "../../website/demos/blocks/jira-issue-demo.tsx"), "utf8");
 const DETAILS_SOURCE = readFileSync(join(__dirname, "../../../app/data/details/blocks/jira-issue.ts"), "utf8");
-const REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks.ts"), "utf8");
+const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks-variants.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
 const SHIMMER_SOURCE = readFileSync(join(__dirname, "../../ui-custom/shimmer.tsx"), "utf8");
 const ROOT_CLASS_BLOCK = SOURCE.slice(
@@ -338,14 +338,20 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /id: "service-impact-agent"[\s\S]*labels: SERVICE_IMPACT_AGENT_LABELS,[\s\S]*cycleIntervalMs: 5200,[\s\S]*cycleIntervalJitterMs: 1600/);
 	assert.match(PAGE_SOURCE, /id: "dependency-mapper"[\s\S]*labels: DEPENDENCY_MAPPER_LABELS,[\s\S]*cycleIntervalMs: 6800,[\s\S]*cycleIntervalJitterMs: 2200/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = \[[\s\S]*\.\.\.JIRA_ISSUE_AGENT_ACTIVITIES\[0\],[\s\S]*label: "Awaiting user input"[\s\S]*state: "awaiting-input"[\s\S]*JIRA_ISSUE_AGENT_ACTIVITIES\[1\]/);
-	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider, useRovoChat \} from "@\/app\/contexts";/);
-	assert.match(PAGE_SOURCE, /import FloatingRovoButton from "@\/components\/projects\/shared\/components\/floating-rovo-button";/);
-	assert.match(PAGE_SOURCE, /import RovoFloatingChat from "@\/components\/projects\/rovo-floating-chat\/components\/rovo-floating-chat";/);
+	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider \} from "@\/app\/contexts";/);
+	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/asx\/data\/agent-chat-data";/);
+	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/asx\/components\/asx-rovo-overlay";/);
+	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/asx\/hooks\/use-asx-agent-chat-demo";/);
 	assert.match(PAGE_SOURCE, /import \{[\s\S]*JiraIssue,[\s\S]*type JiraIssueAgentActivity,[\s\S]*type JiraIssueCompletedAgentRun,[\s\S]*type JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue";/);
-	assert.match(PAGE_SOURCE, /const \{ chatSurface, openChat, sendPrompt \} = useRovoChat\(\);/);
-	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = useCallback\(\(\) => \{[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat\]\);/);
-	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openChat\("floating"\);[\s\S]*void sendPrompt\(request\.prompt, \{[\s\S]*messageMetadata: \{[\s\S]*source: "jira-issue-generative-action",[\s\S]*\},[\s\S]*\}\);[\s\S]*\}, \[openChat, sendPrompt\]\);/);
-	assert.match(PAGE_SOURCE, /<RovoChatProvider>[\s\S]*<JiraIssueAgentActivityStatesDemo \/>[\s\S]*<\/RovoChatProvider>/);
+	// The demo drops into the floating chat with the activity's agent already
+	// selected (matching ASX), not a blank vanilla Rovo chat.
+	assert.doesNotMatch(PAGE_SOURCE, /openChat\("floating"\)/);
+	assert.match(PAGE_SOURCE, /const \{ chatContextBar, externalThinkingMessageId, openAgentChat \} = useAsxAgentChatDemo\(\);/);
+	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
+	assert.match(PAGE_SOURCE, /const handleAgentActivityQuestionSubmit = openActivityChat;/);
+	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo \/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "single-agent-working", label: "1 agent" \}/);
@@ -372,15 +378,16 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /agentDoneRuns=\{agentActivityState === "agent-completed-work" \? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined\}/);
 	assert.match(PAGE_SOURCE, /generativeAction=\{\{[\s\S]*onSubmit: handleGenerativeActionSubmit,[\s\S]*\}\}/);
 	assert.match(PAGE_SOURCE, /onAgentActivityViewChat=\{handleAgentActivityViewChat\}/);
-	assert.match(PAGE_SOURCE, /\{chatSurface === null \? \([\s\S]*<FloatingRovoButton[\s\S]*forceVisible[\s\S]*positioning="container"[\s\S]*product="jira"[\s\S]*\/>[\s\S]*\) : null\}/);
-	assert.match(PAGE_SOURCE, /\{chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat key="floating-chat" \/>[\s\S]*\) : null\}/);
+	assert.match(PAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}[\s\S]*onQuestionAnswer=\{pendingChatQuestion \? handleChatQuestionAnswer : undefined\}[\s\S]*\/>/);
+	assert.doesNotMatch(PAGE_SOURCE, /<FloatingRovoButton/);
+	assert.doesNotMatch(PAGE_SOURCE, /<RovoFloatingChat/);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoAgentActivityStates\(\)/);
 	assert.match(DEMO_SOURCE, /<JiraIssuePage variant="agent-activity-states" \/>/);
 	assert.match(DETAILS_SOURCE, /demoSlug: "jira-issue-demo-agent-activity-states"/);
 	assert.match(DETAILS_SOURCE, /name: "agentActivities"/);
 	assert.match(DETAILS_SOURCE, /name: "onAgentActivityViewChat"/);
-	assert.match(REGISTRY_SOURCE, /"jira-issue-demo-agent-activity-states": dynamic\(/);
-	assert.match(REGISTRY_SOURCE, /default: mod\.JiraIssueDemoAgentActivityStates/);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-issue-demo-agent-activity-states": dynamic\(/);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoAgentActivityStates/);
 });
 
 test("Jira issue renders expandable subtasks with nested subtask cards", () => {
