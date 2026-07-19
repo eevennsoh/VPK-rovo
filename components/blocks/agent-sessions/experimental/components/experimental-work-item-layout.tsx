@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 
 import { useAgentSessionsState } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
@@ -39,6 +40,7 @@ export function ExperimentalWorkItemLayout({
 	composer,
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useAgentSessionsState();
+	const { metadataCollapsed } = usePanelLayout();
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
 	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
@@ -50,7 +52,11 @@ export function ExperimentalWorkItemLayout({
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
 			<div
 				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:grid @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
-				style={{ gridTemplateColumns: "minmax(0, 1fr) clamp(320px, 34vw, 408px)" }}
+				style={{
+					gridTemplateColumns: metadataCollapsed
+						? "minmax(0, 1fr)"
+						: "minmax(0, 1fr) clamp(320px, 34vw, 408px)",
+				}}
 			>
 				<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col">
 					<div
@@ -71,9 +77,11 @@ export function ExperimentalWorkItemLayout({
 						</div>
 					) : null}
 				</div>
-				<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pt-1 @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2">
-					<div className="order-3 min-w-0">{metadata}</div>
-				</div>
+				{metadataCollapsed ? null : (
+					<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2">
+						<div className="order-3 min-w-0">{metadata}</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

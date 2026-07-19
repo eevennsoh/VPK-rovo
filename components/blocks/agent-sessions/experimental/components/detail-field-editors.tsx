@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
@@ -100,7 +101,15 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56" positionerClassName="z-[502]" sideOffset={8}>
 				{STATUS_PHASES.map((phase) => (
-					<DropdownMenuItem key={phase} onSelect={() => onChange(phase)} selected={phase === value}>
+					<DropdownMenuItem
+						key={phase}
+						onSelect={() => onChange(phase)}
+						elemAfter={
+							phase === value ? (
+								<CheckMarkIcon label="" size="small" color="var(--ds-icon-selected)" />
+							) : undefined
+						}
+					>
 						<Lozenge variant={statusVariant(phase)}>{phase}</Lozenge>
 					</DropdownMenuItem>
 				))}
