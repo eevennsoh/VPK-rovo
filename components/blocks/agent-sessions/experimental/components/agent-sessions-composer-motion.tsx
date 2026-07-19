@@ -1,8 +1,9 @@
 "use client";
 
-import { motion, useReducedMotion, type Transition } from "motion/react";
+import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import { useState, type ReactNode } from "react";
 
+import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { cn } from "@/lib/utils";
 
 const COMPOSER_REPOSITION_TRANSITION = {
@@ -15,26 +16,33 @@ const REDUCED_MOTION_TRANSITION = { duration: 0 } satisfies Transition;
 interface AgentSessionsComposerMotionProps {
 	children: ReactNode;
 	className?: string;
+	placement: "planner" | "sticky";
 }
 
 /** Shared layout identity for the planner composer becoming the sticky composer. */
 export function AgentSessionsComposerMotion({
 	children,
 	className,
+	placement,
 }: Readonly<AgentSessionsComposerMotionProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
+	const { metadataLayoutAnimating } = usePanelLayout();
 	const [isAnimating, setIsAnimating] = useState(false);
 
 	return (
-		<motion.div
-			className={cn("min-w-0", className)}
-			layoutId="agent-sessions-composer"
-			onLayoutAnimationStart={() => setIsAnimating(true)}
-			onLayoutAnimationComplete={() => setIsAnimating(false)}
-			style={isAnimating && !shouldReduceMotion ? { willChange: "transform" } : undefined}
-			transition={shouldReduceMotion ? REDUCED_MOTION_TRANSITION : COMPOSER_REPOSITION_TRANSITION}
-		>
-			{children}
-		</motion.div>
+		<LayoutGroup inherit="id">
+			<motion.div
+				className={cn("min-w-0", className)}
+				layout={metadataLayoutAnimating ? false : "position"}
+				layoutDependency={placement}
+				layoutId={metadataLayoutAnimating ? undefined : "agent-sessions-composer"}
+				onLayoutAnimationStart={() => setIsAnimating(true)}
+				onLayoutAnimationComplete={() => setIsAnimating(false)}
+				style={isAnimating && !shouldReduceMotion ? { willChange: "transform" } : undefined}
+				transition={shouldReduceMotion ? REDUCED_MOTION_TRANSITION : COMPOSER_REPOSITION_TRANSITION}
+			>
+				{children}
+			</motion.div>
+		</LayoutGroup>
 	);
 }

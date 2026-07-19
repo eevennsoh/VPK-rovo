@@ -110,7 +110,7 @@ function AiPlannerActionBar() {
 			className="relative z-20 mt-4"
 			data-ai-planner-controls="floating"
 		>
-			<AgentSessionsComposerMotion>
+			<AgentSessionsComposerMotion placement="planner">
 				<FloatingComposer
 					actions={(
 						<div className="flex items-center gap-2">

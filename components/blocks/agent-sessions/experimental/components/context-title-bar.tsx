@@ -6,11 +6,20 @@ import { AnimatePresence, motion, useReducedMotion, type Transition } from "moti
 import { token } from "@/lib/tokens";
 import { ContextEditableTitle } from "@/components/blocks/agent-sessions/experimental/components/context-editable-header";
 import { ContextTitleActions } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
-import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
+import {
+	METADATA_CONTENT_COLLAPSE_TRANSITION,
+	METADATA_CONTENT_EXPAND_TRANSITION,
+	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
+	usePanelLayout,
+} from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 
 const ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.1,
 	ease: [0.4, 1, 0.6, 1], // duration-fast + ease-out-practical
+};
+const EXPANDED_ACTIONS_ENTER_TRANSITION: Transition = {
+	duration: 0.05,
+	ease: [0.4, 1, 0.6, 1], // duration-xxshort + ease-out-practical
 };
 const ACTIONS_EXIT_TRANSITION: Transition = {
 	duration: 0.05,
@@ -35,6 +44,7 @@ function AnimatedContextTitleActions({
 	const didCompleteToggleExit = useRef(false);
 	const [isAnimating, setIsAnimating] = useState(false);
 	const isInteractive = !hideForToggle && isLayoutSettled && !isAnimating;
+	const enterTransition = collapsed ? ACTIONS_ENTER_TRANSITION : EXPANDED_ACTIONS_ENTER_TRANSITION;
 
 	return (
 		<motion.div
@@ -46,7 +56,7 @@ function AnimatedContextTitleActions({
 							transition: shouldReduceMotion ? { duration: 0 } : ACTIONS_EXIT_TRANSITION,
 						}
 					: isLayoutSettled
-					? { opacity: 1, scale: 1, transition: ACTIONS_ENTER_TRANSITION }
+					? { opacity: 1, scale: 1, transition: enterTransition }
 					: { opacity: 0, scale: 0.96, transition: { duration: 0 } }
 			}
 			aria-hidden={isInteractive ? undefined : true}
@@ -84,31 +94,29 @@ export function ContextTitleBar() {
 		metadataCollapsed,
 		metadataTogglePending,
 	} = usePanelLayout();
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useReducedMotion() ?? false;
 	const [settledMetadataCollapsed, setSettledMetadataCollapsed] = useState(metadataCollapsed);
 	const isActionLayoutSettled = shouldReduceMotion || settledMetadataCollapsed === metadataCollapsed;
+	const contentLayoutTransition = shouldReduceMotion
+		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
+		: metadataCollapsed
+			? METADATA_CONTENT_COLLAPSE_TRANSITION
+			: METADATA_CONTENT_EXPAND_TRANSITION;
 	const contentColumnStyle = {
 		maxWidth: metadataCollapsed ? "800px" : "100%",
-		transition: shouldReduceMotion
-			? undefined
-			: metadataCollapsed
-				? "max-width var(--duration-medium) var(--ease-in)"
-				: "max-width var(--duration-slow) var(--ease-in-out)",
 	} as CSSProperties;
 
 	return (
 		<div style={{ paddingBottom: token("space.200") }}>
-			<div
+			<motion.div
 				className="mx-auto flex w-full items-center justify-between gap-3 px-6 motion-reduce:transition-none"
 				data-agent-sessions-title-column
-				onTransitionEnd={(event) => {
-					if (event.currentTarget === event.target && event.propertyName === "max-width") {
-						setSettledMetadataCollapsed(metadataCollapsed);
-					}
-				}}
+				layout={shouldReduceMotion ? false : "position"}
+				onLayoutAnimationComplete={() => setSettledMetadataCollapsed(metadataCollapsed)}
 				style={contentColumnStyle}
+				transition={contentLayoutTransition}
 			>
-				<div className="min-w-0 flex-1">
+				<div className="min-w-0 flex-1" data-agent-sessions-title>
 					<ContextEditableTitle />
 				</div>
 				<AnimatePresence initial={false} mode="popLayout">
@@ -121,7 +129,7 @@ export function ContextTitleBar() {
 						shouldReduceMotion={shouldReduceMotion}
 					/>
 				</AnimatePresence>
-			</div>
+			</motion.div>
 		</div>
 	);
 }

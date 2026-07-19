@@ -10,35 +10,56 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RovoColorIcon } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import type { ReactNode } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import CopyIcon from "@atlaskit/icon/core/copy";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import LockUnlockedIcon from "@atlaskit/icon/core/lock-unlocked";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+type CodingAgent = Readonly<{
+	/** Stable id used for React keys. */
+	id: string;
+	/** Human-readable label shown in the button/menu. */
+	label: string;
+	/** Brand glyph. Rovo is a 1P mark; the rest render via `LogoThirdParty`. */
+	logo: ReactNode;
+}>;
+
+function thirdPartyAgentLogo(name: ThirdPartyLogoName): ReactNode {
+	return <LogoThirdParty name={name} size="small" borderless />;
+}
+
 /**
- * Coding-agent brands shown behind the "Open" split button. The first entry is
- * the primary agent whose logo sits in front of the "Open" label; the full list
- * populates the trailing chevron's dropdown menu. Each id maps to a registered
- * `LogoThirdParty` brand (Claude/Cursor/OpenAI ship with the upstream package;
- * Gemini/Copilot are local `public/3p` fallback assets).
+ * Coding editors / agents shown behind the "Open" split button. The first entry
+ * is the default — its logo + label sit in front of the split button, so it is
+ * intentionally omitted from the dropdown (no need to repeat the default). The
+ * remaining entries populate the trailing chevron's menu. Most map to a
+ * registered `LogoThirdParty` brand (Codex/Cursor/Copilot ship with the upstream
+ * package or a local `public/3p` fallback); Rovo CLI uses the 1P `RovoColorIcon`.
  */
-const CODING_AGENTS: ReadonlyArray<{ name: ThirdPartyLogoName; label: string }> = [
-	{ name: "claude", label: "Claude" },
-	{ name: "openai", label: "OpenAI" },
-	{ name: "cursor", label: "Cursor" },
-	{ name: "github-copilot", label: "GitHub Copilot" },
-	{ name: "google-gemini", label: "Gemini" },
+const CODING_AGENTS: readonly CodingAgent[] = [
+	{ id: "claude-code", label: "Claude Code", logo: thirdPartyAgentLogo("claude") },
+	{ id: "codex", label: "Codex", logo: thirdPartyAgentLogo("openai-codex") },
+	{ id: "rovo-cli", label: "Rovo CLI", logo: <RovoColorIcon size="small" /> },
+	{ id: "cursor", label: "Cursor", logo: thirdPartyAgentLogo("cursor") },
+	{ id: "vs-code", label: "VS Code", logo: thirdPartyAgentLogo("vs-code") },
+	{ id: "github-copilot", label: "GitHub Copilot", logo: thirdPartyAgentLogo("github-copilot") },
+	{ id: "gemini", label: "Gemini", logo: thirdPartyAgentLogo("google-gemini") },
 ];
 
 const PRIMARY_CODING_AGENT = CODING_AGENTS[0];
+/** Dropdown lists the non-default agents; the default sits on the split button. */
+const SECONDARY_CODING_AGENTS = CODING_AGENTS.slice(1);
 
 /**
  * Title-row action cluster for the experimental Agent Sessions work item:
- * lock / watch / share / Open split button / more. Visual-only (no handlers) —
- * mirrors the standard ModalHeader action styling but sits beside the editable
+ * lock / watch / share / status / Open split button / more. It mirrors the
+ * standard ModalHeader action styling but sits beside the editable
  * title instead of in the breadcrumb row. The Open split button reuses the
  * shared ButtonGroup primitive so the main + trailing chevron read as one group;
  * its trailing chevron opens a dropdown listing the available coding agents.
@@ -61,9 +82,9 @@ export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?
 				</>
 			)}
 			<ButtonGroup variant="split">
-				<Button aria-label="Open" variant="outline" className="gap-0.5">
-					<LogoThirdParty name={PRIMARY_CODING_AGENT.name} size="small" borderless />
-					Open
+				<Button aria-label={`Open with ${PRIMARY_CODING_AGENT.label}`} variant="outline" className="gap-0.5">
+					{PRIMARY_CODING_AGENT.logo}
+					{PRIMARY_CODING_AGENT.label}
 				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -73,16 +94,22 @@ export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?
 							</Button>
 						}
 					/>
-					<DropdownMenuContent align="end" positionerClassName="z-[502]">
-						{CODING_AGENTS.map((agent) => (
+					<DropdownMenuContent align="end" positionerClassName="z-[502]" className="p-0">
+						<div className="max-h-72 overflow-y-auto p-1">
+							{SECONDARY_CODING_AGENTS.map((agent) => (
+								<DropdownMenuItem className="gap-0.5" key={agent.id} elemBefore={agent.logo}>
+									{agent.label}
+								</DropdownMenuItem>
+							))}
+						</div>
+						<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
 							<DropdownMenuItem
 								className="gap-0.5"
-								key={agent.name}
-								elemBefore={<LogoThirdParty name={agent.name} size="small" borderless />}
+								elemBefore={<CopyIcon label="" size="small" />}
 							>
-								{agent.label}
+								Copy prompt
 							</DropdownMenuItem>
-						))}
+						</div>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</ButtonGroup>

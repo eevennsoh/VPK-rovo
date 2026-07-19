@@ -159,9 +159,11 @@ export function ActivityComposer() {
 			<ActivityComposerContextPills
 				onSelectAgent={(agentName) => insertContext("@", agentName)}
 				onSelectSkill={(skillId) => insertContext("/", skillId)}
+				onStatusChange={(status) => actions.updateMetadata({ status })}
+				status={state.metadata.status}
 			/>
 			<div className="relative" data-agent-sessions-composer-state="sticky">
-				<AgentSessionsComposerMotion>
+				<AgentSessionsComposerMotion placement="sticky">
 					<FloatingComposer
 						actions={
 							<RovoComposerActionButton

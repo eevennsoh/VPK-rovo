@@ -138,10 +138,13 @@ test("the title Open split button uses direct 24px coding-agent logos", () => {
 	assert.match(titleActionsSource, /<ButtonGroup variant="split">/u);
 	assert.match(
 		titleActionsSource,
-		/<DropdownMenuItem[\s\S]*className="gap-0\.5"[\s\S]*elemBefore=\{<LogoThirdParty name=\{agent\.name\} size="small" borderless \/>\}/u,
+		/<DropdownMenuItem[\s\S]*className="gap-0\.5"[\s\S]*elemBefore=\{agent\.logo\}/u,
 	);
+	assert.match(titleActionsSource, /<LogoThirdParty name=\{name\} size="small" borderless \/>/u);
+	assert.match(titleActionsSource, /<RovoColorIcon size="small" \/>/u);
 	assert.doesNotMatch(titleActionsSource, /LogoThirdParty[^>]*size="xxsmall"/u);
 	assert.match(titleActionsSource, /export function ContextTitleActions\(\{ collapsed = false \}/u);
+	assert.doesNotMatch(titleActionsSource, /useAgentSessionsState|useAgentSessionsActions|StatusPill/u);
 	assert.match(titleActionsSource, /\{collapsed \? null : \([\s\S]*aria-label="No restrictions"[\s\S]*<EyeOpenIcon[\s\S]*aria-label="Share"/u);
 	assert.match(titleActionsSource, /collapsed \? \([\s\S]*<DropdownMenu[\s\S]*aria-label="Actions"/u);
 	assert.match(titleActionsSource, />\s*No restrictions\s*<\/DropdownMenuItem>/u);
@@ -184,27 +187,30 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(layoutSource, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
 	assert.match(layoutSource, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(layoutSource, /useReducedMotion\(\)/u);
-	assert.match(layoutSource, /margin-right var\(--duration-slow\) var\(--ease-in-out\)/u);
-	assert.match(layoutSource, /margin-right var\(--duration-medium\) var\(--ease-in\)/u);
 	assert.match(layoutSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
-	assert.match(layoutSource, /max-width var\(--duration-slow\) var\(--ease-in-out\)/u);
-	assert.match(layoutSource, /max-width var\(--duration-medium\) var\(--ease-in\)/u);
+	assert.match(layoutSource, /METADATA_CONTENT_COLLAPSE_TRANSITION/u);
+	assert.match(layoutSource, /METADATA_CONTENT_EXPAND_TRANSITION/u);
+	assert.equal((layoutSource.match(/layout=\{shouldReduceMotion \? false : "position"\}/gu) ?? []).length, 1);
 	assert.match(layoutSource, /data-agent-sessions-content-column/u);
 	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(titleBarSource, /data-agent-sessions-title-column/u);
-	assert.match(titleBarSource, /max-width var\(--duration-slow\) var\(--ease-in-out\)/u);
-	assert.match(titleBarSource, /max-width var\(--duration-medium\) var\(--ease-in\)/u);
+	assert.match(titleBarSource, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(titleBarSource, /onLayoutAnimationComplete=\{\(\) => setSettledMetadataCollapsed\(metadataCollapsed\)\}/u);
+	assert.match(titleBarSource, /data-agent-sessions-title/u);
+	assert.doesNotMatch(titleBarSource, /function AnimatedContextTitle\(/u);
 	assert.match(titleBarSource, /<AnimatePresence initial=\{false\} mode="popLayout">/u);
 	assert.match(titleBarSource, /key=\{metadataCollapsed \? "metadata-collapsed" : "metadata-expanded"\}/u);
 	assert.match(titleBarSource, /collapsed=\{metadataCollapsed\}/u);
 	assert.match(titleBarSource, /settledMetadataCollapsed === metadataCollapsed/u);
-	assert.match(titleBarSource, /event\.currentTarget === event\.target && event\.propertyName === "max-width"/u);
-	assert.match(titleBarSource, /setSettledMetadataCollapsed\(metadataCollapsed\)/u);
+	assert.match(panelLayoutSource, /METADATA_CONTENT_COLLAPSE_DURATION_MS = 200/u);
+	assert.match(panelLayoutSource, /METADATA_CONTENT_EXPAND_DURATION_MS = 250/u);
 	assert.match(panelLayoutSource, /const \[metadataTogglePending, setMetadataTogglePending\] = useState\(false\);/u);
 	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => setMetadataTogglePending\(true\), \[\]\)/u);
 	assert.match(panelLayoutSource, /setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*setMetadataTogglePending\(false\);/u);
 	assert.match(titleBarSource, /duration: 0\.05,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
+	assert.match(titleBarSource, /EXPANDED_ACTIONS_ENTER_TRANSITION[\s\S]*duration: 0\.05/u);
+	assert.match(titleBarSource, /collapsed \? ACTIONS_ENTER_TRANSITION : EXPANDED_ACTIONS_ENTER_TRANSITION/u);
 	assert.match(titleBarSource, /opacity: 0, scale: 0\.96/u);
 	assert.match(titleBarSource, /const isInteractive = !hideForToggle && isLayoutSettled && !isAnimating;/u);
 	assert.match(titleBarSource, /hideForToggle=\{metadataTogglePending\}/u);
@@ -267,13 +273,16 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(plannerPanelSource, /data-ai-planner-controls="floating"/u);
 	assert.match(plannerPanelSource, /className="relative z-20 mt-4"/u);
 	assert.doesNotMatch(plannerPanelSource, /className="absolute inset-x-0/u);
-	assert.match(plannerPanelSource, /<AgentSessionsComposerMotion>[\s\S]*<FloatingComposer/u);
+	assert.match(plannerPanelSource, /<AgentSessionsComposerMotion placement="planner">[\s\S]*<FloatingComposer/u);
 	assert.equal((plannerPanelSource.match(/size="default"/gu) ?? []).length, 2);
 	assert.match(plannerPanelSource, /className="border-0 bg-surface-overlay"/u);
 	assert.match(plannerPanelSource, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.doesNotMatch(plannerPanelSource, /useRovoChat|launchSession/u);
 	assert.match(compositionSource, /<LayoutGroup id=\{composerLayoutGroupId\}>/u);
-	assert.match(composerMotionSource, /layoutId="agent-sessions-composer"/u);
+	assert.match(composerMotionSource, /layoutId=\{metadataLayoutAnimating \? undefined : "agent-sessions-composer"\}/u);
+	assert.match(composerMotionSource, /<LayoutGroup inherit="id">/u);
+	assert.match(composerMotionSource, /layout=\{metadataLayoutAnimating \? false : "position"\}/u);
+	assert.match(composerMotionSource, /layoutDependency=\{placement\}/u);
 	assert.match(composerMotionSource, /duration: 0\.25,[\s\S]*ease: \[0\.4, 0, 0, 1\]/u);
 	assert.match(composerMotionSource, /useReducedMotion\(\)/u);
 	assert.match(composerMotionSource, /onLayoutAnimationStart[\s\S]*onLayoutAnimationComplete/u);
@@ -287,7 +296,9 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.doesNotMatch(layoutSource, /bg-background\/90|backdrop-blur/u);
 	assert.doesNotMatch(layoutSource, /agentlayout:border-t|agentlayout:border-border/u);
 	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onSelectAgent=\{\(agentName\) => insertContext\("@", agentName\)\}[\s\S]*onSelectSkill=\{\(skillId\) => insertContext\("\/", skillId\)\}/u);
-	assert.match(activityComposerSource, /<AgentSessionsComposerMotion>[\s\S]*<FloatingComposer/u);
+	assert.match(activityComposerSource, /onStatusChange=\{\(status\) => actions\.updateMetadata\(\{ status \}\)\}[\s\S]*status=\{state\.metadata\.status\}/u);
+	assert.match(contextPillsSource, /Move to:[\s\S]*<StatusPill onChange=\{onStatusChange\} value=\{status\} \/>/u);
+	assert.match(activityComposerSource, /<AgentSessionsComposerMotion placement="sticky">[\s\S]*<FloatingComposer/u);
 	assert.doesNotMatch(activityComposerSource, /className="shadow-none"/u);
 	assert.match(activityComposerSource, /ref=\{editorRef\}/u);
 	assert.match(activityComposerSource, /return `\$\{currentDraft\}\$\{separator\}\$\{prefix\}\$\{value\} `;[\s\S]*editorRef\.current\?\.focus\(\)/u);

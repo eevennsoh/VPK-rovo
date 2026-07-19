@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
@@ -104,11 +103,7 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 					<DropdownMenuItem
 						key={phase}
 						onSelect={() => onChange(phase)}
-						elemAfter={
-							phase === value ? (
-								<CheckMarkIcon label="" size="small" color="var(--ds-icon-selected)" />
-							) : undefined
-						}
+						selected={phase === value}
 					>
 						<Lozenge variant={statusVariant(phase)}>{phase}</Lozenge>
 					</DropdownMenuItem>

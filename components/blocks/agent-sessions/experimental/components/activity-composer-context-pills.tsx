@@ -5,6 +5,10 @@ import { useState, type ReactNode } from "react";
 
 import { ActivityComposerAgentContextPill } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-skill-context-pill";
+import { StatusPill } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
+import { ContextBarPill } from "@/components/ui-custom/context-bar/context-bar";
+import { Icon } from "@/components/ui/icon";
+import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 
 const PILL_GROUP_VARIANTS = {
 	hidden: {},
@@ -31,6 +35,8 @@ const PILL_REVEAL_VARIANTS = {
 interface ActivityComposerContextPillsProps {
 	onSelectAgent: (agentName: string) => void;
 	onSelectSkill: (skillId: string) => void;
+	onStatusChange: (status: string) => void;
+	status: string;
 }
 
 function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
@@ -52,6 +58,8 @@ function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
 export function ActivityComposerContextPills({
 	onSelectAgent,
 	onSelectSkill,
+	onStatusChange,
+	status,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
 
@@ -68,6 +76,16 @@ export function ActivityComposerContextPills({
 			</RevealingPill>
 			<RevealingPill>
 				<ActivityComposerSkillContextPill onSelectSkill={onSelectSkill} />
+			</RevealingPill>
+			<RevealingPill>
+				<ContextBarPill
+					className="gap-2 pr-2"
+					icon={<Icon aria-hidden render={<ProjectStatusIcon label="" size="small" />} />}
+					interactive={false}
+				>
+					Move to:
+					<StatusPill onChange={onStatusChange} value={status} />
+				</ContextBarPill>
 			</RevealingPill>
 		</motion.div>
 	);

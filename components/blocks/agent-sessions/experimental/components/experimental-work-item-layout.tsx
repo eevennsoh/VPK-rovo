@@ -4,7 +4,12 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 
 import { useAgentSessionsState } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
-import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
+import {
+	METADATA_CONTENT_COLLAPSE_TRANSITION,
+	METADATA_CONTENT_EXPAND_TRANSITION,
+	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
+	usePanelLayout,
+} from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 
@@ -60,28 +65,23 @@ export function ExperimentalWorkItemLayout({
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useAgentSessionsState();
 	const { metadataCollapsed } = usePanelLayout();
-	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceMotion = useReducedMotion() ?? false;
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
 	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask }),
 		[showBottomScrollMask],
 	);
+	const contentLayoutTransition = shouldReduceMotion
+		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
+		: metadataCollapsed
+			? METADATA_CONTENT_COLLAPSE_TRANSITION
+			: METADATA_CONTENT_EXPAND_TRANSITION;
 	const contentStyle = {
 		"--metadata-panel-offset": metadataCollapsed ? "0px" : METADATA_PANEL_WIDTH,
-		transition: shouldReduceMotion
-			? undefined
-			: metadataCollapsed
-				? "margin-right var(--duration-medium) var(--ease-in)"
-				: "margin-right var(--duration-slow) var(--ease-in-out)",
 	} as CSSProperties;
 	const contentColumnStyle = {
 		maxWidth: metadataCollapsed ? "800px" : "100%",
-		transition: shouldReduceMotion
-			? undefined
-			: metadataCollapsed
-				? "max-width var(--duration-medium) var(--ease-in)"
-				: "max-width var(--duration-slow) var(--ease-in-out)",
 	} as CSSProperties;
 
 	return (
@@ -93,34 +93,35 @@ export function ExperimentalWorkItemLayout({
 					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
 					style={contentStyle}
 				>
-					<div
-						ref={leftScrollRef}
-						className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pb-6"
-						data-agent-sessions-scroll-region
-						style={leftScrollMaskStyle}
+					<motion.div
+						className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col motion-reduce:transition-none"
+						data-agent-sessions-content-column
+						layout={shouldReduceMotion ? false : "position"}
+						style={contentColumnStyle}
+						transition={contentLayoutTransition}
 					>
 						<div
-							className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-6 @[860px]/agentlayout:px-6 motion-reduce:transition-none"
-							data-agent-sessions-content-column
-							style={contentColumnStyle}
+							ref={leftScrollRef}
+							className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pb-6"
+							data-agent-sessions-scroll-region
+							style={leftScrollMaskStyle}
 						>
-							<div className="order-1 min-w-0">{context}</div>
-							<div className="order-2 min-w-0">{activity}</div>
-						</div>
-					</div>
-					{showStickyComposer ? (
-						<div
-							className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:py-4"
-							data-agent-sessions-composer-dock
-						>
-							<div
-								className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6 motion-reduce:transition-none"
-								style={contentColumnStyle}
-							>
-								{composer}
+							<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-6 @[860px]/agentlayout:px-6">
+								<div className="order-1 min-w-0">{context}</div>
+								<div className="order-2 min-w-0">{activity}</div>
 							</div>
 						</div>
-					) : null}
+						{showStickyComposer ? (
+							<div
+								className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:py-4"
+								data-agent-sessions-composer-dock
+							>
+								<div className="contents @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6">
+									{composer}
+								</div>
+							</div>
+						) : null}
+					</motion.div>
 				</div>
 				<AnimatePresence initial={false}>
 					{metadataCollapsed ? null : (
