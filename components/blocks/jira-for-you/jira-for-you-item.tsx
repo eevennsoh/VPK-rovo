@@ -6,7 +6,6 @@ import EpicIcon from "@atlaskit/icon/core/epic";
 import StoryIcon from "@atlaskit/icon/core/story";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
-import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 
 import { JiraIssueGenerativeActionMenu } from "@/components/blocks/jira-issue/generative-action-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -150,16 +149,6 @@ function ItemActions({
 				issue={{ issueKey: item.issueKey, summary: item.title }}
 				triggerElement={generativeTrigger}
 			/>
-			{item.isRunning ? (
-				<Button
-					aria-label="Stop agents"
-					className="[&_svg]:text-icon-danger!"
-					size="icon-compact"
-					variant="outline"
-				>
-					<VideoStopOverlayIcon label="" />
-				</Button>
-			) : null}
 			<JiraForYouStatusLozengeDropdown value={item.jiraStatus} />
 			<Button onClick={onView} size="compact" variant="outline">
 				View
