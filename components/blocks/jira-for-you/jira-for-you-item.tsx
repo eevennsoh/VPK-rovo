@@ -16,7 +16,10 @@ import { Button } from "@/components/ui/button";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 
-import { JiraForYouStatusLozenge } from "./jira-for-you-status";
+import {
+	JiraForYouStatusLozenge,
+	JiraForYouStatusLozengeDropdown,
+} from "./jira-for-you-status";
 import type {
 	JiraForYouAgent,
 	JiraForYouIssueType,
@@ -157,6 +160,7 @@ function ItemActions({
 					<VideoStopOverlayIcon label="" />
 				</Button>
 			) : null}
+			<JiraForYouStatusLozengeDropdown value={item.jiraStatus} />
 			<Button onClick={onView} size="compact" variant="outline">
 				View
 			</Button>

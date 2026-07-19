@@ -23,11 +23,21 @@ test("every In progress row exposes the stop action", () => {
 	assert.equal(inProgressSection.match(/isRunning: true/g)?.length, 3);
 });
 
-test("every row has a read-only Jira status lozenge", () => {
+test("every row has a Jira status lozenge with a status-change dropdown", () => {
 	assert.equal(DATA_SOURCE.match(/jiraStatus: /g)?.length, 10);
-	assert.match(ITEM_SOURCE, /<ItemActions[\s\S]*<JiraForYouStatusLozenge value=\{item\.jiraStatus\} \/>/);
+	// Resting state shows the read-only lozenge; hover reveals the interactive
+	// status-change dropdown inside the row actions.
 	assert.match(STATUS_SOURCE, /<Lozenge variant=\{STATUS_VARIANTS\[value\]\}>\{value\}<\/Lozenge>/);
-	assert.doesNotMatch(STATUS_SOURCE, /DropdownMenu|onChange|LozengeDropdownTrigger/);
+	// The dropdown lives in the hover-revealed ItemActions cluster, alongside View.
+	assert.match(
+		ITEM_SOURCE,
+		/function ItemActions\([\s\S]*<JiraForYouStatusLozengeDropdown value=\{item\.jiraStatus\} \/>[\s\S]*View[\s\S]*\n\}/,
+	);
+	// Subtle neutral trigger + colored lozenge options with a checkmark on the
+	// current status, mirroring the agent-session StatusPill dropdown.
+	assert.match(STATUS_SOURCE, /LozengeDropdownTrigger[\s\S]*variant="neutral"/);
+	assert.match(STATUS_SOURCE, /<DropdownMenuItem[\s\S]*selected=\{option === selected\}[\s\S]*<Lozenge variant=\{STATUS_VARIANTS\[option\]\}>/);
+	assert.match(STATUS_SOURCE, /setSelected\(option\)/);
 	assert.match(STATUS_SOURCE, /"Human review": "warning"/);
 	assert.match(STATUS_SOURCE, /"In progress": "information"/);
 	assert.match(STATUS_SOURCE, /"In review": "information"/);
