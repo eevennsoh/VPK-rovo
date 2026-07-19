@@ -54,6 +54,7 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
  * it stays visible at the bottom of the single scroll. The wide Context + Activity
  * scrollport adds a bottom fade only while more content remains below. The same order
  * values also keep each wide column stacked correctly, so no slot is rendered twice.
+ * The wide Context + Activity scrollport also fades its top edge once scrolled down.
  *
  * Container-query driven (not viewport) so it reacts to the dialog's actual
  * body width rather than the screen.
@@ -69,10 +70,10 @@ export function ExperimentalWorkItemLayout({
 	const { metadataCollapsed } = usePanelLayout();
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
-	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: leftScrollRef, showTopScrollMask, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
-		() => buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask }),
-		[showBottomScrollMask],
+		() => buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask }),
+		[showTopScrollMask, showBottomScrollMask],
 	);
 	const contentLayoutTransition = shouldReduceMotion
 		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION

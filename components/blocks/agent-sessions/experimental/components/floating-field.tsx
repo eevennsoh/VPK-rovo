@@ -3,9 +3,7 @@
 import { type ReactNode } from "react";
 
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
-import CrossIcon from "@atlaskit/icon/core/cross";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,6 +18,12 @@ import { cn } from "@/lib/utils";
  * open (`:has([data-popup-open])`). The editor trigger (`children`) is always
  * full-width and clickable; when collapsed it fades to transparent so only the
  * overlaid label + icon show, so a click anywhere on the row still opens it.
+ *
+ * The whole row is the hit area: the trigger stretches to the full padded row
+ * width (`-mx-2 px-2`) and, once expanded, pulls its box up over the floated
+ * label's reserved space (`-mt-6 pt-6`), so clicking anywhere on the row — the
+ * label region, the padding, or the value line — activates the editor, not just
+ * the value's own bounding box.
  */
 
 // Applied to a child so it takes its expanded form whenever the field is filled,
@@ -47,17 +51,11 @@ export function FloatingField({
 	label,
 	icon: IconComponent,
 	filled,
-	actions,
-	onClear,
 	children,
 }: Readonly<{
 	label: string;
 	icon: React.ComponentType<NewCoreIconProps>;
 	filled: boolean;
-	/** Trailing controls revealed on hover while expanded (e.g. assign-to-me). */
-	actions?: ReactNode;
-	/** When set and the field is filled, shows a hover ✕ that clears the value (collapsing the row). */
-	onClear?: () => void;
 	/** The editor: a full-width popover/menu trigger that renders the value. */
 	children: ReactNode;
 }>) {
@@ -90,27 +88,26 @@ export function FloatingField({
 				{label}
 			</span>
 
-			{/* Value / editor — full-width + clickable; fades + slides down into place. */}
+			{/*
+			 * Value / editor — full-width + clickable; fades + slides down into
+			 * place. The wrapper's `pt-6` (on expand) reserves the floated-label
+			 * space; the nested trigger reclaims that space as hit area by pulling
+			 * its box up over it (`-mt-6 pt-6` on expand) and stretching to the row
+			 * edges (`-mx-2 px-2`), so a click anywhere on the row — label region,
+			 * padding, or value — opens the editor, not just the value's own box.
+			 */}
 			<div
 				className={cn(
 					"pt-1.5 pb-1.5 opacity-0",
+					"group-data-[filled=true]/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-data-[filled=true]/ff:[&>[data-slot=detail-value-trigger]]:pt-6",
+					"group-focus-within/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-focus-within/ff:[&>[data-slot=detail-value-trigger]]:pt-6",
+					"group-has-[[data-popup-open]]/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-has-[[data-popup-open]]/ff:[&>[data-slot=detail-value-trigger]]:pt-6",
 					"transition-[padding,opacity] duration-medium ease-in-out motion-reduce:transition-none",
 					EXPANDED_VALUE,
 				)}
 			>
 				{children}
 			</div>
-
-			{actions || (onClear && filled) ? (
-				<div className="absolute right-2 bottom-1.5 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-normal ease-out-practical group-hover/ff:opacity-100 group-focus-within/ff:opacity-100 motion-reduce:transition-none">
-					{actions}
-					{onClear && filled ? (
-						<Button aria-label={`Clear ${label}`} onClick={onClear} size="icon-compact" variant="ghost">
-							<CrossIcon label="" size="small" />
-						</Button>
-					) : null}
-				</div>
-			) : null}
 		</div>
 	);
 }
