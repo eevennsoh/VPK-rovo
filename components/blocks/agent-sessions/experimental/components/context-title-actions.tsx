@@ -54,7 +54,7 @@ export function ContextTitleActions() {
 			<Button aria-label="Share" size="icon" variant="outline">
 				<ShareIcon label="" />
 			</Button>
-			<ButtonGroup>
+			<ButtonGroup variant="split">
 				<Button aria-label="Open" variant="outline" className="gap-0.5">
 					<LogoThirdParty name={PRIMARY_CODING_AGENT.name} size="small" borderless />
 					Open
@@ -71,7 +71,7 @@ export function ContextTitleActions() {
 						{CODING_AGENTS.map((agent) => (
 							<DropdownMenuItem
 								key={agent.name}
-								elemBefore={<LogoThirdParty name={agent.name} size="xxsmall" borderless />}
+								elemBefore={<LogoThirdParty name={agent.name} size="small" borderless />}
 							>
 								{agent.label}
 							</DropdownMenuItem>

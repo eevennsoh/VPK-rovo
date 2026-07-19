@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 
 import { useAgentSessionsState } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
@@ -13,6 +14,24 @@ interface ExperimentalWorkItemLayoutProps {
 	metadata: ReactNode;
 	composer: ReactNode;
 }
+
+const METADATA_PANEL_WIDTH = "clamp(320px, 34vw, 408px)";
+
+const METADATA_PANEL_VARIANTS: Variants = {
+	closed: {
+		transform: "translateX(100%)",
+		transition: { duration: 0.2, ease: [0.6, 0, 0.8, 0.6] }, // duration-medium + ease-in
+	},
+	open: {
+		transform: "translateX(0%)",
+		transition: { duration: 0.25, ease: [0, 0.4, 0, 1] }, // duration-slow + ease-out
+	},
+};
+
+const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
+	closed: { transform: "translateX(0%)", transition: { duration: 0 } },
+	open: { transform: "translateX(0%)", transition: { duration: 0 } },
+};
 
 /**
  * Responsive 4-slot layout for the experimental work item dialog body.
@@ -41,24 +60,31 @@ export function ExperimentalWorkItemLayout({
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useAgentSessionsState();
 	const { metadataCollapsed } = usePanelLayout();
+	const shouldReduceMotion = useReducedMotion();
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
 	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask }),
 		[showBottomScrollMask],
 	);
+	const contentStyle = {
+		"--metadata-panel-offset": metadataCollapsed ? "0px" : METADATA_PANEL_WIDTH,
+		transition: shouldReduceMotion
+			? undefined
+			: metadataCollapsed
+				? "margin-right var(--duration-medium) var(--ease-in)"
+				: "margin-right var(--duration-slow) var(--ease-in-out)",
+	} as CSSProperties;
 
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
 			<div
-				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:grid @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
-				style={{
-					gridTemplateColumns: metadataCollapsed
-						? "minmax(0, 1fr)"
-						: "minmax(0, 1fr) clamp(320px, 34vw, 408px)",
-				}}
+				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
 			>
-				<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col">
+				<div
+					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
+					style={contentStyle}
+				>
 					<div
 						ref={leftScrollRef}
 						className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-6 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
@@ -77,11 +103,21 @@ export function ExperimentalWorkItemLayout({
 						</div>
 					) : null}
 				</div>
-				{metadataCollapsed ? null : (
-					<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2">
-						<div className="order-3 min-w-0">{metadata}</div>
-					</div>
-				)}
+				<AnimatePresence initial={false}>
+					{metadataCollapsed ? null : (
+						<motion.div
+							animate="open"
+							className="order-3 min-w-0 @[860px]/agentlayout:absolute @[860px]/agentlayout:inset-y-0 @[860px]/agentlayout:right-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2"
+							exit="closed"
+							id="experimental-work-item-metadata-panel"
+							initial="closed"
+							style={{ willChange: shouldReduceMotion ? undefined : "transform" }}
+							variants={shouldReduceMotion ? REDUCED_MOTION_METADATA_PANEL_VARIANTS : METADATA_PANEL_VARIANTS}
+						>
+							<div className="min-w-0">{metadata}</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 		</div>
 	);

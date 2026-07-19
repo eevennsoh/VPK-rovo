@@ -17,8 +17,10 @@ export function ExperimentalBreadcrumbActions() {
 	return (
 		<>
 			<Button
-				aria-label="Toggle side panel"
-				aria-pressed={!metadataCollapsed}
+				aria-controls="experimental-work-item-metadata-panel"
+				aria-expanded={!metadataCollapsed}
+				aria-label={metadataCollapsed ? "Show metadata panel" : "Hide metadata panel"}
+				className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
 				size="icon"
 				variant="outline"
 				onClick={toggleMetadata}

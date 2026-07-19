@@ -30,6 +30,19 @@ test("the split variation preserves connected geometry and uses the correct seam
 	assert.match(BUTTON_SOURCE, /data-variant=\{variant \?\? "default"\}/u);
 });
 
+test("selected segments after the first restore and overlap their leading border", () => {
+	for (const state of ["aria-expanded", "aria-pressed"]) {
+		assert.match(
+			BUTTON_GROUP_SOURCE,
+			new RegExp(`\\[&>\\[data-slot\\]~\\[data-slot\\]\\[${state}=true\\]\\]:-ml-px`, "u"),
+		);
+		assert.match(
+			BUTTON_GROUP_SOURCE,
+			new RegExp(`\\[&>\\[data-slot\\]~\\[data-slot\\]\\[${state}=true\\]\\]:border-l`, "u"),
+		);
+	}
+});
+
 test("the connected dropdown-action demo uses its shared seam and VPK chevron", () => {
 	const separatorDemo = DEMO_SOURCE.match(
 		/export function ButtonGroupDemoWithSeparator\(\) \{([\s\S]*?)\n\}/u,

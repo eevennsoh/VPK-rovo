@@ -132,6 +132,17 @@ test("AgentSessions experimental view mounts the local composition, not the glob
 	assert.equal((AGENT_SESSIONS_SOURCE.match(/<AgentSessionsShell onOpen=/gu) ?? []).length, 2);
 });
 
+test("the title Open split button uses direct 24px coding-agent logos", () => {
+	const titleActionsSource = readBlockFile("experimental/components/context-title-actions.tsx");
+
+	assert.match(titleActionsSource, /<ButtonGroup variant="split">/u);
+	assert.match(
+		titleActionsSource,
+		/elemBefore=\{<LogoThirdParty name=\{agent\.name\} size="small" borderless \/>\}/u,
+	);
+	assert.doesNotMatch(titleActionsSource, /LogoThirdParty[^>]*size="xxsmall"/u);
+});
+
 test("the experimental surface stays out of global Rovo history", () => {
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
 	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
@@ -142,6 +153,25 @@ test("the experimental surface stays out of global Rovo history", () => {
 	}
 	assert.match(compositionSource, /<AgentSessionsProvider/u);
 	assert.match(compositionSource, /<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>/u);
+});
+
+test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
+	const actionsSource = readBlockFile("experimental/components/experimental-breadcrumb-actions.tsx");
+	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
+
+	assert.doesNotMatch(actionsSource, /aria-pressed/u);
+	assert.match(actionsSource, /aria-expanded=\{!metadataCollapsed\}/u);
+	assert.match(actionsSource, /aria-controls="experimental-work-item-metadata-panel"/u);
+	assert.match(actionsSource, /metadataCollapsed \? "Show metadata panel" : "Hide metadata panel"/u);
+	assert.match(actionsSource, /aria-expanded:bg-bg-neutral-subtle/u);
+	assert.match(layoutSource, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(layoutSource, /id="experimental-work-item-metadata-panel"/u);
+	assert.match(layoutSource, /transform: "translateX\(100%\)"/u);
+	assert.match(layoutSource, /duration: 0\.25, ease: \[0, 0\.4, 0, 1\]/u);
+	assert.match(layoutSource, /duration: 0\.2, ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(layoutSource, /useReducedMotion\(\)/u);
+	assert.match(layoutSource, /margin-right var\(--duration-slow\) var\(--ease-in-out\)/u);
+	assert.match(layoutSource, /margin-right var\(--duration-medium\) var\(--ease-in\)/u);
 });
 
 test("AI Planner is composed below the title with shared TWG and prompt primitives", () => {

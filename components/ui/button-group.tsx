@@ -29,7 +29,7 @@ const buttonGroupVariants = cva(
 				variant: ["connected", "split"],
 				orientation: "horizontal",
 				className:
-					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 *:data-slot:rounded-r-none",
+					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot][aria-expanded=true]]:-ml-px [&>[data-slot]~[data-slot][aria-expanded=true]]:border-l [&>[data-slot]~[data-slot][aria-pressed=true]]:-ml-px [&>[data-slot]~[data-slot][aria-pressed=true]]:border-l *:data-slot:rounded-r-none",
 			},
 			{
 				variant: "connected",
