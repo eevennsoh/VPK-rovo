@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
@@ -23,10 +23,12 @@ export function JiraActivityComment({
 	entry,
 	currentUser,
 	onSubmitReply,
+	action,
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
 	currentUser: JiraActivityActor;
 	onSubmitReply: (body: string) => void;
+	action?: ReactNode;
 }>) {
 	const [detailOpen, setDetailOpen] = useState(false);
 	const replies = entry.replies ?? [];
@@ -36,10 +38,13 @@ export function JiraActivityComment({
 	return (
 		<div className="w-full overflow-hidden rounded-lg border border-border bg-surface">
 			<div className="grid gap-2 p-3">
-				<div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
-					<span className="font-medium text-text">{entry.actor.name}</span>
-					<span className="text-text-subtle">{entry.timestamp}</span>
-					{entry.tag ? <Tag color={entry.tag.color ?? "gray"}>{entry.tag.text}</Tag> : null}
+				<div className="flex min-w-0 items-start justify-between gap-2">
+					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
+						<span className="font-medium text-text">{entry.actor.name}</span>
+						<span className="text-text-subtle">{entry.timestamp}</span>
+						{entry.tag ? <Tag color={entry.tag.color ?? "gray"}>{entry.tag.text}</Tag> : null}
+					</div>
+					{action ? <div className="shrink-0">{action}</div> : null}
 				</div>
 
 				<JiraActivitySegments

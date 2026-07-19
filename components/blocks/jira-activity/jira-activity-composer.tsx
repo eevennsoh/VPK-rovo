@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent, type Ref } from "react";
 
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
+import AddIcon from "@atlaskit/icon/core/add";
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
+import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +23,13 @@ export interface JiraActivityComposerProps {
 	/** `reply` is an inline row inside a comment card; `comment` is a bordered box. */
 	variant?: "reply" | "comment";
 	onSubmit: (body: string) => void;
+	/** Controlled draft value. Omit to let the composer own its draft. */
+	value?: string;
+	/** Initial draft for an uncontrolled composer. */
+	defaultValue?: string;
+	onValueChange?: (value: string) => void;
+	/** Ref to the shared prompt editor used by the comment variant. */
+	textareaRef?: Ref<HTMLTextAreaElement>;
 	className?: string;
 }
 
@@ -30,16 +42,30 @@ export function JiraActivityComposer({
 	placeholder,
 	variant = "comment",
 	onSubmit,
+	value: controlledValue,
+	defaultValue = "",
+	onValueChange,
+	textareaRef,
 	className,
 }: Readonly<JiraActivityComposerProps>) {
-	const [value, setValue] = useState("");
+	const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
+	const value = controlledValue ?? uncontrolledValue;
 	const trimmed = value.trim();
 	const canSubmit = trimmed.length > 0;
+
+	function updateValue(nextValue: string) {
+		if (controlledValue === undefined) {
+			setUncontrolledValue(nextValue);
+		}
+		onValueChange?.(nextValue);
+	}
 
 	function submit() {
 		if (!canSubmit) return;
 		onSubmit(trimmed);
-		setValue("");
+		updateValue("");
+		setRealtimeVoiceActive(false);
 	}
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -77,7 +103,7 @@ export function JiraActivityComposer({
 				<Textarea
 					aria-label={placeholder}
 					className="min-h-8 flex-1 py-1.5"
-					onChange={(event) => setValue(event.target.value)}
+					onChange={(event) => updateValue(event.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					rows={1}
@@ -90,17 +116,38 @@ export function JiraActivityComposer({
 	}
 
 	return (
-		<div className={cn("rounded-lg border border-border bg-surface", className)}>
-			<Textarea
+		<FloatingComposer
+			actions={
+				<RovoComposerActionButton
+					canSubmit={canSubmit}
+					composerStatus="ready"
+					experimentalDarkCta
+					onStop={() => setRealtimeVoiceActive(false)}
+					onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
+					realtimeVoiceActive={realtimeVoiceActive}
+				/>
+			}
+			addButton={
+				<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+					<AddIcon label="" />
+				</PromptInputButton>
+			}
+			allowOverflow
+			aria-label={placeholder}
+			className={cn("w-full", className)}
+			onSubmit={submit}
+		>
+			<PromptInputTextarea
 				aria-label={placeholder}
-				className="min-h-24"
-				onChange={(event) => setValue(event.target.value)}
-				onKeyDown={handleKeyDown}
+				autoResize
+				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+				enableDirectoryAutocomplete={false}
+				onChange={(event) => updateValue(event.currentTarget.value)}
 				placeholder={placeholder}
+				ref={textareaRef}
+				rows={1}
 				value={value}
-				variant="none"
 			/>
-			<div className="flex items-center justify-end px-3 pb-3">{actions}</div>
-		</div>
+		</FloatingComposer>
 	);
 }

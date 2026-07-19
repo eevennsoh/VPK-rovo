@@ -6,12 +6,9 @@ import { AGENT_SESSIONS_ROSTER } from "@/components/blocks/agent-sessions/data/s
 import { useAgentSessions } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { ActivityComposerContextPills } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-context-pills";
 import { AgentSessionsComposerMotion } from "@/components/blocks/agent-sessions/experimental/components/agent-sessions-composer-motion";
+import { AGENT_SESSIONS_CURRENT_USER } from "@/components/blocks/agent-sessions/experimental/lib/jira-activity-adapter";
+import { JiraActivityComposer } from "@/components/blocks/jira-activity";
 import { DEFAULT_SKILLS } from "@/app/data/directory";
-import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
-import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
-import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
-import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
-import { cn } from "@/lib/utils";
 
 import { ActivitySuggestionMenu, type ActivitySuggestionItem } from "./activity-suggestion-menu";
 
@@ -53,21 +50,16 @@ function buildItems(trigger: TrailingTrigger | null): ActivitySuggestionItem[] {
 }
 
 /**
- * Unified comment/command composer. Reuses the shared {@link FloatingComposer} in its
- * "experimental dark button" form — a leading "+" add button, plus the live-voice and
- * dark send CTA from {@link RovoComposerActionButton}, and deliberately no sources
- * customize menu or model/reasoning selector. It layers lightweight local `@agent` /
- * `/skill` suggestions by detecting a trailing token in the owned draft state and
- * anchoring a suggestion Popover to the composer container. On submit, an `@mention` of a
- * working (running/waiting) session's agent resumes that session via `replySession`;
- * otherwise the text is posted as a comment.
+ * Unified comment/command composer. Reuses the Jira Activity prompt surface while
+ * layering lightweight local `@agent` / `/skill` suggestions over its controlled
+ * draft. On submit, an `@mention` of a working session's agent resumes that session
+ * via `replySession`; otherwise the text is posted as a comment.
  */
 export function ActivityComposer() {
 	const { state, actions } = useAgentSessions();
 	const [draft, setDraft] = useState("");
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [suppressed, setSuppressed] = useState(false);
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 
 	const trigger = useMemo(() => detectTrigger(draft), [draft]);
@@ -105,12 +97,12 @@ export function ActivityComposer() {
 		requestAnimationFrame(() => editorRef.current?.focus());
 	};
 
-	const handleSubmit = () => {
-		const text = draft.trim();
+	const handleSubmit = (body: string) => {
+		const text = body.trim();
 		if (!text) return;
 		const mentioned = state.sessions.find(
 			(session) =>
-				(session.status === "running" || session.status === "waiting") && draft.includes(`@${session.agentName}`),
+				(session.status === "running" || session.status === "waiting") && text.includes(`@${session.agentName}`),
 		);
 		if (mentioned) {
 			actions.replySession(mentioned.id, text);
@@ -120,7 +112,6 @@ export function ActivityComposer() {
 		setDraft("");
 		setSuppressed(false);
 		setActiveIndex(0);
-		setRealtimeVoiceActive(false);
 	};
 
 	// Capture keydowns before the composer's internal editor so navigation/selection
@@ -164,32 +155,15 @@ export function ActivityComposer() {
 			/>
 			<div className="relative" data-agent-sessions-composer-state="sticky">
 				<AgentSessionsComposerMotion placement="sticky">
-					<FloatingComposer
-						actions={
-							<RovoComposerActionButton
-								canSubmit={Boolean(draft.trim())}
-								composerStatus="ready"
-								experimentalDarkCta
-								onStop={() => setRealtimeVoiceActive(false)}
-								onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
-								realtimeVoiceActive={realtimeVoiceActive}
-							/>
-						}
-						allowOverflow
+					<JiraActivityComposer
+						author={AGENT_SESSIONS_CURRENT_USER}
 						onSubmit={handleSubmit}
-					>
-						<PromptInputTextarea
-							aria-label="Add a comment"
-							autoResize
-							className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-							enableDirectoryAutocomplete={false}
-							onChange={(event) => handlePromptChange(event.currentTarget.value)}
-							placeholder="Comment, @mention an agent, or / for skills"
-							ref={editorRef}
-							rows={1}
-							value={draft}
-						/>
-					</FloatingComposer>
+						onValueChange={handlePromptChange}
+						placeholder="Comment, @mention an agent, or / for skills"
+						textareaRef={editorRef}
+						value={draft}
+						variant="comment"
+					/>
 				</AgentSessionsComposerMotion>
 				<ActivitySuggestionMenu
 					activeIndex={boundedIndex}
