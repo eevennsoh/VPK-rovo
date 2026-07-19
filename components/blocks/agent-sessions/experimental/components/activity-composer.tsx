@@ -17,21 +17,14 @@ const MAX_SUGGESTIONS = 6;
 // so accepting a suggestion — which appends a trailing space — dismisses the menu).
 const TRAILING_TOKEN = /(?:^|\s)([@/])([\w-]*)$/;
 
-interface TrailingTrigger {
-	char: "@" | "/";
-	query: string;
-}
-
-function detectTrigger(draft: string): TrailingTrigger | null {
+function buildItems(draft: string): ActivitySuggestionItem[] {
 	const match = TRAILING_TOKEN.exec(draft);
-	if (!match) return null;
-	return { char: match[1] as "@" | "/", query: match[2].toLowerCase() };
-}
+	if (!match) return [];
+	const [, trigger, query] = match;
+	const normalizedQuery = query.toLowerCase();
 
-function buildItems(trigger: TrailingTrigger | null): ActivitySuggestionItem[] {
-	if (!trigger) return [];
-	if (trigger.char === "@") {
-		return AGENT_SESSIONS_ROSTER.filter((agent) => agent.name.toLowerCase().includes(trigger.query))
+	if (trigger === "@") {
+		return AGENT_SESSIONS_ROSTER.filter((agent) => agent.name.toLowerCase().includes(normalizedQuery))
 			.slice(0, MAX_SUGGESTIONS)
 			.map((agent) => ({
 				id: agent.id,
@@ -43,7 +36,7 @@ function buildItems(trigger: TrailingTrigger | null): ActivitySuggestionItem[] {
 			}));
 	}
 	return DEFAULT_SKILLS.filter(
-		(skill) => skill.name.toLowerCase().includes(trigger.query) || skill.id.toLowerCase().includes(trigger.query),
+		(skill) => skill.name.toLowerCase().includes(normalizedQuery) || skill.id.toLowerCase().includes(normalizedQuery),
 	)
 		.slice(0, MAX_SUGGESTIONS)
 		.map((skill) => ({ id: skill.id, value: skill.id, label: skill.name, description: skill.description, kind: "skill" }));
@@ -62,8 +55,7 @@ export function ActivityComposer() {
 	const [suppressed, setSuppressed] = useState(false);
 	const editorRef = useRef<HTMLTextAreaElement>(null);
 
-	const trigger = useMemo(() => detectTrigger(draft), [draft]);
-	const items = useMemo(() => buildItems(trigger), [trigger]);
+	const items = useMemo(() => buildItems(draft), [draft]);
 	const menuOpen = items.length > 0 && !suppressed;
 	const boundedIndex = items.length > 0 ? Math.min(activeIndex, items.length - 1) : 0;
 
