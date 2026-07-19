@@ -41,7 +41,12 @@ export function ExperimentalWorkItemDialog({
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const content = (
 		<>
-			<ModalHeader showClose={presentation !== "inline"} actions={<ExperimentalBreadcrumbActions />} />
+			<ModalHeader
+				actions={<ExperimentalBreadcrumbActions />}
+				actionsClassName="gap-1"
+				closeButtonVariant="ghost"
+				showClose={presentation !== "inline"}
+			/>
 			<ContextTitleBar />
 
 			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>

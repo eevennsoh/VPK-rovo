@@ -7,6 +7,10 @@ const DEMO_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/website/demos/ui/button-group-demo.tsx"),
 	"utf8",
 );
+const BUTTON_DEMO_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/website/demos/ui/button-demo.tsx"),
+	"utf8",
+);
 const BUTTON_GROUP_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui/button-group.tsx"),
 	"utf8",
@@ -24,6 +28,17 @@ const BUTTON_DETAIL_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
+const SELECTED_SEGMENT_SELECTOR =
+	"[&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]";
+const SELECTED_BUTTON_STATE_CLASSES = [
+	"aria-pressed:bg-bg-selected",
+	"aria-pressed:text-text-selected",
+	"aria-pressed:border-border-selected",
+	"aria-expanded:bg-bg-selected",
+	"aria-expanded:text-text-selected",
+	"aria-expanded:border-border-selected",
+];
+
 test("the split variation preserves connected geometry and uses the correct seams", () => {
 	assert.match(BUTTON_GROUP_SOURCE, /split:[\s\S]*\[&>button\[data-variant=default\]\]:border-primary[\s\S]*\[&>button\[data-variant=default\]:first-child\]:border-r-border-inverse[\s\S]*has-\[button\[aria-expanded=true\]\]:\[&>button\[data-variant=outline\]:first-child\]:border-r-border-selected/u);
 	assert.match(BUTTON_GROUP_SOURCE, /variant: \["connected", "split"\]/u);
@@ -31,22 +46,53 @@ test("the split variation preserves connected geometry and uses the correct seam
 });
 
 test("selected segments after the first paint a leading stroke without changing seam geometry", () => {
-	assert.match(
-		BUTTON_GROUP_SOURCE,
-		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:relative/u,
-	);
-	assert.match(
-		BUTTON_GROUP_SOURCE,
-		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:-left-px/u,
-	);
-	assert.match(
-		BUTTON_GROUP_SOURCE,
-		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:w-px/u,
-	);
-	assert.match(
-		BUTTON_GROUP_SOURCE,
-		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:bg-border-selected/u,
-	);
+	const requiredOverlayClasses = [
+		":relative",
+		":before:pointer-events-none",
+		":before:absolute",
+		":before:inset-y-0",
+		":before:-left-px",
+		":before:w-px",
+		":before:bg-border-selected",
+		":before:content-['']",
+	];
+
+	for (const className of requiredOverlayClasses) {
+		assert.ok(
+			BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}${className}`),
+			`selected segment seam is missing ${className}`,
+		);
+	}
+
+	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:-ml-px`));
+	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:border-l`));
+});
+
+test("all button variants inherit one shared pressed and expanded state contract", () => {
+	assert.match(BUTTON_SOURCE, /const buttonVariants = cva\(\n\t`\$\{selectedButtonState\} /u);
+
+	for (const className of SELECTED_BUTTON_STATE_CLASSES) {
+		assert.equal(
+			BUTTON_SOURCE.split(className).length - 1,
+			1,
+			`${className} must stay centralized in selectedButtonState`,
+		);
+	}
+});
+
+test("the selected-state gallery covers every button variant", () => {
+	const selectedDemo = BUTTON_DEMO_SOURCE.match(
+		/export function ButtonDemoSelected\(\) \{([\s\S]*?)\n\}/u,
+	)?.[1] ?? "";
+
+	assert.match(selectedDemo, /<Button aria-pressed="true">Default<\/Button>/u);
+	for (const variant of ["outline", "secondary", "ghost", "destructive", "warning", "discovery", "link"]) {
+		assert.match(
+			selectedDemo,
+			new RegExp(`<Button variant="${variant}" aria-pressed="true">`, "u"),
+			`${variant} is missing from ButtonDemoSelected`,
+		);
+	}
 });
 
 test("the connected dropdown-action demo uses its shared seam and VPK chevron", () => {

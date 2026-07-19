@@ -28,6 +28,9 @@ const buttonGroupVariants = cva(
 			{
 				variant: ["connected", "split"],
 				orientation: "horizontal",
+				// Later segments suppress their physical left border to avoid a double
+				// seam. Paint selected seams as an overlay so fixed and auto-width
+				// buttons keep identical closed/open geometry.
 				className:
 					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:relative [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:pointer-events-none [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:absolute [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:inset-y-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:-left-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:w-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:bg-border-selected [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:content-[''] *:data-slot:rounded-r-none",
 			},

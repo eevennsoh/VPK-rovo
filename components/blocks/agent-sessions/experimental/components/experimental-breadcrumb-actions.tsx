@@ -8,26 +8,26 @@ import ShrinkDiagonalIcon from "@atlaskit/icon/core/shrink-diagonal";
 /**
  * Breadcrumb-row action cluster for the experimental Agent Sessions work item:
  * a metadata-panel toggle plus a (visual-only) collapse control that sit left of
- * the dialog's close button. Mirrors the standard ModalHeader icon-button
- * styling. The panel toggle collapses/expands the right-hand metadata column via
- * the shared `PanelLayoutProvider`.
+ * the dialog's close button. The panel toggle collapses/expands the right-hand
+ * metadata column via the shared `PanelLayoutProvider`.
  */
 export function ExperimentalBreadcrumbActions() {
-	const { metadataCollapsed, toggleMetadata } = usePanelLayout();
+	const { metadataCollapsed, metadataTogglePending, toggleMetadata } = usePanelLayout();
 	return (
 		<>
 			<Button
 				aria-controls="experimental-work-item-metadata-panel"
 				aria-expanded={!metadataCollapsed}
 				aria-label={metadataCollapsed ? "Show metadata panel" : "Hide metadata panel"}
-				className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
+				className="aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
+				disabled={metadataTogglePending}
 				size="icon"
-				variant="outline"
+				variant="ghost"
 				onClick={toggleMetadata}
 			>
 				<PanelRightIcon label="" />
 			</Button>
-			<Button aria-label="Collapse" size="icon" variant="outline">
+			<Button aria-label="Collapse" size="icon" variant="ghost">
 				<ShrinkDiagonalIcon label="" />
 			</Button>
 		</>

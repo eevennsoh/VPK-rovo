@@ -300,14 +300,23 @@ export function ButtonDemoSelected() {
 			<Button variant="outline" aria-pressed="true">
 				Outline
 			</Button>
+			<Button variant="secondary" aria-pressed="true">
+				Secondary
+			</Button>
 			<Button variant="ghost" aria-pressed="true">
 				Ghost
+			</Button>
+			<Button variant="destructive" aria-pressed="true">
+				Destructive
 			</Button>
 			<Button variant="warning" aria-pressed="true">
 				Warning
 			</Button>
 			<Button variant="discovery" aria-pressed="true">
 				Discovery
+			</Button>
+			<Button variant="link" aria-pressed="true">
+				Link
 			</Button>
 		</div>
 	);

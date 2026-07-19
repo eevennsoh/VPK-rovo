@@ -4,7 +4,8 @@ import { type ReactNode } from "react";
 import Image from "next/image";
 
 import { token } from "@/lib/tokens";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -30,7 +31,14 @@ import TaskIcon from "@atlaskit/icon/core/task";
 export function ModalHeader({
 	showClose = true,
 	actions,
-}: Readonly<{ showClose?: boolean; actions?: ReactNode }>) {
+	actionsClassName,
+	closeButtonVariant = "outline",
+}: Readonly<{
+	showClose?: boolean;
+	actions?: ReactNode;
+	actionsClassName?: string;
+	closeButtonVariant?: ButtonProps["variant"];
+}>) {
 	const { meta } = useWorkItemModal();
 	const { workItem } = meta;
 
@@ -93,7 +101,7 @@ export function ModalHeader({
 				</BreadcrumbList>
 			</Breadcrumb>
 
-			<div className="flex shrink-0 items-center gap-2">
+			<div className={cn("flex shrink-0 items-center gap-2", actionsClassName)}>
 				{actions ?? (
 					<>
 						<Button aria-label="No restrictions" size="icon" variant="outline">
@@ -112,7 +120,7 @@ export function ModalHeader({
 					</>
 				)}
 				{showClose ? (
-					<Button aria-label="Close" size="icon" variant="outline" onClick={meta.onClose}>
+					<Button aria-label="Close" size="icon" variant={closeButtonVariant} onClick={meta.onClose}>
 						<CrossIcon label="" />
 					</Button>
 				) : null}

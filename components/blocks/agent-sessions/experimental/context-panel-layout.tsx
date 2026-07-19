@@ -1,12 +1,16 @@
 "use client";
 
-import { createContext, use, useMemo, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useMemo, useState, type ReactNode } from "react";
 
 interface PanelLayoutContextValue {
 	/** Whether the right-hand metadata column is collapsed (hidden). */
 	metadataCollapsed: boolean;
-	/** Toggle the metadata column between collapsed and expanded. */
+	/** Whether the title actions are exiting before the layout state changes. */
+	metadataTogglePending: boolean;
+	/** Request a metadata-column toggle after the title actions finish exiting. */
 	toggleMetadata: () => void;
+	/** Apply the requested layout state once the title-action exit completes. */
+	completeMetadataToggle: () => void;
 }
 
 const PanelLayoutContext = createContext<PanelLayoutContextValue | null>(null);
@@ -21,12 +25,22 @@ const PanelLayoutContext = createContext<PanelLayoutContextValue | null>(null);
  */
 export function PanelLayoutProvider({ children }: Readonly<{ children: ReactNode }>) {
 	const [metadataCollapsed, setMetadataCollapsed] = useState(false);
+	const [metadataTogglePending, setMetadataTogglePending] = useState(false);
+	const toggleMetadata = useCallback(() => setMetadataTogglePending(true), []);
+	const completeMetadataToggle = useCallback(() => {
+		if (!metadataTogglePending) return;
+
+		setMetadataCollapsed((collapsed) => !collapsed);
+		setMetadataTogglePending(false);
+	}, [metadataTogglePending]);
 	const value = useMemo<PanelLayoutContextValue>(
 		() => ({
+			completeMetadataToggle,
 			metadataCollapsed,
-			toggleMetadata: () => setMetadataCollapsed((collapsed) => !collapsed),
+			metadataTogglePending,
+			toggleMetadata,
 		}),
-		[metadataCollapsed],
+		[completeMetadataToggle, metadataCollapsed, metadataTogglePending, toggleMetadata],
 	);
 
 	return <PanelLayoutContext value={value}>{children}</PanelLayoutContext>;

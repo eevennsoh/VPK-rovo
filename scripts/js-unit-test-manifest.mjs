@@ -80,6 +80,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui/data/logo-usage.test.js",
 		"components/ui/breadcrumb.test.js",
 		"components/ui/badge.test.js",
+		"components/ui/button-group.test.js",
 		"components/ui/date-label.test.js",
 		"components/ui/lozenge.test.js",
 		"components/ui/tag.test.js",

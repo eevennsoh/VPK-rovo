@@ -1,7 +1,9 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Icon } from "@/components/ui/icon";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -41,19 +43,23 @@ const PRIMARY_CODING_AGENT = CODING_AGENTS[0];
  * shared ButtonGroup primitive so the main + trailing chevron read as one group;
  * its trailing chevron opens a dropdown listing the available coding agents.
  */
-export function ContextTitleActions() {
+export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?: boolean }>) {
 	return (
 		<div className="flex shrink-0 items-center gap-2">
-			<Button aria-label="No restrictions" size="icon" variant="outline">
-				<LockUnlockedIcon label="" />
-			</Button>
-			<Button className="gap-2" variant="outline">
-				<EyeOpenIcon label="" />
-				1
-			</Button>
-			<Button aria-label="Share" size="icon" variant="outline">
-				<ShareIcon label="" />
-			</Button>
+			{collapsed ? null : (
+				<>
+					<Button aria-label="No restrictions" size="icon" variant="outline">
+						<LockUnlockedIcon label="" />
+					</Button>
+					<Button className="gap-2" variant="outline">
+						<EyeOpenIcon label="" />
+						1
+					</Button>
+					<Button aria-label="Share" size="icon" variant="outline">
+						<ShareIcon label="" />
+					</Button>
+				</>
+			)}
 			<ButtonGroup variant="split">
 				<Button aria-label="Open" variant="outline" className="gap-0.5">
 					<LogoThirdParty name={PRIMARY_CODING_AGENT.name} size="small" borderless />
@@ -80,9 +86,39 @@ export function ContextTitleActions() {
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</ButtonGroup>
-			<Button aria-label="Actions" size="icon" variant="outline">
-				<ShowMoreHorizontalIcon label="" />
-			</Button>
+			{collapsed ? (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button aria-label="Actions" size="icon" variant="outline">
+								<ShowMoreHorizontalIcon label="" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" positionerClassName="z-[502]">
+						<DropdownMenuItem
+							elemBefore={<Icon aria-hidden render={<LockUnlockedIcon label="" size="small" />} />}
+						>
+							No restrictions
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							elemBefore={<Icon aria-hidden render={<EyeOpenIcon label="" size="small" />} />}
+							elemAfter={<Badge>1</Badge>}
+						>
+							Watch
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							elemBefore={<Icon aria-hidden render={<ShareIcon label="" size="small" />} />}
+						>
+							Share
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			) : (
+				<Button aria-label="Actions" size="icon" variant="outline">
+					<ShowMoreHorizontalIcon label="" />
+				</Button>
+			)}
 		</div>
 	);
 }

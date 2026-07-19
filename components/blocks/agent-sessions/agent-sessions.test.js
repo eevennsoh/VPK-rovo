@@ -141,6 +141,12 @@ test("the title Open split button uses direct 24px coding-agent logos", () => {
 		/<DropdownMenuItem[\s\S]*className="gap-0\.5"[\s\S]*elemBefore=\{<LogoThirdParty name=\{agent\.name\} size="small" borderless \/>\}/u,
 	);
 	assert.doesNotMatch(titleActionsSource, /LogoThirdParty[^>]*size="xxsmall"/u);
+	assert.match(titleActionsSource, /export function ContextTitleActions\(\{ collapsed = false \}/u);
+	assert.match(titleActionsSource, /\{collapsed \? null : \([\s\S]*aria-label="No restrictions"[\s\S]*<EyeOpenIcon[\s\S]*aria-label="Share"/u);
+	assert.match(titleActionsSource, /collapsed \? \([\s\S]*<DropdownMenu[\s\S]*aria-label="Actions"/u);
+	assert.match(titleActionsSource, />\s*No restrictions\s*<\/DropdownMenuItem>/u);
+	assert.match(titleActionsSource, /elemAfter=\{<Badge>1<\/Badge>\}[\s\S]*>\s*Watch\s*<\/DropdownMenuItem>/u);
+	assert.match(titleActionsSource, />\s*Share\s*<\/DropdownMenuItem>/u);
 });
 
 test("the experimental surface stays out of global Rovo history", () => {
@@ -157,14 +163,21 @@ test("the experimental surface stays out of global Rovo history", () => {
 
 test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
 	const actionsSource = readBlockFile("experimental/components/experimental-breadcrumb-actions.tsx");
+	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
+	const panelLayoutSource = readBlockFile("experimental/context-panel-layout.tsx");
 	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
 	const titleBarSource = readBlockFile("experimental/components/context-title-bar.tsx");
 
 	assert.doesNotMatch(actionsSource, /aria-pressed/u);
 	assert.match(actionsSource, /aria-expanded=\{!metadataCollapsed\}/u);
 	assert.match(actionsSource, /aria-controls="experimental-work-item-metadata-panel"/u);
+	assert.match(actionsSource, /disabled=\{metadataTogglePending\}/u);
 	assert.match(actionsSource, /metadataCollapsed \? "Show metadata panel" : "Hide metadata panel"/u);
-	assert.match(actionsSource, /aria-expanded:bg-bg-neutral-subtle/u);
+	assert.match(actionsSource, /aria-expanded:border-transparent aria-expanded:bg-transparent/u);
+	assert.equal((actionsSource.match(/variant="ghost"/gu) ?? []).length, 2);
+	assert.doesNotMatch(actionsSource, /variant="outline"/u);
+	assert.match(dialogSource, /actionsClassName="gap-1"/u);
+	assert.match(dialogSource, /closeButtonVariant="ghost"/u);
 	assert.match(layoutSource, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(layoutSource, /id="experimental-work-item-metadata-panel"/u);
 	assert.match(layoutSource, /transform: "translateX\(100%\)"/u);
@@ -181,6 +194,25 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(titleBarSource, /data-agent-sessions-title-column/u);
 	assert.match(titleBarSource, /max-width var\(--duration-slow\) var\(--ease-in-out\)/u);
 	assert.match(titleBarSource, /max-width var\(--duration-medium\) var\(--ease-in\)/u);
+	assert.match(titleBarSource, /<AnimatePresence initial=\{false\} mode="popLayout">/u);
+	assert.match(titleBarSource, /key=\{metadataCollapsed \? "metadata-collapsed" : "metadata-expanded"\}/u);
+	assert.match(titleBarSource, /collapsed=\{metadataCollapsed\}/u);
+	assert.match(titleBarSource, /settledMetadataCollapsed === metadataCollapsed/u);
+	assert.match(titleBarSource, /event\.currentTarget === event\.target && event\.propertyName === "max-width"/u);
+	assert.match(titleBarSource, /setSettledMetadataCollapsed\(metadataCollapsed\)/u);
+	assert.match(panelLayoutSource, /const \[metadataTogglePending, setMetadataTogglePending\] = useState\(false\);/u);
+	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => setMetadataTogglePending\(true\), \[\]\)/u);
+	assert.match(panelLayoutSource, /setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*setMetadataTogglePending\(false\);/u);
+	assert.match(titleBarSource, /duration: 0\.05,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
+	assert.match(titleBarSource, /opacity: 0, scale: 0\.96/u);
+	assert.match(titleBarSource, /const isInteractive = !hideForToggle && isLayoutSettled && !isAnimating;/u);
+	assert.match(titleBarSource, /hideForToggle=\{metadataTogglePending\}/u);
+	assert.match(titleBarSource, /onToggleExitComplete=\{completeMetadataToggle\}/u);
+	assert.match(titleBarSource, /hideForToggle && !didCompleteToggleExit\.current/u);
+	assert.match(titleBarSource, /didCompleteToggleExit\.current = true;/u);
+	assert.match(titleBarSource, /inert=\{isInteractive \? undefined : true\}/u);
+	assert.match(titleBarSource, /willChange: isAnimating \? "transform, opacity" : undefined/u);
 });
 
 test("AI Planner is composed below the title with shared TWG and prompt primitives", () => {
