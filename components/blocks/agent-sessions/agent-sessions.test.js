@@ -172,11 +172,9 @@ test("the experimental surface stays out of global Rovo history", () => {
 		dialogSource,
 		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
 	);
-	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher onModalBlanket=\{!portalToViewport\} \/>/u);
-	assert.match(
-		floatingLauncherSource,
-		/\[&>\.fixed\]:translate-x-\[18px\] \[&>\.fixed\]:translate-y-\[18px\]/u,
-	);
+	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher \/>/u);
+	assert.doesNotMatch(floatingSurfaceSource, /onModalBlanket/u);
+	assert.doesNotMatch(floatingLauncherSource, /translate-[xy]-/u);
 });
 
 test("the activity layout imports a real content-visibility hook", () => {
@@ -306,7 +304,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.doesNotMatch(contextPanelSource, /<div aria-hidden className="h-px bg-border" \/>/u);
 	assert.doesNotMatch(contextPanelSource, />Details</u);
 	assert.match(contextEditableHeaderSource, /placeholder="Press \/ to help improve the work item"/u);
-	assert.match(contextEditableHeaderSource, /editorClassName="agent-instructions-tiptap-editor context-description-tiptap-editor text-text"/u);
+	assert.match(contextEditableHeaderSource, /"agent-instructions-tiptap-editor context-description-tiptap-editor text-text"/u);
+	assert.match(contextEditableHeaderSource, /isProcessing && "context-description-tiptap-editor-hug"/u);
 	assert.match(contextEditableHeaderSource, /mentionSources=\{EDITOR_PALETTE_MENTION_SOURCES\}/u);
 	assert.match(contextEditableHeaderSource, /suggestionVariant="nested"/u);
 	assert.match(contextEditableHeaderSource, /toolbarReveal="hover"/u);
