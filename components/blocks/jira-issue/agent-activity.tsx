@@ -17,6 +17,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
@@ -275,7 +276,15 @@ function JiraIssueAgentActivityRow({
 							</Avatar>
 							{isAwaitingInput ? (
 								<span className="inline-flex min-w-0 items-baseline text-sm leading-5 text-text-subtlest">
-									<span className="truncate">{activity.label}</span>
+									<Shimmer
+										as="span"
+										duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
+										spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
+										wave={false}
+										className="min-w-0 truncate text-sm leading-5"
+									>
+										{activity.label}
+									</Shimmer>
 									<AnimatedDots />
 								</span>
 							) : (
@@ -290,7 +299,11 @@ function JiraIssueAgentActivityRow({
 							<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">
 								<StatusInformationIcon label="" size="small" color="currentColor" />
 							</span>
-						) : null}
+						) : (
+							<span className="-my-1 grid size-6 shrink-0 place-items-center" aria-hidden="true">
+								<Spinner size="sm" variant="rainbow" label="" />
+							</span>
+						)}
 					</button>
 				)}
 			/>
@@ -353,21 +366,13 @@ function JiraIssueCyclingAgentLabel({
 				<AnimatePresence mode="wait">
 					<motion.span
 						key={label}
-						className="block truncate"
+						className="block min-w-0 truncate text-sm leading-5"
 						initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
 						animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
 						exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
 						transition={JIRA_ISSUE_AGENT_LABEL_TRANSITION}
 					>
-						<Shimmer
-							as="span"
-							duration={JIRA_ISSUE_AGENT_SHIMMER_DURATION}
-							spread={JIRA_ISSUE_AGENT_SHIMMER_SPREAD}
-							wave={false}
-							className="block min-w-0 truncate text-sm leading-5"
-						>
-							{label}
-						</Shimmer>
+						{label}
 					</motion.span>
 				</AnimatePresence>
 			</span>

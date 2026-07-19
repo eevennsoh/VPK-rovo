@@ -12,6 +12,7 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
+import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import { Button } from "@/components/ui/button";
@@ -71,10 +72,16 @@ const JIRA_ISSUE_AGENT_ACTIVITIES = [
 	},
 ] as const satisfies readonly JiraIssueAgentActivity[];
 
+const JIRA_ISSUE_AWAITING_INPUT_QUESTION = {
+	...QUESTION_CARD_SINGLE_SELECT_DEMO[0],
+	options: QUESTION_CARD_SINGLE_SELECT_DEMO[0].options.slice(0, 2),
+};
+
 const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	{
 		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
 		label: "Awaiting user input",
+		question: JIRA_ISSUE_AWAITING_INPUT_QUESTION,
 		state: "awaiting-input",
 	},
 	JIRA_ISSUE_AGENT_ACTIVITIES[1],
@@ -187,6 +194,9 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 	const handleAgentActivityViewChat = useCallback(() => {
 		openChat("floating");
 	}, [openChat]);
+	const handleAgentActivityQuestionSubmit = useCallback(() => {
+		openChat("floating");
+	}, [openChat]);
 	const handleGenerativeActionSubmit = useCallback((request: JiraIssueGenerativeActionRequest) => {
 		openChat("floating");
 		void sendPrompt(request.prompt, {
@@ -232,6 +242,7 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 						onSubmit: handleGenerativeActionSubmit,
 					}}
 					issueKey="PD-40"
+					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
 					priority="major"
 					subtasks={JIRA_ISSUE_DEMO_SUBTASKS}

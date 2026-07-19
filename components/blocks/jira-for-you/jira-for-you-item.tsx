@@ -14,6 +14,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
 
 import { JiraForYouStatusLozenge } from "./jira-for-you-status";
 import type {
@@ -36,6 +37,51 @@ function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="text-text-subtlest">
 			·
+		</span>
+	);
+}
+
+/**
+ * Visual rule (shared with jira-issue agent activity): text shimmer is reserved
+ * for "needs input" states; in-progress work uses the rainbow spinner instead.
+ * A status can combine both (e.g. "1 Awaiting user response, 2 In progress"),
+ * so each comma-separated segment is classified and rendered independently.
+ */
+function isAwaitingInputStatus(status: string): boolean {
+	return /awaiting user/i.test(status);
+}
+
+function JiraForYouStatusSegment({ segment }: Readonly<{ segment: string }>) {
+	if (isAwaitingInputStatus(segment)) {
+		return (
+			<Shimmer as="span" className="text-xs leading-4" duration={1.6} spread={2}>
+				{segment}
+			</Shimmer>
+		);
+	}
+
+	return (
+		<span className="flex items-center gap-1 text-xs leading-4">
+			{segment}
+			<Spinner size="xs" variant="rainbow" label="" />
+		</span>
+	);
+}
+
+function JiraForYouItemStatus({ status }: Readonly<{ status: string }>) {
+	const segments = status
+		.split(",")
+		.map((segment) => segment.trim())
+		.filter(Boolean);
+
+	return (
+		<span className="flex items-center gap-1 text-xs leading-4">
+			{segments.map((segment, index) => (
+				<span className="flex items-center gap-1" key={segment}>
+					{index > 0 ? <span aria-hidden="true">,</span> : null}
+					<JiraForYouStatusSegment segment={segment} />
+				</span>
+			))}
 		</span>
 	);
 }
@@ -144,14 +190,7 @@ export function JiraForYouItemRow({
 									<AgentAvatarCluster agents={item.agents} />
 								) : null}
 								{item.status ? (
-									<Shimmer
-										as="span"
-										className="text-xs leading-4"
-										duration={1.6}
-										spread={2}
-									>
-										{item.status}
-									</Shimmer>
+									<JiraForYouItemStatus status={item.status} />
 								) : null}
 							</span>
 							<MetadataDot />
