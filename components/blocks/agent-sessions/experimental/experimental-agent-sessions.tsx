@@ -7,6 +7,7 @@ import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-wo
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSessionsPreset } from "@/components/blocks/agent-sessions/data/session-state";
 import { AgentSessionsProvider } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { PanelLayoutProvider } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/agent-sessions/experimental/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/agent-sessions/experimental/components/experimental-work-item-layout";
 import { ContextPanel } from "@/components/blocks/agent-sessions/experimental/components/context-panel";
@@ -66,23 +67,25 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
 			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem} active={open}>
-				<LayoutGroup id={composerLayoutGroupId}>
-					<ExperimentalWorkItemDialog
-						open={open}
-						onClose={onClose}
-						presentation={presentation}
-						workItemCode={workItem.code}
-						workItemTitle={workItem.title}
-					>
-						<ExperimentalWorkItemLayout
-							context={<ContextPanel />}
-							activity={<ActivityPanel />}
-							composer={<ActivityComposer />}
-							metadata={<MetadataRail />}
-						/>
-						<FloatingSessionSurface portalToViewport={presentation === "inline"} />
-					</ExperimentalWorkItemDialog>
-				</LayoutGroup>
+				<PanelLayoutProvider>
+					<LayoutGroup id={composerLayoutGroupId}>
+						<ExperimentalWorkItemDialog
+							open={open}
+							onClose={onClose}
+							presentation={presentation}
+							workItemCode={workItem.code}
+							workItemTitle={workItem.title}
+						>
+							<ExperimentalWorkItemLayout
+								context={<ContextPanel />}
+								activity={<ActivityPanel />}
+								composer={<ActivityComposer />}
+								metadata={<MetadataRail />}
+							/>
+							<FloatingSessionSurface portalToViewport={presentation === "inline"} />
+						</ExperimentalWorkItemDialog>
+					</LayoutGroup>
+				</PanelLayoutProvider>
 			</AgentSessionsProvider>
 		</WorkItemModalProvider>
 	);

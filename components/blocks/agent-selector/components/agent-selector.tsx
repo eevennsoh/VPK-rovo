@@ -236,7 +236,7 @@ function AgentSelectorItem({
 							aria-hidden={!showPinButton}
 							aria-label={`${isPinned ? "Unpin" : "Pin"} ${agent.name}`}
 							aria-pressed={isPinned}
-							className="size-6 text-icon-subtle aria-pressed:border-transparent! aria-pressed:bg-transparent!"
+							className="size-6 text-icon-subtle aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-icon-subtle! aria-pressed:[&_svg]:text-icon-subtle!"
 							onClick={(event) => {
 								event.preventDefault();
 								event.stopPropagation();
