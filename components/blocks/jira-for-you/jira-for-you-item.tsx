@@ -51,18 +51,25 @@ function isAwaitingInputStatus(status: string): boolean {
 	return /awaiting user/i.test(status);
 }
 
-function JiraForYouStatusSegment({ segment }: Readonly<{ segment: string }>) {
+function JiraForYouStatusSegment({
+	segment,
+	trailingComma = false,
+}: Readonly<{ segment: string; trailingComma?: boolean }>) {
+	// Keep the comma attached directly to the segment text (no leading space),
+	// so a combined status reads "Awaiting user response, 2 In progress".
+	const text = trailingComma ? `${segment},` : segment;
+
 	if (isAwaitingInputStatus(segment)) {
 		return (
 			<Shimmer as="span" className="text-xs leading-4" duration={1.6} spread={2}>
-				{segment}
+				{text}
 			</Shimmer>
 		);
 	}
 
 	return (
 		<span className="flex items-center gap-1 text-xs leading-4">
-			{segment}
+			{text}
 			<Spinner size="xs" variant="rainbow" label="" />
 		</span>
 	);
@@ -76,8 +83,12 @@ function JiraForYouItemStatus({ status }: Readonly<{ status: string }>) {
 
 	return (
 		<span className="flex items-center gap-1 text-xs leading-4">
-			{segments.map((segment) => (
-				<JiraForYouStatusSegment key={segment} segment={segment} />
+			{segments.map((segment, index) => (
+				<JiraForYouStatusSegment
+					key={segment}
+					segment={segment}
+					trailingComma={index < segments.length - 1}
+				/>
 			))}
 		</span>
 	);
