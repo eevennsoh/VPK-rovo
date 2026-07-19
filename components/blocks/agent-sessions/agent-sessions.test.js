@@ -319,7 +319,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(contextPillsSource, /staggerChildren: 0\.05/u);
 	assert.match(contextPillsSource, /initial=\{shouldReduceMotion \? false : "hidden"\}/u);
 	assert.match(agentContextPillSource, /import \{ AgentSelector \} from "@\/components\/blocks\/agent-selector";/u);
-	assert.match(agentContextPillSource, /<DropdownMenuTrigger[\s\S]*<ContextBarPill[\s\S]*Use agent/u);
+	assert.match(agentContextPillSource, /<DropdownMenuTrigger[\s\S]*<ContextBarPill[\s\S]*Assign agents/u);
 	assert.match(agentContextPillSource, /<AgentSelector[\s\S]*agents=\{ROVO_AGENT_SELECTOR_AGENTS\}[\s\S]*selectionMode="single"/u);
 	assert.match(agentContextPillSource, /onSelectAgent\(agent\.name\);[\s\S]*setIsOpen\(false\);/u);
 	assert.match(skillContextPillSource, /import \{ SkillSelector \} from "@\/components\/blocks\/skill-selector";/u);
