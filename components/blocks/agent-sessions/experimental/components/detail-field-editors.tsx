@@ -91,7 +91,7 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 				render={
 					<LozengeDropdownTrigger
 						aria-label={`Change status. Current status: ${value}`}
-						size="spacious"
+						size="compact"
 						variant={statusVariant(value)}
 					/>
 				}
