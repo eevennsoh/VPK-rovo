@@ -68,6 +68,25 @@ export function resolveBrandLogoPresentation(src: string): BrandLogoPresentation
 	return { src, hasBorder: false };
 }
 
+/** Per-id inset scale for 3P marks (glyph size = box size * scale). */
+const THREE_P_INSET_SCALE_BY_ID: Readonly<Record<string, number>> =
+	(THREE_P as { insetScaleById?: Record<string, number> }).insetScaleById ?? {};
+
+/**
+ * Resolves the inset scale for a 2P/3P brand asset path — the fraction of the
+ * logo box the glyph should occupy. A full-bleed 3P mark can be tagged in
+ * `logo-usage.json` (`threeP.insetScaleById`) to render smaller and centered
+ * inside its box (e.g. VS Code at 20px inside a 24px box). Returns 1 (no inset)
+ * for any path without an explicit override.
+ */
+export function resolveBrandLogoInsetScale(src: string): number {
+	if (src.startsWith("/3p/")) {
+		const id = src.split("/")[2] ?? "";
+		return THREE_P_INSET_SCALE_BY_ID[id] ?? 1;
+	}
+	return 1;
+}
+
 /**
  * Whether a 1P Atlassian product/master logo should render inside a bordered
  * tile. Solid-background product marks render bare; the Atlassian master logo

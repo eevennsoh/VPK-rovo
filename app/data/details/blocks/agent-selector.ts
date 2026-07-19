@@ -26,6 +26,7 @@ const agents: AgentSelectorAgent[] = [
 		examples: [
 			{ title: "Standalone picker", description: "Persistent standalone surfaces for the default and selected-agent action states.", demoSlug: "agent-selector-demo-standalone" },
 			{ title: "Selected agent actions", description: "Top actions for a selected custom agent before switching to another agent.", demoSlug: "agent-selector-demo-selected-agent-actions" },
+			{ title: "Jira kanban", description: "Running agents surface in a top In progress section with a stop-on-hover control; the row opens the agent's chat.", demoSlug: "agent-selector-demo-jira" },
 		],
 		props: [
 			{
@@ -83,6 +84,22 @@ const agents: AgentSelectorAgent[] = [
 				name: "selectedAgentActions",
 				type: "readonly AgentSelectorAction[]",
 				description: "Optional actions rendered above the switch-agent list for the currently selected agent.",
+			},
+			{
+				name: "inProgressAgentIds",
+				type: "readonly string[]",
+				description: "Opt-in (Jira kanban): agents currently running on the item render in a top In progress section instead of showing a tick, and are excluded from the pinned/available groups. Absent/empty leaves the list unchanged.",
+			},
+			{
+				name: "inProgressLabel",
+				type: "string",
+				default: '"In progress"',
+				description: "Heading for the in-progress section.",
+			},
+			{
+				name: "onStopAgent",
+				type: "(agentId: string) => void",
+				description: "Called when the trailing stop control on an in-progress row is activated. The row body still fires onAgentToggle (e.g. to open the agent's chat).",
 			},
 		],
 	};

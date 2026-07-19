@@ -22,6 +22,7 @@ function loadLogoUsageModule() {
 		export {
 			THIRD_PARTY_BORDERLESS_LOGO_IDS,
 			resolveBrandLogoPresentation,
+			resolveBrandLogoInsetScale,
 			resolveAtlassianLogoBorder,
 		} from "@/components/ui/data/logo-usage";
 	`);
@@ -89,6 +90,21 @@ test("unknown logo paths fall back to no border, src unchanged", async () => {
 		src: "/illustration/foo.svg",
 		hasBorder: false,
 	});
+});
+
+test("VS Code renders inset (20px glyph in a 24px box) via its inset scale", async () => {
+	const { resolveBrandLogoInsetScale } = await loadLogoUsageModule();
+
+	// 20 / 24 — the glyph is smaller than its box so it sits inset with padding.
+	assert.equal(resolveBrandLogoInsetScale("/3p/vs-code/24.svg"), 20 / 24);
+});
+
+test("3P logos without an inset override render full-bleed (scale 1)", async () => {
+	const { resolveBrandLogoInsetScale } = await loadLogoUsageModule();
+
+	assert.equal(resolveBrandLogoInsetScale("/3p/github/24.svg"), 1);
+	assert.equal(resolveBrandLogoInsetScale("/2p/appfire.png"), 1);
+	assert.equal(resolveBrandLogoInsetScale("/illustration/foo.svg"), 1);
 });
 
 test("the Atlassian master logo (no solid background) gets a bordered tile", async () => {

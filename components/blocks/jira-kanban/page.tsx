@@ -50,6 +50,24 @@ export default function JiraKanbanPage() {
 		}));
 	};
 
+	// A plain click selects just this card (clearing any prior selection), which
+	// slides the Jira toolbar up from the bottom center of the screen. Shift/⌘
+	// clicks still route through onCardSelect for range/toggle multi-select.
+	const handleCardClick = (
+		_title: string,
+		cardCode: string,
+		_card: JiraKanbanCardData,
+		columnTitle: string,
+	) => {
+		const indexInColumn = boardColumns
+			.find((column) => column.title === columnTitle)
+			?.cards.findIndex((card) => card.code === cardCode) ?? 0;
+		handleCardSelect(cardCode, columnTitle, indexInColumn, {
+			metaOrCtrlKey: false,
+			shiftKey: false,
+		});
+	};
+
 	const handleCardDragStart = (card: JiraKanbanCardData, sourceColumnTitle: string) => {
 		if (!selection.selectedCardCodes.has(card.code)) {
 			setSelection(createJiraKanbanSelectionState());
@@ -143,6 +161,7 @@ export default function JiraKanbanPage() {
 					boardColumns={boardColumns}
 					draggedCardCode={draggedCard?.card.code ?? null}
 					selectedCardCodes={selection.selectedCardCodes}
+					onCardClick={handleCardClick}
 					onCardSelect={handleCardSelect}
 					onCardDragStart={handleCardDragStart}
 					onCardDrop={handleCardDrop}

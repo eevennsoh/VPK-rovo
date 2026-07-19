@@ -49,11 +49,44 @@ test("AgentSelector defaults to the unified Agent Directory catalog", () => {
 	assert.match(DATA_SOURCE, /AGENT_SELECTOR_DEMO_AGENTS:[\s\S]*= ROVO_AGENT_SELECTOR_AGENTS;/u);
 });
 
-test("AgentSelector hides command checkmarks for single-select usage", () => {
+test("AgentSelector hides command checkmarks for single-select usage by default", () => {
 	assert.match(COMPONENT_SOURCE, /selectionMode = "multiple"/u);
 	assert.match(COMPONENT_SOURCE, /const supportsMultipleSelection = selectionMode === "multiple";/u);
-	assert.match(COMPONENT_SOURCE, /showCheckIcon=\{supportsMultipleSelection\}/u);
-	assert.match(COMPONENT_SOURCE, /data-checked=\{supportsMultipleSelection && isChecked \? true : undefined\}/u);
+	// CommandItem's built-in check lane is multiple-select only. Single-select uses
+	// a separate custom blue tile (below); in-progress rows never show a tick.
+	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress;/u);
+	assert.match(COMPONENT_SOURCE, /showCheckIcon=\{showCheckIcon\}/u);
+	assert.match(COMPONENT_SOURCE, /data-checked=\{showCheckIcon && isChecked \? true : undefined\}/u);
+	// Checkbox semantics (role + aria-checked) stay tied to multiple-select only;
+	// a single-select tick is a visual affordance, not a checkbox.
+	assert.match(COMPONENT_SOURCE, /aria-checked=\{supportsMultipleSelection && !isInProgress \? isChecked : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /role=\{supportsMultipleSelection && !isInProgress \? "menuitemcheckbox" : undefined\}/u);
+});
+
+test("AgentSelector single-select tick uses the VPK check in a transparent icon tile", () => {
+	// Opt-in prop, default off so existing single-select consumers are unchanged.
+	assert.match(COMPONENT_SOURCE, /showSelectedTickInSingleSelect\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /showSelectedTickInSingleSelect = false,/u);
+	// Single-select tick derives independently of the multi-select check lane.
+	assert.match(
+		COMPONENT_SOURCE,
+		/const showSingleSelectTick =\s*!isInProgress && !supportsMultipleSelection && showSelectedTickInSingleSelect && isChecked;/u,
+	);
+	// Rendered as the VPK CheckIcon in subtle color, inside a 24px transparent
+	// IconTile (small = size-6). `iconSize="small"` is required: transparent tiles
+	// default their glyph to the medium (16px) icon size, so without it the check
+	// renders oversized instead of the intended small (12px) tick.
+	assert.match(COMPONENT_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
+	assert.match(COMPONENT_SOURCE, /import \{ CheckIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-subtle"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
+	);
+	// The default and selected-agent-actions demo variants turn it on; jira does not.
+	assert.match(
+		PAGE_SOURCE,
+		/showSelectedTickInSingleSelect=\{variant === "default" \|\| variant === "selected-agent-actions"\}/u,
+	);
 });
 
 test("AgentSelector uses stable command values for duplicate agent names", () => {
@@ -92,7 +125,7 @@ test("AgentSelector action labels use subtle text color", () => {
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
-	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
 	// Title + byline use the shared editor-palette type treatment (menu-row-*
 	// utilities) rather than re-deriving line-height with text-sm/leading-*.
@@ -113,7 +146,13 @@ test("AgentSelector rows use greeting prompt text rhythm and shared agent avatar
 test("AgentSelector pin actions reveal without permanently reserving label space and split pinned rows", () => {
 	assert.match(COMPONENT_SOURCE, /import PinFilledIcon from "@atlaskit\/icon\/core\/pin-filled";/u);
 	assert.match(COMPONENT_SOURCE, /import PinIcon from "@atlaskit\/icon\/core\/pin";/u);
-	assert.match(COMPONENT_SOURCE, /const showPinButton = pinningEnabled && \(isPinned \|\| isInteractionActive\);/u);
+	// The hover reveal is suppressed on the checked row so the pin never flashes
+	// for a frame as the selected row floats to the top carrying stale hover
+	// state. Mirrors the `revealByline = isInteractionActive && !isChecked` guard.
+	assert.match(
+		COMPONENT_SOURCE,
+		/const showPinButton =\s*!isInProgress && pinningEnabled && \(isPinned \|\| \(isInteractionActive && !isChecked\)\);/u,
+	);
 	assert.match(COMPONENT_SOURCE, /marginLeft: showPinButton \? 8 : 0,[\s\S]*opacity: showPinButton \? 1 : 0,[\s\S]*width: showPinButton \? 24 : 0/u);
 	assert.match(COMPONENT_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agent\.name\}`\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-hidden=\{!showPinButton\}/u);
@@ -121,10 +160,104 @@ test("AgentSelector pin actions reveal without permanently reserving label space
 	assert.match(COMPONENT_SOURCE, /tabIndex=\{showPinButton \? 0 : -1\}/u);
 	assert.match(COMPONENT_SOURCE, /event\.preventDefault\(\);[\s\S]*event\.stopPropagation\(\);[\s\S]*onTogglePinned\(agent\.id\);/u);
 	assert.match(COMPONENT_SOURCE, /heading=\{pinnedItemsLabel\}/u);
-	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \? moreItemsLabel : undefined\}/u);
+	assert.match(COMPONENT_SOURCE, /heading=\{hasPinnedAgents \|\| inProgressAgents\.length > 0 \? moreItemsLabel : undefined\}/u);
 	assert.match(COMPONENT_SOURCE, /moreItemsLabel = "More agents"/u);
 	assert.match(COMPONENT_SOURCE, /pinnedItemsLabel = "Pinned"/u);
-	assert.match(COMPONENT_SOURCE, /useReducedMotion\(\)/u);
+	// Pin reveal is instant: a plain span with conditional inline styles, no
+	// Motion animate/transition to play in or out. The right margin collapses to
+	// 0 when the single-select tick follows so the pin↔check gap stays 4px.
+	assert.match(COMPONENT_SOURCE, /style=\{\{\s*marginLeft: showPinButton \? 8 : 0,[\s\S]*marginRight: showPinButton \? \(showSingleSelectTick \? 0 : 4\) : 0,\s*opacity: showPinButton \? 1 : 0,\s*width: showPinButton \? 24 : 0,\s*\}\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /animate=\{\{\s*marginLeft: showPinButton/u);
+});
+
+test("AgentSelector renders in-progress agents in a top section with stop-on-hover", () => {
+	// Opt-in prop surface: absent/empty = feature off (list behaves as before).
+	assert.match(COMPONENT_SOURCE, /inProgressAgentIds\?: readonly string\[\];/u);
+	assert.match(COMPONENT_SOURCE, /inProgressLabel = "In progress"/u);
+	assert.match(COMPONENT_SOURCE, /onStopAgent\?: \(agentId: string\) => void;/u);
+
+	// Repo-canonical stop affordance (matches jira-agent-session / jira-for-you),
+	// not a bare "stop" icon (which does not resolve in @atlaskit/icon).
+	assert.match(COMPONENT_SOURCE, /import VideoStopOverlayIcon from "@atlaskit\/icon\/core\/video-stop-overlay";/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/stop"/u);
+
+	// In-progress rows: no tick/pin. The rainbow spinner marks the running agent
+	// at rest and crossfades to a red stop control on hover/focus.
+	// Regression (stop-hover race): the reveal must be CSS-driven, not React state.
+	// A React-state reveal (`showStopButton`) lagged the pointer by a render, so a
+	// hover/click over the freshly-revealed button could land on the row instead.
+	// The stop control now reveals + re-enables pointer-events via group-hover /
+	// focus-visible on the group/command-item row, matching the Jira sidebar.
+	assert.doesNotMatch(COMPONENT_SOURCE, /showStopButton/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /tabIndex=\{showStopButton/u);
+	// In-progress rows never show a tick: the multi-select check lane excludes them
+	// and the single-select tile requires !isInProgress.
+	assert.match(COMPONENT_SOURCE, /const showCheckIcon = supportsMultipleSelection && !isInProgress;/u);
+	assert.match(COMPONENT_SOURCE, /const showSingleSelectTick =\s*!isInProgress &&/u);
+	assert.match(COMPONENT_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(COMPONENT_SOURCE, /<Spinner label=\{`\$\{agent\.name\} running`\} size="sm" variant="rainbow" \/>/u);
+	// Spinner fades out while the stop button + its pointer-events fade in, all
+	// gated by CSS hover/focus so the button's hit area is synchronous with the
+	// pointer (no render-lag frame where the row eats the hover/click).
+	assert.match(COMPONENT_SOURCE, /group-hover\/command-item:opacity-0/u);
+	// The decorative spinner must be pointer-events-none: at opacity 0 it forms a
+	// stacking context that paints above the sibling stop button, so with default
+	// pointer-events it would intercept the click meant for the stop control.
+	assert.match(COMPONENT_SOURCE, /pointer-events-none col-start-1 row-start-1 transition-opacity/u);
+	assert.match(COMPONENT_SOURCE, /"opacity-0 pointer-events-none transition-opacity duration-fast ease-out-practical motion-reduce:transition-none"/u);
+	assert.match(COMPONENT_SOURCE, /"group-hover\/command-item:opacity-100 group-hover\/command-item:pointer-events-auto"/u);
+	assert.match(COMPONENT_SOURCE, /"focus-visible:opacity-100 focus-visible:pointer-events-auto"/u);
+	// Stop icon uses the danger (red) token, not the subtle icon color.
+	assert.match(COMPONENT_SOURCE, /col-start-1 row-start-1 size-6 text-icon-danger/u);
+	assert.match(COMPONENT_SOURCE, /aria-label=\{`Stop \$\{agent\.name\}`\}/u);
+	// Clicking the stop control cancels the run without firing the row's open-chat
+	// select — stopPropagation is the click-side half of the same race.
+	assert.match(COMPONENT_SOURCE, /event\.preventDefault\(\);\s*event\.stopPropagation\(\);\s*onStop\?\.\(agent\.id\);/u);
+
+	// The in-progress group renders first (top of the list) and is excluded from
+	// pinned/more so each agent appears once.
+	assert.match(COMPONENT_SOURCE, /agents=\{inProgressAgents\}[\s\S]*heading=\{inProgressLabel\}[\s\S]*isInProgressGroup/u);
+	assert.match(COMPONENT_SOURCE, /pinnedAgentIdSet\.has\(agent\.id\) && !inProgressAgentIdSet\.has\(agent\.id\)/u);
+	assert.match(COMPONENT_SOURCE, /!pinnedAgentIdSet\.has\(agent\.id\) && !inProgressAgentIdSet\.has\(agent\.id\)/u);
+});
+
+test("AgentSelector demo exposes a Jira variant with in-progress stop-on-hover", () => {
+	assert.match(PAGE_SOURCE, /variant\?: "default" \| "selected-agent-actions" \| "jira";/u);
+	assert.match(PAGE_SOURCE, /variant === "jira" \? \["github-copilot", "readiness-checker"\] : \[\]/u);
+	assert.match(PAGE_SOURCE, /inProgressAgentIds=\{inProgressAgentIds\}/u);
+	assert.match(PAGE_SOURCE, /onStopAgent=\{\(agentId\) =>\s*setInProgressAgentIds\(\(ids\) => ids\.filter\(\(id\) => id !== agentId\)\)/u);
+
+	// Wired end-to-end: demo wrapper -> variant registry -> details example.
+	assert.match(DEMO_SOURCE, /export function AgentSelectorDemoJira/u);
+	assert.match(DEMO_SOURCE, /<AgentSelectorPage variant="jira" \/>/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"agent-selector-demo-jira"[\s\S]*default: mod\.AgentSelectorDemoJira/u);
+	assert.match(DETAILS_SOURCE, /demoSlug: "agent-selector-demo-jira"/u);
+});
+
+test("AgentSelector suppresses the byline reveal on the selected row so promotion to the top does not flash it", () => {
+	// Regression: selecting a hovered agent floats it to the top (visibleAgents
+	// orders selected first). Because rows are keyed by id, the clicked row's
+	// hovered "active" copy state used to ride the reorder up and animate back to
+	// idle at the top — a byline flash/jump. The reveal must exclude the checked
+	// row, and the flip must be instant for the checked row (and under reduced
+	// motion) so no active→idle animation plays during the promotion.
+	assert.match(COMPONENT_SOURCE, /const revealByline = isInteractionActive && !isChecked;/u);
+	assert.match(COMPONENT_SOURCE, /const copyInstant = isChecked \|\| prefersReducedMotion;/u);
+	assert.match(COMPONENT_SOURCE, /const prefersReducedMotion = useReducedMotion\(\);/u);
+	assert.match(COMPONENT_SOURCE, /import \{ motion, useReducedMotion, type Variants \} from "motion\/react";/u);
+	// The copy block reads the gated reveal and passes `copyInstant` as motion
+	// `custom` to the copy wrapper plus both the label and byline spans.
+	assert.match(COMPONENT_SOURCE, /animate=\{revealByline \? "active" : "idle"\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /animate=\{isInteractionActive \? "active" : "idle"\}/u);
+	const customPasses = COMPONENT_SOURCE.match(/custom=\{copyInstant\}/gu) ?? [];
+	assert.equal(customPasses.length, 3);
+	// The instant flip MUST live inside the variant — a variant's own transition
+	// overrides the `transition` prop — so the variants are dynamic functions of
+	// `instant` that collapse the transition to a 0-duration snap when set.
+	assert.match(COMPONENT_SOURCE, /idle: \(instant: boolean\) =>/u);
+	assert.match(COMPONENT_SOURCE, /active: \(instant: boolean\) =>/u);
+	assert.match(COMPONENT_SOURCE, /transition: instant \? \{ duration: 0 \} :/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /transition=\{copyTransition\}/u);
 });
 
 test("AgentSelector dropdowns do not inherit the generic menu height cap", () => {
