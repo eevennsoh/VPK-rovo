@@ -75,6 +75,14 @@ export function ExperimentalWorkItemLayout({
 				? "margin-right var(--duration-medium) var(--ease-in)"
 				: "margin-right var(--duration-slow) var(--ease-in-out)",
 	} as CSSProperties;
+	const contentColumnStyle = {
+		maxWidth: metadataCollapsed ? "800px" : "100%",
+		transition: shouldReduceMotion
+			? undefined
+			: metadataCollapsed
+				? "max-width var(--duration-medium) var(--ease-in)"
+				: "max-width var(--duration-slow) var(--ease-in-out)",
+	} as CSSProperties;
 
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
@@ -87,19 +95,30 @@ export function ExperimentalWorkItemLayout({
 				>
 					<div
 						ref={leftScrollRef}
-						className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-6 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
+						className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pb-6"
 						data-agent-sessions-scroll-region
 						style={leftScrollMaskStyle}
 					>
-						<div className="order-1 min-w-0">{context}</div>
-						<div className="order-2 min-w-0">{activity}</div>
+						<div
+							className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-6 @[860px]/agentlayout:px-6 motion-reduce:transition-none"
+							data-agent-sessions-content-column
+							style={contentColumnStyle}
+						>
+							<div className="order-1 min-w-0">{context}</div>
+							<div className="order-2 min-w-0">{activity}</div>
+						</div>
 					</div>
 					{showStickyComposer ? (
 						<div
-							className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:py-4"
+							className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:py-4"
 							data-agent-sessions-composer-dock
 						>
-							{composer}
+							<div
+								className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6 motion-reduce:transition-none"
+								style={contentColumnStyle}
+							>
+								{composer}
+							</div>
 						</div>
 					) : null}
 				</div>

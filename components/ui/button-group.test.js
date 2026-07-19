@@ -30,17 +30,23 @@ test("the split variation preserves connected geometry and uses the correct seam
 	assert.match(BUTTON_SOURCE, /data-variant=\{variant \?\? "default"\}/u);
 });
 
-test("selected segments after the first restore and overlap their leading border", () => {
-	for (const state of ["aria-expanded", "aria-pressed"]) {
-		assert.match(
-			BUTTON_GROUP_SOURCE,
-			new RegExp(`\\[&>\\[data-slot\\]~\\[data-slot\\]\\[${state}=true\\]\\]:-ml-px`, "u"),
-		);
-		assert.match(
-			BUTTON_GROUP_SOURCE,
-			new RegExp(`\\[&>\\[data-slot\\]~\\[data-slot\\]\\[${state}=true\\]\\]:border-l`, "u"),
-		);
-	}
+test("selected segments after the first paint a leading stroke without changing seam geometry", () => {
+	assert.match(
+		BUTTON_GROUP_SOURCE,
+		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:relative/u,
+	);
+	assert.match(
+		BUTTON_GROUP_SOURCE,
+		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:-left-px/u,
+	);
+	assert.match(
+		BUTTON_GROUP_SOURCE,
+		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:w-px/u,
+	);
+	assert.match(
+		BUTTON_GROUP_SOURCE,
+		/\[&>\[data-slot\]~\[data-slot\]:is\(\[aria-expanded=true\],\[aria-pressed=true\]\)\]:before:bg-border-selected/u,
+	);
 });
 
 test("the connected dropdown-action demo uses its shared seam and VPK chevron", () => {

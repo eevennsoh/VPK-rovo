@@ -138,7 +138,7 @@ test("the title Open split button uses direct 24px coding-agent logos", () => {
 	assert.match(titleActionsSource, /<ButtonGroup variant="split">/u);
 	assert.match(
 		titleActionsSource,
-		/elemBefore=\{<LogoThirdParty name=\{agent\.name\} size="small" borderless \/>\}/u,
+		/<DropdownMenuItem[\s\S]*className="gap-0\.5"[\s\S]*elemBefore=\{<LogoThirdParty name=\{agent\.name\} size="small" borderless \/>\}/u,
 	);
 	assert.doesNotMatch(titleActionsSource, /LogoThirdParty[^>]*size="xxsmall"/u);
 });
@@ -158,6 +158,7 @@ test("the experimental surface stays out of global Rovo history", () => {
 test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
 	const actionsSource = readBlockFile("experimental/components/experimental-breadcrumb-actions.tsx");
 	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
+	const titleBarSource = readBlockFile("experimental/components/context-title-bar.tsx");
 
 	assert.doesNotMatch(actionsSource, /aria-pressed/u);
 	assert.match(actionsSource, /aria-expanded=\{!metadataCollapsed\}/u);
@@ -172,6 +173,14 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(layoutSource, /useReducedMotion\(\)/u);
 	assert.match(layoutSource, /margin-right var\(--duration-slow\) var\(--ease-in-out\)/u);
 	assert.match(layoutSource, /margin-right var\(--duration-medium\) var\(--ease-in\)/u);
+	assert.match(layoutSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
+	assert.match(layoutSource, /max-width var\(--duration-slow\) var\(--ease-in-out\)/u);
+	assert.match(layoutSource, /max-width var\(--duration-medium\) var\(--ease-in\)/u);
+	assert.match(layoutSource, /data-agent-sessions-content-column/u);
+	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
+	assert.match(titleBarSource, /data-agent-sessions-title-column/u);
+	assert.match(titleBarSource, /max-width var\(--duration-slow\) var\(--ease-in-out\)/u);
+	assert.match(titleBarSource, /max-width var\(--duration-medium\) var\(--ease-in\)/u);
 });
 
 test("AI Planner is composed below the title with shared TWG and prompt primitives", () => {

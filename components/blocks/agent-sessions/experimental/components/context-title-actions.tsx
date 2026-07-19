@@ -70,6 +70,7 @@ export function ContextTitleActions() {
 					<DropdownMenuContent align="end" positionerClassName="z-[502]">
 						{CODING_AGENTS.map((agent) => (
 							<DropdownMenuItem
+								className="gap-0.5"
 								key={agent.name}
 								elemBefore={<LogoThirdParty name={agent.name} size="small" borderless />}
 							>
