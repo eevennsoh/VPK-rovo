@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,7 +11,11 @@ import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivityEvent } from "./jira-activity-event";
 import { JiraActivityHeader } from "./jira-activity-header";
 import { JiraActivityNode } from "./jira-activity-node";
-import type { JiraActivityActor, JiraActivityEntry } from "./jira-activity-types";
+import type {
+	JiraActivityActor,
+	JiraActivityCommentEntry,
+	JiraActivityEntry,
+} from "./jira-activity-types";
 import {
 	createCommentEntry,
 	createReply,
@@ -21,8 +25,16 @@ import {
 export interface JiraActivityProps {
 	/** Timeline entries, oldest first. Defaults to built-in sample data. */
 	entries?: readonly JiraActivityEntry[];
+	/** Initial entries when the timeline is uncontrolled. */
+	defaultEntries?: readonly JiraActivityEntry[];
+	/** Receives the complete next timeline after a comment or reply is submitted. */
+	onEntriesChange?: (entries: readonly JiraActivityEntry[]) => void;
 	/** The signed-in viewer; authors new comments and replies. */
 	currentUser?: JiraActivityActor;
+	/** Override the bottom composer. Pass `null` to suppress it. */
+	composer?: ReactNode | null;
+	/** Optional trailing action for each comment card. */
+	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	className?: string;
 	onUnsubscribe?: () => void;
 }
@@ -34,27 +46,41 @@ export interface JiraActivityProps {
  * comment composer. Comments and replies append to the feed via a pure reducer.
  */
 export function JiraActivity({
-	entries = JIRA_ACTIVITY_ENTRIES,
+	entries: controlledEntries,
+	defaultEntries = JIRA_ACTIVITY_ENTRIES,
+	onEntriesChange,
 	currentUser = JIRA_ACTIVITY_CURRENT_USER,
+	composer,
+	renderCommentAction,
 	className,
 	onUnsubscribe,
 }: Readonly<JiraActivityProps>) {
-	const [state, dispatch] = useReducer(jiraActivityReducer, { entries });
+	const [uncontrolledEntries, setUncontrolledEntries] = useState(defaultEntries);
+	const entries = controlledEntries ?? uncontrolledEntries;
+
+	function applyAction(action: Parameters<typeof jiraActivityReducer>[1]) {
+		const nextState = jiraActivityReducer({ entries }, action);
+		if (nextState.entries === entries) return;
+		if (controlledEntries === undefined) {
+			setUncontrolledEntries(nextState.entries);
+		}
+		onEntriesChange?.(nextState.entries);
+	}
 
 	// The header avatar group reflects the distinct people involved in the thread.
 	const participants = useMemo(() => {
 		const seen = new Set<string>();
 		const people: JiraActivityActor[] = [];
-		for (const actor of [currentUser, ...state.entries.map((entry) => entry.actor)]) {
+		for (const actor of [currentUser, ...entries.map((entry) => entry.actor)]) {
 			if (actor.kind !== "person" || seen.has(actor.id)) continue;
 			seen.add(actor.id);
 			people.push(actor);
 		}
 		return people;
-	}, [state.entries, currentUser]);
+	}, [entries, currentUser]);
 
 	function handleAddComment(body: string) {
-		dispatch({
+		applyAction({
 			type: "add-comment",
 			entry: createCommentEntry({
 				id: crypto.randomUUID(),
@@ -66,7 +92,7 @@ export function JiraActivity({
 	}
 
 	function handleAddReply(entryId: string, body: string) {
-		dispatch({
+		applyAction({
 			type: "add-reply",
 			entryId,
 			reply: createReply({
@@ -83,8 +109,8 @@ export function JiraActivity({
 			<JiraActivityHeader onUnsubscribe={onUnsubscribe} participants={participants} />
 
 			<ol aria-label="Activity timeline" className="flex flex-col">
-				{state.entries.map((entry, index) => {
-					const isLast = index === state.entries.length - 1;
+				{entries.map((entry, index) => {
+					const isLast = index === entries.length - 1;
 
 					return (
 						<li className="flex gap-2" key={entry.id}>
@@ -105,6 +131,7 @@ export function JiraActivity({
 										currentUser={currentUser}
 										entry={entry}
 										onSubmitReply={(body) => handleAddReply(entry.id, body)}
+										action={renderCommentAction?.(entry)}
 									/>
 								) : null}
 								{entry.kind === "changed-files" ? (
@@ -116,17 +143,20 @@ export function JiraActivity({
 				})}
 			</ol>
 
-			<JiraActivityComposer
-				author={currentUser}
-				onSubmit={handleAddComment}
-				placeholder="Leave a comment..."
-				variant="comment"
-			/>
+			{composer === undefined ? (
+				<JiraActivityComposer
+					author={currentUser}
+					onSubmit={handleAddComment}
+					placeholder="Leave a comment..."
+					variant="comment"
+				/>
+			) : composer}
 		</div>
 	);
 }
 
 export { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
+export { JiraActivityComposer, type JiraActivityComposerProps } from "./jira-activity-composer";
 export type {
 	JiraActivityActor,
 	JiraActivityActorKind,

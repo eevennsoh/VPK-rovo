@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	description:
-		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events (an actor plus an action line with inline code, link, colored-label, and tag chips), rich comment cards (a header, a body, an optional collapsible detail section, replies, and a reply composer), and changed-files cards (a summary, description, and branch/PR tag). Leading nodes render a person photo, an agent hexagon, an app brand mark, or a neutral event glyph. A header shows the participants, and a bottom composer plus in-card reply composers append comments and replies to the feed (submit on Enter).',
+		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events, rich comment cards, and changed-files cards. The feed supports controlled or uncontrolled entries, per-comment actions, a replaceable bottom composer, compact in-card replies, and the shared floating Rovo prompt composer for new comments.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraActivity } from "@/components/blocks/jira-activity";`,
 	usage: `import { JiraActivity } from "@/components/blocks/jira-activity";
@@ -12,9 +12,31 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 		{
 			name: "entries",
 			type: "readonly JiraActivityEntry[]",
-			default: "built-in sample data",
+			default: "undefined (uncontrolled)",
 			description:
-				'Timeline entries, oldest first. Each entry\'s `kind` ("event" | "comment" | "changed-files") selects its renderer.',
+				'Controlled timeline entries, oldest first. Each entry\'s `kind` selects its renderer.',
+		},
+		{
+			name: "defaultEntries",
+			type: "readonly JiraActivityEntry[]",
+			default: "built-in sample data",
+			description: "Initial entries for an uncontrolled timeline.",
+		},
+		{
+			name: "onEntriesChange",
+			type: "(entries: readonly JiraActivityEntry[]) => void",
+			description: "Called with the complete next timeline after a comment or reply is submitted.",
+		},
+		{
+			name: "composer",
+			type: "ReactNode | null",
+			default: "shared JiraActivityComposer",
+			description: "Overrides the bottom composer. Pass null to suppress it.",
+		},
+		{
+			name: "renderCommentAction",
+			type: "(entry: JiraActivityCommentEntry) => ReactNode",
+			description: "Renders an optional trailing action in each comment card header.",
 		},
 		{
 			name: "currentUser",

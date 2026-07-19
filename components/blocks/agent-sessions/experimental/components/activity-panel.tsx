@@ -1,24 +1,40 @@
 "use client";
 
-import Heading from "@/components/ui/heading";
+import { useMemo } from "react";
 
-import { ActivityEventList } from "./activity-event-list";
+import { JiraActivity } from "@/components/blocks/jira-activity";
+import { Button } from "@/components/ui/button";
+import { useAgentSessions } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import {
+	AGENT_SESSIONS_CURRENT_USER,
+	mapActivityEventsToJiraEntries,
+} from "@/components/blocks/agent-sessions/experimental/lib/jira-activity-adapter";
 
 /**
- * Activity panel for the experimental Agent Sessions block: an "Activity" heading
- * above the chronological human + agent event feed. The comment/command composer is
- * no longer rendered here — it now lives in the pinned footer at the bottom of the
- * Activity column (owned by ExperimentalWorkItemLayout's `composer` slot), so it stays
- * visible while this feed scrolls. All data comes from the foundation hooks; the panel
- * takes no props.
+ * Live Jira Activity timeline for the experimental Agent Sessions block. The
+ * timeline's built-in composer is suppressed because the shared Agent Sessions
+ * composer remains pinned by ExperimentalWorkItemLayout. Agent comment actions
+ * open the corresponding floating session surface.
  */
 export function ActivityPanel() {
+	const { meta, actions } = useAgentSessions();
+	const entries = useMemo(() => mapActivityEventsToJiraEntries(meta.activityEvents), [meta.activityEvents]);
+
 	return (
-		<section aria-labelledby="agent-sessions-activity-heading" className="flex flex-col gap-3">
-			<Heading id="agent-sessions-activity-heading" size="small" as="h3">
-				Activity
-			</Heading>
-			<ActivityEventList />
-		</section>
+		<JiraActivity
+			composer={null}
+			currentUser={AGENT_SESSIONS_CURRENT_USER}
+			entries={entries}
+			renderCommentAction={(entry) => {
+				const event = meta.activityEvents.find((activityEvent) => activityEvent.id === entry.id);
+				if (!event || event.kind !== "agent") return null;
+
+				return (
+					<Button onClick={() => actions.openSession(event.sessionId)} size="compact" type="button" variant="link">
+						View session
+					</Button>
+				);
+			}}
+		/>
 	);
 }

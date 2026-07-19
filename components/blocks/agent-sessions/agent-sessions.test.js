@@ -225,6 +225,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	const contextPanelSource = readBlockFile("experimental/components/context-panel.tsx");
 	const plannerPanelSource = readBlockFile("experimental/components/ai-planner-panel.tsx");
 	const activityComposerSource = readBlockFile("experimental/components/activity-composer.tsx");
+	const activityPanelSource = readBlockFile("experimental/components/activity-panel.tsx");
 	const agentContextPillSource = readBlockFile("experimental/components/activity-composer-agent-context-pill.tsx");
 	const skillContextPillSource = readBlockFile("experimental/components/activity-composer-skill-context-pill.tsx");
 	const contextPillsSource = readBlockFile("experimental/components/activity-composer-context-pills.tsx");
@@ -298,11 +299,20 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onSelectAgent=\{\(agentName\) => insertContext\("@", agentName\)\}[\s\S]*onSelectSkill=\{\(skillId\) => insertContext\("\/", skillId\)\}/u);
 	assert.match(activityComposerSource, /onStatusChange=\{\(status\) => actions\.updateMetadata\(\{ status \}\)\}[\s\S]*status=\{state\.metadata\.status\}/u);
 	assert.match(contextPillsSource, /Move to:[\s\S]*<StatusPill onChange=\{onStatusChange\} value=\{status\} \/>/u);
-	assert.match(activityComposerSource, /<AgentSessionsComposerMotion placement="sticky">[\s\S]*<FloatingComposer/u);
+	assert.match(activityComposerSource, /import \{ JiraActivityComposer \} from "@\/components\/blocks\/jira-activity";/u);
+	assert.match(activityComposerSource, /<AgentSessionsComposerMotion placement="sticky">[\s\S]*<JiraActivityComposer/u);
+	assert.match(activityComposerSource, /onValueChange=\{handlePromptChange\}/u);
+	assert.match(activityComposerSource, /textareaRef=\{editorRef\}/u);
+	assert.match(activityComposerSource, /value=\{draft\}/u);
+	assert.doesNotMatch(activityComposerSource, /import \{ FloatingComposer \}|PromptInputTextarea|RovoComposerActionButton/u);
 	assert.doesNotMatch(activityComposerSource, /className="shadow-none"/u);
-	assert.match(activityComposerSource, /ref=\{editorRef\}/u);
 	assert.match(activityComposerSource, /return `\$\{currentDraft\}\$\{separator\}\$\{prefix\}\$\{value\} `;[\s\S]*editorRef\.current\?\.focus\(\)/u);
 	assert.doesNotMatch(activityComposerSource, /requestedContext/u);
+	assert.match(activityPanelSource, /import \{ JiraActivity \} from "@\/components\/blocks\/jira-activity";/u);
+	assert.match(activityPanelSource, /mapActivityEventsToJiraEntries\(meta\.activityEvents\)/u);
+	assert.match(activityPanelSource, /<JiraActivity[\s\S]*composer=\{null\}[\s\S]*entries=\{entries\}[\s\S]*renderCommentAction=/u);
+	assert.match(activityPanelSource, /actions\.openSession\(event\.sessionId\)/u);
+	assert.doesNotMatch(activityPanelSource, /ActivityEventList/u);
 	assert.match(contextPillsSource, /<ActivityComposerAgentContextPill onSelectAgent=\{onSelectAgent\} \/>/u);
 	assert.match(contextPillsSource, /<ActivityComposerSkillContextPill onSelectSkill=\{onSelectSkill\} \/>/u);
 	assert.match(contextPillsSource, /delayChildren: 0\.25/u);
@@ -326,6 +336,9 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	}
 	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/context-summary.tsx")), false);
 	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/planner-suggestion.tsx")), false);
+	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/activity-event-list.tsx")), false);
+	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/activity-agent-event.tsx")), false);
+	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/activity-human-event.tsx")), false);
 });
 
 test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {
