@@ -172,11 +172,9 @@ test("the experimental surface stays out of global Rovo history", () => {
 		dialogSource,
 		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
 	);
-	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher onModalBlanket=\{!portalToViewport\} \/>/u);
-	assert.match(
-		floatingLauncherSource,
-		/\[&>\.fixed\]:translate-x-\[18px\] \[&>\.fixed\]:translate-y-\[18px\]/u,
-	);
+	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher \/>/u);
+	assert.doesNotMatch(floatingSurfaceSource, /onModalBlanket/u);
+	assert.doesNotMatch(floatingLauncherSource, /translate-[xy]-/u);
 });
 
 test("the activity layout imports a real content-visibility hook", () => {
@@ -320,7 +318,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.doesNotMatch(contextPanelSource, /<div aria-hidden className="h-px bg-border" \/>/u);
 	assert.doesNotMatch(contextPanelSource, />Details</u);
 	assert.match(contextEditableHeaderSource, /placeholder="Press \/ to help improve the work item"/u);
-	assert.match(contextEditableHeaderSource, /editorClassName="agent-instructions-tiptap-editor context-description-tiptap-editor text-text"/u);
+	assert.match(contextEditableHeaderSource, /"agent-instructions-tiptap-editor context-description-tiptap-editor text-text"/u);
+	assert.match(contextEditableHeaderSource, /isProcessing && "context-description-tiptap-editor-hug"/u);
 	assert.match(contextEditableHeaderSource, /mentionSources=\{EDITOR_PALETTE_MENTION_SOURCES\}/u);
 	assert.match(contextEditableHeaderSource, /suggestionVariant="nested"/u);
 	assert.match(contextEditableHeaderSource, /toolbarReveal="hover"/u);
@@ -370,7 +369,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(layoutSource, /planner\.status === "inactive" \|\| planner\.status === "applied"/u);
 	assert.match(layoutSource, /\{showStickyComposer \? \([\s\S]*\{composer\}[\s\S]*\) : null\}/u);
 	assert.match(layoutSource, /useHasVerticalOverflow/u);
-	assert.match(layoutSource, /buildScrollMaskStyle\(\{ fadeTop: false, fadeBottom: showBottomScrollMask \}\)/u);
+	assert.match(layoutSource, /buildScrollMaskStyle\(\{ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask \}\)/u);
 	assert.match(layoutSource, /data-agent-sessions-scroll-region/u);
 	assert.match(layoutSource, /data-agent-sessions-composer-dock/u);
 	assert.match(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-agent-sessions-composer-dock/u);
