@@ -7,8 +7,25 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "jira-agent-session-card.tsx"),
 	"utf8",
 );
+const ACTIVITY_CARD_SOURCE = readFileSync(
+	join(__dirname, "jira-agent-session-activity-card.tsx"),
+	"utf8",
+);
+const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
+const DEMO_SOURCE = readFileSync(
+	join(__dirname, "../../website/demos/blocks/jira-agent-session-demo.tsx"),
+	"utf8",
+);
+const DETAIL_SOURCE = readFileSync(
+	join(__dirname, "../../../app/data/details/blocks/jira-agent-session.ts"),
+	"utf8",
+);
+const VARIANT_REGISTRY_SOURCE = readFileSync(
+	join(__dirname, "../../website/registry/blocks-variants.ts"),
+	"utf8",
+);
 
 test("running and awaiting sessions shimmer the title; complete is solid", () => {
 	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*true/);
@@ -35,6 +52,7 @@ test("only running sessions expose the Stop action", () => {
 });
 
 test("View opens the Rovo floating chat in the demo", () => {
+	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\?\.\(item\)\} size="compact" variant="outline">\s*View/u);
 	assert.match(PAGE_SOURCE, /const handleView = useCallback\(\(\) => \{\s*openChat\("floating"\);/);
 	assert.match(PAGE_SOURCE, /onView=\{handleView\}/);
 	assert.match(PAGE_SOURCE, /chatSurface === "floating" \? <RovoFloatingChat/);
@@ -48,8 +66,11 @@ test("the leading tile renders the agent avatar at 32px, not an issue-type icon"
 	assert.doesNotMatch(CARD_SOURCE, /IconTile/);
 });
 
-test("the metadata line uses agent name, branch, and asx PR-status colors", () => {
-	assert.match(CARD_SOURCE, /\{item\.agent\.name\}/);
+test("the metadata line uses elapsed runtime, branch, and asx PR-status colors", () => {
+	assert.equal(
+		(CARD_SOURCE.match(/formatElapsedTime\(elapsedSeconds\)/gu) ?? []).length,
+		2,
+	);
 	assert.match(CARD_SOURCE, /\{item\.branch\}/);
 	assert.match(CARD_SOURCE, /created:\s*\{[\s\S]*?text-icon-success/);
 	assert.match(CARD_SOURCE, /merged:\s*\{[\s\S]*?text-icon-accent-purple/);
@@ -69,4 +90,35 @@ test("sample data covers one card per state", () => {
 	assert.match(DATA_SOURCE, /state: "running"/);
 	assert.match(DATA_SOURCE, /state: "needs-input"/);
 	assert.match(DATA_SOURCE, /state: "complete"/);
+});
+
+test("exports the expanded activity-card variant and owns its shared shell", () => {
+	assert.match(INDEX_SOURCE, /export \{ JiraAgentSessionActivityCard \}/u);
+	assert.match(
+		ACTIVITY_CARD_SOURCE,
+		/w-full overflow-hidden rounded-lg border border-border bg-surface/u,
+	);
+	assert.match(ACTIVITY_CARD_SOURCE, /aria-expanded=\{detailsOpen\}/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /replyComposer/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /<JiraAgentSessionActivityHeader[\s\S]*item=\{item\}/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /grid w-full gap-4 rounded-xl border border-border bg-surface p-4/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /text-sm leading-5 text-text/u);
+	assert.doesNotMatch(ACTIVITY_CARD_SOURCE, /text-base leading-6 text-text/u);
+	assert.match(CARD_SOURCE, /formatElapsedTime\(elapsedSeconds\)/u);
+	assert.match(CARD_SOURCE, /title="Agent runtime"/u);
+	assert.match(CARD_SOURCE, /onClick=\{\(\) => onView\?\.\(item\)\}[\s\S]*View/u);
+});
+
+test("documents the activity-card variant as a rendered example section", () => {
+	assert.match(DETAIL_SOURCE, /title: "Activity card"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "jira-agent-session-demo-activity-card"/u);
+	assert.match(
+		VARIANT_REGISTRY_SOURCE,
+		/"jira-agent-session-demo-activity-card"[\s\S]*JiraAgentSessionActivityCardDemo/u,
+	);
+	assert.match(DEMO_SOURCE, /export function JiraAgentSessionActivityCardDemo/u);
+	assert.match(DEMO_SOURCE, /<JiraAgentSessionActivityCard/u);
+	assert.match(DEMO_SOURCE, /item=\{entry\.sessionItem\}/u);
+	assert.match(DEMO_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
+	assert.match(DEMO_SOURCE, /rounded-xl border border-border bg-bg-input/u);
 });

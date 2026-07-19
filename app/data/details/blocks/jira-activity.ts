@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	description:
-		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events, rich comment cards, and changed-files cards. The feed supports controlled or uncontrolled entries, per-comment actions, a replaceable bottom composer, compact in-card replies, and the shared floating Rovo prompt composer for new comments.',
+		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events, rich comment cards, and changed-files cards. The header can sort all activity or show only comments authored by agents.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraActivity } from "@/components/blocks/jira-activity";`,
 	usage: `import { JiraActivity } from "@/components/blocks/jira-activity";
@@ -61,6 +61,23 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			name: "onSortOrderChange",
 			type: '(next: "ascending" | "descending") => void',
 			description: "Called when the header sort control changes the ordering.",
+		},
+		{
+			name: "filter",
+			type: '"all" | "agents-only"',
+			default: "undefined (uncontrolled)",
+			description: "Controlled timeline filter. `agents-only` displays only agent-authored comments.",
+		},
+		{
+			name: "defaultFilter",
+			type: '"all" | "agents-only"',
+			default: '"all"',
+			description: "Initial filter when the header view control is uncontrolled.",
+		},
+		{
+			name: "onFilterChange",
+			type: '(next: "all" | "agents-only") => void',
+			description: "Called when the header view control changes the activity filter.",
 		},
 		{
 			name: "className",

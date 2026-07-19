@@ -1,25 +1,30 @@
 import * as React from "react";
 
-import { Tag } from "@/components/ui/tag";
+import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
+import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
+
+import { Icon } from "@/components/ui/icon";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { Tag, type TagColor } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type { JiraActivitySegment } from "./jira-activity-types";
 
-// Decorative dot fills for colored inline labels (e.g. •Bug, •UI polish).
-// Decorative accent classes are allowed here per `.agents/rules/token-priority.md`.
-const LABEL_DOT_CLASS: Record<string, string> = {
-	red: "bg-red-500",
-	green: "bg-green-500",
-	blue: "bg-blue-500",
-	yellow: "bg-yellow-500",
-	purple: "bg-purple-500",
-	teal: "bg-teal-500",
-	orange: "bg-orange-500",
-	lime: "bg-lime-500",
-	gray: "bg-neutral-500",
-};
-
 const CHIP_BASE = "rounded-xs px-1 font-mono text-[0.8125rem] leading-5 align-middle";
+const LABEL_LOZENGE_VARIANT: Partial<Record<
+	TagColor,
+	NonNullable<LozengeProps["variant"]>
+>> = {
+	red: "danger",
+	green: "success",
+	blue: "information",
+	yellow: "warning",
+	purple: "discovery",
+	teal: "accent-teal",
+	orange: "accent-orange",
+	lime: "accent-lime",
+	gray: "neutral",
+};
 
 function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>) {
 	switch (segment.type) {
@@ -42,24 +47,45 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 					{segment.text}
 				</a>
 			);
+		case "lozenge":
+			return (
+				<Lozenge className="align-middle" variant={segment.variant ?? "neutral"}>
+					{segment.text}
+				</Lozenge>
+			);
 		case "label":
 			return (
-				<span className="inline-flex items-center gap-1 align-middle">
-					<span
-						aria-hidden="true"
-						className={cn(
-							"size-1.5 shrink-0 rounded-full",
-							LABEL_DOT_CLASS[segment.color] ?? LABEL_DOT_CLASS.gray,
-						)}
-					/>
+				<Lozenge
+					className="align-middle"
+					variant={LABEL_LOZENGE_VARIANT[segment.color] ?? "neutral"}
+				>
 					{segment.text}
-				</span>
+				</Lozenge>
 			);
 		case "tag":
 			return (
 				<Tag className="align-middle" color={segment.color ?? "gray"}>
 					{segment.text}
 				</Tag>
+			);
+		case "transition-arrow":
+			return (
+				<Icon
+					aria-hidden
+					className="mx-1 align-middle text-icon-subtle"
+					render={<ArrowRightIcon color="currentColor" label="" size="small" />}
+				/>
+			);
+		case "priority":
+			return (
+				<span className="inline-flex items-center gap-1 align-middle">
+					<Icon
+						aria-hidden
+						className="text-icon-warning"
+						render={<PriorityMediumIcon color="currentColor" label="" size="small" />}
+					/>
+					<span>{segment.text}</span>
+				</span>
 			);
 	}
 }
@@ -68,7 +94,7 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
  * Renders a run of rich inline segments (shared by event lines and comment
  * bodies). Segments carry their own whitespace, so no separators are inserted —
  * this lets punctuation hug a chip (`…in ThreadedComments.tsx:`) while words get
- * spaced (`added •Bug and •UI polish`).
+ * spaced (`added Bug and UI polish`).
  */
 export function JiraActivitySegments({
 	segments,

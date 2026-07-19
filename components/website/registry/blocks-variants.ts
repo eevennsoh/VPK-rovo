@@ -359,6 +359,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	"jira-issue-demo-agent-activity-states": dynamic(() => import("../demos/blocks/jira-issue-demo").then((mod) => ({
 		default: mod.JiraIssueDemoAgentActivityStates,
 	})), { ssr: false }),
+	"jira-agent-session-demo-activity-card": dynamic(
+		() =>
+			import("../demos/blocks/jira-agent-session-demo").then((mod) => ({
+				default: mod.JiraAgentSessionActivityCardDemo,
+			})),
+		{ ssr: false },
+	),
 
 	// Agent Progress
 	"agent-progress-demo-running": dynamic(

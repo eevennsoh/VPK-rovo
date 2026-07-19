@@ -254,7 +254,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<p className="text-xs leading-4 text-text-subtle">Just now<\/p>\}[\s\S]*title=\{activity\.name\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isRovoActivity = activity\.name === "Rovo";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<Avatar[\s\S]*className=\{isRovoActivity \? "\[&>svg\]:hidden" : undefined\}[\s\S]*label=\{activity\.name\}[\s\S]*shape="hexagon"[\s\S]*size="default"[\s\S]*<AvatarImage[\s\S]*className=\{isRovoActivity \? "size-6 object-contain" : undefined\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View chat/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /activity\.state === "awaiting-input" && activity\.question \? \([\s\S]*<QuestionCard[\s\S]*onSubmit=\{handleQuestionSubmit\}[\s\S]*questions=\{\[activity\.question\]\}[\s\S]*\) : \([\s\S]*<FloatingComposer/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function handleQuestionSubmit\(answers: QuestionCardAnswers\) \{\s*onQuestionSubmit\?\.\(activity, answers\);\s*\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className="shadow-none"[\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);

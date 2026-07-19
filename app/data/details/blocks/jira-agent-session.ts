@@ -11,6 +11,14 @@ export const JIRA_AGENT_SESSION_DETAIL: ComponentDetail = {
   onView={(item) => console.log("view", item.id)}
   onStop={(item) => console.log("stop", item.id)}
 />`,
+	examples: [
+		{
+			title: "Activity card",
+			description:
+				"Expanded Jira Activity treatment with a rich agent response, supporting details, and an in-card reply composer.",
+			demoSlug: "jira-agent-session-demo-activity-card",
+		},
+	],
 	props: [
 		{
 			name: "items",
@@ -34,6 +42,51 @@ export const JIRA_AGENT_SESSION_DETAIL: ComponentDetail = {
 			name: "className",
 			type: "string",
 			description: "Additional classes applied to the root container.",
+		},
+	],
+	subComponents: [
+		{
+			name: "JiraAgentSessionActivityCard",
+			description:
+				"Expanded activity-feed variant used by Jira Activity for agent responses, optional supporting details, replies, and a reply composer.",
+			props: [
+				{
+					name: "item",
+					type: "JiraAgentSessionItem",
+					description:
+						"Optional session summary that replaces the compact activity header with the agent avatar, work title, branch, pull-request status, and lifecycle indicator.",
+				},
+				{
+					name: "agentName",
+					type: "string",
+					description: "Fallback agent name shown when `item` is omitted.",
+				},
+				{
+					name: "timestamp",
+					type: "string",
+					description: "Fallback relative timestamp shown when `item` is omitted.",
+				},
+				{
+					name: "onView",
+					type: "(item: JiraAgentSessionItem) => void",
+					description: "Called when the rich activity header's View button is activated.",
+				},
+				{
+					name: "details",
+					type: "{ label: string; children: ReactNode }",
+					description: "Optional expandable supporting detail.",
+				},
+				{
+					name: "replies",
+					type: "ReactNode",
+					description: "Rendered replies shown in the card footer.",
+				},
+				{
+					name: "replyComposer",
+					type: "ReactNode",
+					description: "Optional reply composer shown below replies.",
+				},
+			],
 		},
 	],
 };

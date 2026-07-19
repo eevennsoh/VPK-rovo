@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ARTIFACT_LIST_DETAIL: ComponentDetail = {
-	description: "A card listing worked-on artifacts and smart links. Each row shows a neutral icon tile (or 3rd-party logo), a title, a source and owner metadata line, and an Open button revealed on row hover or keyboard focus.",
+	description: "A card listing worked-on artifacts and smart links. The default variant uses 64px stacked-metadata rows on a raised surface; the compact variant uses 48px inline-metadata rows on a bordered surface.",
 	importStatement: `import { ArtifactList } from "@/components/ui-custom/artifact-list";`,
 	usage: `import { ArtifactList } from "@/components/ui-custom/artifact-list";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
@@ -20,7 +20,7 @@ const items: ArtifactListItem[] = [
     title: "Content Variation Analysis",
     source: "Google Spreadsheet",
     owner: "Vitafleet Team",
-    brandName: "google-drive",
+    logoName: "google-drive",
   },
 ];
 
@@ -42,6 +42,12 @@ const items: ArtifactListItem[] = [
 			name: "openLabel",
 			type: "string",
 			description: "Label for the per-row Open button. Defaults to \"Open\".",
+		},
+		{
+			name: "variant",
+			type: '"default" | "compact"',
+			default: '"default"',
+			description: "Controls row density and surface treatment. Compact rows are 48px tall with inline metadata and compact actions.",
 		},
 	],
 };

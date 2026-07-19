@@ -158,7 +158,7 @@ function JiraIssueAgentActivityPanel({
 				action={
 					onViewChat ? (
 						<Button type="button" onClick={handleViewChat} size="compact" variant="outline">
-							View chat
+							View
 						</Button>
 					) : null
 				}
