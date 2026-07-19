@@ -7781,7 +7781,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-design"
 			},
 			{
-				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.5 xhigh via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically.",
+				"description": "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.6 Sol medium via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically.",
 				"name": "vpk-fable",
 				"path": ".agents/skills/vpk-fable/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-fable"
