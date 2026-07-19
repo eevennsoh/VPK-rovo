@@ -65,7 +65,6 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["assigned", "worked-on", "viewed"],
 				agents: [READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT],
 				status: "1 Awaiting user response, 2 In progress",
-				isRunning: true,
 			},
 			{
 				id: "performance-benchmarking",
@@ -77,7 +76,6 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["assigned", "worked-on"],
 				agents: [PROGRESS_AGENT],
 				status: "In progress",
-				isRunning: true,
 			},
 			{
 				id: "refactor-readability",
@@ -89,7 +87,6 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["worked-on", "viewed"],
 				agents: [PLANNER_AGENT],
 				status: "In review",
-				isRunning: true,
 			},
 		],
 	},

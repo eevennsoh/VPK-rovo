@@ -6,6 +6,7 @@ const { test } = require("node:test");
 const ITEM_SOURCE = readFileSync(join(__dirname, "jira-for-you-item.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
 const STATUS_SOURCE = readFileSync(join(__dirname, "jira-for-you-status.tsx"), "utf8");
+const TYPES_SOURCE = readFileSync(join(__dirname, "jira-for-you-types.ts"), "utf8");
 
 test("CRM analytics activity summarizes each agent status", () => {
 	assert.match(
@@ -14,13 +15,10 @@ test("CRM analytics activity summarizes each agent status", () => {
 	);
 });
 
-test("every In progress row exposes the stop action", () => {
-	const inProgressSection = DATA_SOURCE.match(
-		/id: "in-progress"[\s\S]*?\n\t\},\n\t\{\n\t\tid: "to-do"/,
-	)?.[0];
-
-	assert.ok(inProgressSection);
-	assert.equal(inProgressSection.match(/isRunning: true/g)?.length, 3);
+test("removed stop action is not advertised by the item contract", () => {
+	assert.doesNotMatch(TYPES_SOURCE, /\bisRunning\??:/);
+	assert.doesNotMatch(DATA_SOURCE, /\bisRunning:/);
+	assert.doesNotMatch(ITEM_SOURCE, /Stop agents|VideoStopOverlayIcon/);
 });
 
 test("every row has a Jira status lozenge with a status-change dropdown", () => {
