@@ -6,6 +6,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
+import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
@@ -16,6 +17,9 @@ import { Icon } from "@/components/ui/icon";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
+import { CheckIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
@@ -71,43 +75,80 @@ export interface AgentSelectorProps {
 	 * toggle is a no-op. Generic + domain-neutral; absent = no disabled rows.
 	 */
 	disabledAgentIds?: readonly string[];
+	/**
+	 * Opt-in (Jira kanban) treatment: agents currently running on the item.
+	 * These render in a dedicated section pinned to the top of the list (above
+	 * Pinned/More) instead of showing a selection tick, and are excluded from the
+	 * pinned/available groups. Absent/empty = feature off, list behaves as before.
+	 */
+	inProgressAgentIds?: readonly string[];
+	/** Heading for the in-progress section. */
+	inProgressLabel?: string;
+	/**
+	 * Opt-in: in single-select mode, render the selection tick on the currently
+	 * selected row (single-select normally shows no tick and relies on top-of-list
+	 * ordering alone). Multiple-select mode always shows ticks regardless.
+	 */
+	showSelectedTickInSingleSelect?: boolean;
+	/**
+	 * Called when the trailing stop control on an in-progress row is activated.
+	 * Cancels that agent's run. Clicking the row body still fires `onAgentToggle`
+	 * (the kanban opens the agent's chat from there).
+	 */
+	onStopAgent?: (agentId: string) => void;
 }
 
 // Keep the hover/focus reveal in lockstep with GreetingPromptRow so agent rows
 // use the same label lift and byline reveal rhythm without importing chat CSS.
+// Dynamic (function) variants: `custom` is whether the flip should be instant —
+// true for the selected row promoted to the top and under reduced motion. The
+// transition MUST live inside the variant: a variant's own transition overrides
+// the component's `transition` prop, so a prop-level override is silently
+// ignored and the copy would still animate during the promotion.
 const agentLabelVariants: Variants = {
-	idle: {
+	idle: (instant: boolean) => ({
 		transform: "translateY(8px)",
-		transition: { type: "spring", bounce: 0, visualDuration: 0.18 },
-	},
-	active: {
+		transition: instant ? { duration: 0 } : { type: "spring", bounce: 0, visualDuration: 0.18 },
+	}),
+	active: (instant: boolean) => ({
 		transform: "translateY(0px)",
-		transition: { type: "spring", bounce: 0.12, visualDuration: 0.24 },
-	},
+		transition: instant ? { duration: 0 } : { type: "spring", bounce: 0.12, visualDuration: 0.24 },
+	}),
 };
 
 const agentDescriptionVariants: Variants = {
-	idle: {
+	idle: (instant: boolean) => ({
 		opacity: 0,
 		transform: "translateY(4px)",
-		transition: { duration: 0.1, ease: [0.4, 0, 1, 1] },
-	},
-	active: {
+		transition: instant ? { duration: 0 } : { duration: 0.1, ease: [0.4, 0, 1, 1] },
+	}),
+	active: (instant: boolean) => ({
 		opacity: 1,
 		transform: "translateY(0px)",
-		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
-	},
+		transition: instant ? { duration: 0 } : { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+	}),
 };
 
 const EMPTY_SELECTED_AGENT_IDS: readonly string[] = [];
 const EMPTY_PINNED_AGENT_IDS: readonly string[] = [];
+const EMPTY_IN_PROGRESS_AGENT_IDS: readonly string[] = [];
 const EMPTY_DISABLED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
 const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
 const ACTION_LABEL_CLASS = "text-text-subtle";
-const AGENT_ROW_CLASS =
-	"grid h-11 w-full grid-cols-[24px_minmax(0,1fr)] items-center gap-3 rounded-[12px] px-1.5 py-0 text-left";
+// The trailing `auto` column reserves a lane for CommandItem's check icon,
+// rendered only in multiple-select (non-in-progress) rows. Without it the check
+// becomes a third child in a 2-column grid and wraps to a second grid row, which
+// knocks the copy ~4px above center. But that lane must exist ONLY when the check
+// renders: grid `gap` is reserved between grid lines even when a cell is empty,
+// so an unused `auto` column still adds a 12px gap that inflates the trailing gap
+// (e.g. the stop control's 6px padding + 4px `mr-1` = 10px would become 22px).
+// So we add the third column only when `showCheckIcon` is true.
+const AGENT_ROW_BASE_CLASS =
+	"grid h-11 w-full items-center gap-3 rounded-[12px] px-1.5 py-0 text-left";
+const AGENT_ROW_CHECK_COLS = "grid-cols-[24px_minmax(0,1fr)_auto]";
+const AGENT_ROW_PLAIN_COLS = "grid-cols-[24px_minmax(0,1fr)]";
 const AGENT_COPY_CLASS =
 	"flex min-h-[34px] min-w-0 flex-col justify-start overflow-hidden";
 // Title + byline share the editor palette's reusable type treatment
@@ -153,19 +194,27 @@ function AgentSelectorItem({
 	agent,
 	isChecked,
 	isDisabled,
+	isInProgress,
 	isPinned,
+	onStop,
 	onTogglePinned,
 	onToggle,
 	pinningEnabled,
+	showSelectedTickInSingleSelect,
 	supportsMultipleSelection,
 }: Readonly<{
 	agent: AgentSelectorAgent;
 	isChecked: boolean;
 	isDisabled: boolean;
+	/** In-progress rows swap the pin/check affordance for a stop-on-hover control. */
+	isInProgress: boolean;
 	isPinned: boolean;
+	onStop?: (agentId: string) => void;
 	onTogglePinned: (agentId: string) => void;
 	onToggle?: (agentId: string) => void;
 	pinningEnabled: boolean;
+	/** Opt-in single-select tick on the selected row. */
+	showSelectedTickInSingleSelect: boolean;
 	supportsMultipleSelection: boolean;
 }>): ReactElement {
 	// Mirror the editor-palette suggestion row: the byline stays hidden until the
@@ -173,14 +222,49 @@ function AgentSelectorItem({
 	// interaction state (rather than `whileHover`) so the reveal is deterministic
 	// and matches the editor-palette `isInteractionActive` pattern exactly.
 	const [isInteractionActive, setIsInteractionActive] = useState(false);
-	const shouldReduceMotion = Boolean(useReducedMotion());
-	const showPinButton = pinningEnabled && (isPinned || isInteractionActive);
+	const prefersReducedMotion = useReducedMotion();
+	// In-progress rows never pin/check; they reveal a stop control on hover/focus.
+	// The check lane is suppressed even in multiple-select mode. Unlike the pin
+	// reveal (React-state width/opacity), the stop reveal is driven purely by CSS
+	// group-hover/focus-visible so the control's hit area appears in the same frame
+	// the pointer reaches the row — see the in-progress block below.
+	// A pinned agent always shows its (filled) pin. Otherwise the pin reveals on
+	// hover/focus — but never via hover on the checked row: on selection the
+	// checked row floats to the top of the list carrying its still-active
+	// interaction state, which would flash the pin for a frame at the new
+	// position before `onMouseLeave` fires. Mirrors the `revealByline` guard.
+	const showPinButton =
+		!isInProgress && pinningEnabled && (isPinned || (isInteractionActive && !isChecked));
+	// Multiple-select rows use CommandItem's built-in check lane. Single-select
+	// opt-in uses a custom blue check tile instead (rendered in the trailing
+	// region below). In-progress rows never show any tick.
+	const showCheckIcon = supportsMultipleSelection && !isInProgress;
+	const showSingleSelectTick =
+		!isInProgress && !supportsMultipleSelection && showSelectedTickInSingleSelect && isChecked;
+	// The selected row floats to the top of the list on selection. If it were
+	// hovered when clicked, its "active" (byline-visible) copy state would ride
+	// the reorder up to the top and only then animate back to idle — a visible
+	// byline flash/jump at the new position. So suppress the byline reveal for the
+	// checked row entirely, and make its copy flip instant (0-duration) so the
+	// active→idle change on becoming checked never animates during the promotion.
+	// Unchecked rows keep the smooth hover reveal. Reduced motion flips instantly
+	// everywhere so the byline snaps rather than slides/fades.
+	const revealByline = isInteractionActive && !isChecked;
+	const copyInstant = isChecked || prefersReducedMotion;
 	return (
 		<CommandItem
-			aria-checked={supportsMultipleSelection ? isChecked : undefined}
+			aria-checked={supportsMultipleSelection && !isInProgress ? isChecked : undefined}
 			aria-disabled={isDisabled || undefined}
-			className={AGENT_ROW_CLASS}
-			data-checked={supportsMultipleSelection && isChecked ? true : undefined}
+			className={cn(
+				AGENT_ROW_BASE_CLASS,
+				showCheckIcon ? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,
+				// The single-select selected row carries a persistent subtlest-blue
+				// background so the choice reads as "selected" at rest. CommandItem's
+				// `data-selected:bg-muted` (hover/keyboard active) still layers on top
+				// via the cascade so hovering the selected row is unaffected.
+				showSingleSelectTick && "bg-bg-selected",
+			)}
+			data-checked={showCheckIcon && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}
 			onBlur={() => setIsInteractionActive(false)}
 			onFocus={() => setIsInteractionActive(true)}
@@ -192,19 +276,21 @@ function AgentSelectorItem({
 				}
 				onToggle?.(agent.id);
 			}}
-			role={supportsMultipleSelection ? "menuitemcheckbox" : undefined}
-			showCheckIcon={supportsMultipleSelection}
+			role={supportsMultipleSelection && !isInProgress ? "menuitemcheckbox" : undefined}
+			showCheckIcon={showCheckIcon}
 			value={agent.id}
 		>
 			<AgentSelectorLogo agent={agent} />
 			<div className="flex min-w-0 items-center">
 				<motion.span
-					animate={isInteractionActive ? "active" : "idle"}
+					animate={revealByline ? "active" : "idle"}
 					className={cn(AGENT_COPY_CLASS, "flex-1")}
+					custom={copyInstant}
 					initial={false}
 				>
 					<motion.span
 						className={AGENT_LABEL_CLASS}
+						custom={copyInstant}
 						style={{ willChange: "transform" }}
 						variants={agentLabelVariants}
 					>
@@ -212,6 +298,7 @@ function AgentSelectorItem({
 					</motion.span>
 					<motion.span
 						className={AGENT_DESCRIPTION_CLASS}
+						custom={copyInstant}
 						style={{ willChange: "transform, opacity" }}
 						variants={agentDescriptionVariants}
 					>
@@ -221,16 +308,54 @@ function AgentSelectorItem({
 				{isDisabled ? (
 					<span className="ml-2 shrink-0 text-xs font-medium text-text-subtlest">Working</span>
 				) : null}
-				{pinningEnabled ? (
-					<motion.span
-						animate={{
+				{isInProgress ? (
+					// The rainbow spinner marks a running agent at rest; hovering/focusing
+					// the row crossfades it to a red stop control. The 24px slot is fixed
+					// (no width collapse) so the spinner is always visible. `mr-1` adds the
+					// 4px that makes the trailing gap (6px row padding + 4px) equal the
+					// 10px top/bottom gap of the 24px chip inside the 44px row.
+					<span className="relative ml-2 mr-1 grid size-6 shrink-0 place-items-center">
+						<span className="pointer-events-none col-start-1 row-start-1 transition-opacity duration-fast ease-out-practical group-hover/command-item:opacity-0 group-has-[[data-slot=button]:focus-visible]/command-item:opacity-0 motion-reduce:transition-none">
+							<Spinner label={`${agent.name} running`} size="sm" variant="rainbow" />
+						</span>
+						<Button
+							aria-label={`Stop ${agent.name}`}
+							className={cn(
+								"col-start-1 row-start-1 size-6 text-icon-danger",
+								// At rest the button is invisible and non-interactive so it never
+								// intercepts pointer/tap over the spinner (incl. touch/no-hover
+								// devices); hover/focus turns both back on in the same frame.
+								"opacity-0 pointer-events-none transition-opacity duration-fast ease-out-practical motion-reduce:transition-none",
+								"group-hover/command-item:opacity-100 group-hover/command-item:pointer-events-auto",
+								"focus-visible:opacity-100 focus-visible:pointer-events-auto",
+							)}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								onStop?.(agent.id);
+							}}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<Icon aria-hidden render={<VideoStopOverlayIcon label="" size="small" />} />
+						</Button>
+					</span>
+				) : pinningEnabled ? (
+					<span
+						className="shrink-0 overflow-hidden"
+						style={{
 							marginLeft: showPinButton ? 8 : 0,
+							// 4px right gap (only when shown) so the total trailing gap
+							// (6px row padding + 4px) equals the 10px top/bottom gap of the
+							// 24px chip inside the 44px row. When the single-select check
+							// follows the pin, the pin is no longer the trailing element:
+							// drop this to 0 so the check's own `ml-1` (4px) alone defines
+							// the pin↔check gap, instead of stacking to 8px.
+							marginRight: showPinButton ? (showSingleSelectTick ? 0 : 4) : 0,
 							opacity: showPinButton ? 1 : 0,
 							width: showPinButton ? 24 : 0,
 						}}
-						className="shrink-0 overflow-hidden"
-						initial={false}
-						transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 1, 0.6, 1] }}
 					>
 						<Button
 							aria-hidden={!showPinButton}
@@ -253,7 +378,25 @@ function AgentSelectorItem({
 								render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />}
 							/>
 						</Button>
-					</motion.span>
+					</span>
+				) : null}
+				{showSingleSelectTick ? (
+					// Single-select selected marker: the VPK check glyph in the selected
+					// (blue) icon color, in a 24px transparent icon tile so it aligns with
+					// the pin/stop slot. `mr-1` mirrors the in-progress spinner's trailing
+					// margin so the 24px chip sits 10px from the row's right edge (6px row
+					// padding + 4px), matching its 10px top/bottom inset. `ml-1` keeps the
+					// pin↔check gap at 4px (the pin drops its own right margin to 0 when
+					// this tick follows).
+					<IconTile
+						aria-hidden
+						className="ml-1 mr-1 text-icon-selected"
+						icon={<CheckIcon size="small" />}
+						iconSize="small"
+						label=""
+						size="small"
+						variant="transparent"
+					/>
 				) : null}
 			</div>
 		</CommandItem>
@@ -264,11 +407,15 @@ interface AgentSelectorGroupProps {
 	agents: readonly AgentSelectorAgent[];
 	disabledAgentIdSet: ReadonlySet<string>;
 	heading?: string;
+	/** Renders every row in this group with the in-progress stop-on-hover treatment. */
+	isInProgressGroup?: boolean;
 	onAgentToggle?: (agentId: string) => void;
+	onStopAgent?: (agentId: string) => void;
 	onTogglePinned: (agentId: string) => void;
 	pinnedAgentIdSet: ReadonlySet<string>;
 	pinningEnabled: boolean;
 	selectedAgentIdSet: ReadonlySet<string>;
+	showSelectedTickInSingleSelect: boolean;
 	supportsMultipleSelection: boolean;
 }
 
@@ -276,11 +423,14 @@ function AgentSelectorGroup({
 	agents,
 	disabledAgentIdSet,
 	heading,
+	isInProgressGroup = false,
 	onAgentToggle,
+	onStopAgent,
 	onTogglePinned,
 	pinnedAgentIdSet,
 	pinningEnabled,
 	selectedAgentIdSet,
+	showSelectedTickInSingleSelect,
 	supportsMultipleSelection,
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
@@ -290,11 +440,14 @@ function AgentSelectorGroup({
 					agent={agent}
 					isChecked={selectedAgentIdSet.has(agent.id)}
 					isDisabled={disabledAgentIdSet.has(agent.id)}
+					isInProgress={isInProgressGroup}
 					isPinned={pinnedAgentIdSet.has(agent.id)}
 					key={agent.id}
+					onStop={onStopAgent}
 					onToggle={onAgentToggle}
 					onTogglePinned={onTogglePinned}
 					pinningEnabled={pinningEnabled}
+					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 			))}
@@ -330,6 +483,10 @@ export function AgentSelector({
 	selectedActionsLabel = "Selected agent actions",
 	selectedAgentIds,
 	disabledAgentIds,
+	inProgressAgentIds,
+	inProgressLabel = "In progress",
+	onStopAgent,
+	showSelectedTickInSingleSelect = false,
 }: Readonly<AgentSelectorProps>): ReactElement {
 	const [internalQuery, setInternalQuery] = useState(defaultQuery);
 	const [internalPinnedAgentIds, setInternalPinnedAgentIds] = useState<readonly string[]>(defaultPinnedAgentIds);
@@ -339,9 +496,11 @@ export function AgentSelector({
 	const resolvedQuery = query ?? internalQuery;
 	const normalizedQuery = resolvedQuery.trim().toLowerCase();
 	const resolvedPinnedAgentIds = pinnedAgentIds ?? internalPinnedAgentIds;
+	const inProgressIds = inProgressAgentIds ?? EMPTY_IN_PROGRESS_AGENT_IDS;
 	const selectedAgentIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 	const disabledAgentIdSet = useMemo(() => new Set(disabledIds), [disabledIds]);
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
+	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -366,15 +525,30 @@ export function AgentSelector({
 			return true;
 		});
 	}, [agents, normalizedQuery, selectedAgentIdSet, selectedIds]);
+	// In-progress agents own the top section and are removed from pinned/more so
+	// each agent appears exactly once. When the feature is off the set is empty
+	// and these filters are no-ops.
+	const inProgressAgents = useMemo(
+		() => visibleAgents.filter((agent) => inProgressAgentIdSet.has(agent.id)),
+		[inProgressAgentIdSet, visibleAgents],
+	);
 	const pinnedAgents = useMemo(
-		() => visibleAgents.filter((agent) => pinnedAgentIdSet.has(agent.id)),
-		[pinnedAgentIdSet, visibleAgents],
+		() =>
+			visibleAgents.filter(
+				(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
+			),
+		[inProgressAgentIdSet, pinnedAgentIdSet, visibleAgents],
 	);
 	const moreAgents = useMemo(
-		() => visibleAgents.filter((agent) => !pinnedAgentIdSet.has(agent.id)),
-		[pinnedAgentIdSet, visibleAgents],
+		() =>
+			visibleAgents.filter(
+				(agent) => !pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
+			),
+		[inProgressAgentIdSet, pinnedAgentIdSet, visibleAgents],
 	);
-	const hasPinnedAgents = agents.some((agent) => pinnedAgentIdSet.has(agent.id));
+	const hasPinnedAgents = agents.some(
+		(agent) => pinnedAgentIdSet.has(agent.id) && !inProgressAgentIdSet.has(agent.id),
+	);
 
 	function handleQueryChange(nextQuery: string) {
 		if (query === undefined) {
@@ -431,6 +605,20 @@ export function AgentSelector({
 			<CommandList aria-label={listLabel} className="min-h-0 max-h-none flex-1 p-0">
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				<AgentSelectorGroup
+					agents={inProgressAgents}
+					disabledAgentIdSet={disabledAgentIdSet}
+					heading={inProgressLabel}
+					isInProgressGroup
+					onAgentToggle={onAgentToggle}
+					onStopAgent={onStopAgent}
+					onTogglePinned={handleTogglePinned}
+					pinnedAgentIdSet={pinnedAgentIdSet}
+					pinningEnabled={pinningEnabled}
+					selectedAgentIdSet={selectedAgentIdSet}
+					showSelectedTickInSingleSelect={false}
+					supportsMultipleSelection={supportsMultipleSelection}
+				/>
+				<AgentSelectorGroup
 					agents={pinnedAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
 					heading={pinnedItemsLabel}
@@ -439,17 +627,19 @@ export function AgentSelector({
 					pinnedAgentIdSet={pinnedAgentIdSet}
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
+					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 				<AgentSelectorGroup
 					agents={moreAgents}
 					disabledAgentIdSet={disabledAgentIdSet}
-					heading={hasPinnedAgents ? moreItemsLabel : undefined}
+					heading={hasPinnedAgents || inProgressAgents.length > 0 ? moreItemsLabel : undefined}
 					onAgentToggle={onAgentToggle}
 					onTogglePinned={handleTogglePinned}
 					pinnedAgentIdSet={pinnedAgentIdSet}
 					pinningEnabled={pinningEnabled}
 					selectedAgentIdSet={selectedAgentIdSet}
+					showSelectedTickInSingleSelect={showSelectedTickInSingleSelect}
 					supportsMultipleSelection={supportsMultipleSelection}
 				/>
 			</CommandList>

@@ -23,6 +23,16 @@ export function AgentSelectorDemoSelectedAgentActions(): ReactElement {
 	);
 }
 
+export function AgentSelectorDemoJira(): ReactElement {
+	return (
+		<div className="flex min-h-[32rem] items-start justify-center p-6 pt-8">
+			<div className="w-full max-w-80">
+				<AgentSelectorPage variant="jira" />
+			</div>
+		</div>
+	);
+}
+
 export function AgentSelectorDemoStandalone(): ReactElement {
 	return (
 		<div className="flex min-h-[32rem] w-full flex-col items-center justify-center gap-4 p-6 md:flex-row md:items-start">

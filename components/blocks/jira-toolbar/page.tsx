@@ -12,6 +12,7 @@ export default function JiraToolbarPage() {
 	const [selectedCount, setSelectedCount] = useState(2);
 	const [selectedStatus, setSelectedStatus] = useState<string | null>("Intake");
 	const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+	const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
 
 	return (
 		<div className="relative grid min-h-[320px] w-full place-items-center rounded-lg bg-surface p-6">
@@ -21,6 +22,11 @@ export default function JiraToolbarPage() {
 						? `${selectedCount} Jira work items selected in ${selectedStatus ?? "multiple statuses"}.`
 						: "Select work items to show the Jira Toolbar."}
 				</p>
+				{selectedSkillId ? (
+					<p className="text-sm text-text-subtle">
+						Applied skill: {selectedSkillId}
+					</p>
+				) : null}
 				{selectedCount === 0 ? (
 					<Button onClick={() => setSelectedCount(2)}>Select two work items</Button>
 				) : null}
@@ -34,6 +40,7 @@ export default function JiraToolbarPage() {
 						: current.filter((id) => id !== agentId));
 				}}
 				onClearSelection={() => setSelectedCount(0)}
+				onSkillSelect={setSelectedSkillId}
 				onStatusChange={setSelectedStatus}
 				selectedAgentIds={selectedAgentIds}
 				selectedCount={selectedCount}

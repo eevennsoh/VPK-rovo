@@ -90,7 +90,6 @@ export interface JiraKanbanSelectionToolbarConfig {
 	onDelete?: () => void;
 	onEditFields?: () => void;
 	onMerge?: () => void;
-	onSelectAll?: () => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
 	selectedAgentIds?: readonly string[];
@@ -700,7 +699,6 @@ export function JiraKanban({
 						onDelete={selectionToolbar.onDelete}
 						onEditFields={selectionToolbar.onEditFields}
 						onMerge={selectionToolbar.onMerge}
-						onSelectAll={selectionToolbar.onSelectAll}
 						onStatusChange={selectionToolbar.onStatusChange}
 						onWatchOptions={selectionToolbar.onWatchOptions}
 						selectedAgentIds={selectionToolbar.selectedAgentIds}

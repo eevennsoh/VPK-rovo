@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/data/logo-data";
 import {
 	resolveAtlassianLogoBorder,
+	resolveBrandLogoInsetScale,
 	resolveBrandLogoPresentation,
 } from "@/components/ui/data/logo-usage";
 import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-logo";
@@ -198,6 +199,11 @@ export function CustomLogo({
 	// 3P marks get a bordered tile (swapping to the borderless glyph so borders
 	// don't double up); solid-fill 3P marks render bare.
 	const brand = src ? resolveBrandLogoPresentation(src) : null;
+	// Some full-bleed 3P marks are tagged to render inset inside their box (e.g.
+	// VS Code: a 20px glyph centered in the 24px box). The wrapper keeps the full
+	// `px` footprint so it aligns with sibling logos; only the glyph shrinks.
+	const insetScale = src ? resolveBrandLogoInsetScale(src) : 1;
+	const insetPx = Math.round(px * insetScale);
 	// Custom-app art (project avatars) are full-bleed square tiles, so soften the
 	// corners with the 8px (radius.large) tile radius. Brand marks are unaffected.
 	const isCustomAvatar = Boolean(src && src.startsWith("/avatar-project/"));
@@ -223,10 +229,10 @@ export function CustomLogo({
 			src={brand.src}
 			alt=""
 			aria-hidden
-			width={px}
-			height={px}
+			width={insetPx}
+			height={insetPx}
 			className={cn("object-contain", isCustomAvatar && "rounded-lg")}
-			style={{ width: px, height: px }}
+			style={{ width: insetPx, height: insetPx }}
 		/>
 	) : svg ? (
 		React.cloneElement(svg, { width: px, height: px, "aria-hidden": true })

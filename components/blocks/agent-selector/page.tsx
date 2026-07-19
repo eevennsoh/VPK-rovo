@@ -17,7 +17,7 @@ import { RovoColorIcon } from "@/components/ui/logo";
 
 interface AgentSelectorPageProps {
 	presentation?: "dropdown" | "standalone";
-	variant?: "default" | "selected-agent-actions";
+	variant?: "default" | "selected-agent-actions" | "jira";
 }
 
 const AGENT_SELECTOR_STANDALONE_SURFACE_CLASS =
@@ -32,6 +32,12 @@ export default function AgentSelectorPage({
 		variant === "selected-agent-actions" ? ["ai-insights-agent"] : ["github-copilot"]
 	);
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<readonly string[]>([]);
+	// Jira kanban use case: agents actively running on the work item render in a
+	// top "In progress" section with a stop-on-hover control (instead of a tick);
+	// stopping removes the agent from the section.
+	const [inProgressAgentIds, setInProgressAgentIds] = useState<readonly string[]>(
+		variant === "jira" ? ["github-copilot", "readiness-checker"] : []
+	);
 	const agents = variant === "selected-agent-actions" ? AGENT_SELECTOR_CUSTOM_AGENT_DEMO_AGENTS : AGENT_SELECTOR_DEMO_AGENTS;
 	const selectedAgentActions: readonly AgentSelectorAction[] = variant === "selected-agent-actions"
 		? [
@@ -64,6 +70,11 @@ export default function AgentSelectorPage({
 			selectionMode="single"
 			onPinnedAgentIdsChange={setPinnedAgentIds}
 			pinnedAgentIds={pinnedAgentIds}
+			showSelectedTickInSingleSelect={variant === "default" || variant === "selected-agent-actions"}
+			inProgressAgentIds={inProgressAgentIds}
+			onStopAgent={(agentId) =>
+				setInProgressAgentIds((ids) => ids.filter((id) => id !== agentId))
+			}
 			selectedAgentActions={selectedAgentActions}
 			selectedAgentIds={selectedAgentIds}
 		/>

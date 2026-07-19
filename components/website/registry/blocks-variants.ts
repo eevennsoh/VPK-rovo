@@ -332,6 +332,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"agent-selector-demo-jira": dynamic(
+		() =>
+			import("../demos/blocks/agent-selector-demo").then((mod) => ({
+				default: mod.AgentSelectorDemoJira,
+			})),
+		{ ssr: false },
+	),
 	"skill-selector-demo-standalone": dynamic(
 		() =>
 			import("../demos/blocks/skill-selector-demo").then((mod) => ({

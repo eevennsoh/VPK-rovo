@@ -16,6 +16,10 @@
 			"description": "Third-party marks at /public/3p/<id>/<size>.svg. Solid-fill marks paint their own background and render bare. White-tile marks ship a 16-borderless.svg sibling: render the borderless glyph inside a VPK-drawn bordered tile so borders don't double up.",
 			"defaultHasBorder": false,
 			"borderlessVariantFile": "16-borderless.svg",
+			"$insetScaleComment": "Optional per-id inset: the glyph renders at size*scale, centered in the full size box, so a full-bleed mark can sit inset with padding (e.g. VS Code at 20px inside a 24px box = 20/24). Defaults to 1 (no inset).",
+			"insetScaleById": {
+				"vs-code": 0.8333333333333334
+			},
 			"borderlessIds": [
 				"airtable",
 				"clickup",

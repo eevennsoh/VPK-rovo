@@ -9,13 +9,14 @@ import EditBulkIcon from "@atlaskit/icon/core/edit-bulk";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import MergeQueueIcon from "@atlaskit/icon-lab/core/merge-queue";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
 import {
 	AgentSelector,
 	type AgentSelectorAgent,
 } from "@/components/blocks/agent-selector";
+import { SkillSelector } from "@/components/blocks/skill-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,8 +84,10 @@ export interface JiraToolbarProps {
 	onCreateAgent?: () => void;
 	onDelete?: () => void;
 	onEditFields?: () => void;
+	onBrowseSkills?: () => void;
+	onCreateSkill?: () => void;
 	onMerge?: () => void;
-	onSelectAll?: () => void;
+	onSkillSelect?: (skillId: string) => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
 	selectedAgentIds?: readonly string[];
@@ -134,6 +137,13 @@ interface ToolbarAction {
 	renderInline: () => ReactNode;
 	/** Overflow-menu node (menu item or submenu). */
 	renderMenu: () => ReactNode;
+	/**
+	 * When true, the action always lives in the "⋯" overflow menu and never
+	 * renders inline — it does not participate in width-fitting. Used to keep the
+	 * top-level toolbar focused on the primary actions (e.g. Edit fields, Merge,
+	 * and Watch options are secondary and stay tucked away by default).
+	 */
+	alwaysOverflow?: boolean;
 }
 
 export function JiraToolbar({
@@ -145,8 +155,10 @@ export function JiraToolbar({
 	onCreateAgent,
 	onDelete,
 	onEditFields,
+	onBrowseSkills,
+	onCreateSkill,
 	onMerge,
-	onSelectAll,
+	onSkillSelect,
 	onStatusChange,
 	onWatchOptions,
 	selectedAgentIds = [],
@@ -157,6 +169,8 @@ export function JiraToolbar({
 	const shouldReduceMotion = useReducedMotion();
 	const [agentSelectorOpen, setAgentSelectorOpen] = useState(false);
 	const [agentQuery, setAgentQuery] = useState("");
+	const [skillSelectorOpen, setSkillSelectorOpen] = useState(false);
+	const [skillQuery, setSkillQuery] = useState("");
 	const selectedAgentIdSet = useMemo(
 		() => new Set(selectedAgentIds),
 		[selectedAgentIds],
@@ -168,6 +182,19 @@ export function JiraToolbar({
 		if (!open) {
 			setAgentQuery("");
 		}
+	};
+
+	const handleSkillSelectorOpenChange = (open: boolean) => {
+		setSkillSelectorOpen(open);
+		if (!open) {
+			setSkillQuery("");
+		}
+	};
+
+	const handleSkillToggle = (skillId: string) => {
+		onSkillSelect?.(skillId);
+		setSkillSelectorOpen(false);
+		setSkillQuery("");
 	};
 
 	useEffect(() => {
@@ -190,9 +217,10 @@ export function JiraToolbar({
 	const statusItems = statusOptions.map((status) => (
 		<DropdownMenuItem
 			key={status}
-			// The lozenge tone + trailing check mark already signal selection, so
-			// suppress the selected surface/text tint.
-			className="data-selected:bg-transparent data-selected:text-text data-selected:data-[highlighted]:bg-bg-neutral-subtle-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-neutral-subtle-pressed"
+			// The lozenge tone + trailing check mark carry selection meaning, so
+			// keep the default text color and use a subtle blue selected surface
+			// instead of the strong selected tint.
+			className="data-selected:bg-bg-brand-subtlest data-selected:text-text data-selected:data-[highlighted]:bg-bg-brand-subtlest-hovered data-selected:data-[highlighted]:text-text data-selected:active:bg-bg-brand-subtlest-pressed"
 			onSelect={() => onStatusChange(status)}
 			selected={selectedStatus === status}
 		>
@@ -253,9 +281,52 @@ export function JiraToolbar({
 			),
 		},
 		{
+			id: "use-skills",
+			label: "Use skills",
+			icon: <SkillIcon label="" size="small" />,
+			renderInline: () => (
+				<DropdownMenu open={skillSelectorOpen} onOpenChange={handleSkillSelectorOpenChange}>
+					<DropdownMenuTrigger
+						render={<Button className={ACTION_BUTTON_CLASS} type="button" variant="ghost" />}
+					>
+						<Icon render={<SkillIcon label="" size="small" />} />
+						Use skills
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						align="start"
+						// Bottom-anchored like Assign agents: bound the height by the space
+						// above the trigger and let the SkillSelector's own list scroll.
+						className="w-[360px] max-h-[min(26rem,var(--available-height,26rem))] overflow-hidden p-0"
+						positionerClassName="z-[501]"
+						side="top"
+						sideOffset={FLYOUT_SIDE_OFFSET}
+					>
+						<SkillSelector
+							onBrowseSkills={() => onBrowseSkills?.()}
+							onCreateSkill={() => onCreateSkill?.()}
+							onQueryChange={setSkillQuery}
+							onSkillToggle={handleSkillToggle}
+							query={skillQuery}
+							selectionMode="single"
+						/>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			),
+			// In the overflow menu, reuse the standalone skill selector by opening it.
+			renderMenu: () => (
+				<DropdownMenuItem
+					elemBefore={<Icon render={<SkillIcon label="" size="small" />} />}
+					onSelect={() => setSkillSelectorOpen(true)}
+				>
+					Use skills
+				</DropdownMenuItem>
+			),
+		},
+		{
 			id: "edit-fields",
 			label: "Edit fields",
 			icon: <EditBulkIcon label="" size="small" />,
+			alwaysOverflow: true,
 			renderInline: () => (
 				<JiraToolbarAction
 					icon={<Icon render={<EditBulkIcon label="" size="small" />} />}
@@ -313,6 +384,7 @@ export function JiraToolbar({
 						id: "merge",
 						label: "Merge",
 						icon: <MergeQueueIcon label="" size="small" />,
+						alwaysOverflow: true,
 						renderInline: () => (
 							<JiraToolbarAction
 								icon={<Icon render={<MergeQueueIcon label="" size="small" />} />}
@@ -336,6 +408,7 @@ export function JiraToolbar({
 			id: "watch",
 			label: "Watch options",
 			icon: <EyeOpenIcon label="" size="small" />,
+			alwaysOverflow: true,
 			renderInline: () => (
 				<JiraToolbarAction
 					icon={<Icon render={<EyeOpenIcon label="" size="small" />} />}
@@ -385,12 +458,21 @@ export function JiraToolbar({
 	// rendered — a feedback loop). Instead we watch the full-width positioner and
 	// subtract the always-on leading/trailing clusters to derive how much room
 	// the middle actions actually have.
+	// Split the descriptors: `alwaysOverflow` actions are pinned into the "⋯" menu
+	// and never render inline, so only the inline-eligible actions participate in
+	// width-fitting and measurement. The two lists keep their relative source
+	// order so the overflow menu still reads top-to-bottom in a natural order.
+	const inlineEligibleActions = actions.filter((action) => !action.alwaysOverflow);
+	const pinnedOverflowActions = actions.filter((action) => action.alwaysOverflow);
+
 	const positionerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const leadingRef = useRef<HTMLDivElement>(null);
 	const trailingRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState<number>(actions.length);
-	const actionCount = actions.length;
+	const [visibleCount, setVisibleCount] = useState<number>(
+		inlineEligibleActions.length,
+	);
+	const inlineActionCount = inlineEligibleActions.length;
 
 	useLayoutEffect(() => {
 		const positioner = positionerRef.current;
@@ -407,18 +489,25 @@ export function JiraToolbar({
 			);
 			// Available width for middle actions = the space the toolbar may occupy
 			// (positioner content box, i.e. viewport minus its horizontal padding)
-			// minus the fixed leading (badge + Select all + separator) and trailing
+			// minus the fixed leading (badge + separator) and trailing
 			// (separator + close) clusters.
 			const available =
 				positioner!.clientWidth
 				- leading!.offsetWidth
 				- trailing!.offsetWidth
 				- TOOLBAR_HORIZONTAL_PADDING;
+			// Pinned overflow actions keep the "⋯" trigger permanently in the
+			// trailing cluster, so its width is already subtracted above. When it is
+			// always present, reserve 0 extra width here to avoid double-counting it;
+			// otherwise reserve the trigger width for the case where it only appears
+			// once middle actions collapse.
+			const reservedTriggerWidth =
+				pinnedOverflowActions.length > 0 ? 0 : OVERFLOW_TRIGGER_WIDTH;
 			setVisibleCount(
 				computeContextBarOverflow(
 					widths,
 					available,
-					OVERFLOW_TRIGGER_WIDTH,
+					reservedTriggerWidth,
 					ACTION_GAP,
 				),
 			);
@@ -430,10 +519,16 @@ export function JiraToolbar({
 		observer.observe(leading);
 		observer.observe(trailing);
 		return () => observer.disconnect();
-	}, [actionCount]);
+	}, [inlineActionCount, pinnedOverflowActions.length]);
 
-	const visibleActions = actions.slice(0, visibleCount);
-	const hiddenActions = actions.slice(visibleCount);
+	// Inline-eligible actions that fit render inline; the rest collapse into the
+	// "⋯" menu. Pinned overflow actions are always appended to the hidden set so
+	// they only ever appear inside the "⋯" menu.
+	const visibleActions = inlineEligibleActions.slice(0, visibleCount);
+	const hiddenActions = [
+		...inlineEligibleActions.slice(visibleCount),
+		...pinnedOverflowActions,
+	];
 
 	return (
 		<AnimatePresence initial={false}>
@@ -465,11 +560,13 @@ export function JiraToolbar({
 						transition={transition}
 					>
 						<div className="flex h-12 min-w-0 max-w-[calc(100vw-2rem)] items-center px-2">
-							{/* Hidden measurement row: intrinsic width of every middle action,
-							    used only to compute how many fit. Never visible. */}
+							{/* Hidden measurement row: intrinsic width of every inline-eligible
+							    middle action, used only to compute how many fit. Pinned
+							    overflow actions are excluded so the widths array aligns with
+							    the fitting math. Never visible. */}
 							<div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-clip">
 								<div className="invisible flex items-center" ref={measureRef}>
-									{actions.map((action) => (
+									{inlineEligibleActions.map((action) => (
 										<JiraToolbarAction icon={<Icon render={action.icon} />} key={`measure-${action.id}`}>
 											{action.label}
 										</JiraToolbarAction>
@@ -483,12 +580,6 @@ export function JiraToolbar({
 									<Badge max={false}>{selectedCount}</Badge>
 									<span>selected</span>
 								</div>
-								<JiraToolbarAction
-									icon={<Icon render={<CursorIcon label="" size="small" />} />}
-									onClick={onSelectAll}
-								>
-									Select all
-								</JiraToolbarAction>
 								<ToolbarSeparator />
 							</div>
 
