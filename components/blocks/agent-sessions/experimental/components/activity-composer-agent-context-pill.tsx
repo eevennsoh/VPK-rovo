@@ -57,7 +57,7 @@ export function ActivityComposerAgentContextPill({
 					/>
 				}
 			>
-				Use agent
+				Assign agents
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="start"

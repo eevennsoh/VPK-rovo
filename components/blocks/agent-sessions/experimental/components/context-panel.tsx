@@ -20,10 +20,7 @@ export function ContextPanel() {
 					<ContextResources />
 				</div>
 				<div aria-hidden className="h-px bg-border" />
-				<div className="flex flex-col gap-1">
-					<span className="px-0.5 text-xs font-semibold leading-4 text-text-subtlest">Description</span>
-					<ContextEditableDescription />
-				</div>
+				<ContextEditableDescription />
 			</AiPlannerScope>
 		</section>
 	);

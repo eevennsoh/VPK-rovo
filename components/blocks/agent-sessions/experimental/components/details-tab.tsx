@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-import BoardIcon from "@atlaskit/icon/core/board";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
+import ProjectIcon from "@atlaskit/icon/core/project";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
@@ -37,14 +37,14 @@ export { seedMetadataDraft } from "@/components/blocks/agent-sessions/data/plann
 
 export type MetadataDraft = AgentPlannerMetadata;
 
-/** Atlassian Project editor (rocket row + project search); value trigger only — the row chrome is supplied by FloatingField. */
+/** Project editor (project search); value trigger only — the row chrome is supplied by FloatingField. */
 function AtlassianProjectEditor({ value, onChange }: Readonly<{ value: string | null; onChange: (id: string) => void }>) {
 	const [open, setOpen] = useState(false);
 	const selected = PROJECT_OPTIONS.find((project) => project.id === value);
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label={selected ? "Change Atlassian Project" : "Add Atlassian Project"} />}>
+			<PopoverTrigger render={<DetailValueTrigger aria-label={selected ? "Change project" : "Add project"} />}>
 				{selected ? (
 					<span className="truncate text-sm text-text">{selected.name}</span>
 				) : (
@@ -108,8 +108,8 @@ export function DetailsTab({
 
 			<FloatingField
 				filled={draft.atlassianProject !== null}
-				icon={BoardIcon}
-				label="Atlassian Project"
+				icon={ProjectIcon}
+				label="Project"
 				onClear={() => onChange({ atlassianProject: null })}
 			>
 				<AtlassianProjectEditor onChange={(id) => onChange({ atlassianProject: id })} value={draft.atlassianProject} />
