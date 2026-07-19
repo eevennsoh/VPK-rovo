@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
+
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
@@ -11,6 +13,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
+import { formatElapsedTime } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -137,6 +140,90 @@ function LifecycleIndicator({
 	}
 }
 
+function useJiraAgentSessionElapsedSeconds(item: JiraAgentSessionItem) {
+	const [elapsedSeconds, setElapsedSeconds] = useState(item.elapsedSeconds ?? 0);
+
+	useEffect(() => {
+		if (item.state === "complete") return;
+		const intervalId = window.setInterval(
+			() => setElapsedSeconds((currentSeconds) => currentSeconds + 1),
+			1000,
+		);
+		return () => window.clearInterval(intervalId);
+	}, [item.state]);
+
+	return elapsedSeconds;
+}
+
+export function JiraAgentSessionActivityHeader({
+	item,
+	action,
+	onView,
+}: Readonly<{
+	item: JiraAgentSessionItem;
+	action?: ReactNode;
+	onView?: (item: JiraAgentSessionItem) => void;
+}>) {
+	const elapsedSeconds = useJiraAgentSessionElapsedSeconds(item);
+	const stateMeta = STATE_META[item.state];
+	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
+	const PrIcon = prMeta?.Icon ?? null;
+	const titleText = stateMeta.titleOverride ?? item.title;
+
+	return (
+		<div className="flex min-w-0 items-center gap-3">
+			<AgentAvatarVisual
+				avatarClassName="shrink-0"
+				avatarSrc={item.agent.avatarSrc}
+				label={item.agent.name}
+				sizePx={32}
+			/>
+			<div className="min-w-0 flex-1">
+				<div className="flex min-w-0 items-center">
+					{stateMeta.shimmerTitle ? (
+						<Shimmer
+							as="span"
+							className="min-w-0 truncate text-sm font-medium"
+							duration={1.4}
+							spread={2}
+						>
+							{titleText}
+						</Shimmer>
+					) : (
+						<span className="min-w-0 truncate text-sm font-medium text-text">
+							{titleText}
+						</span>
+					)}
+					{stateMeta.showDots ? <AnimatedDots /> : null}
+				</div>
+				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+					<span className="shrink-0" title="Agent runtime">
+						{formatElapsedTime(elapsedSeconds)}
+					</span>
+					<MetadataDot />
+					<span className="truncate">{item.branch}</span>
+					{prMeta && PrIcon ? (
+						<>
+							<MetadataDot />
+							<span className="flex shrink-0 items-center gap-1">
+								<span className={cn("grid size-4 place-items-center", prMeta.colorClass)}>
+									<PrIcon color="currentColor" label="" size="small" />
+								</span>
+								<span>{prMeta.label}</span>
+							</span>
+						</>
+					) : null}
+				</div>
+			</div>
+			{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
+			<Button onClick={() => onView?.(item)} size="compact" type="button" variant="outline">
+				View
+			</Button>
+			{action ? <div className="shrink-0">{action}</div> : null}
+		</div>
+	);
+}
+
 function CardActions({
 	item,
 	showStop,
@@ -177,6 +264,7 @@ export function JiraAgentSessionCard({
 	onView?: (item: JiraAgentSessionItem) => void;
 	onStop?: (item: JiraAgentSessionItem) => void;
 }>) {
+	const elapsedSeconds = useJiraAgentSessionElapsedSeconds(item);
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
@@ -213,7 +301,9 @@ export function JiraAgentSessionCard({
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</span>
 				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-					<span className="shrink-0">{item.agent.name}</span>
+					<span className="shrink-0" title="Agent runtime">
+						{formatElapsedTime(elapsedSeconds)}
+					</span>
 					<MetadataDot />
 					<span className="truncate">{item.branch}</span>
 					{prMeta && PrIcon ? (

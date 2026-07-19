@@ -15,6 +15,7 @@ import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
+	JiraActivityFilter,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
 import {
@@ -43,6 +44,12 @@ export interface JiraActivityProps {
 	defaultSortOrder?: JiraActivitySortOrder;
 	/** Receives the next ordering when the header sort control changes. */
 	onSortOrderChange?: (next: JiraActivitySortOrder) => void;
+	/** Controlled timeline filter. */
+	filter?: JiraActivityFilter;
+	/** Initial filter when uncontrolled. Defaults to `all`. */
+	defaultFilter?: JiraActivityFilter;
+	/** Receives the next filter when the header view control changes. */
+	onFilterChange?: (next: JiraActivityFilter) => void;
 	/** Controlled collapsed state for the timeline body. */
 	collapsed?: boolean;
 	/** Initial collapsed state when uncontrolled. Defaults to `false`. */
@@ -68,6 +75,9 @@ export function JiraActivity({
 	sortOrder: controlledSortOrder,
 	defaultSortOrder = "ascending",
 	onSortOrderChange,
+	filter: controlledFilter,
+	defaultFilter = "all",
+	onFilterChange,
 	collapsed: controlledCollapsed,
 	defaultCollapsed = false,
 	onCollapsedChange,
@@ -76,6 +86,8 @@ export function JiraActivity({
 	const entries = controlledEntries ?? uncontrolledEntries;
 	const [uncontrolledSortOrder, setUncontrolledSortOrder] = useState(defaultSortOrder);
 	const sortOrder = controlledSortOrder ?? uncontrolledSortOrder;
+	const [uncontrolledFilter, setUncontrolledFilter] = useState(defaultFilter);
+	const filter = controlledFilter ?? uncontrolledFilter;
 	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
 	const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
 
@@ -93,6 +105,13 @@ export function JiraActivity({
 		onCollapsedChange?.(next);
 	}
 
+	function handleFilterChange(next: JiraActivityFilter) {
+		if (controlledFilter === undefined) {
+			setUncontrolledFilter(next);
+		}
+		onFilterChange?.(next);
+	}
+
 	function applyAction(action: Parameters<typeof jiraActivityReducer>[1]) {
 		const nextState = jiraActivityReducer({ entries }, action);
 		if (nextState.entries === entries) return;
@@ -104,9 +123,16 @@ export function JiraActivity({
 
 	// Entries are stored oldest-first; `descending` shows newest first without
 	// mutating the canonical order the reducer appends to.
+	const visibleEntries = useMemo(
+		() =>
+			filter === "agents-only"
+				? entries.filter((entry) => entry.kind === "comment" && entry.actor.kind === "agent")
+				: entries,
+		[entries, filter],
+	);
 	const orderedEntries = useMemo(
-		() => (sortOrder === "descending" ? [...entries].reverse() : entries),
-		[entries, sortOrder],
+		() => (sortOrder === "descending" ? [...visibleEntries].reverse() : visibleEntries),
+		[sortOrder, visibleEntries],
 	);
 
 	function handleAddComment(body: string) {
@@ -139,8 +165,10 @@ export function JiraActivity({
 			<div>
 				<JiraActivityHeader
 					collapsed={collapsed}
-					count={entries.length}
+					count={visibleEntries.length}
+					filter={filter}
 					onCollapsedChange={handleCollapsedChange}
+					onFilterChange={handleFilterChange}
 					onSortOrderChange={handleSortOrderChange}
 					sortOrder={sortOrder}
 				/>
@@ -207,6 +235,7 @@ export type {
 	JiraActivityEntry,
 	JiraActivityEventEntry,
 	JiraActivityEventIcon,
+	JiraActivityFilter,
 	JiraActivityReply,
 	JiraActivitySegment,
 	JiraActivitySortOrder,

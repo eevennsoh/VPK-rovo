@@ -21,8 +21,20 @@ const EVENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-event.tsx"),
 	"utf8",
 );
+const SEGMENTS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-segments.tsx"),
+	"utf8",
+);
 const COMMENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment.tsx"),
+	"utf8",
+);
+const CHANGED_FILES_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-changed-files.tsx"),
+	"utf8",
+);
+const NODE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-node.tsx"),
 	"utf8",
 );
 
@@ -31,6 +43,21 @@ test("sample feed covers all three entry kinds", () => {
 	assert.ok(kinds.has("event"));
 	assert.ok(kinds.has("comment"));
 	assert.ok(kinds.has("changed-files"));
+});
+
+test("changed-files activity renders agent outputs with the compact Artifact List variant", () => {
+	const changedFiles = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.kind === "changed-files");
+	assert.ok(changedFiles?.sessionItem, "expected an agent session summary");
+	assert.equal(changedFiles.sessionItem.title, "Conduct performance benchmarking");
+	assert.deepEqual(
+		changedFiles.outputs.map((output) => output.title),
+		["Audience Engagement Report", "Chat summary title"],
+	);
+	assert.match(CHANGED_FILES_SOURCE, /import \{ ArtifactList \}/u);
+	assert.match(CHANGED_FILES_SOURCE, /items=\{entry\.outputs\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /variant="compact"/u);
+	assert.match(CHANGED_FILES_SOURCE, /formatElapsedTime\(entry\.sessionItem\.elapsedSeconds \?\? 0\)/u);
+	assert.match(CHANGED_FILES_SOURCE, />\s*Done\s*</u);
 });
 
 test("sample feed documents work by people, AI agents, and apps", () => {
@@ -62,12 +89,76 @@ test("agent/app-driven events carry a neutral event icon", () => {
 	assert.equal(labelled.icon, "label");
 });
 
+test("status events use the neutral Project status icon", () => {
+	assert.match(
+		NODE_SOURCE,
+		/import ProjectStatusIcon from "@atlaskit\/icon\/core\/project-status"/u,
+	);
+	assert.match(NODE_SOURCE, /status: ProjectStatusIcon/u);
+	assert.match(NODE_SOURCE, /"in-progress": ProjectStatusIcon/u);
+	assert.match(NODE_SOURCE, /className="text-icon-subtle"/u);
+	assert.doesNotMatch(NODE_SOURCE, /ClockIcon|text-icon-warning/u);
+});
+
+test("delegated events use the Person assignee icon", () => {
+	assert.match(
+		NODE_SOURCE,
+		/import PersonAssigneeIcon from "@atlaskit\/icon-lab\/core\/person-assignee"/u,
+	);
+	assert.match(NODE_SOURCE, /delegated: PersonAssigneeIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon/u);
+});
+
+test("the Medium priority event uses the Agent Sessions priority icon treatment", () => {
+	const assigned = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "assigned");
+	assert.equal(assigned.kind, "event");
+	assert.deepEqual(assigned.segments.at(-1), { type: "priority", text: "Medium" });
+	assert.match(SEGMENTS_SOURCE, /PriorityMediumIcon/u);
+	assert.match(SEGMENTS_SOURCE, /className="text-icon-warning"/u);
+});
+
+test("labels and workflow states render as semantic lozenges", () => {
+	const labelled = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "labelled");
+	const movedTodo = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "moved-todo");
+	const movedProgress = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "moved-progress");
+	assert.deepEqual(
+		labelled.segments.filter((segment) => segment.type === "lozenge"),
+		[
+			{ type: "lozenge", text: "Bug", variant: "danger" },
+			{ type: "lozenge", text: "UI Polish", variant: "success" },
+		],
+	);
+	assert.deepEqual(
+		movedTodo.segments.filter((segment) => segment.type === "lozenge").map((segment) => segment.text),
+		["Triage", "Todo"],
+	);
+	assert.deepEqual(
+		movedProgress.segments.filter((segment) => segment.type === "lozenge").map((segment) => segment.text),
+		["Todo", "In Progress"],
+	);
+	assert.deepEqual(
+		movedTodo.segments.filter((segment) => segment.type === "transition-arrow"),
+		[{ type: "transition-arrow" }],
+	);
+	assert.deepEqual(
+		movedProgress.segments.filter((segment) => segment.type === "transition-arrow"),
+		[{ type: "transition-arrow" }],
+	);
+	assert.match(SEGMENTS_SOURCE, /import ArrowRightIcon from "@atlaskit\/icon\/core\/arrow-right"/u);
+	assert.match(SEGMENTS_SOURCE, /className="mx-1 align-middle text-icon-subtle"/u);
+	assert.match(SEGMENTS_SOURCE, /<Lozenge className="align-middle"/u);
+	assert.doesNotMatch(SEGMENTS_SOURCE, /LABEL_DOT_CLASS/u);
+});
+
 test("Jira Activity exposes controlled entries and replaceable composer contracts", () => {
 	assert.match(INDEX_SOURCE, /defaultEntries\?: readonly JiraActivityEntry\[\]/u);
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
 	assert.match(INDEX_SOURCE, /composer === undefined/u);
+	assert.match(INDEX_SOURCE, /filter\?: JiraActivityFilter/u);
+	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
+	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
 });
 
 test("the header shows an activity count and a text-link sort control", () => {
@@ -81,6 +172,17 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /text-text-subtlest \[&_svg\]:text-icon-subtlest/u);
 	// Its portal clears the work-item dialog's z-index.
 	assert.match(HEADER_SOURCE, /positionerClassName="z-\[502\]"/u);
+});
+
+test("the header can show only comments authored by agents", () => {
+	const expectedAgentComments = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "comment" && entry.actor.kind === "agent",
+	);
+	assert.ok(expectedAgentComments.length > 0);
+	assert.match(HEADER_SOURCE, /value="agents-only"/u);
+	assert.match(HEADER_SOURCE, />\s*Show agents only\s*</u);
+	assert.match(INDEX_SOURCE, /entry\.kind === "comment" && entry\.actor\.kind === "agent"/u);
+	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 });
 
 test("the header pins a hover-reveal collapse control to the separator corner", () => {
@@ -107,12 +209,46 @@ test("Jira Activity wires collapse state and hides the body when collapsed", () 
 	assert.match(INDEX_SOURCE, /group\/jira-activity/u);
 	// Timeline and composer are gated behind the collapsed flag.
 	assert.match(INDEX_SOURCE, /\{collapsed \? null : \(\s*<ol/u);
-	assert.match(INDEX_SOURCE, /count=\{entries\.length\}/u);
+	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 });
 
 test("one-line activity events use 12px type without shrinking expanded agent cards", () => {
 	assert.match(EVENT_SOURCE, /className="text-xs leading-4 text-text-subtle"/u);
+	assert.match(EVENT_SOURCE, /className="flex min-w-0 items-center gap-2 text-xs leading-4"/u);
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
+});
+
+test("the linked event uses the Jira Queue pull-request row", () => {
+	const linked = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.id === "linked");
+	assert.equal(linked.kind, "event");
+	assert.deepEqual(linked.pullRequest, {
+		number: 1847,
+		title: "Fix threaded comment highlight bottom corners",
+		status: "Open",
+		additions: 148,
+		deletions: 37,
+	});
+	assert.match(EVENT_SOURCE, />Pull request</u);
+	assert.match(EVENT_SOURCE, /variant=\{status === "Merged" \? "discovery" : "success"\}/u);
+	assert.match(EVENT_SOURCE, /font-mono font-normal text-text-success/u);
+	assert.match(EVENT_SOURCE, /font-mono font-normal text-text-danger/u);
+	assert.match(EVENT_SOURCE, /min-w-0 flex-1 truncate text-text/u);
+});
+
+test("agent comments use the Jira Agent Session activity-card variant", () => {
+	assert.match(
+		COMMENT_SOURCE,
+		/import \{ JiraAgentSessionActivityCard \} from "@\/components\/blocks\/jira-agent-session"/u,
+	);
+	assert.match(COMMENT_SOURCE, /<JiraAgentSessionActivityCard/u);
+	assert.match(COMMENT_SOURCE, /item=\{entry\.sessionItem\}/u);
+	assert.match(COMMENT_SOURCE, /entry\.sessionItem \? "comment" : "reply"/u);
+	assert.match(COMMENT_SOURCE, /Ask, @mention, or \/ for actions/u);
+	assert.match(COMMENT_SOURCE, /entry\.sessionItem\s*\? undefined\s*:\s*entry\.collapsible/u);
+	assert.doesNotMatch(
+		COMMENT_SOURCE,
+		/w-full overflow-hidden rounded-lg border border-border bg-surface/u,
+	);
 });
 
 test("the exported comment composer uses the shared floating Rovo prompt", () => {

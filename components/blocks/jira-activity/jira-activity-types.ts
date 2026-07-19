@@ -1,4 +1,7 @@
+import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import type { LozengeProps } from "@/components/ui/lozenge";
 import type { TagColor } from "@/components/ui/tag";
 
 /**
@@ -33,14 +36,21 @@ export type JiraActivityEventIcon =
 
 /**
  * A rich inline text run. Shared by event action lines and comment bodies so
- * the code/link/label/tag chip styling lives in one renderer.
+ * the code/link/lozenge/tag styling lives in one renderer.
  */
 export type JiraActivitySegment =
 	| { type: "text"; text: string }
 	| { type: "code"; text: string }
 	| { type: "link"; text: string; href?: string }
+	| {
+			type: "lozenge";
+			text: string;
+			variant?: NonNullable<LozengeProps["variant"]>;
+		}
 	| { type: "label"; text: string; color: TagColor }
-	| { type: "tag"; text: string; color?: TagColor };
+	| { type: "tag"; text: string; color?: TagColor }
+	| { type: "transition-arrow" }
+	| { type: "priority"; text: "Medium" };
 
 interface JiraActivityEntryBase {
 	id: string;
@@ -55,6 +65,14 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 	/** Leading event glyph; when omitted the actor avatar is shown instead. */
 	icon?: JiraActivityEventIcon;
 	segments: readonly JiraActivitySegment[];
+	/** Optional compact pull-request metadata shown in place of the standard action line. */
+	pullRequest?: {
+		number: number;
+		title: string;
+		status: "Open" | "Merged";
+		additions: number;
+		deletions: number;
+	};
 }
 
 export interface JiraActivityReply {
@@ -80,12 +98,18 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	replies?: readonly JiraActivityReply[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
 	allowReply?: boolean;
+	/** Optional Jira Agent Session summary for the expanded activity-card header. */
+	sessionItem?: JiraAgentSessionItem;
 }
 
 /** A bordered card summarizing a code change, with a branch/PR reference. */
 export interface JiraActivityChangedFilesEntry extends JiraActivityEntryBase {
 	kind: "changed-files";
 	tag?: { text: string; color?: TagColor };
+	/** Optional agent-session summary for output-list cards. */
+	sessionItem?: JiraAgentSessionItem;
+	/** Artifacts produced by the session, rendered as compact output rows. */
+	outputs?: readonly ArtifactListItem[];
 	/** Headline, e.g. "Changed 2 files". */
 	summary: string;
 	/** Muted description of the change. */
@@ -101,3 +125,6 @@ export type JiraActivityEntry =
 
 /** Timeline ordering: `ascending` = oldest first, `descending` = newest first. */
 export type JiraActivitySortOrder = "ascending" | "descending";
+
+/** Timeline filtering: show every activity or only comments authored by agents. */
+export type JiraActivityFilter = "all" | "agents-only";

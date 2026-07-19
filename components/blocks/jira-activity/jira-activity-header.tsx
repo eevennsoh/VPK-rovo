@@ -13,7 +13,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-import type { JiraActivitySortOrder } from "./jira-activity-types";
+import type { JiraActivityFilter, JiraActivitySortOrder } from "./jira-activity-types";
 
 // The sort control reads as newest/oldest to the user; the underlying order is
 // still ascending (oldest first) / descending (newest first).
@@ -32,12 +32,16 @@ export function JiraActivityHeader({
 	count,
 	sortOrder,
 	onSortOrderChange,
+	filter,
+	onFilterChange,
 	collapsed,
 	onCollapsedChange,
 }: Readonly<{
 	count: number;
 	sortOrder: JiraActivitySortOrder;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;
+	filter: JiraActivityFilter;
+	onFilterChange: (next: JiraActivityFilter) => void;
 	collapsed: boolean;
 	onCollapsedChange: (next: boolean) => void;
 }>) {
@@ -61,19 +65,29 @@ export function JiraActivityHeader({
 							/>
 						}
 					>
-						{SORT_LINK_LABELS[sortOrder]}
+						{filter === "agents-only" ? "Show agents only" : SORT_LINK_LABELS[sortOrder]}
 						<Icon aria-hidden render={<ChevronDownIcon label="" />} />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" positionerClassName="z-[502]">
 						<DropdownMenuRadioGroup
-							onValueChange={(value) => onSortOrderChange(value as JiraActivitySortOrder)}
-							value={sortOrder}
+							onValueChange={(value) => {
+								if (value === "agents-only") {
+									onFilterChange("agents-only");
+									return;
+								}
+								onFilterChange("all");
+								onSortOrderChange(value as JiraActivitySortOrder);
+							}}
+							value={filter === "agents-only" ? filter : sortOrder}
 						>
 							<DropdownMenuRadioItem value="descending">
 								Show latest first
 							</DropdownMenuRadioItem>
 							<DropdownMenuRadioItem value="ascending">
 								Show oldest first
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="agents-only">
+								Show agents only
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuContent>

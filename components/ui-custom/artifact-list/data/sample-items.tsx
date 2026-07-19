@@ -47,3 +47,19 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		avatarSrc: "/avatar-agent/teamwork-agents/teamwork-coach.svg",
 	},
 ];
+
+export const COMPACT_SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
+	{
+		id: "audience-engagement-report-compact",
+		title: "Audience Engagement Report",
+		source: "Confluence page",
+		owner: "Vitafleet Team",
+		iconName: "globe",
+	},
+	{
+		id: "chat-summary-compact",
+		title: "Chat summary title",
+		source: "A snippet of the chat summary",
+		iconName: "ai-chat",
+	},
+];

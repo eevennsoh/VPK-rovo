@@ -55,20 +55,20 @@ test("Artifact List leading visual uses the ADS tile radius and neutral inset-im
 
 	assert.match(source, /const usesInsetImage = Boolean\(item\.avatarSrc \|\| item\.logoSrc\);/u);
 	assert.match(source, /variant=\{usesInsetImage \? "neutral" : item\.tileVariant \?\? "neutral"\}/u);
-	assert.match(source, /size="medium"[\s\S]*className=\{cn\([\s\S]*"rounded-tile"/u);
+	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}[\s\S]*className=\{cn\([\s\S]*"rounded-tile"/u);
 	// Avatar/logo paths render inset on the same tile; icon is the fallback.
 	assert.match(source, /if \(item\.avatarSrc\)[\s\S]*<img[\s\S]*src=\{item\.avatarSrc\}/u);
 	assert.match(source, /if \(item\.logoSrc\)[\s\S]*<img[\s\S]*src=\{item\.logoSrc\}/u);
 	assert.match(source, /return item\.icon;/u);
 });
 
-test("Artifact List metadata renders source • owner with the subtlest dot", () => {
+test("Artifact List metadata renders source · owner with the small subtlest dot", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /<span className="shrink-0 text-text-subtle">\{item\.source\}<\/span>/u);
-	assert.match(source, /<span className="shrink-0 text-text-subtlest">•<\/span>/u);
+	assert.equal((source.match(/aria-hidden="true" className="shrink-0 text-text-subtlest">·<\/span>/gu) ?? []).length, 2);
 	// Owner is the truncating element; min-w-0 lets the flex child shrink below content.
 	assert.match(source, /<span className="min-w-0 truncate text-text-subtle">\{item\.owner\}<\/span>/u);
 });
@@ -80,7 +80,7 @@ test("Artifact List Open button is a stable trailing action and stays keyboard-r
 
 	// The row renders the action as an in-flow trailing column so it cannot be
 	// clipped by the raised card's overflow boundary.
-	assert.match(source, /<Button[\s\S]*className="ml-auto shrink-0 whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size="default"[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
+	assert.match(source, /<Button[\s\S]*className="ml-auto shrink-0 whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size=\{variant === "compact" \? "compact" : "default"\}[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
 	assert.match(source, /openOnRowClick \? \([\s\S]*<button[\s\S]*type="button"[\s\S]*onClick=\{handleOpen\}/u);
 	assert.match(source, /openOnRowClick\?: boolean;/u);
 	assert.doesNotMatch(source, /role=\{openOnRowClick \? "button"/u);
@@ -105,5 +105,21 @@ test("Artifact List docs demo renders the sample items card", () => {
 
 	assert.match(page, /import \{ ArtifactList \} from "@\/components\/ui-custom\/artifact-list";/u);
 	assert.match(page, /items=\{SAMPLE_ARTIFACT_ITEMS\}/u);
+	assert.match(page, /items=\{COMPACT_SAMPLE_ARTIFACT_ITEMS\}/u);
+	assert.match(page, /variant="compact"/u);
 	assert.match(demo, /import ArtifactListPage from "@\/components\/ui-custom\/artifact-list\/page";/u);
+});
+
+test("Artifact List compact variant uses 48px inline rows, small tiles, and compact actions", () => {
+	const source = readProjectFile(
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
+	);
+
+	assert.match(source, /variant\?: "default" \| "compact";/u);
+	assert.match(source, /flex h-12 items-center gap-3 px-3 py-2/u);
+	assert.match(source, /grid size-8 shrink-0 place-items-center/u);
+	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}/u);
+	assert.match(source, /flex min-w-0 flex-1 items-baseline gap-2/u);
+	assert.match(source, /size=\{variant === "compact" \? "compact" : "default"\}/u);
+	assert.match(source, /overflow-hidden rounded-lg border border-border bg-surface/u);
 });

@@ -1,15 +1,13 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import BranchIcon from "@atlaskit/icon/core/branch";
-import ClockIcon from "@atlaskit/icon/core/clock";
-import RadioUncheckedIcon from "@atlaskit/icon/core/radio-unchecked";
-import ShortcutIcon from "@atlaskit/icon/core/shortcut";
+import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
+import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils";
 
 import type { JiraActivityActor, JiraActivityEventIcon } from "./jira-activity-types";
 
@@ -18,16 +16,10 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	created: AddIcon,
 	label: TagIcon,
 	sla: StopwatchIcon,
-	status: RadioUncheckedIcon,
-	delegated: ShortcutIcon,
-	"in-progress": ClockIcon,
+	status: ProjectStatusIcon,
+	delegated: PersonAssigneeIcon,
+	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
-};
-
-// Most glyphs read as subtle; the in-progress clock carries the warning accent
-// to echo the "In Progress" status color.
-const EVENT_ICON_COLOR: Partial<Record<JiraActivityEventIcon, string>> = {
-	"in-progress": "text-icon-warning",
 };
 
 function initialsOf(name: string): string {
@@ -68,7 +60,7 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 	return (
 		<Icon
 			aria-hidden
-			className={cn("text-icon-subtle", EVENT_ICON_COLOR[icon])}
+			className="text-icon-subtle"
 			render={<IconComponent color="currentColor" label="" size="small" />}
 		/>
 	);
