@@ -76,11 +76,8 @@ function JiraForYouItemStatus({ status }: Readonly<{ status: string }>) {
 
 	return (
 		<span className="flex items-center gap-1 text-xs leading-4">
-			{segments.map((segment, index) => (
-				<span className="flex items-center gap-1" key={segment}>
-					{index > 0 ? <span aria-hidden="true">,</span> : null}
-					<JiraForYouStatusSegment segment={segment} />
-				</span>
+			{segments.map((segment) => (
+				<JiraForYouStatusSegment key={segment} segment={segment} />
 			))}
 		</span>
 	);
