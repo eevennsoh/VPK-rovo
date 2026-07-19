@@ -84,7 +84,6 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
 								metadata={<MetadataRail />}
-								metadataPeek={<MetadataRail borderless />}
 							/>
 						</ExperimentalWorkItemDialog>
 					</LayoutGroup>

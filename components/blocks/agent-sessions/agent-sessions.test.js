@@ -204,13 +204,26 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(actionsSource, /aria-expanded:border-transparent aria-expanded:bg-transparent/u);
 	assert.equal((actionsSource.match(/variant="ghost"/gu) ?? []).length, 2);
 	assert.doesNotMatch(actionsSource, /variant="outline"/u);
-	// Collapsed-only peek wiring: hover/focus opens the sneak-peek, click still docks.
-	assert.match(actionsSource, /const peekProps = metadataCollapsed/u);
-	assert.match(actionsSource, /onPointerEnter: \(\) => setMetadataPeek\(true\)/u);
-	assert.match(actionsSource, /onPointerLeave: \(\) => setMetadataPeek\(false\)/u);
-	assert.match(actionsSource, /onFocus: \(\) => setMetadataPeek\(true\)/u);
-	assert.match(actionsSource, /onBlur: \(\) => setMetadataPeek\(false\)/u);
-	assert.match(actionsSource, /\{\.\.\.peekProps\}/u);
+	// Collapsed-only preview: a hover-opened Popover anchored to the toggle icon
+	// renders the borderless rail directly beneath it (no far-travel/gap dismiss).
+	// Base UI keeps the popup open across the trigger->popup path; clicking docks.
+	assert.match(actionsSource, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover"/u);
+	assert.match(actionsSource, /import \{ MetadataRail \} from "@\/components\/blocks\/agent-sessions\/experimental\/components\/metadata-rail"/u);
+	// The Popover wrapper is always mounted (stable trigger element); hover-open is
+	// gated to the collapsed state so collapsing under the pointer still previews.
+	assert.match(actionsSource, /<Popover>/u);
+	assert.match(actionsSource, /openOnHover=\{metadataCollapsed\}/u);
+	assert.match(actionsSource, /delay=\{120\}/u);
+	assert.match(actionsSource, /closeDelay=\{80\}/u);
+	assert.match(actionsSource, /render=\{toggleButton\}/u);
+	assert.match(actionsSource, /<MetadataRail borderless \/>/u);
+	assert.match(actionsSource, /align="end"/u);
+	// The work-item dialog paints at z-[500]/[501]; the preview must sit above it,
+	// or it mounts but is painted behind the dialog (invisible on screen).
+	assert.match(actionsSource, /positionerClassName="z-\[600\]"/u);
+	// The old right-edge peek-overlay pointer/focus wiring is gone.
+	assert.doesNotMatch(actionsSource, /setMetadataPeek/u);
+	assert.doesNotMatch(actionsSource, /peekProps/u);
 	assert.match(dialogSource, /actionsClassName="gap-1"/u);
 	assert.match(dialogSource, /closeButtonVariant="ghost"/u);
 	assert.match(modalHeaderSource, /<Breadcrumb className="min-w-0 overflow-visible" size="small">/u);
@@ -226,19 +239,20 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(layoutSource, /METADATA_CONTENT_EXPAND_TRANSITION/u);
 	assert.equal((layoutSource.match(/layout=\{shouldReduceMotion \? false : "position"\}/gu) ?? []).length, 1);
 	assert.match(layoutSource, /data-agent-sessions-content-column/u);
-	// Peek overlay: a floating borderless rail, layered above the docked panel
-	// (z-30) with the overlay shadow, gated on collapsed + peeking, no reflow.
-	assert.match(layoutSource, /const showMetadataPeek = metadataCollapsed && metadataPeeking;/u);
-	assert.match(layoutSource, /\{showMetadataPeek \? \(/u);
-	assert.match(layoutSource, /@\[860px\]\/agentlayout:z-30/u);
-	assert.match(layoutSource, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
-	assert.match(layoutSource, /variants=\{shouldReduceMotion \? REDUCED_MOTION_METADATA_PEEK_VARIANTS : METADATA_PEEK_VARIANTS\}/u);
-	assert.match(layoutSource, /onPointerEnter=\{\(\) => setMetadataPeek\(true\)\}/u);
-	assert.match(layoutSource, /onPointerLeave=\{\(\) => setMetadataPeek\(false\)\}/u);
-	assert.match(layoutSource, /metadataPeek: ReactNode/u);
-	// The peek reuses the rail without its border; the docked instance keeps it.
+	// The floating right-edge peek overlay is gone: the collapsed-rail preview now
+	// lives as a trigger-anchored dropdown owned by the breadcrumb actions, so the
+	// layout no longer carries peek state, a peek slot, or the z-30 overlay.
+	assert.doesNotMatch(layoutSource, /showMetadataPeek/u);
+	assert.doesNotMatch(layoutSource, /metadataPeeking/u);
+	assert.doesNotMatch(layoutSource, /setMetadataPeek/u);
+	assert.doesNotMatch(layoutSource, /metadataPeek/u);
+	assert.doesNotMatch(layoutSource, /METADATA_PEEK_VARIANTS/u);
+	assert.doesNotMatch(layoutSource, /@\[860px\]\/agentlayout:z-30/u);
+	// The docked panel still uses the overlay elevation via the rail itself, but
+	// the layout file no longer applies its own peek boxShadow.
+	assert.doesNotMatch(layoutSource, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
-	assert.match(compositionSource, /metadataPeek=\{<MetadataRail borderless \/>\}/u);
+	assert.doesNotMatch(compositionSource, /metadataPeek/u);
 	const metadataRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
 	assert.match(metadataRailSource, /borderless = false/u);
 	assert.match(metadataRailSource, /borderless \? null : "border border-border"/u);
@@ -255,15 +269,15 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(panelLayoutSource, /METADATA_CONTENT_COLLAPSE_DURATION_MS = 200/u);
 	assert.match(panelLayoutSource, /METADATA_CONTENT_EXPAND_DURATION_MS = 250/u);
 	assert.match(panelLayoutSource, /const \[metadataTogglePending, setMetadataTogglePending\] = useState\(false\);/u);
-	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataPeeking\(false\);[\s\S]*setMetadataTogglePending\(true\);[\s\S]*\}, \[\]\)/u);
+	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataTogglePending\(true\);[\s\S]*\}, \[\]\)/u);
 	assert.match(panelLayoutSource, /setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*setMetadataTogglePending\(false\);/u);
-	// Peek overlay: collapsed-only sneak-peek state, its fast transitions, and the
-	// invariant that peek clears whenever the rail docks.
-	assert.match(panelLayoutSource, /const \[metadataPeeking, setMetadataPeeking\] = useState\(false\);/u);
-	assert.match(panelLayoutSource, /setMetadataPeek = useCallback\(\(peeking: boolean\) => setMetadataPeeking\(peeking\), \[\]\)/u);
-	assert.match(panelLayoutSource, /if \(!metadataCollapsed\) setMetadataPeeking\(false\);/u);
-	assert.match(panelLayoutSource, /METADATA_PEEK_ENTER_TRANSITION[\s\S]*duration: 0\.12,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
-	assert.match(panelLayoutSource, /METADATA_PEEK_EXIT_TRANSITION[\s\S]*duration: 0\.1,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	// Peek state moved out of the panel-layout owner: the collapsed-rail preview is
+	// now a self-contained hover Popover on the toggle, so no peek state,
+	// setter, docking-clear effect, or peek transitions remain here.
+	assert.doesNotMatch(panelLayoutSource, /metadataPeeking/u);
+	assert.doesNotMatch(panelLayoutSource, /setMetadataPeek/u);
+	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_ENTER_TRANSITION/u);
+	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_EXIT_TRANSITION/u);
 	assert.match(titleBarSource, /duration: 0\.05,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
 	assert.match(titleBarSource, /EXPANDED_ACTIONS_ENTER_TRANSITION[\s\S]*duration: 0\.05/u);
