@@ -55,21 +55,27 @@ function JiraForYouStatusSegment({
 	segment,
 	trailingComma = false,
 }: Readonly<{ segment: string; trailingComma?: boolean }>) {
-	// Keep the comma attached directly to the segment text (no leading space),
-	// so a combined status reads "Awaiting user response, 2 In progress".
-	const text = trailingComma ? `${segment},` : segment;
+	// The comma is punctuation, not status text, so it stays outside the shimmer
+	// while still hugging the segment (no leading space): "Awaiting user response, …".
+	const comma = trailingComma ? <span aria-hidden="true">,</span> : null;
 
 	if (isAwaitingInputStatus(segment)) {
 		return (
-			<Shimmer as="span" className="text-xs leading-4" duration={1.6} spread={2}>
-				{text}
-			</Shimmer>
+			<span className="inline-flex items-baseline text-xs leading-4">
+				<Shimmer as="span" duration={1.6} spread={2}>
+					{segment}
+				</Shimmer>
+				{comma}
+			</span>
 		);
 	}
 
 	return (
 		<span className="flex items-center gap-1 text-xs leading-4">
-			{text}
+			<span className="inline-flex items-baseline">
+				{segment}
+				{comma}
+			</span>
 			<Spinner size="xs" variant="rainbow" label="" />
 		</span>
 	);
