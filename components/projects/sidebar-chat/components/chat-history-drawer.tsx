@@ -14,8 +14,8 @@ import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
-import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import HistoryIcon from "@atlaskit/icon-lab/core/history";
 import SortOptionsIcon from "@atlaskit/icon-lab/core/sort-options";
 import { useRovoChat } from "@/app/contexts";
@@ -219,7 +219,7 @@ function ChatHistorySectionHeading({
 					onClick={onCreateFolder}
 					className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:ring-3 focus-visible:ring-ring/50"
 				>
-					<FolderClosedIcon label="" size="small" />
+					<FolderAddIcon label="" size="small" />
 				</button>
 			</div>
 		</div>

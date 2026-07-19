@@ -1,9 +1,9 @@
-# Codex Executor Reference (GPT-5.5 via Codex CLI)
+# Codex Executor Reference (GPT-5.6 Sol via Codex CLI)
 
 The non-Claude executor backend for `/vpk-fable orchestrate`, adapted from
 steipete's `codex-first` skill (`agent-scripts/skills/codex-first/SKILL.md`).
 Workers are **CLI processes**, not subagents: each run is `codex exec` in a
-background Bash call, pinned to GPT-5.5 at xhigh reasoning effort. Flags below
+background Bash call, pinned to GPT-5.6 Sol at medium reasoning effort. Flags below
 are verified against **codex-cli 0.143.0** — re-run `codex exec --help` and
 update this doc if a newer CLI drifts (notably: `--yolo` does **not** exist in
 0.143.0; only the long form does).
@@ -16,7 +16,7 @@ command), then:
 ```bash
 mkdir -p output/fable-codex
 codex exec --dangerously-bypass-approvals-and-sandbox -C "$PWD" \
-  -m gpt-5.5 -c model_reasoning_effort="xhigh" \
+  -m gpt-5.6-sol -c model_reasoning_effort="medium" \
   --output-last-message output/fable-codex/worker-<n>.md \
   - < output/fable-codex/brief-<n>.md
 ```
@@ -103,7 +103,7 @@ back to a sandboxed resume instead of dropping to Claude workers:
 
 ```bash
 codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true \
-  -m gpt-5.5 -c model_reasoning_effort="xhigh" \
+  -m gpt-5.6-sol -c model_reasoning_effort="medium" \
   --output-last-message output/fable-codex/worker-1.md \
   resume --last - < output/fable-codex/followup-1.md
 ```

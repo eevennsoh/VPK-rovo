@@ -1,7 +1,7 @@
 ---
 name: vpk-fable
-description: "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.5 xhigh via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically."
-purpose: Reproduce Anthropic's advisor-tool and plan-big/execute-small patterns inside Claude Code, so most tokens burn at executor rates — GPT-5.5 via Codex CLI or Sonnet 5 subagents — while Fable 5 handles only planning, synthesis, and high-judgment moments.
+description: "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.6 Sol medium via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically."
+purpose: Reproduce Anthropic's advisor-tool and plan-big/execute-small patterns inside Claude Code, so most tokens burn at executor rates — GPT-5.6 Sol via Codex CLI or Sonnet 5 subagents — while Fable 5 handles only planning, synthesis, and high-judgment moments.
 owner: VPK
 category: agent-operations
 inputs: The user's mode choice (advisor, orchestrate, or bare), an optional executor flag for orchestrate mode (--codex default, --claude for Sonnet workers), the current task context, and for advisor mode the specific decision or blocker to escalate.
@@ -26,7 +26,7 @@ Two executor mechanisms exist:
 - **Claude subagents** with per-agent `model:` overrides:
   - `vpk-agent-advisor` (`.claude/agents/vpk-agent-advisor.md`) — `model: fable`, read-only.
   - `vpk-agent-worker` (`.claude/agents/vpk-agent-worker.md`) — `model: sonnet`, full tools.
-- **Codex CLI processes** (`codex exec`, GPT-5.5 at xhigh reasoning effort) —
+- **Codex CLI processes** (`codex exec`, GPT-5.6 Sol at medium reasoning effort) —
   the default executor for orchestrate mode, run via background Bash rather
   than the Agent tool. See
   [references/codex-executor.md](references/codex-executor.md).
@@ -50,7 +50,7 @@ Everything else in this skill applies unchanged.
 | Invocation | Mode |
 | --- | --- |
 | `/vpk-fable advisor [question]` | Consult the Fable 5 advisor about the current work |
-| `/vpk-fable orchestrate <task>` | Plan big, execute small: delegate to the **codex executor** (GPT-5.5 xhigh, default) |
+| `/vpk-fable orchestrate <task>` | Plan big, execute small: delegate to the **codex executor** (GPT-5.6 Sol medium, default) |
 | `/vpk-fable orchestrate --claude <task>` | Same pattern, Sonnet 5 subagent workers instead |
 | `/vpk-fable` (bare) | Explain both patterns and help the user pick |
 
@@ -158,7 +158,7 @@ threshold data is in
 
 ### Pick the executor
 
-- **codex (default)** — `codex exec` CLI processes running GPT-5.5 at xhigh
+- **codex (default)** — `codex exec` CLI processes running GPT-5.6 Sol at medium
   reasoning effort, launched via background Bash. Full mechanics, canonical
   command, and brief template:
   [references/codex-executor.md](references/codex-executor.md).
@@ -226,8 +226,8 @@ consult moment 3 and the orchestrator's own-the-verification rule.
   spec and verify. In the cookbook's benchmark the split was ~2.5× cheaper and
   ~3× faster than a solo frontier agent, with 84% of input tokens billed at
   worker rates.
-- **Executor choice** — orchestrate defaults to the codex executor (GPT-5.5
-  xhigh via `codex exec`); pass `--claude` to use Sonnet 5 subagent workers
+- **Executor choice** — orchestrate defaults to the codex executor (GPT-5.6 Sol
+  medium via `codex exec`); pass `--claude` to use Sonnet 5 subagent workers
   instead. Codex tokens bill to the user's ChatGPT/Codex plan, not the Claude
   quota, so the codex default also spreads load across subscriptions.
 - **Cost framing** — on the API these are per-token savings; on a Claude

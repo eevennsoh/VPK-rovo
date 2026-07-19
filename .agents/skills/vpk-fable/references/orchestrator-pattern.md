@@ -19,7 +19,7 @@ context window stays small enough to plan well late into a task.
 The pattern runs on either of two worker mechanisms; the orchestration rules
 below apply to both:
 
-- **Codex CLI (default)** — GPT-5.5 xhigh `codex exec` processes via
+- **Codex CLI (default)** — GPT-5.6 Sol medium `codex exec` processes via
   background Bash; reports are `--output-last-message` files. The
   orchestrator's assumptions about these workers come from
   `codex-executor.md`.
