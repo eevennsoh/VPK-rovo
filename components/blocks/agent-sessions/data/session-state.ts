@@ -22,6 +22,11 @@
  */
 
 import type { WorkItemAttachment, WorkItemChildItem, WorkItemData } from "@/app/contexts/context-work-item-modal";
+import type {
+	JiraActivityEventIcon,
+	JiraActivitySegment,
+} from "@/components/blocks/jira-activity";
+import type { TagColor } from "@/components/ui/tag";
 import {
 	advanceAgentPlanner,
 	createAgentPlannerState,
@@ -42,6 +47,7 @@ import {
 } from "@/components/blocks/agent-sessions/data/session-scripts";
 import {
 	FILLED_COMMENTS,
+	FILLED_STATIC_EVENTS,
 	PRESET_AGENTS,
 	SESSION_EPOCH_MS,
 	emptyContextResources,
@@ -155,6 +161,8 @@ export interface AgentSessionsState {
 	planner: AgentPlannerState;
 	comments: AgentSessionComment[];
 	sessions: AgentSession[];
+	/** Seeded, non-interactive timeline scaffolding (event + changed-files rows). */
+	staticEvents: StaticTimelineEvent[];
 	activeSessionId: string | null;
 	/** Draft text to pre-populate the floating session composer (e.g. from a next step). */
 	composerPrefill: string | null;
@@ -185,7 +193,51 @@ export interface AgentActivityEvent {
 	createdAtMs: number;
 }
 
-export type ActivityEvent = HumanActivityEvent | AgentActivityEvent;
+/** Who performed a seeded, static timeline event (person, agent, or connected app). */
+export interface StaticTimelineActor {
+	id: string;
+	name: string;
+	kind: "person" | "agent" | "app";
+	/** Person photo or 1P agent art under `public/`. */
+	avatarSrc?: string;
+	/** Third-party brand name for `app` actors (e.g. "github"). */
+	brandName?: string;
+}
+
+/**
+ * A seeded, non-interactive timeline row. These scaffold the filled preset's
+ * Activity with the same event and changed-files states the standalone Jira
+ * Activity block shows, and flow through `selectActivityEvents` alongside the
+ * derived human comments and agent sessions.
+ */
+export interface StaticEventActivityEvent {
+	id: string;
+	kind: "event";
+	actor: StaticTimelineActor;
+	/** Leading event glyph; when omitted the actor avatar is shown instead. */
+	icon?: JiraActivityEventIcon;
+	segments: readonly JiraActivitySegment[];
+	createdAtMs: number;
+}
+
+export interface StaticChangedFilesActivityEvent {
+	id: string;
+	kind: "changed-files";
+	actor: StaticTimelineActor;
+	summary: string;
+	description: string;
+	branch?: string;
+	tag?: { text: string; color?: TagColor };
+	createdAtMs: number;
+}
+
+export type StaticTimelineEvent = StaticEventActivityEvent | StaticChangedFilesActivityEvent;
+
+export type ActivityEvent =
+	| HumanActivityEvent
+	| AgentActivityEvent
+	| StaticEventActivityEvent
+	| StaticChangedFilesActivityEvent;
 
 export type AddContextResourceAction =
 	| { type: "add-context-resource"; kind: "attachment"; item: WorkItemAttachment }
@@ -771,7 +823,7 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 			createdAtMs: session.startedAtMs,
 		};
 	});
-	return [...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);
+	return [...state.staticEvents, ...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);
 }
 
 
@@ -789,6 +841,7 @@ export function createEmptyPresetState(workItem: Readonly<WorkItemData>): AgentS
 		planner: createAgentPlannerState("empty", workItem),
 		comments: [],
 		sessions: [],
+		staticEvents: [],
 		activeSessionId: null,
 		composerPrefill: null,
 		elapsedMs: 0,
@@ -816,6 +869,7 @@ export function createFilledPresetState(workItem: Readonly<WorkItemData>): Agent
 		planner: createAgentPlannerState("filled", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions: [completed],
+		staticEvents: FILLED_STATIC_EVENTS.map((event) => ({ ...event })),
 		activeSessionId: null,
 		composerPrefill: null,
 		elapsedMs: 0,
@@ -872,6 +926,7 @@ export function createRunningPresetState(workItem: Readonly<WorkItemData>): Agen
 		planner: createAgentPlannerState("running", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions,
+		staticEvents: [],
 		activeSessionId: null,
 		composerPrefill: null,
 		elapsedMs: 0,

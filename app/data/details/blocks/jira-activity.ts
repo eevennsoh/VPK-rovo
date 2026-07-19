@@ -7,7 +7,7 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	importStatement: `import { JiraActivity } from "@/components/blocks/jira-activity";`,
 	usage: `import { JiraActivity } from "@/components/blocks/jira-activity";
 
-<JiraActivity onUnsubscribe={() => console.log("unsubscribe")} />`,
+<JiraActivity defaultSortOrder="ascending" />`,
 	props: [
 		{
 			name: "entries",
@@ -43,12 +43,24 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			type: "JiraActivityActor",
 			default: "built-in sample user",
 			description:
-				"The signed-in viewer. Authors new comments (bottom composer) and replies (in-card composer), and seeds the header avatar group.",
+				"The signed-in viewer. Authors new comments (bottom composer) and replies (in-card composer).",
 		},
 		{
-			name: "onUnsubscribe",
-			type: "() => void",
-			description: "Called when the header Unsubscribe control is activated.",
+			name: "sortOrder",
+			type: '"ascending" | "descending"',
+			default: "undefined (uncontrolled)",
+			description: "Controlled timeline ordering. `ascending` shows oldest first.",
+		},
+		{
+			name: "defaultSortOrder",
+			type: '"ascending" | "descending"',
+			default: '"ascending"',
+			description: "Initial ordering when the sort control is uncontrolled.",
+		},
+		{
+			name: "onSortOrderChange",
+			type: '(next: "ascending" | "descending") => void',
+			description: "Called when the header sort control changes the ordering.",
 		},
 		{
 			name: "className",

@@ -16,6 +16,7 @@ interface ExperimentalWorkItemDialogProps {
 	workItemCode: string;
 	workItemTitle: string;
 	children: ReactNode;
+	blanketContent?: ReactNode;
 }
 
 /**
@@ -37,6 +38,7 @@ export function ExperimentalWorkItemDialog({
 	workItemCode,
 	workItemTitle,
 	children,
+	blanketContent,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const content = (
@@ -68,14 +70,17 @@ export function ExperimentalWorkItemDialog({
 		// top AND bottom — its lower edge flows under the gallery dock. Only the
 		// horizontal 24px inset remains, mirroring the board's px-8.
 		return (
-			<section
-				aria-label={workItemTitle}
-				className="h-full w-[calc(100%-24px)] max-w-[1200px] outline-none"
-				style={surfaceStyle}
-			>
-				{content}
-				<p className="sr-only">{description}</p>
-			</section>
+			<>
+				<section
+					aria-label={workItemTitle}
+					className="h-full w-[calc(100%-24px)] max-w-[1200px] outline-none"
+					style={surfaceStyle}
+				>
+					{content}
+					<p className="sr-only">{description}</p>
+				</section>
+				{open ? blanketContent : null}
+			</>
 		);
 	}
 
@@ -107,6 +112,7 @@ export function ExperimentalWorkItemDialog({
 					<Dialog.Title className="sr-only">{workItemTitle}</Dialog.Title>
 					<Dialog.Description className="sr-only">{description}</Dialog.Description>
 				</Dialog.Popup>
+				{open ? blanketContent : null}
 			</Dialog.Portal>
 		</Dialog.Root>
 	);

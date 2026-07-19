@@ -79,7 +79,7 @@ export function ActivityComposerContextPills({
 			</RevealingPill>
 			<RevealingPill>
 				<ContextBarPill
-					className="gap-2 pr-2"
+					className="gap-1.5 pr-2"
 					icon={<Icon aria-hidden render={<ProjectStatusIcon label="" size="small" />} />}
 					interactive={false}
 				>

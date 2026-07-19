@@ -375,6 +375,15 @@
  */
 @supports (container-type: scroll-state) {
 	@container scroll-state(stuck: top) {
+		/*
+		 * While pinned the toolbar is revealed, so the resting hairline (which
+		 * only fills the reserved space when idle) must hide to avoid drawing a
+		 * line across the visible bar.
+		 */
+		[data-slot="rich-text-editor-toolbar-resting-separator"] {
+			opacity: 0;
+		}
+
 		[data-slot="rich-text-editor-toolbar-reveal"] {
 			opacity: 1;
 			/*
@@ -418,6 +427,26 @@
 
 .agent-instructions-tiptap-editor.agent-instructions-tiptap-editor-compact-empty {
 	min-height: 32px;
+}
+
+/*
+ * Work item description editor: defaults to a compact 48px height and grows
+ * with content. Scoped to the context description so the shared 128px agent
+ * instructions height is unaffected elsewhere.
+ */
+.agent-instructions-tiptap-editor.context-description-tiptap-editor,
+.agent-instructions-tiptap-editor.context-description-tiptap-editor.ProseMirror {
+	min-height: 48px;
+}
+
+/*
+ * While the Teamwork Graph planner is running, the description hugs its content:
+ * the reserved min-height is dropped so the empty-state placeholder sits on a
+ * single line instead of a 48px block.
+ */
+.agent-instructions-tiptap-editor.context-description-tiptap-editor-hug,
+.agent-instructions-tiptap-editor.context-description-tiptap-editor-hug.ProseMirror {
+	min-height: 0;
 }
 
 /*

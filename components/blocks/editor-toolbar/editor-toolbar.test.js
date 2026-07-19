@@ -58,6 +58,19 @@ test("RichTextEditorToolbar remains as a compatibility wrapper", () => {
 	assert.match(richToolbarSource, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
 });
 
+test("hover-reveal toolbars stay visible while the editor has focus", () => {
+	const richTextEditorSource = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
+
+	assert.match(
+		richTextEditorSource,
+		/group-hover:opacity-100 group-focus-within:opacity-100/u,
+	);
+	assert.doesNotMatch(
+		richTextEditorSource,
+		/group-hover:opacity-100 focus-within:opacity-100/u,
+	);
+});
+
 test("Editor toolbar demo renders the block directly", () => {
 	const pageSource = readProjectFile("components/blocks/editor-toolbar/page.tsx");
 	const demoSource = readProjectFile("components/website/demos/blocks/editor-toolbar-demo.tsx");

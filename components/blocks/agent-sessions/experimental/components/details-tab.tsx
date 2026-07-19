@@ -152,46 +152,48 @@ export function DetailsTab({
 				/>
 			</FloatingField>
 
-			<FloatingField filled={draft.crew.length > 0} icon={PeopleGroupIcon} label="Crew" onClear={() => onChange({ crew: [] })}>
-				<CrewRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
-			</FloatingField>
-
-			<FloatingField filled={draft.priority !== null} icon={PriorityMediumIcon} label="Priority" onClear={() => onChange({ priority: null })}>
-				<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
-			</FloatingField>
-
-			<FloatingField filled={draft.startDate !== undefined} icon={CalendarIcon} label="Start date" onClear={() => onChange({ startDate: undefined })}>
-				<DateRowField
-					ariaLabel="Change start date"
-					CalendarComponent={Calendar}
-					onChange={(next) => onChange({ startDate: next })}
-					placeholder="Add start date"
-					value={draft.startDate}
-				/>
-			</FloatingField>
-
-			<FloatingField filled={draft.dueDate !== undefined} icon={CalendarIcon} label="Due date" onClear={() => onChange({ dueDate: undefined })}>
-				<DateRowField
-					ariaLabel="Change due date"
-					CalendarComponent={Calendar}
-					onChange={(next) => onChange({ dueDate: next })}
-					placeholder="Add due date"
-					value={draft.dueDate}
-				/>
-			</FloatingField>
-
-			<FloatingField filled={draft.parent !== null} icon={EpicIcon} label="Parent" onClear={() => onChange({ parent: null })}>
-				<ParentRowField onChange={(key) => onChange({ parent: key })} value={draft.parent} />
-			</FloatingField>
-
 			{showMore ? (
-				<FloatingField filled={draft.labels.length > 0} icon={TagIcon} label="Labels" onClear={() => onChange({ labels: [] })}>
-					<LabelsRowField onChange={(next) => onChange({ labels: next })} value={draft.labels} />
-				</FloatingField>
+				<>
+					<FloatingField filled={draft.crew.length > 0} icon={PeopleGroupIcon} label="Crew" onClear={() => onChange({ crew: [] })}>
+						<CrewRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
+					</FloatingField>
+
+					<FloatingField filled={draft.priority !== null} icon={PriorityMediumIcon} label="Priority" onClear={() => onChange({ priority: null })}>
+						<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
+					</FloatingField>
+
+					<FloatingField filled={draft.startDate !== undefined} icon={CalendarIcon} label="Start date" onClear={() => onChange({ startDate: undefined })}>
+						<DateRowField
+							ariaLabel="Change start date"
+							CalendarComponent={Calendar}
+							onChange={(next) => onChange({ startDate: next })}
+							placeholder="Add start date"
+							value={draft.startDate}
+						/>
+					</FloatingField>
+
+					<FloatingField filled={draft.dueDate !== undefined} icon={CalendarIcon} label="Due date" onClear={() => onChange({ dueDate: undefined })}>
+						<DateRowField
+							ariaLabel="Change due date"
+							CalendarComponent={Calendar}
+							onChange={(next) => onChange({ dueDate: next })}
+							placeholder="Add due date"
+							value={draft.dueDate}
+						/>
+					</FloatingField>
+
+					<FloatingField filled={draft.parent !== null} icon={EpicIcon} label="Parent" onClear={() => onChange({ parent: null })}>
+						<ParentRowField onChange={(key) => onChange({ parent: key })} value={draft.parent} />
+					</FloatingField>
+
+					<FloatingField filled={draft.labels.length > 0} icon={TagIcon} label="Labels" onClear={() => onChange({ labels: [] })}>
+						<LabelsRowField onChange={(next) => onChange({ labels: next })} value={draft.labels} />
+					</FloatingField>
+				</>
 			) : null}
 
 			<button
-				className="mt-1 self-start rounded-md px-2 py-1 text-sm font-medium text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
+				className="-mx-2 mt-1 self-start rounded-md px-2 py-1 text-sm font-medium text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
 				onClick={() => setShowMore((previous) => !previous)}
 				type="button"
 			>

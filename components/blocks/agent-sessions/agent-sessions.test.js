@@ -179,6 +179,15 @@ test("the experimental surface stays out of global Rovo history", () => {
 	);
 });
 
+test("the activity layout imports a real content-visibility hook", () => {
+	const activityPanelSource = readBlockFile("experimental/components/activity-panel.tsx");
+	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
+
+	assert.match(activityPanelSource, /export function useHasActivity\(\): boolean/u);
+	assert.match(activityPanelSource, /return meta\.activityEvents\.length > 0;/u);
+	assert.match(layoutSource, /import \{ useHasActivity \} from .*activity-panel";/u);
+});
+
 test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
 	const actionsSource = readBlockFile("experimental/components/experimental-breadcrumb-actions.tsx");
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");

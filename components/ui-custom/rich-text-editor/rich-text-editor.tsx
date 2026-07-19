@@ -16,6 +16,7 @@ import {
 	type StudioAgentDataFlowConfig,
 } from "@/lib/studio-agent-data-flow";
 import { cn } from "@/lib/utils";
+import { token } from "@/lib/tokens";
 import {
 	getDirectoryAutocompleteState,
 	type DirectoryAutocompleteState,
@@ -109,7 +110,7 @@ interface RichTextEditorProps
 	 * - `"always"` (default): toolbar is always visible.
 	 * - `"hover"`: toolbar is hidden (but its space stays reserved, so there is
 	 *   no layout jump) and fades in when the pointer hovers anywhere in the
-	 *   editor, or when keyboard focus lands on a toolbar control. It is also
+	 *   editor, or while focus remains anywhere within the editor. It is also
 	 *   sticky: once it pins to the top of the surrounding scroll container it
 	 *   reveals itself and follows the scroll (progressive enhancement via
 	 *   `scroll-state(stuck)`; degrades to hover-only where unsupported).
@@ -123,6 +124,21 @@ interface RichTextEditorProps
 	 * gap isn't doubled. Opt-in (e.g. agent + skill config instructions).
 	 */
 	padStuckToolbar?: boolean;
+	/**
+	 * Only meaningful with `toolbarReveal="hover"`. When `true`, the space the
+	 * hidden toolbar reserves shows a centered hairline divider in the resting
+	 * state (matching `h-px bg-border` rules elsewhere) instead of an empty gap.
+	 * The divider cross-fades out — and the toolbar cross-fades in — on
+	 * hover/focus-within, and while the bar is pinned (`scroll-state(stuck)`).
+	 * Opt-in so other hover consumers keep the plain empty gap.
+	 */
+	toolbarRestingSeparator?: boolean;
+	/**
+	 * Optional label shown before the resting separator's hairline (mirrors the
+	 * "Activity" header pattern: label + full-width rule). Only rendered when
+	 * `toolbarRestingSeparator` is set. Omit for a bare line.
+	 */
+	toolbarRestingSeparatorLabel?: ReactNode;
 	"aria-label"?: string;
 }
 
@@ -360,6 +376,8 @@ export function RichTextEditor({
 	showFloatingMenu = false,
 	toolbarReveal = "always",
 	padStuckToolbar = false,
+	toolbarRestingSeparator = false,
+	toolbarRestingSeparatorLabel,
 	"aria-label": ariaLabel,
 	...props
 }: Readonly<RichTextEditorProps>) {
@@ -770,9 +788,31 @@ export function RichTextEditor({
 						// `rich-text-editor.css`), so it follows the scroll.
 						toolbarReveal === "hover" &&
 							"sticky top-0 z-10 [container-type:scroll-state]",
+						// Anchors the absolutely-positioned resting separator that
+						// fills the reserved toolbar space when idle (see below).
+						toolbarReveal === "hover" && toolbarRestingSeparator && "relative",
 						toolbarClassName,
 					)}
 				>
+					{toolbarReveal === "hover" && toolbarRestingSeparator ? (
+						// Resting-state hairline that occupies the reserved toolbar
+						// space instead of an empty gap. It's the inverse of the
+						// reveal child: visible when idle and cross-fading out as the
+						// toolbar fades in on hover/focus-within (and while pinned —
+						// see the `scroll-state(stuck)` rule in `rich-text-editor.css`).
+						<div
+							aria-hidden="true"
+							data-slot="rich-text-editor-toolbar-resting-separator"
+							className="pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center gap-3 opacity-100 transition-opacity duration-normal ease-out group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none"
+						>
+							{toolbarRestingSeparatorLabel != null ? (
+								<span className="shrink-0 text-text-subtlest" style={{ font: token("font.heading.xxsmall") }}>
+									{toolbarRestingSeparatorLabel}
+								</span>
+							) : null}
+							<div className="h-px min-w-2 flex-1 bg-border" />
+						</div>
+					) : null}
 					<div
 						data-slot="rich-text-editor-toolbar-reveal"
 						className={cn(
@@ -782,7 +822,7 @@ export function RichTextEditor({
 							// `relative` anchors the stuck ::before that fills any
 							// scroll-padding gap above the pinned bar (see CSS).
 							toolbarReveal === "hover" &&
-								"relative bg-surface opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
+								"relative bg-surface opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none",
 							// `padStuckToolbar` reserves 8px of surface below the bar so,
 							// once it pins, content scrolling under isn't cramped and no
 							// transparent gap shows. Consumers pair it with `space-y-0`.

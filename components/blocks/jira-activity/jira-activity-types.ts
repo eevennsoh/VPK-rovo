@@ -98,3 +98,6 @@ export type JiraActivityEntry =
 	| JiraActivityEventEntry
 	| JiraActivityCommentEntry
 	| JiraActivityChangedFilesEntry;
+
+/** Timeline ordering: `ascending` = oldest first, `descending` = newest first. */
+export type JiraActivitySortOrder = "ascending" | "descending";

@@ -10,7 +10,7 @@ export function JiraActivityEvent({
 	entry,
 }: Readonly<{ entry: JiraActivityEventEntry }>) {
 	return (
-		<p className="text-sm leading-5 text-text-subtle">
+		<p className="text-xs leading-4 text-text-subtle">
 			<span className="font-medium text-text">{entry.actor.name}</span>{" "}
 			<JiraActivitySegments segments={entry.segments} />
 			<span className="text-text-subtlest"> · {entry.timestamp}</span>

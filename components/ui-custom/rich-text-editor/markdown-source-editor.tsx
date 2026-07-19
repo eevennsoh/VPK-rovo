@@ -20,7 +20,7 @@ const LANGUAGE = "markdown";
 // text metrics (font, size, line-height, wrapping, tab-size). Any mismatch makes
 // the colored layer drift away from the caret. Keep this list authoritative.
 const SHARED_TEXT_CLASSES =
-	"m-0 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words [tab-size:2]";
+	"m-0 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words [tab-size:2]";
 
 function useMarkdownTokens(code: string): TokenizedCode {
 	const rawTokens = useMemo(() => createRawTokens(code), [code]);

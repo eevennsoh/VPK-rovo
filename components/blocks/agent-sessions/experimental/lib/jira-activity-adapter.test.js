@@ -90,6 +90,85 @@ test("maps agent activity to rich Jira comments with lifecycle tags", async () =
 	}
 });
 
+test("maps a static event to a Jira event row with icon, segments, and timestamp", async () => {
+	const adapter = await loadAdapter();
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-labelled",
+			kind: "event",
+			actor: {
+				id: "static-triage-assistant",
+				name: "Triage assistant",
+				kind: "agent",
+				avatarSrc: "/triage.svg",
+			},
+			icon: "label",
+			segments: [
+				{ type: "text", text: "added " },
+				{ type: "label", text: "RFP", color: "blue" },
+			],
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 5),
+		},
+	]);
+
+	assert.equal(entry.kind, "event");
+	assert.equal(entry.icon, "label");
+	assert.deepEqual(entry.actor, {
+		id: "static-triage-assistant",
+		name: "Triage assistant",
+		kind: "agent",
+		avatarSrc: "/triage.svg",
+	});
+	assert.deepEqual(entry.segments, [
+		{ type: "text", text: "added " },
+		{ type: "label", text: "RFP", color: "blue" },
+	]);
+	assert.equal(typeof entry.timestamp, "string");
+});
+
+test("maps a static event without an icon and an app actor with a brand name", async () => {
+	const adapter = await loadAdapter();
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-linked",
+			kind: "event",
+			actor: { id: "static-github", name: "GitHub", kind: "app", brandName: "github" },
+			segments: [{ type: "text", text: "linked the response workspace" }],
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
+		},
+	]);
+
+	assert.equal(entry.kind, "event");
+	assert.equal(entry.icon, undefined);
+	assert.deepEqual(entry.actor, { id: "static-github", name: "GitHub", kind: "app", brandName: "github" });
+});
+
+test("maps a static changed-files event to a Jira changed-files card", async () => {
+	const adapter = await loadAdapter();
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-changed-files",
+			kind: "changed-files",
+			actor: { id: "static-readiness", name: "Readiness Checker", kind: "agent", avatarSrc: "/readiness.svg" },
+			summary: "Updated 3 resources",
+			description: "Refreshed the compliance matrix and owners.",
+			branch: "#RFP-101",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+		},
+	]);
+
+	assert.equal(entry.kind, "changed-files");
+	assert.equal(entry.summary, "Updated 3 resources");
+	assert.equal(entry.description, "Refreshed the compliance matrix and owners.");
+	assert.equal(entry.branch, "#RFP-101");
+	assert.deepEqual(entry.actor, {
+		id: "static-readiness",
+		name: "Readiness Checker",
+		kind: "agent",
+		avatarSrc: "/readiness.svg",
+	});
+});
+
 test("preserves input chronology and represents a missing agent response as an empty body", async () => {
 	const adapter = await loadAdapter();
 	const entries = adapter.mapActivityEventsToJiraEntries([

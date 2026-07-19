@@ -149,7 +149,7 @@ export function TwgTool({
 		>
 			{hasExpandableContent ? (
 				<CollapsibleTrigger
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
 				>
 					<TwgToolBannerBackground />
 					{bannerContent}
@@ -157,7 +157,7 @@ export function TwgTool({
 			) : shouldRenderButtonBanner ? (
 				<button
 					aria-expanded={chevronOpen}
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
 					onClick={onBannerClick}
 					type="button"
 				>
@@ -166,7 +166,7 @@ export function TwgTool({
 				</button>
 			) : (
 				<div
-					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2"
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1 pr-2"
 				>
 					<TwgToolBannerBackground />
 					{bannerContent}

@@ -12,6 +12,7 @@ import type {
 	AgentSessionsContextResources,
 	ContextLinkedItem,
 	NextStep,
+	StaticTimelineEvent,
 } from "@/components/blocks/agent-sessions/data/session-state";
 
 /**
@@ -77,6 +78,128 @@ export const FILLED_COMMENTS: AgentSessionComment[] = [
 		authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
 		content: "Flagging that Acmecorp budget qualification is still open — let's confirm before committing to a full response.",
 		createdAtMs: SESSION_EPOCH_MS - 3_600_000,
+	},
+];
+
+const MAYA: StaticTimelineEvent["actor"] = {
+	id: "static-maya-chen",
+	name: "Maya Chen",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+};
+
+const JORDAN: StaticTimelineEvent["actor"] = {
+	id: "static-jordan-lee",
+	name: "Jordan Lee",
+	kind: "person",
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+};
+
+const TRIAGE_AGENT: StaticTimelineEvent["actor"] = {
+	id: "static-triage-assistant",
+	name: "Triage assistant",
+	kind: "agent",
+	avatarSrc: "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+};
+
+const READINESS_AGENT: StaticTimelineEvent["actor"] = {
+	id: "static-readiness-checker",
+	name: "Readiness Checker",
+	kind: "agent",
+	avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+};
+
+const GITHUB: StaticTimelineEvent["actor"] = {
+	id: "static-github",
+	name: "GitHub",
+	kind: "app",
+	brandName: "github",
+};
+
+const AUTOMATION_TAG = { text: "Automation" } as const;
+
+/**
+ * Seeded timeline scaffolding for the filled preset. Mirrors the states the
+ * standalone Jira Activity block shows (created, labels, SLA, status moves,
+ * self-assign, self-delegate, changed files, connected-app link) but themed to
+ * the Acmecorp RFP demo actors. All offsets precede the seeded human comment
+ * (−60min) and completed session (−30min) so the feed reads chronologically.
+ */
+export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
+	{
+		id: "static-created",
+		kind: "event",
+		actor: MAYA,
+		segments: [{ type: "text", text: "created the issue" }],
+		createdAtMs: SESSION_EPOCH_MS - 5_400_000, // −90min
+	},
+	{
+		id: "static-labelled",
+		kind: "event",
+		actor: TRIAGE_AGENT,
+		icon: "label",
+		segments: [
+			{ type: "text", text: "added " },
+			{ type: "label", text: "RFP", color: "blue" },
+			{ type: "text", text: " and " },
+			{ type: "label", text: "Enterprise", color: "purple" },
+		],
+		createdAtMs: SESSION_EPOCH_MS - 5_280_000, // −88min
+	},
+	{
+		id: "static-sla",
+		kind: "event",
+		actor: READINESS_AGENT,
+		icon: "sla",
+		segments: [
+			{ type: "text", text: "set the SLA to 2w " },
+			{ type: "tag", ...AUTOMATION_TAG },
+		],
+		createdAtMs: SESSION_EPOCH_MS - 5_160_000, // −86min
+	},
+	{
+		id: "static-moved-intake",
+		kind: "event",
+		actor: MAYA,
+		icon: "status",
+		segments: [{ type: "text", text: "moved from Triage to RFP Intake" }],
+		createdAtMs: SESSION_EPOCH_MS - 4_800_000, // −80min
+	},
+	{
+		id: "static-assigned",
+		kind: "event",
+		actor: JORDAN,
+		segments: [{ type: "text", text: "self-assigned the issue and set priority to High" }],
+		createdAtMs: SESSION_EPOCH_MS - 4_680_000, // −78min
+	},
+	{
+		id: "static-delegated",
+		kind: "event",
+		actor: READINESS_AGENT,
+		icon: "delegated",
+		segments: [
+			{ type: "text", text: "delegated the risk review " },
+			{ type: "tag", ...AUTOMATION_TAG },
+		],
+		createdAtMs: SESSION_EPOCH_MS - 2_400_000, // −40min
+	},
+	{
+		id: "static-changed-files",
+		kind: "changed-files",
+		actor: READINESS_AGENT,
+		summary: "Updated 3 resources",
+		description:
+			"Refreshed the Acmecorp compliance matrix, requirement owners, and the security response draft ahead of the bid decision.",
+		branch: "#RFP-101",
+		createdAtMs: SESSION_EPOCH_MS - 1_500_000, // −25min
+	},
+	{
+		id: "static-linked",
+		kind: "event",
+		actor: GITHUB,
+		icon: "linked",
+		segments: [{ type: "text", text: "linked Acmecorp ESM RFP response workspace" }],
+		createdAtMs: SESSION_EPOCH_MS - 1_200_000, // −20min
 	},
 ];
 

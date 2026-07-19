@@ -3,12 +3,15 @@
 import { useReducedMotion } from "motion/react";
 
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+import { isPlannerProcessing } from "@/components/blocks/agent-sessions/data/planner-state";
 import {
 	useAgentSessionsActions,
 	useAgentSessionsState,
 } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
+import { cn } from "@/lib/utils";
 import {
 	CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME,
 	CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS,
@@ -45,21 +48,38 @@ export function ContextEditableTitle() {
  *
  * Unlike the click-to-edit title, the description is a live TipTap editor (like
  * Studio's instructions/description): edits commit on every keystroke via
- * `editContextText`, with no confirm/cancel inline-edit step. Chrome-free — no
- * toolbar or bubble/floating menus — so it reads as the plain description field.
+ * `editContextText`, with no confirm/cancel inline-edit step. Its editor chrome
+ * mirrors Studio instructions: the toolbar reveals on hover/focus, the rendered
+ * and Markdown views share one toggle, and the directory-backed slash menu uses
+ * the same agent/skill sources.
  */
 export function ContextEditableDescription() {
-	const { contextResources } = useAgentSessionsState();
+	const { contextResources, planner } = useAgentSessionsState();
 	const actions = useAgentSessionsActions();
+	// While the Teamwork Graph planner is running, drop the editor's min-height so
+	// the description hugs its content instead of reserving empty space.
+	const isProcessing = isPlannerProcessing(planner);
 	return (
 		<RichTextEditor
 			aria-label="Work item description"
 			className="min-w-0 space-y-0"
-			editorClassName="-ml-1.5 rounded-md px-1.5 text-text transition-colors hover:bg-bg-neutral-subtle-hovered focus-within:bg-transparent focus-within:hover:bg-transparent"
-			placeholder="Add a description"
-			showToolbar={false}
-			showBubbleMenu={false}
-			showFloatingMenu={false}
+			editorClassName={cn(
+				"agent-instructions-tiptap-editor context-description-tiptap-editor text-text",
+				isProcessing && "context-description-tiptap-editor-hug",
+			)}
+			enableDirectoryAutocomplete
+			mentionSources={EDITOR_PALETTE_MENTION_SOURCES}
+			placeholder="Press / to help improve the work item"
+			placeholderSlot={(
+				<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
+					Press <code>/</code> to help improve the work item
+				</p>
+			)}
+			suggestionVariant="nested"
+			toolbarReveal="hover"
+			toolbarRestingSeparator
+			toolbarRestingSeparatorLabel="Description"
+			padStuckToolbar
 			value={contextResources.description}
 			onMarkdownChange={(value) => actions.editContextText("description", value)}
 		/>

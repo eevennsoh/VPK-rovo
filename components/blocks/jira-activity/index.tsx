@@ -15,6 +15,7 @@ import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
+	JiraActivitySortOrder,
 } from "./jira-activity-types";
 import {
 	createCommentEntry,
@@ -36,7 +37,18 @@ export interface JiraActivityProps {
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	className?: string;
-	onUnsubscribe?: () => void;
+	/** Controlled timeline ordering. */
+	sortOrder?: JiraActivitySortOrder;
+	/** Initial ordering when uncontrolled. Defaults to `ascending` (oldest first). */
+	defaultSortOrder?: JiraActivitySortOrder;
+	/** Receives the next ordering when the header sort control changes. */
+	onSortOrderChange?: (next: JiraActivitySortOrder) => void;
+	/** Controlled collapsed state for the timeline body. */
+	collapsed?: boolean;
+	/** Initial collapsed state when uncontrolled. Defaults to `false`. */
+	defaultCollapsed?: boolean;
+	/** Receives the next collapsed state when the header collapse control changes. */
+	onCollapsedChange?: (next: boolean) => void;
 }
 
 /**
@@ -53,10 +65,33 @@ export function JiraActivity({
 	composer,
 	renderCommentAction,
 	className,
-	onUnsubscribe,
+	sortOrder: controlledSortOrder,
+	defaultSortOrder = "ascending",
+	onSortOrderChange,
+	collapsed: controlledCollapsed,
+	defaultCollapsed = false,
+	onCollapsedChange,
 }: Readonly<JiraActivityProps>) {
 	const [uncontrolledEntries, setUncontrolledEntries] = useState(defaultEntries);
 	const entries = controlledEntries ?? uncontrolledEntries;
+	const [uncontrolledSortOrder, setUncontrolledSortOrder] = useState(defaultSortOrder);
+	const sortOrder = controlledSortOrder ?? uncontrolledSortOrder;
+	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
+	const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
+
+	function handleSortOrderChange(next: JiraActivitySortOrder) {
+		if (controlledSortOrder === undefined) {
+			setUncontrolledSortOrder(next);
+		}
+		onSortOrderChange?.(next);
+	}
+
+	function handleCollapsedChange(next: boolean) {
+		if (controlledCollapsed === undefined) {
+			setUncontrolledCollapsed(next);
+		}
+		onCollapsedChange?.(next);
+	}
 
 	function applyAction(action: Parameters<typeof jiraActivityReducer>[1]) {
 		const nextState = jiraActivityReducer({ entries }, action);
@@ -67,17 +102,12 @@ export function JiraActivity({
 		onEntriesChange?.(nextState.entries);
 	}
 
-	// The header avatar group reflects the distinct people involved in the thread.
-	const participants = useMemo(() => {
-		const seen = new Set<string>();
-		const people: JiraActivityActor[] = [];
-		for (const actor of [currentUser, ...entries.map((entry) => entry.actor)]) {
-			if (actor.kind !== "person" || seen.has(actor.id)) continue;
-			seen.add(actor.id);
-			people.push(actor);
-		}
-		return people;
-	}, [entries, currentUser]);
+	// Entries are stored oldest-first; `descending` shows newest first without
+	// mutating the canonical order the reducer appends to.
+	const orderedEntries = useMemo(
+		() => (sortOrder === "descending" ? [...entries].reverse() : entries),
+		[entries, sortOrder],
+	);
 
 	function handleAddComment(body: string) {
 		applyAction({
@@ -105,52 +135,64 @@ export function JiraActivity({
 	}
 
 	return (
-		<div className={cn("flex w-full flex-col gap-4", className)}>
-			<JiraActivityHeader onUnsubscribe={onUnsubscribe} participants={participants} />
+		<div className={cn("group/jira-activity flex w-full flex-col gap-4", className)}>
+			<div>
+				<JiraActivityHeader
+					collapsed={collapsed}
+					count={entries.length}
+					onCollapsedChange={handleCollapsedChange}
+					onSortOrderChange={handleSortOrderChange}
+					sortOrder={sortOrder}
+				/>
+			</div>
 
-			<ol aria-label="Activity timeline" className="flex flex-col">
-				{entries.map((entry, index) => {
-					const isLast = index === entries.length - 1;
+			{collapsed ? null : (
+				<ol aria-label="Activity timeline" className="flex flex-col">
+					{orderedEntries.map((entry, index) => {
+						const isLast = index === orderedEntries.length - 1;
 
-					return (
-						<li className="flex gap-2" key={entry.id}>
-							<JiraActivityNode
-								actor={entry.actor}
-								icon={entry.kind === "event" ? entry.icon : undefined}
-								isLast={isLast}
-							/>
-							<div
-								className={cn(
-									"min-w-0 flex-1 pb-3",
-									entry.kind === "event" && "pt-0.5",
-								)}
-							>
-								{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
-								{entry.kind === "comment" ? (
-									<JiraActivityComment
-										currentUser={currentUser}
-										entry={entry}
-										onSubmitReply={(body) => handleAddReply(entry.id, body)}
-										action={renderCommentAction?.(entry)}
-									/>
-								) : null}
-								{entry.kind === "changed-files" ? (
-									<JiraActivityChangedFiles entry={entry} />
-								) : null}
-							</div>
-						</li>
-					);
-				})}
-			</ol>
+						return (
+							<li className="flex gap-2" key={entry.id}>
+								<JiraActivityNode
+									actor={entry.actor}
+									icon={entry.kind === "event" ? entry.icon : undefined}
+									isLast={isLast}
+								/>
+								<div
+									className={cn(
+										"min-w-0 flex-1 pb-3",
+										entry.kind === "event" && "pt-0.5",
+									)}
+								>
+									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
+									{entry.kind === "comment" ? (
+										<JiraActivityComment
+											currentUser={currentUser}
+											entry={entry}
+											onSubmitReply={(body) => handleAddReply(entry.id, body)}
+											action={renderCommentAction?.(entry)}
+										/>
+									) : null}
+									{entry.kind === "changed-files" ? (
+										<JiraActivityChangedFiles entry={entry} />
+									) : null}
+								</div>
+							</li>
+						);
+					})}
+				</ol>
+			)}
 
-			{composer === undefined ? (
+			{collapsed || composer === null ? null : composer === undefined ? (
 				<JiraActivityComposer
 					author={currentUser}
 					onSubmit={handleAddComment}
 					placeholder="Leave a comment..."
 					variant="comment"
 				/>
-			) : composer}
+			) : (
+				composer
+			)}
 		</div>
 	);
 }
@@ -167,4 +209,5 @@ export type {
 	JiraActivityEventIcon,
 	JiraActivityReply,
 	JiraActivitySegment,
+	JiraActivitySortOrder,
 } from "./jira-activity-types";

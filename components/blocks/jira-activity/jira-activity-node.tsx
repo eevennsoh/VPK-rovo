@@ -44,7 +44,7 @@ function initialsOf(name: string): string {
 function ActorGlyph({ actor }: Readonly<{ actor: JiraActivityActor }>) {
 	if (actor.kind === "person") {
 		return (
-			<Avatar label={actor.name} size="sm">
+			<Avatar label={actor.name} size="xs">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
 			</Avatar>
@@ -58,7 +58,7 @@ function ActorGlyph({ actor }: Readonly<{ actor: JiraActivityActor }>) {
 			brandName={actor.brandName}
 			fallbackText={initialsOf(actor.name)}
 			label={actor.name}
-			sizePx={24}
+			sizePx={16}
 		/>
 	);
 }

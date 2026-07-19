@@ -16,10 +16,7 @@ export function ContextPanel() {
 	return (
 		<section aria-label="Work item context" className="flex flex-col gap-3">
 			<AiPlannerScope header={<AiPlannerPanel />}>
-				<div className="flex flex-col gap-1">
-					<ContextResources />
-				</div>
-				<div aria-hidden className="h-px bg-border" />
+				<ContextResources />
 				<ContextEditableDescription />
 			</AiPlannerScope>
 		</section>

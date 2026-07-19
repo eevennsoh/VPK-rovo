@@ -545,21 +545,26 @@ export function JiraToolbar({
 				>
 					<motion.div
 						animate={{ opacity: 1, y: 0 }}
-						className="pointer-events-auto max-w-full rounded-lg bg-surface"
-						data-color-mode="dark"
-						data-slot="jira-toolbar"
-						data-subtree-theme=""
-						data-theme="dark:dark spacing:spacing typography:typography shape:shape"
+						className="pointer-events-auto max-w-full rounded-lg"
 						exit={{
 							opacity: shouldReduceMotion ? 1 : 0,
 							y: shouldReduceMotion ? 0 : 16,
 							transition: shouldReduceMotion ? TOOLBAR_REDUCED : TOOLBAR_EXIT,
 						}}
 						initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+						// Resolve the overlay shadow here, outside the dark subtree below, so
+						// it matches the floating Rovo button's light-mode overlay shadow
+						// (elevation.shadow.overlay) rather than the darker dark-mode variant.
 						style={{ boxShadow: token("elevation.shadow.overlay"), willChange: "transform, opacity" }}
 						transition={transition}
 					>
-						<div className="flex h-12 min-w-0 max-w-[calc(100vw-2rem)] items-center px-2">
+						<div
+							className="flex h-12 min-w-0 max-w-[calc(100vw-2rem)] items-center rounded-lg bg-surface px-2"
+							data-color-mode="dark"
+							data-slot="jira-toolbar"
+							data-subtree-theme=""
+							data-theme="dark:dark spacing:spacing typography:typography shape:shape"
+						>
 							{/* Hidden measurement row: intrinsic width of every inline-eligible
 							    middle action, used only to compute how many fit. Pinned
 							    overflow actions are excluded so the widths array aligns with

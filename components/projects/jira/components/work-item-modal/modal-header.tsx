@@ -55,8 +55,8 @@ export function ModalHeader({
 				backgroundColor: token("elevation.surface.overlay"),
 			}}
 		>
-			<Breadcrumb className="min-w-0 overflow-hidden" size="small">
-				<BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">
+			<Breadcrumb className="min-w-0 overflow-visible" size="small">
+				<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">
 					<BreadcrumbItem className="min-w-0 max-w-[240px] shrink">
 						<BreadcrumbLink
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"

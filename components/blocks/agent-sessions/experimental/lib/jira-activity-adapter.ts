@@ -4,12 +4,18 @@ import {
 	type AgentActivityEvent,
 	type AgentSessionStatus,
 	type HumanActivityEvent,
+	type StaticChangedFilesActivityEvent,
+	type StaticEventActivityEvent,
+	type StaticTimelineActor,
 } from "@/components/blocks/agent-sessions/data/session-state";
 import type {
 	JiraActivityActor,
+	JiraActivityChangedFilesEntry,
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
+	JiraActivityEventEntry,
 } from "@/components/blocks/jira-activity";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 export const AGENT_SESSIONS_CURRENT_USER: JiraActivityActor = {
 	id: "agent-sessions-current-user",
@@ -78,7 +84,52 @@ function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityComment
 	};
 }
 
+function staticActor(actor: Readonly<StaticTimelineActor>): JiraActivityActor {
+	return {
+		id: actor.id,
+		name: actor.name,
+		kind: actor.kind,
+		...(actor.avatarSrc ? { avatarSrc: actor.avatarSrc } : {}),
+		...(actor.brandName ? { brandName: actor.brandName as ThirdPartyLogoName } : {}),
+	};
+}
+
+function mapStaticEvent(event: Readonly<StaticEventActivityEvent>): JiraActivityEventEntry {
+	return {
+		id: event.id,
+		kind: "event",
+		actor: staticActor(event.actor),
+		timestamp: formatSessionTimestamp(event.createdAtMs),
+		...(event.icon ? { icon: event.icon } : {}),
+		segments: event.segments,
+	};
+}
+
+function mapStaticChangedFiles(event: Readonly<StaticChangedFilesActivityEvent>): JiraActivityChangedFilesEntry {
+	return {
+		id: event.id,
+		kind: "changed-files",
+		actor: staticActor(event.actor),
+		timestamp: formatSessionTimestamp(event.createdAtMs),
+		summary: event.summary,
+		description: event.description,
+		...(event.branch ? { branch: event.branch } : {}),
+		...(event.tag ? { tag: event.tag } : {}),
+	};
+}
+
 /** Convert the already-chronological Agent Sessions activity stream for Jira Activity. */
 export function mapActivityEventsToJiraEntries(events: readonly ActivityEvent[]): JiraActivityEntry[] {
-	return events.map((event) => (event.kind === "human" ? mapHumanEvent(event) : mapAgentEvent(event)));
+	return events.map((event) => {
+		switch (event.kind) {
+			case "human":
+				return mapHumanEvent(event);
+			case "agent":
+				return mapAgentEvent(event);
+			case "event":
+				return mapStaticEvent(event);
+			case "changed-files":
+				return mapStaticChangedFiles(event);
+		}
+	});
 }
