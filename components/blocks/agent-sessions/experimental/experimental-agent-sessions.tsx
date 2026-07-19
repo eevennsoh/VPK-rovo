@@ -33,8 +33,8 @@ const NOOP = () => undefined;
  * Wraps the whole experience in the block-local `AgentSessionsProvider` (one
  * shared session-state instance) so the launcher, the floating session panel,
  * and the Activity `@`-reply composer all act on the same sessions. The floating
- * session surface is mounted INSIDE the dialog subtree so Base UI's modal `inert`
- * treatment does not disable it.
+ * session surface is mounted in the dialog portal but outside the popup, keeping
+ * it interactive on the blanket without making the modal its positioning root.
  */
 export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessionsProps>) {
 	const composerLayoutGroupId = useId();
@@ -75,14 +75,17 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 							presentation={presentation}
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
+							blanketContent={
+								<FloatingSessionSurface portalToViewport={presentation === "inline"} />
+							}
 						>
 							<ExperimentalWorkItemLayout
 								context={<ContextPanel />}
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
 								metadata={<MetadataRail />}
+								metadataPeek={<MetadataRail borderless />}
 							/>
-							<FloatingSessionSurface portalToViewport={presentation === "inline"} />
 						</ExperimentalWorkItemDialog>
 					</LayoutGroup>
 				</PanelLayoutProvider>

@@ -12,7 +12,18 @@ import ShrinkDiagonalIcon from "@atlaskit/icon/core/shrink-diagonal";
  * metadata column via the shared `PanelLayoutProvider`.
  */
 export function ExperimentalBreadcrumbActions() {
-	const { metadataCollapsed, metadataTogglePending, toggleMetadata } = usePanelLayout();
+	const { metadataCollapsed, metadataTogglePending, setMetadataPeek, toggleMetadata } = usePanelLayout();
+	// Peek is a collapsed-only affordance: hovering/focusing the toggle slides the
+	// rail in as a floating overlay for a quick sneak-peek; clicking commits it to
+	// the docked version. No peek once the rail is already docked.
+	const peekProps = metadataCollapsed
+		? {
+				onBlur: () => setMetadataPeek(false),
+				onFocus: () => setMetadataPeek(true),
+				onPointerEnter: () => setMetadataPeek(true),
+				onPointerLeave: () => setMetadataPeek(false),
+			}
+		: undefined;
 	return (
 		<>
 			<Button
@@ -24,6 +35,7 @@ export function ExperimentalBreadcrumbActions() {
 				size="icon"
 				variant="ghost"
 				onClick={toggleMetadata}
+				{...peekProps}
 			>
 				<PanelRightIcon label="" />
 			</Button>

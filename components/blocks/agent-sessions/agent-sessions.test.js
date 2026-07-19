@@ -156,17 +156,33 @@ test("the experimental surface stays out of global Rovo history", () => {
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
 	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
 	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
+	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
+	const floatingLauncherSource = readBlockFile("experimental/components/floating-session-launcher.tsx");
+	const floatingSurfaceSource = readBlockFile("experimental/components/floating-session-surface.tsx");
 	for (const source of [compositionSource, controllerSource, contextSource]) {
 		assert.doesNotMatch(source, /useRovoChat/u);
 		assert.doesNotMatch(source, /openChat\("floating"\)/u);
 	}
 	assert.match(compositionSource, /<AgentSessionsProvider/u);
-	assert.match(compositionSource, /<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>/u);
+	assert.match(
+		compositionSource,
+		/blanketContent=\{[\s\S]*<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>[\s\S]*\}/u,
+	);
+	assert.match(
+		dialogSource,
+		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
+	);
+	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher onModalBlanket=\{!portalToViewport\} \/>/u);
+	assert.match(
+		floatingLauncherSource,
+		/\[&>\.fixed\]:translate-x-\[18px\] \[&>\.fixed\]:translate-y-\[18px\]/u,
+	);
 });
 
 test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
 	const actionsSource = readBlockFile("experimental/components/experimental-breadcrumb-actions.tsx");
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
+	const modalHeaderSource = readProjectFile("components/projects/jira/components/work-item-modal/modal-header.tsx");
 	const panelLayoutSource = readBlockFile("experimental/context-panel-layout.tsx");
 	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
 	const titleBarSource = readBlockFile("experimental/components/context-title-bar.tsx");
@@ -179,8 +195,17 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(actionsSource, /aria-expanded:border-transparent aria-expanded:bg-transparent/u);
 	assert.equal((actionsSource.match(/variant="ghost"/gu) ?? []).length, 2);
 	assert.doesNotMatch(actionsSource, /variant="outline"/u);
+	// Collapsed-only peek wiring: hover/focus opens the sneak-peek, click still docks.
+	assert.match(actionsSource, /const peekProps = metadataCollapsed/u);
+	assert.match(actionsSource, /onPointerEnter: \(\) => setMetadataPeek\(true\)/u);
+	assert.match(actionsSource, /onPointerLeave: \(\) => setMetadataPeek\(false\)/u);
+	assert.match(actionsSource, /onFocus: \(\) => setMetadataPeek\(true\)/u);
+	assert.match(actionsSource, /onBlur: \(\) => setMetadataPeek\(false\)/u);
+	assert.match(actionsSource, /\{\.\.\.peekProps\}/u);
 	assert.match(dialogSource, /actionsClassName="gap-1"/u);
 	assert.match(dialogSource, /closeButtonVariant="ghost"/u);
+	assert.match(modalHeaderSource, /<Breadcrumb className="min-w-0 overflow-visible" size="small">/u);
+	assert.match(modalHeaderSource, /<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">/u);
 	assert.match(layoutSource, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(layoutSource, /id="experimental-work-item-metadata-panel"/u);
 	assert.match(layoutSource, /transform: "translateX\(100%\)"/u);
@@ -192,6 +217,22 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(layoutSource, /METADATA_CONTENT_EXPAND_TRANSITION/u);
 	assert.equal((layoutSource.match(/layout=\{shouldReduceMotion \? false : "position"\}/gu) ?? []).length, 1);
 	assert.match(layoutSource, /data-agent-sessions-content-column/u);
+	// Peek overlay: a floating borderless rail, layered above the docked panel
+	// (z-30) with the overlay shadow, gated on collapsed + peeking, no reflow.
+	assert.match(layoutSource, /const showMetadataPeek = metadataCollapsed && metadataPeeking;/u);
+	assert.match(layoutSource, /\{showMetadataPeek \? \(/u);
+	assert.match(layoutSource, /@\[860px\]\/agentlayout:z-30/u);
+	assert.match(layoutSource, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
+	assert.match(layoutSource, /variants=\{shouldReduceMotion \? REDUCED_MOTION_METADATA_PEEK_VARIANTS : METADATA_PEEK_VARIANTS\}/u);
+	assert.match(layoutSource, /onPointerEnter=\{\(\) => setMetadataPeek\(true\)\}/u);
+	assert.match(layoutSource, /onPointerLeave=\{\(\) => setMetadataPeek\(false\)\}/u);
+	assert.match(layoutSource, /metadataPeek: ReactNode/u);
+	// The peek reuses the rail without its border; the docked instance keeps it.
+	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
+	assert.match(compositionSource, /metadataPeek=\{<MetadataRail borderless \/>\}/u);
+	const metadataRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
+	assert.match(metadataRailSource, /borderless = false/u);
+	assert.match(metadataRailSource, /borderless \? null : "border border-border"/u);
 	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(titleBarSource, /data-agent-sessions-title-column/u);
 	assert.match(titleBarSource, /layout=\{shouldReduceMotion \? false : "position"\}/u);
@@ -205,8 +246,15 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(panelLayoutSource, /METADATA_CONTENT_COLLAPSE_DURATION_MS = 200/u);
 	assert.match(panelLayoutSource, /METADATA_CONTENT_EXPAND_DURATION_MS = 250/u);
 	assert.match(panelLayoutSource, /const \[metadataTogglePending, setMetadataTogglePending\] = useState\(false\);/u);
-	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => setMetadataTogglePending\(true\), \[\]\)/u);
+	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataPeeking\(false\);[\s\S]*setMetadataTogglePending\(true\);[\s\S]*\}, \[\]\)/u);
 	assert.match(panelLayoutSource, /setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*setMetadataTogglePending\(false\);/u);
+	// Peek overlay: collapsed-only sneak-peek state, its fast transitions, and the
+	// invariant that peek clears whenever the rail docks.
+	assert.match(panelLayoutSource, /const \[metadataPeeking, setMetadataPeeking\] = useState\(false\);/u);
+	assert.match(panelLayoutSource, /setMetadataPeek = useCallback\(\(peeking: boolean\) => setMetadataPeeking\(peeking\), \[\]\)/u);
+	assert.match(panelLayoutSource, /if \(!metadataCollapsed\) setMetadataPeeking\(false\);/u);
+	assert.match(panelLayoutSource, /METADATA_PEEK_ENTER_TRANSITION[\s\S]*duration: 0\.12,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
+	assert.match(panelLayoutSource, /METADATA_PEEK_EXIT_TRANSITION[\s\S]*duration: 0\.1,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(titleBarSource, /duration: 0\.05,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
 	assert.match(titleBarSource, /EXPANDED_ACTIONS_ENTER_TRANSITION[\s\S]*duration: 0\.05/u);
@@ -233,6 +281,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
 	const contextResourcesSource = readBlockFile("experimental/components/context-resources.tsx");
+	const contextEditableHeaderSource = readBlockFile("experimental/components/context-editable-header.tsx");
 	const twgToolSource = readProjectFile("components/ui-custom/twg-tool.tsx");
 	const agentSummaryRowSource = fs.readFileSync(
 		path.join(process.cwd(), "components", "blocks", "agent", "components", "agent-summary-row.tsx"),
@@ -244,8 +293,16 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.ok(contextPanelSource.indexOf("<AiPlannerPanel />") < contextPanelSource.indexOf("<ContextResources />"));
 	assert.ok(contextPanelSource.indexOf("<ContextResources />") < contextPanelSource.indexOf("<ContextEditableDescription />"));
 	assert.match(contextPanelSource, /<AiPlannerScope header=\{<AiPlannerPanel \/>\}>/u);
-	assert.match(contextPanelSource, /<div aria-hidden className="h-px bg-border" \/>/u);
+	// The context resources and description sit directly adjacent — no divider rule.
+	assert.doesNotMatch(contextPanelSource, /<div aria-hidden className="h-px bg-border" \/>/u);
 	assert.doesNotMatch(contextPanelSource, />Details</u);
+	assert.match(contextEditableHeaderSource, /placeholder="Press \/ to help improve the work item"/u);
+	assert.match(contextEditableHeaderSource, /editorClassName="agent-instructions-tiptap-editor context-description-tiptap-editor text-text"/u);
+	assert.match(contextEditableHeaderSource, /mentionSources=\{EDITOR_PALETTE_MENTION_SOURCES\}/u);
+	assert.match(contextEditableHeaderSource, /suggestionVariant="nested"/u);
+	assert.match(contextEditableHeaderSource, /toolbarReveal="hover"/u);
+	assert.match(contextEditableHeaderSource, /\bpadStuckToolbar\b/u);
+	assert.doesNotMatch(contextEditableHeaderSource, /showToolbar=\{false\}|showBubbleMenu=\{false\}/u);
 	assert.match(plannerPanelSource, /import \{ TwgTool, type TwgToolSource \} from "@\/components\/ui-custom\/twg-tool";/u);
 	assert.match(plannerPanelSource, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
 	assert.match(plannerPanelSource, /import \{ TWGLoader \} from "@\/components\/ui-custom\/twg-loader";/u);
@@ -327,6 +384,10 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(skillContextPillSource, /<SkillSelector[\s\S]*onSkillToggle=\{handleSkillToggle\}[\s\S]*selectionMode="single"/u);
 	assert.match(skillContextPillSource, /onSelectSkill\(skillId\);[\s\S]*setIsOpen\(false\);/u);
 	assert.match(contextResourcesSource, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
+	assert.match(
+		contextResourcesSource,
+		/flex flex-wrap items-start gap-1 \*:focus-visible:relative \*:focus-visible:z-10/u,
+	);
 	assert.equal((contextResourcesSource.match(/elemBefore=\{<Icon aria-hidden render=/gu) ?? []).length, 3);
 	assert.equal((contextResourcesSource.match(/labelClassName="whitespace-nowrap sm:w-28"/gu) ?? []).length, 3);
 	assert.match(agentSummaryRowSource, /labelClassName\?: string;/u);
@@ -437,6 +498,33 @@ test("preset initialization: empty/filled/running set up the two dimensions", as
 	assert.equal(model.selectWorkingCount(running), 3); // 2 running + 1 waiting
 	assert.ok(running.sessions.some((session) => session.status === "waiting"));
 	assert.equal(running.planner.status, "inactive");
+});
+
+test("filled preset scaffolds the activity feed with static event + changed-files rows", async () => {
+	const model = await loadSessionModel();
+
+	const empty = model.hydratePreset("empty", TEST_WORK_ITEM);
+	const running = model.hydratePreset("running", TEST_WORK_ITEM);
+	// Only the filled preset carries the seeded scaffolding.
+	assert.equal(empty.staticEvents.length, 0);
+	assert.equal(running.staticEvents.length, 0);
+
+	const filled = model.hydratePreset("filled", TEST_WORK_ITEM);
+	assert.ok(filled.staticEvents.length >= 6);
+	assert.ok(filled.staticEvents.some((event) => event.kind === "event"));
+	assert.ok(filled.staticEvents.some((event) => event.kind === "changed-files"));
+
+	// The selector merges static events with human comments + agent sessions and
+	// keeps the whole stream chronological.
+	const events = model.selectActivityEvents(filled);
+	assert.ok(events.some((event) => event.kind === "event"));
+	assert.ok(events.some((event) => event.kind === "changed-files"));
+	assert.ok(events.some((event) => event.kind === "human"));
+	assert.ok(events.some((event) => event.kind === "agent"));
+	const timestamps = events.map((event) => event.createdAtMs);
+	assert.deepEqual(timestamps, [...timestamps].sort((a, b) => a - b));
+	// The "created" scaffold event leads the chronological feed.
+	assert.equal(events[0].kind, "event");
 });
 
 test("empty preset planner searches in phases and prefills the normal form when ready", async () => {
