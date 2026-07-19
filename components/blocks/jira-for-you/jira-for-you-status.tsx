@@ -2,17 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Lozenge,
-	LozengeDropdownTrigger,
-	type LozengeProps,
-} from "@/components/ui/lozenge";
+import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 
 import type { JiraForYouStatus } from "./jira-for-you-types";
 
@@ -44,12 +43,12 @@ export function JiraForYouStatusLozenge({
 }
 
 /**
- * Interactive counterpart to {@link JiraForYouStatusLozenge}: a subtle,
- * neutral-toned dropdown trigger for changing the item's Jira workflow status,
- * revealed with the other row actions on hover. Mirrors the agent-session status
- * dropdown (`StatusPill`) — a quiet trigger with colored lozenge options and a
- * checkmark on the current status — but keeps the trigger neutral so it reads as
- * one more row action rather than a loud status pill.
+ * Interactive counterpart to {@link JiraForYouStatusLozenge}: a standard VPK
+ * outline dropdown button for changing the item's Jira workflow status, revealed
+ * with the other row actions on hover. It reuses the compact `Button` (matching
+ * the sibling "View" button's 24px height + outline style) so the action cluster
+ * lines up, while the menu mirrors the agent-session status dropdown —
+ * colored lozenge options with a checkmark on the current status.
  */
 export function JiraForYouStatusLozengeDropdown({
 	value,
@@ -66,16 +65,17 @@ export function JiraForYouStatusLozengeDropdown({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<LozengeDropdownTrigger
+					<Button
 						aria-label={`Change status. Current status: ${selected}`}
-						maxWidth="160px"
+						className="max-w-40 gap-1"
 						onClick={(event) => event.stopPropagation()}
 						size="compact"
-						variant="neutral"
+						variant="outline"
 					/>
 				}
 			>
-				{selected}
+				<span className="truncate">{selected}</span>
+				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="end"

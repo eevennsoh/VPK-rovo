@@ -33,9 +33,10 @@ test("every row has a Jira status lozenge with a status-change dropdown", () => 
 		ITEM_SOURCE,
 		/function ItemActions\([\s\S]*<JiraForYouStatusLozengeDropdown value=\{item\.jiraStatus\} \/>[\s\S]*View[\s\S]*\n\}/,
 	);
-	// Subtle neutral trigger + colored lozenge options with a checkmark on the
-	// current status, mirroring the agent-session StatusPill dropdown.
-	assert.match(STATUS_SOURCE, /LozengeDropdownTrigger[\s\S]*variant="neutral"/);
+	// Standard compact outline Button trigger (matches the sibling View button's
+	// 24px height) with a chevron, plus colored lozenge options with a checkmark
+	// on the current status, mirroring the agent-session StatusPill dropdown.
+	assert.match(STATUS_SOURCE, /<DropdownMenuTrigger[\s\S]*<Button[\s\S]*size="compact"[\s\S]*variant="outline"[\s\S]*<ChevronDownIcon/);
 	assert.match(STATUS_SOURCE, /<DropdownMenuItem[\s\S]*selected=\{option === selected\}[\s\S]*<Lozenge variant=\{STATUS_VARIANTS\[option\]\}>/);
 	assert.match(STATUS_SOURCE, /setSelected\(option\)/);
 	assert.match(STATUS_SOURCE, /"Human review": "warning"/);
