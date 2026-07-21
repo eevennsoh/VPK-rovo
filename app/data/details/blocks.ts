@@ -68,6 +68,7 @@ import { DATA_TABLE_DETAIL } from "./blocks/data-table";
 import { GENERATIVE_CARD_DETAIL } from "./blocks/generative-card";
 import { TOP_NAVIGATION_DETAIL } from "./blocks/top-navigation";
 import { CHAT_GALLERY_DETAIL } from "./blocks/chat-gallery";
+import { CODE_REVIEW_DETAIL } from "./blocks/code-review";
 import { PROMPT_GALLERY_DETAIL } from "./blocks/prompt-gallery";
 import { SETTINGS_DIALOG_DETAIL } from "./blocks/settings-dialog";
 import { MEMORY_DETAIL } from "./blocks/memory";
@@ -165,6 +166,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"generative-card": GENERATIVE_CARD_DETAIL,
 	"top-navigation": TOP_NAVIGATION_DETAIL,
 	"chat-gallery": CHAT_GALLERY_DETAIL,
+	"code-review": CODE_REVIEW_DETAIL,
 	"prompt-gallery": PROMPT_GALLERY_DETAIL,
 	"settings-dialog": SETTINGS_DIALOG_DETAIL,
 	memory: MEMORY_DETAIL,
