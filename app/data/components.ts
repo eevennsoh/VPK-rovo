@@ -397,6 +397,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("chat-gallery", "Chat Gallery"),
 	blockComponent("chatbot", "Chatbot"),
 	blockComponent("chatgpt", "ChatGPT"),
+	blockComponent("code-review", "Code Review"),
 	blockComponent("cursor", "Cursor"),
 	blockComponent("dashboard", "Dashboard"),
 	blockComponent("editor-palette", "Editor Palette"),

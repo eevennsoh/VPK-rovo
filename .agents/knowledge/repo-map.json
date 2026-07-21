@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 81,
-			"pageCount": 58
+			"ownerImportCount": 82,
+			"pageCount": 59
 		},
 		"pages": [
 			{
@@ -4208,6 +4208,30 @@
 					}
 				],
 				"source": "app/preview/blocks/agent-profile-card/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/code-review/page",
+						"source": "components/blocks/code-review/page",
+						"symbols": [
+							"CodeReviewPage"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/code-review",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/code-review/page",
+						"source": "components/blocks/code-review/page",
+						"symbols": [
+							"CodeReviewPage"
+						]
+					}
+				],
+				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5189,7 +5213,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 406,
+			"manifestEntryCount": 407,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5225,7 +5249,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 95,
+				"entryCount": 96,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5382,6 +5406,12 @@
 						"slug": "chatgpt",
 						"name": "ChatGPT",
 						"importPath": "@/components/blocks/chatgpt"
+					},
+					{
+						"category": "blocks",
+						"slug": "code-review",
+						"name": "Code Review",
+						"importPath": "@/components/blocks/code-review"
 					},
 					{
 						"category": "blocks",

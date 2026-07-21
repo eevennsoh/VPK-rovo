@@ -97,6 +97,7 @@
 		"@modelcontextprotocol/sdk": "1.29.0",
 		"@number-flow/react": "^0.6.0",
 		"@paper-design/shaders-react": "^0.0.76",
+		"@pierre/diffs": "^1.2.12",
 		"@radix-ui/react-slider": "^1.4.1",
 		"@radix-ui/react-use-controllable-state": "^1.2.3",
 		"@react-three/drei": "^10.7.7",

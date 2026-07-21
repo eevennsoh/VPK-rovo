@@ -36,6 +36,11 @@ trustPolicyExclude:
   # downgrade (lost provenance a later-published version carries). Reputable
   # (Redux/reselect), no advisory. Version-pinned so the guard re-applies on change.
   - reselect@5.1.1
+  # Transitive of @pierre/diffs; latest lacks provenance attestations so the
+  # publish-date trust heuristic flags it as a downgrade. Same maintainer set as
+  # @pierre/diffs itself (pierre.co team), normal release cadence, no advisory.
+  # Version-pinned so the guard re-applies on any future change.
+  - "@pierre/theme@1.1.0"
 # Dependency pinning tiers (see Engineering Standards in AGENTS.md):
 #   Float   ^x.y.z  - stable libs; `pnpm update` may take patch + minor
 #   Cautious ~x.y.z - libs where minors have broken us; patch only
