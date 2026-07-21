@@ -1,111 +1,146 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-
+import {
+	JiraAgentSessionActivityCard,
+	type JiraAgentSessionItem,
+} from "@/components/blocks/jira-agent-session";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Comment } from "@/components/ui/comment";
-import { Icon } from "@/components/ui/icon";
-import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/utils";
 
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivitySegments } from "./jira-activity-segments";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "./jira-activity-types";
 
+function initialsOf(name: string): string {
+	return (
+		name
+			.split(" ")
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((word) => word[0]?.toUpperCase())
+			.join("") || "?"
+	);
+}
+
 /**
- * Bordered comment card: header (name/time/tag), rich body, an optional
- * collapsible detail section, submitted replies, and a reply composer. The
- * actor avatar is intentionally not repeated here — the timeline spine already
- * shows it beside the card.
+ * Adapts Jira Activity comment data to the expanded Jira Agent Session card.
+ * Human comments repeat their identity inside the card header; agent-session
+ * cards continue to use the session identity supplied by their item.
  */
 export function JiraActivityComment({
 	entry,
 	currentUser,
 	onSubmitReply,
+	onViewSession,
+	onReplyRequest,
 	action,
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
 	currentUser: JiraActivityActor;
 	onSubmitReply: (body: string) => void;
+	onViewSession?: (item: JiraAgentSessionItem) => void;
+	onReplyRequest?: (entry: JiraActivityCommentEntry) => void;
 	action?: ReactNode;
 }>) {
-	const [detailOpen, setDetailOpen] = useState(false);
 	const replies = entry.replies ?? [];
 	const allowReply = entry.allowReply ?? true;
-	const showFooter = replies.length > 0 || allowReply;
+	const replyAction = (
+		<Button
+			onClick={() => onReplyRequest?.(entry)}
+			size="compact"
+			type="button"
+			variant="outline"
+		>
+			Reply
+		</Button>
+	);
+	const trailingAction =
+		entry.actor.kind === "person" ? (
+			action ? (
+				<div className="flex items-center gap-1">
+					{replyAction}
+					{action}
+				</div>
+			) : (
+				replyAction
+			)
+		) : (
+			action
+		);
 
 	return (
-		<div className="w-full overflow-hidden rounded-lg border border-border bg-surface">
-			<div className="grid gap-2 p-3">
-				<div className="flex min-w-0 items-start justify-between gap-2">
-					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
-						<span className="font-medium text-text">{entry.actor.name}</span>
-						<span className="text-text-subtle">{entry.timestamp}</span>
-						{entry.tag ? <Tag color={entry.tag.color ?? "gray"}>{entry.tag.text}</Tag> : null}
+		<JiraAgentSessionActivityCard
+			action={trailingAction}
+			agentName={entry.actor.name}
+			headerAvatar={
+				entry.actor.kind === "person" ? (
+					<Avatar aria-hidden size="default">
+						{entry.actor.avatarSrc ? <AvatarImage alt="" src={entry.actor.avatarSrc} /> : null}
+						<AvatarFallback>{initialsOf(entry.actor.name)}</AvatarFallback>
+					</Avatar>
+				) : undefined
+			}
+			headerLayout={entry.actor.kind === "person" ? "stacked" : "inline"}
+			item={entry.sessionItem}
+			onView={onViewSession}
+			details={
+				entry.sessionItem
+					? undefined
+					: entry.collapsible
+					? {
+							label: entry.collapsible.label,
+							children: (
+								<JiraActivitySegments
+									className="pl-5 text-sm leading-5 text-text-subtle"
+									segments={entry.collapsible.content}
+								/>
+							),
+						}
+					: undefined
+			}
+			replies={
+				replies.length > 0 ? (
+					<div className="grid gap-3 p-3">
+						{replies.map((reply) => (
+							<Comment
+								author={reply.actor.name}
+								avatarSrc={reply.actor.avatarSrc}
+								key={reply.id}
+								time={reply.timestamp}
+							>
+								{reply.body}
+							</Comment>
+						))}
 					</div>
-					{action ? <div className="shrink-0">{action}</div> : null}
-				</div>
-
-				<JiraActivitySegments
-					className="text-sm leading-5 text-text"
-					segments={entry.body}
-				/>
-
-				{entry.collapsible ? (
-					<div className="grid gap-1">
-						<button
-							aria-expanded={detailOpen}
-							className="flex items-center gap-1 self-start rounded-xs text-sm font-medium text-text focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-							onClick={() => setDetailOpen((prev) => !prev)}
-							type="button"
-						>
-							<Icon
-								aria-hidden
-								className={cn(
-									"text-icon-subtle transition-transform duration-fast ease-out-practical motion-reduce:transition-none",
-									detailOpen && "rotate-90",
-								)}
-								render={<ChevronRightIcon color="currentColor" label="" size="small" />}
-							/>
-							{entry.collapsible.label}
-						</button>
-						{detailOpen ? (
-							<JiraActivitySegments
-								className="pl-5 text-sm leading-5 text-text-subtle"
-								segments={entry.collapsible.content}
-							/>
-						) : null}
-					</div>
-				) : null}
-			</div>
-
-			{showFooter ? (
-				<div className="border-t border-border">
-					{replies.length > 0 ? (
-						<div className="grid gap-3 p-3">
-							{replies.map((reply) => (
-								<Comment
-									author={reply.actor.name}
-									avatarSrc={reply.actor.avatarSrc}
-									key={reply.id}
-									time={reply.timestamp}
-								>
-									{reply.body}
-								</Comment>
-							))}
-						</div>
-					) : null}
-					{allowReply ? (
-						<JiraActivityComposer
-							author={currentUser}
-							onSubmit={onSubmitReply}
-							placeholder="Leave a reply..."
-							variant="reply"
-						/>
-					) : null}
-				</div>
-			) : null}
-		</div>
+				) : undefined
+			}
+			replyComposer={
+				allowReply ? (
+					<JiraActivityComposer
+						author={currentUser}
+						className={
+							entry.sessionItem
+								? "rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]"
+								: undefined
+						}
+						onSubmit={onSubmitReply}
+						placeholder={
+							entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."
+						}
+						variant={entry.sessionItem ? "comment" : "reply"}
+					/>
+				) : undefined
+			}
+			tag={entry.tag}
+			timestamp={entry.timestamp}
+		>
+			<JiraActivitySegments
+				className="text-sm leading-5 text-text"
+				segments={entry.body}
+			/>
+		</JiraAgentSessionActivityCard>
 	);
 }

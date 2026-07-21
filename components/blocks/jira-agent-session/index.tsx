@@ -35,7 +35,9 @@ export function JiraAgentSession({
 }
 
 export { JIRA_AGENT_SESSION_ITEMS } from "./data";
+export { JiraAgentSessionActivityCard } from "./jira-agent-session-activity-card";
 export type {
+	JiraAgentSessionActivityCardProps,
 	JiraAgentSessionAgent,
 	JiraAgentSessionItem,
 	JiraAgentSessionPrStatus,

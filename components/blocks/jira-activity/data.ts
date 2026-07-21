@@ -25,7 +25,7 @@ const TRIAGE_AGENT: JiraActivityActor = {
 
 const ROVO_DEV: JiraActivityActor = {
 	id: "rovo-dev",
-	name: "Rovo Dev",
+	name: "Rovo",
 	kind: "agent",
 	avatarSrc: "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
 };
@@ -63,9 +63,9 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		timestamp: "14min ago",
 		segments: [
 			{ type: "text", text: "added " },
-			{ type: "label", text: "Bug", color: "red" },
+			{ type: "lozenge", text: "Bug", variant: "danger" },
 			{ type: "text", text: " and " },
-			{ type: "label", text: "UI polish", color: "green" },
+			{ type: "lozenge", text: "UI Polish", variant: "success" },
 		],
 	},
 	{
@@ -85,7 +85,12 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		actor: ANDREA,
 		icon: "status",
 		timestamp: "11min ago",
-		segments: [{ type: "text", text: "moved from Triage to Todo" }],
+		segments: [
+			{ type: "text", text: "moved from " },
+			{ type: "lozenge", text: "Triage" },
+			{ type: "transition-arrow" },
+			{ type: "lozenge", text: "Todo" },
+		],
 	},
 	{
 		id: "assigned",
@@ -93,7 +98,8 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		actor: ANDREA,
 		timestamp: "11min ago",
 		segments: [
-			{ type: "text", text: "self-assigned the issue and set priority to Medium" },
+			{ type: "text", text: "self-assigned the issue and set priority to " },
+			{ type: "priority", text: "Medium" },
 		],
 	},
 	{
@@ -136,6 +142,18 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 			],
 		},
 		replies: [],
+		sessionItem: {
+			id: "performance-benchmarking",
+			title: "Conduct performance benchmarking",
+			state: "running",
+			agent: {
+				name: "Progress tracker",
+				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			},
+			branch: "rovo/perf-27-benchmarks",
+			elapsedSeconds: 360,
+			prStatus: "created",
+		},
 	},
 	{
 		id: "delegated",
@@ -152,11 +170,37 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		id: "changed-files",
 		kind: "changed-files",
 		actor: ROVO_DEV,
-		timestamp: "6min",
+		timestamp: "5min",
 		summary: "Changed 2 files",
 		description:
 			"Adjusted the threaded comment radius logic so the final visible reply only rounds its bottom corners when no reply input follows.",
 		branch: "#78672",
+		sessionItem: {
+			id: "performance-benchmarking-outputs",
+			title: "Conduct performance benchmarking",
+			state: "complete",
+			agent: {
+				name: "Progress tracker",
+				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
+			},
+			branch: "rovo/perf-27-benchmarks",
+			elapsedSeconds: 300,
+		},
+		outputs: [
+			{
+				id: "audience-engagement-report",
+				title: "Audience Engagement Report",
+				source: "Confluence page",
+				owner: "Vitafleet Team",
+				iconName: "globe",
+			},
+			{
+				id: "chat-summary",
+				title: "Chat summary title",
+				source: "A snippet of the chat summary",
+				iconName: "ai-chat",
+			},
+		],
 	},
 	{
 		id: "moved-progress",
@@ -165,7 +209,11 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		icon: "in-progress",
 		timestamp: "6min ago",
 		segments: [
-			{ type: "text", text: "moved from Todo to In Progress " },
+			{ type: "text", text: "moved from " },
+			{ type: "lozenge", text: "Todo" },
+			{ type: "transition-arrow" },
+			{ type: "lozenge", text: "In Progress", variant: "information" },
+			{ type: "text", text: " " },
 			{ type: "tag", ...AUTOMATION_TAG },
 		],
 	},
@@ -175,8 +223,13 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		actor: GITHUB,
 		icon: "linked",
 		timestamp: "2min ago",
-		segments: [
-			{ type: "text", text: "linked Fix threaded comment highlight bottom corners" },
-		],
+		segments: [],
+		pullRequest: {
+			number: 1847,
+			title: "Fix threaded comment highlight bottom corners",
+			status: "Open",
+			additions: 148,
+			deletions: 37,
+		},
 	},
 ];

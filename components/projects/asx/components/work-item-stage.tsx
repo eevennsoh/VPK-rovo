@@ -11,9 +11,10 @@ const WORK_ITEM_STATES: readonly {
 	label: string;
 	value: AgentSessionsExperimentalPreset;
 }[] = [
-	{ label: "Empty", value: "empty" },
-	{ label: "Filled", value: "filled" },
-	{ label: "Agents running", value: "running" },
+	{ label: "Empty", value: "blank" },
+	{ label: "Suggestions", value: "empty" },
+	{ label: "Running", value: "running" },
+	{ label: "Done", value: "filled" },
 ];
 
 export interface WorkItemStageController {
@@ -23,7 +24,7 @@ export interface WorkItemStageController {
 }
 
 export function useWorkItemStageController(): WorkItemStageController {
-	const [preset, setPreset] = useState<AgentSessionsExperimentalPreset>("empty");
+	const [preset, setPreset] = useState<AgentSessionsExperimentalPreset>("blank");
 	const [launchId, setLaunchId] = useState(0);
 
 	const selectPreset = useCallback((nextPreset: AgentSessionsExperimentalPreset): void => {
@@ -65,7 +66,7 @@ export function WorkItemStage({
 	controller,
 }: Readonly<{ controller: WorkItemStageController }>): React.ReactElement {
 	return (
-		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center">
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalAgentSessions
 				key={controller.launchId}
 				initialPreset={controller.preset}

@@ -12,6 +12,21 @@ interface ScriptStepDef {
 	agentMessage?: string;
 }
 
+interface ScriptQuestionOption {
+	id: string;
+	label: string;
+	description?: string;
+}
+
+export interface ScriptWaitingQuestion {
+	id: string;
+	label: string;
+	description?: string;
+	kind: "single-select" | "multi-select" | "text";
+	options: readonly ScriptQuestionOption[];
+	placeholder?: string;
+}
+
 export interface AgentSessionScript {
 	id: string;
 	title: string;
@@ -20,6 +35,8 @@ export interface AgentSessionScript {
 	steps: ScriptStepDef[];
 	/** After completing this step index, the agent pauses in `waiting`. */
 	waitAfterIndex?: number;
+	/** Structured question shown in floating chat when this script pauses. */
+	waitingQuestion?: ScriptWaitingQuestion;
 	waitingPrompt: string;
 	waitingPreview: string;
 	resumeMessage: string;
@@ -30,7 +47,7 @@ export interface AgentSessionScript {
 export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
 	"compliance-matrix": {
 		id: "compliance-matrix",
-		title: "Compliance matrix",
+		title: "Map Acmecorp’s compliance requirements",
 		defaultCommand: "Build the Acmecorp requirement compliance matrix",
 		runningPreview: "Mapping mandatory RFP requirements to Atlassian capabilities…",
 		steps: [
@@ -39,7 +56,6 @@ export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
 			{ id: "owners", label: "Assign response owners", durationMs: 1600 },
 			{ id: "draft", label: "Draft the compliance matrix", durationMs: 2000, agentMessage: "Drafted the compliance matrix with owners and confidence flags." },
 		],
-		waitAfterIndex: 1,
 		waitingPrompt: "4 requirements need partner or roadmap positioning. Do you want me to flag them as gaps or draft mitigation language?",
 		waitingPreview: "Waiting: how should I handle the 4 partner/roadmap requirements?",
 		resumeMessage: "Understood — I'll continue with that approach.",
@@ -48,7 +64,7 @@ export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
 	},
 	"risk-review": {
 		id: "risk-review",
-		title: "Risk review",
+		title: "Review Acmecorp’s bid risks",
 		defaultCommand: "Review the Acmecorp bid risks",
 		runningPreview: "Assessing bid/no-bid risks across security, CMDB, and timeline…",
 		steps: [
@@ -64,7 +80,7 @@ export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
 	},
 	"pricing-draft": {
 		id: "pricing-draft",
-		title: "Pricing draft",
+		title: "Model pricing options for Acmecorp",
 		defaultCommand: "Draft the Acmecorp pricing posture",
 		runningPreview: "Modeling licensing assumptions for a multi-thousand-user deployment…",
 		steps: [
@@ -73,15 +89,33 @@ export const SESSION_SCRIPTS: Record<string, AgentSessionScript> = {
 			{ id: "guardrails", label: "Apply discount guardrails", durationMs: 1600, agentMessage: "Applied deal-desk discount guardrails and flagged approvals." },
 		],
 		waitAfterIndex: 0,
-		waitingPrompt: "I need a target seat band to model pricing. Should I assume 5,000 seats or wait for qualification?",
+		waitingQuestion: {
+			id: "pricing-seat-band",
+			label: "Which seat band should I use for the pricing model?",
+			description: "Choose a planning assumption so I can finish the TCO scenarios.",
+			kind: "single-select",
+			options: [
+				{
+					id: "assume-5000-seats",
+					label: "Assume 5,000 seats",
+					description: "Continue now with a 5,000-seat planning assumption.",
+				},
+				{
+					id: "model-seat-range",
+					label: "Model a 5,000–10,000-seat range",
+					description: "Compare both seat bands so qualification can choose later.",
+				},
+			],
+		},
+		waitingPrompt: "I need a target seat band to model pricing. Should I use 5,000 seats as the base case or compare a 5,000–10,000-seat range?",
 		waitingPreview: "Waiting: which seat band should I model?",
-		resumeMessage: "Thanks — modeling against that seat band now.",
+		resumeMessage: "Thanks — updating the pricing model with that assumption now.",
 		completionMessage: "Pricing draft ready with TCO scenarios and approval flags for deal desk.",
 		completionPreview: "Pricing draft complete — TCO scenarios ready.",
 	},
 	"general-assist": {
 		id: "general-assist",
-		title: "Work item assistant",
+		title: "Recommend next steps for this work item",
 		defaultCommand: "Help me move this work item forward",
 		runningPreview: "Reviewing the work item and suggesting next steps…",
 		steps: [

@@ -146,7 +146,7 @@
 		"@visx/zoom": "4.0.1-alpha.0",
 		"@web-kits/audio": "^0.1.0",
 		"@xyflow/react": "^12.11.1",
-		"agent-browser": "^0.31.0",
+		"agent-browser": "^0.32.3",
 		"ai": "^6.0.209",
 		"ansi-to-react": "^6.2.6",
 		"class-variance-authority": "^0.7.1",

@@ -48,7 +48,10 @@ export type {
 	JiraIssueAgentActivityMode,
 	JiraIssueAgentActivityState,
 } from "@/components/blocks/jira-issue/agent-activity";
-export type { JiraIssueCompletedAgentRun } from "@/components/blocks/jira-issue/completed-agent-runs";
+export type {
+	JiraIssueCompletedAgentRun,
+	JiraIssueCompletedAgentRunState,
+} from "@/components/blocks/jira-issue/completed-agent-runs";
 export type {
 	JiraIssueGenerativeActionConfig,
 	JiraIssueGenerativeActionIssue,
@@ -449,7 +452,9 @@ export function JiraIssue({
 	const [internalSubtasksExpanded, setInternalSubtasksExpanded] = useState(defaultSubtasksExpanded);
 	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
 	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
-	const generativeActionRevealActive = generativeActionPointerActive || generativeActionFocusActive;
+	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
+	const generativeActionRevealActive = !generativeActionRevealSuppressed
+		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
 	const completedSubtaskCount = getCompletedCount(subtasksCompleted, subtasks?.length ?? 0);
@@ -569,6 +574,7 @@ export function JiraIssue({
 
 	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
 		if (generativeAction && event.currentTarget.contains(event.target as Node)) {
+			setGenerativeActionRevealSuppressed(false);
 			setGenerativeActionPointerActive(true);
 		}
 	}
@@ -592,6 +598,7 @@ export function JiraIssue({
 			&& event.target instanceof Element
 			&& event.currentTarget.contains(event.target)
 		) {
+			setGenerativeActionRevealSuppressed(false);
 			setGenerativeActionFocusActive(event.target.matches(":focus-visible"));
 		}
 	}
@@ -693,6 +700,7 @@ export function JiraIssue({
 			action={generativeAction}
 			anchor={generativeActionAnchor}
 			issue={{ issueKey, summary }}
+			onOpenChange={(nextOpen) => setGenerativeActionRevealSuppressed(!nextOpen)}
 			onTriggerBlur={() => setGenerativeActionFocusActive(false)}
 			onTriggerFocus={() => setGenerativeActionFocusActive(true)}
 			onTriggerPointerEnter={() => setGenerativeActionPointerActive(true)}

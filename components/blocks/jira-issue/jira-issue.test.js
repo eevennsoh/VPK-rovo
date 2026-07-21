@@ -8,10 +8,12 @@ const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx")
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
 const GENERATIVE_SOURCE = readFileSync(join(__dirname, "generative-action-menu.tsx"), "utf8");
+const ROVO_SPARKLE_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rovo-sparkle/rovo-sparkle.tsx"), "utf8");
+const ROVO_SPARKLE_BUTTON_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rovo-sparkle/button.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DEMO_SOURCE = readFileSync(join(__dirname, "../../website/demos/blocks/jira-issue-demo.tsx"), "utf8");
 const DETAILS_SOURCE = readFileSync(join(__dirname, "../../../app/data/details/blocks/jira-issue.ts"), "utf8");
-const REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks.ts"), "utf8");
+const VARIANT_REGISTRY_SOURCE = readFileSync(join(__dirname, "../../website/registry/blocks-variants.ts"), "utf8");
 const RICH_TEXT_EDITOR_CSS_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
 const SHIMMER_SOURCE = readFileSync(join(__dirname, "../../ui-custom/shimmer.tsx"), "utf8");
 const ROOT_CLASS_BLOCK = SOURCE.slice(
@@ -48,7 +50,7 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueAgentActivity,[\s\S]*JiraIssueAgentActivityMode,[\s\S]*JiraIssueAgentActivityState,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/agent-activity";/);
 	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
-	assert.match(SOURCE, /export type \{ JiraIssueCompletedAgentRun \} from "@\/components\/blocks\/jira-issue\/completed-agent-runs";/);
+	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueCompletedAgentRun,[\s\S]*JiraIssueCompletedAgentRunState,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/completed-agent-runs";/);
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
 	assert.match(SOURCE, /onAgentActivityQuestionSubmit\?: \(activity: JiraIssueAgentActivity, answers: QuestionCardAnswers\) => void;/);
 	assert.match(SOURCE, /onAgentActivityViewChat\?: \(activity: JiraIssueAgentActivity\) => void;/);
@@ -94,15 +96,16 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(SOURCE, /\{generativeActionMenu\}/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full overflow-visible outline-none"/);
 
-	assert.match(GENERATIVE_SOURCE, /import GenerativeIndicatorIcon from "@atlaskit\/icon-lab\/core\/generative-indicator";/);
+	assert.match(GENERATIVE_SOURCE, /RovoSparkle,[\s\S]*RovoSparkleButton,[\s\S]*type RovoSparkleActionRequest,/);
 	assert.match(GENERATIVE_SOURCE, /import \{ EDITOR_PALETTE_MENTION_SOURCES \} from "@\/components\/blocks\/editor-palette\/data\/mention-sources";/);
-	assert.match(GENERATIVE_SOURCE, /RichTextCommandMenuSearchField,[\s\S]*RichTextSuggestionMenu,[\s\S]*getMentionChildItems,/);
+	assert.match(GENERATIVE_SOURCE, /import \{ getMentionChildItems \} from "@\/components\/ui-custom\/rich-text-editor";/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionConfig \{[\s\S]*ariaLabel\?: string;[\s\S]*onSubmit: \(request: JiraIssueGenerativeActionRequest\) => void \| Promise<void>;/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionRequest \{[\s\S]*kind: JiraIssueGenerativeActionKind;[\s\S]*prompt: string;[\s\S]*issue: JiraIssueGenerativeActionIssue;[\s\S]*selectedItem\?: JiraIssueGenerativeActionSelectedItem;/);
-	assert.match(GENERATIVE_SOURCE, /import \{ motion, useReducedMotion, type Transition \} from "motion\/react";/);
+	assert.match(GENERATIVE_SOURCE, /export type JiraIssueGenerativeActionSelectedItem = RovoSparkleSelectedItem;/);
 	assert.match(SOURCE, /const \[generativeActionPointerActive, setGenerativeActionPointerActive\] = useState\(false\);/);
 	assert.match(SOURCE, /const \[generativeActionFocusActive, setGenerativeActionFocusActive\] = useState\(false\);/);
-	assert.match(SOURCE, /const generativeActionRevealActive = generativeActionPointerActive \|\| generativeActionFocusActive;/);
+	assert.match(SOURCE, /const \[generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed\] = useState\(false\);/);
+	assert.match(SOURCE, /const generativeActionRevealActive = !generativeActionRevealSuppressed[\s\S]*&& \(generativeActionPointerActive \|\| generativeActionFocusActive\);/);
 	assert.match(SOURCE, /const \[generativeActionAnchor, setGenerativeActionAnchor\] = useState<HTMLElement \| null>\(null\);/);
 	assert.match(SOURCE, /<JiraIssueGenerativeActionMenu[\s\S]*anchor=\{generativeActionAnchor\}[\s\S]*revealActive=\{generativeActionRevealActive\}/);
 	assert.match(SOURCE, /<article[\s\S]*ref=\{setGenerativeActionAnchor\}/);
@@ -126,18 +129,19 @@ test("Jira issue renders a reusable generative action command menu", () => {
 		"the real DOM pointer boundary should win over portaled React descendants",
 	);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{onAgentActivityOpenChange\}/);
-	assert.match(GENERATIVE_SOURCE, /import \{ createPortal \} from "react-dom";/);
 	assert.match(GENERATIVE_SOURCE, /triggerElement\?: ReactElement;/);
-	assert.match(GENERATIVE_SOURCE, /const trigger = triggerPosition \? createPortal\([\s\S]*document\.body/);
-	assert.match(GENERATIVE_SOURCE, /const resolvedTrigger = triggerElement \? \([\s\S]*<PopoverTrigger render=\{triggerElement\} \/>[\s\S]*\) : trigger;/);
-	assert.match(GENERATIVE_SOURCE, /className="group\/sparkle fixed z-\[550\] inline-flex h-6 w-4 items-start/);
+	assert.match(GENERATIVE_SOURCE, /const generatedTrigger = triggerPosition \? \([\s\S]*<RovoSparkleButton[\s\S]*hideWhenSelected/);
+	assert.match(GENERATIVE_SOURCE, /const resolvedTrigger = triggerElement \?\? generatedTrigger;/);
+	assert.match(GENERATIVE_SOURCE, /className="fixed z-\[550\] before:absolute/);
+	assert.doesNotMatch(GENERATIVE_SOURCE, /mt-2/);
+	assert.match(GENERATIVE_SOURCE, /function handleOpenChange\(nextOpen: boolean\) \{[\s\S]*setOpen\(nextOpen\);[\s\S]*onOpenChange\?\.\(nextOpen\);/);
+	assert.match(SOURCE, /onOpenChange=\{\(nextOpen\) => setGenerativeActionRevealSuppressed\(!nextOpen\)\}/);
+	assert.match(SOURCE, /onTriggerPointerEnter=\{\(\) => setGenerativeActionPointerActive\(true\)\}/);
+	assert.match(SOURCE, /onTriggerPointerLeave=\{\(\) => setGenerativeActionPointerActive\(false\)\}/);
 	assert.match(GENERATIVE_SOURCE, /window\.addEventListener\("scroll", updateTriggerPosition, true\);/);
 	assert.match(GENERATIVE_SOURCE, /if \(!anchor \|\| \(!revealActive && !open\)\) \{[\s\S]*window\.requestAnimationFrame\(trackTriggerPosition\)[\s\S]*window\.cancelAnimationFrame\(animationFrameId\)/);
-	assert.match(GENERATIVE_SOURCE, /function getJiraIssueGenerativeTriggerPosition\(anchor: HTMLElement\)[\s\S]*left: rect\.right \+ 7,[\s\S]*top: rect\.top,/);
+	assert.match(GENERATIVE_SOURCE, /function getJiraIssueGenerativeTriggerPosition\(anchor: HTMLElement\)[\s\S]*anchor\.querySelector<HTMLElement>\("\[data-slot='jira-issue-surface'\]"\)[\s\S]*left: rect\.right \+ 7,[\s\S]*top: issueSurface\?\.getBoundingClientRect\(\)\.top \?\? rect\.top,/);
 	assert.doesNotMatch(GENERATIVE_SOURCE, /top: rect\.top \+ 1/);
-	assert.match(GENERATIVE_SOURCE, /const JIRA_ISSUE_GENERATIVE_SPARKLE_SCALE_ENTER: Transition = \{ type: "spring", bounce: 0, visualDuration: 0\.15 \};/);
-	assert.match(GENERATIVE_SOURCE, /const JIRA_ISSUE_GENERATIVE_SPARKLE_SCALE_EXIT: Transition = \{ type: "spring", bounce: 0, visualDuration: 0\.1 \};/);
-	assert.match(GENERATIVE_SOURCE, /<motion\.span[\s\S]*animate=\{\{[\s\S]*opacity: sparkleVisible \? 1 : 0,[\s\S]*scale: shouldReduceMotion \? 1 : sparkleVisible \? 1 : 0\.9,[\s\S]*\}\}[\s\S]*initial=\{false\}[\s\S]*transition=\{shouldReduceMotion[\s\S]*JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_REDUCED[\s\S]*sparkleVisible[\s\S]*JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_ENTER[\s\S]*JIRA_ISSUE_GENERATIVE_SPARKLE_MOTION_EXIT/);
 	assert.doesNotMatch(GENERATIVE_SOURCE, /group-hover\/jira-issue|group-focus-within\/jira-issue/);
 	assert.match(
 		GENERATIVE_SOURCE,
@@ -145,42 +149,43 @@ test("Jira issue renders a reusable generative action command menu", () => {
 		"the sparkle trigger should bridge its 8px visual gap back to the card",
 	);
 	assert.doesNotMatch(GENERATIVE_SOURCE, /delay-200|translate-x/);
-	assert.match(GENERATIVE_SOURCE, /<GenerativeIndicatorIcon label="" size="small" spacing="none" color="currentColor" \/>/);
-	assert.match(GENERATIVE_SOURCE, /className="inline-flex size-3 items-center justify-center \[&>span\]:size-3 \[&_svg\]:size-3"/);
-	assert.match(GENERATIVE_SOURCE, /boxShadow: token\("elevation\.shadow\.overlay"\)/);
-	assert.match(GENERATIVE_SOURCE, /<PopoverContent[\s\S]*align="start"[\s\S]*className="z-\[600\] w-auto gap-0 border-0 bg-transparent p-0 text-text shadow-none"[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="right"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -16\}/);
-	assert.match(GENERATIVE_SOURCE, /className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"/);
+	assert.match(GENERATIVE_SOURCE, /size="compact"[\s\S]*visible=\{sparkleVisible\}/);
+	assert.match(GENERATIVE_SOURCE, /<RovoSparkle[\s\S]*agents=\{JIRA_ISSUE_GENERATIVE_AGENTS\}[\s\S]*menuTitle="Jira issue actions"[\s\S]*popoverTitle="Jira issue generative actions"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -24\}[\s\S]*skills=\{JIRA_ISSUE_GENERATIVE_SKILLS\}/);
+	assert.match(GENERATIVE_SOURCE, /triggerPortalContainer=\{hasTriggerElement \? null : document\.body\}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /import \{ motion, useReducedMotion, type Transition \} from "motion\/react";/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /shouldReduceMotion \|\| !active[\s\S]*"scale\(1\) rotate\(0deg\)"[\s\S]*"scale\(1\.06\) rotate\(360deg\)"/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /<motion\.g[\s\S]*animate=\{\{ opacity: colorActive \? 1 : 0 \}\}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /animate=\{\{ opacity: selected \? 1 : 0 \}\}[\s\S]*className="text-icon-selected!"/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /if \(selected !== previousSelected\) \{[\s\S]*setInteractionSuppressed\(true\)/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_ENTER: Transition = \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_COLOR_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: \[0\.4, 0, 0, 1\] \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
+	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /const colorTransition = shouldReduceMotion[\s\S]*\? SPARKLE_REDUCED/);
+	assert.match(ROVO_SPARKLE_SOURCE, /className="rich-text-command-menu-borderless rich-text-command-menu-search-selects"/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected,[\s\S]*\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover,[\s\S]*background-color: var\(--ds-background-neutral-subtle-hovered, #f1f2f4\);/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-item-selected:hover \.rich-text-command-menu-copy \{\s*padding-right: 28px;/);
 	assert.match(RICH_TEXT_EDITOR_CSS_SOURCE, /\.rich-text-command-menu-search-selects:focus-within \.rich-text-command-menu-return-shortcut \{\s*display: inline-flex;/);
-	assert.match(GENERATIVE_SOURCE, /emptyState=\{false\}/);
-	assert.match(GENERATIVE_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*icon=\{<RovoColorIcon size="xxsmall" \/>\}[\s\S]*label="Ask Rovo"/);
-	assert.match(GENERATIVE_SOURCE, /const \[selectedIndex, setSelectedIndex\] = useState\(-1\);/);
-	assert.match(GENERATIVE_SOURCE, /function getJiraIssueGenerativeNextSelectedIndex\([\s\S]*direction: -1 \| 1,[\s\S]*isJiraIssueGenerativeSelectableRow\(items\[index\]\)/);
-	assert.match(GENERATIVE_SOURCE, /function handleMenuKeyDown\(event: KeyboardEvent<HTMLInputElement>\)[\s\S]*event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"[\s\S]*getJiraIssueGenerativeNextSelectedIndex\([\s\S]*event\.key === "ArrowDown" \? 1 : -1[\s\S]*event\.key === "Enter"[\s\S]*handleSelectItem\(rows\[selectedIndex\]\)/);
-	assert.match(GENERATIVE_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*onKeyDown=\{handleMenuKeyDown\}[\s\S]*onValueChange=\{handleAskPromptChange\}/);
-	assert.match(GENERATIVE_SOURCE, /<RichTextSuggestionMenu[\s\S]*onHover=\{setSelectedIndex\}[\s\S]*selectedIndex=\{selectedIndex\}/);
+	assert.match(ROVO_SPARKLE_SOURCE, /emptyState=\{false\}/);
+	assert.match(ROVO_SPARKLE_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*icon=\{<RovoColorIcon size="xxsmall" \/>\}[\s\S]*label="Ask Rovo"/);
+	assert.match(ROVO_SPARKLE_SOURCE, /const \[selectedIndex, setSelectedIndex\] = useState\(-1\);/);
+	assert.match(ROVO_SPARKLE_SOURCE, /function getNextSelectedIndex\(items: readonly RovoSparkleItem\[\], currentIndex: number, direction: -1 \| 1\)/);
+	assert.match(ROVO_SPARKLE_SOURCE, /function handleMenuKeyDown\(event: KeyboardEvent<HTMLInputElement>\)[\s\S]*event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"[\s\S]*getNextSelectedIndex\(rows, currentIndex, event\.key === "ArrowDown" \? 1 : -1\)[\s\S]*event\.key === "Enter"[\s\S]*handleSelectItem\(rows\[selectedIndex\]\)/);
+	assert.match(ROVO_SPARKLE_SOURCE, /<RichTextSuggestionMenu[\s\S]*onHover=\{setSelectedIndex\}[\s\S]*selectedIndex=\{selectedIndex\}/);
 	assert.match(GENERATIVE_SOURCE, /getMentionChildItems\(EDITOR_PALETTE_MENTION_SOURCES, "skill"\)/);
-	assert.match(GENERATIVE_SOURCE, /headingLabel: "Skills"/);
+	assert.match(ROVO_SPARKLE_SOURCE, /headingLabel: "Skills"/);
 	assert.match(GENERATIVE_SOURCE, /getMentionChildItems\(EDITOR_PALETTE_MENTION_SOURCES, "subagent"\)/);
-	assert.match(GENERATIVE_SOURCE, /headingLabel: "Agents"/);
-	assert.match(GENERATIVE_SOURCE, /function filterJiraIssueGenerativeActionItems\([\s\S]*query\.trim\(\)\.toLowerCase\(\)[\s\S]*item\.label[\s\S]*item\.description[\s\S]*includes\(normalizedQuery\)/);
-	assert.match(GENERATIVE_SOURCE, /const isFiltering = query\.trim\(\)\.length > 0;/);
-	assert.match(GENERATIVE_SOURCE, /const matchedSkills = filterJiraIssueGenerativeActionItems\(skills, query\);/);
-	assert.match(GENERATIVE_SOURCE, /const matchedAgents = filterJiraIssueGenerativeActionItems\(agents, query\);/);
-	assert.match(GENERATIVE_SOURCE, /matchedAgents\.length > 0 \? \[[\s\S]*headingLabel: "Agents"[\s\S]*\.\.\.visibleAgents[\s\S]*: \[\]/);
-	assert.match(GENERATIVE_SOURCE, /matchedSkills\.length > 0 \? \[[\s\S]*headingLabel: "Skills"[\s\S]*\.\.\.visibleSkills[\s\S]*: \[\]/);
-	assert.match(GENERATIVE_SOURCE, /isFiltering \|\| showAllAgents \|\| agents\.length <= JIRA_ISSUE_GENERATIVE_SECTION_LIMIT/);
-	assert.match(GENERATIVE_SOURCE, /isFiltering \|\| showAllSkills \|\| skills\.length <= JIRA_ISSUE_GENERATIVE_SECTION_LIMIT/);
-	assert.match(GENERATIVE_SOURCE, /getJiraIssueGenerativeActionRows\(askPrompt, showAllSkills, showAllAgents\)/);
-	assert.match(GENERATIVE_SOURCE, /\[askPrompt, showAllSkills, showAllAgents\]/);
-	assert.match(GENERATIVE_SOURCE, /JIRA_ISSUE_GENERATIVE_SECTION_LIMIT = 3/);
-	assert.match(GENERATIVE_SOURCE, /label: "Browse all"/);
+	assert.match(ROVO_SPARKLE_SOURCE, /headingLabel: "Agents"/);
+	assert.match(ROVO_SPARKLE_SOURCE, /function filterItems\(items: readonly RovoSparkleItem\[\], query: string\)/);
+	assert.match(ROVO_SPARKLE_SOURCE, /const isFiltering = query\.trim\(\)\.length > 0;/);
+	assert.match(ROVO_SPARKLE_SOURCE, /const SECTION_LIMIT = 3;/);
+	assert.match(ROVO_SPARKLE_SOURCE, /label: "Browse all"/);
 	assert.ok(
-		GENERATIVE_SOURCE.indexOf("id: JIRA_ISSUE_GENERATIVE_AGENTS_HEADING_ID")
-			< GENERATIVE_SOURCE.indexOf("id: JIRA_ISSUE_GENERATIVE_SKILLS_HEADING_ID"),
+		ROVO_SPARKLE_SOURCE.indexOf("id: AGENTS_HEADING_ID")
+			< ROVO_SPARKLE_SOURCE.indexOf("id: SKILLS_HEADING_ID"),
 		"agents should appear before skills in the Jira issue palette",
 	);
+	assert.match(GENERATIVE_SOURCE, /function handleRovoSparkleSubmit\(request: RovoSparkleActionRequest\)/);
 	assert.match(GENERATIVE_SOURCE, /return `\$\{prompt\.trim\(\)\}\\n\\nJira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}`;/);
 	assert.match(GENERATIVE_SOURCE, /return `Use the "\$\{item\.label\}" skill for Jira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}\.`;/);
 	assert.match(GENERATIVE_SOURCE, /return `Ask "\$\{item\.label\}" to help with Jira issue \$\{issue\.issueKey\}: \$\{issue\.summary\}\.`;/);
@@ -211,6 +216,12 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /hover:bg-bg-neutral-hovered/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /gap-2 rounded-sm px-3 py-1/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityPanel/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ formatElapsedTime \} from "@\/lib\/elapsed-time";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentElapsedByline\(\{ startedAtMs \}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const \[startedAtMs\] = useState\(\(\) => Date\.now\(\)\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /byline=\{<JiraIssueAgentElapsedByline startedAtMs=\{startedAtMs\} \/>\}/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /formatElapsedTime\(elapsedSeconds\)/u);
+	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, />Just now<\/p>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\) =>/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentActivityRow[\s\S]*activity=\{activity\}[\s\S]*index=\{index\}[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}[\s\S]*onViewChat=\{onViewChat\}[\s\S]*rowCount=\{activities\.length\}/);
@@ -233,10 +244,11 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /initialBackgroundPosition=/);
 	assert.match(SHIMMER_SOURCE, /initialBackgroundPosition\?: string;/);
 	assert.match(SHIMMER_SOURCE, /const resolvedInitialBackgroundPosition = initialBackgroundPosition \?\? "100% center";/);
-	assert.match(SHIMMER_SOURCE, /animate=\{\{ backgroundPosition: "0% center" \}\}/);
-	assert.match(SHIMMER_SOURCE, /initial=\{\{ backgroundPosition: resolvedInitialBackgroundPosition \}\}/);
+	assert.match(SHIMMER_SOURCE, /"shimmer-sweep-motion relative inline-block/);
+	assert.match(SHIMMER_SOURCE, /"--text-shimmer-duration": `\$\{resolvedDuration\}s`/);
+	assert.match(SHIMMER_SOURCE, /"--text-shimmer-start-position": resolvedInitialBackgroundPosition/);
+	assert.doesNotMatch(SHIMMER_SOURCE, /animate=\{\{ backgroundPosition:/);
 	assert.doesNotMatch(SHIMMER_SOURCE, /initial=\{false\}/);
-	assert.doesNotMatch(SHIMMER_SOURCE, /usesCssShimmerAnimation/);
 	assert.doesNotMatch(SHIMMER_SOURCE, /text-gradient-shimmer/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1\.4;/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;/);
@@ -249,12 +261,12 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">\s*<StatusInformationIcon label="" size="small" color="currentColor" \/>/);
 	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), panel is the
 	// 320px-family 400px overlay with no border, and the exit transition is zeroed.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*align="start"[\s\S]*alignOffset=\{0\}[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel activity=\{activity\} onQuestionSubmit=\{onQuestionSubmit\} onViewChat=\{onViewChat\} \/>/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{activity\.label\}`\}[\s\S]*<HoverCardContent[\s\S]*align="start"[\s\S]*alignOffset=\{0\}[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel[\s\S]*activity=\{activity\}[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}[\s\S]*onViewChat=\{onViewChat\}[\s\S]*startedAtMs=\{startedAtMs\}[\s\S]*\/>/);
 	// Panel uses the agent-directory lockup + the dark-CTA compact composer.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<p className="text-xs leading-4 text-text-subtle">Just now<\/p>\}[\s\S]*title=\{activity\.name\}/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<JiraIssueAgentElapsedByline startedAtMs=\{startedAtMs\} \/>\}[\s\S]*title=\{activity\.name\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isRovoActivity = activity\.name === "Rovo";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<Avatar[\s\S]*className=\{isRovoActivity \? "\[&>svg\]:hidden" : undefined\}[\s\S]*label=\{activity\.name\}[\s\S]*shape="hexagon"[\s\S]*size="default"[\s\S]*<AvatarImage[\s\S]*className=\{isRovoActivity \? "size-6 object-contain" : undefined\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View chat/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /activity\.state === "awaiting-input" && activity\.question \? \([\s\S]*<QuestionCard[\s\S]*onSubmit=\{handleQuestionSubmit\}[\s\S]*questions=\{\[activity\.question\]\}[\s\S]*\) : \([\s\S]*<FloatingComposer/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function handleQuestionSubmit\(answers: QuestionCardAnswers\) \{\s*onQuestionSubmit\?\.\(activity, answers\);\s*\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className="shadow-none"[\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);
@@ -272,12 +284,15 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 });
 
 test("Jira issue shows completed agent run details on hover and keyboard focus", () => {
-	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime: string;/);
+	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime: string;[\s\S]*state: JiraIssueCompletedAgentRunState;/);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{80\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{triggerLabel\}/);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent done">[\s\S]*className="mx-1 flex h-8 w-\[calc\(100%-8px\)\][\s\S]*rounded-sm px-2 py-2[\s\S]*hover:bg-bg-neutral-subtle-hovered[\s\S]*focus-visible:ring-3[\s\S]*<AiAgentIcon label="" size="medium" spacing="none" color="currentColor" \/>[\s\S]*<span>Agent done<\/span>[\s\S]*<JiraIssueCountBadge>\{count\}<\/JiraIssueCountBadge>/);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCardContent[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] overflow-hidden rounded-xl bg-surface-overlay p-0 text-text shadow-overlay data-ending-style:transition-none"[\s\S]*side="right"[\s\S]*<ul aria-label="Completed agent runs">/);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /rounded-xl border border-border bg-surface-overlay/);
-	assert.match(COMPLETED_RUNS_SOURCE, /<p className="truncate text-sm font-medium leading-5 text-text" title=\{run\.summary\}>\{run\.summary\}<\/p>[\s\S]*<Avatar label=\{run\.agentName\} shape="hexagon" size="xs">[\s\S]*\{run\.agentName\}[\s\S]*\{issueDescription\}[\s\S]*\{run\.relativeTime\}/);
+	assert.match(COMPLETED_RUNS_SOURCE, /<p className="truncate text-sm font-medium leading-5 text-text" title=\{run\.summary\}>\{run\.summary\}<\/p>[\s\S]*<Avatar label=\{run\.agentName\} shape="hexagon" size="xs">[\s\S]*\{run\.relativeTime\}[\s\S]*\{state\.render\}[\s\S]*\{state\.label\}/);
+	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /const issueDescription = /);
+	assert.match(COMPLETED_RUNS_SOURCE, /done: \{[\s\S]*label: "Done",[\s\S]*iconClassName: "text-icon-success",[\s\S]*StatusSuccessIcon/);
+	assert.match(COMPLETED_RUNS_SOURCE, /failed: \{[\s\S]*label: "Failed",[\s\S]*iconClassName: "text-icon-danger",[\s\S]*StatusErrorIcon/);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
 	assert.match(SOURCE, /key="agent-done"[\s\S]*<JiraIssueAgentDone onOpenChange=\{onAgentActivityOpenChange\} runs=\{agentDoneRuns\} \/>/);
 });
@@ -338,14 +353,20 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /id: "service-impact-agent"[\s\S]*labels: SERVICE_IMPACT_AGENT_LABELS,[\s\S]*cycleIntervalMs: 5200,[\s\S]*cycleIntervalJitterMs: 1600/);
 	assert.match(PAGE_SOURCE, /id: "dependency-mapper"[\s\S]*labels: DEPENDENCY_MAPPER_LABELS,[\s\S]*cycleIntervalMs: 6800,[\s\S]*cycleIntervalJitterMs: 2200/);
 	assert.match(PAGE_SOURCE, /const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = \[[\s\S]*\.\.\.JIRA_ISSUE_AGENT_ACTIVITIES\[0\],[\s\S]*label: "Awaiting user input"[\s\S]*state: "awaiting-input"[\s\S]*JIRA_ISSUE_AGENT_ACTIVITIES\[1\]/);
-	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider, useRovoChat \} from "@\/app\/contexts";/);
-	assert.match(PAGE_SOURCE, /import FloatingRovoButton from "@\/components\/projects\/shared\/components\/floating-rovo-button";/);
-	assert.match(PAGE_SOURCE, /import RovoFloatingChat from "@\/components\/projects\/rovo-floating-chat\/components\/rovo-floating-chat";/);
+	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider \} from "@\/app\/contexts";/);
+	assert.match(PAGE_SOURCE, /import \{ ASX_CHAT_AGENT_PROFILES \} from "@\/components\/projects\/asx\/data\/agent-chat-data";/);
+	assert.match(PAGE_SOURCE, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/asx\/components\/asx-rovo-overlay";/);
+	assert.match(PAGE_SOURCE, /import \{ useAsxAgentChatDemo \} from "@\/components\/projects\/asx\/hooks\/use-asx-agent-chat-demo";/);
 	assert.match(PAGE_SOURCE, /import \{[\s\S]*JiraIssue,[\s\S]*type JiraIssueAgentActivity,[\s\S]*type JiraIssueCompletedAgentRun,[\s\S]*type JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue";/);
-	assert.match(PAGE_SOURCE, /const \{ chatSurface, openChat, sendPrompt \} = useRovoChat\(\);/);
-	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = useCallback\(\(\) => \{[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat\]\);/);
-	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openChat\("floating"\);[\s\S]*void sendPrompt\(request\.prompt, \{[\s\S]*messageMetadata: \{[\s\S]*source: "jira-issue-generative-action",[\s\S]*\},[\s\S]*\}\);[\s\S]*\}, \[openChat, sendPrompt\]\);/);
-	assert.match(PAGE_SOURCE, /<RovoChatProvider>[\s\S]*<JiraIssueAgentActivityStatesDemo \/>[\s\S]*<\/RovoChatProvider>/);
+	// The demo drops into the floating chat with the activity's agent already
+	// selected (matching ASX), not a blank vanilla Rovo chat.
+	assert.doesNotMatch(PAGE_SOURCE, /openChat\("floating"\)/);
+	assert.match(PAGE_SOURCE, /const \{ chatContextBar, externalThinkingMessageId, openAgentChat \} = useAsxAgentChatDemo\(\);/);
+	assert.match(PAGE_SOURCE, /const openActivityChat = useCallback\(\(activity: JiraIssueAgentActivity\) => \{[\s\S]*openAgentChat\(\{[\s\S]*agentId: activity\.id,[\s\S]*agentName: activity\.name,[\s\S]*question: activity\.question,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /const handleAgentActivityViewChat = openActivityChat;/);
+	assert.match(PAGE_SOURCE, /const handleAgentActivityQuestionSubmit = openActivityChat;/);
+	assert.match(PAGE_SOURCE, /const handleGenerativeActionSubmit = useCallback\(\(request: JiraIssueGenerativeActionRequest\) => \{[\s\S]*openAgentChat\(\{[\s\S]*request: request\.prompt,[\s\S]*\}\);[\s\S]*\}, \[openAgentChat\]\);/);
+	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{ASX_CHAT_AGENT_PROFILES\}>[\s\S]*<JiraIssueAgentActivityStatesDemo \/>[\s\S]*<\/RovoChatProvider>/);
 	assert.doesNotMatch(PAGE_SOURCE, /request-review-agent/);
 	assert.match(PAGE_SOURCE, /\{ value: "default", label: "Default" \}/);
 	assert.match(PAGE_SOURCE, /\{ value: "single-agent-working", label: "1 agent" \}/);
@@ -372,15 +393,16 @@ test("Jira issue agent activity demo is registered in docs and variant registry"
 	assert.match(PAGE_SOURCE, /agentDoneRuns=\{agentActivityState === "agent-completed-work" \? JIRA_ISSUE_COMPLETED_AGENT_RUNS : undefined\}/);
 	assert.match(PAGE_SOURCE, /generativeAction=\{\{[\s\S]*onSubmit: handleGenerativeActionSubmit,[\s\S]*\}\}/);
 	assert.match(PAGE_SOURCE, /onAgentActivityViewChat=\{handleAgentActivityViewChat\}/);
-	assert.match(PAGE_SOURCE, /\{chatSurface === null \? \([\s\S]*<FloatingRovoButton[\s\S]*forceVisible[\s\S]*positioning="container"[\s\S]*product="jira"[\s\S]*\/>[\s\S]*\) : null\}/);
-	assert.match(PAGE_SOURCE, /\{chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat key="floating-chat" \/>[\s\S]*\) : null\}/);
+	assert.match(PAGE_SOURCE, /<AsxRovoOverlay[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*externalThinkingMessageId=\{externalThinkingMessageId\}[\s\S]*onQuestionAnswer=\{pendingChatQuestion \? handleChatQuestionAnswer : undefined\}[\s\S]*\/>/);
+	assert.doesNotMatch(PAGE_SOURCE, /<FloatingRovoButton/);
+	assert.doesNotMatch(PAGE_SOURCE, /<RovoFloatingChat/);
 	assert.match(DEMO_SOURCE, /export function JiraIssueDemoAgentActivityStates\(\)/);
 	assert.match(DEMO_SOURCE, /<JiraIssuePage variant="agent-activity-states" \/>/);
 	assert.match(DETAILS_SOURCE, /demoSlug: "jira-issue-demo-agent-activity-states"/);
 	assert.match(DETAILS_SOURCE, /name: "agentActivities"/);
 	assert.match(DETAILS_SOURCE, /name: "onAgentActivityViewChat"/);
-	assert.match(REGISTRY_SOURCE, /"jira-issue-demo-agent-activity-states": dynamic\(/);
-	assert.match(REGISTRY_SOURCE, /default: mod\.JiraIssueDemoAgentActivityStates/);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-issue-demo-agent-activity-states": dynamic\(/);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraIssueDemoAgentActivityStates/);
 });
 
 test("Jira issue renders expandable subtasks with nested subtask cards", () => {

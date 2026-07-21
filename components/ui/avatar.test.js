@@ -134,7 +134,9 @@ test("agent avatars share one hexagon contract across 1P, 2P, and 3P visuals", (
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_EXTERNAL_LOGO_SIZE:[\s\S]*24: "small"[\s\S]*32: "small"[\s\S]*40: "small"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const PX_TO_INSET_IMAGE_CLASS_NAME:[\s\S]*24: "size-5"[\s\S]*32: "size-5"[\s\S]*40: "size-5"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /<LogoThirdParty borderless label="" name=\{brandName\} size=\{externalLogoSize\}/);
-	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian"/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /const hasWhiteBackdrop = isExternalAgent \|\| logoName === "atlassian" \|\| Boolean\(vpkLogo\)/);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /import \{ AtlassianLogo, RovoColorIcon,/u);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /vpkLogo === "rovo" \? \(\s*<RovoColorIcon label="" size=\{insetLogoSize\} \/>/u);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /className="flex size-full items-center justify-center bg-\[#fff\]"/);
 	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /avatarSrc \? \([\s\S]*<AvatarImage[\s\S]*fallbackText \? <AvatarFallback>\{fallbackText\}<\/AvatarFallback> : null/);
 	assert.match(ENTITY_CARD_AGENT_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual"/);

@@ -9,47 +9,19 @@ import {
 	METADATA_CONTENT_COLLAPSE_TRANSITION,
 	METADATA_CONTENT_EXPAND_TRANSITION,
 	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
-	METADATA_PEEK_ENTER_TRANSITION,
-	METADATA_PEEK_EXIT_TRANSITION,
-	METADATA_PEEK_REDUCED_MOTION_TRANSITION,
 	usePanelLayout,
 } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
-import { token } from "@/lib/tokens";
 
 interface ExperimentalWorkItemLayoutProps {
 	context: ReactNode;
 	activity: ReactNode;
 	metadata: ReactNode;
-	/**
-	 * Borderless copy of the metadata rail rendered inside the collapsed-state
-	 * peek overlay. Kept a separate slot so the layout stays generic and the peek
-	 * surface can drop the docked rail's border in favour of its overlay shadow.
-	 */
-	metadataPeek: ReactNode;
 	composer: ReactNode;
 }
 
 const METADATA_PANEL_WIDTH = "clamp(320px, 34vw, 408px)";
-
-const METADATA_PEEK_VARIANTS: Variants = {
-	closed: {
-		opacity: 0,
-		transform: "translateX(8px)",
-		transition: METADATA_PEEK_EXIT_TRANSITION,
-	},
-	open: {
-		opacity: 1,
-		transform: "translateX(0px)",
-		transition: METADATA_PEEK_ENTER_TRANSITION,
-	},
-};
-
-const REDUCED_MOTION_METADATA_PEEK_VARIANTS: Variants = {
-	closed: { opacity: 0, transform: "translateX(0px)", transition: METADATA_PEEK_REDUCED_MOTION_TRANSITION },
-	open: { opacity: 1, transform: "translateX(0px)", transition: METADATA_PEEK_REDUCED_MOTION_TRANSITION },
-};
 
 const METADATA_PANEL_VARIANTS: Variants = {
 	closed: {
@@ -82,6 +54,7 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
  * it stays visible at the bottom of the single scroll. The wide Context + Activity
  * scrollport adds a bottom fade only while more content remains below. The same order
  * values also keep each wide column stacked correctly, so no slot is rendered twice.
+ * The wide Context + Activity scrollport also fades its top edge once scrolled down.
  *
  * Container-query driven (not viewport) so it reacts to the dialog's actual
  * body width rather than the screen.
@@ -90,20 +63,17 @@ export function ExperimentalWorkItemLayout({
 	context,
 	activity,
 	metadata,
-	metadataPeek,
 	composer,
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useAgentSessionsState();
 	const hasActivity = useHasActivity();
-	const { metadataCollapsed, metadataPeeking, setMetadataPeek } = usePanelLayout();
+	const { metadataCollapsed } = usePanelLayout();
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	// The peek overlay only exists over a collapsed rail; never over the docked one.
-	const showMetadataPeek = metadataCollapsed && metadataPeeking;
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
-	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: leftScrollRef, showTopScrollMask, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
-		() => buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask }),
-		[showBottomScrollMask],
+		() => buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask }),
+		[showTopScrollMask, showBottomScrollMask],
 	);
 	const contentLayoutTransition = shouldReduceMotion
 		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
@@ -120,10 +90,10 @@ export function ExperimentalWorkItemLayout({
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
 			<div
-				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
+				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
 			>
 				<div
-					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
+					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[grid-area:1/1] @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
 					style={contentStyle}
 				>
 					<motion.div
@@ -160,7 +130,7 @@ export function ExperimentalWorkItemLayout({
 					{metadataCollapsed ? null : (
 						<motion.div
 							animate="open"
-							className="order-3 min-w-0 @[860px]/agentlayout:absolute @[860px]/agentlayout:inset-y-0 @[860px]/agentlayout:right-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2"
+							className="order-3 min-w-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2 @[860px]/agentlayout:[grid-area:1/1]"
 							exit="closed"
 							id="experimental-work-item-metadata-panel"
 							initial="closed"
@@ -170,37 +140,6 @@ export function ExperimentalWorkItemLayout({
 							<div className="min-w-0">{metadata}</div>
 						</motion.div>
 					)}
-				</AnimatePresence>
-				{/*
-				 * Collapsed-state peek: a floating, borderless copy of the metadata
-				 * rail that slides in on toggle hover/focus for a quick sneak-peek. It
-				 * layers above the widened content column (higher z than the docked
-				 * panel) and never reflows it — leaning on elevation.shadow.overlay for
-				 * separation. Staying alive while the pointer is over the overlay lets
-				 * the user move from the trigger into the peek to scroll it before
-				 * committing to the docked version.
-				 */}
-				<AnimatePresence initial={false}>
-					{showMetadataPeek ? (
-						<motion.div
-							animate="open"
-							aria-label="Work item details preview"
-							className="pointer-events-none hidden @[860px]/agentlayout:absolute @[860px]/agentlayout:inset-y-0 @[860px]/agentlayout:right-0 @[860px]/agentlayout:z-30 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:py-6 @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pl-2"
-							exit="closed"
-							initial="closed"
-							style={{ willChange: shouldReduceMotion ? undefined : "transform, opacity" }}
-							variants={shouldReduceMotion ? REDUCED_MOTION_METADATA_PEEK_VARIANTS : METADATA_PEEK_VARIANTS}
-							onPointerEnter={() => setMetadataPeek(true)}
-							onPointerLeave={() => setMetadataPeek(false)}
-						>
-							<div
-								className="pointer-events-auto min-w-0"
-								style={{ boxShadow: token("elevation.shadow.overlay"), borderRadius: token("radius.large") }}
-							>
-								{metadataPeek}
-							</div>
-						</motion.div>
-					) : null}
 				</AnimatePresence>
 			</div>
 		</div>

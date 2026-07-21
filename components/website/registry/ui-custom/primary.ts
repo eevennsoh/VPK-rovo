@@ -176,4 +176,7 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 		() => import("../../demos/ui-custom/rovo-illustration-demo"),
 		{ ssr: false },
 	),
+	"rovo-sparkle": dynamic(() => import("../../demos/ui-custom/rovo-sparkle-demo"), {
+		ssr: false,
+	}),
 };

@@ -5189,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 404,
+			"manifestEntryCount": 406,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -6599,7 +6599,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 69,
+				"entryCount": 70,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6891,6 +6891,12 @@
 					},
 					{
 						"category": "ui-custom",
+						"slug": "rovo-sparkle",
+						"name": "Rovo Sparkle",
+						"importPath": "@/components/ui-custom/rovo-sparkle"
+					},
+					{
+						"category": "ui-custom",
 						"slug": "sandbox",
 						"name": "Sandbox",
 						"importPath": "@/components/ui-custom/sandbox"
@@ -7079,7 +7085,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 98,
+				"entryCount": 99,
 				"entries": [
 					{
 						"category": "visual",
@@ -7635,6 +7641,12 @@
 					},
 					{
 						"category": "visual",
+						"slug": "thinking-orbs",
+						"name": "Thinking Orbs",
+						"importPath": "@/components/visual/thinking-orbs"
+					},
+					{
+						"category": "visual",
 						"slug": "threshold",
 						"name": "Threshold",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
@@ -7747,7 +7759,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 15
+			"localSkillCount": 16
 		},
 		"localSkills": [
 			{
@@ -7757,7 +7769,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-build"
 			},
 			{
-				"description": "Harvest ADS and shadcn/Base UI components into VPK components, demos, docs metadata, and tests. Use for atlassian.design URLs, shadcn registry/docs components, ADS/shadcn to VPK mapping, visual enrichment, examples, and package/source parity. Use vpk-design for Figma.",
+				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source, including upstream-to-VPK mapping, examples, docs metadata, and package/source parity. Use only when the user names or links one of those upstream sources, explicitly requests ADS/shadcn parity, or invokes vpk-component. Do not use for ordinary edits, bug fixes, animation or motion tweaks, layout changes, or maintenance of an existing VPK component when no upstream component-library source is part of the request. Use vpk-design for Figma.",
 				"name": "vpk-component",
 				"path": ".agents/skills/vpk-component/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"
@@ -7809,6 +7821,12 @@
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
+			},
+			{
+				"description": "Shared execution policy for VPK-rovo scheduled jobs that investigate one maintenance candidate, make a review-ready change, and open or update a pull request. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, engineering-map, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
+				"name": "vpk-scheduled-automation",
+				"path": ".agents/skills/vpk-scheduled-automation/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-scheduled-automation"
 			},
 			{
 				"description": "This skill should be used when the user asks to \"set up\", \"get started\", \"first time setup\", \"new project setup\", \"initialize VPK\", \"run for first time\", \"configure VPK\", \"install dependencies\", \"generate ASAP credentials\", \"configure environment\", \"start dev servers\", \"bootstrap\", \"init\", \"env setup\", \"how do I start\", \"how do I set up the project\", \"get this working\", or wants to set up a new VPK project from scratch. Also triggered by errors like \"ASAP key not working\", \"credentials not found\", \"env not configured\".",

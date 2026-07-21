@@ -29,6 +29,14 @@ test("Jira Toolbar owns functional status, agent assignment, and clear callbacks
 	assert.doesNotMatch(SOURCE, /addEventListener\("keydown", handleKeyDown, true\)/u);
 });
 
+test("Jira Toolbar can render the work-item agent and skill picker contract", () => {
+	assert.match(SOURCE, /defaultPinnedAgentIds=\{defaultPinnedAgentIds\}/u);
+	assert.match(SOURCE, /defaultPinnedSkillIds=\{defaultPinnedSkillIds\}/u);
+	assert.equal((SOURCE.match(/pinnedItemsLabel=\{pinnedItemsLabel\}/gu) ?? []).length, 2);
+	assert.match(SOURCE, /<AgentSelector[\s\S]*selectionMode="single"/u);
+	assert.match(SOURCE, /<SkillSelector[\s\S]*skills=\{skills\}/u);
+});
+
 test("Jira Toolbar uses token motion with a reduced-motion path", () => {
 	assert.match(SOURCE, /duration: 0\.25,[\s\S]*ease: \[0, 0\.4, 0, 1\]/u);
 	assert.match(SOURCE, /duration: 0\.2,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);

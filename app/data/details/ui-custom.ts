@@ -17,6 +17,7 @@ import { MORPHING_ROVO_DETAIL } from "./ui-custom/morphing-rovo";
 import { ROVO_CURSOR_DETAIL } from "./ui-custom/rovo-cursor";
 import { ROVO_GENERATION_DETAIL } from "./ui-custom/rovo-generation";
 import { ROVO_ILLUSTRATION_DETAIL } from "./ui-custom/rovo-illustration";
+import { ROVO_SPARKLE_DETAIL } from "./ui-custom/rovo-sparkle";
 import { ATTACHMENTS_DETAIL } from "./ui-custom/attachments";
 import { CHECKPOINT_DETAIL } from "./ui-custom/checkpoint";
 import { COMMIT_DETAIL } from "./ui-custom/commit";
@@ -88,6 +89,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	"rovo-cursor": ROVO_CURSOR_DETAIL,
 	"rovo-generation": ROVO_GENERATION_DETAIL,
 	"rovo-illustration": ROVO_ILLUSTRATION_DETAIL,
+	"rovo-sparkle": ROVO_SPARKLE_DETAIL,
 	attachments: ATTACHMENTS_DETAIL,
 	checkpoint: CHECKPOINT_DETAIL,
 	commit: COMMIT_DETAIL,

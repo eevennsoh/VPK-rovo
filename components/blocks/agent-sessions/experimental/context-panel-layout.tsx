@@ -16,19 +16,6 @@ export const METADATA_CONTENT_EXPAND_TRANSITION: Transition = {
 };
 export const METADATA_CONTENT_REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
 
-// Peek overlay: a fast, low-commitment sneak-peek of the metadata rail while the
-// panel is collapsed. Enter is quick + responsive (ease-out-practical); exit is
-// even quicker (ease-in) so dismissing on pointer-leave feels immediate.
-export const METADATA_PEEK_ENTER_TRANSITION: Transition = {
-	duration: 0.12, // duration-fast
-	ease: [0.4, 1, 0.6, 1], // ease-out-practical
-};
-export const METADATA_PEEK_EXIT_TRANSITION: Transition = {
-	duration: 0.1, // duration-fast
-	ease: [0.6, 0, 0.8, 0.6], // ease-in
-};
-export const METADATA_PEEK_REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
-
 interface PanelLayoutContextValue {
 	/** Whether the right-hand metadata column is collapsed (hidden). */
 	metadataCollapsed: boolean;
@@ -36,13 +23,6 @@ interface PanelLayoutContextValue {
 	metadataLayoutAnimating: boolean;
 	/** Whether the title actions are exiting before the layout state changes. */
 	metadataTogglePending: boolean;
-	/**
-	 * Whether the collapsed metadata rail is being peeked as a floating overlay
-	 * (hover/focus of the toggle). Only meaningful while `metadataCollapsed`.
-	 */
-	metadataPeeking: boolean;
-	/** Request or dismiss the collapsed-rail peek overlay. */
-	setMetadataPeek: (peeking: boolean) => void;
 	/** Request a metadata-column toggle after the title actions finish exiting. */
 	toggleMetadata: () => void;
 	/** Apply the requested layout state once the title-action exit completes. */
@@ -63,12 +43,7 @@ export function PanelLayoutProvider({ children }: Readonly<{ children: ReactNode
 	const [metadataCollapsed, setMetadataCollapsed] = useState(false);
 	const [metadataLayoutAnimating, setMetadataLayoutAnimating] = useState(false);
 	const [metadataTogglePending, setMetadataTogglePending] = useState(false);
-	const [metadataPeeking, setMetadataPeeking] = useState(false);
-	// Peek is a collapsed-only affordance; dismiss it whenever a toggle is
-	// requested so the overlay never lingers over the docking animation.
-	const setMetadataPeek = useCallback((peeking: boolean) => setMetadataPeeking(peeking), []);
 	const toggleMetadata = useCallback(() => {
-		setMetadataPeeking(false);
 		setMetadataTogglePending(true);
 	}, []);
 	const completeMetadataToggle = useCallback(() => {
@@ -78,11 +53,6 @@ export function PanelLayoutProvider({ children }: Readonly<{ children: ReactNode
 		setMetadataCollapsed((collapsed) => !collapsed);
 		setMetadataTogglePending(false);
 	}, [metadataTogglePending]);
-
-	// A peek only exists over a collapsed rail; clear it if the rail docks.
-	useEffect(() => {
-		if (!metadataCollapsed) setMetadataPeeking(false);
-	}, [metadataCollapsed]);
 
 	useEffect(() => {
 		if (!metadataLayoutAnimating) return;
@@ -98,18 +68,14 @@ export function PanelLayoutProvider({ children }: Readonly<{ children: ReactNode
 			completeMetadataToggle,
 			metadataCollapsed,
 			metadataLayoutAnimating,
-			metadataPeeking,
 			metadataTogglePending,
-			setMetadataPeek,
 			toggleMetadata,
 		}),
 		[
 			completeMetadataToggle,
 			metadataCollapsed,
 			metadataLayoutAnimating,
-			metadataPeeking,
 			metadataTogglePending,
-			setMetadataPeek,
 			toggleMetadata,
 		],
 	);

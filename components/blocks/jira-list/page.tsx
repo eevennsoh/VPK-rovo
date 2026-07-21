@@ -7,8 +7,17 @@ import {
 	type JiraListInsertion,
 	type JiraListIssueType,
 	type JiraListPerson,
+	type JiraListStatusOption,
 } from "./index";
 import { JIRA_LIST_SAMPLE_ROWS, type JiraListSampleRow } from "./data";
+
+const STATUS_OPTIONS: readonly JiraListStatusOption[] = [
+	{ status: "To do", statusVariant: "neutral" },
+	{ status: "In progress", statusVariant: "information" },
+	{ status: "In review", statusVariant: "warning" },
+	{ status: "Blocked", statusVariant: "danger" },
+	{ status: "Done", statusVariant: "success" },
+];
 
 function getNextIssueKey(rows: readonly JiraListSampleRow[]): string {
 	const highestIssueNumber = rows.reduce((maxIssueNumber, row) => {
@@ -166,6 +175,12 @@ export default function JiraListPage() {
 		setDraftWorkItem(null);
 	};
 
+	const handleStatusChange = (issueKey: string, status: JiraListStatusOption) => {
+		setDemoRows((currentRows) => currentRows.map((row) => (
+			row.issueKey === issueKey ? { ...row, ...status } : row
+		)));
+	};
+
 	return (
 		<div className="rounded-lg bg-surface p-4 md:p-5">
 			<JiraList
@@ -200,8 +215,10 @@ export default function JiraListPage() {
 				onRefresh={handleRefresh}
 				onSelectAllRows={handleSelectAllRows}
 				onSelectRow={handleSelectRow}
+				onStatusChange={handleStatusChange}
 				rows={demoRows}
 				selectedIssueKeys={selectedIssueKeys}
+				statusOptions={STATUS_OPTIONS}
 				totalCountLabel={`${demoRows.length}`}
 				visibleCount={demoRows.length}
 			/>

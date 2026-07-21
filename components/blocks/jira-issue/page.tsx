@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AnimatePresence } from "motion/react";
 
-import { RovoChatProvider, useRovoChat } from "@/app/contexts";
+import { RovoChatProvider } from "@/app/contexts";
 import { JiraEpic } from "@/components/blocks/jira-epic";
 import { JIRA_EPIC_DEMO_EPICS } from "@/components/blocks/jira-epic/data/demo-epics";
 import {
@@ -12,8 +11,10 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
-import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
+import { ASX_CHAT_AGENT_PROFILES } from "@/components/projects/asx/data/agent-chat-data";
+import { AsxRovoOverlay } from "@/components/projects/asx/components/asx-rovo-overlay";
+import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
@@ -71,10 +72,16 @@ const JIRA_ISSUE_AGENT_ACTIVITIES = [
 	},
 ] as const satisfies readonly JiraIssueAgentActivity[];
 
+const JIRA_ISSUE_AWAITING_INPUT_QUESTION = {
+	...QUESTION_CARD_SINGLE_SELECT_DEMO[0],
+	options: QUESTION_CARD_SINGLE_SELECT_DEMO[0].options.slice(0, 2),
+};
+
 const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	{
 		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
 		label: "Awaiting user input",
+		question: JIRA_ISSUE_AWAITING_INPUT_QUESTION,
 		state: "awaiting-input",
 	},
 	JIRA_ISSUE_AGENT_ACTIVITIES[1],
@@ -89,6 +96,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "Just now",
+		state: "done",
 	},
 	{
 		id: "PD-40:dependency-mapper",
@@ -98,6 +106,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "1 min ago",
+		state: "failed",
 	},
 ] as const satisfies readonly JiraIssueCompletedAgentRun[];
 
@@ -135,7 +144,7 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 
 	if (isAgentActivityVariant) {
 		return (
-			<RovoChatProvider>
+			<RovoChatProvider agentProfiles={ASX_CHAT_AGENT_PROFILES}>
 				<JiraIssueAgentActivityStatesDemo />
 			</RovoChatProvider>
 		);
@@ -174,9 +183,16 @@ export default function JiraIssuePage({ variant = "default" }: Readonly<JiraIssu
 	);
 }
 
+const JIRA_ISSUE_CHAT_ISSUE_KEY = "PD-40";
+const JIRA_ISSUE_CHAT_ISSUE_SUMMARY = "Implement advanced date-range filter";
+
 function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 	const [agentActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
-	const { chatSurface, openChat, sendPrompt } = useRovoChat();
+	// View chat / question submit / generative actions all drop into the shared
+	// Rovo floating chat with the activity's agent already selected — matching the
+	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
+	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
 	const agentActivities = agentActivityState === "single-agent-working"
 		? JIRA_ISSUE_AGENT_ACTIVITIES.slice(0, 1)
 		: agentActivityState === "multiple-agents-working"
@@ -184,17 +200,36 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 			: agentActivityState === "awaiting-user-input"
 				? JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES
 				: undefined;
-	const handleAgentActivityViewChat = useCallback(() => {
-		openChat("floating");
-	}, [openChat]);
-	const handleGenerativeActionSubmit = useCallback((request: JiraIssueGenerativeActionRequest) => {
-		openChat("floating");
-		void sendPrompt(request.prompt, {
-			messageMetadata: {
-				source: "jira-issue-generative-action",
-			},
+	// Opens the floating chat for the activity's agent. When the activity is
+	// awaiting input, the chat replays its question card; answering it there is
+	// intercepted (via `pendingChatQuestion`) so the agent acknowledges and
+	// continues, mirroring the ASX Kanban "View chat" flow.
+	const openActivityChat = useCallback((activity: JiraIssueAgentActivity) => {
+		setPendingChatQuestion(activity.question ? { submit: () => undefined } : null);
+		openAgentChat({
+			agentId: activity.id,
+			agentName: activity.name,
+			issueKey: JIRA_ISSUE_CHAT_ISSUE_KEY,
+			issueSummary: JIRA_ISSUE_CHAT_ISSUE_SUMMARY,
+			intro: activity.message,
+			question: activity.question,
 		});
-	}, [openChat, sendPrompt]);
+	}, [openAgentChat]);
+	const handleAgentActivityViewChat = openActivityChat;
+	const handleAgentActivityQuestionSubmit = openActivityChat;
+	const handleGenerativeActionSubmit = useCallback((request: JiraIssueGenerativeActionRequest) => {
+		setPendingChatQuestion(null);
+		openAgentChat({
+			agentId: JIRA_ISSUE_AGENT_ACTIVITIES[0].id,
+			agentName: JIRA_ISSUE_AGENT_ACTIVITIES[0].name,
+			issueKey: JIRA_ISSUE_CHAT_ISSUE_KEY,
+			issueSummary: JIRA_ISSUE_CHAT_ISSUE_SUMMARY,
+			request: request.prompt,
+		});
+	}, [openAgentChat]);
+	const handleChatQuestionAnswer = useCallback(() => {
+		setPendingChatQuestion(null);
+	}, []);
 
 	return (
 		<div className="relative flex h-full min-h-[480px] w-full flex-col bg-surface">
@@ -232,6 +267,7 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 						onSubmit: handleGenerativeActionSubmit,
 					}}
 					issueKey="PD-40"
+					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
 					priority="major"
 					subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
@@ -240,20 +276,11 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 					tags={[{ text: "FE Development", color: "purple" }]}
 				/>
 			</div>
-			{chatSurface === null ? (
-				<FloatingRovoButton
-					ariaLabel="Open Rovo chat"
-					forceVisible
-					placement={{ right: "24px", bottom: "24px" }}
-					positioning="container"
-					product="jira"
-				/>
-			) : null}
-			<AnimatePresence>
-				{chatSurface === "floating" ? (
-					<RovoFloatingChat key="floating-chat" />
-				) : null}
-			</AnimatePresence>
+			<AsxRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+				onQuestionAnswer={pendingChatQuestion ? handleChatQuestionAnswer : undefined}
+			/>
 		</div>
 	);
 }

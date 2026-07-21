@@ -374,10 +374,10 @@ export function JiraSessionFlyoutBody({
 							}
 						/>
 						<HoverCardContent
-							align={previewPosition?.align ?? "start"}
-							alignOffset={previewPosition?.alignOffset}
+							align={previewPosition?.align ?? "center"}
+							alignOffset={previewPosition?.alignOffset ?? 0}
 							className="w-[360px] max-w-[calc(100vw-48px)] rounded-xl border-0 bg-transparent p-0 shadow-none"
-							side={previewPosition?.side ?? "bottom"}
+							side={previewPosition?.side ?? "right"}
 							sideOffset={8}
 						>
 							<AgentProfileCard
@@ -390,11 +390,11 @@ export function JiraSessionFlyoutBody({
 				</FlyoutRow>
 				<FlyoutRow icon={<TaskIcon label="" size="small" />} label="Work item">
 					<SmartLink
-						align={previewPosition?.align}
-						alignOffset={previewPosition?.alignOffset}
+						align={previewPosition?.align ?? "center"}
+						alignOffset={previewPosition?.alignOffset ?? 0}
 						item={toWorkItem(session)}
 						showStatus
-						side={previewPosition?.side}
+						side={previewPosition?.side ?? "right"}
 					/>
 				</FlyoutRow>
 			</div>

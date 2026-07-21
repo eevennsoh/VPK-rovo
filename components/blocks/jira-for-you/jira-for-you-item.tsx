@@ -1,21 +1,24 @@
 "use client";
 
-import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import BugIcon from "@atlaskit/icon/core/bug";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import StoryIcon from "@atlaskit/icon/core/story";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
-import VideoStopOverlayIcon from "@atlaskit/icon/core/video-stop-overlay";
 
 import { JiraIssueGenerativeActionMenu } from "@/components/blocks/jira-issue/generative-action-menu";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { RovoSparkleButton } from "@/components/ui-custom/rovo-sparkle";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
 
-import { JiraForYouStatusLozenge } from "./jira-for-you-status";
+import {
+	JiraForYouStatusLozenge,
+	JiraForYouStatusLozengeDropdown,
+} from "./jira-for-you-status";
 import type {
 	JiraForYouAgent,
 	JiraForYouIssueType,
@@ -36,6 +39,65 @@ function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="text-text-subtlest">
 			·
+		</span>
+	);
+}
+
+/**
+ * Visual rule (shared with jira-issue agent activity): text shimmer is reserved
+ * for "needs input" states; in-progress work uses the rainbow spinner instead.
+ * A status can combine both (e.g. "1 Awaiting user response, 2 In progress"),
+ * so each comma-separated segment is classified and rendered independently.
+ */
+function isAwaitingInputStatus(status: string): boolean {
+	return /awaiting user/i.test(status);
+}
+
+function JiraForYouStatusSegment({
+	segment,
+	trailingComma = false,
+}: Readonly<{ segment: string; trailingComma?: boolean }>) {
+	// The comma is punctuation, not status text, so it stays outside the shimmer
+	// while still hugging the segment (no leading space): "Awaiting user response, …".
+	const comma = trailingComma ? <span aria-hidden="true">,</span> : null;
+
+	if (isAwaitingInputStatus(segment)) {
+		return (
+			<span className="inline-flex items-baseline text-xs leading-4">
+				<Shimmer as="span" duration={1.6} spread={2}>
+					{segment}
+				</Shimmer>
+				{comma}
+			</span>
+		);
+	}
+
+	return (
+		<span className="flex items-center gap-1 text-xs leading-4">
+			<span className="inline-flex items-baseline">
+				{segment}
+				{comma}
+			</span>
+			<Spinner size="xs" variant="rainbow" label="" />
+		</span>
+	);
+}
+
+function JiraForYouItemStatus({ status }: Readonly<{ status: string }>) {
+	const segments = status
+		.split(",")
+		.map((segment) => segment.trim())
+		.filter(Boolean);
+
+	return (
+		<span className="flex items-center gap-1 text-xs leading-4">
+			{segments.map((segment, index) => (
+				<JiraForYouStatusSegment
+					key={segment}
+					segment={segment}
+					trailingComma={index < segments.length - 1}
+				/>
+			))}
 		</span>
 	);
 }
@@ -67,19 +129,16 @@ function ItemActions({
 	onView,
 }: Readonly<{ item: JiraForYouItem; onView?: () => void }>) {
 	const generativeTrigger = (
-		<Button
+		<RovoSparkleButton
 			aria-label="Ask Rovo about this work item"
-			className="bg-bg-neutral-bold text-text-inverse [&_svg]:text-text-inverse hover:bg-bg-neutral-bold-hovered"
 			onClick={(event) => event.stopPropagation()}
-			size="icon-compact"
-		>
-			<GenerativeIndicatorIcon label="" />
-		</Button>
+			size="compact"
+		/>
 	);
 
 	return (
 		<div
-			className="pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
+			className="pointer-events-none invisible flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:visible group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:w-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:overflow-visible group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:visible has-[:focus-visible]:w-auto has-[:focus-visible]:overflow-visible has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:visible has-[button[aria-expanded=true]]:w-auto has-[button[aria-expanded=true]]:overflow-visible has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
 			data-slot="jira-for-you-actions"
 		>
 			<JiraIssueGenerativeActionMenu
@@ -87,16 +146,7 @@ function ItemActions({
 				issue={{ issueKey: item.issueKey, summary: item.title }}
 				triggerElement={generativeTrigger}
 			/>
-			{item.isRunning ? (
-				<Button
-					aria-label="Stop agents"
-					className="[&_svg]:text-icon-danger!"
-					size="icon-compact"
-					variant="outline"
-				>
-					<VideoStopOverlayIcon label="" />
-				</Button>
-			) : null}
+			<JiraForYouStatusLozengeDropdown value={item.jiraStatus} />
 			<Button onClick={onView} size="compact" variant="outline">
 				View
 			</Button>
@@ -144,14 +194,7 @@ export function JiraForYouItemRow({
 									<AgentAvatarCluster agents={item.agents} />
 								) : null}
 								{item.status ? (
-									<Shimmer
-										as="span"
-										className="text-xs leading-4"
-										duration={1.6}
-										spread={2}
-									>
-										{item.status}
-									</Shimmer>
+									<JiraForYouItemStatus status={item.status} />
 								) : null}
 							</span>
 							<MetadataDot />
@@ -166,7 +209,7 @@ export function JiraForYouItemRow({
 			</button>
 			<div className="relative flex shrink-0 items-center">
 				<ItemActions item={item} onView={() => onItemClick?.(item)} />
-				<div className="transition-opacity duration-fast ease-out-practical group-hover:pointer-events-none group-hover:opacity-0 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:opacity-0 group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:pointer-events-none group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:opacity-0 motion-reduce:transition-none">
+				<div className="transition-opacity duration-fast ease-out-practical group-hover:hidden group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none">
 					<JiraForYouStatusLozenge value={item.jiraStatus} />
 				</div>
 			</div>

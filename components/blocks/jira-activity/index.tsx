@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
+import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
 import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
@@ -15,6 +16,7 @@ import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityEntry,
+	JiraActivityFilter,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
 import {
@@ -36,6 +38,12 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/** Opens the rich agent-session summary shown by an agent comment. */
+	onViewSession?: (item: JiraAgentSessionItem) => void;
+	/** Called when the Reply action on a human comment is activated. */
+	onReplyRequest?: (entry: JiraActivityCommentEntry) => void;
+	/** Handles an inline reply externally instead of appending it to local timeline state. */
+	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	className?: string;
 	/** Controlled timeline ordering. */
 	sortOrder?: JiraActivitySortOrder;
@@ -43,6 +51,12 @@ export interface JiraActivityProps {
 	defaultSortOrder?: JiraActivitySortOrder;
 	/** Receives the next ordering when the header sort control changes. */
 	onSortOrderChange?: (next: JiraActivitySortOrder) => void;
+	/** Controlled timeline filter. */
+	filter?: JiraActivityFilter;
+	/** Initial filter when uncontrolled. Defaults to `all`. */
+	defaultFilter?: JiraActivityFilter;
+	/** Receives the next filter when the header view control changes. */
+	onFilterChange?: (next: JiraActivityFilter) => void;
 	/** Controlled collapsed state for the timeline body. */
 	collapsed?: boolean;
 	/** Initial collapsed state when uncontrolled. Defaults to `false`. */
@@ -64,10 +78,16 @@ export function JiraActivity({
 	currentUser = JIRA_ACTIVITY_CURRENT_USER,
 	composer,
 	renderCommentAction,
+	onViewSession,
+	onReplyRequest,
+	onSubmitReply,
 	className,
 	sortOrder: controlledSortOrder,
 	defaultSortOrder = "ascending",
 	onSortOrderChange,
+	filter: controlledFilter,
+	defaultFilter = "all",
+	onFilterChange,
 	collapsed: controlledCollapsed,
 	defaultCollapsed = false,
 	onCollapsedChange,
@@ -76,6 +96,8 @@ export function JiraActivity({
 	const entries = controlledEntries ?? uncontrolledEntries;
 	const [uncontrolledSortOrder, setUncontrolledSortOrder] = useState(defaultSortOrder);
 	const sortOrder = controlledSortOrder ?? uncontrolledSortOrder;
+	const [uncontrolledFilter, setUncontrolledFilter] = useState(defaultFilter);
+	const filter = controlledFilter ?? uncontrolledFilter;
 	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
 	const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
 
@@ -93,6 +115,13 @@ export function JiraActivity({
 		onCollapsedChange?.(next);
 	}
 
+	function handleFilterChange(next: JiraActivityFilter) {
+		if (controlledFilter === undefined) {
+			setUncontrolledFilter(next);
+		}
+		onFilterChange?.(next);
+	}
+
 	function applyAction(action: Parameters<typeof jiraActivityReducer>[1]) {
 		const nextState = jiraActivityReducer({ entries }, action);
 		if (nextState.entries === entries) return;
@@ -104,9 +133,21 @@ export function JiraActivity({
 
 	// Entries are stored oldest-first; `descending` shows newest first without
 	// mutating the canonical order the reducer appends to.
+	const visibleEntries = useMemo(
+		() =>
+			filter === "agents-only"
+				? entries.filter(
+						(entry) =>
+							entry.actor.kind === "agent" &&
+							(entry.kind === "comment" ||
+								(entry.kind === "changed-files" && entry.outputs !== undefined)),
+					)
+				: entries,
+		[entries, filter],
+	);
 	const orderedEntries = useMemo(
-		() => (sortOrder === "descending" ? [...entries].reverse() : entries),
-		[entries, sortOrder],
+		() => (sortOrder === "descending" ? [...visibleEntries].reverse() : visibleEntries),
+		[sortOrder, visibleEntries],
 	);
 
 	function handleAddComment(body: string) {
@@ -121,10 +162,14 @@ export function JiraActivity({
 		});
 	}
 
-	function handleAddReply(entryId: string, body: string) {
+	function handleAddReply(entry: JiraActivityCommentEntry, body: string) {
+		if (onSubmitReply) {
+			onSubmitReply(entry, body);
+			return;
+		}
 		applyAction({
 			type: "add-reply",
-			entryId,
+			entryId: entry.id,
 			reply: createReply({
 				id: crypto.randomUUID(),
 				actor: currentUser,
@@ -139,8 +184,10 @@ export function JiraActivity({
 			<div>
 				<JiraActivityHeader
 					collapsed={collapsed}
-					count={entries.length}
+					count={visibleEntries.length}
+					filter={filter}
 					onCollapsedChange={handleCollapsedChange}
+					onFilterChange={handleFilterChange}
 					onSortOrderChange={handleSortOrderChange}
 					sortOrder={sortOrder}
 				/>
@@ -152,24 +199,21 @@ export function JiraActivity({
 						const isLast = index === orderedEntries.length - 1;
 
 						return (
-							<li className="flex gap-2" key={entry.id}>
+							<li className="flex gap-2" data-jira-activity-entry-id={entry.id} key={entry.id}>
 								<JiraActivityNode
 									actor={entry.actor}
 									icon={entry.kind === "event" ? entry.icon : undefined}
 									isLast={isLast}
 								/>
-								<div
-									className={cn(
-										"min-w-0 flex-1 pb-3",
-										entry.kind === "event" && "pt-0.5",
-									)}
-								>
+								<div className="min-w-0 flex-1 pb-3">
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
 											currentUser={currentUser}
 											entry={entry}
-											onSubmitReply={(body) => handleAddReply(entry.id, body)}
+											onReplyRequest={onReplyRequest}
+											onViewSession={onViewSession}
+											onSubmitReply={(body) => handleAddReply(entry, body)}
 											action={renderCommentAction?.(entry)}
 										/>
 									) : null}
@@ -207,6 +251,7 @@ export type {
 	JiraActivityEntry,
 	JiraActivityEventEntry,
 	JiraActivityEventIcon,
+	JiraActivityFilter,
 	JiraActivityReply,
 	JiraActivitySegment,
 	JiraActivitySortOrder,

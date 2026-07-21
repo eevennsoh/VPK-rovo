@@ -2,6 +2,9 @@
 
 import { type ReactNode } from "react";
 
+import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import GlobeIcon from "@atlaskit/icon/core/globe";
+
 import { Button } from "@/components/ui/button";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -17,7 +20,9 @@ export interface ArtifactListItem {
 	/** Metadata source label, e.g. "Confluence page". */
 	source: string;
 	/** Metadata owner label, e.g. "Vitafleet Team". */
-	owner: string;
+	owner?: string;
+	/** Serializable built-in icon for data-only consumers. `icon` takes precedence. */
+	iconName?: "ai-chat" | "globe";
 	/** ADS icon for the leading tile (e.g. `<PageIcon label="" />`). */
 	icon?: ReactNode;
 	/**
@@ -51,6 +56,8 @@ export interface ArtifactListProps extends React.ComponentProps<"div"> {
 	openLabel?: string;
 	/** Also fire `onOpen` when the row body is clicked. */
 	openOnRowClick?: boolean;
+	/** Row density and surface treatment. Defaults to `"default"`. */
+	variant?: "default" | "compact";
 }
 
 function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>) {
@@ -62,25 +69,40 @@ function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>)
 		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx
 		return <img alt="" aria-hidden className="object-contain" height={24} src={item.logoSrc} width={24} />;
 	}
-	return item.icon;
+	if (item.icon) return item.icon;
+	if (item.iconName === "globe") return <GlobeIcon label="" size="small" />;
+	if (item.iconName === "ai-chat") return <AiChatIcon label="" size="small" />;
+	return null;
 }
 
-function ArtifactListLeadingTile({ item }: Readonly<{ item: ArtifactListItem }>) {
+function ArtifactListLeadingTile({
+	item,
+	variant,
+}: Readonly<{ item: ArtifactListItem; variant: "default" | "compact" }>) {
 	// 3P brand logos render as the self-framing package mark (its own tile).
 	if (item.logoName) {
-		return <LogoThirdParty label="" name={item.logoName} size="medium" />;
+		const logo = (
+			<LogoThirdParty
+				label=""
+				name={item.logoName}
+				size={variant === "compact" ? "small" : "medium"}
+			/>
+		);
+		return variant === "compact" ? (
+			<div className="grid size-8 shrink-0 place-items-center">{logo}</div>
+		) : logo;
 	}
 
 	// Logo + agent-avatar rows stay neutral; logos render 24px inset and agent
 	// avatars 20px, while plain icon rows can opt into a color appearance and keep
 	// the tile's default 16px inset.
 	const usesInsetImage = Boolean(item.avatarSrc || item.logoSrc);
-	return (
+	const tile = (
 		<Tile
 			aria-hidden
 			label={item.source}
 			variant={usesInsetImage ? "neutral" : item.tileVariant ?? "neutral"}
-			size="medium"
+			size={variant === "compact" ? "small" : "medium"}
 			className={cn(
 				"rounded-tile",
 				item.logoSrc && "[&_img]:size-6!",
@@ -90,6 +112,10 @@ function ArtifactListLeadingTile({ item }: Readonly<{ item: ArtifactListItem }>)
 			<ArtifactListTileContent item={item} />
 		</Tile>
 	);
+
+	return variant === "compact" ? (
+		<div className="grid size-8 shrink-0 place-items-center">{tile}</div>
+	) : tile;
 }
 
 function ArtifactListRow({
@@ -98,24 +124,50 @@ function ArtifactListRow({
 	openLabel,
 	openOnRowClick,
 	onOpen,
+	variant,
 }: Readonly<{
 	item: ArtifactListItem;
 	isLast: boolean;
 	openLabel: string;
 	openOnRowClick?: boolean;
 	onOpen?: (item: ArtifactListItem) => void;
+	variant: "default" | "compact";
 }>) {
 	const handleOpen = () => onOpen?.(item);
-	const rowBody = (
+	const compactMetadata = (
+		<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+			<span className="shrink-0">{item.source}</span>
+			{item.owner ? (
+				<>
+					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+				</>
+			) : null}
+		</span>
+	);
+	const defaultRowBody = (
 		<>
-			<ArtifactListLeadingTile item={item} />
+			<ArtifactListLeadingTile item={item} variant={variant} />
 			<div className="min-w-0 flex-1">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				<p className="flex items-center gap-1 text-xs leading-4">
 					<span className="shrink-0 text-text-subtle">{item.source}</span>
-					<span className="shrink-0 text-text-subtlest">•</span>
-					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+					{item.owner ? (
+						<>
+							<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+							<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+						</>
+					) : null}
 				</p>
+			</div>
+		</>
+	);
+	const compactRowBody = (
+		<>
+			<ArtifactListLeadingTile item={item} variant={variant} />
+			<div className="flex min-w-0 flex-1 items-baseline gap-2">
+				<p className="shrink-0 truncate text-sm font-medium leading-5 text-text">{item.title}</p>
+				{compactMetadata}
 			</div>
 		</>
 	);
@@ -123,7 +175,9 @@ function ArtifactListRow({
 	return (
 		<div
 			className={cn(
-				"flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
+				variant === "compact"
+					? "flex h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered"
+					: "flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
 				!isLast && "border-b border-border",
 			)}
 		>
@@ -136,12 +190,12 @@ function ArtifactListRow({
 							onClick={handleOpen}
 						/>
 				) : null}
-				{rowBody}
+				{variant === "compact" ? compactRowBody : defaultRowBody}
 			</div>
 			<Button
 				className="ml-auto shrink-0 whitespace-nowrap"
 				variant="outline"
-				size="default"
+				size={variant === "compact" ? "compact" : "default"}
 				type="button"
 				onClick={(event) => {
 					event.stopPropagation();
@@ -159,13 +213,19 @@ export function ArtifactList({
 	onOpen,
 	openLabel = "Open",
 	openOnRowClick = false,
+	variant = "default",
 	className,
 	...props
 }: Readonly<ArtifactListProps>) {
 	return (
 		<div
-			className={cn("overflow-hidden rounded-lg bg-surface-raised", className)}
-			style={{ boxShadow: token("elevation.shadow.raised") }}
+			className={cn(
+				variant === "compact"
+					? "overflow-hidden rounded-lg border border-border bg-surface"
+					: "overflow-hidden rounded-lg bg-surface-raised",
+				className,
+			)}
+			style={variant === "compact" ? undefined : { boxShadow: token("elevation.shadow.raised") }}
 			{...props}
 		>
 			{items.map((item, index) => (
@@ -176,6 +236,7 @@ export function ArtifactList({
 					openLabel={openLabel}
 					openOnRowClick={openOnRowClick}
 					onOpen={onOpen}
+					variant={variant}
 				/>
 			))}
 		</div>

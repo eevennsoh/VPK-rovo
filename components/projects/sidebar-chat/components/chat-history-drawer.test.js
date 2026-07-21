@@ -60,6 +60,16 @@ test("compact chat hamburger buttons open the shared history drawer", () => {
 	assert.match(historyButton, /onClick=\{onToggle \?\? noop\}/u);
 });
 
+test("compact chat header lets long agent names truncate before its actions", () => {
+	const sidebarHeader = readProjectFile("components/projects/sidebar-chat/components/chat-header.tsx");
+	const appBrand = readProjectFile("components/projects/rovo-core/components/rovo-app-brand.tsx");
+
+	assert.match(sidebarHeader, /className="flex min-w-0 flex-1 items-center gap-1"/u);
+	assert.match(sidebarHeader, /className="flex shrink-0 items-center gap-1"/u);
+	assert.match(appBrand, /className="h-8 min-w-0 shrink gap-1\.5 px-2 text-sm font-medium text-text"/u);
+	assert.match(appBrand, /className="min-w-0 truncate font-semibold"/u);
+});
+
 test("minimal compact chat header suppresses history and action controls", () => {
 	const chatPanelSource = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const sidebarHeader = readProjectFile("components/projects/sidebar-chat/components/chat-header.tsx");

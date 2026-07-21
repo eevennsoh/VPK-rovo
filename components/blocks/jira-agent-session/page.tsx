@@ -13,7 +13,7 @@ function JiraAgentSessionDemo() {
 	const { chatSurface, openChat } = useRovoChat();
 
 	// View drops the user into the Rovo floating chat for that session,
-	// matching the jira-issue "view chat" behavior.
+	// matching the Jira Issue "View" action behavior.
 	const handleView = useCallback(() => {
 		openChat("floating");
 	}, [openChat]);

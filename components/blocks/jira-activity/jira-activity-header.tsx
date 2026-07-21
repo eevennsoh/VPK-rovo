@@ -13,7 +13,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-import type { JiraActivitySortOrder } from "./jira-activity-types";
+import type { JiraActivityFilter, JiraActivitySortOrder } from "./jira-activity-types";
 
 // The sort control reads as newest/oldest to the user; the underlying order is
 // still ascending (oldest first) / descending (newest first).
@@ -24,20 +24,24 @@ const SORT_LINK_LABELS: Record<JiraActivitySortOrder, string> = {
 
 /**
  * Feed header: an activity count, a text-link sort control, and a full-width
- * rule. A chevron collapse button overlays the rule at its far-right end with
- * six pixels of visual clearance on both sides. It reveals on section hover and
- * remains visible while the activity is collapsed.
+ * rule. A chevron collapse button overlays the rule flush to its far-right end,
+ * with six pixels of visual clearance on the left only. It reveals on section
+ * hover and remains visible while the activity is collapsed.
  */
 export function JiraActivityHeader({
 	count,
 	sortOrder,
 	onSortOrderChange,
+	filter,
+	onFilterChange,
 	collapsed,
 	onCollapsedChange,
 }: Readonly<{
 	count: number;
 	sortOrder: JiraActivitySortOrder;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;
+	filter: JiraActivityFilter;
+	onFilterChange: (next: JiraActivityFilter) => void;
 	collapsed: boolean;
 	onCollapsedChange: (next: boolean) => void;
 }>) {
@@ -61,19 +65,29 @@ export function JiraActivityHeader({
 							/>
 						}
 					>
-						{SORT_LINK_LABELS[sortOrder]}
+						{filter === "agents-only" ? "Show agents only" : SORT_LINK_LABELS[sortOrder]}
 						<Icon aria-hidden render={<ChevronDownIcon label="" />} />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start" positionerClassName="z-[502]">
 						<DropdownMenuRadioGroup
-							onValueChange={(value) => onSortOrderChange(value as JiraActivitySortOrder)}
-							value={sortOrder}
+							onValueChange={(value) => {
+								if (value === "agents-only") {
+									onFilterChange("agents-only");
+									return;
+								}
+								onFilterChange("all");
+								onSortOrderChange(value as JiraActivitySortOrder);
+							}}
+							value={filter === "agents-only" ? filter : sortOrder}
 						>
 							<DropdownMenuRadioItem value="descending">
 								Show latest first
 							</DropdownMenuRadioItem>
 							<DropdownMenuRadioItem value="ascending">
 								Show oldest first
+							</DropdownMenuRadioItem>
+							<DropdownMenuRadioItem value="agents-only">
+								Show agents only
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					</DropdownMenuContent>
@@ -88,7 +102,7 @@ export function JiraActivityHeader({
 				/>
 				<div
 					className={cn(
-						"invisible pointer-events-none absolute top-1/2 right-1.5 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical before:absolute before:inset-y-0 before:-inset-x-1.5 before:bg-surface before:content-[''] motion-reduce:transition-none",
+						"invisible pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical before:absolute before:inset-y-0 before:-inset-x-1.5 before:bg-surface before:content-[''] motion-reduce:transition-none",
 						collapsed
 							? "visible pointer-events-auto opacity-100"
 							: "group-hover/jira-activity:visible group-hover/jira-activity:pointer-events-auto group-hover/jira-activity:opacity-100 group-focus-within/jira-activity:visible group-focus-within/jira-activity:pointer-events-auto group-focus-within/jira-activity:opacity-100",

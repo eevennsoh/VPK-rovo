@@ -76,7 +76,7 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
 							blanketContent={
-								<FloatingSessionSurface portalToViewport={presentation === "inline"} />
+								<FloatingSessionSurface />
 							}
 						>
 							<ExperimentalWorkItemLayout
@@ -84,7 +84,6 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
 								metadata={<MetadataRail />}
-								metadataPeek={<MetadataRail borderless />}
 							/>
 						</ExperimentalWorkItemDialog>
 					</LayoutGroup>

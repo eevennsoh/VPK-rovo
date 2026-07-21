@@ -3,7 +3,13 @@
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import { useState } from "react";
 
+import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { SkillSelector } from "@/components/blocks/skill-selector";
+import {
+	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+	WORK_ITEM_SKILLS,
+} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -13,15 +19,15 @@ import { Icon } from "@/components/ui/icon";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
 
 interface ActivityComposerSkillContextPillProps {
-	onSelectSkill: (skillId: string) => void;
+	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 }
 
-/** Opens the directory-backed Skill Selector and inserts the chosen skill into the composer. */
+/** Opens the directory-backed Skill Selector and immediately invokes the chosen skill. */
 export function ActivityComposerSkillContextPill({
-	onSelectSkill,
+	onInvokeSkill,
 }: Readonly<ActivityComposerSkillContextPillProps>) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [pinnedSkillIds, setPinnedSkillIds] = useState<readonly string[]>([]);
+	const [pinnedSkillIds, setPinnedSkillIds] = useState<readonly string[]>(DEFAULT_PINNED_WORK_ITEM_SKILL_IDS);
 	const [query, setQuery] = useState("");
 
 	const handleOpenChange = (nextOpen: boolean) => {
@@ -32,7 +38,11 @@ export function ActivityComposerSkillContextPill({
 	};
 
 	const handleSkillToggle = (skillId: string) => {
-		onSelectSkill(skillId);
+		const skill = WORK_ITEM_SKILLS.find((candidate) => candidate.id === skillId);
+		if (!skill) {
+			return;
+		}
+		onInvokeSkill(skill);
 		setIsOpen(false);
 		setQuery("");
 	};
@@ -66,9 +76,11 @@ export function ActivityComposerSkillContextPill({
 					onPinnedSkillIdsChange={setPinnedSkillIds}
 					onQueryChange={setQuery}
 					onSkillToggle={handleSkillToggle}
+					pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
 					pinnedSkillIds={pinnedSkillIds}
 					query={query}
 					selectionMode="single"
+					skills={WORK_ITEM_SKILLS}
 				/>
 			</DropdownMenuContent>
 		</DropdownMenu>

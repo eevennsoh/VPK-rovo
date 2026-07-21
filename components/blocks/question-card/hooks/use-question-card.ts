@@ -145,7 +145,11 @@ export function useQuestionCard({
 	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, currentQuestionAnswered, canGoToNextQuestion);
 
 	useEffect(() => {
-		cardRef.current?.focus();
+		// preventScroll: focusing the card for keyboard handling must not scroll the
+		// card into view. When rendered inside a hover panel over a scrollable page
+		// (e.g. the jira-issue "awaiting input" flyout), a scrolling focus jumps the
+		// whole page to the top on hover.
+		cardRef.current?.focus({ preventScroll: true });
 	}, []);
 
 	useEffect(() => {
@@ -186,12 +190,12 @@ export function useQuestionCard({
 			showCustomInput,
 		});
 		if (shouldAutoFocusCustomInput) {
-			customInputRef.current?.focus();
+			customInputRef.current?.focus({ preventScroll: true });
 			return;
 		}
 
 		if (document.activeElement === customInputRef.current || cardRef.current?.contains(document.activeElement)) {
-			cardRef.current?.focus();
+			cardRef.current?.focus({ preventScroll: true });
 		}
 	}, [safeQuestionIndex, currentQuestion, maxVisibleOptions, showCustomInput]);
 
