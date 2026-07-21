@@ -47,20 +47,23 @@ function RovoSparkleMark({
 			? SPARKLE_TRANSFORM_ENTER
 			: SPARKLE_TRANSFORM_EXIT;
 	const glyphSize = size === "compact" ? 12 : 16;
+	const hoverScale = size === "compact" ? 16 / 12 : 20 / 16;
 
 	return (
 		<motion.span
 			animate={{
-				transform: shouldReduceMotion || !active
-					? "scale(1) rotate(0deg)"
-					: "scale(1.06) rotate(360deg)",
+				rotate: shouldReduceMotion || !active ? 0 : 180,
+				scale: shouldReduceMotion || !active ? 1 : hoverScale,
 			}}
 			aria-hidden="true"
 			className="relative inline-flex origin-center items-center justify-center"
 			data-slot="rovo-sparkle-mark"
 			initial={false}
 			style={{ willChange: "transform" }}
-			transition={transformTransition}
+			transition={{
+				rotate: transformTransition,
+				scale: shouldReduceMotion ? SPARKLE_REDUCED : SPARKLE_COLOR_ENTER,
+			}}
 		>
 			<svg
 				fill="none"

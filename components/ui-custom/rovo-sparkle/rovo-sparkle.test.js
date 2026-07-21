@@ -59,7 +59,10 @@ test("Rovo Sparkle uses token-matched Motion transitions with reduced-motion han
 	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_ENTER: Transition = \{ duration: 0\.4, ease: \[0\.4, 0, 0, 1\] \}/);
 	assert.match(BUTTON_SOURCE, /const SPARKLE_TRANSFORM_EXIT: Transition = \{ duration: 0\.25, ease: \[0\.6, 0, 0\.8, 0\.6\] \}/);
 	assert.match(BUTTON_SOURCE, /const SPARKLE_REDUCED: Transition = \{ duration: 0 \}/);
-	assert.match(BUTTON_SOURCE, /shouldReduceMotion \|\| !active[\s\S]*"scale\(1\) rotate\(0deg\)"[\s\S]*"scale\(1\.06\) rotate\(360deg\)"/);
+	assert.match(BUTTON_SOURCE, /rotate: shouldReduceMotion \|\| !active \? 0 : 180/);
+	assert.match(BUTTON_SOURCE, /const hoverScale = size === "compact" \? 16 \/ 12 : 20 \/ 16/);
+	assert.match(BUTTON_SOURCE, /scale: shouldReduceMotion \|\| !active \? 1 : hoverScale/);
+	assert.match(BUTTON_SOURCE, /rotate: transformTransition,[\s\S]*scale: shouldReduceMotion \? SPARKLE_REDUCED : SPARKLE_COLOR_ENTER/);
 	assert.match(BUTTON_SOURCE, /style=\{\{ willChange: "transform" \}\}/);
 	assert.match(BUTTON_SOURCE, /const colorActive = active && !selected;/);
 	assert.match(BUTTON_SOURCE, /animate=\{\{ opacity: selected \|\| colorActive \? 0 : 1 \}\}/);
@@ -91,5 +94,5 @@ test("Rovo Sparkle is registered and demonstrated at both sizes", () => {
 	assert.match(DEMO_SOURCE, /size="compact"/);
 	assert.match(DEMO_SOURCE, /Compact · 24px/);
 	assert.match(DEMO_SOURCE, /Default · 32px/);
-	assert.match(DEMO_SOURCE, /<output className="text-sm text-text-subtle">\{lastAction\}<\/output>/);
+	assert.doesNotMatch(DEMO_SOURCE, /Choose an action from either sparkle|<output|lastAction/);
 });
