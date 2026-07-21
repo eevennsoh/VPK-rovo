@@ -24,9 +24,9 @@ const SORT_LINK_LABELS: Record<JiraActivitySortOrder, string> = {
 
 /**
  * Feed header: an activity count, a text-link sort control, and a full-width
- * rule. A chevron collapse button overlays the rule at its far-right end with
- * six pixels of visual clearance on both sides. It reveals on section hover and
- * remains visible while the activity is collapsed.
+ * rule. A chevron collapse button overlays the rule flush to its far-right end,
+ * with six pixels of visual clearance on the left only. It reveals on section
+ * hover and remains visible while the activity is collapsed.
  */
 export function JiraActivityHeader({
 	count,
@@ -102,7 +102,7 @@ export function JiraActivityHeader({
 				/>
 				<div
 					className={cn(
-						"invisible pointer-events-none absolute top-1/2 right-1.5 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical before:absolute before:inset-y-0 before:-inset-x-1.5 before:bg-surface before:content-[''] motion-reduce:transition-none",
+						"invisible pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical before:absolute before:inset-y-0 before:-inset-x-1.5 before:bg-surface before:content-[''] motion-reduce:transition-none",
 						collapsed
 							? "visible pointer-events-auto opacity-100"
 							: "group-hover/jira-activity:visible group-hover/jira-activity:pointer-events-auto group-hover/jira-activity:opacity-100 group-focus-within/jira-activity:visible group-focus-within/jira-activity:pointer-events-auto group-focus-within/jira-activity:opacity-100",

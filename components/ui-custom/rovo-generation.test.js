@@ -27,11 +27,13 @@ test("RovoGeneration.Highlight band reuses the token-backed rainbow stops", () =
 	assert.doesNotMatch(ROVO_GENERATION_SOURCE, /#fca700|#6a9a23|#1868db|#af59e0/iu);
 });
 
-test("RovoGeneration.Highlight ports the reference perimeter-shimmer motion (in then away, single pass)", () => {
-	// Same timing/shape constants as the reference RovoPerimeterShimmer.
-	assert.match(ROVO_GENERATION_SOURCE, /HIGHLIGHT_DURATION_MS = 1200/u);
+test("RovoGeneration.Highlight makes one legible 12 o'clock-to-12 o'clock perimeter pass", () => {
+	// The larger suggestion surface needs a slower trace than the reference shimmer.
+	assert.match(ROVO_GENERATION_SOURCE, /HIGHLIGHT_DURATION_MS = 2400/u);
 	assert.match(ROVO_GENERATION_SOURCE, /HIGHLIGHT_DELAY_MS = 200/u);
 	assert.match(ROVO_GENERATION_SOURCE, /HIGHLIGHT_BAND_FRAC = 0\.35/u);
+	// The closed path begins and ends at the top-center rather than a corner.
+	assert.match(ROVO_GENERATION_SOURCE, /`M \$\{width \/ 2\} 0`[\s\S]*`L \$\{width \/ 2\} 0`[\s\S]*"Z"/u);
 	// Travels once and dissolves — no infinite repeat.
 	assert.doesNotMatch(ROVO_GENERATION_SOURCE, /repeat:\s*Infinity/u);
 	// Reduced motion hides the band and reports completion.

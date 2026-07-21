@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useReducedMotion } from "motion/react";
 
 import { JiraActivity } from "@/components/blocks/jira-activity";
-import { Button } from "@/components/ui/button";
 import { useAgentSessions } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import {
 	AGENT_SESSIONS_CURRENT_USER,
@@ -27,24 +27,51 @@ export function useHasActivity(): boolean {
  * open the corresponding floating session surface.
  */
 export function ActivityPanel() {
-	const { meta, actions } = useAgentSessions();
+	const { state, meta, actions } = useAgentSessions();
+	const activityRootRef = useRef<HTMLDivElement>(null);
+	const lastScrolledSessionIdRef = useRef<string | null>(null);
+	const shouldReduceMotion = Boolean(useReducedMotion());
+	const latestSessionId = state.sessions.at(-1)?.id ?? null;
 	const entries = useMemo(() => mapActivityEventsToJiraEntries(meta.activityEvents), [meta.activityEvents]);
 
-	return (
-		<JiraActivity
-			composer={null}
-			currentUser={AGENT_SESSIONS_CURRENT_USER}
-			entries={entries}
-			renderCommentAction={(entry) => {
-				const event = meta.activityEvents.find((activityEvent) => activityEvent.id === entry.id);
-				if (!event || event.kind !== "agent") return null;
+	useEffect(() => {
+		if (!latestSessionId?.startsWith("session-") || lastScrolledSessionIdRef.current === latestSessionId) {
+			return undefined;
+		}
 
-				return (
-					<Button onClick={() => actions.openSession(event.sessionId)} size="compact" type="button" variant="link">
-						View session
-					</Button>
-				);
-			}}
-		/>
+		const animationFrame = requestAnimationFrame(() => {
+			const activityEntryId = `activity-${latestSessionId}`;
+			const target = Array.from(
+				activityRootRef.current?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [],
+			).find((entry) => entry.dataset.jiraActivityEntryId === activityEntryId);
+			if (!target) {
+				return;
+			}
+
+			lastScrolledSessionIdRef.current = latestSessionId;
+			target.scrollIntoView({
+				behavior: shouldReduceMotion ? "auto" : "smooth",
+				block: "nearest",
+			});
+		});
+
+		return () => cancelAnimationFrame(animationFrame);
+	}, [latestSessionId, shouldReduceMotion]);
+
+	return (
+		<div ref={activityRootRef} data-agent-sessions-activity>
+			<JiraActivity
+				composer={null}
+				currentUser={AGENT_SESSIONS_CURRENT_USER}
+				entries={entries}
+				onSubmitReply={(entry, body) => {
+					const event = meta.activityEvents.find((activityEvent) => activityEvent.id === entry.id);
+					if (event?.kind === "agent") {
+						actions.replySession(event.sessionId, body);
+					}
+				}}
+				onViewSession={(item) => actions.openSession(item.id)}
+			/>
+		</div>
 	);
 }

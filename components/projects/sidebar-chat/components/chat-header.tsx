@@ -61,9 +61,9 @@ export default function ChatHeader({
 
 	return (
 		<div className="py-3 px-3">
-			<div className="flex justify-between items-center">
+			<div className="flex items-center">
 				{/* Left side: Menu icon and Title */}
-				<div className="flex items-center gap-1">
+				<div className="flex min-w-0 flex-1 items-center gap-1">
 					<RovoAgentBackButton onBack={onBackToRovo} />
 					{showControls ? (
 						<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
@@ -73,7 +73,7 @@ export default function ChatHeader({
 
 				{/* Right side: Chat actions */}
 				{showControls ? (
-					<div className="flex items-center gap-1">
+					<div className="flex shrink-0 items-center gap-1">
 						<Button aria-label="New chat" size="icon" variant="ghost" onClick={onNewChat ?? noop}>
 							<EditIcon label="" />
 						</Button>

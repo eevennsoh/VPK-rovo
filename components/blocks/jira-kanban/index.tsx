@@ -19,6 +19,7 @@ import {
 } from "@/components/blocks/jira-issue";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
+import type { SkillsDirectorySkill } from "@/app/data/directory";
 import type { QuestionCardAnswers } from "@/components/blocks/question-card/types";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -83,6 +84,8 @@ export interface JiraKanbanCardSelectModifiers {
 export interface JiraKanbanSelectionToolbarConfig {
 	agents?: readonly JiraKanbanAgentData[];
 	className?: string;
+	defaultPinnedAgentIds?: readonly string[];
+	defaultPinnedSkillIds?: readonly string[];
 	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
 	onBrowseAgents?: () => void;
 	onClearSelection: () => void;
@@ -92,7 +95,9 @@ export interface JiraKanbanSelectionToolbarConfig {
 	onMerge?: () => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
+	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
+	skills?: readonly SkillsDirectorySkill[];
 }
 
 export interface JiraKanbanProps {
@@ -692,6 +697,8 @@ export function JiraKanban({
 					<JiraToolbar
 						agents={selectionToolbar.agents ?? agents ?? []}
 						className={selectionToolbar.className}
+						defaultPinnedAgentIds={selectionToolbar.defaultPinnedAgentIds}
+						defaultPinnedSkillIds={selectionToolbar.defaultPinnedSkillIds}
 						onAgentAssignmentChange={selectionToolbar.onAgentAssignmentChange}
 						onBrowseAgents={selectionToolbar.onBrowseAgents}
 						onClearSelection={selectionToolbar.onClearSelection}
@@ -701,9 +708,11 @@ export function JiraKanban({
 						onMerge={selectionToolbar.onMerge}
 						onStatusChange={selectionToolbar.onStatusChange}
 						onWatchOptions={selectionToolbar.onWatchOptions}
+						pinnedItemsLabel={selectionToolbar.pinnedItemsLabel}
 						selectedAgentIds={selectionToolbar.selectedAgentIds}
 						selectedCount={selectedCount}
 						selectedStatus={selectedStatus}
+						skills={selectionToolbar.skills}
 						statusOptions={boardColumns.map((column) => column.title)}
 					/>
 				) : null}

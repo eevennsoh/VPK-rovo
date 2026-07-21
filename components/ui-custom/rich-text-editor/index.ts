@@ -58,6 +58,7 @@ export type {
 	RichTextMentionCategory,
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
+	RichTextMentionSectionLabels,
 	RichTextMentionSources,
 	RichTextMentionTarget,
 	RichTextMentionVisual,

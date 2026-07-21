@@ -27,21 +27,27 @@ const VARIANT_REGISTRY_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("running and awaiting sessions shimmer the title; complete is solid", () => {
-	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*true/);
+test("awaiting sessions shimmer the title; running and complete are solid", () => {
+	assert.match(CARD_SOURCE, /running:\s*\{[^}]*shimmerTitle:\s*false/);
 	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*shimmerTitle:\s*true/);
 	assert.match(CARD_SOURCE, /complete:\s*\{[^}]*shimmerTitle:\s*false[^}]*showDots:\s*false/);
 	assert.match(CARD_SOURCE, /stateMeta\.shimmerTitle \?\s*\(\s*<Shimmer/);
 });
 
-test("running drops the redundant label; awaiting overrides the title with dots", () => {
+test("running drops the redundant label; awaiting preserves the task title with dots", () => {
 	// The shimmering title alone communicates a running session.
 	assert.doesNotMatch(CARD_SOURCE, /Working on it/);
-	assert.match(CARD_SOURCE, /running:\s*\{[^}]*titleOverride:\s*null/);
-	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*titleOverride:\s*"Awaiting user response"/);
 	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*showDots:\s*true/);
-	assert.match(CARD_SOURCE, /const titleText = stateMeta\.titleOverride \?\? item\.title;/);
+	assert.doesNotMatch(CARD_SOURCE, /titleOverride|const titleText/);
+	assert.equal((CARD_SOURCE.match(/\{item\.title\}/gu) ?? []).length, 4);
 	assert.match(CARD_SOURCE, /stateMeta\.showDots \? <AnimatedDots/);
+});
+
+test("the awaiting lifecycle glyph is centered inside its tile", () => {
+	assert.match(
+		CARD_SOURCE,
+		/<span className="grid place-items-center leading-none text-icon-information">[\s\S]*?<StatusInformationIcon/u,
+	);
 });
 
 test("only running sessions expose the Stop action", () => {
@@ -58,20 +64,24 @@ test("View opens the Rovo floating chat in the demo", () => {
 	assert.match(PAGE_SOURCE, /chatSurface === "floating" \? <RovoFloatingChat/);
 });
 
-test("the leading tile renders the agent avatar at 32px, not an issue-type icon", () => {
+test("the leading tile renders the agent or VPK identity at 32px", () => {
 	assert.match(
 		CARD_SOURCE,
 		/<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.agent\.avatarSrc\}[\s\S]*sizePx=\{32\}/,
 	);
-	assert.doesNotMatch(CARD_SOURCE, /IconTile/);
+	assert.match(CARD_SOURCE, /vpkLogo=\{item\.agent\.vpkLogo\}/u);
 });
 
-test("the metadata line uses elapsed runtime, branch, and asx PR-status colors", () => {
+test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
 	assert.equal(
 		(CARD_SOURCE.match(/formatElapsedTime\(elapsedSeconds\)/gu) ?? []).length,
 		2,
 	);
-	assert.match(CARD_SOURCE, /\{item\.branch\}/);
+	assert.equal(
+		(CARD_SOURCE.match(/<span className="truncate">\{item\.agent\.name\}<\/span>/gu) ?? []).length,
+		2,
+	);
+	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.branch\}<\/span>/u);
 	assert.match(CARD_SOURCE, /created:\s*\{[\s\S]*?text-icon-success/);
 	assert.match(CARD_SOURCE, /merged:\s*\{[\s\S]*?text-icon-accent-purple/);
 	// The PR segment only renders when a PR exists (awaiting rows show no PR).
@@ -96,8 +106,13 @@ test("exports the expanded activity-card variant and owns its shared shell", () 
 	assert.match(INDEX_SOURCE, /export \{ JiraAgentSessionActivityCard \}/u);
 	assert.match(
 		ACTIVITY_CARD_SOURCE,
-		/w-full overflow-hidden rounded-lg border border-border bg-surface/u,
+		/w-full overflow-hidden border border-border bg-surface/u,
 	);
+	assert.match(ACTIVITY_CARD_SOURCE, /hasStackedHeader \? "rounded-xl" : "rounded-lg"/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /hasStackedHeader \? "gap-4 p-4" : "gap-2 p-3"/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /\? "flex min-w-0 items-center gap-3"/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /\{headerAvatar\}/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /<div className="min-w-0 flex-1">/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /aria-expanded=\{detailsOpen\}/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /replyComposer/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /<JiraAgentSessionActivityHeader[\s\S]*item=\{item\}/u);

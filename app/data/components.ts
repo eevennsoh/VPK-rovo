@@ -204,6 +204,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("rovo-cursor", "Rovo Cursor"),
 	customComponent("rovo-generation", "Rovo Generation"),
 	customComponent("rovo-illustration", "Rovo Illustration"),
+	customComponent("rovo-sparkle", "Rovo Sparkle"),
 	customComponent("sandbox"),
 	customComponent("schema-display", "Schema Display"),
 	customComponent("shimmer"),

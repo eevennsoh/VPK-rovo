@@ -1,11 +1,15 @@
 "use client";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import StatusErrorIcon from "@atlaskit/icon/core/status-error";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
+
+export type JiraIssueCompletedAgentRunState = "done" | "failed";
 
 export interface JiraIssueCompletedAgentRun {
 	id: string;
@@ -15,7 +19,26 @@ export interface JiraIssueCompletedAgentRun {
 	issueKey: string;
 	issueSummary: string;
 	relativeTime: string;
+	state: JiraIssueCompletedAgentRunState;
 }
+
+const RUN_STATE_PRESENTATION: Readonly<
+	Record<
+		JiraIssueCompletedAgentRunState,
+		{ label: string; iconClassName: string; render: React.ReactElement }
+	>
+> = {
+	done: {
+		label: "Done",
+		iconClassName: "text-icon-success",
+		render: <StatusSuccessIcon color="currentColor" label="" size="small" />,
+	},
+	failed: {
+		label: "Failed",
+		iconClassName: "text-icon-danger",
+		render: <StatusErrorIcon color="currentColor" label="" size="small" />,
+	},
+};
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";
@@ -28,7 +51,7 @@ function JiraIssueCompletedAgentRunRow({
 	index: number;
 	run: JiraIssueCompletedAgentRun;
 }>) {
-	const issueDescription = `${run.issueKey}: ${run.issueSummary}`;
+	const state = RUN_STATE_PRESENTATION[run.state];
 
 	return (
 		<li className={cn("min-w-0 px-3 py-2.5", index > 0 ? "border-t border-border" : null)}>
@@ -38,11 +61,15 @@ function JiraIssueCompletedAgentRunRow({
 					{run.agentAvatarSrc ? <AvatarImage alt="" src={run.agentAvatarSrc} /> : null}
 					<AvatarFallback>{getAgentInitial(run.agentName)}</AvatarFallback>
 				</Avatar>
-				<span className="shrink-0">{run.agentName}</span>
-				<span className="shrink-0" aria-hidden="true">·</span>
-				<span className="min-w-0 flex-1 truncate" title={issueDescription}>{issueDescription}</span>
-				<span className="shrink-0" aria-hidden="true">·</span>
-				<span className="shrink-0">{run.relativeTime}</span>
+				<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+				<span className="shrink-0 truncate">{run.relativeTime}</span>
+				<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+				<span className="flex shrink-0 items-center gap-1 font-medium text-text">
+					<span className={cn("grid size-4 place-items-center", state.iconClassName)} aria-hidden="true">
+						{state.render}
+					</span>
+					{state.label}
+				</span>
 			</div>
 		</li>
 	);

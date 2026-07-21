@@ -650,6 +650,13 @@
 	padding-right: 28px;
 }
 
+/* Rows with a persistent trailing indicator (e.g. an agent status glyph) show it
+   at rest, not only on hover/selection. Reserve the same right gutter always so
+   the label truncates before the 24px indicator instead of sliding under it. */
+.rich-text-command-menu-item[data-has-trailing="true"] .rich-text-command-menu-copy {
+	padding-right: 32px;
+}
+
 .rich-text-command-menu-item-sticky {
 	position: sticky;
 	top: 0;
@@ -961,6 +968,22 @@
 	margin-top: 0;
 	margin-bottom: 0;
 	vertical-align: middle;
+}
+
+/*
+ * Floating composers use a 20px text line rather than the regular composer's
+ * 24px line. Match the mention wrapper to that line box so the chip and typing
+ * caret share the same vertical center.
+ */
+.prompt-input-composer-floating .react-renderer.node-mention,
+.prompt-input-composer-floating .rich-text-mention-node,
+.prompt-input-composer-floating .rich-text-mention-trigger-wrapper {
+	height: 1.25rem;
+	line-height: 1.25rem;
+}
+
+.prompt-input-composer-floating .rich-text-mention-trigger-wrapper {
+	line-height: 0;
 }
 
 .prompt-input-directory-autocomplete-ghost {

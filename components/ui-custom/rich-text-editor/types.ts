@@ -80,6 +80,11 @@ export type RichTextMentionSources = Partial<
 	Record<RichTextMentionCategory, readonly RichTextMentionItem[]>
 >;
 
+/** Optional copy overrides for the two sections on the "@" mention surface. */
+export type RichTextMentionSectionLabels = Partial<
+	Record<"people-team" | "subagent", string>
+>;
+
 /**
  * Layout for the live "@" / "/" suggestion menus.
  *
@@ -134,6 +139,8 @@ export function resolveCommandVariant(
 
 export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
+	/** Overrides section copy without changing the stored mention categories. */
+	mentionSectionLabels?: RichTextMentionSectionLabels;
 	onAskRovo?: (editor: Editor) => void;
 	/**
 	 * Whether the "/" command menu shows the sticky Ask Rovo prompt. Defaults to

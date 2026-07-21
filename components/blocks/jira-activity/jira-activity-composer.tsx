@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent, type Ref } from "react";
+import { useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
 
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -12,6 +12,10 @@ import { FloatingComposer } from "@/components/projects/shared/components/floati
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+import type {
+	RichTextMentionSectionLabels,
+	RichTextSuggestionVariantConfig,
+} from "@/components/ui-custom/rich-text-editor";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +34,10 @@ export interface JiraActivityComposerProps {
 	onValueChange?: (value: string) => void;
 	/** Ref to the shared prompt editor used by the comment variant. */
 	textareaRef?: Ref<HTMLTextAreaElement>;
+	mentionSectionLabels?: RichTextMentionSectionLabels;
+	suggestionVariant?: RichTextSuggestionVariantConfig;
+	/** Optional cue rendered immediately before the submit CTA. */
+	submitAccessory?: ReactNode;
 	className?: string;
 }
 
@@ -46,6 +54,9 @@ export function JiraActivityComposer({
 	defaultValue = "",
 	onValueChange,
 	textareaRef,
+	mentionSectionLabels,
+	suggestionVariant,
+	submitAccessory,
 	className,
 }: Readonly<JiraActivityComposerProps>) {
 	const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
@@ -118,14 +129,17 @@ export function JiraActivityComposer({
 	return (
 		<FloatingComposer
 			actions={
-				<RovoComposerActionButton
-					canSubmit={canSubmit}
-					composerStatus="ready"
-					experimentalDarkCta
-					onStop={() => setRealtimeVoiceActive(false)}
-					onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
-					realtimeVoiceActive={realtimeVoiceActive}
-				/>
+				<>
+					{submitAccessory}
+					<RovoComposerActionButton
+						canSubmit={canSubmit}
+						composerStatus="ready"
+						experimentalDarkCta
+						onStop={() => setRealtimeVoiceActive(false)}
+						onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
+						realtimeVoiceActive={realtimeVoiceActive}
+					/>
+				</>
 			}
 			addButton={
 				<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
@@ -142,10 +156,12 @@ export function JiraActivityComposer({
 				autoResize
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 				enableDirectoryAutocomplete={false}
+				mentionSectionLabels={mentionSectionLabels}
 				onChange={(event) => updateValue(event.currentTarget.value)}
 				placeholder={placeholder}
 				ref={textareaRef}
 				rows={1}
+				suggestionVariant={suggestionVariant}
 				value={value}
 			/>
 		</FloatingComposer>

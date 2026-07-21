@@ -202,11 +202,9 @@ export function AiPlannerScope({
 			className={hasPlanner ? "relative" : undefined}
 			data-ai-planner-scope={hasPlanner ? "active" : undefined}
 		>
-			{isReviewing ? (
-				<RovoGeneration.Highlight active className="block w-full">
-					{content}
-				</RovoGeneration.Highlight>
-			) : content}
+			<RovoGeneration.Highlight active={isReviewing} className="block w-full">
+				{content}
+			</RovoGeneration.Highlight>
 			{isReviewing ? <AiPlannerActionBar /> : null}
 		</div>
 	);

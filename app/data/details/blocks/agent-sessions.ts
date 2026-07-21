@@ -48,9 +48,9 @@ export const AGENT_SESSIONS_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "initialExperimentalPreset",
-			type: "\"empty\" | \"filled\" | \"running\"",
+			type: "\"blank\" | \"empty\" | \"filled\" | \"running\"",
 			default: "\"filled\"",
-			description: "Deterministic starting state for the experimental variant: AI-planned empty context, filled context, or filled context with concurrent running agents.",
+			description: "Deterministic starting state for the experimental variant: true empty context, AI-planned suggestions, filled context, or filled context with concurrent running agents.",
 		},
 	],
 };

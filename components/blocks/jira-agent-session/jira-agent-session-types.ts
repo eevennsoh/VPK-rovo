@@ -15,7 +15,9 @@ export interface JiraAgentSessionAgent {
 	/** Display name, shown as the avatar label and the metadata-row label. */
 	name: string;
 	/** Absolute path to the agent avatar SVG under `public/`. */
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** Canonical VPK product mark used for platform-owned runners such as Rovo. */
+	vpkLogo?: "rovo";
 }
 
 export interface JiraAgentSessionItem {
@@ -31,7 +33,7 @@ export interface JiraAgentSessionItem {
 	elapsedSeconds?: number;
 	/**
 	 * Pull-request status. Omit while the agent is still working pre-PR or
-	 * awaiting user input; the metadata row then shows only the branch.
+	 * awaiting user input; the metadata row still identifies the agent.
 	 */
 	prStatus?: JiraAgentSessionPrStatus;
 }
@@ -57,6 +59,10 @@ export interface JiraAgentSessionActivityCardProps {
 	tag?: { text: string; color?: TagColor };
 	/** Optional trailing header action supplied by the consuming surface. */
 	action?: ReactNode;
+	/** Optional leading identity shown in the plain activity-card header. */
+	headerAvatar?: ReactNode;
+	/** Header geometry for plain activity cards without a session summary. */
+	headerLayout?: "inline" | "stacked";
 	/** Called when the rich activity header's View button is activated. */
 	onView?: (item: JiraAgentSessionItem) => void;
 	/** Main agent response rendered inside the card. */

@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	description:
-		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events, rich comment cards, and changed-files cards. The header can sort all activity or show only comments authored by agents.',
+		'A chronological activity timeline that documents work done by humans and AI agents on a Jira work item, in the style of a Linear "Activity" feed. Entries share a single connector spine and come in three kinds: compact events, rich comment cards, and changed-files cards. The header can sort all activity or show only agent-authored cards, including generated outputs.',
 	demoLayout: { previewHeight: "fit" },
 	importStatement: `import { JiraActivity } from "@/components/blocks/jira-activity";`,
 	usage: `import { JiraActivity } from "@/components/blocks/jira-activity";
@@ -39,6 +39,16 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			description: "Renders an optional trailing action in each comment card header.",
 		},
 		{
+			name: "onViewSession",
+			type: "(item: JiraAgentSessionItem) => void",
+			description: "Called when the View action on a rich agent-session activity card is activated.",
+		},
+		{
+			name: "onReplyRequest",
+			type: "(entry: JiraActivityCommentEntry) => void",
+			description: "Called when the Reply action on a human comment is activated.",
+		},
+		{
 			name: "currentUser",
 			type: "JiraActivityActor",
 			default: "built-in sample user",
@@ -66,7 +76,8 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			name: "filter",
 			type: '"all" | "agents-only"',
 			default: "undefined (uncontrolled)",
-			description: "Controlled timeline filter. `agents-only` displays only agent-authored comments.",
+			description:
+				"Controlled timeline filter. `agents-only` displays agent-authored comments and generated-output cards.",
 		},
 		{
 			name: "defaultFilter",

@@ -4,6 +4,7 @@ import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
 import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
+import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +21,7 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	delegated: PersonAssigneeIcon,
 	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
+	"teamwork-graph": TeamworkGraphIcon,
 };
 
 function initialsOf(name: string): string {
@@ -51,6 +53,7 @@ function ActorGlyph({ actor }: Readonly<{ actor: JiraActivityActor }>) {
 			fallbackText={initialsOf(actor.name)}
 			label={actor.name}
 			sizePx={16}
+			vpkLogo={actor.vpkLogo}
 		/>
 	);
 }

@@ -28,7 +28,6 @@ import {
 	setQueueSessionJiraColumn,
 	setQueueSessionPinned,
 	sortQueueSessions,
-	stopQueueSession,
 } from "@/components/projects/jira-queue/lib/queue-session-state";
 
 function ignoreThreadRun(): Promise<void> {
@@ -137,9 +136,6 @@ export function RovoStage(): React.ReactElement {
 				: [...sessions];
 		});
 	}, []);
-	const handleStopThread = useCallback((threadId: string) => {
-		setHistorySessions((sessions) => stopQueueSession(sessions, threadId));
-	}, []);
 	const handleDismissFileChanges = useCallback(() => {
 		if (!activeHistorySessionId) return;
 		setHistorySessions((sessions) => (
@@ -174,7 +170,6 @@ export function RovoStage(): React.ReactElement {
 			<JiraSessionRowActions
 				isPinned={pinnedThreadIds.has(thread.id)}
 				onArchive={() => handleArchiveThread(thread.id)}
-				onStop={() => handleStopThread(thread.id)}
 				onTogglePin={() => handleTogglePinThread(thread.id)}
 				status={session.status}
 				title={session.status === "awaiting-input" ? "Awaiting user response" : session.title}
@@ -182,7 +177,6 @@ export function RovoStage(): React.ReactElement {
 		);
 	}, [
 		handleArchiveThread,
-		handleStopThread,
 		handleTogglePinThread,
 		historySessionItems,
 		pinnedThreadIds,

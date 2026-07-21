@@ -23,9 +23,14 @@
 
 import type { WorkItemAttachment, WorkItemChildItem, WorkItemData } from "@/app/contexts/context-work-item-modal";
 import type {
+	JiraActivityEventEntry,
 	JiraActivityEventIcon,
 	JiraActivitySegment,
 } from "@/components/blocks/jira-activity";
+import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { CrewMember } from "@/components/blocks/agent-sessions/data/metadata-crew";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { TagColor } from "@/components/ui/tag";
 import {
 	advanceAgentPlanner,
@@ -68,9 +73,10 @@ export const AGENT_SESSIONS_TICK_MS = 400;
 
 export type AgentSessionStatus = "running" | "waiting" | "completed";
 export type AgentSessionsContextStatus = "empty" | "filled";
-export type AgentSessionsPreset = "empty" | "filled" | "running";
+export type AgentSessionsPreset = "blank" | "empty" | "filled" | "running";
 export type AgentSessionEventRole = "human" | "agent";
 export type AgentSessionStepStatus = "complete" | "active" | "pending";
+export type AgentSessionInvocationSource = "context-pill" | "prompt";
 export type RelationshipOption =
 	| "blocks"
 	| "is blocked by"
@@ -119,6 +125,8 @@ export interface AgentSession {
 	agentId: string;
 	agentName: string;
 	agentAvatarSrc?: string;
+	/** Activity-card title for explicitly invoked sessions. Presets use the script title. */
+	title?: string;
 	status: AgentSessionStatus;
 	command: string;
 	previewText: string;
@@ -161,7 +169,7 @@ export interface AgentSessionsState {
 	planner: AgentPlannerState;
 	comments: AgentSessionComment[];
 	sessions: AgentSession[];
-	/** Seeded, non-interactive timeline scaffolding (event + changed-files rows). */
+	/** Stored timeline rows: preset scaffolding plus accepted planner suggestions. */
 	staticEvents: StaticTimelineEvent[];
 	activeSessionId: string | null;
 	/** Draft text to pre-populate the floating session composer (e.g. from a next step). */
@@ -188,6 +196,9 @@ export interface AgentActivityEvent {
 	agentName: string;
 	agentAvatarSrc?: string;
 	status: AgentSessionStatus;
+	title: string;
+	branch: string;
+	elapsedSeconds: number;
 	commandPreview: string;
 	responsePreview?: string;
 	createdAtMs: number;
@@ -205,10 +216,10 @@ export interface StaticTimelineActor {
 }
 
 /**
- * A seeded, non-interactive timeline row. These scaffold the filled preset's
- * Activity with the same event and changed-files states the standalone Jira
- * Activity block shows, and flow through `selectActivityEvents` alongside the
- * derived human comments and agent sessions.
+ * A stored, non-interactive timeline row. Presets use these to scaffold the
+ * same event and changed-files states the standalone Jira Activity block shows;
+ * planner actions also append accepted suggestion events. They flow through
+ * `selectActivityEvents` alongside derived human comments and agent sessions.
  */
 export interface StaticEventActivityEvent {
 	id: string;
@@ -217,6 +228,8 @@ export interface StaticEventActivityEvent {
 	/** Leading event glyph; when omitted the actor avatar is shown instead. */
 	icon?: JiraActivityEventIcon;
 	segments: readonly JiraActivitySegment[];
+	/** Optional compact pull-request metadata shown in place of the action line (mirrors the Jira Activity design). */
+	pullRequest?: JiraActivityEventEntry["pullRequest"];
 	createdAtMs: number;
 }
 
@@ -228,6 +241,8 @@ export interface StaticChangedFilesActivityEvent {
 	description: string;
 	branch?: string;
 	tag?: { text: string; color?: TagColor };
+	sessionItem?: JiraAgentSessionItem;
+	outputs?: readonly ArtifactListItem[];
 	createdAtMs: number;
 }
 
@@ -246,7 +261,16 @@ export type AddContextResourceAction =
 
 export type AgentSessionsAction =
 	| { type: "hydrate-preset"; preset: AgentSessionsPreset; workItem: WorkItemData }
-	| { type: "launch-session"; agentId: string; agentName: string; agentAvatarSrc?: string; command?: string }
+	| { type: "launch-session"; agentId: string; agentName: string; agentAvatarSrc?: string; agentBrandName?: ThirdPartyLogoName; command?: string; title?: string }
+	| {
+		type: "invoke-agent";
+		source: AgentSessionInvocationSource;
+		agentId: string;
+		agentName: string;
+		agentAvatarSrc?: string;
+		agentBrandName?: ThirdPartyLogoName;
+		command?: string;
+	}
 	| { type: "tick"; deltaMs: number }
 	| { type: "settle-running" }
 	| { type: "reply-session"; sessionId: string; text: string }
@@ -296,6 +320,7 @@ function instantiateSession(params: {
 	id: string;
 	order: number;
 	agent: AgentSessionAgent;
+	title?: string;
 	scriptId: string;
 	command?: string;
 	status: AgentSessionStatus;
@@ -383,6 +408,7 @@ function instantiateSession(params: {
 		agentId: params.agent.id,
 		agentName: params.agent.name,
 		agentAvatarSrc: params.agent.avatarSrc,
+		title: params.title,
 		status: params.status,
 		command,
 		previewText,
@@ -541,6 +567,78 @@ export function settleRunningSessions(state: Readonly<AgentSessionsState>): Agen
 	return working;
 }
 
+interface AgentContributor {
+	id: string;
+	name: string;
+	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
+}
+
+function withAgentContributor(
+	metadata: Readonly<AgentPlannerMetadata>,
+	agent: Readonly<AgentContributor>,
+): AgentPlannerMetadata {
+	const contributor: CrewMember = {
+		id: agent.id,
+		kind: "agent",
+		name: agent.name,
+		avatarUrl: agent.avatarSrc,
+		...(agent.brandName ? { brandName: agent.brandName } : {}),
+	};
+	const existingIndex = metadata.crew.findIndex(
+		(member) =>
+			member.kind === "agent" &&
+			(member.id === contributor.id || member.name === contributor.name),
+	);
+	const crew = existingIndex < 0
+		? [...metadata.crew, contributor]
+		: metadata.crew.map((member, index) => (index === existingIndex ? contributor : member));
+	return { ...metadata, crew };
+}
+
+function withSessionContributors(
+	metadata: Readonly<AgentPlannerMetadata>,
+	sessions: readonly AgentSession[],
+): AgentPlannerMetadata {
+	let next = metadata as AgentPlannerMetadata;
+	for (const session of sessions) {
+		next = withAgentContributor(next, {
+			id: session.agentId,
+			name: session.agentName,
+			avatarSrc: session.agentAvatarSrc,
+		});
+	}
+	return next;
+}
+
+function withOutputContributors(
+	metadata: Readonly<AgentPlannerMetadata>,
+	events: readonly StaticTimelineEvent[],
+): AgentPlannerMetadata {
+	let next = metadata as AgentPlannerMetadata;
+	for (const event of events) {
+		if (event.kind !== "changed-files" || !event.sessionItem) continue;
+		next = withAgentContributor(next, {
+			id: event.actor.id.replace(/^static-/u, ""),
+			name: event.sessionItem.agent.name,
+			avatarSrc: event.sessionItem.agent.avatarSrc ?? event.actor.avatarSrc,
+		});
+	}
+	return next;
+}
+
+function withAssigneeContributor(metadata: Readonly<AgentPlannerMetadata>): AgentPlannerMetadata {
+	const assignee = metadata.assignee;
+	return assignee?.kind === "agent" && assignee.id
+		? withAgentContributor(metadata, {
+				id: assignee.id,
+				name: assignee.name,
+				avatarSrc: assignee.avatarUrl,
+				brandName: assignee.brandName,
+			})
+		: metadata as AgentPlannerMetadata;
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Reducer (pure)
 // ────────────────────────────────────────────────────────────────────────────
@@ -577,6 +675,7 @@ export function agentSessionsReducer(
 				id,
 				order: state.nextOrder,
 				agent: { id: action.agentId, name: action.agentName, avatarSrc: action.agentAvatarSrc },
+				title: action.title ?? action.agentName,
 				scriptId,
 				command: action.command,
 				status: "running",
@@ -586,9 +685,42 @@ export function agentSessionsReducer(
 			return {
 				...state,
 				sessions: [...state.sessions, session],
+				metadata: withAgentContributor(state.metadata, {
+					id: action.agentId,
+					name: action.agentName,
+					avatarSrc: action.agentAvatarSrc,
+					brandName: action.agentBrandName,
+				}),
 				nextOrder: state.nextOrder + 1,
 				nextIdCounter: state.nextIdCounter + 1,
 			};
+		}
+		case "invoke-agent": {
+			const invoked = agentSessionsReducer(state, {
+				type: "launch-session",
+				agentId: action.agentId,
+				agentName: action.agentName,
+				agentAvatarSrc: action.agentAvatarSrc,
+				agentBrandName: action.agentBrandName,
+				command: action.command,
+			});
+			if (action.source === "context-pill") {
+				return {
+					...invoked,
+					metadata: {
+						...invoked.metadata,
+						assignee: {
+							id: action.agentId,
+							kind: "agent",
+							name: action.agentName,
+							avatarUrl: action.agentAvatarSrc,
+							...(action.agentBrandName ? { brandName: action.agentBrandName } : {}),
+						},
+					},
+				};
+			}
+
+			return invoked;
 		}
 		case "open-general-session": {
 			const existing = state.sessions.find((session) => session.agentId === GENERAL_AGENT.id && session.status !== "completed");
@@ -608,6 +740,11 @@ export function agentSessionsReducer(
 			return {
 				...state,
 				sessions: [...state.sessions, session],
+				metadata: withAgentContributor(state.metadata, {
+					id: GENERAL_AGENT.id,
+					name: GENERAL_AGENT.name,
+					avatarSrc: GENERAL_AGENT.avatarSrc,
+				}),
 				activeSessionId: id,
 				nextOrder: state.nextOrder + 1,
 				nextIdCounter: state.nextIdCounter + 1,
@@ -701,11 +838,40 @@ export function agentSessionsReducer(
 			};
 		case "accept-planner-field":
 		case "dismiss-planner-field":
-		case "apply-planner-proposal":
 		case "reject-planner-proposal":
 		case "refine-planner-proposal":
-		case "edit-metadata":
 			return reduceAgentPlanner(state, action);
+		case "edit-metadata": {
+			const updated = reduceAgentPlanner(state, action);
+			return {
+				...updated,
+				metadata: withSessionContributors(
+					withAssigneeContributor(updated.metadata),
+					updated.sessions,
+				),
+			};
+		}
+		case "apply-planner-proposal": {
+			const applied = reduceAgentPlanner(state, action);
+			if (state.planner.status !== "ready" || applied.planner.status !== "applied") return applied;
+			const event: StaticEventActivityEvent = {
+				id: `teamwork-graph-suggestion-${state.nextIdCounter}`,
+				kind: "event",
+				actor: {
+					id: "teamwork-graph",
+					name: "Teamwork Graph",
+					kind: "app",
+				},
+				icon: "teamwork-graph",
+				segments: [{ type: "text", text: "provided a suggestion" }],
+				createdAtMs: SESSION_EPOCH_MS + state.elapsedMs,
+			};
+			return {
+				...applied,
+				staticEvents: [...applied.staticEvents, event],
+				nextIdCounter: state.nextIdCounter + 1,
+			};
+		}
 		default: {
 			// Exhaustiveness guard: adding an action without handling it is a type error.
 			const _exhaustive: never = action;
@@ -810,6 +976,7 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 	}));
 	const agentEvents: ActivityEvent[] = state.sessions.map((session) => {
 		const lastAgentMessage = [...session.messages].reverse().find((message) => message.role === "agent");
+		const script = SESSION_SCRIPTS[session.scriptId] ?? SESSION_SCRIPTS["general-assist"];
 		return {
 			id: `activity-${session.id}`,
 			kind: "agent",
@@ -818,6 +985,12 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 			agentName: session.agentName,
 			agentAvatarSrc: session.agentAvatarSrc,
 			status: session.status,
+			title: session.title ?? script.title,
+			branch: `rovo/${session.scriptId}`,
+			elapsedSeconds: Math.max(
+				0,
+				Math.floor((SESSION_EPOCH_MS + state.elapsedMs - session.startedAtMs) / 1000),
+			),
 			commandPreview: session.command,
 			responsePreview: lastAgentMessage?.content ?? session.previewText,
 			createdAtMs: session.startedAtMs,
@@ -831,13 +1004,32 @@ export function selectActivityEvents(state: Readonly<AgentSessionsState>): Activ
 // Presets
 // ────────────────────────────────────────────────────────────────────────────
 
+export function createBlankPresetState(workItem: Readonly<WorkItemData>): AgentSessionsState {
+	const contextResources = emptyContextResources();
+	return {
+		version: AGENT_SESSIONS_STATE_VERSION,
+		preset: "blank",
+		contextResources: { ...contextResources, title: workItem.title },
+		metadata: withAssigneeContributor(seedEmptyMetadataDraft(workItem)),
+		planner: createAgentPlannerState("blank", workItem),
+		comments: [],
+		sessions: [],
+		staticEvents: [],
+		activeSessionId: null,
+		composerPrefill: null,
+		elapsedMs: 0,
+		nextOrder: 0,
+		nextIdCounter: 1,
+	};
+}
+
 export function createEmptyPresetState(workItem: Readonly<WorkItemData>): AgentSessionsState {
 	const contextResources = emptyContextResources();
 	return {
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "empty",
 		contextResources: { ...contextResources, title: workItem.title },
-		metadata: seedEmptyMetadataDraft(workItem),
+		metadata: withAssigneeContributor(seedEmptyMetadataDraft(workItem)),
 		planner: createAgentPlannerState("empty", workItem),
 		comments: [],
 		sessions: [],
@@ -865,7 +1057,13 @@ export function createFilledPresetState(workItem: Readonly<WorkItemData>): Agent
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "filled",
 		contextResources: { ...contextResources, title: workItem.title },
-		metadata: seedMetadataDraft(workItem),
+		metadata: withOutputContributors(
+			withSessionContributors(
+				withAssigneeContributor(seedMetadataDraft(workItem)),
+				[completed],
+			),
+			FILLED_STATIC_EVENTS,
+		),
 		planner: createAgentPlannerState("filled", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions: [completed],
@@ -907,30 +1105,27 @@ export function createRunningPresetState(workItem: Readonly<WorkItemData>): Agen
 			cursor: 1,
 			startedAtMs: SESSION_EPOCH_MS - 90_000,
 		}),
-		instantiateSession({
-			id: "preset-session-4",
-			order: 3,
-			agent: PRESET_AGENTS.meeting,
-			scriptId: "general-assist",
-			status: "completed",
-			cursor: 2,
-			startedAtMs: SESSION_EPOCH_MS - 300_000,
-		}),
 	];
 	const contextResources = filledContextResources();
 	return {
 		version: AGENT_SESSIONS_STATE_VERSION,
 		preset: "running",
 		contextResources: { ...contextResources, title: workItem.title },
-		metadata: seedMetadataDraft(workItem),
+		metadata: withOutputContributors(
+			withSessionContributors(
+				withAssigneeContributor(seedMetadataDraft(workItem)),
+				sessions,
+			),
+			FILLED_STATIC_EVENTS,
+		),
 		planner: createAgentPlannerState("running", workItem),
 		comments: FILLED_COMMENTS.map((comment) => ({ ...comment })),
 		sessions,
-		staticEvents: [],
+		staticEvents: FILLED_STATIC_EVENTS.map((event) => ({ ...event })),
 		activeSessionId: null,
 		composerPrefill: null,
 		elapsedMs: 0,
-		nextOrder: 4,
+		nextOrder: 3,
 		nextIdCounter: 20,
 	};
 }
@@ -940,6 +1135,8 @@ export function hydratePreset(
 	workItem: Readonly<WorkItemData>,
 ): AgentSessionsState {
 	switch (preset) {
+		case "blank":
+			return createBlankPresetState(workItem);
 		case "empty":
 			return createEmptyPresetState(workItem);
 		case "filled":

@@ -17,6 +17,7 @@ import {
 	type AgentSelectorAgent,
 } from "@/components/blocks/agent-selector";
 import { SkillSelector } from "@/components/blocks/skill-selector";
+import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +79,8 @@ const FLYOUT_SIDE_OFFSET = 16;
 export interface JiraToolbarProps {
 	agents: readonly AgentSelectorAgent[];
 	className?: string;
+	defaultPinnedAgentIds?: readonly string[];
+	defaultPinnedSkillIds?: readonly string[];
 	onAgentAssignmentChange: (agentId: string, assigned: boolean) => void;
 	onBrowseAgents?: () => void;
 	onClearSelection: () => void;
@@ -90,9 +93,11 @@ export interface JiraToolbarProps {
 	onSkillSelect?: (skillId: string) => void;
 	onStatusChange: (status: string) => void;
 	onWatchOptions?: () => void;
+	pinnedItemsLabel?: string;
 	selectedAgentIds?: readonly string[];
 	selectedCount: number;
 	selectedStatus?: string | null;
+	skills?: readonly SkillsDirectorySkill[];
 	statusOptions: readonly string[];
 }
 
@@ -149,6 +154,8 @@ interface ToolbarAction {
 export function JiraToolbar({
 	agents,
 	className,
+	defaultPinnedAgentIds,
+	defaultPinnedSkillIds,
 	onAgentAssignmentChange,
 	onBrowseAgents,
 	onClearSelection,
@@ -161,9 +168,11 @@ export function JiraToolbar({
 	onSkillSelect,
 	onStatusChange,
 	onWatchOptions,
+	pinnedItemsLabel,
 	selectedAgentIds = [],
 	selectedCount,
 	selectedStatus,
+	skills,
 	statusOptions,
 }: Readonly<JiraToolbarProps>) {
 	const shouldReduceMotion = useReducedMotion();
@@ -258,14 +267,17 @@ export function JiraToolbar({
 					>
 						<AgentSelector
 							agents={agents}
+							defaultPinnedAgentIds={defaultPinnedAgentIds}
 							onAgentToggle={(agentId) => {
 								onAgentAssignmentChange(agentId, !selectedAgentIdSet.has(agentId));
 							}}
 							onBrowseAgents={() => onBrowseAgents?.()}
 							onCreateAgent={() => onCreateAgent?.()}
 							onQueryChange={setAgentQuery}
+							pinnedItemsLabel={pinnedItemsLabel}
 							query={agentQuery}
 							selectedAgentIds={selectedAgentIds}
+							selectionMode="single"
 						/>
 					</DropdownMenuContent>
 				</DropdownMenu>
@@ -302,12 +314,15 @@ export function JiraToolbar({
 						sideOffset={FLYOUT_SIDE_OFFSET}
 					>
 						<SkillSelector
+							defaultPinnedSkillIds={defaultPinnedSkillIds}
 							onBrowseSkills={() => onBrowseSkills?.()}
 							onCreateSkill={() => onCreateSkill?.()}
 							onQueryChange={setSkillQuery}
 							onSkillToggle={handleSkillToggle}
+							pinnedItemsLabel={pinnedItemsLabel}
 							query={skillQuery}
 							selectionMode="single"
+							skills={skills}
 						/>
 					</DropdownMenuContent>
 				</DropdownMenu>

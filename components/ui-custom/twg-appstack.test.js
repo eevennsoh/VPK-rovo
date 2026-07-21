@@ -38,6 +38,18 @@ test("TWG Appstack animation is optional and preserves source stack rotation", (
 	assert.match(SOURCE, /animate=\{\{ filter: "blur\(0px\)", opacity: 1, rotate: rotation, scale: 1, x: 0 \}\}/u);
 });
 
+test("TWG Appstack only staggers its first reveal and layout-animates later sources", () => {
+	assert.match(SOURCE, /const hasRenderedSources = useRef\(false\);/u);
+	assert.match(SOURCE, /const shouldStaggerEntrance = !hasRenderedSources\.current;/u);
+	assert.match(SOURCE, /if \(sources\.length > 0\) hasRenderedSources\.current = true;/u);
+	assert.match(
+		SOURCE,
+		/const delay = shouldStaggerEntrance[\s\S]*\? getAppstackDelay\(index, itemCount, direction\)[\s\S]*: 0;/u,
+	);
+	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/u);
+	assert.match(SOURCE, /layout: \{ duration: 0\.25, ease: \[0\.4, 0, 0, 1\] \}/u);
+});
+
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {
 	assert.match(SOURCE, /export function TwgToolSourceStack\(props: TWGAppstackProps\)/u);
 	assert.match(SOURCE, /return <TWGAppstack \{\.\.\.props\} \/>/u);

@@ -13,6 +13,7 @@ import type {
 import type { CrewMember } from "@/components/blocks/agent-sessions/data/metadata-crew";
 import { LABEL_OPTIONS, PROJECT_OPTIONS } from "@/components/blocks/agent-sessions/data/metadata-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/agent-sessions/data/metadata-people";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { filledContextResources } from "@/components/blocks/agent-sessions/data/session-fixtures";
 import type {
 	AgentSessionsContextResources,
@@ -37,10 +38,16 @@ export type AgentPlannerFieldDecision = "pending" | "accepted" | "dismissed";
 export type AgentPlannerSource = "jira" | "twg" | "confluence" | "google-drive";
 export type AgentPlannerPriority = NonNullable<WorkItemData["priority"]>;
 
+export interface AgentPlannerAssignee extends WorkItemPerson {
+	id?: string;
+	kind?: "person" | "agent";
+	brandName?: ThirdPartyLogoName;
+}
+
 export interface AgentPlannerMetadata {
 	status: string;
 	priority: AgentPlannerPriority | null;
-	assignee: WorkItemPerson | null;
+	assignee: AgentPlannerAssignee | null;
 	reporter: WorkItemPerson | null;
 	startDate?: Date;
 	dueDate?: Date;

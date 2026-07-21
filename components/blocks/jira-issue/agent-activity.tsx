@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
+import { formatElapsedTime } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
@@ -59,6 +60,24 @@ const JIRA_ISSUE_AGENT_PANEL_MESSAGES = {
 } as const;
 const JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE =
 	"On it. I am reviewing the connected work and will add the next update inside this work item.";
+
+const JIRA_ISSUE_AGENT_ELAPSED_TICK_MS = 1000;
+
+/** Live duration for an agent run whose start is owned by the persistent activity row. */
+function JiraIssueAgentElapsedByline({ startedAtMs }: Readonly<{ startedAtMs: number }>) {
+	const [elapsedSeconds, setElapsedSeconds] = useState(() =>
+		Math.max(0, Math.floor((Date.now() - startedAtMs) / JIRA_ISSUE_AGENT_ELAPSED_TICK_MS))
+	);
+
+	useEffect(() => {
+		const intervalId = setInterval(() => {
+			setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAtMs) / JIRA_ISSUE_AGENT_ELAPSED_TICK_MS)));
+		}, JIRA_ISSUE_AGENT_ELAPSED_TICK_MS);
+		return () => clearInterval(intervalId);
+	}, [startedAtMs]);
+
+	return <p className="text-xs leading-4 text-text-subtle">{formatElapsedTime(elapsedSeconds)}</p>;
+}
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";
@@ -119,10 +138,12 @@ function JiraIssueAgentActivityPanel({
 	activity,
 	onQuestionSubmit,
 	onViewChat,
+	startedAtMs,
 }: Readonly<{
 	activity: JiraIssueAgentActivity;
 	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onViewChat?: (activity: JiraIssueAgentActivity) => void;
+	startedAtMs: number;
 }>) {
 	const panelMessage = getJiraIssueAgentPanelMessage(activity);
 	const isRovoActivity = activity.name === "Rovo";
@@ -162,7 +183,7 @@ function JiraIssueAgentActivityPanel({
 						</Button>
 					) : null
 				}
-				byline={<p className="text-xs leading-4 text-text-subtle">Just now</p>}
+				byline={<JiraIssueAgentElapsedByline startedAtMs={startedAtMs} />}
 				leading={
 					<Avatar
 						className={isRovoActivity ? "[&>svg]:hidden" : undefined}
@@ -244,6 +265,7 @@ function JiraIssueAgentActivityRow({
 	rowCount: number;
 }>) {
 	const isAwaitingInput = activity.state === "awaiting-input";
+	const [startedAtMs] = useState(() => Date.now());
 	const workingLabels = getJiraIssueAgentWorkingLabels(activity);
 	const rowRadiusClassName = rowCount === 1
 		? "rounded-sm"
@@ -314,7 +336,12 @@ function JiraIssueAgentActivityRow({
 				side="right"
 				sideOffset={8}
 			>
-				<JiraIssueAgentActivityPanel activity={activity} onQuestionSubmit={onQuestionSubmit} onViewChat={onViewChat} />
+				<JiraIssueAgentActivityPanel
+					activity={activity}
+					onQuestionSubmit={onQuestionSubmit}
+					onViewChat={onViewChat}
+					startedAtMs={startedAtMs}
+				/>
 			</HoverCardContent>
 		</HoverCard>
 	);

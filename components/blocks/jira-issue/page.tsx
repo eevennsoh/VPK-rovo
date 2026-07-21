@@ -96,6 +96,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "Just now",
+		state: "done",
 	},
 	{
 		id: "PD-40:dependency-mapper",
@@ -105,6 +106,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "1 min ago",
+		state: "failed",
 	},
 ] as const satisfies readonly JiraIssueCompletedAgentRun[];
 

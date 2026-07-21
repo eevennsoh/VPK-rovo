@@ -22,6 +22,8 @@ export function JiraAgentSessionActivityCard({
 	timestamp,
 	tag,
 	action,
+	headerAvatar,
+	headerLayout = "inline",
 	onView,
 	children,
 	details,
@@ -75,21 +77,47 @@ export function JiraAgentSessionActivityCard({
 		);
 	}
 
+	const hasStackedHeader = headerLayout === "stacked";
+
 	return (
 		<div
 			className={cn(
-				"w-full overflow-hidden rounded-lg border border-border bg-surface",
+				"w-full overflow-hidden border border-border bg-surface",
+				hasStackedHeader ? "rounded-xl" : "rounded-lg",
 				className,
 			)}
 		>
-			<div className="grid gap-2 p-3">
-				<div className="flex min-w-0 items-start justify-between gap-2">
-					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
-						<span className="font-medium text-text">{agentName}</span>
-						<span className="text-text-subtle">{timestamp}</span>
-						{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
-					</div>
-					{action ? <div className="shrink-0">{action}</div> : null}
+			<div className={cn("grid", hasStackedHeader ? "gap-4 p-4" : "gap-2 p-3")}>
+				<div
+					className={
+						hasStackedHeader
+							? "flex min-w-0 items-center gap-3"
+							: "flex min-w-0 items-start gap-3"
+					}
+				>
+					{headerAvatar}
+					{hasStackedHeader ? (
+						<div className="min-w-0 flex-1">
+							<div className="flex min-w-0 items-center">
+								<span className="min-w-0 truncate text-sm font-medium text-text">
+									{agentName}
+								</span>
+							</div>
+							<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+								<span className="shrink-0">{timestamp}</span>
+								{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
+							</div>
+						</div>
+					) : (
+						<div
+							className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5"
+						>
+							<span className="font-medium text-text">{agentName}</span>
+							<span className="text-text-subtle">{timestamp}</span>
+							{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
+						</div>
+					)}
+					{action}
 				</div>
 
 				{children}

@@ -43,7 +43,7 @@ test("RovoAppBrand uses selected-agent actions while a custom agent is active", 
 	assert.match(SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	assert.match(SOURCE, /key=\{selectedAgentId\}/u);
 	assert.match(SOURCE, /variants=\{identityItemVariants\}/u);
-	assert.match(SOURCE, /className="-ml-0\.5 size-4 text-icon-subtle group-aria-expanded\/button:text-icon-selected"/u);
+	assert.match(SOURCE, /className="-ml-0\.5 size-4 shrink-0 text-icon-subtle group-aria-expanded\/button:text-icon-selected"/u);
 	assert.doesNotMatch(SOURCE, /className="-ml-0\.5 size-4 text-icon-selected"/u);
 });
 

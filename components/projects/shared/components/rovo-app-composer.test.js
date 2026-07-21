@@ -347,6 +347,8 @@ test("visual trace auto-tagging uses mention nodes and hides autocomplete while 
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-node \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 1\.5rem;[\s\S]*vertical-align: bottom;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-trigger-wrapper \{[\s\S]*height: 1\.5rem;[\s\S]*overflow: visible;[\s\S]*line-height: 0;[\s\S]*vertical-align: top;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer \.rich-text-mention-chip \{[\s\S]*align-self: center;[\s\S]*vertical-align: middle;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer-floating \.react-renderer\.node-mention,[\s\S]*\.prompt-input-composer-floating \.rich-text-mention-node,[\s\S]*\.prompt-input-composer-floating \.rich-text-mention-trigger-wrapper \{[\s\S]*height: 1\.25rem;[\s\S]*line-height: 1\.25rem;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.prompt-input-composer-floating \.rich-text-mention-trigger-wrapper \{[\s\S]*line-height: 0;/u);
 });
 
 test("composer trace auto-tagging keeps native undo history available", () => {

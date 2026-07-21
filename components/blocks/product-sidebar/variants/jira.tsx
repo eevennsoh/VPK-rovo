@@ -341,12 +341,13 @@ export function JiraSessionRowActions({
 }: Readonly<{
 	isPinned: boolean;
 	onArchive: () => void;
-	onStop: () => void;
+	onStop?: () => void;
 	onTogglePin: () => void;
 	status: JiraSidebarSessionStatus;
 	title: string;
 }>) {
 	const isArchivable = status === "pr-open" || status === "merged" || status === "stopped";
+	const shouldShowLifecycleAction = isArchivable || onStop !== undefined;
 	const PinGlyph = isPinned ? PinFilledIcon : PinIcon;
 
 	return (
@@ -361,22 +362,24 @@ export function JiraSessionRowActions({
 			>
 				<PinGlyph label="" size="small" />
 			</SidebarNavItemAction>
-			<SidebarNavItemAction
-				aria-label={`${isArchivable ? "Archive" : "Stop"} ${title}`}
-				className={cn(
-					"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100",
-					isArchivable
-						? "group-data-[selected=true]/sidebar-nav-item:text-icon-subtle"
-						: "text-icon-danger group-data-[selected=true]/sidebar-nav-item:text-icon-danger",
-				)}
-				onClick={(event) => {
-					event.stopPropagation();
-					if (isArchivable) onArchive();
-					else onStop();
-				}}
-			>
-				{isArchivable ? <ArchiveBoxIcon label="" size="small" /> : <VideoStopOverlayIcon label="" size="small" />}
-			</SidebarNavItemAction>
+			{shouldShowLifecycleAction ? (
+				<SidebarNavItemAction
+					aria-label={`${isArchivable ? "Archive" : "Stop"} ${title}`}
+					className={cn(
+						"opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100",
+						isArchivable
+							? "group-data-[selected=true]/sidebar-nav-item:text-icon-subtle"
+							: "text-icon-danger group-data-[selected=true]/sidebar-nav-item:text-icon-danger",
+					)}
+					onClick={(event) => {
+						event.stopPropagation();
+						if (isArchivable) onArchive();
+						else onStop?.();
+					}}
+				>
+					{isArchivable ? <ArchiveBoxIcon label="" size="small" /> : <VideoStopOverlayIcon label="" size="small" />}
+				</SidebarNavItemAction>
+			) : null}
 		</>
 	);
 }
@@ -435,7 +438,10 @@ function JiraSessionRow({
 							isPinned={isPinned}
 							onArchive={onArchive}
 							onStop={onStop}
-							onTogglePin={onTogglePin}
+							onTogglePin={() => {
+								flyoutHandle.close();
+								onTogglePin();
+							}}
 							status={session.status}
 							title={session.title}
 						/>

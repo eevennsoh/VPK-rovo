@@ -17,13 +17,15 @@ export interface JiraActivityActor {
 	kind: JiraActivityActorKind;
 	/** Person photo or 1P agent art under `public/`. */
 	avatarSrc?: string;
+	/** Canonical VPK product mark for platform-owned actors such as Rovo. */
+	vpkLogo?: "rovo";
 	/** Third-party brand mark for `app` actors, rendered via `LogoThirdParty`. */
 	brandName?: ThirdPartyLogoName;
 }
 
 /**
- * Neutral leading glyph for an event row. When an event omits its `icon`, the
- * actor avatar is shown in the node slot instead (e.g. a person self-assigning).
+ * Leading glyph for an event row. Most are neutral ADS icons; platform services
+ * can use their canonical branded mark. When omitted, the actor avatar is shown.
  */
 export type JiraActivityEventIcon =
 	| "created"
@@ -32,7 +34,8 @@ export type JiraActivityEventIcon =
 	| "status"
 	| "delegated"
 	| "in-progress"
-	| "linked";
+	| "linked"
+	| "teamwork-graph";
 
 /**
  * A rich inline text run. Shared by event action lines and comment bodies so
@@ -126,5 +129,5 @@ export type JiraActivityEntry =
 /** Timeline ordering: `ascending` = oldest first, `descending` = newest first. */
 export type JiraActivitySortOrder = "ascending" | "descending";
 
-/** Timeline filtering: show every activity or only comments authored by agents. */
+/** Timeline filtering: show every activity or only agent-authored cards, including generated outputs. */
 export type JiraActivityFilter = "all" | "agents-only";

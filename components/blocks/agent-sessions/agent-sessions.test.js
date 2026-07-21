@@ -36,6 +36,7 @@ function readBlockFile(relativePath) {
 let modelPromise;
 let detailsTabPromise;
 let detailFieldEditorsPromise;
+let activityComposerRoutingPromise;
 function loadBlockModule(relativePath, harnessName) {
 	return esbuild
 		.build({
@@ -72,6 +73,16 @@ function loadDetailFieldEditorsModule() {
 		);
 	}
 	return detailFieldEditorsPromise;
+}
+
+function loadActivityComposerRoutingModule() {
+	if (!activityComposerRoutingPromise) {
+		activityComposerRoutingPromise = loadBlockModule(
+			"experimental/lib/activity-composer-session-routing.ts",
+			"activity-composer-session-routing-harness.cjs",
+		);
+	}
+	return activityComposerRoutingPromise;
 }
 
 function tickUntil(model, state, predicate, maxTicks = 400) {
@@ -116,14 +127,15 @@ test("AgentSessions preserves the standard variant behavior (regression)", () =>
 	assert.doesNotMatch(defaultViewSource, /Acmecorp: Prepare for bid recommendation for ESM RFP/u);
 });
 
-test("AgentSessions experimental view mounts the local composition, not the global Rovo chat", () => {
+test("AgentSessions experimental view delegates chat ownership to its composition", () => {
 	const experimentalViewSource = AGENT_SESSIONS_SOURCE.slice(
 		AGENT_SESSIONS_SOURCE.indexOf("function AgentSessionsExperimentalView"),
 		AGENT_SESSIONS_SOURCE.indexOf("export default AgentSessions"),
 	);
 	assert.match(experimentalViewSource, /const \[isIssueOpen, setIsIssueOpen\] = useState\(initialIssueOpen\);/u);
 	assert.match(experimentalViewSource, /<ExperimentalAgentSessions[\s\S]*open=\{isIssueOpen\}[\s\S]*onClose=\{handleIssueClose\}[\s\S]*initialPreset=\{initialExperimentalPreset\}[\s\S]*\/>/u);
-	// The experimental variant must NOT reuse the standard modal or the global Rovo chat surface.
+	// The top-level variant does not duplicate either surface; its composition
+	// bridges session state into the shared Jira Issue Rovo overlay.
 	assert.doesNotMatch(experimentalViewSource, /JiraWorkItemModal/u);
 	assert.doesNotMatch(experimentalViewSource, /RovoFloatingChat/u);
 	assert.match(AGENT_SESSIONS_SOURCE, /import \{ ExperimentalAgentSessions \} from "@\/components\/blocks\/agent-sessions\/experimental\/experimental-agent-sessions";/u);
@@ -152,29 +164,59 @@ test("the title Open split button uses direct 24px coding-agent logos", () => {
 	assert.match(titleActionsSource, />\s*Share\s*<\/DropdownMenuItem>/u);
 });
 
-test("the experimental surface stays out of global Rovo history", () => {
+test("the experimental surface reuses the Jira Issue floating Rovo chat", () => {
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
-	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
-	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
-	const floatingLauncherSource = readBlockFile("experimental/components/floating-session-launcher.tsx");
 	const floatingSurfaceSource = readBlockFile("experimental/components/floating-session-surface.tsx");
-	for (const source of [compositionSource, controllerSource, contextSource]) {
-		assert.doesNotMatch(source, /useRovoChat/u);
-		assert.doesNotMatch(source, /openChat\("floating"\)/u);
-	}
+	const sessionScriptsSource = readBlockFile("data/session-scripts.ts");
+	const sharedOverlaySource = readProjectFile("components/projects/asx/components/asx-rovo-overlay.tsx");
 	assert.match(compositionSource, /<AgentSessionsProvider/u);
 	assert.match(
 		compositionSource,
-		/blanketContent=\{[\s\S]*<FloatingSessionSurface portalToViewport=\{presentation === "inline"\} \/>[\s\S]*\}/u,
+		/blanketContent=\{[\s\S]*<FloatingSessionSurface \/>[\s\S]*\}/u,
 	);
 	assert.match(
 		dialogSource,
 		/<\/Dialog\.Popup>\s*\{open \? blanketContent : null\}\s*<\/Dialog\.Portal>/u,
 	);
-	assert.match(floatingSurfaceSource, /<FloatingSessionLauncher \/>/u);
-	assert.doesNotMatch(floatingSurfaceSource, /onModalBlanket/u);
-	assert.doesNotMatch(floatingLauncherSource, /translate-[xy]-/u);
+	assert.match(floatingSurfaceSource, /import \{ AsxRovoOverlay \} from "@\/components\/projects\/asx\/components\/asx-rovo-overlay";/u);
+	assert.match(floatingSurfaceSource, /useAsxAgentChatDemo\(\)/u);
+	assert.match(floatingSurfaceSource, /question: getSessionQuestion\(activeSession\)/u);
+	assert.match(floatingSurfaceSource, /intro: getSessionQuestionIntro\(activeSession\)/u);
+	assert.match(floatingSurfaceSource, /activeSession\.status === "waiting"[\s\S]*script\.resumeMessage/u);
+	assert.match(floatingSurfaceSource, /<AsxRovoOverlay/u);
+	assert.match(floatingSurfaceSource, /onLauncherClick=\{actions\.openLatestOrCreateGeneralSession\}/u);
+	assert.match(sharedOverlaySource, /onButtonClick=\{onLauncherClick\}/u);
+	assert.match(sharedOverlaySource, /interceptClarificationAnswers=\{Boolean\(onInterceptSubmit \|\| onQuestionAnswer\)\}/u);
+	assert.match(sharedOverlaySource, /onInterceptSubmit=\{onInterceptSubmit \?\? \(onQuestionAnswer \? handleQuestionAnswer : undefined\)\}/u);
+	assert.equal((sessionScriptsSource.match(/waitAfterIndex:/gu) ?? []).length, 1);
+	assert.match(sessionScriptsSource, /waitingQuestion: \{[\s\S]*id: "pricing-seat-band"[\s\S]*label: "Assume 5,000 seats"[\s\S]*label: "Model a 5,000–10,000-seat range"/u);
+	assert.doesNotMatch(floatingSurfaceSource, /FloatingSession(?:Panel|Header|Transcript|Progress|Composer|Launcher)/u);
+	for (const fileName of [
+		"floating-session-panel.tsx",
+		"floating-session-header.tsx",
+		"floating-session-transcript.tsx",
+		"floating-session-progress.tsx",
+		"floating-session-composer.tsx",
+		"floating-session-launcher.tsx",
+	]) {
+		assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components", fileName)), false);
+	}
+});
+
+test("the scripted demo sessions use human task titles", () => {
+	const sessionScriptsSource = readBlockFile("data/session-scripts.ts");
+	for (const title of [
+		"Map Acmecorp’s compliance requirements",
+		"Review Acmecorp’s bid risks",
+		"Model pricing options for Acmecorp",
+		"Recommend next steps for this work item",
+	]) {
+		assert.ok(sessionScriptsSource.includes(`title: "${title}"`));
+	}
+	for (const terseTitle of ["Compliance matrix", "Risk review", "Pricing draft", "Work item assistant"]) {
+		assert.ok(!sessionScriptsSource.includes(`title: "${terseTitle}"`));
+	}
 });
 
 test("the activity layout imports a real content-visibility hook", () => {
@@ -184,6 +226,22 @@ test("the activity layout imports a real content-visibility hook", () => {
 	assert.match(activityPanelSource, /export function useHasActivity\(\): boolean/u);
 	assert.match(activityPanelSource, /return meta\.activityEvents\.length > 0;/u);
 	assert.match(layoutSource, /import \{ useHasActivity \} from .*activity-panel";/u);
+	assert.match(activityPanelSource, /onSubmitReply=\{\(entry, body\) => \{/u);
+	assert.match(activityPanelSource, /actions\.replySession\(event\.sessionId, body\)/u);
+});
+
+test("the experimental modal hugs its content until the viewport gap cap", () => {
+	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
+	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
+
+	assert.match(dialogSource, /max-h-\[calc\(100dvh-24px\)\]/u);
+	assert.match(dialogSource, /sm:max-h-\[calc\(100vh-120px\)\]/u);
+	assert.match(dialogSource, /gridTemplateColumns: "minmax\(0, 1fr\)"/u);
+	assert.doesNotMatch(dialogSource, /(?:^|[^-])h-\[calc\(100dvh-24px\)\]/u);
+	assert.doesNotMatch(dialogSource, /sm:h-\[calc\(100vh-120px\)\]/u);
+	assert.match(layoutSource, /@\[860px\]\/agentlayout:grid-rows-\[minmax\(0,1fr\)\]/u);
+	assert.equal((layoutSource.match(/@\[860px\]\/agentlayout:\[grid-area:1\/1\]/gu) ?? []).length, 2);
+	assert.doesNotMatch(layoutSource, /@\[860px\]\/agentlayout:absolute/u);
 });
 
 test("the experimental metadata control is a neutral disclosure with Queue Details motion", () => {
@@ -207,15 +265,19 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	// Base UI keeps the popup open across the trigger->popup path; clicking docks.
 	assert.match(actionsSource, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover"/u);
 	assert.match(actionsSource, /import \{ MetadataRail \} from "@\/components\/blocks\/agent-sessions\/experimental\/components\/metadata-rail"/u);
-	// The Popover wrapper is always mounted (stable trigger element); hover-open is
-	// gated to the collapsed state so collapsing under the pointer still previews.
-	assert.match(actionsSource, /<Popover>/u);
+	// The Popover wrapper is always mounted (stable trigger element), but the
+	// controlled state rejects click-open so only collapsed-state hover can preview.
+	assert.match(actionsSource, /open=\{metadataCollapsed && metadataPreviewOpen\}/u);
+	assert.match(actionsSource, /eventDetails\.reason === "trigger-press"/u);
+	assert.match(actionsSource, /eventDetails\.cancel\(\)/u);
+	assert.match(actionsSource, /eventDetails\.cancel\(\);\s*setMetadataPreviewOpen\(false\)/u);
 	assert.match(actionsSource, /openOnHover=\{metadataCollapsed\}/u);
 	assert.match(actionsSource, /delay=\{120\}/u);
 	assert.match(actionsSource, /closeDelay=\{80\}/u);
 	assert.match(actionsSource, /render=\{toggleButton\}/u);
 	assert.match(actionsSource, /<MetadataRail borderless \/>/u);
 	assert.match(actionsSource, /align="end"/u);
+	assert.match(actionsSource, /className="[^"]*border-0[^"]*shadow-2xl[^"]*dark:shadow-2xl[^"]*"/u);
 	// The work-item dialog paints at z-[500]/[501]; the preview must sit above it,
 	// or it mounts but is painted behind the dialog (invisible on screen).
 	assert.match(actionsSource, /positionerClassName="z-\[600\]"/u);
@@ -294,6 +356,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	const contextPanelSource = readBlockFile("experimental/components/context-panel.tsx");
 	const plannerPanelSource = readBlockFile("experimental/components/ai-planner-panel.tsx");
 	const activityComposerSource = readBlockFile("experimental/components/activity-composer.tsx");
+	const jiraActivityComposerSource = readProjectFile("components/blocks/jira-activity/jira-activity-composer.tsx");
 	const activityPanelSource = readBlockFile("experimental/components/activity-panel.tsx");
 	const agentContextPillSource = readBlockFile("experimental/components/activity-composer-agent-context-pill.tsx");
 	const skillContextPillSource = readBlockFile("experimental/components/activity-composer-skill-context-pill.tsx");
@@ -346,7 +409,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(plannerPanelSource, /const hasPlanner = planner\.status === "searching" \|\| isReviewing;/u);
 	assert.match(plannerPanelSource, /data-ai-planner-scope=\{hasPlanner \? "active" : undefined\}/u);
 	assert.match(plannerPanelSource, /import \{ RovoGeneration \} from "@\/components\/ui-custom\/rovo-generation";/u);
-	assert.match(plannerPanelSource, /<RovoGeneration\.Highlight active className="block w-full">/u);
+	assert.match(plannerPanelSource, /<RovoGeneration\.Highlight active=\{isReviewing\} className="block w-full">/u);
+	assert.doesNotMatch(plannerPanelSource, /\{isReviewing \? \(\s*<RovoGeneration\.Highlight/u);
 	assert.match(plannerPanelSource, /hasPlanner \? "rounded-xl border border-border bg-bg-input p-1\.5" : null/u);
 	assert.match(plannerPanelSource, /hasPlanner \? "px-2 pb-2" : null/u);
 	assert.doesNotMatch(plannerPanelSource, /border-border-discovery-subtle/u);
@@ -375,36 +439,56 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-agent-sessions-composer-dock/u);
 	assert.doesNotMatch(layoutSource, /bg-background\/90|backdrop-blur/u);
 	assert.doesNotMatch(layoutSource, /agentlayout:border-t|agentlayout:border-border/u);
-	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onSelectAgent=\{\(agentName\) => insertContext\("@", agentName\)\}[\s\S]*onSelectSkill=\{\(skillId\) => insertContext\("\/", skillId\)\}/u);
-	assert.match(activityComposerSource, /onStatusChange=\{\(status\) => actions\.updateMetadata\(\{ status \}\)\}[\s\S]*status=\{state\.metadata\.status\}/u);
-	assert.match(contextPillsSource, /Move to:[\s\S]*<StatusPill onChange=\{onStatusChange\} value=\{status\} \/>/u);
+	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onInvokeAgent=\{handleInvokeAgent\}[\s\S]*onInvokeSkill=\{handleInvokeSkill\}/u);
+	assert.match(activityComposerSource, /actions\.invokeAgent\(agent, "context-pill", `@\$\{agent\.name\}`\)/u);
+	assert.match(activityComposerSource, /ROVO_AGENT_SELECTOR_AGENTS\.find\(\(agent\) => includesComposerAgentMention\(text, agent\.name\)\)/u);
+	assert.match(activityComposerSource, /actions\.invokeAgent\(invokedAgent, "prompt", text\)/u);
+	assert.match(activityComposerSource, /\{ id: `skill:\$\{skill\.id\}`, name: "Rovo" \}[\s\S]*`\/\$\{skill\.name\}`,[\s\S]*skill\.name/u);
+	assert.match(activityComposerSource, /findSteeredWorkingSession\(state\.sessions, text\)/u);
+	assert.doesNotMatch(activityComposerSource, /insertContext|requestAnimationFrame|textareaRef/u);
+	assert.doesNotMatch(activityComposerSource, /onStatusChange=/u);
+	assert.doesNotMatch(contextPillsSource, /Move to:|StatusPill/u);
 	assert.match(activityComposerSource, /import \{ JiraActivityComposer \} from "@\/components\/blocks\/jira-activity";/u);
 	assert.match(activityComposerSource, /<AgentSessionsComposerMotion placement="sticky">[\s\S]*<JiraActivityComposer/u);
 	assert.match(activityComposerSource, /onValueChange=\{handlePromptChange\}/u);
-	assert.match(activityComposerSource, /textareaRef=\{editorRef\}/u);
+	assert.match(activityComposerSource, /const AGENT_SESSIONS_MENTION_LABELS = \{ subagent: "Agents" \} as const;/u);
+	assert.match(activityComposerSource, /const AGENT_SESSIONS_SUGGESTION_VARIANT = \{ command: "flat", mention: "flat" \} as const;/u);
+	assert.match(activityComposerSource, /mentionSectionLabels=\{AGENT_SESSIONS_MENTION_LABELS\}/u);
+	assert.match(activityComposerSource, /suggestionVariant=\{AGENT_SESSIONS_SUGGESTION_VARIANT\}/u);
+	assert.match(activityComposerSource, /label: "Continue in existing session"/u);
+	assert.match(activityComposerSource, /label: "Start a new session"/u);
+	assert.match(activityComposerSource, /data-agent-sessions-session-target-menu/u);
+	assert.match(activityComposerSource, /<RichTextSuggestionMenu[\s\S]*className="rich-text-command-menu-borderless w-full!"[\s\S]*items=\{SESSION_TARGET_MENU_ITEMS\}/u);
+	assert.match(activityComposerSource, /sessionTargetSelection\.choice === "new"/u);
+	assert.match(activityComposerSource, /actions\.invokeAgent\([\s\S]*id: mentionedAgentSession\.agentId[\s\S]*"prompt",[\s\S]*text/u);
+	assert.match(activityComposerSource, /submitAccessory=\{startsNewSession \? \([\s\S]*<Tag[\s\S]*onRemove=\{\(\) => chooseSessionTarget\("continue"\)\}[\s\S]*New session/u);
+	assert.match(jiraActivityComposerSource, /submitAccessory\?: ReactNode;/u);
+	assert.match(jiraActivityComposerSource, /\{submitAccessory\}[\s\S]*<RovoComposerActionButton/u);
 	assert.match(activityComposerSource, /value=\{draft\}/u);
 	assert.doesNotMatch(activityComposerSource, /import \{ FloatingComposer \}|PromptInputTextarea|RovoComposerActionButton/u);
+	assert.doesNotMatch(activityComposerSource, /ActivitySuggestionMenu|TRAILING_TOKEN|buildItems/u);
 	assert.doesNotMatch(activityComposerSource, /className="shadow-none"/u);
-	assert.match(activityComposerSource, /return `\$\{currentDraft\}\$\{separator\}\$\{prefix\}\$\{value\} `;[\s\S]*editorRef\.current\?\.focus\(\)/u);
 	assert.doesNotMatch(activityComposerSource, /requestedContext/u);
 	assert.match(activityPanelSource, /import \{ JiraActivity \} from "@\/components\/blocks\/jira-activity";/u);
 	assert.match(activityPanelSource, /mapActivityEventsToJiraEntries\(meta\.activityEvents\)/u);
-	assert.match(activityPanelSource, /<JiraActivity[\s\S]*composer=\{null\}[\s\S]*entries=\{entries\}[\s\S]*renderCommentAction=/u);
-	assert.match(activityPanelSource, /actions\.openSession\(event\.sessionId\)/u);
+	assert.match(activityPanelSource, /<JiraActivity[\s\S]*composer=\{null\}[\s\S]*entries=\{entries\}[\s\S]*onViewSession=/u);
+	assert.match(activityPanelSource, /actions\.openSession\(item\.id\)/u);
+	assert.match(activityPanelSource, /data-jira-activity-entry-id/u);
+	assert.match(activityPanelSource, /target\.scrollIntoView\(\{[\s\S]*behavior: shouldReduceMotion \? "auto" : "smooth",[\s\S]*block: "nearest"/u);
 	assert.doesNotMatch(activityPanelSource, /ActivityEventList/u);
-	assert.match(contextPillsSource, /<ActivityComposerAgentContextPill onSelectAgent=\{onSelectAgent\} \/>/u);
-	assert.match(contextPillsSource, /<ActivityComposerSkillContextPill onSelectSkill=\{onSelectSkill\} \/>/u);
+	assert.match(contextPillsSource, /<ActivityComposerAgentContextPill onInvokeAgent=\{onInvokeAgent\} \/>/u);
+	assert.match(contextPillsSource, /<ActivityComposerSkillContextPill onInvokeSkill=\{onInvokeSkill\} \/>/u);
 	assert.match(contextPillsSource, /delayChildren: 0\.25/u);
 	assert.match(contextPillsSource, /staggerChildren: 0\.05/u);
 	assert.match(contextPillsSource, /initial=\{shouldReduceMotion \? false : "hidden"\}/u);
-	assert.match(agentContextPillSource, /import \{ AgentSelector \} from "@\/components\/blocks\/agent-selector";/u);
+	assert.match(agentContextPillSource, /import \{ AgentSelector(?:, type AgentSelectorAgent)? \} from "@\/components\/blocks\/agent-selector";/u);
 	assert.match(agentContextPillSource, /<DropdownMenuTrigger[\s\S]*<ContextBarPill[\s\S]*Assign agents/u);
 	assert.match(agentContextPillSource, /<AgentSelector[\s\S]*agents=\{ROVO_AGENT_SELECTOR_AGENTS\}[\s\S]*selectionMode="single"/u);
-	assert.match(agentContextPillSource, /onSelectAgent\(agent\.name\);[\s\S]*setIsOpen\(false\);/u);
+	assert.match(agentContextPillSource, /onInvokeAgent\(agent\);[\s\S]*setIsOpen\(false\);/u);
 	assert.match(skillContextPillSource, /import \{ SkillSelector \} from "@\/components\/blocks\/skill-selector";/u);
 	assert.match(skillContextPillSource, /<DropdownMenuTrigger[\s\S]*<ContextBarPill[\s\S]*Use skills/u);
 	assert.match(skillContextPillSource, /<SkillSelector[\s\S]*onSkillToggle=\{handleSkillToggle\}[\s\S]*selectionMode="single"/u);
-	assert.match(skillContextPillSource, /onSelectSkill\(skillId\);[\s\S]*setIsOpen\(false\);/u);
+	assert.match(skillContextPillSource, /const skill = WORK_ITEM_SKILLS\.find[\s\S]*onInvokeSkill\(skill\);[\s\S]*setIsOpen\(false\);/u);
 	assert.match(contextResourcesSource, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
 	assert.match(
 		contextResourcesSource,
@@ -414,6 +498,9 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.equal((contextResourcesSource.match(/labelClassName="whitespace-nowrap sm:w-28"/gu) ?? []).length, 3);
 	assert.match(agentSummaryRowSource, /labelClassName\?: string;/u);
 	assert.match(agentSummaryRowSource, /className=\{cn\("sm:w-20 sm:shrink-0", labelClassName\)\}/u);
+	assert.match(detailsSource, /<FloatingField filled=\{hasAgents\} icon=\{AiAgentIcon\} label="Agents">/u);
+	assert.match(detailsSource, /\{hasAgents \? agentsField : null\}/u);
+	assert.match(detailsSource, /\{!hasAgents \? agentsField : null\}/u);
 	for (const source of [contextResourcesSource, detailsSource]) {
 		assert.doesNotMatch(source, /PlannerSuggestion|planner\.proposal|isPlannerFieldPending/u);
 	}
@@ -424,18 +511,50 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.equal(fs.existsSync(path.join(BLOCK_DIR, "experimental/components/activity-human-event.tsx")), false);
 });
 
+test("the activity skill picker uses work-item skills and space-managed defaults", () => {
+	const skillPickerSource = readBlockFile("experimental/components/activity-composer-skill-context-pill.tsx");
+	const pickerOptionsSource = readBlockFile("experimental/lib/work-item-picker-options.ts");
+
+	for (const label of [
+		"Summarize work item",
+		"Summarize comments",
+		"Improve description",
+		"Suggest child work items",
+		"Link similar work items",
+	]) {
+		assert.match(pickerOptionsSource, new RegExp(`name: "${label}"`, "u"));
+	}
+	assert.match(
+		pickerOptionsSource,
+		/export const DEFAULT_PINNED_WORK_ITEM_SKILL_IDS = \[\s*"summarize-comments",\s*"improve-description",\s*\] as const;/u,
+	);
+	assert.match(pickerOptionsSource, /export const WORK_ITEM_PINNED_ITEMS_LABEL = "Pinned by space";/u);
+	assert.match(skillPickerSource, /pinnedItemsLabel=\{WORK_ITEM_PINNED_ITEMS_LABEL\}/u);
+	assert.match(skillPickerSource, /skills=\{WORK_ITEM_SKILLS\}/u);
+});
+
+test("the activity agent picker uses space-managed defaults", () => {
+	const agentPickerSource = readBlockFile("experimental/components/activity-composer-agent-context-pill.tsx");
+	const pickerOptionsSource = readBlockFile("experimental/lib/work-item-picker-options.ts");
+
+	assert.match(
+		pickerOptionsSource,
+		/export const DEFAULT_PINNED_SPACE_AGENT_IDS = \[\s*"rfp-drafting-agent",\s*"readiness-checker",\s*\] as const;/u,
+	);
+	assert.match(agentPickerSource, /pinnedItemsLabel=\{WORK_ITEM_PINNED_ITEMS_LABEL\}/u);
+});
+
 test("running metronome is gated on the open surface so preset sessions stay pristine until opened (regression)", () => {
 	const controllerSource = readBlockFile("experimental/use-agent-sessions-controller.ts");
 	const contextSource = readBlockFile("experimental/context-agent-sessions.tsx");
 	const compositionSource = readBlockFile("experimental/experimental-agent-sessions.tsx");
 
 	// Controller: the metronome only ticks while the surface is active AND a session
-	// is running, and `active` is a dependency so it re-subscribes on open/close. This
-	// prevents the inline docs "running" launcher from ticking down to waiting/completed
-	// while its dialog is still closed.
+	// is running, while the seeded running demo remains frozen for presentation.
 	assert.match(controllerSource, /active = true,?/u);
-	assert.match(controllerSource, /if \(!active \|\| !isRunning\) return undefined;/u);
-	assert.match(controllerSource, /\[active, isRunning, shouldReduceMotion\]/u);
+	assert.match(controllerSource, /const isFrozenRunningDemo = state\.preset === "running";/u);
+	assert.match(controllerSource, /if \(!active \|\| !isRunning \|\| isFrozenRunningDemo\) return undefined;/u);
+	assert.match(controllerSource, /\[active, isFrozenRunningDemo, isRunning, shouldReduceMotion\]/u);
 
 	// Provider forwards the gate to the controller.
 	assert.match(contextSource, /active\?: boolean;/u);
@@ -500,8 +619,14 @@ test("AgentSessions keeps the standard + experimental registry, detail, demo, an
 
 // ── Behavioral coverage: the pure session-state model ────────────────────────
 
-test("preset initialization: empty/filled/running set up the two dimensions", async () => {
+test("preset initialization: blank/empty/filled/running set up the two dimensions", async () => {
 	const model = await loadSessionModel();
+	const blank = model.hydratePreset("blank", TEST_WORK_ITEM);
+	assert.equal(model.selectContextStatus(blank), "empty");
+	assert.equal(blank.sessions.length, 0);
+	assert.equal(blank.planner.status, "inactive");
+	assert.equal(blank.metadata.priority, null);
+
 	const empty = model.hydratePreset("empty", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(empty), "empty");
 	assert.equal(empty.sessions.length, 0);
@@ -513,23 +638,35 @@ test("preset initialization: empty/filled/running set up the two dimensions", as
 	assert.equal(model.selectContextStatus(filled), "filled");
 	assert.equal(model.selectWorkingCount(filled), 0);
 	assert.ok(filled.sessions.some((session) => session.status === "completed"));
+	assert.deepEqual(filled.metadata.crew.map((agent) => agent.id), [
+		"meeting-insights-reporter",
+		"readiness-checker",
+	]);
 	assert.equal(filled.planner.status, "inactive");
 
 	const running = model.hydratePreset("running", TEST_WORK_ITEM);
 	assert.equal(model.selectContextStatus(running), "filled");
 	assert.equal(model.selectWorkingCount(running), 3); // 2 running + 1 waiting
 	assert.ok(running.sessions.some((session) => session.status === "waiting"));
+	assert.ok(running.sessions.every((session) => session.status !== "completed"));
+	assert.deepEqual(running.metadata.crew.map((agent) => agent.id), [
+		"readiness-checker",
+		"response-reviewer",
+		"feedback-analyzer",
+	]);
 	assert.equal(running.planner.status, "inactive");
 });
 
-test("filled preset scaffolds the activity feed with static event + changed-files rows", async () => {
+test("filled and running presets scaffold activity with static event + changed-files rows", async () => {
 	const model = await loadSessionModel();
 
 	const empty = model.hydratePreset("empty", TEST_WORK_ITEM);
 	const running = model.hydratePreset("running", TEST_WORK_ITEM);
-	// Only the filled preset carries the seeded scaffolding.
+	// Both populated demos carry the Jira-style seeded scaffolding.
 	assert.equal(empty.staticEvents.length, 0);
-	assert.equal(running.staticEvents.length, 0);
+	assert.ok(running.staticEvents.length >= 6);
+	assert.ok(running.staticEvents.some((event) => event.kind === "event"));
+	assert.ok(running.staticEvents.some((event) => event.kind === "changed-files"));
 
 	const filled = model.hydratePreset("filled", TEST_WORK_ITEM);
 	assert.ok(filled.staticEvents.length >= 6);
@@ -589,6 +726,24 @@ test("Confirm all preserves prefilled values and Reject all clears them", async 
 	assert.equal(rejected.contextResources.description, "");
 	assert.equal(rejected.metadata.priority, null);
 	assert.equal(model.selectContextStatus(rejected), "empty");
+});
+
+test("Accept suggestions immediately adds one timestamped Teamwork Graph activity event", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, { type: "settle-running" });
+	state = model.agentSessionsReducer(state, { type: "apply-planner-proposal" });
+
+	const [suggestionEvent] = model.selectActivityEvents(state);
+	assert.equal(suggestionEvent.kind, "event");
+	assert.equal(suggestionEvent.actor.name, "Teamwork Graph");
+	assert.equal(suggestionEvent.actor.kind, "app");
+	assert.equal(suggestionEvent.icon, "teamwork-graph");
+	assert.deepEqual(suggestionEvent.segments, [{ type: "text", text: "provided a suggestion" }]);
+	assert.equal(suggestionEvent.createdAtMs, state.staticEvents[0].createdAtMs);
+
+	state = model.agentSessionsReducer(state, { type: "apply-planner-proposal" });
+	assert.equal(model.selectActivityEvents(state).length, 1);
 });
 
 test("planner refinement stages deterministic deltas and reset restarts search", async () => {
@@ -688,23 +843,246 @@ test("concurrent launch adds independent running sessions", async () => {
 	assert.notEqual(state.sessions[0].id, state.sessions[1].id);
 });
 
-test("deterministic running -> waiting -> running -> completed lifecycle + resume", async () => {
+test("activity composer routes an existing agent mention to the latest working session", async () => {
+	const model = await loadSessionModel();
+	const routing = await loadActivityComposerRoutingModule();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, {
+		type: "launch-session",
+		agentId: "a1",
+		agentName: "Agent One",
+	});
+	state = model.agentSessionsReducer(state, {
+		type: "launch-session",
+		agentId: "a1",
+		agentName: "Agent One",
+	});
+
+	assert.equal(
+		routing.findMentionedWorkingAgentSession(state.sessions, "@Agent One check the risks").id,
+		state.sessions[1].id,
+	);
+	assert.equal(routing.findMentionedWorkingAgentSession(state.sessions, "email@Agent One"), null);
+	assert.equal(routing.findMentionedWorkingAgentSession(state.sessions, "@Agent OnePlus"), null);
+
+	const completedLatest = state.sessions.map((session, index) =>
+		index === 1 ? { ...session, status: "completed" } : session,
+	);
+	assert.equal(
+		routing.findMentionedWorkingAgentSession(completedLatest, "@Agent One").id,
+		state.sessions[0].id,
+	);
+});
+
+test("activity composer keeps active skill commands on the existing steering path", async () => {
+	const model = await loadSessionModel();
+	const routing = await loadActivityComposerRoutingModule();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, {
+		type: "launch-session",
+		agentId: "skill:summarize-comments",
+		agentName: "Rovo",
+		command: "/Summarize comments",
+		title: "Summarize comments",
+	});
+
+	assert.equal(
+		routing.findSteeredWorkingSession(state.sessions, "/Summarize comments focus on blockers").id,
+		state.sessions[0].id,
+	);
+	assert.equal(routing.findMentionedWorkingAgentSession(state.sessions, "@Rovo"), null);
+});
+
+test("agent invocation updates Assignee and Agents according to its source", async () => {
 	const model = await loadSessionModel();
 	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
-	state = model.agentSessionsReducer(state, { type: "launch-session", agentId: "a1", agentName: "Agent One" });
-	const sessionId = state.sessions[0].id;
 
-	state = tickUntil(model, state, (s) => s.sessions[0].status === "waiting");
-	assert.equal(state.sessions[0].status, "waiting");
+	state = model.agentSessionsReducer(state, {
+		type: "invoke-agent",
+		source: "context-pill",
+		agentId: "readiness-checker",
+		agentName: "Readiness Checker",
+		agentAvatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+		command: "@Readiness Checker",
+	});
+	assert.deepEqual(state.metadata.assignee, {
+		id: "readiness-checker",
+		kind: "agent",
+		name: "Readiness Checker",
+		avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+	});
+	assert.deepEqual(state.metadata.crew, [
+		{
+			id: "readiness-checker",
+			kind: "agent",
+			name: "Readiness Checker",
+			avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+		},
+	]);
+
+	const promptInvocation = {
+		type: "invoke-agent",
+		source: "prompt",
+		agentId: "code-reviewer",
+		agentName: "Code Reviewer",
+		agentAvatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		command: "@Code Reviewer Check the implementation.",
+	};
+	state = model.agentSessionsReducer(state, promptInvocation);
+	assert.deepEqual(state.metadata.crew, [
+		{
+			id: "readiness-checker",
+			kind: "agent",
+			name: "Readiness Checker",
+			avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+		},
+		{
+			id: "code-reviewer",
+			kind: "agent",
+			name: "Code Reviewer",
+			avatarUrl: "/avatar-agent/dev-agents/code-reviewer.svg",
+		},
+	]);
+	assert.equal(state.metadata.assignee.name, "Readiness Checker");
+
+	state = model.agentSessionsReducer(state, promptInvocation);
+	assert.equal(state.metadata.crew.length, 2);
+});
+
+test("third-party agent invocation preserves its brand logo in metadata", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+
+	state = model.agentSessionsReducer(state, {
+		type: "invoke-agent",
+		source: "context-pill",
+		agentId: "github-copilot",
+		agentName: "GitHub Copilot",
+		agentBrandName: "github",
+		command: "@GitHub Copilot",
+	});
+
+	assert.deepEqual(state.metadata.assignee, {
+		id: "github-copilot",
+		kind: "agent",
+		name: "GitHub Copilot",
+		avatarUrl: undefined,
+		brandName: "github",
+	});
+	assert.deepEqual(state.metadata.crew, [
+		{
+			id: "github-copilot",
+			kind: "agent",
+			name: "GitHub Copilot",
+			avatarUrl: undefined,
+			brandName: "github",
+		},
+	]);
+
+	const editorSource = readBlockFile("experimental/components/detail-field-editors.tsx");
+	assert.match(editorSource, /<AgentAvatarVisual[\s\S]*brandName=\{person\.brandName\}[\s\S]*sizePx=\{24\}/u);
+});
+
+test("agent assignees and active contributors always remain in Agents metadata", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, {
+		type: "edit-metadata",
+		patch: {
+			assignee: {
+				id: "readiness-checker",
+				kind: "agent",
+				name: "Readiness Checker",
+				avatarUrl: "/avatar-agent/teamwork-agents/readiness-checker.svg",
+			},
+		},
+	});
+	assert.deepEqual(state.metadata.crew.map((agent) => agent.id), ["readiness-checker"]);
+
+	state = model.agentSessionsReducer(state, {
+		type: "launch-session",
+		agentId: "code-reviewer",
+		agentName: "Code Reviewer",
+		agentAvatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+	});
+	state = model.agentSessionsReducer(state, { type: "edit-metadata", patch: { crew: [] } });
+	assert.deepEqual(state.metadata.crew.map((agent) => agent.id), [
+		"readiness-checker",
+		"code-reviewer",
+	]);
+});
+
+test("Details renders 24px assignee/reporter avatars and a stacked Agents group", () => {
+	const editorSource = readBlockFile("experimental/components/detail-field-editors.tsx");
+	assert.match(editorSource, /<Avatar className="shrink-0" size="sm">/u);
+	assert.match(editorSource, /<AvatarGroup className="[^"]*\bshrink-0\b[^"]*" label=\{`\$\{selectedAgents\.length\} agents`\}>/u);
+	assert.match(editorSource, /shown\.map\(\(member\) => \([\s\S]*<AgentAvatar key=\{member\.id\} member=\{member\} \/>/u);
+});
+
+test("an invoked skill is immediately visible in Activity and remains steerable", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	state = model.agentSessionsReducer(state, {
+		type: "launch-session",
+		agentId: "skill:summarize-comments",
+		agentName: "Rovo",
+		command: "/Summarize comments",
+		title: "Summarize comments",
+	});
+
+	const [event] = model.selectActivityEvents(state);
+	assert.equal(event.kind, "agent");
+	assert.equal(event.agentId, "skill:summarize-comments");
+	assert.equal(event.agentName, "Rovo");
+	assert.equal(event.title, "Summarize comments");
+	assert.equal(event.commandPreview, "/Summarize comments");
+	assert.equal(event.status, "running");
+
+	state = model.agentSessionsReducer(state, {
+		type: "reply-session",
+		sessionId: event.sessionId,
+		text: "/Summarize comments Focus on unresolved decisions.",
+	});
+	assert.equal(state.activeSessionId, event.sessionId);
+	assert.ok(state.sessions[0].messages.some((message) => message.content.includes("Focus on unresolved decisions.")));
+});
+
+test("most scripted agents complete while the pricing agent owns the Q&A checkpoint", async () => {
+	const model = await loadSessionModel();
+	let state = model.hydratePreset("empty", TEST_WORK_ITEM);
+	for (const [agentId, agentName] of [["a1", "Agent One"], ["a2", "Agent Two"], ["a3", "Agent Three"]]) {
+		state = model.agentSessionsReducer(state, { type: "launch-session", agentId, agentName });
+	}
+	const pricingSession = state.sessions.find((session) => session.scriptId === "pricing-draft");
+	assert.ok(pricingSession);
+
+	state = tickUntil(model, state, (currentState) =>
+		currentState.sessions.every((session) =>
+			session.id === pricingSession.id ? session.status === "waiting" : session.status === "completed",
+		),
+	);
+	assert.deepEqual(state.sessions.map((session) => [session.scriptId, session.status]), [
+		["compliance-matrix", "completed"],
+		["risk-review", "completed"],
+		["pricing-draft", "waiting"],
+	]);
 
 	// A reply resumes the waiting agent (from chat or Activity — same path).
-	state = model.agentSessionsReducer(state, { type: "reply-session", sessionId, text: "Flag them as gaps." });
-	assert.equal(state.sessions[0].status, "running");
-	assert.ok(state.sessions[0].messages.some((m) => m.role === "human" && m.content === "Flag them as gaps."));
+	state = model.agentSessionsReducer(state, {
+		type: "reply-session",
+		sessionId: pricingSession.id,
+		text: "Assume 5,000 seats.",
+	});
+	const resumed = state.sessions.find((session) => session.id === pricingSession.id);
+	assert.equal(resumed.status, "running");
+	assert.ok(resumed.messages.some((message) => message.role === "human" && message.content === "Assume 5,000 seats."));
 
-	state = tickUntil(model, state, (s) => s.sessions[0].status === "completed");
-	assert.equal(state.sessions[0].status, "completed");
-	assert.equal(state.sessions[0].progress, 1);
+	state = tickUntil(model, state, (currentState) =>
+		currentState.sessions.find((session) => session.id === pricingSession.id)?.status === "completed",
+	);
+	const completed = state.sessions.find((session) => session.id === pricingSession.id);
+	assert.equal(completed.status, "completed");
+	assert.equal(completed.progress, 1);
 });
 
 test("Activity @-reply and chat reply share one session state", async () => {
@@ -785,4 +1163,36 @@ test("details metadata draft and status variants use board lifecycle defaults", 
 	assert.equal(statusVariant(STATUS_PHASES[1]), "information");
 	assert.equal(statusVariant(STATUS_PHASES.at(-1)), "success");
 	assert.equal(statusVariant("Unmapped external status"), "neutral");
+});
+
+test("details metadata searchable pickers reuse the editor palette shell and keep Agents agent-only", async () => {
+	const editorsSource = readBlockFile("experimental/components/detail-field-editors.tsx");
+	const detailsSource = readBlockFile("experimental/components/details-tab.tsx");
+	const { filterMetadataSearchItems } = await loadDetailFieldEditorsModule();
+	const items = [
+		{ id: "maya", label: "Maya Chen", description: "Proposal manager", icon: null },
+		{ id: "jordan", label: "Jordan Lee", description: "Account executive", icon: null },
+	];
+
+	assert.deepEqual(
+		filterMetadataSearchItems(items, "  ACCOUNT ").map((item) => item.id),
+		["jordan"],
+	);
+	assert.match(editorsSource, /<RichTextCommandMenuSearchField/u);
+	assert.match(editorsSource, /<RichTextSuggestionMenu/u);
+	assert.match(editorsSource, /className="rich-text-command-menu-borderless"/u);
+	assert.match(editorsSource, /METADATA_PICKER_POPOVER_CLASS[\s\S]*bg-transparent[\s\S]*shadow-none/u);
+	assert.match(editorsSource, /METADATA_PICKER_POSITIONER_CLASS = "z-\[700\]"/u);
+	assert.doesNotMatch(editorsSource, /rich-text-command-menu-embedded/u);
+	assert.doesNotMatch(editorsSource, /CommandInput|CommandItem|CommandList/u);
+	assert.match(detailsSource, /<MetadataSearchPicker/u);
+	assert.match(detailsSource, /className=\{METADATA_PICKER_POPOVER_CLASS\}/u);
+	assert.equal(
+		(`${editorsSource}\n${detailsSource}`.match(/positionerClassName=\{METADATA_PICKER_POSITIONER_CLASS\}/gu) ?? []).length,
+		8,
+	);
+	assert.doesNotMatch(`${editorsSource}\n${detailsSource}`, /positionerClassName="z-\[502\]"/u);
+	assert.doesNotMatch(detailsSource, /CommandInput|CommandItem|CommandList/u);
+	assert.match(editorsSource, /const agents = CREW_ROSTER\.filter\(\(member\) => member\.kind === "agent"\);/u);
+	assert.doesNotMatch(editorsSource, /Search people and agents|CommandGroup heading="People"/u);
 });
