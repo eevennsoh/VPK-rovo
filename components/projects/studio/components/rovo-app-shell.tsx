@@ -14,6 +14,7 @@
 import type { FileUIPart } from "ai";
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, type ReactNode, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/blocks/artifact";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
@@ -44,7 +45,7 @@ import {
 	RovoAppMessages,
 } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/rovo-core/components/rovo-app-hermes-skill-draft-bar";
-import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
+import type { AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
 import { AgentTestPanel } from "@/components/blocks/agent-test";
 import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
@@ -192,6 +193,11 @@ import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { getStudioSessionAgentDisplayName, useRovoSelectedAgent, type SendPromptOptions } from "@/app/contexts";
 import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile } from "@/app/data/directory/agents";
+
+const RovoAppAgentConfigPanel = dynamic(
+	() => import("@/components/projects/studio/components/rovo-app-agent-config-panel").then((module) => module.RovoAppAgentConfigPanel),
+	{ ssr: true },
+);
 
 interface RovoAppShellProps {
 	embedded?: boolean;
