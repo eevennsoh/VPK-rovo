@@ -12,19 +12,20 @@ import {
 } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { ALL_CHANGES_SUMMARY } from "../../data/changed-files";
-import type { ChangeSet } from "../../data/types";
+import type { ChangesSummary, ChangeSet } from "../../data/types";
 import { DiffStat } from "../diff-stat";
 import { SummaryChangeCard } from "./summary-change-card";
 
 interface SummaryRailProps {
 	changeSets: readonly ChangeSet[];
+	changesSummary: ChangesSummary;
 	selectedChangeSetId: string | null;
 	onSelect: (id: string | null) => void;
 }
 
 export function SummaryRail({
 	changeSets,
+	changesSummary,
 	selectedChangeSetId,
 	onSelect,
 }: Readonly<SummaryRailProps>) {
@@ -58,10 +59,10 @@ export function SummaryRail({
 							>
 								<span>All changes</span>
 								<span className="flex items-center gap-2 text-xs text-text-subtle">
-									<span className="font-mono">{ALL_CHANGES_SUMMARY.fileCount} files</span>
+									<span className="font-mono">{changesSummary.fileCount} files</span>
 									<DiffStat
-										additions={ALL_CHANGES_SUMMARY.additions}
-										deletions={ALL_CHANGES_SUMMARY.deletions}
+										additions={changesSummary.additions}
+										deletions={changesSummary.deletions}
 									/>
 								</span>
 							</Button>

@@ -1,4 +1,4 @@
-import type { ChangedFile, ChangeSet } from "../data/types";
+import type { ChangedFile, ChangesSummary, ChangeSet } from "../data/types";
 
 export function filterBySearch(
 	files: readonly ChangedFile[],
@@ -22,4 +22,15 @@ export function filterByChangeSet(
 
 	const includedIds = new Set(changeSet.fileIds);
 	return files.filter((file) => includedIds.has(file.id));
+}
+
+export function computeChangesSummary(files: readonly ChangedFile[]): ChangesSummary {
+	return files.reduce(
+		(summary, file) => ({
+			fileCount: summary.fileCount + 1,
+			additions: summary.additions + file.additions,
+			deletions: summary.deletions + file.deletions,
+		}),
+		{ fileCount: 0, additions: 0, deletions: 0 },
+	);
 }

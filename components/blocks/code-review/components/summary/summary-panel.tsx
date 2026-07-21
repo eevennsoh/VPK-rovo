@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import type {
 	ChangedFile,
+	ChangesSummary,
 	ChangeSet,
 	CodeReviewWorkItem,
 	DiffLayout,
@@ -21,6 +22,7 @@ interface SummaryPanelProps {
 	workItem: CodeReviewWorkItem;
 	files: readonly ChangedFile[];
 	changeSets: readonly ChangeSet[];
+	changesSummary: ChangesSummary;
 	layout: DiffLayout;
 	selectedChangeSetId: string | null;
 	searchQuery: string;
@@ -34,6 +36,7 @@ export function SummaryPanel({
 	workItem,
 	files,
 	changeSets,
+	changesSummary,
 	layout,
 	selectedChangeSetId,
 	searchQuery,
@@ -69,6 +72,7 @@ export function SummaryPanel({
 			</header>
 			<div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)]">
 				<SummaryRail
+					changesSummary={changesSummary}
 					changeSets={changeSets}
 					onSelect={onSelectedChangeSetIdChange}
 					selectedChangeSetId={selectedChangeSetId}
