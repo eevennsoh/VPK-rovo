@@ -102,6 +102,7 @@ test("Jira session rows expose pin and lifecycle actions", () => {
 	assert.match(JIRA_SIDEBAR_SOURCE, /onStopSession: \(sessionId: string\) => void;/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /onArchiveSession: \(sessionId: string\) => void;/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /const isArchivable = status === "pr-open" \|\| status === "merged" \|\| status === "stopped";/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /onStop\?: \(\) => void;[\s\S]*const shouldShowLifecycleAction = isArchivable \|\| onStop !== undefined;/u);
 	assert.match(JIRA_SIDEBAR_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{title\}`\}/u);
 	assert.equal(
 		JIRA_SIDEBAR_SOURCE.match(/group-data-\[selected=true\]\/sidebar-nav-item:text-icon-subtle/g)?.length,
@@ -111,7 +112,14 @@ test("Jira session rows expose pin and lifecycle actions", () => {
 		JIRA_SIDEBAR_SOURCE,
 		/text-icon-danger group-data-\[selected=true\]\/sidebar-nav-item:text-icon-danger[\s\S]*<VideoStopOverlayIcon label="" size="small" \/>/u,
 	);
-	assert.match(JIRA_SIDEBAR_SOURCE, /if \(isArchivable\) onArchive\(\);[\s\S]*else onStop\(\);/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /shouldShowLifecycleAction \? \([\s\S]*if \(isArchivable\) onArchive\(\);[\s\S]*else onStop\?\.\(\);[\s\S]*\) : null/u);
+});
+
+test("pinning a Jira session closes its flyout before moving the row", () => {
+	assert.match(
+		JIRA_SIDEBAR_SOURCE,
+		/onTogglePin=\{\(\) => \{\s*flyoutHandle\.close\(\);\s*onTogglePin\(\);\s*\}\}/u,
+	);
 });
 
 test("manual Queue sorting makes the session row draggable without a handle icon", () => {

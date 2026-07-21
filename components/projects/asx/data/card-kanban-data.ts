@@ -100,6 +100,7 @@ export const ASX_CARD_KANBAN_DONE_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "Just now",
+		state: "done",
 	},
 	{
 		id: "PD-40:dependency-mapper",
@@ -109,6 +110,7 @@ export const ASX_CARD_KANBAN_DONE_RUNS = [
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
 		relativeTime: "1 min ago",
+		state: "failed",
 	},
 ] as const satisfies readonly JiraIssueCompletedAgentRun[];
 

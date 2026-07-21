@@ -165,7 +165,7 @@ test("ASX Rovo history reuses the three Queue sessions and swaps agent plus tran
 	assert.match(ROVO_STAGE_SOURCE, /getThreadPresentation,/u);
 	assert.match(ROVO_STAGE_SOURCE, /<JiraSessionRowActions/u);
 	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionPinned\(sessions, threadId, !session\.isPinned\)/u);
-	assert.match(ROVO_STAGE_SOURCE, /stopQueueSession\(sessions, threadId\)/u);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /onStop=|stopQueueSession/u);
 	assert.match(ROVO_STAGE_SOURCE, /archiveQueueSession\(/u);
 	assert.match(ROVO_STAGE_SOURCE, /getThreadActions,/u);
 	assert.match(ROVO_STAGE_SOURCE, /pinnedThreadIds,/u);

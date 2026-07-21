@@ -893,6 +893,19 @@
 	scrollbar-gutter: stable;
 }
 
+@keyframes text-shimmer-motion {
+	from {
+		background-position: var(--text-shimmer-start-position), 0% center;
+	}
+	to {
+		background-position: 0% center, 0% center;
+	}
+}
+
+@utility shimmer-sweep-motion {
+	animation: text-shimmer-motion var(--text-shimmer-duration) var(--ease-linear) infinite;
+}
+
 @utility shimmer {
 	background-image: linear-gradient(90deg, currentColor 0%, color-mix(in oklab, currentColor 40%, transparent) 45%, currentColor 100%);
 	background-size: 200% 100%;

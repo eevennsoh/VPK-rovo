@@ -38,7 +38,7 @@ import { AsxRovoOverlay } from "./asx-rovo-overlay";
  * `components/blocks/agent-bento` auto-cycling category bar: a linear progress
  * fill sweeps the active tab, then advances). Hovering or focusing the demo
  * pauses the cycle; clicking a tab selects that state and restarts it. The card
- * animates between states. The agent-row "View chat" action and Ask Rovo open
+ * animates between states. The agent-row "View" action and Ask Rovo open
  * floating chat; selecting a skill or custom agent adds a working activity row.
  *
  * Layout mirrors `KanbanStage`: the stage breaks out of the gallery's centered

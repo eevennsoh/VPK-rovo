@@ -148,7 +148,7 @@ export function RovoAppBrand({
 			>
 				<motion.span
 					aria-hidden
-					className="flex size-4 items-center justify-center"
+					className="flex size-4 shrink-0 items-center justify-center"
 					data-icon="inline-start"
 					variants={identityItemVariants}
 				>
@@ -161,7 +161,7 @@ export function RovoAppBrand({
 						sizePx={16}
 					/>
 				</motion.span>
-				<motion.span className="truncate font-semibold" variants={identityItemVariants}>
+				<motion.span className="min-w-0 truncate font-semibold" variants={identityItemVariants}>
 					{triggerLabel}
 				</motion.span>
 			</motion.span>
@@ -182,7 +182,7 @@ export function RovoAppBrand({
 				render={
 					<Button
 						aria-label={isCustomAgentSelected ? `Select ${selectedAgent.name}` : "Select Rovo agent"}
-						className="h-8 shrink-0 gap-1.5 px-2 text-sm font-medium text-text"
+						className="h-8 min-w-0 shrink gap-1.5 px-2 text-sm font-medium text-text"
 						type="button"
 						variant="ghost"
 					/>
@@ -191,7 +191,7 @@ export function RovoAppBrand({
 				{identity}
 				<Icon
 					aria-hidden
-					className="-ml-0.5 size-4 text-icon-subtle group-aria-expanded/button:text-icon-selected"
+					className="-ml-0.5 size-4 shrink-0 text-icon-subtle group-aria-expanded/button:text-icon-selected"
 					data-icon="inline-end"
 					render={<ChevronDownIcon label="" size="small" spacing="none" />}
 				/>

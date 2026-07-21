@@ -162,7 +162,12 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 		kind: "event",
 		actor: MAYA,
 		icon: "status",
-		segments: [{ type: "text", text: "moved from Triage to RFP Intake" }],
+		segments: [
+			{ type: "text", text: "moved from " },
+			{ type: "lozenge", text: "Triage" },
+			{ type: "transition-arrow" },
+			{ type: "lozenge", text: "RFP Intake" },
+		],
 		createdAtMs: SESSION_EPOCH_MS - 4_800_000, // −80min
 	},
 	{
@@ -191,6 +196,32 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 		description:
 			"Refreshed the Acmecorp compliance matrix, requirement owners, and the security response draft ahead of the bid decision.",
 		branch: "#RFP-101",
+		sessionItem: {
+			id: "static-readiness-outputs",
+			title: "Refresh Acmecorp compliance resources",
+			state: "complete",
+			agent: {
+				name: READINESS_AGENT.name,
+				avatarSrc: READINESS_AGENT.avatarSrc ?? "/avatar-agent/teamwork-agents/readiness-checker.svg",
+			},
+			branch: "rovo/rfp-101-risk-review",
+			elapsedSeconds: 300,
+		},
+		outputs: [
+			{
+				id: "acmecorp-compliance-matrix",
+				title: "Acmecorp compliance matrix",
+				source: "Confluence page",
+				owner: "Readiness Checker",
+				iconName: "globe",
+			},
+			{
+				id: "acmecorp-security-response",
+				title: "Acmecorp security response draft",
+				source: "Agent output",
+				iconName: "ai-chat",
+			},
+		],
 		createdAtMs: SESSION_EPOCH_MS - 1_500_000, // −25min
 	},
 	{
@@ -198,7 +229,14 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 		kind: "event",
 		actor: GITHUB,
 		icon: "linked",
-		segments: [{ type: "text", text: "linked Acmecorp ESM RFP response workspace" }],
+		segments: [],
+		pullRequest: {
+			number: 1847,
+			title: "Add Acmecorp ESM RFP response workspace",
+			status: "Open",
+			additions: 148,
+			deletions: 37,
+		},
 		createdAtMs: SESSION_EPOCH_MS - 1_200_000, // −20min
 	},
 ];
@@ -243,7 +281,7 @@ export function filledContextResources(): AgentSessionsContextResources {
 /** Seeded agents for preset sessions. */
 export const PRESET_AGENTS: Record<string, AgentSessionAgent> = {
 	readiness: { id: "readiness-checker", name: "Readiness Checker", avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg" },
-	requirements: { id: "product-requirements-guide", name: "Product Requirements Guide", avatarSrc: "/avatar-agent/teamwork-agents/product-requirements-guide.svg" },
+	requirements: { id: "response-reviewer", name: "Response Reviewer", avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg" },
 	feedback: { id: "feedback-analyzer", name: "Feedback Analyzer", avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
 	meeting: { id: "meeting-insights-reporter", name: "Meeting Insights Reporter", avatarSrc: "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg" },
 };

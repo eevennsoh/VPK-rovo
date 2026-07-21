@@ -68,6 +68,9 @@ test("maps agent activity to rich Jira comments with lifecycle tags", async () =
 				agentName: "Research agent",
 				agentAvatarSrc: "/research.svg",
 				status,
+				title: "Review qualification evidence",
+				branch: "rovo/rfp-101-qualification",
+				elapsedSeconds: 180 + index,
 				commandPreview: "Review the qualification evidence",
 				responsePreview: `Latest response ${index}`,
 				createdAtMs: Date.UTC(2026, 4, 12, 13, index),
@@ -86,8 +89,50 @@ test("maps agent activity to rich Jira comments with lifecycle tags", async () =
 			label: "Prompt",
 			content: [{ type: "text", text: "Review the qualification evidence" }],
 		});
-		assert.equal(entry.allowReply, false);
+		assert.equal(entry.allowReply, status !== "completed");
+		assert.deepEqual(entry.sessionItem, {
+			id: `session-${index}`,
+			title: "Review qualification evidence",
+			state: status === "waiting" ? "needs-input" : status === "completed" ? "complete" : "running",
+			agent: {
+				name: "Research agent",
+				avatarSrc: "/research.svg",
+			},
+			branch: "rovo/rfp-101-qualification",
+			elapsedSeconds: 180 + index,
+		});
 	}
+});
+
+test("maps skill activity to the canonical VPK Rovo logo", async () => {
+	const adapter = await loadAdapter();
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "activity-skill-1",
+			kind: "agent",
+			sessionId: "session-skill-1",
+			agentId: "skill:improve-description",
+			agentName: "Rovo",
+			status: "running",
+			title: "Improve description",
+			branch: "rovo/risk-review",
+			elapsedSeconds: 0,
+			commandPreview: "/Improve description",
+			responsePreview: "Reviewing the current description…",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+		},
+	]);
+
+	assert.deepEqual(entry.actor, {
+		id: "agent-sessions-agent-skill:improve-description",
+		name: "Rovo",
+		kind: "agent",
+		vpkLogo: "rovo",
+	});
+	assert.deepEqual(entry.sessionItem.agent, {
+		name: "Rovo",
+		vpkLogo: "rovo",
+	});
 });
 
 test("maps a static event to a Jira event row with icon, segments, and timestamp", async () => {
@@ -143,6 +188,32 @@ test("maps a static event without an icon and an app actor with a brand name", a
 	assert.deepEqual(entry.actor, { id: "static-github", name: "GitHub", kind: "app", brandName: "github" });
 });
 
+test("forwards pull-request metadata on a static event so it renders the Jira Activity PR row", async () => {
+	const adapter = await loadAdapter();
+	const pullRequest = {
+		number: 1847,
+		title: "Add Acmecorp ESM RFP response workspace",
+		status: "Open",
+		additions: 148,
+		deletions: 37,
+	};
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "static-linked",
+			kind: "event",
+			actor: { id: "static-github", name: "GitHub", kind: "app", brandName: "github" },
+			icon: "linked",
+			segments: [],
+			pullRequest,
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
+		},
+	]);
+
+	assert.equal(entry.kind, "event");
+	assert.equal(entry.icon, "linked");
+	assert.deepEqual(entry.pullRequest, pullRequest);
+});
+
 test("maps a static changed-files event to a Jira changed-files card", async () => {
 	const adapter = await loadAdapter();
 	const [entry] = adapter.mapActivityEventsToJiraEntries([
@@ -153,6 +224,22 @@ test("maps a static changed-files event to a Jira changed-files card", async () 
 			summary: "Updated 3 resources",
 			description: "Refreshed the compliance matrix and owners.",
 			branch: "#RFP-101",
+			sessionItem: {
+				id: "readiness-output-session",
+				title: "Refresh compliance resources",
+				state: "complete",
+				agent: { name: "Readiness Checker", avatarSrc: "/readiness.svg" },
+				branch: "rovo/rfp-101-risk-review",
+				elapsedSeconds: 300,
+			},
+			outputs: [
+				{
+					id: "compliance-matrix",
+					title: "Acmecorp compliance matrix",
+					source: "Confluence page",
+					iconName: "globe",
+				},
+			],
 			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
 		},
 	]);
@@ -161,6 +248,8 @@ test("maps a static changed-files event to a Jira changed-files card", async () 
 	assert.equal(entry.summary, "Updated 3 resources");
 	assert.equal(entry.description, "Refreshed the compliance matrix and owners.");
 	assert.equal(entry.branch, "#RFP-101");
+	assert.equal(entry.sessionItem.title, "Refresh compliance resources");
+	assert.deepEqual(entry.outputs.map((output) => output.title), ["Acmecorp compliance matrix"]);
 	assert.deepEqual(entry.actor, {
 		id: "static-readiness",
 		name: "Readiness Checker",
@@ -186,6 +275,9 @@ test("preserves input chronology and represents a missing agent response as an e
 			agentId: "rovo",
 			agentName: "Rovo",
 			status: "running",
+			title: "Investigate",
+			branch: "rovo/investigate",
+			elapsedSeconds: 60,
 			commandPreview: "Investigate",
 			createdAtMs: Date.UTC(2026, 4, 12, 11),
 		},
@@ -194,4 +286,5 @@ test("preserves input chronology and represents a missing agent response as an e
 	assert.deepEqual(entries.map((entry) => entry.id), ["later-human", "earlier-agent"]);
 	assert.deepEqual(entries[0].actor, adapter.AGENT_SESSIONS_CURRENT_USER);
 	assert.deepEqual(entries[1].body, []);
+	assert.equal(entries[1].sessionItem.agent.avatarSrc, entries[1].actor.avatarSrc);
 });

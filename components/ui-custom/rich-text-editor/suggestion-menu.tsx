@@ -79,6 +79,7 @@ import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
 	RichTextMentionItem,
+	RichTextMentionSectionLabels,
 	RichTextMentionSources,
 	RichTextMentionVisual,
 	RichTextSlashCategory,
@@ -116,6 +117,12 @@ export interface RichTextSuggestionMenuItem {
 	 * (e.g. "13 available") that should always be readable.
 	 */
 	persistentDescription?: boolean;
+	/**
+	 * Optional trailing indicator rendered on the far right of the row (e.g. a
+	 * status spinner or info glyph). Shown at rest and while hovered/selected; it
+	 * yields the slot to the return-key hint only for the active row.
+	 */
+	trailing?: ReactNode;
 }
 
 interface RichTextSuggestionMenuProps {
@@ -263,10 +270,16 @@ const AGENT_AVATAR_SRCS = [
 	"/avatar-agent/strategy-agents/talent-finder.svg",
 ] as const;
 
-const MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
+const DEFAULT_MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
 	"people-team": "People and team",
 	subagent: "Subagents",
 };
+
+function getMentionParentLabels(
+	overrides?: RichTextMentionSectionLabels,
+): Record<RichTextMentionParentCategory, string> {
+	return { ...DEFAULT_MENTION_PARENT_LABELS, ...overrides };
+}
 
 /** "@" mention surface: people/teams and subagents, each opening a nested list. */
 const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory[] = [
@@ -796,6 +809,10 @@ function RichTextSuggestionMenuOption({
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
 	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
+	// A persistent trailing indicator (e.g. a status glyph) shows at rest, so the
+	// copy must reserve room for it always — not only on hover/selection like the
+	// return hint — so the label truncates before it instead of sliding under it.
+	const hasPersistentTrailing = item.trailing !== undefined && !shouldShowReturnShortcut;
 	// Hovering a row moves the real keyboard selection onto it (via `onHover`),
 	// so mouse and keyboard never disagree and Enter commits the hovered row.
 	const handleMouseEnter = () => {
@@ -845,6 +862,10 @@ function RichTextSuggestionMenuOption({
 						<ReturnIcon className="size-3.5 text-icon-subtlest" />
 					</span>
 				</span>
+			) : item.trailing !== undefined ? (
+				<span className="rich-text-command-menu-shortcut">
+					{item.trailing}
+				</span>
 			) : item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">
 					<Kbd>{item.shortcut}</Kbd>
@@ -861,6 +882,7 @@ function RichTextSuggestionMenuOption({
 				aria-selected={isSelected}
 				animate={isSelected ? "active" : "idle"}
 				className={className}
+				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 				disabled={item.disabled}
 				initial={false}
 				onMouseDown={(event) => event.preventDefault()}
@@ -883,6 +905,7 @@ function RichTextSuggestionMenuOption({
 			role="option"
 			aria-selected={isSelected}
 			className={className}
+			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
 			onClick={() => onSelect(item)}
@@ -1887,6 +1910,7 @@ function getMentionChildVisual(
 function buildCategoryMenuItems(
 	order: readonly RichTextMentionParentCategory[],
 	sources: RichTextMentionSources | undefined,
+	labels: Record<RichTextMentionParentCategory, string>,
 ): readonly RichTextSuggestionMenuItem[] {
 	return order.map((category) => ({
 		description: `${getCategoryItems(sources, category).length} available`,
@@ -1895,15 +1919,16 @@ function buildCategoryMenuItems(
 			? <PeopleGroupIcon label="" size="small" />
 			: getCategoryIcon(category),
 		id: category,
-		label: MENTION_PARENT_LABELS[category],
+		label: labels[category],
 	}));
 }
 
 /** Parent entries for the "@" mention surface: people/teams and subagents. */
 export function getMentionTargetItems(
 	sources?: RichTextMentionSources,
+	labelOverrides?: RichTextMentionSectionLabels,
 ): readonly RichTextSuggestionMenuItem[] {
-	return buildCategoryMenuItems(MENTION_TARGET_ORDER, sources);
+	return buildCategoryMenuItems(MENTION_TARGET_ORDER, sources, getMentionParentLabels(labelOverrides));
 }
 
 /** Parent entries for the "/" command surface: skills, tools, knowledge. */
@@ -1946,6 +1971,7 @@ export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	anchorToInput = false,
 	variant: SuggestionVariant = "nested",
+	labelOverrides?: RichTextMentionSectionLabels,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1953,6 +1979,7 @@ export function createMentionSuggestionRenderer(
 	let currentProps: SuggestionProps<RichTextMentionItem, RichTextMentionItem> | null = null;
 	// Per-section inline expansion for "View more" footers (flat variant only).
 	const expandedSections: Record<string, boolean> = {};
+	const labels = getMentionParentLabels(labelOverrides);
 
 	const isFlat = variant === "flat";
 
@@ -1964,14 +1991,14 @@ export function createMentionSuggestionRenderer(
 	function getFlatSections(): readonly FlatSectionSpec[] {
 		return MENTION_FLAT_SECTIONS.map(({ category, hasDirectory }) => ({
 			key: category,
-			title: MENTION_PARENT_LABELS[category],
+			title: labels[category],
 			hasDirectory,
 			items: getMentionChildItems(getMentionSources?.(), category),
 		}));
 	}
 
 	function getParentItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		return filterItems(getMentionTargetItems(getMentionSources?.()), query);
+		return filterItems(getMentionTargetItems(getMentionSources?.(), labelOverrides), query);
 	}
 
 	function getChildItems(query: string): readonly RichTextSuggestionMenuItem[] {
@@ -2039,7 +2066,7 @@ export function createMentionSuggestionRenderer(
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			onHover: selectIndex,
 			selectedIndex,
-			title: !isFlat && activeCategory ? MENTION_PARENT_LABELS[activeCategory] : "Mention",
+			title: !isFlat && activeCategory ? labels[activeCategory] : "Mention",
 		});
 	}
 

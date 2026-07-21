@@ -7,6 +7,7 @@ import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers } from "@/compon
 import {
 	ASX_KANBAN_DEFAULT_AGENT_ID,
 	ASX_KANBAN_DRAFTING_COLUMN,
+	ASX_KANBAN_INTAKE_COLUMN,
 	getAsxGenerativeAgentSelection,
 	type AsxKanbanAgentSelection,
 } from "../data/kanban-data";
@@ -124,15 +125,86 @@ export function useAsxKanbanLifecycle({
 		});
 	}, [clearCardTimers, schedule]);
 
+	const handleCardClick = useCallback((
+		_title: string,
+		cardCode: string,
+		_card: JiraKanbanCardData,
+		columnTitle: string,
+	) => {
+		const indexInColumn = stateRef.current.columns
+			.find((column) => column.title === columnTitle)
+			?.cards.findIndex((card) => card.code === cardCode) ?? 0;
+		dispatch({
+			type: "select",
+			cardCode,
+			columnTitle,
+			indexInColumn,
+			modifiers: { metaOrCtrlKey: false, shiftKey: false },
+		});
+	}, []);
+
+	const handleStatusChange = useCallback((targetColumnTitle: string) => {
+		dispatch({ type: "set-status", targetColumnTitle });
+	}, []);
+
+	const handleAgentAssignmentChange = useCallback((agentId: string, assigned: boolean) => {
+		if (!assigned) {
+			dispatch({ type: "assign-toolbar-agent", agent: { id: agentId }, assigned: false });
+			return;
+		}
+		// Assigning an agent to the selected cards starts real work: each card
+		// moves into Drafting (the in-progress column) and runs the same
+		// thinking → generating → complete lifecycle as a drag or generative
+		// action. Clear the selection afterwards so the toolbar dismisses, matching
+		// the multi-card drop behavior.
+		const currentState = stateRef.current;
+		const intakeCardCodes = new Set(
+			currentState.columns
+				.find((column) => column.title === ASX_KANBAN_INTAKE_COLUMN)
+				?.cards.map((card) => card.code) ?? [],
+		);
+		const startableCodes = [...currentState.selectedCardCodes].filter((code) => intakeCardCodes.has(code));
+		if (startableCodes.length === 0) return;
+		startCards(startableCodes, { id: agentId });
+		dispatch({ type: "clear-selection" });
+	}, [startCards]);
+
+	const handleClearSelection = useCallback(() => {
+		dispatch({ type: "clear-selection" });
+	}, []);
+
+	const selectedAgentIds = useMemo(
+		() => getCommonSelectedAgentIds(state.lifecycleByCode, state.selectedCardCodes),
+		[state.lifecycleByCode, state.selectedCardCodes],
+	);
+
 	return {
 		boardColumns: useMemo(() => resolveAsxKanbanColumns(state), [state]),
 		draggedCardCode: state.dragged?.cardCodes[0] ?? null,
 		handleCardDragEnd: useCallback(() => dispatch({ type: "drag-end" }), []),
 		handleCardDragStart,
 		handleCardDrop,
+		handleCardClick,
 		handleCardSelect,
 		handleGenerativeActionSubmit,
 		handleQuestionSubmit,
+		handleStatusChange,
+		handleAgentAssignmentChange,
+		handleClearSelection,
+		selectedAgentIds,
 		selectedCardCodes: state.selectedCardCodes,
 	};
+}
+
+/** Agents assigned to every currently-selected card (intersection). */
+function getCommonSelectedAgentIds(
+	lifecycleByCode: Readonly<Record<string, { agentIds: readonly string[] }>>,
+	selectedCardCodes: ReadonlySet<string>,
+): string[] {
+	const selectedCodes = [...selectedCardCodes];
+	if (selectedCodes.length === 0) return [];
+	const firstAgentIds = lifecycleByCode[selectedCodes[0]]?.agentIds ?? [];
+	return firstAgentIds.filter((agentId) => selectedCodes.every(
+		(cardCode) => lifecycleByCode[cardCode]?.agentIds.includes(agentId) ?? false,
+	));
 }

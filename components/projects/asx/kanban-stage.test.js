@@ -11,12 +11,28 @@ const HOOK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/asx/hooks/use-kanban-lifecycle.ts"),
 	"utf8",
 );
+const JIRA_KANBAN_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/jira-kanban/index.tsx"),
+	"utf8",
+);
+const JIRA_ISSUE_AGENT_ACTIVITY_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/jira-issue/agent-activity.tsx"),
+	"utf8",
+);
 
 test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
 	assert.match(STAGE_SOURCE, /selectedCardCodes=\{selectedCardCodes\}/u);
+});
+
+test("ASX Kanban reuses the Jira Issue rainbow spinner for working agents", () => {
+	assert.match(STAGE_SOURCE, /<JiraKanban/u);
+	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
+	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner size="sm" variant="rainbow" label="" \/>/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {
@@ -29,6 +45,34 @@ test("Kanban lifecycle uses deterministic generation and completion delays", () 
 test("Kanban starts skill and custom-agent sparkle actions without opening chat", () => {
 	assert.match(HOOK_SOURCE, /if \(request\.kind === "ask-rovo"\) \{[\s\S]*onNonAgentAction\?\.\(request, card\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(HOOK_SOURCE, /startCards\(\[card\.code\], getAsxGenerativeAgentSelection\(request\)\);/u);
+});
+
+test("Kanban stage shows the Jira selection toolbar when cards are selected", () => {
+	// The shared JiraKanban only renders <JiraToolbar> when a selectionToolbar
+	// config is passed; without it, selecting cards shows no toolbar.
+	assert.match(STAGE_SOURCE, /selectionToolbar=\{\{/u);
+	assert.match(STAGE_SOURCE, /onStatusChange:\s*handleStatusChange/u);
+	assert.match(STAGE_SOURCE, /onAgentAssignmentChange:\s*handleAgentAssignmentChange/u);
+	assert.match(STAGE_SOURCE, /onClearSelection:\s*handleClearSelection/u);
+	assert.match(STAGE_SOURCE, /selectedAgentIds/u);
+	assert.match(STAGE_SOURCE, /agents: ROVO_AGENT_SELECTOR_AGENTS/u);
+	assert.match(STAGE_SOURCE, /defaultPinnedAgentIds: DEFAULT_PINNED_SPACE_AGENT_IDS/u);
+	assert.match(STAGE_SOURCE, /defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS/u);
+	assert.match(STAGE_SOURCE, /pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL/u);
+	assert.match(STAGE_SOURCE, /skills: WORK_ITEM_SKILLS/u);
+	// A plain click selects a single card (and thus reveals the toolbar).
+	assert.match(STAGE_SOURCE, /onCardClick=\{handleCardClick\}/u);
+});
+
+test("Bulk agent assignment starts work and moves selected Intake cards into Drafting", () => {
+	// Assigning an agent from the toolbar must run the same lifecycle as a drag /
+	// generative action (startCards): move into Drafting + thinking→generating→
+	// complete — not merely record the agent id. It should only start cards that
+	// are still in Intake, and clear the selection afterwards.
+	assert.match(HOOK_SOURCE, /const handleAgentAssignmentChange = useCallback\(\(agentId: string, assigned: boolean\) => \{/u);
+	assert.match(HOOK_SOURCE, /ASX_KANBAN_INTAKE_COLUMN/u);
+	assert.match(HOOK_SOURCE, /startCards\(startableCodes, \{ id: agentId \}\)/u);
+	assert.match(HOOK_SOURCE, /dispatch\(\{ type: "clear-selection" \}\)/u);
 });
 
 test("Kanban stage forwards chat thinking state to the ASX overlay", () => {

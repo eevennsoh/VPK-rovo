@@ -57,7 +57,7 @@ import {
 	InputGroupButton,
 	InputGroupInput,
 } from "@/components/ui/input-group";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -82,6 +82,7 @@ export type {
 	JiraListPriority,
 	JiraListProps,
 	JiraListRowData,
+	JiraListStatusOption,
 	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
 
@@ -138,6 +139,7 @@ export function JiraList({
 	copiedIssueKey = null,
 	draftWorkItem = null,
 	extraColumns = [],
+	statusOptions = [],
 	onCreate,
 	onCopyLink,
 	onDraftWorkItemCancel,
@@ -152,6 +154,7 @@ export function JiraList({
 	onRefresh,
 	onSelectAllRows,
 	onSelectRow,
+	onStatusChange,
 	onToggleExpand,
 }: Readonly<JiraListProps>) {
 	const insertionAnchorId = useId().replaceAll(":", "");
@@ -364,7 +367,35 @@ export function JiraList({
 			id: "status",
 			label: "Status",
 			widthClassName: "w-[126px]",
-			renderCell: (row) => <Lozenge variant={row.statusVariant ?? "neutral"}>{row.status}</Lozenge>,
+			renderCell: (row) => onStatusChange && statusOptions.length > 0 ? (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<LozengeDropdownTrigger
+								aria-label={`Change status for ${row.issueKey}. Current status: ${row.status}`}
+								variant={row.statusVariant ?? "neutral"}
+							/>
+						}
+					>
+						{row.status}
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="start" className="w-40" sideOffset={6}>
+						{statusOptions.map((option) => (
+							<DropdownMenuItem
+								key={option.status}
+								onSelect={() => onStatusChange(row.issueKey, option)}
+								selected={option.status === row.status}
+							>
+								<Lozenge variant={option.statusVariant ?? "neutral"}>
+									{option.status}
+								</Lozenge>
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuContent>
+				</DropdownMenu>
+			) : (
+				<Lozenge variant={row.statusVariant ?? "neutral"}>{row.status}</Lozenge>
+			),
 		},
 		{
 			id: "assignee",

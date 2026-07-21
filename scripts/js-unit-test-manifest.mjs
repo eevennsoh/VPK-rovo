@@ -68,13 +68,19 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	],
 	"source-contract": [
 		"components/blocks/agent-sessions/agent-sessions.test.js",
+<<<<<<< HEAD
 		"components/blocks/jira-for-you/jira-for-you.test.js",
+||||||| f46b39561
+=======
+		"components/blocks/jira-activity/jira-activity-alignment.test.js",
+>>>>>>> origin/main
 		"components/projects/rovo-core/lib/rovo-app-route-adapter.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.test.js",
 		"components/projects/shared/components/chat-context-bar.test.js",
 		"components/projects/sidebar-chat/components/agent-result-card.test.js",
 		"components/projects/skills/page.test.js",
+		"components/projects/asx/kanban-stage.test.js",
 		"components/projects/asx/queue-stage.test.js",
 		"components/website/component-doc/components/demo-preview-shell.test.js",
 		"components/website/website-preview-visibility.test.js",
@@ -93,6 +99,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/website/demos/ui/checkbox-demo.test.js",
 		"components/ui-custom/message.test.js",
 		"components/ui-custom/plan.test.js",
+		"components/ui-custom/rovo-sparkle/rovo-sparkle.test.js",
+		"components/ui-custom/twg-appstack.test.js",
 		"components/ui-custom/twg-loader/twg-loader.test.js",
 		"components/visual/ink-wash/registry.test.js",
 		"components/visual/liquid-metal/registry.test.js",
@@ -111,6 +119,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/studio/hooks/use-rovo-app.test.js",
 		"components/projects/studio/lib/clicky-voice-streaming-source.test.js",
 		"components/ui-custom/rich-text-editor/suggestion-menu-empty-popup.test.js",
+		"components/ui-custom/rich-text-editor/suggestion-menu-positioning.test.js",
 	],
 	"legacy-drift": [
 		"backend/lib/deferred-clarification-replay.test.js",

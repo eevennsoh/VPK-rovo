@@ -34,7 +34,7 @@ function toAgentId(agentName: string): string {
  *
  * Activating a row (its body or the View action) drops the user into the shared
  * Rovo floating chat for that session's agent — same behavior as Card Kanban's
- * "View chat": {@link useAsxAgentChatDemo} selects the row's agent (already
+ * "View": {@link useAsxAgentChatDemo} selects the row's agent (already
  * registered via `ROVO_AGENT_PROFILES`), seeds a work-item context bar, and
  * plays back a short thinking → result transcript. The floating chat + launcher
  * render through `AsxRovoOverlay`, which portals above the Gallery dock so the

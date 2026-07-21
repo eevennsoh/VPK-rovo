@@ -35,16 +35,16 @@ test("shared flyout body reuses SmartLink, agent Tag, Lozenge, and GitHub logo",
 	assert.match(source, /<Lozenge variant=\{prState\.variant\}>/u);
 });
 
-test("Queue Details positions Agent, Work item, and Source previews left and centered", () => {
+test("nested Jira previews open right by default while Queue Details overrides them left", () => {
 	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
 	const panelSource = readRepoFile(QUEUE_DETAIL_PANEL_PATH);
 	const artifactsSource = readRepoFile(QUEUE_DETAIL_ARTIFACTS_PATH);
 
 	assert.match(flyoutSource, /previewPosition\?: JiraSessionPreviewPosition/u);
 	assert.match(flyoutSource, /const agentBannerSrc = getAgentProfileBannerSrc\(session\.agentAvatarSrc\);\s*preload\(agentBannerSrc, \{ as: "image" \}\);/u);
-	assert.match(flyoutSource, /<HoverCardContent[\s\S]*align=\{previewPosition\?\.align \?\? "start"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side \?\? "bottom"\}/u);
+	assert.match(flyoutSource, /<HoverCardContent[\s\S]*align=\{previewPosition\?\.align \?\? "center"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset \?\? 0\}[\s\S]*side=\{previewPosition\?\.side \?\? "right"\}/u);
 	assert.match(flyoutSource, /<AgentProfileCard[\s\S]*surface="overlay"/u);
-	assert.match(flyoutSource, /<SmartLink[\s\S]*align=\{previewPosition\?\.align\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset\}[\s\S]*side=\{previewPosition\?\.side\}/u);
+	assert.match(flyoutSource, /<SmartLink[\s\S]*align=\{previewPosition\?\.align \?\? "center"\}[\s\S]*alignOffset=\{previewPosition\?\.alignOffset \?\? 0\}[\s\S]*side=\{previewPosition\?\.side \?\? "right"\}/u);
 	assert.match(panelSource, /const DETAIL_PREVIEW_POSITION = \{\s*align: "center",\s*alignOffset: 0,\s*side: "left",\s*\} as const;/u);
 	assert.match(panelSource, /<JiraSessionFlyoutBody[\s\S]*previewPosition=\{DETAIL_PREVIEW_POSITION\}/u);
 	assert.match(artifactsSource, /<SmartLink align="center" alignOffset=\{0\}[\s\S]*side="left"/u);

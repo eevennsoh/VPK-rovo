@@ -8,6 +8,7 @@ import {
 	ASX_KANBAN_DRAFTING_COLUMN,
 	ASX_KANBAN_INTAKE_COLUMN,
 	ASX_KANBAN_REVIEW_COLUMN,
+	ASX_KANBAN_SUBMITTED_COLUMN,
 	type AsxKanbanAgentSelection,
 	createAsxKanbanActivity,
 	createAsxKanbanCompletedRun,
@@ -45,7 +46,10 @@ export type AsxKanbanAction =
 	| { type: "select"; cardCode: string; columnTitle: string; indexInColumn: number; modifiers: JiraKanbanCardSelectModifiers }
 	| { type: "drag-start"; cardCode: string; sourceColumnTitle: string }
 	| { type: "drag-end" }
-	| { type: "drop"; targetColumnTitle: string; agent?: AsxKanbanAgentSelection };
+	| { type: "drop"; targetColumnTitle: string; agent?: AsxKanbanAgentSelection }
+	| { type: "set-status"; targetColumnTitle: string }
+	| { type: "assign-toolbar-agent"; agent: AsxKanbanAgentSelection; assigned: boolean }
+	| { type: "clear-selection" };
 
 function assignAgents(
 	lifecycleByCode: Readonly<Record<string, AsxKanbanLifecycle>>,
@@ -67,6 +71,26 @@ function assignAgents(
 				[agent.id]: agent,
 			},
 			phase: "thinking",
+		};
+	}
+	return next;
+}
+
+function unassignAgent(
+	lifecycleByCode: Readonly<Record<string, AsxKanbanLifecycle>>,
+	cardCodes: readonly string[],
+	agentId: string,
+): Record<string, AsxKanbanLifecycle> {
+	const next = { ...lifecycleByCode };
+	for (const cardCode of cardCodes) {
+		const current = next[cardCode];
+		if (!current || !current.agentIds.includes(agentId)) continue;
+		const agentSelectionsById = { ...current.agentSelectionsById };
+		delete agentSelectionsById[agentId];
+		next[cardCode] = {
+			...current,
+			agentIds: current.agentIds.filter((id) => id !== agentId),
+			agentSelectionsById,
 		};
 	}
 	return next;
@@ -124,6 +148,11 @@ export function resolveAsxKanbanColumns(state: AsxKanbanState): JiraKanbanColumn
 					agentId,
 					awaitingInput && index === 0,
 					lifecycle.agentSelectionsById[agentId],
+					// Seed per-card variation so the same agent assigned across
+					// multiple cards reads as distinct, concurrent work rather than a
+					// uniform placeholder. Include the agent id so multiple agents on
+					// one card also vary relative to each other.
+					`${card.code}:${agentId}`,
 				)
 			));
 
@@ -178,8 +207,25 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 		case "drag-end":
 			return { ...state, dragged: null };
 		case "drop": {
-			if (!state.dragged
-				|| state.dragged.sourceColumnTitle !== ASX_KANBAN_INTAKE_COLUMN
+			if (!state.dragged) return { ...state, dragged: null };
+			// Dropping into Submitted marks work as delivered: move the card(s)
+			// without running the generative lifecycle and clear each card's
+			// lifecycle entry so the "Agent done" completed-run footer is removed.
+			if (action.targetColumnTitle === ASX_KANBAN_SUBMITTED_COLUMN) {
+				const droppedCodes = state.dragged.cardCodes;
+				const lifecycleByCode = { ...state.lifecycleByCode };
+				for (const cardCode of droppedCodes) delete lifecycleByCode[cardCode];
+				return {
+					...state,
+					columns: moveJiraKanbanCardsToColumn(state.columns, droppedCodes, ASX_KANBAN_SUBMITTED_COLUMN),
+					dragged: null,
+					lifecycleByCode,
+					selectedCardCodes: new Set(
+						[...state.selectedCardCodes].filter((code) => !droppedCodes.includes(code)),
+					),
+				};
+			}
+			if (state.dragged.sourceColumnTitle !== ASX_KANBAN_INTAKE_COLUMN
 				|| action.targetColumnTitle !== ASX_KANBAN_DRAFTING_COLUMN) {
 				return { ...state, dragged: null };
 			}
@@ -195,5 +241,25 @@ export function asxKanbanReducer(state: AsxKanbanState, action: AsxKanbanAction)
 				selectedCardCodes: new Set(),
 			};
 		}
+		case "set-status": {
+			const cardCodes = [...state.selectedCardCodes];
+			if (cardCodes.length === 0) return state;
+			return {
+				...state,
+				columns: moveJiraKanbanCardsToColumn(state.columns, cardCodes, action.targetColumnTitle),
+			};
+		}
+		case "assign-toolbar-agent": {
+			const cardCodes = [...state.selectedCardCodes];
+			if (cardCodes.length === 0) return state;
+			return {
+				...state,
+				lifecycleByCode: action.assigned
+					? assignAgents(state.lifecycleByCode, cardCodes, action.agent)
+					: unassignAgent(state.lifecycleByCode, cardCodes, action.agent.id),
+			};
+		}
+		case "clear-selection":
+			return { ...state, selectedCardCodes: new Set() };
 	}
 }

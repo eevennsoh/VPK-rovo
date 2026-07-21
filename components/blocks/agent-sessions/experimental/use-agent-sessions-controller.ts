@@ -12,17 +12,31 @@ import {
 	hasRunningSession,
 	hydratePreset,
 	type AgentSessionsAction,
+	type AgentSessionInvocationSource,
 	type AgentSessionsPreset,
 	type AgentSessionsState,
 	type ContextLinkedItem,
 } from "@/components/blocks/agent-sessions/data/session-state";
 import { isPlannerProcessing, type AgentPlannerMetadata } from "@/components/blocks/agent-sessions/data/planner-state";
 import type { WorkItemAttachment, WorkItemChildItem, WorkItemData } from "@/app/contexts/context-work-item-modal";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 
 export { AGENT_SESSIONS_TICK_MS };
 
+interface AgentSessionsAgentInput {
+	id: string;
+	name: string;
+	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
+}
+
 export interface AgentSessionsActions {
-	launchSession(agent: { id: string; name: string; avatarSrc?: string }, command?: string): void;
+	launchSession(agent: AgentSessionsAgentInput, command?: string, title?: string): void;
+	invokeAgent(
+		agent: AgentSessionsAgentInput,
+		source: AgentSessionInvocationSource,
+		command?: string,
+	): void;
 	replySession(sessionId: string, text: string): void;
 	addComment(text: string): void;
 	openSession(sessionId: string | null): void;
@@ -68,15 +82,16 @@ export function useAgentSessionsController(
 	const [state, dispatch] = useReducer(agentSessionsReducer, { preset: initialPreset, workItem }, initState);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state) || isPlannerProcessing(state.planner);
+	const isFrozenRunningDemo = state.preset === "running";
 
 	// Metronome: while the surface is active (open) AND a session or planner task
 	// is processing, advance the pure timer engine on a fixed cadence. Gating on
 	// `active` keeps preset sessions pristine until the viewer opens the surface.
-	// The docs "running" launcher must not tick down to waiting/completed while
-	// its dialog is still closed. Reduced motion collapses continuous progress to
-	// an instant settle so state transitions still convey information without animation.
+	// The seeded "running" demo remains frozen after opening so each session stays
+	// steerable. Reduced motion collapses continuous progress to an instant settle
+	// for the other presets.
 	useEffect(() => {
-		if (!active || !isRunning) return undefined;
+		if (!active || !isRunning || isFrozenRunningDemo) return undefined;
 		if (shouldReduceMotion) {
 			dispatch({ type: "settle-running" });
 			return undefined;
@@ -85,14 +100,32 @@ export function useAgentSessionsController(
 			dispatch({ type: "tick", deltaMs: AGENT_SESSIONS_TICK_MS });
 		}, AGENT_SESSIONS_TICK_MS);
 		return () => window.clearInterval(interval);
-	}, [active, isRunning, shouldReduceMotion]);
+	}, [active, isFrozenRunningDemo, isRunning, shouldReduceMotion]);
 
 	const run = useCallback((action: AgentSessionsAction) => dispatch(action), []);
 
 	const actions = useMemo<AgentSessionsActions>(
 		() => ({
-			launchSession: (agent, command) =>
-				run({ type: "launch-session", agentId: agent.id, agentName: agent.name, agentAvatarSrc: agent.avatarSrc, command }),
+			launchSession: (agent, command, title) =>
+				run({
+					type: "launch-session",
+					agentId: agent.id,
+					agentName: agent.name,
+					agentAvatarSrc: agent.avatarSrc,
+					agentBrandName: agent.brandName,
+					command,
+					title,
+				}),
+			invokeAgent: (agent, source, command) =>
+				run({
+					type: "invoke-agent",
+					source,
+					agentId: agent.id,
+					agentName: agent.name,
+					agentAvatarSrc: agent.avatarSrc,
+					agentBrandName: agent.brandName,
+					command,
+				}),
 			replySession: (sessionId, text) => run({ type: "reply-session", sessionId, text }),
 			addComment: (text) => run({ type: "add-comment", text }),
 			openSession: (sessionId) => run({ type: "set-active-session", sessionId }),

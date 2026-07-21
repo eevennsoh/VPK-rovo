@@ -85,14 +85,21 @@ export function DetailEmptyRow({
 	);
 }
 
-/** Plain inline-edit value trigger — no border; the row owns the hover bg. */
+/**
+ * Plain inline-edit value trigger — no border and no hover background: the row
+ * (FloatingField) owns the single hover surface, so the trigger stays visually
+ * flat and a click anywhere on the row opens the editor.
+ */
 export function DetailValueTrigger({ className, ...props }: Readonly<React.ComponentProps<"button">>) {
 	return (
 		<button
 			className={cn(
-				"-mx-1 flex w-full min-w-0 max-w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+				// `-mx-2 px-2` stretches the hit area to the full padded row width so
+				// the row (FloatingField) is entirely clickable; the row owns the hover.
+				"-mx-2 flex w-full min-w-0 max-w-full items-center gap-2 rounded-md px-2 py-0.5 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
 				className,
 			)}
+			data-slot="detail-value-trigger"
 			type="button"
 			{...props}
 		/>

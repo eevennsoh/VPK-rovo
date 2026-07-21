@@ -58,6 +58,11 @@ export interface JiraListRowData {
 	contributors?: readonly JiraListPerson[];
 }
 
+export interface JiraListStatusOption {
+	status: string;
+	statusVariant?: ComponentProps<typeof Lozenge>["variant"];
+}
+
 export interface JiraListExtraColumn {
 	id: string;
 	label: string;
@@ -86,6 +91,7 @@ export interface JiraListProps {
 	copiedIssueKey?: string | null;
 	draftWorkItem?: JiraListDraftWorkItem | null;
 	extraColumns?: readonly JiraListExtraColumn[];
+	statusOptions?: readonly JiraListStatusOption[];
 	onCreate?: (insertion?: JiraListInsertion) => void;
 	onAddColumn?: (afterColumnId: JiraListColumnAnchorId) => void;
 	onCopyLink?: (row: JiraListRowData) => void;
@@ -101,5 +107,6 @@ export interface JiraListProps {
 	onRefresh?: () => void;
 	onSelectAllRows?: (checked: boolean) => void;
 	onSelectRow?: (issueKey: string, checked: boolean) => void;
+	onStatusChange?: (issueKey: string, status: JiraListStatusOption) => void;
 	onToggleExpand?: (issueKey: string) => void;
 }

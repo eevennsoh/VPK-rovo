@@ -10,6 +10,7 @@ export const JIRA_AGENT_SESSION_ITEMS: readonly JiraAgentSessionItem[] = [
 			avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
 		},
 		branch: "rovo/perf-27-benchmarks",
+		elapsedSeconds: 360,
 		prStatus: "created",
 	},
 	{
@@ -21,6 +22,7 @@ export const JIRA_AGENT_SESSION_ITEMS: readonly JiraAgentSessionItem[] = [
 			avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
 		},
 		branch: "rovo/vita-142-vision-deck",
+		elapsedSeconds: 482,
 	},
 	{
 		id: "refactor-readability",
@@ -31,6 +33,7 @@ export const JIRA_AGENT_SESSION_ITEMS: readonly JiraAgentSessionItem[] = [
 			avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
 		},
 		branch: "rovo/web-461-readability",
+		elapsedSeconds: 754,
 		prStatus: "merged",
 	},
 ];

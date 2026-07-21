@@ -2,7 +2,7 @@
 
 import { useId } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { motion } from "motion/react"
+import { motion, type Transition, useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -55,6 +55,19 @@ const ROVO_RAINBOW_STOPS = [
 	{ offset: "100%", color: "#AF59E1" },
 ] as const
 
+const SPINNER_ORBIT_TRANSITION: Transition = {
+	duration: 1.2,
+	ease: "linear",
+	repeat: Infinity,
+}
+
+const SPINNER_STRETCH_TRANSITION: Transition = {
+	duration: 1.2,
+	ease: "easeInOut",
+	repeat: Infinity,
+	times: [0, 0.5, 1],
+}
+
 function Spinner({
 	className,
 	size = "default",
@@ -63,18 +76,25 @@ function Spinner({
 	style,
 }: Readonly<SpinnerProps>) {
 	const gradientId = useId()
+	const shouldReduceMotion = useReducedMotion()
 	const isRainbow = variant === "rainbow"
 	const stroke = isRainbow ? `url(#${gradientId})` : "currentColor"
 
 	return (
-		<svg
+		<motion.svg
 			data-slot="spinner"
 			role="status"
 			aria-label={label}
 			viewBox="0 0 50 50"
 			fill="none"
 			className={cn(spinnerVariants({ size, variant }), className)}
-			style={style}
+			style={{
+				...style,
+				transformOrigin: "center",
+				willChange: shouldReduceMotion ? undefined : "transform",
+			}}
+			animate={{ rotate: shouldReduceMotion ? 0 : 360 }}
+			transition={shouldReduceMotion ? { duration: 0 } : SPINNER_ORBIT_TRANSITION}
 		>
 			{isRainbow ? (
 				<defs>
@@ -105,18 +125,15 @@ function Spinner({
 				strokeLinecap="round"
 				fill="none"
 				transform="rotate(-90 25 25)"
-				animate={{
-					pathLength: [0.05, 0.5, 0.05],
-					pathOffset: [0, 0, 1],
-				}}
-				transition={{
-					duration: 0.8,
-					repeat: Infinity,
-					times: [0, 0.2, 1],
-					ease: ["easeOut", "easeOut"],
-				}}
+				animate={shouldReduceMotion
+					? { strokeDasharray: "56 200", strokeDashoffset: 0 }
+					: {
+							strokeDasharray: ["1 200", "89 200", "89 200"],
+							strokeDashoffset: [0, -35, -124],
+						}}
+				transition={shouldReduceMotion ? { duration: 0 } : SPINNER_STRETCH_TRANSITION}
 			/>
-		</svg>
+		</motion.svg>
 	)
 }
 

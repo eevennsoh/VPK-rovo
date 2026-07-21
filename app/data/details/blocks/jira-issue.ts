@@ -41,7 +41,7 @@ export const JIRA_ISSUE_DETAIL: ComponentDetail = {
 		{ name: "agentActivities", type: "readonly JiraIssueAgentActivity[]", description: "Agent activity rows rendered in the gray activity backdrop below the issue body." },
 		{ name: "agentActivityMode", type: '"none" | "working" | "awaiting-input" | "completed"', default: '"none"', description: "Presentation mode for showing active agent rows or completed-work notification states." },
 		{ name: "agentDoneCount", type: "number", default: "0", description: "Number shown in the Agent done notification row inside the white issue body." },
-		{ name: "onAgentActivityViewChat", type: "(activity: JiraIssueAgentActivity) => void", description: "Called from the agent activity hover panel when the user selects View chat." },
+		{ name: "onAgentActivityViewChat", type: "(activity: JiraIssueAgentActivity) => void", description: "Called from the agent activity hover panel when the user selects View." },
 		{ name: "generativeAction", type: "JiraIssueGenerativeActionConfig", description: "Optional hover-revealed generative action menu that can submit Ask Rovo, skill, or agent prompts with issue context." },
 	],
 };

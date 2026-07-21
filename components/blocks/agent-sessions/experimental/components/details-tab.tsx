@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import EpicIcon from "@atlaskit/icon/core/epic";
-import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import PersonIcon from "@atlaskit/icon/core/person";
-import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import ProjectIcon from "@atlaskit/icon/core/project";
 import TagIcon from "@atlaskit/icon/core/tag";
@@ -20,18 +19,21 @@ import {
 } from "@/components/blocks/agent-sessions/experimental/components/detail-field-row";
 import { FloatingField } from "@/components/blocks/agent-sessions/experimental/components/floating-field";
 import {
-	CrewRowField,
+	AgentsRowField,
 	DateRowField,
 	LabelsRowField,
+	METADATA_PICKER_POPOVER_CLASS,
+	METADATA_PICKER_POSITIONER_CLASS,
+	MetadataSearchPicker,
 	ParentRowField,
+	PersonReadOnlyValue,
 	PersonRowField,
 	PriorityRowField,
 	StatusPill,
 } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
 
 export { seedMetadataDraft } from "@/components/blocks/agent-sessions/data/planner-state";
 
@@ -41,6 +43,12 @@ export type MetadataDraft = AgentPlannerMetadata;
 function AtlassianProjectEditor({ value, onChange }: Readonly<{ value: string | null; onChange: (id: string) => void }>) {
 	const [open, setOpen] = useState(false);
 	const selected = PROJECT_OPTIONS.find((project) => project.id === value);
+	const items = PROJECT_OPTIONS.map((project): RichTextSuggestionMenuItem => ({
+		description: project.team,
+		icon: <ProjectIcon label="" size="small" />,
+		id: project.id,
+		label: project.name,
+	}));
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
@@ -51,31 +59,17 @@ function AtlassianProjectEditor({ value, onChange }: Readonly<{ value: string | 
 					<span className="text-sm text-text-subtlest">Select project</span>
 				)}
 			</PopoverTrigger>
-			<PopoverContent align="start" className="w-[18rem] p-0" positionerClassName="z-[502]">
-				<Command>
-					<CommandInput placeholder="Search projects or paste link" />
-					<CommandList>
-						<CommandEmpty>No projects found.</CommandEmpty>
-						<CommandGroup heading="Recent projects">
-							{PROJECT_OPTIONS.map((project) => (
-								<CommandItem
-									key={project.id}
-									onSelect={() => {
-										onChange(project.id);
-										setOpen(false);
-									}}
-									showCheckIcon={false}
-									value={project.name}
-								>
-									<span className="flex min-w-0 flex-col">
-										<span className="truncate text-sm">{project.name}</span>
-										<span className="truncate text-xs text-text-subtlest">{project.team}</span>
-									</span>
-								</CommandItem>
-							))}
-						</CommandGroup>
-					</CommandList>
-				</Command>
+			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+				<MetadataSearchPicker
+					emptyLabel="No projects found"
+					items={items}
+					onEscape={() => setOpen(false)}
+					onSelect={(item) => {
+						onChange(item.id);
+						setOpen(false);
+					}}
+					placeholder="Search projects or paste link"
+				/>
 			</PopoverContent>
 		</Popover>
 	);
@@ -97,7 +91,12 @@ export function DetailsTab({
 	people: readonly WorkItemPerson[];
 }>) {
 	const [showMore, setShowMore] = useState(false);
-	const assignToMeTarget = people[0];
+	const hasAgents = draft.crew.some((member) => member.kind === "agent");
+	const agentsField = (
+		<FloatingField filled={hasAgents} icon={AiAgentIcon} label="Agents">
+			<AgentsRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
+		</FloatingField>
+	);
 
 	return (
 		<div className="flex flex-col">
@@ -106,33 +105,11 @@ export function DetailsTab({
 				value={<StatusPill onChange={(next) => onChange({ status: next })} value={draft.status} />}
 			/>
 
-			<FloatingField
-				filled={draft.atlassianProject !== null}
-				icon={ProjectIcon}
-				label="Project"
-				onClear={() => onChange({ atlassianProject: null })}
-			>
+			<FloatingField filled={draft.atlassianProject !== null} icon={ProjectIcon} label="Project">
 				<AtlassianProjectEditor onChange={(id) => onChange({ atlassianProject: id })} value={draft.atlassianProject} />
 			</FloatingField>
 
-			<FloatingField
-				actions={
-					assignToMeTarget ? (
-						<Button
-							aria-label="Assign to me"
-							onClick={() => onChange({ assignee: assignToMeTarget })}
-							size="icon-compact"
-							variant="ghost"
-						>
-							<PersonAddIcon label="" size="small" />
-						</Button>
-					) : null
-				}
-				filled={draft.assignee !== null}
-				icon={PersonIcon}
-				label="Assignee"
-				onClear={() => onChange({ assignee: null })}
-			>
+			<FloatingField filled={draft.assignee !== null} icon={PersonIcon} label="Assignee">
 				<PersonRowField
 					ariaLabel="Change assignee"
 					onChange={(person) => onChange({ assignee: person })}
@@ -142,27 +119,21 @@ export function DetailsTab({
 				/>
 			</FloatingField>
 
-			<FloatingField filled={draft.reporter !== null} icon={PersonIcon} label="Reporter" onClear={() => onChange({ reporter: null })}>
-				<PersonRowField
-					ariaLabel="Change reporter"
-					onChange={(person) => onChange({ reporter: person })}
-					people={people}
-					placeholder="Unassigned"
-					value={draft.reporter}
-				/>
+			<FloatingField filled={draft.reporter !== null} icon={PersonIcon} label="Reporter" readOnly>
+				<PersonReadOnlyValue placeholder="Unassigned" value={draft.reporter} />
 			</FloatingField>
+
+			{hasAgents ? agentsField : null}
 
 			{showMore ? (
 				<>
-					<FloatingField filled={draft.crew.length > 0} icon={PeopleGroupIcon} label="Crew" onClear={() => onChange({ crew: [] })}>
-						<CrewRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
-					</FloatingField>
+					{!hasAgents ? agentsField : null}
 
-					<FloatingField filled={draft.priority !== null} icon={PriorityMediumIcon} label="Priority" onClear={() => onChange({ priority: null })}>
+					<FloatingField filled={draft.priority !== null} icon={PriorityMediumIcon} label="Priority">
 						<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
 					</FloatingField>
 
-					<FloatingField filled={draft.startDate !== undefined} icon={CalendarIcon} label="Start date" onClear={() => onChange({ startDate: undefined })}>
+					<FloatingField filled={draft.startDate !== undefined} icon={CalendarIcon} label="Start date">
 						<DateRowField
 							ariaLabel="Change start date"
 							CalendarComponent={Calendar}
@@ -172,7 +143,7 @@ export function DetailsTab({
 						/>
 					</FloatingField>
 
-					<FloatingField filled={draft.dueDate !== undefined} icon={CalendarIcon} label="Due date" onClear={() => onChange({ dueDate: undefined })}>
+					<FloatingField filled={draft.dueDate !== undefined} icon={CalendarIcon} label="Due date">
 						<DateRowField
 							ariaLabel="Change due date"
 							CalendarComponent={Calendar}
@@ -182,11 +153,11 @@ export function DetailsTab({
 						/>
 					</FloatingField>
 
-					<FloatingField filled={draft.parent !== null} icon={EpicIcon} label="Parent" onClear={() => onChange({ parent: null })}>
+					<FloatingField filled={draft.parent !== null} icon={EpicIcon} label="Parent">
 						<ParentRowField onChange={(key) => onChange({ parent: key })} value={draft.parent} />
 					</FloatingField>
 
-					<FloatingField filled={draft.labels.length > 0} icon={TagIcon} label="Labels" onClear={() => onChange({ labels: [] })}>
+					<FloatingField filled={draft.labels.length > 0} icon={TagIcon} label="Labels">
 						<LabelsRowField onChange={(next) => onChange({ labels: next })} value={draft.labels} />
 					</FloatingField>
 				</>

@@ -34,7 +34,9 @@ import {
   RICH_TEXT_OBJECT_REPLACEMENT,
   type ComposerDirectoryAutocompleteController,
   type RichTextMentionItem,
+  type RichTextMentionSectionLabels,
   type RichTextMentionSources,
+  type RichTextSuggestionVariantConfig,
 } from "@/components/ui-custom/rich-text-editor";
 import { useComposerVisualTraceAutoTagging } from "@/components/ui-custom/rich-text-editor/use-composer-visual-trace-auto-tagging";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -1051,6 +1053,10 @@ export type PromptInputTextareaProps = ComponentProps<
    * the unified editor-palette catalog (built from `@/app/data/directory`).
    */
   mentionSources?: RichTextMentionSources;
+  /** Optional copy overrides for sections in the inline "@" picker. */
+  mentionSectionLabels?: RichTextMentionSectionLabels;
+  /** Layout for the inline "@" and "/" suggestion menus. */
+  suggestionVariant?: RichTextSuggestionVariantConfig;
   /**
    * Called once the tiptap editor is ready. Use this (or the forwarded `ref`,
    * which points at the contentEditable DOM) to drive focus or measurement,
@@ -1110,6 +1116,8 @@ export const PromptInputTextarea = ({
   disabled,
   autoFocus,
   mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+  mentionSectionLabels,
+  suggestionVariant,
   onEditorReady,
   "aria-label": ariaLabel,
   // Native-textarea-only props (rows, enterKeyHint, onPaste, …) have no
@@ -1405,10 +1413,12 @@ export const PromptInputTextarea = ({
       createComposerEditorExtensions({
         directoryAutocomplete: directoryAutocompleteController,
         getMentionSources: () => mentionSourcesRef.current,
+        mentionSectionLabels,
         onEnter: handleEnterSubmit,
         onPasteFiles: (files) => attachmentsRef.current.add(files),
+        suggestionVariant,
       }),
-    [directoryAutocompleteController, handleEnterSubmit]
+    [directoryAutocompleteController, handleEnterSubmit, mentionSectionLabels, suggestionVariant]
   );
 
   const editor = useEditor({

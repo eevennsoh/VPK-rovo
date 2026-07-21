@@ -58,18 +58,38 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/const generativeTrigger = \([\s\S]*aria-label="Ask Rovo about this work item"[\s\S]*<GenerativeIndicatorIcon label="" \/>[\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*issue=\{\{ issueKey: item\.issueKey, summary: item\.title \}\}[\s\S]*triggerElement=\{generativeTrigger\}/,
+		/import \{ RovoSparkleButton \} from "@\/components\/ui-custom\/rovo-sparkle";/,
 	);
+	assert.match(
+		ITEM_SOURCE,
+		/const generativeTrigger = \([\s\S]*<RovoSparkleButton[\s\S]*aria-label="Ask Rovo about this work item"[\s\S]*size="compact"[\s\S]*<JiraIssueGenerativeActionMenu[\s\S]*issue=\{\{ issueKey: item\.issueKey, summary: item\.title \}\}[\s\S]*triggerElement=\{generativeTrigger\}/,
+	);
+	assert.doesNotMatch(ITEM_SOURCE, /GenerativeIndicatorIcon/);
+	assert.doesNotMatch(ITEM_SOURCE, /hideWhenSelected/);
 	assert.match(ITEM_SOURCE, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
 	assert.match(
 		ITEM_SOURCE,
-		/has-\[button\[aria-expanded=true\]\]:pointer-events-auto has-\[button\[aria-expanded=true\]\]:opacity-100/,
+		/has-\[button\[aria-expanded=true\]\]:pointer-events-auto[^"]*has-\[button\[aria-expanded=true\]\]:opacity-100/,
 		"the For You row actions should remain visible while the generative menu is open",
 	);
 	assert.match(ITEM_SOURCE, /data-slot="jira-for-you-actions"/);
-	assert.match(ITEM_SOURCE, /group-hover:pointer-events-auto group-hover:opacity-100/);
+	assert.match(ITEM_SOURCE, /group-hover:pointer-events-auto[^"]*group-hover:opacity-100/);
 	assert.match(ITEM_SOURCE, /group-has-\[\[data-slot=jira-for-you-row-button\]:focus-visible\]:pointer-events-auto/);
 	assert.doesNotMatch(ITEM_SOURCE, /group-focus-within/);
-	assert.match(ITEM_SOURCE, /absolute top-1\/2 right-0 flex -translate-y-1\/2 items-center gap-1 opacity-0/);
+	assert.match(
+		ITEM_SOURCE,
+		/invisible flex w-0 items-center gap-1 overflow-hidden opacity-0[^"]*group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100/,
+		"the hidden actions should expand in flow so the text column shrinks instead of sitting underneath them",
+	);
+	assert.doesNotMatch(
+		ITEM_SOURCE,
+		/absolute top-1\/2 right-0 flex/,
+		"the action cluster must participate in row layout when visible",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/group-hover:hidden group-has-\[\[data-slot=jira-for-you-row-button\]:focus-visible\]:hidden/,
+		"the resting lozenge should make way for the expanded action cluster",
+	);
 	assert.doesNotMatch(ITEM_SOURCE, /bg-linear-to-l|from-bg-neutral-subtle-hovered|to-transparent/);
 });

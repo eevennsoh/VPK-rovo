@@ -1,6 +1,6 @@
 ---
 name: vpk-component
-description: Harvest ADS and shadcn/Base UI components into VPK components, demos, docs metadata, and tests. Use for atlassian.design URLs, shadcn registry/docs components, ADS/shadcn to VPK mapping, visual enrichment, examples, and package/source parity. Use vpk-design for Figma.
+description: Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source, including upstream-to-VPK mapping, examples, docs metadata, and package/source parity. Use only when the user names or links one of those upstream sources, explicitly requests ADS/shadcn parity, or invokes vpk-component. Do not use for ordinary edits, bug fixes, animation or motion tweaks, layout changes, or maintenance of an existing VPK component when no upstream component-library source is part of the request. Use vpk-design for Figma.
 purpose: Translate upstream ADS, shadcn, and Base UI component references into VPK primitives, demos, docs metadata, and regression coverage.
 owner: VPK
 category: component-harvesting
@@ -18,6 +18,8 @@ Harvest upstream component patterns into production-ready VPK components. This s
 
 - **ADS lane:** `atlassian.design` / `@atlaskit/*` / `@atlassian/*` component parity, ADS token enrichment, package/source inspection, docs examples, and ADS-equivalent metadata.
 - **shadcn lane:** shadcn/ui, Base UI, `@shadcn/react`, registry examples, upstream utilities, demo parity, and VPK-standardized primitives.
+
+**Scope gate:** An existing VPK component alone is not a trigger. If the request is a local behavior, animation, layout, styling, or bug-fix change without an explicit ADS/Atlaskit/shadcn/Base UI parity target, do not use this skill; follow the repo's normal component workflow instead.
 
 Use `vpk-design` only when the source of truth is a Figma file, screenshot, or bespoke mockup. Use this skill when the source of truth is an upstream component library or component docs page.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useRef, type ComponentProps, type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 
@@ -78,6 +78,7 @@ function getAppstackInitialRotation(rotation: number) {
 function getAppstackTransition(delay: number): Transition {
 	return {
 		filter: { duration: 0.36, ease: [0, 0.4, 0, 1], delay },
+		layout: { duration: 0.25, ease: [0.4, 0, 0, 1] },
 		opacity: { duration: 0.32, ease: [0, 0.4, 0, 1], delay },
 		rotate: { type: "spring", stiffness: 260, damping: 30, mass: 0.85, delay: delay + 0.08 },
 		scale: { type: "spring", stiffness: 260, damping: 28, mass: 0.85, delay },
@@ -229,6 +230,12 @@ export function TWGAppstack({
 }: TWGAppstackProps) {
 	const shouldReduceMotion = useReducedMotion();
 	const shouldAnimate = animated && !shouldReduceMotion;
+	const hasRenderedSources = useRef(false);
+	const shouldStaggerEntrance = !hasRenderedSources.current;
+
+	useEffect(() => {
+		if (sources.length > 0) hasRenderedSources.current = true;
+	}, [sources.length]);
 
 	if (sources.length === 0) {
 		return null;
@@ -253,13 +260,16 @@ export function TWGAppstack({
 			);
 		}
 
-		const delay = getAppstackDelay(index, itemCount, direction);
+		const delay = shouldStaggerEntrance
+			? getAppstackDelay(index, itemCount, direction)
+			: 0;
 
 		return (
 			<motion.div
 				key={key}
 				animate={{ filter: "blur(0px)", opacity: 1, rotate: rotation, scale: 1, x: 0 }}
 				className={itemClassName}
+				layout={shouldReduceMotion ? false : "position"}
 				initial={{
 					filter: "blur(6px)",
 					opacity: 0,
