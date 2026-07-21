@@ -5189,7 +5189,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 405,
+			"manifestEntryCount": 406,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -7085,7 +7085,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 98,
+				"entryCount": 99,
 				"entries": [
 					{
 						"category": "visual",
@@ -7638,6 +7638,12 @@
 						"slug": "text-morphing",
 						"name": "Text Morphing",
 						"importPath": "@/components/visual/text-morphing"
+					},
+					{
+						"category": "visual",
+						"slug": "thinking-orbs",
+						"name": "Thinking Orbs",
+						"importPath": "@/components/visual/thinking-orbs"
 					},
 					{
 						"category": "visual",
