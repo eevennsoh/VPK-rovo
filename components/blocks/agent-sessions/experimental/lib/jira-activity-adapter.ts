@@ -16,6 +16,7 @@ import type {
 	JiraActivityEventEntry,
 } from "@/components/blocks/jira-activity";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
 export const AGENT_SESSIONS_CURRENT_USER: JiraActivityActor = {
 	id: "agent-sessions-current-user",
@@ -28,6 +29,12 @@ const AGENT_STATUS_TAG = {
 	waiting: { text: "Waiting for you", color: "yellow" },
 	completed: { text: "Done", color: "green" },
 } as const satisfies Record<AgentSessionStatus, NonNullable<JiraActivityCommentEntry["tag"]>>;
+
+const AGENT_SESSION_STATE = {
+	running: "running",
+	waiting: "needs-input",
+	completed: "complete",
+} as const;
 
 function actorIdFromName(name: string): string {
 	const normalizedName = name
@@ -64,6 +71,11 @@ function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityComment
 }
 
 function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityCommentEntry {
+	const usesRovoLogo = event.agentId.startsWith("skill:");
+	const avatarSrc = usesRovoLogo
+		? undefined
+		: event.agentAvatarSrc ?? getDeterministicAgentAvatarSrc(event.agentId);
+
 	return {
 		id: event.id,
 		kind: "comment",
@@ -71,7 +83,7 @@ function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityComment
 			id: `agent-sessions-agent-${event.agentId}`,
 			name: event.agentName,
 			kind: "agent",
-			...(event.agentAvatarSrc ? { avatarSrc: event.agentAvatarSrc } : {}),
+			...(usesRovoLogo ? { vpkLogo: "rovo" as const } : { avatarSrc }),
 		},
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		tag: AGENT_STATUS_TAG[event.status],
@@ -80,7 +92,18 @@ function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityComment
 			label: "Prompt",
 			content: [{ type: "text", text: event.commandPreview }],
 		},
-		allowReply: false,
+		allowReply: event.status !== "completed",
+		sessionItem: {
+			id: event.sessionId,
+			title: event.title,
+			state: AGENT_SESSION_STATE[event.status],
+			agent: {
+				name: event.agentName,
+				...(usesRovoLogo ? { vpkLogo: "rovo" as const } : { avatarSrc }),
+			},
+			branch: event.branch,
+			elapsedSeconds: event.elapsedSeconds,
+		},
 	};
 }
 
@@ -102,6 +125,7 @@ function mapStaticEvent(event: Readonly<StaticEventActivityEvent>): JiraActivity
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		...(event.icon ? { icon: event.icon } : {}),
 		segments: event.segments,
+		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};
 }
 
@@ -115,6 +139,8 @@ function mapStaticChangedFiles(event: Readonly<StaticChangedFilesActivityEvent>)
 		description: event.description,
 		...(event.branch ? { branch: event.branch } : {}),
 		...(event.tag ? { tag: event.tag } : {}),
+		...(event.sessionItem ? { sessionItem: event.sessionItem } : {}),
+		...(event.outputs ? { outputs: event.outputs } : {}),
 	};
 }
 

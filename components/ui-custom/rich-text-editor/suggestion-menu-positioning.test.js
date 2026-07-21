@@ -71,6 +71,19 @@ test("composer editor extensions remain the boundary for input-anchored suggesti
 	assert.match(source, /const composerOptions = \{ \.\.\.options, anchorToInput: true, showAskRovoPrompt: false \};/u);
 });
 
+test("prompt input forwards scoped mention layout and section copy to the shared palette", () => {
+	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
+	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/extensions.ts");
+	const menuSource = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+
+	assert.match(promptInputSource, /mentionSectionLabels\?: RichTextMentionSectionLabels;/u);
+	assert.match(promptInputSource, /suggestionVariant\?: RichTextSuggestionVariantConfig;/u);
+	assert.match(promptInputSource, /createComposerEditorExtensions\(\{[\s\S]*mentionSectionLabels,[\s\S]*suggestionVariant,/u);
+	assert.match(extensionSource, /createMentionSuggestionRenderer\([\s\S]*options\.mentionSectionLabels,/u);
+	assert.match(menuSource, /const DEFAULT_MENTION_PARENT_LABELS:[\s\S]*subagent: "Subagents"/u);
+	assert.match(menuSource, /return \{ \.\.\.DEFAULT_MENTION_PARENT_LABELS, \.\.\.overrides \};/u);
+});
+
 test("composer directory autocomplete accepts the active visible list item on Tab", () => {
 	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");

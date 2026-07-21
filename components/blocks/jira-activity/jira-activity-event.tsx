@@ -15,7 +15,7 @@ export function JiraActivityEvent({
 		const { additions, deletions, number, status, title } = entry.pullRequest;
 
 		return (
-			<div className="flex min-w-0 items-center gap-2 text-xs leading-4">
+			<div className="flex h-6 min-w-0 items-center gap-2 text-xs leading-4">
 				<span className="shrink-0 text-text-subtle">Pull request</span>
 				<Lozenge variant={status === "Merged" ? "discovery" : "success"}>{status}</Lozenge>
 				<span className="min-w-0 flex-1 truncate text-text" title={`#${number}: ${title}`}>
@@ -28,10 +28,12 @@ export function JiraActivityEvent({
 	}
 
 	return (
-		<p className="text-xs leading-4 text-text-subtle">
-			<span className="font-medium text-text">{entry.actor.name}</span>{" "}
-			<JiraActivitySegments segments={entry.segments} />
-			<span className="text-text-subtlest"> · {entry.timestamp}</span>
+		<p className="flex h-6 items-center text-xs leading-4 text-text-subtle">
+			<span>
+				<span className="font-medium text-text">{entry.actor.name}</span>{" "}
+				<JiraActivitySegments segments={entry.segments} />
+				<span className="text-text-subtlest"> · {entry.timestamp}</span>
+			</span>
 		</p>
 	);
 }

@@ -189,6 +189,80 @@ test("completed runs preserve agent-specific summary and selected avatar", async
 	assert.equal(completedRun.issueKey, "RFP-102");
 });
 
+test("toolbar set-status moves all selected cards to the chosen column", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+	const toggle = { shiftKey: false, metaOrCtrlKey: true };
+
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-102", columnTitle: "RFP Intake", indexInColumn: 1, modifiers: toggle });
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-103", columnTitle: "RFP Intake", indexInColumn: 2, modifiers: toggle });
+	state = asxKanbanReducer(state, { type: "set-status", targetColumnTitle: "Review" });
+
+	const reviewCodes = column(state, "Review").cards.map((card) => card.code);
+	assert.ok(reviewCodes.includes("RFP-102"));
+	assert.ok(reviewCodes.includes("RFP-103"));
+});
+
+test("toolbar assign/unassign toggles agents across selected cards", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+	const toggle = { shiftKey: false, metaOrCtrlKey: true };
+
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-102", columnTitle: "RFP Intake", indexInColumn: 1, modifiers: toggle });
+	state = asxKanbanReducer(state, { type: "assign-toolbar-agent", agent: { id: "rfp-drafter" }, assigned: true });
+	assert.deepEqual(state.lifecycleByCode["RFP-102"].agentIds, ["rfp-drafter"]);
+
+	state = asxKanbanReducer(state, { type: "assign-toolbar-agent", agent: { id: "rfp-drafter" }, assigned: false });
+	assert.deepEqual(state.lifecycleByCode["RFP-102"].agentIds, []);
+});
+
+test("toolbar clear-selection empties the selection", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-102", columnTitle: "RFP Intake", indexInColumn: 1, modifiers: { shiftKey: false, metaOrCtrlKey: false } });
+	assert.equal(state.selectedCardCodes.size, 1);
+	state = asxKanbanReducer(state, { type: "clear-selection" });
+	assert.equal(state.selectedCardCodes.size, 0);
+});
+
+test("bulk-assigning one agent produces varied, non-lockstep working states per card", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState, resolveAsxKanbanColumns } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+	const toggle = { shiftKey: false, metaOrCtrlKey: true };
+
+	// Select three Intake cards and assign the SAME agent to all of them.
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-102", columnTitle: "RFP Intake", indexInColumn: 1, modifiers: toggle });
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-103", columnTitle: "RFP Intake", indexInColumn: 2, modifiers: toggle });
+	state = asxKanbanReducer(state, { type: "select", cardCode: "RFP-104", columnTitle: "RFP Intake", indexInColumn: 3, modifiers: toggle });
+	state = asxKanbanReducer(state, {
+		type: "assign-agent",
+		cardCodes: ["RFP-102", "RFP-103", "RFP-104"],
+		agent: { id: "rfp-drafter" },
+	});
+
+	const draftingCards = resolveAsxKanbanColumns(state)
+		.find((candidate) => candidate.title === "Drafting").cards;
+	const activities = ["RFP-102", "RFP-103", "RFP-104"].map((code) =>
+		draftingCards.find((card) => card.code === code).agentActivities[0],
+	);
+
+	// Same agent, but each card should start on a different working label and
+	// cycle at a different cadence so they don't march in lockstep.
+	const startLabels = activities.map((activity) => activity.label);
+	assert.equal(new Set(startLabels).size, startLabels.length, "start labels should be distinct per card");
+
+	const cadences = activities.map((activity) => activity.cycleIntervalMs);
+	assert.ok(new Set(cadences).size > 1, "cadence should vary across cards");
+
+	// Variation must be deterministic (stable across renders / SSR).
+	const rerender = ["RFP-102", "RFP-103", "RFP-104"].map((code) =>
+		resolveAsxKanbanColumns(state).find((candidate) => candidate.title === "Drafting").cards
+			.find((card) => card.code === code).agentActivities[0].label,
+	);
+	assert.deepEqual(rerender, startLabels, "labels must be deterministic for a given card");
+});
+
 test("drops outside Intake to Drafting do not start a lifecycle", async () => {
 	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
 	let state = createInitialAsxKanbanState();
@@ -197,4 +271,44 @@ test("drops outside Intake to Drafting do not start a lifecycle", async () => {
 
 	assert.equal(state.lifecycleByCode["RFP-161"], undefined);
 	assert.equal(column(state, "Review").cards[0].code, "RFP-161");
+});
+
+test("dropping a completed card into Submitted moves it and clears the Agent done footer", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState, resolveAsxKanbanColumns } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+
+	// Drive RFP-102 through its lifecycle so it lands in Review with a completed run.
+	state = asxKanbanReducer(state, { type: "assign-agent", cardCodes: ["RFP-102"], agent: { id: "rfp-drafter" } });
+	state = asxKanbanReducer(state, { type: "complete", cardCode: "RFP-102" });
+	const reviewCard = resolveAsxKanbanColumns(state)
+		.find((candidate) => candidate.title === "Review").cards
+		.find((card) => card.code === "RFP-102");
+	assert.equal(reviewCard.agentDoneRuns.length, 1);
+
+	// Drag it into Submitted.
+	state = asxKanbanReducer(state, { type: "drag-start", cardCode: "RFP-102", sourceColumnTitle: "Review" });
+	state = asxKanbanReducer(state, { type: "drop", targetColumnTitle: "Submitted" });
+
+	// The card moved and no longer has a lifecycle entry / completed-run footer.
+	assert.ok(column(state, "Submitted").cards.some((card) => card.code === "RFP-102"));
+	assert.ok(!column(state, "Review").cards.some((card) => card.code === "RFP-102"));
+	assert.equal(state.lifecycleByCode["RFP-102"], undefined);
+	const submittedCard = resolveAsxKanbanColumns(state)
+		.find((candidate) => candidate.title === "Submitted").cards
+		.find((card) => card.code === "RFP-102");
+	assert.equal(submittedCard.agentDoneRuns, undefined);
+	assert.equal(state.dragged, null);
+});
+
+test("dropping into Submitted does not start a new generative lifecycle", async () => {
+	const { asxKanbanReducer, createInitialAsxKanbanState } = await loadHarness();
+	let state = createInitialAsxKanbanState();
+
+	// RFP-105 starts in Intake with no lifecycle; dropping it into Submitted
+	// should move it without assigning an agent or running work.
+	state = asxKanbanReducer(state, { type: "drag-start", cardCode: "RFP-105", sourceColumnTitle: "RFP Intake" });
+	state = asxKanbanReducer(state, { type: "drop", targetColumnTitle: "Submitted" });
+
+	assert.ok(column(state, "Submitted").cards.some((card) => card.code === "RFP-105"));
+	assert.equal(state.lifecycleByCode["RFP-105"], undefined);
 });

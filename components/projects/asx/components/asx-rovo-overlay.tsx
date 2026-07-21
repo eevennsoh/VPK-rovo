@@ -6,12 +6,15 @@ import { createPortal } from "react-dom";
 
 import { useRovoChat } from "@/app/contexts";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import type { ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 interface AsxRovoOverlayProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	externalThinkingMessageId?: string | null;
+	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
+	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
 }
 
@@ -19,6 +22,8 @@ interface AsxRovoOverlayProps {
 export function AsxRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
+	onInterceptSubmit,
+	onLauncherClick,
 	onQuestionAnswer,
 }: Readonly<AsxRovoOverlayProps>): React.ReactNode {
 	const { chatSurface } = useRovoChat();
@@ -40,7 +45,12 @@ export function AsxRovoOverlay({
 	return createPortal(
 		<>
 			{chatSurface === null ? (
-				<FloatingRovoButton ariaLabel="Open Rovo chat" forceVisible product="home" />
+				<FloatingRovoButton
+					ariaLabel="Open Rovo chat"
+					forceVisible
+					onButtonClick={onLauncherClick}
+					product="home"
+				/>
 			) : null}
 			<AnimatePresence>
 				{chatSurface === "floating" ? (
@@ -49,8 +59,8 @@ export function AsxRovoOverlay({
 						chatContextBar={chatContextBar}
 						externalThinkingMessageId={externalThinkingMessageId}
 						hideComposerSourceAndModelControls
-						interceptClarificationAnswers={Boolean(onQuestionAnswer)}
-						onInterceptSubmit={onQuestionAnswer ? handleQuestionAnswer : undefined}
+						interceptClarificationAnswers={Boolean(onInterceptSubmit || onQuestionAnswer)}
+						onInterceptSubmit={onInterceptSubmit ?? (onQuestionAnswer ? handleQuestionAnswer : undefined)}
 						showAgentBackButton={false}
 						showAgentSelector={false}
 						showChatHistory={false}

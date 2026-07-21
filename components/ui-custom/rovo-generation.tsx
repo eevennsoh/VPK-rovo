@@ -32,11 +32,12 @@ const ROVO_GENERATION_HIGHLIGHT_STOPS = [
 	"var(--rovo-generation-stop-purple)",
 ] as const;
 
-// Timing + shape constants copied from the reference RovoPerimeterShimmer so the motion matches.
+// Shape constants follow the reference RovoPerimeterShimmer. The longer travel time keeps
+// the full perimeter lap legible on large suggestion containers.
 const HIGHLIGHT_SUBSEGMENTS_PER_COLOR = 8;
 const HIGHLIGHT_TOTAL_SEGMENTS = ROVO_GENERATION_HIGHLIGHT_STOPS.length * HIGHLIGHT_SUBSEGMENTS_PER_COLOR;
 const HIGHLIGHT_DELAY_MS = 200; // pause before the band enters
-const HIGHLIGHT_DURATION_MS = 1200; // one travel around the perimeter
+const HIGHLIGHT_DURATION_MS = 2400; // one full 12 o'clock-to-12 o'clock perimeter lap
 const HIGHLIGHT_BAND_FRAC = 0.35; // band length as a fraction of the perimeter
 
 function highlightEaseInOut(value: number): number {
@@ -48,15 +49,16 @@ function highlightRoundedRectPath(width: number, height: number, radius: number)
 	const rr = Math.max(0, Math.min(radius, width / 2, height / 2));
 	if (width <= 0 || height <= 0) return "";
 	return [
-		`M 0 ${height - rr}`,
-		`L 0 ${rr}`,
-		`A ${rr} ${rr} 0 0 1 ${rr} 0`,
+		`M ${width / 2} 0`,
 		`L ${width - rr} 0`,
 		`A ${rr} ${rr} 0 0 1 ${width} ${rr}`,
 		`L ${width} ${height - rr}`,
 		`A ${rr} ${rr} 0 0 1 ${width - rr} ${height}`,
 		`L ${rr} ${height}`,
 		`A ${rr} ${rr} 0 0 1 0 ${height - rr}`,
+		`L 0 ${rr}`,
+		`A ${rr} ${rr} 0 0 1 ${rr} 0`,
+		`L ${width / 2} 0`,
 		"Z",
 	].join(" ");
 }
@@ -484,6 +486,6 @@ function RovoGenerationHighlight({
 export const RovoGeneration = {
 	/** Tile surface with optional animated rainbow glow and border. */
 	Root: RovoGenerationRoot,
-	/** Wraps arbitrary UI and traces a quick rainbow stroke around its perimeter to highlight it. */
+	/** Wraps arbitrary UI and traces one rainbow lap around its perimeter to highlight it. */
 	Highlight: RovoGenerationHighlight,
 } as const;

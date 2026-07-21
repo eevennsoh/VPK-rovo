@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -51,17 +52,27 @@ export function FloatingField({
 	label,
 	icon: IconComponent,
 	filled,
+	readOnly = false,
 	children,
 }: Readonly<{
 	label: string;
 	icon: React.ComponentType<NewCoreIconProps>;
 	filled: boolean;
+	/**
+	 * When true the field is display-only: no hover affordance and no pointer
+	 * interaction reach the value. Used for fields the user cannot change (e.g.
+	 * Reporter). The label still floats when the field is filled.
+	 */
+	readOnly?: boolean;
 	/** The editor: a full-width popover/menu trigger that renders the value. */
 	children: ReactNode;
 }>) {
 	return (
 		<div
-			className="group/ff relative -mx-2 rounded-md px-2 transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"
+			className={cn(
+				"group/ff relative -mx-2 rounded-md px-2 transition-colors duration-normal ease-out-practical motion-reduce:transition-none",
+				readOnly ? null : "hover:bg-bg-neutral-subtle-hovered",
+			)}
 			data-filled={filled ? "true" : "false"}
 			data-slot="floating-field"
 		>
@@ -74,7 +85,7 @@ export function FloatingField({
 					EXPANDED_ICON,
 				)}
 			>
-				<IconComponent label="" size="small" />
+				<Icon aria-hidden render={<IconComponent label="" size="small" />} />
 			</span>
 
 			{/* Floating label — one element that rises + shrinks on expand. */}
@@ -99,6 +110,7 @@ export function FloatingField({
 			<div
 				className={cn(
 					"pt-1.5 pb-1.5 opacity-0",
+					readOnly ? "pointer-events-none" : null,
 					"group-data-[filled=true]/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-data-[filled=true]/ff:[&>[data-slot=detail-value-trigger]]:pt-6",
 					"group-focus-within/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-focus-within/ff:[&>[data-slot=detail-value-trigger]]:pt-6",
 					"group-has-[[data-popup-open]]/ff:[&>[data-slot=detail-value-trigger]]:-mt-6 group-has-[[data-popup-open]]/ff:[&>[data-slot=detail-value-trigger]]:pt-6",

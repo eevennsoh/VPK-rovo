@@ -39,6 +39,7 @@ export interface SkillSelectorProps {
 	query?: string;
 	searchPlaceholder?: string;
 	pinnedSkillIds?: readonly string[];
+	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
 	selectedSkillActions?: readonly SkillSelectorAction[];
 	selectedSkillIds?: readonly string[];
@@ -73,6 +74,7 @@ export function SkillSelector({
 	query,
 	searchPlaceholder = "Search skills",
 	pinnedSkillIds,
+	pinnedItemsLabel,
 	pinningEnabled,
 	selectedSkillActions,
 	selectedSkillIds,
@@ -114,6 +116,7 @@ export function SkillSelector({
 			query={query}
 			searchPlaceholder={searchPlaceholder}
 			pinnedAgentIds={pinnedSkillIds}
+			pinnedItemsLabel={pinnedItemsLabel}
 			pinningEnabled={pinningEnabled}
 			selectedActionsLabel="Selected skill actions"
 			selectedAgentActions={selectedSkillActions}

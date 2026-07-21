@@ -24,10 +24,10 @@ import type {
 
 /**
  * State → title-line + lifecycle treatment. `running` shows a solid title with a
- * trailing rainbow spinner; `needs-input` overrides the title with "Awaiting
- * user response" plus animated dots and a trailing info icon; `complete` shows a
- * solid title with no lifecycle indicator. `running` and `needs-input` both
- * expose a Stop action; `complete` does not.
+ * trailing rainbow spinner; `needs-input` keeps the task title, adds animated
+ * dots, and shows a trailing info icon; `complete` shows a solid title with no
+ * lifecycle indicator. `running` and `needs-input` both expose a Stop action;
+ * `complete` does not.
  *
  * The trailing indicator itself is rendered by {@link LifecycleIndicator};
  * `showLifecycle` only gates whether the row reserves that trailing slot.
@@ -35,8 +35,6 @@ import type {
 const STATE_META: Record<
 	JiraAgentSessionState,
 	{
-		/** When set, replaces the work-item title in the title line. */
-		titleOverride: string | null;
 		shimmerTitle: boolean;
 		showDots: boolean;
 		showStop: boolean;
@@ -45,21 +43,18 @@ const STATE_META: Record<
 	}
 > = {
 	running: {
-		titleOverride: null,
 		shimmerTitle: false,
 		showDots: false,
 		showStop: true,
 		showLifecycle: true,
 	},
 	"needs-input": {
-		titleOverride: "Awaiting user response",
 		shimmerTitle: true,
 		showDots: true,
 		showStop: true,
 		showLifecycle: true,
 	},
 	complete: {
-		titleOverride: null,
 		shimmerTitle: false,
 		showDots: false,
 		showStop: false,
@@ -120,7 +115,7 @@ function LifecycleIndicator({
 			return (
 				<IconTile
 					icon={
-						<span className="text-icon-information">
+						<span className="grid place-items-center leading-none text-icon-information">
 							<StatusInformationIcon
 								color="currentColor"
 								label=""
@@ -168,7 +163,6 @@ export function JiraAgentSessionActivityHeader({
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
-	const titleText = stateMeta.titleOverride ?? item.title;
 
 	return (
 		<div className="flex min-w-0 items-center gap-3">
@@ -177,6 +171,7 @@ export function JiraAgentSessionActivityHeader({
 				avatarSrc={item.agent.avatarSrc}
 				label={item.agent.name}
 				sizePx={32}
+				vpkLogo={item.agent.vpkLogo}
 			/>
 			<div className="min-w-0 flex-1">
 				<div className="flex min-w-0 items-center">
@@ -187,11 +182,11 @@ export function JiraAgentSessionActivityHeader({
 							duration={1.4}
 							spread={2}
 						>
-							{titleText}
+							{item.title}
 						</Shimmer>
 					) : (
 						<span className="min-w-0 truncate text-sm font-medium text-text">
-							{titleText}
+							{item.title}
 						</span>
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
@@ -201,7 +196,7 @@ export function JiraAgentSessionActivityHeader({
 						{formatElapsedTime(elapsedSeconds)}
 					</span>
 					<MetadataDot />
-					<span className="truncate">{item.branch}</span>
+					<span className="truncate">{item.agent.name}</span>
 					{prMeta && PrIcon ? (
 						<>
 							<MetadataDot />
@@ -268,7 +263,6 @@ export function JiraAgentSessionCard({
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
-	const titleText = stateMeta.titleOverride ?? item.title;
 
 	return (
 		<li className="group relative flex items-center gap-3 p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered">
@@ -277,6 +271,7 @@ export function JiraAgentSessionCard({
 				avatarSrc={item.agent.avatarSrc}
 				label={item.agent.name}
 				sizePx={32}
+				vpkLogo={item.agent.vpkLogo}
 			/>
 			<button
 				className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -291,11 +286,11 @@ export function JiraAgentSessionCard({
 							duration={1.4}
 							spread={2}
 						>
-							{titleText}
+							{item.title}
 						</Shimmer>
 					) : (
 						<span className="min-w-0 truncate text-sm font-medium text-text">
-							{titleText}
+							{item.title}
 						</span>
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
@@ -305,7 +300,7 @@ export function JiraAgentSessionCard({
 						{formatElapsedTime(elapsedSeconds)}
 					</span>
 					<MetadataDot />
-					<span className="truncate">{item.branch}</span>
+					<span className="truncate">{item.agent.name}</span>
 					{prMeta && PrIcon ? (
 						<>
 							<MetadataDot />

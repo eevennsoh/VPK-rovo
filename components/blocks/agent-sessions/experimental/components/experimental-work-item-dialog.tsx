@@ -61,19 +61,20 @@ export function ExperimentalWorkItemDialog({
 		borderRadius: token("radius.xlarge"),
 		boxShadow: token("elevation.shadow.overlay"),
 		display: "grid",
+		gridTemplateColumns: "minmax(0, 1fr)",
 		gridTemplateRows: "auto auto minmax(0, 1fr)",
 		overflow: "hidden",
 	} as const;
 
 	if (presentation === "inline") {
-		// Fill the full stage height (like the Kanban board) so the card is flush
-		// top AND bottom — its lower edge flows under the gallery dock. Only the
-		// horizontal 24px inset remains, mirroring the board's px-8.
+		// Let the work-item card follow its content height until it reaches the ASX
+		// stage's Kanban-aligned side and bottom gutters. Taller content then scrolls
+		// inside the existing work-item layout instead of extending the page.
 		return (
 			<>
 				<section
 					aria-label={workItemTitle}
-					className="h-full w-[calc(100%-24px)] max-w-[1200px] outline-none"
+					className="max-h-full w-full max-w-[1200px] shrink-0 outline-none"
 					style={surfaceStyle}
 				>
 					{content}
@@ -99,8 +100,8 @@ export function ExperimentalWorkItemDialog({
 				<Dialog.Popup
 					className={cn(
 						"fixed top-1/2 left-1/2 z-[501] origin-center -translate-x-1/2 -translate-y-1/2 outline-none",
-						"h-[calc(100dvh-24px)] max-h-[calc(100dvh-24px)] w-[calc(100vw-24px)] max-w-[1200px]",
-						"sm:h-[calc(100vh-120px)] sm:max-h-[calc(100vh-120px)] sm:w-[calc(100vw-120px)]",
+						"max-h-[calc(100dvh-24px)] w-[calc(100vw-24px)] max-w-[1200px]",
+						"sm:max-h-[calc(100vh-120px)] sm:w-[calc(100vw-120px)]",
 						"transition-[opacity,scale] duration-slow ease-in-out motion-reduce:transition-none",
 						"data-ending-style:duration-medium data-ending-style:ease-in",
 						"data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0",

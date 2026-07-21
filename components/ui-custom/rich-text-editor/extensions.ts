@@ -504,6 +504,7 @@ export function createRichTextMentionExtension(
 				options.getMentionSources,
 				options.anchorToInput,
 				resolveMentionVariant(options.suggestionVariant),
+				options.mentionSectionLabels,
 			),
 		},
 	});

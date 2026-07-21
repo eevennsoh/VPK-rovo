@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from "@/components/ui/avatar";
-import { AtlassianLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
+import { AtlassianLogo, RovoColorIcon, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,8 @@ const avatarSizeFromPx = (px: number): NonNullable<AvatarProps["size"]> => PX_TO
 
 export interface AgentAvatarVisualProps {
 	avatarSrc?: string;
+	/** Render a full-color VPK product mark instead of image-backed agent art. */
+	vpkLogo?: "rovo";
 	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
 	logoName?: AtlassianLogoName;
 	/** When set, renders the upstream `@atlassian/logo-third-party` mark (3P brands). */
@@ -86,6 +88,7 @@ export interface AgentAvatarVisualProps {
  */
 export function AgentAvatarVisual({
 	avatarSrc,
+	vpkLogo,
 	logoName,
 	brandName,
 	label,
@@ -97,17 +100,19 @@ export function AgentAvatarVisual({
 	className,
 	loading,
 }: Readonly<AgentAvatarVisualProps>) {
-	if (!avatarSrc && !logoName && !brandName && !fallbackText) return null;
+	if (!avatarSrc && !vpkLogo && !logoName && !brandName && !fallbackText) return null;
 
 	const isSecondPartyAgent = avatarSrc?.startsWith("/2p/") ?? false;
 	const isThirdPartyAgent = Boolean(brandName);
 	const isExternalAgent = isSecondPartyAgent || isThirdPartyAgent;
-	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian";
+	const hasWhiteBackdrop = isExternalAgent || logoName === "atlassian" || Boolean(vpkLogo);
 	const shouldInsetImage = inset || isExternalAgent;
 	const insetImageClassName = PX_TO_INSET_IMAGE_CLASS_NAME[sizePx] ?? "size-4";
 	const insetLogoSize = PX_TO_INSET_LOGO_SIZE[sizePx] ?? PX_TO_LOGO_SIZE[sizePx] ?? "xxsmall";
 	const externalLogoSize = PX_TO_EXTERNAL_LOGO_SIZE[sizePx] ?? insetLogoSize;
-	const visual = logoName ? (
+	const visual = vpkLogo === "rovo" ? (
+		<RovoColorIcon label="" size={insetLogoSize} />
+	) : logoName ? (
 		<AtlassianLogo label="" name={logoName} size={insetLogoSize} themeAware />
 	) : brandName ? (
 		<LogoThirdParty borderless label="" name={brandName} size={externalLogoSize} />

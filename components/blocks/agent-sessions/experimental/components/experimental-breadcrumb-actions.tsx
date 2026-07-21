@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { MetadataRail } from "@/components/blocks/agent-sessions/experimental/components/metadata-rail";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +25,7 @@ import ShrinkDiagonalIcon from "@atlaskit/icon/core/shrink-diagonal";
  */
 export function ExperimentalBreadcrumbActions() {
 	const { metadataCollapsed, metadataTogglePending, toggleMetadata } = usePanelLayout();
+	const [metadataPreviewOpen, setMetadataPreviewOpen] = useState(false);
 
 	const toggleButton = (
 		<Button
@@ -42,16 +45,25 @@ export function ExperimentalBreadcrumbActions() {
 	return (
 		<>
 			{/*
-			 * The Popover wrapper is always mounted so the trigger element is stable:
-			 * collapsing the rail while the pointer already rests on the toggle must
-			 * not remount it, otherwise Base UI never sees a `pointerenter` and the
-			 * hover preview silently fails to open. `openOnHover` is simply gated to
-			 * the collapsed state — expanded, the toggle is a plain click-to-dock
-			 * button with no preview. `delay` keeps a deliberate hover from
+			 * The Popover wrapper stays mounted so the trigger element remains stable.
+			 * Its open state is controlled because Base UI otherwise classifies the
+			 * collapse click as a persistent click-opened popover, which deliberately
+			 * ignores the hover pointer-leave close path. Only subsequent hover events
+			 * may open the collapsed preview. `delay` keeps a deliberate hover from
 			 * flickering; `closeDelay` gives the pointer a forgiving window to reach
 			 * the popup before it closes.
 			 */}
-			<Popover>
+			<Popover
+				open={metadataCollapsed && metadataPreviewOpen}
+				onOpenChange={(open, eventDetails) => {
+					if (eventDetails.reason === "trigger-press") {
+						eventDetails.cancel();
+						setMetadataPreviewOpen(false);
+						return;
+					}
+					setMetadataPreviewOpen(open);
+				}}
+			>
 				<PopoverTrigger
 					closeDelay={80}
 					delay={120}
@@ -62,7 +74,7 @@ export function ExperimentalBreadcrumbActions() {
 					<PopoverContent
 						align="end"
 						aria-label="Work item details preview"
-						className="max-h-[min(32rem,var(--available-height))] w-[clamp(320px,34vw,408px)] overflow-y-auto p-0"
+						className="max-h-[min(32rem,var(--available-height))] w-[clamp(320px,34vw,408px)] overflow-y-auto border-0 p-0 shadow-2xl dark:shadow-2xl [[data-color-mode=dark]_&]:shadow-2xl"
 						// The work-item dialog paints at z-[500]/[501]; the popover portal
 						// defaults to z-[200], so without this it mounts but is painted
 						// behind the dialog (visible in CSS, invisible on screen). Lift the

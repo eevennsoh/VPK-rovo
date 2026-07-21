@@ -90,10 +90,10 @@ export function ExperimentalWorkItemLayout({
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
 			<div
-				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
+				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
 			>
 				<div
-					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
+					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[grid-area:1/1] @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
 					style={contentStyle}
 				>
 					<motion.div
@@ -130,7 +130,7 @@ export function ExperimentalWorkItemLayout({
 					{metadataCollapsed ? null : (
 						<motion.div
 							animate="open"
-							className="order-3 min-w-0 @[860px]/agentlayout:absolute @[860px]/agentlayout:inset-y-0 @[860px]/agentlayout:right-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2"
+							className="order-3 min-w-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2 @[860px]/agentlayout:[grid-area:1/1]"
 							exit="closed"
 							id="experimental-work-item-metadata-panel"
 							initial="closed"

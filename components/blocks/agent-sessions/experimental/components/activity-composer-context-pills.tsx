@@ -3,12 +3,10 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useState, type ReactNode } from "react";
 
+import type { SkillsDirectorySkill } from "@/app/data/directory";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/agent-sessions/experimental/components/activity-composer-skill-context-pill";
-import { StatusPill } from "@/components/blocks/agent-sessions/experimental/components/detail-field-editors";
-import { ContextBarPill } from "@/components/ui-custom/context-bar/context-bar";
-import { Icon } from "@/components/ui/icon";
-import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 
 const PILL_GROUP_VARIANTS = {
 	hidden: {},
@@ -33,10 +31,8 @@ const PILL_REVEAL_VARIANTS = {
 } satisfies Variants;
 
 interface ActivityComposerContextPillsProps {
-	onSelectAgent: (agentName: string) => void;
-	onSelectSkill: (skillId: string) => void;
-	onStatusChange: (status: string) => void;
-	status: string;
+	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
+	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 }
 
 function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
@@ -56,10 +52,8 @@ function RevealingPill({ children }: Readonly<{ children: ReactNode }>) {
 
 /** Context shortcuts revealed after the planner review composer becomes sticky. */
 export function ActivityComposerContextPills({
-	onSelectAgent,
-	onSelectSkill,
-	onStatusChange,
-	status,
+	onInvokeAgent,
+	onInvokeSkill,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
 
@@ -72,20 +66,10 @@ export function ActivityComposerContextPills({
 			variants={PILL_GROUP_VARIANTS}
 		>
 			<RevealingPill>
-				<ActivityComposerAgentContextPill onSelectAgent={onSelectAgent} />
+				<ActivityComposerAgentContextPill onInvokeAgent={onInvokeAgent} />
 			</RevealingPill>
 			<RevealingPill>
-				<ActivityComposerSkillContextPill onSelectSkill={onSelectSkill} />
-			</RevealingPill>
-			<RevealingPill>
-				<ContextBarPill
-					className="gap-1.5 pr-2"
-					icon={<Icon aria-hidden render={<ProjectStatusIcon label="" size="small" />} />}
-					interactive={false}
-				>
-					Move to:
-					<StatusPill onChange={onStatusChange} value={status} />
-				</ContextBarPill>
+				<ActivityComposerSkillContextPill onInvokeSkill={onInvokeSkill} />
 			</RevealingPill>
 		</motion.div>
 	);

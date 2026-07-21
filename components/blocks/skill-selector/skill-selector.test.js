@@ -23,6 +23,7 @@ test("SkillSelector reuses AgentSelector design with Skills Directory data", () 
 	assert.match(COMPONENT_SOURCE, /moreItemsLabel="More skills"/u);
 	assert.match(COMPONENT_SOURCE, /onPinnedAgentIdsChange=\{onPinnedSkillIdsChange\}/u);
 	assert.match(COMPONENT_SOURCE, /pinnedAgentIds=\{pinnedSkillIds\}/u);
+	assert.match(COMPONENT_SOURCE, /pinnedItemsLabel=\{pinnedItemsLabel\}/u);
 	assert.match(COMPONENT_SOURCE, /const CREATE_SKILL_DIRECTORY_ID = "create-skill";/u);
 	assert.match(COMPONENT_SOURCE, /\.filter\(\(skill\) => !hasCreateSkillFooter \|\| skill\.id !== CREATE_SKILL_DIRECTORY_ID\)/u);
 });

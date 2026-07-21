@@ -3,7 +3,6 @@ import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
 import GridIcon from "@atlaskit/icon/core/grid";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ArtifactList } from "@/components/ui-custom/artifact-list";
@@ -30,6 +29,7 @@ export function JiraActivityChangedFiles({
 						avatarSrc={entry.sessionItem.agent.avatarSrc}
 						label={entry.sessionItem.agent.name}
 						sizePx={32}
+						vpkLogo={entry.sessionItem.agent.vpkLogo}
 					/>
 					<div className="min-w-0 flex-1">
 						<p className="truncate text-sm font-medium leading-5 text-text">
@@ -38,12 +38,7 @@ export function JiraActivityChangedFiles({
 						<div className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
 							<span>{formatElapsedTime(entry.sessionItem.elapsedSeconds ?? 0)}</span>
 							<span aria-hidden className="text-text-subtlest">·</span>
-							<span className="flex items-center gap-1">
-								<span className="grid size-4 place-items-center text-icon-success">
-									<StatusSuccessIcon color="currentColor" label="" size="small" />
-								</span>
-								Done
-							</span>
+							<span className="truncate">{entry.sessionItem.agent.name}</span>
 						</div>
 					</div>
 					<Button

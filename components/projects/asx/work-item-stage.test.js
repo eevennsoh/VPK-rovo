@@ -35,7 +35,7 @@ test("ASX Work item opens the experimental Agent Sessions design from its state 
 	assert.match(STAGE_SOURCE, /aria-label="Open a work item state"/u);
 	assert.match(STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
 	assert.match(STAGE_SOURCE, /size="compact"/u);
-	assert.match(STAGE_SOURCE, /useState<AgentSessionsExperimentalPreset>\("empty"\)/u);
+	assert.match(STAGE_SOURCE, /useState<AgentSessionsExperimentalPreset>\("blank"\)/u);
 	assert.match(STAGE_SOURCE, /aria-pressed=\{controller\.preset === option\.value\}/u);
 	assert.match(STAGE_SOURCE, /aria-pressed:z-10/u);
 	assert.match(STAGE_SOURCE, /border-l!/u);
@@ -43,13 +43,18 @@ test("ASX Work item opens the experimental Agent Sessions design from its state 
 	assert.doesNotMatch(STAGE_SOURCE, /Open work item/u);
 });
 
-test("ASX Work item renders the dialog surface inline without a blanket", () => {
+test("ASX Work item renders a content-height inline surface with a viewport gutter", () => {
 	const inlineIndex = DIALOG_SOURCE.indexOf('if (presentation === "inline")');
 	const backdropIndex = DIALOG_SOURCE.indexOf("<Dialog.Backdrop");
+	const inlineSource = DIALOG_SOURCE.slice(inlineIndex, backdropIndex);
 
 	assert.ok(inlineIndex >= 0 && inlineIndex < backdropIndex);
-	assert.match(DIALOG_SOURCE, /<section[\s\S]*aria-label=\{workItemTitle\}/u);
-	assert.match(DIALOG_SOURCE, /<ModalHeader showClose=\{presentation !== "inline"\} \/>/u);
+	assert.match(inlineSource, /<section[\s\S]*aria-label=\{workItemTitle\}/u);
+	assert.match(inlineSource, /max-h-full/u);
+	assert.match(inlineSource, /w-full max-w-\[1200px\] shrink-0 outline-none/u);
+	assert.doesNotMatch(inlineSource, /className="[^"]*(?:^|\s)h-full(?:\s|$)[^"]*"/u);
+	assert.match(STAGE_SOURCE, /items-start justify-center overflow-hidden px-8 pt-4 pb-4/u);
+	assert.match(DIALOG_SOURCE, /<ModalHeader[\s\S]*showClose=\{presentation !== "inline"\}[\s\S]*\/>/u);
 });
 
 test("ASX Work item portals its local Rovo surface to viewport coordinates", () => {
@@ -59,9 +64,10 @@ test("ASX Work item portals its local Rovo surface to viewport coordinates", () 
 });
 
 test("ASX Work item can jump between all requested presets", () => {
-	assert.match(STAGE_SOURCE, /label: "Empty", value: "empty"/u);
-	assert.match(STAGE_SOURCE, /label: "Filled", value: "filled"/u);
-	assert.match(STAGE_SOURCE, /label: "Agents running", value: "running"/u);
+	assert.match(
+		STAGE_SOURCE,
+		/label: "Empty", value: "blank"[\s\S]*label: "Suggestions", value: "empty"[\s\S]*label: "Running", value: "running"[\s\S]*label: "Done", value: "filled"/u,
+	);
 	assert.doesNotMatch(STAGE_SOURCE, /controls=/u);
 	assert.doesNotMatch(CONTROLLER_SOURCE, /hydrate-preset", preset: initialPreset/u);
 });

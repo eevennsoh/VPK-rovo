@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
+import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
 import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
@@ -37,6 +38,12 @@ export interface JiraActivityProps {
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
+	/** Opens the rich agent-session summary shown by an agent comment. */
+	onViewSession?: (item: JiraAgentSessionItem) => void;
+	/** Called when the Reply action on a human comment is activated. */
+	onReplyRequest?: (entry: JiraActivityCommentEntry) => void;
+	/** Handles an inline reply externally instead of appending it to local timeline state. */
+	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	className?: string;
 	/** Controlled timeline ordering. */
 	sortOrder?: JiraActivitySortOrder;
@@ -71,6 +78,9 @@ export function JiraActivity({
 	currentUser = JIRA_ACTIVITY_CURRENT_USER,
 	composer,
 	renderCommentAction,
+	onViewSession,
+	onReplyRequest,
+	onSubmitReply,
 	className,
 	sortOrder: controlledSortOrder,
 	defaultSortOrder = "ascending",
@@ -126,7 +136,12 @@ export function JiraActivity({
 	const visibleEntries = useMemo(
 		() =>
 			filter === "agents-only"
-				? entries.filter((entry) => entry.kind === "comment" && entry.actor.kind === "agent")
+				? entries.filter(
+						(entry) =>
+							entry.actor.kind === "agent" &&
+							(entry.kind === "comment" ||
+								(entry.kind === "changed-files" && entry.outputs !== undefined)),
+					)
 				: entries,
 		[entries, filter],
 	);
@@ -147,10 +162,14 @@ export function JiraActivity({
 		});
 	}
 
-	function handleAddReply(entryId: string, body: string) {
+	function handleAddReply(entry: JiraActivityCommentEntry, body: string) {
+		if (onSubmitReply) {
+			onSubmitReply(entry, body);
+			return;
+		}
 		applyAction({
 			type: "add-reply",
-			entryId,
+			entryId: entry.id,
 			reply: createReply({
 				id: crypto.randomUUID(),
 				actor: currentUser,
@@ -180,24 +199,21 @@ export function JiraActivity({
 						const isLast = index === orderedEntries.length - 1;
 
 						return (
-							<li className="flex gap-2" key={entry.id}>
+							<li className="flex gap-2" data-jira-activity-entry-id={entry.id} key={entry.id}>
 								<JiraActivityNode
 									actor={entry.actor}
 									icon={entry.kind === "event" ? entry.icon : undefined}
 									isLast={isLast}
 								/>
-								<div
-									className={cn(
-										"min-w-0 flex-1 pb-3",
-										entry.kind === "event" && "pt-0.5",
-									)}
-								>
+								<div className="min-w-0 flex-1 pb-3">
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
 											currentUser={currentUser}
 											entry={entry}
-											onSubmitReply={(body) => handleAddReply(entry.id, body)}
+											onReplyRequest={onReplyRequest}
+											onViewSession={onViewSession}
+											onSubmitReply={(body) => handleAddReply(entry, body)}
 											action={renderCommentAction?.(entry)}
 										/>
 									) : null}

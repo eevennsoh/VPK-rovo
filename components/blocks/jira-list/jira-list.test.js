@@ -123,6 +123,23 @@ test("JiraList exposes the expected table headers and sticky footer content", ()
 	assert.match(SOURCE, /colSpan=\{orderedColumns\.length\}/u);
 });
 
+test("JiraList status lozenges can change the owning row status", () => {
+	const statusCellSource = SOURCE.match(
+		/id: "status",([\s\S]*?)\n\t\t\{\n\t\t\tid: "assignee"/u,
+	)?.[1] ?? "";
+
+	assert.match(TYPES_SOURCE, /statusOptions\?: readonly JiraListStatusOption\[\];/u);
+	assert.match(TYPES_SOURCE, /onStatusChange\?: \(issueKey: string, status: JiraListStatusOption\) => void;/u);
+	assert.match(statusCellSource, /<LozengeDropdownTrigger/u);
+	assert.match(statusCellSource, /Change status for \$\{row\.issueKey\}\. Current status: \$\{row\.status\}/u);
+	assert.match(statusCellSource, /onSelect=\{\(\) => onStatusChange\(row\.issueKey, option\)\}/u);
+	assert.match(statusCellSource, /selected=\{option\.status === row\.status\}/u);
+	assert.match(PAGE_SOURCE, /const STATUS_OPTIONS: readonly JiraListStatusOption\[\]/u);
+	assert.match(PAGE_SOURCE, /row\.issueKey === issueKey \? \{ \.\.\.row, \.\.\.status \} : row/u);
+	assert.match(PAGE_SOURCE, /onStatusChange=\{handleStatusChange\}/u);
+	assert.match(PAGE_SOURCE, /statusOptions=\{STATUS_OPTIONS\}/u);
+});
+
 test("JiraList contributors use the canonical avatar group count treatment", () => {
 	const contributorsSource = SOURCE.match(
 		/export function renderContributors[\s\S]*?\n\}/u,

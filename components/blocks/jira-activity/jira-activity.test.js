@@ -57,7 +57,8 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /items=\{entry\.outputs\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant="compact"/u);
 	assert.match(CHANGED_FILES_SOURCE, /formatElapsedTime\(entry\.sessionItem\.elapsedSeconds \?\? 0\)/u);
-	assert.match(CHANGED_FILES_SOURCE, />\s*Done\s*</u);
+	assert.match(CHANGED_FILES_SOURCE, /entry\.sessionItem\.agent\.name/u);
+	assert.doesNotMatch(CHANGED_FILES_SOURCE, /StatusSuccessIcon|>\s*Done\s*</u);
 });
 
 test("sample feed documents work by people, AI agents, and apps", () => {
@@ -98,6 +99,16 @@ test("status events use the neutral Project status icon", () => {
 	assert.match(NODE_SOURCE, /"in-progress": ProjectStatusIcon/u);
 	assert.match(NODE_SOURCE, /className="text-icon-subtle"/u);
 	assert.doesNotMatch(NODE_SOURCE, /ClockIcon|text-icon-warning/u);
+});
+
+test("Teamwork Graph events use the VPK-wrapped functional icon", () => {
+	assert.match(
+		NODE_SOURCE,
+		/import TeamworkGraphIcon from "@atlaskit\/icon-lab\/core\/teamwork-graph";/u,
+	);
+	assert.match(NODE_SOURCE, /"teamwork-graph": TeamworkGraphIcon/u);
+	assert.match(NODE_SOURCE, /<Icon[\s\S]*render=\{<IconComponent color="currentColor" label="" size="small" \/>\}/u);
+	assert.doesNotMatch(NODE_SOURCE, /TeamworkGraphMark/u);
 });
 
 test("delegated events use the Person assignee icon", () => {
@@ -155,10 +166,15 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
+	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: JiraAgentSessionItem\) => void/u);
+	assert.match(INDEX_SOURCE, /onViewSession=\{onViewSession\}/u);
+	assert.match(INDEX_SOURCE, /onReplyRequest\?: \(entry: JiraActivityCommentEntry\) => void/u);
+	assert.match(INDEX_SOURCE, /onReplyRequest=\{onReplyRequest\}/u);
 	assert.match(INDEX_SOURCE, /composer === undefined/u);
 	assert.match(INDEX_SOURCE, /filter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /onFilterChange\?: \(next: JiraActivityFilter\) => void/u);
+	assert.match(INDEX_SOURCE, /data-jira-activity-entry-id=\{entry\.id\}/u);
 });
 
 test("the header shows an activity count and a text-link sort control", () => {
@@ -174,14 +190,23 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /positionerClassName="z-\[502\]"/u);
 });
 
-test("the header can show only comments authored by agents", () => {
-	const expectedAgentComments = JIRA_ACTIVITY_ENTRIES.filter(
-		(entry) => entry.kind === "comment" && entry.actor.kind === "agent",
+test("the header shows agent comments and generated-output cards", () => {
+	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) =>
+			entry.actor.kind === "agent" &&
+			(entry.kind === "comment" || (entry.kind === "changed-files" && entry.outputs !== undefined)),
 	);
-	assert.ok(expectedAgentComments.length > 0);
+	assert.deepEqual(
+		expectedAgentCards.map((entry) => entry.kind),
+		["comment", "changed-files"],
+	);
 	assert.match(HEADER_SOURCE, /value="agents-only"/u);
 	assert.match(HEADER_SOURCE, />\s*Show agents only\s*</u);
-	assert.match(INDEX_SOURCE, /entry\.kind === "comment" && entry\.actor\.kind === "agent"/u);
+	assert.match(INDEX_SOURCE, /entry\.actor\.kind === "agent"/u);
+	assert.match(
+		INDEX_SOURCE,
+		/entry\.kind === "comment" \|\|[\s\S]*entry\.kind === "changed-files" && entry\.outputs !== undefined/u,
+	);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 });
 
@@ -213,9 +238,15 @@ test("Jira Activity wires collapse state and hides the body when collapsed", () 
 });
 
 test("one-line activity events use 12px type without shrinking expanded agent cards", () => {
-	assert.match(EVENT_SOURCE, /className="text-xs leading-4 text-text-subtle"/u);
-	assert.match(EVENT_SOURCE, /className="flex min-w-0 items-center gap-2 text-xs leading-4"/u);
+	assert.match(EVENT_SOURCE, /className="flex h-6 items-center text-xs leading-4 text-text-subtle"/u);
+	assert.match(EVENT_SOURCE, /className="flex h-6 min-w-0 items-center gap-2 text-xs leading-4"/u);
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
+});
+
+test("event labels share the timeline node's 24px vertical alignment track", () => {
+	assert.match(NODE_SOURCE, /className="flex h-6 shrink-0 items-center justify-center"/u);
+	assert.match(EVENT_SOURCE, /<p className="flex h-6 items-center[^>]*>\s*<span>/u);
+	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
 
 test("the linked event uses the Jira Queue pull-request row", () => {
@@ -238,10 +269,11 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 test("agent comments use the Jira Agent Session activity-card variant", () => {
 	assert.match(
 		COMMENT_SOURCE,
-		/import \{ JiraAgentSessionActivityCard \} from "@\/components\/blocks\/jira-agent-session"/u,
+		/import \{[\s\S]*JiraAgentSessionActivityCard,[\s\S]*type JiraAgentSessionItem,[\s\S]*\} from "@\/components\/blocks\/jira-agent-session"/u,
 	);
 	assert.match(COMMENT_SOURCE, /<JiraAgentSessionActivityCard/u);
 	assert.match(COMMENT_SOURCE, /item=\{entry\.sessionItem\}/u);
+	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
 	assert.match(COMMENT_SOURCE, /entry\.sessionItem \? "comment" : "reply"/u);
 	assert.match(COMMENT_SOURCE, /Ask, @mention, or \/ for actions/u);
 	assert.match(COMMENT_SOURCE, /entry\.sessionItem\s*\? undefined\s*:\s*entry\.collapsible/u);
@@ -249,6 +281,28 @@ test("agent comments use the Jira Agent Session activity-card variant", () => {
 		COMMENT_SOURCE,
 		/w-full overflow-hidden rounded-lg border border-border bg-surface/u,
 	);
+});
+
+test("controlled timelines can route inline agent replies to their owning session", () => {
+	assert.match(INDEX_SOURCE, /onSubmitReply\?: \(entry: JiraActivityCommentEntry, body: string\) => void/u);
+	assert.match(INDEX_SOURCE, /onSubmitReply\(entry, body\);/u);
+	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
+});
+
+test("human comments expose a trailing Reply action without mounting the deferred composer", () => {
+	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \}/u);
+	assert.match(COMMENT_SOURCE, /import \{ Button \} from "@\/components\/ui\/button"/u);
+	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/headerLayout=\{entry\.actor\.kind === "person" \? "stacked" : "inline"\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /onClick=\{\(\) => onReplyRequest\?\.\(entry\)\}/u);
+	assert.match(COMMENT_SOURCE, /size="compact"/u);
+	assert.match(COMMENT_SOURCE, /variant="outline"/u);
+	assert.match(COMMENT_SOURCE, />\s*Reply\s*<\/Button>/u);
+	assert.match(COMMENT_SOURCE, /<Avatar aria-hidden size="default">/u);
+	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{entry\.actor\.avatarSrc\}/u);
 });
 
 test("the exported comment composer uses the shared floating Rovo prompt", () => {

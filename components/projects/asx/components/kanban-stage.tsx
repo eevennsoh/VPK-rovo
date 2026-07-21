@@ -4,6 +4,13 @@ import { useCallback, useState } from "react";
 
 import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
 import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+import {
+	DEFAULT_PINNED_SPACE_AGENT_IDS,
+	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+	WORK_ITEM_SKILLS,
+} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
 import { ASX_KANBAN_AGENTS, ASX_KANBAN_DEFAULT_AGENT_ID } from "@/components/projects/asx/data/kanban-data";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAsxKanbanLifecycle } from "@/components/projects/asx/hooks/use-kanban-lifecycle";
@@ -56,9 +63,14 @@ export function KanbanStage(): React.ReactElement {
 		handleCardDragEnd,
 		handleCardDragStart,
 		handleCardDrop,
+		handleCardClick,
 		handleCardSelect,
 		handleGenerativeActionSubmit,
 		handleQuestionSubmit,
+		handleStatusChange,
+		handleAgentAssignmentChange,
+		handleClearSelection,
+		selectedAgentIds,
 		selectedCardCodes,
 	} = useAsxKanbanLifecycle({ onNonAgentAction: handleNonAgentAction });
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
@@ -91,11 +103,23 @@ export function KanbanStage(): React.ReactElement {
 				onCardDragEnd={handleCardDragEnd}
 				onCardDragStart={handleCardDragStart}
 				onCardDrop={handleCardDrop}
+				onCardClick={handleCardClick}
 				onCardGenerativeActionSubmit={handleGenerativeActionSubmit}
 				onCardSelect={handleCardSelect}
 				paddingBottom={token("space.200")}
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}
+				selectionToolbar={{
+					agents: ROVO_AGENT_SELECTOR_AGENTS,
+					defaultPinnedAgentIds: DEFAULT_PINNED_SPACE_AGENT_IDS,
+					defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+					onAgentAssignmentChange: handleAgentAssignmentChange,
+					onClearSelection: handleClearSelection,
+					onStatusChange: handleStatusChange,
+					pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
+					selectedAgentIds,
+					skills: WORK_ITEM_SKILLS,
+				}}
 			/>
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
