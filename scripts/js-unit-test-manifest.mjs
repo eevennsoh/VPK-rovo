@@ -68,6 +68,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	],
 	"source-contract": [
 		"components/blocks/agent-sessions/agent-sessions.test.js",
+		"components/blocks/jira-for-you/jira-for-you.test.js",
 		"components/blocks/jira-activity/jira-activity-alignment.test.js",
 		"components/projects/rovo-core/lib/rovo-app-route-adapter.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js",

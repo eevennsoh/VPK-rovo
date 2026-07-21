@@ -22,8 +22,6 @@ export interface JiraForYouItem {
 	agents?: readonly JiraForYouAgent[];
 	/** Live status copy shown with a shimmer effect (e.g. "In progress"). */
 	status?: string;
-	/** When true, the hover actions include a "Stop" control. */
-	isRunning?: boolean;
 	/**
 	 * Filter-tab ids this item belongs to (besides "all", which always matches).
 	 * Drives which items are shown when a tab other than "All" is selected.
