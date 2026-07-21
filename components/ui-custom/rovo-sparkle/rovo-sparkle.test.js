@@ -41,8 +41,11 @@ test("Rovo Sparkle uses VPK button geometry and the exact four Rovo leaves", () 
 	assert.match(BUTTON_SOURCE, /selected \? "shadow-none" : "shadow-overlay"/);
 	assert.match(BUTTON_SOURCE, /overflow-hidden/);
 	assert.match(BUTTON_SOURCE, /selected[\s\S]*bg-bg-selected[\s\S]*group-hover\/rovo-sparkle:bg-bg-selected-hovered[\s\S]*group-active\/rovo-sparkle:bg-bg-selected-pressed/);
-	assert.match(BUTTON_SOURCE, /bg-\[#292A2E\]/);
-	assert.match(BUTTON_SOURCE, /group-hover\/rovo-sparkle:bg-\[#3B3D42\][\s\S]*group-active\/rovo-sparkle:bg-\[#505258\]/);
+	assert.match(
+		BUTTON_SOURCE,
+		/bg-bg-neutral-bold group-hover\/rovo-sparkle:bg-bg-neutral-bold-hovered group-active\/rovo-sparkle:bg-bg-neutral-bold-pressed/,
+	);
+	assert.doesNotMatch(BUTTON_SOURCE, /bg-\[#(?:292A2E|3B3D42|505258)\]/);
 	assert.match(BUTTON_SOURCE, /const hiddenWhileSelected = hideWhenSelected && selected;/);
 	assert.match(BUTTON_SOURCE, /const visuallyHidden = !visible \|\| hiddenWhileSelected;/);
 	assert.match(BUTTON_SOURCE, /hiddenWhileSelected \? "pointer-events-none opacity-0" : null/);
