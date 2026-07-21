@@ -25,6 +25,9 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 	"visual-tracing": dynamic(() => import("../demos/visual/visual-tracing-demo"), {
 		ssr: false,
 	}),
+	"thinking-orbs": dynamic(() => import("../demos/visual/thinking-orbs-demo"), {
+		ssr: false,
+	}),
 	"scroll-mask": dynamic(() => import("../demos/visual/scroll-mask-demo"), {
 		ssr: false,
 	}),
@@ -293,6 +296,48 @@ export const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"thinking-orbs-demo-working": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoWorking,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-searching": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoSearching,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-solving": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoSolving,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-listening": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoListening,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-composing": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoComposing,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-shaping": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoShaping,
+			})),
+		{ ssr: false },
+	),
 	"border-beam-demo-rotate-large": dynamic(
 		() =>
 			import("../demos/visual/border-beam-demo").then((mod) => ({
