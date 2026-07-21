@@ -504,6 +504,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("squircle", "Squircle", "@/components/website/demos/visual/shaders/squircle"),
 	visualComponent("svg-tracing", "SVG Tracing", "@/components/visual/svg-tracing"),
 	visualComponent("visual-tracing", "Visual Tracing", "@/components/visual/visual-tracing"),
+	visualComponent("thinking-orbs", "Thinking Orbs", "@/components/visual/thinking-orbs"),
 	visualComponent("scroll-mask", "Scroll Mask", "@/components/visual/scroll-mask"),
 	visualComponent("motion", "Motion", "@/components/visual/motion"),
 	visualComponent("text-effects", "Text Effects", "@/components/visual/text-effects"),
