@@ -1,6 +1,5 @@
-// Theme resolution: explicit prop → ancestor data-theme/.dark|.light
+// Theme resolution: explicit prop → ancestor ADS/data theme/.dark|.light
 // class (watched live) → prefers-color-scheme (subscribed live).
-// SSR-safe: everything runs in effects; the pre-mount fallback is dark.
 
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
@@ -12,6 +11,9 @@ function ancestorTheme(el: Element | null): boolean | null {
 		const attr = node.getAttribute("data-theme");
 		if (attr === "dark") return true;
 		if (attr === "light") return false;
+		const colorMode = node.getAttribute("data-color-mode");
+		if (colorMode === "dark") return true;
+		if (colorMode === "light") return false;
 		if (node.classList.contains("dark")) return true;
 		if (node.classList.contains("light")) return false;
 		node = node.parentElement;
@@ -57,13 +59,13 @@ export function useResolvedDark(
 		const onMq = () => resolve();
 		mq?.addEventListener("change", onMq);
 
-		// live app-level toggles: watch class/data-theme flips on ancestors
+		// live app-level toggles: watch class/theme flips on ancestors
 		let mo: MutationObserver | null = null;
 		if (typeof MutationObserver !== "undefined" && hostRef.current) {
 			mo = new MutationObserver(resolve);
 			mo.observe(document.documentElement, {
 				attributes: true,
-				attributeFilter: ["class", "data-theme"],
+				attributeFilter: ["class", "data-theme", "data-color-mode"],
 				subtree: true,
 			});
 		}
@@ -79,7 +81,11 @@ export function useResolvedDark(
 
 /** Live `prefers-reduced-motion` — reduced users get a static frame. */
 export function useReducedMotion(): boolean {
-	const [reduced, setReduced] = useState(false);
+	const [reduced, setReduced] = useState(
+		() =>
+			typeof matchMedia !== "undefined" &&
+			matchMedia("(prefers-reduced-motion: reduce)").matches,
+	);
 	useEffect(() => {
 		if (typeof matchMedia === "undefined") return;
 		const mq = matchMedia("(prefers-reduced-motion: reduce)");

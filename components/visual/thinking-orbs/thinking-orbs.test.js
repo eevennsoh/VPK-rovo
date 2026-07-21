@@ -12,6 +12,7 @@ const COMPONENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "ThinkingOrb.tsx"),
 	"utf8",
 );
+const THEME_SOURCE = fs.readFileSync(path.join(__dirname, "theme.ts"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(
 	path.join(ROOT, "components/website/demos/visual/thinking-orbs-demo.tsx"),
 	"utf8",
@@ -66,6 +67,11 @@ test("Thinking Orb preserves accessibility, reduced motion, and visibility pausi
 	assert.match(COMPONENT_SOURCE, /if \(reduced\) \{\s*frame\(0\.6\);/);
 	assert.match(COMPONENT_SOURCE, /IntersectionObserver/);
 	assert.match(COMPONENT_SOURCE, /visibilitychange/);
+	assert.match(THEME_SOURCE, /getAttribute\("data-color-mode"\)/);
+	assert.match(
+		THEME_SOURCE,
+		/useState\(\s*\(\) =>\s*typeof matchMedia !== "undefined"/,
+	);
 });
 
 test("Thinking Orbs demo exposes the complete supported control and variant surface", () => {
