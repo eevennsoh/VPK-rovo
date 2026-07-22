@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 import { useRovoChat } from "@/app/contexts";
 import { useAgentSessions } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
@@ -35,7 +36,17 @@ function getSessionResult(session: AgentSession): string {
  * Rovo chat. Agent Sessions owns the deterministic session lifecycle; the
  * existing Rovo surface owns all visible chat chrome, transcript, and composer.
  */
-export function FloatingSessionSurface() {
+export interface FloatingSessionSurfaceProps {
+	/**
+	 * When true, the floating Rovo surface is portaled to `document.body` so it
+	 * escapes an inline container's clipping/transform context and positions
+	 * against viewport coordinates. Full-screen modal presentations keep the
+	 * surface in place (no portal).
+	 */
+	portalToViewport?: boolean;
+}
+
+export function FloatingSessionSurface({ portalToViewport = false }: FloatingSessionSurfaceProps = {}) {
 	const { actions, meta } = useAgentSessions();
 	const { chatSurface } = useRovoChat();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
@@ -80,7 +91,7 @@ export function FloatingSessionSurface() {
 		};
 	}, [actions, activeSession]);
 
-	return (
+	const surface = (
 		<AsxRovoOverlay
 			chatContextBar={chatContextBar}
 			externalThinkingMessageId={externalThinkingMessageId}
@@ -88,4 +99,8 @@ export function FloatingSessionSurface() {
 			onLauncherClick={actions.openLatestOrCreateGeneralSession}
 		/>
 	);
+
+	if (typeof document === "undefined") return surface;
+	const portalRoot = portalToViewport ? document.body : null;
+	return portalRoot ? createPortal(surface, portalRoot) : surface;
 }

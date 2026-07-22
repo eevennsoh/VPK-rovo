@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import { JGP_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
 import { JGP_GALLERY_ITEMS } from "./data/gallery-items";
 import {
 	GLOBAL_SESSION_SCREENS,
@@ -118,8 +119,11 @@ export default function JgpPage(): React.ReactElement {
 	// (their stages call `useRovoChat` for the agent chat overlay), so the whole
 	// gallery tree is wrapped here rather than relying on an ancestor route to
 	// supply the context — this keeps the standalone and exported routes working.
+	// The JGP agent profiles (rfp-drafter, service-impact-agent, …) are passed in
+	// so `selectAgent` resolves those local personas instead of falling back to
+	// default Rovo — mirroring the /asx pattern.
 	return (
-		<RovoChatProvider>
+		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
 			<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 				<Gallery
 					items={JGP_GALLERY_ITEMS}

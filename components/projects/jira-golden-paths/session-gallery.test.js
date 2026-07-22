@@ -101,7 +101,10 @@ test("Local session opens the Kanban section with the real board design", () => 
 	// The Kanban/Rovo design stages call `useRovoChat`, so the JGP tree must be
 	// wrapped in a RovoChatProvider (not reliant on an ancestor route).
 	assert.match(PAGE_SOURCE, /import \{ RovoChatProvider \} from "@\/app\/contexts\/context-rovo-chat";/u);
-	assert.match(PAGE_SOURCE, /<RovoChatProvider>/u);
+	// The provider receives the JGP agent profiles so local personas (rfp-drafter,
+	// service-impact-agent, …) resolve instead of falling back to default Rovo.
+	assert.match(PAGE_SOURCE, /<RovoChatProvider agentProfiles=\{JGP_CHAT_AGENT_PROFILES\}>/u);
+	assert.match(PAGE_SOURCE, /import \{ JGP_CHAT_AGENT_PROFILES \} from "\.\/data\/agent-chat-data";/u);
 });
 
 test("Top-bar label counts position within the current section", () => {
