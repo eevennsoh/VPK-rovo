@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem, type GalleryPalette } from "@/components/blocks/gallery";
 import { JGP_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
@@ -39,6 +40,18 @@ const ROVO_PURPLE_PALETTE: GalleryPalette = ["#5E2C9D", "#7A3BB3", "#9850CC", "#
 interface SessionCard {
 	screens: readonly SessionScreen[];
 	controller: ScreenNavigatorController;
+}
+
+function ResetRovoChatOnEntry({ screen }: Readonly<{ screen: SessionScreen | undefined }>): null {
+	const { resetAgentToRovo, resetChat } = useRovoChat();
+
+	useEffect(() => {
+		if (screen?.design !== "rovo") return;
+		resetAgentToRovo();
+		resetChat();
+	}, [resetAgentToRovo, resetChat, screen?.design, screen?.id]);
+
+	return null;
 }
 
 // The window-level arrow handler must not steal keys from a focused interactive
@@ -132,6 +145,7 @@ export default function JgpPage(): React.ReactElement {
 	// default Rovo — mirroring the /asx pattern.
 	return (
 		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+			<ResetRovoChatOnEntry screen={activeScreen} />
 			<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 				<Gallery
 					items={JGP_GALLERY_ITEMS}

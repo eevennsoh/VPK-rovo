@@ -104,6 +104,15 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /onReset=\{handleReset\}/u);
 });
 
+test("Entering the Global Rovo screen restores the default agent and greeting", () => {
+	assert.match(PAGE_SOURCE, /const \{ resetAgentToRovo, resetChat \} = useRovoChat\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/if \(screen\?\.design !== "rovo"\) return;\s*resetAgentToRovo\(\);\s*resetChat\(\);/u,
+	);
+	assert.match(PAGE_SOURCE, /<ResetRovoChatOnEntry screen=\{activeScreen\} \/>/u);
+});
+
 test("Global For you reuses the shared feed layout with JGP chat playback", () => {
 	assert.match(FOR_YOU_STAGE_SOURCE, /useJgpAgentChatDemo\(\)/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /buildJgpForYouAgentChatScenario\(item\)/u);
