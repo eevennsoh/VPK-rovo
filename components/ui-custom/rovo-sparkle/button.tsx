@@ -80,8 +80,9 @@ function RovoSparkleMark({
 				</defs>
 				<motion.path
 					animate={{ opacity: selected || colorActive ? 0 : 1 }}
+					className="text-icon-inverse!"
 					d={SPARKLE_PATH}
-					fill="#FFFFFF"
+					fill="currentColor"
 					initial={false}
 					style={{ willChange: "opacity" }}
 					transition={colorTransition}

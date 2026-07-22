@@ -30,7 +30,11 @@ test("Rovo Sparkle uses VPK button geometry and the exact four Rovo leaves", () 
 	assert.match(BUTTON_SOURCE, /hideWhenSelected\?: boolean;/);
 	assert.match(BUTTON_SOURCE, /size === "compact" \? "icon-compact" : "icon"/);
 	assert.match(BUTTON_SOURCE, /const glyphSize = size === "compact" \? 12 : 16;/);
-	assert.match(BUTTON_SOURCE, /animate=\{\{ opacity: selected \|\| colorActive \? 0 : 1 \}\}[\s\S]*fill="#FFFFFF"/);
+	assert.match(
+		BUTTON_SOURCE,
+		/animate=\{\{ opacity: selected \|\| colorActive \? 0 : 1 \}\}[\s\S]*className="text-icon-inverse!"[\s\S]*fill="currentColor"/,
+	);
+	assert.doesNotMatch(BUTTON_SOURCE, /fill="#FFFFFF"/);
 	assert.match(BUTTON_SOURCE, /animate=\{\{ opacity: selected \? 1 : 0 \}\}[\s\S]*className="text-icon-selected!"[\s\S]*fill="currentColor"/);
 	assert.match(BUTTON_SOURCE, /<motion\.path[\s\S]*fill="currentColor"/);
 	assert.match(BUTTON_SOURCE, /import \{ ROVO_COLOR_SWATCHES \} from "@\/lib\/rovo-colors";/);
