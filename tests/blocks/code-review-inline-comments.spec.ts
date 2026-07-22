@@ -51,6 +51,7 @@ async function addInlineComment({
 	const editor = page.getByRole("textbox", {
 		name: `Comment on ${path}, ${sideLabel} side, line ${lineNumber}`,
 	});
+	await expect(editor).toHaveCount(1);
 	await expect(editor).toBeFocused();
 	await editor.fill(comment);
 	await editor.press("Control+Enter");

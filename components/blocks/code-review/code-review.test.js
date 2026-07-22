@@ -56,6 +56,7 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	assert.match(diffView, /renderAnnotation=\{\(\{ metadata \}\) => \(/u);
 	assert.match(diffView, /renderGutterUtility=\{\(getHoveredLine\) => \(/u);
 	assert.match(annotation, /aria-label="Add inline comment"/u);
+	assert.match(annotation, /event\.stopPropagation\(\)/u);
 	assert.match(annotation, /event\.key === "Enter" && \(event\.metaKey \|\| event\.ctrlKey\)/u);
 	assert.match(annotation, /event\.key === "Escape"/u);
 	assert.match(annotation, /disabled=\{!canCommit\}/u);

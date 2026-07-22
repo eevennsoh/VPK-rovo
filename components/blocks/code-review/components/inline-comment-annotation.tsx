@@ -3,7 +3,7 @@
 import AddIcon from "@atlaskit/icon/core/add";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import type { GetHoveredLineResult } from "@pierre/diffs";
-import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,8 @@ export function InlineCommentGutterButton({
 	getHoveredLine,
 	onAddComment,
 }: Readonly<InlineCommentGutterButtonProps>) {
-	const handleClick = () => {
+	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
 		const hoveredLine = getHoveredLine();
 		if (hoveredLine) {
 			onAddComment(hoveredLine.side, hoveredLine.lineNumber);
