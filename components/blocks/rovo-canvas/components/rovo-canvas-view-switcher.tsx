@@ -9,7 +9,7 @@ import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 
 import { Icon as VpkIcon } from "@/components/ui/icon";
-import { TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export type RovoCanvasViewIcon = ComponentType<{
 	label: string;
@@ -28,6 +28,8 @@ export interface RovoCanvasView {
 
 interface RovoCanvasViewSwitcherProps {
 	views: ReadonlyArray<RovoCanvasView>;
+	value: string;
+	onValueChange: (value: string) => void;
 }
 
 function getFallbackIcon(viewId: string): RovoCanvasViewIcon {
@@ -56,26 +58,37 @@ function getFallbackIcon(viewId: string): RovoCanvasViewIcon {
 
 export function RovoCanvasViewSwitcher({
 	views,
+	value,
+	onValueChange,
 }: Readonly<RovoCanvasViewSwitcherProps>): React.ReactElement {
 	return (
-		<TabsList
+		<ToggleGroup
 			aria-label="Canvas view"
-			className="h-8 rounded-md border border-border bg-surface p-0.5"
+			className="h-8 bg-surface p-0.5"
+			variant="outline"
+			value={[value]}
+			onValueChange={(values) => {
+				const nextValue = values[0];
+				if (nextValue === undefined) {
+					return;
+				}
+				onValueChange(nextValue);
+			}}
 		>
 			{views.map((view) => {
 				const IconComponent = view.icon ?? getFallbackIcon(view.id);
 
 				return (
-					<TabsTrigger
+					<ToggleGroupItem
 						key={view.id}
 						value={view.id}
 						aria-label={view.label}
 						className="size-7 flex-none px-0"
 					>
 						<VpkIcon render={<IconComponent label="" />} className="size-4" />
-					</TabsTrigger>
+					</ToggleGroupItem>
 				);
 			})}
-		</TabsList>
+		</ToggleGroup>
 	);
 }

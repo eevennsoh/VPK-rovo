@@ -23,37 +23,10 @@ export interface ChangedFile {
 	inExplorer?: boolean;
 }
 
-export interface ChangeSet {
-	id: string;
-	title: string;
-	fileLabel: string;
-	fileIds: readonly string[];
-	additions: number;
-	deletions: number;
-}
-
-export interface ChangesSummary {
-	fileCount: number;
-	additions: number;
-	deletions: number;
-}
-
 export interface ExplorerNode {
 	id: string;
 	name: string;
 	kind: "folder" | "file";
 	children?: readonly ExplorerNode[];
 	fileId?: string;
-}
-
-export interface ChatScript {
-	agentName: string;
-	intro: string;
-	thinkingLabel: string;
-	thinkingCount: number;
-	thinkingSteps: readonly string[];
-	summaryMarkdown: string;
-	ctaLabel: string;
-	composerPlaceholder: string;
-	footerNote: string;
 }

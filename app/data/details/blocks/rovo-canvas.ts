@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const ROVO_CANVAS_DETAIL: ComponentDetail = {
-		description: "Full-screen Rovo canvas chrome extracted as a VPK-native shell: per-kind artefact tabs, code artefact toolbar controls, version history, select mode, and the shared VPK sidebar chat rail without kg-prototyping generation state or demo content.",
+		description: "Full-screen Rovo canvas chrome extracted as a VPK-native shell: per-kind artefact tabs, code artefact toolbar controls, version history, select mode, and the shared VPK sidebar chat rail without generation state or demo content.",
 		importStatement: `import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";`,
 		usage: `import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
 

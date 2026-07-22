@@ -7,17 +7,6 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-test("code review file filters expose the expected pure contracts", () => {
-	const source = readProjectFile("components/blocks/code-review/lib/filter-files.ts");
-
-	assert.match(source, /export function filterBySearch/u);
-	assert.match(source, /export function filterByChangeSet/u);
-	assert.match(source, /query\.trim\(\)\.toLowerCase\(\)/u);
-	assert.match(source, /file\.path\.toLowerCase\(\)\.includes/u);
-	assert.match(source, /if \(changeSet === null\) \{\s*return files;/u);
-	assert.match(source, /files\.filter\(\(file\) => includedIds\.has\(file\.id\)\)/u);
-});
-
 test("code review fixtures preserve the design contracts", () => {
 	const workItem = readProjectFile("components/blocks/code-review/data/work-item.ts");
 	const changedFiles = readProjectFile("components/blocks/code-review/data/changed-files.ts");
@@ -29,27 +18,55 @@ test("code review fixtures preserve the design contracts", () => {
 	assert.match(explorerTree, /ipc\.mp\.test\.ts/u);
 });
 
-test("code review diff components preserve theme and stat token contracts", () => {
+test("code review diff view preserves theme token contracts", () => {
 	const diffView = readProjectFile(
 		"components/blocks/code-review/components/diff-file-view.tsx",
-	);
-	const diffStat = readProjectFile(
-		"components/blocks/code-review/components/diff-stat.tsx",
 	);
 
 	assert.match(diffView, /github-light/u);
 	assert.match(diffView, /github-dark/u);
-	assert.match(diffStat, /text-text-accent-lime/u);
-	assert.match(diffStat, /text-text-accent-red/u);
 });
 
-test("code review orchestrator preserves independent default layouts", () => {
+test("code review orchestrator preserves the editor default layout", () => {
 	const source = readProjectFile(
 		"components/blocks/code-review/components/code-review.tsx",
 	);
 
-	assert.match(source, /useState<DiffLayout>\("unified"\)/u);
 	assert.match(source, /useState<DiffLayout>\("split"\)/u);
+});
+
+test("Code Review composes its editor into a Canvas with the shared Code Reviewer rail", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+	const rail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+
+	assert.match(source, /import \{ RovoCanvas \} from "@\/components\/blocks\/rovo-canvas\/page";/u);
+	assert.match(source, /<RovoCanvas[\s\S]*primaryActionLabel="Create pull request"/u);
+	assert.match(source, /id: "code"/u);
+	assert.match(source, /headerStart=\{<CodeReviewCanvasHeader workItem=\{workItem\} \/>\}/u);
+	assert.match(source, /rightRail=\{[\s\S]*<CodeReviewCanvasRightRail/u);
+	assert.match(rail, /<RovoChatProvider[\s\S]*autoSelectAgentId=\{CODE_REVIEWER_AGENT_ID\}/u);
+	assert.match(rail, /agentProfiles=\{\[CODE_REVIEWER_AGENT\]\}/u);
+	assert.match(rail, /<ChatPanel[\s\S]*headerVariant="minimal"/u);
+});
+
+test("Code Review no longer owns a bespoke chat implementation", () => {
+	const removedPaths = [
+		"components/blocks/code-review/components/chat/chat-panel.tsx",
+		"components/blocks/code-review/components/chat/chat-composer.tsx",
+		"components/blocks/code-review/data/chat-script.ts",
+	];
+
+	for (const removedPath of removedPaths) {
+		assert.equal(
+			fs.existsSync(path.join(process.cwd(), removedPath)),
+			false,
+			`expected ${removedPath} to be removed`,
+		);
+	}
 });
 
 test("code review public barrel and demo expose the composition root", () => {
@@ -60,15 +77,11 @@ test("code review public barrel and demo expose the composition root", () => {
 	assert.match(page, /<CodeReview \/>/u);
 });
 
-test("code review summary and editor retain interaction contracts", () => {
-	const accordion = readProjectFile(
-		"components/blocks/code-review/components/summary/summary-file-accordion.tsx",
-	);
+test("code review editor retains interaction contracts", () => {
 	const explorer = readProjectFile(
 		"components/blocks/code-review/components/editor/editor-explorer.tsx",
 	);
 
-	assert.match(accordion, /aria-expanded=\{isOpen\}/u);
 	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree";/u);
 });
 
@@ -111,30 +124,74 @@ test("Code Review demo wrapper renders the block page", () => {
 	assert.match(demo, /return <Page \/>;/u);
 });
 
-test("Code Review chat preserves scripted copy and inert composer controls", () => {
-	const chatScript = readProjectFile("components/blocks/code-review/data/chat-script.ts");
-	const composer = readProjectFile(
-		"components/blocks/code-review/components/chat/chat-composer.tsx",
-	);
-
-	assert.match(chatScript, /Uses AI\. Verify results\./u);
-	assert.match(chatScript, /acceptance criteria/u);
-	assert.match(composer, /aria-label=/u);
-	assert.match(composer, /type="button"/u);
-});
-
 test("Code Review polish contracts hide duplicate headers and name explorer rows", () => {
 	const diffView = readProjectFile(
 		"components/blocks/code-review/components/diff-file-view.tsx",
-	);
-	const accordion = readProjectFile(
-		"components/blocks/code-review/components/summary/summary-file-accordion.tsx",
 	);
 	const explorer = readProjectFile(
 		"components/blocks/code-review/components/editor/editor-explorer.tsx",
 	);
 
 	assert.match(diffView, /renderCustomHeader=\{\(\) => null\}/u);
-	assert.match(accordion, /flex-1 truncate text-left font-mono/u);
 	assert.match(explorer, /aria-label=\{node\.name\}/u);
+});
+
+test("Code Review moves its shared artefact identity into the canvas header", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+	const header = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-header.tsx",
+	);
+	const canvas = readProjectFile(
+		"components/blocks/rovo-canvas/components/rovo-canvas.tsx",
+	);
+
+	assert.match(source, /showArtefactIdentity=\{false\}/u);
+	assert.match(header, /RovoCanvasArtefactIdentity/u);
+	assert.match(canvas, /export function RovoCanvasArtefactIdentity/u);
+	assert.match(canvas, /showArtefactIdentity = true/u);
+	assert.match(canvas, /showArtefactIdentity \? \(/u);
+	assert.match(canvas, /flex size-full min-h-0 flex-col gap-0/u);
+});
+
+test("Code Review provides a manual launch control after the canvas closes", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+
+	assert.match(source, /isCanvasOpen \? null : \(/u);
+	assert.match(source, /<Button onClick=\{\(\) => setCanvasOpen\(true\)\}>/u);
+	assert.match(source, /Open code review/u);
+});
+
+test("Code Review composition no longer renders a code summary screen", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+
+	assert.doesNotMatch(source, /SummaryPanel/u);
+	assert.doesNotMatch(source, /"summary" \| "editor"/u);
+	assert.match(source, /<EditorPanel/u);
+});
+
+test("Code Review summary screen files are removed", () => {
+	const removedPaths = [
+		"components/blocks/code-review/components/summary/summary-panel.tsx",
+		"components/blocks/code-review/components/summary/summary-rail.tsx",
+		"components/blocks/code-review/components/summary/summary-toolbar.tsx",
+		"components/blocks/code-review/components/summary/summary-file-accordion.tsx",
+		"components/blocks/code-review/components/summary/summary-change-card.tsx",
+		"components/blocks/code-review/components/diff-stat.tsx",
+		"components/blocks/code-review/data/change-sets.ts",
+		"components/blocks/code-review/lib/filter-files.ts",
+	];
+
+	for (const removedPath of removedPaths) {
+		assert.equal(
+			fs.existsSync(path.join(process.cwd(), removedPath)),
+			false,
+			`expected ${removedPath} to be removed`,
+		);
+	}
 });
