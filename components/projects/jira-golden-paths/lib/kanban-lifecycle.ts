@@ -43,7 +43,7 @@ export type JgpKanbanAction =
 	| { type: "request-input"; cardCode: string }
 	| { type: "answer-question"; cardCode: string }
 	| { type: "complete"; cardCode: string; generatedOutput?: string }
-	| { type: "select"; cardCode: string; columnTitle: string; indexInColumn: number; modifiers: JiraKanbanCardSelectModifiers }
+	| { type: "select"; cardCode: string; columnTitle: string; indexInColumn: number; modifiers: JiraKanbanCardSelectModifiers; selectionColumns?: readonly JiraKanbanColumnData[] }
 	| { type: "drag-start"; cardCode: string; sourceColumnTitle: string }
 	| { type: "drag-end" }
 	| { type: "drop"; targetColumnTitle: string; agent?: JgpKanbanAgentSelection }
@@ -195,7 +195,7 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 		case "select": {
 			return {
 				...state,
-				...selectJiraKanbanCard(state, state.columns, action),
+				...selectJiraKanbanCard(state, action.selectionColumns ?? state.columns, action),
 			};
 		}
 		case "drag-start": {

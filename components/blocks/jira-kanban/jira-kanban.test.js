@@ -7,6 +7,7 @@ const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbui
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
 const COLUMN_DRAG_SOURCE = SOURCE.slice(
 	SOURCE.indexOf("const handleColumnDragOver"),
@@ -17,8 +18,10 @@ async function loadStateHarness() {
 	const result = await esbuild.build({
 		stdin: {
 			contents: `
-				export {
+					export {
 					createJiraKanbanSelectionState,
+					filterJiraKanbanColumnsByAssignee,
+					getJiraKanbanAssignees,
 					moveJiraKanbanCardsToColumn,
 					selectJiraKanbanCard,
 					getCommonJiraKanbanAgentIds,
@@ -48,10 +51,63 @@ const SELECTION_COLUMNS = [
 	{ title: "Drafting", count: 0, cards: [] },
 ];
 
+const FILTER_COLUMNS = [
+	{
+		title: "Intake",
+		count: 2,
+		cards: [
+			{ code: "RFP-101", assignee: { id: "maya", name: "Maya", avatarSrc: "/maya.png" } },
+			{ code: "RFP-102", assignee: { id: "jordan", name: "Jordan", avatarSrc: "/jordan.png" } },
+		],
+	},
+	{
+		title: "Review",
+		count: 2,
+		cards: [
+			{ code: "RFP-161", assignee: { id: "maya", name: "Maya", avatarSrc: "/maya.png" } },
+			{ code: "RFP-162", assignee: { id: "priya", name: "Priya", avatarSrc: "/priya.png" } },
+		],
+	},
+];
+
 test("Kanban demo preserves the rounded docs frame and leaves scrolling to the board", () => {
 	assert.match(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 	assert.match(SOURCE, /overflowX: "auto"/u);
+});
+
+test("Kanban block demo includes the shared Jira header and assignee filter", () => {
+	assert.match(PAGE_SOURCE, /<JiraKanbanBoardHeader/u);
+	assert.match(PAGE_SOURCE, /filterJiraKanbanColumnsByAssignee/u);
+	assert.match(PAGE_SOURCE, /boardColumns=\{filteredBoardColumns\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/setSelection\(createJiraKanbanSelectionState\(\)\);[\s\S]*setDraggedCard\(null\);[\s\S]*setSelectedAssigneeIds\(assigneeIds\);/u,
+	);
+});
+
+test("Kanban header matches the production board alignment and action groups", () => {
+	assert.match(HEADER_SOURCE, /<header className="shrink-0 px-4 pb-4 pt-3">/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<header className="[^"]*border-b/u);
+	assert.doesNotMatch(HEADER_SOURCE, />Filter by</u);
+	assert.match(
+		HEADER_SOURCE,
+		/<div className="border-r border-border p-3">[\s\S]*<Button aria-disabled variant="outline">[\s\S]*<Icon data-icon="inline-start" render=\{<AddIcon label="" size="small" \/>\} \/>[\s\S]*Add field[\s\S]*\{FILTER_FIELDS\.map/u,
+	);
+	assert.match(HEADER_SOURCE, /<AvatarUnassigned kind="person" label="Unassigned" size="sm" \/>/u);
+	assert.match(HEADER_SOURCE, /<Button aria-disabled variant="outline">[\s\S]*Group/u);
+	assert.match(HEADER_SOURCE, /<div className="ml-auto flex items-center gap-1">/u);
+	assert.match(HEADER_SOURCE, /aria-label="View insights"/u);
+	assert.match(HEADER_SOURCE, /aria-label="More board controls"/u);
+});
+
+test("Kanban assignee list fades into its fixed selection footer", () => {
+	assert.match(HEADER_SOURCE, /import \{ ScrollMask \} from "@\/components\/visual\/scroll-mask";/u);
+	assert.match(
+		HEADER_SOURCE,
+		/<ScrollMask[\s\S]*footer=\{[\s\S]*\{selectedAssigneeIds\.size\} selected[\s\S]*Clear all[\s\S]*footerClassName="bg-popover px-0 pb-0 pt-3"/u,
+	);
+	assert.doesNotMatch(HEADER_SOURCE, /max-h-64 overflow-y-auto/u);
 });
 
 test("Kanban card focus border stays inside the card and uses the focused border token", () => {
@@ -77,6 +133,14 @@ test("Kanban agent stack removes the avatar-group overlap ring", () => {
 	assert.match(SOURCE, /<AvatarGroup className="-space-x-1\.5 \*:data-\[slot=avatar\]:ring-0!"/);
 	assert.match(SOURCE, /label=\{agent\.name\} shape="hexagon" size="sm"/);
 	assert.doesNotMatch(SOURCE, /showHexagonBorder/);
+});
+
+test("Kanban third-party agents use the shared hexagonal avatar frame", () => {
+	assert.match(
+		SOURCE,
+		/if \(agent\.brandName\) \{[\s\S]*<Avatar className=\{className\} label=\{agent\.name\} shape="hexagon" size="sm">[\s\S]*<LogoThirdParty borderless label="" name=\{agent\.brandName\} size="xxsmall" \/>/u,
+	);
+	assert.doesNotMatch(SOURCE, /return <LogoThirdParty className=\{className\}/u);
 });
 
 test("Kanban agent assignment icons use selected icon color while the trigger is open", () => {
@@ -167,6 +231,48 @@ test("Kanban status changes leave selected cards already in the target column in
 	);
 	assert.equal(columns.find((column) => column.title === "Intake").count, 0);
 	assert.equal(columns.find((column) => column.title === "Drafting").count, 3);
+});
+
+test("Kanban assignee filtering preserves columns, ordering, and accurate counts", async () => {
+	const { filterJiraKanbanColumnsByAssignee } = await loadStateHarness();
+	const unfiltered = filterJiraKanbanColumnsByAssignee(FILTER_COLUMNS, new Set());
+	const mayaOnly = filterJiraKanbanColumnsByAssignee(FILTER_COLUMNS, new Set(["maya"]));
+
+	assert.deepEqual(unfiltered.map((column) => column.cards.map((card) => card.code)), [
+		["RFP-101", "RFP-102"],
+		["RFP-161", "RFP-162"],
+	]);
+	assert.deepEqual(mayaOnly.map((column) => column.title), ["Intake", "Review"]);
+	assert.deepEqual(mayaOnly.map((column) => column.cards.map((card) => card.code)), [
+		["RFP-101"],
+		["RFP-161"],
+	]);
+	assert.deepEqual(mayaOnly.map((column) => column.count), [1, 1]);
+});
+
+test("Kanban multi-assignee filtering uses OR semantics and keeps empty columns", async () => {
+	const { filterJiraKanbanColumnsByAssignee } = await loadStateHarness();
+	const jordanAndPriya = filterJiraKanbanColumnsByAssignee(
+		FILTER_COLUMNS,
+		new Set(["jordan", "priya"]),
+	);
+	const nobody = filterJiraKanbanColumnsByAssignee(FILTER_COLUMNS, new Set(["nobody"]));
+
+	assert.deepEqual(jordanAndPriya.map((column) => column.cards.map((card) => card.code)), [
+		["RFP-102"],
+		["RFP-162"],
+	]);
+	assert.deepEqual(nobody.map((column) => column.count), [0, 0]);
+	assert.equal(nobody.length, FILTER_COLUMNS.length);
+});
+
+test("Kanban derives each assignee once in first-card order", async () => {
+	const { getJiraKanbanAssignees } = await loadStateHarness();
+	assert.deepEqual(getJiraKanbanAssignees(FILTER_COLUMNS).map((assignee) => assignee.id), [
+		"maya",
+		"jordan",
+		"priya",
+	]);
 });
 
 test("Kanban demo wires controlled selection and grouped drag state", () => {

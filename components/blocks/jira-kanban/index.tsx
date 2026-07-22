@@ -47,6 +47,12 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
+export interface JiraKanbanAssigneeData {
+	id: string;
+	name: string;
+	avatarSrc: string;
+}
+
 export interface JiraKanbanCardData {
 	title: string;
 	code: string;
@@ -56,6 +62,7 @@ export interface JiraKanbanCardData {
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
 	avatarUnassignedKind?: AvatarUnassignedKind;
 	avatarPulse?: boolean;
+	assignee?: JiraKanbanAssigneeData;
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
@@ -153,6 +160,7 @@ export function createJiraKanbanColumns(
 		...column,
 		cards: column.cards.map((card) => ({
 			...card,
+			assignee: card.assignee ? { ...card.assignee } : undefined,
 			tags: card.tags.map((tag) => ({ ...tag })),
 			agentActivities: card.agentActivities?.map((activity) => ({
 				...activity,
@@ -179,8 +187,11 @@ function getAgentInitials(name: string): string {
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
 	if (agent.brandName) {
-		// Brand-identity agent → self-framing package tile (no hexagon).
-		return <LogoThirdParty className={className} label={agent.name} name={agent.brandName} size="small" />;
+		return (
+			<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
+				<LogoThirdParty borderless label="" name={agent.brandName} size="xxsmall" />
+			</Avatar>
+		);
 	}
 	return (
 		<Avatar className={className} label={agent.name} shape="hexagon" size="sm">

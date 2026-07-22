@@ -8,6 +8,7 @@ import GlobeIcon from "@atlaskit/icon/core/globe";
 import { Button } from "@/components/ui/button";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
+import { Lozenge } from "@/components/ui/lozenge";
 import { Tile } from "@/components/ui/tile";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,13 @@ export interface ArtifactListItem {
 	source: string;
 	/** Metadata owner label, e.g. "Vitafleet Team". */
 	owner?: string;
+	/** Pull-request metadata rendered inline in compact rows, matching the agent session flyout. */
+	pullRequest?: {
+		number: number;
+		status: "Open" | "Merged";
+		additions: number;
+		deletions: number;
+	};
 	/** Serializable built-in icon for data-only consumers. `icon` takes precedence. */
 	iconName?: "ai-chat" | "globe";
 	/** ADS icon for the leading tile (e.g. `<PageIcon label="" />`). */
@@ -88,9 +96,7 @@ function ArtifactListLeadingTile({
 				size={variant === "compact" ? "small" : "medium"}
 			/>
 		);
-		return variant === "compact" ? (
-			<div className="grid size-8 shrink-0 place-items-center">{logo}</div>
-		) : logo;
+		return logo;
 	}
 
 	// Logo + agent-avatar rows stay neutral; logos render 24px inset and agent
@@ -113,9 +119,7 @@ function ArtifactListLeadingTile({
 		</Tile>
 	);
 
-	return variant === "compact" ? (
-		<div className="grid size-8 shrink-0 place-items-center">{tile}</div>
-	) : tile;
+	return tile;
 }
 
 function ArtifactListRow({
@@ -135,16 +139,31 @@ function ArtifactListRow({
 }>) {
 	const handleOpen = () => onOpen?.(item);
 	const compactMetadata = (
-		<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
-			<span className="shrink-0">{item.source}</span>
+		<span className="block w-full truncate text-xs leading-4 text-text-subtle">
+			{item.source}
 			{item.owner ? (
 				<>
-					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+					<span aria-hidden="true" className="text-text-subtlest"> · </span>
+					{item.owner}
 				</>
 			) : null}
 		</span>
 	);
+	const compactPullRequestByline = item.pullRequest ? (
+		<span className="mt-0.5 flex w-full min-w-0 items-center gap-1 text-xs leading-4">
+			<Lozenge variant={item.pullRequest.status === "Merged" ? "discovery" : "success"}>
+				{item.pullRequest.status}
+			</Lozenge>
+			<a
+				className="min-w-0 flex-1 truncate rounded-[3px] text-text no-underline decoration-current outline-none hover:underline focus-visible:underline"
+				href="#"
+				onClick={(event) => event.preventDefault()}
+				title={`#${item.pullRequest.number}: ${item.title}`}
+			>
+				#{item.pullRequest.number}: {item.title}
+			</a>
+		</span>
+	) : null;
 	const defaultRowBody = (
 		<>
 			<ArtifactListLeadingTile item={item} variant={variant} />
@@ -165,9 +184,9 @@ function ArtifactListRow({
 	const compactRowBody = (
 		<>
 			<ArtifactListLeadingTile item={item} variant={variant} />
-			<div className="flex min-w-0 flex-1 items-baseline gap-2">
-				<p className="shrink-0 truncate text-sm font-medium leading-5 text-text">{item.title}</p>
-				{compactMetadata}
+			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+				<p className="w-full truncate text-xs font-medium leading-4 text-text">{item.title}</p>
+				{compactPullRequestByline ?? compactMetadata}
 			</div>
 		</>
 	);
@@ -176,7 +195,7 @@ function ArtifactListRow({
 		<div
 			className={cn(
 				variant === "compact"
-					? "flex h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered"
+					? "flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered"
 					: "flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
 				!isLast && "border-b border-border",
 			)}
@@ -193,6 +212,9 @@ function ArtifactListRow({
 				{variant === "compact" ? compactRowBody : defaultRowBody}
 			</div>
 			<Button
+				aria-label={item.pullRequest
+					? `Code changes: ${item.pullRequest.additions} additions, ${item.pullRequest.deletions} deletions`
+					: undefined}
 				className="ml-auto shrink-0 whitespace-nowrap"
 				variant="outline"
 				size={variant === "compact" ? "compact" : "default"}
@@ -202,7 +224,12 @@ function ArtifactListRow({
 					handleOpen();
 				}}
 			>
-				{openLabel}
+				{item.pullRequest ? (
+					<span className="flex items-center gap-1">
+						<span className="text-text-success">+{item.pullRequest.additions}</span>
+						<span className="text-text-danger">-{item.pullRequest.deletions}</span>
+					</span>
+				) : openLabel}
 			</Button>
 		</div>
 	);

@@ -34,6 +34,7 @@ export const JIRA_AGENT_SESSION_ITEMS: readonly JiraAgentSessionItem[] = [
 		},
 		branch: "rovo/web-461-readability",
 		elapsedSeconds: 754,
+		completedSecondsAgo: 68 * 60,
 		prStatus: "merged",
 	},
 ];

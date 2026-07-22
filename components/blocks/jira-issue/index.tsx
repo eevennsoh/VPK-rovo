@@ -8,6 +8,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
@@ -105,6 +106,8 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
+	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
+	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
 
@@ -207,6 +210,7 @@ function JiraIssueSummary({
 	isMounted,
 	parentEpicControl,
 	priority,
+	pullRequestNumber,
 	showAutomationIndicator,
 	showPriorityIndicator,
 	summary,
@@ -222,6 +226,7 @@ function JiraIssueSummary({
 	isMounted: boolean;
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
+	pullRequestNumber?: number;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
 	summary: string;
@@ -254,8 +259,16 @@ function JiraIssueSummary({
 			<div className="pt-0.5">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
-						<span className="text-xs font-semibold text-text-subtlest">{issueKey}</span>
+						<div className="flex items-center gap-1">
+							<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
+							<span className="text-xs font-semibold text-text-subtlest">{issueKey}</span>
+						</div>
+						{pullRequestNumber ? (
+							<div className="flex items-center gap-1">
+								<PullRequestIcon label="Pull request" color={token("color.icon.success")} />
+								<span className="text-xs font-semibold text-text-subtlest">#{pullRequestNumber}</span>
+							</div>
+						) : null}
 					</div>
 
 					{showAutomationIndicator ? (
@@ -429,6 +442,8 @@ export function JiraIssue({
 	onAgentActivityOpenChange,
 	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
+	onAgentDoneRunSubmit,
+	onAgentDoneRunView,
 	parentEpicControl,
 	priority = "major",
 	selected = false,
@@ -453,7 +468,9 @@ export function JiraIssue({
 	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
 	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
 	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
-	const generativeActionRevealActive = !generativeActionRevealSuppressed
+	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
+	const generativeActionRevealActive = !agentActivityHoverOpen
+		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
@@ -470,14 +487,17 @@ export function JiraIssue({
 	const activeAgentActivities = resolvedAgentActivityMode === "none" || resolvedAgentActivityMode === "completed"
 		? []
 		: nonCompletedAgentActivities;
-	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working" || resolvedAgentActivityMode === "awaiting-input";
-	const hasAgentDoneNotification = agentDoneRuns.length > 0;
-	const hasIssueRows = hasSubtasks || hasAgentDoneNotification;
+	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
+	const pullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
+	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
+		|| resolvedAgentActivityMode === "awaiting-input"
+		|| hasAgentDoneNotification;
+	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
 	const hasInteractiveContent = hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
-	const issueRowsClassName = cn("pt-1", (!(hasSubtasks && resolvedSubtasksExpanded) || hasAgentDoneNotification) && "pb-1");
+	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const rootBaseStyle: CSSProperties = {
@@ -572,7 +592,21 @@ export function JiraIssue({
 		onSubtasksExpandedChange?.(nextExpanded);
 	}
 
+	function handleAgentActivityOpenChange(open: boolean) {
+		setAgentActivityHoverOpen(open);
+		onAgentActivityOpenChange?.(open);
+	}
+
 	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
+		if (
+			event.target instanceof Element
+			&& event.target.closest("[data-slot='jira-issue-agent-row']")
+		) {
+			setGenerativeActionRevealSuppressed(true);
+			setGenerativeActionPointerActive(false);
+			return;
+		}
+
 		if (generativeAction && event.currentTarget.contains(event.target as Node)) {
 			setGenerativeActionRevealSuppressed(false);
 			setGenerativeActionPointerActive(true);
@@ -628,6 +662,7 @@ export function JiraIssue({
 			isMounted={isMounted}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
+			pullRequestNumber={pullRequestNumber}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}
@@ -674,19 +709,6 @@ export function JiraIssue({
 										shouldReduceMotion={shouldReduceMotion}
 										subtasks={subtasks}
 									/>
-								</motion.div>
-							) : null}
-							{hasAgentDoneNotification ? (
-								<motion.div
-									key="agent-done"
-									animate={presenceMotion.animate}
-									exit={presenceMotion.exit}
-									initial={presenceMotion.initial}
-									layout={shouldReduceMotion ? false : "position"}
-									style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
-									transition={layoutTransition}
-								>
-									<JiraIssueAgentDone onOpenChange={onAgentActivityOpenChange} runs={agentDoneRuns} />
 								</motion.div>
 							) : null}
 						</AnimatePresence>
@@ -763,11 +785,31 @@ export function JiraIssue({
 							</motion.div>
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
-								onOpenChange={onAgentActivityOpenChange}
+								onOpenChange={handleAgentActivityOpenChange}
 								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 							/>
+							<AnimatePresence initial={false} mode="popLayout">
+								{hasAgentDoneNotification ? (
+									<motion.div
+										key="agent-review"
+										animate={presenceMotion.animate}
+										exit={presenceMotion.exit}
+										initial={presenceMotion.initial}
+										layout={shouldReduceMotion ? false : "position"}
+										style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
+										transition={layoutTransition}
+									>
+										<JiraIssueAgentDone
+											onOpenChange={handleAgentActivityOpenChange}
+											onSubmit={onAgentDoneRunSubmit}
+											onView={onAgentDoneRunView}
+											runs={agentDoneRuns}
+										/>
+									</motion.div>
+								) : null}
+							</AnimatePresence>
 						</LayoutGroup>
 					</motion.div>
 					{generativeActionMenu}

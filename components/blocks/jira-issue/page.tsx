@@ -90,22 +90,42 @@ const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 	{
 		id: "PD-40:service-impact-agent",
-		summary: "Mapped affected services and added the implementation impact summary.",
+		summary: "Map affected services and implementation impact",
+		description: "Mapped affected services and added the implementation impact summary.",
 		agentName: JIRA_ISSUE_AGENT_ACTIVITIES[0].name,
 		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[0].avatarSrc,
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
-		relativeTime: "Just now",
+		completedSecondsAgo: 5 * 60,
+		elapsedSeconds: 300,
+		outputs: [
+			{
+				id: "service-impact-summary",
+				title: "Service impact summary",
+				source: "Jira work item",
+				owner: "PD-40",
+				iconName: "ai-chat",
+			},
+			{
+				id: "implementation-notes",
+				title: "Implementation notes",
+				source: "Confluence page",
+				owner: "Platform team",
+				iconName: "globe",
+			},
+		],
 		state: "done",
 	},
 	{
 		id: "PD-40:dependency-mapper",
-		summary: "Documented dependent components, owners, and blocked handoffs.",
+		summary: "Document dependent components and handoffs",
+		description: "Documented dependent components, owners, and blocked handoffs.",
 		agentName: JIRA_ISSUE_AGENT_ACTIVITIES[1].name,
 		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[1].avatarSrc,
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
-		relativeTime: "1 min ago",
+		completedSecondsAgo: 68 * 60,
+		elapsedSeconds: 64,
 		state: "failed",
 	},
 ] as const satisfies readonly JiraIssueCompletedAgentRun[];
@@ -115,14 +135,16 @@ type JiraIssueAgentActivityDemoState =
 	| "single-agent-working"
 	| "multiple-agents-working"
 	| "awaiting-user-input"
-	| "agent-completed-work";
+	| "agent-completed-work"
+	| "agent-dismissed-work";
 
 const JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES = [
 	{ value: "default", label: "Default" },
 	{ value: "single-agent-working", label: "1 agent" },
 	{ value: "multiple-agents-working", label: "1-n agents" },
 	{ value: "awaiting-user-input", label: "Needs input" },
-	{ value: "agent-completed-work", label: "Done" },
+	{ value: "agent-completed-work", label: "Review" },
+	{ value: "agent-dismissed-work", label: "Done" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
 interface JiraIssuePageProps {
@@ -217,6 +239,28 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 	}, [openAgentChat]);
 	const handleAgentActivityViewChat = openActivityChat;
 	const handleAgentActivityQuestionSubmit = openActivityChat;
+	const handleAgentDoneRunView = useCallback((run: JiraIssueCompletedAgentRun) => {
+		setPendingChatQuestion(null);
+		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
+		openAgentChat({
+			agentId,
+			agentName: run.agentName,
+			issueKey: run.issueKey,
+			issueSummary: run.issueSummary,
+			intro: run.description ?? run.summary,
+		});
+	}, [openAgentChat]);
+	const handleAgentDoneRunSubmit = useCallback((run: JiraIssueCompletedAgentRun, prompt: string) => {
+		setPendingChatQuestion(null);
+		const agentId = run.id.includes(":") ? run.id.slice(run.id.indexOf(":") + 1) : run.id;
+		openAgentChat({
+			agentId,
+			agentName: run.agentName,
+			issueKey: run.issueKey,
+			issueSummary: run.issueSummary,
+			request: prompt,
+		});
+	}, [openAgentChat]);
 	const handleGenerativeActionSubmit = useCallback((request: JiraIssueGenerativeActionRequest) => {
 		setPendingChatQuestion(null);
 		openAgentChat({
@@ -269,6 +313,8 @@ function JiraIssueAgentActivityStatesDemo(): React.ReactElement {
 					issueKey="PD-40"
 					onAgentActivityQuestionSubmit={handleAgentActivityQuestionSubmit}
 					onAgentActivityViewChat={handleAgentActivityViewChat}
+					onAgentDoneRunSubmit={handleAgentDoneRunSubmit}
+					onAgentDoneRunView={handleAgentDoneRunView}
 					priority="major"
 					subtasks={JIRA_ISSUE_DEMO_SUBTASKS}
 					subtasksCompleted={0}

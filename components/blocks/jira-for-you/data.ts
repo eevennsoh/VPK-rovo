@@ -76,6 +76,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				tabs: ["assigned", "worked-on"],
 				agents: [PROGRESS_AGENT],
 				status: "In progress",
+				elapsedSeconds: 300,
 			},
 			{
 				id: "refactor-readability",

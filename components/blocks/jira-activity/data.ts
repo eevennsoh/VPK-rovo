@@ -185,6 +185,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 			},
 			branch: "rovo/perf-27-benchmarks",
 			elapsedSeconds: 300,
+			completedSecondsAgo: 5 * 60,
 		},
 		outputs: [
 			{

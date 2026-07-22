@@ -16,9 +16,9 @@ import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/p
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
-import { formatElapsedTime } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
@@ -31,6 +31,10 @@ export interface JiraIssueAgentActivity {
 	label: string;
 	labels?: readonly string[];
 	message?: string;
+	/** Stable start time supplied by a real running session. */
+	startedAtMs?: number;
+	/** Optional seeded runtime for demos; active timers continue from this value. */
+	initialElapsedSeconds?: number;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	question?: QuestionCardQuestion;
@@ -47,6 +51,8 @@ const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;
 const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1.4;
 const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;
+const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS = 45;
+const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS = 7 * 60;
 const JIRA_ISSUE_AGENT_WORKING_LABELS = [
 	"Figuring out which services are affected",
 	"Checking dependent components",
@@ -61,22 +67,75 @@ const JIRA_ISSUE_AGENT_PANEL_MESSAGES = {
 const JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE =
 	"On it. I am reviewing the connected work and will add the next update inside this work item.";
 
-const JIRA_ISSUE_AGENT_ELAPSED_TICK_MS = 1000;
+export function JiraIssueAgentPrompt({
+	className,
+	onSubmit,
+}: Readonly<{
+	className?: string;
+	onSubmit?: (prompt: string) => void;
+}>) {
+	const [reply, setReply] = useState("");
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
+	const [clickyActive, setClickyActive] = useState(false);
+	const canSubmit = Boolean(reply.trim());
 
-/** Live duration for an agent run whose start is owned by the persistent activity row. */
-function JiraIssueAgentElapsedByline({ startedAtMs }: Readonly<{ startedAtMs: number }>) {
-	const [elapsedSeconds, setElapsedSeconds] = useState(() =>
-		Math.max(0, Math.floor((Date.now() - startedAtMs) / JIRA_ISSUE_AGENT_ELAPSED_TICK_MS))
+	const handleToggleRealtimeVoice = useCallback(() => {
+		setClickyActive(false);
+		setRealtimeVoiceActive((active) => !active);
+	}, []);
+	const handleStop = useCallback(() => {
+		setRealtimeVoiceActive(false);
+		setClickyActive(false);
+	}, []);
+	const handleToggleClicky = useCallback(() => {
+		setRealtimeVoiceActive(true);
+		setClickyActive((active) => !active);
+	}, []);
+	const handleSubmit = useCallback(() => {
+		const prompt = reply.trim();
+		if (!prompt) return;
+		onSubmit?.(prompt);
+		setReply("");
+	}, [onSubmit, reply]);
+
+	return (
+		<FloatingComposer
+			actions={
+				<RovoComposerActionButton
+					canSubmit={canSubmit}
+					clickyActive={clickyActive}
+					composerStatus="ready"
+					experimentalDarkCta
+					onStop={handleStop}
+					onToggleClicky={handleToggleClicky}
+					onToggleRealtimeVoice={handleToggleRealtimeVoice}
+					realtimeVoiceActive={realtimeVoiceActive}
+				/>
+			}
+			addButton={
+				<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+					<AddIcon label="" />
+				</PromptInputButton>
+			}
+			allowOverflow
+			aria-label="Reply to agent"
+			className={cn(
+				"shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]",
+				className,
+			)}
+			onSubmit={handleSubmit}
+		>
+			<PromptInputTextarea
+				aria-label="Reply to agent"
+				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
+				enableDirectoryAutocomplete={false}
+				onChange={(event) => setReply(event.currentTarget.value)}
+				placeholder="Ask, @mention, or / for actions"
+				rows={1}
+				value={reply}
+			/>
+		</FloatingComposer>
 	);
-
-	useEffect(() => {
-		const intervalId = setInterval(() => {
-			setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAtMs) / JIRA_ISSUE_AGENT_ELAPSED_TICK_MS)));
-		}, JIRA_ISSUE_AGENT_ELAPSED_TICK_MS);
-		return () => clearInterval(intervalId);
-	}, [startedAtMs]);
-
-	return <p className="text-xs leading-4 text-text-subtle">{formatElapsedTime(elapsedSeconds)}</p>;
 }
 
 function getAgentInitial(name: string): string {
@@ -134,6 +193,12 @@ function getJiraIssueAgentPanelMessage(activity: JiraIssueAgentActivity): string
 		?? JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE;
 }
 
+function getJiraIssueAgentInitialElapsedSeconds(): number {
+	const range = JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS
+		- JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS;
+	return JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS + Math.floor(Math.random() * range);
+}
+
 function JiraIssueAgentActivityPanel({
 	activity,
 	onQuestionSubmit,
@@ -147,10 +212,6 @@ function JiraIssueAgentActivityPanel({
 }>) {
 	const panelMessage = getJiraIssueAgentPanelMessage(activity);
 	const isRovoActivity = activity.name === "Rovo";
-	const [reply, setReply] = useState("");
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
-	const [clickyActive, setClickyActive] = useState(false);
-	const canSubmit = Boolean(reply.trim());
 
 	function handleViewChat() {
 		onViewChat?.(activity);
@@ -159,19 +220,6 @@ function JiraIssueAgentActivityPanel({
 	function handleQuestionSubmit(answers: QuestionCardAnswers) {
 		onQuestionSubmit?.(activity, answers);
 	}
-
-	const handleToggleRealtimeVoice = useCallback(() => {
-		setClickyActive(false);
-		setRealtimeVoiceActive((active) => !active);
-	}, []);
-	const handleStop = useCallback(() => {
-		setRealtimeVoiceActive(false);
-		setClickyActive(false);
-	}, []);
-	const handleToggleClicky = useCallback(() => {
-		setRealtimeVoiceActive(true);
-		setClickyActive((active) => !active);
-	}, []);
 
 	return (
 		<div className="flex flex-col gap-3 p-3">
@@ -183,7 +231,7 @@ function JiraIssueAgentActivityPanel({
 						</Button>
 					) : null
 				}
-				byline={<JiraIssueAgentElapsedByline startedAtMs={startedAtMs} />}
+				byline={<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs={startedAtMs} />}
 				leading={
 					<Avatar
 						className={isRovoActivity ? "[&>svg]:hidden" : undefined}
@@ -211,39 +259,7 @@ function JiraIssueAgentActivityPanel({
 					questions={[activity.question]}
 				/>
 			) : (
-				<FloatingComposer
-					actions={
-						<RovoComposerActionButton
-							canSubmit={canSubmit}
-							clickyActive={clickyActive}
-							composerStatus="ready"
-							experimentalDarkCta
-							onStop={handleStop}
-							onToggleClicky={handleToggleClicky}
-							onToggleRealtimeVoice={handleToggleRealtimeVoice}
-							realtimeVoiceActive={realtimeVoiceActive}
-						/>
-					}
-					addButton={
-						<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
-							<AddIcon label="" />
-						</PromptInputButton>
-					}
-					allowOverflow
-					aria-label="Reply to agent"
-					className="shadow-none"
-					onSubmit={() => setReply("")}
-				>
-					<PromptInputTextarea
-						aria-label="Reply to agent"
-						className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-						enableDirectoryAutocomplete={false}
-						onChange={(event) => setReply(event.currentTarget.value)}
-						placeholder="Ask, @mention, or / for actions"
-						rows={1}
-						value={reply}
-					/>
-				</FloatingComposer>
+				<JiraIssueAgentPrompt />
 			)}
 		</div>
 	);
@@ -265,7 +281,14 @@ function JiraIssueAgentActivityRow({
 	rowCount: number;
 }>) {
 	const isAwaitingInput = activity.state === "awaiting-input";
-	const [startedAtMs] = useState(() => Date.now());
+	const [startedAtMs] = useState(() => {
+		if (typeof activity.startedAtMs === "number" && Number.isFinite(activity.startedAtMs)) {
+			return activity.startedAtMs;
+		}
+		const initialElapsedSeconds = activity.initialElapsedSeconds
+			?? getJiraIssueAgentInitialElapsedSeconds();
+		return Date.now() - initialElapsedSeconds * 1000;
+	});
 	const workingLabels = getJiraIssueAgentWorkingLabels(activity);
 	const rowRadiusClassName = rowCount === 1
 		? "rounded-sm"
@@ -286,6 +309,7 @@ function JiraIssueAgentActivityRow({
 					<button
 						type="button"
 						aria-label={`${activity.name}: ${activity.label}`}
+						data-slot="jira-issue-agent-row"
 						className={cn(
 							"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 							rowRadiusClassName,

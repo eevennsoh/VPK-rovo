@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
 import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
+import { JiraKanbanBoardHeader } from "@/components/blocks/jira-kanban/board-header";
+import {
+	filterJiraKanbanColumnsByAssignee,
+	getJiraKanbanAssignees,
+} from "@/components/blocks/jira-kanban/state";
 import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import {
 	DEFAULT_PINNED_SPACE_AGENT_IDS,
@@ -39,6 +44,7 @@ import { AsxRovoOverlay } from "./asx-rovo-overlay";
 export function KanbanStage(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
+	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
 	const openCardChat = useCallback((agentId: string, agentName: string, card: JiraKanbanCardData, request?: string) => {
 		openAgentChat({
 			agentId,
@@ -73,6 +79,24 @@ export function KanbanStage(): React.ReactElement {
 		selectedAgentIds,
 		selectedCardCodes,
 	} = useAsxKanbanLifecycle({ onNonAgentAction: handleNonAgentAction });
+	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
+	const filteredBoardColumns = useMemo(
+		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
+		[boardColumns, selectedAssigneeIds],
+	);
+	const handleAssigneeFilterChange = useCallback((assigneeIds: Set<string>) => {
+		handleClearSelection();
+		handleCardDragEnd();
+		setSelectedAssigneeIds(assigneeIds);
+	}, [handleCardDragEnd, handleClearSelection]);
+	const handleFilteredCardSelect = useCallback((
+		cardCode: string,
+		columnTitle: string,
+		indexInColumn: number,
+		modifiers: Parameters<typeof handleCardSelect>[3],
+	) => {
+		handleCardSelect(cardCode, columnTitle, indexInColumn, modifiers, filteredBoardColumns);
+	}, [filteredBoardColumns, handleCardSelect]);
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
 		setPendingChatQuestion(activity.question ? {
 			submit: () => handleQuestionSubmit(activity, {}, card),
@@ -93,10 +117,15 @@ export function KanbanStage(): React.ReactElement {
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
+			<JiraKanbanBoardHeader
+				assignees={assignees}
+				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				selectedAssigneeIds={selectedAssigneeIds}
+			/>
 			<JiraKanban
 				agents={ASX_KANBAN_AGENTS}
 				ariaLabel="RFP board columns. Assign agents or drag Intake cards into Drafting to start work."
-				boardColumns={boardColumns}
+				boardColumns={filteredBoardColumns}
 				draggedCardCode={draggedCardCode}
 				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
@@ -105,7 +134,7 @@ export function KanbanStage(): React.ReactElement {
 				onCardDrop={handleCardDrop}
 				onCardClick={handleCardClick}
 				onCardGenerativeActionSubmit={handleGenerativeActionSubmit}
-				onCardSelect={handleCardSelect}
+				onCardSelect={handleFilteredCardSelect}
 				paddingBottom={token("space.200")}
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}

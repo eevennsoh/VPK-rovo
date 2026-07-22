@@ -12,6 +12,7 @@ import { RovoSparkleButton } from "@/components/ui-custom/rovo-sparkle";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -163,7 +164,7 @@ export function JiraForYouItemRow({
 }>) {
 	const meta = ISSUE_TYPE_META[item.issueType];
 	const Glyph = meta.Glyph;
-	const hasActivity = Boolean(item.agents?.length || item.status);
+	const hasActivity = Boolean(item.agents?.length || item.status || item.elapsedSeconds);
 
 	return (
 		<li className="group relative flex items-center gap-3 p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered">
@@ -196,6 +197,11 @@ export function JiraForYouItemRow({
 								{item.status ? (
 									<JiraForYouItemStatus status={item.status} />
 								) : null}
+								<ElapsedTime
+									className="shrink-0"
+									elapsedSeconds={item.elapsedSeconds}
+									prefix={item.agents?.length || item.status ? <MetadataDot /> : null}
+								/>
 							</span>
 							<MetadataDot />
 						</>

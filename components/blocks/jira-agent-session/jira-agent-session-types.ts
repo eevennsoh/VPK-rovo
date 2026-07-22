@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { TagColor } from "@/components/ui/tag";
 
 /**
@@ -18,6 +19,8 @@ export interface JiraAgentSessionAgent {
 	avatarSrc?: string;
 	/** Canonical VPK product mark used for platform-owned runners such as Rovo. */
 	vpkLogo?: "rovo";
+	/** Third-party brand mark rendered inside the shared hexagonal agent avatar. */
+	brandName?: ThirdPartyLogoName;
 }
 
 export interface JiraAgentSessionItem {
@@ -31,6 +34,12 @@ export interface JiraAgentSessionItem {
 	branch: string;
 	/** Initial runtime shown by expanded activity cards, which tick while active. */
 	elapsedSeconds?: number;
+	/** Stable start time for live runtimes when supplied by real session data. */
+	startedAtMs?: number;
+	/** Completion/message time used once the session stops progressing. */
+	completedAtMs?: number;
+	/** Demo-friendly completion age that continues advancing after mount. */
+	completedSecondsAgo?: number;
 	/**
 	 * Pull-request status. Omit while the agent is still working pre-PR or
 	 * awaiting user input; the metadata row still identifies the agent.

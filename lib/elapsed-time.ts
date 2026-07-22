@@ -1,7 +1,32 @@
 export function formatElapsedTime(totalSeconds: number): string {
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+	const normalizedSeconds = Number.isFinite(totalSeconds)
+		? Math.max(0, Math.floor(totalSeconds))
+		: 0;
+	const minutes = Math.floor(normalizedSeconds / 60);
+	const seconds = normalizedSeconds % 60;
+	const parts: string[] = [];
+
+	if (minutes > 0) parts.push(`${minutes}m`);
+	if (seconds > 0) {
+		parts.push(`${minutes > 0 ? seconds.toString().padStart(2, "0") : seconds}s`);
+	}
+
+	return parts.join(" ");
+}
+
+export function formatRelativeTime(totalSecondsAgo: number): string {
+	const normalizedSeconds = Number.isFinite(totalSecondsAgo)
+		? Math.max(0, Math.floor(totalSecondsAgo))
+		: 0;
+	const minutes = Math.floor(normalizedSeconds / 60);
+	const hours = Math.floor(minutes / 60);
+	const days = Math.floor(hours / 24);
+
+	if (minutes < 1) return "Just now";
+	if (hours < 1) return `${minutes}m ago`;
+	if (days < 1) return `${hours}hr ago`;
+	if (days === 1) return "yesterday";
+	return `${days}d ago`;
 }
 
 export function getElapsedSeconds(runCreatedAt: string | null, runCompletedAt: string | null, nowMs: number): number {
