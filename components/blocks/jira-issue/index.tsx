@@ -8,6 +8,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import TaskIcon from "@atlaskit/icon/core/task";
 
@@ -209,6 +210,7 @@ function JiraIssueSummary({
 	isMounted,
 	parentEpicControl,
 	priority,
+	pullRequestNumber,
 	showAutomationIndicator,
 	showPriorityIndicator,
 	summary,
@@ -224,6 +226,7 @@ function JiraIssueSummary({
 	isMounted: boolean;
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
+	pullRequestNumber?: number;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
 	summary: string;
@@ -256,8 +259,16 @@ function JiraIssueSummary({
 			<div className="pt-0.5">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
-						<span className="text-xs font-semibold text-text-subtlest">{issueKey}</span>
+						<div className="flex items-center gap-1">
+							<TaskIcon label={issueTypeLabel} color={token("color.icon.brand")} />
+							<span className="text-xs font-semibold text-text-subtlest">{issueKey}</span>
+						</div>
+						{pullRequestNumber ? (
+							<div className="flex items-center gap-1">
+								<PullRequestIcon label="Pull request" color={token("color.icon.success")} />
+								<span className="text-xs font-semibold text-text-subtlest">#{pullRequestNumber}</span>
+							</div>
+						) : null}
 					</div>
 
 					{showAutomationIndicator ? (
@@ -477,6 +488,7 @@ export function JiraIssue({
 		? []
 		: nonCompletedAgentActivities;
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
+	const pullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification;
@@ -650,6 +662,7 @@ export function JiraIssue({
 			isMounted={isMounted}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
+			pullRequestNumber={pullRequestNumber}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}

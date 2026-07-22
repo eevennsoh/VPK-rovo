@@ -187,8 +187,11 @@ function getAgentInitials(name: string): string {
 
 function AgentAvatar({ agent, className }: Readonly<{ agent: JiraKanbanAgentData; className?: string }>) {
 	if (agent.brandName) {
-		// Brand-identity agent → self-framing package tile (no hexagon).
-		return <LogoThirdParty className={className} label={agent.name} name={agent.brandName} size="small" />;
+		return (
+			<Avatar className={className} label={agent.name} shape="hexagon" size="sm">
+				<LogoThirdParty borderless label="" name={agent.brandName} size="xxsmall" />
+			</Avatar>
+		);
 	}
 	return (
 		<Avatar className={className} label={agent.name} shape="hexagon" size="sm">

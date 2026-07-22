@@ -6,6 +6,7 @@ const { test } = require("node:test");
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
+const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
 const GENERATIVE_SOURCE = readFileSync(join(__dirname, "generative-action-menu.tsx"), "utf8");
 const ROVO_SPARKLE_SOURCE = readFileSync(join(__dirname, "../../ui-custom/rovo-sparkle/rovo-sparkle.tsx"), "utf8");
@@ -56,6 +57,12 @@ test("Jira issue exposes agent activity state props", () => {
 	assert.match(SOURCE, /onAgentActivityViewChat\?: \(activity: JiraIssueAgentActivity\) => void;/);
 	assert.match(SOURCE, /generativeAction\?: JiraIssueGenerativeActionConfig;/);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueGenerativeActionConfig,[\s\S]*JiraIssueGenerativeActionRequest,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/generative-action-menu";/);
+});
+
+test("Jira issue shows PR metadata with the specified summary-row spacing", () => {
+	assert.match(SOURCE, /const pullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
+	assert.match(SOURCE, /<div className="flex items-center gap-2">[\s\S]*<div className="flex items-center gap-1">[\s\S]*<TaskIcon[\s\S]*\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<div className="flex items-center gap-1">[\s\S]*<PullRequestIcon label="Pull request" color=\{token\("color\.icon\.success"\)\} \/>[\s\S]*#\{pullRequestNumber\}/u);
+	assert.match(SOURCE, /pullRequestNumber=\{pullRequestNumber\}/u);
 });
 
 test("Jira issue uses the 8px large radius token", () => {
@@ -224,7 +231,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /gap-2 rounded-sm px-3 py-1/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityPanel/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ ElapsedTime \} from "@\/components\/ui\/elapsed-time";/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const \[startedAtMs\] = useState\(\(\) => Date\.now\(\)\);/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const \[startedAtMs\] = useState\(\(\) => \{[\s\S]*activity\.startedAtMs[\s\S]*activity\.initialElapsedSeconds[\s\S]*getJiraIssueAgentInitialElapsedSeconds\(\)[\s\S]*Date\.now\(\) - initialElapsedSeconds \* 1000;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /byline=\{<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs=\{startedAtMs\} \/>\}/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, />Just now<\/p>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/);
@@ -275,8 +282,9 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /activity\.state === "awaiting-input" && activity\.question \? \([\s\S]*<QuestionCard[\s\S]*onSubmit=\{handleQuestionSubmit\}[\s\S]*questions=\{\[activity\.question\]\}[\s\S]*\) : \([\s\S]*<JiraIssueAgentPrompt/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function handleQuestionSubmit\(answers: QuestionCardAnswers\) \{\s*onQuestionSubmit\?\.\(activity, answers\);\s*\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /export function JiraIssueAgentPrompt[\s\S]*<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className=\{className\}[\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentPrompt className="shadow-none" \/>/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /export function JiraIssueAgentPrompt[\s\S]*<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className=\{cn\([\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /"shadow-\[0px_-2px_25px_rgba\(30,31,33,0\.08\)\]"/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentPrompt \/>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleRealtimeVoice = useCallback\(\(\) => \{\s*setClickyActive\(false\);\s*setRealtimeVoiceActive\(\(active\) => !active\);/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleClicky = useCallback\(\(\) => \{\s*setRealtimeVoiceActive\(true\);\s*setClickyActive\(\(active\) => !active\);/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /EmojiAddIcon|ShowMoreHorizontalIcon|PromptInputSubmit/);
@@ -292,17 +300,20 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 });
 
 test("Jira issue renders completed agents as individual inset hover rows", () => {
-	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime: string;[\s\S]*state: JiraIssueCompletedAgentRunState;/);
+	assert.match(COMPLETED_RUNS_SOURCE, /export interface JiraIssueCompletedAgentRun \{[\s\S]*summary: string;[\s\S]*agentName: string;[\s\S]*agentAvatarSrc\?: string;[\s\S]*agentBrandName\?: ThirdPartyLogoName;[\s\S]*issueKey: string;[\s\S]*issueSummary: string;[\s\S]*relativeTime\?: string;[\s\S]*completedAtMs\?: number;[\s\S]*completedSecondsAgo\?: number;[\s\S]*state: JiraIssueCompletedAgentRunState;/);
+	assert.match(COMPLETED_RUNS_SOURCE, /completedAtMs: run\.completedAtMs,[\s\S]*completedSecondsAgo: run\.completedSecondsAgo,/u);
+	assert.equal((COMPLETED_RUNS_SOURCE.match(/brandName: run\.agentBrandName,/gu) ?? []).length, 2);
 	assert.match(COMPLETED_RUNS_SOURCE, /<section aria-label="Agent review" className="flex w-full flex-col overflow-hidden px-1 py-1">/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /runs\.map\(\(run, index\) => \{[\s\S]*<HoverCard key=\{run\.id\} onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<Avatar label=\{run\.agentName\} shape="hexagon" size="xs">[\s\S]*\{run\.summary\}[\s\S]*\{state\.icon\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /done: \{[\s\S]*label: "Done"[\s\S]*StatusSuccessIcon[\s\S]*failed: \{[\s\S]*label: "Alert"[\s\S]*StatusErrorIcon/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<AgentAvatarVisual[\s\S]*brandName=\{run\.agentBrandName\}[\s\S]*label=\{run\.agentName\}[\s\S]*sizePx=\{16\}[\s\S]*\{run\.summary\}[\s\S]*\{state\.icon\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /done: \{[\s\S]*label: "Done"[\s\S]*StatusSuccessIcon[\s\S]*failed: \{[\s\S]*label: "Alert"[\s\S]*StatusErrorIcon[\s\S]*review: \{[\s\S]*label: "Ready for review"[\s\S]*text-icon-success[\s\S]*PullRequestIcon/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /import \{ JiraActivityChangedFiles \}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCardContent[\s\S]*w-\[440px\][\s\S]*side="right"/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*pullRequestNumber=\{run\.pullRequestNumber\}[\s\S]*status=\{run\.state\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /status === "review" && pullRequestNumber[\s\S]*`#\$\{pullRequestNumber\}`[\s\S]*<PullRequestIcon[\s\S]*status === "failed" \? "text-icon-danger" : "text-icon-success"/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /footer=\{[\s\S]*<JiraIssueAgentPrompt[\s\S]*onSubmit=\{\(prompt\) => onSubmit\?\.\(run, prompt\)\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /className="w-full shadow-none"[\s\S]*variant="jira-issue"/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /className="w-full"[\s\S]*variant="jira-issue"/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /export function JiraIssueAgentPrompt/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{agentDoneRuns\}/u);

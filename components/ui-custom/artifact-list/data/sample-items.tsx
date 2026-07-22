@@ -50,6 +50,18 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 
 export const COMPACT_SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 	{
+		id: "vertexrail-assets-positioning-pr",
+		title: "VertexRail Assets positioning",
+		source: "GitHub pull request",
+		logoName: "github",
+		pullRequest: {
+			number: 1847,
+			status: "Open",
+			additions: 148,
+			deletions: 37,
+		},
+	},
+	{
 		id: "audience-engagement-report-compact",
 		title: "Audience Engagement Report",
 		source: "Confluence page",

@@ -135,6 +135,14 @@ test("Kanban agent stack removes the avatar-group overlap ring", () => {
 	assert.doesNotMatch(SOURCE, /showHexagonBorder/);
 });
 
+test("Kanban third-party agents use the shared hexagonal avatar frame", () => {
+	assert.match(
+		SOURCE,
+		/if \(agent\.brandName\) \{[\s\S]*<Avatar className=\{className\} label=\{agent\.name\} shape="hexagon" size="sm">[\s\S]*<LogoThirdParty borderless label="" name=\{agent\.brandName\} size="xxsmall" \/>/u,
+	);
+	assert.doesNotMatch(SOURCE, /return <LogoThirdParty className=\{className\}/u);
+});
+
 test("Kanban agent assignment icons use selected icon color while the trigger is open", () => {
 	assert.match(SOURCE, /className="ml-0\.5 text-icon-subtle group-aria-expanded\/button:text-icon-selected"/);
 	assert.match(SOURCE, /className="text-icon-subtle group-aria-expanded\/button:text-icon-selected"/);

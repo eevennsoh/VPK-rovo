@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
@@ -11,9 +11,9 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { Button } from "@/components/ui/button";
+import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { formatElapsedTime } from "@/lib/elapsed-time";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -135,19 +135,20 @@ function LifecycleIndicator({
 	}
 }
 
-function useJiraAgentSessionElapsedSeconds(item: JiraAgentSessionItem) {
-	const [elapsedSeconds, setElapsedSeconds] = useState(item.elapsedSeconds ?? 0);
+function JiraAgentSessionTime({ item }: Readonly<{ item: JiraAgentSessionItem }>) {
+	const [seededStartedAtMs] = useState(
+		() => Date.now() - Math.max(0, item.elapsedSeconds ?? 0) * 1000,
+	);
 
-	useEffect(() => {
-		if (item.state === "complete") return;
-		const intervalId = window.setInterval(
-			() => setElapsedSeconds((currentSeconds) => currentSeconds + 1),
-			1000,
-		);
-		return () => window.clearInterval(intervalId);
-	}, [item.state]);
-
-	return elapsedSeconds;
+	return item.state === "complete" ? (
+		<RelativeTime
+			fallback="Just now"
+			secondsAgo={item.completedSecondsAgo}
+			timestampMs={item.completedAtMs}
+		/>
+	) : (
+		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
+	);
 }
 
 export function JiraAgentSessionActivityHeader({
@@ -159,7 +160,6 @@ export function JiraAgentSessionActivityHeader({
 	action?: ReactNode;
 	onView?: (item: JiraAgentSessionItem) => void;
 }>) {
-	const elapsedSeconds = useJiraAgentSessionElapsedSeconds(item);
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
@@ -169,6 +169,7 @@ export function JiraAgentSessionActivityHeader({
 			<AgentAvatarVisual
 				avatarClassName="shrink-0"
 				avatarSrc={item.agent.avatarSrc}
+				brandName={item.agent.brandName}
 				label={item.agent.name}
 				sizePx={32}
 				vpkLogo={item.agent.vpkLogo}
@@ -192,8 +193,8 @@ export function JiraAgentSessionActivityHeader({
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</div>
 				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
-					<span className="shrink-0" title="Agent runtime">
-						{formatElapsedTime(elapsedSeconds)}
+					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
+						<JiraAgentSessionTime item={item} />
 					</span>
 					<MetadataDot />
 					<span className="truncate">{item.agent.name}</span>
@@ -259,7 +260,6 @@ export function JiraAgentSessionCard({
 	onView?: (item: JiraAgentSessionItem) => void;
 	onStop?: (item: JiraAgentSessionItem) => void;
 }>) {
-	const elapsedSeconds = useJiraAgentSessionElapsedSeconds(item);
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
@@ -269,6 +269,7 @@ export function JiraAgentSessionCard({
 			<AgentAvatarVisual
 				avatarClassName="shrink-0"
 				avatarSrc={item.agent.avatarSrc}
+				brandName={item.agent.brandName}
 				label={item.agent.name}
 				sizePx={32}
 				vpkLogo={item.agent.vpkLogo}
@@ -296,8 +297,8 @@ export function JiraAgentSessionCard({
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</span>
 				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-					<span className="shrink-0" title="Agent runtime">
-						{formatElapsedTime(elapsedSeconds)}
+					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
+						<JiraAgentSessionTime item={item} />
 					</span>
 					<MetadataDot />
 					<span className="truncate">{item.agent.name}</span>

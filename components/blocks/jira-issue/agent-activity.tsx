@@ -31,6 +31,10 @@ export interface JiraIssueAgentActivity {
 	label: string;
 	labels?: readonly string[];
 	message?: string;
+	/** Stable start time supplied by a real running session. */
+	startedAtMs?: number;
+	/** Optional seeded runtime for demos; active timers continue from this value. */
+	initialElapsedSeconds?: number;
 	cycleIntervalJitterMs?: number;
 	cycleIntervalMs?: number;
 	question?: QuestionCardQuestion;
@@ -47,6 +51,8 @@ const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;
 const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1.4;
 const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;
+const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS = 45;
+const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS = 7 * 60;
 const JIRA_ISSUE_AGENT_WORKING_LABELS = [
 	"Figuring out which services are affected",
 	"Checking dependent components",
@@ -113,7 +119,10 @@ export function JiraIssueAgentPrompt({
 			}
 			allowOverflow
 			aria-label="Reply to agent"
-			className={className}
+			className={cn(
+				"shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]",
+				className,
+			)}
 			onSubmit={handleSubmit}
 		>
 			<PromptInputTextarea
@@ -184,6 +193,12 @@ function getJiraIssueAgentPanelMessage(activity: JiraIssueAgentActivity): string
 		?? JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE;
 }
 
+function getJiraIssueAgentInitialElapsedSeconds(): number {
+	const range = JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS
+		- JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS;
+	return JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS + Math.floor(Math.random() * range);
+}
+
 function JiraIssueAgentActivityPanel({
 	activity,
 	onQuestionSubmit,
@@ -244,7 +259,7 @@ function JiraIssueAgentActivityPanel({
 					questions={[activity.question]}
 				/>
 			) : (
-				<JiraIssueAgentPrompt className="shadow-none" />
+				<JiraIssueAgentPrompt />
 			)}
 		</div>
 	);
@@ -266,7 +281,14 @@ function JiraIssueAgentActivityRow({
 	rowCount: number;
 }>) {
 	const isAwaitingInput = activity.state === "awaiting-input";
-	const [startedAtMs] = useState(() => Date.now());
+	const [startedAtMs] = useState(() => {
+		if (typeof activity.startedAtMs === "number" && Number.isFinite(activity.startedAtMs)) {
+			return activity.startedAtMs;
+		}
+		const initialElapsedSeconds = activity.initialElapsedSeconds
+			?? getJiraIssueAgentInitialElapsedSeconds();
+		return Date.now() - initialElapsedSeconds * 1000;
+	});
 	const workingLabels = getJiraIssueAgentWorkingLabels(activity);
 	const rowRadiusClassName = rowCount === 1
 		? "rounded-sm"
