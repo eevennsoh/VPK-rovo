@@ -128,7 +128,7 @@ export function SessionScreenControls({
 					<span>{sectionLabel(screens, index)}</span>
 					<ChevronDownIcon label="" size="small" />
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="center">
+				<DropdownMenuContent align="center" portalled={false}>
 					{runs.map((run, runIndex) => (
 						<DropdownMenuItem
 							key={run.startIndex}

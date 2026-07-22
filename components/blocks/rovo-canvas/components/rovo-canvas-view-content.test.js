@@ -13,3 +13,8 @@ test("Rovo Canvas does not retain tabpanel semantics for the Toggle Group view c
 	assert.doesNotMatch(CANVAS_SOURCE, /<Tabs(?:\s|>)/u);
 	assert.doesNotMatch(CANVAS_SOURCE, /<TabsContent(?:\s|>)/u);
 });
+
+test("Rovo Canvas does not render a bottom footer", () => {
+	assert.doesNotMatch(CANVAS_SOURCE, /ui-custom\/footer/u);
+	assert.doesNotMatch(CANVAS_SOURCE, /footer\?: ReactNode/u);
+});

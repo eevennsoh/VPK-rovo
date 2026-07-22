@@ -21,7 +21,7 @@ const GALLERY_CONTROL_BUTTON_CLASS_NAME =
 	"inline-flex cursor-pointer border-0 bg-transparent p-0 text-icon-inverse outline-none transition-opacity duration-normal ease-out-practical hover:opacity-90 active:opacity-80 motion-reduce:transition-none rounded-[10px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const GALLERY_CONTROL_ICON_CLASS_NAME = "size-3 [&>span]:size-3! [&_svg]:size-3!";
 
-type GalleryTheme = "light" | "dark" | "system";
+export type GalleryTheme = "light" | "dark" | "system";
 
 export interface GalleryToggleProps {
 	title: string;
@@ -34,6 +34,10 @@ export interface GalleryToggleProps {
 	 * Resets the currently selected prototype to its initial state.
 	 */
 	onReset: () => void;
+	/** Optional route-owned theme shown instead of the global theme. */
+	theme?: GalleryTheme;
+	/** Cycles a route-owned theme. Falls back to the global theme cycle when omitted. */
+	onThemeCycle?: () => void;
 }
 
 function getThemeLabel(theme: GalleryTheme): string {
@@ -77,10 +81,14 @@ export function GalleryToggle({
 	onToggle,
 	className,
 	onReset,
+	theme: controlledTheme,
+	onThemeCycle,
 }: Readonly<GalleryToggleProps>) {
-	const { theme, setTheme } = useTheme();
+	const { theme: globalTheme, setTheme } = useTheme();
+	const theme = controlledTheme ?? globalTheme;
 	const themeLabel = getThemeLabel(theme);
 	const galleryToggleLabel = open ? "Close gallery" : "Open gallery";
+	const handleThemeCycle = onThemeCycle ?? (() => setTheme(getNextTheme(theme)));
 
 	return (
 		<div
@@ -128,7 +136,7 @@ export function GalleryToggle({
 								<button
 									type="button"
 									aria-label={`Cycle theme, current theme: ${themeLabel}`}
-									onClick={() => setTheme(getNextTheme(theme))}
+									onClick={handleThemeCycle}
 									className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
 								>
 									<GalleryControlSquircle>

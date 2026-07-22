@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { CodeReview } from "@/components/blocks/code-review";
 import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
 import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import { JiraKanbanBoardHeader } from "@/components/blocks/jira-kanban/board-header";
@@ -44,6 +45,7 @@ import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
 export function KanbanStage(): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
+	const [isCodeReviewOpen, setCodeReviewOpen] = useState(false);
 	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
 	const openCardChat = useCallback((agentId: string, agentName: string, card: JiraKanbanCardData, request?: string) => {
 		openAgentChat({
@@ -129,6 +131,7 @@ export function KanbanStage(): React.ReactElement {
 				draggedCardCode={draggedCardCode}
 				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
+				onCardAgentDoneRunReview={() => setCodeReviewOpen(true)}
 				onCardDragEnd={handleCardDragEnd}
 				onCardDragStart={handleCardDragStart}
 				onCardDrop={handleCardDrop}
@@ -150,6 +153,7 @@ export function KanbanStage(): React.ReactElement {
 					skills: WORK_ITEM_SKILLS,
 				}}
 			/>
+			<CodeReview open={isCodeReviewOpen} onOpenChange={setCodeReviewOpen} />
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}

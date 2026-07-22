@@ -13,7 +13,7 @@ test("code review fixtures preserve the design contracts", () => {
 	const explorerTree = readProjectFile("components/blocks/code-review/data/explorer-tree.ts");
 
 	assert.match(workItem, /TWC-109/u);
-	assert.match(workItem, /vitafleet-frontend/u);
+	assert.match(workItem, /acme-corp\/rfp-response-platform/u);
 	assert.match(changedFiles, /ipc\.mp\.test\.ts/u);
 	assert.match(explorerTree, /ipc\.mp\.test\.ts/u);
 });
@@ -27,17 +27,33 @@ test("code review diff view preserves theme token contracts", () => {
 	assert.match(diffView, /github-dark/u);
 });
 
-test("code review orchestrator preserves the editor default layout", () => {
+test("code review diff matches its top inset to the inline hunk inset", () => {
+	const diffView = readProjectFile(
+		"components/blocks/code-review/components/diff-file-view.tsx",
+	);
+
+	assert.match(diffView, /\[data-diffs-header\] ~ \[data-diff\] \[data-code\]/u);
+	assert.match(
+		diffView,
+		/padding-top: var\(--diffs-gap-inline, var\(--diffs-gap-fallback\)\);/u,
+	);
+	assert.match(diffView, /unsafeCSS: DIFF_TOP_INSET_CSS/u);
+});
+
+test("code review orchestrator defaults the editor to unified layout", () => {
 	const source = readProjectFile(
 		"components/blocks/code-review/components/code-review.tsx",
 	);
 
-	assert.match(source, /useState<DiffLayout>\("split"\)/u);
+	assert.match(source, /useState<DiffLayout>\("unified"\)/u);
 });
 
 test("Code Review composes its editor into a Canvas with the shared Code Reviewer rail", () => {
 	const source = readProjectFile(
 		"components/blocks/code-review/components/code-review.tsx",
+	);
+	const header = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-header.tsx",
 	);
 	const rail = readProjectFile(
 		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
@@ -45,9 +61,16 @@ test("Code Review composes its editor into a Canvas with the shared Code Reviewe
 
 	assert.match(source, /import \{ RovoCanvas \} from "@\/components\/blocks\/rovo-canvas\/page";/u);
 	assert.match(source, /<RovoCanvas[\s\S]*primaryActionLabel="Create pull request"/u);
+	assert.match(source, /title=\{`\$\{workItem\.key\}: \$\{workItem\.title\}`\}/u);
+	assert.match(header, /label=\{`\$\{workItem\.key\}: \$\{workItem\.title\}`\}/u);
 	assert.match(source, /id: "code"/u);
-	assert.match(source, /headerStart=\{<CodeReviewCanvasHeader workItem=\{workItem\} \/>\}/u);
+	assert.match(source, /files\.reduce\(/u);
+	assert.match(
+		source,
+		/headerStart=\{<CodeReviewCanvasHeader additions=\{additions\} deletions=\{deletions\} workItem=\{workItem\} \/>\}/u,
+	);
 	assert.match(source, /rightRail=\{[\s\S]*<CodeReviewCanvasRightRail/u);
+	assert.match(rail, /<ChatPanel[\s\S]*hideAiDisclaimer/u);
 	assert.match(rail, /<RovoChatProvider[\s\S]*autoSelectAgentId=\{CODE_REVIEWER_AGENT_ID\}/u);
 	assert.match(rail, /agentProfiles=\{\[CODE_REVIEWER_AGENT\]\}/u);
 	assert.match(rail, /<ChatPanel[\s\S]*headerVariant="minimal"/u);
@@ -149,6 +172,8 @@ test("Code Review moves its shared artefact identity into the canvas header", ()
 
 	assert.match(source, /showArtefactIdentity=\{false\}/u);
 	assert.match(header, /RovoCanvasArtefactIdentity/u);
+	assert.doesNotMatch(header, /Lozenge/u);
+	assert.doesNotMatch(header, /workItem\.environment/u);
 	assert.match(canvas, /export function RovoCanvasArtefactIdentity/u);
 	assert.match(canvas, /showArtefactIdentity = true/u);
 	assert.match(canvas, /showArtefactIdentity \? \(/u);
@@ -160,9 +185,22 @@ test("Code Review provides a manual launch control after the canvas closes", () 
 		"components/blocks/code-review/components/code-review.tsx",
 	);
 
-	assert.match(source, /isCanvasOpen \? null : \(/u);
+	assert.match(source, /const \[internalOpen, setInternalOpen\] = useState\(defaultOpen\);/u);
+	assert.match(source, /const isControlled = open !== undefined;/u);
+	assert.match(source, /!isControlled && !isCanvasOpen \? \(/u);
 	assert.match(source, /<Button onClick=\{\(\) => setCanvasOpen\(true\)\}>/u);
 	assert.match(source, /Open code review/u);
+});
+
+test("Code Review supports a caller-owned launch trigger", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+
+	assert.match(source, /open\?: boolean;/u);
+	assert.match(source, /onOpenChange\?: \(open: boolean\) => void;/u);
+	assert.match(source, /const isCanvasOpen = open \?\? internalOpen;/u);
+	assert.match(source, /onOpenChange\?\.\(nextOpen\);/u);
 });
 
 test("Code Review composition no longer renders a code summary screen", () => {

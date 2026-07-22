@@ -1,11 +1,8 @@
 "use client";
 
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import SearchIcon from "@atlaskit/icon/core/search";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import type { ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -70,17 +67,6 @@ export function EditorExplorer({
 					/>
 				</label>
 			</div>
-			<div className="flex h-8 items-center px-3 text-[11px] font-semibold text-text-subtlest">
-				<span>EXPLORER</span>
-				<Button
-					aria-label="Explorer actions"
-					className="ml-auto"
-					size="icon-compact"
-					variant="ghost"
-				>
-					<ShowMoreHorizontalIcon label="" size="small" />
-				</Button>
-			</div>
 			<ScrollArea className="min-h-0 flex-1 px-1">
 				<FileTree
 					className="rounded-none text-xs"
@@ -93,14 +79,6 @@ export function EditorExplorer({
 					</FileTreeFolder>
 				</FileTree>
 			</ScrollArea>
-			<Button
-				aria-expanded={false}
-				className="h-8 w-full justify-start rounded-none border-t border-border px-2 text-[11px] font-semibold"
-				variant="ghost"
-			>
-				<ChevronRightIcon label="" size="small" />
-				OUTLINE
-			</Button>
 		</aside>
 	);
 }

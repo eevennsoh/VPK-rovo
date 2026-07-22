@@ -13,12 +13,12 @@ import type { TerminalBoardStatus, TerminalLine, TerminalSpan } from "../lib/ter
 // ---------------------------------------------------------------------------
 
 const SPAN_TONE_CLASS: Record<NonNullable<TerminalSpan["tone"]>, string> = {
-	dim: "text-zinc-500",
+	dim: "text-text-subtlest",
 	accent: "text-blue-300",
 	success: "text-green-400",
 	warning: "text-yellow-300",
 	error: "text-red-400",
-	bold: "text-zinc-100 font-semibold",
+	bold: "text-text font-semibold",
 	brand: "text-[#D97757]",
 };
 
@@ -27,7 +27,7 @@ export function TerminalLineView({
 	className,
 }: Readonly<{ line: TerminalLine; className?: string }>): React.ReactElement {
 	return (
-		<div className={cn("whitespace-pre-wrap break-words text-zinc-300", className)}>
+		<div className={cn("whitespace-pre-wrap break-words text-text-subtle", className)}>
 			{line.map((span, index) => (
 				<span key={index} className={span.tone ? SPAN_TONE_CLASS[span.tone] : undefined}>
 					{span.text}
@@ -79,7 +79,7 @@ export function StateGlyph({
 		);
 	}
 	return (
-		<span className={cn("text-zinc-500", className)} aria-hidden="true">
+		<span className={cn("text-text-subtlest", className)} aria-hidden="true">
 			○
 		</span>
 	);
@@ -87,7 +87,7 @@ export function StateGlyph({
 
 export function BlinkCursor({ className }: Readonly<{ className?: string }> = {}): React.ReactElement {
 	return (
-		<span className={cn("animate-pulse text-zinc-100 motion-reduce:animate-none", className)} aria-hidden="true">
+		<span className={cn("animate-pulse text-text motion-reduce:animate-none", className)} aria-hidden="true">
 			▌
 		</span>
 	);
@@ -115,7 +115,7 @@ export function TmuxStatusBar({
 	const rest = pulseGlyph ? statusHint.slice(1) : statusHint;
 
 	return (
-		<div className="flex h-6 shrink-0 items-center justify-between border-t border-zinc-800 bg-zinc-900 px-3 text-xs text-zinc-400">
+		<div className="flex h-6 shrink-0 items-center justify-between border-t border-border bg-bg-neutral-subtle px-3 text-xs text-text-subtle">
 			<div className="flex items-center gap-3">
 				<span className="text-green-400">[asx]</span>
 				<span>{split ? "0:jira 1:claude*" : "0:claude*"}</span>

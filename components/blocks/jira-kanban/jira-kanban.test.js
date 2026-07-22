@@ -344,6 +344,14 @@ test("Kanban card interactions preserve card and column context", () => {
 		SOURCE,
 		/onAgentActivityQuestionSubmit=\{[\s\S]*\? \(activity, answers\) =>[\s\S]*onCardAgentActivityQuestionSubmit\(activity, answers, card, column\.title\)/,
 	);
+	assert.match(
+		SOURCE,
+		/onCardAgentDoneRunReview\?: \([\s\S]*run: JiraIssueCompletedAgentRun,[\s\S]*card: JiraKanbanCardData,[\s\S]*columnTitle: string,[\s\S]*\) => void;/,
+	);
+	assert.match(
+		SOURCE,
+		/onAgentDoneRunReview=\{[\s\S]*\? \(run\) => onCardAgentDoneRunReview\(run, card, column\.title\)/,
+	);
 });
 
 test("Kanban derives visible column counts from rendered cards", () => {

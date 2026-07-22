@@ -10,6 +10,10 @@ const SCREENS_SOURCE = read("data/session-screens.ts");
 const STAGE_SOURCE = read("components/session-stage.tsx");
 const TERMINAL_BEAT_SCREEN_SOURCE = read("components/terminal-beat-screen.tsx");
 const TERMINAL_LIVE_SCREEN_SOURCE = read("components/terminal-live-screen.tsx");
+const TERMINAL_STAGE_SOURCE = read("components/terminal-stage.tsx");
+const TERMINAL_CHROME_SOURCE = read("components/terminal-stage-chrome.tsx");
+const TERMINAL_CLAUDE_PANE_SOURCE = read("components/terminal-stage-claude-pane.tsx");
+const TERMINAL_JIRA_PANE_SOURCE = read("components/terminal-stage-jira-pane.tsx");
 const NAV_HOOK_SOURCE = read("hooks/use-screen-navigator.ts");
 
 test("Gallery exposes exactly the Local and Global session cards", () => {
@@ -62,18 +66,40 @@ test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => 
 	assert.match(PAGE_SOURCE, /palette=\{ROVO_PURPLE_PALETTE\}/u);
 });
 
-test("Page forces ADS dark subtree theming while in the Terminal section", () => {
-	// Mirrors the /asx Terminal pattern: flip the gallery chrome to dark tokens
-	// via ADS subtree theming when the active screen's section is "Terminal".
+test("Page defaults Terminal to a locally controllable dark subtree theme", () => {
 	assert.match(PAGE_SOURCE, /activeScreen\?\.section === "Terminal"/u);
+	assert.match(PAGE_SOURCE, /useState<"dark" \| "light">\("dark"\)/u);
 	assert.match(PAGE_SOURCE, /"data-subtree-theme": ""/u);
-	assert.match(PAGE_SOURCE, /"data-color-mode": "dark"/u);
+	assert.match(PAGE_SOURCE, /"data-color-mode": terminalTheme/u);
 	assert.match(
 		PAGE_SOURCE,
-		/"data-theme": "dark:dark spacing:spacing typography:typography shape:shape"/u,
+		/"data-theme": `\$\{terminalTheme\}:\$\{terminalTheme\} spacing:spacing typography:typography shape:shape`/u,
 	);
-	// Applied to the gallery root wrapper (so the fixed dock inherits it too).
 	assert.match(PAGE_SOURCE, /bg-surface" \{\.\.\.subtreeThemeProps\}/u);
+	assert.match(PAGE_SOURCE, /theme=\{isTerminalSection \? terminalTheme : undefined\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onThemeCycle=\{isTerminalSection \? handleTerminalThemeCycle : undefined\}/u,
+	);
+	assert.match(PAGE_SOURCE, /current === "dark" \? "light" : "dark"/u);
+});
+
+test("Terminal frame and panes follow the route-owned light or dark theme", () => {
+	assert.match(TERMINAL_STAGE_SOURCE, /border-border bg-surface-raised[^"]*text-text/u);
+	assert.match(
+		TERMINAL_STAGE_SOURCE,
+		/className=\{cn\("w-px", state\.split \? "bg-border" : "bg-transparent"\)\}/u,
+	);
+	assert.doesNotMatch(TERMINAL_STAGE_SOURCE, /TERMINAL_FRAME_ZINC_VARS|--ds-/u);
+
+	for (const source of [
+		TERMINAL_STAGE_SOURCE,
+		TERMINAL_CHROME_SOURCE,
+		TERMINAL_CLAUDE_PANE_SOURCE,
+		TERMINAL_JIRA_PANE_SOURCE,
+	]) {
+		assert.doesNotMatch(source, /(?:bg|border|text)-zinc-/u);
+	}
 });
 
 test("Page adds gated ←/→ keyboard stepping for the active card", () => {
@@ -92,6 +118,12 @@ test("Screen controls provide clickable prev/next that disable at the bounds", (
 	assert.match(STAGE_SOURCE, /disabled=\{!canPrev\}/u);
 	assert.match(STAGE_SOURCE, /disabled=\{!canNext\}/u);
 	assert.match(STAGE_SOURCE, /\{sectionLabel\(screens, index\)\}/u);
+});
+
+test("Section dropdown inherits the active gallery subtree theme", () => {
+	// The Terminal section themes the gallery subtree dark. Keep this popup's
+	// portal within that subtree instead of mounting it under the light body.
+	assert.match(STAGE_SOURCE, /<DropdownMenuContent align="center" portalled=\{false\}>/u);
 });
 
 test("Local session opens the Kanban section with the real board design", () => {

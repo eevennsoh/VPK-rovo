@@ -6,6 +6,7 @@ export interface CodeReviewWorkItem {
 	title: string;
 	environment: string;
 	repoName: string;
+	localBranchName: string;
 	branchName: string;
 }
 

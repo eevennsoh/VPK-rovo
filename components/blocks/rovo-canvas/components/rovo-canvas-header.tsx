@@ -1,9 +1,11 @@
 "use client";
 
 import CrossIcon from "@atlaskit/icon/core/cross";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -54,9 +56,24 @@ export function RovoCanvasHeader({
 			<DialogTitle className="sr-only">{title}</DialogTitle>
 
 			<div className="flex shrink-0 items-center gap-2">
-				<Button onClick={onPrimaryAction}>
-					{primaryActionLabel}
-				</Button>
+				<ButtonGroup variant="split">
+					<Button onClick={onPrimaryAction}>{primaryActionLabel}</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button aria-label="More pull request options" size="icon">
+									<VpkIcon render={<ChevronDownIcon label="" size="small" />} />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end">
+							<DropdownMenuGroup>
+								<DropdownMenuItem>Create draft PR</DropdownMenuItem>
+								<DropdownMenuItem>Commit &amp; Push</DropdownMenuItem>
+							</DropdownMenuGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</ButtonGroup>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={

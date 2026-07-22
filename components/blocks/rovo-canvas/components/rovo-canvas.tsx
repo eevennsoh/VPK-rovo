@@ -21,7 +21,6 @@ import {
 	DialogContent,
 	DialogDescription,
 } from "@/components/ui/dialog";
-import { Footer } from "@/components/ui-custom/footer";
 import { Icon as VpkIcon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArtifactAnnotationLayer } from "@/components/blocks/artifact";
@@ -112,7 +111,6 @@ export interface RovoCanvasProps {
 	artefactMetadata?: string;
 	showArtefactIdentity?: boolean;
 	rightRail?: ReactNode;
-	footer?: ReactNode;
 	feedbackBanner?: ReactNode;
 	versionHistory?: ReadonlyArray<RovoCanvasVersion>;
 	onVersionSelect?: (versionId: string) => void;
@@ -258,7 +256,7 @@ export function RovoCanvasArtefactIdentity({
 	metadata,
 }: Readonly<{
 	label: string;
-	metadata?: string;
+	metadata?: ReactNode;
 }>): React.ReactElement {
 	return (
 		<div className="min-w-0">
@@ -577,7 +575,6 @@ export function RovoCanvas({
 	artefactMetadata,
 	showArtefactIdentity = true,
 	rightRail,
-	footer,
 	feedbackBanner,
 	versionHistory = DEFAULT_VERSIONS,
 	onVersionSelect,
@@ -839,8 +836,6 @@ export function RovoCanvas({
 								)}
 							</section>
 						</div>
-
-						{footer === undefined ? <Footer hideIcon className="py-0" /> : footer}
 					</div>
 				</TooltipProvider>
 			</DialogContent>

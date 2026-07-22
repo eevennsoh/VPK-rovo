@@ -93,11 +93,6 @@ export const ROVO_CANVAS_DETAIL: ComponentDetail = {
 				description: "Optional replacement for the default shared VPK sidebar ChatPanel rail.",
 			},
 			{
-				name: "footer",
-				type: "ReactNode",
-				description: "Optional footer slot. Defaults to the AI verification footer.",
-			},
-			{
 				name: "feedbackBanner",
 				type: "ReactNode",
 				description: "Optional banner slot rendered below the header.",
