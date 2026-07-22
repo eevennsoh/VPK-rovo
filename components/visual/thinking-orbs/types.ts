@@ -45,7 +45,7 @@ export type OrbTheme = "auto" | "dark" | "light";
 
 /** Props for the ThinkingOrb React component. */
 export interface ThinkingOrbProps
-	extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "style"> {
+	extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "height" | "style" | "width"> {
 	/** Which animation to show. @default 'working' */
 	state?: OrbState;
 
