@@ -96,7 +96,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[0].avatarSrc,
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
-		relativeTime: "Just now",
+		completedSecondsAgo: 5 * 60,
 		elapsedSeconds: 300,
 		outputs: [
 			{
@@ -124,7 +124,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 		agentAvatarSrc: JIRA_ISSUE_AGENT_ACTIVITIES[1].avatarSrc,
 		issueKey: "PD-40",
 		issueSummary: "Implement advanced date-range filter",
-		relativeTime: "1 min ago",
+		completedSecondsAgo: 68 * 60,
 		elapsedSeconds: 64,
 		state: "failed",
 	},

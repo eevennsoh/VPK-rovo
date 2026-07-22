@@ -1,17 +1,19 @@
 "use client";
 
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { JiraActivityChangedFiles } from "@/components/blocks/jira-activity/jira-activity-changed-files";
 import type { JiraActivityChangedFilesEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import { JiraIssueAgentPrompt } from "@/components/blocks/jira-issue/agent-activity";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 
-export type JiraIssueCompletedAgentRunState = "done" | "failed";
+export type JiraIssueCompletedAgentRunState = "done" | "failed" | "review";
 
 export interface JiraIssueCompletedAgentRun {
 	id: string;
@@ -19,10 +21,16 @@ export interface JiraIssueCompletedAgentRun {
 	description?: string;
 	agentName: string;
 	agentAvatarSrc?: string;
+	agentBrandName?: ThirdPartyLogoName;
 	issueKey: string;
 	issueSummary: string;
-	relativeTime: string;
+	/** Legacy preformatted fallback when no completion timestamp is available. */
+	relativeTime?: string;
+	completedAtMs?: number;
+	/** Demo-friendly age that continues advancing after mount. */
+	completedSecondsAgo?: number;
 	elapsedSeconds?: number;
+	pullRequestNumber?: number;
 	outputs?: readonly ArtifactListItem[];
 	state: JiraIssueCompletedAgentRunState;
 }
@@ -38,11 +46,12 @@ const RUN_STATE_PRESENTATION = {
 		iconClassName: "text-icon-danger",
 		icon: <StatusErrorIcon color="currentColor" label="" size="small" />,
 	},
+	review: {
+		label: "Ready for review",
+		iconClassName: "text-icon-success",
+		icon: <PullRequestIcon color="currentColor" label="" size="small" />,
+	},
 } as const;
-
-function getAgentInitial(name: string): string {
-	return name.trim()[0]?.toUpperCase() ?? "A";
-}
 
 function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChangedFilesEntry {
 	return {
@@ -53,8 +62,9 @@ function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChan
 			kind: "agent",
 			name: run.agentName,
 			avatarSrc: run.agentAvatarSrc,
+			brandName: run.agentBrandName,
 		},
-		timestamp: run.relativeTime,
+		timestamp: run.relativeTime ?? "Just now",
 		summary: run.summary,
 		description: run.description ?? "",
 		sessionItem: {
@@ -64,9 +74,12 @@ function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChan
 			agent: {
 				name: run.agentName,
 				avatarSrc: run.agentAvatarSrc,
+				brandName: run.agentBrandName,
 			},
 			branch: "",
 			elapsedSeconds: run.elapsedSeconds,
+			completedAtMs: run.completedAtMs,
+			completedSecondsAgo: run.completedSecondsAgo,
 		},
 		outputs: run.outputs ?? [],
 	};
@@ -111,10 +124,14 @@ export function JiraIssueAgentDone({
 									type="button"
 								>
 									<span className="flex min-w-0 items-center gap-2">
-										<Avatar label={run.agentName} shape="hexagon" size="xs">
-											{run.agentAvatarSrc ? <AvatarImage alt="" src={run.agentAvatarSrc} /> : null}
-											<AvatarFallback>{getAgentInitial(run.agentName)}</AvatarFallback>
-										</Avatar>
+										<AgentAvatarVisual
+											avatarClassName="shrink-0"
+											avatarSrc={run.agentAvatarSrc}
+											brandName={run.agentBrandName}
+											fallbackText={run.agentName}
+											label={run.agentName}
+											sizePx={16}
+										/>
 										<span className="truncate text-sm leading-5 text-text-subtlest">{run.summary}</span>
 									</span>
 									<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
@@ -134,11 +151,12 @@ export function JiraIssueAgentDone({
 								entry={getCompletedRunEntry(run)}
 								footer={
 									<JiraIssueAgentPrompt
-										className="w-full shadow-none"
+										className="w-full"
 										onSubmit={(prompt) => onSubmit?.(run, prompt)}
 									/>
 								}
 								onView={() => onView?.(run)}
+								pullRequestNumber={run.pullRequestNumber}
 								status={run.state}
 								variant="jira-issue"
 							/>

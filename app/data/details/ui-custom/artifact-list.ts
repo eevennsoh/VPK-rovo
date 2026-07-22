@@ -47,7 +47,7 @@ const items: ArtifactListItem[] = [
 			name: "variant",
 			type: '"default" | "compact"',
 			default: '"default"',
-			description: "Controls row density and surface treatment. Compact rows are 48px tall with inline metadata and compact actions.",
+			description: "Controls row density and surface treatment. Compact rows are 48px tall with stacked title and metadata lines plus compact actions.",
 		},
 	],
 };

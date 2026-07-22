@@ -9,6 +9,7 @@ import type { QuestionCardQuestion } from "@/components/blocks/question-card/typ
 import type { JiraKanbanAgentData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
@@ -50,6 +51,12 @@ const JGP_DIRECTORY_SKILLS = directorySkillsData as readonly JgpDirectorySkillRe
 
 export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 	{
+		id: "claude-code",
+		name: "Claude Code",
+		byline: "Coding agent by Anthropic",
+		brandName: "claude",
+	},
+	{
 		id: JGP_KANBAN_DEFAULT_AGENT_ID,
 		name: "RFP Drafter",
 		byline: "Sales agent by Atlassian",
@@ -76,6 +83,86 @@ export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 	...BOARD_AGENTS,
 ] as const;
 
+interface JgpKanbanReviewRunFixture {
+	agentId: string;
+	agentName: string;
+	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
+	description: string;
+	elapsedSeconds: number;
+	outputs: NonNullable<JiraIssueCompletedAgentRun["outputs"]>;
+	pullRequestNumber?: number;
+	state: JiraIssueCompletedAgentRun["state"];
+	summary: string;
+}
+
+const JGP_KANBAN_REVIEW_RUNS_BY_CODE: Readonly<Record<string, readonly JgpKanbanReviewRunFixture[]>> = {
+	"RFP-161": [
+		{
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			brandName: "claude",
+			description: "Opened pull request #1847 with the Assets and CMDB positioning changes. It is ready for review.",
+			elapsedSeconds: 248,
+			pullRequestNumber: 1847,
+			outputs: [
+				{
+					id: "vertexrail-assets-positioning-pr",
+					title: "VertexRail Assets positioning",
+					source: "Pull request",
+					logoName: "github",
+					pullRequest: {
+						number: 1847,
+						status: "Open",
+						additions: 148,
+						deletions: 37,
+					},
+				},
+			],
+			state: "review",
+			summary: "Opened Assets and CMDB positioning PR",
+		},
+		{
+			agentId: "code-reviewer",
+			agentName: "Code Reviewer",
+			avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+			description: "Reviewed the proposed positioning and documented the claims that are ready for the final response.",
+			elapsedSeconds: 176,
+			outputs: [
+				{
+					id: "vertexrail-positioning-review",
+					title: "Positioning review",
+					source: "Jira work item",
+					owner: "RFP-161",
+					iconName: "ai-chat",
+				},
+			],
+			state: "done",
+			summary: "Checked positioning for accuracy",
+		},
+	],
+	"RFP-162": [
+		{
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			brandName: "claude",
+			description: "Updated the customer-facing response and captured the remaining legal exceptions for approval.",
+			elapsedSeconds: 221,
+			outputs: [
+				{
+					id: "greenfield-data-residency-response",
+					title: "Data residency response",
+					source: "Confluence page",
+					owner: "RFP-162",
+					iconName: "globe",
+				},
+			],
+			state: "done",
+			summary: "Updated data-residency response language",
+		},
+	],
+};
+
 export const JGP_RFP_QUESTION: QuestionCardQuestion = {
 	id: "rfp-response-strategy",
 	label: "Which response strategy should we lead with?",
@@ -100,10 +187,29 @@ export function createJgpKanbanColumns(): JiraKanbanColumnData[] {
 	return BOARD_COLUMNS.map((column) => {
 		const cards = column.title === JGP_KANBAN_DRAFTING_COLUMN
 			? []
-			: column.cards.map((card) => ({
-				...card,
-				tags: card.tags.map((tag) => ({ ...tag })),
-			}));
+			: column.cards.map((card) => {
+				const reviewRuns = JGP_KANBAN_REVIEW_RUNS_BY_CODE[card.code];
+				return {
+					...card,
+					tags: card.tags.map((tag) => ({ ...tag })),
+					agentActivityMode: reviewRuns ? "completed" as const : undefined,
+					agentDoneRuns: reviewRuns?.map((run, index) => ({
+						id: `${card.code}:${run.agentId}`,
+						summary: run.summary,
+						description: run.description,
+						agentName: run.agentName,
+						agentAvatarSrc: run.avatarSrc,
+						agentBrandName: run.brandName,
+						issueKey: card.code,
+						issueSummary: card.title,
+						relativeTime: index === 0 ? "Just now" : "1 min ago",
+						elapsedSeconds: run.elapsedSeconds,
+						pullRequestNumber: run.pullRequestNumber,
+						outputs: run.outputs.map((output) => ({ ...output })),
+						state: run.state,
+					})),
+				};
+			});
 
 		return { ...column, cards, count: cards.length };
 	});

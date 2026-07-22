@@ -70,11 +70,26 @@ test("Artifact List metadata renders source · owner with the small subtlest dot
 	assert.match(source, /<span className="shrink-0 text-text-subtle">\{item\.source\}<\/span>/u);
 	assert.equal((source.match(/aria-hidden="true" className="shrink-0 text-text-subtlest">·<\/span>/gu) ?? []).length, 1);
 	assert.match(source, /<span aria-hidden="true" className="text-text-subtlest"> · <\/span>/u);
-	// The compact title and combined metadata both shrink before the trailing action.
-	assert.match(source, /<span className="min-w-0 flex-1 truncate text-xs leading-4 text-text-subtle">/u);
-	assert.match(source, /<div className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">/u);
-	assert.match(source, /<p className="min-w-0 shrink truncate text-sm font-medium leading-5 text-text">\{item\.title\}<\/p>/u);
+	// Compact rows stack the combined metadata beneath the title, and both lines
+	// truncate before the trailing action.
+	assert.match(source, /<span className="block w-full truncate text-xs leading-4 text-text-subtle">/u);
+	assert.match(source, /<div className="flex min-w-0 flex-1 flex-col overflow-hidden">/u);
+	assert.match(source, /<p className="w-full truncate text-xs font-medium leading-4 text-text">\{item\.title\}<\/p>/u);
 	assert.doesNotMatch(source, /shrink-0 truncate text-sm font-medium leading-5 text-text/u);
+});
+
+test("Artifact List keeps the compact row structure and uses flyout metadata for PR bylines", () => {
+	const source = readProjectFile(
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
+	);
+
+	assert.match(source, /const compactPullRequestByline = item\.pullRequest \? \(/u);
+	assert.match(source, /<span className="mt-0\.5 flex w-full min-w-0 items-center gap-1 text-xs leading-4">/u);
+	assert.match(source, /<Lozenge variant=\{item\.pullRequest\.status === "Merged" \? "discovery" : "success"\}>[\s\S]*\{item\.pullRequest\.status\}/u);
+	assert.match(source, /<a[\s\S]*no-underline decoration-current outline-none hover:underline focus-visible:underline[\s\S]*href="#[\s\S]*event\.preventDefault\(\)[\s\S]*#\{item\.pullRequest\.number\}: \{item\.title\}[\s\S]*<\/a>/u);
+	assert.match(source, /<p className="w-full truncate text-xs font-medium leading-4 text-text">\{item\.title\}<\/p>[\s\S]*\{compactPullRequestByline \?\? compactMetadata\}/u);
+	assert.match(source, /aria-label=\{item\.pullRequest[\s\S]*`Code changes: \$\{item\.pullRequest\.additions\} additions, \$\{item\.pullRequest\.deletions\} deletions`/u);
+	assert.match(source, /\{item\.pullRequest \? \([\s\S]*text-text-success[\s\S]*text-text-danger[\s\S]*\) : openLabel\}/u);
 });
 
 test("Artifact List Open button is a stable trailing action and stays keyboard-reachable", () => {
@@ -106,24 +121,27 @@ test("Artifact List text shrinks beside the trailing action at compact widths", 
 test("Artifact List docs demo renders the sample items card", () => {
 	const page = readProjectFile("components/ui-custom/artifact-list/page.tsx");
 	const demo = readProjectFile("components/website/demos/ui-custom/artifact-list-demo.tsx");
+	const sampleItems = readProjectFile("components/ui-custom/artifact-list/data/sample-items.tsx");
 
 	assert.match(page, /import \{ ArtifactList \} from "@\/components\/ui-custom\/artifact-list";/u);
 	assert.match(page, /items=\{SAMPLE_ARTIFACT_ITEMS\}/u);
 	assert.match(page, /items=\{COMPACT_SAMPLE_ARTIFACT_ITEMS\}/u);
 	assert.match(page, /variant="compact"/u);
 	assert.match(demo, /import ArtifactListPage from "@\/components\/ui-custom\/artifact-list\/page";/u);
+	assert.match(sampleItems, /id: "vertexrail-assets-positioning-pr"[\s\S]*logoName: "github"[\s\S]*number: 1847[\s\S]*status: "Open"[\s\S]*additions: 148[\s\S]*deletions: 37/u);
 });
 
-test("Artifact List compact variant uses 48px inline rows, small tiles, and compact actions", () => {
+test("Artifact List compact variant uses at least 48px stacked rows, 24px tiles, 12px gaps, and compact actions", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /variant\?: "default" \| "compact";/u);
-	assert.match(source, /flex h-12 items-center gap-3 px-3 py-2/u);
-	assert.match(source, /grid size-8 shrink-0 place-items-center/u);
+	assert.match(source, /flex min-h-12 items-center gap-3 px-3 py-2/u);
+	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3/u);
+	assert.doesNotMatch(source, /grid size-8 shrink-0 place-items-center/u);
 	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}/u);
-	assert.match(source, /flex min-w-0 flex-1 items-baseline gap-2/u);
+	assert.match(source, /flex min-w-0 flex-1 flex-col overflow-hidden/u);
 	assert.match(source, /size=\{variant === "compact" \? "compact" : "default"\}/u);
 	assert.match(source, /overflow-hidden rounded-lg border border-border bg-surface/u);
 });

@@ -15,8 +15,10 @@ async function loadHarness() {
 				} from "./components/projects/jira-golden-paths/lib/kanban-lifecycle";
 				export {
 					createJgpKanbanActivity,
+					createJgpKanbanColumns,
 					getJgpGenerativeAgentSelection,
 					getJgpGenerativeActivityId,
+					JGP_KANBAN_AGENTS,
 				} from "./components/projects/jira-golden-paths/data/kanban-data";
 			`,
 			loader: "ts",
@@ -45,6 +47,60 @@ test("JGP board starts with no Drafting cards and derives every count", async ()
 	for (const boardColumn of state.columns) {
 		assert.equal(boardColumn.count, boardColumn.cards.length);
 	}
+});
+
+test("Review cards start with agent rows, including a hexagonal Claude Code avatar", async () => {
+	const { createJgpKanbanColumns, JGP_KANBAN_AGENTS } = await loadHarness();
+	const reviewCards = createJgpKanbanColumns().find((column) => column.title === "Review").cards;
+	const claudeCode = JGP_KANBAN_AGENTS.find((agent) => agent.id === "claude-code");
+	const claudeRun = reviewCards
+		.flatMap((card) => card.agentDoneRuns ?? [])
+		.find((run) => run.agentName === "Claude Code");
+
+	assert.deepEqual(
+		reviewCards.filter((card) => card.agentActivityMode === "completed").map((card) => card.code),
+		["RFP-161", "RFP-162"],
+	);
+	assert.equal(reviewCards[0].agentDoneRuns.length, 2);
+	assert.deepEqual(
+		reviewCards[0].agentDoneRuns.map((run) => [run.agentName, run.state]),
+		[["Claude Code", "review"], ["Code Reviewer", "done"]],
+	);
+	assert.equal(reviewCards[1].agentDoneRuns.length, 1);
+	assert.ok(reviewCards.slice(2).every((card) => card.agentDoneRuns === undefined));
+	assert.ok(reviewCards.slice(0, 2).every((card) => card.agentDoneRuns.every((run) => run.outputs.length === 1)));
+	assert.deepEqual(
+		reviewCards[0].agentDoneRuns.map((run) => run.outputs.map((output) => output.title)),
+		[
+			["VertexRail Assets positioning"],
+			["Positioning review"],
+		],
+	);
+	assert.equal(claudeRun.agentAvatarSrc, undefined);
+	assert.equal(claudeRun.agentBrandName, "claude");
+	assert.equal(claudeRun.pullRequestNumber, 1847);
+	assert.equal(
+		claudeRun.description,
+		"Opened pull request #1847 with the Assets and CMDB positioning changes. It is ready for review.",
+	);
+	assert.deepEqual(claudeRun.outputs[0], {
+		id: "vertexrail-assets-positioning-pr",
+		title: "VertexRail Assets positioning",
+		source: "Pull request",
+		logoName: "github",
+		pullRequest: {
+			number: 1847,
+			status: "Open",
+			additions: 148,
+			deletions: 37,
+		},
+	});
+	assert.deepEqual(claudeCode, {
+		id: "claude-code",
+		name: "Claude Code",
+		byline: "Coding agent by Anthropic",
+		brandName: "claude",
+	});
 });
 
 test("quick agent assignment moves an Intake card into Drafting and supports multiple agents", async () => {

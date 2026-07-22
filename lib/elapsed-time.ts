@@ -14,6 +14,21 @@ export function formatElapsedTime(totalSeconds: number): string {
 	return parts.join(" ");
 }
 
+export function formatRelativeTime(totalSecondsAgo: number): string {
+	const normalizedSeconds = Number.isFinite(totalSecondsAgo)
+		? Math.max(0, Math.floor(totalSecondsAgo))
+		: 0;
+	const minutes = Math.floor(normalizedSeconds / 60);
+	const hours = Math.floor(minutes / 60);
+	const days = Math.floor(hours / 24);
+
+	if (minutes < 1) return "Just now";
+	if (hours < 1) return `${minutes}m ago`;
+	if (days < 1) return `${hours}hr ago`;
+	if (days === 1) return "yesterday";
+	return `${days}d ago`;
+}
+
 export function getElapsedSeconds(runCreatedAt: string | null, runCompletedAt: string | null, nowMs: number): number {
 	if (!runCreatedAt) return 0;
 	const startTime = Date.parse(runCreatedAt);

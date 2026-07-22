@@ -73,10 +73,8 @@ test("the leading tile renders the agent or VPK identity at 32px", () => {
 });
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
-	assert.equal(
-		(CARD_SOURCE.match(/formatElapsedTime\(elapsedSeconds\)/gu) ?? []).length,
-		2,
-	);
+	assert.match(CARD_SOURCE, /function JiraAgentSessionTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
+	assert.equal((CARD_SOURCE.match(/<JiraAgentSessionTime item=\{item\} \/>/gu) ?? []).length, 2);
 	assert.equal(
 		(CARD_SOURCE.match(/<span className="truncate">\{item\.agent\.name\}<\/span>/gu) ?? []).length,
 		2,
@@ -119,8 +117,7 @@ test("exports the expanded activity-card variant and owns its shared shell", () 
 	assert.match(ACTIVITY_CARD_SOURCE, /grid w-full gap-4 rounded-xl border border-border bg-surface p-4/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /text-sm leading-5 text-text/u);
 	assert.doesNotMatch(ACTIVITY_CARD_SOURCE, /text-base leading-6 text-text/u);
-	assert.match(CARD_SOURCE, /formatElapsedTime\(elapsedSeconds\)/u);
-	assert.match(CARD_SOURCE, /title="Agent runtime"/u);
+	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
 	assert.match(CARD_SOURCE, /onClick=\{\(\) => onView\?\.\(item\)\}[\s\S]*View/u);
 });
 
