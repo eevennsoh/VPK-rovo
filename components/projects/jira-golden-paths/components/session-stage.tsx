@@ -1,9 +1,16 @@
 "use client";
 
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { ScreenNavigatorController } from "../hooks/use-screen-navigator";
 import type { SessionScreen } from "../data/session-screens";
 import { KanbanStage } from "./kanban-stage";
@@ -43,6 +50,47 @@ function sectionLabel(screens: readonly SessionScreen[], index: number): string 
 	return `${section} \u00b7 ${position} of ${total}`;
 }
 
+interface SectionRun {
+	/** Section label, or the screen title when the screen has no `section`. */
+	label: string;
+	/** Index of the first screen in this run — where the dropdown jumps to. */
+	startIndex: number;
+}
+
+/**
+ * Collapses the screen list into the ordered set of jumpable destinations for
+ * the section dropdown: one entry per CONTIGUOUS run of same-section screens
+ * (matching how `sectionLabel` counts), so a section name reused in a later
+ * block yields a separate entry. Screens without a section become their own
+ * single-screen entry labeled by title, so every screen stays reachable.
+ */
+function sectionRuns(screens: readonly SessionScreen[]): readonly SectionRun[] {
+	const runs: SectionRun[] = [];
+	for (let i = 0; i < screens.length; i += 1) {
+		const screen = screens[i];
+		const previous = screens[i - 1];
+		const startsNewRun =
+			i === 0 || !screen?.section || screen.section !== previous?.section;
+		if (startsNewRun) {
+			runs.push({ label: screen?.section ?? screen?.title ?? `Screen ${i + 1}`, startIndex: i });
+		}
+	}
+	return runs;
+}
+
+/**
+ * Index into `sectionRuns` of the run that contains `index` — the run whose
+ * `startIndex` is the greatest one still ≤ the active index.
+ */
+function activeRunIndex(runs: readonly SectionRun[], index: number): number {
+	let active = 0;
+	for (let i = 0; i < runs.length; i += 1) {
+		if (runs[i]!.startIndex <= index) active = i;
+		else break;
+	}
+	return active;
+}
+
 /** Left/right screen navigator rendered in the gallery top bar (`topBarCenter`). */
 export function SessionScreenControls({
 	screens,
@@ -51,7 +99,9 @@ export function SessionScreenControls({
 	screens: readonly SessionScreen[];
 	controller: ScreenNavigatorController;
 }>): React.ReactElement {
-	const { index, canPrev, canNext, prev, next } = controller;
+	const { index, canPrev, canNext, prev, next, goTo } = controller;
+	const runs = sectionRuns(screens);
+	const activeRun = activeRunIndex(runs, index);
 
 	return (
 		<div className="flex items-center gap-2 text-sm text-text">
@@ -65,7 +115,31 @@ export function SessionScreenControls({
 			>
 				<ChevronLeftIcon label="" size="small" />
 			</Button>
-			<span className="tabular-nums">{sectionLabel(screens, index)}</span>
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<button
+							type="button"
+							className="flex items-center gap-1 rounded-sm px-1 py-0.5 tabular-nums text-text outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring/50"
+							aria-label="Jump to section"
+						/>
+					}
+				>
+					<span>{sectionLabel(screens, index)}</span>
+					<ChevronDownIcon label="" size="small" />
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="center">
+					{runs.map((run, runIndex) => (
+						<DropdownMenuItem
+							key={run.startIndex}
+							selected={runIndex === activeRun}
+							onSelect={() => goTo(run.startIndex)}
+						>
+							{run.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
 			<Button
 				type="button"
 				variant="outline"

@@ -40,8 +40,6 @@ export interface JiraActivityProps {
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	/** Opens the rich agent-session summary shown by an agent comment. */
 	onViewSession?: (item: JiraAgentSessionItem) => void;
-	/** Called when the Reply action on a human comment is activated. */
-	onReplyRequest?: (entry: JiraActivityCommentEntry) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	className?: string;
@@ -79,7 +77,6 @@ export function JiraActivity({
 	composer,
 	renderCommentAction,
 	onViewSession,
-	onReplyRequest,
 	onSubmitReply,
 	className,
 	sortOrder: controlledSortOrder,
@@ -205,13 +202,19 @@ export function JiraActivity({
 									icon={entry.kind === "event" ? entry.icon : undefined}
 									isLast={isLast}
 								/>
-								<div className="min-w-0 flex-1 pb-3">
+								<div
+									className={cn(
+										"min-w-0 flex-1",
+										// Human and agent comment panels get a slightly larger 16px gap
+										// below the card; event spine rows and changed-files outputs stay at 12px.
+										entry.kind === "comment" ? "pb-4" : "pb-3",
+									)}
+								>
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
 											currentUser={currentUser}
 											entry={entry}
-											onReplyRequest={onReplyRequest}
 											onViewSession={onViewSession}
 											onSubmitReply={(body) => handleAddReply(entry, body)}
 											action={renderCommentAction?.(entry)}

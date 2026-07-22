@@ -7,7 +7,6 @@ import {
 	type JiraAgentSessionItem,
 } from "@/components/blocks/jira-agent-session";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Comment } from "@/components/ui/comment";
 
 import { JiraActivityComposer } from "./jira-activity-composer";
@@ -25,55 +24,37 @@ function initialsOf(name: string): string {
 	);
 }
 
+// The reply composer sits flush inside the card's footer: the card's own
+// `border-t` is the only divider, so the composer drops the floating
+// border/radius/shadow it carries by default and aligns its leading/trailing
+// controls to the card's 16px content padding.
+const FLUSH_COMPOSER_CLASSNAME = "border-0 rounded-none bg-transparent px-4 py-3 shadow-none";
+
 /**
  * Adapts Jira Activity comment data to the expanded Jira Agent Session card.
  * Human comments repeat their identity inside the card header; agent-session
- * cards continue to use the session identity supplied by their item.
+ * cards continue to use the session identity supplied by their item. Both human
+ * and agent comments expose an inline prompt composer as a flush card footer.
  */
 export function JiraActivityComment({
 	entry,
 	currentUser,
 	onSubmitReply,
 	onViewSession,
-	onReplyRequest,
 	action,
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
 	currentUser: JiraActivityActor;
 	onSubmitReply: (body: string) => void;
 	onViewSession?: (item: JiraAgentSessionItem) => void;
-	onReplyRequest?: (entry: JiraActivityCommentEntry) => void;
 	action?: ReactNode;
 }>) {
 	const replies = entry.replies ?? [];
 	const allowReply = entry.allowReply ?? true;
-	const replyAction = (
-		<Button
-			onClick={() => onReplyRequest?.(entry)}
-			size="compact"
-			type="button"
-			variant="outline"
-		>
-			Reply
-		</Button>
-	);
-	const trailingAction =
-		entry.actor.kind === "person" ? (
-			action ? (
-				<div className="flex items-center gap-1">
-					{replyAction}
-					{action}
-				</div>
-			) : (
-				replyAction
-			)
-		) : (
-			action
-		);
 
 	return (
 		<JiraAgentSessionActivityCard
-			action={trailingAction}
+			action={action}
 			agentName={entry.actor.name}
 			headerAvatar={
 				entry.actor.kind === "person" ? (
@@ -121,26 +102,19 @@ export function JiraActivityComment({
 				allowReply ? (
 					<JiraActivityComposer
 						author={currentUser}
-						className={
-							entry.sessionItem
-								? "rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]"
-								: undefined
-						}
+						className={FLUSH_COMPOSER_CLASSNAME}
 						onSubmit={onSubmitReply}
 						placeholder={
 							entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."
 						}
-						variant={entry.sessionItem ? "comment" : "reply"}
+						variant="comment"
 					/>
 				) : undefined
 			}
 			tag={entry.tag}
 			timestamp={entry.timestamp}
 		>
-			<JiraActivitySegments
-				className="text-sm leading-5 text-text"
-				segments={entry.body}
-			/>
+			<JiraActivitySegments className="text-sm leading-5 text-text" segments={entry.body} />
 		</JiraAgentSessionActivityCard>
 	);
 }

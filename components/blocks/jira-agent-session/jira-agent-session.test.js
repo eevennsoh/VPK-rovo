@@ -114,7 +114,18 @@ test("exports the expanded activity-card variant and owns its shared shell", () 
 	assert.match(ACTIVITY_CARD_SOURCE, /aria-expanded=\{detailsOpen\}/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /replyComposer/u);
 	assert.match(ACTIVITY_CARD_SOURCE, /<JiraAgentSessionActivityHeader[\s\S]*item=\{item\}/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /grid w-full gap-4 rounded-xl border border-border bg-surface p-4/u);
+	// The agent-session card wraps header/body/details in a padded grid and moves
+	// the composer into a flush footer separated by a border-t divider.
+	assert.match(
+		ACTIVITY_CARD_SOURCE,
+		/w-full overflow-hidden rounded-xl border border-border bg-surface/u,
+	);
+	assert.match(ACTIVITY_CARD_SOURCE, /<div className="grid gap-4 p-4">/u);
+	assert.match(ACTIVITY_CARD_SOURCE, /<div className="border-t border-border">/u);
+	assert.doesNotMatch(
+		ACTIVITY_CARD_SOURCE,
+		/grid w-full gap-4 rounded-xl border border-border bg-surface p-4/u,
+	);
 	assert.match(ACTIVITY_CARD_SOURCE, /text-sm leading-5 text-text/u);
 	assert.doesNotMatch(ACTIVITY_CARD_SOURCE, /text-base leading-6 text-text/u);
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);

@@ -44,11 +44,6 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			description: "Called when the View action on a rich agent-session activity card is activated.",
 		},
 		{
-			name: "onReplyRequest",
-			type: "(entry: JiraActivityCommentEntry) => void",
-			description: "Called when the Reply action on a human comment is activated.",
-		},
-		{
 			name: "currentUser",
 			type: "JiraActivityActor",
 			default: "built-in sample user",

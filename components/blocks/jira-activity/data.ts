@@ -103,6 +103,21 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		],
 	},
 	{
+		// Human activity snapshot: a person's comment card with a stacked
+		// avatar/name/timestamp header. Like the agent card, it exposes an inline
+		// prompt composer as a flush footer (allowReply defaults to true).
+		id: "human-flag",
+		kind: "comment",
+		actor: ANDREA,
+		timestamp: "10min ago",
+		body: [
+			{
+				type: "text",
+				text: "Flagging that this only reproduces on threads with a trailing reply input — let's confirm the fix holds in dark mode before we close it out.",
+			},
+		],
+	},
+	{
 		id: "root-cause",
 		kind: "comment",
 		actor: ROVO_DEV,
