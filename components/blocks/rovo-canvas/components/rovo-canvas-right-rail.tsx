@@ -1,5 +1,6 @@
 "use client";
 
+import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 
 interface RovoCanvasRightRailProps {
@@ -12,23 +13,25 @@ export function RovoCanvasRightRail({
 	onClose,
 }: Readonly<RovoCanvasRightRailProps>): React.ReactElement {
 	return (
-		<ChatPanel
-			onClose={onClose}
-			headerVariant="minimal"
-			enableSmartWidgets
-			abortOnUnmount={false}
-			chatContextBar={{
-				iconName: "artifact",
-				label: artifactTitle,
-				signature: `rovo-canvas-artifact:${artifactTitle}`,
-				variant: "edit",
-			}}
-			sendPromptOptions={{
-				smartGeneration: {
-					enabled: true,
-					surface: "sidebar",
-				},
-			}}
-		/>
+		<RovoChatProvider>
+			<ChatPanel
+				onClose={onClose}
+				headerVariant="minimal"
+				enableSmartWidgets
+				abortOnUnmount={false}
+				chatContextBar={{
+					iconName: "artifact",
+					label: artifactTitle,
+					signature: `rovo-canvas-artifact:${artifactTitle}`,
+					variant: "edit",
+				}}
+				sendPromptOptions={{
+					smartGeneration: {
+						enabled: true,
+						surface: "sidebar",
+					},
+				}}
+			/>
+		</RovoChatProvider>
 	);
 }

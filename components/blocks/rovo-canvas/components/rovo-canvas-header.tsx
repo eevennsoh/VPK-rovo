@@ -16,8 +16,11 @@ import { DialogTitle } from "@/components/ui/dialog";
 import { Icon as VpkIcon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
 
+import type { ReactNode } from "react";
+
 interface RovoCanvasHeaderProps {
 	title: string;
+	start?: ReactNode;
 	primaryActionLabel: string;
 	onPrimaryAction?: () => void;
 	onClose: () => void;
@@ -40,13 +43,14 @@ function RovoCanvasBrand(): React.ReactElement {
 
 export function RovoCanvasHeader({
 	title,
+	start,
 	primaryActionLabel,
 	onPrimaryAction,
 	onClose,
 }: Readonly<RovoCanvasHeaderProps>): React.ReactElement {
 	return (
 		<header className="flex shrink-0 items-center justify-between gap-4">
-			<RovoCanvasBrand />
+			{start ?? <RovoCanvasBrand />}
 			<DialogTitle className="sr-only">{title}</DialogTitle>
 
 			<div className="flex shrink-0 items-center gap-2">

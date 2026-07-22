@@ -8,6 +8,7 @@ export default function RovoCanvasPage(): React.ReactElement {
 
 export {
 	RovoCanvas,
+	RovoCanvasArtefactIdentity,
 	RovoCanvasPlaceholder,
 } from "@/components/blocks/rovo-canvas/components/rovo-canvas";
 export type {

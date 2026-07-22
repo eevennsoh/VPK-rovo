@@ -1,4 +1,4 @@
-import type { ChangedFile, ChangesSummary } from "./types";
+import type { ChangedFile } from "./types";
 
 const PRODUCT_PAGE_OLD = `import ErrorMessage from "../../common/components/ErrorMessage";
 
@@ -121,11 +121,4 @@ export const EDITOR_FILE: ChangedFile = {
 	defaultExpanded: true,
 	hunkHeader: "@@ -48,6 +48,11 @@ export type SmartLinkProps = {",
 	inExplorer: true,
-};
-
-// Summary stats are stored verbatim from the design, not derived from per-file stats.
-export const ALL_CHANGES_SUMMARY: ChangesSummary = {
-	fileCount: 3,
-	additions: 28,
-	deletions: 11,
 };

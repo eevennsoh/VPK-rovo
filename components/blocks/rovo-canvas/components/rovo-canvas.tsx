@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Footer } from "@/components/ui-custom/footer";
 import { Icon as VpkIcon } from "@/components/ui/icon";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArtifactAnnotationLayer } from "@/components/blocks/artifact";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
@@ -102,6 +101,7 @@ export interface RovoCanvasProps {
 	kind?: RovoCanvasArtefactKind;
 	status?: RovoCanvasStatus;
 	title?: string;
+	headerStart?: ReactNode;
 	primaryActionLabel?: string;
 	onPrimaryAction?: () => void;
 	views?: ReadonlyArray<RovoCanvasView>;
@@ -110,6 +110,7 @@ export interface RovoCanvasProps {
 	onViewChange?: (viewId: string) => void;
 	artefactLabel?: string;
 	artefactMetadata?: string;
+	showArtefactIdentity?: boolean;
 	rightRail?: ReactNode;
 	footer?: ReactNode;
 	feedbackBanner?: ReactNode;
@@ -252,7 +253,7 @@ function getRovoCanvasDefaultCopyText(): string {
 	return "";
 }
 
-function RovoCanvasArtefactIdentity({
+export function RovoCanvasArtefactIdentity({
 	label,
 	metadata,
 }: Readonly<{
@@ -565,6 +566,7 @@ export function RovoCanvas({
 	kind = "dashboard",
 	status = "ready",
 	title = "Canvas draft",
+	headerStart,
 	primaryActionLabel = "Save",
 	onPrimaryAction,
 	views,
@@ -573,6 +575,7 @@ export function RovoCanvas({
 	onViewChange,
 	artefactLabel,
 	artefactMetadata,
+	showArtefactIdentity = true,
 	rightRail,
 	footer,
 	feedbackBanner,
@@ -742,6 +745,7 @@ export function RovoCanvas({
 					<div className="flex size-full min-h-0 flex-col gap-4">
 						<RovoCanvasHeader
 							title={title}
+							start={headerStart}
 							primaryActionLabel={primaryActionLabel}
 							onPrimaryAction={onPrimaryAction}
 							onClose={() => setOpen(false)}
@@ -751,34 +755,36 @@ export function RovoCanvas({
 
 						<div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_400px] lg:overflow-hidden">
 							<section className="flex min-h-[420px] min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:min-h-0">
-								<Tabs
-									value={resolvedActiveViewId}
-									onValueChange={setActiveViewId}
-									className="flex size-full min-h-0 gap-0"
-								>
-									<div className="grid min-h-[60px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border bg-surface px-4 py-3">
-										<RovoCanvasArtefactIdentity
-											label={resolvedArtefactLabel}
-											metadata={artefactMetadata}
-										/>
-										{resolvedViews.length > 1 ? (
-											<RovoCanvasViewSwitcher views={resolvedViews} />
-										) : (
-											<div aria-hidden="true" />
-										)}
-										<CanvasToolbar
-											activeView={activeView}
-											isVersionHistoryOpen={shouldShowVersionHistory}
-											isSelectMode={isSelectMode}
-											isCopied={isCopied}
-											showSelectModeControl={showSelectModeControl}
-											isSelectModeDisabled={!isAnnotationModeAvailable}
-											onRefresh={handleRefresh}
-											onToggleVersionHistory={() => setVersionHistoryOpen((value) => !value)}
-											onToggleSelectMode={handleToggleSelectMode}
-											onCopy={handleCopy}
-										/>
-									</div>
+								<div className="flex size-full min-h-0 flex-col gap-0">
+									{showArtefactIdentity ? (
+										<div className="grid min-h-[60px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border bg-surface px-4 py-3">
+											<RovoCanvasArtefactIdentity
+												label={resolvedArtefactLabel}
+												metadata={artefactMetadata}
+											/>
+											{resolvedViews.length > 1 ? (
+												<RovoCanvasViewSwitcher
+													onValueChange={setActiveViewId}
+													value={resolvedActiveViewId}
+													views={resolvedViews}
+												/>
+											) : (
+												<div aria-hidden="true" />
+											)}
+											<CanvasToolbar
+												activeView={activeView}
+												isVersionHistoryOpen={shouldShowVersionHistory}
+												isSelectMode={isSelectMode}
+												isCopied={isCopied}
+												showSelectModeControl={showSelectModeControl}
+												isSelectModeDisabled={!isAnnotationModeAvailable}
+												onRefresh={handleRefresh}
+												onToggleVersionHistory={() => setVersionHistoryOpen((value) => !value)}
+												onToggleSelectMode={handleToggleSelectMode}
+												onCopy={handleCopy}
+											/>
+										</div>
+									) : null}
 
 									<div className="flex min-h-0 flex-1">
 										<div className="relative min-w-0 flex-1">
@@ -787,7 +793,11 @@ export function RovoCanvas({
 													view.id === resolvedActiveViewId && getToolbarMode(view) === "preview";
 
 												return (
-													<TabsContent key={view.id} value={view.id} className="size-full">
+													<div
+														key={view.id}
+														hidden={view.id !== resolvedActiveViewId}
+														className="size-full"
+													>
 														<div
 															ref={isActivePreviewView ? annotationContainerRef : undefined}
 															className="relative size-full min-h-0 overflow-hidden"
@@ -805,7 +815,7 @@ export function RovoCanvas({
 																/>
 															) : null}
 														</div>
-													</TabsContent>
+													</div>
 												);
 											})}
 											{isWorkingStatus(status) ? <LoadingScreen /> : null}
@@ -817,7 +827,7 @@ export function RovoCanvas({
 											/>
 										) : null}
 									</div>
-								</Tabs>
+								</div>
 							</section>
 
 							<section className="min-h-[520px] min-w-0 overflow-hidden lg:min-h-0">
