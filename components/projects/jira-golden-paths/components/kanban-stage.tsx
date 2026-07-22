@@ -89,6 +89,14 @@ export function KanbanStage(): React.ReactElement {
 		handleCardDragEnd();
 		setSelectedAssigneeIds(assigneeIds);
 	}, [handleCardDragEnd, handleClearSelection]);
+	const handleFilteredCardSelect = useCallback((
+		cardCode: string,
+		columnTitle: string,
+		indexInColumn: number,
+		modifiers: Parameters<typeof handleCardSelect>[3],
+	) => {
+		handleCardSelect(cardCode, columnTitle, indexInColumn, modifiers, filteredBoardColumns);
+	}, [filteredBoardColumns, handleCardSelect]);
 	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
 		setPendingChatQuestion(activity.question ? {
 			submit: () => handleQuestionSubmit(activity, {}, card),
@@ -126,7 +134,7 @@ export function KanbanStage(): React.ReactElement {
 				onCardDrop={handleCardDrop}
 				onCardClick={handleCardClick}
 				onCardGenerativeActionSubmit={handleGenerativeActionSubmit}
-				onCardSelect={handleCardSelect}
+				onCardSelect={handleFilteredCardSelect}
 				paddingBottom={token("space.200")}
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}

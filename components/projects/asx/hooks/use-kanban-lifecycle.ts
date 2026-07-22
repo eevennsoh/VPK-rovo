@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 import type { JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
-import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers } from "@/components/blocks/jira-kanban";
+import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
 	ASX_KANBAN_DEFAULT_AGENT_ID,
 	ASX_KANBAN_DRAFTING_COLUMN,
@@ -92,8 +92,9 @@ export function useAsxKanbanLifecycle({
 		columnTitle: string,
 		indexInColumn: number,
 		modifiers: JiraKanbanCardSelectModifiers,
+		selectionColumns?: readonly JiraKanbanColumnData[],
 	) => {
-		dispatch({ type: "select", cardCode, columnTitle, indexInColumn, modifiers });
+		dispatch({ type: "select", cardCode, columnTitle, indexInColumn, modifiers, selectionColumns });
 	}, []);
 
 	const handleCardDragStart = useCallback((card: JiraKanbanCardData, sourceColumnTitle: string) => {

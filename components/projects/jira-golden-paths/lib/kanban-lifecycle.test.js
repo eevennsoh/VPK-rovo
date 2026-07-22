@@ -134,6 +134,32 @@ test("multi-selected Intake cards batch-start when dropped into Drafting", async
 	assert.equal(state.selectedCardCodes.size, 0);
 });
 
+test("shift selection only includes cards visible in filtered columns", async () => {
+	const { createInitialJgpKanbanState, jgpKanbanReducer } = await loadHarness();
+	let state = createInitialJgpKanbanState();
+	const selectionColumns = state.columns.map((item) => ({
+		...item,
+		cards: item.cards.filter((card) => card.code !== "RFP-102"),
+	}));
+	state = jgpKanbanReducer(state, {
+		type: "select",
+		cardCode: "RFP-101",
+		columnTitle: "RFP Intake",
+		indexInColumn: 0,
+		modifiers: { metaOrCtrlKey: false, shiftKey: false },
+		selectionColumns,
+	});
+	state = jgpKanbanReducer(state, {
+		type: "select",
+		cardCode: "RFP-103",
+		columnTitle: "RFP Intake",
+		indexInColumn: 1,
+		modifiers: { metaOrCtrlKey: false, shiftKey: true },
+		selectionColumns,
+	});
+	assert.deepEqual([...state.selectedCardCodes].sort(), ["RFP-101", "RFP-103"]);
+});
+
 test("RFP-101 resolves needs-input and completion states before moving to Review", async () => {
 	const { jgpKanbanReducer, createInitialJgpKanbanState, resolveJgpKanbanColumns } = await loadHarness();
 	let state = createInitialJgpKanbanState();

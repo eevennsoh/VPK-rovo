@@ -31,6 +31,12 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /selectedCardCodes=\{selectedCardCodes\}/u);
 });
 
+test("Kanban stage selects ranges against the filtered columns", () => {
+	assert.match(STAGE_SOURCE, /const handleFilteredCardSelect = useCallback/u);
+	assert.match(STAGE_SOURCE, /handleCardSelect\(cardCode, columnTitle, indexInColumn, modifiers, filteredBoardColumns\);/u);
+	assert.match(STAGE_SOURCE, /onCardSelect=\{handleFilteredCardSelect\}/u);
+});
+
 test("ASX Kanban reuses the Jira Issue rainbow spinner for working agents", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanban/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
