@@ -1,0 +1,131 @@
+"use client";
+
+import { useCallback, useState } from "react";
+
+import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
+import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
+import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
+import {
+	DEFAULT_PINNED_SPACE_AGENT_IDS,
+	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+	WORK_ITEM_SKILLS,
+} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
+import { JGP_KANBAN_AGENTS, JGP_KANBAN_DEFAULT_AGENT_ID } from "@/components/projects/jira-golden-paths/data/kanban-data";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
+import { useJgpKanbanLifecycle } from "@/components/projects/jira-golden-paths/hooks/use-kanban-lifecycle";
+import { token } from "@/lib/tokens";
+import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
+
+/**
+ * The "Kanban" design pattern for the Jira Golden Paths gallery.
+ *
+ * Reuses the real `components/blocks/jira-kanban` board verbatim (same sample
+ * columns + agents as the block's own demo), shown read-only in the gallery
+ * stage when the Kanban card is selected.
+ *
+ * Layout intent: the Gallery viewport is the container. The board breaks out of
+ * the stage's centered `max-w-3xl` column to span the full viewport width
+ * (`left-1/2 -translate-x-1/2 w-screen`) and fills the available stage height.
+ * The pinned dock floats over the board's lower portion via its backdrop blur
+ * (the gallery's "content flows under the dock" effect). Columns flow to fill
+ * the width and scroll their own cards.
+ *
+ * The arbitrary variants complete the board's flex-column height chain (its
+ * shared root is only `flex-1 min-h-0`, so its inner section would otherwise
+ * grow to content height) — scoped here so the /jira board and the block demo
+ * keep their existing behavior.
+ */
+export function KanbanStage(): React.ReactElement {
+	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
+	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
+	const openCardChat = useCallback((agentId: string, agentName: string, card: JiraKanbanCardData, request?: string) => {
+		openAgentChat({
+			agentId,
+			agentName,
+			issueKey: card.code,
+			issueSummary: card.title,
+			request,
+		});
+	}, [openAgentChat]);
+	const handleNonAgentAction = useCallback((request: JiraIssueGenerativeActionRequest, card: JiraKanbanCardData) => {
+		setPendingChatQuestion(null);
+		openCardChat(
+			JGP_KANBAN_DEFAULT_AGENT_ID,
+			"RFP Drafter",
+			card,
+			request.prompt,
+		);
+	}, [openCardChat]);
+	const {
+		boardColumns,
+		draggedCardCode,
+		handleCardDragEnd,
+		handleCardDragStart,
+		handleCardDrop,
+		handleCardClick,
+		handleCardSelect,
+		handleGenerativeActionSubmit,
+		handleQuestionSubmit,
+		handleStatusChange,
+		handleAgentAssignmentChange,
+		handleClearSelection,
+		selectedAgentIds,
+		selectedCardCodes,
+	} = useJgpKanbanLifecycle({ onNonAgentAction: handleNonAgentAction });
+	const handleViewChat = useCallback((activity: JiraIssueAgentActivity, card: JiraKanbanCardData) => {
+		setPendingChatQuestion(activity.question ? {
+			submit: () => handleQuestionSubmit(activity, {}, card),
+		} : null);
+		openAgentChat({
+			agentId: activity.id,
+			agentName: activity.name,
+			issueKey: card.code,
+			issueSummary: card.title,
+			intro: activity.message,
+			question: activity.question,
+		});
+	}, [handleQuestionSubmit, openAgentChat]);
+	const handleChatQuestionAnswer = useCallback(() => {
+		pendingChatQuestion?.submit();
+		setPendingChatQuestion(null);
+	}, [pendingChatQuestion]);
+
+	return (
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
+			<JiraKanban
+				agents={JGP_KANBAN_AGENTS}
+				ariaLabel="RFP board columns. Assign agents or drag Intake cards into Drafting to start work."
+				boardColumns={boardColumns}
+				draggedCardCode={draggedCardCode}
+				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
+				onCardAgentActivityViewChat={handleViewChat}
+				onCardDragEnd={handleCardDragEnd}
+				onCardDragStart={handleCardDragStart}
+				onCardDrop={handleCardDrop}
+				onCardClick={handleCardClick}
+				onCardGenerativeActionSubmit={handleGenerativeActionSubmit}
+				onCardSelect={handleCardSelect}
+				paddingBottom={token("space.200")}
+				paddingTop={0}
+				selectedCardCodes={selectedCardCodes}
+				selectionToolbar={{
+					agents: ROVO_AGENT_SELECTOR_AGENTS,
+					defaultPinnedAgentIds: DEFAULT_PINNED_SPACE_AGENT_IDS,
+					defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+					onAgentAssignmentChange: handleAgentAssignmentChange,
+					onClearSelection: handleClearSelection,
+					onStatusChange: handleStatusChange,
+					pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
+					selectedAgentIds,
+					skills: WORK_ITEM_SKILLS,
+				}}
+			/>
+			<JgpRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+				onQuestionAnswer={pendingChatQuestion ? handleChatQuestionAnswer : undefined}
+			/>
+		</div>
+	);
+}
