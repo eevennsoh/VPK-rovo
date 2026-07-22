@@ -1,0 +1,4 @@
+interface:
+  display_name: "VPK Scheduled Automation"
+  short_description: "Run one safe VPK producer job and hand off its PR."
+  default_prompt: "Use $vpk-scheduled-automation to execute one scheduled VPK producer job safely, validate it, and open or update a PR without merging."

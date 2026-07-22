@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 82,
-			"pageCount": 59
+			"ownerImportCount": 83,
+			"pageCount": 60
 		},
 		"pages": [
 			{
@@ -4224,6 +4224,30 @@
 					}
 				],
 				"source": "app/preview/blocks/agent-profile-card/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/blocks/code-review/page",
+						"source": "components/blocks/code-review/page",
+						"symbols": [
+							"CodeReviewPage"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/code-review",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/blocks/code-review/page",
+						"source": "components/blocks/code-review/page",
+						"symbols": [
+							"CodeReviewPage"
+						]
+					}
+				],
+				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5205,7 +5229,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 406,
+			"manifestEntryCount": 408,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5241,7 +5265,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 95,
+				"entryCount": 96,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5398,6 +5422,12 @@
 						"slug": "chatgpt",
 						"name": "ChatGPT",
 						"importPath": "@/components/blocks/chatgpt"
+					},
+					{
+						"category": "blocks",
+						"slug": "code-review",
+						"name": "Code Review",
+						"importPath": "@/components/blocks/code-review"
 					},
 					{
 						"category": "blocks",
@@ -7107,7 +7137,7 @@
 			},
 			{
 				"category": "visual",
-				"entryCount": 98,
+				"entryCount": 99,
 				"entries": [
 					{
 						"category": "visual",
@@ -7663,6 +7693,12 @@
 					},
 					{
 						"category": "visual",
+						"slug": "thinking-orbs",
+						"name": "Thinking Orbs",
+						"importPath": "@/components/visual/thinking-orbs"
+					},
+					{
+						"category": "visual",
 						"slug": "threshold",
 						"name": "Threshold",
 						"importPath": "@/components/website/demos/visual/shader-lab-effect-demo"
@@ -7775,7 +7811,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 15
+			"localSkillCount": 16
 		},
 		"localSkills": [
 			{
@@ -7837,6 +7873,12 @@
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
+			},
+			{
+				"description": "Shared execution policy for VPK-rovo scheduled jobs that investigate one maintenance candidate, make a review-ready change, and open or update a pull request. Use when a Codex automation invokes vpk-scheduled-automation for bug, test, deprecation, interface, simplification, engineering-map, AGENTS.md, frontend-runtime, performance, UI-quality, or dependency work. Do not use for read-only summaries or local cleanup jobs.",
+				"name": "vpk-scheduled-automation",
+				"path": ".agents/skills/vpk-scheduled-automation/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-scheduled-automation"
 			},
 			{
 				"description": "This skill should be used when the user asks to \"set up\", \"get started\", \"first time setup\", \"new project setup\", \"initialize VPK\", \"run for first time\", \"configure VPK\", \"install dependencies\", \"generate ASAP credentials\", \"configure environment\", \"start dev servers\", \"bootstrap\", \"init\", \"env setup\", \"how do I start\", \"how do I set up the project\", \"get this working\", or wants to set up a new VPK project from scratch. Also triggered by errors like \"ASAP key not working\", \"credentials not found\", \"env not configured\".",

@@ -1048,6 +1048,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
 	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
 	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/blocks\/agent-test";/u);
+	assert.match(SHELL_SOURCE, /const RovoAppAgentConfigPanel = dynamic\([\s\S]*import\("@\/components\/projects\/studio\/components\/rovo-app-agent-config-panel"\)[\s\S]*\{ ssr: true \}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /import \{ RovoAppAgentConfigPanel,/u);
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);

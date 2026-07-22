@@ -237,6 +237,9 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		ssr: false,
 	}),
 	chatgpt: dynamic(() => import("../demos/blocks/chatgpt-demo"), { ssr: false }),
+	"code-review": dynamic(() => import("../demos/blocks/code-review-demo"), {
+		ssr: false,
+	}),
 	"chat-gallery": dynamic(
 		() => import("../demos/blocks/chat-gallery-demo"),
 		{ ssr: false },
