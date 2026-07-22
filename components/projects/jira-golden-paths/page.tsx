@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import { Gallery, type GalleryItem, type GalleryPalette } from "@/components/blocks/gallery";
 import { JGP_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
 import { JGP_GALLERY_ITEMS } from "./data/gallery-items";
 import {
@@ -30,7 +30,7 @@ import { SessionScreenControls, SessionStage } from "./components/session-stage"
 // later.
 // ---------------------------------------------------------------------------
 
-const ROVO_PURPLE_PALETTE = ["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"];
+const ROVO_PURPLE_PALETTE: GalleryPalette = ["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"];
 
 interface SessionCard {
 	screens: readonly SessionScreen[];
