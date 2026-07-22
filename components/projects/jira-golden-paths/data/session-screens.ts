@@ -27,7 +27,7 @@
  *     are kept as building blocks).
  */
 /** Named golden-path design patterns a screen can render (see `SessionStage`). */
-export type SessionScreenDesign = "kanban";
+export type SessionScreenDesign = "for-you" | "kanban" | "rovo" | "work-item";
 
 export interface SessionScreen {
 	id: string;
@@ -65,7 +65,9 @@ export interface SessionScreen {
 // the later "needs input" board (beat 7) — non-contiguous with the live run, so
 // it stays a static slide. The sixth screen opens the "Kanban" section: the real
 // Jira Kanban board design (light chrome; the Terminal-section dark mode does not
-// apply here).
+// apply here). After Kanban, a second Terminal section resumes from the next beat
+// and carries the demo through its remaining completion screens, followed by the
+// Kanban design again in its completed state.
 export const LOCAL_SESSION_SCREENS: readonly SessionScreen[] = [
 	{ id: "local-0", section: "Terminal", title: "Local session · Terminal beat 0", liveBeat: 0 },
 	{ id: "local-1", section: "Terminal", title: "Local session · Terminal beat 1", liveBeat: 1 },
@@ -73,10 +75,16 @@ export const LOCAL_SESSION_SCREENS: readonly SessionScreen[] = [
 	{ id: "local-3", section: "Terminal", title: "Local session · connected dashboard", liveBeat: 3 },
 	{ id: "local-4", section: "Terminal", title: "Local session · Terminal beat 7", terminalBeat: 7 },
 	{ id: "local-5", section: "Kanban", title: "Local session · Kanban board", design: "kanban" },
+	{ id: "local-6", section: "Terminal", title: "Local session · Terminal beat 8", terminalBeat: 8 },
+	{ id: "local-7", section: "Terminal", title: "Local session · Terminal beat 9", terminalBeat: 9 },
+	{ id: "local-8", section: "Terminal", title: "Local session · Terminal beat 10", terminalBeat: 10 },
+	{ id: "local-9", section: "Terminal", title: "Local session · Terminal beat 11", terminalBeat: 11 },
+	{ id: "local-10", section: "Kanban", title: "Local session · Kanban board", design: "kanban" },
 ];
 
 export const GLOBAL_SESSION_SCREENS: readonly SessionScreen[] = [
-	{ id: "global-1", title: "Global session · Screen 1" },
-	{ id: "global-2", title: "Global session · Screen 2" },
-	{ id: "global-3", title: "Global session · Screen 3" },
+	{ id: "global-1", section: "Kanban", title: "Global session · Kanban board", design: "kanban" },
+	{ id: "global-2", section: "Work item", title: "Global session · Work item", design: "work-item" },
+	{ id: "global-3", section: "Rovo", title: "Global session · Rovo", design: "rovo" },
+	{ id: "global-4", section: "For you", title: "Global session · For you", design: "for-you" },
 ];

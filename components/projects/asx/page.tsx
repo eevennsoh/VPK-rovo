@@ -6,10 +6,10 @@ import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
-import JiraForYouPage from "@/components/blocks/jira-for-you/page";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
+import { ForYouStageLayout } from "@/components/projects/shared/components/for-you-stage-layout";
 import {
 	ASX_CHAT_AGENT_PROFILES,
 	buildAsxForYouAgentChatScenario,
@@ -30,7 +30,6 @@ import {
 	WorkItemStage,
 	type WorkItemStageController,
 } from "./components/work-item-stage";
-import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -70,11 +69,7 @@ function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean }>): React.React
 
 	return (
 		<>
-			<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
-				<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
-					<JiraForYouPage onItemClick={handleItemClick} />
-				</div>
-			</div>
+			<ForYouStageLayout dockOpen={dockOpen} onItemClick={handleItemClick} />
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
