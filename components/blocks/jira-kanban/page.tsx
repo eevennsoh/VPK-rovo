@@ -8,9 +8,12 @@ import {
 	type JiraKanbanCardSelectModifiers,
 	type JiraKanbanColumnData,
 } from "./index";
+import { JiraKanbanBoardHeader } from "./board-header";
 import {
 	createJiraKanbanSelectionState,
+	filterJiraKanbanColumnsByAssignee,
 	getCommonJiraKanbanAgentIds,
+	getJiraKanbanAssignees,
 	moveJiraKanbanCardsToColumn,
 	selectJiraKanbanCard,
 	updateJiraKanbanCardAgentAssignment,
@@ -31,6 +34,12 @@ export default function JiraKanbanPage() {
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
 	const [assignedAgentIdsByCard, setAssignedAgentIdsByCard] = useState<Record<string, string[]>>({});
+	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
+	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
+	const filteredBoardColumns = useMemo(
+		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
+		[boardColumns, selectedAssigneeIds],
+	);
 	const selectedAgentIds = useMemo(
 		() => getCommonJiraKanbanAgentIds(assignedAgentIdsByCard, selection.selectedCardCodes),
 		[assignedAgentIdsByCard, selection.selectedCardCodes],
@@ -42,7 +51,7 @@ export default function JiraKanbanPage() {
 		indexInColumn: number,
 		modifiers: JiraKanbanCardSelectModifiers,
 	) => {
-		setSelection((current) => selectJiraKanbanCard(current, boardColumns, {
+		setSelection((current) => selectJiraKanbanCard(current, filteredBoardColumns, {
 			cardCode,
 			columnTitle,
 			indexInColumn,
@@ -59,7 +68,7 @@ export default function JiraKanbanPage() {
 		_card: JiraKanbanCardData,
 		columnTitle: string,
 	) => {
-		const indexInColumn = boardColumns
+		const indexInColumn = filteredBoardColumns
 			.find((column) => column.title === columnTitle)
 			?.cards.findIndex((card) => card.code === cardCode) ?? 0;
 		handleCardSelect(cardCode, columnTitle, indexInColumn, {
@@ -102,6 +111,12 @@ export default function JiraKanbanPage() {
 
 	const handleCardDragEnd = () => {
 		setDraggedCard(null);
+	};
+
+	const handleAssigneeFilterChange = (assigneeIds: Set<string>) => {
+		setSelection(createJiraKanbanSelectionState());
+		setDraggedCard(null);
+		setSelectedAssigneeIds(assigneeIds);
 	};
 
 	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
@@ -153,12 +168,17 @@ export default function JiraKanbanPage() {
 
 	return (
 		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface p-4 md:p-5">
+			<JiraKanbanBoardHeader
+				assignees={assignees}
+				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
+				selectedAssigneeIds={selectedAssigneeIds}
+			/>
 			<div className="min-w-0">
 				<JiraKanban
 					agents={BOARD_AGENTS}
 					ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
 					assignedAgentIdsByColumn={columnAgentAssignments}
-					boardColumns={boardColumns}
+					boardColumns={filteredBoardColumns}
 					draggedCardCode={draggedCard?.card.code ?? null}
 					selectedCardCodes={selection.selectedCardCodes}
 					onCardClick={handleCardClick}

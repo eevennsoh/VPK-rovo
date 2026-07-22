@@ -15,6 +15,13 @@ test("CRM analytics activity summarizes each agent status", () => {
 	);
 });
 
+test("Jira For You uses the shared elapsed-time primitive", () => {
+	assert.match(TYPES_SOURCE, /elapsedSeconds\?: number;/u);
+	assert.match(DATA_SOURCE, /id: "performance-benchmarking"[\s\S]*elapsedSeconds: 300,/u);
+	assert.match(ITEM_SOURCE, /import \{ ElapsedTime \} from "@\/components\/ui\/elapsed-time";/u);
+	assert.match(ITEM_SOURCE, /<ElapsedTime[\s\S]*elapsedSeconds=\{item\.elapsedSeconds\}[\s\S]*prefix=\{item\.agents\?\.length \|\| item\.status \? <MetadataDot \/> : null\}/u);
+});
+
 test("removed stop action is not advertised by the item contract", () => {
 	assert.doesNotMatch(TYPES_SOURCE, /\bisRunning\??:/);
 	assert.doesNotMatch(DATA_SOURCE, /\bisRunning:/);

@@ -47,6 +47,12 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
+export interface JiraKanbanAssigneeData {
+	id: string;
+	name: string;
+	avatarSrc: string;
+}
+
 export interface JiraKanbanCardData {
 	title: string;
 	code: string;
@@ -56,6 +62,7 @@ export interface JiraKanbanCardData {
 	avatarShape?: NonNullable<AvatarProps["shape"]>;
 	avatarUnassignedKind?: AvatarUnassignedKind;
 	avatarPulse?: boolean;
+	assignee?: JiraKanbanAssigneeData;
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
@@ -153,6 +160,7 @@ export function createJiraKanbanColumns(
 		...column,
 		cards: column.cards.map((card) => ({
 			...card,
+			assignee: card.assignee ? { ...card.assignee } : undefined,
 			tags: card.tags.map((tag) => ({ ...tag })),
 			agentActivities: card.agentActivities?.map((activity) => ({
 				...activity,

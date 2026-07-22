@@ -135,12 +135,12 @@ function ArtifactListRow({
 }>) {
 	const handleOpen = () => onOpen?.(item);
 	const compactMetadata = (
-		<span className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
-			<span className="shrink-0">{item.source}</span>
+		<span className="min-w-0 flex-1 truncate text-xs leading-4 text-text-subtle">
+			{item.source}
 			{item.owner ? (
 				<>
-					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
+					<span aria-hidden="true" className="text-text-subtlest"> · </span>
+					{item.owner}
 				</>
 			) : null}
 		</span>
@@ -165,8 +165,8 @@ function ArtifactListRow({
 	const compactRowBody = (
 		<>
 			<ArtifactListLeadingTile item={item} variant={variant} />
-			<div className="flex min-w-0 flex-1 items-baseline gap-2">
-				<p className="shrink-0 truncate text-sm font-medium leading-5 text-text">{item.title}</p>
+			<div className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">
+				<p className="min-w-0 shrink truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				{compactMetadata}
 			</div>
 		</>

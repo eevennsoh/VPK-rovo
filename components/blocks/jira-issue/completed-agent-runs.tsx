@@ -1,10 +1,12 @@
 "use client";
 
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
-import { JiraIssueCountBadge } from "@/components/blocks/jira-issue/count-badge";
+import { JiraActivityChangedFiles } from "@/components/blocks/jira-activity/jira-activity-changed-files";
+import type { JiraActivityChangedFilesEntry } from "@/components/blocks/jira-activity/jira-activity-types";
+import { JiraIssueAgentPrompt } from "@/components/blocks/jira-issue/agent-activity";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
@@ -14,113 +16,136 @@ export type JiraIssueCompletedAgentRunState = "done" | "failed";
 export interface JiraIssueCompletedAgentRun {
 	id: string;
 	summary: string;
+	description?: string;
 	agentName: string;
 	agentAvatarSrc?: string;
 	issueKey: string;
 	issueSummary: string;
 	relativeTime: string;
+	elapsedSeconds?: number;
+	outputs?: readonly ArtifactListItem[];
 	state: JiraIssueCompletedAgentRunState;
 }
 
-const RUN_STATE_PRESENTATION: Readonly<
-	Record<
-		JiraIssueCompletedAgentRunState,
-		{ label: string; iconClassName: string; render: React.ReactElement }
-	>
-> = {
+const RUN_STATE_PRESENTATION = {
 	done: {
 		label: "Done",
 		iconClassName: "text-icon-success",
-		render: <StatusSuccessIcon color="currentColor" label="" size="small" />,
+		icon: <StatusSuccessIcon color="currentColor" label="" size="small" />,
 	},
 	failed: {
-		label: "Failed",
+		label: "Alert",
 		iconClassName: "text-icon-danger",
-		render: <StatusErrorIcon color="currentColor" label="" size="small" />,
+		icon: <StatusErrorIcon color="currentColor" label="" size="small" />,
 	},
-};
+} as const;
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";
 }
 
-function JiraIssueCompletedAgentRunRow({
-	index,
-	run,
-}: Readonly<{
-	index: number;
-	run: JiraIssueCompletedAgentRun;
-}>) {
-	const state = RUN_STATE_PRESENTATION[run.state];
-
-	return (
-		<li className={cn("min-w-0 px-3 py-2.5", index > 0 ? "border-t border-border" : null)}>
-			<p className="truncate text-sm font-medium leading-5 text-text" title={run.summary}>{run.summary}</p>
-			<div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs leading-4 text-text-subtle">
-				<Avatar label={run.agentName} shape="hexagon" size="xs">
-					{run.agentAvatarSrc ? <AvatarImage alt="" src={run.agentAvatarSrc} /> : null}
-					<AvatarFallback>{getAgentInitial(run.agentName)}</AvatarFallback>
-				</Avatar>
-				<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-				<span className="shrink-0 truncate">{run.relativeTime}</span>
-				<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
-				<span className="flex shrink-0 items-center gap-1 font-medium text-text">
-					<span className={cn("grid size-4 place-items-center", state.iconClassName)} aria-hidden="true">
-						{state.render}
-					</span>
-					{state.label}
-				</span>
-			</div>
-		</li>
-	);
+function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChangedFilesEntry {
+	return {
+		id: run.id,
+		kind: "changed-files",
+		actor: {
+			id: run.id,
+			kind: "agent",
+			name: run.agentName,
+			avatarSrc: run.agentAvatarSrc,
+		},
+		timestamp: run.relativeTime,
+		summary: run.summary,
+		description: run.description ?? "",
+		sessionItem: {
+			id: run.id,
+			title: run.summary,
+			state: "complete",
+			agent: {
+				name: run.agentName,
+				avatarSrc: run.agentAvatarSrc,
+			},
+			branch: "",
+			elapsedSeconds: run.elapsedSeconds,
+		},
+		outputs: run.outputs ?? [],
+	};
 }
 
 export function JiraIssueAgentDone({
 	onOpenChange,
+	onSubmit,
+	onView,
 	runs,
 }: Readonly<{
 	onOpenChange?: (open: boolean) => void;
+	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
+	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
 }>) {
-	const count = runs.length;
-	const triggerLabel = `View ${count} completed agent ${count === 1 ? "run" : "runs"}`;
-
 	return (
-		<HoverCard onOpenChange={onOpenChange}>
-			<section aria-label="Agent done">
-				<HoverCardTrigger
-					closeDelay={80}
-					delay={0}
-					render={(
-						<button
-							type="button"
-							aria-label={triggerLabel}
-							className="mx-1 flex h-8 w-[calc(100%-8px)] items-center justify-between rounded-sm px-2 py-2 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+		<section aria-label="Agent review" className="flex w-full flex-col overflow-hidden px-1 py-1">
+			{runs.map((run, index) => {
+				const state = RUN_STATE_PRESENTATION[run.state];
+				const rowRadiusClassName = runs.length === 1
+					? "rounded-sm"
+					: index === 0
+						? "rounded-tl-[6px] rounded-tr-[6px] rounded-bl-[2px] rounded-br-[2px]"
+						: index === runs.length - 1
+							? "rounded-tl-[2px] rounded-tr-[2px] rounded-bl-[6px] rounded-br-[6px]"
+							: "rounded-[2px]";
+
+				return (
+					<HoverCard key={run.id} onOpenChange={onOpenChange}>
+						<HoverCardTrigger
+							closeDelay={0}
+							delay={0}
+							render={(
+								<button
+									aria-label={`${run.agentName}: ${state.label}`}
+									data-slot="jira-issue-agent-row"
+									className={cn(
+										"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+										rowRadiusClassName,
+									)}
+									type="button"
+								>
+									<span className="flex min-w-0 items-center gap-2">
+										<Avatar label={run.agentName} shape="hexagon" size="xs">
+											{run.agentAvatarSrc ? <AvatarImage alt="" src={run.agentAvatarSrc} /> : null}
+											<AvatarFallback>{getAgentInitial(run.agentName)}</AvatarFallback>
+										</Avatar>
+										<span className="truncate text-sm leading-5 text-text-subtlest">{run.summary}</span>
+									</span>
+									<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
+										{state.icon}
+									</span>
+								</button>
+							)}
+						/>
+						<HoverCardContent
+							align="start"
+							alignOffset={0}
+							className="w-[440px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl bg-surface-overlay p-0 text-text shadow-overlay data-ending-style:transition-none"
+							side="right"
+							sideOffset={8}
 						>
-							<span className="flex items-center gap-2 text-sm font-medium leading-5 text-text-subtle">
-								<span className="grid size-4 shrink-0 place-items-center text-icon-subtle" aria-hidden="true">
-									<AiAgentIcon label="" size="medium" spacing="none" color="currentColor" />
-								</span>
-								<span>Agent done</span>
-								<JiraIssueCountBadge>{count}</JiraIssueCountBadge>
-							</span>
-						</button>
-					)}
-				/>
-			</section>
-			<HoverCardContent
-				align="start"
-				alignOffset={0}
-				className="w-[400px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl bg-surface-overlay p-0 text-text shadow-overlay data-ending-style:transition-none"
-				side="right"
-				sideOffset={8}
-			>
-				<ul aria-label="Completed agent runs">
-					{runs.map((run, index) => (
-						<JiraIssueCompletedAgentRunRow index={index} key={run.id} run={run} />
-					))}
-				</ul>
-			</HoverCardContent>
-		</HoverCard>
+							<JiraActivityChangedFiles
+								entry={getCompletedRunEntry(run)}
+								footer={
+									<JiraIssueAgentPrompt
+										className="w-full shadow-none"
+										onSubmit={(prompt) => onSubmit?.(run, prompt)}
+									/>
+								}
+								onView={() => onView?.(run)}
+								status={run.state}
+								variant="jira-issue"
+							/>
+						</HoverCardContent>
+					</HoverCard>
+				);
+			})}
+		</section>
 	);
 }

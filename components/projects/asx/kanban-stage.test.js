@@ -21,6 +21,10 @@ const JIRA_ISSUE_AGENT_ACTIVITY_SOURCE = fs.readFileSync(
 );
 
 test("Kanban stage wires the shared issue lifecycle callbacks", () => {
+	assert.match(STAGE_SOURCE, /<JiraKanbanBoardHeader/u);
+	assert.match(STAGE_SOURCE, /filterJiraKanbanColumnsByAssignee/u);
+	assert.match(STAGE_SOURCE, /boardColumns=\{filteredBoardColumns\}/u);
+	assert.match(STAGE_SOURCE, /handleClearSelection\(\);[\s\S]*handleCardDragEnd\(\);/u);
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);

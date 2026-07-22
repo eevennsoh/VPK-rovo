@@ -68,9 +68,13 @@ test("Artifact List metadata renders source · owner with the small subtlest dot
 	);
 
 	assert.match(source, /<span className="shrink-0 text-text-subtle">\{item\.source\}<\/span>/u);
-	assert.equal((source.match(/aria-hidden="true" className="shrink-0 text-text-subtlest">·<\/span>/gu) ?? []).length, 2);
-	// Owner is the truncating element; min-w-0 lets the flex child shrink below content.
-	assert.match(source, /<span className="min-w-0 truncate text-text-subtle">\{item\.owner\}<\/span>/u);
+	assert.equal((source.match(/aria-hidden="true" className="shrink-0 text-text-subtlest">·<\/span>/gu) ?? []).length, 1);
+	assert.match(source, /<span aria-hidden="true" className="text-text-subtlest"> · <\/span>/u);
+	// The compact title and combined metadata both shrink before the trailing action.
+	assert.match(source, /<span className="min-w-0 flex-1 truncate text-xs leading-4 text-text-subtle">/u);
+	assert.match(source, /<div className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">/u);
+	assert.match(source, /<p className="min-w-0 shrink truncate text-sm font-medium leading-5 text-text">\{item\.title\}<\/p>/u);
+	assert.doesNotMatch(source, /shrink-0 truncate text-sm font-medium leading-5 text-text/u);
 });
 
 test("Artifact List Open button is a stable trailing action and stays keyboard-reachable", () => {

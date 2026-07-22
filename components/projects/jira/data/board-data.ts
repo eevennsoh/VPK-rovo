@@ -1,4 +1,8 @@
-import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type {
+	JiraKanbanAssigneeData,
+	JiraKanbanColumnData,
+} from "@/components/blocks/jira-kanban";
+import { AVATARS } from "@/components/projects/jira/data/avatars";
 
 export type {
 	JiraKanbanCardData as KanbanCardData,
@@ -34,6 +38,30 @@ function createClientTitle(code: keyof typeof RFP_CLIENT_NAMES_BY_CODE, title: s
 	return `${RFP_CLIENT_NAMES_BY_CODE[code]}: ${title}`;
 }
 
+const EXTRA_ASSIGNEES = [
+	{ src: "/avatar-user/david-hsieh/color/asow-service-yellow.png", name: "Owen Kim, solutions architect" },
+	{ src: "/avatar-user/florence-garcia/color/asow-strategy-orange.png", name: "Ava Rossi, proposal writer" },
+] as const;
+
+const ASSIGNEES_BY_AVATAR = new Map(
+	[...AVATARS, ...EXTRA_ASSIGNEES].map(({ src, name }) => [
+		src,
+		{
+			id: name.split(",", 1)[0].toLowerCase().replaceAll(" ", "-"),
+			name: name.split(",", 1)[0],
+			avatarSrc: src,
+		} satisfies JiraKanbanAssigneeData,
+	]),
+);
+
+function getAssignee(avatarSrc: string): JiraKanbanAssigneeData {
+	const assignee = ASSIGNEES_BY_AVATAR.get(avatarSrc);
+	if (!assignee) {
+		throw new Error(`Missing Kanban assignee for ${avatarSrc}`);
+	}
+	return assignee;
+}
+
 export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 	{
 		title: "RFP Intake",
@@ -49,6 +77,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+				assignee: getAssignee("/avatar-user/andrea-wilson/color/asow-service-yellow.png"),
 			},
 			{
 				title: createClientTitle("RFP-102", "Parse supplier questionnaire and requested files"),
@@ -60,6 +89,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+				assignee: getAssignee("/avatar-user/andrew-park/color/asow-dev-lime.png"),
 			},
 			{
 				title: createClientTitle("RFP-103", "Build DACI and response-owner matrix"),
@@ -71,6 +101,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "minor",
 				avatarSrc: "/avatar-user/annie-clare/color/asow-strategy-orange.png",
+				assignee: getAssignee("/avatar-user/annie-clare/color/asow-strategy-orange.png"),
 			},
 			{
 				title: createClientTitle("RFP-104", "Inventory ITSM, asset, portal, and reporting requirements"),
@@ -83,6 +114,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "minor",
 				avatarSrc: "/avatar-user/aoife-burke/color/asow-service-yellow.png",
+				assignee: getAssignee("/avatar-user/aoife-burke/color/asow-service-yellow.png"),
 			},
 			{
 				title: createClientTitle("RFP-105", "Confirm bid/no-bid risks and mandatory gaps"),
@@ -94,6 +126,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/bradley-phillips/color/asow-product-purple.png",
+				assignee: getAssignee("/avatar-user/bradley-phillips/color/asow-product-purple.png"),
 			},
 			{
 				title: createClientTitle("RFP-106", "Create RFP timeline with checkpoints and demos"),
@@ -105,6 +138,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/brian-lin/color/asow-teamwork-blue.png",
+				assignee: getAssignee("/avatar-user/brian-lin/color/asow-teamwork-blue.png"),
 			},
 			{
 				title: createClientTitle("RFP-107", "Collect customer context, current tools, and success metrics"),
@@ -116,6 +150,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "minor",
 				avatarSrc: "/avatar-user/christine-sanchez/color/asow-strategy-orange.png",
+				assignee: getAssignee("/avatar-user/christine-sanchez/color/asow-strategy-orange.png"),
 			},
 		],
 	},
@@ -133,6 +168,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/david-hsieh/color/asow-service-yellow.png",
+				assignee: getAssignee("/avatar-user/david-hsieh/color/asow-service-yellow.png"),
 			},
 			{
 				title: createClientTitle("RFP-142", "Write JSM service desk, portal, and knowledge answers"),
@@ -144,6 +180,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/florence-garcia/color/asow-strategy-orange.png",
+				assignee: getAssignee("/avatar-user/florence-garcia/color/asow-strategy-orange.png"),
 			},
 			{
 				title: createClientTitle("RFP-143", "Prepare pricing, implementation, and TCO response"),
@@ -155,6 +192,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+				assignee: getAssignee("/avatar-user/andrew-park/color/asow-dev-lime.png"),
 			},
 		],
 	},
@@ -172,6 +210,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/annie-clare/color/asow-strategy-orange.png",
+				assignee: getAssignee("/avatar-user/annie-clare/color/asow-strategy-orange.png"),
 			},
 			{
 				title: createClientTitle("RFP-162", "Legal review for data residency, DPA, and terms"),
@@ -184,6 +223,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/aoife-burke/color/asow-service-yellow.png",
+				assignee: getAssignee("/avatar-user/aoife-burke/color/asow-service-yellow.png"),
 			},
 			{
 				title: createClientTitle("RFP-163", "Security review for Guard, audit, GRC, and vulnerabilities"),
@@ -195,6 +235,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/bradley-phillips/color/asow-product-purple.png",
+				assignee: getAssignee("/avatar-user/bradley-phillips/color/asow-product-purple.png"),
 			},
 			{
 				title: createClientTitle("RFP-164", "Executive review of win themes and final pitch"),
@@ -206,6 +247,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "major",
 				avatarSrc: "/avatar-user/brian-lin/color/asow-teamwork-blue.png",
+				assignee: getAssignee("/avatar-user/brian-lin/color/asow-teamwork-blue.png"),
 			},
 		],
 	},
@@ -223,6 +265,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "minor",
 				avatarSrc: "/avatar-user/christine-sanchez/color/asow-strategy-orange.png",
+				assignee: getAssignee("/avatar-user/christine-sanchez/color/asow-strategy-orange.png"),
 			},
 			{
 				title: createClientTitle("RFP-182", "Archive final response, exhibits, and demo deck"),
@@ -234,6 +277,7 @@ export const BOARD_COLUMNS: readonly JiraKanbanColumnData[] = [
 				],
 				priority: "medium",
 				avatarSrc: "/avatar-user/david-hsieh/color/asow-service-yellow.png",
+				assignee: getAssignee("/avatar-user/david-hsieh/color/asow-service-yellow.png"),
 			},
 		],
 	},

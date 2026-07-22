@@ -1,7 +1,43 @@
 import type {
+	JiraKanbanAssigneeData,
 	JiraKanbanCardSelectModifiers,
 	JiraKanbanColumnData,
 } from "./index";
+
+export function getJiraKanbanAssignees(
+	columns: readonly JiraKanbanColumnData[],
+): JiraKanbanAssigneeData[] {
+	const assignees = new Map<string, JiraKanbanAssigneeData>();
+
+	for (const card of columns.flatMap((column) => column.cards)) {
+		if (card.assignee && !assignees.has(card.assignee.id)) {
+			assignees.set(card.assignee.id, card.assignee);
+		}
+	}
+
+	return [...assignees.values()];
+}
+
+export function filterJiraKanbanColumnsByAssignee(
+	columns: readonly JiraKanbanColumnData[],
+	selectedAssigneeIds: ReadonlySet<string>,
+): JiraKanbanColumnData[] {
+	if (selectedAssigneeIds.size === 0) {
+		return [...columns];
+	}
+
+	return columns.map((column) => {
+		const cards = column.cards.filter((card) => (
+			card.assignee ? selectedAssigneeIds.has(card.assignee.id) : false
+		));
+
+		return {
+			...column,
+			cards,
+			count: cards.length,
+		};
+	});
+}
 
 export interface JiraKanbanSelectionState {
 	lastSelectedByColumn: Readonly<Record<string, number>>;
