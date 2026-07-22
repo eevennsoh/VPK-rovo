@@ -105,6 +105,8 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	onAgentActivityOpenChange?: (open: boolean) => void;
 	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
+	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
+	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
 
@@ -429,6 +431,8 @@ export function JiraIssue({
 	onAgentActivityOpenChange,
 	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
+	onAgentDoneRunSubmit,
+	onAgentDoneRunView,
 	parentEpicControl,
 	priority = "major",
 	selected = false,
@@ -453,7 +457,9 @@ export function JiraIssue({
 	const [generativeActionPointerActive, setGenerativeActionPointerActive] = useState(false);
 	const [generativeActionFocusActive, setGenerativeActionFocusActive] = useState(false);
 	const [generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed] = useState(false);
-	const generativeActionRevealActive = !generativeActionRevealSuppressed
+	const [agentActivityHoverOpen, setAgentActivityHoverOpen] = useState(false);
+	const generativeActionRevealActive = !agentActivityHoverOpen
+		&& !generativeActionRevealSuppressed
 		&& (generativeActionPointerActive || generativeActionFocusActive);
 	const hasSubtasks = Boolean(subtasks?.length);
 	const resolvedSubtasksExpanded = subtasksExpanded ?? internalSubtasksExpanded;
@@ -470,14 +476,16 @@ export function JiraIssue({
 	const activeAgentActivities = resolvedAgentActivityMode === "none" || resolvedAgentActivityMode === "completed"
 		? []
 		: nonCompletedAgentActivities;
-	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working" || resolvedAgentActivityMode === "awaiting-input";
-	const hasAgentDoneNotification = agentDoneRuns.length > 0;
-	const hasIssueRows = hasSubtasks || hasAgentDoneNotification;
+	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
+	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
+		|| resolvedAgentActivityMode === "awaiting-input"
+		|| hasAgentDoneNotification;
+	const hasIssueRows = hasSubtasks;
 	const hasAgentActivityPresentation = agentActivityMode !== undefined || Boolean(agentActivities?.length) || hasAgentDoneNotification;
 	const usesAgentActivityShell = hasAgentActivityPresentation;
 	const hasInteractiveContent = hasSubtasks || Boolean(parentEpicControl) || hasAgentActivityPresentation || Boolean(generativeAction);
 	const shouldRenderIssueClickButton = Boolean(props.onClick && !parentEpicControl);
-	const issueRowsClassName = cn("pt-1", (!(hasSubtasks && resolvedSubtasksExpanded) || hasAgentDoneNotification) && "pb-1");
+	const issueRowsClassName = cn("pt-1", !(hasSubtasks && resolvedSubtasksExpanded) && "pb-1");
 	const layoutTransition = getJiraIssueLayoutTransition(shouldReduceMotion);
 	const presenceMotion = getJiraIssuePresenceMotion(shouldReduceMotion);
 	const rootBaseStyle: CSSProperties = {
@@ -572,7 +580,21 @@ export function JiraIssue({
 		onSubtasksExpandedChange?.(nextExpanded);
 	}
 
+	function handleAgentActivityOpenChange(open: boolean) {
+		setAgentActivityHoverOpen(open);
+		onAgentActivityOpenChange?.(open);
+	}
+
 	function handleGenerativeActionPointerOver(event: PointerEvent<HTMLElement>) {
+		if (
+			event.target instanceof Element
+			&& event.target.closest("[data-slot='jira-issue-agent-row']")
+		) {
+			setGenerativeActionRevealSuppressed(true);
+			setGenerativeActionPointerActive(false);
+			return;
+		}
+
 		if (generativeAction && event.currentTarget.contains(event.target as Node)) {
 			setGenerativeActionRevealSuppressed(false);
 			setGenerativeActionPointerActive(true);
@@ -676,19 +698,6 @@ export function JiraIssue({
 									/>
 								</motion.div>
 							) : null}
-							{hasAgentDoneNotification ? (
-								<motion.div
-									key="agent-done"
-									animate={presenceMotion.animate}
-									exit={presenceMotion.exit}
-									initial={presenceMotion.initial}
-									layout={shouldReduceMotion ? false : "position"}
-									style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
-									transition={layoutTransition}
-								>
-									<JiraIssueAgentDone onOpenChange={onAgentActivityOpenChange} runs={agentDoneRuns} />
-								</motion.div>
-							) : null}
 						</AnimatePresence>
 					</div>
 				</div>
@@ -763,11 +772,31 @@ export function JiraIssue({
 							</motion.div>
 							<JiraIssueAgentActivityRows
 								activities={activeAgentActivities}
-								onOpenChange={onAgentActivityOpenChange}
+								onOpenChange={handleAgentActivityOpenChange}
 								onQuestionSubmit={onAgentActivityQuestionSubmit}
 								onViewChat={onAgentActivityViewChat}
 								shouldReduceMotion={shouldReduceMotion}
 							/>
+							<AnimatePresence initial={false} mode="popLayout">
+								{hasAgentDoneNotification ? (
+									<motion.div
+										key="agent-review"
+										animate={presenceMotion.animate}
+										exit={presenceMotion.exit}
+										initial={presenceMotion.initial}
+										layout={shouldReduceMotion ? false : "position"}
+										style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
+										transition={layoutTransition}
+									>
+										<JiraIssueAgentDone
+											onOpenChange={handleAgentActivityOpenChange}
+											onSubmit={onAgentDoneRunSubmit}
+											onView={onAgentDoneRunView}
+											runs={agentDoneRuns}
+										/>
+									</motion.div>
+								) : null}
+							</AnimatePresence>
 						</LayoutGroup>
 					</motion.div>
 					{generativeActionMenu}

@@ -1,0 +1,246 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import AddIcon from "@atlaskit/icon/core/add";
+import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
+import FilterIcon from "@atlaskit/icon/core/filter";
+import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
+import PersonAddIcon from "@atlaskit/icon/core/person-add";
+import SearchIcon from "@atlaskit/icon/core/search";
+import SettingsIcon from "@atlaskit/icon/core/settings";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import UndoIcon from "@atlaskit/icon/core/undo";
+import GroupIcon from "@atlaskit/icon-lab/core/group";
+
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarGroup,
+	AvatarImage,
+	AvatarUnassigned,
+} from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Heading } from "@/components/ui/heading";
+import { Icon } from "@/components/ui/icon";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { JiraIcon } from "@/components/ui/logo";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollMask } from "@/components/visual/scroll-mask";
+import { cn } from "@/lib/utils";
+import type { JiraKanbanAssigneeData } from "./index";
+
+const FILTER_FIELDS = [
+	"Project",
+	"Parent",
+	"Assignee",
+	"Status",
+	"Work type",
+	"Labels",
+] as const;
+
+interface JiraKanbanBoardHeaderProps {
+	assignees: readonly JiraKanbanAssigneeData[];
+	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
+	selectedAssigneeIds: ReadonlySet<string>;
+}
+
+function AssigneeAvatar({
+	assignee,
+	muted,
+	selected,
+}: Readonly<{
+	assignee: JiraKanbanAssigneeData;
+	muted?: boolean;
+	selected?: boolean;
+}>) {
+	return (
+		<Avatar
+			className={cn(
+				selected && "ring-2! ring-border-selected!",
+				muted && "opacity-(--opacity-disabled)",
+			)}
+			label={assignee.name}
+			size="sm"
+		>
+			<AvatarImage alt="" src={assignee.avatarSrc} />
+			<AvatarFallback>{assignee.name.slice(0, 1)}</AvatarFallback>
+		</Avatar>
+	);
+}
+
+export function JiraKanbanBoardHeader({
+	assignees,
+	onSelectedAssigneeIdsChange,
+	selectedAssigneeIds,
+}: Readonly<JiraKanbanBoardHeaderProps>) {
+	const [filterOpen, setFilterOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const filteredAssignees = useMemo(() => {
+		const normalizedQuery = query.trim().toLocaleLowerCase();
+		return normalizedQuery
+			? assignees.filter((assignee) => assignee.name.toLocaleLowerCase().includes(normalizedQuery))
+			: assignees;
+	}, [assignees, query]);
+	const hasSelection = selectedAssigneeIds.size > 0;
+
+	const toggleAssignee = (assigneeId: string) => {
+		const nextSelection = new Set(selectedAssigneeIds);
+		if (nextSelection.has(assigneeId)) {
+			nextSelection.delete(assigneeId);
+		} else {
+			nextSelection.add(assigneeId);
+		}
+		onSelectedAssigneeIdsChange(nextSelection);
+	};
+
+	return (
+		<header className="shrink-0 px-4 pb-4 pt-3">
+			<div className="flex min-w-0 items-center gap-2">
+				<JiraIcon label="Jira" size="small" />
+				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
+				<div className="flex items-center gap-1">
+					<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
+						<Icon render={<PersonAddIcon label="" />} />
+					</Button>
+					<Button aria-disabled aria-label="More board actions" size="icon" variant="ghost">
+						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					</Button>
+				</div>
+			</div>
+
+			<div className="mt-4 flex flex-wrap items-center gap-2">
+				<InputGroup className="w-44">
+					<InputGroupAddon>
+						<Icon render={<SearchIcon label="" size="small" />} />
+					</InputGroupAddon>
+					<InputGroupInput aria-label="Search board" placeholder="Search board" readOnly />
+				</InputGroup>
+
+				<AvatarGroup className="ml-1 -space-x-1.5" label="Board assignees">
+					<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
+					{assignees.slice(0, 6).map((assignee) => (
+						<AssigneeAvatar
+							assignee={assignee}
+							key={assignee.id}
+							muted={hasSelection && !selectedAssigneeIds.has(assignee.id)}
+							selected={selectedAssigneeIds.has(assignee.id)}
+						/>
+					))}
+				</AvatarGroup>
+
+				<Popover open={filterOpen} onOpenChange={setFilterOpen}>
+					<PopoverTrigger
+						render={
+							<Button aria-expanded={filterOpen} aria-pressed={hasSelection} variant="outline" />
+						}
+					>
+						<Icon render={<FilterIcon label="" size="small" />} />
+						Filter
+						{hasSelection ? <Badge variant="information">{selectedAssigneeIds.size}</Badge> : null}
+					</PopoverTrigger>
+					<PopoverContent align="start" className="w-[560px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
+						<div className="grid h-[360px] grid-cols-[200px_minmax(0,1fr)]">
+							<div className="border-r border-border p-3">
+								<Button aria-disabled variant="outline">
+									<Icon data-icon="inline-start" render={<AddIcon label="" size="small" />} />
+									Add field
+								</Button>
+								<div className="mt-2">
+									{FILTER_FIELDS.map((field) => {
+										const enabled = field === "Assignee";
+										return (
+											<Button
+												aria-current={enabled ? "page" : undefined}
+												className="w-full justify-start"
+												disabled={!enabled}
+												key={field}
+												variant={enabled ? "secondary" : "ghost"}
+											>
+												{field}
+											</Button>
+										);
+									})}
+								</div>
+							</div>
+
+							<div className="flex min-h-0 min-w-0 flex-col p-3">
+								<InputGroup>
+									<InputGroupAddon>
+										<Icon render={<SearchIcon label="" size="small" />} />
+									</InputGroupAddon>
+									<InputGroupInput
+										aria-label="Search assignee"
+										onChange={(event) => setQuery(event.target.value)}
+										placeholder="Search assignee"
+										value={query}
+									/>
+								</InputGroup>
+
+								<ScrollMask
+									className="mt-2 min-h-0 flex-1 rounded-none border-0 bg-transparent"
+									footer={
+										<div className="flex items-center justify-between gap-3">
+											<p className="text-xs text-text-subtle">{selectedAssigneeIds.size} selected</p>
+											<Button
+												disabled={!hasSelection}
+												onClick={() => onSelectedAssigneeIdsChange(new Set())}
+												size="compact"
+												variant="ghost"
+											>
+												Clear all
+											</Button>
+										</div>
+									}
+									footerClassName="bg-popover px-0 pb-0 pt-3"
+									viewportClassName="[scrollbar-gutter:auto]"
+								>
+									{filteredAssignees.map((assignee) => (
+										<label
+											className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-bg-neutral-subtle-hovered"
+											key={assignee.id}
+										>
+											<Checkbox
+												checked={selectedAssigneeIds.has(assignee.id)}
+												onCheckedChange={() => toggleAssignee(assignee.id)}
+											/>
+											<AssigneeAvatar assignee={assignee} />
+											<span className="min-w-0 truncate text-sm">{assignee.name}</span>
+										</label>
+									))}
+									{filteredAssignees.length === 0 ? (
+										<p className="px-2 py-6 text-center text-sm text-text-subtle">No assignees found</p>
+									) : null}
+								</ScrollMask>
+							</div>
+						</div>
+					</PopoverContent>
+				</Popover>
+
+				<Button aria-disabled variant="outline">
+					<Icon render={<GroupIcon label="" size="small" />} />
+					Group
+				</Button>
+
+				<div className="ml-auto flex items-center gap-1">
+					<Button aria-disabled aria-label="View insights" size="icon" variant="outline">
+						<Icon render={<ChartTrendIcon label="" />} />
+					</Button>
+					<Button aria-disabled aria-label="Board settings" size="icon" variant="outline">
+						<Icon render={<SettingsIcon label="" />} />
+					</Button>
+					<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
+						<Icon render={<UndoIcon label="" />} />
+					</Button>
+					<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
+						<Icon render={<MegaphoneIcon label="" />} />
+					</Button>
+					<Button aria-disabled aria-label="More board controls" size="icon" variant="outline">
+						<Icon render={<ShowMoreHorizontalIcon label="" />} />
+					</Button>
+				</div>
+			</div>
+		</header>
+	);
+}

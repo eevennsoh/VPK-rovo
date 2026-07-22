@@ -15,3 +15,9 @@ test("popover content supports overriding the portal positioner layer", () => {
 		/className=\{cn\("isolate z-\[200\]", positionerClassName\)\}/u,
 	);
 });
+
+test("popover content uses the ADS elevation overlay shadow", () => {
+	assert.match(source, /rounded-lg p-2\.5 text-sm shadow-xl/u);
+	assert.doesNotMatch(source, /shadow-\[|dark:shadow|data-color-mode=dark.*shadow/u);
+	assert.doesNotMatch(source, /ring-1/u);
+});

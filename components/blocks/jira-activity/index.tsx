@@ -218,7 +218,7 @@ export function JiraActivity({
 										/>
 									) : null}
 									{entry.kind === "changed-files" ? (
-										<JiraActivityChangedFiles entry={entry} />
+										<JiraActivityChangedFiles entry={entry} onView={onViewSession} />
 									) : null}
 								</div>
 							</li>

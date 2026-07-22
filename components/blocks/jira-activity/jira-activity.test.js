@@ -56,9 +56,16 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /import \{ ArtifactList \}/u);
 	assert.match(CHANGED_FILES_SOURCE, /items=\{entry\.outputs\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant="compact"/u);
-	assert.match(CHANGED_FILES_SOURCE, /formatElapsedTime\(entry\.sessionItem\.elapsedSeconds \?\? 0\)/u);
+	assert.match(CHANGED_FILES_SOURCE, /import \{ ElapsedTime \} from "@\/components\/ui\/elapsed-time";/u);
+	assert.match(CHANGED_FILES_SOURCE, /<ElapsedTime[\s\S]*elapsedSeconds=\{entry\.sessionItem\.elapsedSeconds\}[\s\S]*prefix=\{<span aria-hidden className="text-text-subtlest">·<\/span>\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.sessionItem\.agent\.name/u);
-	assert.doesNotMatch(CHANGED_FILES_SOURCE, /StatusSuccessIcon|>\s*Done\s*</u);
+	assert.match(CHANGED_FILES_SOURCE, /StatusSuccessIcon/u);
+	assert.match(CHANGED_FILES_SOURCE, /\{statusLabel\}[\s\S]*<ElapsedTime[\s\S]*·[\s\S]*entry\.sessionItem\.agent\.name/u);
+	assert.match(CHANGED_FILES_SOURCE, /onView\?\.\(entry\.sessionItem\)/u);
+	assert.match(CHANGED_FILES_SOURCE, /variant\?: "activity" \| "jira-issue";/u);
+	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);
+	assert.match(CHANGED_FILES_SOURCE, /entry\.outputs\.length > 0 \? "p-3" : "px-3 pb-3 pt-0"/u);
+	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
 });
 
 test("sample feed documents work by people, AI agents, and apps", () => {
