@@ -136,7 +136,8 @@ test("Gallery selected surface preserves the organic ink-bloom contract", () => 
 	assert.match(source, /maskImage: inkMaskImage/u);
 	assert.equal((source.match(/\bmaskImage:/gu) ?? []).length, 1);
 	assert.match(source, /maskMode: "alpha"/u);
-	assert.match(source, /BLUE_PALETTE/u);
+	assert.match(source, /DEFAULT_GALLERY_PALETTE/u);
+	assert.match(source, /palette = DEFAULT_GALLERY_PALETTE/u);
 	assert.match(source, /LiquidGradient/u);
 	assert.match(source, /highlightTextRef/u);
 	assert.match(source, /text-text-inverse/u);
@@ -148,8 +149,8 @@ test("Gallery keeps the WebGL shader timeline continuous during selection exit",
 	const selectionSource = readProjectFile("components/blocks/gallery/lib/gallery-selection.ts");
 	assert.doesNotMatch(source, /speed=\{visual\.phase/u);
 	assert.match(source, /speed=\{shaderParameters\.speed\}/u);
-	assert.doesNotMatch(source, /colors=\{\[\.\.\.BLUE_PALETTE\]\}/u);
-	assert.match(source, /colors=\{BLUE_PALETTE\}/u);
+	assert.doesNotMatch(source, /colors=\{\[\.\.\.palette\]\}/u);
+	assert.match(source, /colors=\{palette\}/u);
 	assert.doesNotMatch(source, /const DUR_EXIT = 0\.1/u);
 	assert.match(selectionSource, /GALLERY_SELECTION_SHADER_EXIT_SECONDS = 0\.6;/u);
 	assert.match(

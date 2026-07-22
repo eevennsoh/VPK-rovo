@@ -16,6 +16,7 @@ import {
 	getGalleryItemSeed,
 	type GallerySelectionVisual,
 } from "../lib/gallery-selection";
+import { DEFAULT_GALLERY_PALETTE, type GalleryPalette } from "../lib/gallery-palette";
 import { GalleryTitleLines } from "./gallery-title-lines";
 
 const ENTER_EASE = [0.45, 0, 0.55, 1] as const; // Deliberately even ink spread.
@@ -23,7 +24,6 @@ const EXIT_EASE = [0, 0.4, 0, 1] as const; // --ease-out; starts the shader exit
 const DUR_ENTER = 0.8; // Brisk organic reveal; still outlasts the 0.6s exit.
 const MASK_FEATHER_PX = 18;
 const MASK_DIAMETER_SCALE = 2.6;
-const BLUE_PALETTE: string[] = ["#0747A6", "#0C66E4", "#1D7AFC", "#579DFF"];
 
 interface GalleryShaderParameters {
 	seed: number;
@@ -125,6 +125,7 @@ export interface GallerySelectedSurfaceProps {
 	width: number;
 	height: number;
 	visual: GallerySelectionVisual;
+	palette?: GalleryPalette;
 	highlightTextRef: RefObject<HTMLSpanElement | null>;
 }
 
@@ -134,6 +135,7 @@ export function GallerySelectedSurface({
 	width,
 	height,
 	visual,
+	palette = DEFAULT_GALLERY_PALETTE,
 	highlightTextRef,
 }: Readonly<GallerySelectedSurfaceProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -202,14 +204,14 @@ export function GallerySelectedSurface({
 				className="absolute inset-0"
 				style={{
 					backgroundImage: [
-						`radial-gradient(circle at ${visual.origin.xPercent}% ${visual.origin.yPercent}%, ${BLUE_PALETTE[3]} 0%, transparent 52%)`,
-						`linear-gradient(140deg, ${BLUE_PALETTE[0]} 0%, ${BLUE_PALETTE[1]} 52%, ${BLUE_PALETTE[2]} 100%)`,
+						`radial-gradient(circle at ${visual.origin.xPercent}% ${visual.origin.yPercent}%, ${palette[3]} 0%, transparent 52%)`,
+						`linear-gradient(140deg, ${palette[0]} 0%, ${palette[1]} 52%, ${palette[2]} 100%)`,
 					].join(", "),
 				}}
 			/>
 			<LiquidGradient
 				className="absolute inset-0 h-full w-full"
-				colors={BLUE_PALETTE}
+				colors={palette}
 				seed={shaderParameters.seed}
 				speed={shaderParameters.speed}
 				loop={0}

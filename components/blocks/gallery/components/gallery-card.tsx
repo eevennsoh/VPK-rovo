@@ -23,6 +23,7 @@ import {
 	type GallerySelectionOrigin,
 	type GallerySelectionVisual,
 } from "../lib/gallery-selection";
+import type { GalleryPalette } from "../lib/gallery-palette";
 import { GallerySelectedSurface } from "./gallery-selected-surface";
 import { GalleryTitleLines } from "./gallery-title-lines";
 
@@ -89,6 +90,7 @@ export interface GalleryCardProps {
 	dragging: boolean;
 	isSelected: boolean;
 	selectionVisual: GallerySelectionVisual | null;
+	palette?: GalleryPalette;
 	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 }
 
@@ -100,6 +102,7 @@ export function GalleryCard({
 	dragging,
 	isSelected,
 	selectionVisual,
+	palette,
 	onSelect,
 }: Readonly<GalleryCardProps>) {
 	const { width, height } = SIZE_DIMS[item.size];
@@ -196,6 +199,7 @@ export function GalleryCard({
 								width={width}
 								height={height}
 								visual={selectionVisual}
+								palette={palette}
 								highlightTextRef={highlightTextRef}
 							/>
 						) : null}

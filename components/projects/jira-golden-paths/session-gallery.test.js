@@ -57,6 +57,11 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /onReset=\{handleReset\}/u);
 });
 
+test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => {
+	assert.match(PAGE_SOURCE, /const ROVO_PURPLE_PALETTE(?:: GalleryPalette)? = \["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"\];/u);
+	assert.match(PAGE_SOURCE, /palette=\{ROVO_PURPLE_PALETTE\}/u);
+});
+
 test("Page forces ADS dark subtree theming while in the Terminal section", () => {
 	// Mirrors the /asx Terminal pattern: flip the gallery chrome to dark tokens
 	// via ADS subtree theming when the active screen's section is "Terminal".
