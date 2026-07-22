@@ -80,8 +80,9 @@ function RovoSparkleMark({
 				</defs>
 				<motion.path
 					animate={{ opacity: selected || colorActive ? 0 : 1 }}
+					className="text-icon-inverse!"
 					d={SPARKLE_PATH}
-					fill="#FFFFFF"
+					fill="currentColor"
 					initial={false}
 					style={{ willChange: "opacity" }}
 					transition={colorTransition}
@@ -195,7 +196,7 @@ export function RovoSparkleButton({
 					"inline-flex size-full items-center justify-center",
 					selected
 						? "bg-bg-selected group-hover/rovo-sparkle:bg-bg-selected-hovered group-active/rovo-sparkle:bg-bg-selected-pressed"
-						: "bg-[#292A2E] group-hover/rovo-sparkle:bg-[#3B3D42] group-active/rovo-sparkle:bg-[#505258]",
+						: "bg-bg-neutral-bold group-hover/rovo-sparkle:bg-bg-neutral-bold-hovered group-active/rovo-sparkle:bg-bg-neutral-bold-pressed",
 				)}
 				data-active={interactionActive || undefined}
 				initial={false}
