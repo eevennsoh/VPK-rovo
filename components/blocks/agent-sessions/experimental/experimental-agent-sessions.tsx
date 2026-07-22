@@ -76,7 +76,7 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
 							blanketContent={
-								<FloatingSessionSurface />
+								<FloatingSessionSurface portalToViewport={presentation === "inline"} />
 							}
 						>
 							<ExperimentalWorkItemLayout

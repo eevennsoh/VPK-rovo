@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 82,
-			"pageCount": 59
+			"ownerImportCount": 83,
+			"pageCount": 60
 		},
 		"pages": [
 			{
@@ -3986,6 +3986,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-golden-paths",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-golden-paths/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5213,7 +5229,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 407,
+			"manifestEntryCount": 408,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5831,7 +5847,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 12,
+				"entryCount": 13,
 				"entries": [
 					{
 						"category": "projects",
@@ -5862,6 +5878,12 @@
 						"slug": "jira",
 						"name": "Jira",
 						"importPath": "@/components/projects/jira"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-paths",
+						"name": "Jira Golden Paths",
+						"importPath": "@/components/projects/jira-golden-paths"
 					},
 					{
 						"category": "projects",

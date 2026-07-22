@@ -173,7 +173,7 @@ test("the experimental surface reuses the Jira Issue floating Rovo chat", () => 
 	assert.match(compositionSource, /<AgentSessionsProvider/u);
 	assert.match(
 		compositionSource,
-		/blanketContent=\{[\s\S]*<FloatingSessionSurface \/>[\s\S]*\}/u,
+		/blanketContent=\{[\s\S]*<FloatingSessionSurface(?:\s[^>]*)?\/>[\s\S]*\}/u,
 	);
 	assert.match(
 		dialogSource,

@@ -34,6 +34,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"jira-golden-paths": {
+		description: "Jira Golden Paths — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		importStatement: `import JgpPage from "@/components/projects/jira-golden-paths";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"jira-queue": {
 		description: "A Jira agent-session queue — a project sidebar of running, awaiting, and completed agent sessions beside a conversation workspace with a detail panel of sources and outputs. Harvested from the ASX gallery's Queue pattern as a standalone surface.",
 		importStatement: `import JiraQueuePage from "@/components/projects/jira-queue";`,
