@@ -30,6 +30,8 @@ import { SessionScreenControls, SessionStage } from "./components/session-stage"
 // later.
 // ---------------------------------------------------------------------------
 
+const ROVO_PURPLE_PALETTE = ["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"];
+
 interface SessionCard {
 	screens: readonly SessionScreen[];
 	controller: ScreenNavigatorController;
@@ -127,6 +129,7 @@ export default function JgpPage(): React.ReactElement {
 			<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 				<Gallery
 					items={JGP_GALLERY_ITEMS}
+					palette={ROVO_PURPLE_PALETTE}
 					title="Jira Golden Paths"
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}

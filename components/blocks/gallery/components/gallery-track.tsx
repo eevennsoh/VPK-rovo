@@ -12,6 +12,7 @@ import type { GallerySelectionOrigin, GallerySelectionVisual } from "../lib/gall
 import { useDockPointer } from "../hooks/use-dock-magnification";
 import { useDragScroll } from "../hooks/use-drag-scroll";
 import { GalleryCard } from "./gallery-card";
+import type { GalleryPalette } from "../lib/gallery-palette";
 
 // Local edge-mask builder — deliberately NOT the bento one, which composites a
 // permanent bottom fade via `mask-composite: intersect`. Gallery wants left/right
@@ -77,6 +78,7 @@ export interface GalleryTrackProps {
 	selectedId: string | null;
 	activeVisual: GallerySelectionVisual | null;
 	exitingVisual: GallerySelectionVisual | null;
+	palette?: GalleryPalette;
 	onSelect: (id: string, origin: GallerySelectionOrigin) => void;
 	className?: string;
 }
@@ -86,6 +88,7 @@ export function GalleryTrack({
 	selectedId,
 	activeVisual,
 	exitingVisual,
+	palette,
 	onSelect,
 	className,
 }: Readonly<GalleryTrackProps>): JSX.Element {
@@ -186,6 +189,7 @@ export function GalleryTrack({
 						dragging={drag.dragging}
 						isSelected={selectedId === item.id}
 						selectionVisual={getSelectionVisual(item.id, activeVisual, exitingVisual)}
+						palette={palette}
 						onSelect={onSelect}
 					/>
 				))}

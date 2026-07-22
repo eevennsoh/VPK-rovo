@@ -18,6 +18,7 @@ import {
 	type GalleryStagePosition,
 } from "./gallery-selected-stage";
 import { GalleryToggle } from "./gallery-toggle";
+import type { GalleryPalette } from "../lib/gallery-palette";
 import { GalleryTrack } from "./gallery-track";
 
 // The pinned strip is a pure ORCHESTRATION node: it carries no visual style of its
@@ -89,6 +90,8 @@ export interface GalleryProps {
 	onSelectedChange?: (selectedId: string) => void;
 	renderSelectedItem?: (item: GalleryItem) => ReactNode;
 	className?: string;
+	/** Palette used for selected-card liquid highlights. Defaults to the standard blue treatment. */
+	palette?: GalleryPalette;
 	/** Called after the selected prototype is reset to its initial mounted state. */
 	onReset?: (item: GalleryItem) => void;
 }
@@ -107,6 +110,7 @@ export function Gallery({
 	onSelectedChange,
 	renderSelectedItem = renderDefaultSelectedItem,
 	className,
+	palette,
 	onReset,
 }: Readonly<GalleryProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
@@ -235,6 +239,7 @@ export function Gallery({
 							selectedId={resolvedSelectedId}
 							activeVisual={visualState.active}
 							exitingVisual={visualState.exiting}
+							palette={palette}
 							onSelect={handleSelect}
 						/>
 					</motion.div>
