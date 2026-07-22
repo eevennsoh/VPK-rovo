@@ -90,8 +90,12 @@ test("the current user is a person with an avatar (authors comments/replies)", (
 });
 
 test("the comment entry has a rich body and a collapsible section", () => {
-	const comment = JIRA_ACTIVITY_ENTRIES.find((entry) => entry.kind === "comment");
-	assert.ok(comment, "expected a comment entry");
+	// The rich session comment is agent-authored; a human snapshot comment also
+	// exists in the feed, so target the agent comment specifically.
+	const comment = JIRA_ACTIVITY_ENTRIES.find(
+		(entry) => entry.kind === "comment" && entry.actor.kind === "agent",
+	);
+	assert.ok(comment, "expected an agent comment entry");
 	assert.ok(comment.collapsible, "comment should have a collapsible section");
 	const bodyTypes = new Set(comment.body.map((segment) => segment.type));
 	assert.ok(bodyTypes.has("code"), "body should include an inline code chip");
@@ -175,6 +179,25 @@ test("labels and workflow states render as semantic lozenges", () => {
 	assert.doesNotMatch(SEGMENTS_SOURCE, /LABEL_DOT_CLASS/u);
 });
 
+test("agent output cards summarize the change and expose a View action", () => {
+	// The card can open its owning session, so it accepts an onView handler that
+	// the timeline wires from onViewSession.
+	assert.match(
+		CHANGED_FILES_SOURCE,
+		/import type \{ JiraAgentSessionItem \} from "@\/components\/blocks\/jira-agent-session"/u,
+	);
+	assert.match(CHANGED_FILES_SOURCE, /onView\?: \(item: JiraAgentSessionItem\) => void/u);
+	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
+	// A short generated-work summary renders as its own paragraph above the outputs.
+	assert.match(
+		CHANGED_FILES_SOURCE,
+		/<p className="px-3 pb-3 text-sm leading-5 text-text">\{entry\.description\}<\/p>/u,
+	);
+	// The ellipsis "More actions" affordance is replaced by a persistent View action
+	// (the user can still open and chat with the session after generation).
+	assert.match(CHANGED_FILES_SOURCE, />\s*View\s*<\/Button>/u);
+});
+
 test("Jira Activity exposes controlled entries and replaceable composer contracts", () => {
 	assert.match(INDEX_SOURCE, /defaultEntries\?: readonly JiraActivityEntry\[\]/u);
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
@@ -182,8 +205,6 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
 	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: JiraAgentSessionItem\) => void/u);
 	assert.match(INDEX_SOURCE, /onViewSession=\{onViewSession\}/u);
-	assert.match(INDEX_SOURCE, /onReplyRequest\?: \(entry: JiraActivityCommentEntry\) => void/u);
-	assert.match(INDEX_SOURCE, /onReplyRequest=\{onReplyRequest\}/u);
 	assert.match(INDEX_SOURCE, /composer === undefined/u);
 	assert.match(INDEX_SOURCE, /filter\?: JiraActivityFilter/u);
 	assert.match(INDEX_SOURCE, /defaultFilter\?: JiraActivityFilter/u);
@@ -288,8 +309,13 @@ test("agent comments use the Jira Agent Session activity-card variant", () => {
 	assert.match(COMMENT_SOURCE, /<JiraAgentSessionActivityCard/u);
 	assert.match(COMMENT_SOURCE, /item=\{entry\.sessionItem\}/u);
 	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
-	assert.match(COMMENT_SOURCE, /entry\.sessionItem \? "comment" : "reply"/u);
-	assert.match(COMMENT_SOURCE, /Ask, @mention, or \/ for actions/u);
+	// Both human and agent comments render the shared prompt-input composer.
+	assert.match(COMMENT_SOURCE, /variant="comment"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/entry\.sessionItem\s*\? "Ask, @mention, or \/ for actions"\s*:\s*"Leave a reply\.\.\."/u,
+	);
 	assert.match(COMMENT_SOURCE, /entry\.sessionItem\s*\? undefined\s*:\s*entry\.collapsible/u);
 	assert.doesNotMatch(
 		COMMENT_SOURCE,
@@ -303,20 +329,40 @@ test("controlled timelines can route inline agent replies to their owning sessio
 	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
 });
 
-test("human comments expose a trailing Reply action without mounting the deferred composer", () => {
+test("human comments expose the flush prompt composer instead of a Reply button", () => {
 	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \}/u);
-	assert.match(COMMENT_SOURCE, /import \{ Button \} from "@\/components\/ui\/button"/u);
 	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/headerLayout=\{entry\.actor\.kind === "person" \? "stacked" : "inline"\}/u,
 	);
-	assert.match(COMMENT_SOURCE, /onClick=\{\(\) => onReplyRequest\?\.\(entry\)\}/u);
-	assert.match(COMMENT_SOURCE, /size="compact"/u);
-	assert.match(COMMENT_SOURCE, /variant="outline"/u);
-	assert.match(COMMENT_SOURCE, />\s*Reply\s*<\/Button>/u);
 	assert.match(COMMENT_SOURCE, /<Avatar aria-hidden size="default">/u);
 	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{entry\.actor\.avatarSrc\}/u);
+	// The human card no longer renders a Reply button or wires onReplyRequest; the
+	// prompt composer is always mounted as a flush footer instead.
+	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
+	assert.doesNotMatch(COMMENT_SOURCE, />\s*Reply\s*<\/Button>/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /from "@\/components\/ui\/button"/u);
+	// Flush composer: no floating border/radius/shadow, aligned to the card's padding.
+	assert.match(COMMENT_SOURCE, /border-0 rounded-none bg-transparent px-4 py-3 shadow-none/u);
+});
+
+test("the sample feed includes a human activity snapshot comment", () => {
+	const humanComments = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "comment" && entry.actor.kind === "person",
+	);
+	assert.ok(
+		humanComments.length > 0,
+		"expected at least one human-authored comment card",
+	);
+	const snapshot = humanComments[0];
+	// A human snapshot is a plain comment (no agent session summary) so it renders
+	// the stacked avatar/name/timestamp header rather than the agent-session card.
+	assert.equal(snapshot.sessionItem, undefined);
+	assert.ok(snapshot.actor.avatarSrc, "human snapshot should carry a photo avatar");
+	assert.ok(snapshot.body.length > 0, "human snapshot should have a body");
+	// The prompt composer is exposed for human comments (allowReply defaults to true).
+	assert.notEqual(snapshot.allowReply, false);
 });
 
 test("the exported comment composer uses the shared floating Rovo prompt", () => {

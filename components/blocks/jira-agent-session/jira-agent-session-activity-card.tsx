@@ -59,20 +59,26 @@ export function JiraAgentSessionActivityCard({
 		return (
 			<div
 				className={cn(
-					"grid w-full gap-4 rounded-xl border border-border bg-surface p-4",
+					"w-full overflow-hidden rounded-xl border border-border bg-surface",
 					className,
 				)}
 			>
-				<JiraAgentSessionActivityHeader
-					action={action}
-					item={item}
-					key={item.id}
-					onView={onView}
-				/>
-				<div className="text-sm leading-5 text-text">{children}</div>
-				{detailsContent}
-				{replies}
-				{replyComposer}
+				<div className="grid gap-4 p-4">
+					<JiraAgentSessionActivityHeader
+						action={action}
+						item={item}
+						key={item.id}
+						onView={onView}
+					/>
+					<div className="text-sm leading-5 text-text">{children}</div>
+					{detailsContent}
+				</div>
+				{showFooter ? (
+					<div className="border-t border-border">
+						{replies}
+						{replyComposer}
+					</div>
+				) : null}
 			</div>
 		);
 	}
