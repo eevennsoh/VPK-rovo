@@ -16,6 +16,10 @@ import {
 	type ScreenNavigatorController,
 } from "./hooks/use-screen-navigator";
 import { SessionScreenControls, SessionStage } from "./components/session-stage";
+import {
+	useWorkItemStageController,
+	WorkItemControls,
+} from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // JGP — Jira Golden Paths
@@ -54,10 +58,12 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 export default function JgpPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(JGP_GALLERY_ITEMS[0]?.id ?? "");
 	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
+	const [dockOpen, setDockOpen] = useState(true);
 	// One navigator per card, hoisted here so the top-bar controls and the stage
 	// share a single source of truth (each card keeps its own place).
 	const localNav = useScreenNavigator(LOCAL_SESSION_SCREENS.length);
 	const globalNav = useScreenNavigator(GLOBAL_SESSION_SCREENS.length);
+	const workItemController = useWorkItemStageController();
 
 	const cardsById = useMemo<Record<string, SessionCard>>(
 		() => ({
@@ -133,18 +139,32 @@ export default function JgpPage(): React.ReactElement {
 					title="Jira Golden Paths"
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}
+					open={dockOpen}
+					onOpenChange={setDockOpen}
 					theme={isTerminalSection ? terminalTheme : undefined}
 					onThemeCycle={isTerminalSection ? handleTerminalThemeCycle : undefined}
-					topBarCenter={
-						<SessionScreenControls
-							screens={activeCard.screens}
-							controller={activeCard.controller}
-						/>
-					}
+					topBarCenter={(
+						<div className="flex items-center gap-3">
+							<SessionScreenControls
+								screens={activeCard.screens}
+								controller={activeCard.controller}
+							/>
+							{activeScreen?.design === "work-item" ? (
+								<WorkItemControls controller={workItemController} />
+							) : null}
+						</div>
+					)}
 					onReset={handleReset}
 					renderSelectedItem={(item) => {
 						const card = cardsById[item.id] ?? activeCard;
-						return <SessionStage screens={card.screens} controller={card.controller} />;
+						return (
+							<SessionStage
+								controller={card.controller}
+								dockOpen={dockOpen}
+								screens={card.screens}
+								workItemController={workItemController}
+							/>
+						);
 					}}
 				/>
 			</div>
