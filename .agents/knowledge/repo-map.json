@@ -5229,7 +5229,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 408,
+			"manifestEntryCount": 409,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -6651,7 +6651,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 70,
+				"entryCount": 71,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6784,6 +6784,12 @@
 						"slug": "file-tree",
 						"name": "File Tree",
 						"importPath": "@/components/ui-custom/file-tree"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "file-tree-2",
+						"name": "File Tree 2",
+						"importPath": "@/components/ui-custom/file-tree-2"
 					},
 					{
 						"category": "ui-custom",

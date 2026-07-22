@@ -83,6 +83,9 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"file-tree": dynamic(() => import("../../demos/ui-custom/file-tree-demo"), {
 		ssr: false,
 	}),
+	"file-tree-2": dynamic(() => import("../../demos/ui-custom/file-tree-2-demo"), {
+		ssr: false,
+	}),
 	image: dynamic(() => import("../../demos/ui-custom/image-demo"), { ssr: false }),
 	"inline-citation": dynamic(
 		() => import("../../demos/ui-custom/inline-citation-demo"),
