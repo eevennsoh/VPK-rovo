@@ -12,9 +12,9 @@ import {
 } from "@/components/ui-custom/file-tree";
 
 import { EXPLORER_TREE } from "../../data/explorer-tree";
-import type { ExplorerNode } from "../../data/types";
+import type { ChangedFile, ExplorerNode } from "../../data/types";
 
-const DEFAULT_EXPANDED_PATHS = new Set(["vscode"]);
+const DEFAULT_EXPANDED_PATHS = new Set(["vscode", "changed-files"]);
 
 function renderExplorerNode(node: ExplorerNode): ReactNode {
 	if (node.kind === "folder") {
@@ -38,16 +38,18 @@ function renderExplorerNode(node: ExplorerNode): ReactNode {
 }
 
 interface EditorExplorerProps {
+	files: readonly ChangedFile[];
 	selectedFileId: string;
 	onFileSelect: (fileId: string) => void;
 }
 
 export function EditorExplorer({
+	files,
 	selectedFileId,
 	onFileSelect,
 }: Readonly<EditorExplorerProps>) {
 	const handleSelect = (path: string) => {
-		if (path === "ipc-mp-test") {
+		if (files.some((file) => file.id === path)) {
 			onFileSelect(path);
 		}
 	};
@@ -75,7 +77,17 @@ export function EditorExplorer({
 					selectedPath={selectedFileId}
 				>
 					<FileTreeFolder aria-label="VSCODE" name="VSCODE" path="vscode">
-						{EXPLORER_TREE.map(renderExplorerNode)}
+						<FileTreeFolder aria-label="Changed files" name="CHANGED FILES" path="changed-files">
+							{files.map((file) => (
+								<FileTreeFile
+									aria-label={file.path}
+									key={file.id}
+									name={file.path.split("/").at(-1) ?? file.path}
+									path={file.id}
+								/>
+							))}
+						</FileTreeFolder>
+						{EXPLORER_TREE.filter((node) => !node.fileId).map(renderExplorerNode)}
 					</FileTreeFolder>
 				</FileTree>
 			</ScrollArea>

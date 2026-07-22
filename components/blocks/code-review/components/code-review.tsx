@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,16 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { CHANGED_FILES, EDITOR_FILE } from "../data/changed-files";
 import { CODE_REVIEW_WORK_ITEM } from "../data/work-item";
 import type { ChangedFile, CodeReviewWorkItem, DiffLayout } from "../data/types";
+import {
+	EMPTY_INLINE_COMMENT_STATE,
+	cancelInlineCommentDraft,
+	commitInlineCommentDraft,
+	createInlineCommentDraft,
+	removeAllInlineComments,
+	removeInlineComment,
+	updateInlineCommentDraft,
+	type InlineCommentAnchor,
+} from "../lib/inline-comments";
 import { CodeReviewCanvasHeader } from "./code-review-canvas-header";
 import { CodeReviewCanvasRightRail } from "./code-review-canvas-right-rail";
 import { EditorPanel } from "./editor/editor-panel";
@@ -51,11 +61,36 @@ export function CodeReview({
 		onOpenChange?.(nextOpen);
 	};
 	const [editorLayout, setEditorLayout] = useState<DiffLayout>("unified");
+	const [inlineComments, setInlineComments] = useState(EMPTY_INLINE_COMMENT_STATE);
+	const nextInlineCommentId = useRef(0);
 	const [editorFileId, setEditorFileId] = useState(
 		() => (editorFiles.find((file) => file.inExplorer) ?? editorFiles[0])?.id ?? EDITOR_FILE.id,
 	);
 	const selectedEditorFile =
 		editorFiles.find((file) => file.id === editorFileId) ?? editorFiles[0] ?? EDITOR_FILE;
+	const handleAddDraft = useCallback((anchor: InlineCommentAnchor) => {
+		nextInlineCommentId.current += 1;
+		setInlineComments((state) => createInlineCommentDraft(state, {
+			...anchor,
+			body: "",
+			id: `inline-comment-${nextInlineCommentId.current}`,
+		}));
+	}, []);
+	const handleCancelDraft = useCallback((draftId: string) => {
+		setInlineComments((state) => cancelInlineCommentDraft(state, draftId));
+	}, []);
+	const handleCommitDraft = useCallback((draftId: string) => {
+		setInlineComments((state) => commitInlineCommentDraft(state, draftId));
+	}, []);
+	const handleDeleteComment = useCallback((commentId: string) => {
+		setInlineComments((state) => removeInlineComment(state, commentId));
+	}, []);
+	const handleRemoveAllComments = useCallback(() => {
+		setInlineComments((state) => removeAllInlineComments(state));
+	}, []);
+	const handleUpdateDraft = useCallback((draftId: string, body: string) => {
+		setInlineComments((state) => updateInlineCommentDraft(state, draftId, body));
+	}, []);
 
 	return (
 		<>
@@ -88,10 +123,18 @@ export function CodeReview({
 						toolbar: "none",
 						content: (
 							<EditorPanel
+								comments={inlineComments.comments}
+								drafts={inlineComments.drafts}
 								file={selectedEditorFile}
+								files={editorFiles}
 								layout={editorLayout}
+								onAddDraft={handleAddDraft}
+								onCancelDraft={handleCancelDraft}
+								onCommitDraft={handleCommitDraft}
+								onDeleteComment={handleDeleteComment}
 								onFileSelect={setEditorFileId}
 								onLayoutChange={setEditorLayout}
+								onUpdateDraft={handleUpdateDraft}
 								selectedFileId={editorFileId}
 							/>
 						),
@@ -99,8 +142,10 @@ export function CodeReview({
 				]}
 				rightRail={
 					<CodeReviewCanvasRightRail
+						comments={inlineComments.comments}
 						workItem={workItem}
 						onClose={() => setCanvasOpen(false)}
+						onRemoveAllComments={handleRemoveAllComments}
 					/>
 				}
 			/>

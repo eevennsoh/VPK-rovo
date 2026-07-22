@@ -156,6 +156,12 @@ export interface ChatPanelCustomAgentTabs {
 	trigger?: ReactNode;
 }
 
+export interface ComposerInputContext {
+	content: ReactNode;
+	submitText: string;
+	onSubmitted?: () => void;
+}
+
 export type ChatPanelHistoryController = Pick<
 	ControlledChatHistoryDrawerProps,
 	| "activeThreadId"
@@ -278,6 +284,8 @@ interface ChatPanelProps {
 	composerContainerClassName?: string;
 	/** Optional host-owned actions rendered directly above the composer. */
 	composerContextBar?: ReactNode;
+	/** Optional host-owned, non-text context rendered inside the prompt surface. */
+	composerInputContext?: ComposerInputContext;
 	/** Opt-in first-render focus for host surfaces where the composer is primary. */
 	autoFocusComposer?: boolean;
 	/**
@@ -489,6 +497,7 @@ export default function ChatPanel({
 	conversationContentClassName,
 	composerContainerClassName,
 	composerContextBar,
+	composerInputContext,
 	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
@@ -698,25 +707,28 @@ export default function ChatPanel({
 		speakLocalConversationVoiceText({ voiceText: initialVoiceText });
 	}, [localConversation, speakLocalConversationVoiceText]);
 	const handleComposerSubmit = useCallback(async ({ files, text }: { text: string; files: FileUIPart[] }) => {
-		if (!localConversation) {
-			await handleSubmit({ files, text });
+		const promptText = (text || prompt).trim() || composerInputContext?.submitText.trim() || "";
+		if (!promptText && files.length === 0) {
 			return;
 		}
 
-		const promptText = (text || prompt).trim();
-		if (!promptText) {
+		if (!localConversation) {
+			await handleSubmit({ files, text: promptText });
+			composerInputContext?.onSubmitted?.();
 			return;
 		}
 
 		const result = await localConversation.onSubmit(promptText);
 		if (!isLocalConversationSubmitHandled(result)) {
 			await handleSubmit({ files, text: promptText });
+			composerInputContext?.onSubmitted?.();
 			return;
 		}
 
 		setPrompt("");
 		speakLocalConversationVoiceText(result);
-	}, [handleSubmit, prompt, localConversation, setPrompt, speakLocalConversationVoiceText]);
+		composerInputContext?.onSubmitted?.();
+	}, [composerInputContext, handleSubmit, prompt, localConversation, setPrompt, speakLocalConversationVoiceText]);
 
 	// --- Rovo AI cursor companion (Clicky) ---
 	const clicky = useClicky();
@@ -1906,6 +1918,8 @@ export default function ChatPanel({
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						composerContextBar={composerContextBar}
+						composerInputContext={composerInputContext?.content}
+						hasComposerInputContext={composerInputContext !== undefined}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
 						prefillMentionRequest={
 							composerPrefillRequest?.mention

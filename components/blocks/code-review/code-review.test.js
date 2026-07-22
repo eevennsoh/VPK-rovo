@@ -40,6 +40,60 @@ test("code review diff matches its top inset to the inline hunk inset", () => {
 	assert.match(diffView, /unsafeCSS: DIFF_TOP_INSET_CSS/u);
 });
 
+test("code review extends Pierre gutter utilities and line annotations", () => {
+	const diffView = readProjectFile(
+		"components/blocks/code-review/components/diff-file-view.tsx",
+	);
+	const annotation = readProjectFile(
+		"components/blocks/code-review/components/inline-comment-annotation.tsx",
+	);
+
+	assert.match(diffView, /<MultiFileDiff<InlineCommentAnnotationMetadata>/u);
+	assert.match(diffView, /lineAnnotations=\{lineAnnotations\}/u);
+	assert.match(diffView, /enableGutterUtility: true/u);
+	assert.match(diffView, /lineHoverHighlight: "both"/u);
+	assert.match(diffView, /onLineNumberClick: \(\{ annotationSide, lineNumber \}\)/u);
+	assert.match(diffView, /renderAnnotation=\{\(\{ metadata \}\) => \(/u);
+	assert.match(diffView, /renderGutterUtility=\{\(getHoveredLine\) => \(/u);
+	assert.match(annotation, /aria-label="Add inline comment"/u);
+	assert.match(annotation, /event\.stopPropagation\(\)/u);
+	assert.match(annotation, /event\.key === "Enter" && \(event\.metaKey \|\| event\.ctrlKey\)/u);
+	assert.match(annotation, /event\.key === "Escape"/u);
+	assert.match(annotation, /disabled=\{!canCommit\}/u);
+	assert.match(annotation, />Local comment</u);
+	assert.match(annotation, /aria-label=\{`Delete comment on/u);
+});
+
+test("code review owns comment state across files and diff layouts", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+
+	assert.match(source, /useState\(EMPTY_INLINE_COMMENT_STATE\)/u);
+	assert.match(source, /comments=\{inlineComments\.comments\}/u);
+	assert.match(source, /drafts=\{inlineComments\.drafts\}/u);
+	assert.match(source, /removeAllInlineComments/u);
+	assert.match(source, /updateInlineCommentDraft/u);
+});
+
+test("code review sends committed comments as one-turn composer context", () => {
+	const rail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+	const chip = readProjectFile(
+		"components/blocks/code-review/components/inline-comments-composer-chip.tsx",
+	);
+
+	assert.match(rail, /serializeInlineCommentsContext\(workItem, comments\)/u);
+	assert.match(rail, /composerInputContext=\{hasInlineComments \? \{/u);
+	assert.match(rail, /submitText: "Address these inline review comments\."/u);
+	assert.match(rail, /onSubmitted: onRemoveAllComments/u);
+	assert.match(rail, /contextDescription: inlineCommentsContext \|\| undefined/u);
+	assert.match(chip, /comments\.length === 1 \? "comment" : "comments"/u);
+	assert.match(chip, /Inline review comments/u);
+	assert.match(chip, /Remove all inline comments/u);
+});
+
 test("code review orchestrator defaults the editor to unified layout", () => {
 	const source = readProjectFile(
 		"components/blocks/code-review/components/code-review.tsx",
@@ -108,6 +162,8 @@ test("code review editor retains interaction contracts", () => {
 	);
 
 	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree";/u);
+	assert.match(explorer, /<FileTreeFolder aria-label="Changed files" name="CHANGED FILES" path="changed-files">/u);
+	assert.match(explorer, /files\.some\(\(file\) => file\.id === path\)/u);
 });
 
 test("Code Review is registered as a website block in both catalog files", () => {

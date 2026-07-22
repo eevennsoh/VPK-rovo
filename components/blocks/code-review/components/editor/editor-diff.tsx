@@ -11,18 +11,37 @@ import { Icon } from "@/components/ui/icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import type { ChangedFile, DiffLayout } from "../../data/types";
+import type {
+	InlineCommentAnchor,
+	InlineCommentDraft,
+	InlineReviewComment,
+} from "../../lib/inline-comments";
 import { DiffFileView } from "../diff-file-view";
 
 interface EditorDiffProps {
 	file: ChangedFile;
 	layout: DiffLayout;
+	drafts: readonly InlineCommentDraft[];
+	comments: readonly InlineReviewComment[];
+	onAddDraft: (anchor: InlineCommentAnchor) => void;
+	onCancelDraft: (draftId: string) => void;
+	onCommitDraft: (draftId: string) => void;
+	onDeleteComment: (commentId: string) => void;
 	onLayoutChange: (layout: DiffLayout) => void;
+	onUpdateDraft: (draftId: string, body: string) => void;
 }
 
 export function EditorDiff({
 	file,
 	layout,
+	drafts,
+	comments,
+	onAddDraft,
+	onCancelDraft,
+	onCommitDraft,
+	onDeleteComment,
 	onLayoutChange,
+	onUpdateDraft,
 }: Readonly<EditorDiffProps>) {
 	return (
 		<section className="flex min-h-0 min-w-0 flex-col bg-surface">
@@ -63,7 +82,17 @@ export function EditorDiff({
 				{file.hunkHeader ?? "Diff"}
 			</div>
 			<ScrollArea className="min-h-0 flex-1">
-				<DiffFileView file={file} layout={layout} />
+				<DiffFileView
+					comments={comments}
+					drafts={drafts}
+					file={file}
+					layout={layout}
+					onAddDraft={onAddDraft}
+					onCancelDraft={onCancelDraft}
+					onCommitDraft={onCommitDraft}
+					onDeleteComment={onDeleteComment}
+					onUpdateDraft={onUpdateDraft}
+				/>
 			</ScrollArea>
 		</section>
 	);
