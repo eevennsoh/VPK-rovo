@@ -161,9 +161,11 @@ test("code review editor retains interaction contracts", () => {
 		"components/blocks/code-review/components/editor/editor-explorer.tsx",
 	);
 
-	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree";/u);
-	assert.match(explorer, /<FileTreeFolder aria-label="Changed files" name="CHANGED FILES" path="changed-files">/u);
-	assert.match(explorer, /files\.some\(\(file\) => file\.id === path\)/u);
+	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree-2";/u);
+	assert.match(explorer, /<FileTree2/u);
+	assert.match(explorer, /CHANGED_FILES_ROOT_PATH/u);
+	assert.match(explorer, /fileIdsByPath\.get\(path\)/u);
+	assert.doesNotMatch(explorer, /FileTreeFile|FileTreeFolder/u);
 });
 
 test("Code Review is registered as a website block in both catalog files", () => {
@@ -205,7 +207,7 @@ test("Code Review demo wrapper renders the block page", () => {
 	assert.match(demo, /return <Page \/>;/u);
 });
 
-test("Code Review polish contracts hide duplicate headers and name explorer rows", () => {
+test("Code Review polish contracts hide duplicate headers and label the shared explorer", () => {
 	const diffView = readProjectFile(
 		"components/blocks/code-review/components/diff-file-view.tsx",
 	);
@@ -214,7 +216,9 @@ test("Code Review polish contracts hide duplicate headers and name explorer rows
 	);
 
 	assert.match(diffView, /renderCustomHeader=\{\(\) => null\}/u);
-	assert.match(explorer, /aria-label=\{node\.name\}/u);
+	assert.match(explorer, /aria-label="Code review files"/u);
+	assert.match(explorer, /"VSCODE\/package\.json": "renamed"/u);
+	assert.match(explorer, /"VSCODE\/node_modules": "ignored"/u);
 });
 
 test("Code Review moves its shared artefact identity into the canvas header", () => {

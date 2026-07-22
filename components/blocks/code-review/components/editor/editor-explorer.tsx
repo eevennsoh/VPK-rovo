@@ -1,40 +1,82 @@
 "use client";
 
 import SearchIcon from "@atlaskit/icon/core/search";
-import type { ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-	FileTree,
-	FileTreeFile,
-	FileTreeFolder,
-} from "@/components/ui-custom/file-tree";
+	FileTree2,
+	type FileTree2GitStatus,
+	type FileTree2Item,
+} from "@/components/ui-custom/file-tree-2";
 
 import { EXPLORER_TREE } from "../../data/explorer-tree";
 import type { ChangedFile, ExplorerNode } from "../../data/types";
 
-const DEFAULT_EXPANDED_PATHS = new Set(["vscode", "changed-files"]);
+const CODE_REVIEW_ROOT_PATH = "VSCODE";
+const CHANGED_FILES_ROOT_PATH = `${CODE_REVIEW_ROOT_PATH}/CHANGED FILES`;
+const DEFAULT_EXPANDED_PATHS = [
+	CODE_REVIEW_ROOT_PATH,
+	CHANGED_FILES_ROOT_PATH,
+];
+const DEMO_GIT_STATUSES: Readonly<Record<string, FileTree2GitStatus>> = {
+	"VSCODE/.browserslistrc": "ignored",
+	"VSCODE/.gitignore": "deleted",
+	"VSCODE/CONTRIBUTING.md": "added",
+	"VSCODE/node_modules": "ignored",
+	"VSCODE/package.json": "renamed",
+	"VSCODE/yarn.lock": "untracked",
+};
 
-function renderExplorerNode(node: ExplorerNode): ReactNode {
-	if (node.kind === "folder") {
-		return (
-			<FileTreeFolder aria-label={node.name} key={node.id} name={node.name} path={node.id}>
-				{node.children?.map(renderExplorerNode)}
-			</FileTreeFolder>
-		);
+interface CodeReviewTreeData {
+	fileIdsByPath: ReadonlyMap<string, string>;
+	items: readonly FileTree2Item[];
+	pathsByFileId: ReadonlyMap<string, string>;
+}
+
+function createCodeReviewTreeData(files: readonly ChangedFile[]): CodeReviewTreeData {
+	const itemsByPath = new Map<string, FileTree2Item>([
+		[CODE_REVIEW_ROOT_PATH, { path: CODE_REVIEW_ROOT_PATH, type: "folder" }],
+		[CHANGED_FILES_ROOT_PATH, { path: CHANGED_FILES_ROOT_PATH, type: "folder" }],
+	]);
+	const fileIdsByPath = new Map<string, string>();
+	const pathsByFileId = new Map<string, string>();
+
+	const addExplorerNode = (node: ExplorerNode, parentPath: string) => {
+		const path = `${parentPath}/${node.name}`;
+		itemsByPath.set(path, {
+			disabled: node.kind === "file" && !node.fileId,
+			path,
+			status: DEMO_GIT_STATUSES[path],
+			type: node.kind,
+		});
+
+		if (node.fileId) {
+			fileIdsByPath.set(path, node.fileId);
+			pathsByFileId.set(node.fileId, path);
+		}
+		for (const child of node.children ?? []) {
+			addExplorerNode(child, path);
+		}
+	};
+
+	for (const node of EXPLORER_TREE.filter((node) => !node.fileId)) {
+		addExplorerNode(node, CODE_REVIEW_ROOT_PATH);
 	}
 
-	return (
-		<FileTreeFile
-			aria-label={node.name}
-			aria-disabled={node.fileId ? undefined : true}
-			className={node.fileId ? undefined : "cursor-default"}
-			key={node.id}
-			name={node.name}
-			path={node.fileId ?? node.id}
-		/>
-	);
+	for (const file of files) {
+		const fileName = file.path.split("/").at(-1) ?? file.path;
+		const path = `${CHANGED_FILES_ROOT_PATH}/${fileName}`;
+		itemsByPath.set(path, { path, status: file.status });
+		fileIdsByPath.set(path, file.id);
+		pathsByFileId.set(file.id, path);
+	}
+
+	return {
+		fileIdsByPath,
+		items: [...itemsByPath.values()],
+		pathsByFileId,
+	};
 }
 
 interface EditorExplorerProps {
@@ -48,9 +90,11 @@ export function EditorExplorer({
 	selectedFileId,
 	onFileSelect,
 }: Readonly<EditorExplorerProps>) {
+	const { fileIdsByPath, items, pathsByFileId } = createCodeReviewTreeData(files);
 	const handleSelect = (path: string) => {
-		if (files.some((file) => file.id === path)) {
-			onFileSelect(path);
+		const fileId = fileIdsByPath.get(path);
+		if (fileId) {
+			onFileSelect(fileId);
 		}
 	};
 
@@ -70,26 +114,14 @@ export function EditorExplorer({
 				</label>
 			</div>
 			<ScrollArea className="min-h-0 flex-1 px-1">
-				<FileTree
-					className="rounded-none text-xs"
-					defaultExpanded={DEFAULT_EXPANDED_PATHS}
-					onSelect={handleSelect}
-					selectedPath={selectedFileId}
-				>
-					<FileTreeFolder aria-label="VSCODE" name="VSCODE" path="vscode">
-						<FileTreeFolder aria-label="Changed files" name="CHANGED FILES" path="changed-files">
-							{files.map((file) => (
-								<FileTreeFile
-									aria-label={file.path}
-									key={file.id}
-									name={file.path.split("/").at(-1) ?? file.path}
-									path={file.id}
-								/>
-							))}
-						</FileTreeFolder>
-						{EXPLORER_TREE.filter((node) => !node.fileId).map(renderExplorerNode)}
-					</FileTreeFolder>
-				</FileTree>
+				<FileTree2
+					aria-label="Code review files"
+					className="rounded-none border-0 bg-transparent text-xs [&_[role=tree]]:max-h-none [&_[role=tree]]:overflow-visible"
+					defaultExpandedPaths={DEFAULT_EXPANDED_PATHS}
+					items={items}
+					onSelectedPathChange={handleSelect}
+					selectedPath={pathsByFileId.get(selectedFileId)}
+				/>
 			</ScrollArea>
 		</aside>
 	);

@@ -179,6 +179,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("edge"),
 	customComponent("environment-variables", "Environment Variables"),
 	customComponent("file-tree", "File Tree"),
+	customComponent("file-tree-2", "File Tree 2"),
 	customComponent("image"),
 	customComponent("inline-citation", "Inline Citation"),
 	customComponent("jsx-preview", "JSX Preview"),
