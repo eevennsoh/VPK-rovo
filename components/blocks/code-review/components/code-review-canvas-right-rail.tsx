@@ -28,6 +28,7 @@ export function CodeReviewCanvasRightRail({
 				headerVariant="minimal"
 				enableSmartWidgets
 				abortOnUnmount={false}
+				hideAiDisclaimer
 				greeting={{
 					heading: "Review this change",
 					suggestions: CODE_REVIEWER_AGENT.starters,

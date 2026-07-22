@@ -13,6 +13,12 @@ interface DiffFileViewProps {
 	className?: string;
 }
 
+const DIFF_TOP_INSET_CSS = `
+[data-diffs-header] ~ [data-diff] [data-code] {
+	padding-top: var(--diffs-gap-inline, var(--diffs-gap-fallback));
+}
+`;
+
 export function DiffFileView({ file, layout, className }: Readonly<DiffFileViewProps>) {
 	const { actualTheme } = useTheme();
 
@@ -34,6 +40,7 @@ export function DiffFileView({ file, layout, className }: Readonly<DiffFileViewP
 			}}
 			options={{
 				diffStyle: layout,
+				unsafeCSS: DIFF_TOP_INSET_CSS,
 				theme: {
 					light: "github-light",
 					dark: "github-dark",

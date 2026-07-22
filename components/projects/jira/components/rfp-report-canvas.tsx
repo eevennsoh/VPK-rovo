@@ -323,7 +323,6 @@ export function RfpReportCanvas({
 					onClose={() => actions.setCanvasOpen(false)}
 				/>
 			}
-			footer={null}
 		/>
 	);
 }

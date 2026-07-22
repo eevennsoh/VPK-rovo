@@ -53,6 +53,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 
 export default function JgpPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(JGP_GALLERY_ITEMS[0]?.id ?? "");
+	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
 	// One navigator per card, hoisted here so the top-bar controls and the stage
 	// share a single source of truth (each card keeps its own place).
 	const localNav = useScreenNavigator(LOCAL_SESSION_SCREENS.length);
@@ -69,6 +70,9 @@ export default function JgpPage(): React.ReactElement {
 
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		setSelectedId(nextSelectedId);
+	}, []);
+	const handleTerminalThemeCycle = useCallback(() => {
+		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
 	}, []);
 
 	// The gallery Reset control rewinds the active card's walkthrough to screen 1.
@@ -99,21 +103,17 @@ export default function JgpPage(): React.ReactElement {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [activeNext, activePrev]);
 
-	// The Terminal section is a full dark-mode experience: the terminal frame is
-	// already dark, so we flip the surrounding gallery chrome (top bar, dock,
-	// background) to dark too via ADS subtree theming whenever the active screen
-	// belongs to the "Terminal" section — mirroring the /asx Terminal pattern.
-	// Every semantic token in the subtree resolves to its dark value (no `dark:`
-	// utilities or hardcoded colors), and the `position: fixed` dock strip still
-	// inherits it as a DOM descendant of this root. Generalizes to future
-	// sections by keying off the screen's `section`, not a specific card.
+	// The Terminal section defaults to a dark ADS subtree while keeping that
+	// choice route-local and controllable from Gallery's theme button. The user
+	// can switch the full Terminal surface to light without changing the global
+	// app theme; non-Terminal sections fall back to the normal global theme.
 	const activeScreen = activeCard.screens[activeCard.controller.index];
 	const isTerminalSection = activeScreen?.section === "Terminal";
 	const subtreeThemeProps = isTerminalSection
 		? {
 				"data-subtree-theme": "",
-				"data-color-mode": "dark",
-				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+				"data-color-mode": terminalTheme,
+				"data-theme": `${terminalTheme}:${terminalTheme} spacing:spacing typography:typography shape:shape`,
 			}
 		: {};
 
@@ -133,6 +133,8 @@ export default function JgpPage(): React.ReactElement {
 					title="Jira Golden Paths"
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}
+					theme={isTerminalSection ? terminalTheme : undefined}
+					onThemeCycle={isTerminalSection ? handleTerminalThemeCycle : undefined}
 					topBarCenter={
 						<SessionScreenControls
 							screens={activeCard.screens}

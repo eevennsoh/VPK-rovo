@@ -111,6 +111,7 @@ function renderAsxItem(
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
+	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
 	// The dock's open state is controlled here so stages can react to it — the
 	// "For you" feed drops its dock clearance padding when the dock is hidden.
 	const [dockOpen, setDockOpen] = useState(true);
@@ -157,6 +158,9 @@ function AsxGallery(): React.ReactElement {
 			resetRovoSurface();
 		}
 	}, [resetRovoSurface, restartTerminal]);
+	const handleTerminalThemeCycle = useCallback(() => {
+		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
+	}, []);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
@@ -166,18 +170,14 @@ function AsxGallery(): React.ReactElement {
 			<TerminalControls controller={terminalController} />
 		) : null;
 
-	// The Terminal pattern is a full dark-mode experience: the terminal frame is
-	// already dark (hardcoded zinc), so we flip the surrounding gallery chrome
-	// (top bar, dock, background) to dark too via ADS subtree theming. Every
-	// semantic token in the subtree resolves to its dark value — no `dark:`
-	// utilities or hardcoded colors. The dock strip is `position: fixed` but
-	// still a DOM descendant of this root, so the theme cascades to it.
+	// Terminal owns a local dark default while still allowing Gallery's theme
+	// control to switch the entire subtree, including the terminal frame.
 	const isTerminal = selectedId === "terminal";
 	const subtreeThemeProps = isTerminal
 		? {
 				"data-subtree-theme": "",
-				"data-color-mode": "dark",
-				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+				"data-color-mode": terminalTheme,
+				"data-theme": `${terminalTheme}:${terminalTheme} spacing:spacing typography:typography shape:shape`,
 			}
 		: {};
 
@@ -190,6 +190,8 @@ function AsxGallery(): React.ReactElement {
 				onSelectedChange={handleSelectedChange}
 				open={dockOpen}
 				onOpenChange={setDockOpen}
+				theme={isTerminal ? terminalTheme : undefined}
+				onThemeCycle={isTerminal ? handleTerminalThemeCycle : undefined}
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
 				onReset={handleReset}

@@ -2,7 +2,6 @@
 
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { JiraActivityChangedFiles } from "@/components/blocks/jira-activity/jira-activity-changed-files";
 import type { JiraActivityChangedFilesEntry } from "@/components/blocks/jira-activity/jira-activity-types";
@@ -37,9 +36,9 @@ export interface JiraIssueCompletedAgentRun {
 
 const RUN_STATE_PRESENTATION = {
 	done: {
-		label: "Done",
-		iconClassName: "text-icon-success",
-		icon: <StatusSuccessIcon color="currentColor" label="" size="small" />,
+		label: null,
+		iconClassName: null,
+		icon: null,
 	},
 	failed: {
 		label: "Alert",
@@ -87,11 +86,13 @@ function getCompletedRunEntry(run: JiraIssueCompletedAgentRun): JiraActivityChan
 
 export function JiraIssueAgentDone({
 	onOpenChange,
+	onReview,
 	onSubmit,
 	onView,
 	runs,
 }: Readonly<{
 	onOpenChange?: (open: boolean) => void;
+	onReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
@@ -115,7 +116,7 @@ export function JiraIssueAgentDone({
 							delay={0}
 							render={(
 								<button
-									aria-label={`${run.agentName}: ${state.label}`}
+									aria-label={state.label ? `${run.agentName}: ${state.label}` : run.agentName}
 									data-slot="jira-issue-agent-row"
 									className={cn(
 										"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -134,9 +135,11 @@ export function JiraIssueAgentDone({
 										/>
 										<span className="truncate text-sm leading-5 text-text-subtlest">{run.summary}</span>
 									</span>
-									<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
-										{state.icon}
-									</span>
+									{state.icon ? (
+										<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
+											{state.icon}
+										</span>
+									) : null}
 								</button>
 							)}
 						/>
@@ -155,8 +158,12 @@ export function JiraIssueAgentDone({
 										onSubmit={(prompt) => onSubmit?.(run, prompt)}
 									/>
 								}
+								onOutputOpen={(item) => {
+									if (item.pullRequest) {
+										onReview?.(run);
+									}
+								}}
 								onView={() => onView?.(run)}
-								pullRequestNumber={run.pullRequestNumber}
 								status={run.state}
 								variant="jira-issue"
 							/>

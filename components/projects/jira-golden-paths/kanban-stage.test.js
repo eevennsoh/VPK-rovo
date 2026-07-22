@@ -28,6 +28,8 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
+	assert.match(STAGE_SOURCE, /onCardAgentDoneRunReview=\{\(\) => setCodeReviewOpen\(true\)\}/u);
+	assert.match(STAGE_SOURCE, /<CodeReview open=\{isCodeReviewOpen\} onOpenChange=\{setCodeReviewOpen\} \/>/u);
 	assert.match(STAGE_SOURCE, /selectedCardCodes=\{selectedCardCodes\}/u);
 });
 

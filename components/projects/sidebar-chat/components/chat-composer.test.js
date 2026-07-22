@@ -82,6 +82,18 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.doesNotMatch(sidebarComposer, /<PromptInputButton[\s\S]*aria-label="Rovo cursor"/u);
 });
 
+test("compact chat can hide the AI disclaimer without changing the default", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /hideAiDisclaimer\?: boolean;/u);
+	assert.match(sidebarPanel, /hideAiDisclaimer = false/u);
+	assert.match(sidebarPanel, /hideAiDisclaimer=\{hideAiDisclaimer\}/u);
+	assert.match(sidebarComposer, /hideAiDisclaimer\?: boolean;/u);
+	assert.match(sidebarComposer, /hideAiDisclaimer = false/u);
+	assert.match(sidebarComposer, /\{hideAiDisclaimer \? null : <Footer \/>\}/u);
+});
+
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");

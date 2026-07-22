@@ -54,17 +54,17 @@ function JiraRow({ item, selected }: Readonly<{ item: TerminalWorkItem; selected
 			// cursor (k9s / lazygit reverse-video row).
 			className={cn(
 				"-mx-4 flex items-center gap-2 px-4 py-0.5",
-				selected ? "bg-zinc-800" : null,
+				selected ? "bg-bg-neutral" : null,
 			)}
 		>
 			<StateGlyph status={item.status} className="shrink-0" />
-			<span className="shrink-0 font-semibold text-zinc-100">{item.key}</span>
-			<span className={cn("shrink-0", selected ? "text-zinc-100" : "text-zinc-300")}>{item.title}</span>
-			<span className={cn("min-w-0 flex-1 truncate", selected ? "text-zinc-300" : "text-zinc-500")}>
+			<span className="shrink-0 font-semibold text-text">{item.key}</span>
+			<span className={cn("shrink-0", selected ? "text-text" : "text-text-subtle")}>{item.title}</span>
+			<span className={cn("min-w-0 flex-1 truncate", selected ? "text-text-subtle" : "text-text-subtlest")}>
 				{item.summary}
 			</span>
 			{item.pr ? <PrLabel number={item.pr.number} state={item.pr.state} /> : null}
-			<span className="shrink-0 text-zinc-500">{item.age}</span>
+			<span className="shrink-0 text-text-subtlest">{item.age}</span>
 		</motion.div>
 	);
 }
@@ -76,7 +76,7 @@ function JiraSection({
 }: Readonly<{ label: string; items: readonly TerminalWorkItem[]; selectedKey: string | null }>): React.ReactElement | null {
 	return items.length > 0 ? (
 		<div className="mb-3">
-			<p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">{label}</p>
+			<p className="mb-1 text-[11px] uppercase tracking-wide text-text-subtlest">{label}</p>
 			{items.map((item) => (
 				<JiraRow key={item.key} item={item} selected={item.key === selectedKey} />
 			))}
@@ -95,7 +95,7 @@ function JiraShellView({
 	const inFlightLines: readonly TerminalLine[] = isOutputting ? activeStep.lines.slice(0, revealCount) : [];
 
 	return (
-		<div className="flex h-full flex-col overflow-y-auto px-4 py-3 text-zinc-300">
+		<div className="flex h-full flex-col overflow-y-auto px-4 py-3 text-text-subtle">
 			<div className="flex flex-col gap-0.5">
 				{pane.transcript.map((line, index) => (
 					<TerminalLineView key={index} line={line} />
@@ -105,7 +105,7 @@ function JiraShellView({
 				))}
 			</div>
 			<div className={cn("flex items-center gap-2", pane.transcript.length > 0 ? "mt-1" : null)}>
-				<span className="text-zinc-500">{TERMINAL_SHELL_PROMPT}</span>
+				<span className="text-text-subtlest">{TERMINAL_SHELL_PROMPT}</span>
 				<span>{displayedDraft}</span>
 				<BlinkCursor />
 			</div>
@@ -157,8 +157,8 @@ export function TerminalStageJiraPane({
 		>
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
 				<p className="font-semibold text-blue-400">{JIRA_CLI_TITLE}</p>
-				<p className="mb-1 text-zinc-500">{JIRA_CLI_WORKSPACE}</p>
-				<p className="mb-3 text-zinc-400">
+				<p className="mb-1 text-text-subtlest">{JIRA_CLI_WORKSPACE}</p>
+				<p className="mb-3 text-text-subtle">
 					<span className={COUNT_TONE_CLASS.awaiting}>{counts.awaiting} awaiting input</span>
 					{" · "}
 					<span className={COUNT_TONE_CLASS.working}>{counts.working} working</span>
@@ -169,7 +169,7 @@ export function TerminalStageJiraPane({
 					<JiraSection key={key} label={label} items={sections[key]} selectedKey={selectedKey} />
 				))}
 			</div>
-			<p className="shrink-0 border-t border-zinc-800 px-4 py-2 text-[11px] text-zinc-500">
+			<p className="shrink-0 border-t border-border px-4 py-2 text-[11px] text-text-subtlest">
 				{JIRA_CLI_FOOTER_HINTS}
 			</p>
 		</motion.div>

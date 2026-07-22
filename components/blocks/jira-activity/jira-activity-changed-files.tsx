@@ -7,11 +7,10 @@ import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
-import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { ArtifactList } from "@/components/ui-custom/artifact-list";
+import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import { Icon } from "@/components/ui/icon";
@@ -70,29 +69,27 @@ function JiraActivityViewAction({
 export function JiraActivityChangedFiles({
 	entry,
 	footer,
+	onOutputOpen,
 	onView,
-	pullRequestNumber,
 	status = "done",
 	variant = "activity",
 }: Readonly<{
 	entry: JiraActivityChangedFilesEntry;
 	footer?: ReactNode;
+	onOutputOpen?: (item: ArtifactListItem) => void;
 	onView?: (item: JiraAgentSessionItem) => void;
-	pullRequestNumber?: number;
 	status?: "done" | "failed" | "review";
 	variant?: "activity" | "jira-issue";
 }>) {
 	if (entry.sessionItem && entry.outputs) {
 		const isJiraIssue = variant === "jira-issue";
-		const statusLabel = status === "review" && pullRequestNumber
-			? `#${pullRequestNumber}`
-			: status === "done" ? "Done" : "Failed";
-		const statusIcon = status === "review"
-			? <PullRequestIcon color="currentColor" label="" size="small" />
-			: status === "done"
-				? <StatusSuccessIcon color="currentColor" label="" size="small" />
-				: <StatusErrorIcon color="currentColor" label="" size="small" />;
-		const statusIconClassName = status === "failed" ? "text-icon-danger" : "text-icon-success";
+		const statusPresentation = status === "failed"
+			? {
+					icon: <StatusErrorIcon color="currentColor" label="" size="small" />,
+					iconClassName: "text-icon-danger",
+					label: "Failed",
+				}
+			: null;
 
 		return (
 			<div
@@ -115,20 +112,19 @@ export function JiraActivityChangedFiles({
 							{entry.sessionItem.title}
 						</p>
 						<div className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-							<span
-								className={cn(
-									"flex shrink-0 items-center gap-1",
-									status === "review" ? "text-text-subtlest" : "text-text",
-								)}
-							>
-								<Icon
-									aria-hidden
-									className={statusIconClassName}
-									render={statusIcon}
-								/>
-								{statusLabel}
-							</span>
-							<span aria-hidden className="text-text-subtlest">·</span>
+							{statusPresentation ? (
+								<>
+									<span className="flex shrink-0 items-center gap-1 text-text">
+										<Icon
+											aria-hidden
+											className={statusPresentation.iconClassName}
+											render={statusPresentation.icon}
+										/>
+										{statusPresentation.label}
+									</span>
+									<span aria-hidden className="text-text-subtlest">·</span>
+								</>
+							) : null}
 							<JiraActivitySessionTime
 								fallback={entry.timestamp}
 								item={entry.sessionItem}
@@ -149,6 +145,7 @@ export function JiraActivityChangedFiles({
 					<ArtifactList
 						className={isJiraIssue ? "mx-3 rounded-lg" : "rounded-none border-x-0 border-b-0"}
 						items={entry.outputs}
+						onOpen={onOutputOpen}
 						variant="compact"
 					/>
 				) : null}

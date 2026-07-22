@@ -290,6 +290,8 @@ interface ChatPanelProps {
 	composerReservesContextBarSpace?: boolean;
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
+	/** Opt-out for embedded surfaces that should not show the AI verification disclaimer. */
+	hideAiDisclaimer?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
@@ -490,6 +492,7 @@ export default function ChatPanel({
 	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
+	hideAiDisclaimer = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
 	headerVariant = "default",
@@ -1880,6 +1883,7 @@ export default function ChatPanel({
 						experimentalDarkCta
 						containerClassName={composerContainerClassName}
 						hideAiCursor={hideAiCursor}
+						hideAiDisclaimer={hideAiDisclaimer}
 						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
 						dictationState={dictationState}

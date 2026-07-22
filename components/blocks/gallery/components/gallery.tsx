@@ -17,7 +17,7 @@ import {
 	GallerySelectedStage,
 	type GalleryStagePosition,
 } from "./gallery-selected-stage";
-import { GalleryToggle } from "./gallery-toggle";
+import { GalleryToggle, type GalleryTheme } from "./gallery-toggle";
 import type { GalleryPalette } from "../lib/gallery-palette";
 import { GalleryTrack } from "./gallery-track";
 
@@ -94,6 +94,10 @@ export interface GalleryProps {
 	palette?: GalleryPalette;
 	/** Called after the selected prototype is reset to its initial mounted state. */
 	onReset?: (item: GalleryItem) => void;
+	/** Optional route-owned theme displayed by the Gallery theme control. */
+	theme?: GalleryTheme;
+	/** Cycles the optional route-owned theme. */
+	onThemeCycle?: () => void;
 }
 
 export function Gallery({
@@ -112,6 +116,8 @@ export function Gallery({
 	className,
 	palette,
 	onReset,
+	theme,
+	onThemeCycle,
 }: Readonly<GalleryProps>): JSX.Element {
 	const shouldReduceMotion = useReducedMotion();
 	const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -213,6 +219,8 @@ export function Gallery({
 				open={isOpen}
 				onToggle={handleToggle}
 				onReset={handleReset}
+				theme={theme}
+				onThemeCycle={onThemeCycle}
 			/>
 
 			{selectedItem ? (

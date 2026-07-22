@@ -298,6 +298,7 @@ Recurring thermo-nuclear reviews have shown that VPK stays healthiest when new b
 
 ### Execution Discipline
 
+- Skill routing: do not select `vpk-component` merely because a task touches a component. Use it only when the user explicitly invokes it, names or links an upstream ADS/Atlaskit/shadcn/Base UI component source, or requests parity with one. Ordinary edits, bug fixes, copy changes, layout changes, motion changes, and maintenance of existing VPK components follow the normal workflow without `vpk-component`.
 - Surface assumptions before coding when the request has multiple plausible interpretations; ask only when a reasonable, low-risk assumption is not available.
 - Prefer the smallest complete change that solves the stated problem. Do not add speculative features, configuration, abstractions, or error handling that the request does not require.
 - Keep edits surgical: every changed line should trace back to the user's request, required verification, or cleanup caused by your own change.

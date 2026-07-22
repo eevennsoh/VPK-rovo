@@ -59,11 +59,11 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /import \{ ElapsedTime, RelativeTime \} from "@\/components\/ui\/elapsed-time";/u);
 	assert.match(CHANGED_FILES_SOURCE, /function JiraActivitySessionTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*secondsAgo=\{item\.completedSecondsAgo\}[\s\S]*timestampMs=\{item\.completedAtMs\}[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.sessionItem\.agent\.name/u);
-	assert.match(CHANGED_FILES_SOURCE, /StatusSuccessIcon/u);
-	assert.match(CHANGED_FILES_SOURCE, /\{statusLabel\}[\s\S]*<JiraActivitySessionTime[\s\S]*·[\s\S]*entry\.sessionItem\.agent\.name/u);
-	assert.match(CHANGED_FILES_SOURCE, /"flex shrink-0 items-center gap-1",[\s\S]*status === "review"/u);
+	assert.doesNotMatch(CHANGED_FILES_SOURCE, /StatusSuccessIcon|\? "Done"/u);
+	assert.doesNotMatch(CHANGED_FILES_SOURCE, /pullRequestNumber|Ready for review/u);
+	assert.match(CHANGED_FILES_SOURCE, /statusPresentation \? \([\s\S]*\{statusPresentation\.label\}[\s\S]*<JiraActivitySessionTime[\s\S]*·[\s\S]*entry\.sessionItem\.agent\.name/u);
+	assert.match(CHANGED_FILES_SOURCE, /className="flex shrink-0 items-center gap-1 text-text"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex shrink-0 items-center gap-1 font-medium/u);
-	assert.match(CHANGED_FILES_SOURCE, /status === "review" \? "text-text-subtlest" : "text-text"/u);
 	assert.equal(changedFiles.sessionItem.completedSecondsAgo, 5 * 60);
 	assert.match(CHANGED_FILES_SOURCE, /function JiraActivityViewAction[\s\S]*const handleView = \(\) => onView\?\.\(item\);/u);
 	assert.match(CHANGED_FILES_SOURCE, /<Button[\s\S]*aria-label=\{`Open \$\{item\.agent\.name\}`\}[\s\S]*className="shrink-0 gap-1"[\s\S]*size="compact"[\s\S]*Open[\s\S]*<LinkExternalIcon label="" size="small" \/>/u);

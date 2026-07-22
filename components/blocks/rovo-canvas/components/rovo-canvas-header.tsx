@@ -1,9 +1,11 @@
 "use client";
 
 import CrossIcon from "@atlaskit/icon/core/cross";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -23,6 +25,13 @@ interface RovoCanvasHeaderProps {
 	start?: ReactNode;
 	primaryActionLabel: string;
 	onPrimaryAction?: () => void;
+	/**
+	 * Optional caller-supplied menu items for a split primary-action button
+	 * (the code review canvas supplies its pull-request commands this way).
+	 * When omitted the header renders a plain primary button, so report and
+	 * dashboard canvases never advertise capabilities they do not have.
+	 */
+	primaryActionMenu?: ReactNode;
 	onClose: () => void;
 }
 
@@ -46,6 +55,7 @@ export function RovoCanvasHeader({
 	start,
 	primaryActionLabel,
 	onPrimaryAction,
+	primaryActionMenu,
 	onClose,
 }: Readonly<RovoCanvasHeaderProps>): React.ReactElement {
 	return (
@@ -54,9 +64,25 @@ export function RovoCanvasHeader({
 			<DialogTitle className="sr-only">{title}</DialogTitle>
 
 			<div className="flex shrink-0 items-center gap-2">
-				<Button onClick={onPrimaryAction}>
-					{primaryActionLabel}
-				</Button>
+				{primaryActionMenu ? (
+					<ButtonGroup variant="split">
+						<Button onClick={onPrimaryAction}>{primaryActionLabel}</Button>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button aria-label="More primary action options" size="icon">
+										<VpkIcon render={<ChevronDownIcon label="" size="small" />} />
+									</Button>
+								}
+							/>
+							<DropdownMenuContent align="end">
+								<DropdownMenuGroup>{primaryActionMenu}</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</ButtonGroup>
+				) : (
+					<Button onClick={onPrimaryAction}>{primaryActionLabel}</Button>
+				)}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={

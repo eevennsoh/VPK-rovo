@@ -241,6 +241,19 @@ test("Gallery controls expose state-aware tooltips and reset the selected protot
 	assert.doesNotMatch(toggleSource, /window\.location\.reload/u);
 });
 
+test("Gallery theme control supports a route-owned theme without replacing its global default", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+
+	assert.match(gallerySource, /theme\?: GalleryTheme;/u);
+	assert.match(gallerySource, /onThemeCycle\?: \(\) => void;/u);
+	assert.match(gallerySource, /theme=\{theme\}/u);
+	assert.match(gallerySource, /onThemeCycle=\{onThemeCycle\}/u);
+	assert.match(toggleSource, /const theme = controlledTheme \?\? globalTheme;/u);
+	assert.match(toggleSource, /const handleThemeCycle = onThemeCycle \?\? \(\(\) => setTheme\(getNextTheme\(theme\)\)\);/u);
+	assert.match(toggleSource, /onClick=\{handleThemeCycle\}/u);
+});
+
 test("Gallery controls reserve an in-flow row with compact button geometry", () => {
 	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
