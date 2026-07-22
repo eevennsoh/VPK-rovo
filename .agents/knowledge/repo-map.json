@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 81,
-			"pageCount": 58
+			"ownerImportCount": 82,
+			"pageCount": 59
 		},
 		"pages": [
 			{
@@ -3986,6 +3986,22 @@
 				"shellOwnerCount": 0,
 				"shellOwners": [],
 				"source": "app/jira/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/jira-golden-paths",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/jira-golden-paths/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5189,7 +5205,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 404,
+			"manifestEntryCount": 406,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5801,7 +5817,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 12,
+				"entryCount": 13,
 				"entries": [
 					{
 						"category": "projects",
@@ -5832,6 +5848,12 @@
 						"slug": "jira",
 						"name": "Jira",
 						"importPath": "@/components/projects/jira"
+					},
+					{
+						"category": "projects",
+						"slug": "jira-golden-paths",
+						"name": "Jira Golden Paths",
+						"importPath": "@/components/projects/jira-golden-paths"
 					},
 					{
 						"category": "projects",
@@ -6599,7 +6621,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 69,
+				"entryCount": 70,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -6888,6 +6910,12 @@
 						"slug": "rovo-illustration",
 						"name": "Rovo Illustration",
 						"importPath": "@/components/ui-custom/rovo-illustration"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "rovo-sparkle",
+						"name": "Rovo Sparkle",
+						"importPath": "@/components/ui-custom/rovo-sparkle"
 					},
 					{
 						"category": "ui-custom",
@@ -7757,7 +7785,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-build"
 			},
 			{
-				"description": "Harvest ADS and shadcn/Base UI components into VPK components, demos, docs metadata, and tests. Use for atlassian.design URLs, shadcn registry/docs components, ADS/shadcn to VPK mapping, visual enrichment, examples, and package/source parity. Use vpk-design for Figma.",
+				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source, including upstream-to-VPK mapping, examples, docs metadata, and package/source parity. Use only when the user names or links one of those upstream sources, explicitly requests ADS/shadcn parity, or invokes vpk-component. Do not use for ordinary edits, bug fixes, animation or motion tweaks, layout changes, or maintenance of an existing VPK component when no upstream component-library source is part of the request. Use vpk-design for Figma.",
 				"name": "vpk-component",
 				"path": ".agents/skills/vpk-component/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"

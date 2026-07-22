@@ -9,6 +9,10 @@ export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	}),
 	html: dynamic(() => import("../demos/projects/html-demo"), { ssr: false }),
 	jira: dynamic(() => import("../demos/projects/jira-demo"), { ssr: false }),
+	"jira-golden-paths": dynamic(
+		() => import("../demos/projects/jira-golden-paths-demo"),
+		{ ssr: false },
+	),
 	"jira-queue": dynamic(() => import("../demos/projects/jira-queue-demo"), {
 		ssr: false,
 	}),
