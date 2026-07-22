@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 import { CHANGED_FILES, EDITOR_FILE } from "../data/changed-files";
 import { CODE_REVIEW_WORK_ITEM } from "../data/work-item";
@@ -71,6 +72,12 @@ export function CodeReview({
 				title={`${workItem.key}: ${workItem.title}`}
 				headerStart={<CodeReviewCanvasHeader additions={additions} deletions={deletions} workItem={workItem} />}
 				primaryActionLabel="Create pull request"
+				primaryActionMenu={
+					<>
+						<DropdownMenuItem>Create draft PR</DropdownMenuItem>
+						<DropdownMenuItem>Commit &amp; Push</DropdownMenuItem>
+					</>
+				}
 				artefactLabel={`${workItem.key}: ${workItem.title}`}
 				artefactMetadata={`${workItem.repoName} · ${workItem.localBranchName} → ${workItem.branchName}`}
 				showArtefactIdentity={false}

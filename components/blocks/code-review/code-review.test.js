@@ -97,7 +97,9 @@ test("code review public barrel and demo expose the composition root", () => {
 	const page = readProjectFile("components/blocks/code-review/page.tsx");
 
 	assert.match(index, /export \{ CodeReview \} from "\.\/components\/code-review";/u);
-	assert.match(page, /<CodeReview \/>/u);
+	// The standalone block page opens the review canvas by default (the launcher
+	// button is only the reopen-after-close affordance).
+	assert.match(page, /<CodeReview defaultOpen \/>/u);
 });
 
 test("code review editor retains interaction contracts", () => {
@@ -201,6 +203,28 @@ test("Code Review supports a caller-owned launch trigger", () => {
 	assert.match(source, /onOpenChange\?: \(open: boolean\) => void;/u);
 	assert.match(source, /const isCanvasOpen = open \?\? internalOpen;/u);
 	assert.match(source, /onOpenChange\?\.\(nextOpen\);/u);
+});
+
+test("Code Review owns its pull-request actions; the shared canvas header does not", () => {
+	const codeReview = readProjectFile(
+		"components/blocks/code-review/components/code-review.tsx",
+	);
+	const header = readProjectFile(
+		"components/blocks/rovo-canvas/components/rovo-canvas-header.tsx",
+	);
+
+	// The code-review caller supplies the PR-specific split-menu items.
+	assert.match(codeReview, /primaryActionMenu=\{/u);
+	assert.match(codeReview, /Create draft PR/u);
+	assert.match(codeReview, /Commit &amp; Push/u);
+
+	// The shared header must NOT hardcode pull-request actions, so report and
+	// dashboard canvases (rfp report, sidebar-chat artifacts) never advertise
+	// capabilities they lack. It renders the split button only when a caller
+	// supplies primaryActionMenu, and a plain button otherwise.
+	assert.doesNotMatch(header, /Create draft PR/u);
+	assert.doesNotMatch(header, /Commit &amp; Push/u);
+	assert.match(header, /primaryActionMenu \? \(/u);
 });
 
 test("Code Review composition no longer renders a code summary screen", () => {

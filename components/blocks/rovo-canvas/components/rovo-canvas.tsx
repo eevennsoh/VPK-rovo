@@ -103,6 +103,9 @@ export interface RovoCanvasProps {
 	headerStart?: ReactNode;
 	primaryActionLabel?: string;
 	onPrimaryAction?: () => void;
+	/** Optional menu items for a split primary-action button; only canvases with
+	 * secondary primary-action commands (e.g. code review) supply this. */
+	primaryActionMenu?: ReactNode;
 	views?: ReadonlyArray<RovoCanvasView>;
 	viewId?: string;
 	defaultViewId?: string;
@@ -567,6 +570,7 @@ export function RovoCanvas({
 	headerStart,
 	primaryActionLabel = "Save",
 	onPrimaryAction,
+	primaryActionMenu,
 	views,
 	viewId,
 	defaultViewId,
@@ -745,6 +749,7 @@ export function RovoCanvas({
 							start={headerStart}
 							primaryActionLabel={primaryActionLabel}
 							onPrimaryAction={onPrimaryAction}
+							primaryActionMenu={primaryActionMenu}
 							onClose={() => setOpen(false)}
 						/>
 

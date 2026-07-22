@@ -25,6 +25,13 @@ interface RovoCanvasHeaderProps {
 	start?: ReactNode;
 	primaryActionLabel: string;
 	onPrimaryAction?: () => void;
+	/**
+	 * Optional caller-supplied menu items for a split primary-action button
+	 * (the code review canvas supplies its pull-request commands this way).
+	 * When omitted the header renders a plain primary button, so report and
+	 * dashboard canvases never advertise capabilities they do not have.
+	 */
+	primaryActionMenu?: ReactNode;
 	onClose: () => void;
 }
 
@@ -48,6 +55,7 @@ export function RovoCanvasHeader({
 	start,
 	primaryActionLabel,
 	onPrimaryAction,
+	primaryActionMenu,
 	onClose,
 }: Readonly<RovoCanvasHeaderProps>): React.ReactElement {
 	return (
@@ -56,24 +64,25 @@ export function RovoCanvasHeader({
 			<DialogTitle className="sr-only">{title}</DialogTitle>
 
 			<div className="flex shrink-0 items-center gap-2">
-				<ButtonGroup variant="split">
+				{primaryActionMenu ? (
+					<ButtonGroup variant="split">
+						<Button onClick={onPrimaryAction}>{primaryActionLabel}</Button>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button aria-label="More primary action options" size="icon">
+										<VpkIcon render={<ChevronDownIcon label="" size="small" />} />
+									</Button>
+								}
+							/>
+							<DropdownMenuContent align="end">
+								<DropdownMenuGroup>{primaryActionMenu}</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</ButtonGroup>
+				) : (
 					<Button onClick={onPrimaryAction}>{primaryActionLabel}</Button>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button aria-label="More pull request options" size="icon">
-									<VpkIcon render={<ChevronDownIcon label="" size="small" />} />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem>Create draft PR</DropdownMenuItem>
-								<DropdownMenuItem>Commit &amp; Push</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</ButtonGroup>
+				)}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
