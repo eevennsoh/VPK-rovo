@@ -128,7 +128,7 @@ export function serializeInlineCommentsContext(
 		`Line: ${comment.lineNumber}`,
 		`Exact code line: ${JSON.stringify(comment.lineText)}`,
 		`Review comment: ${comment.body}`,
-	].join("\n"));
+	].join("\n")).join("\n\n");
 
 	return [
 		"Inline code review comments (local prompt context):",
@@ -136,8 +136,6 @@ export function serializeInlineCommentsContext(
 		`Repository: ${workItem.repoName}`,
 		`Branch: ${workItem.branchName}`,
 		"",
-		...serializedComments.flatMap((comment, index) =>
-			index === serializedComments.length - 1 ? [comment] : [comment, ""],
-		),
+		serializedComments,
 	].join("\n");
 }
