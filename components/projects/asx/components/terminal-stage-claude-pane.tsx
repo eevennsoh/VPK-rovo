@@ -82,12 +82,12 @@ export function TerminalStageClaudePane({
 	return (
 		<div className="flex h-full min-w-0 flex-col overflow-hidden">
 			<div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-				<div className="mb-3 flex items-start gap-3 rounded-md border border-zinc-800 p-3">
+				<div className="mb-3 flex items-start gap-3 rounded-md border border-border p-3">
 					<ClaudeLogo />
 					<div className="min-w-0">
 						<p className="text-[#D97757]">✻ Welcome to Claude Code!</p>
-						<p className="text-zinc-500">claude-fable · /help for help</p>
-						<p className="text-zinc-500">cwd: ~/dev/asx</p>
+						<p className="text-text-subtlest">claude-fable · /help for help</p>
+						<p className="text-text-subtlest">cwd: ~/dev/asx</p>
 					</div>
 				</div>
 				<div className="flex flex-col gap-1">
@@ -99,12 +99,12 @@ export function TerminalStageClaudePane({
 					))}
 				</div>
 			</div>
-			<div className="shrink-0 border-t border-zinc-800 px-4 py-3">
-				<div className="rounded-md border border-zinc-800 px-3 py-2 text-zinc-300">
+			<div className="shrink-0 border-t border-border px-4 py-3">
+				<div className="rounded-md border border-border px-3 py-2 text-text-subtle">
 					<span>{"> "}{displayedDraft}</span>
 					<BlinkCursor />
 				</div>
-				<p className="mt-1 text-[11px] text-zinc-500">? for shortcuts</p>
+				<p className="mt-1 text-[11px] text-text-subtlest">? for shortcuts</p>
 			</div>
 		</div>
 	);

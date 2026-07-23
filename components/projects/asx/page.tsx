@@ -6,10 +6,10 @@ import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
-import JiraForYouPage from "@/components/blocks/jira-for-you/page";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
+import { ForYouStageLayout } from "@/components/projects/shared/components/for-you-stage-layout";
 import {
 	ASX_CHAT_AGENT_PROFILES,
 	buildAsxForYouAgentChatScenario,
@@ -30,7 +30,6 @@ import {
 	WorkItemStage,
 	type WorkItemStageController,
 } from "./components/work-item-stage";
-import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // ASX — Agent Sessions Experience
@@ -70,11 +69,7 @@ function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean }>): React.React
 
 	return (
 		<>
-			<div className="relative left-1/2 h-full min-h-0 w-screen -translate-x-1/2 overflow-y-auto">
-				<div className={cn("mx-auto w-full max-w-3xl px-6", dockOpen ? "pb-56" : "pb-8")}>
-					<JiraForYouPage onItemClick={handleItemClick} />
-				</div>
-			</div>
+			<ForYouStageLayout dockOpen={dockOpen} onItemClick={handleItemClick} />
 			<AsxRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}
@@ -111,6 +106,7 @@ function renderAsxItem(
 
 function AsxGallery(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(ASX_GALLERY_ITEMS[0]?.id ?? "");
+	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
 	// The dock's open state is controlled here so stages can react to it — the
 	// "For you" feed drops its dock clearance padding when the dock is hidden.
 	const [dockOpen, setDockOpen] = useState(true);
@@ -157,6 +153,9 @@ function AsxGallery(): React.ReactElement {
 			resetRovoSurface();
 		}
 	}, [resetRovoSurface, restartTerminal]);
+	const handleTerminalThemeCycle = useCallback(() => {
+		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
+	}, []);
 	const topBarCenter =
 		selectedId === "card" ? (
 			<CardKanbanControls controller={cardKanbanController} />
@@ -166,18 +165,14 @@ function AsxGallery(): React.ReactElement {
 			<TerminalControls controller={terminalController} />
 		) : null;
 
-	// The Terminal pattern is a full dark-mode experience: the terminal frame is
-	// already dark (hardcoded zinc), so we flip the surrounding gallery chrome
-	// (top bar, dock, background) to dark too via ADS subtree theming. Every
-	// semantic token in the subtree resolves to its dark value — no `dark:`
-	// utilities or hardcoded colors. The dock strip is `position: fixed` but
-	// still a DOM descendant of this root, so the theme cascades to it.
+	// Terminal owns a local dark default while still allowing Gallery's theme
+	// control to switch the entire subtree, including the terminal frame.
 	const isTerminal = selectedId === "terminal";
 	const subtreeThemeProps = isTerminal
 		? {
 				"data-subtree-theme": "",
-				"data-color-mode": "dark",
-				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+				"data-color-mode": terminalTheme,
+				"data-theme": `${terminalTheme}:${terminalTheme} spacing:spacing typography:typography shape:shape`,
 			}
 		: {};
 
@@ -190,6 +185,8 @@ function AsxGallery(): React.ReactElement {
 				onSelectedChange={handleSelectedChange}
 				open={dockOpen}
 				onOpenChange={setDockOpen}
+				theme={isTerminal ? terminalTheme : undefined}
+				onThemeCycle={isTerminal ? handleTerminalThemeCycle : undefined}
 				topBarCenter={topBarCenter}
 				showTopBarBorder={selectedId === "queue"}
 				onReset={handleReset}

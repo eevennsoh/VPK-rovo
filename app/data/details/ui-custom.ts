@@ -41,6 +41,7 @@ import { REASONING_DETAIL } from "./ui-custom/reasoning";
 import { SANDBOX_DETAIL } from "./ui-custom/sandbox";
 import { ENVIRONMENT_VARIABLES_DETAIL } from "./ui-custom/environment-variables";
 import { FILE_TREE_DETAIL } from "./ui-custom/file-tree";
+import { FILE_TREE_2_DETAIL } from "./ui-custom/file-tree-2";
 import { CONTROLS_DETAIL } from "./ui-custom/controls";
 import { CONVERSATION_DETAIL } from "./ui-custom/conversation";
 import { EDGE_DETAIL } from "./ui-custom/edge";
@@ -113,6 +114,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	sandbox: SANDBOX_DETAIL,
 	"environment-variables": ENVIRONMENT_VARIABLES_DETAIL,
 	"file-tree": FILE_TREE_DETAIL,
+	"file-tree-2": FILE_TREE_2_DETAIL,
 	controls: CONTROLS_DETAIL,
 	conversation: CONVERSATION_DETAIL,
 	edge: EDGE_DETAIL,

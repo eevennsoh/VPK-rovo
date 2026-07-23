@@ -43,6 +43,28 @@ const TERMINAL_JIRA_PANE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/asx/components/terminal-stage-jira-pane.tsx"),
 	"utf8",
 );
+const TERMINAL_PAGE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/page.tsx"),
+	"utf8",
+);
+const TERMINAL_STAGE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/components/terminal-stage.tsx"),
+	"utf8",
+);
+const TERMINAL_CHROME_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/components/terminal-stage-chrome.tsx"),
+	"utf8",
+);
+const TERMINAL_CLAUDE_PANE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/asx/components/terminal-stage-claude-pane.tsx"),
+	"utf8",
+);
+const TERMINAL_VIEW_SOURCES = [
+	TERMINAL_STAGE_SOURCE,
+	TERMINAL_CHROME_SOURCE,
+	TERMINAL_CLAUDE_PANE_SOURCE,
+	TERMINAL_JIRA_PANE_SOURCE,
+].join("\n");
 
 function item(key, status, overrides = {}) {
 	return { age: "now", key, status, summary: "summary", title: key, ...overrides };
@@ -64,6 +86,30 @@ function playThroughScript(harness) {
 
 	return state;
 }
+
+test("Terminal owns a dark default that the Gallery theme control can cycle", () => {
+	assert.match(TERMINAL_PAGE_SOURCE, /useState<"dark" \| "light">\("dark"\)/u);
+	assert.match(
+		TERMINAL_PAGE_SOURCE,
+		/setTerminalTheme\(\(current\) => \(current === "dark" \? "light" : "dark"\)\)/u,
+	);
+	assert.match(TERMINAL_PAGE_SOURCE, /theme=\{isTerminal \? terminalTheme : undefined\}/u);
+	assert.match(TERMINAL_PAGE_SOURCE, /onThemeCycle=\{isTerminal \? handleTerminalThemeCycle : undefined\}/u);
+	assert.match(TERMINAL_PAGE_SOURCE, /"data-color-mode": terminalTheme/u);
+});
+
+test("Terminal frame follows semantic theme tokens without fixed zinc overrides", () => {
+	assert.doesNotMatch(TERMINAL_VIEW_SOURCES, /TERMINAL_FRAME_ZINC_VARS|--ds-/u);
+	assert.doesNotMatch(TERMINAL_VIEW_SOURCES, /(?:bg|border|text)-zinc-/u);
+	assert.match(TERMINAL_STAGE_SOURCE, /border-border bg-surface-raised[^\n]*text-text/u);
+});
+
+test("Terminal divider stays transparent until the pane is split", () => {
+	assert.match(
+		TERMINAL_STAGE_SOURCE,
+		/state\.split \? "bg-border" : "bg-transparent"/u,
+	);
+});
 
 test("applyBoardEvent add-item appends without mutating the input array", async () => {
 	const harness = await loadTerminalStateHarness();

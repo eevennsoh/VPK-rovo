@@ -402,4 +402,39 @@ export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"file-tree-2-demo-path-first": dynamic(
+		() =>
+			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
+				default: mod.FileTree2DemoPathFirst,
+			})),
+		{ ssr: false },
+	),
+	"file-tree-2-demo-flatten-empty-directories": dynamic(
+		() =>
+			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
+				default: mod.FileTree2DemoFlattenEmptyDirectories,
+			})),
+		{ ssr: false },
+	),
+	"file-tree-2-demo-git-status": dynamic(
+		() =>
+			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
+				default: mod.FileTree2DemoGitStatus,
+			})),
+		{ ssr: false },
+	),
+	"file-tree-2-demo-drag-and-drop": dynamic(
+		() =>
+			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
+				default: mod.FileTree2DemoDragAndDrop,
+			})),
+		{ ssr: false },
+	),
+	"file-tree-2-demo-icon-rules": dynamic(
+		() =>
+			import("../../demos/ui-custom/file-tree-2-demo").then((mod) => ({
+				default: mod.FileTree2DemoIconRules,
+			})),
+		{ ssr: false },
+	),
 };

@@ -107,6 +107,7 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	onAgentActivityQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
 	onAgentActivityViewChat?: (activity: JiraIssueAgentActivity) => void;
 	onAgentDoneRunSubmit?: (run: JiraIssueCompletedAgentRun, prompt: string) => void;
+	onAgentDoneRunReview?: (run: JiraIssueCompletedAgentRun) => void;
 	onAgentDoneRunView?: (run: JiraIssueCompletedAgentRun) => void;
 	generativeAction?: JiraIssueGenerativeActionConfig;
 }
@@ -443,6 +444,7 @@ export function JiraIssue({
 	onAgentActivityQuestionSubmit,
 	onAgentActivityViewChat,
 	onAgentDoneRunSubmit,
+	onAgentDoneRunReview,
 	onAgentDoneRunView,
 	parentEpicControl,
 	priority = "major",
@@ -803,6 +805,7 @@ export function JiraIssue({
 									>
 										<JiraIssueAgentDone
 											onOpenChange={handleAgentActivityOpenChange}
+											onReview={onAgentDoneRunReview}
 											onSubmit={onAgentDoneRunSubmit}
 											onView={onAgentDoneRunView}
 											runs={agentDoneRuns}

@@ -40,7 +40,7 @@ import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { TileAvatar } from "@/components/ui/tile";
 import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
-import { cn } from "@/lib/utils";
+import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
 
 import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
 
@@ -198,67 +198,6 @@ export function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
 	};
 }
 
-/** A flyout value rendered as a hover-underlined link. Development metadata
- * (repository, branch, commit, worktree) uses this so the value reads as
- * actionable: the underline only appears on hover. */
-function FlyoutLink({
-	className,
-	title,
-	segmented = false,
-	children,
-}: Readonly<{
-	className?: string;
-	title?: string;
-	/**
-	 * When the link wraps a multi-color `PathValue`, the underline is drawn by
-	 * each segment (via `group-hover`) so it matches that segment's color.
-	 * The `<a>` itself must then NOT underline, or it would paint one flat
-	 * single-color line over the whole value. Plain single-color links leave
-	 * this `false` and underline on the anchor directly.
-	 */
-	segmented?: boolean;
-	children: ReactNode;
-}>) {
-	return (
-		<a
-			className={cn(
-				// `group` so nested PathValue segments can react to this link's hover.
-				// `decoration-current` keeps a plain link's underline in its text color.
-				"group min-w-0 truncate rounded-[3px] no-underline decoration-current outline-none",
-				segmented ? null : "hover:underline focus-visible:underline",
-				className,
-			)}
-			href="#"
-			title={title}
-		>
-			{children}
-		</a>
-	);
-}
-
-/** Renders a slash-delimited path where every segment before the final one
- * (the `path-before/` prefix) is dimmed to `text-text-subtlest`, keeping the
- * final segment at the normal value color. Used for repository and branch
- * paths so the meaningful tail stands out. Each segment underlines in its own
- * text color on hover (`group-hover`) so the underline never diverges from the
- * text above it. */
-function PathValue({ path }: Readonly<{ path: string }>) {
-	const lastSlash = path.lastIndexOf("/");
-	if (lastSlash === -1) return <span className="text-text">{path}</span>;
-	const prefix = path.slice(0, lastSlash + 1);
-	const tail = path.slice(lastSlash + 1);
-	return (
-		<>
-			<span className="text-text-subtlest decoration-current group-hover:underline group-focus-visible:underline">
-				{prefix}
-			</span>
-			<span className="text-text decoration-current group-hover:underline group-focus-visible:underline">
-				{tail}
-			</span>
-		</>
-	);
-}
-
 /** A labeled row inside the flyout: fixed label column + value column. */
 export function FlyoutRow({
 	icon,
@@ -406,7 +345,7 @@ export function JiraSessionFlyoutBody({
 						<FlyoutRow icon={prStateIcon(session.status)} label="Pull request">
 							<span className="flex min-w-0 flex-1 items-center gap-1">
 								<Lozenge variant={prState.variant}>{prState.label}</Lozenge>
-								<FlyoutLink
+								<MetadataPathLink
 									className="text-text"
 									title={
 										session.pullRequestTitle
@@ -417,7 +356,7 @@ export function JiraSessionFlyoutBody({
 									{session.pullRequestTitle
 										? `#${session.pullRequestNumber}: ${session.pullRequestTitle}`
 										: `#${session.pullRequestNumber}`}
-								</FlyoutLink>
+								</MetadataPathLink>
 								{hasCodeChanges ? (
 									<span className="ml-auto flex shrink-0 items-center gap-1">
 										<span className="text-text-success">+{session.additions}</span>
@@ -436,22 +375,22 @@ export function JiraSessionFlyoutBody({
 						<FlyoutRow icon={<FolderClosedIcon label="" size="small" />} label="Repository">
 							<span className="flex min-w-0 items-center gap-1">
 								<GithubLogo aria-hidden borderless label="" size="xxsmall" />
-								<FlyoutLink segmented title={session.repository}>
-									<PathValue path={session.repository} />
-								</FlyoutLink>
+								<MetadataPathLink segmented title={session.repository}>
+									<MetadataPathValue path={session.repository} />
+								</MetadataPathLink>
 							</span>
 						</FlyoutRow>
 					) : null}
 					{session.branch ? (
 						<FlyoutRow icon={<BranchIcon label="" size="small" />} label="Branch">
-							<FlyoutLink segmented title={session.branch}>
-								<PathValue path={session.branch} />
-							</FlyoutLink>
+							<MetadataPathLink segmented title={session.branch}>
+								<MetadataPathValue path={session.branch} />
+							</MetadataPathLink>
 						</FlyoutRow>
 					) : null}
 					{session.worktreePath ? (
 						<FlyoutRow icon={<IfElseIcon label="" size="small" />} label="Worktree">
-							<FlyoutLink className="text-text" title={session.worktreePath}>{session.worktreePath}</FlyoutLink>
+							<MetadataPathLink className="text-text" title={session.worktreePath}>{session.worktreePath}</MetadataPathLink>
 						</FlyoutRow>
 					) : null}
 				</div>

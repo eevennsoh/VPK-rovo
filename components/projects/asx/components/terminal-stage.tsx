@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { KeyboardEvent } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -23,37 +23,6 @@ import { TerminalStageJiraPane } from "./terminal-stage-jira-pane";
 // `page.tsx`), so there's no dedicated restart button here — `r`/`R` still
 // restarts from the keyboard.
 // ---------------------------------------------------------------------------
-
-// The terminal uses Tailwind `zinc-*` and accent color utilities. In this repo
-// those utilities compile straight to ADS `--ds-*` tokens (e.g. `bg-zinc-950` →
-// `background-color: var(--ds-text-accent-gray-bolder)`; see the aliases in
-// `app/tailwind-theme.css`), and those tokens FLIP with the app color mode — so
-// the frame would invert to light whenever the OS/app is in dark mode. To keep
-// the frame a real, always-dark terminal — dark chrome around it, but never
-// inverting — we pin the exact `--ds-*` tokens it references to fixed hex values
-// on the frame wrapper. These are the light-mode resolutions (the intended
-// terminal look), so the frame renders identically in every theme.
-const TERMINAL_FRAME_ZINC_VARS = {
-	// zinc-950 / zinc-900 (frame bg, deepest text)
-	"--ds-text-accent-gray-bolder": "#1E1F21",
-	// zinc-800 (borders, dividers, selected row bg)
-	"--ds-background-accent-gray-bolder-pressed": "#3B3D42",
-	// zinc-500 (dim text)
-	"--ds-chart-gray-bolder": "#7D818A",
-	// zinc-400
-	"--ds-chart-gray-bold": "#8C8F97",
-	// zinc-300 (body text)
-	"--ds-background-accent-gray-subtle": "#8C8F97",
-	// zinc-100 (bright text)
-	"--ds-background-accent-gray-subtler": "#DDDEE1",
-	// accent tones (syntax + status glyphs)
-	"--ds-background-accent-blue-subtle": "#669DF1", // blue-300
-	"--ds-chart-blue-bold": "#4688EC", // blue-400
-	"--ds-chart-green-bold": "#22A06B", // green-400
-	"--ds-background-accent-yellow-subtle-hovered": "#DDB30E", // yellow-300
-	"--ds-chart-red-bold": "#F15B50", // red-400
-	"--ds-background-accent-purple-subtle": "#C97CF4", // purple-300
-} as CSSProperties;
 
 export function TerminalControls({
 	controller,
@@ -85,18 +54,9 @@ export function TerminalStage({
 	};
 
 	return (
-		// The terminal frame must always render dark, independent of the app's
-		// color mode. In this repo every Tailwind `zinc-*` utility is aliased to an
-		// ADS `--ds-*` token (see `app/tailwind-theme.css`), so `bg-zinc-950` etc.
-		// FLIP with the theme — dark in light mode, light in dark mode. That made
-		// the frame invert whenever the OS/app was in dark mode. Instead of relying
-		// on those theme-relative tokens, we pin the `zinc` scale to fixed hex
-		// values on this wrapper, so the frame is dark in every theme while the
-		// surrounding gallery chrome still follows dark mode (see `page.tsx`).
-		<div
-			style={TERMINAL_FRAME_ZINC_VARS}
-			className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center px-8"
-		>
+		// Use semantic surfaces throughout the frame so the route-owned Terminal
+		// theme controls the demo itself as well as the surrounding Gallery chrome.
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-center justify-center px-8">
 			<div
 				role={awaitingClick ? "button" : undefined}
 				tabIndex={awaitingClick ? 0 : undefined}
@@ -104,7 +64,7 @@ export function TerminalStage({
 				onClick={handleFrameClick}
 				onKeyDown={handleKeyDown}
 				className={cn(
-					"flex h-full max-h-[70vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 font-mono text-[13px] text-zinc-100 shadow-2xl",
+					"flex h-full max-h-[70vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-surface-raised font-mono text-[13px] text-text shadow-2xl",
 					awaitingClick ? "cursor-pointer" : "cursor-default",
 				)}
 			>
@@ -127,7 +87,7 @@ export function TerminalStage({
 							selectedKey={selectedKey}
 						/>
 					</div>
-					<div className="w-px bg-zinc-800" />
+					<div className={cn("w-px", state.split ? "bg-border" : "bg-transparent")} />
 					<div className="min-w-0 overflow-hidden">
 						<TerminalStageClaudePane pane={state.right} activeStep={activeStep} revealCount={revealCount} />
 					</div>

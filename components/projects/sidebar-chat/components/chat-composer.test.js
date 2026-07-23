@@ -82,6 +82,18 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.doesNotMatch(sidebarComposer, /<PromptInputButton[\s\S]*aria-label="Rovo cursor"/u);
 });
 
+test("compact chat can hide the AI disclaimer without changing the default", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /hideAiDisclaimer\?: boolean;/u);
+	assert.match(sidebarPanel, /hideAiDisclaimer = false/u);
+	assert.match(sidebarPanel, /hideAiDisclaimer=\{hideAiDisclaimer\}/u);
+	assert.match(sidebarComposer, /hideAiDisclaimer\?: boolean;/u);
+	assert.match(sidebarComposer, /hideAiDisclaimer = false/u);
+	assert.match(sidebarComposer, /\{hideAiDisclaimer \? null : <Footer \/>\}/u);
+});
+
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
@@ -515,6 +527,21 @@ test("compact chat submits add-menu files through the shared Rovo thread queue",
 	assert.ok(sendPromptIndex > sendChatMessageIndex);
 	assert.match(context.slice(sendChatMessageIndex, sendPromptIndex), /files: promptItem\.files/u);
 	assert.match(context.slice(sendPromptIndex), /files: promptFiles/u);
+});
+
+test("compact chat accepts host-owned input context inside the prompt surface", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /export interface ComposerInputContext \{[\s\S]*content: ReactNode;[\s\S]*submitText: string;[\s\S]*onSubmitted\?: \(\) => void;/u);
+	assert.match(sidebarPanel, /composerInputContext\?: ComposerInputContext;/u);
+	assert.match(sidebarPanel, /const promptText = \(text \|\| prompt\)\.trim\(\) \|\| composerInputContext\?\.submitText\.trim\(\) \|\| "";/u);
+	assert.match(sidebarPanel, /await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*composerInputContext\?\.onSubmitted\?\.\(\);/u);
+	assert.match(sidebarPanel, /composerInputContext=\{composerInputContext\?\.content\}/u);
+	assert.match(sidebarPanel, /hasComposerInputContext=\{composerInputContext !== undefined\}/u);
+	assert.match(sidebarComposer, /PromptInputHeader/u);
+	assert.match(sidebarComposer, /<PromptInputHeader className="px-0 pb-2 pt-0">[\s\S]*\{composerInputContext\}[\s\S]*<\/PromptInputHeader>/u);
+	assert.match(sidebarComposer, /prompt\.trim\(\)\.length > 0 \|\| attachments\.files\.length > 0 \|\| hasComposerInputContext/u);
 });
 
 test("compact chat edit context blocks unmatched prompts from normal Rovo chat", () => {

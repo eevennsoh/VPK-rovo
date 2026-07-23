@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem, type GalleryPalette } from "@/components/blocks/gallery";
 import { JGP_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
@@ -16,6 +17,10 @@ import {
 	type ScreenNavigatorController,
 } from "./hooks/use-screen-navigator";
 import { SessionScreenControls, SessionStage } from "./components/session-stage";
+import {
+	useWorkItemStageController,
+	WorkItemControls,
+} from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // JGP — Jira Golden Paths
@@ -37,6 +42,18 @@ interface SessionCard {
 	controller: ScreenNavigatorController;
 }
 
+function ResetRovoChatOnEntry({ screen }: Readonly<{ screen: SessionScreen | undefined }>): null {
+	const { resetAgentToRovo, resetChat } = useRovoChat();
+
+	useEffect(() => {
+		if (screen?.design !== "rovo") return;
+		resetAgentToRovo();
+		resetChat();
+	}, [resetAgentToRovo, resetChat, screen?.design, screen?.id]);
+
+	return null;
+}
+
 // The window-level arrow handler must not steal keys from a focused interactive
 // control (the top-bar prev/next buttons, the dock tiles): ←/→ on those must act
 // on the control, not step the walkthrough. So bail whenever focus is within any
@@ -53,10 +70,13 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 
 export default function JgpPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(JGP_GALLERY_ITEMS[0]?.id ?? "");
+	const [terminalTheme, setTerminalTheme] = useState<"dark" | "light">("dark");
+	const [dockOpen, setDockOpen] = useState(true);
 	// One navigator per card, hoisted here so the top-bar controls and the stage
 	// share a single source of truth (each card keeps its own place).
 	const localNav = useScreenNavigator(LOCAL_SESSION_SCREENS.length);
 	const globalNav = useScreenNavigator(GLOBAL_SESSION_SCREENS.length);
+	const workItemController = useWorkItemStageController();
 
 	const cardsById = useMemo<Record<string, SessionCard>>(
 		() => ({
@@ -69,6 +89,9 @@ export default function JgpPage(): React.ReactElement {
 
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		setSelectedId(nextSelectedId);
+	}, []);
+	const handleTerminalThemeCycle = useCallback(() => {
+		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
 	}, []);
 
 	// The gallery Reset control rewinds the active card's walkthrough to screen 1.
@@ -99,21 +122,17 @@ export default function JgpPage(): React.ReactElement {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [activeNext, activePrev]);
 
-	// The Terminal section is a full dark-mode experience: the terminal frame is
-	// already dark, so we flip the surrounding gallery chrome (top bar, dock,
-	// background) to dark too via ADS subtree theming whenever the active screen
-	// belongs to the "Terminal" section — mirroring the /asx Terminal pattern.
-	// Every semantic token in the subtree resolves to its dark value (no `dark:`
-	// utilities or hardcoded colors), and the `position: fixed` dock strip still
-	// inherits it as a DOM descendant of this root. Generalizes to future
-	// sections by keying off the screen's `section`, not a specific card.
+	// The Terminal section defaults to a dark ADS subtree while keeping that
+	// choice route-local and controllable from Gallery's theme button. The user
+	// can switch the full Terminal surface to light without changing the global
+	// app theme; non-Terminal sections fall back to the normal global theme.
 	const activeScreen = activeCard.screens[activeCard.controller.index];
 	const isTerminalSection = activeScreen?.section === "Terminal";
 	const subtreeThemeProps = isTerminalSection
 		? {
 				"data-subtree-theme": "",
-				"data-color-mode": "dark",
-				"data-theme": "dark:dark spacing:spacing typography:typography shape:shape",
+				"data-color-mode": terminalTheme,
+				"data-theme": `${terminalTheme}:${terminalTheme} spacing:spacing typography:typography shape:shape`,
 			}
 		: {};
 
@@ -126,6 +145,7 @@ export default function JgpPage(): React.ReactElement {
 	// default Rovo — mirroring the /asx pattern.
 	return (
 		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
+			<ResetRovoChatOnEntry screen={activeScreen} />
 			<div className="relative h-dvh w-full overflow-hidden bg-surface" {...subtreeThemeProps}>
 				<Gallery
 					items={JGP_GALLERY_ITEMS}
@@ -133,16 +153,32 @@ export default function JgpPage(): React.ReactElement {
 					title="Jira Golden Paths"
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}
-					topBarCenter={
-						<SessionScreenControls
-							screens={activeCard.screens}
-							controller={activeCard.controller}
-						/>
-					}
+					open={dockOpen}
+					onOpenChange={setDockOpen}
+					theme={isTerminalSection ? terminalTheme : undefined}
+					onThemeCycle={isTerminalSection ? handleTerminalThemeCycle : undefined}
+					topBarCenter={(
+						<div className="flex items-center gap-3">
+							<SessionScreenControls
+								screens={activeCard.screens}
+								controller={activeCard.controller}
+							/>
+							{activeScreen?.design === "work-item" ? (
+								<WorkItemControls controller={workItemController} />
+							) : null}
+						</div>
+					)}
 					onReset={handleReset}
 					renderSelectedItem={(item) => {
 						const card = cardsById[item.id] ?? activeCard;
-						return <SessionStage screens={card.screens} controller={card.controller} />;
+						return (
+							<SessionStage
+								controller={card.controller}
+								dockOpen={dockOpen}
+								screens={card.screens}
+								workItemController={workItemController}
+							/>
+						);
 					}}
 				/>
 			</div>

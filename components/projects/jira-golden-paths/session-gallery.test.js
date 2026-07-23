@@ -8,8 +8,15 @@ const PAGE_SOURCE = read("page.tsx");
 const GALLERY_ITEMS_SOURCE = read("data/gallery-items.ts");
 const SCREENS_SOURCE = read("data/session-screens.ts");
 const STAGE_SOURCE = read("components/session-stage.tsx");
+const FOR_YOU_STAGE_SOURCE = read("components/for-you-stage.tsx");
+const SHARED_FOR_YOU_STAGE_SOURCE = read("../shared/components/for-you-stage-layout.tsx");
+const ASX_PAGE_SOURCE = read("../asx/page.tsx");
 const TERMINAL_BEAT_SCREEN_SOURCE = read("components/terminal-beat-screen.tsx");
 const TERMINAL_LIVE_SCREEN_SOURCE = read("components/terminal-live-screen.tsx");
+const TERMINAL_STAGE_SOURCE = read("components/terminal-stage.tsx");
+const TERMINAL_CHROME_SOURCE = read("components/terminal-stage-chrome.tsx");
+const TERMINAL_CLAUDE_PANE_SOURCE = read("components/terminal-stage-claude-pane.tsx");
+const TERMINAL_JIRA_PANE_SOURCE = read("components/terminal-stage-jira-pane.tsx");
 const NAV_HOOK_SOURCE = read("hooks/use-screen-navigator.ts");
 
 test("Gallery exposes exactly the Local and Global session cards", () => {
@@ -22,16 +29,49 @@ test("Gallery exposes exactly the Local and Global session cards", () => {
 test("Each card defines its own ordered set of screens to navigate", () => {
 	assert.match(SCREENS_SOURCE, /export const LOCAL_SESSION_SCREENS: readonly SessionScreen\[\]/u);
 	assert.match(SCREENS_SOURCE, /export const GLOBAL_SESSION_SCREENS: readonly SessionScreen\[\]/u);
+	assert.match(
+		SCREENS_SOURCE,
+		/global-1[^\n]+section: "Kanban"[^\n]+design: "kanban"/u,
+	);
+	assert.match(
+		SCREENS_SOURCE,
+		/global-2[^\n]+section: "Work item"[^\n]+design: "work-item"/u,
+	);
+	assert.match(
+		SCREENS_SOURCE,
+		/global-3[^\n]+section: "Rovo"[^\n]+design: "rovo"/u,
+	);
+	assert.match(
+		SCREENS_SOURCE,
+		/global-4[^\n]+section: "For you"[^\n]+design: "for-you"/u,
+	);
+	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
+	assert.match(STAGE_SOURCE, /screen\?\.design === "rovo"/u);
+	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} \/>/u);
+	assert.doesNotMatch(STAGE_SOURCE, /QueueStage|design === "queue"/u);
+	assert.match(STAGE_SOURCE, /screen\?\.design === "for-you"/u);
+	assert.match(STAGE_SOURCE, /<ForYouStage dockOpen=\{dockOpen\} key=\{screen\.id\} \/>/u);
+	assert.match(STAGE_SOURCE, /screen\?\.design === "work-item"/u);
+	assert.match(STAGE_SOURCE, /<WorkItemStage controller=\{workItemController\} key=\{screen\.id\} \/>/u);
 });
 
-test("Local session drives beats 0–3 live and freezes beat 7", () => {
+test("Local session drives beats 0–3 live and resumes terminal beats 8–11 after Kanban", () => {
 	// Screens 0–3 share the live presenter (liveBeat 0 = initial un-split
 	// terminal, 1 = split, 2 = connect command typed but not run, 3 = connected
-	// dashboard); the non-contiguous beat 7 (needs-input board) stays frozen.
+	// dashboard). The non-contiguous beat 7 (needs-input board) and the resumed
+	// post-Kanban beats 8–11 stay frozen.
 	const liveBeats = [...SCREENS_SOURCE.matchAll(/liveBeat:\s*(\d+)/gu)].map((match) => Number(match[1]));
 	assert.deepEqual(liveBeats, [0, 1, 2, 3]);
 	const frozenBeats = [...SCREENS_SOURCE.matchAll(/terminalBeat:\s*(\d+)/gu)].map((match) => Number(match[1]));
-	assert.deepEqual(frozenBeats, [7]);
+	assert.deepEqual(frozenBeats, [7, 8, 9, 10, 11]);
+	assert.match(
+		SCREENS_SOURCE,
+		/local-5[^\n]+section: "Kanban"[^\n]+\n\s*\{ id: "local-6", section: "Terminal"[^\n]+terminalBeat: 8/u,
+	);
+	assert.match(
+		SCREENS_SOURCE,
+		/local-9[^\n]+terminalBeat: 11[^\n]+\n\s*\{ id: "local-10", section: "Kanban"[^\n]+design: "kanban"/u,
+	);
 
 	// The stage routes live screens to the shared presenter and frozen screens to
 	// the static snapshot.
@@ -53,8 +93,35 @@ test("Local session drives beats 0–3 live and freezes beat 7", () => {
 test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /title="Jira Golden Paths"/u);
 	assert.match(PAGE_SOURCE, /<SessionScreenControls\s+screens=\{activeCard\.screens\}\s+controller=\{activeCard\.controller\}\s+\/>/u);
-	assert.match(PAGE_SOURCE, /<SessionStage screens=\{card\.screens\} controller=\{card\.controller\} \/>/u);
+	assert.match(
+		PAGE_SOURCE,
+		/<SessionStage[\s\S]*controller=\{card\.controller\}[\s\S]*dockOpen=\{dockOpen\}[\s\S]*screens=\{card\.screens\}[\s\S]*workItemController=\{workItemController\}/u,
+	);
+	assert.match(PAGE_SOURCE, /activeScreen\?\.design === "work-item"/u);
+	assert.match(PAGE_SOURCE, /<WorkItemControls controller=\{workItemController\} \/>/u);
+	assert.match(PAGE_SOURCE, /open=\{dockOpen\}/u);
+	assert.match(PAGE_SOURCE, /onOpenChange=\{setDockOpen\}/u);
 	assert.match(PAGE_SOURCE, /onReset=\{handleReset\}/u);
+});
+
+test("Entering the Global Rovo screen restores the default agent and greeting", () => {
+	assert.match(PAGE_SOURCE, /const \{ resetAgentToRovo, resetChat \} = useRovoChat\(\);/u);
+	assert.match(
+		PAGE_SOURCE,
+		/if \(screen\?\.design !== "rovo"\) return;\s*resetAgentToRovo\(\);\s*resetChat\(\);/u,
+	);
+	assert.match(PAGE_SOURCE, /<ResetRovoChatOnEntry screen=\{activeScreen\} \/>/u);
+});
+
+test("Global For you reuses the shared feed layout with JGP chat playback", () => {
+	assert.match(FOR_YOU_STAGE_SOURCE, /useJgpAgentChatDemo\(\)/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /buildJgpForYouAgentChatScenario\(item\)/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JgpRovoOverlay/u);
+	assert.match(SHARED_FOR_YOU_STAGE_SOURCE, /<JiraForYouPage onItemClick=\{onItemClick\} \/>/u);
+	assert.match(SHARED_FOR_YOU_STAGE_SOURCE, /dockOpen \? "pb-56" : "pb-8"/u);
+	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
+	assert.doesNotMatch(ASX_PAGE_SOURCE, /<JiraForYouPage/u);
 });
 
 test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => {
@@ -62,18 +129,40 @@ test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => 
 	assert.match(PAGE_SOURCE, /palette=\{ROVO_PURPLE_PALETTE\}/u);
 });
 
-test("Page forces ADS dark subtree theming while in the Terminal section", () => {
-	// Mirrors the /asx Terminal pattern: flip the gallery chrome to dark tokens
-	// via ADS subtree theming when the active screen's section is "Terminal".
+test("Page defaults Terminal to a locally controllable dark subtree theme", () => {
 	assert.match(PAGE_SOURCE, /activeScreen\?\.section === "Terminal"/u);
+	assert.match(PAGE_SOURCE, /useState<"dark" \| "light">\("dark"\)/u);
 	assert.match(PAGE_SOURCE, /"data-subtree-theme": ""/u);
-	assert.match(PAGE_SOURCE, /"data-color-mode": "dark"/u);
+	assert.match(PAGE_SOURCE, /"data-color-mode": terminalTheme/u);
 	assert.match(
 		PAGE_SOURCE,
-		/"data-theme": "dark:dark spacing:spacing typography:typography shape:shape"/u,
+		/"data-theme": `\$\{terminalTheme\}:\$\{terminalTheme\} spacing:spacing typography:typography shape:shape`/u,
 	);
-	// Applied to the gallery root wrapper (so the fixed dock inherits it too).
 	assert.match(PAGE_SOURCE, /bg-surface" \{\.\.\.subtreeThemeProps\}/u);
+	assert.match(PAGE_SOURCE, /theme=\{isTerminalSection \? terminalTheme : undefined\}/u);
+	assert.match(
+		PAGE_SOURCE,
+		/onThemeCycle=\{isTerminalSection \? handleTerminalThemeCycle : undefined\}/u,
+	);
+	assert.match(PAGE_SOURCE, /current === "dark" \? "light" : "dark"/u);
+});
+
+test("Terminal frame and panes follow the route-owned light or dark theme", () => {
+	assert.match(TERMINAL_STAGE_SOURCE, /border-border bg-surface-raised[^"]*text-text/u);
+	assert.match(
+		TERMINAL_STAGE_SOURCE,
+		/className=\{cn\("w-px", state\.split \? "bg-border" : "bg-transparent"\)\}/u,
+	);
+	assert.doesNotMatch(TERMINAL_STAGE_SOURCE, /TERMINAL_FRAME_ZINC_VARS|--ds-/u);
+
+	for (const source of [
+		TERMINAL_STAGE_SOURCE,
+		TERMINAL_CHROME_SOURCE,
+		TERMINAL_CLAUDE_PANE_SOURCE,
+		TERMINAL_JIRA_PANE_SOURCE,
+	]) {
+		assert.doesNotMatch(source, /(?:bg|border|text)-zinc-/u);
+	}
 });
 
 test("Page adds gated ←/→ keyboard stepping for the active card", () => {
@@ -94,10 +183,16 @@ test("Screen controls provide clickable prev/next that disable at the bounds", (
 	assert.match(STAGE_SOURCE, /\{sectionLabel\(screens, index\)\}/u);
 });
 
+test("Section dropdown inherits the active gallery subtree theme", () => {
+	// The Terminal section themes the gallery subtree dark. Keep this popup's
+	// portal within that subtree instead of mounting it under the light body.
+	assert.match(STAGE_SOURCE, /<DropdownMenuContent align="center" portalled=\{false\}>/u);
+});
+
 test("Local session opens the Kanban section with the real board design", () => {
 	// The sixth screen is the "Kanban" section rendering the Kanban board design.
 	assert.match(SCREENS_SOURCE, /design:\s*"kanban"/u);
-	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "kanban";/u);
+	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
 	// The stage routes a `design: "kanban"` screen to the real KanbanStage,
 	// keyed by screen id so it mounts fresh when navigated to.
 	assert.match(STAGE_SOURCE, /screen\?\.design === "kanban"/u);
@@ -113,11 +208,28 @@ test("Local session opens the Kanban section with the real board design", () => 
 });
 
 test("Top-bar label counts position within the current section", () => {
-	// The five Terminal screens then one Kanban screen — so the label reads
-	// `Terminal · <n> of 5` across the run, then `Kanban · 1 of 1`. The counter
-	// resets per section (U+00B7 middle dot).
+	// Local has five opening Terminal screens, one Kanban screen, four resumed
+	// Terminal screens, then Kanban again. Global adds Kanban, Work item, Rovo,
+	// and For you.
+	// The counter resets per run (U+00B7 middle dot), even when a section name is reused later.
 	const sections = [...SCREENS_SOURCE.matchAll(/section:\s*"([^"]+)"/gu)].map((match) => match[1]);
-	assert.deepEqual(sections, ["Terminal", "Terminal", "Terminal", "Terminal", "Terminal", "Kanban"]);
+	assert.deepEqual(sections, [
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Kanban",
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Kanban",
+		"Kanban",
+		"Work item",
+		"Rovo",
+		"For you",
+	]);
 	// Section-scoped, contiguous-run label with a middle dot; plain fallback when
 	// a screen has no section.
 	assert.match(STAGE_SOURCE, /\$\{section\} \\u00b7 \$\{position\} of \$\{total\}/u);

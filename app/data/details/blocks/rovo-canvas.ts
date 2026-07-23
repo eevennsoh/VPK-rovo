@@ -58,6 +58,11 @@ export const ROVO_CANVAS_DETAIL: ComponentDetail = {
 				description: "Optional handler for the header primary action.",
 			},
 			{
+				name: "primaryActionMenu",
+				type: "ReactNode",
+				description: "Optional menu items for a split primary-action button. Supply per-artefact secondary commands (e.g. the code review canvas's Create draft PR / Commit & Push); omit for a plain primary button.",
+			},
+			{
 				name: "views",
 				type: "ReadonlyArray<RovoCanvasView>",
 				description: "Optional artefact tabs and content slots. Omit to use chrome-only defaults for the selected kind.",
@@ -91,11 +96,6 @@ export const ROVO_CANVAS_DETAIL: ComponentDetail = {
 				name: "rightRail",
 				type: "ReactNode",
 				description: "Optional replacement for the default shared VPK sidebar ChatPanel rail.",
-			},
-			{
-				name: "footer",
-				type: "ReactNode",
-				description: "Optional footer slot. Defaults to the AI verification footer.",
 			},
 			{
 				name: "feedbackBanner",
