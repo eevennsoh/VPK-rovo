@@ -17,7 +17,6 @@ import type {
   HTMLAttributes,
   KeyboardEventHandler,
   PropsWithChildren,
-  ReactNode,
   RefObject,
 } from "react";
 
@@ -27,6 +26,10 @@ import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import {
+  PromptInputButton,
+  type PromptInputButtonProps,
+} from "@/components/ui-custom/prompt-input-button";
 import {
   composerDirectoryAutocompletePluginKey,
   createComposerEditorExtensions,
@@ -88,12 +91,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   ArrowUpIcon,
   ImageIcon,
   MicIcon,
@@ -106,7 +103,6 @@ import RandomizeIcon from "@atlaskit/icon-lab/core/randomize";
 import { cva, type VariantProps } from "class-variance-authority";
 import { nanoid } from "nanoid";
 import {
-  Children,
   createContext,
   useCallback,
   use,
@@ -115,6 +111,17 @@ import {
   useRef,
   useState,
 } from "react";
+
+export {
+  PromptInputDictationControl,
+  type PromptInputDictationControlProps,
+  type PromptInputDictationState,
+} from "@/components/ui-custom/prompt-input-dictation";
+export {
+  PromptInputButton,
+  type PromptInputButtonProps,
+  type PromptInputButtonTooltip,
+} from "@/components/ui-custom/prompt-input-button";
 
 // ============================================================================
 // Helpers
@@ -1859,19 +1866,6 @@ export const PromptInputSendControls = ({
   );
 };
 
-export type PromptInputButtonTooltip =
-  | string
-  | {
-      content: ReactNode;
-      shortcut?: string;
-      side?: ComponentProps<typeof TooltipContent>["side"];
-      delay?: number;
-    };
-
-export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
-  tooltip?: PromptInputButtonTooltip;
-};
-
 const PROMPT_INPUT_PREFERENCE_SOURCES = [
   {
     name: "google-drive",
@@ -1882,55 +1876,6 @@ const PROMPT_INPUT_PREFERENCE_SOURCES = [
     label: "Microsoft Teams",
   },
 ] as const;
-
-export const PromptInputButton = ({
-  variant = "ghost",
-  className,
-  size,
-  tooltip,
-  ...props
-}: Readonly<PromptInputButtonProps>) => {
-  const newSize =
-    size ?? (Children.count(props.children) > 1 ? "sm" : "icon-sm");
-
-  const button = (
-    <InputGroupButton
-      className={cn(className)}
-      size={newSize}
-      type="button"
-      variant={variant}
-      {...props}
-    />
-  );
-
-  if (!tooltip) {
-    return button;
-  }
-
-  const tooltipContent =
-    typeof tooltip === "string" ? tooltip : tooltip.content;
-  const shortcut = typeof tooltip === "string" ? undefined : tooltip.shortcut;
-  const side = typeof tooltip === "string" ? "top" : (tooltip.side ?? "top");
-  const delay = typeof tooltip === "string" ? undefined : tooltip.delay;
-
-  const tooltipElement = (
-    <Tooltip>
-      <TooltipTrigger render={button} />
-      <TooltipContent side={side}>
-        {tooltipContent}
-        {shortcut && (
-          <span className="ml-2 text-muted-foreground">{shortcut}</span>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-
-  if (delay != null) {
-    return <TooltipProvider delay={delay}>{tooltipElement}</TooltipProvider>;
-  }
-
-  return tooltipElement;
-};
 
 export type PromptInputPreferencesButtonProps = Omit<
   PromptInputButtonProps,

@@ -2,13 +2,16 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_FOR_YOU_DETAIL: ComponentDetail = {
 	description:
-		"A personalized \"For you\" work feed that groups Jira work items by status (Needs input, In progress, To do, Done) with issue-type icon tiles, live agent-activity shimmer status, filter tabs, search, and hover row actions.",
-	demoLayout: { previewHeight: "fit" },
-	importStatement: `import { JiraForYou } from "@/components/blocks/jira-for-you";`,
-	usage: `import { JiraForYou } from "@/components/blocks/jira-for-you";
+		"A personalized Jira work feed with a reusable list primitive and a full-height workspace demo that opens agent-specific conversation and details from the existing View action.",
+	demoLayout: { previewContentWidth: "full", previewHeight: "fixed" },
+	importStatement: `import { JiraForYouWorkspace, JiraForYou } from "@/components/blocks/jira-for-you";`,
+	usage: `import { JiraForYouWorkspace, JiraForYou } from "@/components/blocks/jira-for-you";
+
+<JiraForYouWorkspace />
 
 <JiraForYou
   onItemClick={(item) => console.log(item.issueKey)}
+  onView={(item) => console.log("open workspace", item.issueKey)}
 />`,
 	props: [
 		{
@@ -27,12 +30,17 @@ export const JIRA_FOR_YOU_DETAIL: ComponentDetail = {
 		{
 			name: "onItemClick",
 			type: "(item: JiraForYouItem) => void",
-			description: "Called when a work item row or its View action is activated.",
+			description: "Called when a row body is activated. Standalone list consumers keep the existing behavior unless they supply onView separately.",
+		},
+		{
+			name: "onView",
+			type: "(item: JiraForYouItem) => void",
+			description: "Called when the row’s View action is activated. When omitted, View falls back to onItemClick for existing list consumers.",
 		},
 		{
 			name: "className",
 			type: "string",
-			description: "Additional classes applied to the root container.",
+			description: "Additional classes applied to the root list or workspace container.",
 		},
 	],
 };

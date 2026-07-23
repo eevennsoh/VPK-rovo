@@ -1,7 +1,9 @@
 export type JiraForYouIssueType = "task" | "bug" | "subtask" | "epic" | "story";
-export type JiraForYouStatus = "Human review" | "In progress" | "In review" | "To do" | "Done";
+export type JiraForYouStatus = "Review" | "In progress" | "In review" | "To do" | "Done";
 
 export interface JiraForYouAgent {
+	/** Stable id from the canonical agent directory when used in a workspace. */
+	id?: string;
 	/** Display name, used for the avatar accessible label. */
 	name: string;
 	/** Absolute path to the agent avatar SVG under `public/`. */

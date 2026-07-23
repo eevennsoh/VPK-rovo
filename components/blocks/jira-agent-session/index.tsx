@@ -13,7 +13,7 @@ export function JiraAgentSession({
 	className,
 	items = JIRA_AGENT_SESSION_ITEMS,
 	onView,
-	onStop,
+	selectedItemId,
 }: Readonly<JiraAgentSessionProps>) {
 	return (
 		<ul
@@ -24,9 +24,9 @@ export function JiraAgentSession({
 		>
 			{items.map((item: JiraAgentSessionItem) => (
 				<JiraAgentSessionCard
+					isSelected={item.id === selectedItemId}
 					item={item}
 					key={item.id}
-					onStop={onStop}
 					onView={onView}
 				/>
 			))}

@@ -13,6 +13,8 @@ export type JiraAgentSessionState = "running" | "complete" | "needs-input";
 export type JiraAgentSessionPrStatus = "created" | "merged";
 
 export interface JiraAgentSessionAgent {
+	/** Canonical directory identity used by profile previews and all agent surfaces. */
+	id?: string;
 	/** Display name, shown as the avatar label and the metadata-row label. */
 	name: string;
 	/** Absolute path to the agent avatar SVG under `public/`. */
@@ -51,10 +53,10 @@ export interface JiraAgentSessionProps {
 	className?: string;
 	/** Session rows to render; defaults to built-in sample data. */
 	items?: readonly JiraAgentSessionItem[];
+	/** Id of the session currently selected by the consuming surface. */
+	selectedItemId?: string;
 	/** Called when a row body or its View action is activated. */
 	onView?: (item: JiraAgentSessionItem) => void;
-	/** Called when the Stop action on a running row is activated. */
-	onStop?: (item: JiraAgentSessionItem) => void;
 }
 
 export interface JiraAgentSessionActivityCardProps {

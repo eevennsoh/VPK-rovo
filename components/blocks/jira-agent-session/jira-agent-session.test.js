@@ -7,6 +7,10 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "jira-agent-session-card.tsx"),
 	"utf8",
 );
+const TYPES_SOURCE = readFileSync(
+	join(__dirname, "jira-agent-session-types.ts"),
+	"utf8",
+);
 const ACTIVITY_CARD_SOURCE = readFileSync(
 	join(__dirname, "jira-agent-session-activity-card.tsx"),
 	"utf8",
@@ -50,11 +54,11 @@ test("the awaiting lifecycle glyph is centered inside its tile", () => {
 	);
 });
 
-test("only running sessions expose the Stop action", () => {
-	assert.match(CARD_SOURCE, /showStop \? \(/);
-	assert.match(CARD_SOURCE, /aria-label="Stop agent"/);
-	assert.match(CARD_SOURCE, /showStop=\{stateMeta\.showStop\}/);
-	assert.match(CARD_SOURCE, /running:\s*\{[^}]*showStop:\s*true/);
+test("session rows expose View without advertising a Stop action", () => {
+	assert.doesNotMatch(CARD_SOURCE, /Stop agent|VideoStopOverlayIcon|onStop|showStop/u);
+	assert.doesNotMatch(INDEX_SOURCE, /onStop/u);
+	assert.doesNotMatch(TYPES_SOURCE, /onStop\?:/u);
+	assert.match(CARD_SOURCE, /<Button onClick=\{\(\) => onView\?\.\(item\)\} size="compact" variant="outline">[\s\S]*View/u);
 });
 
 test("View opens the Rovo floating chat in the demo", () => {
@@ -75,10 +79,8 @@ test("the leading tile renders the agent or VPK identity at 32px", () => {
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
 	assert.match(CARD_SOURCE, /function JiraAgentSessionTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
 	assert.equal((CARD_SOURCE.match(/<JiraAgentSessionTime item=\{item\} \/>/gu) ?? []).length, 2);
-	assert.equal(
-		(CARD_SOURCE.match(/<span className="truncate">\{item\.agent\.name\}<\/span>/gu) ?? []).length,
-		2,
-	);
+	assert.match(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
+	assert.match(CARD_SOURCE, /<span className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.branch\}<\/span>/u);
 	assert.match(CARD_SOURCE, /created:\s*\{[\s\S]*?text-icon-success/);
 	assert.match(CARD_SOURCE, /merged:\s*\{[\s\S]*?text-icon-accent-purple/);
@@ -98,6 +100,59 @@ test("sample data covers one card per state", () => {
 	assert.match(DATA_SOURCE, /state: "running"/);
 	assert.match(DATA_SOURCE, /state: "needs-input"/);
 	assert.match(DATA_SOURCE, /state: "complete"/);
+});
+
+test("the list exposes generic selected-item state to its native card", () => {
+	assert.match(TYPES_SOURCE, /selectedItemId\?: string;/u);
+	assert.match(INDEX_SOURCE, /selectedItemId/u);
+	assert.match(
+		INDEX_SOURCE,
+		/isSelected=\{item\.id === selectedItemId\}/u,
+	);
+	assert.match(CARD_SOURCE, /isSelected\?: boolean;/u);
+	assert.match(CARD_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
+	assert.match(CARD_SOURCE, /aria-pressed=\{isSelected\}/u);
+	assert.match(CARD_SOURCE, /isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"/u);
+});
+
+test("session rows reuse the canonical agent profile preview on the left", () => {
+	assert.match(TYPES_SOURCE, /id\?: string;[\s\S]*name: string;/u);
+	assert.match(CARD_SOURCE, /item\.agent\.id[\s\S]*getRovoAgentProfile\(item\.agent\.id\)/u);
+	assert.match(CARD_SOURCE, /<HoverCard[\s\S]*<HoverCardTrigger/u);
+	assert.match(CARD_SOURCE, /<EntityCardAgentProfile/u);
+	assert.match(CARD_SOURCE, /side="left"/u);
+	assert.match(CARD_SOURCE, /positionerClassName="z-\[575\]/u);
+	assert.match(CARD_SOURCE, /surface="overlay"/u);
+	assert.match(CARD_SOURCE, /name=\{agentProfile\.name\}/u);
+	assert.match(CARD_SOURCE, /avatarSrc=\{agentProfile\.avatarSrc\}/u);
+	assert.match(CARD_SOURCE, /closeDelay=\{80\}/u);
+});
+
+test("in-flow View controls shrink truncating text without collisions", () => {
+	assert.doesNotMatch(CARD_SOURCE, /absolute inset-y-0 right-0/u);
+	assert.match(
+		CARD_SOURCE,
+		/className="flex min-w-0 flex-1 flex-col items-start justify-center/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/className="flex w-full min-w-0 items-center gap-0 overflow-hidden"/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs/u,
+	);
+	assert.match(CARD_SOURCE, /className="min-w-0 truncate text-sm font-medium text-text"/u);
+	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
+	assert.match(CARD_SOURCE, /invisible ml-0 flex w-0 shrink-0 items-center overflow-hidden opacity-0/u);
+	assert.match(CARD_SOURCE, /group-hover:visible[^"]*group-hover:w-auto[^"]*group-hover:overflow-visible/u);
+	assert.match(CARD_SOURCE, /group-focus-within:visible[^"]*group-focus-within:w-auto[^"]*group-focus-within:overflow-visible/u);
+	assert.match(CARD_SOURCE, /\{isSelected \? null : \(\s*<CardActions/u);
+	assert.doesNotMatch(CARD_SOURCE, /isVisible/u);
+	assert.match(
+		CARD_SOURCE,
+		/!isSelected &&\s*"group-hover:ml-0 group-hover:w-0 group-hover:opacity-0 group-focus-within:ml-0 group-focus-within:w-0 group-focus-within:opacity-0"/u,
+	);
 });
 
 test("exports the expanded activity-card variant and owns its shared shell", () => {

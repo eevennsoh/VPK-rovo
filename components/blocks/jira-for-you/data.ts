@@ -1,29 +1,29 @@
+import { getRovoAgentProfile } from "@/app/data/directory/agents";
+
 import type {
 	JiraForYouAgent,
 	JiraForYouSection,
 	JiraForYouTab,
 } from "./jira-for-you-types";
 
-const READINESS_AGENT: JiraForYouAgent = {
-	name: "Readiness checker",
-	avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
-};
-const PROGRESS_AGENT: JiraForYouAgent = {
-	name: "Progress tracker",
-	avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
-};
-const REVIEWER_AGENT: JiraForYouAgent = {
-	name: "Code reviewer",
-	avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
-};
-const PLANNER_AGENT: JiraForYouAgent = {
-	name: "Code planner",
-	avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
-};
-const FEEDBACK_AGENT: JiraForYouAgent = {
-	name: "Feedback analyzer",
-	avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
-};
+function createJiraForYouAgent(agentId: string): JiraForYouAgent {
+	const profile = getRovoAgentProfile(agentId);
+	if (profile.id !== agentId || !profile.avatarSrc) {
+		throw new Error(`Jira For You agent "${agentId}" needs a canonical directory avatar.`);
+	}
+
+	return {
+		id: profile.id,
+		name: profile.name,
+		avatarSrc: profile.avatarSrc,
+	};
+}
+
+const READINESS_AGENT = createJiraForYouAgent("readiness-checker");
+const PROGRESS_AGENT = createJiraForYouAgent("progress-tracker");
+const REVIEWER_AGENT = createJiraForYouAgent("code-reviewer");
+const PLANNER_AGENT = createJiraForYouAgent("code-planner");
+const FEEDBACK_AGENT = createJiraForYouAgent("feedback-analyzer");
 
 export const JIRA_FOR_YOU_TABS: readonly JiraForYouTab[] = [
 	{ id: "all", label: "All" },
@@ -35,7 +35,7 @@ export const JIRA_FOR_YOU_TABS: readonly JiraForYouTab[] = [
 export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 	{
 		id: "needs-input",
-		label: "Human review",
+		label: "Review",
 		items: [
 			{
 				id: "vitafleet-presentation",
@@ -43,7 +43,7 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "task",
 				issueKey: "VITA-142",
 				spaceName: "Vitafleet",
-				jiraStatus: "Human review",
+				jiraStatus: "Review",
 				tabs: ["assigned", "worked-on"],
 				agents: [READINESS_AGENT],
 				status: "Waiting for input",

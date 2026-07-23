@@ -1,5 +1,6 @@
 "use client";
 
+import type { Ref } from "react";
 import BugIcon from "@atlaskit/icon/core/bug";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import StoryIcon from "@atlaskit/icon/core/story";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 import {
 	JiraForYouStatusLozenge,
@@ -38,7 +40,11 @@ const ISSUE_TYPE_META: Record<
 };
 function MetadataDot() {
 	return (
-		<span aria-hidden="true" className="text-text-subtlest">
+		<span
+			aria-hidden="true"
+			className="mx-1 text-text-subtlest"
+			data-slot="jira-for-you-metadata-separator"
+		>
 			·
 		</span>
 	);
@@ -64,7 +70,13 @@ function JiraForYouStatusSegment({
 
 	if (isAwaitingInputStatus(segment)) {
 		return (
-			<span className="inline-flex items-baseline text-xs leading-4">
+			<span
+				className={cn(
+					"inline text-xs leading-4",
+					trailingComma && "mr-1",
+				)}
+				data-slot="jira-for-you-status-segment"
+			>
 				<Shimmer as="span" duration={1.6} spread={2}>
 					{segment}
 				</Shimmer>
@@ -74,12 +86,23 @@ function JiraForYouStatusSegment({
 	}
 
 	return (
-		<span className="flex items-center gap-1 text-xs leading-4">
-			<span className="inline-flex items-baseline">
+		<span
+			className={cn(
+				"inline text-xs leading-4",
+				trailingComma && "mr-1",
+			)}
+			data-slot="jira-for-you-status-segment"
+		>
+			<span className="inline">
 				{segment}
 				{comma}
 			</span>
-			<Spinner size="xs" variant="rainbow" label="" />
+			<Spinner
+				className="ml-1 inline-block align-middle"
+				label=""
+				size="xs"
+				variant="rainbow"
+			/>
 		</span>
 	);
 }
@@ -91,7 +114,7 @@ function JiraForYouItemStatus({ status }: Readonly<{ status: string }>) {
 		.filter(Boolean);
 
 	return (
-		<span className="flex items-center gap-1 text-xs leading-4">
+		<span className="inline text-xs leading-4">
 			{segments.map((segment, index) => (
 				<JiraForYouStatusSegment
 					key={segment}
@@ -126,9 +149,16 @@ function AgentAvatarCluster({
 }
 
 function ItemActions({
+	forceVisible = false,
 	item,
 	onView,
-}: Readonly<{ item: JiraForYouItem; onView?: () => void }>) {
+	viewButtonRef,
+}: Readonly<{
+	forceVisible?: boolean;
+	item: JiraForYouItem;
+	onView?: () => void;
+	viewButtonRef?: Ref<HTMLButtonElement>;
+}>) {
 	const generativeTrigger = (
 		<RovoSparkleButton
 			aria-label="Ask Rovo about this work item"
@@ -139,7 +169,10 @@ function ItemActions({
 
 	return (
 		<div
-			className="pointer-events-none invisible flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100 group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:pointer-events-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:visible group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:w-auto group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:overflow-visible group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:visible has-[:focus-visible]:w-auto has-[:focus-visible]:overflow-visible has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:visible has-[button[aria-expanded=true]]:w-auto has-[button[aria-expanded=true]]:overflow-visible has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none"
+			className={cn(
+				"pointer-events-none invisible flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity duration-fast ease-out-practical group-hover:pointer-events-auto group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:w-auto group-focus-within:overflow-visible group-focus-within:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:visible has-[:focus-visible]:w-auto has-[:focus-visible]:overflow-visible has-[:focus-visible]:opacity-100 has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:visible has-[button[aria-expanded=true]]:w-auto has-[button[aria-expanded=true]]:overflow-visible has-[button[aria-expanded=true]]:opacity-100 motion-reduce:transition-none",
+				forceVisible && "pointer-events-auto visible w-auto overflow-visible opacity-100",
+			)}
 			data-slot="jira-for-you-actions"
 		>
 			<JiraIssueGenerativeActionMenu
@@ -148,7 +181,7 @@ function ItemActions({
 				triggerElement={generativeTrigger}
 			/>
 			<JiraForYouStatusLozengeDropdown value={item.jiraStatus} />
-			<Button onClick={onView} size="compact" variant="outline">
+			<Button onClick={onView} ref={viewButtonRef} size="compact" variant="outline">
 				View
 			</Button>
 		</div>
@@ -156,22 +189,37 @@ function ItemActions({
 }
 
 export function JiraForYouItemRow({
+	isSelected = false,
+	isViewActionForcedVisible = false,
 	item,
 	onItemClick,
+	onRowButtonRef,
 	onView,
+	onViewButtonRef,
 }: Readonly<{
+	isSelected?: boolean;
+	isViewActionForcedVisible?: boolean;
 	item: JiraForYouItem;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onView?: (item: JiraForYouItem) => void;
+	onViewButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 }>) {
 	const meta = ISSUE_TYPE_META[item.issueType];
 	const Glyph = meta.Glyph;
 	const hasActivity = Boolean(item.agents?.length || item.status || item.elapsedSeconds);
 
 	return (
-		<li className="group relative flex items-center gap-3 p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered">
+		<li
+			aria-current={isSelected ? "true" : undefined}
+			className={cn(
+				"group relative flex items-center p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered",
+				isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
+			)}
+		>
 			<IconTile
 				aria-hidden
+				className="mr-3"
 				icon={<Glyph label="" />}
 				label={meta.label}
 				shape="square"
@@ -179,9 +227,13 @@ export function JiraForYouItemRow({
 				variant={meta.variant}
 			/>
 			<button
-				className="flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+				className={cn(
+					"flex min-w-0 flex-1 flex-col items-start justify-center rounded-xs text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+					isSelected && "text-text-selected",
+				)}
 				data-slot="jira-for-you-row-button"
 				onClick={() => onItemClick?.(item)}
+				ref={(node) => onRowButtonRef?.(item, node)}
 				type="button"
 			>
 				<span className="flex w-full min-w-0 items-center gap-1">
@@ -189,35 +241,52 @@ export function JiraForYouItemRow({
 						{item.title}
 					</span>
 				</span>
-				<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">
-					{hasActivity ? (
-						<>
-							<span className="flex shrink-0 items-center gap-1">
-								{item.agents?.length ? (
-									<AgentAvatarCluster agents={item.agents} />
-								) : null}
-								{item.status ? (
-									<JiraForYouItemStatus status={item.status} />
-								) : null}
-								<ElapsedTime
-									className="shrink-0"
-									elapsedSeconds={item.elapsedSeconds}
-									prefix={item.agents?.length || item.status ? <MetadataDot /> : null}
-								/>
-							</span>
-							<MetadataDot />
-						</>
+				<span
+					className="flex w-full min-w-0 items-center gap-1 text-xs leading-4 text-text-subtlest"
+					data-slot="jira-for-you-metadata"
+				>
+					{item.agents?.length ? (
+						<AgentAvatarCluster agents={item.agents} />
 					) : null}
-					<span className="shrink-0">{meta.label}</span>
-					<MetadataDot />
-					<span className="shrink-0">{item.issueKey}</span>
-					<MetadataDot />
-					<span className="truncate">{item.spaceName}</span>
+					<span
+						className="min-w-0 flex-1 truncate"
+						data-slot="jira-for-you-metadata-text"
+					>
+						{item.status ? (
+							<JiraForYouItemStatus status={item.status} />
+						) : null}
+						<ElapsedTime
+							elapsedSeconds={item.elapsedSeconds}
+							prefix={item.status ? <MetadataDot /> : null}
+						/>
+						{hasActivity ? <MetadataDot /> : null}
+						<span>{meta.label}</span>
+						<MetadataDot />
+						<span>{item.issueKey}</span>
+						<MetadataDot />
+						<span>{item.spaceName}</span>
+					</span>
 				</span>
 			</button>
-			<div className="relative flex shrink-0 items-center">
-				<ItemActions item={item} onView={() => (onView ?? onItemClick)?.(item)} />
-				<div className="transition-opacity duration-fast ease-out-practical group-hover:hidden group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none">
+			<div
+				className={cn(
+					"relative ml-0 flex w-0 shrink-0 items-center group-hover:ml-3 group-hover:w-auto group-focus-within:ml-3 group-focus-within:w-auto has-[button[aria-expanded=true]]:ml-3 has-[button[aria-expanded=true]]:w-auto @[560px]/jira-for-you-items:ml-3 @[560px]/jira-for-you-items:w-auto",
+					isViewActionForcedVisible && "ml-3 w-auto",
+				)}
+				data-slot="jira-for-you-trailing"
+			>
+				<ItemActions
+					forceVisible={isViewActionForcedVisible}
+					item={item}
+					onView={() => (onView ?? onItemClick)?.(item)}
+					viewButtonRef={(node) => onViewButtonRef?.(item, node)}
+				/>
+				<div
+					className={cn(
+						"hidden transition-opacity duration-fast ease-out-practical @[560px]/jira-for-you-items:block group-hover:hidden group-focus-within:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none",
+						isViewActionForcedVisible && "hidden",
+					)}
+				>
 					<JiraForYouStatusLozenge value={item.jiraStatus} />
 				</div>
 			</div>

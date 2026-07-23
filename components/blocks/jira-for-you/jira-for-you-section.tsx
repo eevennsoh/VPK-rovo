@@ -30,22 +30,34 @@ function SectionLabel({ label }: Readonly<{ label: string }>) {
 }
 
 function ItemList({
+	forcedVisibleViewItemId,
 	items,
+	onItemButtonRef,
 	onItemClick,
+	onRowButtonRef,
 	onView,
+	selectedItemId,
 }: Readonly<{
+	forcedVisibleViewItemId?: string;
 	items: readonly JiraForYouItem[];
+	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onView?: (item: JiraForYouItem) => void;
+	selectedItemId?: string;
 }>) {
 	return (
-		<ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+		<ul className="@container/jira-for-you-items divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
 			{items.map((item) => (
 				<JiraForYouItemRow
+					isSelected={item.id === selectedItemId}
+					isViewActionForcedVisible={item.id === forcedVisibleViewItemId}
 					item={item}
 					key={item.id}
 					onItemClick={onItemClick}
+					onRowButtonRef={onRowButtonRef}
 					onView={onView}
+					onViewButtonRef={onItemButtonRef}
 				/>
 			))}
 		</ul>
@@ -53,15 +65,34 @@ function ItemList({
 }
 
 export function JiraForYouSectionGroup({
+	forcedVisibleViewItemId,
+	onItemButtonRef,
 	onItemClick,
+	onRowButtonRef,
 	onView,
+	selectedItemId,
 	section,
 }: Readonly<{
+	forcedVisibleViewItemId?: string;
+	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onView?: (item: JiraForYouItem) => void;
+	selectedItemId?: string;
 	section: JiraForYouSection;
 }>) {
 	const [open, setOpen] = useState(true);
+	const itemList = (
+		<ItemList
+			forcedVisibleViewItemId={forcedVisibleViewItemId}
+			items={section.items}
+			onItemButtonRef={onItemButtonRef}
+			onItemClick={onItemClick}
+			onRowButtonRef={onRowButtonRef}
+			onView={onView}
+			selectedItemId={selectedItemId}
+		/>
+	);
 
 	if (!section.collapsible) {
 		return (
@@ -69,7 +100,7 @@ export function JiraForYouSectionGroup({
 				<div className="flex h-8 items-center">
 					<SectionLabel label={section.label} />
 				</div>
-				<ItemList items={section.items} onItemClick={onItemClick} onView={onView} />
+				{itemList}
 			</section>
 		);
 	}
@@ -94,9 +125,7 @@ export function JiraForYouSectionGroup({
 					render={<ChevronDownIcon label="" size="small" />}
 				/>
 			</CollapsibleTrigger>
-			<CollapsibleContent>
-				<ItemList items={section.items} onItemClick={onItemClick} onView={onView} />
-			</CollapsibleContent>
+			<CollapsibleContent>{itemList}</CollapsibleContent>
 		</Collapsible>
 	);
 }

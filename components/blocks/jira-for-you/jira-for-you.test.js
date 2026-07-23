@@ -5,6 +5,7 @@ const { test } = require("node:test");
 
 const ITEM_SOURCE = readFileSync(join(__dirname, "jira-for-you-item.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
+const SECTION_SOURCE = readFileSync(join(__dirname, "jira-for-you-section.tsx"), "utf8");
 const STATUS_SOURCE = readFileSync(join(__dirname, "jira-for-you-status.tsx"), "utf8");
 const TYPES_SOURCE = readFileSync(join(__dirname, "jira-for-you-types.ts"), "utf8");
 
@@ -23,7 +24,7 @@ test("Jira For You uses the shared elapsed-time primitive", () => {
 	assert.match(TYPES_SOURCE, /elapsedSeconds\?: number;/u);
 	assert.match(DATA_SOURCE, /id: "performance-benchmarking"[\s\S]*elapsedSeconds: 300,/u);
 	assert.match(ITEM_SOURCE, /import \{ ElapsedTime \} from "@\/components\/ui\/elapsed-time";/u);
-	assert.match(ITEM_SOURCE, /<ElapsedTime[\s\S]*elapsedSeconds=\{item\.elapsedSeconds\}[\s\S]*prefix=\{item\.agents\?\.length \|\| item\.status \? <MetadataDot \/> : null\}/u);
+	assert.match(ITEM_SOURCE, /<ElapsedTime[\s\S]*elapsedSeconds=\{item\.elapsedSeconds\}[\s\S]*prefix=\{item\.status \? <MetadataDot \/> : null\}/u);
 });
 
 test("removed stop action is not advertised by the item contract", () => {
@@ -48,7 +49,7 @@ test("every row has a Jira status lozenge with a status-change dropdown", () => 
 	assert.match(STATUS_SOURCE, /<DropdownMenuTrigger[\s\S]*<Button[\s\S]*size="compact"[\s\S]*variant="outline"[\s\S]*<ChevronDownIcon/);
 	assert.match(STATUS_SOURCE, /<DropdownMenuItem[\s\S]*selected=\{option === selected\}[\s\S]*<Lozenge variant=\{STATUS_VARIANTS\[option\]\}>/);
 	assert.match(STATUS_SOURCE, /setSelected\(option\)/);
-	assert.match(STATUS_SOURCE, /"Human review": "warning"/);
+	assert.match(STATUS_SOURCE, /Review: "warning"/);
 	assert.match(STATUS_SOURCE, /"In progress": "information"/);
 	assert.match(STATUS_SOURCE, /"In review": "information"/);
 	assert.match(STATUS_SOURCE, /"To do": "neutral"/);
@@ -58,7 +59,55 @@ test("every row has a Jira status lozenge with a status-change dropdown", () => 
 test("Jira For You rows place agent activity before issue metadata", () => {
 	assert.match(
 		ITEM_SOURCE,
-		/\{item\.title\}[\s\S]*<span className="flex w-full min-w-0 items-center gap-1 text-xs text-text-subtlest">[\s\S]*<AgentAvatarCluster agents=\{item\.agents\} \/>[\s\S]*\{item\.status\}[\s\S]*<MetadataDot \/>[\s\S]*\{meta\.label\}[\s\S]*\{item\.issueKey\}[\s\S]*\{item\.spaceName\}/,
+		/\{item\.title\}[\s\S]*data-slot="jira-for-you-metadata"[\s\S]*<AgentAvatarCluster agents=\{item\.agents\} \/>[\s\S]*data-slot="jira-for-you-metadata-text"[\s\S]*\{item\.status\}[\s\S]*<MetadataDot \/>[\s\S]*\{meta\.label\}[\s\S]*\{item\.issueKey\}[\s\S]*\{item\.spaceName\}/,
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/function MetadataDot\(\)[\s\S]*className="mx-1 text-text-subtlest"[\s\S]*data-slot="jira-for-you-metadata-separator"[\s\S]*·/,
+		"middle-dot separators should preserve the original spacing on both sides",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/trailingComma && "mr-1"/,
+		"comma-separated status segments should preserve their original four-pixel gap",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/<Spinner[\s\S]*className="ml-1 inline-block align-middle"/,
+		"status spinners should preserve their original four-pixel gap",
+	);
+});
+
+test("Jira For You rows collapse the resting lozenge slot in constrained containers", () => {
+	assert.match(
+		SECTION_SOURCE,
+		/<ul className="[^"]*@container\/jira-for-you-items[^"]*">/,
+		"the item list should own the inline-size query instead of relying on viewport width",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/className=\{cn\(\s*"[^"]*ml-0[^"]*w-0[^"]*group-hover:ml-3[^"]*group-hover:w-auto[^"]*group-focus-within:ml-3[^"]*group-focus-within:w-auto[^"]*@\[560px\]\/jira-for-you-items:ml-3[^"]*@\[560px\]\/jira-for-you-items:w-auto"[\s\S]*data-slot="jira-for-you-trailing"/,
+		"the narrow resting trailing slot should reserve neither lozenge width nor gap",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/className=\{cn\(\s*"hidden[^"]*@\[560px\]\/jira-for-you-items:block[^"]*group-hover:hidden[^"]*group-focus-within:hidden/,
+		"the resting lozenge should only appear in wide containers and yield to actions",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/className="min-w-0 flex-1 truncate"[\s\S]*data-slot="jira-for-you-metadata-text"/,
+		"the aggregate metadata text should own truncation after the fixed avatar cluster",
+	);
+	assert.doesNotMatch(
+		ITEM_SOURCE,
+		/"flex min-w-0 flex-1 flex-col items-start justify-center overflow-hidden/,
+		"the row content button should not hard-clip title and metadata together",
+	);
+	assert.match(
+		ITEM_SOURCE,
+		/data-slot="jira-for-you-metadata"[\s\S]*<AgentAvatarCluster agents=\{item\.agents\} \/>[\s\S]*className="min-w-0 flex-1 truncate"[\s\S]*data-slot="jira-for-you-metadata-text"/,
+		"agent avatars should remain outside the shrinking metadata text owner",
 	);
 });
 
@@ -85,8 +134,7 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 	);
 	assert.match(ITEM_SOURCE, /data-slot="jira-for-you-actions"/);
 	assert.match(ITEM_SOURCE, /group-hover:pointer-events-auto[^"]*group-hover:opacity-100/);
-	assert.match(ITEM_SOURCE, /group-has-\[\[data-slot=jira-for-you-row-button\]:focus-visible\]:pointer-events-auto/);
-	assert.doesNotMatch(ITEM_SOURCE, /group-focus-within/);
+	assert.match(ITEM_SOURCE, /group-focus-within:pointer-events-auto[^"]*group-focus-within:opacity-100/);
 	assert.match(
 		ITEM_SOURCE,
 		/invisible flex w-0 items-center gap-1 overflow-hidden opacity-0[^"]*group-hover:visible group-hover:w-auto group-hover:overflow-visible group-hover:opacity-100/,
@@ -99,7 +147,7 @@ test("Jira For You sparkle action opens the shared Jira issue generative menu", 
 	);
 	assert.match(
 		ITEM_SOURCE,
-		/group-hover:hidden group-has-\[\[data-slot=jira-for-you-row-button\]:focus-visible\]:hidden/,
+		/group-hover:hidden group-focus-within:hidden/,
 		"the resting lozenge should make way for the expanded action cluster",
 	);
 	assert.doesNotMatch(ITEM_SOURCE, /bg-linear-to-l|from-bg-neutral-subtle-hovered|to-transparent/);
