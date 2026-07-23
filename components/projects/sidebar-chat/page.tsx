@@ -292,9 +292,7 @@ interface ChatPanelProps {
 	 */
 	composerReservesContextBarSpace?: boolean;
 	/**
-	 * Controls where the greeting sits before the conversation has messages.
-	 * Third-party agent surfaces use the centered treatment; custom agents and
-	 * Rovo stay near the composer like the standard sidebar chat.
+	 * Third-party agents center the empty greeting; custom agents and Rovo keep it near the composer.
 	 */
 	emptyGreetingPlacement?: "centered" | "near-composer";
 	greetingSelectedAgent?: RovoAgentProfile | null;
