@@ -1,15 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect } from "react";
+import { useReducedMotion } from "motion/react";
 
-import { createStaticTerminalController } from "../hooks/use-terminal-demo";
+import { useTerminalDemo } from "../hooks/use-terminal-demo";
 import { TerminalStage } from "./terminal-stage";
 
-// A single Local session screen that embeds the Terminal demo frozen at one beat.
-// The controller is a static, non-interactive snapshot (see
-// `createStaticTerminalController`) — the session card's own left/right controls
-// move between beats, so the terminal itself never steps or captures keys.
+const FIRST_POST_REVIEW_BEAT = 7;
+
+// Post-review Terminal screens preserve the preceding screen's settled history,
+// then run exactly one destination beat through the presenter's existing
+// line-by-line reveal. The first screen has no terminal predecessor to animate
+// from, and reduced-motion users start directly at the stable destination.
 export function TerminalBeatScreen({ beat }: Readonly<{ beat: number }>): React.ReactElement {
-	const controller = useMemo(() => createStaticTerminalController(beat), [beat]);
+	const shouldReduceMotion = useReducedMotion();
+	const initialSettledBeat = shouldReduceMotion || beat === FIRST_POST_REVIEW_BEAT ? beat : beat - 1;
+	const controller = useTerminalDemo(true, { initialSettledBeat, keyboard: false });
+	const { state, advance } = controller;
+
+	useEffect(() => {
+		const settledBeat = state.beatIndex + 1;
+		if (state.settled && settledBeat < beat) advance();
+	}, [advance, beat, state.beatIndex, state.settled]);
+
 	return <TerminalStage controller={controller} />;
 }

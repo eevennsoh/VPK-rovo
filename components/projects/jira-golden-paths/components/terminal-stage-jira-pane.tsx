@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import {
 	getBoardCounts,
 	getBoardSections,
+	getVisibleOutputLines,
 	TERMINAL_SECTION_ORDER,
 	type TerminalBeatStep,
-	type TerminalLine,
 	type TerminalPaneState,
 	type TerminalWorkItem,
 } from "../lib/terminal-demo-state";
@@ -90,9 +90,8 @@ function JiraShellView({
 	revealCount,
 }: Readonly<{ pane: TerminalPaneState; activeStep: TerminalBeatStep | null; revealCount: number }>): React.ReactElement {
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "left";
-	const isOutputting = activeStep?.kind === "output" && activeStep.pane === "left";
 	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
-	const inFlightLines: readonly TerminalLine[] = isOutputting ? activeStep.lines.slice(0, revealCount) : [];
+	const inFlightLines = getVisibleOutputLines(activeStep, "left", revealCount);
 
 	return (
 		<div className="flex h-full flex-col overflow-y-auto px-4 py-3 text-text-subtle">

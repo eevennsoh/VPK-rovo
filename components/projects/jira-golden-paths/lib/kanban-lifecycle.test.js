@@ -15,6 +15,7 @@ async function loadHarness() {
 				} from "./components/projects/jira-golden-paths/lib/kanban-lifecycle";
 				export {
 					createJgpKanbanActivity,
+					createJgpKanbanCompletionStoryColumns,
 					createJgpKanbanColumns,
 					JGP_CODE_REVIEW_FILES,
 					JGP_CODE_REVIEW_WORK_ITEM,
@@ -81,6 +82,8 @@ test("JGP scenarios use the focus-work lifecycle and deterministic snapshots", a
 	assert.deepEqual([...new Set(localTagCounts)].sort(), [1, 2, 3]);
 	assert.deepEqual(column(completed, "Review").cards.map((card) => card.code), ["JGP-239", "JGP-232", "JGP-234"]);
 	assert.deepEqual(column(completed, "Done").cards.map((card) => card.code), ["JGP-247", "JGP-240", "JGP-236", "JGP-238"]);
+	assert.equal(column(completed, "Done").cards[0].pullRequestNumber, 247);
+	assert.equal(column(completed, "Done").cards[0].pullRequestStatus, "merged");
 	assert.ok(column(review, "Done").cards.every((card) => !card.agentActivityMode && !card.agentDoneRuns));
 	assert.ok(column(completed, "Done").cards.every((card) => !card.agentActivityMode && !card.agentDoneRuns));
 	assert.deepEqual(
@@ -183,6 +186,8 @@ test("Carl's review card exposes the existing Claude PR run", async () => {
 
 	assert.equal(card.assignee.name, "Carl");
 	assert.equal(card.agentActivityMode, "completed");
+	assert.equal(card.pullRequestNumber, 247);
+	assert.equal(card.pullRequestStatus, "open");
 	assert.equal(run.agentName, "Claude Code");
 	assert.equal(run.agentBrandName, "claude");
 	assert.equal(run.pullRequestNumber, 247);
@@ -229,6 +234,20 @@ test("Carl's review card exposes the existing Claude PR run", async () => {
 			"ipc.mp.test.ts",
 		]),
 	);
+});
+
+test("JGP-247 completion story moves an open PR from In progress to Done as merged", async () => {
+	const { createJgpKanbanCompletionStoryColumns } = await loadHarness();
+	const inProgress = createJgpKanbanCompletionStoryColumns("in-progress");
+	const done = createJgpKanbanCompletionStoryColumns("done");
+	const inProgressCard = column({ columns: inProgress }, "In progress").cards.find((card) => card.code === "JGP-247");
+	const doneCard = column({ columns: done }, "Done").cards.find((card) => card.code === "JGP-247");
+
+	assert.equal(inProgressCard.pullRequestNumber, 247);
+	assert.equal(inProgressCard.pullRequestStatus, "open");
+	assert.equal(column({ columns: inProgress }, "Done").cards.some((card) => card.code === "JGP-247"), false);
+	assert.equal(doneCard.pullRequestNumber, 247);
+	assert.equal(doneCard.pullRequestStatus, "merged");
 });
 
 test("Cursor exists only in the route-owned JGP agent set", async () => {

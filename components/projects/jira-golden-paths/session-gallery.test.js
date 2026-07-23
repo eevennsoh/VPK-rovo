@@ -17,6 +17,7 @@ const TERMINAL_STAGE_SOURCE = read("components/terminal-stage.tsx");
 const TERMINAL_CHROME_SOURCE = read("components/terminal-stage-chrome.tsx");
 const TERMINAL_CLAUDE_PANE_SOURCE = read("components/terminal-stage-claude-pane.tsx");
 const TERMINAL_JIRA_PANE_SOURCE = read("components/terminal-stage-jira-pane.tsx");
+const TERMINAL_HOOK_SOURCE = read("hooks/use-terminal-demo.ts");
 const NAV_HOOK_SOURCE = read("hooks/use-screen-navigator.ts");
 
 test("Gallery exposes exactly the Local and Global session cards", () => {
@@ -82,8 +83,14 @@ test("Local session drives the TwG setup live and resumes review beats after Kan
 	assert.match(STAGE_SOURCE, /screen\?\.terminalBeat != null/u);
 	assert.match(STAGE_SOURCE, /<TerminalBeatScreen key=\{screen\.id\} beat=\{screen\.terminalBeat\} \/>/u);
 
-	// The frozen screen is a static, non-interactive snapshot of one beat.
-	assert.match(TERMINAL_BEAT_SCREEN_SOURCE, /createStaticTerminalController\(beat\)/u);
+	// The first post-review screen is stable; later screens start from the
+	// preceding settled beat and animate only their destination beat.
+	assert.match(
+		TERMINAL_BEAT_SCREEN_SOURCE,
+		/const initialSettledBeat = shouldReduceMotion \|\| beat === FIRST_POST_REVIEW_BEAT \? beat : beat - 1;/u,
+	);
+	assert.match(TERMINAL_BEAT_SCREEN_SOURCE, /useTerminalDemo\(true, \{ initialSettledBeat, keyboard: false \}\)/u);
+	assert.match(TERMINAL_BEAT_SCREEN_SOURCE, /if \(state\.settled && settledBeat < beat\) advance\(\);/u);
 	assert.match(TERMINAL_BEAT_SCREEN_SOURCE, /<TerminalStage controller=\{controller\} \/>/u);
 
 	// The live run reuses the real presenter animation, with the card owning the
@@ -95,6 +102,19 @@ test("Local session drives the TwG setup live and resumes review beats after Kan
 		/<StateGlyph status="working" className="shrink-0 text-\[#D97757\]" \/>/u,
 	);
 	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<span>Working…<\/span>/u);
+});
+
+test("Post-review terminal screens share the line-by-line output reveal timing", () => {
+	assert.match(TERMINAL_HOOK_SOURCE, /const OUTPUT_MS_PER_LINE = 250; \/\/ duration-slow/u);
+	assert.match(TERMINAL_HOOK_SOURCE, /initialSettledBeat\?: number;/u);
+	assert.match(TERMINAL_HOOK_SOURCE, /shouldReduceMotion[\s\S]*dispatch\(\{ type: "finish-beat" \}\);/u);
+});
+
+test("Active terminal output reuses the reduced-motion-safe ASCII working glyph", () => {
+	assert.match(TERMINAL_CHROME_SOURCE, /active && span\.text === "⏺ "/u);
+	assert.match(TERMINAL_CHROME_SOURCE, /<StateGlyph status="working" \/>/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /const activeLine = pane\.working \? currentLine : undefined;/u);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /active=\{line === activeLine\}/u);
 });
 
 test("Page wires the session stage + top-bar screen navigator per card", () => {

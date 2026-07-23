@@ -223,14 +223,15 @@ test("Code Review composes its editor into a Canvas with the shared Code Reviewe
 	assert.match(source, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
 	assert.doesNotMatch(rail, /hideAiDisclaimer/u);
 	assert.match(rail, /agentProfile = CODE_REVIEWER_AGENT/u);
+	assert.match(rail, /agentVariant = "custom"/u);
 	assert.match(rail, /<RovoChatProvider[\s\S]*autoSelectAgentId=\{agentProfile\.id\}/u);
 	assert.match(rail, /agentProfiles=\{\[agentProfile\]\}/u);
-	assert.match(rail, /centerEmptyGreeting/u);
+	assert.match(rail, /emptyGreetingPlacement=\{variantConfig\.emptyGreetingPlacement\}/u);
 	assert.match(rail, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
 	assert.match(rail, /showAgentBackButton=\{false\}/u);
 	assert.match(rail, /showAgentSelector=\{false\}/u);
 	assert.match(rail, /<ChatPanel[\s\S]*headerVariant="minimal"/u);
-	assert.match(rail, /headerEndAction=\{\([\s\S]*aria-label=\{`Open \$\{agentProfile\.name\}`\}[\s\S]*LinkExternalIcon/u);
+	assert.match(rail, /headerEndAction=\{variantConfig\.supportsExternalOpen \? \([\s\S]*aria-label=\{`Open \$\{agentProfile\.name\}`\}[\s\S]*LinkExternalIcon/u);
 });
 
 test("Code Review omits the dismiss placeholder for its persistent chat context", () => {
@@ -251,10 +252,10 @@ test("Code Review identifies the local device above its attached composer", () =
 
 	assert.match(rail, /import DevicesIcon from "@atlaskit\/icon\/core\/devices";/u);
 	assert.match(rail, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
-	assert.match(
-		rail,
-		/composerSurfaceHeader=\{\([\s\S]*<IconTile[\s\S]*as="span"[\s\S]*className="text-icon-subtle"[\s\S]*icon=\{<DevicesIcon label="" size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="xxsmall"[\s\S]*variant="transparent"[\s\S]*Local · Carl’s MacBook Pro/u,
-	);
+	assert.match(rail, /supportsLocalSession: boolean/u);
+	assert.match(rail, /composerSurfaceHeader=\{variantConfig\.supportsLocalSession \? \(/u);
+	assert.match(rail, /<DevicesIcon label="" size="small" \/>/u);
+	assert.match(rail, />Local · Carl’s MacBook Pro</u);
 });
 
 test("Code Review no longer owns a bespoke chat implementation", () => {
@@ -325,13 +326,50 @@ test("Code Review demo is registered as an ssr:false dynamic import", () => {
 	);
 });
 
-test("Code Review demo wrapper renders the block page", () => {
+test("Code Review demo launches each agent placement variant from the preview", () => {
 	const demo = readProjectFile(
 		"components/website/demos/blocks/code-review-demo.tsx",
 	);
 
-	assert.match(demo, /import Page from "@\/components\/blocks\/code-review\/page";/u);
-	assert.match(demo, /return <Page \/>;/u);
+	assert.match(demo, /label: "3P \(Cloud\)"[\s\S]*value: "third-party-cloud"/u);
+	assert.match(demo, /label: "3P \(Local\)"[\s\S]*value: "third-party-local"/u);
+	assert.match(demo, /label: "Custom agents"[\s\S]*value: "custom"/u);
+	assert.match(demo, /label: "Rovo"[\s\S]*value: "rovo"/u);
+	assert.match(demo, /aria-label="Open code review variant"/u);
+	assert.match(demo, /onClick=\{\(\) => setAgentVariant\(variant\.value\)\}/u);
+	assert.match(demo, /open=\{selectedVariant !== null\}/u);
+	assert.match(demo, /agentVariant=\{selectedVariant\?\.value \?\? "custom"\}/u);
+	assert.doesNotMatch(demo, /defaultOpen|feedbackBanner|aria-pressed/u);
+});
+
+test("Code Review agent types explicitly control empty greeting placement", () => {
+	const rail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+	const sidebarChat = readProjectFile(
+		"components/projects/sidebar-chat/page.tsx",
+	);
+	const kanbanStage = readProjectFile(
+		"components/projects/jira-golden-paths/components/kanban-stage.tsx",
+	);
+	const chatGreeting = readProjectFile(
+		"components/projects/sidebar-chat/components/chat-greeting.tsx",
+	);
+
+	assert.match(rail, /case "third-party-cloud":[\s\S]*emptyGreetingPlacement: "centered"/u);
+	assert.match(rail, /case "third-party-local":[\s\S]*emptyGreetingPlacement: "centered"/u);
+	assert.match(rail, /case "custom":[\s\S]*emptyGreetingPlacement: "near-composer"/u);
+	assert.match(rail, /case "rovo":[\s\S]*emptyGreetingPlacement: "near-composer"/u);
+	assert.match(rail, /case "third-party-cloud":[\s\S]*supportsExternalOpen: false,[\s\S]*supportsLocalSession: false,/u);
+	assert.match(rail, /case "third-party-local":[\s\S]*supportsExternalOpen: true,[\s\S]*supportsLocalSession: true,/u);
+	assert.match(rail, /case "custom":[\s\S]*supportsExternalOpen: false,[\s\S]*supportsLocalSession: false,/u);
+	assert.match(rail, /case "rovo":[\s\S]*supportsExternalOpen: false,[\s\S]*supportsLocalSession: false,[\s\S]*usesDefaultRovoGreeting: true,/u);
+	assert.match(rail, /greeting=\{variantConfig\.usesDefaultRovoGreeting \? undefined : \{/u);
+	assert.match(chatGreeting, /heading = "How can I help\?"/u);
+	assert.match(chatGreeting, /const greetingSuggestions = suggestions \?\? defaultSuggestions/u);
+	assert.match(sidebarChat, /emptyGreetingPlacement = "near-composer"/u);
+	assert.match(sidebarChat, /emptyGreetingPlacement === "centered" && !hasMessages/u);
+	assert.match(kanbanStage, /agentVariant="third-party-local"/u);
 });
 
 test("Code Review polish contracts hide duplicate headers and label the shared explorer", () => {

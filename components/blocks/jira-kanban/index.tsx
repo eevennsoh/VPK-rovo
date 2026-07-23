@@ -3,7 +3,8 @@
 // oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
 // oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { LayoutGroup, motion, useReducedMotion, type Transition } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -15,6 +16,7 @@ import {
 	type JiraIssueCompletedAgentRun,
 	type JiraIssueGenerativeActionRequest,
 	type JiraIssuePriority,
+	type JiraIssuePullRequestStatus,
 	type JiraIssueTag,
 } from "@/components/blocks/jira-issue";
 import { AgentSelector } from "@/components/blocks/agent-selector";
@@ -47,6 +49,9 @@ export type JiraKanbanPriority = JiraIssuePriority;
 
 export type JiraKanbanCardTag = JiraIssueTag;
 
+const JIRA_KANBAN_CARD_MOVE: Transition = { duration: 0.6, ease: [0.4, 0, 0, 1] }; // duration-slowest + ease-in-out
+const JIRA_KANBAN_CARD_DEPART: Transition = { duration: 0.4, ease: [0.6, 0, 0.8, 0.6] }; // duration-slower + ease-in
+
 export interface JiraKanbanAssigneeData {
 	id: string;
 	name: string;
@@ -66,6 +71,8 @@ export interface JiraKanbanCardData {
 	agentActivities?: readonly JiraIssueAgentActivity[];
 	agentActivityMode?: JiraIssueAgentActivityMode;
 	agentDoneRuns?: readonly JiraIssueCompletedAgentRun[];
+	pullRequestNumber?: number;
+	pullRequestStatus?: JiraIssuePullRequestStatus;
 }
 
 export interface JiraKanbanColumnData {
@@ -86,6 +93,19 @@ export interface JiraKanbanAgentData {
 export interface JiraKanbanCardSelectModifiers {
 	shiftKey: boolean;
 	metaOrCtrlKey: boolean;
+}
+
+export interface JiraKanbanCardMoveAnimation {
+	cardCode: string;
+	phase: "departing" | "arriving";
+}
+
+function getJiraKanbanCardScale(
+	phase: JiraKanbanCardMoveAnimation["phase"] | undefined,
+): number {
+	if (phase === "arriving") return 0.9;
+	if (phase === "departing") return 0.96;
+	return 1;
 }
 
 export interface JiraKanbanSelectionToolbarConfig {
@@ -110,8 +130,10 @@ export interface JiraKanbanSelectionToolbarConfig {
 export interface JiraKanbanProps {
 	boardColumns: readonly JiraKanbanColumnData[];
 	agents?: readonly JiraKanbanAgentData[];
+	animateCardMoves?: boolean;
 	assignedAgentIdsByColumn?: Readonly<Record<string, readonly string[]>>;
 	ariaLabel?: string;
+	cardMoveAnimation?: JiraKanbanCardMoveAnimation;
 	columnHeaderPaddingBlock?: CSSProperties["paddingBlock"];
 	draggedCardCode?: string | null;
 	selectedCardCodes?: ReadonlySet<string>;
@@ -451,9 +473,11 @@ function getCommonSelectedCardStatus(
 
 export function JiraKanban({
 	agents,
+	animateCardMoves = false,
 	ariaLabel = "Jira kanban columns. Scroll horizontally to review all statuses.",
 	assignedAgentIdsByColumn = {},
 	boardColumns,
+	cardMoveAnimation,
 	columnHeaderPaddingBlock = token("space.100"),
 	draggedCardCode = null,
 	selectedCardCodes,
@@ -474,7 +498,10 @@ export function JiraKanban({
 	paddingTop = token("space.150"),
 	selectionToolbar,
 }: Readonly<JiraKanbanProps>) {
+	const cardLayoutGroupId = useId();
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const shouldReduceMotion = useReducedMotion();
+	const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;
 	const [canScrollRight, setCanScrollRight] = useState(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 	const selectedCount = selectedCardCodes?.size ?? 0;
@@ -625,8 +652,9 @@ export function JiraKanban({
 					minHeight: 0,
 				}}
 				>
-				<div className="flex items-stretch gap-2" style={{ minWidth: "100%" }}>
-					{boardColumns.map((column) => (
+				<LayoutGroup id={cardLayoutGroupId}>
+					<div className="flex items-stretch gap-2" style={{ minWidth: "100%" }}>
+						{boardColumns.map((column) => (
 						<div
 							key={column.title}
 							className="border-2 border-transparent transition-colors"
@@ -653,6 +681,10 @@ export function JiraKanban({
 									const isCardBeingDragged = draggedCardCode === card.code;
 									const isMultiSelection = (selectedCardCodes?.size ?? 0) > 1;
 									const isSelectedCardBeingDragged = Boolean(draggedCardCode && isMultiSelection && isSelected);
+									const cardMovePhase = cardMoveAnimation?.cardCode === card.code
+										? cardMoveAnimation.phase
+										: undefined;
+									const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;
 									const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 										const modifiers: JiraKanbanCardSelectModifiers = {
 											shiftKey: event.shiftKey,
@@ -666,65 +698,87 @@ export function JiraKanban({
 										onCardClick?.(card.title, card.code, card, column.title);
 									};
 									return (
-										<JiraIssue
+										<motion.div
 											key={card.code}
-											summary={card.title}
-											issueKey={card.code}
-											tags={card.tags}
-											priority={card.priority}
-											assigneeAvatarSrc={card.avatarSrc}
-											assigneeAvatarShape={card.avatarShape}
-											assigneeUnassignedKind={card.avatarUnassignedKind}
-											assigneePulse={card.avatarPulse}
-											agentActivities={card.agentActivities}
-											agentActivityMode={card.agentActivityMode}
-											agentDoneRuns={card.agentDoneRuns}
-											generativeAction={
-												onCardGenerativeActionSubmit
-													? {
-														onSubmit: (request) =>
-															onCardGenerativeActionSubmit(request, card, column.title),
-													}
-													: undefined
-											}
-											onAgentActivityOpenChange={
-												onCardAgentActivityOpenChange
-													? (open) => onCardAgentActivityOpenChange(open, card, column.title)
-													: undefined
-											}
-											onAgentActivityViewChat={
-												onCardAgentActivityViewChat
-													? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
-													: undefined
-											}
-											onAgentActivityQuestionSubmit={
-												onCardAgentActivityQuestionSubmit
-													? (activity, answers) =>
-														onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
-													: undefined
-											}
-											onAgentDoneRunReview={
-												onCardAgentDoneRunReview
-													? (run) => onCardAgentDoneRunReview(run, card, column.title)
-													: undefined
-											}
-											onAgentDoneRunView={
-												onCardAgentDoneRunView
-													? (run) => onCardAgentDoneRunView(run, card, column.title)
-													: undefined
-											}
-											dragging={isCardBeingDragged || isSelectedCardBeingDragged}
-											selected={isSelected}
-											onClick={handleClick}
-											onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
-											onDragEnd={handleCardDragEndInternal}
-										/>
+											className="w-full"
+											layout={shouldAnimateCardPosition ? "position" : false}
+											layoutId={shouldAnimateCardPosition ? `jira-kanban-card-${card.code}` : undefined}
+											style={shouldAnimateCardPosition ? { willChange: "transform" } : undefined}
+											transition={JIRA_KANBAN_CARD_MOVE}
+										>
+											<motion.div
+												animate={
+													shouldAnimateCardMoves
+														? { scale: getJiraKanbanCardScale(cardMovePhase) }
+														: undefined
+												}
+												initial={false}
+												style={cardMovePhase ? { willChange: "transform" } : undefined}
+												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
+											>
+											<JiraIssue
+												summary={card.title}
+												issueKey={card.code}
+												tags={card.tags}
+												priority={card.priority}
+												pullRequestNumber={card.pullRequestNumber}
+												pullRequestStatus={card.pullRequestStatus}
+												assigneeAvatarSrc={card.avatarSrc}
+												assigneeAvatarShape={card.avatarShape}
+												assigneeUnassignedKind={card.avatarUnassignedKind}
+												assigneePulse={card.avatarPulse}
+												agentActivities={card.agentActivities}
+												agentActivityMode={card.agentActivityMode}
+												agentDoneRuns={card.agentDoneRuns}
+												generativeAction={
+													onCardGenerativeActionSubmit
+														? {
+															onSubmit: (request) =>
+																onCardGenerativeActionSubmit(request, card, column.title),
+														}
+														: undefined
+												}
+												onAgentActivityOpenChange={
+													onCardAgentActivityOpenChange
+														? (open) => onCardAgentActivityOpenChange(open, card, column.title)
+														: undefined
+												}
+												onAgentActivityViewChat={
+													onCardAgentActivityViewChat
+														? (activity) => onCardAgentActivityViewChat(activity, card, column.title)
+														: undefined
+												}
+												onAgentActivityQuestionSubmit={
+													onCardAgentActivityQuestionSubmit
+														? (activity, answers) =>
+															onCardAgentActivityQuestionSubmit(activity, answers, card, column.title)
+														: undefined
+												}
+												onAgentDoneRunReview={
+													onCardAgentDoneRunReview
+														? (run) => onCardAgentDoneRunReview(run, card, column.title)
+														: undefined
+												}
+												onAgentDoneRunView={
+													onCardAgentDoneRunView
+														? (run) => onCardAgentDoneRunView(run, card, column.title)
+														: undefined
+												}
+												dragging={isCardBeingDragged || isSelectedCardBeingDragged}
+												selected={isSelected}
+												onClick={handleClick}
+												onDragStart={(event) => handleCardDragStartInternal(card, column.title, event)}
+												onDragEnd={handleCardDragEndInternal}
+											/>
+											</motion.div>
+										</motion.div>
 									);
 								})}
 							</BoardColumn>
 						</div>
-					))}
-				</div>
+						))}
+					</div>
+				</LayoutGroup>
 				</section>
 				{selectionToolbar ? (
 					<JiraToolbar

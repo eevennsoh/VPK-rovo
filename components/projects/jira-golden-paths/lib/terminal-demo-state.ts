@@ -118,6 +118,15 @@ export function applyBoardEvent(
 	}
 }
 
+export function getVisibleOutputLines(
+	step: TerminalBeatStep | null,
+	pane: "left" | "right",
+	revealCount: number,
+): readonly TerminalLine[] {
+	if (step?.kind !== "output" || step.pane !== pane) return [];
+	return step.lines.slice(0, Math.max(0, revealCount));
+}
+
 /** Formats a submitted prompt draft into its transcript line. Documented convention:
  * the right pane (Claude Code) echoes prompts with a `> ` shell-style prefix; the left
  * pane only echoes the initial Jira shell command verbatim. Both use tone "bold" so

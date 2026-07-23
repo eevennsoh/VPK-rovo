@@ -25,12 +25,19 @@ const SPAN_TONE_CLASS: Record<NonNullable<TerminalSpan["tone"]>, string> = {
 export function TerminalLineView({
 	line,
 	className,
-}: Readonly<{ line: TerminalLine; className?: string }>): React.ReactElement {
+	active = false,
+}: Readonly<{ line: TerminalLine; className?: string; active?: boolean }>): React.ReactElement {
 	return (
 		<div className={cn("whitespace-pre-wrap break-words text-text-subtle", className)}>
 			{line.map((span, index) => (
 				<span key={index} className={span.tone ? SPAN_TONE_CLASS[span.tone] : undefined}>
-					{span.text}
+					{active && span.text === "⏺ " ? (
+						<>
+							<StateGlyph status="working" />{" "}
+						</>
+					) : (
+						span.text
+					)}
 				</span>
 			))}
 		</div>

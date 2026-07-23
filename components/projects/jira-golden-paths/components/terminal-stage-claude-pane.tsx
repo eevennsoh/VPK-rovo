@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 
-import type { TerminalBeatStep, TerminalLine, TerminalPaneState } from "../lib/terminal-demo-state";
+import {
+	getVisibleOutputLines,
+	type TerminalBeatStep,
+	type TerminalPaneState,
+} from "../lib/terminal-demo-state";
 import { BlinkCursor, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
 
 // ---------------------------------------------------------------------------
@@ -69,9 +73,11 @@ export function TerminalStageClaudePane({
 }: Readonly<TerminalStageClaudePaneProps>): React.ReactElement {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const isTyping = activeStep?.kind === "type" && activeStep.pane === "right";
-	const isOutputting = activeStep?.kind === "output" && activeStep.pane === "right";
 	const displayedDraft = isTyping ? activeStep.text.slice(0, revealCount) : pane.promptDraft;
-	const inFlightLines: readonly TerminalLine[] = isOutputting ? activeStep.lines.slice(0, revealCount) : [];
+	const inFlightLines = getVisibleOutputLines(activeStep, "right", revealCount);
+	const currentLine = inFlightLines.at(-1) ?? pane.transcript.at(-1);
+	const activeLine = pane.working ? currentLine : undefined;
+	const hasInlineWorkingMarker = activeLine?.[0]?.text === "⏺ ";
 
 	useEffect(() => {
 		const node = scrollRef.current;
@@ -92,12 +98,20 @@ export function TerminalStageClaudePane({
 				</div>
 				<div className="flex flex-col gap-1">
 					{pane.transcript.map((line, index) => (
-						<TerminalLineView key={index} line={line} />
+						<TerminalLineView
+							key={index}
+							line={line}
+							active={line === activeLine}
+						/>
 					))}
 					{inFlightLines.map((line, index) => (
-						<TerminalLineView key={`in-flight-${index}`} line={line} />
+						<TerminalLineView
+							key={`in-flight-${index}`}
+							line={line}
+							active={line === activeLine}
+						/>
 					))}
-					{pane.working ? (
+					{pane.working && !hasInlineWorkingMarker ? (
 						<div className="mt-1 flex items-center gap-2 text-text-subtlest">
 							<StateGlyph status="working" className="shrink-0 text-[#D97757]" />
 							<span>Working…</span>

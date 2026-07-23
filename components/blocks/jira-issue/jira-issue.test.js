@@ -60,9 +60,12 @@ test("Jira issue exposes agent activity state props", () => {
 });
 
 test("Jira issue shows PR metadata with the specified summary-row spacing", () => {
-	assert.match(SOURCE, /const pullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
-	assert.match(SOURCE, /<div className="flex items-center gap-2">[\s\S]*<div className="flex items-center gap-1">[\s\S]*<TaskIcon[\s\S]*\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<div className="flex items-center gap-1">[\s\S]*<PullRequestIcon label="Pull request" color=\{token\("color\.icon\.success"\)\} \/>[\s\S]*#\{pullRequestNumber\}/u);
-	assert.match(SOURCE, /pullRequestNumber=\{pullRequestNumber\}/u);
+	assert.match(SOURCE, /pullRequestNumber\?: number;[\s\S]*pullRequestStatus\?: JiraIssuePullRequestStatus;/u);
+	assert.match(SOURCE, /const inferredPullRequestNumber = agentDoneRuns\.find\(\(run\) => run\.pullRequestNumber\)\?\.pullRequestNumber;/u);
+	assert.match(SOURCE, /const resolvedPullRequestNumber = pullRequestNumber \?\? inferredPullRequestNumber;/u);
+	assert.match(SOURCE, /<div className="flex items-center gap-2">[\s\S]*<div className="flex items-center gap-1">[\s\S]*<TaskIcon[\s\S]*\{issueKey\}[\s\S]*\{pullRequestNumber \? \([\s\S]*<div className="flex items-center gap-1">[\s\S]*pullRequestStatus === "merged"[\s\S]*text-icon-accent-purple[\s\S]*<MergeSuccessIcon label="Pull request merged" color="currentColor" \/>[\s\S]*text-icon-accent-lime[\s\S]*<PullRequestIcon label="Pull request" color="currentColor" \/>[\s\S]*#\{pullRequestNumber\}/u);
+	assert.match(SOURCE, /pullRequestNumber=\{resolvedPullRequestNumber\}/u);
+	assert.match(SOURCE, /pullRequestStatus=\{pullRequestStatus\}/u);
 });
 
 test("Jira issue uses the 8px large radius token", () => {

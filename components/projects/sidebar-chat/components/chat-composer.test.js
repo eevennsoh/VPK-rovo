@@ -94,12 +94,12 @@ test("compact chat can hide the AI disclaimer without changing the default", () 
 	assert.match(sidebarComposer, /\{hideAiDisclaimer \? null : <Footer \/>\}/u);
 });
 
-test("chat surfaces can center an empty greeting without changing the default alignment", () => {
+test("chat surfaces explicitly place empty greetings near the composer by default", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 
-	assert.match(sidebarPanel, /centerEmptyGreeting\?: boolean;/u);
-	assert.match(sidebarPanel, /centerEmptyGreeting = false/u);
-	assert.match(sidebarPanel, /const shouldCenterEmptyGreeting = centerEmptyGreeting && !hasMessages;/u);
+	assert.match(sidebarPanel, /emptyGreetingPlacement\?: "centered" \| "near-composer";/u);
+	assert.match(sidebarPanel, /emptyGreetingPlacement = "near-composer"/u);
+	assert.match(sidebarPanel, /const shouldCenterEmptyGreeting = emptyGreetingPlacement === "centered" && !hasMessages;/u);
 	assert.match(sidebarPanel, /shouldCenterAgentTestEmptyState \|\| shouldCenterEmptyGreeting/u);
 });
 
@@ -254,8 +254,9 @@ test("compact chat composer supports an opt-in left-side surface header tooltip"
 	);
 	assert.match(
 		codeReviewRail,
-		/composerSurfaceHeaderTooltip="Sends your prompt to Claude Code running locally\."/u,
+		/composerSurfaceHeaderTooltip=\{variantConfig\.supportsLocalSession[\s\S]*selected agent running locally\./u,
 	);
+	assert.doesNotMatch(codeReviewRail, /third-party agent running in the cloud\./u);
 });
 
 test("compact chat composer supports opt-in first-render autofocus", () => {

@@ -18,6 +18,7 @@ async function loadTerminalStateHarness() {
 					getBoardCounts,
 					getBoardSections,
 					getOrderedItemKeys,
+					getVisibleOutputLines,
 				} from "./components/projects/jira-golden-paths/lib/terminal-demo-state";
 				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/jira-golden-paths/data/terminal-demo-script";
 			`,
@@ -163,6 +164,70 @@ test("script integrity: after TwG loads context, typed input goes to Claude Code
 	assert.ok(laterInputSteps.every((step) => step.pane === "right"));
 });
 
+test("post-review terminal transitions reveal only each destination beat's new lines", async () => {
+	const harness = await loadTerminalStateHarness();
+	const transitions = [
+		{
+			fromBeat: 7,
+			toBeat: 8,
+			lines: [
+				"⏺ Updated range selection to use the rendered filtered issue list",
+				"⏺ Added regression coverage for Shift-select while filtered",
+				"✓ Focused tests passed · lint passed · typecheck passed",
+			],
+		},
+		{
+			fromBeat: 8,
+			toBeat: 9,
+			lines: [
+				"  ⎿ commit c91e42a  fix(jira): preserve range selection while filtered",
+				"✓ Pushed follow-up commit to PR #247",
+			],
+		},
+		{
+			fromBeat: 9,
+			toBeat: 10,
+			lines: [
+				"⏺ gh pr merge 247 --squash --delete-branch",
+				"✓ PR #247 merged into main",
+				"✓ JGP-247 moved to Done",
+			],
+		},
+	];
+
+	for (const { fromBeat, toBeat, lines } of transitions) {
+		const prior = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, fromBeat - 1);
+		const destination = harness.TERMINAL_DEMO_BEATS[toBeat - 1];
+		const outputStep = destination.steps.find((step) => step.kind === "output" && step.pane === "right");
+		assert.ok(outputStep, `expected right-pane output in beat ${toBeat}`);
+
+		assert.deepEqual(
+			harness.getVisibleOutputLines(outputStep, "right", 1).map((line) => line.map((span) => span.text).join("")),
+			[lines[0]],
+		);
+		assert.deepEqual(
+			harness.getVisibleOutputLines(outputStep, "right", lines.length).map((line) => line.map((span) => span.text).join("")),
+			lines,
+		);
+
+		const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
+		let inProgress = reducer(prior, { type: "begin-beat" });
+		while (destination.steps[inProgress.stepIndex]?.kind !== "output") {
+			inProgress = reducer(inProgress, { type: "commit-step" });
+		}
+		assert.deepEqual(
+			inProgress.right.transcript.slice(0, prior.right.transcript.length),
+			prior.right.transcript,
+			`beat ${toBeat} must preserve beat ${fromBeat} history`,
+		);
+		assert.deepEqual(
+			reducer(inProgress, { type: "finish-beat" }),
+			harness.foldBeats(harness.TERMINAL_DEMO_BEATS, toBeat - 1),
+			`beat ${toBeat} must settle to its complete deterministic state`,
+		);
+	}
+});
+
 test("Jira dashboard keeps shortcuts without restoring its dispatch box", async () => {
 	const harness = await loadTerminalStateHarness();
 
@@ -247,13 +312,30 @@ test("script tells the approved TwG, review handoff, follow-up commit, and merge
 	assert.match(allText, /pnpm run typecheck · passed/u);
 	assert.doesNotMatch(allText, /  ·  /u);
 	assert.match(allText, /⏺ GitHub ·/u);
-	assert.match(allText, /preserve Shift-selection against the visible filtered order/u);
+
+	const reviewHandoff = harness.TERMINAL_DEMO_BEATS.find((beat) => beat.id === "review-handoff");
+	assert.ok(reviewHandoff, "expected a `review-handoff` beat");
+	const [handoffInput, handoffSubmit] = reviewHandoff.steps;
+	assert.equal(handoffInput.kind, "type");
+	assert.equal(handoffInput.pane, "right");
+	assert.equal(handoffSubmit.kind, "submit");
+	assert.equal(handoffSubmit.pane, "right");
+	assert.match(
+		handoffInput.text,
+		/claude -- 'Continue work on Jira work item "Add assignee focus mode" \(JGP-247\) in this local Claude session\./u,
+	);
+	assert.match(handoffInput.text, /<JIRA_WORK_ITEM>[\s\S]*<key>JGP-247<\/key>/u);
+	assert.match(handoffInput.text, /<reviewFeedback>[\s\S]*<author>Carl<\/author>/u);
+	assert.match(handoffInput.text, /Preserve Shift-selection against the visible filtered order/u);
+	assert.match(handoffInput.text, /Calculate the range from filteredIssues, not the unfiltered board\./u);
 	assert.match(allText, /fix\(jira\): preserve range selection while filtered/u);
 	assert.match(allText, /PR #247 merged into main/u);
 	assert.match(allText, /All checks passing · ready for your review/u);
 	assert.doesNotMatch(allText, /Carl's review/u);
 	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 4).right.working, true);
 	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 5).right.working, false);
+	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 6).right.working, true);
+	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 7).right.working, false);
 
 	const toolSpans = harness.TERMINAL_DEMO_BEATS.flatMap((beat) => beat.steps)
 		.filter((step) => step.kind === "output")

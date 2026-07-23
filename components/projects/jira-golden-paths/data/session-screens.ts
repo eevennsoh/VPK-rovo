@@ -87,7 +87,7 @@ export const LOCAL_SESSION_SCREENS: readonly SessionScreen[] = [
 		scenario: "local-review",
 	},
 	{ id: "local-8", section: "Terminal", title: "Review feedback handed off", terminalBeat: 7 },
-	{ id: "local-9", section: "Terminal", title: "Apply Sarah's feedback", terminalBeat: 8 },
+	{ id: "local-9", section: "Terminal", title: "Apply Carl's feedback", terminalBeat: 8 },
 	{ id: "local-10", section: "Terminal", title: "Push follow-up commit", terminalBeat: 9 },
 	{ id: "local-11", section: "Terminal", title: "Merge PR #247", terminalBeat: 10 },
 	{
