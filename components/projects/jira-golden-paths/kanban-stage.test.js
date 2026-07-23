@@ -7,6 +7,10 @@ const STAGE_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-paths/components/kanban-stage.tsx"),
 	"utf8",
 );
+const ACTIVITY_DATA_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-golden-paths/data/kanban-activity-data.ts"),
+	"utf8",
+);
 const HOOK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-paths/hooks/use-kanban-lifecycle.ts"),
 	"utf8",
@@ -134,10 +138,30 @@ test("Kanban stage shows the Jira selection toolbar when cards are selected", ()
 	assert.match(STAGE_SOURCE, /onAgentAssignmentChange:\s*handleAgentAssignmentChange/u);
 	assert.match(STAGE_SOURCE, /onClearSelection:\s*handleClearSelection/u);
 	assert.match(STAGE_SOURCE, /selectedAgentIds/u);
-	assert.match(STAGE_SOURCE, /agents: JGP_KANBAN_SELECTION_AGENTS/u);
+	assert.match(STAGE_SOURCE, /scenario === "global-assignment"\s*\?\s*JGP_GLOBAL_KANBAN_SELECTION_AGENTS\s*:\s*JGP_KANBAN_SELECTION_AGENTS/u);
 	assert.match(STAGE_SOURCE, /defaultPinnedAgentIds: \["claude-code", "cursor"\]/u);
 	// A plain click selects a single card (and thus reveals the toolbar).
 	assert.match(STAGE_SOURCE, /onCardClick=\{handleCardClick\}/u);
+});
+
+test("global-session Kanban adds the custom-agent directory while retaining coding defaults", () => {
+	assert.match(ACTIVITY_DATA_SOURCE, /import directoryAgentsData from "@\/app\/data\/directory\/agents\.json";/u);
+	assert.match(
+		ACTIVITY_DATA_SOURCE,
+		/export const JGP_GLOBAL_KANBAN_SELECTION_AGENTS[^=]*=\s*\[\s*\.\.\.JGP_KANBAN_AGENTS,\s*\.\.\.JGP_DIRECTORY_AGENTS\.filter\(\(agent\) => agent\.id !== "rovo-dev"\),\s*\]/u,
+	);
+	assert.match(STAGE_SOURCE, /JGP_GLOBAL_KANBAN_SELECTION_AGENTS/u);
+});
+
+test("global-session Kanban reuses the exact ASX work-item skill picker configuration", () => {
+	assert.match(
+		STAGE_SOURCE,
+		/import \{\s*DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,\s*WORK_ITEM_PINNED_ITEMS_LABEL,\s*WORK_ITEM_SKILLS,\s*\} from "@\/components\/blocks\/agent-sessions\/experimental\/lib\/work-item-picker-options";/u,
+	);
+	assert.match(STAGE_SOURCE, /defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS/u);
+	assert.match(STAGE_SOURCE, /pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL/u);
+	assert.match(STAGE_SOURCE, /skills: WORK_ITEM_SKILLS/u);
+	assert.match(STAGE_SOURCE, /scenario === "global-assignment"/u);
 });
 
 test("Bulk agent assignment starts work and moves selected To do cards into In progress", () => {

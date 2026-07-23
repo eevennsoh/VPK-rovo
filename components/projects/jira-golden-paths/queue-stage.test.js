@@ -131,7 +131,8 @@ test("JGP Rovo stage matches the sidebar chat project dimensions", () => {
 
 test("JGP Rovo history reuses Queue session behavior with route-owned global-story sessions", () => {
 	assert.match(ROVO_STAGE_SOURCE, /useState<AsxQueueSession\[\]>\(\(\) => \([\s\S]*JGP_ROVO_SESSION_SEEDS\.map/u);
-	assert.match(ROVO_STAGE_SOURCE, /scenario === "pr-review" \? "jgp-252-pr-review" : "jgp-251-persistence-question"/u);
+	assert.match(ROVO_STAGE_SOURCE, /const initialSessionId = "jgp-251-persistence-question";/u);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /scenario === "pr-review"|jgp-252-pr-review/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(orderedHistorySessions\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /description: <JiraSessionDescription session=\{session\} \/>/u);
@@ -148,7 +149,20 @@ test("JGP Rovo history reuses Queue session behavior with route-owned global-sto
 	assert.match(ROVO_STAGE_SOURCE, /getThreadActions,/u);
 	assert.match(ROVO_STAGE_SOURCE, /pinnedThreadIds,/u);
 	assert.match(ROVO_STAGE_SOURCE, /chatHistory=\{chatHistory\}/u);
-	assert.match(ROVO_STAGE_SOURCE, /inlineArtifactDocuments=\{JGP_ROVO_ARTIFACT_DOCUMENTS\}/u);
+	assert.match(ROVO_STAGE_SOURCE, /renderWidget=\{renderWidget\}/u);
+	assert.match(ROVO_STAGE_SOURCE, /<CodeList[\s\S]*items=\{payload\.items\}/u);
+	assert.match(ROVO_STAGE_SOURCE, /interceptClarificationAnswers/u);
+	assert.match(ROVO_STAGE_SOURCE, /markAnsweredQuestionTraces/u);
+	assert.match(ROVO_STAGE_SOURCE, /onInterceptSubmit=\{handleInterceptSubmit\}/u);
+	assert.match(ROVO_STAGE_SOURCE, /<CreatePrContextBar/u);
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/<ContextBarPill[\s\S]*interactive=\{false\}[\s\S]*<ButtonGroup aria-label="Create pull request" variant="split">/u,
+	);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /PullRequestIcon|icon=\{<PullRequestIcon/u);
+	assert.match(ROVO_STAGE_SOURCE, />Create PR<\/Button>/u);
+	assert.match(ROVO_STAGE_SOURCE, />Create draft PR<\/DropdownMenuItem>/u);
+	assert.match(ROVO_STAGE_SOURCE, />Commit &amp; push<\/DropdownMenuItem>/u);
 	assert.match(
 		ROVO_STAGE_SOURCE,
 		/resetChat\(\);[\s\S]*selectAgent\(session\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*replaceMessages\(thread\.messages\);[\s\S]*setActiveHistorySessionId\(threadId\);/u,
@@ -180,21 +194,38 @@ test("JGP Rovo history uses Queue sorting and exposes its controller", () => {
 	assert.match(ROVO_STAGE_SOURCE, /sortMode,/u);
 });
 
-test("JGP Rovo reuses the Queue session context bar above its composer", () => {
+test("JGP Rovo keeps the changes pill and replaces Move to Done with Create PR", () => {
 	assert.match(QUEUE_WORKSPACE_SOURCE, /export function QueueSessionContextBar/u);
-	assert.match(ROVO_STAGE_SOURCE, /import \{ QueueSessionContextBar \} from "@\/components\/projects\/jira-queue\/components\/queue-conversation-workspace";/u);
 	assert.match(ROVO_STAGE_SOURCE, /dismissQueueSessionFileChanges\(sessions, activeHistorySessionId\)/u);
-	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionJiraColumn\([\s\S]*sessions,[\s\S]*activeHistorySessionId,[\s\S]*jiraColumn,[\s\S]*\)/u);
 	assert.match(
 		ROVO_STAGE_SOURCE,
-		/jiraColumn === "Done"[\s\S]*\{ \.\.\.session, status: "merged" \}/u,
+		/composerContextBar=\{activeHistorySession \? \([\s\S]*<CreatePrContextBar[\s\S]*session=\{activeHistorySession\}/u,
 	);
-	assert.match(
-		ROVO_STAGE_SOURCE,
-		/composerContextBar=\{activeHistorySession \? \([\s\S]*<QueueSessionContextBar[\s\S]*compact[\s\S]*session=\{activeHistorySession\}/u,
-	);
+	assert.match(ROVO_STAGE_SOURCE, /Changes:/u);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /Move to:/u);
 	assert.match(CHAT_PANEL_SOURCE, /composerContextBar=\{composerContextBar\}/u);
 	assert.match(CHAT_COMPOSER_SOURCE, /\{composerContextBar\}\s*<ChatContextBar/u);
+});
+
+test("JGP Rovo hides source and model controls without changing normal chat defaults", () => {
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/<ChatPanel[\s\S]*hideComposerSourceAndModelControls/u,
+	);
+	assert.match(CHAT_PANEL_SOURCE, /hideComposerSourceAndModelControls = false/u);
+	assert.match(
+		CHAT_PANEL_SOURCE,
+		/hideSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u,
+	);
+	assert.match(CHAT_COMPOSER_SOURCE, /hideSourceAndModelControls = false/u);
+	assert.match(
+		CHAT_COMPOSER_SOURCE,
+		/\{hideSourceAndModelControls \? null : \([\s\S]*key="sources-selector"/u,
+	);
+	assert.match(
+		CHAT_COMPOSER_SOURCE,
+		/hideReasoningSelector=\{hideSourceAndModelControls\}/u,
+	);
 });
 
 test("JGP Rovo clears the active Queue session when returning to Rovo", () => {

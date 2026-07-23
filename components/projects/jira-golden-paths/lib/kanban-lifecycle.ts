@@ -17,6 +17,7 @@ import {
 } from "../data/kanban-data";
 
 export type JgpKanbanLifecyclePhase = "default" | "thinking" | "generating" | "needs-input" | "completed";
+export type JgpKanbanCompletionMode = "complete" | "stay-active";
 
 export interface JgpKanbanLifecycle {
 	agentIds: string[];
@@ -31,6 +32,7 @@ export interface JgpKanbanDragState {
 }
 
 export interface JgpKanbanState {
+	agentCompletionMode: JgpKanbanCompletionMode;
 	columns: JiraKanbanColumnData[];
 	dragged: JgpKanbanDragState | null;
 	lastSelectedByColumn: Record<string, number>;
@@ -112,6 +114,7 @@ function updateLifecycle(
 
 export function createInitialJgpKanbanState(scenario: JgpKanbanScenario = "local-review"): JgpKanbanState {
 	return {
+		agentCompletionMode: scenario === "global-assignment" ? "stay-active" : "complete",
 		columns: createJgpKanbanColumns(scenario),
 		dragged: null,
 		lastSelectedByColumn: {},
@@ -181,6 +184,16 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 		case "answer-question":
 			return updateLifecycle(state, action.cardCode, (current) => ({ ...current, phase: "generating" }));
 		case "complete": {
+			if (state.agentCompletionMode === "stay-active") {
+				const next = updateLifecycle(state, action.cardCode, (current) => ({
+					...current,
+					phase: "generating",
+				}));
+				return {
+					...next,
+					selectedCardCodes: new Set([...next.selectedCardCodes].filter((code) => code !== action.cardCode)),
+				};
+			}
 			const next = updateLifecycle(state, action.cardCode, (current) => ({
 				...current,
 				generatedOutput: action.generatedOutput,

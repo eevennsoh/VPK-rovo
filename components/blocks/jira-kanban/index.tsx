@@ -19,6 +19,10 @@ import {
 	type JiraIssuePullRequestStatus,
 	type JiraIssueTag,
 } from "@/components/blocks/jira-issue";
+import {
+	mapAgentToMentionItem,
+	mapSkillToMentionItem,
+} from "@/components/blocks/editor-palette/data/mention-sources";
 import { AgentSelector } from "@/components/blocks/agent-selector";
 import { JiraToolbar } from "@/components/blocks/jira-toolbar";
 import type { SkillsDirectorySkill } from "@/app/data/directory";
@@ -42,6 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -206,6 +211,18 @@ export function createJiraKanbanColumns(
 			agentDoneRuns: card.agentDoneRuns?.map((run) => ({ ...run })),
 		})),
 	}));
+}
+
+function orderPickerItems<T extends Readonly<{ id: string }>>(
+	items: readonly T[],
+	pinnedIds: readonly string[] | undefined,
+): readonly T[] {
+	if (!pinnedIds?.length) return items;
+	const pinnedIdSet = new Set(pinnedIds);
+	return [
+		...items.filter((item) => pinnedIdSet.has(item.id)),
+		...items.filter((item) => !pinnedIdSet.has(item.id)),
+	];
 }
 
 function getAgentInitials(name: string): string {
@@ -508,6 +525,34 @@ export function JiraKanban({
 	const selectedStatus = selectedCardCodes
 		? getCommonSelectedCardStatus(boardColumns, selectedCardCodes)
 		: null;
+	const generativeActionAgents = useMemo(
+		() => selectionToolbar?.agents
+			? getMentionChildItems(
+					{
+						subagent: orderPickerItems(
+							selectionToolbar.agents,
+							selectionToolbar.defaultPinnedAgentIds,
+						).map(mapAgentToMentionItem),
+					},
+					"subagent",
+				)
+			: undefined,
+		[selectionToolbar?.agents, selectionToolbar?.defaultPinnedAgentIds],
+	);
+	const generativeActionSkills = useMemo(
+		() => selectionToolbar?.skills
+			? getMentionChildItems(
+					{
+						skill: orderPickerItems(
+							selectionToolbar.skills,
+							selectionToolbar.defaultPinnedSkillIds,
+						).map(mapSkillToMentionItem),
+					},
+					"skill",
+				)
+			: undefined,
+		[selectionToolbar?.defaultPinnedSkillIds, selectionToolbar?.skills],
+	);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- scroll affordance depends on measured DOM dimensions.
 	useEffect(() => {
@@ -733,8 +778,10 @@ export function JiraKanban({
 												generativeAction={
 													onCardGenerativeActionSubmit
 														? {
+															agents: generativeActionAgents,
 															onSubmit: (request) =>
 																onCardGenerativeActionSubmit(request, card, column.title),
+															skills: generativeActionSkills,
 														}
 														: undefined
 												}

@@ -34,7 +34,6 @@ export type SessionScreenScenario =
 	| "local-completed"
 	| "global-assignment"
 	| "blocked-question"
-	| "pr-review"
 	| "human-review"
 	| "completed-timeline";
 
@@ -110,26 +109,19 @@ export const GLOBAL_SESSION_SCREENS: readonly SessionScreen[] = [
 	{
 		id: "global-2",
 		section: "Rovo",
-		title: "Unblock Cursor",
+		title: "Unblock Cursor and review its changes",
 		design: "rovo",
 		scenario: "blocked-question",
 	},
 	{
 		id: "global-3",
-		section: "Rovo",
-		title: "Review code on mobile",
-		design: "rovo",
-		scenario: "pr-review",
-	},
-	{
-		id: "global-4",
 		section: "For you",
 		title: "Five tasks ready for review",
 		design: "for-you",
 		scenario: "human-review",
 	},
 	{
-		id: "global-5",
+		id: "global-4",
 		section: "Work item",
 		title: "Review the completed timeline",
 		design: "work-item",

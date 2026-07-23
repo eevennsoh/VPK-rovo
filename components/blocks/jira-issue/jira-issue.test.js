@@ -109,9 +109,11 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(GENERATIVE_SOURCE, /RovoSparkle,[\s\S]*RovoSparkleButton,[\s\S]*type RovoSparkleActionRequest,/);
 	assert.match(GENERATIVE_SOURCE, /import \{ EDITOR_PALETTE_MENTION_SOURCES \} from "@\/components\/blocks\/editor-palette\/data\/mention-sources";/);
 	assert.match(GENERATIVE_SOURCE, /import \{ getMentionChildItems \} from "@\/components\/ui-custom\/rich-text-editor";/);
-	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionConfig \{[\s\S]*ariaLabel\?: string;[\s\S]*onSubmit: \(request: JiraIssueGenerativeActionRequest\) => void \| Promise<void>;/);
+	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionConfig \{[\s\S]*agents\?: readonly RovoSparkleItem\[\];[\s\S]*ariaLabel\?: string;[\s\S]*onSubmit: \(request: JiraIssueGenerativeActionRequest\) => void \| Promise<void>;[\s\S]*skills\?: readonly RovoSparkleItem\[\];/);
 	assert.match(GENERATIVE_SOURCE, /export interface JiraIssueGenerativeActionRequest \{[\s\S]*kind: JiraIssueGenerativeActionKind;[\s\S]*prompt: string;[\s\S]*issue: JiraIssueGenerativeActionIssue;[\s\S]*selectedItem\?: JiraIssueGenerativeActionSelectedItem;/);
 	assert.match(GENERATIVE_SOURCE, /export type JiraIssueGenerativeActionSelectedItem = RovoSparkleSelectedItem;/);
+	assert.match(GENERATIVE_SOURCE, /agents=\{action\.agents \?\? JIRA_ISSUE_GENERATIVE_AGENTS\}/u);
+	assert.match(GENERATIVE_SOURCE, /skills=\{action\.skills \?\? JIRA_ISSUE_GENERATIVE_SKILLS\}/u);
 	assert.match(SOURCE, /const \[generativeActionPointerActive, setGenerativeActionPointerActive\] = useState\(false\);/);
 	assert.match(SOURCE, /const \[generativeActionFocusActive, setGenerativeActionFocusActive\] = useState\(false\);/);
 	assert.match(SOURCE, /const \[generativeActionRevealSuppressed, setGenerativeActionRevealSuppressed\] = useState\(false\);/);
@@ -174,7 +176,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.match(GENERATIVE_SOURCE, /"--jira-issue-generative-bridge-height": `\$\{triggerPosition\.bridgeHeight\}px`/u);
 	assert.doesNotMatch(GENERATIVE_SOURCE, /delay-200|translate-x/);
 	assert.match(GENERATIVE_SOURCE, /size="compact"[\s\S]*visible=\{sparkleVisible\}/);
-	assert.match(GENERATIVE_SOURCE, /<RovoSparkle[\s\S]*agents=\{JIRA_ISSUE_GENERATIVE_AGENTS\}[\s\S]*menuTitle="Jira issue actions"[\s\S]*popoverTitle="Jira issue generative actions"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -24\}[\s\S]*skills=\{JIRA_ISSUE_GENERATIVE_SKILLS\}/);
+	assert.match(GENERATIVE_SOURCE, /<RovoSparkle[\s\S]*agents=\{action\.agents \?\? JIRA_ISSUE_GENERATIVE_AGENTS\}[\s\S]*menuTitle="Jira issue actions"[\s\S]*popoverTitle="Jira issue generative actions"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -24\}[\s\S]*skills=\{action\.skills \?\? JIRA_ISSUE_GENERATIVE_SKILLS\}/);
 	assert.match(GENERATIVE_SOURCE, /triggerPortalContainer=\{hasTriggerElement \? null : document\.body\}/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /import \{ motion, useReducedMotion, type Transition \} from "motion\/react";/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /rotate: shouldReduceMotion \|\| !active \? 0 : 180,[\s\S]*scale: shouldReduceMotion \|\| !active \? 1 : hoverScale/);

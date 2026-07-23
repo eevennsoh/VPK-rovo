@@ -64,7 +64,10 @@ export function useJgpKanbanLifecycle({
 		timersRef.current.clear();
 	}, []);
 
-	const startCards = useCallback((cardCodes: readonly string[], agent: JgpKanbanAgentSelection) => {
+	const startCards = useCallback((
+		cardCodes: readonly string[],
+		agent: JgpKanbanAgentSelection,
+	) => {
 		for (const cardCode of cardCodes) {
 			clearCardTimers(cardCode);
 			dispatch({ type: "assign-agent", cardCodes: [cardCode], agent });
@@ -152,10 +155,10 @@ export function useJgpKanbanLifecycle({
 			return;
 		}
 		// Assigning an agent to the selected cards starts real work: each card
-		// moves into In progress and runs the same
-		// thinking → generating → complete lifecycle as a drag or generative
-		// action. Clear the selection afterwards so the toolbar dismisses, matching
-		// the multi-card drop behavior.
+		// moves into In progress and runs the thinking → generating → complete
+		// lifecycle there without implicitly advancing to Review. Clear the
+		// selection afterwards so the toolbar dismisses, matching the multi-card
+		// drop behavior.
 		const currentState = stateRef.current;
 		const intakeCardCodes = new Set(
 			currentState.columns

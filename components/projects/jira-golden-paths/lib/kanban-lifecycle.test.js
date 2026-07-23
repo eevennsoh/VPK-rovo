@@ -20,6 +20,8 @@ async function loadHarness() {
 					JGP_CODE_REVIEW_FILES,
 					JGP_CODE_REVIEW_WORK_ITEM,
 					JGP_KANBAN_AGENTS,
+					JGP_KANBAN_IN_PROGRESS_COLUMN,
+					JGP_KANBAN_REVIEW_COLUMN,
 				} from "./components/projects/jira-golden-paths/data/kanban-data";
 			`,
 			loader: "ts",
@@ -275,16 +277,80 @@ test("bulk Cursor assignment moves all five tasks alongside human work in In pro
 	assert.ok(new Set(activities.map((activity) => activity.label)).size > 1);
 });
 
-test("completed Cursor work moves to Review", async () => {
-	const { createInitialJgpKanbanState, jgpKanbanReducer, resolveJgpKanbanColumns } = await loadHarness();
+test("Sarah's global assignments stay In progress across assignment paths and agents", async () => {
+	const {
+		createInitialJgpKanbanState,
+		jgpKanbanReducer,
+		resolveJgpKanbanColumns,
+		JGP_KANBAN_IN_PROGRESS_COLUMN,
+		JGP_KANBAN_REVIEW_COLUMN,
+	} = await loadHarness();
 	let state = createInitialJgpKanbanState("global-assignment");
-	state = jgpKanbanReducer(state, { type: "assign-agent", cardCodes: ["JGP-251"], agent: { id: "cursor", name: "Cursor" } });
-	state = jgpKanbanReducer(state, { type: "complete", cardCode: "JGP-251" });
+	const assignments = [
+		{ agent: { id: "cursor", name: "Cursor" }, cardCodes: ["JGP-251", "JGP-252"] },
+		{ agent: { id: "unit-test-creator", name: "Unit Test Creator" }, cardCodes: ["JGP-253", "JGP-254"] },
+	];
+	const draggedCardCode = "JGP-255";
+	const assignedCodes = [...assignments.flatMap(({ cardCodes }) => cardCodes), draggedCardCode];
+
+	for (const { agent, cardCodes } of assignments) {
+		state = jgpKanbanReducer(state, {
+			type: "assign-agent",
+			agent,
+			cardCodes,
+		});
+	}
+	state = jgpKanbanReducer(state, {
+		type: "drag-start",
+		cardCode: draggedCardCode,
+		sourceColumnTitle: "To do",
+	});
+	state = jgpKanbanReducer(state, {
+		type: "drop",
+		targetColumnTitle: JGP_KANBAN_IN_PROGRESS_COLUMN,
+		agent: { id: "github-copilot", name: "GitHub Copilot" },
+	});
+	for (const cardCode of assignedCodes) {
+		state = jgpKanbanReducer(state, { type: "complete", cardCode });
+	}
+
+	assert.ok(assignedCodes.every((code) => state.columns
+		.flatMap((item) => item.cards)
+		.find((card) => card.code === code)?.assignee?.name === "Sarah"));
+	assert.ok(assignedCodes.every(
+		(code) => column(state, JGP_KANBAN_IN_PROGRESS_COLUMN).cards.some((card) => card.code === code),
+	));
+	assert.ok(assignedCodes.every(
+		(code) => !column(state, JGP_KANBAN_REVIEW_COLUMN).cards.some((card) => card.code === code),
+	));
+	assert.ok(assignedCodes.every((code) => state.lifecycleByCode[code].phase === "generating"));
+	const activeCards = column(
+		{ columns: resolveJgpKanbanColumns(state) },
+		JGP_KANBAN_IN_PROGRESS_COLUMN,
+	).cards
+		.filter((card) => assignedCodes.includes(card.code));
+	assert.ok(activeCards.every((card) => card.agentActivityMode === "working"));
+	assert.ok(activeCards.every((card) => card.agentActivities.every((activity) => activity.state === "working")));
+	assert.ok(activeCards.every((card) => card.agentDoneRuns === undefined));
+	assert.ok(activeCards.every((card) => card.agentActivities.every(
+		(activity) => !/Completed|Review/u.test(`${activity.label} ${activity.message}`),
+	)));
+});
+
+test("normal local workflow completion still moves to Review", async () => {
+	const {
+		createInitialJgpKanbanState,
+		jgpKanbanReducer,
+		resolveJgpKanbanColumns,
+	} = await loadHarness();
+	let state = createInitialJgpKanbanState("local-review");
+	state = jgpKanbanReducer(state, { type: "assign-agent", cardCodes: ["JGP-231"], agent: { id: "cursor", name: "Cursor" } });
+	state = jgpKanbanReducer(state, { type: "complete", cardCode: "JGP-231" });
 	const card = resolveJgpKanbanColumns(state)
 		.find((item) => item.title === "Review").cards
-		.find((item) => item.code === "JGP-251");
+		.find((item) => item.code === "JGP-231");
 
-	assert.equal(card.code, "JGP-251");
+	assert.equal(card.code, "JGP-231");
 	assert.equal(card.agentDoneRuns[0].agentName, "Cursor");
 	assert.match(card.agentDoneRuns[0].summary, /Review/u);
 });
@@ -309,16 +375,16 @@ test("shift selection only includes cards visible in filtered columns", async ()
 
 test("dropping delivered work into Done clears its lifecycle footer", async () => {
 	const { createInitialJgpKanbanState, jgpKanbanReducer, resolveJgpKanbanColumns } = await loadHarness();
-	let state = createInitialJgpKanbanState("global-assignment");
-	state = jgpKanbanReducer(state, { type: "assign-agent", cardCodes: ["JGP-251"], agent: { id: "cursor" } });
-	state = jgpKanbanReducer(state, { type: "complete", cardCode: "JGP-251" });
-	state = jgpKanbanReducer(state, { type: "drag-start", cardCode: "JGP-251", sourceColumnTitle: "Review" });
+	let state = createInitialJgpKanbanState("local-review");
+	state = jgpKanbanReducer(state, { type: "assign-agent", cardCodes: ["JGP-231"], agent: { id: "cursor" } });
+	state = jgpKanbanReducer(state, { type: "complete", cardCode: "JGP-231" });
+	state = jgpKanbanReducer(state, { type: "drag-start", cardCode: "JGP-231", sourceColumnTitle: "Review" });
 	state = jgpKanbanReducer(state, { type: "drop", targetColumnTitle: "Done" });
 
-	assert.equal(state.lifecycleByCode["JGP-251"], undefined);
+	assert.equal(state.lifecycleByCode["JGP-231"], undefined);
 	const card = resolveJgpKanbanColumns(state)
 		.find((item) => item.title === "Done").cards
-		.find((item) => item.code === "JGP-251");
-	assert.equal(card.code, "JGP-251");
+		.find((item) => item.code === "JGP-231");
+	assert.equal(card.code, "JGP-231");
 	assert.equal(card.agentDoneRuns, undefined);
 });

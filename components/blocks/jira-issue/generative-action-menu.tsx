@@ -8,6 +8,7 @@ import {
 	RovoSparkleButton,
 	type RovoSparkleActionKind,
 	type RovoSparkleActionRequest,
+	type RovoSparkleItem,
 	type RovoSparkleSelectedItem,
 } from "@/components/ui-custom/rovo-sparkle";
 import { getMentionChildItems } from "@/components/ui-custom/rich-text-editor";
@@ -29,8 +30,10 @@ export interface JiraIssueGenerativeActionRequest {
 }
 
 export interface JiraIssueGenerativeActionConfig {
+	agents?: readonly RovoSparkleItem[];
 	ariaLabel?: string;
 	onSubmit: (request: JiraIssueGenerativeActionRequest) => void | Promise<void>;
+	skills?: readonly RovoSparkleItem[];
 }
 
 interface JiraIssueGenerativeActionMenuProps {
@@ -202,7 +205,7 @@ export function JiraIssueGenerativeActionMenu({
 
 	return (
 		<RovoSparkle
-			agents={JIRA_ISSUE_GENERATIVE_AGENTS}
+			agents={action.agents ?? JIRA_ISSUE_GENERATIVE_AGENTS}
 			ariaLabel={action.ariaLabel ?? "Open Jira issue generative actions"}
 			emptyLabel="No Jira issue actions found"
 			menuTitle="Jira issue actions"
@@ -213,7 +216,7 @@ export function JiraIssueGenerativeActionMenu({
 			side="right"
 			sideOffset={hasTriggerElement ? 4 : -24}
 			size="compact"
-			skills={JIRA_ISSUE_GENERATIVE_SKILLS}
+			skills={action.skills ?? JIRA_ISSUE_GENERATIVE_SKILLS}
 			triggerElement={resolvedTrigger}
 			triggerPortalContainer={hasTriggerElement ? null : document.body}
 		/>
