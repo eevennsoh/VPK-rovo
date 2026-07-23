@@ -33,9 +33,8 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 	for (const [id, design, scenario] of [
 		["global-1", "kanban", "global-assignment"],
 		["global-2", "rovo", "blocked-question"],
-		["global-3", "rovo", "pr-review"],
-		["global-4", "for-you", "human-review"],
-		["global-5", "work-item", "completed-timeline"],
+		["global-3", "for-you", "human-review"],
+		["global-4", "work-item", "completed-timeline"],
 	]) {
 		assert.match(
 			SCREENS_SOURCE,
@@ -44,8 +43,8 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 	}
 	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "rovo"/u);
-	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} scenario=\{scenario\} \/>/u);
-	assert.match(STAGE_SOURCE, /screen\.scenario === "pr-review" \? "pr-review" : "blocked-question"/u);
+	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} \/>/u);
+	assert.doesNotMatch(SCREENS_SOURCE, /scenario: "pr-review"/u);
 	assert.doesNotMatch(STAGE_SOURCE, /QueueStage|design === "queue"/u);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "for-you"/u);
 	assert.match(
@@ -253,7 +252,7 @@ test("Local session opens the Kanban section with the real board design", () => 
 
 test("Top-bar label counts position within the current section", () => {
 	// Local has seven opening Terminal screens, one Kanban screen, four resumed
-	// Terminal screens, then Kanban again. Global adds Kanban, two Rovo screens,
+	// Terminal screens, then Kanban again. Global adds Kanban, one Rovo screen,
 	// For you, and Work item.
 	// The counter resets per run (U+00B7 middle dot), even when a section name is reused later.
 	const sections = [...SCREENS_SOURCE.matchAll(/section:\s*"([^"]+)"/gu)].map((match) => match[1]);
@@ -272,7 +271,6 @@ test("Top-bar label counts position within the current section", () => {
 		"Terminal",
 		"Kanban",
 		"Kanban",
-		"Rovo",
 		"Rovo",
 		"For you",
 		"Work item",

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ChangesIcon from "@atlaskit/icon/core/changes";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import {
 	JiraSessionDescription,
@@ -9,33 +11,123 @@ import {
 	JiraSessionRowActions,
 } from "@/components/blocks/product-sidebar/variants/jira";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { CodeList } from "@/components/ui-custom/code-list";
+import {
+	ContextBarPill,
+	ContextBarTagGroup,
+} from "@/components/ui-custom/context-bar";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import ChatPanel, {
 	type ChatPanelHistoryController,
+	type ChatSubmitInterceptOutcome,
 } from "@/components/projects/sidebar-chat/page";
 import type { ChatHistorySortMode } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
-import { QueueSessionContextBar } from "@/components/projects/jira-queue/components/queue-conversation-workspace";
 import {
 	createAsxQueueSidebarSessionItem,
 	createAsxQueueHistoryThreads,
-	type AsxQueueJiraColumn,
 	type AsxQueueSession,
 } from "@/components/projects/jira-queue/data/queue-sessions";
 import {
 	archiveQueueSession,
 	dismissQueueSessionFileChanges,
-	setQueueSessionJiraColumn,
 	setQueueSessionPinned,
 	sortQueueSessions,
 } from "@/components/projects/jira-queue/lib/queue-session-state";
 import {
-	JGP_ROVO_ARTIFACT_DOCUMENTS,
+	JGP_CODE_LIST_WIDGET_TYPE,
+	JGP_ROVO_COMPLETED_SESSION_PATCH,
 	JGP_ROVO_SESSION_SEEDS,
+	buildJgpRovoContinuationPlayback,
+	parseJgpCodeListWidgetPayload,
 } from "@/components/projects/jira-golden-paths/data/agent-chat-data";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
 function ignoreThreadRun(): Promise<void> {
 	return Promise.resolve();
+}
+
+function CreatePrContextBar({
+	onCommitAndPush,
+	onCreateDraftPr,
+	onCreatePr,
+	onDismissFileChanges,
+	session,
+}: Readonly<{
+	onCommitAndPush: () => void;
+	onCreateDraftPr: () => void;
+	onCreatePr: () => void;
+	onDismissFileChanges: () => void;
+	session: AsxQueueSession;
+}>): React.ReactElement | null {
+	const fileChanges = session.fileChanges?.isDismissed ? undefined : session.fileChanges;
+	if (!fileChanges) return null;
+
+	return (
+		<ContextBarTagGroup
+			className="mb-3 w-full"
+			items={[
+				{
+					id: "changes",
+					label: `Dismiss changes: +${fileChanges.additions} -${fileChanges.deletions}`,
+					icon: <ChangesIcon label="" size="small" />,
+					onSelect: onDismissFileChanges,
+					content: (
+						<ContextBarPill
+							aria-label="Dismiss file changes"
+							className="px-2"
+							icon={<ChangesIcon color="currentColor" label="" size="small" />}
+							onClick={onDismissFileChanges}
+							title={fileChanges.files.join("\n")}
+						>
+							Changes:
+							<span className="inline-flex items-center gap-0.5">
+								<span className="font-mono font-normal text-text-success">+{fileChanges.additions}</span>
+								<span className="font-mono font-normal text-text-danger">-{fileChanges.deletions}</span>
+							</span>
+						</ContextBarPill>
+					),
+				},
+				{
+					id: "create-pr",
+					label: "Create pull request",
+					onSelect: onCreatePr,
+					content: (
+						<ContextBarPill
+							className="gap-2 px-2"
+							interactive={false}
+						>
+							<ButtonGroup aria-label="Create pull request" variant="split">
+								<Button onClick={onCreatePr} size="compact" variant="outline">Create PR</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={<Button aria-label="More pull request actions" size="icon-compact" variant="outline" />}
+									>
+										<ChevronDownIcon label="" size="small" />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="min-w-44" side="top">
+										<DropdownMenuGroup>
+											<DropdownMenuItem onSelect={onCreateDraftPr}>Create draft PR</DropdownMenuItem>
+											<DropdownMenuItem onSelect={onCommitAndPush}>Commit &amp; push</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ButtonGroup>
+						</ContextBarPill>
+					),
+				},
+			]}
+			overflowAriaLabel="Show more session actions"
+		/>
+	);
 }
 
 /**
@@ -48,10 +140,9 @@ function ignoreThreadRun(): Promise<void> {
  *
  * Layout intent: the sidebar chat is a narrow, bounded panel. The gallery runs
  * this stage with the default `stagePosition="top"` (shared by the board/list/
- * terminal stages), so centering is done here. The pinned dock is treated as a
- * pure overlay — we do NOT reserve its footprint — so the panel is vertically
- * (and horizontally) centered within the full stage height as if the dock were
- * absent, with the dock's backdrop blur floating over the panel's lower edge.
+ * terminal stages), so centering is done here. Bottom padding keeps the
+ * composer's final action row above the pinned Gallery dock, including when an
+ * expanded CodeList makes the conversation taller.
  * Its 400px width and 800px height cap match the standalone sidebar-chat demo;
  * `h-full` lets it shrink on short viewports. `ChatPanel` carries its own
  * raised surface + border + radius (see the sidebar-chat
@@ -61,9 +152,7 @@ function ignoreThreadRun(): Promise<void> {
  * gallery resets it when the Rovo card is entered so the panel opens at its
  * greeting instead of inheriting the Kanban demo's conversation.
  */
-export function RovoStage({
-	scenario = "blocked-question",
-}: Readonly<{ scenario?: "blocked-question" | "pr-review" }>): React.ReactElement {
+export function RovoStage(): React.ReactElement {
 	const {
 		replaceMessages,
 		resetAgentToRovo,
@@ -73,7 +162,7 @@ export function RovoStage({
 	const [historySessions, setHistorySessions] = useState<AsxQueueSession[]>(() => (
 		JGP_ROVO_SESSION_SEEDS.map((session) => ({ ...session }))
 	));
-	const initialSessionId = scenario === "pr-review" ? "jgp-252-pr-review" : "jgp-251-persistence-question";
+	const initialSessionId = "jgp-251-persistence-question";
 	const [activeHistorySessionId, setActiveHistorySessionId] = useState<string | null>(initialSessionId);
 	const [sortMode, setSortMode] = useState<ChatHistorySortMode>("manual");
 	const orderedHistorySessions = useMemo(
@@ -98,6 +187,49 @@ export function RovoStage({
 		historySessions.filter((session) => session.isPinned).map((session) => session.id),
 	), [historySessions]);
 	const activeHistorySession = historySessions.find((session) => session.id === activeHistorySessionId);
+	const continuationCounterRef = useRef(0);
+	const updateActiveSession = useCallback((patch: Partial<AsxQueueSession>) => {
+		if (!activeHistorySessionId) return;
+		setHistorySessions((sessions) => sessions.map((session) => (
+			session.id === activeHistorySessionId ? { ...session, ...patch } : session
+		)));
+	}, [activeHistorySessionId]);
+	const handleCreatePr = useCallback(() => {
+		updateActiveSession({
+			pullRequestNumber: 842,
+			pullRequestTitle: "JGP-252 Add a Clear focus action",
+		});
+	}, [updateActiveSession]);
+	const handleCreateDraftPr = useCallback(() => {
+		updateActiveSession({
+			pullRequestNumber: 842,
+			pullRequestTitle: "Draft: JGP-252 Add a Clear focus action",
+		});
+	}, [updateActiveSession]);
+	const handleCommitAndPush = useCallback(() => {
+		updateActiveSession({ commit: "6f4c2ab" });
+	}, [updateActiveSession]);
+	const handleInterceptSubmit = useCallback((): ChatSubmitInterceptOutcome => {
+		if (activeHistorySession?.status !== "awaiting-input") return { handled: false };
+
+		continuationCounterRef.current += 1;
+		const playback = buildJgpRovoContinuationPlayback(`rovo-answer-${continuationCounterRef.current}`);
+		const [pendingFrame, ...stagedFrames] = playback.frames;
+		return {
+			handled: true,
+			pendingAssistantParts: pendingFrame?.parts,
+			assistantPartStages: stagedFrames.map((frame) => ({
+				delayMs: frame.delayMs,
+				getAssistantParts: () => frame.parts,
+			})),
+			onApply: () => updateActiveSession(JGP_ROVO_COMPLETED_SESSION_PATCH),
+		};
+	}, [activeHistorySession?.status, updateActiveSession]);
+	const renderWidget = useCallback((widget: { type: string; data: unknown }): ReactNode => {
+		if (widget.type !== JGP_CODE_LIST_WIDGET_TYPE) return undefined;
+		const payload = parseJgpCodeListWidgetPayload(widget.data);
+		return payload ? <CodeList defaultExpandedIds={[payload.items[0]?.id ?? ""]} items={payload.items} /> : null;
+	}, []);
 	const getThreadPresentation = useCallback<
 		NonNullable<ChatPanelHistoryController["getThreadPresentation"]>
 	>((thread) => {
@@ -162,21 +294,6 @@ export function RovoStage({
 			dismissQueueSessionFileChanges(sessions, activeHistorySessionId)
 		));
 	}, [activeHistorySessionId]);
-	const handleJiraColumnChange = useCallback((jiraColumn: AsxQueueJiraColumn) => {
-		if (!activeHistorySessionId) return;
-		setHistorySessions((sessions) => {
-			const nextSessions = setQueueSessionJiraColumn(
-				sessions,
-				activeHistorySessionId,
-				jiraColumn,
-			);
-			return jiraColumn === "Done"
-				? nextSessions.map((session) => session.id === activeHistorySessionId
-					? { ...session, status: "merged" }
-					: session)
-				: nextSessions;
-		});
-	}, [activeHistorySessionId]);
 	const handleArchiveThread = useCallback((threadId: string) => {
 		const result = archiveQueueSession(
 			historySessions,
@@ -236,21 +353,26 @@ export function RovoStage({
 	]);
 
 	return (
-		<div className="flex h-full min-h-0 w-full items-center justify-center">
+		<div className="flex h-full min-h-0 w-full items-center justify-center pb-28">
 			<div className="h-full max-h-[800px] min-h-0 w-[400px]">
 				<ChatPanel
 					chatHistory={chatHistory}
-					inlineArtifactDocuments={JGP_ROVO_ARTIFACT_DOCUMENTS}
+					hideComposerSourceAndModelControls
 					composerContextBar={activeHistorySession ? (
-						<QueueSessionContextBar
-							compact
+						<CreatePrContextBar
+							onCommitAndPush={handleCommitAndPush}
+							onCreateDraftPr={handleCreateDraftPr}
+							onCreatePr={handleCreatePr}
 							onDismissFileChanges={handleDismissFileChanges}
-							onJiraColumnChange={handleJiraColumnChange}
 							session={activeHistorySession}
 						/>
 					) : null}
+					interceptClarificationAnswers
+					markAnsweredQuestionTraces
+					onInterceptSubmit={handleInterceptSubmit}
 					onBackToRovo={handleBackToRovo}
 					onClose={() => {}}
+					renderWidget={renderWidget}
 					enableSmartWidgets
 					showAwaitingIndicator={activeHistorySession?.status === "awaiting-input"}
 					sendPromptOptions={{

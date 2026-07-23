@@ -39,7 +39,7 @@ function normalizeLookupValue(value: string): string {
 	return value.trim().toLowerCase();
 }
 
-function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
+export function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
 	return {
 		category: "subagent",
 		description: agent.description ?? agent.byline,

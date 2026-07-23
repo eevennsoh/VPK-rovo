@@ -192,8 +192,7 @@ export function SessionStage({
 	}
 
 	if (screen?.design === "rovo") {
-		const scenario = screen.scenario === "pr-review" ? "pr-review" : "blocked-question";
-		return <RovoStage key={screen.id} scenario={scenario} />;
+		return <RovoStage key={screen.id} />;
 	}
 
 	if (screen?.design === "for-you") {

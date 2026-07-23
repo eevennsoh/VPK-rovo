@@ -380,6 +380,26 @@ test("Kanban card interactions preserve card and column context", () => {
 	);
 });
 
+test("Kanban sparkle agents and skills preserve selection-toolbar ordering", () => {
+	assert.match(
+		SOURCE,
+		/function orderPickerItems[\s\S]*const pinnedIdSet = new Set\(pinnedIds\);[\s\S]*items\.filter\(\(item\) => pinnedIdSet\.has\(item\.id\)\)[\s\S]*items\.filter\(\(item\) => !pinnedIdSet\.has\(item\.id\)\)/u,
+	);
+	assert.match(
+		SOURCE,
+		/const generativeActionAgents = useMemo\([\s\S]*orderPickerItems\(\s*selectionToolbar\.agents,\s*selectionToolbar\.defaultPinnedAgentIds,\s*\)\.map\(mapAgentToMentionItem\)[\s\S]*"subagent"[\s\S]*selectionToolbar\?\.defaultPinnedAgentIds/u,
+	);
+	assert.match(
+		SOURCE,
+		/const generativeActionSkills = useMemo\([\s\S]*orderPickerItems\(\s*selectionToolbar\.skills,\s*selectionToolbar\.defaultPinnedSkillIds,\s*\)\.map\(mapSkillToMentionItem\)[\s\S]*"skill"[\s\S]*selectionToolbar\?\.defaultPinnedSkillIds/u,
+	);
+	assert.match(
+		SOURCE,
+		/generativeAction=\{[\s\S]*agents: generativeActionAgents,[\s\S]*onSubmit: \(request\) =>[\s\S]*skills: generativeActionSkills,/u,
+	);
+	assert.doesNotMatch(SOURCE, /generativeAction(?:Agents|Skills)[\s\S]{0,100}\.(?:sort|toSorted)\(/u);
+});
+
 test("Kanban derives visible column counts from rendered cards", () => {
 	assert.match(SOURCE, /count=\{column\.cards\.length\}/);
 	assert.doesNotMatch(SOURCE, /count=\{column\.count\}/);

@@ -17,10 +17,10 @@ async function loadHarness() {
 				export {
 					JGP_CLAUDE_CODE_AGENT_PROFILE,
 					JGP_CHAT_AGENT_PROFILES,
-					JGP_ROVO_ARTIFACT_DOCUMENTS,
 					JGP_ROVO_SESSION_SEEDS,
 					buildJgpAgentChatPlayback,
 					buildJgpAgentChatContextBar,
+					buildJgpRovoContinuationPlayback,
 				} from "./components/projects/jira-golden-paths/data/agent-chat-data";
 			`,
 			loader: "ts",
@@ -44,12 +44,16 @@ test("JGP chat profiles include every lifecycle-specific agent", async () => {
 	const serviceImpactAgent = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "service-impact-agent");
 	const dependencyMapper = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "dependency-mapper");
 	const unitTestCreator = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "unit-test-creator");
+	const cursor = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "cursor");
 
 	assert.equal(profileIds.has("rfp-drafter"), true);
 	assert.equal(profileIds.has("service-impact-agent"), true);
 	assert.equal(profileIds.has("dependency-mapper"), true);
 	assert.equal(profileIds.has("unit-test-creator"), true);
 	assert.equal(profileIds.has("cursor"), true);
+	assert.equal(cursor.name, "Cursor");
+	assert.equal(cursor.brandName, "cursor");
+	assert.equal(cursor.avatarSrc, undefined);
 	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.id, "claude-code");
 	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.name, "Claude Code");
 	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.brandName, "claude");
@@ -131,21 +135,31 @@ test("JGP chat hook selects the agent before opening and cancels stale playback 
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
 });
 
-test("JGP global Rovo sessions cover the persistence blocker and mobile PR review", async () => {
+test("JGP global Rovo uses one input-required session that continues to PR completion", async () => {
 	const data = await loadHarness();
-	assert.equal(data.JGP_ROVO_SESSION_SEEDS.length, 2);
+	assert.equal(data.JGP_ROVO_SESSION_SEEDS.length, 1);
 	const blocked = data.JGP_ROVO_SESSION_SEEDS.find((session) => session.issueKey === "JGP-251");
-	const review = data.JGP_ROVO_SESSION_SEEDS.find((session) => session.issueKey === "JGP-252");
 	assert.equal(blocked.status, "awaiting-input");
 	assert.equal(blocked.question.questions[0].options[0].label, "Remember per board");
-	assert.equal(review.status, "pr-open");
-	assert.equal(review.jiraColumn, "Done");
-	assert.equal(review.pullRequestNumber, 842);
-	assert.deepEqual(review.fileChanges.files, [
+});
+
+test("submitted Rovo answer advances through thinking frames to a CodeList result", async () => {
+	const { buildJgpRovoContinuationPlayback } = await loadHarness();
+	const playback = buildJgpRovoContinuationPlayback("answer-run", 0);
+
+	assert.deepEqual(playback.frames.map((frame) => frame.delayMs), [0, 700, 900, 800]);
+	assert.equal(playback.frames[0].parts[0].type, "data-thinking-status");
+	assert.equal(playback.frames[1].parts.some((part) => part.type === "data-thinking-event"), true);
+	assert.equal(playback.frames[2].parts.at(-1).state, "streaming");
+	const finalParts = playback.frames.at(-1).parts;
+	assert.equal(finalParts.some((part) => part.type === "data-thinking-event"), true);
+	const codeListPart = finalParts.find(
+		(part) => part.type === "data-widget-data" && part.data.type === "jgp-code-list",
+	);
+	assert.ok(codeListPart);
+	assert.deepEqual(codeListPart.data.payload.items.map((item) => item.path), [
 		"src/boards/assignee-focus/assignee-focus-toolbar.tsx",
 		"src/boards/assignee-focus/assignee-focus-toolbar.test.tsx",
 	]);
-	const artifactPart = review.messages.at(-1).parts.find((part) => part.type === "data-artifact-result");
-	assert.equal(artifactPart.data.documentId, "jgp-252-clear-focus-code");
-	assert.match(data.JGP_ROVO_ARTIFACT_DOCUMENTS[artifactPart.data.documentId].versions[0].content, /Clear focus/u);
+	assert.match(codeListPart.data.payload.items[0].code, /Clear focus/u);
 });

@@ -11,6 +11,7 @@ export {
 	createJgpKanbanCompletedRun,
 	getJgpGenerativeActivityId,
 	getJgpGenerativeAgentSelection,
+	JGP_GLOBAL_KANBAN_SELECTION_AGENTS,
 	JGP_KANBAN_AGENTS,
 	JGP_KANBAN_CURSOR_AGENT_ID,
 	JGP_KANBAN_DEFAULT_AGENT_ID,

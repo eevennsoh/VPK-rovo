@@ -1,4 +1,5 @@
 import directoryAgentsData from "@/app/data/directory/agents.json";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
@@ -8,12 +9,6 @@ import type { JiraKanbanAgentData } from "@/components/blocks/jira-kanban";
 
 export const JGP_KANBAN_DEFAULT_AGENT_ID = "claude-code";
 export const JGP_KANBAN_CURSOR_AGENT_ID = "cursor";
-
-interface JgpDirectoryAgentRecord {
-	id: string;
-	name: string;
-	avatarSrc?: string;
-}
 
 export interface JgpKanbanAgentSelection {
 	id: string;
@@ -28,7 +23,7 @@ interface JgpKanbanActivityScenario {
 	workingMessage: string;
 }
 
-const JGP_DIRECTORY_AGENTS = directoryAgentsData as readonly JgpDirectoryAgentRecord[];
+const JGP_DIRECTORY_AGENTS = directoryAgentsData as readonly AgentSelectorAgent[];
 
 export function getDirectoryAgentAvatar(agentId: string): string | undefined {
 	return JGP_DIRECTORY_AGENTS.find((agent) => agent.id === agentId)?.avatarSrc;
@@ -50,6 +45,11 @@ export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 ] as const;
 
 export const JGP_KANBAN_SELECTION_AGENTS = JGP_KANBAN_AGENTS;
+
+export const JGP_GLOBAL_KANBAN_SELECTION_AGENTS = [
+	...JGP_KANBAN_AGENTS,
+	...JGP_DIRECTORY_AGENTS.filter((agent) => agent.id !== "rovo-dev"),
+] as const;
 
 const ACTIVITY_SCENARIOS: Readonly<Record<string, JgpKanbanActivityScenario>> = {
 	[JGP_KANBAN_DEFAULT_AGENT_ID]: {

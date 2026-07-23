@@ -7,6 +7,10 @@ const SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-brand.tsx"),
 	"utf8",
 );
+const AGENT_AVATAR_VISUAL_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/agent-avatar-visual.tsx"),
+	"utf8",
+);
 const HEADER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/rovo-core/components/rovo-app-header.tsx"),
 	"utf8",
@@ -51,6 +55,18 @@ test("RovoAppBrand can render a fixed identity without an agent selector", () =>
 	assert.match(SOURCE, /enableAgentSelector\?: boolean;/u);
 	assert.match(SOURCE, /if \(!enableAgentSelector\) \{/u);
 	assert.match(SOURCE, /<div className="flex h-8 min-w-0 shrink-0 items-center px-2 text-sm font-medium text-text">[\s\S]*\{identity\}/u);
+});
+
+test("RovoAppBrand renders selected third-party identities as labeled extra-small hexagons", () => {
+	assert.match(
+		SOURCE,
+		/<AgentAvatarVisual[\s\S]*brandName=\{selectedAgent\.brandName\}[\s\S]*label=\{selectedAgent\.name\}[\s\S]*sizePx=\{16\}/u,
+	);
+	assert.match(AGENT_AVATAR_VISUAL_SOURCE, /16: "xs"/u);
+	assert.match(
+		AGENT_AVATAR_VISUAL_SOURCE,
+		/<Avatar className=\{avatarClassName\} label=\{label\} shape="hexagon" size=\{avatarSizeFromPx\(sizePx\)\}>/u,
+	);
 });
 
 test("fullscreen Rovo header exposes a custom-agent back button", () => {

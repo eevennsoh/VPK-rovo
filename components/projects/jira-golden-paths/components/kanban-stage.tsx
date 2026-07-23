@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CodeReview } from "@/components/blocks/code-review";
+import {
+	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+	WORK_ITEM_PINNED_ITEMS_LABEL,
+	WORK_ITEM_SKILLS,
+} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
@@ -22,6 +27,7 @@ import {
 import {
 	JGP_CODE_REVIEW_FILES,
 	JGP_CODE_REVIEW_WORK_ITEM,
+	JGP_GLOBAL_KANBAN_SELECTION_AGENTS,
 	JGP_KANBAN_AGENTS,
 	JGP_KANBAN_DEFAULT_AGENT_ID,
 	JGP_KANBAN_SELECTION_AGENTS,
@@ -237,8 +243,17 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}
 				selectionToolbar={{
-					agents: JGP_KANBAN_SELECTION_AGENTS,
+					agents: scenario === "global-assignment"
+						? JGP_GLOBAL_KANBAN_SELECTION_AGENTS
+						: JGP_KANBAN_SELECTION_AGENTS,
 					defaultPinnedAgentIds: ["claude-code", "cursor"],
+					...(scenario === "global-assignment"
+						? {
+								defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+								pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
+								skills: WORK_ITEM_SKILLS,
+							}
+						: {}),
 					onAgentAssignmentChange: handleAgentAssignmentChange,
 					onClearSelection: handleClearSelection,
 					onStatusChange: handleStatusChange,
