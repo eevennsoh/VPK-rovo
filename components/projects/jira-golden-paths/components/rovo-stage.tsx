@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import {
 	JiraSessionDescription,
@@ -137,7 +137,10 @@ export function RovoStage({
 		setActiveHistorySessionId(threadId);
 		return Promise.resolve();
 	}, [historySessions, historyThreads, replaceMessages, resetChat, selectAgent]);
+	const initializedSessionIdRef = useRef<string | null>(null);
 	useEffect(() => {
+		if (initializedSessionIdRef.current === initialSessionId) return;
+		initializedSessionIdRef.current = initialSessionId;
 		void handleSelectThread(initialSessionId);
 	}, [handleSelectThread, initialSessionId]);
 	const handleDeleteThread = useCallback((threadId: string) => {

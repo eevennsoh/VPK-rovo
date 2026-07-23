@@ -153,6 +153,11 @@ test("JGP Rovo history reuses Queue session behavior with route-owned global-sto
 		ROVO_STAGE_SOURCE,
 		/resetChat\(\);[\s\S]*selectAgent\(session\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*replaceMessages\(thread\.messages\);[\s\S]*setActiveHistorySessionId\(threadId\);/u,
 	);
+	assert.match(ROVO_STAGE_SOURCE, /const initializedSessionIdRef = useRef<string \| null>\(null\);/u);
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/if \(initializedSessionIdRef\.current === initialSessionId\) return;[\s\S]*initializedSessionIdRef\.current = initialSessionId;[\s\S]*void handleSelectThread\(initialSessionId\);/u,
+	);
 	assert.match(ROVO_STAGE_SOURCE, /resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*resetChat\(\);/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueHistoryThreads/u);
 	assert.match(QUEUE_SESSIONS_SOURCE, /createAsxQueueSidebarSessionItem/u);

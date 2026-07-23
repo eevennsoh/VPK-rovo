@@ -51,7 +51,7 @@ function MetadataDot() {
  * so each comma-separated segment is classified and rendered independently.
  */
 function isAwaitingInputStatus(status: string): boolean {
-	return /awaiting user/i.test(status);
+	return /awaiting user|waiting for input/i.test(status);
 }
 
 function JiraForYouStatusSegment({

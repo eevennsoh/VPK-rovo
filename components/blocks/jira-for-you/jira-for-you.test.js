@@ -13,6 +13,10 @@ test("CRM analytics activity summarizes each agent status", () => {
 		DATA_SOURCE,
 		/id: "crm-analytics-dashboard"[\s\S]*agents: \[READINESS_AGENT, REVIEWER_AGENT, FEEDBACK_AGENT\][\s\S]*status: "1 Waiting for input, 2 In progress"/,
 	);
+	assert.match(
+		ITEM_SOURCE,
+		/return \/awaiting user\|waiting for input\/i\.test\(status\);/,
+	);
 });
 
 test("Jira For You uses the shared elapsed-time primitive", () => {
