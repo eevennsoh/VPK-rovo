@@ -335,7 +335,11 @@ test("Jira issue renders completed agents as individual inset hover rows", () =>
 	assert.match(COMPLETED_RUNS_SOURCE, /<JiraActivityChangedFiles[\s\S]*entry=\{getCompletedRunEntry\(run\)\}[\s\S]*status=\{run\.state\}/u);
 	assert.doesNotMatch(COMPLETED_RUNS_SOURCE, /pullRequestNumber=\{run\.pullRequestNumber\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /<ArtifactList[\s\S]*onOpen=\{onOutputOpen\}/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /onOutputOpen=\{\(item\) => \{[\s\S]*if \(item\.pullRequest\) \{[\s\S]*onReview\?\.\(run\);/u);
+	assert.match(
+		COMPLETED_RUNS_SOURCE,
+		/onOutputOpen=\{\(item\) => \{[\s\S]*if \(item\.pullRequest\) \{[\s\S]*setOpenRunId\(null\);[\s\S]*onOpenChange\?\.\(false\);[\s\S]*onReview\?\.\(run\);/u,
+		"opening a pull-request review should dismiss its agent flyout first",
+	);
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*onReview=\{onAgentDoneRunReview\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /const statusPresentation = status === "failed"[\s\S]*<StatusErrorIcon[\s\S]*: null/u);

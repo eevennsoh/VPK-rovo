@@ -175,6 +175,8 @@ export function JiraIssueAgentDone({
 								}
 								onOutputOpen={(item) => {
 									if (item.pullRequest) {
+										setOpenRunId(null);
+										onOpenChange?.(false);
 										onReview?.(run);
 									}
 								}}
