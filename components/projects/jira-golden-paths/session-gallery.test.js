@@ -29,48 +29,50 @@ test("Gallery exposes exactly the Local and Global session cards", () => {
 test("Each card defines its own ordered set of screens to navigate", () => {
 	assert.match(SCREENS_SOURCE, /export const LOCAL_SESSION_SCREENS: readonly SessionScreen\[\]/u);
 	assert.match(SCREENS_SOURCE, /export const GLOBAL_SESSION_SCREENS: readonly SessionScreen\[\]/u);
-	assert.match(
-		SCREENS_SOURCE,
-		/global-1[^\n]+section: "Kanban"[^\n]+design: "kanban"/u,
-	);
-	assert.match(
-		SCREENS_SOURCE,
-		/global-2[^\n]+section: "Work item"[^\n]+design: "work-item"/u,
-	);
-	assert.match(
-		SCREENS_SOURCE,
-		/global-3[^\n]+section: "Rovo"[^\n]+design: "rovo"/u,
-	);
-	assert.match(
-		SCREENS_SOURCE,
-		/global-4[^\n]+section: "For you"[^\n]+design: "for-you"/u,
-	);
+	for (const [id, design, scenario] of [
+		["global-1", "kanban", "global-assignment"],
+		["global-2", "rovo", "blocked-question"],
+		["global-3", "rovo", "pr-review"],
+		["global-4", "for-you", "human-review"],
+		["global-5", "work-item", "completed-timeline"],
+	]) {
+		assert.match(
+			SCREENS_SOURCE,
+			new RegExp(`id: "${id}"[\\s\\S]*?design: "${design}"[\\s\\S]*?scenario: "${scenario}"`, "u"),
+		);
+	}
 	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "rovo"/u);
-	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} \/>/u);
+	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} scenario=\{scenario\} \/>/u);
+	assert.match(STAGE_SOURCE, /screen\.scenario === "pr-review" \? "pr-review" : "blocked-question"/u);
 	assert.doesNotMatch(STAGE_SOURCE, /QueueStage|design === "queue"/u);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "for-you"/u);
-	assert.match(STAGE_SOURCE, /<ForYouStage dockOpen=\{dockOpen\} key=\{screen\.id\} \/>/u);
+	assert.match(
+		STAGE_SOURCE,
+		/<ForYouStage dockOpen=\{dockOpen\} key=\{screen\.id\} scenario="human-review" \/>/u,
+	);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "work-item"/u);
-	assert.match(STAGE_SOURCE, /<WorkItemStage controller=\{workItemController\} key=\{screen\.id\} \/>/u);
+	assert.match(
+		STAGE_SOURCE,
+		/<WorkItemStage[\s\S]*?controller=\{workItemController\}[\s\S]*?key=\{screen\.id\}[\s\S]*?scenario="completed-timeline"/u,
+	);
 });
 
-test("Local session drives beats 0–3 live and resumes terminal beats 8–11 after Kanban", () => {
-	// Screens 0–3 share the live presenter (liveBeat 0 = initial un-split
-	// terminal, 1 = split, 2 = connect command typed but not run, 3 = connected
-	// dashboard). The non-contiguous beat 7 (needs-input board) and the resumed
-	// post-Kanban beats 8–11 stay frozen.
+test("Local session drives the TwG setup live and resumes review beats after Kanban", () => {
+	// Screens 0–6 share the live presenter: initial terminal, split, command,
+	// backlog, issue inspection, work-context handoff, and line-by-line delivery.
+	// Post-review work uses frozen snapshots.
 	const liveBeats = [...SCREENS_SOURCE.matchAll(/liveBeat:\s*(\d+)/gu)].map((match) => Number(match[1]));
-	assert.deepEqual(liveBeats, [0, 1, 2, 3]);
+	assert.deepEqual(liveBeats, [0, 1, 2, 3, 4, 5, 6]);
 	const frozenBeats = [...SCREENS_SOURCE.matchAll(/terminalBeat:\s*(\d+)/gu)].map((match) => Number(match[1]));
-	assert.deepEqual(frozenBeats, [7, 8, 9, 10, 11]);
+	assert.deepEqual(frozenBeats, [7, 8, 9, 10]);
 	assert.match(
 		SCREENS_SOURCE,
-		/local-5[^\n]+section: "Kanban"[^\n]+\n\s*\{ id: "local-6", section: "Terminal"[^\n]+terminalBeat: 8/u,
+		/id: "local-7"[\s\S]*?scenario: "local-review"[\s\S]*?id: "local-8"[^\n]+terminalBeat: 7/u,
 	);
 	assert.match(
 		SCREENS_SOURCE,
-		/local-9[^\n]+terminalBeat: 11[^\n]+\n\s*\{ id: "local-10", section: "Kanban"[^\n]+design: "kanban"/u,
+		/local-11[^\n]+terminalBeat: 10[\s\S]*?id: "local-12"[\s\S]*?scenario: "local-completed"/u,
 	);
 
 	// The stage routes live screens to the shared presenter and frozen screens to
@@ -88,6 +90,11 @@ test("Local session drives beats 0–3 live and resumes terminal beats 8–11 af
 	// arrow keys (keyboard off) and driving advance/stepBack to the target beat.
 	assert.match(TERMINAL_LIVE_SCREEN_SOURCE, /useTerminalDemo\(true, \{ keyboard: false \}\)/u);
 	assert.match(TERMINAL_LIVE_SCREEN_SOURCE, /<TerminalStage controller=\{controller\} \/>/u);
+	assert.match(
+		TERMINAL_CLAUDE_PANE_SOURCE,
+		/<StateGlyph status="working" className="shrink-0 text-\[#D97757\]" \/>/u,
+	);
+	assert.match(TERMINAL_CLAUDE_PANE_SOURCE, /<span>Working…<\/span>/u);
 });
 
 test("Page wires the session stage + top-bar screen navigator per card", () => {
@@ -97,11 +104,10 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 		PAGE_SOURCE,
 		/<SessionStage[\s\S]*controller=\{card\.controller\}[\s\S]*dockOpen=\{dockOpen\}[\s\S]*screens=\{card\.screens\}[\s\S]*workItemController=\{workItemController\}/u,
 	);
-	assert.match(PAGE_SOURCE, /activeScreen\?\.design === "work-item"/u);
-	assert.match(PAGE_SOURCE, /<WorkItemControls controller=\{workItemController\} \/>/u);
+	assert.doesNotMatch(PAGE_SOURCE, /WorkItemControls/u);
 	assert.match(PAGE_SOURCE, /open=\{dockOpen\}/u);
 	assert.match(PAGE_SOURCE, /onOpenChange=\{setDockOpen\}/u);
-	assert.match(PAGE_SOURCE, /onReset=\{handleReset\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /onReset=\{handleReset\}|controller\.reset\(\)/u);
 });
 
 test("Entering the Global Rovo screen restores the default agent and greeting", () => {
@@ -116,9 +122,14 @@ test("Entering the Global Rovo screen restores the default agent and greeting", 
 test("Global For you reuses the shared feed layout with JGP chat playback", () => {
 	assert.match(FOR_YOU_STAGE_SOURCE, /useJgpAgentChatDemo\(\)/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /buildJgpForYouAgentChatScenario\(item\)/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /onView=\{handleView\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{JGP_FOR_YOU_SECTIONS\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /tabs=\{JGP_FOR_YOU_TABS\}/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /<JgpRovoOverlay/u);
-	assert.match(SHARED_FOR_YOU_STAGE_SOURCE, /<JiraForYouPage onItemClick=\{onItemClick\} \/>/u);
+	assert.match(
+		SHARED_FOR_YOU_STAGE_SOURCE,
+		/<JiraForYouPage onItemClick=\{onItemClick\} onView=\{onView\} sections=\{sections\} tabs=\{tabs\} \/>/u,
+	);
 	assert.match(SHARED_FOR_YOU_STAGE_SOURCE, /dockOpen \? "pb-56" : "pb-8"/u);
 	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
 	assert.doesNotMatch(ASX_PAGE_SOURCE, /<JiraForYouPage/u);
@@ -189,6 +200,15 @@ test("Section dropdown inherits the active gallery subtree theme", () => {
 	assert.match(STAGE_SOURCE, /<DropdownMenuContent align="center" portalled=\{false\}>/u);
 });
 
+test("Section dropdown opening does not add another flex gap to the centered controls", () => {
+	assert.match(STAGE_SOURCE, /<div className="flex items-center text-sm text-text">/u);
+	assert.match(STAGE_SOURCE, /size="icon-compact"\s+className="mr-2"\s+aria-label="Previous screen"/u);
+	assert.match(
+		STAGE_SOURCE,
+		/className="mr-2 flex items-center gap-1 rounded-sm px-1 py-0\.5 tabular-nums/u,
+	);
+});
+
 test("Local session opens the Kanban section with the real board design", () => {
 	// The sixth screen is the "Kanban" section rendering the Kanban board design.
 	assert.match(SCREENS_SOURCE, /design:\s*"kanban"/u);
@@ -196,7 +216,11 @@ test("Local session opens the Kanban section with the real board design", () => 
 	// The stage routes a `design: "kanban"` screen to the real KanbanStage,
 	// keyed by screen id so it mounts fresh when navigated to.
 	assert.match(STAGE_SOURCE, /screen\?\.design === "kanban"/u);
-	assert.match(STAGE_SOURCE, /<KanbanStage key=\{screen\.id\} \/>/u);
+	assert.match(STAGE_SOURCE, /<KanbanStage key=\{screen\.id\} scenario=\{scenario\} \/>/u);
+	assert.match(
+		STAGE_SOURCE,
+		/screen\.scenario === "local-completed" \|\| screen\.scenario === "global-assignment"/u,
+	);
 
 	// The Kanban/Rovo design stages call `useRovoChat`, so the JGP tree must be
 	// wrapped in a RovoChatProvider (not reliant on an ancestor route).
@@ -208,9 +232,9 @@ test("Local session opens the Kanban section with the real board design", () => 
 });
 
 test("Top-bar label counts position within the current section", () => {
-	// Local has five opening Terminal screens, one Kanban screen, four resumed
-	// Terminal screens, then Kanban again. Global adds Kanban, Work item, Rovo,
-	// and For you.
+	// Local has seven opening Terminal screens, one Kanban screen, four resumed
+	// Terminal screens, then Kanban again. Global adds Kanban, two Rovo screens,
+	// For you, and Work item.
 	// The counter resets per run (U+00B7 middle dot), even when a section name is reused later.
 	const sections = [...SCREENS_SOURCE.matchAll(/section:\s*"([^"]+)"/gu)].map((match) => match[1]);
 	assert.deepEqual(sections, [
@@ -219,19 +243,23 @@ test("Top-bar label counts position within the current section", () => {
 		"Terminal",
 		"Terminal",
 		"Terminal",
-		"Kanban",
-		"Terminal",
-		"Terminal",
 		"Terminal",
 		"Terminal",
 		"Kanban",
+		"Terminal",
+		"Terminal",
+		"Terminal",
+		"Terminal",
 		"Kanban",
-		"Work item",
+		"Kanban",
+		"Rovo",
 		"Rovo",
 		"For you",
+		"Work item",
 	]);
 	// Section-scoped, contiguous-run label with a middle dot; plain fallback when
 	// a screen has no section.
+	assert.match(STAGE_SOURCE, /if \(total === 1\) return section;/u);
 	assert.match(STAGE_SOURCE, /\$\{section\} \\u00b7 \$\{position\} of \$\{total\}/u);
 	assert.match(STAGE_SOURCE, /screens\[start - 1\]\?\.section === section/u);
 	assert.match(STAGE_SOURCE, /screens\[end \+ 1\]\?\.section === section/u);

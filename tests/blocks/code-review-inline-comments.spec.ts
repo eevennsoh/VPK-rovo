@@ -24,13 +24,11 @@ async function addInlineComment({
 	comment,
 	lineNumber,
 	page,
-	path,
 	side,
 }: {
 	comment: string;
 	lineNumber: number;
 	page: Page;
-	path: string;
 	side: "additions" | "deletions";
 }) {
 	await getDiffLine(page, side, lineNumber).hover();
@@ -47,9 +45,8 @@ async function addInlineComment({
 		addButtonBox.x + addButtonBox.width / 2,
 		addButtonBox.y + addButtonBox.height / 2,
 	);
-	const sideLabel = side === "additions" ? "new" : "old";
 	const editor = page.getByRole("textbox", {
-		name: `Comment on ${path}, ${sideLabel} side, line ${lineNumber}`,
+		name: `Comment on line ${lineNumber}`,
 	});
 	await expect(editor).toHaveCount(1);
 	await expect(editor).toBeFocused();
@@ -66,7 +63,6 @@ test("inline comments persist across files and layouts and attach to the compose
 		comment: "Guard against NaN before updating quantity.",
 		lineNumber: 16,
 		page,
-		path: "ipc.mp.test.ts",
 		side: "additions",
 	});
 	await expect(page.getByRole("button", { name: "Review 1 comment" })).toBeVisible();
@@ -77,7 +73,6 @@ test("inline comments persist across files and layouts and attach to the compose
 		comment: "Remove the temporary logging before merging.",
 		lineNumber: 16,
 		page,
-		path: "src/components/UserProfileDialog.ts",
 		side: "deletions",
 	});
 

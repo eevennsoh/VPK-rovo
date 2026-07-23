@@ -1,34 +1,25 @@
 import directoryAgentsData from "@/app/data/directory/agents.json";
-import directorySkillsData from "@/app/data/directory/skills.json";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
 	JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
-import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
-import type { JiraKanbanAgentData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
-import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
-import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
-import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
+import type { JiraKanbanAgentData, JiraKanbanAssigneeData, JiraKanbanCardData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { ChangedFile, CodeReviewWorkItem } from "@/components/blocks/code-review/data/types";
 
-export const JGP_KANBAN_INTAKE_COLUMN = "RFP Intake";
-export const JGP_KANBAN_DRAFTING_COLUMN = "Drafting";
+export const JGP_KANBAN_TODO_COLUMN = "To do";
+export const JGP_KANBAN_IN_PROGRESS_COLUMN = "In progress";
 export const JGP_KANBAN_REVIEW_COLUMN = "Review";
-export const JGP_KANBAN_SUBMITTED_COLUMN = "Submitted";
-export const JGP_KANBAN_DEFAULT_AGENT_ID = "rfp-drafter";
-const JGP_ROVO_AGENT_ID = "rovo-dev";
+export const JGP_KANBAN_DONE_COLUMN = "Done";
+export const JGP_KANBAN_DEFAULT_AGENT_ID = "claude-code";
+export const JGP_KANBAN_CURSOR_AGENT_ID = "cursor";
+
+export type JgpKanbanScenario = "local-review" | "local-completed" | "global-assignment";
 
 interface JgpDirectoryAgentRecord {
 	id: string;
 	name: string;
 	avatarSrc?: string;
-}
-
-interface JgpDirectorySkillRecord {
-	id: string;
-	name: string;
 }
 
 export interface JgpKanbanAgentSelection {
@@ -38,16 +29,17 @@ export interface JgpKanbanAgentSelection {
 }
 
 interface JgpKanbanActivityScenario {
-	awaitingInputMessage: string;
 	completedSummary: string;
 	cycleIntervalMs: number;
 	labels: readonly string[];
-	question: QuestionCardQuestion;
 	workingMessage: string;
 }
 
 const JGP_DIRECTORY_AGENTS = directoryAgentsData as readonly JgpDirectoryAgentRecord[];
-const JGP_DIRECTORY_SKILLS = directorySkillsData as readonly JgpDirectorySkillRecord[];
+
+function getDirectoryAgentAvatar(agentId: string): string | undefined {
+	return JGP_DIRECTORY_AGENTS.find((agent) => agent.id === agentId)?.avatarSrc;
+}
 
 export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 	{
@@ -57,379 +49,913 @@ export const JGP_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 		brandName: "claude",
 	},
 	{
-		id: JGP_KANBAN_DEFAULT_AGENT_ID,
-		name: "RFP Drafter",
-		byline: "Sales agent by Atlassian",
-		avatarSrc: getDeterministicAgentAvatarSrc(JGP_KANBAN_DEFAULT_AGENT_ID),
+		id: JGP_KANBAN_CURSOR_AGENT_ID,
+		name: "Cursor",
+		byline: "Coding agent by Cursor",
+		brandName: "cursor",
 	},
-	{
-		id: "service-impact-agent",
-		name: "Service impact agent",
-		byline: "Service agent by Atlassian",
-		avatarSrc: "/avatar-agent/service-agents/rca-agent.svg",
-	},
-	{
-		id: "dependency-mapper",
-		name: "Dependency mapper",
-		byline: "Planning agent by Atlassian",
-		avatarSrc: "/avatar-agent/teamwork-agents/work-item-planner.svg",
-	},
-	{
-		id: "ai-insights-agent",
-		name: "AI Insights Agent",
-		byline: "Custom agent by Atlassian",
-		avatarSrc: "/avatar-agent/product-agents/wildcard-1.svg",
-	},
-	...BOARD_AGENTS,
 ] as const;
 
-interface JgpKanbanReviewRunFixture {
-	agentId: string;
-	agentName: string;
-	avatarSrc?: string;
-	brandName?: ThirdPartyLogoName;
-	description: string;
-	elapsedSeconds: number;
-	outputs: NonNullable<JiraIssueCompletedAgentRun["outputs"]>;
-	pullRequestNumber?: number;
-	state: JiraIssueCompletedAgentRun["state"];
-	summary: string;
+export const JGP_KANBAN_SELECTION_AGENTS = JGP_KANBAN_AGENTS;
+
+const CARL: JiraKanbanAssigneeData = {
+	id: "carl",
+	name: "Carl",
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+};
+
+const SARAH: JiraKanbanAssigneeData = {
+	id: "sarah",
+	name: "Sarah",
+	avatarSrc: "/avatar-user/annie-clare/color/asow-strategy-orange.png",
+};
+
+const MAYA: JiraKanbanAssigneeData = {
+	id: "maya-chen",
+	name: "Maya Chen",
+	avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
+};
+
+const ELENA: JiraKanbanAssigneeData = {
+	id: "elena-ruiz",
+	name: "Elena Ruiz",
+	avatarSrc: "/avatar-user/aoife-burke/color/asow-service-yellow.png",
+};
+
+const NOAH: JiraKanbanAssigneeData = {
+	id: "noah-patel",
+	name: "Noah Patel",
+	avatarSrc: "/avatar-user/bradley-phillips/color/asow-product-purple.png",
+};
+
+const SOFIA: JiraKanbanAssigneeData = {
+	id: "sofia-garcia",
+	name: "Sofia Garcia",
+	avatarSrc: "/avatar-user/brian-lin/color/asow-teamwork-blue.png",
+};
+
+const OWEN: JiraKanbanAssigneeData = {
+	id: "owen-kim",
+	name: "Owen Kim",
+	avatarSrc: "/avatar-user/david-hsieh/color/asow-service-yellow.png",
+};
+
+function createCard(params: Readonly<{
+	assignee: JiraKanbanAssigneeData;
+	code: string;
+	priority?: JiraKanbanCardData["priority"];
+	tags: JiraKanbanCardData["tags"];
+	title: string;
+}>): JiraKanbanCardData {
+	return {
+		assignee: params.assignee,
+		avatarSrc: params.assignee.avatarSrc,
+		code: params.code,
+		priority: params.priority ?? "minor",
+		tags: params.tags,
+		title: params.title,
+	};
 }
 
-const JGP_KANBAN_REVIEW_RUNS_BY_CODE: Readonly<Record<string, readonly JgpKanbanReviewRunFixture[]>> = {
-	"RFP-161": [
+function createWorkingCard(
+	card: JiraKanbanCardData,
+	activities: readonly JiraIssueAgentActivity[],
+	mode: JiraKanbanCardData["agentActivityMode"] = "working",
+): JiraKanbanCardData {
+	return {
+		...card,
+		agentActivities: activities,
+		agentActivityMode: mode,
+	};
+}
+
+function createCompletedCard(
+	card: JiraKanbanCardData,
+	runs: readonly JiraIssueCompletedAgentRun[],
+): JiraKanbanCardData {
+	return {
+		...card,
+		agentActivityMode: "completed",
+		agentDoneRuns: runs,
+	};
+}
+
+function createCompletedRun(params: Readonly<{
+	agentAvatarSrc?: string;
+	agentBrandName?: JiraIssueCompletedAgentRun["agentBrandName"];
+	agentName: string;
+	description: string;
+	elapsedSeconds: number;
+	issueKey: string;
+	issueSummary: string;
+	outputs?: JiraIssueCompletedAgentRun["outputs"];
+	pullRequestNumber?: number;
+	showStateIcon?: boolean;
+	state: JiraIssueCompletedAgentRun["state"];
+	summary: string;
+}>): JiraIssueCompletedAgentRun {
+	return {
+		id: `${params.issueKey}:${params.agentName.toLowerCase().replaceAll(" ", "-")}`,
+		actionLabel: params.agentBrandName ? undefined : "View",
+		agentAvatarSrc: params.agentAvatarSrc,
+		agentBrandName: params.agentBrandName,
+		agentName: params.agentName,
+		description: params.description,
+		elapsedSeconds: params.elapsedSeconds,
+		issueKey: params.issueKey,
+		issueSummary: params.issueSummary,
+		outputs: params.outputs,
+		pullRequestNumber: params.pullRequestNumber,
+		relativeTime: params.state === "done" ? "This week" : "Today",
+		showStateIcon: params.showStateIcon ?? false,
+		state: params.state,
+		summary: params.summary,
+	};
+}
+
+const JGP_247_BASE = createCard({
+	assignee: CARL,
+	code: "JGP-247",
+	priority: "major",
+	tags: [
+		{ text: "assignee focus", color: "blue" },
+		{ text: "kanban", color: "teal" },
+	],
+	title: "Add assignee focus mode",
+});
+
+const JGP_247_REVIEW_RUN: JiraIssueCompletedAgentRun = {
+	id: "JGP-247:claude-code",
+	agentBrandName: "claude",
+	agentName: "Claude Code",
+	description: "Opened pull request #247 with assignee focus mode. It is ready for your review.",
+	elapsedSeconds: 312,
+	issueKey: "JGP-247",
+	issueSummary: "Add assignee focus mode",
+	outputs: [
 		{
-			agentId: "claude-code",
-			agentName: "Claude Code",
-			brandName: "claude",
-			description: "Opened pull request #1847 with the Assets and CMDB positioning changes. It is ready for review.",
-			elapsedSeconds: 248,
-			pullRequestNumber: 1847,
-			outputs: [
-				{
-					id: "vertexrail-assets-positioning-pr",
-					title: "VertexRail Assets positioning",
-					source: "Pull request",
+			id: "jgp-247-assignee-focus-pr",
+			logoName: "github",
+			pullRequest: {
+				additions: 86,
+				deletions: 18,
+				number: 247,
+				status: "Open",
+			},
+			source: "Pull request",
+			title: "Add assignee focus mode",
+		},
+	],
+	pullRequestNumber: 247,
+	relativeTime: "Yesterday",
+	state: "review",
+	summary: "Opened assignee focus mode PR",
+};
+
+const LOCAL_TEAM_TODO: readonly JiraKanbanCardData[] = [
+	createCard({
+		assignee: NOAH,
+		code: "JGP-231",
+		title: "Stabilize gallery snapshot coverage",
+		tags: [{ text: "testing", color: "purple" }],
+	}),
+	createCard({
+		assignee: MAYA,
+		code: "JGP-244",
+		title: "Compress board illustration assets",
+		tags: [
+			{ text: "performance", color: "orange" },
+			{ text: "assets", color: "teal" },
+		],
+	}),
+	createCard({
+		assignee: ELENA,
+		code: "JGP-217",
+		title: "Migrate date picker to ADS",
+		tags: [
+			{ text: "design system", color: "blue" },
+			{ text: "migration", color: "purple" },
+			{ text: "date picker", color: "teal" },
+		],
+	}),
+];
+
+const LOCAL_TEAM_IN_PROGRESS: readonly JiraKanbanCardData[] = [
+	createWorkingCard(
+		createCard({
+			assignee: SARAH,
+			code: "JGP-241",
+			title: "Keep board filters in the URL",
+			tags: [
+				{ text: "navigation", color: "blue" },
+				{ text: "filters", color: "teal" },
+			],
+		}),
+		[
+			{
+				id: "cursor",
+				name: "Cursor",
+				agentBrandName: "cursor",
+				label: "Updating URL state synchronization",
+				labels: ["Updating URL state synchronization", "Checking browser history", "Running navigation tests"],
+				cycleIntervalMs: 2100,
+				cycleIntervalJitterMs: 300,
+				message: "I’m keeping board filters synchronized with the URL and checking back-forward navigation.",
+				initialElapsedSeconds: 164,
+				state: "working",
+			},
+			{
+				id: "code-reviewer",
+				name: "Code Reviewer",
+				avatarSrc: getDirectoryAgentAvatar("code-reviewer"),
+				label: "Reviewing URL-state edge cases",
+				labels: ["Reviewing URL-state edge cases", "Checking filter serialization", "Verifying navigation coverage"],
+				cycleIntervalMs: 2400,
+				cycleIntervalJitterMs: 300,
+				message: "I’m reviewing the URL-state changes for edge cases while Cursor finishes the implementation.",
+				initialElapsedSeconds: 102,
+				state: "working",
+			},
+		],
+	),
+	createCard({
+		assignee: MAYA,
+		code: "JGP-242",
+		title: "Improve board loading performance",
+		tags: [{ text: "performance", color: "orange" }],
+	}),
+	createWorkingCard(
+		createCard({
+			assignee: OWEN,
+			code: "JGP-243",
+			title: "Map dependencies for board permissions",
+			tags: [
+				{ text: "permissions", color: "teal" },
+				{ text: "dependencies", color: "blue" },
+				{ text: "blocked", color: "orange" },
+			],
+		}),
+		[{
+			id: "dependency-mapper",
+			name: "Dependency Mapper",
+			avatarSrc: getDirectoryAgentAvatar("work-item-planner"),
+			label: "Waiting for input",
+			labels: ["Mapping permission dependencies", "Checking project boundaries", "Waiting for input"],
+			message: "I found two permission boundaries that change the implementation path.",
+			initialElapsedSeconds: 391,
+			question: {
+				id: "permission-boundary",
+				label: "Which permission boundary should the board use?",
+				kind: "single-select",
+				options: [
+					{ id: "project", label: "Project permissions", description: "Follow the current project permission scheme." },
+					{ id: "board", label: "Board permissions", description: "Use a board-specific permission boundary." },
+				],
+			},
+			state: "awaiting-input",
+		}],
+		"awaiting-input",
+	),
+];
+
+const LOCAL_TEAM_REVIEW: readonly JiraKanbanCardData[] = [
+	createCompletedCard(
+		createCard({
+			assignee: CARL,
+			code: "JGP-239",
+			title: "Fix assignee facepile overflow",
+			tags: [
+				{ text: "facepile", color: "orange" },
+				{ text: "responsive", color: "blue" },
+				{ text: "bug", color: "purple" },
+			],
+		}),
+		[
+			createCompletedRun({
+				agentBrandName: "claude",
+				agentName: "Claude Code",
+				description: "Resolved the facepile overflow at narrow board widths and prepared the change for review.",
+				elapsedSeconds: 226,
+				issueKey: "JGP-239",
+				issueSummary: "Fix assignee facepile overflow",
+				outputs: [{
+					id: "jgp-239-facepile-pr",
 					logoName: "github",
 					pullRequest: {
-						number: 1847,
+						additions: 42,
+						deletions: 11,
+						number: 812,
 						status: "Open",
-						additions: 148,
-						deletions: 37,
 					},
-				},
-			],
+					source: "Pull request",
+					title: "Fix assignee facepile overflow",
+				}],
+				pullRequestNumber: 812,
+				showStateIcon: true,
+				state: "review",
+				summary: "Fixed the facepile overflow",
+			}),
+			createCompletedRun({
+				agentAvatarSrc: getDirectoryAgentAvatar("brand-voice-crafter"),
+				agentName: "Unit Test Creator",
+				description: "Added responsive regression coverage for the assignee facepile.",
+				elapsedSeconds: 142,
+				issueKey: "JGP-239",
+				issueSummary: "Fix assignee facepile overflow",
+				outputs: [{
+					id: "jgp-239-facepile-coverage",
+					iconName: "page",
+					owner: "Page",
+					source: "Confluence",
+					title: "Assignee facepile responsive coverage",
+				}],
+				state: "review",
+				summary: "Added responsive facepile coverage",
+			}),
+		],
+	),
+	createCompletedCard(
+		createCard({
+			assignee: CARL,
+			code: "JGP-232",
+			title: "Announce filtered result counts",
+			tags: [{ text: "accessibility", color: "green" }],
+		}),
+		[createCompletedRun({
+			agentAvatarSrc: getDirectoryAgentAvatar("chatgpt-wrapper-app"),
+			agentName: "Accessibility Tester",
+			description: "Added regression coverage for result-count announcements across filter changes.",
+			elapsedSeconds: 194,
+			issueKey: "JGP-232",
+			issueSummary: "Announce filtered result counts",
+			outputs: [{
+				id: "jgp-232-announcement-coverage",
+				iconName: "video",
+				owner: "Video",
+				source: "Loom",
+				title: "Filtered result-count accessibility walkthrough",
+			}],
 			state: "review",
-			summary: "Opened Assets and CMDB positioning PR",
-		},
-		{
-			agentId: "code-reviewer",
-			agentName: "Code Reviewer",
-			avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
-			description: "Reviewed the proposed positioning and documented the claims that are ready for the final response.",
-			elapsedSeconds: 176,
-			outputs: [
-				{
-					id: "vertexrail-positioning-review",
-					title: "Positioning review",
-					source: "Jira work item",
-					owner: "RFP-161",
-					iconName: "ai-chat",
-				},
+			summary: "Added result-count announcement coverage",
+		})],
+	),
+	createCompletedCard(
+		createCard({
+			assignee: CARL,
+			code: "JGP-234",
+			title: "Preserve keyboard focus after filtering",
+			tags: [
+				{ text: "keyboard", color: "purple" },
+				{ text: "accessibility", color: "green" },
 			],
-			state: "done",
-			summary: "Checked positioning for accuracy",
-		},
-	],
-	"RFP-162": [
-		{
-			agentId: "claude-code",
+		}),
+		[createCompletedRun({
+			agentBrandName: "claude",
 			agentName: "Claude Code",
-			brandName: "claude",
-			description: "Updated the customer-facing response and captured the remaining legal exceptions for approval.",
-			elapsedSeconds: 221,
-			outputs: [
-				{
-					id: "greenfield-data-residency-response",
-					title: "Data residency response",
-					source: "Confluence page",
-					owner: "RFP-162",
-					iconName: "globe",
+			description: "Preserved keyboard focus across filter changes and prepared the result for review.",
+			elapsedSeconds: 171,
+			issueKey: "JGP-234",
+			issueSummary: "Preserve keyboard focus after filtering",
+			outputs: [{
+				id: "jgp-234-keyboard-focus-pr",
+				logoName: "github",
+				pullRequest: {
+					additions: 31,
+					deletions: 8,
+					number: 819,
+					status: "Open",
 				},
-			],
-			state: "done",
-			summary: "Updated data-residency response language",
+				source: "Pull request",
+				title: "Preserve keyboard focus after filtering",
+			}],
+			pullRequestNumber: 819,
+			showStateIcon: true,
+			state: "review",
+			summary: "Preserved keyboard focus across filters",
+		})],
+	),
+];
+
+const LOCAL_TEAM_DONE: readonly JiraKanbanCardData[] = [
+	createCard({
+		assignee: SOFIA,
+		code: "JGP-240",
+		title: "Clarify focused-assignee empty states",
+		tags: [{ text: "content", color: "green" }],
+	}),
+	createCard({
+		assignee: ELENA,
+		code: "JGP-236",
+		title: "Document assignee focus shortcuts",
+		tags: [
+			{ text: "documentation", color: "blue" },
+			{ text: "shortcuts", color: "teal" },
+		],
+	}),
+	createCard({
+		assignee: NOAH,
+		code: "JGP-238",
+		title: "Align board filter analytics events",
+		tags: [
+			{ text: "analytics", color: "purple" },
+			{ text: "filters", color: "blue" },
+			{ text: "instrumentation", color: "teal" },
+		],
+	}),
+];
+
+const GLOBAL_TASKS: readonly JiraKanbanCardData[] = [
+	createCard({ assignee: SARAH, code: "JGP-251", title: "Remember assignee focus per board", tags: [{ text: "preferences", color: "blue" }] }),
+	createCard({ assignee: SARAH, code: "JGP-252", title: "Add a Clear focus action", tags: [{ text: "interaction", color: "teal" }] }),
+	createCard({ assignee: SARAH, code: "JGP-253", title: "Preserve keyboard focus in the assignee facepile", tags: [{ text: "keyboard", color: "purple" }] }),
+	createCard({ assignee: SARAH, code: "JGP-254", title: "Announce filtered result counts to screen readers", tags: [{ text: "accessibility", color: "green" }] }),
+	createCard({ assignee: SARAH, code: "JGP-255", title: "Add an empty state when an assignee has no visible work", tags: [{ text: "empty state", color: "orange" }] }),
+];
+
+const GLOBAL_BACKGROUND_TASKS: readonly JiraKanbanCardData[] = [
+	createCard({ assignee: MAYA, code: "JGP-257", title: "Persist quick filters across board refreshes", tags: [{ text: "filters", color: "blue" }] }),
+	createCard({ assignee: ELENA, code: "JGP-258", title: "Clarify the focused-assignee tooltip", tags: [{ text: "content", color: "teal" }] }),
+	createCard({ assignee: NOAH, code: "JGP-259", title: "Track assignee focus adoption", tags: [{ text: "analytics", color: "purple" }] }),
+	createCard({ assignee: SOFIA, code: "JGP-260", title: "Document board focus shortcuts", tags: [{ text: "documentation", color: "green" }] }),
+];
+
+const GLOBAL_TEAM_WORK = {
+	inProgress: [
+		createCard({ assignee: MAYA, code: "JGP-248", title: "Keep board filters in the URL", tags: [{ text: "navigation", color: "blue" }] }),
+		createCard({ assignee: OWEN, code: "JGP-249", title: "Add keyboard shortcuts to assignee focus", tags: [{ text: "keyboard", color: "purple" }] }),
+	],
+	review: [
+		createCard({ assignee: ELENA, code: "JGP-250", title: "Restore focus after clearing filters", tags: [{ text: "accessibility", color: "green" }] }),
+		{
+			...createCard({ assignee: NOAH, code: "JGP-256", title: "Remove the retired assignee-focus feature flag", tags: [{ text: "cleanup", color: "teal" }] }),
+			agentActivityMode: "completed" as const,
+			agentDoneRuns: [{
+				id: "JGP-256:cursor",
+				agentBrandName: "cursor",
+				agentName: "Cursor",
+				description: "Removed the retired feature flag and opened pull request #839 for review.",
+				elapsedSeconds: 184,
+				issueKey: "JGP-256",
+				issueSummary: "Remove the retired assignee-focus feature flag",
+				outputs: [{
+					id: "jgp-256-retired-flag-pr",
+					logoName: "github",
+					pullRequest: {
+						additions: 24,
+						deletions: 61,
+						number: 839,
+						status: "Open",
+					},
+					source: "Pull request",
+					title: "Remove the retired assignee-focus feature flag",
+				}],
+				pullRequestNumber: 839,
+				relativeTime: "Today",
+				state: "review",
+				summary: "Opened retired feature flag cleanup PR",
+			}],
 		},
 	],
-};
-
-export const JGP_RFP_QUESTION: QuestionCardQuestion = {
-	id: "rfp-response-strategy",
-	label: "Which response strategy should we lead with?",
-	description: "Choose the narrative the RFP drafter should prioritize in the recommendation.",
-	kind: "single-select",
-	options: [
-		{
-			id: "platform-consolidation",
-			label: "Platform consolidation",
-			description: "Lead with lower tool sprawl and one connected system of work.",
-		},
-		{
-			id: "service-experience",
-			label: "Service experience",
-			description: "Lead with faster employee support and self-service outcomes.",
-		},
+	done: [
+		createCard({ assignee: SOFIA, code: "JGP-246", title: "Add assignee facepile overflow", tags: [{ text: "facepile", color: "orange" }] }),
+		JGP_247_BASE,
 	],
-};
+} as const;
 
-/** JGP owns a fresh, non-persisted board. Drafting intentionally starts empty. */
-export function createJgpKanbanColumns(): JiraKanbanColumnData[] {
-	return BOARD_COLUMNS.map((column) => {
-		const cards = column.title === JGP_KANBAN_DRAFTING_COLUMN
-			? []
-			: column.cards.map((card) => {
-				const reviewRuns = JGP_KANBAN_REVIEW_RUNS_BY_CODE[card.code];
-				return {
-					...card,
-					tags: card.tags.map((tag) => ({ ...tag })),
-					agentActivityMode: reviewRuns ? "completed" as const : undefined,
-					agentDoneRuns: reviewRuns?.map((run, index) => ({
-						id: `${card.code}:${run.agentId}`,
-						summary: run.summary,
-						description: run.description,
-						agentName: run.agentName,
-						agentAvatarSrc: run.avatarSrc,
-						agentBrandName: run.brandName,
-						issueKey: card.code,
-						issueSummary: card.title,
-						relativeTime: index === 0 ? "Just now" : "1 min ago",
-						elapsedSeconds: run.elapsedSeconds,
-						pullRequestNumber: run.pullRequestNumber,
-						outputs: run.outputs.map((output) => ({ ...output })),
-						state: run.state,
-					})),
-				};
-			});
-
-		return { ...column, cards, count: cards.length };
+function createColumns(cardsByTitle: Readonly<Record<string, readonly JiraKanbanCardData[]>>): JiraKanbanColumnData[] {
+	return [
+		JGP_KANBAN_TODO_COLUMN,
+		JGP_KANBAN_IN_PROGRESS_COLUMN,
+		JGP_KANBAN_REVIEW_COLUMN,
+		JGP_KANBAN_DONE_COLUMN,
+	].map((title) => {
+		const cards = (cardsByTitle[title] ?? []).map((card) => ({
+			...card,
+			assignee: card.assignee ? { ...card.assignee } : undefined,
+			tags: card.tags.map((tag) => ({ ...tag })),
+			agentActivities: card.agentActivities?.map((activity) => ({
+				...activity,
+				labels: activity.labels ? [...activity.labels] : undefined,
+				question: activity.question ? {
+					...activity.question,
+					options: activity.question.options.map((option) => ({ ...option })),
+				} : undefined,
+			})),
+			agentDoneRuns: card.agentDoneRuns?.map((run) => ({
+				...run,
+				outputs: run.outputs?.map((output) => ({ ...output })),
+			})),
+		}));
+		return { title, count: cards.length, cards };
 	});
 }
 
-const JGP_KANBAN_ACTIVITY_SCENARIOS: Readonly<Record<string, JgpKanbanActivityScenario>> = {
-	[JGP_KANBAN_DEFAULT_AGENT_ID]: {
-		labels: [
-			"Reading the RFP requirements",
-			"Outlining the response structure",
-			"Drafting the response narrative",
-			"Pulling in supporting proof points",
-			"Tightening the executive summary",
-			"Checking response coverage",
+/** Creates a fresh, deterministic board for one gallery segment. */
+export function createJgpKanbanColumns(scenario: JgpKanbanScenario = "local-review"): JiraKanbanColumnData[] {
+	if (scenario === "global-assignment") {
+		return createColumns({
+			[JGP_KANBAN_TODO_COLUMN]: [...GLOBAL_TASKS, ...GLOBAL_BACKGROUND_TASKS],
+			[JGP_KANBAN_IN_PROGRESS_COLUMN]: GLOBAL_TEAM_WORK.inProgress,
+			[JGP_KANBAN_REVIEW_COLUMN]: GLOBAL_TEAM_WORK.review,
+			[JGP_KANBAN_DONE_COLUMN]: GLOBAL_TEAM_WORK.done,
+		});
+	}
+
+	if (scenario === "local-completed") {
+		return createColumns({
+			[JGP_KANBAN_TODO_COLUMN]: LOCAL_TEAM_TODO,
+			[JGP_KANBAN_IN_PROGRESS_COLUMN]: LOCAL_TEAM_IN_PROGRESS,
+			[JGP_KANBAN_REVIEW_COLUMN]: LOCAL_TEAM_REVIEW,
+			[JGP_KANBAN_DONE_COLUMN]: [JGP_247_BASE, ...LOCAL_TEAM_DONE],
+		});
+	}
+
+	return createColumns({
+		[JGP_KANBAN_TODO_COLUMN]: LOCAL_TEAM_TODO,
+		[JGP_KANBAN_IN_PROGRESS_COLUMN]: LOCAL_TEAM_IN_PROGRESS,
+		[JGP_KANBAN_REVIEW_COLUMN]: [
+			{
+				...JGP_247_BASE,
+				agentActivityMode: "completed",
+				agentDoneRuns: [JGP_247_REVIEW_RUN],
+			},
+			...LOCAL_TEAM_REVIEW,
 		],
-		cycleIntervalMs: 2400,
-		workingMessage: "I’m reviewing the requirements and shaping a concise response narrative for this RFP.",
-		awaitingInputMessage: "I found two credible response strategies. Choose the narrative I should prioritize before I finish the recommendation.",
-		completedSummary: "Prepared the bid recommendation and response narrative for review.",
-		question: JGP_RFP_QUESTION,
+		[JGP_KANBAN_DONE_COLUMN]: LOCAL_TEAM_DONE,
+	});
+}
+
+export const JGP_CODE_REVIEW_WORK_ITEM: CodeReviewWorkItem = {
+	key: "JGP-247",
+	title: "Add assignee focus mode",
+	environment: "Development",
+	repoName: "atlassian/jira",
+	localBranchName: "carl/jgp-247-assignee-focus-mode",
+	branchName: "main",
+};
+
+const JGP_ASSIGNEE_FOCUS_PREFIX = `export interface BoardCard {
+	code: string;
+	assigneeId?: string;
+	columnId: string;
+}
+
+export interface SelectionAnchor {
+	cardCode: string;
+	columnId: string;
+}
+
+interface SelectVisibleRangeOptions {
+	anchor: SelectionAnchor | null;
+	targetCode: string;
+	visibleCards: readonly BoardCard[];
+}
+
+function findVisibleIndex(cards: readonly BoardCard[], cardCode: string): number {
+	return cards.findIndex((card) => card.code === cardCode);
+}
+
+function orderRange(startIndex: number, endIndex: number): readonly [number, number] {
+	return startIndex <= endIndex
+		? [startIndex, endIndex]
+		: [endIndex, startIndex];
+}
+
+export function selectVisibleRange({
+	anchor,
+	targetCode,
+	visibleCards,
+}: SelectVisibleRangeOptions): readonly BoardCard[] {`;
+
+const JGP_ASSIGNEE_FOCUS_AFTER_RANGE = `}
+
+function selectOnlyTarget(
+	visibleCards: readonly BoardCard[],
+	targetCode: string,
+): readonly BoardCard[] {
+	const target = visibleCards.find((card) => card.code === targetCode);
+	return target ? [target] : [];
+}
+
+function createVisibleCodeSet(visibleCards: readonly BoardCard[]): ReadonlySet<string> {
+	return new Set(visibleCards.map((card) => card.code));
+}
+
+export function reconcileSelection(
+	selectedCodes: ReadonlySet<string>,
+	visibleCards: readonly BoardCard[],
+	anchor: SelectionAnchor | null,
+): ReadonlySet<string> {`;
+
+const JGP_ASSIGNEE_FOCUS_AFTER_RECONCILE = `}
+
+export function isSelectionVisible(
+	selectedCodes: ReadonlySet<string>,
+	visibleCards: readonly BoardCard[],
+): boolean {
+	const visibleCodes = createVisibleCodeSet(visibleCards);
+	return Array.from(selectedCodes).every((cardCode) => visibleCodes.has(cardCode));
+}
+
+function findAnchorCard(
+	visibleCards: readonly BoardCard[],
+	cardCode: string,
+): BoardCard | undefined {
+	return visibleCards.find((card) => card.code === cardCode);
+}
+
+export function resolveSelectionAnchor(
+	visibleCards: readonly BoardCard[],
+	targetCode: string,
+	previousAnchor: SelectionAnchor | null,
+): SelectionAnchor | null {`;
+
+const JGP_ASSIGNEE_FOCUS_OLD = [
+	JGP_ASSIGNEE_FOCUS_PREFIX,
+	`	// Legacy range selection used the unfiltered board index.
+	// It could select cards hidden by the active assignee filter.
+	// Reversed ranges were normalized by mutating the source list.
+	// Missing anchors silently selected every card in the column.
+	// Duplicate card codes were not removed from the result.
+	// Keyboard selection did not follow the rendered card order.`,
+	JGP_ASSIGNEE_FOCUS_AFTER_RANGE,
+	`	// Legacy reconciliation retained hidden card codes.
+	// Empty results discarded the current keyboard anchor.
+	// Selection order changed whenever filters were toggled.
+	// Duplicate codes could survive into the toolbar state.
+	// The returned Set reused mutable caller-owned state.`,
+	JGP_ASSIGNEE_FOCUS_AFTER_RECONCILE,
+	`	// Legacy anchor lookup ignored the filtered card collection.
+	// Moving between columns could retain an invalid anchor.
+	// Hidden cards remained eligible as the next range start.
+	// Repeated selection always allocated a new anchor object.
+	// Missing target cards defaulted to the first board card.`,
+	"}",
+].join("\n");
+
+const JGP_ASSIGNEE_FOCUS_NEW = [
+	JGP_ASSIGNEE_FOCUS_PREFIX,
+	`	if (!anchor) {
+		return selectOnlyTarget(visibleCards, targetCode);
+	}
+	const anchorIndex = findVisibleIndex(visibleCards, anchor.cardCode);
+	const targetIndex = findVisibleIndex(visibleCards, targetCode);
+	if (anchorIndex === -1) {
+		return selectOnlyTarget(visibleCards, targetCode);
+	}
+	if (targetIndex === -1) {
+		return selectOnlyTarget(visibleCards, targetCode);
+	}
+	const [startIndex, endIndex] = orderRange(anchorIndex, targetIndex);
+	const selectedCards = visibleCards.slice(startIndex, endIndex + 1);
+	if (selectedCards.length === 0) {
+		return selectOnlyTarget(visibleCards, targetCode);
+	}
+	if (!selectedCards.some((card) => card.code === targetCode)) {
+		return selectOnlyTarget(visibleCards, targetCode);
+	}
+	// Range selection follows the exact filtered order rendered on the board.
+	return selectedCards.filter(
+		(card, index, cards) =>
+			cards.findIndex((candidate) => candidate.code === card.code) === index,
+	);`,
+	JGP_ASSIGNEE_FOCUS_AFTER_RANGE,
+	`	const visibleCodes = createVisibleCodeSet(visibleCards);
+	const nextSelection = new Set<string>();
+	for (const cardCode of selectedCodes) {
+		if (visibleCodes.has(cardCode)) {
+			nextSelection.add(cardCode);
+		}
+	}
+	if (nextSelection.size === 0) {
+		const firstVisibleCard = visibleCards.at(0);
+		if (firstVisibleCard) {
+			nextSelection.add(firstVisibleCard.code);
+		}
+	}
+	if (anchor && visibleCodes.has(anchor.cardCode)) {
+		nextSelection.add(anchor.cardCode);
+	}
+	// Stable ordering keeps selection snapshots deterministic across renders.
+	return new Set(
+		Array.from(nextSelection).sort((left, right) => left.localeCompare(right)),
+	);`,
+	JGP_ASSIGNEE_FOCUS_AFTER_RECONCILE,
+	`	const anchorCard = findAnchorCard(visibleCards, targetCode);
+	const anchorColumnId = anchorCard?.columnId;
+	if (!anchorCard || !anchorColumnId) {
+		return null;
+	}
+	const columnCards = visibleCards.filter((card) => card.columnId === anchorColumnId);
+	const visibleIndex = findVisibleIndex(columnCards, targetCode);
+	const isStillVisible = visibleIndex >= 0;
+	if (!isStillVisible) {
+		return null;
+	}
+	const normalizedAnchor = {
+		cardCode: anchorCard.code,
+		columnId: anchorColumnId,
+	} satisfies SelectionAnchor;
+	// Keep the anchor stable when the same visible card remains selected.
+	if (previousAnchor?.cardCode === normalizedAnchor.cardCode) {
+		return previousAnchor;
+	}
+	return normalizedAnchor;`,
+	"}",
+].join("\n");
+
+export const JGP_CODE_REVIEW_FILES: readonly ChangedFile[] = [
+	{
+		id: "assignee-focus-selection",
+		path: "components/kanban/assignee-focus.ts",
+		status: "modified",
+		language: "typescript",
+		oldContents: JGP_ASSIGNEE_FOCUS_OLD,
+		newContents: JGP_ASSIGNEE_FOCUS_NEW,
+		additions: 64,
+		deletions: 16,
+		defaultExpanded: true,
 	},
-	"feedback-analyzer": {
-		labels: [
-			"Clustering customer evidence",
-			"Tagging recurring pain points",
-			"Comparing themes and sentiment",
-			"Weighing signal strength",
-			"Turning signals into win themes",
-		],
-		cycleIntervalMs: 2100,
-		workingMessage: "I’m grouping the customer evidence into themes and looking for the strongest signal to anchor the response.",
-		awaitingInputMessage: "Two customer signals are equally strong. Choose which one should shape the response narrative.",
-		completedSummary: "Clustered the customer evidence into themes and identified the lead win signal.",
-		question: {
-			id: "feedback-signal",
-			label: "Which customer signal should shape the response?",
-			description: "Choose the evidence the Feedback Analyzer should elevate into the lead win theme.",
-			kind: "single-select",
-			options: [
-				{ id: "operational-friction", label: "Operational friction", description: "Lead with the cost and complexity customers experience today." },
-				{ id: "executive-confidence", label: "Executive confidence", description: "Lead with visibility, governance, and measurable outcomes." },
-			],
+	...[
+		{
+			path: ".editorconfig",
+			language: "ini",
+			contents: "root = true\n[*]\nindent_style = tab\nend_of_line = lf",
 		},
-	},
-	"ai-insights-agent": {
-		labels: [
-			"Scanning current AI shifts",
-			"Mapping trends to customer priorities",
-			"Comparing market signals",
-			"Pressure-testing the angle",
-			"Drafting an innovation angle",
-		],
-		cycleIntervalMs: 1900,
-		workingMessage: "I’m comparing current AI trends with the customer’s priorities to find a credible innovation angle.",
-		awaitingInputMessage: "I found two viable AI narratives. Choose how ambitious the response should sound.",
-		completedSummary: "Added a current, credible AI innovation angle to the response.",
-		question: {
-			id: "ai-narrative",
-			label: "Which AI narrative should lead the response?",
-			description: "Choose the innovation angle the AI Insights Agent should develop.",
-			kind: "single-select",
-			options: [
-				{ id: "practical-adoption", label: "Practical AI adoption", description: "Emphasize near-term productivity and responsible rollout." },
-				{ id: "strategic-differentiation", label: "Strategic differentiation", description: "Emphasize long-term advantage and new operating models." },
-			],
+		{
+			path: ".eslintignore",
+			language: "text",
+			contents: "build\nout\nnode_modules",
 		},
-	},
-	"readiness-checker": {
-		labels: [
-			"Checking requirement coverage",
-			"Verifying evidence and attachments",
-			"Flagging ownership gaps",
-			"Confirming approval handoffs",
-			"Scoring response readiness",
-		],
-		cycleIntervalMs: 2300,
-		workingMessage: "I’m checking evidence, ownership, and mandatory requirements before this response moves to Review.",
-		awaitingInputMessage: "The response has two readiness gaps. Choose which one I should resolve first.",
-		completedSummary: "Checked mandatory coverage, evidence, and response ownership for review.",
-		question: {
-			id: "readiness-gap",
-			label: "Which readiness gap should we resolve first?",
-			description: "Choose the blocker the Readiness Checker should prioritize.",
-			kind: "single-select",
-			options: [
-				{ id: "evidence-gaps", label: "Evidence gaps", description: "Confirm proof points, references, and required attachments." },
-				{ id: "owner-alignment", label: "Owner alignment", description: "Confirm accountable reviewers and approval handoffs." },
-			],
+		{
+			path: ".git-blame-ignore",
+			language: "text",
+			contents: "# Formatting-only revisions are recorded here.",
 		},
+		{
+			path: ".gitattributes",
+			language: "text",
+			contents: "* text=auto eol=lf\n*.png binary",
+		},
+		{
+			path: ".mailmap",
+			language: "text",
+			contents: "Jira Design <jira-design@atlassian.com>",
+		},
+		{
+			path: ".mention-bot",
+			language: "json",
+			contents: "{\"reviewers\":[\"jira-design\"]}",
+		},
+		{
+			path: ".yarnrc",
+			language: "text",
+			contents: "--install.frozen-lockfile true",
+		},
+		{
+			path: "yarn.lock",
+			language: "yaml",
+			contents: "# Mock lockfile for the scripted review.",
+		},
+		{
+			path: "gulpfile.js",
+			language: "javascript",
+			contents: "export { build } from \"./scripts/build\";",
+		},
+		{
+			path: ".eslintrc.json",
+			language: "json",
+			contents: "{\"extends\":[\"@atlassian\"]}",
+		},
+		{
+			path: ".lsifrc.json",
+			language: "json",
+			contents: "{\"projectRoot\":\".\"}",
+		},
+		{
+			path: "cglicenses.json",
+			language: "json",
+			contents: "{\"licenses\":[]}",
+		},
+		{
+			path: "cgmanifest.json",
+			language: "json",
+			contents: "{\"registrations\":[]}",
+		},
+		{
+			path: "product.json",
+			language: "json",
+			contents: "{\"name\":\"Jira Design\"}",
+		},
+		{
+			path: "tsfmt.json",
+			language: "json",
+			contents: "{\"tabs\":true}",
+		},
+		{
+			path: "ipc.mp.test.ts",
+			language: "typescript",
+			contents: "export const ipcContract = \"stable\";",
+			id: "ipc-mp-test",
+		},
+	].map(({ contents, id, language, path }) => ({
+		id: id ?? `jgp-explorer:${path}`,
+		path,
+		explorerPath: path,
+		status: "modified" as const,
+		language,
+		oldContents: contents,
+		newContents: contents,
+		additions: 0,
+		deletions: 0,
+		defaultExpanded: false,
+	})),
+	{
+		id: "jgp-explorer:.gitignore",
+		path: ".gitignore",
+		explorerPath: ".gitignore",
+		status: "modified",
+		language: "text",
+		oldContents: "legacy-dist",
+		newContents: "dist\n.next\ncoverage\noutput\n*.log\n.DS_Store",
+		additions: 6,
+		deletions: 1,
+		defaultExpanded: false,
 	},
-	"service-impact-agent": {
-		labels: [
-			"Mapping affected services",
-			"Tracing downstream dependencies",
-			"Checking operational outcomes",
-			"Estimating customer impact",
-			"Writing the service summary",
-		],
+	{
+		id: "jgp-explorer:package.json",
+		path: "package.json",
+		explorerPath: "package.json",
+		status: "modified",
+		language: "json",
+		oldContents: "{\"name\":\"jira\"}",
+		newContents: `{
+	"name": "@atlassian/jira-board",
+	"private": true,
+	"scripts": {
+		"test": "pnpm test",
+		"typecheck": "tsc --noEmit"
+	}
+}`,
+		additions: 8,
+		deletions: 1,
+		defaultExpanded: false,
+	},
+	{
+		id: "jgp-explorer:CONTRIBUTING.md",
+		path: "CONTRIBUTING.md",
+		explorerPath: "CONTRIBUTING.md",
+		status: "added",
+		language: "markdown",
+		oldContents: "",
+		newContents: `# Contributing
+
+1. Create a focused branch.
+2. Keep board filters reflected in the URL.
+3. Test keyboard and pointer selection.
+4. Run the focused unit tests.
+5. Request review from Jira Design.
+6. Merge after approval.`,
+		additions: 8,
+		deletions: 0,
+		defaultExpanded: false,
+	},
+];
+
+const ACTIVITY_SCENARIOS: Readonly<Record<string, JgpKanbanActivityScenario>> = {
+	"claude-code": {
+		labels: ["Reading the work item context", "Implementing the board change", "Running focused tests", "Preparing the pull request"],
 		cycleIntervalMs: 2200,
-		workingMessage: "I’m tracing the affected services and translating operational impact into customer outcomes.",
-		awaitingInputMessage: "I found two ways to frame service impact. Choose the outcome I should emphasize.",
-		completedSummary: "Mapped the affected services and added a customer-facing impact summary.",
-		question: {
-			id: "service-outcome",
-			label: "Which service outcome matters most?",
-			kind: "single-select",
-			options: [
-				{ id: "employee-experience", label: "Employee experience", description: "Prioritize faster support and self-service." },
-				{ id: "operational-resilience", label: "Operational resilience", description: "Prioritize reliability, visibility, and faster recovery." },
-			],
-		},
+		workingMessage: "I’m using the connected work context to implement this Jira board change and verify it with focused tests.",
+		completedSummary: "Implemented the Jira board change and prepared it for review.",
 	},
-	"dependency-mapper": {
-		labels: [
-			"Following linked requirements",
-			"Mapping owners and dependencies",
-			"Spotting blocked handoffs",
-			"Sequencing the critical path",
-			"Checking response handoffs",
-		],
-		cycleIntervalMs: 2500,
-		workingMessage: "I’m following linked requirements and mapping the owners and handoffs that could block the response.",
-		awaitingInputMessage: "I found two dependency clusters. Choose which handoff I should untangle first.",
-		completedSummary: "Documented dependent requirements, owners, and blocked handoffs.",
-		question: {
-			id: "dependency-focus",
-			label: "Which dependency cluster should we resolve first?",
-			kind: "single-select",
-			options: [
-				{ id: "technical", label: "Technical dependencies", description: "Resolve integrations, data, and platform constraints." },
-				{ id: "approval", label: "Approval dependencies", description: "Resolve legal, security, and executive review handoffs." },
-			],
-		},
-	},
-	"skill:create-skill": {
-		labels: ["Interpreting the skill brief", "Drafting reusable instructions", "Checking trigger language"],
-		cycleIntervalMs: 1800,
-		workingMessage: "I’m turning this work pattern into reusable skill instructions with a clear trigger and output contract.",
-		awaitingInputMessage: "The skill can be broad or tightly scoped. Choose how it should be triggered.",
-		completedSummary: "Created reusable skill instructions with a clear trigger and output contract.",
-		question: {
-			id: "skill-trigger",
-			label: "How specific should the skill trigger be?",
-			kind: "single-select",
-			options: [
-				{ id: "narrow", label: "Narrow and explicit", description: "Trigger only for enterprise RFP response work." },
-				{ id: "broad", label: "Broad and reusable", description: "Trigger for related proposal and bid-response work." },
-			],
-		},
-	},
-	"skill:design-landing-page": {
-		labels: ["Auditing message hierarchy", "Shaping the conversion story", "Sketching page sections"],
-		cycleIntervalMs: 2000,
-		workingMessage: "I’m translating the RFP value proposition into a focused landing-page narrative and section hierarchy.",
-		awaitingInputMessage: "The page can optimize for two different outcomes. Choose the primary conversion goal.",
-		completedSummary: "Designed the landing-page narrative, conversion goal, and section hierarchy.",
-		question: {
-			id: "landing-page-goal",
-			label: "What should the landing page optimize for?",
-			kind: "single-select",
-			options: [
-				{ id: "qualified-leads", label: "Qualified leads", description: "Drive visitors toward a consultation or demo request." },
-				{ id: "executive-confidence", label: "Executive confidence", description: "Build trust with proof, outcomes, and differentiation." },
-			],
-		},
-	},
-	"skill:develop-mobile-app-interface": {
-		labels: ["Mapping core mobile journeys", "Defining navigation patterns", "Checking platform conventions"],
-		cycleIntervalMs: 2600,
-		workingMessage: "I’m turning the service requirements into focused mobile journeys and platform-appropriate interaction patterns.",
-		awaitingInputMessage: "Two mobile journeys compete for the first prototype. Choose the one I should prioritize.",
-		completedSummary: "Defined the priority mobile journey, navigation pattern, and platform conventions.",
-		question: {
-			id: "mobile-journey",
-			label: "Which mobile journey should we prototype first?",
-			kind: "single-select",
-			options: [
-				{ id: "employee-self-service", label: "Employee self-service", description: "Focus on finding help and resolving common requests." },
-				{ id: "service-team-triage", label: "Service-team triage", description: "Focus on prioritizing and resolving incoming work." },
-			],
-		},
+	[JGP_KANBAN_CURSOR_AGENT_ID]: {
+		labels: ["Reading the Jira context", "Updating the board behavior", "Checking accessibility", "Preparing the change for review"],
+		cycleIntervalMs: 2100,
+		workingMessage: "I’m working through the Jira context and preparing this focused board improvement for review.",
+		completedSummary: "Completed the board improvement and moved it to Review.",
 	},
 };
 
-function getJgpKanbanActivityScenario(agentId: string): JgpKanbanActivityScenario {
-	const scenario = JGP_KANBAN_ACTIVITY_SCENARIOS[agentId];
-	if (scenario) return scenario;
-
-	return {
-		labels: [
-			"Reviewing the RFP",
-			"Applying the selected expertise",
-			"Gathering supporting context",
-			"Drafting the next update",
-			"Preparing the next update",
-		],
-		cycleIntervalMs: 2400,
-		workingMessage: "I’m applying the selected expertise to this issue and preparing a focused update.",
-		awaitingInputMessage: "I found a decision point that needs your input before I can finish the update.",
-		completedSummary: "Applied the selected expertise and prepared the issue update for review.",
-		question: JGP_RFP_QUESTION,
+function getActivityScenario(agentId: string): JgpKanbanActivityScenario {
+	return ACTIVITY_SCENARIOS[agentId] ?? {
+		labels: ["Reading the Jira context", "Applying the requested change", "Checking the result"],
+		cycleIntervalMs: 2300,
+		workingMessage: "I’m applying the requested change using the linked Jira context.",
+		completedSummary: "Completed the requested change and prepared it for review.",
 	};
 }
 
 export function getJgpGenerativeActivityId(request: JiraIssueGenerativeActionRequest): string {
 	if (request.kind === "skill") {
-		const skillId = request.selectedItem?.id ?? "skill:selected-skill";
+		const skillId = request.selectedItem?.id ?? "selected-skill";
 		return skillId.startsWith("skill:") ? skillId : `skill:${skillId}`;
 	}
-
-	if (request.kind === "agent") {
-		return request.selectedItem?.id.replace(/^subagent:/u, "") ?? JGP_KANBAN_DEFAULT_AGENT_ID;
-	}
-
-	return JGP_ROVO_AGENT_ID;
+	if (request.kind === "agent") return request.selectedItem?.id.replace(/^subagent:/u, "") ?? JGP_KANBAN_DEFAULT_AGENT_ID;
+	return "rovo-dev";
 }
 
-export function getJgpGenerativeAgentSelection(
-	request: JiraIssueGenerativeActionRequest,
-): JgpKanbanAgentSelection {
+export function getJgpGenerativeAgentSelection(request: JiraIssueGenerativeActionRequest): JgpKanbanAgentSelection {
 	return {
 		id: getJgpGenerativeActivityId(request),
 		name: request.kind === "agent" ? request.selectedItem?.label : undefined,
@@ -437,12 +963,6 @@ export function getJgpGenerativeAgentSelection(
 	};
 }
 
-/**
- * Small deterministic string hash (FNV-1a-ish). Used to derive per-card
- * variation from a stable seed (the card/issue key) so the demo reads
- * dynamically without `Math.random` — which would break SSR/client hydration
- * and make the story non-reproducible between renders.
- */
 function hashJgpSeed(seed: string): number {
 	let hash = 2166136261;
 	for (let index = 0; index < seed.length; index += 1) {
@@ -452,87 +972,33 @@ function hashJgpSeed(seed: string): number {
 	return hash >>> 0;
 }
 
-/** Rotates a label pool so different cards start on — and cycle through — a
- * different phrase, breaking the lockstep uniformity when the same agent is
- * assigned to several cards at once. */
 function rotateJgpLabels(labels: readonly string[], offset: number): readonly string[] {
 	if (labels.length <= 1) return labels;
 	const start = offset % labels.length;
 	return [...labels.slice(start), ...labels.slice(0, start)];
 }
 
-/**
- * Derives per-card working-label variation from a stable seed. Returns the
- * scenario labels rotated to a card-specific starting phrase plus a jittered
- * cycle cadence, so a bulk assignment of one agent to many cards reads as
- * distinct, concurrent work instead of a uniform placeholder.
- */
-function getJgpSeededLabelVariation(
-	scenario: JgpKanbanActivityScenario,
-	seed: string | undefined,
-): { labels: readonly string[]; cycleIntervalMs: number; cycleIntervalJitterMs: number } {
-	if (!seed) {
-		return {
-			labels: scenario.labels,
-			cycleIntervalMs: scenario.cycleIntervalMs,
-			cycleIntervalJitterMs: 0,
-		};
-	}
-	const hash = hashJgpSeed(seed);
-	// Start each card on a different phrase in the pool.
-	const labels = rotateJgpLabels(scenario.labels, hash);
-	// Spread the base cadence by ±400ms per card and add real jitter so cards
-	// started at the same instant drift out of sync instead of advancing together.
-	const cadenceOffset = (hash % 9) * 100 - 400; // -400 … +400ms
-	return {
-		labels,
-		cycleIntervalMs: Math.max(1200, scenario.cycleIntervalMs + cadenceOffset),
-		cycleIntervalJitterMs: 500 + (hash % 6) * 100, // 500 … 1000ms
-	};
-}
-
 export function createJgpKanbanActivity(
 	agentId: string,
-	awaitingInput = false,
 	selection?: JgpKanbanAgentSelection,
 	seed?: string,
 ): JiraIssueAgentActivity {
-	if (agentId.startsWith("skill:")) {
-		const skillId = agentId.replace(/^skill:/u, "");
-		const skillName = JGP_DIRECTORY_SKILLS.find((skill) => skill.id === skillId)?.name ?? "selected skill";
-		const scenario = getJgpKanbanActivityScenario(agentId);
-		const variation = getJgpSeededLabelVariation(scenario, seed);
-
-		return {
-			id: agentId,
-			name: "Rovo",
-			avatarSrc: ROVO_LOGO_DATA_URI,
-			label: awaitingInput ? "Awaiting user input" : variation.labels[0] ?? `Running ${skillName}`,
-			labels: variation.labels,
-			message: awaitingInput ? scenario.awaitingInputMessage : scenario.workingMessage,
-			question: awaitingInput ? scenario.question : undefined,
-			cycleIntervalMs: variation.cycleIntervalMs,
-			cycleIntervalJitterMs: variation.cycleIntervalJitterMs,
-			state: awaitingInput ? "awaiting-input" : "working",
-		};
-	}
-
+	const scenario = getActivityScenario(agentId);
+	const hash = seed ? hashJgpSeed(seed) : 0;
+	const labels = rotateJgpLabels(scenario.labels, hash);
 	const jgpAgent = JGP_KANBAN_AGENTS.find((candidate) => candidate.id === agentId);
 	const directoryAgent = JGP_DIRECTORY_AGENTS.find((candidate) => candidate.id === agentId);
-	const scenario = getJgpKanbanActivityScenario(agentId);
-	const variation = getJgpSeededLabelVariation(scenario, seed);
-
 	return {
 		id: agentId,
-		name: selection?.name ?? jgpAgent?.name ?? directoryAgent?.name ?? "RFP agent",
+		name: selection?.name ?? jgpAgent?.name ?? directoryAgent?.name ?? "Coding agent",
 		avatarSrc: selection?.avatarSrc ?? jgpAgent?.avatarSrc ?? directoryAgent?.avatarSrc,
-		label: awaitingInput ? "Awaiting user input" : variation.labels[0] ?? "Reviewing the RFP",
-		labels: variation.labels,
-		message: awaitingInput ? scenario.awaitingInputMessage : scenario.workingMessage,
-		question: awaitingInput ? scenario.question : undefined,
-		cycleIntervalMs: variation.cycleIntervalMs,
-		cycleIntervalJitterMs: variation.cycleIntervalJitterMs,
-		state: awaitingInput ? "awaiting-input" : "working",
+		agentBrandName: jgpAgent?.brandName,
+		label: labels[0] ?? "Reading the Jira context",
+		labels,
+		message: scenario.workingMessage,
+		cycleIntervalMs: Math.max(1200, scenario.cycleIntervalMs + (seed ? (hash % 9) * 100 - 400 : 0)),
+		cycleIntervalJitterMs: seed ? 500 + (hash % 6) * 100 : 0,
+		state: "working",
 	};
 }
 
@@ -543,14 +1009,13 @@ export function createJgpKanbanCompletedRun(
 	summary?: string,
 	state: JiraIssueCompletedAgentRun["state"] = "done",
 ): JiraIssueCompletedAgentRun {
-	const activity = createJgpKanbanActivity(agentId, false, selection);
-	const scenario = getJgpKanbanActivityScenario(agentId);
-
+	const activity = createJgpKanbanActivity(agentId, selection);
 	return {
 		id: `${issue.issueKey}:${agentId}`,
-		summary: summary ?? scenario.completedSummary,
+		summary: summary ?? getActivityScenario(agentId).completedSummary,
 		agentName: activity.name,
 		agentAvatarSrc: activity.avatarSrc,
+		agentBrandName: JGP_KANBAN_AGENTS.find((agent) => agent.id === agentId)?.brandName,
 		issueKey: issue.issueKey,
 		issueSummary: issue.issueSummary,
 		relativeTime: "Just now",

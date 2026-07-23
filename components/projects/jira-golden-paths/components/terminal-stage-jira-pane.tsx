@@ -24,8 +24,8 @@ import { foldBoardPreview } from "../hooks/use-terminal-demo";
 import { BlinkCursor, PrLabel, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
 
 // ---------------------------------------------------------------------------
-// Left pane — the invented "Jira CLI" sessions dashboard. Before `jira
-// connect` resolves it's a plain shell (prompt + boot transcript); once the
+// Left pane — the TwG connected-work dashboard. Before `twg start-work`
+// resolves it's a plain shell (prompt + boot transcript); once the
 // reducer flips `dashboardVisible` it fades into the sectioned board.
 // ---------------------------------------------------------------------------
 

@@ -27,6 +27,7 @@ export type ArtifactResult = RovoDataParts["artifact-result"];
 interface ArtifactResultCardProps {
 	artifact: ArtifactResult;
 	className?: string;
+	inlineDocument?: RovoAppDocument;
 	onDialogOpen?: (artifact: ArtifactResult) => void;
 	onDialogClose?: (artifact: ArtifactResult) => void;
 }
@@ -125,6 +126,7 @@ function buildCanvasVersionHistory(
 export function ArtifactResultCard({
 	artifact,
 	className,
+	inlineDocument,
 	onDialogOpen,
 	onDialogClose,
 }: Readonly<ArtifactResultCardProps>): ReactNode {
@@ -200,6 +202,13 @@ export function ArtifactResultCard({
 	}, [artifact.documentId, handleOpenChange, shouldOpenInRovoCanvas]);
 
 	useEffect(() => {
+		if (inlineDocument) {
+			setDocument(inlineDocument);
+			setErrorMessage(null);
+			setIsLoading(false);
+			return;
+		}
+
 		if (!isOpen && !shouldOpenInRovoCanvas) {
 			return;
 		}
@@ -227,7 +236,7 @@ export function ArtifactResultCard({
 		return () => {
 			ignore = true;
 		};
-	}, [artifact.documentId, isOpen, shouldOpenInRovoCanvas]);
+	}, [artifact.documentId, inlineDocument, isOpen, shouldOpenInRovoCanvas]);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useEffect(() => {

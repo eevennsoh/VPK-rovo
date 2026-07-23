@@ -89,6 +89,24 @@ export function removeInlineComment(
 	};
 }
 
+export function updateInlineComment(
+	state: InlineCommentState,
+	commentId: string,
+	body: string,
+): InlineCommentState {
+	const trimmedBody = body.trim();
+	if (!trimmedBody) {
+		return state;
+	}
+
+	return {
+		...state,
+		comments: state.comments.map((comment) =>
+			comment.id === commentId ? { ...comment, body: trimmedBody } : comment,
+		),
+	};
+}
+
 export function removeAllInlineComments(state: InlineCommentState): InlineCommentState {
 	return {
 		...state,

@@ -24,21 +24,44 @@ test("ProgressTracker supports optional bylines and warning steps without replac
 	assert.match(PROGRESS_TRACKER_SOURCE, /typeof step\.label === "string" \? step\.label\.trim\(\) : ""/u);
 });
 
-test("Spinner matches the CodePen chasing-tail motion", () => {
-	assert.match(SPINNER_SOURCE, /import \{ motion, type Transition, useReducedMotion \} from "motion\/react"/u);
-	assert.match(SPINNER_SOURCE, /<motion\.svg/u);
-	assert.match(SPINNER_SOURCE, /<motion\.circle/u);
+test("Spinner preserves the CodePen chasing-tail motion without competing rotation drivers", () => {
+	assert.match(SPINNER_SOURCE, /import \{ useReducedMotion \} from "motion\/react"/u);
+	assert.match(SPINNER_SOURCE, /<svg/u);
+	assert.match(SPINNER_SOURCE, /<circle/u);
 	assert.match(SPINNER_SOURCE, /transform="rotate\(-90 25 25\)"/u);
-	assert.match(SPINNER_SOURCE, /const SPINNER_ORBIT_TRANSITION: Transition = \{[\s\S]*duration: 1\.2,[\s\S]*ease: "linear",[\s\S]*repeat: Infinity/u);
-	assert.match(SPINNER_SOURCE, /const SPINNER_STRETCH_TRANSITION: Transition = \{[\s\S]*duration: 1\.2,[\s\S]*ease: "easeInOut",[\s\S]*repeat: Infinity,[\s\S]*times: \[0, 0\.5, 1\]/u);
-	assert.match(SPINNER_SOURCE, /animate=\{\{ rotate: shouldReduceMotion \? 0 : 360 \}\}/u);
-	assert.match(SPINNER_SOURCE, /strokeDasharray: \["1 200", "89 200", "89 200"\]/u);
-	assert.match(SPINNER_SOURCE, /strokeDashoffset: \[0, -35, -124\]/u);
-	assert.match(SPINNER_SOURCE, /\? \{ strokeDasharray: "56 200", strokeDashoffset: 0 \}/u);
-	assert.match(SPINNER_SOURCE, /willChange: shouldReduceMotion \? undefined : "transform"/u);
+	assert.match(
+		SPINNER_SOURCE,
+		/"spin calc\(var\(--duration-slowest\) \* 2\) var\(--ease-linear\) infinite"/u,
+	);
+	assert.match(SPINNER_SOURCE, /strokeDasharray="56 200"/u);
+	assert.match(SPINNER_SOURCE, /strokeDashoffset="0"/u);
+	assert.match(
+		SPINNER_SOURCE,
+		/const ROVO_RAINBOW_BANDS = \[[\s\S]*\{ color: "#FCA700", share: 0\.3, start: 0 \}[\s\S]*\{ color: "#6A9A23", share: 0\.18, start: 0\.3 \}[\s\S]*\{ color: "#1868DB", share: 0\.21, start: 0\.48 \}[\s\S]*\{ color: "#AF59E1", share: 0\.31, start: 0\.69 \}/u,
+	);
+	assert.match(SPINNER_SOURCE, /<mask[\s\S]*id=\{tailMaskId\}[\s\S]*maskUnits="userSpaceOnUse"/u);
+	assert.match(SPINNER_SOURCE, /\{ROVO_RAINBOW_BANDS\.map\(\(band\) => \{/u);
+	assert.match(SPINNER_SOURCE, /const segmentLength = SPINNER_CIRCUMFERENCE \* band\.share/u);
+	assert.match(SPINNER_SOURCE, /strokeDasharray=\{`\$\{segmentLength\} \$\{SPINNER_CIRCUMFERENCE - segmentLength\}`\}/u);
+	assert.match(SPINNER_SOURCE, /strokeDashoffset=\{-SPINNER_CIRCUMFERENCE \* band\.start\}/u);
+	assert.doesNotMatch(SPINNER_SOURCE, /linearGradient|ROVO_RAINBOW_STOPS/u);
+	assert.match(SPINNER_SOURCE, /phaseOffsetMs\?: number/u);
+	assert.match(SPINNER_SOURCE, /const SPINNER_LOOP_DURATION_MS = 1200/u);
+	assert.match(SPINNER_SOURCE, /normalizeSpinnerPhaseOffsetMs\(phaseOffsetMs\)/u);
+	assert.match(SPINNER_SOURCE, /animationDelay: shouldReduceMotion \? undefined : negativePhaseOffset/u);
+	assert.equal(SPINNER_SOURCE.match(/begin=\{negativePhaseOffset\}/gu)?.length, 2);
 	assert.doesNotMatch(SPINNER_SOURCE, /pathLength|pathOffset/u);
 	assert.doesNotMatch(SPINNER_SOURCE, /animateTransform/u);
 	assert.doesNotMatch(SPINNER_SOURCE, /animate-spin/u);
+	assert.match(
+		SPINNER_SOURCE,
+		/<animate[\s\S]*attributeName="stroke-dasharray"[\s\S]*dur="1\.2s"[\s\S]*keyTimes="0;0\.5;1"[\s\S]*repeatCount="indefinite"[\s\S]*values="1 200;89 200;89 200"/u,
+	);
+	assert.match(
+		SPINNER_SOURCE,
+		/<animate[\s\S]*attributeName="stroke-dashoffset"[\s\S]*dur="1\.2s"[\s\S]*keyTimes="0;0\.5;1"[\s\S]*repeatCount="indefinite"[\s\S]*values="0;-35;-124"/u,
+	);
+	assert.match(SPINNER_SOURCE, /const tailAnimations = shouldReduceMotion \? null : \(/u);
 });
 
 test("Shimmer keeps its token-backed CSS sweep animation", () => {

@@ -156,7 +156,7 @@ export function JiraSessionLabel({ session }: Readonly<{ session: JiraSidebarSes
 	return session.status === "awaiting-input" ? (
 		<span className="flex min-w-0 items-baseline">
 			<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
-				Awaiting user response
+				Waiting for input
 			</Shimmer>
 			<AnimatedDots />
 		</span>
@@ -167,8 +167,8 @@ export function JiraSessionLifecycle({ status }: Readonly<{ status: JiraSidebarS
 	switch (status) {
 		case "awaiting-input":
 			return (
-				<span className="grid size-4 shrink-0 place-items-center text-icon-information" title="Waiting for your response">
-					<StatusInformationIcon label="Waiting for your response" size="small" color="currentColor" />
+				<span className="grid size-4 shrink-0 place-items-center text-icon-information" title="Waiting for input">
+					<StatusInformationIcon label="Waiting for input" size="small" color="currentColor" />
 				</span>
 			);
 		case "running":

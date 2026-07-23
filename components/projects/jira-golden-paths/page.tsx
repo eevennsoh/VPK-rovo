@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { Gallery, type GalleryItem, type GalleryPalette } from "@/components/blocks/gallery";
+import { Gallery, type GalleryPalette } from "@/components/blocks/gallery";
 import { JGP_CHAT_AGENT_PROFILES } from "./data/agent-chat-data";
 import { JGP_GALLERY_ITEMS } from "./data/gallery-items";
 import {
@@ -17,10 +17,7 @@ import {
 	type ScreenNavigatorController,
 } from "./hooks/use-screen-navigator";
 import { SessionScreenControls, SessionStage } from "./components/session-stage";
-import {
-	useWorkItemStageController,
-	WorkItemControls,
-} from "./components/work-item-stage";
+import { useWorkItemStageController } from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // JGP — Jira Golden Paths
@@ -29,10 +26,9 @@ import {
 // a presenter-paced walkthrough of an ordered set of screens, navigated
 // left/right from the gallery top bar (see `SessionScreenControls`) or the ←/→
 // arrow keys — mirroring the terminal demo's beat stepping. Screens are
-// placeholders for now (see `./data/session-screens.ts`); the pattern stages
-// from the original clone (KanbanStage, TerminalStage, RovoStage, QueueStage, …)
-// are kept under `./components/` as building blocks to wire into these screens
-// later.
+// Each screen is a prepared beat in Carl's local or Sarah's global story. The
+// existing Terminal, Kanban, Rovo, For You, and Work item stages render those
+// route-owned scenarios without introducing gallery-specific UI variants.
 // ---------------------------------------------------------------------------
 
 const ROVO_PURPLE_PALETTE: GalleryPalette = ["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"];
@@ -94,14 +90,6 @@ export default function JgpPage(): React.ReactElement {
 		setTerminalTheme((current) => (current === "dark" ? "light" : "dark"));
 	}, []);
 
-	// The gallery Reset control rewinds the active card's walkthrough to screen 1.
-	const handleReset = useCallback(
-		(item: GalleryItem) => {
-			cardsById[item.id]?.controller.reset();
-		},
-		[cardsById],
-	);
-
 	// ←/→ step the active card's screens, mirroring the terminal demo. Depend on
 	// the stable per-card callbacks so this re-subscribes only when the active
 	// card changes, not on every screen change.
@@ -140,9 +128,8 @@ export default function JgpPage(): React.ReactElement {
 	// (their stages call `useRovoChat` for the agent chat overlay), so the whole
 	// gallery tree is wrapped here rather than relying on an ancestor route to
 	// supply the context — this keeps the standalone and exported routes working.
-	// The JGP agent profiles (rfp-drafter, service-impact-agent, …) are passed in
-	// so `selectAgent` resolves those local personas instead of falling back to
-	// default Rovo — mirroring the /asx pattern.
+	// The JGP agent profiles are passed in so route-owned Claude Code and Cursor
+	// sessions resolve without changing the global agent directory.
 	return (
 		<RovoChatProvider agentProfiles={JGP_CHAT_AGENT_PROFILES}>
 			<ResetRovoChatOnEntry screen={activeScreen} />
@@ -158,17 +145,11 @@ export default function JgpPage(): React.ReactElement {
 					theme={isTerminalSection ? terminalTheme : undefined}
 					onThemeCycle={isTerminalSection ? handleTerminalThemeCycle : undefined}
 					topBarCenter={(
-						<div className="flex items-center gap-3">
-							<SessionScreenControls
-								screens={activeCard.screens}
-								controller={activeCard.controller}
-							/>
-							{activeScreen?.design === "work-item" ? (
-								<WorkItemControls controller={workItemController} />
-							) : null}
-						</div>
+						<SessionScreenControls
+							screens={activeCard.screens}
+							controller={activeCard.controller}
+						/>
 					)}
-					onReset={handleReset}
 					renderSelectedItem={(item) => {
 						const card = cardsById[item.id] ?? activeCard;
 						return (

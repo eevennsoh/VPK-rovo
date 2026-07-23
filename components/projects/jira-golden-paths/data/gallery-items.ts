@@ -13,13 +13,13 @@ export const JGP_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
 		id: "local-session",
 		title: "Local session",
-		description: "A golden-path walkthrough of an agent session running on your machine.",
+		description: "Carl starts JGP-247 with TwG and Claude Code, reviews the result in Jira, then merges it locally.",
 		size: "landscape",
 	},
 	{
 		id: "global-session",
 		title: "Global session",
-		description: "A golden-path walkthrough of an agent session running in the cloud.",
+		description: "Sarah delegates five Jira tasks to Cursor, unblocks and reviews work in Rovo, then follows up in Jira.",
 		size: "landscape",
 	},
 ];

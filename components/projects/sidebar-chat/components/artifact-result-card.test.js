@@ -144,3 +144,15 @@ test("ArtifactResultCard shows a text skeleton while the HTML report summary is 
 		/<ArtifactCard[\s\S]*previewSummary=\{document\?\.previewSummary \?\? undefined\}[\s\S]*\{isPreviewSummaryPending \? <ArtifactResultCardPreviewSkeleton \/> : null\}[\s\S]*<\/ArtifactCard>/u,
 	);
 });
+
+test("ArtifactResultCard can render a route-owned inline document without backend persistence", () => {
+	assert.match(ARTIFACT_RESULT_CARD_SOURCE, /inlineDocument\?: RovoAppDocument;/u);
+	assert.match(
+		ARTIFACT_RESULT_CARD_SOURCE,
+		/if \(inlineDocument\) \{[\s\S]*setDocument\(inlineDocument\);[\s\S]*setIsLoading\(false\);[\s\S]*return;/u,
+	);
+	assert.match(
+		ARTIFACT_RESULT_CARD_SOURCE,
+		/if \(!isOpen && !shouldOpenInRovoCanvas\) \{/u,
+	);
+});

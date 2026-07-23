@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
@@ -31,6 +33,9 @@ export interface JiraIssueCompletedAgentRun {
 	elapsedSeconds?: number;
 	pullRequestNumber?: number;
 	outputs?: readonly ArtifactListItem[];
+	actionLabel?: "Open" | "View";
+	/** Allows dense consumers to keep review state without repeating a trailing PR glyph on the row. */
+	showStateIcon?: boolean;
 	state: JiraIssueCompletedAgentRunState;
 }
 
@@ -97,6 +102,8 @@ export function JiraIssueAgentDone({
 	onView?: (run: JiraIssueCompletedAgentRun) => void;
 	runs: readonly JiraIssueCompletedAgentRun[];
 }>) {
+	const [openRunId, setOpenRunId] = useState<string | null>(null);
+
 	return (
 		<section aria-label="Agent review" className="flex w-full flex-col overflow-hidden px-1 py-1">
 			{runs.map((run, index) => {
@@ -110,7 +117,14 @@ export function JiraIssueAgentDone({
 							: "rounded-[2px]";
 
 				return (
-					<HoverCard key={run.id} onOpenChange={onOpenChange}>
+					<HoverCard
+						key={run.id}
+						onOpenChange={(open) => {
+							setOpenRunId(open ? run.id : null);
+							onOpenChange?.(open);
+						}}
+						open={openRunId === run.id}
+					>
 						<HoverCardTrigger
 							closeDelay={0}
 							delay={0}
@@ -135,7 +149,7 @@ export function JiraIssueAgentDone({
 										/>
 										<span className="truncate text-sm leading-5 text-text-subtlest">{run.summary}</span>
 									</span>
-									{state.icon ? (
+									{run.showStateIcon !== false && state.icon ? (
 										<span className={cn("-my-1 grid size-6 shrink-0 place-items-center", state.iconClassName)} aria-hidden="true">
 											{state.icon}
 										</span>
@@ -147,6 +161,7 @@ export function JiraIssueAgentDone({
 							align="start"
 							alignOffset={0}
 							className="w-[440px] max-w-[calc(100vw-48px)] overflow-hidden rounded-xl bg-surface-overlay p-0 text-text shadow-overlay data-ending-style:transition-none"
+							positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
 							side="right"
 							sideOffset={8}
 						>
@@ -163,9 +178,14 @@ export function JiraIssueAgentDone({
 										onReview?.(run);
 									}
 								}}
-								onView={() => onView?.(run)}
+								onView={() => {
+									setOpenRunId(null);
+									onOpenChange?.(false);
+									onView?.(run);
+								}}
 								status={run.state}
 								variant="jira-issue"
+								viewActionLabel={run.actionLabel}
 							/>
 						</HoverCardContent>
 					</HoverCard>

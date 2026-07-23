@@ -6,10 +6,11 @@ import type { JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-
 import type { JiraKanbanCardData, JiraKanbanCardSelectModifiers, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
 	JGP_KANBAN_DEFAULT_AGENT_ID,
-	JGP_KANBAN_DRAFTING_COLUMN,
-	JGP_KANBAN_INTAKE_COLUMN,
+	JGP_KANBAN_IN_PROGRESS_COLUMN,
+	JGP_KANBAN_TODO_COLUMN,
 	getJgpGenerativeAgentSelection,
 	type JgpKanbanAgentSelection,
+	type JgpKanbanScenario,
 } from "../data/kanban-data";
 import {
 	jgpKanbanReducer,
@@ -19,19 +20,19 @@ import {
 
 const GENERATING_DELAY_MS = 1_200;
 const COMPLETION_DELAY_MS = 5_500;
-const INPUT_RESUME_COMPLETION_DELAY_MS = 2_500;
-const NEEDS_INPUT_CARD_CODE = "RFP-101";
 
 type TimerHandle = number;
 
 interface UseJgpKanbanLifecycleOptions {
 	onNonAgentAction?: (request: JiraIssueGenerativeActionRequest, card: JiraKanbanCardData) => void;
+	scenario?: JgpKanbanScenario;
 }
 
 export function useJgpKanbanLifecycle({
 	onNonAgentAction,
+	scenario = "local-review",
 }: UseJgpKanbanLifecycleOptions = {}) {
-	const [state, dispatch] = useReducer(jgpKanbanReducer, undefined, createInitialJgpKanbanState);
+	const [state, dispatch] = useReducer(jgpKanbanReducer, scenario, createInitialJgpKanbanState);
 	const stateRef = useRef(state);
 	const timersRef = useRef(new Map<string, Set<TimerHandle>>());
 
@@ -71,7 +72,7 @@ export function useJgpKanbanLifecycle({
 				dispatch({ type: "advance-generating", cardCode });
 			});
 			schedule(cardCode, COMPLETION_DELAY_MS, () => {
-				dispatch({ type: cardCode === NEEDS_INPUT_CARD_CODE ? "request-input" : "complete", cardCode });
+				dispatch({ type: "complete", cardCode });
 			});
 		}
 	}, [clearCardTimers, schedule]);
@@ -103,14 +104,14 @@ export function useJgpKanbanLifecycle({
 
 	const handleCardDrop = useCallback((targetColumnTitle: string) => {
 		const dragged = stateRef.current.dragged;
-		if (dragged && targetColumnTitle === JGP_KANBAN_DRAFTING_COLUMN) {
+		if (dragged && targetColumnTitle === JGP_KANBAN_IN_PROGRESS_COLUMN) {
 			const codes = [...dragged.cardCodes];
 			dispatch({ type: "drop", targetColumnTitle, agent: { id: JGP_KANBAN_DEFAULT_AGENT_ID } });
 			for (const cardCode of codes) {
 				clearCardTimers(cardCode);
 				schedule(cardCode, GENERATING_DELAY_MS, () => dispatch({ type: "advance-generating", cardCode }));
 				schedule(cardCode, COMPLETION_DELAY_MS, () => {
-					dispatch({ type: cardCode === NEEDS_INPUT_CARD_CODE ? "request-input" : "complete", cardCode });
+					dispatch({ type: "complete", cardCode });
 				});
 			}
 			return;
@@ -120,11 +121,8 @@ export function useJgpKanbanLifecycle({
 
 	const handleQuestionSubmit = useCallback((_activity: unknown, _answers: unknown, card: JiraKanbanCardData) => {
 		clearCardTimers(card.code);
-		dispatch({ type: "answer-question", cardCode: card.code });
-		schedule(card.code, INPUT_RESUME_COMPLETION_DELAY_MS, () => {
-			dispatch({ type: "complete", cardCode: card.code });
-		});
-	}, [clearCardTimers, schedule]);
+		dispatch({ type: "complete", cardCode: card.code });
+	}, [clearCardTimers]);
 
 	const handleCardClick = useCallback((
 		_title: string,
@@ -154,14 +152,14 @@ export function useJgpKanbanLifecycle({
 			return;
 		}
 		// Assigning an agent to the selected cards starts real work: each card
-		// moves into Drafting (the in-progress column) and runs the same
+		// moves into In progress and runs the same
 		// thinking → generating → complete lifecycle as a drag or generative
 		// action. Clear the selection afterwards so the toolbar dismisses, matching
 		// the multi-card drop behavior.
 		const currentState = stateRef.current;
 		const intakeCardCodes = new Set(
 			currentState.columns
-				.find((column) => column.title === JGP_KANBAN_INTAKE_COLUMN)
+				.find((column) => column.title === JGP_KANBAN_TODO_COLUMN)
 				?.cards.map((card) => card.code) ?? [],
 		);
 		const startableCodes = [...currentState.selectedCardCodes].filter((code) => intakeCardCodes.has(code));

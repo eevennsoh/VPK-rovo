@@ -4,7 +4,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -39,6 +39,9 @@ interface ChatHeaderProps {
 	onStop?: () => void;
 	onHistoryToggle?: () => void;
 	isHistoryOpen?: boolean;
+	showAgentBackButton?: boolean;
+	showAgentSelector?: boolean;
+	endAction?: ReactNode;
 	variant?: "default" | "minimal";
 }
 
@@ -51,6 +54,9 @@ export default function ChatHeader({
 	onStop,
 	onHistoryToggle,
 	isHistoryOpen = false,
+	showAgentBackButton = true,
+	showAgentSelector = true,
+	endAction,
 	variant = "default",
 }: Readonly<ChatHeaderProps>) {
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -64,14 +70,15 @@ export default function ChatHeader({
 			<div className="flex items-center">
 				{/* Left side: Menu icon and Title */}
 				<div className="flex min-w-0 flex-1 items-center gap-1">
-					<RovoAgentBackButton onBack={onBackToRovo} />
+					{showAgentBackButton ? <RovoAgentBackButton onBack={onBackToRovo} /> : null}
 					{showControls ? (
 						<ChatHistoryButton isHistoryOpen={isHistoryOpen} onToggle={onHistoryToggle} />
 					) : null}
-					<RovoAppBrand />
+					<RovoAppBrand enableAgentSelector={showAgentSelector} />
 				</div>
 
 				{/* Right side: Chat actions */}
+				{endAction ? <div className="flex shrink-0 items-center">{endAction}</div> : null}
 				{showControls ? (
 					<div className="flex shrink-0 items-center gap-1">
 						<Button aria-label="New chat" size="icon" variant="ghost" onClick={onNewChat ?? noop}>

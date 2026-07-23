@@ -14,8 +14,9 @@ import { floatingComposerTextareaClassName } from "@/components/projects/shared/
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import { Shimmer } from "@/components/ui-custom/shimmer";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
@@ -28,6 +29,7 @@ export interface JiraIssueAgentActivity {
 	id: string;
 	name: string;
 	avatarSrc?: string;
+	agentBrandName?: ThirdPartyLogoName;
 	label: string;
 	labels?: readonly string[];
 	message?: string;
@@ -49,8 +51,10 @@ const JIRA_ISSUE_MOTION_STYLE: CSSProperties = { willChange: "transform, opacity
 const JIRA_ISSUE_AGENT_LABEL_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;
 const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;
+const JIRA_ISSUE_AGENT_AWAITING_LABEL = "Waiting for input";
 const JIRA_ISSUE_AGENT_SHIMMER_DURATION = 1.4;
 const JIRA_ISSUE_AGENT_SHIMMER_SPREAD = 2;
+const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;
 const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS = 45;
 const JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS = 7 * 60;
 const JIRA_ISSUE_AGENT_WORKING_LABELS = [
@@ -166,6 +170,14 @@ function getJiraIssueAgentCycleDelay(intervalMs: number, jitterMs: number): numb
 	return Math.max(1000, intervalMs) + Math.round(Math.random() * Math.max(0, jitterMs));
 }
 
+function getJiraIssueAgentSpinnerPhaseOffsetMs(activityId: string, index: number): number {
+	let hash = (index + 1) * 317;
+	for (let characterIndex = 0; characterIndex < activityId.length; characterIndex += 1) {
+		hash = (hash * 31 + activityId.charCodeAt(characterIndex)) % JIRA_ISSUE_AGENT_SPINNER_LOOP_MS;
+	}
+	return hash;
+}
+
 function getJiraIssueAgentWorkingLabels(activity: JiraIssueAgentActivity): readonly string[] {
 	const trimmedLabel = activity.label.trim();
 	const labels = trimmedLabel ? [trimmedLabel] : [];
@@ -233,21 +245,14 @@ function JiraIssueAgentActivityPanel({
 				}
 				byline={<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs={startedAtMs} />}
 				leading={
-					<Avatar
-						className={isRovoActivity ? "[&>svg]:hidden" : undefined}
+					<AgentAvatarVisual
+						avatarClassName={isRovoActivity ? "[&>svg]:hidden" : undefined}
+						avatarSrc={activity.avatarSrc}
+						brandName={activity.agentBrandName}
+						fallbackText={getAgentInitial(activity.name)}
 						label={activity.name}
-						shape="hexagon"
-						size="default"
-					>
-						{activity.avatarSrc ? (
-							<AvatarImage
-								alt=""
-								className={isRovoActivity ? "size-6 object-contain" : undefined}
-								src={activity.avatarSrc}
-							/>
-						) : null}
-						<AvatarFallback>{getAgentInitial(activity.name)}</AvatarFallback>
-					</Avatar>
+						sizePx={32}
+					/>
 				}
 				title={activity.name}
 			/>
@@ -281,6 +286,7 @@ function JiraIssueAgentActivityRow({
 	rowCount: number;
 }>) {
 	const isAwaitingInput = activity.state === "awaiting-input";
+	const displayLabel = isAwaitingInput ? JIRA_ISSUE_AGENT_AWAITING_LABEL : activity.label;
 	const [startedAtMs] = useState(() => {
 		if (typeof activity.startedAtMs === "number" && Number.isFinite(activity.startedAtMs)) {
 			return activity.startedAtMs;
@@ -308,7 +314,7 @@ function JiraIssueAgentActivityRow({
 				render={(
 					<button
 						type="button"
-						aria-label={`${activity.name}: ${activity.label}`}
+						aria-label={`${activity.name}: ${displayLabel}`}
 						data-slot="jira-issue-agent-row"
 						className={cn(
 							"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -316,10 +322,13 @@ function JiraIssueAgentActivityRow({
 						)}
 					>
 						<div className="flex min-w-0 items-center gap-2">
-							<Avatar label={activity.name} shape="hexagon" size="xs">
-								{activity.avatarSrc ? <AvatarImage src={activity.avatarSrc} alt="" /> : null}
-								<AvatarFallback>{getAgentInitial(activity.name)}</AvatarFallback>
-							</Avatar>
+							<AgentAvatarVisual
+								avatarSrc={activity.avatarSrc}
+								brandName={activity.agentBrandName}
+								fallbackText={getAgentInitial(activity.name)}
+								label={activity.name}
+								sizePx={16}
+							/>
 							{isAwaitingInput ? (
 								<span className="inline-flex min-w-0 items-baseline text-sm leading-5 text-text-subtlest">
 									<Shimmer
@@ -329,7 +338,7 @@ function JiraIssueAgentActivityRow({
 										wave={false}
 										className="min-w-0 truncate text-sm leading-5"
 									>
-										{activity.label}
+										{displayLabel}
 									</Shimmer>
 									<AnimatedDots />
 								</span>
@@ -347,7 +356,12 @@ function JiraIssueAgentActivityRow({
 							</span>
 						) : (
 							<span className="-my-1 grid size-6 shrink-0 place-items-center" aria-hidden="true">
-								<Spinner size="sm" variant="rainbow" label="" />
+								<Spinner
+									label=""
+									phaseOffsetMs={getJiraIssueAgentSpinnerPhaseOffsetMs(activity.id, index)}
+									size="sm"
+									variant="rainbow"
+								/>
 							</span>
 						)}
 					</button>
@@ -357,6 +371,7 @@ function JiraIssueAgentActivityRow({
 				align="start"
 				alignOffset={0}
 				className="w-[400px] max-w-[calc(100vw-48px)] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"
+				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
 				side="right"
 				sideOffset={8}
 			>

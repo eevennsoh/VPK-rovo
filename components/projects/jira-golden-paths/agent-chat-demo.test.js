@@ -15,7 +15,10 @@ async function loadHarness() {
 		stdin: {
 			contents: `
 				export {
+					JGP_CLAUDE_CODE_AGENT_PROFILE,
 					JGP_CHAT_AGENT_PROFILES,
+					JGP_ROVO_ARTIFACT_DOCUMENTS,
+					JGP_ROVO_SESSION_SEEDS,
 					buildJgpAgentChatPlayback,
 					buildJgpAgentChatContextBar,
 				} from "./components/projects/jira-golden-paths/data/agent-chat-data";
@@ -36,16 +39,28 @@ async function loadHarness() {
 }
 
 test("JGP chat profiles include every lifecycle-specific agent", async () => {
-	const { JGP_CHAT_AGENT_PROFILES } = await loadHarness();
+	const { JGP_CHAT_AGENT_PROFILES, JGP_CLAUDE_CODE_AGENT_PROFILE } = await loadHarness();
 	const profileIds = new Set(JGP_CHAT_AGENT_PROFILES.map((profile) => profile.id));
 	const serviceImpactAgent = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "service-impact-agent");
 	const dependencyMapper = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "dependency-mapper");
+	const unitTestCreator = JGP_CHAT_AGENT_PROFILES.find((profile) => profile.id === "unit-test-creator");
 
 	assert.equal(profileIds.has("rfp-drafter"), true);
 	assert.equal(profileIds.has("service-impact-agent"), true);
 	assert.equal(profileIds.has("dependency-mapper"), true);
+	assert.equal(profileIds.has("unit-test-creator"), true);
+	assert.equal(profileIds.has("cursor"), true);
+	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.id, "claude-code");
+	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.name, "Claude Code");
+	assert.equal(JGP_CLAUDE_CODE_AGENT_PROFILE.brandName, "claude");
+	assert.equal(
+		JGP_CLAUDE_CODE_AGENT_PROFILE.description,
+		"Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools.",
+	);
+	assert.deepEqual(JGP_CLAUDE_CODE_AGENT_PROFILE.starters, []);
 	assert.equal(serviceImpactAgent.avatarSrc, "/avatar-agent/service-agents/rca-agent.svg");
 	assert.equal(dependencyMapper.avatarSrc, "/avatar-agent/teamwork-agents/work-item-planner.svg");
+	assert.equal(unitTestCreator.avatarSrc, "/avatar-agent/dev-agents/unit-test-creator.svg");
 	assert.notEqual(serviceImpactAgent.avatarSrc, dependencyMapper.avatarSrc);
 });
 
@@ -114,4 +129,23 @@ test("JGP chat hook selects the agent before opening and cancels stale playback 
 	assert.match(HOOK_SOURCE, /useEffect\(\(\) => cancelPlayback, \[cancelPlayback\]\);/u);
 	assert.match(HOOK_SOURCE, /setChatContextBar\(buildJgpAgentChatContextBar\(scenario\)\);/u);
 	assert.match(HOOK_SOURCE, /setExternalThinkingMessageId\(scenario\.question \? null : playback\.assistantMessageId\);/u);
+});
+
+test("JGP global Rovo sessions cover the persistence blocker and mobile PR review", async () => {
+	const data = await loadHarness();
+	assert.equal(data.JGP_ROVO_SESSION_SEEDS.length, 2);
+	const blocked = data.JGP_ROVO_SESSION_SEEDS.find((session) => session.issueKey === "JGP-251");
+	const review = data.JGP_ROVO_SESSION_SEEDS.find((session) => session.issueKey === "JGP-252");
+	assert.equal(blocked.status, "awaiting-input");
+	assert.equal(blocked.question.questions[0].options[0].label, "Remember per board");
+	assert.equal(review.status, "pr-open");
+	assert.equal(review.jiraColumn, "Done");
+	assert.equal(review.pullRequestNumber, 842);
+	assert.deepEqual(review.fileChanges.files, [
+		"src/boards/assignee-focus/assignee-focus-toolbar.tsx",
+		"src/boards/assignee-focus/assignee-focus-toolbar.test.tsx",
+	]);
+	const artifactPart = review.messages.at(-1).parts.find((part) => part.type === "data-artifact-result");
+	assert.equal(artifactPart.data.documentId, "jgp-252-clear-focus-code");
+	assert.match(data.JGP_ROVO_ARTIFACT_DOCUMENTS[artifactPart.data.documentId].versions[0].content, /Clear focus/u);
 });

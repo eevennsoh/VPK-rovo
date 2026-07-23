@@ -18,6 +18,54 @@ test("code review fixtures preserve the design contracts", () => {
 	assert.match(explorerTree, /ipc\.mp\.test\.ts/u);
 });
 
+test("code review explorer-backed files stay selectable", () => {
+	const explorer = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-explorer.tsx",
+	);
+
+	assert.match(explorer, /file\.explorerPath/u);
+	assert.match(explorer, /disabled: false/u);
+	assert.match(explorer, /onFileSelect\(fileId\)/u);
+});
+
+test("code review editor starts directly with the file diff", () => {
+	const editorDiff = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-diff.tsx",
+	);
+
+	assert.match(editorDiff, /file\.hunkHeader \? \(/u);
+	assert.doesNotMatch(editorDiff, /\?\? "Diff"/u);
+	assert.match(editorDiff, /\{file\.hunkHeader\}/u);
+});
+
+test("code review editor shows the selected file change counts", () => {
+	const editorDiff = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-diff.tsx",
+	);
+
+	assert.match(editorDiff, /file\.additions\} additions, \$\{file\.deletions\} deletions/u);
+	assert.match(editorDiff, />\+\{file\.additions\}</u);
+	assert.match(editorDiff, />-\{file\.deletions\}</u);
+	assert.match(editorDiff, /className="ml-auto flex shrink-0 items-center gap-1 text-xs leading-4"/u);
+	assert.match(editorDiff, /text-text-danger/u);
+	assert.match(editorDiff, /text-text-success/u);
+});
+
+test("code review scrollbars reveal on interaction instead of at rest", () => {
+	const editorDiff = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-diff.tsx",
+	);
+	const explorer = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-explorer.tsx",
+	);
+
+	for (const source of [editorDiff, explorer]) {
+		assert.match(source, /\[data-slot=scroll-area-scrollbar\]\]:opacity-0/u);
+		assert.match(source, /hover:\[&_\[data-slot=scroll-area-scrollbar\]\]:opacity-100/u);
+		assert.match(source, /focus-within:\[&_\[data-slot=scroll-area-scrollbar\]\]:opacity-100/u);
+	}
+});
+
 test("code review diff view preserves theme token contracts", () => {
 	const diffView = readProjectFile(
 		"components/blocks/code-review/components/diff-file-view.tsx",
@@ -27,17 +75,23 @@ test("code review diff view preserves theme token contracts", () => {
 	assert.match(diffView, /github-dark/u);
 });
 
-test("code review diff matches its top inset to the inline hunk inset", () => {
+test("code review diff restores the top inset above hunk content", () => {
 	const diffView = readProjectFile(
 		"components/blocks/code-review/components/diff-file-view.tsx",
 	);
 
-	assert.match(diffView, /\[data-diffs-header\] ~ \[data-diff\] \[data-code\]/u);
-	assert.match(
-		diffView,
-		/padding-top: var\(--diffs-gap-inline, var\(--diffs-gap-fallback\)\);/u,
+	assert.match(diffView, /DIFF_UNSAFE_CSS/u);
+	assert.match(diffView, /diffs-gap-inline/u);
+	assert.match(diffView, /unsafeCSS: DIFF_UNSAFE_CSS/u);
+});
+
+test("code review uses collapsible line-info hunk separators", () => {
+	const diffView = readProjectFile(
+		"components/blocks/code-review/components/diff-file-view.tsx",
 	);
-	assert.match(diffView, /unsafeCSS: DIFF_TOP_INSET_CSS/u);
+
+	assert.match(diffView, /hunkSeparators: "line-info"/u);
+	assert.match(diffView, /collapsedContextThreshold: 6/u);
 });
 
 test("code review extends Pierre gutter utilities and line annotations", () => {
@@ -52,15 +106,46 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	assert.match(diffView, /lineAnnotations=\{lineAnnotations\}/u);
 	assert.match(diffView, /enableGutterUtility: true/u);
 	assert.match(diffView, /lineHoverHighlight: "both"/u);
-	assert.match(diffView, /onLineNumberClick: \(\{ annotationSide, lineNumber \}\)/u);
+	assert.doesNotMatch(diffView, /onLineNumberClick/u);
 	assert.match(diffView, /renderAnnotation=\{\(\{ metadata \}\) => \(/u);
+	assert.match(
+		diffView,
+		/key=\{metadata\.kind === "draft" \? metadata\.draft\.id : metadata\.comment\.id\}/u,
+		"Pierre indexes annotation slots, so the rendered editor needs its own stable comment identity",
+	);
 	assert.match(diffView, /renderGutterUtility=\{\(getHoveredLine\) => \(/u);
 	assert.match(annotation, /aria-label="Add inline comment"/u);
+	assert.match(annotation, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
+	assert.match(
+		diffView,
+		/\[data-column-number\]:has\(\[data-gutter-utility-slot\]\) \[data-line-number-content\]/u,
+	);
+	assert.match(
+		annotation,
+		/className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-brand shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"/u,
+	);
 	assert.match(annotation, /event\.stopPropagation\(\)/u);
-	assert.match(annotation, /event\.key === "Enter" && \(event\.metaKey \|\| event\.ctrlKey\)/u);
 	assert.match(annotation, /event\.key === "Escape"/u);
 	assert.match(annotation, /disabled=\{!canCommit\}/u);
-	assert.match(annotation, />Local comment</u);
+	assert.match(annotation, /className="min-w-0 bg-surface-raised px-3 pb-3 pt-2 font-sans text-text"/u);
+	assert.match(annotation, /className="mb-2 text-xs font-semibold text-text-subtlest"/u);
+	assert.match(annotation, /Comment on line \{lineNumber\}/u);
+	assert.match(annotation, /aria-label=\{ariaLabel\}/u);
+	assert.match(annotation, /<PromptInputTextarea/u);
+	assert.match(annotation, /className="min-h-\[101px\] w-full rounded-xl/u);
+	assert.doesNotMatch(annotation, /min-h-20/u);
+	assert.match(annotation, /enableDirectoryAutocomplete=\{false\}/u);
+	assert.match(annotation, /enableSuggestionMenus=\{false\}/u);
+	assert.match(annotation, /placeholder=""/u);
+	assert.match(annotation, /<Button[\s\S]*type="button"[\s\S]*Cancel/u);
+	assert.match(annotation, /<Button disabled=\{!canCommit\} type="submit" variant="outline">[\s\S]*Comment/u);
+	assert.match(annotation, /const isEditing = body !== comment\.body;/u);
+	assert.match(annotation, /editorKey=\{comment\.body\}/u);
+	assert.match(annotation, /key=\{editorKey\}/u);
+	assert.match(annotation, /isEditing \? \([\s\S]*Cancel[\s\S]*Update[\s\S]*: \([\s\S]*Delete/u);
+	assert.match(annotation, /<Button disabled=\{!canUpdate\} type="submit" variant="outline">[\s\S]*Update/u);
+	assert.match(annotation, /onClick=\{\(\) => onDelete\(comment\.id\)\}[\s\S]*variant="outline"[\s\S]*Delete/u);
+	assert.doesNotMatch(annotation, /size="compact"/u);
 	assert.match(annotation, /aria-label=\{`Delete comment on/u);
 });
 
@@ -73,6 +158,7 @@ test("code review owns comment state across files and diff layouts", () => {
 	assert.match(source, /comments=\{inlineComments\.comments\}/u);
 	assert.match(source, /drafts=\{inlineComments\.drafts\}/u);
 	assert.match(source, /removeAllInlineComments/u);
+	assert.match(source, /updateInlineComment/u);
 	assert.match(source, /updateInlineCommentDraft/u);
 });
 
@@ -86,11 +172,15 @@ test("code review sends committed comments as one-turn composer context", () => 
 
 	assert.match(rail, /serializeInlineCommentsContext\(workItem, comments\)/u);
 	assert.match(rail, /composerInputContext=\{hasInlineComments \? \{/u);
-	assert.match(rail, /submitText: "Address these inline review comments\."/u);
-	assert.match(rail, /onSubmitted: onRemoveAllComments/u);
+	assert.match(rail, /const INLINE_REVIEW_PROMPT = "Address these inline review comments\.";/u);
+	assert.match(rail, /onSubmitStart: handleSubmitted/u);
+	assert.match(rail, /onReviewSubmit\?\.\(\{ comments, prompt: INLINE_REVIEW_PROMPT \}\);/u);
+	assert.match(rail, /onRemoveAllComments\(\);/u);
 	assert.match(rail, /contextDescription: inlineCommentsContext \|\| undefined/u);
 	assert.match(chip, /comments\.length === 1 \? "comment" : "comments"/u);
-	assert.match(chip, /Inline review comments/u);
+	assert.doesNotMatch(chip, /PopoverTitle|Inline review comments/u);
+	assert.match(chip, /Line \{comment\.lineNumber\}/u);
+	assert.doesNotMatch(chip, /New|Old|side · line/u);
 	assert.match(chip, /Remove all inline comments/u);
 });
 
@@ -114,7 +204,10 @@ test("Code Review composes its editor into a Canvas with the shared Code Reviewe
 	);
 
 	assert.match(source, /import \{ RovoCanvas \} from "@\/components\/blocks\/rovo-canvas\/page";/u);
-	assert.match(source, /<RovoCanvas[\s\S]*primaryActionLabel="Create pull request"/u);
+	assert.match(source, /primaryActionLabel = "Create pull request"/u);
+	assert.match(source, /<RovoCanvas[\s\S]*primaryActionLabel=\{primaryActionLabel\}/u);
+	assert.match(source, /onPrimaryAction=\{onPrimaryAction\}/u);
+	assert.match(source, /primaryActionMenu=\{showPrimaryActionMenu \? \(/u);
 	assert.match(source, /title=\{`\$\{workItem\.key\}: \$\{workItem\.title\}`\}/u);
 	assert.match(header, /label=\{`\$\{workItem\.key\}: \$\{workItem\.title\}`\}/u);
 	assert.match(source, /id: "code"/u);
@@ -124,10 +217,44 @@ test("Code Review composes its editor into a Canvas with the shared Code Reviewe
 		/headerStart=\{<CodeReviewCanvasHeader additions=\{additions\} deletions=\{deletions\} workItem=\{workItem\} \/>\}/u,
 	);
 	assert.match(source, /rightRail=\{[\s\S]*<CodeReviewCanvasRightRail/u);
-	assert.match(rail, /<ChatPanel[\s\S]*hideAiDisclaimer/u);
-	assert.match(rail, /<RovoChatProvider[\s\S]*autoSelectAgentId=\{CODE_REVIEWER_AGENT_ID\}/u);
-	assert.match(rail, /agentProfiles=\{\[CODE_REVIEWER_AGENT\]\}/u);
+	assert.match(source, /agentProfile\?: RovoAgentProfile/u);
+	assert.match(source, /agentProfile=\{agentProfile\}/u);
+	assert.match(source, /hideComposerSourceAndModelControls\?: boolean/u);
+	assert.match(source, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
+	assert.doesNotMatch(rail, /hideAiDisclaimer/u);
+	assert.match(rail, /agentProfile = CODE_REVIEWER_AGENT/u);
+	assert.match(rail, /<RovoChatProvider[\s\S]*autoSelectAgentId=\{agentProfile\.id\}/u);
+	assert.match(rail, /agentProfiles=\{\[agentProfile\]\}/u);
+	assert.match(rail, /centerEmptyGreeting/u);
+	assert.match(rail, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
+	assert.match(rail, /showAgentBackButton=\{false\}/u);
+	assert.match(rail, /showAgentSelector=\{false\}/u);
 	assert.match(rail, /<ChatPanel[\s\S]*headerVariant="minimal"/u);
+	assert.match(rail, /headerEndAction=\{\([\s\S]*aria-label=\{`Open \$\{agentProfile\.name\}`\}[\s\S]*LinkExternalIcon/u);
+});
+
+test("Code Review omits the dismiss placeholder for its persistent chat context", () => {
+	const rail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+
+	assert.match(rail, /iconName: "branch"/u);
+	assert.match(rail, /label: workItem\.localBranchName/u);
+	assert.match(rail, /signature: `code-review-branch:\$\{workItem\.localBranchName\}`/u);
+	assert.match(rail, /chatContextBar=\{\{[\s\S]*showDismissPlaceholder: false/u);
+});
+
+test("Code Review identifies the local device above its attached composer", () => {
+	const rail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+
+	assert.match(rail, /import DevicesIcon from "@atlaskit\/icon\/core\/devices";/u);
+	assert.match(rail, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
+	assert.match(
+		rail,
+		/composerSurfaceHeader=\{\([\s\S]*<IconTile[\s\S]*as="span"[\s\S]*className="text-icon-subtle"[\s\S]*icon=\{<DevicesIcon label="" size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="xxsmall"[\s\S]*variant="transparent"[\s\S]*Local · Carl’s MacBook Pro/u,
+	);
 });
 
 test("Code Review no longer owns a bespoke chat implementation", () => {
@@ -163,7 +290,7 @@ test("code review editor retains interaction contracts", () => {
 
 	assert.match(explorer, /from "@\/components\/ui-custom\/file-tree-2";/u);
 	assert.match(explorer, /<FileTree2/u);
-	assert.match(explorer, /CHANGED_FILES_ROOT_PATH/u);
+	assert.match(explorer, /const changedFilesRootPath = `\$\{rootPath\}\/CHANGED FILES`;/u);
 	assert.match(explorer, /fileIdsByPath\.get\(path\)/u);
 	assert.doesNotMatch(explorer, /FileTreeFile|FileTreeFolder/u);
 });
@@ -217,8 +344,12 @@ test("Code Review polish contracts hide duplicate headers and label the shared e
 
 	assert.match(diffView, /renderCustomHeader=\{\(\) => null\}/u);
 	assert.match(explorer, /aria-label="Code review files"/u);
-	assert.match(explorer, /"VSCODE\/package\.json": "renamed"/u);
-	assert.match(explorer, /"VSCODE\/node_modules": "ignored"/u);
+	assert.match(explorer, /hover:\[&_\[data-slot=scroll-area-scrollbar\]\]:opacity-100/u);
+	assert.match(explorer, /\[&_\[data-slot=scroll-area-scrollbar\]\]:opacity-0/u);
+	assert.match(explorer, /"package\.json": "renamed"/u);
+	assert.match(explorer, /"node_modules": "ignored"/u);
+	assert.match(explorer, /explorerRootLabel = CODE_REVIEW_ROOT_PATH/u);
+	assert.match(explorer, /defaultExpandedPaths=\{defaultExpandedPaths\}/u);
 });
 
 test("Code Review moves its shared artefact identity into the canvas header", () => {
@@ -234,6 +365,14 @@ test("Code Review moves its shared artefact identity into the canvas header", ()
 
 	assert.match(source, /showArtefactIdentity=\{false\}/u);
 	assert.match(header, /RovoCanvasArtefactIdentity/u);
+	assert.match(header, /icon=\{<TaskIcon label="" color=\{token\("color\.icon\.brand"\)\} \/>\}/u);
+	assert.match(header, /variant="blue"/u);
+	assert.match(
+		header,
+		/<span className="shrink-0 text-text">\{workItem\.branchName\}<\/span>[\s\S]*<MetadataPathValue path=\{workItem\.localBranchName\} \/>/u,
+	);
+	assert.doesNotMatch(header, /AngleBracketsIcon/u);
+	assert.doesNotMatch(header, /variant="blueBold"/u);
 	assert.doesNotMatch(header, /Lozenge/u);
 	assert.doesNotMatch(header, /workItem\.environment/u);
 	assert.match(canvas, /export function RovoCanvasArtefactIdentity/u);
@@ -275,14 +414,14 @@ test("Code Review owns its pull-request actions; the shared canvas header does n
 
 	// The code-review caller supplies the PR-specific split-menu items.
 	assert.match(codeReview, /primaryActionMenu=\{/u);
-	assert.match(codeReview, /Create draft PR/u);
+	assert.match(codeReview, /Create draft pull request/u);
 	assert.match(codeReview, /Commit &amp; Push/u);
 
 	// The shared header must NOT hardcode pull-request actions, so report and
 	// dashboard canvases (rfp report, sidebar-chat artifacts) never advertise
 	// capabilities they lack. It renders the split button only when a caller
 	// supplies primaryActionMenu, and a plain button otherwise.
-	assert.doesNotMatch(header, /Create draft PR/u);
+	assert.doesNotMatch(header, /Create draft pull request/u);
 	assert.doesNotMatch(header, /Commit &amp; Push/u);
 	assert.match(header, /primaryActionMenu \? \(/u);
 });

@@ -49,6 +49,18 @@ async function loadChatContextBarHarness() {
 			`,
 		],
 		[
+			"@atlaskit/icon/core/branch",
+			`
+				import React from "react";
+				export default function BranchIcon(props) {
+					return React.createElement("svg", {
+						"data-color": props.color,
+						"data-icon": "branch",
+					});
+				}
+			`,
+		],
+		[
 			"@atlaskit/icon/core/cross",
 			`
 				import React from "react";
@@ -186,7 +198,7 @@ test("ChatContextBar renders a non-dismissible truncated context chip", async ()
 	assert.match(markup, /RFP-101: Prepare for bid recommendation for ESM RFP/);
 	assert.match(markup, /data-icon="location"/);
 	assert.match(markup, /data-icon="work-item"/);
-	assert.match(CHAT_CONTEXT_BAR_SOURCE, /<Icon[\s\S]*render=\{<ContextIcon[\s\S]*\/?>/u);
+	assert.match(CHAT_CONTEXT_BAR_SOURCE, /<Icon[\s\S]*render=\{[\s\S]*<ContextIcon[\s\S]*\/?>/u);
 	assert.match(markup, /data-color="standard"/);
 	assert.match(markup, /data-max-width="100%"/);
 	assert.match(markup, /data-class="[^"]*min-w-0[^"]*"/);
@@ -220,6 +232,21 @@ test("ChatContextBar renders artifact edit context with an active dismiss afford
 	assert.match(markup, /<button/);
 	assert.doesNotMatch(markup, /Context:/);
 	assert.doesNotMatch(markup, /data-icon="location"/);
+});
+
+test("ChatContextBar renders a branch edit context", async () => {
+	const harness = await loadChatContextBarHarness();
+	const markup = harness.renderContextBar({
+		label: "carl/jgp-247-assignee-focus-mode",
+		iconName: "branch",
+		signature: "code-review-branch:carl/jgp-247-assignee-focus-mode",
+		variant: "edit",
+	});
+
+	assert.match(markup, /Edit:/);
+	assert.match(markup, /carl\/jgp-247-assignee-focus-mode/);
+	assert.match(markup, /data-color="color\.icon\.subtle" data-icon="branch"/);
+	assert.doesNotMatch(markup, /data-icon="page"/);
 });
 
 test("ChatContextBar can omit the non-interactive dismiss placeholder", async () => {

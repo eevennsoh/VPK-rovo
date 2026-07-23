@@ -42,7 +42,7 @@ export interface JiraAgentSessionItem {
 	completedSecondsAgo?: number;
 	/**
 	 * Pull-request status. Omit while the agent is still working pre-PR or
-	 * awaiting user input; the metadata row still identifies the agent.
+	 * waiting for input; the metadata row still identifies the agent.
 	 */
 	prStatus?: JiraAgentSessionPrStatus;
 }

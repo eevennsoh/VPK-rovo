@@ -32,9 +32,11 @@ function SectionLabel({ label }: Readonly<{ label: string }>) {
 function ItemList({
 	items,
 	onItemClick,
+	onView,
 }: Readonly<{
 	items: readonly JiraForYouItem[];
 	onItemClick?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem) => void;
 }>) {
 	return (
 		<ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
@@ -43,6 +45,7 @@ function ItemList({
 					item={item}
 					key={item.id}
 					onItemClick={onItemClick}
+					onView={onView}
 				/>
 			))}
 		</ul>
@@ -51,9 +54,11 @@ function ItemList({
 
 export function JiraForYouSectionGroup({
 	onItemClick,
+	onView,
 	section,
 }: Readonly<{
 	onItemClick?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem) => void;
 	section: JiraForYouSection;
 }>) {
 	const [open, setOpen] = useState(true);
@@ -64,7 +69,7 @@ export function JiraForYouSectionGroup({
 				<div className="flex h-8 items-center">
 					<SectionLabel label={section.label} />
 				</div>
-				<ItemList items={section.items} onItemClick={onItemClick} />
+				<ItemList items={section.items} onItemClick={onItemClick} onView={onView} />
 			</section>
 		);
 	}
@@ -90,7 +95,7 @@ export function JiraForYouSectionGroup({
 				/>
 			</CollapsibleTrigger>
 			<CollapsibleContent>
-				<ItemList items={section.items} onItemClick={onItemClick} />
+				<ItemList items={section.items} onItemClick={onItemClick} onView={onView} />
 			</CollapsibleContent>
 		</Collapsible>
 	);

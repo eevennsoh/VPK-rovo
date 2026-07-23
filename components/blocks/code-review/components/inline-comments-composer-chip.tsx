@@ -4,7 +4,7 @@ import CommentIcon from "@atlaskit/icon/core/comment";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import type { InlineReviewComment } from "../lib/inline-comments";
 
@@ -45,9 +45,6 @@ export function InlineCommentsComposerChip({
 					side="top"
 					sideOffset={8}
 				>
-					<PopoverTitle className="border-b border-border px-3 py-2 text-sm">
-						Inline review comments
-					</PopoverTitle>
 					<ul className="divide-y divide-border">
 						{comments.map((comment) => (
 							<li className="min-w-0 px-3 py-2" key={comment.id}>
@@ -55,7 +52,7 @@ export function InlineCommentsComposerChip({
 									{comment.filePath}
 								</div>
 								<div className="mt-0.5 text-xs text-text-subtle">
-									{comment.side === "additions" ? "New" : "Old"} side · line {comment.lineNumber}
+									Line {comment.lineNumber}
 								</div>
 								<p className="mt-1 whitespace-pre-wrap break-words text-sm text-text">{comment.body}</p>
 							</li>

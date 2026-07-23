@@ -39,6 +39,7 @@ export type TerminalBeatStep =
 	| { kind: "type"; pane: "left" | "right"; text: string }
 	| { kind: "submit"; pane: "left" | "right" }
 	| { kind: "output"; pane: "left" | "right"; lines: readonly TerminalLine[] }
+	| { kind: "set-working"; pane: "left" | "right"; working: boolean }
 	| { kind: "show-dashboard" }
 	| { kind: "board"; events: readonly TerminalBoardEvent[] }
 	| { kind: "pause"; ms: number };
@@ -54,6 +55,7 @@ export interface TerminalBeat {
 export interface TerminalPaneState {
 	transcript: TerminalLine[];
 	promptDraft: string;
+	working: boolean;
 }
 
 export interface TerminalDemoState {
@@ -83,8 +85,8 @@ export function createInitialTerminalDemoState(): TerminalDemoState {
 		stepIndex: 0,
 		settled: true,
 		finished: false,
-		left: { transcript: [], promptDraft: "" },
-		right: { transcript: [], promptDraft: "" },
+		left: { transcript: [], promptDraft: "", working: false },
+		right: { transcript: [], promptDraft: "", working: false },
 		items: [],
 	};
 }
@@ -142,6 +144,7 @@ export function applyStep(state: TerminalDemoState, step: TerminalBeatStep): Ter
 			return updatePane(state, step.pane, (pane) => ({ ...pane, promptDraft: step.text }));
 		case "submit":
 			return updatePane(state, step.pane, (pane) => ({
+				...pane,
 				transcript: [...pane.transcript, formatSubmittedLine(step.pane, pane.promptDraft)],
 				promptDraft: "",
 			}));
@@ -150,6 +153,8 @@ export function applyStep(state: TerminalDemoState, step: TerminalBeatStep): Ter
 				...pane,
 				transcript: [...pane.transcript, ...step.lines],
 			}));
+		case "set-working":
+			return updatePane(state, step.pane, (pane) => ({ ...pane, working: step.working }));
 		case "board":
 			return { ...state, items: step.events.reduce(applyBoardEvent, state.items as TerminalWorkItem[]) };
 		case "pause":

@@ -3,6 +3,7 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
 import BoardIcon from "@atlaskit/icon/core/board";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LocationIcon from "@atlaskit/icon/core/location";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -32,6 +33,7 @@ const ICON_MAP: Record<ChatContextBarIconName, typeof BoardIcon> = {
 	agent: PersonIcon,
 	artifact: PageIcon,
 	board: BoardIcon,
+	branch: BranchIcon,
 	"work-item": WorkItemIcon,
 };
 
@@ -63,7 +65,17 @@ export default function ChatContextBar({
 		<Icon
 			aria-hidden
 			className="size-4"
-			render={<ContextIcon color={token("color.icon.brand")} label="" size="small" />}
+			render={
+				<ContextIcon
+					color={token(
+						context.iconName === "branch"
+							? "color.icon.subtle"
+							: "color.icon.brand",
+					)}
+					label=""
+					size="small"
+				/>
+			}
 		/>
 	);
 

@@ -31,7 +31,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const TYPE_MS_PER_CHAR = 28;
-const OUTPUT_MS_PER_LINE = 120;
+const OUTPUT_MS_PER_LINE = 280;
 const OUTPUT_LEAD_IN_MS = 300;
 const BOARD_MS_PER_EVENT = 350;
 
@@ -160,7 +160,12 @@ export function useTerminalDemo(
 			scheduleReveal(total, perUnitMs, performance.now());
 		};
 
-		if (step.kind === "split" || step.kind === "show-dashboard" || step.kind === "submit") {
+		if (
+			step.kind === "split"
+			|| step.kind === "show-dashboard"
+			|| step.kind === "submit"
+			|| step.kind === "set-working"
+		) {
 			scheduleTimer(() => dispatch({ type: "commit-step" }), 0);
 		} else if (step.kind === "pause") {
 			scheduleTimer(() => dispatch({ type: "commit-step" }), step.ms);

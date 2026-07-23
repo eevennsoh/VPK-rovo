@@ -118,7 +118,7 @@ export function TmuxStatusBar({
 		<div className="flex h-6 shrink-0 items-center justify-between border-t border-border bg-bg-neutral-subtle px-3 text-xs text-text-subtle">
 			<div className="flex items-center gap-3">
 				<span className="text-green-400">[jira-golden-paths]</span>
-				<span>{split ? "0:jira 1:claude*" : "0:claude*"}</span>
+				<span>{split ? "0:twg 1:claude*" : "0:claude*"}</span>
 			</div>
 			<div className="flex items-center gap-3">
 				<span>

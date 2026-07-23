@@ -110,6 +110,9 @@ test("JGP Rovo surfaces render at viewport level above the Gallery dock", () => 
 	assert.match(ROVO_OVERLAY_SOURCE, /createPortal/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /document\.body/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<FloatingRovoButton/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /document\.documentElement\.dataset\.rovoCanvasOpen === "true"/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /new MutationObserver\(updateRovoCanvasOpen\)/u);
+	assert.match(ROVO_OVERLAY_SOURCE, /chatSurface === null && !isRovoCanvasOpen/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /<RovoFloatingChat/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /chatContextBar=\{chatContextBar\}/u);
 	assert.match(ROVO_OVERLAY_SOURCE, /hideComposerSourceAndModelControls/u);
@@ -126,14 +129,15 @@ test("JGP Rovo stage matches the sidebar chat project dimensions", () => {
 	assert.doesNotMatch(ROVO_STAGE_SOURCE, /max-h-\[680px\]|max-w-\[440px\]/u);
 });
 
-test("JGP Rovo history reuses the three Queue sessions and swaps agent plus transcript", () => {
-	assert.match(ROVO_STAGE_SOURCE, /useState<AsxQueueSession\[\]>\(\(\) => \([\s\S]*ASX_QUEUE_SESSION_SEEDS\.map/u);
+test("JGP Rovo history reuses Queue session behavior with route-owned global-story sessions", () => {
+	assert.match(ROVO_STAGE_SOURCE, /useState<AsxQueueSession\[\]>\(\(\) => \([\s\S]*JGP_ROVO_SESSION_SEEDS\.map/u);
+	assert.match(ROVO_STAGE_SOURCE, /scenario === "pr-review" \? "jgp-252-pr-review" : "jgp-251-persistence-question"/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueHistoryThreads\(orderedHistorySessions\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /createAsxQueueSidebarSessionItem\(session\)/u);
 	assert.match(ROVO_STAGE_SOURCE, /description: <JiraSessionDescription session=\{session\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /meta: <JiraSessionLifecycle status=\{session\.status\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /session\.status === "awaiting-input"/u);
-	assert.match(ROVO_STAGE_SOURCE, /Awaiting user response/u);
+	assert.match(ROVO_STAGE_SOURCE, /Waiting for input/u);
 	assert.match(ROVO_STAGE_SOURCE, /<AnimatedDots \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /: <JiraSessionLabel session=\{session\} \/>/u);
 	assert.match(ROVO_STAGE_SOURCE, /getThreadPresentation,/u);
@@ -144,6 +148,7 @@ test("JGP Rovo history reuses the three Queue sessions and swaps agent plus tran
 	assert.match(ROVO_STAGE_SOURCE, /getThreadActions,/u);
 	assert.match(ROVO_STAGE_SOURCE, /pinnedThreadIds,/u);
 	assert.match(ROVO_STAGE_SOURCE, /chatHistory=\{chatHistory\}/u);
+	assert.match(ROVO_STAGE_SOURCE, /inlineArtifactDocuments=\{JGP_ROVO_ARTIFACT_DOCUMENTS\}/u);
 	assert.match(
 		ROVO_STAGE_SOURCE,
 		/resetChat\(\);[\s\S]*selectAgent\(session\.agentId, \{ preserveCurrentThread: true \}\);[\s\S]*replaceMessages\(thread\.messages\);[\s\S]*setActiveHistorySessionId\(threadId\);/u,
@@ -174,7 +179,11 @@ test("JGP Rovo reuses the Queue session context bar above its composer", () => {
 	assert.match(QUEUE_WORKSPACE_SOURCE, /export function QueueSessionContextBar/u);
 	assert.match(ROVO_STAGE_SOURCE, /import \{ QueueSessionContextBar \} from "@\/components\/projects\/jira-queue\/components\/queue-conversation-workspace";/u);
 	assert.match(ROVO_STAGE_SOURCE, /dismissQueueSessionFileChanges\(sessions, activeHistorySessionId\)/u);
-	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionJiraColumn\(sessions, activeHistorySessionId, jiraColumn\)/u);
+	assert.match(ROVO_STAGE_SOURCE, /setQueueSessionJiraColumn\([\s\S]*sessions,[\s\S]*activeHistorySessionId,[\s\S]*jiraColumn,[\s\S]*\)/u);
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/jiraColumn === "Done"[\s\S]*\{ \.\.\.session, status: "merged" \}/u,
+	);
 	assert.match(
 		ROVO_STAGE_SOURCE,
 		/composerContextBar=\{activeHistorySession \? \([\s\S]*<QueueSessionContextBar[\s\S]*compact[\s\S]*session=\{activeHistorySession\}/u,

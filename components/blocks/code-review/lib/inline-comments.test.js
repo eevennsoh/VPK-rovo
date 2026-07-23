@@ -103,6 +103,17 @@ test("individual and bulk removal leave unfinished drafts untouched", async () =
 	assert.deepEqual(afterAll.drafts, [draft]);
 });
 
+test("committed inline comments can be updated without changing their anchor", async () => {
+	const { updateInlineComment } = await model;
+	const comment = createDraft("comment-1", { body: "Original" });
+	const state = { drafts: [], comments: [comment] };
+
+	const updated = updateInlineComment(state, "comment-1", "  Revised wording  ");
+
+	assert.deepEqual(updated.comments, [{ ...comment, body: "Revised wording" }]);
+	assert.equal(updateInlineComment(updated, "comment-1", "   "), updated);
+});
+
 test("line text resolution uses one-based old and new source lines", async () => {
 	const { resolveInlineCommentLineText } = await model;
 	const file = createFile();

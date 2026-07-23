@@ -151,15 +151,11 @@ test("script integrity: exactly one click-trigger beat and it is the split beat"
 	assert.equal(clickBeats[0].id, "split");
 });
 
-test("script integrity: after the Jira connect sequence, typed input goes to Claude Code", async () => {
+test("script integrity: after TwG loads context, typed input goes to Claude Code", async () => {
 	const harness = await loadTerminalStateHarness();
-	// Everything up to and including the `connect` beat is Jira-pane (left) setup;
-	// every input step after it must target the Claude (right) pane. Derived from
-	// the `connect` beat id rather than a fixed index so inserting pause beats
-	// (e.g. `connect-typed`) doesn't silently break the invariant.
-	const connectIndex = harness.TERMINAL_DEMO_BEATS.findIndex((beat) => beat.id === "connect");
-	assert.ok(connectIndex >= 0, "expected a `connect` beat");
-	const laterInputSteps = harness.TERMINAL_DEMO_BEATS.slice(connectIndex + 1).flatMap((beat) => (
+	const contextIndex = harness.TERMINAL_DEMO_BEATS.findIndex((beat) => beat.id === "context-loaded");
+	assert.ok(contextIndex >= 0, "expected a `context-loaded` beat");
+	const laterInputSteps = harness.TERMINAL_DEMO_BEATS.slice(contextIndex + 1).flatMap((beat) => (
 		beat.steps.filter((step) => step.kind === "type" || step.kind === "submit")
 	));
 
@@ -191,18 +187,81 @@ test("Jira dashboard compositor hints are removed in reduced motion", () => {
 	assert.doesNotMatch(TERMINAL_JIRA_PANE_SOURCE, /style=\{\{ willChange:/u);
 });
 
-test("script integrity: final board counts and every done item has a PR", async () => {
+test("script integrity: Carl's selected work ends merged while the remaining backlog stays available", async () => {
 	const harness = await loadTerminalStateHarness();
 	const final = harness.foldBeats(harness.TERMINAL_DEMO_BEATS, harness.TERMINAL_DEMO_BEATS.length - 1);
 	const counts = harness.getBoardCounts(final.items);
 
-	assert.deepEqual(counts, { awaiting: 0, completed: 6, working: 0 });
+	assert.deepEqual(counts, { awaiting: 0, completed: 1, working: 0 });
 
 	const sections = harness.getBoardSections(final.items);
-	assert.equal(sections.done.length, 6);
-	for (const doneItem of sections.done) {
-		assert.ok(doneItem.pr, `${doneItem.key} is done but has no PR`);
-	}
+	assert.deepEqual(sections.backlog.map(({ key }) => key), ["JGP-231", "JGP-244", "JGP-217"]);
+	assert.deepEqual(sections.done.map(({ key, title, pr }) => ({ key, title, pr })), [
+		{
+			key: "JGP-247",
+			title: "Add assignee focus mode",
+			pr: { number: 247, state: "merged" },
+		},
+	]);
+});
+
+test("script tells the approved TwG, review handoff, follow-up commit, and merge story", async () => {
+	const harness = await loadTerminalStateHarness();
+	assert.deepEqual(
+		harness.TERMINAL_DEMO_BEATS.map((beat) => beat.id),
+		[
+			"split",
+			"start-work-typed",
+			"backlog-loaded",
+			"inspect-work",
+			"context-loaded",
+			"implementation",
+			"review-handoff",
+			"revision",
+			"follow-up-commit",
+			"merge",
+		],
+	);
+
+	const allText = harness.TERMINAL_DEMO_BEATS.flatMap((beat) => beat.steps).flatMap((step) => {
+		if (step.kind === "type") return [step.text];
+		if (step.kind === "output") return step.lines.flatMap((line) => line.map((span) => span.text));
+		return [];
+	}).join("\n");
+
+	assert.match(allText, /^twg start-work$/mu);
+	assert.match(allText, /Explain JGP-247\. Include the issue, linked design notes, and implementation risks\./u);
+	assert.match(allText, /get Jira issue JGP-247/u);
+	assert.match(allText, /⎿ Goal ·/u);
+	assert.match(allText, /⎿ Acceptance ·/u);
+	assert.match(allText, /⎿ Risk ·/u);
+	assert.match(allText, /twg start-work JGP-247/u);
+	assert.doesNotMatch(allText, /Show me the tools and checks/u);
+	assert.doesNotMatch(allText, /AI-ready context shared with Claude Code/u);
+	assert.match(allText, /⏺ Read ·/u);
+	assert.match(allText, /⏺ Search ·/u);
+	assert.match(allText, /⏺ Edit ·/u);
+	assert.match(allText, /⏺ Test ·/u);
+	assert.match(allText, /⏺ Bash ·/u);
+	assert.match(allText, /kanban-lifecycle\.test\.js · 7 passed/u);
+	assert.match(allText, /pnpm run typecheck · passed/u);
+	assert.doesNotMatch(allText, /  ·  /u);
+	assert.match(allText, /⏺ GitHub ·/u);
+	assert.match(allText, /preserve Shift-selection against the visible filtered order/u);
+	assert.match(allText, /fix\(jira\): preserve range selection while filtered/u);
+	assert.match(allText, /PR #247 merged into main/u);
+	assert.match(allText, /All checks passing · ready for your review/u);
+	assert.doesNotMatch(allText, /Carl's review/u);
+	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 4).right.working, true);
+	assert.equal(harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 5).right.working, false);
+
+	const toolSpans = harness.TERMINAL_DEMO_BEATS.flatMap((beat) => beat.steps)
+		.filter((step) => step.kind === "output")
+		.flatMap((step) => step.lines)
+		.flatMap((line) => line)
+		.filter((span) => span.text.startsWith("⏺"));
+	assert.ok(toolSpans.length > 0, "expected Claude tool invocations");
+	for (const span of toolSpans) assert.equal(span.tone, "brand");
 });
 
 test("reducer control flow: commit-step past the last step keeps state settled", async () => {
@@ -238,14 +297,14 @@ test("reducer control flow: step-back rolls back to the previous beat's settled 
 	assert.deepEqual(back, harness.foldBeats(harness.TERMINAL_DEMO_BEATS, lastIndex - 1));
 
 	// Mid-beat rollback discards in-flight progress and lands on the prior beat.
-	// `connect-typed` (beat 1) is single-step, so use the multi-step `connect`
+	// `start-work-typed` (beat 1) is single-step, so use the multi-step backlog
 	// beat (beat 2) to land mid-animation.
 	let mid = harness.createInitialTerminalDemoState();
 	mid = reducer(mid, { type: "begin-beat" }); // beat 0 (split)
 	mid = reducer(mid, { type: "commit-step" }); // settle split
-	mid = reducer(mid, { type: "begin-beat" }); // beat 1 (connect-typed)
-	mid = reducer(mid, { type: "commit-step" }); // settle connect-typed
-	mid = reducer(mid, { type: "begin-beat" }); // beat 2 (connect)
+	mid = reducer(mid, { type: "begin-beat" }); // beat 1 (start-work-typed)
+	mid = reducer(mid, { type: "commit-step" }); // settle start-work-typed
+	mid = reducer(mid, { type: "begin-beat" }); // beat 2 (backlog-loaded)
 	mid = reducer(mid, { type: "commit-step" }); // one step in, unsettled
 	assert.equal(mid.settled, false);
 	assert.deepEqual(reducer(mid, { type: "step-back" }), harness.foldBeats(harness.TERMINAL_DEMO_BEATS, 1));
@@ -283,8 +342,8 @@ test("reducer control flow: begin-beat while unsettled is a no-op", async () => 
 	const harness = await loadTerminalStateHarness();
 	const reducer = harness.createTerminalDemoReducer(harness.TERMINAL_DEMO_BEATS);
 	let state = harness.createInitialTerminalDemoState();
-	// Beats 0 ("split") and 1 ("connect-typed") are single-step, so settle both
-	// first, then begin beat 2 ("connect", multi-step) and commit only its first
+	// Beats 0 ("split") and 1 ("start-work-typed") are single-step, so settle both
+	// first, then begin beat 2 ("backlog-loaded", multi-step) and commit only its first
 	// step to land mid-beat.
 	state = reducer(state, { type: "begin-beat" });
 	state = reducer(state, { type: "commit-step" });

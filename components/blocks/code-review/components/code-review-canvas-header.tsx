@@ -1,12 +1,13 @@
 "use client";
 
-import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import TaskIcon from "@atlaskit/icon/core/task";
 
 import { RovoCanvasArtefactIdentity } from "@/components/blocks/rovo-canvas/page";
 import { IconTile } from "@/components/ui/icon-tile";
 import { GithubLogo } from "@/components/ui/logo-third-party";
 import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
+import { token } from "@/lib/tokens";
 
 import type { CodeReviewWorkItem } from "../data/types";
 
@@ -24,10 +25,10 @@ export function CodeReviewCanvasHeader({
 	return (
 		<div className="flex min-w-0 items-center gap-2 px-2">
 			<IconTile
-				icon={<AngleBracketsIcon label="" size="small" />}
-				label="Code review"
+				icon={<TaskIcon label="" color={token("color.icon.brand")} />}
+				label="Task"
 				size="medium"
-				variant="blueBold"
+				variant="blue"
 			/>
 			<RovoCanvasArtefactIdentity
 				label={`${workItem.key}: ${workItem.title}`}
@@ -40,10 +41,10 @@ export function CodeReviewCanvasHeader({
 						<span aria-hidden="true">·</span>
 						<span className="flex min-w-0 items-center gap-1">
 							<BranchIcon label="" size="small" />
-							<span className="shrink-0 text-text">{workItem.localBranchName}</span>
+							<span className="shrink-0 text-text">{workItem.branchName}</span>
 							<span aria-hidden="true">→</span>
-							<MetadataPathLink segmented title={workItem.branchName}>
-								<MetadataPathValue path={workItem.branchName} />
+							<MetadataPathLink segmented title={workItem.localBranchName}>
+								<MetadataPathValue path={workItem.localBranchName} />
 							</MetadataPathLink>
 						</span>
 						<span aria-hidden="true">·</span>

@@ -15,7 +15,7 @@ import { TerminalStageJiraPane } from "./terminal-stage-jira-pane";
 //
 // A single tmux-style window telling the story "monitor your Jira work and
 // code at the same time": a Claude Code session (right) and an invented
-// "Jira CLI" sessions dashboard (left) that live-updates as Claude works.
+// TwG connected-work dashboard (left) that live-updates as Claude works.
 // Presenter-paced: click the frame to split, then →/Space/click advances
 // each beat (see `useTerminalDemo`). Advance affordance lives inside the
 // frame (status-bar hint + keyboard); the top bar only shows beat progress.

@@ -41,23 +41,25 @@ function JiraActivitySessionTime({ item, fallback }: Readonly<{
 function JiraActivityViewAction({
 	item,
 	onView,
+	viewActionLabel,
 }: Readonly<{
 	item: JiraAgentSessionItem;
 	onView?: (item: JiraAgentSessionItem) => void;
+	viewActionLabel: "Open" | "View";
 }>) {
 	const handleView = () => onView?.(item);
 
 	return (
 		<Button
-			aria-label={`Open ${item.agent.name}`}
+			aria-label={`${viewActionLabel} ${item.agent.name}`}
 			className="shrink-0 gap-1"
 			onClick={handleView}
 			size="compact"
 			type="button"
 			variant="outline"
 		>
-			Open
-			<LinkExternalIcon label="" size="small" />
+			{viewActionLabel}
+			{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
 		</Button>
 	);
 }
@@ -71,15 +73,19 @@ export function JiraActivityChangedFiles({
 	footer,
 	onOutputOpen,
 	onView,
+	outputOpenLabel = "Open",
 	status = "done",
 	variant = "activity",
+	viewActionLabel = "Open",
 }: Readonly<{
 	entry: JiraActivityChangedFilesEntry;
 	footer?: ReactNode;
 	onOutputOpen?: (item: ArtifactListItem) => void;
 	onView?: (item: JiraAgentSessionItem) => void;
+	outputOpenLabel?: "Open" | "View";
 	status?: "done" | "failed" | "review";
 	variant?: "activity" | "jira-issue";
+	viewActionLabel?: "Open" | "View";
 }>) {
 	if (entry.sessionItem && entry.outputs) {
 		const isJiraIssue = variant === "jira-issue";
@@ -133,7 +139,11 @@ export function JiraActivityChangedFiles({
 							<span className="truncate">{entry.sessionItem.agent.name}</span>
 						</div>
 					</div>
-					<JiraActivityViewAction item={entry.sessionItem} onView={onView} />
+					<JiraActivityViewAction
+						item={entry.sessionItem}
+						onView={onView}
+						viewActionLabel={viewActionLabel}
+					/>
 				</div>
 				{entry.description ? (
 					<p className={cn("px-3 text-sm leading-5 text-text", isJiraIssue ? "pb-2" : "pb-3")}>
@@ -146,6 +156,7 @@ export function JiraActivityChangedFiles({
 						className={isJiraIssue ? "mx-3 rounded-lg" : "rounded-none border-x-0 border-b-0"}
 						items={entry.outputs}
 						onOpen={onOutputOpen}
+						openLabel={outputOpenLabel}
 						variant="compact"
 					/>
 				) : null}

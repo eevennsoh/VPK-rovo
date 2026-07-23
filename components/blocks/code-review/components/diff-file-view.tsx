@@ -31,12 +31,21 @@ interface DiffFileViewProps {
 	onCancelDraft: (draftId: string) => void;
 	onCommitDraft: (draftId: string) => void;
 	onDeleteComment: (commentId: string) => void;
+	onUpdateComment: (commentId: string, body: string) => void;
 	onUpdateDraft: (draftId: string, body: string) => void;
 }
 
-const DIFF_TOP_INSET_CSS = `
+const DIFF_UNSAFE_CSS = `
 [data-diffs-header] ~ [data-diff] [data-code] {
 	padding-top: var(--diffs-gap-inline, var(--diffs-gap-fallback));
+}
+
+[data-column-number]:has([data-gutter-utility-slot]) [data-line-number-content] {
+	visibility: hidden;
+}
+
+[data-column-number]:has([data-gutter-utility-slot]) [data-gutter-utility-slot] {
+	z-index: 5;
 }
 `;
 
@@ -50,6 +59,7 @@ export function DiffFileView({
 	onCancelDraft,
 	onCommitDraft,
 	onDeleteComment,
+	onUpdateComment,
 	onUpdateDraft,
 }: Readonly<DiffFileViewProps>) {
 	const { actualTheme } = useTheme();
@@ -100,25 +110,26 @@ export function DiffFileView({
 			}}
 			lineAnnotations={lineAnnotations}
 			options={{
+				collapsedContextThreshold: 6,
 				diffStyle: layout,
 				enableGutterUtility: true,
+				hunkSeparators: "line-info",
 				lineHoverHighlight: "both",
-				onLineNumberClick: ({ annotationSide, lineNumber }) => {
-					handleAddComment(annotationSide, lineNumber);
-				},
 				theme: {
 					light: "github-light",
 					dark: "github-dark",
 				},
 				themeType: actualTheme,
-				unsafeCSS: DIFF_TOP_INSET_CSS,
+				unsafeCSS: DIFF_UNSAFE_CSS,
 			}}
 			renderAnnotation={({ metadata }) => (
 				<InlineCommentAnnotation
+					key={metadata.kind === "draft" ? metadata.draft.id : metadata.comment.id}
 					metadata={metadata}
 					onCancelDraft={onCancelDraft}
 					onCommitDraft={onCommitDraft}
 					onDeleteComment={onDeleteComment}
+					onUpdateComment={onUpdateComment}
 					onUpdateDraft={onUpdateDraft}
 				/>
 			)}

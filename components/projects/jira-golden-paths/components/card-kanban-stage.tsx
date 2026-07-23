@@ -159,7 +159,7 @@ export function CardKanbanStage({ controller }: Readonly<CardKanbanStageProps>):
 			}
 
 			const selection = getJgpGenerativeAgentSelection(request);
-			const activity = createJgpKanbanActivity(selection.id, false, selection);
+			const activity = createJgpKanbanActivity(selection.id, selection);
 			setAddedAgentActivities((current) => current.some((candidate) => candidate.id === activity.id)
 				? current
 				: [...current, activity]);

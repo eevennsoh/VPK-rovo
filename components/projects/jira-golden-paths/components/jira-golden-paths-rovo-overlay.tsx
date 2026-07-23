@@ -28,9 +28,23 @@ export function JgpRovoOverlay({
 }: Readonly<JgpRovoOverlayProps>): React.ReactNode {
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+	const [isRovoCanvasOpen, setIsRovoCanvasOpen] = useState(false);
 
 	useEffect(() => {
 		setPortalRoot(document.body);
+
+		const updateRovoCanvasOpen = () => {
+			setIsRovoCanvasOpen(document.documentElement.dataset.rovoCanvasOpen === "true");
+		};
+		updateRovoCanvasOpen();
+
+		const observer = new MutationObserver(updateRovoCanvasOpen);
+		observer.observe(document.documentElement, {
+			attributeFilter: ["data-rovo-canvas-open"],
+			attributes: true,
+		});
+
+		return () => observer.disconnect();
 	}, []);
 
 	const handleQuestionAnswer = useCallback(() => ({
@@ -44,7 +58,7 @@ export function JgpRovoOverlay({
 
 	return createPortal(
 		<>
-			{chatSurface === null ? (
+			{chatSurface === null && !isRovoCanvasOpen ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible

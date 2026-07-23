@@ -10,6 +10,7 @@ import { EditorDiff } from "./editor-diff";
 import { EditorExplorer } from "./editor-explorer";
 
 interface EditorPanelProps {
+	explorerRootLabel?: string;
 	file: ChangedFile;
 	files: readonly ChangedFile[];
 	layout: DiffLayout;
@@ -20,12 +21,14 @@ interface EditorPanelProps {
 	onCancelDraft: (draftId: string) => void;
 	onCommitDraft: (draftId: string) => void;
 	onDeleteComment: (commentId: string) => void;
+	onUpdateComment: (commentId: string, body: string) => void;
 	onFileSelect: (fileId: string) => void;
 	onLayoutChange: (layout: DiffLayout) => void;
 	onUpdateDraft: (draftId: string, body: string) => void;
 }
 
 export function EditorPanel({
+	explorerRootLabel,
 	file,
 	files,
 	layout,
@@ -36,13 +39,19 @@ export function EditorPanel({
 	onCancelDraft,
 	onCommitDraft,
 	onDeleteComment,
+	onUpdateComment,
 	onFileSelect,
 	onLayoutChange,
 	onUpdateDraft,
 }: Readonly<EditorPanelProps>) {
 	return (
 		<section className="grid size-full min-h-0 grid-cols-[240px_minmax(0,1fr)]">
-			<EditorExplorer files={files} onFileSelect={onFileSelect} selectedFileId={selectedFileId} />
+			<EditorExplorer
+				explorerRootLabel={explorerRootLabel}
+				files={files}
+				onFileSelect={onFileSelect}
+				selectedFileId={selectedFileId}
+			/>
 			<EditorDiff
 				comments={comments}
 				drafts={drafts}
@@ -52,6 +61,7 @@ export function EditorPanel({
 				onCancelDraft={onCancelDraft}
 				onCommitDraft={onCommitDraft}
 				onDeleteComment={onDeleteComment}
+				onUpdateComment={onUpdateComment}
 				onLayoutChange={onLayoutChange}
 				onUpdateDraft={onUpdateDraft}
 			/>

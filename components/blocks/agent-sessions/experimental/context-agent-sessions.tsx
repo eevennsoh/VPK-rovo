@@ -45,10 +45,11 @@ interface AgentSessionsProviderProps {
 	/** Whether the surface is open/visible; gates the running metronome so preset
 	 * sessions stay pristine until the viewer opens the surface. */
 	active?: boolean;
+	initialState?: AgentSessionsState;
 }
 
-export function AgentSessionsProvider({ children, initialPreset, workItem, active = true }: Readonly<AgentSessionsProviderProps>) {
-	const { state, actions } = useAgentSessionsController(initialPreset, workItem, active);
+export function AgentSessionsProvider({ children, initialPreset, initialState, workItem, active = true }: Readonly<AgentSessionsProviderProps>) {
+	const { state, actions } = useAgentSessionsController(initialPreset, workItem, active, initialState);
 
 	const meta = useMemo<AgentSessionsMeta>(
 		() => ({
