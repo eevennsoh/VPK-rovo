@@ -6,7 +6,7 @@
 // the tab is hidden (visibilitychange). Reduced-motion users get a
 // static representative frame that still follows the live theme.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CanvasHTMLAttributes } from "react";
 import { MODE_DRAWS } from "./engine/registry";
 import { resolvePreset } from "./presets";
 import { useReducedMotion, useResolvedDark } from "./theme";
@@ -34,6 +34,9 @@ export function ThinkingOrb({
 	const ref = useRef<HTMLCanvasElement | null>(null);
 	const dark = useResolvedDark(theme, ref);
 	const reduced = useReducedMotion();
+	const canvasProps = { ...rest } as CanvasHTMLAttributes<HTMLCanvasElement>;
+	delete canvasProps.width;
+	delete canvasProps.height;
 
 	useEffect(() => {
 		const canvas = ref.current;
@@ -113,7 +116,7 @@ export function ThinkingOrb({
 			role="img"
 			aria-label={ariaLabel ?? LABELS[state]}
 			style={{ width: size, height: size, display: "block", ...style }}
-			{...rest}
+			{...canvasProps}
 		/>
 	);
 }
