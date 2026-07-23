@@ -12,6 +12,7 @@ const COMPONENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "ThinkingOrb.tsx"),
 	"utf8",
 );
+const TYPES_SOURCE = fs.readFileSync(path.join(__dirname, "types.ts"), "utf8");
 const THEME_SOURCE = fs.readFileSync(path.join(__dirname, "theme.ts"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(
 	path.join(ROOT, "components/website/demos/visual/thinking-orbs-demo.tsx"),
@@ -72,6 +73,16 @@ test("Thinking Orb preserves accessibility, reduced motion, and visibility pausi
 		THEME_SOURCE,
 		/useState\(\s*\(\) =>\s*typeof matchMedia !== "undefined"/,
 	);
+});
+
+test("Thinking Orb reserves canvas backing dimensions for the size prop", () => {
+	assert.match(
+		TYPES_SOURCE,
+		/extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "height" \| "style" \| "width">/,
+	);
+	assert.match(COMPONENT_SOURCE, /delete canvasProps\.width;/);
+	assert.match(COMPONENT_SOURCE, /delete canvasProps\.height;/);
+	assert.match(COMPONENT_SOURCE, /\{\.\.\.canvasProps\}/);
 });
 
 test("Thinking Orbs demo exposes the complete supported control and variant surface", () => {
