@@ -12,6 +12,7 @@ import type {
 export function JiraAgentSession({
 	className,
 	items = JIRA_AGENT_SESSION_ITEMS,
+	variant = "default",
 	onView,
 	selectedItemId,
 }: Readonly<JiraAgentSessionProps>) {
@@ -28,6 +29,7 @@ export function JiraAgentSession({
 					item={item}
 					key={item.id}
 					onView={onView}
+					variant={variant}
 				/>
 			))}
 		</ul>
@@ -35,12 +37,12 @@ export function JiraAgentSession({
 }
 
 export { JIRA_AGENT_SESSION_ITEMS } from "./data";
-export { JiraAgentSessionActivityCard } from "./jira-agent-session-activity-card";
+export { JiraAgentSessionActivityHeader } from "./jira-agent-session-card";
 export type {
-	JiraAgentSessionActivityCardProps,
 	JiraAgentSessionAgent,
 	JiraAgentSessionItem,
 	JiraAgentSessionPrStatus,
 	JiraAgentSessionProps,
 	JiraAgentSessionState,
+	JiraAgentSessionVariant,
 } from "./jira-agent-session-types";

@@ -29,6 +29,7 @@ import type {
 	JiraAgentSessionItem,
 	JiraAgentSessionPrStatus,
 	JiraAgentSessionState,
+	JiraAgentSessionVariant,
 } from "./jira-agent-session-types";
 
 /**
@@ -250,10 +251,12 @@ export function JiraAgentSessionCard({
 	isSelected = false,
 	item,
 	onView,
+	variant,
 }: Readonly<{
 	isSelected?: boolean;
 	item: JiraAgentSessionItem;
 	onView?: (item: JiraAgentSessionItem) => void;
+	variant: JiraAgentSessionVariant;
 }>) {
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
@@ -263,6 +266,11 @@ export function JiraAgentSessionCard({
 		: ROVO_AGENT_PROFILES.find(
 			(profile) => profile.name.toLocaleLowerCase() === item.agent.name.toLocaleLowerCase(),
 		);
+	const isCompact = variant === "compact";
+	const titleClassName = cn(
+		"min-w-0 truncate font-medium",
+		isCompact ? "text-xs" : "text-sm",
+	);
 
 	return (
 		<HoverCard closeDelay={80} openDelay={120}>
@@ -284,7 +292,7 @@ export function JiraAgentSessionCard({
 				avatarSrc={item.agent.avatarSrc}
 				brandName={item.agent.brandName}
 				label={item.agent.name}
-				sizePx={32}
+				sizePx={isCompact ? 24 : 32}
 				vpkLogo={item.agent.vpkLogo}
 			/>
 			<button
@@ -297,14 +305,14 @@ export function JiraAgentSessionCard({
 					{stateMeta.shimmerTitle ? (
 						<Shimmer
 							as="span"
-							className="min-w-0 truncate text-sm font-medium"
+							className={titleClassName}
 							duration={1.4}
 							spread={2}
 						>
 							{item.title}
 						</Shimmer>
 					) : (
-						<span className="min-w-0 truncate text-sm font-medium text-text">
+						<span className={cn(titleClassName, "text-text")}>
 							{item.title}
 						</span>
 					)}

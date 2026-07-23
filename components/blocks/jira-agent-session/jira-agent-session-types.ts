@@ -1,7 +1,4 @@
-import type { ReactNode } from "react";
-
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import type { TagColor } from "@/components/ui/tag";
 
 /**
  * Lifecycle of an agent working a Jira work item. Drives the title/status
@@ -11,6 +8,9 @@ export type JiraAgentSessionState = "running" | "complete" | "needs-input";
 
 /** Pull-request status shown in the metadata row, when a PR exists. */
 export type JiraAgentSessionPrStatus = "created" | "merged";
+
+/** Visual density for Jira agent-session rows. */
+export type JiraAgentSessionVariant = "default" | "compact";
 
 export interface JiraAgentSessionAgent {
 	/** Canonical directory identity used by profile previews and all agent surfaces. */
@@ -30,7 +30,7 @@ export interface JiraAgentSessionItem {
 	title: string;
 	/** Agent session state — see {@link JiraAgentSessionState}. */
 	state: JiraAgentSessionState;
-	/** The agent working the session; rendered as the 32px leading avatar. */
+	/** The agent working the session; rendered in the leading avatar. */
 	agent: JiraAgentSessionAgent;
 	/** Feature branch the agent is working on. */
 	branch: string;
@@ -55,34 +55,8 @@ export interface JiraAgentSessionProps {
 	items?: readonly JiraAgentSessionItem[];
 	/** Id of the session currently selected by the consuming surface. */
 	selectedItemId?: string;
+	/** Row density; compact uses a 24px avatar and 12px title. */
+	variant?: JiraAgentSessionVariant;
 	/** Called when a row body or its View action is activated. */
 	onView?: (item: JiraAgentSessionItem) => void;
-}
-
-export interface JiraAgentSessionActivityCardProps {
-	/** Session summary shown as the rich activity-card header. */
-	item?: JiraAgentSessionItem;
-	/** Agent name shown in the activity-card header. */
-	agentName?: string;
-	/** Relative activity timestamp shown beside the agent name. */
-	timestamp?: string;
-	/** Optional status tag shown in the activity-card header. */
-	tag?: { text: string; color?: TagColor };
-	/** Optional trailing header action supplied by the consuming surface. */
-	action?: ReactNode;
-	/** Optional leading identity shown in the plain activity-card header. */
-	headerAvatar?: ReactNode;
-	/** Header geometry for plain activity cards without a session summary. */
-	headerLayout?: "inline" | "stacked";
-	/** Called when the rich activity header's View button is activated. */
-	onView?: (item: JiraAgentSessionItem) => void;
-	/** Main agent response rendered inside the card. */
-	children: ReactNode;
-	/** Optional expandable supporting detail, such as a prompt or investigation. */
-	details?: { label: string; children: ReactNode };
-	/** Optional rendered replies shown below the agent response. */
-	replies?: ReactNode;
-	/** Optional reply composer shown at the bottom of the card. */
-	replyComposer?: ReactNode;
-	className?: string;
 }

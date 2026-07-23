@@ -7,27 +7,15 @@ const CARD_SOURCE = readFileSync(
 	join(__dirname, "jira-agent-session-card.tsx"),
 	"utf8",
 );
-const TYPES_SOURCE = readFileSync(
-	join(__dirname, "jira-agent-session-types.ts"),
-	"utf8",
-);
-const ACTIVITY_CARD_SOURCE = readFileSync(
-	join(__dirname, "jira-agent-session-activity-card.tsx"),
-	"utf8",
-);
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
-const DEMO_SOURCE = readFileSync(
-	join(__dirname, "../../website/demos/blocks/jira-agent-session-demo.tsx"),
-	"utf8",
-);
 const DETAIL_SOURCE = readFileSync(
 	join(__dirname, "../../../app/data/details/blocks/jira-agent-session.ts"),
 	"utf8",
 );
-const VARIANT_REGISTRY_SOURCE = readFileSync(
-	join(__dirname, "../../website/registry/blocks-variants.ts"),
+const TYPES_SOURCE = readFileSync(
+	join(__dirname, "jira-agent-session-types.ts"),
 	"utf8",
 );
 
@@ -68,10 +56,10 @@ test("View opens the Rovo floating chat in the demo", () => {
 	assert.match(PAGE_SOURCE, /chatSurface === "floating" \? <RovoFloatingChat/);
 });
 
-test("the leading tile renders the agent or VPK identity at 32px", () => {
+test("the leading tile renders the agent or VPK identity at the selected density", () => {
 	assert.match(
 		CARD_SOURCE,
-		/<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.agent\.avatarSrc\}[\s\S]*sizePx=\{32\}/,
+		/<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.agent\.avatarSrc\}[\s\S]*sizePx=\{isCompact \? 24 : 32\}/,
 	);
 	assert.match(CARD_SOURCE, /vpkLogo=\{item\.agent\.vpkLogo\}/u);
 });
@@ -142,7 +130,7 @@ test("in-flow View controls shrink truncating text without collisions", () => {
 		CARD_SOURCE,
 		/className="flex w-full min-w-0 items-center gap-1 overflow-hidden text-xs/u,
 	);
-	assert.match(CARD_SOURCE, /className="min-w-0 truncate text-sm font-medium text-text"/u);
+	assert.match(CARD_SOURCE, /<span className=\{cn\(titleClassName, "text-text"\)\}>/u);
 	assert.match(CARD_SOURCE, /className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.match(CARD_SOURCE, /invisible ml-0 flex w-0 shrink-0 items-center overflow-hidden opacity-0/u);
 	assert.match(CARD_SOURCE, /group-hover:visible[^"]*group-hover:w-auto[^"]*group-hover:overflow-visible/u);
@@ -155,48 +143,25 @@ test("in-flow View controls shrink truncating text without collisions", () => {
 	);
 });
 
-test("exports the expanded activity-card variant and owns its shared shell", () => {
-	assert.match(INDEX_SOURCE, /export \{ JiraAgentSessionActivityCard \}/u);
-	assert.match(
-		ACTIVITY_CARD_SOURCE,
-		/w-full overflow-hidden border border-border bg-surface/u,
-	);
-	assert.match(ACTIVITY_CARD_SOURCE, /hasStackedHeader \? "rounded-xl" : "rounded-lg"/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /hasStackedHeader \? "gap-4 p-4" : "gap-2 p-3"/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /\? "flex min-w-0 items-center gap-3"/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /\{headerAvatar\}/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /<div className="min-w-0 flex-1">/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /aria-expanded=\{detailsOpen\}/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /replyComposer/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /<JiraAgentSessionActivityHeader[\s\S]*item=\{item\}/u);
-	// The agent-session card wraps header/body/details in a padded grid and moves
-	// the composer into a flush footer separated by a border-t divider.
-	assert.match(
-		ACTIVITY_CARD_SOURCE,
-		/w-full overflow-hidden rounded-xl border border-border bg-surface/u,
-	);
-	assert.match(ACTIVITY_CARD_SOURCE, /<div className="grid gap-4 p-4">/u);
-	assert.match(ACTIVITY_CARD_SOURCE, /<div className="border-t border-border">/u);
-	assert.doesNotMatch(
-		ACTIVITY_CARD_SOURCE,
-		/grid w-full gap-4 rounded-xl border border-border bg-surface p-4/u,
-	);
-	assert.match(ACTIVITY_CARD_SOURCE, /text-sm leading-5 text-text/u);
-	assert.doesNotMatch(ACTIVITY_CARD_SOURCE, /text-base leading-6 text-text/u);
-	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
-	assert.match(CARD_SOURCE, /onClick=\{\(\) => onView\?\.\(item\)\}[\s\S]*View/u);
+test("supports default and compact session rows", () => {
+	assert.match(TYPES_SOURCE, /export type JiraAgentSessionVariant = "default" \| "compact"/u);
+	assert.match(TYPES_SOURCE, /variant\?: JiraAgentSessionVariant/u);
+	assert.match(INDEX_SOURCE, /variant = "default"/u);
+	assert.match(INDEX_SOURCE, /<JiraAgentSessionCard[\s\S]*variant=\{variant\}/u);
+	assert.match(CARD_SOURCE, /variant === "compact"/u);
+	assert.match(CARD_SOURCE, /sizePx=\{isCompact \? 24 : 32\}/u);
+	assert.match(CARD_SOURCE, /isCompact \? "text-xs" : "text-sm"/u);
+	assert.match(DETAIL_SOURCE, /name: "variant"/u);
+	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact"'/u);
+	assert.match(DETAIL_SOURCE, /default: '"default"'/u);
 });
 
-test("documents the activity-card variant as a rendered example section", () => {
-	assert.match(DETAIL_SOURCE, /title: "Activity card"/u);
-	assert.match(DETAIL_SOURCE, /demoSlug: "jira-agent-session-demo-activity-card"/u);
+test("exports the session activity header without owning an activity card shell", () => {
 	assert.match(
-		VARIANT_REGISTRY_SOURCE,
-		/"jira-agent-session-demo-activity-card"[\s\S]*JiraAgentSessionActivityCardDemo/u,
+		INDEX_SOURCE,
+		/export \{ JiraAgentSessionActivityHeader \} from "\.\/jira-agent-session-card"/u,
 	);
-	assert.match(DEMO_SOURCE, /export function JiraAgentSessionActivityCardDemo/u);
-	assert.match(DEMO_SOURCE, /<JiraAgentSessionActivityCard/u);
-	assert.match(DEMO_SOURCE, /item=\{entry\.sessionItem\}/u);
-	assert.match(DEMO_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
-	assert.match(DEMO_SOURCE, /rounded-xl border border-border bg-bg-input/u);
+	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
+	assert.match(CARD_SOURCE, /onClick=\{\(\) => onView\?\.\(item\)\}[\s\S]*View/u);
+	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
 });
