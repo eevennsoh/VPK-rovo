@@ -2,13 +2,11 @@
 
 import type { ReactNode } from "react";
 
-import {
-	JiraAgentSessionActivityCard,
-	type JiraAgentSessionItem,
-} from "@/components/blocks/jira-agent-session";
+import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Comment } from "@/components/ui/comment";
 
+import { JiraActivityCard } from "./jira-activity-card";
 import { JiraActivityComposer } from "./jira-activity-composer";
 import { JiraActivitySegments } from "./jira-activity-segments";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "./jira-activity-types";
@@ -53,7 +51,7 @@ export function JiraActivityComment({
 	const allowReply = entry.allowReply ?? true;
 
 	return (
-		<JiraAgentSessionActivityCard
+		<JiraActivityCard
 			action={action}
 			agentName={entry.actor.name}
 			headerAvatar={
@@ -115,6 +113,6 @@ export function JiraActivityComment({
 			timestamp={entry.timestamp}
 		>
 			<JiraActivitySegments className="text-sm leading-5 text-text" segments={entry.body} />
-		</JiraAgentSessionActivityCard>
+		</JiraActivityCard>
 	);
 }

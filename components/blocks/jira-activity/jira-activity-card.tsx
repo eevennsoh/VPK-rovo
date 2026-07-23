@@ -1,22 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
+import {
+	JiraAgentSessionActivityHeader,
+	type JiraAgentSessionItem,
+} from "@/components/blocks/jira-agent-session";
 import { Icon } from "@/components/ui/icon";
-import { Tag } from "@/components/ui/tag";
+import { Tag, type TagColor } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
-import { JiraAgentSessionActivityHeader } from "./jira-agent-session-card";
-import type { JiraAgentSessionActivityCardProps } from "./jira-agent-session-types";
+export interface JiraActivityCardProps {
+	/** Session summary shown as the rich activity-card header. */
+	item?: JiraAgentSessionItem;
+	/** Agent name shown in the activity-card header. */
+	agentName?: string;
+	/** Relative activity timestamp shown beside the agent name. */
+	timestamp?: string;
+	/** Optional status tag shown in the activity-card header. */
+	tag?: { text: string; color?: TagColor };
+	/** Optional trailing header action supplied by the consuming surface. */
+	action?: ReactNode;
+	/** Optional leading identity shown in the plain activity-card header. */
+	headerAvatar?: ReactNode;
+	/** Header geometry for plain activity cards without a session summary. */
+	headerLayout?: "inline" | "stacked";
+	/** Called when the rich activity header's View button is activated. */
+	onView?: (item: JiraAgentSessionItem) => void;
+	/** Main activity content rendered inside the card. */
+	children: ReactNode;
+	/** Optional expandable supporting detail, such as a prompt or investigation. */
+	details?: { label: string; children: ReactNode };
+	/** Optional rendered replies shown below the activity content. */
+	replies?: ReactNode;
+	/** Optional reply composer shown at the bottom of the card. */
+	replyComposer?: ReactNode;
+	className?: string;
+}
 
 /**
- * Expanded agent-session card for chronological activity surfaces. The
- * consuming surface supplies its rich response, replies, and composer while
- * this component owns the shared card shell and expandable detail treatment.
+ * Shared card shell for Jira Activity comments. It owns the human and agent
+ * header treatments, expandable details, replies, and flush composer footer.
+ * Jira Agent Session supplies only the session-specific header presentation.
  */
-export function JiraAgentSessionActivityCard({
+export function JiraActivityCard({
 	item,
 	agentName,
 	timestamp,
@@ -30,7 +59,7 @@ export function JiraAgentSessionActivityCard({
 	replies,
 	replyComposer,
 	className,
-}: Readonly<JiraAgentSessionActivityCardProps>) {
+}: Readonly<JiraActivityCardProps>) {
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const showFooter = replies != null || replyComposer != null;
 	const detailsContent = details ? (
@@ -45,7 +74,7 @@ export function JiraAgentSessionActivityCard({
 					aria-hidden
 					className={cn(
 						"text-icon-subtle transition-transform duration-fast ease-out-practical motion-reduce:transition-none",
-						detailsOpen && "rotate-90",
+						detailsOpen ? "rotate-90" : null,
 					)}
 					render={<ChevronRightIcon color="currentColor" label="" size="small" />}
 				/>
@@ -115,9 +144,7 @@ export function JiraAgentSessionActivityCard({
 							</div>
 						</div>
 					) : (
-						<div
-							className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5"
-						>
+						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5">
 							<span className="font-medium text-text">{agentName}</span>
 							<span className="text-text-subtle">{timestamp}</span>
 							{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}

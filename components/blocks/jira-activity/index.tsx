@@ -245,6 +245,7 @@ export function JiraActivity({
 }
 
 export { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
+export { JiraActivityCard, type JiraActivityCardProps } from "./jira-activity-card";
 export { JiraActivityComposer, type JiraActivityComposerProps } from "./jira-activity-composer";
 export type {
 	JiraActivityActor,

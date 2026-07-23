@@ -8,6 +8,14 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 	usage: `import { JiraActivity } from "@/components/blocks/jira-activity";
 
 <JiraActivity defaultSortOrder="ascending" />`,
+	examples: [
+		{
+			title: "Activity card",
+			description:
+				"Standalone rich activity card with an agent-session header, response content, and a flush in-card reply composer.",
+			demoSlug: "jira-activity-demo-activity-card",
+		},
+	],
 	props: [
 		{
 			name: "entries",
@@ -89,6 +97,62 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			name: "className",
 			type: "string",
 			description: "Additional classes applied to the root container.",
+		},
+	],
+	subComponents: [
+		{
+			name: "JiraActivityCard",
+			description:
+				"Shared activity-card shell for human and agent responses, optional supporting details, replies, and a reply composer.",
+			props: [
+				{
+					name: "item",
+					type: "JiraAgentSessionItem",
+					description:
+						"Optional session summary that renders the session-specific agent header.",
+				},
+				{
+					name: "agentName",
+					type: "string",
+					description: "Agent or person name shown when `item` is omitted.",
+				},
+				{
+					name: "timestamp",
+					type: "string",
+					description: "Relative activity timestamp shown when `item` is omitted.",
+				},
+				{
+					name: "headerAvatar",
+					type: "ReactNode",
+					description: "Optional leading identity for a plain activity-card header.",
+				},
+				{
+					name: "headerLayout",
+					type: '"inline" | "stacked"',
+					default: '"inline"',
+					description: "Header geometry used when `item` is omitted.",
+				},
+				{
+					name: "onView",
+					type: "(item: JiraAgentSessionItem) => void",
+					description: "Called when the session header's View button is activated.",
+				},
+				{
+					name: "details",
+					type: "{ label: string; children: ReactNode }",
+					description: "Optional expandable supporting detail.",
+				},
+				{
+					name: "replies",
+					type: "ReactNode",
+					description: "Rendered replies shown in the card footer.",
+				},
+				{
+					name: "replyComposer",
+					type: "ReactNode",
+					description: "Optional reply composer shown below replies.",
+				},
+			],
 		},
 	],
 };
