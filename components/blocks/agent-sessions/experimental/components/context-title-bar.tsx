@@ -5,7 +5,10 @@ import { AnimatePresence, motion, useReducedMotion, type Transition } from "moti
 
 import { token } from "@/lib/tokens";
 import { ContextEditableTitle } from "@/components/blocks/agent-sessions/experimental/components/context-editable-header";
-import { ContextTitleActions } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
+import {
+	ContextTitleActions,
+	type CodingAgentId,
+} from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
 import {
 	METADATA_CONTENT_COLLAPSE_TRANSITION,
 	METADATA_CONTENT_EXPAND_TRANSITION,
@@ -31,6 +34,7 @@ interface AnimatedContextTitleActionsProps {
 	hideForToggle: boolean;
 	isLayoutSettled: boolean;
 	onToggleExitComplete: () => void;
+	primaryAgentId?: CodingAgentId;
 	shouldReduceMotion: boolean;
 }
 
@@ -39,6 +43,7 @@ function AnimatedContextTitleActions({
 	hideForToggle,
 	isLayoutSettled,
 	onToggleExitComplete,
+	primaryAgentId,
 	shouldReduceMotion,
 }: Readonly<AnimatedContextTitleActionsProps>) {
 	const didCompleteToggleExit = useRef(false);
@@ -76,7 +81,7 @@ function AnimatedContextTitleActions({
 				willChange: isAnimating ? "transform, opacity" : undefined,
 			}}
 		>
-			<ContextTitleActions collapsed={collapsed} />
+			<ContextTitleActions collapsed={collapsed} primaryAgentId={primaryAgentId} />
 		</motion.div>
 	);
 }
@@ -88,7 +93,7 @@ function AnimatedContextTitleActions({
  * to the modal's right edge (under the breadcrumb controls) and above the
  * two-column body, so they can never collide with the metadata rail.
  */
-export function ContextTitleBar() {
+export function ContextTitleBar({ primaryAgentId }: Readonly<{ primaryAgentId?: CodingAgentId }>) {
 	const {
 		completeMetadataToggle,
 		metadataCollapsed,
@@ -126,6 +131,7 @@ export function ContextTitleBar() {
 						hideForToggle={metadataTogglePending}
 						isLayoutSettled={isActionLayoutSettled}
 						onToggleExitComplete={completeMetadataToggle}
+						primaryAgentId={primaryAgentId}
 						shouldReduceMotion={shouldReduceMotion}
 					/>
 				</AnimatePresence>

@@ -47,11 +47,11 @@ function MetadataDot() {
 /**
  * Visual rule (shared with jira-issue agent activity): text shimmer is reserved
  * for "needs input" states; in-progress work uses the rainbow spinner instead.
- * A status can combine both (e.g. "1 Awaiting user response, 2 In progress"),
+ * A status can combine both (e.g. "1 Waiting for input, 2 In progress"),
  * so each comma-separated segment is classified and rendered independently.
  */
 function isAwaitingInputStatus(status: string): boolean {
-	return /awaiting user/i.test(status);
+	return /awaiting user|waiting for input/i.test(status);
 }
 
 function JiraForYouStatusSegment({
@@ -59,7 +59,7 @@ function JiraForYouStatusSegment({
 	trailingComma = false,
 }: Readonly<{ segment: string; trailingComma?: boolean }>) {
 	// The comma is punctuation, not status text, so it stays outside the shimmer
-	// while still hugging the segment (no leading space): "Awaiting user response, …".
+	// while still hugging the segment (no leading space): "Waiting for input, …".
 	const comma = trailingComma ? <span aria-hidden="true">,</span> : null;
 
 	if (isAwaitingInputStatus(segment)) {
@@ -158,9 +158,11 @@ function ItemActions({
 export function JiraForYouItemRow({
 	item,
 	onItemClick,
+	onView,
 }: Readonly<{
 	item: JiraForYouItem;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem) => void;
 }>) {
 	const meta = ISSUE_TYPE_META[item.issueType];
 	const Glyph = meta.Glyph;
@@ -214,7 +216,7 @@ export function JiraForYouItemRow({
 				</span>
 			</button>
 			<div className="relative flex shrink-0 items-center">
-				<ItemActions item={item} onView={() => onItemClick?.(item)} />
+				<ItemActions item={item} onView={() => (onView ?? onItemClick)?.(item)} />
 				<div className="transition-opacity duration-fast ease-out-practical group-hover:hidden group-has-[[data-slot=jira-for-you-row-button]:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_:focus-visible]:hidden group-has-[[data-slot=jira-for-you-actions]_button[aria-expanded=true]]:hidden motion-reduce:transition-none">
 					<JiraForYouStatusLozenge value={item.jiraStatus} />
 				</div>

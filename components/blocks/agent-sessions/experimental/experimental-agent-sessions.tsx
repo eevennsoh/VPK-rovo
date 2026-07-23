@@ -6,6 +6,8 @@ import { useId, useMemo } from "react";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSessionsPreset } from "@/components/blocks/agent-sessions/data/session-state";
+import type { AgentSessionsState } from "@/components/blocks/agent-sessions/data/session-state";
+import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { AgentSessionsProvider } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
 import { PanelLayoutProvider } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/agent-sessions/experimental/components/experimental-work-item-dialog";
@@ -15,9 +17,13 @@ import { ActivityPanel } from "@/components/blocks/agent-sessions/experimental/c
 import { ActivityComposer } from "@/components/blocks/agent-sessions/experimental/components/activity-composer";
 import { MetadataRail } from "@/components/blocks/agent-sessions/experimental/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/agent-sessions/experimental/components/floating-session-surface";
+import type { CodingAgentId } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
 
 interface ExperimentalAgentSessionsBaseProps {
 	initialPreset: AgentSessionsPreset;
+	initialState?: AgentSessionsState;
+	primaryCodingAgentId?: CodingAgentId;
+	workItem?: WorkItemData;
 }
 
 export type ExperimentalAgentSessionsProps = ExperimentalAgentSessionsBaseProps & (
@@ -38,7 +44,7 @@ const NOOP = () => undefined;
  */
 export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessionsProps>) {
 	const composerLayoutGroupId = useId();
-	const { initialPreset } = props;
+	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
 	let open: boolean;
 	let onClose: () => void;
@@ -51,14 +57,14 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 		open = props.open;
 		onClose = props.onClose;
 	}
-	const workItem = useMemo(
-		() =>
-			getAgentsWorkItemForCard({
+	const defaultWorkItem = useMemo(
+		() => getAgentsWorkItemForCard({
 				title: "Acmecorp: Prepare for bid recommendation for ESM RFP",
 				code: "RFP-101",
 			}),
 		[],
 	);
+	const workItem = props.workItem ?? defaultWorkItem;
 
 	return (
 		// Keep the WorkItemModalProvider mounted (isOpen always true) so the reused
@@ -66,13 +72,14 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 		// open/close lifecycle + enter/exit animation. Read-only reuse — the standard
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
-			<AgentSessionsProvider initialPreset={initialPreset} workItem={workItem} active={open}>
+			<AgentSessionsProvider initialPreset={initialPreset} initialState={initialState} workItem={workItem} active={open}>
 				<PanelLayoutProvider>
 					<LayoutGroup id={composerLayoutGroupId}>
 						<ExperimentalWorkItemDialog
 							open={open}
 							onClose={onClose}
 							presentation={presentation}
+							primaryCodingAgentId={props.primaryCodingAgentId}
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
 							blanketContent={

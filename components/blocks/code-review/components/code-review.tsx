@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 
+import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { RovoCanvas } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -16,8 +17,10 @@ import {
 	createInlineCommentDraft,
 	removeAllInlineComments,
 	removeInlineComment,
+	updateInlineComment,
 	updateInlineCommentDraft,
 	type InlineCommentAnchor,
+	type InlineReviewComment,
 } from "../lib/inline-comments";
 import { CodeReviewCanvasHeader } from "./code-review-canvas-header";
 import { CodeReviewCanvasRightRail } from "./code-review-canvas-right-rail";
@@ -26,19 +29,38 @@ import { EditorPanel } from "./editor/editor-panel";
 export interface CodeReviewProps {
 	workItem?: CodeReviewWorkItem;
 	files?: readonly ChangedFile[];
+	explorerRootLabel?: string;
 	className?: string;
 	open?: boolean;
 	defaultOpen?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	primaryActionLabel?: string;
+	onPrimaryAction?: () => void;
+	showPrimaryActionMenu?: boolean;
+	primaryActionMenu?: ReactNode;
+	agentProfile?: RovoAgentProfile;
+	hideComposerSourceAndModelControls?: boolean;
+	onReviewSubmit?: (submission: Readonly<{
+		comments: readonly InlineReviewComment[];
+		prompt: string;
+	}>) => void;
 }
 
 export function CodeReview({
 	workItem = CODE_REVIEW_WORK_ITEM,
 	files = CHANGED_FILES,
+	explorerRootLabel,
 	className,
 	open,
 	defaultOpen = false,
 	onOpenChange,
+	primaryActionLabel = "Create pull request",
+	onPrimaryAction,
+	showPrimaryActionMenu = true,
+	primaryActionMenu,
+	agentProfile,
+	hideComposerSourceAndModelControls = false,
+	onReviewSubmit,
 }: Readonly<CodeReviewProps>) {
 	const isDefaultFileSet = files === CHANGED_FILES;
 	const { additions, deletions } = files.reduce(
@@ -85,6 +107,9 @@ export function CodeReview({
 	const handleDeleteComment = useCallback((commentId: string) => {
 		setInlineComments((state) => removeInlineComment(state, commentId));
 	}, []);
+	const handleUpdateComment = useCallback((commentId: string, body: string) => {
+		setInlineComments((state) => updateInlineComment(state, commentId, body));
+	}, []);
 	const handleRemoveAllComments = useCallback(() => {
 		setInlineComments((state) => removeAllInlineComments(state));
 	}, []);
@@ -106,13 +131,16 @@ export function CodeReview({
 				kind="script"
 				title={`${workItem.key}: ${workItem.title}`}
 				headerStart={<CodeReviewCanvasHeader additions={additions} deletions={deletions} workItem={workItem} />}
-				primaryActionLabel="Create pull request"
-				primaryActionMenu={
-					<>
-						<DropdownMenuItem>Create draft PR</DropdownMenuItem>
-						<DropdownMenuItem>Commit &amp; Push</DropdownMenuItem>
-					</>
-				}
+				primaryActionLabel={primaryActionLabel}
+				onPrimaryAction={onPrimaryAction}
+				primaryActionMenu={showPrimaryActionMenu ? (
+					primaryActionMenu ?? (
+						<>
+							<DropdownMenuItem>Create draft pull request</DropdownMenuItem>
+							<DropdownMenuItem>Commit &amp; Push</DropdownMenuItem>
+						</>
+					)
+				) : undefined}
 				artefactLabel={`${workItem.key}: ${workItem.title}`}
 				artefactMetadata={`${workItem.repoName} · ${workItem.localBranchName} → ${workItem.branchName}`}
 				showArtefactIdentity={false}
@@ -125,6 +153,7 @@ export function CodeReview({
 							<EditorPanel
 								comments={inlineComments.comments}
 								drafts={inlineComments.drafts}
+								explorerRootLabel={explorerRootLabel}
 								file={selectedEditorFile}
 								files={editorFiles}
 								layout={editorLayout}
@@ -132,6 +161,7 @@ export function CodeReview({
 								onCancelDraft={handleCancelDraft}
 								onCommitDraft={handleCommitDraft}
 								onDeleteComment={handleDeleteComment}
+								onUpdateComment={handleUpdateComment}
 								onFileSelect={setEditorFileId}
 								onLayoutChange={setEditorLayout}
 								onUpdateDraft={handleUpdateDraft}
@@ -142,10 +172,13 @@ export function CodeReview({
 				]}
 				rightRail={
 					<CodeReviewCanvasRightRail
+						agentProfile={agentProfile}
 						comments={inlineComments.comments}
+						hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
 						workItem={workItem}
 						onClose={() => setCanvasOpen(false)}
 						onRemoveAllComments={handleRemoveAllComments}
+						onReviewSubmit={onReviewSubmit}
 					/>
 				}
 			/>

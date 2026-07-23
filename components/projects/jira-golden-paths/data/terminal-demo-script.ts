@@ -1,9 +1,9 @@
 import type { TerminalBeat, TerminalWorkItem } from "../lib/terminal-demo-state";
 
-export const JIRA_CLI_TITLE = "Jira CLI v0.4.2";
-export const JIRA_CLI_WORKSPACE = "Jira Golden Paths (JGP) · jira-golden-paths.atlassian.net";
-export const JIRA_CLI_FOOTER_HINTS = "↑↓ to move · enter to open Jira";
-export const TERMINAL_INITIAL_HINT = "click the terminal to open Jira";
+export const JIRA_CLI_TITLE = "Teamwork Graph";
+export const JIRA_CLI_WORKSPACE = "Jira Golden Paths · work available to start";
+export const JIRA_CLI_FOOTER_HINTS = "↑↓ to browse · enter to inspect in Jira";
+export const TERMINAL_INITIAL_HINT = "click the terminal to browse available work";
 export const TERMINAL_SHELL_PROMPT = "~/dev/jira-golden-paths $";
 
 const JIRA_CLI_BASE_URL = "https://jira-golden-paths.atlassian.net";
@@ -12,68 +12,59 @@ export function getJiraIssueUrl(issueKey: string): string {
 	return `${JIRA_CLI_BASE_URL}/browse/${encodeURIComponent(issueKey)}`;
 }
 
-/** Seeded backlog + done items, shown the moment the Jira dashboard appears (beat "connect"). */
-const SEED_WORK_ITEMS: readonly TerminalWorkItem[] = [
+const AVAILABLE_WORK_ITEMS: readonly TerminalWorkItem[] = [
+	{
+		key: "JGP-247",
+		title: "Add assignee focus mode",
+		status: "backlog",
+		summary: "Ready to start · design notes and acceptance criteria linked",
+		age: "1d",
+	},
 	{
 		key: "JGP-231",
-		title: "Fix flaky gallery snapshot test",
+		title: "Stabilize gallery snapshot coverage",
 		status: "backlog",
-		summary: "Flaky on ~1 in 5 CI runs",
+		summary: "Flaky on one in five CI runs",
 		age: "3d",
 	},
 	{
-		key: "JGP-198",
-		title: "Add dark mode toggle to settings",
+		key: "JGP-244",
+		title: "Compress board illustration assets",
 		status: "backlog",
-		summary: "Design reviewed, ready for build",
+		summary: "Lighthouse identified an LCP regression",
 		age: "5d",
 	},
 	{
-		key: "JGP-244",
-		title: "Compress illustration assets",
-		status: "backlog",
-		summary: "Lighthouse flagged LCP regression",
-		age: "1w",
-	},
-	{
 		key: "JGP-217",
-		title: "Migrate date-picker to design system",
+		title: "Migrate date picker to ADS",
 		status: "backlog",
-		summary: "Blocked on new picker API",
-		age: "2w",
-	},
-	{
-		key: "JGP-190",
-		title: "Bump Node 22 in CI",
-		status: "done",
-		summary: "Merged to main",
-		age: "2d",
-		pr: { number: 482, state: "merged" },
+		summary: "Ready after the picker API upgrade",
+		age: "1w",
 	},
 ];
 
+/**
+ * Carl's complete local-session story. Discovery, backlog browsing, issue
+ * inspection, and context handoff are presented live. Delivery and post-review
+ * work use deterministic snapshots on either side of the Kanban review.
+ */
 export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 	{
 		id: "split",
 		trigger: "click",
-		hint: "→ next: jira connect --space jira-golden-paths",
+		hint: "→ next: ask TwG what work is available",
 		steps: [{ kind: "split" }],
 	},
 	{
-		// The command is typed into the Jira pane but NOT yet run — a deliberate
-		// pause point so a narrator can stop and talk about the connect command
-		// before it executes. Splitting this out from `connect` means the live
-		// presenter settles here (draft text sitting at the prompt, no output).
-		// The following `connect` beat's `submit` step commits this same draft.
-		id: "connect-typed",
+		id: "start-work-typed",
 		trigger: "key",
-		hint: "→ next: run the connect command",
-		steps: [{ kind: "type", pane: "left", text: "jira connect --space jira-golden-paths" }],
+		hint: "→ next: load the backlog",
+		steps: [{ kind: "type", pane: "left", text: "twg start-work" }],
 	},
 	{
-		id: "connect",
+		id: "backlog-loaded",
 		trigger: "key",
-		hint: "→ next: create a work item and start on it",
+		hint: "→ next: ask Claude what JGP-247 involves",
 		steps: [
 			{ kind: "submit", pane: "left" },
 			{ kind: "pause", ms: 300 },
@@ -82,222 +73,193 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 				pane: "left",
 				lines: [
 					[
-						{ text: "Connecting to ", tone: "dim" },
-						{ text: "jira-golden-paths.atlassian.net", tone: "bold" },
-						{ text: "…", tone: "dim" },
-					],
-					[
 						{ text: "✓ ", tone: "success" },
-						{ text: "Connected · ", tone: "dim" },
-						{ text: "Jira Golden Paths (JGP)", tone: "bold" },
+						{ text: "Found 4 backlog items ready to start", tone: "bold" },
 					],
+					[{ text: "  Tip         ", tone: "dim" }, { text: "Ask Claude for context before selecting an item" }],
 				],
 			},
 			{ kind: "show-dashboard" },
 			{
 				kind: "board",
-				events: SEED_WORK_ITEMS.map((item) => ({ type: "add-item" as const, item })),
+				events: AVAILABLE_WORK_ITEMS.map((item) => ({ type: "add-item" as const, item })),
 			},
 		],
 	},
 	{
-		id: "create-item",
+		id: "inspect-work",
 		trigger: "key",
-		hint: "→ next: pick up JGP-231 from the backlog",
+		hint: "→ next: select JGP-247",
 		steps: [
 			{
 				kind: "type",
 				pane: "right",
-				text: "Create a Jira work item for the card overflow bug on the Kanban stage, then start on it.",
-			},
-			{ kind: "submit", pane: "right" },
-			{ kind: "pause", ms: 300 },
-			{
-				kind: "output",
-				pane: "right",
-				lines: [
-					[
-						{ text: "⏺ ", tone: "accent" },
-						{ text: 'jira create --title "Fix card overflow on the Kanban stage"' },
-					],
-					[
-						{ text: "  ⎿ ", tone: "dim" },
-						{ text: "Created ", tone: "dim" },
-						{ text: "JGP-247", tone: "bold" },
-					],
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira start JGP-247" }],
-				],
-			},
-			{
-				kind: "board",
-				events: [
-					{
-						type: "add-item",
-						item: {
-							key: "JGP-247",
-							title: "Fix card overflow on the Kanban stage",
-							status: "working",
-							summary: "Reproducing the card overflow on the Kanban stage…",
-							age: "now",
-						},
-					},
-				],
-			},
-		],
-	},
-	{
-		id: "pickup-backlog",
-		trigger: "key",
-		hint: "→ next: kick off the rest of the backlog in parallel",
-		steps: [
-			{
-				kind: "type",
-				pane: "right",
-				text: "Pick up JGP-231 — the flaky gallery snapshot test — and figure out the flake.",
+				text: "Explain JGP-247. Include the issue, linked design notes, and implementation risks.",
 			},
 			{ kind: "submit", pane: "right" },
 			{
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira start JGP-231" }],
-					[{ text: "  ⎿ ", tone: "dim" }, { text: "Session started", tone: "dim" }],
-				],
-			},
-			{
-				kind: "board",
-				events: [
-					{ type: "move-item", key: "JGP-231", to: "working" },
-					{
-						type: "set-summary",
-						key: "JGP-231",
-						summary: "Bisecting flaky retries in the gallery spec",
-						age: "now",
-					},
+					[{ text: "⏺ Atlassian · ", tone: "brand" }, { text: "get Jira issue JGP-247" }],
+					[{ text: "⏺ Search · ", tone: "brand" }, { text: "linked board-focus design notes and team decisions" }],
+					[{ text: "  ⎿ Goal · ", tone: "dim" }, { text: "Click an assignee to focus the board on their visible work." }],
+					[{ text: "  ⎿ Acceptance · ", tone: "dim" }, { text: "Clear focus, preserve keyboard navigation, announce result counts." }],
+					[{ text: "  ⎿ Risk · ", tone: "dim" }, { text: "Range selection must follow the filtered rendered order." }],
+					[{ text: "  ⎿ Team flow · ", tone: "dim" }, { text: "Focused tests → PR review → squash merge" }],
+					[{ text: "✓ ", tone: "success" }, { text: "JGP-247 is scoped and ready to start" }],
 				],
 			},
 		],
 	},
 	{
-		id: "parallel-dispatch",
+		id: "context-loaded",
 		trigger: "key",
-		hint: "→ next: Jira surfaces a question about JGP-198",
+		hint: "→ next: Claude implements the task",
 		steps: [
-			{ kind: "type", pane: "right", text: "Kick off the rest of the backlog in parallel." },
+			{ kind: "type", pane: "right", text: "Start JGP-247 with TwG and implement it using that context." },
 			{ kind: "submit", pane: "right" },
 			{
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira start JGP-198" }],
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira start JGP-244" }],
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira start JGP-217" }],
-					[{ text: "  ⎿ ", tone: "dim" }, { text: "3 sessions started in parallel", tone: "dim" }],
+					[{ text: "⏺ TwG · ", tone: "brand" }, { text: "twg start-work JGP-247" }],
+					[{ text: "  ⎿ ", tone: "dim" }, { text: "Agent session created · Jira, docs, and team workflow connected" }],
+					[{ text: "  ⎿ ", tone: "dim" }, { text: "Branch jgp-247-assignee-focus-mode ready" }],
 				],
 			},
+			{ kind: "set-working", pane: "right", working: true },
 			{
 				kind: "board",
 				events: [
-					{ type: "move-item", key: "JGP-198", to: "working" },
-					{ type: "set-summary", key: "JGP-198", summary: "Sketching system-preference detection", age: "now" },
-					{ type: "move-item", key: "JGP-244", to: "working" },
-					{ type: "set-summary", key: "JGP-244", summary: "Re-encoding illustrations to AVIF", age: "now" },
-					{ type: "move-item", key: "JGP-217", to: "working" },
-					{ type: "set-summary", key: "JGP-217", summary: "Swapping in the design-system DatePicker", age: "now" },
+					{ type: "move-item", key: "JGP-247", to: "working" },
+					{ type: "set-summary", key: "JGP-247", summary: "Claude is implementing assignee focus mode", age: "now" },
 				],
 			},
 		],
 	},
 	{
-		id: "needs-input",
+		id: "implementation",
 		trigger: "key",
-		hint: "→ next: reply to JGP-198",
+		hint: "PR #247 is ready · next: review in Jira",
 		steps: [
 			{
-				kind: "board",
-				events: [
-					{ type: "move-item", key: "JGP-198", to: "needs-input" },
-					{
-						type: "set-summary",
-						key: "JGP-198",
-						summary: "Should dark mode follow system preference by default?",
-						age: "now",
-					},
+				kind: "output",
+				pane: "right",
+				lines: [
+					[{ text: "⏺ Read · ", tone: "brand" }, { text: "Kanban board, facepile, and selection lifecycle owners" }],
+					[{ text: "⏺ Search · ", tone: "brand" }, { text: "rg assignee filter, visibleCards, range selection" }],
+					[{ text: "⏺ Edit · ", tone: "brand" }, { text: "added focused-assignee state and clear-focus action" }],
+					[{ text: "⏺ Edit · ", tone: "brand" }, { text: "filtered the rendered board while preserving keyboard focus" }],
+					[{ text: "⏺ Test · ", tone: "brand" }, { text: "added selection and screen-reader regression coverage" }],
+					[{ text: "⏺ Bash · ", tone: "brand" }, { text: "node --test kanban-lifecycle.test.js · 7 passed" }],
+					[{ text: "⏺ Bash · ", tone: "brand" }, { text: "pnpm run typecheck · passed" }],
+					[{ text: "⏺ Git · ", tone: "brand" }, { text: "reviewed diff and created two focused commits" }],
+					[{ text: "  ⎿ ", tone: "dim" }, { text: "4f7a2d1  feat(jira): add assignee focus mode" }],
+					[{ text: "  ⎿ ", tone: "dim" }, { text: "a8c39be  test(jira): cover focused board selection" }],
+					[{ text: "⏺ GitHub · ", tone: "brand" }, { text: "pushed branch and opened PR #247" }],
+					[{ text: "✓ ", tone: "success" }, { text: "All checks passing · ready for your review" }],
 				],
 			},
-		],
-	},
-	{
-		id: "reply",
-		trigger: "key",
-		hint: "→ next: first PRs land",
-		steps: [
-			{ kind: "type", pane: "right", text: "JGP-198: yes — follow system preference, add a manual override" },
-			{ kind: "submit", pane: "right" },
-			{
-				kind: "board",
-				events: [
-					{ type: "move-item", key: "JGP-198", to: "working" },
-					{
-						type: "set-summary",
-						key: "JGP-198",
-						summary: "Building manual override for dark mode preference",
-						age: "now",
-					},
-				],
-			},
-		],
-	},
-	{
-		id: "first-completions",
-		trigger: "key",
-		hint: "→ next: remaining sessions wrap up",
-		steps: [
+			{ kind: "set-working", pane: "right", working: false },
 			{
 				kind: "board",
 				events: [
 					{ type: "move-item", key: "JGP-247", to: "done" },
-					{ type: "set-pr", key: "JGP-247", number: 512, state: "open" },
-					{ type: "move-item", key: "JGP-244", to: "done" },
-					{ type: "set-pr", key: "JGP-244", number: 513, state: "open" },
+					{ type: "set-summary", key: "JGP-247", summary: "PR #247 is ready for review", age: "now" },
+					{ type: "set-pr", key: "JGP-247", number: 247, state: "open" },
 				],
 			},
 		],
 	},
 	{
-		id: "second-completions",
+		id: "review-handoff",
 		trigger: "key",
-		hint: "→ next: summarize today's sessions",
+		hint: "→ next: Claude applies Sarah's feedback",
 		steps: [
+			{
+				kind: "type",
+				pane: "right",
+				text: "Update JGP-247 from this review: preserve Shift-selection against the visible filtered order. Inline comment: calculate the range from filteredIssues, not the unfiltered board.",
+			},
+			{ kind: "submit", pane: "right" },
+			{
+				kind: "output",
+				pane: "right",
+				lines: [[{ text: "⏺ ", tone: "brand" }, { text: "Review context received · updating PR #247" }]],
+			},
 			{
 				kind: "board",
 				events: [
-					{ type: "move-item", key: "JGP-231", to: "done" },
-					{ type: "set-pr", key: "JGP-231", number: 514, state: "open" },
-					{ type: "move-item", key: "JGP-217", to: "done" },
-					{ type: "set-pr", key: "JGP-217", number: 515, state: "open" },
-					{ type: "move-item", key: "JGP-198", to: "done" },
-					{ type: "set-pr", key: "JGP-198", number: 516, state: "open" },
+					{ type: "move-item", key: "JGP-247", to: "working" },
+					{ type: "set-summary", key: "JGP-247", summary: "Applying Sarah's inline review feedback", age: "now" },
 				],
 			},
 		],
 	},
 	{
-		id: "summary",
+		id: "revision",
 		trigger: "key",
-		hint: "demo complete · press R to restart",
+		hint: "→ next: create a follow-up commit",
 		steps: [
-			{ kind: "type", pane: "right", text: "Summarize today's sessions." },
+			{
+				kind: "output",
+				pane: "right",
+				lines: [
+					[{ text: "⏺ ", tone: "brand" }, { text: "Updated range selection to use the rendered filtered issue list" }],
+					[{ text: "⏺ ", tone: "brand" }, { text: "Added regression coverage for Shift-select while filtered" }],
+					[{ text: "✓ ", tone: "success" }, { text: "Focused tests passed · lint passed · typecheck passed" }],
+				],
+			},
+			{
+				kind: "board",
+				events: [{ type: "set-summary", key: "JGP-247", summary: "Filtered range selection fixed; checks passing" }],
+			},
+		],
+	},
+	{
+		id: "follow-up-commit",
+		trigger: "key",
+		hint: "→ next: merge PR #247",
+		steps: [
+			{
+				kind: "output",
+				pane: "right",
+				lines: [
+					[{ text: "  ⎿ ", tone: "dim" }, { text: "commit c91e42a  fix(jira): preserve range selection while filtered" }],
+					[{ text: "✓ ", tone: "success" }, { text: "Pushed follow-up commit to PR #247" }],
+				],
+			},
+			{
+				kind: "board",
+				events: [
+					{ type: "move-item", key: "JGP-247", to: "done" },
+					{ type: "set-summary", key: "JGP-247", summary: "Follow-up commit pushed · ready to merge" },
+				],
+			},
+		],
+	},
+	{
+		id: "merge",
+		trigger: "key",
+		hint: "local session complete · next: Jira shows Done",
+		steps: [
+			{ kind: "type", pane: "right", text: "The changes look good. Merge PR #247." },
 			{ kind: "submit", pane: "right" },
 			{
 				kind: "output",
 				pane: "right",
 				lines: [
-					[{ text: "⏺ ", tone: "accent" }, { text: "jira report --today" }],
-					[
-						{ text: "  ⎿ ", tone: "dim" },
-						{ text: "6 sessions run · 6 PRs opened · backlog cleared.", tone: "success" },
-					],
+					[{ text: "⏺ ", tone: "brand" }, { text: "gh pr merge 247 --squash --delete-branch" }],
+					[{ text: "✓ ", tone: "success" }, { text: "PR #247 merged into main" }],
+					[{ text: "✓ ", tone: "success" }, { text: "JGP-247 moved to Done" }],
+				],
+			},
+			{
+				kind: "board",
+				events: [
+					{ type: "set-summary", key: "JGP-247", summary: "Merged to main", age: "now" },
+					{ type: "set-pr", key: "JGP-247", number: 247, state: "merged" },
 				],
 			},
 		],

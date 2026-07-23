@@ -60,6 +60,8 @@ test("Artifact List leading visual uses the ADS tile radius and neutral inset-im
 	assert.match(source, /if \(item\.avatarSrc\)[\s\S]*<img[\s\S]*src=\{item\.avatarSrc\}/u);
 	assert.match(source, /if \(item\.logoSrc\)[\s\S]*<img[\s\S]*src=\{item\.logoSrc\}/u);
 	assert.match(source, /return item\.icon;/u);
+	assert.match(source, /item\.iconName === "page"[\s\S]*<PageIcon label="" size="small" \/>/u);
+	assert.match(source, /item\.iconName === "video"[\s\S]*<VideoIcon label="" size="small" \/>/u);
 });
 
 test("Artifact List metadata renders source · owner with the small subtlest dot", () => {

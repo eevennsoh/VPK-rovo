@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import type { TerminalBeatStep, TerminalLine, TerminalPaneState } from "../lib/terminal-demo-state";
-import { BlinkCursor, TerminalLineView } from "./terminal-stage-chrome";
+import { BlinkCursor, StateGlyph, TerminalLineView } from "./terminal-stage-chrome";
 
 // ---------------------------------------------------------------------------
 // Right pane — the Claude Code session. Renders the welcome box, committed
@@ -86,7 +86,7 @@ export function TerminalStageClaudePane({
 					<ClaudeLogo />
 					<div className="min-w-0">
 						<p className="text-[#D97757]">✻ Welcome to Claude Code!</p>
-						<p className="text-text-subtlest">claude-fable · /help for help</p>
+						<p className="text-text-subtlest">Claude Code · /help for help</p>
 						<p className="text-text-subtlest">cwd: ~/dev/jira-golden-paths</p>
 					</div>
 				</div>
@@ -97,6 +97,12 @@ export function TerminalStageClaudePane({
 					{inFlightLines.map((line, index) => (
 						<TerminalLineView key={`in-flight-${index}`} line={line} />
 					))}
+					{pane.working ? (
+						<div className="mt-1 flex items-center gap-2 text-text-subtlest">
+							<StateGlyph status="working" className="shrink-0 text-[#D97757]" />
+							<span>Working…</span>
+						</div>
+					) : null}
 				</div>
 			</div>
 			<div className="shrink-0 border-t border-border px-4 py-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
@@ -34,6 +34,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { RovoComposerSendControls, type RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
@@ -68,6 +69,8 @@ interface ChatComposerProps {
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	composerContextBar?: ReactNode;
+	composerSurfaceHeader?: ReactNode;
+	composerSurfaceHeaderTooltip?: ReactNode;
 	composerInputContext?: ReactNode;
 	hasComposerInputContext?: boolean;
 	directoryAutocompleteListVisible?: boolean;
@@ -116,6 +119,22 @@ interface ChatComposerSendControlsProps {
 
 function getQueuedPromptLabel(queuedPrompt: QueuedPromptItem): string {
 	return queuedPrompt.text || queuedPrompt.files[0]?.filename || "Attachment";
+}
+
+function withComposerSurfaceHeaderTooltip(
+	surface: ReactElement,
+	content?: ReactNode,
+): ReactElement {
+	if (!content) {
+		return surface;
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger render={surface} />
+			<TooltipContent side="left">{content}</TooltipContent>
+		</Tooltip>
+	);
 }
 
 function ChatComposerSendControls({
@@ -180,7 +199,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, addMenuItemsBefore, experimentalDarkCta = false, hideAiCursor = false, hideAiDisclaimer = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, autoFocus = false, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, composerContextBar, composerSurfaceHeader, composerSurfaceHeaderTooltip, composerInputContext, hasComposerInputContext = false, directoryAutocompleteListVisible = false, prefillMentionRequest, placeholder = "Ask, @mention, or / for skills", mentionSources, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -258,7 +277,19 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					</Queue>
 				</div>
 			) : null}
-			<div className="chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-3 pb-3 pt-4">
+			{composerSurfaceHeader ? (
+				withComposerSurfaceHeaderTooltip((
+					<div className="relative z-10 mx-auto flex min-h-10 w-full max-w-[800px] items-center gap-1.5 rounded-t-xl border border-b-0 border-border bg-bg-neutral px-3 py-2 text-sm font-medium text-text-subtle">
+						{composerSurfaceHeader}
+					</div>
+				), composerSurfaceHeaderTooltip)
+			) : null}
+			<div
+				className={cn(
+					"chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] border border-border bg-surface px-3 pb-3 pt-4",
+					composerSurfaceHeader ? "rounded-b-xl border-t-0" : "rounded-xl",
+				)}
+			>
 				<PromptInput
 					allowOverflow
 					data-screen-assistant-target={screenAssistantTargetPrefix}
@@ -267,7 +298,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 				>
 					<PendingAttachments />
 					{hasComposerInputContext ? (
-						<PromptInputHeader className="px-0 pb-2 pt-0">
+						<PromptInputHeader className="px-2 pb-3 pt-0">
 							{composerInputContext}
 						</PromptInputHeader>
 					) : null}

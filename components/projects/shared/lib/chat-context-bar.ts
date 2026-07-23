@@ -1,4 +1,9 @@
-export type ChatContextBarIconName = "agent" | "artifact" | "board" | "work-item";
+export type ChatContextBarIconName =
+	| "agent"
+	| "artifact"
+	| "board"
+	| "branch"
+	| "work-item";
 export type ChatContextBarVariant = "context" | "edit";
 
 export interface ChatContextBarDescriptor {

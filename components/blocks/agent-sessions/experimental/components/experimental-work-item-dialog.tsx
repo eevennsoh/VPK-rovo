@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/agent-sessions/experimental/components/experimental-breadcrumb-actions";
 import { ContextTitleBar } from "@/components/blocks/agent-sessions/experimental/components/context-title-bar";
+import type { CodingAgentId } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
 
 interface ExperimentalWorkItemDialogProps {
 	open: boolean;
 	onClose: () => void;
 	presentation: "modal" | "inline";
+	primaryCodingAgentId?: CodingAgentId;
 	workItemCode: string;
 	workItemTitle: string;
 	children: ReactNode;
@@ -35,6 +37,7 @@ export function ExperimentalWorkItemDialog({
 	open,
 	onClose,
 	presentation,
+	primaryCodingAgentId,
 	workItemCode,
 	workItemTitle,
 	children,
@@ -49,7 +52,7 @@ export function ExperimentalWorkItemDialog({
 				closeButtonVariant="ghost"
 				showClose={presentation !== "inline"}
 			/>
-			<ContextTitleBar />
+			<ContextTitleBar primaryAgentId={primaryCodingAgentId} />
 
 			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 				{children}

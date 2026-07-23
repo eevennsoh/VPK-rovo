@@ -94,6 +94,27 @@ test("compact chat can hide the AI disclaimer without changing the default", () 
 	assert.match(sidebarComposer, /\{hideAiDisclaimer \? null : <Footer \/>\}/u);
 });
 
+test("chat surfaces can center an empty greeting without changing the default alignment", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+
+	assert.match(sidebarPanel, /centerEmptyGreeting\?: boolean;/u);
+	assert.match(sidebarPanel, /centerEmptyGreeting = false/u);
+	assert.match(sidebarPanel, /const shouldCenterEmptyGreeting = centerEmptyGreeting && !hasMessages;/u);
+	assert.match(sidebarPanel, /shouldCenterAgentTestEmptyState \|\| shouldCenterEmptyGreeting/u);
+});
+
+test("compact chat can lock a selected agent identity", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const chatHeader = readProjectFile("components/projects/sidebar-chat/components/chat-header.tsx");
+
+	assert.match(sidebarPanel, /showAgentBackButton\?: boolean;/u);
+	assert.match(sidebarPanel, /showAgentSelector\?: boolean;/u);
+	assert.match(sidebarPanel, /showAgentBackButton=\{showAgentBackButton\}/u);
+	assert.match(sidebarPanel, /showAgentSelector=\{showAgentSelector\}/u);
+	assert.match(chatHeader, /showAgentBackButton \? <RovoAgentBackButton onBack=\{onBackToRovo\} \/> : null/u);
+	assert.match(chatHeader, /<RovoAppBrand enableAgentSelector=\{showAgentSelector\} \/>/u);
+});
+
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
@@ -201,7 +222,40 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 	assert.match(sidebarPanel, /containerClassName=\{composerContainerClassName\}/u);
 	assert.match(sidebarComposer, /containerClassName\?: string;/u);
 	assert.match(sidebarComposer, /className=\{cn\("relative min-w-0 px-3", containerClassName\)\}/u);
-	assert.match(sidebarComposer, /rounded-xl border border-border bg-surface px-3 pb-3 pt-4/u);
+	assert.match(sidebarComposer, /border border-border bg-surface px-3 pb-3 pt-4/u);
+});
+
+test("compact chat composer supports an opt-in attached surface header", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /composerSurfaceHeader\?: ReactNode;/u);
+	assert.match(sidebarPanel, /composerSurfaceHeader=\{composerSurfaceHeader\}/u);
+	assert.match(sidebarComposer, /composerSurfaceHeader\?: ReactNode;/u);
+	assert.match(sidebarComposer, /composerSurfaceHeader \? \([\s\S]*rounded-t-xl border border-b-0/u);
+	assert.match(sidebarComposer, /composerSurfaceHeader \? "rounded-b-xl border-t-0" : "rounded-xl"/u);
+});
+
+test("compact chat composer supports an opt-in left-side surface header tooltip", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+	const codeReviewRail = readProjectFile(
+		"components/blocks/code-review/components/code-review-canvas-right-rail.tsx",
+	);
+
+	assert.match(sidebarPanel, /composerSurfaceHeaderTooltip\?: ReactNode;/u);
+	assert.match(sidebarPanel, /composerSurfaceHeaderTooltip=\{composerSurfaceHeaderTooltip\}/u);
+	assert.match(sidebarComposer, /composerSurfaceHeaderTooltip\?: ReactNode;/u);
+	assert.match(sidebarComposer, /<TooltipTrigger render=\{surface\} \/>/u);
+	assert.match(sidebarComposer, /<TooltipContent side="left">\{content\}<\/TooltipContent>/u);
+	assert.match(
+		sidebarComposer,
+		/composerSurfaceHeader \? \([\s\S]*withComposerSurfaceHeaderTooltip\([\s\S]*composerSurfaceHeaderTooltip/u,
+	);
+	assert.match(
+		codeReviewRail,
+		/composerSurfaceHeaderTooltip="Sends your prompt to Claude Code running locally\."/u,
+	);
 });
 
 test("compact chat composer supports opt-in first-render autofocus", () => {
@@ -533,14 +587,15 @@ test("compact chat accepts host-owned input context inside the prompt surface", 
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 
-	assert.match(sidebarPanel, /export interface ComposerInputContext \{[\s\S]*content: ReactNode;[\s\S]*submitText: string;[\s\S]*onSubmitted\?: \(\) => void;/u);
+	assert.match(sidebarPanel, /export interface ComposerInputContext \{[\s\S]*content: ReactNode;[\s\S]*submitText: string;[\s\S]*onSubmitStart\?: \(\) => void;[\s\S]*onSubmitted\?: \(\) => void;/u);
+	assert.match(sidebarPanel, /composerInputContext\?\.onSubmitStart\?\.\(\);[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);/u);
 	assert.match(sidebarPanel, /composerInputContext\?: ComposerInputContext;/u);
 	assert.match(sidebarPanel, /const promptText = \(text \|\| prompt\)\.trim\(\) \|\| composerInputContext\?\.submitText\.trim\(\) \|\| "";/u);
 	assert.match(sidebarPanel, /await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*composerInputContext\?\.onSubmitted\?\.\(\);/u);
 	assert.match(sidebarPanel, /composerInputContext=\{composerInputContext\?\.content\}/u);
 	assert.match(sidebarPanel, /hasComposerInputContext=\{composerInputContext !== undefined\}/u);
 	assert.match(sidebarComposer, /PromptInputHeader/u);
-	assert.match(sidebarComposer, /<PromptInputHeader className="px-0 pb-2 pt-0">[\s\S]*\{composerInputContext\}[\s\S]*<\/PromptInputHeader>/u);
+	assert.match(sidebarComposer, /<PromptInputHeader className="px-2 pb-3 pt-0">[\s\S]*\{composerInputContext\}[\s\S]*<\/PromptInputHeader>/u);
 	assert.match(sidebarComposer, /prompt\.trim\(\)\.length > 0 \|\| attachments\.files\.length > 0 \|\| hasComposerInputContext/u);
 });
 

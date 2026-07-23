@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import {
 	JiraSessionDescription,
@@ -16,7 +16,6 @@ import ChatPanel, {
 import type { ChatHistorySortMode } from "@/components/projects/sidebar-chat/components/chat-history-drawer";
 import { QueueSessionContextBar } from "@/components/projects/jira-queue/components/queue-conversation-workspace";
 import {
-	ASX_QUEUE_SESSION_SEEDS,
 	createAsxQueueSidebarSessionItem,
 	createAsxQueueHistoryThreads,
 	type AsxQueueJiraColumn,
@@ -29,6 +28,11 @@ import {
 	setQueueSessionPinned,
 	sortQueueSessions,
 } from "@/components/projects/jira-queue/lib/queue-session-state";
+import {
+	JGP_ROVO_ARTIFACT_DOCUMENTS,
+	JGP_ROVO_SESSION_SEEDS,
+} from "@/components/projects/jira-golden-paths/data/agent-chat-data";
+import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
 function ignoreThreadRun(): Promise<void> {
 	return Promise.resolve();
@@ -57,7 +61,9 @@ function ignoreThreadRun(): Promise<void> {
  * gallery resets it when the Rovo card is entered so the panel opens at its
  * greeting instead of inheriting the Kanban demo's conversation.
  */
-export function RovoStage(): React.ReactElement {
+export function RovoStage({
+	scenario = "blocked-question",
+}: Readonly<{ scenario?: "blocked-question" | "pr-review" }>): React.ReactElement {
 	const {
 		replaceMessages,
 		resetAgentToRovo,
@@ -65,9 +71,10 @@ export function RovoStage(): React.ReactElement {
 		selectAgent,
 	} = useRovoChat();
 	const [historySessions, setHistorySessions] = useState<AsxQueueSession[]>(() => (
-		ASX_QUEUE_SESSION_SEEDS.map((session) => ({ ...session }))
+		JGP_ROVO_SESSION_SEEDS.map((session) => ({ ...session }))
 	));
-	const [activeHistorySessionId, setActiveHistorySessionId] = useState<string | null>(null);
+	const initialSessionId = scenario === "pr-review" ? "jgp-252-pr-review" : "jgp-251-persistence-question";
+	const [activeHistorySessionId, setActiveHistorySessionId] = useState<string | null>(initialSessionId);
 	const [sortMode, setSortMode] = useState<ChatHistorySortMode>("manual");
 	const orderedHistorySessions = useMemo(
 		() => sortQueueSessions(historySessions, sortMode),
@@ -78,7 +85,14 @@ export function RovoStage(): React.ReactElement {
 		[orderedHistorySessions],
 	);
 	const historySessionItems = useMemo(() => new Map(
-		historySessions.map((session) => [session.id, createAsxQueueSidebarSessionItem(session)]),
+		historySessions.map((session) => {
+			const item = createAsxQueueSidebarSessionItem(session);
+			return [session.id, session.agentId === "cursor" ? {
+				...item,
+				agentName: "Cursor",
+				agentAvatarSrc: getDeterministicAgentAvatarSrc("cursor"),
+			} : item];
+		}),
 	), [historySessions]);
 	const pinnedThreadIds = useMemo(() => new Set(
 		historySessions.filter((session) => session.isPinned).map((session) => session.id),
@@ -96,7 +110,7 @@ export function RovoStage(): React.ReactElement {
 			title: session.status === "awaiting-input" ? (
 				<span className="flex min-w-0 items-baseline">
 					<Shimmer as="span" className="min-w-0 truncate" duration={1.4} spread={2}>
-						Awaiting user response
+						Waiting for input
 					</Shimmer>
 					<AnimatedDots />
 				</span>
@@ -123,6 +137,12 @@ export function RovoStage(): React.ReactElement {
 		setActiveHistorySessionId(threadId);
 		return Promise.resolve();
 	}, [historySessions, historyThreads, replaceMessages, resetChat, selectAgent]);
+	const initializedSessionIdRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (initializedSessionIdRef.current === initialSessionId) return;
+		initializedSessionIdRef.current = initialSessionId;
+		void handleSelectThread(initialSessionId);
+	}, [handleSelectThread, initialSessionId]);
 	const handleDeleteThread = useCallback((threadId: string) => {
 		setHistorySessions((sessions) => sessions.filter((session) => session.id !== threadId));
 		if (activeHistorySessionId === threadId) handleNewChat();
@@ -144,9 +164,18 @@ export function RovoStage(): React.ReactElement {
 	}, [activeHistorySessionId]);
 	const handleJiraColumnChange = useCallback((jiraColumn: AsxQueueJiraColumn) => {
 		if (!activeHistorySessionId) return;
-		setHistorySessions((sessions) => (
-			setQueueSessionJiraColumn(sessions, activeHistorySessionId, jiraColumn)
-		));
+		setHistorySessions((sessions) => {
+			const nextSessions = setQueueSessionJiraColumn(
+				sessions,
+				activeHistorySessionId,
+				jiraColumn,
+			);
+			return jiraColumn === "Done"
+				? nextSessions.map((session) => session.id === activeHistorySessionId
+					? { ...session, status: "merged" }
+					: session)
+				: nextSessions;
+		});
 	}, [activeHistorySessionId]);
 	const handleArchiveThread = useCallback((threadId: string) => {
 		const result = archiveQueueSession(
@@ -172,7 +201,7 @@ export function RovoStage(): React.ReactElement {
 				onArchive={() => handleArchiveThread(thread.id)}
 				onTogglePin={() => handleTogglePinThread(thread.id)}
 				status={session.status}
-				title={session.status === "awaiting-input" ? "Awaiting user response" : session.title}
+				title={session.status === "awaiting-input" ? "Waiting for input" : session.title}
 			/>
 		);
 	}, [
@@ -211,6 +240,7 @@ export function RovoStage(): React.ReactElement {
 			<div className="h-full max-h-[800px] min-h-0 w-[400px]">
 				<ChatPanel
 					chatHistory={chatHistory}
+					inlineArtifactDocuments={JGP_ROVO_ARTIFACT_DOCUMENTS}
 					composerContextBar={activeHistorySession ? (
 						<QueueSessionContextBar
 							compact

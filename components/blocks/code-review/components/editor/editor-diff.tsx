@@ -27,6 +27,7 @@ interface EditorDiffProps {
 	onCancelDraft: (draftId: string) => void;
 	onCommitDraft: (draftId: string) => void;
 	onDeleteComment: (commentId: string) => void;
+	onUpdateComment: (commentId: string, body: string) => void;
 	onLayoutChange: (layout: DiffLayout) => void;
 	onUpdateDraft: (draftId: string, body: string) => void;
 }
@@ -40,6 +41,7 @@ export function EditorDiff({
 	onCancelDraft,
 	onCommitDraft,
 	onDeleteComment,
+	onUpdateComment,
 	onLayoutChange,
 	onUpdateDraft,
 }: Readonly<EditorDiffProps>) {
@@ -53,9 +55,18 @@ export function EditorDiff({
 						<CrossIcon label="" size="small" />
 					</Button>
 				</div>
+				{file.additions > 0 || file.deletions > 0 ? (
+					<span
+						aria-label={`${file.additions} additions, ${file.deletions} deletions`}
+						className="ml-auto flex shrink-0 items-center gap-1 text-xs leading-4"
+					>
+						<span className="text-text-success">+{file.additions}</span>
+						<span className="text-text-danger">-{file.deletions}</span>
+					</span>
+				) : null}
 				<ButtonGroup
 					aria-label="Editor diff layout"
-					className="my-auto ml-auto mr-2"
+					className="my-auto ml-2 mr-2"
 					variant="connected"
 				>
 					<Button
@@ -78,10 +89,12 @@ export function EditorDiff({
 					</Button>
 				</ButtonGroup>
 			</div>
-			<div className="flex h-7 shrink-0 items-center border-b border-border bg-surface-sunken px-3 font-mono text-xs text-text-subtle">
-				{file.hunkHeader ?? "Diff"}
-			</div>
-			<ScrollArea className="min-h-0 flex-1">
+			{file.hunkHeader ? (
+				<div className="flex h-7 shrink-0 items-center border-b border-border bg-surface-sunken px-3 font-mono text-xs text-text-subtle">
+					{file.hunkHeader}
+				</div>
+			) : null}
+			<ScrollArea className="min-h-0 flex-1 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity hover:[&_[data-slot=scroll-area-scrollbar]]:opacity-100 focus-within:[&_[data-slot=scroll-area-scrollbar]]:opacity-100">
 				<DiffFileView
 					comments={comments}
 					drafts={drafts}
@@ -91,6 +104,7 @@ export function EditorDiff({
 					onCancelDraft={onCancelDraft}
 					onCommitDraft={onCommitDraft}
 					onDeleteComment={onDeleteComment}
+					onUpdateComment={onUpdateComment}
 					onUpdateDraft={onUpdateDraft}
 				/>
 			</ScrollArea>

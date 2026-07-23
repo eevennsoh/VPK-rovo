@@ -5,11 +5,12 @@ import {
 } from "@/components/blocks/jira-kanban/state";
 import {
 	JGP_KANBAN_DEFAULT_AGENT_ID,
-	JGP_KANBAN_DRAFTING_COLUMN,
-	JGP_KANBAN_INTAKE_COLUMN,
+	JGP_KANBAN_DONE_COLUMN,
 	JGP_KANBAN_REVIEW_COLUMN,
-	JGP_KANBAN_SUBMITTED_COLUMN,
+	JGP_KANBAN_IN_PROGRESS_COLUMN,
+	JGP_KANBAN_TODO_COLUMN,
 	type JgpKanbanAgentSelection,
+	type JgpKanbanScenario,
 	createJgpKanbanActivity,
 	createJgpKanbanCompletedRun,
 	createJgpKanbanColumns,
@@ -109,9 +110,9 @@ function updateLifecycle(
 	};
 }
 
-export function createInitialJgpKanbanState(): JgpKanbanState {
+export function createInitialJgpKanbanState(scenario: JgpKanbanScenario = "local-review"): JgpKanbanState {
 	return {
-		columns: createJgpKanbanColumns(),
+		columns: createJgpKanbanColumns(scenario),
 		dragged: null,
 		lastSelectedByColumn: {},
 		lifecycleByCode: {},
@@ -143,10 +144,9 @@ export function resolveJgpKanbanColumns(state: JgpKanbanState): JiraKanbanColumn
 			}
 
 			const awaitingInput = lifecycle.phase === "needs-input";
-			const activities = lifecycle.agentIds.map((agentId, index) => (
+			const activities = lifecycle.agentIds.map((agentId) => (
 				createJgpKanbanActivity(
 					agentId,
-					awaitingInput && index === 0,
 					lifecycle.agentSelectionsById[agentId],
 					// Seed per-card variation so the same agent assigned across
 					// multiple cards reads as distinct, concurrent work rather than a
@@ -171,7 +171,7 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 		case "assign-agent":
 			return {
 				...state,
-				columns: moveJiraKanbanCardsToColumn(state.columns, action.cardCodes, JGP_KANBAN_DRAFTING_COLUMN),
+				columns: moveJiraKanbanCardsToColumn(state.columns, action.cardCodes, JGP_KANBAN_IN_PROGRESS_COLUMN),
 				lifecycleByCode: assignAgents(state.lifecycleByCode, action.cardCodes, action.agent),
 			};
 		case "advance-generating":
@@ -208,16 +208,16 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 			return { ...state, dragged: null };
 		case "drop": {
 			if (!state.dragged) return { ...state, dragged: null };
-			// Dropping into Submitted marks work as delivered: move the card(s)
+			// Dropping into Done marks work as delivered: move the card(s)
 			// without running the generative lifecycle and clear each card's
 			// lifecycle entry so the "Agent done" completed-run footer is removed.
-			if (action.targetColumnTitle === JGP_KANBAN_SUBMITTED_COLUMN) {
+			if (action.targetColumnTitle === JGP_KANBAN_DONE_COLUMN) {
 				const droppedCodes = state.dragged.cardCodes;
 				const lifecycleByCode = { ...state.lifecycleByCode };
 				for (const cardCode of droppedCodes) delete lifecycleByCode[cardCode];
 				return {
 					...state,
-					columns: moveJiraKanbanCardsToColumn(state.columns, droppedCodes, JGP_KANBAN_SUBMITTED_COLUMN),
+					columns: moveJiraKanbanCardsToColumn(state.columns, droppedCodes, JGP_KANBAN_DONE_COLUMN),
 					dragged: null,
 					lifecycleByCode,
 					selectedCardCodes: new Set(
@@ -225,13 +225,13 @@ export function jgpKanbanReducer(state: JgpKanbanState, action: JgpKanbanAction)
 					),
 				};
 			}
-			if (state.dragged.sourceColumnTitle !== JGP_KANBAN_INTAKE_COLUMN
-				|| action.targetColumnTitle !== JGP_KANBAN_DRAFTING_COLUMN) {
+			if (state.dragged.sourceColumnTitle !== JGP_KANBAN_TODO_COLUMN
+				|| action.targetColumnTitle !== JGP_KANBAN_IN_PROGRESS_COLUMN) {
 				return { ...state, dragged: null };
 			}
 			return {
 				...state,
-				columns: moveJiraKanbanCardsToColumn(state.columns, state.dragged.cardCodes, JGP_KANBAN_DRAFTING_COLUMN),
+				columns: moveJiraKanbanCardsToColumn(state.columns, state.dragged.cardCodes, JGP_KANBAN_IN_PROGRESS_COLUMN),
 				dragged: null,
 				lifecycleByCode: assignAgents(
 					state.lifecycleByCode,

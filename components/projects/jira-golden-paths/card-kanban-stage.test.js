@@ -22,9 +22,10 @@ test("Card Kanban keeps auto-cycling paused while a portalled agent flyout is op
 	assert.match(AUTO_CYCLE_SOURCE, /setExternalInteractionActive: \(active: boolean\) => void;/u);
 	assert.match(AUTO_CYCLE_SOURCE, /wrapperInteractingRef\.current \|\| externalInteractingRef\.current/u);
 	assert.match(JIRA_ISSUE_SOURCE, /onAgentActivityOpenChange\?: \(open: boolean\) => void;/u);
-	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{onAgentActivityOpenChange\}/u);
+	assert.match(JIRA_ISSUE_SOURCE, /function handleAgentActivityOpenChange\(open: boolean\) \{[\s\S]*onAgentActivityOpenChange\?\.\(open\);[\s\S]*\}/u);
+	assert.match(JIRA_ISSUE_SOURCE, /onOpenChange=\{handleAgentActivityOpenChange\}/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /<HoverCard[\s\S]*onOpenChange=\{\(open\) => \{[\s\S]*onOpenChange\?\.\(open\);[\s\S]*open=\{openRunId === run\.id\}/u);
 });
 
 test("Card Kanban restarts its progression when the gallery re-enters it", () => {
@@ -40,7 +41,7 @@ test("Card Kanban forwards persistent issue context to floating chat", () => {
 
 test("Card Kanban adds skill and custom-agent selections as working rows", () => {
 	assert.match(STAGE_SOURCE, /if \(request\.kind === "ask-rovo"\) \{[\s\S]*openAgentChat\([\s\S]*return;[\s\S]*\}/u);
-	assert.match(STAGE_SOURCE, /const selection = getJgpGenerativeAgentSelection\(request\);[\s\S]*const activity = createJgpKanbanActivity\(selection\.id, false, selection\);/u);
+	assert.match(STAGE_SOURCE, /const selection = getJgpGenerativeAgentSelection\(request\);[\s\S]*const activity = createJgpKanbanActivity\(selection\.id, selection\);/u);
 	assert.match(STAGE_SOURCE, /setAddedAgentActivities\(\(current\) => current\.some\(\(candidate\) => candidate\.id === activity\.id\)[\s\S]*\[\.\.\.current, activity\]/u);
 	assert.match(STAGE_SOURCE, /agentActivities\.length > 0[\s\S]*\? "working"/u);
 });

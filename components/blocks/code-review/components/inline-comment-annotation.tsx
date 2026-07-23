@@ -1,12 +1,23 @@
 "use client";
 
 import AddIcon from "@atlaskit/icon/core/add";
-import DeleteIcon from "@atlaskit/icon/core/delete";
 import type { GetHoveredLineResult } from "@pierre/diffs";
-import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import {
+	useState,
+	type KeyboardEvent,
+	type MouseEvent,
+	type PointerEvent,
+	type ReactNode,
+} from "react";
 
+import {
+	PromptInput,
+	PromptInputBody,
+	PromptInputFooter,
+	PromptInputTextarea,
+} from "@/components/ui-custom/prompt-input";
+import { composerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 
 import type {
 	InlineCommentDraft,
@@ -38,9 +49,10 @@ export function InlineCommentGutterButton({
 	return (
 		<Button
 			aria-label="Add inline comment"
-			className="size-5 rounded-sm p-0"
+			className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-brand shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
 			data-testid="inline-comment-gutter-button"
 			onClick={handleClick}
+			onPointerDown={(event) => event.stopPropagation()}
 			size="icon-compact"
 			title="Add inline comment"
 		>
@@ -56,90 +68,162 @@ interface InlineCommentDraftEditorProps {
 	onCommit: (draftId: string) => void;
 }
 
+interface InlineCommentEditorSurfaceProps {
+	ariaLabel: string;
+	body: string;
+	children: ReactNode;
+	editorKey?: string;
+	kind: "comment" | "draft";
+	lineNumber: number;
+	onChange: (body: string) => void;
+	onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
+	onSubmit: () => void;
+}
+
+function InlineCommentEditorSurface({
+	ariaLabel,
+	body,
+	children,
+	editorKey,
+	kind,
+	lineNumber,
+	onChange,
+	onKeyDown,
+	onSubmit,
+}: Readonly<InlineCommentEditorSurfaceProps>) {
+	return (
+		<div
+			className="min-w-0 bg-surface-raised px-3 pb-3 pt-2 font-sans text-text"
+			data-inline-comment-kind={kind}
+			onKeyDown={onKeyDown}
+			onPointerDown={(event: PointerEvent<HTMLDivElement>) => event.stopPropagation()}
+		>
+			<div className="mb-2 text-xs font-semibold text-text-subtlest">
+				Comment on line {lineNumber}
+			</div>
+			<PromptInput
+				className="min-h-[101px] w-full rounded-xl border border-border bg-surface px-3 pb-3 pt-4"
+				onSubmit={onSubmit}
+			>
+				<PromptInputBody>
+					<PromptInputTextarea
+						aria-label={ariaLabel}
+						autoFocus
+						className={composerTextareaClassName}
+						enableDirectoryAutocomplete={false}
+						enableSuggestionMenus={false}
+						key={editorKey}
+						onChange={(event) => onChange(event.currentTarget.value)}
+						placeholder=""
+						value={body}
+					/>
+				</PromptInputBody>
+				<PromptInputFooter className="mt-3 justify-end px-0 pb-0 pt-0">
+					{children}
+				</PromptInputFooter>
+			</PromptInput>
+		</div>
+	);
+}
+
 function InlineCommentDraftEditor({
 	draft,
 	onCancel,
 	onChange,
 	onCommit,
 }: Readonly<InlineCommentDraftEditorProps>) {
-	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const canCommit = draft.body.trim().length > 0;
-	const sideLabel = draft.side === "additions" ? "new" : "old";
 
-	useEffect(() => {
-		const frame = requestAnimationFrame(() => textareaRef.current?.focus());
-		return () => cancelAnimationFrame(frame);
-	}, []);
-
-	const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (event.key === "Escape") {
 			event.preventDefault();
 			onCancel(draft.id);
-			return;
-		}
-
-		if (event.key === "Enter" && (event.metaKey || event.ctrlKey) && canCommit) {
-			event.preventDefault();
-			onCommit(draft.id);
 		}
 	};
 
 	return (
-		<div
-			className="min-w-0 bg-surface-raised px-3 py-2 font-sans text-text"
-			data-inline-comment-kind="draft"
-			onPointerDown={(event: PointerEvent<HTMLDivElement>) => event.stopPropagation()}
+		<InlineCommentEditorSurface
+			ariaLabel={`Comment on line ${draft.lineNumber}`}
+			body={draft.body}
+			kind="draft"
+			lineNumber={draft.lineNumber}
+			onChange={(body) => onChange(draft.id, body)}
+			onKeyDown={handleKeyDown}
+			onSubmit={() => {
+				if (canCommit) onCommit(draft.id);
+			}}
 		>
-			<div className="mb-2 text-xs font-semibold text-text-subtle">Local comment</div>
-			<Textarea
-				ref={textareaRef}
-				aria-label={`Comment on ${draft.filePath}, ${sideLabel} side, line ${draft.lineNumber}`}
-				className="min-h-20 resize-y bg-bg-input font-sans text-sm"
-				onChange={(event) => onChange(draft.id, event.currentTarget.value)}
-				onKeyDown={handleKeyDown}
-				placeholder="Add a comment about this line"
-				value={draft.body}
-			/>
-			<div className="mt-2 flex justify-end gap-2">
-				<Button onClick={() => onCancel(draft.id)} size="compact" variant="ghost">
-					Cancel
-				</Button>
-				<Button disabled={!canCommit} onClick={() => onCommit(draft.id)} size="compact">
-					Comment
-				</Button>
-			</div>
-		</div>
+			<Button onClick={() => onCancel(draft.id)} type="button" variant="ghost">
+				Cancel
+			</Button>
+			<Button disabled={!canCommit} type="submit" variant="outline">
+				Comment
+			</Button>
+		</InlineCommentEditorSurface>
 	);
 }
 
 interface InlineCommentViewProps {
 	comment: InlineReviewComment;
 	onDelete: (commentId: string) => void;
+	onUpdate: (commentId: string, body: string) => void;
 }
 
-function InlineCommentView({ comment, onDelete }: Readonly<InlineCommentViewProps>) {
-	const sideLabel = comment.side === "additions" ? "new" : "old";
+function InlineCommentView({
+	comment,
+	onDelete,
+	onUpdate,
+}: Readonly<InlineCommentViewProps>) {
+	const [body, setBody] = useState(comment.body);
+	const trimmedBody = body.trim();
+	const isEditing = body !== comment.body;
+	const canUpdate = isEditing && trimmedBody.length > 0;
+
+	const handleCancel = () => setBody(comment.body);
+	const handleUpdate = () => {
+		if (canUpdate) {
+			onUpdate(comment.id, trimmedBody);
+			setBody(trimmedBody);
+		}
+	};
+	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+		if (event.key === "Escape" && isEditing) {
+			event.preventDefault();
+			handleCancel();
+		}
+	};
 
 	return (
-		<div
-			className="group/comment min-w-0 bg-surface-raised px-3 py-2 font-sans text-text"
-			data-inline-comment-kind="comment"
-			onPointerDown={(event: PointerEvent<HTMLDivElement>) => event.stopPropagation()}
+		<InlineCommentEditorSurface
+			ariaLabel={`Comment on line ${comment.lineNumber}`}
+			body={body}
+			editorKey={comment.body}
+			kind="comment"
+			lineNumber={comment.lineNumber}
+			onChange={setBody}
+			onKeyDown={handleKeyDown}
+			onSubmit={handleUpdate}
 		>
-			<div className="flex items-center justify-between gap-2">
-				<span className="text-xs font-semibold text-text-subtle">Local comment</span>
+			{isEditing ? (
+				<>
+					<Button onClick={handleCancel} type="button" variant="ghost">
+						Cancel
+					</Button>
+					<Button disabled={!canUpdate} type="submit" variant="outline">
+						Update
+					</Button>
+				</>
+			) : (
 				<Button
-					aria-label={`Delete comment on ${comment.filePath}, ${sideLabel} side, line ${comment.lineNumber}`}
-					className="opacity-70 group-hover/comment:opacity-100"
+					aria-label={`Delete comment on ${comment.filePath}, line ${comment.lineNumber}`}
 					onClick={() => onDelete(comment.id)}
-					size="icon-compact"
-					variant="ghost"
+					type="button"
+					variant="outline"
 				>
-					<DeleteIcon label="" size="small" />
+					Delete
 				</Button>
-			</div>
-			<p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5">{comment.body}</p>
-		</div>
+			)}
+		</InlineCommentEditorSurface>
 	);
 }
 
@@ -148,6 +232,7 @@ interface InlineCommentAnnotationProps {
 	onCancelDraft: (draftId: string) => void;
 	onCommitDraft: (draftId: string) => void;
 	onDeleteComment: (commentId: string) => void;
+	onUpdateComment: (commentId: string, body: string) => void;
 	onUpdateDraft: (draftId: string, body: string) => void;
 }
 
@@ -156,6 +241,7 @@ export function InlineCommentAnnotation({
 	onCancelDraft,
 	onCommitDraft,
 	onDeleteComment,
+	onUpdateComment,
 	onUpdateDraft,
 }: Readonly<InlineCommentAnnotationProps>) {
 	return metadata.kind === "draft" ? (
@@ -166,6 +252,10 @@ export function InlineCommentAnnotation({
 			onCommit={onCommitDraft}
 		/>
 	) : (
-		<InlineCommentView comment={metadata.comment} onDelete={onDeleteComment} />
+		<InlineCommentView
+			comment={metadata.comment}
+			onDelete={onDeleteComment}
+			onUpdate={onUpdateComment}
+		/>
 	);
 }

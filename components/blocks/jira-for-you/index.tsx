@@ -16,6 +16,7 @@ import type {
 export interface JiraForYouProps {
 	className?: string;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem) => void;
 	sections?: readonly JiraForYouSection[];
 	tabs?: readonly JiraForYouTab[];
 }
@@ -44,6 +45,7 @@ function filterSections(
 export function JiraForYou({
 	className,
 	onItemClick,
+	onView,
 	sections = JIRA_FOR_YOU_SECTIONS,
 	tabs = JIRA_FOR_YOU_TABS,
 }: Readonly<JiraForYouProps>) {
@@ -69,6 +71,7 @@ export function JiraForYou({
 						<JiraForYouSectionGroup
 							key={section.id}
 							onItemClick={onItemClick}
+							onView={onView}
 							section={section}
 						/>
 					))}

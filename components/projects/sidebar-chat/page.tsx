@@ -16,21 +16,10 @@ import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import { useLazyRef } from "@/lib/use-lazy-ref";
-import {
-	Conversation,
-	ConversationContent,
-	ConversationScrollButton,
-} from "@/components/ui-custom/conversation";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ui-custom/conversation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
@@ -70,6 +59,7 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
+import type { RovoAppDocument } from "@/lib/rovo-app-types";
 import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
@@ -159,6 +149,7 @@ export interface ChatPanelCustomAgentTabs {
 export interface ComposerInputContext {
 	content: ReactNode;
 	submitText: string;
+	onSubmitStart?: () => void;
 	onSubmitted?: () => void;
 }
 
@@ -284,6 +275,10 @@ interface ChatPanelProps {
 	composerContainerClassName?: string;
 	/** Optional host-owned actions rendered directly above the composer. */
 	composerContextBar?: ReactNode;
+	/** Optional host-owned header attached to the top of the prompt surface. */
+	composerSurfaceHeader?: ReactNode;
+	/** Optional tooltip shown when the user hovers the prompt surface header. */
+	composerSurfaceHeaderTooltip?: ReactNode;
 	/** Optional host-owned, non-text context rendered inside the prompt surface. */
 	composerInputContext?: ComposerInputContext;
 	/** Opt-in first-render focus for host surfaces where the composer is primary. */
@@ -296,13 +291,18 @@ interface ChatPanelProps {
 	 * footprint keeps the two greetings' last prompts on the same baseline.
 	 */
 	composerReservesContextBarSpace?: boolean;
+	/** Center the greeting vertically when the conversation has no messages. */
+	centerEmptyGreeting?: boolean;
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
 	/** Opt-out for embedded surfaces that should not show the AI verification disclaimer. */
 	hideAiDisclaimer?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
 	hideHeader?: boolean;
+	headerEndAction?: ReactNode;
 	headerVariant?: "default" | "minimal";
+	showAgentBackButton?: boolean;
+	showAgentSelector?: boolean;
 	abortOnUnmount?: boolean;
 	/**
 	 * Optional deterministic submit interceptor. When provided and it reports the
@@ -336,6 +336,8 @@ interface ChatPanelProps {
 	externalThinkingMessageId?: string | null;
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
+	/** Route-owned static documents for artifact previews that do not use backend persistence. */
+	inlineArtifactDocuments?: Readonly<Record<string, RovoAppDocument>>;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 	localConversation?: ChatPanelLocalConversation | null;
 	startRealtimeVoiceRequestKey?: number;
@@ -497,14 +499,20 @@ export default function ChatPanel({
 	conversationContentClassName,
 	composerContainerClassName,
 	composerContextBar,
+	composerSurfaceHeader,
+	composerSurfaceHeaderTooltip,
 	composerInputContext,
 	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
+	centerEmptyGreeting = false,
 	hideAiCursor = false,
 	hideAiDisclaimer = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
+	headerEndAction,
 	headerVariant = "default",
+	showAgentBackButton = true,
+	showAgentSelector = true,
 	abortOnUnmount = true,
 	onInterceptSubmit,
 	containerClassName,
@@ -517,6 +525,7 @@ export default function ChatPanel({
 	externalThinkingMessageId,
 	onArtifactResult,
 	onArtifactDialogOpen,
+	inlineArtifactDocuments,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 	localConversation = null,
 	startRealtimeVoiceRequestKey = 0,
@@ -711,6 +720,7 @@ export default function ChatPanel({
 		if (!promptText && files.length === 0) {
 			return;
 		}
+		composerInputContext?.onSubmitStart?.();
 
 		if (!localConversation) {
 			await handleSubmit({ files, text: promptText });
@@ -1486,6 +1496,7 @@ export default function ChatPanel({
 	const hasTestGreetingSuggestions = (resolvedGreeting?.suggestions?.length ?? 0) > 0;
 	const shouldBottomAlignAgentTestEmptyState = isAgentTestEmptyState && hasTestGreetingSuggestions;
 	const shouldCenterAgentTestEmptyState = isAgentTestEmptyState && !hasTestGreetingSuggestions;
+	const shouldCenterEmptyGreeting = centerEmptyGreeting && !hasMessages;
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
 	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || isAgentTestEmptyState;
 	const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle?.display === "grid";
@@ -1665,7 +1676,7 @@ export default function ChatPanel({
 		// so the alignment must live here rather than only on the className.)
 		justifyContent: shouldBottomAlignAgentTestEmptyState
 			? "flex-end"
-			: shouldCenterAgentTestEmptyState
+			: shouldCenterAgentTestEmptyState || shouldCenterEmptyGreeting
 				? "center"
 				: hasMessages || shouldUseNaturalEmptyGreeting
 					? "flex-start"
@@ -1802,6 +1813,7 @@ export default function ChatPanel({
 											<ArtifactResultCard
 												key={`artifact-${generatedResult.result.documentId}-${generatedResult.result.action}`}
 												artifact={generatedResult.result}
+												inlineDocument={inlineArtifactDocuments?.[generatedResult.result.documentId]}
 												onDialogOpen={handleArtifactDialogOpen}
 												onDialogClose={releaseArtifactDialogFloatingPin}
 											/>
@@ -1918,6 +1930,8 @@ export default function ChatPanel({
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						composerContextBar={composerContextBar}
+						composerSurfaceHeader={composerSurfaceHeader}
+						composerSurfaceHeaderTooltip={composerSurfaceHeaderTooltip}
 						composerInputContext={composerInputContext?.content}
 						hasComposerInputContext={composerInputContext !== undefined}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
@@ -1972,6 +1986,7 @@ export default function ChatPanel({
 			{!hideHeader && (
 				<div className="shrink-0">
 					<ChatHeader
+						endAction={headerEndAction}
 						variant={headerVariant}
 						isHistoryOpen={isHistoryOpen}
 						onBackToRovo={onBackToRovo}
@@ -1979,6 +1994,8 @@ export default function ChatPanel({
 						onHistoryToggle={toggleHistory}
 						onNewChat={handleNewChat}
 						onSurfaceSwitch={onSurfaceSwitch}
+						showAgentBackButton={showAgentBackButton}
+						showAgentSelector={showAgentSelector}
 					/>
 				</div>
 			)}

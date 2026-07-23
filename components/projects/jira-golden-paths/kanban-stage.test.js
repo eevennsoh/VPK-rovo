@@ -19,6 +19,10 @@ const JIRA_ISSUE_AGENT_ACTIVITY_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/blocks/jira-issue/agent-activity.tsx"),
 	"utf8",
 );
+const JIRA_ISSUE_COMPLETED_RUNS_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/jira-issue/completed-agent-runs.tsx"),
+	"utf8",
+);
 
 test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /<JiraKanbanBoardHeader/u);
@@ -28,9 +32,31 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	assert.match(STAGE_SOURCE, /onCardGenerativeActionSubmit=\{handleGenerativeActionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityQuestionSubmit=\{handleQuestionSubmit\}/u);
 	assert.match(STAGE_SOURCE, /onCardAgentActivityViewChat=\{handleViewChat\}/u);
-	assert.match(STAGE_SOURCE, /onCardAgentDoneRunReview=\{\(\) => setCodeReviewOpen\(true\)\}/u);
-	assert.match(STAGE_SOURCE, /<CodeReview open=\{isCodeReviewOpen\} onOpenChange=\{setCodeReviewOpen\} \/>/u);
+	assert.match(STAGE_SOURCE, /onCardAgentDoneRunView=\{handleCompletedAgentView\}/u);
+	assert.match(STAGE_SOURCE, /onCardAgentDoneRunReview=\{\(_run, card\) =>/u);
+	assert.match(STAGE_SOURCE, /if \(card\.code === "JGP-247"\) setCodeReviewOpen\(true\);/u);
+	assert.match(STAGE_SOURCE, /files=\{JGP_CODE_REVIEW_FILES\}/u);
+	assert.match(STAGE_SOURCE, /explorerRootLabel="jira"/u);
+	assert.match(STAGE_SOURCE, /hideComposerSourceAndModelControls/u);
+	assert.match(STAGE_SOURCE, /workItem=\{JGP_CODE_REVIEW_WORK_ITEM\}/u);
+	assert.match(STAGE_SOURCE, /primaryActionLabel="Merge pull request"/u);
+	assert.match(STAGE_SOURCE, /Close pull request/u);
+	assert.match(STAGE_SOURCE, /Convert to draft pull request/u);
+	assert.doesNotMatch(STAGE_SOURCE, /primaryActionLabel="Close review"/u);
+	assert.match(STAGE_SOURCE, /onReviewSubmit=\{handleReviewSubmit\}/u);
 	assert.match(STAGE_SOURCE, /selectedCardCodes=\{selectedCardCodes\}/u);
+	assert.match(JIRA_KANBAN_SOURCE, /onCardAgentDoneRunView\?: \(/u);
+	assert.match(
+		JIRA_KANBAN_SOURCE,
+		/onAgentDoneRunView=\{[\s\S]*onCardAgentDoneRunView[\s\S]*\(run\) => onCardAgentDoneRunView\(run, card, column\.title\)/u,
+	);
+});
+
+test("custom completed agents open a hard-coded floating chat playback", () => {
+	assert.match(STAGE_SOURCE, /if \(run\.actionLabel !== "View"\) return;/u);
+	assert.match(STAGE_SOURCE, /agentId: run\.agentName\.toLowerCase\(\)\.replaceAll\(" ", "-"\)/u);
+	assert.match(STAGE_SOURCE, /request: `Show me what you completed for \$\{card\.code\}\.`/u);
+	assert.match(STAGE_SOURCE, /result: \[[\s\S]*run\.description \?\? artifactSummary[\s\S]*artifactSummary/u);
 });
 
 test("Kanban stage selects ranges against the filtered columns", () => {
@@ -44,14 +70,28 @@ test("JGP Kanban reuses the Jira Issue rainbow spinner for working agents", () =
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner size="sm" variant="rainbow" label="" \/>/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /agentBrandName\?: ThirdPartyLogoName;/u);
+	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
+	assert.match(
+		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
+		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"/u,
+	);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_SPINNER_LOOP_MS = 1200;/u);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentSpinnerPhaseOffsetMs\(activityId: string, index: number\)/u);
+	assert.doesNotMatch(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner[^>]*animate-spin/u);
+});
+
+test("completed Jira agent rows can suppress repeated state icons without hiding hover artifacts", () => {
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /showStateIcon\?: boolean;/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /run\.showStateIcon !== false && state\.icon/u);
+	assert.match(JIRA_ISSUE_COMPLETED_RUNS_SOURCE, /outputs: run\.outputs \?\? \[\]/u);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {
 	assert.match(HOOK_SOURCE, /const GENERATING_DELAY_MS = 1_200;/u);
 	assert.match(HOOK_SOURCE, /const COMPLETION_DELAY_MS = 5_500;/u);
-	assert.match(HOOK_SOURCE, /const INPUT_RESUME_COMPLETION_DELAY_MS = 2_500;/u);
-	assert.match(HOOK_SOURCE, /const NEEDS_INPUT_CARD_CODE = "RFP-101";/u);
+	assert.doesNotMatch(HOOK_SOURCE, /RFP-/u);
 });
 
 test("Kanban starts skill and custom-agent sparkle actions without opening chat", () => {
@@ -67,22 +107,19 @@ test("Kanban stage shows the Jira selection toolbar when cards are selected", ()
 	assert.match(STAGE_SOURCE, /onAgentAssignmentChange:\s*handleAgentAssignmentChange/u);
 	assert.match(STAGE_SOURCE, /onClearSelection:\s*handleClearSelection/u);
 	assert.match(STAGE_SOURCE, /selectedAgentIds/u);
-	assert.match(STAGE_SOURCE, /agents: ROVO_AGENT_SELECTOR_AGENTS/u);
-	assert.match(STAGE_SOURCE, /defaultPinnedAgentIds: DEFAULT_PINNED_SPACE_AGENT_IDS/u);
-	assert.match(STAGE_SOURCE, /defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS/u);
-	assert.match(STAGE_SOURCE, /pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL/u);
-	assert.match(STAGE_SOURCE, /skills: WORK_ITEM_SKILLS/u);
+	assert.match(STAGE_SOURCE, /agents: JGP_KANBAN_SELECTION_AGENTS/u);
+	assert.match(STAGE_SOURCE, /defaultPinnedAgentIds: \["claude-code", "cursor"\]/u);
 	// A plain click selects a single card (and thus reveals the toolbar).
 	assert.match(STAGE_SOURCE, /onCardClick=\{handleCardClick\}/u);
 });
 
-test("Bulk agent assignment starts work and moves selected Intake cards into Drafting", () => {
+test("Bulk agent assignment starts work and moves selected To do cards into In progress", () => {
 	// Assigning an agent from the toolbar must run the same lifecycle as a drag /
 	// generative action (startCards): move into Drafting + thinking→generating→
 	// complete — not merely record the agent id. It should only start cards that
 	// are still in Intake, and clear the selection afterwards.
 	assert.match(HOOK_SOURCE, /const handleAgentAssignmentChange = useCallback\(\(agentId: string, assigned: boolean\) => \{/u);
-	assert.match(HOOK_SOURCE, /JGP_KANBAN_INTAKE_COLUMN/u);
+	assert.match(HOOK_SOURCE, /JGP_KANBAN_TODO_COLUMN/u);
 	assert.match(HOOK_SOURCE, /startCards\(startableCodes, \{ id: agentId \}\)/u);
 	assert.match(HOOK_SOURCE, /dispatch\(\{ type: "clear-selection" \}\)/u);
 });
@@ -93,4 +130,8 @@ test("Kanban stage forwards chat thinking state to the JGP overlay", () => {
 	assert.match(STAGE_SOURCE, /question: activity\.question/u);
 	assert.match(STAGE_SOURCE, /intro: activity\.message/u);
 	assert.match(STAGE_SOURCE, /onQuestionAnswer=\{pendingChatQuestion \? handleChatQuestionAnswer : undefined\}/u);
+});
+
+test("Carl's Code Review canvas opens the Claude Code session profile", () => {
+	assert.match(STAGE_SOURCE, /agentProfile=\{JGP_CLAUDE_CODE_AGENT_PROFILE\}/u);
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState, type ReactElement } from "react";
+import { useLayoutEffect, useState, type CSSProperties, type ReactElement } from "react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
@@ -47,12 +47,14 @@ interface JiraIssueGenerativeActionMenuProps {
 }
 
 interface JiraIssueGenerativeActionPosition {
+	bridgeHeight: number;
 	left: number;
 	top: number;
 }
 
 const JIRA_ISSUE_GENERATIVE_SKILLS = getMentionChildItems(EDITOR_PALETTE_MENTION_SOURCES, "skill");
 const JIRA_ISSUE_GENERATIVE_AGENTS = getMentionChildItems(EDITOR_PALETTE_MENTION_SOURCES, "subagent");
+const JIRA_ISSUE_GENERATIVE_TRIGGER_SIZE = 24;
 
 export function buildJiraIssueGenerativeAskRovoPrompt(
 	prompt: string,
@@ -78,9 +80,11 @@ export function buildJiraIssueGenerativeAgentPrompt(
 function getJiraIssueGenerativeTriggerPosition(anchor: HTMLElement): JiraIssueGenerativeActionPosition {
 	const rect = anchor.getBoundingClientRect();
 	const issueSurface = anchor.querySelector<HTMLElement>("[data-slot='jira-issue-surface']");
+	const top = issueSurface?.getBoundingClientRect().top ?? rect.top;
 	return {
+		bridgeHeight: Math.max(JIRA_ISSUE_GENERATIVE_TRIGGER_SIZE, rect.bottom - top),
 		left: rect.right + 7,
-		top: issueSurface?.getBoundingClientRect().top ?? rect.top,
+		top,
 	};
 }
 
@@ -134,7 +138,9 @@ export function JiraIssueGenerativeActionMenu({
 		const trackTriggerPosition = () => {
 			setTriggerPosition((currentPosition) => {
 				const nextPosition = getJiraIssueGenerativeTriggerPosition(anchor);
-				return currentPosition?.left === nextPosition.left && currentPosition.top === nextPosition.top
+				return currentPosition?.bridgeHeight === nextPosition.bridgeHeight
+					&& currentPosition.left === nextPosition.left
+					&& currentPosition.top === nextPosition.top
 					? currentPosition
 					: nextPosition;
 			});
@@ -170,7 +176,7 @@ export function JiraIssueGenerativeActionMenu({
 		<RovoSparkleButton
 			active={open}
 			aria-label={action.ariaLabel ?? "Open Jira issue generative actions"}
-			className="fixed z-[550] before:absolute before:inset-y-0 before:-left-2 before:w-2 before:content-['']"
+			className="fixed z-[150] overflow-visible before:pointer-events-auto before:absolute before:-left-2 before:top-0 before:h-[var(--jira-issue-generative-bridge-height)] before:w-2 before:content-[''] [&>span]:rounded-[inherit]"
 			hideWhenSelected
 			onBlur={onTriggerBlur}
 			onClick={(event) => event.stopPropagation()}
@@ -180,10 +186,11 @@ export function JiraIssueGenerativeActionMenu({
 			onPointerLeave={onTriggerPointerLeave}
 			size="compact"
 			style={{
+				"--jira-issue-generative-bridge-height": `${triggerPosition.bridgeHeight}px`,
 				left: triggerPosition.left,
 				pointerEvents: open ? "none" : undefined,
 				top: triggerPosition.top,
-			}}
+			} as CSSProperties}
 			visible={sparkleVisible}
 		/>
 	) : null;

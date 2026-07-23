@@ -53,7 +53,10 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 		changedFiles.outputs.map((output) => output.title),
 		["Audience Engagement Report", "Chat summary title"],
 	);
-	assert.match(CHANGED_FILES_SOURCE, /import \{ ArtifactList \}/u);
+	assert.match(
+		CHANGED_FILES_SOURCE,
+		/import \{ ArtifactList, type ArtifactListItem \} from "@\/components\/ui-custom\/artifact-list";/u,
+	);
 	assert.match(CHANGED_FILES_SOURCE, /items=\{entry\.outputs\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant="compact"/u);
 	assert.match(CHANGED_FILES_SOURCE, /import \{ ElapsedTime, RelativeTime \} from "@\/components\/ui\/elapsed-time";/u);
@@ -66,9 +69,11 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex shrink-0 items-center gap-1 font-medium/u);
 	assert.equal(changedFiles.sessionItem.completedSecondsAgo, 5 * 60);
 	assert.match(CHANGED_FILES_SOURCE, /function JiraActivityViewAction[\s\S]*const handleView = \(\) => onView\?\.\(item\);/u);
-	assert.match(CHANGED_FILES_SOURCE, /<Button[\s\S]*aria-label=\{`Open \$\{item\.agent\.name\}`\}[\s\S]*className="shrink-0 gap-1"[\s\S]*size="compact"[\s\S]*Open[\s\S]*<LinkExternalIcon label="" size="small" \/>/u);
+	assert.match(CHANGED_FILES_SOURCE, /aria-label=\{`\$\{viewActionLabel\} \$\{item\.agent\.name\}`\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /\{viewActionLabel\}[\s\S]*viewActionLabel === "Open" \? <LinkExternalIcon label="" size="small" \/> : null/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /ButtonGroup|Open with \$\{item\.agent\.name\}/u);
-	assert.match(CHANGED_FILES_SOURCE, /<JiraActivityViewAction item=\{entry\.sessionItem\} onView=\{onView\} \/>/u);
+	assert.match(CHANGED_FILES_SOURCE, /<JiraActivityViewAction[\s\S]*item=\{entry\.sessionItem\}[\s\S]*onView=\{onView\}[\s\S]*viewActionLabel=\{viewActionLabel\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /openLabel=\{outputOpenLabel\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant\?: "activity" \| "jira-issue";/u);
 	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.outputs\.length > 0 \? "p-3" : "px-3 pb-3 pt-0"/u);
@@ -191,11 +196,16 @@ test("agent output cards summarize the change and expose a View action", () => {
 	// A short generated-work summary renders as its own paragraph above the outputs.
 	assert.match(
 		CHANGED_FILES_SOURCE,
-		/<p className="px-3 pb-3 text-sm leading-5 text-text">\{entry\.description\}<\/p>/u,
+		/<p className=\{cn\("px-3 text-sm leading-5 text-text", isJiraIssue \? "pb-2" : "pb-3"\)\}>[\s\S]*\{entry\.description\}[\s\S]*<\/p>/u,
 	);
-	// The ellipsis "More actions" affordance is replaced by a persistent View action
-	// (the user can still open and chat with the session after generation).
-	assert.match(CHANGED_FILES_SOURCE, />\s*View\s*<\/Button>/u);
+	// The ellipsis "More actions" affordance is replaced by a persistent,
+	// caller-labelled action. Only the external "Open" treatment gets the
+	// external-link icon; in-product custom artifacts use "View".
+	assert.match(CHANGED_FILES_SOURCE, /\{viewActionLabel\}/u);
+	assert.match(
+		CHANGED_FILES_SOURCE,
+		/viewActionLabel === "Open" \? <LinkExternalIcon label="" size="small" \/> : null/u,
+	);
 });
 
 test("Jira Activity exposes controlled entries and replaceable composer contracts", () => {
@@ -250,7 +260,7 @@ test("the header pins a hover-reveal collapse control to the separator corner", 
 	assert.match(HEADER_SOURCE, /onCollapsedChange: \(next: boolean\) => void/u);
 	// The separator stays continuous while the fixed outline button overlays it.
 	assert.match(HEADER_SOURCE, /absolute inset-x-0 top-1\/2 h-px/u);
-	assert.match(HEADER_SOURCE, /absolute top-1\/2 right-1\.5 -translate-y-1\/2 opacity-0/u);
+	assert.match(HEADER_SOURCE, /absolute top-1\/2 right-0 -translate-y-1\/2 opacity-0/u);
 	assert.match(HEADER_SOURCE, /variant="outline"/u);
 	assert.match(HEADER_SOURCE, /className="relative z-10 bg-surface hover:bg-surface active:bg-surface/u);
 	assert.match(HEADER_SOURCE, /aria-expanded:hover:bg-surface aria-expanded:active:bg-surface/u);

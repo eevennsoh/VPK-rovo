@@ -80,7 +80,7 @@ const JIRA_ISSUE_AWAITING_INPUT_QUESTION = {
 const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	{
 		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
-		label: "Awaiting user input",
+		label: "Waiting for input",
 		question: JIRA_ISSUE_AWAITING_INPUT_QUESTION,
 		state: "awaiting-input",
 	},

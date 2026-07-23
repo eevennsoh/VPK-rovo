@@ -124,9 +124,9 @@ function LifecycleIndicator({
 						</span>
 					}
 					iconSize="small"
-					label="Awaiting user response"
+					label="Waiting for input"
 					size="small"
-					title="Awaiting user response"
+					title="Waiting for input"
 					variant="transparent"
 				/>
 			);

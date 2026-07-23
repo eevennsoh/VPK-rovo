@@ -95,6 +95,9 @@ test("Kanban header matches the production board alignment and action groups", (
 		/<div className="border-r border-border p-3">[\s\S]*<Button aria-disabled variant="outline">[\s\S]*<Icon data-icon="inline-start" render=\{<AddIcon label="" size="small" \/>\} \/>[\s\S]*Add field[\s\S]*\{FILTER_FIELDS\.map/u,
 	);
 	assert.match(HEADER_SOURCE, /<AvatarUnassigned kind="person" label="Unassigned" size="sm" \/>/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Filter board by \$\{assignee\.name\}`\}/u);
+	assert.match(HEADER_SOURCE, /aria-pressed=\{selectedAssigneeIds\.has\(assignee\.id\)\}/u);
+	assert.match(HEADER_SOURCE, /onClick=\{\(\) => toggleAssignee\(assignee\.id\)\}/u);
 	assert.match(HEADER_SOURCE, /<Button aria-disabled variant="outline">[\s\S]*Group/u);
 	assert.match(HEADER_SOURCE, /<div className="ml-auto flex items-center gap-1">/u);
 	assert.match(HEADER_SOURCE, /aria-label="View insights"/u);

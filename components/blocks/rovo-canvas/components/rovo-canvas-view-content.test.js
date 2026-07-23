@@ -18,3 +18,8 @@ test("Rovo Canvas does not render a bottom footer", () => {
 	assert.doesNotMatch(CANVAS_SOURCE, /ui-custom\/footer/u);
 	assert.doesNotMatch(CANVAS_SOURCE, /footer\?: ReactNode/u);
 });
+
+test("Rovo Canvas keeps an even viewport inset on every side", () => {
+	assert.match(CANVAS_SOURCE, /"inset-4 flex h-auto w-auto !max-w-none/u);
+	assert.doesNotMatch(CANVAS_SOURCE, /top-16 right-4 bottom-4 left-4/u);
+});

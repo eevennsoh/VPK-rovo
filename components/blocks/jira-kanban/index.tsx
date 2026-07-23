@@ -151,6 +151,11 @@ export interface JiraKanbanProps {
 		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => void;
+	onCardAgentDoneRunView?: (
+		run: JiraIssueCompletedAgentRun,
+		card: JiraKanbanCardData,
+		columnTitle: string,
+	) => void;
 	onCreateAgent?: (columnTitle: string) => void;
 	onToggleColumnAgent?: (columnTitle: string, agentId: string) => void;
 	paddingBottom?: CSSProperties["paddingBottom"];
@@ -462,6 +467,7 @@ export function JiraKanban({
 	onCardAgentActivityQuestionSubmit,
 	onCardAgentActivityViewChat,
 	onCardAgentDoneRunReview,
+	onCardAgentDoneRunView,
 	onCreateAgent,
 	onToggleColumnAgent,
 	paddingBottom = token("space.150"),
@@ -700,6 +706,11 @@ export function JiraKanban({
 											onAgentDoneRunReview={
 												onCardAgentDoneRunReview
 													? (run) => onCardAgentDoneRunReview(run, card, column.title)
+													: undefined
+											}
+											onAgentDoneRunView={
+												onCardAgentDoneRunView
+													? (run) => onCardAgentDoneRunView(run, card, column.title)
 													: undefined
 											}
 											dragging={isCardBeingDragged || isSelectedCardBeingDragged}

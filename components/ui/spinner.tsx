@@ -2,7 +2,7 @@
 
 import { useId } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { motion, type Transition, useReducedMotion } from "motion/react"
+import { useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -34,38 +34,31 @@ interface SpinnerProps
 	extends VariantProps<typeof spinnerVariants> {
 	className?: string
 	label?: string
+	/** Deterministic offset into the animation loop, used to desynchronise nearby spinners. */
+	phaseOffsetMs?: number
 	style?: React.CSSProperties
 }
 
 /**
- * Rovo brand color stops, in saffron → lime → blue → purple order, with each
- * stop doubled at the same offset to produce hard color transitions instead
- * of smooth interpolation. Band proportions match the Figma conic gradient
- * the cursor stroke uses (saffron 0–20%, lime 20–46.6%, blue 46.6–70%, purple
- * 70–100%) so the spinner reads as the same rainbow as the rest of the brand.
+ * The tail is shortest at the start/end of its loop, so equal geometric bands
+ * underexpose the colors at that seam. These shares compensate for the mask's
+ * full 1.2-second cycle so each color contributes roughly equal visible area.
  */
-const ROVO_RAINBOW_STOPS = [
-	{ offset: "0%", color: "#FCA700" },
-	{ offset: "25%", color: "#FCA700" },
-	{ offset: "25%", color: "#6A9A23" },
-	{ offset: "50%", color: "#6A9A23" },
-	{ offset: "50%", color: "#1868DB" },
-	{ offset: "75%", color: "#1868DB" },
-	{ offset: "75%", color: "#AF59E1" },
-	{ offset: "100%", color: "#AF59E1" },
+const ROVO_RAINBOW_BANDS = [
+	{ color: "#FCA700", share: 0.3, start: 0 },
+	{ color: "#6A9A23", share: 0.18, start: 0.3 },
+	{ color: "#1868DB", share: 0.21, start: 0.48 },
+	{ color: "#AF59E1", share: 0.31, start: 0.69 },
 ] as const
 
-const SPINNER_ORBIT_TRANSITION: Transition = {
-	duration: 1.2,
-	ease: "linear",
-	repeat: Infinity,
-}
+const SPINNER_RADIUS = 20
+const SPINNER_CIRCUMFERENCE = 2 * Math.PI * SPINNER_RADIUS
+const SPINNER_LOOP_DURATION_MS = 1200
 
-const SPINNER_STRETCH_TRANSITION: Transition = {
-	duration: 1.2,
-	ease: "easeInOut",
-	repeat: Infinity,
-	times: [0, 0.5, 1],
+function normalizeSpinnerPhaseOffsetMs(phaseOffsetMs: number): number {
+	if (!Number.isFinite(phaseOffsetMs)) return 0
+	return ((Math.round(phaseOffsetMs) % SPINNER_LOOP_DURATION_MS) + SPINNER_LOOP_DURATION_MS)
+		% SPINNER_LOOP_DURATION_MS
 }
 
 function Spinner({
@@ -73,15 +66,44 @@ function Spinner({
 	size = "default",
 	variant = "inherit",
 	label = "Loading",
+	phaseOffsetMs = 0,
 	style,
 }: Readonly<SpinnerProps>) {
-	const gradientId = useId()
+	const spinnerId = useId()
 	const shouldReduceMotion = useReducedMotion()
 	const isRainbow = variant === "rainbow"
-	const stroke = isRainbow ? `url(#${gradientId})` : "currentColor"
+	const tailMaskId = `${spinnerId}-tail`
+	const normalizedPhaseOffsetMs = normalizeSpinnerPhaseOffsetMs(phaseOffsetMs)
+	const negativePhaseOffset = normalizedPhaseOffsetMs > 0
+		? `-${normalizedPhaseOffsetMs}ms`
+		: undefined
+	const tailAnimations = shouldReduceMotion ? null : (
+		<>
+			<animate
+				attributeName="stroke-dasharray"
+				begin={negativePhaseOffset}
+				calcMode="spline"
+				dur="1.2s"
+				keySplines="0.4 0 0 1;0.4 0 0 1"
+				keyTimes="0;0.5;1"
+				repeatCount="indefinite"
+				values="1 200;89 200;89 200"
+			/>
+			<animate
+				attributeName="stroke-dashoffset"
+				begin={negativePhaseOffset}
+				calcMode="spline"
+				dur="1.2s"
+				keySplines="0.4 0 0 1;0.4 0 0 1"
+				keyTimes="0;0.5;1"
+				repeatCount="indefinite"
+				values="0;-35;-124"
+			/>
+		</>
+	)
 
 	return (
-		<motion.svg
+		<svg
 			data-slot="spinner"
 			role="status"
 			aria-label={label}
@@ -90,50 +112,80 @@ function Spinner({
 			className={cn(spinnerVariants({ size, variant }), className)}
 			style={{
 				...style,
+				animation: shouldReduceMotion
+					? undefined
+					: "spin calc(var(--duration-slowest) * 2) var(--ease-linear) infinite",
+				animationDelay: shouldReduceMotion ? undefined : negativePhaseOffset,
 				transformOrigin: "center",
 				willChange: shouldReduceMotion ? undefined : "transform",
 			}}
-			animate={{ rotate: shouldReduceMotion ? 0 : 360 }}
-			transition={shouldReduceMotion ? { duration: 0 } : SPINNER_ORBIT_TRANSITION}
 		>
 			{isRainbow ? (
-				<defs>
-					<linearGradient
-						id={gradientId}
-						x1="0"
-						y1="0"
-						x2="1"
-						y2="1"
-						gradientUnits="objectBoundingBox"
-					>
-						{ROVO_RAINBOW_STOPS.map((stop, i) => (
-							<stop
-								key={`${stop.offset}-${i}`}
-								offset={stop.offset}
-								stopColor={stop.color}
-							/>
-						))}
-					</linearGradient>
-				</defs>
-			) : null}
-			<motion.circle
-				cx="25"
-				cy="25"
-				r="20"
-				stroke={stroke}
-				strokeWidth="4"
-				strokeLinecap="round"
-				fill="none"
-				transform="rotate(-90 25 25)"
-				animate={shouldReduceMotion
-					? { strokeDasharray: "56 200", strokeDashoffset: 0 }
-					: {
-							strokeDasharray: ["1 200", "89 200", "89 200"],
-							strokeDashoffset: [0, -35, -124],
-						}}
-				transition={shouldReduceMotion ? { duration: 0 } : SPINNER_STRETCH_TRANSITION}
-			/>
-		</motion.svg>
+				<>
+					<defs>
+						<mask
+							height="50"
+							id={tailMaskId}
+							maskUnits="userSpaceOnUse"
+							width="50"
+							x="0"
+							y="0"
+						>
+							<circle
+								cx="25"
+								cy="25"
+								fill="none"
+								r={SPINNER_RADIUS}
+								stroke="white"
+								strokeDasharray="56 200"
+								strokeDashoffset="0"
+								strokeLinecap="round"
+								strokeWidth="4"
+								transform="rotate(-90 25 25)"
+							>
+								{tailAnimations}
+							</circle>
+						</mask>
+					</defs>
+					<g mask={`url(#${tailMaskId})`}>
+						{ROVO_RAINBOW_BANDS.map((band) => {
+							const segmentLength = SPINNER_CIRCUMFERENCE * band.share
+
+							return (
+								<circle
+									cx="25"
+									cy="25"
+									fill="none"
+									key={band.color}
+									r={SPINNER_RADIUS}
+									stroke={band.color}
+									strokeDasharray={`${segmentLength} ${SPINNER_CIRCUMFERENCE - segmentLength}`}
+									strokeDashoffset={-SPINNER_CIRCUMFERENCE * band.start}
+									strokeLinecap="butt"
+									strokeWidth="4"
+									transform="rotate(-90 25 25)"
+								/>
+							)
+						})}
+					</g>
+				</>
+			) : (
+				<circle
+					cx="25"
+					cy="25"
+					fill="none"
+					r={SPINNER_RADIUS}
+					stroke="currentColor"
+					strokeDasharray="56 200"
+					strokeDashoffset="0"
+					strokeLinecap="round"
+					strokeWidth="4"
+					transform="rotate(-90 25 25)"
+				>
+					{tailAnimations}
+				</circle>
+			)}
+		</svg>
 	)
 }
 

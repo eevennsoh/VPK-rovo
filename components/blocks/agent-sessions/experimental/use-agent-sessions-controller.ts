@@ -66,20 +66,22 @@ export interface AgentSessionsController {
 }
 
 interface AgentSessionsInit {
+	initialState?: AgentSessionsState;
 	preset: AgentSessionsPreset;
 	workItem: WorkItemData;
 }
 
-function initState({ preset, workItem }: AgentSessionsInit): AgentSessionsState {
-	return hydratePreset(preset, workItem);
+function initState({ initialState, preset, workItem }: AgentSessionsInit): AgentSessionsState {
+	return initialState ?? hydratePreset(preset, workItem);
 }
 
 export function useAgentSessionsController(
 	initialPreset: AgentSessionsPreset,
 	workItem: WorkItemData,
 	active = true,
+	initialState?: AgentSessionsState,
 ): AgentSessionsController {
-	const [state, dispatch] = useReducer(agentSessionsReducer, { preset: initialPreset, workItem }, initState);
+	const [state, dispatch] = useReducer(agentSessionsReducer, { initialState, preset: initialPreset, workItem }, initState);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state) || isPlannerProcessing(state.planner);
 	const isFrozenRunningDemo = state.preset === "running";

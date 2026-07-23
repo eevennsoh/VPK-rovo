@@ -566,6 +566,8 @@ export function createComposerTraceDecorationExtension() {
 
 export interface ComposerEditorExtensionOptions extends RichTextEditorExtensionOptions {
 	directoryAutocomplete?: ComposerDirectoryAutocompleteController;
+	/** Disable the inline `@` mention and `/` command palettes. */
+	enableSuggestionMenus?: boolean;
 	/**
 	 * Called on a plain (non-Shift, non-IME) Enter when no `@`/`/` menu is open.
 	 * Return `true` to consume the keystroke (e.g. after requesting form submit).
@@ -590,9 +592,13 @@ export function createComposerEditorExtensions(
 		ComposerText,
 		ComposerHardBreak,
 		createComposerHistoryExtension(),
-		createRichTextMentionExtension(composerOptions),
-		// The composer's "/" menu surfaces references only — no Format category.
-		SlashCommand.configure({ ...composerOptions, includeFormat: false }),
+		...(options.enableSuggestionMenus === false
+			? []
+			: [
+					createRichTextMentionExtension(composerOptions),
+					// The composer's "/" menu surfaces references only — no Format category.
+					SlashCommand.configure({ ...composerOptions, includeFormat: false }),
+				]),
 		// Composer-only: tracks reverted auto-tag spots so they aren't re-converted.
 		DismissedAutoTagTracker,
 		createComposerTraceDecorationExtension(),

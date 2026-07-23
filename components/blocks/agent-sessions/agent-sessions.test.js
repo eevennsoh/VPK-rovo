@@ -155,7 +155,11 @@ test("the title Open split button uses direct 24px coding-agent logos", () => {
 	assert.match(titleActionsSource, /<LogoThirdParty name=\{name\} size="small" borderless \/>/u);
 	assert.match(titleActionsSource, /<RovoColorIcon size="small" \/>/u);
 	assert.doesNotMatch(titleActionsSource, /LogoThirdParty[^>]*size="xxsmall"/u);
-	assert.match(titleActionsSource, /export function ContextTitleActions\(\{ collapsed = false \}/u);
+	assert.match(
+		titleActionsSource,
+		/export function ContextTitleActions\(\{[\s\S]*collapsed = false,[\s\S]*primaryAgentId = "claude-code",/u,
+	);
+	assert.match(titleActionsSource, /CODING_AGENTS\.find\(\(agent\) => agent\.id === primaryAgentId\)/u);
 	assert.doesNotMatch(titleActionsSource, /useAgentSessionsState|useAgentSessionsActions|StatusPill/u);
 	assert.match(titleActionsSource, /\{collapsed \? null : \([\s\S]*aria-label="No restrictions"[\s\S]*<EyeOpenIcon[\s\S]*aria-label="Share"/u);
 	assert.match(titleActionsSource, /collapsed \? \([\s\S]*<DropdownMenu[\s\S]*aria-label="Actions"/u);
@@ -558,7 +562,10 @@ test("running metronome is gated on the open surface so preset sessions stay pri
 
 	// Provider forwards the gate to the controller.
 	assert.match(contextSource, /active\?: boolean;/u);
-	assert.match(contextSource, /useAgentSessionsController\(initialPreset, workItem, active\)/u);
+	assert.match(
+		contextSource,
+		/useAgentSessionsController\(initialPreset, workItem, active(?:, initialState)?\)/u,
+	);
 	assert.match(controllerSource, /hasRunningSession\(state\) \|\| isPlannerProcessing\(state\.planner\)/u);
 
 	// Composition drives the gate from the dialog open state.

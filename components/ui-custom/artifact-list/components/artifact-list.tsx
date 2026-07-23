@@ -4,6 +4,8 @@ import { type ReactNode } from "react";
 
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import GlobeIcon from "@atlaskit/icon/core/globe";
+import PageIcon from "@atlaskit/icon/core/page";
+import VideoIcon from "@atlaskit/icon/core/video";
 
 import { Button } from "@/components/ui/button";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
@@ -30,7 +32,7 @@ export interface ArtifactListItem {
 		deletions: number;
 	};
 	/** Serializable built-in icon for data-only consumers. `icon` takes precedence. */
-	iconName?: "ai-chat" | "globe";
+	iconName?: "ai-chat" | "globe" | "page" | "video";
 	/** ADS icon for the leading tile (e.g. `<PageIcon label="" />`). */
 	icon?: ReactNode;
 	/**
@@ -78,6 +80,8 @@ function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>)
 		return <img alt="" aria-hidden className="object-contain" height={24} src={item.logoSrc} width={24} />;
 	}
 	if (item.icon) return item.icon;
+	if (item.iconName === "page") return <PageIcon label="" size="small" />;
+	if (item.iconName === "video") return <VideoIcon label="" size="small" />;
 	if (item.iconName === "globe") return <GlobeIcon label="" size="small" />;
 	if (item.iconName === "ai-chat") return <AiChatIcon label="" size="small" />;
 	return null;

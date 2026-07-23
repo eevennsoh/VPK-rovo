@@ -14,18 +14,13 @@ import { EXPLORER_TREE } from "../../data/explorer-tree";
 import type { ChangedFile, ExplorerNode } from "../../data/types";
 
 const CODE_REVIEW_ROOT_PATH = "VSCODE";
-const CHANGED_FILES_ROOT_PATH = `${CODE_REVIEW_ROOT_PATH}/CHANGED FILES`;
-const DEFAULT_EXPANDED_PATHS = [
-	CODE_REVIEW_ROOT_PATH,
-	CHANGED_FILES_ROOT_PATH,
-];
 const DEMO_GIT_STATUSES: Readonly<Record<string, FileTree2GitStatus>> = {
-	"VSCODE/.browserslistrc": "ignored",
-	"VSCODE/.gitignore": "deleted",
-	"VSCODE/CONTRIBUTING.md": "added",
-	"VSCODE/node_modules": "ignored",
-	"VSCODE/package.json": "renamed",
-	"VSCODE/yarn.lock": "untracked",
+	".browserslistrc": "ignored",
+	".gitignore": "deleted",
+	"CONTRIBUTING.md": "added",
+	"node_modules": "ignored",
+	"package.json": "renamed",
+	"yarn.lock": "untracked",
 };
 
 interface CodeReviewTreeData {
@@ -34,10 +29,14 @@ interface CodeReviewTreeData {
 	pathsByFileId: ReadonlyMap<string, string>;
 }
 
-function createCodeReviewTreeData(files: readonly ChangedFile[]): CodeReviewTreeData {
+function createCodeReviewTreeData(
+	files: readonly ChangedFile[],
+	rootPath: string,
+): CodeReviewTreeData {
+	const changedFilesRootPath = `${rootPath}/CHANGED FILES`;
 	const itemsByPath = new Map<string, FileTree2Item>([
-		[CODE_REVIEW_ROOT_PATH, { path: CODE_REVIEW_ROOT_PATH, type: "folder" }],
-		[CHANGED_FILES_ROOT_PATH, { path: CHANGED_FILES_ROOT_PATH, type: "folder" }],
+		[rootPath, { path: rootPath, type: "folder" }],
+		[changedFilesRootPath, { path: changedFilesRootPath, type: "folder" }],
 	]);
 	const fileIdsByPath = new Map<string, string>();
 	const pathsByFileId = new Map<string, string>();
@@ -47,7 +46,7 @@ function createCodeReviewTreeData(files: readonly ChangedFile[]): CodeReviewTree
 		itemsByPath.set(path, {
 			disabled: node.kind === "file" && !node.fileId,
 			path,
-			status: DEMO_GIT_STATUSES[path],
+			status: DEMO_GIT_STATUSES[path.slice(rootPath.length + 1)],
 			type: node.kind,
 		});
 
@@ -61,13 +60,24 @@ function createCodeReviewTreeData(files: readonly ChangedFile[]): CodeReviewTree
 	};
 
 	for (const node of EXPLORER_TREE.filter((node) => !node.fileId)) {
-		addExplorerNode(node, CODE_REVIEW_ROOT_PATH);
+		addExplorerNode(node, rootPath);
 	}
 
 	for (const file of files) {
 		const fileName = file.path.split("/").at(-1) ?? file.path;
-		const path = `${CHANGED_FILES_ROOT_PATH}/${fileName}`;
-		itemsByPath.set(path, { path, status: file.status });
+		const path = file.explorerPath
+			? `${rootPath}/${file.explorerPath}`
+			: `${changedFilesRootPath}/${fileName}`;
+		const existingItem = itemsByPath.get(path);
+		itemsByPath.set(path, {
+			...existingItem,
+			disabled: false,
+			path,
+			status: file.additions > 0 || file.deletions > 0
+				? file.status
+				: existingItem?.status,
+			type: "file",
+		});
 		fileIdsByPath.set(path, file.id);
 		pathsByFileId.set(file.id, path);
 	}
@@ -80,17 +90,26 @@ function createCodeReviewTreeData(files: readonly ChangedFile[]): CodeReviewTree
 }
 
 interface EditorExplorerProps {
+	explorerRootLabel?: string;
 	files: readonly ChangedFile[];
 	selectedFileId: string;
 	onFileSelect: (fileId: string) => void;
 }
 
 export function EditorExplorer({
+	explorerRootLabel = CODE_REVIEW_ROOT_PATH,
 	files,
 	selectedFileId,
 	onFileSelect,
 }: Readonly<EditorExplorerProps>) {
-	const { fileIdsByPath, items, pathsByFileId } = createCodeReviewTreeData(files);
+	const { fileIdsByPath, items, pathsByFileId } = createCodeReviewTreeData(
+		files,
+		explorerRootLabel,
+	);
+	const defaultExpandedPaths = [
+		explorerRootLabel,
+		`${explorerRootLabel}/CHANGED FILES`,
+	];
 	const handleSelect = (path: string) => {
 		const fileId = fileIdsByPath.get(path);
 		if (fileId) {
@@ -113,11 +132,11 @@ export function EditorExplorer({
 					/>
 				</label>
 			</div>
-			<ScrollArea className="min-h-0 flex-1 px-1">
+			<ScrollArea className="min-h-0 flex-1 px-1 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity hover:[&_[data-slot=scroll-area-scrollbar]]:opacity-100 focus-within:[&_[data-slot=scroll-area-scrollbar]]:opacity-100">
 				<FileTree2
 					aria-label="Code review files"
 					className="rounded-none border-0 bg-transparent text-xs [&_[role=tree]]:max-h-none [&_[role=tree]]:overflow-visible"
-					defaultExpandedPaths={DEFAULT_EXPANDED_PATHS}
+					defaultExpandedPaths={defaultExpandedPaths}
 					items={items}
 					onSelectedPathChange={handleSelect}
 					selectedPath={pathsByFileId.get(selectedFileId)}

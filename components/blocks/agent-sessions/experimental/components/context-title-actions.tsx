@@ -21,9 +21,18 @@ import LockUnlockedIcon from "@atlaskit/icon/core/lock-unlocked";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+export type CodingAgentId =
+	| "claude-code"
+	| "codex"
+	| "rovo-cli"
+	| "cursor"
+	| "vs-code"
+	| "github-copilot"
+	| "gemini";
+
 type CodingAgent = Readonly<{
 	/** Stable id used for React keys. */
-	id: string;
+	id: CodingAgentId;
 	/** Human-readable label shown in the button/menu. */
 	label: string;
 	/** Brand glyph. Rovo is a 1P mark; the rest render via `LogoThirdParty`. */
@@ -52,10 +61,6 @@ const CODING_AGENTS: readonly CodingAgent[] = [
 	{ id: "gemini", label: "Gemini", logo: thirdPartyAgentLogo("google-gemini") },
 ];
 
-const PRIMARY_CODING_AGENT = CODING_AGENTS[0];
-/** Dropdown lists the non-default agents; the default sits on the split button. */
-const SECONDARY_CODING_AGENTS = CODING_AGENTS.slice(1);
-
 /**
  * Title-row action cluster for the experimental Agent Sessions work item:
  * lock / watch / share / status / Open split button / more. It mirrors the
@@ -64,7 +69,13 @@ const SECONDARY_CODING_AGENTS = CODING_AGENTS.slice(1);
  * shared ButtonGroup primitive so the main + trailing chevron read as one group;
  * its trailing chevron opens a dropdown listing the available coding agents.
  */
-export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?: boolean }>) {
+export function ContextTitleActions({
+	collapsed = false,
+	primaryAgentId = "claude-code",
+}: Readonly<{ collapsed?: boolean; primaryAgentId?: CodingAgentId }>) {
+	const primaryCodingAgent = CODING_AGENTS.find((agent) => agent.id === primaryAgentId) ?? CODING_AGENTS[0];
+	const secondaryCodingAgents = CODING_AGENTS.filter((agent) => agent.id !== primaryCodingAgent.id);
+
 	return (
 		<div className="flex shrink-0 items-center gap-2">
 			{collapsed ? null : (
@@ -82,9 +93,9 @@ export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?
 				</>
 			)}
 			<ButtonGroup variant="split">
-				<Button aria-label={`Open with ${PRIMARY_CODING_AGENT.label}`} variant="outline" className="gap-0.5">
-					{PRIMARY_CODING_AGENT.logo}
-					{PRIMARY_CODING_AGENT.label}
+				<Button aria-label={`Open with ${primaryCodingAgent.label}`} variant="outline" className="gap-0.5">
+					{primaryCodingAgent.logo}
+					{primaryCodingAgent.label}
 				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -96,7 +107,7 @@ export function ContextTitleActions({ collapsed = false }: Readonly<{ collapsed?
 					/>
 					<DropdownMenuContent align="end" positionerClassName="z-[502]" className="p-0">
 						<div className="max-h-72 overflow-y-auto p-1">
-							{SECONDARY_CODING_AGENTS.map((agent) => (
+							{secondaryCodingAgents.map((agent) => (
 								<DropdownMenuItem className="gap-0.5" key={agent.id} elemBefore={agent.logo}>
 									{agent.label}
 								</DropdownMenuItem>

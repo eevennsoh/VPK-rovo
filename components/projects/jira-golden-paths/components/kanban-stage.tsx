@@ -3,21 +3,27 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { CodeReview } from "@/components/blocks/code-review";
-import type { JiraIssueAgentActivity, JiraIssueGenerativeActionRequest } from "@/components/blocks/jira-issue";
+import type {
+	JiraIssueAgentActivity,
+	JiraIssueCompletedAgentRun,
+	JiraIssueGenerativeActionRequest,
+} from "@/components/blocks/jira-issue";
 import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
 import { JiraKanbanBoardHeader } from "@/components/blocks/jira-kanban/board-header";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
 	filterJiraKanbanColumnsByAssignee,
 	getJiraKanbanAssignees,
 } from "@/components/blocks/jira-kanban/state";
-import { ROVO_AGENT_SELECTOR_AGENTS } from "@/app/data/directory/agents";
 import {
-	DEFAULT_PINNED_SPACE_AGENT_IDS,
-	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
-	WORK_ITEM_PINNED_ITEMS_LABEL,
-	WORK_ITEM_SKILLS,
-} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
-import { JGP_KANBAN_AGENTS, JGP_KANBAN_DEFAULT_AGENT_ID } from "@/components/projects/jira-golden-paths/data/kanban-data";
+	JGP_CODE_REVIEW_FILES,
+	JGP_CODE_REVIEW_WORK_ITEM,
+	JGP_KANBAN_AGENTS,
+	JGP_KANBAN_DEFAULT_AGENT_ID,
+	JGP_KANBAN_SELECTION_AGENTS,
+	type JgpKanbanScenario,
+} from "@/components/projects/jira-golden-paths/data/kanban-data";
+import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-paths/data/agent-chat-data";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
 import { useJgpKanbanLifecycle } from "@/components/projects/jira-golden-paths/hooks/use-kanban-lifecycle";
 import { token } from "@/lib/tokens";
@@ -26,9 +32,8 @@ import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
 /**
  * The "Kanban" design pattern for the Jira Golden Paths gallery.
  *
- * Reuses the real `components/blocks/jira-kanban` board verbatim (same sample
- * columns + agents as the block's own demo), shown read-only in the gallery
- * stage when the Kanban card is selected.
+ * Reuses the real `components/blocks/jira-kanban` board with deterministic,
+ * route-owned focus-work scenarios for the gallery story.
  *
  * Layout intent: the Gallery viewport is the container. The board breaks out of
  * the stage's centered `max-w-3xl` column to span the full viewport width
@@ -42,7 +47,11 @@ import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
  * grow to content height) — scoped here so the /jira board and the block demo
  * keep their existing behavior.
  */
-export function KanbanStage(): React.ReactElement {
+interface KanbanStageProps {
+	scenario?: JgpKanbanScenario;
+}
+
+export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageProps>): React.ReactElement {
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useJgpAgentChatDemo();
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
 	const [isCodeReviewOpen, setCodeReviewOpen] = useState(false);
@@ -60,7 +69,7 @@ export function KanbanStage(): React.ReactElement {
 		setPendingChatQuestion(null);
 		openCardChat(
 			JGP_KANBAN_DEFAULT_AGENT_ID,
-			"RFP Drafter",
+			"Claude Code",
 			card,
 			request.prompt,
 		);
@@ -80,7 +89,7 @@ export function KanbanStage(): React.ReactElement {
 		handleClearSelection,
 		selectedAgentIds,
 		selectedCardCodes,
-	} = useJgpKanbanLifecycle({ onNonAgentAction: handleNonAgentAction });
+	} = useJgpKanbanLifecycle({ onNonAgentAction: handleNonAgentAction, scenario });
 	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
 	const filteredBoardColumns = useMemo(
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
@@ -112,10 +121,38 @@ export function KanbanStage(): React.ReactElement {
 			question: activity.question,
 		});
 	}, [handleQuestionSubmit, openAgentChat]);
+	const handleCompletedAgentView = useCallback((
+		run: JiraIssueCompletedAgentRun,
+		card: JiraKanbanCardData,
+	) => {
+		if (run.actionLabel !== "View") return;
+
+		const artifact = run.outputs?.[0];
+		const artifactSummary = artifact
+			? `The **${artifact.title}** ${artifact.owner?.toLowerCase() ?? "artifact"} is ready in ${artifact.source}.`
+			: "The completed work is ready to review from the Jira work item.";
+
+		setPendingChatQuestion(null);
+		openAgentChat({
+			agentId: run.agentName.toLowerCase().replaceAll(" ", "-"),
+			agentName: run.agentName,
+			issueKey: card.code,
+			issueSummary: card.title,
+			request: `Show me what you completed for ${card.code}.`,
+			result: [
+				`I completed **${run.summary.toLowerCase()}** for **${card.code}**.`,
+				run.description ?? artifactSummary,
+				artifactSummary,
+			].join("\n\n"),
+		});
+	}, [openAgentChat]);
 	const handleChatQuestionAnswer = useCallback(() => {
 		pendingChatQuestion?.submit();
 		setPendingChatQuestion(null);
 	}, [pendingChatQuestion]);
+	const handleReviewSubmit = useCallback(() => {
+		setCodeReviewOpen(false);
+	}, []);
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 flex-col px-8 [&>div]:flex [&>div]:min-h-0 [&>div]:flex-col [&>div>section]:flex [&>div>section]:min-h-0">
@@ -126,12 +163,15 @@ export function KanbanStage(): React.ReactElement {
 			/>
 			<JiraKanban
 				agents={JGP_KANBAN_AGENTS}
-				ariaLabel="RFP board columns. Assign agents or drag Intake cards into Drafting to start work."
+				ariaLabel="Jira board focus work. Assign a coding agent or drag To do cards into In progress to start work."
 				boardColumns={filteredBoardColumns}
 				draggedCardCode={draggedCardCode}
 				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
-				onCardAgentDoneRunReview={() => setCodeReviewOpen(true)}
+				onCardAgentDoneRunReview={(_run, card) => {
+					if (card.code === "JGP-247") setCodeReviewOpen(true);
+				}}
+				onCardAgentDoneRunView={handleCompletedAgentView}
 				onCardDragEnd={handleCardDragEnd}
 				onCardDragStart={handleCardDragStart}
 				onCardDrop={handleCardDrop}
@@ -142,18 +182,32 @@ export function KanbanStage(): React.ReactElement {
 				paddingTop={0}
 				selectedCardCodes={selectedCardCodes}
 				selectionToolbar={{
-					agents: ROVO_AGENT_SELECTOR_AGENTS,
-					defaultPinnedAgentIds: DEFAULT_PINNED_SPACE_AGENT_IDS,
-					defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
+					agents: JGP_KANBAN_SELECTION_AGENTS,
+					defaultPinnedAgentIds: ["claude-code", "cursor"],
 					onAgentAssignmentChange: handleAgentAssignmentChange,
 					onClearSelection: handleClearSelection,
 					onStatusChange: handleStatusChange,
-					pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL,
 					selectedAgentIds,
-					skills: WORK_ITEM_SKILLS,
 				}}
 			/>
-			<CodeReview open={isCodeReviewOpen} onOpenChange={setCodeReviewOpen} />
+			<CodeReview
+				agentProfile={JGP_CLAUDE_CODE_AGENT_PROFILE}
+				explorerRootLabel="jira"
+				files={JGP_CODE_REVIEW_FILES}
+				hideComposerSourceAndModelControls
+				onOpenChange={setCodeReviewOpen}
+				onPrimaryAction={() => setCodeReviewOpen(false)}
+				onReviewSubmit={handleReviewSubmit}
+				open={isCodeReviewOpen}
+				primaryActionLabel="Merge pull request"
+				primaryActionMenu={
+					<>
+						<DropdownMenuItem>Close pull request</DropdownMenuItem>
+						<DropdownMenuItem>Convert to draft pull request</DropdownMenuItem>
+					</>
+				}
+				workItem={JGP_CODE_REVIEW_WORK_ITEM}
+			/>
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}
 				externalThinkingMessageId={externalThinkingMessageId}

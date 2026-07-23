@@ -1034,6 +1034,8 @@ export type PromptInputTextareaProps = ComponentProps<
    * token path; pass false for exceptional surfaces.
    */
   enableDirectoryAutocomplete?: boolean;
+  /** Enables the inline `@` mention and `/` command palettes. Defaults to true. */
+  enableSuggestionMenus?: boolean;
   /**
    * Whether the host is rendering an external suggestions list for the current
    * composer. When true, Mod+1..9 selects that list; plain Enter and arrow
@@ -1100,6 +1102,7 @@ export const PromptInputTextarea = ({
   autoResize: _autoResize = true,
   enableVisualTraceAutoTagging = false,
   enableDirectoryAutocomplete = true,
+  enableSuggestionMenus = true,
   directoryAutocompleteListVisible = false,
   directoryAutocompleteLimit,
   prefillMentionRequest,
@@ -1412,13 +1415,14 @@ export const PromptInputTextarea = ({
     () =>
       createComposerEditorExtensions({
         directoryAutocomplete: directoryAutocompleteController,
+        enableSuggestionMenus,
         getMentionSources: () => mentionSourcesRef.current,
         mentionSectionLabels,
         onEnter: handleEnterSubmit,
         onPasteFiles: (files) => attachmentsRef.current.add(files),
         suggestionVariant,
       }),
-    [directoryAutocompleteController, handleEnterSubmit, mentionSectionLabels, suggestionVariant]
+    [directoryAutocompleteController, enableSuggestionMenus, handleEnterSubmit, mentionSectionLabels, suggestionVariant]
   );
 
   const editor = useEditor({

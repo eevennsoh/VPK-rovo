@@ -8,6 +8,8 @@ import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
+import type { AsxQueueSession } from "@/components/projects/jira-queue/data/queue-sessions";
+import type { RovoAppDocument } from "@/lib/rovo-app-types";
 
 export interface JgpAgentChatScenario {
 	agentId: string;
@@ -32,6 +34,24 @@ export interface JgpAgentChatPlayback {
 }
 
 const JGP_AGENT_PROFILES = [
+	{
+		id: "claude-code",
+		name: "Claude Code",
+			byline: "Coding agent by Anthropic",
+			brandName: "claude",
+			description: "Claude Code is an agentic coding tool that reads your codebase, edits files, runs commands, and integrates with your development tools.",
+			starters: [],
+			contextDescription: "Answer as Claude Code for the selected JGP Jira issue and pull request.",
+	},
+	{
+		id: "cursor",
+		name: "Cursor",
+		byline: "Coding agent",
+		avatarSrc: getDeterministicAgentAvatarSrc("cursor"),
+		description: "Implements scoped Jira engineering tasks and prepares code changes for human review.",
+		starters: [],
+		contextDescription: "Answer as Cursor for the selected JGP Jira issue.",
+	},
 	{
 		id: "rfp-drafter",
 		name: "RFP Drafter",
@@ -59,7 +79,18 @@ const JGP_AGENT_PROFILES = [
 		starters: [],
 		contextDescription: "Answer as Dependency mapper for the selected JGP Jira issue.",
 	},
+	{
+		id: "unit-test-creator",
+		name: "Unit Test Creator",
+		byline: "JGP demo agent by Rovo",
+		avatarSrc: "/avatar-agent/dev-agents/unit-test-creator.svg",
+		description: "Creates focused regression coverage and review-ready test artifacts for Jira work items.",
+		starters: [],
+		contextDescription: "Answer as Unit Test Creator for the selected JGP Jira issue.",
+	},
 ] as const satisfies readonly RovoAgentProfile[];
+
+export const JGP_CLAUDE_CODE_AGENT_PROFILE: RovoAgentProfile = JGP_AGENT_PROFILES[0];
 
 /** Static profiles supplied to the JGP-local provider so chat can select demo agents. */
 export const JGP_CHAT_AGENT_PROFILES: readonly RovoAgentProfile[] = [
@@ -67,10 +98,139 @@ export const JGP_CHAT_AGENT_PROFILES: readonly RovoAgentProfile[] = [
 	...JGP_AGENT_PROFILES,
 ];
 
+function queueMessage(id: string, role: "assistant" | "user", text: string): RovoUIMessage {
+	return { id, role, parts: [{ type: "text", text, state: "done" }] };
+}
+
+const JGP_252_ARTIFACT_DOCUMENT_ID = "jgp-252-clear-focus-code";
+
+/** Static route-owned code preview for the mobile PR-review session. */
+export const JGP_ROVO_ARTIFACT_DOCUMENTS: Readonly<Record<string, RovoAppDocument>> = {
+	[JGP_252_ARTIFACT_DOCUMENT_ID]: {
+		id: JGP_252_ARTIFACT_DOCUMENT_ID,
+		threadId: "jgp-252-pr-review",
+		title: "JGP-252 Clear focus action",
+		kind: "code",
+		previewSummary: "Adds an explicit Clear focus action and restores the full board without disturbing keyboard focus.",
+		sourceMessageId: "jgp-252-agent",
+		createdAt: "2026-07-23T00:18:00.000Z",
+		updatedAt: "2026-07-23T00:18:00.000Z",
+		versions: [{
+			id: "jgp-252-clear-focus-v1",
+			title: "Clear focus action",
+			changeLabel: "PR #842",
+			createdAt: "2026-07-23T00:18:00.000Z",
+			content: `export function AssigneeFocusToolbar({ focusedAssignee, onClearFocus }: Props) {
+	return focusedAssignee ? (
+		<Button appearance="subtle" onClick={onClearFocus}>
+			Clear focus
+		</Button>
+	) : null;
+}`,
+		}],
+	},
+};
+
+/** Route-owned mobile Rovo snapshots for Sarah's global-session story. */
+export const JGP_ROVO_SESSION_SEEDS: readonly AsxQueueSession[] = [
+	{
+		id: "jgp-251-persistence-question",
+		spaceId: "jira-board-focus-workflows",
+		agentId: "cursor",
+		host: "cloud",
+		issueKey: "JGP-251",
+		issueSummary: "Remember assignee focus per board",
+		title: "Remember assignee focus per board",
+		status: "awaiting-input",
+		isPinned: false,
+		jiraColumn: "In progress",
+		manualRank: 1,
+		priority: "low",
+		priorityRank: 1,
+		updatedRank: 1,
+		assignee: { name: "Sarah" },
+		question: {
+			prompt: "Should assignee focus persist when someone returns to this board?",
+			questions: [{
+				id: "focus-persistence",
+				kind: "single-select",
+				label: "How should assignee focus be remembered?",
+				description: "This determines whether the saved focus follows the person or stays scoped to the current board.",
+				options: [
+					{ id: "per-board", label: "Remember per board", description: "Restore the last focused assignee separately for each board." },
+					{ id: "global", label: "Remember everywhere", description: "Use the same focused assignee across every board." },
+					{ id: "session-only", label: "Only this visit", description: "Clear focus when the board is closed." },
+				],
+			}],
+		},
+		messages: [
+			queueMessage("jgp-251-user", "user", "Implement saved assignee focus for this board."),
+			queueMessage("jgp-251-agent", "assistant", "I have the board preference storage ready, but one product decision changes the data scope and restore behavior."),
+		],
+	},
+	{
+		id: "jgp-252-pr-review",
+		spaceId: "jira-board-focus-workflows",
+		agentId: "cursor",
+		host: "cloud",
+		issueKey: "JGP-252",
+		issueSummary: "Add a Clear focus action",
+		title: "Add a Clear focus action",
+		status: "pr-open",
+		isPinned: false,
+		jiraColumn: "Done",
+		manualRank: 2,
+		priority: "low",
+		priorityRank: 2,
+		updatedRank: 2,
+		assignee: { name: "Sarah" },
+		repository: "atlassian/jira-cloud",
+		branch: "cursor/jgp-252-clear-focus-action",
+		pullRequestNumber: 842,
+		pullRequestTitle: "JGP-252 Add a Clear focus action",
+		commit: "6f4c2ab",
+		checks: "5 checks passing",
+		fileChanges: {
+			additions: 42,
+			deletions: 8,
+			files: [
+				"src/boards/assignee-focus/assignee-focus-toolbar.tsx",
+				"src/boards/assignee-focus/assignee-focus-toolbar.test.tsx",
+			],
+			isDismissed: false,
+		},
+		messages: [
+			queueMessage("jgp-252-user", "user", "Add a clear action so I can return to the full board after focusing on one assignee."),
+			{
+				id: "jgp-252-agent",
+				role: "assistant",
+				parts: [
+					{ type: "text", text: "I added the Clear focus action, kept keyboard focus stable, and updated the focused tests. PR **#842** is open with all five checks passing. Open the code artifact to review the implementation, then move the Jira work item to Done when you are happy.", state: "done" },
+					{
+						type: "data-artifact-result",
+						data: {
+							action: "create",
+							documentId: JGP_252_ARTIFACT_DOCUMENT_ID,
+							kind: "code",
+							threadId: "jgp-252-pr-review",
+							title: "JGP-252 Clear focus action",
+						},
+					},
+				],
+			},
+		],
+	},
+];
+
 const JGP_FOR_YOU_AGENT_BY_ITEM_ID: Readonly<Record<string, {
 	agentId: string;
 	agentName: string;
 }>> = {
+	"jgp-251": { agentId: "cursor", agentName: "Cursor" },
+	"jgp-252": { agentId: "cursor", agentName: "Cursor" },
+	"jgp-253": { agentId: "cursor", agentName: "Cursor" },
+	"jgp-254": { agentId: "cursor", agentName: "Cursor" },
+	"jgp-255": { agentId: "cursor", agentName: "Cursor" },
 	"vitafleet-presentation": { agentId: "readiness-checker", agentName: "Readiness checker" },
 	"crm-analytics-dashboard": { agentId: "feedback-analyzer", agentName: "Feedback analyzer" },
 	"performance-benchmarking": { agentId: "progress-tracker", agentName: "Progress tracker" },

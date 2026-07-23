@@ -42,7 +42,10 @@ test("ASX Kanban reuses the Jira Issue rainbow spinner for working agents", () =
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivities=\{card\.agentActivities\}/u);
 	assert.match(JIRA_KANBAN_SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<Spinner size="sm" variant="rainbow" label="" \/>/u);
+	assert.match(
+		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
+		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"[\s\S]*\/>/u,
+	);
 });
 
 test("Kanban lifecycle uses deterministic generation and completion delays", () => {

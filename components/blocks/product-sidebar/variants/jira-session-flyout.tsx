@@ -281,7 +281,7 @@ export function JiraSessionFlyoutBody({
 			{session.status === "awaiting-input" ? (
 				<Alert size="small" variant="info">
 					<Icon render={<StatusInformationIcon label="" />} label="Information" />
-					<AlertTitle>Awaiting user response</AlertTitle>
+					<AlertTitle>Waiting for input</AlertTitle>
 				</Alert>
 			) : null}
 

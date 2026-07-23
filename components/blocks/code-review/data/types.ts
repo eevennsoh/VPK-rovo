@@ -20,6 +20,7 @@ export interface ChangedFile {
 	additions: number;
 	deletions: number;
 	defaultExpanded: boolean;
+	explorerPath?: string;
 	hunkHeader?: string;
 	inExplorer?: boolean;
 }

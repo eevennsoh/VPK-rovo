@@ -67,3 +67,18 @@ test("JGP Work item can jump between all requested presets", () => {
 	assert.doesNotMatch(STAGE_SOURCE, /controls=/u);
 	assert.doesNotMatch(CONTROLLER_SOURCE, /hydrate-preset", preset: initialPreset/u);
 });
+
+test("Global completed Work item opens directly on Sarah's delivered JGP-251 timeline", () => {
+	assert.match(STAGE_SOURCE, /code: "JGP-251"/u);
+	assert.match(STAGE_SOURCE, /title: "Remember assignee focus per board"/u);
+	assert.match(STAGE_SOURCE, /assignee: \{ name: "Sarah"/u);
+	assert.match(STAGE_SOURCE, /initialPreset="filled"/u);
+	assert.match(STAGE_SOURCE, /primaryCodingAgentId="cursor"/u);
+	assert.match(STAGE_SOURCE, /answered Cursor's product question/u);
+	assert.match(STAGE_SOURCE, /getDeterministicAgentAvatarSrc\("cursor"\)/u);
+	assert.match(STAGE_SOURCE, /actor: CURSOR[\s\S]*implemented board-scoped preference storage/u);
+	assert.match(STAGE_SOURCE, /actor: OWEN[\s\S]*actor: MAYA[\s\S]*actor: CURSOR[\s\S]*actor: GITHUB[\s\S]*actor: ELENA/u);
+	assert.match(STAGE_SOURCE, /JGP-251 Remember assignee focus per board/u);
+	assert.match(STAGE_SOURCE, /moved the work item to/u);
+	assert.doesNotMatch(STAGE_SOURCE, /JGP-247|Claude Code|Carl/u);
+});
