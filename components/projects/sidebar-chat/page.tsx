@@ -291,9 +291,7 @@ interface ChatPanelProps {
 	 * footprint keeps the two greetings' last prompts on the same baseline.
 	 */
 	composerReservesContextBarSpace?: boolean;
-	/**
-	 * Third-party agents center the empty greeting; custom agents and Rovo keep it near the composer.
-	 */
+	/** Third-party agents center the empty greeting; custom agents and Rovo keep it near the composer. */
 	emptyGreetingPlacement?: "centered" | "near-composer";
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
