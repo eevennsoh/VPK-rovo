@@ -80,6 +80,9 @@ test("Thinking Orb reserves canvas backing dimensions for the size prop", () => 
 		TYPES_SOURCE,
 		/extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "height" \| "style" \| "width">/,
 	);
+	assert.match(COMPONENT_SOURCE, /delete canvasProps\.width;/);
+	assert.match(COMPONENT_SOURCE, /delete canvasProps\.height;/);
+	assert.match(COMPONENT_SOURCE, /\{\.\.\.canvasProps\}/);
 });
 
 test("Thinking Orbs demo exposes the complete supported control and variant surface", () => {
