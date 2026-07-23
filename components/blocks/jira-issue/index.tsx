@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion, type Transition
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PriorityMajorIcon from "@atlaskit/icon/core/priority-major";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
@@ -44,6 +45,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 export type JiraIssuePriority = "major" | "medium" | "minor";
+export type JiraIssuePullRequestStatus = "open" | "merged";
 export type {
 	JiraIssueAgentActivity,
 	JiraIssueAgentActivityMode,
@@ -81,6 +83,8 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	summary: string;
 	/** Jira issue key, e.g. RFP-101. */
 	issueKey: string;
+	pullRequestNumber?: number;
+	pullRequestStatus?: JiraIssuePullRequestStatus;
 	tags?: readonly JiraIssueTag[];
 	priority?: JiraIssuePriority;
 	issueTypeLabel?: string;
@@ -212,6 +216,7 @@ function JiraIssueSummary({
 	parentEpicControl,
 	priority,
 	pullRequestNumber,
+	pullRequestStatus,
 	showAutomationIndicator,
 	showPriorityIndicator,
 	summary,
@@ -228,6 +233,7 @@ function JiraIssueSummary({
 	parentEpicControl?: ReactNode;
 	priority: JiraIssuePriority;
 	pullRequestNumber?: number;
+	pullRequestStatus?: JiraIssuePullRequestStatus;
 	showAutomationIndicator: boolean;
 	showPriorityIndicator: boolean;
 	summary: string;
@@ -266,7 +272,15 @@ function JiraIssueSummary({
 						</div>
 						{pullRequestNumber ? (
 							<div className="flex items-center gap-1">
-								<PullRequestIcon label="Pull request" color={token("color.icon.success")} />
+								{pullRequestStatus === "merged" ? (
+									<span className="text-icon-accent-purple">
+										<MergeSuccessIcon label="Pull request merged" color="currentColor" />
+									</span>
+								) : (
+									<span className="text-icon-accent-lime">
+										<PullRequestIcon label="Pull request" color="currentColor" />
+									</span>
+								)}
 								<span className="text-xs font-semibold text-text-subtlest">#{pullRequestNumber}</span>
 							</div>
 						) : null}
@@ -448,6 +462,8 @@ export function JiraIssue({
 	onAgentDoneRunView,
 	parentEpicControl,
 	priority = "major",
+	pullRequestNumber,
+	pullRequestStatus,
 	selected = false,
 	showAutomationIndicator = false,
 	showPriorityIndicator = true,
@@ -490,7 +506,8 @@ export function JiraIssue({
 		? []
 		: nonCompletedAgentActivities;
 	const hasAgentDoneNotification = resolvedAgentActivityMode === "completed" && agentDoneRuns.length > 0;
-	const pullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
+	const inferredPullRequestNumber = agentDoneRuns.find((run) => run.pullRequestNumber)?.pullRequestNumber;
+	const resolvedPullRequestNumber = pullRequestNumber ?? inferredPullRequestNumber;
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| resolvedAgentActivityMode === "awaiting-input"
 		|| hasAgentDoneNotification;
@@ -664,7 +681,8 @@ export function JiraIssue({
 			isMounted={isMounted}
 			parentEpicControl={parentEpicControl}
 			priority={priority}
-			pullRequestNumber={pullRequestNumber}
+			pullRequestNumber={resolvedPullRequestNumber}
+			pullRequestStatus={pullRequestStatus}
 			showAutomationIndicator={showAutomationIndicator}
 			showPriorityIndicator={showPriorityIndicator}
 			summary={summary}

@@ -7,6 +7,23 @@ export const TERMINAL_INITIAL_HINT = "click the terminal to browse available wor
 export const TERMINAL_SHELL_PROMPT = "~/dev/jira-golden-paths $";
 
 const JIRA_CLI_BASE_URL = "https://jira-golden-paths.atlassian.net";
+const REVIEW_HANDOFF_COMMAND = `claude -- 'Continue work on Jira work item "Add assignee focus mode" (JGP-247) in this local Claude session. Review feedback was sent from Jira. Address the inline comment below, run the relevant checks, and update the open pull request. Use the Atlassian MCP for any additional work item or review context.
+
+# Jira Work Item Context
+<JIRA_WORK_ITEM>
+<title>Add assignee focus mode</title>
+<key>JGP-247</key>
+<description>Click an assignee to focus the board on their visible work while preserving keyboard navigation and accessible result counts.</description>
+<project>
+  <key>JGP</key>
+</project>
+<cloudId>7f8c0e4a-1b62-4fb8-a6d5-3c21e97a0247</cloudId>
+<issueUrl>${JIRA_CLI_BASE_URL}/browse/JGP-247</issueUrl>
+<reviewFeedback>
+  <author>Carl</author>
+  <inlineComment>Preserve Shift-selection against the visible filtered order. Calculate the range from filteredIssues, not the unfiltered board.</inlineComment>
+</reviewFeedback>
+</JIRA_WORK_ITEM>'`;
 
 export function getJiraIssueUrl(issueKey: string): string {
 	return `${JIRA_CLI_BASE_URL}/browse/${encodeURIComponent(issueKey)}`;
@@ -175,14 +192,15 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 	{
 		id: "review-handoff",
 		trigger: "key",
-		hint: "→ next: Claude applies Sarah's feedback",
+		hint: "→ next: Claude applies Carl's feedback",
 		steps: [
 			{
 				kind: "type",
 				pane: "right",
-				text: "Update JGP-247 from this review: preserve Shift-selection against the visible filtered order. Inline comment: calculate the range from filteredIssues, not the unfiltered board.",
+				text: REVIEW_HANDOFF_COMMAND,
 			},
 			{ kind: "submit", pane: "right" },
+			{ kind: "set-working", pane: "right", working: true },
 			{
 				kind: "output",
 				pane: "right",
@@ -192,7 +210,7 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 				kind: "board",
 				events: [
 					{ type: "move-item", key: "JGP-247", to: "working" },
-					{ type: "set-summary", key: "JGP-247", summary: "Applying Sarah's inline review feedback", age: "now" },
+					{ type: "set-summary", key: "JGP-247", summary: "Applying Carl's inline review feedback", age: "now" },
 				],
 			},
 		],
@@ -211,6 +229,7 @@ export const TERMINAL_DEMO_BEATS: readonly TerminalBeat[] = [
 					[{ text: "✓ ", tone: "success" }, { text: "Focused tests passed · lint passed · typecheck passed" }],
 				],
 			},
+			{ kind: "set-working", pane: "right", working: false },
 			{
 				kind: "board",
 				events: [{ type: "set-summary", key: "JGP-247", summary: "Filtered range selection fixed; checks passing" }],

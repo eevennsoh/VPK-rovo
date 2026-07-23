@@ -291,8 +291,8 @@ interface ChatPanelProps {
 	 * footprint keeps the two greetings' last prompts on the same baseline.
 	 */
 	composerReservesContextBarSpace?: boolean;
-	/** Center the greeting vertically when the conversation has no messages. */
-	centerEmptyGreeting?: boolean;
+	/** Third-party agents center the empty greeting; custom agents and Rovo keep it near the composer. */
+	emptyGreetingPlacement?: "centered" | "near-composer";
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
 	/** Opt-out for embedded surfaces that should not show the AI verification disclaimer. */
@@ -504,7 +504,7 @@ export default function ChatPanel({
 	composerInputContext,
 	autoFocusComposer = false,
 	composerReservesContextBarSpace = false,
-	centerEmptyGreeting = false,
+	emptyGreetingPlacement = "near-composer",
 	hideAiCursor = false,
 	hideAiDisclaimer = false,
 	hideComposerSourceAndModelControls = false,
@@ -1496,7 +1496,7 @@ export default function ChatPanel({
 	const hasTestGreetingSuggestions = (resolvedGreeting?.suggestions?.length ?? 0) > 0;
 	const shouldBottomAlignAgentTestEmptyState = isAgentTestEmptyState && hasTestGreetingSuggestions;
 	const shouldCenterAgentTestEmptyState = isAgentTestEmptyState && !hasTestGreetingSuggestions;
-	const shouldCenterEmptyGreeting = centerEmptyGreeting && !hasMessages;
+	const shouldCenterEmptyGreeting = emptyGreetingPlacement === "centered" && !hasMessages;
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
 	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || isAgentTestEmptyState;
 	const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle?.display === "grid";

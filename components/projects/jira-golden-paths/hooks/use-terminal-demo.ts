@@ -31,7 +31,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const TYPE_MS_PER_CHAR = 28;
-const OUTPUT_MS_PER_LINE = 280;
+const OUTPUT_MS_PER_LINE = 250; // duration-slow
 const OUTPUT_LEAD_IN_MS = 300;
 const BOARD_MS_PER_EVENT = 350;
 
@@ -90,6 +90,12 @@ export function foldBoardPreview(
 
 export interface UseTerminalDemoOptions {
 	/**
+	 * Begin from this fully settled, 1-indexed beat. Defaults to 0 (the initial
+	 * terminal). Used by post-review screens to preserve the preceding screen
+	 * while animating only the destination beat's additions.
+	 */
+	initialSettledBeat?: number;
+	/**
 	 * Bind the window-level presenter keys (→/←/Space/↑↓/Enter/R). Defaults to
 	 * `true`. Set `false` when an outer navigator owns the arrow keys and drives
 	 * the demo through the returned `advance`/`stepBack`/`restart` instead (e.g.
@@ -104,8 +110,13 @@ export function useTerminalDemo(
 	options?: UseTerminalDemoOptions,
 ): TerminalDemoController {
 	const keyboardEnabled = options?.keyboard ?? true;
+	const initialSettledBeat = options?.initialSettledBeat ?? 0;
 	const shouldReduceMotion = useReducedMotion();
-	const [state, dispatch] = useReducer(terminalDemoReducer, undefined, createInitialTerminalDemoState);
+	const [state, dispatch] = useReducer(terminalDemoReducer, initialSettledBeat, (beatNumber) => {
+		if (beatNumber <= 0) return createInitialTerminalDemoState();
+		const throughIndex = Math.min(beatNumber, TERMINAL_DEMO_BEATS.length) - 1;
+		return foldBeats(TERMINAL_DEMO_BEATS, throughIndex);
+	});
 	const [revealCount, setRevealCount] = useState(0);
 	const [rawSelectedKey, setRawSelectedKey] = useState<string | null>(null);
 	const timersRef = useRef<Set<TimerHandle>>(new Set());
@@ -346,31 +357,5 @@ export function useTerminalDemo(
 		stepBack,
 		handleFrameClick,
 		restart,
-	};
-}
-
-/**
- * Build a frozen, non-interactive controller showing the terminal settled at a
- * 1-indexed beat (beat 1 = the first beat). Used by static "slide" surfaces (the
- * Local session card) that embed a specific beat snapshot rather than the live
- * presenter-paced demo: advance/stepBack/restart are no-ops and nothing is
- * mid-animation (`activeStep: null`), so the panes render the fully-settled state.
- */
-export function createStaticTerminalController(beatNumber: number): TerminalDemoController {
-	const throughIndex = beatNumber - 1;
-	const state = foldBeats(TERMINAL_DEMO_BEATS, throughIndex);
-	const noop = (): void => {};
-	return {
-		state,
-		activeStep: null,
-		revealCount: 0,
-		beatCount: TERMINAL_DEMO_BEATS.length,
-		awaitingClick: false,
-		statusHint: TERMINAL_DEMO_BEATS[throughIndex]?.hint ?? "",
-		selectedKey: null,
-		advance: noop,
-		stepBack: noop,
-		handleFrameClick: noop,
-		restart: noop,
 	};
 }

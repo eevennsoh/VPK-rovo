@@ -24,6 +24,7 @@ export const JGP_KANBAN_REVIEW_COLUMN = "Review";
 export const JGP_KANBAN_DONE_COLUMN = "Done";
 
 export type JgpKanbanScenario = "local-review" | "local-completed" | "global-assignment";
+export type JgpKanbanCompletionStoryPhase = "in-progress" | "departing" | "arriving" | "done";
 
 const CARL: JiraKanbanAssigneeData = {
 	id: "carl",
@@ -71,6 +72,8 @@ function createCard(params: Readonly<{
 	assignee: JiraKanbanAssigneeData;
 	code: string;
 	priority?: JiraKanbanCardData["priority"];
+	pullRequestNumber?: JiraKanbanCardData["pullRequestNumber"];
+	pullRequestStatus?: JiraKanbanCardData["pullRequestStatus"];
 	tags: JiraKanbanCardData["tags"];
 	title: string;
 }>): JiraKanbanCardData {
@@ -79,6 +82,8 @@ function createCard(params: Readonly<{
 		avatarSrc: params.assignee.avatarSrc,
 		code: params.code,
 		priority: params.priority ?? "minor",
+		pullRequestNumber: params.pullRequestNumber,
+		pullRequestStatus: params.pullRequestStatus,
 		tags: params.tags,
 		title: params.title,
 	};
@@ -144,6 +149,8 @@ const JGP_247_BASE = createCard({
 	assignee: CARL,
 	code: "JGP-247",
 	priority: "major",
+	pullRequestNumber: 247,
+	pullRequestStatus: "merged",
 	tags: [
 		{ text: "assignee focus", color: "blue" },
 		{ text: "kanban", color: "teal" },
@@ -545,10 +552,35 @@ export function createJgpKanbanColumns(scenario: JgpKanbanScenario = "local-revi
 				...JGP_247_BASE,
 				agentActivityMode: "completed",
 				agentDoneRuns: [JGP_247_REVIEW_RUN],
+				pullRequestStatus: "open",
 			},
 			...LOCAL_TEAM_REVIEW,
 		],
 		[JGP_KANBAN_DONE_COLUMN]: LOCAL_TEAM_DONE,
+	});
+}
+
+export function createJgpKanbanCompletionStoryColumns(
+	phase: JgpKanbanCompletionStoryPhase,
+): JiraKanbanColumnData[] {
+	const completedColumns = createJgpKanbanColumns("local-completed");
+	if (phase === "arriving" || phase === "done") return completedColumns;
+
+	const completedCard = completedColumns
+		.flatMap((column) => column.cards)
+		.find((card) => card.code === "JGP-247");
+	if (!completedCard) return completedColumns;
+
+	const openCard: JiraKanbanCardData = {
+		...completedCard,
+		pullRequestStatus: "open",
+	};
+
+	return completedColumns.map((column) => {
+		const cards = column.title === JGP_KANBAN_IN_PROGRESS_COLUMN
+			? [openCard, ...column.cards]
+			: column.cards.filter((card) => card.code !== completedCard.code);
+		return { ...column, cards, count: cards.length };
 	});
 }
 

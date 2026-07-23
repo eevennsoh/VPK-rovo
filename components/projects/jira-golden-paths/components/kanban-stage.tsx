@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CodeReview } from "@/components/blocks/code-review";
 import type {
@@ -8,7 +8,11 @@ import type {
 	JiraIssueCompletedAgentRun,
 	JiraIssueGenerativeActionRequest,
 } from "@/components/blocks/jira-issue";
-import { JiraKanban, type JiraKanbanCardData } from "@/components/blocks/jira-kanban";
+import {
+	JiraKanban,
+	type JiraKanbanCardData,
+	type JiraKanbanCardMoveAnimation,
+} from "@/components/blocks/jira-kanban";
 import { JiraKanbanBoardHeader } from "@/components/blocks/jira-kanban/board-header";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
@@ -21,6 +25,8 @@ import {
 	JGP_KANBAN_AGENTS,
 	JGP_KANBAN_DEFAULT_AGENT_ID,
 	JGP_KANBAN_SELECTION_AGENTS,
+	createJgpKanbanCompletionStoryColumns,
+	type JgpKanbanCompletionStoryPhase,
 	type JgpKanbanScenario,
 } from "@/components/projects/jira-golden-paths/data/kanban-data";
 import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-paths/data/agent-chat-data";
@@ -28,6 +34,22 @@ import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hoo
 import { useJgpKanbanLifecycle } from "@/components/projects/jira-golden-paths/hooks/use-kanban-lifecycle";
 import { token } from "@/lib/tokens";
 import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
+
+const JGP_COMPLETION_STORY_DELAY_MS = 2_000;
+const JGP_COMPLETION_SCALE_OUT_MS = 400;
+
+function getCompletionCardMoveAnimation(
+	scenario: JgpKanbanScenario,
+	phase: JgpKanbanCompletionStoryPhase,
+): JiraKanbanCardMoveAnimation | undefined {
+	if (scenario !== "local-completed") return undefined;
+	if (phase !== "departing" && phase !== "arriving") return undefined;
+
+	return {
+		cardCode: "JGP-247",
+		phase,
+	};
+}
 
 /**
  * The "Kanban" design pattern for the Jira Golden Paths gallery.
@@ -56,6 +78,9 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 	const [pendingChatQuestion, setPendingChatQuestion] = useState<Readonly<{ submit: () => void }> | null>(null);
 	const [isCodeReviewOpen, setCodeReviewOpen] = useState(false);
 	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
+	const [completionStoryPhase, setCompletionStoryPhase] = useState<JgpKanbanCompletionStoryPhase>(
+		scenario === "local-completed" ? "in-progress" : "done",
+	);
 	const openCardChat = useCallback((agentId: string, agentName: string, card: JiraKanbanCardData, request?: string) => {
 		openAgentChat({
 			agentId,
@@ -90,11 +115,39 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 		selectedAgentIds,
 		selectedCardCodes,
 	} = useJgpKanbanLifecycle({ onNonAgentAction: handleNonAgentAction, scenario });
-	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
-	const filteredBoardColumns = useMemo(
-		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
-		[boardColumns, selectedAssigneeIds],
+	useEffect(() => {
+		if (scenario !== "local-completed") return;
+		let moveTimer: number | undefined;
+		let departureFrame: number | undefined;
+		let arrivalFrame: number | undefined;
+		const departureTimer = window.setTimeout(() => {
+			setCompletionStoryPhase("departing");
+			departureFrame = window.requestAnimationFrame(() => {
+				moveTimer = window.setTimeout(() => {
+					setCompletionStoryPhase("arriving");
+					arrivalFrame = window.requestAnimationFrame(() => setCompletionStoryPhase("done"));
+				}, JGP_COMPLETION_SCALE_OUT_MS);
+			});
+		}, JGP_COMPLETION_STORY_DELAY_MS);
+		return () => {
+			window.clearTimeout(departureTimer);
+			if (moveTimer !== undefined) window.clearTimeout(moveTimer);
+			if (departureFrame !== undefined) window.cancelAnimationFrame(departureFrame);
+			if (arrivalFrame !== undefined) window.cancelAnimationFrame(arrivalFrame);
+		};
+	}, [scenario]);
+	const storyBoardColumns = useMemo(
+		() => scenario === "local-completed"
+			? createJgpKanbanCompletionStoryColumns(completionStoryPhase)
+			: boardColumns,
+		[boardColumns, completionStoryPhase, scenario],
 	);
+	const assignees = useMemo(() => getJiraKanbanAssignees(storyBoardColumns), [storyBoardColumns]);
+	const filteredBoardColumns = useMemo(
+		() => filterJiraKanbanColumnsByAssignee(storyBoardColumns, selectedAssigneeIds),
+		[selectedAssigneeIds, storyBoardColumns],
+	);
+	const completionCardMoveAnimation = getCompletionCardMoveAnimation(scenario, completionStoryPhase);
 	const handleAssigneeFilterChange = useCallback((assigneeIds: Set<string>) => {
 		handleClearSelection();
 		handleCardDragEnd();
@@ -163,8 +216,10 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 			/>
 			<JiraKanban
 				agents={JGP_KANBAN_AGENTS}
+				animateCardMoves={scenario === "local-completed"}
 				ariaLabel="Jira board focus work. Assign a coding agent or drag To do cards into In progress to start work."
 				boardColumns={filteredBoardColumns}
+				cardMoveAnimation={completionCardMoveAnimation}
 				draggedCardCode={draggedCardCode}
 				onCardAgentActivityQuestionSubmit={handleQuestionSubmit}
 				onCardAgentActivityViewChat={handleViewChat}
@@ -192,6 +247,7 @@ export function KanbanStage({ scenario = "local-review" }: Readonly<KanbanStageP
 			/>
 			<CodeReview
 				agentProfile={JGP_CLAUDE_CODE_AGENT_PROFILE}
+				agentVariant="third-party-local"
 				explorerRootLabel="jira"
 				files={JGP_CODE_REVIEW_FILES}
 				hideComposerSourceAndModelControls

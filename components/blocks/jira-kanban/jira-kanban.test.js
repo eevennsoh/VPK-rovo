@@ -312,10 +312,33 @@ test("Kanban cards expose and render Jira issue agent lifecycle presentation", (
 	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
 	assert.match(SOURCE, /agentActivityMode\?: JiraIssueAgentActivityMode;/);
 	assert.match(SOURCE, /agentDoneRuns\?: readonly JiraIssueCompletedAgentRun\[\];/);
+	assert.match(SOURCE, /pullRequestNumber\?: number;/);
+	assert.match(SOURCE, /pullRequestStatus\?: JiraIssuePullRequestStatus;/);
 	assert.match(SOURCE, /agentActivities=\{card\.agentActivities\}/);
 	assert.match(SOURCE, /agentActivityMode=\{card\.agentActivityMode\}/);
 	assert.match(SOURCE, /agentDoneRuns=\{card\.agentDoneRuns\}/);
+	assert.match(SOURCE, /pullRequestNumber=\{card\.pullRequestNumber\}/);
+	assert.match(SOURCE, /pullRequestStatus=\{card\.pullRequestStatus\}/);
 	assert.match(SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
+});
+
+test("Kanban can animate cards between columns with reduced-motion support", () => {
+	assert.match(SOURCE, /animateCardMoves\?: boolean;/u);
+	assert.match(SOURCE, /useReducedMotion\(\)/u);
+	assert.match(SOURCE, /const shouldAnimateCardMoves = animateCardMoves && !shouldReduceMotion;/u);
+	assert.match(SOURCE, /<LayoutGroup id=\{cardLayoutGroupId\}>/u);
+	assert.match(SOURCE, /cardMoveAnimation\?: JiraKanbanCardMoveAnimation;/u);
+	assert.match(SOURCE, /const JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6,/u);
+	assert.match(SOURCE, /const JIRA_KANBAN_CARD_DEPART: Transition = \{ duration: 0\.4,/u);
+	assert.match(SOURCE, /if \(phase === "arriving"\) return 0\.9;/u);
+	assert.match(SOURCE, /if \(phase === "departing"\) return 0\.96;/u);
+	assert.match(SOURCE, /\{ scale: getJiraKanbanCardScale\(cardMovePhase\) \}/u);
+	assert.match(SOURCE, /initial=\{false\}/u);
+	assert.match(SOURCE, /const shouldAnimateCardPosition = shouldAnimateCardMoves && cardMovePhase === undefined;/u);
+	assert.match(SOURCE, /layout=\{shouldAnimateCardPosition \? "position" : false\}/u);
+	assert.match(SOURCE, /layoutId=\{shouldAnimateCardPosition \? `jira-kanban-card-\$\{card\.code\}` : undefined\}/u);
+	assert.doesNotMatch(SOURCE, /layoutId=\{shouldAnimateCardMoves \?/u);
+	assert.match(SOURCE, /transition=\{cardMovePhase === "departing" \? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE\}/u);
 });
 
 test("Kanban card interactions preserve card and column context", () => {

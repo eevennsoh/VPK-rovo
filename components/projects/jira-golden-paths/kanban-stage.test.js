@@ -52,6 +52,33 @@ test("Kanban stage wires the shared issue lifecycle callbacks", () => {
 	);
 });
 
+test("completed Kanban story automatically moves JGP-247 into Done", () => {
+	assert.match(STAGE_SOURCE, /const JGP_COMPLETION_STORY_DELAY_MS = 2_000;/u);
+	assert.match(STAGE_SOURCE, /const JGP_COMPLETION_SCALE_OUT_MS = 400;/u);
+	assert.match(STAGE_SOURCE, /createJgpKanbanCompletionStoryColumns/u);
+	assert.match(STAGE_SOURCE, /scenario === "local-completed" \? "in-progress" : "done"/u);
+	assert.match(
+		STAGE_SOURCE,
+		/setCompletionStoryPhase\("departing"\);[\s\S]*departureFrame = window\.requestAnimationFrame\(\(\) => \{[\s\S]*moveTimer = window\.setTimeout\(\(\) => \{[\s\S]*setCompletionStoryPhase\("arriving"\);[\s\S]*\}, JGP_COMPLETION_SCALE_OUT_MS\)/u,
+	);
+	assert.match(STAGE_SOURCE, /window\.requestAnimationFrame\(\(\) => setCompletionStoryPhase\("done"\)\)/u);
+	assert.match(STAGE_SOURCE, /animateCardMoves=\{scenario === "local-completed"\}/u);
+	assert.match(STAGE_SOURCE, /if \(phase !== "departing" && phase !== "arriving"\) return undefined;/u);
+	assert.match(STAGE_SOURCE, /phase,/u);
+	assert.match(STAGE_SOURCE, /cardMoveAnimation=\{completionCardMoveAnimation\}/u);
+	assert.match(JIRA_KANBAN_SOURCE, /const JIRA_KANBAN_CARD_MOVE: Transition = \{ duration: 0\.6,/u);
+	assert.match(JIRA_KANBAN_SOURCE, /const JIRA_KANBAN_CARD_DEPART: Transition = \{ duration: 0\.4,/u);
+	assert.match(JIRA_KANBAN_SOURCE, /if \(phase === "arriving"\) return 0\.9;/u);
+	assert.match(JIRA_KANBAN_SOURCE, /if \(phase === "departing"\) return 0\.96;/u);
+	assert.match(JIRA_KANBAN_SOURCE, /return 1;/u);
+	assert.match(JIRA_KANBAN_SOURCE, /initial=\{false\}/u);
+	assert.doesNotMatch(JIRA_KANBAN_SOURCE, /JIRA_KANBAN_CARD_(?:MOVE|DEPART)[^;]*duration: 0\.8/u);
+	assert.match(
+		JIRA_KANBAN_SOURCE,
+		/\? \{ scale: getJiraKanbanCardScale\(cardMovePhase\) \}[\s\S]*: undefined/u,
+	);
+});
+
 test("custom completed agents open a hard-coded floating chat playback", () => {
 	assert.match(STAGE_SOURCE, /if \(run\.actionLabel !== "View"\) return;/u);
 	assert.match(STAGE_SOURCE, /agentId: run\.agentName\.toLowerCase\(\)\.replaceAll\(" ", "-"\)/u);

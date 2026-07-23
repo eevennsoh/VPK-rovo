@@ -23,7 +23,10 @@ import {
 	type InlineReviewComment,
 } from "../lib/inline-comments";
 import { CodeReviewCanvasHeader } from "./code-review-canvas-header";
-import { CodeReviewCanvasRightRail } from "./code-review-canvas-right-rail";
+import {
+	CodeReviewCanvasRightRail,
+	type CodeReviewAgentVariant,
+} from "./code-review-canvas-right-rail";
 import { EditorPanel } from "./editor/editor-panel";
 
 export interface CodeReviewProps {
@@ -38,6 +41,7 @@ export interface CodeReviewProps {
 	onPrimaryAction?: () => void;
 	showPrimaryActionMenu?: boolean;
 	primaryActionMenu?: ReactNode;
+	agentVariant?: CodeReviewAgentVariant;
 	agentProfile?: RovoAgentProfile;
 	hideComposerSourceAndModelControls?: boolean;
 	onReviewSubmit?: (submission: Readonly<{
@@ -58,6 +62,7 @@ export function CodeReview({
 	onPrimaryAction,
 	showPrimaryActionMenu = true,
 	primaryActionMenu,
+	agentVariant = "custom",
 	agentProfile,
 	hideComposerSourceAndModelControls = false,
 	onReviewSubmit,
@@ -172,6 +177,7 @@ export function CodeReview({
 				]}
 				rightRail={
 					<CodeReviewCanvasRightRail
+						agentVariant={agentVariant}
 						agentProfile={agentProfile}
 						comments={inlineComments.comments}
 						hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
