@@ -29,6 +29,7 @@ export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	compact: boolean;
 	experimentalDarkCta: boolean;
 	galleryExpanded: boolean;
+	hideReasoningSelector: boolean;
 	hideSourceAndModelControls: boolean;
 	isPlanMode: boolean;
 	onTogglePlanMode?: () => void;
@@ -56,6 +57,7 @@ export function ComposerCardBody({
 	experimentalDarkCta,
 	focusRequestKey,
 	galleryExpanded,
+	hideReasoningSelector,
 	hideSourceAndModelControls,
 	isPlanMode,
 	micStream,
@@ -137,10 +139,13 @@ export function ComposerCardBody({
 	}, []);
 
 	useEffect(() => {
-		if (!hideSourceAndModelControls) return;
-		setIsCustomizeMenuOpen(false);
-		setIsAutoMenuOpen(false);
-	}, [hideSourceAndModelControls]);
+		if (hideSourceAndModelControls) {
+			setIsCustomizeMenuOpen(false);
+		}
+		if (hideSourceAndModelControls || hideReasoningSelector) {
+			setIsAutoMenuOpen(false);
+		}
+	}, [hideReasoningSelector, hideSourceAndModelControls]);
 
 	if (isPlanMode && selectedReasoning !== "max") {
 		setSelectedReasoning("max");
@@ -227,7 +232,7 @@ export function ComposerCardBody({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
-						hideReasoningSelector={hideSourceAndModelControls}
+						hideReasoningSelector={hideSourceAndModelControls || hideReasoningSelector}
 						isComposerBusy={isComposerBusy}
 						clickyActive={clickyActive}
 						micStream={micStream}

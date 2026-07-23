@@ -13,6 +13,7 @@ const SESSION_AGENT_TYPES_SOURCE = readProjectFile("components/projects/rovo-cor
 const SESSION_AGENT_ENTRY_SOURCE = readProjectFile("components/projects/rovo-core/lib/agent-records/session-agent-entry.ts");
 const SESSION_AGENT_REGISTRY_SOURCE = readProjectFile("components/projects/rovo-core/lib/agent-records/session-agent-registry.ts");
 const LIVE_WAVEFORM_SOURCE = readProjectFile("components/ui-audio/live-waveform.tsx");
+const PROMPT_INPUT_SOURCE = readProjectFile("components/ui-custom/prompt-input.tsx");
 const ROVO_CURSOR_SOURCE = readProjectFile("components/ui-custom/rovo-cursor.tsx");
 const ROVO_CHAT_HELPERS_SOURCE = readProjectFile("app/contexts/rovo-chat-helpers.ts");
 
@@ -328,11 +329,12 @@ test("shared composer auto reasoning button opens a sources-free customize popov
 	assert.match(source, /const autoReasoningButtonClassName = \[/u);
 	assert.match(source, /className=\{autoReasoningButtonClassName\}/u);
 	assert.match(source, /\[&\[aria-expanded=true\]\]:bg-transparent/u);
-	assert.match(source, /aria-label="Start dictation"/u);
+	assert.match(source, /PromptInputDictationControl/u);
+	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Start dictation"/u);
 	assert.match(source, /aria-label="Start live voice"/u);
 	assert.match(source, /aria-label="Stop live voice"/u);
-	assert.match(source, /aria-label="Stop dictation"/u);
-	assert.doesNotMatch(source, /aria-label="Accept dictation"/u);
+	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Stop dictation"/u);
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /aria-label="Accept dictation"/u);
 	assert.match(source, /aria-label="Submit"/u);
 });
 
@@ -340,28 +342,31 @@ test("shared composer uses one stop control for active dictation", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 
 	assert.match(source, /const handleStopDictation = useCallback/u);
-	assert.match(source, /aria-label="Stop dictation"[\s\S]*onClick=\{handleStopDictation\}/u);
-	assert.doesNotMatch(source, /CheckMarkIcon/u);
-	assert.doesNotMatch(source, /onAcceptDictation/u);
+	assert.match(source, /<PromptInputDictationControl[\s\S]*onStop=\{handleStopDictation\}/u);
+	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Stop dictation"[\s\S]*onClick=\{onStop\}/u);
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /CheckMarkIcon/u);
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /onAcceptDictation/u);
 });
 
 test("shared composer waveform uses live stream while listening and processing animation otherwise", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 
 	assert.match(source, /const isDictationRecording = dictationState === "recording" && micStream !== null;/u);
-	assert.match(source, /active=\{isDictationRecording\}/u);
-	assert.match(source, /mediaStream=\{isDictationRecording \? micStream : null\}/u);
-	assert.doesNotMatch(source, /mode=\{isDictationRecording \? "scrolling" : "static"\}/u);
+	assert.match(source, /state=\{isDictationRecording \? "listening" : "processing"\}/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const isListening = state === "listening" && mediaStream !== null;/u);
+	assert.match(PROMPT_INPUT_SOURCE, /active=\{isListening\}/u);
+	assert.match(PROMPT_INPUT_SOURCE, /mediaStream=\{isListening \? mediaStream : null\}/u);
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /mode=\{isListening \? "scrolling" : "static"\}/u);
 	assert.match(source, /const isRealtimeMicWaveformActive = realtimeVoiceState === "listening" && realtimeWaveformState\.active;/u);
 	assert.match(source, /const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && realtimeVoiceActive;/u);
 	assert.match(source, /active=\{isRealtimeMicWaveformActive\}/u);
 	assert.match(source, /mediaStream=\{isRealtimeMicWaveformActive \? micStream : null\}/u);
 	assert.doesNotMatch(source, /mode=\{isRealtimeMicWaveformActive \? "scrolling" : "static"\}/u);
-	assert.equal((source.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 3);
+	assert.equal((source.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 2);
 	assert.equal((source.match(/mode="static"/gu) ?? []).length, 1);
-	assert.equal((source.match(/sensitivity=\{2\.4\}/gu) ?? []).length, 1);
-	assert.equal((source.match(/smoothingTimeConstant=\{0\.35\}/gu) ?? []).length, 1);
-	assert.equal((source.match(/fftSize=\{512\}/gu) ?? []).length, 1);
+	assert.equal((PROMPT_INPUT_SOURCE.match(/sensitivity=\{2\.4\}/gu) ?? []).length, 1);
+	assert.equal((PROMPT_INPUT_SOURCE.match(/smoothingTimeConstant=\{0\.35\}/gu) ?? []).length, 1);
+	assert.equal((PROMPT_INPUT_SOURCE.match(/fftSize=\{512\}/gu) ?? []).length, 1);
 	assert.match(source, /const shouldShowRealtimeVoiceRail = realtimeVoiceActive && Boolean\(onToggleClicky\);/u);
 	assert.match(source, /key="live-voice-active"/u);
 	assert.doesNotMatch(source, /live-voice-cursor-active/u);
@@ -429,7 +434,7 @@ test("shared composer keeps dictation beside typed submit and live voice empty-o
 	assert.match(source, /const shouldShowDictationStart = Boolean\(onStartDictation\) && !resolvedComposerBusy && !realtimeVoiceActive && !submitDisabled;/u);
 	assert.match(source, /const shouldShowRealtimeVoiceStart = idleAction === "voice-start" && !canSubmit && Boolean\(onToggleRealtimeVoice\);/u);
 	assert.match(source, /idleAction === "submit" \|\| idleAction === "voice-start"/u);
-	assert.match(source, /\{shouldShowDictationStart \? \([\s\S]*aria-label="Start dictation"[\s\S]*\) : null\}/u);
+	assert.match(source, /\{shouldShowDictationStart \? \([\s\S]*<PromptInputDictationControl[\s\S]*\) : null\}/u);
 	assert.match(source, /\{idleAction === "submit" \? \([\s\S]*aria-label="Submit"[\s\S]*\) : null\}/u);
 	assert.match(source, /\{shouldShowRealtimeVoiceStart \? \([\s\S]*aria-label="Start live voice"[\s\S]*\) : null\}/u);
 });
@@ -439,7 +444,7 @@ test("shared composer live chat CTA defaults to brand blue with opt-in dark styl
 	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 	const brandClass = "bg-primary text-primary-foreground [&_svg]:text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed";
 	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
-	const dictationStartIndex = source.indexOf('aria-label="Start dictation"');
+	const dictationStartIndex = PROMPT_INPUT_SOURCE.indexOf('aria-label="Start dictation"');
 	const voiceStartIndex = source.indexOf('aria-label="Start live voice"');
 
 	assert.match(source, /experimentalDarkCta\?: boolean/u);
@@ -456,9 +461,13 @@ test("shared composer live chat CTA defaults to brand blue with opt-in dark styl
 	assert.notEqual(voiceStartIndex, -1);
 	// Submit dark styling stays opt-in (brand blue by default via the button's default variant).
 	assert.match(source.slice(submitIndex, source.indexOf("</PromptInputSubmit>", submitIndex)), /experimentalDarkCtaClassName/u);
-	const dictationButtonStartIndex = source.lastIndexOf("<PromptInputButton", dictationStartIndex);
-	assert.match(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /variant="ghost"/u);
-	assert.doesNotMatch(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /experimentalDarkCtaClassName/u);
+	const dictationButtonStartIndex = PROMPT_INPUT_SOURCE.lastIndexOf("<PromptInputButton", dictationStartIndex);
+	const dictationButtonSource = PROMPT_INPUT_SOURCE.slice(
+		dictationButtonStartIndex,
+		PROMPT_INPUT_SOURCE.indexOf("</PromptInputButton>", dictationStartIndex),
+	);
+	assert.match(dictationButtonSource, /variant="ghost"/u);
+	assert.doesNotMatch(dictationButtonSource, /experimentalDarkCtaClassName/u);
 	const voiceStartButtonStartIndex = source.lastIndexOf("<PromptInputButton", voiceStartIndex);
 	const voiceStartButtonSource = source.slice(voiceStartButtonStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex));
 	assert.doesNotMatch(voiceStartButtonSource, /shadow-sm/u);

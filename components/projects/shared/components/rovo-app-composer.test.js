@@ -84,7 +84,8 @@ test("active voice controls do not use border beam visual effects", () => {
 	assert.doesNotMatch(FLOATING_COMPOSER_SOURCE, /BorderBeam/u);
 	assert.doesNotMatch(FLOATING_BODY_SOURCE, /beamActive/u);
 	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /BorderBeam|ACTIVE_VOICE_BEAM_PROPS/u);
-	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop dictation"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /PromptInputDictationControl/u);
+	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Stop dictation"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"/u);
 });
 
@@ -153,13 +154,14 @@ test("Rovo Cursor is gated behind active live voice in shared composer chrome", 
 	assert.match(CARD_BODY_SOURCE, /rounded-xl border border-border bg-surface p-3/u);
 	assert.match(CARD_BODY_SOURCE, /compact \? "pb-2 pt-3" : "pt-4"/u);
 	assert.match(FLOATING_COMPOSER_SOURCE, /className=\{cn\(composerPromptInputClassName, "p-3", className\)\}/u);
-	assert.equal((SEND_CONTROLS_SOURCE.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 3);
+	assert.equal((SEND_CONTROLS_SOURCE.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 2);
 	assert.match(SEND_CONTROLS_SOURCE, /function ComposerVoiceWaveform/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount\?: 4 \| 8;/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount = 8/u);
 	assert.match(SEND_CONTROLS_SOURCE, /className=\{cn\("flex h-full shrink-0 items-center", barCount === 4 \? "w-4" : "w-8"\)\}/u);
 	assert.match(SEND_CONTROLS_SOURCE, /barCount=\{barCount\}/u);
 	assert.equal((SEND_CONTROLS_SOURCE.match(/barCount=\{4\}/gu) ?? []).length, 2);
+	assert.match(PROMPT_INPUT_SOURCE, /barCount=\{8\}/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /barCount\?: number/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /barCount: fixedBarCount/u);
 	assert.match(LIVE_WAVEFORM_SOURCE, /const getBarCount = useCallback\([\s\S]*\(width: number\) =>/u);
@@ -317,7 +319,8 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.match(PROMPT_INPUT_SOURCE, /hasVisibleList: \(\) =>[\s\S]*directoryAutocompleteListVisibleRef\.current &&[\s\S]*\(directoryAutocompleteStateRef\.current\?\.matches\.length \?\? 0\) > 0/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
-	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*PromptInputDictationControl/u);
+	assert.match(PROMPT_INPUT_SOURCE, /aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
 });
 
 test("visual trace auto-tagging uses mention nodes and hides autocomplete while tracing", () => {

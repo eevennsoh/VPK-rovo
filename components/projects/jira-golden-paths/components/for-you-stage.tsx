@@ -26,7 +26,7 @@ export const JGP_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [{
 		title,
 		issueType: "task" as const,
 		spaceName: "Jira board focus workflows",
-		jiraStatus: "Human review" as const,
+		jiraStatus: "Review" as const,
 		agents: [CURSOR_AGENT],
 		tabs: ["human-review"],
 	})),
@@ -34,7 +34,7 @@ export const JGP_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [{
 
 export const JGP_FOR_YOU_TABS: readonly JiraForYouTab[] = [
 	{ id: "all", label: "All", count: 5 },
-	{ id: "human-review", label: "Human review", count: 5 },
+	{ id: "human-review", label: "Review", count: 5 },
 ];
 
 export function ForYouStage({ dockOpen }: Readonly<{ dockOpen: boolean; scenario?: "human-review" }>): React.ReactElement {

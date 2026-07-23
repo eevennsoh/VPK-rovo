@@ -238,10 +238,13 @@ type JiraSessionPreviewPosition = Pick<
 /** The redesigned flyout body matching the reference mock. */
 export function JiraSessionFlyoutBody({
 	session,
+	hideAgentRow = false,
 	hideHeader = false,
 	previewPosition,
 }: Readonly<{
 	session: JiraSidebarSessionItem;
+	/** Hide the Agent metadata row when the surrounding surface owns agent selection. */
+	hideAgentRow?: boolean;
 	/**
 	 * Hide the in-body title + relative-time header. Used by the queue detail
 	 * panel, which already surfaces the session title in its own PanelHeader, so
@@ -292,8 +295,9 @@ export function JiraSessionFlyoutBody({
 				>
 					{session.host === "cloud" ? "Cloud" : "Local"}
 				</FlyoutRow>
-				<FlyoutRow icon={<AiAgentIcon label="" size="small" />} label="Agent">
-					<HoverCard closeDelay={120} openDelay={0}>
+				{hideAgentRow ? null : (
+					<FlyoutRow icon={<AiAgentIcon label="" size="small" />} label="Agent">
+						<HoverCard closeDelay={120} openDelay={0}>
 						{/* Base UI reads delays on the Trigger, not the Root. Set them here
 						    too so this nested agent card opens instantly and tolerates the
 						    pointer travel from the surrounding session flyout (which itself
@@ -325,8 +329,9 @@ export function JiraSessionFlyoutBody({
 								surface="overlay"
 							/>
 						</HoverCardContent>
-					</HoverCard>
-				</FlyoutRow>
+						</HoverCard>
+					</FlyoutRow>
+				)}
 				<FlyoutRow icon={<TaskIcon label="" size="small" />} label="Work item">
 					<SmartLink
 						align={previewPosition?.align ?? "center"}

@@ -57,6 +57,8 @@ export interface RovoAppComposerProps {
 	dictationTranscriptPreview?: string | null;
 	errorMessage?: string | null;
 	experimentalDarkCta?: boolean;
+	/** Card chrome: hide only the reasoning/model selector while keeping source controls. */
+	hideReasoningSelector?: boolean;
 	hideSourceAndModelControls?: boolean;
 	/** Floating chrome: bumps the prompt input to the in-session 800px width. */
 	fillWidth?: boolean;
@@ -113,6 +115,7 @@ function RovoAppComposerInner({
 	dictationTranscriptPreview = null,
 	errorMessage,
 	experimentalDarkCta = false,
+	hideReasoningSelector = false,
 	hideSourceAndModelControls = false,
 	fillWidth = false,
 	focusRequestKey,
@@ -293,6 +296,7 @@ function RovoAppComposerInner({
 						compact={compact}
 						experimentalDarkCta={experimentalDarkCta}
 						galleryExpanded={galleryExpanded}
+						hideReasoningSelector={hideReasoningSelector}
 						hideSourceAndModelControls={hideSourceAndModelControls}
 						isPlanMode={isPlanMode}
 						onTogglePlanMode={onTogglePlanMode}

@@ -1,7 +1,20 @@
 "use client";
 
-import Page from "@/components/blocks/jira-for-you/page";
+import { usePathname } from "next/navigation";
+
+import { JiraForYouWorkspace } from "@/components/blocks/jira-for-you";
 
 export default function JiraForYouDemo() {
-	return <Page />;
+	const pathname = usePathname();
+	const isStandalonePreview = pathname.startsWith("/preview/");
+
+	if (isStandalonePreview) {
+		return (
+			<div className="h-full min-h-0 overflow-hidden rounded-lg border border-border bg-surface">
+				<JiraForYouWorkspace chrome="plain" className="h-full min-h-0" />
+			</div>
+		);
+	}
+
+	return <JiraForYouWorkspace chrome="plain" className="h-full min-h-0" />;
 }

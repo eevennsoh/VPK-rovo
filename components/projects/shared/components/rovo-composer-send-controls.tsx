@@ -12,6 +12,7 @@ import { REASONING_OPTIONS } from "@/components/projects/shared/components/chat-
 import {
 	PromptInputAutoButton,
 	PromptInputButton,
+	PromptInputDictationControl,
 	PromptInputSubmit,
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
@@ -22,8 +23,6 @@ import { resolveRovoAppComposerWaveformState } from "@/components/projects/share
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
-import CrossIcon from "@atlaskit/icon/core/cross";
-import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
@@ -306,32 +305,12 @@ export function RovoComposerActionButton({
 						style={{ willChange: "transform, opacity" }}
 					>
 						<ComposerActionFrame>
-							<div className="flex h-8 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold pl-1 pr-3 text-text-inverse shadow-sm">
-								<button
-									aria-hidden="true"
-									className="hidden"
-									disabled
-									tabIndex={-1}
-									type="submit"
-								/>
-								<button
-									aria-label="Stop dictation"
-									className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
-									onClick={handleStopDictation}
-									type="button"
-								>
-									<CrossIcon label="" size="small" />
-								</button>
-								<ComposerVoiceWaveform
-									active={isDictationRecording}
-									barHeightScale={dictationState === "processing" ? 1.15 : 1}
-									mediaStream={isDictationRecording ? micStream : null}
-									processing={isDictationActive && !isDictationRecording}
-								/>
-								{dictationTranscriptPreview ? (
-									<span className="sr-only">Latest dictation transcript: {dictationTranscriptPreview}</span>
-								) : null}
-							</div>
+							<PromptInputDictationControl
+								mediaStream={micStream}
+								onStop={handleStopDictation}
+								state={isDictationRecording ? "listening" : "processing"}
+								transcriptPreview={dictationTranscriptPreview}
+							/>
 						</ComposerActionFrame>
 					</motion.div>
 				) : shouldShowRealtimeVoiceRail ? (
@@ -440,16 +419,10 @@ export function RovoComposerActionButton({
 						<ComposerActionFrame>
 							<div className="flex h-9 items-center gap-1">
 								{shouldShowDictationStart ? (
-									<PromptInputButton
-										variant="ghost"
-										aria-label="Start dictation"
-										className="size-8 hover:opacity-90 active:opacity-80"
-										data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:dictation` : undefined}
-										onClick={handleStartDictation}
-										tooltip={{ content: "Dictate", delay: 0 }}
-									>
-										<MicrophoneIcon label="" />
-									</PromptInputButton>
+									<PromptInputDictationControl
+										onStart={handleStartDictation}
+										screenAssistantTarget={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:dictation` : undefined}
+									/>
 								) : null}
 								{idleAction === "submit" ? (
 									<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>

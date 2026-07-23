@@ -15,8 +15,12 @@ import type {
 
 export interface JiraForYouProps {
 	className?: string;
+	forcedVisibleViewItemId?: string;
 	onItemClick?: (item: JiraForYouItem) => void;
+	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	onView?: (item: JiraForYouItem) => void;
+	onViewButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
+	selectedItemId?: string;
 	sections?: readonly JiraForYouSection[];
 	tabs?: readonly JiraForYouTab[];
 }
@@ -44,8 +48,12 @@ function filterSections(
 
 export function JiraForYou({
 	className,
+	forcedVisibleViewItemId,
 	onItemClick,
+	onItemButtonRef,
 	onView,
+	onViewButtonRef,
+	selectedItemId,
 	sections = JIRA_FOR_YOU_SECTIONS,
 	tabs = JIRA_FOR_YOU_TABS,
 }: Readonly<JiraForYouProps>) {
@@ -69,9 +77,13 @@ export function JiraForYou({
 				<div className="flex flex-col gap-3">
 					{visibleSections.map((section) => (
 						<JiraForYouSectionGroup
+							forcedVisibleViewItemId={forcedVisibleViewItemId}
 							key={section.id}
+							onItemButtonRef={onViewButtonRef}
 							onItemClick={onItemClick}
+							onRowButtonRef={onItemButtonRef}
 							onView={onView}
+							selectedItemId={selectedItemId}
 							section={section}
 						/>
 					))}
@@ -95,3 +107,10 @@ export type {
 	JiraForYouStatus,
 	JiraForYouTab,
 } from "./jira-for-you-types";
+export type {
+	JiraForYouWorkspaceAgentSession,
+	JiraForYouWorkspaceData,
+	JiraForYouWorkspaceItemData,
+	JiraForYouWorkspaceOutput,
+} from "./jira-for-you-workspace-types";
+export { JiraForYouWorkspace } from "./jira-for-you-workspace";

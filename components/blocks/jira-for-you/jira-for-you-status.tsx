@@ -19,7 +19,7 @@ const STATUS_VARIANTS: Record<
 	JiraForYouStatus,
 	NonNullable<LozengeProps["variant"]>
 > = {
-	"Human review": "warning",
+	Review: "warning",
 	"In progress": "information",
 	"In review": "information",
 	"To do": "neutral",
@@ -30,7 +30,7 @@ const STATUS_ORDER: readonly JiraForYouStatus[] = [
 	"To do",
 	"In progress",
 	"In review",
-	"Human review",
+	"Review",
 	"Done",
 ];
 
