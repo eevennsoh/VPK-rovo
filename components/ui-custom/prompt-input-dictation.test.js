@@ -7,6 +7,10 @@ const PROMPT_INPUT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "prompt-input.tsx"),
 	"utf8",
 );
+const DICTATION_SOURCE = fs.readFileSync(
+	path.join(__dirname, "prompt-input-dictation.tsx"),
+	"utf8",
+);
 const SEND_CONTROLS_SOURCE = fs.readFileSync(
 	path.join(
 		__dirname,
@@ -24,42 +28,46 @@ const SIDEBAR_COMPOSER_SOURCE = fs.readFileSync(
 
 test("PromptInput exposes an opt-in controlled dictation component", () => {
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/export type PromptInputDictationState = "idle" \| "listening" \| "processing";/u,
 	);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/export interface PromptInputDictationControlProps/u,
 	);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/export const PromptInputDictationControl/u,
 	);
-	assert.match(PROMPT_INPUT_SOURCE, /state = "idle"/u);
-	assert.match(PROMPT_INPUT_SOURCE, /state === "listening"/u);
+	assert.match(DICTATION_SOURCE, /state = "idle"/u);
+	assert.match(DICTATION_SOURCE, /state === "listening"/u);
+	assert.match(
+		PROMPT_INPUT_SOURCE,
+		/export \{[\s\S]*PromptInputDictationControl,[\s\S]*\} from "@\/components\/ui-custom\/prompt-input-dictation";/u,
+	);
 });
 
 test("PromptInput dictation supports disabled and unsupported hosts", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /disabled\?: boolean;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /supported\?: boolean;/u);
-	assert.match(PROMPT_INPUT_SOURCE, /if \(!supported\) \{\s*return null;\s*\}/u);
+	assert.match(DICTATION_SOURCE, /disabled\?: boolean;/u);
+	assert.match(DICTATION_SOURCE, /supported\?: boolean;/u);
+	assert.match(DICTATION_SOURCE, /if \(!supported\) \{\s*return null;\s*\}/u);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/<PromptInputButton[\s\S]*disabled=\{disabled\}/u,
 	);
 });
 
 test("PromptInput dictation has accessible labels, tooltip, and host callbacks", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Start dictation"/u);
-	assert.match(PROMPT_INPUT_SOURCE, /aria-label="Stop dictation"/u);
+	assert.match(DICTATION_SOURCE, /aria-label="Start dictation"/u);
+	assert.match(DICTATION_SOURCE, /aria-label="Stop dictation"/u);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/tooltip=\{\{ content: "Dictate", delay: 0 \}\}/u,
 	);
-	assert.match(PROMPT_INPUT_SOURCE, /onClick=\{onStart\}/u);
-	assert.match(PROMPT_INPUT_SOURCE, /onClick=\{onStop\}/u);
+	assert.match(DICTATION_SOURCE, /onClick=\{onStart\}/u);
+	assert.match(DICTATION_SOURCE, /onClick=\{onStop\}/u);
 	assert.match(
-		PROMPT_INPUT_SOURCE,
+		DICTATION_SOURCE,
 		/Latest dictation transcript: \{transcriptPreview\}/u,
 	);
 });

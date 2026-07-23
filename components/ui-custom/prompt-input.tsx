@@ -17,19 +17,19 @@ import type {
   HTMLAttributes,
   KeyboardEventHandler,
   PropsWithChildren,
-  ReactNode,
   RefObject,
 } from "react";
 
 import Image from "next/image";
 
-import CrossIcon from "@atlaskit/icon/core/cross";
-import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
-import { LiveWaveform } from "@/components/ui-audio/live-waveform";
+import {
+  PromptInputButton,
+  type PromptInputButtonProps,
+} from "@/components/ui-custom/prompt-input-button";
 import {
   composerDirectoryAutocompletePluginKey,
   createComposerEditorExtensions,
@@ -53,7 +53,6 @@ import {
   getDirectoryAutocompleteState,
   type DirectoryAutocompleteState,
 } from "@/lib/directory-autocomplete";
-import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 
 import { Badge } from "@/components/ui/badge";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
@@ -92,12 +91,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   ArrowUpIcon,
   ImageIcon,
   MicIcon,
@@ -110,7 +103,6 @@ import RandomizeIcon from "@atlaskit/icon-lab/core/randomize";
 import { cva, type VariantProps } from "class-variance-authority";
 import { nanoid } from "nanoid";
 import {
-  Children,
   createContext,
   useCallback,
   use,
@@ -119,6 +111,17 @@ import {
   useRef,
   useState,
 } from "react";
+
+export {
+  PromptInputDictationControl,
+  type PromptInputDictationControlProps,
+  type PromptInputDictationState,
+} from "@/components/ui-custom/prompt-input-dictation";
+export {
+  PromptInputButton,
+  type PromptInputButtonProps,
+  type PromptInputButtonTooltip,
+} from "@/components/ui-custom/prompt-input-button";
 
 // ============================================================================
 // Helpers
@@ -1863,19 +1866,6 @@ export const PromptInputSendControls = ({
   );
 };
 
-export type PromptInputButtonTooltip =
-  | string
-  | {
-      content: ReactNode;
-      shortcut?: string;
-      side?: ComponentProps<typeof TooltipContent>["side"];
-      delay?: number;
-    };
-
-export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
-  tooltip?: PromptInputButtonTooltip;
-};
-
 const PROMPT_INPUT_PREFERENCE_SOURCES = [
   {
     name: "google-drive",
@@ -1886,55 +1876,6 @@ const PROMPT_INPUT_PREFERENCE_SOURCES = [
     label: "Microsoft Teams",
   },
 ] as const;
-
-export const PromptInputButton = ({
-  variant = "ghost",
-  className,
-  size,
-  tooltip,
-  ...props
-}: Readonly<PromptInputButtonProps>) => {
-  const newSize =
-    size ?? (Children.count(props.children) > 1 ? "sm" : "icon-sm");
-
-  const button = (
-    <InputGroupButton
-      className={cn(className)}
-      size={newSize}
-      type="button"
-      variant={variant}
-      {...props}
-    />
-  );
-
-  if (!tooltip) {
-    return button;
-  }
-
-  const tooltipContent =
-    typeof tooltip === "string" ? tooltip : tooltip.content;
-  const shortcut = typeof tooltip === "string" ? undefined : tooltip.shortcut;
-  const side = typeof tooltip === "string" ? "top" : (tooltip.side ?? "top");
-  const delay = typeof tooltip === "string" ? undefined : tooltip.delay;
-
-  const tooltipElement = (
-    <Tooltip>
-      <TooltipTrigger render={button} />
-      <TooltipContent side={side}>
-        {tooltipContent}
-        {shortcut && (
-          <span className="ml-2 text-muted-foreground">{shortcut}</span>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-
-  if (delay != null) {
-    return <TooltipProvider delay={delay}>{tooltipElement}</TooltipProvider>;
-  }
-
-  return tooltipElement;
-};
 
 export type PromptInputPreferencesButtonProps = Omit<
   PromptInputButtonProps,
@@ -2055,119 +1996,6 @@ export const PromptInputMicrophone = ({
       {children ?? <MicIcon className="size-4" />}
     </InputGroupButton>
   );
-};
-
-export type PromptInputDictationState = "idle" | "listening" | "processing";
-
-export interface PromptInputDictationControlProps {
-	className?: string;
-	disabled?: boolean;
-	mediaStream?: MediaStream | null;
-	onStart?: () => void;
-	onStop?: () => void;
-	screenAssistantTarget?: string;
-	state?: PromptInputDictationState;
-	supported?: boolean;
-	transcriptPreview?: string | null;
-}
-
-/**
- * Controlled dictation chrome for PromptInput.
- *
- * Speech recognition, microphone permission, transcript commits, and state
- * transitions stay with the host. This component only renders the shared
- * idle/listening/processing affordance and forwards user intent.
- */
-export const PromptInputDictationControl = ({
-	className,
-	disabled = false,
-	mediaStream = null,
-	onStart,
-	onStop,
-	screenAssistantTarget,
-	state = "idle",
-	supported = true,
-	transcriptPreview = null,
-}: Readonly<PromptInputDictationControlProps>) => {
-	if (!supported) {
-		return null;
-	}
-
-	if (state === "idle") {
-		return (
-			<PromptInputButton
-				aria-label="Start dictation"
-				className={cn("size-8 hover:opacity-90 active:opacity-80", className)}
-				data-screen-assistant-target={screenAssistantTarget}
-				disabled={disabled}
-				onClick={onStart}
-				tooltip={{ content: "Dictate", delay: 0 }}
-				variant="ghost"
-			>
-				<MicrophoneIcon label="" />
-			</PromptInputButton>
-		);
-	}
-
-	const isListening = state === "listening" && mediaStream !== null;
-
-	return (
-		<div
-			className={cn(
-				"flex h-8 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold pl-1 pr-3 text-text-inverse shadow-sm",
-				className,
-			)}
-			data-dictation-state={state}
-		>
-			<button
-				aria-hidden="true"
-				className="hidden"
-				disabled
-				tabIndex={-1}
-				type="submit"
-			/>
-			<button
-				aria-label="Stop dictation"
-				className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
-				disabled={disabled}
-				onClick={onStop}
-				type="button"
-			>
-				<CrossIcon label="" size="small" />
-			</button>
-			<span className="flex h-full w-8 shrink-0 items-center">
-				<LiveWaveform
-					active={isListening}
-					barColor="currentColor"
-					barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
-					barCount={8}
-					barGap={2}
-					barHeightScale={state === "processing" ? 1.15 : 1}
-					barOpacityMax={1}
-					barOpacityMin={1}
-					barRadius={0}
-					barWidth={2}
-					className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-slow"
-					entranceAnimation="stagger"
-					entranceDurationMs={180}
-					entranceStaggerMs={14}
-					fadeEdges={false}
-					fftSize={512}
-					height="100%"
-					mediaStream={isListening ? mediaStream : null}
-					mode="static"
-					processing={!isListening}
-					sensitivity={2.4}
-					smoothingTimeConstant={0.35}
-				/>
-			</span>
-			{transcriptPreview ? (
-				<span className="sr-only">
-					Latest dictation transcript: {transcriptPreview}
-				</span>
-			) : null}
-		</div>
-	);
 };
 
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {

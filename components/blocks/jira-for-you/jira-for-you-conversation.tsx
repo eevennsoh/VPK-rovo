@@ -136,7 +136,7 @@ export function JiraForYouConversation({
 				/>
 
 				<div
-					className="sticky bottom-0 z-10 shrink-0 bg-background/90 backdrop-blur"
+					className="sticky bottom-0 z-10 shrink-0 bg-background"
 					data-testid="jira-for-you-composer-region"
 				>
 					<div className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 py-3 md:px-6">
