@@ -16,21 +16,10 @@ import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import { useLazyRef } from "@/lib/use-lazy-ref";
-import {
-	Conversation,
-	ConversationContent,
-	ConversationScrollButton,
-} from "@/components/ui-custom/conversation";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ui-custom/conversation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
