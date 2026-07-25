@@ -9,6 +9,10 @@ const HOOK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo.ts"),
 	"utf8",
 );
+const ROVO_STAGE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/jira-golden-paths/components/rovo-stage.tsx"),
+	"utf8",
+);
 
 async function loadHarness() {
 	const result = await esbuild.build({
@@ -17,6 +21,7 @@ async function loadHarness() {
 				export {
 					JGP_CLAUDE_CODE_AGENT_PROFILE,
 					JGP_CHAT_AGENT_PROFILES,
+					JGP_ROVO_COMPLETED_SESSION_PATCH,
 					JGP_ROVO_SESSION_SEEDS,
 					buildJgpAgentChatPlayback,
 					buildJgpAgentChatContextBar,
@@ -162,4 +167,31 @@ test("submitted Rovo answer advances through thinking frames to a CodeList resul
 		"src/boards/assignee-focus/assignee-focus-toolbar.test.tsx",
 	]);
 	assert.match(codeListPart.data.payload.items[0].code, /Clear focus/u);
+});
+
+test("submitted Rovo answer makes the completed changes ready for review", async () => {
+	const { JGP_ROVO_COMPLETED_SESSION_PATCH } = await loadHarness();
+
+	assert.deepEqual(JGP_ROVO_COMPLETED_SESSION_PATCH, {
+		status: "pr-open",
+		jiraColumn: "Done",
+		repository: "atlassian/jira-cloud",
+		branch: "cursor/jgp-252-clear-focus-action",
+		commit: "6f4c2ab",
+		checks: "5 checks passing",
+		fileChanges: {
+			additions: 42,
+			deletions: 8,
+			files: [
+				"src/boards/assignee-focus/assignee-focus-toolbar.tsx",
+				"src/boards/assignee-focus/assignee-focus-toolbar.test.tsx",
+			],
+			isDismissed: false,
+		},
+		question: undefined,
+	});
+	assert.match(
+		ROVO_STAGE_SOURCE,
+		/if \(activeHistorySession\?\.status !== "awaiting-input"\) return \{ handled: false \};[\s\S]*onApply: \(\) => updateActiveSession\(JGP_ROVO_COMPLETED_SESSION_PATCH\),/u,
+	);
 });
