@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 export interface UseFitTextOptions {
 	/** Smallest font size (px) to try. */
@@ -85,7 +85,7 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 		[],
 	);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (!containerElement) return undefined;
 		const observer = new ResizeObserver(fit);
 		observer.observe(containerElement);

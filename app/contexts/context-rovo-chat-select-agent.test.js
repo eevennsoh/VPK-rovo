@@ -50,6 +50,18 @@ test("recent-agents nav list is ordered by lastTouchedAt (the pin signal)", () =
 	);
 });
 
+test("chat surface actions synchronously maintain the ref used by floating pins", () => {
+	assert.match(CONTEXT_SOURCE, /const updateChatSurface = useCallback/u);
+	assert.match(CONTEXT_SOURCE, /chatSurfaceRef\.current = nextSurface;\s*setChatSurface\(nextSurface\);/u);
+	assert.match(CONTEXT_SOURCE, /const closeChat = useCallback\(\(\) => updateChatSurface\(null\)/u);
+	assert.match(CONTEXT_SOURCE, /if \(chatSurfaceRef\.current !== null && restored === "sidebar"\)/u);
+});
+
+test("history toggles compose from the latest queued state", () => {
+	assert.match(CONTEXT_SOURCE, /setIsHistoryOpen\(\(previousOpen\) => !previousOpen\)/u);
+	assert.match(CONTEXT_SOURCE, /if \(isHistoryOpen\) \{\s*void refreshThreads\(\);\s*\}/u);
+});
+
 test("selecting an agent does not bump lastTouchedAt (no pin-to-top on click)", () => {
 	const selectAgentBody = getSelectAgentBody(CONTEXT_SOURCE);
 

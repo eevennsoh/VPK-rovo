@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 	type ReactNode,
+	type SetStateAction,
 } from "react";
 import { useChat } from "@ai-sdk/react";
 import { API_ENDPOINTS } from "@/lib/api-config";
@@ -273,6 +274,14 @@ export function RovoChatProvider({
 		setSelectedAgentId(nextAgentId);
 	}, []);
 	const [chatSurface, setChatSurface] = useState<ChatSurface | null>(null);
+	const chatSurfaceRef = useLatestRef(chatSurface);
+	const updateChatSurface = useCallback((updater: SetStateAction<ChatSurface | null>) => {
+		const nextSurface = typeof updater === "function"
+			? updater(chatSurfaceRef.current)
+			: updater;
+		chatSurfaceRef.current = nextSurface;
+		setChatSurface(nextSurface);
+	}, [chatSurfaceRef]);
 	const isOpen = chatSurface !== null;
 	const [isSubmitPending, setIsSubmitPending] = useState(false);
 	const [pendingSubmitStartedAt, setPendingSubmitStartedAt] = useState<number | null>(
@@ -1079,21 +1088,20 @@ export function RovoChatProvider({
 	// oxlint-enable react-doctor/no-event-handler
 
 	const toggleChat = useCallback(
-		() => setChatSurface((prev) => (prev === "sidebar" ? null : "sidebar")),
-		[]
+		() => updateChatSurface((previous) => (previous === "sidebar" ? null : "sidebar")),
+		[updateChatSurface]
 	);
-	const closeChat = useCallback(() => setChatSurface(null), []);
-	const openChat = useCallback((surface: ChatSurface) => setChatSurface(surface), []);
+	const closeChat = useCallback(() => updateChatSurface(null), [updateChatSurface]);
+	const openChat = useCallback((surface: ChatSurface) => updateChatSurface(surface), [updateChatSurface]);
 	const switchSurface = useCallback(
-		(surface: ChatSurface) => setChatSurface(surface),
-		[]
+		(surface: ChatSurface) => updateChatSurface(surface),
+		[updateChatSurface]
 	);
 
 	const [floatingPinReasons, setFloatingPinReasons] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
 	const floatingPinReasonsRef = useLatestRef(floatingPinReasons);
-	const chatSurfaceRef = useLatestRef(chatSurface);
 	const isFloatingPinned = floatingPinReasons.size > 0;
 	// Surface to restore once the last pin releases. Captured on first pin only.
 	const surfaceBeforePinRef = useRef<ChatSurface | null>(null);
@@ -1104,13 +1112,13 @@ export function RovoChatProvider({
 		if (previous.size === 0) {
 			const currentSurface = chatSurfaceRef.current;
 			surfaceBeforePinRef.current = currentSurface;
-			if (currentSurface === "sidebar") setChatSurface("floating");
+			if (currentSurface === "sidebar") updateChatSurface("floating");
 		}
 		const next = new Set(previous);
 		next.add(reason);
 		floatingPinReasonsRef.current = next;
 		setFloatingPinReasons(next);
-	}, [chatSurfaceRef, floatingPinReasonsRef]);
+	}, [chatSurfaceRef, floatingPinReasonsRef, updateChatSurface]);
 
 	const unpinFloating = useCallback((reason: string) => {
 		const previous = floatingPinReasonsRef.current;
@@ -1123,10 +1131,10 @@ export function RovoChatProvider({
 			const restored = surfaceBeforePinRef.current;
 			surfaceBeforePinRef.current = null;
 			if (chatSurfaceRef.current !== null && restored === "sidebar") {
-				setChatSurface("sidebar");
+				updateChatSurface("sidebar");
 			}
 		}
-	}, [chatSurfaceRef, floatingPinReasonsRef]);
+	}, [chatSurfaceRef, floatingPinReasonsRef, updateChatSurface]);
 
 	const clearSuggestedQuestions = useCallback(() => {
 		setMessages((prev) =>
@@ -1190,14 +1198,18 @@ export function RovoChatProvider({
 
 	const openHistory = useCallback(() => {
 		setIsHistoryOpen(true);
-		void refreshThreads();
-	}, [refreshThreads]);
+	}, []);
 
 	const closeHistory = useCallback(() => setIsHistoryOpen(false), []);
 
 	const toggleHistory = useCallback(() => {
-		if (!isHistoryOpen) void refreshThreads();
-		setIsHistoryOpen(!isHistoryOpen);
+		setIsHistoryOpen((previousOpen) => !previousOpen);
+	}, []);
+
+	useEffect(() => {
+		if (isHistoryOpen) {
+			void refreshThreads();
+		}
 	}, [isHistoryOpen, refreshThreads]);
 
 	useEffect(() => {
