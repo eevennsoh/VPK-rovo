@@ -1,11 +1,24 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { pathToFileURL } = require("node:url");
 
+const hookPath = path.join(process.cwd(), "components/hooks/use-has-vertical-overflow.ts");
+
 async function loadOverflowHarness() {
-	return import(pathToFileURL(path.join(process.cwd(), "components/hooks/use-has-vertical-overflow.ts")).href);
+	return import(pathToFileURL(hookPath).href);
 }
+
+test("useHasVerticalOverflow does not update state after every render", () => {
+	const source = fs.readFileSync(hookPath, "utf8");
+
+	assert.doesNotMatch(
+		source,
+		/useEffect\(\(\) => \{\s*updateScrollState\(\);\s*\}\);/,
+		"an effect without dependencies creates a setState-render loop",
+	);
+});
 
 test("VerticalOverflowState does not show masks for one-pixel layout jitter", async () => {
 	const { getVerticalOverflowState } = await loadOverflowHarness();

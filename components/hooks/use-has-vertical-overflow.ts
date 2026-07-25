@@ -144,10 +144,6 @@ export function useHasVerticalOverflow<T extends HTMLElement>(): HasVerticalOver
 	);
 
 	useEffect(() => {
-		updateScrollState();
-	});
-
-	useEffect(() => {
 		if (!element) return undefined;
 		return subscribeToVerticalOverflow(element, updateScrollState);
 	}, [element, updateScrollState]);
