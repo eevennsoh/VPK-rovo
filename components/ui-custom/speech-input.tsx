@@ -5,6 +5,7 @@ import type { ComponentProps, MouseEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 import VideoStopIcon from "@atlaskit/icon/core/video-stop";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -39,6 +40,24 @@ const detectSpeechInputMode = (): SpeechInputMode => {
 	return "none";
 };
 
+function subscribeMediaRecorder(
+	mediaRecorder: MediaRecorder,
+	handlers: {
+		onDataAvailable: (event: BlobEvent) => void;
+		onError: () => void;
+		onStop: () => void;
+	},
+): () => void {
+	mediaRecorder.addEventListener("dataavailable", handlers.onDataAvailable);
+	mediaRecorder.addEventListener("stop", handlers.onStop);
+	mediaRecorder.addEventListener("error", handlers.onError);
+	return () => {
+		mediaRecorder.removeEventListener("dataavailable", handlers.onDataAvailable);
+		mediaRecorder.removeEventListener("stop", handlers.onStop);
+		mediaRecorder.removeEventListener("error", handlers.onError);
+	};
+}
+
 const resolveSpeechInputButtonSize = (size: SpeechInputProps["size"]): SpeechInputProps["size"] => {
 	if (size === "compact") {
 		return "icon-compact";
@@ -67,13 +86,14 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const streamRef = useRef<MediaStream | null>(null);
+	const mediaRecorderListenerCleanupRef = useRef<(() => void) | null>(null);
 	const audioChunksRef = useRef<Blob[]>([]);
-	const onTranscriptionChangeRef = useRef<SpeechInputProps["onTranscriptionChange"]>(onTranscriptionChange);
-	const onAudioRecordedRef = useRef<SpeechInputProps["onAudioRecorded"]>(onAudioRecorded);
-
-	// Keep refs in sync
-	onTranscriptionChangeRef.current = onTranscriptionChange;
-	onAudioRecordedRef.current = onAudioRecorded;
+	const onTranscriptionChangeRef = useLatestRef<SpeechInputProps["onTranscriptionChange"]>(onTranscriptionChange);
+	const onAudioRecordedRef = useLatestRef<SpeechInputProps["onAudioRecorded"]>(onAudioRecorded);
+	const clearMediaRecorderListeners = useCallback(() => {
+		mediaRecorderListenerCleanupRef.current?.();
+		mediaRecorderListenerCleanupRef.current = null;
+	}, []);
 
 	// Initialize Speech Recognition when mode is speech-recognition
 		// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- browser SpeechRecognition availability is discovered through an external API.
@@ -135,12 +155,13 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 			recognitionRef.current = null;
 			setIsRecognitionReady(false);
 		};
-		}, [mode, lang]);
+		}, [lang, mode, onTranscriptionChangeRef]);
 		// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	// Cleanup MediaRecorder and stream on unmount
 	useEffect(
 		() => () => {
+			clearMediaRecorderListeners();
 			if (mediaRecorderRef.current?.state === "recording") {
 				mediaRecorderRef.current.stop();
 			}
@@ -150,7 +171,7 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 				}
 			}
 		},
-		[],
+			[clearMediaRecorderListeners],
 	);
 
 	// Start MediaRecorder recording
@@ -160,6 +181,7 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 		}
 
 		try {
+			clearMediaRecorderListeners();
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			streamRef.current = stream;
 			const mediaRecorder = new MediaRecorder(stream);
@@ -172,6 +194,8 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 			};
 
 			const handleStop = async () => {
+				clearMediaRecorderListeners();
+				mediaRecorderRef.current = null;
 				for (const track of stream.getTracks()) {
 					track.stop();
 				}
@@ -197,6 +221,8 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 			};
 
 			const handleError = () => {
+				clearMediaRecorderListeners();
+				mediaRecorderRef.current = null;
 				setIsListening(false);
 				for (const track of stream.getTracks()) {
 					track.stop();
@@ -204,9 +230,11 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 				streamRef.current = null;
 			};
 
-			mediaRecorder.addEventListener("dataavailable", handleDataAvailable);
-			mediaRecorder.addEventListener("stop", handleStop);
-			mediaRecorder.addEventListener("error", handleError);
+			mediaRecorderListenerCleanupRef.current = subscribeMediaRecorder(mediaRecorder, {
+				onDataAvailable: handleDataAvailable,
+				onError: handleError,
+				onStop: handleStop,
+			});
 
 			mediaRecorderRef.current = mediaRecorder;
 			mediaRecorder.start();
@@ -214,7 +242,7 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 		} catch {
 			setIsListening(false);
 		}
-	}, []);
+	}, [clearMediaRecorderListeners, onAudioRecordedRef, onTranscriptionChangeRef]);
 
 	// Stop MediaRecorder recording
 	const stopMediaRecorder = useCallback(() => {

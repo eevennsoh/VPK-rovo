@@ -61,6 +61,9 @@ export function AgentCompactConfigNavButton({
 // dropdowns receive the field's disabled labels (derived from the persisted
 // config) and match by field-specific key so the state survives reorder/removal.
 const trimDisabledLabel = (value: string) => value.trim();
+function suppressMenuDismissal(event: { preventDefault: () => void }) {
+	event.preventDefault();
+}
 
 export function useDisabledLabelSet(
 	disabledItems: readonly string[] | undefined,
@@ -94,10 +97,6 @@ export function AgentCompactTriggerRow({
 	// toggling never dismisses the menu even when the re-render detaches the
 	// pressed node. preventDefault is safe here because the Switch toggles via
 	// `onCheckedChange`, not the native default.
-	function suppressMenuDismissal(event: { preventDefault: () => void }) {
-		event.preventDefault();
-	}
-
 	return (
 		<DropdownMenuItem
 			closeOnClick={false}
@@ -251,9 +250,6 @@ export function AgentCompactReferenceRow({
 }>) {
 	// See AgentCompactTriggerRow: preventDefault on the switch's pointer/mouse
 	// down stops Base UI from dismissing the menu when toggling.
-	function suppressMenuDismissal(event: { preventDefault: () => void }) {
-		event.preventDefault();
-	}
 	// Prefer an explicit elemBefore; otherwise derive the front slot from the row's
 	// directory category so skills/tools/apps/subagents each lead with their icon.
 	const frontSlot = elemBefore ?? (category ? renderAgentReferenceRowVisual(category, label, tagColor) : undefined);

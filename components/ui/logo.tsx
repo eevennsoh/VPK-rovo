@@ -14,6 +14,7 @@ import {
 	type AtlassianLogoName,
 	LOGO_ICON_COMPONENTS,
 	LOGO_LOCKUP_COMPONENTS,
+	LOGO_TILE_SIZES,
 	CUSTOM_LOGO_SIZES,
 } from "@/components/ui/data/logo-data";
 import {
@@ -25,22 +26,10 @@ import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-lo
 import { Tile, type TileProps } from "@/components/ui/tile";
 
 export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
+export { ATLASSIAN_LOGO_SOURCE, LOGO_TILE_SIZES, isAtlassianLogoSource } from "@/components/ui/data/logo-data";
 export type { AtlassianLogoName };
 export type LogoVariant = "icon" | "lockup";
 export type LogoSize = NonNullable<TileProps["size"]>;
-export const ATLASSIAN_LOGO_SOURCE = "atlassian";
-export const LOGO_TILE_SIZES = [
-	"xxsmall",
-	"xsmall",
-	"small",
-	"medium",
-	"large",
-	"xlarge",
-] as const satisfies ReadonlyArray<LogoSize>;
-
-export function isAtlassianLogoSource(src: string | null | undefined): boolean {
-	return src === ATLASSIAN_LOGO_SOURCE;
-}
 
 export interface LogoProps extends Omit<AtlaskitLogoProps, "size"> {
 	color?: string;
@@ -317,97 +306,91 @@ export function RovoColorIcon({
 	);
 }
 
-export const RovoColorLogo = RovoColorIcon;
+export function RovoColorLogo(props: Readonly<RovoColorIconProps>) { return <RovoColorIcon {...props} />; }
 
 /* -- Named product exports --------------------------------------- */
 
-function createLogo(name: AtlassianLogoName) {
-	return function LogoComponent(props: Readonly<LogoProps>) {
-		return <AtlassianLogo name={name} {...props} />;
-	};
-}
+export function AdminIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="admin" {...props} />; }
+export function AlignIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="align" {...props} />; }
+export function AnalyticsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="analytics" {...props} />; }
+export function AssetsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="assets" {...props} />; }
+export function AtlassianBrandIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="atlassian" {...props} />; }
+export function AtlassianAdministrationIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="atlassian-administration" {...props} />; }
+export function AtlassianAnalyticsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="atlassian-analytics" {...props} />; }
+export function BambooIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="bamboo" {...props} />; }
+export function BitbucketIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="bitbucket" {...props} />; }
+export function BitbucketDataCenterIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="bitbucket-data-center" {...props} />; }
+export function ChatIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="chat" {...props} />; }
+export function CompassIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="compass" {...props} />; }
+export function ConfluenceIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="confluence" {...props} />; }
+export function ConfluenceDataCenterIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="confluence-data-center" {...props} />; }
+export function CrowdIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="crowd" {...props} />; }
+export function CustomerServiceManagementIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="customer-service-management" {...props} />; }
+export function DxIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="dx" {...props} />; }
+export function FeedbackIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="feedback" {...props} />; }
+export function FocusIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="focus" {...props} />; }
+export function GoalsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="goals" {...props} />; }
+export function GuardIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="guard" {...props} />; }
+export function HomeIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="home" {...props} />; }
+export function HubIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="hub" {...props} />; }
+export function JiraIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira" {...props} />; }
+export function JiraAlignIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira-align" {...props} />; }
+export function JiraDataCenterIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira-data-center" {...props} />; }
+export function JiraProductDiscoveryIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira-product-discovery" {...props} />; }
+export function JiraServiceManagementIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira-service-management" {...props} />; }
+export function JiraServiceManagementDataCenterIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="jira-service-management-data-center" {...props} />; }
+export function LoomIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="loom" {...props} />; }
+export function LoomAttributionIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="loom-attribution" {...props} />; }
+export function OpsgenieIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="opsgenie" {...props} />; }
+export function ProjectsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="projects" {...props} />; }
+export function RovoIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="rovo" {...props} />; }
+export function RovoDevIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="rovo-dev" {...props} />; }
+export function RovoDevAgentIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="rovo-dev-agent" {...props} />; }
+export function SearchIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="search" {...props} />; }
+export function StatuspageIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="statuspage" {...props} />; }
+export function StudioIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="studio" {...props} />; }
+export function TalentIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="talent" {...props} />; }
+export function TeamsIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="teams" {...props} />; }
+export function TrelloIcon(props: Readonly<LogoProps>) { return <AtlassianLogo name="trello" {...props} />; }
 
-export const AdminIcon = createLogo("admin");
-export const AlignIcon = createLogo("align");
-export const AnalyticsIcon = createLogo("analytics");
-export const AssetsIcon = createLogo("assets");
-export const AtlassianBrandIcon = createLogo("atlassian");
-export const AtlassianAdministrationIcon = createLogo("atlassian-administration");
-export const AtlassianAnalyticsIcon = createLogo("atlassian-analytics");
-export const BambooIcon = createLogo("bamboo");
-export const BitbucketIcon = createLogo("bitbucket");
-export const BitbucketDataCenterIcon = createLogo("bitbucket-data-center");
-export const ChatIcon = createLogo("chat");
-export const CompassIcon = createLogo("compass");
-export const ConfluenceIcon = createLogo("confluence");
-export const ConfluenceDataCenterIcon = createLogo("confluence-data-center");
-export const CrowdIcon = createLogo("crowd");
-export const CustomerServiceManagementIcon = createLogo("customer-service-management");
-export const DxIcon = createLogo("dx");
-export const FeedbackIcon = createLogo("feedback");
-export const FocusIcon = createLogo("focus");
-export const GoalsIcon = createLogo("goals");
-export const GuardIcon = createLogo("guard");
-export const HomeIcon = createLogo("home");
-export const HubIcon = createLogo("hub");
-export const JiraIcon = createLogo("jira");
-export const JiraAlignIcon = createLogo("jira-align");
-export const JiraDataCenterIcon = createLogo("jira-data-center");
-export const JiraProductDiscoveryIcon = createLogo("jira-product-discovery");
-export const JiraServiceManagementIcon = createLogo("jira-service-management");
-export const JiraServiceManagementDataCenterIcon = createLogo("jira-service-management-data-center");
-export const LoomIcon = createLogo("loom");
-export const LoomAttributionIcon = createLogo("loom-attribution");
-export const OpsgenieIcon = createLogo("opsgenie");
-export const ProjectsIcon = createLogo("projects");
-export const RovoIcon = createLogo("rovo");
-export const RovoDevIcon = createLogo("rovo-dev");
-export const RovoDevAgentIcon = createLogo("rovo-dev-agent");
-export const SearchIcon = createLogo("search");
-export const StatuspageIcon = createLogo("statuspage");
-export const StudioIcon = createLogo("studio");
-export const TalentIcon = createLogo("talent");
-export const TeamsIcon = createLogo("teams");
-export const TrelloIcon = createLogo("trello");
-
-export const AdminLogo = AdminIcon;
-export const AlignLogo = AlignIcon;
-export const AnalyticsLogo = AnalyticsIcon;
-export const AssetsLogo = AssetsIcon;
-export const AtlassianBrandLogo = AtlassianBrandIcon;
-export const AtlassianAdministrationLogo = AtlassianAdministrationIcon;
-export const AtlassianAnalyticsLogo = AtlassianAnalyticsIcon;
-export const BambooLogo = BambooIcon;
-export const BitbucketLogo = BitbucketIcon;
-export const BitbucketDataCenterLogo = BitbucketDataCenterIcon;
-export const ChatLogo = ChatIcon;
-export const CompassLogo = CompassIcon;
-export const ConfluenceLogo = ConfluenceIcon;
-export const ConfluenceDataCenterLogo = ConfluenceDataCenterIcon;
-export const CrowdLogo = CrowdIcon;
-export const CustomerServiceManagementLogo = CustomerServiceManagementIcon;
-export const FeedbackLogo = FeedbackIcon;
-export const FocusLogo = FocusIcon;
-export const GoalsLogo = GoalsIcon;
-export const GuardLogo = GuardIcon;
-export const HomeLogo = HomeIcon;
-export const HubLogo = HubIcon;
-export const JiraLogo = JiraIcon;
-export const JiraAlignLogo = JiraAlignIcon;
-export const JiraDataCenterLogo = JiraDataCenterIcon;
-export const JiraProductDiscoveryLogo = JiraProductDiscoveryIcon;
-export const JiraServiceManagementLogo = JiraServiceManagementIcon;
-export const JiraServiceManagementDataCenterLogo = JiraServiceManagementDataCenterIcon;
-export const LoomLogo = LoomIcon;
-export const LoomAttributionLogo = LoomAttributionIcon;
-export const OpsgenieLogo = OpsgenieIcon;
-export const ProjectsLogo = ProjectsIcon;
-export const RovoLogo = RovoIcon;
-export const RovoDevLogo = RovoDevIcon;
-export const RovoDevAgentLogo = RovoDevAgentIcon;
-export const SearchLogo = SearchIcon;
-export const StatuspageLogo = StatuspageIcon;
-export const StudioLogo = StudioIcon;
-export const TalentLogo = TalentIcon;
-export const TeamsLogo = TeamsIcon;
-export const TrelloLogo = TrelloIcon;
+export function AdminLogo(props: Readonly<LogoProps>) { return <AdminIcon {...props} />; }
+export function AlignLogo(props: Readonly<LogoProps>) { return <AlignIcon {...props} />; }
+export function AnalyticsLogo(props: Readonly<LogoProps>) { return <AnalyticsIcon {...props} />; }
+export function AssetsLogo(props: Readonly<LogoProps>) { return <AssetsIcon {...props} />; }
+export function AtlassianBrandLogo(props: Readonly<LogoProps>) { return <AtlassianBrandIcon {...props} />; }
+export function AtlassianAdministrationLogo(props: Readonly<LogoProps>) { return <AtlassianAdministrationIcon {...props} />; }
+export function AtlassianAnalyticsLogo(props: Readonly<LogoProps>) { return <AtlassianAnalyticsIcon {...props} />; }
+export function BambooLogo(props: Readonly<LogoProps>) { return <BambooIcon {...props} />; }
+export function BitbucketLogo(props: Readonly<LogoProps>) { return <BitbucketIcon {...props} />; }
+export function BitbucketDataCenterLogo(props: Readonly<LogoProps>) { return <BitbucketDataCenterIcon {...props} />; }
+export function ChatLogo(props: Readonly<LogoProps>) { return <ChatIcon {...props} />; }
+export function CompassLogo(props: Readonly<LogoProps>) { return <CompassIcon {...props} />; }
+export function ConfluenceLogo(props: Readonly<LogoProps>) { return <ConfluenceIcon {...props} />; }
+export function ConfluenceDataCenterLogo(props: Readonly<LogoProps>) { return <ConfluenceDataCenterIcon {...props} />; }
+export function CrowdLogo(props: Readonly<LogoProps>) { return <CrowdIcon {...props} />; }
+export function CustomerServiceManagementLogo(props: Readonly<LogoProps>) { return <CustomerServiceManagementIcon {...props} />; }
+export function FeedbackLogo(props: Readonly<LogoProps>) { return <FeedbackIcon {...props} />; }
+export function FocusLogo(props: Readonly<LogoProps>) { return <FocusIcon {...props} />; }
+export function GoalsLogo(props: Readonly<LogoProps>) { return <GoalsIcon {...props} />; }
+export function GuardLogo(props: Readonly<LogoProps>) { return <GuardIcon {...props} />; }
+export function HomeLogo(props: Readonly<LogoProps>) { return <HomeIcon {...props} />; }
+export function HubLogo(props: Readonly<LogoProps>) { return <HubIcon {...props} />; }
+export function JiraLogo(props: Readonly<LogoProps>) { return <JiraIcon {...props} />; }
+export function JiraAlignLogo(props: Readonly<LogoProps>) { return <JiraAlignIcon {...props} />; }
+export function JiraDataCenterLogo(props: Readonly<LogoProps>) { return <JiraDataCenterIcon {...props} />; }
+export function JiraProductDiscoveryLogo(props: Readonly<LogoProps>) { return <JiraProductDiscoveryIcon {...props} />; }
+export function JiraServiceManagementLogo(props: Readonly<LogoProps>) { return <JiraServiceManagementIcon {...props} />; }
+export function JiraServiceManagementDataCenterLogo(props: Readonly<LogoProps>) { return <JiraServiceManagementDataCenterIcon {...props} />; }
+export function LoomLogo(props: Readonly<LogoProps>) { return <LoomIcon {...props} />; }
+export function LoomAttributionLogo(props: Readonly<LogoProps>) { return <LoomAttributionIcon {...props} />; }
+export function OpsgenieLogo(props: Readonly<LogoProps>) { return <OpsgenieIcon {...props} />; }
+export function ProjectsLogo(props: Readonly<LogoProps>) { return <ProjectsIcon {...props} />; }
+export function RovoLogo(props: Readonly<LogoProps>) { return <RovoIcon {...props} />; }
+export function RovoDevLogo(props: Readonly<LogoProps>) { return <RovoDevIcon {...props} />; }
+export function RovoDevAgentLogo(props: Readonly<LogoProps>) { return <RovoDevAgentIcon {...props} />; }
+export function SearchLogo(props: Readonly<LogoProps>) { return <SearchIcon {...props} />; }
+export function StatuspageLogo(props: Readonly<LogoProps>) { return <StatuspageIcon {...props} />; }
+export function StudioLogo(props: Readonly<LogoProps>) { return <StudioIcon {...props} />; }
+export function TalentLogo(props: Readonly<LogoProps>) { return <TalentIcon {...props} />; }
+export function TeamsLogo(props: Readonly<LogoProps>) { return <TeamsIcon {...props} />; }
+export function TrelloLogo(props: Readonly<LogoProps>) { return <TrelloIcon {...props} />; }

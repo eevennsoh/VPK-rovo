@@ -14,35 +14,33 @@ interface UsePersonalGraphIntroResult {
 	isReducedMotion: boolean;
 }
 
+function scheduleIntroTimeline(onPhase: (phase: PersonalGraphIntroPhase) => void): () => void {
+	const timeouts = PERSONAL_GRAPH_INTRO_TIMELINE.flatMap((step) => {
+		if (step.at === 0) {
+			onPhase(step.phase);
+			return [];
+		}
+		return [setTimeout(() => onPhase(step.phase), step.at)];
+	});
+
+	return () => {
+		for (const timeout of timeouts) {
+			clearTimeout(timeout);
+		}
+	};
+}
+
 export function usePersonalGraphIntro(replayKey = 0): UsePersonalGraphIntroResult {
 	const prefersReducedMotion = useReducedMotion() ?? false;
 	const [phase, setPhase] = useState<PersonalGraphIntroPhase>("title");
 
 	useEffect(() => {
-		setPhase("title");
 		if (prefersReducedMotion) {
 			setPhase(getPersonalGraphIntroPhaseAt(0, prefersReducedMotion));
 			return;
 		}
 
-		const timeouts: ReturnType<typeof setTimeout>[] = [];
-		for (const step of PERSONAL_GRAPH_INTRO_TIMELINE) {
-			if (step.at === 0) {
-				setPhase(step.phase);
-				continue;
-			}
-			timeouts.push(
-				setTimeout(() => {
-					setPhase(step.phase);
-				}, step.at),
-			);
-		}
-
-		return () => {
-			for (const id of timeouts) {
-				clearTimeout(id);
-			}
-		};
+		return scheduleIntroTimeline(setPhase);
 	}, [prefersReducedMotion, replayKey]);
 
 	return { phase, isReducedMotion: prefersReducedMotion };

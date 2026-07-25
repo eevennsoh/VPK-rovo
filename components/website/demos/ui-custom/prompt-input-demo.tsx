@@ -80,24 +80,17 @@ export function PromptInputDemoChatComposer() {
 
 	const handleStop = useCallback(async () => {}, []);
 	const handleToggleRealtimeVoice = useCallback(() => {
-		setRealtimeVoiceActive((active) => {
-			if (active) {
-				setClickyActive(false);
-			}
-
-			return !active;
-		});
-	}, []);
+		if (realtimeVoiceActive) {
+			setClickyActive(false);
+		}
+		setRealtimeVoiceActive(!realtimeVoiceActive);
+	}, [realtimeVoiceActive]);
 	const handleToggleClicky = useCallback(() => {
-		setClickyActive((active) => {
-			if (active) {
-				return false;
-			}
-
+		if (!clickyActive) {
 			setRealtimeVoiceActive(true);
-			return true;
-		});
-	}, []);
+		}
+		setClickyActive(!clickyActive);
+	}, [clickyActive]);
 
 	const canSubmit = prompt.trim().length > 0;
 
@@ -230,29 +223,22 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 	const [clickyActive, setClickyActive] = useState(false);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
-		setRealtimeVoiceActive((active) => {
-			if (active) {
-				setClickyActive(false);
-			}
-
-			return !active;
-		});
-	}, []);
+		if (realtimeVoiceActive) {
+			setClickyActive(false);
+		}
+		setRealtimeVoiceActive(!realtimeVoiceActive);
+	}, [realtimeVoiceActive]);
 
 	const handleStop = useCallback(() => {
 		setRealtimeVoiceActive(false);
 		setClickyActive(false);
 	}, []);
 	const handleToggleClicky = useCallback(() => {
-		setClickyActive((active) => {
-			if (active) {
-				return false;
-			}
-
+		if (!clickyActive) {
 			setRealtimeVoiceActive(true);
-			return true;
-		});
-	}, []);
+		}
+		setClickyActive(!clickyActive);
+	}, [clickyActive]);
 
 	const canSubmit = Boolean(prompt.trim());
 

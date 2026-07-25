@@ -23,6 +23,7 @@ import {
 import { injectGlow, updateGlow } from './engine/glow/glow';
 import { addReflectionTarget, removeReflectionTarget } from './engine/reflection/paint';
 import { scheduleReflectionPaint } from './engine/reflection/reflectionScheduler';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { ensureStylesInjected } from './styles';
 import type { MetalFxProps, MetalFxTheme } from './types';
 
@@ -54,29 +55,12 @@ setGlowCallback((inst, nowMs) => {
  * Resolves 'auto' theme to 'dark' | 'light' and keeps it in sync with
  * the OS preference via matchMedia.
  *
- * The useState initialiser runs synchronously so the resolved value is
- * available on the first render (no flash). The useEffect then attaches
- * the MQL listener and calls update() immediately to handle the case
- * where the OS preference changed between SSR and hydration.
+ * The external-store subscription provides a stable dark server snapshot and
+ * updates immediately when the OS preference changes in the browser.
  */
 function useResolvedTheme(theme: MetalFxTheme): 'dark' | 'light' {
-  const [resolved, setResolved] = useState<'dark' | 'light'>(() => {
-    if (theme !== 'auto') return theme;
-    if (typeof window === 'undefined' || !window.matchMedia) return 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
-
-  useEffect(() => {
-    if (theme !== 'auto') { setResolved(theme); return; }
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => setResolved(mql.matches ? 'dark' : 'light');
-    update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
-  }, [theme]);
-
-  return resolved;
+	const systemIsDark = useMediaQuery('(prefers-color-scheme: dark)', true);
+	return theme === 'auto' ? (systemIsDark ? 'dark' : 'light') : theme;
 }
 
 /**
@@ -124,9 +108,9 @@ export const MetalFx = forwardRef<HTMLDivElement, MetalFxProps>(function MetalFx
 
   const [ready, setReady] = useState(false);
   const resolvedTheme = useResolvedTheme(theme);
-  // Write during render (not in an effect) so the glow callback always sees
-  // the up-to-date theme on the very next tick.
-  themeRef.current = resolvedTheme;
+  useEffect(() => {
+    themeRef.current = resolvedTheme;
+  }, [resolvedTheme]);
   const shape: 'pill' | 'circle' = variant === 'circle' ? 'circle' : 'pill';
   const glowEnabled = !disableGlow;
 

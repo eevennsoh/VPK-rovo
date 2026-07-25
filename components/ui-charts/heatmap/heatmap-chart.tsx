@@ -6,6 +6,7 @@ import { ParentSize } from "@visx/responsive";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { useReducedMotion } from "motion/react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import {
   type ReactNode,
   useCallback,
@@ -13,8 +14,8 @@ import {
   useId,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
 } from "react";
 import { cn } from "@/lib/utils";
 import type { Margin } from "../chart-context";
@@ -39,6 +40,40 @@ import {
   buildHeatmapFillScale,
   resolveHeatmapLevelStyles,
 } from "./heatmap-colors";
+
+interface HeatmapLifecycleState {
+  chartPhase: ChartPhase;
+  revealEpoch: number;
+  revealMode: HeatmapRevealMode;
+}
+
+type HeatmapLifecycleAction =
+  | { type: "begin-reveal"; mode: Exclude<HeatmapRevealMode, null> }
+  | { type: "finish-reveal" }
+  | { type: "start-conceal" }
+  | { type: "set-resting-phase"; phase: ChartPhase };
+
+function reduceHeatmapLifecycle(
+  state: HeatmapLifecycleState,
+  action: HeatmapLifecycleAction,
+): HeatmapLifecycleState {
+  switch (action.type) {
+    case "begin-reveal":
+      return {
+        chartPhase: "revealing",
+        revealEpoch: state.revealEpoch + 1,
+        revealMode: action.mode,
+      };
+    case "finish-reveal":
+      return { ...state, chartPhase: "ready", revealMode: null };
+    case "start-conceal":
+      return { ...state, chartPhase: "exitingReady", revealMode: null };
+    case "set-resting-phase":
+      return { ...state, chartPhase: action.phase, revealMode: null };
+    default:
+      return state;
+  }
+}
 import {
   type HeatmapColumn,
   type HeatmapContextValue,
@@ -457,35 +492,32 @@ function useHeatmapChartLifecycle({
   animate: boolean;
 }) {
   const reducedMotion = useReducedMotion();
-  const [chartPhase, setChartPhase] = useState<ChartPhase>(() =>
-    resolveRestingChartPhase(chartStatus)
-  );
-  const [isLoaded, setIsLoaded] = useState(
-    () => chartStatus === "ready" && (!animate || animationDuration <= 0)
-  );
-  const [revealEpoch, setRevealEpoch] = useState(0);
-  const [revealMode, setRevealMode] = useState<HeatmapRevealMode>(null);
-  const prevStatusRef = useRef(chartStatus);
-  const phaseRef = useRef(chartPhase);
-  phaseRef.current = chartPhase;
-
   const animateCells = animate && !reducedMotion;
   const animateEnter = animateCells && animationDuration > 0;
+  const [{ chartPhase, revealEpoch, revealMode }, dispatch] = useReducer(
+    reduceHeatmapLifecycle,
+    {
+      chartPhase: chartStatus === "ready" && animateEnter
+        ? "revealing"
+        : resolveRestingChartPhase(chartStatus),
+      revealEpoch: chartStatus === "ready" && animateEnter ? 1 : 0,
+      revealMode: chartStatus === "ready" && animateEnter ? "enter" : null,
+    },
+  );
+  const prevStatusRef = useRef(chartStatus);
+  const phaseRef = useLatestRef(chartPhase);
+  const isLoaded = chartPhase === "ready";
 
   const finishReveal = useCallback(() => {
-    setIsLoaded(true);
-    setChartPhase("ready");
-    setRevealMode(null);
+    dispatch({ type: "finish-reveal" });
   }, []);
 
   const beginReveal = useCallback(() => {
-    setRevealMode("enter");
-    setRevealEpoch((epoch) => epoch + 1);
-    setIsLoaded(false);
-    setChartPhase("revealing");
     if (!animateEnter) {
       finishReveal();
+      return;
     }
+    dispatch({ type: "begin-reveal", mode: "enter" });
   }, [animateEnter, finishReveal]);
 
   useLayoutEffect(() => {
@@ -496,16 +528,12 @@ function useHeatmapChartLifecycle({
     prevStatusRef.current = chartStatus;
 
     if (chartStatus === "ready" && prevStatus === "loading") {
-      setRevealMode("fromLoading");
-      setIsLoaded(false);
-      setChartPhase("revealing");
+      dispatch({ type: "begin-reveal", mode: "fromLoading" });
       return;
     }
 
     if (chartStatus === "loading" && prevStatus === "ready") {
-      setRevealMode(null);
-      setIsLoaded(false);
-      setChartPhase("exitingReady");
+      dispatch({ type: "start-conceal" });
     }
   }, [chartStatus]);
 
@@ -515,7 +543,7 @@ function useHeatmapChartLifecycle({
     }
 
     const timer = window.setTimeout(() => {
-      setChartPhase("loading");
+      dispatch({ type: "set-resting-phase", phase: "loading" });
     }, HEATMAP_LOADING_CONCEAL_MS);
 
     return () => window.clearTimeout(timer);
@@ -524,8 +552,10 @@ function useHeatmapChartLifecycle({
   // biome-ignore lint/correctness/useExhaustiveDependencies: revealSignature replays enter
   useEffect(() => {
     if (!animateEnter) {
-      setIsLoaded(true);
-      setChartPhase(resolveRestingChartPhase(chartStatus));
+      dispatch({
+        type: "set-resting-phase",
+        phase: resolveRestingChartPhase(chartStatus),
+      });
       return;
     }
     if (chartStatus !== "ready") {
@@ -540,6 +570,7 @@ function useHeatmapChartLifecycle({
     animateEnter,
     animationDuration,
     beginReveal,
+	phaseRef,
     chartStatus,
     revealSignature,
   ]);

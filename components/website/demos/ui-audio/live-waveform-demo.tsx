@@ -39,13 +39,10 @@ function LiveWaveformPreview({
 				<div className="flex flex-wrap justify-center gap-2">
 					<Button
 						onClick={() => {
-							setActive((current) => {
-								const next = !current;
-								if (next) {
-									setProcessing(false);
-								}
-								return next;
-							});
+							if (!active) {
+								setProcessing(false);
+							}
+							setActive(!active);
 						}}
 						size="default"
 						variant={active ? "default" : "outline"}
@@ -54,13 +51,10 @@ function LiveWaveformPreview({
 					</Button>
 					<Button
 						onClick={() => {
-							setProcessing((current) => {
-								const next = !current;
-								if (next) {
-									setActive(false);
-								}
-								return next;
-							});
+							if (!processing) {
+								setActive(false);
+							}
+							setProcessing(!processing);
 						}}
 						size="default"
 						variant={processing ? "default" : "outline"}

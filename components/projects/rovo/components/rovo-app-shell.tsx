@@ -416,7 +416,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 	useHmrReloadSuppression(chat.isStreaming);
 	const chatRef = useRef(chat);
-	chatRef.current = chat;
+	useEffect(() => {
+		chatRef.current = chat;
+	}, [chat]);
 	const [skillDrafts, setSkillDrafts] = useState<HermesSkillDraftSummary[]>([]);
 	const [activePendingSkillDraftIndex, setActivePendingSkillDraftIndex] = useState(0);
 	const [activePendingSkillDraftDetail, setActivePendingSkillDraftDetail] = useState<HermesSkillDraftDetail | null>(null);
@@ -1335,7 +1337,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		isGenerating: chat.isStreaming,
 	} satisfies RealtimeVoiceShellOptions) as RealtimeVoiceShellResult;
 
-	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+	useEffect(() => {
+		sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+	}, [realtime.sendFunctionCallOutput]);
 
 	const isRealtimeActive = realtime.voiceState !== "idle";
 
@@ -1611,7 +1615,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chat.shouldQueueNextSubmission,
 		],
 	);
-	handleComposerSubmitRef.current = handleComposerSubmit;
+	useEffect(() => {
+		handleComposerSubmitRef.current = handleComposerSubmit;
+	}, [handleComposerSubmit]);
 
 	const timelineItems = useMemo(() => {
 		return deriveRovoAppTimelineItems(displayMessages);
@@ -1794,10 +1800,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		previewPrompt,
 		showHomeState,
 	});
-	screenAssistantComposerRef.current = {
-		hasPrefill: Boolean(voiceTranscript ?? prefillText),
-		placeholder: composerPreviewState.placeholder,
-	};
+	useEffect(() => {
+		screenAssistantComposerRef.current = {
+			hasPrefill: Boolean(voiceTranscript ?? prefillText),
+			placeholder: composerPreviewState.placeholder,
+		};
+	}, [composerPreviewState.placeholder, prefillText, voiceTranscript]);
 	const canAnnotateWorkspaceDocument = workspaceDocument !== null;
 	const annotationState = useArtifactAnnotations({
 		active: cursorMode && isArtifactOpen && !chat.streamingArtifact && chat.artifactMode === "preview" && process.env.NODE_ENV === "development",

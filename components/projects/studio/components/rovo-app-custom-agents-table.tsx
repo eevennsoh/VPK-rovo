@@ -296,16 +296,14 @@ export function StudioAgentsSection({
 	);
 
 	const togglePinned = (agentId: string) => {
-		setPinnedAgentIds((current) => {
-			const next = new Set(current);
-			if (next.has(agentId)) {
-				next.delete(agentId);
-			} else {
-				next.add(agentId);
-			}
-			writePinnedAgentIds(next);
-			return next;
-		});
+		const nextPinnedAgentIds = new Set(pinnedAgentIds);
+		if (nextPinnedAgentIds.has(agentId)) {
+			nextPinnedAgentIds.delete(agentId);
+		} else {
+			nextPinnedAgentIds.add(agentId);
+		}
+		setPinnedAgentIds(nextPinnedAgentIds);
+		writePinnedAgentIds(nextPinnedAgentIds);
 	};
 
 	return (

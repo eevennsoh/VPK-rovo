@@ -1,11 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import type { Spec } from "@json-render/react";
 
 interface UseProgressiveSpecResult {
 	progressiveSpec: Spec | null;
 	isProgressing: boolean;
+}
+
+type ProgressiveSpecAction =
+	| { type: "append"; key: string; element: Spec["elements"][string] }
+	| { type: "complete"; spec: Spec }
+	| { type: "reset"; spec: Spec | null }
+	| { type: "start"; spec: Spec };
+
+function reduceProgressiveSpec(
+	state: UseProgressiveSpecResult,
+	action: ProgressiveSpecAction,
+): UseProgressiveSpecResult {
+	switch (action.type) {
+		case "append":
+			if (!state.progressiveSpec) return state;
+			return {
+				...state,
+				progressiveSpec: {
+					...state.progressiveSpec,
+					elements: {
+						...state.progressiveSpec.elements,
+						[action.key]: action.element,
+					},
+				} as Spec,
+			};
+		case "complete":
+			return { progressiveSpec: action.spec, isProgressing: false };
+		case "reset":
+			return { progressiveSpec: action.spec, isProgressing: false };
+		case "start":
+			return { progressiveSpec: action.spec, isProgressing: true };
+		default:
+			return state;
+	}
 }
 
 function getTraversalKeys(spec: Spec): string[] {
@@ -49,13 +83,14 @@ export function useProgressiveSpec(
 	enabled = true,
 	intervalMs = 40,
 ): UseProgressiveSpecResult {
-	const [progressiveSpec, setProgressiveSpec] = useState<Spec | null>(null);
-	const [isProgressing, setIsProgressing] = useState(false);
+	const [{ progressiveSpec, isProgressing }, dispatch] = useReducer(
+		reduceProgressiveSpec,
+		{ progressiveSpec: null, isProgressing: false },
+	);
 
 	useEffect(() => {
 		if (!spec || !enabled) {
-			setProgressiveSpec(spec);
-			setIsProgressing(false);
+			dispatch({ type: "reset", spec });
 			return;
 		}
 
@@ -63,13 +98,11 @@ export function useProgressiveSpec(
 
 		// Small specs render immediately — no progressive benefit
 		if (traversalKeys.length <= 3) {
-			setProgressiveSpec(spec);
-			setIsProgressing(false);
+			dispatch({ type: "reset", spec });
 			return;
 		}
 
 		let cancelled = false;
-		setIsProgressing(true);
 
 		// Batch 1: root element + first child (minimally valid spec)
 		const initialElements: Spec["elements"] = {};
@@ -81,12 +114,12 @@ export function useProgressiveSpec(
 			}
 		}
 
-		setProgressiveSpec({
+		dispatch({ type: "start", spec: {
 			root: spec.root,
 			elements: initialElements,
 			// Include state from the start so JSONUIProvider initializes correctly
 			...(spec.state !== undefined ? { state: spec.state } : {}),
-		} as Spec);
+		} as Spec });
 
 		// Schedule remaining elements one per frame
 		let index = batchSize;
@@ -97,24 +130,14 @@ export function useProgressiveSpec(
 
 			if (index >= traversalKeys.length) {
 				// Done — return the original spec reference (includes state)
-				setProgressiveSpec(spec);
-				setIsProgressing(false);
+				dispatch({ type: "complete", spec });
 				return;
 			}
 
 			const key = traversalKeys[index];
 			index++;
 
-			setProgressiveSpec((prev) => {
-				if (!prev) return prev;
-				return {
-					...prev,
-					elements: {
-						...prev.elements,
-						[key]: spec.elements[key],
-					},
-				} as Spec;
-			});
+			dispatch({ type: "append", key, element: spec.elements[key] });
 
 			frameId = requestAnimationFrame(() => {
 				frameId = null;

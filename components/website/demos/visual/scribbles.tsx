@@ -5,14 +5,25 @@ import { useEffect, useId, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import {
+	SCRIBBLES_DEFAULT_AMOUNT,
+	SCRIBBLES_DEFAULT_BASE_FREQUENCY,
+	SCRIBBLES_DEFAULT_INTERVAL_MS,
+	SCRIBBLES_DEFAULT_NUM_OCTAVES,
+	SCRIBBLES_DEFAULT_OFFSETS,
+	SCRIBBLES_DEFAULT_SCALE,
+	SCRIBBLES_DEFAULT_SEED,
+} from "./scribbles-defaults";
 
-export const SCRIBBLES_DEFAULT_SCALE = 16;
-export const SCRIBBLES_DEFAULT_BASE_FREQUENCY = 0.02;
-export const SCRIBBLES_DEFAULT_NUM_OCTAVES = 2;
-export const SCRIBBLES_DEFAULT_SEED = 1;
-export const SCRIBBLES_DEFAULT_INTERVAL_MS = 100;
-export const SCRIBBLES_DEFAULT_AMOUNT = 0.5;
-export const SCRIBBLES_DEFAULT_OFFSETS = [-0.02, 0.01, -0.01, 0.02] as const;
+export {
+	SCRIBBLES_DEFAULT_AMOUNT,
+	SCRIBBLES_DEFAULT_BASE_FREQUENCY,
+	SCRIBBLES_DEFAULT_INTERVAL_MS,
+	SCRIBBLES_DEFAULT_NUM_OCTAVES,
+	SCRIBBLES_DEFAULT_OFFSETS,
+	SCRIBBLES_DEFAULT_SCALE,
+	SCRIBBLES_DEFAULT_SEED,
+} from "./scribbles-defaults";
 
 export interface ScribblesAnimation {
 	enabled?: boolean;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	getVpkHtmlNotesApiPath,
 	readJsonResponse,
@@ -23,13 +23,6 @@ export function useArtifactNotes(
 	const [error, setError] = useState<string | null>(null);
 	const isArtifactPage = pagePath !== "srcdoc";
 	const isDirty = notes !== savedNotes;
-
-	useEffect(() => {
-		setNotes("");
-		setSavedNotes("");
-		setStatus("idle");
-		setError(null);
-	}, [pagePath]);
 
 	const loadNotes = useCallback(async () => {
 		if (!isArtifactPage) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useMotionValueEvent } from "motion/react";
 import {
 	useCallback,
 	useEffect,
@@ -126,11 +126,10 @@ export function GlassTabs<TValue extends string>({
 	useEffect(() => {
 		if (!onShellStretchChange) return;
 		onShellStretchChange(shellStretch.get());
-		const unsubscribe = shellStretch.on("change", onShellStretchChange);
-		return () => {
-			unsubscribe();
-		};
 	}, [onShellStretchChange, shellStretch]);
+	useMotionValueEvent(shellStretch, "change", (value) => {
+		onShellStretchChange?.(value);
+	});
 
 	useEffect(() => {
 		if (!onParentMagnetChange) return;
@@ -138,13 +137,13 @@ export function GlassTabs<TValue extends string>({
 			onParentMagnetChange(parentSpringX.get(), parentSpringY.get());
 		};
 		emit();
-		const unsubscribeX = parentSpringX.on("change", emit);
-		const unsubscribeY = parentSpringY.on("change", emit);
-		return () => {
-			unsubscribeX();
-			unsubscribeY();
-		};
 	}, [onParentMagnetChange, parentSpringX, parentSpringY]);
+	useMotionValueEvent(parentSpringX, "change", () => {
+		onParentMagnetChange?.(parentSpringX.get(), parentSpringY.get());
+	});
+	useMotionValueEvent(parentSpringY, "change", () => {
+		onParentMagnetChange?.(parentSpringX.get(), parentSpringY.get());
+	});
 
 	return (
 		<motion.div

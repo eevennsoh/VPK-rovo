@@ -16,7 +16,10 @@ function readRepoFile(relativePath) {
 // The rich flyout body is the canonical "latest" flyout and lives in the Jira
 // sidebar variant so both the live sidebar and this block render it.
 const FLYOUT_BODY_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout.tsx";
+const FLYOUT_HANDLE_PATH = "components/blocks/product-sidebar/variants/jira-session-flyout-data.ts";
+const FLYOUT_DEMO_DATA_PATH = "components/blocks/agent-session-flyout/agent-session-flyout-data.ts";
 const HOVER_CARD_PATH = "components/ui/hover-card.tsx";
+const HOVER_CARD_HANDLE_PATH = "components/ui/hover-card-handle.ts";
 const QUEUE_DETAIL_ARTIFACTS_PATH = "components/projects/jira-queue/components/queue-detail-artifacts.tsx";
 const QUEUE_DETAIL_PANEL_PATH = "components/projects/jira-queue/components/queue-detail-panel.tsx";
 
@@ -54,13 +57,15 @@ test("nested Jira previews open right by default while Queue Details overrides t
 // re-declaring its own flyout body or placeholder lifecycle copy.
 test("block delegates to the shared flyout body and reuses /asx data", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
+	const dataSource = readRepoFile(FLYOUT_DEMO_DATA_PATH);
 	assert.match(
 		source,
 		/import\s*\{[^}]*JiraSessionFlyoutSurface[^}]*JiraSessionFlyoutTrigger[^}]*\}\s*from\s*"@\/components\/blocks\/product-sidebar\/variants\/jira-session-flyout"/u,
 	);
 	assert.match(source, /<JiraSessionFlyoutSurface handle=\{flyoutHandle\} \/>/u);
 	assert.match(source, /<JiraSessionFlyoutTrigger[\s\S]*?session=\{session\}/u);
-	assert.match(source, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
+	assert.match(source, /AGENT_SESSION_FLYOUT_SESSIONS/u);
+	assert.match(dataSource, /ASX_QUEUE_SESSION_SEEDS\.map\(createAsxQueueSidebarSessionItem\)/u);
 	assert.doesNotMatch(source, /function AgentSessionFlyoutBody\b/u);
 	assert.doesNotMatch(source, /STATUS_META|<h3\b|<section\b/u);
 	assert.doesNotMatch(source, /paused for input|pull request is open|actively working/u);
@@ -72,13 +77,15 @@ test("block delegates to the shared flyout body and reuses /asx data", () => {
 test("demo sessions share one moving shell with a fade-only content viewport", () => {
 	const source = readBlockFile("components/agent-session-flyout.tsx");
 	const flyoutSource = readRepoFile(FLYOUT_BODY_PATH);
+	const flyoutHandleSource = readRepoFile(FLYOUT_HANDLE_PATH);
 	const hoverCardSource = readRepoFile(HOVER_CARD_PATH);
+	const hoverCardHandleSource = readRepoFile(HOVER_CARD_HANDLE_PATH);
 
 	assert.match(source, /useState\(createJiraSessionFlyoutHandle\)/u);
 	assert.equal(source.match(/<JiraSessionFlyoutSurface\b/gu)?.length, 1);
 	assert.match(source, /flex max-w-sm flex-col gap-0\.5 rounded-lg border/u);
 	assert.doesNotMatch(source, /<HoverCard\b/u);
-	assert.match(flyoutSource, /createHoverCardHandle<JiraSidebarSessionItem>\(\)/u);
+	assert.match(flyoutHandleSource, /createHoverCardHandle<JiraSidebarSessionItem>\(\)/u);
 	assert.match(flyoutSource, /cloneElement\(childElement, \{[\s\S]*onFocusCapture: \(event\) => \{[\s\S]*handle\.open\(triggerId\);/u);
 	assert.match(flyoutSource, /event\.target\.matches\(":focus-visible"\)/u);
 	assert.match(flyoutSource, /<HoverCardViewport\b/u);
@@ -93,7 +100,7 @@ test("demo sessions share one moving shell with a fade-only content viewport", (
 	assert.doesNotMatch(flyoutSource, /\[&_\[(?:data-current|data-previous)\]\]:h-\(--popup-height\)/u);
 	assert.match(flyoutSource, /overflow-clip rounded-\[inherit\]/u);
 	assert.match(flyoutSource, /motion-reduce:\[&_\[data-current\]\]:transition-none/u);
-	assert.match(hoverCardSource, /const createHoverCardHandle = PreviewCardPrimitive\.createHandle/u);
+	assert.match(hoverCardHandleSource, /const createHoverCardHandle = PreviewCardPrimitive\.createHandle/u);
 	assert.match(hoverCardSource, /function HoverCardViewport\b/u);
 	assert.match(hoverCardSource, /positionerClassName\?: string/u);
 });

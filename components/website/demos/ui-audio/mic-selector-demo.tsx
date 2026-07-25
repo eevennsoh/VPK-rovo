@@ -53,13 +53,10 @@ function MicSelectorPreview({
 								<Button
 									aria-label={isRecording ? "Stop recording" : "Start recording"}
 									onClick={() => {
-										setIsRecording((current) => {
-											const next = !current;
-											if (next) {
-												setHasRecording(true);
-											}
-											return next;
-										});
+										if (!isRecording) {
+											setHasRecording(true);
+										}
+										setIsRecording(!isRecording);
 									}}
 									size="icon"
 									variant="ghost"

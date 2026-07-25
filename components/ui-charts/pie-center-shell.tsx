@@ -32,7 +32,7 @@ export type PieCenterShellProps = Omit<PieCenterProps, "children"> & {
  * Renders {@link PieCenter} with a minimal {@link PieProvider} so you can reuse
  * the same center layout as a donut pie without mounting slices or a full {@link PieChart}.
  */
-export function PieCenterShell({
+function PieCenterShellContent({
   centerValue,
   contextSize,
   innerRadiusPx,
@@ -40,34 +40,24 @@ export function PieCenterShell({
   ...pieCenterProps
 }: PieCenterShellProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const introStartedRef = useRef(false);
-
-  const [flowTotal, setFlowTotal] = useState(() =>
-    animateEntrance ? 0 : centerValue
-  );
+  const [entranceComplete, setEntranceComplete] = useState(!animateEntrance);
 
   useEffect(() => {
     if (!animateEntrance) {
-      setFlowTotal(centerValue);
       return;
     }
 
-    if (!introStartedRef.current) {
-      introStartedRef.current = true;
-      setFlowTotal(0);
-      let innerRaf = 0;
-      const outerRaf = requestAnimationFrame(() => {
-        innerRaf = requestAnimationFrame(() => setFlowTotal(centerValue));
-      });
-      return () => {
-        cancelAnimationFrame(outerRaf);
-        cancelAnimationFrame(innerRaf);
-        introStartedRef.current = false;
-      };
-    }
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => setEntranceComplete(true));
+    });
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+    };
+  }, [animateEntrance]);
 
-    setFlowTotal(centerValue);
-  }, [animateEntrance, centerValue]);
+  const flowTotal = entranceComplete ? centerValue : 0;
 
   const data: PieData[] = useMemo(
     () => [{ label: "_pieCenterShell", value: Math.max(flowTotal, 0) }],
@@ -170,6 +160,10 @@ export function PieCenterShell({
       <PieCenter {...pieCenterProps} />
     </PieProvider>
   );
+}
+
+export function PieCenterShell(props: Readonly<PieCenterShellProps>) {
+  return <PieCenterShellContent key={String(props.animateEntrance ?? true)} {...props} />;
 }
 
 PieCenterShell.displayName = "PieCenterShell";

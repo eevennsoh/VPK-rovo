@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 import {
 	JiraKanban,
-	createJiraKanbanColumns,
 	type JiraKanbanCardData,
 	type JiraKanbanCardSelectModifiers,
 	type JiraKanbanColumnData,
 } from "./index";
+import { createJiraKanbanColumns } from "./jira-kanban-data";
 import { JiraKanbanBoardHeader } from "./board-header";
 import {
 	createJiraKanbanSelectionState,

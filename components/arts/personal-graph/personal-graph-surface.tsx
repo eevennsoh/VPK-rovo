@@ -11,7 +11,7 @@
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import CrossIcon from "@atlaskit/icon/core/cross";
@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/components/utils/theme-wrapper";
-import Graph, { ROVO_GRAPH_DEFAULT_PARAMS } from "@/components/website/demos/visual/graph";
+import Graph from "@/components/website/demos/visual/graph";
+import { ROVO_GRAPH_DEFAULT_PARAMS } from "@/components/website/demos/visual/graph-defaults";
 import { cn } from "@/lib/utils";
 import { useGraphSource } from "./hooks/use-graph-source";
 import { usePersonalGraphIntro } from "./hooks/use-personal-graph-intro";
@@ -77,13 +78,13 @@ import { PersonalGraphSummaryPanel } from "./personal-graph-summary-panel";
 import { PersonalGraphTitle } from "./personal-graph-title-scramble";
 import { PersonalGraphTwgAuthError } from "./personal-graph-twg-auth-error";
 import {
-	GraphNodeMarker,
 	getGraphStatsText,
 	getRelatedNodes,
 	getSelectedNode,
 	getTwgGraphStatsText,
 	isTwgAuthRequiredError,
-} from "./personal-graph-surface-helpers";
+} from "./personal-graph-surface-data";
+import { GraphNodeMarker } from "./personal-graph-surface-helpers";
 
 type PersonalGraphSurfaceProps = React.ComponentProps<"main">;
 
@@ -205,12 +206,9 @@ function useResponsivePersonalGraphParams(stageRef: React.RefObject<HTMLDivEleme
 		return () => resizeObserver.disconnect();
 	}, [stageRef]);
 
-	useEffect(() => {
-		const unsubscribe = smoothWidthMV.on("change", (width) => {
+	useMotionValueEvent(smoothWidthMV, "change", (width) => {
 			setResponsiveParamsForViewport({ ...viewportRef.current, width });
-		});
-		return () => unsubscribe();
-	}, [setResponsiveParamsForViewport, smoothWidthMV]);
+	});
 
 	useEffect(() => {
 		viewportRef.current = viewport;
@@ -898,15 +896,15 @@ export function PersonalGraphSurface({
 				<PersonalGraphBackdrop className="z-0" />
 				<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">
 					<motion.div
-						className="relative flex flex-col items-center"
-						initial={{ y: PERSONAL_GRAPH_HEADER_INITIAL_Y, gap: "24px" }}
+						className={cn("relative flex flex-col items-center", isPostSettle ? "gap-4" : "gap-6")}
+						initial={{ y: PERSONAL_GRAPH_HEADER_INITIAL_Y }}
 						animate={{
 							y: isPostSettle ? PERSONAL_GRAPH_HEADER_SETTLED_Y : PERSONAL_GRAPH_HEADER_INITIAL_Y,
-							gap: isPostSettle ? "16px" : "24px",
 						}}
+						layout
 						transition={{
 							y: { duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS, ease: easeOut },
-							gap: { duration: 0.45, ease: easeOut },
+							layout: { duration: 0.45, ease: easeOut },
 						}}
 						style={{ willChange: "transform" }}
 					>
@@ -1130,13 +1128,14 @@ export function PersonalGraphSurface({
 					aria-label="Personal Graph search and chat"
 					className="pointer-events-none absolute left-4 right-4 z-40 flex justify-center sm:inset-x-6 lg:left-[360px] lg:right-[360px]"
 					inert={!isSearchRevealed}
-					initial={{ bottom: -120 }}
+					initial={{ y: 144 }}
 					animate={{
-						bottom: isSearchRevealed ? 24 : -120,
+						y: isSearchRevealed ? 0 : 144,
 					}}
 					transition={{
-						bottom: { duration: 0.6, ease: easeOut },
+						y: { duration: 0.6, ease: easeOut },
 					}}
+					style={{ bottom: 24, willChange: "transform" }}
 				>
 					<div className="pointer-events-auto relative w-full max-w-[560px]">
 						<PersonalGraphSummaryPanel

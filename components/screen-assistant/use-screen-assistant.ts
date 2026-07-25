@@ -332,8 +332,10 @@ export function useScreenAssistant({
 
 	// Keep the tool executor pointed at the latest realtime handlers without
 	// re-creating the realtime hook.
-	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
-	sendTextInputRef.current = ({ text }) => realtime.sendTextInput({ text });
+	useEffect(() => {
+		sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+		sendTextInputRef.current = ({ text }) => realtime.sendTextInput({ text });
+	}, [realtime]);
 
 	// Bridge the AI cursor activation to the Realtime voice session + Clicky
 	// system prompt (reuses the Studio voice bridge verbatim).

@@ -174,6 +174,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   } = options
 
   const connectionRef = useRef<RealtimeConnection | null>(null)
+  const connectionListenerCleanupRef = useRef<(() => void) | null>(null)
   const connectionIdCounterRef = useRef(0)
   const activeConnectionIdRef = useRef<number | null>(null)
 
@@ -186,6 +187,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
   const disconnect = useCallback(() => {
     const connection = connectionRef.current
+    connectionListenerCleanupRef.current?.()
+    connectionListenerCleanupRef.current = null
     if (!connection) {
       setStatus("disconnected")
       activeConnectionIdRef.current = null
@@ -323,8 +326,25 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             handler(...args)
           }
 
+        const listenerCleanups: Array<() => void> = []
+        const subscribe = (
+          event: RealtimeEvents,
+          listener: Parameters<RealtimeConnection["on"]>[1]
+        ) => {
+          connection.on(event as never, listener as never)
+          listenerCleanups.push(() =>
+            connection.off(event as never, listener as never)
+          )
+        }
+        connectionListenerCleanupRef.current = () => {
+          for (const cleanup of listenerCleanups) {
+            cleanup()
+          }
+          listenerCleanups.length = 0
+        }
+
         // Set up event listeners
-        connection.on(
+        subscribe(
           RealtimeEvents.SESSION_STARTED,
           runIfCurrent(() => {
             setStatus("connected")
@@ -332,7 +352,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.PARTIAL_TRANSCRIPT,
           runIfCurrent((data: unknown) => {
             const message = data as PartialTranscriptMessage
@@ -342,7 +362,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.COMMITTED_TRANSCRIPT,
           runIfCurrent((data: unknown) => {
             const message = data as CommittedTranscriptMessage
@@ -358,7 +378,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
           runIfCurrent((data: unknown) => {
             const message = data as CommittedTranscriptWithTimestampsMessage
@@ -374,7 +394,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.ERROR,
           runIfCurrent((err: unknown) => {
             const message = err as ScribeErrorMessage
@@ -384,7 +404,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.AUTH_ERROR,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeAuthErrorMessage
@@ -394,7 +414,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.QUOTA_EXCEEDED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeQuotaExceededErrorMessage
@@ -404,7 +424,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.COMMIT_THROTTLED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeCommitThrottledErrorMessage
@@ -414,7 +434,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.TRANSCRIBER_ERROR,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeTranscriberErrorMessage
@@ -424,7 +444,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.UNACCEPTED_TERMS,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeUnacceptedTermsErrorMessage
@@ -434,7 +454,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.RATE_LIMITED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeRateLimitedErrorMessage
@@ -444,7 +464,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.INPUT_ERROR,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeInputErrorMessage
@@ -454,7 +474,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.QUEUE_OVERFLOW,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeQueueOverflowErrorMessage
@@ -464,7 +484,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.RESOURCE_EXHAUSTED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeResourceExhaustedErrorMessage
@@ -474,7 +494,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeSessionTimeLimitExceededErrorMessage
@@ -484,7 +504,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.CHUNK_SIZE_EXCEEDED,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeChunkSizeExceededErrorMessage
@@ -494,7 +514,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY,
           runIfCurrent((data: unknown) => {
             const message = data as ScribeInsufficientAudioActivityErrorMessage
@@ -504,18 +524,20 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.OPEN,
           runIfCurrent(() => {
             onConnect?.()
           })
         )
 
-        connection.on(
+        subscribe(
           RealtimeEvents.CLOSE,
           runIfCurrent(() => {
             activeConnectionIdRef.current = null
             connectionRef.current = null
+            connectionListenerCleanupRef.current?.()
+            connectionListenerCleanupRef.current = null
             setStatus("disconnected")
             onDisconnect?.()
           })

@@ -286,10 +286,10 @@ export function ArtifactDemoCodePreview() {
 					</ResizablePanel>
 				</ResizablePanelGroup>
 			) : (
-				<>
-					{cardPane}
-					<AnimatePresence>
-						{isOpen ? (
+				cardPane
+			)}
+			<AnimatePresence>
+				{!shouldSplit && isOpen ? (
 							<motion.div
 								key="artifact-panel"
 								animate={{
@@ -329,9 +329,7 @@ export function ArtifactDemoCodePreview() {
 								{artifactPanel}
 							</motion.div>
 						) : null}
-					</AnimatePresence>
-				</>
-			)}
+			</AnimatePresence>
 		</div>
 	);
 }
@@ -455,10 +453,10 @@ export function ArtifactDemoImagePreview() {
 					</ResizablePanel>
 				</ResizablePanelGroup>
 			) : (
-				<>
-					{cardPane}
-					<AnimatePresence>
-						{isOpen ? (
+				cardPane
+			)}
+			<AnimatePresence>
+				{!shouldSplit && isOpen ? (
 							<motion.div
 								key="image-artifact-panel"
 								animate={{
@@ -498,9 +496,7 @@ export function ArtifactDemoImagePreview() {
 								{artifactPanel}
 							</motion.div>
 						) : null}
-					</AnimatePresence>
-				</>
-			)}
+			</AnimatePresence>
 		</div>
 	);
 }

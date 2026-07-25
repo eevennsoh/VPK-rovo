@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 
@@ -173,6 +173,7 @@ export function TriggerInstructionsComposer({
 	const [runPromptMode, setRunPromptMode] = useState<AgentRunPromptMode>(() =>
 		instructions?.trim() ? "custom-prompt" : "run-agent",
 	);
+	const resolvedRunPromptMode = instructions?.trim() ? "custom-prompt" : runPromptMode;
 	const [mentionInventoryResetKey, setMentionInventoryResetKey] = useState(0);
 	const stashedCustomPromptRef = useRef("");
 	const handleRunPromptModeChange = useCallback((value: AgentRunPromptMode): void => {
@@ -185,12 +186,6 @@ export function TriggerInstructionsComposer({
 			onInstructionsChange?.(stashedCustomPromptRef.current);
 		}
 	}, [instructions, onInstructionsChange]);
-
-	useEffect(() => {
-		if (instructions?.trim()) {
-			setRunPromptMode("custom-prompt");
-		}
-	}, [instructions]);
 
 	const beforeEditorSlot = (
 		<div className="relative mb-3">
@@ -218,10 +213,10 @@ export function TriggerInstructionsComposer({
 					role="radiogroup"
 				>
 					<button
-						aria-checked={runPromptMode === "run-agent"}
+						aria-checked={resolvedRunPromptMode === "run-agent"}
 						className={cn(
 							"relative inline-flex h-[25px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-							runPromptMode === "run-agent" && "bg-surface text-text shadow-sm",
+							resolvedRunPromptMode === "run-agent" && "bg-surface text-text shadow-sm",
 						)}
 						onClick={() => handleRunPromptModeChange("run-agent")}
 						role="radio"
@@ -231,10 +226,10 @@ export function TriggerInstructionsComposer({
 						Run agent
 					</button>
 					<button
-						aria-checked={runPromptMode === "custom-prompt"}
+						aria-checked={resolvedRunPromptMode === "custom-prompt"}
 						className={cn(
 							"relative inline-flex h-[25px] items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-							runPromptMode === "custom-prompt" && "bg-surface text-text shadow-sm",
+							resolvedRunPromptMode === "custom-prompt" && "bg-surface text-text shadow-sm",
 						)}
 						onClick={() => handleRunPromptModeChange("custom-prompt")}
 						role="radio"
@@ -271,7 +266,7 @@ export function TriggerInstructionsComposer({
 				</p>
 			)}
 			screenAssistantTargetId={screenAssistantTargetId}
-			showEditor={runPromptMode === "custom-prompt"}
+			showEditor={resolvedRunPromptMode === "custom-prompt"}
 			showSectionLabel={showSectionLabel}
 		/>
 	);

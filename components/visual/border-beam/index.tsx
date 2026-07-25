@@ -9,6 +9,7 @@
 import {
   useId,
   useEffect,
+  useReducer,
   useState,
   useCallback,
   useMemo,
@@ -20,52 +21,27 @@ import {
 import type { BorderBeamProps, BorderBeamTheme } from './types';
 import { sizePresets, sizeThemePresets, generateBeamCSS, getPulseDriverConfig } from './styles';
 import { registerPulseInstance } from './pulse-driver';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 function useSystemTheme(): 'dark' | 'light' {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window === 'undefined') return 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? 'dark' : 'light');
-    };
-
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
-
-  return theme;
+  return useMediaQuery('(prefers-color-scheme: dark)', true) ? 'dark' : 'light';
 }
 
 function usePrefersReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handler = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-
-    setPrefersReducedMotion(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
-
-  return prefersReducedMotion;
+  return useMediaQuery('(prefers-reduced-motion: reduce)');
 }
 
 function resolveTheme(theme: BorderBeamTheme, systemTheme: 'dark' | 'light'): 'dark' | 'light' {
   return theme === 'auto' ? systemTheme : theme;
+}
+
+type BorderBeamPhase = 'active' | 'fading' | 'inactive';
+
+function reduceBorderBeamPhase(
+  _phase: BorderBeamPhase,
+  nextPhase: BorderBeamPhase,
+): BorderBeamPhase {
+  return nextPhase;
 }
 
 /**
@@ -107,8 +83,12 @@ export function BorderBeam(
     const prefersReducedMotion = usePrefersReducedMotion();
     const internalRef = useRef<HTMLDivElement>(null);
 
-    const [isActive, setIsActive] = useState(active);
-    const [isFading, setIsFading] = useState(false);
+    const [phase, setPhase] = useReducer(
+      reduceBorderBeamPhase,
+      active ? 'active' : 'inactive',
+    );
+    const isActive = phase !== 'inactive';
+    const isFading = phase === 'fading';
     const [isVisible, setIsVisible] = useState(true);
     const [detectedRadius, setDetectedRadius] = useState<number | null>(null);
     const [pulseGlowScale, setPulseGlowScale] = useState<{ x: number; y: number }>({ x: 1, y: 1 });
@@ -140,30 +120,28 @@ export function BorderBeam(
     useEffect(() => {
       if (prefersReducedMotion) {
         if (active) {
-          if (!isActive) {
-            setIsActive(true);
+          if (phase === 'inactive') {
+            setPhase('active');
             onActivate?.();
-          }
-          if (isFading) {
-            setIsFading(false);
+          } else if (phase === 'fading') {
+            setPhase('active');
           }
           return;
         }
 
-        if (isActive || isFading) {
-          setIsActive(false);
-          setIsFading(false);
+        if (phase !== 'inactive') {
+          setPhase('inactive');
           onDeactivate?.();
         }
         return;
       }
 
-      if (active && !isActive && !isFading) {
-        setIsActive(true);
-      } else if (!active && isActive && !isFading) {
-        setIsFading(true);
+      if (active && phase === 'inactive') {
+        setPhase('active');
+      } else if (!active && phase === 'active') {
+        setPhase('fading');
       }
-    }, [active, isActive, isFading, onActivate, onDeactivate, prefersReducedMotion]);
+    }, [active, onActivate, onDeactivate, phase, prefersReducedMotion]);
 
     // Pause the (paint-heavy) animations while the element is scrolled offscreen.
     // This stops per-frame painting entirely for hidden instances without changing
@@ -231,8 +209,7 @@ export function BorderBeam(
 
         if (e.target === e.currentTarget) {
           if (animationName === `beam-fade-out-${id}`) {
-            setIsActive(false);
-            setIsFading(false);
+            setPhase('inactive');
             onDeactivate?.();
           } else if (animationName === `beam-fade-in-${id}`) {
             onActivate?.();

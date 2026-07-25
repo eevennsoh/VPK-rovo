@@ -200,6 +200,7 @@ function getUndulateIntensity(cx: number, cy: number, grid: number[][]): number 
 function AnimatedRovoLogo() {
 	const [mounted, setMounted] = useState(false);
 	const [grid, setGrid] = useState(createRandomGrid);
+	const gridRef = useRef(grid);
 	const targetsRef = useLazyRef(() => createRandomGrid());
 
 	useEffect(() => {
@@ -212,21 +213,20 @@ function AnimatedRovoLogo() {
 	useEffect(() => {
 		// 24 FPS animation — slightly faster breathing
 		const interval = setInterval(() => {
-			setGrid((prev) => {
-				const next = prev.map((row) => [...row]);
-				const targets = targetsRef.current;
-				for (let r = 0; r <= GRID_SIZE; r++) {
-					for (let c = 0; c <= GRID_SIZE; c++) {
-						const diff = targets[r][c] - next[r][c];
-						// 20% lerp per frame — snappier movement
-						next[r][c] += diff * 0.2;
-						if (Math.abs(diff) < 0.1) {
-							targets[r][c] = Math.random();
-						}
+			const next = gridRef.current.map((row) => [...row]);
+			const targets = targetsRef.current;
+			for (let r = 0; r <= GRID_SIZE; r++) {
+				for (let c = 0; c <= GRID_SIZE; c++) {
+					const diff = targets[r][c] - next[r][c];
+					// 20% lerp per frame — snappier movement
+					next[r][c] += diff * 0.2;
+					if (Math.abs(diff) < 0.1) {
+						targets[r][c] = Math.random();
 					}
 				}
-				return next;
-			});
+			}
+			gridRef.current = next;
+			setGrid(next);
 		}, 42);
 		return () => clearInterval(interval);
 	}, []);

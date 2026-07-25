@@ -23,7 +23,7 @@ import type { RovoAppQueuedAction } from "@/lib/rovo-app-types";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { RovoAppPlanExecutionTracker } from "@/components/projects/shared/components/rovo-app-plan-execution-tracker";
 import { ComposerCardBody } from "@/components/projects/shared/components/composer-card-body";
 import { ComposerFloatingBody } from "@/components/projects/shared/components/composer-floating-body";
@@ -135,7 +135,6 @@ function RovoAppComposerInner({
 	onStartDictation,
 	onStopDictation,
 	onSubmit,
-	onTextChange,
 	onToggleClicky,
 	onTogglePlanMode,
 	onToggleRealtimeVoice,
@@ -155,10 +154,6 @@ function RovoAppComposerInner({
 	const controller = usePromptInputController();
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
-
-	useEffect(() => {
-		onTextChange?.(controller.textInput.value);
-	}, [controller.textInput.value, onTextChange]);
 
 	const handlePromptSubmit = useCallback(
 		(payload: { text: string; files: FileUIPart[] }) => {
@@ -313,7 +308,7 @@ function RovoAppComposerInner({
 
 export function RovoAppComposer(props: Readonly<RovoAppComposerProps>) {
 	return (
-		<PromptInputProvider>
+		<PromptInputProvider onInputChange={props.onTextChange}>
 			<RovoAppComposerInner {...props} />
 		</PromptInputProvider>
 	);

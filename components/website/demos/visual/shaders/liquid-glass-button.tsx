@@ -19,12 +19,14 @@ import { useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 import LiquidGlass, { type LiquidGlassProps } from "./liquid-glass";
+import { LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS } from "./liquid-glass-button-config";
+
+export { LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS } from "./liquid-glass-button-config";
 
 const DEFAULT_ELASTICITY = 0.35;
 const DEFAULT_MAGNET_DISTANCE = 10;
 const DEFAULT_HOVER_AREA = 24;
 const DEFAULT_PRESS_SCALE = 0.92;
-const BUTTON_RADIUS = 9999;
 const MAGNET_SPRING = {
 	stiffness: 900,
 	damping: 50,
@@ -37,21 +39,6 @@ const SCALE_SPRING = {
 	mass: 0.32,
 } as const;
 const BUTTON_POINTER_SMOOTHING_REST_DELTA = 0.01;
-export const LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS = {
-	borderRadius: BUTTON_RADIUS,
-	borderWidth: 0.05,
-	brightness: 50,
-	opacity: 0.9,
-	blur: 4,
-	backgroundOpacity: 0.18,
-	saturation: 1,
-	distortionScale: -40,
-	dispersion: 4,
-	borderColor: "var(--ds-border)",
-	borderOpacity: 1,
-	dropShadow: false,
-} satisfies Partial<LiquidGlassProps>;
-
 function clamp(value: number, min: number, max: number): number {
 	return Math.min(Math.max(value, min), max);
 }
@@ -501,7 +488,7 @@ export function LiquidGlassButton({
 				height={glassHeight ?? "100%"}
 				className={cn("pointer-events-none absolute inset-0", glassClassName)}
 				style={{
-					borderRadius: BUTTON_RADIUS,
+					borderRadius: LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS.borderRadius,
 					zIndex: 0,
 					...glassStyle,
 				} as CSSProperties}

@@ -68,7 +68,7 @@ async function loadUserInvalidSyncHarness(t) {
 					isUserInvalidSyncControl,
 					releaseUserInvalidBridgeOwnership,
 					syncUserInvalidAriaState,
-				} from "./components/utils/user-invalid-sync";
+				} from "./components/utils/user-invalid-sync-state";
 			`,
 			loader: "tsx",
 			resolveDir: process.cwd(),

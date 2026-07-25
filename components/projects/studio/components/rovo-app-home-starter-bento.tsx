@@ -563,8 +563,7 @@ function HomeStarterBento({
 						) : null}
 					</AnimatePresence>
 				</div>
-				{canShowMore ? (
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 						<div
 							className="group/browse-all pointer-events-auto relative flex items-center"
 							onMouseEnter={() => setBrowseAllHovered(true)}
@@ -576,7 +575,8 @@ function HomeStarterBento({
 								}
 							}}
 						>
-							<Button
+							{canShowMore ? (
+								<Button
 								type="button"
 								aria-label="Browse all agents"
 								variant="ghost"
@@ -586,10 +586,11 @@ function HomeStarterBento({
 								onClick={() => onBrowseTemplates(activeCategory)}
 							>
 								Browse all
-							</Button>
+								</Button>
+							) : null}
 							{/* Absolutely positioned so "Browse all" stays centered at rest. */}
 							<AnimatePresence initial={false}>
-								{browseAllHovered ? (
+								{canShowMore && browseAllHovered ? (
 									<>
 										{/* Bridge the visual 8px gap so pointer movement from "Browse all" to
 										    "Dismiss" cannot fall through and hover a bento tile behind it. */}
@@ -619,7 +620,6 @@ function HomeStarterBento({
 							</AnimatePresence>
 						</div>
 					</div>
-				) : null}
 			</div>
 		</div>
 	);

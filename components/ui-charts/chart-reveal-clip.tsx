@@ -58,17 +58,18 @@ export function ChartRevealClip({
   if (mode === "conceal") {
     // Mirror the LTR reveal: advance the clip's left edge rightward while width
     // shrinks (same geometry as `LineLoadingPulseStroke` exit half-cycle).
-    const rightEdge = -padding + paddedWidth;
-
     return (
       <clipPath id={clipPathId}>
         <motion.rect
-          animate={{ width: 0, x: rightEdge }}
+          animate={{ scaleX: 0 }}
           height={paddedHeight}
-          initial={{ width: paddedWidth, x: -padding }}
+          initial={{ scaleX: 1 }}
           key={`conceal-${revealEpoch}`}
           onAnimationComplete={() => onComplete?.()}
+          style={{ transformBox: "fill-box", transformOrigin: "right", willChange: "transform" }}
           transition={transition}
+          width={paddedWidth}
+          x={-padding}
           y={-padding}
         />
       </clipPath>
@@ -78,10 +79,11 @@ export function ChartRevealClip({
   return (
     <clipPath id={clipPathId}>
       <motion.rect
-        animate={{ width: paddedWidth }}
+        animate={{ scaleX: 1 }}
         height={paddedHeight}
-        initial={{ width: 0 }}
+        initial={{ scaleX: 0 }}
         key={`reveal-${revealEpoch}`}
+        style={{ transformBox: "fill-box", transformOrigin: "left", willChange: "transform" }}
         transition={transition}
         width={paddedWidth}
         x={-padding}

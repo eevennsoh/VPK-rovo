@@ -15,8 +15,6 @@ type HoverCardProps<Payload = unknown> = PreviewCardPrimitive.Root.Props<Payload
 type HoverCardHandle<Payload = unknown> = PreviewCardPrimitive.Handle<Payload>
 type HoverCardTriggerProps<Payload = unknown> = PreviewCardPrimitive.Trigger.Props<Payload>
 
-const createHoverCardHandle = PreviewCardPrimitive.createHandle
-
 // Base UI's PreviewCard reads hover delays on the Trigger (`delay`/`closeDelay`),
 // not the Root. Bridge the Root-level `openDelay`/`closeDelay` props down to the
 // Trigger via context so existing call sites keep their intended delays.
@@ -109,8 +107,9 @@ export {
   HoverCardTrigger,
   HoverCardContent,
   HoverCardViewport,
-  createHoverCardHandle,
   type HoverCardHandle,
   type HoverCardProps,
   type HoverCardTriggerProps,
 }
+
+export { createHoverCardHandle } from "@/components/ui/hover-card-handle"

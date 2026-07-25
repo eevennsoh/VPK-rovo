@@ -45,7 +45,7 @@ import {
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
-import { renderAgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
+import { AgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
@@ -183,6 +183,7 @@ function formatRelativeTime(timestamp: number | null): string {
 function formatAbsoluteDateTime(timestamp: number): string {
 	return new Intl.DateTimeFormat("en-US", {
 		dateStyle: "medium",
+		timeZone: "UTC",
 		timeStyle: "short",
 	}).format(new Date(timestamp));
 }
@@ -1805,7 +1806,7 @@ export function RovoAppAgentConfigPanel({
 					{connectingProvider ? (
 						<div className="flex flex-col items-center gap-4 py-2">
 							<div className="flex size-12 items-center justify-center">
-								{renderAgentTriggerProviderTileIcon(connectingProvider.trigger)}
+								<AgentTriggerProviderTileIcon trigger={connectingProvider.trigger} />
 							</div>
 							<div className="flex items-center gap-2 text-text">
 								<Spinner />

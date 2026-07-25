@@ -253,6 +253,7 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	const dialogSource = readBlockFile("experimental/components/experimental-work-item-dialog.tsx");
 	const modalHeaderSource = readProjectFile("components/projects/jira/components/work-item-modal/modal-header.tsx");
 	const panelLayoutSource = readBlockFile("experimental/context-panel-layout.tsx");
+	const panelLayoutMotionSource = readBlockFile("experimental/context-panel-layout-motion.ts");
 	const layoutSource = readBlockFile("experimental/components/experimental-work-item-layout.tsx");
 	const titleBarSource = readBlockFile("experimental/components/context-title-bar.tsx");
 
@@ -330,8 +331,8 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(titleBarSource, /key=\{metadataCollapsed \? "metadata-collapsed" : "metadata-expanded"\}/u);
 	assert.match(titleBarSource, /collapsed=\{metadataCollapsed\}/u);
 	assert.match(titleBarSource, /settledMetadataCollapsed === metadataCollapsed/u);
-	assert.match(panelLayoutSource, /METADATA_CONTENT_COLLAPSE_DURATION_MS = 200/u);
-	assert.match(panelLayoutSource, /METADATA_CONTENT_EXPAND_DURATION_MS = 250/u);
+	assert.match(panelLayoutMotionSource, /METADATA_CONTENT_COLLAPSE_DURATION_MS = 200/u);
+	assert.match(panelLayoutMotionSource, /METADATA_CONTENT_EXPAND_DURATION_MS = 250/u);
 	assert.match(panelLayoutSource, /const \[metadataTogglePending, setMetadataTogglePending\] = useState\(false\);/u);
 	assert.match(panelLayoutSource, /toggleMetadata = useCallback\(\(\) => \{[\s\S]*setMetadataTogglePending\(true\);[\s\S]*\}, \[\]\)/u);
 	assert.match(panelLayoutSource, /setMetadataCollapsed\(\(collapsed\) => !collapsed\);[\s\S]*setMetadataTogglePending\(false\);/u);

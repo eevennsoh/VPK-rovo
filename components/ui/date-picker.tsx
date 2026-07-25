@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useIsMounted } from "@/components/hooks/use-is-mounted"
 
 export interface DatePickerProps {
 	value?: Date
@@ -23,8 +24,9 @@ function DatePicker({
 	disabled,
 }: Readonly<DatePickerProps>) {
 	const [open, setOpen] = React.useState(false)
+	const mounted = useIsMounted()
 
-	const label = value
+	const label = value && mounted
 		? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(value)
 		: placeholder
 

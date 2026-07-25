@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
 
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ClickyState, ClickyPointTarget } from "@/components/projects/rovo-core/hooks/use-clicky";
 import { ClickyCursor } from "./clicky-cursor";
@@ -45,6 +45,35 @@ const NAV_PHRASES = [
 	"look here!",
 	"see this?",
 ];
+
+interface ClickyOverlayUiState {
+	cursorPositionReady: boolean;
+	showWelcome: boolean;
+}
+
+type ClickyOverlayUiAction =
+	| { type: "cursor-ready" }
+	| { type: "dismiss-welcome" }
+	| { type: "reset" }
+	| { type: "show-welcome" };
+
+function reduceClickyOverlayUi(
+	state: ClickyOverlayUiState,
+	action: ClickyOverlayUiAction,
+): ClickyOverlayUiState {
+	switch (action.type) {
+		case "cursor-ready":
+			return { ...state, cursorPositionReady: true };
+		case "dismiss-welcome":
+			return { ...state, showWelcome: false };
+		case "reset":
+			return { cursorPositionReady: false, showWelcome: false };
+		case "show-welcome":
+			return { ...state, showWelcome: true };
+		default:
+			return state;
+	}
+}
 
 // ---------------------------------------------------------------------------
 // Math utilities
@@ -189,8 +218,10 @@ export function ClickyOverlay({
 	const [flightPhase, setFlightPhase] = useState<FlightPhase>("idle");
 	const [navPhrase, setNavPhrase] = useState("");
 	const [bubbleOpacity, setBubbleOpacity] = useState(1);
-	const [showWelcome, setShowWelcome] = useState(false);
-	const [cursorPositionReady, setCursorPositionReady] = useState(false);
+	const [{ cursorPositionReady, showWelcome }, dispatchUi] = useReducer(
+		reduceClickyOverlayUi,
+		{ cursorPositionReady: false, showWelcome: false },
+	);
 
 	// Return flight interruption
 	const returnStartMouseRef = useRef({ x: 0, y: 0 });
@@ -290,7 +321,7 @@ export function ClickyOverlay({
 		y.jump(targetY);
 		springX.jump(targetX);
 		springY.jump(targetY);
-		setCursorPositionReady(true);
+		dispatchUi({ type: "cursor-ready" });
 	}, [springX, springY, x, y]);
 
 	const dismissWelcomeAfterTyping = useCallback(() => {
@@ -298,7 +329,7 @@ export function ClickyOverlay({
 			clearTimeout(welcomeDismissTimerRef.current);
 		}
 		welcomeDismissTimerRef.current = setTimeout(() => {
-			setShowWelcome(false);
+			dispatchUi({ type: "dismiss-welcome" });
 			welcomeDismissTimerRef.current = null;
 		}, WELCOME_DISMISS_AFTER_TYPE_MS);
 	}, []);
@@ -306,8 +337,7 @@ export function ClickyOverlay({
 	useEffect(() => {
 		if (!isActive) {
 			wasActiveRef.current = false;
-			setCursorPositionReady(false);
-			setShowWelcome(false);
+			dispatchUi({ type: "reset" });
 			if (welcomeDismissTimerRef.current) {
 				clearTimeout(welcomeDismissTimerRef.current);
 				welcomeDismissTimerRef.current = null;
@@ -318,7 +348,7 @@ export function ClickyOverlay({
 		if (!wasActiveRef.current) {
 			wasActiveRef.current = true;
 			seedCursorPosition();
-			setShowWelcome(true);
+			dispatchUi({ type: "show-welcome" });
 			if (welcomeDismissTimerRef.current) {
 				clearTimeout(welcomeDismissTimerRef.current);
 				welcomeDismissTimerRef.current = null;

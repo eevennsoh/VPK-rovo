@@ -33,7 +33,7 @@ test("does not mutate input array", () => {
 		{ id: "t1", label: "Draft marketing copy", blockedBy: [] },
 		{ id: "t2", label: "Review marketing copy", blockedBy: [] },
 	];
-	const original = JSON.parse(JSON.stringify(tasks));
+	const original = structuredClone(tasks);
 	inferTaskDependencies(tasks);
 	assert.deepEqual(tasks, original);
 });

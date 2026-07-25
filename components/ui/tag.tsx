@@ -4,7 +4,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
 import { Icon } from "@/components/ui/icon";
-import { withTooltip } from "@/components/ui/tooltip";
+import { withTooltip } from "@/components/ui/tooltip-utils";
 import { cn } from "@/lib/utils";
 
 type LegacyTagVariant = "success" | "removed" | "inprogress" | "new" | "moved";

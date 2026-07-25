@@ -8,6 +8,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -240,13 +241,13 @@ const SpeechInput = forwardRef<HTMLDivElement, SpeechInputProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getToken, scribe, onStart, microphone])
 
-    const stop = () => {
+    const stop = useCallback(() => {
       startRequestIdRef.current += 1
       scribe.disconnect()
       onStop?.(buildEvent(transcriptsRef.current))
-    }
+    }, [onStop, scribe])
 
-    const cancel = () => {
+    const cancel = useCallback(() => {
       startRequestIdRef.current += 1
       const event = buildEvent(transcriptsRef.current)
       scribe.disconnect()
@@ -256,9 +257,9 @@ const SpeechInput = forwardRef<HTMLDivElement, SpeechInputProps>(
         committedTranscripts: [],
       }
       onCancel?.(event)
-    }
+    }, [onCancel, scribe])
 
-    const contextValue: SpeechInputContextValue = {
+    const contextValue = useMemo<SpeechInputContextValue>(() => ({
       isConnected: scribe.isConnected,
       isConnecting,
       start,
@@ -270,7 +271,7 @@ const SpeechInput = forwardRef<HTMLDivElement, SpeechInputProps>(
         partialTranscript: scribe.partialTranscript,
         committedTranscripts: scribe.committedTranscripts.map((t) => t.text),
       }),
-    }
+    }), [cancel, isConnecting, scribe.committedTranscripts, scribe.error, scribe.isConnected, scribe.partialTranscript, size, start, stop])
 
   useEffect(() => {
     return () => {

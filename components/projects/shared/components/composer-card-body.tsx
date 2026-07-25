@@ -138,20 +138,13 @@ export function ComposerCardBody({
 		}
 	}, []);
 
-	useEffect(() => {
-		if (hideSourceAndModelControls) {
-			setIsCustomizeMenuOpen(false);
-		}
-		if (hideSourceAndModelControls || hideReasoningSelector) {
-			setIsAutoMenuOpen(false);
-		}
-	}, [hideReasoningSelector, hideSourceAndModelControls]);
-
-	if (isPlanMode && selectedReasoning !== "max") {
-		setSelectedReasoning("max");
-	} else if (!isPlanMode && selectedReasoning === "max") {
-		setSelectedReasoning(DEFAULT_REASONING_OPTION_ID);
-	}
+	const resolvedCustomizeMenuOpen = !hideSourceAndModelControls && isCustomizeMenuOpen;
+	const resolvedAutoMenuOpen = !hideSourceAndModelControls && !hideReasoningSelector && isAutoMenuOpen;
+	const resolvedSelectedReasoning = isPlanMode
+		? "max"
+		: selectedReasoning === "max"
+			? DEFAULT_REASONING_OPTION_ID
+			: selectedReasoning;
 
 	return (
 		<div
@@ -205,12 +198,12 @@ export function ComposerCardBody({
 							</PromptInputActionMenuContent>
 						</PromptInputActionMenu>
 						{hideSourceAndModelControls ? null : (
-							<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
+							<Popover open={resolvedCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 								<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
 								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
 									<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
 									<CustomizeMenu
-										selectedReasoning={selectedReasoning}
+										selectedReasoning={resolvedSelectedReasoning}
 										onReasoningChange={handleReasoningChange}
 										showReasoning={false}
 										webResultsEnabled={webResultsEnabled}
@@ -244,11 +237,11 @@ export function ComposerCardBody({
 						onStopDictation={onStopDictation}
 						onToggleClicky={onToggleClicky}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
-						open={isAutoMenuOpen}
+						open={resolvedAutoMenuOpen}
 						realtimeVoiceActive={realtimeVoiceActive}
 						realtimeVoiceState={realtimeVoiceState}
 						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-						selectedReasoning={selectedReasoning}
+						selectedReasoning={resolvedSelectedReasoning}
 						showBackgroundStop={showBackgroundStop}
 						showSubmitWhenEmpty={showSubmitWhenEmpty}
 						submitDisabled={submitDisabled}

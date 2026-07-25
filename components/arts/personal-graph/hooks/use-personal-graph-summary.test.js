@@ -7,6 +7,10 @@ const SUMMARY_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "use-personal-graph-summary.ts"),
 	"utf8",
 );
+const SUMMARY_PANEL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "personal-graph-summary-panel.tsx"),
+	"utf8",
+);
 
 test("usePersonalGraphSummary tracks article HTML state and resets by graph revision", () => {
 	assert.match(SUMMARY_HOOK_SOURCE, /articleMarkdown/);
@@ -15,7 +19,7 @@ test("usePersonalGraphSummary tracks article HTML state and resets by graph revi
 	assert.match(SUMMARY_HOOK_SOURCE, /cacheStatus/);
 	assert.match(SUMMARY_HOOK_SOURCE, /sourceFingerprint/);
 	assert.match(SUMMARY_HOOK_SOURCE, /sourceNotice/);
-	assert.match(SUMMARY_HOOK_SOURCE, /const resetKey = getExplorerRevision\(explorer, node\);/);
+	assert.match(SUMMARY_PANEL_SOURCE, /key=\{getExplorerRevision\(props\.explorer, props\.node\)\}/);
 	assert.match(SUMMARY_HOOK_SOURCE, /setDocument\(null\);/);
 	assert.match(SUMMARY_HOOK_SOURCE, /setArticleMarkdown\(""\);/);
 });

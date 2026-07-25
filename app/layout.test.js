@@ -110,14 +110,14 @@ test("RootLayout exposes browser color-scheme favicon links", () => {
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /theme-favicon/);
 });
 
-test("RootLayout keeps the pre-hydration bootstrap out of the React script tree", () => {
+test("RootLayout runs the pre-hydration bootstrap through Next's beforeInteractive script", () => {
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/import \{ PreHydrationScript \} from "@\/components\/utils\/pre-hydration-script";/,
+		/import Script from "next\/script";/,
 	);
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/<PreHydrationScript id="vpk-pre-hydration">\{preHydrationScript\}<\/PreHydrationScript>/,
+		/<Script id="vpk-pre-hydration" strategy="beforeInteractive">\s*\{preHydrationScript\}\s*<\/Script>/,
 	);
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /<script(?:\s|>)/);
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /dangerouslySetInnerHTML=\{\{ __html: preHydrationScript \}\}/);
@@ -130,7 +130,7 @@ test("RootLayout mounts the runtime document title prefixer", () => {
 	);
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/<PreHydrationScript id="vpk-pre-hydration">\{preHydrationScript\}<\/PreHydrationScript>\s*<DocumentTitlePrefix \/>/,
+		/<Script id="vpk-pre-hydration" strategy="beforeInteractive">\s*\{preHydrationScript\}\s*<\/Script>\s*<DocumentTitlePrefix \/>/,
 	);
 });
 

@@ -20,6 +20,7 @@ import type {
 	KeyboardEvent,
 	PointerEvent as ReactPointerEvent,
 } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 import type { LiquidGlassProps } from "@/components/website/demos/visual/shaders/liquid-glass";
 import {
@@ -144,6 +145,21 @@ function getEdgeFollowerWidth(
 	return baseWidth;
 }
 
+function observeGlassTabsLayout(
+	container: HTMLDivElement,
+	buttons: readonly (HTMLButtonElement | null)[],
+	onResize: () => void,
+): () => void {
+	const resizeObserver = new ResizeObserver(onResize);
+	resizeObserver.observe(container);
+	for (const button of buttons) {
+		if (button) {
+			resizeObserver.observe(button);
+		}
+	}
+	return () => resizeObserver.disconnect();
+}
+
 // Reverse-engineered from the "Magnetic Hover" component shipped on
 // magnet.learnframer.site (chunk-ND35KM2X.mjs).
 const MAGNET_PARENT_DISTANCE = 10;
@@ -204,18 +220,15 @@ export function useGlassTabsMotion<TValue extends string>({
 
 	// Refs so useTransform callbacks can read current index without
 	// stale closures (MotionValue-driven, runs every frame).
-	const selectedIndexRef = useRef(selectedIndex);
-	selectedIndexRef.current = selectedIndex;
-	const hoveredIndexRef = useRef(hoveredIndex);
-	hoveredIndexRef.current = hoveredIndex;
+	const selectedIndexRef = useLatestRef(selectedIndex);
+	const hoveredIndexRef = useLatestRef(hoveredIndex);
 	// Mirror the latest measured segments so animation `onComplete`
 	// callbacks (chained settles after the stretch overshoot) can read
 	// the freshest layout values instead of the stale closure capture
 	// from when the effect ran. Fixes the "rainbow pill stuck at the
 	// stretched-out coordinates" bug that surfaces when fonts finish
 	// loading or the container resizes mid-animation.
-	const segmentsRef = useRef<SegmentRect[]>(segments);
-	segmentsRef.current = segments;
+	const segmentsRef = useLatestRef<SegmentRect[]>(segments);
 
 	const pillLeft = useMotionValue(0);
 	const pillWidth = useMotionValue(0);
@@ -350,23 +363,28 @@ export function useGlassTabsMotion<TValue extends string>({
 	}, [keyboardSelectionPulseKey]);
 
 	useEffect(() => {
-		if (typeof ResizeObserver === "undefined") return;
 		const container = containerRef.current;
-		if (!container) return;
-		const resizeObserver = new ResizeObserver(() => {
-			measure();
-		});
-		resizeObserver.observe(container);
-		buttonRefs.current.forEach((button) => {
-			if (button) {
-				resizeObserver.observe(button);
-			}
-		});
+		if (typeof ResizeObserver === "undefined" || !container) {
+			return () => undefined;
+		}
+		let isDisposed = false;
+		const stopObserving = observeGlassTabsLayout(
+			container,
+			buttonRefs.current,
+			measure,
+		);
 		// Re-measure after web fonts finish loading — DotGothic16 may
 		// arrive after the initial layout measurement, shifting button
 		// widths and invalidating the pill position.
-		document.fonts.ready.then(() => measure());
-		return () => resizeObserver.disconnect();
+		void document.fonts.ready.then(() => {
+			if (!isDisposed) {
+				measure();
+			}
+		});
+		return () => {
+			isDisposed = true;
+			stopObserving();
+		};
 	}, [measure, options.length]);
 
 	const isFirstPositionRef = useRef(true);
@@ -481,8 +499,10 @@ export function useGlassTabsMotion<TValue extends string>({
 		});
 	}, [
 		keyboardSelectionPulseKey,
+		segmentsRef,
 		segments,
 		selectedIndex,
+		selectedIndexRef,
 		pillLeft,
 		pillWidth,
 		shouldReduceMotion,

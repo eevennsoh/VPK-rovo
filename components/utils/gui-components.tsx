@@ -141,8 +141,7 @@ export type GUIControlProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUIControl({
+export function GUIControl({
 	id,
 	label,
 	description,
@@ -287,7 +286,7 @@ export type GUIPercentControlProps = Omit<GUIControlProps, "value" | "defaultVal
 	onChange: (next: number) => void;
 }>;
 
-function GUIPercentControl({
+export function GUIPercentControl({
 	value,
 	defaultValue,
 	min = 0,
@@ -319,8 +318,7 @@ export type GUIPanelProps = Readonly<{
 	children: ReactNode;
 }>;
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUIPanel({ title, values, defaultOpen = true, onPlay, playLabel = "Replay", children }: GUIPanelProps) {
+export function GUIPanel({ title, values, defaultOpen = true, onPlay, playLabel = "Replay", children }: GUIPanelProps) {
 	const [open, setOpen] = useState(defaultOpen);
 	const [copied, setCopied] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -477,8 +475,7 @@ export type GUIToggleProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUIToggle({ id, label, description, checked, disabled = false, onChange, valueKeys }: GUIToggleProps) {
+export function GUIToggle({ id, label, description, checked, disabled = false, onChange, valueKeys }: GUIToggleProps) {
 	useGUIValueKeys(valueKeys);
 	const switchId = `${id}-toggle`;
 
@@ -571,8 +568,7 @@ function GUISelectOptionContent({
 	);
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUISelect<T extends string>({
+export function GUISelect<T extends string>({
 	id,
 	label,
 	description,
@@ -699,8 +695,7 @@ export type GUITextInputProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUITextInput({ id, label, description, placeholder, value, onChange, valueKeys }: GUITextInputProps) {
+export function GUITextInput({ id, label, description, placeholder, value, onChange, valueKeys }: GUITextInputProps) {
 	useGUIValueKeys(valueKeys);
 	const inputId = `${id}-text`;
 
@@ -738,7 +733,7 @@ export type GUIColorInputProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUIColorInput({
+export function GUIColorInput({
 	id,
 	label,
 	description,
@@ -838,7 +833,7 @@ export type GUIColorListProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUIColorList({
+export function GUIColorList({
 	id,
 	label,
 	description,
@@ -1014,7 +1009,7 @@ export type GUIRgbaColorInputProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUIRgbaColorInput({
+export function GUIRgbaColorInput({
 	id,
 	label,
 	value,
@@ -1265,7 +1260,7 @@ export type GUIImageInputProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUIImageInput({
+export function GUIImageInput({
 	id,
 	label,
 	value,
@@ -1396,7 +1391,7 @@ export type GUISwatchGroupProps<T extends string = string> = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUISwatchGroup<T extends string>({
+export function GUISwatchGroup<T extends string>({
 	id,
 	label,
 	description,
@@ -1473,7 +1468,7 @@ export type GUISegmentedControlProps<T extends string | boolean = string> = Read
 	valueKeys?: string | readonly string[];
 }>;
 
-function GUISegmentedControl<T extends string | boolean>({
+export function GUISegmentedControl<T extends string | boolean>({
 	id,
 	label,
 	description,
@@ -1533,8 +1528,7 @@ export type GUISectionProps = Readonly<{
 	children: ReactNode;
 }>;
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function GUISection({ title, defaultOpen = true, borderTop = true, children }: GUISectionProps) {
+export function GUISection({ title, defaultOpen = true, borderTop = true, children }: GUISectionProps) {
 	const [open, setOpen] = useState(defaultOpen);
 
 	return (
@@ -1566,19 +1560,3 @@ function GUISection({ title, defaultOpen = true, borderTop = true, children }: G
 		</div>
 	);
 }
-
-export const GUI = {
-	ColorInput: GUIColorInput,
-	ColorList: GUIColorList,
-	Control: GUIControl,
-	ImageInput: GUIImageInput,
-	Panel: GUIPanel,
-	PercentControl: GUIPercentControl,
-	RgbaColorInput: GUIRgbaColorInput,
-	Section: GUISection,
-	SegmentedControl: GUISegmentedControl,
-	Select: GUISelect,
-	SwatchGroup: GUISwatchGroup,
-	TextInput: GUITextInput,
-	Toggle: GUIToggle,
-} as const;

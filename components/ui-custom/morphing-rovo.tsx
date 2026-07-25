@@ -15,8 +15,11 @@ import { useEffect, useRef, useState } from "react";
  * Replaces flubber by simply lerping every numeric value in the string.
  */
 function lerpPaths(pathA: string, pathB: string): (t: number) => string {
-	const numsA = pathA.match(/-?[\d.]+/g)!.map(Number);
-	const numsB = pathB.match(/-?[\d.]+/g)!.map(Number);
+	const numsA = pathA.match(/-?[\d.]+/g)?.map(Number) ?? [];
+	const numsB = pathB.match(/-?[\d.]+/g)?.map(Number) ?? [];
+	if (numsA.length === 0 || numsA.length !== numsB.length) {
+		return () => pathA;
+	}
 
 	return (t: number) => {
 		let i = 0;

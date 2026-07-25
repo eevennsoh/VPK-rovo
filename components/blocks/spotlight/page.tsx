@@ -18,8 +18,8 @@ import {
 	SpotlightSecondaryAction,
 	SpotlightStepCount,
 } from "@/components/blocks/spotlight/components/spotlight-card";
-import { SPOTLIGHT_PLACEMENTS, SpotlightTarget } from "@/components/blocks/spotlight/components/spotlight-target";
-import type { SpotlightPlacement } from "@/components/blocks/spotlight/components/spotlight-target";
+import { SpotlightTarget } from "@/components/blocks/spotlight/components/spotlight-target";
+import { SPOTLIGHT_PLACEMENTS, type SpotlightPlacement } from "@/components/blocks/spotlight/spotlight-placement";
 import { SPOTLIGHT_MEDIA_SRC, SPOTLIGHT_TOUR_STEPS } from "@/components/blocks/spotlight/data/demo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 

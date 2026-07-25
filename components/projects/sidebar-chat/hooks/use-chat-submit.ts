@@ -6,6 +6,7 @@ import type { QueuedPromptItem } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { createId } from "@/lib/utils";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import type { RovoMessageMetadata, RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { FileUIPart } from "ai";
 
@@ -117,12 +118,9 @@ export function useChatSubmit({
 	// interception closure can read the latest list without pulling it into the
 	// `useCallback` deps below — otherwise `submitPrompt`/`handleSubmit` would get
 	// a new identity per token for every (app-wide) ChatPanel consumer.
-	const uiMessagesRef = useRef(uiMessages);
-	uiMessagesRef.current = uiMessages;
-	const isStreamingRef = useRef(isStreaming);
-	isStreamingRef.current = isStreaming;
-	const hasInFlightTurnRef = useRef(hasInFlightTurn);
-	hasInFlightTurnRef.current = hasInFlightTurn;
+	const uiMessagesRef = useLatestRef(uiMessages);
+	const isStreamingRef = useLatestRef(isStreaming);
+	const hasInFlightTurnRef = useLatestRef(hasInFlightTurn);
 
 	const injectLocalAssistantTurn = useCallback(
 		async ({
@@ -223,7 +221,14 @@ export function useChatSubmit({
 				setLocalThinkingAssistantMessageId(null);
 			}
 		},
-		[ensureThreadForLocalTurn, replaceMessages, stopStreaming],
+		[
+			ensureThreadForLocalTurn,
+			hasInFlightTurnRef,
+			isStreamingRef,
+			replaceMessages,
+			stopStreaming,
+			uiMessagesRef,
+		],
 	);
 
 	// Deterministic interception: when the prompt is a handled build intent, skip

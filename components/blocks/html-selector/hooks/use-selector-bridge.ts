@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, type RefObject } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import { getBridge, injectSelectorCore } from "../lib/bridge";
 import { resolveIframePage } from "../lib/page-path";
 import { HTML_SELECTOR_SHORTCUTS } from "../lib/shortcuts";
@@ -56,23 +57,19 @@ export function useSelectorBridge({
 	// bridge.deactivate() in its cleanup, which closes the in-iframe overlay
 	// UI (popovers, inspect mode) mid-interaction — every pin save would
 	// otherwise kick the user out of the tool.
-	const callbacksRef = useRef(callbacks);
-	const pagePinsRef = useRef(pagePins);
-	const pinMetaRef = useRef(pinMeta);
-	const agentRef = useRef(agent);
-	callbacksRef.current = callbacks;
-	pagePinsRef.current = pagePins;
-	pinMetaRef.current = pinMeta;
-	agentRef.current = agent;
+	const callbacksRef = useLatestRef(callbacks);
+	const pagePinsRef = useLatestRef(pagePins);
+	const pinMetaRef = useLatestRef(pinMeta);
+	const agentRef = useLatestRef(agent);
 
 	useEffect(() => {
 		if (!enabled) {
-			return;
+			return () => {};
 		}
 
 		const iframe = iframeRef.current;
 		if (!iframe) {
-			return;
+			return () => {};
 		}
 
 		let cancelled = false;
@@ -88,14 +85,6 @@ export function useSelectorBridge({
 		};
 
 		const mountIntoIframe = async () => {
-			// History traversals can restore a document without firing the
-			// iframe load event; re-mount on that document's pageshow too.
-			const frameWindow = iframe.contentWindow as (Window & { __vpkhsPageshowHooked?: boolean }) | null;
-			if (frameWindow && !frameWindow.__vpkhsPageshowHooked) {
-				frameWindow.__vpkhsPageshowHooked = true;
-				frameWindow.addEventListener("pageshow", handleLoad);
-			}
-
 			const page = resolveIframePage(iframe);
 			callbacksRef.current.onPageChange(page);
 
@@ -128,12 +117,15 @@ export function useSelectorBridge({
 			void mountIntoIframe();
 		}
 
+		const frameWindow = iframe.contentWindow;
 		iframe.addEventListener("load", handleLoad);
+		frameWindow?.addEventListener("pageshow", handleLoad);
 		void mountIntoIframe();
 
 		return () => {
 			cancelled = true;
 			iframe.removeEventListener("load", handleLoad);
+			frameWindow?.removeEventListener("pageshow", handleLoad);
 			try {
 				const bridge = getBridge(iframe);
 				bridge?.deactivate();
@@ -142,7 +134,7 @@ export function useSelectorBridge({
 				// Ignore cross-origin cleanup failures.
 			}
 		};
-	}, [enabled, iframeRef]);
+	}, [agentRef, callbacksRef, enabled, iframeRef, pagePinsRef, pinMetaRef]);
 
 	// Data sync: push pin/meta/agent updates through the live bridge without
 	// reconfiguring — setPins re-renders markers and lists but never touches
@@ -163,5 +155,5 @@ export function useSelectorBridge({
 			page.pagePath,
 			getStaleSelectors(bridge, activePagePins),
 		);
-	}, [enabled, iframeRef, pagePins, pinMeta]);
+	}, [callbacksRef, enabled, iframeRef, pagePins, pinMeta]);
 }

@@ -7,7 +7,7 @@ import {
 	useReducedMotion,
 	type Variants,
 } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
@@ -48,6 +48,44 @@ type JiraForYouWorkspaceMode =
 	| { kind: "feed" }
 	| { itemId: string; kind: "assigned-chat" }
 	| { itemId: string; kind: "unassigned-agent-session" };
+
+interface JiraForYouWorkspaceViewState {
+	isDetailPanelOpen: boolean;
+	mode: JiraForYouWorkspaceMode;
+}
+
+type JiraForYouWorkspaceViewAction =
+	| { type: "close" }
+	| { type: "open-assigned"; itemId: string; detailPanelOpen: boolean }
+	| { type: "open-unassigned"; itemId: string }
+	| { type: "set-detail-panel"; open: boolean }
+	| { type: "toggle-detail-panel" };
+
+function reduceWorkspaceView(
+	state: JiraForYouWorkspaceViewState,
+	action: JiraForYouWorkspaceViewAction,
+): JiraForYouWorkspaceViewState {
+	switch (action.type) {
+		case "close":
+			return { isDetailPanelOpen: false, mode: { kind: "feed" } };
+		case "open-assigned":
+			return {
+				isDetailPanelOpen: action.detailPanelOpen,
+				mode: { itemId: action.itemId, kind: "assigned-chat" },
+			};
+		case "open-unassigned":
+			return {
+				isDetailPanelOpen: false,
+				mode: { itemId: action.itemId, kind: "unassigned-agent-session" },
+			};
+		case "set-detail-panel":
+			return { ...state, isDetailPanelOpen: action.open };
+		case "toggle-detail-panel":
+			return { ...state, isDetailPanelOpen: !state.isDetailPanelOpen };
+		default:
+			return state;
+	}
+}
 
 function getWorkspaceModeItemId(mode: JiraForYouWorkspaceMode): string | null {
 	switch (mode.kind) {
@@ -90,8 +128,14 @@ export function JiraForYouWorkspace({
 		() => createJiraForYouWorkspaceData(sections),
 		[sections],
 	);
-	const [mode, setMode] = useState<JiraForYouWorkspaceMode>({ kind: "feed" });
-	const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+	const [{ isDetailPanelOpen, mode }, dispatchView] = useReducer(
+		reduceWorkspaceView,
+		{ isDetailPanelOpen: false, mode: { kind: "feed" } },
+	);
+	const requestedItemId = getWorkspaceModeItemId(mode);
+	if (requestedItemId && !workspaceData.itemsById[requestedItemId]) {
+		dispatchView({ type: "close" });
+	}
 	const [restoringViewButtonItemId, setRestoringViewButtonItemId] = useState<string | null>(null);
 	const [selectedAgentByItemId, setSelectedAgentByItemId] = useState<
 		Record<string, string>
@@ -99,12 +143,15 @@ export function JiraForYouWorkspace({
 	const [localMessagesBySessionKey, setLocalMessagesBySessionKey] = useState<
 		Record<string, RovoUIMessage[]>
 	>({});
+	const handleDetailPanelCollapse = useCallback(() => {
+		dispatchView({ type: "set-detail-panel", open: false });
+	}, []);
 	const detailPanelResize = useSidebarResize({
 		defaultWidth: DETAIL_PANEL_DEFAULT_WIDTH_PX,
 		direction: "rtl",
 		maxWidth: DETAIL_PANEL_MAX_WIDTH_PX,
 		minWidth: DETAIL_PANEL_MIN_WIDTH_PX,
-		onCollapse: () => setIsDetailPanelOpen(false),
+		onCollapse: handleDetailPanelCollapse,
 	});
 	const rowButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 	const viewButtonRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -131,20 +178,6 @@ export function JiraForYouWorkspace({
 		resizeObserver.observe(workspaceNode);
 		return () => resizeObserver.disconnect();
 	}, [workspaceNode]);
-
-	useEffect(() => {
-		const modeItemId = getWorkspaceModeItemId(mode);
-		if (!modeItemId) {
-			return;
-		}
-
-		if (workspaceData.itemsById[modeItemId]) {
-			return;
-		}
-
-		setMode({ kind: "feed" });
-		setIsDetailPanelOpen(false);
-	}, [mode, workspaceData.itemsById]);
 
 	const activeItemId = getWorkspaceModeItemId(mode);
 	const activeItemData = activeItemId
@@ -230,8 +263,7 @@ export function JiraForYouWorkspace({
 				? focusRestoreItemIdRef.current
 				: null,
 		);
-		setMode({ kind: "feed" });
-		setIsDetailPanelOpen(false);
+		dispatchView({ type: "close" });
 	}, []);
 
 	const handleItemActivate = useCallback((
@@ -250,15 +282,14 @@ export function JiraForYouWorkspace({
 
 		switch (itemData.kind) {
 			case "unassigned":
-				setMode({
-					itemId: item.id,
-					kind: "unassigned-agent-session",
-				});
-				setIsDetailPanelOpen(false);
+				dispatchView({ type: "open-unassigned", itemId: item.id });
 				return;
 			case "assigned":
-				setMode({ itemId: item.id, kind: "assigned-chat" });
-				setIsDetailPanelOpen(!isNarrow);
+				dispatchView({
+					type: "open-assigned",
+					itemId: item.id,
+					detailPanelOpen: !isNarrow,
+				});
 				break;
 			default: {
 				const exhaustiveItemData: never = itemData;
@@ -397,7 +428,7 @@ export function JiraForYouWorkspace({
 						isDetailPanelOpen={isDetailPanelOpen}
 						item={assignedItemData.item}
 						onBack={handleCloseWorkspace}
-						onDetailPanelToggle={() => setIsDetailPanelOpen((current) => !current)}
+						onDetailPanelToggle={() => dispatchView({ type: "toggle-detail-panel" })}
 						onSubmit={handleSubmit}
 						selectedAgentSession={selectedAgentSession}
 						uiMessages={uiMessages}
@@ -410,7 +441,7 @@ export function JiraForYouWorkspace({
 								isNarrow={isNarrow}
 								item={assignedItemData.item}
 								onAgentSelect={handleAgentSelect}
-								onClose={() => setIsDetailPanelOpen(false)}
+								onClose={() => dispatchView({ type: "set-detail-panel", open: false })}
 								resize={detailPanelResize}
 								selectedAgentId={selectedAgentSession.id}
 							/>

@@ -1,30 +1,24 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from "react";
+import {
+	DITHERING_BLEND_MODES,
+	DITHERING_COMPOSITE_MODES,
+	getDitheringPresetDefaults,
+	type DitheringAlgorithm,
+	type DitheringBlendMode,
+	type DitheringColorMode,
+	type DitheringCompositeMode,
+	type DitheringPreset,
+} from "./dithering-config";
 
-export const DITHERING_BLEND_MODES = [
-	"normal",
-	"multiply",
-	"screen",
-	"overlay",
-	"darken",
-	"lighten",
-	"color-dodge",
-	"color-burn",
-	"hard-light",
-	"soft-light",
-	"difference",
-	"exclusion",
-	"hue",
-	"saturation",
-	"color",
-	"luminosity",
-] as const;
-
-export const DITHERING_COMPOSITE_MODES = ["filter", "mask"] as const;
-export const DITHERING_PRESETS = ["custom", "gameboy"] as const;
-export const DITHERING_ALGORITHMS = ["bayer-2x2", "bayer-4x4", "bayer-8x8", "noise"] as const;
-export const DITHERING_COLOR_MODES = ["monochrome", "source", "duo-tone"] as const;
+export type {
+	DitheringAlgorithm,
+	DitheringBlendMode,
+	DitheringColorMode,
+	DitheringCompositeMode,
+	DitheringPreset,
+} from "./dithering-config";
 
 const VERTEX_SHADER = `#version 300 es
 precision highp float;
@@ -314,12 +308,6 @@ void main() {
 type RGB = readonly [number, number, number];
 
 export type DitheringSourceMode = "field" | "image";
-export type DitheringPreset = (typeof DITHERING_PRESETS)[number];
-export type DitheringAlgorithm = (typeof DITHERING_ALGORITHMS)[number];
-export type DitheringColorMode = (typeof DITHERING_COLOR_MODES)[number];
-export type DitheringBlendMode = (typeof DITHERING_BLEND_MODES)[number];
-export type DitheringCompositeMode = (typeof DITHERING_COMPOSITE_MODES)[number];
-
 export interface DitheringProps {
 	className?: string;
 	style?: CSSProperties;
@@ -344,36 +332,6 @@ export interface DitheringProps {
 	shadowColor?: string;
 	highlightColor?: string;
 	speed?: number;
-}
-
-export type DitheringPresetDefaults = Partial<
-	Pick<
-		DitheringProps,
-		| "algorithm"
-		| "colorMode"
-		| "highlightColor"
-		| "levels"
-		| "monoColor"
-		| "pixelSize"
-		| "shadowColor"
-		| "spread"
-	>
->;
-
-export const DITHERING_PRESET_DEFAULTS = {
-	gameboy: {
-		algorithm: "bayer-2x2",
-		colorMode: "duo-tone",
-		highlightColor: "#9bbc0f",
-		levels: 4,
-		pixelSize: 3,
-		shadowColor: "#0f380f",
-		spread: 0.5,
-	},
-} as const satisfies Record<Exclude<DitheringPreset, "custom">, DitheringPresetDefaults>;
-
-export function getDitheringPresetDefaults(preset: DitheringPreset): DitheringPresetDefaults {
-	return preset === "gameboy" ? DITHERING_PRESET_DEFAULTS.gameboy : {};
 }
 
 function createDefaultTexture(): HTMLCanvasElement {

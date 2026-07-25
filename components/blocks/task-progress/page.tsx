@@ -341,10 +341,10 @@ export default function TaskProgress({
 											{runStatus !== "completed" ? (
 												<motion.div
 													key="progress-bar"
-													initial={{ height: "auto", opacity: 1 }}
-													exit={{ height: 0, opacity: 0 }}
+													initial={{ opacity: 1, scaleY: 1 }}
+													exit={{ opacity: 0, scaleY: 0 }}
 													transition={{ duration: 0.3, ease: "easeInOut" }}
-													className="overflow-hidden"
+													className="origin-top overflow-hidden"
 												>
 													<ProgressRovo
 														aria-label="Run progress"

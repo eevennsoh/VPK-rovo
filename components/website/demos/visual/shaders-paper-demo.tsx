@@ -631,11 +631,7 @@ function createPaperShaderParams(
 		Object.entries(preset.params).map(([key, value]) => [key, clonePaperShaderValue(value)])
 	) as PaperShaderParams;
 
-	if (definition.image) {
-		params.image = definition.image;
-	}
-
-	return params;
+	return definition.image ? { ...params, image: definition.image } : params;
 }
 
 function getReducedMotionShaderProps(
@@ -895,10 +891,9 @@ export default function PaperShadersDemo({ slug: previewSlug }: Readonly<PaperSh
 		setSelectedPresetName(nextPreset.name);
 		setParams((currentParams) => {
 			const nextParams = createPaperShaderParams(definition, nextPreset);
-			if (definition.image) {
-				nextParams.image = currentParams.image;
-			}
-			return nextParams;
+			return definition.image
+				? { ...nextParams, image: currentParams.image }
+				: nextParams;
 		});
 	}, [definition]);
 

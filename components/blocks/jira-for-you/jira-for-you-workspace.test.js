@@ -110,15 +110,15 @@ test("the workspace owns open or close, focus restoration, and local user-messag
 	assert.match(WORKSPACE_SOURCE, /aria-label=\{`Chat workspace for \$\{assignedItemData\.item\.issueKey\}`\}/u);
 	assert.match(WORKSPACE_SOURCE, /const resizeObserver = new ResizeObserver/u);
 	assert.match(WORKSPACE_SOURCE, /ref=\{setWorkspaceNode\}/u);
-	assert.match(WORKSPACE_SOURCE, /const \[mode, setMode\] = useState<JiraForYouWorkspaceMode>\(\{ kind: "feed" \}\)/u);
-	assert.match(WORKSPACE_SOURCE, /const \[isDetailPanelOpen, setIsDetailPanelOpen\] = useState\(false\)/u);
+	assert.match(WORKSPACE_SOURCE, /const \[\{ isDetailPanelOpen, mode \}, dispatchView\] = useReducer\(/u);
+	assert.match(WORKSPACE_SOURCE, /function reduceWorkspaceView\(/u);
 	assert.match(WORKSPACE_SOURCE, /const viewButtonRefs = useRef\(new Map<string, HTMLButtonElement>\(\)\);/u);
 	assert.match(
 		WORKSPACE_SOURCE,
 		/const focusWhenReady = \(\) => \{[\s\S]*focusRestoreControlRef\.current === "row"[\s\S]*rowButtonRefs\.current\.get\(itemId\)[\s\S]*viewButtonRefs\.current\.get\(itemId\);[\s\S]*button\.focus\(\);/u,
 	);
-	assert.match(WORKSPACE_SOURCE, /setMode\(\{ itemId: item\.id, kind: "assigned-chat" \}\);[\s\S]*setIsDetailPanelOpen\(!isNarrow\);/u);
-	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = focusRestoreItemIdRef\.current;[\s\S]*setMode\(\{ kind: "feed" \}\);[\s\S]*setIsDetailPanelOpen\(false\);/u);
+	assert.match(WORKSPACE_SOURCE, /dispatchView\(\{\s*type: "open-assigned",\s*itemId: item\.id,\s*detailPanelOpen: !isNarrow,/u);
+	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = focusRestoreItemIdRef\.current;[\s\S]*dispatchView\(\{ type: "close" \}\);/u);
 	assert.match(WORKSPACE_SOURCE, /createRovoAppUserMessage/u);
 	assert.match(WORKSPACE_SOURCE, /createId\("jira-for-you-user"\)/u);
 	assert.match(WORKSPACE_SOURCE, /const WIDE_FEED_MIN_WIDTH_PX = 420;/u);

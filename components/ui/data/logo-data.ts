@@ -1,4 +1,18 @@
 import type { ComponentType } from "react";
+
+export const ATLASSIAN_LOGO_SOURCE = "atlassian";
+export const LOGO_TILE_SIZES = [
+	"xxsmall",
+	"xsmall",
+	"small",
+	"medium",
+	"large",
+	"xlarge",
+] as const;
+
+export function isAtlassianLogoSource(src: string | null | undefined): boolean {
+	return src === ATLASSIAN_LOGO_SOURCE;
+}
 import {
 	AdminIcon as AtlaskitAdminIcon,
 	AdminLogo as AtlaskitAdminLogo,

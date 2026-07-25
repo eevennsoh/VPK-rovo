@@ -8,7 +8,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
-import { Fragment, useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useCallback, useReducer, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { FileUIPart } from "ai";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/projects/shared/components/chat-configuration/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
@@ -84,6 +84,11 @@ import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
+import {
+	reduceDictationPresentation,
+	reduceScreenAssistantRegion,
+	subscribeToUserActivation,
+} from "./lib/sidebar-chat-state";
 import { type DelegationRequest, type UseRealtimeVoiceResult, useRealtimeVoice } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
 import { useClicky } from "@/components/projects/rovo-core/hooks/use-clicky";
@@ -95,7 +100,6 @@ import {
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import styles from "./chat.module.css";
@@ -395,6 +399,7 @@ const CONTEXT_BAR_RESERVED_SPACE_PX = 48;
 const AGENT_TEST_COMPOSER_GAP_PX = 12;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
+
 const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
 	{ id: "draft", label: "Draft", variant: "neutral" },
 	{ id: "version-2", label: "V2", variant: "success", sectionBreakBefore: true, isCurrent: true },
@@ -764,21 +769,22 @@ export default function ChatPanel({
 			clickyStartSpeaking(text);
 			return true;
 		}, [activateClicky, clickyStartSpeaking, hideAiCursor, isClickyActive]);
-		const [screenAssistantRegion, setScreenAssistantRegion] = useState<StudioScreenAssistantRegion | null>(null);
-		const [screenAssistantRegionPainting, setScreenAssistantRegionPainting] = useState(false);
+		const [{ painting: screenAssistantRegionPainting, region: screenAssistantRegion }, dispatchScreenAssistantRegion] = useReducer(
+			reduceScreenAssistantRegion,
+			{ painting: false, region: null },
+		);
+		if (
+			(hideAiCursor || !isClickyActive) &&
+			(screenAssistantRegion || screenAssistantRegionPainting)
+		) {
+			dispatchScreenAssistantRegion({ type: "reset" });
+		}
 
 	useEffect(() => {
 		if (hideAiCursor && isClickyActive) {
 			deactivateClicky();
 		}
 	}, [deactivateClicky, hideAiCursor, isClickyActive]);
-
-	useEffect(() => {
-		if (hideAiCursor || !isClickyActive) {
-			setScreenAssistantRegion(null);
-			setScreenAssistantRegionPainting(false);
-		}
-	}, [hideAiCursor, isClickyActive]);
 
 	const realtimeTranscriptRef = useRef("");
 	const promptRef = useRef(prompt);
@@ -805,8 +811,10 @@ export default function ChatPanel({
 	const dictationBaselineRef = useRef<string | null>(null);
 	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
-	const [isDictationActive, setIsDictationActive] = useState(false);
-	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
+	const [{ isActive: isDictationActive, transcriptPreview: dictationTranscriptPreview }, dispatchDictation] = useReducer(
+		reduceDictationPresentation,
+		{ isActive: false, transcriptPreview: null },
+	);
 	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 
 	useEffect(() => {
@@ -834,7 +842,7 @@ export default function ChatPanel({
 		realtimeTranscriptRef.current = "";
 
 		if (isDictationActiveRef.current) {
-			setDictationTranscriptPreview(null);
+			dispatchDictation({ type: "preview", transcript: null });
 			return;
 		}
 
@@ -864,7 +872,7 @@ export default function ChatPanel({
 		}
 
 		if (isDictationActiveRef.current) {
-			setDictationTranscriptPreview(transcriptText);
+			dispatchDictation({ type: "preview", transcript: transcriptText });
 			const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcriptText);
 			promptRef.current = nextText;
 			setPrompt(nextText);
@@ -885,7 +893,7 @@ export default function ChatPanel({
 			const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcriptText);
 			dictationCommittedTextRef.current = nextText;
 			promptRef.current = nextText;
-			setDictationTranscriptPreview(transcriptText);
+			dispatchDictation({ type: "preview", transcript: transcriptText });
 			setPrompt(nextText);
 			setComposerFocusRequestKey((currentKey) => currentKey + 1);
 			return;
@@ -1150,9 +1158,11 @@ export default function ChatPanel({
 		),
 	});
 
-	sendRealtimeTextInputRef.current = realtime.sendTextInput;
-	realtimeVoiceStateRef.current = realtime.voiceState;
-	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+	useEffect(() => {
+		sendRealtimeTextInputRef.current = realtime.sendTextInput;
+		realtimeVoiceStateRef.current = realtime.voiceState;
+		sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+	}, [realtime.sendFunctionCallOutput, realtime.sendTextInput, realtime.voiceState]);
 
 	// --- AI cursor voice bridge: connects realtime + injects tool-based prompt ---
 	useDefaultClickyVoice({
@@ -1170,8 +1180,7 @@ export default function ChatPanel({
 		dictationBaselineRef.current = null;
 		dictationCommittedTextRef.current = null;
 		isDictationActiveRef.current = false;
-		setIsDictationActive(false);
-		setDictationTranscriptPreview(null);
+		dispatchDictation({ type: "stop" });
 		realtime.disconnect();
 	}, [realtime]);
 	const handleStartDictation = useCallback(() => {
@@ -1184,8 +1193,7 @@ export default function ChatPanel({
 		dictationBaselineRef.current = baselineText;
 		dictationCommittedTextRef.current = baselineText;
 		isDictationActiveRef.current = true;
-		setIsDictationActive(true);
-		setDictationTranscriptPreview(null);
+		dispatchDictation({ type: "start" });
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 		realtime.connect({ transcriptionOnly: true });
 	}, [realtime]);
@@ -1195,8 +1203,7 @@ export default function ChatPanel({
 			dictationBaselineRef.current = null;
 			dictationCommittedTextRef.current = null;
 			isDictationActiveRef.current = false;
-			setIsDictationActive(false);
-			setDictationTranscriptPreview(null);
+			dispatchDictation({ type: "stop" });
 		}
 
 		realtimeTranscriptRef.current = "";
@@ -1229,21 +1236,7 @@ export default function ChatPanel({
 			clearDeferredStartRealtimeVoice();
 			startRealtimeVoice();
 		};
-		const listenerOptions: AddEventListenerOptions = {
-			capture: true,
-		};
-		const removeListenerOptions: EventListenerOptions = {
-			capture: true,
-		};
-
-		window.addEventListener("pointerdown", handleUserActivation, listenerOptions);
-		window.addEventListener("keydown", handleUserActivation, listenerOptions);
-		window.addEventListener("touchstart", handleUserActivation, listenerOptions);
-		cleanupDeferredStartRealtimeVoiceRef.current = () => {
-			window.removeEventListener("pointerdown", handleUserActivation, removeListenerOptions);
-			window.removeEventListener("keydown", handleUserActivation, removeListenerOptions);
-			window.removeEventListener("touchstart", handleUserActivation, removeListenerOptions);
-		};
+		cleanupDeferredStartRealtimeVoiceRef.current = subscribeToUserActivation(handleUserActivation);
 	}, [clearDeferredStartRealtimeVoice, startRealtimeVoice]);
 	useEffect(() => {
 		if (startRealtimeVoiceRequestKey <= 0) {
@@ -2152,8 +2145,12 @@ export default function ChatPanel({
 			<ScreenAssistantRegionOverlay
 				active={!hideAiCursor && isClickyActive}
 				getVisibleTargets={getScreenAssistantVisibleTargets}
-				onPaintingChange={setScreenAssistantRegionPainting}
-				onRegionChange={setScreenAssistantRegion}
+				onPaintingChange={(painting) => {
+					dispatchScreenAssistantRegion({ type: "set-painting", painting });
+				}}
+				onRegionChange={(region) => {
+					dispatchScreenAssistantRegion({ type: "set-region", region });
+				}}
 				region={screenAssistantRegion}
 			/>
 		</div>

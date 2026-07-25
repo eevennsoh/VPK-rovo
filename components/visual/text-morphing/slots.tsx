@@ -56,12 +56,11 @@ function SlotColumn({
 	const spinIn = Math.max(digit, 1);
 	const startValue = animateIn ? digit - spinIn * (direction || 1) : digit;
 	const current = useMotionValue(startValue);
-	const cumulativeRef = useRef(digit);
-	const prevDigitRef = useRef(digit);
+	const [digitState, setDigitState] = useState({ cumulative: digit, digit });
 	const initialRef = useRef(true);
 
-	if (digit !== prevDigitRef.current) {
-		const old = prevDigitRef.current;
+	if (digit !== digitState.digit) {
+		const old = digitState.digit;
 		let diff: number;
 
 		if (direction > 0) {
@@ -72,14 +71,13 @@ function SlotColumn({
 			diff = digit - old;
 		}
 
-		cumulativeRef.current += diff;
-		prevDigitRef.current = digit;
+		setDigitState({ cumulative: digitState.cumulative + diff, digit });
 	}
 
 	useEffect(() => {
 		if (!isPresent) {
 			const spinOut = Math.max(digit, 1);
-			animate(current, cumulativeRef.current + spinOut * (direction || 1), { ...transition });
+			animate(current, digitState.cumulative + spinOut * (direction || 1), { ...transition });
 			return;
 		}
 
@@ -88,7 +86,7 @@ function SlotColumn({
 			if (!animateIn) return;
 		}
 
-		animate(current, cumulativeRef.current, { ...transition, delay });
+		animate(current, digitState.cumulative, { ...transition, delay });
 	});
 
 	return (
@@ -123,25 +121,34 @@ export function SlotsRenderer({
 }) {
 	const chars = splitGraphemes(text);
 
-	const nextIdRef = useRef(chars.length);
-	const [prevText, setPrevText] = useState(text);
-	const [digitKeys, setDigitKeys] = useState<number[]>(() => chars.map((_, i) => i));
-	const dirRef = useRef(1);
+	const [renderState, setRenderState] = useState(() => ({
+		digitKeys: chars.map((_, index) => index),
+		direction: 1,
+		nextId: chars.length,
+		text,
+	}));
 	const mountedRef = useRef(false);
 
 	useEffect(() => {
 		mountedRef.current = true;
 	}, []);
 
-	if (text !== prevText) {
-		const result = reconcileDigitKeys(prevText, text, digitKeys, nextIdRef.current);
-		nextIdRef.current = result.nextId;
-		dirRef.current = result.direction;
-		setDigitKeys(result.keys);
-		setPrevText(text);
+	if (text !== renderState.text) {
+		const result = reconcileDigitKeys(
+			renderState.text,
+			text,
+			renderState.digitKeys,
+			renderState.nextId,
+		);
+		setRenderState({
+			digitKeys: result.keys,
+			direction: result.direction,
+			nextId: result.nextId,
+			text,
+		});
 	}
 
-	const dir = dirRef.current;
+	const dir = renderState.direction;
 	const prefixLen = (() => {
 		const idx = chars.findIndex((c) => isDigit(c));
 		return idx === -1 ? chars.length : idx;

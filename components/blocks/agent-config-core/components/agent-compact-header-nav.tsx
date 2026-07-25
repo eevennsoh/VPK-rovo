@@ -4,12 +4,6 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
-import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
-import PersonIcon from "@atlaskit/icon/core/person";
-import ScorecardIcon from "@atlaskit/icon/core/scorecard";
-import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
-import ViewsIcon from "@atlaskit/icon-lab/core/views";
-
 import { AGENT_AVATAR_SRC } from "@/components/blocks/agent-config-core/components/agent-profile-cover";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,25 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
-import { LayoutDashboardIcon, MoreHorizontalIcon } from "@/components/ui/vpk-icons";
+import { MoreHorizontalIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import { cn } from "@/lib/utils";
-
-const AGENT_COMPACT_HEADER_NAV_ITEMS = [
-	{ icon: <LayoutDashboardIcon size="small" />, label: "Details", value: "details" },
-	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, label: "Insights", value: "insights" },
-	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, label: "Surfaces", value: "surfaces" },
-	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, label: "Evaluation", value: "evaluation" },
-	{ icon: <PersonIcon label="" size="small" color="currentColor" />, label: "Users", value: "users" },
-	{ icon: <LockLockedIcon label="" size="small" color="currentColor" />, label: "Access", value: "access" },
-] as const;
-
-export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
-export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
-// react-doctor-disable-next-line react-doctor/only-export-components -- Consumers share this default nav contract with the compact agent header.
-export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
-// react-doctor-disable-next-line react-doctor/only-export-components -- Consumers share this details nav item with the compact agent header.
-export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
+import {
+	AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
+	type AgentCompactHeaderNavItem,
+	type AgentCompactHeaderSection,
+} from "./agent-compact-header-nav-data";
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;

@@ -2,11 +2,9 @@
 
 // oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
 
-// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
-
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import { useReducer, useState, type ReactElement, type ReactNode } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -595,14 +593,15 @@ export function ControlledChatHistoryDrawer({
 	threadsLoaded,
 }: Readonly<ControlledChatHistoryDrawerProps>): ReactElement | null {
 	const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
-	const [shouldRenderSheet, setShouldRenderSheet] = useState(isHistoryOpen);
+	const [shouldRenderSheet, setShouldRenderSheet] = useReducer(
+		(_current: boolean, next: boolean) => next,
+		isHistoryOpen,
+	);
 	const panelState = useChatHistoryPanelState({ deleteThread, threads });
 
-	useEffect(() => {
-		if (active && isHistoryOpen) {
-			setShouldRenderSheet(true);
-		}
-	}, [active, isHistoryOpen]);
+	if (active && isHistoryOpen && !shouldRenderSheet) {
+		setShouldRenderSheet(true);
+	}
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open || !active) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { createRovoAppSurfaceShell } from "@/components/projects/rovo-core/components/rovo-app-surface-shell";
+import { createRovoAppSurfaceShell } from "@/components/projects/rovo-core/components/create-rovo-app-surface-shell";
 import { RovoAppSidebar } from "@/components/projects/rovo/components/rovo-app-sidebar";
 import { useRovoAppThreadList } from "@/components/projects/rovo/hooks/use-rovo-app-thread-list";
 import {

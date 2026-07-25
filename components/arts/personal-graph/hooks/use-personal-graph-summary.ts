@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import { streamPersonalGraphSummarize } from "../lib/personal-graph-api";
 import type {
 	PersonalGraphSummaryLength,
@@ -27,7 +28,7 @@ function createSummaryClientId() {
 	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function getExplorerRevision(explorer: VaultExplorer | null, node: VaultNode | null) {
+export function getExplorerRevision(explorer: VaultExplorer | null, node: VaultNode | null) {
 	return [
 		explorer?.generatedAt ?? "no-explorer",
 		node?.id ?? "no-node",
@@ -39,8 +40,8 @@ function getExplorerRevision(explorer: VaultExplorer | null, node: VaultNode | n
 export function usePersonalGraphSummary(node: VaultNode | null, explorer: VaultExplorer | null) {
 	const abortRef = useRef<AbortController | null>(null);
 	const clientIdRef = useRef("");
-	const explorerRef = useRef<VaultExplorer | null>(explorer);
-	const nodeRef = useRef<VaultNode | null>(node);
+	const explorerRef = useLatestRef(explorer);
+	const nodeRef = useLatestRef(node);
 	const [articleMarkdown, setArticleMarkdown] = useState("");
 	const [cacheStatus, setCacheStatus] = useState<"hit" | "miss" | "bypass" | null>(null);
 	const [document, setDocument] = useState<PersonalGraphSummaryHtmlDocument | null>(null);
@@ -51,16 +52,6 @@ export function usePersonalGraphSummary(node: VaultNode | null, explorer: VaultE
 	const [sourceNotice, setSourceNotice] = useState<string | null>(null);
 	const [stage, setStage] = useState("");
 	const [status, setStatus] = useState<PersonalGraphSummaryStatus>("idle");
-	const resetKey = getExplorerRevision(explorer, node);
-
-	useEffect(() => {
-		explorerRef.current = explorer;
-	}, [explorer]);
-
-	useEffect(() => {
-		nodeRef.current = node;
-	}, [node]);
-
 	const abort = useCallback(() => {
 		abortRef.current?.abort();
 		abortRef.current = null;
@@ -78,10 +69,6 @@ export function usePersonalGraphSummary(node: VaultNode | null, explorer: VaultE
 		setStage("");
 		setStatus("idle");
 	}, [abort]);
-
-	useEffect(() => {
-		reset();
-	}, [reset, resetKey]);
 
 	useEffect(() => abort, [abort]);
 
@@ -164,7 +151,7 @@ export function usePersonalGraphSummary(node: VaultNode | null, explorer: VaultE
 				abortRef.current = null;
 			}
 		}
-	}, [abort]);
+	}, [abort, explorerRef, nodeRef]);
 
 	return {
 		articleMarkdown,

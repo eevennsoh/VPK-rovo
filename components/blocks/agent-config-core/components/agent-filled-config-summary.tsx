@@ -13,10 +13,13 @@ import { AgentCompactAppsNavButton, AgentCompactDirectoryNavButton, type AgentCo
 import { getAgentCollectionIconClassName, getTagColorForAgentAvatar } from "@/components/blocks/agent-config-core/components/agent-config-visuals";
 import { AgentMemoryRow, AgentReasoningRow, type KnowledgeModeValue, type MemoryModeValue, type ReasoningModeValue } from "@/components/blocks/agent-config-core/components/agent-reasoning-memory-selectors";
 import { AgentAddValueButton, AgentFilledSummaryRow, AgentReferenceChip, AgentSectionLabel } from "@/components/blocks/agent-config-core/components/agent-summary-row";
-import { createAutomationRuleFromEvent, getAgentAutomationItems, getAgentAutomationRules, getNonEmptyConfigItems, isAgentListItemDisabled, serializeAgentAutomationRuleLabels, type AgentConfigFormValue, type AgentConfigListFieldName, type AgentConfigReferenceListFieldName, type AgentConfigTextFieldName, type AgentDirectoryKind, type AgentHideableConfigField } from "@/components/blocks/agent-config-core/lib/agent-config-model";
+import { createAutomationRuleFromEvent, getAgentAutomationRules, getNonEmptyConfigItems, isAgentListItemDisabled, serializeAgentAutomationRuleLabels, type AgentConfigFormValue, type AgentConfigListFieldName, type AgentConfigReferenceListFieldName, type AgentConfigTextFieldName, type AgentDirectoryKind, type AgentHideableConfigField } from "@/components/blocks/agent-config-core/lib/agent-config-model";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import type { TagColor } from "@/components/ui/tag";
+
+export { hasFilledAgentConfig } from "./agent-filled-config-summary-data";
+
 interface AgentTriggerSummaryRowProps {
 	items: readonly string[];
 	addLabel?: string;
@@ -544,16 +547,5 @@ export function AgentFilledConfigSummary({
 				<Fragment key={row.key}>{row.node}</Fragment>
 			))}
 		</div>
-	);
-}
-
-export function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
-	return (
-		getAgentAutomationItems(config).length > 0 ||
-		getNonEmptyConfigItems(config.skills).length > 0 ||
-		getNonEmptyConfigItems(config.tools).length > 0 ||
-		getNonEmptyConfigItems(config.subagents).length > 0 ||
-		getNonEmptyConfigItems(config.knowledge).length > 0 ||
-		getNonEmptyConfigItems(config.conversationStarters).length > 0
 	);
 }

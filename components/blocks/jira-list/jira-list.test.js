@@ -10,7 +10,9 @@ const { test } = require("node:test");
 const SOURCE = [
 	"index.tsx",
 	"jira-list-dnd.ts",
+	"jira-list-cell-data.ts",
 	"jira-list-cells.tsx",
+	"jira-list-column-model.tsx",
 	"jira-list-rows.tsx",
 ].map((file) => readFileSync(join(__dirname, file), "utf8")).join("\n");
 const CELLS_SOURCE = readFileSync(join(__dirname, "jira-list-cells.tsx"), "utf8");
@@ -142,7 +144,7 @@ test("JiraList status lozenges can change the owning row status", () => {
 
 test("JiraList contributors use the canonical avatar group count treatment", () => {
 	const contributorsSource = SOURCE.match(
-		/export function renderContributors[\s\S]*?\n\}/u,
+		/export function JiraListContributorsCell[\s\S]*?\n\}/u,
 	)?.[0] ?? "";
 
 	assert.match(contributorsSource, /<AvatarGroup label=/u);
@@ -155,17 +157,17 @@ test("JiraList does not add a separate open-agent-sessions action", () => {
 		/id: "agentSessions",([\s\S]*?)\n\t\t\{\n\t\t\tid: "priority"/u,
 	)?.[1] ?? "";
 
-	assert.match(agentSessionsCellSource, /renderCell: \(row\) => renderAgentSessions\(row\.agentSessions\)/u);
+	assert.match(agentSessionsCellSource, /renderCell: \(row\) => <JiraListAgentSessionsCell agentSessions=\{row\.agentSessions\} \/>/u);
 	assert.doesNotMatch(SOURCE, /onOpenAgentSessions|Open agent sessions for/u);
 	assert.doesNotMatch(PAGE_SOURCE, /inModelRow|onOpenAgentSessions/u);
 });
 
 test("JiraList keeps agent sessions and labels on one line with accessible overflow menus", () => {
 	const agentSessionsSource = SOURCE.match(
-		/export function renderAgentSessions[\s\S]*?\n\}/u,
+		/export function JiraListAgentSessionsCell[\s\S]*?\n\}/u,
 	)?.[0] ?? "";
 	const labelsSource = SOURCE.match(
-		/export function renderLabels[\s\S]*?\n\}/u,
+		/export function JiraListLabelsCell[\s\S]*?\n\}/u,
 	)?.[0] ?? "";
 
 	assert.match(SOURCE, /function OverflowMenu/u);
@@ -203,8 +205,8 @@ test("JiraList keeps agent sessions and labels on one line with accessible overf
 });
 
 test("JiraList treats agent session strings as display labels, not unique IDs", () => {
-	const agentSessionsRendererStart = SOURCE.indexOf("export function renderAgentSessions(");
-	const agentSessionsRendererEnd = SOURCE.indexOf("export function renderGoals", agentSessionsRendererStart);
+	const agentSessionsRendererStart = SOURCE.indexOf("export function JiraListAgentSessionsCell(");
+	const agentSessionsRendererEnd = SOURCE.indexOf("export function JiraListGoalsCell", agentSessionsRendererStart);
 	const agentSessionsRendererSource = SOURCE.slice(agentSessionsRendererStart, agentSessionsRendererEnd);
 
 	assert.ok(agentSessionsRendererStart > -1);
