@@ -84,6 +84,11 @@ import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
+import {
+	reduceDictationPresentation,
+	reduceScreenAssistantRegion,
+	subscribeToUserActivation,
+} from "./lib/sidebar-chat-state";
 import { type DelegationRequest, type UseRealtimeVoiceResult, useRealtimeVoice } from "@/components/projects/rovo-core/hooks/use-realtime-voice";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
 import { useClicky } from "@/components/projects/rovo-core/hooks/use-clicky";
@@ -95,7 +100,6 @@ import {
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
-	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import styles from "./chat.module.css";
@@ -205,18 +209,6 @@ const LOCAL_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;
 const LOCAL_CONVERSATION_VOICE_SUPPRESSION_MAX_MS = 12000;
 const LOCAL_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS = 280;
 const LOCAL_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS = 900;
-
-function subscribeToUserActivation(onActivation: (event: Event) => void): () => void {
-	const options: AddEventListenerOptions = { capture: true };
-	window.addEventListener("pointerdown", onActivation, options);
-	window.addEventListener("keydown", onActivation, options);
-	window.addEventListener("touchstart", onActivation, options);
-	return () => {
-		window.removeEventListener("pointerdown", onActivation, options);
-		window.removeEventListener("keydown", onActivation, options);
-		window.removeEventListener("touchstart", onActivation, options);
-	};
-}
 
 function isLocalConversationSubmitHandled(result: ChatPanelLocalConversationSubmitResult): boolean {
 	return result !== false && (
@@ -408,57 +400,6 @@ const AGENT_TEST_COMPOSER_GAP_PX = 12;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 
-interface DictationPresentationState {
-	isActive: boolean;
-	transcriptPreview: string | null;
-}
-
-interface ScreenAssistantRegionState {
-	painting: boolean;
-	region: StudioScreenAssistantRegion | null;
-}
-
-type ScreenAssistantRegionAction =
-	| { type: "reset" }
-	| { type: "set-painting"; painting: boolean }
-	| { type: "set-region"; region: StudioScreenAssistantRegion | null };
-
-function reduceScreenAssistantRegion(
-	state: ScreenAssistantRegionState,
-	action: ScreenAssistantRegionAction,
-): ScreenAssistantRegionState {
-	switch (action.type) {
-		case "reset":
-			return { painting: false, region: null };
-		case "set-painting":
-			return { ...state, painting: action.painting };
-		case "set-region":
-			return { ...state, region: action.region };
-		default:
-			return state;
-	}
-}
-
-type DictationPresentationAction =
-	| { type: "preview"; transcript: string | null }
-	| { type: "start" }
-	| { type: "stop" };
-
-function reduceDictationPresentation(
-	state: DictationPresentationState,
-	action: DictationPresentationAction,
-): DictationPresentationState {
-	switch (action.type) {
-		case "preview":
-			return { ...state, transcriptPreview: action.transcript };
-		case "start":
-			return { isActive: true, transcriptPreview: null };
-		case "stop":
-			return { isActive: false, transcriptPreview: null };
-		default:
-			return state;
-	}
-}
 const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
 	{ id: "draft", label: "Draft", variant: "neutral" },
 	{ id: "version-2", label: "V2", variant: "success", sectionBreakBefore: true, isCurrent: true },

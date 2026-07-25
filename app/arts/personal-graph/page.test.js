@@ -122,13 +122,7 @@ const GRAPH_SOURCE = fs.readFileSync(
 	),
 	"utf8",
 );
-const GRAPH_DEFAULTS_SOURCE = fs.readFileSync(
-	path.join(
-		__dirname,
-		"../../../components/website/demos/visual/graph-defaults.ts",
-	),
-	"utf8",
-);
+const GRAPH_DEFAULTS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../components/website/demos/visual/graph-defaults.ts"), "utf8");
 const NEURAL_CANVAS_SOURCE = fs.readFileSync(
 	path.join(
 		__dirname,
