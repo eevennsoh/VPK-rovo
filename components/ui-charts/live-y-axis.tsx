@@ -126,15 +126,17 @@ const LiveYAxisInner = memo(function LiveYAxisInner({
 
   // Pick a nice interval with hysteresis
   const interval = useMemo(() => {
-    const next = pickNiceInterval(
+    return pickNiceInterval(
       valRange,
       innerHeight,
       minGap,
       intervalRef.current
     );
-    intervalRef.current = next;
-    return next;
   }, [valRange, innerHeight, minGap]);
+
+  useEffect(() => {
+    intervalRef.current = interval;
+  }, [interval]);
 
   // Stabilize the tick VALUE set: only recompute which ticks exist when the
   // domain crosses an interval boundary. We quantize min/max to interval

@@ -50,27 +50,7 @@ interface RovoAppSurfaceShellCoreProps {
 	useThreadList: () => UseRovoAppThreadListResult;
 }
 
-interface RovoAppSurfaceShellProps {
-	children: ReactNode;
-}
-
-type RovoAppSurfaceShellFactoryOptions = Omit<RovoAppSurfaceShellCoreProps, "children">;
-
-export function createRovoAppSurfaceShell(options: Readonly<RovoAppSurfaceShellFactoryOptions>) {
-	return function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellProps>) {
-		return (
-			<RovoAppSurfaceShellCore
-				buildThreadPath={options.buildThreadPath}
-				rootPath={options.rootPath}
-				product={options.product}
-				SidebarComponent={options.SidebarComponent}
-				useThreadList={options.useThreadList}
-			>
-				{children}
-			</RovoAppSurfaceShellCore>
-		);
-	};
-}
+export type RovoAppSurfaceShellFactoryOptions = Omit<RovoAppSurfaceShellCoreProps, "children">;
 
 export function RovoAppSurfaceShellCore({
 	buildThreadPath,

@@ -11,6 +11,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { useReducedMotion } from "motion/react"
 import * as THREE from "three"
 import { useLazyRef } from "@/lib/use-lazy-ref";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 export type AgentState = null | "thinking" | "listening" | "talking"
 
@@ -69,8 +70,7 @@ export function Orb({
   }, [])
 
   const shouldAnimate = !reduced && inView && tabVisible
-  const pausedRef = useRef(!shouldAnimate)
-  pausedRef.current = !shouldAnimate
+  const pausedRef = useLatestRef(!shouldAnimate)
 
   return (
     <div ref={wrapperRef} className={className ?? "relative h-full w-full"}>
@@ -139,6 +139,15 @@ function Scene({
   const perlinNoiseTexture = useTexture(
     "https://storage.googleapis.com/eleven-public-cdn/images/perlin-noise.png"
   )
+  const repeatNoiseTexture = useMemo(() => {
+    const texture = perlinNoiseTexture.clone()
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.needsUpdate = true
+    return texture
+  }, [perlinNoiseTexture])
+
+  useEffect(() => () => repeatNoiseTexture.dispose(), [repeatNoiseTexture])
 
   const agentRef = useRef<AgentState>(agentState)
   const modeRef = useRef<"auto" | "manual">(volumeMode)
@@ -270,8 +279,6 @@ function Scene({
   }, [gl])
 
   const uniforms = useMemo(() => {
-    perlinNoiseTexture.wrapS = THREE.RepeatWrapping
-    perlinNoiseTexture.wrapT = THREE.RepeatWrapping
     const isDark =
       typeof document !== "undefined" &&
       document.documentElement.classList.contains("dark")
@@ -279,7 +286,7 @@ function Scene({
       uColor1: new THREE.Uniform(new THREE.Color(initialColorsRef.current[0])),
       uColor2: new THREE.Uniform(new THREE.Color(initialColorsRef.current[1])),
       uOffsets: { value: offsets },
-      uPerlinTexture: new THREE.Uniform(perlinNoiseTexture),
+      uPerlinTexture: new THREE.Uniform(repeatNoiseTexture),
       uTime: new THREE.Uniform(0),
       uAnimation: new THREE.Uniform(0.1),
       uInverted: new THREE.Uniform(isDark ? 1 : 0),
@@ -287,7 +294,7 @@ function Scene({
       uOutputVolume: new THREE.Uniform(0),
       uOpacity: new THREE.Uniform(0),
     }
-  }, [perlinNoiseTexture, offsets])
+  }, [repeatNoiseTexture, offsets])
 
   return (
     <mesh ref={circleRef}>

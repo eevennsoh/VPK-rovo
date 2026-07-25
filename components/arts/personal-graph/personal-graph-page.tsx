@@ -29,6 +29,7 @@ const streamdownPlugins = { cjk, code: safeCodePlugin, math, mermaid };
 
 const updatedAtFormatter = new Intl.DateTimeFormat("en-US", {
 	dateStyle: "medium",
+	timeZone: "UTC",
 	timeStyle: "short",
 });
 

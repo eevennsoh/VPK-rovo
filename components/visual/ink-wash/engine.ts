@@ -811,10 +811,11 @@ export class InkWashEngine {
 		this.canvas.toBlob((blob) => {
 			if (!blob) return;
 			const anchor = document.createElement("a");
-			anchor.href = URL.createObjectURL(blob);
+			const objectUrl = URL.createObjectURL(blob);
+			anchor.href = objectUrl;
 			anchor.download = `ink-wash-${new Date().toISOString().replace(/[:.]/gu, "-").slice(0, 19)}.png`;
 			anchor.click();
-			window.setTimeout(() => URL.revokeObjectURL(anchor.href), 4000);
+			URL.revokeObjectURL(objectUrl);
 		});
 	}
 

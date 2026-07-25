@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion, type Transition } from "motion/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { DIGIT_DISTANCE, isDigit, reconcileDigitKeys, splitGraphemes } from "./lib";
 
@@ -28,20 +28,30 @@ export function NumberRenderer({
 }) {
 	const chars = splitGraphemes(text);
 
-	const nextIdRef = useRef(chars.length);
-	const [prevText, setPrevText] = useState(text);
-	const [digitKeys, setDigitKeys] = useState<number[]>(() => chars.map((_, i) => i));
-	const dirRef = useRef(1);
+	const [renderState, setRenderState] = useState(() => ({
+		digitKeys: chars.map((_, index) => index),
+		direction: 1,
+		nextId: chars.length,
+		text,
+	}));
 
-	if (text !== prevText) {
-		const result = reconcileDigitKeys(prevText, text, digitKeys, nextIdRef.current);
-		nextIdRef.current = result.nextId;
-		dirRef.current = result.direction;
-		setDigitKeys(result.keys);
-		setPrevText(text);
+	if (text !== renderState.text) {
+		const result = reconcileDigitKeys(
+			renderState.text,
+			text,
+			renderState.digitKeys,
+			renderState.nextId,
+		);
+		setRenderState({
+			digitKeys: result.keys,
+			direction: result.direction,
+			nextId: result.nextId,
+			text,
+		});
 	}
 
-	const dir = dirRef.current;
+	const digitKeys = renderState.digitKeys;
+	const dir = renderState.direction;
 	const prefixLen = (() => {
 		const idx = chars.findIndex((c) => isDigit(c));
 		return idx === -1 ? chars.length : idx;

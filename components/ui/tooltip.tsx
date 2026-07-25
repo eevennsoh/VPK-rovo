@@ -76,33 +76,11 @@ function TooltipContent({
 	)
 }
 
-/**
- * Wrap a trigger element in a tooltip when `content` is provided, otherwise
- * return the trigger unchanged. Keeps the conditional-tooltip idiom in one place
- * so callers (e.g. Tag/SkillTag overlay controls) don't each re-implement it.
- */
-function withTooltip(
-	trigger: React.ReactElement,
-	content?: React.ReactNode,
-): React.ReactElement {
-	if (!content) {
-		return trigger
-	}
-
-	return (
-		<Tooltip>
-			<TooltipTrigger render={trigger} />
-			<TooltipContent>{content}</TooltipContent>
-		</Tooltip>
-	)
-}
-
 export {
 	Tooltip,
 	TooltipTrigger,
 	TooltipContent,
 	TooltipProvider,
-	withTooltip,
 	type TooltipProps,
 	type TooltipTriggerProps,
 	type TooltipContentProps,

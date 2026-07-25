@@ -223,5 +223,4 @@ export {
 	AttachmentActions,
 	AttachmentAction,
 	AttachmentTrigger,
-	attachmentVariants,
 }

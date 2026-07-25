@@ -11,8 +11,8 @@ import {
   useContext,
   useEffect,
   useId,
+  useMemo,
   useRef,
-  type FC,
 } from "react";
 import { motion, useAnimation } from "motion/react";
 
@@ -26,6 +26,19 @@ export type RovoIconProps = {
 const RovoIconCtx = createContext<{
   solidControls: ReturnType<typeof useAnimation>;
 } | null>(null);
+const TEXT_SUMMARY_RETURN_TRANSITION = { duration: 0.6, ease: "easeInOut" as const };
+const TEXT_SUMMARY_SOLID_LINE_VARIANTS = {
+  initial: { opacity: 1, transition: TEXT_SUMMARY_RETURN_TRANSITION },
+  hovered: { opacity: 1, transition: TEXT_SUMMARY_RETURN_TRANSITION },
+};
+const TEXT_SUMMARY_SPARKLE_GROUP_VARIANTS = {
+  initial: { y: 0, rotate: 0, transition: TEXT_SUMMARY_RETURN_TRANSITION },
+  hovered: { y: -6, rotate: 180, transition: { duration: 0.6, ease: "easeInOut" as const } },
+};
+const TEXT_SUMMARY_SPARKLE_GRADIENT_VARIANTS = {
+  initial: { opacity: 0, transition: TEXT_SUMMARY_RETURN_TRANSITION },
+  hovered: { opacity: 1, transition: { duration: 0.3, ease: "easeInOut" as const } },
+};
 
 function useRovoControls() {
   return useContext(RovoIconCtx)!;
@@ -221,26 +234,10 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
     return () => cancelAnimationFrame(rafRef.current);
   }, [hovered, solidControls, resetAll, singleColor]);
 
-  const returnTransition = { duration: 0.6, ease: "easeInOut" as const };
-
-  const solidLine1 = {
-    initial: { opacity: 1, transition: returnTransition },
-    hovered: { opacity: 1, transition: returnTransition },
-  };
-
-  const sparkleGroup = {
-    initial: { y: 0, rotate: 0, transition: returnTransition },
-    hovered: { y: -6, rotate: 180, transition: { duration: 0.6, ease: "easeInOut" as const } },
-  };
   const sparkleSolid = {
-    initial: { opacity: 1, transition: returnTransition },
-    hovered: singleColor ? { opacity: 1, transition: returnTransition } : { opacity: 0, transition: { duration: 0.3, ease: "easeInOut" as const } },
+    initial: { opacity: 1, transition: TEXT_SUMMARY_RETURN_TRANSITION },
+    hovered: singleColor ? { opacity: 1, transition: TEXT_SUMMARY_RETURN_TRANSITION } : { opacity: 0, transition: { duration: 0.3, ease: "easeInOut" as const } },
   };
-  const sparkleGradient = {
-    initial: { opacity: 0, transition: returnTransition },
-    hovered: { opacity: 1, transition: { duration: 0.3, ease: "easeInOut" as const } },
-  };
-
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -261,7 +258,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
 
       <motion.line
         x1="1.5" y1="2.625" x2="22.5" y2="2.625"
-        variants={solidLine1}
+            variants={TEXT_SUMMARY_SOLID_LINE_VARIANTS}
         initial="initial"
         animate={solidControls}
       />
@@ -302,7 +299,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
       )}
 
       <motion.g
-        variants={sparkleGroup}
+            variants={TEXT_SUMMARY_SPARKLE_GROUP_VARIANTS}
         initial="initial"
         animate={solidControls}
         style={{ transformOrigin: "18.75px 18.75px" }}
@@ -317,7 +314,7 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
         />
         {!singleColor && (
           <motion.g
-            variants={sparkleGradient}
+            variants={TEXT_SUMMARY_SPARKLE_GRADIENT_VARIANTS}
             initial="initial"
             animate={solidControls}
           >
@@ -339,9 +336,10 @@ function Comp_ai_generative_text_summary({ size, color = "currentColor", hovered
 
 export function AiGenerativeTextSummary({ size = 20, color = "var(--ds-icon, #505258)", hovered, singleColor = true }: RovoIconProps) {
   const solidControls = useAnimation();
+  const contextValue = useMemo(() => ({ solidControls }), [solidControls]);
 
   return (
-    <RovoIconCtx.Provider value={{ solidControls }}>
+    <RovoIconCtx.Provider value={contextValue}>
       <Comp_ai_generative_text_summary size={size} color={color} hovered={hovered} singleColor={singleColor} />
     </RovoIconCtx.Provider>
   );
@@ -1168,17 +1166,3 @@ function Comp_ai_search({ size, color = "currentColor", hovered, singleColor }: 
 export function AiSearch({ size = 20, color = "var(--ds-icon, #505258)", hovered, singleColor = true }: RovoIconProps) {
   return <Comp_ai_search size={size} color={color} hovered={hovered} singleColor={singleColor} />;
 }
-
-
-export const ANIMATED_ICONS = {
-  "ai-generative-text": AiGenerativeText,
-  "ai-generative-text-summary": AiGenerativeTextSummary,
-  "ai-search": AiSearch,
-  "angle-brackets": AngleBrackets,
-  "magic-wand": MagicWand,
-  "rovo-chat": RovoChat,
-} satisfies Record<string, FC<RovoIconProps>>;
-
-export type AnimatedIconName = keyof typeof ANIMATED_ICONS;
-
-export const animatedIconNames = Object.keys(ANIMATED_ICONS) as AnimatedIconName[];

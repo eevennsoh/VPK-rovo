@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { renderAgentTriggerProviderCompactTileIcon, renderAgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
+import { AgentTriggerProviderCompactTileIcon, AgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tile } from "@/components/ui/tile";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -57,12 +57,10 @@ export function AgentAutomationFlowCover({
 								key={trigger.id}
 								className="inline-flex size-4 shrink-0 items-center justify-center"
 							>
-								{renderAgentTriggerProviderCompactTileIcon(trigger) ?? (
-									<CompactFlowTile
-										icon={<AutomationIcon label="" size="small" />}
-										label="Trigger"
-									/>
-								)}
+								<AgentTriggerProviderCompactTileIcon
+									fallback={<CompactFlowTile icon={<AutomationIcon label="" size="small" />} label="Trigger" />}
+									trigger={trigger}
+								/>
 							</span>
 						))
 					) : (
@@ -99,7 +97,10 @@ export function AgentAutomationFlowCover({
 				{visibleTriggers.length > 0 ? (
 					visibleTriggers.map((trigger) => (
 						<span key={trigger.id} className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
-							{renderAgentTriggerProviderTileIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+							<AgentTriggerProviderTileIcon
+								fallback={<AutomationIcon label="" size="small" />}
+								trigger={trigger}
+							/>
 						</span>
 					))
 				) : (

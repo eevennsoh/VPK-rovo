@@ -15,10 +15,10 @@ test("compact chat scroll anchor uses the Rovo bottom/target follow lifecycle", 
 	assert.match(USE_SCROLL_ANCHOR_SOURCE, /enableTargetFollow = true,/);
 	assert.match(
 		USE_SCROLL_ANCHOR_SOURCE,
-		/useState<ConversationFollowMode>\("bottom"\)/,
+		/useReducer\(\s*reduceScrollAnchor,/,
 	);
-	assert.match(USE_SCROLL_ANCHOR_SOURCE, /setScrollFollowMode\("target"\)/);
-	assert.match(USE_SCROLL_ANCHOR_SOURCE, /setScrollFollowMode\("bottom"\)/);
+	assert.match(USE_SCROLL_ANCHOR_SOURCE, /dispatchScrollAnchor\(\{ type: "follow-target", messageId: latestUserMessageId \}\)/);
+	assert.match(USE_SCROLL_ANCHOR_SOURCE, /dispatchScrollAnchor\(\{ type: "follow-bottom" \}\)/);
 	assert.match(
 		USE_SCROLL_ANCHOR_SOURCE,
 		/scrollSpacerRef\.current\.style\.height = "0px"/,

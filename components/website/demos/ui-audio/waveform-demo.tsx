@@ -12,7 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { WAVEFORM_DATA } from "./demo-data";
+import { WAVEFORM_DATA } from "./demo-data-values";
 
 function WaveformCard({
 	title,

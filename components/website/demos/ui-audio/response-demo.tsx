@@ -1,7 +1,7 @@
 "use client";
 
 import { Response } from "@/components/ui-audio/response";
-import { RESPONSE_MARKDOWN } from "./demo-data";
+import { RESPONSE_MARKDOWN } from "./demo-data-values";
 
 function ResponsePreview({
 	content = RESPONSE_MARKDOWN,

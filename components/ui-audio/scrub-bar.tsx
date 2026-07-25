@@ -7,6 +7,7 @@ import {
   createContext,
   use,
   useCallback,
+  useMemo,
   useRef,
   type ComponentProps,
   type HTMLAttributes,
@@ -62,14 +63,14 @@ function ScrubBarContainer({
 }: ScrubBarContainerProps) {
   const progress = duration > 0 ? (value / duration) * 100 : 0
 
-  const contextValue: ScrubBarContextValue = {
+  const contextValue = useMemo<ScrubBarContextValue>(() => ({
     duration,
     value,
     progress,
     onScrub,
     onScrubStart,
     onScrubEnd,
-  }
+  }), [duration, onScrub, onScrubEnd, onScrubStart, progress, value])
 
   return (
     <ScrubBarContext value={contextValue}>

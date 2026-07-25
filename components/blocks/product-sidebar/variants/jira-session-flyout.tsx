@@ -30,7 +30,6 @@ import {
 	HoverCardContent,
 	HoverCardTrigger,
 	HoverCardViewport,
-	createHoverCardHandle,
 	type HoverCardHandle,
 	type HoverCardTriggerProps,
 } from "@/components/ui/hover-card";
@@ -43,6 +42,9 @@ import { getAgentProfileBannerSrc } from "@/lib/agent-avatars";
 import { MetadataPathLink, MetadataPathValue } from "@/components/ui/metadata-path-link";
 
 import type { JiraSidebarSessionItem, JiraSidebarSessionStatus } from "./jira";
+import { prStateLozenge } from "./jira-session-flyout-data";
+
+export { createJiraSessionFlyoutHandle, prStateLozenge } from "./jira-session-flyout-data";
 
 export type JiraSessionFlyoutHandle = HoverCardHandle<JiraSidebarSessionItem>;
 
@@ -60,11 +62,6 @@ export interface JiraSessionFlyoutSurfaceProps {
 
 interface FocusCaptureChildProps {
 	onFocusCapture?: FocusEventHandler<HTMLElement>;
-}
-
-/** Creates one flyout store for a related list of Jira session triggers. */
-export function createJiraSessionFlyoutHandle(): JiraSessionFlyoutHandle {
-	return createHoverCardHandle<JiraSidebarSessionItem>();
 }
 
 /** Connects a session row to the list's shared flyout and carries its payload. */
@@ -147,20 +144,13 @@ const STATUS_WORK_ITEM: Record<
 	stopped: { label: "Stopped", variant: "neutral" },
 };
 
-/** Pull-request state lozenge derived from the session lifecycle. */
-export function prStateLozenge(status: JiraSidebarSessionStatus): { label: string; variant: LozengeProps["variant"] } {
-	return status === "merged"
-		? { label: "Merged", variant: "discovery" }
-		: { label: "Open", variant: "success" };
-}
-
 /**
  * Pull-request row icon, contextual to the merge outcome:
  * - `merged` → merge success
  * - `stopped` → merge failure (the PR ended without landing)
  * - everything else (open PR, running, …) → the generic pull-request glyph
  */
-export function prStateIcon(status: JiraSidebarSessionStatus): ReactNode {
+function prStateIcon(status: JiraSidebarSessionStatus): ReactNode {
 	if (status === "merged") return <MergeSuccessIcon label="" size="small" />;
 	if (status === "stopped") return <MergeFailureIcon label="" size="small" />;
 	return <PullRequestIcon label="" size="small" />;
@@ -176,7 +166,7 @@ const WORK_ITEM_STATUS_OPTIONS: ReadonlyArray<{ label: string; variant: LozengeP
 
 /** Builds the SmartLink work-item link (issue key + summary + assignee, priority,
  * and an interactive status dropdown). */
-export function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
+function toWorkItem(session: JiraSidebarSessionItem): SmartLinkItem {
 	const workItemStatus = STATUS_WORK_ITEM[session.status];
 
 	return {

@@ -3,7 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const GUI_SOURCE = fs.readFileSync(path.join(__dirname, "gui.tsx"), "utf8");
+const GUI_SOURCE = fs.readFileSync(path.join(__dirname, "gui-components.tsx"), "utf8");
+const GUI_API_SOURCE = fs.readFileSync(path.join(__dirname, "gui.ts"), "utf8");
 
 test("GUI.Panel gives every open control panel a spaced inner scroll area", () => {
 	assert.match(GUI_SOURCE, /data-gui-panel-scroll="true"/);
@@ -44,7 +45,7 @@ test("GUI exports the full shared control surface", () => {
 		"TextInput",
 		"Toggle",
 	]) {
-		assert.match(GUI_SOURCE, new RegExp(`${componentName}: GUI`));
+		assert.match(GUI_API_SOURCE, new RegExp(`${componentName}: GUI`));
 	}
 
 	for (const typeName of [

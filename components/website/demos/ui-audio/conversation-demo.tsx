@@ -9,7 +9,7 @@ import {
 } from "@/components/ui-audio/conversation";
 import { Message, MessageContent } from "@/components/ui-audio/message";
 import { Orb } from "@/components/ui-audio/orb";
-import { CONVERSATION_DOWNLOAD_MESSAGES } from "./demo-data";
+import { CONVERSATION_DOWNLOAD_MESSAGES } from "./demo-data-values";
 
 function ConversationPreview({
 	empty = true,

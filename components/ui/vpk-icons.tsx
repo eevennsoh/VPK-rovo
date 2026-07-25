@@ -197,17 +197,15 @@ function resolveAtlaskitSize(
 	return "medium";
 }
 
-function createVpkIcon(
-	RenderIcon: AtlaskitRenderIcon,
-): VpkIconRenderer {
-	return function VpkIcon({
+function VpkIconFromGlyph({
+	renderIcon: RenderIcon,
 		className,
 		color,
 		label,
 		size,
 		...props
-	}: Readonly<VpkIconProps>) {
-		return (
+	}: Readonly<VpkIconProps & { renderIcon: AtlaskitRenderIcon }>) {
+	return (
 			<Icon
 				className={cn("shrink-0", className)}
 				label={label}
@@ -222,210 +220,207 @@ function createVpkIcon(
 				{...props}
 			/>
 		);
-	};
-}
+	}
 
-function createUnsafeVpkIcon(RenderIcon: unknown): VpkIconComponent {
-	return createVpkIcon(RenderIcon as AtlaskitRenderIcon);
+export function MessageCircleIcon(props: Readonly<VpkIconProps>) {
+	return <VpkIconFromGlyph renderIcon={CommentIconGlyph as AtlaskitRenderIcon} {...props} />;
 }
-
-export const MessageCircleIcon = createUnsafeVpkIcon(CommentIconGlyph);
-export const CheckIcon = createUnsafeVpkIcon(CheckMarkIconGlyph);
-export const CopyIcon = createUnsafeVpkIcon(CopyIconGlyph);
-export const EyeIcon = createUnsafeVpkIcon(EyeOpenIconGlyph);
-export const EyeOffIcon = createUnsafeVpkIcon(EyeOpenStrikethroughIconGlyph);
-export const ChevronLeftIcon = createUnsafeVpkIcon(ChevronLeftIconGlyph);
-export const ChevronRightIcon = createUnsafeVpkIcon(ChevronRightIconGlyph);
-export const ChevronDownIcon = createUnsafeVpkIcon(ChevronDownIconGlyph);
-export const ChevronUpIcon = createUnsafeVpkIcon(ChevronUpIconGlyph);
-export const ChevronsLeftIcon = createUnsafeVpkIcon(ChevronDoubleLeftIconGlyph);
-export const ChevronsRightIcon = createUnsafeVpkIcon(ChevronDoubleRightIconGlyph);
-export const DownloadIcon = createUnsafeVpkIcon(DownloadIconGlyph);
-export const ExternalLinkIcon = createUnsafeVpkIcon(LinkExternalIconGlyph);
-export const ArchiveIcon = createUnsafeVpkIcon(ArchiveBoxIconGlyph);
-export const ArrowDownIcon = createUnsafeVpkIcon(ArrowDownIconGlyph);
-export const ArrowLeftIcon = createUnsafeVpkIcon(ArrowLeftIconGlyph);
-export const ArrowRightIcon = createUnsafeVpkIcon(ArrowRightIconGlyph);
-export const ArrowUpIcon = createUnsafeVpkIcon(ArrowUpIconGlyph);
-export const ArrowLeft = ArrowLeftIcon;
-export const ArrowRight = ArrowRightIcon;
-export const ArrowDown = ArrowDownIcon;
-export const ArrowUp = ArrowUpIcon;
-export const ArrowUpRightIcon = createUnsafeVpkIcon(ArrowUpRightIconGlyph);
-export const ArrowUpRight = ArrowUpRightIcon;
-export const ArrowLeftCircleIcon = ArrowLeftIcon;
-export const PaperclipIcon = createUnsafeVpkIcon(AttachmentIconGlyph);
-export const SearchIcon = createUnsafeVpkIcon(SearchIconGlyph);
-export const BookmarkIcon = createUnsafeVpkIcon(BookWithBookmarkIconGlyph);
-export const BookIcon = createUnsafeVpkIcon(BookWithBookmarkIconGlyph);
-export const TextNormalIcon = createUnsafeVpkIcon(TextNormalIconGlyph);
-export const BoldIcon = createUnsafeVpkIcon(TextBoldIconGlyph);
-export const ItalicIcon = createUnsafeVpkIcon(TextItalicIconGlyph);
-export const UnderlineIcon = createUnsafeVpkIcon(TextUnderlineIconGlyph);
-export const PackageIcon = createUnsafeVpkIcon(DiagramSymbolPackageIconGlyph);
-export const TerminalIcon = createUnsafeVpkIcon(TerminalIconGlyph);
-export const CircleAlertIcon = createUnsafeVpkIcon(InformationCircleIconGlyph);
-export const TriangleAlertIcon = createUnsafeVpkIcon(WarningIconGlyph);
-export const SparklesIcon = createUnsafeVpkIcon(AiSparkleIconGlyph);
-export const MicIcon = createUnsafeVpkIcon(MicrophoneIconGlyph);
-export const MicOffIcon = createUnsafeVpkIcon(MicrophoneStrikethroughIconGlyph);
-export const PauseIcon = createUnsafeVpkIcon(VideoPauseIconGlyph);
-export const PlayIcon = createUnsafeVpkIcon(VideoPlayIconGlyph);
-export const SettingsIcon = createUnsafeVpkIcon(SettingsIconGlyph);
-export const SquareIcon = createUnsafeVpkIcon(VideoStopIconGlyph);
-export const XIcon = createUnsafeVpkIcon(CrossIconGlyph);
-export const MinusIcon = createUnsafeVpkIcon(MinusIconGlyph);
-export const PlusIcon = createUnsafeVpkIcon(AddIconGlyph);
-export const Plus = PlusIcon;
-export const PinIcon = createUnsafeVpkIcon(PinIconGlyph);
-export const Pin = PinIcon;
-export const PinFilledIcon = createUnsafeVpkIcon(PinFilledIconGlyph);
-export const PinFilled = PinFilledIcon;
-export const Trash2Icon = createUnsafeVpkIcon(DeleteIconGlyph);
-export const TrashIcon = Trash2Icon;
-export const DeleteIcon = Trash2Icon;
-export const Trash = TrashIcon;
-export const MessageSquarePlusIcon = createUnsafeVpkIcon(CommentAddIconGlyph);
-export const PencilLineIcon = createUnsafeVpkIcon(EditIconGlyph);
-export const PencilIcon = PencilLineIcon;
-export const SaveIcon = createUnsafeVpkIcon(SaveIconGlyph);
-export const LoaderCircleIcon = createUnsafeVpkIcon(RefreshIconGlyph);
-export const LoaderIcon = LoaderCircleIcon;
-export const RefreshCwIcon = LoaderCircleIcon;
-export const Loader2Icon = LoaderCircleIcon;
-export const CornerDownLeftIcon = createUnsafeVpkIcon(ArrowCurvedDownLeftIconGlyph);
-export const AlertTriangleIcon = createUnsafeVpkIcon(WarningIconGlyph);
-export const AudioWaveformIcon = createUnsafeVpkIcon(AudioWaveformIconGlyph);
-export const AudioLinesIcon = AudioWaveformIcon;
-export const BarChart3Icon = createUnsafeVpkIcon(ChartBarIconGlyph);
-export const BarChartIcon = BarChart3Icon;
-export const CalendarIcon = createUnsafeVpkIcon(CalendarIconGlyph);
-export const BellIcon = createUnsafeVpkIcon(NotificationIconGlyph);
-export const BluetoothIcon = createUnsafeVpkIcon(BluetoothIconGlyph);
-export const CreditCardIcon = createUnsafeVpkIcon(CreditCardIconGlyph);
-export const CameraIcon = createUnsafeVpkIcon(CameraIconGlyph);
-export const DatabaseIcon = createUnsafeVpkIcon(DatabaseIconGlyph);
-export const DollarSignIcon = CreditCardIcon;
-export const EmailIcon = createUnsafeVpkIcon(EmailIconGlyph);
-export const MailIcon = EmailIcon;
-export const InboxIcon = createUnsafeVpkIcon(InboxIconGlyph);
-export const FileIcon = createUnsafeVpkIcon(FileIconGlyph);
-export const FileTextIcon = FileIcon;
-export const FileChartColumnIcon = BarChart3Icon;
-export const FileCodeIcon = createUnsafeVpkIcon(AngleBracketsIconGlyph);
-export const FileJsonIcon = FileIcon;
-export const FolderIcon = createUnsafeVpkIcon(FolderClosedIconGlyph);
-export const FolderOpenIcon = createUnsafeVpkIcon(FolderOpenIconGlyph);
-export const FolderPlusIcon = FolderOpenIcon;
-export const GripVerticalIcon = createUnsafeVpkIcon(DragHandleVerticalIconGlyph);
-export const GitCommitIcon = createUnsafeVpkIcon(CommitIconGlyph);
-export const GitCommitVertical = GitCommitIcon;
-export const GlobeIcon = createUnsafeVpkIcon(GlobeIconGlyph);
-export const HomeIcon = createUnsafeVpkIcon(HomeIconGlyph);
-export const LayoutDashboardIcon = createUnsafeVpkIcon(DashboardIconGlyph);
-export const ArrowUpCircleIcon = ArrowUpIcon;
-export const ImageIcon = createUnsafeVpkIcon(ImageIconGlyph);
-export const MonitorIcon = createUnsafeVpkIcon(ScreenIconGlyph);
-export const AppWindowIcon = MonitorIcon;
-export const KeyboardIcon = createUnsafeVpkIcon(ProjectionScreenIconGlyph);
-export const Music2Icon = createUnsafeVpkIcon(AudioIconGlyph);
-export const AudioWaveform = AudioWaveformIcon;
-export const BotIcon = createUnsafeVpkIcon(AiBotIconGlyph);
-export const CodeIcon = createUnsafeVpkIcon(AngleBracketsIconGlyph);
-export const Columns3Icon = createUnsafeVpkIcon(LayoutThreeColumnsIconGlyph);
-export const ClockIcon = createUnsafeVpkIcon(ClockIconGlyph);
-export const Clock2Icon = ClockIcon;
-export const PersonIcon = createUnsafeVpkIcon(PersonIconGlyph);
-export const CircleUserRoundIcon = PersonIcon;
-export const PhoneIcon = createUnsafeVpkIcon(PhoneIconGlyph);
-export const VideoIcon = createUnsafeVpkIcon(VideoIconGlyph);
-export const Video = VideoIcon;
-export const CaptionsIcon = createUnsafeVpkIcon(VideoClosedCaptionsFilledIconGlyph);
-export const TrendingDownIcon = createUnsafeVpkIcon(ChartTrendDownIconGlyph);
-export const TrendingUpIcon = createUnsafeVpkIcon(ChartTrendUpIconGlyph);
-export const ChartBarIcon = BarChart3Icon;
-export const ChartLineIcon = TrendingUpIcon;
-export const ChartPieIcon = createUnsafeVpkIcon(ChartPieIconGlyph);
-export const ThumbsDownIcon = createUnsafeVpkIcon(ThumbsDownIconGlyph);
-export const ThumbsUpIcon = createUnsafeVpkIcon(ThumbsUpIconGlyph);
-export const TargetIcon = createUnsafeVpkIcon(TargetIconGlyph);
-export const CheckCircle2Icon = createUnsafeVpkIcon(CheckCircleIconGlyph);
-export const CheckCircleIcon = CheckCircle2Icon;
-export const CircleCheckIcon = CheckCircle2Icon;
-export const CircleDotIcon = createUnsafeVpkIcon(RadioCheckedIconGlyph);
-export const CircleIcon = createUnsafeVpkIcon(RadioUncheckedIconGlyph);
-export const CircleDashedIcon = CircleIcon;
-export const UserCircleIcon = PersonIcon;
-export const CirclePlusIcon = createUnsafeVpkIcon(PlusCircleIconGlyph);
-export const XCircleIcon = createUnsafeVpkIcon(CrossCircleIconGlyph);
-export const MessageSquareIcon = MessageCircleIcon;
-export const MessageSquareDiffIcon = createUnsafeVpkIcon(CommentAddIconGlyph);
-export const ListTodoIcon = createUnsafeVpkIcon(TaskToDoIconGlyph);
-export const ListIcon = createUnsafeVpkIcon(ListBulletedIconGlyph);
-export const ClipboardListIcon = createUnsafeVpkIcon(ClipboardIconGlyph);
-export const UsersIcon = createUnsafeVpkIcon(PeopleGroupIconGlyph);
-export const FootprintsIcon = ListTodoIcon;
-export const WavesIcon = AudioWaveformIcon;
-export const MenuIcon = createUnsafeVpkIcon(MenuIconGlyph);
-export const LinkIcon = createUnsafeVpkIcon(LinkIconGlyph);
-export const LightbulbIcon = createUnsafeVpkIcon(LightbulbIconGlyph);
-export const LockIcon = createUnsafeVpkIcon(LockLockedIconGlyph);
-export const PaintbrushIcon = createUnsafeVpkIcon(PaintBrushIconGlyph);
-export const PlusCircleIcon = createUnsafeVpkIcon(PlusCircleIconGlyph);
-export const GalleryVerticalEndIcon = createUnsafeVpkIcon(ViewTypeCardHomeIconGlyph);
-export const ShareIcon = createUnsafeVpkIcon(ShareIconGlyph);
-export const Share = ShareIcon;
-export const SendIcon = createUnsafeVpkIcon(SendIconGlyph);
-export const SidebarIcon = createUnsafeVpkIcon(PanelLeftIconGlyph);
-export const BookOpenIcon = BookIcon;
-export const EllipsisVerticalIcon = createUnsafeVpkIcon(ShowMoreHorizontalIconGlyph);
-export const MoreHorizontalIcon = EllipsisVerticalIcon;
-export const MoreVerticalIcon = createUnsafeVpkIcon(ShowMoreVerticalIconGlyph);
-export const CommandIcon = TerminalIcon;
-export const Command = TerminalIcon;
-export const MousePointerIcon = createUnsafeVpkIcon(QrCodeIconGlyph);
-export const MousePointerClickIcon = MousePointerIcon;
-export const PenToolIcon = PaintbrushIcon;
-export const ShoppingBagIcon = CreditCardIcon;
-export const WandIcon = createUnsafeVpkIcon(ArrowStartIconGlyph);
-export const HelpCircleIcon = createUnsafeVpkIcon(InformationCircleIconGlyph);
-export const CircleHelpIcon = HelpCircleIcon;
-export const InfoIcon = createUnsafeVpkIcon(InformationCircleIconGlyph);
-export const RadioIcon = CircleDotIcon;
-export const RotateCwIcon = LoaderCircleIcon;
-export const Disc3 = AudioWaveformIcon;
-export const FlipHorizontalIcon = ArrowRightIcon;
-export const FlipVerticalIcon = ArrowDownIcon;
-export const ReturnIcon = createUnsafeVpkIcon(ReturnIconGlyph);
-export const CalculatorIcon = CreditCardIcon;
-export const ClipboardPasteIcon = createUnsafeVpkIcon(ClipboardIconGlyph);
-export const LayoutGridIcon = Columns3Icon;
-export const ScissorsIcon = DeleteIcon;
-export const CornerUpLeft = CornerDownLeftIcon;
-export const CornerUpRight = ArrowRightIcon;
-export const AlignCenterIcon = createUnsafeVpkIcon(AlignTextCenterIconGlyph);
-export const AlignLeftIcon = createUnsafeVpkIcon(AlignTextLeftIconGlyph);
-export const AlignRightIcon = createUnsafeVpkIcon(AlignTextRightIconGlyph);
-export const LogOutIcon = createUnsafeVpkIcon(LogOutIconGlyph);
-export const HeartIcon = createUnsafeVpkIcon(HeartIconGlyph);
-export const StarIcon = createUnsafeVpkIcon(StarStarredIconGlyph);
-export const Star = StarIcon;
-export const StarOff = StarIcon;
-export const TableIcon = createUnsafeVpkIcon(TableIconGlyph);
-export const UserIcon = PersonIcon;
-export const UserRoundXIcon = createUnsafeVpkIcon(PersonRemoveIconGlyph);
-export const VolumeXIcon = createUnsafeVpkIcon(VolumeMutedIconGlyph);
-export const ZoomInIcon = createUnsafeVpkIcon(ZoomInIconGlyph);
-export const ZoomOutIcon = createUnsafeVpkIcon(ZoomOutIconGlyph);
-export const MaximizeIcon = createUnsafeVpkIcon(MaximizeIconGlyph);
-export const MinimizeIcon = createUnsafeVpkIcon(MinimizeIconGlyph);
-export const HistoryIcon = createUnsafeVpkIcon(HistoryIconGlyph);
-export const FlagIcon = createUnsafeVpkIcon(FlagIconGlyph);
-export const SheetIcon = FileIcon;
-export const ShieldAlertIcon = createUnsafeVpkIcon(WarningIconGlyph);
-export const SmileIcon = PersonIcon;
-export const Settings2Icon = SettingsIcon;
-export const TreePineIcon = createUnsafeVpkIcon(TreeIconGlyph);
+export function CheckIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CheckMarkIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CopyIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CopyIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function EyeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={EyeOpenIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function EyeOffIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={EyeOpenStrikethroughIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronDownIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronDownIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronUpIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronUpIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronsLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronDoubleLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChevronsRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChevronDoubleRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function DownloadIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DownloadIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ExternalLinkIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LinkExternalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArchiveIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArchiveBoxIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowDownIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowDownIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowUpIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowUpIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowLeft(props: Readonly<VpkIconProps>) { return <ArrowLeftIcon {...props} />; }
+export function ArrowRight(props: Readonly<VpkIconProps>) { return <ArrowRightIcon {...props} />; }
+export function ArrowDown(props: Readonly<VpkIconProps>) { return <ArrowDownIcon {...props} />; }
+export function ArrowUp(props: Readonly<VpkIconProps>) { return <ArrowUpIcon {...props} />; }
+export function ArrowUpRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowUpRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowUpRight(props: Readonly<VpkIconProps>) { return <ArrowUpRightIcon {...props} />; }
+export function ArrowLeftCircleIcon(props: Readonly<VpkIconProps>) { return <ArrowLeftIcon {...props} />; }
+export function PaperclipIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AttachmentIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SearchIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={SearchIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BookmarkIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={BookWithBookmarkIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BookIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={BookWithBookmarkIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TextNormalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextNormalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BoldIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextBoldIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ItalicIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextItalicIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function UnderlineIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TextUnderlineIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PackageIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DiagramSymbolPackageIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TerminalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TerminalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleAlertIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InformationCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TriangleAlertIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={WarningIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SparklesIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AiSparkleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MicIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MicrophoneIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MicOffIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MicrophoneStrikethroughIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PauseIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VideoPauseIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PlayIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VideoPlayIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SettingsIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={SettingsIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SquareIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VideoStopIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function XIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CrossIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MinusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MinusIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PlusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AddIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Plus(props: Readonly<VpkIconProps>) { return <PlusIcon {...props} />; }
+export function PinIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PinIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Pin(props: Readonly<VpkIconProps>) { return <PinIcon {...props} />; }
+export function PinFilledIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PinFilledIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PinFilled(props: Readonly<VpkIconProps>) { return <PinFilledIcon {...props} />; }
+export function Trash2Icon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DeleteIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TrashIcon(props: Readonly<VpkIconProps>) { return <Trash2Icon {...props} />; }
+export function DeleteIcon(props: Readonly<VpkIconProps>) { return <Trash2Icon {...props} />; }
+export function Trash(props: Readonly<VpkIconProps>) { return <TrashIcon {...props} />; }
+export function MessageSquarePlusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CommentAddIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PencilLineIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={EditIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PencilIcon(props: Readonly<VpkIconProps>) { return <PencilLineIcon {...props} />; }
+export function SaveIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={SaveIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LoaderCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={RefreshIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LoaderIcon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
+export function RefreshCwIcon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
+export function Loader2Icon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
+export function CornerDownLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowCurvedDownLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AlertTriangleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={WarningIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AudioWaveformIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AudioWaveformIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AudioLinesIcon(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }
+export function BarChart3Icon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChartBarIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BarChartIcon(props: Readonly<VpkIconProps>) { return <BarChart3Icon {...props} />; }
+export function CalendarIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CalendarIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BellIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={NotificationIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BluetoothIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={BluetoothIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CreditCardIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CreditCardIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CameraIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CameraIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function DatabaseIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DatabaseIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function DollarSignIcon(props: Readonly<VpkIconProps>) { return <CreditCardIcon {...props} />; }
+export function EmailIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={EmailIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MailIcon(props: Readonly<VpkIconProps>) { return <EmailIcon {...props} />; }
+export function InboxIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InboxIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FileIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FileIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FileTextIcon(props: Readonly<VpkIconProps>) { return <FileIcon {...props} />; }
+export function FileChartColumnIcon(props: Readonly<VpkIconProps>) { return <BarChart3Icon {...props} />; }
+export function FileCodeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AngleBracketsIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FileJsonIcon(props: Readonly<VpkIconProps>) { return <FileIcon {...props} />; }
+export function FolderIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FolderClosedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FolderOpenIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FolderOpenIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FolderPlusIcon(props: Readonly<VpkIconProps>) { return <FolderOpenIcon {...props} />; }
+export function GripVerticalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DragHandleVerticalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function GitCommitIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CommitIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function GitCommitVertical(props: Readonly<VpkIconProps>) { return <GitCommitIcon {...props} />; }
+export function GlobeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={GlobeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function HomeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={HomeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LayoutDashboardIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={DashboardIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ArrowUpCircleIcon(props: Readonly<VpkIconProps>) { return <ArrowUpIcon {...props} />; }
+export function ImageIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ImageIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MonitorIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ScreenIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AppWindowIcon(props: Readonly<VpkIconProps>) { return <MonitorIcon {...props} />; }
+export function KeyboardIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ProjectionScreenIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Music2Icon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AudioIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AudioWaveform(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }
+export function BotIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AiBotIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CodeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AngleBracketsIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Columns3Icon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LayoutThreeColumnsIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ClockIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ClockIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Clock2Icon(props: Readonly<VpkIconProps>) { return <ClockIcon {...props} />; }
+export function PersonIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PersonIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleUserRoundIcon(props: Readonly<VpkIconProps>) { return <PersonIcon {...props} />; }
+export function PhoneIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PhoneIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function VideoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VideoIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Video(props: Readonly<VpkIconProps>) { return <VideoIcon {...props} />; }
+export function CaptionsIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VideoClosedCaptionsFilledIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TrendingDownIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChartTrendDownIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TrendingUpIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChartTrendUpIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ChartBarIcon(props: Readonly<VpkIconProps>) { return <BarChart3Icon {...props} />; }
+export function ChartLineIcon(props: Readonly<VpkIconProps>) { return <TrendingUpIcon {...props} />; }
+export function ChartPieIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ChartPieIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ThumbsDownIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ThumbsDownIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ThumbsUpIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ThumbsUpIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function TargetIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TargetIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CheckCircle2Icon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CheckCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CheckCircleIcon(props: Readonly<VpkIconProps>) { return <CheckCircle2Icon {...props} />; }
+export function CircleCheckIcon(props: Readonly<VpkIconProps>) { return <CheckCircle2Icon {...props} />; }
+export function CircleDotIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={RadioCheckedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={RadioUncheckedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleDashedIcon(props: Readonly<VpkIconProps>) { return <CircleIcon {...props} />; }
+export function UserCircleIcon(props: Readonly<VpkIconProps>) { return <PersonIcon {...props} />; }
+export function CirclePlusIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PlusCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function XCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CrossCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MessageSquareIcon(props: Readonly<VpkIconProps>) { return <MessageCircleIcon {...props} />; }
+export function MessageSquareDiffIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={CommentAddIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ListTodoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TaskToDoIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ListBulletedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ClipboardListIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ClipboardIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function UsersIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PeopleGroupIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FootprintsIcon(props: Readonly<VpkIconProps>) { return <ListTodoIcon {...props} />; }
+export function WavesIcon(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }
+export function MenuIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MenuIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LinkIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LinkIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LightbulbIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LightbulbIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LockIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LockLockedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PaintbrushIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PaintBrushIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function PlusCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PlusCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function GalleryVerticalEndIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ViewTypeCardHomeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ShareIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ShareIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Share(props: Readonly<VpkIconProps>) { return <ShareIcon {...props} />; }
+export function SendIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={SendIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SidebarIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PanelLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function BookOpenIcon(props: Readonly<VpkIconProps>) { return <BookIcon {...props} />; }
+export function EllipsisVerticalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ShowMoreHorizontalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MoreHorizontalIcon(props: Readonly<VpkIconProps>) { return <EllipsisVerticalIcon {...props} />; }
+export function MoreVerticalIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ShowMoreVerticalIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CommandIcon(props: Readonly<VpkIconProps>) { return <TerminalIcon {...props} />; }
+export function Command(props: Readonly<VpkIconProps>) { return <TerminalIcon {...props} />; }
+export function MousePointerIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={QrCodeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MousePointerClickIcon(props: Readonly<VpkIconProps>) { return <MousePointerIcon {...props} />; }
+export function PenToolIcon(props: Readonly<VpkIconProps>) { return <PaintbrushIcon {...props} />; }
+export function ShoppingBagIcon(props: Readonly<VpkIconProps>) { return <CreditCardIcon {...props} />; }
+export function WandIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ArrowStartIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function HelpCircleIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InformationCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CircleHelpIcon(props: Readonly<VpkIconProps>) { return <HelpCircleIcon {...props} />; }
+export function InfoIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={InformationCircleIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function RadioIcon(props: Readonly<VpkIconProps>) { return <CircleDotIcon {...props} />; }
+export function RotateCwIcon(props: Readonly<VpkIconProps>) { return <LoaderCircleIcon {...props} />; }
+export function Disc3(props: Readonly<VpkIconProps>) { return <AudioWaveformIcon {...props} />; }
+export function FlipHorizontalIcon(props: Readonly<VpkIconProps>) { return <ArrowRightIcon {...props} />; }
+export function FlipVerticalIcon(props: Readonly<VpkIconProps>) { return <ArrowDownIcon {...props} />; }
+export function ReturnIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ReturnIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function CalculatorIcon(props: Readonly<VpkIconProps>) { return <CreditCardIcon {...props} />; }
+export function ClipboardPasteIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ClipboardIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LayoutGridIcon(props: Readonly<VpkIconProps>) { return <Columns3Icon {...props} />; }
+export function ScissorsIcon(props: Readonly<VpkIconProps>) { return <DeleteIcon {...props} />; }
+export function CornerUpLeft(props: Readonly<VpkIconProps>) { return <CornerDownLeftIcon {...props} />; }
+export function CornerUpRight(props: Readonly<VpkIconProps>) { return <ArrowRightIcon {...props} />; }
+export function AlignCenterIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AlignTextCenterIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AlignLeftIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AlignTextLeftIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function AlignRightIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={AlignTextRightIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function LogOutIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={LogOutIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function HeartIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={HeartIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function StarIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={StarStarredIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function Star(props: Readonly<VpkIconProps>) { return <StarIcon {...props} />; }
+export function StarOff(props: Readonly<VpkIconProps>) { return <StarIcon {...props} />; }
+export function TableIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TableIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function UserIcon(props: Readonly<VpkIconProps>) { return <PersonIcon {...props} />; }
+export function UserRoundXIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={PersonRemoveIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function VolumeXIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={VolumeMutedIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ZoomInIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ZoomInIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function ZoomOutIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={ZoomOutIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MaximizeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MaximizeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function MinimizeIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={MinimizeIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function HistoryIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={HistoryIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function FlagIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={FlagIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SheetIcon(props: Readonly<VpkIconProps>) { return <FileIcon {...props} />; }
+export function ShieldAlertIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={WarningIconGlyph as AtlaskitRenderIcon} {...props} />; }
+export function SmileIcon(props: Readonly<VpkIconProps>) { return <PersonIcon {...props} />; }
+export function Settings2Icon(props: Readonly<VpkIconProps>) { return <SettingsIcon {...props} />; }
+export function TreePineIcon(props: Readonly<VpkIconProps>) { return <VpkIconFromGlyph renderIcon={TreeIconGlyph as AtlaskitRenderIcon} {...props} />; }
 
 export const ChevronsUpDownIcon: VpkIconRenderer = ({
 	className,
@@ -459,4 +454,4 @@ export const ChevronsUpDownIcon: VpkIconRenderer = ({
 	);
 };
 
-export const ChevronsUpDown = ChevronsUpDownIcon;
+export function ChevronsUpDown(props: Readonly<VpkIconProps>) { return <ChevronsUpDownIcon {...props} />; }

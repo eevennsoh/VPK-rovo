@@ -270,8 +270,7 @@ export function useRovoAppCore({
 	const [draftThreadId, setDraftThreadId] = useState(() => initialThreadId ?? createRovoAppId());
 	const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreadId);
 	const [threads, setThreads] = useState<RovoAppThread[]>([]);
-	const threadsRef = useRef(threads);
-	threadsRef.current = threads;
+	const threadsRef = useLatestRef(threads);
 	const [threadsLoaded, setThreadsLoaded] = useState(false);
 	const [documents, setDocuments] = useState<RovoAppDocument[]>([]);
 	const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);

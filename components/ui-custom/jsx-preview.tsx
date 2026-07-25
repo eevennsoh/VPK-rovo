@@ -15,7 +15,6 @@ import {
 	useCallback,
 	use,
 	useEffect,
-	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -228,13 +227,11 @@ export const JSXPreviewContent = memo(function JSXPreviewContent({
 	} = useJSXPreview();
 	const errorReportedRef = useRef<string | null>(null);
 	const pendingErrorRef = useRef<JSXPreviewQueuedError | null>(null);
-	const [displayJsx, setDisplayJsx] = useState(processedJsx);
-	const [lastGoodJsx, setLastGoodJsx] = useState("");
-
-	useLayoutEffect(() => {
-		errorReportedRef.current = null;
-		setDisplayJsx(processedJsx);
-	}, [processedJsx]);
+	const lastGoodJsxRef = useRef("");
+	const [rejectedStreamingJsx, setRejectedStreamingJsx] = useState<string | null>(null);
+	const displayJsx = rejectedStreamingJsx === processedJsx
+		? lastGoodJsxRef.current
+		: processedJsx;
 
 	// JsxParser calls onError while it renders, so queue follow-up work here
 	// and commit it after render to avoid cross-component render updates.
@@ -248,7 +245,7 @@ export const JSXPreviewContent = memo(function JSXPreviewContent({
 		pendingErrorRef.current = null;
 
 		if (pendingError.isStreaming) {
-			setDisplayJsx(lastGoodJsx);
+			setRejectedStreamingJsx(pendingError.jsx);
 			return;
 		}
 
@@ -282,11 +279,7 @@ export const JSXPreviewContent = memo(function JSXPreviewContent({
 			return;
 		}
 
-		setLastGoodJsx((currentLastGoodJsx) =>
-			currentLastGoodJsx === processedJsx
-				? currentLastGoodJsx
-				: processedJsx,
-		);
+		lastGoodJsxRef.current = processedJsx;
 	}, [displayJsx, processedJsx]);
 
 	return (

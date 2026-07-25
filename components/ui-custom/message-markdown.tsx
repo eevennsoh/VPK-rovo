@@ -350,10 +350,17 @@ function MarkdownAnchor({
 		}
 
 		event.preventDefault();
+		let documentId: string;
+		try {
+			documentId = decodeURIComponent(href.slice(prefix.length));
+		} catch {
+			documentId = href.slice(prefix.length);
+		}
+
 		window.dispatchEvent(new CustomEvent("rovo:open-canvas-artifact", {
 			cancelable: true,
 			detail: {
-				documentId: decodeURIComponent(href.slice(prefix.length)),
+				documentId,
 			},
 		}));
 	};

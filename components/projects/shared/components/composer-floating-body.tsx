@@ -185,9 +185,8 @@ export function ComposerFloatingBody({
 				/>
 			</FloatingComposer>
 
-			{onStartFromScratch ? (
-				<AnimatePresence>
-					{isRevealVisible ? (
+			<AnimatePresence>
+				{onStartFromScratch && isRevealVisible ? (
 						<motion.div
 							key="start-from-scratch"
 							initial={{ opacity: 0, y: -4 }}
@@ -262,9 +261,8 @@ export function ComposerFloatingBody({
 								</button>
 							</span>
 						</motion.div>
-					) : null}
-				</AnimatePresence>
-			) : null}
+				) : null}
+			</AnimatePresence>
 		</div>
 	);
 }

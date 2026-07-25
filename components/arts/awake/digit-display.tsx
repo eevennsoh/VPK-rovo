@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,9 @@ interface DigitDisplayProps {
 }
 
 function FlipChar({ char }: { char: string }) {
-	const idRef = useRef(0);
-	const prevRef = useRef(char);
-
-	if (prevRef.current !== char) {
-		idRef.current += 1;
-		prevRef.current = char;
+	const [renderState, setRenderState] = useState({ char, id: 0 });
+	if (renderState.char !== char) {
+		setRenderState({ char, id: renderState.id + 1 });
 	}
 
 	return (
@@ -27,7 +24,7 @@ function FlipChar({ char }: { char: string }) {
 			<span className="invisible" aria-hidden="true">{char}</span>
 			<AnimatePresence initial={false}>
 				<motion.span
-					key={idRef.current}
+					key={renderState.id}
 					className="absolute left-0 top-0"
 					initial={{ y: "100%", filter: "blur(4px)", opacity: 0 }}
 					animate={{ y: 0, filter: "blur(0px)", opacity: 1 }}

@@ -262,11 +262,11 @@ export function QueueConversationWorkspace({
 					onDetailPanelToggle={() => onDetailPanelOpenChange(!isDetailPanelOpen)}
 				/>
 				<motion.div
-					animate={{ paddingRight: isDetailPanelOpen ? detailPanelResize.sidebarWidth : 0 }}
 					className="flex min-h-0 w-full flex-1 flex-col"
 					data-testid="asx-queue-chat-body"
 					initial={false}
-					style={shouldReduceMotion ? undefined : { willChange: "padding-right" }}
+					layout
+					style={{ paddingRight: isDetailPanelOpen ? detailPanelResize.sidebarWidth : 0, willChange: shouldReduceMotion ? undefined : "transform" }}
 					transition={chatBodyTransition}
 				>
 					<ChatMessages

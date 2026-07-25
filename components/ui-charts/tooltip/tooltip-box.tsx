@@ -95,12 +95,14 @@ function TooltipBoxInner({
   const animatedLeft = useSpring(targetX, effectiveSpring);
   const animatedTop = useSpring(targetY, effectiveSpring);
 
-  if (leftOverride === undefined) {
-    animatedLeft.set(targetX);
-  }
-  if (topOverride === undefined) {
-    animatedTop.set(targetY);
-  }
+	useEffect(() => {
+		if (leftOverride === undefined) {
+			animatedLeft.set(targetX);
+		}
+		if (topOverride === undefined) {
+			animatedTop.set(targetY);
+		}
+	}, [animatedLeft, animatedTop, leftOverride, targetX, targetY, topOverride]);
 
   useLayoutEffect(() => {
     if (!tooltipRef.current) {

@@ -29,7 +29,7 @@ function createQueue() {
 }
 
 function cloneJson(value) {
-	return JSON.parse(JSON.stringify(value));
+	return structuredClone(value);
 }
 
 function normalizeJobStatus(value) {

@@ -94,6 +94,69 @@ function resolveRfpReportCanvasStatus(status: RfpHtmlReportStatus): RovoCanvasSt
 	return "ready";
 }
 
+async function fetchRfpHtmlReportPreview({
+	contextDescription,
+	signal,
+	variant,
+}: Readonly<{
+	contextDescription: string;
+	signal: AbortSignal;
+	variant: RfpReportVariant;
+}>): Promise<string> {
+	const response = await fetch(RFP_REPORT_PREVIEW_ENDPOINT, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			contextDescription,
+			variant,
+		}),
+		signal,
+	});
+	if (!response.ok) {
+		const payload = await response.json().catch(() => null) as unknown;
+		const message = payload &&
+			typeof payload === "object" &&
+			"error" in payload &&
+			typeof payload.error === "string"
+			? payload.error
+				: "The report preview route returned an error.";
+		throw new Error(message);
+	}
+	const payload = await response.json().catch(() => null) as unknown;
+	if (!isRfpHtmlReportPreviewResponse(payload)) {
+		throw new Error("The report preview route did not return a report document.");
+	}
+	return payload.html;
+}
+
+async function loadRfpHtmlReportPreview({
+	contextDescription,
+	onResult,
+	signal,
+	variant,
+}: Readonly<{
+	contextDescription: string;
+	onResult: (result: { error: string | null; html: string | null }) => void;
+	signal: AbortSignal;
+	variant: RfpReportVariant;
+}>): Promise<void> {
+	try {
+		const html = await fetchRfpHtmlReportPreview({ contextDescription, signal, variant });
+		if (!signal.aborted) {
+			onResult({ error: null, html });
+		}
+	} catch (error: unknown) {
+		if (!signal.aborted) {
+			onResult({
+				error: error instanceof Error ? error.message : String(error),
+				html: null,
+			});
+		}
+	}
+}
+
 function useRfpHtmlReportPreview(state: AgentsRfpDemoState): RfpHtmlReportPreviewState {
 	const [reloadKey, setReloadKey] = useState(0);
 	const [previewState, setPreviewState] = useState<Omit<RfpHtmlReportPreviewState, "reload">>({
@@ -111,57 +174,33 @@ function useRfpHtmlReportPreview(state: AgentsRfpDemoState): RfpHtmlReportPrevie
 		}
 
 		const abortController = new AbortController();
+		let cancelled = false;
 		setPreviewState((currentState) => ({
 			error: null,
 			html: currentState.html,
 			status: currentState.html ? "ready" : "loading",
 		}));
 
-		void fetch(RFP_REPORT_PREVIEW_ENDPOINT, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				contextDescription,
-				variant,
-			}),
-			signal: abortController.signal,
-		})
-			.then(async (response) => {
-				const payload = await response.json().catch(() => null) as unknown;
-				if (!response.ok) {
-					const message = payload &&
-						typeof payload === "object" &&
-						"error" in payload &&
-						typeof payload.error === "string"
-						? payload.error
-							: "The report preview route returned an error.";
-					throw new Error(message);
-				}
-				if (!isRfpHtmlReportPreviewResponse(payload)) {
-					throw new Error("The report preview route did not return a report document.");
-				}
-
-				setPreviewState({
-					error: null,
-					html: payload.html,
-					status: "ready",
-				});
-			})
-			.catch((error: unknown) => {
-				if (abortController.signal.aborted) {
+		void loadRfpHtmlReportPreview({
+			contextDescription,
+			onResult: (result) => {
+				if (cancelled) {
 					return;
 				}
-
 				setPreviewState({
-					error: error instanceof Error ? error.message : String(error),
-					html: null,
-					status: "error",
+					error: result.error,
+					html: result.html,
+					status: result.error === null ? "ready" : "error",
 				});
-			});
+			},
+			signal: abortController.signal,
+			variant,
+		});
 
-		return () => abortController.abort();
+		return () => {
+			cancelled = true;
+			abortController.abort();
+		};
 	}, [contextDescription, reloadKey, state.canvas.open, variant]);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 

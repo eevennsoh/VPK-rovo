@@ -71,12 +71,12 @@ export function CursorSceneFan({ burst, launching }: Readonly<CursorSceneFanProp
 	const entranceStartRef = useRef(0);
 	const launchStartRef = useRef<number | null>(null);
 	const wasLaunchingRef = useRef(false);
-	const scratchAxis = useRef(new THREE.Vector3()).current;
-	const scratchRollQuat = useRef(new THREE.Quaternion()).current;
-	const scratchBaseQuat = useRef(new THREE.Quaternion()).current;
+	const scratchAxis = useMemo(() => new THREE.Vector3(), []);
+	const scratchRollQuat = useMemo(() => new THREE.Quaternion(), []);
+	const scratchBaseQuat = useMemo(() => new THREE.Quaternion(), []);
 
 	useFrame((frameState) => {
-		const t = frameState.clock.getElapsedTime();
+		const t = frameState.clock.elapsedTime;
 
 		if (burst && burstIdRef.current !== burst.id) {
 			burstIdRef.current = burst.id;

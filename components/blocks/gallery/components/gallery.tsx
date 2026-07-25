@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState, type JSX, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 import type { GalleryItem } from "../data/gallery-items";
 import {
@@ -128,12 +129,11 @@ export function Gallery({
 		createInitialVisualState(resolveSelectedId(items, selectedId ?? defaultSelectedId)),
 	);
 	const [resetKey, setResetKey] = useState(0);
-	const isOpenRef = useRef(open ?? internalOpen);
+	const isOpenRef = useLatestRef(open ?? internalOpen);
 	const selectionOriginsRef = useRef<Map<string, GallerySelectionOrigin>>(new Map());
 	const visualKeyRef = useRef(1);
 
 	const isOpen = open ?? internalOpen;
-	isOpenRef.current = isOpen;
 	const resolvedSelectedId = resolveSelectedId(items, selectedId ?? internalSelectedId);
 	const selectedItem =
 		resolvedSelectedId ? (items.find((item) => item.id === resolvedSelectedId) ?? null) : null;
@@ -151,7 +151,7 @@ export function Gallery({
 		isOpenRef.current = next;
 		if (open === undefined) setInternalOpen(next);
 		onOpenChange?.(next);
-	}, [open, onOpenChange]);
+	}, [isOpenRef, open, onOpenChange]);
 
 	const handleSelect = useCallback(
 		(id: string, origin: GallerySelectionOrigin) => {
@@ -176,6 +176,8 @@ export function Gallery({
 		}
 		const origin =
 			selectionOriginsRef.current.get(resolvedSelectedId) ?? DEFAULT_GALLERY_SELECTION_ORIGIN;
+		const nextVisualKey = visualKeyRef.current;
+		visualKeyRef.current += 1;
 		setVisualState((current) => {
 			if (current.active?.id === resolvedSelectedId) {
 				return current.active.origin === origin
@@ -184,11 +186,10 @@ export function Gallery({
 			}
 			const nextActive: GallerySelectionVisual = {
 				id: resolvedSelectedId,
-				key: visualKeyRef.current,
+				key: nextVisualKey,
 				origin,
 				phase: current.active ? "enter" : "settled",
 			};
-			visualKeyRef.current += 1;
 			return {
 				active: nextActive,
 				exiting:

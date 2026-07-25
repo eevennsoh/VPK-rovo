@@ -103,8 +103,8 @@ export function RovoAppShellPaneLayoutCore({
 							opacity: 1,
 							x: 0,
 							y: 0,
-							width: shellSize.width || "100%",
-							height: shellSize.height || "100%",
+							scaleX: 1,
+							scaleY: 1,
 							borderRadius: 0,
 							transition: {
 								delay: 0,
@@ -128,9 +128,15 @@ export function RovoAppShellPaneLayoutCore({
 							opacity: 1,
 							x: artifactOrigin.left,
 							y: artifactOrigin.top,
-							width: artifactOrigin.width,
-							height: artifactOrigin.height,
+							scaleX: shellSize.width > 0 ? artifactOrigin.width / shellSize.width : 1,
+							scaleY: shellSize.height > 0 ? artifactOrigin.height / shellSize.height : 1,
 							borderRadius: 32,
+						}}
+						style={{
+							height: shellSize.height || "100%",
+							transformOrigin: "top left",
+							width: shellSize.width || "100%",
+							willChange: "transform, opacity",
 						}}
 					>
 						{artifactPane}

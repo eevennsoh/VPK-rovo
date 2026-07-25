@@ -410,20 +410,3 @@ export function useChartHover(): ChartHoverContextValue {
   }
   return context;
 }
-
-/**
- * Merged stable + hover context. Convenient for components that need both,
- * but re-renders on every hover (because hover changes). Prefer
- * `useChartStable()` or `useChartHover()` for hot consumers that only need
- * one slice.
- */
-export function useChart(): ChartContextValue {
-  const stable = useChartStable();
-  const hover = useChartHover();
-  // Identity changes on every hover (hover is the volatile slice) — that's
-  // fine for consumers using this merged hook; they explicitly opted in to
-  // re-rendering on hover.
-  return { ...stable, ...hover };
-}
-
-export default ChartStableContext;

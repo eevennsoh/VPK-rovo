@@ -130,6 +130,9 @@ export {
 const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   try {
     const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Unable to read attachment: ${response.status}`);
+    }
     const blob = await response.blob();
     // FileReader uses callback-based API, wrapping in Promise is necessary
     // oxlint-disable-next-line eslint-plugin-promise(avoid-new)
@@ -282,6 +285,7 @@ const useOptionalProviderAttachments = () =>
 
 export type PromptInputProviderProps = PropsWithChildren<{
   initialInput?: string;
+  onInputChange?: (value: string) => void;
 }>;
 
 /**
@@ -290,11 +294,16 @@ export type PromptInputProviderProps = PropsWithChildren<{
  */
 export const PromptInputProvider = ({
   initialInput: initialTextInput = "",
+  onInputChange,
   children,
 }: PromptInputProviderProps) => {
   // ----- textInput state
   const [textInput, setTextInput] = useState(initialTextInput);
-  const clearInput = useCallback(() => setTextInput(""), []);
+  const updateTextInput = useCallback((value: string) => {
+    setTextInput(value);
+    onInputChange?.(value);
+  }, [onInputChange]);
+  const clearInput = useCallback(() => updateTextInput(""), [updateTextInput]);
 
   // ----- attachments state (global when wrapped)
   const [attachmentFiles, setAttachmentFiles] = useState<
@@ -392,11 +401,11 @@ export const PromptInputProvider = ({
       attachments,
       textInput: {
         clear: clearInput,
-        setInput: setTextInput,
+        setInput: updateTextInput,
         value: textInput,
       },
     }),
-    [textInput, clearInput, attachments, __registerFileInput]
+    [textInput, clearInput, updateTextInput, attachments, __registerFileInput]
   );
 
   return (
@@ -595,6 +604,7 @@ export const PromptInput = ({
 
   // ----- Local attachments (only used when no provider)
   const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
+  const itemsRef = useRef(items);
   const files = usingProvider ? controller.attachments.files : items;
 
   // ----- Local referenced sources (always local to PromptInput)
@@ -658,10 +668,10 @@ export const PromptInput = ({
         return;
       }
 
-      setItems((prev) => {
+      const currentItems = itemsRef.current;
         const capacity =
           typeof maxFiles === "number"
-            ? Math.max(0, maxFiles - prev.length)
+            ? Math.max(0, maxFiles - currentItems.length)
             : undefined;
         const capped =
           typeof capacity === "number" ? sized.slice(0, capacity) : sized;
@@ -681,21 +691,23 @@ export const PromptInput = ({
             url: URL.createObjectURL(file),
           });
         }
-        return [...prev, ...next];
-      });
+      const nextItems = [...currentItems, ...next];
+      itemsRef.current = nextItems;
+      setItems(nextItems);
     },
     [matchesAccept, maxFiles, maxFileSize, onError]
   );
 
   const removeLocal = useCallback(
-    (id: string) =>
-      setItems((prev) => {
-        const found = prev.find((file) => file.id === id);
+    (id: string) => {
+        const found = itemsRef.current.find((file) => file.id === id);
         if (found?.url) {
           URL.revokeObjectURL(found.url);
         }
-        return prev.filter((file) => file.id !== id);
-      }),
+        const nextItems = itemsRef.current.filter((file) => file.id !== id);
+        itemsRef.current = nextItems;
+        setItems(nextItems);
+      },
     []
   );
 
@@ -743,20 +755,19 @@ export const PromptInput = ({
     [matchesAccept, maxFileSize, maxFiles, onError, files.length, controller]
   );
 
-  const clearAttachments = useCallback(
-    () =>
-      usingProvider
-        ? controller?.attachments.clear()
-        : setItems((prev) => {
-            for (const file of prev) {
-              if (file.url) {
-                URL.revokeObjectURL(file.url);
-              }
-            }
-            return [];
-          }),
-    [usingProvider, controller]
-  );
+  const clearAttachments = useCallback(() => {
+    if (usingProvider) {
+      controller?.attachments.clear();
+      return;
+    }
+    for (const file of itemsRef.current) {
+      if (file.url) {
+        URL.revokeObjectURL(file.url);
+      }
+    }
+    itemsRef.current = [];
+    setItems([]);
+  }, [usingProvider, controller]);
 
   const clearReferencedSources = useCallback(
     () => setReferencedSources([]),
@@ -1360,10 +1371,7 @@ export const PromptInputTextarea = ({
     setDirectoryAutocompleteState(nextState);
   }, [enableDirectoryAutocomplete, isAnySuggestionMenuOpen, isVisualTraceAutoTaggingBusy, setDirectoryAutocompleteState]);
 
-  refreshDirectoryAutocompleteRef.current = refreshDirectoryAutocomplete;
-  isAutoTaggingBusyRef.current = isVisualTraceAutoTaggingBusy;
-
-  acceptDirectoryAutocompleteIndexRef.current = (index: number, requireGhost = false): boolean => {
+  const acceptDirectoryAutocompleteIndex = useCallback((index: number, requireGhost = false): boolean => {
     const activeEditor = activeEditorRef.current;
     const currentState = directoryAutocompleteStateRef.current;
     if (!activeEditor || !currentState) {
@@ -1394,7 +1402,13 @@ export const PromptInputTextarea = ({
       .run();
     setDirectoryAutocompleteState(null);
     return true;
-  };
+  }, [setDirectoryAutocompleteState]);
+
+  useEffect(() => {
+    refreshDirectoryAutocompleteRef.current = refreshDirectoryAutocomplete;
+    isAutoTaggingBusyRef.current = isVisualTraceAutoTaggingBusy;
+    acceptDirectoryAutocompleteIndexRef.current = acceptDirectoryAutocompleteIndex;
+  }, [acceptDirectoryAutocompleteIndex, isVisualTraceAutoTaggingBusy, refreshDirectoryAutocomplete]);
 
   // Plain Enter (menu closed, no IME) submits the host form unless its submit
   // button is disabled. Returns true to consume the keystroke.

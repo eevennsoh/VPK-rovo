@@ -104,7 +104,9 @@ function isInteractiveTarget(target: EventTarget | null) {
 export default function GlassTabsDemo() {
 	const [value, setValue] = React.useState<GlassTabsDemoValue>("location");
 	const valueRef = React.useRef(value);
-	valueRef.current = value;
+	React.useEffect(() => {
+		valueRef.current = value;
+	}, [value]);
 
 	React.useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {

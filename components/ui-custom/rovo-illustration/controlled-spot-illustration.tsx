@@ -17,6 +17,7 @@ import SpotIllustration, {
   getSpotIllustrationUrl,
   applyOverlapClipPath,
 } from "./spot-illustration";
+import { mountProcessedIllustrationSvg } from "./spot-illustration-utils";
 import { computeFrame } from "./frame";
 import { getEmbeddedSpotIllustrationSvg } from "./assets.generated";
 
@@ -126,7 +127,10 @@ function GenericControlledSpotIllustration({
     }
     const url = getSpotIllustrationUrl(illusId, theme, baseUrl);
     fetch(url)
-      .then(r => r.text())
+      .then((response) => {
+        if (!response.ok) throw new Error(`Unable to load illustration: ${response.status}`);
+        return response.text();
+      })
       .then(text => {
         if (mounted) setSvgHtml(processIllustrationSvg(text, illusId));
       })
@@ -137,9 +141,8 @@ function GenericControlledSpotIllustration({
   useEffect(() => {
     if (!wrapperRef.current || !svgHtml) return;
     const wrapper = wrapperRef.current;
-    wrapper.innerHTML = svgHtml;
-    const svgEl = wrapper.querySelector('svg');
-    if (svgEl) applyOverlapClipPath(svgEl as SVGSVGElement);
+    const svgEl = mountProcessedIllustrationSvg(wrapper, svgHtml);
+    if (svgEl) applyOverlapClipPath(svgEl);
     mosaicRotateEls.current = Array.from(wrapper.querySelectorAll('[data-mosaic-rotate]')) as SVGGElement[];
     gestureEls.current = Array.from(wrapper.querySelectorAll('.illus-gesture'));
     const gMap = new Map<number, Element[]>();

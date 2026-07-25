@@ -227,7 +227,7 @@ export function AudioPlayerProvider<TData = unknown>({
     [activeItem]
   )
 
-  useAnimationFrame(() => {
+  const syncPlaybackState = useCallback(() => {
     if (audioRef.current) {
       _setActiveItem(itemRef.current)
       setReadyState(audioRef.current.readyState)
@@ -238,7 +238,9 @@ export function AudioPlayerProvider<TData = unknown>({
       setError(audioRef.current.error)
       setPlaybackRateState(audioRef.current.playbackRate)
     }
-  })
+  }, [])
+
+  useAnimationFrame(syncPlaybackState)
 
   const isPlaying = !paused
   const isBuffering =

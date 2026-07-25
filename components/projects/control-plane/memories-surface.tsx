@@ -6,7 +6,7 @@
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
-import { startTransition, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -186,6 +186,7 @@ function createDownload(fileName: string, content: BlobPart, contentType: string
 }
 
 export function MemoriesSurfacePage() {
+	const artifactGenerationRequestRef = useRef(0);
 	const searchParams = useSearchParams();
 	const [filters, setFilters] = useState<FilterState>(() => buildInitialFilterState(searchParams));
 	const [activeView, setActiveView] = useState<ExplorerView>("graph");
@@ -300,6 +301,8 @@ export function MemoriesSurfacePage() {
 		if (!explorer) {
 			return;
 		}
+		const requestId = artifactGenerationRequestRef.current + 1;
+		artifactGenerationRequestRef.current = requestId;
 
 		const artifactSelection = buildMemoryArtifactSelection({
 			kind,
@@ -314,6 +317,9 @@ export function MemoriesSurfacePage() {
 					selectedNodeIds: artifactSelection.selectedNodeIds,
 					title: artifactSelection.title,
 				});
+				if (artifactGenerationRequestRef.current !== requestId) {
+					return;
+				}
 				setBriefArtifact(nextBrief);
 				return;
 			}
@@ -324,12 +330,19 @@ export function MemoriesSurfacePage() {
 				selectedNodeIds: artifactSelection.selectedNodeIds,
 				title: artifactSelection.title,
 			});
+			if (artifactGenerationRequestRef.current !== requestId) {
+				return;
+			}
 			setDeckArtifact(nextDeck);
 		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : String(error));
+			if (artifactGenerationRequestRef.current === requestId) {
+				setErrorMessage(error instanceof Error ? error.message : String(error));
+			}
 		} finally {
-			setIsGeneratingBrief(false);
-			setIsGeneratingDeck(false);
+			if (artifactGenerationRequestRef.current === requestId) {
+				setIsGeneratingBrief(false);
+				setIsGeneratingDeck(false);
+			}
 		}
 	}
 

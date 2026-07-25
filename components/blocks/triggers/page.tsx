@@ -11,6 +11,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import AddIcon from "@atlaskit/icon/core/add";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -61,7 +62,6 @@ import {
 	getAgentTriggerReadableLabel,
 	getTriggerEvent,
 	getTriggerProvider,
-	serializeAgentTriggerLabels,
 	TRIGGER_PROVIDERS,
 	type AgentTriggerConnectionState,
 	type AgentAutomationRule,
@@ -94,8 +94,6 @@ export type {
 	AgentTriggerProviderId,
 	AgentTriggerValue,
 };
-export { serializeAgentTriggerLabels, TRIGGER_PROVIDERS };
-
 function renderTriggerProviderIcon(
 	icon: AgentTriggerProviderIcon,
 	label: string,
@@ -136,51 +134,21 @@ function renderTriggerProviderIcon(
 }
 
 /**
- * Provider icon element for a configured trigger value, identical to the icon
- * the picker and trigger rows render. Exported so summary chips elsewhere (e.g.
- * the agent config trigger row) can show the exact same provider logo instead
- * of a generic fallback. Returns `null` for an unknown provider id.
- */
-export function renderAgentTriggerProviderIcon(trigger: AgentTriggerValue): ReactElement | null {
-	const provider = getTriggerProvider(trigger.providerId);
-	if (!provider) {
-		return null;
-	}
-	return renderTriggerProviderIcon(provider.icon, provider.label);
-}
-
-/**
  * Tile-filled provider icon for a configured trigger value, using the EXACT
  * editor-palette treatment (the 24px `.rich-text-command-menu-avatar` tile that
- * the logo fills) rather than the bare 16px glyph from
- * `renderAgentTriggerProviderIcon`. Use where a trigger row should mirror the
+ * the logo fills). Use where a trigger row should mirror the
  * picker / editor-palette logo, e.g. the collapsed agent-config Triggers
  * dropdown rows. Returns `null` for an unknown provider id.
  */
-export function renderAgentTriggerProviderTileIcon(trigger: AgentTriggerValue): ReactElement | null {
+export function AgentTriggerProviderTileIcon({
+	fallback = null,
+	trigger,
+}: Readonly<{ fallback?: ReactNode; trigger: AgentTriggerValue }>): ReactNode {
 	const provider = getTriggerProvider(trigger.providerId);
 	if (!provider) {
-		return null;
+		return fallback;
 	}
 	return <TriggerProviderTileIcon icon={provider.icon} label={provider.label} />;
-}
-
-/**
- * Compact 16px provider icon for a configured trigger value, using the same
- * editor-palette logo treatment as `renderAgentTriggerProviderTileIcon` but at
- * the chip scale (`RichTextMentionVisualMark size="pill"`): solid-background 1P
- * logos fill the 16px slot bare, the backgroundless Atlassian/Rovo marks and
- * stroked icons keep their transparent inset tile, and 2P/3P brand images use
- * the 16px chip frame. Use where a dense flow row should show the exact same
- * logo as the picker without the surrounding `Tile` frame, e.g. the agent-test
- * greeting flow cover. Returns `null` for an unknown provider id.
- */
-export function renderAgentTriggerProviderChipIcon(trigger: AgentTriggerValue): ReactElement | null {
-	const provider = getTriggerProvider(trigger.providerId);
-	if (!provider) {
-		return null;
-	}
-	return <RichTextMentionVisualMark label={provider.label} size="pill" visual={getTriggerProviderVisual(provider.icon)} />;
 }
 
 /**
@@ -189,10 +157,13 @@ export function renderAgentTriggerProviderChipIcon(trigger: AgentTriggerValue): 
  * but frames stroked trigger glyphs in the bordered `Tile` treatment so the
  * compact flow cover remains a smaller version of the full tile flow.
  */
-export function renderAgentTriggerProviderCompactTileIcon(trigger: AgentTriggerValue): ReactElement | null {
+export function AgentTriggerProviderCompactTileIcon({
+	fallback = null,
+	trigger,
+}: Readonly<{ fallback?: ReactNode; trigger: AgentTriggerValue }>): ReactNode {
 	const provider = getTriggerProvider(trigger.providerId);
 	if (!provider) {
-		return null;
+		return fallback;
 	}
 	const visual = getTriggerProviderVisual(provider.icon);
 
@@ -984,8 +955,7 @@ export function TriggerAutomationDialog({
 	saveLabel = "Save",
 	title = "New Automation",
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
-	const seedRef = useRef<AgentAutomationRule>(automationRule);
-	seedRef.current = automationRule;
+	const seedRef = useLatestRef<AgentAutomationRule>(automationRule);
 	const wasOpen = useRef(open);
 	const connectTimerRef = useRef<number | null>(null);
 	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(automationRule.triggers);
@@ -1002,7 +972,7 @@ export function TriggerAutomationDialog({
 			setActive(isAutomationRuleEnabled(nextSeed));
 		}
 		wasOpen.current = open;
-	}, [open]);
+	}, [open, seedRef]);
 
 	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
 	useEffect(() => {
@@ -1181,8 +1151,7 @@ export function TriggerConfigAutomationDialog({
 	showBack = false,
 	title = "Edit automation",
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
-	const seedRef = useRef<AgentAutomationRule>(automationRule);
-	seedRef.current = automationRule;
+	const seedRef = useLatestRef<AgentAutomationRule>(automationRule);
 	const wasOpen = useRef(open);
 	const connectTimerRef = useRef<number | null>(null);
 	const [draftRule, setDraftRule] = useState<AgentAutomationRule>(automationRule);
@@ -1195,7 +1164,7 @@ export function TriggerConfigAutomationDialog({
 			setActive(isAutomationRuleEnabled(nextSeed));
 		}
 		wasOpen.current = open;
-	}, [open]);
+	}, [open, seedRef]);
 
 	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
 	useEffect(() => {
@@ -1484,15 +1453,16 @@ export default function Triggers({
 								{rule.triggers.map((trigger) => {
 									return (
 										<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
-											{renderAgentTriggerProviderTileIcon(trigger) ?? (
-												<IconTile
+											<AgentTriggerProviderTileIcon
+												fallback={<IconTile
 													aria-hidden={true}
 													icon={<AutomationIcon label="" size="small" />}
 													label="Trigger"
 													size="medium"
 													variant="blue"
-												/>
-											)}
+												/>}
+												trigger={trigger}
+											/>
 											<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
 										</div>
 									);

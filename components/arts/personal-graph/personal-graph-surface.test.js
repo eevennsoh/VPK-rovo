@@ -32,7 +32,7 @@ const NEURAL_WORKFLOW_LABEL_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const SURFACE_HELPERS_SOURCE = fs.readFileSync(
-	path.join(__dirname, "personal-graph-surface-helpers.tsx"),
+	path.join(__dirname, "personal-graph-surface-data.ts"),
 	"utf8",
 );
 

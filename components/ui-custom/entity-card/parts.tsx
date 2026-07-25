@@ -67,6 +67,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+	event.stopPropagation();
+}
+
 /** Compact count formatter — 1500 → "1.5K", 12000 → "12K". */
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatCompact(value: number): string {
@@ -238,10 +242,6 @@ function EntityCardSelectableLeading({
 	onSelectedChange?: (checked: boolean) => void;
 	selected?: boolean;
 }>) {
-	const stopPropagation = (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>) => {
-		event.stopPropagation();
-	};
-
 	return (
 		<span className="relative inline-flex size-8 shrink-0 items-center justify-center leading-none">
 			<span
@@ -308,10 +308,6 @@ export function EntityCardAddedSwitch({
 	onAddedChange,
 	title,
 }: Readonly<EntityCardAddedSwitchProps>) {
-	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
-		event.stopPropagation();
-	}
-
 	return (
 		<Switch
 			aria-label={`${added ? "Remove" : "Add"} ${title}`}

@@ -181,11 +181,6 @@ function useTranscriptViewer({
   const handleTimeUpdateRef = useRef<(time: number) => void>(() => {})
   const onDurationChangeRef = useRef<(duration: number) => void>(() => {})
 
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isScrubbing, setIsScrubbing] = useState(false)
-  const [duration, setDuration] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
-
   const { segments, words } = useMemo(() => {
     if (segmentComposer) {
       return segmentComposer(alignment)
@@ -207,16 +202,14 @@ function useTranscriptViewer({
     return 0
   }, [alignment, words])
 
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isScrubbing, setIsScrubbing] = useState(false)
+  const [duration, setDuration] = useState(guessedDuration)
+  const [currentTime, setCurrentTime] = useState(0)
+
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(() =>
     words.length ? 0 : -1
   )
-
-  useEffect(() => {
-    setCurrentTime(0)
-    setDuration(guessedDuration)
-    setIsPlaying(false)
-    setCurrentWordIndex(words.length ? 0 : -1)
-  }, [words.length, alignment, guessedDuration])
 
   const findWordIndex = useCallback(
     (time: number) => {

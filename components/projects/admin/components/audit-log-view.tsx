@@ -36,6 +36,7 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
 	year: "numeric",
 	hour: "2-digit",
 	minute: "2-digit",
+	timeZone: "UTC",
 });
 
 export function AuditLogView() {

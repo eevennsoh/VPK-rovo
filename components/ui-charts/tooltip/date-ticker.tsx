@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
-import { memo, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 
 const TICKER_ITEM_HEIGHT = 24;
 /** Full scroll stacks are skipped above this count — single label + instant updates. */
@@ -81,16 +81,17 @@ const DateTickerInner = memo(function DateTickerInner({
   const dayY = useSpring(0, { stiffness: 400, damping: 35 });
   const monthY = useSpring(0, { stiffness: 400, damping: 35 });
 
-  dayY.set(-currentIndex * TICKER_ITEM_HEIGHT);
+	useEffect(() => {
+		dayY.set(-currentIndex * TICKER_ITEM_HEIGHT);
+	}, [currentIndex, dayY]);
 
-  if (currentMonthIndex >= 0) {
-    const isFirstRender = prevMonthIndexRef.current === -1;
-    const monthChanged = prevMonthIndexRef.current !== currentMonthIndex;
-    if (isFirstRender || monthChanged) {
-      monthY.set(-currentMonthIndex * TICKER_ITEM_HEIGHT);
-      prevMonthIndexRef.current = currentMonthIndex;
-    }
-  }
+	useEffect(() => {
+		if (currentMonthIndex < 0 || prevMonthIndexRef.current === currentMonthIndex) {
+			return;
+		}
+		monthY.set(-currentMonthIndex * TICKER_ITEM_HEIGHT);
+		prevMonthIndexRef.current = currentMonthIndex;
+	}, [currentMonthIndex, monthY]);
 
   return (
     <div className="overflow-hidden rounded-full bg-chart-tooltip-background px-4 py-1 text-chart-tooltip-foreground shadow-lg">

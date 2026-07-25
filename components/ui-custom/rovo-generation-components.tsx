@@ -7,6 +7,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode, RefObject } from "react";
 
 import { cn } from "@/lib/utils";
+import { useLatestRef } from "@/lib/use-latest-ref";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 const ROVO_GENERATION_GRADIENT =
 	"conic-gradient(from 90deg, var(--rovo-generation-stop-orange) 0deg 73deg, var(--rovo-generation-stop-lime) 73deg 168deg, var(--rovo-generation-stop-blue) 168deg 253deg, var(--rovo-generation-stop-purple) 253deg 360deg)";
@@ -113,7 +115,6 @@ function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function RovoGenerationGradientLayer({
 	active,
 	animated,
@@ -201,8 +202,7 @@ function RovoGenerationGradientLayer({
 	);
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function RovoGenerationRoot({
+export function RovoGenerationRoot({
 	size = 100,
 	radius = 12,
 	glow = false,
@@ -309,7 +309,6 @@ export interface RovoGenerationHighlightProps extends Omit<ComponentPropsWithout
 	children?: ReactNode;
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- Module-private helper hook; keeping it unexported avoids widening the public API for Fast Refresh.
 function useAutoRadius(ref: RefObject<HTMLElement | null>, radiusProp: number | undefined): number {
 	const [autoRadius, setAutoRadius] = useState<number>(radiusProp ?? 12);
 
@@ -327,8 +326,7 @@ function useAutoRadius(ref: RefObject<HTMLElement | null>, radiusProp: number | 
 	return radiusProp ?? autoRadius;
 }
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-function RovoGenerationHighlight({
+export function RovoGenerationHighlight({
 	active = true,
 	radius,
 	strokeWidth = 1,
@@ -341,11 +339,10 @@ function RovoGenerationHighlight({
 	const wrapperRef = useRef<HTMLDivElement>(null);
 	const resolvedRadius = useAutoRadius(wrapperRef, radius);
 	const shouldReduceMotion = useReducedMotion() ?? false;
-	const pathRefs = useRef<(SVGPathElement | null)[]>(
-		Array.from({ length: HIGHLIGHT_TOTAL_SEGMENTS }, () => null),
+	const pathRefs = useLazyRef<(SVGPathElement | null)[]>(
+		() => Array.from({ length: HIGHLIGHT_TOTAL_SEGMENTS }, () => null),
 	);
-	const onCompleteRef = useRef(onHighlightComplete);
-	onCompleteRef.current = onHighlightComplete;
+	const onCompleteRef = useLatestRef(onHighlightComplete);
 
 	const normalizedStroke = Math.max(0.5, strokeWidth);
 
@@ -430,7 +427,7 @@ function RovoGenerationHighlight({
 		return () => {
 			if (raf) cancelAnimationFrame(raf);
 		};
-	}, [active, resolvedRadius, normalizedStroke, shouldReduceMotion]);
+	}, [active, normalizedStroke, onCompleteRef, pathRefs, resolvedRadius, shouldReduceMotion]);
 
 	return (
 		<div
@@ -482,10 +479,3 @@ function RovoGenerationHighlight({
 		</div>
 	);
 }
-
-export const RovoGeneration = {
-	/** Tile surface with optional animated rainbow glow and border. */
-	Root: RovoGenerationRoot,
-	/** Wraps arbitrary UI and traces one rainbow lap around its perimeter to highlight it. */
-	Highlight: RovoGenerationHighlight,
-} as const;

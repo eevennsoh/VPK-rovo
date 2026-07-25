@@ -10,6 +10,7 @@ function readProjectFile(relativePath) {
 const SKILL_CONFIG_SOURCE = readProjectFile("components/blocks/skill-config/components/skill-config.tsx");
 const AGENT_CONFIG_CORE_INDEX_SOURCE = readProjectFile("components/blocks/agent-config-core/index.ts");
 const AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE = readProjectFile("components/blocks/agent-config-core/components/agent-compact-header-nav.tsx");
+const AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_DATA_SOURCE = readProjectFile("components/blocks/agent-config-core/components/agent-compact-header-nav-data.tsx");
 
 test("Skill Config reads compact header navigation from the canonical agent config owner", () => {
 	assert.match(
@@ -25,13 +26,13 @@ test("Skill Config reads compact header navigation from the canonical agent conf
 		/from "@\/components\/blocks\/agent-config-core\/components\/agent-compact-header-nav";/u,
 	);
 	assert.match(
-		AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE,
+		AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_DATA_SOURCE,
 		/const AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*<LayoutDashboardIcon size="small" \/>[\s\S]*label: "Details"[\s\S]*label: "Insights"/u,
 	);
-	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /export type AgentCompactHeaderSection/u);
+	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_DATA_SOURCE, /export type AgentCompactHeaderSection/u);
 	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /export interface AgentCompactHeaderNavProps/u);
-	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS/u);
-	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM/u);
+	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_DATA_SOURCE, /export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS/u);
+	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_DATA_SOURCE, /export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM/u);
 	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /function AgentCompactHeaderNavButton/u);
 	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /export function AgentCompactHeaderNav/u);
 	assert.match(AGENT_CONFIG_CORE_COMPACT_HEADER_NAV_SOURCE, /computeContextBarOverflow/u);

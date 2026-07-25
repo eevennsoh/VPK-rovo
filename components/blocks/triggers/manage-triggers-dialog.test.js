@@ -38,7 +38,7 @@ test("ManageTriggersDialog restores the compact drag-list modal", () => {
 
 test("ManageTriggersDialog rows manage automation rules, not individual event triggers", () => {
 	assert.match(DIALOG_SOURCE, /function ManageAutomationFlowVisual/u);
-	assert.match(DIALOG_SOURCE, /renderAgentTriggerProviderTileIcon\(trigger\)/u);
+	assert.match(DIALOG_SOURCE, /<AgentTriggerProviderTileIcon[\s\S]*trigger=\{trigger\}/u);
 	// Figma reposition: trigger icon tiles stack above the text, with no
 	// connector line or trailing agent-instructions tile in the row visual.
 	assert.doesNotMatch(DIALOG_SOURCE, /GenerativeIndicatorIcon/u);

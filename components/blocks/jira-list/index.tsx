@@ -99,16 +99,18 @@ import {
 	type JiraListRowTarget,
 } from "@/components/blocks/jira-list/jira-list-dnd";
 import {
-	getOrderedColumns,
 	HierarchyConnector,
 	IssueTypeGlyph,
+	JiraListAgentSessionsCell,
 	JiraListAvatar,
+	JiraListLabelsCell,
 	PriorityGlyph,
-	PRIORITY_LABELS,
-	renderAgentSessions,
-	renderLabels,
-	type JiraListColumnDefinition,
 } from "@/components/blocks/jira-list/jira-list-cells";
+import {
+	getOrderedColumns,
+	type JiraListColumnDefinition,
+} from "@/components/blocks/jira-list/jira-list-column-model";
+import { PRIORITY_LABELS } from "@/components/blocks/jira-list/jira-list-cell-data";
 import {
 	JiraListSortableRow,
 	RowBoundaryCreateControls,
@@ -414,7 +416,7 @@ export function JiraList({
 			id: "agentSessions",
 			label: "Agent sessions",
 			widthClassName: "w-[247px]",
-			renderCell: (row) => renderAgentSessions(row.agentSessions),
+			renderCell: (row) => <JiraListAgentSessionsCell agentSessions={row.agentSessions} />,
 		},
 		{
 			id: "priority",
@@ -433,7 +435,7 @@ export function JiraList({
 			id: "labels",
 			label: "Labels",
 			widthClassName: "w-[180px]",
-			renderCell: (row) => renderLabels(row.labels),
+			renderCell: (row) => <JiraListLabelsCell labels={row.labels} />,
 		},
 		{
 			id: "dueDate",

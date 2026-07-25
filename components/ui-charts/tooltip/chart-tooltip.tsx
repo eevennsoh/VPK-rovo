@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
-
 // oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
 // oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
 
@@ -12,9 +10,9 @@ import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import {
   chartCssVars,
   type LineConfig,
-  useChart,
   useChartStable,
 } from "../chart-context";
+import { useChart } from "../use-chart";
 import { weekdayDateFmt } from "../chart-formatters";
 import { DateTicker } from "./date-ticker";
 import { TooltipBox } from "./tooltip-box";
@@ -310,14 +308,12 @@ function DatePillTrackerInner({
   const effectiveSpring = springConfig ?? tooltipSpring;
   const animatedX = useSpring(xWithMargin, effectiveSpring);
 
-  if (!discreteInteraction) {
-    animatedX.set(xWithMargin);
-  }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we need to jump the animatedX when the visible prop changes
-  useEffect(() => {
-    animatedX.set(xWithMargin);
-  }, [animatedX, visible]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: we need to jump the animatedX when the visible prop changes
+	useEffect(() => {
+		if (!discreteInteraction || visible) {
+			animatedX.set(xWithMargin);
+		}
+	}, [animatedX, discreteInteraction, visible, xWithMargin]);
 
   return (
     <motion.div

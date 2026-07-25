@@ -4,14 +4,8 @@ import type { ReactElement } from "react";
 import { useCallback, useState } from "react";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import AiChatIcon from "@atlaskit/icon/core/ai-chat";
-import AppsIcon from "@atlaskit/icon/core/apps";
 import AutomationIcon from "@atlaskit/icon/core/automation";
-import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
-import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
-import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
-import { DEFAULT_STARTER_ICON, type StarterIconKey } from "@/components/blocks/conversation-starters";
 import { TriggerProviderSearchList, type AgentAutomationRule } from "@/components/blocks/triggers/page";
 import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
 import { getToolIdFromMentionId } from "@/components/blocks/editor-palette/data/mention-sources";
@@ -22,7 +16,7 @@ import { AgentCompactConversationStartersNavButton } from "@/components/blocks/a
 import { AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS, AgentCompactConfigNavButton, AgentCompactReferenceRow, AgentCompactTriggerRow, useDisabledLabelSet } from "@/components/blocks/agent/components/agent-compact-config-nav-rows";
 import { getTagColorForAgentAvatar, tagColorToMenuIconClassName } from "@/components/blocks/agent/components/agent-config-visuals";
 import { AgentMemorySelector, AgentReasoningSelector, type KnowledgeModeValue, type MemoryModeValue, type ReasoningModeValue } from "@/components/blocks/agent/components/agent-reasoning-memory-selectors";
-import { createAutomationRuleFromEvent, getAgentAutomationItems, getAgentAutomationRules, getNonEmptyConfigItems, getSkillConfigItems, getSkillConfigLabel, serializeAgentAutomationRuleLabels, type AgentConfigFormValue, type AgentConfigListFieldName, type AgentConfigReferenceListFieldName, type AgentDirectoryKind, type AgentHideableConfigField } from "@/components/blocks/agent/lib/agent-config-model";
+import { createAutomationRuleFromEvent, getAgentAutomationRules, getNonEmptyConfigItems, getSkillConfigItems, getSkillConfigLabel, serializeAgentAutomationRuleLabels, type AgentConfigFormValue, type AgentConfigListFieldName, type AgentConfigReferenceListFieldName, type AgentDirectoryKind, type AgentHideableConfigField } from "@/components/blocks/agent/lib/agent-config-model";
 import { AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD } from "@/components/blocks/agent/lib/agent-reference-mapping";
 import { buildHorizontalScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
@@ -32,21 +26,25 @@ import type { TagColor } from "@/components/ui/tag";
 import { PlusIcon } from "@/components/ui/vpk-icons";
 import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import {
+	getAgentCompactEmptyConfigNavItems,
+	getConversationStarterSummaryItems,
+	openAgentDirectoryOrAppendListItem,
+	type AgentCompactConfigNavItem,
+	type AgentInlineSearchField,
+} from "./agent-compact-config-nav-data";
 
 export { MAX_AGENT_CONVERSATION_STARTERS } from "@/components/blocks/agent/components/agent-compact-conversation-starters-nav";
-
-// Source order IS the canonical display order for the empty-state chip strip:
-// Flows › Apps › Skills › Subagents › Conversation starters › Memory.
-// Reasoning renders separately and always sits last.
-const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
-	{ agentFieldName: "trigger", label: "Flows", Icon: AutomationIcon },
-	{ agentFieldName: "apps", label: "Apps", listFieldName: "apps", Icon: AppsIcon },
-	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: SkillIcon },
-	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
-	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters", Icon: AiChatIcon },
-	{ agentFieldName: "memory", label: "Memory", kind: "memory", Icon: AiModelIcon },
-	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon },
-] as const;
+export {
+	getAgentCompactEmptyConfigNavItems,
+	getAgentFilledSummaryAddLabel,
+	getConversationStarterSummaryItems,
+	openAgentDirectoryOrAppendListItem,
+} from "./agent-compact-config-nav-data";
+export type {
+	AgentCompactConfigNavItem,
+	AgentInlineSearchField,
+} from "./agent-compact-config-nav-data";
 
 // Match the shared Menubar's default `gap-0.5` (2px) so the connected config
 // strip spaces items identically to the base component.
@@ -64,81 +62,12 @@ const AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE = buildHorizontalScrollMaskStyle(
 	edge: "both",
 	fadeSize: "var(--ds-space-300)",
 });
-const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = {
-	conversationStarters: "Add prompts to help people start",
-	knowledge: "Add knowledge to ground this agent",
-	apps: "Add apps to connect tools and knowledge",
-	skills: "Add skills to guide specialized tasks",
-	subagents: "Add subagents to handle specific scenarios",
-	tools: "Add tools to extend what this agent can do",
-	triggers: "Add flows for when this agent runs",
-};
-
-export function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean): string | undefined {
-	if (!showAddButtons) {
-		return undefined;
-	}
-
-	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] : "Edit";
-}
-
-export function openAgentDirectoryOrAppendListItem(
-	directory: AgentDirectoryKind,
-	field: AgentConfigListFieldName,
-	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void,
-	onAppendListItem?: (field: AgentConfigListFieldName) => void,
-): void {
-	if (onOpenDirectory) {
-		onOpenDirectory(directory);
-		return;
-	}
-
-	onAppendListItem?.(field);
-}
-
-export function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
-	return AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS.map((item) => {
-		let count = 0;
-		if (config) {
-			switch (item.agentFieldName) {
-				case "trigger":
-					count = getAgentAutomationItems(config).length;
-					break;
-				case "skills":
-					count = getSkillConfigItems(config.skills).length;
-					break;
-				case "apps":
-					count = getNonEmptyConfigItems(config.apps).length;
-					break;
-				case "subagents":
-					count = getNonEmptyConfigItems(config.subagents).length;
-					break;
-				case "memory":
-					// Memory is an always-on knowledge source with no item count.
-					count = 0;
-					break;
-				case "conversationStarters":
-					count = getNonEmptyConfigItems(config.conversationStarters).length;
-					break;
-				case "reasoning":
-					count = 0;
-					break;
-			}
-		}
-		return { ...item, count };
-	});
-}
-
-export type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "apps" | "knowledge" | "skills" | "tools">;
-
 const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, EditorPaletteSearchCategory> = {
 	apps: "app",
 	knowledge: "knowledge",
 	skills: "skill",
 	tools: "tool",
 };
-
-export type AgentCompactConfigNavItem = ReturnType<typeof getAgentCompactEmptyConfigNavItems>[number];
 
 function getAgentCompactConfigNavItemOnClick(
 	item: AgentCompactConfigNavItem,
@@ -948,18 +877,4 @@ export function AgentCompactEmptyConfigNav({
 			</Menubar>
 		</div>
 	);
-}
-
-export function getConversationStarterSummaryItems(config: AgentConfigFormValue): ReadonlyArray<{
-	icon: StarterIconKey;
-	label: string;
-}> {
-	const icons = config.conversationStarterIcons ?? [];
-
-	return (config.conversationStarters ?? [])
-		.map((item, index) => ({
-			icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
-			label: item.trim(),
-		}))
-		.filter((item) => item.label.length > 0);
 }

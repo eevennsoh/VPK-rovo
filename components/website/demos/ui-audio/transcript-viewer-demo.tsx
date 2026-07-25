@@ -9,7 +9,7 @@ import {
 import {
 	AUDIO_SAMPLE_URL,
 	TRANSCRIPT_ALIGNMENT,
-} from "./demo-data";
+} from "./demo-data-values";
 
 function SkeletonLine({
 	className,

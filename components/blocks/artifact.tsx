@@ -602,16 +602,20 @@ const EMPTY_ANNOTATIONS: ArtifactAnnotation[] = [];
 type ArtifactVersionHistoryItem = ArtifactDocument["versions"][number];
 
 // Module-level formatters avoid constructing Intl.DateTimeFormat for every visible version row.
-const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+const ARTIFACT_VERSION_HISTORY_GROUP_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+	dateStyle: "medium",
+	timeZone: "UTC",
+});
 const ARTIFACT_VERSION_HISTORY_TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("en-US", {
 	dateStyle: "medium",
+	timeZone: "UTC",
 	timeStyle: "short",
 });
 
-function isSameLocalDate(a: Date, b: Date): boolean {
-	return a.getFullYear() === b.getFullYear()
-		&& a.getMonth() === b.getMonth()
-		&& a.getDate() === b.getDate();
+function isSameUtcDate(a: Date, b: Date): boolean {
+	return a.getUTCFullYear() === b.getUTCFullYear()
+		&& a.getUTCMonth() === b.getUTCMonth()
+		&& a.getUTCDate() === b.getUTCDate();
 }
 
 function getArtifactVersionHistoryGroup(createdAt: string): string {
@@ -621,7 +625,7 @@ function getArtifactVersionHistoryGroup(createdAt: string): string {
 		return "Earlier";
 	}
 
-	if (isSameLocalDate(date, new Date())) {
+	if (isSameUtcDate(date, new Date())) {
 		return "Today";
 	}
 
@@ -782,6 +786,33 @@ export interface ArtifactPanelProps {
 	className?: string;
 }
 
+function trackScrollingState(elements: readonly HTMLElement[]): () => void {
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	function onScroll(this: HTMLElement) {
+		this.setAttribute("data-scrolling", "");
+		if (timeout !== undefined) {
+			clearTimeout(timeout);
+		}
+		timeout = setTimeout(() => {
+			for (const element of elements) {
+				element.removeAttribute("data-scrolling");
+			}
+		}, 1000);
+	}
+	for (const element of elements) {
+		element.addEventListener("scroll", onScroll, { passive: true });
+	}
+
+	return () => {
+		for (const element of elements) {
+			element.removeEventListener("scroll", onScroll);
+		}
+		if (timeout !== undefined) {
+			clearTimeout(timeout);
+		}
+	};
+}
+
 export function ArtifactPanel({
 	annotations = EMPTY_ANNOTATIONS,
 	contentRef,
@@ -842,20 +873,7 @@ export function ArtifactPanel({
 
 	useEffect(() => {
 		const elements = [outerScrollRef.current, contentRef?.current].filter(Boolean) as HTMLElement[];
-		if (elements.length === 0) return;
-		let timeout: ReturnType<typeof setTimeout>;
-		function onScroll(this: HTMLElement) {
-			this.setAttribute("data-scrolling", "");
-			clearTimeout(timeout);
-			timeout = setTimeout(() => {
-				for (const el of elements) el.removeAttribute("data-scrolling");
-			}, 1000);
-		}
-		for (const el of elements) el.addEventListener("scroll", onScroll, { passive: true });
-		return () => {
-			for (const el of elements) el.removeEventListener("scroll", onScroll);
-			clearTimeout(timeout);
-		};
+		return trackScrollingState(elements);
 	}, [contentRef]);
 
 	if (!hasVersionHistory && isVersionHistoryOpen) {

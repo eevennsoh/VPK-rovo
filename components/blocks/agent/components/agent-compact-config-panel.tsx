@@ -228,7 +228,8 @@ export function AgentCompactConfigPanel({
 				// `pt-2`/divider live inside the animated region so the parent doesn't keep
 				// a residual gap while collapsed (flex `gap` wouldn't transition away).
 				initial={false}
-				animate={{ height: stripRevealed ? "auto" : 0, opacity: stripRevealed ? 1 : 0 }}
+				animate={{ opacity: stripRevealed ? 1 : 0 }}
+				layout
 				transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.4, 1, 0.6, 1] }}
 				// `overflow: hidden` drives the height-collapse animation, but it clips
 				// BOTH axes — and `overflow-x: visible` can't pair with `overflow-y:
@@ -238,7 +239,7 @@ export function AgentCompactConfigPanel({
 				// edge gets sheared here. `-mx-4 px-4` pushes this clip box out to the
 				// card's padding edge while keeping the content in place, so the bleed
 				// has room. Card padding is `px-4`, so this nets to the card border.
-				style={{ overflow: "hidden", willChange: "opacity" }}
+				style={{ height: stripRevealed ? "auto" : 0, overflow: "hidden", willChange: "opacity, transform" }}
 				className={hasRows ? "-mx-4 flex flex-col gap-2 px-4 pt-2" : "-mx-4 flex flex-col gap-2 px-4"}
 			>
 				{hasRows ? <div aria-hidden className="h-px bg-border" /> : null}

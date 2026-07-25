@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { fetchExplorer } from "../lib/personal-graph-api";
 import type { VaultExplorer } from "../lib/personal-graph-types";
 
@@ -15,10 +15,44 @@ interface VaultExplorerState {
 	refresh: () => Promise<void>;
 }
 
+interface VaultExplorerRequestState {
+	error: Error | null;
+	explorer: VaultExplorer | null;
+	isLoading: boolean;
+}
+
+type VaultExplorerAction =
+	| { type: "disabled" }
+	| { type: "failed"; error: Error }
+	| { type: "loaded"; explorer: VaultExplorer }
+	| { type: "loading" }
+	| { type: "settled" };
+
+function reduceVaultExplorer(
+	state: VaultExplorerRequestState,
+	action: VaultExplorerAction,
+): VaultExplorerRequestState {
+	switch (action.type) {
+		case "disabled":
+			return { error: null, explorer: null, isLoading: false };
+		case "failed":
+			return { error: action.error, explorer: null, isLoading: false };
+		case "loaded":
+			return { error: null, explorer: action.explorer, isLoading: false };
+		case "loading":
+			return { ...state, isLoading: true };
+		case "settled":
+			return state.isLoading ? { ...state, isLoading: false } : state;
+		default:
+			return state;
+	}
+}
+
 export function useVaultExplorer({ enabled = true }: UseVaultExplorerOptions = {}): VaultExplorerState {
-	const [explorer, setExplorer] = useState<VaultExplorer | null>(null);
-	const [error, setError] = useState<Error | null>(null);
-	const [isLoading, setIsLoading] = useState(enabled);
+	const [{ error, explorer, isLoading }, dispatch] = useReducer(
+		reduceVaultExplorer,
+		{ error: null, explorer: null, isLoading: enabled },
+	);
 	const enabledRef = useRef(enabled);
 
 	useEffect(() => {
@@ -27,34 +61,31 @@ export function useVaultExplorer({ enabled = true }: UseVaultExplorerOptions = {
 
 	const refresh = useCallback(async () => {
 		if (!enabledRef.current) {
-			setExplorer(null);
-			setError(null);
-			setIsLoading(false);
+			dispatch({ type: "disabled" });
 			return;
 		}
 
 		const controller = new AbortController();
-		setIsLoading(true);
+		dispatch({ type: "loading" });
 		try {
 			const nextExplorer = await fetchExplorer({ signal: controller.signal });
-			setExplorer(nextExplorer);
-			setError(null);
+			dispatch({ type: "loaded", explorer: nextExplorer });
 		} catch (nextError) {
 			if (nextError instanceof Error && nextError.name === "AbortError") {
 				return;
 			}
-			setExplorer(null);
-			setError(nextError instanceof Error ? nextError : new Error(String(nextError)));
+			dispatch({
+				type: "failed",
+				error: nextError instanceof Error ? nextError : new Error(String(nextError)),
+			});
 		} finally {
-			setIsLoading(false);
+			dispatch({ type: "settled" });
 		}
 	}, []);
 
 	useEffect(() => {
 		if (!enabled) {
-			setExplorer(null);
-			setError(null);
-			setIsLoading(false);
+			dispatch({ type: "disabled" });
 			return;
 		}
 

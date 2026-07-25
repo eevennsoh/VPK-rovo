@@ -151,7 +151,10 @@ test("Skills Directory uses contextual cards, immediate Studio switches, and leg
 	assert.match(source, /onToggleAdded=\{showAddedSwitch \? \(checked\) => onToggleAddedSkill\(skill, checked\) : undefined\}/u);
 	assert.match(source, /onAddedChange=\{onToggleAdded\}/u);
 	assert.match(source, /cardActionLabel=\{onToggleAdded \? `\$\{added \? "Remove" : "Add"\} \$\{skill\.name\}` : undefined\}/u);
-	assert.match(source, /onSelectedChange=\{onToggleSelected\}/u);
+	assert.match(
+		source,
+		/onSelectedChange=\{\(checked\) => \{[\s\S]*if \(nextSelected\) \{[\s\S]*setMoreMenuOpen\(false\);[\s\S]*onToggleSelected\(checked\);/u,
+	);
 	assert.match(source, /selectable=\{checkboxSelectable\}/u);
 	assert.match(source, /const effectiveAdded = addedIds\.has\(skill\.id\);/u);
 	assert.match(source, /added=\{effectiveAdded\}/u);

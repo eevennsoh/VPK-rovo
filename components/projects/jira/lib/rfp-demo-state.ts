@@ -382,7 +382,7 @@ function getRfpDraftingAgentData(agent: AgentsRfpDemoAgent): JiraKanbanAgentData
 }
 
 function cloneState(state: AgentsRfpDemoState): AgentsRfpDemoState {
-	return JSON.parse(JSON.stringify(state)) as AgentsRfpDemoState;
+	return structuredClone(state);
 }
 
 function createDefaultBoardState(): AgentsRfpDemoState["board"] {

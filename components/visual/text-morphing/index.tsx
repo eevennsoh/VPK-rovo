@@ -56,9 +56,9 @@ function AutoSizeWrapper({ children, transition }: { children: React.ReactNode; 
 
 	return (
 		<motion.span
-			animate={{ width: width > 0 ? width : "auto" }}
+			layout="size"
 			transition={transition}
-			style={{ display: "inline-flex", willChange: "width" }}
+			style={{ display: "inline-flex", width: width > 0 ? width : "auto", willChange: "transform" }}
 		>
 			<span ref={ref} style={{ display: "inline-flex" }}>
 				{children}

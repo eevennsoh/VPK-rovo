@@ -1,6 +1,7 @@
 "use client";
 
 import { useLazyRef } from "@/lib/use-lazy-ref";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import {
 	createContext,
 	use,
@@ -484,12 +485,11 @@ export function RovoChatProvider({
 			return;
 		}
 
-		setSessionAgentEntries((previous) => {
-			const mergeResult = mergeRehydratedSessionAgentEntries(previous, rehydrated);
-			if (!mergeResult.changed) {
-				return previous;
-			}
-
+		const mergeResult = mergeRehydratedSessionAgentEntries(
+			sessionAgentEntriesRef.current,
+			rehydrated,
+		);
+		if (mergeResult.changed) {
 			sessionAgentEntriesRef.current = mergeResult.entries;
 			// Rehydration writes the persisted agents back to storage unchanged;
 			// run that persist silently so a plain reload (no user edits) never
@@ -498,8 +498,8 @@ export function RovoChatProvider({
 			// debounced save effect, so the flag can't linger and swallow the
 			// user's next real save.
 			suppressNextSessionAgentSaveStatusRef.current = true;
-			return mergeResult.entries;
-		});
+			setSessionAgentEntries(mergeResult.entries);
+		}
 	}, []);
 	// oxlint-enable react-doctor/no-initialize-state
 
@@ -1092,45 +1092,41 @@ export function RovoChatProvider({
 	const [floatingPinReasons, setFloatingPinReasons] = useState<ReadonlySet<string>>(
 		() => new Set()
 	);
+	const floatingPinReasonsRef = useLatestRef(floatingPinReasons);
+	const chatSurfaceRef = useLatestRef(chatSurface);
 	const isFloatingPinned = floatingPinReasons.size > 0;
 	// Surface to restore once the last pin releases. Captured on first pin only.
 	const surfaceBeforePinRef = useRef<ChatSurface | null>(null);
 
 	const pinFloating = useCallback((reason: string) => {
-		setFloatingPinReasons((prev) => {
-			if (prev.has(reason)) return prev;
-			if (prev.size === 0) {
-				// First pin — capture current surface so we can restore it on release.
-				// Don't auto-open chat that was closed: only switch from "sidebar".
-				setChatSurface((current) => {
-					surfaceBeforePinRef.current = current;
-					return current === "sidebar" ? "floating" : current;
-				});
-			}
-			const next = new Set(prev);
-			next.add(reason);
-			return next;
-		});
-	}, []);
+		const previous = floatingPinReasonsRef.current;
+		if (previous.has(reason)) return;
+		if (previous.size === 0) {
+			const currentSurface = chatSurfaceRef.current;
+			surfaceBeforePinRef.current = currentSurface;
+			if (currentSurface === "sidebar") setChatSurface("floating");
+		}
+		const next = new Set(previous);
+		next.add(reason);
+		floatingPinReasonsRef.current = next;
+		setFloatingPinReasons(next);
+	}, [chatSurfaceRef, floatingPinReasonsRef]);
 
 	const unpinFloating = useCallback((reason: string) => {
-		setFloatingPinReasons((prev) => {
-			if (!prev.has(reason)) return prev;
-			const next = new Set(prev);
-			next.delete(reason);
-			if (next.size === 0) {
-				const restored = surfaceBeforePinRef.current;
-				surfaceBeforePinRef.current = null;
-				setChatSurface((current) => {
-					// User closed the chat during the pin — honor that.
-					if (current === null) return current;
-					// Restore only if the original surface before pinning was sidebar.
-					return restored === "sidebar" ? "sidebar" : current;
-				});
+		const previous = floatingPinReasonsRef.current;
+		if (!previous.has(reason)) return;
+		const next = new Set(previous);
+		next.delete(reason);
+		floatingPinReasonsRef.current = next;
+		setFloatingPinReasons(next);
+		if (next.size === 0) {
+			const restored = surfaceBeforePinRef.current;
+			surfaceBeforePinRef.current = null;
+			if (chatSurfaceRef.current !== null && restored === "sidebar") {
+				setChatSurface("sidebar");
 			}
-			return next;
-		});
-	}, []);
+		}
+	}, [chatSurfaceRef, floatingPinReasonsRef]);
 
 	const clearSuggestedQuestions = useCallback(() => {
 		setMessages((prev) =>
@@ -1200,14 +1196,9 @@ export function RovoChatProvider({
 	const closeHistory = useCallback(() => setIsHistoryOpen(false), []);
 
 	const toggleHistory = useCallback(() => {
-		setIsHistoryOpen((previousOpen) => {
-			const nextOpen = !previousOpen;
-			if (nextOpen) {
-				void refreshThreads();
-			}
-			return nextOpen;
-		});
-	}, [refreshThreads]);
+		if (!isHistoryOpen) void refreshThreads();
+		setIsHistoryOpen(!isHistoryOpen);
+	}, [isHistoryOpen, refreshThreads]);
 
 	useEffect(() => {
 		const handleFocus = () => {

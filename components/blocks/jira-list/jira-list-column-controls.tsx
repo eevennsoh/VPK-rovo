@@ -125,13 +125,13 @@ export function JiraListColumnBoundary({
 							value={query}
 						/>
 					</div>
-					<div className="max-h-80 overflow-y-auto bg-surface py-1" role="list">
+					<ul className="max-h-80 overflow-y-auto bg-surface py-1">
 						{visibleOptions.map((option) => {
 							const isSelected = selectedOptionIds.has(option.id);
 							return (
+								<li key={option.id}>
 								<label
 									className="flex min-h-12 cursor-pointer items-start gap-3 bg-surface px-3 py-2 hover:bg-bg-neutral-subtle-hovered"
-									key={option.id}
 								>
 									<Checkbox
 										aria-label={`Select ${option.label}`}
@@ -159,12 +159,13 @@ export function JiraListColumnBoundary({
 										</span>
 									</span>
 								</label>
+								</li>
 							);
 						})}
 						{visibleOptions.length === 0 ? (
-							<p className="px-3 py-6 text-center text-sm text-text-subtle">No columns found</p>
+							<li className="px-3 py-6 text-center text-sm text-text-subtle">No columns found</li>
 						) : null}
-					</div>
+					</ul>
 					<div className="border-t border-border bg-surface px-3 py-2 text-right text-sm font-semibold text-text-subtle">
 						34 of 58
 					</div>

@@ -448,7 +448,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 	useHmrReloadSuppression(chat.isStreaming);
 	const chatRef = useRef(chat);
-	chatRef.current = chat;
+	useEffect(() => {
+		chatRef.current = chat;
+	}, [chat]);
 	const [skillDrafts, setSkillDrafts] = useState<HermesSkillDraftSummary[]>([]);
 	const [activePendingSkillDraftIndex, setActivePendingSkillDraftIndex] = useState(0);
 	const [activePendingSkillDraftDetail, setActivePendingSkillDraftDetail] = useState<HermesSkillDraftDetail | null>(null);
@@ -2766,9 +2768,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	// Keep the screen-assistant tool executor (created with the realtime hook
 	// above) pointed at the latest handlers without re-creating the hook.
-	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
-	handleComposerSubmitRef.current = handleComposerSubmit;
-	prefillTextRef.current = prefillText;
+	useEffect(() => {
+		sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+		handleComposerSubmitRef.current = handleComposerSubmit;
+		prefillTextRef.current = prefillText;
+	}, [handleComposerSubmit, prefillText, realtime.sendFunctionCallOutput]);
 
 	const displayMessages = useMemo(() => {
 		if (!optimisticUserMessage) {
@@ -3003,7 +3007,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
 	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
 	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;
-	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
+	useEffect(() => {
+		isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
+	}, [isDefaultAgentHomeState]);
 	const shouldReduceMotion = useReducedMotion();
 	const shouldReduceStudioLandingMotion = Boolean(shouldReduceMotion);
 	const [landingMotionReady, setLandingMotionReady] = useState(false);
@@ -3028,10 +3034,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const studioLandingMotionTransition = shouldReduceStudioLandingMotion
 		? STUDIO_LANDING_REDUCED_TRANSITION
 		: STUDIO_LANDING_ENTER_TRANSITION;
-	screenAssistantComposerRef.current = {
-		hasPrefill: Boolean(voiceTranscript ?? prefillText),
-		placeholder: composerPreviewState.placeholder,
-	};
+	useEffect(() => {
+		screenAssistantComposerRef.current = {
+			hasPrefill: Boolean(voiceTranscript ?? prefillText),
+			placeholder: composerPreviewState.placeholder,
+		};
+	}, [composerPreviewState.placeholder, prefillText, voiceTranscript]);
 
 	useEffect(() => {
 		if (landingMotionReady || shellSize.width <= 0 || shellSize.height <= 0) {

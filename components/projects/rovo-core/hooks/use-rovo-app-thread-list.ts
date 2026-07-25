@@ -31,6 +31,11 @@ export function useRovoAppThreadListCore(
 	const [threadsLoaded, setThreadsLoaded] = useState(false);
 	const mountedRef = useRef(true);
 	const lastSerializedRef = useRef<string>("");
+	const threadsRef = useRef<RovoAppThread[]>([]);
+	const updateThreads = useCallback((nextThreads: RovoAppThread[]) => {
+		threadsRef.current = nextThreads;
+		setThreads(nextThreads);
+	}, []);
 
 	const refreshThreads = useCallback(async () => {
 		try {
@@ -40,10 +45,10 @@ export function useRovoAppThreadListCore(
 					const nextSerialized = serializeRovoAppThreads(result);
 					if (nextSerialized !== lastSerializedRef.current) {
 						lastSerializedRef.current = nextSerialized;
-						setThreads(result);
+						updateThreads(result);
 					}
 				} else {
-					setThreads(result);
+					updateThreads(result);
 				}
 				setThreadsLoaded(true);
 			}
@@ -52,7 +57,7 @@ export function useRovoAppThreadListCore(
 				setThreadsLoaded(true);
 			}
 		}
-	}, [dedupeRefreshResults]);
+	}, [dedupeRefreshResults, updateThreads]);
 
 	useEffect(() => {
 		mountedRef.current = true;
@@ -92,13 +97,12 @@ export function useRovoAppThreadListCore(
 	}, [passiveRefreshIntervalMs, refreshThreads]);
 
 	const deleteThread = useCallback(async (threadId: string) => {
-		setThreads((prev) => {
-			const nextThreads = prev.filter((thread) => thread.id !== threadId);
-			if (dedupeRefreshResults) {
-				lastSerializedRef.current = serializeRovoAppThreads(nextThreads);
-			}
-			return nextThreads;
-		});
+		const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId);
+		threadsRef.current = nextThreads;
+		if (dedupeRefreshResults) {
+			lastSerializedRef.current = serializeRovoAppThreads(nextThreads);
+		}
+		setThreads(nextThreads);
 		try {
 			await deleteRovoAppThread(threadId);
 		} catch {

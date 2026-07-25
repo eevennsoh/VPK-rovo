@@ -12,7 +12,7 @@ export interface HeatmapXAxisProps {
   className?: string;
 }
 
-const monthFmt = new Intl.DateTimeFormat("en-US", { month: "short" });
+const monthFmt = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" });
 
 export const HeatmapXAxis = memo(function HeatmapXAxis({
   className,
@@ -34,7 +34,7 @@ export const HeatmapXAxis = memo(function HeatmapXAxis({
         continue;
       }
 
-      const month = firstDate.getMonth();
+      const month = firstDate.getUTCMonth();
       if (month === lastMonth) {
         continue;
       }

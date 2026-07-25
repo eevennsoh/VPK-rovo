@@ -40,7 +40,7 @@ function getQuestionCardStorageKey(toolCallId: string | undefined): string | nul
 	return `${QUESTION_CARD_STORAGE_PREFIX}${toolCallId}`;
 }
 
-function getQuestionSignature(questions: ReadonlyArray<QuestionCardQuestion>): string {
+export function getQuestionSignature(questions: ReadonlyArray<QuestionCardQuestion>): string {
 	return questions.map((question) => question.id).join("|");
 }
 
@@ -152,14 +152,6 @@ export function useQuestionCard({
 		cardRef.current?.focus({ preventScroll: true });
 	}, []);
 
-	useEffect(() => {
-		const persistedState = readPersistedQuestionCardState(storageKey, questionSignature);
-		setAnswers(defaultAnswers ?? persistedState?.answers ?? {});
-		setCurrentQuestionIndex(Math.min(totalQuestions - 1, persistedState?.currentQuestionIndex ?? 0));
-		setFocusedIndex(0);
-		previousQuestionIndexRef.current = null;
-	}, [defaultAnswers, questionSignature, storageKey, totalQuestions]);
-
 	const persistQuestionCardState = useCallback(
 		(nextAnswers: QuestionCardAnswers, nextQuestionIndex: number) => {
 			writePersistedQuestionCardState(storageKey, {
@@ -206,22 +198,18 @@ export function useQuestionCard({
 	const goToNextQuestion = useCallback((nextAnswers: QuestionCardAnswers = answers) => {
 		setNavigationDirection("forward");
 		resetFocusForNewQuestion();
-		setCurrentQuestionIndex((previous) => {
-			const nextIndex = Math.min(totalQuestions - 1, previous + 1);
-			persistQuestionCardState(nextAnswers, nextIndex);
-			return nextIndex;
-		});
-	}, [answers, totalQuestions, resetFocusForNewQuestion, persistQuestionCardState]);
+		const nextIndex = Math.min(totalQuestions - 1, safeQuestionIndex + 1);
+		setCurrentQuestionIndex(nextIndex);
+		persistQuestionCardState(nextAnswers, nextIndex);
+	}, [answers, totalQuestions, safeQuestionIndex, resetFocusForNewQuestion, persistQuestionCardState]);
 
 	const goToPreviousQuestion = useCallback((nextAnswers: QuestionCardAnswers = answers) => {
 		setNavigationDirection("backward");
 		resetFocusForNewQuestion();
-		setCurrentQuestionIndex((previous) => {
-			const nextIndex = Math.max(0, previous - 1);
-			persistQuestionCardState(nextAnswers, nextIndex);
-			return nextIndex;
-		});
-	}, [answers, resetFocusForNewQuestion, persistQuestionCardState]);
+		const nextIndex = Math.max(0, safeQuestionIndex - 1);
+		setCurrentQuestionIndex(nextIndex);
+		persistQuestionCardState(nextAnswers, nextIndex);
+	}, [answers, safeQuestionIndex, resetFocusForNewQuestion, persistQuestionCardState]);
 
 	const submitAnswers = useCallback(
 		(nextAnswers: QuestionCardAnswers) => {
@@ -360,25 +348,22 @@ export function useQuestionCard({
 	const handleKeyboardOptionSelect = useCallback(
 		(optionId: string) => {
 			if (currentQuestion.kind === "multi-select") {
-				setAnswers((previousAnswers) => {
-					const selectedValues = getSelectedValues(previousAnswers[currentQuestion.id]);
-					const nextValues = selectedValues.includes(optionId)
-						? selectedValues.filter((value) => value !== optionId)
-						: [...selectedValues, optionId];
-
-					const nextAnswers = {
-						...previousAnswers,
-						[currentQuestion.id]: nextValues,
-					};
-					persistQuestionCardState(nextAnswers, safeQuestionIndex);
-					return nextAnswers;
-				});
+				const selectedValues = getSelectedValues(answers[currentQuestion.id]);
+				const nextValues = selectedValues.includes(optionId)
+					? selectedValues.filter((value) => value !== optionId)
+					: [...selectedValues, optionId];
+				const nextAnswers = {
+					...answers,
+					[currentQuestion.id]: nextValues,
+				};
+				setAnswers(nextAnswers);
+				persistQuestionCardState(nextAnswers, safeQuestionIndex);
 				return;
 			}
 
 			handleSelectOption(optionId);
 		},
-		[currentQuestion, handleSelectOption, persistQuestionCardState, safeQuestionIndex],
+		[answers, currentQuestion, handleSelectOption, persistQuestionCardState, safeQuestionIndex],
 	);
 
 	const handleCustomInputFocus = useCallback(() => {

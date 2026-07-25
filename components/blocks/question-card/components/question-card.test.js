@@ -101,9 +101,10 @@ test("QuestionCard keyboard shortcuts toggle multi-select options without submit
 	);
 
 	assert.match(keyboardSelect, /currentQuestion\.kind === "multi-select"/u);
-	assert.match(keyboardSelect, /setAnswers\(\(previousAnswers\) =>/u);
-	assert.match(keyboardSelect, /const selectedValues = getSelectedValues\(previousAnswers\[currentQuestion\.id\]\)/u);
+	assert.match(keyboardSelect, /const selectedValues = getSelectedValues\(answers\[currentQuestion\.id\]\)/u);
 	assert.match(keyboardSelect, /\[currentQuestion\.id\]: nextValues/u);
+	assert.match(keyboardSelect, /setAnswers\(nextAnswers\)/u);
+	assert.match(keyboardSelect, /persistQuestionCardState\(nextAnswers, safeQuestionIndex\)/u);
 	assert.match(keyboardSelect, /handleSelectOption\(optionId\)/u);
 	assert.doesNotMatch(keyboardSelect, /onSubmit\(nextAnswers\)/u);
 	assert.doesNotMatch(keyboardSelect, /goToNextQuestion\(\)/u);

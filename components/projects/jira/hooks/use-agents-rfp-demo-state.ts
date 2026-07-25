@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type SetStateAction } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import {
 	attachRfpReportToWorkItem,
 	approveRfpReport,
@@ -83,6 +84,15 @@ async function readJsonStateResponse(response: Response): Promise<AgentsRfpDemoS
 
 export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 	const [state, setState] = useState<AgentsRfpDemoState>(() => createDefaultAgentsRfpDemoState());
+	const stateRef = useLatestRef(state);
+	const updateState = useCallback((updater: SetStateAction<AgentsRfpDemoState>) => {
+		const nextState = typeof updater === "function"
+			? (updater as (current: AgentsRfpDemoState) => AgentsRfpDemoState)(stateRef.current)
+			: updater;
+		stateRef.current = nextState;
+		setState(nextState);
+		return nextState;
+	}, [stateRef]);
 	const hasPendingAgentWork = Object.values(state.workItems).some((workItem) => (
 		workItem.agentStatus === "queued" || workItem.agentStatus === "running"
 	));
@@ -94,7 +104,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 			try {
 				const nextState = await readJsonStateResponse(await fetch(RFP_DEMO_STATE_ENDPOINT));
 				if (!cancelled) {
-					setState(nextState);
+					updateState(nextState);
 				}
 			} catch (error) {
 				console.error("[AgentsRfpDemo] Failed to load backend state:", error);
@@ -106,7 +116,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [updateState]);
 
 	useEffect(() => {
 		if (!hasPendingAgentWork) {
@@ -118,7 +128,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 			try {
 				const nextState = await readJsonStateResponse(await fetch(RFP_DEMO_STATE_ENDPOINT));
 				if (!cancelled) {
-					setState(nextState);
+					updateState(nextState);
 				}
 			} catch (error) {
 				console.error("[AgentsRfpDemo] Failed to poll backend state:", error);
@@ -132,7 +142,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 			cancelled = true;
 			window.clearInterval(intervalId);
 		};
-	}, [hasPendingAgentWork]);
+	}, [hasPendingAgentWork, updateState]);
 
 	const postStateMutation = useCallback(async (endpoint: string, body: Record<string, unknown> = {}) => {
 		try {
@@ -141,21 +151,16 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 				headers: { "Content-Type": "application/json" },
 				method: "POST",
 			}));
-			setState(nextState);
+			updateState(nextState);
 		} catch (error) {
 			console.error("[AgentsRfpDemo] Failed to mutate backend state:", error);
 		}
-	}, []);
+	}, [updateState]);
 
 	const persistStateMutation = useCallback((updater: SetStateAction<AgentsRfpDemoState>) => {
-		setState((currentState) => {
-			const nextState = typeof updater === "function"
-				? (updater as (state: AgentsRfpDemoState) => AgentsRfpDemoState)(currentState)
-				: updater;
-			void postStateMutation(RFP_DEMO_STATE_ENDPOINT, { state: nextState });
-			return nextState;
-		});
-	}, [postStateMutation]);
+		const nextState = updateState(updater);
+		void postStateMutation(RFP_DEMO_STATE_ENDPOINT, { state: nextState });
+	}, [postStateMutation, updateState]);
 
 	const reset = useCallback(() => postStateMutation(RFP_DEMO_RESET_ENDPOINT), [postStateMutation]);
 	const generateReport = useCallback(() => persistStateMutation(generateRfpReport), [persistStateMutation]);
@@ -192,20 +197,20 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 	);
 	const moveCard = useCallback(
 		(cardCode: string, targetColumnTitle: string) => {
-			setState((currentState) => moveRfpDemoCard(currentState, cardCode, targetColumnTitle));
+			updateState((currentState) => moveRfpDemoCard(currentState, cardCode, targetColumnTitle));
 			void postStateMutation(RFP_DEMO_TICKET_EVENT_ENDPOINT, {
 				ticketCode: cardCode,
 				targetColumn: targetColumnTitle,
 			});
 		},
-		[postStateMutation],
+		[postStateMutation, updateState],
 	);
 	const moveCards = useCallback(
 		(cardCodes: readonly string[], targetColumnTitle: string) => {
 			if (cardCodes.length === 0) {
 				return;
 			}
-			setState((currentState) => cardCodes.reduce(
+			updateState((currentState) => cardCodes.reduce(
 				(accState, cardCode) => moveRfpDemoCard(accState, cardCode, targetColumnTitle),
 				currentState,
 			));
@@ -218,7 +223,7 @@ export function useAgentsRfpDemoState(): AgentsRfpDemoController {
 				}
 			})();
 		},
-		[postStateMutation],
+		[postStateMutation, updateState],
 	);
 	const setCardsAgentAssignment = useCallback(
 		(cardCodes: readonly string[], agentId: string, assigned: boolean) => {

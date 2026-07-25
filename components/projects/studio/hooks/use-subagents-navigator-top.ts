@@ -11,6 +11,26 @@ import { useEffect, useState, type RefObject } from "react";
  */
 const DEFAULT_TOP_PX = 36;
 
+function observeResizeTargets(observer: ResizeObserver, ...targets: Element[]): void {
+	for (const target of targets) {
+		observer.observe(target);
+	}
+}
+
+function observeSubtreeMutations(observer: MutationObserver, target: Node): void {
+	observer.observe(target, { childList: true, subtree: true });
+}
+
+function subscribeToEvent(
+	target: EventTarget,
+	type: string,
+	listener: EventListenerOrEventListenerObject,
+	options?: boolean | AddEventListenerOptions,
+): () => void {
+	target.addEventListener(type, listener, options);
+	return () => target.removeEventListener(type, listener, options);
+}
+
 /**
  * Keeps the floating {@link SubagentsNavigator} top-aligned with the first line
  * of the agent instructions editor, whether the user is viewing rendered text
@@ -39,7 +59,7 @@ export function useSubagentsNavigatorTop(
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container || typeof ResizeObserver === "undefined") {
-			return;
+			return () => undefined;
 		}
 
 		let frame = 0;
@@ -135,17 +155,18 @@ export function useSubagentsNavigatorTop(
 		}
 
 		const resizeObserver = new ResizeObserver(scheduleMeasure);
-		resizeObserver.observe(container);
+		observeResizeTargets(resizeObserver, container);
+		let unsubscribeScroll: (() => void) | null = null;
 
 		const section = container.querySelector<HTMLElement>(
 			'[data-agent-field="instructions"]',
 		);
 		if (section) {
-			resizeObserver.observe(section);
+			observeResizeTargets(resizeObserver, section);
 			scrollTarget = findScrollParent(section);
-			scrollTarget?.addEventListener("scroll", scheduleMeasure, {
-				passive: true,
-			});
+			if (scrollTarget) {
+				unsubscribeScroll = subscribeToEvent(scrollTarget, "scroll", scheduleMeasure, { passive: true });
+			}
 		}
 		// The profile column above the editor reflows as it settles; observe it so
 		// the first line stays tracked when the name/description height changes.
@@ -153,7 +174,7 @@ export function useSubagentsNavigatorTop(
 			'[data-agent-field="name"]',
 		);
 		if (profileName) {
-			resizeObserver.observe(profileName);
+			observeResizeTargets(resizeObserver, profileName);
 		}
 
 		// Images above the editor (cover banner, avatars) load asynchronously and
@@ -162,20 +183,20 @@ export function useSubagentsNavigatorTop(
 		const pendingImages = Array.from(
 			container.querySelectorAll<HTMLImageElement>("img"),
 		).filter((img) => !img.complete);
-		for (const img of pendingImages) {
-			img.addEventListener("load", scheduleMeasure, { once: true });
-			img.addEventListener("error", scheduleMeasure, { once: true });
-		}
+		const unsubscribeImages = pendingImages.flatMap((img) => [
+			subscribeToEvent(img, "load", scheduleMeasure, { once: true }),
+			subscribeToEvent(img, "error", scheduleMeasure, { once: true }),
+		]);
 
 		// The editor mounts/streams content asynchronously; re-measure when the
 		// instructions subtree changes so the first line stays tracked.
 		const mutationObserver = new MutationObserver(scheduleMeasure);
-		mutationObserver.observe(container, { childList: true, subtree: true });
+		observeSubtreeMutations(mutationObserver, container);
 
 		// Late web-font swaps and the window's own load event can shift the
 		// editor's baseline after our first pass.
-		window.addEventListener("resize", scheduleMeasure, { passive: true });
-		window.addEventListener("load", scheduleMeasure);
+		const unsubscribeWindowResize = subscribeToEvent(window, "resize", scheduleMeasure, { passive: true });
+		const unsubscribeWindowLoad = subscribeToEvent(window, "load", scheduleMeasure);
 
 		scheduleMeasure();
 		scheduleSettlePasses();
@@ -189,13 +210,12 @@ export function useSubagentsNavigatorTop(
 			}
 			resizeObserver.disconnect();
 			mutationObserver.disconnect();
-			scrollTarget?.removeEventListener("scroll", scheduleMeasure);
-			for (const img of pendingImages) {
-				img.removeEventListener("load", scheduleMeasure);
-				img.removeEventListener("error", scheduleMeasure);
+			unsubscribeScroll?.();
+			for (const unsubscribe of unsubscribeImages) {
+				unsubscribe();
 			}
-			window.removeEventListener("resize", scheduleMeasure);
-			window.removeEventListener("load", scheduleMeasure);
+			unsubscribeWindowResize();
+			unsubscribeWindowLoad();
 		};
 	}, [containerRef]);
 

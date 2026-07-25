@@ -260,7 +260,6 @@ function DateLabelTrigger({
 export {
 	DateLabel,
 	DateLabelTrigger,
-	dateLabelVariants,
 	type DateLabelProps,
 	type DateLabelTriggerProps,
 }

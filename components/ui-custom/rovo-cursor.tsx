@@ -530,10 +530,15 @@ function Speaking({ scale }: Readonly<{ scale: number }>) {
 						key={bar.color}
 						style={{
 							width: barWidth,
+							height: maxH,
 							backgroundColor: bar.color,
+							transformOrigin: "center",
+							willChange: "transform",
 						}}
-						initial={{ height: 0 }}
-						animate={reduced ? { height: (minH + maxH) / 2 } : { height: [minH, maxH, minH] }}
+						initial={{ scaleY: 0 }}
+						animate={reduced
+							? { scaleY: (minH + maxH) / (2 * maxH) }
+							: { scaleY: [minH / maxH, 1, minH / maxH] }}
 						transition={
 							reduced
 								? SPEAKING_MOUNT_TRANSITION

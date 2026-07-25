@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { fetchLog } from "./lib/personal-graph-api";
 import type { LogEntry } from "./lib/personal-graph-types";
 
-const formatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+const formatter = new Intl.DateTimeFormat("en-US", {
+	dateStyle: "medium",
+	timeZone: "UTC",
+});
 
 export function PersonalGraphLog({ refreshKey }: Readonly<{ refreshKey: number }>) {
 	const [entries, setEntries] = useState<LogEntry[]>([]);

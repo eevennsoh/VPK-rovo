@@ -7,51 +7,13 @@ import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Heading from "@/components/ui/heading";
+import type {
+	RovoAppEmptyStateConfig,
+	RovoAppEmptyState,
+	RovoAppImageIllustrationEmptyState as RovoAppIllustratedEmptyState,
+} from "./rovo-app-empty-state-config";
 
-type RovoAppPlainEmptyState = {
-	heading: string;
-	id: string;
-};
-
-type RovoAppImageIllustrationEmptyState = RovoAppPlainEmptyState & {
-	alt: string;
-	darkIllustrationSrc: string;
-	height: number;
-	illustrationClassName: string;
-	lightIllustrationSrc: string;
-	width: number;
-};
-
-type RovoAppEmptyState = RovoAppPlainEmptyState | RovoAppImageIllustrationEmptyState;
-type RovoAppIllustratedEmptyState = RovoAppImageIllustrationEmptyState;
-
-export type RovoAppEmptyStateConfig = {
-	default: RovoAppEmptyState;
-	max: RovoAppEmptyState;
-};
-
-export const ROVO_APP_DEFAULT_EMPTY_STATE = {
-	default: {
-		alt: "Chat",
-		darkIllustrationSrc: "/illustration-ai/chat/dark.svg",
-		heading: "How can I help?",
-		height: 67,
-		id: "default",
-		illustrationClassName: "h-[67px] w-[74px]",
-		lightIllustrationSrc: "/illustration-ai/chat/light.svg",
-		width: 74,
-	},
-	max: {
-		alt: "Max",
-		darkIllustrationSrc: "/illustration-ai/max/dark.gif",
-		heading: "Let's plan your next move",
-		height: 67,
-		id: "max",
-		illustrationClassName: "h-[67px] w-[74px]",
-		lightIllustrationSrc: "/illustration-ai/max/light.gif",
-		width: 74,
-	},
-} as const satisfies RovoAppEmptyStateConfig;
+export type { RovoAppEmptyStateConfig } from "./rovo-app-empty-state-config";
 
 const ROVO_APP_EMPTY_STATE_MODE_TRANSITION = {
 	type: "spring",

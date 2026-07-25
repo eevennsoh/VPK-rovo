@@ -584,8 +584,8 @@ function DefaultAgentBrowser({
 				)}
 
 				<div className="flex items-center justify-between">
-					{activeTemplateCategoryOption ? (
-						<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
+					<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
+						{activeTemplateCategoryOption ? (
 							<motion.div
 								animate="center"
 								className="min-h-14 overflow-hidden text-text"
@@ -598,8 +598,9 @@ function DefaultAgentBrowser({
 							>
 								<TemplateCategoryTitle category={activeTemplateCategoryOption} />
 							</motion.div>
-						</AnimatePresence>
-					) : (
+						) : null}
+					</AnimatePresence>
+					{activeTemplateCategoryOption ? null : (
 						<Button variant="outline">
 							Sort by popularity
 							<Icon render={<ChevronDownIcon label="" size="small" color="currentColor" />} />
@@ -612,9 +613,9 @@ function DefaultAgentBrowser({
 					)}
 				</div>
 
-				{activeTemplateCategoryOption ? (
-					<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
-						{filteredTemplates.length === 0 ? (
+				<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
+					{activeTemplateCategoryOption ? (
+						filteredTemplates.length === 0 ? (
 							<motion.p
 								animate="center"
 								className="text-sm text-text-subtlest"
@@ -644,9 +645,10 @@ function DefaultAgentBrowser({
 									onSelectAgent={onSelectTemplateAgent}
 								/>
 							</motion.section>
-						)}
-					</AnimatePresence>
-				) : filtered.length === 0 ? (
+						)
+					) : null}
+				</AnimatePresence>
+				{activeTemplateCategoryOption ? null : filtered.length === 0 ? (
 					<p className="text-sm text-text-subtlest" key={`agents-empty-${activeCategory}`}>
 						No agents match &ldquo;{query}&rdquo;.
 					</p>

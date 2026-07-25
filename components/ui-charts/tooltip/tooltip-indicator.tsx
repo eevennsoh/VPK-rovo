@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
-
 // oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
 
 import { motion, useSpring } from "motion/react";
@@ -101,14 +99,12 @@ function TooltipIndicatorInner({
   const rectX = x - pixelWidth / 2;
   const animatedX = useSpring(rectX, effectiveSpring);
 
-  if (animate) {
-    animatedX.set(rectX);
-  }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we need to jump the animatedX when the visible prop changes
-  useEffect(() => {
-    animatedX.set(rectX);
-  }, [animatedX, visible]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: we need to jump the animatedX when the visible prop changes
+	useEffect(() => {
+		if (animate || visible) {
+			animatedX.set(rectX);
+		}
+	}, [animate, animatedX, rectX, visible]);
 
   const edgeOpacity = fadeEdges ? 0 : 1;
 

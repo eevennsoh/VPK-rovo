@@ -16,7 +16,7 @@ import ReturnIcon from "@atlaskit/icon-lab/core/return";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { getVisibleOptionCount } from "@/components/blocks/question-card/lib/option-slots";
 import { getSelectedValues } from "@/components/blocks/question-card/lib/question-helpers";
-import { useQuestionCard } from "@/components/blocks/question-card/hooks/use-question-card";
+import { getQuestionSignature, useQuestionCard } from "@/components/blocks/question-card/hooks/use-question-card";
 import type { QuestionCardAnswerValue, QuestionCardAnswers, QuestionCardQuestion } from "../types";
 
 // Re-export types for backward compatibility
@@ -223,7 +223,7 @@ function QuestionInput({
 // QuestionCard
 // ---------------------------------------------------------------------------
 
-function QuestionCard({
+function QuestionCardContent({
 	questions,
 	isSubmitting = false,
 	onSubmit,
@@ -409,6 +409,11 @@ function QuestionCard({
 			</footer>
 		</div>
 	);
+}
+
+function QuestionCard(props: Readonly<QuestionCardProps>): React.ReactElement {
+	const resetKey = `${props.toolCallId}:${getQuestionSignature(props.questions)}:${JSON.stringify(props.defaultAnswers ?? {})}`;
+	return <QuestionCardContent key={resetKey} {...props} />;
 }
 
 export { QuestionCard };

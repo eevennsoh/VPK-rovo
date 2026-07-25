@@ -1,7 +1,8 @@
 "use client";
 
 import { animate, type Transition, useMotionValue } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 
 /** Drives 0→1 enter progress using the studio motion transition (spring or tween). */
@@ -11,8 +12,7 @@ export function useMountProgress(
   replayKey: number | string
 ) {
   const progress = useMotionValue(0);
-  const transitionRef = useRef(enterTransition);
-  transitionRef.current = enterTransition;
+  const transitionRef = useLatestRef(enterTransition);
 
   // replayKey intentionally retriggers enter when motion settings change
   // biome-ignore lint/correctness/useExhaustiveDependencies: replayKey
@@ -23,7 +23,7 @@ export function useMountProgress(
       delay: delaySeconds,
     });
     return () => controls.stop();
-  }, [delaySeconds, replayKey, progress]);
+  }, [delaySeconds, replayKey, progress, transitionRef]);
 
   return progress;
 }

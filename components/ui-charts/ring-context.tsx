@@ -182,9 +182,3 @@ export function useRingHover(): RingHoverContextValue {
   }
   return context;
 }
-
-export function useRing(): RingContextValue {
-  return { ...useRingStable(), ...useRingHover() };
-}
-
-export default RingStableContext;

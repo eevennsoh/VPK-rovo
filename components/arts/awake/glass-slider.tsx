@@ -12,6 +12,7 @@ import {
 	animate,
 	motion,
 	useMotionValue,
+	useMotionValueEvent,
 	useReducedMotion,
 	useTransform,
 } from "motion/react";
@@ -403,14 +404,8 @@ export function GlassSlider({
 		el.style.maskComposite = mask.maskComposite;
 		el.style.webkitMaskComposite = mask.WebkitMaskComposite;
 	}, [meniscusHeightMV, meniscusCurveMV]);
-	useEffect(() => {
-		const u1 = meniscusHeightMV.on("change", writeMeniscusMaskFromMVs);
-		const u2 = meniscusCurveMV.on("change", writeMeniscusMaskFromMVs);
-		return () => {
-			u1();
-			u2();
-		};
-	}, [meniscusHeightMV, meniscusCurveMV, writeMeniscusMaskFromMVs]);
+	useMotionValueEvent(meniscusHeightMV, "change", writeMeniscusMaskFromMVs);
+	useMotionValueEvent(meniscusCurveMV, "change", writeMeniscusMaskFromMVs);
 	const squircleTrackStyle = useMemo(
 		() =>
 			({
@@ -548,10 +543,9 @@ export function GlassSlider({
 	// Forward combined shape changes (rubber-band overshoot + active
 	// scale-up) to the parent so external chrome can follow the deformed
 	// track edges across every interaction state.
-	useEffect(() => {
+	const computeShapeOffsets = useCallback(() => {
 		if (!onShapeChange) return;
 		const wrapper = wrapperRef.current;
-		const computeOffsets = () => {
 			const stretch = rubberStretch.get();
 			const scale = activeScaleY.get();
 			// `scaleY` is applied with `transformOrigin: center center`,
@@ -571,17 +565,9 @@ export function GlassSlider({
 			const topOffsetPx = stretch - halfHeightGrowth - halfScaleGrowth;
 			const bottomOffsetPx = stretch + halfHeightGrowth + halfScaleGrowth;
 			onShapeChange({ topOffsetPx, bottomOffsetPx });
-		};
-		// Emit current values once so consumers start in sync.
-		computeOffsets();
-		const unsubscribers = [
-			rubberStretch.on("change", computeOffsets),
-			activeScaleY.on("change", computeOffsets),
-		];
-		return () => {
-			for (const unsubscribe of unsubscribers) unsubscribe();
-		};
-	}, [rubberStretch, activeScaleY, onShapeChange]);
+	}, [activeScaleY, onShapeChange, rubberStretch]);
+	useMotionValueEvent(rubberStretch, "change", computeShapeOffsets);
+	useMotionValueEvent(activeScaleY, "change", computeShapeOffsets);
 
 	// Convert clientY to a value. Up = higher value.
 	const positionToValue = useCallback(

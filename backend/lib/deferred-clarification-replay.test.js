@@ -12,7 +12,7 @@ const {
 const { getNonEmptyString } = require("./shared-utils");
 
 function toPlainValue(value) {
-	return JSON.parse(JSON.stringify(value));
+	return structuredClone(value);
 }
 
 function createQuestionMetaStore() {

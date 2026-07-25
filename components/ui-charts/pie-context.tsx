@@ -199,9 +199,3 @@ export function usePieHover(): PieHoverContextValue {
   }
   return context;
 }
-
-export function usePie(): PieContextValue {
-  return { ...usePieStable(), ...usePieHover() };
-}
-
-export default PieStableContext;

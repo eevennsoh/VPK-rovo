@@ -6,10 +6,10 @@ import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
 import {
   chartCssVars,
-  useChart,
   useChartStable,
   useYScale,
 } from "./chart-context";
+import { useChart } from "./use-chart";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 

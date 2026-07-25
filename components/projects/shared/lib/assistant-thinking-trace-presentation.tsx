@@ -265,17 +265,17 @@ function buildToolTraceHeader({
 				toolCall,
 			});
 
-			return function ToolTraceHeaderRender() {
-				return (
-					<TwgTool
-						description={description}
-						showChevron={false}
-						sources={header.sources}
-						status={status}
-						title={header.title}
-					/>
-				);
-			};
+			const renderHeader = () => (
+				<TwgTool
+					description={description}
+					showChevron={false}
+					sources={header.sources}
+					status={status}
+					title={header.title}
+				/>
+			);
+			renderHeader.displayName = "ToolTraceHeaderRender";
+			return renderHeader;
 		}
 	}
 }
@@ -288,10 +288,11 @@ function buildToolTraceDetail({
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
 }>): () => ReactNode {
 	switch (detail.type) {
-		case "narration-rows":
-			return function ToolTraceDetailRender() {
-				return <TraceNarrationRowsDetail detailRows={detailRows} />;
-			};
+		case "narration-rows": {
+			const renderDetail = () => <TraceNarrationRowsDetail detailRows={detailRows} />;
+			renderDetail.displayName = "ToolTraceDetailRender";
+			return renderDetail;
+		}
 	}
 }
 

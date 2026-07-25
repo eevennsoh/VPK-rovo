@@ -7,7 +7,6 @@
 import {
 	type Dispatch,
 	type KeyboardEvent,
-	useEffect,
 	useMemo,
 	useState,
 	type MouseEvent,
@@ -896,12 +895,6 @@ function SkillsDirectoryEntityCard({
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const moreActionsDisabled = selected;
 
-	useEffect(() => {
-		if (moreActionsDisabled) {
-			setMoreMenuOpen(false);
-		}
-	}, [moreActionsDisabled]);
-
 	return (
 		<EntityCardSkillCard
 			active={!moreActionsDisabled && moreMenuOpen}
@@ -928,7 +921,13 @@ function SkillsDirectoryEntityCard({
 			}
 			name={skill.name}
 			onAddedChange={onToggleAdded}
-			onSelectedChange={onToggleSelected}
+			onSelectedChange={(checked) => {
+				const nextSelected = checked ?? !selected;
+				if (nextSelected) {
+					setMoreMenuOpen(false);
+				}
+				onToggleSelected(checked);
+			}}
 			onSelect={onSelect}
 			selectable={checkboxSelectable}
 			selected={selected}

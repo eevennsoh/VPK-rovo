@@ -13,11 +13,8 @@ import {
 } from "@/components/ui-audio/audio-player";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import {
-	AUDIO_PLAYER_ITEM,
-	DEMO_TRACK_TITLE,
-	DemoSurface,
-} from "./demo-data";
+import { DemoSurface } from "./demo-data";
+import { AUDIO_PLAYER_ITEM, DEMO_TRACK_TITLE } from "./demo-data-values";
 
 const PLAYLIST_ITEMS = exampleTracks.map((track) => ({
 	id: track.id,

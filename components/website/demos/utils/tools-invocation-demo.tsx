@@ -1,7 +1,6 @@
 "use client";
 
 import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import {
@@ -314,8 +313,13 @@ function getToolError(toolPart: RovoToolPart): string | undefined {
 	return toolPart.errorText;
 }
 
-function getResolvedIconHtml(options: { toolName?: string | null; title?: string | null; input?: unknown; mcpServer?: string | null }) {
-	return renderToStaticMarkup(
+function ToolIcon(options: Readonly<{
+	toolName?: string | null;
+	title?: string | null;
+	input?: unknown;
+	mcpServer?: string | null;
+}>): ReactElement {
+	return (
 		<span style={{ display: "inline-flex", width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
 			{renderResolvedToolIcon(resolveToolIcon(options), { className: "size-4" })}
 		</span>
@@ -385,7 +389,6 @@ function InlineToolCard({ toolPart }: { toolPart: RovoToolPart }) {
 	const displayInfo = getToolDisplayInfo(rawToolName, input);
 	const displayName = displayInfo.displayName;
 	const serverName = displayInfo.server;
-	const iconHtml = getResolvedIconHtml({ toolName: rawToolName, input });
 
 	const formattedInput =
 		input !== undefined && input !== null
@@ -413,7 +416,7 @@ function InlineToolCard({ toolPart }: { toolPart: RovoToolPart }) {
 				{/* Header row */}
 				<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 					<span style={{ ...toolNameBadgeStyle, display: "inline-flex", alignItems: "center", gap: 6 }}>
-					<span dangerouslySetInnerHTML={{ __html: iconHtml }} />
+					<ToolIcon toolName={rawToolName} input={input} />
 					<span>{displayName}</span>
 				</span>
 					{serverName ? <span style={serverBadgeStyle}>{serverName}</span> : null}
@@ -508,7 +511,6 @@ function ThinkingToolCard({ toolCall }: { toolCall: ThinkingToolCallSummary }) {
 	const displayInfo = getToolDisplayInfo(toolCall.toolName, toolCall.input, toolCall.mcpServer);
 	const displayName = displayInfo.displayName;
 	const serverName = displayInfo.server;
-	const iconHtml = getResolvedIconHtml({ toolName: toolCall.toolName, input: toolCall.input, mcpServer: toolCall.mcpServer });
 	const displayState = thinkingStateToDisplayState(toolCall.state);
 
 	const formattedInput =
@@ -533,7 +535,7 @@ function ThinkingToolCard({ toolCall }: { toolCall: ThinkingToolCallSummary }) {
 			<div style={toolCardStyle}>
 				<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 					<span style={{ ...toolNameBadgeStyle, display: "inline-flex", alignItems: "center", gap: 6 }}>
-					<span dangerouslySetInnerHTML={{ __html: iconHtml }} />
+					<ToolIcon toolName={toolCall.toolName} input={toolCall.input} mcpServer={toolCall.mcpServer} />
 					<span>{displayName}</span>
 				</span>
 					{serverName ? <span style={serverBadgeStyle}>{serverName}</span> : null}

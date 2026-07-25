@@ -97,8 +97,9 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 
 	function updateListItem(field: AgentConfigListFieldName, index: number, value: string) {
 		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? [...current[field]] : [];
-			items[index] = value;
+			const items = Array.isArray(current[field])
+				? current[field].map((item, itemIndex) => itemIndex === index ? value : item)
+				: [];
 			return { ...current, [field]: items };
 		});
 	}

@@ -1,7 +1,7 @@
 "use client";
 
-import type { MotionValue } from "motion/react";
-import { useEffect, useState } from "react";
+import { type MotionValue, useMotionValueEvent } from "motion/react";
+import { useState } from "react";
 
 /**
  * Returns true once a mount-progress MotionValue reaches 1.
@@ -11,19 +11,11 @@ import { useEffect, useState } from "react";
 export function useEnterComplete(mountProgress: MotionValue<number>): boolean {
 	const [complete, setComplete] = useState(() => mountProgress.get() >= 1);
 
-	useEffect(() => {
-		if (mountProgress.get() >= 1) {
+	useMotionValueEvent(mountProgress, "change", (value) => {
+		if (value >= 1) {
 			setComplete(true);
-			return;
 		}
-
-		const unsubscribe = mountProgress.on("change", (value) => {
-			if (value >= 1) {
-				setComplete(true);
-			}
-		});
-		return () => unsubscribe();
-	}, [mountProgress]);
+	});
 
 	return complete;
 }

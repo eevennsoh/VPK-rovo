@@ -9,8 +9,8 @@ import {
 	METADATA_CONTENT_COLLAPSE_TRANSITION,
 	METADATA_CONTENT_EXPAND_TRANSITION,
 	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
-	usePanelLayout,
-} from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
+} from "@/components/blocks/agent-sessions/experimental/context-panel-layout-motion";
+import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	buildScrollMaskBlurLayerStyles,

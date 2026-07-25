@@ -10,7 +10,7 @@ import {
 	type SkillCollectionId,
 } from "@/app/data/directory/skill-collections";
 import type { TagOverlayAction } from "@/components/ui/tag";
-import { withTooltip } from "@/components/ui/tooltip";
+import { withTooltip } from "@/components/ui/tooltip-utils";
 import { cn } from "@/lib/utils";
 
 type SkillTagColor = SkillCollectionId | "2p3p";

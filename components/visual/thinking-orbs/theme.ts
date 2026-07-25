@@ -3,6 +3,7 @@
 
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { OrbTheme } from "./types";
 
 function ancestorTheme(el: Element | null): boolean | null {
@@ -81,18 +82,5 @@ export function useResolvedDark(
 
 /** Live `prefers-reduced-motion` — reduced users get a static frame. */
 export function useReducedMotion(): boolean {
-	const [reduced, setReduced] = useState(
-		() =>
-			typeof matchMedia !== "undefined" &&
-			matchMedia("(prefers-reduced-motion: reduce)").matches,
-	);
-	useEffect(() => {
-		if (typeof matchMedia === "undefined") return;
-		const mq = matchMedia("(prefers-reduced-motion: reduce)");
-		setReduced(mq.matches);
-		const on = (e: MediaQueryListEvent) => setReduced(e.matches);
-		mq.addEventListener("change", on);
-		return () => mq.removeEventListener("change", on);
-	}, []);
-	return reduced;
+	return useMediaQuery("(prefers-reduced-motion: reduce)");
 }

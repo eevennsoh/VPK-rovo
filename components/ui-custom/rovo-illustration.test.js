@@ -13,6 +13,8 @@ function readRepoFile(...segments) {
 
 const INDEX_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/index.tsx");
 const SPOT_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/spot-illustration.tsx");
+const SPOT_CONFIG_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/spot-illustration-config.ts");
+const SPOT_PROCESS_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/spot-illustration-process.ts");
 const CONTROLLED_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/controlled-spot-illustration.tsx");
 const ASSETS_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/assets.generated.ts");
 const DEMO_SOURCE = readRepoFile("components/website/demos/ui-custom/rovo-illustration-demo.tsx");
@@ -25,18 +27,18 @@ test("Rovo Illustration restores the embedded spot illustration API", () => {
 	assert.match(INDEX_SOURCE, /export const RovoIllustration = SpotIllustration;/u);
 	assert.match(INDEX_SOURCE, /export const ControlledRovoIllustration = ControlledSpotIllustration;/u);
 	assert.match(SPOT_SOURCE, /getEmbeddedSpotIllustrationSvg/u);
-	assert.match(SPOT_SOURCE, /id: "ai-first-jira"/u);
-	assert.match(SPOT_SOURCE, /id: "deep-research"/u);
+	assert.match(SPOT_CONFIG_SOURCE, /id: "ai-first-jira"/u);
+	assert.match(SPOT_CONFIG_SOURCE, /id: "deep-research"/u);
 });
 
 test("Rovo Illustration rotates clipped mosaics around their own mask center", () => {
-	assert.match(SPOT_SOURCE, /function getMosaicMaskBounds/u);
-	assert.match(SPOT_SOURCE, /function getMosaicBaseUnderlayFills/u);
-	assert.match(SPOT_SOURCE, /mg\.getAttribute\('mask'\)/u);
-	assert.match(SPOT_SOURCE, /transform-origin: \$\{maskCenterX\}px \$\{maskCenterY\}px/u);
-	assert.match(SPOT_SOURCE, /data-mosaic-base-underlay/u);
-	assert.doesNotMatch(SPOT_SOURCE, /data-mosaic-color-guard/u);
-	assert.doesNotMatch(SPOT_SOURCE, /transform-origin: \$\{cx\}px \$\{cy\}px/u);
+	assert.match(SPOT_PROCESS_SOURCE, /function getMosaicMaskBounds/u);
+	assert.match(SPOT_PROCESS_SOURCE, /function getMosaicBaseUnderlayFills/u);
+	assert.match(SPOT_PROCESS_SOURCE, /mg\.getAttribute\('mask'\)/u);
+	assert.match(SPOT_PROCESS_SOURCE, /transform-origin: \$\{maskCenterX\}px \$\{maskCenterY\}px/u);
+	assert.match(SPOT_PROCESS_SOURCE, /data-mosaic-base-underlay/u);
+	assert.doesNotMatch(SPOT_PROCESS_SOURCE, /data-mosaic-color-guard/u);
+	assert.doesNotMatch(SPOT_PROCESS_SOURCE, /transform-origin: \$\{cx\}px \$\{cy\}px/u);
 });
 
 test("Rovo Illustration is wired into the ui-custom catalog route", () => {
@@ -48,9 +50,9 @@ test("Rovo Illustration is wired into the ui-custom catalog route", () => {
 });
 
 test("Rovo Illustration demo exposes Chat and Brainstorm animations", () => {
-	assert.match(SPOT_SOURCE, /id: "chat", label: "Chat"/u);
-	assert.match(SPOT_SOURCE, /id: "brainstorm", label: "Brainstorm"/u);
-	assert.match(SPOT_SOURCE, /'brainstorm': \{ grey: \[2, 3\], mosaic: \[1\], overlap: \[4\] \}/u);
+	assert.match(SPOT_CONFIG_SOURCE, /id: "chat", label: "Chat"/u);
+	assert.match(SPOT_CONFIG_SOURCE, /id: "brainstorm", label: "Brainstorm"/u);
+	assert.match(SPOT_CONFIG_SOURCE, /'brainstorm': \{ grey: \[2, 3\], mosaic: \[1\], overlap: \[4\] \}/u);
 	assert.match(ASSETS_SOURCE, /"brainstorm": BRAINSTORM_LIGHT_SVG/u);
 	assert.match(ASSETS_SOURCE, /"brainstorm": BRAINSTORM_DARK_SVG/u);
 	assert.match(DEMO_SOURCE, /illusIds=\{SPOT_ILLUSTRATIONS\.map/u);

@@ -2,7 +2,7 @@
 
 import CrossIcon from "@atlaskit/icon/core/cross";
 import { AnimatePresence, arc, motion, useReducedMotion, type Transition } from "motion/react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
@@ -40,6 +40,39 @@ const FOCUSABLE_SELECTOR = [
 type ViewportRect = Pick<DOMRect, "bottom" | "height" | "left" | "right" | "top" | "width">;
 type ViewportPoint = { x: number; y: number };
 type TourPhase = "tour" | "returning";
+
+interface TourPresentationState {
+	phase: TourPhase;
+	showFinalMessage: boolean;
+	showTourPanel: boolean;
+}
+
+type TourPresentationAction =
+	| { type: "hide-tour-panel" }
+	| { type: "reset-tour" }
+	| { type: "show-final-message" }
+	| { type: "show-tour-panel" }
+	| { type: "start-returning" };
+
+function reduceTourPresentation(
+	state: TourPresentationState,
+	action: TourPresentationAction,
+): TourPresentationState {
+	switch (action.type) {
+		case "hide-tour-panel":
+			return state.showTourPanel ? { ...state, showTourPanel: false } : state;
+		case "reset-tour":
+			return { phase: "tour", showFinalMessage: false, showTourPanel: false };
+		case "show-final-message":
+			return { ...state, showFinalMessage: true };
+		case "show-tour-panel":
+			return { ...state, showTourPanel: true };
+		case "start-returning":
+			return { phase: "returning", showFinalMessage: false, showTourPanel: false };
+		default:
+			return state;
+	}
+}
 
 export interface RovoCursorOnboardingTourProps {
 	isActive: boolean;
@@ -298,9 +331,10 @@ export function RovoCursorOnboardingTour({
 	const restoreFocusRef = useRef<HTMLElement | null>(null);
 	const lastFinishRequestKeyRef = useRef(finishRequestKey);
 	const [mounted, setMounted] = useState(false);
-	const [phase, setPhase] = useState<TourPhase>("tour");
-	const [showTourPanel, setShowTourPanel] = useState(false);
-	const [showFinalMessage, setShowFinalMessage] = useState(false);
+	const [{ phase, showFinalMessage, showTourPanel }, dispatchPresentation] = useReducer(
+		reduceTourPresentation,
+		{ phase: "tour", showFinalMessage: false, showTourPanel: false },
+	);
 	const active = isActive || phase === "returning";
 	const { anchorRect, liveChatRect } = useViewportMeasurement({
 		active,
@@ -323,19 +357,20 @@ export function RovoCursorOnboardingTour({
 			return;
 		}
 
-		setPhase("tour");
-		setShowTourPanel(false);
-		setShowFinalMessage(false);
+		dispatchPresentation({ type: "reset-tour" });
 	}, [isActive, step.key]);
 
 	useEffect(() => {
 		if (!isActive || phase !== "tour") {
-			setShowTourPanel(false);
+			dispatchPresentation({ type: "hide-tour-panel" });
 			return;
 		}
 
-		setShowTourPanel(false);
-		const revealTimer = window.setTimeout(() => setShowTourPanel(true), reducedMotion ? 0 : TOUR_PANEL_REVEAL_DELAY_MS);
+		dispatchPresentation({ type: "hide-tour-panel" });
+		const revealTimer = window.setTimeout(
+			() => dispatchPresentation({ type: "show-tour-panel" }),
+			reducedMotion ? 0 : TOUR_PANEL_REVEAL_DELAY_MS,
+		);
 		return () => window.clearTimeout(revealTimer);
 	}, [isActive, phase, reducedMotion, step.key]);
 
@@ -415,7 +450,10 @@ export function RovoCursorOnboardingTour({
 			return;
 		}
 
-		const revealTimer = window.setTimeout(() => setShowFinalMessage(true), reducedMotion ? 0 : FINAL_MESSAGE_DELAY_MS);
+		const revealTimer = window.setTimeout(
+			() => dispatchPresentation({ type: "show-final-message" }),
+			reducedMotion ? 0 : FINAL_MESSAGE_DELAY_MS,
+		);
 		const dismissTimer = window.setTimeout(onDismiss, (reducedMotion ? 0 : FINAL_MESSAGE_DELAY_MS) + FINAL_DISMISS_MS);
 		return () => {
 			window.clearTimeout(revealTimer);
@@ -424,9 +462,7 @@ export function RovoCursorOnboardingTour({
 	}, [onDismiss, phase, reducedMotion]);
 
 	const startReturningPhase = useCallback(() => {
-		setPhase("returning");
-		setShowTourPanel(false);
-		setShowFinalMessage(false);
+		dispatchPresentation({ type: "start-returning" });
 	}, []);
 
 	useEffect(() => {
@@ -488,17 +524,20 @@ export function RovoCursorOnboardingTour({
 						className="fixed rounded-lg border-2 border-border-accent-blue bg-blanket-selected shadow-[0_0_0_6px_var(--ds-blanket-selected)]"
 						data-rovo-cursor-onboarding-highlight
 						initial={reducedMotion ? false : { opacity: 0, scale: 0.96 }}
+						layout
 						animate={{
 							opacity: 1,
 							scale: 1,
-							x: anchorRect.left - TARGET_OUTSET,
-							y: anchorRect.top - TARGET_OUTSET,
-							width: anchorRect.width + TARGET_OUTSET * 2,
-							height: anchorRect.height + TARGET_OUTSET * 2,
 						}}
 						exit={{ opacity: 0, scale: 0.98 }}
 						transition={reducedMotion ? { duration: 0 } : { duration: 0.22 }}
-						style={{ boxShadow: `0 0 0 6px ${token("color.blanket.selected")}` }}
+						style={{
+							boxShadow: `0 0 0 6px ${token("color.blanket.selected")}`,
+							height: anchorRect.height + TARGET_OUTSET * 2,
+							left: anchorRect.left - TARGET_OUTSET,
+							top: anchorRect.top - TARGET_OUTSET,
+							width: anchorRect.width + TARGET_OUTSET * 2,
+						}}
 					/>
 				) : null}
 			</AnimatePresence>

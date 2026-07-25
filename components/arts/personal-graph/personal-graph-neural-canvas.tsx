@@ -10,7 +10,7 @@
 /* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "motion/react";
 import { ensureReady, type PlayOptions } from "@web-kits/audio";
 import { useSound } from "@web-kits/audio/react";
 import { useTheme } from "@/components/utils/theme-wrapper";
@@ -620,8 +620,7 @@ export function PersonalGraphNeuralCanvas({
 		requestRenderRef.current();
 	}, [selectedNodeId, targetFocusMV]);
 
-	useEffect(() => {
-		const unsubscribe = focusProgressMV.on("change", (nextFocusProgress) => {
+	useMotionValueEvent(focusProgressMV, "change", (nextFocusProgress) => {
 			const settledHidden = nextFocusProgress < FOCUS_PROGRESS_SETTLED_EPSILON;
 			const settledShown = nextFocusProgress >= 1 - FOCUS_PROGRESS_SETTLED_EPSILON;
 			focusProgressRef.current = settledHidden ? 0 : settledShown ? 1 : nextFocusProgress;
@@ -629,46 +628,34 @@ export function PersonalGraphNeuralCanvas({
 				layoutFocusNodeIdRef.current = null;
 			}
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [focusProgressMV]);
+	});
 
-	useEffect(() => {
-		const unsubscribe = labelRevealProgressMV.on("change", (nextProgress) => {
+	useMotionValueEvent(labelRevealProgressMV, "change", (nextProgress) => {
 			const settled = nextProgress < 0.001;
 			labelRevealProgressRef.current = settled ? 0 : nextProgress;
 			if (settled && !hoveredNodeIdRef.current) {
 				labelNodeIdRef.current = null;
 			}
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [labelRevealProgressMV]);
+	});
 
-	useEffect(() => {
-		const unsubscribe = smoothRayElasticXMV.on("change", (nextX) => {
+	useMotionValueEvent(smoothRayElasticXMV, "change", (nextX) => {
 			rayElasticRef.current = {
 				...rayElasticRef.current,
 				point: { ...rayElasticRef.current.point, x: nextX },
 			};
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [smoothRayElasticXMV]);
+	});
 
-	useEffect(() => {
-		const unsubscribe = smoothRayElasticYMV.on("change", (nextY) => {
+	useMotionValueEvent(smoothRayElasticYMV, "change", (nextY) => {
 			rayElasticRef.current = {
 				...rayElasticRef.current,
 				point: { ...rayElasticRef.current.point, y: nextY },
 			};
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [smoothRayElasticYMV]);
+	});
 
-	useEffect(() => {
-		const unsubscribe = smoothRayElasticProgressMV.on("change", (nextProgress) => {
+	useMotionValueEvent(smoothRayElasticProgressMV, "change", (nextProgress) => {
 			const settled = nextProgress < 0.001;
 			rayElasticRef.current = {
 				...rayElasticRef.current,
@@ -676,12 +663,9 @@ export function PersonalGraphNeuralCanvas({
 				progress: settled ? 0 : nextProgress,
 			};
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [smoothRayElasticProgressMV]);
+	});
 
-	useEffect(() => {
-		const unsubscribe = smoothInteractionIntensityMV.on("change", (nextIntensity) => {
+	useMotionValueEvent(smoothInteractionIntensityMV, "change", (nextIntensity) => {
 			const settled = nextIntensity < 0.001;
 			interactionRef.current = {
 				...interactionRef.current,
@@ -690,9 +674,7 @@ export function PersonalGraphNeuralCanvas({
 				intensity: settled ? 0 : nextIntensity,
 			};
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [smoothInteractionIntensityMV]);
+	});
 
 	useEffect(() => {
 		if (
@@ -741,8 +723,7 @@ export function PersonalGraphNeuralCanvas({
 		targetInteractionIntensityMV.set(0);
 	}, [smoothInteractionIntensityMV, targetInteractionIntensityMV]);
 
-	useEffect(() => {
-		const unsubscribe = smoothZoomMV.on("change", (nextZoom) => {
+	useMotionValueEvent(smoothZoomMV, "change", (nextZoom) => {
 			const cam = cameraRef.current;
 			if (cam.zoom === nextZoom) return;
 			const anchor = wheelAnchorRef.current;
@@ -759,9 +740,7 @@ export function PersonalGraphNeuralCanvas({
 				cameraRef.current = { ...cam, zoom: nextZoom };
 			}
 			requestRenderRef.current();
-		});
-		return () => unsubscribe();
-	}, [smoothZoomMV, params, viewport]);
+	});
 
 	useEffect(() => {
 		if (!selectedNodeId) {

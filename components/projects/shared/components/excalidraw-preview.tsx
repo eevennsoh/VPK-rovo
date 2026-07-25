@@ -25,11 +25,17 @@ export function ExcalidrawPreview({
 
 	useEffect(() => {
 		let cancelled = false;
-		import("@excalidraw/excalidraw").then((m) => {
-			if (!cancelled) {
-				setMod({ Excalidraw: m.Excalidraw, restoreAppState: m.restoreAppState, restoreElements: m.restoreElements });
-			}
-		});
+		import("@excalidraw/excalidraw")
+			.then((m) => {
+				if (!cancelled) {
+					setMod({ Excalidraw: m.Excalidraw, restoreAppState: m.restoreAppState, restoreElements: m.restoreElements });
+				}
+			})
+			.catch((error: unknown) => {
+				if (!cancelled) {
+					console.error("Unable to load Excalidraw preview", error);
+				}
+			});
 		return () => { cancelled = true; };
 	}, []);
 
