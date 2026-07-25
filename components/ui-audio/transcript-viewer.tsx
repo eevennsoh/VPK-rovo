@@ -90,7 +90,7 @@ type TranscriptViewerContainerProps = {
     "onPlay" | "onPause" | "onTimeUpdate" | "onEnded" | "onDurationChange"
   >
 
-function TranscriptViewerContainer({
+function TranscriptViewerContainerContent({
   audioSrc,
   audioType = "audio/mpeg",
   alignment,
@@ -148,6 +148,20 @@ function TranscriptViewerContainer({
       </div>
     </TranscriptViewerProvider>
   )
+}
+
+function TranscriptViewerContainer(props: TranscriptViewerContainerProps) {
+  const alignment = props.alignment
+  const lastEndTime = alignment.characterEndTimesSeconds.at(-1) ?? 0
+  const alignmentKey = [
+    props.audioSrc,
+    alignment.characters.length,
+    alignment.characters[0] ?? "",
+    alignment.characters.at(-1) ?? "",
+    lastEndTime,
+  ].join(":")
+
+  return <TranscriptViewerContainerContent key={alignmentKey} {...props} />
 }
 
 type TranscriptViewerWordStatus = "spoken" | "unspoken" | "current"

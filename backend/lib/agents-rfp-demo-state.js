@@ -164,7 +164,7 @@ const RFP_101_FIXTURE_ATTACHMENTS = [
 ];
 
 function cloneJson(value) {
-	return JSON.parse(JSON.stringify(value));
+	return structuredClone(value);
 }
 
 function isObject(value) {

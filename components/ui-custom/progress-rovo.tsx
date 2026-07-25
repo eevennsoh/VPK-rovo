@@ -66,8 +66,9 @@ function ProgressRovo({ value, isIndeterminate = false, className, ...props }: R
 				) : (
 					<motion.div
 						key="determinate"
-						className="absolute inset-y-0 left-0 overflow-hidden rounded-full"
-						animate={{ width: `${clampedValue}%` }}
+						className="absolute inset-0 overflow-hidden rounded-full"
+						animate={{ clipPath: `inset(0 ${100 - clampedValue}% 0 0)` }}
+						style={{ willChange: "clipPath" }}
 						transition={{ duration: 0.3, ease: [0, 0.4, 0, 1] }}
 					>
 						<span

@@ -23,7 +23,7 @@ export function Frame2087327905({ className }: Readonly<Frame2087327905Props>) {
 				className
 			)}
 			data-node-id="frame-2087327905"
-			role="presentation"
+			role="img"
 			aria-label="Triangular pattern demonstration with colored frames"
 		>
 			{/* Red frame - top-left */}

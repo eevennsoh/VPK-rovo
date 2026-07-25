@@ -8,41 +8,9 @@ import {
 } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";
 
-export const SHADOW_OVERLAY_PRESET_IDS = [
-	"ceBGguIpUU8luwByxuQz79t7To",
-	"znMaWHYdlNjI3XmG9UmHCZJ2dF4",
-	"EmAMO0OLZ4CWbBHNtkim5etdvjE",
-	"7K01o5a0Y1LyKM8iKincpTWSm0",
-	"hRNB6XrJT2M7fsVBS1bS1tZpOAs",
-	"ekHbDzFghE4uvIjKPrLwFVCfOk",
-	"svuE9O4efZ24yHS2buRr3ViibE",
-	"UjoQ9C7XN8feIfM14wB310cOJR4",
-	"isACzjE1USQFF2bW0oMvLMdMKzA",
-	"Z8UyfkF6S9UmBLwaZWMbJdJc3c",
-	"Ck9UWgqX5Nc46BxqHHXhJoEMMs",
-	"5UnPseCHA2ms40G25VTbksLmUfM",
-	"aJy8SKOl9MNn9WhYQLOggwDzMcw",
-	"rVXg0zhAlJFlziBLPM0rvdBL8NQ",
-	"nLGjGCZybN83O12nVaNpt0AxJgw",
-	"gEulGDbGwms4zhp1tGv4BerAI",
-	"lUB3IS8TiPeJBP5gV9ZfBoIJ7E",
-	"RwER4Vq4vLm4c6J48t9kMFieI",
-	"IMPAXiPWHsECHuiQm2Tkywi94",
-	"rjdvLhlEdUwNXlqn9KiHCSLYeDw",
-	"qOEKe0T3OnLqPe72x2Mpycx5ePk",
-	"MRSUqPmzy7IMgTiZy3JsNmgGLY",
-	"LjqX4PLHcL524jh3kpnz4toTio",
-	"HxlEYnQRYQVXiHiJHtlZ6GRzNg",
-	"KKc66YBV1jrvMD3cq7NgJvPzmc",
-	"wOmMo3IJcXcrWDLyBW3roBGkkbU",
-	"psKeI3qPMv3osKwHZ7jXsWXE",
-	"2TstK9EzgkxpUcWVcBd3qF78UDw",
-	"FHbxpWYUP15NVTQxR7b88Es9hvA",
-	"maeTigdLMJoJJlgi5wKcFMyZQ",
-	"OirDHWzfb3BoUZGoUuEktQsBrfw",
-	"8kCsbgl3oV2CW69fVtUhAOmhubA",
-] as const;
+export { SHADOW_OVERLAY_PRESET_IDS } from "./shadow-overlay-presets";
 
 const NOISE_TEXTURE_SRC = "https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png";
 

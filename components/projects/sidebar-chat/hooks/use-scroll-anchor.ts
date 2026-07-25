@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useMemo, useReducer } from "react";
 import type {
 	ConversationContextValue,
 	ConversationFollowMode,
@@ -33,6 +33,29 @@ interface UseScrollAnchorReturn {
 	scrollFollowMode: ConversationFollowMode;
 }
 
+interface ScrollAnchorState {
+	messageId: string | null;
+	mode: ConversationFollowMode;
+}
+
+type ScrollAnchorAction =
+	| { type: "follow-bottom" }
+	| { type: "follow-target"; messageId: string };
+
+function reduceScrollAnchor(
+	_state: ScrollAnchorState,
+	action: ScrollAnchorAction,
+): ScrollAnchorState {
+	switch (action.type) {
+		case "follow-bottom":
+			return { messageId: null, mode: "bottom" };
+		case "follow-target":
+			return { messageId: action.messageId, mode: "target" };
+		default:
+			return _state;
+	}
+}
+
 // useLayoutEffect cannot run during SSR; fall back to useEffect on the server.
 const useIsomorphicLayoutEffect =
 	typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -48,8 +71,10 @@ export function useScrollAnchor({
 	const didInitialScrollRef = useRef(false);
 	const previousLatestUserMessageIdRef = useRef<string | null>(null);
 	const pendingAnchorScrollAnimationRef = useRef<ScrollToBottomOptions["animation"]>("instant");
-	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
-	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
+	const [{ messageId: scrollAnchorMessageId, mode: scrollFollowMode }, dispatchScrollAnchor] = useReducer(
+		reduceScrollAnchor,
+		{ messageId: null, mode: "bottom" },
+	);
 
 	const latestUserMessageId = useMemo(
 		() => getLatestUserMessageId(uiMessages),
@@ -97,11 +122,9 @@ export function useScrollAnchor({
 			pendingAnchorScrollAnimationRef.current = hasInitializedScrollRef.current
 				? FAST_TURN_SCROLL_ANIMATION
 				: "instant";
-			setScrollAnchorMessageId(latestUserMessageId);
-			setScrollFollowMode("target");
+			dispatchScrollAnchor({ type: "follow-target", messageId: latestUserMessageId });
 		} else if (!isGenerationActive && scrollFollowMode !== "bottom") {
-			setScrollAnchorMessageId(null);
-			setScrollFollowMode("bottom");
+			dispatchScrollAnchor({ type: "follow-bottom" });
 		}
 
 		// First-mount scroll already ran in useLayoutEffect above; only run

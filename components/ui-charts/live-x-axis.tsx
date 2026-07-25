@@ -3,9 +3,11 @@
 // oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
 
 import { motion, useSpring } from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useChart, useChartStable } from "./chart-context";
+import { useLatestRef } from "@/lib/use-latest-ref";
+import { useChartStable } from "./chart-context";
+import { useChart } from "./use-chart";
 import { hmsTimeFmt } from "./chart-formatters";
 
 const TICKER_HALF_WIDTH = 50;
@@ -92,12 +94,11 @@ const LiveXAxisInner = memo(function LiveXAxisInner({
   // so the pill and crosshair line move in lockstep
   const pillX = tooltipData ? tooltipData.x + margin.left : 0;
   const animatedPillX = useSpring(pillX, crosshairSpringConfig);
-  const springRef = useRef(animatedPillX);
-  springRef.current = animatedPillX;
+  const springRef = useLatestRef(animatedPillX);
 
   useEffect(() => {
     springRef.current.set(pillX);
-  }, [pillX]);
+  }, [pillX, springRef]);
 
   return createPortal(
     <div className="pointer-events-none absolute inset-0">

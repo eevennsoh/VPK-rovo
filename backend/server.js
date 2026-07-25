@@ -1,6 +1,6 @@
 // Initialize console early for startup debugging
 console.log("[STARTUP] Server process starting...");
-console.error("[STARTUP] Startup initiated", new Date().toISOString());
+console.error("[STARTUP] Startup initiated");
 
 // Try to load .env.local if it exists, but don't fail if it doesn't
 try {

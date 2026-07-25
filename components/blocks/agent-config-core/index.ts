@@ -1,11 +1,13 @@
 export {
+	AgentCompactHeaderNav,
+	type AgentCompactHeaderNavProps,
+} from "@/components/blocks/agent-config-core/components/agent-compact-header-nav";
+export {
 	AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
 	AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM,
-	AgentCompactHeaderNav,
 	type AgentCompactHeaderNavItem,
-	type AgentCompactHeaderNavProps,
 	type AgentCompactHeaderSection,
-} from "@/components/blocks/agent-config-core/components/agent-compact-header-nav";
+} from "@/components/blocks/agent-config-core/components/agent-compact-header-nav-data";
 
 export {
 	Agent,

@@ -8,8 +8,7 @@ import {
   useInternalNode,
 } from "@xyflow/react";
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-const Temporary = ({
+export const TemporaryEdge = ({
   id,
   sourceX,
   sourceY,
@@ -107,8 +106,7 @@ const getEdgeParams = (
   };
 };
 
-// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
-const Animated = ({ id, source, target, markerEnd, style }: EdgeProps) => {
+export const AnimatedEdge = ({ id, source, target, markerEnd, style }: EdgeProps) => {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
 
@@ -138,9 +136,4 @@ const Animated = ({ id, source, target, markerEnd, style }: EdgeProps) => {
       </circle>
     </>
   );
-};
-
-export const Edge = {
-  Animated,
-  Temporary,
 };

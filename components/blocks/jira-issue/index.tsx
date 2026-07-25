@@ -44,6 +44,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+const AGENT_ACTIVITY_SHELL_STYLE: CSSProperties = {
+	borderRadius: "10px",
+	transformOrigin: "top center",
+};
+const AGENT_ACTIVITY_BACKDROP_STYLE: CSSProperties = {
+	borderRadius: "10px",
+	transformOrigin: "top center",
+};
+const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = {
+	borderRadius: token("radius.large"),
+	textAlign: "left",
+	transformOrigin: "top center",
+};
+const AGENT_ACTIVITY_SURFACE_STYLE: CSSProperties = {
+	borderRadius: token("radius.large"),
+	boxShadow: token("elevation.shadow.raised"),
+	transformOrigin: "top center",
+};
+
 export type JiraIssuePriority = "major" | "medium" | "minor";
 export type JiraIssuePullRequestStatus = "open" | "merged";
 export type {
@@ -570,14 +589,6 @@ export function JiraIssue({
 		transformOrigin: "top center",
 		...style,
 	};
-	const agentActivityShellStyle: CSSProperties = {
-		borderRadius: "10px",
-		transformOrigin: "top center",
-	};
-	const agentActivityBackdropStyle: CSSProperties = {
-		borderRadius: "10px",
-		transformOrigin: "top center",
-	};
 	const agentActivityBackdropAnimation = {
 		bottom: 0,
 		left: 0,
@@ -591,16 +602,6 @@ export function JiraIssue({
 		left: agentActivitySurfacePosition,
 		right: agentActivitySurfacePosition,
 		top: agentActivitySurfacePosition,
-	};
-	const agentActivityInnerStyle: CSSProperties = {
-		borderRadius: token("radius.large"),
-		textAlign: "left",
-		transformOrigin: "top center",
-	};
-	const agentActivitySurfaceStyle: CSSProperties = {
-		borderRadius: token("radius.large"),
-		boxShadow: token("elevation.shadow.raised"),
-		transformOrigin: "top center",
 	};
 
 	function handleSubtasksToggle() {
@@ -704,37 +705,33 @@ export function JiraIssue({
 			) : (
 				<div className="p-3">{summaryContent}</div>
 			)}
-			{hasIssueRows ? (
-				<div>
-					<JiraIssueSeparator inset={usesAgentActivityShell ? agentActivitySurfaceInset : 0} />
-					<div className={issueRowsClassName}>
-						<AnimatePresence initial={false} mode="popLayout">
-							{hasSubtasks && subtasks ? (
-								<motion.div
-									key="subtasks"
-									animate={presenceMotion.animate}
-									exit={presenceMotion.exit}
-									initial={presenceMotion.initial}
-									layout={shouldReduceMotion ? false : "position"}
-									style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
-									transition={layoutTransition}
-								>
-									<JiraIssueSubtasks
-										completedCount={completedSubtaskCount}
-										controlId={subtasksPanelId}
-										expanded={resolvedSubtasksExpanded}
-										hasInsetSurface={hasActiveAgentActivityShell}
-										label={subtasksLabel}
-										onToggle={handleSubtasksToggle}
-										shouldReduceMotion={shouldReduceMotion}
-										subtasks={subtasks}
-									/>
-								</motion.div>
-							) : null}
-						</AnimatePresence>
-					</div>
-				</div>
-			) : null}
+			<AnimatePresence initial={false} mode="popLayout">
+				{hasIssueRows && subtasks ? (
+					<motion.div
+						key="issue-rows"
+						animate={presenceMotion.animate}
+						exit={presenceMotion.exit}
+						initial={presenceMotion.initial}
+						layout={shouldReduceMotion ? false : "position"}
+						style={shouldReduceMotion ? undefined : JIRA_ISSUE_MOTION_STYLE}
+						transition={layoutTransition}
+					>
+						<JiraIssueSeparator inset={usesAgentActivityShell ? agentActivitySurfaceInset : 0} />
+						<div className={issueRowsClassName}>
+							<JiraIssueSubtasks
+								completedCount={completedSubtaskCount}
+								controlId={subtasksPanelId}
+								expanded={resolvedSubtasksExpanded}
+								hasInsetSurface={hasActiveAgentActivityShell}
+								label={subtasksLabel}
+								onToggle={handleSubtasksToggle}
+								shouldReduceMotion={shouldReduceMotion}
+								subtasks={subtasks}
+							/>
+						</div>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 		</div>
 	);
 	const generativeActionMenu = generativeAction ? (
@@ -773,7 +770,7 @@ export function JiraIssue({
 						className={agentActivityShellClassName}
 						initial={false}
 						layout={shouldReduceMotion ? false : "size"}
-						style={agentActivityShellStyle}
+						style={AGENT_ACTIVITY_SHELL_STYLE}
 						transition={layoutTransition}
 					>
 						<motion.div
@@ -781,7 +778,7 @@ export function JiraIssue({
 							animate={shouldReduceMotion ? undefined : agentActivityBackdropAnimation}
 							className="pointer-events-none absolute bg-bg-accent-gray-subtlest"
 							initial={false}
-							style={shouldReduceMotion ? { ...agentActivityBackdropStyle, ...agentActivityBackdropAnimation } : agentActivityBackdropStyle}
+							style={shouldReduceMotion ? { ...AGENT_ACTIVITY_BACKDROP_STYLE, ...agentActivityBackdropAnimation } : AGENT_ACTIVITY_BACKDROP_STYLE}
 							transition={layoutTransition}
 						/>
 						<LayoutGroup id={agentActivityLayoutGroupId}>
@@ -789,7 +786,7 @@ export function JiraIssue({
 								className={rootClassName}
 								data-slot="jira-issue-card"
 								layout={shouldReduceMotion ? false : "position"}
-								style={agentActivityInnerStyle}
+								style={AGENT_ACTIVITY_INNER_STYLE}
 								transition={layoutTransition}
 							>
 								<motion.div
@@ -798,7 +795,7 @@ export function JiraIssue({
 									className={agentActivitySurfaceClassName}
 									data-slot="jira-issue-surface"
 									initial={false}
-									style={shouldReduceMotion ? { ...agentActivitySurfaceStyle, ...agentActivitySurfaceAnimation } : agentActivitySurfaceStyle}
+									style={shouldReduceMotion ? { ...AGENT_ACTIVITY_SURFACE_STYLE, ...agentActivitySurfaceAnimation } : AGENT_ACTIVITY_SURFACE_STYLE}
 									transition={layoutTransition}
 								/>
 								{richIssueContent}

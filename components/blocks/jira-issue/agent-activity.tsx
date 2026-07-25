@@ -386,7 +386,7 @@ function JiraIssueAgentActivityRow({
 	);
 }
 
-function JiraIssueCyclingAgentLabel({
+function JiraIssueCyclingAgentLabelContent({
 	cycleIntervalJitterMs,
 	cycleIntervalMs,
 	labels,
@@ -397,12 +397,7 @@ function JiraIssueCyclingAgentLabel({
 }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [labelIndex, setLabelIndex] = useState(0);
-	const labelsKey = labels.join("\n");
 	const label = labels[labelIndex % labels.length] ?? "";
-
-	useEffect(() => {
-		setLabelIndex(0);
-	}, [labelsKey]);
 
 	useEffect(() => {
 		if (shouldReduceMotion || labels.length <= 1) {
@@ -424,7 +419,7 @@ function JiraIssueCyclingAgentLabel({
 				window.clearTimeout(timeoutId);
 			}
 		};
-	}, [cycleIntervalJitterMs, cycleIntervalMs, labels.length, labelsKey, shouldReduceMotion]);
+	}, [cycleIntervalJitterMs, cycleIntervalMs, labels.length, shouldReduceMotion]);
 
 	return (
 		<span className="block min-w-0 flex-1 overflow-hidden text-sm leading-5 text-text-subtlest">
@@ -443,6 +438,19 @@ function JiraIssueCyclingAgentLabel({
 				</AnimatePresence>
 			</span>
 		</span>
+	);
+}
+
+function JiraIssueCyclingAgentLabel(props: Readonly<{
+	cycleIntervalJitterMs: number;
+	cycleIntervalMs: number;
+	labels: readonly string[];
+}>) {
+	return (
+		<JiraIssueCyclingAgentLabelContent
+			key={props.labels.join("\n")}
+			{...props}
+		/>
 	);
 }
 

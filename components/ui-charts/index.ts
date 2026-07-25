@@ -42,6 +42,7 @@ export * from "./grid";
 export * from "./x-axis";
 export * from "./y-axis";
 export * from "./chart-context";
+export * from "./use-chart";
 export * from "./chart-config-context";
 export * from "./chart-stat-flow";
 export * from "./chart-center-typography";

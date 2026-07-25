@@ -59,21 +59,21 @@ const JIRA_ISSUE_GENERATIVE_SKILLS = getMentionChildItems(EDITOR_PALETTE_MENTION
 const JIRA_ISSUE_GENERATIVE_AGENTS = getMentionChildItems(EDITOR_PALETTE_MENTION_SOURCES, "subagent");
 const JIRA_ISSUE_GENERATIVE_TRIGGER_SIZE = 24;
 
-export function buildJiraIssueGenerativeAskRovoPrompt(
+function buildJiraIssueGenerativeAskRovoPrompt(
 	prompt: string,
 	issue: JiraIssueGenerativeActionIssue,
 ): string {
 	return `${prompt.trim()}\n\nJira issue ${issue.issueKey}: ${issue.summary}`;
 }
 
-export function buildJiraIssueGenerativeSkillPrompt(
+function buildJiraIssueGenerativeSkillPrompt(
 	item: JiraIssueGenerativeActionSelectedItem,
 	issue: JiraIssueGenerativeActionIssue,
 ): string {
 	return `Use the "${item.label}" skill for Jira issue ${issue.issueKey}: ${issue.summary}.`;
 }
 
-export function buildJiraIssueGenerativeAgentPrompt(
+function buildJiraIssueGenerativeAgentPrompt(
 	item: JiraIssueGenerativeActionSelectedItem,
 	issue: JiraIssueGenerativeActionIssue,
 ): string {
@@ -103,6 +103,11 @@ export function JiraIssueGenerativeActionMenu({
 	revealActive = false,
 	triggerElement,
 }: Readonly<JiraIssueGenerativeActionMenuProps>) {
+	const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+
+	useLayoutEffect(() => {
+		setPortalContainer(document.body);
+	}, []);
 	const [open, setOpen] = useState(false);
 	const [triggerPosition, setTriggerPosition] = useState<JiraIssueGenerativeActionPosition | null>(null);
 	const hasTriggerElement = Boolean(triggerElement);
@@ -218,7 +223,7 @@ export function JiraIssueGenerativeActionMenu({
 			size="compact"
 			skills={action.skills ?? JIRA_ISSUE_GENERATIVE_SKILLS}
 			triggerElement={resolvedTrigger}
-			triggerPortalContainer={hasTriggerElement ? null : document.body}
+			triggerPortalContainer={hasTriggerElement ? null : portalContainer}
 		/>
 	);
 }

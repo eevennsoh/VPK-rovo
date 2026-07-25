@@ -25,8 +25,10 @@ export type {
 	SpotlightDismissControlProps,
 } from "./components/spotlight-card";
 
-export { SpotlightTarget, SpotlightPulse, SPOTLIGHT_PLACEMENTS } from "./components/spotlight-target";
-export type { SpotlightTargetProps, SpotlightPulseProps, SpotlightPlacement } from "./components/spotlight-target";
+export { SpotlightTarget, SpotlightPulse } from "./components/spotlight-target";
+export type { SpotlightTargetProps, SpotlightPulseProps } from "./components/spotlight-target";
+export { SPOTLIGHT_PLACEMENTS } from "./spotlight-placement";
+export type { SpotlightPlacement } from "./spotlight-placement";
 
 export { SPOTLIGHT_TOUR_STEPS, SPOTLIGHT_MEDIA_SRC } from "./data/demo";
 export type { SpotlightTourStep } from "./data/demo";

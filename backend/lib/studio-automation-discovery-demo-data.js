@@ -253,7 +253,7 @@ const GENERATED_AGENT_FIXTURES = [
 ];
 
 function cloneJson(value) {
-	return JSON.parse(JSON.stringify(value));
+	return structuredClone(value);
 }
 
 function buildStudioAutomationDiscoveryGeneratedAgentResults() {

@@ -107,11 +107,7 @@ function toMermaidMarkdown(code: string): string {
 }
 
 function cloneStateModel<TState extends Record<string, unknown>>(state: TState): TState {
-	if (typeof structuredClone === "function") {
-		return structuredClone(state);
-	}
-
-	return JSON.parse(JSON.stringify(state)) as TState;
+	return structuredClone(state);
 }
 
 type JsonRenderFileTreeNode = {

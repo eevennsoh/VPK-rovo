@@ -604,20 +604,6 @@
 			"type": "legacy-react-context"
 		},
 		{
-			"filePath": "components/ui-charts/tooltip/chart-tooltip.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
-			"type": "eslint-disable"
-		},
-		{
-			"filePath": "components/ui-charts/tooltip/tooltip-indicator.tsx",
-			"occurrence": 1,
-			"reason": "existing baseline",
-			"text": "/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */",
-			"type": "eslint-disable"
-		},
-		{
 			"filePath": "components/ui-custom/animated-icon-art.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
@@ -814,7 +800,7 @@
 			"type": "eslint-disable"
 		},
 		{
-			"filePath": "components/utils/gui.tsx",
+			"filePath": "components/utils/gui-components.tsx",
 			"occurrence": 1,
 			"reason": "existing baseline",
 			"text": "// eslint-disable-next-line react-hooks/exhaustive-deps",

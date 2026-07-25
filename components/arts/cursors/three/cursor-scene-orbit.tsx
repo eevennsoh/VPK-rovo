@@ -54,7 +54,7 @@ export function CursorSceneOrbit({ working, paused, centerRef }: Readonly<Cursor
 	const accumulatedRef = useRef(0);
 	const mountTimeRef = useRef<number | null>(null);
 	const centerWorldRef = useRef({ x: 0, y: 0 });
-	const scratchCenter = useRef(new THREE.Vector3()).current;
+	const scratchCenter = useMemo(() => new THREE.Vector3(), []);
 
 	useFrame((frameState, delta) => {
 		if (!working) {
@@ -68,7 +68,7 @@ export function CursorSceneOrbit({ working, paused, centerRef }: Readonly<Cursor
 			return;
 		}
 
-		const nowSec = frameState.clock.getElapsedTime();
+		const nowSec = frameState.clock.elapsedTime;
 		if (mountTimeRef.current === null) {
 			mountTimeRef.current = nowSec;
 			accumulatedRef.current = 0;

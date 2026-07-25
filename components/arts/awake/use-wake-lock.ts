@@ -12,14 +12,7 @@ const WAKE_LOCK_VISIBLE_TAB_TITLE = "⚠ Keep this page active";
 interface MinimalWakeLockSentinel {
 	released: boolean;
 	release: () => Promise<void>;
-	addEventListener: (
-		type: "release",
-		listener: () => void,
-	) => void;
-	removeEventListener: (
-		type: "release",
-		listener: () => void,
-	) => void;
+	onrelease: (() => void) | null;
 }
 
 interface MinimalWakeLockApi {
@@ -144,8 +137,15 @@ export function useWakeLock(
 		setHiddenTabReminder();
 	}, [setHiddenTabReminder]);
 
+	const detachSentinelReleaseListener = React.useCallback(() => {
+		if (sentinelRef.current) {
+			sentinelRef.current.onrelease = null;
+		}
+	}, []);
+
 	const releaseInternal = React.useCallback(async () => {
 		const sentinel = sentinelRef.current;
+		detachSentinelReleaseListener();
 		sentinelRef.current = null;
 		setIsActive(false);
 		setStatus("idle");
@@ -157,7 +157,7 @@ export function useWakeLock(
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to release wake lock");
 		}
-	}, [clearHiddenTabAlert]);
+	}, [clearHiddenTabAlert, detachSentinelReleaseListener]);
 
 	const acquireInternal = React.useCallback(async () => {
 		if (typeof document !== "undefined" && document.visibilityState !== "visible") {
@@ -186,8 +186,9 @@ export function useWakeLock(
 			setStatusMessage(null);
 			setError(null);
 			clearHiddenTabAlert();
-			const handleRelease = () => {
-				if (sentinelRef.current === sentinel) {
+				const handleRelease = () => {
+					detachSentinelReleaseListener();
+					if (sentinelRef.current === sentinel) {
 					sentinelRef.current = null;
 					setIsActive(false);
 					if (
@@ -201,8 +202,8 @@ export function useWakeLock(
 					setStatus("idle");
 					setStatusMessage(null);
 				}
-			};
-			sentinel.addEventListener("release", handleRelease);
+				};
+				sentinel.onrelease = handleRelease;
 		} catch (err) {
 			sentinelRef.current = null;
 			setIsActive(false);
@@ -211,7 +212,7 @@ export function useWakeLock(
 			clearHiddenTabAlert();
 			setError(err instanceof Error ? err.message : "Failed to acquire wake lock");
 		}
-	}, [clearHiddenTabAlert, markWaitingForVisible]);
+	}, [clearHiddenTabAlert, detachSentinelReleaseListener, markWaitingForVisible]);
 
 	// Mount: detect support and rehydrate preference. If the user
 	// previously enabled the lock, attempt to re-acquire immediately.

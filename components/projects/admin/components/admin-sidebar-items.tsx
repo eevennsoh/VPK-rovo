@@ -2,9 +2,7 @@
 
 // oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
 
-// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
-
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { AdminIconComponent, AdminNavLeaf, AdminNavSection } from "../data/admin-data";
@@ -126,13 +124,18 @@ export function AdminExpandableSection({
 		() => sectionContainsItem(section, selectedItem),
 		[section, selectedItem],
 	);
-	const [isExpanded, setIsExpanded] = useState(section.defaultExpanded === true || containsSelected);
-
-	useEffect(() => {
+	const [isManuallyExpanded, setIsManuallyExpanded] = useState(section.defaultExpanded === true);
+	const [collapsedSelection, setCollapsedSelection] = useState<string | null>(null);
+	const isExpanded = containsSelected
+		? collapsedSelection !== selectedItem
+		: isManuallyExpanded;
+	const toggleExpanded = () => {
 		if (containsSelected) {
-			setIsExpanded(true);
+			setCollapsedSelection(isExpanded ? selectedItem : null);
+			return;
 		}
-	}, [containsSelected]);
+		setIsManuallyExpanded((expanded) => !expanded);
+	};
 
 	return (
 		<div className="flex flex-col gap-0.5">
@@ -140,7 +143,7 @@ export function AdminExpandableSection({
 				icon={section.icon}
 				isExpanded={isExpanded}
 				label={section.label}
-				onClick={() => setIsExpanded((expanded) => !expanded)}
+				onClick={toggleExpanded}
 			/>
 			{isExpanded ? (
 				<div className="ml-4 flex flex-col gap-0.5 border-l border-border pl-2">
@@ -211,14 +214,19 @@ function AdminNestedSection({
 	onSelectItem: (item: string) => void;
 }>) {
 	const containsSelected = items.some((item) => item.label === selectedItem);
-	const [isExpanded, setIsExpanded] = useState(defaultExpanded === true || containsSelected);
+	const [isManuallyExpanded, setIsManuallyExpanded] = useState(defaultExpanded === true);
+	const [collapsedSelection, setCollapsedSelection] = useState<string | null>(null);
+	const isExpanded = containsSelected
+		? collapsedSelection !== selectedItem
+		: isManuallyExpanded;
 	const ChevronIcon = isExpanded ? ADMIN_ICONS.chevronDown : ADMIN_ICONS.chevronRight;
-
-	useEffect(() => {
+	const toggleExpanded = () => {
 		if (containsSelected) {
-			setIsExpanded(true);
+			setCollapsedSelection(isExpanded ? selectedItem : null);
+			return;
 		}
-	}, [containsSelected]);
+		setIsManuallyExpanded((expanded) => !expanded);
+	};
 
 	return (
 		<div className="flex flex-col gap-0.5">
@@ -226,7 +234,7 @@ function AdminNestedSection({
 				type="button"
 				aria-expanded={isExpanded}
 				className="flex min-h-8 w-full items-center gap-1 rounded-md px-2 py-1 text-left text-sm text-text-subtle transition-colors hover:bg-bg-neutral-subtle-hovered"
-				onClick={() => setIsExpanded((expanded) => !expanded)}
+				onClick={toggleExpanded}
 			>
 				<span className="flex size-6 shrink-0 items-center justify-center">
 					<ChevronIcon label="" color={token("color.icon.subtle")} size="small" />

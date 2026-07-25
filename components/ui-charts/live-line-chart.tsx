@@ -16,6 +16,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import { MeasuredParentSize } from "./measured-parent-size";
 import {
   ChartProvider,
@@ -341,10 +342,8 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
   });
 
   const pausedRef = useRef(paused);
-  const dataRef = useRef(data);
-  const dataKeyRef = useRef(dataKey);
-  dataRef.current = data;
-  dataKeyRef.current = dataKey;
+  const dataRef = useLatestRef(data);
+  const dataKeyRef = useLatestRef(dataKey);
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -425,6 +424,8 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [
+	dataKeyRef,
+	dataRef,
     targetRange,
     value,
     lerpSpeed,

@@ -23,7 +23,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
 	TriggerPicker,
-	renderAgentTriggerProviderTileIcon,
+	AgentTriggerProviderTileIcon,
 	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
 import {
@@ -146,7 +146,7 @@ export function ManageTriggersDialog({
 	);
 }
 
-export function getAutomationRuleSecondary(rule: AgentAutomationRule): string {
+function getAutomationRuleSecondary(rule: AgentAutomationRule): string {
 	const triggerCount = rule.triggers.length;
 	const providers = Array.from(new Set(
 		rule.triggers
@@ -168,7 +168,10 @@ function ManageAutomationFlowVisual({ rule }: Readonly<{ rule: AgentAutomationRu
 				{visibleTriggers.length > 0 ? (
 					visibleTriggers.map((trigger) => (
 						<span key={trigger.id} className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
-							{renderAgentTriggerProviderTileIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+							<AgentTriggerProviderTileIcon
+								fallback={<AutomationIcon label="" size="small" />}
+								trigger={trigger}
+							/>
 						</span>
 					))
 				) : (

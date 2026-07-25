@@ -7,7 +7,10 @@ import RefreshIcon from "@atlaskit/icon/core/refresh";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { usePersonalGraphSummary } from "./hooks/use-personal-graph-summary";
+import {
+	getExplorerRevision,
+	usePersonalGraphSummary,
+} from "./hooks/use-personal-graph-summary";
 import type { PersonalGraphSummaryLength, VaultExplorer, VaultNode } from "./lib/personal-graph-types";
 import { PersonalGraphGlassPanel } from "./personal-graph-glass-panel";
 
@@ -41,7 +44,7 @@ function downloadHtml(filename: string, html: string) {
 	URL.revokeObjectURL(url);
 }
 
-export function PersonalGraphSummaryPanel({
+function PersonalGraphSummaryPanelContent({
 	explorer,
 	node,
 	onSelectNode,
@@ -228,5 +231,14 @@ export function PersonalGraphSummaryPanel({
 				</div>
 			) : null}
 		</PersonalGraphGlassPanel>
+	);
+}
+
+export function PersonalGraphSummaryPanel(props: Readonly<PersonalGraphSummaryPanelProps>) {
+	return (
+		<PersonalGraphSummaryPanelContent
+			key={getExplorerRevision(props.explorer, props.node)}
+			{...props}
+		/>
 	);
 }

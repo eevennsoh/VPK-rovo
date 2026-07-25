@@ -5,7 +5,7 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useMemo } from "react";
-import { useChart } from "./chart-context";
+import { useChart } from "./use-chart";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 

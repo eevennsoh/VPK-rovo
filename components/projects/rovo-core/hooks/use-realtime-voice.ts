@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import {
 	createRealtimeAssistantTextStreamState,
@@ -224,7 +225,7 @@ export function useRealtimeVoice({
 	const hasReceivedServerDeltaRef = useRef(false);
 	const serverTranscriptionActiveRef = useRef(false);
 	const manualTurnTakingRef = useRef(false);
-	const assistantTextStreamRef = useRef(createRealtimeAssistantTextStreamState());
+	const assistantTextStreamRef = useLazyRef(createRealtimeAssistantTextStreamState);
 	const queuedTextInputsRef = useRef<Array<{
 		contextDescription?: string;
 		text: string;
@@ -325,7 +326,7 @@ export function useRealtimeVoice({
 
 	const resetAssistantTextStream = useCallback(() => {
 		assistantTextStreamRef.current = createRealtimeAssistantTextStreamState();
-	}, []);
+	}, [assistantTextStreamRef]);
 
 	const resetGenerationStateSoon = useCallback(() => {
 		if (generationResetTimerRef.current !== null) {
@@ -1330,6 +1331,7 @@ export function useRealtimeVoice({
 			}
 		},
 		[
+			assistantTextStreamRef,
 			clearBrowserTranscriptCompletionTimer,
 			clearResponseCreateFallbackTimer,
 			dispatchTextInput,
@@ -1640,7 +1642,7 @@ export function useRealtimeVoice({
 			activeRef.current = false;
 			cleanupConnectionRef.current();
 		};
-	}, [cleanupConnection]);
+	}, []);
 
 	// -- Return --------------------------------------------------------------
 

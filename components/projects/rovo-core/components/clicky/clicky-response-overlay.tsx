@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, type MotionValue, useTransform } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { motion, type MotionValue, useMotionValueEvent, useTransform } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Response overlay — dark panel near cursor showing full AI response text.
@@ -98,21 +98,19 @@ export function ClickyResponseOverlay({
 	});
 
 	// Check if panel would clip off-screen and flip if needed
-	useEffect(() => {
-		const check = () => {
+	const checkPosition = useCallback(() => {
 			const cx = cursorX.get();
 			const cy = cursorY.get();
 			const panelHeight = panelRef.current?.offsetHeight ?? 100;
 
 			setFlipX(cx + OFFSET_X + MAX_WIDTH + EDGE_PADDING > window.innerWidth);
 			setFlipY(cy + OFFSET_Y + panelHeight + EDGE_PADDING > window.innerHeight);
-		};
-
-		check();
-		const unsub = cursorX.on("change", check);
-		const unsub2 = cursorY.on("change", check);
-		return () => { unsub(); unsub2(); };
 	}, [cursorX, cursorY]);
+	useEffect(() => {
+		checkPosition();
+	}, [checkPosition]);
+	useMotionValueEvent(cursorX, "change", checkPosition);
+	useMotionValueEvent(cursorY, "change", checkPosition);
 
 	if (!text) return null;
 

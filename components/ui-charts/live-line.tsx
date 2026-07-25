@@ -6,7 +6,8 @@ import type { CurveFactory } from "d3-shape";
 import { AreaClosed, LinePath } from "@visx/shape";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
-import { chartCssVars, useChart } from "./chart-context";
+import { chartCssVars } from "./chart-context";
+import { useChart } from "./use-chart";
 
 export type Momentum = "up" | "down" | "flat";
 

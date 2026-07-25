@@ -8,6 +8,20 @@ import { NavigationItemWithHoverChevronProps } from "./types";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
+const PRIMARY_CONTROL_STYLE = {
+	alignItems: "center",
+	background: "transparent",
+	border: 0,
+	color: "inherit",
+	cursor: "pointer",
+	display: "flex",
+	flex: 1,
+	gap: token("space.025"),
+	minWidth: 0,
+	padding: 0,
+	textAlign: "left",
+} satisfies CSSProperties;
+
 export function NavigationItemWithHoverChevron({
 	icon: Icon,
 	label,
@@ -18,20 +32,6 @@ export function NavigationItemWithHoverChevron({
 	const [isHovered, setIsHovered] = useState(false);
 	const [isFocusedWithin, setIsFocusedWithin] = useState(false);
 	const isActionAreaVisible = isHovered || isFocusedWithin;
-
-	const primaryControlStyle = {
-		alignItems: "center",
-		background: "transparent",
-		border: 0,
-		color: "inherit",
-		cursor: "pointer",
-		display: "flex",
-		flex: 1,
-		gap: token("space.025"),
-		minWidth: 0,
-		padding: 0,
-		textAlign: "left",
-	} satisfies CSSProperties;
 
 	return (
 		<div
@@ -59,7 +59,7 @@ export function NavigationItemWithHoverChevron({
 				type="button"
 				aria-expanded={isExpanded}
 				onClick={onClick}
-				style={primaryControlStyle}
+				style={PRIMARY_CONTROL_STYLE}
 			>
 				{/* Icon - swaps to chevron while actions are available */}
 				<span

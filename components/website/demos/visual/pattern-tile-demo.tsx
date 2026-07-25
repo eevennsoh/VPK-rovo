@@ -6,11 +6,6 @@ import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
 import PatternTile, {
-	ANIMATABLE_PATTERNS,
-	BLEND_MODE_TYPES,
-	FILL_TYPES,
-	PATTERN_TYPES,
-	POSITION_TYPES,
 	STROKE_LINE_CAP_TYPES,
 	STROKE_LINE_JOIN_TYPES,
 	STROKE_STYLE_TYPES,
@@ -24,6 +19,13 @@ import PatternTile, {
 	type PatternStrokeStyle,
 	type PatternType,
 } from "./pattern-tile";
+import {
+	ANIMATABLE_PATTERNS,
+	BLEND_MODE_TYPES,
+	FILL_TYPES,
+	PATTERN_TYPES,
+	POSITION_TYPES,
+} from "./pattern-tile-options";
 
 const DEFAULT_PATTERN_TYPE: PatternType = "grid";
 const DEFAULT_FRONT = "#FFFFFF";

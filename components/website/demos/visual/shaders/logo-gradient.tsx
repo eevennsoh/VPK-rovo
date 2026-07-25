@@ -10,7 +10,7 @@ import {
 
 const MAX_COLORS = 8;
 
-export const LOGO_GRADIENT_DEFAULT_COLORS = [
+const LOGO_GRADIENT_DEFAULT_COLORS = [
 	"#000000",
 	"#0051FF",
 	"#0DAAFF",

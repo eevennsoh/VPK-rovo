@@ -480,7 +480,6 @@ const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set([
 
 export {
 	Avatar,
-	avatarVariants,
 	AvatarImage,
 	AvatarFallback,
 	AvatarUnassigned,

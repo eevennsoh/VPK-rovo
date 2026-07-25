@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
+import { useEffect } from "react";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
 
@@ -31,8 +32,10 @@ export function TooltipDot({
   const animatedX = useSpring(x, effectiveSpring);
   const animatedY = useSpring(y, effectiveSpring);
 
-  animatedX.set(x);
-  animatedY.set(y);
+	useEffect(() => {
+		animatedX.set(x);
+		animatedY.set(y);
+	}, [animatedX, animatedY, x, y]);
 
   if (!visible) {
     return null;

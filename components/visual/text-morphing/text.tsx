@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion, type Transition } from "motion/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { reconcileTextKeys, splitGraphemes } from "./lib";
 
@@ -35,18 +35,28 @@ export function TextRenderer({
 	style?: React.CSSProperties;
 }) {
 	const graphemes = splitGraphemes(text);
-	const nextIdRef = useRef(graphemes.length);
-	const [prevText, setPrevText] = useState(text);
-	const [charKeys, setCharKeys] = useState<string[]>(() => graphemes.map((_, i) => `c${i}`));
-	const [changeRatio, setChangeRatio] = useState(0);
+	const [renderState, setRenderState] = useState(() => ({
+		changeRatio: 0,
+		charKeys: graphemes.map((_, index) => `c${index}`),
+		nextId: graphemes.length,
+		text,
+	}));
 
-	if (text !== prevText) {
-		const result = reconcileTextKeys(prevText, text, charKeys, nextIdRef.current);
-		nextIdRef.current = result.nextId;
-		setPrevText(text);
-		setCharKeys(result.keys);
-		setChangeRatio(result.changeRatio);
+	if (text !== renderState.text) {
+		const result = reconcileTextKeys(
+			renderState.text,
+			text,
+			renderState.charKeys,
+			renderState.nextId,
+		);
+		setRenderState({
+			changeRatio: result.changeRatio,
+			charKeys: result.keys,
+			nextId: result.nextId,
+			text,
+		});
 	}
+	const { changeRatio, charKeys } = renderState;
 
 	return (
 		<MotionConfig transition={transition}>

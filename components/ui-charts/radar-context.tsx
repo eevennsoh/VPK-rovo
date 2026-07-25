@@ -168,9 +168,3 @@ export function useRadarHover(): RadarHoverContextValue {
   }
   return context;
 }
-
-export function useRadar(): RadarContextValue {
-  return { ...useRadarStable(), ...useRadarHover() };
-}
-
-export default RadarStableContext;

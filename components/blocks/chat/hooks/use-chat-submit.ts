@@ -52,20 +52,22 @@ export function useChatSubmit(): UseChatSubmitReturn {
 
 		abort();
 		setPromptState("");
+		const userMessageId = nextMessageId("user");
 		setMessages((prev) => [
 			...prev,
 			{
-				id: nextMessageId("user"),
+				id: userMessageId,
 				type: "user",
 				content: promptText,
 			},
 		]);
 
 		pendingResponseTimerRef.current = setTimeout(() => {
+			const assistantMessageId = nextMessageId("assistant");
 			setMessages((prev) => [
 				...prev,
 				{
-					id: nextMessageId("assistant"),
+					id: assistantMessageId,
 					type: "assistant",
 					content: createAssistantReply(promptText),
 				},

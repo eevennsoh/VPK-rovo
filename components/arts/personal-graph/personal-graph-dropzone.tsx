@@ -31,6 +31,14 @@ export function PersonalGraphDropzone({ onRawAdded }: Readonly<PersonalGraphDrop
 		}
 	}, [onRawAdded]);
 
+	const addFile = useCallback(async (file: File) => {
+		try {
+			await addText(file.name, await file.text());
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : "Unable to read file");
+		}
+	}, [addText]);
+
 	return (
 		<>
 			<button
@@ -44,7 +52,7 @@ export function PersonalGraphDropzone({ onRawAdded }: Readonly<PersonalGraphDrop
 					const file = event.dataTransfer.files[0];
 					const text = event.dataTransfer.getData("text/plain");
 					if (file) {
-						void file.text().then((content) => addText(file.name, content));
+						void addFile(file);
 					} else if (text) {
 						void addText("pasted-url.md", text);
 					}
@@ -66,7 +74,7 @@ export function PersonalGraphDropzone({ onRawAdded }: Readonly<PersonalGraphDrop
 				className="hidden"
 				onChange={(event) => {
 					const file = event.target.files?.[0];
-					if (file) void file.text().then((content) => addText(file.name, content));
+					if (file) void addFile(file);
 				}}
 				ref={inputRef}
 				type="file"

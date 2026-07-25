@@ -4,41 +4,18 @@ import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
+import {
+	SPOTLIGHT_PLACEMENT_CONFIG,
+	type SpotlightAlign as Align,
+	type SpotlightPlacement,
+	type SpotlightSide as Side,
+} from "@/components/blocks/spotlight/spotlight-placement";
+
+export type { SpotlightPlacement } from "@/components/blocks/spotlight/spotlight-placement";
 
 // ---------------------------------------------------------------------------
 // Placement — ADS-style names mapped to base-ui side/align
 // ---------------------------------------------------------------------------
-
-type Side = "top" | "bottom" | "left" | "right";
-type Align = "start" | "center" | "end";
-
-export type SpotlightPlacement =
-	| "top-start"
-	| "top-center"
-	| "top-end"
-	| "bottom-start"
-	| "bottom-center"
-	| "bottom-end"
-	| "left-start"
-	| "left-end"
-	| "right-start"
-	| "right-end";
-
-const PLACEMENTS: Record<SpotlightPlacement, { side: Side; align: Align }> = {
-	"top-start": { side: "top", align: "start" },
-	"top-center": { side: "top", align: "center" },
-	"top-end": { side: "top", align: "end" },
-	"bottom-start": { side: "bottom", align: "start" },
-	"bottom-center": { side: "bottom", align: "center" },
-	"bottom-end": { side: "bottom", align: "end" },
-	"left-start": { side: "left", align: "start" },
-	"left-end": { side: "left", align: "end" },
-	"right-start": { side: "right", align: "start" },
-	"right-end": { side: "right", align: "end" },
-};
-
-/** All supported placements, in the ADS dropdown order. */
-export const SPOTLIGHT_PLACEMENTS = Object.keys(PLACEMENTS) as SpotlightPlacement[];
 
 // ---------------------------------------------------------------------------
 // Pulse — animated highlight glow drawn around the target element
@@ -114,7 +91,7 @@ function SpotlightTarget({
 	pulse = true,
 	shape = "rounded",
 }: Readonly<SpotlightTargetProps>) {
-	const resolved = placement ? PLACEMENTS[placement] : { side, align };
+	const resolved = placement ? SPOTLIGHT_PLACEMENT_CONFIG[placement] : { side, align };
 
 	// Mirror the popover's open state so the pulse matches the popup even in
 	// uncontrolled usage (when `open` is omitted, base-ui owns the real state).

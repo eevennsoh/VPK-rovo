@@ -408,13 +408,12 @@ export function useAssistantThinkingTraceState({
 		userOpenOverride: shouldCollapseOnPhaseChange ? false : thinkingUserOverride,
 	});
 
-	if (previousReasoningPhaseRef.current !== reasoningPhase) {
+	useEffect(() => {
 		previousReasoningPhaseRef.current = reasoningPhase;
-
 		if (shouldCollapseOnPhaseChange && thinkingUserOverride !== false) {
 			setThinkingUserOverride(false);
 		}
-	}
+	}, [reasoningPhase, shouldCollapseOnPhaseChange, thinkingUserOverride]);
 
 	const thinkingUpdateSignal = [
 		message.id,

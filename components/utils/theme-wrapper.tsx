@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
 
-import { createContext, use, useEffect, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import { setGlobalTheme } from "@atlaskit/tokens";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import ThemeIcon from "@atlaskit/icon/core/theme";
@@ -160,19 +160,19 @@ export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "u
 	}, [storageKey]);
 
 	// Update theme and persist to localStorage
-	const updateTheme = (newTheme: Theme) => {
+	const updateTheme = useCallback((newTheme: Theme) => {
 		setTheme(newTheme);
 		if (typeof window !== "undefined") {
 			localStorage.setItem(storageKey, newTheme);
 			broadcastThemeToFrames(newTheme);
 		}
-	};
+	}, [storageKey]);
 
-	const value: ThemeContextType = {
+	const value = useMemo<ThemeContextType>(() => ({
 		theme,
 		setTheme: updateTheme,
 		actualTheme,
-	};
+	}), [actualTheme, theme, updateTheme]);
 
 	return <ThemeContext value={value}>{children}</ThemeContext>;
 }

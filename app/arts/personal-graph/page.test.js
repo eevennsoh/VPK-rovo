@@ -34,7 +34,7 @@ const SURFACE_SOURCE = fs.readFileSync(
 const SURFACE_HELPERS_SOURCE = fs.readFileSync(
 	path.join(
 		__dirname,
-		"../../../components/arts/personal-graph/personal-graph-surface-helpers.tsx",
+		"../../../components/arts/personal-graph/personal-graph-surface-data.ts",
 	),
 	"utf8",
 );
@@ -122,6 +122,7 @@ const GRAPH_SOURCE = fs.readFileSync(
 	),
 	"utf8",
 );
+const GRAPH_DEFAULTS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../components/website/demos/visual/graph-defaults.ts"), "utf8");
 const NEURAL_CANVAS_SOURCE = fs.readFileSync(
 	path.join(
 		__dirname,
@@ -223,7 +224,7 @@ test("Personal Graph control flyout exposes the app theme toggle", () => {
 });
 
 test("Personal Graph header keeps controls centered below the title", () => {
-	assert.match(SURFACE_SOURCE, /className="relative flex flex-col items-center"/);
+	assert.match(SURFACE_SOURCE, /className=\{cn\("relative flex flex-col items-center"/);
 	assert.match(SEARCH_SOURCE, /<PersonalGraphControlFlyoutTrigger/);
 	assert.match(SEARCH_SOURCE, /<PersonalGraphControlFlyoutActions/);
 	assert.doesNotMatch(SURFACE_SOURCE, /xl:absolute xl:right-0 xl:top-0 xl:justify-end/);
@@ -319,9 +320,10 @@ test("Personal Graph keeps the search and chat composer separate from the center
 	assert.match(SURFACE_SOURCE, /left-4 right-4 z-40 flex justify-center/);
 	assert.match(SURFACE_SOURCE, /max-w-\[560px\]/);
 	assert.doesNotMatch(SURFACE_SOURCE, /max-w-\[760px\]/);
-	assert.match(SURFACE_SOURCE, /initial=\{\{ bottom: -120 \}\}/);
+	assert.match(SURFACE_SOURCE, /initial=\{\{ y: 144 \}\}/);
 	assert.match(SURFACE_SOURCE, /const isSearchRevealed = isVaultReadyForLayout && \(phase === "search"/);
-	assert.match(SURFACE_SOURCE, /bottom: isSearchRevealed \? 24 : -120/);
+	assert.match(SURFACE_SOURCE, /y: isSearchRevealed \? 0 : 144/);
+	assert.match(SURFACE_SOURCE, /style=\{\{ bottom: 24, willChange: "transform" \}\}/);
 	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_PROMPT_INPUT_BOTTOM_PX = 24;/);
 	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_PROMPT_INPUT_HEIGHT_PX = 64;/);
 	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_TAIL_PROMPT_GAP_PX = 8;/);
@@ -533,11 +535,11 @@ test("Personal Graph does not fetch the vault explorer before a vault is ready",
 	assert.match(VAULT_EXPLORER_HOOK_SOURCE, /enabledRef\.current = enabled;/);
 	assert.match(
 		VAULT_EXPLORER_HOOK_SOURCE,
-		/if \(!enabledRef\.current\) \{[\s\S]*setExplorer\(null\);[\s\S]*setError\(null\);[\s\S]*setIsLoading\(false\);[\s\S]*return;[\s\S]*\}/,
+		/if \(!enabledRef\.current\) \{[\s\S]*dispatch\(\{ type: "disabled" \}\);[\s\S]*return;[\s\S]*\}/,
 	);
 	assert.match(
 		VAULT_EXPLORER_HOOK_SOURCE,
-		/useEffect\(\(\) => \{[\s\S]*if \(!enabled\) \{[\s\S]*setExplorer\(null\);[\s\S]*setError\(null\);[\s\S]*setIsLoading\(false\);[\s\S]*return;[\s\S]*\}[\s\S]*void refresh\(\);[\s\S]*\}, \[enabled, refresh\]\);/,
+		/useEffect\(\(\) => \{[\s\S]*if \(!enabled\) \{[\s\S]*dispatch\(\{ type: "disabled" \}\);[\s\S]*return;[\s\S]*\}[\s\S]*void refresh\(\);[\s\S]*\}, \[enabled, refresh\]\);/,
 	);
 });
 
@@ -618,11 +620,14 @@ test("Personal Graph uses theme-aware editor-style surrounding chrome", () => {
 
 test("Personal Graph leaves the page header transparent over the backdrop grid", () => {
 	assert.match(SURFACE_SOURCE, /<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">/);
-	assert.match(SURFACE_SOURCE, /<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">\s*<motion\.div\s+className="relative flex flex-col items-center"/);
-	assert.match(SURFACE_SOURCE, /initial=\{\{ y: PERSONAL_GRAPH_HEADER_INITIAL_Y, gap: "24px" \}\}/);
+	assert.match(SURFACE_SOURCE, /<header className="absolute inset-x-4 top-6 z-30 sm:inset-x-6 lg:inset-x-8">\s*<motion\.div\s+className=\{cn\("relative flex flex-col items-center"/);
+	assert.match(SURFACE_SOURCE, /isPostSettle \? "gap-4" : "gap-6"/);
+	assert.match(SURFACE_SOURCE, /initial=\{\{ y: PERSONAL_GRAPH_HEADER_INITIAL_Y \}\}/);
 	assert.match(SURFACE_SOURCE, /y: isPostSettle \? PERSONAL_GRAPH_HEADER_SETTLED_Y : PERSONAL_GRAPH_HEADER_INITIAL_Y/);
+	assert.match(SURFACE_SOURCE, /\s+layout\s+transition=\{\{/);
 	assert.match(SURFACE_SOURCE, /const PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS = 0\.7;/);
 	assert.match(SURFACE_SOURCE, /y: \{ duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS, ease: easeOut \}/);
+	assert.match(SURFACE_SOURCE, /layout: \{ duration: 0\.45, ease: easeOut \}/);
 	assert.match(SURFACE_SOURCE, /minHeight: \{\s+duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,\s+ease: easeOut,/);
 	assert.match(SURFACE_SOURCE, /scale: isPostSettle \? 1 : PERSONAL_GRAPH_INITIAL_TITLE_SCALE,\s+\}\}\s+transition=\{\{\s+duration: PERSONAL_GRAPH_HEADER_SETTLE_DURATION_SECONDS,/);
 	assert.doesNotMatch(SURFACE_SOURCE, /PERSONAL_GRAPH_TITLE_SETTLE_DELAY_SECONDS/);
@@ -668,7 +673,7 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.doesNotMatch(SURFACE_SOURCE, /\(explorer\?\.edges \?\? \[\]\)\.map/);
 	assert.match(
 		SURFACE_SOURCE,
-		/import Graph, \{ ROVO_GRAPH_DEFAULT_PARAMS \} from "@\/components\/website\/demos\/visual\/graph";/,
+		/import Graph from "@\/components\/website\/demos\/visual\/graph";[\s\S]*import \{ ROVO_GRAPH_DEFAULT_PARAMS \} from "@\/components\/website\/demos\/visual\/graph-defaults";/,
 	);
 	assert.match(SURFACE_SOURCE, /<Graph/);
 	assert.match(SURFACE_SOURCE, /variant="fill"/);
@@ -714,19 +719,19 @@ test("Personal Graph keeps the owned canvas renderer accessible", () => {
 	assert.match(NEURAL_RENDERER_SOURCE, /function drawRadialRayTails/);
 	assert.match(NEURAL_RENDERER_SOURCE, /const origin = getNeuralOrigin\(options\.viewport, options\.params\);/);
 	assert.doesNotMatch(SURFACE_SOURCE, /PERSONAL_GRAPH_NEURAL_PARAMS_STORAGE_KEY/);
-	assert.match(GRAPH_SOURCE, /nodeShape: "square"/);
-	assert.match(GRAPH_SOURCE, /layoutShape: "radialCluster"/);
-	assert.match(GRAPH_SOURCE, /radialArcAngle: 360/);
-	assert.match(GRAPH_SOURCE, /radialDepthCurve: 0\.8/);
-	assert.match(GRAPH_SOURCE, /nodeSize: 4/);
-	assert.match(GRAPH_SOURCE, /originMarkerSize: 12/);
-	assert.match(GRAPH_SOURCE, /originY: 0\.52/);
-	assert.match(GRAPH_SOURCE, /rayOriginY: 0\.52/);
-	assert.match(GRAPH_SOURCE, /signalColor: ROVO_GRAPH_COLORS\.default/);
-	assert.match(GRAPH_SOURCE, /signalFrequency: 0\.5/);
-	assert.match(GRAPH_SOURCE, /signalGlowEnabled: false/);
-	assert.match(GRAPH_SOURCE, /signalLength: 0\.5/);
-	assert.match(GRAPH_SOURCE, /signalWidth: 1/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /nodeShape: "square"/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /layoutShape: "radialCluster"/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /radialArcAngle: 360/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /radialDepthCurve: 0\.8/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /nodeSize: 4/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /originMarkerSize: 12/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /originY: 0\.52/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /rayOriginY: 0\.52/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /signalColor: ROVO_GRAPH_COLORS\.default/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /signalFrequency: 0\.5/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /signalGlowEnabled: false/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /signalLength: 0\.5/);
+	assert.match(GRAPH_DEFAULTS_SOURCE, /signalWidth: 1/);
 	assert.doesNotMatch(SURFACE_SOURCE, /PersonalGraphPromptTailConnector/);
 	assert.doesNotMatch(SURFACE_SOURCE, /data-personal-graph-tail-connector/);
 	assert.match(SURFACE_SOURCE, /selectedNodeId=\{selectedNodeId\}/);
@@ -768,7 +773,7 @@ test("Personal Graph derives responsive graph params from the route stage", () =
 	assert.match(SURFACE_SOURCE, /shouldAnimateResponsivePersonalGraphParams/);
 	assert.match(SURFACE_SOURCE, /const targetWidthMV = useMotionValue<number>/);
 	assert.match(SURFACE_SOURCE, /const smoothWidthMV = useSpring/);
-	assert.match(SURFACE_SOURCE, /smoothWidthMV\.on\("change"/);
+	assert.match(SURFACE_SOURCE, /useMotionValueEvent\(smoothWidthMV, "change"/);
 	assert.match(SURFACE_SOURCE, /setParams\(\(currentParams\) => \{/);
 	assert.match(SURFACE_SOURCE, /areResponsivePersonalGraphParamsEqual\(currentParams, nextParams\)/);
 	assert.match(SURFACE_SOURCE, /targetWidthMV\.jump\(viewport\.width\)/);

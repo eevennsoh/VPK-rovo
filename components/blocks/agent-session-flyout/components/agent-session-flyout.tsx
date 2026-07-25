@@ -12,10 +12,7 @@ import {
 	JiraSessionFlyoutTrigger,
 	createJiraSessionFlyoutHandle,
 } from "@/components/blocks/product-sidebar/variants/jira-session-flyout";
-import {
-	ASX_QUEUE_SESSION_SEEDS,
-	createAsxQueueSidebarSessionItem,
-} from "@/components/projects/jira-queue/data/queue-sessions";
+import { AGENT_SESSION_FLYOUT_SESSIONS } from "@/components/blocks/agent-session-flyout/agent-session-flyout-data";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,10 +20,6 @@ import { cn } from "@/lib/utils";
  * shared `JiraSessionFlyoutSurface` — the exact rich, direction-aware flyout
  * used by the live Jira product sidebar.
  */
-
-/** The four demo sessions from the `/asx` queue, mapped to sidebar items. */
-export const AGENT_SESSION_FLYOUT_SESSIONS: readonly JiraSidebarSessionItem[] =
-	ASX_QUEUE_SESSION_SEEDS.map(createAsxQueueSidebarSessionItem);
 
 export interface AgentSessionFlyoutProps {
 	/** Sessions to render in the compact list. Defaults to the `/asx` queue seeds. */

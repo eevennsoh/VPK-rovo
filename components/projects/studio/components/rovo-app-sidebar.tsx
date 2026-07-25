@@ -341,18 +341,37 @@ function StudioSidebarNavigation({
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
 		getStudioSidebarRecentAgentSelected(item, recentAgents.items, activeThreadId, selectedAgentId)
 	);
+	const selectedRecentAgent = recentAgents.items.find((item) =>
+		getStudioSidebarRecentAgentSelected(
+			item,
+			recentAgents.items,
+			activeThreadId,
+			selectedAgentId,
+		)
+	);
+	const selectedRecentAgentKey = selectedRecentAgent
+		? `${selectedRecentAgent.kind}:${selectedRecentAgent.id}`
+		: null;
 	const hasSelectedSessionAgent = selectedAgentId
 		? sessionAgentEntries.some((entry) => entry.profile.id === selectedAgentId)
 		: false;
-	// Accordion state for the "Agents" header. Default open, and auto-open when a
-	// recent agent becomes selected from outside the visible list; a direct header
-	// click can still collapse the group.
-	const [isAgentsExpanded, setIsAgentsExpanded] = React.useState(true);
-	React.useEffect(() => {
-		if (hasSelectedRecentAgent) {
-			setIsAgentsExpanded(true);
+	// A newly selected recent agent opens the group without waiting for an effect.
+	// The selection key also lets a direct header click keep that selection
+	// collapsed until the user selects a different recent agent.
+	const [isAgentsManuallyExpanded, setIsAgentsManuallyExpanded] = React.useState(true);
+	const [collapsedSelectionKey, setCollapsedSelectionKey] = React.useState<string | null>(null);
+	const isAgentsExpanded = selectedRecentAgentKey
+		? collapsedSelectionKey !== selectedRecentAgentKey
+		: isAgentsManuallyExpanded;
+	const toggleAgentsExpanded = () => {
+		if (selectedRecentAgentKey) {
+			const nextExpanded = !isAgentsExpanded;
+			setCollapsedSelectionKey(nextExpanded ? null : selectedRecentAgentKey);
+			setIsAgentsManuallyExpanded(nextExpanded);
+			return;
 		}
-	}, [hasSelectedRecentAgent]);
+		setIsAgentsManuallyExpanded((expanded) => !expanded);
+	};
 
 	return (
 		<nav aria-label="Studio" className="flex shrink-0 flex-col gap-3">
@@ -382,7 +401,7 @@ function StudioSidebarNavigation({
 								);
 								const isItemSelected = shouldShowRecentAgents ? false : isAgentsItem ? isAgentsHomeActive : item.isSelected;
 								const handleItemClick = shouldShowRecentAgents
-									? () => setIsAgentsExpanded((prev) => !prev)
+					? toggleAgentsExpanded
 									: isAgentsItem
 										? onNewChat
 										: item.onClick;

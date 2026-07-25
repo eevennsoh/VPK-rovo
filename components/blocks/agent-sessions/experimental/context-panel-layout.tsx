@@ -1,20 +1,10 @@
 "use client";
 
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Transition } from "motion/react";
-
-const METADATA_CONTENT_COLLAPSE_DURATION_MS = 200;
-const METADATA_CONTENT_EXPAND_DURATION_MS = 250;
-
-export const METADATA_CONTENT_COLLAPSE_TRANSITION: Transition = {
-	duration: METADATA_CONTENT_COLLAPSE_DURATION_MS / 1000,
-	ease: [0.6, 0, 0.8, 0.6], // duration-medium + ease-in
-};
-export const METADATA_CONTENT_EXPAND_TRANSITION: Transition = {
-	duration: METADATA_CONTENT_EXPAND_DURATION_MS / 1000,
-	ease: [0.4, 0, 0, 1], // duration-slow + ease-in-out
-};
-export const METADATA_CONTENT_REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
+import {
+	METADATA_CONTENT_COLLAPSE_DURATION_MS,
+	METADATA_CONTENT_EXPAND_DURATION_MS,
+} from "./context-panel-layout-motion";
 
 interface PanelLayoutContextValue {
 	/** Whether the right-hand metadata column is collapsed (hidden). */

@@ -56,6 +56,9 @@ function fetchWorldData(): Promise<FeatureCollection<
   globalFetchPromise = (async () => {
     try {
       const response = await fetch(WORLD_DATA_URL);
+      if (!response.ok) {
+        throw new Error(`Failed to load world topology: ${response.status}`);
+      }
       const topology = (await response.json()) as WorldTopology;
       const objectKey = Object.keys(topology.objects)[0];
       if (!objectKey) {

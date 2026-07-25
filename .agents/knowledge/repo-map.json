@@ -3644,7 +3644,7 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 88,
+			"ownerImportCount": 85,
 			"pageCount": 61
 		},
 		"pages": [
@@ -4250,7 +4250,7 @@
 				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
-				"ownerCount": 5,
+				"ownerCount": 2,
 				"owners": [
 					{
 						"importPath": "@/app/contexts/context-rovo-chat",
@@ -4260,36 +4260,15 @@
 						]
 					},
 					{
-						"importPath": "@/components/blocks/jira-for-you",
-						"source": "components/blocks/jira-for-you",
+						"importPath": "@/components/blocks/jira-for-you/page",
+						"source": "components/blocks/jira-for-you/page",
 						"symbols": [
-							"JiraForYouWorkspace"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/product-sidebar/page",
-						"source": "components/blocks/product-sidebar/page",
-						"symbols": [
-							"ProductSidebar"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/product-sidebar/variants/jira",
-						"source": "components/blocks/product-sidebar/variants/jira",
-						"symbols": [
-							"JiraSidebar"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/top-navigation/page",
-						"source": "components/blocks/top-navigation/page",
-						"symbols": [
-							"TopNavigation"
+							"JiraForYouShell"
 						]
 					}
 				],
 				"routePath": "/preview/blocks/jira-for-you",
-				"shellOwnerCount": 5,
+				"shellOwnerCount": 2,
 				"shellOwners": [
 					{
 						"importPath": "@/app/contexts/context-rovo-chat",
@@ -4299,31 +4278,10 @@
 						]
 					},
 					{
-						"importPath": "@/components/blocks/jira-for-you",
-						"source": "components/blocks/jira-for-you",
+						"importPath": "@/components/blocks/jira-for-you/page",
+						"source": "components/blocks/jira-for-you/page",
 						"symbols": [
-							"JiraForYouWorkspace"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/product-sidebar/page",
-						"source": "components/blocks/product-sidebar/page",
-						"symbols": [
-							"ProductSidebar"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/product-sidebar/variants/jira",
-						"source": "components/blocks/product-sidebar/variants/jira",
-						"symbols": [
-							"JiraSidebar"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/top-navigation/page",
-						"source": "components/blocks/top-navigation/page",
-						"symbols": [
-							"TopNavigation"
+							"JiraForYouShell"
 						]
 					}
 				],

@@ -3,6 +3,7 @@
 import { useClicky } from "@/components/projects/rovo-core/hooks/use-clicky";
 import { useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -91,15 +92,13 @@ export default function Cursors({ className }: Readonly<CursorsProps>) {
 
 	const burstIdRef = useRef(0);
 	const pointerRef = useRef<{ x: number; y: number } | null>(null);
-	const clickyActiveRef = useRef(false);
-	clickyActiveRef.current = clicky.isActive;
+	const clickyActiveRef = useLatestRef(clicky.isActive);
 	// The last line shown (avoid immediate repeats), whether a team is up (so the
 	// model's real answer doesn't overwrite the funny caption), and whether the
 	// team is mid-launch (so a second "let's go" doesn't restart it).
 	const lastLineRef = useRef<string | null>(null);
 	const burstActiveRef = useRef(false);
-	const launchingRef = useRef(false);
-	launchingRef.current = launching;
+	const launchingRef = useLatestRef(launching);
 	const launchTimerRef = useRef<number | null>(null);
 	const speechTimerRef = useRef<number | null>(null);
 	const captionTimerRef = useRef<number | null>(null);

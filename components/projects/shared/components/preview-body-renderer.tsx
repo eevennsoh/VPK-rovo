@@ -85,14 +85,13 @@ function StreamingSummaryPreview({ summary }: Readonly<{ summary: string }>): Re
 			return;
 		}
 
+		let nextCursor = 0;
 		const intervalId = window.setInterval(() => {
-			setCursor((previousCursor) => {
-				const nextCursor = Math.min(summary.length, previousCursor + SUMMARY_STREAM_STEP_CHARS);
-				if (nextCursor >= summary.length) {
-					window.clearInterval(intervalId);
-				}
-				return nextCursor;
-			});
+			nextCursor = Math.min(summary.length, nextCursor + SUMMARY_STREAM_STEP_CHARS);
+			setCursor(nextCursor);
+			if (nextCursor >= summary.length) {
+				window.clearInterval(intervalId);
+			}
 		}, SUMMARY_STREAM_INTERVAL_MS);
 
 		return () => {

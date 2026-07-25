@@ -97,7 +97,3 @@ export function WeatherIcon({
 		</span>
 	);
 }
-
-export function getWeatherLabel(weatherCode: number | null, isDay: boolean): string {
-	return pickIcon(weatherCode, isDay).label;
-}

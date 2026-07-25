@@ -3,7 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const ROVO_GENERATION_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-generation.tsx"), "utf8");
+const ROVO_GENERATION_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-generation-components.tsx"), "utf8");
+const ROVO_GENERATION_API_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-generation.ts"), "utf8");
 
 test("RovoGeneration rainbow stops are sourced from theme variables", () => {
 	assert.match(ROVO_GENERATION_SOURCE, /--rovo-generation-stop-orange": "var\(--color-orange-300\)"/u);
@@ -15,7 +16,7 @@ test("RovoGeneration rainbow stops are sourced from theme variables", () => {
 });
 
 test("RovoGeneration exposes a Highlight sub-component", () => {
-	assert.match(ROVO_GENERATION_SOURCE, /Highlight: RovoGenerationHighlight/u);
+	assert.match(ROVO_GENERATION_API_SOURCE, /Highlight: RovoGenerationHighlight/u);
 	assert.match(ROVO_GENERATION_SOURCE, /function RovoGenerationHighlight\(/u);
 });
 

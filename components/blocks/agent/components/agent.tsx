@@ -42,12 +42,14 @@ import {
 import { useAgentAutomationDialogs } from "@/components/blocks/agent/hooks/use-agent-automation-dialogs";
 
 export {
+	AgentCompactHeaderNav,
+} from "@/components/blocks/agent/components/agent-compact-header-nav";
+export {
 	AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
 	AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM,
-	AgentCompactHeaderNav,
 	type AgentCompactHeaderNavItem,
 	type AgentCompactHeaderSection,
-} from "@/components/blocks/agent/components/agent-compact-header-nav";
+} from "@/components/blocks/agent/components/agent-compact-header-nav-data";
 
 export {
 	Agent,

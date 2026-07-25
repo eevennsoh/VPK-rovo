@@ -9,7 +9,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { DemoSurface, MOCK_VOICES } from "./demo-data";
+import { DemoSurface } from "./demo-data";
+import { MOCK_VOICES } from "./demo-data-values";
 
 function VoicePickerPreview() {
 	const [voice, setVoice] = useState(MOCK_VOICES[0]?.voiceId);

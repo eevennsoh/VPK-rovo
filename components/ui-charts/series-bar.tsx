@@ -3,7 +3,8 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
-import { chartCssVars, useChart } from "./chart-context";
+import { chartCssVars } from "./chart-context";
+import { useChart } from "./use-chart";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { computeSeriesBarWidth } from "./series-bar-layout";
@@ -231,7 +232,6 @@ export function SeriesBar({
               fadedOpacity={fadedOpacity}
               fill={fill}
               index={i}
-              innerHeight={innerHeight}
               isFaded={isFaded}
               key={`${dataKey}-${categoryLabel}-${revealEpoch}`}
               radius={effectiveRadius}
@@ -271,7 +271,6 @@ interface SeriesBarRectProps {
   fill: string;
   radius: number;
   index: number;
-  innerHeight: number;
   calculatedStaggerDelay: number;
   enterTransition?: Transition;
   revealEpoch: number;
@@ -287,7 +286,6 @@ function SeriesBarRect({
   fill,
   radius,
   index,
-  innerHeight,
   calculatedStaggerDelay,
   enterTransition,
   revealEpoch,
@@ -302,18 +300,20 @@ function SeriesBarRect({
   return (
     <motion.rect
       animate={{
-        height: barHeight,
-        y,
         opacity: isFaded ? fadedOpacity : 1,
+		scaleY: 1,
       }}
       fill={fill}
-      initial={{ height: 0, y: innerHeight, opacity: 1 }}
+      height={barHeight}
+      initial={{ opacity: 1, scaleY: 0 }}
       key={`series-bar-${index}-${revealEpoch}`}
       rx={radius}
       ry={radius}
       transition={enterAnim}
+      style={{ transformBox: "fill-box", transformOrigin: "bottom", willChange: "transform" }}
       width={barWidth}
       x={x}
+	  y={y}
     />
   );
 }

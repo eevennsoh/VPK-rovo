@@ -354,7 +354,7 @@ export function WebPreviewConsole({
 								key={`${log.timestamp.getTime()}-${index}`}
 							>
 								<span className="text-muted-foreground">
-									{log.timestamp.toLocaleTimeString()}
+									{log.timestamp.toLocaleTimeString("en-US", { timeZone: "UTC" })}
 								</span>{" "}
 								{log.message}
 							</div>

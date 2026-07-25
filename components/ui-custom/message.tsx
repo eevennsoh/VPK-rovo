@@ -350,7 +350,7 @@ export function MessageBranchContent({
 		}
 	}, [childrenArray, branches, setBranches]);
 
-	return childrenArray.map((branch, index) => (
+	return <>{childrenArray.map((branch, index) => (
 		<div
 			className={cn(
 				"grid gap-2 overflow-hidden [&>div]:pb-0",
@@ -361,7 +361,7 @@ export function MessageBranchContent({
 		>
 			{branch}
 		</div>
-	));
+	))}</>;
 }
 
 export type MessageBranchSelectorProps = ComponentProps<typeof ButtonGroup>;

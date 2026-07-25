@@ -98,13 +98,9 @@ export function useClicky({
 
 		stateRef.current = nextState;
 		setState(nextState);
+		onStateChangeRef.current?.(nextState);
 		return true;
 	}, []);
-
-	// Notify on state changes
-	useEffect(() => {
-		onStateChangeRef.current?.(state);
-	}, [state]);
 
 	const activate = useCallback(() => {
 		if (stateRef.current === "off") {

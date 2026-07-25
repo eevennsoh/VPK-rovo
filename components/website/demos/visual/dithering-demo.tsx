@@ -6,6 +6,9 @@ import { GUI } from "@/components/utils/gui";
 import { token } from "@/lib/tokens";
 
 import Dithering, {
+	type DitheringSourceMode,
+} from "./shaders/dithering";
+import {
 	DITHERING_ALGORITHMS,
 	DITHERING_BLEND_MODES,
 	DITHERING_COLOR_MODES,
@@ -17,8 +20,7 @@ import Dithering, {
 	type DitheringColorMode,
 	type DitheringCompositeMode,
 	type DitheringPreset,
-	type DitheringSourceMode,
-} from "./shaders/dithering";
+} from "./shaders/dithering-config";
 
 const SOURCE_MODE_OPTIONS = [
 	{ value: "field", label: "Field" },

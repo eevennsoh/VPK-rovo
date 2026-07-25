@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { ANIMATED_ICONS, type AnimatedIconName } from "./animated-icon-art";
+import { ANIMATED_ICONS, type AnimatedIconName } from "./animated-icon-registry";
 
 export {
 	ANIMATED_ICONS,
 	animatedIconNames,
 	type AnimatedIconName,
-} from "./animated-icon-art";
+} from "./animated-icon-registry";
 
 // How long a token-driven "replay" stays in the playing state before settling.
 const REPLAY_MS = 1000;

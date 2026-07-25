@@ -10,10 +10,68 @@
 
 import React, { useRef, useEffect, useLayoutEffect, useCallback, useId, useState } from "react";
 import { useLazyRef } from "@/lib/use-lazy-ref";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
 import { getEmbeddedSpotIllustrationSvg } from "./assets.generated";
+import { processIllustrationSvg } from "./spot-illustration-process";
+import {
+	ILLUS_ELEMENTS,
+	ILLUS_ENTER_DURATION,
+	ILLUS_ENTER_Y_OFFSET,
+	ILLUS_EXIT_DURATION,
+	ILLUS_EXIT_Y_OFFSET,
+	ILLUS_HOLD_DURATION,
+	ILLUS_MOTION,
+	ILLUS_PAUSE_BETWEEN,
+	ILLUS_ROTATE_GROUP,
+	MOSAIC_SPIN_DEG_PER_SEC,
+	SPOT_ILLUSTRATIONS,
+} from "./spot-illustration-config";
+import {
+	applyOverlapClipPath,
+	easeInBack,
+	easeInCubic,
+	easeInQuart,
+	easeOutCubic,
+	easeOutQuart,
+	getSpotIllustrationUrl,
+	lerp,
+	mountProcessedIllustrationSvg,
+	springEase,
+} from "./spot-illustration-utils";
+
+export {
+	applyOverlapClipPath,
+	easeInBack,
+	easeInCubic,
+	easeInQuart,
+	easeOutCubic,
+	easeOutQuart,
+	getSpotIllustrationUrl,
+	lerp,
+	springEase,
+} from "./spot-illustration-utils";
+export {
+	CHAT_ENTER_DURATION,
+	CHAT_EXIT_DURATION,
+	CHAT_HOLD_DURATION,
+	CHAT_PAUSE_DURATION,
+	ILLUS_ELEMENTS,
+	ILLUS_ENTER_DURATION,
+	ILLUS_ENTER_Y_OFFSET,
+	ILLUS_EXIT_DURATION,
+	ILLUS_EXIT_Y_OFFSET,
+	ILLUS_HAND_DRAWN,
+	ILLUS_HOLD_DURATION,
+	ILLUS_MOTION,
+	ILLUS_ROTATE_GROUP,
+	MOSAIC_SPIN_DEG_PER_SEC,
+	SPOT_ILLUSTRATIONS,
+} from "./spot-illustration-config";
+export type { ILLUS_MOTION_TYPE } from "./spot-illustration-config";
+export { processIllustrationSvg } from "./spot-illustration-process";
 
 const CANVAS_SIZE = 400;
 const MOSAIC_W = 125;
@@ -51,23 +109,6 @@ const svg1: SvgData = {"paths":["M33.593 13.251C33.593 17.199 32.228 20.167 29.9
 const svg2: SvgData = {"paths":["M0 13.251C0 17.199 1.365 20.167 3.689 22.26C4.802 23.268 6.153 24.066 7.665 24.689C10.101 25.69 12.992 26.187 16.142 26.236L24.675 34.552V25.081C25.109 24.941 25.522 24.794 25.928 24.626C27.391 24.01 28.7 23.233 29.799 22.26C32.179 20.16 33.593 17.199 33.593 13.251C33.593 9.303 32.13 6.132 29.694 3.99C28.616 3.045 27.349 2.282 25.935 1.68C23.289 0.553001 20.111 0 16.674 0C13.237 0 10.234 0.532001 7.665 1.603C6.202 2.205 4.893 2.996 3.794 3.983C1.407 6.132 0 9.184 0 13.244V13.251Z"],"viewBox":"0 0 34 35","fills":["#DDDEE1"]};
 const gestureLines: GestureData = {"id":"eyelash","label":"Eyelash","viewBox":"-36.5 -23.5 146 94","renderAs":"fill","paths":["M23.8826 33.8781C23.6526 34.7281 26.2626 36.8181 27.0426 36.4081C28.1426 35.8281 29.1026 35.0581 30.0926 33.8681C31.0626 32.4081 30.7926 31.6281 31.6026 30.7581C32.8526 29.1881 35.6926 27.1381 36.3926 26.6481C36.4926 26.5781 36.5726 26.4881 36.6426 26.3781C37.0826 25.6281 39.0626 22.3581 41.2826 19.9681C42.7126 18.1681 43.6026 17.0481 44.0626 16.4681C45.1426 15.0781 45.7026 13.8481 46.0126 12.4381C46.1826 11.6681 43.9126 9.84812 43.1926 10.1781C41.8926 10.7881 40.8026 11.5981 39.6826 12.9481C39.2526 13.4781 37.7326 14.0881 36.3726 15.5681C36.1526 15.8081 35.9926 16.0981 35.8826 16.4281C34.9826 19.2981 32.4626 21.9381 32.4626 21.9381C32.4626 21.9381 29.0526 26.1681 27.6226 27.9481C26.5526 29.2981 26.0326 29.9481 25.7126 30.3481C24.7626 31.5681 24.2226 32.6681 23.8926 33.8681L23.8826 33.8781Z","M0.192569 30.1881C0.372569 31.0481 3.65257 31.7081 4.16257 30.9881C4.87257 29.9681 5.37257 28.8381 5.70257 27.3281C5.89257 25.5781 5.30257 25.0181 5.61257 23.8681C6.00257 21.8981 7.58257 18.7681 7.97257 18.0181C8.03257 17.9081 8.06257 17.7881 8.07257 17.6681C8.12257 16.7981 8.37257 12.9881 9.25257 9.83812C9.70257 7.57812 9.97257 6.17812 10.1226 5.44812C10.4426 3.71812 10.3726 2.36812 10.0026 0.978119C9.80257 0.218119 6.94257 -0.361881 6.46257 0.268119C5.58257 1.40812 4.99257 2.62812 4.61257 4.34812C4.47257 5.01812 3.41257 6.25812 2.87257 8.19812C2.78257 8.51812 2.77257 8.84812 2.83257 9.18812C3.34257 12.1481 2.33257 15.6581 2.33257 15.6581C2.33257 15.6581 1.25257 20.9781 0.792569 23.2181C0.462569 24.9081 0.302569 25.7281 0.202569 26.2281C-0.0774306 27.7481 -0.0574306 28.9781 0.202569 30.1981L0.192569 30.1881Z","M43.1126 42.9981C42.5026 43.6381 43.8126 46.7181 44.6926 46.7281C45.9426 46.7381 47.1526 46.5181 48.5826 45.9381C50.1326 45.1081 50.2626 44.2981 51.3826 43.9081C53.2226 43.1281 56.7026 42.6681 57.5426 42.5581C57.6626 42.5381 57.7826 42.5081 57.8826 42.4481C58.6826 41.9581 61.7926 40.4381 64.5826 39.5981C66.6426 38.6281 67.6926 37.8581 68.3426 37.4181C69.7426 36.4881 70.5526 35.5781 71.2326 34.3681C71.6326 33.6681 70.6126 31.0881 69.8126 31.2081C68.3426 31.4281 67.0726 31.9281 65.5226 32.9981C64.9426 33.3881 63.5826 33.3381 61.7926 34.2681C61.5026 34.4181 61.2526 34.6281 61.0626 34.8881C59.2826 37.3481 56.4526 38.5781 56.4526 38.5781C56.4526 38.5781 51.6626 40.5581 49.5326 41.3381C47.8826 41.9581 47.0826 42.2581 46.5926 42.4481C45.1826 43.0081 44.0926 43.0181 43.1026 42.9881L43.1126 42.9981Z"],"centerlines":["M45.5326 11.1681C41.3726 16.4881 33.6726 26.4581 24.0026 33.9181","M9.78258 0.708115C7.80258 9.88812 3.17258 21.6481 0.51258 30.1781","M69.5926 31.4181C64.8526 34.2081 53.3526 39.3381 43.4126 42.9381"]};
 
-export const SPOT_ILLUSTRATIONS = [
-  { id: "chat", label: "Chat" },
-  { id: "brainstorm", label: "Brainstorm" },
-  { id: "ai", label: "AI" },
-  { id: "create", label: "Create" },
-  { id: "deep-research", label: "Deep Research" },
-  { id: "write", label: "Write" },
-  { id: "search", label: "Search" },
-  { id: "smart-answer", label: "Smart Answer" },
-  { id: "megaphone", label: "Megaphone" },
-  { id: "mode", label: "AI First Create - Confluence" },
-  { id: "ai-first-jira", label: "AI First Create - JIRA" },
-  { id: "code", label: "Code" },
-  { id: "error", label: "Error" },
-  { id: "help", label: "Help" },
-  { id: "summarize", label: "Summarize" },
-];
 
 const CYCLED_SPOT_ILLUSTRATIONS = SPOT_ILLUSTRATIONS.filter(i => i.id !== "chat");
 const DEFAULT_CYCLE_IDS = CYCLED_SPOT_ILLUSTRATIONS.map(i => i.id);
@@ -84,267 +125,6 @@ function resolveCycleConfig(illusIds: string[] | undefined): { cycleIds: string[
   };
 }
 
-export const ILLUS_HAND_DRAWN: Record<string, number[][]> = {
-  'brainstorm': [[3]],
-  'write': [[4], [5]],
-  'search': [[4], [5], [6]],
-  'deep-research': [[6, 7, 8], [9, 10], [11, 12]],
-  'smart-answer': [[4], [5], [6]],
-  'error': [[5], [6], [7]],
-  'help': [[4], [5], [6]],
-  'summarize': [[7], [8], [9]],
-};
-
-export const ILLUS_ELEMENTS: Record<string, { grey: number[]; mosaic: number[]; overlap: number[]; greyBack?: number[]; mosaicTop?: number[] }> = {
-  'brainstorm': { grey: [2, 3], mosaic: [1], overlap: [4] },
-  'ai': { grey: [0, 3], mosaic: [2], overlap: [4] },
-  'create': { grey: [0, 4], mosaic: [1, 2, 6, 11], overlap: [3, 7], mosaicTop: [8, 9] },
-  'write': { grey: [0, 4, 5], mosaic: [2], overlap: [3] },
-  'search': { grey: [2, 7], mosaic: [1, 3, 4, 5, 6], overlap: [8] },
-  'deep-research': { greyBack: [0, 1], grey: [4, 5], mosaic: [3], overlap: [13, 14] },
-  'smart-answer': { grey: [0, 1], mosaic: [3], overlap: [7] },
-  'megaphone': { grey: [0], mosaic: [2], overlap: [3] },
-  'mode': { grey: [0], mosaic: [2, 3, 4], overlap: [5], mosaicTop: [6, 7] },
-  'ai-first-jira': { grey: [0], mosaic: [2, 3, 4], overlap: [5], mosaicTop: [6, 7] },
-  'code': { grey: [3], mosaic: [0, 1, 2], overlap: [4, 5] },
-  'error': { grey: [2], mosaic: [1], overlap: [3, 4] },
-  'help': { grey: [2], mosaic: [1], overlap: [3] },
-  'summarize': { greyBack: [0], grey: [], mosaic: [2], overlap: [3, 4, 5, 6] },
-};
-
-export type ILLUS_MOTION_TYPE = {
-  greyEnterFrom?: { x: number; y: number };
-  mosaicEnterFrom?: { x: number; y: number };
-  greyExitTo?: { x: number; y: number };
-  mosaicExitTo?: { x: number; y: number };
-  idleMosaicRoam?: { ax: number; ay: number; period: number };
-  mosaicEnterScale?: number;
-  mosaicExitScale?: number;
-  overlapTrack?: 'grey' | 'mosaic';
-  gestureStagger?: number;
-  enterTX?: number;
-  enterTY?: number;
-  enterScale?: number;
-  enterRotation?: number;
-  exitTX?: number;
-  exitTY?: number;
-  exitScale?: number;
-  exitRotation?: number;
-};
-
-export const ILLUS_MOTION: Record<string, ILLUS_MOTION_TYPE> = {
-  'ai': {
-    greyEnterFrom: { x: -8, y: 2 },
-    mosaicEnterFrom: { x: 8, y: 2 },
-    greyExitTo: { x: 4, y: -1.5 },
-    mosaicExitTo: { x: -4, y: -1.5 },
-    overlapTrack: 'mosaic',
-  },
-  'create': {
-    greyEnterFrom: { x: 0, y: 0 },
-    mosaicEnterFrom: { x: 0, y: 0 },
-    greyExitTo: { x: 0, y: 0 },
-    mosaicExitTo: { x: 0, y: 0 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'brainstorm': {
-    greyEnterFrom: { x: 0, y: 0 },
-    mosaicEnterFrom: { x: 0, y: 0 },
-    greyExitTo: { x: 0, y: 0 },
-    mosaicExitTo: { x: 0, y: 0 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'search': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'write': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'deep-research': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    gestureStagger: 0.12,
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'smart-answer': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    gestureStagger: 0.12,
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'megaphone': {
-    greyEnterFrom: { x: 0, y: 0 },
-    mosaicEnterFrom: { x: 0, y: 0 },
-    greyExitTo: { x: 0, y: 0 },
-    mosaicExitTo: { x: 0, y: 0 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'mode': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'ai-first-jira': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'code': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'error': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    gestureStagger: 0.12,
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'help': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    gestureStagger: 0.12,
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-  'summarize': {
-    greyEnterFrom: { x: -3, y: 3 },
-    mosaicEnterFrom: { x: 3, y: -2 },
-    greyExitTo: { x: 2.5, y: -2.5 },
-    mosaicExitTo: { x: -2.5, y: 2 },
-    overlapTrack: 'mosaic',
-    gestureStagger: 0.12,
-    enterTX: -14,
-    enterTY: 14,
-    enterScale: 0.75,
-    enterRotation: -5,
-    exitTX: 12,
-    exitTY: -10,
-    exitScale: 0.75,
-    exitRotation: 5,
-  },
-};
-
-export const ILLUS_ROTATE_GROUP: Record<string, { elements: number[]; anchorX: number; anchorY: number; degrees: number; period: number }> = {
-  'deep-research': { elements: [2, 3, 4, 5, 13, 14], anchorX: 34.46, anchorY: 40.18, degrees: 5, period: 3.5 },
-};
 
 const PARAMS = {
   mode: "simple" as const,
@@ -367,59 +147,7 @@ const PARAMS = {
   gestureOffset: { x: 63, y: -111 },
 };
 
-export const ILLUS_ENTER_DURATION = 0.65;
-export const ILLUS_HOLD_DURATION = 3.2;
-export const ILLUS_EXIT_DURATION = 0.4;
-const ILLUS_PAUSE_BETWEEN = 0.04;
-export const CHAT_ENTER_DURATION = 0.65;
-export const CHAT_HOLD_DURATION = 3.2;
-export const CHAT_EXIT_DURATION = 0.4;
-export const CHAT_PAUSE_DURATION = 0.4;
-export const ILLUS_ENTER_Y_OFFSET = 30;
-export const ILLUS_EXIT_Y_OFFSET = -20;
-// Continuous rotation speed (deg/sec) of the colored mosaic group. Single source
-// of truth shared across every Rovo illustration surface: the looping scene here,
-// the chat lifecycle, the controlled idle frame, and frame.ts enter/exit. Import
-// this rather than redefining a local rate so all surfaces stay in sync.
-export const MOSAIC_SPIN_DEG_PER_SEC = 30;
 
-export function easeOutCubic(t: number) {
-  return 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3);
-}
-
-export function springEase(t: number) {
-  const c = Math.max(0, Math.min(1, t));
-  if (c === 0) return 0;
-  if (c === 1) return 1;
-  const damping = 0.72;
-  const frequency = 2.2;
-  const decay = Math.exp(-damping * frequency * c * 2 * Math.PI);
-  return 1 - decay * Math.cos(frequency * c * 2 * Math.PI);
-}
-
-export function easeInCubic(t: number) {
-  const c = Math.max(0, Math.min(1, t));
-  return c * c * c;
-}
-
-export function easeInBack(t: number) {
-  const c = Math.max(0, Math.min(1, t));
-  const s = 1.4;
-  const s1 = s + 1;
-  return s1 * c * c * c - s * c * c;
-}
-
-export function easeOutQuart(t: number) {
-  const c = Math.max(0, Math.min(1, t));
-  return 1 - Math.pow(1 - c, 4);
-}
-
-export function easeInQuart(t: number) {
-  const c = Math.max(0, Math.min(1, t));
-  return c * c * c * c;
-}
-
-export function lerp(a: number, b: number, p: number) { return a + (b - a) * p; }
 function lerpState(start: TransformState, end: TransformState, p: number): TransformState {
   return {
     x: lerp(start.x, end.x, p),
@@ -477,264 +205,6 @@ function MosaicSvg({ svg, uniqueId, mosaicRef, entranceRef, theme }: {
   );
 }
 
-export function getSpotIllustrationUrl(id: string, theme: "light" | "dark", baseUrl: string): string {
-  return `${baseUrl}spot-illustrations/${theme}/${id}.svg`;
-}
-
-let _illusClipCounter = 0;
-
-export function applyOverlapClipPath(_svgEl: SVGSVGElement): void {
-  void _svgEl;
-}
-
-function getMaskReferenceId(maskReference: string | null): string | null {
-	const match = maskReference?.match(/^url\(["']?#([^"')]+)["']?\)$/u);
-	return match?.[1] ?? null;
-}
-
-function readSvgNumber(value: string | null): number | null {
-	if (!value) return null;
-	const parsed = Number.parseFloat(value);
-	return Number.isFinite(parsed) ? parsed : null;
-}
-
-function getMosaicMaskBounds(svg: SVGSVGElement, maskReference: string | null, fallback: { x: number; y: number; width: number; height: number }) {
-	const maskId = getMaskReferenceId(maskReference);
-	const mask = maskId
-		? Array.from(svg.querySelectorAll('mask')).find(maskEl => maskEl.getAttribute('id') === maskId)
-		: null;
-	const x = readSvgNumber(mask?.getAttribute('x') ?? null);
-	const y = readSvgNumber(mask?.getAttribute('y') ?? null);
-	const width = readSvgNumber(mask?.getAttribute('width') ?? null);
-	const height = readSvgNumber(mask?.getAttribute('height') ?? null);
-	if (x === null || y === null || width === null || height === null) {
-		return fallback;
-	}
-	return { x, y, width, height };
-}
-
-function getMosaicBaseUnderlayFills(baseFill: string | null): [string, string, string, string] {
-	const normalizedFill = baseFill?.toUpperCase();
-	const blue = normalizedFill === '#1558BC' ? '#1558BC' : '#1868DB';
-	const orange = normalizedFill === '#1558BC' || normalizedFill === '#E56E00' ? '#E56E00' : '#FCA700';
-	return [blue, '#6A9A23', '#AF59E1', orange];
-}
-
-function appendMosaicBaseUnderlay(doc: Document, wrapper: SVGGElement, cx: number, cy: number, radius: number, fills: [string, string, string, string]): void {
-	const underlay = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-	underlay.setAttribute('data-mosaic-base-underlay', '');
-	underlay.setAttribute('aria-hidden', 'true');
-	const circles = [
-		{ cx: cx - radius * 0.45, cy: cy - radius * 0.35, fill: fills[0] },
-		{ cx: cx + radius * 0.45, cy: cy - radius * 0.35, fill: fills[1] },
-		{ cx: cx - radius * 0.2, cy: cy + radius * 0.45, fill: fills[2] },
-		{ cx: cx + radius * 0.55, cy: cy + radius * 0.45, fill: fills[3] },
-	];
-	circles.forEach(circleConfig => {
-		const circle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-		circle.setAttribute('cx', String(circleConfig.cx));
-		circle.setAttribute('cy', String(circleConfig.cy));
-		circle.setAttribute('r', String(radius * 0.72));
-		circle.setAttribute('fill', circleConfig.fill);
-		underlay.appendChild(circle);
-	});
-	wrapper.appendChild(underlay);
-}
-
-export function processIllustrationSvg(svgText: string, illusId: string): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgText, 'image/svg+xml');
-  const svg = doc.querySelector('svg');
-  if (!svg) return svgText;
-  const vb = (svg.getAttribute('viewBox') || '0 0 100 100').split(/\s+/).map(Number);
-  if (illusId === 'ai-first-jira') {
-    const jiraClipGroup = svg.querySelector('g[clip-path="url(#clip1_jira)"]');
-    if (jiraClipGroup) {
-      const inner = jiraClipGroup.querySelector('g[transform]');
-      if (inner) inner.setAttribute('data-jira-logo', '');
-    }
-  }
-  svg.querySelectorAll('g[mask]').forEach((mg) => {
-    const wrapper = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-    wrapper.setAttribute('data-mosaic-rotate', '');
-    const maskBounds = getMosaicMaskBounds(svg, mg.getAttribute('mask'), { x: vb[0], y: vb[1], width: vb[2], height: vb[3] });
-    const maskCenterX = maskBounds.x + maskBounds.width / 2;
-    const maskCenterY = maskBounds.y + maskBounds.height / 2;
-    const maskRadius = Math.hypot(maskBounds.width, maskBounds.height) / 2;
-    wrapper.setAttribute('style', `transform-origin: ${maskCenterX}px ${maskCenterY}px`);
-    let baseFill: string | null = null;
-    for (const child of Array.from(mg.children)) {
-      const f = child.getAttribute('fill');
-      if (f && f.startsWith('#') && f.toUpperCase() !== '#FFFFFF' && f.toUpperCase() !== '#FFF' && f.toUpperCase() !== '#000' && f.toUpperCase() !== '#000000') {
-        baseFill = f;
-        break;
-      }
-    }
-    if (baseFill) {
-      const baseR = Math.hypot(vb[2], vb[3]);
-      const baseCircle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      baseCircle.setAttribute('cx', String(maskCenterX));
-      baseCircle.setAttribute('cy', String(maskCenterY));
-      baseCircle.setAttribute('r', String(baseR));
-      baseCircle.setAttribute('fill', baseFill);
-      baseCircle.setAttribute('data-mosaic-base', '');
-      wrapper.appendChild(baseCircle);
-    }
-    appendMosaicBaseUnderlay(doc, wrapper, maskCenterX, maskCenterY, maskRadius, getMosaicBaseUnderlayFills(baseFill));
-    while (mg.firstChild) wrapper.appendChild(mg.firstChild);
-    mg.appendChild(wrapper);
-  });
-  const groups = ILLUS_HAND_DRAWN[illusId];
-  if (groups) {
-    const children = Array.from(svg.children);
-    groups.forEach((group, gi) => {
-      group.forEach(idx => {
-        const el = children[idx];
-        if (el instanceof Element) {
-          el.classList.add('illus-gesture');
-          el.setAttribute('data-gesture-group', String(gi));
-          if (gi % 2 === 1) el.classList.add('illus-gesture-stagger');
-        }
-      });
-    });
-  }
-  const elemConfig = ILLUS_ELEMENTS[illusId];
-  const rotGroupConfig = ILLUS_ROTATE_GROUP[illusId];
-  let savedRotateGroupRefs: Element[] = [];
-  if (rotGroupConfig) {
-    const preChildren = Array.from(svg.children);
-    savedRotateGroupRefs = rotGroupConfig.elements
-      .map(idx => preChildren[idx])
-      .filter((el): el is Element => el instanceof Element);
-  }
-  if (elemConfig) {
-    const allChildren = Array.from(svg.children);
-    const greyChildren: Element[] = [];
-    allChildren.forEach((child, i) => {
-      let layer: string | null = null;
-      let isGreyBack = false;
-      let isMosaicTop = false;
-      if (elemConfig.greyBack && elemConfig.greyBack.includes(i)) { layer = 'grey'; isGreyBack = true; }
-      else if (elemConfig.grey.includes(i)) layer = 'grey';
-      else if (elemConfig.mosaicTop && elemConfig.mosaicTop.includes(i)) { layer = 'mosaic'; isMosaicTop = true; }
-      else if (elemConfig.mosaic.includes(i)) layer = 'mosaic';
-      else if (elemConfig.overlap.includes(i)) layer = 'overlap';
-      if (layer && child instanceof Element) {
-        if (layer === 'grey') greyChildren.push(child);
-        const wrapper = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-        wrapper.setAttribute('data-illus-layer', layer);
-        if (isGreyBack) wrapper.setAttribute('data-illus-grey-back', '');
-        if (isMosaicTop) wrapper.setAttribute('data-illus-mosaic-top', '');
-        if (layer === 'mosaic' || layer === 'overlap') {
-          wrapper.setAttribute('style', 'transform-box: fill-box; transform-origin: center center;');
-        }
-        child.replaceWith(wrapper);
-        wrapper.appendChild(child);
-      }
-    });
-    if (greyChildren.length > 0 && elemConfig.overlap.length > 0) {
-      const maskId = `illus-grey-mask-${illusId}-${++_illusClipCounter}`;
-      const mask = doc.createElementNS('http://www.w3.org/2000/svg', 'mask');
-      mask.setAttribute('id', maskId);
-      mask.setAttribute('maskUnits', 'userSpaceOnUse');
-      const vb = (svg.getAttribute('viewBox') || '0 0 100 100').split(/\s+/).map(Number);
-      mask.setAttribute('x', String(vb[0] - 50));
-      mask.setAttribute('y', String(vb[1] - 50));
-      mask.setAttribute('width', String(vb[2] + 100));
-      mask.setAttribute('height', String(vb[3] + 100));
-      const maskG = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      maskG.setAttribute('data-illus-grey-clip', '');
-      greyChildren.forEach(greyEl => {
-        const clone = greyEl.cloneNode(true) as Element;
-        clone.setAttribute('fill', 'white');
-        clone.setAttribute('stroke', 'none');
-        clone.removeAttribute('class');
-        clone.removeAttribute('data-jira-logo');
-        clone.querySelectorAll('[data-jira-logo]').forEach(n => n.removeAttribute('data-jira-logo'));
-        clone.querySelectorAll('*').forEach(child => {
-          if (child.hasAttribute('fill') && child.getAttribute('fill') !== 'none') child.setAttribute('fill', 'white');
-          if (child.hasAttribute('stroke')) child.setAttribute('stroke', 'none');
-        });
-        maskG.appendChild(clone);
-      });
-      mask.appendChild(maskG);
-      svg.insertBefore(mask, svg.firstChild);
-      svg.querySelectorAll('[data-illus-layer="overlap"]').forEach(overlapWrapper => {
-        overlapWrapper.setAttribute('mask', `url(#${maskId})`);
-      });
-    }
-    const mosaicLayers = Array.from(svg.querySelectorAll('[data-illus-layer="mosaic"]:not([data-illus-mosaic-top])'));
-    const mosaicTopLayers = Array.from(svg.querySelectorAll('[data-illus-layer="mosaic"][data-illus-mosaic-top]'));
-    const greyBackLayers = Array.from(svg.querySelectorAll('[data-illus-layer="grey"][data-illus-grey-back]'));
-    const greyLayers = Array.from(svg.querySelectorAll('[data-illus-layer="grey"]:not([data-illus-grey-back])'));
-    const overlapLayers = Array.from(svg.querySelectorAll('[data-illus-layer="overlap"]'));
-    greyBackLayers.forEach(w => svg.appendChild(w));
-    mosaicLayers.forEach(w => svg.appendChild(w));
-    greyLayers.forEach(w => svg.appendChild(w));
-    overlapLayers.forEach(w => svg.appendChild(w));
-    mosaicTopLayers.forEach(w => svg.appendChild(w));
-    Array.from(svg.children).forEach(child => {
-      if (child instanceof Element && child.classList.contains('illus-gesture')) {
-        svg.appendChild(child);
-      }
-    });
-  }
-  if (rotGroupConfig) {
-    if (savedRotateGroupRefs.length > 0 && elemConfig) {
-      const effectiveRefs = savedRotateGroupRefs.map(el => {
-        const parent = el.parentElement;
-        if (parent && parent.hasAttribute('data-illus-layer')) return parent;
-        return el;
-      });
-      const seen = new Set<Element>();
-      const uniqueRefs: Element[] = [];
-      effectiveRefs.forEach(el => { if (!seen.has(el)) { seen.add(el); uniqueRefs.push(el); } });
-      const allCurrentChildren = Array.from(svg.children);
-      uniqueRefs.sort((a, b) => allCurrentChildren.indexOf(a) - allCurrentChildren.indexOf(b));
-      if (uniqueRefs.length > 0 && (uniqueRefs[0].parentElement as Element | null) === (svg as unknown as Element)) {
-        const wrapper = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-        wrapper.setAttribute('data-illus-rotate', '');
-        uniqueRefs[0].before(wrapper);
-        uniqueRefs.forEach(el => {
-          if ((el.parentElement as Element | null) === (svg as unknown as Element)) wrapper.appendChild(el);
-        });
-      }
-    } else {
-      const allChildren = Array.from(svg.children);
-      const sortedIndices = [...rotGroupConfig.elements].sort((a, b) => a - b);
-      const firstEl = allChildren[sortedIndices[0]];
-      if (firstEl instanceof Element) {
-        const wrapper = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-        wrapper.setAttribute('data-illus-rotate', '');
-        firstEl.before(wrapper);
-        sortedIndices.forEach(idx => {
-          const el = allChildren[idx];
-          if (el instanceof Element) {
-            wrapper.appendChild(el);
-          }
-        });
-      }
-    }
-  }
-  const greyBackToReorder = Array.from(svg.querySelectorAll('[data-illus-grey-back]'));
-  if (greyBackToReorder.length > 0) {
-    const firstNonDef = Array.from(svg.children).find(
-      child => child.tagName !== 'mask' && child.tagName !== 'defs' && child.tagName !== 'style'
-    );
-    greyBackToReorder.forEach(el => {
-      if (firstNonDef && el !== firstNonDef) svg.insertBefore(el, firstNonDef);
-    });
-  }
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '100%');
-  svg.setAttribute('overflow', 'visible');
-  const existingStyle = svg.getAttribute('style') || '';
-  svg.setAttribute('style', `${existingStyle}${existingStyle ? '; ' : ''}overflow: visible`);
-  const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
-  style.textContent = `.illus-gesture { transform-box: fill-box; transform-origin: center center; animation: illusGesturePulse 0.8s steps(1) infinite; } .illus-gesture-stagger { animation-delay: 0.4s; } @keyframes illusGesturePulse { 0%, 49.9% { transform: scale(1); } 50%, 100% { transform: scale(0.95); } }`;
-  svg.insertBefore(style, svg.firstChild);
-  return new XMLSerializer().serializeToString(svg);
-}
 
 export interface SpotIllustrationProps {
 	size?: number;
@@ -751,10 +221,8 @@ export interface SpotIllustrationProps {
 
 export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, className, baseUrl = "/", chatOnly = false, paused = false, illusIds, controlledChatLifecycle = false, wantChatExit = false, onChatExitComplete }: Readonly<SpotIllustrationProps>) {
   const { cycleIds: cycleIdsResolved, includeChat: includeChatResolved } = resolveCycleConfig(illusIds);
-  const cycleIdsRef = useRef<string[]>(cycleIdsResolved);
-  const includeChatRef = useRef<boolean>(includeChatResolved);
-  cycleIdsRef.current = cycleIdsResolved;
-  includeChatRef.current = includeChatResolved;
+  const cycleIdsRef = useLatestRef<string[]>(cycleIdsResolved);
+  const includeChatRef = useLatestRef<boolean>(includeChatResolved);
   const baseId = useId().replace(/:/g, "");
   const pr = size / 300;
   const { actualTheme: theme } = useTheme();
@@ -796,22 +264,16 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
   const illusGreyClipRef = useRef<SVGGElement[]>([]);
   const illusRotateEls = useRef<SVGGElement[]>([]);
   const illusRoamRef = useRef({ x: 0, y: 0 });
-  const themeRef = useRef(theme);
-  themeRef.current = theme;
-
   // Controlled chat lifecycle: when enabled, the chat scene plays its
   // entrance once, holds the idle (frozen end-of-enter) state indefinitely,
   // then plays its exit only when wantChatExit becomes true. This avoids
   // looping the full enter/idle/exit cycle that the free-running default
   // mode produces, so consumers like the Rovo Prompt Studio can drive chat
   // transitions on word-association just like every other illustration.
-  const controlledChatLifecycleRef = useRef(controlledChatLifecycle);
-  const wantChatExitRef = useRef(wantChatExit);
-  const onChatExitCompleteRef = useRef(onChatExitComplete);
+  const controlledChatLifecycleRef = useLatestRef(controlledChatLifecycle);
+  const wantChatExitRef = useLatestRef(wantChatExit);
+  const onChatExitCompleteRef = useLatestRef(onChatExitComplete);
   const chatExitCompleteFiredRef = useRef(false);
-  controlledChatLifecycleRef.current = controlledChatLifecycle;
-  wantChatExitRef.current = wantChatExit;
-  onChatExitCompleteRef.current = onChatExitComplete;
 
   const pauseBetweenLoops = 0;
 
@@ -860,8 +322,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
     return { scale, tx, ty };
   }
 
-  const pausedRef = useRef(paused);
-  pausedRef.current = paused;
+  const pausedRef = useLatestRef(paused);
 
   const updateAnimation = useCallback((timestamp: number) => {
     const clock = clockRef.current;
@@ -1432,7 +893,10 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
         }
         const url = getSpotIllustrationUrl(illus.id, t, baseUrl);
         promises.push(
-          fetch(url).then(r => r.text()).then(text => {
+          fetch(url).then((response) => {
+            if (!response.ok) throw new Error(`Unable to load illustration: ${response.status}`);
+            return response.text();
+          }).then(text => {
             if (mounted) svgCacheRef.current.set(`${illus.id}-${t}`, processIllustrationSvg(text, illus.id));
           }).catch(() => {})
         );
@@ -1456,7 +920,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
         clearTimeout(illusTransitionTimer.current);
         illusTransitionTimer.current = null;
       }
-      wrapper.innerHTML = "";
+      wrapper.replaceChildren();
       wrapper.style.transition = "";
       wrapper.style.opacity = "1";
       illusMosaicRefs.current = [];
@@ -1479,9 +943,8 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
     }
 
     const applyNewSvg = () => {
-      wrapper.innerHTML = processed;
-      const svgEl = wrapper.querySelector('svg');
-      if (svgEl) applyOverlapClipPath(svgEl as SVGSVGElement);
+      const svgEl = mountProcessedIllustrationSvg(wrapper, processed);
+      if (svgEl) applyOverlapClipPath(svgEl);
       illusMosaicRefs.current = Array.from(wrapper.querySelectorAll('[data-mosaic-rotate]')) as SVGGElement[];
       illusGestureEls.current = Array.from(wrapper.querySelectorAll('.illus-gesture'));
       illusGestureEls.current.forEach(el => { (el as SVGElement).style.opacity = '0'; });
@@ -1504,7 +967,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
     const themeChanged = prevThemeRef.current !== theme;
     prevThemeRef.current = theme;
 
-    if (themeChanged && wrapper.innerHTML) {
+    if (themeChanged && wrapper.childElementCount > 0) {
       const savedOpacity = wrapper.style.opacity;
       wrapper.style.transition = "opacity 0.15s ease-out";
       wrapper.style.opacity = "0";

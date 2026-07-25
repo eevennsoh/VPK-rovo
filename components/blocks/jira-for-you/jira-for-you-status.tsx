@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
@@ -55,11 +55,15 @@ export function JiraForYouStatusLozengeDropdown({
 }: Readonly<{
 	value: JiraForYouStatus;
 }>) {
-	const [selected, setSelected] = useState<JiraForYouStatus>(value);
+	return <JiraForYouStatusLozengeDropdownContent initialValue={value} key={value} />;
+}
 
-	useEffect(() => {
-		setSelected(value);
-	}, [value]);
+function JiraForYouStatusLozengeDropdownContent({
+	initialValue,
+}: Readonly<{
+	initialValue: JiraForYouStatus;
+}>) {
+	const [selected, setSelected] = useState<JiraForYouStatus>(initialValue);
 
 	return (
 		<DropdownMenu>

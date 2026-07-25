@@ -18,6 +18,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -77,10 +78,9 @@ export function ConversationStartersDialog({
 	placeholder,
 }: Readonly<ConversationStartersDialogProps>) {
 	const isControlled = typeof starters !== "undefined";
-	const seedRef = useRef<readonly ConversationStarter[]>(
+	const seedRef = useLatestRef<readonly ConversationStarter[]>(
 		isControlled ? starters : defaultStarters,
 	);
-	seedRef.current = isControlled ? starters : defaultStarters;
 
 	const idCounter = useRef(0);
 	const [draftState, setDraftState] = useState(() => ({

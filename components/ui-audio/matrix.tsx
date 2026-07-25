@@ -72,22 +72,29 @@ function useAnimation(
     frames,
     isPlaying: options.autoplay,
   })
+  const animationStateRef = useRef(animationState)
   const frameIdRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(0)
   const accumulatorRef = useRef<number>(0)
-  let resolvedAnimationState = animationState
-  if (animationState.frames !== frames || animationState.autoplay !== options.autoplay) {
+  const shouldResetAnimation = animationState.frames !== frames || animationState.autoplay !== options.autoplay
+  const resetAnimationState = useMemo(() => ({
+    autoplay: options.autoplay,
+    frameIndex: 0,
+    frames,
+    isPlaying: options.autoplay,
+  }), [frames, options.autoplay])
+  const resolvedAnimationState = shouldResetAnimation
+    ? resetAnimationState
+    : animationState
+  const { frameIndex, isPlaying } = resolvedAnimationState
+
+  useEffect(() => {
+    if (!shouldResetAnimation) return
     lastTimeRef.current = 0
     accumulatorRef.current = 0
-    resolvedAnimationState = {
-      autoplay: options.autoplay,
-      frameIndex: 0,
-      frames,
-      isPlaying: options.autoplay,
-    }
+    animationStateRef.current = resolvedAnimationState
     setAnimationState(resolvedAnimationState)
-  }
-  const { frameIndex, isPlaying } = resolvedAnimationState
+  }, [animationState, resetAnimationState, shouldResetAnimation])
 
   useEffect(() => {
     if (!frames || frames.length === 0 || !isPlaying || options.paused) {
@@ -108,20 +115,18 @@ function useAnimation(
       if (accumulatorRef.current >= frameInterval) {
         accumulatorRef.current -= frameInterval
 
-        setAnimationState((currentState) => {
-          const prev = currentState.frameIndex
-          const next = prev + 1
-          if (next >= frames.length) {
-            if (options.loop) {
-              options.onFrame?.(0)
-              return { ...currentState, frameIndex: 0 }
-            } else {
-              return { ...currentState, isPlaying: false }
-            }
-          }
-          options.onFrame?.(next)
-          return { ...currentState, frameIndex: next }
-        })
+        const currentState = animationStateRef.current
+        const nextFrameIndex = currentState.frameIndex + 1
+        const nextState = nextFrameIndex >= frames.length
+          ? options.loop
+            ? { ...currentState, frameIndex: 0 }
+            : { ...currentState, isPlaying: false }
+          : { ...currentState, frameIndex: nextFrameIndex }
+        animationStateRef.current = nextState
+        if (nextFrameIndex < frames.length || options.loop) {
+          options.onFrame?.(nextState.frameIndex)
+        }
+        setAnimationState(nextState)
       }
 
       frameIdRef.current = requestAnimationFrame(animate)

@@ -245,7 +245,9 @@ function AnimateIcon({
   }, []);
   const shouldAnimate = !reduced && tabVisible;
   const shouldAnimateRef = React.useRef(shouldAnimate);
-  shouldAnimateRef.current = shouldAnimate;
+  React.useEffect(() => {
+    shouldAnimateRef.current = shouldAnimate;
+  }, [shouldAnimate]);
   React.useEffect(() => {
     if (!shouldAnimate && loop) {
       stopAnimation();
@@ -671,8 +673,6 @@ function useVariants<
 }
 
 export {
-  pathClassName,
-  staticAnimations,
   AnimateIcon,
   IconWrapper,
   useAnimateIconContext,

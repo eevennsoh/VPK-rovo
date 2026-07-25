@@ -15,6 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { cn } from "@/lib/utils";
 
+export { toggleSelectedValue } from "./experimental-directory-values";
+
 export interface ExperimentalDirectoryEmptyState {
 	title: string;
 	description: string;
@@ -43,12 +45,6 @@ export type ExperimentalDirectoryFacet<TOption extends ExperimentalDirectoryFilt
 			renderOptionLeading?: (option: TOption) => ReactNode;
 			selectedValues: readonly string[];
 	  };
-
-export function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
-	return values.includes(value)
-		? values.filter((current) => current !== value)
-		: [...values, value];
-}
 
 function facetIsActive<TOption extends ExperimentalDirectoryFilterOption>(
 	facet: ExperimentalDirectoryFacet<TOption>,

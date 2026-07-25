@@ -4,7 +4,8 @@ import { curveLinear } from "@visx/curve";
 import { LinePath } from "@visx/shape";
 import type { CurveFactory } from "d3-shape";
 import { useCallback, useId, useMemo } from "react";
-import { useChart, useChartStable } from "./chart-context";
+import { useChartStable } from "./chart-context";
+import { useChart } from "./use-chart";
 import {
   type FadeEdges,
   fadeGradientStops,

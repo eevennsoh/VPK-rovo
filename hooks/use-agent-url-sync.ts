@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { ROVO_AGENT_ID } from "@/app/data/directory/agents";
 import { getAgentIdFromSearch, withAgentParam } from "@/lib/agent-route-sync";
+import { useLatestRef } from "@/lib/use-latest-ref";
 
 /**
  * Keeps the agent the surface is *editing* in sync with the `?agent=` query
@@ -56,12 +57,8 @@ export function useAgentUrlSync({
 }) {
 	// Mirror live values into refs so the once-attached popstate handler reads
 	// current state without re-subscribing when these churn.
-	const editingAgentIdRef = useRef(editingAgentId);
-	editingAgentIdRef.current = editingAgentId;
-	const selectableAgentIdsRef = useRef(selectableAgentIds);
-	selectableAgentIdsRef.current = selectableAgentIds;
-	const onAgentRestoredRef = useRef(onAgentRestored);
-	onAgentRestoredRef.current = onAgentRestored;
+	const selectableAgentIdsRef = useLatestRef(selectableAgentIds);
+	const onAgentRestoredRef = useLatestRef(onAgentRestored);
 
 	// The agent id the URL was last reconciled to (either direction); guards the
 	// write effect from echoing a change that originated from the URL.
@@ -109,7 +106,7 @@ export function useAgentUrlSync({
 
 		window.addEventListener("popstate", handlePopState);
 		return () => window.removeEventListener("popstate", handlePopState);
-	}, [enabled]);
+	}, [enabled, onAgentRestoredRef, selectableAgentIdsRef]);
 
 	// Apply the pending mount seed once the agent roster can resolve it.
 	useEffect(() => {
@@ -136,7 +133,7 @@ export function useAgentUrlSync({
 			// deep-linked / reloaded agent. Chat identity is untouched.
 			onAgentRestoredRef.current?.(seedAgentId);
 		}
-	}, [enabled, selectableAgentIds, editingAgentId]);
+	}, [editingAgentId, enabled, onAgentRestoredRef, selectableAgentIds]);
 
 	// Reflect the edited agent into the URL.
 	useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useLatestRef } from "@/lib/use-latest-ref";
 import type { ChartPhase } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 import {
@@ -136,18 +137,14 @@ export function useAnimatedYDomains({
     skeletonByAxis,
     targetByAxis
   );
-  const destinationRef = useRef(destinationByAxis);
-  destinationRef.current = destinationByAxis;
-  const skeletonRef = useRef(skeletonByAxis);
-  skeletonRef.current = skeletonByAxis;
-  const targetRef = useRef(targetByAxis);
-  targetRef.current = targetByAxis;
+  const destinationRef = useLatestRef(destinationByAxis);
+  const skeletonRef = useLatestRef(skeletonByAxis);
+  const targetRef = useLatestRef(targetByAxis);
 
   const [animatedByAxis, setAnimatedByAxis] = useState(destinationByAxis);
   const animatedRef = useRef(animatedByAxis);
   const prevPhaseRef = useRef(chartPhase);
-  const onSettledRef = useRef(onSettled);
-  onSettledRef.current = onSettled;
+  const onSettledRef = useLatestRef(onSettled);
 
   useEffect(() => {
     animatedRef.current = animatedByAxis;
@@ -196,7 +193,7 @@ export function useAnimatedYDomains({
     });
 
     return () => control?.stop();
-  }, [chartPhase, durationMs, enabled, reducedMotion]);
+  }, [chartPhase, destinationRef, durationMs, enabled, onSettledRef, reducedMotion, skeletonRef, targetRef]);
 
   const targetSignature = JSON.stringify(targetByAxis);
   const prevTargetSignatureRef = useRef(targetSignature);
@@ -227,7 +224,9 @@ export function useAnimatedYDomains({
     chartPhase,
     durationMs,
     enabled,
+	onSettledRef,
     reducedMotion,
+	targetRef,
     targetSignature,
     tweenOnTargetChange,
   ]);

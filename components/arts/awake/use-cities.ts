@@ -148,36 +148,22 @@ export function useCities(): UseCitiesReturn {
 	);
 
 	const addCity = useCallback((city: LockscreenLocation) => {
-		setCities((prev) => {
-			if (prev.some((currentCity) => currentCity.id === city.id)) {
-				return prev;
-			}
-
-			const next = [...prev, city];
-			setSelectedIndexRaw(next.length - 1);
-			return next;
-		});
-	}, []);
+		if (cities.some((currentCity) => currentCity.id === city.id)) return;
+		const next = [...cities, city];
+		setCities(next);
+		setSelectedIndexRaw(next.length - 1);
+	}, [cities]);
 
 	const removeCity = useCallback((cityId: string) => {
-		setCities((prev) => {
-			// Always keep at least one city so the rail and dependent
-			// widgets (current weather, time card, etc.) have something
-			// to render.
-			if (prev.length <= 1) return prev;
-			const removalIndex = prev.findIndex((c) => c.id === cityId);
-			if (removalIndex === -1) return prev;
-
-			const next = prev.filter((_, idx) => idx !== removalIndex);
-			// Clamp the selection: if the removed city was at or before the
-			// current selection, shift left; always ensure we stay in range.
-			setSelectedIndexRaw((current) => {
-				const adjusted = removalIndex < current ? current - 1 : current;
-				return clampSelectedIndex(adjusted, next.length);
-			});
-			return next;
-		});
-	}, []);
+		// Always keep at least one city so the rail and dependent widgets have data.
+		if (cities.length <= 1) return;
+		const removalIndex = cities.findIndex((city) => city.id === cityId);
+		if (removalIndex === -1) return;
+		const next = cities.filter((_, index) => index !== removalIndex);
+		const adjusted = removalIndex < selectedIndex ? selectedIndex - 1 : selectedIndex;
+		setCities(next);
+		setSelectedIndexRaw(clampSelectedIndex(adjusted, next.length));
+	}, [cities, selectedIndex]);
 
 	const selected = cities[selectedIndex] ?? DEFAULT_PRESET_CITY;
 

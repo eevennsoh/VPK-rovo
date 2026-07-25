@@ -23,8 +23,10 @@ import {
 	shouldRenderRovoAppWidget,
 } from "@/components/projects/rovo-core/lib/rovo-app-message-display";
 import { resolveRovoAppPendingAssistantDisplayState, resolveRovoAppStreamingAssistantMessageId } from "@/components/projects/rovo-core/lib/rovo-app-streaming-assistant";
-import { ROVO_APP_DEFAULT_EMPTY_STATE, RovoAppConversationEmptyState, type RovoAppEmptyStateConfig } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
-import { computeRovoAppAnchorScrollTop, RovoAppScrollActiveTracker, RovoAppScrollAnchorSync } from "@/components/projects/rovo-core/components/rovo-app-scroll-sync";
+import { RovoAppConversationEmptyState } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
+import { ROVO_APP_DEFAULT_EMPTY_STATE, type RovoAppEmptyStateConfig } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
+import { RovoAppScrollActiveTracker, RovoAppScrollAnchorSync } from "@/components/projects/rovo-core/components/rovo-app-scroll-sync";
+import { computeRovoAppAnchorScrollTop } from "@/components/projects/rovo-core/lib/rovo-app-scroll-anchor-dom";
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
 import { AssistantSuggestionsSection } from "@/components/projects/shared/components/assistant-suggestions-section";
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
@@ -56,8 +58,8 @@ import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/
 import { Component, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
 
-export { ROVO_APP_DEFAULT_EMPTY_STATE } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
-export type { RovoAppEmptyStateConfig } from "@/components/projects/rovo-core/components/rovo-app-empty-state";
+export { ROVO_APP_DEFAULT_EMPTY_STATE } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
+export type { RovoAppEmptyStateConfig } from "@/components/projects/rovo-core/components/rovo-app-empty-state-config";
 
 type RovoAppCustomWidgetRenderContext = {
 	message: RovoUIMessage;

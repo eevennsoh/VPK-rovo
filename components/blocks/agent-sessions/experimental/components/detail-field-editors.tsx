@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import EpicIcon from "@atlaskit/icon/core/epic";
@@ -13,8 +13,7 @@ import PriorityLowestIcon from "@atlaskit/icon/core/priority-lowest";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import TagIcon from "@atlaskit/icon/core/tag";
 
-import type { WorkItemData, WorkItemPerson } from "@/app/contexts/context-work-item-modal";
-import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
+import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { CREW_ROSTER, type CrewMember } from "@/components/blocks/agent-sessions/data/metadata-crew";
 import type { AgentSessionStatus } from "@/components/blocks/agent-sessions/data/session-state";
 import { useAgentSessionsState } from "@/components/blocks/agent-sessions/experimental/context-agent-sessions";
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Lozenge, LozengeDropdownTrigger, type LozengeProps } from "@/components/ui/lozenge";
+import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { Tag, TagGroup } from "@/components/ui/tag";
@@ -46,12 +45,21 @@ import {
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
+import {
+	filterMetadataSearchItems,
+	PRIORITY_OPTIONS,
+	STATUS_PHASES,
+	statusVariant,
+	type PriorityValue,
+} from "./detail-field-editor-data";
 
-export type PriorityValue = NonNullable<WorkItemData["priority"]>;
-type LozengeVariant = NonNullable<LozengeProps["variant"]>;
-
-export const STATUS_PHASES: readonly string[] = BOARD_COLUMNS.map((column) => column.title);
-export const PRIORITY_OPTIONS: readonly PriorityValue[] = ["Highest", "High", "Medium", "Low", "Lowest"];
+export {
+	filterMetadataSearchItems,
+	PRIORITY_OPTIONS,
+	STATUS_PHASES,
+	statusVariant,
+} from "./detail-field-editor-data";
+export type { PriorityValue } from "./detail-field-editor-data";
 
 const PRIORITY_ICONS: Record<PriorityValue, typeof PriorityMediumIcon> = {
 	Highest: PriorityHighestIcon,
@@ -76,32 +84,6 @@ const PRIORITY_COLOR_CLASSES: Record<PriorityValue, string> = {
 export const METADATA_PICKER_POPOVER_CLASS =
 	"w-auto gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none dark:shadow-none [[data-color-mode=dark]_&]:shadow-none";
 export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
-
-export function statusVariant(status: string): LozengeVariant {
-	const index = STATUS_PHASES.indexOf(status);
-	if (index >= 0 && index === STATUS_PHASES.length - 1) {
-		return "success";
-	}
-	if (index <= 0) {
-		return "neutral";
-	}
-	return "information";
-}
-
-export function filterMetadataSearchItems(
-	items: readonly RichTextSuggestionMenuItem[],
-	query: string,
-): readonly RichTextSuggestionMenuItem[] {
-	const normalizedQuery = query.trim().toLowerCase();
-	if (!normalizedQuery) {
-		return items;
-	}
-
-	return items.filter((item) => {
-		const haystack = `${item.label} ${item.description ?? ""}`.toLowerCase();
-		return haystack.includes(normalizedQuery);
-	});
-}
 
 export function MetadataSearchPicker({
 	emptyLabel,
@@ -317,7 +299,13 @@ export function DateRowField({
 	CalendarComponent: React.ComponentType<{ mode: "single"; selected?: Date; onSelect: (d: Date | undefined) => void }>;
 }>) {
 	const [open, setOpen] = useState(false);
-	const label = value ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(value) : placeholder;
+	const [label, setLabel] = useState(placeholder);
+
+	useEffect(() => {
+		setLabel(value
+			? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(value)
+			: placeholder);
+	}, [placeholder, value]);
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
@@ -520,6 +508,32 @@ function AgentStatusIndicator({ status }: Readonly<{ status: AgentSessionStatus 
 	}
 }
 
+function toAgentSuggestionItem(
+	agent: CrewMember,
+	status?: AgentSessionStatus,
+): RichTextSuggestionMenuItem {
+	return {
+		icon: <AiAgentIcon label="" size="small" />,
+		id: agent.id,
+		label: agent.name,
+		visual: agent.brandName
+			? { kind: "third-party", name: agent.brandName }
+			: agent.avatarUrl
+				? { kind: "avatar", shape: "hexagon", src: agent.avatarUrl }
+				: undefined,
+		...(status && status !== "completed" ? { trailing: <AgentStatusIndicator status={status} /> } : {}),
+	};
+}
+
+function toAgentSuggestionHeading(id: string, label: string): RichTextSuggestionMenuItem {
+	return {
+		headingLabel: label,
+		icon: null,
+		id,
+		label,
+	};
+}
+
 export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly CrewMember[]; onChange: (next: CrewMember[]) => void }>) {
 	const [open, setOpen] = useState(false);
 	const { sessions, staticEvents } = useAgentSessionsState();
@@ -548,27 +562,6 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 	const statusOf = (id: string): AgentSessionStatus =>
 		statusByAgentId.get(id) ?? (completedOutputAgentIds.has(id) ? "completed" : "running");
 
-	// `status` is set for added agents so the row shows its trailing lifecycle
-	// glyph (running spinner / needs-input info); the unselected roster omits it.
-	const toItem = (agent: CrewMember, status?: AgentSessionStatus): RichTextSuggestionMenuItem => ({
-		icon: <AiAgentIcon label="" size="small" />,
-		id: agent.id,
-		label: agent.name,
-		visual: agent.brandName
-			? { kind: "third-party", name: agent.brandName }
-			: agent.avatarUrl
-				? { kind: "avatar", shape: "hexagon", src: agent.avatarUrl }
-				: undefined,
-		...(status && status !== "completed" ? { trailing: <AgentStatusIndicator status={status} /> } : {}),
-	});
-
-	const heading = (id: string, label: string): RichTextSuggestionMenuItem => ({
-		headingLabel: label,
-		icon: null,
-		id,
-		label,
-	});
-
 	// Sections: added agents grouped by session status (Running / Awaiting user
 	// response / Done), then the rest of the roster under "Select agent". Each
 	// section leads with a non-interactive heading; empty sections are omitted.
@@ -576,14 +569,16 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 	for (const section of AGENT_STATUS_SECTIONS) {
 		const sectionItems = agents
 			.filter((agent) => isSelected(agent.id) && statusOf(agent.id) === section.status)
-			.map((agent) => toItem(agent, section.status));
+			.map((agent) => toAgentSuggestionItem(agent, section.status));
 		if (sectionItems.length > 0) {
-			items.push(heading(`__agents-${section.key}-heading`, section.label), ...sectionItems);
+			items.push(toAgentSuggestionHeading(`__agents-${section.key}-heading`, section.label), ...sectionItems);
 		}
 	}
-	const availableItems = agents.filter((agent) => !isSelected(agent.id)).map((agent) => toItem(agent));
+	const availableItems = agents
+		.filter((agent) => !isSelected(agent.id))
+		.map((agent) => toAgentSuggestionItem(agent));
 	if (availableItems.length > 0) {
-		items.push(heading("__agents-select-heading", "Select agent"), ...availableItems);
+		items.push(toAgentSuggestionHeading("__agents-select-heading", "Select agent"), ...availableItems);
 	}
 
 	const toggle = (member: CrewMember) => {

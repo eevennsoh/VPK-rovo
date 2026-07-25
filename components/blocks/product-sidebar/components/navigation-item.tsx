@@ -9,6 +9,21 @@ import { NavigationItemProps } from "./types";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 
+const PRIMARY_CONTROL_STYLE = {
+	alignItems: "center",
+	background: "transparent",
+	border: 0,
+	color: "inherit",
+	cursor: "pointer",
+	display: "flex",
+	flex: 1,
+	gap: token("space.025"),
+	minWidth: 0,
+	padding: 0,
+	textAlign: "left",
+	textDecoration: "none",
+} satisfies CSSProperties;
+
 export function NavigationItem({
 	icon: Icon,
 	label,
@@ -32,21 +47,6 @@ export function NavigationItem({
 		position: "relative",
 		gap: token("space.025"),
 		minHeight: "32px",
-	} satisfies CSSProperties;
-
-	const primaryControlStyle = {
-		alignItems: "center",
-		background: "transparent",
-		border: 0,
-		color: "inherit",
-		cursor: "pointer",
-		display: "flex",
-		flex: 1,
-		gap: token("space.025"),
-		minWidth: 0,
-		padding: 0,
-		textAlign: "left",
-		textDecoration: "none",
 	} satisfies CSSProperties;
 
 	const primaryContent = (
@@ -130,11 +130,11 @@ export function NavigationItem({
 			)}
 
 			{href ? (
-				<Link href={href} onClick={() => onClick?.()} style={primaryControlStyle}>
+				<Link href={href} onClick={() => onClick?.()} style={PRIMARY_CONTROL_STYLE}>
 					{primaryContent}
 				</Link>
 			) : (
-				<button type="button" onClick={onClick} style={primaryControlStyle}>
+				<button type="button" onClick={onClick} style={PRIMARY_CONTROL_STYLE}>
 					{primaryContent}
 				</button>
 			)}

@@ -103,6 +103,12 @@ test("Gallery centers the card strip by default without breaking overflow reacha
 	assert.match(source, /overflow-x-auto/u);
 });
 
+test("Gallery fits selected-stage text before paint", () => {
+	const source = readProjectFile("components/blocks/gallery/hooks/use-fit-text.ts");
+	assert.match(source, /import \{ useCallback, useLayoutEffect, useRef, useState/u);
+	assert.match(source, /useLayoutEffect\(\(\) => \{[\s\S]*new ResizeObserver\(fit\)[\s\S]*fit\(\);/u);
+});
+
 test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	const cardSource = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
 	const dragScrollSource = readProjectFile("components/blocks/gallery/hooks/use-drag-scroll.ts");

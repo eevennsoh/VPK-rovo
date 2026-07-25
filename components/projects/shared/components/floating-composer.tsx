@@ -27,6 +27,20 @@ export type FloatingComposerProps = Omit<
 	addButtonProps?: ComponentProps<typeof PromptInputButton>;
 };
 
+function observeResizeTargets(observer: ResizeObserver, ...targets: Element[]): void {
+	for (const target of targets) {
+		observer.observe(target);
+	}
+}
+
+function observeMutations(observer: MutationObserver, target: Node): void {
+	observer.observe(target, {
+		characterData: true,
+		childList: true,
+		subtree: true,
+	});
+}
+
 /**
  * Shared floating prompt composer shell.
  *
@@ -58,7 +72,7 @@ export function FloatingComposer({
 		const textFieldContainer = textFieldRef.current;
 		const actionsContainer = actionsRef.current;
 		if (!container || !addButtonContainer || !textFieldContainer || !actionsContainer) {
-			return;
+			return () => undefined;
 		}
 
 		const findField = () =>
@@ -166,9 +180,7 @@ export function FloatingComposer({
 		};
 
 		const resizeObserver = new ResizeObserver(scheduleMeasure);
-		resizeObserver.observe(container);
-		resizeObserver.observe(addButtonContainer);
-		resizeObserver.observe(actionsContainer);
+		observeResizeTargets(resizeObserver, container, addButtonContainer, actionsContainer);
 
 		const mutationObserver = new MutationObserver(scheduleMeasure);
 		let boundField: HTMLElement | null = null;
@@ -181,12 +193,8 @@ export function FloatingComposer({
 				resizeObserver.unobserve(boundField);
 			}
 			boundField = field;
-			resizeObserver.observe(field);
-			mutationObserver.observe(field, {
-				characterData: true,
-				childList: true,
-				subtree: true,
-			});
+			observeResizeTargets(resizeObserver, field);
+			observeMutations(mutationObserver, field);
 			scheduleMeasure();
 			return true;
 		};

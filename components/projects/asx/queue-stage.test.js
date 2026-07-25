@@ -267,7 +267,7 @@ test("Queue workspace reuses fullscreen message and Rovo composer primitives", (
 	assert.match(QUEUE_WORKSPACE_SOURCE, /realtimeVoiceState=\{realtime\.voiceState\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /hideSourceAndModelControls/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /data-testid="asx-queue-chat-body"/u);
-	assert.match(QUEUE_WORKSPACE_SOURCE, /animate=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0 \}\}/u);
+	assert.match(QUEUE_WORKSPACE_SOURCE, /\s+layout\s+style=\{\{ paddingRight: isDetailPanelOpen \? detailPanelResize\.sidebarWidth : 0, willChange: shouldReduceMotion \? undefined : "transform" \}\}/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /shouldReduceMotion \|\| detailPanelResize\.isResizing/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /contentClassName="mx-auto max-w-\[800px\] px-6"/u);
 	assert.match(QUEUE_WORKSPACE_SOURCE, /className="mx-auto w-full max-w-\[800px\] px-3"/u);

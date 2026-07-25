@@ -13,8 +13,8 @@ import {
 	METADATA_CONTENT_COLLAPSE_TRANSITION,
 	METADATA_CONTENT_EXPAND_TRANSITION,
 	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
-	usePanelLayout,
-} from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
+} from "@/components/blocks/agent-sessions/experimental/context-panel-layout-motion";
+import { usePanelLayout } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 
 const ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.1,

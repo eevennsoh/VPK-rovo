@@ -4,7 +4,6 @@
 
 import {
 	useCallback,
-	useEffect,
 	useState,
 	type CSSProperties,
 	type ReactNode,
@@ -16,6 +15,12 @@ import { token } from "@/lib/tokens";
 const ATTACHMENT_CARD_RADIUS = 6;
 const ATTACHMENT_GENERATION_DURATION_SECONDS = 2;
 const ATTACHMENT_GENERATION_SIZE = 172;
+const GENERATION_SURFACE_STYLE: CSSProperties = {
+	minWidth: 0,
+	width: "100%",
+	height: "auto",
+	boxShadow: token("elevation.shadow.raised"),
+};
 
 interface AttachmentPreviewCardProps {
 	highlightedKey?: number;
@@ -27,7 +32,7 @@ interface AttachmentPreviewCardProps {
 	trailingVisual?: ReactNode;
 }
 
-export function AttachmentPreviewCard({
+function AttachmentPreviewCardContent({
 	highlightedKey,
 	isHighlighted = false,
 	onOpen,
@@ -54,22 +59,6 @@ export function AttachmentPreviewCard({
 		borderRadius: token("radius.medium"),
 		cursor: onOpen ? "pointer" : undefined,
 	};
-	const generationSurfaceStyle: CSSProperties = {
-		minWidth: 0,
-		width: "100%",
-		height: "auto",
-		boxShadow: token("elevation.shadow.raised"),
-	};
-
-	useEffect(() => {
-		if (!isHighlighted) {
-			setIsGenerationActive(false);
-			return;
-		}
-
-		setIsGenerationActive(true);
-	}, [highlightedKey, isHighlighted]);
-
 	const cardContent = (
 		<>
 			<div
@@ -98,7 +87,7 @@ export function AttachmentPreviewCard({
 			onGenerationComplete={handleGenerationComplete}
 			radius={ATTACHMENT_CARD_RADIUS}
 			size={ATTACHMENT_GENERATION_SIZE}
-			style={generationSurfaceStyle}
+			style={GENERATION_SURFACE_STYLE}
 		>
 			<div className="w-full p-[var(--rovo-generation-border-width)]">
 				<div className="overflow-hidden rounded-[calc(var(--rovo-generation-radius)-var(--rovo-generation-border-width))] bg-surface">
@@ -132,4 +121,9 @@ export function AttachmentPreviewCard({
 			{visibleContent}
 		</div>
 	);
+}
+
+export function AttachmentPreviewCard(props: Readonly<AttachmentPreviewCardProps>) {
+	const resetKey = `${props.isHighlighted === true}:${props.highlightedKey ?? "default"}`;
+	return <AttachmentPreviewCardContent key={resetKey} {...props} />;
 }

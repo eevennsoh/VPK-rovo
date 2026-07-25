@@ -42,10 +42,9 @@ test("Studio sidebar creation rows use the shared VPK spinner", () => {
 
 test("Studio sidebar Agents parent can collapse while a recent agent is selected", () => {
 	assert.doesNotMatch(SOURCE, /isAgentsExpanded\s*\|\|\s*hasSelectedRecentAgent/u);
-	assert.match(
-		SOURCE,
-		/React\.useEffect\(\(\) => \{\s*if \(hasSelectedRecentAgent\) \{\s*setIsAgentsExpanded\(true\);/u,
-	);
+	assert.match(SOURCE, /const selectedRecentAgentKey = selectedRecentAgent/u);
+	assert.match(SOURCE, /collapsedSelectionKey !== selectedRecentAgentKey/u);
+	assert.match(SOURCE, /setCollapsedSelectionKey\(nextExpanded \? null : selectedRecentAgentKey\)/u);
 	assert.match(SOURCE, /shouldShowRecentAgents && isAgentsExpanded \? \(/u);
 });
 

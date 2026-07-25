@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 export interface UseFitTextOptions {
 	/** Smallest font size (px) to try. */
@@ -38,6 +38,7 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 	const textRef = useRef<T | null>(null);
 	const containerElementRef = useRef<C | null>(null);
 	const observerRef = useRef<ResizeObserver | null>(null);
+	const [containerElement, setContainerElement] = useState<C | null>(null);
 
 	const fit = useCallback(() => {
 		const container = containerElementRef.current;
@@ -78,22 +79,23 @@ export function useFitText<C extends HTMLElement = HTMLDivElement, T extends HTM
 
 	const containerRef = useCallback(
 		(node: C | null) => {
-			observerRef.current?.disconnect();
-			observerRef.current = null;
 			containerElementRef.current = node;
-			if (node) {
-				const observer = new ResizeObserver(fit);
-				observer.observe(node);
-				observerRef.current = observer;
-				// The ResizeObserver's first callback is async; fit now so a fresh mount
-				// (initial render or morph-back re-mount) never flashes the default size.
-				fit();
-			}
+			setContainerElement(node);
 		},
-		[fit],
+		[],
 	);
 
-	useEffect(() => () => observerRef.current?.disconnect(), []);
+	useLayoutEffect(() => {
+		if (!containerElement) return undefined;
+		const observer = new ResizeObserver(fit);
+		observer.observe(containerElement);
+		observerRef.current = observer;
+		fit();
+		return () => {
+			observer.disconnect();
+			observerRef.current = null;
+		};
+	}, [containerElement, fit]);
 
 	return { containerRef, textRef };
 }

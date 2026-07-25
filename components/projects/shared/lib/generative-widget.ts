@@ -2756,10 +2756,9 @@ export function createBodyOnlySpec(
 	const propsToStrip = new Map<string, Set<string>>();
 	for (const source of [titleSource, descSource]) {
 		if (!source) continue;
-		if (!propsToStrip.has(source.key)) {
-			propsToStrip.set(source.key, new Set());
-		}
-		propsToStrip.get(source.key)!.add(source.propName);
+		const strippedProps = propsToStrip.get(source.key) ?? new Set<string>();
+		strippedProps.add(source.propName);
+		propsToStrip.set(source.key, strippedProps);
 	}
 
 	const newElements: Record<string, unknown> = {};

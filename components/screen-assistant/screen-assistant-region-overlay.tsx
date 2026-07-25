@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { token } from "@/lib/tokens";
 import { createId } from "@/lib/utils";
@@ -22,6 +22,7 @@ const TIPTOUR_BRUSH_LAYERS = [
 	{ key: "bloom", lineWidth: 32, maxStrokeOpacity: 0.26, postBlurRadius: 12 },
 	{ key: "core", lineWidth: 18, maxStrokeOpacity: 0.72, postBlurRadius: 0 },
 ] as const;
+const subscribeToClientMount = () => () => {};
 const TIPTOUR_BRUSH_BANDS = Array.from({ length: TIPTOUR_BRUSH_BAND_COUNT }, (_, bandIndex) => {
 	const startFraction = bandIndex / TIPTOUR_BRUSH_BAND_COUNT;
 	const endFraction = (bandIndex + 1) / TIPTOUR_BRUSH_BAND_COUNT;
@@ -148,17 +149,17 @@ export function ScreenAssistantRegionOverlay({
 	onRegionChange,
 	region,
 }: Readonly<ScreenAssistantRegionOverlayProps>) {
-	const [mounted, setMounted] = useState(false);
+	const mounted = useSyncExternalStore(
+		subscribeToClientMount,
+		() => true,
+		() => false,
+	);
 	const [draftPath, setDraftPath] = useState<StudioScreenAssistantRegionPoint[]>([]);
 	const paintingRef = useRef(false);
 	const latestPointerRef = useRef<StudioScreenAssistantRegionPoint | null>(null);
 	const pathRef = useRef<StudioScreenAssistantRegionPoint[]>([]);
 	const pressedShortcutKeysRef = useRef<ShortcutKeyState>({ ctrl: false, shift: false });
 	const shortcutArmedRef = useRef(false);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	const clearDraftPaint = useCallback(() => {
 		paintingRef.current = false;

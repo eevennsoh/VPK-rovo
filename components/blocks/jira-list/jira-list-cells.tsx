@@ -22,17 +22,12 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type {
-	JiraListColumnAnchorId,
-	JiraListExtraColumn,
-	JiraListGoal,
 	JiraListIssueType,
+	JiraListGoal,
 	JiraListPerson,
 	JiraListPriority,
-	JiraListRowData,
 	JiraListTag,
 } from "@/components/blocks/jira-list/jira-list-types";
-
-const DEFAULT_EXTRA_COLUMN_WIDTH_CLASS = "w-[156px]";
 
 const AGENT_SESSION_AVATAR_SRCS: Readonly<Record<string, string>> = {
 	"Survey summarizer": "/avatar-agent/product-agents/feedback-analyzer.svg",
@@ -49,19 +44,13 @@ const AGENT_SESSION_AVATAR_SRCS: Readonly<Record<string, string>> = {
 	"Editor": "/avatar-agent/dev-agents/code-documentation-writer.svg",
 };
 
-export const PRIORITY_ICONS = {
+const PRIORITY_ICONS = {
 	major: PriorityMajorIcon,
 	medium: PriorityMediumIcon,
 	minor: PriorityMinorIcon,
 } as const;
 
-export const PRIORITY_LABELS = {
-	major: "Major",
-	medium: "Medium",
-	minor: "Minor",
-} as const;
-
-export const ISSUE_TYPE_ICONS = {
+const ISSUE_TYPE_ICONS = {
 	epic: EpicIcon,
 	task: TaskIcon,
 	story: StoryIcon,
@@ -90,7 +79,7 @@ export function HierarchyConnector({
 	);
 }
 
-export function getPersonInitials(name: string): string {
+function getPersonInitials(name: string): string {
 	return name
 		.split(/\s+/u)
 		.filter(Boolean)
@@ -208,39 +197,7 @@ function AgentSessionTag({ session }: Readonly<{ session: string }>) {
 	);
 }
 
-export interface JiraListColumnDefinition {
-	id: JiraListColumnAnchorId;
-	label: string;
-	widthClassName: string;
-	align?: "left" | "center";
-	headerContent?: ReactNode;
-	renderCell: (row: JiraListRowData) => ReactNode;
-}
-
-export function getOrderedColumns(
-	baseColumns: readonly JiraListColumnDefinition[],
-	extraColumns: readonly JiraListExtraColumn[],
-): JiraListColumnDefinition[] {
-	const orderedColumns = [...baseColumns];
-
-	for (const extraColumn of extraColumns) {
-		const anchorIndex = orderedColumns.findIndex((column) => column.id === extraColumn.afterColumnId);
-		orderedColumns.splice(anchorIndex === -1 ? orderedColumns.length : anchorIndex + 1, 0, {
-			id: extraColumn.id,
-			label: extraColumn.label,
-			widthClassName: extraColumn.widthClassName ?? DEFAULT_EXTRA_COLUMN_WIDTH_CLASS,
-			renderCell: (row) => (
-				<span className="text-sm text-text-subtle">
-					{extraColumn.valuesByIssueKey?.[row.issueKey] ?? "None"}
-				</span>
-			),
-		});
-	}
-
-	return orderedColumns;
-}
-
-export function renderAgentSessions(agentSessions: readonly string[] | undefined): ReactNode {
+export function JiraListAgentSessionsCell({ agentSessions }: Readonly<{ agentSessions: readonly string[] | undefined }>) {
 	if (!agentSessions || agentSessions.length === 0) {
 		return <span className="text-text-subtle text-sm">None</span>;
 	}
@@ -262,7 +219,7 @@ export function renderAgentSessions(agentSessions: readonly string[] | undefined
 	);
 }
 
-export function renderGoals(goals: readonly JiraListGoal[] | undefined): ReactNode {
+export function JiraListGoalsCell({ goals }: Readonly<{ goals: readonly JiraListGoal[] | undefined }>) {
 	if (!goals || goals.length === 0) {
 		return <span className="text-text-subtle text-sm">None</span>;
 	}
@@ -286,7 +243,7 @@ export function renderGoals(goals: readonly JiraListGoal[] | undefined): ReactNo
 	);
 }
 
-export function renderLabels(labels: readonly JiraListTag[] | undefined): ReactNode {
+export function JiraListLabelsCell({ labels }: Readonly<{ labels: readonly JiraListTag[] | undefined }>) {
 	if (!labels || labels.length === 0) {
 		return <span className="text-text-subtle text-sm">None</span>;
 	}
@@ -313,7 +270,7 @@ export function renderLabels(labels: readonly JiraListTag[] | undefined): ReactN
 	);
 }
 
-export function renderContributors(contributors: readonly JiraListPerson[] | undefined): ReactNode {
+export function JiraListContributorsCell({ contributors }: Readonly<{ contributors: readonly JiraListPerson[] | undefined }>) {
 	if (!contributors || contributors.length === 0) {
 		return <span className="text-text-subtle text-sm">None</span>;
 	}

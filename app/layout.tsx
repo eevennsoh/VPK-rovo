@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font -- App Router root layout applies these fonts globally. */
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
@@ -8,7 +9,6 @@ import { getSSRAutoScript, getThemeStyles } from "@atlaskit/tokens";
 import { Providers } from "@/app/providers";
 import { DevRootTools } from "@/components/utils/dev-root-tools";
 import { DocumentTitlePrefix } from "@/components/utils/document-title-prefix";
-import { PreHydrationScript } from "@/components/utils/pre-hydration-script";
 import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
 
@@ -245,7 +245,9 @@ ${devStylesheetGuardScript}
 				<link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&family=Bitcount+Grid+Single:wght@100..900&family=DotGothic16&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 			</head>
 			<body suppressHydrationWarning className="antialiased">
-				<PreHydrationScript id="vpk-pre-hydration">{preHydrationScript}</PreHydrationScript>
+				<Script id="vpk-pre-hydration" strategy="beforeInteractive">
+					{preHydrationScript}
+				</Script>
 				<DocumentTitlePrefix />
 				<a
 					href="#main-content"
