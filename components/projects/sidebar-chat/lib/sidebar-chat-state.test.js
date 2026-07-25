@@ -47,3 +47,18 @@ test("screen-assistant reducer resets painting and region together", () => {
 		{ painting: false, region: null },
 	);
 });
+
+test("screen-assistant reducer preserves identity for duplicate updates", () => {
+	const { reduceScreenAssistantRegion } = loadSidebarChatState();
+	const idleState = { painting: false, region: null };
+
+	assert.equal(reduceScreenAssistantRegion(idleState, { type: "reset" }), idleState);
+	assert.equal(
+		reduceScreenAssistantRegion(idleState, { type: "set-painting", painting: false }),
+		idleState,
+	);
+	assert.equal(
+		reduceScreenAssistantRegion(idleState, { type: "set-region", region: null }),
+		idleState,
+	);
+});

@@ -38,10 +38,13 @@ export function reduceScreenAssistantRegion(
 ): ScreenAssistantRegionState {
 	switch (action.type) {
 		case "reset":
+			if (!state.painting && state.region === null) return state;
 			return { painting: false, region: null };
 		case "set-painting":
+			if (state.painting === action.painting) return state;
 			return { ...state, painting: action.painting };
 		case "set-region":
+			if (state.region === action.region) return state;
 			return { ...state, region: action.region };
 		default:
 			return state;

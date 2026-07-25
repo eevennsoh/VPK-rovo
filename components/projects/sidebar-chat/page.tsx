@@ -100,6 +100,7 @@ import {
 	createStudioScreenAssistantSnapshot,
 	getStudioScreenAssistantVisibleTargets,
 	groundStudioScreenAssistantTarget,
+	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/rovo-core/lib/screen-assistant";
 import styles from "./chat.module.css";
@@ -773,6 +774,12 @@ export default function ChatPanel({
 			reduceScreenAssistantRegion,
 			{ painting: false, region: null },
 		);
+		const setScreenAssistantRegionPainting = useCallback((painting: boolean) => {
+			dispatchScreenAssistantRegion({ type: "set-painting", painting });
+		}, []);
+		const setScreenAssistantRegion = useCallback((region: StudioScreenAssistantRegion | null) => {
+			dispatchScreenAssistantRegion({ type: "set-region", region });
+		}, []);
 		if (
 			(hideAiCursor || !isClickyActive) &&
 			(screenAssistantRegion || screenAssistantRegionPainting)
@@ -2142,16 +2149,12 @@ export default function ChatPanel({
 						onReturnToIdle={clickyReturnToIdle}
 					/>
 			)}
-			<ScreenAssistantRegionOverlay
-				active={!hideAiCursor && isClickyActive}
-				getVisibleTargets={getScreenAssistantVisibleTargets}
-				onPaintingChange={(painting) => {
-					dispatchScreenAssistantRegion({ type: "set-painting", painting });
-				}}
-				onRegionChange={(region) => {
-					dispatchScreenAssistantRegion({ type: "set-region", region });
-				}}
-				region={screenAssistantRegion}
+				<ScreenAssistantRegionOverlay
+					active={!hideAiCursor && isClickyActive}
+					getVisibleTargets={getScreenAssistantVisibleTargets}
+					onPaintingChange={setScreenAssistantRegionPainting}
+					onRegionChange={setScreenAssistantRegion}
+					region={screenAssistantRegion}
 			/>
 		</div>
 	);
