@@ -9,6 +9,14 @@ const CARD_SOURCE = readFileSync(
 );
 const INDEX_SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
+const DEMO_SOURCE = readFileSync(
+	join(__dirname, "../../website/demos/blocks/jira-agent-session-demo.tsx"),
+	"utf8",
+);
+const VARIANT_REGISTRY_SOURCE = readFileSync(
+	join(__dirname, "../../website/registry/blocks-variants.ts"),
+	"utf8",
+);
 const DATA_SOURCE = readFileSync(join(__dirname, "data.ts"), "utf8");
 const DETAIL_SOURCE = readFileSync(
 	join(__dirname, "../../../app/data/details/blocks/jira-agent-session.ts"),
@@ -26,12 +34,20 @@ test("awaiting sessions shimmer the title; running and complete are solid", () =
 	assert.match(CARD_SOURCE, /stateMeta\.shimmerTitle \?\s*\(\s*<Shimmer/);
 });
 
-test("running drops the redundant label; awaiting preserves the task title with dots", () => {
+test("running drops the redundant label; awaiting swaps the title to the waiting-for-input copy with dots", () => {
 	// The shimmering title alone communicates a running session.
 	assert.doesNotMatch(CARD_SOURCE, /Working on it/);
 	assert.match(CARD_SOURCE, /"needs-input":\s*\{[^}]*showDots:\s*true/);
 	assert.doesNotMatch(CARD_SOURCE, /titleOverride|const titleText/);
-	assert.equal((CARD_SOURCE.match(/\{item\.title\}/gu) ?? []).length, 4);
+	// Awaiting sessions name the blocked state instead of the task title, matching
+	// the Jira queue card's JiraSessionLabel.
+	assert.match(CARD_SOURCE, /const AWAITING_INPUT_TITLE = "Waiting for input";/u);
+	assert.match(
+		CARD_SOURCE,
+		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
+	);
+	// The helper drives every title slot (shimmer + plain, in the card and header).
+	assert.equal((CARD_SOURCE.match(/\{getSessionTitle\(item\)\}/gu) ?? []).length, 4);
 	assert.match(CARD_SOURCE, /stateMeta\.showDots \? <AnimatedDots/);
 });
 
@@ -151,9 +167,22 @@ test("supports default and compact session rows", () => {
 	assert.match(CARD_SOURCE, /variant === "compact"/u);
 	assert.match(CARD_SOURCE, /sizePx=\{isCompact \? 24 : 32\}/u);
 	assert.match(CARD_SOURCE, /isCompact \? "text-xs" : "text-sm"/u);
+	assert.match(CARD_SOURCE, /isCompact \? "px-3 py-1\.5" : "p-3"/u);
 	assert.match(DETAIL_SOURCE, /name: "variant"/u);
 	assert.match(DETAIL_SOURCE, /type: '"default" \| "compact"'/u);
 	assert.match(DETAIL_SOURCE, /default: '"default"'/u);
+});
+
+test("shows the compact variant in the component documentation", () => {
+	assert.match(PAGE_SOURCE, /variant = "default"/u);
+	assert.match(PAGE_SOURCE, /<JiraAgentSessionDemo variant=\{variant\} \/>/u);
+	assert.match(PAGE_SOURCE, /<JiraAgentSession[^>]*variant=\{variant\}/u);
+	assert.match(DEMO_SOURCE, /export function JiraAgentSessionDemoCompact/u);
+	assert.match(DEMO_SOURCE, /<Page variant="compact" \/>/u);
+	assert.match(DETAIL_SOURCE, /title: "Compact"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "jira-agent-session-demo-compact"/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /"jira-agent-session-demo-compact": dynamic/u);
+	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.JiraAgentSessionDemoCompact/u);
 });
 
 test("exports the session activity header without owning an activity card shell", () => {

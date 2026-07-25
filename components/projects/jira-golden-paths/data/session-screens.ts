@@ -1,7 +1,7 @@
 /**
  * Screen sets for the two Jira Golden Paths gallery cards.
  *
- * Each session card ("Local session", "Global session") walks through an ordered
+ * Each session card ("Carl's local session", "Sarah's global session") walks through an ordered
  * set of screens, navigated left/right from the gallery top bar — see
  * `SessionScreenControls` in `../components/session-stage.tsx` and the
  * `useScreenNavigator` hook. Mirrors the terminal demo's beat stepping, but over
@@ -27,15 +27,14 @@
  *     are kept as building blocks).
  */
 /** Named golden-path design patterns a screen can render (see `SessionStage`). */
-export type SessionScreenDesign = "for-you" | "kanban" | "rovo" | "work-item";
+export type SessionScreenDesign = "for-you" | "kanban" | "rovo";
 
 export type SessionScreenScenario =
 	| "local-review"
 	| "local-completed"
 	| "global-assignment"
 	| "blocked-question"
-	| "human-review"
-	| "completed-timeline";
+	| "human-review";
 
 export interface SessionScreen {
 	id: string;
@@ -119,12 +118,5 @@ export const GLOBAL_SESSION_SCREENS: readonly SessionScreen[] = [
 		title: "Five tasks ready for review",
 		design: "for-you",
 		scenario: "human-review",
-	},
-	{
-		id: "global-4",
-		section: "Work item",
-		title: "Review the completed timeline",
-		design: "work-item",
-		scenario: "completed-timeline",
 	},
 ];

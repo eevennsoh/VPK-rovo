@@ -12,16 +12,22 @@ import {
 	usePanelLayout,
 } from "@/components/blocks/agent-sessions/experimental/context-panel-layout";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
+import {
+	buildScrollMaskBlurLayerStyles,
+	buildScrollMaskStyle,
+	SCROLL_MASK_DEFAULT_FADE_SIZE,
+} from "@/components/visual/scroll-mask/lib";
 
 interface ExperimentalWorkItemLayoutProps {
 	context: ReactNode;
 	activity: ReactNode;
 	metadata: ReactNode;
 	composer: ReactNode;
+	fillContainer?: boolean;
 }
 
 const METADATA_PANEL_WIDTH = "clamp(320px, 34vw, 408px)";
+const NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bottom");
 
 const METADATA_PANEL_VARIANTS: Variants = {
 	closed: {
@@ -51,10 +57,10 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
  * Narrow (< 860px): the columns collapse (`display: contents`) into a single
  * scroll flow ordered Context -> Activity -> Metadata -> Composer via
  * `order`. The composer becomes `sticky bottom-0` on a translucent, blurred dock so
- * it stays visible at the bottom of the single scroll. The wide Context + Activity
- * scrollport adds a bottom fade only while more content remains below. The same order
+ * it stays visible at the bottom of the single scroll. That outer scrollport owns a
+ * matching progressive bottom mask while more content remains below. The same order
  * values also keep each wide column stacked correctly, so no slot is rendered twice.
- * The wide Context + Activity scrollport also fades its top edge once scrolled down.
+ * The wide Context + Activity scrollport keeps its own top and bottom masks.
  *
  * Container-query driven (not viewport) so it reacts to the dialog's actual
  * body width rather than the screen.
@@ -64,12 +70,17 @@ export function ExperimentalWorkItemLayout({
 	activity,
 	metadata,
 	composer,
+	fillContainer = false,
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
 	const { planner } = useAgentSessionsState();
 	const hasActivity = useHasActivity();
 	const { metadataCollapsed } = usePanelLayout();
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const showStickyComposer = planner.status === "inactive" || planner.status === "applied";
+	const {
+		ref: narrowScrollRef,
+		showBottomScrollMask: showNarrowBottomScrollMask,
+	} = useHasVerticalOverflow<HTMLDivElement>();
 	const { ref: leftScrollRef, showTopScrollMask, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask }),
@@ -90,7 +101,9 @@ export function ExperimentalWorkItemLayout({
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
 			<div
-				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
+				ref={narrowScrollRef}
+				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 data-[fill-container]:pb-0 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
+				data-fill-container={fillContainer ? "" : undefined}
 			>
 				<div
 					className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col @[860px]/agentlayout:[grid-area:1/1] @[860px]/agentlayout:[margin-right:var(--metadata-panel-offset)] motion-reduce:transition-none"
@@ -119,6 +132,19 @@ export function ExperimentalWorkItemLayout({
 								className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:pt-4 @[860px]/agentlayout:pb-6"
 								data-agent-sessions-composer-dock
 							>
+								{showNarrowBottomScrollMask ? (
+									<div
+										aria-hidden
+										className="pointer-events-none absolute inset-x-0 bottom-full @[860px]/agentlayout:hidden"
+										data-agent-sessions-narrow-scroll-mask
+										style={{ height: SCROLL_MASK_DEFAULT_FADE_SIZE }}
+									>
+										{NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS.map((layerStyle, index) => (
+											<div key={index} style={layerStyle} />
+										))}
+										<div className="absolute inset-0 bg-linear-to-b from-transparent to-background" />
+									</div>
+								) : null}
 								<div className="contents @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6">
 									{composer}
 								</div>

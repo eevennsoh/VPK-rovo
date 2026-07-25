@@ -113,4 +113,7 @@ export type {
 	JiraForYouWorkspaceItemData,
 	JiraForYouWorkspaceOutput,
 } from "./jira-for-you-workspace-types";
-export { JiraForYouWorkspace } from "./jira-for-you-workspace";
+export {
+	JiraForYouWorkspace,
+	type JiraForYouWorkspaceProps,
+} from "./jira-for-you-workspace";

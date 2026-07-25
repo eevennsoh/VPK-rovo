@@ -1,9 +1,11 @@
 "use client";
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import CommentIcon from "@atlaskit/icon/core/comment";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
+import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import type { FileUIPart } from "ai";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ConversationContextValue } from "@/components/ui-custom/conversation";
@@ -16,9 +18,14 @@ import {
 } from "@/components/projects/rovo/hooks/use-realtime-voice";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+import { JiraForYouIssueTypeIcon } from "./jira-for-you-item";
 import type { JiraForYouItem } from "./jira-for-you-types";
+import { JiraForYouWorkItemView } from "./jira-for-you-work-item-view";
 import type { JiraForYouWorkspaceAgentSession } from "./jira-for-you-workspace-types";
+
+type JiraForYouMainView = "chat" | "work-item";
 
 interface JiraForYouConversationProps {
 	detailPanelInsetPx: number;
@@ -41,6 +48,7 @@ export function JiraForYouConversation({
 	selectedAgentSession,
 	uiMessages,
 }: Readonly<JiraForYouConversationProps>) {
+	const [mainView, setMainView] = useState<JiraForYouMainView>("chat");
 	const conversationContextRef = useRef<ConversationContextValue | null>(null);
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const renderableMessages = [...uiMessages];
@@ -67,6 +75,12 @@ export function JiraForYouConversation({
 		detailPanelInsetPx > 0
 			? { maxWidth: `calc(100% - ${detailPanelInsetPx}px)` }
 			: undefined;
+	const handleMainViewChange = useCallback((values: string[]) => {
+		const nextView = values[0];
+		if (nextView === "chat" || nextView === "work-item") {
+			setMainView(nextView);
+		}
+	}, []);
 
 	return (
 		<section
@@ -89,76 +103,109 @@ export function JiraForYouConversation({
 						<Icon aria-hidden render={<ArrowLeftIcon label="" />} />
 					</Button>
 					<div className="flex min-w-0 flex-1 items-center gap-2">
-						<AgentAvatarVisual
-							avatarSrc={selectedAgentSession.profile.avatarSrc}
-							brandName={selectedAgentSession.profile.brandName}
-							className="size-6 object-contain"
-							fallbackText={selectedAgentSession.profile.name.slice(0, 2)}
-							label={selectedAgentSession.profile.name}
-							logoName={selectedAgentSession.profile.logoName}
-							sizePx={24}
-						/>
-						<div className="min-w-0 max-w-full">
-							<p className="truncate text-sm font-semibold text-text">
-								{selectedAgentSession.profile.name}
-							</p>
-							<p className="sr-only">
-								{item.issueKey}: {item.title}
-							</p>
-						</div>
+						{mainView === "work-item" ? (
+							<>
+								<JiraForYouIssueTypeIcon issueType={item.issueType} />
+								<p className="truncate text-sm font-semibold text-text">
+									{item.title}
+								</p>
+							</>
+						) : (
+							<>
+								<AgentAvatarVisual
+									avatarSrc={selectedAgentSession.profile.avatarSrc}
+									brandName={selectedAgentSession.profile.brandName}
+									className="size-6 object-contain"
+									fallbackText={selectedAgentSession.profile.name.slice(0, 2)}
+									label={selectedAgentSession.profile.name}
+									logoName={selectedAgentSession.profile.logoName}
+									sizePx={24}
+								/>
+								<p className="truncate text-sm font-semibold text-text">
+									{selectedAgentSession.profile.name}
+								</p>
+							</>
+						)}
 					</div>
-					{isDetailPanelOpen ? null : (
-						<Button
-							aria-controls="jira-for-you-detail-panel"
-							aria-expanded={false}
-							aria-label="Open detail panel"
-							onClick={onDetailPanelToggle}
-							size="icon"
-							type="button"
-							variant="ghost"
+					<ToggleGroup
+						aria-label="Workspace view"
+						className="h-8 bg-surface"
+						onValueChange={handleMainViewChange}
+						value={[mainView]}
+						variant="outline"
+					>
+						<ToggleGroupItem
+							aria-label="Chat view"
+							className="size-8 px-0 [&:not([data-pressed])_[data-slot=icon]]:text-text-subtle! [&:not([data-pressed])_svg]:text-text-subtle!"
+							value="chat"
 						>
-							<Icon aria-hidden render={<PanelRightIcon label="" />} />
-						</Button>
-					)}
+							<Icon aria-hidden render={<CommentIcon label="" />} />
+						</ToggleGroupItem>
+						<ToggleGroupItem
+							aria-label="Work item view"
+							className="size-8 px-0 [&:not([data-pressed])_[data-slot=icon]]:text-text-subtle! [&:not([data-pressed])_svg]:text-text-subtle!"
+							value="work-item"
+						>
+							<Icon aria-hidden render={<WorkItemIcon label="" />} />
+						</ToggleGroupItem>
+					</ToggleGroup>
+					<Button
+						aria-controls="jira-for-you-detail-panel"
+						aria-expanded={isDetailPanelOpen}
+						aria-label={isDetailPanelOpen ? "Close detail panel" : "Open detail panel"}
+						className="size-8 aria-expanded:[&_[data-slot=icon]]:text-icon-selected! aria-expanded:[&_svg]:text-icon-selected!"
+						onClick={onDetailPanelToggle}
+						size="icon"
+						type="button"
+						variant="outline"
+					>
+						<Icon aria-hidden render={<PanelRightIcon label="" />} />
+					</Button>
 				</header>
 
-				<ChatMessages
-					contentBottomPadding="24px"
-					contentClassName="mx-auto flex min-w-0 w-full max-w-[800px] px-3 md:px-6"
-					contentTopPadding="24px"
-					conversationContextRef={conversationContextRef}
-					hideScrollbar={false}
-					messageMode="ask"
-					scrollSpacerRef={scrollSpacerRef}
-					showFeedbackActions={false}
-					showFollowUpSuggestions={false}
-					uiMessages={renderableMessages}
-				/>
+				{mainView === "chat" ? (
+					<>
+						<ChatMessages
+							contentBottomPadding="24px"
+							contentClassName="mx-auto flex min-w-0 w-full max-w-[800px] px-3 md:px-6"
+							contentTopPadding="24px"
+							conversationContextRef={conversationContextRef}
+							hideScrollbar={false}
+							messageMode="ask"
+							scrollSpacerRef={scrollSpacerRef}
+							showFeedbackActions={false}
+							showFollowUpSuggestions={false}
+							uiMessages={renderableMessages}
+						/>
 
-				<div
-					className="sticky bottom-0 z-10 shrink-0 bg-background"
-					data-testid="jira-for-you-composer-region"
-				>
-					<div className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 py-3 md:px-6">
-						<div className="min-w-0 max-w-full" data-testid="jira-for-you-composer">
-							<RovoAppComposer
-								composerStatus="ready"
-								experimentalDarkCta
-								hideReasoningSelector
-								micStream={realtime.micStream}
-								onStop={async () => realtime.disconnect()}
-								onSubmit={onSubmit}
-								onToggleRealtimeVoice={handleToggleRealtimeVoice}
-								placeholder={selectedAgentSession.composerPlaceholder}
-								realtimeVoiceActive={realtime.voiceState !== "idle"}
-								realtimeVoiceState={realtime.voiceState}
-							/>
+						<div
+							className="sticky bottom-0 z-10 shrink-0 bg-background"
+							data-testid="jira-for-you-composer-region"
+						>
+							<div className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 pt-3 md:px-6">
+								<div className="min-w-0 max-w-full" data-testid="jira-for-you-composer">
+									<RovoAppComposer
+										composerStatus="ready"
+										experimentalDarkCta
+										hideReasoningSelector
+										micStream={realtime.micStream}
+										onStop={async () => realtime.disconnect()}
+										onSubmit={onSubmit}
+										onToggleRealtimeVoice={handleToggleRealtimeVoice}
+										placeholder={selectedAgentSession.composerPlaceholder}
+										realtimeVoiceActive={realtime.voiceState !== "idle"}
+										realtimeVoiceState={realtime.voiceState}
+									/>
+								</div>
+								<div data-testid="jira-for-you-footer">
+									<Footer />
+								</div>
+							</div>
 						</div>
-						<div data-testid="jira-for-you-footer">
-							<Footer />
-						</div>
-					</div>
-				</div>
+					</>
+				) : (
+					<JiraForYouWorkItemView item={item} />
+				)}
 			</div>
 		</section>
 	);

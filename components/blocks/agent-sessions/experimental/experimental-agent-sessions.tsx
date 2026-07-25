@@ -20,6 +20,7 @@ import { FloatingSessionSurface } from "@/components/blocks/agent-sessions/exper
 import type { CodingAgentId } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
 
 interface ExperimentalAgentSessionsBaseProps {
+	defaultMetadataCollapsed?: boolean;
 	initialPreset: AgentSessionsPreset;
 	initialState?: AgentSessionsState;
 	primaryCodingAgentId?: CodingAgentId;
@@ -28,7 +29,12 @@ interface ExperimentalAgentSessionsBaseProps {
 
 export type ExperimentalAgentSessionsProps = ExperimentalAgentSessionsBaseProps & (
 	| { presentation?: "modal"; open: boolean; onClose: () => void }
-	| { presentation: "inline"; open?: never; onClose?: never }
+	| {
+		presentation: "inline";
+		inlineSurface?: "card" | "fill";
+		open?: never;
+		onClose?: never;
+	}
 );
 
 const NOOP = () => undefined;
@@ -46,10 +52,12 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 	const composerLayoutGroupId = useId();
 	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
+	let inlineSurface: "card" | "fill" = "card";
 	let open: boolean;
 	let onClose: () => void;
 	if (props.presentation === "inline") {
 		presentation = "inline";
+		inlineSurface = props.inlineSurface ?? "card";
 		open = true;
 		onClose = NOOP;
 	} else {
@@ -73,9 +81,10 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
 			<AgentSessionsProvider initialPreset={initialPreset} initialState={initialState} workItem={workItem} active={open}>
-				<PanelLayoutProvider>
+				<PanelLayoutProvider defaultMetadataCollapsed={props.defaultMetadataCollapsed ?? false}>
 					<LayoutGroup id={composerLayoutGroupId}>
 						<ExperimentalWorkItemDialog
+							inlineSurface={inlineSurface}
 							open={open}
 							onClose={onClose}
 							presentation={presentation}
@@ -90,6 +99,7 @@ export function ExperimentalAgentSessions(props: Readonly<ExperimentalAgentSessi
 								context={<ContextPanel />}
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
+								fillContainer={inlineSurface === "fill"}
 								metadata={<MetadataRail />}
 							/>
 						</ExperimentalWorkItemDialog>

@@ -11,6 +11,53 @@ const WORKSPACE_SOURCE = readFileSync(join(__dirname, "jira-for-you-workspace.ts
 const WORKSPACE_TYPES_SOURCE = readFileSync(join(__dirname, "jira-for-you-workspace-types.ts"), "utf8");
 const WORKSPACE_DATA_SOURCE = readFileSync(join(__dirname, "jira-for-you-workspace-data.ts"), "utf8");
 const CONVERSATION_SOURCE = readFileSync(join(__dirname, "jira-for-you-conversation.tsx"), "utf8");
+const AGENT_SESSIONS_WORKSPACE_SOURCE = readFileSync(
+	join(__dirname, "jira-for-you-agent-sessions-workspace.tsx"),
+	"utf8",
+);
+const WORK_ITEM_VIEW_SOURCE = readFileSync(join(__dirname, "jira-for-you-work-item-view.tsx"), "utf8");
+const WORK_ITEM_DIALOG_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/components/experimental-work-item-dialog.tsx",
+	),
+	"utf8",
+);
+const WORK_ITEM_LAYOUT_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/components/experimental-work-item-layout.tsx",
+	),
+	"utf8",
+);
+const AGENT_SESSIONS_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/experimental-agent-sessions.tsx",
+	),
+	"utf8",
+);
+const PANEL_LAYOUT_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/context-panel-layout.tsx",
+	),
+	"utf8",
+);
+const CONTEXT_TITLE_BAR_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/components/context-title-bar.tsx",
+	),
+	"utf8",
+);
+const CONTEXT_TITLE_ACTIONS_SOURCE = readFileSync(
+	join(
+		process.cwd(),
+		"components/blocks/agent-sessions/experimental/components/context-title-actions.tsx",
+	),
+	"utf8",
+);
 const HEADER_SOURCE = readFileSync(join(__dirname, "jira-for-you-header.tsx"), "utf8");
 const DETAIL_PANEL_SOURCE = readFileSync(join(__dirname, "jira-for-you-detail-panel.tsx"), "utf8");
 const SESSION_FLYOUT_SOURCE = readFileSync(
@@ -33,6 +80,7 @@ const PREVIEW_PAGE_SOURCE = readFileSync(
 	join(process.cwd(), "app/preview/blocks/jira-for-you/page.tsx"),
 	"utf8",
 );
+const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const DETAIL_DOC_SOURCE = readFileSync(
 	join(process.cwd(), "app/data/details/blocks/jira-for-you.ts"),
 	"utf8",
@@ -50,7 +98,7 @@ test("Jira For You preserves standalone list callbacks while exposing selected-r
 });
 
 test("the workspace owns open or close, focus restoration, and local user-message state", () => {
-	assert.match(INDEX_SOURCE, /export \{ JiraForYouWorkspace \} from "\.\/jira-for-you-workspace";/u);
+	assert.match(INDEX_SOURCE, /export \{[\s\S]*JiraForYouWorkspace,[\s\S]*type JiraForYouWorkspaceProps,[\s\S]*\} from "\.\/jira-for-you-workspace";/u);
 	assert.doesNotMatch(WORKSPACE_SOURCE, /useWindowWidth/u);
 	assert.match(WORKSPACE_SOURCE, /const \[workspaceNode, setWorkspaceNode\] = useState<HTMLDivElement \| null>\(null\);/u);
 	assert.match(WORKSPACE_SOURCE, /const \[workspaceWidth, setWorkspaceWidth\] = useState\(0\);/u);
@@ -90,15 +138,17 @@ test("the conversation workspace reuses fullscreen chat primitives and a back pa
 	assert.match(CONVERSATION_SOURCE, /aria-label="Back to For you feed"/u);
 	assert.match(CONVERSATION_SOURCE, /<Button[\s\S]*aria-label="Back to For you feed"[\s\S]*size="icon"[\s\S]*variant="ghost"/u);
 	assert.ok(CONVERSATION_SOURCE.includes('<Icon aria-hidden render={<ArrowLeftIcon label="" />} />'));
-	assert.match(CONVERSATION_SOURCE, /aria-label="Open detail panel"/u);
+	assert.match(CONVERSATION_SOURCE, /aria-label=\{isDetailPanelOpen \? "Close detail panel" : "Open detail panel"\}/u);
+	assert.match(CONVERSATION_SOURCE, /aria-expanded=\{isDetailPanelOpen\}/u);
 	assert.match(CONVERSATION_SOURCE, /const conversationColumnStyle =\s*detailPanelInsetPx > 0\s*\?\s*\{ maxWidth: `calc\(100% - \$\{detailPanelInsetPx\}px\)` \}\s*:\s*undefined/u);
 	assert.match(CONVERSATION_SOURCE, /className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*data-testid="jira-for-you-conversation-pane"[\s\S]*style=\{conversationColumnStyle\}/u);
 	assert.ok(CONVERSATION_SOURCE.includes('contentClassName="mx-auto flex min-w-0 w-full max-w-[800px] px-3 md:px-6"'));
-	assert.ok(CONVERSATION_SOURCE.includes('className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 py-3 md:px-6"'));
+	assert.ok(CONVERSATION_SOURCE.includes('className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 pt-3 md:px-6"'));
+	assert.match(CONVERSATION_SOURCE, /import \{ JiraForYouIssueTypeIcon \} from "\.\/jira-for-you-item";/u);
+	assert.match(CONVERSATION_SOURCE, /mainView === "work-item" \? \([\s\S]*<JiraForYouIssueTypeIcon issueType=\{item\.issueType\} \/>[\s\S]*\{item\.title\}[\s\S]*\) : \([\s\S]*<AgentAvatarVisual/u);
 	assert.match(CONVERSATION_SOURCE, /<p className="truncate text-sm font-semibold text-text">\s*\{selectedAgentSession\.profile\.name\}\s*<\/p>/u);
-	assert.match(CONVERSATION_SOURCE, /<p className="sr-only">\s*\{item\.issueKey\}: \{item\.title\}\s*<\/p>/u);
+	assert.match(ITEM_SOURCE, /export function JiraForYouIssueTypeIcon\([\s\S]*ISSUE_TYPE_META\[issueType\][\s\S]*render=\{<Glyph label="" \/>\}/u);
 	assert.doesNotMatch(CONVERSATION_SOURCE, /\{isNarrow \? null : <span>Back<\/span>\}/u);
-	assert.doesNotMatch(CONVERSATION_SOURCE, /\{item\.issueKey\}: \{item\.title\}[\s\S]*selectedAgentSession\.profile\.name/u);
 	assert.match(CONVERSATION_SOURCE, /messageMode="ask"/u);
 	assert.match(CONVERSATION_SOURCE, /showFeedbackActions=\{false\}/u);
 	assert.match(CONVERSATION_SOURCE, /showFollowUpSuggestions=\{false\}/u);
@@ -115,6 +165,49 @@ test("the conversation workspace reuses fullscreen chat primitives and a back pa
 	assert.match(CONVERSATION_SOURCE, /data-testid="jira-for-you-composer-region"/u);
 	assert.doesNotMatch(CONVERSATION_SOURCE, /shrink-0 border-t border-border bg-background\/90/u);
 	assert.match(CONVERSATION_SOURCE, /<Footer \/>/u);
+});
+
+test("assigned workspaces switch independently between chat, work item, and details", () => {
+	assert.match(CONVERSATION_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.match(CONVERSATION_SOURCE, /const \[mainView, setMainView\] = useState<JiraForYouMainView>\("chat"\);/u);
+	assert.match(CONVERSATION_SOURCE, /<ToggleGroup[\s\S]*aria-label="Workspace view"[\s\S]*className="h-8 bg-surface"[\s\S]*value=\{\[mainView\]\}[\s\S]*variant="outline"/u);
+	assert.match(CONVERSATION_SOURCE, /<ToggleGroupItem[\s\S]*aria-label="Chat view"[\s\S]*\[&:not\(\[data-pressed\]\)_\[data-slot=icon\]\]:text-text-subtle![\s\S]*\[&:not\(\[data-pressed\]\)_svg\]:text-text-subtle![\s\S]*<Icon aria-hidden render=\{<CommentIcon/u);
+	assert.match(CONVERSATION_SOURCE, /<ToggleGroupItem[\s\S]*aria-label="Work item view"[\s\S]*\[&:not\(\[data-pressed\]\)_\[data-slot=icon\]\]:text-text-subtle![\s\S]*\[&:not\(\[data-pressed\]\)_svg\]:text-text-subtle![\s\S]*<Icon aria-hidden render=\{<WorkItemIcon/u);
+	assert.doesNotMatch(CONVERSATION_SOURCE, /<Icon aria-hidden className="text-text-subtle" render=\{<(?:CommentIcon|WorkItemIcon)/u);
+	assert.match(CONVERSATION_SOURCE, /aria-label=\{isDetailPanelOpen \? "Close detail panel" : "Open detail panel"\}[\s\S]*className="size-8 aria-expanded:\[&_\[data-slot=icon\]\]:text-icon-selected! aria-expanded:\[&_svg\]:text-icon-selected!"[\s\S]*size="icon"[\s\S]*variant="outline"[\s\S]*<Icon aria-hidden render=\{<PanelRightIcon/u);
+	assert.match(CONVERSATION_SOURCE, /mainView === "chat"[\s\S]*<JiraForYouWorkItemView item=\{item\} \/>/u);
+	assert.match(WORK_ITEM_VIEW_SOURCE, /import \{ ExperimentalAgentSessions \}/u);
+	assert.match(
+		WORK_ITEM_VIEW_SOURCE,
+		/className="flex min-h-0 w-full flex-1 overflow-hidden"/u,
+	);
+	assert.match(
+		WORK_ITEM_VIEW_SOURCE,
+		/<ExperimentalAgentSessions[\s\S]*defaultMetadataCollapsed[\s\S]*initialPreset="filled"[\s\S]*inlineSurface="fill"[\s\S]*key=\{item\.id\}[\s\S]*presentation="inline"[\s\S]*workItem=\{mapJiraForYouItemToWorkItem\(item\)\}/u,
+	);
+	assert.match(AGENT_SESSIONS_WORKSPACE_SOURCE, /className="flex min-h-0 flex-1 overflow-hidden"/u);
+	assert.match(
+		AGENT_SESSIONS_WORKSPACE_SOURCE,
+		/<ExperimentalAgentSessions[\s\S]*defaultMetadataCollapsed[\s\S]*initialPreset="blank"[\s\S]*inlineSurface="fill"[\s\S]*presentation="inline"/u,
+	);
+	assert.match(AGENT_SESSIONS_SOURCE, /<PanelLayoutProvider defaultMetadataCollapsed=\{props\.defaultMetadataCollapsed \?\? false\}>/u);
+	assert.match(PANEL_LAYOUT_SOURCE, /defaultMetadataCollapsed = false/u);
+	assert.match(PANEL_LAYOUT_SOURCE, /useState\(defaultMetadataCollapsed\)/u);
+	assert.match(CONTEXT_TITLE_BAR_SOURCE, /<ContextTitleActions collapsed=\{collapsed\} primaryAgentId=\{primaryAgentId\} \/>/u);
+	assert.match(CONTEXT_TITLE_BAR_SOURCE, /collapsed=\{metadataCollapsed\}/u);
+	assert.match(CONTEXT_TITLE_ACTIONS_SOURCE, /<ButtonGroup variant="split">[\s\S]*Open with \$\{primaryCodingAgent\.label\}/u);
+	assert.match(CONTEXT_TITLE_ACTIONS_SOURCE, /\{collapsed \? \([\s\S]*<Button aria-label="Actions" size="icon" variant="outline">/u);
+	assert.match(WORK_ITEM_DIALOG_SOURCE, /const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";/u);
+	assert.match(WORK_ITEM_DIALOG_SOURCE, /borderRadius: fillsInlineContainer \? 0 : token\("radius\.xlarge"\)/u);
+	assert.match(WORK_ITEM_DIALOG_SOURCE, /boxShadow: fillsInlineContainer \? "none" : token\("elevation\.shadow\.overlay"\)/u);
+	assert.match(WORK_ITEM_DIALOG_SOURCE, /fillsInlineContainer \? "h-full min-h-0 max-w-none flex-1 shrink" : null/u);
+	assert.match(AGENT_SESSIONS_SOURCE, /fillContainer=\{inlineSurface === "fill"\}/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /fillContainer = false/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /p-6 data-\[fill-container\]:pb-0[\s\S]*data-fill-container=\{fillContainer \? "" : undefined\}/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /className="[^"]*bg-background[^"]*pb-4[^"]*@\[860px\]\/agentlayout:pb-6"[\s\S]*data-agent-sessions-composer-dock/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /ref: narrowScrollRef,[\s\S]*showBottomScrollMask: showNarrowBottomScrollMask,[\s\S]*ref=\{narrowScrollRef\}/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /showNarrowBottomScrollMask[\s\S]*data-agent-sessions-narrow-scroll-mask[\s\S]*NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS[\s\S]*bg-linear-to-b from-transparent to-background/u);
+	assert.doesNotMatch(WORK_ITEM_VIEW_SOURCE, /WorkItemModalProvider|<WorkItemModal\./u);
 });
 
 test("the header wraps tabs beneath the title when space gets tight without moving the search field into that row", () => {
@@ -200,11 +293,14 @@ test("the block demo and docs now present the workspace instead of the list-only
 	assert.match(DETAIL_DOC_SOURCE, /View falls back to onItemClick/u);
 });
 
-test("the dedicated preview route owns the Jira shell state for For you selection and Ask Rovo", () => {
-	assert.match(PREVIEW_PAGE_SOURCE, /import \{ useState \} from "react";/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /forceShowRovoAction/u);
-	assert.doesNotMatch(PREVIEW_PAGE_SOURCE, /hideRovoAction/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /import \{ JiraSidebar \} from "@\/components\/blocks\/product-sidebar\/variants\/jira";/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /const \[selectedSidebarItem, setSelectedSidebarItem\] = useState\("For you"\);/u);
-	assert.match(PREVIEW_PAGE_SOURCE, /content=\{\(\s*<JiraSidebar[\s\S]*onSelectItem=\{setSelectedSidebarItem\}[\s\S]*selectedItem=\{selectedSidebarItem\}/u);
+test("the reusable Jira shell owns top navigation, sidebar state, and the full-height workspace", () => {
+	assert.match(PAGE_SOURCE, /import \{ useState \} from "react";/u);
+	assert.match(PAGE_SOURCE, /forceShowRovoAction/u);
+	assert.doesNotMatch(PAGE_SOURCE, /hideRovoAction/u);
+	assert.match(PAGE_SOURCE, /import \{ JiraSidebar \} from "@\/components\/blocks\/product-sidebar\/variants\/jira";/u);
+	assert.match(PAGE_SOURCE, /const \[selectedSidebarItem, setSelectedSidebarItem\] = useState\("For you"\);/u);
+	assert.match(PAGE_SOURCE, /shellHeight=\{shellHeight\}/u);
+	assert.match(PAGE_SOURCE, /content=\{\(\s*<JiraSidebar[\s\S]*onSelectItem=\{setSelectedSidebarItem\}[\s\S]*selectedItem=\{selectedSidebarItem\}/u);
+	assert.match(PAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*chrome="plain"[\s\S]*className="h-full min-h-0 flex-1"[\s\S]*\/>/u);
+	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouShell \/>/u);
 });

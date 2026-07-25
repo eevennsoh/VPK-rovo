@@ -113,7 +113,8 @@ export function GalleryCard({
 	const scaledWidth = useTransform(() => width * scale.get());
 	const prefersReducedMotion = useReducedMotion();
 	const itemVariants = prefersReducedMotion ? CARD_ITEM_REDUCED : CARD_ITEM;
-	const { containerRef, textRef } = useFitText<HTMLDivElement, HTMLSpanElement>(item.title, {
+	const titleLayoutText = item.titleLines?.join("\n") ?? item.title;
+	const { containerRef, textRef } = useFitText<HTMLDivElement, HTMLSpanElement>(titleLayoutText, {
 		syncTextRefs: [highlightTextRef],
 	});
 
@@ -196,6 +197,7 @@ export function GalleryCard({
 								key={selectionVisual.key}
 								itemId={item.id}
 								title={item.title}
+								titleLines={item.titleLines}
 								width={width}
 								height={height}
 								visual={selectionVisual}
@@ -208,7 +210,12 @@ export function GalleryCard({
 							className="pointer-events-none absolute inset-0 z-0 p-6"
 						>
 							<div ref={containerRef} className="flex h-full w-full flex-col justify-end">
-								<GalleryTitleLines title={item.title} textRef={textRef} className="text-text" />
+								<GalleryTitleLines
+									title={item.title}
+									lines={item.titleLines}
+									textRef={textRef}
+									className="text-text"
+								/>
 							</div>
 						</div>
 					</Squircle>

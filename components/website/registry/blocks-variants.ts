@@ -2,6 +2,13 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
+	"jira-agent-session-demo-compact": dynamic(
+		() =>
+			import("../demos/blocks/jira-agent-session-demo").then((mod) => ({
+				default: mod.JiraAgentSessionDemoCompact,
+			})),
+		{ ssr: false },
+	),
 	"agent-sessions-demo-standard": dynamic(
 		() =>
 			import("../demos/blocks/agent-sessions-demo").then((mod) => ({

@@ -97,6 +97,7 @@ test("the Agents section directly reuses Jira Agent Session with native states a
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
+	assert.match(DETAIL_PANEL_SOURCE, /variant="compact"/u);
 	assert.match(
 		DETAIL_PANEL_SOURCE,
 		/agent: \{[\s\S]*avatarSrc: agentSession\.profile\.avatarSrc,[\s\S]*name: agentSession\.profile\.name,[\s\S]*\}/u,

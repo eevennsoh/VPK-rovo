@@ -11,6 +11,7 @@ import { ContextTitleBar } from "@/components/blocks/agent-sessions/experimental
 import type { CodingAgentId } from "@/components/blocks/agent-sessions/experimental/components/context-title-actions";
 
 interface ExperimentalWorkItemDialogProps {
+	inlineSurface: "card" | "fill";
 	open: boolean;
 	onClose: () => void;
 	presentation: "modal" | "inline";
@@ -34,6 +35,7 @@ interface ExperimentalWorkItemDialogProps {
  * Dialog.Title/Description.
  */
 export function ExperimentalWorkItemDialog({
+	inlineSurface,
 	open,
 	onClose,
 	presentation,
@@ -44,6 +46,7 @@ export function ExperimentalWorkItemDialog({
 	blanketContent,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
+	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
 	const content = (
 		<>
 			<ModalHeader
@@ -61,8 +64,8 @@ export function ExperimentalWorkItemDialog({
 	);
 	const surfaceStyle = {
 		backgroundColor: token("elevation.surface.overlay"),
-		borderRadius: token("radius.xlarge"),
-		boxShadow: token("elevation.shadow.overlay"),
+		borderRadius: fillsInlineContainer ? 0 : token("radius.xlarge"),
+		boxShadow: fillsInlineContainer ? "none" : token("elevation.shadow.overlay"),
 		display: "grid",
 		gridTemplateColumns: "minmax(0, 1fr)",
 		gridTemplateRows: "auto auto minmax(0, 1fr)",
@@ -70,14 +73,16 @@ export function ExperimentalWorkItemDialog({
 	} as const;
 
 	if (presentation === "inline") {
-		// Let the work-item card follow its content height until it reaches the ASX
-		// stage's Kanban-aligned side and bottom gutters. Taller content then scrolls
-		// inside the existing work-item layout instead of extending the page.
+		// Inline hosts can keep the existing content-height card or opt into a
+		// flush surface that fills the host's available width and height.
 		return (
 			<>
 				<section
 					aria-label={workItemTitle}
-					className="max-h-full w-full max-w-[1200px] shrink-0 outline-none"
+					className={cn(
+						"max-h-full w-full max-w-[1200px] shrink-0 outline-none",
+						fillsInlineContainer ? "h-full min-h-0 max-w-none flex-1 shrink" : null,
+					)}
 					style={surfaceStyle}
 				>
 					{content}

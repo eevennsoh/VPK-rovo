@@ -39,8 +39,16 @@ const PanelLayoutContext = createContext<PanelLayoutContextValue | null>(null);
  * `ExperimentalWorkItemLayout` body. Kept separate from the session-data
  * controller so session state and view state stay in their own owners.
  */
-export function PanelLayoutProvider({ children }: Readonly<{ children: ReactNode }>) {
-	const [metadataCollapsed, setMetadataCollapsed] = useState(false);
+interface PanelLayoutProviderProps {
+	children: ReactNode;
+	defaultMetadataCollapsed?: boolean;
+}
+
+export function PanelLayoutProvider({
+	children,
+	defaultMetadataCollapsed = false,
+}: Readonly<PanelLayoutProviderProps>) {
+	const [metadataCollapsed, setMetadataCollapsed] = useState(defaultMetadataCollapsed);
 	const [metadataLayoutAnimating, setMetadataLayoutAnimating] = useState(false);
 	const [metadataTogglePending, setMetadataTogglePending] = useState(false);
 	const toggleMetadata = useCallback(() => {

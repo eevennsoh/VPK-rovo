@@ -7,9 +7,11 @@ import { RovoChatProvider, useRovoChat } from "@/app/contexts";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 
-import { JiraAgentSession } from "./index";
+import { JiraAgentSession, type JiraAgentSessionVariant } from "./index";
 
-function JiraAgentSessionDemo() {
+function JiraAgentSessionDemo({
+	variant,
+}: Readonly<{ variant: JiraAgentSessionVariant }>) {
 	const { chatSurface, openChat } = useRovoChat();
 
 	// View drops the user into the Rovo floating chat for that session,
@@ -21,7 +23,7 @@ function JiraAgentSessionDemo() {
 	return (
 		<div className="relative flex h-full min-h-[420px] w-full flex-col bg-surface p-6">
 			<div className="mx-auto flex w-full max-w-xl flex-1 items-center">
-				<JiraAgentSession className="w-full" onView={handleView} />
+				<JiraAgentSession className="w-full" onView={handleView} variant={variant} />
 			</div>
 			{chatSurface === null ? (
 				<FloatingRovoButton
@@ -39,10 +41,12 @@ function JiraAgentSessionDemo() {
 	);
 }
 
-export default function JiraAgentSessionPage() {
+export default function JiraAgentSessionPage({
+	variant = "default",
+}: Readonly<{ variant?: JiraAgentSessionVariant }>) {
 	return (
 		<RovoChatProvider>
-			<JiraAgentSessionDemo />
+			<JiraAgentSessionDemo variant={variant} />
 		</RovoChatProvider>
 	);
 }

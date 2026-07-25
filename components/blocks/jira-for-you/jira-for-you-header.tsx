@@ -31,8 +31,15 @@ export function JiraForYouHeader({
 			className="@container flex min-w-0 flex-col gap-4 overflow-x-hidden"
 			data-testid="jira-for-you-header"
 		>
+			{/*
+			 * One line: a 56px band (min-h-14) sits flush at the top to align with
+			 * the chat/detail headers. Wrapped (@max-[28rem]): the heading stacks
+			 * over the tabs and regains a top gap equal to the feed's horizontal
+			 * padding via --feed-stack-top (falls back to 0 when the var is unset,
+			 * e.g. the standalone JiraForYouPage which pads its own wrapper).
+			 */}
 			<div
-				className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 @max-[28rem]:flex-col @max-[28rem]:items-stretch @max-[28rem]:justify-start @max-[28rem]:gap-y-4"
+				className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 @min-[28rem]:min-h-14 @max-[28rem]:mt-[var(--feed-stack-top)] @max-[28rem]:flex-col @max-[28rem]:items-stretch @max-[28rem]:justify-start @max-[28rem]:gap-y-4"
 				data-testid="jira-for-you-heading-tabs-row"
 			>
 				<h2 className="shrink-0 text-text" style={{ font: token("font.heading.small") }}>

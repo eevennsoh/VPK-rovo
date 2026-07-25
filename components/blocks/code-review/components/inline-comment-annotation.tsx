@@ -49,7 +49,7 @@ export function InlineCommentGutterButton({
 	return (
 		<Button
 			aria-label="Add inline comment"
-			className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-brand shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+			className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-subtle shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
 			data-testid="inline-comment-gutter-button"
 			onClick={handleClick}
 			onPointerDown={(event) => event.stopPropagation()}

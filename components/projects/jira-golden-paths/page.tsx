@@ -17,17 +17,16 @@ import {
 	type ScreenNavigatorController,
 } from "./hooks/use-screen-navigator";
 import { SessionScreenControls, SessionStage } from "./components/session-stage";
-import { useWorkItemStageController } from "./components/work-item-stage";
 
 // ---------------------------------------------------------------------------
 // JGP — Jira Golden Paths
 //
-// The gallery dock has two cards: "Local session" and "Global session". Each is
+// The gallery dock has two cards: "Carl's local session" and "Sarah's global session". Each is
 // a presenter-paced walkthrough of an ordered set of screens, navigated
 // left/right from the gallery top bar (see `SessionScreenControls`) or the ←/→
 // arrow keys — mirroring the terminal demo's beat stepping. Screens are
 // Each screen is a prepared beat in Carl's local or Sarah's global story. The
-// existing Terminal, Kanban, Rovo, For You, and Work item stages render those
+// existing Terminal, Kanban, Rovo, and For You stages render those
 // route-owned scenarios without introducing gallery-specific UI variants.
 // ---------------------------------------------------------------------------
 
@@ -72,7 +71,6 @@ export default function JgpPage(): React.ReactElement {
 	// share a single source of truth (each card keeps its own place).
 	const localNav = useScreenNavigator(LOCAL_SESSION_SCREENS.length);
 	const globalNav = useScreenNavigator(GLOBAL_SESSION_SCREENS.length);
-	const workItemController = useWorkItemStageController();
 
 	const cardsById = useMemo<Record<string, SessionCard>>(
 		() => ({
@@ -116,6 +114,10 @@ export default function JgpPage(): React.ReactElement {
 	// app theme; non-Terminal sections fall back to the normal global theme.
 	const activeScreen = activeCard.screens[activeCard.controller.index];
 	const isTerminalSection = activeScreen?.section === "Terminal";
+	// The For you screen wants a divider under the gallery top bar; other screens
+	// keep the borderless header. Gate on the typed `design` identity, not the
+	// free-form `section` label, mirroring `isTerminalSection` above.
+	const isForYouScreen = activeScreen?.design === "for-you";
 	const subtreeThemeProps = isTerminalSection
 		? {
 				"data-subtree-theme": "",
@@ -138,6 +140,7 @@ export default function JgpPage(): React.ReactElement {
 					items={JGP_GALLERY_ITEMS}
 					palette={ROVO_PURPLE_PALETTE}
 					title="Jira Golden Paths"
+					showTopBarBorder={isForYouScreen}
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}
 					open={dockOpen}
@@ -155,9 +158,7 @@ export default function JgpPage(): React.ReactElement {
 						return (
 							<SessionStage
 								controller={card.controller}
-								dockOpen={dockOpen}
 								screens={card.screens}
-								workItemController={workItemController}
 							/>
 						);
 					}}

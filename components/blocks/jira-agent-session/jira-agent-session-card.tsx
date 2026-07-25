@@ -34,9 +34,9 @@ import type {
 
 /**
  * State → title-line + lifecycle treatment. `running` shows a solid title with a
- * trailing rainbow spinner; `needs-input` keeps the task title, adds animated
- * dots, and shows a trailing info icon; `complete` shows a solid title with no
- * lifecycle indicator.
+ * trailing rainbow spinner; `needs-input` swaps the title for "Waiting for input"
+ * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
+ * icon; `complete` shows a solid title with no lifecycle indicator.
  *
  * The trailing indicator itself is rendered by {@link LifecycleIndicator};
  * `showLifecycle` only gates whether the row reserves that trailing slot.
@@ -97,6 +97,19 @@ function MetadataDot() {
 
 function getAgentPublisher(byline: string): string {
 	return /\bby\s+(.+)$/iu.exec(byline)?.[1]?.trim() ?? byline;
+}
+
+/** Copy shown on the title line while a session is blocked awaiting a reply. */
+const AWAITING_INPUT_TITLE = "Waiting for input";
+
+/**
+ * Title-line text for a session row. `needs-input` swaps the work-item title for
+ * "Waiting for input", mirroring the Jira queue card's `JiraSessionLabel`
+ * (`components/blocks/product-sidebar/variants/jira.tsx`), so the shimmering line
+ * names the state the session is blocked on. Other states show the task title.
+ */
+function getSessionTitle(item: JiraAgentSessionItem): string {
+	return item.state === "needs-input" ? AWAITING_INPUT_TITLE : item.title;
 }
 
 /**
@@ -192,11 +205,11 @@ export function JiraAgentSessionActivityHeader({
 							duration={1.4}
 							spread={2}
 						>
-							{item.title}
+							{getSessionTitle(item)}
 						</Shimmer>
 					) : (
 						<span className="min-w-0 truncate text-sm font-medium text-text">
-							{item.title}
+							{getSessionTitle(item)}
 						</span>
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
@@ -281,7 +294,8 @@ export function JiraAgentSessionCard({
 					<li
 						aria-current={isSelected ? "true" : undefined}
 						className={cn(
-							"group relative flex items-center gap-0 p-3 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered",
+							"group relative flex items-center gap-0 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered",
+							isCompact ? "px-3 py-1.5" : "p-3",
 							isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
 						)}
 					/>
@@ -309,11 +323,11 @@ export function JiraAgentSessionCard({
 							duration={1.4}
 							spread={2}
 						>
-							{item.title}
+							{getSessionTitle(item)}
 						</Shimmer>
 					) : (
 						<span className={cn(titleClassName, "text-text")}>
-							{item.title}
+							{getSessionTitle(item)}
 						</span>
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}

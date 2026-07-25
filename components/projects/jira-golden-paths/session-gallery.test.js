@@ -20,11 +20,13 @@ const TERMINAL_JIRA_PANE_SOURCE = read("components/terminal-stage-jira-pane.tsx"
 const TERMINAL_HOOK_SOURCE = read("hooks/use-terminal-demo.ts");
 const NAV_HOOK_SOURCE = read("hooks/use-screen-navigator.ts");
 
-test("Gallery exposes exactly the Local and Global session cards", () => {
+test("Gallery exposes exactly Carl's local and Sarah's global session cards", () => {
 	const ids = [...GALLERY_ITEMS_SOURCE.matchAll(/id:\s*"([^"]+)"/gu)].map((match) => match[1]);
 	assert.deepEqual(ids, ["local-session", "global-session"]);
-	assert.match(GALLERY_ITEMS_SOURCE, /title:\s*"Local session"/u);
-	assert.match(GALLERY_ITEMS_SOURCE, /title:\s*"Global session"/u);
+	assert.match(GALLERY_ITEMS_SOURCE, /title:\s*"Carl's local session"/u);
+	assert.match(GALLERY_ITEMS_SOURCE, /title:\s*"Sarah's global session"/u);
+	assert.match(GALLERY_ITEMS_SOURCE, /titleLines:\s*\["Carl's", "local session"\]/u);
+	assert.match(GALLERY_ITEMS_SOURCE, /titleLines:\s*\["Sarah's", "global session"\]/u);
 });
 
 test("Each card defines its own ordered set of screens to navigate", () => {
@@ -34,14 +36,13 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 		["global-1", "kanban", "global-assignment"],
 		["global-2", "rovo", "blocked-question"],
 		["global-3", "for-you", "human-review"],
-		["global-4", "work-item", "completed-timeline"],
 	]) {
 		assert.match(
 			SCREENS_SOURCE,
 			new RegExp(`id: "${id}"[\\s\\S]*?design: "${design}"[\\s\\S]*?scenario: "${scenario}"`, "u"),
 		);
 	}
-	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
+	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo";/u);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "rovo"/u);
 	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} \/>/u);
 	assert.doesNotMatch(SCREENS_SOURCE, /scenario: "pr-review"/u);
@@ -49,13 +50,10 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 	assert.match(STAGE_SOURCE, /screen\?\.design === "for-you"/u);
 	assert.match(
 		STAGE_SOURCE,
-		/<ForYouStage dockOpen=\{dockOpen\} key=\{screen\.id\} scenario="human-review" \/>/u,
+		/<ForYouStage key=\{screen\.id\} \/>/u,
 	);
-	assert.match(STAGE_SOURCE, /screen\?\.design === "work-item"/u);
-	assert.match(
-		STAGE_SOURCE,
-		/<WorkItemStage[\s\S]*?controller=\{workItemController\}[\s\S]*?key=\{screen\.id\}[\s\S]*?scenario="completed-timeline"/u,
-	);
+	assert.doesNotMatch(SCREENS_SOURCE, /global-4|design: "work-item"|completed-timeline/u);
+	assert.doesNotMatch(STAGE_SOURCE, /WorkItemStage|workItemController|design === "work-item"/u);
 });
 
 test("Local session drives the TwG setup live and resumes review beats after Kanban", () => {
@@ -121,9 +119,9 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.match(PAGE_SOURCE, /<SessionScreenControls\s+screens=\{activeCard\.screens\}\s+controller=\{activeCard\.controller\}\s+\/>/u);
 	assert.match(
 		PAGE_SOURCE,
-		/<SessionStage[\s\S]*controller=\{card\.controller\}[\s\S]*dockOpen=\{dockOpen\}[\s\S]*screens=\{card\.screens\}[\s\S]*workItemController=\{workItemController\}/u,
+		/<SessionStage[\s\S]*controller=\{card\.controller\}[\s\S]*screens=\{card\.screens\}[\s\S]*\/>/u,
 	);
-	assert.doesNotMatch(PAGE_SOURCE, /WorkItemControls/u);
+	assert.doesNotMatch(PAGE_SOURCE, /WorkItemControls|workItemController|useWorkItemStageController/u);
 	assert.match(PAGE_SOURCE, /open=\{dockOpen\}/u);
 	assert.match(PAGE_SOURCE, /onOpenChange=\{setDockOpen\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /onReset=\{handleReset\}|controller\.reset\(\)/u);
@@ -138,20 +136,20 @@ test("Entering the Global Rovo screen restores the default agent and greeting", 
 	assert.match(PAGE_SOURCE, /<ResetRovoChatOnEntry screen=\{activeScreen\} \/>/u);
 });
 
-test("Global For you reuses the shared feed layout with JGP chat playback", () => {
-	assert.match(FOR_YOU_STAGE_SOURCE, /useJgpAgentChatDemo\(\)/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /buildJgpForYouAgentChatScenario\(item\)/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /onView=\{handleView\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{JGP_FOR_YOU_SECTIONS\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /tabs=\{JGP_FOR_YOU_TABS\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /<JgpRovoOverlay/u);
+test("Global For you fills the stage with the complete Jira shell", () => {
+	assert.match(
+		FOR_YOU_STAGE_SOURCE,
+		/<JiraForYouShell shellHeight="parent" \/>/u,
+	);
+	assert.match(FOR_YOU_STAGE_SOURCE, /h-full min-h-0 w-screen/u);
+	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /dockOpen|pb-56|pb-8/u);
+	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /JiraForYouWorkspace|JGP_FOR_YOU_SECTIONS|JgpRovoOverlay|JiraForYouPage/u);
+	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
+	assert.doesNotMatch(ASX_PAGE_SOURCE, /<JiraForYouPage/u);
 	assert.match(
 		SHARED_FOR_YOU_STAGE_SOURCE,
 		/<JiraForYouPage onItemClick=\{onItemClick\} onView=\{onView\} sections=\{sections\} tabs=\{tabs\} \/>/u,
 	);
-	assert.match(SHARED_FOR_YOU_STAGE_SOURCE, /dockOpen \? "pb-56" : "pb-8"/u);
-	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
-	assert.doesNotMatch(ASX_PAGE_SOURCE, /<JiraForYouPage/u);
 });
 
 test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => {
@@ -231,7 +229,7 @@ test("Section dropdown opening does not add another flex gap to the centered con
 test("Local session opens the Kanban section with the real board design", () => {
 	// The sixth screen is the "Kanban" section rendering the Kanban board design.
 	assert.match(SCREENS_SOURCE, /design:\s*"kanban"/u);
-	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo" \| "work-item";/u);
+	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo";/u);
 	// The stage routes a `design: "kanban"` screen to the real KanbanStage,
 	// keyed by screen id so it mounts fresh when navigated to.
 	assert.match(STAGE_SOURCE, /screen\?\.design === "kanban"/u);
@@ -253,7 +251,7 @@ test("Local session opens the Kanban section with the real board design", () => 
 test("Top-bar label counts position within the current section", () => {
 	// Local has seven opening Terminal screens, one Kanban screen, four resumed
 	// Terminal screens, then Kanban again. Global adds Kanban, one Rovo screen,
-	// For you, and Work item.
+	// and For you.
 	// The counter resets per run (U+00B7 middle dot), even when a section name is reused later.
 	const sections = [...SCREENS_SOURCE.matchAll(/section:\s*"([^"]+)"/gu)].map((match) => match[1]);
 	assert.deepEqual(sections, [
@@ -273,7 +271,6 @@ test("Top-bar label counts position within the current section", () => {
 		"Kanban",
 		"Rovo",
 		"For you",
-		"Work item",
 	]);
 	// Section-scoped, contiguous-run label with a middle dot; plain fallback when
 	// a screen has no section.

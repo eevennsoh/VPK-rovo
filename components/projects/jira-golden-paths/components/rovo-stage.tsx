@@ -138,15 +138,29 @@ function CreatePrContextBar({
  * standalone `/sidebar-chat` demo renders — shown as a bounded sidebar panel
  * in the gallery stage when the Rovo card is selected.
  *
- * Layout intent: the sidebar chat is a narrow, bounded panel. The gallery runs
- * this stage with the default `stagePosition="top"` (shared by the board/list/
- * terminal stages), so centering is done here. Bottom padding keeps the
- * composer's final action row above the pinned Gallery dock, including when an
- * expanded CodeList makes the conversation taller.
+ * Layout intent: the sidebar chat is a narrow, full-height panel. The gallery
+ * runs this stage with the default `stagePosition="top"` (shared by the board/
+ * list/terminal stages), so the panel should FILL the stage height the way the
+ * standalone sidebar-chat demo fills its viewport — not float as a short,
+ * vertically-centered card. The panel wrapper is `h-full` because `ChatPanel`
+ * renders at `height: 100%` (see the sidebar-chat `chatStyles.chatPanel`) and
+ * needs a sized parent, so it fills its content box.
+ * The vertical clearance is a CONSTANT, dock-independent bottom inset (`pb-6`),
+ * with no top inset. This is deliberate: the Gallery dock is a `fixed` overlay
+ * (out of normal flow — see `gallery.tsx`), so it must NOT reserve layout space
+ * here. If the inset changed with the dock's open state the panel would resize
+ * and visibly shift when the dock is dismissed; keeping it constant lets the dock
+ * (and its frosted backdrop) float ON TOP of the chat — overlaying the composer
+ * while open and revealing it untouched when closed. The small `pb-6` (matching
+ * the standalone sidebar-chat demo's inset) keeps the composer off the viewport
+ * edge without leaving a large dead gap. There is no top inset — nothing sits
+ * above the stage but the 48px Gallery top bar, already a flex sibling outside it
+ * — so the panel fills from the top of the stage and reaches the same effective
+ * height as the real sidebar chat. On very tall viewports it caps at 800px and
+ * `items-center` centers it within the box.
  * Its 400px width and 800px height cap match the standalone sidebar-chat demo;
  * `h-full` lets it shrink on short viewports. `ChatPanel` carries its own
- * raised surface + border + radius (see the sidebar-chat
- * `chatStyles.chatPanel`), so no extra chrome is needed here.
+ * raised surface + border + radius, so no extra chrome is needed here.
  *
  * The chat runs on the JGP-wide `RovoChatProvider` (see `../page.tsx`); the
  * gallery resets it when the Rovo card is entered so the panel opens at its
@@ -353,7 +367,7 @@ export function RovoStage(): React.ReactElement {
 	]);
 
 	return (
-		<div className="flex h-full min-h-0 w-full items-center justify-center pb-28">
+		<div className="flex h-full min-h-0 w-full items-center justify-center pb-6">
 			<div className="h-full max-h-[800px] min-h-0 w-[400px]">
 				<ChatPanel
 					chatHistory={chatHistory}

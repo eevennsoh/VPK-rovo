@@ -330,7 +330,11 @@ export function JiraForYouWorkspace({
 			>
 				<div
 					className={cn(
-						"w-full px-4 py-4 md:px-5 md:py-5",
+						// pb-only keeps the For You header flush at the column top on one
+						// line so its 56px band aligns with the chat/detail headers. When
+						// the tabs wrap (@max-[28rem]) the header re-adds a top gap via
+						// --feed-stack-top, matching the responsive horizontal padding.
+						"w-full px-4 pb-4 md:px-5 md:pb-5 [--feed-stack-top:1rem] md:[--feed-stack-top:1.25rem]",
 						activeItemData && !isNarrow ? undefined : "mx-auto max-w-3xl",
 					)}
 				>

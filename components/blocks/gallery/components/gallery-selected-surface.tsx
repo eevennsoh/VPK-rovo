@@ -122,6 +122,7 @@ function createInkMaskImage(seed: number): string {
 export interface GallerySelectedSurfaceProps {
 	itemId: string;
 	title: string;
+	titleLines?: readonly string[];
 	width: number;
 	height: number;
 	visual: GallerySelectionVisual;
@@ -132,6 +133,7 @@ export interface GallerySelectedSurfaceProps {
 export function GallerySelectedSurface({
 	itemId,
 	title,
+	titleLines,
 	width,
 	height,
 	visual,
@@ -232,6 +234,7 @@ export function GallerySelectedSurface({
 				<div className="flex h-full w-full flex-col justify-end">
 					<GalleryTitleLines
 						title={title}
+						lines={titleLines}
 						textRef={highlightTextRef}
 						className="text-text-inverse"
 					/>

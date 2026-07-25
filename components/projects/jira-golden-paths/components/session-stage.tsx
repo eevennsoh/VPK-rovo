@@ -18,7 +18,6 @@ import { KanbanStage } from "./kanban-stage";
 import { RovoStage } from "./rovo-stage";
 import { TerminalBeatScreen } from "./terminal-beat-screen";
 import { TerminalLiveScreen } from "./terminal-live-screen";
-import { WorkItemStage, type WorkItemStageController } from "./work-item-stage";
 
 // ---------------------------------------------------------------------------
 // The Local/Global session cards share one presenter: an ordered set of screens
@@ -172,15 +171,11 @@ export function SessionScreenControls({
  *   - otherwise → the configured screen title.
  */
 export function SessionStage({
-	dockOpen,
 	screens,
 	controller,
-	workItemController,
 }: Readonly<{
-	dockOpen: boolean;
 	screens: readonly SessionScreen[];
 	controller: ScreenNavigatorController;
-	workItemController: WorkItemStageController;
 }>): React.ReactElement {
 	const screen = screens[controller.index] ?? screens[0];
 
@@ -196,17 +191,7 @@ export function SessionStage({
 	}
 
 	if (screen?.design === "for-you") {
-		return <ForYouStage dockOpen={dockOpen} key={screen.id} scenario="human-review" />;
-	}
-
-	if (screen?.design === "work-item") {
-		return (
-			<WorkItemStage
-				controller={workItemController}
-				key={screen.id}
-				scenario="completed-timeline"
-			/>
-		);
+		return <ForYouStage key={screen.id} />;
 	}
 
 	if (screen?.liveBeat != null) {

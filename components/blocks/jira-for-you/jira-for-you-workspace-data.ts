@@ -142,8 +142,12 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"readiness-checker": {
-				assistant:
-					"I reviewed the deck outline against the latest Vitafleet strategy memo, highlighted three claims that still need executive approval, and queued the final narrative for your review.",
+				assistant: [
+					"I reviewed the full deck outline against the latest Vitafleet strategy memo and the launch brief. The story is coherent and the overall narrative is ready for a final review, but I found three claims that still need explicit executive approval before the deck can be shared broadly.",
+					"**What is ready**\n- The opening frames the customer problem and Vitafleet vision clearly.\n- The product principles now map directly to the launch outcomes in the strategy memo.\n- The roadmap section uses the latest sequencing and removes the older milestone language.",
+					"**What still needs input**\n1. Confirm the projected adoption range on the market-opportunity slide.\n2. Approve the customer quote selected for the vision section.\n3. Decide whether the partner expansion target belongs in the main narrative or the appendix.",
+					"Once those decisions are recorded, I’ll update the affected slides, run a final consistency pass across the speaker notes, and prepare a presentation-ready PDF. I’ve also queued a shorter leadership version so the same approved narrative can be reused without creating a second source of truth.",
+				].join("\n\n"),
 				status: "awaiting-input",
 			},
 		},
@@ -164,18 +168,32 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		worktreePath: "~/src/revenue-platform/.worktrees/crm-318-review",
 		agentSessions: {
 			"readiness-checker": {
-				assistant:
-					"I finished the launch-readiness pass for CRM-318 and flagged two dependencies still blocking the dashboard rollout: the audience mapping refresh and the finance sign-off for the attribution schema.",
+				assistant: [
+					"I finished the launch-readiness pass for CRM-318. The dashboard itself is in good shape: the latest branch matches the acceptance criteria, all five automated checks are passing, and the regression checklist is complete for the primary analytics journeys.",
+					"**What I verified**\n- Campaign, channel, and region filters return the expected totals across the standard reporting windows.\n- Saved dashboard views survive a refresh and preserve the selected comparison period.\n- Empty, partial, and delayed-data states use the approved guidance instead of showing misleading zero values.\n- The updated attribution labels are consistent between the summary cards, trend charts, and exported report.\n- Keyboard navigation and focus order remain intact after the dashboard refinements.",
+					"**Two dependencies are still blocking rollout**\n1. **Audience mapping refresh:** the production mapping table is one revision behind the dataset used for validation. Shipping before that refresh could place a small group of recently renamed segments under the wrong parent audience.\n2. **Finance sign-off:** Finance still needs to approve the revised attribution schema, particularly the treatment of influenced pipeline when a campaign touches more than one opportunity stage.",
+					"Neither blocker requires another UI change. The implementation can remain at the current commit while the data owner refreshes the mapping table and Finance records its decision. I linked the relevant acceptance criteria and PR notes in the details panel so both approvals can be checked against the same evidence.",
+					"**What I’m doing next**\nI’m keeping the readiness checklist open and will re-run the audience, attribution, and export checks as soon as both approvals land. If the refreshed mapping produces the same totals and Finance accepts the schema as written, I’ll mark CRM-318 ready to release, attach the completed regression checklist, and post a concise handoff for the rollout owner.",
+					"My recommendation is to hold the rollout rather than launch behind a partial-data caveat. The remaining work is narrow, the current build is stable, and waiting for these two confirmations avoids creating a trust issue in the first week of dashboard use.",
+				].join("\n\n"),
 				status: "awaiting-input",
 			},
 			"code-reviewer": {
-				assistant:
-					"I reviewed the latest implementation branch for CRM-318, confirmed the aggregation pipeline changes are safe, and left two follow-ups around null campaign metadata and threshold edge cases.",
+				assistant: [
+					"I reviewed the latest implementation branch for CRM-318 and confirmed that the aggregation pipeline changes are safe. The query boundary is clearer, the updated grouping logic preserves the existing totals, and the branch does not introduce a new client-side transformation path.",
+					"**Review findings**\n- The campaign and channel aggregations now share the same normalized input model.\n- The comparison-period calculation handles month and quarter boundaries consistently.\n- Loading and error states remain isolated from the chart rendering path.\n- The focused regression coverage exercises the new grouping and export behavior.",
+					"I left two follow-ups. First, null campaign metadata should be normalized before it reaches the grouping helper so an incomplete record cannot create an unlabeled series. Second, the anomaly threshold tests should include values exactly on the lower and upper boundary, not only values on either side.",
+					"Both follow-ups are small and local to the data boundary. Once they are addressed, I’ll re-read the final diff, re-run the focused checks, and confirm that the PR is ready to merge without widening the scope of CRM-318.",
+				].join("\n\n"),
 				status: "running",
 			},
 			"feedback-analyzer": {
-				assistant:
-					"I clustered the latest field feedback for CRM-318 into adoption, trust, and discoverability themes. The strongest ask is a clearer explanation of how the anomaly score is calculated.",
+				assistant: [
+					"I clustered the latest field feedback for CRM-318 into three themes: adoption, trust, and discoverability. The feedback is directionally positive, especially from teams replacing manual weekly reports, but users want more context before they rely on the dashboard for planning decisions.",
+					"**What users are saying**\n- **Adoption:** saved views and exports remove repeated setup work for weekly reviews.\n- **Trust:** users want to understand why a value is marked anomalous before escalating it.\n- **Discoverability:** several users missed the comparison-period control on their first visit.\n- **Language:** attribution labels are accurate, but some readers interpret “influenced” as “sourced.”",
+					"The strongest ask is a clearer explanation of how the anomaly score is calculated. A short explanation beside the score, supported by a deeper help link, would address most of the trust questions without adding noise to every chart.",
+					"Next I’m separating launch-critical feedback from follow-up improvements. I’ll turn the anomaly explanation and attribution-language concern into concrete recommendations, then attach the remaining discoverability ideas to the post-launch backlog with the original feedback evidence preserved.",
+				].join("\n\n"),
 				status: "running",
 			},
 		},
@@ -191,8 +209,12 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"progress-tracker": {
-				assistant:
-					"I completed the latest benchmark sweep, refreshed the historical trendline, and isolated the API fan-out step as the main contributor to the 95th percentile regression.",
+				assistant: [
+					"I completed the latest PERF-27 benchmark sweep and refreshed the historical trendline with the new results. Median performance remains inside the agreed budget, but the 95th percentile has regressed enough to warrant investigation before the next platform rollout.",
+					"**Current result**\n- Median request latency is effectively unchanged.\n- The 95th percentile is 14% slower than the last stable baseline.\n- The regression appears only under the high-concurrency profile.\n- Memory use and error rate remain within their expected ranges.",
+					"I isolated the API fan-out step as the main contributor. Individual downstream calls are not materially slower; the extra time comes from one dependent request waiting for work that can begin earlier in the sequence.",
+					"Next I’m validating that finding with a narrower trace and a reordered prototype. If the prototype removes the tail-latency increase without changing response semantics, I’ll package the evidence and recommended sequence change for the service owner.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -208,8 +230,12 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"code-planner": {
-				assistant:
-					"I drafted a smaller-surface refactor plan for WEB-461 that extracts the normalization logic first, keeps the route shell shallow, and preserves the current regression coverage while the behavior moves.",
+				assistant: [
+					"I drafted a smaller-surface refactor plan for WEB-461. The plan keeps the route shell focused on composition, moves normalization into a typed boundary, and preserves the current behavior while each responsibility changes owners.",
+					"**Proposed sequence**\n1. Capture the existing normalization cases in focused contract tests.\n2. Extract the normalization helper without changing its call sites.\n3. Move route-specific mapping behind a small adapter.\n4. Replace the repeated conditional branches with the normalized model.\n5. Remove the old local helpers after every caller has migrated.",
+					"This order keeps the diff reviewable and avoids a half-migrated state where both the route and the new helper own the same decisions. It also gives us a clear checkpoint after each step, so a behavior change can be traced to one boundary rather than the entire refactor.",
+					"Next I’m checking the plan against the current regression coverage and file ownership. I’ll then turn it into implementation-sized tasks with explicit verification for the parsing boundary, route output, and user-visible behavior.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -224,8 +250,11 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"code-reviewer": {
-				assistant:
-					"I traced the intermittent suite failures to a race between fixture seeding and checkout retries. The next step is a small retry-boundary fix before we widen the browser coverage.",
+				assistant: [
+					"I traced the intermittent PAY-88 suite failures to a race between fixture seeding and checkout retries. The checkout can begin a retry while the shared fixture is still publishing its final state, which explains why the failure disappears when the same test is run by itself.",
+					"The evidence points to one ownership boundary rather than a general timing problem: successful runs wait for the fixture-ready signal, while failing runs depend on a fixed delay and occasionally observe the previous checkout state.",
+					"My recommended fix is to make the retry wait for the existing readiness condition and remove the fixed delay from this path. After that, I’ll repeat the scenario under parallel load and add focused browser coverage for the retry transition so the original race remains reproducible as a regression test.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -240,8 +269,11 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"code-planner": {
-				assistant:
-					"I mapped the onboarding flow into three focused browser scenarios so we can add coverage without importing brittle fixture state into the suite.",
+				assistant: [
+					"I mapped the GROW-204 onboarding flow into three focused browser scenarios: a first-time setup, an invited-user handoff, and a returning user resuming incomplete work. Together they cover the critical journey without importing brittle fixture state into every test.",
+					"Each scenario starts from a small explicit boundary, verifies the user-visible milestone, and cleans up only the data it creates. Shared helpers will cover authentication and seed setup, while product decisions stay readable in the individual specs.",
+					"Next I’m identifying the smallest stable selectors and the existing test utilities we can reuse. I’ll then draft the first-time setup scenario as the reference pattern before adding the two variants, with failure screenshots and accessibility assertions included from the start.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -255,8 +287,11 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"code-reviewer": {
-				assistant:
-					"I identified the component boundaries where focused regression tests buy the most protection: async loading states, selected-row semantics, and token-driven visual variants.",
+				assistant: [
+					"I reviewed the QA-56 component inventory and identified the boundaries where focused regression tests buy the most protection: asynchronous loading states, selected-row semantics, and token-driven visual variants.",
+					"The first test set should cover state transitions rather than implementation details: loading to populated, populated to empty, selection moving between rows, and keyboard focus returning after a transient surface closes. A smaller visual matrix can then protect the semantic variants that have previously drifted between themes.",
+					"Next I’m ranking the components by user impact and change frequency, then mapping each one to the lightest suitable test layer. The output will be a sequenced test plan that starts with the highest-risk shared behavior and avoids duplicating coverage already owned by browser journeys.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -270,8 +305,11 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"progress-tracker": {
-				assistant:
-					"I backfilled the CI rollout history for PLAT-12 and summarized the checkpoints that made the pipeline stable enough to adopt as the default merge gate.",
+				assistant: [
+					"I backfilled the PLAT-12 rollout history and summarized the checkpoints that made the continuous integration pipeline stable enough to become the default merge gate.",
+					"The rollout moved through three clear stages: an opt-in validation period, a required check for a small pilot group, and full branch-protection enforcement after failure rates and queue times stabilized. The final stage also added ownership guidance so teams knew where to route infrastructure failures versus product-test failures.",
+					"The completed summary includes the adoption timeline, the reliability signals used at each checkpoint, and the remaining follow-ups around peak queue time. I’m doing one final evidence pass now so the rollout record can serve as a reusable template for future organization-wide checks.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -285,8 +323,11 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"feedback-analyzer": {
-				assistant:
-					"I grouped the accessibility improvements from DS-73 into navigation, focus visibility, and copy clarity, then highlighted which changes lowered support friction the most.",
+				assistant: [
+					"I grouped the completed DS-73 accessibility improvements into navigation, focus visibility, and copy clarity, then compared the support themes from before and after the rollout.",
+					"Keyboard navigation produced the clearest improvement: users can now move through the primary workflow without losing their place when a panel opens or closes. Stronger focus treatment reduced uncertainty in dense screens, while the revised instructions removed several ambiguous action labels reported by screen-reader users.",
+					"The outcome summary separates observed improvements from areas that still need measurement. Next I’m attaching the assistive-technology findings and turning the two remaining copy questions into follow-up recommendations for the design-system owners.",
+				].join("\n\n"),
 			},
 		},
 	},
@@ -301,8 +342,12 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"readiness-checker": {
-				assistant:
-					"I closed the integration readiness checklist for INT-119 and documented the two partner contracts that still need monitoring after the feature ships.",
+				assistant: [
+					"I closed the INT-119 integration readiness checklist and confirmed that the launch requirements are complete across authentication, request limits, error handling, and partner-facing documentation.",
+					"The production configuration matches the approved contract, the fallback behavior has been exercised for unavailable and rate-limited responses, and the support handoff includes the identifiers needed to trace a request across our boundary and the partner API.",
+					"Two partner contracts still need monitoring after launch: one has a lower burst allowance than our internal default, and the other can return a delayed completion callback during regional maintenance. Neither blocks release, but both are recorded with owners, thresholds, and escalation steps.",
+					"Next I’m preparing the first-week monitoring view and a concise launch handoff. If those two contract signals stay within their expected ranges, INT-119 can move from heightened monitoring into the standard integration health review.",
+				].join("\n\n"),
 			},
 		},
 	},

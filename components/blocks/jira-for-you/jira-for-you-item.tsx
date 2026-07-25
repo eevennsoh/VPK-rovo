@@ -14,6 +14,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime } from "@/components/ui/elapsed-time";
+import { Icon } from "@/components/ui/icon";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -30,14 +31,61 @@ import type {
 
 const ISSUE_TYPE_META: Record<
 	JiraForYouIssueType,
-	{ Glyph: typeof TaskIcon; variant: IconTileVariant; label: string }
+	{
+		Glyph: typeof TaskIcon;
+		iconClassName: string;
+		label: string;
+		variant: IconTileVariant;
+	}
 > = {
-	task: { Glyph: TaskIcon, variant: "blue", label: "Task" },
-	bug: { Glyph: BugIcon, variant: "red", label: "Bug" },
-	subtask: { Glyph: SubtasksIcon, variant: "blue", label: "Subtask" },
-	epic: { Glyph: EpicIcon, variant: "purple", label: "Epic" },
-	story: { Glyph: StoryIcon, variant: "green", label: "Story" },
+	task: {
+		Glyph: TaskIcon,
+		iconClassName: "text-icon-accent-blue",
+		label: "Task",
+		variant: "blue",
+	},
+	bug: {
+		Glyph: BugIcon,
+		iconClassName: "text-icon-accent-red",
+		label: "Bug",
+		variant: "red",
+	},
+	subtask: {
+		Glyph: SubtasksIcon,
+		iconClassName: "text-icon-accent-blue",
+		label: "Subtask",
+		variant: "blue",
+	},
+	epic: {
+		Glyph: EpicIcon,
+		iconClassName: "text-icon-accent-purple",
+		label: "Epic",
+		variant: "purple",
+	},
+	story: {
+		Glyph: StoryIcon,
+		iconClassName: "text-icon-accent-green",
+		label: "Story",
+		variant: "green",
+	},
 };
+
+export function JiraForYouIssueTypeIcon({
+	className,
+	issueType,
+}: Readonly<{ className?: string; issueType: JiraForYouIssueType }>) {
+	const meta = ISSUE_TYPE_META[issueType];
+	const Glyph = meta.Glyph;
+
+	return (
+		<Icon
+			aria-hidden
+			className={cn("shrink-0", meta.iconClassName, className)}
+			render={<Glyph label="" />}
+		/>
+	);
+}
+
 function MetadataDot() {
 	return (
 		<span

@@ -44,9 +44,11 @@ export function JiraForYouAgentSessionsWorkspace({
 					<Icon aria-hidden render={<ArrowLeftIcon label="" />} />
 				</Button>
 			</div>
-			<div className="flex min-h-0 flex-1 justify-center overflow-hidden p-3">
+			<div className="flex min-h-0 flex-1 overflow-hidden">
 				<ExperimentalAgentSessions
+					defaultMetadataCollapsed
 					initialPreset="blank"
+					inlineSurface="fill"
 					presentation="inline"
 					workItem={workItem}
 				/>

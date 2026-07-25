@@ -127,6 +127,13 @@ test("JGP Rovo surfaces render at viewport level above the Gallery dock", () => 
 test("JGP Rovo stage matches the sidebar chat project dimensions", () => {
 	assert.match(ROVO_STAGE_SOURCE, /h-full max-h-\[800px\] min-h-0 w-\[400px\]/u);
 	assert.doesNotMatch(ROVO_STAGE_SOURCE, /max-h-\[680px\]|max-w-\[440px\]/u);
+	// The panel fills the stage from the top with a CONSTANT small bottom inset.
+	// The Gallery dock is a fixed overlay (out of flow), so the inset must not
+	// depend on the dock's open state — otherwise dismissing the dock resizes the
+	// panel and it visibly shifts. Guard against reintroducing a dock-dependent
+	// inset or the old large symmetric gap.
+	assert.match(ROVO_STAGE_SOURCE, /items-center justify-center pb-6/u);
+	assert.doesNotMatch(ROVO_STAGE_SOURCE, /dockOpen|py-28|pb-28/u);
 });
 
 test("JGP Rovo history reuses Queue session behavior with route-owned global-story sessions", () => {

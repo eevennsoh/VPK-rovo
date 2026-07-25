@@ -1,6 +1,8 @@
 export interface GalleryItem {
 	id: string;
 	title: string;
+	/** Optional visual line grouping; the accessible title remains unchanged. */
+	titleLines?: readonly string[];
 	description: string;
 	/** One of three fixed footprints: portrait (tall), landscape (wide), 1x1 (square). */
 	size: "portrait" | "landscape" | "1x1";

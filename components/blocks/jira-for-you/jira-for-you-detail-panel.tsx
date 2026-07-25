@@ -164,6 +164,7 @@ function AgentSection({
 				items={sessionItems}
 				onView={(sessionItem) => onAgentSelect(sessionItem.id)}
 				selectedItemId={selectedAgentId}
+				variant="compact"
 			/>
 		</section>
 	);

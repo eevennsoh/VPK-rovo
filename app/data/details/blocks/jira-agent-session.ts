@@ -10,6 +10,14 @@ export const JIRA_AGENT_SESSION_DETAIL: ComponentDetail = {
 <JiraAgentSession
   onView={(item) => console.log("view", item.id)}
 />`,
+	examples: [
+		{
+			title: "Compact",
+			description:
+				"The same session states and actions in a denser row with a 24px agent avatar and 12px title.",
+			demoSlug: "jira-agent-session-demo-compact",
+		},
+	],
 	props: [
 		{
 			name: "items",
