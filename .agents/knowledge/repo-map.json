@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 83,
-			"pageCount": 60
+			"ownerImportCount": 88,
+			"pageCount": 61
 		},
 		"pages": [
 			{
@@ -4248,6 +4248,86 @@
 					}
 				],
 				"source": "app/preview/blocks/code-review/page.tsx"
+			},
+			{
+				"ownerCount": 5,
+				"owners": [
+					{
+						"importPath": "@/app/contexts/context-rovo-chat",
+						"source": "app/contexts/context-rovo-chat",
+						"symbols": [
+							"RovoChatProvider"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/jira-for-you",
+						"source": "components/blocks/jira-for-you",
+						"symbols": [
+							"JiraForYouWorkspace"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/product-sidebar/page",
+						"source": "components/blocks/product-sidebar/page",
+						"symbols": [
+							"ProductSidebar"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/product-sidebar/variants/jira",
+						"source": "components/blocks/product-sidebar/variants/jira",
+						"symbols": [
+							"JiraSidebar"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/top-navigation/page",
+						"source": "components/blocks/top-navigation/page",
+						"symbols": [
+							"TopNavigation"
+						]
+					}
+				],
+				"routePath": "/preview/blocks/jira-for-you",
+				"shellOwnerCount": 5,
+				"shellOwners": [
+					{
+						"importPath": "@/app/contexts/context-rovo-chat",
+						"source": "app/contexts/context-rovo-chat",
+						"symbols": [
+							"RovoChatProvider"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/jira-for-you",
+						"source": "components/blocks/jira-for-you",
+						"symbols": [
+							"JiraForYouWorkspace"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/product-sidebar/page",
+						"source": "components/blocks/product-sidebar/page",
+						"symbols": [
+							"ProductSidebar"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/product-sidebar/variants/jira",
+						"source": "components/blocks/product-sidebar/variants/jira",
+						"symbols": [
+							"JiraSidebar"
+						]
+					},
+					{
+						"importPath": "@/components/blocks/top-navigation/page",
+						"source": "components/blocks/top-navigation/page",
+						"symbols": [
+							"TopNavigation"
+						]
+					}
+				],
+				"source": "app/preview/blocks/jira-for-you/page.tsx"
 			},
 			{
 				"ownerCount": 1,

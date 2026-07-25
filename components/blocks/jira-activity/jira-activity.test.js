@@ -29,12 +29,28 @@ const COMMENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment.tsx"),
 	"utf8",
 );
+const CARD_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-card.tsx"),
+	"utf8",
+);
 const CHANGED_FILES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-changed-files.tsx"),
 	"utf8",
 );
 const NODE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-node.tsx"),
+	"utf8",
+);
+const DEMO_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../website/demos/blocks/jira-activity-demo.tsx"),
+	"utf8",
+);
+const DETAIL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../../app/data/details/blocks/jira-activity.ts"),
+	"utf8",
+);
+const VARIANT_REGISTRY_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../website/registry/blocks-variants.ts"),
 	"utf8",
 );
 
@@ -311,14 +327,26 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 	assert.match(EVENT_SOURCE, /min-w-0 flex-1 truncate text-text/u);
 });
 
-test("agent comments use the Jira Agent Session activity-card variant", () => {
+test("Jira Activity owns the shared activity card used by agent comments", () => {
 	assert.match(
 		COMMENT_SOURCE,
-		/import \{[\s\S]*JiraAgentSessionActivityCard,[\s\S]*type JiraAgentSessionItem,[\s\S]*\} from "@\/components\/blocks\/jira-agent-session"/u,
+		/import \{ JiraActivityCard \} from "\.\/jira-activity-card"/u,
 	);
-	assert.match(COMMENT_SOURCE, /<JiraAgentSessionActivityCard/u);
+	assert.match(COMMENT_SOURCE, /<JiraActivityCard/u);
+	assert.match(COMMENT_SOURCE, /<\/JiraActivityCard>/u);
 	assert.match(COMMENT_SOURCE, /item=\{entry\.sessionItem\}/u);
 	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
+	assert.match(
+		INDEX_SOURCE,
+		/export \{ JiraActivityCard, type JiraActivityCardProps \} from "\.\/jira-activity-card"/u,
+	);
+	assert.match(CARD_SOURCE, /export interface JiraActivityCardProps/u);
+	assert.match(CARD_SOURCE, /export function JiraActivityCard/u);
+	assert.match(
+		CARD_SOURCE,
+		/import \{\s*JiraAgentSessionActivityHeader,[\s\S]*type JiraAgentSessionItem,[\s\S]*\} from "@\/components\/blocks\/jira-agent-session"/u,
+	);
+	assert.match(CARD_SOURCE, /<JiraAgentSessionActivityHeader/u);
 	// Both human and agent comments render the shared prompt-input composer.
 	assert.match(COMMENT_SOURCE, /variant="comment"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"/u);
@@ -330,6 +358,24 @@ test("agent comments use the Jira Agent Session activity-card variant", () => {
 	assert.doesNotMatch(
 		COMMENT_SOURCE,
 		/w-full overflow-hidden rounded-lg border border-border bg-surface/u,
+	);
+});
+
+test("documents the standalone activity card under Jira Activity", () => {
+	assert.match(DETAIL_SOURCE, /title: "Activity card"/u);
+	assert.match(DETAIL_SOURCE, /demoSlug: "jira-activity-demo-activity-card"/u);
+	assert.match(DETAIL_SOURCE, /name: "JiraActivityCard"/u);
+	assert.match(DEMO_SOURCE, /export function JiraActivityCardDemo/u);
+	assert.match(DEMO_SOURCE, /<JiraActivityCard/u);
+	assert.match(DEMO_SOURCE, /item=\{entry\.sessionItem\}/u);
+	assert.match(DEMO_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
+	assert.match(
+		DEMO_SOURCE,
+		/border-0 rounded-none bg-transparent px-4 py-3 shadow-none/u,
+	);
+	assert.match(
+		VARIANT_REGISTRY_SOURCE,
+		/"jira-activity-demo-activity-card"[\s\S]*JiraActivityCardDemo/u,
 	);
 });
 
