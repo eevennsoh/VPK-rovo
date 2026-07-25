@@ -76,6 +76,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-effects.test.js",
 		"components/projects/shared/components/chat-context-bar.test.js",
 		"components/projects/sidebar-chat/components/agent-result-card.test.js",
+		"components/projects/jira-golden-paths/agent-chat-demo.test.js",
 		"components/projects/skills/page.test.js",
 		"components/projects/asx/kanban-stage.test.js",
 		"components/projects/jira-golden-paths/kanban-stage.test.js",
