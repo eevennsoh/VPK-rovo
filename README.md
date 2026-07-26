@@ -44,39 +44,13 @@ cp .env.local.example .env.local
 
 ### Development
 
-**Option 1: Concurrent (recommended)**
-
 ```bash
-pnpm run dev
+pnpm run rovo  # Rovo Serve + backend + frontend
+pnpm run dev   # Frontend + backend without Rovo Serve
 ```
 
-Open the frontend port printed by the command or recorded in
-`.dev-frontend-port`.
-
-**Option 2: Explicit Portless**
-
-```bash
-portless run
-```
-
-Open [https://vpk-rovo.localhost](https://vpk-rovo.localhost) in the main worktree.
-Bare `portless run` handles both cases automatically: from a branched worktree
-it auto-prepends the branch as `https://my-branch.vpk-rovo.localhost`. Only a
-detached worktree needs `portless run --name <worktree-dir>` (served at
-`https://<worktree-dir>.localhost`). Add `--script rovo` when the surface needs
-Rovo Serve. `pnpm run dev:tmux:start` also runs the dev stack through
-`portless run`, so it prints a stable `.localhost` URL (shown as `🌐 https://…`
-by `pnpm ports`).
-
-**Option 3: Separate terminals**
-
-```bash
-# Terminal 1: Backend
-pnpm run dev:backend
-
-# Terminal 2: Frontend
-pnpm run dev:frontend
-```
+Open the frontend URL printed by the command. Agent and worktree launcher details
+live in [AGENTS.md](./AGENTS.md).
 
 ### Verify Setup
 
@@ -89,51 +63,17 @@ Should show `"authMethod": "ASAP"` and all env vars as `"SET"`.
 ## Commands
 
 ```bash
-# Development
-pnpm run dev              # Start frontend + backend on direct localhost ports
-portless run              # Start frontend + backend through Portless (.localhost URL; --name <worktree-dir> when detached)
-pnpm run dev:frontend     # Frontend only (Next.js with Turbopack)
-pnpm run dev:backend      # Backend only (Express)
-pnpm run rovo             # Start Rovo Serve + backend + frontend on direct localhost ports
-portless run --script rovo
-                          # Start Rovo Serve + backend + frontend through Portless (when the surface needs Rovo Serve)
-
-# Building
-pnpm run build            # Next.js build
-
-# Linting
-pnpm run lint             # ESLint
-
-# Deployment
-./.cursor/skills/vpk-deploy/scripts/deploy.sh <service> <version> [env]
-./.cursor/skills/vpk-deploy/scripts/deploy-check.sh  # Pre-deploy validation
-
-# Utilities
-curl http://localhost:8080/api/health     # Health check
-lsof -ti:3000,8080 | xargs kill -9        # Kill lingering port processes
+pnpm install       # Install dependencies
+pnpm run rovo      # Rovo Serve + backend + frontend
+pnpm run dev       # Frontend + backend
+pnpm run lint      # ESLint
+pnpm run typecheck # TypeScript
 ```
 
 ## Skills
 
-VPK includes AI-assisted skills for common workflows:
-
-| Skill  | Command       | Type     | Purpose                                                       |
-| ------ | ------------- | -------- | ------------------------------------------------------------- |
-| Setup  | `/vpk-setup`  | Workflow | Initial setup: ASAP credentials, .env.local, dev servers      |
-| Deploy | `/vpk-deploy` | Workflow | Deploy to Atlassian Micros (auto-detects initial vs redeploy) |
-| Tidy   | `/vpk-tidy`   | Utility  | Refactor React components for reusability and modularity      |
-
-Skills are defined in `.cursor/skills/`.
-
-### Agents
-
-VPK includes specialized AI agents that are invoked proactively:
-
-| Agent | Purpose |
-|-------|---------|
-| vpk-agent-tidy | React refactoring specialist for code cleanup and modularization |
-
-Agents are defined in `.cursor/agents/`.
+See the generated [local skills catalog](./.agents/skills/INDEX.md) for available
+workflows and [AGENTS.md](./AGENTS.md) for provider-neutral agent context.
 
 ## Deployment to Micros
 

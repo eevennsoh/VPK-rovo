@@ -1,15 +1,6 @@
 ---
 name: vpk-fable
 description: "Run Fable 5 cost-tiering patterns inside Claude Code / Claude desktop without Managed Agents or the raw API: consult a Fable 5 advisor subagent from a cheaper executor session (advisor pattern), or have Fable 5 plan and delegate execution to GPT-5.6 Sol medium via the Codex CLI (default) or parallel Sonnet 5 worker subagents with --claude (orchestrator pattern). Use when the user says vpk-fable, asks for a Fable second opinion at lower cost, wants plan-big-execute-small delegation, wants Fable to plan while codex/ChatGPT executes, or asks how to use Fable 5 economically."
-purpose: Reproduce Anthropic's advisor-tool and plan-big/execute-small patterns inside Claude Code, so most tokens burn at executor rates — GPT-5.6 Sol via Codex CLI or Sonnet 5 subagents — while Fable 5 handles only planning, synthesis, and high-judgment moments.
-owner: VPK
-category: agent-operations
-inputs: The user's mode choice (advisor, orchestrate, or bare), an optional executor flag for orchestrate mode (--codex default, --claude for Sonnet workers), the current task context, and for advisor mode the specific decision or blocker to escalate.
-outputs: Advisor consultations (decision + plan + risks) fed back into the executor loop, or a Fable-planned delegation — codex run reports or Sonnet worker findings — synthesized into one answer.
-required_tools: Agent tool (subagent spawn with model override), SendMessage (re-consult a warm advisor), Bash (codex exec executor runs)
-validation_command: node scripts/validate-skills.js
-generated_artifacts: Advisor advice and worker findings live in conversation; codex executor briefs and reports land under gitignored output/fable-codex/. Workers may edit files when the brief asks for implementation.
-common_failure_modes: Spawning the advisor cold without packaged context, consulting the advisor on trivial turns, front-loading all judgment into one upfront consult on exploratory tasks instead of scheduled checkpoints, over-sharding orchestration briefs so delegation overhead exceeds savings, delegating low-reading-volume tasks where coordination cost exceeds worker savings, spawning cold workers for sequential follow-up briefs instead of re-messaging a warm one, concluding before all workers return, running the advisor pattern when the main session is already Fable 5, dispatching parallel codex briefs with overlapping write scopes, parsing the codex JSONL stream instead of the --output-last-message file, using codex resume --last while multiple codex runs are live, and not falling back to Claude workers when the codex CLI is missing or unauthenticated.
 ---
 
 # VPK Fable — Advisor and Orchestrator Patterns

@@ -1,15 +1,7 @@
 ---
 name: vpk-sol
 description: "Manual-command-only GPT-5.6 Sol planner and Proximity worker orchestrator. Activate only when the first non-whitespace token in the user's current message is the exact slash command `/vpk-sol`. Never activate from a skill-name mention, Markdown link, file path, stack trace, pasted or quoted text, prior-turn context, or an AI agent's inference or suggestion."
-purpose: Keep high-judgment planning in the current GPT-5.6 Sol Codex session while routing execution to GPT-5.5 xhigh through Proximity without exposing or changing the planner's auth state.
-owner: VPK
-category: agent-operations
-inputs: A user-authored message whose first non-whitespace token is `/vpk-sol`, optionally followed by a task.
-outputs: Frozen worker briefs, isolated GPT-5.5 worker reports, reviewed implementation diffs, orchestrator-owned verification, and one synthesized result.
-required_tools: Shell access to codex and curl, a running Proximity endpoint on localhost:29576, and workspace-write access to the current worktree.
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-sol
-generated_artifacts: Briefs, reports, and isolated worker homes live under gitignored output/sol-codex/.
-common_failure_modes: Auto-activating from a mention or link instead of a manual slash command, running from a non-Sol planner session, inheriting the planner's CODEX_HOME or auth environment, using a global provider-switch helper, falling back to the planner provider when Proximity fails, overlapping parallel write scopes, resuming the wrong worker, trusting a worker's self-verification, or letting Sol take over implementation after repeated worker failures.
 ---
 
 # VPK Sol — Personal Planner, Gateway Workers

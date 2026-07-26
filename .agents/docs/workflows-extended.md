@@ -3,10 +3,19 @@
 ## Build and Run
 
 - Build: `pnpm run build`
-- Build for production (static export): `NEXT_OUTPUT=export pnpm run build`
+- Build the static export used in production: `pnpm run build:export` (never run `NEXT_OUTPUT=export pnpm run build` directly — the wrapper temporarily moves runtime-only App Router API and skills detail routes before invoking the export build)
 - Start frontend + backend for browser verification: `pnpm run dev:tmux:start` (runs the dev stack through `portless run`, so it prints a stable `.localhost` URL)
 - Start frontend + backend in the foreground when tmux is unavailable: `pnpm run dev`
 - Discover actual worktree URLs/ports: `pnpm ports` (prefer the Portless `🌐 https://…` URL), with `.dev-frontend-port` and `.dev-backend-port` as fallback
+
+## Launcher Matrix
+
+- `pnpm run rovo` — 1 Rovo Serve instance + backend + frontend; `pnpm run rovo -- 6` for the full pool. First run prints a `ROVO_SESSION_TOKEN` to copy into `.env.local`.
+- `pnpm run rovo:tmux:start --1` / `--6` — frontend, backend, and Rovo pool in the detached tmux session; stop with `pnpm run rovo:tmux:stop`.
+- `pnpm run dev:rovo` — Rovo Serve only; `pnpm run dev:frontend` / `pnpm run dev:backend` — single services.
+- `pnpm run dev:tmux:attach` — attach to the detached dev session for logs (detach with `Ctrl-b` then `d`); `pnpm run dev:tmux:status` — non-interactive session/port snapshot; `pnpm run dev:tmux:stop` — stop this worktree only.
+- Vanilla `portless run` — `vpk-rovo.localhost` on main, `<branch>.vpk-rovo.localhost` on a branch; add `--name <worktree-dir>` only when HEAD is detached, and `--script rovo` only when the surface needs Rovo Serve. The `/portless` command resolves this.
+- Tmux/Rovo launchers seed `.env.local` (main worktree copy, then `.env.local.example`); copy or symlink it manually only when starting backend/frontend entrypoints outside these launchers.
 
 ## Deployment
 

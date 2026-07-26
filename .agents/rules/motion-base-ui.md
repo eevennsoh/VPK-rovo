@@ -2,9 +2,6 @@
 description: Animating Base UI components with Motion for React
 globs: *.tsx, *.jsx
 alwaysApply: false
-paths:
-  - "*.tsx"
-  - "*.jsx"
 ---
 
 # Animating Base UI with Motion for React

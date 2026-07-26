@@ -7,7 +7,6 @@ const test = require("node:test");
 const {
 	DEFAULT_TARGET,
 	buildSkillIndexText,
-	collectMarkdownHeadingLabels,
 	collectMarkdownLinks,
 	collectReferenceDocs,
 	collectSkillDirectories,
@@ -97,21 +96,6 @@ test("parseFrontmatter accepts block descriptions", () => {
 	assert.equal(parsed.fields.has("description"), true);
 });
 
-test("collectMarkdownHeadingLabels normalizes skill metadata headings", () => {
-	assert.deepEqual(collectMarkdownHeadingLabels([
-		"## Required Tools",
-		"### Common Failure Modes ###",
-		"```md",
-		"## Purpose",
-		"```",
-		"# Example",
-	].join("\n")), new Set([
-		"required tools",
-		"common failure modes",
-		"example",
-	]));
-});
-
 test("collectSkillDirectories treats an individual skill folder as a target", () => {
 	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-single-"));
 	try {
@@ -157,27 +141,14 @@ test("createSkillValidationReport validates repo-local skill shape", () => {
 	}
 });
 
-test("createSkillValidationReport warns but passes when recommended metadata is missing", () => {
-	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-metadata-warning-"));
+test("createSkillValidationReport passes a minimal name+description skill with no metadata warnings", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-validate-skills-minimal-"));
 	const originalLog = console.log;
 	try {
 		writeSkill(cwd, "example-skill", "# Example\n\nUse this skill.\n");
 		const report = createSkillValidationReport({ checkIndex: false, cwd });
 		assert.deepEqual(report.failures, []);
-		assert.equal(report.warnings.length, 1);
-		assert.equal(report.warnings[0].type, "skill-metadata-missing");
-		assert.deepEqual(report.warnings[0].missing, [
-			"purpose",
-			"owner",
-			"category",
-			"inputs",
-			"outputs",
-			"required tools",
-			"validation command",
-			"generated artifacts",
-			"common failure modes",
-		]);
-		assert.match(report.warnings[0].message, /Recommended skill metadata is missing/u);
+		assert.deepEqual(report.warnings, []);
 		console.log = () => {};
 		assert.equal(validateSkills({ checkIndex: false, cwd, json: true }), 0);
 	} finally {

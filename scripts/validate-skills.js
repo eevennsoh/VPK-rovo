@@ -10,53 +10,6 @@ const SKILL_ENTRYPOINT = "SKILL.md";
 const SKILL_INDEX_PATH = ".agents/skills/INDEX.md";
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const ALLOWED_SKILLS_ROOT_FILES = new Set(["INDEX.md"]);
-const RECOMMENDED_SKILL_METADATA = [
-	{
-		frontmatterKeys: ["purpose"],
-		headings: ["purpose"],
-		label: "purpose",
-	},
-	{
-		frontmatterKeys: ["owner"],
-		headings: ["owner"],
-		label: "owner",
-	},
-	{
-		frontmatterKeys: ["category"],
-		headings: ["category"],
-		label: "category",
-	},
-	{
-		frontmatterKeys: ["inputs"],
-		headings: ["inputs"],
-		label: "inputs",
-	},
-	{
-		frontmatterKeys: ["outputs"],
-		headings: ["outputs"],
-		label: "outputs",
-	},
-	{
-		frontmatterKeys: ["required_tools", "required-tools", "tools"],
-		headings: ["required tools", "tools"],
-		label: "required tools",
-	},
-	{
-		frontmatterKeys: ["validation", "validation_command", "validation-command"],
-		headings: ["validation", "validation command"],
-		label: "validation command",
-	},
-	{
-		frontmatterKeys: ["generated_artifacts", "generated-artifacts"],
-		headings: ["generated artifacts"],
-		label: "generated artifacts",
-	},
-	{
-		frontmatterKeys: ["common_failure_modes", "common-failure-modes", "failure_modes", "failure-modes"],
-		headings: ["common failure modes", "failure modes"],
-		label: "common failure modes",
-	},
-];
 
 function toPosixPath(filePath) {
 	return filePath.split(path.sep).join("/");
@@ -76,35 +29,6 @@ function normalizeMarkdownTableCell(value) {
 		.replace(/\s+/gu, " ")
 		.replace(/\|/gu, "\\|")
 		.trim();
-}
-
-function normalizeMetadataLabel(value) {
-	return String(value ?? "")
-		.toLowerCase()
-		.replace(/[`*_]/gu, "")
-		.replace(/[^\p{Letter}\p{Number}]+/gu, " ")
-		.replace(/\s+/gu, " ")
-		.trim();
-}
-
-function collectMarkdownHeadingLabels(content) {
-	const headings = new Set();
-	let inFence = false;
-	for (const line of String(content ?? "").split(/\r?\n/u)) {
-		if (/^\s*(```|~~~)/u.test(line)) {
-			inFence = !inFence;
-			continue;
-		}
-		if (inFence) {
-			continue;
-		}
-
-		const match = /^#{1,6}\s+(.+?)(?:\s+#+)?$/u.exec(line);
-		if (match) {
-			headings.add(normalizeMetadataLabel(match[1]));
-		}
-	}
-	return headings;
 }
 
 function collectReferenceDocs(skillDir) {
@@ -425,32 +349,6 @@ function getFrontmatterTextValue(parsed, key) {
 	return lines.join(" ").trim();
 }
 
-function hasRecommendedMetadata(parsed, bodyHeadings, metadata) {
-	const hasFrontmatterMetadata = metadata.frontmatterKeys.some((key) => hasFrontmatterValue(parsed, key));
-	if (hasFrontmatterMetadata) {
-		return true;
-	}
-
-	return metadata.headings.some((heading) => bodyHeadings.has(normalizeMetadataLabel(heading)));
-}
-
-function validateRecommendedSkillMetadata({ parsed, body, skillPath }) {
-	const bodyHeadings = collectMarkdownHeadingLabels(body);
-	const missing = RECOMMENDED_SKILL_METADATA
-		.filter((metadata) => !hasRecommendedMetadata(parsed, bodyHeadings, metadata))
-		.map((metadata) => metadata.label);
-	if (missing.length === 0) {
-		return [];
-	}
-
-	return [{
-		message: `Recommended skill metadata is missing: ${missing.join(", ")}. Add frontmatter keys or matching body headings; use "none" when not applicable.`,
-		missing,
-		path: skillPath,
-		type: "skill-metadata-missing",
-	}];
-}
-
 function validateSkillDirectory(skillDir) {
 	const skillName = path.basename(skillDir);
 	const skillPath = path.join(skillDir, SKILL_ENTRYPOINT);
@@ -481,7 +379,6 @@ function validateSkillDirectory(skillDir) {
 		});
 	}
 	failures.push(...validateMarkdownLinks({ content, skillDir, skillPath }));
-	warnings.push(...validateRecommendedSkillMetadata({ body: parsed.body, parsed, skillPath }));
 
 	const frontmatterName = getFrontmatterScalar(parsed, "name");
 	const description = getFrontmatterTextValue(parsed, "description");
@@ -734,7 +631,6 @@ module.exports = {
 	SKILL_INDEX_PATH,
 	buildSkillIndexText,
 	checkSkillIndex,
-	collectMarkdownHeadingLabels,
 	collectMarkdownLinks,
 	collectReferenceDocs,
 	collectSkillDirectories,

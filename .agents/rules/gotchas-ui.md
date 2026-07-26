@@ -2,8 +2,6 @@
 description: UI component gotchas — Base UI menus, Popover, Toggle, Sonner
 globs: components/**/*.tsx
 alwaysApply: false
-paths:
-  - components/**/*.tsx
 ---
 
 # UI Gotchas

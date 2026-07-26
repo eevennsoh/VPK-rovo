@@ -1,707 +1,136 @@
 ---
 name: vpk-html
-description: 'Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Algebrica editorial identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.'
-purpose: Render explicitly requested documents, reports, decks, resumes, and engineering artifacts into offline single-file HTML with VPK/Kami quality gates.
-owner: VPK
-category: artifact-generation
-inputs: User source material, requested document type, optional brand profile, HTML templates, and quality constraints.
-outputs: Single-file HTML artifact, optional PDF export, optional GitHub Pages URL, validation report, and local output path.
-required_tools: shell, node, browser verification tools
+description: Render supplied material into offline, single-file HTML documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces with the Algebrica editorial identity. Use only when explicitly invoked as vpk-html or /vpk-html, optionally with a document hint or --github.
 validation_command: node .agents/skills/vpk-html/scripts/check-html.mjs
-generated_artifacts: HTML files, optional PDFs, screenshots, and local output assets under artifacts/vpk-html/<slug>/.
-common_failure_modes: Auto-triggering without explicit invocation, overfitting the wrong template, breaking offline constraints, or skipping HTML quality gates.
 ---
 
 # vpk-html
 
-This skill is invoked **explicitly** via `/vpk-html` (optionally with a doc-type
-hint or flag, e.g. `/vpk-html resume`, `/vpk-html one-pager`,
-`/vpk-html --github`). It does **not**
-auto-trigger on natural-language mentions of HTML, documents, or reports — the
-monorepo ships sibling skills (`/vpk-design`, etc.) and kami itself, so
-activation is strict to avoid collisions. It produces an offline, single-file
-HTML artifact such as a document, report, one-pager, brief, memo, deck,
-changelog, portfolio, resume, or engineering workflow surface.
+Produce a durable offline HTML artifact by selecting and filling an existing
+template. HTML is the source of truth; the build scripts validate and enhance
+it rather than compiling a separate content format.
 
-**Architecture:** kami-style template editing. The skill ships 28 HTML
-templates at `assets/templates/`: 8 base document shells plus 20 Phase 2
-engineering shells mapped from the `html-effectiveness` use-case catalog, plus
-39 diagram/chart primitives and 5 technical illustration exemplars. To produce a
-document, copy a template into a working directory and fill its
-`{{placeholders}}`. The renderer is a validator, not a JSON-to-HTML compiler.
+## Read before drafting
 
-## Artifact layout
+Load only the references needed for the requested document:
 
-Every generated user artifact gets its own ignored folder:
-`artifacts/vpk-html/<slug>/`. The finished HTML source of truth lives at
-`artifacts/vpk-html/<slug>/<slug>.html`. Keep optional PDFs, screenshots,
-iteration captures, validation images, and other local review assets for that
-artifact inside the same slug folder; use `screenshots/` under the slug folder
-when there are many browser captures. Do not put generated HTML directly in the
-repo root, `docs/html/`, or the top level of `artifacts/vpk-html/`.
+| Need or document type | Read |
+| --- | --- |
+| Core authoring flow, artifact layout, assets, metadata | [authoring detail](references/authoring-detail.md) |
+| Visual identity, typography, spacing, color, motion | [design](references/design.md) |
+| General prose and document quality bars | [writing](references/writing.md) |
+| Banned styling and content failure modes | [anti-patterns](references/anti-patterns.md) |
+| Source attribution and missing evidence | [source policy](references/source-policy.md) |
+| Resume or CV | [resume writing](references/resume-writing.md) |
+| Optional customer identity | [brand profile](references/brand-profile.md) |
+| Diagrams or flowcharts | [diagrams](references/diagrams.md) and [SVG style](references/svg-style.md) |
+| Data charts | [charts](references/charts.md) |
+| Technical illustrations | [illustrations](references/illustrations.md) |
+| Slide/deck or document navigation | [presentation](references/presentation.md) |
+| Editorial long-form patterns | [editorial patterns](references/editorial-patterns.md) |
+| Accessibility | [accessibility](references/accessibility.md) |
+| Quality checks | [quality gates](references/quality-gates.md) and [production](references/production.md) |
+| Derived PDF | [PDF export](references/pdf-export.md) |
+| Landing/product site | [landing](references/landing.md) |
+| GitHub Pages | [GitHub Pages](references/github-pages.md) |
+| MP4 conversion | [video export](references/video-export.md) |
 
-Generated artifacts under `artifacts/` are durable local deliverables, even
-though the directory is ignored by Git. Automated housekeeping, including
-Artifact cleanup and System clean, must never delete, prune, rotate, empty, or
-modify `artifacts/**`. Ignored, untracked, old, or idle does not mean disposable.
-Deletion requires a separate, explicit user request that names the exact
-artifact path.
+## When to use
 
-## GitHub Pages flag
+Use this skill only after explicit invocation to turn supplied material into an
+editorial document or engineering artifact. It is not a general dynamic web-app
+builder, a saturated/cyberpunk visual-design mode, or a PDF/PPTX-first workflow.
+When PDF, video, landing, or publishing is requested, generate and validate the
+HTML source first and then use the relevant derived track.
 
-When the user invokes `/vpk-html --github`, the deliverable is not complete at
-local HTML. Generate and validate the normal
-`artifacts/vpk-html/<slug>/<slug>.html` artifact first, then publish that artifact
-to GitHub Pages as a browsable live page.
+## Hard invariants
 
-Default publishing shape:
+- Keep the deliverable offline and single-file: inline required CSS, scripts,
+  fonts, SVG, and raster assets. Do not leave network or local-file dependencies.
+- Write the source artifact to
+  `artifacts/vpk-html/<slug>/<slug>.html`; keep its derived files and review
+  captures inside the same slug folder.
+- Treat `artifacts/**` as durable user output. Never delete, prune, rotate, or
+  modify other artifacts as housekeeping.
+- Copy an existing file from `assets/templates/` and edit its content. Preserve
+  the template structure, shared runtime hooks, single `<main>` landmark, and
+  Algebrica identity.
+- Do not fabricate facts or leave placeholders. Mark missing evidence as
+  `[DATA NEEDED: description]` and follow the source policy.
+- Follow the banned-style and content rules in
+  [anti-patterns](references/anti-patterns.md); do not override the identity
+  with generic dashboard cards, excessive gradients, or decorative clutter.
+- Keep all existing files in this skill at their fixed paths. Runtime routes and
+  selector code read `SKILL.md`, `references/tokens.json`, scripts, styles, and
+  assets directly.
 
-- Publish from the artifact folder as a standalone nested Git repo.
-- Copy `<slug>.html` to `index.html`; the Pages root URL is canonical.
-- Add `.nojekyll`.
-- Stage and commit only `index.html` and `.nojekyll`.
-- Keep screenshots, PDFs, and the original `<slug>.html` local-only unless the
-  user explicitly asks to publish them.
-- Create or reuse a GitHub repo named from `<slug>` under the active `gh`
-  account, unless the user supplies `--repo owner/name`.
-- Enable GitHub Pages from branch `main` and path `/`.
+## Workflow
 
-Command:
+### 1. Extract intent and choose a template
+
+Infer purpose, audience, format/tone constraints, and success criteria. Ask one
+compact question only if two or more cannot be inferred. Match the request to a
+template under `assets/templates/`; the complete general and engineering
+template map is in [authoring detail](references/authoring-detail.md).
+
+### 2. Distill and source the material
+
+Separate supplied facts from interpretation, verify source-dependent claims,
+and remove repetition before fitting the template. Read the document-specific
+writing reference above before drafting. If a brand profile is requested or
+available, bake it into the finished file according to its precedence rules.
+
+### 3. Copy and fill
 
 ```bash
-node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
+mkdir -p artifacts/vpk-html/<slug>
+cp .agents/skills/vpk-html/assets/templates/<template>.html artifacts/vpk-html/<slug>/<slug>.html
 ```
 
-The `--github` mode runs placeholder coverage, browser render verification, and
-static HTML validity before it copies the artifact to `index.html` or touches
-GitHub. It requires a working `gh` login with repo permissions. See
-`references/github-pages.md` for the operational contract, rerun behavior, and
-failure handling.
+Fill every visible placeholder and the title, author, description, and keyword
+metadata. Use the shipped diagram and illustration primitives where helpful;
+inline any additional permitted asset. See
+[authoring detail](references/authoring-detail.md) for asset policy, metadata,
+long-document navigation, and fill constraints.
 
----
+### 4. Validate the source artifact
 
-## Step 0 · Brand profile (optional, baked at fill time)
-
-Before extracting intent, check for a brand profile at
-`~/.config/vpk-html/brand.md` (fallback `~/.vpk-html/brand.md`). It is optional —
-if absent, render with the built-in Algebrica identity (grayscale ink chrome, no accent hue) and skip
-this step. There is no runtime; **you bake the profile into the output as you
-fill the template.**
-
-The profile is YAML frontmatter (author/name/role/email/website/company,
-`brand_color`, `logo`) plus freeform Markdown "habit notes". Apply with this
-precedence (highest wins): **explicit prompt > your editorial judgment > habit
-notes > frontmatter > built-in default.**
-
-- **Identity placeholders** — substitute `{{AUTHOR}}`, `{{NAME}}`, role, email,
-  `{{PAGE / CONTACT}}`, company, etc. from frontmatter when the prompt doesn't
-  override them.
-- **Brand color (explicit override only)** — read `brand_color: #HEX` as
-  customer metadata. Do not tint the built-in Algebrica identity from it:
-  default `--accent` resolves to ink, content links underline only on
-  hover/focus, and chrome stays grayscale. Only when the prompt explicitly requests a customer-branded
-  page may the inline alias become
-  `--accent: var(--ds-brand-override, #HEX);`. That override is offline and
-  check-clean, but it must not rewrite `--focal`, `--ill-*`, status tokens, or
-  neutral paper/ink tokens.
-- **Logo** — if `logo:` points at a local image, base64-inline it into the header
-  slot as a `data:image/*` URI (already exempt from the remote-asset check). Never
-  reference a remote or local file path. Missing logo/profile → no logo, built-in grayscale ink chrome.
-
-Full format and examples: `references/brand-profile.md`.
-
----
-
-## Step 1 · Intent extraction (silent checklist)
-
-Before choosing a template, verify these four dimensions are clear. Do not
-ask unless 2+ are missing and cannot be inferred from context.
-
-| Dimension | What to extract | Example |
-|---|---|---|
-| **Purpose** | Why this document exists | Persuade investor vs. align internal team |
-| **Audience** | Who reads it, what they already know | Technical CTO vs. non-technical reviewer |
-| **Constraint** | Hard limits on length, format, tone | "One page max", "formal English" |
-| **Success** | What outcome counts as success | They approve the budget / they understand the architecture |
-
-If 2+ dimensions are genuinely unclear, ask in a single compact question.
-Never ask all four as a checklist.
-
----
-
-## Step 2 · Pick the document type
-
-| User says | Document | Template |
-|---|---|---|
-| "one-pager / proposal / exec summary / brief" | One-Pager | `one-pager.html` |
-| "white paper / long doc / chapter / report" | Long Doc | `long-doc.html` |
-| "formal letter / memo / cover letter" | Letter | `letter.html` |
-| "portfolio / case studies / work samples" | Portfolio | `portfolio.html` |
-| "resume / CV" | Resume | `resume.html` |
-| "slides / deck / keynote" | Slides | `slides.html` |
-| "equity report / investment memo / valuation" | Equity Report | `equity-report.html` |
-| "release notes / changelog" | Changelog | `changelog.html` |
-| "broadsheet / front page / index / issue opener" | Broadsheet Front Page/Index | `broadsheet.html` |
-| "annual report / brand book / studio report / colophon" | Annual Report/Brand Book | `annual-report.html` |
-| "interview / Q&A / profile / conversation" | Interview/Q&A Feature | `interview.html` |
-| "lookbook / gallery / portfolio plates / artifact collection" | Lookbook/Gallery Portfolio | `lookbook.html` |
-| "feature essay / long-form essay / data essay" | Long-Form Feature Essay | `feature-essay.html` |
-
-If unsure, ask a one-liner about the scenario rather than guess.
-
-### Engineering templates (Phase 2)
-
-Use these when the user asks for an engineering workflow surface rather than a
-general-purpose document.
-
-| User says | Document | Template |
-|---|---|---|
-| "technical approach comparison / implementation options" | Exploration · Code Approaches | `exploration-code-approaches.html` |
-| "visual directions / UI concept comparison" | Exploration · Visual Designs | `exploration-visual-designs.html` |
-| "code review / PR review / review findings" | Code Review · Pull Request | `code-review-pr.html` |
-| "explain this code / codebase map / module walkthrough" | Code Understanding | `code-understanding.html` |
-| "design system / token contract / component system" | Design System | `design-system.html` |
-| "component variants / UI state matrix / component spec" | Component Variants | `component-variants.html` |
-| "motion prototype / animation concept" | Prototype · Animation | `prototype-animation.html` |
-| "interaction prototype / UI behavior prototype" | Prototype · Interaction | `prototype-interaction.html` |
-| "engineering deck / technical slides" | Engineering Slide Deck | `slide-deck.html` |
-| "SVG illustration brief / technical illustration" | SVG Illustrations | `svg-illustrations.html` |
-| "status report / weekly update / project update" | Status Report | `status-report.html` |
-| "incident report / postmortem / outage report" | Incident Report | `incident-report.html` |
-| "flowchart / decision flow / process diagram" | Flowchart Diagram | `flowchart-diagram.html` |
-| "feature explainer / technical research brief" | Research · Feature Explainer | `research-feature-explainer.html` |
-| "concept explainer / technical concept / research note" | Research · Concept Explainer | `research-concept-explainer.html` |
-| "implementation plan / engineering plan / rollout plan" | Implementation Plan | `implementation-plan.html` |
-| "PR writeup / pull request description / change summary" | Pull Request Writeup | `pr-writeup.html` |
-| "triage board / issue board / bug triage" | Editor · Triage Board | `editor-triage-board.html` |
-| "feature flag matrix / rollout controls / flag plan" | Editor · Feature Flags | `editor-feature-flags.html` |
-| "prompt tuning / prompt eval / AI instruction editor" | Editor · Prompt Tuner | `editor-prompt-tuner.html` |
-
-### Diagrams (primitives, not a separate template type)
-
-When the user asks for **a diagram inside** a long-doc / portfolio /
-equity-report, route to `assets/diagrams/` rather than picking a new template:
-
-| User says | Diagram | File |
-|---|---|---|
-| "architecture / system / components diagram" | Architecture | `assets/diagrams/architecture.html` |
-| "flowchart / decision flow" | Flowchart | `assets/diagrams/flowchart.html` |
-| "swimlane / cross-team flow" | Swimlane | `assets/diagrams/swimlane.html` |
-| "state machine / lifecycle" | State Machine | `assets/diagrams/state-machine.html` |
-| "timeline / milestones / roadmap" | Timeline | `assets/diagrams/timeline.html` |
-| "tree / hierarchy / org chart" | Tree | `assets/diagrams/tree.html` |
-| "layer stack / OSI / tier stack" | Layer Stack | `assets/diagrams/layer-stack.html` |
-| "quadrant / 2×2 / priority matrix" | Quadrant | `assets/diagrams/quadrant.html` |
-| "venn / overlap / set intersection" | Venn | `assets/diagrams/venn.html` |
-| "bar chart / categories" | Bar Chart | `assets/diagrams/bar-chart.html` |
-| "line chart / trend / time series" | Line Chart | `assets/diagrams/line-chart.html` |
-| "donut / pie / distribution" | Donut Chart | `assets/diagrams/donut-chart.html` |
-| "candlestick / OHLC / stock price" | Candlestick | `assets/diagrams/candlestick.html` |
-| "waterfall / revenue bridge / decomposition" | Waterfall | `assets/diagrams/waterfall.html` |
-| "box plot / quartiles / outliers" | Box Plot | `assets/diagrams/box-plot.html` |
-| "histogram / frequency distribution" | Histogram | `assets/diagrams/histogram.html` |
-| "ridgeline / stacked distributions" | Ridgeline | `assets/diagrams/ridgeline.html` |
-| "beeswarm / individual observations" | Beeswarm | `assets/diagrams/beeswarm.html` |
-| "dot strip / one-dimensional scatter" | Dot Strip | `assets/diagrams/dot-strip.html` |
-| "slope chart / before after rank" | Slope Chart | `assets/diagrams/slope-chart.html` |
-| "dumbbell / current vs target gaps" | Dumbbell | `assets/diagrams/dumbbell.html` |
-| "lollipop / ranked values" | Lollipop | `assets/diagrams/lollipop.html` |
-| "bullet chart / actual vs target" | Bullet | `assets/diagrams/bullet.html` |
-| "population pyramid / mirrored cohorts" | Population Pyramid | `assets/diagrams/population-pyramid.html` |
-| "annotated line / events on trend" | Annotated Line | `assets/diagrams/annotated-line.html` |
-| "index chart / baseline 100" | Index Chart | `assets/diagrams/index-chart.html` |
-| "small multiples / repeated panels" | Small Multiples | `assets/diagrams/small-multiples.html` |
-| "band chart / range band" | Band Chart | `assets/diagrams/band-chart.html` |
-| "stacked area / composition over time" | Stacked Area | `assets/diagrams/stacked-area.html` |
-| "calendar heatmap / daily intensity" | Calendar Heatmap | `assets/diagrams/calendar-heatmap.html` |
-| "matrix heatmap / grid intensity" | Matrix Heatmap | `assets/diagrams/matrix-heatmap.html` |
-| "waffle / fixed-count parts of whole" | Waffle | `assets/diagrams/waffle.html` |
-| "grid choropleth / regional intensity grid" | Grid Choropleth | `assets/diagrams/grid-choropleth.html` |
-| "treemap / hierarchical share" | Treemap | `assets/diagrams/treemap.html` |
-| "sankey / flow volumes" | Sankey | `assets/diagrams/sankey.html` |
-| "arc diagram / ordered relationships" | Arc Diagram | `assets/diagrams/arc-diagram.html` |
-| "scatter / two-variable relationship" | Scatter | `assets/diagrams/scatter.html` |
-| "connected scatter / trajectory" | Connected Scatter | `assets/diagrams/connected-scatter.html` |
-| "icicle / hierarchical composition" | Icicle | `assets/diagrams/icicle.html` |
-
-Read `references/diagrams.md` before drawing — it has the data-shape decision
-tree, the focal rule, and the anti-patterns table. Extract the `<svg>` block
-from the diagram file and drop it into a `<figure>` inside long-doc /
-portfolio / equity-report.
-
-Before drawing, always ask: **would a well-written paragraph teach the
-reader less than this diagram?** If no, don't draw.
-
-### Technical illustrations (object/mechanism SVGs)
-
-Use `assets/illustrations/` when the user asks for an isometric object,
-exploded assembly, annotated mechanism, cutaway/cross-section, or pipeline
-illustration. These are not data-shape diagrams: they use the grayscale
-`--ill-*` figure ramp for linework, shaded faces, hatching, and labels.
-
-Read `references/illustrations.md` before drawing. If an illustration uses
-SMIL, every `animateTransform` must use `begin="indefinite"` and the document
-must include the reduced-motion-aware `<script data-vpk-smil-starter>` starter.
-`check-html.mjs` enforces that policy.
-
----
-
-## Step 3 · Source and material pass
-
-Run this before filling content when the document depends on facts outside
-the user's draft. Skip only for personal drafts where the user supplied
-everything.
-
-### Source check
-
-Trigger when the document mentions a specific company, product, person,
-release date, version, funding round, metric, market fact, or technical
-spec.
-
-- Use primary sources before writing: user-provided material, official site,
-  filings, press release, repo release
-- Keep a short note of sources and dates for facts that drive the document
-- If sources conflict or a fact cannot be checked quickly, ask the user
-  instead of choosing silently
-- Avoid current-sounding claims ("latest", "recent", "new", version numbers,
-  launch dates, financial figures) unless they are checked
-
-### Material check
-
-Trigger when the document is about a company, product, project, or personal
-brand.
-
-| Need | Required when | Accept |
-|---|---|---|
-| Logo | Any branded document | User file or official SVG/PNG |
-| Product image | Physical product / venue | Official image, user image, or marked gap |
-| UI screenshot | App / SaaS / website | Current screenshot, official product image |
-| Brand colors | Branded portfolio / one-pager | Official value, extracted asset value, or keep the built-in grayscale ink chrome |
-
-If a required item is missing, use a compact gap table and ask once. Do not
-replace missing material with generic imagery, approximate logo drawings, or
-invented values.
-
----
-
-## Step 4 · Distill raw content (if applicable)
-
-**Auto-detect whether to distill.** Do not ask the user; judge from the input:
-
-| Skip distill (fill directly) | Run distill |
-|---|---|
-| Content has explicit section labels matching template structure | Raw prose without section structure |
-| Metrics already quantified | Numbers scattered or implied |
-| User said "use this as-is" | Multi-source dump (chat / email / multiple docs) |
-| Content count matches template | Content count mismatches template |
-
-When in doubt, run distill. Distill is cheap; rebuilding a misaligned doc is
-not.
-
-When distilling raw material:
-
-1. **Extract**: pull every factual claim, number, date, name, source,
-   action item
-2. **Classify**: map each extract to the template's sections
-3. **Gap-check**: list what the template needs but the raw content doesn't
-4. **Ask once**: share the gap table; do not guess to fill gaps
-
----
-
-## Step 5 · Layout note (transparent, non-blocking)
-
-Before filling the template, write a short editor-style note stating the
-intent: template choice, narrative arc, embedded diagrams, output. Keep
-under 80 words, prose not status panel. Continue immediately after; do not
-wait for approval.
-
-Example:
-
-> Layout intent: Equity report on Acme Inc, ~2 pages. Open with thesis and
-> price target, run through valuation (DCF + comparables), close on catalysts
-> and risks. A revenue line chart and an FY26 waterfall sit mid-doc. Logo is
-> in hand; product image absent, so the header stays text-only. Output: HTML.
-
-The note is for transparency, not approval. Adjust on user pushback;
-otherwise proceed to Step 6.
-
----
-
-## Step 6 · Fill the template
-
-1. Create a per-artifact output folder: `mkdir -p artifacts/vpk-html/<slug>`
-   Then copy the template there: `cp .agents/skills/vpk-html/assets/templates/<id>.html artifacts/vpk-html/<slug>/<slug>.html`
-2. **CSS stays untouched**; only edit the body, preserving the single `<main>` landmark around visible content
-3. Content follows `references/writing.md` — data over adjectives, distinctive
-   phrasing over industry clichés
-4. Avoid patterns listed in `references/anti-patterns.md`: emptiness,
-   fabrication, mimicry, excess, source gaps, tone contamination
-5. **Before filling, read the quality bar for your document type** in
-   `references/writing.md`. Structure is necessary but not sufficient: a
-   resume bullet needs Action + Scope + Result + Business Outcome (see
-   `references/resume-writing.md`); an equity report needs variant
-   perception + quantified catalysts; slides need assertion-evidence titles.
-6. For screen-read long docs, make the table of contents real internal links
-   to stable section IDs, add visible `#` self-links to major `h1`/`h2`
-   headings, and give anchor targets `scroll-margin-top` so copied links land
-   cleanly. If the TOC shows both section numbers and page-like references,
-   prefix the page values (`Pg 03`) so they cannot be mistaken for another
-   section number, and style them as the smallest/lightest metadata in the row.
-7. When a print-oriented long-doc template is used as an on-screen explainer,
-   add enough screen-only rhythm between chapters for direct anchor jumps to
-   feel intentional.
-   Keep cover-title counts aligned with the primary document structure; do not
-   introduce a bold count such as "7 moments" when the TOC is organized around
-   a different number of sections. If the audience needs problem framing, add
-   a concise TLDR/preface page between the cover and contents, then update TOC
-   page labels so section links still read correctly. For short orchestration
-   explainers, prefer a direct Problem/Solution pair over extra middle cards
-   unless the user explicitly asks for more framing. In the Solution side,
-   keep the answer concise; if the deck has later mechanics sections, the
-   TLDR solution can focus on the new human role while downstream pages explain
-   the system/control-plane details.
-8. For presentation-style long docs, use a `data-vpk-docnav` runtime with the
-   shared round-button document navigation cluster: visible Up/Down controls,
-   Geist Mono `NN / NN` counter, circular progress ring, keyboard Up/Down
-   navigation, and active-section focus treatment so non-active sections recede
-   without disappearing. Pressing `p` opens the presenter window for the current
-   section. Per-section notes belong in
-   `<aside class="speaker-notes" aria-hidden="true">...</aside>` as the last
-   child of `main > section`; they stay hidden from the audience window and
-   print output. Keep dimming scoped to a keyboard/control navigation focus
-   state and release that state immediately on manual wheel/touch scrolling.
-   Opacity focus changes should ease over roughly 500-700ms with a gentle
-   curve; avoid abrupt jumps from dimmed sections back to full opacity.
-9. In SVG diagrams, never rely on long single-line text inside fixed boxes.
-   Split labels into multiple `<text>` lines or widen the node/viewBox before
-   text reaches the container edge. Keep short node titles on one line when
-   they fit cleanly; do not split two-word labels such as "Update workpad"
-   without a layout need. Connector endpoints should meet the source and
-   target container edges exactly, with the arrow tip landing on the target
-   edge and the tail beginning at the source edge. Do not leave stray visual
-   gaps, and do not let markers protrude into boxes or labels. Use filled
-   triangle markers consistently. When the gap between nodes is tight, keep the
-   same filled-triangle language but use a smaller marker rather than an open
-   chevron. If a connector crosses or terminates on a card/legend, draw that
-   connector in a later SVG layer so the line and arrowhead remain visible
-   above the card.
-10. Center diagrams and technical illustrations by default. The SVG element
-   should center in the figure, and the visible art inside the SVG viewBox
-   should also be optically centered unless the prompt explicitly asks for a
-   left/right-aligned layout. If a full-width canvas creates dead space, set a
-   figure width that hugs the SVG artboard instead. When adjusting vertical
-   centering inside an SVG, move related node and connector groups together so
-   arrows, labels, and boxes keep their internal alignment.
-   Use status color consistently across related diagrams. Human-needed,
-   human-review, or approval-gate states are warning/yellow states by default,
-   not danger/red states, unless the node means an actual error or destructive
-   failure.
-11. Drop caps should read as intentional letterforms, not decorative rules.
-   Avoid starting drop-capped leads with thin letters such as `I`; use a
-   moderate weight and two-line float metrics so the third text line clears
-   back underneath the initial instead of continuing beside it. In
-   presentation-style explainers, reserve the drop cap for the cover subtitle
-   or opening deck statement, not every chapter lead. Tune tall drop caps
-   so they do not protrude high above the first line, so their bottom edge
-   sits close to the second line baseline, and so the letter color inherits
-   the surrounding text unless it is intentionally acting as a focal mark. If
-   the initial sits visually high, use a small top offset while compensating
-   the float height so the third text line still clears beneath the letter.
-   Prefer the regular display weight for cover drop caps; heavier weights can
-   overpower adjacent subtitle text. Tune the right gutter by eye so adjacent
-   first- and second-line text sits close to the glyph without touching it.
-12. Code samples, command blocks, markdown templates, `pre`, and inline `code`
-   must explicitly use the mono face after any document-level typography
-   overrides. Do not let presentation/body text rules pull code back into the
-   body or display font.
-
-### Do not generate
-
-- Do not leave placeholder text (`{{...}}`, "Lorem ipsum", "[Insert here]",
-  "TBD") in the final document
-- Do not invent metrics, financial data, or statistics; mark gaps with
-  `[DATA NEEDED: description]`
-- Do not use stock-image descriptions as image placeholders
-- Do not pad content to fill template slots
-- Do not write a paragraph that merely restates its own heading
-
-### Fill metadata (`<head>`)
-
-Every template has meta placeholders. Fill all four before saving:
-
-| Placeholder | Rule |
-|---|---|
-| `{{AUTHOR}}` | Resume/letter/portfolio: the person's name. Others: leave or use env. |
-| `{{DESCRIPTION}}` | One sentence (≤150 chars) extracted from the first 2 paragraphs |
-| `{{KEYWORDS}}` | 3–5 keywords from the title + section headings, comma-separated |
-| `{{DOC_TITLE}}` (or per-template variant) | Infer from the H1 / `.header .title` text |
-
-`<meta name="generator" content="vpk-html">` is fixed; do not change it.
-
----
-
-## Step 7 · Build & verify
+Run all three required checks:
 
 ```bash
-# Placeholder coverage (catches unfilled {{...}})
 node .agents/skills/vpk-html/scripts/build.mjs --check-placeholders artifacts/vpk-html/<slug>/<slug>.html
-
-# Render in chromium, verify fonts + no console errors
 node .agents/skills/vpk-html/scripts/build.mjs --verify artifacts/vpk-html/<slug>/<slug>.html
-
-# Static HTML validity
 node .agents/skills/vpk-html/scripts/check-html.mjs artifacts/vpk-html/<slug>/<slug>.html
 ```
 
-Optional, on demand:
+Inspect the rendered artifact in a browser at the intended viewport. Fix font,
+overflow, console, accessibility, focal hierarchy, and content-density issues.
+Run relevant advisory checks from
+[quality gates](references/quality-gates.md), using `--strict` when the task
+requires them to fail validation.
+
+### 5. Produce optional derivatives
+
+Only after the HTML passes:
 
 ```bash
-# Derived PDF export (Chromium print-to-PDF; HTML stays source of truth)
-node .agents/skills/vpk-html/scripts/build.mjs --pdf artifacts/vpk-html/<slug>/<slug>.html [--out artifacts/vpk-html/<slug>/<slug>.pdf]
+# PDF
+node .agents/skills/vpk-html/scripts/build.mjs --pdf artifacts/vpk-html/<slug>/<slug>.html
 
-# Advisory content-quality gates (warnings; --strict to fail). See references/quality-gates.md
-node .agents/skills/vpk-html/scripts/build.mjs --check-density artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-orphans artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-rhythm artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-resume-balance artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-focal artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-motion-budget artifacts/vpk-html/<slug>/<slug>.html
-node .agents/skills/vpk-html/scripts/build.mjs --check-caption-echo artifacts/vpk-html/<slug>/<slug>.html
+# Landing bundle
+node .agents/skills/vpk-html/scripts/build.mjs --landing artifacts/vpk-html/<slug>/<slug>.html
 
-# Landing / product-site export (companions + responsive verify). See references/landing.md
-node .agents/skills/vpk-html/scripts/build.mjs --landing artifacts/vpk-html/<slug>/<slug>.html [--out artifacts/vpk-html/<slug>/site] [--origin <url>]
-
-# GitHub Pages publish (validates, copies to index.html, pushes, enables Pages). See references/github-pages.md
+# GitHub Pages
 node .agents/skills/vpk-html/scripts/build.mjs --github artifacts/vpk-html/<slug>/<slug>.html [--repo owner/name] [--public|--private]
-
-# Refresh theme + presentation/docnav runtime in explicit artifact files
-node .agents/skills/vpk-html/scripts/build.mjs --inject-runtime artifacts/vpk-html/<slug>/<slug>.html [artifacts/vpk-html/<other>/<other>.html ...]
 ```
 
-For template-library changes (color sweeps, font swaps, port-script edits):
+Use the corresponding reference for prerequisites, output layout, and
+verification. Do not publish screenshots, PDFs, or the noncanonical source file
+unless the user explicitly asks.
 
-```bash
-# Kami-style CSS token drift check
-node .agents/skills/vpk-html/scripts/build.mjs --sync
+## Runtime and library maintenance
 
-# Regenerate styles.css after editing references/tokens.json
-node .agents/skills/vpk-html/scripts/build.mjs --write-styles
-
-# CSS / token / font sanity across all templates
-node .agents/skills/vpk-html/scripts/build.mjs --check-templates
-
-# Re-port from kami source (idempotent): templates + diagrams + curated demos
-node .agents/skills/vpk-html/scripts/port-kami.mjs   # or --templates / --diagrams / --demos
-
-# Retrofit committed HTML when kami source is absent or after shared runtime edits
-node .agents/skills/vpk-html/scripts/retrofit.mjs
-
-# Regenerate original Phase 2 shells from the html-effectiveness use-case map
-node .agents/skills/vpk-html/scripts/port-engineering.mjs
-
-# Copy and restyle direct Phase 2 demo ports from assets/html-effectiveness/
-node .agents/skills/vpk-html/scripts/port-engineering-demos.mjs
-
-# Regenerate curated vpk-native demos + landing mock previews (catalog)
-node .agents/skills/vpk-html/scripts/build-demos.mjs   # or --curated / --landing
-
-# Regenerate technical illustration exemplars + matching gallery demos
-node .agents/skills/vpk-html/scripts/build-illustrations.mjs
-
-# Regenerate landing shells (landing-page.html, docs-site.html)
-node .agents/skills/vpk-html/scripts/landing.mjs
-```
-
----
-
-## Shared Theme Contract
-
-vpk-html follows kami's constraint-system model, but the visual system is VPK's.
-Do not hard-code palettes or font faces independently in each demo, diagram, or
-template script.
-
-- Keep the visible shared stylesheet at root as `styles.css`, matching Kami's layout.
-- Author semantic colors once in `references/tokens.json`.
-- Regenerate `styles.css` with `node .agents/skills/vpk-html/scripts/build.mjs --write-styles`.
-- Use `scripts/shared.mjs` for generated CSS: `buildFontFaceBlock()`, `readStylesCss()`, `FONT_STACKS`, `KAMI_COLOR_MAP`, or `buildSharedCssBlock()`.
-- Use `scripts/theme.mjs` for the light / dark / system runtime. Keep the early head script before the shared style block and the visible toggle script before `</body>`.
-- Run `node .agents/skills/vpk-html/scripts/build.mjs --sync` before and after any token/style edit.
-- Individual templates may define layout aliases such as `--brand`, `--paper`, or `--mono`, but those aliases must point back to the shared unprefixed variables.
-
-This keeps every future demo and template on the same colors, dark-mode
-fallbacks, font families, and reduced-motion rule without editing one inline
-CSS block at a time.
-
-## Motion, Presentation, and Video Contracts
-
-Motion is generated centrally from `scripts/shared.mjs` and
-`references/tokens.json`. Do not author one-off easing curves in individual
-templates. Use the shared `--ease-out`, `--ease-in-out`, `--vpk-dur-*`, and
-`data-vpk-motion` contract; print output must stay neutralized and
-reduced-motion must remove movement while preserving legible opacity changes.
-
-Decks are dual-layer artifacts. The print layer keeps the fixed page geometry
-for PDF export; the screen layer is injected by `scripts/presentation.mjs` and
-supports whole-slide Left/Right navigation, `#slide-N` deep links, hidden
-speaker notes, and a synced presenter window. Decks and `data-vpk-docnav`
-documents share the same round-button navigation cluster: circular Previous /
-Next buttons, Geist Mono `NN / NN` counter with `aria-live="polite"`, and an
-SVG circular progress ring whose `stroke-dashoffset` follows current progress.
-The ring animates with shared motion tokens and jumps without animation under
-reduced motion.
-
-Speaker notes belong in `<aside class="speaker-notes" aria-hidden="true">` as
-the last child of each slide or `main > section`. They must never appear in the
-main projected/audience window or print output. Pressing `p` opens a synced
-presenter window with the current slide/section title, editable speaker notes,
-next-slide/next-section preview, and elapsed timer. The regular theme toggle is
-hidden from the presenter window. Screen recordings of the audience window
-exclude notes; video conversion may consume notes as narration input only.
-
-MP4 export is not part of the browser deck runtime. When the user asks for
-video, read `references/video-export.md` and model the worked example at
-`assets/video/landing-demo-separation/`; re-author the deck into a Hyperframes
-general-video composition only after confirming the user wants a render.
-
-## Identity
-
-Algebrica editorial manual: warm paper, near-monochrome ink, restrained rules,
-and typography-led technical figures. Tuned for concise strategy decks,
-engineering narratives, status readouts, and long-form technical briefs that
-still preserve the offline single-file HTML contract.
-
-**Light mode (default):**
-
-- **Surface:** `--paper` and `--paper-background` — warm paper and browser canvas.
-- **Raised surface:** `--surface-raised` for cards / callouts when they need separation.
-- **Ink:** `--headline` for mastheads/stat heads, `--ink` / `--body-text` for body copy, and `--muted-text` / `--subtlest-text` for metadata.
-- **Chrome:** `--accent` resolves to ink; `--accent-soft` and `--accent-soft-strong` are warm gray washes for pill controls, selection, focus, and key-insight emphasis. There is no hue accent in the built-in identity.
-- **Focal:** `--focal` — the single darkest-ink figure emphasis token.
-- **Figure ramp:** `--ill-line`, `--ill-ink50`, `--ill-guide`, `--ill-guide-dashed`, `--ill-frame`, `--ill-fill`, `--ill-fill-alt`, and the `--ill-tone*` aliases for diagrams, charts, and technical illustrations.
-- **Component chrome:** `--table-header`, `--chip-*`, `--pill-*`, `--search-*`, `--code-surface`, and `--heat0` through `--heat4` carry the Algebrica table, vote-chip, pill, search, code-card, and heatmap roles.
-- **Functional text:** `--syntax-*`, `--success`, `--warning`, `--danger`, `--info`, and `--diff-*` are the meaning-bearing roles. Do not substitute decorative accent fills for code, state, or diff text.
-- **Background canvas:** plain `--paper-background` for the browser/page backdrop; do not add dotted grid canvases to templates, demos, landing shells, or generated artifacts.
-- **Elevation:** flat by default. Prefer hairline borders, whitespace, and subtle surface shifts over shadows.
-
-**Dark mode** (activate via `<html data-theme="dark">`):
-
-- The same unprefixed aliases switch to warm paper-dark fallbacks under `[data-theme="dark"]`; figures invert through tokens, not raw colors.
-- Theme runtime state is `light`, `dark`, or `system`, persisted at `localStorage["vpk-html-theme"]`. `system` follows `prefers-color-scheme` and removes `data-theme` unless the system is dark. The fixed control uses `.vpk-theme-toggle` / `data-vpk-theme-toggle`; video export and print flows may exclude that class/attribute.
-
-**Functional roles (AA):**
-
-| Role | Purpose | Contrast guarantee |
-|---|---|---|
-| `syntaxKeyword` | Code keywords and operators | ≥4.5:1 on `codeSurface` |
-| `syntaxIdentifier` | Ordinary code names | ≥4.5:1 on `codeSurface` |
-| `syntaxString` | Strings / paths / quoted values | ≥4.5:1 on `codeSurface` |
-| `syntaxComment` | Code comments and muted annotations | ≥4.5:1 on `codeSurface` |
-| `syntaxLiteral` | Numbers, booleans, and literal values | ≥4.5:1 on `codeSurface` |
-| `success` | Completed / healthy state text and dots | ≥4.5:1 on `paper` and `successTint`; indicator use is ≥3:1 on paper/surfaces |
-| `warning` | Human-needed / risky state text and dots | ≥4.5:1 on `paper` and `warningTint`; indicator use is ≥3:1 on paper/surfaces |
-| `danger` | Error / destructive / failed state text and dots | ≥4.5:1 on `paper` and `dangerTint`; indicator use is ≥3:1 on paper/surfaces |
-| `info` | Neutral state text and dots | ≥4.5:1 on `paper` and `infoTint`; indicator use is ≥3:1 on paper/surfaces |
-| `diffAddText` | Added-line diff text | ≥4.5:1 on paper-composited `diffAddTint` |
-| `diffDelText` | Deleted-line diff text | ≥4.5:1 on paper-composited `diffDelTint` |
-| `diffAddTint` / `diffDelTint` | Subtle diff row washes | Paired only with their diff text roles |
-
-Decorative fills remain soft: `accentSaffron`, `accentGreen`, and
-`collectionSoftware` are visually distinct swatches, not text colors. `ruleStrong`
-stays a hairline rule color.
-
-**Fonts** (Geist family, all self-hosted in `assets/fonts/`):
-
-- **Display and body:** Geist for mastheads, slide titles, prose, labels, ordinary UI/document text, and tables.
-- **Mono:** Geist Mono for code, metrics, dates, counters, figure numbers, table numbers, chart labels, and technical identifiers.
-- **Numerals:** Geist Mono Numeric is embedded with `unicode-range: U+0030-0039`; place it before Geist in mixed text stacks so visible digits render in Geist Mono while letters stay Geist.
-
-**Type scale (screen):**
-
-| Role | Size | Family | Color |
-|---|---|---|---|
-| Page title / masthead | 36px | Geist 400-500 | headline |
-| h1 (chapter title) | 36px | Geist 400-500 | headline |
-| h2 (section) | 26px | Geist 500 | headline |
-| h3 | 19px | Geist 500 | ink |
-| h4-h6 | 15px | Geist 500 | ink |
-| Body, p, li | 17px / 23px in long-form prose | Geist + numeric face | ink |
-| Breadcrumb / eyebrow | 12px | Geist Mono 600, uppercase, 2px tracking | muted ink |
-| Margin label / fig-tag | 13px | Geist or Geist Mono for numbers/files | muted ink |
-
-**Other identity rules:**
-
-- **Drop cap:** Geist regular or medium weight, two-line float, inheriting the surrounding text color by default. For presentation-style explainers, reserve it for the cover subtitle or opening deck statement; do not repeat drop caps on every chapter lead. Prose-heavy long docs may use one opening drop cap when it supports the editorial tone.
-- **Long-form prose:** `.post-section` content is justified, hyphenated, and `overflow-wrap: break-word`, using the shared base-8 rhythm: eyebrow gap 40px, paragraph gap 24px, h2 bottom gap 32px, h3 bottom gap 24px, heading top gaps 48/40/32px after content, section padding/gap 56px, and a warm hairline between sections. Long docs may use `.post-paragraph-number` in the left margin; it hides on narrow screens.
-- **Tables:** Geist 12px, collapsed 1px `--rule` borders on every cell, `8px 12px` centered padding, `th` weight 500, and `--table-header` header wash. No radius, zebra rows, or hover treatment.
-- **Components:** prefer the Algebrica vocabulary for reusable surfaces: 12px-radius bordered list-table cards, 22px vote/count chips, 10px heatmap dots using `--heat0` → `--heat4`, 8px-radius tinted code cards, 34px pill buttons, centered 32px section heads, and steps lists with a vertical connector.
-- **Compact screens:** shared CSS defines `--page-max-width`, `--page-pad-x/y`, and compact `--page-pad-x/y-compact`. Under 840px, document bodies and page wrappers step down to `max-width: 100%` with clamp-based padding so content keeps an edge gutter and avoids horizontal overflow. Chrome shells may opt out with `data-vpk-chrome`.
-- **Dotted divider:** `radial-gradient` row of 1px dots, 8px pitch, applied to `<hr>` after the masthead.
-- **Deck rule:** apply class `.ascii-rule` to `<hr>` for a quiet dotted separator.
-- **Frames:** sections, articles, figures, and tables are flat by default. Cards / callouts opt in to a 1px ink/rule border and radius no larger than 6px.
-- **Links:** no visible default underline. Content links animate an underline in on hover/focus; chrome links (sidebar nav, header/meta, footer, breadcrumbs, docnav controls) never underline and shift only opacity or muted/ink color. Focus rings use ink.
-- **SVGs:** every generated SVG must follow `references/svg-style.md`: token-only grayscale, no gradients/filters, Geist Mono labels, numeric stroke widths 0.5-2.5, and no `--accent*` or `--link*` inside figures.
-
-### Side stripes are banned
-
-Per the impeccable absolute-bans, no `border-left` or `border-right` greater
-than 1px as a colored accent on cards, list items, callouts, or alerts.
-Use a background tint (`var(--ivory)`), a top/bottom rule, or nothing.
-
-### Two-column spread (`long-doc.html` only)
-
-Use the `.spread` primitive when a diagram is the argument, not decoration:
-
-```html
-<div class="spread">
-  <div class="spread-prose">
-    <h3>Heading</h3>
-    <p>Prose that walks the reader through the figure.</p>
-  </div>
-  <figure class="spread-figure">
-    <span class="gutter-tag">FIG_002</span>
-    <svg viewBox="0 0 480 320">...</svg>
-    <figcaption>FIG_002 · What the reader is looking at.</figcaption>
-  </figure>
-</div>
-```
-
-The prose column is intentionally narrower (~42%) than the figure column
-(~58%). On screens narrower than 720px and in print, the spread collapses to
-a single column with the figure below.
-
-The full token map and font set live in `references/tokens.json`,
-`styles.css`, and `scripts/shared.mjs`. Templates already inline the
-resolved theme block — don't redefine it per document.
-
----
-
-## Reference docs (consult before drafting)
-
-- `references/anti-patterns.md` — 6 AI-output failure modes
-- `references/diagrams.md` — diagram selection guide + focal rule
-- `references/illustrations.md` — technical illustration recipe + SMIL policy
-- `references/svg-style.md` — required grayscale SVG grammar + lint rules
-- `references/charts.md` — chart animation, interaction, and catalog foundation
-- `references/presentation.md` — deck runtime, presenter window, speaker notes
-- `references/video-export.md` — Hyperframes MP4 conversion contract and worked example (`assets/video/landing-demo-separation/`)
-- `references/resume-writing.md` — Action + Scope + Result + Outcome
-- `references/writing.md` — general prose rules + quality bars per doc type
-- `references/design.md` — visual rules
-- `references/brand-profile.md` — optional offline brand profile (Step 0)
-- `references/pdf-export.md` — optional derived PDF export
-- `references/quality-gates.md` — advisory content-quality gates
-- `references/landing.md` — landing / product-site track
-- `references/github-pages.md` — optional live GitHub Pages publishing track
-- `references/production.md` — troubleshooting (page overflow, font issues)
-- `references/source-policy.md` — when and how to cite
-
----
-
-## When not to use this skill
-
-- User wants Material / Fluent / Tailwind default — different visual language
-- Need dark / cyberpunk / futurist aesthetic (vpk-html is deliberately
-  editorial and deck-like)
-- Need saturated freeform color (vpk-html uses near-monochrome editorial tokens plus muted semantic status colors)
-- Web dynamic app UI (vpk-html is for static documents)
-- Output must be PDF or PPTX (vpk-html is HTML-only)
+For changes to shared templates, tokens, runtime injection, demos, or catalog
+assets, read [production](references/production.md) and use the existing scripts
+in place. Do not rename or move `scripts/`, `styles.css`, assets, or existing
+references; these paths are coupled to runtime code and repository validators.

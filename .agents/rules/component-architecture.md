@@ -2,9 +2,6 @@
 description: Component architecture patterns — Context State/Actions/Meta, compound components, CVA variants
 globs: components/**/*.tsx, app/contexts/**/*.tsx
 alwaysApply: false
-paths:
-  - components/**/*.tsx
-  - app/contexts/**/*.tsx
 ---
 
 # Component Architecture

@@ -1,11 +1,6 @@
 ---
 name: vpk-setup
-description: This skill should be used when the user asks to "set up", "get started", "first time setup",
-  "new project setup", "initialize VPK", "run for first time", "configure VPK", "install dependencies",
-  "generate ASAP credentials", "configure environment", "start dev servers", "bootstrap", "init",
-  "env setup", "how do I start", "how do I set up the project", "get this working",
-  or wants to set up a new VPK project from scratch. Also triggered by errors like
-  "ASAP key not working", "credentials not found", "env not configured".
+description: Configure a first-time or repaired VPK checkout, including dependencies, credentials, environment, Rovo Serve, and local dev servers. Use when asked to "set up", "first time setup", "initialize VPK", or "bootstrap", and for errors such as "ASAP key not working", "credentials not found", or "env not configured".
 purpose: Guide first-time or repaired VPK local setup for dependencies, credentials, env files, Rovo Serve, AI Gateway, and dev servers.
 owner: VPK
 category: setup
