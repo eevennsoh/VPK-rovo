@@ -1,5 +1,5 @@
 /**
- * Screen sets for the two Jira Golden Paths gallery cards.
+ * Screen sets for the two Jira Golden Journeys gallery cards.
  *
  * Each session card ("Carl's local session", "Sarah's global session") walks through an ordered
  * set of screens, navigated left/right from the gallery top bar — see

@@ -1,7 +1,7 @@
 import type { TerminalBeat, TerminalWorkItem } from "../lib/terminal-demo-state";
 
 export const JIRA_CLI_TITLE = "Teamwork Graph";
-export const JIRA_CLI_WORKSPACE = "Jira Golden Paths · work available to start";
+export const JIRA_CLI_WORKSPACE = "Jira Golden Journeys · work available to start";
 export const JIRA_CLI_FOOTER_HINTS = "↑↓ to browse · enter to inspect in Jira";
 export const TERMINAL_INITIAL_HINT = "click the terminal to browse available work";
 export const TERMINAL_SHELL_PROMPT = "~/dev/jira-golden-paths $";

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
-import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { AgentListItem } from "@/components/blocks/agent-list";
 import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
@@ -39,7 +39,7 @@ export interface JiraActivityProps {
 	/** Optional trailing action for each comment card. */
 	renderCommentAction?: (entry: JiraActivityCommentEntry) => ReactNode;
 	/** Opens the rich agent-session summary shown by an agent comment. */
-	onViewSession?: (item: JiraAgentSessionItem) => void;
+	onViewSession?: (item: AgentListItem) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	className?: string;

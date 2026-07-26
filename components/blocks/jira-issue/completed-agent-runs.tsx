@@ -7,7 +7,7 @@ import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
 import { JiraActivityChangedFiles } from "@/components/blocks/jira-activity/jira-activity-changed-files";
 import type { JiraActivityChangedFilesEntry } from "@/components/blocks/jira-activity/jira-activity-types";
-import { JiraIssueAgentPrompt } from "@/components/blocks/jira-issue/agent-activity";
+import { AgentStatesComposer } from "@/components/blocks/agent-states";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
@@ -168,7 +168,7 @@ export function JiraIssueAgentDone({
 							<JiraActivityChangedFiles
 								entry={getCompletedRunEntry(run)}
 								footer={
-									<JiraIssueAgentPrompt
+									<AgentStatesComposer
 										className="w-full"
 										onSubmit={(prompt) => onSubmit?.(run, prompt)}
 									/>

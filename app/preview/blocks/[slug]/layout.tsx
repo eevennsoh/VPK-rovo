@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { PreviewCategoryLayout, getCategoryPreviewMetadata, type PreviewLayoutProps } from "@/app/preview/_shared/preview-metadata";
 
 const CHAT_CAPABLE_BLOCK_PREVIEWS = new Set([
-	"agent-sessions",
-	"agent-sessions-demo-standard",
-	"agent-sessions-demo-experimental",
+	"jira-work-item",
+	"jira-work-item-demo-standard",
+	"jira-work-item-demo-experimental",
 	"terminal-switch",
 ]);
 

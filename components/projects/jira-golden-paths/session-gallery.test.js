@@ -115,7 +115,7 @@ test("Active terminal output reuses the reduced-motion-safe ASCII working glyph"
 });
 
 test("Page wires the session stage + top-bar screen navigator per card", () => {
-	assert.match(PAGE_SOURCE, /title="Jira Golden Paths"/u);
+	assert.match(PAGE_SOURCE, /title="Jira Golden Journeys"/u);
 	assert.match(PAGE_SOURCE, /<SessionScreenControls\s+screens=\{activeCard\.screens\}\s+controller=\{activeCard\.controller\}\s+\/>/u);
 	assert.match(
 		PAGE_SOURCE,
@@ -152,7 +152,7 @@ test("Global For you fills the stage with the complete Jira shell", () => {
 	);
 });
 
-test("Page gives Jira Golden Paths a shaded Rovo-purple gallery palette", () => {
+test("Page gives Jira Golden Journeys a shaded Rovo-purple gallery palette", () => {
 	assert.match(PAGE_SOURCE, /const ROVO_PURPLE_PALETTE(?:: GalleryPalette)? = \["#5E2C9D", "#7A3BB3", "#9850CC", "#AF59E1"\];/u);
 	assert.match(PAGE_SOURCE, /palette=\{ROVO_PURPLE_PALETTE\}/u);
 });

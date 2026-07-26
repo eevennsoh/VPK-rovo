@@ -1,7 +1,7 @@
 import type { GalleryItem } from "@/components/blocks/gallery";
 
 /**
- * JGP (Jira Golden Paths) gallery cards.
+ * JGP (Jira Golden Journeys) gallery cards.
  *
  * Two cards — "Carl's local session" and "Sarah's global session". Selecting a card reveals a
  * presenter-paced walkthrough of that session's screens in the gallery stage,

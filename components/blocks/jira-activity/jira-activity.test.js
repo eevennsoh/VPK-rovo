@@ -205,9 +205,9 @@ test("agent output cards summarize the change and expose a View action", () => {
 	// the timeline wires from onViewSession.
 	assert.match(
 		CHANGED_FILES_SOURCE,
-		/import type \{ JiraAgentSessionItem \} from "@\/components\/blocks\/jira-agent-session"/u,
+		/import type \{ AgentListItem \} from "@\/components\/blocks\/agent-list"/u,
 	);
-	assert.match(CHANGED_FILES_SOURCE, /onView\?: \(item: JiraAgentSessionItem\) => void/u);
+	assert.match(CHANGED_FILES_SOURCE, /onView\?: \(item: AgentListItem\) => void/u);
 	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
 	// A short generated-work summary renders as its own paragraph above the outputs.
 	assert.match(
@@ -229,7 +229,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /onEntriesChange\?: \(entries: readonly JiraActivityEntry\[\]\) => void/u);
 	assert.match(INDEX_SOURCE, /composer\?: ReactNode \| null/u);
 	assert.match(INDEX_SOURCE, /renderCommentAction\?: \(entry:/u);
-	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: JiraAgentSessionItem\) => void/u);
+	assert.match(INDEX_SOURCE, /onViewSession\?: \(item: AgentListItem\) => void/u);
 	assert.match(INDEX_SOURCE, /onViewSession=\{onViewSession\}/u);
 	assert.match(INDEX_SOURCE, /composer === undefined/u);
 	assert.match(INDEX_SOURCE, /filter\?: JiraActivityFilter/u);
@@ -344,9 +344,9 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /export function JiraActivityCard/u);
 	assert.match(
 		CARD_SOURCE,
-		/import \{\s*JiraAgentSessionActivityHeader,[\s\S]*type JiraAgentSessionItem,[\s\S]*\} from "@\/components\/blocks\/jira-agent-session"/u,
+		/import \{\s*AgentListActivityHeader,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list"/u,
 	);
-	assert.match(CARD_SOURCE, /<JiraAgentSessionActivityHeader/u);
+	assert.match(CARD_SOURCE, /<AgentListActivityHeader/u);
 	// Both human and agent comments render the shared prompt-input composer.
 	assert.match(COMMENT_SOURCE, /variant="comment"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"/u);

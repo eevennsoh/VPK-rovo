@@ -1,8 +1,8 @@
 "use client";
 
-import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
-import type { JiraForYouSection, JiraForYouTab } from "@/components/blocks/jira-for-you";
-import JiraForYouPage from "@/components/blocks/jira-for-you/page";
+import type { JiraForYouItem } from "@/components/projects/jira-for-you";
+import type { JiraForYouSection, JiraForYouTab } from "@/components/projects/jira-for-you";
+import JiraForYouPage from "@/components/projects/jira-for-you/page";
 import { cn } from "@/lib/utils";
 
 interface ForYouStageLayoutProps {

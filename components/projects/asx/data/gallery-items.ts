@@ -9,7 +9,7 @@ import type { GalleryItem } from "@/components/blocks/gallery";
  * single jira-issue card transitioning across agent activity states, while
  * Kanban and List show their full Jira blocks. Rovo reuses the `sidebar-chat`
  * project verbatim as an in-stage sidebar chat panel. For you shows the
- * personalized `jira-for-you` feed. Agent session shows the `jira-agent-session`
+ * personalized `jira-for-you` feed. Agent session shows the `agent-list`
  * block. The others are title placeholders until their design is added. Order:
  * Terminal, Rovo, Queue, For you, Card kanban, Kanban, List, Card work item,
  * Work item.

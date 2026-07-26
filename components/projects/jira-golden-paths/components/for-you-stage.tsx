@@ -1,6 +1,6 @@
 "use client";
 
-import { JiraForYouShell } from "@/components/blocks/jira-for-you/page";
+import { JiraForYouShell } from "@/components/projects/jira-for-you/page";
 
 export function ForYouStage(): React.ReactElement {
 	return (

@@ -1,4 +1,4 @@
-import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { AgentListItem } from "@/components/blocks/agent-list";
 import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import type { LozengeProps } from "@/components/ui/lozenge";
@@ -101,8 +101,8 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	replies?: readonly JiraActivityReply[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
 	allowReply?: boolean;
-	/** Optional Jira Agent Session summary for the expanded activity-card header. */
-	sessionItem?: JiraAgentSessionItem;
+	/** Optional Agent List summary for the expanded activity-card header. */
+	sessionItem?: AgentListItem;
 }
 
 /** A bordered card summarizing a code change, with a branch/PR reference. */
@@ -110,7 +110,7 @@ export interface JiraActivityChangedFilesEntry extends JiraActivityEntryBase {
 	kind: "changed-files";
 	tag?: { text: string; color?: TagColor };
 	/** Optional agent-session summary for output-list cards. */
-	sessionItem?: JiraAgentSessionItem;
+	sessionItem?: AgentListItem;
 	/** Artifacts produced by the session, rendered as compact output rows. */
 	outputs?: readonly ArtifactListItem[];
 	/** Headline, e.g. "Changed 2 files". */

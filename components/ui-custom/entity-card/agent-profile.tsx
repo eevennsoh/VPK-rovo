@@ -92,7 +92,7 @@ export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"sectio
 	swapActionLabel?: string;
 	/** Visible label for the `"preview"` variant button. Defaults to `"View agent"`. */
 	previewActionLabel?: string;
-	onInputAction?: () => void;
+	onInputAction?: (prompt: string) => void | Promise<void>;
 	onEditAction?: () => void;
 	onMoreAction?: () => void;
 	onSwapAction?: () => void;
@@ -167,9 +167,11 @@ export function EntityCardAgentProfile({
 		setClickyActive((active) => !active);
 	}, []);
 	const handleComposerSubmit = useCallback(() => {
+		const prompt = reply.trim();
+		if (!prompt) return;
 		setReply("");
-		onInputAction?.();
-	}, [onInputAction]);
+		void onInputAction?.(prompt);
+	}, [onInputAction, reply]);
 
 	// Attribution badge overlaid on the agent avatar. Mirrors agent-card's
 	// renderAvatarBadge: a company logo tile (Atlassian glyph when no logo is

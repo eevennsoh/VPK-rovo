@@ -6,19 +6,19 @@ const { test } = require("node:test");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const STAGE_SOURCE = readFileSync(join(__dirname, "components/work-item-stage.tsx"), "utf8");
 const DIALOG_SOURCE = readFileSync(
-	join(__dirname, "../../blocks/agent-sessions/experimental/components/experimental-work-item-dialog.tsx"),
+	join(__dirname, "../../blocks/jira-work-item/experimental/components/experimental-work-item-dialog.tsx"),
 	"utf8",
 );
 const COMPOSITION_SOURCE = readFileSync(
-	join(__dirname, "../../blocks/agent-sessions/experimental/experimental-agent-sessions.tsx"),
+	join(__dirname, "../../blocks/jira-work-item/experimental/experimental-jira-work-item.tsx"),
 	"utf8",
 );
 const FLOATING_SURFACE_SOURCE = readFileSync(
-	join(__dirname, "../../blocks/agent-sessions/experimental/components/floating-session-surface.tsx"),
+	join(__dirname, "../../blocks/jira-work-item/experimental/components/floating-session-surface.tsx"),
 	"utf8",
 );
 const CONTROLLER_SOURCE = readFileSync(
-	join(__dirname, "../../blocks/agent-sessions/experimental/use-agent-sessions-controller.ts"),
+	join(__dirname, "../../blocks/jira-work-item/experimental/use-jira-work-item-controller.ts"),
 	"utf8",
 );
 
@@ -26,16 +26,16 @@ test("ASX Work item opens the experimental Agent Sessions design from its state 
 	assert.match(PAGE_SOURCE, /item\.id === "work-item"[\s\S]*<WorkItemStage controller=\{workItemController\} \/>/u);
 	assert.match(PAGE_SOURCE, /<WorkItemControls controller=\{workItemController\} \/>/u);
 	assert.match(PAGE_SOURCE, /topBarCenter=\{topBarCenter\}/u);
-	assert.match(STAGE_SOURCE, /<ExperimentalAgentSessions/u);
+	assert.match(STAGE_SOURCE, /<ExperimentalJiraWorkItem/u);
 	assert.match(STAGE_SOURCE, /const selectPreset = useCallback[\s\S]*setPreset\(nextPreset\);/u);
 	assert.match(STAGE_SOURCE, /setLaunchId\(\(currentLaunchId\) => currentLaunchId \+ 1\);/u);
-	assert.match(STAGE_SOURCE, /<ExperimentalAgentSessions[\s\S]*key=\{controller\.launchId\}/u);
+	assert.match(STAGE_SOURCE, /<ExperimentalJiraWorkItem[\s\S]*key=\{controller\.launchId\}/u);
 	assert.match(STAGE_SOURCE, /presentation="inline"/u);
 	assert.doesNotMatch(STAGE_SOURCE, /isOpen|setIsOpen|onClose=/u);
 	assert.match(STAGE_SOURCE, /aria-label="Open a work item state"/u);
 	assert.match(STAGE_SOURCE, /<ButtonGroup[\s\S]*variant="connected"/u);
 	assert.match(STAGE_SOURCE, /size="compact"/u);
-	assert.match(STAGE_SOURCE, /useState<AgentSessionsExperimentalPreset>\("blank"\)/u);
+	assert.match(STAGE_SOURCE, /useState<JiraWorkItemExperimentalPreset>\("blank"\)/u);
 	assert.match(STAGE_SOURCE, /aria-pressed=\{controller\.preset === option\.value\}/u);
 	assert.match(STAGE_SOURCE, /aria-pressed:z-10/u);
 	assert.match(STAGE_SOURCE, /border-l!/u);

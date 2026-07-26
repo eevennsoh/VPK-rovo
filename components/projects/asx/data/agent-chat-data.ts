@@ -3,7 +3,7 @@ import {
 	ROVO_AGENT_PROFILES,
 	type RovoAgentProfile,
 } from "@/app/data/directory/agents";
-import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
+import type { JiraForYouItem } from "@/components/projects/jira-for-you";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
