@@ -34,8 +34,16 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"jira-for-you": {
+		description: "A personalized Jira workspace that combines assigned and recent work, agent sessions, work-item conversation, source and output details, and full Jira product chrome.",
+		importStatement: `import { JiraForYouWorkspace } from "@/components/projects/jira-for-you";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"jira-golden-paths": {
-		description: "Jira Golden Paths — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
+		description: "Jira Golden Journeys — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
 		importStatement: `import JgpPage from "@/components/projects/jira-golden-paths";`,
 		demoLayout: {
 			previewHeight: "fixed",

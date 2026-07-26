@@ -29,7 +29,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
 
 /**
- * The "Card Kanban" design pattern for the Jira Golden Paths gallery.
+ * The "Card Kanban" design pattern for the Jira Golden Journeys gallery.
  *
  * A single `components/blocks/jira-issue` card that transitions across the
  * "Agent activity states" — default, one agent working, multiple agents

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { AgentListItem } from "@/components/blocks/agent-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Comment } from "@/components/ui/comment";
 
@@ -29,7 +29,7 @@ function initialsOf(name: string): string {
 const FLUSH_COMPOSER_CLASSNAME = "border-0 rounded-none bg-transparent px-4 py-3 shadow-none";
 
 /**
- * Adapts Jira Activity comment data to the expanded Jira Agent Session card.
+ * Adapts Jira Activity comment data to the expanded Agent List card.
  * Human comments repeat their identity inside the card header; agent-session
  * cards continue to use the session identity supplied by their item. Both human
  * and agent comments expose an inline prompt composer as a flush card footer.
@@ -44,7 +44,7 @@ export function JiraActivityComment({
 	entry: JiraActivityCommentEntry;
 	currentUser: JiraActivityActor;
 	onSubmitReply: (body: string) => void;
-	onViewSession?: (item: JiraAgentSessionItem) => void;
+	onViewSession?: (item: AgentListItem) => void;
 	action?: ReactNode;
 }>) {
 	const replies = entry.replies ?? [];

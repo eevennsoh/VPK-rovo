@@ -111,6 +111,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/agent-progress-demo"),
 		{ ssr: false },
 	),
+	"agent-states": dynamic(
+		() => import("../demos/blocks/agent-states-demo"),
+		{ ssr: false },
+	),
 	"agent-selector": dynamic(
 		() => import("../demos/blocks/agent-selector-demo"),
 		{ ssr: false },
@@ -119,25 +123,25 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/blocks/skill-selector-demo"),
 		{ ssr: false },
 	),
-	"agent-sessions": dynamic(
-		() => import("../demos/blocks/agent-sessions-demo"),
+	"jira-work-item": dynamic(
+		() => import("../demos/blocks/jira-work-item-demo"),
 		{ ssr: false },
 	),
 	"agent-session-flyout": dynamic(
 		() => import("../demos/blocks/agent-session-flyout-demo"),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-standard": dynamic(
+	"jira-work-item-demo-standard": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoStandard,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoStandard,
 			})),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-experimental": dynamic(
+	"jira-work-item-demo-experimental": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoExperimental,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimental,
 			})),
 		{ ssr: false },
 	),
@@ -317,11 +321,8 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	"jira-epic": dynamic(() => import("../demos/blocks/jira-epic-demo"), {
 		ssr: false,
 	}),
-	"jira-for-you": dynamic(() => import("../demos/blocks/jira-for-you-demo"), {
-		ssr: false,
-	}),
-	"jira-agent-session": dynamic(
-		() => import("../demos/blocks/jira-agent-session-demo"),
+	"agent-list": dynamic(
+		() => import("../demos/blocks/agent-list-demo"),
 		{ ssr: false },
 	),
 	"jira-activity": dynamic(() => import("../demos/blocks/jira-activity-demo"), {

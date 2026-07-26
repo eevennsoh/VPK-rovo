@@ -112,8 +112,8 @@ export const AGENT_PROFILE_CARD_DETAIL: ComponentDetail = {
 			},
 			{
 				name: "onInputAction",
-				type: "() => void",
-				description: "Called when the input affordance is selected.",
+				type: "(prompt: string) => void | Promise<void>",
+				description: "Called with the submitted composer text.",
 			},
 			{
 				name: "onSwapAction",

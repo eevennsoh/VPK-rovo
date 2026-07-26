@@ -7,7 +7,7 @@ import {
 	DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,
 	WORK_ITEM_PINNED_ITEMS_LABEL,
 	WORK_ITEM_SKILLS,
-} from "@/components/blocks/agent-sessions/experimental/lib/work-item-picker-options";
+} from "@/components/blocks/jira-work-item/experimental/lib/work-item-picker-options";
 import type {
 	JiraIssueAgentActivity,
 	JiraIssueCompletedAgentRun,
@@ -58,7 +58,7 @@ function getCompletionCardMoveAnimation(
 }
 
 /**
- * The "Kanban" design pattern for the Jira Golden Paths gallery.
+ * The "Kanban" design pattern for the Jira Golden Journeys gallery.
  *
  * Reuses the real `components/blocks/jira-kanban` board with deterministic,
  * route-owned focus-work scenarios for the gallery story.

@@ -11,7 +11,7 @@ import { TerminalStageClaudePane } from "./terminal-stage-claude-pane";
 import { TerminalStageJiraPane } from "./terminal-stage-jira-pane";
 
 // ---------------------------------------------------------------------------
-// The "Terminal" design pattern for the Jira Golden Paths gallery.
+// The "Terminal" design pattern for the Jira Golden Journeys gallery.
 //
 // A single tmux-style window telling the story "monitor your Jira work and
 // code at the same time": a Claude Code session (right) and an invented

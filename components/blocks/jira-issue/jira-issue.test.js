@@ -5,6 +5,7 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
 const AGENT_ACTIVITY_SOURCE = readFileSync(join(__dirname, "agent-activity.tsx"), "utf8");
+const AGENT_STATES_SOURCE = readFileSync(join(__dirname, "../agent-states/index.tsx"), "utf8");
 const COMPLETED_RUNS_SOURCE = readFileSync(join(__dirname, "completed-agent-runs.tsx"), "utf8");
 const CHANGED_FILES_SOURCE = readFileSync(join(__dirname, "../jira-activity/jira-activity-changed-files.tsx"), "utf8");
 const COUNT_BADGE_SOURCE = readFileSync(join(__dirname, "count-badge.tsx"), "utf8");
@@ -177,7 +178,7 @@ test("Jira issue renders a reusable generative action command menu", () => {
 	assert.doesNotMatch(GENERATIVE_SOURCE, /delay-200|translate-x/);
 	assert.match(GENERATIVE_SOURCE, /size="compact"[\s\S]*visible=\{sparkleVisible\}/);
 	assert.match(GENERATIVE_SOURCE, /<RovoSparkle[\s\S]*agents=\{action\.agents \?\? JIRA_ISSUE_GENERATIVE_AGENTS\}[\s\S]*menuTitle="Jira issue actions"[\s\S]*popoverTitle="Jira issue generative actions"[\s\S]*sideOffset=\{hasTriggerElement \? 4 : -24\}[\s\S]*skills=\{action\.skills \?\? JIRA_ISSUE_GENERATIVE_SKILLS\}/);
-	assert.match(GENERATIVE_SOURCE, /triggerPortalContainer=\{hasTriggerElement \? null : document\.body\}/);
+	assert.match(GENERATIVE_SOURCE, /triggerPortalContainer=\{hasTriggerElement \? null : portalContainer\}/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /import \{ motion, useReducedMotion, type Transition \} from "motion\/react";/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /rotate: shouldReduceMotion \|\| !active \? 0 : 180,[\s\S]*scale: shouldReduceMotion \|\| !active \? 1 : hoverScale/);
 	assert.match(ROVO_SPARKLE_BUTTON_SOURCE, /<motion\.g[\s\S]*animate=\{\{ opacity: colorActive \? 1 : 0 \}\}/);
@@ -235,21 +236,14 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 		/<HoverCardContent[\s\S]*positionerClassName="z-\[575\] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-\[''\]"/u,
 		"active agent flyouts should stay above card-level sparkle triggers and retain hover through their visible shadow edge",
 	);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ FloatingComposer \} from "@\/components\/projects\/shared\/components\/floating-composer";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ PromptInputButton, PromptInputTextarea \} from "@\/components\/ui-custom\/prompt-input";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentCardHeader \} from "@\/components\/blocks\/agent-card";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ QuestionCard \} from "@\/components\/blocks\/question-card\/components\/question-card";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentStates \} from "@\/components\/blocks\/agent-states";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /import type \{ QuestionCardAnswers, QuestionCardQuestion \} from "@\/components\/blocks\/question-card\/types";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ RovoComposerActionButton \} from "@\/components\/projects\/shared\/components\/rovo-composer-send-controls";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityRow\(\{\n\tactivity,\n\tindex,\n\tonOpenChange,\n\tonQuestionSubmit,\n\tonViewChat,\n\trowCount,/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const rowRadiusClassName = rowCount === 1[\s\S]*\? "rounded-sm"[\s\S]*index === 0[\s\S]*\? "rounded-tl-\[6px\] rounded-tr-\[6px\] rounded-bl-\[2px\] rounded-br-\[2px\]"[\s\S]*index === rowCount - 1[\s\S]*\? "rounded-tl-\[2px\] rounded-tr-\[2px\] rounded-bl-\[6px\] rounded-br-\[6px\]"[\s\S]*: "rounded-\[2px\]";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /"flex h-6 w-full items-center justify-between gap-2 px-2 py-1 text-left outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /hover:bg-bg-neutral-hovered/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /gap-2 rounded-sm px-3 py-1/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueAgentActivityPanel/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ ElapsedTime \} from "@\/components\/ui\/elapsed-time";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const \[startedAtMs\] = useState\(\(\) => \{[\s\S]*activity\.startedAtMs[\s\S]*activity\.initialElapsedSeconds[\s\S]*getJiraIssueAgentInitialElapsedSeconds\(\)[\s\S]*Date\.now\(\) - initialElapsedSeconds \* 1000;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /byline=\{<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs=\{startedAtMs\} \/>\}/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, />Just now<\/p>/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /className=\{cn\("flex w-full flex-col overflow-hidden", hasActivities && "px-1 py-1"\)\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /activities\.map\(\(activity, index\) =>/);
@@ -261,7 +255,7 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentWorkingLabels\(activity: JiraIssueAgentActivity\): readonly string\[\]/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const workingLabels = activity\.labels \?\? JIRA_ISSUE_AGENT_WORKING_LABELS;/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /function getJiraIssueAgentCycleDelay\(intervalMs: number, jitterMs: number\): number \{[\s\S]*Math\.random\(\) \* Math\.max\(0, jitterMs\)/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueCyclingAgentLabel\(\{\n\tcycleIntervalJitterMs,\n\tcycleIntervalMs,\n\tlabels,/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /function JiraIssueCyclingAgentLabel\(props: Readonly<\{[\s\S]*cycleIntervalJitterMs: number;[\s\S]*cycleIntervalMs: number;[\s\S]*labels: readonly string\[\];/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_TRANSITION = \{ duration: 0\.2, ease: "easeOut" \} as const;/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_CYCLE_INTERVAL_MS = 5200;/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const JIRA_ISSUE_AGENT_LABEL_CYCLE_JITTER_MS = 1800;/);
@@ -290,22 +284,13 @@ test("Jira issue renders agent activity rows with shimmer and awaiting-input dot
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="inline-flex min-w-0 items-baseline text-sm leading-5 text-text-subtlest">[\s\S]*<AnimatedDots \/>/);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AnimatedDots className="-ml-0\.5 \[&>span\]:text-sm" \/>/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<span className="-my-1 grid size-6 shrink-0 place-items-center text-icon-information" aria-hidden="true">\s*<StatusInformationIcon label="" size="small" color="currentColor" \/>/);
-	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), panel is the
-	// 320px-family 400px overlay with no border, and the exit transition is zeroed.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{displayLabel\}`\}[\s\S]*<HoverCardContent[\s\S]*align="start"[\s\S]*alignOffset=\{0\}[\s\S]*className="w-\[400px\] max-w-\[calc\(100vw-48px\)\] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"[\s\S]*<JiraIssueAgentActivityPanel[\s\S]*activity=\{activity\}[\s\S]*onQuestionSubmit=\{onQuestionSubmit\}[\s\S]*onViewChat=\{onViewChat\}[\s\S]*startedAtMs=\{startedAtMs\}[\s\S]*\/>/);
+	// Instant reveal + instant dismiss: delay lives on the Trigger (Base UI), while
+	// Agent States owns the 400px overlay surface and interaction content.
+	assert.match(AGENT_ACTIVITY_SOURCE, /<HoverCard onOpenChange=\{onOpenChange\}>[\s\S]*<HoverCardTrigger[\s\S]*closeDelay=\{0\}[\s\S]*delay=\{0\}[\s\S]*aria-label=\{`\$\{activity\.name\}: \$\{displayLabel\}`\}[\s\S]*<HoverCardContent[\s\S]*className="w-auto max-w-\[calc\(100vw-48px\)\] bg-transparent p-0 shadow-none data-ending-style:transition-none"[\s\S]*<AgentStates[\s\S]*message=\{getJiraIssueAgentPanelMessage\(activity\)\}[\s\S]*question=\{activity\.question\}[\s\S]*startedAtMs=\{startedAtMs\}[\s\S]*state=\{activity\.state\}/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /data-slot="jira-issue-agent-row"/u);
-	// Panel uses the agent-directory lockup + the dark-CTA compact composer.
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentCardHeader[\s\S]*byline=\{<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs=\{startedAtMs\} \/>\}[\s\S]*title=\{activity\.name\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const isRovoActivity = activity\.name === "Rovo";/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentAvatarVisual[\s\S]*avatarClassName=\{isRovoActivity \? "\[&>svg\]:hidden" : undefined\}[\s\S]*avatarSrc=\{activity\.avatarSrc\}[\s\S]*brandName=\{activity\.agentBrandName\}[\s\S]*label=\{activity\.name\}[\s\S]*sizePx=\{32\}/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<Button type="button" onClick=\{handleViewChat\} size="compact" variant="outline">[\s\S]*View/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /activity\.state === "awaiting-input" && activity\.question \? \([\s\S]*<QuestionCard[\s\S]*onSubmit=\{handleQuestionSubmit\}[\s\S]*questions=\{\[activity\.question\]\}[\s\S]*\) : \([\s\S]*<JiraIssueAgentPrompt/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /function handleQuestionSubmit\(answers: QuestionCardAnswers\) \{\s*onQuestionSubmit\?\.\(activity, answers\);\s*\}/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /export function JiraIssueAgentPrompt[\s\S]*<FloatingComposer[\s\S]*<RovoComposerActionButton[\s\S]*experimentalDarkCta[\s\S]*addButton=\{[\s\S]*<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">[\s\S]*<AddIcon label="" \/>[\s\S]*aria-label="Reply to agent"[\s\S]*className=\{cn\([\s\S]*<PromptInputTextarea[\s\S]*placeholder="Ask, @mention, or \/ for actions"/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /"shadow-\[0px_-2px_25px_rgba\(30,31,33,0\.08\)\]"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /<JiraIssueAgentPrompt \/>/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleRealtimeVoice = useCallback\(\(\) => \{\s*setClickyActive\(false\);\s*setRealtimeVoiceActive\(\(active\) => !active\);/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /handleToggleClicky = useCallback\(\(\) => \{\s*setRealtimeVoiceActive\(true\);\s*setClickyActive\(\(active\) => !active\);/);
+	assert.match(AGENT_STATES_SOURCE, /<AgentCardHeader[\s\S]*<ElapsedTime[\s\S]*title=\{agent\.name\}/u);
+	assert.match(AGENT_STATES_SOURCE, /state === "awaiting-input" && question[\s\S]*<QuestionCard[\s\S]*<AgentStatesComposer/u);
+	assert.match(AGENT_STATES_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /EmojiAddIcon|ShowMoreHorizontalIcon|PromptInputSubmit/);
 	assert.match(SOURCE, /"relative w-full overflow-visible rounded-\[10px\] outline-none"/);
 	assert.match(SOURCE, /"group\/jira-issue relative w-full overflow-visible outline-none"/);
@@ -348,9 +333,9 @@ test("Jira issue renders completed agents as individual inset hover rows", () =>
 	assert.match(SOURCE, /onAgentDoneRunReview\?: \(run: JiraIssueCompletedAgentRun\) => void;/u);
 	assert.match(SOURCE, /<JiraIssueAgentDone[\s\S]*onReview=\{onAgentDoneRunReview\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /const statusPresentation = status === "failed"[\s\S]*<StatusErrorIcon[\s\S]*: null/u);
-	assert.match(COMPLETED_RUNS_SOURCE, /footer=\{[\s\S]*<JiraIssueAgentPrompt[\s\S]*onSubmit=\{\(prompt\) => onSubmit\?\.\(run, prompt\)\}/u);
+	assert.match(COMPLETED_RUNS_SOURCE, /footer=\{[\s\S]*<AgentStatesComposer[\s\S]*onSubmit=\{\(prompt\) => onSubmit\?\.\(run, prompt\)\}/u);
 	assert.match(COMPLETED_RUNS_SOURCE, /className="w-full"[\s\S]*variant="jira-issue"/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /export function JiraIssueAgentPrompt/u);
+	assert.match(AGENT_STATES_SOURCE, /export function AgentStatesComposer/u);
 	assert.doesNotMatch(SOURCE, /showSeparator/);
 	assert.match(SOURCE, /<JiraIssueAgentActivityRows[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="agent-review"[\s\S]*<JiraIssueAgentDone[\s\S]*onOpenChange=\{handleAgentActivityOpenChange\}[\s\S]*runs=\{agentDoneRuns\}/u);
 });
@@ -380,7 +365,7 @@ test("Jira issue animates agent state transitions with Motion", () => {
 	assert.doesNotMatch(SOURCE, /padding: shouldReduceMotion/);
 	assert.match(SOURCE, /<LayoutGroup id=\{agentActivityLayoutGroupId\}>[\s\S]*<JiraIssueAgentActivityRows[\s\S]*activities=\{activeAgentActivities\}[\s\S]*onQuestionSubmit=\{onAgentActivityQuestionSubmit\}[\s\S]*onViewChat=\{onAgentActivityViewChat\}[\s\S]*shouldReduceMotion=\{shouldReduceMotion\}[\s\S]*\/>[\s\S]*<\/LayoutGroup>/);
 	assert.match(SOURCE, /transformOrigin: "top center"/);
-	assert.match(SOURCE, /const agentActivityInnerStyle: CSSProperties = \{[\s\S]*transformOrigin: "top center"/);
+	assert.match(SOURCE, /const AGENT_ACTIVITY_INNER_STYLE: CSSProperties = \{[\s\S]*transformOrigin: "top center"/);
 	assert.doesNotMatch(SOURCE, /layout=\{!shouldReduceMotion\}/);
 	assert.match(SOURCE, /layout=\{shouldReduceMotion \? false : "position"\}/);
 	assert.match(SOURCE, /style=\{shouldReduceMotion \? undefined : JIRA_ISSUE_MOTION_STYLE\}/);

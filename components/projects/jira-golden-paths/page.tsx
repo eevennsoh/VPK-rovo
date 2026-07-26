@@ -19,7 +19,7 @@ import {
 import { SessionScreenControls, SessionStage } from "./components/session-stage";
 
 // ---------------------------------------------------------------------------
-// JGP — Jira Golden Paths
+// JGP — Jira Golden Journeys
 //
 // The gallery dock has two cards: "Carl's local session" and "Sarah's global session". Each is
 // a presenter-paced walkthrough of an ordered set of screens, navigated
@@ -139,7 +139,7 @@ export default function JgpPage(): React.ReactElement {
 				<Gallery
 					items={JGP_GALLERY_ITEMS}
 					palette={ROVO_PURPLE_PALETTE}
-					title="Jira Golden Paths"
+					title="Jira Golden Journeys"
 					showTopBarBorder={isForYouScreen}
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}

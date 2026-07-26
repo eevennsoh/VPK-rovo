@@ -48,7 +48,7 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "onViewSession",
-			type: "(item: JiraAgentSessionItem) => void",
+			type: "(item: AgentListItem) => void",
 			description: "Called when the View action on a rich agent-session activity card is activated.",
 		},
 		{
@@ -107,7 +107,7 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			props: [
 				{
 					name: "item",
-					type: "JiraAgentSessionItem",
+					type: "AgentListItem",
 					description:
 						"Optional session summary that renders the session-specific agent header.",
 				},
@@ -134,7 +134,7 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 				},
 				{
 					name: "onView",
-					type: "(item: JiraAgentSessionItem) => void",
+					type: "(item: AgentListItem) => void",
 					description: "Called when the session header's View button is activated.",
 				},
 				{

@@ -176,7 +176,7 @@ test("AgentSelector renders in-progress agents in a top section with stop-on-hov
 	assert.match(COMPONENT_SOURCE, /inProgressLabel = "In progress"/u);
 	assert.match(COMPONENT_SOURCE, /onStopAgent\?: \(agentId: string\) => void;/u);
 
-	// Repo-canonical stop affordance (matches jira-agent-session / jira-for-you),
+	// Repo-canonical stop affordance (matches agent-list / jira-for-you),
 	// not a bare "stop" icon (which does not resolve in @atlaskit/icon).
 	assert.match(COMPONENT_SOURCE, /import VideoStopOverlayIcon from "@atlaskit\/icon\/core\/video-stop-overlay";/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/stop"/u);

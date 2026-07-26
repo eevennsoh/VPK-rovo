@@ -36,7 +36,7 @@ test("Agent Profile Card title actions use chat label and edit icon controls", (
 	assert.match(entitySource, /const resolvedEditActionLabel = editActionLabel \?\? `Edit \$\{name\}`;/u);
 	assert.match(
 		entitySource,
-		/<Button[\s\S]*aria-label=\{resolvedSwapActionLabel\}[\s\S]*size="compact"[\s\S]*>\s*\{resolvedSwapActionLabel\}\s*<\/Button>/u,
+		/<Button[\s\S]*aria-label=\{resolvedSwapActionLabel\}[\s\S]*size="icon-compact"[\s\S]*<AiChatIcon label="" size="small" \/>/u,
 	);
 	assert.match(
 		entitySource,
@@ -50,4 +50,12 @@ test("Agent Profile Card supports opt-in overlay elevation", () => {
 	assert.match(entitySource, /surface\?: "raised" \| "overlay";/u);
 	assert.match(entitySource, /surface === "overlay" \? "bg-surface-overlay" : "bg-surface-raised"/u);
 	assert.match(entitySource, /surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u);
+});
+
+test("Agent Profile Card forwards submitted composer text to its consumer", () => {
+	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
+
+	assert.match(entitySource, /onInputAction\?: \(prompt: string\) => void \| Promise<void>;/u);
+	assert.match(entitySource, /const prompt = reply\.trim\(\);/u);
+	assert.match(entitySource, /void onInputAction\?\.\(prompt\);/u);
 });

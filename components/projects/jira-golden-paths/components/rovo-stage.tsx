@@ -131,7 +131,7 @@ function CreatePrContextBar({
 }
 
 /**
- * The "Rovo" design pattern for the Jira Golden Paths gallery.
+ * The "Rovo" design pattern for the Jira Golden Journeys gallery.
  *
  * Reuses the `components/projects/sidebar-chat` project verbatim — the same
  * `ChatPanel` (with smart widgets + sidebar smart generation) that the

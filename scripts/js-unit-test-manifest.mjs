@@ -48,6 +48,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/html-selector/lib/prompt-composer.test.js",
 		"components/blocks/product-sidebar/components/navigation-item-actions.test.js",
 		"components/blocks/task-progress/lib/progress-bar-state.test.js",
+		"components/blocks/agent-states/agent-states.test.js",
 		"components/ui-audio/live-waveform-layout.test.js",
 		"components/website/demos/utils/gui-demo.test.js",
 		"components/utils/gui.test.js",
@@ -68,8 +69,8 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/work-item-widget/work-item-widget.test.js",
 	],
 	"source-contract": [
-		"components/blocks/agent-sessions/agent-sessions.test.js",
-		"components/blocks/jira-for-you/jira-for-you.test.js",
+		"components/blocks/jira-work-item/jira-work-item.test.js",
+		"components/projects/jira-for-you/jira-for-you.test.js",
 		"components/blocks/jira-activity/jira-activity-alignment.test.js",
 		"components/projects/rovo-core/lib/rovo-app-route-adapter.test.js",
 		"components/projects/rovo-core/hooks/use-rovo-app-artifact-panel-controller.test.js",

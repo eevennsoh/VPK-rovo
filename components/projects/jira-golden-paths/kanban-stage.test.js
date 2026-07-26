@@ -103,7 +103,8 @@ test("JGP Kanban reuses the Jira Issue rainbow spinner for working agents", () =
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /agentBrandName\?: ThirdPartyLogoName;/u);
-	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 2);
+	assert.equal(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE.match(/<AgentAvatarVisual/g)?.length, 1);
+	assert.match(JIRA_ISSUE_AGENT_ACTIVITY_SOURCE, /<AgentStates/u);
 	assert.match(
 		JIRA_ISSUE_AGENT_ACTIVITY_SOURCE,
 		/<Spinner[\s\S]*label=""[\s\S]*phaseOffsetMs=\{getJiraIssueAgentSpinnerPhaseOffsetMs\(activity\.id, index\)\}[\s\S]*size="sm"[\s\S]*variant="rainbow"/u,
@@ -156,7 +157,7 @@ test("global-session Kanban adds the custom-agent directory while retaining codi
 test("global-session Kanban reuses the exact ASX work-item skill picker configuration", () => {
 	assert.match(
 		STAGE_SOURCE,
-		/import \{\s*DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,\s*WORK_ITEM_PINNED_ITEMS_LABEL,\s*WORK_ITEM_SKILLS,\s*\} from "@\/components\/blocks\/agent-sessions\/experimental\/lib\/work-item-picker-options";/u,
+		/import \{\s*DEFAULT_PINNED_WORK_ITEM_SKILL_IDS,\s*WORK_ITEM_PINNED_ITEMS_LABEL,\s*WORK_ITEM_SKILLS,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental\/lib\/work-item-picker-options";/u,
 	);
 	assert.match(STAGE_SOURCE, /defaultPinnedSkillIds: DEFAULT_PINNED_WORK_ITEM_SKILL_IDS/u);
 	assert.match(STAGE_SOURCE, /pinnedItemsLabel: WORK_ITEM_PINNED_ITEMS_LABEL/u);

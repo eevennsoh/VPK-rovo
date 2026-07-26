@@ -5,16 +5,16 @@ import { useState, type ReactNode } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 
 import {
-	JiraAgentSessionActivityHeader,
-	type JiraAgentSessionItem,
-} from "@/components/blocks/jira-agent-session";
+	AgentListActivityHeader,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
 import { Icon } from "@/components/ui/icon";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 export interface JiraActivityCardProps {
 	/** Session summary shown as the rich activity-card header. */
-	item?: JiraAgentSessionItem;
+	item?: AgentListItem;
 	/** Agent name shown in the activity-card header. */
 	agentName?: string;
 	/** Relative activity timestamp shown beside the agent name. */
@@ -28,7 +28,7 @@ export interface JiraActivityCardProps {
 	/** Header geometry for plain activity cards without a session summary. */
 	headerLayout?: "inline" | "stacked";
 	/** Called when the rich activity header's View button is activated. */
-	onView?: (item: JiraAgentSessionItem) => void;
+	onView?: (item: AgentListItem) => void;
 	/** Main activity content rendered inside the card. */
 	children: ReactNode;
 	/** Optional expandable supporting detail, such as a prompt or investigation. */
@@ -43,7 +43,7 @@ export interface JiraActivityCardProps {
 /**
  * Shared card shell for Jira Activity comments. It owns the human and agent
  * header treatments, expandable details, replies, and flush composer footer.
- * Jira Agent Session supplies only the session-specific header presentation.
+ * Agent List supplies only the session-specific header presentation.
  */
 export function JiraActivityCard({
 	item,
@@ -102,7 +102,7 @@ export function JiraActivityCard({
 			>
 				{item ? (
 					<>
-						<JiraAgentSessionActivityHeader
+						<AgentListActivityHeader
 							action={action}
 							item={item}
 							key={item.id}

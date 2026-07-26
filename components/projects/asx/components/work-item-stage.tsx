@@ -2,14 +2,14 @@
 
 import { useCallback, useState } from "react";
 
-import type { AgentSessionsExperimentalPreset } from "@/components/blocks/agent-sessions";
-import { ExperimentalAgentSessions } from "@/components/blocks/agent-sessions/experimental/experimental-agent-sessions";
+import type { JiraWorkItemExperimentalPreset } from "@/components/blocks/jira-work-item";
+import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 
 const WORK_ITEM_STATES: readonly {
 	label: string;
-	value: AgentSessionsExperimentalPreset;
+	value: JiraWorkItemExperimentalPreset;
 }[] = [
 	{ label: "Empty", value: "blank" },
 	{ label: "Suggestions", value: "empty" },
@@ -18,16 +18,16 @@ const WORK_ITEM_STATES: readonly {
 ];
 
 export interface WorkItemStageController {
-	preset: AgentSessionsExperimentalPreset;
+	preset: JiraWorkItemExperimentalPreset;
 	launchId: number;
-	selectPreset: (preset: AgentSessionsExperimentalPreset) => void;
+	selectPreset: (preset: JiraWorkItemExperimentalPreset) => void;
 }
 
 export function useWorkItemStageController(): WorkItemStageController {
-	const [preset, setPreset] = useState<AgentSessionsExperimentalPreset>("blank");
+	const [preset, setPreset] = useState<JiraWorkItemExperimentalPreset>("blank");
 	const [launchId, setLaunchId] = useState(0);
 
-	const selectPreset = useCallback((nextPreset: AgentSessionsExperimentalPreset): void => {
+	const selectPreset = useCallback((nextPreset: JiraWorkItemExperimentalPreset): void => {
 		setPreset(nextPreset);
 		setLaunchId((currentLaunchId) => currentLaunchId + 1);
 	}, []);
@@ -67,7 +67,7 @@ export function WorkItemStage({
 }: Readonly<{ controller: WorkItemStageController }>): React.ReactElement {
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
-			<ExperimentalAgentSessions
+			<ExperimentalJiraWorkItem
 				key={controller.launchId}
 				initialPreset={controller.preset}
 				presentation="inline"

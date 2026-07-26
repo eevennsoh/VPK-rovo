@@ -8,7 +8,7 @@ import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
-import type { JiraAgentSessionItem } from "@/components/blocks/jira-agent-session";
+import type { AgentListItem } from "@/components/blocks/agent-list";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import type { JiraActivityChangedFilesEntry } from "./jira-activity-types";
 
 function JiraActivitySessionTime({ item, fallback }: Readonly<{
-	item: JiraAgentSessionItem;
+	item: AgentListItem;
 	fallback: string;
 }>) {
 	const [seededStartedAtMs] = useState(
@@ -43,8 +43,8 @@ function JiraActivityViewAction({
 	onView,
 	viewActionLabel,
 }: Readonly<{
-	item: JiraAgentSessionItem;
-	onView?: (item: JiraAgentSessionItem) => void;
+	item: AgentListItem;
+	onView?: (item: AgentListItem) => void;
 	viewActionLabel: "Open" | "View";
 }>) {
 	const handleView = () => onView?.(item);
@@ -81,7 +81,7 @@ export function JiraActivityChangedFiles({
 	entry: JiraActivityChangedFilesEntry;
 	footer?: ReactNode;
 	onOutputOpen?: (item: ArtifactListItem) => void;
-	onView?: (item: JiraAgentSessionItem) => void;
+	onView?: (item: AgentListItem) => void;
 	outputOpenLabel?: "Open" | "View";
 	status?: "done" | "failed" | "review";
 	variant?: "activity" | "jira-issue";

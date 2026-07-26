@@ -4250,44 +4250,6 @@
 				"source": "app/preview/blocks/code-review/page.tsx"
 			},
 			{
-				"ownerCount": 2,
-				"owners": [
-					{
-						"importPath": "@/app/contexts/context-rovo-chat",
-						"source": "app/contexts/context-rovo-chat",
-						"symbols": [
-							"RovoChatProvider"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/jira-for-you/page",
-						"source": "components/blocks/jira-for-you/page",
-						"symbols": [
-							"JiraForYouShell"
-						]
-					}
-				],
-				"routePath": "/preview/blocks/jira-for-you",
-				"shellOwnerCount": 2,
-				"shellOwners": [
-					{
-						"importPath": "@/app/contexts/context-rovo-chat",
-						"source": "app/contexts/context-rovo-chat",
-						"symbols": [
-							"RovoChatProvider"
-						]
-					},
-					{
-						"importPath": "@/components/blocks/jira-for-you/page",
-						"source": "components/blocks/jira-for-you/page",
-						"symbols": [
-							"JiraForYouShell"
-						]
-					}
-				],
-				"source": "app/preview/blocks/jira-for-you/page.tsx"
-			},
-			{
 				"ownerCount": 1,
 				"owners": [
 					{
@@ -4437,6 +4399,44 @@
 					}
 				],
 				"source": "app/preview/projects/[slug]/page.tsx"
+			},
+			{
+				"ownerCount": 2,
+				"owners": [
+					{
+						"importPath": "@/app/contexts/context-rovo-chat",
+						"source": "app/contexts/context-rovo-chat",
+						"symbols": [
+							"RovoChatProvider"
+						]
+					},
+					{
+						"importPath": "@/components/projects/jira-for-you/page",
+						"source": "components/projects/jira-for-you/page",
+						"symbols": [
+							"JiraForYouShell"
+						]
+					}
+				],
+				"routePath": "/preview/projects/jira-for-you",
+				"shellOwnerCount": 2,
+				"shellOwners": [
+					{
+						"importPath": "@/app/contexts/context-rovo-chat",
+						"source": "app/contexts/context-rovo-chat",
+						"symbols": [
+							"RovoChatProvider"
+						]
+					},
+					{
+						"importPath": "@/components/projects/jira-for-you/page",
+						"source": "components/projects/jira-for-you/page",
+						"symbols": [
+							"JiraForYouShell"
+						]
+					}
+				],
+				"source": "app/preview/projects/jira-for-you/page.tsx"
 			},
 			{
 				"ownerCount": 0,
@@ -5267,7 +5267,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 409,
+			"manifestEntryCount": 410,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5349,6 +5349,12 @@
 					},
 					{
 						"category": "blocks",
+						"slug": "agent-list",
+						"name": "Agent List",
+						"importPath": "@/components/blocks/agent-list"
+					},
+					{
+						"category": "blocks",
 						"slug": "agent-profile-card",
 						"name": "Agent Profile Card",
 						"importPath": "@/components/blocks/agent-profile-card"
@@ -5373,9 +5379,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "agent-sessions",
-						"name": "Agent Sessions",
-						"importPath": "@/components/blocks/agent-sessions"
+						"slug": "agent-states",
+						"name": "Agent States",
+						"importPath": "@/components/blocks/agent-states"
 					},
 					{
 						"category": "blocks",
@@ -5535,21 +5541,9 @@
 					},
 					{
 						"category": "blocks",
-						"slug": "jira-agent-session",
-						"name": "Jira Agent Session",
-						"importPath": "@/components/blocks/jira-agent-session"
-					},
-					{
-						"category": "blocks",
 						"slug": "jira-epic",
 						"name": "Jira Epic",
 						"importPath": "@/components/blocks/jira-epic"
-					},
-					{
-						"category": "blocks",
-						"slug": "jira-for-you",
-						"name": "Jira for You",
-						"importPath": "@/components/blocks/jira-for-you"
 					},
 					{
 						"category": "blocks",
@@ -5574,6 +5568,12 @@
 						"slug": "jira-toolbar",
 						"name": "Jira Toolbar",
 						"importPath": "@/components/blocks/jira-toolbar"
+					},
+					{
+						"category": "blocks",
+						"slug": "jira-work-item",
+						"name": "Jira Work Item",
+						"importPath": "@/components/blocks/jira-work-item"
 					},
 					{
 						"category": "blocks",
@@ -5885,7 +5885,7 @@
 			},
 			{
 				"category": "projects",
-				"entryCount": 13,
+				"entryCount": 14,
 				"entries": [
 					{
 						"category": "projects",
@@ -5919,8 +5919,14 @@
 					},
 					{
 						"category": "projects",
+						"slug": "jira-for-you",
+						"name": "Jira For You",
+						"importPath": "@/components/projects/jira-for-you"
+					},
+					{
+						"category": "projects",
 						"slug": "jira-golden-paths",
-						"name": "Jira Golden Paths",
+						"name": "Jira Golden Journeys",
 						"importPath": "@/components/projects/jira-golden-paths"
 					},
 					{

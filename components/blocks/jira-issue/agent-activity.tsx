@@ -1,23 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
-import AddIcon from "@atlaskit/icon/core/add";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
-import { AgentCardHeader } from "@/components/blocks/agent-card";
-import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
+import { AgentStates } from "@/components/blocks/agent-states";
 import type { QuestionCardAnswers, QuestionCardQuestion } from "@/components/blocks/question-card/types";
-import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
-import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
-import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
-import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import { Button } from "@/components/ui/button";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import { ElapsedTime } from "@/components/ui/elapsed-time";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -70,77 +62,6 @@ const JIRA_ISSUE_AGENT_PANEL_MESSAGES = {
 } as const;
 const JIRA_ISSUE_AGENT_PANEL_FALLBACK_MESSAGE =
 	"On it. I am reviewing the connected work and will add the next update inside this work item.";
-
-export function JiraIssueAgentPrompt({
-	className,
-	onSubmit,
-}: Readonly<{
-	className?: string;
-	onSubmit?: (prompt: string) => void;
-}>) {
-	const [reply, setReply] = useState("");
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
-	const [clickyActive, setClickyActive] = useState(false);
-	const canSubmit = Boolean(reply.trim());
-
-	const handleToggleRealtimeVoice = useCallback(() => {
-		setClickyActive(false);
-		setRealtimeVoiceActive((active) => !active);
-	}, []);
-	const handleStop = useCallback(() => {
-		setRealtimeVoiceActive(false);
-		setClickyActive(false);
-	}, []);
-	const handleToggleClicky = useCallback(() => {
-		setRealtimeVoiceActive(true);
-		setClickyActive((active) => !active);
-	}, []);
-	const handleSubmit = useCallback(() => {
-		const prompt = reply.trim();
-		if (!prompt) return;
-		onSubmit?.(prompt);
-		setReply("");
-	}, [onSubmit, reply]);
-
-	return (
-		<FloatingComposer
-			actions={
-				<RovoComposerActionButton
-					canSubmit={canSubmit}
-					clickyActive={clickyActive}
-					composerStatus="ready"
-					experimentalDarkCta
-					onStop={handleStop}
-					onToggleClicky={handleToggleClicky}
-					onToggleRealtimeVoice={handleToggleRealtimeVoice}
-					realtimeVoiceActive={realtimeVoiceActive}
-				/>
-			}
-			addButton={
-				<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
-					<AddIcon label="" />
-				</PromptInputButton>
-			}
-			allowOverflow
-			aria-label="Reply to agent"
-			className={cn(
-				"shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]",
-				className,
-			)}
-			onSubmit={handleSubmit}
-		>
-			<PromptInputTextarea
-				aria-label="Reply to agent"
-				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
-				enableDirectoryAutocomplete={false}
-				onChange={(event) => setReply(event.currentTarget.value)}
-				placeholder="Ask, @mention, or / for actions"
-				rows={1}
-				value={reply}
-			/>
-		</FloatingComposer>
-	);
-}
 
 function getAgentInitial(name: string): string {
 	return name.trim()[0]?.toUpperCase() ?? "A";
@@ -209,65 +130,6 @@ function getJiraIssueAgentInitialElapsedSeconds(): number {
 	const range = JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MAX_SECONDS
 		- JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS;
 	return JIRA_ISSUE_AGENT_INITIAL_ELAPSED_MIN_SECONDS + Math.floor(Math.random() * range);
-}
-
-function JiraIssueAgentActivityPanel({
-	activity,
-	onQuestionSubmit,
-	onViewChat,
-	startedAtMs,
-}: Readonly<{
-	activity: JiraIssueAgentActivity;
-	onQuestionSubmit?: (activity: JiraIssueAgentActivity, answers: QuestionCardAnswers) => void;
-	onViewChat?: (activity: JiraIssueAgentActivity) => void;
-	startedAtMs: number;
-}>) {
-	const panelMessage = getJiraIssueAgentPanelMessage(activity);
-	const isRovoActivity = activity.name === "Rovo";
-
-	function handleViewChat() {
-		onViewChat?.(activity);
-	}
-
-	function handleQuestionSubmit(answers: QuestionCardAnswers) {
-		onQuestionSubmit?.(activity, answers);
-	}
-
-	return (
-		<div className="flex flex-col gap-3 p-3">
-			<AgentCardHeader
-				action={
-					onViewChat ? (
-						<Button type="button" onClick={handleViewChat} size="compact" variant="outline">
-							View
-						</Button>
-					) : null
-				}
-				byline={<ElapsedTime className="text-xs leading-4 text-text-subtle" startedAtMs={startedAtMs} />}
-				leading={
-					<AgentAvatarVisual
-						avatarClassName={isRovoActivity ? "[&>svg]:hidden" : undefined}
-						avatarSrc={activity.avatarSrc}
-						brandName={activity.agentBrandName}
-						fallbackText={getAgentInitial(activity.name)}
-						label={activity.name}
-						sizePx={32}
-					/>
-				}
-				title={activity.name}
-			/>
-			<p className="text-sm leading-5 text-text">{panelMessage}</p>
-			{activity.state === "awaiting-input" && activity.question ? (
-				<QuestionCard
-					className="shadow-none"
-					onSubmit={handleQuestionSubmit}
-					questions={[activity.question]}
-				/>
-			) : (
-				<JiraIssueAgentPrompt />
-			)}
-		</div>
-	);
 }
 
 function JiraIssueAgentActivityRow({
@@ -370,16 +232,33 @@ function JiraIssueAgentActivityRow({
 			<HoverCardContent
 				align="start"
 				alignOffset={0}
-				className="w-[400px] max-w-[calc(100vw-48px)] rounded-xl bg-surface-overlay p-0 text-text shadow-2xl data-ending-style:transition-none"
+				className="w-auto max-w-[calc(100vw-48px)] bg-transparent p-0 shadow-none data-ending-style:transition-none"
 				positionerClassName="z-[575] after:pointer-events-auto after:absolute after:-inset-2 after:-z-10 after:content-['']"
 				side="right"
 				sideOffset={8}
 			>
-				<JiraIssueAgentActivityPanel
-					activity={activity}
-					onQuestionSubmit={onQuestionSubmit}
-					onViewChat={onViewChat}
+				<AgentStates
+					agent={{
+						avatarSrc: activity.avatarSrc,
+						brandName: activity.agentBrandName,
+						id: activity.id,
+						name: activity.name,
+					}}
+					initialElapsedSeconds={activity.initialElapsedSeconds}
+					message={getJiraIssueAgentPanelMessage(activity)}
+					onQuestionSubmit={
+						onQuestionSubmit
+							? (answers) => onQuestionSubmit(activity, answers)
+							: undefined
+					}
+					onView={
+						onViewChat
+							? () => onViewChat(activity)
+							: undefined
+					}
+					question={activity.question}
 					startedAtMs={startedAtMs}
+					state={activity.state}
 				/>
 			</HoverCardContent>
 		</HoverCard>

@@ -3,9 +3,9 @@
 import { useCallback } from "react";
 
 import {
-	JiraAgentSession,
-	type JiraAgentSessionItem,
-} from "@/components/blocks/jira-agent-session";
+	AgentList,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
 import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
 
@@ -25,9 +25,9 @@ function toAgentId(agentName: string): string {
 }
 
 /**
- * The "Agent session" design pattern for the Jira Golden Paths gallery.
+ * The "Agent session" design pattern for the Jira Golden Journeys gallery.
  *
- * Reuses the real `components/blocks/jira-agent-session` block verbatim (same
+ * Reuses the real `components/blocks/agent-list` block verbatim (same
  * sample sessions as the block's own demo), shown in the gallery stage when the
  * Agent session card is selected. The list sits in a centered, constrained
  * column so the session rows read cleanly against the wide stage.
@@ -45,7 +45,7 @@ export function AgentSessionStage(): React.ReactElement {
 		useJgpAgentChatDemo();
 
 	const handleView = useCallback(
-		(item: JiraAgentSessionItem) => {
+		(item: AgentListItem) => {
 			const issueKey = deriveIssueKey(item.branch);
 			openAgentChat({
 				agentId: toAgentId(item.agent.name),
@@ -61,7 +61,7 @@ export function AgentSessionStage(): React.ReactElement {
 	return (
 		<div className="relative flex h-full min-h-0 w-full flex-col justify-center px-8 pb-28">
 			<div className="mx-auto w-full max-w-xl">
-				<JiraAgentSession className="w-full" onView={handleView} />
+				<AgentList className="w-full" composerChatSurface="floating" onView={handleView} />
 			</div>
 			<JgpRovoOverlay
 				chatContextBar={chatContextBar}

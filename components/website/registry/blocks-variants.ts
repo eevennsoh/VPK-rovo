@@ -2,38 +2,38 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
-	"jira-agent-session-demo-compact": dynamic(
+	"agent-list-demo-compact": dynamic(
 		() =>
-			import("../demos/blocks/jira-agent-session-demo").then((mod) => ({
-				default: mod.JiraAgentSessionDemoCompact,
+			import("../demos/blocks/agent-list-demo").then((mod) => ({
+				default: mod.AgentListDemoCompact,
 			})),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-standard": dynamic(
+	"jira-work-item-demo-standard": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoStandard,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoStandard,
 			})),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-experimental": dynamic(
+	"jira-work-item-demo-experimental": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoExperimental,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimental,
 			})),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-experimental-empty": dynamic(
+	"jira-work-item-demo-experimental-empty": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoExperimentalEmpty,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalEmpty,
 			})),
 		{ ssr: false },
 	),
-	"agent-sessions-demo-experimental-running": dynamic(
+	"jira-work-item-demo-experimental-running": dynamic(
 		() =>
-			import("../demos/blocks/agent-sessions-demo").then((mod) => ({
-				default: mod.AgentSessionsDemoExperimentalRunning,
+			import("../demos/blocks/jira-work-item-demo").then((mod) => ({
+				default: mod.JiraWorkItemDemoExperimentalRunning,
 			})),
 		{ ssr: false },
 	),

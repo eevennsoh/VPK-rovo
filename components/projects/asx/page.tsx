@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
-import type { JiraForYouItem } from "@/components/blocks/jira-for-you";
+import type { JiraForYouItem } from "@/components/projects/jira-for-you";
 import JiraListPage from "@/components/blocks/jira-list/page";
 import { useAsxAgentChatDemo } from "@/components/projects/asx/hooks/use-asx-agent-chat-demo";
 import { useAutoCycle } from "@/components/projects/asx/hooks/use-auto-cycle";
@@ -39,7 +39,7 @@ import {
 // stage via `renderSelectedItem`. Card Kanban shows a jira-issue card, while
 // Kanban, List, and Queue show their full Jira experiences, For you shows the
 // personalized jira-for-you feed, Rovo reuses the sidebar-chat project as an
-// in-stage chat panel, and Agent session shows the jira-agent-session block. The
+// in-stage chat panel, and Agent session shows the agent-list block. The
 // remaining patterns fall back to a large title placeholder.
 // ---------------------------------------------------------------------------
 

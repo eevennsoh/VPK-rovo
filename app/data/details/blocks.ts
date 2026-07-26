@@ -9,6 +9,7 @@ import { EDITOR_TOOLBAR_DETAIL } from "./blocks/editor-toolbar";
 import { AGENT_CARD_DETAIL } from "./blocks/agent-card";
 import { TWG_AGENT_CARD_DETAIL } from "./blocks/twg-agent-card";
 import { AGENT_PROFILE_CARD_DETAIL } from "./blocks/agent-profile-card";
+import { AGENT_STATES_DETAIL } from "./blocks/agent-states";
 import { AGENT_DIRECTORY_DETAIL } from "./blocks/agent-directory";
 import { AGENT_TEMPLATES_DETAIL } from "./blocks/agent-templates";
 import { ARTIFACT_DETAIL } from "./blocks/artifact";
@@ -28,7 +29,7 @@ import { CURSOR_DETAIL } from "./blocks/cursor";
 import { AGENT_PROGRESS_DETAIL } from "./blocks/agent-progress";
 import { AGENT_SELECTOR_DETAIL } from "./blocks/agent-selector";
 import { SKILL_SELECTOR_DETAIL } from "./blocks/skill-selector";
-import { AGENT_SESSIONS_DETAIL } from "./blocks/agent-sessions";
+import { JIRA_WORK_ITEM_DETAIL } from "./blocks/jira-work-item";
 import { AGENT_SESSION_FLYOUT_DETAIL } from "./blocks/agent-session-flyout";
 import { TASK_PROGRESS_DETAIL } from "./blocks/task-progress";
 import { TRIGGERS_DETAIL } from "./blocks/triggers";
@@ -85,8 +86,7 @@ import { APPROVAL_CARD_DETAIL } from "./blocks/approval-card";
 import { TOOL_APPROVAL_DETAIL } from "./blocks/tool-approval";
 import { CHATBOT_DETAIL } from "./blocks/chatbot";
 import { JIRA_EPIC_DETAIL } from "./blocks/jira-epic";
-import { JIRA_FOR_YOU_DETAIL } from "./blocks/jira-for-you";
-import { JIRA_AGENT_SESSION_DETAIL } from "./blocks/jira-agent-session";
+import { AGENT_LIST_DETAIL } from "./blocks/agent-list";
 import { JIRA_ACTIVITY_DETAIL } from "./blocks/jira-activity";
 import { JIRA_ISSUE_DETAIL } from "./blocks/jira-issue";
 import { JIRA_LIST_DETAIL } from "./blocks/jira-list";
@@ -107,6 +107,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-card": AGENT_CARD_DETAIL,
 	"twg-agent-card": TWG_AGENT_CARD_DETAIL,
 	"agent-profile-card": AGENT_PROFILE_CARD_DETAIL,
+	"agent-states": AGENT_STATES_DETAIL,
 	"agent-directory": AGENT_DIRECTORY_DETAIL,
 	"agent-templates": AGENT_TEMPLATES_DETAIL,
 	artifact: ARTIFACT_DETAIL,
@@ -126,7 +127,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-progress": AGENT_PROGRESS_DETAIL,
 	"agent-selector": AGENT_SELECTOR_DETAIL,
 	"skill-selector": SKILL_SELECTOR_DETAIL,
-	"agent-sessions": AGENT_SESSIONS_DETAIL,
+	"jira-work-item": JIRA_WORK_ITEM_DETAIL,
 	"agent-session-flyout": AGENT_SESSION_FLYOUT_DETAIL,
 	"task-progress": TASK_PROGRESS_DETAIL,
 	triggers: TRIGGERS_DETAIL,
@@ -183,8 +184,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"tool-approval": TOOL_APPROVAL_DETAIL,
 	chatbot: CHATBOT_DETAIL,
 	"jira-epic": JIRA_EPIC_DETAIL,
-	"jira-for-you": JIRA_FOR_YOU_DETAIL,
-	"jira-agent-session": JIRA_AGENT_SESSION_DETAIL,
+	"agent-list": AGENT_LIST_DETAIL,
 	"jira-activity": JIRA_ACTIVITY_DETAIL,
 	"jira-issue": JIRA_ISSUE_DETAIL,
 	"jira-list": JIRA_LIST_DETAIL,
