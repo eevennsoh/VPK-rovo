@@ -7859,19 +7859,19 @@
 		},
 		"localSkills": [
 			{
-				"description": "Extract VPK routes to standalone apps.",
+				"description": "Extract a VPK route into a standalone, minimal Next.js app with traced imports, source-compatible paths, and Micros-ready scaffolding. Use when asked to invoke vpk-build, extract a route, create a standalone prototype, or hand a VPK route off as an independently deployable app.",
 				"name": "vpk-build",
 				"path": ".agents/skills/vpk-build/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-build"
 			},
 			{
-				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source, including upstream-to-VPK mapping, examples, docs metadata, and package/source parity. Use only when the user names or links one of those upstream sources, explicitly requests ADS/shadcn parity, or invokes vpk-component. Do not use for ordinary edits, bug fixes, animation or motion tweaks, layout changes, or maintenance of an existing VPK component when no upstream component-library source is part of the request. Use vpk-design for Figma.",
+				"description": "Harvest or enrich VPK components from an explicit ADS, Atlaskit, shadcn, Base UI, or @shadcn/react source with upstream mapping, demos, docs metadata, and parity. Use only when the user invokes vpk-component, names or links one of those sources, or requests ADS/shadcn parity. Do not select it merely because a task touches a component or for ordinary edits, fixes, motion, layout, or maintenance without an upstream source; use vpk-design for Figma.",
 				"name": "vpk-component",
 				"path": ".agents/skills/vpk-component/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component"
 			},
 			{
-				"description": "Translate custom or third-party AI, voice, and adjacent component libraries into VPK-standardized primitives. Use when the user asks to \"migrate to ui-custom\", \"replace custom chat\", \"use ui-custom message\", \"standardize AI components\", \"replace message bubble\", \"use conversation component\", \"migrate prompt input\", \"use code-block component\", \"replace custom suggestions\", \"switch to ui-custom\", \"adopt ai-elements\", \"elements.ai-sdk.dev\", \"port ElevenLabs UI\", \"use ui-audio\", \"voice picker\", \"waveform\", \"transcript viewer\", \"audio player\", \"speech input\", \"port this third-party component\", \"translate this library into VPK\", or references an existing ui/ui-custom/ui-audio component and wants to migrate code to it.",
+				"description": "Translate custom or third-party AI, voice, and adjacent libraries into VPK-owned primitives. Use when asked to \"migrate to ui-custom\", \"standardize AI components\", \"adopt ai-elements\", \"port ElevenLabs UI\", or \"use ui-audio\".",
 				"name": "vpk-component-ext",
 				"path": ".agents/skills/vpk-component-ext/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-component-ext"
@@ -7895,25 +7895,25 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-fable"
 			},
 			{
-				"description": "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"delete the branch after merge\\\", \\\"prune stale refs\\\", \\\"tidy worktrees\\\", \\\"sweep landed worktrees\\\", \\\"my worktrees are piling up\\\", \\\"remove this worktree\\\", \\\"free worktree ports\\\", \\\"kill the dev server for a worktree\\\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed.",
+				"description": "Remove only proven-landed VPK-rovo worktrees and branches, prune stale refs, and close explicitly abandoned PRs. Use when the user says \\\"vpk-git-clean\\\", \\\"clean up worktrees\\\", \\\"clean up branches\\\", \\\"remove merged worktrees\\\", \\\"prune stale refs\\\", or \\\"worktrees are piling up\\\".",
 				"name": "vpk-git-clean",
 				"path": ".agents/skills/vpk-git-clean/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-clean"
 			},
 			{
-				"description": "Use for VPK-rovo git shipping: create/update PRs, merge PRs back to main, or run the full create-PR -> wait/merge -> sync-main flow when the user invokes vpk-git-ship. For cleanup, use vpk-git-clean.",
+				"description": "Ship VPK-rovo changes through a pull request, required checks, review remediation, merge, and persistent-main sync. Use when the user says \\\"vpk-git-ship\\\", \\\"ship this\\\", \\\"merge it\\\", \\\"land this work end-to-end\\\", or \\\"merge these PRs back to main\\\"; use vpk-git-clean for cleanup.",
 				"name": "vpk-git-ship",
 				"path": ".agents/skills/vpk-git-ship/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-ship"
 			},
 			{
-				"description": "Use for VPK-rovo fast direct-to-main shipping: commit ALL uncommitted changes and push straight to remote main with an auto-generated commit message — NO PR, NO branch, NO review gate. The fast counterpart to vpk-git-ship. Use for \\\"vpk-git-ship-fast\\\", \\\"commit and push to main\\\", \\\"commit everything and sync to main\\\", \\\"quick commit to main\\\", \\\"push straight to main no PR\\\", \\\"just commit and sync\\\", or \\\"land this directly\\\". For the gated PR + Codex-review + auto-merge flow use vpk-git-ship; for worktree/branch cleanup use vpk-git-clean.",
+				"description": "Commit all eligible changes and push directly to VPK-rovo main without a PR. Use when the user says \\\"vpk-git-ship-fast\\\", \\\"commit and push to main\\\", \\\"push straight to main, no PR\\\", or \\\"land this directly\\\"; protected main may require fallback to vpk-git-ship.",
 				"name": "vpk-git-ship-fast",
 				"path": ".agents/skills/vpk-git-ship-fast/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-git-ship-fast"
 			},
 			{
-				"description": "Render supplied material into offline, single-file HTML artifacts — documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces — with the vpk-html Algebrica editorial identity, plus optional PDF, landing/product-site, and GitHub Pages publishing tracks. Invoked explicitly via /vpk-html (optionally with a doc-type hint or --github); does not auto-trigger on casual mentions of HTML or documents.",
+				"description": "Render supplied material into offline, single-file HTML documents, reports, one-pagers, briefs, memos, decks, changelogs, portfolios, resumes, and engineering workflow surfaces with the Algebrica editorial identity. Use only when explicitly invoked as vpk-html or /vpk-html, optionally with a document hint or --github.",
 				"name": "vpk-html",
 				"path": ".agents/skills/vpk-html/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-html"
@@ -7925,7 +7925,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-scheduled-automation"
 			},
 			{
-				"description": "This skill should be used when the user asks to \"set up\", \"get started\", \"first time setup\", \"new project setup\", \"initialize VPK\", \"run for first time\", \"configure VPK\", \"install dependencies\", \"generate ASAP credentials\", \"configure environment\", \"start dev servers\", \"bootstrap\", \"init\", \"env setup\", \"how do I start\", \"how do I set up the project\", \"get this working\", or wants to set up a new VPK project from scratch. Also triggered by errors like \"ASAP key not working\", \"credentials not found\", \"env not configured\".",
+				"description": "Configure a first-time or repaired VPK checkout, including dependencies, credentials, environment, Rovo Serve, and local dev servers. Use when asked to \"set up\", \"first time setup\", \"initialize VPK\", or \"bootstrap\", and for errors such as \"ASAP key not working\", \"credentials not found\", or \"env not configured\".",
 				"name": "vpk-setup",
 				"path": ".agents/skills/vpk-setup/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-setup"
@@ -7943,7 +7943,7 @@
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-symphony"
 			},
 			{
-				"description": "Diagnose and fix high local-dev CPU/RAM on this Mac, then run or schedule the cleanup that prevents recurrence. It detects and restarts runaway `next-server` or Turbopack processes, resets a sustained-hot Atlassian `almd`, clears oversized Next.js `.next` caches across vpk-rovo worktrees, and restarts ballooned `fseventsd` when the machine is configured for it. Use whenever the user says `vpk-system-clean`, Next.js/node/`almd` is \"eating CPU\", \"at 400%\", or \"spiking\", the Mac is slow or loud, `fseventsd` is using lots of CPU/RAM, disk is filling from `.next`, or they want to clean the system, free space, kill runaway processes, schedule cleanup, see cleanup records, check the maintenance job/log, change thresholds, or repair the launchd agent or sudoers rule.",
+				"description": "Diagnose and remediate VPK local-dev CPU, memory, and disk pressure, or manage its scheduled maintenance. Use when the user says \\\"vpk-system-clean\\\", \\\"next-server eating CPU / at 400%\\\", \\\"Mac is slow or loud\\\", \\\"fseventsd\\\", or \\\"clean .next caches / free space\\\".",
 				"name": "vpk-system-clean",
 				"path": ".agents/skills/vpk-system-clean/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-system-clean"

@@ -2,6 +2,15 @@
 
 Detailed procedures for registering demos, consolidating components, and wiring metadata.
 
+## Contents
+
+- [Register demos](#register-demos)
+- [Add detail metadata](#add-detail-metadata)
+- [ADS equivalents entry](#ads-equivalents-entry)
+- [Doc hero display contract](#doc-hero-display-contract)
+- [Component consolidation](#component-consolidation)
+- [Demo file template](#demo-file-template)
+
 ## Register Demos
 
 Add entries to `UI_EXAMPLE_DEMOS` (or `AI_EXAMPLE_DEMOS`) in `components/website/registry.ts`. Use the `.then()` wrapper to extract named exports from the shared demo file:
@@ -98,3 +107,30 @@ When an ADS component is a thin wrapper or re-export that can be covered by an e
 | `textarea` (page) | `field` | `@atlaskit/textarea` |
 | `input` (page) | `field` | (demos merged into field) |
 | `flag` | `sonner` | `@atlaskit/flag` |
+
+## Demo file template
+
+Keep demo files declarative and use the real VPK primitive. Include only states
+that teach meaningful API or parity behavior; avoid decorative wrappers that
+obscure the component.
+
+```tsx
+"use client"
+
+import { Example } from "@/components/ui/example"
+
+export default function ExampleDemo() {
+	return (
+		<div className="flex flex-wrap items-center gap-3">
+			<Example>Default</Example>
+			<Example variant="secondary">Secondary</Example>
+			<Example disabled>Disabled</Example>
+		</div>
+	)
+}
+```
+
+Use grouped sections only when the component has enough independent states to
+justify them. Reuse repository icons and assets through the component's public
+API. Register every exported demo and verify the hero, navigation entry, and
+examples on the live component route.

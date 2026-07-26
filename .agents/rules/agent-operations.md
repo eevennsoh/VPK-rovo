@@ -2,44 +2,18 @@
 description: Skills, parallel work model, agent teams, behavioral rules
 globs: .agents/skills/**, .agents/agents/**
 alwaysApply: false
-paths:
-  - ".agents/skills/**"
-  - ".agents/agents/**"
 ---
 
 # Agent Operations
 
 ## Skills and Agents
 
-Primary locations:
-
 - Skills: `.agents/skills/*/SKILL.md`
 - Agents: `.agents/agents/*`
+- Provider mirrors: `.cursor/`, `.claude/`, `.codex/`, and `.rovo/` contain provider-specific config plus symlinks back to `.agents/`
+- Skill types: workflow skills are multi-step procedures; utility skills are single-purpose helpers
 
-Provider mirrors:
-
-- `.cursor/`, `.claude/`, `.codex/`, and `.rovo/` contain provider-specific config plus symlinks back to `.agents/`
-
-Skill types:
-
-- Workflow: multi-step procedures
-- Utility: single-purpose helpers
-
-Current VPK skills (see Appendix for details):
-
-- `/vpk-setup`
-- `/vpk-build`
-- `/vpk-deploy`
-- `/vpk-design`
-- `/vpk-html`
-- `/vpk-tidy`
-- `/vpk-component`
-- `/vpk-component-ext`
-- `/vpk-symphony`
-- `/vpk-fable`
-- `/vpk-sol`
-
-> **Note:** Slash commands (e.g., `/vpk-deploy`) are Cursor IDE features. In other environments, reference the skill definitions in `.agents/skills/` directly.
+Skill catalog: `.agents/skills/INDEX.md` (generated — regenerate with `node scripts/validate-skills.js --update-index`).
 
 ## Parallel Work Model
 
@@ -50,48 +24,23 @@ Choose one model based on communication needs:
 | Subagents   | Independent tasks where only results matter        | Main agent coordinates                    | Lower  |
 | Agent teams | Cross-area work needing direct teammate discussion | Shared task list + teammate collaboration | Higher |
 
-Subagent rule:
-
-- Always wait for all subagents before yielding results
+Subagent rule: always wait for all subagents before yielding results.
 
 ## Agent Teams Management
 
 Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
 
-Controls:
-
 - In-process mode: select teammate with Shift+Up/Down, toggle task list with Ctrl+T
 - Split pane mode: set `"teammateMode": "tmux"`
 - Delegate mode: Shift+Tab
-
-Default team lifecycle:
-
-```text
-Explore -> Implement -> Test -> Tidy
-```
+- Default lifecycle: `Explore -> Implement -> Test -> Tidy`
 
 Detailed ownership and phase guidance is in `## Appendix -> Agent Team Workflow Reference`.
 
-## Behavioral Rules
-
-- Verify exact file location before UI edits by searching for distinctive text/classes.
-- Use macOS/BSD-safe shell patterns (for example `sed -i ''`).
-- For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
-- When editing icons, check consistency across all icons in the component.
-- Prefer flexible AI-driven implementations over narrow hardcoded matching.
-- Prefer the simplest viable implementation before introducing abstractions.
-- If implementation gets unstable, stop and re-plan instead of patching repeatedly.
-- Before completion, perform a staff-level quality gate: root-cause fixes, clean architecture, no band-aids.
-- When fixing a bug, add a regression test that reproduces the original failure.
-
 ## Skill Validation
 
-- When editing `.agents/skills/**/scripts/*`, run the narrow script test or
-  smoke path before handoff. For Python tests named `test_*.py`, run them
-  directly with `python3 path/to/test_*.py`; for helper scripts without tests,
-  run the documented smoke command or explain the blocker.
-- For `SKILL.md` or reference-only edits, `git diff --check` is enough unless
-  the doc changes command behavior, validation expectations, or script names.
+- When editing `.agents/skills/**/scripts/*`, run the narrow script test or smoke path before handoff. For Python tests named `test_*.py`, run them directly with `python3 path/to/test_*.py`; for helper scripts without tests, run the documented smoke command or explain the blocker.
+- For `SKILL.md` or reference-only edits, `git diff --check` is enough unless the doc changes command behavior, validation expectations, or script names.
 
 ## Local Overrides
 

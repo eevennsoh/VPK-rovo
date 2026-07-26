@@ -1,212 +1,111 @@
 ---
 name: vpk-system-clean
-description: >-
-  Diagnose and fix high local-dev CPU/RAM on this Mac, then run or schedule the
-  cleanup that prevents recurrence. It detects and restarts runaway `next-server`
-  or Turbopack processes, resets a sustained-hot Atlassian `almd`, clears
-  oversized Next.js `.next` caches across vpk-rovo worktrees, and restarts
-  ballooned `fseventsd` when the machine is configured for it. Use whenever the
-  user says `vpk-system-clean`, Next.js/node/`almd` is "eating CPU", "at 400%",
-  or "spiking", the Mac is slow or loud, `fseventsd` is using lots of CPU/RAM,
-  disk is filling from `.next`, or they want to clean the system, free space,
-  kill runaway processes, schedule cleanup, see cleanup records, check the
-  maintenance job/log, change thresholds, or repair the launchd agent or
-  sudoers rule.
-purpose: Diagnose and remediate high local-dev and almd CPU, RAM, disk, tmux, and cache pressure on the user's Mac without touching source work.
-owner: VPK
-category: local-maintenance
-inputs: Process list, tmux sessions, worktree inventory, Next.js cache sizes, cleanup records, and user-approved remediation scope.
-outputs: Restarted or stopped runaway dev and almd processes, removed proven disposable caches, cleanup records, and prevention guidance.
-required_tools: shell, ps, pgrep, lsof, tmux, du, pnpm
+description: "Diagnose and remediate VPK local-dev CPU, memory, and disk pressure, or manage its scheduled maintenance. Use when the user says \"vpk-system-clean\", \"next-server eating CPU / at 400%\", \"Mac is slow or loud\", \"fseventsd\", or \"clean .next caches / free space\"."
 validation_command: zsh scripts/status.sh
-generated_artifacts: Cleanup logs and maintenance records under the configured local records path.
-common_failure_modes: Killing unrelated active work or a short-lived almd task, deleting ambiguous workspace files, pruning global Portless state, or running cleanup from the wrong checkout.
 ---
 
 # vpk-system-clean
 
-A 24/7 development Mac hits six recurring CPU/RAM problems:
+Use this skill to diagnose and safely remediate recurring VPK development-Mac
+pressure: sustained-hot or memory-bloated `next-server`/Turbopack processes,
+oversized idle `.next` caches, orphaned worktree tmux sessions, sustained-hot
+exact-path Atlassian `almd`, and ballooned `fseventsd`.
 
-1. **Runaway dev server (the big one).** `next-server` gets stuck in a
-   watch → recompile → write → FSEvent → re-watch feedback loop and pegs the CPU
-   (observed: **477%**). A healthy compile is *bursty*; a runaway stays hot. The
-   only reliable live fix is to restart that dev server.
-2. **Bloated dev server (memory).** `next-server` can also idle at huge memory
-   while CPU is quiet. Measured as **vmmap Physical footprint**, not `ps` RSS —
-   the arm64 `MAP_JIT` leak lives in JIT/native mappings that RSS barely counts
-   (an 11.1 GB-footprint server showed 0.19 GB RSS). Post-Next-16.3, a healthy
-   dev server sits in the low single-digit GB range; **≥6 GB** means the leak
-   is back and the safest fix is to restart that dev server.
-3. **Runaway `.next` caches.** Turbopack's `.next/dev` grows unbounded (15 GB /
-   39k files seen). Every file feeds macOS FSEvents and *amplifies* the loop in
-   (1). Keeping it small is the prevention.
-4. **Stale tmux dev sessions.** The worktree launchers — `scripts/dev-tmux-plain.sh` (plain frontend + backend, run **through `portless run`**) and `scripts/dev-tmux.sh` (the Rovo pool) — each run a per-worktree session named `vpk-dev-<worktree>`. Sessions may live on the default tmux socket or the private `vpk-dev` socket used by the plain stack. Nothing auto-stops them, so a deleted worktree leaves an **orphaned** session burning CPU/RAM/ports indefinitely. Killed through the same socket that listed it when its worktree path no longer exists (and you are not attached).
-5. **Runaway Atlassian `almd`.** `/usr/local/bin/almd` can remain at 50%+ CPU
-   for hours while emitting repeated event-processing errors. The sweep checks
-   the exact executable, requires at least 15 minutes of runtime, then samples
-   three times across 20 seconds before terminating it. Its user LaunchAgent
-   retries every five minutes.
-6. **`fseventsd` leak.** macOS's FS-events daemon leaks CPU/RAM over long uptimes
-   (22 GB / 100%+ seen). It auto-respawns clean when killed.
+## When to use
 
-The skill fixes live runaway processes and prevents recurring Next.js churn by
-clearing stale caches and orphaned dev sessions.
+Use it for live diagnosis, an immediate cleanup sweep, maintenance status or
+records, scheduling, install/repair, tuning, or uninstall. For a vague "machine
+is slow" request, start with status and act only on what it flags. Do not use it
+for arbitrary process killing, repository cleanup, or generated-artifact removal.
 
-The setup: a guard **script** (`scripts/vpk-system-clean.sh`) run on a schedule
-by a per-user **launchd agent** (`com.<user>.vpk-system-clean`). The skill is the
-**source of truth** — `scripts/` is canonical; install copies the script to
-`~/.local/bin/` and *generates* the launchd plist for the current user.
+## Hard invariants
 
-## Decide what the user wants, then act
+- The files under `scripts/` are canonical. Run or reference them in place; do
+  not substitute hand-written cleanup commands when a script owns the operation.
+- Protect `artifacts/**`: never inspect, modify, or delete it in this flow. The
+  only repository data eligible for scheduled deletion is a qualifying `.next`
+  cache chosen by the canonical script while no dev server uses it.
+- Target only exact guarded processes: the selected `next-server` and parent,
+  exact `/usr/local/bin/almd`, orphaned `vpk-dev-*` sessions, and `fseventsd`
+  when its sudoers guard exists. Do not broaden names or paths.
+- Do not run global `portless prune`; it may kill another worktree after port
+  reuse. The cleanup never touches the long-lived Portless `:443` proxy.
+- The skill does not run `sudo`. Missing sudoers support is reported for the
+  user to repair deliberately.
 
-| User intent | Operation | Command (`zsh`, from this skill dir) |
-| --- | --- | --- |
-| "next-server is at 400%", "dev server spiking", "fan loud", "fix the CPU now" | **Doctor** | `scripts/doctor.sh` then `scripts/doctor.sh --kill` |
-| "almd is stuck", "almd is eating CPU", "kill almd" | **Status, then run now** | `scripts/status.sh`, then `~/.local/bin/vpk-system-clean.sh` |
-| "is it set up?", "why's it slow", "how big are caches", "check the log" | **Status** | `scripts/status.sh` |
-| "run the full cleanup now", "free up space", "clear .next" | **Run now** | `~/.local/bin/vpk-system-clean.sh` |
-| "set a timer", "run at 3am", "every 6 hours", "change schedule" | **Schedule** | `scripts/schedule.sh ...` |
-| "show records / history", "how much was freed" | **Records** | `scripts/records.sh` |
-| "reinstall", "repair", "agent isn't running", "set up sudoers" | **Install / repair** | `scripts/install.sh` |
-| "clean more/less aggressively", "change the CPU/size threshold" | **Tune** | edit `scripts/vpk-system-clean.sh`, then re-run install |
-| "remove this", "uninstall", "remove all the cleanup setup" | **Uninstall** | `scripts/uninstall.sh` (`--dry-run` to preview) |
+## Route the request
 
-Vague request ("machine is slow")? Start with **Status** (it lists hot dev
-servers, `almd`, fseventsd, cache sizes, and orphaned `vpk-dev-*` tmux sessions),
-then act on whatever it flags.
+Run commands from this skill directory with `zsh`:
 
-## Doctor — fix a runaway dev server (the CPU spike)
+| Intent | Command |
+| --- | --- |
+| Diagnose a hot dev server | `scripts/doctor.sh` |
+| Restart proven runaway dev servers | `scripts/doctor.sh --kill` |
+| Inspect setup, processes, caches, sessions, or logs | `scripts/status.sh` |
+| Run the installed scheduled sweep now | `~/.local/bin/vpk-system-clean.sh` |
+| Inspect cleanup history | `scripts/records.sh` |
+| Change or inspect schedule | `scripts/schedule.sh ...` |
+| Install or repair launchd/sudoers guidance | `scripts/install.sh` |
+| Preview or remove the setup | `scripts/uninstall.sh --dry-run` / `scripts/uninstall.sh` |
 
-`scripts/doctor.sh` lists every `next-server` with its CPU%, physical footprint
-(GB), port, and worktree, flagging any **sustained** above `NEXT_CPU_HOT`
-(150%). Also exposed as `pnpm run mem` from the vpk-rovo repo root. `--kill`
-re-checks they're still hot, then kills each runaway *and its `next dev` parent*
-so it can be restarted clean:
+For thresholds, schedules, record formats, launchd/sudoers repair, tuning, and
+uninstall details, read [maintenance.md](references/maintenance.md).
 
-```
-zsh scripts/doctor.sh          # inspect
-zsh scripts/doctor.sh --kill   # restart the runaways
-```
+## Doctor workflow
 
-After killing, tell the user to restart the dev server — for browser-verification worktrees use `pnpm run dev:tmux:start` (re-establishes the detached tmux session **and** its stable Portless `.localhost` URL so agents can resume browser automation at the same address), or `pnpm run dev` / `rovo` otherwise — and that clearing `.next` first helps (it regenerates). The scheduled job also does this automatically (see below).
+1. Run `zsh scripts/doctor.sh`. It reports each `next-server` with CPU,
+   `vmmap` physical footprint, port, and worktree; `pnpm run mem` exposes the
+   same diagnostic from the repo root.
+2. A sustained CPU breach is different from a bursty compile. Kill only after
+   the doctor's recheck, using `zsh scripts/doctor.sh --kill` when the user asked
+   for remediation.
+3. The kill path stops the runaway server and its `next dev` parent so it can
+   restart cleanly. Tell the user to relaunch with `pnpm run dev:tmux:start` for
+   a stable worktree Portless URL, or the appropriate `pnpm run dev`/`rovo`
+   command otherwise.
 
-## Run now (full sweep, has side effects)
+## Full sweep
 
-Run the **installed** copy so it matches the scheduled job exactly:
+Run the installed copy so manual and scheduled behavior match:
 
-```
+```bash
 zsh ~/.local/bin/vpk-system-clean.sh
 ```
 
-Order: (1) detect a *sustained*-hot `next-server` (sampled twice so a normal
-burst isn't killed) and restart it if `KILL_RUNAWAY_NEXT=1`; (2) detect a
-bloated `next-server` at or above `NEXT_MEM_MAX_GB` physical footprint,
-re-checked after a `NEXT_MEM_SETTLE_SECS` settle window and only killed if
-still bloated **and idle** (CPU below `NEXT_MEM_IDLE_CPU_MAX`) on the second
-sample — a busy compile burst can also peak in the double digits, so this
-avoids killing a healthy warmup — and restart it if `KILL_BLOATED_NEXT=1`;
-(3) delete `.next` caches over
-`NEXT_MAX_GB` **only when no dev server is running** — it never deletes a live
-build's cache; (4) kill orphaned `vpk-dev-*` tmux sessions whose worktree path
-is gone, on both the default and private `vpk-dev` tmux sockets (skipping any
-session you're attached to); (5) reset only an exact-path `almd` that is at
-least 15 minutes old and remains at or above `ALMD_CPU_HOT` across three samples;
-(6) restart `fseventsd` if over `FSEVENTS_MAX_MB` *and* the sudoers rule exists.
-Afterward show `scripts/records.sh` or the log.
+The sweep samples sustained-hot `next-server`, rechecks memory-bloated but idle
+servers, deletes only oversized inactive `.next` caches, stops unattached tmux
+sessions whose worktree path is gone, samples old exact-path `almd` before TERM
+and guarded KILL, and restarts oversized `fseventsd` only when the least-privilege
+sudoers rule exists.
 
-**Generated-artifact retention boundary:** this flow never inspects, deletes, or
-modifies `artifacts/**`. Generated deliverables remain protected even when they
-are ignored, untracked, old, or idle. The only repository directories this
-scheduled flow may delete are qualifying `.next` caches selected by the
-canonical script; deleting a generated artifact requires a separate, explicit
-user request naming the exact path.
+Silent exit zero is a valid successful run. Do not improvise extra remediation
+after it. For a script-only handoff, report status, the log path
+`~/Library/Logs/vpk-system-clean.log`, and only actionable warnings. If the
+command is still running quietly, wait for it rather than branching into other
+cleanup.
 
-If `fseventsd` is bloated but the sudoers rule is missing, the script logs that
-it skipped. The user can fix the current balloon now with `sudo pkill -x
-fseventsd` (password; auto-respawns) and add the rule (Install) for automation.
+## Safety notes
 
-## Schedule (set the timer)
+- Memory decisions use `vmmap` physical footprint, not `ps` RSS; arm64 JIT/native
+  mappings make RSS undercount the observed leak dramatically.
+- A busy warmup can briefly use high CPU or memory, so the scripts resample and
+  require idle state where appropriate.
+- The `almd` guard verifies executable path, minimum age, and sustained CPU. A
+  similarly named shell or Atlassian service remains untouched.
+- Orphaned tmux sessions are killed through the same socket that listed them and
+  only when their worktree path is gone and the session is unattached.
+- If sandbox permissions block a cache or log path, report the exact failure;
+  do not attempt alternate deletion, permission repair, or schedule changes.
 
-`scripts/schedule.sh` sets when the job runs, persists to
-`~/.config/vpk-system-clean/schedule.env`, and re-applies via install so it
-survives repairs:
+## Validation and proof
 
-```
-zsh scripts/schedule.sh 03:30      # daily at 03:30
-zsh scripts/schedule.sh every 6h   # every 6 hours (min 10m)
-zsh scripts/schedule.sh show       # print configured + live schedule
+```bash
+zsh scripts/status.sh
+zsh scripts/records.sh
 ```
 
-Tip: if runaway dev servers are the recurring pain, a more frequent interval
-(e.g. `every 2h`) catches them sooner than once-nightly.
-
-## Records (cleanup history)
-
-`scripts/records.sh` aggregates the log: total runs, servers killed, caches
-removed, ~GB reclaimed, stale tmux sessions killed, `almd` resets, fseventsd
-resets, and the last 8 runs. `--removed` lists every removed cache; `--raw`
-dumps the full log.
-
-## Install / repair
-
-`scripts/install.sh` is idempotent: copies the script, generates + validates the
-plist (honoring any saved schedule), reloads the agent, and checks the sudoers
-rule — printing the three commands to add it if missing. The skill never runs
-`sudo`; the rule whitelists exactly `/usr/bin/pkill -x fseventsd` (least
-privilege). Confirm with Status afterward.
-
-## Tune
-
-Top of `scripts/vpk-system-clean.sh`:
-- `NEXT_CPU_HOT` (150) — %CPU above which a sustained `next-server` is a runaway.
-- `KILL_RUNAWAY_NEXT` (1) — set 0 to only report runaways, never kill them.
-- `NEXT_MEM_MAX_GB` (6) — physical footprint (GB, via `vmmap`) at or above
-  which a `next-server` is a bloated candidate. Post-Next-16.3 a healthy dev
-  server sits at low single-digit GB, so ≥6 GB means the arm64 `MAP_JIT` leak
-  is back — but a busy compile burst can also peak this high, so it only kills
-  if still bloated **and idle** after settling (see next two). Do not
-  switch this to `ps` RSS — RSS undercounts the leak ~50x.
-- `KILL_BLOATED_NEXT` (1) — set 0 to only report bloated servers, never kill them.
-- `NEXT_MAX_GB` (3) — delete a `.next` cache only past this size.
-- `ALMD_CPU_HOT` (50) — minimum CPU for all three samples before resetting the
-  exact `/usr/local/bin/almd` process.
-- `ALMD_MIN_AGE_SECS` (900) — protect the first 15 minutes of normal startup.
-- `KILL_RUNAWAY_ALMD` (1) — set 0 to report a runaway `almd` without stopping it.
-- `FSEVENTS_MAX_MB` (2048) — restart `fseventsd` only past this RSS.
-
-Edit the canonical copy, then re-run **Install**.
-
-## Uninstall
-
-`scripts/uninstall.sh` removes everything the setup created — the launchd agent,
-its plist, the installed `~/.local/bin` script, and the schedule config — in one
-pass, reporting each location as it goes. Preview with `--dry-run`; add `--logs`
-to also delete the run logs (kept by default as records).
-
-```
-zsh scripts/uninstall.sh --dry-run   # show exactly what would be removed
-zsh scripts/uninstall.sh             # remove the live automation (keeps logs)
-zsh scripts/uninstall.sh --logs      # also delete the logs
-```
-
-Two things it does not remove automatically:
-- **the root-owned sudoers rule** — it prints the command for you:
-  `sudo rm -f /etc/sudoers.d/vpk-system-clean && sudo visudo -c`
-- **the skill source dir** (the uninstaller runs from it) — to delete the skill
-  itself: `rm -rf .agents/skills/vpk-system-clean` (commit if tracked).
-
-## Notes
-
-- **Portless awareness.** Browser-verification dev servers run **through `portless run`** inside the `vpk-dev-<worktree>` tmux session, so each worktree has a stable `.localhost` URL (`pnpm ports`). When this skill kills a runaway `next-server` (Doctor) or an orphaned session, that worktree's `~/.portless/routes.json` entry is left behind as a harmless stale route — reaped by `pnpm run dev:tmux:stop`'s Ctrl-C on next clean stop, or a deliberate `portless prune`. This cleanup only ever targets `next-server` / `next dev` / `vpk-dev-*` tmux sessions, so it never touches the portless `:443` proxy (a separate long-lived daemon, not a `next-server`); other worktrees' `.localhost` routing keeps working. Do **not** add a global `portless prune` to the sweep — it kills by port and could hit a live worktree.
-- Paths assume vpk-rovo at `~/Labs/vpk-rovo` plus `~/.codex/worktrees/*`
-  and `.../.claude/worktrees/*`. Adjust `NEXT_DIRS` if your layout differs.
-- `KILL_RUNAWAY_NEXT=1` can, in principle, kill a genuinely-busy build that
-  sustains >150% for the ~4s sample window. That is rare (compiles are bursty),
-  but if a user reports a killed build mid-work, lower the aggressiveness by
-  raising `NEXT_CPU_HOT` or setting `KILL_RUNAWAY_NEXT=0` (then rely on Doctor).
-- The `almd` guard does not touch `atlassian-otel-collector`, Jamf, osquery, or
-  Apple's `ecosystem*` services. It verifies the executable path before acting,
-  sends TERM first, and uses KILL only if that same executable remains alive.
-- `artifacts/**` is a durable generated-deliverable boundary. Never add it, or
-  any child path, to this skill's cleanup targets.
-- Scripts use `setopt NULL_GLOB` (zsh aborts on unmatched globs otherwise).
+Use status for launchd/sudoers state, `fseventsd`, live Next servers, tmux
+sessions, and cache sizes. Use records or the log for runs, servers restarted,
+caches removed, space reclaimed, session/almd/fseventsd resets, and warnings.
+Report only the operation requested and its evidence; do not widen a script-only
+run into configuration changes.

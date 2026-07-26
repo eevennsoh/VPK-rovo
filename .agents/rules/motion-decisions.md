@@ -2,10 +2,6 @@
 description: Deciding which motion token to pick for a UI role (duration, easing, property)
 globs: components/**/*.tsx, app/**/*.tsx, *.css
 alwaysApply: false
-paths:
-  - "components/**/*.tsx"
-  - "app/**/*.tsx"
-  - "*.css"
 ---
 
 # Motion decisions
@@ -13,7 +9,6 @@ paths:
 The **decision layer**: which `--duration-*` / `--ease-*` token to pick for a given UI role, and why. This is *judgment*, not catalog or API.
 
 - Token table + Tailwind aliases: `token-priority.md`
-- Motion for React API + per-frame perf rules: `motion-react.md`
 - Animating Base UI surfaces (popups, menus, dialogs) on exit: `motion-base-ui.md`
 
 ## Should-I-animate gate
@@ -124,7 +119,7 @@ Never invent a curve that is not a token. Pick the resolved array from this map:
 
 Durations (seconds): `xxshort` .05 · `fast` .1 · `normal` .15 · `medium` .2 · `slow` .25 · `slower` .4 · `slowest` .6
 
-**Two Motion idioms agents miss** (full rules in `motion-react.md`):
+**Two Motion idioms agents miss:**
 
 - Animating `transform` / `opacity` / `filter` / `clipPath` → set `willChange` for exactly those properties on the element.
 - **Asymmetric exit:** put the faster exit timing in the **`exit` variant's own `transition`**, not a single shared `transition` prop — a lone `transition` prop applies to enter *and* exit, silently making the exit run at the enter timing. Wrap with `AnimatePresence`, and zero motion via `useReducedMotion()`.

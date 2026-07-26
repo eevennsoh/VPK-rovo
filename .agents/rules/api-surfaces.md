@@ -2,12 +2,6 @@
 description: API endpoint reference — backend routes, orchestrator, and dev proxy mappings
 globs: backend/routes/**/*.js, backend/app.js, backend/server.js, app/api/**/*.ts, backend/lib/*.js
 alwaysApply: false
-paths:
-  - backend/routes/**/*.js
-  - backend/app.js
-  - backend/server.js
-  - app/api/**/*.ts
-  - backend/lib/*.js
 ---
 
 # API Surfaces
