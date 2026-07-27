@@ -56,6 +56,13 @@ test("every row has a Jira status lozenge with a status-change dropdown", () => 
 	assert.match(STATUS_SOURCE, /Done: "success"/);
 });
 
+test("Refactor readability stays aligned with the in-progress section", () => {
+	assert.match(
+		DATA_SOURCE,
+		/id: "refactor-readability"[\s\S]*jiraStatus: "In progress"[\s\S]*status: "In progress"/u,
+	);
+});
+
 test("Jira For You rows place agent activity before issue metadata", () => {
 	assert.match(
 		ITEM_SOURCE,

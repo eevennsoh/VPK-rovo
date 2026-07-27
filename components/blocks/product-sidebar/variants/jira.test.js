@@ -4,6 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const JIRA_SIDEBAR_SOURCE = fs.readFileSync(path.join(__dirname, "jira.tsx"), "utf8");
+const JIRA_NAVIGATION_SOURCE = fs.readFileSync(path.join(__dirname, "../data/jira-navigation.ts"), "utf8");
 const PRODUCT_LOGOS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../components/product-logos.tsx"),
 	"utf8",
@@ -35,13 +36,23 @@ test("Jira project marks use the shared square tile avatar", () => {
 	);
 	assert.match(JIRA_SIDEBAR_SOURCE, /<TileAvatar[\s\S]*?shape="square"[\s\S]*?src=\{src\}/u);
 	assert.doesNotMatch(JIRA_SIDEBAR_SOURCE, /import Image from "next\/image"/u);
+	assert.match(JIRA_SIDEBAR_SOURCE, /export function JiraProjectAvatar/u);
+	assert.match(JIRA_NAVIGATION_SOURCE, /id: "enterprise-rfp-qualification"[\s\S]*name: "Jira Design"[\s\S]*imageSrc: "\/avatar-project\/rocket\.svg"/u);
+});
+
+test("Jira external-link metadata uses a 12px glyph in the transparent 24px end slot", () => {
+	assert.match(JIRA_SIDEBAR_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
+	assert.match(
+		JIRA_SIDEBAR_SOURCE,
+		/meta=\{hasExternalLink \? \([\s\S]*?<IconTile[\s\S]*?as="span"[\s\S]*?icon=\{<LinkExternalIcon label="" size="small" \/>\}[\s\S]*?iconSize="small"[\s\S]*?size="small"[\s\S]*?variant="transparent"/u,
+	);
 });
 
 test("product sidebar logos use the snug Tile contract for glyph alignment", () => {
 	assert.match(PRODUCT_LOGOS_SOURCE, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
 	assert.match(
 		PRODUCT_LOGOS_SOURCE,
-		/<Tile aria-hidden=\{isDecorative \? true : undefined\} label=\{label \|\| "Product logo"\} size="xsmall" variant="transparent" isSnug>/u,
+		/<Tile aria-hidden=\{isDecorative \? true : undefined\} label=\{label \|\| "Product logo"\} size="small" variant="transparent" isSnug>/u,
 	);
 	assert.equal(PRODUCT_LOGOS_SOURCE.match(/<ProductLogoTile label=\{props\.label\}>/gu)?.length, 5);
 });

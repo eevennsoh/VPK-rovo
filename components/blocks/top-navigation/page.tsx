@@ -56,6 +56,8 @@ export interface ShellSidebarSlotState {
 interface TopNavigationProps {
 	product?: Product;
 	showSearch?: boolean;
+	/** Initial pinned-sidebar state before the user takes control. */
+	defaultSidebarOpen?: boolean;
 	/** Size the shell to the viewport, or fill a height-constrained parent. */
 	shellHeight?: "viewport" | "parent";
 	/** Preserve the legacy leading inset used by sidebar-owned product shells. */
@@ -116,6 +118,7 @@ interface TopNavigationProps {
 export default function TopNavigation({
 	product = "studio",
 	showSearch = true,
+	defaultSidebarOpen = true,
 	shellHeight = "viewport",
 	searchAlignment = "responsive",
 	hideRovoAction = false,
@@ -128,7 +131,7 @@ export default function TopNavigation({
 
 	// The chrome owns its own sidebar open state (decoupled from the demo's
 	// `context-sidebar`) so the resizable shell works standalone.
-	const [sidebarOpen, setSidebarOpen] = useState(true);
+	const [sidebarOpen, setSidebarOpen] = useState(defaultSidebarOpen);
 
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
@@ -375,7 +378,7 @@ export default function TopNavigation({
 				"overflow-hidden",
 				shellHeight === "parent" ? "h-full! min-h-0!" : "h-svh",
 			)}
-			defaultOpen
+			defaultOpen={defaultSidebarOpen}
 			onOpenChange={setSidebarOpen}
 			open={sidebarOpen}
 			style={sidebarStyle}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import ChartTrendIcon from "@atlaskit/icon/core/chart-trend";
 import FilterIcon from "@atlaskit/icon/core/filter";
@@ -25,9 +25,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Heading } from "@/components/ui/heading";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { JiraIcon } from "@/components/ui/logo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollMask } from "@/components/visual/scroll-mask";
+import { JiraProjectAvatar } from "@/components/blocks/product-sidebar/variants/jira";
+import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { cn } from "@/lib/utils";
 import type { JiraKanbanAssigneeData } from "./index";
 
@@ -42,8 +43,12 @@ const FILTER_FIELDS = [
 
 interface JiraKanbanBoardHeaderProps {
 	assignees: readonly JiraKanbanAssigneeData[];
+	compact?: boolean;
 	onSelectedAssigneeIdsChange: (assigneeIds: Set<string>) => void;
+	searchPlaceholder?: string;
 	selectedAssigneeIds: ReadonlySet<string>;
+	surfaceLabel?: string;
+	viewTabs?: ReactNode;
 }
 
 function AssigneeAvatar({
@@ -72,8 +77,12 @@ function AssigneeAvatar({
 
 export function JiraKanbanBoardHeader({
 	assignees,
+	compact = false,
 	onSelectedAssigneeIdsChange,
+	searchPlaceholder = "Search board",
 	selectedAssigneeIds,
+	surfaceLabel = "board",
+	viewTabs,
 }: Readonly<JiraKanbanBoardHeaderProps>) {
 	const [filterOpen, setFilterOpen] = useState(false);
 	const [query, setQuery] = useState("");
@@ -84,6 +93,7 @@ export function JiraKanbanBoardHeader({
 			: assignees;
 	}, [assignees, query]);
 	const hasSelection = selectedAssigneeIds.size > 0;
+	const surfaceTitle = `${surfaceLabel.slice(0, 1).toLocaleUpperCase()}${surfaceLabel.slice(1)}`;
 
 	const toggleAssignee = (assigneeId: string) => {
 		const nextSelection = new Set(selectedAssigneeIds);
@@ -96,26 +106,27 @@ export function JiraKanbanBoardHeader({
 	};
 
 	return (
-		<header className="shrink-0 px-4 pb-4 pt-3">
-			<div className="flex min-w-0 items-center gap-2">
-				<JiraIcon label="Jira" size="small" />
+		<header className="shrink-0 pb-4 pt-3">
+			<div className="flex min-w-0 items-center gap-2 px-4">
+				<JiraProjectAvatar label={JIRA_DESIGN_PROJECT.name} src={JIRA_DESIGN_PROJECT.imageSrc} />
 				<Heading as="h1" className="truncate" size="large">Jira Design</Heading>
 				<div className="flex items-center gap-1">
 					<Button aria-disabled aria-label="Add people" size="icon" variant="ghost">
 						<Icon render={<PersonAddIcon label="" />} />
 					</Button>
-					<Button aria-disabled aria-label="More board actions" size="icon" variant="ghost">
+					<Button aria-disabled aria-label={`More ${surfaceLabel} actions`} size="icon" variant="ghost">
 						<Icon render={<ShowMoreHorizontalIcon label="" />} />
 					</Button>
 				</div>
 			</div>
+			{viewTabs ? <div className="mt-2">{viewTabs}</div> : null}
 
-			<div className="mt-4 flex flex-wrap items-center gap-2">
+			<div className="mt-4 flex flex-wrap items-center gap-2 px-4">
 				<InputGroup className="w-44">
 					<InputGroupAddon>
 						<Icon render={<SearchIcon label="" size="small" />} />
 					</InputGroupAddon>
-					<InputGroupInput aria-label="Search board" placeholder="Search board" readOnly />
+					<InputGroupInput aria-label={searchPlaceholder} placeholder={searchPlaceholder} readOnly />
 				</InputGroup>
 
 				{/* Facepile stacks leftmost-on-top: keep DOM order (so tab order matches
@@ -124,12 +135,12 @@ export function JiraKanbanBoardHeader({
 				    face <button> wrappers are position:static, where z-index is inert. */}
 				<AvatarGroup
 					className="ml-1 -space-x-1.5 isolate [&>*]:relative [&>*:nth-child(1)]:z-[7] [&>*:nth-child(2)]:z-[6] [&>*:nth-child(3)]:z-[5] [&>*:nth-child(4)]:z-[4] [&>*:nth-child(5)]:z-[3] [&>*:nth-child(6)]:z-[2] [&>*:nth-child(7)]:z-[1]"
-					label="Board assignees"
+					label={`${surfaceTitle} assignees`}
 				>
 					<AvatarUnassigned kind="person" label="Unassigned" size="sm" />
 					{assignees.slice(0, 6).map((assignee) => (
 						<button
-							aria-label={`Filter board by ${assignee.name}`}
+							aria-label={`Filter ${surfaceLabel} by ${assignee.name}`}
 							aria-pressed={selectedAssigneeIds.has(assignee.id)}
 							className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 							key={assignee.id}
@@ -148,12 +159,18 @@ export function JiraKanbanBoardHeader({
 				<Popover open={filterOpen} onOpenChange={setFilterOpen}>
 					<PopoverTrigger
 						render={
-							<Button aria-expanded={filterOpen} aria-pressed={hasSelection} variant="outline" />
+							<Button
+								aria-expanded={filterOpen}
+								aria-label={hasSelection ? `Filter ${surfaceLabel}, ${selectedAssigneeIds.size} selected` : `Filter ${surfaceLabel}`}
+								aria-pressed={hasSelection}
+								size={compact ? "icon" : undefined}
+								variant="outline"
+							/>
 						}
 					>
-						<Icon render={<FilterIcon label="" size="small" />} />
-						Filter
-						{hasSelection ? <Badge variant="information">{selectedAssigneeIds.size}</Badge> : null}
+						<Icon render={<FilterIcon label="" />} />
+						{compact ? null : "Filter"}
+						{hasSelection && !compact ? <Badge variant="information">{selectedAssigneeIds.size}</Badge> : null}
 					</PopoverTrigger>
 					<PopoverContent align="start" className="w-[560px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden p-0">
 						<div className="grid h-[360px] grid-cols-[200px_minmax(0,1fr)]">
@@ -233,27 +250,35 @@ export function JiraKanbanBoardHeader({
 					</PopoverContent>
 				</Popover>
 
-				<Button aria-disabled variant="outline">
-					<Icon render={<GroupIcon label="" size="small" />} />
-					Group
+				<Button aria-disabled aria-label={`Group ${surfaceLabel}`} size={compact ? "icon" : undefined} variant="outline">
+					<Icon render={<GroupIcon label="" />} />
+					{compact ? null : "Group"}
 				</Button>
 
-				<div className="ml-auto flex items-center gap-1">
-					<Button aria-disabled aria-label="View insights" size="icon" variant="outline">
-						<Icon render={<ChartTrendIcon label="" />} />
-					</Button>
-					<Button aria-disabled aria-label="Board settings" size="icon" variant="outline">
-						<Icon render={<SettingsIcon label="" />} />
-					</Button>
-					<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
-						<Icon render={<UndoIcon label="" />} />
-					</Button>
-					<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
-						<Icon render={<MegaphoneIcon label="" />} />
-					</Button>
-					<Button aria-disabled aria-label="More board controls" size="icon" variant="outline">
-						<Icon render={<ShowMoreHorizontalIcon label="" />} />
-					</Button>
+				<div className={cn("flex items-center gap-1", compact ? undefined : "ml-auto")}>
+					{compact ? (
+						<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+							<Icon render={<ShowMoreHorizontalIcon label="" />} />
+						</Button>
+					) : (
+						<>
+							<Button aria-disabled aria-label="View insights" size="icon" variant="outline">
+								<Icon render={<ChartTrendIcon label="" />} />
+							</Button>
+							<Button aria-disabled aria-label={`${surfaceTitle} settings`} size="icon" variant="outline">
+								<Icon render={<SettingsIcon label="" />} />
+							</Button>
+							<Button aria-disabled aria-label="Undo board change" size="icon" variant="outline">
+								<Icon render={<UndoIcon label="" />} />
+							</Button>
+							<Button aria-disabled aria-label="Board announcements" size="icon" variant="outline">
+								<Icon render={<MegaphoneIcon label="" />} />
+							</Button>
+							<Button aria-disabled aria-label={`More ${surfaceLabel} controls`} size="icon" variant="outline">
+								<Icon render={<ShowMoreHorizontalIcon label="" />} />
+							</Button>
+						</>
+					)}
 				</div>
 			</div>
 		</header>

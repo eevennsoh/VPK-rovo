@@ -389,8 +389,9 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	const detailsSource = readBlockFile("experimental/components/details-tab.tsx");
 	assert.ok(contextPanelSource.indexOf("<ContextEditableTitle />") < contextPanelSource.indexOf("<AiPlannerScope"));
 	assert.ok(contextPanelSource.indexOf("<AiPlannerScope") < contextPanelSource.indexOf("<AiPlannerPanel />"));
-	assert.ok(contextPanelSource.indexOf("<AiPlannerPanel />") < contextPanelSource.indexOf("<ContextResources />"));
-	assert.ok(contextPanelSource.indexOf("<ContextResources />") < contextPanelSource.indexOf("<ContextEditableDescription />"));
+	assert.ok(contextPanelSource.indexOf("<AiPlannerPanel />") < contextPanelSource.indexOf("<ContextResources outputs={outputs} />"));
+	assert.ok(contextPanelSource.indexOf("<ContextResources outputs={outputs} />") < contextPanelSource.indexOf("<ContextEditableDescription />"));
+	assert.match(contextResourcesSource, /outputs\.length > 0 \? \([\s\S]*items=\{outputs\}[\s\S]*label="Output"/u);
 	assert.match(contextPanelSource, /<AiPlannerScope header=\{<AiPlannerPanel \/>\}>/u);
 	// The context resources and description sit directly adjacent — no divider rule.
 	assert.doesNotMatch(contextPanelSource, /<div aria-hidden className="h-px bg-border" \/>/u);
@@ -509,8 +510,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 		contextResourcesSource,
 		/flex flex-wrap items-start gap-1 \*:focus-visible:relative \*:focus-visible:z-10/u,
 	);
-	assert.equal((contextResourcesSource.match(/elemBefore=\{<Icon aria-hidden render=/gu) ?? []).length, 3);
-	assert.equal((contextResourcesSource.match(/labelClassName="whitespace-nowrap sm:w-28"/gu) ?? []).length, 3);
+	assert.equal((contextResourcesSource.match(/(?:elemBefore|itemElemBefore)=\{(?:\(\) => \(\s*)?<Icon aria-hidden render=/gu) ?? []).length, 4);
+	assert.equal((contextResourcesSource.match(/labelClassName="whitespace-nowrap sm:w-28"/gu) ?? []).length, 4);
 	assert.match(agentSummaryRowSource, /labelClassName\?: string;/u);
 	assert.match(agentSummaryRowSource, /className=\{cn\("sm:w-20 sm:shrink-0", labelClassName\)\}/u);
 	assert.match(detailsSource, /<FloatingField filled=\{hasAgents\} icon=\{AiAgentIcon\} label="Agents">/u);

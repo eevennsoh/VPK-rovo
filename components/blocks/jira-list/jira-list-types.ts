@@ -82,6 +82,7 @@ export interface JiraListDraftWorkItem {
 
 export interface JiraListProps {
 	rows: readonly JiraListRowData[];
+	activeIssueKey?: string;
 	ariaLabel?: string;
 	className?: string;
 	createLabel?: string;

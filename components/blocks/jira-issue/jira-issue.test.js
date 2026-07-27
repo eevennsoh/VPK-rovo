@@ -38,10 +38,18 @@ test("Jira issue default width can be overridden by a kanban-column demo width c
 });
 
 test("Jira issue exposes selected and dragging states on the root button", () => {
+	assert.match(SOURCE, /active\?: boolean;/);
+	assert.match(SOURCE, /data-active=\{active \|\| undefined\}/);
 	assert.match(SOURCE, /aria-pressed=\{ariaPressed \?\? selected\}/);
 	assert.match(SOURCE, /data-selected=\{selected \|\| undefined\}/);
 	assert.match(SOURCE, /data-dragging=\{dragging \|\| undefined\}/);
 	assert.match(SOURCE, /cursor: dragging \? "grabbing" : draggable \? "grab" : "default"/);
+});
+
+test("Jira issue distinguishes an active card background from bulk selection", () => {
+	assert.match(ROOT_CLASS_BLOCK, /selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? "border-transparent bg-bg-selected"[\s\S]*: "border-transparent bg-surface"/u);
+	assert.match(ROOT_CLASS_BLOCK, /const agentActivitySurfaceClassName = cn\([\s\S]*selected[\s\S]*\? "border-border-selected bg-bg-selected"[\s\S]*: active[\s\S]*\? "border-transparent bg-bg-selected"/u);
+	assert.doesNotMatch(SOURCE, /aria-pressed=\{ariaPressed \?\? active\}/u);
 });
 
 test("Jira issue exposes agent activity state props", () => {

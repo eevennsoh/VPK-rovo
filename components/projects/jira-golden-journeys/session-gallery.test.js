@@ -9,6 +9,8 @@ const GALLERY_ITEMS_SOURCE = read("data/gallery-items.ts");
 const SCREENS_SOURCE = read("data/session-screens.ts");
 const STAGE_SOURCE = read("components/session-stage.tsx");
 const FOR_YOU_STAGE_SOURCE = read("components/for-you-stage.tsx");
+const JIRA_DESIGN_VIEW_TABS_SOURCE = read("components/jira-design-view-tabs.tsx");
+const JIRA_DESIGN_WORK_ITEMS_SOURCE = read("data/jira-design-work-items.ts");
 const SHARED_FOR_YOU_STAGE_SOURCE = read("../shared/components/for-you-stage-layout.tsx");
 const ASX_PAGE_SOURCE = read("../asx/page.tsx");
 const TERMINAL_BEAT_SCREEN_SOURCE = read("components/terminal-beat-screen.tsx");
@@ -42,7 +44,18 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 			new RegExp(`id: "${id}"[\\s\\S]*?design: "${design}"[\\s\\S]*?scenario: "${scenario}"`, "u"),
 		);
 	}
-	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo";/u);
+	for (const [id, section, design] of [
+		["global-4", "Kanban & List", "jira-kanban"],
+	]) {
+		assert.match(
+			SCREENS_SOURCE,
+			new RegExp(`id: "${id}"[\\s\\S]*?section: "${section}"[\\s\\S]*?design: "${design}"`, "u"),
+		);
+	}
+	assert.match(
+		SCREENS_SOURCE,
+		/export type SessionScreenDesign = "for-you" \| "jira-kanban" \| "kanban" \| "rovo";/u,
+	);
 	assert.match(STAGE_SOURCE, /screen\?\.design === "rovo"/u);
 	assert.match(STAGE_SOURCE, /<RovoStage key=\{screen\.id\} \/>/u);
 	assert.doesNotMatch(SCREENS_SOURCE, /scenario: "pr-review"/u);
@@ -52,7 +65,14 @@ test("Each card defines its own ordered set of screens to navigate", () => {
 		STAGE_SOURCE,
 		/<ForYouStage key=\{screen\.id\} \/>/u,
 	);
-	assert.doesNotMatch(SCREENS_SOURCE, /global-4|design: "work-item"|completed-timeline/u);
+	assert.match(STAGE_SOURCE, /screen\?\.design === "jira-kanban"/u);
+	assert.match(STAGE_SOURCE, /<JiraDesignStage key=\{screen\.id\} \/>/u);
+	assert.doesNotMatch(SCREENS_SOURCE, /global-5|section: "List"|design: "jira-list"/u);
+	assert.match(
+		FOR_YOU_STAGE_SOURCE,
+		/function JiraShellStage[\s\S]*relative left-1\/2 h-full min-h-0 w-screen -translate-x-1\/2 overflow-hidden/u,
+	);
+	assert.doesNotMatch(SCREENS_SOURCE, /design: "work-item"|completed-timeline/u);
 	assert.doesNotMatch(STAGE_SOURCE, /WorkItemStage|workItemController|design === "work-item"/u);
 });
 
@@ -127,6 +147,13 @@ test("Page wires the session stage + top-bar screen navigator per card", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /onReset=\{handleReset\}|controller\.reset\(\)/u);
 });
 
+test("Jira shell screens show the gallery top-bar divider", () => {
+	assert.match(PAGE_SOURCE, /activeScreen\?\.design === "for-you"/u);
+	assert.match(PAGE_SOURCE, /activeScreen\?\.design === "jira-kanban"/u);
+	assert.doesNotMatch(PAGE_SOURCE, /activeScreen\?\.design === "jira-list"/u);
+	assert.match(PAGE_SOURCE, /showTopBarBorder=\{showTopBarBorder\}/u);
+});
+
 test("Entering the Global Rovo screen restores the default agent and greeting", () => {
 	assert.match(PAGE_SOURCE, /const \{ resetAgentToRovo, resetChat \} = useRovoChat\(\);/u);
 	assert.match(
@@ -139,17 +166,109 @@ test("Entering the Global Rovo screen restores the default agent and greeting", 
 test("Global For you fills the stage with the complete Jira shell", () => {
 	assert.match(
 		FOR_YOU_STAGE_SOURCE,
-		/<JiraForYouShell shellHeight="parent" \/>/u,
+		/<JiraForYouShell[\s\S]*shellHeight="parent"[\s\S]*showConversationHeaderBorder=\{false\}\s*>/u,
 	);
+	assert.match(FOR_YOU_STAGE_SOURCE, /return <JiraShellStage \/>;/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /h-full min-h-0 w-screen/u);
 	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /dockOpen|pb-56|pb-8/u);
-	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /JiraForYouWorkspace|JGP_FOR_YOU_SECTIONS|JgpRovoOverlay|JiraForYouPage/u);
+	assert.doesNotMatch(FOR_YOU_STAGE_SOURCE, /JGP_FOR_YOU_SECTIONS|JgpRovoOverlay|JiraForYouPage/u);
 	assert.match(ASX_PAGE_SOURCE, /<ForYouStageLayout dockOpen=\{dockOpen\} onItemClick=\{handleItemClick\} \/>/u);
 	assert.doesNotMatch(ASX_PAGE_SOURCE, /<JiraForYouPage/u);
 	assert.match(
 		SHARED_FOR_YOU_STAGE_SOURCE,
 		/<JiraForYouPage onItemClick=\{onItemClick\} onView=\{onView\} sections=\{sections\} tabs=\{tabs\} \/>/u,
 	);
+});
+
+test("Global Kanban cards open the shared chat, work-item, and details workspace", () => {
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORKSPACE_SECTIONS = JIRA_FOR_YOU_SECTIONS/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORK_ITEMS_BY_KEY = new Map<string, JiraForYouItem>/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*feedResizeLabel="Resize Jira Design view panel"/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /renderFeed=\{\(\{ activeItemId, onItemActivate \}\) => \([\s\S]*<JiraKanbanPage[\s\S]*compactHeader=\{Boolean\(activeItemId\)\}/u);
+	assert.equal((FOR_YOU_STAGE_SOURCE.match(/JIRA_DESIGN_WORK_ITEMS_BY_KEY\.get/gu) ?? []).length, 2);
+	assert.equal((FOR_YOU_STAGE_SOURCE.match(/onItemActivate\(item\);/gu) ?? []).length, 2);
+	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{JIRA_DESIGN_WORKSPACE_SECTIONS\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /showScrollAffordance=\{false\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /showConversationHeaderBorder=\{false\}/u);
+});
+
+test("Global Jira Design preserves the default chat width across sidebar changes", () => {
+	assert.match(FOR_YOU_STAGE_SOURCE, /feedResizeLabel="Resize Jira Design view panel"[\s\S]*preserveChatWidthAcrossSidebar/u);
+});
+
+test("Global Jira Design starts with the VITA-142 chat and details open", () => {
+	assert.match(
+		FOR_YOU_STAGE_SOURCE,
+		/<JiraForYouWorkspace[\s\S]*defaultDetailPanelOpen[\s\S]*defaultOpenItemId="vitafleet-presentation"/u,
+	);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /id: "vitafleet-presentation"|JIRA_FOR_YOU_SECTIONS/u);
+});
+
+test("Global Jira Design starts with the product sidebar collapsed", () => {
+	assert.match(
+		FOR_YOU_STAGE_SOURCE,
+		/<JiraShellStage[\s\S]*defaultSelectedSidebarItem=\{JIRA_DESIGN_PROJECT\.name\}[\s\S]*defaultSidebarOpen=\{false\}/u,
+	);
+});
+
+test("Global Kanban marks the open workspace card independently from bulk selection", () => {
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORK_ITEMS_BY_ID = new Map<string, JiraForYouItem>/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /activeCardCode=\{activeItemId[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_ID\.get\(activeItemId\)\?\.issueKey[\s\S]*: undefined\}/u);
+});
+
+test("Board and List derive the same work items from the For you dataset", () => {
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORK_ITEMS = JIRA_DESIGN_WORKSPACE_SECTIONS\.flatMap/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /AVATARS\.slice\(0, 6\)/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /const assignee = getJiraDesignAssignee\(item\.id\)/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_KANBAN_COLUMNS:[\s\S]*JIRA_DESIGN_WORK_ITEMS[\s\S]*item\.issueKey[\s\S]*item\.title/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /createJiraDesignListRows[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_KEY\.get\(card\.code\)[\s\S]*issueKey: item\.issueKey[\s\S]*summary: item\.title/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /boardColumns=\{boardColumns\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /onBoardColumnsChange=\{\(columns\) => setBoardColumns/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /const rows = useMemo\(\(\) => createJiraDesignListRows\(boardColumns\)/u);
+});
+
+test("Global Jira Design cards keep human assignees while active agents use activity rows", () => {
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /function getJiraDesignAssignee[\s\S]*needs a human assignee/u);
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/const assignee = getJiraDesignAssignee\(item\.id\);[\s\S]*agentActivities: createJiraDesignAgentActivities\(item\)[\s\S]*assignee,[\s\S]*avatarSrc: assignee\.avatarSrc/u,
+	);
+	assert.match(
+		JIRA_DESIGN_WORK_ITEMS_SOURCE,
+		/function createJiraDesignAgentActivities[\s\S]*if \(!item\.agents\?\.length\)[\s\S]*return undefined;[\s\S]*state = hasAwaitingAgent && index === 0 \? "awaiting-input" as const : "working" as const/u,
+	);
+});
+
+test("Global Jira Design screens share functional Board and List line tabs", () => {
+	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<Tabs[\s\S]*value=\{activeView\}/u);
+	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<TabsList className="h-9 w-full justify-start px-2" variant="line">/u);
+	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<TabsTrigger className="flex-none" value="board">[\s\S]*Board[\s\S]*<TabsTrigger className="flex-none" value="list">[\s\S]*List/u);
+	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<BoardIcon label="" \/>/u);
+	assert.match(JIRA_DESIGN_VIEW_TABS_SOURCE, /<TableIcon label="" \/>/u);
+	assert.doesNotMatch(JIRA_DESIGN_VIEW_TABS_SOURCE, /(?:BoardIcon|TableIcon) label="" size="small"/u);
+	assert.match(STAGE_SOURCE, /const \[view, setView\] = useState<JiraDesignView>\("board"\);/u);
+	assert.match(STAGE_SOURCE, /return <JiraDesignWorkspaceStage onViewChange=\{setView\} view=\{view\} \/>;/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /viewTabs=\{<JiraDesignViewTabs activeView="board" onViewChange=\{onViewChange\} \/>\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraDesignViewTabs activeView="list" onViewChange=\{onViewChange\} \/>/u);
+	assert.match(
+		FOR_YOU_STAGE_SOURCE,
+		/<JiraShellStage[\s\S]*defaultSelectedSidebarItem=\{JIRA_DESIGN_PROJECT\.name\}[\s\S]*defaultSidebarOpen=\{false\}/u,
+	);
+	assert.equal((FOR_YOU_STAGE_SOURCE.match(/defaultSelectedSidebarItem=\{JIRA_DESIGN_PROJECT\.name\}/gu) ?? []).length, 1);
+	assert.match(FOR_YOU_STAGE_SOURCE, /import \{ JiraKanbanBoardHeader \} from "@\/components\/blocks\/jira-kanban\/board-header";/u);
+});
+
+test("Global Jira Design list reuses the board controls with a list search label", () => {
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraListFeed[\s\S]*compactHeader=\{Boolean\(activeItemId\)\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraKanbanBoardHeader[\s\S]*searchPlaceholder="Search list"[\s\S]*surfaceLabel="list"/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /filterJiraKanbanColumnsByAssignee\(boardColumns, selectedAssigneeIds\)/u);
+});
+
+test("Board and List swap only the persistent workspace feed", () => {
+	assert.equal((FOR_YOU_STAGE_SOURCE.match(/<JiraForYouWorkspace/gu) ?? []).length, 1);
+	assert.match(FOR_YOU_STAGE_SOURCE, /renderFeed=\{\(\{ activeItemId, onItemActivate \}\) => \([\s\S]*view === "board" \? \([\s\S]*<JiraKanbanPage[\s\S]*\) : \([\s\S]*<JiraListFeed[\s\S]*onViewChange=\{onViewChange\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraListFeed[\s\S]*activeIssueKey=\{activeItemId[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_ID\.get\(activeItemId\)\?\.issueKey/u);
+	assert.doesNotMatch(STAGE_SOURCE, /view === "board" \? \([\s\S]*JiraKanbanWorkspaceStage[\s\S]*JiraListWorkspaceStage/u);
 });
 
 test("Page gives Jira Golden Journeys a shaded Rovo-purple gallery palette", () => {
@@ -229,7 +348,7 @@ test("Section dropdown opening does not add another flex gap to the centered con
 test("Local session opens the Kanban section with the real board design", () => {
 	// The sixth screen is the "Kanban" section rendering the Kanban board design.
 	assert.match(SCREENS_SOURCE, /design:\s*"kanban"/u);
-	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = "for-you" \| "kanban" \| "rovo";/u);
+	assert.match(SCREENS_SOURCE, /export type SessionScreenDesign = [^;]*"kanban"[^;]*;/u);
 	// The stage routes a `design: "kanban"` screen to the real KanbanStage,
 	// keyed by screen id so it mounts fresh when navigated to.
 	assert.match(STAGE_SOURCE, /screen\?\.design === "kanban"/u);
@@ -251,7 +370,7 @@ test("Local session opens the Kanban section with the real board design", () => 
 test("Top-bar label counts position within the current section", () => {
 	// Local has seven opening Terminal screens, one Kanban screen, four resumed
 	// Terminal screens, then Kanban again. Global adds Kanban, one Rovo screen,
-	// and For you.
+	// For you and the combined Jira Design Board/List screen.
 	// The counter resets per run (U+00B7 middle dot), even when a section name is reused later.
 	const sections = [...SCREENS_SOURCE.matchAll(/section:\s*"([^"]+)"/gu)].map((match) => match[1]);
 	assert.deepEqual(sections, [
@@ -271,6 +390,7 @@ test("Top-bar label counts position within the current section", () => {
 		"Kanban",
 		"Rovo",
 		"For you",
+		"Kanban & List",
 	]);
 	// Section-scoped, contiguous-run label with a middle dot; plain fallback when
 	// a screen has no section.

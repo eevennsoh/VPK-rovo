@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { JiraSidebar } from "@/components/blocks/product-sidebar/variants/jira";
 import AppLayout from "@/components/projects/page";
@@ -32,18 +32,27 @@ export default function JiraForYouPage({
 }
 
 interface JiraForYouShellProps {
+	children?: ReactNode;
+	defaultSelectedSidebarItem?: string;
+	defaultSidebarOpen?: boolean;
 	shellHeight?: "parent" | "viewport";
+	showConversationHeaderBorder?: boolean;
 }
 
 /** Full Jira product chrome for the For You workspace. */
 export function JiraForYouShell({
+	children,
+	defaultSelectedSidebarItem = "For you",
+	defaultSidebarOpen = true,
 	shellHeight = "viewport",
+	showConversationHeaderBorder = true,
 }: Readonly<JiraForYouShellProps>): React.ReactElement {
-	const [selectedSidebarItem, setSelectedSidebarItem] = useState("For you");
+	const [selectedSidebarItem, setSelectedSidebarItem] = useState(defaultSelectedSidebarItem);
 
 	return (
 		<AppLayout
 			chatPanelFlush
+			defaultSidebarOpen={defaultSidebarOpen}
 			hideFloatingRovo
 			hideRovoAction
 			product="jira"
@@ -57,7 +66,13 @@ export function JiraForYouShell({
 			topNavigationSearchAlignment="sidebar"
 		>
 			<main className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
-				<JiraForYouWorkspace chrome="plain" className="h-full min-h-0 flex-1" />
+				{children ?? (
+					<JiraForYouWorkspace
+						chrome="plain"
+						className="h-full min-h-0 flex-1"
+						showConversationHeaderBorder={showConversationHeaderBorder}
+					/>
+				)}
 			</main>
 		</AppLayout>
 	);

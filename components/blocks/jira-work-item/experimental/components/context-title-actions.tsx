@@ -7,7 +7,9 @@ import { Icon } from "@/components/ui/icon";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -95,7 +97,7 @@ export function ContextTitleActions({
 			<ButtonGroup variant="split">
 				<Button aria-label={`Open with ${primaryCodingAgent.label}`} variant="outline" className="gap-0.5">
 					{primaryCodingAgent.logo}
-					{primaryCodingAgent.label}
+					Open
 				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -107,11 +109,14 @@ export function ContextTitleActions({
 					/>
 					<DropdownMenuContent align="end" positionerClassName="z-[502]" className="p-0">
 						<div className="max-h-72 overflow-y-auto p-1">
-							{secondaryCodingAgents.map((agent) => (
-								<DropdownMenuItem className="gap-0.5" key={agent.id} elemBefore={agent.logo}>
-									{agent.label}
-								</DropdownMenuItem>
-							))}
+							<DropdownMenuGroup>
+								<DropdownMenuLabel>Open in</DropdownMenuLabel>
+								{secondaryCodingAgents.map((agent) => (
+									<DropdownMenuItem className="gap-0.5" key={agent.id} elemBefore={agent.logo}>
+										{agent.label}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuGroup>
 						</div>
 						<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
 							<DropdownMenuItem

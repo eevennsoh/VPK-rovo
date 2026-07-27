@@ -141,6 +141,7 @@ export interface JiraKanbanProps {
 	cardMoveAnimation?: JiraKanbanCardMoveAnimation;
 	columnHeaderPaddingBlock?: CSSProperties["paddingBlock"];
 	draggedCardCode?: string | null;
+	activeCardCode?: string;
 	selectedCardCodes?: ReadonlySet<string>;
 	onCardClick?: (title: string, code: string, card: JiraKanbanCardData, columnTitle: string) => void;
 	onCardSelect?: (
@@ -188,6 +189,7 @@ export interface JiraKanbanProps {
 	paddingBottom?: CSSProperties["paddingBottom"];
 	paddingTop?: CSSProperties["paddingTop"];
 	selectionToolbar?: JiraKanbanSelectionToolbarConfig;
+	showScrollAffordance?: boolean;
 }
 
 function orderPickerItems<T extends Readonly<{ id: string }>>(
@@ -466,6 +468,7 @@ function getCommonSelectedCardStatus(
 }
 
 export function JiraKanban({
+	activeCardCode,
 	agents,
 	animateCardMoves = false,
 	ariaLabel = "Jira kanban columns. Scroll horizontally to review all statuses.",
@@ -491,6 +494,7 @@ export function JiraKanban({
 	paddingBottom = token("space.150"),
 	paddingTop = token("space.150"),
 	selectionToolbar,
+	showScrollAffordance = true,
 }: Readonly<JiraKanbanProps>) {
 	const cardLayoutGroupId = useId();
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -649,8 +653,8 @@ export function JiraKanban({
 	};
 
 	return (
-		<div className="relative flex-1 min-h-0">
-			{canScrollRight ? (
+		<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+			{showScrollAffordance && canScrollRight ? (
 				<div
 					aria-hidden="true"
 					className="pointer-events-none absolute top-2 right-4 z-10 rounded-full border border-border bg-surface-raised px-2.5 py-1 text-[11px] font-medium text-text-subtle shadow-sm"
@@ -659,11 +663,11 @@ export function JiraKanban({
 				</div>
 			) : null}
 
-				<section
-					ref={scrollRef}
-					tabIndex={0}
+			<section
+				ref={scrollRef}
+				tabIndex={0}
 				aria-label={ariaLabel}
-				className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+				className="flex min-h-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
 				style={{
 					flex: 1,
 					paddingTop,
@@ -673,9 +677,9 @@ export function JiraKanban({
 					overflowY: "hidden",
 					minHeight: 0,
 				}}
-				>
+			>
 				<LayoutGroup id={cardLayoutGroupId}>
-					<div className="flex items-stretch gap-2" style={{ minWidth: "100%" }}>
+					<div className="flex min-h-full items-stretch gap-2" style={{ minWidth: "100%" }}>
 						{boardColumns.map((column) => (
 						<div
 							key={column.title}
@@ -683,7 +687,7 @@ export function JiraKanban({
 							onDragOver={handleColumnDragOver}
 							onDragLeave={handleColumnDragLeave}
 							onDrop={(event) => handleColumnDrop(event, column.title)}
-							style={{ flex: "1 1 0", minWidth: "168px", borderRadius: token("radius.xlarge") }}
+							style={{ flex: "1 1 0", minWidth: "280px", borderRadius: token("radius.xlarge") }}
 						>
 							<BoardColumn
 								agents={agents}
@@ -699,6 +703,7 @@ export function JiraKanban({
 								title={column.title}
 							>
 								{column.cards.map((card, cardIndex) => {
+									const isActive = activeCardCode === card.code;
 									const isSelected = selectedCardCodes?.has(card.code) ?? false;
 									const isCardBeingDragged = draggedCardCode === card.code;
 									const isMultiSelection = (selectedCardCodes?.size ?? 0) > 1;
@@ -739,12 +744,14 @@ export function JiraKanban({
 												transition={cardMovePhase === "departing" ? JIRA_KANBAN_CARD_DEPART : JIRA_KANBAN_CARD_MOVE}
 											>
 											<JiraIssue
+												active={isActive}
 												summary={card.title}
 												issueKey={card.code}
 												tags={card.tags}
 												priority={card.priority}
 												pullRequestNumber={card.pullRequestNumber}
 												pullRequestStatus={card.pullRequestStatus}
+												assigneeAvatarLabel={card.assignee?.name}
 												assigneeAvatarSrc={card.avatarSrc}
 												assigneeAvatarShape={card.avatarShape}
 												assigneeUnassignedKind={card.avatarUnassignedKind}

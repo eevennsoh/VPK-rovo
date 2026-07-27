@@ -18,6 +18,9 @@ const ROVO_CANVAS_HEADER_SOURCE = fs.readFileSync(
 );
 
 test("hideFloatingRovo suppresses the layout-owned floating chat surface", () => {
+	assert.match(PROJECT_LAYOUT_SOURCE, /defaultSidebarOpen\?: boolean;/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /defaultSidebarOpen = true/u);
+	assert.match(PROJECT_LAYOUT_SOURCE, /<TopNavigation[\s\S]*defaultSidebarOpen=\{defaultSidebarOpen\}/u);
 	assert.match(
 		PROJECT_LAYOUT_SOURCE,
 		/const shouldHideRovoAction = hideRovoAction \|\| isRovoCanvasOpen;/,

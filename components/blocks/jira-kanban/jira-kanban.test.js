@@ -6,6 +6,7 @@ const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const DATA_SOURCE = readFileSync(join(__dirname, "jira-kanban-data.ts"), "utf8");
 const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const HEADER_SOURCE = readFileSync(join(__dirname, "board-header.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(join(__dirname, "..", "jira-issue", "index.tsx"), "utf8");
@@ -71,7 +72,8 @@ const FILTER_COLUMNS = [
 ];
 
 test("Kanban demo preserves the rounded docs frame and leaves scrolling to the board", () => {
-	assert.match(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
+	assert.match(PAGE_SOURCE, /rounded-lg bg-surface/u);
+	assert.doesNotMatch(PAGE_SOURCE, /rounded-lg bg-surface p-4 md:p-5/u);
 	assert.doesNotMatch(PAGE_SOURCE, /overflow-x-auto/u);
 	assert.match(SOURCE, /overflowX: "auto"/u);
 });
@@ -87,7 +89,8 @@ test("Kanban block demo includes the shared Jira header and assignee filter", ()
 });
 
 test("Kanban header matches the production board alignment and action groups", () => {
-	assert.match(HEADER_SOURCE, /<header className="shrink-0 px-4 pb-4 pt-3">/u);
+	assert.match(HEADER_SOURCE, /<header className="shrink-0 pb-4 pt-3">/u);
+	assert.match(HEADER_SOURCE, /<div className="flex min-w-0 items-center gap-2 px-4">/u);
 	assert.doesNotMatch(HEADER_SOURCE, /<header className="[^"]*border-b/u);
 	assert.doesNotMatch(HEADER_SOURCE, />Filter by</u);
 	assert.match(
@@ -95,13 +98,43 @@ test("Kanban header matches the production board alignment and action groups", (
 		/<div className="border-r border-border p-3">[\s\S]*<Button aria-disabled variant="outline">[\s\S]*<Icon data-icon="inline-start" render=\{<AddIcon label="" size="small" \/>\} \/>[\s\S]*Add field[\s\S]*\{FILTER_FIELDS\.map/u,
 	);
 	assert.match(HEADER_SOURCE, /<AvatarUnassigned kind="person" label="Unassigned" size="sm" \/>/u);
-	assert.match(HEADER_SOURCE, /aria-label=\{`Filter board by \$\{assignee\.name\}`\}/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Filter \$\{surfaceLabel\} by \$\{assignee\.name\}`\}/u);
 	assert.match(HEADER_SOURCE, /aria-pressed=\{selectedAssigneeIds\.has\(assignee\.id\)\}/u);
 	assert.match(HEADER_SOURCE, /onClick=\{\(\) => toggleAssignee\(assignee\.id\)\}/u);
 	assert.match(HEADER_SOURCE, /<Button aria-disabled variant="outline">[\s\S]*Group/u);
-	assert.match(HEADER_SOURCE, /<div className="ml-auto flex items-center gap-1">/u);
+	assert.match(HEADER_SOURCE, /className=\{cn\("flex items-center gap-1", compact \? undefined : "ml-auto"\)\}/u);
 	assert.match(HEADER_SOURCE, /aria-label="View insights"/u);
-	assert.match(HEADER_SOURCE, /aria-label="More board controls"/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`More \$\{surfaceLabel\} controls`\}/u);
+});
+
+test("Kanban header places optional view tabs below the Jira Design label", () => {
+	assert.match(HEADER_SOURCE, /<JiraProjectAvatar label=\{JIRA_DESIGN_PROJECT\.name\} src=\{JIRA_DESIGN_PROJECT\.imageSrc\} \/>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<JiraIcon/u);
+	assert.match(HEADER_SOURCE, /viewTabs\?: ReactNode;/u);
+	assert.match(HEADER_SOURCE, /\{viewTabs \? <div className="mt-2">\{viewTabs\}<\/div> : null\}/u);
+	assert.match(HEADER_SOURCE, /<div className="mt-4 flex flex-wrap items-center gap-2 px-4">/u);
+	assert.match(PAGE_SOURCE, /viewTabs\?: ReactNode;/u);
+	assert.match(PAGE_SOURCE, /<JiraKanbanBoardHeader[\s\S]*viewTabs=\{viewTabs\}/u);
+});
+
+test("Kanban header compacts its controls while an owning workspace is open", () => {
+	assert.match(PAGE_SOURCE, /compactHeader\?: boolean;/u);
+	assert.match(PAGE_SOURCE, /<JiraKanbanBoardHeader[\s\S]*compact=\{compactHeader\}/u);
+	assert.match(HEADER_SOURCE, /compact\?: boolean;/u);
+	assert.match(HEADER_SOURCE, /size=\{compact \? "icon" : undefined\}[\s\S]*\{compact \? null : "Filter"\}/u);
+	assert.match(HEADER_SOURCE, /aria-label=\{`Group \$\{surfaceLabel\}`\} size=\{compact \? "icon" : undefined\}[\s\S]*\{compact \? null : "Group"\}/u);
+	assert.match(HEADER_SOURCE, /className=\{cn\("flex items-center gap-1", compact \? undefined : "ml-auto"\)\}/u);
+	assert.match(HEADER_SOURCE, /<FilterIcon label="" \/>/u);
+	assert.match(HEADER_SOURCE, /<GroupIcon label="" \/>/u);
+	assert.doesNotMatch(HEADER_SOURCE, /<(?:FilterIcon|GroupIcon) label="" size="small" \/>/u);
+	assert.match(HEADER_SOURCE, /\{compact \? \([\s\S]*aria-label=\{`More \$\{surfaceLabel\} controls`\}[\s\S]*\) : \([\s\S]*aria-label="View insights"[\s\S]*aria-label=\{`\$\{surfaceTitle\} settings`\}[\s\S]*aria-label="Undo board change"[\s\S]*aria-label="Board announcements"/u);
+});
+
+test("Kanban header supports owning surfaces with a custom search label", () => {
+	assert.match(HEADER_SOURCE, /searchPlaceholder\?: string;/u);
+	assert.match(HEADER_SOURCE, /searchPlaceholder = "Search board"/u);
+	assert.match(HEADER_SOURCE, /<InputGroupInput aria-label=\{searchPlaceholder\} placeholder=\{searchPlaceholder\} readOnly \/>/u);
+	assert.match(HEADER_SOURCE, /surfaceLabel = "board"/u);
 });
 
 test("Kanban assignee list fades into its fixed selection footer", () => {
@@ -123,6 +156,40 @@ test("Kanban card list gives the first card room for its raised edge", () => {
 		SOURCE,
 		/overflowY: "auto",\n\s+paddingTop: token\("space\.050"\),\n\s+paddingBottom: token\("space\.100"\),/,
 	);
+});
+
+test("Kanban columns retain a readable minimum width when the board narrows", () => {
+	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
+});
+
+test("Kanban columns stretch through the available board height", () => {
+	assert.match(PAGE_SOURCE, /<div className="flex min-h-0 min-w-0 flex-1">[\s\S]*<JiraKanban/u);
+	assert.match(SOURCE, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
+	assert.match(SOURCE, /<section[\s\S]*className="flex min-h-0 flex-1 focus-visible:outline-none/u);
+	assert.match(SOURCE, /<div className="flex min-h-full items-stretch gap-2" style=\{\{ minWidth: "100%" \}\}>/u);
+	assert.match(SOURCE, /className="group\/board-column"[\s\S]*height: "100%"/u);
+});
+
+test("Kanban scroll affordance can be hidden by an owning surface", () => {
+	assert.match(SOURCE, /showScrollAffordance\?: boolean;/u);
+	assert.match(SOURCE, /showScrollAffordance = true,/u);
+	assert.match(SOURCE, /showScrollAffordance && canScrollRight \? \(/u);
+	assert.match(PAGE_SOURCE, /showScrollAffordance=\{showScrollAffordance\}/u);
+});
+
+test("Kanban page keeps plain activation separate from modifier-key bulk selection", () => {
+	assert.match(PAGE_SOURCE, /onCardClick\?: \(card: JiraKanbanCardData, columnTitle: string\) => void;/u);
+	assert.match(PAGE_SOURCE, /if \(onCardClick\) \{[\s\S]*setSelection\(createJiraKanbanSelectionState\(\)\);[\s\S]*onCardClick\(card, columnTitle\);[\s\S]*return;/u);
+	assert.match(PAGE_SOURCE, /handleCardSelect\(cardCode, columnTitle, indexInColumn,[\s\S]*metaOrCtrlKey: false,[\s\S]*shiftKey: false,/u);
+	assert.match(SOURCE, /if \(modifiers\.shiftKey \|\| modifiers\.metaOrCtrlKey\) \{[\s\S]*onCardSelect\?\.\(card\.code, column\.title, cardIndex, modifiers\);[\s\S]*return;[\s\S]*onCardClick\?\.\(card\.title, card\.code, card, column\.title\);/u);
+});
+
+test("Kanban tracks the active workspace card separately from bulk selection", () => {
+	assert.match(SOURCE, /activeCardCode\?: string;/u);
+	assert.match(SOURCE, /const isActive = activeCardCode === card\.code;/u);
+	assert.match(SOURCE, /<JiraIssue[\s\S]*active=\{isActive\}[\s\S]*selected=\{isSelected\}/u);
+	assert.match(PAGE_SOURCE, /activeCardCode\?: string;/u);
+	assert.match(PAGE_SOURCE, /<JiraKanban[\s\S]*activeCardCode=\{activeCardCode\}/u);
 });
 
 test("Kanban drag-over column border stays inside the column and uses the focused border token", () => {
@@ -155,6 +222,7 @@ test("Kanban card renders explicit unassigned avatars with the shared placeholde
 	assert.match(JIRA_ISSUE_SOURCE, /AvatarUnassigned,/);
 	assert.match(JIRA_ISSUE_SOURCE, /assigneeUnassignedKind\?: AvatarUnassignedKind;/);
 	assert.match(SOURCE, /assigneeUnassignedKind=\{card\.avatarUnassignedKind\}/);
+	assert.match(SOURCE, /assigneeAvatarLabel=\{card\.assignee\?\.name\}/);
 	assert.match(
 		JIRA_ISSUE_SOURCE,
 		/function JiraIssueAssignee[\s\S]*if \(assigneeUnassignedKind\) \{[\s\S]*<AvatarUnassigned[\s\S]*kind=\{assigneeUnassignedKind\}[\s\S]*size="sm"/,
@@ -319,7 +387,7 @@ test("Kanban cards expose and render Jira issue agent lifecycle presentation", (
 	assert.match(SOURCE, /agentDoneRuns=\{card\.agentDoneRuns\}/);
 	assert.match(SOURCE, /pullRequestNumber=\{card\.pullRequestNumber\}/);
 	assert.match(SOURCE, /pullRequestStatus=\{card\.pullRequestStatus\}/);
-	assert.match(SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
+	assert.match(DATA_SOURCE, /agentDoneRuns: card\.agentDoneRuns\?\.map\(\(run\) => \(\{ \.\.\.run \}\)\)/);
 });
 
 test("Kanban can animate cards between columns with reduced-motion support", () => {
