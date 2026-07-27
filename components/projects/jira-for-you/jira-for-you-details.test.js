@@ -95,6 +95,10 @@ test("the Agents section directly reuses Agent List with native states and selec
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /className="flex w-full flex-col gap-1 divide-y-0"/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /divide-y-0/u);
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
+	assert.match(
+		DETAIL_PANEL_SOURCE,
+		/onSubmitPrompt=\{\(sessionItem, prompt\) => onAgentPrompt\(sessionItem\.id, prompt\)\}/u,
+	);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /variant="compact"/u);

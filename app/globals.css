@@ -31,6 +31,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Keep AnimatedDots keyframes outside component content so CSS source never
+   contributes to an ancestor's accessible name. Timings remain instance-owned. */
+@keyframes dot-reveal {
+	0%,
+	20% {
+		opacity: 0;
+	}
+	40%,
+	100% {
+		opacity: 1;
+	}
+}
+
 :root {
 	--chart-1: var(--ds-chart-blue-bolder);
 	--chart-2: var(--ds-chart-green-bolder);

@@ -17,16 +17,16 @@ import {
 	JGP_CARD_KANBAN_STATES,
 	JGP_CARD_KANBAN_SUBTASKS,
 	JGP_CARD_KANBAN_WORKING_ACTIVITIES,
-} from "@/components/projects/jira-golden-paths/data/card-kanban-data";
+} from "@/components/projects/jira-golden-journeys/data/card-kanban-data";
 import {
 	createJgpKanbanActivity,
 	getJgpGenerativeAgentSelection,
-} from "@/components/projects/jira-golden-paths/data/kanban-data";
-import type { UseAutoCycleResult } from "@/components/projects/jira-golden-paths/hooks/use-auto-cycle";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
+} from "@/components/projects/jira-golden-journeys/data/kanban-data";
+import type { UseAutoCycleResult } from "@/components/projects/jira-golden-journeys/hooks/use-auto-cycle";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys/hooks/use-jira-golden-journeys-agent-chat-demo";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
+import { JgpRovoOverlay } from "./jira-golden-journeys-rovo-overlay";
 
 /**
  * The "Card Kanban" design pattern for the Jira Golden Journeys gallery.

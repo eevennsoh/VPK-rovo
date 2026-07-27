@@ -12,8 +12,8 @@ export const PROJECT_DEMOS: Record<string, ComponentType> = {
 	"jira-for-you": dynamic(() => import("../demos/projects/jira-for-you-demo"), {
 		ssr: false,
 	}),
-	"jira-golden-paths": dynamic(
-		() => import("../demos/projects/jira-golden-paths-demo"),
+	"jira-golden-journeys": dynamic(
+		() => import("../demos/projects/jira-golden-journeys-demo"),
 		{ ssr: false },
 	),
 	"jira-queue": dynamic(() => import("../demos/projects/jira-queue-demo"), {

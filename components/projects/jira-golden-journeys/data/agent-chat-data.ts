@@ -203,7 +203,7 @@ export function buildJgpAgentChatContextBar(
 		iconName: "work-item",
 		label: `${scenario.issueKey}: ${scenario.issueSummary}`,
 		showDismissPlaceholder: false,
-		signature: `jira-golden-paths-work-item:${scenario.issueKey}`,
+		signature: `jira-golden-journeys-work-item:${scenario.issueKey}`,
 	};
 }
 
@@ -226,7 +226,7 @@ function buildJgpQuestionCardParts(
 ): RovoUIMessage["parts"] | null {
 	if (!scenario.question) return null;
 
-	const toolCallId = `jira-golden-paths-agent-question-${runId}`;
+	const toolCallId = `jira-golden-journeys-agent-question-${runId}`;
 	return [
 		{
 			type: "text",
@@ -261,9 +261,9 @@ export function buildJgpAgentChatPlayback(
 	runId: string,
 	now = Date.now(),
 ): JgpAgentChatPlayback {
-	const assistantMessageId = `jira-golden-paths-agent-assistant-${runId}`;
+	const assistantMessageId = `jira-golden-journeys-agent-assistant-${runId}`;
 	const questionCardParts = buildJgpQuestionCardParts(scenario, runId);
-	const toolCallId = `jira-golden-paths-agent-work-${runId}`;
+	const toolCallId = `jira-golden-journeys-agent-work-${runId}`;
 	const startedAt = new Date(now).toISOString();
 	const completedAt = new Date(now + 2_400).toISOString();
 	const thinkingStatus = {
@@ -309,7 +309,7 @@ export function buildJgpAgentChatPlayback(
 	return {
 		assistantMessageId,
 		userMessage: {
-			id: `jira-golden-paths-agent-user-${runId}`,
+			id: `jira-golden-journeys-agent-user-${runId}`,
 			role: "user",
 			parts: [{ type: "text", text: getScenarioRequest(scenario), state: "done" }],
 		},

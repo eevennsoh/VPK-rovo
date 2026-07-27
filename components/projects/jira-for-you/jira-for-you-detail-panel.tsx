@@ -128,12 +128,14 @@ function AgentSection({
 	agentSessions,
 	branch,
 	itemTitle,
+	onAgentPrompt,
 	onAgentSelect,
 	selectedAgentId,
 }: Readonly<{
 	agentSessions: readonly JiraForYouWorkspaceAgentSession[];
 	branch: string;
 	itemTitle: string;
+	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	selectedAgentId: string;
 }>) {
@@ -162,6 +164,7 @@ function AgentSection({
 			<AgentList
 				className="w-full"
 				items={sessionItems}
+				onSubmitPrompt={(sessionItem, prompt) => onAgentPrompt(sessionItem.id, prompt)}
 				onView={(sessionItem) => onAgentSelect(sessionItem.id)}
 				selectedItemId={selectedAgentId}
 				variant="compact"
@@ -225,6 +228,7 @@ function DetailPanelInner({
 	agentSessions,
 	details,
 	item,
+	onAgentPrompt,
 	onAgentSelect,
 	onClose,
 	selectedAgentId,
@@ -232,6 +236,7 @@ function DetailPanelInner({
 	agentSessions: readonly JiraForYouWorkspaceAgentSession[];
 	details: JiraForYouWorkspaceItemDetails;
 	item: JiraForYouItem;
+	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	onClose: () => void;
 	selectedAgentId: string;
@@ -263,6 +268,7 @@ function DetailPanelInner({
 						agentSessions={agentSessions}
 						branch={details.session.branch ?? `jira/${item.issueKey.toLowerCase()}`}
 						itemTitle={item.title}
+						onAgentPrompt={onAgentPrompt}
 						onAgentSelect={onAgentSelect}
 						selectedAgentId={selectedAgentId}
 					/>
@@ -278,6 +284,7 @@ interface JiraForYouDetailPanelProps {
 	details: JiraForYouWorkspaceItemDetails;
 	isNarrow: boolean;
 	item: JiraForYouItem;
+	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	onClose: () => void;
 	resize: Pick<
@@ -300,6 +307,7 @@ export function JiraForYouDetailPanel({
 	details,
 	isNarrow,
 	item,
+	onAgentPrompt,
 	onAgentSelect,
 	onClose,
 	resize,
@@ -327,6 +335,7 @@ export function JiraForYouDetailPanel({
 				agentSessions={agentSessions}
 				details={details}
 				item={item}
+				onAgentPrompt={onAgentPrompt}
 				onAgentSelect={onAgentSelect}
 				onClose={onClose}
 				selectedAgentId={selectedAgentId}

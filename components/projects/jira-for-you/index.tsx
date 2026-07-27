@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,9 @@ import type {
 export interface JiraForYouProps {
 	className?: string;
 	forcedVisibleViewItemId?: string;
-	onItemClick?: (item: JiraForYouItem) => void;
+	onItemClick?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onView?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onViewButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 	selectedItemId?: string;
 	sections?: readonly JiraForYouSection[];

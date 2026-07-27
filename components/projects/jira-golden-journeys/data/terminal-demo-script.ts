@@ -4,9 +4,9 @@ export const JIRA_CLI_TITLE = "Teamwork Graph";
 export const JIRA_CLI_WORKSPACE = "Jira Golden Journeys · work available to start";
 export const JIRA_CLI_FOOTER_HINTS = "↑↓ to browse · enter to inspect in Jira";
 export const TERMINAL_INITIAL_HINT = "click the terminal to browse available work";
-export const TERMINAL_SHELL_PROMPT = "~/dev/jira-golden-paths $";
+export const TERMINAL_SHELL_PROMPT = "~/dev/jira-golden-journeys $";
 
-const JIRA_CLI_BASE_URL = "https://jira-golden-paths.atlassian.net";
+const JIRA_CLI_BASE_URL = "https://jira-golden-journeys.atlassian.net";
 const REVIEW_HANDOFF_COMMAND = `claude -- 'Continue work on Jira work item "Add assignee focus mode" (JGP-247) in this local Claude session. Review feedback was sent from Jira. Address the inline comment below, run the relevant checks, and update the open pull request. Use the Atlassian MCP for any additional work item or review context.
 
 # Jira Work Item Context

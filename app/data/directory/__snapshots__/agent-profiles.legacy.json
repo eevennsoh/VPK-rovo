@@ -259,7 +259,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
 				"contextDescription": "[Selected custom agent]\nAgent: Feedback Analyzer\nByline: Product agent by Atlassian\nDescription: Clusters customer feedback and surfaces themes, sentiment, and product opportunities.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -623,7 +623,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg"
 			},
 			{
 				"id": "notion",
@@ -744,7 +744,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg"
 			},
 			{
 				"id": "notion",
@@ -1045,7 +1045,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg",
 				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
 				"contextDescription": "[Selected custom agent]\nAgent: Feedback Analyzer\nByline: Product agent by Atlassian\nDescription: Clusters customer feedback and surfaces themes, sentiment, and product opportunities.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1375,7 +1375,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg"
 			},
 			{
 				"id": "notion",
@@ -1485,7 +1485,7 @@
 				"id": "feedback-analyzer",
 				"name": "Feedback Analyzer",
 				"byline": "Product agent by Atlassian",
-				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg"
 			},
 			{
 				"id": "notion",

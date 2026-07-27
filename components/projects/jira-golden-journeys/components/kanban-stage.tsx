@@ -34,12 +34,12 @@ import {
 	createJgpKanbanCompletionStoryColumns,
 	type JgpKanbanCompletionStoryPhase,
 	type JgpKanbanScenario,
-} from "@/components/projects/jira-golden-paths/data/kanban-data";
-import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-paths/data/agent-chat-data";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
-import { useJgpKanbanLifecycle } from "@/components/projects/jira-golden-paths/hooks/use-kanban-lifecycle";
+} from "@/components/projects/jira-golden-journeys/data/kanban-data";
+import { JGP_CLAUDE_CODE_AGENT_PROFILE } from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys/hooks/use-jira-golden-journeys-agent-chat-demo";
+import { useJgpKanbanLifecycle } from "@/components/projects/jira-golden-journeys/hooks/use-kanban-lifecycle";
 import { token } from "@/lib/tokens";
-import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
+import { JgpRovoOverlay } from "./jira-golden-journeys-rovo-overlay";
 
 const JGP_COMPLETION_STORY_DELAY_MS = 2_000;
 const JGP_COMPLETION_SCALE_OUT_MS = 400;

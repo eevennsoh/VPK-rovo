@@ -42,9 +42,9 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewContentWidth: "full",
 		},
 	},
-	"jira-golden-paths": {
+	"jira-golden-journeys": {
 		description: "Jira Golden Journeys — a gallery of agent-session design patterns. Each dock card is a pattern; selecting one reveals its design in the stage (the Kanban card shows the Jira Kanban board). New patterns are added as cards over time.",
-		importStatement: `import JgpPage from "@/components/projects/jira-golden-paths";`,
+		importStatement: `import JgpPage from "@/components/projects/jira-golden-journeys";`,
 		demoLayout: {
 			previewHeight: "fixed",
 			previewContentWidth: "full",

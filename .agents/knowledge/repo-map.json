@@ -3998,10 +3998,10 @@
 						]
 					}
 				],
-				"routePath": "/jira-golden-paths",
+				"routePath": "/jira-golden-journeys",
 				"shellOwnerCount": 0,
 				"shellOwners": [],
-				"source": "app/jira-golden-paths/page.tsx"
+				"source": "app/jira-golden-journeys/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -5925,9 +5925,9 @@
 					},
 					{
 						"category": "projects",
-						"slug": "jira-golden-paths",
+						"slug": "jira-golden-journeys",
 						"name": "Jira Golden Journeys",
-						"importPath": "@/components/projects/jira-golden-paths"
+						"importPath": "@/components/projects/jira-golden-journeys"
 					},
 					{
 						"category": "projects",

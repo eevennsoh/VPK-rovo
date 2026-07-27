@@ -7,7 +7,7 @@ import {
 	buildJgpAgentChatContextBar,
 	buildJgpAgentChatPlayback,
 	type JgpAgentChatScenario,
-} from "@/components/projects/jira-golden-paths/data/agent-chat-data";
+} from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
 import type { ChatContextBarDescriptor } from "@/components/projects/shared/lib/chat-context-bar";
 
 export interface UseJgpAgentChatDemoResult {
