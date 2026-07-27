@@ -196,12 +196,15 @@ test("shows the compact variant in the component documentation", () => {
 	assert.match(VARIANT_REGISTRY_SOURCE, /default: mod\.AgentListDemoCompact/u);
 });
 
-test("exports the session activity header without owning an activity card shell", () => {
+test("exports a session activity header whose optional View action requires a handler", () => {
 	assert.match(
 		INDEX_SOURCE,
 		/export \{ AgentListActivityHeader \} from "\.\/agent-list-card"/u,
 	);
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
-	assert.match(CARD_SOURCE, /onClick=\{\(\) => onView\?\.\(item\)\}[\s\S]*View/u);
+	assert.match(
+		CARD_SOURCE,
+		/\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>\s*\) : null\}/u,
+	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
 });

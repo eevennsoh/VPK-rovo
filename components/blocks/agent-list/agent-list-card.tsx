@@ -240,9 +240,11 @@ export function AgentListActivityHeader({
 				</div>
 			</div>
 			{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
-			<Button onClick={() => onView?.(item)} size="compact" type="button" variant="outline">
-				View
-			</Button>
+			{onView ? (
+				<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
+					View
+				</Button>
+			) : null}
 			{action ? <div className="shrink-0">{action}</div> : null}
 		</div>
 	);
