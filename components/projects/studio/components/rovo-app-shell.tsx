@@ -140,6 +140,9 @@ import {
 	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
 	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_PADDING_PX,
+	TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX,
+	TOP_NAV_SEARCH_MAX_WIDTH_PX,
+	TOP_NAV_SEARCH_MIN_WIDTH_PX,
 } from "@/components/blocks/top-navigation/layout-constants";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Badge } from "@/components/ui/badge";
@@ -4058,7 +4061,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						isSidebarResizing={sidebarResize.isResizing}
 						hideAppSwitcher
 						separatorLineOffsetPx={sidebarResize.sidebarWidth - TOP_NAV_PADDING_PX}
-						onToggleSidebar={nav.toggleSidebar}
+						onToggleSidebar={() => chat.setSidebarOpen(!chat.sidebarOpen)}
 						onToggleAppSwitcher={nav.handleToggleAppSwitcher}
 						onCloseAppSwitcher={nav.handleCloseAppSwitcher}
 						onNavigate={(path) => nav.handleNavigate(path === "/" ? "/studio" : path)}
@@ -4071,7 +4074,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{!embedded ? (
 					<div
-						className="flex shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out"
+						className={cn(
+							"relative flex shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out",
+							!chat.sidebarOpen && (nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX)
+								&& "justify-end",
+						)}
 						style={{
 							...headerHeightStyle,
 							paddingLeft: chat.sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
@@ -4080,14 +4087,25 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							viewTransitionName: "persistent-header" as never,
 						}}
 					>
-						<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
+						<div
+							className={cn(
+								"relative flex min-w-0 flex-1 items-center gap-2",
+								!chat.sidebarOpen && (nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX)
+									? "pointer-events-none absolute inset-x-0 justify-center px-3 [&>*]:pointer-events-auto"
+									: "justify-start",
+							)}
+						>
 							<div
 								ref={nav.searchContainerRef}
-								className="relative flex h-9 w-full items-center"
+								className="relative flex h-9 min-w-0 grow items-center"
+								style={{
+									flexBasis: `${TOP_NAV_SEARCH_MIN_WIDTH_PX}px`,
+									maxWidth: `${TOP_NAV_SEARCH_MAX_WIDTH_PX}px`,
+								}}
 							>
 								<InputGroup
 									className={cn(
-										"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
+										"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered motion-reduce:transition-none",
 										"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
 										nav.isSearchFocused && "scale-y-[1.15]",
 										nav.isSearchFocused && "relative z-[1001]",

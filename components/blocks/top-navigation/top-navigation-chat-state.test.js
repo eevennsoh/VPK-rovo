@@ -16,6 +16,14 @@ const TOP_NAVIGATION_DEMO_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "..", "website", "demos", "blocks", "top-navigation-demo.tsx"),
 	"utf8",
 );
+const STUDIO_ROVO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "projects", "studio", "components", "rovo-app-shell.tsx"),
+	"utf8",
+);
+const ROVO_APP_SHELL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "projects", "rovo", "components", "rovo-app-shell.tsx"),
+	"utf8",
+);
 
 test("Ask Rovo button exposes sidebar chat open state as pressed state", () => {
 	assert.match(RIGHT_NAVIGATION_SOURCE, /isChatOpen = false/);
@@ -37,7 +45,7 @@ test("top navigation derives Ask Rovo pressed state from the sidebar chat surfac
 	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}/);
 });
 
-test("top navigation centers the capped search at wide widths and left-aligns it below the breakpoint", () => {
+test("top navigation caps search globally and centers it only when the persistent sidebar is collapsed", () => {
 	// The search lives in a middle zone that grows but caps at a max / floors at a
 	// min width, centering at wide widths (Figma) and left-aligning below the
 	// center breakpoint.
@@ -64,15 +72,27 @@ test("top navigation centers the capped search at wide widths and left-aligns it
 	// Page wires the center/left alignment and the capped search width. The search
 	// grows to the cap but uses its min as a flex-basis (not a hard floor) so it
 	// shrinks under pressure instead of clipping the right cluster.
-	assert.match(TOP_NAVIGATION_SOURCE, /centerSearch \? "justify-center" : "justify-start"/);
-	assert.match(TOP_NAVIGATION_SOURCE, /maxWidth: `\$\{TOP_NAV_SEARCH_MAX_WIDTH_PX\}px`/);
-	assert.match(TOP_NAVIGATION_SOURCE, /flexBasis: `\$\{TOP_NAV_SEARCH_MIN_WIDTH_PX\}px`/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const isPersistentSidebarVisible = variant === "header" \? nav\.isVisible : sidebarOpen;/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const centerSearch = !isPersistentSidebarVisible/);
+
+	for (const source of [TOP_NAVIGATION_SOURCE, STUDIO_ROVO_APP_SHELL_SOURCE, ROVO_APP_SHELL_SOURCE]) {
+		assert.match(source, /maxWidth: `\$\{TOP_NAV_SEARCH_MAX_WIDTH_PX\}px`/);
+		assert.match(source, /flexBasis: `\$\{TOP_NAV_SEARCH_MIN_WIDTH_PX\}px`/);
+		assert.match(source, /TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX/);
+	}
+
+	for (const source of [STUDIO_ROVO_APP_SHELL_SOURCE, ROVO_APP_SHELL_SOURCE]) {
+		assert.match(source, /!chat\.sidebarOpen/);
+		assert.match(source, /onToggleSidebar=\{\(\) => chat\.setSidebarOpen\(!chat\.sidebarOpen\)\}/u);
+		assert.match(source, /\? "pointer-events-none absolute inset-x-0 justify-center px-3 \[&>\*\]:pointer-events-auto"/u);
+		assert.match(source, /&& "justify-end"/u);
+	}
 });
 
-test("top navigation can persist search beside the expanded sidebar", () => {
+test("top navigation keeps the legacy sidebar inset without overriding collapsed centering", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment\?: "responsive" \| "sidebar";/);
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment = "responsive"/);
-	assert.match(TOP_NAVIGATION_SOURCE, /const centerSearch = searchAlignment === "responsive"/);
+	assert.match(TOP_NAVIGATION_SOURCE, /const centerSearch = !isPersistentSidebarVisible/);
 	assert.match(TOP_NAVIGATION_SOURCE, /searchAlignment === "sidebar" \? "ps-2" : undefined/);
 });
 

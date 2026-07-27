@@ -12,7 +12,7 @@ async function loadHarness() {
 					jgpKanbanReducer,
 					createInitialJgpKanbanState,
 					resolveJgpKanbanColumns,
-				} from "./components/projects/jira-golden-paths/lib/kanban-lifecycle";
+				} from "./components/projects/jira-golden-journeys/lib/kanban-lifecycle";
 				export {
 					createJgpKanbanActivity,
 					createJgpKanbanCompletionStoryColumns,
@@ -22,11 +22,11 @@ async function loadHarness() {
 					JGP_KANBAN_AGENTS,
 					JGP_KANBAN_IN_PROGRESS_COLUMN,
 					JGP_KANBAN_REVIEW_COLUMN,
-				} from "./components/projects/jira-golden-paths/data/kanban-data";
+				} from "./components/projects/jira-golden-journeys/data/kanban-data";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
-			sourcefile: "jira-golden-paths-kanban-lifecycle-harness.ts",
+			sourcefile: "jira-golden-journeys-kanban-lifecycle-harness.ts",
 		},
 		bundle: true,
 		format: "cjs",

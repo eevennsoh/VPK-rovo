@@ -47,6 +47,12 @@ export const AGENT_LIST_DETAIL: ComponentDetail = {
 				"Called when a card body or its View action is activated. In the demo this opens the Rovo floating chat.",
 		},
 		{
+			name: "onSubmitPrompt",
+			type: "(item: AgentListItem, prompt: string) => void | Promise<void>",
+			description:
+				"Overrides the default chat destination for Agent States composer submissions.",
+		},
+		{
 			name: "className",
 			type: "string",
 			description: "Additional classes applied to the root container.",

@@ -4,15 +4,15 @@ const path = require("node:path");
 const test = require("node:test");
 
 const STAGE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/components/kanban-stage.tsx"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/components/kanban-stage.tsx"),
 	"utf8",
 );
 const ACTIVITY_DATA_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/data/kanban-activity-data.ts"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/data/kanban-activity-data.ts"),
 	"utf8",
 );
 const HOOK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/hooks/use-kanban-lifecycle.ts"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/hooks/use-kanban-lifecycle.ts"),
 	"utf8",
 );
 const JIRA_KANBAN_SOURCE = fs.readFileSync(

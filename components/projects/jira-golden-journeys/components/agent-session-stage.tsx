@@ -6,8 +6,8 @@ import {
 	AgentList,
 	type AgentListItem,
 } from "@/components/blocks/agent-list";
-import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo";
-import { JgpRovoOverlay } from "./jira-golden-paths-rovo-overlay";
+import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journeys/hooks/use-jira-golden-journeys-agent-chat-demo";
+import { JgpRovoOverlay } from "./jira-golden-journeys-rovo-overlay";
 
 /**
  * Derives a Jira-style issue key from an agent-session branch so the chat's

@@ -6,11 +6,11 @@ const esbuild = require("esbuild");
 const { loadCjsModuleFromText } = require(path.join(process.cwd(), "scripts/lib/esbuild-cjs-loader.js"));
 
 const HOOK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/hooks/use-jira-golden-paths-agent-chat-demo.ts"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/hooks/use-jira-golden-journeys-agent-chat-demo.ts"),
 	"utf8",
 );
 const ROVO_STAGE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/components/rovo-stage.tsx"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/components/rovo-stage.tsx"),
 	"utf8",
 );
 
@@ -26,11 +26,11 @@ async function loadHarness() {
 					buildJgpAgentChatPlayback,
 					buildJgpAgentChatContextBar,
 					buildJgpRovoContinuationPlayback,
-				} from "./components/projects/jira-golden-paths/data/agent-chat-data";
+				} from "./components/projects/jira-golden-journeys/data/agent-chat-data";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
-			sourcefile: "jira-golden-paths-agent-chat-data-harness.ts",
+			sourcefile: "jira-golden-journeys-agent-chat-data-harness.ts",
 		},
 		bundle: true,
 		format: "cjs",
@@ -127,7 +127,7 @@ test("JGP agent chat exposes persistent work-item context for the floating compo
 		iconName: "work-item",
 		label: "PD-40: Implement advanced date-range filter",
 		showDismissPlaceholder: false,
-		signature: "jira-golden-paths-work-item:PD-40",
+		signature: "jira-golden-journeys-work-item:PD-40",
 	});
 	assert.equal(contextBar.collapsible, undefined);
 });
