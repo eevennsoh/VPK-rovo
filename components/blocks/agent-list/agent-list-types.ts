@@ -62,4 +62,6 @@ export interface AgentListProps {
 	variant?: AgentListVariant;
 	/** Called when a row body or its View action is activated. */
 	onView?: (item: AgentListItem) => void;
+	/** Overrides the default chat destination for Agent States composer submissions. */
+	onSubmitPrompt?: (item: AgentListItem, prompt: string) => Promise<void> | void;
 }

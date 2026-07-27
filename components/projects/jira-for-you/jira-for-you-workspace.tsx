@@ -7,10 +7,19 @@ import {
 	useReducedMotion,
 	type Variants,
 } from "motion/react";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useReducer,
+	useRef,
+	useState,
+	type MouseEvent as ReactMouseEvent,
+} from "react";
 
 import { createRovoAppUserMessage } from "@/components/projects/rovo-core/lib/rovo-app-user-message";
 import { useSidebarResize } from "@/components/projects/rovo-core/hooks/use-sidebar-resize";
+import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { createId, cn } from "@/lib/utils";
 
@@ -25,9 +34,11 @@ import { createJiraForYouWorkspaceData } from "./jira-for-you-workspace-data";
 const DETAIL_PANEL_DEFAULT_WIDTH_PX = 360;
 const DETAIL_PANEL_MIN_WIDTH_PX = 280;
 const DETAIL_PANEL_MAX_WIDTH_PX = 720;
+const FEED_PANEL_DEFAULT_WIDTH_PX = 520;
+const FEED_PANEL_MIN_WIDTH_PX = 320;
+const FEED_PANEL_MAX_WIDTH_PX = 720;
 const NARROW_LAYOUT_BREAKPOINT_PX = 1024;
 const WIDE_FEED_MIN_WIDTH_PX = 420;
-const WIDE_CONVERSATION_PREFERRED_WIDTH_PX = 800;
 const WIDE_JIRA_WORK_ITEM_PREFERRED_WIDTH_PX = 1200;
 const CONSTRAINED_OVERLAY_VARIANTS: Variants = {
 	closed: {
@@ -153,11 +164,17 @@ export function JiraForYouWorkspace({
 		minWidth: DETAIL_PANEL_MIN_WIDTH_PX,
 		onCollapse: handleDetailPanelCollapse,
 	});
+	const feedPanelResize = useSidebarResize({
+		defaultWidth: FEED_PANEL_DEFAULT_WIDTH_PX,
+		maxWidth: FEED_PANEL_MAX_WIDTH_PX,
+		minWidth: FEED_PANEL_MIN_WIDTH_PX,
+	});
 	const rowButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 	const viewButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 	const focusRestoreControlRef = useRef<"row" | "view">("view");
 	const focusRestoreItemIdRef = useRef<string | null>(null);
 	const pendingFocusRestoreItemIdRef = useRef<string | null>(null);
+	const shouldRestoreFocusRef = useRef(false);
 
 	useEffect(() => {
 		if (!workspaceNode) {
@@ -195,12 +212,10 @@ export function JiraForYouWorkspace({
 	const selectedAgentSession = assignedItemData?.agentSessions.find(
 		(agentSession) => agentSession.id === selectedAgentId,
 	) ?? assignedItemData?.agentSessions[0] ?? null;
-	const wideChatWorkspaceStyle = !isNarrow
+	const hasResizableChatSplit = mode.kind === "assigned-chat" && !isNarrow;
+	const wideFeedPanelStyle = hasResizableChatSplit
 		? {
-			flexBasis:
-				WIDE_CONVERSATION_PREFERRED_WIDTH_PX +
-				(isDetailPanelOpen ? detailPanelResize.sidebarWidth : 0),
-			maxWidth: `calc(100% - ${WIDE_FEED_MIN_WIDTH_PX}px)`,
+			flex: `0 0 ${feedPanelResize.sidebarWidth}px`,
 		}
 		: undefined;
 	const wideJiraWorkItemWorkspaceStyle = !isNarrow
@@ -257,9 +272,11 @@ export function JiraForYouWorkspace({
 	}, [activeItemId]);
 
 	const handleCloseWorkspace = useCallback(() => {
-		pendingFocusRestoreItemIdRef.current = focusRestoreItemIdRef.current;
+		pendingFocusRestoreItemIdRef.current = shouldRestoreFocusRef.current
+			? focusRestoreItemIdRef.current
+			: null;
 		setRestoringViewButtonItemId(
-			focusRestoreControlRef.current === "view"
+			shouldRestoreFocusRef.current && focusRestoreControlRef.current === "view"
 				? focusRestoreItemIdRef.current
 				: null,
 		);
@@ -269,9 +286,14 @@ export function JiraForYouWorkspace({
 	const handleItemActivate = useCallback((
 		item: JiraForYouItem,
 		origin: "row" | "view",
+		event: ReactMouseEvent<HTMLButtonElement>,
 	) => {
 		focusRestoreItemIdRef.current = item.id;
 		focusRestoreControlRef.current = origin;
+		shouldRestoreFocusRef.current = event.detail === 0;
+		if (!shouldRestoreFocusRef.current) {
+			event.currentTarget.blur();
+		}
 		setRestoringViewButtonItemId(null);
 		onItemClick?.(item);
 
@@ -320,9 +342,12 @@ export function JiraForYouWorkspace({
 		}));
 	}, [assignedItemData]);
 
-	const handleSubmit = useCallback(async ({ files, text }: { files: FileUIPart[]; text: string }) => {
+	const appendLocalMessage = useCallback((
+		targetSessionKey: string,
+		{ files, text }: { files: FileUIPart[]; text: string },
+	) => {
 		const trimmedText = text.trim();
-		if (!sessionKey || (!trimmedText && files.length === 0)) {
+		if (!trimmedText && files.length === 0) {
 			return;
 		}
 
@@ -334,9 +359,36 @@ export function JiraForYouWorkspace({
 		});
 		setLocalMessagesBySessionKey((current) => ({
 			...current,
-			[sessionKey]: [...(current[sessionKey] ?? []), message],
+			[targetSessionKey]: [...(current[targetSessionKey] ?? []), message],
 		}));
-	}, [sessionKey]);
+	}, []);
+
+	const handleSubmit = useCallback(async (payload: { files: FileUIPart[]; text: string }) => {
+		if (!sessionKey) {
+			return;
+		}
+
+		appendLocalMessage(sessionKey, payload);
+	}, [appendLocalMessage, sessionKey]);
+
+	const handleAgentPrompt = useCallback((agentId: string, prompt: string) => {
+		const trimmedPrompt = prompt.trim();
+		const targetAgentSession = assignedItemData?.agentSessions.find(
+			(agentSession) => agentSession.id === agentId,
+		);
+		if (!assignedItemData || !targetAgentSession || !trimmedPrompt) {
+			return;
+		}
+
+		setSelectedAgentByItemId((current) => ({
+			...current,
+			[assignedItemData.item.id]: targetAgentSession.id,
+		}));
+		appendLocalMessage(
+			`${assignedItemData.item.id}:${targetAgentSession.id}`,
+			{ files: [], text: trimmedPrompt },
+		);
+	}, [appendLocalMessage, assignedItemData]);
 
 	return (
 		<div
@@ -351,13 +403,16 @@ export function JiraForYouWorkspace({
 			<section
 				aria-hidden={activeItemData && isNarrow ? true : undefined}
 				className={cn(
-					"min-h-0 overflow-y-auto",
+					"min-h-0",
 					activeItemData && !isNarrow
-						? "min-w-[420px] flex-1 border-r border-border"
-						: "w-full flex-1",
+						? hasResizableChatSplit
+							? "relative shrink-0"
+							: "min-w-[420px] flex-1 overflow-y-auto border-r border-border"
+						: "w-full flex-1 overflow-y-auto",
 				)}
 				data-testid="jira-for-you-feed"
 				inert={activeItemData && isNarrow ? true : undefined}
+				style={wideFeedPanelStyle}
 			>
 				<div
 					className={cn(
@@ -366,6 +421,7 @@ export function JiraForYouWorkspace({
 						// the tabs wrap (@max-[28rem]) the header re-adds a top gap via
 						// --feed-stack-top, matching the responsive horizontal padding.
 						"w-full px-4 pb-4 md:px-5 md:pb-5 [--feed-stack-top:1rem] md:[--feed-stack-top:1.25rem]",
+						hasResizableChatSplit ? "h-full overflow-y-auto" : undefined,
 						activeItemData && !isNarrow ? undefined : "mx-auto max-w-3xl",
 					)}
 				>
@@ -379,8 +435,8 @@ export function JiraForYouWorkspace({
 
 							rowButtonRefs.current.delete(item.id);
 						}}
-						onItemClick={(item) => handleItemActivate(item, "row")}
-						onView={(item) => handleItemActivate(item, "view")}
+						onItemClick={(item, event) => handleItemActivate(item, "row", event)}
+						onView={(item, event) => handleItemActivate(item, "view", event)}
 						onViewButtonRef={(item, node) => {
 							if (node) {
 								viewButtonRefs.current.set(item.id, node);
@@ -394,6 +450,26 @@ export function JiraForYouWorkspace({
 						tabs={tabs}
 					/>
 				</div>
+				{hasResizableChatSplit ? (
+					<SidebarResizeHandle
+						aria-label="Resize For you list panel"
+						aria-orientation="vertical"
+						aria-valuemax={feedPanelResize.maxWidth}
+						aria-valuemin={feedPanelResize.minWidth}
+						aria-valuenow={feedPanelResize.sidebarWidth}
+						className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						data-active={feedPanelResize.isResizing ? "" : undefined}
+						data-testid="jira-for-you-feed-resize-handle"
+						onDoubleClick={feedPanelResize.onResizeHandleDoubleClick}
+						onKeyDown={feedPanelResize.onResizeHandleKeyDown}
+						onPointerDown={feedPanelResize.onResizeHandlePointerDown}
+						onPointerEnter={feedPanelResize.onResizeHandlePointerEnter}
+						onPointerLeave={feedPanelResize.onResizeHandlePointerLeave}
+						role="separator"
+						side="right"
+						tabIndex={0}
+					/>
+				) : null}
 			</section>
 
 			<AnimatePresence initial={false}>
@@ -407,14 +483,13 @@ export function JiraForYouWorkspace({
 							"min-h-0 min-w-0 bg-background",
 							isNarrow
 								? "absolute inset-0 z-10"
-								: "relative flex shrink",
+								: "relative flex flex-1",
 						)}
 						data-layout={isNarrow ? "overlay" : "split"}
 						data-testid="jira-for-you-chat-workspace"
 						exit="closed"
 						initial="closed"
 						style={{
-							...wideChatWorkspaceStyle,
 							willChange: isNarrow && !shouldReduceMotion ? "transform" : undefined,
 						}}
 						variants={workspaceVariants}
@@ -427,6 +502,7 @@ export function JiraForYouWorkspace({
 						}
 						isDetailPanelOpen={isDetailPanelOpen}
 						item={assignedItemData.item}
+						key={selectedAgentSession.id}
 						onBack={handleCloseWorkspace}
 						onDetailPanelToggle={() => dispatchView({ type: "toggle-detail-panel" })}
 						onSubmit={handleSubmit}
@@ -440,6 +516,7 @@ export function JiraForYouWorkspace({
 								details={assignedItemData.details}
 								isNarrow={isNarrow}
 								item={assignedItemData.item}
+								onAgentPrompt={handleAgentPrompt}
 								onAgentSelect={handleAgentSelect}
 								onClose={() => dispatchView({ type: "set-detail-panel", open: false })}
 								resize={detailPanelResize}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent as ReactMouseEvent } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import {
@@ -41,9 +41,9 @@ function ItemList({
 	forcedVisibleViewItemId?: string;
 	items: readonly JiraForYouItem[];
 	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onItemClick?: (item: JiraForYouItem) => void;
+	onItemClick?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onView?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	selectedItemId?: string;
 }>) {
 	return (
@@ -75,9 +75,9 @@ export function JiraForYouSectionGroup({
 }: Readonly<{
 	forcedVisibleViewItemId?: string;
 	onItemButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onItemClick?: (item: JiraForYouItem) => void;
+	onItemClick?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onView?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	selectedItemId?: string;
 	section: JiraForYouSection;
 }>) {

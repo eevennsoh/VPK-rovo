@@ -93,7 +93,7 @@ export function TerminalStageClaudePane({
 					<div className="min-w-0">
 						<p className="text-[#D97757]">✻ Welcome to Claude Code!</p>
 						<p className="text-text-subtlest">Claude Code · /help for help</p>
-						<p className="text-text-subtlest">cwd: ~/dev/jira-golden-paths</p>
+						<p className="text-text-subtlest">cwd: ~/dev/jira-golden-journeys</p>
 					</div>
 				</div>
 				<div className="flex flex-col gap-1">

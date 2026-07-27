@@ -53,11 +53,11 @@ export function JiraForYouHeader({
 					<TabsList className="h-auto w-max max-w-full flex-nowrap justify-start overflow-x-auto @max-[28rem]:w-full">
 						{tabs.map((tab) => (
 							<TabsTrigger
-								className="shrink-0 flex-none @max-[28rem]:min-w-0 @max-[28rem]:flex-[1_1_auto] @max-[28rem]:overflow-hidden"
+								className="shrink-0 flex-none @max-[28rem]:min-w-12 @max-[28rem]:flex-[1_1_auto] @max-[28rem]:overflow-hidden"
 								key={tab.id}
 								value={tab.id}
 							>
-								<span className="min-w-min truncate">{tab.label}</span>
+								<span className="min-w-0 flex-1 truncate">{tab.label}</span>
 								{typeof tab.count === "number" ? <Badge>{tab.count}</Badge> : null}
 							</TabsTrigger>
 						))}

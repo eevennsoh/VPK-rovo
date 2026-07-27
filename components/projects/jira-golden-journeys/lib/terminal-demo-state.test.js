@@ -19,8 +19,8 @@ async function loadTerminalStateHarness() {
 					getBoardSections,
 					getOrderedItemKeys,
 					getVisibleOutputLines,
-				} from "./components/projects/jira-golden-paths/lib/terminal-demo-state";
-				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/jira-golden-paths/data/terminal-demo-script";
+				} from "./components/projects/jira-golden-journeys/lib/terminal-demo-state";
+				export { getJiraIssueUrl, TERMINAL_DEMO_BEATS } from "./components/projects/jira-golden-journeys/data/terminal-demo-script";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -37,11 +37,11 @@ async function loadTerminalStateHarness() {
 }
 
 const TERMINAL_HOOK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/hooks/use-terminal-demo.ts"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/hooks/use-terminal-demo.ts"),
 	"utf8",
 );
 const TERMINAL_JIRA_PANE_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/jira-golden-paths/components/terminal-stage-jira-pane.tsx"),
+	path.join(process.cwd(), "components/projects/jira-golden-journeys/components/terminal-stage-jira-pane.tsx"),
 	"utf8",
 );
 
@@ -231,7 +231,7 @@ test("post-review terminal transitions reveal only each destination beat's new l
 test("Jira dashboard keeps shortcuts without restoring its dispatch box", async () => {
 	const harness = await loadTerminalStateHarness();
 
-	assert.equal(harness.getJiraIssueUrl("JGP-198"), "https://jira-golden-paths.atlassian.net/browse/JGP-198");
+	assert.equal(harness.getJiraIssueUrl("JGP-198"), "https://jira-golden-journeys.atlassian.net/browse/JGP-198");
 	assert.match(TERMINAL_JIRA_PANE_SOURCE, /\{JIRA_CLI_FOOTER_HINTS\}/u);
 	assert.doesNotMatch(TERMINAL_JIRA_PANE_SOURCE, /JIRA_CLI_DISPATCH_PLACEHOLDER/u);
 	assert.match(
