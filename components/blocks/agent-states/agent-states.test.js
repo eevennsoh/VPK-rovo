@@ -4,6 +4,7 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "index.tsx"), "utf8");
+const PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const JIRA_ISSUE_SOURCE = readFileSync(
 	join(__dirname, "../jira-issue/agent-activity.tsx"),
 	"utf8",
@@ -22,6 +23,15 @@ test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /<ElapsedTime/u);
 	assert.match(SOURCE, /<AgentStatesComposer onSubmit=\{onSubmit\} \/>/u);
 	assert.match(SOURCE, /state === "awaiting-input" && question/u);
+});
+
+test("Agent States demo exposes distinct content for each state", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/import \{ QUESTION_CARD_SINGLE_SELECT_DEMO \} from "@\/components\/blocks\/question-card\/data\/questions";/u,
+	);
+	assert.match(PAGE_SOURCE, /question=\{QUESTION_CARD_SINGLE_SELECT_DEMO\[0\]\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /\bmessage=/u);
 });
 
 test("Jira Issue and Agent List consume Agent States instead of local flyout cards", () => {
