@@ -94,9 +94,11 @@ export function ExperimentalWorkItemLayout({
 	const contentStyle = {
 		"--metadata-panel-offset": metadataCollapsed ? "0px" : METADATA_PANEL_WIDTH,
 	} as CSSProperties;
-	const contentColumnStyle = {
+	const constrainedColumnStyle = {
 		maxWidth: metadataCollapsed ? "800px" : "100%",
 	} as CSSProperties;
+	const contentColumnStyle = fillContainer ? undefined : constrainedColumnStyle;
+	const innerColumnStyle = fillContainer ? constrainedColumnStyle : undefined;
 
 	return (
 		<div className="@container/agentlayout h-full min-h-0 min-w-0">
@@ -122,7 +124,10 @@ export function ExperimentalWorkItemLayout({
 							data-jira-work-item-scroll-region
 							style={leftScrollMaskStyle}
 						>
-							<div className="contents @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6 @[860px]/agentlayout:px-6">
+							<div
+								className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6 @[860px]/agentlayout:px-6"
+								style={innerColumnStyle}
+							>
 								<div className="order-1 min-w-0">{context}</div>
 								{hasActivity ? <div className="order-2 min-w-0">{activity}</div> : null}
 							</div>
@@ -145,7 +150,10 @@ export function ExperimentalWorkItemLayout({
 										<div className="absolute inset-0 bg-linear-to-b from-transparent to-background" />
 									</div>
 								) : null}
-								<div className="contents @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6">
+								<div
+									className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:block @[860px]/agentlayout:w-full @[860px]/agentlayout:px-6"
+									style={innerColumnStyle}
+								>
 									{composer}
 								</div>
 							</div>

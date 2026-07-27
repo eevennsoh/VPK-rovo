@@ -17,14 +17,20 @@ export function AgentList({
 	composerChatSurface = "sidebar",
 	items = AGENT_LIST_ITEMS,
 	variant = "default",
+	onSubmitPrompt,
 	onView,
 	selectedItemId,
 }: Readonly<AgentListProps>) {
 	const { openChat, sendPrompt } = useRovoChat();
-	const handleFlyoutSubmit = useCallback((prompt: string) => {
+	const handleFlyoutSubmit = useCallback((item: AgentListItem, prompt: string) => {
+		if (onSubmitPrompt) {
+			void onSubmitPrompt(item, prompt);
+			return;
+		}
+
 		openChat(composerChatSurface);
 		void sendPrompt(prompt);
-	}, [composerChatSurface, openChat, sendPrompt]);
+	}, [composerChatSurface, onSubmitPrompt, openChat, sendPrompt]);
 
 	return (
 		<ul
@@ -39,7 +45,7 @@ export function AgentList({
 					item={item}
 					key={item.id}
 					onView={onView}
-					onFlyoutSubmit={handleFlyoutSubmit}
+					onFlyoutSubmit={(prompt) => handleFlyoutSubmit(item, prompt)}
 					variant={variant}
 				/>
 			))}

@@ -118,7 +118,7 @@
 		"id": "feedback-analyzer",
 		"name": "Feedback Analyzer",
 		"byline": "Product agent by Atlassian",
-		"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+		"avatarSrc": "/avatar-agent/product-agents/wildcard-6.svg",
 		"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
 		"attributionKind": "company",
 		"favorite": true,

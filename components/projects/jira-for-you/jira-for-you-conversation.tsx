@@ -188,6 +188,7 @@ export function JiraForYouConversation({
 										composerStatus="ready"
 										experimentalDarkCta
 										hideReasoningSelector
+										hideSourceAndModelControls
 										micStream={realtime.micStream}
 										onStop={async () => realtime.disconnect()}
 										onSubmit={onSubmit}

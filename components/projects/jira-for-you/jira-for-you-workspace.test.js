@@ -101,7 +101,7 @@ test("Jira For You preserves standalone list callbacks while exposing selected-r
 	assert.match(SECTION_SOURCE, /isSelected=\{item\.id === selectedItemId\}/u);
 	assert.match(ITEM_SOURCE, /aria-current=\{isSelected \? "true" : undefined\}/u);
 	assert.match(ITEM_SOURCE, /isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"/u);
-	assert.match(ITEM_SOURCE, /onView=\{\(\) => \(onView \?\? onItemClick\)\?\.\(item\)\}/u);
+	assert.match(ITEM_SOURCE, /onView=\{\(event\) => \(onView \?\? onItemClick\)\?\.\(item, event\)\}/u);
 	assert.match(ITEM_SOURCE, /viewButtonRef=\{\(node\) => onViewButtonRef\?\.\(item, node\)\}/u);
 });
 
@@ -125,18 +125,40 @@ test("the workspace owns open or close, focus restoration, and local user-messag
 		WORKSPACE_SOURCE,
 		/const focusWhenReady = \(\) => \{[\s\S]*focusRestoreControlRef\.current === "row"[\s\S]*rowButtonRefs\.current\.get\(itemId\)[\s\S]*viewButtonRefs\.current\.get\(itemId\);[\s\S]*button\.focus\(\);/u,
 	);
+	assert.match(WORKSPACE_SOURCE, /const shouldRestoreFocusRef = useRef\(false\);/u);
+	assert.match(WORKSPACE_SOURCE, /shouldRestoreFocusRef\.current = event\.detail === 0;/u);
+	assert.match(WORKSPACE_SOURCE, /if \(!shouldRestoreFocusRef\.current\) \{\s*event\.currentTarget\.blur\(\);\s*\}/u);
 	assert.match(WORKSPACE_SOURCE, /dispatchView\(\{\s*type: "open-assigned",\s*itemId: item\.id,\s*detailPanelOpen: !isNarrow,/u);
-	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = focusRestoreItemIdRef\.current;[\s\S]*dispatchView\(\{ type: "close" \}\);/u);
+	assert.match(WORKSPACE_SOURCE, /pendingFocusRestoreItemIdRef\.current = shouldRestoreFocusRef\.current[\s\S]*\? focusRestoreItemIdRef\.current[\s\S]*: null;[\s\S]*dispatchView\(\{ type: "close" \}\);/u);
 	assert.match(WORKSPACE_SOURCE, /createRovoAppUserMessage/u);
 	assert.match(WORKSPACE_SOURCE, /createId\("jira-for-you-user"\)/u);
+	assert.match(WORKSPACE_SOURCE, /const handleAgentPrompt = useCallback\(\(agentId: string, prompt: string\) => \{/u);
+	assert.match(WORKSPACE_SOURCE, /const targetAgentSession = assignedItemData\?\.agentSessions\.find/u);
+	assert.match(WORKSPACE_SOURCE, /\[assignedItemData\.item\.id\]: targetAgentSession\.id/u);
+	assert.match(WORKSPACE_SOURCE, /`\$\{assignedItemData\.item\.id\}:\$\{targetAgentSession\.id\}`/u);
+	assert.match(WORKSPACE_SOURCE, /onAgentPrompt=\{handleAgentPrompt\}/u);
+	assert.match(WORKSPACE_SOURCE, /<JiraForYouConversation[\s\S]*key=\{selectedAgentSession\.id\}/u);
 	assert.match(WORKSPACE_SOURCE, /const WIDE_FEED_MIN_WIDTH_PX = 420;/u);
-	assert.match(WORKSPACE_SOURCE, /const WIDE_CONVERSATION_PREFERRED_WIDTH_PX = 800;/u);
-	assert.match(WORKSPACE_SOURCE, /flexBasis:[\s\S]*WIDE_CONVERSATION_PREFERRED_WIDTH_PX[\s\S]*detailPanelResize\.sidebarWidth/u);
 	assert.match(WORKSPACE_SOURCE, /maxWidth: `calc\(100% - \$\{WIDE_FEED_MIN_WIDTH_PX\}px\)`/u);
-	assert.match(WORKSPACE_SOURCE, /"min-w-\[420px\] flex-1 border-r border-border"/u);
-	assert.match(WORKSPACE_SOURCE, /onItemClick=\{\(item\) => handleItemActivate\(item, "row"\)\}/u);
-	assert.match(WORKSPACE_SOURCE, /onView=\{\(item\) => handleItemActivate\(item, "view"\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /\? "relative shrink-0"/u);
+	assert.match(WORKSPACE_SOURCE, /hasResizableChatSplit \? "h-full overflow-y-auto" : undefined/u);
+	assert.match(WORKSPACE_SOURCE, /onItemClick=\{\(item, event\) => handleItemActivate\(item, "row", event\)\}/u);
+	assert.match(WORKSPACE_SOURCE, /onView=\{\(item, event\) => handleItemActivate\(item, "view", event\)\}/u);
 	assert.match(WORKSPACE_SOURCE, /detailPanelInsetPx=\{\s*isDetailPanelOpen && !isNarrow\s*\?\s*detailPanelResize\.sidebarWidth\s*:\s*0\s*\}/u);
+});
+
+test("the assigned chat split exposes a draggable, keyboard-accessible list separator", () => {
+	assert.match(WORKSPACE_SOURCE, /const FEED_PANEL_DEFAULT_WIDTH_PX = 520;/u);
+	assert.match(WORKSPACE_SOURCE, /const feedPanelResize = useSidebarResize\(\{/u);
+	assert.match(WORKSPACE_SOURCE, /defaultWidth: FEED_PANEL_DEFAULT_WIDTH_PX/u);
+	assert.match(WORKSPACE_SOURCE, /const hasResizableChatSplit = mode\.kind === "assigned-chat" && !isNarrow;/u);
+	assert.match(WORKSPACE_SOURCE, /flex: `0 0 \$\{feedPanelResize\.sidebarWidth\}px`/u);
+	assert.match(WORKSPACE_SOURCE, /style=\{wideFeedPanelStyle\}/u);
+	assert.match(WORKSPACE_SOURCE, /isNarrow[\s\S]*\? "absolute inset-0 z-10"[\s\S]*: "relative flex flex-1"/u);
+	assert.match(
+		WORKSPACE_SOURCE,
+		/<SidebarResizeHandle[\s\S]*aria-label="Resize For you list panel"[\s\S]*data-testid="jira-for-you-feed-resize-handle"[\s\S]*onKeyDown=\{feedPanelResize\.onResizeHandleKeyDown\}[\s\S]*onPointerDown=\{feedPanelResize\.onResizeHandlePointerDown\}[\s\S]*role="separator"[\s\S]*side="right"/u,
+	);
 });
 
 test("the conversation workspace reuses fullscreen chat primitives and a back path", () => {
@@ -160,7 +182,7 @@ test("the conversation workspace reuses fullscreen chat primitives and a back pa
 	assert.match(CONVERSATION_SOURCE, /messageMode="ask"/u);
 	assert.match(CONVERSATION_SOURCE, /showFeedbackActions=\{false\}/u);
 	assert.match(CONVERSATION_SOURCE, /showFollowUpSuggestions=\{false\}/u);
-	assert.doesNotMatch(CONVERSATION_SOURCE, /hideSourceAndModelControls/u);
+	assert.match(CONVERSATION_SOURCE, /hideSourceAndModelControls/u);
 	assert.match(CONVERSATION_SOURCE, /hideReasoningSelector/u);
 	assert.doesNotMatch(CONVERSATION_SOURCE, /showSubmitWhenEmpty/u);
 	assert.match(CONVERSATION_SOURCE, /const realtime = useRealtimeVoice\(/u);
@@ -211,6 +233,9 @@ test("assigned workspaces switch independently between chat, work item, and deta
 	assert.match(WORK_ITEM_DIALOG_SOURCE, /fillsInlineContainer \? "h-full min-h-0 max-w-none flex-1 shrink" : null/u);
 	assert.match(JIRA_WORK_ITEM_SOURCE, /fillContainer=\{inlineSurface === "fill"\}/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /fillContainer = false/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /const contentColumnStyle = fillContainer \? undefined : constrainedColumnStyle;/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /const innerColumnStyle = fillContainer \? constrainedColumnStyle : undefined;/u);
+	assert.match(WORK_ITEM_LAYOUT_SOURCE, /data-jira-work-item-scroll-region[\s\S]*style=\{innerColumnStyle\}/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /p-6 data-\[fill-container\]:pb-0[\s\S]*data-fill-container=\{fillContainer \? "" : undefined\}/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /className="[^"]*bg-background[^"]*pb-4[^"]*@\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-composer-dock/u);
 	assert.match(WORK_ITEM_LAYOUT_SOURCE, /ref: narrowScrollRef,[\s\S]*showBottomScrollMask: showNarrowBottomScrollMask,[\s\S]*ref=\{narrowScrollRef\}/u);
@@ -224,8 +249,9 @@ test("the header wraps tabs beneath the title when space gets tight without movi
 	assert.match(HEADER_SOURCE, /<h2 className="shrink-0 text-text"/u);
 	assert.match(HEADER_SOURCE, /className="min-w-0 max-w-full flex-none @max-\[28rem\]:w-full"/u);
 	assert.match(HEADER_SOURCE, /<TabsList className="h-auto w-max max-w-full flex-nowrap justify-start overflow-x-auto @max-\[28rem\]:w-full">/u);
+	assert.match(HEADER_SOURCE, /@max-\[28rem\]:min-w-12/u);
 	assert.match(HEADER_SOURCE, /@max-\[28rem\]:flex-\[1_1_auto\]/u);
-	assert.match(HEADER_SOURCE, /<span className="min-w-min truncate">\{tab\.label\}<\/span>/u);
+	assert.match(HEADER_SOURCE, /<span className="min-w-0 flex-1 truncate">\{tab\.label\}<\/span>/u);
 	assert.match(HEADER_SOURCE, /<InputGroup className="min-w-0">/u);
 });
 
@@ -236,6 +262,7 @@ test("the detail panel includes an Agents selector and agent-specific details co
 	assert.match(DETAIL_PANEL_SOURCE, /aria-labelledby="jira-for-you-agents-heading"/u);
 	assert.match(DETAIL_PANEL_SOURCE, /<JiraSessionSectionHeading id="jira-for-you-agents-heading">Agents<\/JiraSessionSectionHeading>/u);
 	assert.match(DETAIL_PANEL_SOURCE, /items=\{sessionItems\}/u);
+	assert.match(DETAIL_PANEL_SOURCE, /onSubmitPrompt=\{\(sessionItem, prompt\) => onAgentPrompt\(sessionItem\.id, prompt\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /Shimmer|JiraSessionLifecycle|TileAvatar|<Tag/u);
@@ -324,11 +351,13 @@ test("the reusable Jira shell owns sidebar state, sidebar chat fallback, and the
 	assert.match(PAGE_SOURCE, /import AppLayout from "@\/components\/projects\/page";/u);
 	assert.match(PAGE_SOURCE, /chatPanelFlush/u);
 	assert.match(PAGE_SOURCE, /hideFloatingRovo/u);
+	assert.match(PAGE_SOURCE, /hideRovoAction/u);
 	assert.match(PAGE_SOURCE, /import \{ JiraSidebar \} from "@\/components\/blocks\/product-sidebar\/variants\/jira";/u);
 	assert.match(PAGE_SOURCE, /const \[selectedSidebarItem, setSelectedSidebarItem\] = useState\("For you"\);/u);
 	assert.match(PAGE_SOURCE, /shellHeight=\{shellHeight\}/u);
 	assert.match(PAGE_SOURCE, /sidebarContent=\{\(\s*<JiraSidebar[\s\S]*onSelectItem=\{setSelectedSidebarItem\}[\s\S]*selectedItem=\{selectedSidebarItem\}/u);
 	assert.match(PAGE_SOURCE, /topNavigationSearchAlignment="sidebar"/u);
+	assert.match(PAGE_SOURCE, /<main className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">/u);
 	assert.match(PAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*chrome="plain"[\s\S]*className="h-full min-h-0 flex-1"[\s\S]*\/>/u);
 	assert.match(PREVIEW_PAGE_SOURCE, /<JiraForYouShell \/>/u);
 });

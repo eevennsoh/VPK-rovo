@@ -136,12 +136,15 @@ test("session rows reuse Agent States flyouts on the left", () => {
 
 test("Agent States composer submissions open the configured chat surface with sidebar fallback", () => {
 	assert.match(TYPES_SOURCE, /composerChatSurface\?: ChatSurface;/u);
+	assert.match(TYPES_SOURCE, /onSubmitPrompt\?: \(item: AgentListItem, prompt: string\) => Promise<void> \| void;/u);
 	assert.match(INDEX_SOURCE, /composerChatSurface = "sidebar"/u);
+	assert.match(INDEX_SOURCE, /if \(onSubmitPrompt\) \{[\s\S]*void onSubmitPrompt\(item, prompt\);[\s\S]*return;/u);
 	assert.match(INDEX_SOURCE, /openChat\(composerChatSurface\);/u);
 	assert.match(INDEX_SOURCE, /void sendPrompt\(prompt\);/u);
-	assert.match(INDEX_SOURCE, /onFlyoutSubmit=\{handleFlyoutSubmit\}/u);
+	assert.match(INDEX_SOURCE, /onFlyoutSubmit=\{\(prompt\) => handleFlyoutSubmit\(item, prompt\)\}/u);
 	assert.match(DETAIL_SOURCE, /name: "composerChatSurface"/u);
 	assert.match(DETAIL_SOURCE, /default: '"sidebar"'/u);
+	assert.match(DETAIL_SOURCE, /name: "onSubmitPrompt"/u);
 });
 
 test("in-flow View controls immediately replace lifecycle indicators without collisions", () => {

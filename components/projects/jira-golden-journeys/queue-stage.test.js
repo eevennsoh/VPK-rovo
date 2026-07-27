@@ -12,7 +12,7 @@ const KANBAN_STAGE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const ROVO_OVERLAY_SOURCE = fs.readFileSync(
-	path.join(__dirname, "components/jira-golden-paths-rovo-overlay.tsx"),
+	path.join(__dirname, "components/jira-golden-journeys-rovo-overlay.tsx"),
 	"utf8",
 );
 const ROVO_STAGE_SOURCE = fs.readFileSync(

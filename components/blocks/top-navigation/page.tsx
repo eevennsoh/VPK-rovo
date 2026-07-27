@@ -58,7 +58,7 @@ interface TopNavigationProps {
 	showSearch?: boolean;
 	/** Size the shell to the viewport, or fill a height-constrained parent. */
 	shellHeight?: "viewport" | "parent";
-	/** Keep search anchored beside the persistent sidebar instead of centering it at wide widths. */
+	/** Preserve the legacy leading inset used by sidebar-owned product shells. */
 	searchAlignment?: "responsive" | "sidebar";
 	hideRovoAction?: boolean;
 	/**
@@ -106,8 +106,9 @@ interface TopNavigationProps {
  * Studio-style application shell with a resizable, pinned side-nav and a 56px
  * top navigation bar. The header mirrors the Figma global top navigation:
  * left chrome (sidebar toggle, app switcher, product logo) sits in the
- * sidebar-aligned region; the search + Create sit in a middle zone that centers
- * at wide widths and left-aligns below `TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX`;
+	 * sidebar-aligned region; the search + Create sit in a middle zone that
+	 * left-aligns while the sidebar is pinned, then centers when it is collapsed
+	 * at or above `TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX`;
  * the right cluster (Ask Rovo, notifications, help, settings, avatar) collapses
  * into a "…" overflow popover at narrow widths. The search shrinks fluidly and
  * collapses to an icon button below `TOP_NAV_SEARCH_ICON_BREAKPOINT_PX`.
@@ -157,8 +158,11 @@ export default function TopNavigation({
 		}
 	}, [isSearchCollapsible]);
 
-	// Center the search at wide widths (Figma), left-align it below the breakpoint.
-	const centerSearch = searchAlignment === "responsive"
+	// A pinned sidebar anchors the search to the content edge. Once the sidebar
+	// collapses, center the search + Create group at wide viewports; below the
+	// existing breakpoint it returns to the responsive left-aligned layout.
+	const isPersistentSidebarVisible = variant === "header" ? nav.isVisible : sidebarOpen;
+	const centerSearch = !isPersistentSidebarVisible
 		&& (nav.windowWidth === 0 || nav.windowWidth >= TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX);
 
 	const handleExpandSearchIcon = useCallback(() => {
@@ -201,7 +205,9 @@ export default function TopNavigation({
 		<div
 			className={cn(
 				"flex min-w-0 flex-1 items-center gap-2",
-				centerSearch ? "justify-center" : "justify-start",
+				centerSearch
+					? "pointer-events-none absolute inset-x-0 justify-center px-3 [&>*]:pointer-events-auto"
+					: "justify-start",
 			)}
 		>
 			{showSearch ? (
@@ -223,7 +229,7 @@ export default function TopNavigation({
 					>
 						<InputGroup
 							className={cn(
-								"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
+								"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered motion-reduce:transition-none",
 								"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
 								nav.isSearchFocused && "relative z-[1001] scale-y-[1.15]",
 							)}
@@ -296,7 +302,10 @@ export default function TopNavigation({
 	if (variant === "header") {
 		return (
 			<header
-				className="relative flex shrink-0 items-center gap-2 px-3"
+				className={cn(
+					"relative flex shrink-0 items-center gap-2 px-3",
+					centerSearch && "justify-end",
+				)}
 				style={{
 					...headerHeightStyle,
 					position: "sticky",
@@ -423,7 +432,10 @@ export default function TopNavigation({
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{/* Top navigation bar */}
 				<div
-					className="flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out"
+					className={cn(
+						"relative flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
+						centerSearch && "justify-end",
+					)}
 					style={{
 						...headerHeightStyle,
 						paddingLeft: sidebarOpen ? undefined : `${getCollapsedHeaderPaddingPx(product)}px`,

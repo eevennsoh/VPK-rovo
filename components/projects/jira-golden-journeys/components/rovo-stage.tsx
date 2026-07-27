@@ -39,7 +39,7 @@ import {
 	JGP_ROVO_SESSION_SEEDS,
 	buildJgpRovoContinuationPlayback,
 	parseJgpCodeListWidgetPayload,
-} from "@/components/projects/jira-golden-paths/data/agent-chat-data";
+} from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {

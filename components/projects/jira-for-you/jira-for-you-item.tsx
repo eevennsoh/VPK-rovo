@@ -1,6 +1,6 @@
 "use client";
 
-import type { Ref } from "react";
+import type { MouseEvent as ReactMouseEvent, Ref } from "react";
 import BugIcon from "@atlaskit/icon/core/bug";
 import EpicIcon from "@atlaskit/icon/core/epic";
 import StoryIcon from "@atlaskit/icon/core/story";
@@ -204,7 +204,7 @@ function ItemActions({
 }: Readonly<{
 	forceVisible?: boolean;
 	item: JiraForYouItem;
-	onView?: () => void;
+	onView?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 	viewButtonRef?: Ref<HTMLButtonElement>;
 }>) {
 	const generativeTrigger = (
@@ -248,9 +248,9 @@ export function JiraForYouItemRow({
 	isSelected?: boolean;
 	isViewActionForcedVisible?: boolean;
 	item: JiraForYouItem;
-	onItemClick?: (item: JiraForYouItem) => void;
+	onItemClick?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onRowButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
-	onView?: (item: JiraForYouItem) => void;
+	onView?: (item: JiraForYouItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
 	onViewButtonRef?: (item: JiraForYouItem, node: HTMLButtonElement | null) => void;
 }>) {
 	const meta = ISSUE_TYPE_META[item.issueType];
@@ -280,7 +280,7 @@ export function JiraForYouItemRow({
 					isSelected && "text-text-selected",
 				)}
 				data-slot="jira-for-you-row-button"
-				onClick={() => onItemClick?.(item)}
+				onClick={(event) => onItemClick?.(item, event)}
 				ref={(node) => onRowButtonRef?.(item, node)}
 				type="button"
 			>
@@ -326,7 +326,7 @@ export function JiraForYouItemRow({
 				<ItemActions
 					forceVisible={isViewActionForcedVisible}
 					item={item}
-					onView={() => (onView ?? onItemClick)?.(item)}
+					onView={(event) => (onView ?? onItemClick)?.(item, event)}
 					viewButtonRef={(node) => onViewButtonRef?.(item, node)}
 				/>
 				<div

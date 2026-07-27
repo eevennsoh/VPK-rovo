@@ -45,6 +45,7 @@ export function JiraForYouShell({
 		<AppLayout
 			chatPanelFlush
 			hideFloatingRovo
+			hideRovoAction
 			product="jira"
 			shellHeight={shellHeight}
 			sidebarContent={(
@@ -55,7 +56,7 @@ export function JiraForYouShell({
 			)}
 			topNavigationSearchAlignment="sidebar"
 		>
-			<main className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
+			<main className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
 				<JiraForYouWorkspace chrome="plain" className="h-full min-h-0 flex-1" />
 			</main>
 		</AppLayout>
