@@ -23,6 +23,7 @@ interface ExperimentalJiraWorkItemBaseProps {
 	defaultMetadataCollapsed?: boolean;
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
+	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 	workItem?: WorkItemData;
 }
@@ -96,7 +97,7 @@ export function ExperimentalJiraWorkItem(props: Readonly<ExperimentalJiraWorkIte
 							}
 						>
 							<ExperimentalWorkItemLayout
-								context={<ContextPanel />}
+								context={<ContextPanel outputs={props.outputs} />}
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
 								fillContainer={inlineSurface === "fill"}

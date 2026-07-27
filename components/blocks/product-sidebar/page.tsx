@@ -45,7 +45,7 @@ export default function ProductSidebar({
 	headerOffsetPx = TOP_NAV_HEADER_HEIGHT_PX,
 	topOffset = false,
 }: Readonly<SidebarProps>) {
-	const [selectedItem, setSelectedItem] = useState(product === "confluence" ? "Demo Live page" : "Enterprise RFP Qualification");
+	const [selectedItem, setSelectedItem] = useState(product === "confluence" ? "Demo Live page" : "Jira Design");
 	const { isVisible, isHovered, setHovered } = useSidebar();
 	const shouldShow = isVisible || isHovered;
 	// When visible the sidebar spans the full viewport height (top: 0) so its

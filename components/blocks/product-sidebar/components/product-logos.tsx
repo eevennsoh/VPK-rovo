@@ -12,7 +12,7 @@ function ProductLogoTile({ children, label }: Readonly<{ children: React.ReactNo
 	const isDecorative = label === "";
 
 	return (
-		<Tile aria-hidden={isDecorative ? true : undefined} label={label || "Product logo"} size="xsmall" variant="transparent" isSnug>
+		<Tile aria-hidden={isDecorative ? true : undefined} label={label || "Product logo"} size="small" variant="transparent" isSnug>
 			{children}
 		</Tile>
 	);

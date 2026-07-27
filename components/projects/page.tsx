@@ -26,6 +26,7 @@ type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "s
 interface AppLayoutProps {
 	product: Product;
 	children: React.ReactNode;
+	defaultSidebarOpen?: boolean;
 	sidebarContent?: React.ReactNode;
 	topNavigationSearchAlignment?: "responsive" | "sidebar";
 	shellHeight?: "viewport" | "parent";
@@ -129,6 +130,7 @@ function useIsRovoCanvasOpen(): boolean {
 export default function AppLayout({
 	product,
 	children,
+	defaultSidebarOpen = true,
 	sidebarContent,
 	topNavigationSearchAlignment = "responsive",
 	shellHeight = "viewport",
@@ -282,6 +284,7 @@ export default function AppLayout({
 	// Use the canonical TopNavigation shell variant
 	return (
 		<TopNavigation
+			defaultSidebarOpen={defaultSidebarOpen}
 			product={product}
 			shellHeight={shellHeight}
 			searchAlignment={topNavigationSearchAlignment}

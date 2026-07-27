@@ -16,12 +16,14 @@ export interface ExternalLink {
 	href?: string;
 }
 
+export const JIRA_DESIGN_PROJECT: StarredProject = {
+	id: "enterprise-rfp-qualification",
+	name: "Jira Design",
+	imageSrc: "/avatar-project/rocket.svg",
+};
+
 export const STARRED_PROJECTS: readonly StarredProject[] = [
-	{
-		id: "enterprise-rfp-qualification",
-		name: "Enterprise RFP Qualification",
-		imageSrc: "/avatar-project/rocket.svg",
-	},
+	JIRA_DESIGN_PROJECT,
 	{
 		id: "enterprise-rfp-pipeline",
 		name: "Enterprise RFP Pipeline",

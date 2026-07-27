@@ -19,33 +19,41 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 
 import { JiraForYouIssueTypeIcon } from "./jira-for-you-item";
 import type { JiraForYouItem } from "./jira-for-you-types";
 import { JiraForYouWorkItemView } from "./jira-for-you-work-item-view";
-import type { JiraForYouWorkspaceAgentSession } from "./jira-for-you-workspace-types";
+import type {
+	JiraForYouWorkspaceAgentSession,
+	JiraForYouWorkspaceItemDetails,
+} from "./jira-for-you-workspace-types";
 
 type JiraForYouMainView = "chat" | "work-item";
 
 interface JiraForYouConversationProps {
 	detailPanelInsetPx: number;
+	details: JiraForYouWorkspaceItemDetails;
 	isDetailPanelOpen: boolean;
 	item: JiraForYouItem;
 	onBack: () => void;
 	onDetailPanelToggle: () => void;
 	onSubmit: (payload: { files: FileUIPart[]; text: string }) => Promise<void>;
 	selectedAgentSession: JiraForYouWorkspaceAgentSession;
+	showHeaderBorder?: boolean;
 	uiMessages: JiraForYouWorkspaceAgentSession["messages"];
 }
 
 export function JiraForYouConversation({
 	detailPanelInsetPx,
+	details,
 	isDetailPanelOpen,
 	item,
 	onBack,
 	onDetailPanelToggle,
 	onSubmit,
 	selectedAgentSession,
+	showHeaderBorder = true,
 	uiMessages,
 }: Readonly<JiraForYouConversationProps>) {
 	const [mainView, setMainView] = useState<JiraForYouMainView>("chat");
@@ -92,7 +100,10 @@ export function JiraForYouConversation({
 				data-testid="jira-for-you-conversation-pane"
 				style={conversationColumnStyle}
 			>
-				<header className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border px-3 py-3">
+				<header className={cn(
+					"flex min-w-0 shrink-0 items-center gap-2 px-3 py-3",
+					showHeaderBorder && "border-b border-border",
+				)}>
 					<Button
 						aria-label="Back to For you feed"
 						onClick={onBack}
@@ -168,7 +179,7 @@ export function JiraForYouConversation({
 						<ChatMessages
 							contentBottomPadding="24px"
 							contentClassName="mx-auto flex min-w-0 w-full max-w-[800px] px-3 md:px-6"
-							contentTopPadding="24px"
+							contentTopPadding="16px"
 							conversationContextRef={conversationContextRef}
 							hideScrollbar={false}
 							messageMode="ask"
@@ -205,7 +216,7 @@ export function JiraForYouConversation({
 						</div>
 					</>
 				) : (
-					<JiraForYouWorkItemView item={item} />
+					<JiraForYouWorkItemView details={details} item={item} />
 				)}
 			</div>
 		</section>

@@ -105,6 +105,13 @@ test("top navigation can fill a height-constrained parent", () => {
 	);
 });
 
+test("top navigation lets an owning shell start with its sidebar collapsed", () => {
+	assert.match(TOP_NAVIGATION_SOURCE, /defaultSidebarOpen\?: boolean;/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /defaultSidebarOpen = true/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /useState\(defaultSidebarOpen\)/u);
+	assert.match(TOP_NAVIGATION_SOURCE, /defaultOpen=\{defaultSidebarOpen\}/u);
+});
+
 test("top navigation collapses the search to an icon button on very narrow viewports", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/);
 	assert.match(TOP_NAVIGATION_SOURCE, /isSearchCollapsible/);

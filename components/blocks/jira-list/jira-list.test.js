@@ -619,12 +619,21 @@ test("JiraList owns explicit grid separators and selected row cell treatment", (
 	assert.match(SOURCE, /function HierarchyConnector/u);
 	assert.match(SOURCE, /border-b border-r border-border/u);
 	assert.match(SOURCE, /bg-bg-selected/u);
-	assert.match(SOURCE, /aria-selected=\{isSelected \|\| undefined\}/u);
+	assert.match(SOURCE, /aria-selected=\{isHighlighted \|\| undefined\}/u);
 	assert.match(SOURCE, /flex max-h-\[640px\] flex-col/u);
 	assert.match(SOURCE, /min-h-0 flex-1 overflow-auto/u);
 	assert.match(SOURCE, /containerClassName="overflow-visible"/u);
 	assert.match(SOURCE, /group-focus-within\/row:bg-bg-neutral-subtle-hovered/u);
 	assert.doesNotMatch(SOURCE, /min-h-\[640px\]/u);
+});
+
+test("JiraList highlights an active issue independently from bulk checkbox selection", () => {
+	assert.match(TYPES_SOURCE, /activeIssueKey\?: string;/u);
+	assert.match(SOURCE, /const isActive = activeIssueKey === row\.issueKey;/u);
+	assert.match(SOURCE, /const isHighlighted = isSelected \|\| isActive;/u);
+	assert.match(SOURCE, /data-active=\{isActive \|\| undefined\}/u);
+	assert.match(SOURCE, /checked=\{isSelected\}/u);
+	assert.doesNotMatch(SOURCE, /checked=\{isHighlighted\}/u);
 });
 
 test("JiraList is registered in block docs and manifests", () => {

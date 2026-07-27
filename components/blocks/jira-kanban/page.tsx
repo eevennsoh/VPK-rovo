@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import {
 	JiraKanban,
+	type JiraKanbanAgentData,
 	type JiraKanbanCardData,
 	type JiraKanbanCardSelectModifiers,
 	type JiraKanbanColumnData,
@@ -23,13 +24,49 @@ import { BOARD_COLUMNS } from "@/components/projects/jira/data/board-data";
 
 const DEFAULT_CREATED_COLUMN_AGENT_ID = "readiness-checker";
 
+export interface JiraKanbanPageProps {
+	activeCardCode?: string;
+	agents?: readonly JiraKanbanAgentData[];
+	ariaLabel?: string;
+	boardColumns?: readonly JiraKanbanColumnData[];
+	compactHeader?: boolean;
+	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
+	onCardClick?: (card: JiraKanbanCardData, columnTitle: string) => void;
+	showScrollAffordance?: boolean;
+	viewTabs?: ReactNode;
+}
+
 interface DraggedCardState {
 	card: JiraKanbanCardData;
 	sourceColumnTitle: string;
 }
 
-export default function JiraKanbanPage() {
-	const [boardColumns, setBoardColumns] = useState<JiraKanbanColumnData[]>(() => createJiraKanbanColumns(BOARD_COLUMNS));
+export default function JiraKanbanPage({
+	activeCardCode,
+	agents = BOARD_AGENTS,
+	ariaLabel = "RFP board columns. Scroll horizontally to review all statuses.",
+	boardColumns: controlledBoardColumns,
+	compactHeader = false,
+	onBoardColumnsChange,
+	onCardClick,
+	showScrollAffordance,
+	viewTabs,
+}: Readonly<JiraKanbanPageProps>) {
+	const [localBoardColumns, setLocalBoardColumns] = useState<JiraKanbanColumnData[]>(
+		() => createJiraKanbanColumns(BOARD_COLUMNS),
+	);
+	const boardColumns = controlledBoardColumns ?? localBoardColumns;
+	const updateBoardColumns = useCallback((
+		updater: (columns: readonly JiraKanbanColumnData[]) => readonly JiraKanbanColumnData[],
+	) => {
+		const nextColumns = updater(boardColumns);
+		if (controlledBoardColumns !== undefined) {
+			onBoardColumnsChange?.(nextColumns);
+			return;
+		}
+
+		setLocalBoardColumns([...nextColumns]);
+	}, [boardColumns, controlledBoardColumns, onBoardColumnsChange]);
 	const [columnAgentAssignments, setColumnAgentAssignments] = useState<Record<string, string[]>>({});
 	const [draggedCard, setDraggedCard] = useState<DraggedCardState | null>(null);
 	const [selection, setSelection] = useState(createJiraKanbanSelectionState);
@@ -59,15 +96,22 @@ export default function JiraKanbanPage() {
 		}));
 	};
 
-	// A plain click selects just this card (clearing any prior selection), which
-	// slides the Jira toolbar up from the bottom center of the screen. Shift/⌘
-	// clicks still route through onCardSelect for range/toggle multi-select.
+	// An owning workspace uses a plain click for activation, so clear any bulk
+	// selection before opening it. Shift/⌘ clicks bypass this handler in
+	// `JiraKanban` and continue through `onCardSelect` for range/toggle selection.
+	// The standalone block keeps its original plain-click selection behavior.
 	const handleCardClick = (
 		_title: string,
 		cardCode: string,
-		_card: JiraKanbanCardData,
+		card: JiraKanbanCardData,
 		columnTitle: string,
 	) => {
+		if (onCardClick) {
+			setSelection(createJiraKanbanSelectionState());
+			onCardClick(card, columnTitle);
+			return;
+		}
+
 		const indexInColumn = filteredBoardColumns
 			.find((column) => column.title === columnTitle)
 			?.cards.findIndex((card) => card.code === cardCode) ?? 0;
@@ -96,7 +140,7 @@ export default function JiraKanbanPage() {
 			? [...selection.selectedCardCodes]
 			: [draggedCard.card.code];
 
-		setBoardColumns((prevColumns) => {
+		updateBoardColumns((prevColumns) => {
 			const movableCardCodes = draggedCardCodes.filter((cardCode) => prevColumns.some((column) => (
 				column.title !== targetColumnTitle && column.cards.some((card) => card.code === cardCode)
 			)));
@@ -120,7 +164,7 @@ export default function JiraKanbanPage() {
 	};
 
 	const handleSelectedCardsStatusChange = (targetColumnTitle: string) => {
-		setBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
+		updateBoardColumns((currentColumns) => moveJiraKanbanCardsToColumn(
 			currentColumns,
 			[...selection.selectedCardCodes],
 			targetColumnTitle,
@@ -167,16 +211,19 @@ export default function JiraKanbanPage() {
 	};
 
 	return (
-		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface p-4 md:p-5">
+		<div className="flex h-full min-h-[640px] flex-col rounded-lg bg-surface">
 			<JiraKanbanBoardHeader
 				assignees={assignees}
+				compact={compactHeader}
 				onSelectedAssigneeIdsChange={handleAssigneeFilterChange}
 				selectedAssigneeIds={selectedAssigneeIds}
+				viewTabs={viewTabs}
 			/>
-			<div className="min-w-0">
+			<div className="flex min-h-0 min-w-0 flex-1">
 				<JiraKanban
-					agents={BOARD_AGENTS}
-					ariaLabel="RFP board columns. Scroll horizontally to review all statuses."
+					activeCardCode={activeCardCode}
+					agents={agents}
+					ariaLabel={ariaLabel}
 					assignedAgentIdsByColumn={columnAgentAssignments}
 					boardColumns={filteredBoardColumns}
 					draggedCardCode={draggedCard?.card.code ?? null}
@@ -195,6 +242,7 @@ export default function JiraKanbanPage() {
 						onStatusChange: handleSelectedCardsStatusChange,
 						selectedAgentIds,
 					}}
+					showScrollAffordance={showScrollAffordance}
 				/>
 			</div>
 		</div>

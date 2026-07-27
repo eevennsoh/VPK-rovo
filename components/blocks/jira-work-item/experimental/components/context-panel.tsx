@@ -12,11 +12,11 @@ import { ContextResources } from "@/components/blocks/jira-work-item/experimenta
  * elevated floating prompt connect the refinement controls to the fields Rovo
  * populated.
  */
-export function ContextPanel() {
+export function ContextPanel({ outputs }: Readonly<{ outputs?: readonly string[] }>) {
 	return (
 		<section aria-label="Work item context" className="flex flex-col gap-3">
 			<AiPlannerScope header={<AiPlannerPanel />}>
-				<ContextResources />
+				<ContextResources outputs={outputs} />
 				<ContextEditableDescription />
 			</AiPlannerScope>
 		</section>

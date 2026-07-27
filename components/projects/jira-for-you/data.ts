@@ -19,7 +19,7 @@ function createJiraForYouAgent(agentId: string): JiraForYouAgent {
 	};
 }
 
-const READINESS_AGENT = createJiraForYouAgent("readiness-checker");
+export const READINESS_AGENT = createJiraForYouAgent("readiness-checker");
 const PROGRESS_AGENT = createJiraForYouAgent("progress-tracker");
 const REVIEWER_AGENT = createJiraForYouAgent("code-reviewer");
 const PLANNER_AGENT = createJiraForYouAgent("code-planner");
@@ -84,10 +84,10 @@ export const JIRA_FOR_YOU_SECTIONS: readonly JiraForYouSection[] = [
 				issueType: "bug",
 				issueKey: "WEB-461",
 				spaceName: "Web app",
-				jiraStatus: "In review",
+				jiraStatus: "In progress",
 				tabs: ["worked-on", "viewed"],
 				agents: [PLANNER_AGENT],
-				status: "In review",
+				status: "In progress",
 			},
 		],
 	},

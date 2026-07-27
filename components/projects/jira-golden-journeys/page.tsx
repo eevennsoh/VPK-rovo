@@ -114,10 +114,11 @@ export default function JgpPage(): React.ReactElement {
 	// app theme; non-Terminal sections fall back to the normal global theme.
 	const activeScreen = activeCard.screens[activeCard.controller.index];
 	const isTerminalSection = activeScreen?.section === "Terminal";
-	// The For you screen wants a divider under the gallery top bar; other screens
+	// Jira shell screens want a divider under the gallery top bar; other screens
 	// keep the borderless header. Gate on the typed `design` identity, not the
 	// free-form `section` label, mirroring `isTerminalSection` above.
-	const isForYouScreen = activeScreen?.design === "for-you";
+	const showTopBarBorder = activeScreen?.design === "for-you"
+		|| activeScreen?.design === "jira-kanban";
 	const subtreeThemeProps = isTerminalSection
 		? {
 				"data-subtree-theme": "",
@@ -140,7 +141,7 @@ export default function JgpPage(): React.ReactElement {
 					items={JGP_GALLERY_ITEMS}
 					palette={ROVO_PURPLE_PALETTE}
 					title="Jira Golden Journeys"
-					showTopBarBorder={isForYouScreen}
+					showTopBarBorder={showTopBarBorder}
 					selectedId={selectedId}
 					onSelectedChange={handleSelectedChange}
 					open={dockOpen}

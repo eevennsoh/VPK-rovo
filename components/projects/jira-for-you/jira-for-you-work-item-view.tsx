@@ -3,13 +3,16 @@
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
 
 import type { JiraForYouItem } from "./jira-for-you-types";
+import type { JiraForYouWorkspaceItemDetails } from "./jira-for-you-workspace-types";
 import { mapJiraForYouItemToWorkItem } from "./jira-for-you-work-item-data";
 
 interface JiraForYouWorkItemViewProps {
+	details: JiraForYouWorkspaceItemDetails;
 	item: JiraForYouItem;
 }
 
 export function JiraForYouWorkItemView({
+	details,
 	item,
 }: Readonly<JiraForYouWorkItemViewProps>) {
 	return (
@@ -23,6 +26,7 @@ export function JiraForYouWorkItemView({
 				initialPreset="filled"
 				inlineSurface="fill"
 				key={item.id}
+				outputs={details.outputs.map((output) => output.title)}
 				presentation="inline"
 				workItem={mapJiraForYouItemToWorkItem(item)}
 			/>

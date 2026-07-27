@@ -112,6 +112,7 @@ export interface JiraIssueProps extends Omit<ComponentProps<"button">, "children
 	assigneeAvatarShape?: NonNullable<AvatarProps["shape"]>;
 	assigneeUnassignedKind?: AvatarUnassignedKind;
 	assigneePulse?: boolean;
+	active?: boolean;
 	selected?: boolean;
 	dragging?: boolean;
 	showPriorityIndicator?: boolean;
@@ -457,6 +458,7 @@ function JiraIssueSubtasks({
 
 export function JiraIssue({
 	"aria-pressed": ariaPressed,
+	active = false,
 	agentActivities,
 	agentActivityMode,
 	agentDoneRuns = [],
@@ -557,7 +559,9 @@ export function JiraIssue({
 			? "border-transparent bg-transparent"
 			: selected
 				? "border-border-selected bg-bg-selected"
-				: "border-transparent bg-surface",
+				: active
+					? "border-transparent bg-bg-selected"
+					: "border-transparent bg-surface",
 		"transition-[opacity,background-color,border-color] duration-normal ease-out",
 		"data-starting-style:opacity-0 data-starting-style:-translate-y-1",
 		!usesAgentActivityShell && className,
@@ -566,7 +570,9 @@ export function JiraIssue({
 		"pointer-events-none absolute border",
 		selected
 			? "border-border-selected bg-bg-selected"
-			: "border-transparent bg-surface",
+			: active
+				? "border-transparent bg-bg-selected"
+				: "border-transparent bg-surface",
 	);
 	const agentActivityShellClassName = cn(
 		"relative w-full overflow-visible rounded-[10px] outline-none",
@@ -755,6 +761,7 @@ export function JiraIssue({
 					ref={setGenerativeActionAnchor}
 					draggable={draggable}
 					className={agentActivityArticleClassName}
+					data-active={active || undefined}
 					data-dragging={dragging || undefined}
 					data-selected={selected || undefined}
 					data-agent-activity-mode={resolvedAgentActivityMode}
@@ -840,6 +847,7 @@ export function JiraIssue({
 				ref={setGenerativeActionAnchor}
 				draggable={draggable}
 				className={rootClassName}
+				data-active={active || undefined}
 				data-dragging={dragging || undefined}
 				data-selected={selected || undefined}
 				onBlurCapture={handleGenerativeActionBlurCapture}
@@ -862,6 +870,7 @@ export function JiraIssue({
 			draggable={draggable}
 			aria-pressed={ariaPressed ?? selected}
 			className={rootClassName}
+			data-active={active || undefined}
 			data-dragging={dragging || undefined}
 			data-selected={selected || undefined}
 			style={buttonStyle}

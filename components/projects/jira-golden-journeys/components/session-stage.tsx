@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
@@ -13,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ScreenNavigatorController } from "../hooks/use-screen-navigator";
 import type { SessionScreen } from "../data/session-screens";
-import { ForYouStage } from "./for-you-stage";
+import { ForYouStage, JiraDesignWorkspaceStage } from "./for-you-stage";
+import type { JiraDesignView } from "./jira-design-view-tabs";
 import { KanbanStage } from "./kanban-stage";
 import { RovoStage } from "./rovo-stage";
 import { TerminalBeatScreen } from "./terminal-beat-screen";
@@ -178,7 +180,6 @@ export function SessionStage({
 	controller: ScreenNavigatorController;
 }>): React.ReactElement {
 	const screen = screens[controller.index] ?? screens[0];
-
 	if (screen?.design === "kanban") {
 		const scenario = screen.scenario === "local-completed" || screen.scenario === "global-assignment"
 			? screen.scenario
@@ -192,6 +193,10 @@ export function SessionStage({
 
 	if (screen?.design === "for-you") {
 		return <ForYouStage key={screen.id} />;
+	}
+
+	if (screen?.design === "jira-kanban") {
+		return <JiraDesignStage key={screen.id} />;
 	}
 
 	if (screen?.liveBeat != null) {
@@ -209,4 +214,10 @@ export function SessionStage({
 			</h2>
 		</div>
 	);
+}
+
+function JiraDesignStage(): React.ReactElement {
+	const [view, setView] = useState<JiraDesignView>("board");
+
+	return <JiraDesignWorkspaceStage onViewChange={setView} view={view} />;
 }

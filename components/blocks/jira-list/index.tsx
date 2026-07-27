@@ -132,6 +132,7 @@ const HEADER_CELL_CLASS =
 
 export function JiraList({
 	rows,
+	activeIssueKey,
 	ariaLabel = "Jira list view",
 	className,
 	createLabel = "Create",
@@ -773,6 +774,8 @@ export function JiraList({
 						<SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
 							{rows.map((row, rowIndex) => {
 								const isSelected = selectedIssueKeys.has(row.issueKey);
+								const isActive = activeIssueKey === row.issueKey;
+								const isHighlighted = isSelected || isActive;
 								const isDropTarget = (
 									dragOverIssueKey === row.issueKey
 									&& draggingIssueKey !== row.issueKey
@@ -791,8 +794,9 @@ export function JiraList({
 									<Fragment key={row.issueKey}>
 										{renderDraftWorkItemRow(rowIndex)}
 										<JiraListSortableRow
-											aria-selected={isSelected || undefined}
+											aria-selected={isHighlighted || undefined}
 											className="group/row border-0 hover:bg-transparent focus-within:bg-transparent data-[state=selected]:bg-transparent"
+											data-active={isActive || undefined}
 											data-state={isSelected ? "selected" : undefined}
 											handleOverlayElement={rowOverlayElement}
 											instanceId={insertionAnchorId}
@@ -810,9 +814,9 @@ export function JiraList({
 										>
 											<TableCell
 												className={cn(
-													getBodyCellClassName({ isSelected, align: "center" }),
+													getBodyCellClassName({ isSelected: isHighlighted, align: "center" }),
 													"sticky left-0 isolate overflow-visible bg-surface! px-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:transition-colors",
-													isSelected
+													isHighlighted
 														? "before:bg-bg-selected"
 														: "before:bg-transparent group-hover/row:before:bg-bg-neutral-subtle-hovered group-focus-within/row:before:bg-bg-neutral-subtle-hovered",
 													insertionLinePosition ? "z-30" : "z-10",
@@ -833,7 +837,7 @@ export function JiraList({
 												<TableCell
 													className={cn(
 														getBodyCellClassName({
-															isSelected,
+															isSelected: isHighlighted,
 															align: column.align,
 															isLastColumn: columnIndex === orderedColumns.length - 1,
 														}),

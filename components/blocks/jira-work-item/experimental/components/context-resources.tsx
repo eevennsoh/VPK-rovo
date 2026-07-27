@@ -3,6 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
+import FileIcon from "@atlaskit/icon/core/file";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -58,7 +59,7 @@ interface ContextResource {
  * labelled property/value summary row and leaves the button row. All data +
  * mutations flow through the foundation hooks.
  */
-export function ContextResources() {
+export function ContextResources({ outputs = [] }: Readonly<{ outputs?: readonly string[] }>) {
 	const { contextResources } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	const { attachments, subtasks, linkedItems } = contextResources;
@@ -169,11 +170,23 @@ export function ContextResources() {
 					)}
 				</div>
 			) : null}
-			{filled.length > 0 ? (
+			{filled.length > 0 || outputs.length > 0 ? (
 				<div className="flex flex-col gap-1">
 					{filled.map((resource) => (
 						<div key={resource.id}>{resource.renderFilledRow()}</div>
 					))}
+					{outputs.length > 0 ? (
+						<AgentFilledSummaryRow
+							agentFieldName="outputs"
+							itemElemBefore={() => (
+								<Icon aria-hidden render={<FileIcon color="currentColor" label="" size="small" />} />
+							)}
+							items={outputs}
+							label="Output"
+							labelClassName="whitespace-nowrap sm:w-28"
+							tagColor="standard"
+						/>
+					) : null}
 				</div>
 			) : null}
 		</div>

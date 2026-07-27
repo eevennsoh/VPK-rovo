@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem, SidebarNavItemAction } from "@/components/ui-custom/sidebar-nav-item";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Shimmer } from "@/components/ui-custom/shimmer";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -462,7 +463,7 @@ function JiraSessionRow({
 	);
 }
 
-function JiraProjectAvatar({
+export function JiraProjectAvatar({
 	label = "",
 	src,
 }: Readonly<{
@@ -514,7 +515,17 @@ function JiraSidebarRow({
 			label={label}
 			leading={leading}
 			leadingSize="medium"
-			meta={hasExternalLink ? <LinkExternalIcon label="" size="small" /> : null}
+			meta={hasExternalLink ? (
+				<IconTile
+					aria-hidden
+					as="span"
+					icon={<LinkExternalIcon label="" size="small" />}
+					iconSize="small"
+					label=""
+					size="small"
+					variant="transparent"
+				/>
+			) : null}
 			onClick={onClick}
 		/>
 	);

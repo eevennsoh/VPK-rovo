@@ -51,7 +51,7 @@ anywhere in the invocation text; strip the flag before reading the task.
 ## Mode: advisor
 
 Intended shape: the **main session is the executor** on a cheaper model
-(Sonnet 5 via `/model`; Opus 4.8 if Sonnet 5 is unavailable), and Fable 5 is
+(Sonnet 5 via `/model`; Opus 5 if Sonnet 5 is unavailable), and Fable 5 is
 consulted only at high-judgment moments. If the main session is already
 running Fable 5, tell the user the advisor adds nothing (Fable advising
 Fable) and either continue solo or suggest switching the session to Sonnet 5.
@@ -211,7 +211,7 @@ consult moment 3 and the orchestrator's own-the-verification rule.
 - **Advisor** — cheap executor loop, Fable consulted on demand. Best when the
   work is mostly mechanical but a few decisions are hard, or when a long
   exploratory loop needs periodic re-ranking checkpoints. Executor Sonnet 5
-  (Opus 4.8 fallback), advisor Fable 5.
+  (Opus 5 fallback), advisor Fable 5.
 - **Orchestrator** — Fable plans/synthesizes, cheaper executors grind. Best
   for coverage tasks with lots of reading, or implementation tasks Fable can
   spec and verify. In the cookbook's benchmark the split was ~2.5× cheaper and

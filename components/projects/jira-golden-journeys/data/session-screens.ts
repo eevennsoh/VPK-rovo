@@ -27,7 +27,7 @@
  *     are kept as building blocks).
  */
 /** Named golden-path design patterns a screen can render (see `SessionStage`). */
-export type SessionScreenDesign = "for-you" | "kanban" | "rovo";
+export type SessionScreenDesign = "for-you" | "jira-kanban" | "kanban" | "rovo";
 
 export type SessionScreenScenario =
 	| "local-review"
@@ -118,5 +118,11 @@ export const GLOBAL_SESSION_SCREENS: readonly SessionScreen[] = [
 		title: "Five tasks ready for review",
 		design: "for-you",
 		scenario: "human-review",
+	},
+	{
+		id: "global-4",
+		section: "Kanban & List",
+		title: "Kanban",
+		design: "jira-kanban",
 	},
 ];
