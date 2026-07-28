@@ -5,6 +5,7 @@ import CommentIcon from "@atlaskit/icon/core/comment";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import type { FileUIPart } from "ai";
+import dynamic from "next/dynamic";
 import { useCallback, useRef, useState } from "react";
 
 import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
@@ -29,11 +30,14 @@ import { cn } from "@/lib/utils";
 
 import { JiraForYouIssueTypeIcon } from "./jira-for-you-item";
 import type { JiraForYouItem } from "./jira-for-you-types";
-import { JiraForYouWorkItemView } from "./jira-for-you-work-item-view";
 import type {
 	JiraForYouWorkspaceAgentSession,
 	JiraForYouWorkspaceItemDetails,
 } from "./jira-for-you-workspace-types";
+
+const JiraForYouWorkItemView = dynamic(() =>
+	import("./jira-for-you-work-item-view").then((module) => module.JiraForYouWorkItemView),
+);
 
 type JiraForYouMainView = "chat" | "work-item";
 

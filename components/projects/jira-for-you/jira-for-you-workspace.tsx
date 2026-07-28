@@ -7,6 +7,7 @@ import {
 	useReducedMotion,
 	type Variants,
 } from "motion/react";
+import dynamic from "next/dynamic";
 import {
 	useCallback,
 	useEffect,
@@ -27,12 +28,17 @@ import { createId, cn } from "@/lib/utils";
 
 import { JIRA_FOR_YOU_SECTIONS, JIRA_FOR_YOU_TABS } from "./data";
 import { JiraForYou } from "./index";
-import { JiraForYouWorkItemWorkspace } from "./jira-for-you-work-item-workspace";
 import type { JiraForYouItem, JiraForYouSection, JiraForYouTab } from "./jira-for-you-types";
 import { JiraForYouConversation } from "./jira-for-you-conversation";
 import { JiraForYouDetailPanel } from "./jira-for-you-detail-panel";
 import { createJiraForYouWorkspaceData } from "./jira-for-you-workspace-data";
 import type { JiraForYouWorkspaceData } from "./jira-for-you-workspace-types";
+
+const JiraForYouWorkItemWorkspace = dynamic(() =>
+	import("./jira-for-you-work-item-workspace").then(
+		(module) => module.JiraForYouWorkItemWorkspace,
+	),
+);
 
 const DETAIL_PANEL_DEFAULT_WIDTH_PX = 360;
 const DETAIL_PANEL_MIN_WIDTH_PX = 280;

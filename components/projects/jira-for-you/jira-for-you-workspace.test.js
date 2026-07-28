@@ -231,6 +231,24 @@ test("waiting Jira For You sessions show the shared awaiting indicator and quest
 });
 
 test("assigned workspaces switch independently between chat, work item, and details", () => {
+	assert.match(CONVERSATION_SOURCE, /import dynamic from "next\/dynamic";/u);
+	assert.match(
+		CONVERSATION_SOURCE,
+		/const JiraForYouWorkItemView = dynamic\(\(\) =>\s*import\("\.\/jira-for-you-work-item-view"\)\.then\(\(module\) => module\.JiraForYouWorkItemView\),\s*\);/u,
+	);
+	assert.doesNotMatch(
+		CONVERSATION_SOURCE,
+		/import \{ JiraForYouWorkItemView \} from "\.\/jira-for-you-work-item-view";/u,
+	);
+	assert.match(WORKSPACE_SOURCE, /import dynamic from "next\/dynamic";/u);
+	assert.match(
+		WORKSPACE_SOURCE,
+		/const JiraForYouWorkItemWorkspace = dynamic\(\(\) =>\s*import\("\.\/jira-for-you-work-item-workspace"\)\.then\(\s*\(module\) => module\.JiraForYouWorkItemWorkspace,\s*\),\s*\);/u,
+	);
+	assert.doesNotMatch(
+		WORKSPACE_SOURCE,
+		/import \{ JiraForYouWorkItemWorkspace \} from "\.\/jira-for-you-work-item-workspace";/u,
+	);
 	assert.match(CONVERSATION_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(CONVERSATION_SOURCE, /const \[mainView, setMainView\] = useState<JiraForYouMainView>\("chat"\);/u);
 	assert.match(CONVERSATION_SOURCE, /<ToggleGroup[\s\S]*aria-label="Workspace view"[\s\S]*className="h-8 bg-surface"[\s\S]*value=\{\[mainView\]\}[\s\S]*variant="outline"/u);
