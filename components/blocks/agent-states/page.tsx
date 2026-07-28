@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { AgentStates, type AgentStatesState } from "@/components/blocks/agent-states";
+import { QUESTION_CARD_SINGLE_SELECT_DEMO } from "@/components/blocks/question-card/data/questions";
 import { Button } from "@/components/ui/button";
 import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 
@@ -37,9 +38,9 @@ export default function AgentStatesPage() {
 					name: "Service impact agent",
 				}}
 				initialElapsedSeconds={422}
-				message="On it. I am digging into the affected services and will add a clear service impact summary inside this work item."
 				onSubmit={() => undefined}
 				onView={() => undefined}
+				question={QUESTION_CARD_SINGLE_SELECT_DEMO[0]}
 				state={state}
 			/>
 		</div>
