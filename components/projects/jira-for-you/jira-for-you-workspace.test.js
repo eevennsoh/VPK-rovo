@@ -137,7 +137,7 @@ test("the workspace owns open or close, focus restoration, and local user-messag
 	assert.match(WORKSPACE_SOURCE, /\[assignedItemData\.item\.id\]: targetAgentSession\.id/u);
 	assert.match(WORKSPACE_SOURCE, /`\$\{assignedItemData\.item\.id\}:\$\{targetAgentSession\.id\}`/u);
 	assert.match(WORKSPACE_SOURCE, /onAgentPrompt=\{handleAgentPrompt\}/u);
-	assert.match(WORKSPACE_SOURCE, /<JiraForYouConversation[\s\S]*key=\{selectedAgentSession\.id\}/u);
+	assert.match(WORKSPACE_SOURCE, /<JiraForYouConversation[\s\S]*key=\{`\$\{assignedItemData\.item\.id\}:\$\{selectedAgentSession\.id\}`\}/u);
 	assert.match(WORKSPACE_SOURCE, /const WIDE_FEED_MIN_WIDTH_PX = 420;/u);
 	assert.match(WORKSPACE_SOURCE, /maxWidth: `calc\(100% - \$\{WIDE_FEED_MIN_WIDTH_PX\}px\)`/u);
 	assert.match(WORKSPACE_SOURCE, /\? "relative shrink-0"/u);
@@ -217,6 +217,17 @@ test("the conversation workspace reuses fullscreen chat primitives and a back pa
 	assert.match(CONVERSATION_SOURCE, /data-testid="jira-for-you-composer-region"/u);
 	assert.doesNotMatch(CONVERSATION_SOURCE, /shrink-0 border-t border-border bg-background\/90/u);
 	assert.match(CONVERSATION_SOURCE, /<Footer \/>/u);
+});
+
+test("waiting Jira For You sessions show the shared awaiting indicator and question card", () => {
+	assert.match(WORKSPACE_TYPES_SOURCE, /awaitingQuestions\?: readonly QuestionCardQuestion\[\];/u);
+	assert.match(WORKSPACE_DATA_SOURCE, /id: "unapproved-claims-treatment"[\s\S]*label: "How should I handle the unapproved claims\?"/u);
+	assert.match(WORKSPACE_DATA_SOURCE, /awaitingQuestions: agentSeed\?\.awaitingQuestions/u);
+	assert.match(CONVERSATION_SOURCE, /showAwaitingIndicator=\{shouldShowAwaitingQuestion\}/u);
+	assert.match(CONVERSATION_SOURCE, /resizeTarget=\{shouldShowAwaitingQuestion \? "bottom" : "follow"\}/u);
+	assert.match(CONVERSATION_SOURCE, /<QuestionCard[\s\S]*isSubmitting=\{isQuestionSubmitting\}[\s\S]*questions=\{awaitingQuestions\}/u);
+	assert.match(CONVERSATION_SOURCE, /<QuestionCardShortcutsFooter \/>/u);
+	assert.match(CONVERSATION_SOURCE, /shouldShowAwaitingQuestion && awaitingQuestions \? \([\s\S]*<QuestionCard[\s\S]*\) : \([\s\S]*<RovoAppComposer/u);
 });
 
 test("assigned workspaces switch independently between chat, work item, and details", () => {

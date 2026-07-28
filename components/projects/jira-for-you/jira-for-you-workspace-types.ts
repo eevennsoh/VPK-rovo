@@ -6,6 +6,7 @@ import type {
 	JiraSidebarSessionStatus,
 } from "@/components/blocks/product-sidebar/variants/jira";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 
 import type { JiraForYouItem } from "./jira-for-you-types";
 
@@ -16,6 +17,8 @@ export interface JiraForYouWorkspaceOutput {
 }
 
 export interface JiraForYouWorkspaceAgentSession {
+	activityTitle: string;
+	awaitingQuestions?: readonly QuestionCardQuestion[];
 	composerPlaceholder: string;
 	id: string;
 	messages: readonly RovoUIMessage[];
