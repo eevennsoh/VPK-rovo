@@ -79,6 +79,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/projects/sidebar-chat/components/agent-result-card.test.js",
 		"components/projects/jira-golden-journeys/agent-chat-demo.test.js",
 		"app/data/jira-golden-journeys-contract.test.js",
+		"components/projects/jira-for-you/jira-for-you-details.test.js",
 		"components/projects/skills/page.test.js",
 		"components/projects/asx/kanban-stage.test.js",
 		"components/projects/jira-golden-journeys/kanban-stage.test.js",
