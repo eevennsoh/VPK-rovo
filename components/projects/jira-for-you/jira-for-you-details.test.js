@@ -59,7 +59,7 @@ test("work-item details are stable and agent sessions contain only agent-scoped 
 	);
 	assert.match(
 		WORKSPACE_DATA_SOURCE,
-		/interface WorkspaceAgentSeed \{\s*assistant: string;\s*composerPlaceholder\?: string;\s*messages\?: readonly RovoUIMessage\[\];\s*status\?: JiraSidebarSessionStatus;\s*\}/u,
+		/interface WorkspaceAgentSeed \{\s*assistant: string;\s*activityTitle\?: string;\s*composerPlaceholder\?: string;\s*messages\?: readonly RovoUIMessage\[\];\s*status\?: JiraSidebarSessionStatus;\s*\}/u,
 	);
 	assert.match(
 		WORKSPACE_DATA_SOURCE,
@@ -102,6 +102,8 @@ test("the Agents section directly reuses Agent List with native states and selec
 	assert.match(DETAIL_PANEL_SOURCE, /onView=\{\(sessionItem\) => onAgentSelect\(sessionItem\.id\)\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /selectedItemId=\{selectedAgentId\}/u);
 	assert.match(DETAIL_PANEL_SOURCE, /variant="compact"/u);
+	assert.match(DETAIL_PANEL_SOURCE, /title: agentSession\.activityTitle/u);
+	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /title: itemTitle/u);
 	assert.match(
 		DETAIL_PANEL_SOURCE,
 		/agent: \{[\s\S]*avatarSrc: agentSession\.profile\.avatarSrc,[\s\S]*name: agentSession\.profile\.name,[\s\S]*\}/u,
@@ -113,6 +115,14 @@ test("the Agents section directly reuses Agent List with native states and selec
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /<Tag|type="agent"|data-tag-text|data-slot=tag-before/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /Shimmer|JiraSessionLifecycle|TileAvatar/u);
 	assert.doesNotMatch(DETAIL_PANEL_SOURCE, /onStop/u);
+});
+
+test("CRM agent rows use distinct activity titles", () => {
+	assert.match(
+		WORKSPACE_DATA_SOURCE,
+		/"crm-analytics-dashboard":[\s\S]*activityTitle: "Checking launch readiness"[\s\S]*activityTitle: "Reviewing aggregation logic"[\s\S]*activityTitle: "Analyzing launch feedback"/u,
+	);
+	assert.match(WORKSPACE_DATA_SOURCE, /activityTitle: agentSeed\?\.activityTitle \?\? item\.title/u);
 });
 
 test("Review is the sole warning review status", () => {

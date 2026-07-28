@@ -582,7 +582,7 @@ export function JiraForYouWorkspace({
 						details={assignedItemData.details}
 						isDetailPanelOpen={isDetailPanelOpen}
 						item={assignedItemData.item}
-						key={selectedAgentSession.id}
+						key={`${assignedItemData.item.id}:${selectedAgentSession.id}`}
 						onBack={handleCloseWorkspace}
 						onDetailPanelToggle={() => dispatchView({ type: "toggle-detail-panel" })}
 						onSubmit={handleSubmit}

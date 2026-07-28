@@ -7,10 +7,16 @@ import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import type { FileUIPart } from "ai";
 import { useCallback, useRef, useState } from "react";
 
+import { QuestionCard } from "@/components/blocks/question-card/components/question-card";
+import type {
+	QuestionCardAnswers,
+	QuestionCardQuestion,
+} from "@/components/blocks/question-card/types";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { ConversationContextValue } from "@/components/ui-custom/conversation";
 import { Footer } from "@/components/ui-custom/footer";
 import { ChatMessages } from "@/components/projects/shared/components/chat-messages";
+import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
 import {
 	type DelegationRequest,
@@ -30,6 +36,21 @@ import type {
 } from "./jira-for-you-workspace-types";
 
 type JiraForYouMainView = "chat" | "work-item";
+
+function formatQuestionCardAnswers(
+	questions: readonly QuestionCardQuestion[],
+	answers: QuestionCardAnswers,
+): string {
+	return questions.flatMap((question) => {
+		const answer = answers[question.id];
+		const answerIds = Array.isArray(answer) ? answer : answer ? [answer] : [];
+		const labels = answerIds.map((answerId) => (
+			question.options.find((option) => option.id === answerId)?.label ?? answerId
+		));
+
+		return labels.length > 0 ? labels : [];
+	}).join("\n");
+}
 
 interface JiraForYouConversationProps {
 	detailPanelInsetPx: number;
@@ -57,6 +78,8 @@ export function JiraForYouConversation({
 	uiMessages,
 }: Readonly<JiraForYouConversationProps>) {
 	const [mainView, setMainView] = useState<JiraForYouMainView>("chat");
+	const [isQuestionAnswered, setIsQuestionAnswered] = useState(false);
+	const [isQuestionSubmitting, setIsQuestionSubmitting] = useState(false);
 	const conversationContextRef = useRef<ConversationContextValue | null>(null);
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
 	const renderableMessages = [...uiMessages];
@@ -89,6 +112,24 @@ export function JiraForYouConversation({
 			setMainView(nextView);
 		}
 	}, []);
+	const awaitingQuestions = selectedAgentSession.awaitingQuestions;
+	const shouldShowAwaitingQuestion = Boolean(awaitingQuestions?.length) && !isQuestionAnswered;
+	const handleQuestionSubmit = useCallback(async (answers: QuestionCardAnswers) => {
+		if (!awaitingQuestions?.length) {
+			return;
+		}
+
+		setIsQuestionSubmitting(true);
+		try {
+			await onSubmit({
+				files: [],
+				text: formatQuestionCardAnswers(awaitingQuestions, answers),
+			});
+			setIsQuestionAnswered(true);
+		} finally {
+			setIsQuestionSubmitting(false);
+		}
+	}, [awaitingQuestions, onSubmit]);
 
 	return (
 		<section
@@ -183,7 +224,9 @@ export function JiraForYouConversation({
 							conversationContextRef={conversationContextRef}
 							hideScrollbar={false}
 							messageMode="ask"
+							resizeTarget={shouldShowAwaitingQuestion ? "bottom" : "follow"}
 							scrollSpacerRef={scrollSpacerRef}
+							showAwaitingIndicator={shouldShowAwaitingQuestion}
 							showFeedbackActions={false}
 							showFollowUpSuggestions={false}
 							uiMessages={renderableMessages}
@@ -194,24 +237,39 @@ export function JiraForYouConversation({
 							data-testid="jira-for-you-composer-region"
 						>
 							<div className="mx-auto flex min-w-0 w-full max-w-[800px] flex-col px-3 pt-3 md:px-6">
-								<div className="min-w-0 max-w-full" data-testid="jira-for-you-composer">
-									<RovoAppComposer
-										composerStatus="ready"
-										experimentalDarkCta
-										hideReasoningSelector
-										hideSourceAndModelControls
-										micStream={realtime.micStream}
-										onStop={async () => realtime.disconnect()}
-										onSubmit={onSubmit}
-										onToggleRealtimeVoice={handleToggleRealtimeVoice}
-										placeholder={selectedAgentSession.composerPlaceholder}
-										realtimeVoiceActive={realtime.voiceState !== "idle"}
-										realtimeVoiceState={realtime.voiceState}
-									/>
-								</div>
-								<div data-testid="jira-for-you-footer">
-									<Footer />
-								</div>
+								{shouldShowAwaitingQuestion && awaitingQuestions ? (
+									<>
+										<QuestionCard
+											customInputPlaceholder={awaitingQuestions[0]?.placeholder}
+											isSubmitting={isQuestionSubmitting}
+											onDismiss={() => setIsQuestionAnswered(true)}
+											onSubmit={(answers) => void handleQuestionSubmit(answers)}
+											questions={awaitingQuestions}
+										/>
+										<QuestionCardShortcutsFooter />
+									</>
+								) : (
+									<>
+										<div className="min-w-0 max-w-full" data-testid="jira-for-you-composer">
+											<RovoAppComposer
+												composerStatus="ready"
+												experimentalDarkCta
+												hideReasoningSelector
+												hideSourceAndModelControls
+												micStream={realtime.micStream}
+												onStop={async () => realtime.disconnect()}
+												onSubmit={onSubmit}
+												onToggleRealtimeVoice={handleToggleRealtimeVoice}
+												placeholder={selectedAgentSession.composerPlaceholder}
+												realtimeVoiceActive={realtime.voiceState !== "idle"}
+												realtimeVoiceState={realtime.voiceState}
+											/>
+										</div>
+										<div data-testid="jira-for-you-footer">
+											<Footer />
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 					</>

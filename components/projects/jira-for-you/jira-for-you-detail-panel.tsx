@@ -127,14 +127,12 @@ function getPanelVariants(
 function AgentSection({
 	agentSessions,
 	branch,
-	itemTitle,
 	onAgentPrompt,
 	onAgentSelect,
 	selectedAgentId,
 }: Readonly<{
 	agentSessions: readonly JiraForYouWorkspaceAgentSession[];
 	branch: string;
-	itemTitle: string;
 	onAgentPrompt: (agentId: string, prompt: string) => void;
 	onAgentSelect: (agentId: string) => void;
 	selectedAgentId: string;
@@ -150,7 +148,7 @@ function AgentSection({
 			id: agentSession.id,
 			prStatus: toAgentSessionPrStatus(agentSession.status),
 			state: toAgentSessionState(agentSession.status),
-			title: itemTitle,
+			title: agentSession.activityTitle,
 		}),
 	);
 
@@ -267,7 +265,6 @@ function DetailPanelInner({
 					<AgentSection
 						agentSessions={agentSessions}
 						branch={details.session.branch ?? `jira/${item.issueKey.toLowerCase()}`}
-						itemTitle={item.title}
 						onAgentPrompt={onAgentPrompt}
 						onAgentSelect={onAgentSelect}
 						selectedAgentId={selectedAgentId}

@@ -255,7 +255,7 @@ test("compact chat composer supports an opt-in left-side surface header tooltip"
 	);
 	assert.match(
 		codeReviewRail,
-		/composerSurfaceHeaderTooltip=\{variantConfig\.supportsLocalSession[\s\S]*selected agent running locally\./u,
+		/composerSurfaceHeaderTooltip=\{variantConfig\.supportsLocalSession[\s\S]*Sends your prompt to your local agent\./u,
 	);
 	assert.doesNotMatch(codeReviewRail, /third-party agent running in the cloud\./u);
 });

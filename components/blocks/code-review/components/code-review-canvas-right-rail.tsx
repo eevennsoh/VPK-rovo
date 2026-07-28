@@ -157,7 +157,7 @@ export function CodeReviewCanvasRightRail({
 					</>
 				) : undefined}
 				composerSurfaceHeaderTooltip={variantConfig.supportsLocalSession
-					? "Sends your prompt to the selected agent running locally."
+					? "Sends your prompt to your local agent."
 					: undefined}
 				composerInputContext={hasInlineComments ? {
 					content: (

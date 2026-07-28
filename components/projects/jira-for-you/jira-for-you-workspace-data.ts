@@ -5,6 +5,7 @@ import {
 import type { SmartLinkItem } from "@/components/blocks/smart-link/components/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import type { JiraSidebarSessionStatus } from "@/components/blocks/product-sidebar/variants/jira";
+import type { QuestionCardQuestion } from "@/components/blocks/question-card/types";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 import type {
@@ -47,6 +48,8 @@ interface WorkspaceSourceSeed {
 
 interface WorkspaceAgentSeed {
 	assistant: string;
+	activityTitle?: string;
+	awaitingQuestions?: readonly QuestionCardQuestion[];
 	composerPlaceholder?: string;
 	messages?: readonly RovoUIMessage[];
 	status?: JiraSidebarSessionStatus;
@@ -142,6 +145,31 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		],
 		agentSessions: {
 			"readiness-checker": {
+				awaitingQuestions: [
+					{
+						id: "unapproved-claims-treatment",
+						kind: "single-select",
+						label: "How should I handle the unapproved claims?",
+						options: [
+							{
+								id: "move-to-appendix",
+								label: "Move them to the appendix (Recommended)",
+								description: "Keep the main narrative presentation-ready while approvals are pending.",
+							},
+							{
+								id: "keep-in-main-narrative",
+								label: "Keep them in the main narrative",
+								description: "Leave all three claims in place and wait for explicit approvals.",
+							},
+							{
+								id: "remove-from-version",
+								label: "Remove them from this version",
+								description: "Publish without the adoption range, customer quote, or partner target.",
+							},
+						],
+						placeholder: "Tell Readiness Checker what to do...",
+					},
+				],
 				assistant: [
 					"I reviewed the full deck outline against the latest Vitafleet strategy memo and the launch brief. The story is coherent and the overall narrative is ready for a final review, but I found three claims that still need explicit executive approval before the deck can be shared broadly.",
 					"**What is ready**\n- The opening frames the customer problem and Vitafleet vision clearly.\n- The product principles now map directly to the launch outcomes in the strategy memo.\n- The roadmap section uses the latest sequencing and removes the older milestone language.",
@@ -168,6 +196,7 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 		worktreePath: "~/src/revenue-platform/.worktrees/crm-318-review",
 		agentSessions: {
 			"readiness-checker": {
+				activityTitle: "Checking launch readiness",
 				assistant: [
 					"I finished the launch-readiness pass for CRM-318. The dashboard itself is in good shape: the latest branch matches the acceptance criteria, all five automated checks are passing, and the regression checklist is complete for the primary analytics journeys.",
 					"**What I verified**\n- Campaign, channel, and region filters return the expected totals across the standard reporting windows.\n- Saved dashboard views survive a refresh and preserve the selected comparison period.\n- Empty, partial, and delayed-data states use the approved guidance instead of showing misleading zero values.\n- The updated attribution labels are consistent between the summary cards, trend charts, and exported report.\n- Keyboard navigation and focus order remain intact after the dashboard refinements.",
@@ -179,6 +208,7 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 				status: "awaiting-input",
 			},
 			"code-reviewer": {
+				activityTitle: "Reviewing aggregation logic",
 				assistant: [
 					"I reviewed the latest implementation branch for CRM-318 and confirmed that the aggregation pipeline changes are safe. The query boundary is clearer, the updated grouping logic preserves the existing totals, and the branch does not introduce a new client-side transformation path.",
 					"**Review findings**\n- The campaign and channel aggregations now share the same normalized input model.\n- The comparison-period calculation handles month and quarter boundaries consistently.\n- Loading and error states remain isolated from the chart rendering path.\n- The focused regression coverage exercises the new grouping and export behavior.",
@@ -188,6 +218,7 @@ const WORKSPACE_ITEM_SEEDS: Readonly<Record<string, WorkspaceItemSeed>> = {
 				status: "running",
 			},
 			"feedback-analyzer": {
+				activityTitle: "Analyzing launch feedback",
 				assistant: [
 					"I clustered the latest field feedback for CRM-318 into three themes: adoption, trust, and discoverability. The feedback is directionally positive, especially from teams replacing manual weekly reports, but users want more context before they rely on the dashboard for planning decisions.",
 					"**What users are saying**\n- **Adoption:** saved views and exports remove repeated setup work for weekly reviews.\n- **Trust:** users want to understand why a value is marked anomalous before escalating it.\n- **Discoverability:** several users missed the comparison-period control on their first visit.\n- **Language:** attribution labels are accurate, but some readers interpret “influenced” as “sourced.”",
@@ -446,6 +477,8 @@ function createAgentSession(
 			: `The work item is still tracked in **${item.jiraStatus}** and is ready for the next handoff.`,
 	].join("\n\n");
 	return {
+		activityTitle: agentSeed?.activityTitle ?? item.title,
+		awaitingQuestions: agentSeed?.awaitingQuestions,
 		composerPlaceholder: agentSeed?.composerPlaceholder ?? `Message ${profile.name}`,
 		id: agentId,
 		messages: agentSeed?.messages ?? buildFallbackMessages(item, agent, assistantText),
