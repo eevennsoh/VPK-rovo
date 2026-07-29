@@ -46,7 +46,7 @@ export type TwgToolSourceIconProps = Omit<ComponentProps<typeof Tile>, "children
 
 export type TwgAppstackAnimationDirection = "left-to-right" | "right-to-left";
 
-export type TWGAppstackProps = ComponentProps<"div"> & {
+export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & {
 	sources: ReadonlyArray<TwgToolSource>;
 	iconSize?: TwgToolSourceIconSize;
 	maxVisible?: number;
