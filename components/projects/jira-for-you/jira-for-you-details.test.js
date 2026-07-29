@@ -59,7 +59,7 @@ test("work-item details are stable and agent sessions contain only agent-scoped 
 	);
 	assert.match(
 		WORKSPACE_DATA_SOURCE,
-		/interface WorkspaceAgentSeed \{\s*assistant: string;\s*activityTitle\?: string;\s*composerPlaceholder\?: string;\s*messages\?: readonly RovoUIMessage\[\];\s*status\?: JiraSidebarSessionStatus;\s*\}/u,
+		/interface WorkspaceAgentSeed \{\s*assistant: string;\s*activityTitle\?: string;\s*awaitingQuestions\?: readonly QuestionCardQuestion\[\];\s*composerPlaceholder\?: string;\s*messages\?: readonly RovoUIMessage\[\];\s*status\?: JiraSidebarSessionStatus;\s*\}/u,
 	);
 	assert.match(
 		WORKSPACE_DATA_SOURCE,
