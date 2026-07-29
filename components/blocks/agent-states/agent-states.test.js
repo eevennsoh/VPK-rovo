@@ -13,6 +13,10 @@ const AGENT_LIST_SOURCE = readFileSync(
 	join(__dirname, "../agent-list/agent-list-card.tsx"),
 	"utf8",
 );
+const AGENT_PROFILE_SOURCE = readFileSync(
+	join(__dirname, "../../ui-custom/entity-card/agent-profile.tsx"),
+	"utf8",
+);
 
 test("Agent States owns the shared Jira agent flyout surface", () => {
 	assert.match(SOURCE, /export type AgentStatesState = "working" \| "awaiting-input" \| "completed";/u);
@@ -32,6 +36,16 @@ test("Agent States demo exposes distinct content for each state", () => {
 	);
 	assert.match(PAGE_SOURCE, /question=\{QUESTION_CARD_SINGLE_SELECT_DEMO\[0\]\}/u);
 	assert.doesNotMatch(PAGE_SOURCE, /\bmessage=/u);
+});
+
+test("compact agent composers use the shared raised elevation treatment", () => {
+	for (const source of [SOURCE, AGENT_PROFILE_SOURCE]) {
+		assert.match(source, /\bshadow-md\b/u);
+		assert.doesNotMatch(
+			source,
+			/shadow-\[0px_-2px_25px_rgba\(30,31,33,0\.08\)\]/u,
+		);
+	}
 });
 
 test("Jira Issue and Agent List consume Agent States instead of local flyout cards", () => {
