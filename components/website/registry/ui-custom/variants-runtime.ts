@@ -303,6 +303,13 @@ export const UI_CUSTOM_RUNTIME_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"twg-appstack-demo-sizes": dynamic(
+		() =>
+			import("../../demos/ui-custom/twg-appstack-demo").then((mod) => ({
+				default: mod.TWGAppstackDemoSizes,
+			})),
+		{ ssr: false },
+	),
 	"transcription-demo-static": dynamic(
 		() =>
 			import("../../demos/ui-custom/transcription-demo").then((mod) => ({

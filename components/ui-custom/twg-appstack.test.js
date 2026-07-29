@@ -13,18 +13,39 @@ const DETAILS_SOURCE = readDetailCategorySource("ui-custom");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 const DEMO_SOURCE = readFileSync(join(ROOT, "components/website/demos/ui-custom/twg-appstack-demo.tsx"), "utf8");
 
-test("TWG Appstack fixes md source items to 24px wrappers", () => {
+test("TWG Appstack exposes the shared 16/20/24/32 tile size scale", () => {
 	assert.match(SOURCE, /export function TWGAppstack/u);
-	assert.match(SOURCE, /size === "md" \? "size-6" : "size-4"/u);
+	assert.match(
+		SOURCE,
+		/export type TwgToolSourceIconSize = "xxsmall" \| "xsmall" \| "small" \| "medium";/u,
+	);
+	assert.match(SOURCE, /xxsmall: \{ box: "size-4", imagePx: 16, overlap: "-ml-0\.5", countText: "text-\[10px\]" \}/u);
+	assert.match(SOURCE, /xsmall: \{ box: "size-5", imagePx: 20, overlap: "-ml-1", countText: "text-\[10px\]" \}/u);
+	assert.match(SOURCE, /small: \{ box: "size-6", imagePx: 24, overlap: "-ml-1", countText: "text-xs" \}/u);
+	assert.match(SOURCE, /medium: \{ box: "size-8", imagePx: 32, overlap: "-ml-1\.5", countText: "text-xs" \}/u);
+	assert.match(SOURCE, /as const satisfies Record<TwgToolSourceIconSize, \{/u);
 	assert.match(SOURCE, /"relative flex shrink-0 items-center justify-center"/u);
-	assert.match(SOURCE, /size=\{getSourceTileSize\(iconSize\)\}/u);
+});
+
+test("TWG Appstack defaults to 24px and passes the size straight to the tile scale", () => {
+	assert.match(SOURCE, /size = "small",/u);
+	assert.match(SOURCE, /iconSize = "small",/u);
+	assert.match(SOURCE, /const sizing = APPSTACK_SIZES\[iconSize\];/u);
+	assert.match(SOURCE, /sizing\.box,\s*index > 0 && sizing\.overlap/u);
+	// The four names are shared with `components/ui/tile`, so no translation
+	// table sits between the prop and the Tile / logo primitives.
+	assert.doesNotMatch(SOURCE, /getSourceTileSize|getAppstackItemClassName|getSourceImageSize/u);
+	assert.doesNotMatch(SOURCE, /size === "md"/u);
 });
 
 test("TWG Appstack uses a solid fill on stacked tiles", () => {
 	assert.match(SOURCE, /const APPSTACK_TILE_FILL_CLASS = "bg-surface"/u);
 	assert.match(SOURCE, /cn\("shrink-0", APPSTACK_TILE_FILL_CLASS, className\)/u);
 	assert.match(SOURCE, /className="shrink-0 bg-surface text-text-subtlest"/u);
-	assert.match(SOURCE, /<span className="text-xs font-medium leading-none">\+\{hiddenCount\}<\/span>/u);
+	assert.match(
+		SOURCE,
+		/<span className=\{cn\("font-medium leading-none", sizing\.countText\)\}>\+\{hiddenCount\}<\/span>/u,
+	);
 });
 
 test("TWG Appstack animation is optional and preserves source stack rotation", () => {
@@ -60,6 +81,9 @@ test("TWG Appstack is wired into the ui-custom catalog", () => {
 	assert.match(MANIFEST_SOURCE, /customComponent\("twg-appstack", "TWG Appstack"\)/u);
 	assert.match(DETAILS_SOURCE, /"twg-appstack": \{/u);
 	assert.match(REGISTRY_SOURCE, /"twg-appstack": dynamic\(\(\) => import\("\.\/demos\/ui-custom\/twg-appstack-demo"\)/u);
+	assert.match(REGISTRY_SOURCE, /"twg-appstack-demo-sizes": dynamic\(/u);
+	assert.match(DETAILS_SOURCE, /demoSlug: "twg-appstack-demo-sizes"/u);
+	assert.match(DEMO_SOURCE, /export function TWGAppstackDemoSizes\(\)/u);
 	assert.match(DEMO_SOURCE, /export default function TWGAppstackDemo/u);
 	assert.match(DEMO_SOURCE, /aria-label="Replay TWG app stack animation"/u);
 	assert.match(DEMO_SOURCE, /setReplayKey\(\(currentKey\) => currentKey \+ 1\)/u);

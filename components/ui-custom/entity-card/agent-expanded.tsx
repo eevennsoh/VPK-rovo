@@ -280,7 +280,7 @@ export function EntityCardAgentExpanded({
 			>
 				{sources.length > 0 ? (
 					<EntityCardSection label="Works with">
-						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={8} sources={sources} />
+						<TWGAppstack animated={false} className="justify-start" iconSize="small" maxVisible={8} sources={sources} />
 					</EntityCardSection>
 				) : null}
 

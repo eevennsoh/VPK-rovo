@@ -699,7 +699,7 @@ test("Agent Card expanded template uses the shared template detail body without 
 		card,
 		/data-slot="agent-card-scroll"[\s\S]*style=\{EXPANDED_TICKET_BOTTOM_STYLE\}[\s\S]*<AgentCardSection label="Works with">/u,
 	);
-	assert.match(card, /<TWGAppstack animated=\{false\} className="justify-start" iconSize="md" maxVisible=\{7\} sources=\{sources\} \/>/u);
+	assert.match(card, /<TWGAppstack animated=\{false\} className="justify-start" iconSize="small" maxVisible=\{7\} sources=\{sources\} \/>/u);
 	assert.match(card, /<AgentCardSection label="Works with">/u);
 	assert.match(card, /<AgentCardSection label="Skills">/u);
 	assert.match(card, /<div className="py-1\.5">[\s\S]*<Separator \/>/u);

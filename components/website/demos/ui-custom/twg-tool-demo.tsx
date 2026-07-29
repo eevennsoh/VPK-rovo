@@ -76,7 +76,7 @@ function InlineSource({
 }) {
 	return (
 		<span className="inline-flex min-w-0 items-center gap-1">
-			<TwgToolSourceIcon source={source} size="sm" />
+			<TwgToolSourceIcon source={source} size="xxsmall" />
 			<span className="truncate">{children}</span>
 		</span>
 	);

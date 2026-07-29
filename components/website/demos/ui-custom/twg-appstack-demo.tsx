@@ -10,6 +10,7 @@ import {
 	TWGAppstack,
 	type TwgAppstackAnimationDirection,
 	type TwgToolSource,
+	type TwgToolSourceIconSize,
 } from "@/components/ui-custom/twg-appstack";
 
 const SOURCES: TwgToolSource[] = [
@@ -18,6 +19,13 @@ const SOURCES: TwgToolSource[] = [
 	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
 	{ id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
 	{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
+];
+
+const SIZES: ReadonlyArray<{ size: TwgToolSourceIconSize; label: string }> = [
+	{ size: "xxsmall", label: "xxsmall — 16x16" },
+	{ size: "xsmall", label: "xsmall — 20x20" },
+	{ size: "small", label: "small — 24x24" },
+	{ size: "medium", label: "medium — 32x32" },
 ];
 
 export default function TWGAppstackDemo() {
@@ -62,6 +70,10 @@ export default function TWGAppstackDemo() {
 					<span className="text-xs font-semibold leading-4 text-text-subtle">Static</span>
 					<TWGAppstack animated={false} className="justify-start" sources={SOURCES.slice(0, 4)} />
 				</div>
+				<div className="flex flex-col gap-2">
+					<span className="text-xs font-semibold leading-4 text-text-subtle">Sizes</span>
+					<TWGAppstackDemoSizes />
+				</div>
 			</div>
 		</div>
 	);
@@ -73,4 +85,23 @@ export function TWGAppstackDemoStatic() {
 
 export function TWGAppstackDemoOverflow() {
 	return <TWGAppstack animated={false} className="justify-start" sources={SOURCES} maxVisible={3} />;
+}
+
+export function TWGAppstackDemoSizes() {
+	return (
+		<div className="flex flex-col gap-4">
+			{SIZES.map(({ size, label }) => (
+				<div key={size} className="flex flex-col gap-1.5">
+					<span className="text-xs leading-4 text-text-subtlest">{label}</span>
+					<TWGAppstack
+						animated={false}
+						className="justify-start"
+						iconSize={size}
+						maxVisible={4}
+						sources={SOURCES}
+					/>
+				</div>
+			))}
+		</div>
+	);
 }

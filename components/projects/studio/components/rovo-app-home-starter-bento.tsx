@@ -257,7 +257,7 @@ function HomeStarterHeroTile({
 								<TWGAppstack
 									animated={false}
 									className="justify-start"
-									iconSize="md"
+									iconSize="small"
 									maxVisible={hero.sources.length}
 									sources={hero.sources}
 								/>
