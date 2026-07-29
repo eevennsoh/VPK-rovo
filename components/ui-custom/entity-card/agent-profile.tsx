@@ -330,7 +330,7 @@ export function EntityCardAgentProfile({
 						}
 						allowOverflow
 						aria-label={inputActionLabel ?? inputPlaceholder}
-						className="w-full rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]"
+						className="w-full rounded-xl border border-border bg-bg-input px-3 shadow-md"
 						onSubmit={handleComposerSubmit}
 					>
 						<PromptInputTextarea

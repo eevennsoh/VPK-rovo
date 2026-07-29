@@ -111,10 +111,7 @@ export function AgentStatesComposer({
 			}
 			allowOverflow
 			aria-label="Reply to agent"
-			className={cn(
-				"shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]",
-				className,
-			)}
+			className={cn("shadow-md", className)}
 			onSubmit={handleSubmit}
 		>
 			<PromptInputTextarea
