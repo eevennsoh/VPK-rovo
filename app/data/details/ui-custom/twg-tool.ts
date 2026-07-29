@@ -26,7 +26,7 @@ const sources: TwgToolSource[] = [
   description={
     <div className="flex min-w-0 items-center gap-1">
       Looking into
-      <TwgToolSourceIcon source={sources[0]} size="sm" />
+      <TwgToolSourceIcon source={sources[0]} size="xxsmall" />
       <span className="italic">Upper arm strain repair</span>
     </div>
   }

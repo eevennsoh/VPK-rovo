@@ -71,7 +71,7 @@ export function Knowledge({ className, ...props }: Readonly<KnowledgeProps>) {
 					</div>
 					<TWGAppstack
 						className="relative z-10 max-w-[42%]"
-						iconSize="md"
+						iconSize="small"
 						sources={KNOWLEDGE_SOURCES}
 					/>
 				</div>

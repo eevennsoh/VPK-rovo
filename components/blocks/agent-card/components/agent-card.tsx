@@ -456,7 +456,7 @@ export function AgentCard({
 
 				{sources.length > 0 ? (
 					<AgentCardSection label="Works with">
-						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
+						<TWGAppstack animated={false} className="justify-start" iconSize="small" maxVisible={6} sources={sources} />
 					</AgentCardSection>
 				) : null}
 
@@ -755,7 +755,7 @@ export function AgentCard({
 
 							{sources.length > 0 ? (
 								<AgentCardSection label="Works with" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
-									<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
+									<TWGAppstack animated={false} className="justify-start" iconSize="small" maxVisible={7} sources={sources} />
 								</AgentCardSection>
 							) : null}
 
@@ -893,7 +893,7 @@ export function AgentCard({
 						>
 							{sources.length > 0 ? (
 								<AgentCardSection label="Works with">
-									<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
+									<TWGAppstack animated={false} className="justify-start" iconSize="small" maxVisible={7} sources={sources} />
 								</AgentCardSection>
 							) : null}
 

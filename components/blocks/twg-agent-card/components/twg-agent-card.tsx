@@ -180,7 +180,7 @@ export function TWGAgentCard({
 						<TWGAppstack
 							className="mt-1 justify-start"
 							direction="left-to-right"
-							iconSize="md"
+							iconSize="small"
 							maxVisible={7}
 							sources={sources}
 						/>

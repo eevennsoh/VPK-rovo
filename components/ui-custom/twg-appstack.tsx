@@ -10,7 +10,12 @@ import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-d
 import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
 
-export type TwgToolSourceIconSize = "sm" | "md";
+/**
+ * Shared with `components/ui/tile` — the names resolve to the same box on the
+ * `Tile`, `AtlassianLogo`, and `LogoThirdParty` scale, so the size is passed
+ * straight through rather than translated.
+ */
+export type TwgToolSourceIconSize = "xxsmall" | "xsmall" | "small" | "medium";
 export type TwgToolThirdPartyProvider = "google-drive" | "salesforce";
 export type TwgToolSourceProvider =
 	| "twg"
@@ -86,39 +91,44 @@ function getAppstackTransition(delay: number): Transition {
 	};
 }
 
+/**
+ * Per-size geometry. `box` matches the `Tile` size class so the animated
+ * wrapper and the tile it holds stay the same square; `imagePx` sizes the
+ * `next/image` fallback to that same box; `overlap` scales the negative inline
+ * margin with the tile so the stack keeps its density at every size; `countText`
+ * keeps the `+N` overflow label legible inside a smaller square.
+ */
+const APPSTACK_SIZES = {
+	xxsmall: { box: "size-4", imagePx: 16, overlap: "-ml-0.5", countText: "text-[10px]" },
+	xsmall: { box: "size-5", imagePx: 20, overlap: "-ml-1", countText: "text-[10px]" },
+	small: { box: "size-6", imagePx: 24, overlap: "-ml-1", countText: "text-xs" },
+	medium: { box: "size-8", imagePx: 32, overlap: "-ml-1.5", countText: "text-xs" },
+} as const satisfies Record<TwgToolSourceIconSize, {
+	box: string;
+	imagePx: number;
+	overlap: string;
+	countText: string;
+}>;
+
 function isThirdPartyProvider(
 	provider: TwgToolSourceProvider
 ): provider is TwgToolThirdPartyProvider {
 	return provider === "google-drive" || provider === "salesforce";
 }
 
-function getSourceTileSize(size: TwgToolSourceIconSize): "small" | "xxsmall" {
-	return size === "md" ? "small" : "xxsmall";
-}
-
-function getSourceImageSize(size: TwgToolSourceIconSize) {
-	return size === "md" ? 24 : 16;
-}
-
-function getAppstackItemClassName(size: TwgToolSourceIconSize) {
-	return size === "md" ? "size-6" : "size-4";
-}
-
 export function TwgToolSourceIcon({
 	className,
 	source,
-	size = "md",
+	size = "small",
 	...props
 }: TwgToolSourceIconProps) {
-	const tileSize = getSourceTileSize(size);
-
 	if (source.icon) {
 		return (
 			<Tile
 				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
 				isInset={false}
 				label={source.label}
-				size={tileSize}
+				size={size}
 				variant="transparent"
 				{...props}
 			>
@@ -135,7 +145,7 @@ export function TwgToolSourceIcon({
 				className={cn("shrink-0", className)}
 				label={source.label}
 				name={source.name}
-				size={tileSize}
+				size={size}
 			/>
 		);
 	}
@@ -147,16 +157,16 @@ export function TwgToolSourceIcon({
 				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
 				isInset={false}
 				label={source.label}
-				size={tileSize}
+				size={size}
 				variant="transparent"
 				{...props}
 			>
 				<Image
 					alt=""
 					aria-hidden
-					height={getSourceImageSize(size)}
+					height={APPSTACK_SIZES[size].imagePx}
 					src={source.iconSrc}
-					width={getSourceImageSize(size)}
+					width={APPSTACK_SIZES[size].imagePx}
 				/>
 			</Tile>
 		);
@@ -168,7 +178,7 @@ export function TwgToolSourceIcon({
 				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
 				isInset={false}
 				label={source.label}
-				size={tileSize}
+				size={size}
 				variant="transparent"
 				{...props}
 			>
@@ -177,7 +187,7 @@ export function TwgToolSourceIcon({
 						name="jira-service-management"
 						hasBorder
 						label={source.label}
-						size={size === "md" ? "small" : "xxsmall"}
+						size={size}
 						themeAware={false}
 					/>
 				</span>
@@ -192,7 +202,7 @@ export function TwgToolSourceIcon({
 				className={cn("shrink-0", className)}
 				label={source.label}
 				name={source.provider}
-				size={tileSize}
+				size={size}
 			/>
 		);
 	}
@@ -202,7 +212,7 @@ export function TwgToolSourceIcon({
 			className={cn("shrink-0 text-icon-subtle", APPSTACK_TILE_FILL_CLASS, className)}
 			isInset={false}
 			label={source.label}
-			size={tileSize}
+			size={size}
 			variant="transparent"
 			{...props}
 		>
@@ -211,7 +221,7 @@ export function TwgToolSourceIcon({
 					name={source.provider}
 					hasBorder
 					label={source.label}
-					size={size === "md" ? "small" : "xxsmall"}
+					size={size}
 					themeAware={false}
 				/>
 			</span>
@@ -223,7 +233,7 @@ export function TWGAppstack({
 	animated = true,
 	className,
 	direction = "right-to-left",
-	iconSize = "md",
+	iconSize = "small",
 	maxVisible = 6,
 	sources,
 	...props
@@ -232,6 +242,7 @@ export function TWGAppstack({
 	const shouldAnimate = animated && !shouldReduceMotion;
 	const hasRenderedSources = useRef(false);
 	const shouldStaggerEntrance = !hasRenderedSources.current;
+	const sizing = APPSTACK_SIZES[iconSize];
 
 	useEffect(() => {
 		if (sources.length > 0) hasRenderedSources.current = true;
@@ -248,8 +259,8 @@ export function TWGAppstack({
 	const renderItem = (key: string, index: number, children: ReactNode, rotation = getAppstackRotation(index)) => {
 		const itemClassName = cn(
 			"relative flex shrink-0 items-center justify-center",
-			getAppstackItemClassName(iconSize),
-			index > 0 && "-ml-1"
+			sizing.box,
+			index > 0 && sizing.overlap
 		);
 
 		if (!shouldAnimate) {
@@ -307,10 +318,10 @@ export function TWGAppstack({
 						hasBorder
 						isInset={false}
 						label={`${hiddenCount} more sources`}
-						size={getSourceTileSize(iconSize)}
+						size={iconSize}
 						variant="transparent"
 					>
-						<span className="text-xs font-medium leading-none">+{hiddenCount}</span>
+						<span className={cn("font-medium leading-none", sizing.countText)}>+{hiddenCount}</span>
 					</Tile>,
 					0
 				)
