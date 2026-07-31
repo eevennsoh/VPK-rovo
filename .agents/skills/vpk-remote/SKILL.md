@@ -29,9 +29,9 @@ subagents bill the OAuth session. Every worker is an external CLI process.
 
 | Invocation | Behavior |
 | --- | --- |
-| `/vpk-remote <task>` | Delegate to GPT-5.6 Sol at medium effort (default) |
+| `/vpk-remote <task>` | Delegate to GPT-5.6 Sol at high effort (default) |
 | `/vpk-remote [model] [effort] <task>` | Delegate to the named lane/effort |
-| `/vpk-remote advisor [question]` | Read-only consult → Claude lane, Opus 5 high |
+| `/vpk-remote advisor [question]` | Read-only consult → the family that did *not* do the work |
 | `/vpk-remote fanout <task>` | Force the parallel read-only shape |
 | `/vpk-remote` (bare) | Explain the grammar and ask for a task |
 
@@ -47,15 +47,17 @@ stays in the task.
 
 | Token | Lane | Model ID | Default effort |
 | --- | --- | --- | --- |
-| *(none)* / `sol` | GPT (codex) | `gpt-5.6-sol` | `medium` |
+| *(none)* / `sol` | GPT (codex) | `gpt-5.6-sol` | `high` |
 | `terra` | GPT (codex) | `gpt-5.6-terra` | `high` |
 | `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` | `high` |
 | `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` | `high` |
 
-Effort tokens `low` `medium` `high` `xhigh` override the lane default and are
-valid on both lanes (all four probed working on 2026-07-31, including codex
-`low` and claude `--effort xhigh`). Examples: `/vpk-remote xhigh <task>` =
-Sol at xhigh; `/vpk-remote opus <task>` = Opus 5 at high;
+Every lane defaults to `high` — the planner's credit is the scarce resource,
+not the worker's, so a worker that thinks harder and gets it right the first
+time is cheaper than a correction round. Effort tokens `low` `medium` `high`
+`xhigh` override that, and all four are valid on both lanes (probed working
+on 2026-07-31, including codex `low` and claude `--effort xhigh`). Examples:
+`/vpk-remote low <task>` = Sol at low for a mechanical sweep;
 `/vpk-remote terra xhigh <task>` = Terra at xhigh.
 
 ## Hard preflight (blocking)
@@ -134,8 +136,22 @@ never retry through a shell alias.
 ## Mode: advisor
 
 A second opinion at high judgment moments, billed to Proximity: a
-**read-only** consult brief dispatched to the Claude lane at Opus 5 high
-(model/effort tokens may override, e.g. `/vpk-remote advisor terra xhigh …`).
+**read-only** consult brief, dispatched with the same lane commands as any
+other worker.
+
+**Default to the family that did not do the work.** Cost no longer picks the
+advisor — every lane bills Proximity — so what a consult buys is
+*independence*, not a capability tier. A GPT worker's blind spots are found
+most cheaply by a Claude reviewer and vice versa; asking the same family to
+audit its own reasoning re-runs the same priors.
+
+| Work under review | Advisor default |
+| --- | --- |
+| GPT lane (`sol` / `terra`), or nothing dispatched yet | `claude-opus-5[1m]` at high |
+| Claude lane (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
+
+Explicit tokens always win: `/vpk-remote advisor sol xhigh <question>` forces
+a GPT consult regardless of what ran before it.
 
 Consult moments, packaging checklist, and advice shape:
 [references/advisor-pattern.md](references/advisor-pattern.md). The advisor
@@ -163,7 +179,7 @@ Everything lives under gitignored `output/`:
 ```text
 output/remote-gpt/worker-<n>/      # home/ (CODEX_HOME), brief.md, report.md, followup-<k>.md
 output/remote-claude/worker-<n>/   # brief.md, report.md, stderr.log, followup-<k>.md
-output/remote-claude/advisor-<n>/  # advisor consults (same layout)
+output/remote-<lane>/advisor-<n>/  # advisor consults, same layout as that lane's workers
 ```
 
 One directory per worker; never reuse a directory across concurrent workers.

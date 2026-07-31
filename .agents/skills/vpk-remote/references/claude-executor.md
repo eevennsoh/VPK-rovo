@@ -82,10 +82,11 @@ update this doc.
 
 ## Advisor consults
 
-Advisor briefs use this lane at Opus 5 `--effort high` by default, under
-`output/remote-claude/advisor-<n>/`, with a read-only brief per
-[advisor-pattern.md](advisor-pattern.md). Same command, different directory
-and brief contract.
+This lane serves advisor consults at Opus 5 `--effort high` when the work
+under review came from the **GPT** lane (or when nothing has been dispatched
+yet) — see the independence rule in
+[advisor-pattern.md](advisor-pattern.md). Same command, `advisor-<n>/`
+instead of `worker-<n>/`, and a read-only brief.
 
 ## Failure handling
 

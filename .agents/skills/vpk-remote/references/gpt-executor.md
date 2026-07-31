@@ -37,7 +37,7 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   codex exec --ignore-user-config -C "$PWD" \
   -m gpt-5.6-sol \
   -c 'model_provider="openai-gw"' \
-  -c 'model_reasoning_effort="medium"' \
+  -c 'model_reasoning_effort="high"' \
   -c 'approval_policy="never"' \
   -c 'model_providers.openai-gw.name="AI Gateway (Proximity)"' \
   -c 'model_providers.openai-gw.base_url="http://localhost:29576/openai/v1"' \
@@ -92,7 +92,7 @@ env -u OPENAI_API_KEY -u CODEX_API_KEY \
   codex exec --ignore-user-config \
   -m gpt-5.6-sol \
   -c 'model_provider="openai-gw"' \
-  -c 'model_reasoning_effort="medium"' \
+  -c 'model_reasoning_effort="high"' \
   -c 'approval_policy="never"' \
   -c 'model_providers.openai-gw.name="AI Gateway (Proximity)"' \
   -c 'model_providers.openai-gw.base_url="http://localhost:29576/openai/v1"' \
@@ -108,6 +108,14 @@ Resuming keeps the session's prompt cache warm — a fresh `codex exec`
 re-pays the whole cold-start context read. Use `resume --last` only when this
 is the sole active/recent session in its isolated home; **never resume during
 or immediately after fan-out** (the selected session is ambiguous).
+
+## Advisor consults
+
+This lane serves advisor consults at `gpt-5.6-sol` `xhigh` when the work
+under review came from the **Claude** lane, including plans written by the
+OAuth planner itself — see the independence rule in
+[advisor-pattern.md](advisor-pattern.md). Use `--sandbox read-only`, an
+`advisor-<n>/` directory, and a read-only brief.
 
 ## Failure handling
 

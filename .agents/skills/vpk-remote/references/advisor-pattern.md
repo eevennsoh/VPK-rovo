@@ -1,11 +1,12 @@
 # Advisor Pattern Reference (Proximity-billed consults)
 
 Adapted from Anthropic's advisor-tool guidance and the retired `/vpk-fable`
-advisor mode. The difference here: the advisor is **not a subagent** (a
-subagent would bill the OAuth session). It is a one-shot, read-only
-`claude -p` consult through the Proximity Claude lane — Opus 5 at high effort
-by default — per [claude-executor.md](claude-executor.md), under
-`output/remote-claude/advisor-<n>/`.
+advisor mode. Two things changed in the port: the advisor is **not a
+subagent** (a subagent would bill the OAuth session), and it is **not pinned
+to one model**. It is a one-shot, read-only worker on either lane —
+[gpt-executor.md](gpt-executor.md) or
+[claude-executor.md](claude-executor.md) — writing to
+`output/remote-<lane>/advisor-<n>/`.
 
 ## The idea
 
@@ -14,6 +15,29 @@ consulted mid-task for strategic guidance: it reads the situation, produces a
 decision or course-correction, and the planner continues. The advisor never
 generates the final output and never edits files — that is where the savings
 come from.
+
+## Picking the advisor: independence, not tier
+
+In `/vpk-fable` the advisor was pinned to the strongest model because it was
+the *expensive* one, consulted sparingly while a cheaper executor did the
+grinding. That rationale is dead here: every lane bills Proximity at the same
+boundary, so there is no cost gradient to arbitrage.
+
+What remains is **perspective diversity**. A model reviewing its own family's
+output re-runs largely the same priors and tends to ratify; a different family
+fails differently and is far likelier to surface the thing that was missed. So
+default the consult to the family that did *not* do the work — Opus 5 high
+when reviewing GPT-lane work or when nothing has been dispatched yet, Sol
+xhigh when reviewing Claude-lane work. Explicit model/effort tokens override.
+
+Two corollaries worth remembering:
+
+- **Reviewing your own planner counts too.** When the consult is about a plan
+  the OAuth Claude session wrote, the GPT lane is the independent reviewer,
+  even though no worker has run yet.
+- **Do not stack same-family consults.** A second opinion from the same
+  family as the first advisor adds cost without adding independence; if the
+  first consult was inconclusive, sharpen the question instead.
 
 ## When to consult (and when not to)
 
@@ -37,8 +61,8 @@ Good advice is a 400–700 token course-correction, not an essay.
 
 ## Context packaging (the consult starts cold)
 
-A one-shot `claude -p` worker sees only its brief — no transcript. Package
-all five items:
+A one-shot worker on either lane sees only its brief — no transcript, and on
+the GPT lane no CLAUDE.md either. Package all five items:
 
 1. **Task** — what the user asked for, verbatim where it matters.
 2. **Constraints** — repo rules, API contracts, non-negotiables.
@@ -57,9 +81,10 @@ You are advising only. Make no edits of any kind. Reply with:
 Keep it under ~700 tokens.
 ```
 
-Because the lane is stateless, a repeat consult re-sends context as a fresh
-brief: prior advice, what was adopted, what changed, and the new question.
-Keep the delta tight.
+Treat consults as stateless and re-send context as a fresh brief on repeat:
+prior advice, what was adopted, what changed, and the new question. Keep the
+delta tight. (The GPT lane could technically `resume` a consult session, but
+a re-brief keeps both lanes on one contract and consults are short.)
 
 ## After advice returns
 
