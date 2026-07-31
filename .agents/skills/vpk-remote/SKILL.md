@@ -42,7 +42,7 @@ proximity") use the defaults unless the user names a model in prose.
 tokens (case-insensitive, any order, at most one model + one effort + one
 mode) while each is a recognized keyword; the first unrecognized token starts
 the task text. Keywords inside the task are never consumed — in
-`/vpk-remote fix the low contrast button`, parsing stops at `fix`, so `low`
+`/vpk-remote fix the high contrast toggle`, parsing stops at `fix`, so `high`
 stays in the task.
 
 | Token | Lane | Model ID | Default effort |
@@ -52,13 +52,33 @@ stays in the task.
 | `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` | `high` |
 | `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` | `high` |
 
-Every lane defaults to `high` — the planner's credit is the scarce resource,
-not the worker's, so a worker that thinks harder and gets it right the first
-time is cheaper than a correction round. Effort tokens `low` `medium` `high`
-`xhigh` override that, and all four are valid on both lanes (probed working
-on 2026-07-31, including codex `low` and claude `--effort xhigh`). Examples:
-`/vpk-remote low <task>` = Sol at low for a mechanical sweep;
-`/vpk-remote terra xhigh <task>` = Terra at xhigh.
+Every lane defaults to `high`. Effort tokens `medium` `high` `xhigh` override
+it and are valid on both lanes (probed working on 2026-07-31, including
+claude `--effort xhigh`). `medium` is the floor — the CLIs also accept `low`,
+but this skill does not offer it: the planner's credit is the scarce
+resource, not the worker's, and a worker that under-thinks buys a correction
+round that costs a brief-write and a report-read on the expensive side of the
+boundary.
+
+### Choosing effort
+
+Do not coast on the default — pick from the task's shape. Effort and
+verification are substitutes only where a proof command exists; where it
+doesn't, effort is the sole quality lever.
+
+| Task shape | Effort | Why |
+| --- | --- | --- |
+| Advisor consults, and genuine design ambiguity — unruled-out failure modes, a call the brief cannot settle | `xhigh` | Nothing verifies judgment. No proof command backstops a wrong call, so thinking is the only lever. |
+| Implementation against a clear spec — the common case | `high` | The proof command backstops mistakes, so effort and verification share the load. |
+| Mechanical sweeps — renames, mass migrations, formatting, "apply this same edit to these 9 files" | `medium` | The brief fully determines the answer. Higher effort here buys scope creep, not correctness: a maximally-thinking worker starts finding adjacent improvements nobody asked for. |
+
+Before reaching for the effort knob on a task that failed once, re-read the
+brief first. Round-trips come far more often from an underspecified brief
+than an under-thinking worker, and raising effort on a vague brief just
+produces a confident wrong answer sooner.
+
+Examples: `/vpk-remote medium rename useFoo to useBar across components/` =
+Sol at medium; `/vpk-remote terra xhigh <task>` = Terra at xhigh.
 
 ## Hard preflight (blocking)
 
@@ -147,8 +167,11 @@ audit its own reasoning re-runs the same priors.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT lane (`sol` / `terra`), or nothing dispatched yet | `claude-opus-5[1m]` at high |
+| GPT lane (`sol` / `terra`), or nothing dispatched yet | `claude-opus-5[1m]` at xhigh |
 | Claude lane (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
+
+Both rows are `xhigh` for the reason in *Choosing effort* above: advice is
+unverifiable, so effort is the only quality lever a consult has.
 
 Explicit tokens always win: `/vpk-remote advisor sol xhigh <question>` forces
 a GPT consult regardless of what ran before it.

@@ -21,7 +21,8 @@ skill references it by path and never copies its contents anywhere.
 ## Canonical run
 
 Substitute `<model>` (`claude-opus-5[1m]` | `claude-sonnet-5`) and `<effort>`
-(`low` | `medium` | `high` | `xhigh` — `xhigh` verified accepted). The model
+(`medium` | `high` | `xhigh`, all verified accepted; `low` works but is
+deliberately not offered — see *Choosing effort* in SKILL.md). The model
 ID **must be quoted** — `[1m]` is a shell glob pattern.
 
 ```bash
@@ -82,7 +83,7 @@ update this doc.
 
 ## Advisor consults
 
-This lane serves advisor consults at Opus 5 `--effort high` when the work
+This lane serves advisor consults at Opus 5 `--effort xhigh` when the work
 under review came from the **GPT** lane (or when nothing has been dispatched
 yet) — see the independence rule in
 [advisor-pattern.md](advisor-pattern.md). Same command, `advisor-<n>/`
