@@ -44,14 +44,17 @@ command logs.
 
 ## Shape selection
 
-**Single worker (implementation — the default).** Anything that writes files
-runs as one worker, iterated with follow-ups (GPT lane: `resume`; Claude
-lane: stateless re-brief). Workers share this worktree — unlike subagents
-they really do race on files — so overlapping write scopes must never run in
-parallel.
+Shape is inferred from the brief, not requested — `--fanout` / `--single`
+only override the inference. Anything that writes files is single-worker;
+read-only work that splits into 2+ independent scopes fans out.
 
-**Fan-out (read-only coverage).** 2–5 parallel workers only when every brief
-is substantial and independent:
+**Single worker (anything that writes).** Iterated with follow-ups (GPT lane:
+`resume`; Claude lane: stateless re-brief). Workers share this worktree —
+unlike subagents they really do race on files — so overlapping write scopes
+must never run in parallel, regardless of what flag was passed.
+
+**Fan-out (the default for read-only coverage).** 2–5 parallel workers when
+every brief is substantial and independent:
 
 - Dispatch all workers in **one message** (parallel background Bash calls),
   each with its own worker directory.

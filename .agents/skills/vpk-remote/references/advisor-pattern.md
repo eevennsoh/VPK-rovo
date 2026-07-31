@@ -56,19 +56,20 @@ Two corollaries worth remembering:
    ranking was anti-correlated with what worked — the checkpoints carried
    the value.
 
-Moments 1–3 fire **autonomously** — the planner consults without being asked,
-stating that it is doing so and why. They are the list in SKILL.md. Moment 4
-is opt-in per task: agree the checkpoint cadence with the user up front,
-because a cadence the user did not ask for spends planner tokens on a
-schedule rather than on a trigger.
+Moment 3 is the **standing default** — every task that produces a diff gets a
+pre-completion verify unless the diff is trivial or the user passed
+`--no-advisor`. Moments 1 and 2 fire on judgment during a run. Moment 4 is
+opt-in per task: agree the checkpoint cadence with the user up front, because
+a cadence nobody asked for spends planner tokens on a schedule rather than on
+a trigger.
 
-Reserve consults for genuine uncertainty. Do not consult for single-step
-questions, mechanical edits, or anything verifiable cheaply by running code.
-The bar is a cost comparison you can actually run: a consult spends planner
-tokens (one brief written, one piece of advice read) while the thinking bills
-Proximity — so consult when a wrong call would cost more than that, and
-decide unaided when it would not. Good advice is a 400–700 token
-course-correction, not an essay.
+Consults are on by default, not unconditional. Skip them for single-step
+questions, mechanical edits, an obvious plan, or anything a proof command
+verifies more cheaply than the consult costs. The bar is a cost comparison
+you can actually run: a consult spends planner tokens on both sides — one
+brief written, one piece of advice read — while the thinking itself bills
+Proximity. Consult when a wrong call would cost more than that handoff.
+Good advice is a 400–700 token course-correction, not an essay.
 
 ## Context packaging (the consult starts cold)
 

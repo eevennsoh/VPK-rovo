@@ -31,8 +31,9 @@ subagents bill the OAuth session. Every worker is an external CLI process.
 | --- | --- |
 | `/vpk-remote <task>` | Delegate to GPT-5.6 Sol at high effort (default) |
 | `/vpk-remote --model <m> --effort <e> <task>` | Delegate to the named lane/effort |
-| `/vpk-remote --advisor <question>` | Read-only consult → the family that did *not* do the work |
-| `/vpk-remote --fanout <task>` | Force the parallel read-only shape |
+| `/vpk-remote --advisor <question>` | Consult-only run → the family that did *not* do the work |
+| `/vpk-remote --no-advisor <task>` | Skip the consults this task would otherwise get |
+| `/vpk-remote --single <task>` | One worker even where fan-out would apply |
 | `/vpk-remote` (bare) | Explain the grammar and ask for a task |
 
 Natural-language activations ("implement this remotely", "route it through
@@ -49,8 +50,13 @@ alone to end flag parsing when the task itself starts with a dash.
 | --- | --- | --- |
 | `--model` | `sol` `terra` `opus` `sonnet` | `sol` |
 | `--effort` | `medium` `high` `xhigh` | `high` |
-| `--advisor` | *(no value)* | off |
-| `--fanout` | *(no value)* | off |
+| `--advisor` / `--no-advisor` | *(no value)* | **on** |
+| `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
+
+Both behavioral defaults are **on**: the planner consults an advisor and
+fans out without being asked. `--no-advisor` and `--single` are the escape
+hatches, and `--advisor` / `--fanout` force the behavior in cases the
+planner would otherwise judge too small for it.
 
 | `--model` | Lane | Model ID |
 | --- | --- | --- |
@@ -166,8 +172,12 @@ never retry through a shell alias.
    (GPT lane: `resume`; Claude lane: re-brief with the prior report + diff
    summary). After two failed correction cycles, stop and report the
    blocker — the planner does not silently take over implementation.
-7. **Synthesize.** Outcome, proof, genuine blockers. Cite worker evidence
-   rather than re-deriving it.
+7. **Verify with an advisor** (default-on; see *Mode: advisor*). Send the
+   diff and the original goal to the other family for an independent read
+   before reporting done. Skip only for a trivial diff or under
+   `--no-advisor`.
+8. **Synthesize.** Outcome, proof, what the advisor confirmed or flagged, and
+   genuine blockers. Cite worker evidence rather than re-deriving it.
 
 ## Mode: advisor
 
@@ -175,30 +185,33 @@ A second opinion at high judgment moments, billed to Proximity: a
 **read-only** consult brief, dispatched with the same lane commands as any
 other worker.
 
-**How it is invoked.** Explicitly, or on the planner's own judgment:
+**Consults are on by default.** The planner runs them without being asked,
+stating that it is consulting and why. `--advisor` on its own makes a consult
+the entire task; `--no-advisor` suppresses them for a run.
 
-- `/vpk-remote --advisor <question>`, or asking in prose ("get a second
-  opinion", "have the other model check this").
-- **Autonomously**, at the consult moments below — no permission needed, but
-  say that you are consulting and why.
+**Standing consult — every task that produces a diff:**
 
-Consult on your own initiative at these moments, and only these:
+- **Pre-completion verify.** Before reporting work as done, send the diff and
+  the original goal to the other family for an independent read. This is the
+  verifier shape, and it is the one that pays off when you are steering from
+  a phone: it is a second pair of eyes you did not have to ask for, and it
+  costs you one line in the summary.
+
+**Additional consults, on judgment:**
 
 1. **Stuck** — after roughly two failed correction cycles on the same
    problem, before dispatching a third variation of the same idea.
 2. **Before committing to an approach** whose design decision the brief
    cannot settle and where a wrong call means discarding the worker's output
    rather than amending it.
-3. **Before declaring complex multi-worker work done** — the verifier shape,
-   an independent read of the diff against the original goal.
 
-The bar is a cost question you can actually answer: a consult spends planner
-tokens (one brief written, one piece of advice read) while the consult itself
-bills Proximity, so consult when a wrong call would cost **more than that** —
-a discarded worker run, a third failed correction, a shipped-wrong diff.
-Below that bar, decide and move. Never consult for single-step questions,
-mechanical edits, an obvious plan, or anything a proof command settles more
-cheaply than the consult costs.
+**Where consults are skipped** — the default is on, not unconditional. Skip
+the verify for a trivial diff (a copy change, a one-line fix, a mechanical
+rename a proof command already covers), because a consult spends planner
+tokens on both sides — writing the brief and reading the advice — while the
+thinking itself bills Proximity. When a wrong call would cost less than that
+handoff, decide and move. Never consult on single-step questions or an
+obvious plan.
 
 **Default to the family that did not do the work.** Cost no longer picks the
 advisor — every lane bills Proximity — so what a consult buys is
@@ -224,14 +237,27 @@ or reject, then continue.
 
 ## Worker shapes
 
-- **Single worker (implementation — the default).** Workers share this
-  worktree, so anything that writes files runs as one worker at a time,
-  iterated via follow-ups. Never fan out overlapping write scopes.
-- **Fan-out (read-only coverage).** 2–5 parallel workers for independent
-  research/audit briefs with **disjoint reading scopes**, dispatched in one
-  message, every brief carrying an explicit "make no edits" constraint.
-  Lanes may mix (e.g. sonnet + sol in parallel). Wait for every report
-  before synthesizing — never conclude from a partial fan-out.
+Shape is chosen automatically from the brief, not requested:
+
+| Brief | Shape |
+| --- | --- |
+| Writes files (implementation, refactor, migration) | **Single worker**, always |
+| Read-only and splits into 2+ independent reading scopes | **Fan-out**, 2–5 workers |
+| Read-only, one scope | Single worker |
+
+**Fan-out is the default for read-only work** — research, audits, sweeps,
+"check X across these areas" — dispatched in one message with disjoint
+reading scopes, every brief carrying an explicit "make no edits" constraint.
+Lanes may mix (e.g. sonnet + sol in parallel). Wait for every report before
+synthesizing; never conclude from a partial fan-out.
+
+**Fan-out can never be the default for briefs that write.** This is a
+mechanical constraint, not a preference: parallel workers share one worktree
+and will overwrite each other's edits, leaving a diff no report describes.
+`--fanout` on a writing brief is therefore an **error** — report it and ask
+whether to split the task into provably disjoint write scopes (which then
+runs as a fan-out of narrower briefs) or to run it single. Implementation
+otherwise stays one worker iterated via follow-ups.
 
 Full shape, sizing, and completion rules:
 [references/dispatch-patterns.md](references/dispatch-patterns.md).
@@ -265,6 +291,6 @@ One directory per worker; never reuse a directory across concurrent workers.
 - A missing or empty report after worker exit is an infrastructure failure —
   re-dispatch that brief once to a fresh worker. A well-supported "not
   found" is a valid finding, not a failure.
-- Advisor consults are trigger-driven, not routine: a normal implementation
-  run does not get one. Consult when a moment in *Mode: advisor* fires, and
-  say why; otherwise decide and move.
+- Advisor consults are on by default and the planner runs them unasked, but
+  they are not unconditional — skip the verify on a trivial diff, and honor
+  `--no-advisor`. Always say when a consult ran and what it concluded.
