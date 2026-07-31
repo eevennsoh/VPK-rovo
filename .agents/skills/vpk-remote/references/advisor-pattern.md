@@ -25,9 +25,9 @@ What a consult buys is **perspective diversity**. A model reviewing its own
 family's output re-runs largely the same priors and tends to ratify; a
 different family fails differently and is far likelier to surface the thing
 that was missed. So default the consult to the family that did *not* do the
-work — Opus 5 xhigh when reviewing GPT-lane work or when nothing has been
-dispatched yet, Sol xhigh when reviewing Claude-lane work. Explicit
-`--model` / `--effort` flags override.
+work: **Opus 5 xhigh only when reviewing GPT-lane output; Sol xhigh
+otherwise** — Claude-lane output, a plan the planner authored, or a question
+with nothing dispatched yet. Explicit `--model` / `--effort` flags override.
 
 Two corollaries worth remembering:
 
@@ -81,7 +81,12 @@ the GPT lane no CLAUDE.md either. Package all five items:
 4. **History** — approaches already tried and how each failed.
 5. **The question** — the specific decision to make, not "any thoughts?".
 
-Plus the advisor-specific constraints, verbatim in every consult brief:
+Read-only is enforced by the dispatch flags — `--permission-mode plan`
+(Claude lane) or `--sandbox read-only` (GPT lane) — so the brief's "advising
+only" line is a restatement for the model, not the guard. Never dispatch a
+consult with write permissions and rely on the wording.
+
+Include these advisor-specific constraints verbatim in every consult brief:
 
 ```text
 You are advising only. Make no edits of any kind. Reply with:
@@ -98,7 +103,11 @@ a re-brief keeps both lanes on one contract and consults are short.)
 
 ## After advice returns
 
-Verify `git status` is clean (the advisor must not have edited anything),
-state in one or two sentences what you adopt or reject and why, then
+State in one or two sentences what you adopt or reject and why, then
 continue. Advice is input, not command — if it conflicts with something the
 advisor could not see, say so and decide.
+
+`git status` after a consult is a cheap sanity check, not the read-only
+guard: during a pre-completion verify the worker's diff is still uncommitted,
+so a clean-vs-dirty comparison proves nothing about the advisor. Enforcement
+lives in the dispatch flags.

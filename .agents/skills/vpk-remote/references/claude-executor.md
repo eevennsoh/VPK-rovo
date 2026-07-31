@@ -63,10 +63,9 @@ Why each layer exists:
   be invoked from this workflow.
 - `--no-session-persistence` keeps one-shot workers out of the resume list.
 - `--dangerously-skip-permissions` lets headless implementation edit files
-  without prompts, so **the brief's scope boundaries are the only
-  guardrail** — write Constraints and Non-goals explicitly. Advisor and
-  other read-only briefs must carry an explicit "make no edits" constraint,
-  and the planner verifies with `git status` afterwards.
+  without prompts, so on **writing briefs the scope boundaries are the only
+  guardrail** — write Constraints and Non-goals explicitly. Read-only briefs
+  must not use this flag; see *Advisor and read-only consults* below.
 
 ## Follow-ups (stateless re-brief)
 
@@ -81,13 +80,40 @@ unverified. If a long implementation loop needs statefulness, prefer the GPT
 lane (codex `resume` is verified) or verify claude resume behavior first and
 update this doc.
 
-## Advisor consults
+## Advisor and read-only consults
 
 This lane serves advisor consults at Opus 5 `--effort xhigh` when the work
-under review came from the **GPT** lane (or when nothing has been dispatched
-yet) — see the independence rule in
-[advisor-pattern.md](advisor-pattern.md). Same command, `advisor-<n>/`
-instead of `worker-<n>/`, and a read-only brief.
+under review came from the **GPT** lane — see the independence rule in
+[advisor-pattern.md](advisor-pattern.md).
+
+**Read-only is enforced, never merely asked for.** Swap
+`--dangerously-skip-permissions` for `--permission-mode plan`, which blocks
+writes at the tool layer:
+
+```bash
+advisor_root="$PWD/output/remote-claude/advisor-1"
+mkdir -p "$advisor_root"
+
+env -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN -u CLAUDE_EFFORT \
+  ANTHROPIC_BASE_URL="http://localhost:29576/vertex/claude" \
+  "$HOME/.local/bin/claude" -p --permission-mode plan \
+  --settings "$HOME/.claude/settings-gw.json" \
+  --model "claude-opus-5[1m]" --effort xhigh \
+  --no-session-persistence \
+  < "$advisor_root/brief.md" \
+  > "$advisor_root/report.md" \
+  2> "$advisor_root/stderr.log"
+```
+
+Verified 2026-07-31: a consult explicitly instructed to create a file
+refused, and the worktree stayed clean. This matters most for the
+pre-completion verify, where the worker's diff is still uncommitted — a
+post-consult `git status` cannot tell an advisor's edit from the worker's
+own, so the guard has to be enforcement rather than inspection. Keep the
+"make no edits" line in the brief and the `git status` check as secondary
+signals, not as the mechanism.
+
+The GPT lane's equivalent is `--sandbox read-only`.
 
 ## Failure handling
 

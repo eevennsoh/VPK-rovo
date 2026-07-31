@@ -219,10 +219,16 @@ audit its own reasoning re-runs the same priors.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT lane (`sol` / `terra`), or nothing dispatched yet | `claude-opus-5[1m]` at xhigh |
-| Claude lane (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
+| GPT-lane worker output (`sol` / `terra`) | `claude-opus-5[1m]` at xhigh |
+| Claude-lane worker output (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
+| A plan this planner wrote, or nothing dispatched yet | `gpt-5.6-sol` at xhigh |
 
-Both rows are `xhigh` for the reason in *Choosing effort* above: advice is
+The third row follows from the second: **this planner is Claude**, so
+anything it authored is Claude-family work and a Claude advisor would review
+its own priors. GPT is the independent reviewer by default, and Opus is
+reached for only when GPT actually did the work.
+
+All rows are `xhigh` for the reason in *Choosing effort* above: advice is
 unverifiable, so effort is the only quality lever a consult has.
 
 Explicit flags always win: `/vpk-remote --advisor --model sol <question>`
@@ -278,7 +284,11 @@ One directory per worker; never reuse a directory across concurrent workers.
   mutation. (Exception: none. Even one-line fixes are a worker brief or an
   honest "this is too small to delegate — want me to spend OAuth credit on
   it?" question to the user.)
-- The advisor never edits files; verify with `git status` after a consult.
+- The advisor cannot edit files, and this is **enforced by the dispatch flags**
+  — `--permission-mode plan` on the Claude lane, `--sandbox read-only` on the
+  GPT lane — never by the brief alone. It matters most for the pre-completion
+  verify, where the worker's diff is uncommitted and a post-consult
+  `git status` could not distinguish an advisor's edit from the worker's.
 - Workspace-write sandboxing is the GPT-lane default; do not escalate to
   bypass mode. The Claude lane runs with permissions skipped, so the brief's
   scope boundaries are its only guardrail — write them explicitly.
