@@ -25,6 +25,9 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/screen-assistant/screen-assistant-geometry.test.js",
 		"components/hooks/use-has-vertical-overflow.test.js",
 		"components/arts/personal-graph/lib/neural-graph/neural-graph.test.js",
+		"components/arts/rovo-p5/lib/point-cloud-sampling.test.ts",
+		"components/arts/rovo-p5/lib/teamwork-graph.test.ts",
+		"components/arts/rovo-p5/lib/rovo-p5-timeline.test.ts",
 		"components/blocks/triggers/data/trigger-inference.test.js",
 		"components/visual/text-morphing/lib.test.js",
 		"components/visual/svg-tracing/lib.test.js",
@@ -69,6 +72,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/work-item-widget/work-item-widget.test.js",
 	],
 	"source-contract": [
+		"components/arts/rovo-p5/index.test.js",
 		"components/blocks/jira-work-item/jira-work-item.test.js",
 		"components/projects/jira-for-you/jira-for-you.test.js",
 		"components/blocks/jira-activity/jira-activity-alignment.test.js",

@@ -512,9 +512,18 @@ const TITLE_CASE_MINOR_WORDS = new Set([
 	"of", "on", "or", "per", "the", "to", "via", "vs", "with",
 ]);
 
+// Brand names that are stylized lowercase by their owners and must not be
+// "corrected" to Title Case (e.g. "Rovo p5" for p5.js). Unlike minor words
+// these are content words, so they are allowed in any position.
+const TITLE_CASE_BRAND_WORDS = new Set(["p5"]);
+
 function isTitleCaseWord(word, index) {
 	// Capitalized word, acronym, brand, or numeric segment (e.g. "Chat", "SVG", "ChatGPT", "01").
 	if (/^[A-Z0-9]/u.test(word)) {
+		return true;
+	}
+	// Brand stylized lowercase, e.g. "p5".
+	if (TITLE_CASE_BRAND_WORDS.has(word)) {
 		return true;
 	}
 	// Version suffix, e.g. "v2".

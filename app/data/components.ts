@@ -482,6 +482,7 @@ export const ART_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	artComponent("cursors", "Cursors"),
 	artComponent("personal-graph", "Personal Graph"),
 	artComponent("rovo-fable", "Rovo Fable"),
+	artComponent("rovo-p5", "Rovo p5"),
 ]);
 
 export const UTILITY_COMPONENTS: ComponentEntry[] = sortEntriesByName([

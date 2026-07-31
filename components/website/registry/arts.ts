@@ -18,4 +18,8 @@ export const ARTS_DEMOS: Record<string, ComponentType> = {
 		() => import("../demos/arts/rovo-fable-demo"),
 		{ ssr: false },
 	),
+	"rovo-p5": dynamic(
+		() => import("../demos/arts/rovo-p5-demo"),
+		{ ssr: false },
+	),
 };

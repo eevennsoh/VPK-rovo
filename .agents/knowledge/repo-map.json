@@ -3644,8 +3644,8 @@
 	},
 	"appPages": {
 		"summary": {
-			"ownerImportCount": 85,
-			"pageCount": 61
+			"ownerImportCount": 87,
+			"pageCount": 63
 		},
 		"pages": [
 			{
@@ -3850,6 +3850,30 @@
 					}
 				],
 				"source": "app/arts/rovo-fable/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
+						"importPath": "@/components/arts/rovo-p5",
+						"source": "components/arts/rovo-p5",
+						"symbols": [
+							"RovoP5"
+						]
+					}
+				],
+				"routePath": "/arts/rovo-p5",
+				"shellOwnerCount": 1,
+				"shellOwners": [
+					{
+						"importPath": "@/components/arts/rovo-p5",
+						"source": "components/arts/rovo-p5",
+						"symbols": [
+							"RovoP5"
+						]
+					}
+				],
+				"source": "app/arts/rovo-p5/page.tsx"
 			},
 			{
 				"ownerCount": 1,
@@ -4684,6 +4708,22 @@
 				"ownerCount": 1,
 				"owners": [
 					{
+						"importPath": "@/components/website/demo-registry-loader",
+						"source": "components/website/demo-registry-loader",
+						"symbols": [
+							"loadDemoComponent"
+						]
+					}
+				],
+				"routePath": "/rovo-p5",
+				"shellOwnerCount": 0,
+				"shellOwners": [],
+				"source": "app/rovo-p5/page.tsx"
+			},
+			{
+				"ownerCount": 1,
+				"owners": [
+					{
 						"importPath": "@/components/projects/rovo/page",
 						"source": "components/projects/rovo/page",
 						"symbols": [
@@ -5267,13 +5307,13 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 410,
+			"manifestEntryCount": 411,
 			"categoryCount": 9
 		},
 		"categories": [
 			{
 				"category": "arts",
-				"entryCount": 4,
+				"entryCount": 5,
 				"entries": [
 					{
 						"category": "arts",
@@ -5298,6 +5338,12 @@
 						"slug": "rovo-fable",
 						"name": "Rovo Fable",
 						"importPath": "@/components/arts/rovo-fable"
+					},
+					{
+						"category": "arts",
+						"slug": "rovo-p5",
+						"name": "Rovo p5",
+						"importPath": "@/components/arts/rovo-p5"
 					}
 				]
 			},

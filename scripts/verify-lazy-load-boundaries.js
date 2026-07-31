@@ -76,6 +76,11 @@ const DEFAULT_HEAVY_IMPORT_RULES = [
 	},
 	{
 		match: "exact",
+		source: "p5",
+		reason: "creative-coding runtime",
+	},
+	{
+		match: "exact",
 		source: "react-leaflet",
 		reason: "map runtime",
 	},
