@@ -55,8 +55,14 @@ interface RovoP5CanvasProps {
 	readonly resetToken: number;
 	/** Transport state; the cycle is driven by the director when playing. */
 	readonly playing: boolean;
-	/** Seeks the cycle when the visitor scrubs; null leaves the clock alone. */
-	readonly seekSeconds: number | null;
+	/**
+	 * Seeks the cycle when the visitor scrubs; null leaves the clock alone.
+	 *
+	 * A fresh object per request rather than a bare number, so repeating the
+	 * same position still seeks — React bails out of an identical state value,
+	 * which silently dropped a second scrub back to the same spot.
+	 */
+	readonly seekRequest: { readonly seconds: number } | null;
 	/** Reports the cycle position back so the transport can render it. */
 	readonly onProgress: (seconds: number, direction: RovoP5Direction) => void;
 	readonly className?: string;
@@ -67,7 +73,7 @@ export default function RovoP5Canvas({
 	backdrop,
 	resetToken,
 	playing,
-	seekSeconds,
+	seekRequest,
 	onProgress,
 	className,
 }: RovoP5CanvasProps) {
@@ -102,8 +108,23 @@ export default function RovoP5Canvas({
 		if (reducedMotionRef.current) instanceRef.current?.redraw();
 	}, [backdrop]);
 
+	// Setup calls `noLoop()` when reduced motion is on, and nothing else ever
+	// restarts it. Toggling the OS preference afterwards has to drive the loop
+	// directly, or the art stays frozen after the preference is turned off and
+	// keeps burning frames on a static frame after it is turned on.
 	useEffect(() => {
 		reducedMotionRef.current = reducedMotion;
+		const instance = instanceRef.current;
+		if (!instance) return;
+		// The clock advances by measured deltas, so it must forget the timestamp
+		// it stopped at or the first frame back jumps.
+		lastFrameRef.current = null;
+		if (reducedMotion) {
+			instance.noLoop();
+			instance.redraw();
+		} else {
+			instance.loop();
+		}
 	}, [reducedMotion]);
 
 	useEffect(() => {
@@ -117,12 +138,15 @@ export default function RovoP5Canvas({
 		lastFrameRef.current = null;
 	}, [playing]);
 
+	// Deliberately keyed on the request alone. Depending on `playing` too meant
+	// every later play/pause toggle re-ran this and rewound the clock to a stale
+	// seek — after Restart, pausing later jumped back to zero.
 	useEffect(() => {
-		if (seekSeconds === null) return;
-		elapsedRef.current = seekSeconds;
+		if (seekRequest === null) return;
+		elapsedRef.current = seekRequest.seconds;
 		lastFrameRef.current = null;
-		if (!playing) instanceRef.current?.redraw();
-	}, [seekSeconds, playing]);
+		if (!playingRef.current) instanceRef.current?.redraw();
+	}, [seekRequest]);
 
 	useEffect(() => {
 		cloudRef.current = createRovoLogoCloud(params.particles);
@@ -198,10 +222,17 @@ export default function RovoP5Canvas({
 		});
 		controllerRef.current = controller;
 
-		void import("p5").then(({ default: P5 }) => {
-			if (disposed) return;
-			instanceRef.current = new P5(controller.sketch, container);
-		});
+		// A failed chunk load would otherwise surface as an unhandled rejection
+		// and leave the surface blank with nothing in the console to explain it.
+		void import("p5")
+			.then(({ default: P5 }) => {
+				if (disposed) return;
+				instanceRef.current = new P5(controller.sketch, container);
+			})
+			.catch((error: unknown) => {
+				if (disposed) return;
+				console.error("Rovo p5: the p5 runtime failed to load", error);
+			});
 
 		return () => {
 			disposed = true;

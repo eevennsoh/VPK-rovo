@@ -26,7 +26,9 @@ test("p5 never reaches the server render", () => {
 		/dynamic\(\(\) => import\("@\/components\/arts\/rovo-p5\/rovo-p5-canvas"\),\s*\{\s*ssr: false,?\s*\}\)/,
 	);
 	assert.doesNotMatch(SHELL_SOURCE, /from "p5"/);
-	assert.match(CANVAS_SOURCE, /import\("p5"\)\.then/);
+	assert.match(CANVAS_SOURCE, /import\("p5"\)\s*\n?\s*\.then/);
+	// A failed chunk load must not become an unhandled rejection.
+	assert.match(CANVAS_SOURCE, /\.catch\(\(error: unknown\) =>/);
 	assert.match(CANVAS_SOURCE, /^import type p5 from "p5";$/m);
 });
 
@@ -429,4 +431,34 @@ test("the transport tucks away for capture without stranding focus", () => {
 			"every tuck transition needs a reduced-motion guard",
 		);
 	}
+});
+
+test("a seek is consumed once, not re-applied on every play toggle", () => {
+	// Regression: the effect depended on `playing` as well as the seek, so every
+	// later play/pause re-ran it and rewound the clock to a stale position —
+	// after Restart, pausing later jumped back to zero. A bare number also meant
+	// React deduplicated a repeat scrub to the same spot, so the request is an
+	// object whose identity changes every time.
+	assert.match(CANVAS_SOURCE, /readonly seekRequest: \{ readonly seconds: number \} \| null;/);
+	assert.match(CANVAS_SOURCE, /\}, \[seekRequest\]\);/);
+	assert.doesNotMatch(CANVAS_SOURCE, /\[seekSeconds, playing\]/);
+	// The pause redraw reads the ref, so `playing` need not be a dependency.
+	assert.match(CANVAS_SOURCE, /if \(!playingRef\.current\) instanceRef\.current\?\.redraw\(\);/);
+
+	assert.match(SHELL_SOURCE, /setSeekRequest\(\{ seconds \}\)/);
+	assert.match(SHELL_SOURCE, /setSeekRequest\(\{ seconds: 0 \}\)/);
+});
+
+test("toggling reduced motion drives the p5 loop, not just a ref", () => {
+	// Setup calls noLoop() when reduced motion is on and nothing else restarts
+	// it, so flipping the OS preference afterwards left the art frozen one way
+	// and burning frames on a static frame the other.
+	const effect = CANVAS_SOURCE.slice(
+		CANVAS_SOURCE.indexOf("reducedMotionRef.current = reducedMotion;"),
+		CANVAS_SOURCE.indexOf("}, [reducedMotion]);"),
+	);
+	assert.match(effect, /instance\.noLoop\(\)/);
+	assert.match(effect, /instance\.loop\(\)/);
+	// The clock advances by measured deltas, so it must forget the paused stamp.
+	assert.match(effect, /lastFrameRef\.current = null;/);
 });

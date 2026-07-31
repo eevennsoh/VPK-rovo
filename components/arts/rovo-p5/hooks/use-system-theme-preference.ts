@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 
-import { hasStoredThemePreference, useTheme } from "@/components/utils/theme-wrapper";
+import { hasStoredThemePreference } from "@/components/utils/theme-storage";
+import { useTheme } from "@/components/utils/theme-wrapper";
 
 /**
  * Opts this surface into the OS colour scheme.

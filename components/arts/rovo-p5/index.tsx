@@ -39,7 +39,7 @@ export default function RovoP5({
 	const [playing, setPlaying] = useState(true);
 	const [elapsed, setElapsed] = useState(0);
 	const [stageLabel, setStageLabel] = useState("");
-	const [seekSeconds, setSeekSeconds] = useState<number | null>(null);
+	const [seekRequest, setSeekRequest] = useState<{ seconds: number } | null>(null);
 
 	// Tucked away for screen capture. The bar translates off the bottom rather
 	// than unmounting, so the cycle keeps playing behind it.
@@ -56,13 +56,15 @@ export default function RovoP5({
 		setStageLabel((previous) => (previous === direction.label ? previous : direction.label));
 	}, []);
 
+	// A new object every time, so scrubbing back to the same position still
+	// seeks rather than being deduplicated away by React.
 	const handleSeek = useCallback((seconds: number) => {
-		setSeekSeconds(seconds);
+		setSeekRequest({ seconds });
 		setElapsed(seconds);
 	}, []);
 
 	const handleRestart = useCallback(() => {
-		setSeekSeconds(0);
+		setSeekRequest({ seconds: 0 });
 		setElapsed(0);
 		setPlaying(true);
 	}, []);
@@ -92,7 +94,7 @@ export default function RovoP5({
 				params={controller.params}
 				playing={playing && !reducedMotion}
 				resetToken={resetToken}
-				seekSeconds={seekSeconds}
+				seekRequest={seekRequest}
 			/>
 
 			<header className="pointer-events-none relative flex items-center gap-3 px-4 py-5 sm:px-8">
