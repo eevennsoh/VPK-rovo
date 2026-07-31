@@ -48,9 +48,9 @@ stays in the task.
 | Token | Lane | Model ID | Default effort |
 | --- | --- | --- | --- |
 | *(none)* / `sol` | GPT (codex) | `gpt-5.6-sol` | `medium` |
-| `terra` | GPT (codex) | `gpt-5.6-terra` | `medium` |
+| `terra` | GPT (codex) | `gpt-5.6-terra` | `high` |
 | `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` | `high` |
-| `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` | `medium` |
+| `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` | `high` |
 
 Effort tokens `low` `medium` `high` `xhigh` override the lane default and are
 valid on both lanes (all four probed working on 2026-07-31, including codex
