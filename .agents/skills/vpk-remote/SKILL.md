@@ -19,11 +19,9 @@ as headless CLI worker processes billed through the Proximity AI Gateway on
 OAuth session. Burning the OAuth credit on implementation defeats the reason
 this skill exists.
 
-This skill supersedes `/vpk-fable` and `/vpk-sol` and carries their proven
-patterns forward: the frozen-brief/distilled-report contract, the
-reading-volume economics, the Proximity isolation recipe, and the advisor
-consult triggers. Unlike vpk-fable, it never spawns Claude Code subagents —
-subagents bill the OAuth session. Every worker is an external CLI process.
+**Never spawn Claude Code subagents** for delegable work. A subagent bills
+the OAuth session, which is the one thing this skill exists to prevent, and
+no model or brief makes that safe. Every worker is an external CLI process.
 
 ## Invocation and dispatch grammar
 

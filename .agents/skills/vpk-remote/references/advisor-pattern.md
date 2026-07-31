@@ -1,12 +1,11 @@
 # Advisor Pattern Reference (Proximity-billed consults)
 
-Adapted from Anthropic's advisor-tool guidance and the retired `/vpk-fable`
-advisor mode. Two things changed in the port: the advisor is **not a
-subagent** (a subagent would bill the OAuth session), and it is **not pinned
-to one model**. It is a one-shot, read-only worker on either lane —
+An advisor consult is a one-shot, **read-only** worker on either lane —
 [gpt-executor.md](gpt-executor.md) or
 [claude-executor.md](claude-executor.md) — writing to
-`output/remote-<lane>/advisor-<n>/`.
+`output/remote-<lane>/advisor-<n>/`. It is never a Claude Code subagent: a
+subagent bills the OAuth session, and the model is chosen per consult rather
+than pinned.
 
 ## The idea
 
@@ -18,18 +17,17 @@ come from.
 
 ## Picking the advisor: independence, not tier
 
-In `/vpk-fable` the advisor was pinned to the strongest model because it was
-the *expensive* one, consulted sparingly while a cheaper executor did the
-grinding. That rationale is dead here: every lane bills Proximity at the same
-boundary, so there is no cost gradient to arbitrage.
+Do not pick the advisor by capability tier. Every lane bills Proximity at the
+same boundary, so there is no cost gradient to arbitrage and no reason to
+reach for a "stronger" model.
 
-What remains is **perspective diversity**. A model reviewing its own family's
-output re-runs largely the same priors and tends to ratify; a different family
-fails differently and is far likelier to surface the thing that was missed. So
-default the consult to the family that did *not* do the work — Opus 5 high
-when reviewing GPT-lane work or when nothing has been dispatched yet, Sol
-xhigh when reviewing Claude-lane work. Explicit `--model` / `--effort` flags
-override.
+What a consult buys is **perspective diversity**. A model reviewing its own
+family's output re-runs largely the same priors and tends to ratify; a
+different family fails differently and is far likelier to surface the thing
+that was missed. So default the consult to the family that did *not* do the
+work — Opus 5 xhigh when reviewing GPT-lane work or when nothing has been
+dispatched yet, Sol xhigh when reviewing Claude-lane work. Explicit
+`--model` / `--effort` flags override.
 
 Two corollaries worth remembering:
 
@@ -51,10 +49,10 @@ Two corollaries worth remembering:
    rather than producing it.
 4. **At scheduled checkpoints on long exploratory loops** — agree the cadence
    up front (initial plan + 2–3 checkpoints) and consult for **re-ranking
-   and steering**, not new ideas. On exploratory tasks, hold the advisor's
-   *initial* plan loosely: in Lance Martin's Parameter Golf test the upfront
-   ranking was anti-correlated with what worked — the checkpoints carried
-   the value.
+   and steering**, not new ideas. Hold the advisor's *initial* plan loosely
+   on this shape of task: an upfront ranking of approaches nobody has tried
+   yet is a guess, and the value lands at the checkpoints, where real results
+   are available to re-rank against.
 
 Moment 3 is the **standing default** — every task that produces a diff gets a
 pre-completion verify unless the diff is trivial or the user passed

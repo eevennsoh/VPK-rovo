@@ -1,7 +1,6 @@
 # Dispatch Patterns Reference (briefs, reports, shapes, economics)
 
-Lane-agnostic rules for every `/vpk-remote` worker, GPT or Claude. Ported
-from the retired `/vpk-fable` and `/vpk-sol` orchestration references.
+Lane-agnostic rules for every `/vpk-remote` worker, GPT or Claude.
 
 ## Frozen brief contract
 
