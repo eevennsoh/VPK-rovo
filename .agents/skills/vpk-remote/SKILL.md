@@ -30,35 +30,46 @@ subagents bill the OAuth session. Every worker is an external CLI process.
 | Invocation | Behavior |
 | --- | --- |
 | `/vpk-remote <task>` | Delegate to GPT-5.6 Sol at high effort (default) |
-| `/vpk-remote [model] [effort] <task>` | Delegate to the named lane/effort |
-| `/vpk-remote advisor [question]` | Read-only consult → the family that did *not* do the work |
-| `/vpk-remote fanout <task>` | Force the parallel read-only shape |
+| `/vpk-remote --model <m> --effort <e> <task>` | Delegate to the named lane/effort |
+| `/vpk-remote --advisor <question>` | Read-only consult → the family that did *not* do the work |
+| `/vpk-remote --fanout <task>` | Force the parallel read-only shape |
 | `/vpk-remote` (bare) | Explain the grammar and ask for a task |
 
 Natural-language activations ("implement this remotely", "route it through
 proximity") use the defaults unless the user names a model in prose.
 
-**Token parsing.** After `/vpk-remote`, consume leading whitespace-separated
-tokens (case-insensitive, any order, at most one model + one effort + one
-mode) while each is a recognized keyword; the first unrecognized token starts
-the task text. Keywords inside the task are never consumed — in
-`/vpk-remote fix the high contrast toggle`, parsing stops at `fix`, so `high`
-stays in the task.
+**Flag parsing.** Every option is an explicit `--flag`; **no bare word is
+ever interpreted as a model, effort, or mode.** Flags come first, and
+everything after the last flag (and its value) is the task text — so
+`/vpk-remote fix the high contrast toggle` sends that entire sentence as the
+task, with no risk that `high` is mistaken for an effort setting. Use `--`
+alone to end flag parsing when the task itself starts with a dash.
 
-| Token | Lane | Model ID | Default effort |
-| --- | --- | --- | --- |
-| *(none)* / `sol` | GPT (codex) | `gpt-5.6-sol` | `high` |
-| `terra` | GPT (codex) | `gpt-5.6-terra` | `high` |
-| `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` | `high` |
-| `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` | `high` |
+| Flag | Values | Default |
+| --- | --- | --- |
+| `--model` | `sol` `terra` `opus` `sonnet` | `sol` |
+| `--effort` | `medium` `high` `xhigh` | `high` |
+| `--advisor` | *(no value)* | off |
+| `--fanout` | *(no value)* | off |
 
-Every lane defaults to `high`. Effort tokens `medium` `high` `xhigh` override
-it and are valid on both lanes (probed working on 2026-07-31, including
-claude `--effort xhigh`). `medium` is the floor — the CLIs also accept `low`,
-but this skill does not offer it: the planner's credit is the scarce
-resource, not the worker's, and a worker that under-thinks buys a correction
-round that costs a brief-write and a report-read on the expensive side of the
-boundary.
+| `--model` | Lane | Model ID |
+| --- | --- | --- |
+| `sol` *(default)* | GPT (codex) | `gpt-5.6-sol` |
+| `terra` | GPT (codex) | `gpt-5.6-terra` |
+| `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` |
+| `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` |
+
+An unrecognized flag or flag value is an **error**: report it and ask, never
+guess a near match and never silently fold it into the task text. A typo'd
+`--effort xhigh` that quietly becomes part of the brief is exactly the
+failure this syntax exists to prevent.
+
+Every lane defaults to `--effort high`; `medium` `high` `xhigh` are all valid
+on both lanes (probed working on 2026-07-31, including claude
+`--effort xhigh`). `medium` is the floor — the CLIs also accept `low`, but
+this skill does not offer it: the planner's credit is the scarce resource,
+not the worker's, and a worker that under-thinks buys a correction round that
+costs a brief-write and a report-read on the expensive side of the boundary.
 
 ### Choosing effort
 
@@ -77,8 +88,13 @@ brief first. Round-trips come far more often from an underspecified brief
 than an under-thinking worker, and raising effort on a vague brief just
 produces a confident wrong answer sooner.
 
-Examples: `/vpk-remote medium rename useFoo to useBar across components/` =
-Sol at medium; `/vpk-remote terra xhigh <task>` = Terra at xhigh.
+Examples:
+
+```text
+/vpk-remote --effort medium rename useFoo to useBar across components/
+/vpk-remote --model terra --effort xhigh <task>
+/vpk-remote --advisor --model sol is this reducer the right owner for X?
+```
 
 ## Hard preflight (blocking)
 
@@ -159,6 +175,31 @@ A second opinion at high judgment moments, billed to Proximity: a
 **read-only** consult brief, dispatched with the same lane commands as any
 other worker.
 
+**How it is invoked.** Explicitly, or on the planner's own judgment:
+
+- `/vpk-remote --advisor <question>`, or asking in prose ("get a second
+  opinion", "have the other model check this").
+- **Autonomously**, at the consult moments below — no permission needed, but
+  say that you are consulting and why.
+
+Consult on your own initiative at these moments, and only these:
+
+1. **Stuck** — after roughly two failed correction cycles on the same
+   problem, before dispatching a third variation of the same idea.
+2. **Before committing to an approach** whose design decision the brief
+   cannot settle and where a wrong call means discarding the worker's output
+   rather than amending it.
+3. **Before declaring complex multi-worker work done** — the verifier shape,
+   an independent read of the diff against the original goal.
+
+The bar is a cost question you can actually answer: a consult spends planner
+tokens (one brief written, one piece of advice read) while the consult itself
+bills Proximity, so consult when a wrong call would cost **more than that** —
+a discarded worker run, a third failed correction, a shipped-wrong diff.
+Below that bar, decide and move. Never consult for single-step questions,
+mechanical edits, an obvious plan, or anything a proof command settles more
+cheaply than the consult costs.
+
 **Default to the family that did not do the work.** Cost no longer picks the
 advisor — every lane bills Proximity — so what a consult buys is
 *independence*, not a capability tier. A GPT worker's blind spots are found
@@ -173,8 +214,8 @@ audit its own reasoning re-runs the same priors.
 Both rows are `xhigh` for the reason in *Choosing effort* above: advice is
 unverifiable, so effort is the only quality lever a consult has.
 
-Explicit tokens always win: `/vpk-remote advisor sol xhigh <question>` forces
-a GPT consult regardless of what ran before it.
+Explicit flags always win: `/vpk-remote --advisor --model sol <question>`
+forces a GPT consult regardless of what ran before it.
 
 Consult moments, packaging checklist, and advice shape:
 [references/advisor-pattern.md](references/advisor-pattern.md). The advisor
@@ -224,5 +265,6 @@ One directory per worker; never reuse a directory across concurrent workers.
 - A missing or empty report after worker exit is an infrastructure failure —
   re-dispatch that brief once to a fresh worker. A well-supported "not
   found" is a valid finding, not a failure.
-- Do not stack patterns by default: an implementation run does not also need
-  an advisor consult unless it hits a genuine design wall.
+- Advisor consults are trigger-driven, not routine: a normal implementation
+  run does not get one. Consult when a moment in *Mode: advisor* fires, and
+  say why; otherwise decide and move.

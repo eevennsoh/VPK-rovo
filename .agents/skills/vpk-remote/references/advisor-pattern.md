@@ -28,7 +28,8 @@ output re-runs largely the same priors and tends to ratify; a different family
 fails differently and is far likelier to surface the thing that was missed. So
 default the consult to the family that did *not* do the work — Opus 5 high
 when reviewing GPT-lane work or when nothing has been dispatched yet, Sol
-xhigh when reviewing Claude-lane work. Explicit model/effort tokens override.
+xhigh when reviewing Claude-lane work. Explicit `--model` / `--effort` flags
+override.
 
 Two corollaries worth remembering:
 
@@ -55,9 +56,19 @@ Two corollaries worth remembering:
    ranking was anti-correlated with what worked — the checkpoints carried
    the value.
 
+Moments 1–3 fire **autonomously** — the planner consults without being asked,
+stating that it is doing so and why. They are the list in SKILL.md. Moment 4
+is opt-in per task: agree the checkpoint cadence with the user up front,
+because a cadence the user did not ask for spends planner tokens on a
+schedule rather than on a trigger.
+
 Reserve consults for genuine uncertainty. Do not consult for single-step
 questions, mechanical edits, or anything verifiable cheaply by running code.
-Good advice is a 400–700 token course-correction, not an essay.
+The bar is a cost comparison you can actually run: a consult spends planner
+tokens (one brief written, one piece of advice read) while the thinking bills
+Proximity — so consult when a wrong call would cost more than that, and
+decide unaided when it would not. Good advice is a 400–700 token
+course-correction, not an essay.
 
 ## Context packaging (the consult starts cold)
 
