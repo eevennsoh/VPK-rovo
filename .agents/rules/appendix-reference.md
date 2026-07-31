@@ -40,7 +40,6 @@ Optional environment variables:
 Skill catalog: `.agents/skills/INDEX.md` (generated — regenerate with `node scripts/validate-skills.js --update-index`).
 
 - Figma pipeline agents: `vpk-agent-extractor` (haiku), `vpk-agent-implementer` (opus), `vpk-agent-validator` (haiku)
-- Fable pattern agents: `vpk-agent-advisor` (fable, read-only), `vpk-agent-worker` (sonnet)
 
 ## Agent Team Workflow Reference
 
