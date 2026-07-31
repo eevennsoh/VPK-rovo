@@ -29,4 +29,11 @@ export const ART_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"rovo-p5": {
+		description:
+			"p5.js sketch that reads the Rovo mark as the isometric cube it depicts, un-projects its four facets into a colour-tagged 3D point cloud you can orbit by dragging, then morphs that solid into a temporal force-directed teamwork graph — the mark's four facets becoming four communities, bridged by cross links, with packets travelling the links as the layout keeps relaxing and the graph accretes on a repeating cycle. A control panel exposes the 3D extrusion, the graph forces, and the particle life.",
+		demoLayout: {
+			previewHeight: "fixed",
+		},
+	},
 };

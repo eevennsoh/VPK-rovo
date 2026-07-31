@@ -69,6 +69,18 @@ const resolveActualTheme = (theme: Theme): "light" | "dark" => {
 	return theme;
 };
 
+export const DEFAULT_THEME_STORAGE_KEY = "ui-theme";
+
+/**
+ * Whether the visitor has actually chosen a theme, as opposed to sitting on the
+ * `defaultTheme` fallback. Surfaces that want to honour the OS preference need
+ * this to tell "chose light" apart from "never chose anything", because ADS
+ * tokens are global — a scoped `data-color-mode` does not re-resolve them.
+ */
+export function hasStoredThemePreference(storageKey: string = DEFAULT_THEME_STORAGE_KEY): boolean {
+	return getStoredTheme(storageKey) !== undefined;
+}
+
 export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "ui-theme" }: Readonly<ThemeWrapperProps>) {
 	// Initial render must match the server, which always renders `defaultTheme`
 	// (it has no access to localStorage). The stored theme is applied in the
