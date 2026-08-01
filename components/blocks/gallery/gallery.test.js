@@ -109,6 +109,12 @@ test("Gallery fits selected-stage text before paint", () => {
 	assert.match(source, /useLayoutEffect\(\(\) => \{[\s\S]*new ResizeObserver\(fit\)[\s\S]*fit\(\);/u);
 });
 
+test("Gallery preserves explicit title line groups without wrapping inside a line", () => {
+	const source = readProjectFile("components/blocks/gallery/components/gallery-title-lines.tsx");
+
+	assert.match(source, /className="block whitespace-nowrap"/u);
+});
+
 test("Gallery suppresses click-to-expand after a drag-to-pan gesture", () => {
 	const cardSource = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
 	const dragScrollSource = readProjectFile("components/blocks/gallery/hooks/use-drag-scroll.ts");

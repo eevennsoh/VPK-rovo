@@ -74,6 +74,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	"source-contract": [
 		"components/arts/rovo-p5/index.test.js",
 		"components/blocks/jira-work-item/jira-work-item.test.js",
+		"components/projects/jira-agents/jira-agents.test.js",
 		"components/projects/jira-for-you/jira-for-you.test.js",
 		"components/blocks/jira-activity/jira-activity-alignment.test.js",
 		"components/projects/rovo-core/lib/rovo-app-route-adapter.test.js",

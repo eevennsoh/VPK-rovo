@@ -20,7 +20,7 @@ export function GalleryTitleLines({
 	return (
 		<span ref={textRef} className={cn("block w-full font-semibold leading-[1.02] tracking-tight", className)}>
 			{renderedLines.map((line, index) => (
-				<span key={index} className="block">
+				<span key={index} className="block whitespace-nowrap">
 					{line}
 				</span>
 			))}
