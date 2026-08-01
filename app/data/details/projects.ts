@@ -34,6 +34,14 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 			previewHeight: "fixed",
 		},
 	},
+	"jira-agents": {
+		description: "An early Jira Agents gallery scaffold with three empty cards: Jira For You, Kanban & List, and Work Item. The design for each stage has not been layered in yet.",
+		importStatement: `import JiraAgentsPage from "@/components/projects/jira-agents";`,
+		demoLayout: {
+			previewHeight: "fixed",
+			previewContentWidth: "full",
+		},
+	},
 	"jira-for-you": {
 		description: "A personalized Jira workspace that combines assigned and recent work, agent sessions, work-item conversation, source and output details, and full Jira product chrome.",
 		importStatement: `import { JiraForYouWorkspace } from "@/components/projects/jira-for-you";`,
