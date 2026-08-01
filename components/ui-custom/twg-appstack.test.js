@@ -38,6 +38,14 @@ test("TWG Appstack defaults to 24px and passes the size straight to the tile sca
 	assert.doesNotMatch(SOURCE, /size === "md"/u);
 });
 
+test("TWG Appstack rejects caller children that its source render path discards", () => {
+	assert.match(
+		SOURCE,
+		/export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & \{\s*children\?: never;/u,
+	);
+	assert.match(SOURCE, /\{visibleSources\.map\(\(source, index\) => \(/u);
+});
+
 test("TWG Appstack uses a solid fill on stacked tiles", () => {
 	assert.match(SOURCE, /const APPSTACK_TILE_FILL_CLASS = "bg-surface"/u);
 	assert.match(SOURCE, /cn\("shrink-0", APPSTACK_TILE_FILL_CLASS, className\)/u);
