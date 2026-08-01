@@ -593,6 +593,7 @@ export const PROJECT_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	projectComponent("confluence", "Confluence"),
 	projectComponent("html", "HTML"),
 	projectComponent("jira", "Jira"),
+	projectComponent("jira-agents", "Jira Agents"),
 	projectComponent("jira-for-you", "Jira For You"),
 	projectComponent("jira-golden-journeys", "Jira Golden Journeys"),
 	projectComponent("jira-queue", "Jira Queue"),

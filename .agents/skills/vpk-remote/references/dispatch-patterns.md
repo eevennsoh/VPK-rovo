@@ -8,12 +8,16 @@ Write the brief to `brief.md` in the worker's directory **before** dispatch;
 never inline it into a shell command. Every brief carries, in order:
 
 1. **Goal** — one concrete outcome, no ambiguity.
-2. **Exact repo paths** — files and directories in scope, in this worktree.
+2. **Exact repo paths** — files and directories in scope, written relative to
+   the worktree the worker runs in. Under the default, a writing brief runs in
+   its own task worktree branched from `main` (see *Worktree isolation* in
+   SKILL.md), so paths resolve there, not in the user's checkout.
 3. **Constraints** — the specific repo rules that apply (tabs, `@/` imports,
    token classes, pnpm; name only the relevant ones).
 4. **Non-goals** — what the worker must not touch or expand into. For
    implementation briefs, state that unrelated existing worktree changes
-   belong to the user and must be preserved.
+   belong to the user and must be preserved. A fresh task worktree starts
+   clean, so this matters most under `--no-worktree`.
 5. **Proof expected** — the exact command that must pass (e.g. a targeted
    `node --test`, or `pnpm run lint && pnpm run typecheck`).
 6. **Output shape** — the report contract below, identical on both lanes so
@@ -48,9 +52,11 @@ only override the inference. Anything that writes files is single-worker;
 read-only work that splits into 2+ independent scopes fans out.
 
 **Single worker (anything that writes).** Iterated with follow-ups (GPT lane:
-`resume`; Claude lane: stateless re-brief). Workers share this worktree —
-unlike subagents they really do race on files — so overlapping write scopes
-must never run in parallel, regardless of what flag was passed.
+`resume`; Claude lane: stateless re-brief). Every worker on a task shares that
+task's worktree — unlike subagents they really do race on files — so
+overlapping write scopes must never run in parallel, regardless of what flag
+was passed. Per-task worktrees separate *tasks* from each other, not workers
+within a task.
 
 **Fan-out (the default for read-only coverage).** 2–5 parallel workers when
 every brief is substantial and independent:
