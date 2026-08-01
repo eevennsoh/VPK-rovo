@@ -38,10 +38,10 @@ test("TWG Appstack defaults to 24px and passes the size straight to the tile sca
 	assert.doesNotMatch(SOURCE, /size === "md"/u);
 });
 
-test("TWG Appstack does not advertise caller children that its source render path discards", () => {
+test("TWG Appstack rejects caller children that its source render path discards", () => {
 	assert.match(
 		SOURCE,
-		/export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & \{/u,
+		/export type TWGAppstackProps = Omit<ComponentProps<"div">, "children"> & \{\s*children\?: never;/u,
 	);
 	assert.match(SOURCE, /\{visibleSources\.map\(\(source, index\) => \(/u);
 });
