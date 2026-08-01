@@ -32,6 +32,7 @@ no model or brief makes that safe. Every worker is an external CLI process.
 | `/vpk-remote --advisor <question>` | Consult-only run → the family that did *not* do the work |
 | `/vpk-remote --no-advisor <task>` | Skip the consults this task would otherwise get |
 | `/vpk-remote --single <task>` | One worker even where fan-out would apply |
+| `/vpk-remote --no-worktree <task>` | Write in the current checkout instead of an isolated worktree |
 | `/vpk-remote` (bare) | Explain the grammar and ask for a task |
 
 Natural-language activations ("implement this remotely", "route it through
@@ -50,10 +51,12 @@ alone to end flag parsing when the task itself starts with a dash.
 | `--effort` | `medium` `high` `xhigh` | `high` |
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
+| `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
 
-Both behavioral defaults are **on**: the planner consults an advisor and
-fans out without being asked. `--no-advisor` and `--single` are the escape
-hatches, and `--advisor` / `--fanout` force the behavior in cases the
+All three behavioral defaults are **on**: the planner isolates writing work in
+a worktree, consults an advisor, and fans out read-only work without being
+asked. `--no-worktree`, `--no-advisor`, and `--single` are the escape hatches,
+and `--worktree` / `--advisor` / `--fanout` force the behavior in cases the
 planner would otherwise judge too small for it.
 
 | `--model` | Lane | Model ID |
@@ -143,6 +146,82 @@ never retry through a shell alias.
   session exports its own `ANTHROPIC_BASE_URL` and `CLAUDE_EFFORT`, so the
   Claude-lane recipe sets both explicitly rather than trusting inheritance.
 
+## Worktree isolation
+
+**Every brief that writes files gets its own git worktree, by default.** This
+skill is steered from a phone, so several tasks on unrelated problems are
+routinely in flight at once. Workers sharing one checkout do not error when
+they collide — the later write simply wins, and you get two confident reports
+describing a diff that matches neither. That is the same mechanical hazard the
+*Worker shapes* fan-out rule guards against, at the scale of concurrent tasks
+rather than concurrent workers, and it is invisible from a phone.
+
+Two further reasons the default is on, not merely available:
+
+- **`main` is protected.** Direct pushes are blocked and a PR plus passing
+  checks is required, so the work becomes a branch regardless. Writing in the
+  checkout only defers branching; it never avoids it.
+- **Every other agent surface already does this.** Codex, Cursor, and Claude
+  Code each create a per-task worktree. Writing in place makes this skill the
+  lone outlier.
+
+| Brief | Worktree |
+| --- | --- |
+| Writes files (implementation, refactor, migration) | **yes** — default on |
+| Read-only (advisor consults, audits, research, fan-out) | **no** |
+
+Read-only briefs are dispatched `--sandbox read-only` (GPT) or
+`--permission-mode plan` (Claude), so they *cannot* write. Isolation buys
+nothing there and costs setup, which is why the default is keyed to the same
+"does this brief write?" predicate that already picks the worker shape.
+
+### Creating the worktree
+
+Branch from the current `main` and place it under the repo's ignored
+`.claude/worktrees/`, one per task:
+
+```bash
+branch="remote/<short-task-slug>"
+tree="$PWD/.claude/worktrees/<short-task-slug>"
+git worktree add -b "$branch" "$tree" main
+```
+
+Then **warm it up before dispatching** — a fresh worktree has no
+`node_modules` and no `.env*`, and the brief's proof command is usually
+`pnpm run lint` / `pnpm run typecheck`, which cannot run without them:
+
+```bash
+cp "$PWD"/.env.local "$tree"/.env.local 2>/dev/null || true
+(cd "$tree" && CI=true pnpm install --prefer-offline)
+```
+
+Per repo guidance, do **not** run parallel pnpm validations until warmup
+completes. Dispatch the worker with `-C "$tree"` (GPT lane) or from `$tree`
+(Claude lane), and write the brief's *Exact repo paths* relative to that
+worktree. `output/` artifacts stay under the **main** checkout so reports from
+concurrent tasks remain readable in one place.
+
+### Landing
+
+The worker commits its work to the task branch inside the worktree; the
+planner verifies the diff there and reports. **Stop at a verified diff** —
+pushing the branch and opening a PR is `/vpk-git-ship`, run only when the user
+asks. Nothing outward-facing happens on the strength of a passing proof
+command alone.
+
+Leave the worktree in place after reporting so the user can inspect it.
+Cleanup of landed branches is `/vpk-git-clean`, never an automatic step of
+this skill — and never `tmux kill-server` or `portless prune`, which cascade
+across every worktree.
+
+### When `--no-worktree` is right
+
+Writing in the current checkout is correct when the task *is* the checkout's
+uncommitted state — amending work already in progress there, or a change the
+user is actively watching in a running dev server. Say which one applies when
+the flag is used, and check `git status` first so the worker is not handed a
+dirty tree it will silently fold into its diff.
+
 ## Procedure
 
 1. **Ground.** Read only enough repo context to identify the owner, the
@@ -152,30 +231,38 @@ never retry through a shell alias.
    twice (written by one side, read by the other), so delegation must clearly
    dominate that overhead — for tiny read-only questions, just answer;
    any non-trivial mutation still goes to a worker.
-2. **Freeze the brief** to a file — Goal / Exact repo paths / Constraints /
+2. **Isolate.** If the brief writes files, create and warm the task worktree
+   per *Worktree isolation* above, and confirm warmup finished before
+   dispatch. Skip for read-only briefs and under `--no-worktree`.
+3. **Freeze the brief** to a file — Goal / Exact repo paths / Constraints /
    Non-goals / Proof expected / Output shape, per
    [references/dispatch-patterns.md](references/dispatch-patterns.md). Never
    inline a brief into a shell command.
-3. **Dispatch** via background Bash using the lane's canonical command:
+4. **Dispatch** via background Bash using the lane's canonical command:
    [references/gpt-executor.md](references/gpt-executor.md) or
    [references/claude-executor.md](references/claude-executor.md).
-4. **Read only the report file.** Never stream or parse raw worker output —
+5. **Read only the report file.** Never stream or parse raw worker output —
    raw material stays in worker contexts; that is where the credit and
-   context-window savings come from.
-5. **Verify.** Inspect `git status` and `git diff`, run the brief's proof
-   command if cheap (targeted `node --test`, a single grep). Delegate heavy
-   verification (full `pnpm run lint && pnpm run typecheck`, suites) as its
-   own follow-up brief. A worker never self-certifies.
-6. **Correct at most twice.** Send focused follow-ups to the same worker
+   context-window savings come from. An absent or empty report does **not**
+   imply an absent diff: a worker killed mid-run may have already written
+   every file. Always check `git status` in the task worktree before
+   re-dispatching.
+6. **Verify.** Inspect `git status` and `git diff` **in the task worktree**,
+   run the brief's proof command if cheap (targeted `node --test`, a single
+   grep). Delegate heavy verification (full `pnpm run lint &&
+   pnpm run typecheck`, suites) as its own follow-up brief. A worker never
+   self-certifies.
+7. **Correct at most twice.** Send focused follow-ups to the same worker
    (GPT lane: `resume`; Claude lane: re-brief with the prior report + diff
    summary). After two failed correction cycles, stop and report the
    blocker — the planner does not silently take over implementation.
-7. **Verify with an advisor** (default-on; see *Mode: advisor*). Send the
+8. **Verify with an advisor** (default-on; see *Mode: advisor*). Send the
    diff and the original goal to the other family for an independent read
    before reporting done. Skip only for a trivial diff or under
    `--no-advisor`.
-8. **Synthesize.** Outcome, proof, what the advisor confirmed or flagged, and
-   genuine blockers. Cite worker evidence rather than re-deriving it.
+9. **Synthesize.** Outcome, proof, what the advisor confirmed or flagged,
+   which branch and worktree hold the diff, and genuine blockers. Cite worker
+   evidence rather than re-deriving it.
 
 ## Mode: advisor
 
@@ -263,6 +350,11 @@ whether to split the task into provably disjoint write scopes (which then
 runs as a fan-out of narrower briefs) or to run it single. Implementation
 otherwise stays one worker iterated via follow-ups.
 
+Worktree isolation is **per task, not per worker**, so it does not soften this
+rule — every worker on one task shares that task's worktree and collides there
+exactly as described. What it prevents is the same collision *between*
+concurrently dispatched tasks; see *Worktree isolation*.
+
 Full shape, sizing, and completion rules:
 [references/dispatch-patterns.md](references/dispatch-patterns.md).
 
@@ -277,6 +369,11 @@ output/remote-<lane>/advisor-<n>/  # advisor consults, same layout as that lane'
 ```
 
 One directory per worker; never reuse a directory across concurrent workers.
+
+Artifacts stay under the **main checkout's** `output/`, never inside a task
+worktree, so reports from concurrently dispatched tasks stay readable in one
+place and survive worktree cleanup. Name the worker directory after the task
+when several are in flight (`output/remote-gpt/<task-slug>-worker-1/`).
 
 ## Boundaries
 
@@ -297,8 +394,31 @@ One directory per worker; never reuse a directory across concurrent workers.
 - Never modify `~/.codex/config.toml`, `~/.claude/settings-gw.json`, or
   model pins as part of a run.
 - A missing or empty report after worker exit is an infrastructure failure —
-  re-dispatch that brief once to a fresh worker. A well-supported "not
-  found" is a valid finding, not a failure.
+  **check `git status` in the task worktree first**, since a worker killed
+  mid-run may have completed every edit and died before emitting its report.
+  Re-dispatch that brief once to a fresh worker only if no diff landed. A
+  well-supported "not found" is a valid finding, not a failure.
 - Advisor consults are on by default and the planner runs them unasked, but
   they are not unconditional — skip the verify on a trivial diff, and honor
   `--no-advisor`. Always say when a consult ran and what it concluded.
+- Worktree isolation is on by default for briefs that write, and the planner
+  creates the worktree unasked. It never pushes, opens a PR, or removes a
+  worktree on its own: shipping is `/vpk-git-ship` and cleanup is
+  `/vpk-git-clean`, both only when the user asks. Always report which branch
+  and worktree hold the diff.
+
+## Known infrastructure hazard
+
+Proximity's **`/openai/*` route intermittently returns HTTP 400** —
+`CloudID is invalid or not provisioned in the staging environment` — on
+roughly 10% of requests (measured 2026-08-01: 18/20 small identical calls
+passed, and an 8KB request failed while a 400KB one succeeded, so it is
+neither size nor config). `codex exec` treats 400 as non-retryable and aborts
+the whole session, so a long GPT-lane run is likely to die partway.
+
+The single-request preflight cannot detect this — most requests succeed. When
+a GPT-lane worker dies with that message, it is **not** a brief or model
+problem: check `git status` for a landed diff, then prefer the Claude lane
+(`--model opus` / `--model sonnet`, routed via `/vertex/claude`, 12/12 clean
+in the same window) rather than re-dispatching to GPT. The upstream fix
+belongs to whoever provisions the staging CloudID.
