@@ -3,6 +3,13 @@
 // oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
 
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+	DEFAULT_THEME_STORAGE_KEY,
+	getStoredTheme,
+	isTheme,
+	type Theme,
+} from "@/components/utils/theme-storage";
 import { setGlobalTheme } from "@atlaskit/tokens";
 import DevicesIcon from "@atlaskit/icon/core/devices";
 import ThemeIcon from "@atlaskit/icon/core/theme";
@@ -15,7 +22,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-type Theme = "light" | "dark" | "system";
 
 interface ThemeContextType {
 	theme: Theme;
@@ -31,10 +37,6 @@ interface ThemeWrapperProps {
 	storageKey?: string;
 }
 
-const isTheme = (value: string | null): value is Theme => {
-	return value === "light" || value === "dark" || value === "system";
-};
-
 const THEME_SYNC_MESSAGE_TYPE = "vpk:theme-sync";
 
 const broadcastThemeToFrames = (theme: Theme) => {
@@ -49,19 +51,6 @@ const broadcastThemeToFrames = (theme: Theme) => {
 	});
 };
 
-const getStoredTheme = (storageKey: string): Theme | undefined => {
-	if (typeof window === "undefined") {
-		return undefined;
-	}
-
-	try {
-		const storedTheme = window.localStorage.getItem(storageKey);
-		return isTheme(storedTheme) ? storedTheme : undefined;
-	} catch {
-		return undefined;
-	}
-};
-
 const resolveActualTheme = (theme: Theme): "light" | "dark" => {
 	if (theme === "system") {
 		return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -69,7 +58,7 @@ const resolveActualTheme = (theme: Theme): "light" | "dark" => {
 	return theme;
 };
 
-export function ThemeWrapper({ children, defaultTheme = "light", storageKey = "ui-theme" }: Readonly<ThemeWrapperProps>) {
+export function ThemeWrapper({ children, defaultTheme = "light", storageKey = DEFAULT_THEME_STORAGE_KEY }: Readonly<ThemeWrapperProps>) {
 	// Initial render must match the server, which always renders `defaultTheme`
 	// (it has no access to localStorage). The stored theme is applied in the
 	// effect below, once the component has mounted on the client.

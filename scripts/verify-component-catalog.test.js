@@ -261,6 +261,7 @@ test("title case name checker accepts Chicago-style names and rejects sentence c
 		"ChatGPT",
 		"Fluted Glass v2",
 		"Login 01",
+		"Rovo p5",
 	]) {
 		assert.equal(isTitleCaseName(name), true, `expected "${name}" to be Title Case`);
 	}
@@ -272,6 +273,7 @@ test("title case name checker accepts Chicago-style names and rejects sentence c
 		"Chat gallery",
 		"Editor toolbar",
 		"of Thought",
+		"rovo p5",
 		"",
 	]) {
 		assert.equal(isTitleCaseName(name), false, `expected "${name}" to fail Title Case`);

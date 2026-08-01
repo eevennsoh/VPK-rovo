@@ -87,7 +87,7 @@ export function RovoCanvasHeader({
 					<DropdownMenuTrigger
 						render={
 							<Button aria-label="More canvas actions" size="icon" variant="outline">
-								<VpkIcon render={<ShowMoreHorizontalIcon label="" size="small" />} />
+								<VpkIcon render={<ShowMoreHorizontalIcon label="" />} />
 							</Button>
 						}
 					/>
@@ -105,7 +105,7 @@ export function RovoCanvasHeader({
 					</DropdownMenuContent>
 				</DropdownMenu>
 				<Button aria-label="Close canvas" size="icon" variant="outline" onClick={onClose}>
-					<VpkIcon render={<CrossIcon label="" size="small" />} />
+					<VpkIcon render={<CrossIcon label="" />} />
 				</Button>
 			</div>
 		</header>
