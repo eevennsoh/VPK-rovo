@@ -24,12 +24,16 @@ const RovoP5Canvas = dynamic(() => import("@/components/arts/rovo-p5/rovo-p5-can
 	ssr: false,
 });
 
+export type RovoP5Props = Omit<React.ComponentProps<"section">, "children"> & {
+	readonly children?: never;
+};
+
 // The app shell already renders a `<main id="main-content">`, so this surface
 // is a `<section>`: a nested second `main` trips three axe landmark rules.
 export default function RovoP5({
 	className,
 	...props
-}: Readonly<React.ComponentProps<"section">>) {
+}: Readonly<RovoP5Props>) {
 	const controller = useRovoP5Params();
 	const [resetToken, setResetToken] = useState(0);
 	const reducedMotion = Boolean(useReducedMotion());
