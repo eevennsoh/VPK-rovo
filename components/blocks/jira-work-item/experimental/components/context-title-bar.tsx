@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Transition } from "motion/react";
 
 import { token } from "@/lib/tokens";
@@ -24,8 +24,9 @@ const EXPANDED_ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.05,
 	ease: [0.4, 1, 0.6, 1], // duration-xxshort + ease-out-practical
 };
+const ACTIONS_EXIT_DURATION_MS = 50;
 const ACTIONS_EXIT_TRANSITION: Transition = {
-	duration: 0.05,
+	duration: ACTIONS_EXIT_DURATION_MS / 1000,
 	ease: [0.6, 0, 0.8, 0.6], // duration-xxshort + ease-in
 };
 
@@ -51,6 +52,16 @@ function AnimatedContextTitleActions({
 	const isInteractive = !hideForToggle && isLayoutSettled && !isAnimating;
 	const enterTransition = collapsed ? ACTIONS_ENTER_TRANSITION : EXPANDED_ACTIONS_ENTER_TRANSITION;
 
+	useEffect(() => {
+		if (!hideForToggle || didCompleteToggleExit.current) return undefined;
+
+		const timeout = window.setTimeout(() => {
+			didCompleteToggleExit.current = true;
+			onToggleExitComplete();
+		}, shouldReduceMotion ? 0 : ACTIONS_EXIT_DURATION_MS);
+		return () => window.clearTimeout(timeout);
+	}, [hideForToggle, onToggleExitComplete, shouldReduceMotion]);
+
 	return (
 		<motion.div
 			animate={
@@ -68,13 +79,7 @@ function AnimatedContextTitleActions({
 			exit={{ opacity: 0, scale: 0.96, transition: { duration: 0 } }}
 			inert={isInteractive ? undefined : true}
 			initial={shouldReduceMotion || isLayoutSettled ? false : { opacity: 0, scale: 0.96 }}
-			onAnimationComplete={() => {
-				setIsAnimating(false);
-				if (hideForToggle && !didCompleteToggleExit.current) {
-					didCompleteToggleExit.current = true;
-					onToggleExitComplete();
-				}
-			}}
+			onAnimationComplete={() => setIsAnimating(false)}
 			onAnimationStart={() => setIsAnimating(true)}
 			style={{
 				transformOrigin: "right center",
