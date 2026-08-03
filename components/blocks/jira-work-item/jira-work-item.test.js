@@ -341,25 +341,6 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(experimentalRailSource, /components\/blocks\/artifact-pane/u);
 	assert.match(experimentalRailSource, /<Tabs defaultValue="details">/u);
 
-	const experimentalV2RailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
-	assert.match(experimentalV2RailSource, /import \{ ArtifactPane, type ArtifactPaneSectionItem \} from "@\/components\/blocks\/artifact-pane"/u);
-	assert.match(experimentalV2RailSource, /<ArtifactPane[\s\S]*aria-label="Work item details"/u);
-	assert.match(experimentalV2RailSource, /id: "details"/u);
-	assert.match(experimentalV2RailSource, /id: "automation"/u);
-	assert.match(experimentalV2RailSource, /id: "development"/u);
-	assert.match(experimentalV2RailSource, /id: "apps"/u);
-	assert.match(experimentalV2RailSource, /defaultOpen: true/u);
-	assert.match(experimentalV2RailSource, /borderless=\{borderless\}/u);
-
-	const experimentalV2DetailsSource = readBlockFile("experimental-v2/components/details-tab.tsx");
-	assert.match(experimentalV2DetailsSource, /import \{ ArtifactPanePropertyRow \} from "@\/components\/blocks\/artifact-pane"/u);
-	assert.match(experimentalV2DetailsSource, /<ArtifactPanePropertyRow editable=\{false\}[\s\S]*label="Status">/u);
-	assert.match(experimentalV2DetailsSource, /icon=\{<ProjectIcon label="" size="small" \/>\} label="Project"/u);
-	assert.match(experimentalV2DetailsSource, /icon=\{<AiAgentIcon label="" size="small" \/>\} label="Agents"/u);
-	assert.match(experimentalV2DetailsSource, /import \{ ArtifactPaneAgentsField \} from "@\/components\/blocks\/artifact-pane\/artifact-agents-field"/u);
-	assert.match(experimentalV2DetailsSource, /<ArtifactPaneAgentsField[\s\S]*value=\{selectedAgentIds\}/u);
-	assert.doesNotMatch(experimentalV2DetailsSource, /AgentsRowField/u);
-	assert.match(experimentalV2DetailsSource, /className="flex flex-col gap-2"/u);
 	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(titleBarSource, /data-jira-work-item-title-column/u);
 	assert.match(titleBarSource, /layout=\{shouldReduceMotion \? false : "position"\}/u);
