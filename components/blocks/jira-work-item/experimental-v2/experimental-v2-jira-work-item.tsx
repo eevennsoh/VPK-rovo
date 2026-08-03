@@ -20,7 +20,6 @@ import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/exper
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
-	defaultMetadataCollapsed?: boolean;
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	outputs?: readonly string[];
@@ -87,7 +86,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
 			<JiraWorkItemProvider initialPreset={initialPreset} initialState={initialState} workItem={workItem} active={open}>
-				<PanelLayoutProvider defaultMetadataCollapsed={props.defaultMetadataCollapsed ?? false}>
+				<PanelLayoutProvider>
 					<LayoutGroup id={composerLayoutGroupId}>
 						<ExperimentalWorkItemDialog
 							inlineSurface={inlineSurface}

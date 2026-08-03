@@ -279,8 +279,9 @@ test("the header omits the separator and collapse control", () => {
 
 test("Jira Activity supports externally controlled collapse state", () => {
 	assert.match(INDEX_SOURCE, /collapsed\?: boolean/u);
-	assert.match(INDEX_SOURCE, /defaultCollapsed\?: boolean/u);
+	assert.doesNotMatch(INDEX_SOURCE, /defaultCollapsed/u);
 	assert.doesNotMatch(INDEX_SOURCE, /onCollapsedChange/u);
+	assert.match(INDEX_SOURCE, /const collapsed = controlledCollapsed \?\? false;/u);
 	// Timeline and composer are gated behind the collapsed flag.
 	assert.match(INDEX_SOURCE, /\{collapsed \? null : \(\s*<ol/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);

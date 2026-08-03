@@ -62,8 +62,6 @@ export interface JiraActivityProps {
 	onFilterChange?: (next: JiraActivityFilter) => void;
 	/** Controlled collapsed state for the timeline body. */
 	collapsed?: boolean;
-	/** Initial collapsed state when uncontrolled. Defaults to `false`. */
-	defaultCollapsed?: boolean;
 }
 
 /**
@@ -91,7 +89,6 @@ export function JiraActivity({
 	defaultFilter = "all",
 	onFilterChange,
 	collapsed: controlledCollapsed,
-	defaultCollapsed = false,
 }: Readonly<JiraActivityProps>) {
 	const [uncontrolledEntries, setUncontrolledEntries] = useState(defaultEntries);
 	const entries = controlledEntries ?? uncontrolledEntries;
@@ -99,7 +96,7 @@ export function JiraActivity({
 	const sortOrder = controlledSortOrder ?? uncontrolledSortOrder;
 	const [uncontrolledFilter, setUncontrolledFilter] = useState(defaultFilter);
 	const filter = controlledFilter ?? uncontrolledFilter;
-	const collapsed = controlledCollapsed ?? defaultCollapsed;
+	const collapsed = controlledCollapsed ?? false;
 
 	function handleSortOrderChange(next: JiraActivitySortOrder) {
 		if (controlledSortOrder === undefined) {

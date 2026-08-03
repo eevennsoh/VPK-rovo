@@ -3,6 +3,7 @@
 import { useMemo, type ReactElement } from "react";
 
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -29,6 +30,7 @@ import {
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Button } from "@/components/ui/button";
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
@@ -43,7 +45,7 @@ function toAttachmentSmartLink(attachment: Readonly<WorkItemAttachment>): SmartL
 	const isLoom = attachment.sourceProduct === "loom";
 
 	return {
-		id: `attachment-${id}`,
+		id,
 		href: `#attachment-${id}`,
 		title: getAttachmentLabel(attachment),
 		variant: isConfluence ? "confluence" : isLoom ? "loom" : "file",
@@ -70,7 +72,7 @@ function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem
 	}[subtask.status];
 
 	return {
-		id: `subtask-${subtask.key}`,
+		id: subtask.key,
 		href: `#${subtask.key.toLowerCase()}`,
 		title: `${subtask.key}: ${subtask.summary}`,
 		variant: "jira",
@@ -87,7 +89,7 @@ function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem
 
 function toLinkedItemSmartLink(linkedItem: Readonly<ContextLinkedItem>): SmartLinkItem {
 	return {
-		id: `linked-item-${linkedItem.id}`,
+		id: linkedItem.id,
 		href: `#${linkedItem.key.toLowerCase()}`,
 		title: `${linkedItem.key}: ${linkedItem.summary}`,
 		variant: "jira",
@@ -98,19 +100,35 @@ function toLinkedItemSmartLink(linkedItem: Readonly<ContextLinkedItem>): SmartLi
 	};
 }
 
-function ResourceSmartLinks({ items }: Readonly<{ items: readonly SmartLinkItem[] }>) {
+function ResourceSmartLinks({
+	items,
+	onRemove,
+}: Readonly<{
+	items: readonly SmartLinkItem[];
+	onRemove: (id: string) => void;
+}>) {
 	return (
 		<ul className="space-y-1">
 			{items.map((item) => (
-				<li className="flex min-w-0" key={item.id}>
+				<li className="flex min-w-0 items-center gap-1" key={item.id}>
 					<SmartLink
 						align="center"
 						alignOffset={0}
-						className="max-w-full"
+						className="min-w-0 max-w-full"
 						item={item}
 						positionerClassName="z-[600]"
 						side="left"
 					/>
+					<Button
+						aria-label={`Remove ${item.title}`}
+						className="shrink-0"
+						onClick={() => onRemove(item.id)}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<DeleteIcon label="" size="small" />
+					</Button>
 				</li>
 			))}
 		</ul>
@@ -148,7 +166,12 @@ export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boo
 
 	if (attachments.length > 0) {
 		resourceSections.push({
-			content: <ResourceSmartLinks items={attachments.map(toAttachmentSmartLink)} />,
+			content: (
+				<ResourceSmartLinks
+					items={attachments.map(toAttachmentSmartLink)}
+					onRemove={(id) => actions.removeContextResource("attachment", id)}
+				/>
+			),
 			count: attachments.length,
 			id: "attachments",
 			title: "Attachments",
@@ -157,7 +180,12 @@ export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boo
 
 	if (subtasks.length > 0) {
 		resourceSections.push({
-			content: <ResourceSmartLinks items={subtasks.map(toSubtaskSmartLink)} />,
+			content: (
+				<ResourceSmartLinks
+					items={subtasks.map(toSubtaskSmartLink)}
+					onRemove={(id) => actions.removeContextResource("subtask", id)}
+				/>
+			),
 			count: subtasks.length,
 			id: "subtasks",
 			title: "Subtasks",
@@ -166,7 +194,12 @@ export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boo
 
 	if (linkedItems.length > 0) {
 		resourceSections.push({
-			content: <ResourceSmartLinks items={linkedItems.map(toLinkedItemSmartLink)} />,
+			content: (
+				<ResourceSmartLinks
+					items={linkedItems.map(toLinkedItemSmartLink)}
+					onRemove={(id) => actions.removeContextResource("link", id)}
+				/>
+			),
 			count: linkedItems.length,
 			id: "linked-items",
 			title: "Linked work items",

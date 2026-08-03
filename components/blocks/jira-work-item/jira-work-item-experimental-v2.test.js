@@ -257,7 +257,9 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*count: attachments\.length/u);
 	assert.match(metadataRailSource, /subtasks\.map\(toSubtaskSmartLink\)[\s\S]*count: subtasks\.length/u);
 	assert.match(metadataRailSource, /linkedItems\.map\(toLinkedItemSmartLink\)[\s\S]*count: linkedItems\.length/u);
-	assert.match(metadataRailSource, /function ResourceSmartLinks[\s\S]*<ul className="space-y-1">[\s\S]*<SmartLink[\s\S]*align="center"[\s\S]*alignOffset=\{0\}[\s\S]*className="max-w-full"[\s\S]*item=\{item\}[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="left"/u);
+	assert.match(metadataRailSource, /function ResourceSmartLinks[\s\S]*<ul className="space-y-1">[\s\S]*<SmartLink[\s\S]*align="center"[\s\S]*alignOffset=\{0\}[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{item\}[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="left"/u);
+	assert.match(metadataRailSource, /aria-label=\{`Remove \$\{item\.title\}`\}[\s\S]*onClick=\{\(\) => onRemove\(item\.id\)\}[\s\S]*<DeleteIcon/u);
+	assert.match(metadataRailSource, /removeContextResource\("attachment", id\)[\s\S]*removeContextResource\("subtask", id\)[\s\S]*removeContextResource\("link", id\)/u);
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*subtasks\.map\(toSubtaskSmartLink\)[\s\S]*linkedItems\.map\(toLinkedItemSmartLink\)/u);
 	assert.doesNotMatch(metadataRailSource, /AgentFilledSummaryRow|AgentReferenceChip|agentFieldName=/u);
 	assert.match(
@@ -269,6 +271,13 @@ test("experimental v2 renders filled context resources as conditional metadata s
 		/\{ content: <DevelopmentSectionContent \/>, id: "development", title: "Development" \}/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
+});
+
+test("experimental v2 keeps its persistent metadata rail open", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+
+	assert.doesNotMatch(compositionSource, /defaultMetadataCollapsed/u);
+	assert.match(compositionSource, /<PanelLayoutProvider>/u);
 });
 
 test("the block index resolves both experimental surfaces from one map", () => {
