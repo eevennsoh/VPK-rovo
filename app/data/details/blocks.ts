@@ -13,6 +13,7 @@ import { AGENT_STATES_DETAIL } from "./blocks/agent-states";
 import { AGENT_DIRECTORY_DETAIL } from "./blocks/agent-directory";
 import { AGENT_TEMPLATES_DETAIL } from "./blocks/agent-templates";
 import { ARTIFACT_DETAIL } from "./blocks/artifact";
+import { ARTIFACT_PANE_DETAIL } from "./blocks/artifact-pane";
 import { APPS_DIRECTORY_DETAIL } from "./blocks/apps-directory";
 import { TOOLS_DIRECTORY_DETAIL } from "./blocks/tools-directory";
 import { SKILLS_DIRECTORY_DETAIL } from "./blocks/skills-directory";
@@ -111,6 +112,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"agent-directory": AGENT_DIRECTORY_DETAIL,
 	"agent-templates": AGENT_TEMPLATES_DETAIL,
 	artifact: ARTIFACT_DETAIL,
+	"artifact-pane": ARTIFACT_PANE_DETAIL,
 	"apps-directory": APPS_DIRECTORY_DETAIL,
 	"tools-directory": TOOLS_DIRECTORY_DETAIL,
 	"skills-directory": SKILLS_DIRECTORY_DETAIL,

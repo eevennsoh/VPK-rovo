@@ -66,6 +66,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { ArrowLeftIcon, ReturnIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { cn } from "@/lib/utils";
 
 import { RichTextMentionVisualMark } from "./mention-visual";
@@ -100,6 +101,8 @@ export interface RichTextSuggestionMenuItem {
 	description?: string;
 	shortcut?: string;
 	icon: ReactNode;
+	/** Optional fully rendered leading visual for domain-specific identity frames. */
+	leadingVisual?: ReactNode;
 	isSticky?: boolean;
 	stickyPosition?: "top" | "bottom";
 	visual?: RichTextMentionVisual;
@@ -141,6 +144,7 @@ interface RichTextSuggestionMenuProps {
 	onHover?: (index: number) => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 	selectedIndex: number;
+	selectedItemIds?: ReadonlySet<string>;
 	title: string;
 }
 
@@ -588,6 +592,7 @@ export function RichTextSuggestionMenu({
 	onHover,
 	onSelect,
 	selectedIndex,
+	selectedItemIds,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const listRef = useRef<HTMLDivElement | null>(null);
@@ -627,8 +632,6 @@ export function RichTextSuggestionMenu({
 			data-has-header={header ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			data-pointer-selects={onHover ? "true" : undefined}
-			role="listbox"
-			aria-label={title}
 		>
 			{onBack ? (
 				<button
@@ -646,6 +649,9 @@ export function RichTextSuggestionMenu({
 			{header}
 			<div
 				className="rich-text-command-menu-list"
+				role="listbox"
+				aria-label={title}
+				aria-multiselectable={selectedItemIds ? true : undefined}
 				ref={listRef}
 				onScroll={updateListScrollState}
 			>
@@ -663,6 +669,7 @@ export function RichTextSuggestionMenu({
 							) : (
 								<RichTextSuggestionMenuOption
 									key={item.id}
+									isChosen={selectedItemIds?.has(item.id)}
 									isSelected={index === selectedIndex}
 									item={item}
 									onHover={onHover ? () => onHover(index) : undefined}
@@ -787,6 +794,7 @@ export function RichTextCommandMenuSearchField({
 }
 
 interface RichTextSuggestionMenuOptionProps {
+	isChosen?: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
 	onHover?: () => void;
@@ -794,6 +802,7 @@ interface RichTextSuggestionMenuOptionProps {
 }
 
 function RichTextSuggestionMenuOption({
+	isChosen,
 	isSelected,
 	item,
 	onHover,
@@ -879,7 +888,7 @@ function RichTextSuggestionMenuOption({
 			<motion.button
 				type="button"
 				role="option"
-				aria-selected={isSelected}
+				aria-selected={isChosen ?? isSelected}
 				animate={isSelected ? "active" : "idle"}
 				className={className}
 				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
@@ -903,7 +912,7 @@ function RichTextSuggestionMenuOption({
 		<button
 			type="button"
 			role="option"
-			aria-selected={isSelected}
+			aria-selected={isChosen ?? isSelected}
 			className={className}
 			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}
@@ -937,7 +946,9 @@ function RichTextSuggestionMenuItemVisual({
 	// 32px mark down to 75%) keeps the glyph on ADS's `small` Tile inset (14px),
 	// matching /components/ui/logo — a scaled 32px tile would freeze the `medium`
 	// inset and shrink the glyph to 12px.
-	const visual = item.visual ? (
+	const visual = item.leadingVisual ? (
+		item.leadingVisual
+	) : item.visual ? (
 		<RichTextMentionVisualMark
 			label={item.label}
 			size="menu-compact"
@@ -1952,13 +1963,24 @@ export function getMentionChildItems(
 	sources: RichTextMentionSources | undefined,
 	category: RichTextMentionMenuCategory,
 ): readonly RichTextSuggestionMenuItem[] {
-	return getCategoryItems(sources, category).map((item) => ({
-		description: getMentionChildDescription(item),
-		icon: getCategoryIcon(item.category),
-		id: item.id,
-		label: item.label,
-		visual: getMentionChildVisual(item),
-	}));
+	return getCategoryItems(sources, category).map((item) => {
+		const visual = getMentionChildVisual(item);
+
+		return {
+			description: getMentionChildDescription(item),
+			icon: getCategoryIcon(item.category),
+			id: item.id,
+			label: item.label,
+			leadingVisual: item.category === "subagent" && visual?.kind === "third-party" ? (
+				<AgentAvatarVisual
+					brandName={visual.name}
+					fallbackText={item.label.slice(0, 2).toUpperCase()}
+					sizePx={24}
+				/>
+			) : undefined,
+			visual,
+		};
+	});
 }
 
 /** "@" surface sections in mention order: people & team, then subagents. */

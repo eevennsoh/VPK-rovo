@@ -17,6 +17,22 @@ const BADGE_ICON_AVATAR_SRC = "/avatar-user/ali/color/asow-teamwork-blue.png";
 const BADGE_AVATAR_SRC = "/avatar-user/olivia-yang/color/asow-service-yellow.png";
 const GROUP_AVATAR_TWO_SRC = "/avatar-user/nova/color/asow-service-yellow.png";
 const GROUP_AVATAR_THREE_SRC = "/avatar-user/maia-ma/color/asow-service-yellow.png";
+const AVATAR_GROUP_SIZES = [
+	{ label: "16px", size: "xs", sizePx: 16 },
+	{ label: "24px", size: "sm", sizePx: 24 },
+	{ label: "32px", size: "default", sizePx: 32 },
+	{ label: "40px", size: "lg", sizePx: 40 },
+] as const;
+const HUMAN_GROUP_AVATARS = [
+	{ alt: "Team member", fallback: "CN", src: PRIMARY_AVATAR_SRC },
+	{ alt: "Nova", fallback: "LR", src: GROUP_AVATAR_TWO_SRC },
+	{ alt: "Maia Ma", fallback: "ER", src: GROUP_AVATAR_THREE_SRC },
+] as const;
+const AGENT_GROUP_AVATARS = [
+	{ label: "Code planner", src: "/avatar-agent/dev-agents/code-planner.svg" },
+	{ label: "Feedback analyzer", src: "/avatar-agent/product-agents/feedback-analyzer.svg" },
+	{ label: "Service triage", src: "/avatar-agent/service-agents/service-triage.svg" },
+] as const;
 
 export default function AvatarDemo() {
 	return (
@@ -319,68 +335,21 @@ export function AvatarDemoGroupWithIconCount() {
 
 export function AvatarDemoGroup() {
 	return (
-		<>
-			<AvatarGroup>
-				<Avatar size="sm">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
-					<AvatarFallback>CN</AvatarFallback>
-				</Avatar>
-				<Avatar size="sm">
-					<AvatarImage
-						src={GROUP_AVATAR_TWO_SRC}
-						alt="Nova"
-					/>
-					<AvatarFallback>LR</AvatarFallback>
-				</Avatar>
-				<Avatar size="sm">
-					<AvatarImage
-						src={GROUP_AVATAR_THREE_SRC}
-						alt="Maia Ma"
-					/>
-					<AvatarFallback>ER</AvatarFallback>
-				</Avatar>
-			</AvatarGroup>
-			<AvatarGroup>
-				<Avatar>
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
-					<AvatarFallback>CN</AvatarFallback>
-				</Avatar>
-				<Avatar>
-					<AvatarImage
-						src={GROUP_AVATAR_TWO_SRC}
-						alt="Nova"
-					/>
-					<AvatarFallback>LR</AvatarFallback>
-				</Avatar>
-				<Avatar>
-					<AvatarImage
-						src={GROUP_AVATAR_THREE_SRC}
-						alt="Maia Ma"
-					/>
-					<AvatarFallback>ER</AvatarFallback>
-				</Avatar>
-			</AvatarGroup>
-			<AvatarGroup>
-				<Avatar size="lg">
-					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Team member" />
-					<AvatarFallback>CN</AvatarFallback>
-				</Avatar>
-				<Avatar size="lg">
-					<AvatarImage
-						src={GROUP_AVATAR_TWO_SRC}
-						alt="Nova"
-					/>
-					<AvatarFallback>LR</AvatarFallback>
-				</Avatar>
-				<Avatar size="lg">
-					<AvatarImage
-						src={GROUP_AVATAR_THREE_SRC}
-						alt="Maia Ma"
-					/>
-					<AvatarFallback>ER</AvatarFallback>
-				</Avatar>
-			</AvatarGroup>
-		</>
+		<div className="flex flex-wrap items-end gap-6">
+			{AVATAR_GROUP_SIZES.map(({ label, size }) => (
+				<div className="flex flex-col items-center gap-1.5" key={size}>
+					<AvatarGroup label={`${label} human avatar group`}>
+						{HUMAN_GROUP_AVATARS.map((avatar) => (
+							<Avatar key={avatar.alt} size={size}>
+								<AvatarImage alt={avatar.alt} src={avatar.src} />
+								<AvatarFallback>{avatar.fallback}</AvatarFallback>
+							</Avatar>
+						))}
+					</AvatarGroup>
+					<span className="text-xs text-text-subtle">{label}</span>
+				</div>
+			))}
+		</div>
 	);
 }
 
@@ -522,23 +491,23 @@ export function AvatarDemoAgentTiers() {
 
 export function AvatarDemoAgentGroup() {
 	return (
-		<AvatarGroup label="Agents">
-			<AgentAvatarVisual
-				avatarSrc="/avatar-agent/dev-agents/code-planner.svg"
-				label="Code planner"
-				sizePx={24}
-			/>
-			<AgentAvatarVisual
-				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
-				label="Feedback analyzer"
-				sizePx={24}
-			/>
-			<AgentAvatarVisual
-				avatarSrc="/avatar-agent/service-agents/service-triage.svg"
-				label="Service triage"
-				sizePx={24}
-			/>
-		</AvatarGroup>
+		<div className="flex flex-wrap items-end gap-6">
+			{AVATAR_GROUP_SIZES.map(({ label, size, sizePx }) => (
+					<div className="flex flex-col items-center gap-1.5" key={size}>
+						<AvatarGroup label={`${label} agent avatar group`}>
+							{AGENT_GROUP_AVATARS.map((agent) => (
+								<AgentAvatarVisual
+									avatarSrc={agent.src}
+									key={agent.label}
+									label={agent.label}
+									sizePx={sizePx}
+								/>
+							))}
+						</AvatarGroup>
+						<span className="text-xs text-text-subtle">{label}</span>
+					</div>
+			))}
+		</div>
 	);
 }
 
