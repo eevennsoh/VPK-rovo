@@ -52,6 +52,10 @@ export const BLOCK_DEMOS: Record<string, ComponentType> = {
 	artifact: dynamic(() => import("../demos/blocks/artifact-demo"), {
 		ssr: false,
 	}),
+	"artifact-pane": dynamic(
+		() => import("../demos/blocks/artifact-pane-demo"),
+		{ ssr: false },
+	),
 	"tools-directory": dynamic(
 		() => import("../demos/blocks/tools-directory-demo"),
 		{ ssr: false },

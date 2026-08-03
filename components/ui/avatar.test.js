@@ -174,14 +174,27 @@ test("avatar groups give hexagon agents a shape-aware background separator", () 
 		AVATAR_SOURCE,
 		/\[&>\[data-slot=avatar\]\[data-shape=hexagon\]\]:ring-0/,
 	);
+	assert.match(AVATAR_SOURCE, /-space-x-2 has-data-\[size=xs\]:-space-x-1/);
+});
+
+test("labeled avatars expose an image role", () => {
+	assert.equal((AVATAR_SOURCE.match(/role=\{label \? "img" : undefined\}/g) ?? []).length, 2);
 });
 
 test("avatar docs include the agent avatar group variant", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoAgentGroup\(\)/);
-	assert.match(AVATAR_DEMO_SOURCE, /<AvatarGroup label="Agents">/);
+	assert.match(AVATAR_DEMO_SOURCE, /AVATAR_GROUP_SIZES = \[[\s\S]*\{ label: "16px", size: "xs", sizePx: 16 \}/);
+	assert.match(AVATAR_DEMO_SOURCE, /AVATAR_GROUP_SIZES\.map\(\(\{ label, size, sizePx \}\) =>/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarGroup label=\{`\$\{label\} agent avatar group`\}>/);
 	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-agent-group"/);
 	assert.match(REGISTRY_SOURCE, /"avatar-demo-agent-group"/);
 	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoAgentGroup/);
+});
+
+test("avatar docs include 16px human avatar groups", () => {
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarGroup label=\{`\$\{label\} human avatar group`\}>/);
+	assert.match(AVATAR_DEMO_SOURCE, /<Avatar key=\{avatar\.alt\} size=\{size\}>/);
+	assert.match(AVATAR_DETAILS_SOURCE, /Overlapping 16, 24, 32, and 40px human avatar groups\./);
 });
 
 test("avatar group overflow icon scales down to 12px for small groups", () => {
@@ -189,6 +202,8 @@ test("avatar group overflow icon scales down to 12px for small groups", () => {
 	assert.match(AVATAR_SOURCE, /\[&_svg\]:size-4/);
 	assert.match(AVATAR_SOURCE, /group-has-data-\[size=sm\]\/avatar-group:\[&_\[data-slot=icon\]\]:size-3/);
 	assert.match(AVATAR_SOURCE, /group-has-data-\[size=sm\]\/avatar-group:\[&_svg\]:size-3/);
+	assert.match(AVATAR_SOURCE, /group-has-data-\[size=xs\]\/avatar-group:size-4/);
+	assert.match(AVATAR_SOURCE, /group-has-data-\[size=xs\]\/avatar-group:\[&_svg\]:size-2/);
 });
 
 test("avatar docs include only the base unassigned demo states", () => {

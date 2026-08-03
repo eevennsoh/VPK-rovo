@@ -84,6 +84,13 @@ test("prompt input forwards scoped mention layout and section copy to the shared
 	assert.match(menuSource, /return \{ \.\.\.DEFAULT_MENTION_PARENT_LABELS, \.\.\.overrides \};/u);
 });
 
+test("third-party subagents use the shared hexagon avatar in suggestion palettes", () => {
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+
+	assert.match(source, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
+	assert.match(source, /item\.category === "subagent" && visual\?\.kind === "third-party"[\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{visual\.name\}[\s\S]*sizePx=\{24\}/u);
+});
+
 test("composer directory autocomplete accepts the active visible list item on Tab", () => {
 	const extensionSource = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 	const promptInputSource = readProjectFile("components/ui-custom/prompt-input.tsx");
