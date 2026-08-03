@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
-	description: "Jira work-item surface with a standard current-state variant and an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents.",
+	description: "Jira work-item surface with a standard current-state variant, an opt-in experimental variant that adds work-item-scoped agent/chat sessions, empty/filled context, and concurrent mock agents, plus an experimental v2 fork of that surface for independent iteration.",
 	importStatement: `import JiraWorkItem from "@/components/blocks/jira-work-item";`,
 	usage: `import JiraWorkItem from "@/components/blocks/jira-work-item";
 
@@ -27,6 +27,21 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			description: "Experimental variant seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
 			demoSlug: "jira-work-item-demo-experimental-running",
 		},
+		{
+			title: "Experimental v2 · Filled context",
+			description: "Experimental v2 session: a standalone fork of the experimental surface that starts identical to v1 and diverges independently. Shares the session/planner model, owns its own component tree.",
+			demoSlug: "jira-work-item-demo-experimental-v2",
+		},
+		{
+			title: "Experimental v2 · Empty context",
+			description: "Experimental v2 empty-context preset with the same automatic deterministic AI Planner pass, natural-language refinement, and single explicit confirmation action as v1.",
+			demoSlug: "jira-work-item-demo-experimental-v2-empty",
+		},
+		{
+			title: "Experimental v2 · Multiple agents running",
+			description: "Experimental v2 seeded with the running preset: several work-item-scoped agents progressing concurrently on a deterministic metronome, with live status pills and progress.",
+			demoSlug: "jira-work-item-demo-experimental-v2-running",
+		},
 	],
 	props: [
 		{
@@ -42,15 +57,15 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		},
 		{
 			name: "variant",
-			type: "\"default\" | \"experimental\"",
+			type: "\"default\" | \"experimental\" | \"experimental-v2\"",
 			default: "\"default\"",
-			description: "Opt-in layout variation. The default variant keeps the current Jira sessions surface.",
+			description: "Opt-in layout variation. The default variant keeps the current Jira sessions surface; experimental-v2 is an independent fork of the experimental surface.",
 		},
 		{
 			name: "initialExperimentalPreset",
 			type: "\"blank\" | \"empty\" | \"filled\" | \"running\"",
 			default: "\"filled\"",
-			description: "Deterministic starting state for the experimental variant: true empty context, AI-planned suggestions, filled context, or filled context with concurrent running agents.",
+			description: "Deterministic starting state for the experimental variants: true empty context, AI-planned suggestions, filled context, or filled context with concurrent running agents.",
 		},
 	],
 };
