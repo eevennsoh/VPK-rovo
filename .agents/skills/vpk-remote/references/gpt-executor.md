@@ -1,10 +1,10 @@
-# GPT Executor Reference (Sol/Terra via Codex CLI → Proximity)
+# GPT Executor Reference (Sol/Terra/Luna via Codex CLI → Proximity)
 
 The GPT lane for `/vpk-remote` workers. Each worker is a `codex exec` process
 in a background Bash call, routed to Proximity's localhost gateway with an
 isolated per-worker `CODEX_HOME`. The contract is intentionally
 self-contained: it does not rely on the user's aliases, `~/.codex/config.toml`,
-or login state. Flags verified against **codex-cli 0.144.5** (2026-07-31);
+or login state. Flags verified against **codex-cli 0.146.0** (2026-08-03);
 re-run `codex exec --help` and update this doc if a newer CLI drifts.
 
 ## Preflight
@@ -16,18 +16,20 @@ curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
 
 The curl is a **health check only**. Proximity's catalog endpoint is stale —
 it lists models older than what the gateway serves (verified: catalog tops
-out at gpt-5.5 while `gpt-5.6-sol` and `gpt-5.6-terra` both answer). Do not
+out at gpt-5.5 while `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`
+answer). Do not
 grep the catalog for the target model; if the gateway rejects the model at
 dispatch time, that rejection is the blocker to report. Failure of either
 check is a blocker — never substitute the planner's provider or login.
 
 ## Canonical first run
 
-Substitute `<model>` (`gpt-5.6-sol` | `gpt-5.6-terra`) and `<effort>`
-(`medium` | `high` | `xhigh`; `low` is accepted by the CLI but deliberately
-not offered by this skill — see *Choosing effort* in SKILL.md) from the
-dispatch grammar. Create one directory per worker; never copy anything from
-`~/.codex` into it.
+Substitute `<model>` (`gpt-5.6-sol` | `gpt-5.6-terra` | `gpt-5.6-luna`) and
+`<effort>` (`medium` | `high` | `xhigh` | `max`; `low` is accepted by the CLI
+but deliberately not offered by this skill — see *Choosing effort* in
+SKILL.md) from the dispatch grammar. Create one directory per worker; never
+copy anything from `~/.codex` into it. Luna at `max` was verified end-to-end
+through Proximity on 2026-08-03.
 
 ```bash
 worker_root="$PWD/output/remote-gpt/worker-1"
