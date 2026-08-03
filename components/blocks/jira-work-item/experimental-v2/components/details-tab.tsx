@@ -8,18 +8,17 @@ import EpicIcon from "@atlaskit/icon/core/epic";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import ProjectIcon from "@atlaskit/icon/core/project";
+import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
+import { ArtifactPanePropertyRow } from "@/components/blocks/artifact-pane";
+import { ArtifactPaneAgentsField } from "@/components/blocks/artifact-pane/artifact-agents-field";
+import { CREW_ROSTER, type CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
 import { PROJECT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
 import type { AgentPlannerMetadata } from "@/components/blocks/jira-work-item/data/planner-state";
+import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-row";
 import {
-	DetailFieldRow,
-	DetailValueTrigger,
-} from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-row";
-import { FloatingField } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-field";
-import {
-	AgentsRowField,
 	DateRowField,
 	LabelsRowField,
 	METADATA_PICKER_POPOVER_CLASS,
@@ -39,7 +38,10 @@ export { seedMetadataDraft } from "@/components/blocks/jira-work-item/data/plann
 
 export type MetadataDraft = AgentPlannerMetadata;
 
-/** Project editor (project search); value trigger only — the row chrome is supplied by FloatingField. */
+const ARTIFACT_AGENT_CREW_BY_ID = new Map(
+	CREW_ROSTER.filter((member) => member.kind === "agent").map((member) => [member.id, member]),
+);
+
 function AtlassianProjectEditor({ value, onChange }: Readonly<{ value: string | null; onChange: (id: string) => void }>) {
 	const [open, setOpen] = useState(false);
 	const selected = PROJECT_OPTIONS.find((project) => project.id === value);
@@ -75,12 +77,7 @@ function AtlassianProjectEditor({ value, onChange }: Readonly<{ value: string | 
 	);
 }
 
-/**
- * The Details tab body. Every optional field is a `FloatingField`: it shows a
- * single `icon + label` line while empty/idle and floats the label up to reveal
- * the value/editor once it has a value or is being edited (video-matched). Status
- * always has a value, so it stays in the expanded `DetailFieldRow` form.
- */
+/** The ArtifactPane-aligned Details body for the experimental v2 work item. */
 export function DetailsTab({
 	draft,
 	onChange,
@@ -91,25 +88,32 @@ export function DetailsTab({
 	people: readonly WorkItemPerson[];
 }>) {
 	const [showMore, setShowMore] = useState(false);
-	const hasAgents = draft.crew.some((member) => member.kind === "agent");
+	const selectedAgentIds = draft.crew
+		.filter((member) => member.kind === "agent")
+		.map((member) => member.id);
+	const hasAgents = selectedAgentIds.length > 0;
 	const agentsField = (
-		<FloatingField filled={hasAgents} icon={AiAgentIcon} label="Agents">
-			<AgentsRowField onChange={(next) => onChange({ crew: next })} value={draft.crew} />
-		</FloatingField>
+		<ArtifactPanePropertyRow icon={<AiAgentIcon label="" size="small" />} label="Agents">
+			<ArtifactPaneAgentsField
+				onChange={(agentIds) => onChange({
+					crew: agentIds
+						.map((id) => ARTIFACT_AGENT_CREW_BY_ID.get(id))
+						.filter((member): member is CrewMember => Boolean(member)),
+				})}
+				value={selectedAgentIds}
+			/>
+		</ArtifactPanePropertyRow>
 	);
 
 	return (
-		<div className="flex flex-col">
-			<DetailFieldRow
-				label="Status"
-				value={<StatusPill onChange={(next) => onChange({ status: next })} value={draft.status} />}
-			/>
-
-			<FloatingField filled={draft.atlassianProject !== null} icon={ProjectIcon} label="Project">
+		<div className="flex flex-col gap-2">
+			<ArtifactPanePropertyRow editable={false} icon={<ProjectStatusIcon label="" size="small" />} label="Status">
+				<StatusPill onChange={(next) => onChange({ status: next })} value={draft.status} />
+			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<ProjectIcon label="" size="small" />} label="Project">
 				<AtlassianProjectEditor onChange={(id) => onChange({ atlassianProject: id })} value={draft.atlassianProject} />
-			</FloatingField>
-
-			<FloatingField filled={draft.assignee !== null} icon={PersonIcon} label="Assignee">
+			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<PersonIcon label="" size="small" />} label="Assignee">
 				<PersonRowField
 					ariaLabel="Change assignee"
 					onChange={(person) => onChange({ assignee: person })}
@@ -117,23 +121,18 @@ export function DetailsTab({
 					placeholder="Unassigned"
 					value={draft.assignee}
 				/>
-			</FloatingField>
-
-			<FloatingField filled={draft.reporter !== null} icon={PersonIcon} label="Reporter" readOnly>
+			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow editable={false} icon={<PersonIcon label="" size="small" />} label="Reporter">
 				<PersonReadOnlyValue placeholder="Unassigned" value={draft.reporter} />
-			</FloatingField>
-
+			</ArtifactPanePropertyRow>
 			{hasAgents ? agentsField : null}
-
 			{showMore ? (
 				<>
-					{!hasAgents ? agentsField : null}
-
-					<FloatingField filled={draft.priority !== null} icon={PriorityMediumIcon} label="Priority">
+					{hasAgents ? null : agentsField}
+					<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
 						<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
-					</FloatingField>
-
-					<FloatingField filled={draft.startDate !== undefined} icon={CalendarIcon} label="Start date">
+					</ArtifactPanePropertyRow>
+					<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Start date">
 						<DateRowField
 							ariaLabel="Change start date"
 							CalendarComponent={Calendar}
@@ -141,9 +140,8 @@ export function DetailsTab({
 							placeholder="Add start date"
 							value={draft.startDate}
 						/>
-					</FloatingField>
-
-					<FloatingField filled={draft.dueDate !== undefined} icon={CalendarIcon} label="Due date">
+					</ArtifactPanePropertyRow>
+					<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Due date">
 						<DateRowField
 							ariaLabel="Change due date"
 							CalendarComponent={Calendar}
@@ -151,21 +149,18 @@ export function DetailsTab({
 							placeholder="Add due date"
 							value={draft.dueDate}
 						/>
-					</FloatingField>
-
-					<FloatingField filled={draft.parent !== null} icon={EpicIcon} label="Parent">
+					</ArtifactPanePropertyRow>
+					<ArtifactPanePropertyRow icon={<EpicIcon label="" size="small" />} label="Parent">
 						<ParentRowField onChange={(key) => onChange({ parent: key })} value={draft.parent} />
-					</FloatingField>
-
-					<FloatingField filled={draft.labels.length > 0} icon={TagIcon} label="Labels">
+					</ArtifactPanePropertyRow>
+					<ArtifactPanePropertyRow icon={<TagIcon label="" size="small" />} label="Labels">
 						<LabelsRowField onChange={(next) => onChange({ labels: next })} value={draft.labels} />
-					</FloatingField>
+					</ArtifactPanePropertyRow>
 				</>
 			) : null}
-
 			<button
-				className="-mx-2 mt-1 self-start rounded-md px-2 py-1 text-sm font-medium text-text-subtle outline-none hover:text-text focus-visible:ring-2 focus-visible:ring-ring"
-				onClick={() => setShowMore((previous) => !previous)}
+				className="mt-1 self-start text-xs leading-5 text-text-subtle underline-offset-2 hover:underline focus-visible:underline"
+				onClick={() => setShowMore((current) => !current)}
 				type="button"
 			>
 				{showMore ? "See less" : "See more"}

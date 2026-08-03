@@ -22,6 +22,7 @@ import {
 	type DirectoryAutocompleteState,
 } from "@/lib/directory-autocomplete";
 import { Spinner } from "@/components/ui/spinner";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 
 import { createRichTextEditorExtensions, getMentionCategory, getMentionNodeAttrs, RICH_TEXT_OBJECT_REPLACEMENT } from "./extensions";
 import {
@@ -95,6 +96,8 @@ interface RichTextEditorProps
 	 * keep the plain empty title with no button.
 	 */
 	onOpenDirectory?: (category: RichTextSlashCategory) => void;
+	/** Requested view mode. Omit to let the editor manage the mode internally. */
+	viewMode?: EditorToolbarViewMode;
 	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	/**
 	 * When `{ enabled: true }`, a leading SKILL.md `---` YAML block renders as the
@@ -111,9 +114,8 @@ interface RichTextEditorProps
 	 * - `"hover"`: toolbar is hidden (but its space stays reserved, so there is
 	 *   no layout jump) and fades in when the pointer hovers anywhere in the
 	 *   editor, or while focus remains anywhere within the editor. It is also
-	 *   sticky: once it pins to the top of the surrounding scroll container it
-	 *   reveals itself and follows the scroll (progressive enhancement via
-	 *   `scroll-state(stuck)`; degrades to hover-only where unsupported).
+	 *   sticky and follows the scroll while hover/focus continues to own which
+	 *   toolbar state is visible.
 	 */
 	toolbarReveal?: "always" | "hover";
 	/**
@@ -124,12 +126,14 @@ interface RichTextEditorProps
 	 * gap isn't doubled. Opt-in (e.g. agent + skill config instructions).
 	 */
 	padStuckToolbar?: boolean;
+	/** Adds the shared 32px progressive blur below this toolbar only while stuck. */
+	stuckToolbarScrollFade?: boolean;
 	/**
 	 * Only meaningful with `toolbarReveal="hover"`. When `true`, the space the
 	 * hidden toolbar reserves shows a centered hairline divider in the resting
 	 * state (matching `h-px bg-border` rules elsewhere) instead of an empty gap.
 	 * The divider cross-fades out — and the toolbar cross-fades in — on
-	 * hover/focus-within, and while the bar is pinned (`scroll-state(stuck)`).
+	 * hover/focus-within.
 	 * Opt-in so other hover consumers keep the plain empty gap.
 	 */
 	toolbarRestingSeparator?: boolean;
@@ -369,6 +373,7 @@ export function RichTextEditor({
 	onInsertReferenceOption,
 	onAskRovo,
 	onOpenDirectory,
+	viewMode: requestedViewMode,
 	onViewModeChange,
 	frontmatter,
 	showToolbar = true,
@@ -376,6 +381,7 @@ export function RichTextEditor({
 	showFloatingMenu = false,
 	toolbarReveal = "always",
 	padStuckToolbar = false,
+	stuckToolbarScrollFade = false,
 	toolbarRestingSeparator = false,
 	toolbarRestingSeparatorLabel,
 	"aria-label": ariaLabel,
@@ -498,7 +504,6 @@ export function RichTextEditor({
 
 	function updateViewMode(nextMode: EditorToolbarViewMode): void {
 		setViewMode(nextMode);
-		onViewModeChange?.(nextMode);
 	}
 
 	// Pass the directory launcher only when a host actually supplies one. The
@@ -544,6 +549,7 @@ export function RichTextEditor({
 			attributes: {
 				"aria-label": ariaLabel ?? "Rich text editor",
 				class: cn("tiptap-editor", editorClassName),
+				role: "textbox",
 			},
 		},
 		onCreate: ({ editor: activeEditor }) => {
@@ -563,6 +569,27 @@ export function RichTextEditor({
 			refreshDirectoryAutocomplete(activeEditor);
 		},
 	});
+
+	useEffect(() => {
+		if (!editor || requestedViewMode === undefined || requestedViewMode === viewMode) {
+			return;
+		}
+
+		if (viewMode === "markdown" && requestedViewMode !== "markdown") {
+			editor.commands.setContent(markdownSource, {
+				contentType: "markdown",
+				emitUpdate: false,
+			});
+			setIsEmpty(!markdownSource.trim());
+			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
+		}
+
+		if (requestedViewMode === "markdown") {
+			setMarkdownSource(editor.getMarkdown());
+		}
+
+		setViewMode(requestedViewMode);
+	}, [editor, markdownSource, requestedViewMode, viewMode]);
 
 	useEffect(() => {
 		mentionSourcesRef.current = mentionSources;
@@ -784,22 +811,20 @@ export function RichTextEditor({
 					className={cn(
 						// In hover mode the toolbar becomes a sticky scroll-state
 						// container: it pins to the top of the surrounding scroll
-						// container and the reveal child fades in once stuck (see
-						// `rich-text-editor.css`), so it follows the scroll.
+						// container while hover/focus continues to own whether the
+						// resting label or interactive controls are visible.
 						toolbarReveal === "hover" &&
 							"sticky top-0 z-10 [container-type:scroll-state]",
-						// Anchors the absolutely-positioned resting separator that
-						// fills the reserved toolbar space when idle (see below).
-						toolbarReveal === "hover" && toolbarRestingSeparator && "relative",
+						// The sticky position itself anchors the absolutely-positioned
+						// resting row that fills the reserved toolbar space below.
 						toolbarClassName,
 					)}
 				>
 					{toolbarReveal === "hover" && toolbarRestingSeparator ? (
-						// Resting-state hairline that occupies the reserved toolbar
-						// space instead of an empty gap. It's the inverse of the
+						// Resting row that occupies the reserved toolbar space instead
+						// of an empty gap. It's the inverse of the
 						// reveal child: visible when idle and cross-fading out as the
-						// toolbar fades in on hover/focus-within (and while pinned —
-						// see the `scroll-state(stuck)` rule in `rich-text-editor.css`).
+						// toolbar fades in on hover/focus-within.
 						<div
 							aria-hidden="true"
 							data-slot="rich-text-editor-toolbar-resting-separator"
@@ -817,12 +842,11 @@ export function RichTextEditor({
 						data-slot="rich-text-editor-toolbar-reveal"
 						className={cn(
 							// Hidden by default (space stays reserved by the sticky
-							// parent above), revealed on hover/focus, and — via the
-							// scroll-state(stuck) rule in the CSS — while pinned.
+							// parent above) and revealed on hover/focus.
 							// `relative` anchors the stuck ::before that fills any
 							// scroll-padding gap above the pinned bar (see CSS).
 							toolbarReveal === "hover" &&
-								"relative bg-surface opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none",
+								"relative bg-transparent opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none",
 							// `padStuckToolbar` reserves 8px of surface below the bar so,
 							// once it pins, content scrolling under isn't cramped and no
 							// transparent gap shows. Consumers pair it with `space-y-0`.
@@ -841,6 +865,11 @@ export function RichTextEditor({
 							onInsertReferenceOption={onInsertReferenceOption}
 						/>
 					</div>
+					{toolbarReveal === "hover" && stuckToolbarScrollFade ? (
+						<StickyRowScrollFade
+							data-slot="rich-text-editor-toolbar-scroll-fade"
+						/>
+					) : null}
 				</div>
 			) : null}
 			{frontmatterEnabled && viewMode === "rendered" ? (

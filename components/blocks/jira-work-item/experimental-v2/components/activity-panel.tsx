@@ -61,9 +61,12 @@ export function ActivityPanel() {
 	return (
 		<div ref={activityRootRef} data-jira-work-item-activity>
 			<JiraActivity
+				className="gap-2"
 				composer={null}
 				currentUser={JIRA_WORK_ITEM_CURRENT_USER}
 				entries={entries}
+				headerClassName="sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay [container-type:scroll-state]"
+				headerScrollFade
 				onSubmitReply={(entry, body) => {
 					const event = meta.activityEvents.find((activityEvent) => activityEvent.id === entry.id);
 					if (event?.kind === "agent") {

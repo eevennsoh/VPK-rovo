@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import Image from "next/image";
 
 import { token } from "@/lib/tokens";
@@ -32,12 +32,16 @@ export function ModalHeader({
 	showClose = true,
 	actions,
 	actionsClassName,
+	closeButtonDisabled = false,
 	closeButtonVariant = "outline",
+	paddingBottom,
 }: Readonly<{
 	showClose?: boolean;
 	actions?: ReactNode;
 	actionsClassName?: string;
+	closeButtonDisabled?: boolean;
 	closeButtonVariant?: ButtonProps["variant"];
+	paddingBottom?: CSSProperties["paddingBottom"];
 }>) {
 	const { meta } = useWorkItemModal();
 	const { workItem } = meta;
@@ -51,6 +55,7 @@ export function ModalHeader({
 				alignItems: "center",
 				minWidth: 0,
 				paddingBlock: token("space.300"),
+				paddingBottom: paddingBottom ?? token("space.300"),
 				paddingInline: token("space.300"),
 				backgroundColor: token("elevation.surface.overlay"),
 			}}
@@ -120,7 +125,13 @@ export function ModalHeader({
 					</>
 				)}
 				{showClose ? (
-					<Button aria-label="Close" size="icon" variant={closeButtonVariant} onClick={meta.onClose}>
+					<Button
+						aria-disabled={closeButtonDisabled || undefined}
+						aria-label="Close"
+						size="icon"
+						variant={closeButtonVariant}
+						onClick={closeButtonDisabled ? undefined : meta.onClose}
+					>
 						<CrossIcon label="" />
 					</Button>
 				) : null}

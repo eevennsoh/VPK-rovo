@@ -337,9 +337,29 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(layoutSource, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
 	const compositionSource = readBlockFile("experimental/experimental-jira-work-item.tsx");
 	assert.doesNotMatch(compositionSource, /metadataPeek/u);
-	const metadataRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
-	assert.match(metadataRailSource, /borderless = false/u);
-	assert.match(metadataRailSource, /borderless \? null : "border border-border"/u);
+	const experimentalRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
+	assert.doesNotMatch(experimentalRailSource, /components\/blocks\/artifact-pane/u);
+	assert.match(experimentalRailSource, /<Tabs defaultValue="details">/u);
+
+	const experimentalV2RailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	assert.match(experimentalV2RailSource, /import \{ ArtifactPane, type ArtifactPaneSectionItem \} from "@\/components\/blocks\/artifact-pane"/u);
+	assert.match(experimentalV2RailSource, /<ArtifactPane[\s\S]*aria-label="Work item details"/u);
+	assert.match(experimentalV2RailSource, /id: "details"/u);
+	assert.match(experimentalV2RailSource, /id: "automation"/u);
+	assert.match(experimentalV2RailSource, /id: "development"/u);
+	assert.match(experimentalV2RailSource, /id: "apps"/u);
+	assert.match(experimentalV2RailSource, /defaultOpen: true/u);
+	assert.match(experimentalV2RailSource, /borderless=\{borderless\}/u);
+
+	const experimentalV2DetailsSource = readBlockFile("experimental-v2/components/details-tab.tsx");
+	assert.match(experimentalV2DetailsSource, /import \{ ArtifactPanePropertyRow \} from "@\/components\/blocks\/artifact-pane"/u);
+	assert.match(experimentalV2DetailsSource, /<ArtifactPanePropertyRow editable=\{false\}[\s\S]*label="Status">/u);
+	assert.match(experimentalV2DetailsSource, /icon=\{<ProjectIcon label="" size="small" \/>\} label="Project"/u);
+	assert.match(experimentalV2DetailsSource, /icon=\{<AiAgentIcon label="" size="small" \/>\} label="Agents"/u);
+	assert.match(experimentalV2DetailsSource, /import \{ ArtifactPaneAgentsField \} from "@\/components\/blocks\/artifact-pane\/artifact-agents-field"/u);
+	assert.match(experimentalV2DetailsSource, /<ArtifactPaneAgentsField[\s\S]*value=\{selectedAgentIds\}/u);
+	assert.doesNotMatch(experimentalV2DetailsSource, /AgentsRowField/u);
+	assert.match(experimentalV2DetailsSource, /className="flex flex-col gap-2"/u);
 	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(titleBarSource, /data-jira-work-item-title-column/u);
 	assert.match(titleBarSource, /layout=\{shouldReduceMotion \? false : "position"\}/u);
@@ -461,7 +481,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(layoutSource, /buildScrollMaskStyle\(\{ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask \}\)/u);
 	assert.match(layoutSource, /data-jira-work-item-scroll-region/u);
 	assert.match(layoutSource, /data-jira-work-item-composer-dock/u);
-	assert.match(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
+	assert.match(layoutSource, /className="[^"]*bg-transparent[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
+	assert.doesNotMatch(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
 	assert.doesNotMatch(layoutSource, /bg-background\/90|backdrop-blur/u);
 	assert.doesNotMatch(layoutSource, /agentlayout:border-t|agentlayout:border-border/u);
 	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onInvokeAgent=\{handleInvokeAgent\}[\s\S]*onInvokeSkill=\{handleInvokeSkill\}/u);

@@ -11,7 +11,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils";
 
 import type { JiraActivityFilter, JiraActivitySortOrder } from "./jira-activity-types";
 
@@ -23,10 +22,7 @@ const SORT_LINK_LABELS: Record<JiraActivitySortOrder, string> = {
 };
 
 /**
- * Feed header: an activity count, a text-link sort control, and a full-width
- * rule. A chevron collapse button overlays the rule flush to its far-right end,
- * with six pixels of visual clearance on the left only. It reveals on section
- * hover and remains visible while the activity is collapsed.
+ * Feed header with an activity count and text-link sort control.
  */
 export function JiraActivityHeader({
 	count,
@@ -34,16 +30,12 @@ export function JiraActivityHeader({
 	onSortOrderChange,
 	filter,
 	onFilterChange,
-	collapsed,
-	onCollapsedChange,
 }: Readonly<{
 	count: number;
 	sortOrder: JiraActivitySortOrder;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;
 	filter: JiraActivityFilter;
 	onFilterChange: (next: JiraActivityFilter) => void;
-	collapsed: boolean;
-	onCollapsedChange: (next: boolean) => void;
 }>) {
 	return (
 		<div className="flex items-center gap-3">
@@ -92,41 +84,6 @@ export function JiraActivityHeader({
 						</DropdownMenuRadioGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
-			</div>
-
-			{/* The button overlays one continuous separator without reserving a gap. */}
-			<div className="relative h-6 min-w-2 flex-1">
-				<div
-					aria-hidden
-					className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border"
-				/>
-				<div
-					className={cn(
-						"invisible pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical before:absolute before:inset-y-0 before:-inset-x-1.5 before:bg-surface before:content-[''] motion-reduce:transition-none",
-						collapsed
-							? "visible pointer-events-auto opacity-100"
-							: "group-hover/jira-activity:visible group-hover/jira-activity:pointer-events-auto group-hover/jira-activity:opacity-100 group-focus-within/jira-activity:visible group-focus-within/jira-activity:pointer-events-auto group-focus-within/jira-activity:opacity-100",
-					)}
-				>
-					<Button
-						aria-expanded={!collapsed}
-						aria-label={collapsed ? "Expand activity" : "Collapse activity"}
-						className="relative z-10 bg-surface hover:bg-surface active:bg-surface aria-expanded:border-border aria-expanded:bg-surface aria-expanded:text-text-subtle aria-expanded:hover:bg-surface aria-expanded:active:bg-surface"
-						onClick={() => onCollapsedChange(!collapsed)}
-						size="icon-compact"
-						type="button"
-						variant="outline"
-					>
-						<Icon
-							aria-hidden
-							className={cn(
-								"transition-transform duration-fast ease-out-practical motion-reduce:transition-none",
-								collapsed && "rotate-180",
-							)}
-							render={<ChevronDownIcon label="" />}
-						/>
-					</Button>
-				</div>
 			</div>
 		</div>
 	);

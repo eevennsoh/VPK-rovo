@@ -4,10 +4,11 @@ import { useCallback, useState } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
+import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import {
 	useWorkItemStageController,
 	WorkItemControls,
-	WorkItemStage,
+	type WorkItemStageController,
 } from "@/components/projects/asx/components/work-item-stage";
 import {
 	ForYouStage,
@@ -23,6 +24,20 @@ function KanbanListStage(): React.ReactElement {
 	return <JiraDesignWorkspaceStage onViewChange={setView} view={view} />;
 }
 
+function JiraAgentsWorkItemStage({
+	controller,
+}: Readonly<{ controller: WorkItemStageController }>): React.ReactElement {
+	return (
+		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
+			<ExperimentalV2JiraWorkItem
+				key={controller.launchId}
+				initialPreset={controller.preset}
+				presentation="inline"
+			/>
+		</div>
+	);
+}
+
 export default function JiraAgentsPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(JIRA_AGENTS_GALLERY_ITEMS[0]?.id ?? "");
 	const workItemController = useWorkItemStageController();
@@ -32,7 +47,7 @@ export default function JiraAgentsPage(): React.ReactElement {
 	const renderSelectedItem = useCallback((item: GalleryItem): React.ReactNode => {
 		if (item.id === "for-you") return <ForYouStage />;
 		if (item.id === "kanban-list") return <KanbanListStage />;
-		if (item.id === "work-item") return <WorkItemStage controller={workItemController} />;
+		if (item.id === "work-item") return <JiraAgentsWorkItemStage controller={workItemController} />;
 		return null;
 	}, [workItemController]);
 

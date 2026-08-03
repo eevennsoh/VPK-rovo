@@ -127,6 +127,7 @@ export interface SmartLinkProps {
 	side?: React.ComponentProps<typeof HoverCardContent>["side"];
 	align?: React.ComponentProps<typeof HoverCardContent>["align"];
 	alignOffset?: React.ComponentProps<typeof HoverCardContent>["alignOffset"];
+	positionerClassName?: React.ComponentProps<typeof HoverCardContent>["positionerClassName"];
 	/** Inline chip size: "small" (12px label, default) or "large" (16px label). */
 	size?: SmartLinkSize;
 	/** When true, render the item's status as a lozenge at the end of the inline chip. */
@@ -359,7 +360,7 @@ function SmartLinkTrigger({
 	return (
 		<a
 			{...props}
-			aria-describedby={`smart-link-card-${item.id}`}
+			aria-describedby={open ? `smart-link-card-${item.id}` : undefined}
 			className={cn(
 				// Extends the VPK Tag visual contract: the small size keeps the same
 				// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
@@ -740,6 +741,7 @@ export function SmartLink({
 	side = "bottom",
 	align = "start",
 	alignOffset,
+	positionerClassName,
 	size = "small",
 	showStatus = false,
 	openDelay = 120,
@@ -768,6 +770,7 @@ export function SmartLink({
 				align={align}
 				alignOffset={alignOffset}
 				className="w-auto border-0 bg-transparent p-0 text-text shadow-none"
+				positionerClassName={positionerClassName}
 				side={side}
 				sideOffset={8}
 			>

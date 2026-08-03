@@ -7,15 +7,12 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-breadcrumb-actions";
-import { ContextTitleBar } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
-import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 
 interface ExperimentalWorkItemDialogProps {
 	inlineSurface: "card" | "fill";
 	open: boolean;
 	onClose: () => void;
 	presentation: "modal" | "inline";
-	primaryCodingAgentId?: CodingAgentId;
 	workItemCode: string;
 	workItemTitle: string;
 	children: ReactNode;
@@ -39,7 +36,6 @@ export function ExperimentalWorkItemDialog({
 	open,
 	onClose,
 	presentation,
-	primaryCodingAgentId,
 	workItemCode,
 	workItemTitle,
 	children,
@@ -49,14 +45,13 @@ export function ExperimentalWorkItemDialog({
 	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
 	const content = (
 		<>
-			<ModalHeader
-				actions={<ExperimentalBreadcrumbActions />}
-				actionsClassName="gap-1"
-				closeButtonVariant="ghost"
-				showClose={presentation !== "inline"}
-			/>
-			<ContextTitleBar primaryAgentId={primaryCodingAgentId} />
-
+				<ModalHeader
+					actions={<ExperimentalBreadcrumbActions />}
+					actionsClassName="gap-1"
+					closeButtonDisabled={presentation === "inline"}
+					closeButtonVariant="ghost"
+					paddingBottom={token("space.100")}
+				/>
 			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 				{children}
 			</div>
@@ -68,7 +63,7 @@ export function ExperimentalWorkItemDialog({
 		boxShadow: fillsInlineContainer ? "none" : token("elevation.shadow.overlay"),
 		display: "grid",
 		gridTemplateColumns: "minmax(0, 1fr)",
-		gridTemplateRows: "auto auto minmax(0, 1fr)",
+		gridTemplateRows: "auto minmax(0, 1fr)",
 		overflow: "hidden",
 	} as const;
 

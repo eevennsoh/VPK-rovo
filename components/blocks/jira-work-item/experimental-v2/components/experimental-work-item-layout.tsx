@@ -81,10 +81,10 @@ export function ExperimentalWorkItemLayout({
 		ref: narrowScrollRef,
 		showBottomScrollMask: showNarrowBottomScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
-	const { ref: leftScrollRef, showTopScrollMask, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: leftScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const leftScrollMaskStyle = useMemo(
-		() => buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask }),
-		[showTopScrollMask, showBottomScrollMask],
+		() => buildScrollMaskStyle({ fadeTop: false, fadeBottom: showBottomScrollMask }),
+		[showBottomScrollMask],
 	);
 	const contentLayoutTransition = shouldReduceMotion
 		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
@@ -134,7 +134,7 @@ export function ExperimentalWorkItemLayout({
 						</div>
 						{showStickyComposer ? (
 							<div
-								className="order-5 min-w-0 sticky bottom-0 z-10 bg-background px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:pt-4 @[860px]/agentlayout:pb-6"
+								className="order-5 min-w-0 sticky bottom-0 z-10 bg-transparent px-4 pt-3 pb-4 @[860px]/agentlayout:static @[860px]/agentlayout:shrink-0 @[860px]/agentlayout:px-0 @[860px]/agentlayout:pt-4 @[860px]/agentlayout:pb-6"
 								data-jira-work-item-composer-dock
 							>
 								{showNarrowBottomScrollMask ? (

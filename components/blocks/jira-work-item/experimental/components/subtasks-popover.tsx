@@ -48,7 +48,7 @@ export function SubtasksPopover({ trigger }: Readonly<{ trigger: ReactElement }>
 			<PopoverTrigger render={trigger} />
 			<PopoverContent align="start" className="w-[22rem] p-0" positionerClassName="z-[502]">
 				<Tabs defaultValue="create" className="gap-0">
-					<TabsList variant="line" className="w-full px-2.5 pt-2.5">
+					<TabsList variant="line" className="mt-2.5 w-full px-2.5">
 						<TabsTrigger value="create">Create new</TabsTrigger>
 						<TabsTrigger value="existing">Add existing</TabsTrigger>
 					</TabsList>

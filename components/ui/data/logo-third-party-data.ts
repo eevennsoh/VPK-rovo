@@ -76,6 +76,7 @@ export const THIRD_PARTY_LOGO_MANIFEST = [
 	{ name: "microsoft", label: "Microsoft", packageIcon: { entrypoint: "microsoft", exportName: "MicrosoftIcon" } },
 	{ name: "microsoft-365", label: "Microsoft 365", packageIcon: { entrypoint: "microsoft-365", exportName: "Microsoft365Icon" } },
 	{ name: "microsoft-azure", label: "Microsoft Azure", packageIcon: { entrypoint: "microsoft-azure", exportName: "MicrosoftAzureIcon" } },
+	{ name: "microsoft-copilot", label: "Microsoft Copilot", localAsset: true },
 	{ name: "microsoft-entra-id", label: "Microsoft Entra ID", packageIcon: { entrypoint: "microsoft-entra-id", exportName: "MicrosoftEntraIDIcon" } },
 	{ name: "microsoft-excel", label: "Microsoft Excel", packageIcon: { entrypoint: "microsoft-excel", exportName: "MicrosoftExcelIcon" } },
 	{ name: "microsoft-onedrive", label: "Microsoft OneDrive", packageIcon: { entrypoint: "microsoft-onedrive", exportName: "MicrosoftOneDriveIcon" }, localAsset: true },
@@ -222,5 +223,7 @@ export function isLocalFallbackThirdPartyLogoName(
  * to local-asset ids so package-only brands cannot produce a 404ing path.
  */
 export function thirdPartyLogoSrc(name: LocalAssetThirdPartyLogoName): string {
-	return `/3p/${name}/24.svg`;
+	const cacheVersion = name === "github-copilot" ? "?v=transparent-bg" : "";
+
+	return `/3p/${name}/24.svg${cacheVersion}`;
 }

@@ -959,8 +959,8 @@ function RichTextSuggestionMenuItemVisual({
 			size="small"
 			label={item.label}
 			aria-hidden={true}
-			className="border border-border bg-surface text-icon-subtlest"
 			icon={item.icon}
+			variant="blue"
 		/>
 	);
 

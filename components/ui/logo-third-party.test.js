@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readdirSync } = require("node:fs");
+const { readFileSync, readdirSync } = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -132,6 +132,21 @@ test("thirdPartyLogoSrc resolves the canonical 24px asset path", async () => {
 
 	assert.equal(thirdPartyLogoSrc("slack"), "/3p/slack/24.svg");
 	assert.equal(thirdPartyLogoSrc("github"), "/3p/github/24.svg");
+	assert.equal(
+		thirdPartyLogoSrc("github-copilot"),
+		"/3p/github-copilot/24.svg?v=transparent-bg",
+	);
+});
+
+test("GitHub Copilot source SVGs have no painted background rectangle", () => {
+	for (const size of [16, 20, 24, 32]) {
+		const source = readFileSync(
+			path.join(THIRD_PARTY_DIR, "github-copilot", `${size}.svg`),
+			"utf8",
+		);
+
+		assert.doesNotMatch(source, /fill="white"/u);
+	}
 });
 
 test("third-party logos use the shared tile size scale in tile demos", () => {

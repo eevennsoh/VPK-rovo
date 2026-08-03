@@ -94,7 +94,6 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 							open={open}
 							onClose={onClose}
 							presentation={presentation}
-							primaryCodingAgentId={props.primaryCodingAgentId}
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
 							blanketContent={
@@ -102,7 +101,12 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 							}
 						>
 							<ExperimentalWorkItemLayout
-								context={<ContextPanel outputs={props.outputs} />}
+								context={(
+									<ContextPanel
+										outputs={props.outputs}
+										primaryCodingAgentId={props.primaryCodingAgentId}
+									/>
+								)}
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer />}
 								fillContainer={inlineSurface === "fill"}

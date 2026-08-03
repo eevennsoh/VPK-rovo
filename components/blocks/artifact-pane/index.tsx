@@ -13,6 +13,7 @@ import { token } from "@/lib/tokens";
 
 export interface ArtifactPaneSectionItem {
 	content: ReactNode;
+	count?: number;
 	defaultOpen?: boolean;
 	id: string;
 	title: ReactNode;
@@ -30,16 +31,16 @@ export function ArtifactPanePropertyRow({
 	label,
 }: Readonly<{ children: ReactNode; editable?: boolean; icon: ReactNode; label: string }>) {
 	return (
-		<div className="grid min-h-6 min-w-0 grid-cols-[16px_84px_minmax(0,1fr)] items-center gap-2 text-xs leading-5">
+		<div className="grid min-h-8 min-w-0 grid-cols-[16px_84px_minmax(0,1fr)] items-center gap-2 text-xs leading-5">
 			<span aria-hidden className="grid size-4 place-items-center text-icon-subtle">
 				{icon}
 			</span>
 			<span className="text-text-subtlest">{label}</span>
 			<div
 				className={cn(
-					"flex min-h-6 min-w-0 items-center text-text [&_[data-slot=avatar-group-count]]:size-4 [&_[data-slot=avatar]]:size-4 [&_[data-slot=tile]]:size-4",
+					"flex min-h-8 min-w-0 items-center text-text [&_[data-slot=avatar-group-count]]:size-6 [&_[data-slot=avatar]]:size-6 [&_[data-slot=tile]]:size-6",
 					editable
-						? "-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered motion-reduce:transition-none [&>button]:m-0! [&>button]:min-h-6! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0!"
+						? "-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered motion-reduce:transition-none [&>button]:m-0! [&>button]:min-h-8! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0!"
 						: null,
 				)}
 			>
@@ -51,6 +52,7 @@ export function ArtifactPanePropertyRow({
 
 function ArtifactPaneDisclosure({
 	content,
+	count,
 	onOpenChange,
 	open,
 	title,
@@ -62,13 +64,19 @@ function ArtifactPaneDisclosure({
 			<CollapsibleTrigger
 				render={
 					<button
-						className="group/header flex w-full items-center justify-between gap-3 px-3 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						className="group/header flex w-full items-center justify-between gap-3 px-3 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
 						type="button"
 					/>
 				}
 			>
-				<span className="text-sm font-semibold text-text-subtle group-hover/header:text-text group-focus-visible/header:text-text">
+				<span
+					className="flex min-w-0 items-center gap-1.5 text-text-subtle group-hover/header:text-text group-focus-visible/header:text-text"
+					style={{ font: token("font.heading.xxsmall") }}
+				>
 					{title}
+					{!open && count !== undefined ? (
+						<span className="shrink-0 text-xs font-normal text-text-subtlest">· {count}</span>
+					) : null}
 				</span>
 				<motion.span
 					animate={{ rotate: open ? 90 : 0 }}
@@ -147,6 +155,7 @@ export function ArtifactPane({
 						>
 							<ArtifactPaneDisclosure
 								content={section.content}
+								count={section.count}
 								onOpenChange={(nextOpen) => setSectionOpen(section.id, nextOpen)}
 								open={open}
 								title={section.title}
