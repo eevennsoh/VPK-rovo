@@ -9,9 +9,22 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import { ExperimentalJiraWorkItem } from "@/components/blocks/jira-work-item/experimental/experimental-jira-work-item";
+import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 
-export type JiraWorkItemVariant = "default" | "experimental";
+export type JiraWorkItemVariant = "default" | "experimental" | "experimental-v2";
 export type JiraWorkItemExperimentalPreset = JiraWorkItemPreset;
+
+/**
+ * Experimental surfaces keyed by variant. `experimental-v2` is a full fork of
+ * the v1 tree (`experimental-v2/`) so the two can diverge independently; both
+ * share the session/planner model under `data/`.
+ */
+const EXPERIMENTAL_SURFACES = {
+	experimental: ExperimentalJiraWorkItem,
+	"experimental-v2": ExperimentalV2JiraWorkItem,
+} as const;
+
+type ExperimentalVariant = keyof typeof EXPERIMENTAL_SURFACES;
 
 export interface JiraWorkItemProps {
 	/** Opens the work item on initial render. Used by docs variant chooser entry points. */
@@ -20,7 +33,7 @@ export interface JiraWorkItemProps {
 	onIssueClose?: () => void;
 	/** Opt-in layout variation. The default variant keeps the current Jira sessions surface. */
 	variant?: JiraWorkItemVariant;
-	/** Deterministic starting state for the experimental variant. */
+	/** Deterministic starting state for the experimental variants. */
 	initialExperimentalPreset?: JiraWorkItemExperimentalPreset;
 }
 
@@ -30,14 +43,15 @@ export function JiraWorkItem({
 	variant = "default",
 	initialExperimentalPreset = "filled",
 }: Readonly<JiraWorkItemProps>) {
-	return variant === "experimental" ? (
+	return variant === "default" ? (
+		<JiraWorkItemDefaultView initialIssueOpen={initialIssueOpen} onIssueClose={onIssueClose} />
+	) : (
 		<JiraWorkItemExperimentalView
 			initialIssueOpen={initialIssueOpen}
 			onIssueClose={onIssueClose}
 			initialExperimentalPreset={initialExperimentalPreset}
+			surface={variant}
 		/>
-	) : (
-		<JiraWorkItemDefaultView initialIssueOpen={initialIssueOpen} onIssueClose={onIssueClose} />
 	);
 }
 
@@ -85,12 +99,15 @@ function JiraWorkItemExperimentalView({
 	initialIssueOpen,
 	onIssueClose,
 	initialExperimentalPreset,
+	surface,
 }: Readonly<{
 	initialIssueOpen: boolean;
 	onIssueClose?: () => void;
 	initialExperimentalPreset: JiraWorkItemExperimentalPreset;
+	surface: ExperimentalVariant;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
+	const ExperimentalSurface = EXPERIMENTAL_SURFACES[surface];
 
 	function handleIssueClose() {
 		setIsIssueOpen(false);
@@ -99,7 +116,7 @@ function JiraWorkItemExperimentalView({
 
 	return (
 		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			<ExperimentalJiraWorkItem
+			<ExperimentalSurface
 				open={isIssueOpen}
 				onClose={handleIssueClose}
 				initialPreset={initialExperimentalPreset}

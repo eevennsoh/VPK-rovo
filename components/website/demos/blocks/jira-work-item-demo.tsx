@@ -22,3 +22,15 @@ export function JiraWorkItemDemoExperimentalEmpty() {
 export function JiraWorkItemDemoExperimentalRunning() {
 	return <JiraWorkItem variant="experimental" initialExperimentalPreset="running" />;
 }
+
+export function JiraWorkItemDemoExperimentalV2() {
+	return <JiraWorkItem variant="experimental-v2" initialExperimentalPreset="filled" />;
+}
+
+export function JiraWorkItemDemoExperimentalV2Empty() {
+	return <JiraWorkItem variant="experimental-v2" initialExperimentalPreset="empty" />;
+}
+
+export function JiraWorkItemDemoExperimentalV2Running() {
+	return <JiraWorkItem variant="experimental-v2" initialExperimentalPreset="running" />;
+}
