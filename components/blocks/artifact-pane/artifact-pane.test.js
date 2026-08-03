@@ -83,10 +83,14 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.match(DEMO_SOURCE, /ariaLabel="Change reporter"/u);
 	assert.match(DEMO_SOURCE, /<AgentAvatarVisual/u);
 	assert.match(DEMO_SOURCE, /<AgentsField/u);
+	assert.match(DEMO_SOURCE, /trailing: value\.includes\(agent\.id\) \? <CheckIcon[^>]*\/> : undefined/u);
+	assert.match(DEMO_SOURCE, /selectedItemIds=\{new Set\(value\)\}/u);
 	assert.match(DEMO_SOURCE, /<AvatarGroup[\s\S]*<AgentAvatarVisual[\s\S]*sizePx=\{16\}/u);
 	assert.match(DEMO_SOURCE, /leadingVisual: \([\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{agent\.brandName\}[\s\S]*sizePx=\{24\}/u);
 	assert.doesNotMatch(DEMO_SOURCE, /\? \{ kind: "third-party", name: agent\.brandName \}/u);
 	assert.match(SUGGESTION_MENU_SOURCE, /leadingVisual\?: ReactNode;/u);
+	assert.match(SUGGESTION_MENU_SOURCE, /aria-multiselectable=\{selectedItemIds \? true : undefined\}/u);
+	assert.match(SUGGESTION_MENU_SOURCE, /aria-selected=\{isChosen \?\? isSelected\}/u);
 	assert.match(SUGGESTION_MENU_SOURCE, /const visual = item\.leadingVisual \? \([\s\S]*item\.leadingVisual/u);
 	assert.doesNotMatch(DEMO_SOURCE, /avatarClassName="[^"]*ring-/u);
 	assert.doesNotMatch(DEMO_SOURCE, /label=\{agent\.name\}/u);

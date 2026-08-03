@@ -144,6 +144,7 @@ interface RichTextSuggestionMenuProps {
 	onHover?: (index: number) => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 	selectedIndex: number;
+	selectedItemIds?: ReadonlySet<string>;
 	title: string;
 }
 
@@ -591,6 +592,7 @@ export function RichTextSuggestionMenu({
 	onHover,
 	onSelect,
 	selectedIndex,
+	selectedItemIds,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const listRef = useRef<HTMLDivElement | null>(null);
@@ -630,8 +632,6 @@ export function RichTextSuggestionMenu({
 			data-has-header={header ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			data-pointer-selects={onHover ? "true" : undefined}
-			role="listbox"
-			aria-label={title}
 		>
 			{onBack ? (
 				<button
@@ -649,6 +649,9 @@ export function RichTextSuggestionMenu({
 			{header}
 			<div
 				className="rich-text-command-menu-list"
+				role="listbox"
+				aria-label={title}
+				aria-multiselectable={selectedItemIds ? true : undefined}
 				ref={listRef}
 				onScroll={updateListScrollState}
 			>
@@ -666,6 +669,7 @@ export function RichTextSuggestionMenu({
 							) : (
 								<RichTextSuggestionMenuOption
 									key={item.id}
+									isChosen={selectedItemIds?.has(item.id)}
 									isSelected={index === selectedIndex}
 									item={item}
 									onHover={onHover ? () => onHover(index) : undefined}
@@ -790,6 +794,7 @@ export function RichTextCommandMenuSearchField({
 }
 
 interface RichTextSuggestionMenuOptionProps {
+	isChosen?: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
 	onHover?: () => void;
@@ -797,6 +802,7 @@ interface RichTextSuggestionMenuOptionProps {
 }
 
 function RichTextSuggestionMenuOption({
+	isChosen,
 	isSelected,
 	item,
 	onHover,
@@ -882,7 +888,7 @@ function RichTextSuggestionMenuOption({
 			<motion.button
 				type="button"
 				role="option"
-				aria-selected={isSelected}
+				aria-selected={isChosen ?? isSelected}
 				animate={isSelected ? "active" : "idle"}
 				className={className}
 				data-has-trailing={hasPersistentTrailing ? "true" : undefined}
@@ -906,7 +912,7 @@ function RichTextSuggestionMenuOption({
 		<button
 			type="button"
 			role="option"
-			aria-selected={isSelected}
+			aria-selected={isChosen ?? isSelected}
 			className={className}
 			data-has-trailing={hasPersistentTrailing ? "true" : undefined}
 			disabled={item.disabled}

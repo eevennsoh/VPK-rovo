@@ -18,6 +18,7 @@ import { METADATA_PEOPLE, getMetadataPerson } from "@/components/blocks/jira-wor
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
 	DateRowField,
+	filterMetadataSearchItems,
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
 	MetadataSearchPicker,
@@ -33,8 +34,14 @@ import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tile, TileAvatar } from "@/components/ui/tile";
+import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
+import {
+	RichTextCommandMenuSearchField,
+	RichTextSuggestionEmptyState,
+	RichTextSuggestionMenu,
+	type RichTextSuggestionMenuItem,
+} from "@/components/ui-custom/rich-text-editor";
 
 const ARTIFACT_AGENTS = BOARD_AGENTS.filter((agent) => Boolean(agent.avatarSrc || agent.brandName));
 const INITIAL_AGENT_IDS = ["meeting-insights-reporter", "readiness-checker"];
@@ -95,6 +102,45 @@ function ProjectField({ value, onChange }: Readonly<{ value: string | null; onCh
 	);
 }
 
+function ArtifactAgentsSearchPicker({
+	items,
+	onEscape,
+	onSelect,
+	selectedItemIds,
+}: Readonly<{
+	items: readonly RichTextSuggestionMenuItem[];
+	onEscape: () => void;
+	onSelect: (item: RichTextSuggestionMenuItem) => void;
+	selectedItemIds: ReadonlySet<string>;
+}>) {
+	const [query, setQuery] = useState("");
+	const visibleItems = filterMetadataSearchItems(items, query);
+
+	return (
+		<RichTextSuggestionMenu
+			className="rich-text-command-menu-borderless"
+			emptyLabel="No agents found"
+			emptyState={<RichTextSuggestionEmptyState label="No agents found" />}
+			header={(
+				<RichTextCommandMenuSearchField
+					autoFocus
+					icon={<SearchIcon className="size-4 text-icon-subtle" />}
+					label="Search agents"
+					onClear={() => setQuery("")}
+					onEscape={onEscape}
+					onValueChange={setQuery}
+					value={query}
+				/>
+			)}
+			items={visibleItems}
+			onSelect={onSelect}
+			selectedIndex={-1}
+			selectedItemIds={selectedItemIds}
+			title="Search agents"
+		/>
+	);
+}
+
 function AgentsField({ value, onChange }: Readonly<{ value: readonly string[]; onChange: (ids: string[]) => void }>) {
 	const [open, setOpen] = useState(false);
 	const items = ARTIFACT_AGENTS.map((agent): RichTextSuggestionMenuItem => ({
@@ -110,6 +156,7 @@ function AgentsField({ value, onChange }: Readonly<{ value: readonly string[]; o
 				sizePx={24}
 			/>
 		),
+		trailing: value.includes(agent.id) ? <CheckIcon className="size-4 text-icon-success" /> : undefined,
 	}));
 	const selectedAgents = value
 		.map((id) => ARTIFACT_AGENTS.find((agent) => agent.id === id))
@@ -143,12 +190,11 @@ function AgentsField({ value, onChange }: Readonly<{ value: readonly string[]; o
 				)}
 			</PopoverTrigger>
 			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
-				<MetadataSearchPicker
-					emptyLabel="No agents found"
+				<ArtifactAgentsSearchPicker
 					items={items}
 					onEscape={() => setOpen(false)}
 					onSelect={(item) => toggleAgent(item.id)}
-					placeholder="Search agents"
+					selectedItemIds={new Set(value)}
 				/>
 			</PopoverContent>
 		</Popover>
