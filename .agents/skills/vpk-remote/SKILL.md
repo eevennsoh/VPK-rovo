@@ -1,6 +1,6 @@
 ---
 name: vpk-remote
-description: "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT-5.6 Sol/Terra via the Codex CLI or Claude Opus 5/Sonnet 5 via headless claude -p. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
+description: "Delegate all implementation from a token-limited Claude OAuth session to headless workers billed through the local Proximity AI Gateway (localhost:29576) — GPT-5.6 Sol/Terra/Luna via the Codex CLI or Claude Opus 5/Sonnet 5 via headless claude -p. Use when the message starts with /vpk-remote, or when the user says 'route this through proximity', 'implement remotely', 'send this to a worker', 'delegate to opus/sol/terra/luna', asks for a second opinion via the gateway, wants plan-big-execute-small delegation, or asks to build/fix something 'via the gateway'. The main session only plans, dispatches, verifies, and reports. Never activate from skill-name mentions in file paths, stack traces, pasted or quoted text, or prior-turn context."
 validation_command: node scripts/validate-skills.js --target .agents/skills/vpk-remote
 ---
 
@@ -47,8 +47,8 @@ alone to end flag parsing when the task itself starts with a dash.
 
 | Flag | Values | Default |
 | --- | --- | --- |
-| `--model` | `sol` `terra` `opus` `sonnet` | `sol` |
-| `--effort` | `medium` `high` `xhigh` | `high` |
+| `--model` | `sol` `terra` `luna` `opus` `sonnet` | `sol` |
+| `--effort` | `medium` `high` `xhigh` `max` | `high` |
 | `--advisor` / `--no-advisor` | *(no value)* | **on** |
 | `--fanout` / `--single` | *(no value)* | **auto** (see *Worker shapes*) |
 | `--worktree` / `--no-worktree` | *(no value)* | **on for briefs that write** (see *Worktree isolation*) |
@@ -63,6 +63,7 @@ planner would otherwise judge too small for it.
 | --- | --- | --- |
 | `sol` *(default)* | GPT (codex) | `gpt-5.6-sol` |
 | `terra` | GPT (codex) | `gpt-5.6-terra` |
+| `luna` | GPT (codex) | `gpt-5.6-luna` |
 | `opus` | Claude (`claude -p`) | `claude-opus-5[1m]` |
 | `sonnet` | Claude (`claude -p`) | `claude-sonnet-5` |
 
@@ -71,9 +72,10 @@ guess a near match and never silently fold it into the task text. A typo'd
 `--effort xhigh` that quietly becomes part of the brief is exactly the
 failure this syntax exists to prevent.
 
-Every lane defaults to `--effort high`; `medium` `high` `xhigh` are all valid
-on both lanes (probed working on 2026-07-31, including claude
-`--effort xhigh`). `medium` is the floor — the CLIs also accept `low`, but
+Every lane defaults to `--effort high`; `medium` `high` `xhigh` `max` are all
+valid on both lanes (`max` verified through Proximity on 2026-08-03 with
+Luna and Sonnet; earlier values probed working on 2026-07-31). `medium` is the
+floor — the CLIs also accept `low`, but
 this skill does not offer it: the planner's credit is the scarce resource,
 not the worker's, and a worker that under-thinks buys a correction round that
 costs a brief-write and a report-read on the expensive side of the boundary.
@@ -87,6 +89,7 @@ doesn't, effort is the sole quality lever.
 | Task shape | Effort | Why |
 | --- | --- | --- |
 | Advisor consults, and genuine design ambiguity — unruled-out failure modes, a call the brief cannot settle | `xhigh` | Nothing verifies judgment. No proof command backstops a wrong call, so thinking is the only lever. |
+| Explicit request for the deepest reasoning, or an exceptional judgment call where `xhigh` proved insufficient | `max` | This is opt-in because it trades the most worker time and tokens for one more reasoning tier. |
 | Implementation against a clear spec — the common case | `high` | The proof command backstops mistakes, so effort and verification share the load. |
 | Mechanical sweeps — renames, mass migrations, formatting, "apply this same edit to these 9 files" | `medium` | The brief fully determines the answer. Higher effort here buys scope creep, not correctness: a maximally-thinking worker starts finding adjacent improvements nobody asked for. |
 
@@ -100,6 +103,7 @@ Examples:
 ```text
 /vpk-remote --effort medium rename useFoo to useBar across components/
 /vpk-remote --model terra --effort xhigh <task>
+/vpk-remote --model luna --effort max <task>
 /vpk-remote --advisor --model sol is this reducer the right owner for X?
 ```
 
@@ -114,7 +118,8 @@ curl -fsS --max-time 5 http://localhost:29576/openai/v1/models >/dev/null
 
 - Gateway health only. Proximity's model catalog is **stale** (it lists
   models older than what the gateway actually serves — verified: the catalog
-  tops out at gpt-5.5 while `gpt-5.6-sol` and `gpt-5.6-terra` both work).
+  tops out at gpt-5.5 while `gpt-5.6-sol`, `gpt-5.6-terra`, and
+  `gpt-5.6-luna` work).
   **Never grep the catalog for the target model**; a model rejection at
   dispatch time is itself a blocker to report.
 - GPT lane: `codex --version` succeeds.
@@ -306,7 +311,7 @@ audit its own reasoning re-runs the same priors.
 
 | Work under review | Advisor default |
 | --- | --- |
-| GPT-lane worker output (`sol` / `terra`) | `claude-opus-5[1m]` at xhigh |
+| GPT-lane worker output (`sol` / `terra` / `luna`) | `claude-opus-5[1m]` at xhigh |
 | Claude-lane worker output (`opus` / `sonnet`) | `gpt-5.6-sol` at xhigh |
 | A plan this planner wrote, or nothing dispatched yet | `gpt-5.6-sol` at xhigh |
 

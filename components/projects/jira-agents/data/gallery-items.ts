@@ -4,7 +4,7 @@ export const JIRA_AGENTS_GALLERY_ITEMS: readonly GalleryItem[] = [
 	{
 		id: "for-you",
 		title: "Jira For You",
-		titleLines: ["Jira", "For You"],
+		titleLines: ["Jira For", "You"],
 		description: "A personalized view of Jira work that brings relevant updates and next steps into focus.",
 		size: "1x1",
 	},

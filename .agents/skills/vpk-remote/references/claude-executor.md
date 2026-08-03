@@ -3,7 +3,8 @@
 The Claude lane for `/vpk-remote` workers. Each worker is a headless
 `claude -p` process routed to Proximity's `/vertex/claude` endpoint. Verified
 end-to-end on 2026-07-31 (Opus 5 at `--effort xhigh` returned correctly with
-clean stderr, launched from inside a Claude Code Bash call).
+clean stderr, launched from inside a Claude Code Bash call). Sonnet 5 at
+`--effort max` was verified through Proximity on 2026-08-03.
 
 ## Preflight
 
@@ -21,8 +22,8 @@ skill references it by path and never copies its contents anywhere.
 ## Canonical run
 
 Substitute `<model>` (`claude-opus-5[1m]` | `claude-sonnet-5`) and `<effort>`
-(`medium` | `high` | `xhigh`, all verified accepted; `low` works but is
-deliberately not offered — see *Choosing effort* in SKILL.md). The model
+(`medium` | `high` | `xhigh` | `max`, all verified accepted; `low` works but
+is deliberately not offered — see *Choosing effort* in SKILL.md). The model
 ID **must be quoted** — `[1m]` is a shell glob pattern.
 
 ```bash
