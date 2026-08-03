@@ -41,6 +41,7 @@ test("Tag exposes ADS visual-uplift color tokens and trailing metrics", () => {
 	assert.match(tagSource, /icon: "text-icon-accent-blue group-hover\/tag:text-text-accent-blue/u);
 	assert.match(tagSource, /metric: "bg-bg-accent-blue-subtler"/u);
 	assert.doesNotMatch(tagSource, /border-blue-500|border-red-500|border-neutral-500/u);
+	assert.match(tagSource, /\[&>\[data-slot=icon\]>span\]:size-3! \[&>\[data-slot=icon\]_svg\]:size-3!/u);
 
 	// Component keeps the escape-hatch trailing slot and also supports the
 	// package-compatible `trailingMetric` prop.

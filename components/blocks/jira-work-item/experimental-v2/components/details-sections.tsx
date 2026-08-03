@@ -35,13 +35,20 @@ function CollapsibleSection({ title, children }: Readonly<{ title: string; child
 	);
 }
 
+/** Development section empty-state content. */
+export function DevelopmentSectionContent() {
+	return (
+		<p className="text-sm text-text-subtle">
+			Connect a repository to see branches, commits, and pull requests linked to this work item.
+		</p>
+	);
+}
+
 /** Collapsible Development section (light mock empty state). */
 export function DevelopmentSection() {
 	return (
 		<CollapsibleSection title="Development">
-			<p className="text-sm text-text-subtle">
-				Connect a repository to see branches, commits, and pull requests linked to this work item.
-			</p>
+			<DevelopmentSectionContent />
 		</CollapsibleSection>
 	);
 }

@@ -1458,6 +1458,7 @@ export const PromptInputTextarea = ({
           "prompt-input-composer max-h-48 min-h-16 w-full overflow-y-auto px-0 py-2 outline-none",
           className
         ),
+        role: "textbox",
         ...(disabled ? { "aria-disabled": "true" } : {}),
       },
     },

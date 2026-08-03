@@ -108,6 +108,52 @@ export interface EditorToolbarProps {
 	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 }
 
+export interface EditorToolbarModeTabsProps {
+	mode: EditorToolbarViewMode;
+	showDataFlowMode?: boolean;
+	onModeChange: (mode: EditorToolbarViewMode) => void;
+}
+
+export function EditorToolbarModeTabs({
+	mode,
+	showDataFlowMode = false,
+	onModeChange,
+}: Readonly<EditorToolbarModeTabsProps>) {
+	function handleValueChange(value: string | null): void {
+		if (
+			value !== "rendered" &&
+			value !== "markdown" &&
+			value !== "data-flow"
+		) {
+			return;
+		}
+
+		if (value === "data-flow" && !showDataFlowMode) {
+			return;
+		}
+
+		onModeChange(value);
+	}
+
+	return (
+		<Tabs value={mode} onValueChange={handleValueChange}>
+			<TabsList>
+				<TabsTrigger aria-label="Rendered text" value="rendered" className="px-2">
+					<TextNormalIcon size="small" />
+				</TabsTrigger>
+				<TabsTrigger aria-label="Markdown source" value="markdown" className="px-2">
+					<MarkdownIcon label="" size="small" />
+				</TabsTrigger>
+				{showDataFlowMode ? (
+					<TabsTrigger aria-label="Data flow diagram" value="data-flow" className="px-2">
+						<DataFlowIcon label="" size="small" />
+					</TabsTrigger>
+				) : null}
+			</TabsList>
+		</Tabs>
+	);
+}
+
 interface DropdownMenuItemProps {
 	icon: ReactNode;
 	label: string;
@@ -1051,36 +1097,11 @@ export function EditorToolbar({
 				<div className="flex shrink-0 items-center gap-2">
 					{endSlot}
 					{showModeTabs ? (
-						<Tabs
-							value={currentMode}
-							onValueChange={handleModeChange}
-						>
-							<TabsList>
-								<TabsTrigger
-									aria-label="Rendered text"
-									value="rendered"
-									className="px-2"
-								>
-									<TextNormalIcon size="small" />
-								</TabsTrigger>
-								<TabsTrigger
-									aria-label="Markdown source"
-									value="markdown"
-									className="px-2"
-								>
-									<MarkdownIcon label="" size="small" />
-								</TabsTrigger>
-								{showDataFlowMode ? (
-									<TabsTrigger
-										aria-label="Data flow diagram"
-										value="data-flow"
-										className="px-2"
-									>
-										<DataFlowIcon label="" size="small" />
-									</TabsTrigger>
-								) : null}
-							</TabsList>
-						</Tabs>
+						<EditorToolbarModeTabs
+							mode={currentMode}
+							showDataFlowMode={showDataFlowMode}
+							onModeChange={(nextMode) => handleModeChange(nextMode)}
+						/>
 					) : null}
 				</div>
 			) : null}

@@ -1,27 +1,43 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { useRef, useState, type ReactNode } from "react";
+import { motion, useReducedMotion, type Transition } from "motion/react";
+
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Icon } from "@/components/ui/icon";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
-import type { ReactNode } from "react";
+import { CodeIcon } from "@/components/ui/vpk-icons";
+import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
+import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import LockUnlockedIcon from "@atlaskit/icon/core/lock-unlocked";
 import ShareIcon from "@atlaskit/icon/core/share";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+
+const ACTIONS_ENTER_TRANSITION: Transition = {
+	duration: 0.1,
+	ease: [0.4, 1, 0.6, 1], // duration-fast + ease-out-practical
+};
+const EXPANDED_ACTIONS_ENTER_TRANSITION: Transition = {
+	duration: 0.05,
+	ease: [0.4, 1, 0.6, 1], // duration-xxshort + ease-out-practical
+};
+const ACTIONS_EXIT_TRANSITION: Transition = {
+	duration: 0.05,
+	ease: [0.6, 0, 0.8, 0.6], // duration-xxshort + ease-in
+};
 
 export type CodingAgentId =
 	| "claude-code"
@@ -31,6 +47,83 @@ export type CodingAgentId =
 	| "vs-code"
 	| "github-copilot"
 	| "gemini";
+
+/** Lock, watch, and share controls rendered in the modal header action row. */
+export function ContextHeaderActions() {
+	return (
+		<>
+			<Button aria-label="No restrictions" size="icon" variant="ghost">
+				<LockUnlockedIcon label="" />
+			</Button>
+			<Button className="gap-2" variant="ghost">
+				<EyeOpenIcon label="" />
+				1
+			</Button>
+			<Button aria-label="Share" size="icon" variant="ghost">
+				<ShareIcon label="" />
+			</Button>
+		</>
+	);
+}
+
+/**
+ * Keeps the resource-row actions inert while the metadata column changes the
+ * available content width. The actions exit before the toggle is applied, then
+ * re-enter once the shared layout owner reports that its geometry has settled.
+ */
+export function AnimatedContextTitleActions({
+	primaryAgentId,
+}: Readonly<{ primaryAgentId?: CodingAgentId }>) {
+	const {
+		completeMetadataToggle,
+		metadataCollapsed,
+		metadataLayoutAnimating,
+		metadataTogglePending,
+	} = usePanelLayout();
+	const shouldReduceMotion = useReducedMotion() ?? false;
+	const didCompleteToggleExit = useRef(false);
+	const [isAnimating, setIsAnimating] = useState(false);
+	const hideForToggle = metadataTogglePending || metadataLayoutAnimating;
+	const isInteractive = !hideForToggle && !isAnimating;
+	const enterTransition = metadataCollapsed
+		? ACTIONS_ENTER_TRANSITION
+		: EXPANDED_ACTIONS_ENTER_TRANSITION;
+
+	return (
+		<motion.div
+			className="flex shrink-0 items-center gap-2"
+			animate={
+				hideForToggle
+					? {
+							opacity: 0,
+							scale: 0.96,
+							transition: shouldReduceMotion ? { duration: 0 } : ACTIONS_EXIT_TRANSITION,
+						}
+					: { opacity: 1, scale: 1, transition: enterTransition }
+			}
+			aria-hidden={isInteractive ? undefined : true}
+			inert={isInteractive ? undefined : true}
+			initial={false}
+			onAnimationComplete={() => {
+				setIsAnimating(false);
+				if (metadataTogglePending && !didCompleteToggleExit.current) {
+					didCompleteToggleExit.current = true;
+					completeMetadataToggle();
+				}
+				if (!hideForToggle) {
+					didCompleteToggleExit.current = false;
+				}
+			}}
+			onAnimationStart={() => setIsAnimating(true)}
+			style={{
+				transformOrigin: "left center",
+				willChange: isAnimating ? "transform, opacity" : undefined,
+			}}
+		>
+			<ContextTitleActions primaryAgentId={primaryAgentId} />
+		</motion.div>
+	);
+}
 
 type CodingAgent = Readonly<{
 	/** Stable id used for React keys. */
@@ -42,21 +135,23 @@ type CodingAgent = Readonly<{
 }>;
 
 function thirdPartyAgentLogo(name: ThirdPartyLogoName): ReactNode {
-	return <LogoThirdParty name={name} size="small" borderless />;
+	const darkModeClassName =
+		name === "cursor" || name === "github-copilot"
+			? "dark:brightness-0 dark:invert"
+			: undefined;
+
+	return <LogoThirdParty name={name} size="small" borderless className={darkModeClassName} />;
 }
 
 /**
- * Coding editors / agents shown behind the "Open" split button. The first entry
- * is the default — its logo + label sit in front of the split button, so it is
- * intentionally omitted from the dropdown (no need to repeat the default). The
- * remaining entries populate the trailing chevron's menu. Most map to a
+ * Coding editors and agents shown in the Open in dropdown. Most map to a
  * registered `LogoThirdParty` brand (Codex/Cursor/Copilot ship with the upstream
- * package or a local `public/3p` fallback); Rovo CLI uses the 1P `RovoColorIcon`.
+ * package or a local `public/3p` fallback); Rovo uses the 1P `RovoColorIcon`.
  */
 const CODING_AGENTS: readonly CodingAgent[] = [
-	{ id: "claude-code", label: "Claude Code", logo: thirdPartyAgentLogo("claude") },
+	{ id: "claude-code", label: "Claude", logo: thirdPartyAgentLogo("claude") },
 	{ id: "codex", label: "Codex", logo: thirdPartyAgentLogo("openai-codex") },
-	{ id: "rovo-cli", label: "Rovo CLI", logo: <RovoColorIcon size="small" /> },
+	{ id: "rovo-cli", label: "Rovo", logo: <RovoColorIcon size="small" /> },
 	{ id: "cursor", label: "Cursor", logo: thirdPartyAgentLogo("cursor") },
 	{ id: "vs-code", label: "VS Code", logo: thirdPartyAgentLogo("vs-code") },
 	{ id: "github-copilot", label: "GitHub Copilot", logo: thirdPartyAgentLogo("github-copilot") },
@@ -64,104 +159,63 @@ const CODING_AGENTS: readonly CodingAgent[] = [
 ];
 
 /**
- * Title-row action cluster for the experimental Jira Work Item work item:
- * lock / watch / share / status / Open split button / more. It mirrors the
- * standard ModalHeader action styling but sits beside the editable
- * title instead of in the breadcrumb row. The Open split button reuses the
- * shared ButtonGroup primitive so the main + trailing chevron read as one group;
- * its trailing chevron opens a dropdown listing the available coding agents.
+ * Resource-row action cluster for the experimental Jira Work Item. Lock,
+ * watch, and share live in the modal header. The Open in dropdown lists every
+ * available coding agent, each with Local and Cloud destinations.
  */
 export function ContextTitleActions({
-	collapsed = false,
 	primaryAgentId = "claude-code",
-}: Readonly<{ collapsed?: boolean; primaryAgentId?: CodingAgentId }>) {
+}: Readonly<{ primaryAgentId?: CodingAgentId }>) {
 	const primaryCodingAgent = CODING_AGENTS.find((agent) => agent.id === primaryAgentId) ?? CODING_AGENTS[0];
-	const secondaryCodingAgents = CODING_AGENTS.filter((agent) => agent.id !== primaryCodingAgent.id);
+	const codingAgents = [
+		primaryCodingAgent,
+		...CODING_AGENTS.filter((agent) => agent.id !== primaryCodingAgent.id),
+	];
 
 	return (
-		<div className="flex shrink-0 items-center gap-2">
-			{collapsed ? null : (
-				<>
-					<Button aria-label="No restrictions" size="icon" variant="outline">
-						<LockUnlockedIcon label="" />
-					</Button>
-					<Button className="gap-2" variant="outline">
-						<EyeOpenIcon label="" />
-						1
-					</Button>
-					<Button aria-label="Share" size="icon" variant="outline">
-						<ShareIcon label="" />
-					</Button>
-				</>
-			)}
-			<ButtonGroup variant="split">
-				<Button aria-label={`Open with ${primaryCodingAgent.label}`} variant="outline" className="gap-0.5">
-					{primaryCodingAgent.logo}
-					Open
-				</Button>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button aria-label="More open options" size="icon" variant="outline">
-								<ChevronDownIcon label="" size="small" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" positionerClassName="z-[502]" className="p-0">
-						<div className="max-h-72 overflow-y-auto p-1">
-							<DropdownMenuGroup>
-								<DropdownMenuLabel>Open in</DropdownMenuLabel>
-								{secondaryCodingAgents.map((agent) => (
-									<DropdownMenuItem className="gap-0.5" key={agent.id} elemBefore={agent.logo}>
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button aria-label="Open in" className="gap-2" variant="outline">
+							<CodeIcon aria-hidden size="small" />
+							Open in
+							<ChevronDownIcon label="" size="small" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="end" positionerClassName="z-[502]" className="p-0">
+					<div className="max-h-72 overflow-y-auto p-1">
+						<DropdownMenuGroup>
+							{codingAgents.map((agent) => (
+								<DropdownMenuSub key={agent.id}>
+									<DropdownMenuSubTrigger className="gap-0.5 [&>:last-child]:opacity-0 hover:[&>:last-child]:opacity-100 data-[highlighted]:[&>:last-child]:opacity-100 data-popup-open:[&>:last-child]:opacity-100">
+										<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">
+											{agent.logo}
+										</span>
 										{agent.label}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuGroup>
-						</div>
-						<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
-							<DropdownMenuItem
-								className="gap-0.5"
-								elemBefore={<CopyIcon label="" size="small" />}
-							>
-								Copy prompt
-							</DropdownMenuItem>
-						</div>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</ButtonGroup>
-			{collapsed ? (
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button aria-label="Actions" size="icon" variant="outline">
-								<ShowMoreHorizontalIcon label="" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" positionerClassName="z-[502]">
+									</DropdownMenuSubTrigger>
+									<DropdownMenuSubContent positionerClassName="z-[503]">
+										<DropdownMenuItem>Local</DropdownMenuItem>
+										<DropdownMenuItem>Cloud</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuSub>
+							))}
+						</DropdownMenuGroup>
+					</div>
+					<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
 						<DropdownMenuItem
-							elemBefore={<Icon aria-hidden render={<LockUnlockedIcon label="" size="small" />} />}
+							className="gap-0.5"
+							elemBefore={<CopyIcon label="" size="small" />}
 						>
-							No restrictions
+							Copy prompt
 						</DropdownMenuItem>
-						<DropdownMenuItem
-							elemBefore={<Icon aria-hidden render={<EyeOpenIcon label="" size="small" />} />}
-							elemAfter={<Badge>1</Badge>}
-						>
-							Watch
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							elemBefore={<Icon aria-hidden render={<ShareIcon label="" size="small" />} />}
-						>
-							Share
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			) : (
-				<Button aria-label="Actions" size="icon" variant="outline">
-					<ShowMoreHorizontalIcon label="" />
-				</Button>
-			)}
-		</div>
+					</div>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<Button aria-label="Add" size="icon" variant="outline">
+				<AddIcon label="" size="small" />
+			</Button>
+		</>
 	);
 }

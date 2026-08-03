@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
@@ -43,6 +44,10 @@ export interface JiraActivityProps {
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
 	className?: string;
+	/** Optional classes for the header wrapper, including consumer-owned sticky positioning. */
+	headerClassName?: string;
+	/** Adds a fade below the header while its wrapper is stuck to the top. */
+	headerScrollFade?: boolean;
 	/** Controlled timeline ordering. */
 	sortOrder?: JiraActivitySortOrder;
 	/** Initial ordering when uncontrolled. Defaults to `ascending` (oldest first). */
@@ -57,10 +62,6 @@ export interface JiraActivityProps {
 	onFilterChange?: (next: JiraActivityFilter) => void;
 	/** Controlled collapsed state for the timeline body. */
 	collapsed?: boolean;
-	/** Initial collapsed state when uncontrolled. Defaults to `false`. */
-	defaultCollapsed?: boolean;
-	/** Receives the next collapsed state when the header collapse control changes. */
-	onCollapsedChange?: (next: boolean) => void;
 }
 
 /**
@@ -79,6 +80,8 @@ export function JiraActivity({
 	onViewSession,
 	onSubmitReply,
 	className,
+	headerClassName,
+	headerScrollFade = false,
 	sortOrder: controlledSortOrder,
 	defaultSortOrder = "ascending",
 	onSortOrderChange,
@@ -86,8 +89,6 @@ export function JiraActivity({
 	defaultFilter = "all",
 	onFilterChange,
 	collapsed: controlledCollapsed,
-	defaultCollapsed = false,
-	onCollapsedChange,
 }: Readonly<JiraActivityProps>) {
 	const [uncontrolledEntries, setUncontrolledEntries] = useState(defaultEntries);
 	const entries = controlledEntries ?? uncontrolledEntries;
@@ -95,21 +96,13 @@ export function JiraActivity({
 	const sortOrder = controlledSortOrder ?? uncontrolledSortOrder;
 	const [uncontrolledFilter, setUncontrolledFilter] = useState(defaultFilter);
 	const filter = controlledFilter ?? uncontrolledFilter;
-	const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(defaultCollapsed);
-	const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
+	const collapsed = controlledCollapsed ?? false;
 
 	function handleSortOrderChange(next: JiraActivitySortOrder) {
 		if (controlledSortOrder === undefined) {
 			setUncontrolledSortOrder(next);
 		}
 		onSortOrderChange?.(next);
-	}
-
-	function handleCollapsedChange(next: boolean) {
-		if (controlledCollapsed === undefined) {
-			setUncontrolledCollapsed(next);
-		}
-		onCollapsedChange?.(next);
 	}
 
 	function handleFilterChange(next: JiraActivityFilter) {
@@ -177,17 +170,20 @@ export function JiraActivity({
 	}
 
 	return (
-		<div className={cn("group/jira-activity flex w-full flex-col gap-4", className)}>
-			<div>
+		<div className={cn("flex w-full flex-col gap-4", className)}>
+			<div className={headerClassName} data-slot="jira-activity-header">
 				<JiraActivityHeader
-					collapsed={collapsed}
 					count={visibleEntries.length}
 					filter={filter}
-					onCollapsedChange={handleCollapsedChange}
 					onFilterChange={handleFilterChange}
 					onSortOrderChange={handleSortOrderChange}
 					sortOrder={sortOrder}
 				/>
+				{headerScrollFade ? (
+					<StickyRowScrollFade
+						data-slot="jira-activity-header-scroll-fade"
+					/>
+				) : null}
 			</div>
 
 			{collapsed ? null : (

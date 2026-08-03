@@ -12,11 +12,11 @@ function readProjectFile(relativePath) {
 test("Editor toolbar is exposed as a website block", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
-		/blockComponent\("editor-toolbar", "Editor toolbar"\)/u,
+		/blockComponent\("editor-toolbar", "Editor Toolbar"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
-		/blockComponent\("editor-toolbar", "Editor toolbar"\)/u,
+		/blockComponent\("editor-toolbar", "Editor Toolbar"\)/u,
 	);
 	assert.match(
 		readDetailCategorySource("blocks"),
@@ -32,10 +32,11 @@ test("Editor toolbar block exports the public component and props", () => {
 	const indexSource = readProjectFile("components/blocks/editor-toolbar/index.ts");
 	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
 
-	assert.match(indexSource, /export \{ EditorToolbar \} from "\.\/components\/editor-toolbar";/u);
-	assert.match(indexSource, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps, EditorToolbarViewMode \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(indexSource, /export \{ EditorToolbar, EditorToolbarModeTabs \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(indexSource, /EditorToolbarModeTabsProps,[\s\S]*EditorToolbarViewMode,/u);
 	assert.match(componentSource, /export interface EditorToolbarProps/u);
 	assert.match(componentSource, /export function EditorToolbar/u);
+	assert.match(componentSource, /export function EditorToolbarModeTabs/u);
 	assert.match(componentSource, /endSlot\?: ReactNode;/u);
 	assert.match(componentSource, /controlsOverflow\?: "responsive" \| "fixed";/u);
 	assert.match(componentSource, /onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u);
@@ -59,15 +60,58 @@ test("RichTextEditorToolbar remains as a compatibility wrapper", () => {
 });
 
 test("hover-reveal toolbars stay visible while the editor has focus", () => {
+	const globalCss = readProjectFile("app/globals.css");
 	const richTextEditorSource = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
+	const richTextEditorCss = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
 
+	assert.doesNotMatch(
+		richTextEditorSource,
+		/toolbarRestingSeparator && "relative"/u,
+	);
+	assert.match(
+		richTextEditorSource,
+		/relative bg-transparent opacity-0/u,
+	);
+	assert.doesNotMatch(
+		richTextEditorSource,
+		/relative bg-surface opacity-0/u,
+	);
 	assert.match(
 		richTextEditorSource,
 		/group-hover:opacity-100 group-focus-within:opacity-100/u,
 	);
+	assert.match(
+		richTextEditorSource,
+		/"aria-label": ariaLabel \?\? "Rich text editor",[\s\S]*role: "textbox",/u,
+	);
 	assert.doesNotMatch(
 		richTextEditorSource,
 		/group-hover:opacity-100 focus-within:opacity-100/u,
+	);
+	assert.match(
+		richTextEditorCss,
+		/\[data-slot="rich-text-editor-toolbar-reveal"\] \{[\s\S]*background: var\(--ds-surface-overlay, #fff\);/u,
+	);
+	assert.doesNotMatch(
+		richTextEditorCss,
+		/\[data-slot="rich-text-editor-toolbar-resting-separator"\] \{\s*opacity: 0;/u,
+	);
+	assert.doesNotMatch(
+		richTextEditorCss,
+		/\[data-slot="rich-text-editor-toolbar-reveal"\] \{\s*opacity: 1;/u,
+	);
+	assert.doesNotMatch(richTextEditorCss, /box-shadow: 0 1px 0 0 var\(--ds-border/u);
+	assert.match(
+		richTextEditorSource,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*toolbarReveal === "hover" && stuckToolbarScrollFade[\s\S]*<StickyRowScrollFade[\s\S]*data-slot="rich-text-editor-toolbar-scroll-fade"/u,
+	);
+	assert.match(
+		globalCss,
+		/@container scroll-state\(stuck: top\) \{[\s\S]*\[data-sticky-row-scroll-fade\] \{[\s\S]*opacity: 1;/u,
+	);
+	assert.match(
+		readProjectFile("components/visual/scroll-mask/index.tsx"),
+		/pointer-events-none absolute inset-x-0 top-full h-8 opacity-0[\s\S]*data-sticky-row-scroll-fade=""/u,
 	);
 });
 
@@ -104,7 +148,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.match(componentSource, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(componentSource, /import \{ TextNormalIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(vpkIconsSource, /import TextNormalIconGlyph from "@atlaskit\/icon-lab\/core\/text-normal";/u);
-	assert.match(vpkIconsSource, /export const TextNormalIcon = createUnsafeVpkIcon\(TextNormalIconGlyph\);/u);
+	assert.match(vpkIconsSource, /export function TextNormalIcon\([\s\S]*renderIcon=\{TextNormalIconGlyph as AtlaskitRenderIcon\}/u);
 	assert.doesNotMatch(vpkIconsSource, /TextNormalIcon = createUnsafeVpkIcon\(TextIconGlyph\)/u);
 	assert.match(componentSource, /function handleAddContent\(\): void/u);
 	assert.match(componentSource, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
@@ -139,7 +183,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.match(componentSource, /\{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map\(\(option\) => \(/u);
 	assert.doesNotMatch(componentSource, /label: "Memory"|category: "memory"|AiModelIcon/u);
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
-	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{currentMode\}/u);
+	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{currentMode\}/u);
 	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(componentSource, />\s*Rendered\s*</u);
 	assert.doesNotMatch(componentSource, />\s*Markdown\s*</u);

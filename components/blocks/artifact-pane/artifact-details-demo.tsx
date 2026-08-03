@@ -12,38 +12,29 @@ import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { ArtifactPanePropertyRow } from "@/components/blocks/artifact-pane";
+import { ArtifactPaneAgentsField } from "@/components/blocks/artifact-pane/artifact-agents-field";
 import { ArtifactLabelsField } from "@/components/blocks/artifact-pane/artifact-labels-field";
-import { PROJECT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
+import { PARENT_OPTIONS, PROJECT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
 import { METADATA_PEOPLE, getMetadataPerson } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
 	DateRowField,
-	filterMetadataSearchItems,
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
 	MetadataSearchPicker,
-	ParentRowField,
 	PersonRowField,
 	PriorityRowField,
 	StatusPill,
 	type PriorityValue,
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
-import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
-import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
+import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tag } from "@/components/ui/tag";
 import { Tile, TileAvatar } from "@/components/ui/tile";
-import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import {
-	RichTextCommandMenuSearchField,
-	RichTextSuggestionEmptyState,
-	RichTextSuggestionMenu,
-	type RichTextSuggestionMenuItem,
-} from "@/components/ui-custom/rich-text-editor";
-
-const ARTIFACT_AGENTS = BOARD_AGENTS.filter((agent) => Boolean(agent.avatarSrc || agent.brandName));
+import type { RichTextSuggestionMenuItem } from "@/components/ui-custom/rich-text-editor";
 const INITIAL_AGENT_IDS = ["meeting-insights-reporter", "readiness-checker"];
 const PROJECT_AVATAR_SRCS: Readonly<Record<string, string>> = {
 	"assets-cmdb": "/avatar-project/gears.svg",
@@ -102,100 +93,79 @@ function ProjectField({ value, onChange }: Readonly<{ value: string | null; onCh
 	);
 }
 
-function ArtifactAgentsSearchPicker({
-	items,
-	onEscape,
-	onSelect,
-	selectedItemIds,
-}: Readonly<{
-	items: readonly RichTextSuggestionMenuItem[];
-	onEscape: () => void;
-	onSelect: (item: RichTextSuggestionMenuItem) => void;
-	selectedItemIds: ReadonlySet<string>;
-}>) {
-	const [query, setQuery] = useState("");
-	const visibleItems = filterMetadataSearchItems(items, query);
+type ArtifactEpicColor = "blue" | "green" | "purple";
 
+const ARTIFACT_EPIC_COLORS: Readonly<Record<string, ArtifactEpicColor>> = {
+	"RFP-100": "purple",
+	"RFP-102": "blue",
+	"RFP-103": "green",
+};
+
+function artifactEpicColor(key: string): ArtifactEpicColor {
+	return ARTIFACT_EPIC_COLORS[key] ?? "purple";
+}
+
+function ArtifactEpicIcon() {
 	return (
-		<RichTextSuggestionMenu
-			className="rich-text-command-menu-borderless"
-			emptyLabel="No agents found"
-			emptyState={<RichTextSuggestionEmptyState label="No agents found" />}
-			header={(
-				<RichTextCommandMenuSearchField
-					autoFocus
-					icon={<SearchIcon className="size-4 text-icon-subtle" />}
-					label="Search agents"
-					onClear={() => setQuery("")}
-					onEscape={onEscape}
-					onValueChange={setQuery}
-					value={query}
-				/>
-			)}
-			items={visibleItems}
-			onSelect={onSelect}
-			selectedIndex={-1}
-			selectedItemIds={selectedItemIds}
-			title="Search agents"
+		<Icon
+			aria-hidden
+			render={<EpicIcon color="currentColor" label="" size="medium" spacing="none" />}
 		/>
 	);
 }
 
-function AgentsField({ value, onChange }: Readonly<{ value: readonly string[]; onChange: (ids: string[]) => void }>) {
-	const [open, setOpen] = useState(false);
-	const items = ARTIFACT_AGENTS.map((agent): RichTextSuggestionMenuItem => ({
-		description: agent.byline,
-		icon: <AiAgentIcon label="" size="small" />,
-		id: agent.id,
-		label: agent.name,
-		leadingVisual: (
-			<AgentAvatarVisual
-				avatarSrc={agent.avatarSrc}
-				brandName={agent.brandName}
-				fallbackText={agent.name.slice(0, 2).toUpperCase()}
-				sizePx={24}
-			/>
-		),
-		trailing: value.includes(agent.id) ? <CheckIcon className="size-4 text-icon-success" /> : undefined,
-	}));
-	const selectedAgents = value
-		.map((id) => ARTIFACT_AGENTS.find((agent) => agent.id === id))
-		.filter((agent): agent is (typeof ARTIFACT_AGENTS)[number] => Boolean(agent));
+function ArtifactEpicMenuIcon({ color }: Readonly<{ color: ArtifactEpicColor }>) {
+	return (
+		<IconTile
+			aria-hidden
+			as="span"
+			icon={<ArtifactEpicIcon />}
+			label=""
+			size="small"
+			variant={color}
+		/>
+	);
+}
 
-	const toggleAgent = (id: string) => {
-		onChange(value.includes(id) ? value.filter((agentId) => agentId !== id) : [...value, id]);
-	};
+function ArtifactParentField({ value, onChange }: Readonly<{ value: string | null; onChange: (key: string) => void }>) {
+	const [open, setOpen] = useState(false);
+	const selected = PARENT_OPTIONS.find((option) => option.key === value);
+	const items = PARENT_OPTIONS.map((option): RichTextSuggestionMenuItem => ({
+		description: option.key,
+		icon: null,
+		id: option.key,
+		label: option.summary,
+		leadingVisual: <ArtifactEpicMenuIcon color={artifactEpicColor(option.key)} />,
+	}));
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit agents" />}>
-				{selectedAgents.length > 0 ? (
-					<AvatarGroup className="relative shrink-0" label={`${selectedAgents.length} agents`}>
-						{selectedAgents.slice(0, 3).map((agent) => (
-							<AgentAvatarVisual
-								avatarClassName="shrink-0"
-								avatarSrc={agent.avatarSrc}
-								brandName={agent.brandName}
-								fallbackText={agent.name.slice(0, 2).toUpperCase()}
-								key={agent.id}
-								sizePx={16}
-							/>
-						))}
-						{selectedAgents.length > 3 ? (
-							<AvatarGroupCount>+{selectedAgents.length - 3}</AvatarGroupCount>
-						) : null}
-					</AvatarGroup>
+			<PopoverTrigger render={<DetailValueTrigger aria-label="Change parent" />}>
+				{selected ? (
+					<Tag
+						className="max-w-full self-center"
+						color={artifactEpicColor(selected.key)}
+						elemBefore={<ArtifactEpicIcon />}
+					>
+						{selected.summary}
+					</Tag>
 				) : (
-					<span className="text-sm text-text-subtlest">Add agents</span>
+					<span className="text-sm text-text-subtlest">Add parent</span>
 				)}
 			</PopoverTrigger>
 			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
-				<ArtifactAgentsSearchPicker
-					items={items}
-					onEscape={() => setOpen(false)}
-					onSelect={(item) => toggleAgent(item.id)}
-					selectedItemIds={new Set(value)}
-				/>
+				<div className="[&_.rich-text-command-menu-item:hover]:bg-bg-neutral-subtle-hovered!">
+					<MetadataSearchPicker
+						emptyLabel="No work items found"
+						items={items}
+						onEscape={() => setOpen(false)}
+						onSelect={(item) => {
+							onChange(item.id);
+							setOpen(false);
+						}}
+						placeholder="Search work items"
+					/>
+				</div>
 			</PopoverContent>
 		</Popover>
 	);
@@ -259,7 +229,7 @@ export function ArtifactDetailsDemo() {
 				/>
 			</ArtifactPanePropertyRow>
 			<ArtifactPanePropertyRow icon={<AiAgentIcon label="" size="small" />} label="Agents">
-				<AgentsField onChange={(agentIds) => update({ agentIds })} value={metadata.agentIds} />
+				<ArtifactPaneAgentsField onChange={(agentIds) => update({ agentIds })} value={metadata.agentIds} />
 			</ArtifactPanePropertyRow>
 
 			{showMore ? (
@@ -286,7 +256,7 @@ export function ArtifactDetailsDemo() {
 						/>
 					</ArtifactPanePropertyRow>
 					<ArtifactPanePropertyRow icon={<EpicIcon label="" size="small" />} label="Parent">
-						<ParentRowField onChange={(parent) => update({ parent })} value={metadata.parent} />
+						<ArtifactParentField onChange={(parent) => update({ parent })} value={metadata.parent} />
 					</ArtifactPanePropertyRow>
 					<ArtifactPanePropertyRow icon={<TagIcon label="" size="small" />} label="Labels">
 						<ArtifactLabelsField onChange={(labels) => update({ labels })} value={metadata.labels} />

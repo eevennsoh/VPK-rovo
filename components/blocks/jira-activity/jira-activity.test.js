@@ -271,28 +271,17 @@ test("the header shows agent comments and generated-output cards", () => {
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
 });
 
-test("the header pins a hover-reveal collapse control to the separator corner", () => {
-	assert.match(HEADER_SOURCE, /collapsed: boolean/u);
-	assert.match(HEADER_SOURCE, /onCollapsedChange: \(next: boolean\) => void/u);
-	// The separator stays continuous while the fixed outline button overlays it.
-	assert.match(HEADER_SOURCE, /absolute inset-x-0 top-1\/2 h-px/u);
-	assert.match(HEADER_SOURCE, /absolute top-1\/2 right-0 -translate-y-1\/2 opacity-0/u);
-	assert.match(HEADER_SOURCE, /variant="outline"/u);
-	assert.match(HEADER_SOURCE, /className="relative z-10 bg-surface hover:bg-surface active:bg-surface/u);
-	assert.match(HEADER_SOURCE, /aria-expanded:hover:bg-surface aria-expanded:active:bg-surface/u);
-	assert.match(HEADER_SOURCE, /before:-inset-x-1\.5 before:bg-surface/u);
-	assert.match(HEADER_SOURCE, /collapsed\s*\? "visible pointer-events-auto opacity-100"/u);
-	assert.match(HEADER_SOURCE, /group-hover\/jira-activity:visible/u);
-	assert.match(HEADER_SOURCE, /collapsed && "rotate-180"/u);
-	assert.doesNotMatch(HEADER_SOURCE, /-rotate-90/u);
-	assert.doesNotMatch(HEADER_SOURCE, /requestAnimationFrame|pointermove/u);
+test("the header omits the separator and collapse control", () => {
+	assert.doesNotMatch(HEADER_SOURCE, /relative h-6 min-w-2 flex-1/u);
+	assert.doesNotMatch(HEADER_SOURCE, /aria-label=\{collapsed \? "Expand activity" : "Collapse activity"\}/u);
+	assert.doesNotMatch(HEADER_SOURCE, /onCollapsedChange/u);
 });
 
-test("Jira Activity wires collapse state and hides the body when collapsed", () => {
+test("Jira Activity supports externally controlled collapse state", () => {
 	assert.match(INDEX_SOURCE, /collapsed\?: boolean/u);
-	assert.match(INDEX_SOURCE, /defaultCollapsed\?: boolean/u);
-	assert.match(INDEX_SOURCE, /onCollapsedChange\?: \(next: boolean\) => void/u);
-	assert.match(INDEX_SOURCE, /group\/jira-activity/u);
+	assert.doesNotMatch(INDEX_SOURCE, /defaultCollapsed/u);
+	assert.doesNotMatch(INDEX_SOURCE, /onCollapsedChange/u);
+	assert.match(INDEX_SOURCE, /const collapsed = controlledCollapsed \?\? false;/u);
 	// Timeline and composer are gated behind the collapsed flag.
 	assert.match(INDEX_SOURCE, /\{collapsed \? null : \(\s*<ol/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);

@@ -337,9 +337,10 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(layoutSource, /boxShadow: token\("elevation\.shadow\.overlay"\)/u);
 	const compositionSource = readBlockFile("experimental/experimental-jira-work-item.tsx");
 	assert.doesNotMatch(compositionSource, /metadataPeek/u);
-	const metadataRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
-	assert.match(metadataRailSource, /borderless = false/u);
-	assert.match(metadataRailSource, /borderless \? null : "border border-border"/u);
+	const experimentalRailSource = readBlockFile("experimental/components/metadata-rail.tsx");
+	assert.doesNotMatch(experimentalRailSource, /components\/blocks\/artifact-pane/u);
+	assert.match(experimentalRailSource, /<Tabs defaultValue="details">/u);
+
 	assert.match(titleBarSource, /maxWidth: metadataCollapsed \? "800px" : "100%"/u);
 	assert.match(titleBarSource, /data-jira-work-item-title-column/u);
 	assert.match(titleBarSource, /layout=\{shouldReduceMotion \? false : "position"\}/u);
@@ -461,7 +462,8 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(layoutSource, /buildScrollMaskStyle\(\{ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask \}\)/u);
 	assert.match(layoutSource, /data-jira-work-item-scroll-region/u);
 	assert.match(layoutSource, /data-jira-work-item-composer-dock/u);
-	assert.match(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
+	assert.match(layoutSource, /className="[^"]*bg-transparent[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
+	assert.doesNotMatch(layoutSource, /className="[^"]*bg-background[^"]*"[\s\S]*data-jira-work-item-composer-dock/u);
 	assert.doesNotMatch(layoutSource, /bg-background\/90|backdrop-blur/u);
 	assert.doesNotMatch(layoutSource, /agentlayout:border-t|agentlayout:border-border/u);
 	assert.match(activityComposerSource, /<ActivityComposerContextPills[\s\S]*onInvokeAgent=\{handleInvokeAgent\}[\s\S]*onInvokeSkill=\{handleInvokeSkill\}/u);

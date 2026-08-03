@@ -76,7 +76,7 @@ export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement
 			<PopoverTrigger render={trigger} />
 			<PopoverContent align="start" className="w-[22rem] p-0" positionerClassName="z-[502]">
 				<Tabs defaultValue="upload" className="gap-0">
-					<TabsList variant="line" className="w-full px-2.5 pt-2.5">
+					<TabsList variant="line" className="mt-2.5 w-full px-2.5">
 						<TabsTrigger value="upload">Upload files</TabsTrigger>
 						<TabsTrigger value="link">Link content</TabsTrigger>
 						<TabsTrigger value="create">Create new</TabsTrigger>

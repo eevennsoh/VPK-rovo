@@ -31,6 +31,29 @@ export interface ScrollMaskProps
 	edgeBlur?: boolean;
 }
 
+/** Progressive top-edge blur used directly below a sticky row while it is pinned. */
+export function StickyRowScrollFade({
+	className,
+	...props
+}: Readonly<Omit<ComponentPropsWithoutRef<"div">, "children">>) {
+	return (
+		<div
+			{...props}
+			aria-hidden="true"
+			className={cn(
+				"pointer-events-none absolute inset-x-0 top-full h-8 opacity-0",
+				className,
+			)}
+			data-sticky-row-scroll-fade=""
+		>
+			{TOP_BLUR_LAYERS.map((layerStyle, index) => (
+				<div key={index} style={layerStyle} />
+			))}
+			<div className="absolute inset-0 bg-linear-to-b from-surface-overlay to-transparent" />
+		</div>
+	);
+}
+
 export function ScrollMask({
 	children,
 	header,

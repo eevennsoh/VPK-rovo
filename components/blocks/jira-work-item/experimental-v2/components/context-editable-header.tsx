@@ -4,6 +4,7 @@ import { useReducedMotion } from "motion/react";
 
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { isPlannerProcessing } from "@/components/blocks/jira-work-item/data/planner-state";
@@ -48,12 +49,17 @@ export function ContextEditableTitle() {
  *
  * Unlike the click-to-edit title, the description is a live TipTap editor (like
  * Studio's instructions/description): edits commit on every keystroke via
- * `editContextText`, with no confirm/cancel inline-edit step. Its editor chrome
- * mirrors Studio instructions: the toolbar reveals on hover/focus, the rendered
- * and Markdown views share one toggle, and the directory-backed slash menu uses
- * the same agent/skill sources.
+ * `editContextText`, with no confirm/cancel inline-edit step. The rendered and
+ * Markdown views are controlled from the resource row above, while the
+ * directory-backed slash menu keeps the same agent/skill sources.
  */
-export function ContextEditableDescription() {
+export function ContextEditableDescription({
+	viewMode,
+	onViewModeChange,
+}: Readonly<{
+	viewMode: EditorToolbarViewMode;
+	onViewModeChange: (mode: EditorToolbarViewMode) => void;
+}>) {
 	const { contextResources, planner } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	// While the Teamwork Graph planner is running, drop the editor's min-height so
@@ -75,13 +81,12 @@ export function ContextEditableDescription() {
 					Press <code>/</code> to help improve the work item
 				</p>
 			)}
+			showToolbar={false}
 			suggestionVariant="nested"
-			toolbarReveal="hover"
-			toolbarRestingSeparator
-			toolbarRestingSeparatorLabel="Description"
-			padStuckToolbar
 			value={contextResources.description}
+			viewMode={viewMode}
 			onMarkdownChange={(value) => actions.editContextText("description", value)}
+			onViewModeChange={onViewModeChange}
 		/>
 	);
 }

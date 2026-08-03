@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import DeleteIcon from "@atlaskit/icon/core/delete";
+
 import { LABEL_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
 import {
 	METADATA_PICKER_POPOVER_CLASS,
@@ -50,15 +52,26 @@ function LabelOptionGroup({
 			</div>
 			{labels.map((label) => (
 				<button
+					aria-label={selected ? `Remove ${label}` : `Add ${label}`}
 					aria-selected={selected}
-					className="rich-text-command-menu-item grid-cols-1!"
+					className={selected
+						? "rich-text-command-menu-item group/label-option grid-cols-[minmax(0,1fr)_24px]! hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none"
+						: "rich-text-command-menu-item grid-cols-1! hover:bg-bg-neutral-subtle-hovered! focus-visible:bg-bg-neutral-subtle-hovered! focus-visible:outline-none"}
 					key={label}
 					onClick={() => onToggle(label)}
 					onMouseDown={(event) => event.preventDefault()}
 					role="option"
 					type="button"
 				>
-					<Tag className="justify-self-start" color={labelColor(label)}>{label}</Tag>
+					<Tag className="self-center justify-self-start" color={labelColor(label)}>{label}</Tag>
+					{selected ? (
+						<span
+							aria-hidden
+							className="flex size-6 items-center justify-center justify-self-end text-icon-subtle opacity-0 transition-[color,opacity] duration-normal ease-out-practical group-hover/label-option:text-icon-danger group-hover/label-option:opacity-100 group-focus-visible/label-option:text-icon-danger group-focus-visible/label-option:opacity-100 motion-reduce:transition-none"
+						>
+							<DeleteIcon label="" size="small" />
+						</span>
+					) : null}
 				</button>
 			))}
 		</>
@@ -83,7 +96,7 @@ export function ArtifactLabelsField({
 
 	return (
 		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" />}>
+			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" className="py-1.5!" />}>
 				{value.length > 0 ? (
 					<TagGroup className="gap-1">
 						{value.map((label) => (
@@ -99,6 +112,7 @@ export function ArtifactLabelsField({
 			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
 				<div
 					aria-label="Search labels"
+					aria-multiselectable="true"
 					className="rich-text-command-menu rich-text-command-menu-borderless"
 					data-has-header="true"
 					role="listbox"

@@ -332,12 +332,13 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				<span
 					className={cn(
 						// Front slot and avatar slot share a 16x16 leading box; the element fills it.
-						// Inset logo glyphs (12px) come from their own wrapper — `IconTile
+						// Inset glyphs are 12px: direct `Icon` children are constrained here,
+						// while inset logos come from their own wrapper — `IconTile
 						// variant="transparent" size="xxsmall"` (12px content) or `BrandLogoMark
-						// frame="chip"` (bordered marks at 12px, solid marks fill the box) — so the
-						// slot itself doesn't resize the glyph. Solid product marks fill the full
+						// frame="chip"` (bordered marks at 12px, solid marks fill the box).
+						// Solid product marks fill the full
 						// 16px box; avatars (type=user/other) likewise fill it.
-						"flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4",
+						"flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4 [&>[data-slot=icon]>span]:size-3! [&>[data-slot=icon]_svg]:size-3!",
 						hasAvatarTagStyles ? cn("overflow-hidden", avatarTagBeforeShapeClass) : colorClasses.icon,
 					)}
 					data-slot="tag-before"

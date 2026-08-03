@@ -1,194 +1,120 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
+import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import FileIcon from "@atlaskit/icon/core/file";
-import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
-import PageIcon from "@atlaskit/icon/core/page";
-import VideoIcon from "@atlaskit/icon/core/video";
 
+import { AgentFilledSummaryRow } from "@/components/blocks/agent/components/agent-summary-row";
 import {
-	AgentAddValueButton,
-	AgentFilledSummaryRow,
-	AgentReferenceChip,
-} from "@/components/blocks/agent/components/agent-summary-row";
-import {
-	useJiraWorkItemActions,
-	useJiraWorkItemState,
-} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
+	EditorToolbarModeTabs,
+	type EditorToolbarViewMode,
+} from "@/components/blocks/editor-toolbar";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/attachments-popover";
-import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
+import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import {
+	AnimatedContextTitleActions,
+	type CodingAgentId,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
-import type { WorkItemAttachment } from "@/app/contexts/context-work-item-modal";
+import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+import { cn } from "@/lib/utils";
 
-function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
-	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
-	if (attachment.thumbnailKind === "video") return <VideoIcon label="" size="small" color="currentColor" />;
-	if (attachment.ext === "page" || attachment.ext === "doc") return <PageIcon label="" size="small" color="currentColor" />;
-	return <FilesIcon label="" size="small" color="currentColor" />;
+interface ContextResourceAction {
+	buttonLabel: string;
+	icon: ReactElement;
+	renderAddButton: (trigger: ReactElement) => ReactElement;
+}
+
+interface ContextResourcesProps {
+	descriptionViewMode: EditorToolbarViewMode;
+	outputs?: readonly string[];
+	primaryCodingAgentId?: CodingAgentId;
+	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
 /**
- * A context resource that can flip between two shapes. When empty it is a bare
- * outlined "Add …" button that sits in the shared button row; the moment it has
- * a value it is plucked out into a labelled property/value row (and drops back
- * into the button row when cleared).
+ * Context resource controls: Attachments and Subtasks keep their compact add
+ * buttons in the shared control row. Filled resource values are rendered as
+ * conditional sections in the metadata rail.
  */
-interface ContextResource {
-	/** Stable key + canonical ordering within the button row. */
-	id: string;
-	/** True when the resource has no values (renders as a button). */
-	isEmpty: boolean;
-	/** Label shown on the bare outlined empty-state button. */
-	emptyButtonLabel: string;
-	/** Wraps the empty-state button in its anchored add popover. */
-	renderEmptyButton: (trigger: ReactElement) => ReactNode;
-	/** The filled property/value row. */
-	renderFilledRow: () => ReactNode;
-}
-
-/**
- * Empty-to-filled Context resources: Attachments, Subtasks, and Linked work
- * items. While a resource is empty it lives as a compact outlined button in a
- * single shared row (a clean default state); once it holds a value it becomes a
- * labelled property/value summary row and leaves the button row. All data +
- * mutations flow through the foundation hooks.
- */
-export function ContextResources({ outputs = [] }: Readonly<{ outputs?: readonly string[] }>) {
-	const { contextResources } = useJiraWorkItemState();
-	const actions = useJiraWorkItemActions();
-	const { attachments, subtasks, linkedItems } = contextResources;
-
-	const resources: readonly ContextResource[] = [
+export function ContextResources({
+	descriptionViewMode,
+	outputs = [],
+	primaryCodingAgentId,
+	onDescriptionViewModeChange,
+}: Readonly<ContextResourcesProps>) {
+	const { planner } = useJiraWorkItemState();
+	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
+	const resources: readonly ContextResourceAction[] = [
 		{
-			id: "attachments",
-			isEmpty: attachments.length === 0,
-			emptyButtonLabel: "Add attachments",
-			renderEmptyButton: (trigger) => <AttachmentsPopover key="attachments" trigger={trigger} />,
-			renderFilledRow: () => (
-				<AgentFilledSummaryRow
-					addLabel="Add attachment"
-					agentFieldName="attachments"
-					items={attachments.map(getAttachmentLabel)}
-					label="Attachments"
-					labelClassName="whitespace-nowrap sm:w-28"
-					onRemoveItem={(index) => {
-						const attachment = attachments[index];
-						actions.removeContextResource("attachment", attachment.id ?? attachment.name);
-					}}
-					renderAddControl={({ label, className }) => (
-						<AttachmentsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
-					)}
-					renderItem={({ item, index, onRemove }) => (
-						<AgentReferenceChip
-							elemBefore={<Icon aria-hidden render={attachmentGlyph(attachments[index])} />}
-							label={item}
-							onRemove={onRemove}
-							tagColor="standard"
-						/>
-					)}
-					tagColor="standard"
-				/>
-			),
+			buttonLabel: "Add attachments",
+			icon: <AttachmentIcon label="" size="small" />,
+			renderAddButton: (trigger) => <AttachmentsPopover key="attachments" trigger={trigger} />,
 		},
 		{
-			id: "subtasks",
-			isEmpty: subtasks.length === 0,
-			emptyButtonLabel: "Add subtasks",
-			renderEmptyButton: (trigger) => <SubtasksPopover key="subtasks" trigger={trigger} />,
-			renderFilledRow: () => (
-				<AgentFilledSummaryRow
-					addLabel="Add subtask"
-					agentFieldName="subtasks"
-					items={subtasks.map((item) => `${item.key}: ${item.summary}`)}
-					label="Subtasks"
-					labelClassName="whitespace-nowrap sm:w-28"
-					onRemoveItem={(index) => actions.removeContextResource("subtask", subtasks[index].key)}
-					renderAddControl={({ label, className }) => (
-						<SubtasksPopover trigger={<AgentAddValueButton className={className} label={label} />} />
-					)}
-					renderItem={({ item, onRemove }) => (
-						<AgentReferenceChip
-							elemBefore={<Icon aria-hidden render={<ChildWorkItemsIcon color="currentColor" label="" size="small" />} />}
-							label={item}
-							onRemove={onRemove}
-							tagColor="blue"
-						/>
-					)}
-					tagColor="blue"
-				/>
-			),
+			buttonLabel: "Add subtasks",
+			icon: <ChildWorkItemsIcon label="" size="small" />,
+			renderAddButton: (trigger) => <SubtasksPopover key="subtasks" trigger={trigger} />,
 		},
 		{
-			id: "linkedItems",
-			isEmpty: linkedItems.length === 0,
-			emptyButtonLabel: "Link work items",
-			renderEmptyButton: (trigger) => <LinkedWorkItemsPopover key="linkedItems" trigger={trigger} />,
-			renderFilledRow: () => (
-				<AgentFilledSummaryRow
-					addLabel="Link work item"
-					agentFieldName="linkedItems"
-					items={linkedItems.map((item) => `${item.relationship} ${item.key}: ${item.summary}`)}
-					label="Linked work items"
-					labelClassName="whitespace-nowrap sm:w-28"
-					onRemoveItem={(index) => actions.removeContextResource("link", linkedItems[index].id)}
-					renderAddControl={({ label, className }) => (
-						<LinkedWorkItemsPopover trigger={<AgentAddValueButton className={className} label={label} />} />
-					)}
-					renderItem={({ item, onRemove }) => (
-						<AgentReferenceChip
-							elemBefore={<Icon aria-hidden render={<LinkIcon color="currentColor" label="" size="small" />} />}
-							label={item}
-							onRemove={onRemove}
-							tagColor="purple"
-						/>
-					)}
-					tagColor="purple"
-				/>
-			),
+			buttonLabel: "Link work item",
+			icon: <LinkIcon label="" size="small" />,
+			renderAddButton: (trigger) => <LinkedWorkItemsPopover key="linkedItems" trigger={trigger} />,
 		},
 	];
 
-	const filled = resources.filter((resource) => !resource.isEmpty);
-	const empty = resources.filter((resource) => resource.isEmpty);
-
 	return (
-		<div className="flex flex-col gap-4">
-			{empty.length > 0 ? (
-				<div className="flex flex-wrap items-start gap-1 *:focus-visible:relative *:focus-visible:z-10">
-					{empty.map((resource) =>
-						resource.renderEmptyButton(
-							<Button size="compact" type="button" variant="outline">
-								{resource.emptyButtonLabel}
+		<>
+			<div
+				className={cn(
+					"sticky top-0 z-10 [container-type:scroll-state]",
+					hasPlanner
+						? "bg-bg-input [&_[data-slot=button]]:bg-bg-input [&_[data-slot=button]:hover]:bg-bg-neutral-subtle-hovered [&_[data-slot=button]:active]:bg-bg-neutral-subtle-pressed"
+						: "bg-surface-overlay",
+				)}
+				data-jira-work-item-resource-row
+			>
+				<div
+					className="flex flex-wrap items-start gap-2 *:focus-visible:relative *:focus-visible:z-10"
+					data-jira-work-item-resource-row-content
+				>
+					{resources.map((resource) =>
+						resource.renderAddButton(
+							<Button aria-label={resource.buttonLabel} size="icon" type="button" variant="outline">
+								{resource.icon}
 							</Button>,
 						),
 					)}
-				</div>
-			) : null}
-			{filled.length > 0 || outputs.length > 0 ? (
-				<div className="flex flex-col gap-1">
-					{filled.map((resource) => (
-						<div key={resource.id}>{resource.renderFilledRow()}</div>
-					))}
-					{outputs.length > 0 ? (
-						<AgentFilledSummaryRow
-							agentFieldName="outputs"
-							itemElemBefore={() => (
-								<Icon aria-hidden render={<FileIcon color="currentColor" label="" size="small" />} />
-							)}
-							items={outputs}
-							label="Output"
-							labelClassName="whitespace-nowrap sm:w-28"
-							tagColor="standard"
+					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
+					<div className="ml-auto shrink-0">
+						<EditorToolbarModeTabs
+							mode={descriptionViewMode}
+							onModeChange={onDescriptionViewModeChange}
 						/>
-					) : null}
+					</div>
+				</div>
+				<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" />
+			</div>
+			{outputs.length > 0 ? (
+				<div className="mt-1">
+					<AgentFilledSummaryRow
+						agentFieldName="outputs"
+						itemElemBefore={() => (
+							<Icon aria-hidden render={<FileIcon color="currentColor" label="" size="small" />} />
+						)}
+						items={outputs}
+						label="Output"
+						labelClassName="whitespace-nowrap sm:w-28"
+						tagColor="standard"
+					/>
 				</div>
 			) : null}
-		</div>
+		</>
 	);
 }

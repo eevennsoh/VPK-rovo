@@ -14,6 +14,7 @@ test("prompt input exposes an internal root marker for suggestion popover anchor
 		source,
 		/<form[\s\S]*\{\.\.\.props\}[\s\S]*data-prompt-input-root=""/u,
 	);
+	assert.match(source, /"aria-label": ariaLabel \?\? "Message",[\s\S]*role: "textbox",/u);
 });
 
 test("composer suggestions resolve the prompt input root before legacy chat form fallbacks", () => {
@@ -89,6 +90,16 @@ test("third-party subagents use the shared hexagon avatar in suggestion palettes
 
 	assert.match(source, /import \{ AgentAvatarVisual \} from "@\/components\/ui-custom\/agent-avatar-visual";/u);
 	assert.match(source, /item\.category === "subagent" && visual\?\.kind === "third-party"[\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{visual\.name\}[\s\S]*sizePx=\{24\}/u);
+});
+
+test("fallback suggestion icons use the 24px blue IconTile treatment", () => {
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+	const visualStart = source.indexOf("function RichTextSuggestionMenuItemVisual");
+	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
+
+	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
+	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant="blue"/u);
+	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);
 });
 
 test("composer directory autocomplete accepts the active visible list item on Tab", () => {

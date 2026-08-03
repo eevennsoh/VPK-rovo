@@ -1,22 +1,139 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, type ReactElement } from "react";
 
+import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
+import DeleteIcon from "@atlaskit/icon/core/delete";
+import FilesIcon from "@atlaskit/icon/core/files";
+import LinkIcon from "@atlaskit/icon/core/link";
+import PageIcon from "@atlaskit/icon/core/page";
+import VideoIcon from "@atlaskit/icon/core/video";
+
+import {
+	type WorkItemAttachment,
+	type WorkItemChildItem,
+	type WorkItemPerson,
+} from "@/app/contexts/context-work-item-modal";
+import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
+import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
+import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
+import {
+	AppsSection,
+	DevelopmentSectionContent,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
+import { DetailsTab } from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
+import { AutomationTab } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
 	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import {
-	DetailsTab,
-} from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
-import { AutomationTab } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
-import { AppsSection, DevelopmentSection } from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
-import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { token } from "@/lib/tokens";
+import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { Button } from "@/components/ui/button";
+
+function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
+	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
+	if (attachment.thumbnailKind === "video") return <VideoIcon label="" size="small" color="currentColor" />;
+	if (attachment.ext === "page" || attachment.ext === "doc") return <PageIcon label="" size="small" color="currentColor" />;
+	return <FilesIcon label="" size="small" color="currentColor" />;
+}
+
+function toAttachmentSmartLink(attachment: Readonly<WorkItemAttachment>): SmartLinkItem {
+	const id = attachment.id ?? attachment.name;
+	const isConfluence = attachment.sourceProduct === "confluence";
+	const isLoom = attachment.sourceProduct === "loom";
+
+	return {
+		id,
+		href: `#attachment-${id}`,
+		title: getAttachmentLabel(attachment),
+		variant: isConfluence ? "confluence" : isLoom ? "loom" : "file",
+		provider: isConfluence
+			? { name: "Confluence", logo: { kind: "atlassian", name: "confluence" } }
+			: isLoom
+				? { name: "Loom", logo: { kind: "atlassian", name: "loom" } }
+				: { name: attachment.sourceLabel ?? "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: isConfluence
+			? { kind: "atlassian", name: "confluence" }
+			: isLoom
+				? { kind: "atlassian", name: "loom" }
+				: { kind: "icon-tile", icon: attachmentGlyph(attachment) },
+		description: `${attachment.sourceLabel ?? "Attachment"} attached to this work item.`,
+		metadata: [{ label: attachment.date }],
+	};
+}
+
+function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem {
+	const status = {
+		done: { label: "Done", variant: "success" as const },
+		inprogress: { label: "In progress", variant: "information" as const },
+		todo: { label: "To do", variant: "neutral" as const },
+	}[subtask.status];
+
+	return {
+		id: subtask.key,
+		href: `#${subtask.key.toLowerCase()}`,
+		title: `${subtask.key}: ${subtask.summary}`,
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "icon-tile", icon: <ChildWorkItemsIcon label="" size="small" /> },
+		description: subtask.type ? `${subtask.type} in this work item.` : "Subtask in this work item.",
+		assignee: subtask.assignee
+			? { name: subtask.assignee, src: subtask.assigneeAvatarUrl }
+			: undefined,
+		priority: subtask.priority,
+		status,
+	};
+}
+
+function toLinkedItemSmartLink(linkedItem: Readonly<ContextLinkedItem>): SmartLinkItem {
+	return {
+		id: linkedItem.id,
+		href: `#${linkedItem.key.toLowerCase()}`,
+		title: `${linkedItem.key}: ${linkedItem.summary}`,
+		variant: "jira",
+		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
+		icon: { kind: "icon-tile", icon: <LinkIcon label="" size="small" /> },
+		description: `${linkedItem.type} that ${linkedItem.relationship} this work item.`,
+		metadata: [{ label: linkedItem.relationship }],
+	};
+}
+
+function ResourceSmartLinks({
+	items,
+	onRemove,
+}: Readonly<{
+	items: readonly SmartLinkItem[];
+	onRemove: (id: string) => void;
+}>) {
+	return (
+		<ul className="space-y-1">
+			{items.map((item) => (
+				<li className="flex min-w-0 items-center gap-1" key={item.id}>
+					<SmartLink
+						align="center"
+						alignOffset={0}
+						className="min-w-0 max-w-full"
+						item={item}
+						positionerClassName="z-[600]"
+						side="left"
+					/>
+					<Button
+						aria-label={`Remove ${item.title}`}
+						className="shrink-0"
+						onClick={() => onRemove(item.id)}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<DeleteIcon label="" size="small" />
+					</Button>
+				</li>
+			))}
+		</ul>
+	);
+}
 
 function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): WorkItemPerson[] {
 	const byName = new Map<string, WorkItemPerson>();
@@ -32,65 +149,79 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
 }
 
 /**
- * One section inside the unified metadata rail. Sections after the first carry a
- * hairline top border so the whole rail reads as a single bordered surface with
- * internal dividers rather than a stack of separate cards.
- */
-function MetadataSection({ children, divided = false }: Readonly<{ children: ReactNode; divided?: boolean }>) {
-	return <div className={divided ? "border-t border-border p-3" : "p-3"}>{children}</div>;
-}
-
-/**
- * Video-matched work-item Details right column for the experimental variant: a
- * single bordered surface holding the Details/Automation tabbed section
- * (click-to-add + inline-edit rows, See more) plus Development and Apps sections,
- * separated by internal dividers. Metadata state lives in the shared block
- * provider so planner decisions and manual edits stay coordinated without
- * changing the public block API.
+ * Work-item Details rail for the experimental variant. The shared ArtifactPane
+ * owns the rail surface, disclosure controls, spacing, and dividers while this
+ * adapter supplies work-item-specific content and metadata state.
  */
 export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boolean }> = {}) {
 	const { workItem } = useJiraWorkItemMeta();
-	const { metadata: draft } = useJiraWorkItemState();
+	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
+	const { attachments, linkedItems, subtasks } = contextResources;
 	const people = useMemo(
 		() => mergePeople(workItem.assignee, workItem.reporter),
 		[workItem.assignee, workItem.reporter],
 	);
+	const resourceSections: ArtifactPaneSectionItem[] = [];
 
-	const updateDraft = actions.updateMetadata;
+	if (attachments.length > 0) {
+		resourceSections.push({
+			content: (
+				<ResourceSmartLinks
+					items={attachments.map(toAttachmentSmartLink)}
+					onRemove={(id) => actions.removeContextResource("attachment", id)}
+				/>
+			),
+			count: attachments.length,
+			id: "attachments",
+			title: "Attachments",
+		});
+	}
+
+	if (subtasks.length > 0) {
+		resourceSections.push({
+			content: (
+				<ResourceSmartLinks
+					items={subtasks.map(toSubtaskSmartLink)}
+					onRemove={(id) => actions.removeContextResource("subtask", id)}
+				/>
+			),
+			count: subtasks.length,
+			id: "subtasks",
+			title: "Subtasks",
+		});
+	}
+
+	if (linkedItems.length > 0) {
+		resourceSections.push({
+			content: (
+				<ResourceSmartLinks
+					items={linkedItems.map(toLinkedItemSmartLink)}
+					onRemove={(id) => actions.removeContextResource("link", id)}
+				/>
+			),
+			count: linkedItems.length,
+			id: "linked-items",
+			title: "Linked work items",
+		});
+	}
 
 	return (
-		<section
+		<ArtifactPane
 			aria-label="Work item details"
-			className={cn(
-				"flex flex-col overflow-hidden rounded-lg",
-				// The peek overlay leans on its elevation.shadow.overlay to separate
-				// from the page, so it drops the hairline border the docked rail uses.
-				borderless ? null : "border border-border",
-			)}
-			style={{ backgroundColor: token("elevation.surface") }}
-		>
-			<MetadataSection>
-				<Tabs defaultValue="details">
-					<TabsList className="w-full">
-						<TabsTrigger value="details">Details</TabsTrigger>
-						<TabsTrigger value="automation">Automation</TabsTrigger>
-					</TabsList>
-					<TabsContent className="mt-3" value="details">
-						<DetailsTab draft={draft} onChange={updateDraft} people={people} />
-					</TabsContent>
-					<TabsContent className="mt-3" value="automation">
-						<AutomationTab />
-					</TabsContent>
-				</Tabs>
-			</MetadataSection>
-
-			<MetadataSection divided>
-				<div className="flex flex-col gap-1">
-					<DevelopmentSection />
-					<AppsSection />
-				</div>
-			</MetadataSection>
-		</section>
+			borderless={borderless}
+			sections={[
+				{
+					content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
+					defaultOpen: true,
+					id: "details",
+					title: "Details",
+				},
+				...resourceSections,
+				{ content: <AutomationTab />, id: "automation", title: "Automation" },
+				{ content: <DevelopmentSectionContent />, id: "development", title: "Development" },
+				{ content: <AppsSection />, id: "apps", title: "Apps" },
+			]}
+		/>
 	);
 }
