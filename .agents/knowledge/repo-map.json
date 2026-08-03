@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 412,
+			"manifestEntryCount": 413,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5365,7 +5365,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 96,
+				"entryCount": 97,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5498,6 +5498,12 @@
 						"slug": "artifact",
 						"name": "Artifact",
 						"importPath": "@/components/blocks/artifact"
+					},
+					{
+						"category": "blocks",
+						"slug": "artifact-pane",
+						"name": "Artifact Pane",
+						"importPath": "@/components/blocks/artifact-pane"
 					},
 					{
 						"category": "blocks",
