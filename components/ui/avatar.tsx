@@ -134,6 +134,7 @@ function Avatar({
 				data-size={size}
 				data-shape={shape}
 				aria-label={label}
+				role={label ? "img" : undefined}
 				aria-disabled={disabled || undefined}
 				className={rootClassName}
 				render={<motion.span {...motionProps} />}
@@ -161,6 +162,7 @@ function Avatar({
 			data-size={size}
 			data-shape={shape}
 			aria-label={label}
+			role={label ? "img" : undefined}
 			aria-disabled={disabled || undefined}
 			className={rootClassName}
 			render={<motion.span {...motionProps} />}
@@ -444,7 +446,7 @@ function AvatarGroup({ children, className, label, ...props }: Readonly<AvatarGr
 				role="group"
 				aria-label={label}
 				className={cn(
-					"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
+					"*:data-[slot=avatar]:ring-background group/avatar-group flex -space-x-2 has-data-[size=xs]:-space-x-1 *:data-[slot=avatar]:ring-2 [&>[data-slot=avatar][data-shape=hexagon]]:ring-0",
 					className
 				)}
 				{...props}
@@ -464,7 +466,7 @@ function AvatarGroupCount({
 	return (
 		<div
 			data-slot="avatar-group-count"
-			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=lg]/avatar-group:[&_[data-slot=icon]]:size-5 group-has-data-[size=lg]/avatar-group:[&_svg]:size-5 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
+			className={cn("bg-muted text-muted-foreground size-8 rounded-full text-xs group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=lg]/avatar-group:text-sm group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xs]/avatar-group:size-4 group-has-data-[size=xs]/avatar-group:text-[8px] [&_[data-slot=icon]]:size-4 [&_svg]:size-4 group-has-data-[size=lg]/avatar-group:[&_[data-slot=icon]]:size-5 group-has-data-[size=lg]/avatar-group:[&_svg]:size-5 group-has-data-[size=sm]/avatar-group:[&_[data-slot=icon]]:size-3 group-has-data-[size=sm]/avatar-group:[&_svg]:size-3 group-has-data-[size=xs]/avatar-group:[&_[data-slot=icon]]:size-2 group-has-data-[size=xs]/avatar-group:[&_svg]:size-2 ring-background relative flex shrink-0 items-center justify-center ring-2", className)}
 			{...props}
 		/>
 	)

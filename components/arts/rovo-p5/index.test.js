@@ -238,6 +238,13 @@ test("the surface fills its container rather than collapsing to intrinsic width"
 	assert.doesNotMatch(SHELL_SOURCE, /\n\s*<main[\s>]/);
 });
 
+test("Rovo p5 rejects caller children that its fixed art composition discards", () => {
+	assert.match(
+		SHELL_SOURCE,
+		/export type RovoP5Props = Omit<React\.ComponentProps<"section">, "children"> & \{\s*readonly children\?: never;/u,
+	);
+});
+
 test("the control panel follows the OS colour scheme", () => {
 	// ADS resolves tokens from one global `data-color-mode`, so a scoped
 	// override cannot theme the panel on its own.

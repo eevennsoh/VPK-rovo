@@ -73,6 +73,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 	],
 	"source-contract": [
 		"components/arts/rovo-p5/index.test.js",
+		"components/blocks/artifact-pane/artifact-pane.test.js",
 		"components/blocks/jira-work-item/jira-work-item.test.js",
 		"components/blocks/jira-work-item/jira-work-item-experimental-v2.test.js",
 		"components/projects/jira-agents/jira-agents.test.js",

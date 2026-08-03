@@ -96,7 +96,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         title: "Agent group",
-        description: "Overlapping hexagon avatars with shape-aware separators.",
+        description: "Overlapping 16, 24, 32, and 40px hexagon avatars with shape-aware separators.",
         demoSlug: "avatar-demo-agent-group",
       },
       {
@@ -141,7 +141,7 @@ export const AVATAR_DETAIL: ComponentDetail = {
       },
       {
         title: "Group",
-        description: "Overlapping avatar group with count.",
+        description: "Overlapping 16, 24, 32, and 40px human avatar groups.",
         demoSlug: "avatar-demo-group",
       },
       {
