@@ -249,7 +249,7 @@ test("the activity layout imports a real content-visibility hook", () => {
 	assert.match(activityPanelSource, /export function useHasActivity\(\): boolean/u);
 	assert.match(activityPanelSource, /return meta\.activityEvents\.length > 0;/u);
 	assert.match(layoutSource, /import \{ useHasActivity \} from .*activity-panel";/u);
-	assert.match(activityPanelSource, /onSubmitReply=\{\(entry, body\) => \{/u);
+	assert.match(activityPanelSource, /onSubmitReply=\{handleSubmitReply\}/u);
 	assert.match(activityPanelSource, /actions\.replySession\(event\.sessionId, body\)/u);
 });
 

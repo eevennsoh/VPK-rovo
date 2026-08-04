@@ -43,6 +43,15 @@ export interface JiraActivityProps {
 	onViewSession?: (item: AgentListItem) => void;
 	/** Handles an inline reply externally instead of appending it to local timeline state. */
 	onSubmitReply?: (entry: JiraActivityCommentEntry, body: string) => void;
+	/**
+	 * Per-comment action row and composer disclosure.
+	 * - "none": no action row; the composer stays mounted (legacy behavior).
+	 * - "reactions": pills + Add reaction; the composer stays mounted.
+	 * - "reply-and-reactions": Reply plus reactions; the composer is hidden until Reply.
+	 */
+	commentActions?: "none" | "reactions" | "reply-and-reactions";
+	/** Handles a reaction toggle externally instead of applying it to local state. */
+	onToggleReaction?: (entry: JiraActivityCommentEntry, emoji: string) => void;
 	className?: string;
 	/** Optional classes for the header wrapper, including consumer-owned sticky positioning. */
 	headerClassName?: string;
@@ -79,6 +88,8 @@ export function JiraActivity({
 	renderCommentAction,
 	onViewSession,
 	onSubmitReply,
+	commentActions = "reply-and-reactions",
+	onToggleReaction,
 	className,
 	headerClassName,
 	headerScrollFade = false,
@@ -169,6 +180,19 @@ export function JiraActivity({
 		});
 	}
 
+	function handleToggleReaction(entry: JiraActivityCommentEntry, emoji: string) {
+		if (onToggleReaction) {
+			onToggleReaction(entry, emoji);
+			return;
+		}
+		applyAction({
+			type: "toggle-reaction",
+			entryId: entry.id,
+			emoji,
+			actorId: currentUser.id,
+		});
+	}
+
 	return (
 		<div className={cn("flex w-full flex-col gap-4", className)}>
 			<div className={headerClassName} data-slot="jira-activity-header">
@@ -232,10 +256,12 @@ export function JiraActivity({
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
+											commentActions={commentActions}
 											currentUser={currentUser}
 											entry={entry}
 											onViewSession={onViewSession}
 											onSubmitReply={(body) => handleAddReply(entry, body)}
+											onToggleReaction={(emoji) => handleToggleReaction(entry, emoji)}
 											action={renderCommentAction?.(entry)}
 										/>
 									) : null}
@@ -275,6 +301,7 @@ export type {
 	JiraActivityEventEntry,
 	JiraActivityEventIcon,
 	JiraActivityFilter,
+	JiraActivityReaction,
 	JiraActivityReply,
 	JiraActivitySegment,
 	JiraActivitySortOrder,

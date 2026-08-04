@@ -3,8 +3,11 @@
 import type { ReactElement } from "react";
 
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
+import CommitIcon from "@atlaskit/icon/core/commit";
 import FileIcon from "@atlaskit/icon/core/file";
+import LinkIcon from "@atlaskit/icon/core/link";
 
 import { AgentFilledSummaryRow } from "@/components/blocks/agent/components/agent-summary-row";
 import {
@@ -17,9 +20,11 @@ import {
 	AnimatedContextTitleActions,
 	type CodingAgentId,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
+import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +42,9 @@ interface ContextResourcesProps {
 }
 
 /**
- * Context resource controls: Attachments and Subtasks keep their compact add
- * buttons in the shared control row. Filled resource values are rendered as
- * conditional sections in the metadata rail.
+ * Context resource controls: Attachments, Subtasks, and linked work items keep
+ * their compact add buttons in the shared control row. Filled resource values
+ * are rendered as conditional sections in the metadata rail.
  */
 export function ContextResources({
 	descriptionViewMode,
@@ -53,12 +58,23 @@ export function ContextResources({
 		{
 			buttonLabel: "Add attachments",
 			icon: <AttachmentIcon label="" size="small" />,
-			renderAddButton: (trigger) => <AttachmentsPopover key="attachments" trigger={trigger} />,
+			renderAddButton: (trigger) => (
+				<AttachmentsPopover key="attachments" tooltip="Add attachments" trigger={trigger} />
+			),
 		},
 		{
 			buttonLabel: "Add subtasks",
 			icon: <ChildWorkItemsIcon label="" size="small" />,
-			renderAddButton: (trigger) => <SubtasksPopover key="subtasks" trigger={trigger} />,
+			renderAddButton: (trigger) => (
+				<SubtasksPopover key="subtasks" tooltip="Add subtasks" trigger={trigger} />
+			),
+		},
+		{
+			buttonLabel: "Link work items",
+			icon: <LinkIcon label="" size="small" />,
+			renderAddButton: (trigger) => (
+				<LinkedWorkItemsPopover key="linkedItems" tooltip="Link work items" trigger={trigger} />
+			),
 		},
 	];
 
@@ -73,25 +89,44 @@ export function ContextResources({
 				)}
 				data-jira-work-item-resource-row
 			>
-				<div
-					className="flex flex-wrap items-start gap-2 *:focus-visible:relative *:focus-visible:z-10"
-					data-jira-work-item-resource-row-content
-				>
-					{resources.map((resource) =>
-						resource.renderAddButton(
-							<Button aria-label={resource.buttonLabel} size="icon" type="button" variant="outline">
-								{resource.icon}
-							</Button>,
-						),
-					)}
-					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
-					<div className="ml-auto shrink-0">
-						<EditorToolbarModeTabs
-							mode={descriptionViewMode}
-							onModeChange={onDescriptionViewModeChange}
-						/>
+				<TooltipProvider>
+					<div
+						className="flex flex-wrap items-start gap-1 *:focus-visible:relative *:focus-visible:z-10"
+						data-jira-work-item-resource-row-content
+					>
+						{resources.map((resource) =>
+							resource.renderAddButton(
+								<Button aria-label={resource.buttonLabel} size="icon-compact" type="button" variant="outline">
+									{resource.icon}
+								</Button>,
+							),
+						)}
+						<Tooltip>
+							<TooltipTrigger
+								render={<Button aria-label="Create commit" size="icon-compact" type="button" variant="outline" />}
+							>
+								<CommitIcon label="" size="small" />
+							</TooltipTrigger>
+							<TooltipContent positionerClassName="z-[502]">Create commit</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger
+								render={<Button aria-label="Create branch" size="icon-compact" type="button" variant="outline" />}
+							>
+								<BranchIcon label="" size="small" />
+							</TooltipTrigger>
+							<TooltipContent positionerClassName="z-[502]">Create branch</TooltipContent>
+						</Tooltip>
+						<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
+						<div className="pointer-events-none ml-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
+							<EditorToolbarModeTabs
+								mode={descriptionViewMode}
+								onModeChange={onDescriptionViewModeChange}
+								size="compact"
+							/>
+						</div>
 					</div>
-				</div>
+				</TooltipProvider>
 				<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" />
 			</div>
 			{outputs.length > 0 ? (

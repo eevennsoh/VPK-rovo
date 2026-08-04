@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 
 import { useRovoChat } from "@/app/contexts";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
@@ -32,21 +31,11 @@ function getSessionResult(session: AgentSession): string {
 }
 
 /**
- * Bridges the block-local session model into the shared Jira Issue floating
- * Rovo chat. Jira Work Item owns the deterministic session lifecycle; the
+ * Bridges the block-local session model into the shared Jira Issue Rovo chat.
+ * Jira Work Item owns the deterministic session lifecycle; the
  * existing Rovo surface owns all visible chat chrome, transcript, and composer.
  */
-export interface FloatingSessionSurfaceProps {
-	/**
-	 * When true, the floating Rovo surface is portaled to `document.body` so it
-	 * escapes an inline container's clipping/transform context and positions
-	 * against viewport coordinates. Full-screen modal presentations keep the
-	 * surface in place (no portal).
-	 */
-	portalToViewport?: boolean;
-}
-
-export function FloatingSessionSurface({ portalToViewport = false }: FloatingSessionSurfaceProps = {}) {
+export function FloatingSessionSurface() {
 	const { actions, meta } = useJiraWorkItem();
 	const { chatSurface } = useRovoChat();
 	const { chatContextBar, externalThinkingMessageId, openAgentChat } = useAsxAgentChatDemo();
@@ -91,16 +80,15 @@ export function FloatingSessionSurface({ portalToViewport = false }: FloatingSes
 		};
 	}, [actions, activeSession]);
 
-	const surface = (
-		<AsxRovoOverlay
-			chatContextBar={chatContextBar}
-			externalThinkingMessageId={externalThinkingMessageId}
-			onInterceptSubmit={handleInterceptSubmit}
-			onLauncherClick={actions.openLatestOrCreateGeneralSession}
-		/>
+	return (
+		<div className="relative h-full min-h-0">
+			<AsxRovoOverlay
+				chatContextBar={chatContextBar}
+				externalThinkingMessageId={externalThinkingMessageId}
+				onInterceptSubmit={handleInterceptSubmit}
+				onLauncherClick={actions.openLatestOrCreateGeneralSession}
+				placement="embedded"
+			/>
+		</div>
 	);
-
-	if (typeof document === "undefined") return surface;
-	const portalRoot = portalToViewport ? document.body : null;
-	return portalRoot ? createPortal(surface, portalRoot) : surface;
 }

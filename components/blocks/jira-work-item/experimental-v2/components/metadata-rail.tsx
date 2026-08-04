@@ -3,7 +3,6 @@
 import { useMemo, type ReactElement } from "react";
 
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
-import DeleteIcon from "@atlaskit/icon/core/delete";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -30,7 +29,6 @@ import {
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
-import { Button } from "@/components/ui/button";
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
@@ -110,25 +108,18 @@ function ResourceSmartLinks({
 	return (
 		<ul className="space-y-1">
 			{items.map((item) => (
-				<li className="flex min-w-0 items-center gap-1" key={item.id}>
+				<li className="min-w-0" key={item.id}>
 					<SmartLink
 						align="center"
 						alignOffset={0}
 						className="min-w-0 max-w-full"
 						item={item}
+						onRemove={() => onRemove(item.id)}
 						positionerClassName="z-[600]"
+						removeButtonLabel={`Remove ${item.title}`}
+						removeVariant="overlay"
 						side="left"
 					/>
-					<Button
-						aria-label={`Remove ${item.title}`}
-						className="shrink-0"
-						onClick={() => onRemove(item.id)}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
-					>
-						<DeleteIcon label="" size="small" />
-					</Button>
 				</li>
 			))}
 		</ul>

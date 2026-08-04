@@ -28,6 +28,7 @@ interface FloatingChatHeaderProps {
 	showAgentBackButton?: boolean;
 	showAgentSelector?: boolean;
 	showChatHistory?: boolean;
+	showMoreButton?: boolean;
 	showNewChatButton?: boolean;
 }
 
@@ -42,6 +43,7 @@ export default function FloatingChatHeader({
 	showAgentBackButton = true,
 	showAgentSelector = true,
 	showChatHistory = true,
+	showMoreButton = true,
 	showNewChatButton = true,
 }: Readonly<FloatingChatHeaderProps>) {
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -61,22 +63,24 @@ export default function FloatingChatHeader({
 						<EditIcon label="" />
 					</Button>
 				) : null}
-				<DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								aria-label="More"
-								size="icon"
-								variant={isMoreMenuOpen ? "secondary" : "ghost"}
-							/>
-						}
-					>
-						<ShowMoreHorizontalIcon label="" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" sideOffset={4} positionerClassName="z-[600]">
-						<ChatSurfaceSwitcherItems currentSurface="floating" onSurfaceSwitch={onSurfaceSwitch} />
-					</DropdownMenuContent>
-				</DropdownMenu>
+				{showMoreButton ? (
+					<DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									aria-label="More"
+									size="icon"
+									variant={isMoreMenuOpen ? "secondary" : "ghost"}
+								/>
+							}
+						>
+							<ShowMoreHorizontalIcon label="" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" sideOffset={4} positionerClassName="z-[600]">
+							<ChatSurfaceSwitcherItems currentSurface="floating" onSurfaceSwitch={onSurfaceSwitch} />
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null}
 				<Button aria-label="Close" size="icon" variant="ghost" onClick={onClose}>
 					<CrossIcon label="" />
 				</Button>

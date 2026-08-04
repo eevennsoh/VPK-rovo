@@ -30,16 +30,33 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-	"group-data-horizontal/tabs:h-8 group/tabs-list text-text-subtle inline-flex w-fit items-center justify-center group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
+	"group/tabs-list text-text-subtle inline-flex w-fit items-center justify-center group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
 	{
 		variants: {
 			variant: {
-				default: "rounded-lg p-[3px] bg-muted",
+				default: "rounded-lg bg-muted",
 				line: "gap-0 bg-transparent border-b border-border",
 			},
+			size: {
+				default: "group-data-horizontal/tabs:h-8",
+				compact: "group-data-horizontal/tabs:h-6",
+			},
 		},
+		compoundVariants: [
+			{
+				variant: "default",
+				size: "default",
+				className: "p-[3px]",
+			},
+			{
+				variant: "default",
+				size: "compact",
+				className: "p-0.5",
+			},
+		],
 		defaultVariants: {
 			variant: "default",
+			size: "default",
 		},
 	}
 )
@@ -51,13 +68,15 @@ interface TabsListProps
 function TabsList({
 	className,
 	variant = "default",
+	size = "default",
 	...props
 }: Readonly<TabsListProps>) {
 	return (
 		<TabsPrimitive.List
 			data-slot="tabs-list"
+			data-size={size}
 			data-variant={variant}
-			className={cn(tabsListVariants({ variant }), className)}
+			className={cn(tabsListVariants({ variant, size }), className)}
 			{...props}
 		/>
 	)
@@ -70,7 +89,7 @@ function TabsTrigger({ className, ...props }: Readonly<TabsTriggerProps>) {
 		<TabsPrimitive.Tab
 			data-slot="tabs-trigger"
 			className={cn(
-				"gap-1.5 rounded-md border border-transparent px-3 py-0.5 text-sm font-medium [&_svg:not([class*='size-'])]:size-4 focus-visible:border-ring focus-visible:ring-ring/50 text-text-subtle relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center whitespace-nowrap transition-[background-color,border-color,border-radius,box-shadow,color,opacity] group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start group-data-[variant=line]/tabs-list:h-full group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:border-0 focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-(--opacity-disabled) aria-disabled:pointer-events-none aria-disabled:opacity-(--opacity-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0",
+				"gap-1.5 rounded-md border border-transparent py-0.5 text-sm font-medium focus-visible:border-ring focus-visible:ring-ring/50 text-text-subtle relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center whitespace-nowrap transition-[background-color,border-color,border-radius,box-shadow,color,opacity] group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start group-data-[size=default]/tabs-list:px-3 group-data-[size=compact]/tabs-list:px-2 group-data-[size=default]/tabs-list:[&_svg:not([class*='size-'])]:size-4 group-data-[size=compact]/tabs-list:[&_svg:not([class*='size-'])]:size-3 group-data-[variant=line]/tabs-list:h-full group-data-[variant=line]/tabs-list:rounded-none group-data-[variant=line]/tabs-list:border-0 focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-(--opacity-disabled) aria-disabled:pointer-events-none aria-disabled:opacity-(--opacity-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0",
 				// Default (pill) variant states
 				"group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=default]/tabs-list:hover:bg-bg-neutral-subtle-hovered group-data-[variant=default]/tabs-list:active:bg-bg-neutral-subtle-pressed group-data-[variant=default]/tabs-list:data-active:bg-surface group-data-[variant=default]/tabs-list:data-active:text-text",
 				// Line variant states — selected uses blue text (ADS text.selected)

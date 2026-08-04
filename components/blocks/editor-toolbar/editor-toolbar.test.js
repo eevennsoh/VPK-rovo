@@ -37,6 +37,8 @@ test("Editor toolbar block exports the public component and props", () => {
 	assert.match(componentSource, /export interface EditorToolbarProps/u);
 	assert.match(componentSource, /export function EditorToolbar/u);
 	assert.match(componentSource, /export function EditorToolbarModeTabs/u);
+	assert.match(componentSource, /size\?: TabsListProps\["size"\];/u);
+	assert.match(componentSource, /<TabsList size=\{size\}>/u);
 	assert.match(componentSource, /endSlot\?: ReactNode;/u);
 	assert.match(componentSource, /controlsOverflow\?: "responsive" \| "fixed";/u);
 	assert.match(componentSource, /onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u);
@@ -145,7 +147,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	const vpkIconsSource = readProjectFile("components/ui/vpk-icons.tsx");
 
 	assert.match(componentSource, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
-	assert.match(componentSource, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+	assert.match(componentSource, /import \{ Tabs, TabsList, TabsTrigger, type TabsListProps \} from "@\/components\/ui\/tabs";/u);
 	assert.match(componentSource, /import \{ TextNormalIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(vpkIconsSource, /import TextNormalIconGlyph from "@atlaskit\/icon-lab\/core\/text-normal";/u);
 	assert.match(vpkIconsSource, /export function TextNormalIcon\([\s\S]*renderIcon=\{TextNormalIconGlyph as AtlaskitRenderIcon\}/u);

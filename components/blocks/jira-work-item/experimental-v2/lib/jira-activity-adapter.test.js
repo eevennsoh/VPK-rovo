@@ -15,6 +15,10 @@ function loadAdapter() {
 				bundle: true,
 				format: "cjs",
 				platform: "node",
+				// The adapter's import graph reaches Atlaskit packages that `require()`
+				// their compiled CSS. Node only needs the module's behavior, so drop
+				// stylesheets instead of failing the bundle.
+				loader: { ".css": "empty" },
 				tsconfig: path.join(process.cwd(), "tsconfig.json"),
 				write: false,
 			})
@@ -23,7 +27,7 @@ function loadAdapter() {
 	return adapterPromise;
 }
 
-test("maps human activity to a non-replyable Jira comment", async () => {
+test("maps human activity to a replyable Jira comment", async () => {
 	const adapter = await loadAdapter();
 	const [entry] = adapter.mapActivityEventsToJiraEntries([
 		{
@@ -46,7 +50,7 @@ test("maps human activity to a non-replyable Jira comment", async () => {
 		},
 		timestamp: "9:05 AM",
 		body: [{ type: "text", text: "Budget qualification is still open." }],
-		allowReply: false,
+		allowReply: true,
 	});
 });
 

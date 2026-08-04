@@ -434,7 +434,10 @@ function AgentSelectorGroup({
 	supportsMultipleSelection,
 }: Readonly<AgentSelectorGroupProps>): ReactElement | null {
 	return agents.length > 0 ? (
-		<CommandGroup className="!px-0 !py-1.5" heading={heading}>
+		<CommandGroup
+			className="!px-0 !py-1.5 **:[[cmdk-group-heading]]:font-semibold"
+			heading={heading}
+		>
 			{agents.map((agent) => (
 				<AgentSelectorItem
 					agent={agent}
@@ -465,7 +468,7 @@ export function AgentSelector({
 	defaultQuery = "",
 	defaultPinnedAgentIds = EMPTY_PINNED_AGENT_IDS,
 	emptyMessage = "No agents found.",
-	heading = "Select an agent",
+	heading,
 	listLabel = "Agents",
 	moreItemsLabel = "More agents",
 	onAgentToggle,
@@ -592,7 +595,9 @@ export function AgentSelector({
 				</div>
 			) : null}
 			<div className={cn("shrink-0", hasSelectedAgentActions && "pt-4")}>
-				<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
+				{heading ? (
+					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
+				) : null}
 				<CommandInput
 					aria-label={searchPlaceholder}
 					inputGroupClassName="has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&>[data-align=inline-start]]:pl-3 has-[>[data-align=inline-start]]:[&>input]:pl-3"

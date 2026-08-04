@@ -66,7 +66,10 @@ function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityComment
 		actor: humanActor(event),
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		body: [{ type: "text", text: event.content }],
-		allowReply: false,
+		// Human comments opt in to Reply. The flag was previously false only to
+		// suppress the always-mounted composer under every human comment; now that
+		// Reply-to-reveal is the default, the affordance costs nothing until used.
+		allowReply: true,
 	};
 }
 

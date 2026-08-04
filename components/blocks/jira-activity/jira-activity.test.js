@@ -29,6 +29,10 @@ const COMMENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment.tsx"),
 	"utf8",
 );
+const COMMENT_ACTIONS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-comment-actions.tsx"),
+	"utf8",
+);
 const CARD_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-card.tsx"),
 	"utf8",
@@ -374,7 +378,7 @@ test("controlled timelines can route inline agent replies to their owning sessio
 	assert.match(INDEX_SOURCE, /onSubmitReply=\{\(body\) => handleAddReply\(entry, body\)\}/u);
 });
 
-test("human comments expose the flush prompt composer instead of a Reply button", () => {
+test("human comments keep the stacked identity header and the flush composer geometry", () => {
 	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \}/u);
 	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
 	assert.match(
@@ -383,13 +387,119 @@ test("human comments expose the flush prompt composer instead of a Reply button"
 	);
 	assert.match(COMMENT_SOURCE, /<Avatar aria-hidden size="default">/u);
 	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{entry\.actor\.avatarSrc\}/u);
-	// The human card no longer renders a Reply button or wires onReplyRequest; the
-	// prompt composer is always mounted as a flush footer instead.
+	// Reply is a disclosure the comment owns via `commentActions`, not a callback
+	// the consuming surface has to wire up.
 	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
-	assert.doesNotMatch(COMMENT_SOURCE, />\s*Reply\s*<\/Button>/u);
-	assert.doesNotMatch(COMMENT_SOURCE, /from "@\/components\/ui\/button"/u);
 	// Flush composer: no floating border/radius/shadow, aligned to the card's padding.
 	assert.match(COMMENT_SOURCE, /border-0 rounded-none bg-transparent px-4 py-3 shadow-none/u);
+});
+
+test("the activity card hosts the action row in the body grid, not the bordered footer", () => {
+	// `action` is a header slot, so the reply/reaction row gets its own slot that
+	// lands last in the body grid and inherits the card's gap for both geometries.
+	assert.match(CARD_SOURCE, /footerActions\?: ReactNode;/u);
+	assert.match(CARD_SOURCE, /^\tfooterActions,$/mu);
+	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
+	// Nothing renders it inside the `border-t` footer branch.
+	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
+	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-4 p-4" : "gap-2 p-3"/u);
+});
+
+test("the comment action row pairs Reply with the shared emoji reaction bar", () => {
+	assert.match(
+		COMMENT_ACTIONS_SOURCE,
+		/import ReplyLeftIcon from "@atlaskit\/icon-lab\/core\/reply-left";/u,
+	);
+	assert.match(
+		COMMENT_ACTIONS_SOURCE,
+		/import \{ EmojiReactionBar \} from "@\/components\/blocks\/emoji-picker\/components\/emoji-reaction-bar";/u,
+	);
+	assert.match(COMMENT_ACTIONS_SOURCE, /<EmojiReactionBar/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-label="Comment actions"/u);
+	// Reply is an icon button: label on the Button, empty label on the icon.
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-label="Reply"/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-expanded=\{replyExpanded\}/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /aria-controls=\{replyComposerId\}/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /<ReplyLeftIcon color="currentColor" label="" \/>/u);
+	// Always visible — never a hover-reveal.
+	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /opacity-0|group-hover/u);
+	// Omitting `onReply` is how `allowReply: false` drops the button.
+	assert.match(COMMENT_ACTIONS_SOURCE, /onReply\?: \(\) => void;/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /onReply \? \(/u);
+	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions/u);
+	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
+});
+
+test("Reply discloses the composer, defaulting to reply-and-reactions", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/commentActions\?: "none" \| "reactions" \| "reply-and-reactions";/u,
+	);
+	assert.match(INDEX_SOURCE, /commentActions = "reply-and-reactions",/u);
+	assert.match(INDEX_SOURCE, /commentActions=\{commentActions\}/u);
+	// The comment stands alone with the same default.
+	assert.match(COMMENT_SOURCE, /commentActions = "reply-and-reactions",/u);
+	assert.match(COMMENT_SOURCE, /const allowReply = entry\.allowReply \?\? true;/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/const collapsible = commentActions === "reply-and-reactions";/u,
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/const composerVisible = allowReply && \(!collapsible \|\| replyOpen\);/u,
+	);
+	// The composer only mounts when visible, and aria-controls never dangles.
+	assert.match(COMMENT_SOURCE, /composerVisible \? \(\s*<div id=\{composerId\}>/u);
+	assert.match(COMMENT_SOURCE, /replyComposerId=\{composerVisible \? composerId : undefined\}/u);
+	assert.match(COMMENT_SOURCE, /const composerId = useId\(\);/u);
+	// "none" drops the row entirely; Reply is withheld when the entry opted out.
+	assert.match(COMMENT_SOURCE, /commentActions === "none" \? undefined : \(/u);
+	assert.match(COMMENT_SOURCE, /onReply=\{collapsible && allowReply \? toggleReply : undefined\}/u);
+});
+
+test("toggling a reaction routes through the reducer with the current user's id", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/onToggleReaction\?: \(entry: JiraActivityCommentEntry, emoji: string\) => void/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/function handleToggleReaction\([\s\S]*if \(onToggleReaction\) \{[\s\S]*onToggleReaction\(entry, emoji\);[\s\S]*return;[\s\S]*applyAction\(\{[\s\S]*type: "toggle-reaction",[\s\S]*entryId: entry\.id,[\s\S]*emoji,[\s\S]*actorId: currentUser\.id,/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/onToggleReaction=\{\(emoji\) => handleToggleReaction\(entry, emoji\)\}/u,
+	);
+	assert.match(INDEX_SOURCE, /\bJiraActivityReaction,/u);
+	// Stored actor ids are normalized into the picker block's count view model.
+	assert.match(
+		COMMENT_SOURCE,
+		/\(entry\.reactions \?\? \[\]\)\.map\(\(reaction\) => \(\{[\s\S]*emoji: reaction\.emoji,[\s\S]*count: reaction\.actorIds\.length,[\s\S]*reacted: reaction\.actorIds\.includes\(currentUser\.id\),/u,
+	);
+});
+
+test("the sample feed seeds reactions on a human comment", () => {
+	const seeded = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "comment" && (entry.reactions?.length ?? 0) > 0,
+	);
+	assert.ok(seeded.length > 0, "expected at least one comment with seeded reactions");
+	const [comment] = seeded;
+	assert.equal(comment.actor.kind, "person");
+	assert.ok(comment.reactions.length >= 2, "expected more than one reaction glyph");
+	// One reaction the viewer has pressed (count > 1) and one they have not, so
+	// the demo shows both pill states.
+	const pressed = comment.reactions.filter((reaction) =>
+		reaction.actorIds.includes(JIRA_ACTIVITY_CURRENT_USER.id),
+	);
+	const unpressed = comment.reactions.filter(
+		(reaction) => !reaction.actorIds.includes(JIRA_ACTIVITY_CURRENT_USER.id),
+	);
+	assert.ok(pressed.length > 0, "expected a reaction the current user has pressed");
+	assert.ok(unpressed.length > 0, "expected a reaction the current user has not pressed");
+	assert.ok(pressed[0].actorIds.length > 1, "pressed reaction should aggregate actors");
+	for (const reaction of comment.reactions) {
+		assert.equal(new Set(reaction.actorIds).size, reaction.actorIds.length);
+	}
 });
 
 test("the sample feed includes a human activity snapshot comment", () => {
@@ -422,4 +532,23 @@ test("the exported comment composer uses the shared floating Rovo prompt", () =>
 	assert.match(COMPOSER_SOURCE, /aria-label="Send"/u);
 	assert.match(COMPOSER_SOURCE, /disabled=\{!canSubmit\}/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /RovoComposerActionButton|realtimeVoice/u);
+});
+
+test("disclosing Reply focuses the composer through the editor's own autofocus", () => {
+	// The comment variant is a contentEditable tiptap editor that initialises
+	// asynchronously (prompt-input.tsx maps `autoFocus` onto tiptap's
+	// `autofocus: "end"`). Focusing a ref from a parent effect races that
+	// initialisation and silently no-ops, so the disclosure must not try.
+	assert.match(COMPOSER_SOURCE, /autoFocus\?: boolean;/u);
+	assert.match(COMPOSER_SOURCE, /autoFocus = false,/u);
+	assert.match(COMPOSER_SOURCE, /<PromptInputTextarea[\s\S]*autoFocus=\{autoFocus\}/u);
+	// Only mounts on a Reply click in collapsible mode, so mounting is the moment
+	// to take focus; in the always-mounted modes it must never steal focus.
+	assert.match(COMMENT_SOURCE, /autoFocus=\{collapsible\}/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /textareaRef/u);
+	// Collapsing still returns focus to the Reply button, which is a plain button.
+	assert.match(
+		COMMENT_SOURCE,
+		/if \(!replyToggledRef\.current \|\| replyOpen\) return;\s*replyButtonRef\.current\?\.focus\(\);/u,
+	);
 });

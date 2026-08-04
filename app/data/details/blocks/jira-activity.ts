@@ -15,6 +15,12 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 				"Standalone rich activity card with an agent-session header, response content, and a flush in-card reply composer.",
 			demoSlug: "jira-activity-demo-activity-card",
 		},
+		{
+			title: "Comment reactions",
+			description:
+				'Comment cards with the always-visible action row: Reply reveals the composer, and the add-reaction popover toggles emoji pills. This is the default `commentActions="reply-and-reactions"` behavior.',
+			demoSlug: "jira-activity-demo-reactions",
+		},
 	],
 	props: [
 		{
@@ -45,6 +51,19 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 			name: "renderCommentAction",
 			type: "(entry: JiraActivityCommentEntry) => ReactNode",
 			description: "Renders an optional trailing action in each comment card header.",
+		},
+		{
+			name: "commentActions",
+			type: '"none" | "reactions" | "reply-and-reactions"',
+			default: '"reply-and-reactions"',
+			description:
+				'Per-comment action row and composer disclosure. `"none"` renders no action row and leaves the reply composer mounted (legacy behavior); `"reactions"` adds reaction pills and Add reaction while keeping the composer mounted; `"reply-and-reactions"` adds a Reply button and hides the composer until Reply is activated.',
+		},
+		{
+			name: "onToggleReaction",
+			type: "(entry: JiraActivityCommentEntry, emoji: string) => void",
+			description:
+				"Handles a reaction toggle externally instead of applying it to local state. Omit to let the built-in reducer toggle the reaction for `currentUser`.",
 		},
 		{
 			name: "onViewSession",

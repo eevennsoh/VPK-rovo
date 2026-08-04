@@ -59,6 +59,18 @@ export function TabsDemoDefault() {
 	);
 }
 
+export function TabsDemoCompact() {
+	return (
+		<Tabs defaultValue="account">
+			<TabsList size="compact">
+				<TabsTrigger value="account">Account</TabsTrigger>
+				<TabsTrigger value="password">Password</TabsTrigger>
+				<TabsTrigger value="settings">Settings</TabsTrigger>
+			</TabsList>
+		</Tabs>
+	);
+}
+
 export function TabsDemoDisabled() {
 	return (
 		<Tabs defaultValue="home">

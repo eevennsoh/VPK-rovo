@@ -3,6 +3,7 @@
 import { LayoutGroup } from "motion/react";
 import { useId, useMemo } from "react";
 
+import { useRovoChat } from "@/app/contexts";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
@@ -49,13 +50,15 @@ const NOOP = () => undefined;
  * changes reach both variants.
  *
  * Wraps the whole experience in the block-local `JiraWorkItemProvider` (one
- * shared session-state instance) so the launcher, the floating session panel,
- * and the Activity `@`-reply composer all act on the same sessions. The floating
- * session surface is mounted in the dialog portal but outside the popup, keeping
- * it interactive on the blanket without making the modal its positioning root.
+ * shared session-state instance) so the launcher, the embedded session panel,
+ * and the Activity `@`-reply composer all act on the same sessions. The session
+ * panel replaces the metadata rail while it is open and expands into a
+ * full-height sibling column, keeping the chat within the work-item surface.
  */
 export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWorkItemProps>) {
 	const composerLayoutGroupId = useId();
+	const { chatSurface } = useRovoChat();
+	const agentChatOpen = chatSurface === "floating";
 	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
 	let inlineSurface: "card" | "fill" = "card";
@@ -94,11 +97,10 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 							open={open}
 							onClose={onClose}
 							presentation={presentation}
+							sidebar={<FloatingSessionSurface />}
+							sidebarOpen={agentChatOpen}
 							workItemCode={workItem.code}
 							workItemTitle={workItem.title}
-							blanketContent={
-								<FloatingSessionSurface portalToViewport={presentation === "inline"} />
-							}
 						>
 							<ExperimentalWorkItemLayout
 								context={(
@@ -110,7 +112,14 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 								activity={<ActivityPanel />}
 								composer={<ActivityComposer onOpenAgentChat={props.onOpenAgentChat} />}
 								fillContainer={inlineSurface === "fill"}
-								metadata={<MetadataRail />}
+								metadata={(
+									<div
+										aria-hidden={agentChatOpen}
+										inert={agentChatOpen ? true : undefined}
+									>
+										<MetadataRail borderless />
+									</div>
+								)}
 							/>
 						</ExperimentalWorkItemDialog>
 					</LayoutGroup>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import EpicIcon from "@atlaskit/icon/core/epic";
 import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
@@ -11,13 +10,11 @@ import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
 import PriorityLowestIcon from "@atlaskit/icon/core/priority-lowest";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
-import TagIcon from "@atlaskit/icon/core/tag";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { CREW_ROSTER, type CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
 import type { AgentSessionStatus } from "@/components/blocks/jira-work-item/data/session-state";
 import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { LABEL_OPTIONS, PARENT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card/components/agent-profile-card";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
@@ -34,7 +31,6 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
-import { Tag, TagGroup } from "@/components/ui/tag";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -312,7 +308,7 @@ export function DateRowField({
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				<span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>
 			</PopoverTrigger>
-			<PopoverContent align="start" className="w-auto p-2" positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent align="start" className="w-auto min-w-(--anchor-width) p-2" positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
 				<CalendarComponent
 					mode="single"
 					onSelect={(next) => {
@@ -320,84 +316,6 @@ export function DateRowField({
 						setOpen(false);
 					}}
 					selected={value}
-				/>
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-export function ParentRowField({ value, onChange }: Readonly<{ value: string | null; onChange: (key: string) => void }>) {
-	const [open, setOpen] = useState(false);
-	const selected = PARENT_OPTIONS.find((option) => option.key === value);
-	const items = PARENT_OPTIONS.map((option): RichTextSuggestionMenuItem => ({
-		description: option.key,
-		icon: <EpicIcon label="" size="small" />,
-		id: option.key,
-		label: option.summary,
-	}));
-
-	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Change parent" />}>
-				{selected ? (
-					<span className="flex min-w-0 items-center gap-1.5 text-sm text-text">
-						<span className="shrink-0 font-medium text-text-subtle">{selected.key}</span>
-						<span className="min-w-0 truncate text-text-subtle">{selected.summary}</span>
-					</span>
-				) : (
-					<span className="text-sm text-text-subtlest">Add parent</span>
-				)}
-			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
-				<MetadataSearchPicker
-					emptyLabel="No work items found"
-					items={items}
-					onEscape={() => setOpen(false)}
-					onSelect={(item) => {
-						onChange(item.id);
-						setOpen(false);
-					}}
-					placeholder="Search work items"
-				/>
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-export function LabelsRowField({ value, onChange }: Readonly<{ value: readonly string[]; onChange: (next: string[]) => void }>) {
-	const [open, setOpen] = useState(false);
-	const items = LABEL_OPTIONS.map((label): RichTextSuggestionMenuItem => ({
-		icon: <TagIcon label="" size="small" />,
-		id: label,
-		label,
-	}));
-
-	const toggle = (label: string) => {
-		onChange(value.includes(label) ? value.filter((item) => item !== label) : [...value, label]);
-	};
-
-	return (
-		<Popover onOpenChange={setOpen} open={open}>
-			<PopoverTrigger render={<DetailValueTrigger aria-label="Edit labels" />}>
-				{value.length > 0 ? (
-					<TagGroup className="gap-1">
-						{value.map((label) => (
-							<Tag color="gray" key={label}>
-								{label}
-							</Tag>
-						))}
-					</TagGroup>
-				) : (
-					<span className="text-sm text-text-subtlest">Add label</span>
-				)}
-			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
-				<MetadataSearchPicker
-					emptyLabel="No labels found"
-					items={items}
-					onEscape={() => setOpen(false)}
-					onSelect={(item) => toggle(item.id)}
-					placeholder="Search labels"
 				/>
 			</PopoverContent>
 		</Popover>

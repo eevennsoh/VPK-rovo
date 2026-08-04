@@ -32,14 +32,18 @@ async function loadRovoFloatingChatHarness() {
 			`
 				import React from "react";
 
-				export const motion = {
+				 export const motion = {
 					div({ initial, animate, exit, transition, ...props }) {
 						return React.createElement("div", {
 							...props,
 							"data-motion": "div",
 						});
 					},
-				};
+				 };
+
+				export function useReducedMotion() {
+					return false;
+				}
 			`,
 		],
 		[
@@ -129,6 +133,7 @@ async function loadRovoFloatingChatHarness() {
 						"data-show-agent-back-button": String(props.showAgentBackButton),
 						"data-show-agent-selector": String(props.showAgentSelector),
 						"data-show-chat-history": String(props.showChatHistory),
+						"data-show-more-button": String(props.showMoreButton),
 						"data-show-new-chat-button": String(props.showNewChatButton),
 					});
 				}
@@ -145,6 +150,12 @@ async function loadRovoFloatingChatHarness() {
 
 				export function renderFloatingChat() {
 					return renderToStaticMarkup(React.createElement(RovoFloatingChat));
+				}
+
+				export function renderEmbeddedChat() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						placement: "embedded",
+					}));
 				}
 
 				export function renderFloatingChatWithContext() {
@@ -290,6 +301,7 @@ test("RovoFloatingChat renders the shared chat panel inside the floating shell",
 	assert.match(markup, /data-show-agent-back-button="true"/);
 	assert.match(markup, /data-show-agent-selector="true"/);
 	assert.match(markup, /data-show-chat-history="true"/);
+	assert.match(markup, /data-show-more-button="true"/);
 	assert.match(markup, /data-show-new-chat-button="true"/);
 	assert.match(markup, /data-testid="floating-history-drawer"/);
 	assert.match(markup, /data-testid="shared-chat-panel"/);
@@ -313,6 +325,24 @@ test("RovoFloatingChat can render a fixed single-thread agent header", async () 
 	assert.match(FLOATING_CHAT_HEADER_SOURCE, /<RovoAppBrand enableAgentSelector=\{showAgentSelector\} \/>/u);
 	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showChatHistory \? \([\s\S]*<ChatHistoryButton/u);
 	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showNewChatButton \? \(/u);
+});
+
+test("RovoFloatingChat can fill an embedded owner instead of using viewport positioning", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderEmbeddedChat();
+
+	assert.match(markup, /class="absolute inset-0 z-10 flex min-h-0 w-full flex-col overflow-hidden border-l border-border/);
+	assert.match(markup, /aria-label="Agent chat"/);
+	assert.match(markup, /data-rovo-chat-placement="embedded"/);
+	assert.match(markup, /data-show-more-button="false"/);
+	assert.match(markup, /role="region"/);
+	assert.doesNotMatch(markup, /fixed right-6 bottom-6/);
+	assert.match(markup, /class="h-full min-h-0 min-w-0"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /height: embedded \? "100%" : "auto"/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /maxHeight: embedded \? "none"/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /initial=\{embedded \|\| shouldReduceMotion \? false/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /transition=\{embedded \|\| shouldReduceMotion \? \{ duration: 0 \}/u);
+	assert.match(FLOATING_CHAT_HEADER_SOURCE, /showMoreButton \? \([\s\S]*<DropdownMenu/u);
 });
 
 test("RovoFloatingChat can suppress the custom-agent back button", async () => {
@@ -430,14 +460,13 @@ test("Floating chat shell hugs content until it reaches the viewport-bounded max
 });
 
 test("Floating chat panel receives a bounded max-height without forcing empty-state height", () => {
-	assert.match(ROVO_FLOATING_CHAT_SOURCE, /<div className="min-h-0 min-w-0 overflow-hidden">[\s\S]*<ChatPanel/);
-	assert.match(ROVO_FLOATING_CHAT_SOURCE, /containerClassName="min-h-0 min-w-0"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /: "min-h-0 min-w-0 overflow-hidden"}[\s\S]*<ChatPanel/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /: "min-h-0 min-w-0"}/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /display: "flex"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /flexDirection: "column"/);
-	assert.match(ROVO_FLOATING_CHAT_SOURCE, /height: "auto"/);
-	assert.match(ROVO_FLOATING_CHAT_SOURCE, /maxHeight: "calc\(min\(720px, calc\(100dvh - 96px\)\) - 56px\)"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /height: embedded \? "100%" : "auto"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /maxHeight: embedded \? "none" : "calc\(min\(720px, calc\(100dvh - 96px\)\) - 56px\)"/);
 	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /gridTemplateRows: "minmax\(0, 1fr\) auto"/);
-	assert.doesNotMatch(ROVO_FLOATING_CHAT_SOURCE, /containerClassName="h-full min-h-0"/);
 });
 
 test("Floating chat keeps chrome and composer outside the scrollable message viewport", () => {

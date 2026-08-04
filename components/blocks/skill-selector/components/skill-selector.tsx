@@ -65,7 +65,7 @@ export function SkillSelector({
 	defaultPinnedSkillIds,
 	disabledSkillIds,
 	emptyMessage = "No skills found.",
-	heading = "Select a skill",
+	heading,
 	onBrowseSkills,
 	onCreateSkill,
 	onPinnedSkillIdsChange,

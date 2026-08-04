@@ -104,8 +104,8 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 	},
 	{
 		// Human activity snapshot: a person's comment card with a stacked
-		// avatar/name/timestamp header. Like the agent card, it exposes an inline
-		// prompt composer as a flush footer (allowReply defaults to true).
+		// avatar/name/timestamp header. It carries seeded reactions so the demo
+		// shows both an unreacted pill and one the current viewer has pressed.
 		id: "human-flag",
 		kind: "comment",
 		actor: ANDREA,
@@ -115,6 +115,10 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 				type: "text",
 				text: "Flagging that this only reproduces on threads with a trailing reply input — let's confirm the fix holds in dark mode before we close it out.",
 			},
+		],
+		reactions: [
+			{ emoji: "👍️", actorIds: [ANTHONY.id, JIRA_ACTIVITY_CURRENT_USER.id] },
+			{ emoji: "🎉", actorIds: [ANTHONY.id] },
 		],
 	},
 	{
