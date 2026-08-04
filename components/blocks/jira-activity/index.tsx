@@ -190,6 +190,13 @@ export function JiraActivity({
 				<ol aria-label="Activity timeline" className="flex flex-col">
 					{orderedEntries.map((entry, index) => {
 						const isLast = index === orderedEntries.length - 1;
+						const isCardEntry = entry.kind !== "event";
+						const isNextEntryCard = orderedEntries[index + 1]?.kind !== "event" && !isLast;
+						const spacingClassName = isLast
+							? entry.kind === "comment" ? "pb-4" : "pb-3"
+							: isCardEntry && isNextEntryCard
+								? "pb-6"
+								: isCardEntry || isNextEntryCard ? "pb-5" : "pb-3";
 
 						return (
 							<li className="flex gap-2" data-jira-activity-entry-id={entry.id} key={entry.id}>
@@ -202,9 +209,7 @@ export function JiraActivity({
 									className={cn(
 										"min-w-0 flex-1",
 										entry.kind === "event" ? null : "relative -ml-8",
-										// Human and agent comment panels get a slightly larger 16px gap
-										// below the card; event spine rows and changed-files outputs stay at 12px.
-										entry.kind === "comment" ? "pb-4" : "pb-3",
+										spacingClassName,
 									)}
 								>
 									{entry.kind === "event" ? null : (
@@ -213,13 +218,15 @@ export function JiraActivity({
 												aria-hidden
 												className="pointer-events-none absolute -top-1 left-2.5 h-1 w-1 bg-surface"
 											/>
-											<span
-												aria-hidden
-												className={cn(
-													"pointer-events-none absolute left-2.5 h-1 w-1 bg-surface",
-													entry.kind === "comment" ? "bottom-3" : "bottom-2",
-												)}
-											/>
+											{isLast ? null : (
+												<span
+													aria-hidden
+													className={cn(
+														"pointer-events-none absolute left-2.5 h-1 w-1 bg-surface",
+														isNextEntryCard ? "bottom-5" : "bottom-4",
+													)}
+												/>
+											)}
 										</>
 									)}
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
