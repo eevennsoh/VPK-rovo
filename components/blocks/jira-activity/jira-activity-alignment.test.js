@@ -14,3 +14,7 @@ test("compact activity labels share the timeline node's 24px alignment track", (
 	assert.match(EVENT_SOURCE, /<p className="flex h-6 items-center[^>]*>\s*<span>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
+
+test("rich activity cards align to the timeline's left edge", () => {
+	assert.match(INDEX_SOURCE, /entry\.kind === "event" \? null : "relative -ml-8"/u);
+});

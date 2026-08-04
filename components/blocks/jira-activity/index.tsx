@@ -201,6 +201,7 @@ export function JiraActivity({
 								<div
 									className={cn(
 										"min-w-0 flex-1",
+										entry.kind === "event" ? null : "relative -ml-8",
 										// Human and agent comment panels get a slightly larger 16px gap
 										// below the card; event spine rows and changed-files outputs stay at 12px.
 										entry.kind === "comment" ? "pb-4" : "pb-3",
