@@ -6,6 +6,7 @@ const {
 	checkDependencies,
 	extractPublicBaseUrl,
 	normalizeTargetUrl,
+	parseCliArguments,
 	resolvePortlessTarget,
 	sessionNameForHostname,
 	startTunnel,
@@ -135,6 +136,20 @@ test("requires explicit public-sharing confirmation before any command runs", as
 	assert.equal(calls, 0);
 });
 
+test("treats a URL-only invocation as the documented start command", () => {
+	assert.deepEqual(
+		parseCliArguments([
+			"https://feature.localhost/demo",
+			"--confirm-public",
+		]),
+		{
+			command: "start",
+			confirmPublic: true,
+			targetUrl: "https://feature.localhost/demo",
+		},
+	);
+});
+
 test("reuses an existing scoped tunnel without starting another", async () => {
 	const calls = [];
 	const run = (command, args) => {
@@ -143,6 +158,9 @@ test("reuses an existing scoped tunnel without starting another", async () => {
 		if (command === "atlas") return result(0, "tunnel 141 Atlas Tunnel CLI\n");
 		if (command === "curl") return result(0, "200");
 		if (command === "tmux" && args[0] === "has-session") return result(0);
+		if (command === "tmux" && args[0] === "show-options" && args.at(-1) === "@vpk-tunnel-port") {
+			return result(0, "4321\n");
+		}
 		if (command === "tmux" && args[0] === "capture-pane") {
 			return result(0, "Public URL: https://research.atlastunnel.com\n");
 		}
@@ -163,6 +181,57 @@ test("reuses an existing scoped tunnel without starting another", async () => {
 	assert.equal(
 		calls.some(([command, args]) => command === "tmux" && args[0] === "new-session"),
 		false,
+	);
+});
+
+test("restarts a scoped tunnel when its resolved frontend port changes", async () => {
+	let sessionExists = true;
+	const calls = [];
+	const run = (command, args) => {
+		calls.push([command, args]);
+		if (command === "/bin/sh") return result(0, "/usr/bin/tool\n");
+		if (command === "atlas") return result(0, "tunnel 141 Atlas Tunnel CLI\n");
+		if (command === "curl") return result(0, "200");
+		if (command === "tmux" && args[0] === "has-session") {
+			return result(sessionExists ? 0 : 1);
+		}
+		if (command === "tmux" && args[0] === "show-options" && args.at(-1) === "@vpk-tunnel-port") {
+			return result(0, "4000\n");
+		}
+		if (command === "tmux" && args[0] === "kill-session") {
+			sessionExists = false;
+			return result(0);
+		}
+		if (command === "tmux" && args[0] === "new-session") {
+			sessionExists = true;
+			return result(0);
+		}
+		return result(0);
+	};
+	const tunnel = await startTunnel({
+		confirmPublic: true,
+		resolveTarget: async () => ({
+			hostname: "feature.localhost",
+			localUrl: "https://feature.localhost/demo",
+			port: 4321,
+		}),
+		run,
+		sleep: async () => {},
+		waitForUrl: async () => "https://research.atlastunnel.com",
+	});
+
+	assert.equal(tunnel.reused, false);
+	assert.equal(
+		calls.some(([command, args]) => command === "tmux" && args[0] === "kill-session"),
+		true,
+	);
+	assert.equal(
+		calls.some(
+			([command, args]) => command === "tmux"
+				&& args[0] === "new-session"
+				&& args.at(-1) === "atlas tunnel start --port 4321 --public",
+		),
+		true,
 	);
 });
 
@@ -214,13 +283,32 @@ test("starts the canonical public Atlas command in a new scoped session", async 
 			],
 		],
 	);
+	assert.deepEqual(
+		calls.find(
+			([command, args]) => command === "tmux"
+				&& args[0] === "set-option"
+				&& args.at(-2) === "@vpk-tunnel-port",
+		),
+		[
+			"tmux",
+			[
+				"set-option",
+				"-t",
+				"vpk-tunnel-feature-localhost",
+				"@vpk-tunnel-port",
+				"4321",
+			],
+		],
+	);
 });
 
 test("reports a stored public URL after startup logs scroll away", () => {
 	const run = (command, args) => {
 		if (command === "tmux" && args[0] === "has-session") return result(0);
 		if (command === "tmux" && args[0] === "show-options") {
-			return result(0, "https://research.atlastunnel.com\n");
+			return args.at(-1) === "@vpk-tunnel-port"
+				? result(0, "4321\n")
+				: result(0, "https://research.atlastunnel.com\n");
 		}
 		if (command === "tmux" && args[0] === "capture-pane") return result(0, "request logs\n");
 		return result(1);
@@ -228,6 +316,7 @@ test("reports a stored public URL after startup logs scroll away", () => {
 	const status = statusTunnel({ run, targetUrl: "https://feature.localhost/demo" });
 
 	assert.equal(status.running, true);
+	assert.equal(status.port, 4321);
 	assert.equal(status.publicUrl, "https://research.atlastunnel.com/demo");
 });
 

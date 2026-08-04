@@ -215,6 +215,19 @@ function readStoredPublicBaseUrl(sessionName, run) {
 	return extractPublicBaseUrl(result.stdout);
 }
 
+function readStoredTunnelPort(sessionName, run) {
+	const result = run("tmux", [
+		"show-options",
+		"-v",
+		"-t",
+		sessionName,
+		"@vpk-tunnel-port",
+	]);
+	if (result.error || result.status !== 0) return null;
+	const port = Number(result.stdout.trim());
+	return Number.isInteger(port) && port > 0 && port <= 65_535 ? port : null;
+}
+
 function storePublicBaseUrl(sessionName, publicBaseUrl, run) {
 	const result = run("tmux", [
 		"set-option",
@@ -225,6 +238,19 @@ function storePublicBaseUrl(sessionName, publicBaseUrl, run) {
 	]);
 	if (result.error || result.status !== 0) {
 		throw new Error(`Could not persist the public URL on scoped tunnel session ${sessionName}.`);
+	}
+}
+
+function storeTunnelPort(sessionName, port, run) {
+	const result = run("tmux", [
+		"set-option",
+		"-t",
+		sessionName,
+		"@vpk-tunnel-port",
+		String(port),
+	]);
+	if (result.error || result.status !== 0) {
+		throw new Error(`Could not persist the frontend port on scoped tunnel session ${sessionName}.`);
 	}
 }
 
@@ -281,6 +307,7 @@ async function startTunnel({
 	confirmPublic = false,
 	run = createRunner(),
 	resolveTarget = resolvePortlessTarget,
+	sleep = delay,
 	waitForUrl = waitForPublicUrl,
 } = {}) {
 	if (!confirmPublic) {
@@ -293,7 +320,11 @@ async function startTunnel({
 	const target = await resolveTarget({ targetUrl });
 	const httpStatus = verifyHttpTarget(target.localUrl, run);
 	const sessionName = sessionNameForHostname(target.hostname);
-	const reused = tmuxSessionExists(sessionName, run);
+	let reused = tmuxSessionExists(sessionName, run);
+	if (reused && readStoredTunnelPort(sessionName, run) !== target.port) {
+		await stopTmuxSession(sessionName, run, sleep);
+		reused = false;
+	}
 
 	if (!reused) {
 		const atlasCommand = `atlas tunnel start --port ${target.port} --public`;
@@ -310,6 +341,7 @@ async function startTunnel({
 		?? extractPublicBaseUrl(existingOutput)
 		?? await waitForUrl(sessionName, run);
 	storePublicBaseUrl(sessionName, publicBaseUrl, run);
+	storeTunnelPort(sessionName, target.port, run);
 	return {
 		httpStatus,
 		localUrl: target.localUrl,
@@ -332,11 +364,25 @@ function statusTunnel({ targetUrl = DEFAULT_TARGET_URL, run = createRunner() } =
 		: null;
 	return {
 		localUrl: parsed.href,
+		port: running ? readStoredTunnelPort(sessionName, run) : null,
 		publicBaseUrl,
 		publicUrl: publicBaseUrl ? buildPublicUrl(publicBaseUrl, parsed.href) : null,
 		running,
 		sessionName,
 	};
+}
+
+async function stopTmuxSession(sessionName, run, sleep = delay) {
+	run("tmux", ["send-keys", "-t", sessionName, "C-c"]);
+	await sleep(500);
+	if (!tmuxSessionExists(sessionName, run)) return;
+
+	const killed = run("tmux", ["kill-session", "-t", sessionName]);
+	if (killed.error || killed.status !== 0) {
+		throw new Error(
+			`Could not stop scoped tunnel session ${sessionName}: ${killed.stderr.trim() || "tmux failed"}`,
+		);
+	}
 }
 
 async function stopTunnel({
@@ -350,21 +396,15 @@ async function stopTunnel({
 		return { localUrl: parsed.href, sessionName, stopped: false };
 	}
 
-	run("tmux", ["send-keys", "-t", sessionName, "C-c"]);
-	await sleep(500);
-	if (tmuxSessionExists(sessionName, run)) {
-		const killed = run("tmux", ["kill-session", "-t", sessionName]);
-		if (killed.error || killed.status !== 0) {
-			throw new Error(
-				`Could not stop scoped tunnel session ${sessionName}: ${killed.stderr.trim() || "tmux failed"}`,
-			);
-		}
-	}
+	await stopTmuxSession(sessionName, run, sleep);
 	return { localUrl: parsed.href, sessionName, stopped: true };
 }
 
 function parseCliArguments(argv) {
-	const [command = "start", ...rest] = argv;
+	const firstArgument = argv[0];
+	const urlOnlyStart = typeof firstArgument === "string" && /^https?:\/\//iu.test(firstArgument);
+	const command = urlOnlyStart ? "start" : firstArgument ?? "start";
+	const rest = urlOnlyStart ? argv : argv.slice(1);
 	const confirmPublic = rest.includes("--confirm-public");
 	const positional = rest.filter((value) => value !== "--confirm-public");
 	if (!["resolve", "start", "status", "stop"].includes(command)) {
@@ -409,11 +449,14 @@ module.exports = {
 	normalizeTargetUrl,
 	parseCliArguments,
 	readStoredPublicBaseUrl,
+	readStoredTunnelPort,
 	resolvePortlessTarget,
 	sessionNameForHostname,
 	startTunnel,
 	statusTunnel,
+	stopTmuxSession,
 	storePublicBaseUrl,
+	storeTunnelPort,
 	stopTunnel,
 	tmuxSessionExists,
 	verifyHttpTarget,
