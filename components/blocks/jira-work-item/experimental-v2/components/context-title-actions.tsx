@@ -24,7 +24,9 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import LockUnlockedIcon from "@atlaskit/icon/core/lock-unlocked";
+import ScreenIcon from "@atlaskit/icon/core/screen";
 import ShareIcon from "@atlaskit/icon/core/share";
+import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 
 const ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.1,
@@ -196,8 +198,12 @@ export function ContextTitleActions({
 										{agent.label}
 									</DropdownMenuSubTrigger>
 									<DropdownMenuSubContent positionerClassName="z-[503]">
-										<DropdownMenuItem>Local</DropdownMenuItem>
-										<DropdownMenuItem>Cloud</DropdownMenuItem>
+										<DropdownMenuItem elemBefore={<ScreenIcon label="" size="small" />}>
+											Local
+										</DropdownMenuItem>
+										<DropdownMenuItem elemBefore={<CloudIcon label="" size="small" />}>
+											Cloud
+										</DropdownMenuItem>
 									</DropdownMenuSubContent>
 								</DropdownMenuSub>
 							))}

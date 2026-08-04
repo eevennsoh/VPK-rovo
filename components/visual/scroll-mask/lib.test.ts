@@ -98,13 +98,19 @@ test("buildScrollMaskBlurLayerStyles stacks feathered backdrop-blur layers per e
 	assert.equal(bottom[4].maskImage, "linear-gradient(to top, #000 0%, #000 10%, transparent 26%)");
 });
 
-test("sticky row fades reuse the progressive top-edge blur stack", () => {
+test("sticky row fades reuse the standard surface fade without progressive blur", () => {
 	assert.match(SCROLL_MASK_SOURCE, /export function StickyRowScrollFade/u);
-	assert.match(SCROLL_MASK_SOURCE, /TOP_BLUR_LAYERS\.map\(\(layerStyle, index\) =>/u);
 	assert.match(
 		SCROLL_MASK_SOURCE,
 		/bg-linear-to-b from-surface-overlay to-transparent/u,
 	);
+	const stickyFadeStart = SCROLL_MASK_SOURCE.indexOf("export function StickyRowScrollFade");
+	const stickyFadeEnd = SCROLL_MASK_SOURCE.indexOf("export function ScrollMask", stickyFadeStart);
+	assert.notEqual(stickyFadeStart, -1);
+	assert.notEqual(stickyFadeEnd, -1);
+	const stickyFadeSource = SCROLL_MASK_SOURCE.slice(stickyFadeStart, stickyFadeEnd);
+	assert.doesNotMatch(stickyFadeSource, /TOP_BLUR_LAYERS/u);
+	assert.doesNotMatch(stickyFadeSource, /backdropFilter|WebkitBackdropFilter/u);
 });
 
 test("buildScrollMaskBlurLayerStyles rotates the same ramp onto horizontal edges", () => {

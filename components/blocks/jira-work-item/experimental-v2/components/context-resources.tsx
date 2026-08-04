@@ -5,7 +5,6 @@ import type { ReactElement } from "react";
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import FileIcon from "@atlaskit/icon/core/file";
-import LinkIcon from "@atlaskit/icon/core/link";
 
 import { AgentFilledSummaryRow } from "@/components/blocks/agent/components/agent-summary-row";
 import {
@@ -18,7 +17,6 @@ import {
 	AnimatedContextTitleActions,
 	type CodingAgentId,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
-import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -61,11 +59,6 @@ export function ContextResources({
 			buttonLabel: "Add subtasks",
 			icon: <ChildWorkItemsIcon label="" size="small" />,
 			renderAddButton: (trigger) => <SubtasksPopover key="subtasks" trigger={trigger} />,
-		},
-		{
-			buttonLabel: "Link work item",
-			icon: <LinkIcon label="" size="small" />,
-			renderAddButton: (trigger) => <LinkedWorkItemsPopover key="linkedItems" trigger={trigger} />,
 		},
 	];
 

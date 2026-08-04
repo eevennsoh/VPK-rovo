@@ -196,7 +196,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	);
 	assert.match(contextResourcesSource, /buttonLabel: "Add attachments",[\s\S]*<AttachmentIcon label="" size="small" \/>/u);
 	assert.match(contextResourcesSource, /buttonLabel: "Add subtasks",[\s\S]*<ChildWorkItemsIcon label="" size="small" \/>/u);
-	assert.match(contextResourcesSource, /buttonLabel: "Link work item",[\s\S]*<LinkIcon label="" size="small" \/>[\s\S]*<LinkedWorkItemsPopover key="linkedItems" trigger=\{trigger\} \/>/u);
+	assert.doesNotMatch(contextResourcesSource, /Link work item|LinkIcon|LinkedWorkItemsPopover/u);
 	assert.match(contextResourcesSource, /<Button aria-label=\{resource\.buttonLabel\} size="icon" type="button" variant="outline">[\s\S]*\{resource\.icon\}/u);
 	assert.doesNotMatch(contextResourcesSource, /CommitIcon|BranchIcon|aria-label="Commit"|aria-label="Branch"/u);
 	assert.doesNotMatch(contextResourcesSource, /<Button size="compact" type="button" variant="outline">/u);
@@ -219,7 +219,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	assert.doesNotMatch(titleActionsSource, /ButtonGroup|Claude \(Local\)|DropdownMenuLabel|Rovo CLI|More open options/u);
 	assert.match(
 		titleActionsSource,
-		/codingAgents\.map\(\(agent\) => \([\s\S]*<DropdownMenuSub key=\{agent\.id\}>[\s\S]*<DropdownMenuSubTrigger className="gap-0\.5 \[&>:last-child\]:opacity-0 hover:\[&>:last-child\]:opacity-100 data-\[highlighted\]:\[&>:last-child\]:opacity-100 data-popup-open:\[&>:last-child\]:opacity-100">[\s\S]*<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">[\s\S]*\{agent\.logo\}[\s\S]*\{agent\.label\}[\s\S]*<DropdownMenuSubContent positionerClassName="z-\[503\]">[\s\S]*<DropdownMenuItem>Local<\/DropdownMenuItem>[\s\S]*<DropdownMenuItem>Cloud<\/DropdownMenuItem>/u,
+		/codingAgents\.map\(\(agent\) => \([\s\S]*<DropdownMenuSub key=\{agent\.id\}>[\s\S]*<DropdownMenuSubTrigger className="gap-0\.5 \[&>:last-child\]:opacity-0 hover:\[&>:last-child\]:opacity-100 data-\[highlighted\]:\[&>:last-child\]:opacity-100 data-popup-open:\[&>:last-child\]:opacity-100">[\s\S]*<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">[\s\S]*\{agent\.logo\}[\s\S]*\{agent\.label\}[\s\S]*<DropdownMenuSubContent positionerClassName="z-\[503\]">[\s\S]*<DropdownMenuItem elemBefore=\{<ScreenIcon label="" size="small" \/>\}>[\s\S]*Local[\s\S]*<DropdownMenuItem elemBefore=\{<CloudIcon label="" size="small" \/>\}>[\s\S]*Cloud/u,
 	);
 	assert.doesNotMatch(titleActionsSource, /ContextTitleActions\([\s\S]*collapsed = false/u);
 	assert.doesNotMatch(titleBarSource, /ContextTitleActions|AnimatedContextTitleActions/u);
