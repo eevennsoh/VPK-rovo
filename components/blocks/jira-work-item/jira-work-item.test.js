@@ -363,7 +363,8 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(panelLayoutSource, /setMetadataPeek/u);
 	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_ENTER_TRANSITION/u);
 	assert.doesNotMatch(panelLayoutSource, /METADATA_PEEK_EXIT_TRANSITION/u);
-	assert.match(titleBarSource, /duration: 0\.05,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
+	assert.match(titleBarSource, /const ACTIONS_EXIT_DURATION_MS = 50;/u);
+	assert.match(titleBarSource, /duration: ACTIONS_EXIT_DURATION_MS \/ 1000,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
 	assert.match(titleBarSource, /duration: 0\.1,[\s\S]*ease: \[0\.4, 1, 0\.6, 1\]/u);
 	assert.match(titleBarSource, /EXPANDED_ACTIONS_ENTER_TRANSITION[\s\S]*duration: 0\.05/u);
 	assert.match(titleBarSource, /collapsed \? ACTIONS_ENTER_TRANSITION : EXPANDED_ACTIONS_ENTER_TRANSITION/u);
@@ -371,7 +372,10 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.match(titleBarSource, /const isInteractive = !hideForToggle && isLayoutSettled && !isAnimating;/u);
 	assert.match(titleBarSource, /hideForToggle=\{metadataTogglePending\}/u);
 	assert.match(titleBarSource, /onToggleExitComplete=\{completeMetadataToggle\}/u);
-	assert.match(titleBarSource, /hideForToggle && !didCompleteToggleExit\.current/u);
+	assert.match(titleBarSource, /if \(!hideForToggle \|\| didCompleteToggleExit\.current\) return undefined;/u);
+	assert.match(titleBarSource, /window\.setTimeout\(\(\) => \{[\s\S]*onToggleExitComplete\(\);[\s\S]*shouldReduceMotion \? 0 : ACTIONS_EXIT_DURATION_MS/u);
+	assert.match(titleBarSource, /return \(\) => window\.clearTimeout\(timeout\);/u);
+	assert.match(titleBarSource, /onAnimationComplete=\{\(\) => setIsAnimating\(false\)\}/u);
 	assert.match(titleBarSource, /didCompleteToggleExit\.current = true;/u);
 	assert.match(titleBarSource, /inert=\{isInteractive \? undefined : true\}/u);
 	assert.match(titleBarSource, /willChange: isAnimating \? "transform, opacity" : undefined/u);
