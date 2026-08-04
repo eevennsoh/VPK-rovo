@@ -22,6 +22,7 @@ import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimen
 interface ExperimentalV2JiraWorkItemBaseProps {
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
+	onOpenAgentChat?: (agentId: string) => void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 	workItem?: WorkItemData;
@@ -107,7 +108,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 									/>
 								)}
 								activity={<ActivityPanel />}
-								composer={<ActivityComposer />}
+								composer={<ActivityComposer onOpenAgentChat={props.onOpenAgentChat} />}
 								fillContainer={inlineSurface === "fill"}
 								metadata={<MetadataRail />}
 							/>

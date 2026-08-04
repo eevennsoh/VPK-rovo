@@ -60,6 +60,15 @@ const JGP_AGENT_PROFILES = [
 		contextDescription: "Answer as RFP Drafter for the selected JGP Jira issue.",
 	},
 	{
+		id: "response-reviewer",
+		name: "Response Reviewer",
+		byline: "RFP review agent by Rovo",
+		avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		description: "Reviews enterprise responses for product, security, legal, and delivery risks before bid decisions.",
+		starters: [],
+		contextDescription: "Answer as Response Reviewer for the selected Jira RFP work item.",
+	},
+	{
 		id: "service-impact-agent",
 		name: "Service impact agent",
 		byline: "JGP demo agent by Rovo",

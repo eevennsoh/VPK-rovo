@@ -36,6 +36,8 @@ const V2_DIVERGENCES = new Set([
 	"components/experimental-work-item-layout.tsx",
 	"components/details-tab.tsx",
 	"components/activity-panel.tsx",
+	"components/activity-composer-context-pills.tsx",
+	"components/activity-composer.tsx",
 	"components/metadata-rail.tsx",
 	"experimental-v2-jira-work-item.tsx",
 ]);

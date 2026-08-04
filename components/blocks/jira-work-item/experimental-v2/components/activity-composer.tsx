@@ -51,7 +51,9 @@ interface SessionTargetSelection {
  * Mentioning a working session's agent offers a continue/new-session route; a
  * first-time agent mention invokes that agent and adds it to Crew.
  */
-export function ActivityComposer() {
+export function ActivityComposer({
+	onOpenAgentChat,
+}: Readonly<{ onOpenAgentChat?: (agentId: string) => void }>) {
 	const { state, actions } = useJiraWorkItem();
 	const [draft, setDraft] = useState("");
 	const [sessionTargetSelection, setSessionTargetSelection] = useState<SessionTargetSelection | null>(null);
@@ -67,6 +69,7 @@ export function ActivityComposer() {
 		&& sessionTargetSelection?.sessionId === mentionedWorkingAgentSession.id
 		&& sessionTargetSelection.choice === "new",
 	);
+	const runningSessions = state.sessions.filter((session) => session.status === "running");
 
 	const handlePromptChange = (next: string) => {
 		setDraft(next);
@@ -169,6 +172,8 @@ export function ActivityComposer() {
 			<ActivityComposerContextPills
 				onInvokeAgent={handleInvokeAgent}
 				onInvokeSkill={handleInvokeSkill}
+				onOpenAgentChat={onOpenAgentChat}
+				runningSessions={runningSessions}
 			/>
 			<div className="relative" data-jira-work-item-composer-state="sticky">
 				<JiraWorkItemComposerMotion placement="sticky">
