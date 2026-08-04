@@ -9,9 +9,12 @@ import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
-import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
-import { PromptInputButton, PromptInputTextarea } from "@/components/ui-custom/prompt-input";
+import {
+	PromptInputButton,
+	PromptInputSubmit,
+	PromptInputTextarea,
+} from "@/components/ui-custom/prompt-input";
 import type {
 	RichTextMentionSectionLabels,
 	RichTextSuggestionVariantConfig,
@@ -60,7 +63,6 @@ export function JiraActivityComposer({
 	className,
 }: Readonly<JiraActivityComposerProps>) {
 	const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
-	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 	const value = controlledValue ?? uncontrolledValue;
 	const trimmed = value.trim();
 	const canSubmit = trimmed.length > 0;
@@ -76,7 +78,6 @@ export function JiraActivityComposer({
 		if (!canSubmit) return;
 		onSubmit(trimmed);
 		updateValue("");
-		setRealtimeVoiceActive(false);
 	}
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -131,14 +132,14 @@ export function JiraActivityComposer({
 			actions={
 				<>
 					{submitAccessory}
-					<RovoComposerActionButton
-						canSubmit={canSubmit}
-						composerStatus="ready"
-						experimentalDarkCta
-						onStop={() => setRealtimeVoiceActive(false)}
-						onToggleRealtimeVoice={() => setRealtimeVoiceActive((active) => !active)}
-						realtimeVoiceActive={realtimeVoiceActive}
-					/>
+					<PromptInputSubmit
+						aria-label="Send"
+						className="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+						disabled={!canSubmit}
+						size="icon-sm"
+					>
+						<ArrowUpIcon label="" />
+					</PromptInputSubmit>
 				</>
 			}
 			addButton={

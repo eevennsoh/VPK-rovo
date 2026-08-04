@@ -494,7 +494,7 @@ test("AI Planner is composed below the title with shared TWG and prompt primitiv
 	assert.match(activityComposerSource, /actions\.invokeAgent\([\s\S]*id: mentionedAgentSession\.agentId[\s\S]*"prompt",[\s\S]*text/u);
 	assert.match(activityComposerSource, /submitAccessory=\{startsNewSession \? \([\s\S]*<Tag[\s\S]*onRemove=\{\(\) => chooseSessionTarget\("continue"\)\}[\s\S]*New session/u);
 	assert.match(jiraActivityComposerSource, /submitAccessory\?: ReactNode;/u);
-	assert.match(jiraActivityComposerSource, /\{submitAccessory\}[\s\S]*<RovoComposerActionButton/u);
+	assert.match(jiraActivityComposerSource, /\{submitAccessory\}[\s\S]*<PromptInputSubmit[\s\S]*disabled=\{!canSubmit\}/u);
 	assert.match(activityComposerSource, /value=\{draft\}/u);
 	assert.doesNotMatch(activityComposerSource, /import \{ FloatingComposer \}|PromptInputTextarea|RovoComposerActionButton/u);
 	assert.doesNotMatch(activityComposerSource, /ActivitySuggestionMenu|TRAILING_TOKEN|buildItems/u);
