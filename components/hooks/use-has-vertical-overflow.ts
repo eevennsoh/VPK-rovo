@@ -71,6 +71,10 @@ function getElementVerticalOverflowState(element: HTMLElement | null): VerticalO
 	});
 }
 
+export function getVerticalOverflowResizeTargets(element: Element): Element[] {
+	return [element, ...element.children];
+}
+
 function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void): () => void {
 	element.addEventListener("scroll", updateScrollState, { passive: true });
 
@@ -83,24 +87,33 @@ function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: ()
 	}
 
 	const resizeObserver = new ResizeObserver(updateScrollState);
-	const observeSubtree = (root: Element) => {
-		resizeObserver.observe(root);
-		for (const descendant of root.querySelectorAll("*")) {
-			resizeObserver.observe(descendant);
+	const observedResizeTargets = new Set<Element>();
+	const syncResizeTargets = () => {
+		const nextResizeTargets = new Set(getVerticalOverflowResizeTargets(element));
+
+		for (const target of observedResizeTargets) {
+			if (!nextResizeTargets.has(target)) {
+				resizeObserver.unobserve(target);
+			}
+		}
+
+		for (const target of nextResizeTargets) {
+			if (!observedResizeTargets.has(target)) {
+				resizeObserver.observe(target);
+			}
+		}
+
+		observedResizeTargets.clear();
+		for (const target of nextResizeTargets) {
+			observedResizeTargets.add(target);
 		}
 	};
-	observeSubtree(element);
+	syncResizeTargets();
 
 	const mutationObserver = typeof MutationObserver === "undefined"
 		? null
-		: new MutationObserver((mutations) => {
-				for (const mutation of mutations) {
-					for (const node of mutation.addedNodes) {
-						if (node instanceof Element) {
-							observeSubtree(node);
-						}
-					}
-				}
+		: new MutationObserver(() => {
+				syncResizeTargets();
 				updateScrollState();
 			});
 	mutationObserver?.observe(element, { childList: true, subtree: true });

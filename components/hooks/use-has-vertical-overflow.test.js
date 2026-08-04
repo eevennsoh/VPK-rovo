@@ -20,6 +20,19 @@ test("useHasVerticalOverflow does not update state after every render", () => {
 	);
 });
 
+test("vertical overflow resize tracking stays at the scroll container boundary", async () => {
+	const { getVerticalOverflowResizeTargets } = await loadOverflowHarness();
+	const nestedDescendant = { children: [] };
+	const firstChild = { children: [nestedDescendant] };
+	const secondChild = { children: [] };
+	const scrollContainer = { children: [firstChild, secondChild] };
+
+	assert.deepEqual(
+		getVerticalOverflowResizeTargets(scrollContainer),
+		[scrollContainer, firstChild, secondChild],
+	);
+});
+
 test("VerticalOverflowState does not show masks for one-pixel layout jitter", async () => {
 	const { getVerticalOverflowState } = await loadOverflowHarness();
 
