@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	JiraActivity,
 	JiraActivityCard,
 	JiraActivityComposer,
 	JIRA_ACTIVITY_CURRENT_USER,
@@ -12,6 +13,16 @@ import { JiraActivitySegments } from "@/components/blocks/jira-activity/jira-act
 
 export default function JiraActivityDemo() {
 	return <Page />;
+}
+
+export function JiraActivityReactionsDemo() {
+	return (
+		<div className="w-full p-6">
+			<div className="mx-auto w-full max-w-2xl">
+				<JiraActivity commentActions="reply-and-reactions" />
+			</div>
+		</div>
+	);
 }
 
 export function JiraActivityCardDemo() {

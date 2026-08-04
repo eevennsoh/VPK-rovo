@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 413,
+			"manifestEntryCount": 414,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5365,7 +5365,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 97,
+				"entryCount": 98,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5576,6 +5576,12 @@
 						"slug": "editor-toolbar",
 						"name": "Editor Toolbar",
 						"importPath": "@/components/blocks/editor-toolbar"
+					},
+					{
+						"category": "blocks",
+						"slug": "emoji-picker",
+						"name": "Emoji Picker",
+						"importPath": "@/components/blocks/emoji-picker"
 					},
 					{
 						"category": "blocks",

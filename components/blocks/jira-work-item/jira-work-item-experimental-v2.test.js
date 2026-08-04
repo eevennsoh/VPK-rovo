@@ -30,16 +30,32 @@ const V2_DIVERGENCES = new Set([
 	"components/context-resources.tsx",
 	"components/context-title-actions.tsx",
 	"components/context-title-bar.tsx",
+	"components/detail-field-editors.tsx",
 	"components/details-sections.tsx",
 	"components/experimental-breadcrumb-actions.tsx",
 	"components/experimental-work-item-dialog.tsx",
 	"components/experimental-work-item-layout.tsx",
+	"components/floating-session-surface.tsx",
 	"components/details-tab.tsx",
 	"components/activity-panel.tsx",
 	"components/activity-composer-context-pills.tsx",
 	"components/activity-composer.tsx",
+	"components/ai-planner-panel.tsx",
 	"components/metadata-rail.tsx",
+	// The three context popovers moved to segmented tabs and the shared
+	// `context-popover-parts` chrome; v1 keeps its original underline treatment.
+	"components/attachments-popover.tsx",
+	"components/subtasks-popover.tsx",
+	"components/linked-work-items-popover.tsx",
 	"experimental-v2-jira-work-item.tsx",
+]);
+
+// Modules that exist only in v2. They have no v1 twin, so they are excluded
+// from the structural-duplicate comparison but must still be declared here so
+// an accidental new file is caught rather than silently accepted.
+const V2_ONLY_FILES = new Set([
+	"components/experimental-header-overflow-menu.tsx",
+	"components/context-popover-parts.tsx",
 ]);
 
 function readBlockFile(relativePath) {
@@ -64,6 +80,47 @@ test("experimental v2 exists with a distinctly named composition root", () => {
 	// The v1 root filename must not linger in v2 — both roots are imported side
 	// by side by the block index, so their names have to stay distinct.
 	assert.equal(fs.existsSync(path.join(V2_DIR, "experimental-jira-work-item.tsx")), false);
+});
+
+test("experimental v2 opens the shared agent chat as a full-height sibling column", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
+	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
+	const sessionSurfaceSource = readBlockFile("experimental-v2/components/floating-session-surface.tsx");
+	const sharedOverlaySource = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../projects/asx/components/asx-rovo-overlay.tsx"),
+		"utf8",
+	);
+
+	assert.match(
+		compositionSource,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail borderless \/>/u,
+	);
+	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
+	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
+	assert.doesNotMatch(sessionSurfaceSource, /children|createPortal|portalToViewport/u);
+	assert.match(sharedOverlaySource, /placement === "embedded"/u);
+	assert.match(
+		dialogSource,
+		/data-jira-work-item-main-column[\s\S]*data-jira-work-item-chat-column/u,
+	);
+	assert.match(dialogSource, /grid-cols-\[minmax\(0,1fr\)\]/u);
+	assert.match(
+		dialogSource,
+		/transition-\[margin-right\][\s\S]*@\[860px\]\/workitemdialog:mr-\[clamp\(320px,34vw,408px\)\][\s\S]*data-jira-work-item-header-column/u,
+	);
+	assert.match(
+		dialogSource,
+		/absolute inset-y-0 right-0 z-30[\s\S]*translate-x-full[\s\S]*sidebarOpen \? "translate-x-0" : "pointer-events-none"/u,
+	);
+	assert.match(dialogSource, /transition-\[margin-right\] duration-medium ease-in-out motion-reduce:transition-none/u);
+	assert.match(dialogSource, /transition-transform duration-medium ease-in-out[\s\S]*motion-reduce:transition-none/u);
+	assert.match(dialogSource, /aria-hidden=\{!sidebarOpen\}[\s\S]*inert=\{sidebarOpen \? undefined : true\}/u);
+	assert.match(
+		dialogSource,
+		/className="grid h-full min-h-0 min-w-0 grid-rows-\[auto_minmax\(0,1fr\)\]"[\s\S]*data-jira-work-item-main-column/u,
+	);
+	assert.match(layoutSource, /\{metadataCollapsed \? null : \(/u);
 });
 
 test("experimental v2 and v1 are mutually isolated", () => {
@@ -92,6 +149,7 @@ test("experimental v2 starts as a structural duplicate of v1", () => {
 	const v2Files = listSourceFiles(V2_DIR)
 		.map((filePath) => path.relative(V2_DIR, filePath))
 		.filter((relativePath) => relativePath !== "experimental-v2-jira-work-item.tsx")
+		.filter((relativePath) => !V2_ONLY_FILES.has(relativePath))
 		.sort();
 
 	assert.deepEqual(v2Files, v1Files);
@@ -123,28 +181,213 @@ test("experimental v2 shares the session/planner data layer with v1", () => {
 	assert.equal(fs.existsSync(path.join(V2_DIR, "data")), false);
 });
 
-test("context popover tab navigation keeps the shared default height and top gap", () => {
-	for (const variant of ["experimental", "experimental-v2"]) {
-		for (const popover of ["attachments-popover.tsx", "subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
-			const popoverSource = readBlockFile(`${variant}/components/${popover}`);
+test("experimental v2 running-agents menu removes the suggestion shell border", () => {
+	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
 
-			assert.match(popoverSource, /<TabsList variant="line" className="mt-2\.5 w-full px-2\.5">/u);
-			assert.doesNotMatch(popoverSource, /<TabsList[^>]*\bpt-/u);
-		}
+	assert.match(
+		contextPillsSource,
+		/<RichTextSuggestionMenu[\s\S]*className="rich-text-command-menu-borderless w-full!"[\s\S]*title="Running agents"/u,
+	);
+});
+
+test("experimental v2 running-agents menu dismisses after focus leaves its wrapper", () => {
+	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
+
+	assert.match(contextPillsSource, /window\.addEventListener\("pointerdown", handlePointerDown, true\);/u);
+	assert.match(contextPillsSource, /!containerRef\.current\?\.contains\(event\.target\)[\s\S]*onClose\(false\);/u);
+	assert.match(contextPillsSource, /window\.addEventListener\("keydown", handleDismissKeyDown\);/u);
+	assert.match(contextPillsSource, /event\.key === "Escape"[\s\S]*onClose\(true\);/u);
+	assert.match(contextPillsSource, /window\.removeEventListener\("pointerdown", handlePointerDown, true\);/u);
+	assert.match(contextPillsSource, /window\.removeEventListener\("keydown", handleDismissKeyDown\);/u);
+});
+
+test("context popover tab navigation keeps the shared default height and top gap", () => {
+	for (const popover of ["attachments-popover.tsx", "subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
+		const popoverSource = readBlockFile(`experimental/components/${popover}`);
+
+		assert.match(popoverSource, /<TabsList variant="line" className="mt-2\.5 w-full px-2\.5">/u);
+		assert.doesNotMatch(popoverSource, /<TabsList[^>]*\bpt-/u);
 	}
 });
 
-test("experimental v2 keeps the metadata panel visible and uses compact header bottom padding", () => {
+test("experimental v2 context popovers share one segmented tab strip", () => {
+	for (const popover of ["attachments-popover.tsx", "subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
+		const popoverSource = readBlockFile(`experimental-v2/components/${popover}`);
+
+		// One shared constant, so the three strips cannot drift apart. `variant="line"`
+		// would put them back on the underline treatment v1 uses.
+		assert.match(popoverSource, /<TabsList className=\{CONTEXT_POPOVER_TABS_LIST_CLASS\}>/u);
+		assert.doesNotMatch(popoverSource, /<TabsList[^>]*variant="line"/u);
+	}
+
+	// The grey track is visible, so the strip is inset with a margin. Padding would
+	// shrink the labels inside a full-bleed track instead of insetting the track.
+	const partsSource = readBlockFile("experimental-v2/components/context-popover-parts.tsx");
+	assert.match(partsSource, /CONTEXT_POPOVER_TABS_LIST_CLASS = "mx-2\.5 mt-2\.5 w-\[calc\(100%-1\.25rem\)\]"/u);
+});
+
+test("experimental v2 context popovers reuse one AI suggestion panel", () => {
+	const partsSource = readBlockFile("experimental-v2/components/context-popover-parts.tsx");
+
+	// Header count + collapse, then the shared "Uses AI" footer with feedback.
+	assert.match(partsSource, /export function SuggestionPanel\(/u);
+	assert.match(partsSource, /<AiSparkleIcon label="" color="currentColor" \/>/u);
+	assert.match(partsSource, /<Footer className="justify-start gap-1 px-2 py-1">/u);
+	assert.match(partsSource, /Uses AI\. Verify results\./u);
+
+	// No popover may re-implement the panel locally.
+	for (const popover of ["attachments-popover.tsx", "subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
+		const popoverSource = readBlockFile(`experimental-v2/components/${popover}`);
+		assert.doesNotMatch(popoverSource, /AiSparkleIcon|ThumbsUpIcon|ThumbsDownIcon/u);
+	}
+});
+
+test("experimental v2 work item rows use type-coloured Jira glyphs", () => {
+	const partsSource = readBlockFile("experimental-v2/components/context-popover-parts.tsx");
+
+	assert.match(partsSource, /Task: \{ Glyph: TaskIcon, tone: "text-icon-accent-blue" \}/u);
+	assert.match(partsSource, /Subtask: \{ Glyph: SubtasksIcon, tone: "text-icon-accent-blue" \}/u);
+	assert.match(partsSource, /Story: \{ Glyph: StoryIcon, tone: "text-icon-accent-green" \}/u);
+	assert.match(partsSource, /Bug: \{ Glyph: BugIcon, tone: "text-icon-accent-red" \}/u);
+	assert.match(partsSource, /Epic: \{ Glyph: EpicIcon, tone: "text-icon-accent-purple" \}/u);
+
+	for (const popover of ["subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
+		const popoverSource = readBlockFile(`experimental-v2/components/${popover}`);
+		assert.match(popoverSource, /<WorkItemTypeIcon type=\{/u);
+	}
+});
+
+test("experimental v2 suggested subtasks commit only on confirm", () => {
+	const popoverSource = readBlockFile("experimental-v2/components/subtasks-popover.tsx");
+
+	// Checking a box must stay a reversible draft: the add only runs from the
+	// Create button, which is disabled until at least one box is checked.
+	assert.match(popoverSource, /const createSelectedSuggestions = \(\) => \{/u);
+	assert.match(popoverSource, /disabled=\{selectedSuggestions\.length === 0\}/u);
+	assert.match(popoverSource, /onClick=\{createSelectedSuggestions\}/u);
+	assert.doesNotMatch(popoverSource, /onCheckedChange=\{[^}]*addContextResource/u);
+});
+
+test("experimental v2 context popovers compose tooltips with their triggers", () => {
+	for (const popover of ["attachments-popover.tsx", "subtasks-popover.tsx", "linked-work-items-popover.tsx"]) {
+		const popoverSource = readBlockFile(`experimental-v2/components/${popover}`);
+
+		assert.match(
+			popoverSource,
+			/tooltip \? \([\s\S]*<Tooltip>[\s\S]*<TooltipTrigger render=\{<span className="inline-flex" \/>\}>[\s\S]*<PopoverTrigger render=\{trigger\} \/>[\s\S]*<TooltipContent positionerClassName="z-\[502\]">\{tooltip\}<\/TooltipContent>/u,
+		);
+	}
+});
+
+test("experimental v2 create-new attachments use reserved content-type icons at 16px", () => {
+	const popoverSource = readBlockFile("experimental-v2/components/attachments-popover.tsx");
+
+	// Live doc and Loom have reserved single-purpose glyphs; generic Page/Video
+	// stand-ins read as the wrong object type.
+	assert.match(popoverSource, /import PageLiveDocIcon from "@atlaskit\/icon-lab\/core\/page-live-doc";/u);
+	assert.match(popoverSource, /import LoomIcon from "@atlaskit\/icon-lab\/core\/loom";/u);
+	assert.match(popoverSource, /page: \{ Glyph: PageIcon, tone: "text-icon-accent-blue" \}/u);
+	assert.match(popoverSource, /"live-doc": \{ Glyph: PageLiveDocIcon, tone: "text-icon-accent-magenta" \}/u);
+	assert.match(popoverSource, /whiteboard: \{ Glyph: WhiteboardIcon, tone: "text-icon-accent-teal" \}/u);
+	assert.match(popoverSource, /"loom-video": \{ Glyph: LoomIcon, tone: "text-icon-accent-blue" \}/u);
+
+	// `size="small"` is 12px on new-core icons; the menu renders the 16px default.
+	assert.match(popoverSource, /<Glyph label="" color="currentColor" \/>/u);
+});
+
+test("experimental v2 keeps the metadata panel visible and uses asymmetric header padding", () => {
 	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
 	const headerActionsSource = readBlockFile("experimental-v2/components/experimental-breadcrumb-actions.tsx");
 
-	assert.match(dialogSource, /paddingBottom=\{token\("space\.100"\)\}/u);
+	assert.match(dialogSource, /paddingBottom=\{0\}[\s\S]*paddingTop=\{token\("space\.150"\)\}/u);
 	assert.match(dialogSource, /closeButtonDisabled=\{presentation === "inline"\}/u);
 	assert.doesNotMatch(dialogSource, /showClose=\{presentation !== "inline"\}/u);
 	assert.match(headerActionsSource, /aria-label="Collapse"/u);
-	assert.match(headerActionsSource, /<ContextHeaderActions \/>[\s\S]*aria-label="Collapse"/u);
+	assert.match(headerActionsSource, /<ExperimentalHeaderOverflowMenu \/>[\s\S]*aria-label="Collapse"/u);
+	assert.doesNotMatch(headerActionsSource, /ContextHeaderActions/u);
 	assert.doesNotMatch(headerActionsSource, /Show metadata panel|Hide metadata panel/u);
 	assert.doesNotMatch(headerActionsSource, /usePanelLayout|Popover|PanelRightIcon/u);
+});
+
+test("experimental v2 header overflow menu owns the restriction, watcher, and share actions", () => {
+	const overflowMenuSource = readBlockFile(
+		"experimental-v2/components/experimental-header-overflow-menu.tsx",
+	);
+
+	// The three actions moved out of the header row and must lead the menu.
+	assert.match(
+		overflowMenuSource,
+		/\[\{ label: "Permission" \}, \{ label: "Watch", count: 1 \}, \{ label: "Share" \}\]/u,
+	);
+	assert.match(overflowMenuSource, /\{ label: "Log work", shortcut: "Q" \}/u);
+	assert.match(overflowMenuSource, /\{ label: "Stop watching", shortcut: "W" \}/u);
+	assert.match(overflowMenuSource, /\{ label: "Export to", submenu: \["Excel", "Word", "XML"\] \}/u);
+	// Select cover keeps the chevron affordance but opens no flyout.
+	assert.match(overflowMenuSource, /\{ label: "Select cover", chevron: true \}/u);
+	assert.doesNotMatch(overflowMenuSource, /Select cover", submenu/u);
+	assert.doesNotMatch(overflowMenuSource, /Switch to classic experience/u);
+	// Dialog paints at z-[500]/[501]; both popup layers must clear it.
+	assert.match(overflowMenuSource, /positionerClassName="z-\[502\]"/u);
+	assert.match(overflowMenuSource, /positionerClassName="z-\[503\]"/u);
+	// The popup opens to its full height instead of the shared 328px cap.
+	assert.match(overflowMenuSource, /className="max-h-\[var\(--available-height\)\]"/u);
+	// Separators are derived from group boundaries, never hand-placed.
+	assert.match(overflowMenuSource, /\{groupIndex > 0 \? <DropdownMenuSeparator \/> : null\}/u);
+});
+
+test("experimental v2 reuses the Artifact Pane labels field", () => {
+	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
+	const detailFieldEditorsSource = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
+
+	assert.match(
+		detailsTabSource,
+		/import \{ ArtifactLabelsField \} from "@\/components\/blocks\/artifact-pane\/artifact-labels-field";/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/<ArtifactPanePropertyRow icon=\{<TagIcon label="" size="small" \/>\} label="Labels">/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/<ArtifactLabelsField onChange=\{\(next\) => onChange\(\{ labels: next \}\)\} value=\{draft\.labels\} \/>/u,
+	);
+	assert.doesNotMatch(detailFieldEditorsSource, /export function LabelsRowField/u);
+});
+
+test("experimental v2 calendars are never narrower than their date triggers", () => {
+	const detailFieldEditorsSource = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
+
+	assert.match(detailFieldEditorsSource, /className="w-auto min-w-\(--anchor-width\) p-2"/u);
+});
+
+test("experimental v2 reuses the Artifact Pane project field", () => {
+	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
+
+	assert.match(
+		detailsTabSource,
+		/import \{ ArtifactProjectField \} from "@\/components\/blocks\/artifact-pane\/artifact-project-field";/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/<ArtifactProjectField onChange=\{\(id\) => onChange\(\{ atlassianProject: id \}\)\} value=\{draft\.atlassianProject\} \/>/u,
+	);
+	assert.doesNotMatch(detailsTabSource, /function AtlassianProjectEditor/u);
+});
+
+test("experimental v2 reveals description mode tabs across the description scope", () => {
+	const aiPlannerPanelSource = readBlockFile("experimental-v2/components/ai-planner-panel.tsx");
+	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
+
+	assert.match(
+		aiPlannerPanelSource,
+		/className=\{cn\("group\/description-scope flex flex-col gap-3", hasPlanner \? "px-2 pb-2" : null\)\}/u,
+	);
+	assert.match(
+		contextResourcesSource,
+		/<div className="pointer-events-none ml-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out group-hover\/description-scope:pointer-events-auto group-hover\/description-scope:opacity-100 group-has-\[:focus-visible\]\/description-scope:pointer-events-auto group-has-\[:focus-visible\]\/description-scope:opacity-100 motion-reduce:transition-none">[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}[\s\S]*size="compact"/u,
+	);
+	assert.doesNotMatch(contextResourcesSource, /group-focus-within\/description-scope/u);
+	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-(?:list|trigger)\]\]/u);
 });
 
 test("experimental v2 aligns the title with Details and renders controls in the resource row", () => {
@@ -168,7 +411,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	assert.doesNotMatch(contextPanelSource, /<section aria-label="Work item context" className="flex flex-col gap-3">/u);
 	assert.match(
 		contextResourcesSource,
-		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderAddButton[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
+		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-1[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderAddButton[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
 	);
 	assert.match(
 		contextResourcesSource,
@@ -189,43 +432,60 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 		globalCss,
 		/\[data-jira-work-item-resource-row-content\]::before,[\s\S]*\[data-slot="jira-activity-header"\] > :first-child::before \{[\s\S]*bottom: 100%;[\s\S]*height: 2rem;[\s\S]*background: inherit;/u,
 	);
-	assert.doesNotMatch(contextResourcesSource, /className="flex flex-wrap items-start gap-1/u);
+	assert.doesNotMatch(contextResourcesSource, /className="flex flex-wrap items-start gap-2/u);
 	assert.match(
 		contextResourcesSource,
-		/<div className="ml-auto shrink-0">[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
+		/<div className="[^"]*ml-auto shrink-0[^"]*">[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
 	);
 	assert.match(contextResourcesSource, /buttonLabel: "Add attachments",[\s\S]*<AttachmentIcon label="" size="small" \/>/u);
 	assert.match(contextResourcesSource, /buttonLabel: "Add subtasks",[\s\S]*<ChildWorkItemsIcon label="" size="small" \/>/u);
-	assert.doesNotMatch(contextResourcesSource, /Link work item|LinkIcon|LinkedWorkItemsPopover/u);
-	assert.match(contextResourcesSource, /<Button aria-label=\{resource\.buttonLabel\} size="icon" type="button" variant="outline">[\s\S]*\{resource\.icon\}/u);
-	assert.doesNotMatch(contextResourcesSource, /CommitIcon|BranchIcon|aria-label="Commit"|aria-label="Branch"/u);
+	assert.match(contextResourcesSource, /buttonLabel: "Link work items",[\s\S]*<LinkIcon label="" size="small" \/>[\s\S]*<LinkedWorkItemsPopover key="linkedItems" tooltip="Link work items" trigger=\{trigger\} \/>/u);
+	assert.match(contextResourcesSource, /<Button aria-label=\{resource\.buttonLabel\} size="icon-compact" type="button" variant="outline">[\s\S]*\{resource\.icon\}/u);
+	assert.match(
+		contextResourcesSource,
+		/<TooltipTrigger[\s\S]*render=\{<Button aria-label="Create commit" size="icon-compact" type="button" variant="outline" \/>\}[\s\S]*<CommitIcon label="" size="small" \/>[\s\S]*<TooltipContent positionerClassName="z-\[502\]">Create commit<\/TooltipContent>[\s\S]*<TooltipTrigger[\s\S]*render=\{<Button aria-label="Create branch" size="icon-compact" type="button" variant="outline" \/>\}[\s\S]*<BranchIcon label="" size="small" \/>[\s\S]*<TooltipContent positionerClassName="z-\[502\]">Create branch<\/TooltipContent>/u,
+	);
+	assert.match(contextResourcesSource, /<AttachmentsPopover key="attachments" tooltip="Add attachments" trigger=\{trigger\} \/>/u);
+	assert.match(contextResourcesSource, /<SubtasksPopover key="subtasks" tooltip="Add subtasks" trigger=\{trigger\} \/>/u);
 	assert.doesNotMatch(contextResourcesSource, /<Button size="compact" type="button" variant="outline">/u);
 	assert.doesNotMatch(contextResourcesSource, /const empty =|empty\.map/u);
 	assert.doesNotMatch(contextResourcesSource, /agentFieldName="attachments"|agentFieldName="subtasks"|agentFieldName="linkedItems"/u);
 	assert.match(titleActionsSource, /metadataTogglePending \|\| metadataLayoutAnimating/u);
 	assert.match(titleActionsSource, /inert=\{isInteractive \? undefined : true\}/u);
-	assert.match(titleActionsSource, /export function ContextHeaderActions\(\)[\s\S]*aria-label="No restrictions"[\s\S]*<EyeOpenIcon[\s\S]*aria-label="Share"/u);
-	assert.match(titleActionsSource, /aria-label="No restrictions" size="icon" variant="ghost"/u);
-	assert.match(titleActionsSource, /<Button className="gap-2" variant="ghost">[\s\S]*<EyeOpenIcon/u);
-	assert.match(titleActionsSource, /aria-label="Share" size="icon" variant="ghost"/u);
-	assert.match(titleActionsSource, /export function ContextTitleActions\([\s\S]*aria-label="Open in"[\s\S]*<CodeIcon aria-hidden size="small" \/>[\s\S]*Open in[\s\S]*aria-label="Add"[\s\S]*<AddIcon label="" size="small" \/>/u);
-	assert.match(titleActionsSource, /<motion\.div[\s\S]*className="flex shrink-0 items-center gap-2"/u);
+	// Restriction, watcher, and share moved into the header overflow menu.
+	assert.doesNotMatch(titleActionsSource, /ContextHeaderActions|LockUnlockedIcon|EyeOpenIcon|ShareIcon/u);
+	assert.match(
+		titleActionsSource,
+		/export function ContextTitleActions\([\s\S]*useJiraWorkItemMeta\(\)[\s\S]*primaryAgentId \?\? \(initialPreset === "blank" \? null : "claude-code"\)[\s\S]*<ButtonGroup variant="split">[\s\S]*aria-label=\{primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"\}[\s\S]*className="has-data-\[icon=inline-start\]:pl-2 \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_img\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_svg\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_img\]:size-4! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_svg\]:size-4!"[\s\S]*size="compact"[\s\S]*className="inline-flex size-4 shrink-0 items-center justify-center \[&_span\]:flex! \[&_span\]:items-center! \[&_span\]:justify-center!"[\s\S]*data-agent-logo=\{primaryCodingAgent\?\.id === "rovo-cli" \? "rovo" : primaryCodingAgent \? "third-party" : undefined\}[\s\S]*data-icon=\{primaryCodingAgent \? "inline-start" : undefined\}[\s\S]*primaryCodingAgent\.buttonLogo[\s\S]*<CodeIcon aria-hidden size="small" \/>[\s\S]*primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"[\s\S]*aria-label="More open options" size="icon-compact"/u,
+	);
+	assert.doesNotMatch(titleActionsSource, /aria-label=\{primaryCodingAgent[\s\S]*className="gap-0\.5"[\s\S]*variant="outline"/u);
+	assert.doesNotMatch(titleActionsSource, /AddIcon|aria-label="Add"/u);
+	assert.match(titleActionsSource, /<motion\.div[\s\S]*className="flex shrink-0 items-center gap-1"/u);
 	assert.doesNotMatch(titleActionsSource, /export function ContextTitleActions\([\s\S]*<div className="flex shrink-0 items-center gap-2">/u);
 	assert.match(titleActionsSource, /\{ id: "claude-code", label: "Claude"[\s\S]*\{ id: "rovo-cli", label: "Rovo"/u);
 	assert.match(
 		titleActionsSource,
-		/name === "cursor" \|\| name === "github-copilot"[\s\S]*"dark:brightness-0 dark:invert"[\s\S]*className=\{darkModeClassName\}/u,
+		/\{ id: "claude-code", label: "Claude", byline: "Copy CLI command", buttonLogo: thirdPartyAgentLogo\("claude", "xxsmall"\)[\s\S]*\{ id: "rovo-cli", label: "Rovo", byline: "Copy CLI command", buttonLogo: <RovoColorIcon size="small" \/>[\s\S]*\{ id: "gemini", label: "Gemini", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo\("google-gemini", "xxsmall"\)/u,
 	);
-	assert.doesNotMatch(titleActionsSource, /ButtonGroup|Claude \(Local\)|DropdownMenuLabel|Rovo CLI|More open options/u);
 	assert.match(
 		titleActionsSource,
-		/codingAgents\.map\(\(agent\) => \([\s\S]*<DropdownMenuSub key=\{agent\.id\}>[\s\S]*<DropdownMenuSubTrigger className="gap-0\.5 \[&>:last-child\]:opacity-0 hover:\[&>:last-child\]:opacity-100 data-\[highlighted\]:\[&>:last-child\]:opacity-100 data-popup-open:\[&>:last-child\]:opacity-100">[\s\S]*<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">[\s\S]*\{agent\.logo\}[\s\S]*\{agent\.label\}[\s\S]*<DropdownMenuSubContent positionerClassName="z-\[503\]">[\s\S]*<DropdownMenuItem elemBefore=\{<ScreenIcon label="" size="small" \/>\}>[\s\S]*Local[\s\S]*<DropdownMenuItem elemBefore=\{<CloudIcon label="" size="small" \/>\}>[\s\S]*Cloud/u,
+		/name === "cursor" \|\| name === "github-copilot"[\s\S]*"dark:brightness-0 dark:invert"[\s\S]*className=\{darkModeClassName\}/u,
 	);
+	assert.match(
+		titleActionsSource,
+		/codingAgents\.map\(\(agent\) => \([\s\S]*<DropdownMenuItem[\s\S]*className="h-11 py-0"[\s\S]*elemBefore=\{<span aria-hidden className="inline-flex items-center justify-center leading-none">\{agent\.logo\}<\/span>\}[\s\S]*key=\{agent\.id\}[\s\S]*onSelect=\{\(\) => setSelectedAgentId\(agent\.id\)\}[\s\S]*menu-row-title[\s\S]*group-data-\[highlighted\]\/dropdown-menu-item:translate-y-0[\s\S]*\{agent\.label\}[\s\S]*menu-row-byline[\s\S]*group-data-\[highlighted\]\/dropdown-menu-item:opacity-100[\s\S]*motion-reduce:transition-none[\s\S]*\{agent\.byline\}[\s\S]*Copy prompt/u,
+	);
+	assert.match(
+		titleActionsSource,
+		/<DropdownMenuContent[\s\S]*className="max-h-\[var\(--available-height\)\] p-0"[\s\S]*<div className="p-1">/u,
+	);
+	assert.doesNotMatch(titleActionsSource, /max-h-72|overflow-y-auto p-1/u);
+	assert.doesNotMatch(titleActionsSource, /DropdownMenuSub|ScreenIcon|CloudIcon/u);
 	assert.doesNotMatch(titleActionsSource, /ContextTitleActions\([\s\S]*collapsed = false/u);
 	assert.doesNotMatch(titleBarSource, /ContextTitleActions|AnimatedContextTitleActions/u);
 	assert.doesNotMatch(titleBarSource, /motion|usePanelLayout|px-6/u);
 	assert.doesNotMatch(dialogSource, /ContextTitleBar/u);
-	assert.match(dialogSource, /gridTemplateRows: "auto minmax\(0, 1fr\)"/u);
+	assert.match(dialogSource, /gridTemplateRows: "minmax\(0, 1fr\)"/u);
 });
 
 test("experimental v2 removes the description row and keeps Activity sticky", () => {
@@ -259,9 +519,9 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*count: attachments\.length/u);
 	assert.match(metadataRailSource, /subtasks\.map\(toSubtaskSmartLink\)[\s\S]*count: subtasks\.length/u);
 	assert.match(metadataRailSource, /linkedItems\.map\(toLinkedItemSmartLink\)[\s\S]*count: linkedItems\.length/u);
-	assert.match(metadataRailSource, /function ResourceSmartLinks[\s\S]*<ul className="space-y-1">[\s\S]*<SmartLink[\s\S]*align="center"[\s\S]*alignOffset=\{0\}[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{item\}[\s\S]*positionerClassName="z-\[600\]"[\s\S]*side="left"/u);
-	assert.match(metadataRailSource, /aria-label=\{`Remove \$\{item\.title\}`\}[\s\S]*onClick=\{\(\) => onRemove\(item\.id\)\}[\s\S]*<DeleteIcon/u);
+	assert.match(metadataRailSource, /function ResourceSmartLinks[\s\S]*<ul className="space-y-1">[\s\S]*<SmartLink[\s\S]*align="center"[\s\S]*alignOffset=\{0\}[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{item\}[\s\S]*onRemove=\{\(\) => onRemove\(item\.id\)\}[\s\S]*positionerClassName="z-\[600\]"[\s\S]*removeButtonLabel=\{`Remove \$\{item\.title\}`\}[\s\S]*removeVariant="overlay"[\s\S]*side="left"/u);
 	assert.match(metadataRailSource, /removeContextResource\("attachment", id\)[\s\S]*removeContextResource\("subtask", id\)[\s\S]*removeContextResource\("link", id\)/u);
+	assert.doesNotMatch(metadataRailSource, /DeleteIcon|@atlaskit\/icon\/core\/delete|<Tag/u);
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*subtasks\.map\(toSubtaskSmartLink\)[\s\S]*linkedItems\.map\(toLinkedItemSmartLink\)/u);
 	assert.doesNotMatch(metadataRailSource, /AgentFilledSummaryRow|AgentReferenceChip|agentFieldName=/u);
 	assert.match(
@@ -294,4 +554,28 @@ test("the block index resolves both experimental surfaces from one map", () => {
 	assert.match(indexSource, /const ExperimentalSurface = EXPERIMENTAL_SURFACES\[surface\];/u);
 	// One shared view owns the open/close plumbing for every experimental variant.
 	assert.equal((indexSource.match(/function JiraWorkItemExperimentalView/gu) ?? []).length, 1);
+});
+
+test("the activity panel gives reactions and human replies somewhere to land", () => {
+	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const adapterSource = readBlockFile("experimental-v2/lib/jira-activity-adapter.ts");
+
+	// The timeline is controlled here (entries derive from meta.activityEvents),
+	// so JiraActivity's built-in reducer can never apply a reaction: without an
+	// explicit callback both branches of `applyAction` are inert and every
+	// reaction click would be a silent no-op.
+	assert.match(activityPanelSource, /onToggleReaction=\{handleToggleReaction\}/u);
+	assert.match(activityPanelSource, /toggleReaction\(entry\.reactions \?\? \[\], emoji, JIRA_WORK_ITEM_CURRENT_USER\.id\)/u);
+
+	// Human comments now expose Reply (allowReply flipped to true), but they have
+	// no session to route into — their drafts must be kept rather than dropped.
+	assert.match(adapterSource, /allowReply: true,/u);
+	assert.match(activityPanelSource, /onSubmitReply=\{handleSubmitReply\}/u);
+	assert.match(activityPanelSource, /actions\.replySession\(event\.sessionId, body\)/u);
+	assert.match(activityPanelSource, /setLocalReplies\(\(previous\) => \(\{/u);
+
+	// Local state is overlaid per entry id rather than replacing the derived
+	// array, so streaming session updates keep flowing through untouched.
+	assert.match(activityPanelSource, /const entries = derivedEntries\.map\(\(entry\) => \{/u);
+	assert.doesNotMatch(activityPanelSource, /useState\(derivedEntries\)/u);
 });

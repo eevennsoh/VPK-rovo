@@ -16,7 +16,8 @@ test("SkillSelector reuses AgentSelector design with Skills Directory data", () 
 	assert.match(COMPONENT_SOURCE, /<AgentSelector/u);
 	assert.match(COMPONENT_SOURCE, /getSkillDirectoryVisual/u);
 	assert.match(COMPONENT_SOURCE, /<RichTextMentionVisualMark category="skill"[\s\S]*size="menu-compact"/u);
-	assert.match(COMPONENT_SOURCE, /heading = "Select a skill"/u);
+	assert.match(COMPONENT_SOURCE, /\theading,\n/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /heading = "Select a skill"/u);
 	assert.match(COMPONENT_SOURCE, /searchPlaceholder = "Search skills"/u);
 	assert.match(COMPONENT_SOURCE, /browseAgentsLabel=\{browseSkillsLabel\}/u);
 	assert.match(COMPONENT_SOURCE, /createAgentLabel=\{createSkillLabel\}/u);

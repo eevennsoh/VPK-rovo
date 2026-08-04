@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import type { SkillsDirectorySkill } from "@/app/data/directory";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -50,7 +50,7 @@ function RunningSessionsList({
 	onOpenAgentChat,
 	sessions,
 }: Readonly<{
-	onClose: () => void;
+	onClose: (restoreFocus: boolean) => void;
 	onOpenAgentChat: (agentId: string) => void;
 	sessions: readonly AgentSession[];
 }>) {
@@ -75,20 +75,35 @@ function RunningSessionsList({
 	const openSession = (item: RichTextSuggestionMenuItem) => {
 		const session = sessions.find((candidate) => candidate.id === item.id);
 		if (!session) return;
-		onClose();
+		onClose(false);
 		onOpenAgentChat(session.agentId);
 	};
 
 	useEffect(() => {
 		containerRef.current?.focus();
-	}, []);
+
+		const handlePointerDown = (event: PointerEvent) => {
+			if (event.target instanceof Node && !containerRef.current?.contains(event.target)) {
+				onClose(false);
+			}
+		};
+		const handleDismissKeyDown = (event: globalThis.KeyboardEvent) => {
+			if (event.key === "Escape") {
+				event.preventDefault();
+				onClose(true);
+			}
+		};
+
+		window.addEventListener("pointerdown", handlePointerDown, true);
+		window.addEventListener("keydown", handleDismissKeyDown);
+		return () => {
+			window.removeEventListener("pointerdown", handlePointerDown, true);
+			window.removeEventListener("keydown", handleDismissKeyDown);
+		};
+	}, [onClose]);
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			event.stopPropagation();
-			onClose();
-		} else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+		if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 			event.preventDefault();
 			const step = event.key === "ArrowDown" ? 1 : -1;
 			setSelectedIndex((index) => (index + step + items.length) % items.length);
@@ -106,7 +121,7 @@ function RunningSessionsList({
 			tabIndex={-1}
 		>
 			<RichTextSuggestionMenu
-				className="w-full!"
+				className="rich-text-command-menu-borderless w-full!"
 				emptyLabel="No agents running"
 				items={items}
 				onHover={setSelectedIndex}
@@ -152,10 +167,10 @@ export function ActivityComposerContextPills({
 		}
 	}, [showRunningSessions]);
 
-	const closeRunningSessions = () => {
-		shouldRestoreRunningTriggerFocusRef.current = true;
+	const closeRunningSessions = useCallback((restoreFocus: boolean) => {
+		shouldRestoreRunningTriggerFocusRef.current = restoreFocus;
 		setShowRunningSessions(false);
-	};
+	}, []);
 
 	return (
 		<motion.div

@@ -37,7 +37,7 @@ import { useToolbarOverflow } from "@/components/blocks/editor-toolbar/hooks/use
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, type TabsListProps } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor/markdown-format";
@@ -110,12 +110,14 @@ export interface EditorToolbarProps {
 
 export interface EditorToolbarModeTabsProps {
 	mode: EditorToolbarViewMode;
+	size?: TabsListProps["size"];
 	showDataFlowMode?: boolean;
 	onModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
 export function EditorToolbarModeTabs({
 	mode,
+	size = "default",
 	showDataFlowMode = false,
 	onModeChange,
 }: Readonly<EditorToolbarModeTabsProps>) {
@@ -137,7 +139,7 @@ export function EditorToolbarModeTabs({
 
 	return (
 		<Tabs value={mode} onValueChange={handleValueChange}>
-			<TabsList>
+			<TabsList size={size}>
 				<TabsTrigger aria-label="Rendered text" value="rendered" className="px-2">
 					<TextNormalIcon size="small" />
 				</TabsTrigger>

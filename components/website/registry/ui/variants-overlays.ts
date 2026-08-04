@@ -95,6 +95,13 @@ export const UI_OVERLAY_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"tabs-demo-compact": dynamic(
+		() =>
+			import("../../demos/ui/tabs-demo").then((mod) => ({
+				default: mod.TabsDemoCompact,
+			})),
+		{ ssr: false },
+	),
 	"tabs-demo-line": dynamic(
 		() =>
 			import("../../demos/ui/tabs-demo").then((mod) => ({

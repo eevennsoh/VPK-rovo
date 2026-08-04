@@ -41,7 +41,9 @@ interface TooltipContentProps
 		Pick<
 			TooltipPrimitive.Positioner.Props,
 			"align" | "alignOffset" | "side" | "sideOffset"
-		> {}
+		> {
+	positionerClassName?: string
+}
 
 function TooltipContent({
 	className,
@@ -49,6 +51,7 @@ function TooltipContent({
 	sideOffset = 4,
 	align = "center",
 	alignOffset = 0,
+	positionerClassName,
 	children,
 	...props
 }: Readonly<TooltipContentProps>) {
@@ -59,7 +62,7 @@ function TooltipContent({
 				alignOffset={alignOffset}
 				side={side}
 				sideOffset={sideOffset}
-				className="isolate z-[200]"
+				className={cn("isolate z-[200]", positionerClassName)}
 			>
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"

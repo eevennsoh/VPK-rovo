@@ -8,6 +8,7 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 const DIR = __dirname;
 const COMPONENT_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx"), "utf8");
+const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "demos", "blocks", "smart-link-demo.tsx"), "utf8");
 const PAGE_SOURCE = fs.readFileSync(path.join(DIR, "page.tsx"), "utf8");
 const INDEX_SOURCE = fs.readFileSync(path.join(DIR, "index.ts"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "components.ts"), "utf8");
@@ -19,7 +20,7 @@ const REGISTRY_SOURCE = readWebsiteRegistrySource();
 test("SmartLink is powered by the shared HoverCard primitive", () => {
 	assert.match(COMPONENT_SOURCE, /HoverCard, HoverCardContent, HoverCardTrigger/u);
 	assert.match(COMPONENT_SOURCE, /<HoverCard[\s\S]*openDelay=\{openDelay\}/u);
-	assert.match(COMPONENT_SOURCE, /<HoverCardTrigger render=\{<SmartLinkTrigger/u);
+	assert.match(COMPONENT_SOURCE, /<HoverCardTrigger[\s\S]*render=\{[\s\S]*<SmartLinkTrigger/u);
 	assert.match(COMPONENT_SOURCE, /<HoverCardContent[\s\S]*alignOffset=\{alignOffset\}[\s\S]*positionerClassName=\{positionerClassName\}[\s\S]*<SmartLinkCard/u);
 	assert.match(COMPONENT_SOURCE, /aria-describedby=\{open \? `smart-link-card-\$\{item\.id\}` : undefined\}/u);
 });
@@ -55,7 +56,9 @@ test("catalog details and registry expose smart-link demos", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-project/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-loom/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-generic/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-removable-overlay/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link": dynamic\(\(\) => import\("\.\/demos\/blocks\/smart-link-demo"\)/u);
+	assert.match(REGISTRY_SOURCE, /"smart-link-demo-removable-overlay"[\s\S]*SmartLinkDemoRemovableOverlay/u);
 
 	for (const exportName of [
 		"SmartLinkDemoRich",
@@ -65,9 +68,26 @@ test("catalog details and registry expose smart-link demos", () => {
 		"SmartLinkDemoProject",
 		"SmartLinkDemoLoom",
 		"SmartLinkDemoGeneric",
+		"SmartLinkDemoRemovableOverlay",
 	]) {
 		assert.match(REGISTRY_SOURCE, new RegExp(exportName, "u"));
 	}
+});
+
+test("SmartLink owns its removable overlay variant", () => {
+	assert.match(COMPONENT_SOURCE, /onRemove\?: \(\) => void;[\s\S]*removeVariant\?: "overlay";[\s\S]*removeButtonLabel\?: string;/u);
+	assert.match(COMPONENT_SOURCE, /group\/smart-link-remove/u);
+	assert.match(COMPONENT_SOURCE, /data-smart-link-text/u);
+	assert.match(COMPONENT_SOURCE, /data-slot="smart-link-remove-overlay-button"/u);
+	assert.match(COMPONENT_SOURCE, /removable &&\s*!status &&\s*"group-hover\/smart-link-remove:\[mask-image:/u);
+	assert.match(COMPONENT_SOURCE, /triggerStatusClasses\[size\],[\s\S]*group-hover\/smart-link-remove:\[mask-image:linear-gradient\(to_right,#000_calc\(100%-1\.5rem\),transparent_calc\(100%-1rem\)\)\]/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /group-hover\/smart-link-remove:opacity-0/u);
+	assert.match(COMPONENT_SOURCE, /absolute end-0\.5 top-1\/2/u);
+	assert.match(COMPONENT_SOURCE, /aria-label=\{removeButtonLabel \?\? `Remove \$\{item\.title\}`\}/u);
+	assert.match(COMPONENT_SOURCE, /<CrossIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(DEMO_SOURCE, /export function SmartLinkDemoRemovableOverlay\(\)[\s\S]*onRemove=\{\(\) => setItems[\s\S]*removeVariant="overlay"/u);
+	assert.match(DEMO_SOURCE, /SmartLinkDemoRemovableOverlay\(\)[\s\S]*SMART_LINK_STATUS_EXAMPLES\[0\][\s\S]*removeVariant="overlay"[\s\S]*showStatus=\{item\.id === SMART_LINK_STATUS_EXAMPLES\[0\]\.id\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
 });
 
 test("SmartLink implementation uses semantic tokens instead of raw ds variable utilities", () => {
@@ -88,6 +108,7 @@ test("SmartLink visual rendering uses shared icon and logo primitives", () => {
 	assert.match(COMPONENT_SOURCE, /size: iconSize/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
+	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
 });
 
 test("SmartLink trigger icon tiles render as inline spans", () => {

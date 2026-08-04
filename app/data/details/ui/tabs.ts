@@ -39,6 +39,11 @@ export const TABS_DETAIL: ComponentDetail = {
         demoSlug: "tabs-demo-default",
       },
       {
+        title: "Compact",
+        description: "A 24px pill-style tab list with an inset selected tab.",
+        demoSlug: "tabs-demo-compact",
+      },
+      {
         title: "Line variant",
         description: "Tabs with underline-style indicator.",
         demoSlug: "tabs-demo-line",

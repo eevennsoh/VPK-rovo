@@ -379,6 +379,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent-surfaces", "Agent Surfaces"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("smart-link", "Smart Link"),
+	blockComponent("emoji-picker", "Emoji Picker"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),
 	blockComponent("answer-card", "Answer Card"),

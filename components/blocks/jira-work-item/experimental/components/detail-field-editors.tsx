@@ -312,7 +312,7 @@ export function DateRowField({
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				<span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>
 			</PopoverTrigger>
-			<PopoverContent align="start" className="w-auto p-2" positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent align="start" className="w-auto min-w-(--anchor-width) p-2" positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
 				<CalendarComponent
 					mode="single"
 					onSelect={(next) => {
