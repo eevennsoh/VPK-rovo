@@ -29,11 +29,13 @@ import {
 	PromptInputButton,
 	PromptInputFooter,
 	PromptInputPreferencesButton,
+	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputTools,
 } from "@/components/ui-custom/prompt-input";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
+import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import LinkIcon from "@atlaskit/icon/core/link";
 import MentionIcon from "@atlaskit/icon/core/mention";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -286,4 +288,44 @@ export function PromptInputDemoFloatingBar() {
 
 export function PromptInputDemoFloatingBarDarkCta() {
 	return <FloatingBarDemo experimentalDarkCta />;
+}
+
+export function PromptInputDemoFloatingBarTextSend() {
+	const [prompt, setPrompt] = useState("");
+	const canSubmit = prompt.trim().length > 0;
+
+	return (
+		<DemoFrame>
+			<FloatingComposer
+				actions={
+					<PromptInputSubmit
+						aria-label="Send"
+						className="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+						disabled={!canSubmit}
+						size="icon-sm"
+					>
+						<ArrowUpIcon label="" />
+					</PromptInputSubmit>
+				}
+				addButton={
+					<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
+						<AddIcon label="" />
+					</PromptInputButton>
+				}
+				onSubmit={() => setPrompt("")}
+			>
+				<PromptInputTextarea
+					autoResize
+					className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
+					enableDirectoryAutocomplete={false}
+					onChange={(event) => setPrompt(event.currentTarget.value)}
+					placeholder="Comment, @mention an agent, or / for skills"
+					rows={1}
+					value={prompt}
+				/>
+			</FloatingComposer>
+
+			<style>{textareaCSS}</style>
+		</DemoFrame>
+	);
 }

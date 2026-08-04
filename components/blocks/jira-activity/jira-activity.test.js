@@ -418,5 +418,8 @@ test("the exported comment composer uses the shared floating Rovo prompt", () =>
 	assert.match(COMPOSER_SOURCE, /<FloatingComposer/u);
 	assert.match(COMPOSER_SOURCE, /<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">/u);
 	assert.match(COMPOSER_SOURCE, /<PromptInputTextarea/u);
-	assert.match(COMPOSER_SOURCE, /<RovoComposerActionButton/u);
+	assert.match(COMPOSER_SOURCE, /<PromptInputSubmit/u);
+	assert.match(COMPOSER_SOURCE, /aria-label="Send"/u);
+	assert.match(COMPOSER_SOURCE, /disabled=\{!canSubmit\}/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /RovoComposerActionButton|realtimeVoice/u);
 });

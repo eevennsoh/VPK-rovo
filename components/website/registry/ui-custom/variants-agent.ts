@@ -23,6 +23,13 @@ export const UI_CUSTOM_AGENT_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"prompt-input-demo-floating-bar-text-send": dynamic(
+		() =>
+			import("../../demos/ui-custom/prompt-input-demo").then((mod) => ({
+				default: mod.PromptInputDemoFloatingBarTextSend,
+			})),
+		{ ssr: false },
+	),
 	"list-demo-basic": dynamic(
 		() =>
 			import("../../demos/ui-custom/list-demo").then((mod) => ({
