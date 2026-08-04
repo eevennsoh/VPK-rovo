@@ -207,6 +207,21 @@ export function JiraActivity({
 										entry.kind === "comment" ? "pb-4" : "pb-3",
 									)}
 								>
+									{entry.kind === "event" ? null : (
+										<>
+											<span
+												aria-hidden
+												className="pointer-events-none absolute -top-1 left-2.5 h-1 w-1 bg-surface"
+											/>
+											<span
+												aria-hidden
+												className={cn(
+													"pointer-events-none absolute left-2.5 h-1 w-1 bg-surface",
+													entry.kind === "comment" ? "bottom-3" : "bottom-2",
+												)}
+											/>
+										</>
+									)}
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment

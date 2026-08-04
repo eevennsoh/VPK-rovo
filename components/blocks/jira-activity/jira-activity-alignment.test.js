@@ -18,3 +18,15 @@ test("compact activity labels share the timeline node's 24px alignment track", (
 test("rich activity cards align to the timeline's left edge", () => {
 	assert.match(INDEX_SOURCE, /entry\.kind === "event" \? null : "relative -ml-8"/u);
 });
+
+test("rich activity cards leave a 4px gap in the connector above and below", () => {
+	assert.match(
+		INDEX_SOURCE,
+		/absolute -top-1 left-2\.5 h-1 w-1 bg-surface/u,
+	);
+	assert.match(
+		INDEX_SOURCE,
+		/absolute left-2\.5 h-1 w-1 bg-surface/u,
+	);
+	assert.match(INDEX_SOURCE, /entry\.kind === "comment" \? "bottom-3" : "bottom-2"/u);
+});
