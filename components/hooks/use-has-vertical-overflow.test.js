@@ -20,6 +20,21 @@ test("useHasVerticalOverflow does not update state after every render", () => {
 	);
 });
 
+// The hook reads `window.getComputedStyle` to spot boxless wrappers. Node has no
+// DOM, so stand in a minimal window that reports each stub node's own display.
+function withComputedDisplay(run) {
+	const originalWindow = globalThis.window;
+	globalThis.window = {
+		getComputedStyle: (node) => ({ display: node.display ?? "block" }),
+	};
+
+	try {
+		return run();
+	} finally {
+		globalThis.window = originalWindow;
+	}
+}
+
 test("vertical overflow resize tracking stays at the scroll container boundary", async () => {
 	const { getVerticalOverflowResizeTargets } = await loadOverflowHarness();
 	const nestedDescendant = { children: [] };
@@ -27,10 +42,31 @@ test("vertical overflow resize tracking stays at the scroll container boundary",
 	const secondChild = { children: [] };
 	const scrollContainer = { children: [firstChild, secondChild] };
 
-	assert.deepEqual(
-		getVerticalOverflowResizeTargets(scrollContainer),
-		[scrollContainer, firstChild, secondChild],
-	);
+	withComputedDisplay(() => {
+		assert.deepEqual(
+			getVerticalOverflowResizeTargets(scrollContainer),
+			[scrollContainer, firstChild, secondChild],
+		);
+	});
+});
+
+test("vertical overflow resize tracking descends through boxless layout wrappers", async () => {
+	const { getVerticalOverflowResizeTargets } = await loadOverflowHarness();
+	// A ResizeObserver on a `display: contents` wrapper never reports a size
+	// change, so the layout owner beneath it has to be observed directly.
+	const layoutOwner = { children: [{ children: [] }] };
+	const innerBoxlessWrapper = { children: [layoutOwner], display: "contents" };
+	const outerBoxlessWrapper = { children: [innerBoxlessWrapper], display: "contents" };
+	const boxedSibling = { children: [{ children: [] }] };
+	const scrollContainer = { children: [outerBoxlessWrapper, boxedSibling] };
+
+	withComputedDisplay(() => {
+		assert.deepEqual(
+			getVerticalOverflowResizeTargets(scrollContainer),
+			[scrollContainer, layoutOwner, boxedSibling],
+			"boxless wrappers resolve to their layout owners without observing deeper descendants",
+		);
+	});
 });
 
 test("VerticalOverflowState does not show masks for one-pixel layout jitter", async () => {

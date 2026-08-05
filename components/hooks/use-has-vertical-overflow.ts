@@ -71,8 +71,33 @@ function getElementVerticalOverflowState(element: HTMLElement | null): VerticalO
 	});
 }
 
+function isBoxlessLayoutWrapper(element: Element): boolean {
+	if (typeof window === "undefined" || typeof window.getComputedStyle !== "function") {
+		return false;
+	}
+
+	return window.getComputedStyle(element).display === "contents";
+}
+
+// A `display: contents` wrapper generates no box, so a ResizeObserver on it
+// reports 0x0 once and never fires again. Descend past those wrappers to the
+// nearest descendants that actually own layout, so the observed set stays
+// bounded without going blind to content growth beneath them.
 export function getVerticalOverflowResizeTargets(element: Element): Element[] {
-	return [element, ...element.children];
+	const resizeTargets: Element[] = [element];
+
+	const collectLayoutOwners = (parent: Element) => {
+		for (const child of parent.children) {
+			if (isBoxlessLayoutWrapper(child)) {
+				collectLayoutOwners(child);
+			} else {
+				resizeTargets.push(child);
+			}
+		}
+	};
+	collectLayoutOwners(element);
+
+	return resizeTargets;
 }
 
 function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void): () => void {
