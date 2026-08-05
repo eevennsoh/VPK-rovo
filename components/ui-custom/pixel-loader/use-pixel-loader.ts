@@ -48,25 +48,21 @@ function formatElapsed(elapsedMs: number): string {
 }
 
 /**
- * Live elapsed-time readout, or `null` when disabled (no interval is created).
+ * Live elapsed-time readout for one mounted timer session.
  *
  * Derives from a `performance.now()` start stamp rather than incrementing a
  * counter, so a throttled or backgrounded tab does not accumulate drift.
  */
-export function useElapsed(enabled: boolean): string | null {
+export function useElapsed(): string {
 	const [elapsedMs, setElapsedMs] = useState(0);
 
 	useEffect(() => {
-		if (!enabled) {
-			return;
-		}
 		const startedAt = performance.now();
 		const tick = () => setElapsedMs(performance.now() - startedAt);
-		// Run once up front so a re-enabled timer never shows a stale value.
 		tick();
 		const timer = setInterval(tick, TICK_MS);
 		return () => clearInterval(timer);
-	}, [enabled]);
+	}, []);
 
-	return enabled ? formatElapsed(elapsedMs) : null;
+	return formatElapsed(elapsedMs);
 }
