@@ -82,7 +82,6 @@ export default function EmojiPickerPage() {
 					<div className="flex items-center gap-3 rounded-lg border border-border p-4">
 						<EmojiPickerPopover
 							onSelect={(emoji) => setPicked((current) => [...current, emoji])}
-							selected={picked}
 						/>
 						<span className="text-sm text-text-subtlest">
 							{picked.length > 0 ? picked.join(" ") : "Nothing picked yet"}

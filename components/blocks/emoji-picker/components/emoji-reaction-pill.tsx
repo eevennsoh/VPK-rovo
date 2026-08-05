@@ -9,6 +9,7 @@ export interface EmojiReactionPillProps {
 	emoji: string;
 	count: number;
 	pressed?: boolean;
+	confirmed?: boolean;
 	label?: string;
 	onToggle?: (emoji: string) => void;
 	className?: string;
@@ -28,6 +29,7 @@ export function EmojiReactionPill({
 	emoji,
 	count,
 	pressed = false,
+	confirmed = false,
 	label,
 	onToggle,
 	className,
@@ -39,7 +41,11 @@ export function EmojiReactionPill({
 			// The visible count is kept in the name to satisfy WCAG 2.5.3 Label in Name.
 			aria-label={label ?? `${count} reacted with ${emojiLabel(emoji)}`}
 			aria-pressed={pressed}
-			className={cn("gap-1 rounded-sm px-2 text-xs font-normal tabular-nums", className)}
+			className={cn(
+				"gap-1 rounded-sm px-2 text-xs font-normal tabular-nums duration-fast ease-out-practical motion-reduce:transition-none",
+				confirmed && "aria-pressed:bg-bg-selected-hovered",
+				className,
+			)}
 			onClick={() => onToggle?.(emoji)}
 			size="compact"
 			type="button"

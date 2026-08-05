@@ -75,10 +75,7 @@ export function EmojiPickerDemoPopover() {
 
 	return (
 		<div className="flex w-full items-center justify-center gap-3 p-6">
-			<EmojiPickerPopover
-				onSelect={(emoji) => setPicked((current) => [...current, emoji])}
-				selected={picked}
-			/>
+			<EmojiPickerPopover onSelect={(emoji) => setPicked((current) => [...current, emoji])} />
 			<span className="text-sm text-text-subtlest">
 				{picked.length > 0 ? picked.join(" ") : "Nothing picked yet"}
 			</span>
@@ -94,7 +91,6 @@ export function EmojiPickerDemoFullPicker() {
 			<EmojiPickerPopover
 				defaultView="full"
 				onSelect={(emoji) => setPicked((current) => [...current, emoji])}
-				selected={picked}
 				triggerLabel="Browse all emoji"
 			/>
 			<span className="text-sm text-text-subtlest">
