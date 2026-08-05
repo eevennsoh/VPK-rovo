@@ -448,6 +448,8 @@ test("thread replies share the parent card as inset divided rows with their own 
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-(?:6|8)">/u);
 	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
+	assert.match(COMMENT_SOURCE, /onReply=\{commentActions === "reply-and-reactions" && allowReply \? toggleReply : undefined\}/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
 	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="divide-y divide-border"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);

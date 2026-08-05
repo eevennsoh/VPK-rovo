@@ -109,11 +109,13 @@ function ThreadReplyCard({
 	currentUser,
 	onSubmitReply,
 	commentActions,
+	allowReply,
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
 	onSubmitReply: (body: string) => void;
 	commentActions: "none" | "reactions" | "reply-and-reactions";
+	allowReply: boolean;
 }>) {
 	const [replyOpen, setReplyOpen] = useState(false);
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
@@ -164,7 +166,7 @@ function ThreadReplyCard({
 				footerActions={
 					commentActions === "none" ? undefined : (
 						<JiraActivityCommentActions
-							onReply={commentActions === "reply-and-reactions" ? toggleReply : undefined}
+							onReply={commentActions === "reply-and-reactions" && allowReply ? toggleReply : undefined}
 							onToggleReaction={toggleReaction}
 							reactions={reactionSummaries}
 							replyComposerId={replyOpen ? composerId : undefined}
@@ -349,6 +351,7 @@ export function JiraActivityComment({
 					>
 						{replies.map((reply) => (
 							<ThreadReplyCard
+								allowReply={allowReply}
 								commentActions={commentActions}
 								currentUser={currentUser}
 								key={reply.id}
