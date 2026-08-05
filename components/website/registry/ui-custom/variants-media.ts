@@ -2,6 +2,38 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
 export const UI_CUSTOM_MEDIA_VARIANT_DEMOS: Record<string, ComponentType> = {
+	"pixel-loader-demo-shapes": dynamic(
+		() =>
+			import("../../demos/ui-custom/pixel-loader-demo").then((mod) => ({
+				default: mod.PixelLoaderDemoShapes,
+			})),
+		{ ssr: false },
+	),
+	"pixel-loader-demo-directions": dynamic(
+		() =>
+			import("../../demos/ui-custom/pixel-loader-demo").then((mod) => ({
+				default: mod.PixelLoaderDemoDirections,
+			})),
+		{ ssr: false },
+	),
+	"pixel-loader-demo-rovo": dynamic(
+		() =>
+			import("../../demos/ui-custom/pixel-loader-demo").then((mod) => ({
+				default: mod.PixelLoaderDemoRovo,
+			})),
+		{ ssr: false },
+	),
+	"pixel-loader-demo-inline": dynamic(
+		() =>
+			import("../../demos/ui-custom/pixel-loader-demo").then((mod) => ({
+				default: mod.PixelLoaderDemoInline,
+			})),
+		{ ssr: false },
+	),
+	"pixel-loader-playground-demo": dynamic(
+		() => import("../../demos/ui-custom/pixel-loader-playground-demo"),
+		{ ssr: false },
+	),
 	"audio-player-demo-full": dynamic(
 		() =>
 			import("../../demos/ui-custom/audio-player-demo").then((mod) => ({
