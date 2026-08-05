@@ -1,12 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 import type { EmojiReactionSummary } from "../data/emoji-frequent";
 import { EmojiPickerPopover } from "./emoji-picker-popover";
 import { EmojiReactionPill } from "./emoji-reaction-pill";
+
+const CONFIRMATION_HOLD_MS = 250;
 
 export interface EmojiReactionBarProps {
 	reactions: readonly EmojiReactionSummary[];
@@ -23,8 +25,9 @@ export interface EmojiReactionBarProps {
  * The composed action row: leading slot (e.g. Reply), the reaction pills, the
  * add-reaction popover, then a trailing slot (e.g. Edit / More).
  *
- * Stateless by design — adding and removing a reaction are the same event, so
- * the consumer's reducer owns the toggle.
+ * Reaction data stays controlled — the consumer's reducer owns the toggle.
+ * This row owns only the brief confirmation treatment for an active picker
+ * choice; picker choices never remove reactions.
  */
 export function EmojiReactionBar({
 	reactions,
@@ -36,9 +39,27 @@ export function EmojiReactionBar({
 	"aria-label": ariaLabel = "Reactions",
 	className,
 }: Readonly<EmojiReactionBarProps>) {
-	const selected = reactions
-		.filter((reaction) => reaction.reacted)
-		.map((reaction) => reaction.emoji);
+	const [confirmedReaction, setConfirmedReaction] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!confirmedReaction) return;
+		const timeoutId = window.setTimeout(
+			() => setConfirmedReaction(null),
+			CONFIRMATION_HOLD_MS,
+		);
+		return () => window.clearTimeout(timeoutId);
+	}, [confirmedReaction]);
+
+	function handlePickerSelect(emoji: string): void {
+		const alreadyReacted = reactions.some(
+			(reaction) => reaction.emoji === emoji && reaction.reacted,
+		);
+		if (alreadyReacted) {
+			setConfirmedReaction(emoji);
+			return;
+		}
+		onToggleReaction(emoji);
+	}
 
 	return (
 		<div
@@ -50,6 +71,7 @@ export function EmojiReactionBar({
 			{reactions.map((reaction) => (
 				<EmojiReactionPill
 					count={reaction.count}
+					confirmed={confirmedReaction === reaction.emoji}
 					emoji={reaction.emoji}
 					key={reaction.emoji}
 					label={reaction.label}
@@ -60,8 +82,7 @@ export function EmojiReactionBar({
 			{showAddReaction ? (
 				<EmojiPickerPopover
 					frequent={frequent}
-					onSelect={onToggleReaction}
-					selected={selected}
+					onSelect={handlePickerSelect}
 				/>
 			) : null}
 			{/*
