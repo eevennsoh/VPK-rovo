@@ -143,7 +143,7 @@ export function ArtifactPane({
 				return (
 					<Fragment key={section.id}>
 						{index > 0 && (open || previousOpen) ? (
-							<div className="py-1.5">
+							<div className="px-3 py-1.5">
 								<Separator />
 							</div>
 						) : null}

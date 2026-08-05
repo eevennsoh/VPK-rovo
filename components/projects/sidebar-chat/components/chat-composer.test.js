@@ -43,13 +43,12 @@ test("compact chat sources selector opens a reasoning-free customize popover", (
 	assert.doesNotMatch(source.slice(customizeMenuIndex, sendControlsIndex), /showSources=\{false\}/u);
 });
 
-test("compact chat composer surface does not add a soft fade above the prompt input", () => {
+test("compact chat composer surface restores the shared prompt input backdrop shadow", () => {
 	const source = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const surfaceSource = sourceBetween(source, "chat-composer-surface", "<PromptInput");
 
-	assert.doesNotMatch(source, /composerUpwardShadow/u);
-	assert.doesNotMatch(surfaceSource, /boxShadow/u);
-	assert.doesNotMatch(surfaceSource, /shadow-\[0px_-2px_50px/u);
+	assert.match(source, /import \{[^}]*composerUpwardShadow[^}]*\} from "@\/components\/projects\/shared\/components\/rovo-composer-styles";/u);
+	assert.match(surfaceSource, /style=\{\{ boxShadow: composerUpwardShadow \}\}/u);
 });
 
 test("compact chat animates sources and model selectors when edit-agent context toggles", () => {

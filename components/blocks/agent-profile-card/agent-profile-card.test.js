@@ -59,3 +59,16 @@ test("Agent Profile Card forwards submitted composer text to its consumer", () =
 	assert.match(entitySource, /const prompt = reply\.trim\(\);/u);
 	assert.match(entitySource, /void onInputAction\?\.\(prompt\);/u);
 });
+
+test("Agent Profile Card composer uses the standard prompt backdrop shadow without a border", () => {
+	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
+
+	assert.match(
+		entitySource,
+		/className="w-full rounded-xl border-0 bg-bg-input px-3"/u,
+	);
+	assert.doesNotMatch(
+		entitySource,
+		/className="[^"]*border border-border[^"]*shadow-md[^"]*"/u,
+	);
+});

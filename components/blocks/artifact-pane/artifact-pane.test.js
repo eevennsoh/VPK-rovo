@@ -37,7 +37,7 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? \([\s\S]*text-xs font-normal text-text-subtlest">· \{count\}/u);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
-	assert.match(BLOCK_SOURCE, /index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="py-1\.5"[\s\S]*<Separator \/>/u);
+	assert.match(BLOCK_SOURCE, /index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
 	assert.match(BLOCK_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(BLOCK_SOURCE, /import \{ motion, useReducedMotion \} from "motion\/react"/u);
 	assert.match(BLOCK_SOURCE, /const prefersReducedMotion = useReducedMotion\(\);/u);

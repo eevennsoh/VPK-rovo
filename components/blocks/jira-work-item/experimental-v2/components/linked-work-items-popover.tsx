@@ -48,9 +48,23 @@ function LinkedResultItem({ item, onSelect }: Readonly<{ item: ContextLinkedItem
 	);
 }
 
-export function LinkedWorkItemsPopover({ tooltip, trigger }: Readonly<{ tooltip?: string; trigger: ReactElement }>) {
+interface LinkedWorkItemsPopoverProps {
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	tooltip?: string;
+	trigger: ReactElement;
+}
+
+export function LinkedWorkItemsPopover({
+	open: controlledOpen,
+	onOpenChange,
+	tooltip,
+	trigger,
+}: Readonly<LinkedWorkItemsPopoverProps>) {
 	const actions = useJiraWorkItemActions();
-	const [open, setOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+	const open = controlledOpen ?? uncontrolledOpen;
+	const setOpen = onOpenChange ?? setUncontrolledOpen;
 	const [relationship, setRelationship] = useState<RelationshipOption | null>(null);
 	const [type, setType] = useState<LinkedWorkItemType>("Task");
 	const [scope, setScope] = useState<string>("Local");

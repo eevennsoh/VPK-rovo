@@ -10,11 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
-import {
-	PromptInputButton,
-	PromptInputSubmit,
-	PromptInputTextarea,
-} from "@/components/ui-custom/prompt-input";
+import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import type {
 	RichTextMentionSectionLabels,
 	RichTextSuggestionVariantConfig,
@@ -24,11 +20,43 @@ import { cn } from "@/lib/utils";
 
 import type { JiraActivityActor } from "./jira-activity-types";
 
+/**
+ * The two floating surfaces this composer serves. They share the prompt editor
+ * and submit behaviour but nothing else, so every difference between them lives
+ * here rather than as a className blob at each callsite.
+ *
+ * - `comment` — the standalone/sticky comment bar. Bordered floating box with
+ *   the full-size 32px prompt controls.
+ * - `flush` — the reply row nested inside an activity card. The card already
+ *   owns the border and padding, so this drops its own chrome and tightens the
+ *   controls to 24px.
+ */
+const COMPOSER_SURFACES = {
+	comment: {
+		chrome: "",
+		// 32px controls at the shared `Button` default, with the default ADS glyph.
+		controlClassName: "",
+		iconSize: "medium",
+	},
+	flush: {
+		chrome: "border-0 rounded-none bg-transparent px-4 py-1.5 shadow-none",
+		// 24px controls. Shrinking the box on `size="icon"` keeps `rounded-md`;
+		// `size="icon-compact"` would also force the glyph to a fixed 12px.
+		controlClassName: "size-6",
+		// ADS ships a purpose-drawn small glyph; in a 24px box it reads correctly
+		// where the default one is optically heavy.
+		iconSize: "small",
+	},
+} as const;
+
 export interface JiraActivityComposerProps {
 	author: JiraActivityActor;
 	placeholder: string;
-	/** `reply` is an inline row inside a comment card; `comment` is a bordered box. */
-	variant?: "reply" | "comment";
+	/**
+	 * `reply` is a plain inline row with an avatar; `comment` is the bordered
+	 * floating box; `flush` is the chrome-less compact row inside a card.
+	 */
+	variant?: "reply" | "comment" | "flush";
 	onSubmit: (body: string) => void;
 	/** Controlled draft value. Omit to let the composer own its draft. */
 	value?: string;
@@ -135,29 +163,41 @@ export function JiraActivityComposer({
 		);
 	}
 
+	const surface = COMPOSER_SURFACES[variant];
+
 	return (
 		<FloatingComposer
 			actions={
 				<>
 					{submitAccessory}
-					<PromptInputSubmit
+					<Button
 						aria-label="Send"
-						className="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+						className={cn(
+							"bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed",
+							surface.controlClassName,
+						)}
 						disabled={!canSubmit}
-						size="icon-sm"
+						size="icon"
+						type="submit"
 					>
-						<ArrowUpIcon label="" />
-					</PromptInputSubmit>
+						<ArrowUpIcon label="" size={surface.iconSize} />
+					</Button>
 				</>
 			}
 			addButton={
-				<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">
-					<AddIcon label="" />
-				</PromptInputButton>
+				<Button
+					aria-label="Add"
+					className={surface.controlClassName}
+					size="icon"
+					type="button"
+					variant="ghost"
+				>
+					<AddIcon label="" size={surface.iconSize} />
+				</Button>
 			}
 			allowOverflow
 			aria-label={placeholder}
-			className={cn("w-full", className)}
+			className={cn("w-full", surface.chrome, className)}
 			onSubmit={submit}
 		>
 			<PromptInputTextarea

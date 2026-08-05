@@ -79,9 +79,23 @@ function AttachmentResultItem({ attachment, onSelect }: Readonly<{ attachment: W
 	);
 }
 
-export function AttachmentsPopover({ tooltip, trigger }: Readonly<{ tooltip?: string; trigger: ReactElement }>) {
+interface AttachmentsPopoverProps {
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	tooltip?: string;
+	trigger: ReactElement;
+}
+
+export function AttachmentsPopover({
+	open: controlledOpen,
+	onOpenChange,
+	tooltip,
+	trigger,
+}: Readonly<AttachmentsPopoverProps>) {
 	const actions = useJiraWorkItemActions();
-	const [open, setOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+	const open = controlledOpen ?? uncontrolledOpen;
+	const setOpen = onOpenChange ?? setUncontrolledOpen;
 	const [query, setQuery] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const displayNameId = useId();

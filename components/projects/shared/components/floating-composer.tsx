@@ -236,7 +236,16 @@ export function FloatingComposer({
 	return (
 		<PromptInput
 			variant="floating"
-			className={cn(composerPromptInputClassName, "p-3", className)}
+			className={cn(
+				composerPromptInputClassName,
+				"p-3",
+				// The shell already owns the horizontal gutter, so drop the editor's
+				// own `px-2.5` from both the control container and the placeholder
+				// overlay. Without this the text sits ~10px inboard of the leading
+				// "+" button, and empty/typed states start at different offsets.
+				"[&_[data-slot=input-group-control-container]]:px-0 [&_[data-slot=prompt-input-placeholder]]:px-0",
+				className,
+			)}
 			{...props}
 		>
 			<PromptInputBody>

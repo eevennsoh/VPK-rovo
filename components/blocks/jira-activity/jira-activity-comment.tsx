@@ -23,12 +23,6 @@ function initialsOf(name: string): string {
 	);
 }
 
-// The reply composer sits flush inside the card's footer: the card's own
-// `border-t` is the only divider, so the composer drops the floating
-// border/radius/shadow it carries by default and aligns its leading/trailing
-// controls to the card's 16px content padding.
-const FLUSH_COMPOSER_CLASSNAME = "border-0 rounded-none bg-transparent px-4 py-3 shadow-none";
-
 /**
  * Adapts Jira Activity comment data to the expanded Agent List card.
  * Human comments repeat their identity inside the card header; agent-session
@@ -151,12 +145,11 @@ export function JiraActivityComment({
 							// In collapsible mode the composer only mounts on a Reply
 							// click, so mounting is exactly the moment to take focus.
 							autoFocus={collapsible}
-							className={FLUSH_COMPOSER_CLASSNAME}
 							onSubmit={onSubmitReply}
 							placeholder={
 								entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."
 							}
-							variant="comment"
+							variant="flush"
 						/>
 					</div>
 				) : undefined
