@@ -106,6 +106,7 @@ export function JiraActivityChangedFiles({
 								{statusPresentation.label}
 							</span>
 						) : undefined}
+						timeFallback={entry.timestamp}
 					/>
 					{entry.description ? (
 						<p className="text-sm leading-5 text-text">{entry.description}</p>

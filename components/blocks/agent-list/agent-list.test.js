@@ -83,7 +83,7 @@ test("the leading tile renders the agent or VPK identity at the selected density
 
 test("the metadata line uses elapsed runtime, agent name, and asx PR-status colors", () => {
 	assert.match(CARD_SOURCE, /function AgentListTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
-	assert.equal((CARD_SOURCE.match(/<AgentListTime item=\{item\} \/>/gu) ?? []).length, 2);
+	assert.equal((CARD_SOURCE.match(/<AgentListTime\b/gu) ?? []).length, 2);
 	assert.match(CARD_SOURCE, /<span className="truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.match(CARD_SOURCE, /<span className="min-w-0 truncate">\{item\.agent\.name\}<\/span>/u);
 	assert.doesNotMatch(CARD_SOURCE, /<span className="truncate">\{item\.branch\}<\/span>/u);
@@ -218,4 +218,10 @@ test("the session activity header accepts leading metadata without changing its 
 		CARD_SOURCE,
 		/\{metadataPrefix \? \([\s\S]*\{metadataPrefix\}[\s\S]*<MetadataDot \/>[\s\S]*\) : null\}/u,
 	);
+});
+
+test("the session activity header can preserve a consumer-provided completed timestamp", () => {
+	assert.match(CARD_SOURCE, /fallback = "Just now"/u);
+	assert.match(CARD_SOURCE, /timeFallback\?: string;/u);
+	assert.match(CARD_SOURCE, /<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u);
 });

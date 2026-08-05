@@ -85,6 +85,7 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /StatusSuccessIcon|\? "Done"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /pullRequestNumber|Ready for review/u);
 	assert.match(CHANGED_FILES_SOURCE, /metadataPrefix=\{statusPresentation \? \([\s\S]*\{statusPresentation\.label\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /timeFallback=\{entry\.timestamp\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /className="flex shrink-0 items-center gap-1 text-text"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex shrink-0 items-center gap-1 font-medium/u);
 	assert.equal(changedFiles.sessionItem.completedSecondsAgo, 5 * 60);
