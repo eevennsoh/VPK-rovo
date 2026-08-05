@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 
+import AddIcon from "@atlaskit/icon/core/add";
 import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
@@ -23,15 +24,28 @@ import {
 import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
+type ContextResourceActionId = "attachments" | "subtasks" | "linkedItems";
+
 interface ContextResourceAction {
+	id: ContextResourceActionId;
 	buttonLabel: string;
 	icon: ReactElement;
-	renderAddButton: (trigger: ReactElement) => ReactElement;
+	renderPopover: (
+		trigger: ReactElement,
+		open: boolean,
+		onOpenChange: (open: boolean) => void,
+	) => ReactElement;
 }
 
 interface ContextResourcesProps {
@@ -42,8 +56,8 @@ interface ContextResourcesProps {
 }
 
 /**
- * Context resource controls: Attachments, Subtasks, and linked work items keep
- * their compact add buttons in the shared control row. Filled resource values
+ * Context resource controls: the shared plus menu launches the existing
+ * Attachments, Subtasks, and linked-work-item popovers. Filled resource values
  * are rendered as conditional sections in the metadata rail.
  */
 export function ContextResources({
@@ -54,29 +68,34 @@ export function ContextResources({
 }: Readonly<ContextResourcesProps>) {
 	const { planner } = useJiraWorkItemState();
 	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
+	const [activeResourceAction, setActiveResourceAction] = useState<ContextResourceActionId | null>(null);
 	const resources: readonly ContextResourceAction[] = [
 		{
+			id: "attachments",
 			buttonLabel: "Add attachments",
 			icon: <AttachmentIcon label="" size="small" />,
-			renderAddButton: (trigger) => (
-				<AttachmentsPopover key="attachments" tooltip="Add attachments" trigger={trigger} />
+			renderPopover: (trigger, open, onOpenChange) => (
+				<AttachmentsPopover key="attachments" open={open} onOpenChange={onOpenChange} trigger={trigger} />
 			),
 		},
 		{
+			id: "subtasks",
 			buttonLabel: "Add subtasks",
 			icon: <ChildWorkItemsIcon label="" size="small" />,
-			renderAddButton: (trigger) => (
-				<SubtasksPopover key="subtasks" tooltip="Add subtasks" trigger={trigger} />
+			renderPopover: (trigger, open, onOpenChange) => (
+				<SubtasksPopover key="subtasks" open={open} onOpenChange={onOpenChange} trigger={trigger} />
 			),
 		},
 		{
+			id: "linkedItems",
 			buttonLabel: "Link work items",
 			icon: <LinkIcon label="" size="small" />,
-			renderAddButton: (trigger) => (
-				<LinkedWorkItemsPopover key="linkedItems" tooltip="Link work items" trigger={trigger} />
+			renderPopover: (trigger, open, onOpenChange) => (
+				<LinkedWorkItemsPopover key="linkedItems" open={open} onOpenChange={onOpenChange} trigger={trigger} />
 			),
 		},
 	];
+	const closeResourceAction = () => setActiveResourceAction(null);
 
 	return (
 		<>
@@ -89,45 +108,63 @@ export function ContextResources({
 				)}
 				data-jira-work-item-resource-row
 			>
-				<TooltipProvider>
-					<div
-						className="flex flex-wrap items-start gap-1 *:focus-visible:relative *:focus-visible:z-10"
-						data-jira-work-item-resource-row-content
-					>
+				<div
+					className="flex flex-wrap items-start gap-1 *:focus-visible:relative *:focus-visible:z-10"
+					data-jira-work-item-resource-row-content
+				>
+					<div className="relative inline-flex">
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={<Button aria-label="Add to work item" size="icon-compact" type="button" variant="outline" />}
+							>
+								<AddIcon label="" size="small" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="start" positionerClassName="z-[502]">
+								<DropdownMenuGroup>
+									{resources.map((resource) => (
+										<DropdownMenuItem
+											elemBefore={resource.icon}
+											key={resource.id}
+											onSelect={() => setActiveResourceAction(resource.id)}
+										>
+											{resource.buttonLabel}
+										</DropdownMenuItem>
+									))}
+									<DropdownMenuItem elemBefore={<CommitIcon label="" size="small" />}>
+										Create commit
+									</DropdownMenuItem>
+									<DropdownMenuItem elemBefore={<BranchIcon label="" size="small" />}>
+										Create branch
+									</DropdownMenuItem>
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						{resources.map((resource) =>
-							resource.renderAddButton(
-								<Button aria-label={resource.buttonLabel} size="icon-compact" type="button" variant="outline">
-									{resource.icon}
-								</Button>,
+							resource.renderPopover(
+								<Button
+									aria-hidden
+									className="pointer-events-none absolute inset-0 opacity-0"
+									tabIndex={-1}
+									type="button"
+								/>,
+								activeResourceAction === resource.id,
+								(open) => (open ? setActiveResourceAction(resource.id) : closeResourceAction()),
 							),
 						)}
-						<Tooltip>
-							<TooltipTrigger
-								render={<Button aria-label="Create commit" size="icon-compact" type="button" variant="outline" />}
-							>
-								<CommitIcon label="" size="small" />
-							</TooltipTrigger>
-							<TooltipContent positionerClassName="z-[502]">Create commit</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger
-								render={<Button aria-label="Create branch" size="icon-compact" type="button" variant="outline" />}
-							>
-								<BranchIcon label="" size="small" />
-							</TooltipTrigger>
-							<TooltipContent positionerClassName="z-[502]">Create branch</TooltipContent>
-						</Tooltip>
-						<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
-						<div className="pointer-events-none ml-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
-							<EditorToolbarModeTabs
-								mode={descriptionViewMode}
-								onModeChange={onDescriptionViewModeChange}
-								size="compact"
-							/>
-						</div>
 					</div>
-				</TooltipProvider>
-				<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" />
+					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
+					<div className="pointer-events-none ml-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
+						<EditorToolbarModeTabs
+							mode={descriptionViewMode}
+							onModeChange={onDescriptionViewModeChange}
+							size="compact"
+						/>
+					</div>
+				</div>
+				<StickyRowScrollFade
+					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}
+					data-slot="jira-work-item-resource-row-scroll-fade"
+				/>
 			</div>
 			{outputs.length > 0 ? (
 				<div className="mt-1">

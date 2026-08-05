@@ -23,7 +23,7 @@ import {
 import type { ComposerDirectoryAutocompleteController, RichTextMentionItem, RichTextMentionSources } from "@/components/ui-custom/rich-text-editor";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
+import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow, textareaCSS } from "@/components/projects/shared/components/rovo-composer-styles";
 import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui-custom/queue";
 import { Button } from "@/components/ui/button";
 import DeleteIcon from "@atlaskit/icon/core/delete";
@@ -289,6 +289,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					"chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] border border-border bg-surface px-3 pb-3 pt-4",
 					composerSurfaceHeader ? "rounded-b-xl border-t-0" : "rounded-xl",
 				)}
+				style={{ boxShadow: composerUpwardShadow }}
 			>
 				<PromptInput
 					allowOverflow

@@ -109,19 +109,12 @@ const READINESS_AGENT: StaticTimelineEvent["actor"] = {
 	avatarSrc: "/avatar-agent/teamwork-agents/readiness-checker.svg",
 };
 
-const GITHUB: StaticTimelineEvent["actor"] = {
-	id: "static-github",
-	name: "GitHub",
-	kind: "app",
-	brandName: "github",
-};
-
 const AUTOMATION_TAG = { text: "Automation" } as const;
 
 /**
  * Seeded timeline scaffolding for the filled preset. Mirrors the states the
  * standalone Jira Activity block shows (created, labels, SLA, status moves,
- * self-assign, self-delegate, changed files, connected-app link) but themed to
+ * self-assign, self-delegate, changed files, pull-request creation) but themed to
  * the Acmecorp RFP demo actors. All offsets precede the seeded human comment
  * (−60min) and completed session (−30min) so the feed reads chronologically.
  */
@@ -227,8 +220,7 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 	{
 		id: "static-linked",
 		kind: "event",
-		actor: GITHUB,
-		icon: "linked",
+		actor: MAYA,
 		segments: [],
 		pullRequest: {
 			number: 1847,

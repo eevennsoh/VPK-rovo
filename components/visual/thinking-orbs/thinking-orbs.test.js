@@ -45,7 +45,10 @@ test("Thinking Orb resolves every state at both tuned sizes", async () => {
 		"searching",
 		"solving",
 		"listening",
+		"connecting",
+		"weaving",
 		"composing",
+		"breathing",
 		"shaping",
 	];
 	for (const state of states) {
@@ -71,14 +74,14 @@ test("Thinking Orb preserves accessibility, reduced motion, and visibility pausi
 	assert.match(THEME_SOURCE, /getAttribute\("data-color-mode"\)/);
 	assert.match(
 		THEME_SOURCE,
-		/useState\(\s*\(\) =>\s*typeof matchMedia !== "undefined"/,
+		/useMediaQuery\("\(prefers-reduced-motion: reduce\)"\)/,
 	);
 });
 
 test("Thinking Orb reserves canvas backing dimensions for the size prop", () => {
 	assert.match(
 		TYPES_SOURCE,
-		/extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "height" \| "style" \| "width">/,
+		/extends Omit<\s*CanvasHTMLAttributes<HTMLCanvasElement>,\s*"height" \| "style" \| "width"\s*>/,
 	);
 	assert.match(COMPONENT_SOURCE, /delete canvasProps\.width;/);
 	assert.match(COMPONENT_SOURCE, /delete canvasProps\.height;/);
@@ -91,7 +94,10 @@ test("Thinking Orbs demo exposes the complete supported control and variant surf
 		"searching",
 		"solving",
 		"listening",
+		"connecting",
+		"weaving",
 		"composing",
+		"breathing",
 		"shaping",
 	]) {
 		assert.match(DEMO_SOURCE, new RegExp(`"${state}"`));
@@ -114,7 +120,10 @@ test("Thinking Orbs demo exposes the complete supported control and variant surf
 		"searching",
 		"solving",
 		"listening",
+		"connecting",
+		"weaving",
 		"composing",
+		"breathing",
 		"shaping",
 	]) {
 		assert.match(

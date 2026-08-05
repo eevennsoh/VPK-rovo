@@ -42,9 +42,9 @@ export function JiraActivityCardDemo() {
 					replyComposer={
 						<JiraActivityComposer
 							author={JIRA_ACTIVITY_CURRENT_USER}
-							className="border-0 rounded-none bg-transparent px-4 py-3 shadow-none"
 							onSubmit={() => {}}
 							placeholder="Ask, @mention, or / for actions"
+							variant="flush"
 						/>
 					}
 					tag={entry.tag}

@@ -311,11 +311,17 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 		additions: 148,
 		deletions: 37,
 	});
-	assert.match(EVENT_SOURCE, />Pull request</u);
+	assert.match(
+		EVENT_SOURCE,
+		/<span className="font-medium text-text">\{entry\.actor\.name\}<\/span> created pull request/u,
+	);
 	assert.match(EVENT_SOURCE, /variant=\{status === "Merged" \? "discovery" : "success"\}/u);
-	assert.match(EVENT_SOURCE, /font-mono font-normal text-text-success/u);
-	assert.match(EVENT_SOURCE, /font-mono font-normal text-text-danger/u);
-	assert.match(EVENT_SOURCE, /min-w-0 flex-1 truncate text-text/u);
+	assert.match(EVENT_SOURCE, /className="flex min-w-0 items-center gap-1"/u);
+	assert.match(EVENT_SOURCE, /className="flex shrink-0 items-center gap-1"/u);
+	assert.match(EVENT_SOURCE, /className="text-text-success">\+\{additions\}/u);
+	assert.match(EVENT_SOURCE, /className="text-text-danger">-\{deletions\}/u);
+	assert.match(EVENT_SOURCE, /className="min-w-0 truncate text-text"/u);
+	assert.doesNotMatch(EVENT_SOURCE, /font-mono|ml-auto|flex-1 truncate text-text/u);
 });
 
 test("Jira Activity owns the shared activity card used by agent comments", () => {
@@ -338,9 +344,10 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 		/import \{\s*AgentListActivityHeader,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list"/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListActivityHeader/u);
-	// Both human and agent comments render the shared prompt-input composer.
-	assert.match(COMMENT_SOURCE, /variant="comment"/u);
-	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"/u);
+	// Both human and agent comments render the shared prompt-input composer, on
+	// the compact in-card surface rather than the bordered floating one.
+	assert.match(COMMENT_SOURCE, /variant="flush"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"|variant="comment"/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/entry\.sessionItem\s*\? "Ask, @mention, or \/ for actions"\s*:\s*"Leave a reply\.\.\."/u,
@@ -360,10 +367,10 @@ test("documents the standalone activity card under Jira Activity", () => {
 	assert.match(DEMO_SOURCE, /<JiraActivityCard/u);
 	assert.match(DEMO_SOURCE, /item=\{entry\.sessionItem\}/u);
 	assert.match(DEMO_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
-	assert.match(
-		DEMO_SOURCE,
-		/border-0 rounded-none bg-transparent px-4 py-3 shadow-none/u,
-	);
+	// The flush geometry is the composer's own `flush` surface, not a className
+	// blob copied into each callsite.
+	assert.match(DEMO_SOURCE, /variant="flush"/u);
+	assert.doesNotMatch(DEMO_SOURCE, /border-0 rounded-none bg-transparent/u);
 	assert.match(
 		VARIANT_REGISTRY_SOURCE,
 		/"jira-activity-demo-activity-card"[\s\S]*JiraActivityCardDemo/u,
@@ -392,8 +399,9 @@ test("human comments keep the stacked identity header and the flush composer geo
 	// Reply is a disclosure the comment owns via `commentActions`, not a callback
 	// the consuming surface has to wire up.
 	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
-	// Flush composer: no floating border/radius/shadow, aligned to the card's padding.
-	assert.match(COMMENT_SOURCE, /border-0 rounded-none bg-transparent px-4 py-3 shadow-none/u);
+	// Flush composer: the chrome-less geometry is owned by the composer's `flush`
+	// surface, so the callsite carries no layout className of its own.
+	assert.doesNotMatch(COMMENT_SOURCE, /border-0 rounded-none bg-transparent|FLUSH_COMPOSER_CLASSNAME/u);
 });
 
 test("the activity card hosts the action row in the body grid, not the bordered footer", () => {
@@ -422,6 +430,8 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	assert.match(COMMENT_ACTIONS_SOURCE, /aria-label="Reply"/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /aria-expanded=\{replyExpanded\}/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /aria-controls=\{replyComposerId\}/u);
+	assert.match(COMMENT_ACTIONS_SOURCE, /className="rounded-sm"/u);
+	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /shape="circle"/u);
 	assert.match(COMMENT_ACTIONS_SOURCE, /<ReplyLeftIcon color="currentColor" label="" \/>/u);
 	// Always visible — never a hover-reveal.
 	assert.doesNotMatch(COMMENT_ACTIONS_SOURCE, /opacity-0|group-hover/u);
@@ -567,12 +577,47 @@ test("the exported comment composer uses the shared floating Rovo prompt", () =>
 	assert.match(COMPOSER_SOURCE, /onValueChange\?: \(value: string\) => void/u);
 	assert.match(COMPOSER_SOURCE, /textareaRef\?: Ref<HTMLTextAreaElement>/u);
 	assert.match(COMPOSER_SOURCE, /<FloatingComposer/u);
-	assert.match(COMPOSER_SOURCE, /<PromptInputButton aria-label="Add" size="icon-sm" variant="ghost">/u);
 	assert.match(COMPOSER_SOURCE, /<PromptInputTextarea/u);
-	assert.match(COMPOSER_SOURCE, /<PromptInputSubmit/u);
 	assert.match(COMPOSER_SOURCE, /aria-label="Send"/u);
 	assert.match(COMPOSER_SOURCE, /disabled=\{!canSubmit\}/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /RovoComposerActionButton|realtimeVoice/u);
+});
+
+test("the two floating surfaces are separated by variant, not by callsite classNames", () => {
+	assert.match(COMPOSER_SOURCE, /variant\?: "reply" \| "comment" \| "flush"/u);
+	assert.match(COMPOSER_SOURCE, /const surface = COMPOSER_SURFACES\[variant\];/u);
+	// `comment` is the bordered floating box: no chrome override, default 32px
+	// controls.
+	assert.match(
+		COMPOSER_SOURCE,
+		/comment: \{\s*chrome: "",[\s\S]*?controlClassName: "",/u,
+	);
+	// `flush` is the in-card row: chrome-less with 24px controls.
+	assert.match(
+		COMPOSER_SOURCE,
+		/flush: \{\s*chrome: "border-0 rounded-none bg-transparent px-4 py-1\.5 shadow-none",/u,
+	);
+	assert.match(COMPOSER_SOURCE, /controlClassName: "size-6"/u);
+	// The floating comment bar keeps the default 16px ADS glyph; only the 24px
+	// in-card controls step down to the purpose-drawn small one.
+	assert.match(COMPOSER_SOURCE, /comment: \{[\s\S]*?iconSize: "medium",/u);
+	assert.match(COMPOSER_SOURCE, /flush: \{[\s\S]*?iconSize: "small",/u);
+	assert.match(COMPOSER_SOURCE, /<ArrowUpIcon label="" size=\{surface\.iconSize\} \/>/u);
+	assert.match(COMPOSER_SOURCE, /<AddIcon label="" size=\{surface\.iconSize\} \/>/u);
+	// Both controls are the shared VPK Button at `size="icon"` so they keep
+	// `rounded-md`; `flush` only shrinks the box via `controlClassName`.
+	assert.match(
+		COMPOSER_SOURCE,
+		/aria-label="Send"[\s\S]*?surface\.controlClassName,[\s\S]*?size="icon"[\s\S]*?type="submit"/u,
+	);
+	assert.match(
+		COMPOSER_SOURCE,
+		/aria-label="Add"\s*className=\{surface\.controlClassName\}\s*size="icon"/u,
+	);
+	assert.doesNotMatch(COMPOSER_SOURCE, /icon-xs|icon-sm/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("w-full", surface\.chrome, className\)\}/u);
+	// The editor gutter is the floating shell's job, not this composer's.
+	assert.doesNotMatch(COMPOSER_SOURCE, /input-group-control-container|prompt-input-placeholder/u);
 });
 
 test("disclosing Reply focuses the composer through the editor's own autofocus", () => {

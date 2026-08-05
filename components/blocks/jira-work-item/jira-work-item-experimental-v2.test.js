@@ -448,7 +448,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	assert.doesNotMatch(contextPanelSource, /<section aria-label="Work item context" className="flex flex-col gap-3">/u);
 	assert.match(
 		contextResourcesSource,
-		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-1[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderAddButton[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
+		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-1[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
 	);
 	assert.match(
 		contextResourcesSource,
@@ -458,7 +458,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-trigger\]\[data-active\]\]:bg-bg-input/u);
 	assert.match(
 		contextResourcesSource,
-		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" \/>/u,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade[\s\S]*className=\{hasPlanner \? "\[&>div\]:from-bg-input" : undefined\}[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
 	);
 	assert.doesNotMatch(contextResourcesSource, /<div className="flex flex-col gap-4">/u);
 	assert.match(
@@ -476,14 +476,14 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	);
 	assert.match(contextResourcesSource, /buttonLabel: "Add attachments",[\s\S]*<AttachmentIcon label="" size="small" \/>/u);
 	assert.match(contextResourcesSource, /buttonLabel: "Add subtasks",[\s\S]*<ChildWorkItemsIcon label="" size="small" \/>/u);
-	assert.match(contextResourcesSource, /buttonLabel: "Link work items",[\s\S]*<LinkIcon label="" size="small" \/>[\s\S]*<LinkedWorkItemsPopover key="linkedItems" tooltip="Link work items" trigger=\{trigger\} \/>/u);
-	assert.match(contextResourcesSource, /<Button aria-label=\{resource\.buttonLabel\} size="icon-compact" type="button" variant="outline">[\s\S]*\{resource\.icon\}/u);
+	assert.match(contextResourcesSource, /buttonLabel: "Link work items",[\s\S]*<LinkIcon label="" size="small" \/>[\s\S]*<LinkedWorkItemsPopover key="linkedItems" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
 	assert.match(
 		contextResourcesSource,
-		/<TooltipTrigger[\s\S]*render=\{<Button aria-label="Create commit" size="icon-compact" type="button" variant="outline" \/>\}[\s\S]*<CommitIcon label="" size="small" \/>[\s\S]*<TooltipContent positionerClassName="z-\[502\]">Create commit<\/TooltipContent>[\s\S]*<TooltipTrigger[\s\S]*render=\{<Button aria-label="Create branch" size="icon-compact" type="button" variant="outline" \/>\}[\s\S]*<BranchIcon label="" size="small" \/>[\s\S]*<TooltipContent positionerClassName="z-\[502\]">Create branch<\/TooltipContent>/u,
+		/<DropdownMenuTrigger[\s\S]*aria-label="Add to work item"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*resources\.map\(\(resource\) => \([\s\S]*onSelect=\{\(\) => setActiveResourceAction\(resource\.id\)\}[\s\S]*Create commit[\s\S]*Create branch/u,
 	);
-	assert.match(contextResourcesSource, /<AttachmentsPopover key="attachments" tooltip="Add attachments" trigger=\{trigger\} \/>/u);
-	assert.match(contextResourcesSource, /<SubtasksPopover key="subtasks" tooltip="Add subtasks" trigger=\{trigger\} \/>/u);
+	assert.match(contextResourcesSource, /<AttachmentsPopover key="attachments" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
+	assert.match(contextResourcesSource, /<SubtasksPopover key="subtasks" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
+	assert.match(contextResourcesSource, /className="pointer-events-none absolute inset-0 opacity-0"[\s\S]*activeResourceAction === resource\.id/u);
 	assert.doesNotMatch(contextResourcesSource, /<Button size="compact" type="button" variant="outline">/u);
 	assert.doesNotMatch(contextResourcesSource, /const empty =|empty\.map/u);
 	assert.doesNotMatch(contextResourcesSource, /agentFieldName="attachments"|agentFieldName="subtasks"|agentFieldName="linkedItems"/u);

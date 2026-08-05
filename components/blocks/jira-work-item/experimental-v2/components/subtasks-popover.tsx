@@ -28,9 +28,23 @@ import {
 } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import type { WorkItemChildItem } from "@/app/contexts/context-work-item-modal";
 
-export function SubtasksPopover({ tooltip, trigger }: Readonly<{ tooltip?: string; trigger: ReactElement }>) {
+interface SubtasksPopoverProps {
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	tooltip?: string;
+	trigger: ReactElement;
+}
+
+export function SubtasksPopover({
+	open: controlledOpen,
+	onOpenChange,
+	tooltip,
+	trigger,
+}: Readonly<SubtasksPopoverProps>) {
 	const actions = useJiraWorkItemActions();
-	const [open, setOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+	const open = controlledOpen ?? uncontrolledOpen;
+	const setOpen = onOpenChange ?? setUncontrolledOpen;
 	const [type, setType] = useState<string>("Subtask");
 	const [name, setName] = useState("");
 	const [query, setQuery] = useState("");

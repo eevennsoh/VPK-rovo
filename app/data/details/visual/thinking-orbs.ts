@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const THINKING_ORBS_DETAIL: ComponentDetail = {
 	description:
-		"Dotted canvas indicators for AI and agent activity, adapted from Jakub Antalik's MIT-licensed Thinking Orbs. Six hand-tuned states ship at two independently tuned sizes, with automatic theme detection, reduced-motion static frames, and offscreen pausing.",
+		"Dotted canvas indicators for AI and agent activity, adapted from Jakub Antalik's MIT-licensed Thinking Orbs. Nine hand-tuned states ship at two independently tuned sizes, with automatic theme detection, reduced-motion static frames, and offscreen pausing.",
 	importStatement: `import {
 	ThinkingOrb,
 	type ThinkingOrbProps,
@@ -42,9 +42,25 @@ export const THINKING_ORBS_DETAIL: ComponentDetail = {
 			demoSlug: "thinking-orbs-demo-listening",
 		},
 		{
+			title: "Connecting",
+			description:
+				"A constellation wires itself together while packets run along its edges.",
+			demoSlug: "thinking-orbs-demo-connecting",
+		},
+		{
+			title: "Weaving",
+			description: "Three dotted strands plait around the sphere.",
+			demoSlug: "thinking-orbs-demo-weaving",
+		},
+		{
 			title: "Composing",
 			description: "An undulating multi-band sash wraps around the orb.",
 			demoSlug: "thinking-orbs-demo-composing",
+		},
+		{
+			title: "Breathing",
+			description: "A face-on dotted ring slowly expands and contracts.",
+			demoSlug: "thinking-orbs-demo-breathing",
 		},
 		{
 			title: "Shaping",
@@ -56,10 +72,10 @@ export const THINKING_ORBS_DETAIL: ComponentDetail = {
 	props: [
 		{
 			name: "state",
-			type: '"working" | "searching" | "solving" | "listening" | "composing" | "shaping"',
+			type: '"working" | "searching" | "solving" | "listening" | "connecting" | "weaving" | "composing" | "breathing" | "shaping"',
 			default: '"working"',
 			description:
-				"Selects one of the six hand-tuned agent activity animations.",
+				"Selects one of the nine hand-tuned agent activity animations.",
 		},
 		{
 			name: "size",

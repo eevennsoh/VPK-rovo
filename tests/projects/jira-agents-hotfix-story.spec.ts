@@ -101,9 +101,11 @@ test("the shared-channel story exposes six keyboard-selectable chapters and cano
 		name: "SHOP-4823: Build and integrate the storefront checkout flow To do",
 	});
 	await expect(apiTask).toBeVisible();
-	await expect(apiTask.locator(".text-icon-accent-blue")).toHaveCount(1);
 	await expect(storefrontStory).toBeVisible();
-	await expect(storefrontStory.locator(".text-icon-accent-green")).toHaveCount(1);
+	for (const workItem of [apiTask, storefrontStory]) {
+		const iconTile = workItem.locator('[data-slot="icon-tile"]');
+		await expect(iconTile).toHaveCount(1);
+	}
 
 	await page.getByRole("button", { name: "Linked work items · 1" }).focus();
 	await page.keyboard.press("Enter");
@@ -111,7 +113,7 @@ test("the shared-channel story exposes six keyboard-selectable chapters and cano
 		name: "SHOP-4760: Research checkout abandonment and guest conversion Done",
 	});
 	await expect(researchTask).toBeVisible();
-	await expect(researchTask.locator(".text-icon-accent-blue")).toHaveCount(1);
+	await expect(researchTask.locator('[data-slot="icon-tile"]')).toHaveCount(1);
 
 	const controls = page.getByRole("group", { name: "Open a software delivery story chapter" });
 	await expect(controls.getByRole("button")).toHaveCount(CHAPTERS.length);
@@ -325,7 +327,7 @@ test("the Working chapter passes a scoped semantic accessibility audit", async (
 	await expect(page.getByRole("group", { name: "Open a software delivery story chapter" })).toBeVisible();
 	const workingPill = page.getByRole("button", { name: "3 agents working" });
 	await expect(workingPill.locator('[role="status"]')).toBeVisible();
-	const unnamedButtons = await page.locator("button:visible").evaluateAll((buttons) =>
+	const unnamedButtons = await page.locator('button:visible:not([aria-hidden="true"])').evaluateAll((buttons) =>
 		buttons
 			.filter((button) => {
 				const label = button.getAttribute("aria-label")

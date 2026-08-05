@@ -46,9 +46,9 @@ export function JiraActivityCommentActions({
 						// set, so the open composer is reflected without extra styling.
 						aria-expanded={replyExpanded}
 						aria-label="Reply"
+						className="rounded-sm"
 						onClick={onReply}
 						ref={replyRef}
-						shape="circle"
 						size="icon-compact"
 						type="button"
 						variant="ghost"

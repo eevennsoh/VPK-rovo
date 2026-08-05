@@ -324,10 +324,31 @@ export const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"thinking-orbs-demo-connecting": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoConnecting,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-weaving": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoWeaving,
+			})),
+		{ ssr: false },
+	),
 	"thinking-orbs-demo-composing": dynamic(
 		() =>
 			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
 				default: mod.ThinkingOrbsDemoComposing,
+			})),
+		{ ssr: false },
+	),
+	"thinking-orbs-demo-breathing": dynamic(
+		() =>
+			import("../demos/visual/thinking-orbs-demo").then((mod) => ({
+				default: mod.ThinkingOrbsDemoBreathing,
 			})),
 		{ ssr: false },
 	),
