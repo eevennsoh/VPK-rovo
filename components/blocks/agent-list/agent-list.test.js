@@ -211,3 +211,11 @@ test("exports a session activity header whose optional View action requires a ha
 	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
 });
+
+test("the session activity header accepts leading metadata without changing its shared geometry", () => {
+	assert.match(CARD_SOURCE, /metadataPrefix\?: ReactNode;/u);
+	assert.match(
+		CARD_SOURCE,
+		/\{metadataPrefix \? \([\s\S]*\{metadataPrefix\}[\s\S]*<MetadataDot \/>[\s\S]*\) : null\}/u,
+	);
+});

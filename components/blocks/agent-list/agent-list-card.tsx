@@ -182,10 +182,12 @@ function AgentListTime({ item }: Readonly<{ item: AgentListItem }>) {
 export function AgentListActivityHeader({
 	item,
 	action,
+	metadataPrefix,
 	onView,
 }: Readonly<{
 	item: AgentListItem;
 	action?: ReactNode;
+	metadataPrefix?: ReactNode;
 	onView?: (item: AgentListItem) => void;
 }>) {
 	const stateMeta = STATE_META[item.state];
@@ -221,6 +223,12 @@ export function AgentListActivityHeader({
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</div>
 				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+					{metadataPrefix ? (
+						<>
+							{metadataPrefix}
+							<MetadataDot />
+						</>
+					) : null}
 					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
 						<AgentListTime item={item} />
 					</span>

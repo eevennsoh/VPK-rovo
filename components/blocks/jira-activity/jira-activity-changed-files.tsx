@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";
@@ -8,35 +8,17 @@ import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 
-import type { AgentListItem } from "@/components/blocks/agent-list";
-import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import {
+	AgentListActivityHeader,
+	type AgentListItem,
+} from "@/components/blocks/agent-list";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import { Button } from "@/components/ui/button";
-import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import { Icon } from "@/components/ui/icon";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 
 import type { JiraActivityChangedFilesEntry } from "./jira-activity-types";
-
-function JiraActivitySessionTime({ item, fallback }: Readonly<{
-	item: AgentListItem;
-	fallback: string;
-}>) {
-	const [seededStartedAtMs] = useState(
-		() => Date.now() - Math.max(0, item.elapsedSeconds ?? 0) * 1000,
-	);
-
-	return item.state === "complete" ? (
-		<RelativeTime
-			fallback={fallback}
-			secondsAgo={item.completedSecondsAgo}
-			timestampMs={item.completedAtMs}
-		/>
-	) : (
-		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
-	);
-}
 
 function JiraActivityViewAction({
 	item,
@@ -104,52 +86,31 @@ export function JiraActivityChangedFiles({
 					isJiraIssue ? "rounded-xl" : "overflow-hidden rounded-lg border border-border",
 				)}
 			>
-				<div className="flex h-14 min-w-0 items-center gap-3 px-3">
-					<AgentAvatarVisual
-						avatarClassName="shrink-0"
-						avatarSrc={entry.sessionItem.agent.avatarSrc}
-						brandName={entry.sessionItem.agent.brandName}
-						label={entry.sessionItem.agent.name}
-						sizePx={32}
-						vpkLogo={entry.sessionItem.agent.vpkLogo}
-					/>
-					<div className="min-w-0 flex-1">
-						<p className="truncate text-sm font-medium leading-5 text-text">
-							{entry.sessionItem.title}
-						</p>
-						<div className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-							{statusPresentation ? (
-								<>
-									<span className="flex shrink-0 items-center gap-1 text-text">
-										<Icon
-											aria-hidden
-											className={statusPresentation.iconClassName}
-											render={statusPresentation.icon}
-										/>
-										{statusPresentation.label}
-									</span>
-									<span aria-hidden className="text-text-subtlest">·</span>
-								</>
-							) : null}
-							<JiraActivitySessionTime
-								fallback={entry.timestamp}
+				<div className="grid gap-4 p-3">
+					<AgentListActivityHeader
+						action={(
+							<JiraActivityViewAction
 								item={entry.sessionItem}
+								onView={onView}
+								viewActionLabel={viewActionLabel}
 							/>
-							<span aria-hidden className="text-text-subtlest">·</span>
-							<span className="truncate">{entry.sessionItem.agent.name}</span>
-						</div>
-					</div>
-					<JiraActivityViewAction
+						)}
 						item={entry.sessionItem}
-						onView={onView}
-						viewActionLabel={viewActionLabel}
+						metadataPrefix={statusPresentation ? (
+							<span className="flex shrink-0 items-center gap-1 text-text">
+								<Icon
+									aria-hidden
+									className={statusPresentation.iconClassName}
+									render={statusPresentation.icon}
+								/>
+								{statusPresentation.label}
+							</span>
+						) : undefined}
 					/>
+					{entry.description ? (
+						<p className="text-sm leading-5 text-text">{entry.description}</p>
+					) : null}
 				</div>
-				{entry.description ? (
-					<p className={cn("px-3 text-sm leading-5 text-text", isJiraIssue ? "pb-2" : "pb-3")}>
-						{entry.description}
-					</p>
-				) : null}
 
 				{entry.outputs.length > 0 ? (
 					<ArtifactList

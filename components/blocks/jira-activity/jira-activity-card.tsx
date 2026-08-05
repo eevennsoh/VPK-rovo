@@ -100,7 +100,7 @@ export function JiraActivityCard({
 			<div
 				className={cn(
 					"grid",
-					hasExpandedLayout ? "gap-4 p-4" : "gap-2 p-3",
+					hasExpandedLayout ? "gap-4 p-3" : "gap-2 p-3",
 				)}
 			>
 				{item ? (
