@@ -79,12 +79,13 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	);
 	assert.match(CHANGED_FILES_SOURCE, /items=\{entry\.outputs\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant="compact"/u);
-	assert.match(CHANGED_FILES_SOURCE, /import \{ ElapsedTime, RelativeTime \} from "@\/components\/ui\/elapsed-time";/u);
-	assert.match(CHANGED_FILES_SOURCE, /function JiraActivitySessionTime[\s\S]*item\.state === "complete" \? \([\s\S]*<RelativeTime[\s\S]*secondsAgo=\{item\.completedSecondsAgo\}[\s\S]*timestampMs=\{item\.completedAtMs\}[\s\S]*\) : \([\s\S]*<ElapsedTime startedAtMs=\{item\.startedAtMs \?\? seededStartedAtMs\}/u);
-	assert.match(CHANGED_FILES_SOURCE, /entry\.sessionItem\.agent\.name/u);
+	assert.match(CHANGED_FILES_SOURCE, /import \{[\s\S]*AgentListActivityHeader,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list";/u);
+	assert.match(CHANGED_FILES_SOURCE, /className="grid gap-4 p-3"[\s\S]*<AgentListActivityHeader/u);
+	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex h-14 min-w-0 items-center/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /StatusSuccessIcon|\? "Done"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /pullRequestNumber|Ready for review/u);
-	assert.match(CHANGED_FILES_SOURCE, /statusPresentation \? \([\s\S]*\{statusPresentation\.label\}[\s\S]*<JiraActivitySessionTime[\s\S]*·[\s\S]*entry\.sessionItem\.agent\.name/u);
+	assert.match(CHANGED_FILES_SOURCE, /metadataPrefix=\{statusPresentation \? \([\s\S]*\{statusPresentation\.label\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /timeFallback=\{entry\.timestamp\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /className="flex shrink-0 items-center gap-1 text-text"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex shrink-0 items-center gap-1 font-medium/u);
 	assert.equal(changedFiles.sessionItem.completedSecondsAgo, 5 * 60);
@@ -207,16 +208,13 @@ test("labels and workflow states render as semantic lozenges", () => {
 test("agent output cards summarize the change and expose a View action", () => {
 	// The card can open its owning session, so it accepts an onView handler that
 	// the timeline wires from onViewSession.
-	assert.match(
-		CHANGED_FILES_SOURCE,
-		/import type \{ AgentListItem \} from "@\/components\/blocks\/agent-list"/u,
-	);
+	assert.match(CHANGED_FILES_SOURCE, /type AgentListItem,/u);
 	assert.match(CHANGED_FILES_SOURCE, /onView\?: \(item: AgentListItem\) => void/u);
 	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
 	// A short generated-work summary renders as its own paragraph above the outputs.
 	assert.match(
 		CHANGED_FILES_SOURCE,
-		/<p className=\{cn\("px-3 text-sm leading-5 text-text", isJiraIssue \? "pb-2" : "pb-3"\)\}>[\s\S]*\{entry\.description\}[\s\S]*<\/p>/u,
+		/<p className="text-sm leading-5 text-text">\{entry\.description\}<\/p>/u,
 	);
 	// The ellipsis "More actions" affordance is replaced by a persistent,
 	// caller-labelled action. Only the external "Open" treatment gets the
@@ -402,7 +400,7 @@ test("the activity card hosts the action row in the body grid, not the bordered 
 	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
 	// Nothing renders it inside the `border-t` footer branch.
 	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
-	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-4 p-4" : "gap-2 p-3"/u);
+	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-4 p-3" : "gap-2 p-3"/u);
 });
 
 test("the comment action row pairs Reply with the shared emoji reaction bar", () => {

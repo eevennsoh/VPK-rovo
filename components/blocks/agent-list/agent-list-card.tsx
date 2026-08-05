@@ -163,14 +163,20 @@ function LifecycleIndicator({
 	}
 }
 
-function AgentListTime({ item }: Readonly<{ item: AgentListItem }>) {
+function AgentListTime({
+	item,
+	fallback = "Just now",
+}: Readonly<{
+	item: AgentListItem;
+	fallback?: string;
+}>) {
 	const [seededStartedAtMs] = useState(
 		() => Date.now() - Math.max(0, item.elapsedSeconds ?? 0) * 1000,
 	);
 
 	return item.state === "complete" ? (
 		<RelativeTime
-			fallback="Just now"
+			fallback={fallback}
 			secondsAgo={item.completedSecondsAgo}
 			timestampMs={item.completedAtMs}
 		/>
@@ -182,11 +188,15 @@ function AgentListTime({ item }: Readonly<{ item: AgentListItem }>) {
 export function AgentListActivityHeader({
 	item,
 	action,
+	metadataPrefix,
 	onView,
+	timeFallback,
 }: Readonly<{
 	item: AgentListItem;
 	action?: ReactNode;
+	metadataPrefix?: ReactNode;
 	onView?: (item: AgentListItem) => void;
+	timeFallback?: string;
 }>) {
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
@@ -221,8 +231,14 @@ export function AgentListActivityHeader({
 					{stateMeta.showDots ? <AnimatedDots /> : null}
 				</div>
 				<div className="flex min-w-0 items-center gap-1 text-xs leading-4 text-text-subtle">
+					{metadataPrefix ? (
+						<>
+							{metadataPrefix}
+							<MetadataDot />
+						</>
+					) : null}
 					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
-						<AgentListTime item={item} />
+						<AgentListTime fallback={timeFallback} item={item} />
 					</span>
 					<MetadataDot />
 					<span className="truncate">{item.agent.name}</span>
