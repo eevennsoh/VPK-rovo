@@ -20,32 +20,6 @@ import { cn } from "@/lib/utils";
 
 import type { JiraActivityChangedFilesEntry } from "./jira-activity-types";
 
-function JiraActivityViewAction({
-	item,
-	onView,
-	viewActionLabel,
-}: Readonly<{
-	item: AgentListItem;
-	onView?: (item: AgentListItem) => void;
-	viewActionLabel: "Open" | "View";
-}>) {
-	const handleView = () => onView?.(item);
-
-	return (
-		<Button
-			aria-label={`${viewActionLabel} ${item.agent.name}`}
-			className="shrink-0 gap-1"
-			onClick={handleView}
-			size="compact"
-			type="button"
-			variant="outline"
-		>
-			{viewActionLabel}
-			{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
-		</Button>
-	);
-}
-
 /**
  * Agent output card using compact Artifact List rows. Legacy summary-only
  * entries retain the original single code-change row as a fallback.
@@ -89,11 +63,17 @@ export function JiraActivityChangedFiles({
 				<div className="grid gap-4 p-3">
 					<AgentListActivityHeader
 						action={(
-							<JiraActivityViewAction
-								item={entry.sessionItem}
-								onView={onView}
-								viewActionLabel={viewActionLabel}
-							/>
+							<Button
+								aria-label={`${viewActionLabel} ${entry.sessionItem.agent.name}`}
+								className="shrink-0 gap-1"
+								onClick={() => onView?.(entry.sessionItem)}
+								size="compact"
+								type="button"
+								variant="outline"
+							>
+								{viewActionLabel}
+								{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
+							</Button>
 						)}
 						item={entry.sessionItem}
 						metadataPrefix={statusPresentation ? (
