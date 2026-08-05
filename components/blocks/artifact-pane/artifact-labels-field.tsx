@@ -13,10 +13,7 @@ import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
 import { SearchIcon } from "@/components/ui/vpk-icons";
-import {
-	RichTextCommandMenuSearchField,
-	RichTextSuggestionEmptyState,
-} from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 
 const LABEL_COLORS = ["blue", "green", "purple", "orange", "teal", "magenta", "yellow"] as const satisfies readonly TagColor[];
 
@@ -85,13 +82,21 @@ export function ArtifactLabelsField({
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const normalizedQuery = query.trim().toLowerCase();
-	const visibleLabels = LABEL_OPTIONS.filter((label) => label.toLowerCase().includes(normalizedQuery));
+	const allLabels = Array.from(new Set([...value, ...LABEL_OPTIONS]));
+	const visibleLabels = allLabels.filter((label) => label.toLowerCase().includes(normalizedQuery));
 	const selectedLabels = visibleLabels.filter((label) => value.includes(label));
 	const moreLabels = visibleLabels.filter((label) => !value.includes(label));
 	const firstVisibleLabel = moreLabels[0] ?? selectedLabels[0];
+	const customLabel = query.trim();
+	const canCreateCustomLabel = customLabel.length > 0 && !allLabels.some((label) => label.toLowerCase() === normalizedQuery);
 
 	const toggle = (label: string) => {
 		onChange(value.includes(label) ? value.filter((item) => item !== label) : [...value, label]);
+	};
+
+	const createCustomLabel = (label: string) => {
+		onChange([...value, label]);
+		setQuery("");
 	};
 
 	return (
@@ -109,13 +114,15 @@ export function ArtifactLabelsField({
 					<span className="text-sm text-text-subtlest">Add label</span>
 				)}
 			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent
+				align="start"
+				aria-label="Edit labels"
+				className={METADATA_PICKER_POPOVER_CLASS}
+				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+			>
 				<div
-					aria-label="Search labels"
-					aria-multiselectable="true"
 					className="rich-text-command-menu rich-text-command-menu-borderless"
 					data-has-header="true"
-					role="listbox"
 				>
 					<RichTextCommandMenuSearchField
 						autoFocus
@@ -126,20 +133,27 @@ export function ArtifactLabelsField({
 						onSubmit={() => {
 							if (firstVisibleLabel) {
 								toggle(firstVisibleLabel);
+							} else if (canCreateCustomLabel) {
+								createCustomLabel(customLabel);
 							}
 						}}
 						onValueChange={setQuery}
 						value={query}
 					/>
-					<div className="rich-text-command-menu-list">
+					<div
+						aria-label="Search labels"
+						aria-multiselectable="true"
+						className="rich-text-command-menu-list"
+						role="listbox"
+					>
 						{visibleLabels.length > 0 ? (
 							<>
 								<LabelOptionGroup heading="Selected" labels={selectedLabels} onToggle={toggle} selected />
 								<LabelOptionGroup heading="More labels" labels={moreLabels} onToggle={toggle} selected={false} />
 							</>
-						) : (
-							<RichTextSuggestionEmptyState label="No labels found" />
-						)}
+						) : canCreateCustomLabel ? (
+							<LabelOptionGroup heading="New label" labels={[customLabel]} onToggle={createCustomLabel} selected={false} />
+						) : null}
 					</div>
 				</div>
 			</PopoverContent>

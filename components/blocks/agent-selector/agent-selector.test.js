@@ -124,6 +124,19 @@ test("AgentSelector action labels use subtle text color", () => {
 	assert.doesNotMatch(COMPONENT_SOURCE, /<span className="text-text">\{(?:action\.label|browseAgentsLabel|createAgentLabel)\}<\/span>/u);
 });
 
+test("AgentSelector group headings use the semibold subheading treatment", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/className="!px-0 !py-1\.5 \*\*:\[\[cmdk-group-heading\]\]:font-semibold"/u,
+	);
+});
+
+test("AgentSelector omits the top picker heading unless a consumer supplies one", () => {
+	assert.match(COMPONENT_SOURCE, /\theading,\n/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /heading = "Select an agent"/u);
+	assert.match(COMPONENT_SOURCE, /\{heading \? \([\s\S]*<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">\{heading\}<\/p>[\s\S]*\) : null\}/u);
+});
+
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
 	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);

@@ -33,6 +33,8 @@ export interface JiraActivityCardProps {
 	children: ReactNode;
 	/** Optional expandable supporting detail, such as a prompt or investigation. */
 	details?: { label: string; children: ReactNode };
+	/** Optional action row (reply, reactions) rendered under the activity content. */
+	footerActions?: ReactNode;
 	/** Optional rendered replies shown below the activity content. */
 	replies?: ReactNode;
 	/** Optional reply composer shown at the bottom of the card. */
@@ -56,6 +58,7 @@ export function JiraActivityCard({
 	onView,
 	children,
 	details,
+	footerActions,
 	replies,
 	replyComposer,
 	className,
@@ -97,7 +100,7 @@ export function JiraActivityCard({
 			<div
 				className={cn(
 					"grid",
-					hasExpandedLayout ? "gap-4 p-4" : "gap-2 p-3",
+					hasExpandedLayout ? "gap-4 p-3" : "gap-2 p-3",
 				)}
 			>
 				{item ? (
@@ -146,6 +149,9 @@ export function JiraActivityCard({
 					</>
 				)}
 				{detailsContent}
+				{/* Last child of the body grid: inherits the card's gap and sits flush
+				under the content, while the bordered footer keeps hosting replies. */}
+				{footerActions}
 			</div>
 
 			{showFooter ? (

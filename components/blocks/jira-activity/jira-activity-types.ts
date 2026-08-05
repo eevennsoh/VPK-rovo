@@ -90,6 +90,13 @@ export interface JiraActivityCollapsible {
 	content: readonly JiraActivitySegment[];
 }
 
+/** One emoji reaction on a comment, keyed by glyph. */
+export interface JiraActivityReaction {
+	emoji: string;
+	/** Actor ids that reacted, in first-reacted order. */
+	actorIds: readonly string[];
+}
+
 /** A bordered comment card with a rich body, optional collapsible, and replies. */
 export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	kind: "comment";
@@ -99,6 +106,8 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	/** Optional collapsible detail section (e.g. "Investigation"). */
 	collapsible?: JiraActivityCollapsible;
 	replies?: readonly JiraActivityReply[];
+	/** Emoji reactions on this comment, in first-reacted order. */
+	reactions?: readonly JiraActivityReaction[];
 	/** Render the reply composer under this comment. Defaults to `true`. */
 	allowReply?: boolean;
 	/** Optional Agent List summary for the expanded activity-card header. */

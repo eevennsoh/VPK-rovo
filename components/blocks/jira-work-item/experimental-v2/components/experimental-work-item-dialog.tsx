@@ -17,6 +17,8 @@ interface ExperimentalWorkItemDialogProps {
 	workItemTitle: string;
 	children: ReactNode;
 	blanketContent?: ReactNode;
+	sidebar: ReactNode;
+	sidebarOpen: boolean;
 }
 
 /**
@@ -40,22 +42,51 @@ export function ExperimentalWorkItemDialog({
 	workItemTitle,
 	children,
 	blanketContent,
+	sidebar,
+	sidebarOpen,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
 	const content = (
-		<>
-				<ModalHeader
-					actions={<ExperimentalBreadcrumbActions />}
-					actionsClassName="gap-1"
-					closeButtonDisabled={presentation === "inline"}
-					closeButtonVariant="ghost"
-					paddingBottom={token("space.100")}
-				/>
-			<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
-				{children}
+		<div className="@container/workitemdialog relative grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden">
+			<div
+				className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]"
+				data-jira-work-item-main-column
+			>
+				<div
+					className={cn(
+						"transition-[margin-right] duration-medium ease-in-out motion-reduce:transition-none",
+						sidebarOpen
+							? "@[860px]/workitemdialog:mr-[clamp(320px,34vw,408px)]"
+							: null,
+					)}
+					data-jira-work-item-header-column
+				>
+					<ModalHeader
+						actions={<ExperimentalBreadcrumbActions />}
+						actionsClassName="gap-1"
+						closeButtonDisabled={presentation === "inline"}
+						closeButtonVariant="ghost"
+						paddingBottom={0}
+						paddingTop={token("space.150")}
+					/>
+				</div>
+				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
+					{children}
+				</div>
 			</div>
-		</>
+			<div
+				aria-hidden={!sidebarOpen}
+				className={cn(
+					"absolute inset-y-0 right-0 z-30 w-full translate-x-full overflow-hidden transition-transform duration-medium ease-in-out will-change-transform motion-reduce:transition-none @[860px]/workitemdialog:w-[clamp(320px,34vw,408px)]",
+					sidebarOpen ? "translate-x-0" : "pointer-events-none",
+				)}
+				data-jira-work-item-chat-column
+				inert={sidebarOpen ? undefined : true}
+			>
+				{sidebar}
+			</div>
+		</div>
 	);
 	const surfaceStyle = {
 		backgroundColor: token("elevation.surface.overlay"),
@@ -63,7 +94,7 @@ export function ExperimentalWorkItemDialog({
 		boxShadow: fillsInlineContainer ? "none" : token("elevation.shadow.overlay"),
 		display: "grid",
 		gridTemplateColumns: "minmax(0, 1fr)",
-		gridTemplateRows: "auto minmax(0, 1fr)",
+		gridTemplateRows: "minmax(0, 1fr)",
 		overflow: "hidden",
 	} as const;
 

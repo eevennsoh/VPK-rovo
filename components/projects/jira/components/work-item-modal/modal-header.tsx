@@ -34,6 +34,7 @@ export function ModalHeader({
 	actionsClassName,
 	closeButtonDisabled = false,
 	closeButtonVariant = "outline",
+	paddingTop,
 	paddingBottom,
 }: Readonly<{
 	showClose?: boolean;
@@ -41,6 +42,7 @@ export function ModalHeader({
 	actionsClassName?: string;
 	closeButtonDisabled?: boolean;
 	closeButtonVariant?: ButtonProps["variant"];
+	paddingTop?: CSSProperties["paddingTop"];
 	paddingBottom?: CSSProperties["paddingBottom"];
 }>) {
 	const { meta } = useWorkItemModal();
@@ -55,6 +57,7 @@ export function ModalHeader({
 				alignItems: "center",
 				minWidth: 0,
 				paddingBlock: token("space.300"),
+				paddingTop: paddingTop ?? token("space.300"),
 				paddingBottom: paddingBottom ?? token("space.300"),
 				paddingInline: token("space.300"),
 				backgroundColor: token("elevation.surface.overlay"),

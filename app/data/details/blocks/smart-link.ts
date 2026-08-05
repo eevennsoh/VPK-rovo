@@ -48,6 +48,21 @@ const item: SmartLinkItem = {
 				type: "(action: SmartLinkAction, item: SmartLinkItem) => void",
 				description: "Callback for action rows such as Copy link, Open preview, or Summarize.",
 			},
+			{
+				name: "onRemove",
+				type: "() => void",
+				description: "Removes the Smart Link when its remove control is activated.",
+			},
+			{
+				name: "removeVariant",
+				type: '"overlay"',
+				description: "Reveals an X over the trailing edge on hover or keyboard focus without changing the chip width.",
+			},
+			{
+				name: "removeButtonLabel",
+				type: "string",
+				description: "Accessible label for the remove control. Defaults to Remove followed by the Smart Link title.",
+			},
 		],
 		examples: [
 			{ title: "Confluence and Jira", description: "Rich Atlassian previews with metadata and action rows.", demoSlug: "smart-link-demo-rich" },
@@ -57,6 +72,7 @@ const item: SmartLinkItem = {
 			{ title: "Project", description: "Project preview with avatar, status, update date, and project-specific action.", demoSlug: "smart-link-demo-project" },
 			{ title: "Loom", description: "Loom preview with media-style title, excerpt, and actions.", demoSlug: "smart-link-demo-loom" },
 			{ title: "Generic links", description: "File and message previews backed by existing third-party provider assets.", demoSlug: "smart-link-demo-generic" },
+			{ title: "Removable (overlay)", description: "Smart Links with an X revealed over the trailing edge on hover or keyboard focus.", demoSlug: "smart-link-demo-removable-overlay" },
 			{ title: "Inline status", description: "Work item status rendered as a lozenge at the end of the inline chip.", demoSlug: "smart-link-demo-status" },
 			{ title: "Sizes", description: "12px and 16px inline chips for compact prose or prominent references.", demoSlug: "smart-link-demo-sizes" },
 		],

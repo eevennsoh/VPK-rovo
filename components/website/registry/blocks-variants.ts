@@ -344,6 +344,43 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 	),
 	"smart-link-demo-status": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoStatus })), { ssr: false }),
 	"smart-link-demo-sizes": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoSizes })), { ssr: false }),
+	"smart-link-demo-removable-overlay": dynamic(
+		() =>
+			import("../demos/blocks/smart-link-demo").then((mod) => ({
+				default: mod.SmartLinkDemoRemovableOverlay,
+			})),
+		{ ssr: false },
+	),
+
+	// Emoji Picker
+	"emoji-picker-demo-reaction-bar": dynamic(
+		() =>
+			import("../demos/blocks/emoji-picker-demo").then((mod) => ({
+				default: mod.EmojiPickerDemoReactionBar,
+			})),
+		{ ssr: false },
+	),
+	"emoji-picker-demo-popover": dynamic(
+		() =>
+			import("../demos/blocks/emoji-picker-demo").then((mod) => ({
+				default: mod.EmojiPickerDemoPopover,
+			})),
+		{ ssr: false },
+	),
+	"emoji-picker-demo-full-picker": dynamic(
+		() =>
+			import("../demos/blocks/emoji-picker-demo").then((mod) => ({
+				default: mod.EmojiPickerDemoFullPicker,
+			})),
+		{ ssr: false },
+	),
+	"emoji-picker-demo-pills": dynamic(
+		() =>
+			import("../demos/blocks/emoji-picker-demo").then((mod) => ({
+				default: mod.EmojiPickerDemoPills,
+			})),
+		{ ssr: false },
+	),
 
 	// Agent Selector
 	"agent-selector-demo-standalone": dynamic(
@@ -391,6 +428,13 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 		() =>
 			import("../demos/blocks/jira-activity-demo").then((mod) => ({
 				default: mod.JiraActivityCardDemo,
+			})),
+		{ ssr: false },
+	),
+	"jira-activity-demo-reactions": dynamic(
+		() =>
+			import("../demos/blocks/jira-activity-demo").then((mod) => ({
+				default: mod.JiraActivityReactionsDemo,
 			})),
 		{ ssr: false },
 	),

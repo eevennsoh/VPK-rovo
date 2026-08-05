@@ -16,15 +16,17 @@ interface AsxRovoOverlayProps {
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onLauncherClick?: () => void;
 	onQuestionAnswer?: () => void;
+	placement?: "embedded" | "floating";
 }
 
-/** Keeps ASX Rovo surfaces in the viewport stacking context above the Gallery dock. */
+/** Keeps ASX Rovo surfaces in their requested viewport or embedded stacking context. */
 export function AsxRovoOverlay({
 	chatContextBar,
 	externalThinkingMessageId,
 	onInterceptSubmit,
 	onLauncherClick,
 	onQuestionAnswer,
+	placement = "floating",
 }: Readonly<AsxRovoOverlayProps>): React.ReactNode {
 	const { chatSurface } = useRovoChat();
 	const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -40,11 +42,9 @@ export function AsxRovoOverlay({
 		onApply: onQuestionAnswer,
 	}), [onQuestionAnswer]);
 
-	if (!portalRoot) return null;
-
-	return createPortal(
+	const content = (
 		<>
-			{chatSurface === null ? (
+			{chatSurface === null && placement === "floating" ? (
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat"
 					forceVisible
@@ -66,10 +66,29 @@ export function AsxRovoOverlay({
 						showChatHistory={false}
 						showNewChatButton={false}
 						suppressCustomAgentTabs
+						placement={placement}
 					/>
 				) : null}
 			</AnimatePresence>
-		</>,
-		portalRoot,
+		</>
 	);
+
+	if (placement === "embedded") {
+		return (
+			<>
+				{portalRoot && chatSurface === null ? createPortal(
+					<FloatingRovoButton
+						ariaLabel="Open Rovo chat"
+						forceVisible
+						onButtonClick={onLauncherClick}
+						product="home"
+					/>,
+					portalRoot,
+				) : null}
+				{content}
+			</>
+		);
+	}
+
+	return portalRoot ? createPortal(content, portalRoot) : null;
 }

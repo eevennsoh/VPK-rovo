@@ -2,6 +2,8 @@
 
 import { useState, type ReactElement, type ReactNode } from "react";
 
+import LoomIcon from "@atlaskit/icon-lab/core/loom";
+import PageLiveDocIcon from "@atlaskit/icon-lab/core/page-live-doc";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -33,11 +35,17 @@ import {
 } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import type { WorkItemAttachment } from "@/app/contexts/context-work-item-modal";
 
-const CREATE_OPTION_ICON: Record<AttachmentCreateKind, typeof PageIcon> = {
-	page: PageIcon,
-	"live-doc": PageIcon,
-	whiteboard: WhiteboardIcon,
-	"loom-video": VideoIcon,
+/**
+ * Create-new rows use the ADS single-purpose content-type glyphs at product
+ * parity: each object type owns a reserved icon plus its accent icon token.
+ * Size is left at the new-core default (`medium` = 16px); `size="small"` would
+ * render 12px, which is the object-inline size, not the menu size.
+ */
+const CREATE_OPTION_ICON: Record<AttachmentCreateKind, { Glyph: typeof PageIcon; tone: string }> = {
+	page: { Glyph: PageIcon, tone: "text-icon-accent-blue" },
+	"live-doc": { Glyph: PageLiveDocIcon, tone: "text-icon-accent-magenta" },
+	whiteboard: { Glyph: WhiteboardIcon, tone: "text-icon-accent-teal" },
+	"loom-video": { Glyph: LoomIcon, tone: "text-icon-accent-blue" },
 };
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactNode {
@@ -141,7 +149,7 @@ export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement
 
 					<TabsContent value="create" className="flex flex-col gap-0.5 p-2.5">
 						{ATTACHMENT_CREATE_OPTIONS.map((option) => {
-							const OptionIcon = CREATE_OPTION_ICON[option.id];
+							const { Glyph, tone } = CREATE_OPTION_ICON[option.id];
 							return (
 								<button
 									key={option.id}
@@ -149,8 +157,8 @@ export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement
 									onClick={() => add(createCreatedAttachment(option))}
 									className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text transition-colors hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
 								>
-									<span className="text-icon-subtle">
-										<OptionIcon label="" size="small" color="currentColor" />
+									<span className={tone}>
+										<Glyph label="" color="currentColor" />
 									</span>
 									<span className="min-w-0 flex-1 truncate">{option.label}</span>
 								</button>

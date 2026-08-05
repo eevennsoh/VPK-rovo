@@ -28,16 +28,22 @@ function nextSeq(): number {
 
 // ── Attachments ──────────────────────────────────────────────────────────────
 
+// Both lists span the four Confluence/Loom content types so the Add link tab
+// exercises every reserved content-type glyph, not just generic file icons.
 export const ATTACHMENT_RECENT: readonly WorkItemAttachment[] = [
 	{ id: "recent-brief", name: "acmecorp-discovery-brief", displayName: "Acmecorp discovery brief", ext: "page", date: "3 Jun 2026", thumbnailKind: "document", sourceLabel: "Confluence page", sourceProduct: "confluence" },
 	{ id: "recent-notes", name: "buyer-call-notes", displayName: "Buyer call notes", ext: "page", date: "1 Jun 2026", thumbnailKind: "document", sourceLabel: "Confluence page", sourceProduct: "confluence" },
 	{ id: "recent-walkthrough", name: "esm-demo-walkthrough", displayName: "ESM demo walkthrough", ext: "loom", date: "28 May 2026", thumbnailKind: "video", sourceLabel: "Loom video", sourceProduct: "loom" },
+	{ id: "recent-kickoff-board", name: "rfp-kickoff-whiteboard", displayName: "RFP kickoff whiteboard", ext: "whiteboard", date: "27 May 2026", thumbnailKind: "image", sourceLabel: "Whiteboard" },
+	{ id: "recent-bid-strategy", name: "bid-strategy-live-doc", displayName: "Bid strategy working doc", ext: "doc", date: "26 May 2026", thumbnailKind: "document", sourceLabel: "Live doc", sourceProduct: "confluence" },
 ];
 
 export const ATTACHMENT_SUGGESTED: readonly WorkItemAttachment[] = [
 	{ id: "suggested-matrix", name: "requirement-compliance-matrix", displayName: "Requirement compliance matrix", ext: "xlsx", date: "12 May 2026", thumbnailKind: "document" },
 	{ id: "suggested-pricing", name: "pricing-tco-model", displayName: "Pricing TCO model", ext: "xlsx", date: "2 Jun 2026", thumbnailKind: "document" },
 	{ id: "suggested-security", name: "security-questionnaire", displayName: "Security questionnaire", ext: "pdf", date: "9 May 2026", thumbnailKind: "file", thumbnailTone: "success" },
+	{ id: "suggested-rubric", name: "acmecorp-scoring-rubric", displayName: "Acmecorp scoring rubric", ext: "doc", date: "5 Jun 2026", thumbnailKind: "document", sourceLabel: "Live doc", sourceProduct: "confluence" },
+	{ id: "suggested-competitive", name: "competitive-landscape-board", displayName: "Competitive landscape board", ext: "whiteboard", date: "4 Jun 2026", thumbnailKind: "image", sourceLabel: "Whiteboard" },
 ];
 
 export type AttachmentCreateKind = "page" | "live-doc" | "whiteboard" | "loom-video";
@@ -121,16 +127,41 @@ export const SUBTASK_EXISTING: readonly WorkItemChildItem[] = [
 	{ type: "Task", key: "RFP-124", summary: "Gather reference customers for enterprise ESM", priority: "low", assignee: "Sam Rivera", status: "done" },
 ];
 
+/** Work item types offered by the subtask Create-new type picker. */
+export const SUBTASK_TYPES: readonly string[] = ["Subtask", "Task", "Bug"];
+
+export interface SubtaskSuggestion {
+	id: string;
+	type: string;
+	summary: string;
+}
+
+/**
+ * AI-proposed subtasks for the Create-new tab. These are checkbox-selected and
+ * committed together, so unlike `SUBTASK_SUGGESTIONS` (v1's click-to-add strings)
+ * each one carries a stable id and a work item type to render its glyph.
+ */
+export const SUBTASK_AI_SUGGESTIONS: readonly SubtaskSuggestion[] = [
+	{ id: "ai-subtask-compliance", type: "Subtask", summary: "Review skills architecture design" },
+	{ id: "ai-subtask-signoff", type: "Task", summary: "Collect stakeholder sign-offs on scope" },
+	{ id: "ai-subtask-cmdb", type: "Subtask", summary: "Validate CMDB and Assets requirements with product" },
+];
+
 /** New subtask from a typed name (Create new tab). */
-export function createSubtaskFromName(name: string): WorkItemChildItem {
+export function createSubtaskFromName(name: string, type = "Subtask"): WorkItemChildItem {
 	const seq = nextSeq();
 	return {
-		type: "Subtask",
+		type,
 		key: `NEW-${100 + seq}`,
 		summary: name.trim() || "Untitled subtask",
 		priority: "medium",
 		status: "todo",
 	};
+}
+
+/** Commit an AI-proposed subtask once its checkbox is confirmed. */
+export function createSubtaskFromSuggestion(suggestion: Readonly<SubtaskSuggestion>): WorkItemChildItem {
+	return createSubtaskFromName(suggestion.summary, suggestion.type);
 }
 
 // ── Linked work items ────────────────────────────────────────────────────────
@@ -145,6 +176,9 @@ export const LINK_RELATIONSHIPS: readonly RelationshipOption[] = [
 
 export const LINK_TYPES: readonly LinkedWorkItemType[] = ["Task", "Story", "Bug", "Epic"];
 
+/** Where the Add-existing search looks: this site, or every connected site. */
+export const LINK_SEARCH_SCOPES: readonly string[] = ["Local", "All sites"];
+
 export const LINK_RECENT: readonly ContextLinkedItem[] = [
 	{ id: "recent-rfp-100", key: "RFP-100", summary: "Enterprise RFP Response", type: "Epic", relationship: "relates to" },
 	{ id: "recent-rfp-140", key: "RFP-140", summary: "Acmecorp procurement onboarding", type: "Task", relationship: "relates to" },
@@ -155,6 +189,8 @@ export const LINK_SIMILAR: readonly ContextLinkedItem[] = [
 	{ id: "similar-rfp-102", key: "RFP-102", summary: "Northstar Bank supplier packet review", type: "Task", relationship: "relates to" },
 	{ id: "similar-rfp-150", key: "RFP-150", summary: "Duplicate: Acmecorp ESM evaluation", type: "Story", relationship: "duplicates" },
 	{ id: "similar-rfp-151", key: "RFP-151", summary: "CMDB scale spike blocking bid", type: "Bug", relationship: "is blocked by" },
+	{ id: "similar-rfp-160", key: "RFP-160", summary: "Acmecorp pricing approval thread", type: "Task", relationship: "relates to" },
+	{ id: "similar-rfp-161", key: "RFP-161", summary: "Enterprise ESM rollout programme", type: "Epic", relationship: "relates to" },
 ];
 
 /** New linked item created from the Create new tab. */

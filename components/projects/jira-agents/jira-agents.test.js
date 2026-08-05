@@ -30,7 +30,7 @@ test("Jira Agents reuses the requested gallery surfaces with the experimental v2
 	assert.match(contextPillsSource, /\{runningSessions\.length\} Running/u);
 	assert.match(contextPillsSource, /<RichTextSuggestionMenu[\s\S]*items=\{items\}[\s\S]*title="Running agents"/u);
 	assert.match(contextPillsSource, /showRunningSessions && onOpenAgentChat \? \([\s\S]*<RunningSessionsList[\s\S]*\) : \([\s\S]*<ContextBarPill/u);
-	assert.match(contextPillsSource, /event\.key === "Escape"[\s\S]*onClose\(\);/u);
+	assert.match(contextPillsSource, /event\.key === "Escape"[\s\S]*onClose\(true\);/u);
 	assert.match(contextPillsSource, /runningTriggerRef\.current\?\.focus\(\);/u);
 	assert.doesNotMatch(contextPillsSource, /Popover(?:Content|Trigger)?/u);
 	assert.match(chatDataSource, /id: "response-reviewer",[\s\S]*name: "Response Reviewer",[\s\S]*avatarSrc: "\/avatar-agent\/dev-agents\/code-reviewer\.svg"/u);

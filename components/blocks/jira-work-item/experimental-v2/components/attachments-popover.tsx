@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { useId, useState, type ReactElement } from "react";
 
+import LoomIcon from "@atlaskit/icon-lab/core/loom";
+import PageLiveDocIcon from "@atlaskit/icon-lab/core/page-live-doc";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
+import SearchIcon from "@atlaskit/icon/core/search";
 import UploadIcon from "@atlaskit/icon/core/upload";
 import VideoIcon from "@atlaskit/icon/core/video";
 import WhiteboardIcon from "@atlaskit/icon/core/whiteboard";
 
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	CONTEXT_POPOVER_ROW_CLASS,
+	CONTEXT_POPOVER_SECTION_HEADING_CLASS,
+	CONTEXT_POPOVER_TABS_LIST_CLASS,
+	PopoverSubmitField,
+	SuggestionPanel,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/context-popover-parts";
 import { useJiraWorkItemActions } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import {
 	ATTACHMENT_CREATE_OPTIONS,
@@ -31,38 +35,57 @@ import {
 	getAttachmentLabel,
 	type AttachmentCreateKind,
 } from "@/components/blocks/jira-work-item/data/context-fixtures";
+import { cn } from "@/lib/utils";
 import type { WorkItemAttachment } from "@/app/contexts/context-work-item-modal";
 
-const CREATE_OPTION_ICON: Record<AttachmentCreateKind, typeof PageIcon> = {
-	page: PageIcon,
-	"live-doc": PageIcon,
-	whiteboard: WhiteboardIcon,
-	"loom-video": VideoIcon,
+/**
+ * Create-new rows use the ADS single-purpose content-type glyphs at product
+ * parity: each object type owns a reserved icon plus its accent icon token.
+ * Size is left at the new-core default (`medium` = 16px); `size="small"` would
+ * render 12px, which is the object-inline size, not the menu size.
+ */
+const CREATE_OPTION_ICON: Record<AttachmentCreateKind, { Glyph: typeof PageIcon; tone: string }> = {
+	page: { Glyph: PageIcon, tone: "text-icon-accent-blue" },
+	"live-doc": { Glyph: PageLiveDocIcon, tone: "text-icon-accent-magenta" },
+	whiteboard: { Glyph: WhiteboardIcon, tone: "text-icon-accent-teal" },
+	"loom-video": { Glyph: LoomIcon, tone: "text-icon-accent-blue" },
 };
 
-function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactNode {
-	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
-	if (attachment.thumbnailKind === "video") return <VideoIcon label="" size="small" color="currentColor" />;
-	if (attachment.ext === "page" || attachment.ext === "doc") return <PageIcon label="" size="small" color="currentColor" />;
-	return <FilesIcon label="" size="small" color="currentColor" />;
+/** Attachment rows reuse the create-new glyphs so one object type reads the same everywhere. */
+const ATTACHMENT_EXT_ICON: Record<string, { Glyph: typeof PageIcon; tone: string }> = {
+	page: CREATE_OPTION_ICON.page,
+	doc: CREATE_OPTION_ICON["live-doc"],
+	whiteboard: CREATE_OPTION_ICON.whiteboard,
+	loom: CREATE_OPTION_ICON["loom-video"],
+};
+
+function attachmentIcon(attachment: Readonly<WorkItemAttachment>): { Glyph: typeof PageIcon; tone: string } {
+	if (attachment.ext === "link") return { Glyph: LinkIcon, tone: "text-icon-subtle" };
+	const byContentType = ATTACHMENT_EXT_ICON[attachment.ext];
+	if (byContentType) return byContentType;
+	if (attachment.thumbnailKind === "video") return { Glyph: VideoIcon, tone: "text-icon-subtle" };
+	return { Glyph: FilesIcon, tone: "text-icon-subtle" };
 }
 
 function AttachmentResultItem({ attachment, onSelect }: Readonly<{ attachment: WorkItemAttachment; onSelect: () => void }>) {
-	const label = getAttachmentLabel(attachment);
+	const { Glyph, tone } = attachmentIcon(attachment);
 	return (
-		<CommandItem value={`${label}-${attachment.id}`} onSelect={onSelect} showCheckIcon={false}>
-			<span className="text-icon-subtle">{attachmentGlyph(attachment)}</span>
-			<span className="min-w-0 flex-1 truncate">{label}</span>
-			<span className="shrink-0 text-xs text-text-subtlest">{attachment.date}</span>
-		</CommandItem>
+		<button type="button" onClick={onSelect} className={CONTEXT_POPOVER_ROW_CLASS}>
+			<span className={cn("shrink-0", tone)}>
+				<Glyph label="" color="currentColor" />
+			</span>
+			<span className="min-w-0 flex-1 truncate">{getAttachmentLabel(attachment)}</span>
+		</button>
 	);
 }
 
-export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement }>) {
+export function AttachmentsPopover({ tooltip, trigger }: Readonly<{ tooltip?: string; trigger: ReactElement }>) {
 	const actions = useJiraWorkItemActions();
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [displayName, setDisplayName] = useState("");
+	const displayNameId = useId();
+	const searchHintId = useId();
 
 	const add = (item: WorkItemAttachment) => {
 		actions.addContextResource("attachment", item);
@@ -71,14 +94,29 @@ export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement
 		setOpen(false);
 	};
 
+	const trimmedQuery = query.trim();
+	const matchesQuery = (attachment: Readonly<WorkItemAttachment>) =>
+		getAttachmentLabel(attachment).toLowerCase().includes(trimmedQuery.toLowerCase());
+	const recent = trimmedQuery ? ATTACHMENT_RECENT.filter(matchesQuery) : ATTACHMENT_RECENT;
+	const suggested = trimmedQuery ? ATTACHMENT_SUGGESTED.filter(matchesQuery) : ATTACHMENT_SUGGESTED;
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger render={trigger} />
+			{tooltip ? (
+				<Tooltip>
+					<TooltipTrigger render={<span className="inline-flex" />}>
+						<PopoverTrigger render={trigger} />
+					</TooltipTrigger>
+					<TooltipContent positionerClassName="z-[502]">{tooltip}</TooltipContent>
+				</Tooltip>
+			) : (
+				<PopoverTrigger render={trigger} />
+			)}
 			<PopoverContent align="start" className="w-[22rem] p-0" positionerClassName="z-[502]">
 				<Tabs defaultValue="upload" className="gap-0">
-					<TabsList variant="line" className="mt-2.5 w-full px-2.5">
+					<TabsList className={CONTEXT_POPOVER_TABS_LIST_CLASS}>
 						<TabsTrigger value="upload">Upload files</TabsTrigger>
-						<TabsTrigger value="link">Link content</TabsTrigger>
+						<TabsTrigger value="link">Add link</TabsTrigger>
 						<TabsTrigger value="create">Create new</TabsTrigger>
 					</TabsList>
 
@@ -96,61 +134,71 @@ export function AttachmentsPopover({ trigger }: Readonly<{ trigger: ReactElement
 						</button>
 					</TabsContent>
 
-					<TabsContent value="link" className="flex flex-col gap-2 p-2.5">
-						<Input
-							value={displayName}
-							onChange={(event) => setDisplayName(event.target.value)}
-							placeholder="Display name (optional)"
-							className="h-8"
-						/>
-						<Command className="rounded-lg border border-border p-0">
-							<CommandInput
+					<TabsContent value="link" className="flex max-h-[24rem] flex-col gap-2.5 overflow-y-auto p-2.5">
+						<div className="flex flex-col gap-1">
+							<PopoverSubmitField
+								ariaLabel="Search content or paste a link"
+								leading={
+									<span className="shrink-0 pl-1 text-icon-subtle">
+										<SearchIcon label="" color="currentColor" />
+									</span>
+								}
+								onChange={setQuery}
+								onSubmit={() => add(createLinkedContentAttachment(query, displayName))}
+								placeholder="Search content or paste a link"
+								submitLabel="Attach this link"
 								value={query}
-								onValueChange={setQuery}
-								placeholder="Search or paste a link…"
 							/>
-							<CommandList>
-								{query.trim() ? (
-									<CommandGroup heading="Link">
-										<CommandItem
-											value={`paste-${query}`}
-											onSelect={() => add(createLinkedContentAttachment(query, displayName))}
-											showCheckIcon={false}
-										>
-											<span className="text-icon-subtle">
-												<LinkIcon label="" size="small" color="currentColor" />
-											</span>
-											<span className="min-w-0 flex-1 truncate">Link “{query}”</span>
-										</CommandItem>
-									</CommandGroup>
-								) : null}
-								<CommandEmpty>No matching content.</CommandEmpty>
-								<CommandGroup heading="Recent">
-									{ATTACHMENT_RECENT.map((attachment) => (
-										<AttachmentResultItem key={attachment.id} attachment={attachment} onSelect={() => add({ ...attachment })} />
-									))}
-								</CommandGroup>
-								<CommandGroup heading="Suggested attachments">
-									{ATTACHMENT_SUGGESTED.map((attachment) => (
-										<AttachmentResultItem key={attachment.id} attachment={attachment} onSelect={() => add({ ...attachment })} />
-									))}
-								</CommandGroup>
-							</CommandList>
-						</Command>
+							<span id={searchHintId} className="sr-only">
+								Press Enter to attach the pasted link.
+							</span>
+						</div>
+
+						<div className="flex flex-col gap-1">
+							<Label htmlFor={displayNameId}>Display name (optional)</Label>
+							<Input
+								id={displayNameId}
+								value={displayName}
+								onChange={(event) => setDisplayName(event.target.value)}
+							/>
+						</div>
+
+						<section className="flex flex-col gap-0.5">
+							<h3 className={CONTEXT_POPOVER_SECTION_HEADING_CLASS}>{trimmedQuery ? "Results" : "Recently viewed"}</h3>
+							{recent.length > 0 ? (
+								recent.map((attachment) => (
+									<AttachmentResultItem key={attachment.id} attachment={attachment} onSelect={() => add({ ...attachment })} />
+								))
+							) : (
+								<p className="px-2 py-2 text-sm text-text-subtlest">No matching content. Press Enter to attach it as a link.</p>
+							)}
+						</section>
+
+						{suggested.length > 0 ? (
+							<SuggestionPanel title={`${suggested.length} suggested ${suggested.length === 1 ? "attachment" : "attachments"}`}>
+								{suggested.map((attachment) => (
+									<AttachmentResultItem
+										key={attachment.id}
+										attachment={attachment}
+										onSelect={() => add({ ...attachment })}
+									/>
+								))}
+							</SuggestionPanel>
+						) : null}
 					</TabsContent>
 
 					<TabsContent value="create" className="flex flex-col gap-0.5 p-2.5">
 						{ATTACHMENT_CREATE_OPTIONS.map((option) => {
-							const OptionIcon = CREATE_OPTION_ICON[option.id];
+							const { Glyph, tone } = CREATE_OPTION_ICON[option.id];
 							return (
 								<button
 									key={option.id}
 									type="button"
 									onClick={() => add(createCreatedAttachment(option))}
-									className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-text transition-colors hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+									className={CONTEXT_POPOVER_ROW_CLASS}
 								>
-									<span className="text-icon-subtle">
-										<OptionIcon label="" size="small" color="currentColor" />
+									<span className={cn("shrink-0", tone)}>
+										<Glyph label="" color="currentColor" />
 									</span>
 									<span className="min-w-0 flex-1 truncate">{option.label}</span>
 								</button>

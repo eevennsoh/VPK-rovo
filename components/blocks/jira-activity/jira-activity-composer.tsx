@@ -37,6 +37,12 @@ export interface JiraActivityComposerProps {
 	onValueChange?: (value: string) => void;
 	/** Ref to the shared prompt editor used by the comment variant. */
 	textareaRef?: Ref<HTMLTextAreaElement>;
+	/**
+	 * Focus the editor on mount. The comment variant is a contentEditable tiptap
+	 * editor that initialises asynchronously, so its own `autofocus` config is the
+	 * only reliable way in — focusing a ref from a parent effect races the editor.
+	 */
+	autoFocus?: boolean;
 	mentionSectionLabels?: RichTextMentionSectionLabels;
 	suggestionVariant?: RichTextSuggestionVariantConfig;
 	/** Optional cue rendered immediately before the submit CTA. */
@@ -57,6 +63,7 @@ export function JiraActivityComposer({
 	defaultValue = "",
 	onValueChange,
 	textareaRef,
+	autoFocus = false,
 	mentionSectionLabels,
 	suggestionVariant,
 	submitAccessory,
@@ -114,6 +121,7 @@ export function JiraActivityComposer({
 				</Avatar>
 				<Textarea
 					aria-label={placeholder}
+					autoFocus={autoFocus}
 					className="min-h-8 flex-1 py-1.5"
 					onChange={(event) => updateValue(event.target.value)}
 					onKeyDown={handleKeyDown}
@@ -154,6 +162,7 @@ export function JiraActivityComposer({
 		>
 			<PromptInputTextarea
 				aria-label={placeholder}
+				autoFocus={autoFocus}
 				autoResize
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 				enableDirectoryAutocomplete={false}

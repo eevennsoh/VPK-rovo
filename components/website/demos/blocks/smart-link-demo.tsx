@@ -1,7 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import SmartLinkPage from "@/components/blocks/smart-link/page";
-import { SmartLink, type SmartLinkSize } from "@/components/blocks/smart-link/components/smart-link";
+import {
+	SmartLink,
+	type SmartLinkItem,
+	type SmartLinkSize,
+} from "@/components/blocks/smart-link/components/smart-link";
 import {
 	SMART_LINK_STATUS_EXAMPLES,
 	SMART_LINK_VARIANT_EXAMPLES,
@@ -57,6 +63,31 @@ export function SmartLinkDemoLoom() {
 
 export function SmartLinkDemoGeneric() {
 	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.generic} />;
+}
+
+export function SmartLinkDemoRemovableOverlay() {
+	const [items, setItems] = useState<SmartLinkItem[]>(() => [
+		...SMART_LINK_VARIANT_EXAMPLES.rich,
+		SMART_LINK_STATUS_EXAMPLES[0],
+	]);
+
+	return (
+		<div className="flex min-h-[220px] w-full flex-col items-start gap-4 bg-surface px-6 py-12 text-text">
+			{items.length > 0 ? (
+				items.map((item) => (
+					<SmartLink
+						item={item}
+						key={item.id}
+						onRemove={() => setItems((current) => current.filter((candidate) => candidate.id !== item.id))}
+						removeVariant="overlay"
+						showStatus={item.id === SMART_LINK_STATUS_EXAMPLES[0].id}
+					/>
+				))
+			) : (
+				<p className="text-sm text-text-subtle">All smart links removed</p>
+			)}
+		</div>
+	);
 }
 
 function SmartLinkStatusSet({

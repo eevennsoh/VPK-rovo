@@ -6,6 +6,7 @@
 
 import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement } from "react";
 import Image from "next/image";
+import CrossIcon from "@atlaskit/icon/core/cross";
 import PageIcon from "@atlaskit/icon/core/page";
 import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
 import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
@@ -136,6 +137,9 @@ export interface SmartLinkProps {
 	closeDelay?: number;
 	onOpenChange?: (open: boolean) => void;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
+	onRemove?: () => void;
+	removeVariant?: "overlay";
+	removeButtonLabel?: string;
 	className?: string;
 	contentClassName?: string;
 }
@@ -344,12 +348,13 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 function SmartLinkTrigger({
 	item,
 	open,
+	removable = false,
 	size = "small",
 	showStatus = false,
 	className,
 	...props
 }: Readonly<
-	{ item: SmartLinkItem; open: boolean; size?: SmartLinkSize; showStatus?: boolean } & ComponentProps<"a">
+	{ item: SmartLinkItem; open: boolean; removable?: boolean; size?: SmartLinkSize; showStatus?: boolean } & ComponentProps<"a">
 >) {
 	const status = showStatus ? item.status : undefined;
 	// A goal chip's leading target icon takes the status lozenge tone so the icon
@@ -389,10 +394,25 @@ function SmartLinkTrigger({
 			>
 				{renderVisual(item.icon, "trigger", goalIconTone ?? undefined)}
 			</span>
-			<span className="min-w-0 grow truncate whitespace-nowrap">{item.title}</span>
+			<span
+				className={cn(
+					"min-w-0 grow truncate whitespace-nowrap",
+					removable &&
+						!status &&
+						"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
+				)}
+				data-smart-link-text
+			>
+				{item.title}
+			</span>
 			{status ? (
 				<Lozenge
-					className={cn("shrink-0", triggerStatusClasses[size])}
+					className={cn(
+						"shrink-0",
+						triggerStatusClasses[size],
+						removable &&
+							"group-hover/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-focus-within/smart-link-remove:[mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-hover/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))] group-focus-within/smart-link-remove:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent_calc(100%-1rem))]",
+					)}
 					metric={status.metric}
 					variant={status.variant ?? "neutral"}
 				>
@@ -705,7 +725,7 @@ export function SmartLinkCard({
 			{item.previewImage ? <SmartLinkPreviewMedia image={item.previewImage} /> : null}
 			<div className="flex flex-col gap-2 px-4 pt-4 pb-2">
 				<div className="flex min-w-0 items-center gap-2">
-					<span className="shrink-0">{renderVisual(item.icon, "card")}</span>
+					<span className="inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
 					<h3 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-5 text-link">
 						{item.title}
 					</h3>
@@ -748,24 +768,39 @@ export function SmartLink({
 	closeDelay = 80,
 	onOpenChange,
 	onActionSelect,
+	onRemove,
+	removeVariant,
+	removeButtonLabel,
 	className,
 	contentClassName,
 }: Readonly<SmartLinkProps>) {
 	const [open, setOpen] = useState(false);
+	const isRemovableOverlay = Boolean(onRemove) && removeVariant === "overlay";
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		setOpen(nextOpen);
 		onOpenChange?.(nextOpen);
 	};
 
-	return (
+	const hoverCard = (
 		<HoverCard
 			closeDelay={closeDelay}
 			onOpenChange={handleOpenChange}
 			open={open}
 			openDelay={openDelay}
 		>
-			<HoverCardTrigger render={<SmartLinkTrigger className={className} item={item} open={open} showStatus={showStatus} size={size} />} />
+			<HoverCardTrigger
+				render={
+					<SmartLinkTrigger
+						className={className}
+						item={item}
+						open={open}
+						removable={isRemovableOverlay}
+						showStatus={showStatus}
+						size={size}
+					/>
+				}
+			/>
 			<HoverCardContent
 				align={align}
 				alignOffset={alignOffset}
@@ -781,6 +816,28 @@ export function SmartLink({
 				/>
 			</HoverCardContent>
 		</HoverCard>
+	);
+
+	if (!isRemovableOverlay) {
+		return hoverCard;
+	}
+
+	return (
+		<span className="group/smart-link-remove relative inline-flex min-w-0 max-w-full shrink-0 self-start">
+			{hoverCard}
+			<button
+				aria-label={removeButtonLabel ?? `Remove ${item.title}`}
+				className="pointer-events-none absolute end-0.5 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out-practical motion-reduce:transition-none hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none group-hover/smart-link-remove:pointer-events-auto group-hover/smart-link-remove:opacity-100 group-focus-within/smart-link-remove:pointer-events-auto group-focus-within/smart-link-remove:opacity-100"
+				data-slot="smart-link-remove-overlay-button"
+				onClick={(event) => {
+					event.stopPropagation();
+					onRemove?.();
+				}}
+				type="button"
+			>
+				<Icon render={<CrossIcon label="" size="small" color="currentColor" />} aria-hidden />
+			</button>
+		</span>
 	);
 }
 

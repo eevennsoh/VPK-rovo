@@ -2,35 +2,25 @@
 
 import { useState, type ReactElement } from "react";
 
-import AddIcon from "@atlaskit/icon/core/add";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import LinkIcon from "@atlaskit/icon/core/link";
-
-import { Button } from "@/components/ui/button";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	CONTEXT_POPOVER_ROW_CLASS,
+	CONTEXT_POPOVER_SECTION_HEADING_CLASS,
+	CONTEXT_POPOVER_TABS_LIST_CLASS,
+	PopoverOptionPicker,
+	PopoverSubmitField,
+	SuggestionPanel,
+	WorkItemTypeIcon,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/context-popover-parts";
 import { useJiraWorkItemActions } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import {
 	createLinkedItem,
 	linkExistingItem,
 	LINK_RECENT,
 	LINK_RELATIONSHIPS,
+	LINK_SEARCH_SCOPES,
 	LINK_SIMILAR,
 	LINK_TYPES,
 } from "@/components/blocks/jira-work-item/data/context-fixtures";
@@ -40,57 +30,30 @@ import type {
 	RelationshipOption,
 } from "@/components/blocks/jira-work-item/data/session-state";
 
-// A relationship/type picker backed by DropdownMenu (not Select): the experimental
-// dialog sits at z-[501] and SelectContent hardcodes z-[200] with no override, so a
-// nested Select would render behind the dialog. DropdownMenu accepts a
-// positionerClassName, so we push it to z-[600] above the popover (z-[502]).
-function LinkOptionPicker<T extends string>({
-	ariaLabel,
-	value,
-	options,
-	onChange,
-}: Readonly<{ ariaLabel: string; value: T; options: readonly T[]; onChange: (value: T) => void }>) {
-	const [open, setOpen] = useState(false);
+/**
+ * Relationship starts unset so the picker reads as the "Define relationship"
+ * prompt rather than silently pre-committing to one. Links added before a choice
+ * fall back to the neutral relationship instead of blocking the add.
+ */
+const DEFAULT_RELATIONSHIP: RelationshipOption = "relates to";
+
+function LinkedResultItem({ item, onSelect }: Readonly<{ item: ContextLinkedItem; onSelect: () => void }>) {
 	return (
-		<DropdownMenu open={open} onOpenChange={setOpen}>
-			<DropdownMenuTrigger
-				render={
-					<button
-						type="button"
-						aria-label={ariaLabel}
-						className="flex h-8 min-w-0 flex-1 items-center justify-between gap-1.5 rounded-md border border-input bg-bg-input px-2.5 text-sm text-text transition-colors hover:bg-bg-input-hovered active:bg-bg-input-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:border-ring motion-reduce:transition-none"
-					>
-						<span className="min-w-0 truncate">{value}</span>
-						<span className="shrink-0 text-icon-subtle">
-							<ChevronDownIcon label="" size="small" color="currentColor" />
-						</span>
-					</button>
-				}
-			/>
-			<DropdownMenuContent align="start" positionerClassName="z-[600]">
-				<DropdownMenuRadioGroup
-					value={value}
-					onValueChange={(next) => {
-						onChange(next as T);
-						setOpen(false);
-					}}
-				>
-					{options.map((option) => (
-						<DropdownMenuRadioItem key={option} value={option}>
-							{option}
-						</DropdownMenuRadioItem>
-					))}
-				</DropdownMenuRadioGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<button type="button" onClick={onSelect} className={CONTEXT_POPOVER_ROW_CLASS}>
+			<WorkItemTypeIcon type={item.type} />
+			<span className="min-w-0 flex-1 truncate">
+				{item.key} {item.summary}
+			</span>
+		</button>
 	);
 }
 
-export function LinkedWorkItemsPopover({ trigger }: Readonly<{ trigger: ReactElement }>) {
+export function LinkedWorkItemsPopover({ tooltip, trigger }: Readonly<{ tooltip?: string; trigger: ReactElement }>) {
 	const actions = useJiraWorkItemActions();
 	const [open, setOpen] = useState(false);
-	const [relationship, setRelationship] = useState<RelationshipOption>("relates to");
+	const [relationship, setRelationship] = useState<RelationshipOption | null>(null);
 	const [type, setType] = useState<LinkedWorkItemType>("Task");
+	const [scope, setScope] = useState<string>("Local");
 	const [name, setName] = useState("");
 	const [query, setQuery] = useState("");
 
@@ -103,77 +66,120 @@ export function LinkedWorkItemsPopover({ trigger }: Readonly<{ trigger: ReactEle
 
 	const createFromName = () => {
 		if (!name.trim()) return;
-		add(createLinkedItem(relationship, type, name));
+		add(createLinkedItem(relationship ?? DEFAULT_RELATIONSHIP, type, name));
 	};
+
+	const trimmedQuery = query.trim().toLowerCase();
+	const matchesQuery = (item: Readonly<ContextLinkedItem>) =>
+		`${item.key} ${item.summary}`.toLowerCase().includes(trimmedQuery);
+	const recent = trimmedQuery ? LINK_RECENT.filter(matchesQuery) : LINK_RECENT;
+	const similar = trimmedQuery ? LINK_SIMILAR.filter(matchesQuery) : LINK_SIMILAR;
+
+	const relationshipPicker = (
+		<PopoverOptionPicker
+			ariaLabel="Relationship"
+			onChange={setRelationship}
+			options={LINK_RELATIONSHIPS}
+			placeholder="Define relationship"
+			value={relationship}
+		/>
+	);
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger render={trigger} />
+			{tooltip ? (
+				<Tooltip>
+					<TooltipTrigger render={<span className="inline-flex" />}>
+						<PopoverTrigger render={trigger} />
+					</TooltipTrigger>
+					<TooltipContent positionerClassName="z-[502]">{tooltip}</TooltipContent>
+				</Tooltip>
+			) : (
+				<PopoverTrigger render={trigger} />
+			)}
 			<PopoverContent align="start" className="w-[24rem] p-0" positionerClassName="z-[502]">
 				<Tabs defaultValue="create" className="gap-0">
-					<TabsList variant="line" className="mt-2.5 w-full px-2.5">
+					<TabsList className={CONTEXT_POPOVER_TABS_LIST_CLASS}>
 						<TabsTrigger value="create">Create new</TabsTrigger>
 						<TabsTrigger value="existing">Add existing</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="create" className="flex flex-col gap-2 p-2.5">
-						<div className="flex items-center gap-1.5">
-							<LinkOptionPicker ariaLabel="Relationship" value={relationship} options={LINK_RELATIONSHIPS} onChange={setRelationship} />
-							<LinkOptionPicker ariaLabel="Work item type" value={type} options={LINK_TYPES} onChange={setType} />
-						</div>
-						<div className="flex items-center gap-1.5">
-							<Input
-								value={name}
-								onChange={(event) => setName(event.target.value)}
-								onKeyDown={(event) => {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										createFromName();
-									}
-								}}
-								placeholder="Work item summary"
-								className="h-8"
-							/>
-							<Button type="button" size="icon" variant="outline" aria-label="Create linked work item" disabled={!name.trim()} onClick={createFromName}>
-								<AddIcon label="" size="small" />
-							</Button>
-						</div>
+					<TabsContent value="create" className="flex flex-col gap-2.5 p-2.5">
+						{relationshipPicker}
+						<PopoverSubmitField
+							ariaLabel="Work item name"
+							leading={
+								<PopoverOptionPicker
+									ariaLabel="Work item type"
+									leading={<WorkItemTypeIcon type={type} />}
+									onChange={setType}
+									options={LINK_TYPES}
+									value={type}
+									variant="inline"
+								/>
+							}
+							onChange={setName}
+							onSubmit={createFromName}
+							placeholder="Name this work item"
+							submitLabel="Create linked work item"
+							value={name}
+						/>
 					</TabsContent>
 
-					<TabsContent value="existing" className="flex flex-col gap-2 p-2.5">
-						<LinkOptionPicker ariaLabel="Relationship" value={relationship} options={LINK_RELATIONSHIPS} onChange={setRelationship} />
-						<Command className="rounded-lg border border-border p-0">
-							<CommandInput value={query} onValueChange={setQuery} placeholder="Search work items…" />
-							<CommandList>
-								<CommandEmpty>No matching work items.</CommandEmpty>
-								<CommandGroup heading="Recent issues">
-									{LINK_RECENT.map((item) => (
-										<LinkedResultItem key={item.id} item={item} onSelect={() => add(linkExistingItem(item, relationship))} />
-									))}
-								</CommandGroup>
-								<CommandGroup heading="Similar work items">
-									{LINK_SIMILAR.map((item) => (
-										<LinkedResultItem key={item.id} item={item} onSelect={() => add(linkExistingItem(item, relationship))} />
-									))}
-								</CommandGroup>
-							</CommandList>
-						</Command>
+					<TabsContent value="existing" className="flex max-h-[24rem] flex-col gap-2.5 overflow-y-auto p-2.5">
+						{relationshipPicker}
+						<PopoverSubmitField
+							ariaLabel="Search work items or paste a link"
+							leading={
+								<PopoverOptionPicker
+									ariaLabel="Search scope"
+									onChange={setScope}
+									options={LINK_SEARCH_SCOPES}
+									value={scope}
+									variant="inline"
+								/>
+							}
+							onChange={setQuery}
+							onSubmit={() => {
+								const [first] = [...recent, ...similar];
+								if (first) add(linkExistingItem(first, relationship ?? DEFAULT_RELATIONSHIP));
+							}}
+							placeholder="Search work items or paste a link"
+							submitLabel="Link first matching work item"
+							value={query}
+						/>
+
+						{recent.length > 0 ? (
+							<section className="flex flex-col gap-0.5">
+								<h3 className={CONTEXT_POPOVER_SECTION_HEADING_CLASS}>{trimmedQuery ? "Results" : "Recent issues"}</h3>
+								{recent.map((item) => (
+									<LinkedResultItem
+										key={item.id}
+										item={item}
+										onSelect={() => add(linkExistingItem(item, relationship ?? DEFAULT_RELATIONSHIP))}
+									/>
+								))}
+							</section>
+						) : null}
+
+						{similar.length > 0 ? (
+							<SuggestionPanel title={`${similar.length} similar work ${similar.length === 1 ? "item" : "items"}`}>
+								{similar.map((item) => (
+									<LinkedResultItem
+										key={item.id}
+										item={item}
+										onSelect={() => add(linkExistingItem(item, relationship ?? DEFAULT_RELATIONSHIP))}
+									/>
+								))}
+							</SuggestionPanel>
+						) : null}
+
+						{recent.length === 0 && similar.length === 0 ? (
+							<p className="px-2 py-2 text-sm text-text-subtlest">No matching work items.</p>
+						) : null}
 					</TabsContent>
 				</Tabs>
 			</PopoverContent>
 		</Popover>
-	);
-}
-
-function LinkedResultItem({ item, onSelect }: Readonly<{ item: ContextLinkedItem; onSelect: () => void }>) {
-	return (
-		<CommandItem value={`${item.key} ${item.summary}`} onSelect={onSelect} showCheckIcon={false}>
-			<span className="shrink-0 text-icon-subtle">
-				<LinkIcon label="" size="small" color="currentColor" />
-			</span>
-			<span className="shrink-0 text-xs font-medium text-text-subtle">{item.key}</span>
-			<span className="min-w-0 flex-1 truncate">{item.summary}</span>
-			<span className="shrink-0 text-xs text-text-subtlest">{item.type}</span>
-		</CommandItem>
 	);
 }

@@ -7,12 +7,22 @@ const BLOCK_SOURCE = fs.readFileSync(path.join(__dirname, "index.tsx"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-details-demo.tsx"), "utf8");
 const AGENTS_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-agents-field.tsx"), "utf8");
 const LABELS_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-labels-field.tsx"), "utf8");
+const PARENT_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-parent-field.tsx"), "utf8");
+const PROJECT_FIELD_SOURCE = fs.readFileSync(path.join(__dirname, "artifact-project-field.tsx"), "utf8");
+const DATE_FIELD_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "detail-field-editors.tsx"),
+	"utf8",
+);
 const SUGGESTION_MENU_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "..", "ui-custom", "rich-text-editor", "suggestion-menu.tsx"),
 	"utf8",
 );
 const METADATA_RAIL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "jira-work-item", "experimental", "components", "metadata-rail.tsx"),
+	"utf8",
+);
+const EXPERIMENTAL_V2_DETAILS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "jira-work-item", "experimental-v2", "components", "details-tab.tsx"),
 	"utf8",
 );
 
@@ -77,13 +87,23 @@ test("Artifact Pane remains standalone from the Jira work-item metadata rail", (
 	assert.match(METADATA_RAIL_SOURCE, /<TabsTrigger value="automation">Automation<\/TabsTrigger>/u);
 });
 
+test("Jira work-item v2 reuses the Artifact Pane parent-field owner", () => {
+	assert.match(EXPERIMENTAL_V2_DETAILS_SOURCE, /import \{ ArtifactParentField \} from "@\/components\/blocks\/artifact-pane\/artifact-parent-field"/u);
+	assert.match(EXPERIMENTAL_V2_DETAILS_SOURCE, /<ArtifactParentField onChange=\{\(key\) => onChange\(\{ parent: key \}\)\} value=\{draft\.parent\} \/>/u);
+	assert.doesNotMatch(EXPERIMENTAL_V2_DETAILS_SOURCE, /ParentRowField/u);
+});
+
+test("Artifact Pane calendars are never narrower than their date triggers", () => {
+	assert.match(DATE_FIELD_SOURCE, /className="w-auto min-w-\(--anchor-width\) p-2"/u);
+});
+
 test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => {
 	assert.match(DEMO_SOURCE, /useState<ArtifactMetadata>\(INITIAL_METADATA\)/u);
 	assert.match(DEMO_SOURCE, /<ArtifactPanePropertyRow editable=\{false\}[\s\S]*?label="Status">/u);
 	assert.match(DEMO_SOURCE, /import ProjectStatusIcon from "@atlaskit\/icon\/core\/project-status"/u);
 	assert.match(DEMO_SOURCE, /icon=\{<ProjectStatusIcon label="" size="small" \/>\} label="Status"/u);
 	assert.doesNotMatch(DEMO_SOURCE, /StatusInformationIcon/u);
-	assert.match(DEMO_SOURCE, /<StatusPill[\s\S]*<ProjectField[\s\S]*<PersonRowField/u);
+	assert.match(DEMO_SOURCE, /<StatusPill[\s\S]*<ArtifactProjectField[\s\S]*<PersonRowField/u);
 	assert.match(DEMO_SOURCE, /ariaLabel="Change reporter"/u);
 	assert.match(DEMO_SOURCE, /import \{ ArtifactPaneAgentsField \} from "@\/components\/blocks\/artifact-pane\/artifact-agents-field"/u);
 	assert.match(DEMO_SOURCE, /<ArtifactPaneAgentsField/u);
@@ -101,25 +121,28 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /avatarClassName="[^"]*ring-/u);
 	assert.doesNotMatch(AGENTS_FIELD_SOURCE, /label=\{agent\.name\}/u);
 	assert.match(DEMO_SOURCE, /<PriorityRowField[\s\S]*<DateRowField[\s\S]*<ArtifactParentField[\s\S]*<ArtifactLabelsField/u);
-	assert.match(DEMO_SOURCE, /function ArtifactParentField/u);
-	assert.match(DEMO_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag"/u);
-	assert.match(DEMO_SOURCE, /const ARTIFACT_EPIC_COLORS:[\s\S]*"RFP-100": "purple"[\s\S]*"RFP-102": "blue"[\s\S]*"RFP-103": "green"/u);
-	assert.match(DEMO_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*<Icon[\s\S]*aria-hidden[\s\S]*render=\{<EpicIcon color="currentColor" label="" size="medium" spacing="none" \/>\}/u);
-	assert.doesNotMatch(DEMO_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*className="size-/u);
-	assert.match(DEMO_SOURCE, /function ArtifactEpicMenuIcon\(\{ color \}: Readonly<\{ color: ArtifactEpicColor \}>\)[\s\S]*<IconTile[\s\S]*as="span"[\s\S]*icon=\{<ArtifactEpicIcon \/>\}[\s\S]*size="small"[\s\S]*variant=\{color\}/u);
-	assert.doesNotMatch(DEMO_SOURCE, /function ArtifactEpicMenuIcon\([\s\S]*className="text-current"/u);
-	assert.match(DEMO_SOURCE, /icon: null,[\s\S]*leadingVisual: <ArtifactEpicMenuIcon color=\{artifactEpicColor\(option\.key\)\} \/>/u);
-	assert.match(DEMO_SOURCE, /<Tag[\s\S]*className="max-w-full self-center"[\s\S]*color=\{artifactEpicColor\(selected\.key\)\}[\s\S]*elemBefore=\{<ArtifactEpicIcon \/>\}[\s\S]*\{selected\.summary\}/u);
-	assert.doesNotMatch(DEMO_SOURCE, /\{selected\.key\} \{selected\.summary\}/u);
-	assert.match(DEMO_SOURCE, /\[&_\.rich-text-command-menu-item:hover\]:bg-bg-neutral-subtle-hovered!/u);
+	assert.match(DEMO_SOURCE, /import \{ ArtifactParentField \} from "@\/components\/blocks\/artifact-pane\/artifact-parent-field"/u);
+	assert.match(PARENT_FIELD_SOURCE, /export function ArtifactParentField/u);
+	assert.match(PARENT_FIELD_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag"/u);
+	assert.match(PARENT_FIELD_SOURCE, /const ARTIFACT_EPIC_COLORS:[\s\S]*"RFP-100": "purple"[\s\S]*"RFP-102": "blue"[\s\S]*"RFP-103": "green"/u);
+	assert.match(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*<Icon[\s\S]*aria-hidden[\s\S]*render=\{<EpicIcon color="currentColor" label="" size="medium" spacing="none" \/>\}/u);
+	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicIcon\(\)[\s\S]*className="size-/u);
+	assert.match(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\(\{ color \}: Readonly<\{ color: ArtifactEpicColor \}>\)[\s\S]*<IconTile[\s\S]*as="span"[\s\S]*icon=\{<ArtifactEpicIcon \/>\}[\s\S]*size="small"[\s\S]*variant=\{color\}/u);
+	assert.doesNotMatch(PARENT_FIELD_SOURCE, /function ArtifactEpicMenuIcon\([\s\S]*className="text-current"/u);
+	assert.match(PARENT_FIELD_SOURCE, /icon: null,[\s\S]*leadingVisual: <ArtifactEpicMenuIcon color=\{artifactEpicColor\(option\.key\)\} \/>/u);
+	assert.match(PARENT_FIELD_SOURCE, /<Tag[\s\S]*className="max-w-full self-center"[\s\S]*color=\{artifactEpicColor\(selected\.key\)\}[\s\S]*elemBefore=\{<ArtifactEpicIcon \/>\}[\s\S]*\{selected\.summary\}/u);
+	assert.doesNotMatch(PARENT_FIELD_SOURCE, /\{selected\.key\} \{selected\.summary\}/u);
+	assert.match(PARENT_FIELD_SOURCE, /\[&_\.rich-text-command-menu-item:hover\]:bg-bg-neutral-subtle-hovered!/u);
 	assert.doesNotMatch(DEMO_SOURCE, /<ParentRowField/u);
 	assert.doesNotMatch(DEMO_SOURCE, /<LabelsRowField/u);
 	assert.match(DEMO_SOURCE, /METADATA_PEOPLE/u);
 	assert.match(AGENTS_FIELD_SOURCE, /BOARD_AGENTS/u);
-	assert.match(DEMO_SOURCE, /PROJECT_AVATAR_SRCS[\s\S]*"esm-rfp-response": "\/avatar-project\/rocket\.svg"/u);
-	assert.match(DEMO_SOURCE, /<Tile aria-hidden className="p-0" isSnug/u);
-	assert.match(DEMO_SOURCE, /<ProjectAvatar name=\{selected\.name\} src=\{selected\.avatarSrc\} \/>/u);
-	assert.match(DEMO_SOURCE, /icon: null,[\s\S]*visual: \{ kind: "avatar", shape: "square", src: project\.avatarSrc \}/u);
+	assert.match(DEMO_SOURCE, /import \{ ArtifactProjectField \} from "@\/components\/blocks\/artifact-pane\/artifact-project-field"/u);
+	assert.match(PROJECT_FIELD_SOURCE, /export function ArtifactProjectField/u);
+	assert.match(PROJECT_FIELD_SOURCE, /PROJECT_AVATAR_SRCS[\s\S]*"esm-rfp-response": "\/avatar-project\/rocket\.svg"/u);
+	assert.match(PROJECT_FIELD_SOURCE, /<Tile aria-hidden className="p-0" isSnug/u);
+	assert.match(PROJECT_FIELD_SOURCE, /<ProjectAvatar name=\{selected\.name\} src=\{selected\.avatarSrc\} \/>/u);
+	assert.match(PROJECT_FIELD_SOURCE, /icon: null,[\s\S]*visual: \{ kind: "avatar", shape: "square", src: project\.avatarSrc \}/u);
 	assert.match(DEMO_SOURCE, /className="mt-1 self-start text-xs leading-5 text-text-subtle underline-offset-2 hover:underline focus-visible:underline"/u);
 	assert.doesNotMatch(DEMO_SOURCE, /self-start[^"]*text-link/u);
 	assert.doesNotMatch(DEMO_SOURCE, /See less[\s\S]*text-sm font-medium/u);
@@ -129,6 +152,8 @@ test("Artifact Pane labels use colored tags in the field and grouped picker", ()
 	assert.match(LABELS_FIELD_SOURCE, /import DeleteIcon from "@atlaskit\/icon\/core\/delete"/u);
 	assert.match(LABELS_FIELD_SOURCE, /import \{ Tag, TagGroup, type TagColor \} from "@\/components\/ui\/tag"/u);
 	assert.match(LABELS_FIELD_SOURCE, /const LABEL_COLORS = \["blue", "green", "purple", "orange", "teal", "magenta", "yellow"\]/u);
+	assert.match(LABELS_FIELD_SOURCE, /const allLabels = Array\.from\(new Set\(\[\.\.\.value, \.\.\.LABEL_OPTIONS\]\)\);/u);
+	assert.match(LABELS_FIELD_SOURCE, /const visibleLabels = allLabels\.filter/u);
 	assert.match(LABELS_FIELD_SOURCE, /<Tag className="self-center justify-self-start" color=\{labelColor\(label\)\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu-heading"/u);
 	assert.match(LABELS_FIELD_SOURCE, /group\/label-option grid-cols-\[minmax\(0,1fr\)_24px\]!/u);
@@ -138,9 +163,16 @@ test("Artifact Pane labels use colored tags in the field and grouped picker", ()
 	assert.match(LABELS_FIELD_SOURCE, /<DeleteIcon label="" size="small" \/>/u);
 	assert.match(LABELS_FIELD_SOURCE, /aria-label=\{selected \? `Remove \$\{label\}` : `Add \$\{label\}`\}/u);
 	assert.match(LABELS_FIELD_SOURCE, /aria-multiselectable="true"/u);
+	assert.match(LABELS_FIELD_SOURCE, /<PopoverContent[\s\S]*aria-label="Edit labels"/u);
+	assert.match(LABELS_FIELD_SOURCE, /aria-label="Search labels"[\s\S]*className="rich-text-command-menu-list"[\s\S]*role="listbox"/u);
+	assert.doesNotMatch(LABELS_FIELD_SOURCE, /className="rich-text-command-menu rich-text-command-menu-borderless"[\s\S]{0,80}role="listbox"/u);
 	assert.match(LABELS_FIELD_SOURCE, /<DetailValueTrigger aria-label="Edit labels" className="py-1\.5!" \/>/u);
 	assert.match(LABELS_FIELD_SOURCE, /heading="Selected"/u);
 	assert.match(LABELS_FIELD_SOURCE, /heading="More labels"/u);
+	assert.match(LABELS_FIELD_SOURCE, /const canCreateCustomLabel = customLabel\.length > 0/u);
+	assert.match(LABELS_FIELD_SOURCE, /heading="New label" labels=\{\[customLabel\]\}/u);
+	assert.match(LABELS_FIELD_SOURCE, /else if \(canCreateCustomLabel\) \{[\s\S]*createCustomLabel\(customLabel\);/u);
+	assert.doesNotMatch(LABELS_FIELD_SOURCE, /No labels found/u);
 	assert.match(LABELS_FIELD_SOURCE, /aria-selected=\{selected\}/u);
 });
 

@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 413,
+			"manifestEntryCount": 414,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5365,7 +5365,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 97,
+				"entryCount": 98,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5576,6 +5576,12 @@
 						"slug": "editor-toolbar",
 						"name": "Editor Toolbar",
 						"importPath": "@/components/blocks/editor-toolbar"
+					},
+					{
+						"category": "blocks",
+						"slug": "emoji-picker",
+						"name": "Emoji Picker",
+						"importPath": "@/components/blocks/emoji-picker"
 					},
 					{
 						"category": "blocks",
@@ -7935,7 +7941,7 @@
 	},
 	"skills": {
 		"summary": {
-			"localSkillCount": 15
+			"localSkillCount": 16
 		},
 		"localSkills": [
 			{
@@ -8027,6 +8033,12 @@
 				"name": "vpk-tidy",
 				"path": ".agents/skills/vpk-tidy/SKILL.md",
 				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-tidy"
+			},
+			{
+				"description": "Share a live VPK localhost prototype with external participants through a public Atlas Tunnel URL. Use when the user says \\\"vpk-tunnel\\\", \\\"share my prototype\\\", \\\"make this localhost link public\\\", \\\"send a customer a prototype link\\\", or asks to start, inspect, or stop an Atlas Tunnel for a VPK Portless URL.",
+				"name": "vpk-tunnel",
+				"path": ".agents/skills/vpk-tunnel/SKILL.md",
+				"validationCommand": "node scripts/validate-skills.js --target .agents/skills/vpk-tunnel"
 			}
 		]
 	},

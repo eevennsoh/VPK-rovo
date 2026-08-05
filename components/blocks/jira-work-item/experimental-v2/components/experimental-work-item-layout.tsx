@@ -171,7 +171,7 @@ export function ExperimentalWorkItemLayout({
 							style={{ willChange: shouldReduceMotion ? undefined : "transform" }}
 							variants={shouldReduceMotion ? REDUCED_MOTION_METADATA_PANEL_VARIANTS : METADATA_PANEL_VARIANTS}
 						>
-							<div className="min-w-0">{metadata}</div>
+							<div className="h-full min-w-0">{metadata}</div>
 						</motion.div>
 					)}
 				</AnimatePresence>
