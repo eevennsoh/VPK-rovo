@@ -111,6 +111,11 @@ test("SmartLink visual rendering uses shared icon and logo primitives", () => {
 	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
 });
 
+test("the Jira work-item demo uses a blue work-item icon tile with rich card controls", () => {
+	assert.match(DATA_SOURCE, /import WorkItemIcon from "@atlaskit\/icon\/core\/work-item";/u);
+	assert.match(DATA_SOURCE, /id: "engineering-whiteboard"[\s\S]*icon: \{ kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" \s*\/>, tone: "information" \}[\s\S]*assignee:[\s\S]*status:[\s\S]*priority:[\s\S]*actions: SMART_LINK_MODAL_ACTIONS/u);
+});
+
 test("SmartLink trigger icon tiles render as inline spans", () => {
 	assert.match(COMPONENT_SOURCE, /const iconTileElement = size === "trigger" \? "span" : "div";/u);
 	assert.equal((COMPONENT_SOURCE.match(/as=\{iconTileElement\}/gu) ?? []).length, 2);

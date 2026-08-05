@@ -33,11 +33,13 @@ function readProjectFile(relativePath) {
 test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
+	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
 	assert.match(BLOCK_SOURCE, /borderless \? null : "border border-border"/u);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? \([\s\S]*text-xs font-normal text-text-subtlest">· \{count\}/u);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
-	assert.match(BLOCK_SOURCE, /index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="py-1\.5"[\s\S]*<Separator \/>/u);
+	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
+	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="py-1\.5"[\s\S]*<Separator \/>/u);
 	assert.match(BLOCK_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(BLOCK_SOURCE, /import \{ motion, useReducedMotion \} from "motion\/react"/u);
 	assert.match(BLOCK_SOURCE, /const prefersReducedMotion = useReducedMotion\(\);/u);
@@ -46,11 +48,17 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /style=\{\{ willChange: "transform" \}\}/u);
 	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/u);
 	assert.match(BLOCK_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
+	assert.match(BLOCK_SOURCE, /headerAction\?: Readonly<\{[\s\S]*label: string;[\s\S]*onClick\?: \(\) => void;/u);
+	assert.match(BLOCK_SOURCE, /className="group\/header relative flex w-full items-center"/u);
+	assert.match(BLOCK_SOURCE, /<SettingsIcon label="" size="small" \/>/u);
+	assert.match(BLOCK_SOURCE, /aria-label=\{headerAction\.label\}/u);
+	assert.match(BLOCK_SOURCE, /pointer-events-none absolute top-1\/2 right-8 -translate-y-1\/2 opacity-0 group-hover\/header:pointer-events-auto group-hover\/header:opacity-100 group-focus-within\/header:pointer-events-auto group-focus-within\/header:opacity-100/u);
+	assert.match(BLOCK_SOURCE, /<TooltipContent positionerClassName="z-\[502\]">\{headerAction\.label\}<\/TooltipContent>/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /Chevron(?:Up|Down)Icon/u);
-	assert.match(BLOCK_SOURCE, /className="group\/header flex w-full/u);
+	assert.match(BLOCK_SOURCE, /className="flex w-full items-center justify-between/u);
 	assert.match(BLOCK_SOURCE, /focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/u);
-	assert.match(BLOCK_SOURCE, /opacity-0 group-hover\/header:opacity-100 group-focus-visible\/header:opacity-100/u);
-	assert.match(BLOCK_SOURCE, /text-text-subtle group-hover\/header:text-text group-focus-visible\/header:text-text/u);
+	assert.match(BLOCK_SOURCE, /opacity-0 group-hover\/header:opacity-100 group-focus-within\/header:opacity-100/u);
+	assert.match(BLOCK_SOURCE, /text-text-subtle group-hover\/header:text-text group-focus-within\/header:text-text/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /hover:bg-surface-hovered/u);
 	assert.match(BLOCK_SOURCE, /sections\.map\(\(section, index\) =>/u);
 	assert.match(BLOCK_SOURCE, /index === 0 \? "pt-1\.5" : null/u);

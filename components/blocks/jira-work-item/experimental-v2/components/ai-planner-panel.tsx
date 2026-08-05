@@ -191,7 +191,7 @@ export function AiPlannerScope({
 			)}
 		>
 			{header}
-			<div className={cn("group/description-scope flex flex-col gap-3", hasPlanner ? "px-2 pb-2" : null)}>
+			<div className={cn("group/description-scope flex flex-col gap-6", hasPlanner ? "px-2 pb-2" : null)}>
 				{children}
 			</div>
 		</div>

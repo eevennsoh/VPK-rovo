@@ -162,6 +162,10 @@ test("Kanban columns retain a readable minimum width when the board narrows", ()
 	assert.match(SOURCE, /style=\{\{ flex: "1 1 0", minWidth: "280px", borderRadius: token\("radius\.xlarge"\) \}\}/u);
 });
 
+test("Kanban column drop targets expose a stable browser selector", () => {
+	assert.match(COLUMN_DRAG_SOURCE, /data-jira-kanban-column=\{column\.title\}/u);
+});
+
 test("Kanban columns stretch through the available board height", () => {
 	assert.match(PAGE_SOURCE, /<div className="flex min-h-0 min-w-0 flex-1">[\s\S]*<JiraKanban/u);
 	assert.match(SOURCE, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);

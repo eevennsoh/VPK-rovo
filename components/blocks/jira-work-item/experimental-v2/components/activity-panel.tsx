@@ -10,6 +10,7 @@ import type {
 	JiraActivityReply,
 } from "@/components/blocks/jira-activity";
 import { toggleReaction } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
+import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import {
 	JIRA_WORK_ITEM_CURRENT_USER,
@@ -38,7 +39,11 @@ export function ActivityPanel() {
 	const lastScrolledSessionIdRef = useRef<string | null>(null);
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const latestSessionId = state.sessions.at(-1)?.id ?? null;
-	const derivedEntries = useMemo(() => mapActivityEventsToJiraEntries(meta.activityEvents), [meta.activityEvents]);
+	const activityReferenceTimeMs = SESSION_EPOCH_MS + state.elapsedMs;
+	const derivedEntries = useMemo(
+		() => mapActivityEventsToJiraEntries(meta.activityEvents, activityReferenceTimeMs),
+		[activityReferenceTimeMs, meta.activityEvents],
+	);
 	// Reactions and replies to human comments have no home in the work-item
 	// context, so they are held here and overlaid onto the derived timeline.
 	// Keyed by entry id rather than replacing the array, so streaming session

@@ -21,6 +21,13 @@ const AGENT_SELECTOR_DROPDOWN_CALLSITE_SOURCES = [
 	sourcePath,
 }));
 
+test("agent rows use 8px left padding while preserving the compact trailing inset", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-\[12px\] py-0 pr-1\.5 pl-2 text-left";/u,
+	);
+});
+
 test("AgentSelector demo list omits Rovo Dev", () => {
 	assert.doesNotMatch(DATA_SOURCE, /name:\s*"Rovo Dev"/u);
 	assert.doesNotMatch(DATA_SOURCE, /id:\s*"rovo-dev"/u);
@@ -72,7 +79,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 		COMPONENT_SOURCE,
 		/const showSingleSelectTick =\s*!isInProgress && !supportsMultipleSelection && showSelectedTickInSingleSelect && isChecked;/u,
 	);
-	// Rendered as the VPK CheckIcon in subtle color, inside a 24px transparent
+	// Rendered as the VPK CheckIcon in selected color, inside a 24px transparent
 	// IconTile (small = size-6). `iconSize="small"` is required: transparent tiles
 	// default their glyph to the medium (16px) icon size, so without it the check
 	// renders oversized instead of the intended small (12px) tick.
@@ -80,7 +87,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 	assert.match(COMPONENT_SOURCE, /import \{ CheckIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-subtle"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
+		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-selected"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
 	);
 	// The default and selected-agent-actions demo variants turn it on; jira does not.
 	assert.match(
@@ -138,7 +145,9 @@ test("AgentSelector omits the top picker heading unless a consumer supplies one"
 });
 
 test("AgentSelector rows use greeting prompt text rhythm and shared agent avatars", () => {
-	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CLASS =\s*"grid h-11 w-full grid-cols-\[24px_minmax\(0,1fr\)_auto\] items-center gap-3 rounded-\[12px\] px-1\.5 py-0 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_BASE_CLASS =\s*"grid h-11 w-full items-center gap-3 rounded-\[12px\] py-0 pr-1\.5 pl-2 text-left";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_CHECK_COLS = "grid-cols-\[24px_minmax\(0,1fr\)_auto\]";/u);
+	assert.match(COMPONENT_SOURCE, /const AGENT_ROW_PLAIN_COLS = "grid-cols-\[24px_minmax\(0,1fr\)\]";/u);
 	assert.match(COMPONENT_SOURCE, /const AGENT_COPY_CLASS =\s*"flex min-h-\[34px\] min-w-0 flex-col justify-start overflow-hidden";/u);
 	// Title + byline use the shared editor-palette type treatment (menu-row-*
 	// utilities) rather than re-deriving line-height with text-sm/leading-*.
@@ -150,7 +159,7 @@ test("AgentSelector rows use greeting prompt text rhythm and shared agent avatar
 	assert.doesNotMatch(COMPONENT_SOURCE, /<AtlassianLogo/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /grid-cols-\[32px_minmax\(0,1fr\)_auto\]/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-sm"/u);
-	assert.match(COMPONENT_SOURCE, /className=\{AGENT_ROW_CLASS\}/u);
+	assert.match(COMPONENT_SOURCE, /className=\{cn\([\s\S]*AGENT_ROW_BASE_CLASS,[\s\S]*showCheckIcon \? AGENT_ROW_CHECK_COLS : AGENT_ROW_PLAIN_COLS,/u);
 	assert.match(COMPONENT_SOURCE, /className=\{cn\(AGENT_COPY_CLASS, "flex-1"\)\}/u);
 	assert.match(COMPONENT_SOURCE, /className=\{AGENT_LABEL_CLASS\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /block truncate text-sm font-normal leading-[45] text-text-subtle/u);

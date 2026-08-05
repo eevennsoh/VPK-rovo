@@ -146,7 +146,7 @@ const ACTION_LABEL_CLASS = "text-text-subtle";
 // (e.g. the stop control's 6px padding + 4px `mr-1` = 10px would become 22px).
 // So we add the third column only when `showCheckIcon` is true.
 const AGENT_ROW_BASE_CLASS =
-	"grid h-11 w-full items-center gap-3 rounded-[12px] px-1.5 py-0 text-left";
+	"grid h-11 w-full items-center gap-3 rounded-[12px] py-0 pr-1.5 pl-2 text-left";
 const AGENT_ROW_CHECK_COLS = "grid-cols-[24px_minmax(0,1fr)_auto]";
 const AGENT_ROW_PLAIN_COLS = "grid-cols-[24px_minmax(0,1fr)]";
 const AGENT_COPY_CLASS =

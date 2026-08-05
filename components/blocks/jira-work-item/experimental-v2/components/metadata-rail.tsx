@@ -2,11 +2,11 @@
 
 import { useMemo, type ReactElement } from "react";
 
-import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
 import VideoIcon from "@atlaskit/icon/core/video";
+import WorkItemIcon from "@atlaskit/icon/core/work-item";
 
 import {
 	type WorkItemAttachment,
@@ -17,12 +17,13 @@ import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
-import {
-	AppsSection,
-	DevelopmentSectionContent,
-} from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
+import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
+import { DevelopmentSectionContent } from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
 import { DetailsTab } from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
-import { AutomationTab } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
+import {
+	AutomationTab,
+	type WorkItemAutomationRule,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
 	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
@@ -59,15 +60,19 @@ function toAttachmentSmartLink(attachment: Readonly<WorkItemAttachment>): SmartL
 				: { kind: "icon-tile", icon: attachmentGlyph(attachment) },
 		description: `${attachment.sourceLabel ?? "Attachment"} attached to this work item.`,
 		metadata: [{ label: attachment.date }],
+		actions: SMART_LINK_MODAL_ACTIONS,
 	};
 }
 
-function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem {
-	const status = {
+function toWorkItemStatus(status: WorkItemChildItem["status"] | undefined): SmartLinkItem["status"] {
+	return status ? {
 		done: { label: "Done", variant: "success" as const },
 		inprogress: { label: "In progress", variant: "information" as const },
 		todo: { label: "To do", variant: "neutral" as const },
-	}[subtask.status];
+	}[status] : undefined;
+}
+
+function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem {
 
 	return {
 		id: subtask.key,
@@ -75,13 +80,14 @@ function toSubtaskSmartLink(subtask: Readonly<WorkItemChildItem>): SmartLinkItem
 		title: `${subtask.key}: ${subtask.summary}`,
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
-		icon: { kind: "icon-tile", icon: <ChildWorkItemsIcon label="" size="small" /> },
-		description: subtask.type ? `${subtask.type} in this work item.` : "Subtask in this work item.",
+		icon: { kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" />, tone: "information" },
+		description: subtask.description ?? (subtask.type ? `${subtask.type} in this work item.` : "Subtask in this work item."),
 		assignee: subtask.assignee
 			? { name: subtask.assignee, src: subtask.assigneeAvatarUrl }
 			: undefined,
 		priority: subtask.priority,
-		status,
+		status: toWorkItemStatus(subtask.status),
+		actions: SMART_LINK_MODAL_ACTIONS,
 	};
 }
 
@@ -92,9 +98,14 @@ function toLinkedItemSmartLink(linkedItem: Readonly<ContextLinkedItem>): SmartLi
 		title: `${linkedItem.key}: ${linkedItem.summary}`,
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
-		icon: { kind: "icon-tile", icon: <LinkIcon label="" size="small" /> },
-		description: `${linkedItem.type} that ${linkedItem.relationship} this work item.`,
-		metadata: [{ label: linkedItem.relationship }],
+		icon: { kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" />, tone: "information" },
+		description: linkedItem.description ?? `${linkedItem.type} that ${linkedItem.relationship} this work item.`,
+		assignee: linkedItem.assignee
+			? { name: linkedItem.assignee, src: linkedItem.assigneeAvatarUrl }
+			: undefined,
+		priority: linkedItem.priority,
+		status: toWorkItemStatus(linkedItem.status),
+		actions: SMART_LINK_MODAL_ACTIONS,
 	};
 }
 
@@ -118,6 +129,7 @@ function ResourceSmartLinks({
 						positionerClassName="z-[600]"
 						removeButtonLabel={`Remove ${item.title}`}
 						removeVariant="overlay"
+						showStatus
 						side="left"
 					/>
 				</li>
@@ -144,7 +156,13 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
  * owns the rail surface, disclosure controls, spacing, and dividers while this
  * adapter supplies work-item-specific content and metadata state.
  */
-export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boolean }> = {}) {
+export function MetadataRail({
+	automationRules = [],
+	borderless = false,
+}: Readonly<{
+	automationRules?: readonly WorkItemAutomationRule[];
+	borderless?: boolean;
+}> = {}) {
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
@@ -201,6 +219,7 @@ export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boo
 		<ArtifactPane
 			aria-label="Work item details"
 			borderless={borderless}
+			showSeparators={false}
 			sections={[
 				{
 					content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
@@ -209,9 +228,19 @@ export function MetadataRail({ borderless = false }: Readonly<{ borderless?: boo
 					title: "Details",
 				},
 				...resourceSections,
-				{ content: <AutomationTab />, id: "automation", title: "Automation" },
-				{ content: <DevelopmentSectionContent />, id: "development", title: "Development" },
-				{ content: <AppsSection />, id: "apps", title: "Apps" },
+				{
+					content: <AutomationTab rules={automationRules} />,
+					count: automationRules.length || undefined,
+					headerAction: { label: "Manage automations" },
+					id: "automation",
+					title: "Automation",
+				},
+				{
+					content: <DevelopmentSectionContent />,
+					headerAction: { label: "Manage dev tools" },
+					id: "development",
+					title: "Development",
+				},
 			]}
 		/>
 	);

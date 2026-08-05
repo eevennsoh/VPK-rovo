@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { JiraKanbanBoardHeader } from "@/components/blocks/jira-kanban/board-header";
 import JiraKanbanPage from "@/components/blocks/jira-kanban/page";
-import type { JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
+import type { JiraKanbanAgentData, JiraKanbanColumnData } from "@/components/blocks/jira-kanban";
 import {
 	filterJiraKanbanColumnsByAssignee,
 	getJiraKanbanAssignees,
@@ -13,13 +13,11 @@ import { JiraList } from "@/components/blocks/jira-list";
 import { JIRA_DESIGN_PROJECT } from "@/components/blocks/product-sidebar/data/jira-navigation";
 import { JiraForYouWorkspace } from "@/components/projects/jira-for-you/jira-for-you-workspace";
 import { JiraForYouShell } from "@/components/projects/jira-for-you/page";
-import type { JiraForYouItem } from "@/components/projects/jira-for-you/jira-for-you-types";
+import type { JiraForYouItem, JiraForYouSection } from "@/components/projects/jira-for-you/jira-for-you-types";
 import {
 	createJiraDesignListRows,
 	JIRA_DESIGN_KANBAN_AGENTS,
 	JIRA_DESIGN_KANBAN_COLUMNS,
-	JIRA_DESIGN_WORK_ITEMS_BY_ID,
-	JIRA_DESIGN_WORK_ITEMS_BY_KEY,
 	JIRA_DESIGN_WORKSPACE_SECTIONS,
 } from "../data/jira-design-work-items";
 import { JiraDesignViewTabs, type JiraDesignView } from "./jira-design-view-tabs";
@@ -60,6 +58,11 @@ export function ForYouStage(): React.ReactElement {
 interface JiraDesignWorkspaceStageProps {
 	view: JiraDesignView;
 	onViewChange: (view: JiraDesignView) => void;
+	agents?: readonly JiraKanbanAgentData[];
+	boardColumns?: readonly JiraKanbanColumnData[];
+	defaultOpenItemId?: string;
+	onBoardColumnsChange?: (columns: readonly JiraKanbanColumnData[]) => void;
+	sections?: readonly JiraForYouSection[];
 }
 
 function JiraListFeed({
@@ -68,11 +71,13 @@ function JiraListFeed({
 	compactHeader,
 	onItemActivate,
 	onViewChange,
+	workItemsByKey,
 }: Readonly<Pick<JiraDesignWorkspaceStageProps, "onViewChange"> & {
 	activeIssueKey?: string;
 	boardColumns: readonly JiraKanbanColumnData[];
 	compactHeader: boolean;
 	onItemActivate: (item: JiraForYouItem) => void;
+	workItemsByKey: ReadonlyMap<string, JiraForYouItem>;
 }>): React.ReactElement {
 	const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(() => new Set());
 	const assignees = useMemo(() => getJiraKanbanAssignees(boardColumns), [boardColumns]);
@@ -80,7 +85,10 @@ function JiraListFeed({
 		() => filterJiraKanbanColumnsByAssignee(boardColumns, selectedAssigneeIds),
 		[boardColumns, selectedAssigneeIds],
 	);
-	const rows = useMemo(() => createJiraDesignListRows(filteredBoardColumns), [filteredBoardColumns]);
+	const rows = useMemo(
+		() => createJiraDesignListRows(filteredBoardColumns, workItemsByKey),
+		[filteredBoardColumns, workItemsByKey],
+	);
 
 	return (
 		<div className="flex h-full min-h-0 flex-1 flex-col bg-surface">
@@ -98,7 +106,7 @@ function JiraListFeed({
 					activeIssueKey={activeIssueKey}
 					ariaLabel="For you work items list"
 					onIssueClick={(row) => {
-						const item = JIRA_DESIGN_WORK_ITEMS_BY_KEY.get(row.issueKey);
+						const item = workItemsByKey.get(row.issueKey);
 						if (item) {
 							onItemActivate(item);
 						}
@@ -113,15 +121,37 @@ function JiraListFeed({
 }
 
 export function JiraDesignWorkspaceStage({
+	agents = JIRA_DESIGN_KANBAN_AGENTS,
+	boardColumns: controlledBoardColumns,
+	defaultOpenItemId = "vitafleet-presentation",
+	onBoardColumnsChange,
 	onViewChange,
+	sections = JIRA_DESIGN_WORKSPACE_SECTIONS,
 	view,
 }: Readonly<JiraDesignWorkspaceStageProps>): React.ReactElement {
-	const [boardColumns, setBoardColumns] = useState(
+	const [localBoardColumns, setLocalBoardColumns] = useState(
 		() => JIRA_DESIGN_KANBAN_COLUMNS.map((column) => ({
 			...column,
 			cards: [...column.cards],
 		})),
 	);
+	const boardColumns = controlledBoardColumns ?? localBoardColumns;
+	const workItemsById = useMemo(
+		() => new Map(sections.flatMap((section) => section.items).map((item) => [item.id, item])),
+		[sections],
+	);
+	const workItemsByKey = useMemo(
+		() => new Map([...workItemsById.values()].map((item) => [item.issueKey, item])),
+		[workItemsById],
+	);
+	const updateBoardColumns = (columns: readonly JiraKanbanColumnData[]) => {
+		const nextColumns = columns.map((column) => ({ ...column, cards: [...column.cards] }));
+		if (controlledBoardColumns !== undefined) {
+			onBoardColumnsChange?.(nextColumns);
+			return;
+		}
+		setLocalBoardColumns(nextColumns);
+	};
 
 	return (
 		<JiraShellStage
@@ -132,25 +162,22 @@ export function JiraDesignWorkspaceStage({
 				chrome="plain"
 				className="h-full min-h-0 flex-1"
 				defaultDetailPanelOpen
-				defaultOpenItemId="vitafleet-presentation"
+				defaultOpenItemId={defaultOpenItemId}
 				feedResizeLabel="Resize Jira Design view panel"
 				preserveChatWidthAcrossSidebar
 				renderFeed={({ activeItemId, onItemActivate }) => (
 					view === "board" ? (
 						<JiraKanbanPage
 							activeCardCode={activeItemId
-								? JIRA_DESIGN_WORK_ITEMS_BY_ID.get(activeItemId)?.issueKey
+								? workItemsById.get(activeItemId)?.issueKey
 								: undefined}
-							agents={JIRA_DESIGN_KANBAN_AGENTS}
+							agents={agents}
 							ariaLabel="For you work items board. Scroll horizontally to review all statuses."
 							boardColumns={boardColumns}
 							compactHeader={Boolean(activeItemId)}
-							onBoardColumnsChange={(columns) => setBoardColumns(columns.map((column) => ({
-								...column,
-								cards: [...column.cards],
-							})))}
+							onBoardColumnsChange={updateBoardColumns}
 							onCardClick={(card) => {
-								const item = JIRA_DESIGN_WORK_ITEMS_BY_KEY.get(card.code);
+								const item = workItemsByKey.get(card.code);
 								if (item) {
 									onItemActivate(item);
 								}
@@ -161,16 +188,17 @@ export function JiraDesignWorkspaceStage({
 					) : (
 						<JiraListFeed
 							activeIssueKey={activeItemId
-								? JIRA_DESIGN_WORK_ITEMS_BY_ID.get(activeItemId)?.issueKey
+								? workItemsById.get(activeItemId)?.issueKey
 								: undefined}
 							boardColumns={boardColumns}
 							compactHeader={Boolean(activeItemId)}
 							onItemActivate={onItemActivate}
 							onViewChange={onViewChange}
+							workItemsByKey={workItemsByKey}
 						/>
 					)
 				)}
-				sections={JIRA_DESIGN_WORKSPACE_SECTIONS}
+				sections={sections}
 				showConversationHeaderBorder={false}
 			/>
 		</JiraShellStage>

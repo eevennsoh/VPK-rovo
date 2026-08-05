@@ -62,3 +62,16 @@ test("mention suggestion filters hide the popup instead of rendering a no-result
 	assert.match(mentionUpdate, /const shouldHidePopup = items\.length === 0;/u);
 	assertPopupHidesBeforeRenderingEmptyState(mentionUpdate);
 });
+
+test("generic suggestion rows use neutral gray IconTiles", () => {
+	assert.match(
+		SOURCE,
+		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant="gray"/u,
+	);
+	assert.doesNotMatch(
+		SOURCE,
+		/function RichTextSuggestionMenuItemVisual[\s\S]*<IconTile[\s\S]*variant="blue"/u,
+	);
+	assert.match(SOURCE, /id: getFlatFooterId\(section\.key\)[\s\S]*label: "Browse all"/u);
+	assert.match(SOURCE, /label: expanded \? "View less" : "View more"/u);
+});

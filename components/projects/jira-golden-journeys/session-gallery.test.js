@@ -185,9 +185,10 @@ test("Global Kanban cards open the shared chat, work-item, and details workspace
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORK_ITEMS_BY_KEY = new Map<string, JiraForYouItem>/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraForYouWorkspace[\s\S]*feedResizeLabel="Resize Jira Design view panel"/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /renderFeed=\{\(\{ activeItemId, onItemActivate \}\) => \([\s\S]*<JiraKanbanPage[\s\S]*compactHeader=\{Boolean\(activeItemId\)\}/u);
-	assert.equal((FOR_YOU_STAGE_SOURCE.match(/JIRA_DESIGN_WORK_ITEMS_BY_KEY\.get/gu) ?? []).length, 2);
+	assert.equal((FOR_YOU_STAGE_SOURCE.match(/workItemsByKey\.get/gu) ?? []).length, 2);
 	assert.equal((FOR_YOU_STAGE_SOURCE.match(/onItemActivate\(item\);/gu) ?? []).length, 2);
-	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{JIRA_DESIGN_WORKSPACE_SECTIONS\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /sections = JIRA_DESIGN_WORKSPACE_SECTIONS/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /sections=\{sections\}/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /showScrollAffordance=\{false\}/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /showConversationHeaderBorder=\{false\}/u);
 });
@@ -199,7 +200,7 @@ test("Global Jira Design preserves the default chat width across sidebar changes
 test("Global Jira Design starts with the VITA-142 chat and details open", () => {
 	assert.match(
 		FOR_YOU_STAGE_SOURCE,
-		/<JiraForYouWorkspace[\s\S]*defaultDetailPanelOpen[\s\S]*defaultOpenItemId="vitafleet-presentation"/u,
+		/defaultOpenItemId = "vitafleet-presentation"[\s\S]*<JiraForYouWorkspace[\s\S]*defaultDetailPanelOpen[\s\S]*defaultOpenItemId=\{defaultOpenItemId\}/u,
 	);
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /id: "vitafleet-presentation"|JIRA_FOR_YOU_SECTIONS/u);
 });
@@ -213,7 +214,7 @@ test("Global Jira Design starts with the product sidebar collapsed", () => {
 
 test("Global Kanban marks the open workspace card independently from bulk selection", () => {
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_WORK_ITEMS_BY_ID = new Map<string, JiraForYouItem>/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /activeCardCode=\{activeItemId[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_ID\.get\(activeItemId\)\?\.issueKey[\s\S]*: undefined\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /activeCardCode=\{activeItemId[\s\S]*workItemsById\.get\(activeItemId\)\?\.issueKey[\s\S]*: undefined\}/u);
 });
 
 test("Board and List derive the same work items from the For you dataset", () => {
@@ -221,10 +222,10 @@ test("Board and List derive the same work items from the For you dataset", () =>
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /AVATARS\.slice\(0, 6\)/u);
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /const assignee = getJiraDesignAssignee\(item\.id\)/u);
 	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /JIRA_DESIGN_KANBAN_COLUMNS:[\s\S]*JIRA_DESIGN_WORK_ITEMS[\s\S]*item\.issueKey[\s\S]*item\.title/u);
-	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /createJiraDesignListRows[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_KEY\.get\(card\.code\)[\s\S]*issueKey: item\.issueKey[\s\S]*summary: item\.title/u);
+	assert.match(JIRA_DESIGN_WORK_ITEMS_SOURCE, /createJiraDesignListRows[\s\S]*workItemsByKey: ReadonlyMap<string, JiraForYouItem> = JIRA_DESIGN_WORK_ITEMS_BY_KEY[\s\S]*workItemsByKey\.get\(card\.code\)[\s\S]*issueKey: item\.issueKey[\s\S]*summary: item\.title/u);
 	assert.match(FOR_YOU_STAGE_SOURCE, /boardColumns=\{boardColumns\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /onBoardColumnsChange=\{\(columns\) => setBoardColumns/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /const rows = useMemo\(\(\) => createJiraDesignListRows\(boardColumns\)/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /onBoardColumnsChange=\{updateBoardColumns\}/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /createJiraDesignListRows\(filteredBoardColumns, workItemsByKey\)/u);
 });
 
 test("Global Jira Design cards keep human assignees while active agents use activity rows", () => {
@@ -267,7 +268,7 @@ test("Global Jira Design list reuses the board controls with a list search label
 test("Board and List swap only the persistent workspace feed", () => {
 	assert.equal((FOR_YOU_STAGE_SOURCE.match(/<JiraForYouWorkspace/gu) ?? []).length, 1);
 	assert.match(FOR_YOU_STAGE_SOURCE, /renderFeed=\{\(\{ activeItemId, onItemActivate \}\) => \([\s\S]*view === "board" \? \([\s\S]*<JiraKanbanPage[\s\S]*\) : \([\s\S]*<JiraListFeed[\s\S]*onViewChange=\{onViewChange\}/u);
-	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraListFeed[\s\S]*activeIssueKey=\{activeItemId[\s\S]*JIRA_DESIGN_WORK_ITEMS_BY_ID\.get\(activeItemId\)\?\.issueKey/u);
+	assert.match(FOR_YOU_STAGE_SOURCE, /<JiraListFeed[\s\S]*activeIssueKey=\{activeItemId[\s\S]*workItemsById\.get\(activeItemId\)\?\.issueKey/u);
 	assert.doesNotMatch(STAGE_SOURCE, /view === "board" \? \([\s\S]*JiraKanbanWorkspaceStage[\s\S]*JiraListWorkspaceStage/u);
 });
 

@@ -377,14 +377,18 @@ test("controlled timelines can route inline agent replies to their owning sessio
 });
 
 test("human comments keep the stacked identity header and the flush composer geometry", () => {
-	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \}/u);
+	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \}/u);
 	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/headerLayout=\{entry\.actor\.kind === "person" \? "stacked" : "inline"\}/u,
 	);
-	assert.match(COMMENT_SOURCE, /<Avatar aria-hidden size="default">/u);
-	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{entry\.actor\.avatarSrc\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/<Avatar aria-hidden size=\{sizePx === 16 \? "xs" : "default"\}>/u,
+	);
+	assert.match(COMMENT_SOURCE, /function ActivityActorAvatar/u);
+	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{actor\.avatarSrc\}/u);
 	// Reply is a disclosure the comment owns via `commentActions`, not a callback
 	// the consuming surface has to wire up.
 	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
@@ -400,7 +404,7 @@ test("the activity card hosts the action row in the body grid, not the bordered 
 	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
 	// Nothing renders it inside the `border-t` footer branch.
 	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
-	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-4 p-3" : "gap-2 p-3"/u);
+	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-3 p-3" : "gap-2 p-3"/u);
 });
 
 test("the comment action row pairs Reply with the shared emoji reaction bar", () => {
@@ -426,6 +430,45 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	assert.match(COMMENT_ACTIONS_SOURCE, /onReply \? \(/u);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions/u);
 	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
+});
+
+test("thread replies share the parent card as inset divided rows with their own actions", () => {
+	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
+	assert.match(COMMENT_SOURCE, /<div className="pl-3">\s*<JiraActivityCard[\s\S]*className="rounded-none border-0"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-(?:6|8)">/u);
+	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
+	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
+	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="divide-y divide-border"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
+});
+
+test("comments with nested replies expose one shared header control to collapse the thread", () => {
+	assert.match(COMMENT_SOURCE, /import GrowVerticalIcon from "@atlaskit\/icon\/core\/grow-vertical"/u);
+	assert.match(COMMENT_SOURCE, /const \[repliesExpanded, setRepliesExpanded\] = useState\(true\)/u);
+	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
+	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Collapse nested comments" : "Expand nested comments"/u);
+	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*opacity-0[\s\S]*aria-expanded:bg-transparent[\s\S]*group-hover\/activity-card:opacity-100[\s\S]*group-has-\[:focus-visible\]\/activity-card:opacity-100[\s\S]*size="icon-compact"[\s\S]*<GrowVerticalIcon label="" \/>/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /group-focus-within\/activity-card:opacity-100/u);
+	assert.match(CARD_SOURCE, /group\/activity-card w-full overflow-hidden/u);
+	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
+	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
+	assert.match(COMMENT_SOURCE, /repliesHidden=\{!repliesExpanded\}/u);
+});
+
+test("collapsed threads show a Slack-like participant, count, and timestamp summary", () => {
+	assert.match(COMMENT_SOURCE, /function CollapsedThreadSummary/u);
+	assert.match(COMMENT_SOURCE, /new Map\(replies\.map\(\(reply\) => \[reply\.actor\.id, reply\.actor\]\)\)/u);
+	assert.match(COMMENT_SOURCE, /<AvatarGroup[\s\S]*Reply participants:[\s\S]*actors\.slice\(0, 3\)\.map/u);
+	assert.match(COMMENT_SOURCE, /sizePx=\{16\}/u);
+	assert.match(COMMENT_SOURCE, /replyCountLabel[\s\S]*latestTimestamp/u);
+	assert.match(COMMENT_SOURCE, /text-xs font-normal text-text hover:underline/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /font-medium text-link[\s\S]*replyCountLabel/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /hover:no-underline/u);
+	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
+	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:inline[\s\S]*View all comments/u);
+	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
+	assert.match(COMMENT_SOURCE, /<CollapsedThreadSummary onExpand=\{\(\) => setRepliesExpanded\(true\)\} replies=\{replies\} \/>/u);
 });
 
 test("Reply discloses the composer, defaulting to reply-and-reactions", () => {

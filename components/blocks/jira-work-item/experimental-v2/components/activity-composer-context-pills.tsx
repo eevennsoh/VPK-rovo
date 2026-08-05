@@ -42,10 +42,19 @@ interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string) => void;
-	runningSessions: readonly AgentSession[];
+	workingSessions: readonly AgentSession[];
 }
 
-function RunningSessionsList({
+function getWorkingSessionDescription(session: Readonly<AgentSession>): string | undefined {
+	if (session.status === "waiting") {
+		return session.waitingOn?.kind === "agent"
+			? `Waiting for ${session.waitingOn.agentName}`
+			: "Waiting for you";
+	}
+	return session.title;
+}
+
+function WorkingSessionsList({
 	onClose,
 	onOpenAgentChat,
 	sessions,
@@ -57,7 +66,7 @@ function RunningSessionsList({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session) => ({
-		description: session.title,
+		description: getWorkingSessionDescription(session),
 		id: session.id,
 		icon: null,
 		label: session.agentName,
@@ -69,7 +78,9 @@ function RunningSessionsList({
 			/>
 		),
 		persistentDescription: true,
-		trailing: <Spinner label="" size="xs" variant="rainbow" />,
+		trailing: session.status === "running"
+			? <Spinner label="" size="xs" variant="rainbow" />
+			: <span className="text-xs text-text-subtle">Waiting</span>,
 	}));
 
 	const openSession = (item: RichTextSuggestionMenuItem) => {
@@ -122,12 +133,12 @@ function RunningSessionsList({
 		>
 			<RichTextSuggestionMenu
 				className="rich-text-command-menu-borderless w-full!"
-				emptyLabel="No agents running"
+				emptyLabel="No agents working"
 				items={items}
 				onHover={setSelectedIndex}
 				onSelect={openSession}
 				selectedIndex={selectedIndex}
-				title="Running agents"
+				title="Working agents"
 			/>
 		</div>
 	);
@@ -153,23 +164,23 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
-	runningSessions,
+	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
-	const runningTriggerRef = useRef<HTMLButtonElement>(null);
-	const shouldRestoreRunningTriggerFocusRef = useRef(false);
-	const [showRunningSessions, setShowRunningSessions] = useState(false);
+	const workingTriggerRef = useRef<HTMLButtonElement>(null);
+	const shouldRestoreWorkingTriggerFocusRef = useRef(false);
+	const [showWorkingSessions, setShowWorkingSessions] = useState(false);
 
 	useEffect(() => {
-		if (!showRunningSessions && shouldRestoreRunningTriggerFocusRef.current) {
-			shouldRestoreRunningTriggerFocusRef.current = false;
-			runningTriggerRef.current?.focus();
+		if (!showWorkingSessions && shouldRestoreWorkingTriggerFocusRef.current) {
+			shouldRestoreWorkingTriggerFocusRef.current = false;
+			workingTriggerRef.current?.focus();
 		}
-	}, [showRunningSessions]);
+	}, [showWorkingSessions]);
 
-	const closeRunningSessions = useCallback((restoreFocus: boolean) => {
-		shouldRestoreRunningTriggerFocusRef.current = restoreFocus;
-		setShowRunningSessions(false);
+	const closeWorkingSessions = useCallback((restoreFocus: boolean) => {
+		shouldRestoreWorkingTriggerFocusRef.current = restoreFocus;
+		setShowWorkingSessions(false);
 	}, []);
 
 	return (
@@ -180,24 +191,24 @@ export function ActivityComposerContextPills({
 			initial={shouldReduceMotion ? false : "hidden"}
 			variants={PILL_GROUP_VARIANTS}
 		>
-			{showRunningSessions && onOpenAgentChat ? (
-				<RunningSessionsList
-					onClose={closeRunningSessions}
+			{showWorkingSessions && onOpenAgentChat ? (
+				<WorkingSessionsList
+					onClose={closeWorkingSessions}
 					onOpenAgentChat={onOpenAgentChat}
-					sessions={runningSessions}
+					sessions={workingSessions}
 				/>
 			) : (
 				<>
-					{runningSessions.length > 0 && onOpenAgentChat ? (
+					{workingSessions.length > 0 && onOpenAgentChat ? (
 						<RevealingPill>
 							<ContextBarPill
-								aria-label={`${runningSessions.length} running agents`}
+								aria-label={`${workingSessions.length} agents working`}
 								className="motion-reduce:transition-none"
 								icon={<Spinner label="" size="xs" variant="rainbow" />}
-								onClick={() => setShowRunningSessions(true)}
-								ref={runningTriggerRef}
+								onClick={() => setShowWorkingSessions(true)}
+								ref={workingTriggerRef}
 							>
-								{runningSessions.length} Running
+								{workingSessions.length} {workingSessions.length === 1 ? "agent" : "agents"} working
 							</ContextBarPill>
 						</RevealingPill>
 					) : null}

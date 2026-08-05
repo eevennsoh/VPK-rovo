@@ -83,6 +83,7 @@ export interface JiraActivityReply {
 	actor: JiraActivityActor;
 	timestamp: string;
 	body: string;
+	reactions?: readonly JiraActivityReaction[];
 }
 
 export interface JiraActivityCollapsible {

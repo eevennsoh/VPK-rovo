@@ -682,6 +682,7 @@ export function JiraKanban({
 					<div className="flex min-h-full items-stretch gap-2" style={{ minWidth: "100%" }}>
 						{boardColumns.map((column) => (
 						<div
+							data-jira-kanban-column={column.title}
 							key={column.title}
 							className="border-2 border-transparent transition-colors"
 							onDragOver={handleColumnDragOver}

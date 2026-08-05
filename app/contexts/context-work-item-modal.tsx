@@ -38,6 +38,7 @@ export interface WorkItemChildItem {
 	type?: string;
 	key: string;
 	summary: string;
+	description?: string;
 	priority: "highest" | "high" | "medium" | "low" | "lowest";
 	assignee?: string;
 	assigneeAvatarUrl?: string;
