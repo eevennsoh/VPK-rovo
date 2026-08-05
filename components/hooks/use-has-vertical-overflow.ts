@@ -71,6 +71,35 @@ function getElementVerticalOverflowState(element: HTMLElement | null): VerticalO
 	});
 }
 
+function isBoxlessLayoutWrapper(element: Element): boolean {
+	if (typeof window === "undefined" || typeof window.getComputedStyle !== "function") {
+		return false;
+	}
+
+	return window.getComputedStyle(element).display === "contents";
+}
+
+// A `display: contents` wrapper generates no box, so a ResizeObserver on it
+// reports 0x0 once and never fires again. Descend past those wrappers to the
+// nearest descendants that actually own layout, so the observed set stays
+// bounded without going blind to content growth beneath them.
+export function getVerticalOverflowResizeTargets(element: Element): Element[] {
+	const resizeTargets: Element[] = [element];
+
+	const collectLayoutOwners = (parent: Element) => {
+		for (const child of parent.children) {
+			if (isBoxlessLayoutWrapper(child)) {
+				collectLayoutOwners(child);
+			} else {
+				resizeTargets.push(child);
+			}
+		}
+	};
+	collectLayoutOwners(element);
+
+	return resizeTargets;
+}
+
 function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: () => void): () => void {
 	element.addEventListener("scroll", updateScrollState, { passive: true });
 
@@ -83,24 +112,33 @@ function subscribeToVerticalOverflow(element: HTMLElement, updateScrollState: ()
 	}
 
 	const resizeObserver = new ResizeObserver(updateScrollState);
-	const observeSubtree = (root: Element) => {
-		resizeObserver.observe(root);
-		for (const descendant of root.querySelectorAll("*")) {
-			resizeObserver.observe(descendant);
+	const observedResizeTargets = new Set<Element>();
+	const syncResizeTargets = () => {
+		const nextResizeTargets = new Set(getVerticalOverflowResizeTargets(element));
+
+		for (const target of observedResizeTargets) {
+			if (!nextResizeTargets.has(target)) {
+				resizeObserver.unobserve(target);
+			}
+		}
+
+		for (const target of nextResizeTargets) {
+			if (!observedResizeTargets.has(target)) {
+				resizeObserver.observe(target);
+			}
+		}
+
+		observedResizeTargets.clear();
+		for (const target of nextResizeTargets) {
+			observedResizeTargets.add(target);
 		}
 	};
-	observeSubtree(element);
+	syncResizeTargets();
 
 	const mutationObserver = typeof MutationObserver === "undefined"
 		? null
-		: new MutationObserver((mutations) => {
-				for (const mutation of mutations) {
-					for (const node of mutation.addedNodes) {
-						if (node instanceof Element) {
-							observeSubtree(node);
-						}
-					}
-				}
+		: new MutationObserver(() => {
+				syncResizeTargets();
 				updateScrollState();
 			});
 	mutationObserver?.observe(element, { childList: true, subtree: true });
