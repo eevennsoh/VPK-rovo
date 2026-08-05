@@ -9,6 +9,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
+import WorkItemIcon from "@atlaskit/icon/core/work-item";
 
 import type { SmartLinkItem } from "@/components/blocks/smart-link/components/smart-link";
 import {
@@ -27,7 +28,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 		title: "Engineering Whiteboard for Platform Foundation | List",
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
-		icon: { kind: "atlassian", name: "jira" },
+		icon: { kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" />, tone: "information" },
 		assignee: { name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
 		status: {
 			label: "In progress",

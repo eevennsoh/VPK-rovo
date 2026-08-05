@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import RefreshIcon from "@atlaskit/icon/core/refresh";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import TrashIcon from "@atlaskit/icon/core/delete";
 
 import { RECUR_DAYS, RECUR_FREQUENCIES, RECUR_TIMINGS } from "@/components/blocks/jira-work-item/data/metadata-fixtures";
@@ -77,17 +77,21 @@ export function SetToRecurRow() {
 	return (
 		<Popover onOpenChange={handleOpenChange} open={open}>
 			<PopoverTrigger
-				render={
+					render={
 					<button
 						aria-label="Set to recur"
-						className="flex w-full items-center gap-2 rounded-md px-1 py-2 text-left text-sm text-text outline-none transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+						className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2 rounded-md px-2 py-2 text-left outline-none transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
 						type="button"
 					/>
 				}
 			>
-				<Icon aria-hidden className="text-icon-subtle" render={<RefreshIcon label="" size="small" />} />
-				<span className="min-w-0 flex-1 truncate">Set to recur</span>
-				{isRecurring ? <span className="shrink-0 text-xs text-text-subtlest">{config.frequency}</span> : null}
+				<span className="flex min-w-0 flex-1 flex-col">
+					<span className="truncate text-sm font-medium text-text">Set to recur</span>
+					<span className="truncate text-xs text-text-subtlest">
+						{isRecurring ? `${config.frequency} · ${config.day} · ${config.timing}` : "No schedule set"}
+					</span>
+				</span>
+				<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} />
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-[18rem] p-3" positionerClassName="z-[502]" side="left">
 				<PopoverTitle className="mb-2 text-sm font-semibold">Set to recur</PopoverTitle>

@@ -960,7 +960,7 @@ function RichTextSuggestionMenuItemVisual({
 			label={item.label}
 			aria-hidden={true}
 			icon={item.icon}
-			variant="blue"
+			variant="gray"
 		/>
 	);
 

@@ -50,6 +50,7 @@ import {
 	SESSION_SCRIPTS,
 	type AgentSessionScript,
 } from "@/components/blocks/jira-work-item/data/session-scripts";
+import { reduceBroadcastComment } from "@/components/blocks/jira-work-item/data/shared-channel-state";
 import {
 	FILLED_COMMENTS,
 	FILLED_STATIC_EVENTS,
@@ -74,6 +75,7 @@ export const JIRA_WORK_ITEM_TICK_MS = 400;
 export type AgentSessionStatus = "running" | "waiting" | "completed";
 export type JiraWorkItemContextStatus = "empty" | "filled";
 export type JiraWorkItemPreset = "blank" | "empty" | "filled" | "running";
+export type JiraWorkItemComposerDelivery = "comment" | "broadcast-active-agents";
 export type AgentSessionEventRole = "human" | "agent";
 export type AgentSessionStepStatus = "complete" | "active" | "pending";
 export type AgentSessionInvocationSource = "context-pill" | "prompt";
@@ -110,14 +112,50 @@ export interface ContextLinkedItem {
 	id: string;
 	key: string;
 	summary: string;
+	description?: string;
 	type: LinkedWorkItemType;
 	relationship: RelationshipOption;
+	assignee?: string;
+	assigneeAvatarUrl?: string;
+	priority?: WorkItemChildItem["priority"];
+	status?: WorkItemChildItem["status"];
 }
 
 export interface AgentSessionAgent {
 	id: string;
 	name: string;
 	avatarSrc?: string;
+}
+
+export type AgentSessionWaitingOn =
+	| { kind: "user" }
+	| {
+		kind: "agent";
+		agentId: string;
+		agentName: string;
+		agentAvatarSrc?: string;
+	};
+
+export interface AgentSessionThreadReply {
+	id: string;
+	agentId: string;
+	agentName: string;
+	agentAvatarSrc?: string;
+	content: string;
+	createdAtMs: number;
+}
+
+export interface AgentSessionReaction {
+	emoji: string;
+	actorIds: readonly string[];
+}
+
+export interface HumanActivityThreadReply {
+	id: string;
+	authorName: string;
+	authorAvatarSrc?: string;
+	content: string;
+	createdAtMs: number;
 }
 
 export interface AgentSession {
@@ -141,6 +179,10 @@ export interface AgentSession {
 	/** Internal: whether the scripted wait checkpoint has already been resumed. */
 	resumedFromWait: boolean;
 	order: number;
+	/** Optional owner of a waiting checkpoint. Older fixtures default to the user. */
+	waitingOn?: AgentSessionWaitingOn;
+	/** Authored agent-to-agent handoffs rendered as replies beneath the activity card. */
+	threadReplies?: readonly AgentSessionThreadReply[];
 }
 
 export interface AgentSessionComment {
@@ -149,6 +191,10 @@ export interface AgentSessionComment {
 	authorAvatarSrc?: string;
 	content: string;
 	createdAtMs: number;
+	/** Seeded reactions, typically active agents acknowledging a channel prompt. */
+	reactions?: readonly AgentSessionReaction[];
+	/** Authored colleague replies rendered beneath the channel comment. */
+	threadReplies?: readonly HumanActivityThreadReply[];
 }
 
 export interface JiraWorkItemContextResources {
@@ -186,6 +232,8 @@ export interface HumanActivityEvent {
 	author: { name: string; avatarUrl?: string };
 	content: string;
 	createdAtMs: number;
+	reactions?: readonly AgentSessionReaction[];
+	threadReplies?: readonly HumanActivityThreadReply[];
 }
 
 export interface AgentActivityEvent {
@@ -202,6 +250,8 @@ export interface AgentActivityEvent {
 	commandPreview: string;
 	responsePreview?: string;
 	createdAtMs: number;
+	waitingOn?: AgentSessionWaitingOn;
+	threadReplies?: readonly AgentSessionThreadReply[];
 }
 
 /** Who performed a seeded, static timeline event (person, agent, or connected app). */
@@ -261,6 +311,7 @@ export type AddContextResourceAction =
 
 export type JiraWorkItemAction =
 	| { type: "hydrate-preset"; preset: JiraWorkItemPreset; workItem: WorkItemData }
+	| { type: "hydrate-state"; state: JiraWorkItemState }
 	| { type: "launch-session"; agentId: string; agentName: string; agentAvatarSrc?: string; agentBrandName?: ThirdPartyLogoName; command?: string; title?: string }
 	| {
 		type: "invoke-agent";
@@ -275,6 +326,7 @@ export type JiraWorkItemAction =
 	| { type: "settle-running" }
 	| { type: "reply-session"; sessionId: string; text: string }
 	| { type: "add-comment"; text: string; authorName?: string; authorAvatarSrc?: string }
+	| { type: "broadcast-comment"; text: string; authorName?: string; authorAvatarSrc?: string }
 	| { type: "set-active-session"; sessionId: string | null }
 	| { type: "open-general-session" }
 	| { type: "open-latest-or-general" }
@@ -287,20 +339,8 @@ export type JiraWorkItemAction =
 	| { type: "reset"; workItem: WorkItemData }
 	| AgentPlannerAction;
 
-// ────────────────────────────────────────────────────────────────────────────
-// Deterministic display helpers
-// ────────────────────────────────────────────────────────────────────────────
-
-const SESSION_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
-	hour: "numeric",
-	minute: "2-digit",
-	timeZone: "UTC",
-});
-
-/** Deterministic, locale-stable time-of-day label for a `createdAtMs` value. */
-export function formatSessionTimestamp(createdAtMs: number): string {
-	return SESSION_TIME_FORMATTER.format(new Date(createdAtMs));
-}
+export { formatSessionTimestamp } from "@/components/blocks/jira-work-item/data/session-time";
+export { getAgentActivityActorId } from "@/components/blocks/jira-work-item/data/shared-channel-state";
 
 const GENERAL_AGENT: AgentSessionAgent = { id: "rovo", name: "Rovo", avatarSrc: "/1p/rovo.svg" };
 
@@ -650,6 +690,8 @@ export function jiraWorkItemReducer(
 	switch (action.type) {
 		case "hydrate-preset":
 			return hydratePreset(action.preset, action.workItem);
+		case "hydrate-state":
+			return action.state;
 		case "reset":
 			return hydratePreset(state.preset, action.workItem);
 		case "tick": {
@@ -797,6 +839,7 @@ export function jiraWorkItemReducer(
 					return {
 						...session,
 						status: "running" as const,
+						waitingOn: undefined,
 						resumedFromWait: true,
 						stepElapsedMs: 0,
 						previewText: script.runningPreview,
@@ -817,6 +860,9 @@ export function jiraWorkItemReducer(
 				createdAtMs: SESSION_EPOCH_MS + state.elapsedMs,
 			};
 			return { ...state, comments: [...state.comments, comment], nextIdCounter: state.nextIdCounter + 1 };
+		}
+		case "broadcast-comment": {
+			return reduceBroadcastComment(state, action, SESSION_EPOCH_MS + state.elapsedMs);
 		}
 		case "add-context-resource":
 			return addContextResource(state, action);
@@ -973,6 +1019,8 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 		author: { name: comment.authorName, avatarUrl: comment.authorAvatarSrc },
 		content: comment.content,
 		createdAtMs: comment.createdAtMs,
+		reactions: comment.reactions,
+		threadReplies: comment.threadReplies,
 	}));
 	const agentEvents: ActivityEvent[] = state.sessions.map((session) => {
 		const lastAgentMessage = [...session.messages].reverse().find((message) => message.role === "agent");
@@ -994,6 +1042,8 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 			commandPreview: session.command,
 			responsePreview: lastAgentMessage?.content ?? session.previewText,
 			createdAtMs: session.startedAtMs,
+			waitingOn: session.waitingOn,
+			threadReplies: session.threadReplies,
 		};
 	});
 	return [...state.staticEvents, ...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);

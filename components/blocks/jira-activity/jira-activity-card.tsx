@@ -37,6 +37,8 @@ export interface JiraActivityCardProps {
 	footerActions?: ReactNode;
 	/** Optional rendered replies shown below the activity content. */
 	replies?: ReactNode;
+	/** Keep reply content mounted but remove it from layout and the accessibility tree. */
+	repliesHidden?: boolean;
 	/** Optional reply composer shown at the bottom of the card. */
 	replyComposer?: ReactNode;
 	className?: string;
@@ -60,11 +62,13 @@ export function JiraActivityCard({
 	details,
 	footerActions,
 	replies,
+	repliesHidden = false,
 	replyComposer,
 	className,
 }: Readonly<JiraActivityCardProps>) {
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const showFooter = replies != null || replyComposer != null;
+	const showFooterBorder = (replies != null && !repliesHidden) || replyComposer != null;
 	const detailsContent = details ? (
 		<div className="grid gap-1">
 			<button
@@ -92,7 +96,7 @@ export function JiraActivityCard({
 	return (
 		<div
 			className={cn(
-				"w-full overflow-hidden border border-border bg-surface",
+				"group/activity-card w-full overflow-hidden border border-border bg-surface",
 				hasExpandedLayout ? "rounded-xl" : "rounded-lg",
 				className,
 			)}
@@ -100,7 +104,7 @@ export function JiraActivityCard({
 			<div
 				className={cn(
 					"grid",
-					hasExpandedLayout ? "gap-4 p-3" : "gap-2 p-3",
+					hasExpandedLayout ? "gap-3 p-3" : "gap-2 p-3",
 				)}
 			>
 				{item ? (
@@ -155,7 +159,7 @@ export function JiraActivityCard({
 			</div>
 
 			{showFooter ? (
-				<div className="border-t border-border">
+				<div className={cn(showFooterBorder ? "border-t border-border" : null)}>
 					{replies}
 					{replyComposer}
 				</div>

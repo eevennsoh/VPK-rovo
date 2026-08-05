@@ -6,8 +6,12 @@ import { useId, useMemo } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
-import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
-import type { JiraWorkItemState } from "@/components/blocks/jira-work-item/data/session-state";
+import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type {
+	JiraWorkItemComposerDelivery,
+	JiraWorkItemPreset,
+	JiraWorkItemState,
+} from "@/components/blocks/jira-work-item/data/session-state";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
 import { JiraWorkItemProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
@@ -19,14 +23,18 @@ import { ActivityComposer } from "@/components/blocks/jira-work-item/experimenta
 import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
+import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
+	automationRules?: readonly WorkItemAutomationRule[];
+	composerAgents?: readonly AgentSelectorAgent[];
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
 	onOpenAgentChat?: (agentId: string) => void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
 	workItem?: WorkItemData;
+	composerDelivery?: JiraWorkItemComposerDelivery;
 }
 
 export type ExperimentalV2JiraWorkItemProps = ExperimentalV2JiraWorkItemBaseProps & (
@@ -89,7 +97,13 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 		// open/close lifecycle + enter/exit animation. Read-only reuse — the standard
 		// modal itself is untouched.
 		<WorkItemModalProvider isOpen onClose={onClose} workItem={workItem}>
-			<JiraWorkItemProvider initialPreset={initialPreset} initialState={initialState} workItem={workItem} active={open}>
+			<JiraWorkItemProvider
+				active={open}
+				composerDelivery={props.composerDelivery}
+				initialPreset={initialPreset}
+				initialState={initialState}
+				workItem={workItem}
+			>
 				<PanelLayoutProvider>
 					<LayoutGroup id={composerLayoutGroupId}>
 						<ExperimentalWorkItemDialog
@@ -110,14 +124,19 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 									/>
 								)}
 								activity={<ActivityPanel />}
-								composer={<ActivityComposer onOpenAgentChat={props.onOpenAgentChat} />}
+								composer={(
+									<ActivityComposer
+										agents={props.composerAgents}
+										onOpenAgentChat={props.onOpenAgentChat}
+									/>
+								)}
 								fillContainer={inlineSurface === "fill"}
 								metadata={(
 									<div
 										aria-hidden={agentChatOpen}
 										inert={agentChatOpen ? true : undefined}
 									>
-										<MetadataRail borderless />
+									<MetadataRail automationRules={props.automationRules} borderless />
 									</div>
 								)}
 							/>

@@ -41,7 +41,7 @@ const breadcrumbSizeClassNames = {
 	},
 	label: {
 		medium: "gap-1",
-		small: "gap-0.5",
+		small: "gap-1",
 	},
 	slot: {
 		medium:

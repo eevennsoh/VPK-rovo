@@ -40,8 +40,14 @@ const V2_DIVERGENCES = new Set([
 	"components/activity-panel.tsx",
 	"components/activity-composer-context-pills.tsx",
 	"components/activity-composer.tsx",
+	"components/automation-tab.tsx",
 	"components/ai-planner-panel.tsx",
 	"components/metadata-rail.tsx",
+	"context-jira-work-item.tsx",
+	"lib/activity-composer-session-routing.ts",
+	"lib/jira-activity-adapter.test.js",
+	"lib/jira-activity-adapter.ts",
+	"use-jira-work-item-controller.ts",
 	// The three context popovers moved to segmented tabs and the shared
 	// `context-popover-parts` chrome; v1 keeps its original underline treatment.
 	"components/attachments-popover.tsx",
@@ -94,7 +100,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail borderless \/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail automationRules=\{props\.automationRules\} borderless \/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -181,12 +187,35 @@ test("experimental v2 shares the session/planner data layer with v1", () => {
 	assert.equal(fs.existsSync(path.join(V2_DIR, "data")), false);
 });
 
-test("experimental v2 running-agents menu removes the suggestion shell border", () => {
+test("experimental v2 working-agents menu includes waiting sessions without changing its dismissal contract", () => {
 	const contextPillsSource = readBlockFile("experimental-v2/components/activity-composer-context-pills.tsx");
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
 
 	assert.match(
 		contextPillsSource,
-		/<RichTextSuggestionMenu[\s\S]*className="rich-text-command-menu-borderless w-full!"[\s\S]*title="Running agents"/u,
+		/<RichTextSuggestionMenu[\s\S]*className="rich-text-command-menu-borderless w-full!"[\s\S]*title="Working agents"/u,
+	);
+	assert.match(composerSource, /state\.sessions\.filter\(\(session\) => session\.status !== "completed"\)/u);
+	assert.match(contextPillsSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
+	assert.match(contextPillsSource, /\{workingSessions\.length\} \{workingSessions\.length === 1 \? "agent" : "agents"\} working/u);
+});
+
+test("experimental v2 keeps comment-only composer delivery as the non-target default", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const contextSource = readBlockFile("experimental-v2/context-jira-work-item.tsx");
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+
+	assert.match(contextSource, /composerDelivery = "comment"/u);
+	assert.match(compositionSource, /composerAgents\?: readonly AgentSelectorAgent\[\];/u);
+	assert.match(compositionSource, /<ActivityComposer[\s\S]*agents=\{props\.composerAgents\}/u);
+	assert.match(composerSource, /agents = ROVO_AGENT_SELECTOR_AGENTS/u);
+	assert.match(
+		composerSource,
+		/findMentionedAvailableAgents\([\s\S]*handledAgentIds,[\s\S]*handledAgentNames,[\s\S]*for \(const invokedAgent of invokedAgents\)[\s\S]*actions\.invokeAgent/u,
+	);
+	assert.match(
+		composerSource,
+		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(text\);[\s\S]*else \{[\s\S]*actions\.addComment\(text\);/u,
 	);
 });
 
@@ -377,10 +406,14 @@ test("experimental v2 reuses the Artifact Pane project field", () => {
 test("experimental v2 reveals description mode tabs across the description scope", () => {
 	const aiPlannerPanelSource = readBlockFile("experimental-v2/components/ai-planner-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
+	const richTextEditorStyles = fs.readFileSync(
+		path.join(BLOCK_DIR, "../../ui-custom/rich-text-editor/rich-text-editor.css"),
+		"utf8",
+	);
 
 	assert.match(
 		aiPlannerPanelSource,
-		/className=\{cn\("group\/description-scope flex flex-col gap-3", hasPlanner \? "px-2 pb-2" : null\)\}/u,
+		/className=\{cn\("group\/description-scope flex flex-col gap-6", hasPlanner \? "px-2 pb-2" : null\)\}/u,
 	);
 	assert.match(
 		contextResourcesSource,
@@ -388,6 +421,10 @@ test("experimental v2 reveals description mode tabs across the description scope
 	);
 	assert.doesNotMatch(contextResourcesSource, /group-focus-within\/description-scope/u);
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-(?:list|trigger)\]\]/u);
+	assert.match(
+		richTextEditorStyles,
+		/\.context-description-tiptap-editor:not\(:focus\) > p:last-child:has\(> br\.ProseMirror-trailingBreak:only-child\) \{\s*display: none;/u,
+	);
 });
 
 test("experimental v2 aligns the title with Details and renders controls in the resource row", () => {
@@ -496,6 +533,10 @@ test("experimental v2 removes the description row and keeps Activity sticky", ()
 		activityPanelSource,
 		/<JiraActivity[\s\S]*className="gap-2"[\s\S]*headerClassName="sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay \[container-type:scroll-state\]"[\s\S]*headerScrollFade/u,
 	);
+	assert.match(
+		activityPanelSource,
+		/mapActivityEventsToJiraEntries\(meta\.activityEvents, activityReferenceTimeMs\)/u,
+	);
 	assert.match(contextEditableHeaderSource, /showToolbar=\{false\}/u);
 	assert.match(contextEditableHeaderSource, /viewMode=\{viewMode\}/u);
 	assert.doesNotMatch(
@@ -511,6 +552,9 @@ test("experimental v2 removes the description row and keeps Activity sticky", ()
 
 test("experimental v2 renders filled context resources as conditional metadata sections", () => {
 	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	const automationTabSource = readBlockFile("experimental-v2/components/automation-tab.tsx");
+	const detailsSectionsSource = readBlockFile("experimental-v2/components/details-sections.tsx");
+	const setToRecurSource = readBlockFile("experimental-v2/components/set-to-recur-popover.tsx");
 
 	assert.match(metadataRailSource, /const \{ attachments, linkedItems, subtasks \} = contextResources;/u);
 	assert.match(metadataRailSource, /if \(attachments\.length > 0\) \{[\s\S]*id: "attachments",[\s\S]*title: "Attachments"/u);
@@ -519,20 +563,53 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*count: attachments\.length/u);
 	assert.match(metadataRailSource, /subtasks\.map\(toSubtaskSmartLink\)[\s\S]*count: subtasks\.length/u);
 	assert.match(metadataRailSource, /linkedItems\.map\(toLinkedItemSmartLink\)[\s\S]*count: linkedItems\.length/u);
+	assert.equal((metadataRailSource.match(/kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" \/>, tone: "information"/gu) ?? []).length, 2);
+	assert.match(metadataRailSource, /assignee: subtask\.assignee[\s\S]*name: subtask\.assignee, src: subtask\.assigneeAvatarUrl/u);
+	assert.doesNotMatch(metadataRailSource, /fallbackAssignee|assignee: toSmartLinkAssignee|metadata: \[\{ label: linkedItem\.relationship \}\]/u);
+	assert.match(metadataRailSource, /actions: SMART_LINK_MODAL_ACTIONS/u);
+	assert.match(metadataRailSource, /status: toWorkItemStatus\(linkedItem\.status\)/u);
+	assert.match(metadataRailSource, /description: subtask\.description \?\?/u);
+	assert.match(metadataRailSource, /description: linkedItem\.description \?\?/u);
+	assert.match(metadataRailSource, /assignee: linkedItem\.assignee[\s\S]*name: linkedItem\.assignee, src: linkedItem\.assigneeAvatarUrl/u);
+	assert.match(metadataRailSource, /priority: linkedItem\.priority/u);
 	assert.match(metadataRailSource, /function ResourceSmartLinks[\s\S]*<ul className="space-y-1">[\s\S]*<SmartLink[\s\S]*align="center"[\s\S]*alignOffset=\{0\}[\s\S]*className="min-w-0 max-w-full"[\s\S]*item=\{item\}[\s\S]*onRemove=\{\(\) => onRemove\(item\.id\)\}[\s\S]*positionerClassName="z-\[600\]"[\s\S]*removeButtonLabel=\{`Remove \$\{item\.title\}`\}[\s\S]*removeVariant="overlay"[\s\S]*side="left"/u);
+	assert.match(metadataRailSource, /removeVariant="overlay"[\s\S]*showStatus[\s\S]*side="left"/u);
 	assert.match(metadataRailSource, /removeContextResource\("attachment", id\)[\s\S]*removeContextResource\("subtask", id\)[\s\S]*removeContextResource\("link", id\)/u);
 	assert.doesNotMatch(metadataRailSource, /DeleteIcon|@atlaskit\/icon\/core\/delete|<Tag/u);
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*subtasks\.map\(toSubtaskSmartLink\)[\s\S]*linkedItems\.map\(toLinkedItemSmartLink\)/u);
 	assert.doesNotMatch(metadataRailSource, /AgentFilledSummaryRow|AgentReferenceChip|agentFieldName=/u);
 	assert.match(
 		metadataRailSource,
-		/id: "details",[\s\S]*\.\.\.resourceSections,[\s\S]*id: "automation"[\s\S]*id: "development"[\s\S]*id: "apps"/u,
+		/id: "details",[\s\S]*\.\.\.resourceSections,[\s\S]*id: "automation"[\s\S]*id: "development"/u,
 	);
+	assert.doesNotMatch(metadataRailSource, /id: "apps"|title: "Apps"|<AppsSection/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*showSeparators=\{false\}[\s\S]*sections=\{/u);
+	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
 	assert.match(
 		metadataRailSource,
-		/\{ content: <DevelopmentSectionContent \/>, id: "development", title: "Development" \}/u,
+		/content: <DevelopmentSectionContent \/>,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
+	assert.doesNotMatch(automationTabSource, /From Automation/u);
+	assert.doesNotMatch(automationTabSource, /AutomationTile|core\/branch/u);
+	assert.match(automationTabSource, /rules = \[\][\s\S]*const hasRules = rules\.length > 0/u);
+	assert.match(automationTabSource, /hasRules \? \([\s\S]*<AutomationRuleRows rules=\{rules\} \/>[\s\S]*\) : \([\s\S]*Create an automation to perform tasks/u);
+	assert.match(automationTabSource, /<IconTile[\s\S]*<AutomationIcon label="" size="small" color="currentColor" \/>[\s\S]*size="small"[\s\S]*variant=\{rule\.iconVariant\}/u);
+	assert.match(automationTabSource, /function CreateAutomationRow[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*size="small"[\s\S]*variant="gray"[\s\S]*Create automation/u);
+	assert.match(automationTabSource, /<CreateAutomationRow \/>[\s\S]*<AutomationRuleRows rules=\{rules\} \/>/u);
+	assert.match(automationTabSource, /className="min-w-0 flex-1 truncate text-sm text-text"/u);
+	assert.match(automationTabSource, /<Button variant="outline">\s*Add manually triggered automation\s*<\/Button>/u);
+	assert.doesNotMatch(automationTabSource, /<Button[^>]*(?:w-full|disabled)[^>]*>\s*Add manually triggered automation/u);
+	assert.match(automationTabSource, /latestRule\?\.lastRunAt[\s\S]*`\$\{latestRule\.title\} · \$\{latestRule\.lastRunAt\}`[\s\S]*View automation history/u);
+	assert.match(automationTabSource, /latestRule\?\.lastRunAt \? \([\s\S]*className="size-3 shrink-0 text-icon-success \[&_svg\]:size-3!"[\s\S]*<StatusSuccessIcon label="" size="small" \/>/u);
+	assert.match(automationTabSource, /Recent rule runs[\s\S]*\{recentRunByline\}[\s\S]*ChevronRightIcon/u);
+	assert.match(automationTabSource, /<SetToRecurRow \/>/u);
+	assert.doesNotMatch(automationTabSource, /Manage automations/u);
+	assert.doesNotMatch(automationTabSource, /border-t border-border/u);
+	assert.match(setToRecurSource, /Set to recur[\s\S]*config\.frequency[\s\S]*config\.day[\s\S]*config\.timing[\s\S]*No schedule set[\s\S]*ChevronRightIcon/u);
+	assert.doesNotMatch(setToRecurSource, /RefreshIcon|core\/refresh/u);
+	assert.match(detailsSectionsSource, /truncate text-sm font-medium text-text[\s\S]*truncate text-xs text-text-subtlest/u);
+	assert.doesNotMatch(detailsSectionsSource, /<CollapsibleSection title="Apps">/u);
 });
 
 test("experimental v2 keeps its persistent metadata rail open", () => {

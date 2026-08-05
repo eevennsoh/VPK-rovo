@@ -434,13 +434,24 @@ export function RichTextEditor({
 			return;
 		}
 		const { selection } = activeEditor.state;
-		if (activeEditor.view.composing || !selection.empty || isAnySuggestionMenuOpen(activeEditor)) {
+		const { $from } = selection;
+		if (
+			activeEditor.view.composing ||
+			!selection.empty ||
+			!$from.parent.isTextblock ||
+			$from.parentOffset !== $from.parent.content.size ||
+			isAnySuggestionMenuOpen(activeEditor)
+		) {
+			// A widget inserted before existing characters participates in inline
+			// layout and pushes the remaining text aside. Keep document-editor
+			// completions at the end of the current text block, where the ghost is a
+			// true continuation of what the user is typing.
 			setDirectoryAutocompleteState(null);
 			return;
 		}
-		const textBeforeCursor = selection.$from.parent.textBetween(
+		const textBeforeCursor = $from.parent.textBetween(
 			0,
-			selection.$from.parentOffset,
+			$from.parentOffset,
 			"\n",
 			RICH_TEXT_OBJECT_REPLACEMENT,
 		);

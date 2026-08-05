@@ -39,6 +39,7 @@ export interface JiraWorkItemActions {
 	): void;
 	replySession(sessionId: string, text: string): void;
 	addComment(text: string): void;
+	broadcastComment(text: string): void;
 	openSession(sessionId: string | null): void;
 	openGeneralSession(): void;
 	/** Launcher entry: reopen the latest session, else create a general one. */
@@ -130,6 +131,7 @@ export function useJiraWorkItemController(
 				}),
 			replySession: (sessionId, text) => run({ type: "reply-session", sessionId, text }),
 			addComment: (text) => run({ type: "add-comment", text }),
+			broadcastComment: (text) => run({ type: "broadcast-comment", text }),
 			openSession: (sessionId) => run({ type: "set-active-session", sessionId }),
 			openGeneralSession: () => run({ type: "open-general-session" }),
 			openLatestOrCreateGeneralSession: () => run({ type: "open-latest-or-general" }),
@@ -151,9 +153,11 @@ export function useJiraWorkItemController(
 			rejectPlannerProposal: () => run({ type: "reject-planner-proposal" }),
 			refinePlannerProposal: (prompt) => run({ type: "refine-planner-proposal", prompt }),
 			updateMetadata: (patch) => run({ type: "edit-metadata", patch }),
-			reset: () => run({ type: "reset", workItem }),
+			reset: () => run(initialState
+				? { type: "hydrate-state", state: initialState }
+				: { type: "reset", workItem }),
 		}),
-		[run, workItem],
+		[initialState, run, workItem],
 	);
 
 	return { state, actions };

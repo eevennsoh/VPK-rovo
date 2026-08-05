@@ -1,5 +1,6 @@
 import {
 	formatSessionTimestamp,
+	getAgentActivityActorId,
 	type ActivityEvent,
 	type AgentActivityEvent,
 	type AgentSessionStatus,
@@ -44,28 +45,66 @@ function actorIdFromName(name: string): string {
 	return `jira-work-item-person-${normalizedName || "unknown"}`;
 }
 
-function humanActor(event: Readonly<HumanActivityEvent>): JiraActivityActor {
-	if (event.author.name === JIRA_WORK_ITEM_CURRENT_USER.name) {
-		return event.author.avatarUrl
-			? { ...JIRA_WORK_ITEM_CURRENT_USER, avatarSrc: event.author.avatarUrl }
+function humanAuthorActor(author: Readonly<HumanActivityEvent["author"]>): JiraActivityActor {
+	if (author.name === JIRA_WORK_ITEM_CURRENT_USER.name) {
+		return author.avatarUrl
+			? { ...JIRA_WORK_ITEM_CURRENT_USER, avatarSrc: author.avatarUrl }
 			: JIRA_WORK_ITEM_CURRENT_USER;
 	}
 
 	return {
-		id: actorIdFromName(event.author.name),
-		name: event.author.name,
+		id: actorIdFromName(author.name),
+		name: author.name,
 		kind: "person",
-		...(event.author.avatarUrl ? { avatarSrc: event.author.avatarUrl } : {}),
+		...(author.avatarUrl ? { avatarSrc: author.avatarUrl } : {}),
 	};
 }
 
-function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityCommentEntry {
+function humanActor(event: Readonly<HumanActivityEvent>): JiraActivityActor {
+	return humanAuthorActor(event.author);
+}
+
+function agentActor(agent: Readonly<{
+	id: string;
+	name: string;
+	avatarSrc?: string;
+}>): JiraActivityActor {
+	const usesRovoLogo = agent.id.startsWith("skill:");
+	const avatarSrc = usesRovoLogo
+		? undefined
+		: agent.avatarSrc ?? getDeterministicAgentAvatarSrc(agent.id);
+	return {
+		id: getAgentActivityActorId(agent.id),
+		name: agent.name,
+		kind: "agent",
+		...(usesRovoLogo ? { vpkLogo: "rovo" as const } : { avatarSrc }),
+	};
+}
+
+function mapHumanEvent(
+	event: Readonly<HumanActivityEvent>,
+	referenceTimeMs?: number,
+): JiraActivityCommentEntry {
 	return {
 		id: event.id,
 		kind: "comment",
 		actor: humanActor(event),
-		timestamp: formatSessionTimestamp(event.createdAtMs),
+		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
 		body: [{ type: "text", text: event.content }],
+		...(event.reactions ? { reactions: event.reactions } : {}),
+		...(event.threadReplies
+			? {
+				replies: event.threadReplies.map((reply) => ({
+					id: reply.id,
+					actor: humanAuthorActor({
+						name: reply.authorName,
+						avatarUrl: reply.authorAvatarSrc,
+					}),
+					timestamp: formatSessionTimestamp(reply.createdAtMs, referenceTimeMs),
+					body: reply.content,
+				})),
+			}
+			: {}),
 		// Human comments opt in to Reply. The flag was previously false only to
 		// suppress the always-mounted composer under every human comment; now that
 		// Reply-to-reveal is the default, the affordance costs nothing until used.
@@ -73,29 +112,44 @@ function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityComment
 	};
 }
 
-function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityCommentEntry {
+function mapAgentEvent(
+	event: Readonly<AgentActivityEvent>,
+	referenceTimeMs?: number,
+): JiraActivityCommentEntry {
 	const usesRovoLogo = event.agentId.startsWith("skill:");
 	const avatarSrc = usesRovoLogo
 		? undefined
 		: event.agentAvatarSrc ?? getDeterministicAgentAvatarSrc(event.agentId);
+	const statusTag = event.status === "waiting" && event.waitingOn?.kind === "agent"
+		? { text: `Waiting for ${event.waitingOn.agentName}`, color: "yellow" as const }
+		: AGENT_STATUS_TAG[event.status];
 
 	return {
 		id: event.id,
 		kind: "comment",
-		actor: {
-			id: `jira-work-item-agent-${event.agentId}`,
-			name: event.agentName,
-			kind: "agent",
-			...(usesRovoLogo ? { vpkLogo: "rovo" as const } : { avatarSrc }),
-		},
-		timestamp: formatSessionTimestamp(event.createdAtMs),
-		tag: AGENT_STATUS_TAG[event.status],
+		actor: agentActor({ id: event.agentId, name: event.agentName, avatarSrc: event.agentAvatarSrc }),
+		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
+		tag: statusTag,
 		body: event.responsePreview ? [{ type: "text", text: event.responsePreview }] : [],
 		collapsible: {
 			label: "Prompt",
 			content: [{ type: "text", text: event.commandPreview }],
 		},
 		allowReply: event.status !== "completed",
+		...(event.threadReplies
+			? {
+				replies: event.threadReplies.map((reply) => ({
+					id: reply.id,
+					actor: agentActor({
+						id: reply.agentId,
+						name: reply.agentName,
+						avatarSrc: reply.agentAvatarSrc,
+					}),
+					timestamp: formatSessionTimestamp(reply.createdAtMs, referenceTimeMs),
+					body: reply.content,
+				})),
+			}
+			: {}),
 		sessionItem: {
 			id: event.sessionId,
 			title: event.title,
@@ -120,24 +174,30 @@ function staticActor(actor: Readonly<StaticTimelineActor>): JiraActivityActor {
 	};
 }
 
-function mapStaticEvent(event: Readonly<StaticEventActivityEvent>): JiraActivityEventEntry {
+function mapStaticEvent(
+	event: Readonly<StaticEventActivityEvent>,
+	referenceTimeMs?: number,
+): JiraActivityEventEntry {
 	return {
 		id: event.id,
 		kind: "event",
 		actor: staticActor(event.actor),
-		timestamp: formatSessionTimestamp(event.createdAtMs),
+		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
 		...(event.icon ? { icon: event.icon } : {}),
 		segments: event.segments,
 		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};
 }
 
-function mapStaticChangedFiles(event: Readonly<StaticChangedFilesActivityEvent>): JiraActivityChangedFilesEntry {
+function mapStaticChangedFiles(
+	event: Readonly<StaticChangedFilesActivityEvent>,
+	referenceTimeMs?: number,
+): JiraActivityChangedFilesEntry {
 	return {
 		id: event.id,
 		kind: "changed-files",
 		actor: staticActor(event.actor),
-		timestamp: formatSessionTimestamp(event.createdAtMs),
+		timestamp: formatSessionTimestamp(event.createdAtMs, referenceTimeMs),
 		summary: event.summary,
 		description: event.description,
 		...(event.branch ? { branch: event.branch } : {}),
@@ -148,17 +208,20 @@ function mapStaticChangedFiles(event: Readonly<StaticChangedFilesActivityEvent>)
 }
 
 /** Convert the already-chronological Jira Work Item activity stream for Jira Activity. */
-export function mapActivityEventsToJiraEntries(events: readonly ActivityEvent[]): JiraActivityEntry[] {
+export function mapActivityEventsToJiraEntries(
+	events: readonly ActivityEvent[],
+	referenceTimeMs?: number,
+): JiraActivityEntry[] {
 	return events.map((event) => {
 		switch (event.kind) {
 			case "human":
-				return mapHumanEvent(event);
+				return mapHumanEvent(event, referenceTimeMs);
 			case "agent":
-				return mapAgentEvent(event);
+				return mapAgentEvent(event, referenceTimeMs);
 			case "event":
-				return mapStaticEvent(event);
+				return mapStaticEvent(event, referenceTimeMs);
 			case "changed-files":
-				return mapStaticChangedFiles(event);
+				return mapStaticChangedFiles(event, referenceTimeMs);
 		}
 	});
 }

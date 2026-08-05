@@ -54,6 +54,101 @@ test("maps human activity to a replyable Jira comment", async () => {
 	});
 });
 
+test("maps activity timestamps relative to the supplied story clock", async () => {
+	const adapter = await loadAdapter();
+	const referenceTimeMs = Date.UTC(2026, 4, 12, 9, 9);
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-relative-time",
+			kind: "human",
+			author: { name: "Maya Chen" },
+			content: "Keep the release focused.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+		},
+	], referenceTimeMs);
+
+	assert.equal(entry.timestamp, "4 minutes ago");
+});
+
+test("maps authored eyes reactions and agent handoff replies into Jira comments", async () => {
+	const adapter = await loadAdapter();
+	const [humanEntry, agentEntry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-broadcast",
+			kind: "human",
+			author: { name: "You" },
+			content: "Check the live reconnect path.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+			threadReplies: [{
+				id: "human-reply-1",
+				authorName: "Maya Chen",
+				authorAvatarSrc: "/maya.png",
+				content: "Include mobile web in the acceptance proof.",
+				createdAtMs: Date.UTC(2026, 4, 12, 9, 5, 30),
+			}],
+			reactions: [{
+				emoji: "👀",
+				actorIds: ["jira-work-item-agent-service-impact", "jira-work-item-agent-claude-code"],
+			}],
+		},
+		{
+			id: "activity-claude",
+			kind: "agent",
+			sessionId: "session-claude",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			status: "waiting",
+			waitingOn: {
+				kind: "agent",
+				agentId: "service-impact",
+				agentName: "Service Impact agent",
+				agentAvatarSrc: "/service-impact.svg",
+			},
+			title: "Patch reconnect handling",
+			branch: "codex/jra-4821",
+			elapsedSeconds: 45,
+			commandPreview: "Fix the reset",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
+			threadReplies: [{
+				id: "handoff-1",
+				agentId: "service-impact",
+				agentName: "Service Impact agent",
+				agentAvatarSrc: "/service-impact.svg",
+				content: "The stale filter snapshot is restored after the reconnect subscription resolves.",
+				createdAtMs: Date.UTC(2026, 4, 12, 9, 7),
+			}],
+		},
+	]);
+
+	assert.deepEqual(humanEntry.reactions, [{
+		emoji: "👀",
+		actorIds: ["jira-work-item-agent-service-impact", "jira-work-item-agent-claude-code"],
+	}]);
+	assert.deepEqual(humanEntry.replies, [{
+		id: "human-reply-1",
+		actor: {
+			id: "jira-work-item-person-maya-chen",
+			name: "Maya Chen",
+			kind: "person",
+			avatarSrc: "/maya.png",
+		},
+		timestamp: "9:05 AM",
+		body: "Include mobile web in the acceptance proof.",
+	}]);
+	assert.deepEqual(agentEntry.tag, { text: "Waiting for Service Impact agent", color: "yellow" });
+	assert.deepEqual(agentEntry.replies, [{
+		id: "handoff-1",
+		actor: {
+			id: "jira-work-item-agent-service-impact",
+			name: "Service Impact agent",
+			kind: "agent",
+			avatarSrc: "/service-impact.svg",
+		},
+		timestamp: "9:07 AM",
+		body: "The stale filter snapshot is restored after the reconnect subscription resolves.",
+	}]);
+});
+
 test("maps agent activity to rich Jira comments with lifecycle tags", async () => {
 	const adapter = await loadAdapter();
 	const statuses = [
