@@ -44,8 +44,13 @@ test("the popover anchors through Base UI's render prop, not asChild", () => {
 	// The portal clears the work-item dialog's z-index by default.
 	assert.match(POPOVER_SOURCE, /positionerClassName = "z-\[502\]"/u);
 	assert.match(POPOVER_SOURCE, /positionerClassName=\{positionerClassName\}/u);
-	// Selecting closes the popup; reopening resets to the requested view.
-	assert.match(POPOVER_SOURCE, /function handleSelect[\s\S]*onSelect\(emoji\);[\s\S]*handleOpenChange\(false\);/u);
+	// Selection is repeatable: the popup stays open so several emoji can be added.
+	assert.match(POPOVER_SOURCE, /function handleSelect[\s\S]*onSelect\(emoji\);/u);
+	assert.doesNotMatch(
+		POPOVER_SOURCE,
+		/function handleSelect[\s\S]*handleOpenChange\(false\);/u,
+	);
+	// A real dismissal still resets the requested view for next time.
 	assert.match(POPOVER_SOURCE, /setView\(defaultView\);/u);
 });
 
@@ -79,8 +84,9 @@ test("the full picker reads self-hosted emojibase data", () => {
 test("the reaction pill inherits its selected styling from the Button base", () => {
 	assert.match(REACTION_PILL_SOURCE, /aria-pressed=\{pressed\}/u);
 	// components/ui/button.tsx already maps aria-pressed to the selected token
-	// set; hand-rolling those colors here would fork the treatment.
-	assert.doesNotMatch(REACTION_PILL_SOURCE, /bg-bg-selected/u);
+	// set. The only local selected background is the transient confirmation tone.
+	assert.doesNotMatch(REACTION_PILL_SOURCE, /bg-bg-selected(?:\s|")/u);
+	assert.match(REACTION_PILL_SOURCE, /confirmed && "aria-pressed:bg-bg-selected-hovered"/u);
 	assert.doesNotMatch(REACTION_PILL_SOURCE, /text-text-selected|border-border-selected/u);
 	assert.match(REACTION_PILL_SOURCE, /variant="outline"/u);
 	assert.match(REACTION_PILL_SOURCE, /size="compact"/u);
@@ -101,6 +107,24 @@ test("the reaction pill inherits its selected styling from the Button base", () 
 	assert.match(REACTION_PILL_SOURCE, /import \{ emojiLabel \} from "\.\.\/data\/emoji-frequent";/u);
 });
 
+test("the quick bar offers actions without presenting selected state", () => {
+	assert.doesNotMatch(QUICK_BAR_SOURCE, /aria-pressed|selected/u);
+	assert.doesNotMatch(POPOVER_SOURCE, /selected/u);
+	assert.doesNotMatch(REACTION_BAR_SOURCE, /selected/u);
+});
+
+test("quick-bar emoji scale on hover without moving the button", () => {
+	assert.match(
+		QUICK_BAR_SOURCE,
+		/transition-transform[\s\S]*duration-normal[\s\S]*ease-out-practical/u,
+	);
+	assert.match(QUICK_BAR_SOURCE, /group-hover\/button:scale-125/u);
+	assert.match(QUICK_BAR_SOURCE, /group-focus-visible\/button:scale-125/u);
+	assert.match(QUICK_BAR_SOURCE, /motion-reduce:transform-none/u);
+	assert.match(QUICK_BAR_SOURCE, /motion-reduce:transition-none/u);
+	assert.doesNotMatch(QUICK_BAR_SOURCE, /className="rounded-sm text-base[^\n]*scale-/u);
+});
+
 test("the quick bar stays mounted when the full picker opens", () => {
 	// Unmounting it would destroy the "More emoji" button that holds focus at
 	// that moment, stranding keyboard users on <body> outside a portalled,
@@ -114,7 +138,22 @@ test("the quick bar stays mounted when the full picker opens", () => {
 	assert.doesNotMatch(POPOVER_SOURCE, /isFullView \? \(\s*<EmojiPickerPanel/u);
 });
 
-test("the reaction bar groups its controls and stays stateless", () => {
+test("the expanded quick bar right-aligns a neutral disclosure", () => {
+	assert.match(
+		QUICK_BAR_SOURCE,
+		/showMoreExpanded \? "ml-auto" : null/u,
+	);
+	assert.match(
+		QUICK_BAR_SOURCE,
+		/aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle/u,
+	);
+	assert.match(
+		QUICK_BAR_SOURCE,
+		/aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed/u,
+	);
+});
+
+test("the reaction bar groups its controls and leaves reaction data controlled", () => {
 	assert.match(REACTION_BAR_SOURCE, /role="group"/u);
 	assert.match(REACTION_BAR_SOURCE, /"aria-label": ariaLabel = "Reactions",/u);
 	assert.match(REACTION_BAR_SOURCE, /aria-label=\{ariaLabel\}/u);
@@ -122,20 +161,33 @@ test("the reaction bar groups its controls and stays stateless", () => {
 	assert.match(REACTION_BAR_SOURCE, /<EmojiReactionPill/u);
 	assert.match(REACTION_BAR_SOURCE, /showAddReaction \? \(/u);
 	assert.match(REACTION_BAR_SOURCE, /<EmojiPickerPopover/u);
-	// Toggle math belongs to the consumer's reducer, so there is no local state.
-	assert.doesNotMatch(REACTION_BAR_SOURCE, /useState|useReducer/u);
-	// Pressed pills are what the picker highlights as already selected.
-	assert.match(
-		REACTION_BAR_SOURCE,
-		/reactions[\s\S]*\.filter\(\(reaction\) => reaction\.reacted\)[\s\S]*\.map\(\(reaction\) => reaction\.emoji\)/u,
-	);
+	// Toggle math belongs to the consumer's reducer; local state is visual only.
+	assert.doesNotMatch(REACTION_BAR_SOURCE, /useReducer/u);
 	// The quick bar is its own labelled group of named emoji buttons.
 	assert.match(QUICK_BAR_SOURCE, /role="group"/u);
 	assert.match(QUICK_BAR_SOURCE, /aria-label="Frequently used reactions"/u);
 	assert.match(QUICK_BAR_SOURCE, /aria-label=\{emojiLabel\(emoji\)\}/u);
-	assert.match(QUICK_BAR_SOURCE, /<span aria-hidden="true">\{emoji\}<\/span>/u);
+	assert.match(
+		QUICK_BAR_SOURCE,
+		/<span[\s\S]*aria-hidden="true"[\s\S]*>\s*\{emoji\}\s*<\/span>/u,
+	);
 	assert.match(QUICK_BAR_SOURCE, /aria-expanded=\{showMoreExpanded\}/u);
 	assert.match(QUICK_BAR_SOURCE, /aria-label="More emoji"/u);
+});
+
+test("picker selections add reactions without toggling existing ones off", () => {
+	assert.match(
+		REACTION_BAR_SOURCE,
+		/function handlePickerSelect\(emoji: string\)[\s\S]*reactions\.some\([\s\S]*reaction\.emoji === emoji && reaction\.reacted[\s\S]*if \(alreadyReacted\)[\s\S]*setConfirmedReaction\(emoji\);[\s\S]*return;[\s\S]*onToggleReaction\(emoji\);/u,
+	);
+	assert.match(REACTION_BAR_SOURCE, /onSelect=\{handlePickerSelect\}/u);
+	assert.match(REACTION_BAR_SOURCE, /onToggle=\{onToggleReaction\}/u);
+	assert.match(
+		REACTION_BAR_SOURCE,
+		/confirmed=\{confirmedReaction === reaction\.emoji\}/u,
+	);
+	assert.match(REACTION_BAR_SOURCE, /CONFIRMATION_HOLD_MS = 250/u);
+	assert.match(REACTION_PILL_SOURCE, /duration-fast ease-out-practical motion-reduce:transition-none/u);
 });
 
 test("every picker surface uses Tag's squarish corner, never a pill", () => {

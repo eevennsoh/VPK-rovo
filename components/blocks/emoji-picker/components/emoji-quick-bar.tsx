@@ -10,7 +10,6 @@ import { emojiLabel, FREQUENT_EMOJI } from "../data/emoji-frequent";
 
 export interface EmojiQuickBarProps {
 	onSelect: (emoji: string) => void;
-	selected?: readonly string[];
 	frequent?: readonly string[];
 	/** Invoked by the "…" disclosure that swaps in the full searchable picker. */
 	onShowMore?: () => void;
@@ -25,7 +24,6 @@ export interface EmojiQuickBarProps {
  */
 export function EmojiQuickBar({
 	onSelect,
-	selected,
 	frequent = FREQUENT_EMOJI,
 	onShowMore,
 	showMoreExpanded = false,
@@ -40,7 +38,6 @@ export function EmojiQuickBar({
 			{frequent.map((emoji) => (
 				<Button
 					aria-label={emojiLabel(emoji)}
-					aria-pressed={selected?.includes(emoji) ?? false}
 					className="rounded-sm text-base"
 					key={emoji}
 					onClick={() => onSelect(emoji)}
@@ -48,7 +45,12 @@ export function EmojiQuickBar({
 					type="button"
 					variant="ghost"
 				>
-					<span aria-hidden="true">{emoji}</span>
+					<span
+						aria-hidden="true"
+						className="inline-block transition-transform duration-normal ease-out-practical group-hover/button:scale-125 group-hover/button:will-change-transform group-focus-visible/button:scale-125 group-focus-visible/button:will-change-transform motion-reduce:transform-none motion-reduce:transition-none"
+					>
+						{emoji}
+					</span>
 				</Button>
 			))}
 			{onShowMore ? (
@@ -59,13 +61,16 @@ export function EmojiQuickBar({
 					// it degrades to flex-start and pins the rule to the top of the row.
 					// The variant must be matched (`data-vertical:`) so tailwind-merge drops
 					// the base class instead of leaving two rules to fight on specificity.
-					className="mx-1 h-5 data-vertical:self-center"
+					className={cn(
+						"mx-1 h-5 data-vertical:self-center",
+						showMoreExpanded ? "ml-auto" : null,
+					)}
 					orientation="vertical"
 				/>
 					<Button
 						aria-expanded={showMoreExpanded}
 						aria-label="More emoji"
-						className="rounded-sm"
+						className="rounded-sm aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
 						onClick={onShowMore}
 						size="icon"
 						type="button"

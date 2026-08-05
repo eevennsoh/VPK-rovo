@@ -60,13 +60,7 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 			type: "(emoji: string) => void",
 			required: true,
 			description:
-				"Called with the chosen glyph from either the quick bar or the full picker. Selecting closes the popover.",
-		},
-		{
-			name: "selected",
-			type: "readonly string[]",
-			description:
-				"Glyphs the viewer has already reacted with. Drives `aria-pressed` on the quick-bar buttons.",
+				"Called with each chosen glyph from either the quick bar or the full picker. The popover stays open for repeated selections.",
 		},
 		{
 			name: "trigger",
@@ -90,7 +84,7 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 		{
 			name: "onOpenChange",
 			type: "(open: boolean) => void",
-			description: "Called whenever the popover opens or closes, including after a selection.",
+			description: "Called whenever the popover opens or closes.",
 		},
 		{
 			name: "align",
@@ -133,7 +127,7 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 		{
 			name: "EmojiReactionBar",
 			description:
-				"The composed action row: an optional leading slot (e.g. Reply), the reaction pills, the add-reaction popover, then a trailing slot pushed right. Derives the popover's `selected` set from the reactions marked `reacted`.",
+				"The composed action row: an optional leading slot (e.g. Reply), the reaction pills, the add-reaction popover, then a trailing slot pushed right. Picker choices only add reactions, while pill clicks can toggle them off.",
 			props: [
 				{
 					name: "reactions",
@@ -146,7 +140,7 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 					type: "(emoji: string) => void",
 					required: true,
 					description:
-						"Called for both a pill click and a picker selection — adding and removing are the same event.",
+						"Called for a pill click or a picker selection that the viewer has not already added. Re-selecting an active reaction only confirms its existing state.",
 				},
 				{
 					name: "showAddReaction",
@@ -207,6 +201,13 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 					description: "Whether the viewer reacted. Drives `aria-pressed` and the selected tokens.",
 				},
 				{
+					name: "confirmed",
+					type: "boolean",
+					default: "false",
+					description:
+						"Briefly applies the selected-hover background to confirm an already-active picker choice.",
+				},
+				{
 					name: "label",
 					type: "string",
 					default: "`${count} reacted with ${emoji}`",
@@ -235,11 +236,6 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 					type: "(emoji: string) => void",
 					required: true,
 					description: "Called with the chosen glyph.",
-				},
-				{
-					name: "selected",
-					type: "readonly string[]",
-					description: "Glyphs the viewer already reacted with, for `aria-pressed`.",
 				},
 				{
 					name: "frequent",

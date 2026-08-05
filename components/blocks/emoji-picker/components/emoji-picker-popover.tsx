@@ -23,7 +23,6 @@ const EmojiPickerPanel = dynamic(() => import("./emoji-picker-panel"), {
 
 export interface EmojiPickerPopoverProps {
 	onSelect: (emoji: string) => void;
-	selected?: readonly string[];
 	trigger?: ReactNode;
 	triggerLabel?: string;
 	open?: boolean;
@@ -45,7 +44,6 @@ export interface EmojiPickerPopoverProps {
  */
 export function EmojiPickerPopover({
 	onSelect,
-	selected,
 	trigger,
 	triggerLabel = "Add reaction",
 	open,
@@ -76,7 +74,6 @@ export function EmojiPickerPopover({
 
 	function handleSelect(emoji: string): void {
 		onSelect(emoji);
-		handleOpenChange(false);
 	}
 
 	const triggerElement = isValidElement(trigger) ? (
@@ -118,7 +115,6 @@ export function EmojiPickerPopover({
 					frequent={frequent}
 					onSelect={handleSelect}
 					onShowMore={() => setView(isFullView ? "quick" : "full")}
-					selected={selected}
 					showMoreExpanded={isFullView}
 				/>
 				{isFullView ? <EmojiPickerPanel onSelect={handleSelect} /> : null}
