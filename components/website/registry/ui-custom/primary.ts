@@ -14,6 +14,9 @@ export const UI_CUSTOM_PRIMARY_DEMOS: Record<string, ComponentType> = {
 	"object-tile": dynamic(() => import("../../demos/ui-custom/object-tile-demo"), {
 		ssr: false,
 	}),
+	"pixel-loader": dynamic(() => import("../../demos/ui-custom/pixel-loader-demo"), {
+		ssr: false,
+	}),
 	"progress-circle": dynamic(() => import("../../demos/ui-custom/progress-circle-demo"), {
 		ssr: false,
 	}),

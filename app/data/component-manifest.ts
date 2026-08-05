@@ -193,6 +193,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("package-info", "Package Info"),
 	customComponent("flow-panel", "Flow Panel"),
 	customComponent("persona"),
+	customComponent("pixel-loader", "Pixel Loader"),
 	customComponent("plan"),
 	customComponent("prompt-input", "Prompt Input"),
 	customComponent("queue"),

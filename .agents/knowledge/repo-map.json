@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 414,
+			"manifestEntryCount": 415,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -6775,7 +6775,7 @@
 			},
 			{
 				"category": "ui-custom",
-				"entryCount": 71,
+				"entryCount": 72,
 				"entries": [
 					{
 						"category": "ui-custom",
@@ -7016,6 +7016,12 @@
 						"slug": "persona",
 						"name": "Persona",
 						"importPath": "@/components/ui-custom/persona"
+					},
+					{
+						"category": "ui-custom",
+						"slug": "pixel-loader",
+						"name": "Pixel Loader",
+						"importPath": "@/components/ui-custom/pixel-loader"
 					},
 					{
 						"category": "ui-custom",

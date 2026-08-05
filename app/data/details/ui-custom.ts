@@ -28,6 +28,7 @@ import { CANVAS_DETAIL } from "./ui-custom/canvas";
 import { LIST_DETAIL } from "./ui-custom/list";
 import { MESSAGE_DETAIL } from "./ui-custom/message";
 import { PERSONA_DETAIL } from "./ui-custom/persona";
+import { PIXEL_LOADER_DETAIL } from "./ui-custom/pixel-loader";
 import { PLAN_DETAIL } from "./ui-custom/plan";
 import { PROMPT_INPUT_DETAIL } from "./ui-custom/prompt-input";
 import { QUEUE_DETAIL } from "./ui-custom/queue";
@@ -101,6 +102,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 	list: LIST_DETAIL,
 	message: MESSAGE_DETAIL,
 	persona: PERSONA_DETAIL,
+	"pixel-loader": PIXEL_LOADER_DETAIL,
 	plan: PLAN_DETAIL,
 	"prompt-input": PROMPT_INPUT_DETAIL,
 	queue: QUEUE_DETAIL,

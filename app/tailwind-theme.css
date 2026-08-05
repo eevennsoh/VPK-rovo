@@ -915,6 +915,41 @@
 	animation: var(--animate-expect-text-shimmer);
 }
 
+/* Pixel Loader cell pulse. Stops trace `0.15 + 0.85 * sin(easeInOut(t) * pi)`
+   so the pulse can run on `--ease-linear` (the continuous-motion token) rather
+   than a non-token timing function. The 0.15 floor keeps the 3x3 silhouette
+   readable between pulses and must match DIM_OPACITY in
+   components/ui-custom/pixel-loader/pixel-loader.tsx.
+   Top level, not `@theme`: Tailwind v4 only emits `@theme` keyframes that an
+   `--animate-*` variable references, and these are driven per cell. */
+@keyframes pixel-loader-pulse {
+	0%, 100% { opacity: 0.15; }
+	12.5% { opacity: 0.25; }
+	25% { opacity: 0.53; }
+	37.5% { opacity: 0.85; }
+	50% { opacity: 1; }
+	62.5% { opacity: 0.85; }
+	75% { opacity: 0.53; }
+	87.5% { opacity: 0.25; }
+}
+
+/* Pixel Loader label sweep. The mask is 3x the element width with the bright
+   band centred, so it is off-canvas at both ends and the loop has no jump. */
+@keyframes pixel-loader-shimmer {
+	from { mask-position: 100% 0; }
+	to { mask-position: 0% 0; }
+}
+
+/* Not the `shimmer` utility above: that one builds a `currentColor` gradient
+   and sets `color: transparent` on the same element, so `currentColor`
+   resolves to transparent. Masking keeps the label in its inherited colour,
+   which is what makes it theme-correct. Same technique as `cot-icon-wash`. */
+@utility pixel-loader-shimmer {
+	mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.55) 33%, #000 50%, rgb(0 0 0 / 0.55) 67%);
+	mask-size: 300% 100%;
+	animation: pixel-loader-shimmer 1.4s var(--ease-linear) infinite;
+}
+
 @utility bento-fade-bottom {
 	/* Height of the soft bottom edge shared by Studio bento surfaces. */
 	--bento-fade-height: 96px;
