@@ -38,9 +38,13 @@ test("Agent States demo exposes distinct content for each state", () => {
 	assert.doesNotMatch(PAGE_SOURCE, /\bmessage=/u);
 });
 
-test("compact agent composers use the shared raised elevation treatment", () => {
+test("compact agent surfaces use their intended elevation treatment", () => {
+	assert.match(SOURCE, /\bshadow-md\b/u);
+	assert.match(
+		AGENT_PROFILE_SOURCE,
+		/surface === "overlay" \? "shadow-2xl" : "shadow-sm"/u,
+	);
 	for (const source of [SOURCE, AGENT_PROFILE_SOURCE]) {
-		assert.match(source, /\bshadow-md\b/u);
 		assert.doesNotMatch(
 			source,
 			/shadow-\[0px_-2px_25px_rgba\(30,31,33,0\.08\)\]/u,

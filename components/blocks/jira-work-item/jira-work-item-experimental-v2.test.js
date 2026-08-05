@@ -421,7 +421,7 @@ test("experimental v2 aligns the title with Details and renders controls in the 
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-trigger\]\[data-active\]\]:bg-bg-input/u);
 	assert.match(
 		contextResourcesSource,
-		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" \/>/u,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade[\s\S]*className=\{hasPlanner \? "\[&>div\]:from-bg-input" : undefined\}[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
 	);
 	assert.doesNotMatch(contextResourcesSource, /<div className="flex flex-col gap-4">/u);
 	assert.match(

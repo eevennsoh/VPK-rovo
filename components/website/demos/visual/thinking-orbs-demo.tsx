@@ -17,7 +17,10 @@ const ORB_STATES: readonly OrbState[] = [
 	"searching",
 	"solving",
 	"listening",
+	"connecting",
+	"weaving",
 	"composing",
+	"breathing",
 	"shaping",
 ];
 
@@ -89,8 +92,20 @@ export function ThinkingOrbsDemoListening() {
 	return <ThinkingOrbsStateDemo state="listening" />;
 }
 
+export function ThinkingOrbsDemoConnecting() {
+	return <ThinkingOrbsStateDemo state="connecting" />;
+}
+
+export function ThinkingOrbsDemoWeaving() {
+	return <ThinkingOrbsStateDemo state="weaving" />;
+}
+
 export function ThinkingOrbsDemoComposing() {
 	return <ThinkingOrbsStateDemo state="composing" />;
+}
+
+export function ThinkingOrbsDemoBreathing() {
+	return <ThinkingOrbsStateDemo state="breathing" />;
 }
 
 export function ThinkingOrbsDemoShaping() {
@@ -104,7 +119,7 @@ export default function ThinkingOrbsDemo() {
 	const [theme, setTheme] = useState<OrbTheme>("auto");
 	const [speed, setSpeed] = useState(1);
 	const [paused, setPaused] = useState(false);
-	const [ariaLabel, setAriaLabel] = useState("Agent is listening");
+	const [ariaLabel, setAriaLabel] = useState("");
 	const resolvedTheme = theme === "auto" ? actualTheme : theme;
 	const values = useMemo(
 		() => ({ state, size, theme, speed, paused, ariaLabel }),

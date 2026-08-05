@@ -161,7 +161,10 @@ export function ContextResources({
 						/>
 					</div>
 				</div>
-				<StickyRowScrollFade data-slot="jira-work-item-resource-row-scroll-fade" />
+				<StickyRowScrollFade
+					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}
+					data-slot="jira-work-item-resource-row-scroll-fade"
+				/>
 			</div>
 			{outputs.length > 0 ? (
 				<div className="mt-1">

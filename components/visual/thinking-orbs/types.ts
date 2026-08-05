@@ -1,20 +1,26 @@
 import type { CSSProperties, CanvasHTMLAttributes } from "react";
 
 /**
- * The six shipped states — each a hand-tuned animation:
- * - `working`   — particles on tilted orbits
- * - `searching` — a scan meridian sweeps a dotted globe
- * - `solving`   — bands scramble in quarter turns, then click back
- * - `listening` — a waveform rolls through latitude rings
- * - `composing` — an undulating multi-band sash
- * - `shaping`   — a dotted outline morphs circle → triangle → square
+ * The nine shipped states — each a hand-tuned animation:
+ * - `working`    — particles on tilted orbits
+ * - `searching`  — a scan meridian sweeps a dotted globe
+ * - `solving`    — bands scramble in quarter turns, then click back
+ * - `listening`  — a waveform rolls through latitude rings
+ * - `connecting` — a constellation wires itself, packets running the edges
+ * - `weaving`    — three strands plait around the sphere
+ * - `composing`  — an undulating multi-band sash
+ * - `breathing`  — a face-on ring slowly morphing
+ * - `shaping`    — a dotted outline morphs circle → triangle → square
  */
 export type OrbState =
 	| "working"
 	| "searching"
 	| "solving"
 	| "listening"
+	| "connecting"
+	| "weaving"
 	| "composing"
+	| "breathing"
 	| "shaping";
 
 /**
@@ -45,7 +51,10 @@ export type OrbTheme = "auto" | "dark" | "light";
 
 /** Props for the ThinkingOrb React component. */
 export interface ThinkingOrbProps
-	extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, "height" | "style" | "width"> {
+	extends Omit<
+		CanvasHTMLAttributes<HTMLCanvasElement>,
+		"height" | "style" | "width"
+	> {
 	/** Which animation to show. @default 'working' */
 	state?: OrbState;
 
