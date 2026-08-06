@@ -506,7 +506,11 @@ test("comments with nested replies expose one shared header control to collapse 
 	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(COMMENT_SOURCE, /const headerAction = action \|\| repliesToggle \? \([\s\S]*gap-2/u);
-	assert.match(CARD_SOURCE, /group\/activity-card w-full overflow-hidden/u);
+	// The shared control rides the card's hover scope instead of being always visible.
+	assert.match(
+		CARD_SOURCE,
+		/\{action \? \([\s\S]*"hidden shrink-0 items-center gap-2", actionVisibilityClass/u,
+	);
 	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
 	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
 	assert.match(COMMENT_SOURCE, /repliesHidden=\{!repliesExpanded\}/u);
