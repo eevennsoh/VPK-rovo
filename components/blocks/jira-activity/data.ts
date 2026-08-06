@@ -9,11 +9,11 @@ const ANTHONY: JiraActivityActor = {
 	avatarSrc: "/avatar-human/anthony-chen.png",
 };
 
-const ANDREA: JiraActivityActor = {
-	id: "andrea",
-	name: "Andrea Wilson",
+const VENN: JiraActivityActor = {
+	id: "venn",
+	name: "Venn",
 	kind: "person",
-	avatarSrc: "/avatar-human/andrea-wilson.png",
+	avatarSrc: "/avatar-user/venn/venn.png",
 };
 
 const TRIAGE_AGENT: JiraActivityActor = {
@@ -38,12 +38,7 @@ const GITHUB: JiraActivityActor = {
 };
 
 /** The signed-in viewer — powers the header avatar group and both composers. */
-export const JIRA_ACTIVITY_CURRENT_USER: JiraActivityActor = {
-	id: "priya",
-	name: "Priya Hansra",
-	kind: "person",
-	avatarSrc: "/avatar-human/priya-hansra.png",
-};
+export const JIRA_ACTIVITY_CURRENT_USER: JiraActivityActor = VENN;
 
 const AUTOMATION_TAG = { text: "Automation" } as const;
 
@@ -82,7 +77,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 	{
 		id: "moved-todo",
 		kind: "event",
-		actor: ANDREA,
+		actor: VENN,
 		icon: "status",
 		timestamp: "11min ago",
 		segments: [
@@ -95,7 +90,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 	{
 		id: "assigned",
 		kind: "event",
-		actor: ANDREA,
+		actor: VENN,
 		timestamp: "11min ago",
 		segments: [
 			{ type: "text", text: "self-assigned the issue and set priority to " },
@@ -108,7 +103,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		// shows both an unreacted pill and one the current viewer has pressed.
 		id: "human-flag",
 		kind: "comment",
-		actor: ANDREA,
+		actor: VENN,
 		timestamp: "10min ago",
 		body: [
 			{

@@ -36,9 +36,15 @@ export function JiraActivityEvent({
 	return (
 		<p className="flex h-6 items-center text-xs leading-4 text-text-subtle">
 			<span>
-				<span className="font-medium text-text">{entry.actor.name}</span>{" "}
+				{entry.showActor === false ? null : (
+					<>
+						<span className="font-medium text-text">{entry.actor.name}</span>{" "}
+					</>
+				)}
 				<JiraActivitySegments segments={entry.segments} />
-				<span className="text-text-subtlest"> · {entry.timestamp}</span>
+				{entry.showTimestamp === false ? null : (
+					<span className="text-text-subtlest"> · {entry.timestamp}</span>
+				)}
 			</span>
 		</p>
 	);

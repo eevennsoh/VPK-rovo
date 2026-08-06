@@ -6,6 +6,7 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag, type TagColor } from "@/components/ui/tag";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { cn } from "@/lib/utils";
 
 import type { JiraActivitySegment } from "./jira-activity-types";
@@ -46,6 +47,29 @@ function SegmentContent({ segment }: Readonly<{ segment: JiraActivitySegment }>)
 				>
 					{segment.text}
 				</a>
+			);
+		case "agent-mention":
+			return (
+				<Tag
+					className="mx-0.5 align-middle"
+					color="gray"
+					data-jira-activity-agent-mention
+					elemBefore={
+						<span aria-hidden>
+							<AgentAvatarVisual
+								avatarClassName="after:border-0"
+								avatarSrc={segment.avatarSrc}
+								brandName={segment.brandName}
+								fallbackText={segment.text}
+								sizePx={16}
+							/>
+						</span>
+					}
+					type="agent"
+					variant="editor"
+				>
+					{segment.text}
+				</Tag>
 			);
 		case "lozenge":
 			return (

@@ -44,10 +44,7 @@ const JIRA_AGENTS_AUTOMATION_RULES = [
 ] as const satisfies readonly WorkItemAutomationRule[];
 
 const JIRA_AGENTS_PLANNER_SESSION_ID = "story-session-code-planner";
-const JIRA_AGENTS_CHILD_SESSION_IDS = [
-	"story-session-github-copilot",
-	"story-session-unit-test-creator",
-] as const;
+const JIRA_AGENTS_CHILD_SESSION_IDS = ["story-session-claude-code"] as const;
 
 function getVisibleOrchestrationSessionIds(
 	controller: JiraAgentsStoryController,
@@ -57,14 +54,12 @@ function getVisibleOrchestrationSessionIds(
 		case "comment":
 		case "reaction-1":
 		case "reaction-2":
-		case "reaction-3":
 			return [];
 		case "lead":
 			return [JIRA_AGENTS_PLANNER_SESSION_ID];
-		case "copilot":
+		case "claude":
 			return [JIRA_AGENTS_PLANNER_SESSION_ID, JIRA_AGENTS_CHILD_SESSION_IDS[0]];
 		case "idle":
-		case "tests":
 		case "complete":
 			return [JIRA_AGENTS_PLANNER_SESSION_ID, ...JIRA_AGENTS_CHILD_SESSION_IDS];
 	}

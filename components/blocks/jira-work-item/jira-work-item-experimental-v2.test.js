@@ -67,6 +67,13 @@ const V2_DIVERGENCES = new Set([
 const V2_ONLY_FILES = new Set([
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
+	// keeps comment bodies as a single plain-text segment.
+	"lib/activity-mention-segments.ts",
+	// v2's Development rail section derives copy-ready git commands from the
+	// work item; v1 still renders the connect-a-repository empty state.
+	"lib/development-commands.test.js",
+	"lib/development-commands.ts",
 ]);
 
 function readBlockFile(relativePath) {
@@ -203,17 +210,28 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(composerSource, /state\.sessions\.filter\(\(session\) => session\.status !== "completed"\)/u);
 	assert.match(contextPillsSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
 	assert.match(contextPillsSource, /"code-planner": \[[\s\S]*"Plan the guest checkout architecture"/u);
-	assert.match(contextPillsSource, /"github-copilot": \[[\s\S]*"Implement guest checkout end to end"/u);
-	assert.match(contextPillsSource, /"unit-test-creator": \[[\s\S]*"Verify guest checkout acceptance coverage"/u);
-	assert.match(
-		contextPillsSource,
-		/label: `\$\{session\.agentName\} · \$\{getWorkingSessionActivity\(session, activityCycleIndex, sessionIndex\)\}`/u,
-	);
-	assert.doesNotMatch(contextPillsSource, /persistentDescription: true/u);
-	assert.match(contextPillsSource, /window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
-	assert.match(contextPillsSource, /return \(\) => window\.clearInterval\(intervalId\);/u);
+	assert.match(contextPillsSource, /"claude-code": \[[\s\S]*"Implement and verify guest checkout"/u);
+	assert.doesNotMatch(contextPillsSource, /"github-copilot":|"unit-test-creator":/u);
+	assert.match(contextPillsSource, /label: session\.agentName,/u);
+	assert.match(contextPillsSource, /inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u);
+	assert.match(contextPillsSource, /<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
+	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
+	assert.match(contextPillsSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
+	assert.match(contextPillsSource, /className="mb-2 flex flex-wrap gap-2"/u);
+	assert.match(contextPillsSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
+	assert.match(contextPillsSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
+	assert.match(contextPillsSource, /window\.clearTimeout\(timeoutId\);[\s\S]*window\.clearInterval\(intervalId\);/u);
 	assert.doesNotMatch(contextPillsSource, /Math\.random/u);
 	assert.match(contextPillsSource, /\{workingSessions\.length\} \{workingSessions\.length === 1 \? "agent" : "agents"\} working/u);
+	assert.match(
+		contextPillsSource,
+		/<ContextBarPill[\s\S]*icon=\{\([\s\S]*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/trailing: session\.status === "waiting"[\s\S]*<span className="text-xs text-text-subtle">Waiting<\/span>[\s\S]*: null/u,
+	);
+	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
 });
 
 test("experimental v2 keeps comment-only composer delivery as the non-target default", () => {
@@ -622,7 +640,8 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
 	assert.match(
 		metadataRailSource,
-		/content: <DevelopmentSectionContent \/>,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
+		// Commands follow the edited title in context resources, not the immutable prop.
+		/<DevelopmentSectionContent summary=\{contextResources\.title\} workItemKey=\{workItem\.code\} \/>[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
 	assert.doesNotMatch(automationTabSource, /From Automation/u);

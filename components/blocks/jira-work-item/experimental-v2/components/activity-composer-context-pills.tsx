@@ -8,9 +8,10 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
-import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
@@ -39,6 +40,7 @@ const PILL_REVEAL_VARIANTS = {
 } satisfies Variants;
 
 const WORKING_SESSION_ACTIVITY_CYCLE_MS = 2_200;
+const WORKING_SESSION_ACTIVITY_STAGGER_MS = 480;
 
 const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[]>> = {
 	"code-planner": [
@@ -47,17 +49,12 @@ const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[
 		"Review server-side validation boundaries",
 		"Sequence the implementation handoff",
 	],
-	"github-copilot": [
-		"Implement guest checkout end to end",
+	"claude-code": [
+		"Implement and verify guest checkout",
 		"Wire the storefront checkout flow",
 		"Integrate the approved API contract",
-		"Preserve safe input after payment failures",
-	],
-	"unit-test-creator": [
-		"Verify guest checkout acceptance coverage",
 		"Build deterministic checkout cases",
 		"Check payment and inventory failures",
-		"Prove duplicate submissions are safe",
 	],
 };
 
@@ -71,7 +68,6 @@ interface ActivityComposerContextPillsProps {
 function getWorkingSessionActivity(
 	session: Readonly<AgentSession>,
 	cycleIndex: number,
-	sessionIndex: number,
 ): string {
 	if (session.status === "waiting") {
 		return session.waitingOn?.kind === "agent"
@@ -82,12 +78,51 @@ function getWorkingSessionActivity(
 	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
 	if (!script?.length) return session.title ?? "Working";
 
-	// Keep the authored title as the first frame, then offset each agent so the
-	// three rows do not appear to move in lockstep during the demo.
-	const activityIndex = cycleIndex === 0
-		? 0
-		: (cycleIndex + sessionIndex) % script.length;
-	return script[activityIndex];
+	return script[cycleIndex % script.length];
+}
+
+/**
+ * Keeps every agent's tool narration on its own quiet, staggered cadence.
+ * The first frame is the authored task title; subsequent frames cross-fade in
+ * place so opening the working-agents menu never makes every row move at once.
+ */
+function WorkingSessionActivityByline({
+	session,
+	sessionIndex,
+}: Readonly<{
+	session: AgentSession;
+	sessionIndex: number;
+}>) {
+	const shouldReduceMotion = Boolean(useReducedMotion());
+	const [activityCycleIndex, setActivityCycleIndex] = useState(0);
+	const cycleDelayMs = WORKING_SESSION_ACTIVITY_STAGGER_MS * (sessionIndex + 1);
+
+	useEffect(() => {
+		if (shouldReduceMotion || session.status === "waiting") {
+			return;
+		}
+
+		let intervalId: number | undefined;
+		const timeoutId = window.setTimeout(() => {
+			setActivityCycleIndex((index) => index + 1);
+			intervalId = window.setInterval(() => {
+				setActivityCycleIndex((index) => index + 1);
+			}, WORKING_SESSION_ACTIVITY_CYCLE_MS);
+		}, cycleDelayMs);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+			if (intervalId !== undefined) {
+				window.clearInterval(intervalId);
+			}
+		};
+	}, [cycleDelayMs, session.status, shouldReduceMotion]);
+
+	return (
+		<CyclingByline className="menu-row-title text-text-subtlest">
+			{getWorkingSessionActivity(session, activityCycleIndex)}
+		</CyclingByline>
+	);
 }
 
 function WorkingSessionsList({
@@ -100,30 +135,29 @@ function WorkingSessionsList({
 	sessions: readonly AgentSession[];
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [activityCycleIndex, setActivityCycleIndex] = useState(0);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session, sessionIndex) => ({
 		id: session.id,
 		icon: null,
-		label: `${session.agentName} · ${getWorkingSessionActivity(session, activityCycleIndex, sessionIndex)}`,
+		label: session.agentName,
+		inlineMetadata: (
+			<WorkingSessionActivityByline
+				session={session}
+				sessionIndex={sessionIndex}
+			/>
+		),
 		leadingVisual: (
 			<AgentAvatarVisual
 				avatarSrc={session.agentAvatarSrc}
+				brandName={session.agentBrandName}
 				fallbackText={session.agentName}
 				sizePx={24}
 			/>
 		),
-		trailing: session.status === "running"
-			? <Spinner label="" size="xs" variant="rainbow" />
-			: <span className="text-xs text-text-subtle">Waiting</span>,
+		trailing: session.status === "waiting"
+			? <span className="text-xs text-text-subtle">Waiting</span>
+			: null,
 	}));
-
-	useEffect(() => {
-		const intervalId = window.setInterval(() => {
-			setActivityCycleIndex((index) => index + 1);
-		}, WORKING_SESSION_ACTIVITY_CYCLE_MS);
-		return () => window.clearInterval(intervalId);
-	}, []);
 
 	const openSession = (item: RichTextSuggestionMenuItem) => {
 		const session = sessions.find((candidate) => candidate.id === item.id);
@@ -228,7 +262,7 @@ export function ActivityComposerContextPills({
 	return (
 		<motion.div
 			animate="visible"
-			className="mb-3 flex flex-wrap gap-2"
+			className="mb-2 flex flex-wrap gap-2"
 			data-jira-work-item-context-pills
 			initial={shouldReduceMotion ? false : "hidden"}
 			variants={PILL_GROUP_VARIANTS}
@@ -246,7 +280,14 @@ export function ActivityComposerContextPills({
 							<ContextBarPill
 								aria-label={`${workingSessions.length} agents working`}
 								className="motion-reduce:transition-none"
-								icon={<Spinner label="" size="xs" variant="rainbow" />}
+								icon={(
+									<PixelLoader
+										className="size-3 justify-center"
+										pattern="diagonal-top-left"
+										shape="dot"
+										size="small"
+									/>
+								)}
 								onClick={() => setShowWorkingSessions(true)}
 								ref={workingTriggerRef}
 							>

@@ -150,6 +150,19 @@ test("the shared-channel story exposes six keyboard-selectable chapters and cano
 	}
 });
 
+test("Plan shows the working agent mentions followed by a Started working label", async ({ page }) => {
+	await openWorkItem(page);
+	await selectChapter(page, "Plan");
+
+	const leadActivity = page.locator('[data-jira-activity-entry-id="story-lead-delegated"]');
+	await expect(leadActivity.locator("[data-jira-activity-agent-mention]")).toHaveCount(3);
+	for (const name of ["@Code Planner", "@GitHub Copilot", "@Unit Test Creator"]) {
+		await expect(leadActivity.getByText(name, { exact: true })).toBeVisible();
+	}
+	await expect(leadActivity).toContainText("Started working");
+	await expect(leadActivity).not.toContainText(/claimed the lead|delegated implementation|acceptance coverage/u);
+});
+
 test("Working broadcasts channel context without resolving the agent wait and reselecting resets the chapter", async ({ page }) => {
 	await openWorkItem(page);
 	await selectChapter(page, "Working");
@@ -240,6 +253,10 @@ test("a comment with nested replies can collapse and restore its entire thread f
 
 	const collapseButton = page.getByRole("button", { name: "Collapse nested comments" });
 	await expect(collapseButton).toHaveCount(1);
+	await expect(collapseButton).toBeHidden();
+	const activityCard = page.locator('[class~="group/activity-card"]').filter({ has: collapseButton }).first();
+	await activityCard.hover();
+	await expect(collapseButton).toBeVisible();
 	await expect(collapseButton).toHaveAttribute("aria-expanded", "true");
 	const repliesId = await collapseButton.getAttribute("aria-controls");
 	expect(repliesId).toBeTruthy();
@@ -278,7 +295,11 @@ test("a direct activity reply resumes only its waiting agent and the View action
 	await expect(copilotEntry.getByRole("status", { name: "Running" })).toBeVisible();
 	await expectWorkingAgents(page, 3);
 
-	await copilotEntry.getByRole("button", { name: "View" }).click();
+	const viewButton = copilotEntry.getByRole("button", { name: "View" });
+	await expect(viewButton).toBeHidden();
+	await copilotEntry.hover();
+	await expect(viewButton).toBeVisible();
+	await viewButton.click();
 	const chatColumn = page.locator("[data-jira-work-item-chat-column]");
 	await expect(chatColumn).toHaveAttribute("aria-hidden", "false");
 	await expect(chatColumn).toContainText("GitHub Copilot");

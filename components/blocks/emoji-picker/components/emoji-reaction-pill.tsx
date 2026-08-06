@@ -101,10 +101,17 @@ export function EmojiReactionPill({
 		<TooltipProvider>
 			<Tooltip>
 				<TooltipTrigger render={pill} />
-				<TooltipContent>
-					{formatReactionActorNames(reactorNames)} reacted with{" "}
-					<span aria-hidden="true">{emoji}</span>
-					<span className="sr-only">{emojiLabel(emoji)}</span>
+				<TooltipContent className="flex max-w-64 flex-col items-center pb-3 text-center">
+					<h1 aria-hidden="true" className="p-3 text-4xl leading-none">
+						{emoji}
+					</h1>
+					<p>
+						{formatReactionActorNames(reactorNames)}{" "}
+						<span className="text-text-subtlest">
+							reacted with <span aria-hidden="true">{emoji}</span>
+						<span className="sr-only">{emojiLabel(emoji)}</span>
+						</span>
+					</p>
 				</TooltipContent>
 			</Tooltip>
 		</TooltipProvider>

@@ -24,11 +24,9 @@ const ORCHESTRATION_SEQUENCE = {
 	"agents-working": { next: "comment", delayMs: 1_500 },
 	comment: { next: "reaction-1", delayMs: 1_200 },
 	"reaction-1": { next: "reaction-2", delayMs: 1_000 },
-	"reaction-2": { next: "reaction-3", delayMs: 1_000 },
-	"reaction-3": { next: "lead", delayMs: 1_500 },
-	lead: { next: "copilot", delayMs: 1_500 },
-	copilot: { next: "tests", delayMs: 1_500 },
-	tests: { next: "complete", delayMs: 1_200 },
+	"reaction-2": { next: "lead", delayMs: 1_500 },
+	lead: { next: "claude", delayMs: 1_500 },
+	claude: { next: "complete", delayMs: 1_200 },
 } as const satisfies Record<
 	Exclude<JiraAgentsOrchestrationStep, "idle" | "complete">,
 	{ next: Exclude<JiraAgentsOrchestrationStep, "idle">; delayMs: number }

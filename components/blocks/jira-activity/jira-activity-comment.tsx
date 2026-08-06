@@ -8,6 +8,7 @@ import type { AgentListItem } from "@/components/blocks/agent-list";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 
 import { JiraActivityCard } from "./jira-activity-card";
 import { JiraActivityCommentActions } from "./jira-activity-comment-actions";
@@ -29,6 +30,32 @@ function initialsOf(name: string): string {
 			.map((word) => word[0]?.toUpperCase())
 			.join("") || "?"
 	);
+}
+
+function getReplyMention(actor: JiraActivityActor): RichTextMentionItem {
+	const category =
+		actor.kind === "person" ? "human" : actor.kind === "agent" ? "subagent" : "app";
+	const visual = actor.avatarSrc
+		? {
+				kind: "avatar" as const,
+				shape:
+					actor.kind === "person"
+						? ("circle" as const)
+						: actor.kind === "agent"
+							? ("hexagon" as const)
+							: ("square" as const),
+				src: actor.avatarSrc,
+			}
+		: actor.brandName
+			? { kind: "third-party" as const, name: actor.brandName }
+			: undefined;
+
+	return {
+		category,
+		id: `${category}:${actor.id}`,
+		label: actor.name,
+		visual,
+	};
 }
 
 function ActivityActorAvatar({
@@ -123,6 +150,7 @@ function ThreadReplyCard({
 	allowReply,
 	replyComposerId,
 	replySelected,
+	onViewSession,
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
@@ -132,6 +160,7 @@ function ThreadReplyCard({
 	allowReply: boolean;
 	replyComposerId?: string;
 	replySelected: boolean;
+	onViewSession?: (item: AgentListItem) => void;
 }>) {
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
@@ -165,8 +194,11 @@ function ThreadReplyCard({
 			<JiraActivityCard
 				agentName={reply.actor.name}
 				className="rounded-none border-0"
+				activityGroup="activity-reply"
 				headerAvatar={<ActivityActorAvatar actor={reply.actor} />}
 				headerLayout="stacked"
+				item={reply.sessionItem}
+				onView={onViewSession}
 				footerActions={
 					commentActions === "none" ? undefined : (
 						<JiraActivityCommentActions
@@ -253,7 +285,7 @@ export function JiraActivityComment({
 			return;
 		}
 		setReplyTarget({ key, actor });
-		setReplyDraft(`@${actor.name} `);
+		setReplyDraft("");
 	}
 
 	const repliesToggleLabel = repliesExpanded ? "Collapse nested comments" : "Expand nested comments";
@@ -262,18 +294,18 @@ export function JiraActivityComment({
 			aria-controls={repliesId}
 			aria-expanded={repliesExpanded}
 			aria-label={repliesToggleLabel}
-			className="opacity-0 transition-opacity duration-xxshort ease-out-practical aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered group-hover/activity-card:opacity-100 group-has-[:focus-visible]/activity-card:opacity-100 motion-reduce:transition-none"
+			className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle aria-expanded:text-text-subtle aria-expanded:hover:bg-bg-neutral-subtle-hovered"
 			onClick={() => setRepliesExpanded((expanded) => !expanded)}
 			size="icon-compact"
 			title={repliesToggleLabel}
 			type="button"
-			variant="ghost"
+			variant="outline"
 		>
 			<GrowVerticalIcon label="" />
 		</Button>
 	) : null;
 	const headerAction = action || repliesToggle ? (
-		<div className="flex shrink-0 items-center gap-1">
+		<div className="flex shrink-0 items-center gap-2">
 			{action}
 			{repliesToggle}
 		</div>
@@ -295,6 +327,7 @@ export function JiraActivityComment({
 	const collapsedThreadSummary = hasReplies && !repliesExpanded ? (
 		<CollapsedThreadSummary onExpand={() => setRepliesExpanded(true)} replies={replies} />
 	) : null;
+	const replyMention = replyTarget ? getReplyMention(replyTarget.actor) : undefined;
 
 	// Only the collapse direction is handled here. Opening is covered by the
 	// composer's own `autoFocus`: the comment variant is a contentEditable tiptap
@@ -356,6 +389,9 @@ export function JiraActivityComment({
 								}
 							}}
 							onValueChange={setReplyDraft}
+							prefillMentionRequest={
+								replyMention ? { mention: replyMention, requestKey: 1 } : undefined
+							}
 							placeholder={entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."}
 							value={replyDraft}
 							variant="flush"
@@ -380,6 +416,7 @@ export function JiraActivityComment({
 								actorsById={actorsById}
 								key={reply.id}
 								onReply={(button) => toggleReply(reply.id, reply.actor, button)}
+								onViewSession={onViewSession}
 								reply={reply}
 								replyComposerId={composerId}
 								replySelected={replyTarget?.key === reply.id}

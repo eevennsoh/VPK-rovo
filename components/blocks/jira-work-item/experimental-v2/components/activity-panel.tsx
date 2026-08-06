@@ -64,8 +64,8 @@ export function ActivityPanel({
 		return [...actorDirectory.values()];
 	}, [activityReferenceTimeMs, meta.activityEvents]);
 	const derivedEntries = useMemo(
-		() => mapActivityEventsToJiraEntries(composedActivityEvents, activityReferenceTimeMs),
-		[activityReferenceTimeMs, composedActivityEvents],
+		() => mapActivityEventsToJiraEntries(composedActivityEvents, activityReferenceTimeMs, meta.activityEvents),
+		[activityReferenceTimeMs, composedActivityEvents, meta.activityEvents],
 	);
 	const latestActivityEntryId = derivedEntries.at(-1)?.id ?? null;
 	const activityRevealSignature = latestActivityEntryId
