@@ -79,6 +79,7 @@ export function ActivityComposerSkillContextPill({
 					pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
 					pinnedSkillIds={pinnedSkillIds}
 					query={query}
+					searchVariant="palette"
 					selectionMode="single"
 					skills={WORK_ITEM_SKILLS}
 				/>

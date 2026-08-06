@@ -84,7 +84,7 @@ test("AgentSelector single-select tick uses the VPK check in a transparent icon 
 	// default their glyph to the medium (16px) icon size, so without it the check
 	// renders oversized instead of the intended small (12px) tick.
 	assert.match(COMPONENT_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
-	assert.match(COMPONENT_SOURCE, /import \{ CheckIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(COMPONENT_SOURCE, /import \{[^}]*\bCheckIcon\b[^}]*\} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/<IconTile[\s\S]*className="ml-1 mr-1 text-icon-selected"[\s\S]*icon=\{<CheckIcon size="small" \/>\}[\s\S]*iconSize="small"[\s\S]*size="small"[\s\S]*variant="transparent"[\s\S]*\/>/u,
@@ -291,4 +291,37 @@ test("AgentSelector dropdowns do not inherit the generic menu height cap", () =>
 			`${sourcePath} must let AgentSelector own its 26rem available-height cap`,
 		);
 	}
+});
+
+test("AgentSelector can swap its boxed search for the editor-palette bar", () => {
+	// Default stays the bordered CommandInput so existing directory and toolbar
+	// surfaces are untouched.
+	assert.match(COMPONENT_SOURCE, /searchVariant = "boxed",/u);
+	assert.match(COMPONENT_SOURCE, /searchVariant === "palette" \?/u);
+	// The palette branch reuses the shared field rather than restyling a copy.
+	assert.match(COMPONENT_SOURCE, /<RichTextCommandMenuSearchField/u);
+	// cmdk's Command root owns Arrow/Enter for this list, so the field must not
+	// swallow them — without this the list stops responding to the keyboard.
+	assert.match(COMPONENT_SOURCE, /hostOwnsKeyNavigation/u);
+
+	// SkillSelector is a thin wrapper over AgentSelector; the variant has to
+	// reach it or "Use skills" cannot match "Assign agents".
+	const skillSource = fs.readFileSync(
+		path.join(process.cwd(), "components/blocks/skill-selector/components/skill-selector.tsx"),
+		"utf8",
+	);
+	assert.match(skillSource, /searchVariant\?: AgentSelectorProps\["searchVariant"\];/u);
+	assert.match(skillSource, /searchVariant=\{searchVariant\}/u);
+});
+
+test("AgentSelector fades its list under the search header once scrolled", () => {
+	// The search field is sticky above a scrolling list, so content sliding under
+	// it must fade rather than hard-clip — the same treatment the editor-palette
+	// command menus use. Gated on showTopScrollMask so a short list is unmasked.
+	assert.match(COMPONENT_SOURCE, /useHasVerticalOverflow<HTMLDivElement>\(\)/u);
+	assert.match(COMPONENT_SOURCE, /ref=\{listOverflow\.ref\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/listOverflow\.showTopScrollMask\s*&& "scroll-mask-top overscroll-contain \[--scroll-mask-fade-size:3rem\]"/u,
+	);
 });

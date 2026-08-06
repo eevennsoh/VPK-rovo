@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { FOCUS_RING_HAS_VISIBLE, FOCUS_RING_POPUP_OPEN } from "@/components/ui/focus-ring";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,7 +17,8 @@ import { token } from "@/lib/tokens";
 
 export interface ArtifactPaneSectionItem {
 	content: ReactNode;
-	count?: number;
+	/** Collapsed summary rendered after the title — a plain count, or a ratio such as `"1/3"`. */
+	count?: number | string;
 	defaultOpen?: boolean;
 	headerAction?: Readonly<{
 		label: string;
@@ -48,7 +50,13 @@ export function ArtifactPanePropertyRow({
 				className={cn(
 					"flex min-h-8 min-w-0 items-center text-text [&_[data-slot=avatar-group-count]]:size-6 [&_[data-slot=avatar]]:size-6 [&_[data-slot=tile]]:size-6",
 					editable
-						? "-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered motion-reduce:transition-none [&>button]:m-0! [&>button]:min-h-8! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0!"
+						? cn(
+								"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
+								"has-[:focus-visible]:bg-bg-input has-[[data-popup-open]]:bg-bg-input",
+								FOCUS_RING_HAS_VISIBLE,
+								FOCUS_RING_POPUP_OPEN,
+								"[&>button]:m-0! [&>button]:min-h-8! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0! [&>button]:focus-visible:ring-0!",
+							)
 						: null,
 				)}
 			>
@@ -80,7 +88,7 @@ function ArtifactPaneDisclosure({
 					}
 				>
 					<span
-						className="flex min-w-0 items-center gap-1.5 text-text-subtle group-hover/header:text-text group-focus-within/header:text-text"
+						className="flex min-w-0 items-center gap-1.5 text-text-subtle group-hover/header:text-text group-has-[:focus-visible]/header:text-text"
 						style={{ font: token("font.heading.xxsmall") }}
 					>
 						{title}
@@ -91,7 +99,7 @@ function ArtifactPaneDisclosure({
 					<motion.span
 						animate={{ rotate: open ? 90 : 0 }}
 						aria-hidden
-						className="shrink-0 text-icon-subtle opacity-0 group-hover/header:opacity-100 group-focus-within/header:opacity-100"
+						className="shrink-0 text-icon-subtle opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:opacity-100 group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
 						initial={false}
 						style={{ willChange: "transform" }}
 						transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15, ease: [0.4, 1, 0.6, 1] }}
@@ -106,7 +114,7 @@ function ArtifactPaneDisclosure({
 								render={
 									<Button
 										aria-label={headerAction.label}
-										className="pointer-events-none absolute top-1/2 right-8 -translate-y-1/2 opacity-0 group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-focus-within/header:pointer-events-auto group-focus-within/header:opacity-100 motion-reduce:transition-none"
+										className="pointer-events-none absolute top-1/2 right-8 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover/header:pointer-events-auto group-hover/header:opacity-100 group-has-[:focus-visible]/header:pointer-events-auto group-has-[:focus-visible]/header:opacity-100 motion-reduce:transition-none"
 										onClick={headerAction.onClick}
 										size="icon-compact"
 										type="button"

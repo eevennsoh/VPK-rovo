@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
 import { ROVO_AGENT_SELECTOR_AGENTS, type SkillsDirectorySkill } from "@/app/data/directory";
+import {
+	EDITOR_PALETTE_MENTION_SOURCES,
+	mapAgentToMentionItem,
+} from "@/components/blocks/editor-palette/data/mention-sources";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
@@ -52,13 +56,22 @@ interface SessionTargetSelection {
  * first-time agent mention invokes that agent and adds it to Crew.
  */
 export function ActivityComposer({
-	agents = ROVO_AGENT_SELECTOR_AGENTS,
+	agents,
+	onAgentPromptSubmit,
 	onOpenAgentChat,
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
+	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
+	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
+	const mentionSources = useMemo(() => agents
+		? {
+			...EDITOR_PALETTE_MENTION_SOURCES,
+			subagent: agents.map(mapAgentToMentionItem),
+		}
+		: EDITOR_PALETTE_MENTION_SOURCES, [agents]);
 	const [draft, setDraft] = useState("");
 	const [sessionTargetSelection, setSessionTargetSelection] = useState<SessionTargetSelection | null>(null);
 	const [selectedSessionTargetIndex, setSelectedSessionTargetIndex] = useState(0);
@@ -142,7 +155,7 @@ export function ActivityComposer({
 			}
 		}
 		const invokedAgents = findMentionedAvailableAgents(
-			agents,
+			availableAgents,
 			text,
 			handledAgentIds,
 			handledAgentNames,
@@ -150,6 +163,7 @@ export function ActivityComposer({
 		for (const invokedAgent of invokedAgents) {
 			actions.invokeAgent(invokedAgent, "prompt", text);
 		}
+		onAgentPromptSubmit?.(invokedAgents.map((agent) => agent.id), text);
 		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
 			if (meta.composerDelivery === "broadcast-active-agents") {
 				actions.broadcastComment(text);
@@ -205,6 +219,7 @@ export function ActivityComposer({
 				<JiraWorkItemComposerMotion placement="sticky">
 					<JiraActivityComposer
 						author={JIRA_WORK_ITEM_CURRENT_USER}
+						mentionSources={mentionSources}
 						mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
 						onSubmit={handleSubmit}
 						onValueChange={handlePromptChange}

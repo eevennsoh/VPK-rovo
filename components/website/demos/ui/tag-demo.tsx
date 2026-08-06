@@ -56,7 +56,7 @@ export function TagDemoRemovable() {
 	return (
 		<div className="flex min-h-[352px] w-full items-center justify-center">
 			{visible ? (
-				<Tag onRemove={() => setVisible(false)}>Removable</Tag>
+				<Tag className="self-center" onRemove={() => setVisible(false)}>Removable</Tag>
 			) : (
 				<p className="text-sm text-text-subtle">Tag removed</p>
 			)}
@@ -372,7 +372,7 @@ export function TagDemoAvatarTags() {
 			</Tag>
 			<Tag
 				type="other"
-				isVerified
+				onRemove={() => {}}
 				elemBefore={
 					<Avatar size="xs" shape="square">
 						<AvatarImage src="/avatar-project/group.svg" alt="Atlas team" />
@@ -393,6 +393,49 @@ export function TagDemoAvatarTags() {
 				}
 			>
 				Plan agent
+			</Tag>
+		</div>
+	);
+}
+
+export function TagDemoMentionTags() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Tag
+				type="user"
+				variant="editor"
+				elemBefore={
+					<Avatar size="xs">
+						<AvatarImage src="/avatar-user/venn/venn.png" alt="Ee Venn Soh" />
+						<AvatarFallback>EV</AvatarFallback>
+					</Avatar>
+				}
+			>
+				Ee Venn Soh
+			</Tag>
+			<Tag
+				type="other"
+				variant="editor"
+				elemBefore={
+					<Avatar size="xs" shape="square">
+						<AvatarImage src="/avatar-project/apple.svg" alt="Apple Ecosystem" />
+						<AvatarFallback>AE</AvatarFallback>
+					</Avatar>
+				}
+			>
+				Apple Ecosystem
+			</Tag>
+			<Tag
+				type="agent"
+				variant="editor"
+				elemBefore={
+					<Avatar size="xs" shape="hexagon">
+						<AvatarImage src="/avatar-agent/dev-agents/code-planner.svg" alt="Code Planner" />
+						<AvatarFallback>CP</AvatarFallback>
+					</Avatar>
+				}
+			>
+				Code Planner
 			</Tag>
 		</div>
 	);

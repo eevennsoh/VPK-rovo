@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/exhaustive-deps -- The metronome effect intentionally
 // re-subscribes only when the running gate flips, not on every state change.
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 
 import {
@@ -81,11 +81,27 @@ export function useJiraWorkItemController(
 	workItem: WorkItemData,
 	active = true,
 	initialState?: JiraWorkItemState,
+	initialStateRevision?: string | number,
 ): JiraWorkItemController {
 	const [state, dispatch] = useReducer(jiraWorkItemReducer, { initialState, preset: initialPreset, workItem }, initState);
+	const previousInitialStateRevisionRef = useRef(initialStateRevision);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state) || isPlannerProcessing(state.planner);
 	const isFrozenRunningDemo = state.preset === "running";
+
+	// Scripted consumers can replace their authored snapshot without remounting
+	// the whole work-item surface. Skipping the initial revision avoids a second
+	// hydration on mount; subsequent revisions settle before the browser paints.
+	useLayoutEffect(() => {
+		if (
+			initialStateRevision === undefined
+			|| Object.is(previousInitialStateRevisionRef.current, initialStateRevision)
+		) {
+			return;
+		}
+		previousInitialStateRevisionRef.current = initialStateRevision;
+		if (initialState) dispatch({ type: "hydrate-state", state: initialState });
+	}, [initialState, initialStateRevision]);
 
 	// Metronome: while the surface is active (open) AND a session or planner task
 	// is processing, advance the pure timer engine on a fixed cadence. Gating on

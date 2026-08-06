@@ -30,6 +30,27 @@ function loadStoryModule() {
 	return storyModulePromise;
 }
 
+let orchestrationModulePromise;
+function loadOrchestrationModule() {
+	if (!orchestrationModulePromise) {
+		orchestrationModulePromise = esbuild
+			.build({
+				entryPoints: [path.join(__dirname, "data/orchestration-state.ts")],
+				bundle: true,
+				format: "cjs",
+				loader: { ".css": "empty" },
+				platform: "node",
+				tsconfig: path.join(process.cwd(), "tsconfig.json"),
+				write: false,
+			})
+			.then((result) => loadCjsModuleFromText(
+				result.outputFiles[0].text,
+				"jira-agents-orchestration-state-harness.cjs",
+			));
+	}
+	return orchestrationModulePromise;
+}
+
 let stateModulePromise;
 function loadStateModule() {
 	if (!stateModulePromise) {
@@ -59,6 +80,9 @@ test("Jira Agents composes the six-chapter software delivery story without chang
 
 	assert.match(pageSource, /<JiraAgentsStoryControls controller=\{storyController\} \/>/u);
 	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*workItem=\{controller\.workItem\}/u);
+	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
+	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
+	assert.doesNotMatch(pageSource, /key=\{controller\.launchId\}/u);
 	assert.match(pageSource, /<JiraDesignWorkspaceStage[\s\S]*boardColumns=\{controller\.boardColumns\}[\s\S]*defaultOpenItemId=\{JIRA_AGENTS_STORY_ITEM_ID\}[\s\S]*sections=\{controller\.sections\}/u);
 	assert.match(pageSource, /selectAgent\(agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
 	assert.match(controlsSource, /JIRA_AGENTS_STORY_CHAPTERS\.map/u);
@@ -71,6 +95,45 @@ test("Jira Agents composes the six-chapter software delivery story without chang
 	assert.doesNotMatch(itemsSource, /Jira For You|id: "for-you"/u);
 	assert.doesNotMatch(pageSource, /ForYouStage|item\.id === "for-you"/u);
 	assert.doesNotMatch(pageSource, /WorkItemControls|useWorkItemStageController/u);
+});
+
+test("submitting the complete @mentioned agent team starts the staged orchestration reveal", async () => {
+	const story = await loadStoryModule();
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
+	const completeTeam = story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.id);
+
+	assert.equal(story.shouldStartJiraAgentsPlan("brief", completeTeam), true);
+	assert.equal(story.shouldStartJiraAgentsPlan("brief", completeTeam.slice(0, 2)), false);
+	assert.equal(story.shouldStartJiraAgentsPlan("plan", completeTeam), false);
+	assert.match(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds\)[\s\S]*startOrchestration\(\)/u);
+	assert.doesNotMatch(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds\)[\s\S]*selectChapter\("plan"\)/u);
+	assert.match(controllerSource, /if \(!active \|\| orchestrationStep === "idle"\) return undefined;/u);
+	assert.match(controllerSource, /return \(\) => window\.clearTimeout\(timeoutId\);/u);
+});
+
+test("the orchestration reveal keeps three agents working while comments, reactions, and activity arrive in order", async () => {
+	const orchestration = await loadOrchestrationModule();
+	const steps = [
+		"agents-working",
+		"comment",
+		"reaction-1",
+		"reaction-2",
+		"reaction-3",
+		"lead",
+		"copilot",
+		"tests",
+	];
+	const states = steps.map((step) => orchestration.createJiraAgentsOrchestrationState(step));
+
+	assert.deepEqual(states.map((state) => state.sessions.length), steps.map(() => 3));
+	assert.deepEqual(states.map((state) => {
+		const comment = state.comments.find((candidate) => candidate.id === "story-channel-orchestration");
+		return comment?.reactions?.[0]?.actorIds.length ?? (comment ? 0 : -1);
+	}), [-1, 0, 1, 2, 3, 3, 3, 3]);
+	assert.deepEqual(states.map((state) => state.staticEvents.some(
+		(event) => event.id === "story-lead-delegated",
+	)), [false, false, false, false, false, true, true, true]);
 });
 
 test("Jira Agents seeds checkout automation rows without changing the shared empty default", () => {
@@ -165,7 +228,8 @@ test("the Brief starts with an implementation-ready checkout specification befor
 	assert.deepEqual(
 		brief.contextResources.subtasks.map(({ key, type, status }) => ({ key, type, status })),
 		[
-			{ key: "SHOP-4822", type: "Task", status: "todo" },
+			{ key: "SHOP-4824", type: "Task", status: "done" },
+			{ key: "SHOP-4822", type: "Task", status: "inprogress" },
 			{ key: "SHOP-4823", type: "Story", status: "todo" },
 		],
 	);
@@ -179,6 +243,7 @@ test("the Brief starts with an implementation-ready checkout specification befor
 			...brief.contextResources.linkedItems.map(({ key, assignee }) => ({ key, assignee })),
 		],
 		[
+			{ key: "SHOP-4824", assignee: "Anthony Chen" },
 			{ key: "SHOP-4822", assignee: "Priya Hansra" },
 			{ key: "SHOP-4823", assignee: "Veronica Rodriguez" },
 			{ key: "SHOP-4760", assignee: "Anthony Chen" },
@@ -193,12 +258,12 @@ test("child work-item statuses follow the delivery chapters", async () => {
 	assert.deepEqual(
 		chapters.map((chapter) => story.createJiraAgentsStoryState(chapter).contextResources.subtasks.map((item) => item.status)),
 		[
-			["todo", "todo"],
-			["todo", "todo"],
-			["inprogress", "todo"],
-			["inprogress", "todo"],
-			["inprogress", "inprogress"],
-			["done", "done"],
+			["done", "inprogress", "todo"],
+			["done", "inprogress", "todo"],
+			["done", "inprogress", "todo"],
+			["done", "done", "inprogress"],
+			["done", "done", "inprogress"],
+			["done", "done", "done"],
 		],
 	);
 });

@@ -77,6 +77,7 @@ export function EmojiReactionBar({
 					label={reaction.label}
 					onToggle={onToggleReaction}
 					pressed={reaction.reacted}
+					reactorNames={reaction.reactorNames}
 				/>
 			))}
 			{showAddReaction ? (

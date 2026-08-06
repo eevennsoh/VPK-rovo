@@ -27,6 +27,16 @@ function Input({
 				"data-[variant=default]:border-input data-[variant=default]:bg-bg-input data-[variant=default]:hover:bg-bg-input-hovered data-[variant=default]:active:bg-bg-input-pressed",
 				"data-[variant=subtle]:border-transparent data-[variant=subtle]:hover:bg-bg-input-hovered data-[variant=subtle]:active:bg-bg-input-pressed data-[variant=subtle]:focus-visible:bg-bg-input",
 				"data-[variant=none]:border-0 data-[variant=none]:hover:bg-transparent data-[variant=none]:active:bg-transparent",
+				// Border state overrides must be variant-scoped. The resting
+				// `data-[variant=*]:border-*` rules above have the same specificity as the
+				// unscoped `focus-visible:` / `aria-invalid:` borders and Tailwind emits
+				// data-attribute variants last, so the resting border would otherwise win.
+				// (`none` needs no entry — `border-0` leaves nothing to colour.)
+				"data-[variant=default]:focus-visible:border-ring data-[variant=default]:aria-invalid:border-destructive data-[variant=default]:user-invalid:border-destructive",
+				"data-[variant=subtle]:focus-visible:border-ring data-[variant=subtle]:aria-invalid:border-destructive data-[variant=subtle]:user-invalid:border-destructive",
+				// Read-only fields stay inert on focus, each holding its own resting
+				// border rather than picking up the focus ring above.
+				"data-[variant=default]:read-only:focus-visible:border-input data-[variant=subtle]:read-only:focus-visible:border-transparent",
 				isCompact && "h-7 px-2 file:h-5",
 				isMonospaced && "font-mono",
 				className

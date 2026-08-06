@@ -3,6 +3,7 @@ import {
 	getAgentActivityActorId,
 	type ActivityEvent,
 	type AgentActivityEvent,
+	type AgentSessionThreadReply,
 	type AgentSessionStatus,
 	type HumanActivityEvent,
 	type StaticChangedFilesActivityEvent,
@@ -24,6 +25,58 @@ export const JIRA_WORK_ITEM_CURRENT_USER: JiraActivityActor = {
 	name: "You",
 	kind: "person",
 };
+
+/**
+ * Opt-in activity composition for a lead agent and its delegated sessions.
+ * Sessions remain independent in the work-item model while Activity presents
+ * the delegated agents as replies beneath one lead card.
+ */
+export interface ActivitySessionThreadConfig {
+	parentSessionId: string;
+	childSessionIds: readonly string[];
+	visibleSessionIds: readonly string[];
+}
+
+export function composeActivitySessionThread(
+	events: readonly ActivityEvent[],
+	config?: Readonly<ActivitySessionThreadConfig>,
+): ActivityEvent[] {
+	if (!config) return [...events];
+
+	const childSessionIds = new Set(config.childSessionIds);
+	const visibleSessionIds = new Set(config.visibleSessionIds);
+	const childReplies = events.flatMap((event): AgentSessionThreadReply[] => {
+		if (
+			event.kind !== "agent"
+			|| !childSessionIds.has(event.sessionId)
+			|| !visibleSessionIds.has(event.sessionId)
+		) {
+			return [];
+		}
+
+		return [{
+			id: `${event.id}-thread-reply`,
+			agentId: event.agentId,
+			agentName: event.agentName,
+			agentAvatarSrc: event.agentAvatarSrc,
+			content: event.responsePreview ?? event.commandPreview,
+			createdAtMs: event.createdAtMs,
+		}];
+	});
+
+	return events.flatMap((event): ActivityEvent[] => {
+		if (event.kind !== "agent") return [event];
+		if (childSessionIds.has(event.sessionId)) return [];
+		if (event.sessionId !== config.parentSessionId) return [event];
+		if (!visibleSessionIds.has(event.sessionId)) return [];
+
+		return [{
+			...event,
+			threadReplies: [...(event.threadReplies ?? []), ...childReplies]
+				.sort((left, right) => left.createdAtMs - right.createdAtMs),
+		}];
+	});
+}
 
 const AGENT_STATUS_TAG = {
 	running: { text: "Working", color: "blue" },

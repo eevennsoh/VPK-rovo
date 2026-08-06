@@ -113,6 +113,15 @@ export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = 
 	},
 ];
 
+export function shouldStartJiraAgentsPlan(
+	chapter: JiraAgentsStoryChapter,
+	agentIds: readonly string[],
+): boolean {
+	if (chapter !== "brief") return false;
+	const mentionedAgentIds = new Set(agentIds);
+	return JIRA_AGENTS_STORY_COMPOSER_AGENTS.every((agent) => mentionedAgentIds.has(agent.id));
+}
+
 export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
 	code: JIRA_AGENTS_STORY_ISSUE_KEY,
 	title: "Add guest checkout to the storefront",
@@ -751,13 +760,23 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 			subtasks: [
 				{
 					type: "Task",
+					key: "SHOP-4824",
+					summary: "Define guest checkout requirements and success metrics",
+					description: "Turn the checkout-abandonment research into a scoped requirement set: which steps a guest must complete, which validation errors are recoverable, and the conversion and error-rate targets the delivered flow has to hit.",
+					priority: "medium",
+					assignee: "Anthony Chen",
+					assigneeAvatarUrl: "/avatar-human/anthony-chen.png",
+					status: "done",
+				},
+				{
+					type: "Task",
 					key: "SHOP-4822",
 					summary: "Build guest checkout and order-creation API",
 					description: "Create a guest checkout API that recalculates inventory, pricing, discounts, tax, and shipping before payment. Use tokenized payments and an idempotency key so retries cannot create duplicate orders, and return recoverable validation errors without requiring an account.",
 					priority: "high",
 					assignee: "Priya Hansra",
 					assigneeAvatarUrl: "/avatar-human/priya-hansra.png",
-					status: chapter === "brief" || chapter === "plan" ? "todo" : chapter === "done" ? "done" : "inprogress",
+					status: chapter === "handoff" || chapter === "review" || chapter === "done" ? "done" : "inprogress",
 				},
 				{
 					type: "Story",
@@ -767,7 +786,7 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 					priority: "high",
 					assignee: "Veronica Rodriguez",
 					assigneeAvatarUrl: "/avatar-human/veronica-rodriguez.png",
-					status: chapter === "brief" || chapter === "plan" || chapter === "working" || chapter === "handoff" ? "todo" : chapter === "done" ? "done" : "inprogress",
+					status: chapter === "done" ? "done" : chapter === "handoff" || chapter === "review" ? "inprogress" : "todo",
 				},
 			],
 			linkedItems: [

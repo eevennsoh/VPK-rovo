@@ -81,7 +81,7 @@ export function ModalHeader({
 					<BreadcrumbSeparator className="shrink-0" />
 					<BreadcrumbItem className="min-w-0 flex-1">
 						<BreadcrumbPage
-							className="inline-flex min-w-0 items-center [&_[data-slot=breadcrumb-label-text]]:truncate"
+							className="text-text-subtlest inline-flex min-w-0 items-center [&_[data-slot=breadcrumb-label-text]]:truncate"
 							before={
 								<Icon
 									aria-hidden

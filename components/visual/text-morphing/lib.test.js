@@ -1,9 +1,19 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 
 // Node's test runner strips types from the dynamically-imported .ts module; the
 // explicit extension is required. Matches components/visual/svg-tracing/lib.test.js.
 const helpers = import("./lib.ts");
+const slotsSource = fs.readFileSync(path.join(__dirname, "slots.tsx"), "utf8");
+
+test("SlotsRenderer clips its expanded fade layer to the value line box", () => {
+	assert.match(
+		slotsSource,
+		/style=\{\{ display: "inline-flex", position: "relative", \.\.\.style, overflow: "hidden" \}\}/,
+	);
+});
 
 test("splitGraphemes treats a multi-codepoint emoji as one unit", async () => {
 	const { splitGraphemes } = await helpers;

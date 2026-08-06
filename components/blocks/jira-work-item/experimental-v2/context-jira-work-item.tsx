@@ -48,6 +48,7 @@ interface JiraWorkItemProviderProps {
 	 * sessions stay pristine until the viewer opens the surface. */
 	active?: boolean;
 	initialState?: JiraWorkItemState;
+	initialStateRevision?: string | number;
 	composerDelivery?: JiraWorkItemComposerDelivery;
 }
 
@@ -55,11 +56,18 @@ export function JiraWorkItemProvider({
 	children,
 	initialPreset,
 	initialState,
+	initialStateRevision,
 	workItem,
 	active = true,
 	composerDelivery = "comment",
 }: Readonly<JiraWorkItemProviderProps>) {
-	const { state, actions } = useJiraWorkItemController(initialPreset, workItem, active, initialState);
+	const { state, actions } = useJiraWorkItemController(
+		initialPreset,
+		workItem,
+		active,
+		initialState,
+		initialStateRevision,
+	);
 
 	const meta = useMemo<JiraWorkItemMeta>(
 		() => ({

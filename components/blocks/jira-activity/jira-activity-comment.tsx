@@ -59,6 +59,16 @@ function ActivityActorAvatar({
 	);
 }
 
+function reactionActorNames(
+	reaction: JiraActivityReaction,
+	actorsById: ReadonlyMap<string, JiraActivityActor>,
+): { reactorNames?: readonly string[] } {
+	const names = reaction.actorIds
+		.map((actorId) => actorsById.get(actorId)?.name)
+		.filter((name): name is string => Boolean(name));
+	return names.length === reaction.actorIds.length ? { reactorNames: names } : {};
+}
+
 function CollapsedThreadSummary({
 	onExpand,
 	replies,
@@ -88,10 +98,10 @@ function CollapsedThreadSummary({
 				type="button"
 				variant="link"
 			>
-				<span className="shrink-0">{replyCountLabel}</span>
+				<span className="shrink-0 text-text-subtle">{replyCountLabel}</span>
 				{latestTimestamp ? (
 					<>
-						<span className="truncate group-hover/thread-summary:hidden group-focus-visible/thread-summary:hidden">
+						<span className="truncate text-text-subtlest group-hover/thread-summary:hidden group-focus-visible/thread-summary:hidden">
 							{latestTimestamp}
 						</span>
 						<span className="hidden truncate group-hover/thread-summary:inline group-focus-visible/thread-summary:inline">
@@ -107,31 +117,24 @@ function CollapsedThreadSummary({
 function ThreadReplyCard({
 	reply,
 	currentUser,
-	onSubmitReply,
+	actorsById,
+	onReply,
 	commentActions,
 	allowReply,
+	replyComposerId,
+	replySelected,
 }: Readonly<{
 	reply: JiraActivityReply;
 	currentUser: JiraActivityActor;
-	onSubmitReply: (body: string) => void;
+	actorsById: ReadonlyMap<string, JiraActivityActor>;
+	onReply: (button: HTMLButtonElement | null) => void;
 	commentActions: "none" | "reactions" | "reply-and-reactions";
 	allowReply: boolean;
+	replyComposerId?: string;
+	replySelected: boolean;
 }>) {
-	const [replyOpen, setReplyOpen] = useState(false);
 	const [reactions, setReactions] = useState<readonly JiraActivityReaction[]>(reply.reactions ?? []);
-	const composerId = useId();
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
-	const replyToggledRef = useRef(false);
-
-	useEffect(() => {
-		if (!replyToggledRef.current || replyOpen) return;
-		replyButtonRef.current?.focus();
-	}, [replyOpen]);
-
-	function toggleReply() {
-		replyToggledRef.current = true;
-		setReplyOpen((open) => !open);
-	}
 
 	function toggleReaction(emoji: string) {
 		setReactions((currentReactions) => {
@@ -154,10 +157,11 @@ function ThreadReplyCard({
 		emoji: reaction.emoji,
 		count: reaction.actorIds.length,
 		reacted: reaction.actorIds.includes(currentUser.id),
+		...reactionActorNames(reaction, actorsById),
 	}));
 
 	return (
-		<div className="pl-3">
+		<div className="pl-6">
 			<JiraActivityCard
 				agentName={reply.actor.name}
 				className="rounded-none border-0"
@@ -166,30 +170,18 @@ function ThreadReplyCard({
 				footerActions={
 					commentActions === "none" ? undefined : (
 						<JiraActivityCommentActions
-							onReply={commentActions === "reply-and-reactions" && allowReply ? toggleReply : undefined}
+							onReply={
+								commentActions === "reply-and-reactions" && allowReply
+									? () => onReply(replyButtonRef.current)
+									: undefined
+							}
 							onToggleReaction={toggleReaction}
 							reactions={reactionSummaries}
-							replyComposerId={replyOpen ? composerId : undefined}
-							replyExpanded={replyOpen}
+							replyComposerId={replySelected ? replyComposerId : undefined}
+							replyExpanded={replySelected}
 							replyRef={replyButtonRef}
 						/>
 					)
-				}
-				replyComposer={
-					replyOpen ? (
-						<div id={composerId}>
-							<JiraActivityComposer
-								author={currentUser}
-								autoFocus
-								onSubmit={(body) => {
-									onSubmitReply(body);
-									setReplyOpen(false);
-								}}
-								placeholder="Leave a reply..."
-								variant="flush"
-							/>
-						</div>
-					) : undefined
 				}
 				timestamp={reply.timestamp}
 			>
@@ -208,6 +200,7 @@ function ThreadReplyCard({
 export function JiraActivityComment({
 	entry,
 	currentUser,
+	actorsById,
 	onSubmitReply,
 	onToggleReaction,
 	onViewSession,
@@ -216,6 +209,7 @@ export function JiraActivityComment({
 }: Readonly<{
 	entry: JiraActivityCommentEntry;
 	currentUser: JiraActivityActor;
+	actorsById: ReadonlyMap<string, JiraActivityActor>;
 	onSubmitReply: (body: string) => void;
 	onToggleReaction: (emoji: string) => void;
 	onViewSession?: (item: AgentListItem) => void;
@@ -226,12 +220,17 @@ export function JiraActivityComment({
 	const hasReplies = replies.length > 0;
 	const allowReply = entry.allowReply ?? true;
 	const collapsible = commentActions === "reply-and-reactions";
-	const [replyOpen, setReplyOpen] = useState(false);
+	const [replyTarget, setReplyTarget] = useState<{
+		key: string;
+		actor: JiraActivityActor;
+	} | null>(null);
+	const [replyDraft, setReplyDraft] = useState("");
 	const [repliesExpanded, setRepliesExpanded] = useState(true);
 	const composerId = useId();
 	const repliesId = useId();
-	const composerVisible = allowReply && (!collapsible || replyOpen);
+	const composerVisible = allowReply && (!collapsible || replyTarget !== null);
 	const replyButtonRef = useRef<HTMLButtonElement>(null);
+	const activeReplyButtonRef = useRef<HTMLButtonElement | null>(null);
 	// Only move focus once the viewer has actually toggled Reply, so the initial
 	// mount never steals focus from the page.
 	const replyToggledRef = useRef(false);
@@ -242,11 +241,19 @@ export function JiraActivityComment({
 		emoji: reaction.emoji,
 		count: reaction.actorIds.length,
 		reacted: reaction.actorIds.includes(currentUser.id),
+		...reactionActorNames(reaction, actorsById),
 	}));
 
-	function toggleReply() {
+	function toggleReply(key: string, actor: JiraActivityActor, button: HTMLButtonElement | null) {
 		replyToggledRef.current = true;
-		setReplyOpen((previousOpen) => !previousOpen);
+		activeReplyButtonRef.current = button;
+		if (replyTarget?.key === key) {
+			setReplyTarget(null);
+			setReplyDraft("");
+			return;
+		}
+		setReplyTarget({ key, actor });
+		setReplyDraft(`@${actor.name} `);
 	}
 
 	const repliesToggleLabel = repliesExpanded ? "Collapse nested comments" : "Expand nested comments";
@@ -273,11 +280,15 @@ export function JiraActivityComment({
 	) : undefined;
 	const commentActionControls = commentActions === "none" ? null : (
 		<JiraActivityCommentActions
-			onReply={collapsible && allowReply ? toggleReply : undefined}
+			onReply={
+				collapsible && allowReply
+					? () => toggleReply(entry.id, entry.actor, replyButtonRef.current)
+					: undefined
+			}
 			onToggleReaction={onToggleReaction}
 			reactions={reactionSummaries}
-			replyComposerId={composerVisible ? composerId : undefined}
-			replyExpanded={replyOpen}
+			replyComposerId={replyTarget?.key === entry.id ? composerId : undefined}
+			replyExpanded={replyTarget?.key === entry.id}
 			replyRef={replyButtonRef}
 		/>
 	);
@@ -290,9 +301,9 @@ export function JiraActivityComment({
 	// editor that mounts asynchronously, so focusing it from this effect would
 	// race the editor's initialisation and silently no-op.
 	useEffect(() => {
-		if (!replyToggledRef.current || replyOpen) return;
-		replyButtonRef.current?.focus();
-	}, [replyOpen]);
+		if (!replyToggledRef.current || replyTarget !== null) return;
+		activeReplyButtonRef.current?.focus();
+	}, [replyTarget]);
 
 	return (
 		<JiraActivityCard
@@ -327,14 +338,26 @@ export function JiraActivityComment({
 			}
 			replyComposer={
 				composerVisible ? (
-					<div id={composerId}>
+					<div
+						className={hasReplies && repliesExpanded ? "border-t border-border" : undefined}
+						id={composerId}
+					>
 						<JiraActivityComposer
 							author={currentUser}
 							// In collapsible mode the composer only mounts on a Reply
 							// click, so mounting is exactly the moment to take focus.
 							autoFocus={collapsible}
-							onSubmit={onSubmitReply}
+							key={replyTarget?.key ?? "thread-reply"}
+							onSubmit={(body) => {
+								onSubmitReply(body);
+								if (collapsible) {
+									setReplyTarget(null);
+									setReplyDraft("");
+								}
+							}}
+							onValueChange={setReplyDraft}
 							placeholder={entry.sessionItem ? "Ask, @mention, or / for actions" : "Leave a reply..."}
+							value={replyDraft}
 							variant="flush"
 						/>
 					</div>
@@ -354,9 +377,12 @@ export function JiraActivityComment({
 								allowReply={allowReply}
 								commentActions={commentActions}
 								currentUser={currentUser}
+								actorsById={actorsById}
 								key={reply.id}
-								onSubmitReply={onSubmitReply}
+								onReply={(button) => toggleReply(reply.id, reply.actor, button)}
 								reply={reply}
+								replyComposerId={composerId}
+								replySelected={replyTarget?.key === reply.id}
 							/>
 						))}
 					</div>

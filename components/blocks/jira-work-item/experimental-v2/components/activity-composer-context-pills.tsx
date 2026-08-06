@@ -38,6 +38,29 @@ const PILL_REVEAL_VARIANTS = {
 	},
 } satisfies Variants;
 
+const WORKING_SESSION_ACTIVITY_CYCLE_MS = 2_200;
+
+const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[]>> = {
+	"code-planner": [
+		"Plan the guest checkout architecture",
+		"Define the secure checkout API contract",
+		"Review server-side validation boundaries",
+		"Sequence the implementation handoff",
+	],
+	"github-copilot": [
+		"Implement guest checkout end to end",
+		"Wire the storefront checkout flow",
+		"Integrate the approved API contract",
+		"Preserve safe input after payment failures",
+	],
+	"unit-test-creator": [
+		"Verify guest checkout acceptance coverage",
+		"Build deterministic checkout cases",
+		"Check payment and inventory failures",
+		"Prove duplicate submissions are safe",
+	],
+};
+
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
@@ -45,13 +68,26 @@ interface ActivityComposerContextPillsProps {
 	workingSessions: readonly AgentSession[];
 }
 
-function getWorkingSessionDescription(session: Readonly<AgentSession>): string | undefined {
+function getWorkingSessionActivity(
+	session: Readonly<AgentSession>,
+	cycleIndex: number,
+	sessionIndex: number,
+): string {
 	if (session.status === "waiting") {
 		return session.waitingOn?.kind === "agent"
 			? `Waiting for ${session.waitingOn.agentName}`
 			: "Waiting for you";
 	}
-	return session.title;
+
+	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
+	if (!script?.length) return session.title ?? "Working";
+
+	// Keep the authored title as the first frame, then offset each agent so the
+	// three rows do not appear to move in lockstep during the demo.
+	const activityIndex = cycleIndex === 0
+		? 0
+		: (cycleIndex + sessionIndex) % script.length;
+	return script[activityIndex];
 }
 
 function WorkingSessionsList({
@@ -64,12 +100,12 @@ function WorkingSessionsList({
 	sessions: readonly AgentSession[];
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const [activityCycleIndex, setActivityCycleIndex] = useState(0);
 	const [selectedIndex, setSelectedIndex] = useState(0);
-	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session) => ({
-		description: getWorkingSessionDescription(session),
+	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session, sessionIndex) => ({
 		id: session.id,
 		icon: null,
-		label: session.agentName,
+		label: `${session.agentName} · ${getWorkingSessionActivity(session, activityCycleIndex, sessionIndex)}`,
 		leadingVisual: (
 			<AgentAvatarVisual
 				avatarSrc={session.agentAvatarSrc}
@@ -77,11 +113,17 @@ function WorkingSessionsList({
 				sizePx={24}
 			/>
 		),
-		persistentDescription: true,
 		trailing: session.status === "running"
 			? <Spinner label="" size="xs" variant="rainbow" />
 			: <span className="text-xs text-text-subtle">Waiting</span>,
 	}));
+
+	useEffect(() => {
+		const intervalId = window.setInterval(() => {
+			setActivityCycleIndex((index) => index + 1);
+		}, WORKING_SESSION_ACTIVITY_CYCLE_MS);
+		return () => window.clearInterval(intervalId);
+	}, []);
 
 	const openSession = (item: RichTextSuggestionMenuItem) => {
 		const session = sessions.find((candidate) => candidate.id === item.id);
