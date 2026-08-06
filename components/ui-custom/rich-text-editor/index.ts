@@ -34,6 +34,7 @@ export {
 	type RichTextSlashAction,
 	type RichTextSuggestionMenuItem,
 } from "./suggestion-menu";
+export { useCommandMenuScrollMask } from "./command-menu-scroll-mask";
 export {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,

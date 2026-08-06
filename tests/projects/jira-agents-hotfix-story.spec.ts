@@ -93,16 +93,20 @@ test("the shared-channel story exposes six keyboard-selectable chapters and cano
 	await page.getByRole("button", { name: "See more" }).click();
 	await expect(page.getByRole("button", { name: "Change parent" })).toContainText("Reduce storefront checkout abandonment");
 
-	await page.getByRole("button", { name: "Subtasks · 2" }).click();
+	await page.getByRole("button", { name: "Subtasks · 1/3" }).click();
+	const requirementsTask = page.getByRole("link", {
+		name: "SHOP-4824: Define guest checkout requirements and success metrics Done",
+	});
 	const apiTask = page.getByRole("link", {
-		name: "SHOP-4822: Build guest checkout and order-creation API To do",
+		name: "SHOP-4822: Build guest checkout and order-creation API In progress",
 	});
 	const storefrontStory = page.getByRole("link", {
 		name: "SHOP-4823: Build and integrate the storefront checkout flow To do",
 	});
+	await expect(requirementsTask).toBeVisible();
 	await expect(apiTask).toBeVisible();
 	await expect(storefrontStory).toBeVisible();
-	for (const workItem of [apiTask, storefrontStory]) {
+	for (const workItem of [requirementsTask, apiTask, storefrontStory]) {
 		const iconTile = workItem.locator('[data-slot="icon-tile"]');
 		await expect(iconTile).toHaveCount(1);
 	}

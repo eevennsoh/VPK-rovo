@@ -144,6 +144,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         demoSlug: "tag-demo-avatar-tags",
       },
       {
+        title: "At-mention tags",
+        description:
+          "Filled at-mention treatment for a human, team, and agent. All three use the same rounded tag shell while preserving their avatar shape.",
+        demoSlug: "tag-demo-mention-tags",
+      },
+      {
         title: "Tag Group",
         description: "Container for organizing multiple tags.",
         demoSlug: "tag-demo-tag-group",

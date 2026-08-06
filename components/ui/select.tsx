@@ -62,6 +62,13 @@ function SelectTrigger({
 				"data-[variant=default]:border-input data-[variant=default]:border data-[variant=default]:bg-bg-input data-[variant=default]:hover:bg-bg-input-hovered data-[variant=default]:active:bg-bg-input-pressed",
 				"data-[variant=subtle]:border data-[variant=subtle]:border-transparent data-[variant=subtle]:hover:bg-bg-input-hovered data-[variant=subtle]:active:bg-bg-input-pressed",
 				"data-[variant=none]:border-0 data-[variant=none]:bg-transparent",
+				// Border state overrides must be variant-scoped. The resting
+				// `data-[variant=*]:border-*` rules above have the same specificity as the
+				// unscoped `focus-visible:` / `aria-invalid:` borders and Tailwind emits
+				// data-attribute variants last, so the resting border would otherwise win.
+				// (`none` needs no entry — `border-0` leaves nothing to colour.)
+				"data-[variant=default]:focus-visible:border-ring data-[variant=default]:aria-invalid:border-destructive",
+				"data-[variant=subtle]:focus-visible:border-ring data-[variant=subtle]:aria-invalid:border-destructive",
 				isLoading && "pointer-events-none opacity-(--opacity-loading)",
 				className
 			)}

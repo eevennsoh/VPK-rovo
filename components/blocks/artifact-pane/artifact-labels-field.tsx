@@ -13,7 +13,7 @@ import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tag, TagGroup, type TagColor } from "@/components/ui/tag";
 import { SearchIcon } from "@/components/ui/vpk-icons";
-import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField, useCommandMenuScrollMask } from "@/components/ui-custom/rich-text-editor";
 
 const LABEL_COLORS = ["blue", "green", "purple", "orange", "teal", "magenta", "yellow"] as const satisfies readonly TagColor[];
 
@@ -81,6 +81,12 @@ export function ArtifactLabelsField({
 }: Readonly<{ onChange: (next: string[]) => void; value: readonly string[] }>) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	// This picker hand-rolls the command-menu markup (its rows are Tag pills with
+	// a hover-delete affordance, which RichTextSuggestionMenuItem can't express),
+	// so it has to opt into the top fade mask that RichTextSuggestionMenu applies
+	// for free. Filtering the list shorter clamps scrollTop, which fires a scroll
+	// event, so the scroll handler alone keeps the mask in sync.
+	const { listProps, menuProps } = useCommandMenuScrollMask();
 	const normalizedQuery = query.trim().toLowerCase();
 	const allLabels = Array.from(new Set([...value, ...LABEL_OPTIONS]));
 	const visibleLabels = allLabels.filter((label) => label.toLowerCase().includes(normalizedQuery));
@@ -123,6 +129,7 @@ export function ArtifactLabelsField({
 				<div
 					className="rich-text-command-menu rich-text-command-menu-borderless"
 					data-has-header="true"
+					{...menuProps}
 				>
 					<RichTextCommandMenuSearchField
 						autoFocus
@@ -145,6 +152,7 @@ export function ArtifactLabelsField({
 						aria-multiselectable="true"
 						className="rich-text-command-menu-list"
 						role="listbox"
+						{...listProps}
 					>
 						{visibleLabels.length > 0 ? (
 							<>

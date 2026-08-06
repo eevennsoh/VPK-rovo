@@ -53,6 +53,11 @@ const V2_DIVERGENCES = new Set([
 	"components/attachments-popover.tsx",
 	"components/subtasks-popover.tsx",
 	"components/linked-work-items-popover.tsx",
+	// v2 opens the agent/skill selectors with the borderless editor-palette
+	// search bar so they match the "/" menu and the metadata pickers on the
+	// same screen; v1 keeps the boxed CommandInput.
+	"components/activity-composer-agent-context-pill.tsx",
+	"components/activity-composer-skill-context-pill.tsx",
 	"experimental-v2-jira-work-item.tsx",
 ]);
 
@@ -197,6 +202,17 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	);
 	assert.match(composerSource, /state\.sessions\.filter\(\(session\) => session\.status !== "completed"\)/u);
 	assert.match(contextPillsSource, /`Waiting for \$\{session\.waitingOn\.agentName\}`/u);
+	assert.match(contextPillsSource, /"code-planner": \[[\s\S]*"Plan the guest checkout architecture"/u);
+	assert.match(contextPillsSource, /"github-copilot": \[[\s\S]*"Implement guest checkout end to end"/u);
+	assert.match(contextPillsSource, /"unit-test-creator": \[[\s\S]*"Verify guest checkout acceptance coverage"/u);
+	assert.match(
+		contextPillsSource,
+		/label: `\$\{session\.agentName\} · \$\{getWorkingSessionActivity\(session, activityCycleIndex, sessionIndex\)\}`/u,
+	);
+	assert.doesNotMatch(contextPillsSource, /persistentDescription: true/u);
+	assert.match(contextPillsSource, /window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
+	assert.match(contextPillsSource, /return \(\) => window\.clearInterval\(intervalId\);/u);
+	assert.doesNotMatch(contextPillsSource, /Math\.random/u);
 	assert.match(contextPillsSource, /\{workingSessions\.length\} \{workingSessions\.length === 1 \? "agent" : "agents"\} working/u);
 });
 
@@ -208,10 +224,16 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 	assert.match(contextSource, /composerDelivery = "comment"/u);
 	assert.match(compositionSource, /composerAgents\?: readonly AgentSelectorAgent\[\];/u);
 	assert.match(compositionSource, /<ActivityComposer[\s\S]*agents=\{props\.composerAgents\}/u);
-	assert.match(composerSource, /agents = ROVO_AGENT_SELECTOR_AGENTS/u);
+	assert.match(composerSource, /const availableAgents = agents \?\? ROVO_AGENT_SELECTOR_AGENTS;/u);
+	assert.match(composerSource, /agents[\s\S]*subagent: agents\.map\(mapAgentToMentionItem\)[\s\S]*: EDITOR_PALETTE_MENTION_SOURCES/u);
 	assert.match(
 		composerSource,
 		/findMentionedAvailableAgents\([\s\S]*handledAgentIds,[\s\S]*handledAgentNames,[\s\S]*for \(const invokedAgent of invokedAgents\)[\s\S]*actions\.invokeAgent/u,
+	);
+	assert.match(
+		composerSource,
+		/onAgentPromptSubmit\?\.\([\s\S]*\.\.\.handledAgentIds,[\s\S]*\.\.\.invokedAgents\.map\(\(agent\) => agent\.id\)/u,
+		"composer should report both active and newly invoked mentioned agents to orchestration callbacks",
 	);
 	assert.match(
 		composerSource,
@@ -403,6 +425,17 @@ test("experimental v2 reuses the Artifact Pane project field", () => {
 	assert.doesNotMatch(detailsTabSource, /function AtlassianProjectEditor/u);
 });
 
+test("experimental v2 keeps the status focus ring visible while its menu is open", () => {
+	const detailFieldEditorsSource = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
+
+	// `ring-ring/50` (not full opacity) so the open status pill matches the
+	// Input/InputGroup focus recipe used by the rest of the Details panel.
+	assert.match(
+		detailFieldEditorsSource,
+		/className="data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring\/50"/u,
+	);
+});
+
 test("experimental v2 reveals description mode tabs across the description scope", () => {
 	const aiPlannerPanelSource = readBlockFile("experimental-v2/components/ai-planner-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
@@ -558,10 +591,12 @@ test("experimental v2 renders filled context resources as conditional metadata s
 
 	assert.match(metadataRailSource, /const \{ attachments, linkedItems, subtasks \} = contextResources;/u);
 	assert.match(metadataRailSource, /if \(attachments\.length > 0\) \{[\s\S]*id: "attachments",[\s\S]*title: "Attachments"/u);
-	assert.match(metadataRailSource, /if \(subtasks\.length > 0\) \{[\s\S]*id: "subtasks",[\s\S]*title: "Subtasks"/u);
+	assert.match(metadataRailSource, /if \(subtasks\.length > 0\) \{[\s\S]*id: "subtasks",[\s\S]*title: <SubtasksSectionTitle done=\{doneSubtasks\} total=\{subtasks\.length\} \/>/u);
 	assert.match(metadataRailSource, /if \(linkedItems\.length > 0\) \{[\s\S]*id: "linked-items",[\s\S]*title: "Linked work items"/u);
 	assert.match(metadataRailSource, /attachments\.map\(toAttachmentSmartLink\)[\s\S]*count: attachments\.length/u);
-	assert.match(metadataRailSource, /subtasks\.map\(toSubtaskSmartLink\)[\s\S]*count: subtasks\.length/u);
+	assert.match(metadataRailSource, /subtasks\.map\(toSubtaskSmartLink\)[\s\S]*count: `\$\{doneSubtasks\}\/\$\{subtasks\.length\}`/u);
+	assert.match(metadataRailSource, /const doneSubtasks = subtasks\.filter\(\(subtask\) => subtask\.status === "done"\)\.length;/u);
+	assert.match(metadataRailSource, /<ProgressCircle aria-hidden size="xs" value=\{total > 0 \? Math\.round\(\(done \/ total\) \* 100\) : 0\} variant="outline" \/>/u);
 	assert.match(metadataRailSource, /linkedItems\.map\(toLinkedItemSmartLink\)[\s\S]*count: linkedItems\.length/u);
 	assert.equal((metadataRailSource.match(/kind: "icon-tile", icon: <WorkItemIcon label="" size="medium" \/>, tone: "information"/gu) ?? []).length, 2);
 	assert.match(metadataRailSource, /assignee: subtask\.assignee[\s\S]*name: subtask\.assignee, src: subtask\.assigneeAvatarUrl/u);
@@ -643,6 +678,8 @@ test("the activity panel gives reactions and human replies somewhere to land", (
 	// reaction click would be a silent no-op.
 	assert.match(activityPanelSource, /onToggleReaction=\{handleToggleReaction\}/u);
 	assert.match(activityPanelSource, /toggleReaction\(entry\.reactions \?\? \[\], emoji, JIRA_WORK_ITEM_CURRENT_USER\.id\)/u);
+	assert.match(activityPanelSource, /const reactionActors = useMemo\(\(\) => \{/u);
+	assert.match(activityPanelSource, /actors=\{reactionActors\}/u);
 
 	// Human comments now expose Reply (allowReply flipped to true), but they have
 	// no session to route into — their drafts must be kept rather than dropped.
@@ -655,4 +692,43 @@ test("the activity panel gives reactions and human replies somewhere to land", (
 	// array, so streaming session updates keep flowing through untouched.
 	assert.match(activityPanelSource, /const entries = derivedEntries\.map\(\(entry\) => \{/u);
 	assert.doesNotMatch(activityPanelSource, /useState\(derivedEntries\)/u);
+});
+
+test("experimental v2 opens the agent and skill pickers with the editor-palette search bar", () => {
+	// Both pills are registered v2 divergences, so the structural-duplicate test
+	// no longer guards them. Pin the reason for the divergence instead: the
+	// selectors must request the borderless palette search field so they match
+	// the "/" menu and the Parent/Labels pickers on the same screen.
+	for (const relativePath of [
+		"experimental-v2/components/activity-composer-agent-context-pill.tsx",
+		"experimental-v2/components/activity-composer-skill-context-pill.tsx",
+	]) {
+		assert.match(readBlockFile(relativePath), /searchVariant="palette"/u, `${relativePath} dropped the palette search bar`);
+	}
+
+	// v1 stays on the boxed CommandInput — the divergence is deliberate, not drift.
+	for (const relativePath of [
+		"experimental/components/activity-composer-agent-context-pill.tsx",
+		"experimental/components/activity-composer-skill-context-pill.tsx",
+	]) {
+		assert.doesNotMatch(readBlockFile(relativePath), /searchVariant=/u, `${relativePath} unexpectedly adopted a search variant`);
+	}
+});
+
+test("the work-item skill picker has enough skills to scroll and keeps its pinned pair", () => {
+	const optionsSource = readBlockFile("experimental-v2/lib/work-item-picker-options.ts");
+	const skillIds = [...optionsSource.matchAll(/^\t\tid: "([^"]+)",$/gmu)].map((match) => match[1]);
+
+	// The list is a scroll-mask fixture as much as a menu: the picker viewport is
+	// ~287px and rows are 44px, so it needs well over 7 skills to overflow and
+	// show the fade at all.
+	assert.ok(skillIds.length >= 10, `expected 10+ work-item skills, found ${skillIds.length}`);
+	assert.equal(new Set(skillIds).size, skillIds.length, "work-item skill ids must be unique");
+
+	// Adding skills must never displace the pinned pair — they render in their own
+	// "Pinned by space" group above "More skills" and must still resolve.
+	for (const pinnedId of ["summarize-comments", "improve-description"]) {
+		assert.ok(skillIds.includes(pinnedId), `pinned skill ${pinnedId} is missing from the catalog`);
+		assert.match(optionsSource, new RegExp(`"${pinnedId}",`, "u"), `${pinnedId} dropped out of the pinned defaults`);
+	}
 });

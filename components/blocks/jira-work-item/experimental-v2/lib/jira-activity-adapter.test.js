@@ -149,6 +149,92 @@ test("maps authored eyes reactions and agent handoff replies into Jira comments"
 	}]);
 });
 
+test("composes visible delegated sessions as replies beneath one lead agent", async () => {
+	const adapter = await loadAdapter();
+	const events = [
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			status: "running",
+			title: "Plan guest checkout",
+			branch: "rovo/plan",
+			elapsedSeconds: 12,
+			commandPreview: "Lead the plan",
+			responsePreview: "Designing the checkout contract…",
+			createdAtMs: 100,
+		},
+		{
+			id: "activity-copilot",
+			kind: "agent",
+			sessionId: "session-copilot",
+			agentId: "github-copilot",
+			agentName: "GitHub Copilot",
+			status: "running",
+			title: "Implement guest checkout",
+			branch: "rovo/implement",
+			elapsedSeconds: 8,
+			commandPreview: "Implement guest checkout",
+			responsePreview: "Implementing against the approved contract…",
+			createdAtMs: 200,
+			threadReplies: [{
+				id: "copilot-test-handoff",
+				agentId: "unit-test-creator",
+				agentName: "Unit Test Creator",
+				agentAvatarSrc: "/unit-test-creator.svg",
+				content: "The implementation is ready for acceptance coverage.",
+				createdAtMs: 250,
+			}],
+		},
+		{
+			id: "activity-tests",
+			kind: "agent",
+			sessionId: "session-tests",
+			agentId: "unit-test-creator",
+			agentName: "Unit Test Creator",
+			status: "running",
+			title: "Verify acceptance coverage",
+			branch: "rovo/tests",
+			elapsedSeconds: 4,
+			commandPreview: "Build acceptance proof",
+			responsePreview: "Building deterministic acceptance cases…",
+			createdAtMs: 300,
+		},
+	];
+	const config = {
+		parentSessionId: "session-planner",
+		childSessionIds: ["session-copilot", "session-tests"],
+		visibleSessionIds: ["session-planner", "session-copilot"],
+	};
+
+	const composed = adapter.composeActivitySessionThread(events, config);
+	assert.equal(composed.length, 1);
+	assert.equal(composed[0].sessionId, "session-planner");
+	assert.deepEqual(composed[0].threadReplies, [{
+		id: "activity-copilot-thread-reply",
+		agentId: "github-copilot",
+		agentName: "GitHub Copilot",
+		agentAvatarSrc: undefined,
+		content: "Implementing against the approved contract…",
+		createdAtMs: 200,
+	}, {
+		id: "copilot-test-handoff",
+		agentId: "unit-test-creator",
+		agentName: "Unit Test Creator",
+		agentAvatarSrc: "/unit-test-creator.svg",
+		content: "The implementation is ready for acceptance coverage.",
+		createdAtMs: 250,
+	}]);
+
+	assert.deepEqual(
+		adapter.composeActivitySessionThread(events, { ...config, visibleSessionIds: [] }),
+		[],
+	);
+	assert.equal(events.length, 3, "composition must not mutate the source timeline");
+});
+
 test("maps agent activity to rich Jira comments with lifecycle tags", async () => {
 	const adapter = await loadAdapter();
 	const statuses = [

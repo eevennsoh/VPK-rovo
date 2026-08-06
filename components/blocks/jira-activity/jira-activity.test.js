@@ -444,15 +444,35 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 
 test("thread replies share the parent card as inset divided rows with their own actions", () => {
 	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
-	assert.match(COMMENT_SOURCE, /<div className="pl-3">\s*<JiraActivityCard[\s\S]*className="rounded-none border-0"/u);
-	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-(?:6|8)">/u);
+	assert.match(COMMENT_SOURCE, /<div className="pl-6">\s*<JiraActivityCard[\s\S]*className="rounded-none border-0"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-3">/u);
 	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
-	assert.match(COMMENT_SOURCE, /onReply=\{commentActions === "reply-and-reactions" && allowReply \? toggleReply : undefined\}/u);
+	assert.match(COMMENT_SOURCE, /\? \(\) => onReply\(replyButtonRef\.current\)/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
 	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="divide-y divide-border"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
+});
+
+test("a thread owns one bottom reply composer and targets the clicked author", () => {
+	assert.equal(
+		(COMMENT_SOURCE.match(/<JiraActivityComposer/gu) ?? []).length,
+		1,
+		"the parent and nested replies must not mount independent composers",
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/function toggleReply\(key: string, actor: JiraActivityActor, button: HTMLButtonElement \| null\)[\s\S]*setReplyDraft\(`@\$\{actor\.name\} `\);/u,
+	);
+	assert.match(COMMENT_SOURCE, /onReply=\{\(button\) => toggleReply\(reply\.id, reply\.actor, button\)\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/className=\{hasReplies && repliesExpanded \? "border-t border-border" : undefined\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /key=\{replyTarget\?\.key \?\? "thread-reply"\}/u);
+	assert.match(COMMENT_SOURCE, /onValueChange=\{setReplyDraft\}/u);
+	assert.match(COMMENT_SOURCE, /value=\{replyDraft\}/u);
 });
 
 test("comments with nested replies expose one shared header control to collapse the thread", () => {
@@ -477,13 +497,15 @@ test("collapsed threads show a Slack-like participant, count, and timestamp summ
 	assert.match(COMMENT_SOURCE, /text-xs font-normal text-text hover:underline/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /font-medium text-link[\s\S]*replyCountLabel/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /hover:no-underline/u);
+	assert.match(COMMENT_SOURCE, /shrink-0 text-text-subtle">\{replyCountLabel\}/u);
+	assert.match(COMMENT_SOURCE, /truncate text-text-subtlest group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
 	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
 	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:inline[\s\S]*View all comments/u);
 	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
 	assert.match(COMMENT_SOURCE, /<CollapsedThreadSummary onExpand=\{\(\) => setRepliesExpanded\(true\)\} replies=\{replies\} \/>/u);
 });
 
-test("Reply discloses the composer, defaulting to reply-and-reactions", () => {
+test("Reply discloses the single thread composer, defaulting to reply-and-reactions", () => {
 	assert.match(
 		INDEX_SOURCE,
 		/commentActions\?: "none" \| "reactions" \| "reply-and-reactions";/u,
@@ -499,15 +521,18 @@ test("Reply discloses the composer, defaulting to reply-and-reactions", () => {
 	);
 	assert.match(
 		COMMENT_SOURCE,
-		/const composerVisible = allowReply && \(!collapsible \|\| replyOpen\);/u,
+		/const composerVisible = allowReply && \(!collapsible \|\| replyTarget !== null\);/u,
 	);
 	// The composer only mounts when visible, and aria-controls never dangles.
-	assert.match(COMMENT_SOURCE, /composerVisible \? \(\s*<div id=\{composerId\}>/u);
-	assert.match(COMMENT_SOURCE, /replyComposerId=\{composerVisible \? composerId : undefined\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/composerVisible \? \(\s*<div[\s\S]*?id=\{composerId\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /replyComposerId=\{replyTarget\?\.key === entry\.id \? composerId : undefined\}/u);
 	assert.match(COMMENT_SOURCE, /const composerId = useId\(\);/u);
 	// "none" drops the row entirely; Reply is withheld when the entry opted out.
 	assert.match(COMMENT_SOURCE, /commentActions === "none" \? undefined : \(/u);
-	assert.match(COMMENT_SOURCE, /onReply=\{collapsible && allowReply \? toggleReply : undefined\}/u);
+	assert.match(COMMENT_SOURCE, /\? \(\) => toggleReply\(entry\.id, entry\.actor, replyButtonRef\.current\)/u);
 });
 
 test("toggling a reaction routes through the reducer with the current user's id", () => {
@@ -633,10 +658,11 @@ test("disclosing Reply focuses the composer through the editor's own autofocus",
 	// Only mounts on a Reply click in collapsible mode, so mounting is the moment
 	// to take focus; in the always-mounted modes it must never steal focus.
 	assert.match(COMMENT_SOURCE, /autoFocus=\{collapsible\}/u);
+	assert.match(COMMENT_SOURCE, /key=\{replyTarget\?\.key \?\? "thread-reply"\}/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /textareaRef/u);
 	// Collapsing still returns focus to the Reply button, which is a plain button.
 	assert.match(
 		COMMENT_SOURCE,
-		/if \(!replyToggledRef\.current \|\| replyOpen\) return;\s*replyButtonRef\.current\?\.focus\(\);/u,
+		/if \(!replyToggledRef\.current \|\| replyTarget !== null\) return;\s*activeReplyButtonRef\.current\?\.focus\(\);/u,
 	);
 });

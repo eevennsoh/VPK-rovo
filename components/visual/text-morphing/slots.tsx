@@ -162,7 +162,7 @@ export function SlotsRenderer({
 			<span
 				aria-label={text}
 				className={className}
-				style={{ display: "inline-flex", position: "relative", ...style }}
+				style={{ display: "inline-flex", position: "relative", ...style, overflow: "hidden" }}
 			>
 				<span
 					style={{

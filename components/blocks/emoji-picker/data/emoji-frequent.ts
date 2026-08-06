@@ -12,6 +12,15 @@ export interface EmojiReactionSummary {
 	reacted?: boolean;
 	/** Accessible label override, e.g. "Priya and 2 others reacted with thumbs up". */
 	label?: string;
+	/** Names shown in the optional Slack-like reaction hover detail. */
+	reactorNames?: readonly string[];
+}
+
+/** Formats actor names as an English conjunction for compact reaction details. */
+export function formatReactionActorNames(names: readonly string[]): string {
+	if (names.length < 2) return names[0] ?? "";
+	if (names.length === 2) return `${names[0]} and ${names[1]}`;
+	return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
 /**

@@ -62,6 +62,7 @@ const FILLED_ATTACHMENTS: WorkItemAttachment[] = [
 ];
 
 const FILLED_SUBTASKS: WorkItemChildItem[] = [
+	{ type: "Subtask", key: "RFP-110", summary: "Collect Acmecorp RFP source documents", priority: "medium", assignee: "Jordan Lee", assigneeAvatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png", status: "done" },
 	{ type: "Subtask", key: "RFP-111", summary: "Confirm Acmecorp mandatory response sections", priority: "high", assignee: "Maya Chen", assigneeAvatarUrl: "/avatar-user/andrea-wilson/color/asow-service-yellow.png", status: "inprogress" },
 	{ type: "Subtask", key: "RFP-112", summary: "Map Acmecorp reviewers and decision owners", priority: "medium", assignee: "Jordan Lee", assigneeAvatarUrl: "/avatar-user/andrew-park/color/asow-dev-lime.png", status: "todo" },
 ];

@@ -12,6 +12,7 @@ import { FloatingComposer } from "@/components/projects/shared/components/floati
 import { floatingComposerTextareaClassName } from "@/components/projects/shared/components/rovo-composer-styles";
 import { PromptInputTextarea } from "@/components/ui-custom/prompt-input";
 import type {
+	RichTextMentionSources,
 	RichTextMentionSectionLabels,
 	RichTextSuggestionVariantConfig,
 } from "@/components/ui-custom/rich-text-editor";
@@ -71,6 +72,7 @@ export interface JiraActivityComposerProps {
 	 * only reliable way in — focusing a ref from a parent effect races the editor.
 	 */
 	autoFocus?: boolean;
+	mentionSources?: RichTextMentionSources;
 	mentionSectionLabels?: RichTextMentionSectionLabels;
 	suggestionVariant?: RichTextSuggestionVariantConfig;
 	/** Optional cue rendered immediately before the submit CTA. */
@@ -92,6 +94,7 @@ export function JiraActivityComposer({
 	onValueChange,
 	textareaRef,
 	autoFocus = false,
+	mentionSources,
 	mentionSectionLabels,
 	suggestionVariant,
 	submitAccessory,
@@ -206,6 +209,7 @@ export function JiraActivityComposer({
 				autoResize
 				className={cn(floatingComposerTextareaClassName, "text-sm leading-5")}
 				enableDirectoryAutocomplete={false}
+				mentionSources={mentionSources}
 				mentionSectionLabels={mentionSectionLabels}
 				onChange={(event) => updateValue(event.currentTarget.value)}
 				placeholder={placeholder}
