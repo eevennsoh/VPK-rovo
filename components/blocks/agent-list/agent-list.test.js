@@ -220,17 +220,21 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/<div className="hidden -ml-1 shrink-0 items-center gap-2 group-hover\/activity-card:flex group-has-\[:focus-visible\]\/activity-card:flex">[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
+		/"pointer-events-none -ml-1 flex shrink-0 items-center gap-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
 	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
 });
 
-test("activity-header actions do not reserve space until the card is hovered or focused", () => {
+test("activity-header actions stay focusable while hidden so keyboard users can reach View", () => {
 	assert.match(
 		CARD_SOURCE,
 		/\{onView \|\| action \? \([\s\S]*\{action\}[\s\S]*\) : null\}/u,
 	);
-	assert.doesNotMatch(CARD_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
+	// `display: none` would drop the controls from the tab order, and a hidden
+	// descendant can never satisfy the `:focus-visible` reveal condition itself.
+	assert.doesNotMatch(CARD_SOURCE, /"hidden -ml-1 shrink-0 items-center gap-2/u);
+	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:opacity-100/u);
+	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:pointer-events-auto/u);
 });
 
 test("the session activity header accepts leading metadata without changing its shared geometry", () => {

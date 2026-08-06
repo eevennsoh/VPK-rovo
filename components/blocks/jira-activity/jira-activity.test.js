@@ -361,7 +361,7 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /activityGroupClass[\s\S]*group\/activity-card/u);
 	assert.match(CARD_SOURCE, /activityGroupClass,[\s\S]*"grid"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"group\/activity-card w-full overflow-hidden/u);
-	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-hover\/activity-card:flex/u);
+	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-hover\/activity-card:opacity-100/u);
 	// Both human and agent comments render the shared prompt-input composer, on
 	// the compact in-card surface rather than the bordered floating one.
 	assert.match(COMMENT_SOURCE, /variant="flush"/u);
@@ -506,11 +506,13 @@ test("comments with nested replies expose one shared header control to collapse 
 	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 	assert.match(COMMENT_SOURCE, /const headerAction = action \|\| repliesToggle \? \([\s\S]*gap-2/u);
-	// The shared control rides the card's hover scope instead of being always visible.
+	// The shared control rides the card's hover scope, but stays in the tab order:
+	// a `display: none` wrapper could never satisfy its own focus-visible reveal.
 	assert.match(
 		CARD_SOURCE,
-		/\{action \? \([\s\S]*"hidden shrink-0 items-center gap-2", actionVisibilityClass/u,
+		/\{action \? \([\s\S]*"pointer-events-none flex shrink-0 items-center gap-2 opacity-0[\s\S]*actionVisibilityClass/u,
 	);
+	assert.doesNotMatch(CARD_SOURCE, /"hidden shrink-0 items-center gap-2/u);
 	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
 	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
 	assert.match(COMMENT_SOURCE, /repliesHidden=\{!repliesExpanded\}/u);

@@ -54,7 +54,7 @@ test("wraps the branch and summary in copy-ready git commands", async () => {
 	const commands = toDevelopmentCommands("PD-61", "Slingshot maneuver");
 
 	assert.equal(commands.branchCommand, "git checkout -b PD-61-slingshot-maneuver");
-	assert.equal(commands.commitCommand, 'git commit -m "PD-61 Slingshot maneuver"');
+	assert.equal(commands.commitCommand, "git commit -m 'PD-61 Slingshot maneuver'");
 	assert.equal(commands.workItemKey, "PD-61");
 });
 
@@ -71,6 +71,25 @@ test("keeps the human summary verbatim in the commit subject", async () => {
 
 	assert.equal(
 		toDevelopmentCommands("PD-61", "  Fix: checkout (v2)  ").commitCommand,
-		'git commit -m "PD-61 Fix: checkout (v2)"',
+		"git commit -m 'PD-61 Fix: checkout (v2)'",
+	);
+});
+
+test("neutralises shell syntax so a pasted commit command cannot execute", async () => {
+	const { toDevelopmentCommands } = await loadModule();
+
+	// Single quotes make `$(…)`, backticks, `$VAR`, `\` and `"` literal.
+	assert.equal(
+		toDevelopmentCommands("PD-61", 'Fix $(whoami) and `id` for "$HOME\\path"').commitCommand,
+		String.raw`git commit -m 'PD-61 Fix $(whoami) and ` + "`id`" + String.raw` for "$HOME\path"'`,
+	);
+});
+
+test("escapes an apostrophe by closing, escaping, and reopening the quote", async () => {
+	const { toDevelopmentCommands } = await loadModule();
+
+	assert.equal(
+		toDevelopmentCommands("PD-61", "Fix Bob's checkout").commitCommand,
+		String.raw`git commit -m 'PD-61 Fix Bob'\''s checkout'`,
 	);
 });

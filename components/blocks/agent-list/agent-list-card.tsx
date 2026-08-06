@@ -208,9 +208,11 @@ export function AgentListActivityHeader({
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
 	const activityTimeTitle = item.state === "complete" ? "Last update" : "Agent runtime";
+	// Revealed on hover, but kept in layout and in the tab order: a `display: none`
+	// wrapper could never satisfy its own `:focus-visible` reveal condition.
 	const actionVisibilityClass = activityGroup === "activity-reply"
-		? "group-hover/activity-reply:flex group-has-[:focus-visible]/activity-reply:flex"
-		: "group-hover/activity-card:flex group-has-[:focus-visible]/activity-card:flex";
+		? "group-hover/activity-reply:pointer-events-auto group-hover/activity-reply:opacity-100 group-has-[:focus-visible]/activity-reply:pointer-events-auto group-has-[:focus-visible]/activity-reply:opacity-100"
+		: "group-hover/activity-card:pointer-events-auto group-hover/activity-card:opacity-100 group-has-[:focus-visible]/activity-card:pointer-events-auto group-has-[:focus-visible]/activity-card:opacity-100";
 
 	return (
 		<div className="flex min-w-0 items-center gap-3">
@@ -283,7 +285,12 @@ export function AgentListActivityHeader({
 			</div>
 			{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
 			{onView || action ? (
-				<div className={cn("hidden -ml-1 shrink-0 items-center gap-2", actionVisibilityClass)}>
+				<div
+					className={cn(
+						"pointer-events-none -ml-1 flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+						actionVisibilityClass,
+					)}
+				>
 					{onView ? (
 						<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
 							View

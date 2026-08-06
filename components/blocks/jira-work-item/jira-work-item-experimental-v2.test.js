@@ -640,7 +640,8 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
 	assert.match(
 		metadataRailSource,
-		/content: <DevelopmentSectionContent summary=\{workItem\.title\} workItemKey=\{workItem\.code\} \/>,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
+		// Commands follow the edited title in context resources, not the immutable prop.
+		/<DevelopmentSectionContent summary=\{contextResources\.title\} workItemKey=\{workItem\.code\} \/>[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
 	assert.doesNotMatch(automationTabSource, /From Automation/u);

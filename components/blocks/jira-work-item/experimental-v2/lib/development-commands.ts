@@ -36,6 +36,17 @@ export function toBranchSlug(summary: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Wrap arbitrary text as a single POSIX shell word. Single quotes suppress every
+ * expansion — `$(…)`, backticks, `$VAR`, `\` and `"` are all literal inside them
+ * — so an embedded `'` is the only character needing work: close the quote, emit
+ * an escaped `'`, reopen. Without this a summary like `Fix $(whoami) crash`
+ * would execute when the advertised copy-ready command is pasted into a shell.
+ */
+function toShellSingleQuoted(value: string): string {
+	return `'${value.replaceAll("'", String.raw`'\''`)}'`;
+}
+
 /** Derive the three copyable Development-section values for a work item. */
 export function toDevelopmentCommands(workItemKey: string, summary: string): DevelopmentCommands {
 	const key = workItemKey.trim();
@@ -48,7 +59,7 @@ export function toDevelopmentCommands(workItemKey: string, summary: string): Dev
 		branchName,
 		// The commit subject keeps the human summary verbatim; only the branch
 		// name is slugged.
-		commitCommand: `git commit -m "${key} ${trimmedSummary}"`,
+		commitCommand: `git commit -m ${toShellSingleQuoted(`${key} ${trimmedSummary}`)}`,
 		workItemKey: key,
 	};
 }

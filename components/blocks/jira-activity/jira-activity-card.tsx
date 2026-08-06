@@ -98,9 +98,11 @@ export function JiraActivityCard({
 	const activityGroupClass = activityGroup === "activity-reply"
 		? "group/activity-reply"
 		: "group/activity-card";
+	// Revealed on hover, but kept in layout and in the tab order: a `display: none`
+	// wrapper could never satisfy its own `:focus-visible` reveal condition.
 	const actionVisibilityClass = activityGroup === "activity-reply"
-		? "group-hover/activity-reply:flex group-has-[:focus-visible]/activity-reply:flex"
-		: "group-hover/activity-card:flex group-has-[:focus-visible]/activity-card:flex";
+		? "group-hover/activity-reply:pointer-events-auto group-hover/activity-reply:opacity-100 group-has-[:focus-visible]/activity-reply:pointer-events-auto group-has-[:focus-visible]/activity-reply:opacity-100"
+		: "group-hover/activity-card:pointer-events-auto group-hover/activity-card:opacity-100 group-has-[:focus-visible]/activity-card:pointer-events-auto group-has-[:focus-visible]/activity-card:opacity-100";
 
 	return (
 		<div
@@ -160,7 +162,12 @@ export function JiraActivityCard({
 								</div>
 							)}
 							{action ? (
-								<div className={cn("hidden shrink-0 items-center gap-2", actionVisibilityClass)}>
+								<div
+									className={cn(
+										"pointer-events-none flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										actionVisibilityClass,
+									)}
+								>
 									{action}
 								</div>
 							) : null}
