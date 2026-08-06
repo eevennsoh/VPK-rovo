@@ -89,6 +89,17 @@ export interface PixelLoaderProps {
 	testId?: string;
 }
 
+function PixelLoaderElapsed() {
+	const elapsed = useElapsed();
+
+	return (
+		// Hidden from the live region: a 10Hz readout would flood a screen reader.
+		<span aria-hidden="true" className="font-mono text-xs text-text-subtlest tabular-nums">
+			{elapsed}
+		</span>
+	);
+}
+
 export function PixelLoader({
 	pattern = DEFAULT_PIXEL_LOADER_PATTERN,
 	shape = "square",
@@ -100,7 +111,6 @@ export function PixelLoader({
 	testId,
 }: Readonly<PixelLoaderProps>) {
 	const reducedMotion = usePrefersReducedMotion();
-	const elapsed = useElapsed(showElapsed);
 
 	const { duration, delays } = PIXEL_LOADER_PATTERNS[pattern];
 	const { cell, gap, label: labelSize } = SIZES[size];
@@ -159,12 +169,7 @@ export function PixelLoader({
 				</span>
 			) : null}
 
-			{elapsed ? (
-				// Hidden from the live region: a 10Hz readout would flood a screen reader.
-				<span aria-hidden="true" className="font-mono text-xs text-text-subtlest tabular-nums">
-					{elapsed}
-				</span>
-			) : null}
+			{showElapsed ? <PixelLoaderElapsed /> : null}
 		</output>
 	);
 }
