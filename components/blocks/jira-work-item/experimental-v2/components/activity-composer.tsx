@@ -163,7 +163,10 @@ export function ActivityComposer({
 		for (const invokedAgent of invokedAgents) {
 			actions.invokeAgent(invokedAgent, "prompt", text);
 		}
-		onAgentPromptSubmit?.(invokedAgents.map((agent) => agent.id), text);
+		onAgentPromptSubmit?.(
+			[...handledAgentIds, ...invokedAgents.map((agent) => agent.id)],
+			text,
+		);
 		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
 			if (meta.composerDelivery === "broadcast-active-agents") {
 				actions.broadcastComment(text);

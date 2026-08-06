@@ -54,14 +54,17 @@ export function composeActivitySessionThread(
 			return [];
 		}
 
-		return [{
-			id: `${event.id}-thread-reply`,
-			agentId: event.agentId,
-			agentName: event.agentName,
-			agentAvatarSrc: event.agentAvatarSrc,
-			content: event.responsePreview ?? event.commandPreview,
-			createdAtMs: event.createdAtMs,
-		}];
+		return [
+			{
+				id: `${event.id}-thread-reply`,
+				agentId: event.agentId,
+				agentName: event.agentName,
+				agentAvatarSrc: event.agentAvatarSrc,
+				content: event.responsePreview ?? event.commandPreview,
+				createdAtMs: event.createdAtMs,
+			},
+			...(event.threadReplies ?? []),
+		];
 	});
 
 	return events.flatMap((event): ActivityEvent[] => {

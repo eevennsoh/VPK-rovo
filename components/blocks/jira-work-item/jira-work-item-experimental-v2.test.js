@@ -232,6 +232,11 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 	);
 	assert.match(
 		composerSource,
+		/onAgentPromptSubmit\?\.\([\s\S]*\.\.\.handledAgentIds,[\s\S]*\.\.\.invokedAgents\.map\(\(agent\) => agent\.id\)/u,
+		"composer should report both active and newly invoked mentioned agents to orchestration callbacks",
+	);
+	assert.match(
+		composerSource,
 		/meta\.composerDelivery === "broadcast-active-agents"[\s\S]*actions\.broadcastComment\(text\);[\s\S]*else \{[\s\S]*actions\.addComment\(text\);/u,
 	);
 });

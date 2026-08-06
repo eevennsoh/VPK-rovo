@@ -179,6 +179,14 @@ test("composes visible delegated sessions as replies beneath one lead agent", as
 			commandPreview: "Implement guest checkout",
 			responsePreview: "Implementing against the approved contract…",
 			createdAtMs: 200,
+			threadReplies: [{
+				id: "copilot-test-handoff",
+				agentId: "unit-test-creator",
+				agentName: "Unit Test Creator",
+				agentAvatarSrc: "/unit-test-creator.svg",
+				content: "The implementation is ready for acceptance coverage.",
+				createdAtMs: 250,
+			}],
 		},
 		{
 			id: "activity-tests",
@@ -211,6 +219,13 @@ test("composes visible delegated sessions as replies beneath one lead agent", as
 		agentAvatarSrc: undefined,
 		content: "Implementing against the approved contract…",
 		createdAtMs: 200,
+	}, {
+		id: "copilot-test-handoff",
+		agentId: "unit-test-creator",
+		agentName: "Unit Test Creator",
+		agentAvatarSrc: "/unit-test-creator.svg",
+		content: "The implementation is ready for acceptance coverage.",
+		createdAtMs: 250,
 	}]);
 
 	assert.deepEqual(
