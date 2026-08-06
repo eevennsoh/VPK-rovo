@@ -56,7 +56,7 @@ export function JiraActivityChangedFiles({
 		return (
 			<div
 				className={cn(
-					"w-full bg-surface",
+					"group/activity-card w-full bg-surface",
 					isJiraIssue ? "rounded-xl" : "overflow-hidden rounded-lg border border-border",
 				)}
 			>

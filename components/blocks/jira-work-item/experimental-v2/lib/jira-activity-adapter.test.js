@@ -27,6 +27,17 @@ function loadAdapter() {
 	return adapterPromise;
 }
 
+test("uses Venn as the Jira work-item current user with the supplied face avatar", async () => {
+	const adapter = await loadAdapter();
+
+	assert.deepEqual(adapter.JIRA_WORK_ITEM_CURRENT_USER, {
+		id: "jira-work-item-current-user",
+		name: "Venn",
+		kind: "person",
+		avatarSrc: "/avatar-user/venn/venn.png",
+	});
+});
+
 test("maps human activity to a replyable Jira comment", async () => {
 	const adapter = await loadAdapter();
 	const [entry] = adapter.mapActivityEventsToJiraEntries([
@@ -76,7 +87,7 @@ test("maps authored eyes reactions and agent handoff replies into Jira comments"
 		{
 			id: "comment-broadcast",
 			kind: "human",
-			author: { name: "You" },
+			author: { name: "Venn" },
 			content: "Check the live reconnect path.",
 			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
 			threadReplies: [{
@@ -147,6 +158,100 @@ test("maps authored eyes reactions and agent handoff replies into Jira comments"
 		timestamp: "9:07 AM",
 		body: "The stale filter snapshot is restored after the reconnect subscription resolves.",
 	}]);
+});
+
+test("composes visible delegated sessions as replies beneath one lead agent", async () => {
+	const adapter = await loadAdapter();
+	const events = [
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			status: "running",
+			title: "Plan guest checkout",
+			branch: "rovo/plan",
+			elapsedSeconds: 12,
+			commandPreview: "Lead the plan",
+			responsePreview: "Designing the checkout contract…",
+			createdAtMs: 100,
+		},
+		{
+			id: "activity-copilot",
+			kind: "agent",
+			sessionId: "session-copilot",
+			agentId: "github-copilot",
+			agentName: "GitHub Copilot",
+			status: "running",
+			title: "Implement guest checkout",
+			branch: "rovo/implement",
+			elapsedSeconds: 8,
+			commandPreview: "Implement guest checkout",
+			responsePreview: "Implementing against the approved contract…",
+			createdAtMs: 200,
+			threadReplies: [{
+				id: "copilot-test-handoff",
+				agentId: "unit-test-creator",
+				agentName: "Unit Test Creator",
+				agentAvatarSrc: "/unit-test-creator.svg",
+				content: "The implementation is ready for acceptance coverage.",
+				createdAtMs: 250,
+			}],
+		},
+		{
+			id: "activity-tests",
+			kind: "agent",
+			sessionId: "session-tests",
+			agentId: "unit-test-creator",
+			agentName: "Unit Test Creator",
+			status: "running",
+			title: "Verify acceptance coverage",
+			branch: "rovo/tests",
+			elapsedSeconds: 4,
+			commandPreview: "Build acceptance proof",
+			responsePreview: "Building deterministic acceptance cases…",
+			createdAtMs: 300,
+		},
+	];
+	const config = {
+		parentSessionId: "session-planner",
+		childSessionIds: ["session-copilot", "session-tests"],
+		visibleSessionIds: ["session-planner", "session-copilot"],
+	};
+
+	const composed = adapter.composeActivitySessionThread(events, config);
+	assert.equal(composed.length, 1);
+	assert.equal(composed[0].sessionId, "session-planner");
+	assert.deepEqual(composed[0].threadReplies, [{
+		id: "activity-copilot-thread-reply",
+		sessionId: "session-copilot",
+		agentId: "github-copilot",
+		agentName: "GitHub Copilot",
+		agentAvatarSrc: undefined,
+		content: "Implementing against the approved contract…",
+		createdAtMs: 200,
+	}, {
+		id: "copilot-test-handoff",
+		agentId: "unit-test-creator",
+		agentName: "Unit Test Creator",
+		agentAvatarSrc: "/unit-test-creator.svg",
+		content: "The implementation is ready for acceptance coverage.",
+		createdAtMs: 250,
+	}]);
+
+	const [mappedEntry] = adapter.mapActivityEventsToJiraEntries(composed, undefined, events);
+	assert.deepEqual(
+		mappedEntry.replies.map((reply) => reply.sessionItem?.id),
+		["session-copilot", "session-tests"],
+		"agent replies retain the session used by their View action",
+	);
+
+	assert.deepEqual(
+		adapter.composeActivitySessionThread(events, { ...config, visibleSessionIds: [] }),
+		[],
+	);
+	assert.equal(events.length, 3, "composition must not mutate the source timeline");
 });
 
 test("maps agent activity to rich Jira comments with lifecycle tags", async () => {
@@ -232,6 +337,50 @@ test("maps skill activity to the canonical VPK Rovo logo", async () => {
 		name: "Rovo",
 		vpkLogo: "rovo",
 	});
+});
+
+test("maps third-party coding-agent identity through activity, session, and mention surfaces", async () => {
+	const adapter = await loadAdapter();
+	const [comment, claudeEntry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-claude",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "Ask @Claude Code to implement the change.",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+		},
+		{
+			id: "activity-claude-branded",
+			kind: "agent",
+			sessionId: "session-claude-branded",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			agentAvatarSrc: "/wrong-custom-avatar.svg",
+			agentBrandName: "claude",
+			status: "running",
+			title: "Implement the change",
+			branch: "feature/change",
+			elapsedSeconds: 10,
+			commandPreview: "Implement the change",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 31),
+		},
+	]);
+
+	assert.deepEqual(claudeEntry.actor, {
+		id: "jira-work-item-agent-claude-code",
+		name: "Claude Code",
+		kind: "agent",
+		brandName: "claude",
+	});
+	assert.deepEqual(claudeEntry.sessionItem.agent, {
+		name: "Claude Code",
+		brandName: "claude",
+	});
+	assert.deepEqual(comment.body, [
+		{ type: "text", text: "Ask " },
+		{ type: "agent-mention", text: "Claude Code", brandName: "claude" },
+		{ type: "text", text: " to implement the change." },
+	]);
 });
 
 test("maps a static event to a Jira event row with icon, segments, and timestamp", async () => {
@@ -363,7 +512,7 @@ test("preserves input chronology and represents a missing agent response as an e
 		{
 			id: "later-human",
 			kind: "human",
-			author: { name: "You" },
+			author: { name: "Venn" },
 			content: "Keep this first because the input placed it first.",
 			createdAtMs: Date.UTC(2026, 4, 12, 12),
 		},
@@ -386,4 +535,157 @@ test("preserves input chronology and represents a missing agent response as an e
 	assert.deepEqual(entries[0].actor, adapter.JIRA_WORK_ITEM_CURRENT_USER);
 	assert.deepEqual(entries[1].body, []);
 	assert.equal(entries[1].sessionItem.agent.avatarSrc, entries[1].actor.avatarSrc);
+});
+
+test("promotes @mentions of agents with a session in the stream into mention chips", async () => {
+	const adapter = await loadAdapter();
+	const [comment] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-orchestration",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "@Code Planner lead the plan, and @Unit Test Creator prove it.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/planner.png",
+			status: "running",
+			title: "Plan",
+			branch: "rovo/plan",
+			elapsedSeconds: 10,
+			commandPreview: "Plan",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
+		},
+		{
+			id: "activity-tests",
+			kind: "agent",
+			sessionId: "session-tests",
+			agentId: "unit-test-creator",
+			agentName: "Unit Test Creator",
+			agentAvatarSrc: "/tests.png",
+			status: "running",
+			title: "Test",
+			branch: "rovo/test",
+			elapsedSeconds: 10,
+			commandPreview: "Test",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
+		},
+	]);
+
+	assert.deepEqual(comment.body, [
+		{ type: "agent-mention", text: "Code Planner", avatarSrc: "/planner.png" },
+		{ type: "text", text: " lead the plan, and " },
+		{ type: "agent-mention", text: "Unit Test Creator", avatarSrc: "/tests.png" },
+		{ type: "text", text: " prove it." },
+	]);
+});
+
+test("leaves @text with no matching agent session as plain comment copy", async () => {
+	const adapter = await loadAdapter();
+	const [comment] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-unmatched",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "Email @support and ping @Code Planners about the retry.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/planner.png",
+			status: "running",
+			title: "Plan",
+			branch: "rovo/plan",
+			elapsedSeconds: 10,
+			commandPreview: "Plan",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
+		},
+	]);
+
+	assert.deepEqual(comment.body, [
+		{ type: "text", text: "Email @support and ping @Code Planners about the retry." },
+	]);
+});
+
+test("keeps delegated agents mentionable after their sessions fold into the lead thread", async () => {
+	const adapter = await loadAdapter();
+	const events = [
+		{
+			id: "comment-orchestration",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "@Code Planner lead, @GitHub Copilot build, @Unit Test Creator verify.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/planner.png",
+			status: "running",
+			title: "Plan",
+			branch: "rovo/plan",
+			elapsedSeconds: 10,
+			commandPreview: "Plan",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
+		},
+		{
+			id: "activity-copilot",
+			kind: "agent",
+			sessionId: "session-copilot",
+			agentId: "github-copilot",
+			agentName: "GitHub Copilot",
+			agentAvatarSrc: "/copilot.png",
+			status: "running",
+			title: "Build",
+			branch: "rovo/build",
+			elapsedSeconds: 10,
+			commandPreview: "Build",
+			responsePreview: "Building the service.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
+		},
+		{
+			id: "activity-tests",
+			kind: "agent",
+			sessionId: "session-tests",
+			agentId: "unit-test-creator",
+			agentName: "Unit Test Creator",
+			agentAvatarSrc: "/tests.png",
+			status: "running",
+			title: "Verify",
+			branch: "rovo/verify",
+			elapsedSeconds: 10,
+			commandPreview: "Verify",
+			responsePreview: "Writing acceptance cases.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 3),
+		},
+	];
+
+	// The delegated sessions no longer exist as standalone agent events here.
+	const composed = adapter.composeActivitySessionThread(events, {
+		parentSessionId: "session-planner",
+		childSessionIds: ["session-copilot", "session-tests"],
+		visibleSessionIds: ["session-planner", "session-copilot", "session-tests"],
+	});
+	const [comment] = adapter.mapActivityEventsToJiraEntries(composed);
+
+	assert.deepEqual(
+		comment.body.filter((segment) => segment.type === "agent-mention"),
+		[
+			{ type: "agent-mention", text: "Code Planner", avatarSrc: "/planner.png" },
+			{ type: "agent-mention", text: "GitHub Copilot", avatarSrc: "/copilot.png" },
+			{ type: "agent-mention", text: "Unit Test Creator", avatarSrc: "/tests.png" },
+		],
+	);
 });

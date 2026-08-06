@@ -20,6 +20,7 @@ import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-row";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
+import { FOCUS_RING_VISIBLE } from "@/components/ui/focus-ring";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -170,6 +171,7 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 				render={
 					<LozengeDropdownTrigger
 						aria-label={`Change status. Current status: ${value}`}
+						className="data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring/50"
 						size="compact"
 						variant={statusVariant(value)}
 					/>
@@ -550,7 +552,7 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 					render={
 						<button
 							aria-label="Edit agents"
-							className="absolute inset-0 -mx-2 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							className={cn("absolute inset-0 -mx-2 rounded-md px-2", FOCUS_RING_VISIBLE)}
 							type="button"
 						/>
 					}

@@ -36,6 +36,55 @@ export const WORK_ITEM_SKILLS: readonly SkillsDirectorySkill[] = [
 		icon: "link",
 		source: "platform",
 	},
+	{
+		id: "draft-acceptance-criteria",
+		name: "Draft acceptance criteria",
+		description: "Turn the description into testable acceptance criteria.",
+		icon: "skill",
+		source: "platform",
+	},
+	{
+		id: "draft-test-plan",
+		name: "Draft test plan",
+		description: "Outline the manual and automated checks this change needs.",
+		icon: "curly-brackets",
+		source: "platform",
+	},
+	{
+		id: "estimate-effort",
+		name: "Estimate effort",
+		description: "Suggest an estimate from the scope and comparable past work.",
+		icon: "chart-trend-up",
+		source: "platform",
+	},
+	{
+		id: "find-related-documents",
+		name: "Find related documents",
+		description: "Search Confluence for specs and decisions that affect this work.",
+		icon: "search",
+		source: "platform",
+	},
+	{
+		id: "check-mobile-impact",
+		name: "Check mobile impact",
+		description: "Flag the mobile web and native surfaces this change touches.",
+		icon: "device-mobile",
+		source: "platform",
+	},
+	{
+		id: "draft-release-note",
+		name: "Draft release note",
+		description: "Write customer-facing release copy for this change.",
+		icon: "megaphone",
+		source: "platform",
+	},
+	{
+		id: "schedule-follow-up",
+		name: "Schedule follow-up",
+		description: "Book a review slot with the assignee and reporter.",
+		icon: "calendar",
+		source: "platform",
+	},
 ];
 
 export const DEFAULT_PINNED_SPACE_AGENT_IDS = [

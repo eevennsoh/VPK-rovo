@@ -79,6 +79,7 @@ export function ActivityComposerAgentContextPill({
 					pinnedAgentIds={pinnedAgentIds}
 					pinnedItemsLabel={WORK_ITEM_PINNED_ITEMS_LABEL}
 					query={query}
+					searchVariant="palette"
 					selectionMode="single"
 				/>
 			</DropdownMenuContent>

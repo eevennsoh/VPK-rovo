@@ -17,7 +17,7 @@ export interface JiraActivityCardProps {
 	item?: AgentListItem;
 	/** Agent name shown in the activity-card header. */
 	agentName?: string;
-	/** Relative activity timestamp shown beside the agent name. */
+	/** Fixed sent timestamp shown before active runtime in agent-session headers. */
 	timestamp?: string;
 	/** Optional status tag shown in the activity-card header. */
 	tag?: { text: string; color?: TagColor };
@@ -27,6 +27,8 @@ export interface JiraActivityCardProps {
 	headerAvatar?: ReactNode;
 	/** Header geometry for plain activity cards without a session summary. */
 	headerLayout?: "inline" | "stacked";
+	/** Named hover scope for cards nested inside another activity card. */
+	activityGroup?: "activity-card" | "activity-reply";
 	/** Called when the rich activity header's View button is activated. */
 	onView?: (item: AgentListItem) => void;
 	/** Main activity content rendered inside the card. */
@@ -57,6 +59,7 @@ export function JiraActivityCard({
 	action,
 	headerAvatar,
 	headerLayout = "inline",
+	activityGroup = "activity-card",
 	onView,
 	children,
 	details,
@@ -92,17 +95,26 @@ export function JiraActivityCard({
 	) : null;
 	const hasStackedHeader = headerLayout === "stacked";
 	const hasExpandedLayout = item != null || hasStackedHeader;
+	const activityGroupClass = activityGroup === "activity-reply"
+		? "group/activity-reply"
+		: "group/activity-card";
+	// Revealed on hover, but kept in layout and in the tab order: a `display: none`
+	// wrapper could never satisfy its own `:focus-visible` reveal condition.
+	const actionVisibilityClass = activityGroup === "activity-reply"
+		? "group-hover/activity-reply:pointer-events-auto group-hover/activity-reply:opacity-100 group-has-[:focus-visible]/activity-reply:pointer-events-auto group-has-[:focus-visible]/activity-reply:opacity-100"
+		: "group-hover/activity-card:pointer-events-auto group-hover/activity-card:opacity-100 group-has-[:focus-visible]/activity-card:pointer-events-auto group-has-[:focus-visible]/activity-card:opacity-100";
 
 	return (
 		<div
 			className={cn(
-				"group/activity-card w-full overflow-hidden border border-border bg-surface",
+				"w-full overflow-hidden border border-border bg-surface",
 				hasExpandedLayout ? "rounded-xl" : "rounded-lg",
 				className,
 			)}
 		>
 			<div
 				className={cn(
+					activityGroupClass,
 					"grid",
 					hasExpandedLayout ? "gap-3 p-3" : "gap-2 p-3",
 				)}
@@ -111,8 +123,11 @@ export function JiraActivityCard({
 					<>
 						<AgentListActivityHeader
 							action={action}
+							activityGroup={activityGroup}
 							item={item}
 							key={item.id}
+							leadWithAgentName
+							messageTimestamp={timestamp}
 							onView={onView}
 						/>
 						<div className="text-sm leading-5 text-text">{children}</div>
@@ -146,7 +161,16 @@ export function JiraActivityCard({
 									{tag ? <Tag color={tag.color ?? "gray"}>{tag.text}</Tag> : null}
 								</div>
 							)}
-							{action}
+							{action ? (
+								<div
+									className={cn(
+										"pointer-events-none flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										actionVisibilityClass,
+									)}
+								>
+									{action}
+								</div>
+							) : null}
 						</div>
 
 						{children}

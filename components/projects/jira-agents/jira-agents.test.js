@@ -30,6 +30,27 @@ function loadStoryModule() {
 	return storyModulePromise;
 }
 
+let orchestrationModulePromise;
+function loadOrchestrationModule() {
+	if (!orchestrationModulePromise) {
+		orchestrationModulePromise = esbuild
+			.build({
+				entryPoints: [path.join(__dirname, "data/orchestration-state.ts")],
+				bundle: true,
+				format: "cjs",
+				loader: { ".css": "empty" },
+				platform: "node",
+				tsconfig: path.join(process.cwd(), "tsconfig.json"),
+				write: false,
+			})
+			.then((result) => loadCjsModuleFromText(
+				result.outputFiles[0].text,
+				"jira-agents-orchestration-state-harness.cjs",
+			));
+	}
+	return orchestrationModulePromise;
+}
+
 let stateModulePromise;
 function loadStateModule() {
 	if (!stateModulePromise) {
@@ -59,6 +80,9 @@ test("Jira Agents composes the six-chapter software delivery story without chang
 
 	assert.match(pageSource, /<JiraAgentsStoryControls controller=\{storyController\} \/>/u);
 	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*workItem=\{controller\.workItem\}/u);
+	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
+	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
+	assert.doesNotMatch(pageSource, /key=\{controller\.launchId\}/u);
 	assert.match(pageSource, /<JiraDesignWorkspaceStage[\s\S]*boardColumns=\{controller\.boardColumns\}[\s\S]*defaultOpenItemId=\{JIRA_AGENTS_STORY_ITEM_ID\}[\s\S]*sections=\{controller\.sections\}/u);
 	assert.match(pageSource, /selectAgent\(agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
 	assert.match(controlsSource, /JIRA_AGENTS_STORY_CHAPTERS\.map/u);
@@ -71,6 +95,74 @@ test("Jira Agents composes the six-chapter software delivery story without chang
 	assert.doesNotMatch(itemsSource, /Jira For You|id: "for-you"/u);
 	assert.doesNotMatch(pageSource, /ForYouStage|item\.id === "for-you"/u);
 	assert.doesNotMatch(pageSource, /WorkItemControls|useWorkItemStageController/u);
+});
+
+test("submitting the complete @mentioned agent team starts the staged orchestration reveal", async () => {
+	const story = await loadStoryModule();
+	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
+	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
+	const completeTeam = story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.id);
+
+	assert.equal(story.shouldStartJiraAgentsPlan("brief", completeTeam), true);
+	assert.equal(story.shouldStartJiraAgentsPlan("brief", completeTeam.slice(0, 1)), false);
+	assert.equal(story.shouldStartJiraAgentsPlan("plan", completeTeam), false);
+	assert.match(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds\)[\s\S]*startOrchestration\(\)/u);
+	assert.doesNotMatch(pageSource, /shouldStartJiraAgentsPlan\(chapter, agentIds\)[\s\S]*selectChapter\("plan"\)/u);
+	assert.match(controllerSource, /if \(!active \|\| orchestrationStep === "idle"\) return undefined;/u);
+	assert.match(controllerSource, /return \(\) => window\.clearTimeout\(timeoutId\);/u);
+});
+
+test("the orchestration reveal keeps two agents working while comments, reactions, and activity arrive in order", async () => {
+	const orchestration = await loadOrchestrationModule();
+	const steps = [
+		"agents-working",
+		"comment",
+		"reaction-1",
+		"reaction-2",
+		"lead",
+		"claude",
+	];
+	const states = steps.map((step) => orchestration.createJiraAgentsOrchestrationState(step));
+
+	assert.deepEqual(states.map((state) => state.sessions.length), steps.map(() => 2));
+	assert.deepEqual(states.map((state) => {
+		const comment = state.comments.find((candidate) => candidate.id === "story-channel-orchestration");
+		return comment?.reactions?.[0]?.actorIds.length ?? (comment ? 0 : -1);
+	}), [-1, 0, 1, 2, 2, 2]);
+	assert.deepEqual(states.map((state) => state.staticEvents.some(
+		(event) => event.id === "story-lead-delegated",
+	)), [false, false, false, false, true, true]);
+});
+
+test("the lead activity shows the custom planner and Claude Code as mention tags", async () => {
+	const story = await loadStoryModule();
+	const plan = story.createJiraAgentsStoryState("plan");
+	const leadActivity = plan.staticEvents.find(
+		(event) => event.id === "story-lead-delegated",
+	);
+	const claudeSession = plan.sessions.find((session) => session.agentId === "claude-code");
+
+	assert.equal(leadActivity.showActor, false);
+	assert.equal(leadActivity.showTimestamp, false);
+	assert.deepEqual(
+		leadActivity.segments.map((segment) => segment.type),
+		["agent-mention", "agent-mention", "text"],
+	);
+	assert.deepEqual(
+		leadActivity.segments
+			.filter((segment) => segment.type === "agent-mention")
+			.map((segment) => segment.text),
+		["Code Planner", "Claude Code"],
+	);
+	assert.equal(leadActivity.segments.at(-1).text, " Started working");
+	assert.equal(leadActivity.segments[1].brandName, "claude");
+	assert.equal(claudeSession.agentBrandName, "claude");
+	assert.equal(
+		story.createJiraAgentsStoryState("plan").comments.find(
+			(comment) => comment.id === "story-channel-orchestration",
+		).content,
+		"@Code Planner lead the technical plan and API contract, then hand implementation and acceptance verification to @Claude Code.",
+	);
 });
 
 test("Jira Agents seeds checkout automation rows without changing the shared empty default", () => {
@@ -112,7 +204,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 	assert.deepEqual(chapters, ["brief", "plan", "working", "handoff", "review", "done"]);
 	assert.deepEqual(
 		story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.name),
-		["Code Planner", "GitHub Copilot", "Unit Test Creator"],
+		["Code Planner", "Claude Code"],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.getJiraAgentsStoryStatus(chapter)),
@@ -122,7 +214,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 		chapters.map((chapter) => story.createJiraAgentsStoryState(chapter).sessions.filter(
 			(session) => session.status !== "completed",
 		).length),
-		[0, 3, 3, 2, 1, 0],
+		[0, 2, 2, 1, 1, 0],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => {
@@ -131,7 +223,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 			);
 			return comment?.reactions?.[0]?.actorIds.length ?? 0;
 		}),
-		[0, 3, 3, 2, 1, 0],
+		[0, 2, 2, 1, 1, 0],
 	);
 });
 
@@ -165,7 +257,8 @@ test("the Brief starts with an implementation-ready checkout specification befor
 	assert.deepEqual(
 		brief.contextResources.subtasks.map(({ key, type, status }) => ({ key, type, status })),
 		[
-			{ key: "SHOP-4822", type: "Task", status: "todo" },
+			{ key: "SHOP-4824", type: "Task", status: "done" },
+			{ key: "SHOP-4822", type: "Task", status: "inprogress" },
 			{ key: "SHOP-4823", type: "Story", status: "todo" },
 		],
 	);
@@ -179,11 +272,23 @@ test("the Brief starts with an implementation-ready checkout specification befor
 			...brief.contextResources.linkedItems.map(({ key, assignee }) => ({ key, assignee })),
 		],
 		[
+			{ key: "SHOP-4824", assignee: "Anthony Chen" },
 			{ key: "SHOP-4822", assignee: "Priya Hansra" },
 			{ key: "SHOP-4823", assignee: "Veronica Rodriguez" },
 			{ key: "SHOP-4760", assignee: "Anthony Chen" },
 		],
 	);
+});
+
+test("Jira Agents addresses authored story activity as Venn", async () => {
+	const story = await loadStoryModule();
+	const plan = story.createJiraAgentsStoryState("plan");
+	const orchestrationComment = plan.comments.find(
+		(comment) => comment.id === "story-channel-orchestration",
+	);
+
+	assert.equal(orchestrationComment.authorName, "Venn");
+	assert.equal(plan.sessions[0].messages[0].authorName, "Venn");
 });
 
 test("child work-item statuses follow the delivery chapters", async () => {
@@ -193,12 +298,12 @@ test("child work-item statuses follow the delivery chapters", async () => {
 	assert.deepEqual(
 		chapters.map((chapter) => story.createJiraAgentsStoryState(chapter).contextResources.subtasks.map((item) => item.status)),
 		[
-			["todo", "todo"],
-			["todo", "todo"],
-			["inprogress", "todo"],
-			["inprogress", "todo"],
-			["inprogress", "inprogress"],
-			["done", "done"],
+			["done", "inprogress", "todo"],
+			["done", "inprogress", "todo"],
+			["done", "inprogress", "todo"],
+			["done", "done", "inprogress"],
+			["done", "done", "inprogress"],
+			["done", "done", "done"],
 		],
 	);
 });
@@ -209,24 +314,21 @@ test("working, handoff, review, and done encode the agent dependency chain", asy
 	const handoff = story.createJiraAgentsStoryState("handoff");
 	const review = story.createJiraAgentsStoryState("review");
 	const done = story.createJiraAgentsStoryState("done");
-	const workingCopilot = working.sessions.find((session) => session.agentId === "github-copilot");
-	const handoffCopilot = handoff.sessions.find((session) => session.agentId === "github-copilot");
-	const handoffTests = handoff.sessions.find((session) => session.agentId === "unit-test-creator");
-	const reviewTests = review.sessions.find((session) => session.agentId === "unit-test-creator");
+	const workingClaude = working.sessions.find((session) => session.agentId === "claude-code");
+	const handoffClaude = handoff.sessions.find((session) => session.agentId === "claude-code");
+	const reviewClaude = review.sessions.find((session) => session.agentId === "claude-code");
 
-	assert.equal(workingCopilot.status, "waiting");
-	assert.deepEqual(workingCopilot.waitingOn, {
+	assert.equal(workingClaude.status, "waiting");
+	assert.deepEqual(workingClaude.waitingOn, {
 		kind: "agent",
 		agentId: "code-planner",
 		agentName: "Code Planner",
 		agentAvatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
 	});
-	assert.equal(handoffCopilot.status, "running");
-	assert.equal(handoffCopilot.threadReplies[0].agentId, "code-planner");
-	assert.equal(handoffTests.status, "waiting");
-	assert.equal(handoffTests.waitingOn.agentId, "github-copilot");
-	assert.equal(reviewTests.status, "running");
-	assert.equal(reviewTests.threadReplies[0].agentId, "github-copilot");
+	assert.equal(handoffClaude.status, "running");
+	assert.equal(handoffClaude.threadReplies[0].agentId, "code-planner");
+	assert.equal(reviewClaude.status, "running");
+	assert.equal(reviewClaude.threadReplies[0].agentId, "code-planner");
 	assert.ok(review.staticEvents.some((event) => event.id === "story-pr-opened"));
 	assert.ok(done.staticEvents.some((event) => event.id === "story-pr-merged"));
 	assert.ok(done.staticEvents.some((event) => event.id === "story-release-verified"));
@@ -295,7 +397,7 @@ test("the orchestration timeline and live broadcasts remain chronological", asyn
 	assert.equal(events.at(-1).kind, "human");
 	assert.equal(events.at(-1).content, "Keep guest checkout fast and do not create an account before purchase.");
 	assert.equal(
-		broadcast.sessions.find((session) => session.agentId === "github-copilot").status,
+		broadcast.sessions.find((session) => session.agentId === "claude-code").status,
 		"waiting",
 	);
 });
@@ -343,4 +445,26 @@ test("SHOP-4821 is one shared route-owned item across board, list, and detail da
 
 	assert.equal(preserved.title, "Locally edited board card");
 	assert.equal(story.getJiraAgentsStoryColumn(review), "In review");
+});
+
+test("agent session copy reads as a full comment, never a truncated preview", async () => {
+	const story = await loadStoryModule();
+	const chapters = ["brief", "plan", "working", "handoff", "review", "done"];
+
+	for (const chapter of chapters) {
+		for (const session of story.createJiraAgentsStoryState(chapter).sessions) {
+			assert.doesNotMatch(
+				session.previewText ?? "",
+				/(?:…|\.\.\.)\s*$/u,
+				`${chapter}/${session.agentName} preview text is truncated`,
+			);
+			for (const reply of session.threadReplies ?? []) {
+				assert.doesNotMatch(
+					reply.content,
+					/(?:…|\.\.\.)\s*$/u,
+					`${chapter}/${session.agentName} thread reply is truncated`,
+				);
+			}
+		}
+	}
 });

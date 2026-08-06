@@ -860,6 +860,14 @@
 	overflow: hidden;
 }
 
+/* Compact status rows keep identity and live metadata on one line. */
+.rich-text-command-menu-copy-inline {
+	flex-direction: row;
+	align-items: center;
+	/* Matches the one normal text-space on each side of the inline `·`. */
+	column-gap: 4px;
+}
+
 /* Reveal-able / persistent copy: holds the label plus a description line stacked
    below it. Clamped to 34px and clipped so the pair sits inside the row's fixed
    44px height; the description is `opacity: 0` when idle and fades + slides into

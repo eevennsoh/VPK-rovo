@@ -149,3 +149,27 @@ test("the loader animates without a JS frame loop and honours reduced motion", (
 	assert.match(component, /delay === null \|\| reducedMotion/u);
 	assert.match(component, /var\(--ease-linear\)/u, "timing must come from a motion token");
 });
+
+test("each enabled elapsed readout owns a fresh timer session", () => {
+	const root = process.cwd();
+	const component = readFileSync(
+		path.join(root, "components/ui-custom/pixel-loader/pixel-loader.tsx"),
+		"utf8",
+	);
+	const hooks = readFileSync(
+		path.join(root, "components/ui-custom/pixel-loader/use-pixel-loader.ts"),
+		"utf8",
+	);
+
+	assert.match(
+		component,
+		/showElapsed \? <PixelLoaderElapsed \/> : null/u,
+		"showElapsed must mount and unmount the timer owner so re-enabling starts at zero",
+	);
+	assert.match(hooks, /export function useElapsed\(\): string/u);
+	assert.doesNotMatch(
+		hooks,
+		/useElapsed\(enabled/u,
+		"the timer hook must not retain elapsed state while disabled",
+	);
+});

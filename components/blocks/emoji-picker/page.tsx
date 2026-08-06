@@ -11,8 +11,13 @@ import { EmojiReactionPill } from "./components/emoji-reaction-pill";
 import type { EmojiReactionSummary } from "./data/emoji-frequent";
 
 const INITIAL_REACTIONS: readonly EmojiReactionSummary[] = [
-	{ count: 3, emoji: "👍️", reacted: true },
-	{ count: 1, emoji: "🔥" },
+	{
+		count: 3,
+		emoji: "👍️",
+		reacted: true,
+		reactorNames: ["Code Planner", "GitHub Copilot", "Unit Test Creator"],
+	},
+	{ count: 1, emoji: "🔥", reactorNames: ["Venn"] },
 ];
 
 /**

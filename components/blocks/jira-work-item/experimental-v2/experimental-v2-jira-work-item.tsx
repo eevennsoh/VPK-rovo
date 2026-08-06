@@ -24,12 +24,16 @@ import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
+import type { ActivitySessionThreadConfig } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
+	activitySessionThread?: ActivitySessionThreadConfig;
 	automationRules?: readonly WorkItemAutomationRule[];
 	composerAgents?: readonly AgentSelectorAgent[];
 	initialPreset: JiraWorkItemPreset;
 	initialState?: JiraWorkItemState;
+	initialStateRevision?: string | number;
+	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
@@ -102,6 +106,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 				composerDelivery={props.composerDelivery}
 				initialPreset={initialPreset}
 				initialState={initialState}
+				initialStateRevision={props.initialStateRevision}
 				workItem={workItem}
 			>
 				<PanelLayoutProvider>
@@ -123,10 +128,11 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 										primaryCodingAgentId={props.primaryCodingAgentId}
 									/>
 								)}
-								activity={<ActivityPanel />}
+								activity={<ActivityPanel activitySessionThread={props.activitySessionThread} />}
 								composer={(
 									<ActivityComposer
 										agents={props.composerAgents}
+										onAgentPromptSubmit={props.onAgentPromptSubmit}
 										onOpenAgentChat={props.onOpenAgentChat}
 									/>
 								)}

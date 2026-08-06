@@ -138,7 +138,8 @@ export const JIRA_ACTIVITY_DETAIL: ComponentDetail = {
 				{
 					name: "timestamp",
 					type: "string",
-					description: "Relative activity timestamp shown when `item` is omitted.",
+					description:
+						"Fixed sent timestamp; active session headers append `Working for …`, while plain headers show it alone.",
 				},
 				{
 					name: "headerAvatar",

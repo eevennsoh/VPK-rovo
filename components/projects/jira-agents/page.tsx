@@ -14,6 +14,7 @@ import {
 	JIRA_AGENTS_STORY_BOARD_AGENTS,
 	JIRA_AGENTS_STORY_COMPOSER_AGENTS,
 	JIRA_AGENTS_STORY_ITEM_ID,
+	shouldStartJiraAgentsPlan,
 } from "./data/hotfix-story";
 import { JiraAgentsStoryControls } from "./story-controls";
 import { useJiraAgentsStory, type JiraAgentsStoryController } from "./use-hotfix-story";
@@ -42,6 +43,28 @@ const JIRA_AGENTS_AUTOMATION_RULES = [
 	},
 ] as const satisfies readonly WorkItemAutomationRule[];
 
+const JIRA_AGENTS_PLANNER_SESSION_ID = "story-session-code-planner";
+const JIRA_AGENTS_CHILD_SESSION_IDS = ["story-session-claude-code"] as const;
+
+function getVisibleOrchestrationSessionIds(
+	controller: JiraAgentsStoryController,
+): readonly string[] {
+	switch (controller.orchestrationStep) {
+		case "agents-working":
+		case "comment":
+		case "reaction-1":
+		case "reaction-2":
+			return [];
+		case "lead":
+			return [JIRA_AGENTS_PLANNER_SESSION_ID];
+		case "claude":
+			return [JIRA_AGENTS_PLANNER_SESSION_ID, JIRA_AGENTS_CHILD_SESSION_IDS[0]];
+		case "idle":
+		case "complete":
+			return [JIRA_AGENTS_PLANNER_SESSION_ID, ...JIRA_AGENTS_CHILD_SESSION_IDS];
+	}
+}
+
 function KanbanListStage({
 	controller,
 }: Readonly<{ controller: JiraAgentsStoryController }>): React.ReactElement {
@@ -64,20 +87,33 @@ function JiraAgentsWorkItemStage({
 	controller,
 }: Readonly<{ controller: JiraAgentsStoryController }>): React.ReactElement {
 	const { openChat, selectAgent } = useRovoChat();
+	const { chapter, startOrchestration } = controller;
+	const visibleSessionIds = getVisibleOrchestrationSessionIds(controller);
 	const handleOpenAgentChat = useCallback((agentId: string) => {
 		selectAgent(agentId, { preserveCurrentThread: true });
 		openChat("floating");
 	}, [openChat, selectAgent]);
+	const handleAgentPromptSubmit = useCallback((agentIds: readonly string[]) => {
+		if (shouldStartJiraAgentsPlan(chapter, agentIds)) {
+			startOrchestration();
+		}
+	}, [chapter, startOrchestration]);
 
 	return (
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalV2JiraWorkItem
+				activitySessionThread={{
+					parentSessionId: JIRA_AGENTS_PLANNER_SESSION_ID,
+					childSessionIds: JIRA_AGENTS_CHILD_SESSION_IDS,
+					visibleSessionIds,
+				}}
 				automationRules={JIRA_AGENTS_AUTOMATION_RULES}
-				key={controller.launchId}
 				composerAgents={JIRA_AGENTS_STORY_COMPOSER_AGENTS}
 				composerDelivery="broadcast-active-agents"
 				initialPreset={controller.initialState.preset}
 				initialState={controller.initialState}
+				initialStateRevision={controller.launchId}
+				onAgentPromptSubmit={handleAgentPromptSubmit}
 				onOpenAgentChat={handleOpenAgentChat}
 				presentation="inline"
 				workItem={controller.workItem}
@@ -88,7 +124,7 @@ function JiraAgentsWorkItemStage({
 
 export default function JiraAgentsPage(): React.ReactElement {
 	const [selectedId, setSelectedId] = useState(JIRA_AGENTS_GALLERY_ITEMS[0]?.id ?? "");
-	const storyController = useJiraAgentsStory();
+	const storyController = useJiraAgentsStory(selectedId === "work-item");
 	const handleSelectedChange = useCallback((nextSelectedId: string) => {
 		setSelectedId(nextSelectedId);
 	}, []);

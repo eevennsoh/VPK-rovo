@@ -13,6 +13,7 @@ import {
 	AgentSelector,
 	type AgentSelectorAction,
 	type AgentSelectorAgent,
+	type AgentSelectorProps,
 } from "@/components/blocks/agent-selector";
 import { Icon } from "@/components/ui/icon";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
@@ -38,6 +39,8 @@ export interface SkillSelectorProps {
 	onSkillToggle?: (skillId: string) => void;
 	query?: string;
 	searchPlaceholder?: string;
+	/** See `AgentSelector`'s `searchVariant`: `"palette"` swaps the boxed input for the editor-palette search bar. */
+	searchVariant?: AgentSelectorProps["searchVariant"];
 	pinnedSkillIds?: readonly string[];
 	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
@@ -73,6 +76,7 @@ export function SkillSelector({
 	onSkillToggle,
 	query,
 	searchPlaceholder = "Search skills",
+	searchVariant,
 	pinnedSkillIds,
 	pinnedItemsLabel,
 	pinningEnabled,
@@ -115,6 +119,7 @@ export function SkillSelector({
 			onQueryChange={onQueryChange}
 			query={query}
 			searchPlaceholder={searchPlaceholder}
+			searchVariant={searchVariant}
 			pinnedAgentIds={pinnedSkillIds}
 			pinnedItemsLabel={pinnedItemsLabel}
 			pinningEnabled={pinningEnabled}

@@ -30,6 +30,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/arts/rovo-p5/lib/rovo-p5-timeline.test.ts",
 		"components/blocks/triggers/data/trigger-inference.test.js",
 		"components/blocks/jira-activity/lib/jira-activity-reducer.test.js",
+		"components/blocks/jira-work-item/experimental-v2/lib/development-commands.test.js",
 		"components/visual/text-morphing/lib.test.js",
 		"components/visual/svg-tracing/lib.test.js",
 		"components/ui-charts/heatmap/heatmap-utils.test.js",

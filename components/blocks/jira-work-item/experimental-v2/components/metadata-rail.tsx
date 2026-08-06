@@ -30,6 +30,7 @@ import {
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
+import { ProgressCircle } from "@/components/ui-custom/progress-circle";
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
@@ -138,8 +139,21 @@ function ResourceSmartLinks({
 	);
 }
 
-function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): WorkItemPerson[] {
-	const byName = new Map<string, WorkItemPerson>();
+/**
+ * Subtasks section heading. The ring is a visual summary of completion; the
+ * ratio beside the title (and each subtask's own status) carries it for
+ * assistive tech, so the ring itself stays hidden from the accessibility tree.
+ */
+function SubtasksSectionTitle({ done, total }: Readonly<{ done: number; total: number }>) {
+	return (
+		<>
+			Subtasks
+			<ProgressCircle aria-hidden size="xs" value={total > 0 ? Math.round((done / total) * 100) : 0} variant="outline" />
+		</>
+	);
+}
+
+function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): WorkItemPerson[] {	const byName = new Map<string, WorkItemPerson>();
 	for (const person of METADATA_PEOPLE) {
 		byName.set(person.name, person);
 	}
@@ -188,6 +202,8 @@ export function MetadataRail({
 	}
 
 	if (subtasks.length > 0) {
+		const doneSubtasks = subtasks.filter((subtask) => subtask.status === "done").length;
+
 		resourceSections.push({
 			content: (
 				<ResourceSmartLinks
@@ -195,9 +211,9 @@ export function MetadataRail({
 					onRemove={(id) => actions.removeContextResource("subtask", id)}
 				/>
 			),
-			count: subtasks.length,
+			count: `${doneSubtasks}/${subtasks.length}`,
 			id: "subtasks",
-			title: "Subtasks",
+			title: <SubtasksSectionTitle done={doneSubtasks} total={subtasks.length} />,
 		});
 	}
 
@@ -236,7 +252,11 @@ export function MetadataRail({
 					title: "Automation",
 				},
 				{
-					content: <DevelopmentSectionContent />,
+					content: (
+						// The edited title lives in context resources; `workItem.title` is the
+						// immutable initial prop and would keep copying stale commands.
+						<DevelopmentSectionContent summary={contextResources.title} workItemKey={workItem.code} />
+					),
 					headerAction: { label: "Manage dev tools" },
 					id: "development",
 					title: "Development",

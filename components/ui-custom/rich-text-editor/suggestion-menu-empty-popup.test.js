@@ -2,12 +2,34 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const esbuild = require("esbuild");
+const { loadCjsModuleFromText } = require(process.cwd() + "/scripts/lib/esbuild-cjs-loader.js");
 
 function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
 
 const SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+
+let rankingModulePromise;
+function loadRankingModule() {
+	if (!rankingModulePromise) {
+		rankingModulePromise = esbuild
+			.build({
+				entryPoints: [path.join(process.cwd(), "components/ui-custom/rich-text-editor/suggestion-ranking.ts")],
+				bundle: true,
+				format: "cjs",
+				platform: "node",
+				tsconfig: path.join(process.cwd(), "tsconfig.json"),
+				write: false,
+			})
+			.then((result) => loadCjsModuleFromText(
+				result.outputFiles[0].text,
+				"rich-text-suggestion-ranking-harness.cjs",
+			));
+	}
+	return rankingModulePromise;
+}
 
 function getSourceBetween(startMarker, endMarker) {
 	const start = SOURCE.indexOf(startMarker);
@@ -61,6 +83,30 @@ test("mention suggestion filters hide the popup instead of rendering a no-result
 
 	assert.match(mentionUpdate, /const shouldHidePopup = items\.length === 0;/u);
 	assertPopupHidesBeforeRenderingEmptyState(mentionUpdate);
+});
+
+test("mention suggestions prefer a label match over an earlier description-only match", async () => {
+	const ranking = await loadRankingModule();
+	const items = [
+		{ label: "People and team", heading: true },
+		{ label: "Engineering", description: "Maintains the core application codebase." },
+		{ label: "Agents", heading: true },
+		{ label: "Code Planner", description: "Designs the checkout architecture." },
+	];
+
+	assert.equal(
+		ranking.getPreferredSuggestionIndex(items, "code", (item) => !item.heading),
+		3,
+	);
+	assert.deepEqual(
+		ranking.rankSuggestionsByMatch(items.filter((item) => !item.heading), "code")
+			.map((item) => item.label),
+		["Code Planner", "Engineering"],
+	);
+	assert.match(
+		SOURCE,
+		/buildFlatSurfaceRows\(getFlatSections\(\), props\.query, expandedSections, true\)/u,
+	);
 });
 
 test("generic suggestion rows use neutral gray IconTiles", () => {
