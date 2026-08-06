@@ -125,6 +125,7 @@ export interface AgentSessionAgent {
 	id: string;
 	name: string;
 	avatarSrc?: string;
+	brandName?: ThirdPartyLogoName;
 }
 
 export type AgentSessionWaitingOn =
@@ -138,9 +139,12 @@ export type AgentSessionWaitingOn =
 
 export interface AgentSessionThreadReply {
 	id: string;
+	/** Present when the reply was derived from a concrete agent session event. */
+	sessionId?: string;
 	agentId: string;
 	agentName: string;
 	agentAvatarSrc?: string;
+	agentBrandName?: ThirdPartyLogoName;
 	content: string;
 	createdAtMs: number;
 }
@@ -163,6 +167,7 @@ export interface AgentSession {
 	agentId: string;
 	agentName: string;
 	agentAvatarSrc?: string;
+	agentBrandName?: ThirdPartyLogoName;
 	/** Activity-card title for explicitly invoked sessions. Presets use the script title. */
 	title?: string;
 	status: AgentSessionStatus;
@@ -243,6 +248,7 @@ export interface AgentActivityEvent {
 	agentId: string;
 	agentName: string;
 	agentAvatarSrc?: string;
+	agentBrandName?: ThirdPartyLogoName;
 	status: AgentSessionStatus;
 	title: string;
 	branch: string;
@@ -277,6 +283,10 @@ export interface StaticEventActivityEvent {
 	actor: StaticTimelineActor;
 	/** Leading event glyph; when omitted the actor avatar is shown instead. */
 	icon?: JiraActivityEventIcon;
+	/** Hide the leading actor name for event content represented by its own tags. */
+	showActor?: boolean;
+	/** Hide the relative timestamp for event content that is intentionally self-contained. */
+	showTimestamp?: boolean;
 	segments: readonly JiraActivitySegment[];
 	/** Optional compact pull-request metadata shown in place of the action line (mirrors the Jira Activity design). */
 	pullRequest?: JiraActivityEventEntry["pullRequest"];
@@ -448,6 +458,7 @@ function instantiateSession(params: {
 		agentId: params.agent.id,
 		agentName: params.agent.name,
 		agentAvatarSrc: params.agent.avatarSrc,
+		agentBrandName: params.agent.brandName,
 		title: params.title,
 		status: params.status,
 		command,
@@ -646,6 +657,7 @@ function withSessionContributors(
 			id: session.agentId,
 			name: session.agentName,
 			avatarSrc: session.agentAvatarSrc,
+			brandName: session.agentBrandName,
 		});
 	}
 	return next;
@@ -716,7 +728,12 @@ export function jiraWorkItemReducer(
 			const session = instantiateSession({
 				id,
 				order: state.nextOrder,
-				agent: { id: action.agentId, name: action.agentName, avatarSrc: action.agentAvatarSrc },
+				agent: {
+					id: action.agentId,
+					name: action.agentName,
+					avatarSrc: action.agentAvatarSrc,
+					brandName: action.agentBrandName,
+				},
 				title: action.title ?? action.agentName,
 				scriptId,
 				command: action.command,
@@ -1032,6 +1049,7 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 			agentId: session.agentId,
 			agentName: session.agentName,
 			agentAvatarSrc: session.agentAvatarSrc,
+			agentBrandName: session.agentBrandName,
 			status: session.status,
 			title: session.title ?? script.title,
 			branch: `rovo/${session.scriptId}`,

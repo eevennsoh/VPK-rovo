@@ -46,8 +46,13 @@ test("running drops the redundant label; awaiting swaps the title to the waiting
 		CARD_SOURCE,
 		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
 	);
-	// The helper drives every title slot (shimmer + plain, in the card and header).
-	assert.equal((CARD_SOURCE.match(/\{getSessionTitle\(item\)\}/gu) ?? []).length, 4);
+	// The helper drives the native card title slots and remains the default for
+	// the shared header when a consumer does not lead with the agent identity.
+	assert.equal((CARD_SOURCE.match(/\{getSessionTitle\(item\)\}/gu) ?? []).length, 2);
+	assert.match(
+		CARD_SOURCE,
+		/const title = leadWithAgentName \? item\.agent\.name : getSessionTitle\(item\);/u,
+	);
 	assert.match(CARD_SOURCE, /stateMeta\.showDots \? <AnimatedDots/);
 });
 
@@ -56,6 +61,14 @@ test("the awaiting lifecycle glyph is centered inside its tile", () => {
 		CARD_SOURCE,
 		/<span className="grid place-items-center leading-none text-icon-information">[\s\S]*?<StatusInformationIcon/u,
 	);
+});
+
+test("running sessions use the spinner-sized diagonal dot pixel loader", () => {
+	assert.match(
+		CARD_SOURCE,
+		/<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
+	);
+	assert.doesNotMatch(CARD_SOURCE, /<Spinner/u);
 });
 
 test("session rows expose View without advertising a Stop action", () => {
@@ -207,9 +220,17 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>\s*\) : null\}/u,
+		/<div className="hidden -ml-1 shrink-0 items-center gap-2 group-hover\/activity-card:flex group-has-\[:focus-visible\]\/activity-card:flex">[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
 	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
+});
+
+test("activity-header actions do not reserve space until the card is hovered or focused", () => {
+	assert.match(
+		CARD_SOURCE,
+		/\{onView \|\| action \? \([\s\S]*\{action\}[\s\S]*\) : null\}/u,
+	);
+	assert.doesNotMatch(CARD_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
 });
 
 test("the session activity header accepts leading metadata without changing its shared geometry", () => {
@@ -217,6 +238,34 @@ test("the session activity header accepts leading metadata without changing its 
 	assert.match(
 		CARD_SOURCE,
 		/\{metadataPrefix \? \([\s\S]*\{metadataPrefix\}[\s\S]*<MetadataDot \/>[\s\S]*\) : null\}/u,
+	);
+});
+
+test("the session activity header can lead with the agent identity without repeating it in metadata", () => {
+	assert.match(CARD_SOURCE, /leadWithAgentName\?: boolean;/u);
+	assert.match(
+		CARD_SOURCE,
+		/const title = leadWithAgentName \? item\.agent\.name : getSessionTitle\(item\);/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/\{leadWithAgentName \? null : \([\s\S]*<MetadataDot \/>[\s\S]*\{item\.agent\.name\}[\s\S]*\)\}/u,
+	);
+});
+
+test("the session activity header separates message time from active runtime", () => {
+	assert.match(CARD_SOURCE, /messageTimestamp\?: string;/u);
+	assert.match(
+		CARD_SOURCE,
+		/<span className="shrink-0" title="Message sent">\s*\{messageTimestamp\}\s*<\/span>/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/\{messageTimestamp && item\.state !== "complete" \? <MetadataDot \/> : null\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/\{messageTimestamp \? "Working for " : null\}\s*<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u,
 	);
 });
 

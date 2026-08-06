@@ -15,6 +15,8 @@ const POPOVER_SOURCE = readSource("components/emoji-picker-popover.tsx");
 const QUICK_BAR_SOURCE = readSource("components/emoji-quick-bar.tsx");
 const REACTION_BAR_SOURCE = readSource("components/emoji-reaction-bar.tsx");
 const REACTION_PILL_SOURCE = readSource("components/emoji-reaction-pill.tsx");
+const PAGE_SOURCE = readSource("page.tsx");
+const TOOLTIP_SOURCE = readSource("../../ui/tooltip.tsx");
 
 test("the quick bar offers exactly six frequent reactions", () => {
 	assert.equal(FREQUENT_EMOJI.length, 6);
@@ -142,8 +144,13 @@ test("reaction pills disclose the reacting people on hover and keyboard focus", 
 	assert.match(REACTION_PILL_SOURCE, /<TooltipTrigger render=\{pill\} \/>/u);
 	assert.match(
 		REACTION_PILL_SOURCE,
-		/\{formatReactionActorNames\(reactorNames\)\} reacted with/u,
+		/<TooltipContent className="flex max-w-64 flex-col items-center pb-3 text-center">/u,
 	);
+	assert.match(REACTION_PILL_SOURCE, /<h1 aria-hidden="true" className="p-3 text-4xl leading-none">/u);
+	assert.match(REACTION_PILL_SOURCE, /\{formatReactionActorNames\(reactorNames\)\}\{" "\}/u);
+	assert.match(REACTION_PILL_SOURCE, /<span className="text-text-subtlest">/u);
+	assert.doesNotMatch(TOOLTIP_SOURCE, /\bshadow-(?:sm|md|lg|xl|2xl)\b/u);
+	assert.match(PAGE_SOURCE, /reactorNames: \["Code Planner", "GitHub Copilot", "Unit Test Creator"\]/u);
 });
 
 test("the quick bar offers actions without presenting selected state", () => {

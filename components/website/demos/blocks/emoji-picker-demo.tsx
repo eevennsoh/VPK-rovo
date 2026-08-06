@@ -13,8 +13,13 @@ import Page from "@/components/blocks/emoji-picker/page";
 import { Button } from "@/components/ui/button";
 
 const INITIAL_REACTIONS: readonly EmojiReactionSummary[] = [
-	{ count: 3, emoji: "👍️", reacted: true },
-	{ count: 1, emoji: "🔥" },
+	{
+		count: 3,
+		emoji: "👍️",
+		reacted: true,
+		reactorNames: ["Code Planner", "GitHub Copilot", "Unit Test Creator"],
+	},
+	{ count: 1, emoji: "🔥", reactorNames: ["Venn"] },
 ];
 
 /**

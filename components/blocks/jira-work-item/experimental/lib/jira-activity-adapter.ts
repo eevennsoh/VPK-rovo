@@ -144,6 +144,8 @@ function mapStaticEvent(event: Readonly<StaticEventActivityEvent>): JiraActivity
 		actor: staticActor(event.actor),
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		...(event.icon ? { icon: event.icon } : {}),
+		...(event.showActor === undefined ? {} : { showActor: event.showActor }),
+		...(event.showTimestamp === undefined ? {} : { showTimestamp: event.showTimestamp }),
 		segments: event.segments,
 		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};

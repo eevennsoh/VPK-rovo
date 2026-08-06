@@ -25,6 +25,7 @@ import type {
 	JiraForYouSection,
 	JiraForYouStatus,
 } from "@/components/projects/jira-for-you/jira-for-you-types";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { JIRA_FOR_YOU_SECTIONS } from "@/components/projects/jira-for-you/data";
 import {
 	JIRA_DESIGN_KANBAN_AGENTS,
@@ -71,25 +72,22 @@ const WORK_ITEM_STATUS_BY_CHAPTER = {
 	done: "Done",
 } as const satisfies Record<JiraAgentsStoryChapter, string>;
 
+type JiraAgentsStoryAgent = JiraForYouAgent & { brandName?: ThirdPartyLogoName };
+
 const CODE_PLANNER = {
 	id: "code-planner",
 	name: "Code Planner",
 	avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
-} satisfies JiraForYouAgent;
+} satisfies JiraAgentsStoryAgent;
 
-const GITHUB_COPILOT = {
-	id: "github-copilot",
-	name: "GitHub Copilot",
+const CLAUDE_CODE = {
+	id: "claude-code",
+	name: "Claude Code",
 	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
-} satisfies JiraForYouAgent;
+	brandName: "claude",
+} satisfies JiraAgentsStoryAgent;
 
-const UNIT_TEST_CREATOR = {
-	id: "unit-test-creator",
-	name: "Unit Test Creator",
-	avatarSrc: "/avatar-agent/dev-agents/unit-test-creator.svg",
-} satisfies JiraForYouAgent;
-
-const STORY_AGENTS = [CODE_PLANNER, GITHUB_COPILOT, UNIT_TEST_CREATOR] as const;
+const STORY_AGENTS = [CODE_PLANNER, CLAUDE_CODE] as const;
 const STORY_AGENT_BY_ID = new Map(STORY_AGENTS.map((agent) => [agent.id, agent]));
 
 export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = [
@@ -100,16 +98,10 @@ export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = 
 		avatarSrc: CODE_PLANNER.avatarSrc,
 	},
 	{
-		id: GITHUB_COPILOT.id,
-		name: GITHUB_COPILOT.name,
-		byline: "Implements the checkout service and storefront experience",
-		avatarSrc: GITHUB_COPILOT.avatarSrc,
-	},
-	{
-		id: UNIT_TEST_CREATOR.id,
-		name: UNIT_TEST_CREATOR.name,
-		byline: "Builds and runs guest-checkout acceptance coverage",
-		avatarSrc: UNIT_TEST_CREATOR.avatarSrc,
+		id: CLAUDE_CODE.id,
+		name: CLAUDE_CODE.name,
+		byline: "Coding agent by Anthropic",
+		brandName: "claude",
 	},
 ];
 
@@ -171,18 +163,11 @@ const CODE_PLANNER_ACTOR: StaticTimelineEvent["actor"] = {
 	avatarSrc: CODE_PLANNER.avatarSrc,
 };
 
-const GITHUB_COPILOT_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-github-copilot",
-	name: GITHUB_COPILOT.name,
+const CLAUDE_CODE_ACTOR: StaticTimelineEvent["actor"] = {
+	id: "static-claude-code",
+	name: CLAUDE_CODE.name,
 	kind: "agent",
-	avatarSrc: GITHUB_COPILOT.avatarSrc,
-};
-
-const UNIT_TEST_CREATOR_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-unit-test-creator",
-	name: UNIT_TEST_CREATOR.name,
-	kind: "agent",
-	avatarSrc: UNIT_TEST_CREATOR.avatarSrc,
+	brandName: CLAUDE_CODE.brandName,
 };
 
 const GITHUB_ACTOR: StaticTimelineEvent["actor"] = {
@@ -200,7 +185,7 @@ function createStoryArtifactSession({
 	state,
 	title,
 }: {
-	agent: JiraForYouAgent;
+	agent: JiraAgentsStoryAgent;
 	branch: string;
 	elapsedSeconds: number;
 	id: string;
@@ -214,7 +199,7 @@ function createStoryArtifactSession({
 		agent: {
 			id: agent.id,
 			name: agent.name,
-			avatarSrc: agent.avatarSrc,
+			...(agent.brandName ? { brandName: agent.brandName } : { avatarSrc: agent.avatarSrc }),
 		},
 		branch,
 		elapsedSeconds,
@@ -274,11 +259,12 @@ const PLAN_EVENTS: readonly StaticTimelineEvent[] = [
 		kind: "event",
 		actor: CODE_PLANNER_ACTOR,
 		icon: "delegated",
+		showActor: false,
+		showTimestamp: false,
 		segments: [
-			{ type: "text", text: "claimed the lead, delegated implementation to " },
-			{ type: "link", text: "GitHub Copilot" },
-			{ type: "text", text: " and acceptance coverage to " },
-			{ type: "link", text: "Unit Test Creator" },
+			{ type: "agent-mention", text: CODE_PLANNER.name, avatarSrc: CODE_PLANNER.avatarSrc },
+			{ type: "agent-mention", text: CLAUDE_CODE.name, brandName: CLAUDE_CODE.brandName },
+			{ type: "text", text: " Started working" },
 		],
 		createdAtMs: STORY_EPOCH_MS - 2_880_000,
 	},
@@ -332,13 +318,13 @@ const HANDOFF_EVENT: StaticTimelineEvent = {
 	id: "story-root-cause-handoff",
 	kind: "changed-files",
 	actor: CODE_PLANNER_ACTOR,
-	summary: "Shared the checkout contract with GitHub Copilot",
+	summary: "Shared the checkout contract with Claude Code",
 	description: "Posted the request schema, validation errors, order response, and idempotency behavior so the storefront can integrate without duplicating pricing or inventory logic.",
 	branch: "#SHOP-4821",
 	tag: { text: "Handoff", color: "purple" },
 	sessionItem: createStoryArtifactSession({
 		id: "story-planner-handoff",
-		title: "Shared the checkout contract with GitHub Copilot",
+		title: "Shared the checkout contract with Claude Code",
 		state: "complete",
 		agent: CODE_PLANNER,
 		branch: JIRA_AGENTS_STORY_ISSUE_KEY,
@@ -362,19 +348,19 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 	{
 		id: "story-changed-files",
 		kind: "changed-files",
-		actor: GITHUB_COPILOT_ACTOR,
+		actor: CLAUDE_CODE_ACTOR,
 		summary: "Changed 12 files",
 		description: "Implemented the guest order service plus the storefront delivery, payment, validation, confirmation, and post-purchase account flows against the approved contract.",
 		branch: "feature/shop-4821-guest-checkout",
 		tag: { text: "Ready for review", color: "green" },
 		sessionItem: {
-			id: "story-copilot-checkout",
+			id: "story-claude-checkout",
 			title: "Implement guest checkout end to end",
 			state: "complete",
 			agent: {
-				id: GITHUB_COPILOT.id,
-				name: GITHUB_COPILOT.name,
-				avatarSrc: GITHUB_COPILOT.avatarSrc,
+				id: CLAUDE_CODE.id,
+				name: CLAUDE_CODE.name,
+				brandName: CLAUDE_CODE.brandName,
 			},
 			branch: "feature/shop-4821-guest-checkout",
 			elapsedSeconds: 482,
@@ -385,7 +371,7 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 				id: "guest-checkout-implementation",
 				title: "Guest checkout implementation",
 				source: "Agent output",
-				owner: GITHUB_COPILOT.name,
+				owner: CLAUDE_CODE.name,
 				iconName: "ai-chat",
 			},
 		],
@@ -414,7 +400,7 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 	{
 		id: "story-regression-matrix",
 		kind: "changed-files",
-		actor: UNIT_TEST_CREATOR_ACTOR,
+		actor: CLAUDE_CODE_ACTOR,
 		summary: "Acceptance matrix passed",
 		description: "Verified guest purchase, validation errors, inventory changes, declined payments, duplicate submissions, confirmation, and optional post-purchase account creation.",
 		branch: "#1847",
@@ -423,7 +409,7 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 			id: "story-test-report",
 			title: "Acceptance matrix passed",
 			state: "complete",
-			agent: UNIT_TEST_CREATOR,
+			agent: CLAUDE_CODE,
 			branch: "#1847",
 			elapsedSeconds: 438,
 		}),
@@ -432,7 +418,7 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 				id: "acceptance-report",
 				title: "SHOP-4821 acceptance report",
 				source: "Test artifact",
-				owner: UNIT_TEST_CREATOR.name,
+				owner: CLAUDE_CODE.name,
 				iconName: "page",
 			},
 		],
@@ -483,7 +469,7 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 ];
 
 function createSession(
-	agent: JiraForYouAgent,
+	agent: JiraAgentsStoryAgent,
 	status: AgentSessionStatus,
 	order: number,
 	options: {
@@ -515,6 +501,7 @@ function createSession(
 		agentId: agent.id ?? "unknown-agent",
 		agentName: agent.name,
 		agentAvatarSrc: agent.avatarSrc,
+		agentBrandName: agent.brandName,
 		title: options.title,
 		status,
 		command: options.command,
@@ -525,7 +512,7 @@ function createSession(
 			{
 				id: `story-session-${agent.id}-prompt`,
 				role: "human",
-				authorName: "You",
+				authorName: "Venn",
 				content: options.command,
 				createdAtMs: STORY_EPOCH_MS - 2_700_000 + order * 60_000,
 			},
@@ -555,33 +542,30 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 	const plannerStatus: AgentSessionStatus = chapter === "plan" || chapter === "working"
 		? "running"
 		: "completed";
-	const copilotStatus: AgentSessionStatus = chapter === "plan" || chapter === "handoff"
+	const claudeStatus: AgentSessionStatus = chapter === "plan" || chapter === "handoff" || chapter === "review"
 		? "running"
 		: chapter === "working"
-			? "waiting"
-			: "completed";
-	const testStatus: AgentSessionStatus = chapter === "plan" || chapter === "working" || chapter === "review"
-		? "running"
-		: chapter === "handoff"
 			? "waiting"
 			: "completed";
 
 	const planner = createSession(CODE_PLANNER, plannerStatus, 0, {
 		title: "Plan the guest checkout architecture",
-		command: "Lead the technical plan, define the secure checkout API and validation contract, then hand it to GitHub Copilot.",
+		command: "Lead the technical plan, define the secure checkout API and validation contract, then hand implementation to Claude Code.",
 		previewText: plannerStatus === "completed"
 			? "Technical plan approved with the OpenAPI contract, server-owned validation, idempotency, and delivery sequence."
-			: "Designing the checkout contract, validation rules, idempotency behavior, and implementation sequence…",
+			: "Designing the checkout contract, validation rules, idempotency behavior, and implementation sequence. I will publish the OpenAPI schema and the server-owned validation rules before handing implementation to Claude Code.",
 	});
-	const copilot = createSession(GITHUB_COPILOT, copilotStatus, 1, {
-		title: "Implement guest checkout end to end",
-		command: "Implement the checkout service and storefront flow after Code Planner confirms the request, response, and validation-error contract.",
-		previewText: copilotStatus === "waiting"
+	const claude = createSession(CLAUDE_CODE, claudeStatus, 1, {
+		title: "Implement and verify guest checkout",
+		command: "Implement the checkout service and storefront flow from Code Planner's contract, then run the acceptance coverage before opening the pull request.",
+		previewText: claudeStatus === "waiting"
 			? "Waiting for Code Planner to publish the checkout API contract."
-			: copilotStatus === "completed"
-				? "Guest checkout is ready on feature/shop-4821-guest-checkout and PR #1847 is open."
-				: "Implementing the guest order service and storefront checkout against the approved contract…",
-		waitingOn: copilotStatus === "waiting"
+			: claudeStatus === "completed"
+				? "Guest checkout and its 18-check acceptance matrix are complete on PR #1847."
+				: chapter === "review"
+					? "Running the guest checkout acceptance matrix against PR #1847 and resolving the final review feedback."
+					: "Implementing the guest order service and storefront checkout against the approved contract. Pricing, inventory, and payment are recalculated on the server before the order is created.",
+		waitingOn: claudeStatus === "waiting"
 			? {
 				kind: "agent",
 				agentId: CODE_PLANNER.id ?? "code-planner",
@@ -591,46 +575,17 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 			: undefined,
 		threadReplies: chapter === "handoff" || chapter === "review" || chapter === "done"
 			? [{
-				id: "story-planner-to-copilot",
+				id: "story-planner-to-claude",
 				agentId: CODE_PLANNER.id ?? "code-planner",
 				agentName: CODE_PLANNER.name,
 				agentAvatarSrc: CODE_PLANNER.avatarSrc,
-				content: "The guest checkout technical plan is approved. I attached the OpenAPI contract and validation rules, including idempotency, pricing, inventory, and payment errors. You can start the full-stack implementation.",
+				content: "The guest checkout technical plan is approved. I attached the OpenAPI contract and validation rules, including idempotency, pricing, inventory, and payment errors. You can implement the full-stack flow and run the acceptance matrix.",
 				createdAtMs: STORY_EPOCH_MS - 1_740_000,
 			}]
 			: undefined,
 	});
-	const test = createSession(UNIT_TEST_CREATOR, testStatus, 2, {
-		title: "Verify guest checkout acceptance coverage",
-		command: "Build checkout acceptance tests from the story criteria, then verify GitHub Copilot's integrated branch when it is ready.",
-		previewText: testStatus === "waiting"
-			? "Acceptance suite is ready. Waiting for GitHub Copilot to share the integrated branch."
-			: testStatus === "completed"
-				? "Acceptance matrix passed: 18 checks cover guest purchase, validation, payment, confirmation, and account creation."
-				: chapter === "review"
-					? "Running the guest checkout acceptance matrix against PR #1847…"
-					: "Building deterministic cases for valid orders, validation failures, inventory changes, declined payments, and duplicate submissions…",
-		waitingOn: testStatus === "waiting"
-			? {
-				kind: "agent",
-				agentId: GITHUB_COPILOT.id ?? "github-copilot",
-				agentName: GITHUB_COPILOT.name,
-				agentAvatarSrc: GITHUB_COPILOT.avatarSrc,
-			}
-			: undefined,
-		threadReplies: chapter === "review" || chapter === "done"
-			? [{
-				id: "story-copilot-to-tests",
-				agentId: GITHUB_COPILOT.id ?? "github-copilot",
-				agentName: GITHUB_COPILOT.name,
-				agentAvatarSrc: GITHUB_COPILOT.avatarSrc,
-				content: "The integrated guest checkout is on feature/shop-4821-guest-checkout. Please run the acceptance matrix against PR #1847.",
-				createdAtMs: STORY_EPOCH_MS - 900_000,
-			}]
-			: undefined,
-	});
 
-	return [planner, copilot, test];
+	return [planner, claude];
 }
 
 function activeAgentIds(sessions: readonly AgentSession[]): string[] {
@@ -661,8 +616,8 @@ function createStoryComments(
 		},
 		...(chapter === "brief" ? [] : [{
 			id: "story-channel-orchestration",
-			authorName: "You",
-			content: "@Code Planner lead the technical plan and API contract, @GitHub Copilot implement guest checkout end to end, and @Unit Test Creator build the acceptance proof. Share contracts and handoffs in this work item so everyone has the same context.",
+			authorName: "Venn",
+			content: "@Code Planner lead the technical plan and API contract, then hand implementation and acceptance verification to @Claude Code.",
 			createdAtMs: STORY_EPOCH_MS - 2_940_000,
 			...(actorIds.length > 0
 				? { reactions: [{ emoji: "👀", actorIds }] }
@@ -814,6 +769,7 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 				kind: "agent" as const,
 				name: session.agentName,
 				avatarUrl: session.agentAvatarSrc,
+				...(session.agentBrandName ? { brandName: session.agentBrandName } : {}),
 			})),
 		},
 		comments: createStoryComments(chapter, sessions),
@@ -891,6 +847,7 @@ function createBoardActivity(session: AgentSession) {
 		id: `${JIRA_AGENTS_STORY_ISSUE_KEY}:${session.agentId}`,
 		name: session.agentName,
 		avatarSrc: session.agentAvatarSrc,
+		agentBrandName: session.agentBrandName,
 		label: waitingAgent ? `Waiting for ${waitingAgent}` : session.previewText,
 		labels: session.steps.map((step) => step.label),
 		message: session.previewText,
@@ -957,15 +914,9 @@ export const JIRA_AGENTS_STORY_BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
 		avatarSrc: CODE_PLANNER.avatarSrc,
 	},
 	{
-		id: GITHUB_COPILOT.id ?? "github-copilot",
-		name: GITHUB_COPILOT.name,
-		byline: "Full-stack checkout implementation agent",
-		avatarSrc: GITHUB_COPILOT.avatarSrc,
-	},
-	{
-		id: UNIT_TEST_CREATOR.id ?? "unit-test-creator",
-		name: UNIT_TEST_CREATOR.name,
-		byline: "Guest checkout verification engineer",
-		avatarSrc: UNIT_TEST_CREATOR.avatarSrc,
+		id: CLAUDE_CODE.id ?? "claude-code",
+		name: CLAUDE_CODE.name,
+		byline: "Coding agent by Anthropic",
+		brandName: "claude",
 	},
 ];

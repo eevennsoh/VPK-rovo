@@ -252,7 +252,7 @@ export function MetadataRail({
 					title: "Automation",
 				},
 				{
-					content: <DevelopmentSectionContent />,
+					content: <DevelopmentSectionContent summary={workItem.title} workItemKey={workItem.code} />,
 					headerAction: { label: "Manage dev tools" },
 					id: "development",
 					title: "Development",

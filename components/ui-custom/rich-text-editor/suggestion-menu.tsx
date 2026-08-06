@@ -104,6 +104,11 @@ export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
 	description?: string;
+	/**
+	 * Optional supplementary content that stays on the title line. This is for
+	 * compact, dynamic metadata such as a running tool-call narration.
+	 */
+	inlineMetadata?: ReactNode;
 	shortcut?: string;
 	icon: ReactNode;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
@@ -857,7 +862,15 @@ function RichTextSuggestionMenuOption({
 	const children = (
 		<>
 			<RichTextSuggestionMenuItemVisual item={item} />
-			{canRevealMetadata ? (
+			{item.inlineMetadata ? (
+				<span className="rich-text-command-menu-copy rich-text-command-menu-copy-inline">
+					<span className="menu-row-title">{item.label}</span>
+					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+					<span className="min-w-0 flex-1">
+						{item.inlineMetadata}
+					</span>
+				</span>
+			) : canRevealMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable">
 					<motion.span
 						className="menu-row-title"

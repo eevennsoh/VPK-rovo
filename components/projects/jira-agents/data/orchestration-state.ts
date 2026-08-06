@@ -8,16 +8,14 @@ export type JiraAgentsOrchestrationStep =
 	| "comment"
 	| "reaction-1"
 	| "reaction-2"
-	| "reaction-3"
 	| "lead"
-	| "copilot"
-	| "tests"
+	| "claude"
 	| "complete";
 
 /**
  * Route-owned snapshots for the prompt-driven orchestration reveal. Sessions
  * exist from the first step so the composer can immediately show the shared
- * three-agent context. Activity independently reveals those sessions after the
+ * two-agent context. Activity independently reveals those sessions after the
  * prompt and acknowledgement reactions land.
  */
 export function createJiraAgentsOrchestrationState(
@@ -33,13 +31,11 @@ export function createJiraAgentsOrchestrationState(
 	);
 	const reactionCount = step === "reaction-1"
 		? 1
-		: step === "reaction-2"
+		: step === "reaction-2" || step === "lead" || step === "claude"
 			? 2
-			: step === "reaction-3" || step === "lead" || step === "copilot" || step === "tests"
-				? 3
-				: 0;
+			: 0;
 	const showComment = step !== "agents-working";
-	const showLeadActivity = step === "lead" || step === "copilot" || step === "tests";
+	const showLeadActivity = step === "lead" || step === "claude";
 	const stagedComment = orchestrationComment
 		? {
 			...orchestrationComment,

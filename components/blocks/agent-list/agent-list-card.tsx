@@ -8,6 +8,7 @@ import StatusInformationIcon from "@atlaskit/icon/core/status-information";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
 import {
 	AgentStates,
 	type AgentStatesState,
@@ -21,7 +22,6 @@ import {
 	HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -33,7 +33,7 @@ import type {
 
 /**
  * State → title-line + lifecycle treatment. `running` shows a solid title with a
- * trailing rainbow spinner; `needs-input` swaps the title for "Waiting for input"
+ * trailing pixel loader; `needs-input` swaps the title for "Waiting for input"
  * (see {@link getSessionTitle}), adds animated dots, and shows a trailing info
  * icon; `complete` shows a solid title with no lifecycle indicator.
  *
@@ -119,11 +119,9 @@ function getAgentStatesState(state: AgentListState): AgentStatesState {
 }
 
 /**
- * Trailing per-state lifecycle indicator, mirroring the Jira queue card
- * (`components/blocks/product-sidebar/variants/jira.tsx`): `running` shows the
- * Rovo rainbow spinner, `needs-input` an information icon, `complete` nothing.
- * Each glyph sits in a 24×24 transparent {@link IconTile} (12px design inside),
- * so the trailing slot reads at a consistent size across states.
+ * Trailing per-state lifecycle indicator: `running` shows the pixel loader,
+ * `needs-input` an information icon, `complete` nothing. Each indicator keeps a
+ * 24×24 trailing slot with a 12px visual footprint.
  */
 function LifecycleIndicator({
 	state,
@@ -131,13 +129,14 @@ function LifecycleIndicator({
 	switch (state) {
 		case "running":
 			return (
-				<IconTile
-					icon={<Spinner label="Running" variant="rainbow" />}
-					iconSize="small"
-					label="Running"
-					size="small"
-					variant="transparent"
-				/>
+				<span className="grid size-6 shrink-0 place-items-center text-icon">
+					<PixelLoader
+						className="size-3 justify-center"
+						pattern="diagonal-top-left"
+						shape="dot"
+						size="small"
+					/>
+				</span>
 			);
 		case "needs-input":
 			return (
@@ -188,12 +187,18 @@ function AgentListTime({
 export function AgentListActivityHeader({
 	item,
 	action,
+	activityGroup = "activity-card",
+	leadWithAgentName = false,
+	messageTimestamp,
 	metadataPrefix,
 	onView,
 	timeFallback,
 }: Readonly<{
 	item: AgentListItem;
 	action?: ReactNode;
+	activityGroup?: "activity-card" | "activity-reply";
+	leadWithAgentName?: boolean;
+	messageTimestamp?: string;
 	metadataPrefix?: ReactNode;
 	onView?: (item: AgentListItem) => void;
 	timeFallback?: string;
@@ -201,6 +206,11 @@ export function AgentListActivityHeader({
 	const stateMeta = STATE_META[item.state];
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
+	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
+	const activityTimeTitle = item.state === "complete" ? "Last update" : "Agent runtime";
+	const actionVisibilityClass = activityGroup === "activity-reply"
+		? "group-hover/activity-reply:flex group-has-[:focus-visible]/activity-reply:flex"
+		: "group-hover/activity-card:flex group-has-[:focus-visible]/activity-card:flex";
 
 	return (
 		<div className="flex min-w-0 items-center gap-3">
@@ -214,18 +224,18 @@ export function AgentListActivityHeader({
 			/>
 			<div className="min-w-0 flex-1">
 				<div className="flex min-w-0 items-center">
-					{stateMeta.shimmerTitle ? (
+					{stateMeta.shimmerTitle && !leadWithAgentName ? (
 						<Shimmer
 							as="span"
 							className="min-w-0 truncate text-sm font-medium"
 							duration={1.4}
 							spread={2}
 						>
-							{getSessionTitle(item)}
+							{title}
 						</Shimmer>
 					) : (
 						<span className="min-w-0 truncate text-sm font-medium text-text">
-							{getSessionTitle(item)}
+							{title}
 						</span>
 					)}
 					{stateMeta.showDots ? <AnimatedDots /> : null}
@@ -237,11 +247,27 @@ export function AgentListActivityHeader({
 							<MetadataDot />
 						</>
 					) : null}
-					<span className="shrink-0" title={item.state === "complete" ? "Last update" : "Agent runtime"}>
-						<AgentListTime fallback={timeFallback} item={item} />
-					</span>
-					<MetadataDot />
-					<span className="truncate">{item.agent.name}</span>
+					{messageTimestamp ? (
+						<span className="shrink-0" title="Message sent">
+							{messageTimestamp}
+						</span>
+					) : null}
+					{messageTimestamp && item.state !== "complete" ? <MetadataDot /> : null}
+					{!messageTimestamp || item.state !== "complete" ? (
+						<span
+							className="shrink-0"
+							title={activityTimeTitle}
+						>
+							{messageTimestamp ? "Working for " : null}
+							<AgentListTime fallback={timeFallback} item={item} />
+						</span>
+					) : null}
+					{leadWithAgentName ? null : (
+						<>
+							<MetadataDot />
+							<span className="truncate">{item.agent.name}</span>
+						</>
+					)}
 					{prMeta && PrIcon ? (
 						<>
 							<MetadataDot />
@@ -256,12 +282,16 @@ export function AgentListActivityHeader({
 				</div>
 			</div>
 			{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
-			{onView ? (
-				<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
-					View
-				</Button>
+			{onView || action ? (
+				<div className={cn("hidden -ml-1 shrink-0 items-center gap-2", actionVisibilityClass)}>
+					{onView ? (
+						<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
+							View
+						</Button>
+					) : null}
+					{action}
+				</div>
 			) : null}
-			{action ? <div className="shrink-0">{action}</div> : null}
 		</div>
 	);
 }
