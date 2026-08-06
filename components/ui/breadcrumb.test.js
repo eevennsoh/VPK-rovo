@@ -32,6 +32,7 @@ test("Breadcrumb size classes cover text, controls, slots, separators, and ellip
 
 	assert.match(SOURCE, /medium: "text-sm leading-5"/);
 	assert.match(SOURCE, /small: "text-xs leading-4"/);
+	assert.match(SOURCE, /label: \{\s*medium: "gap-1",\s*small: "gap-1"/);
 });
 
 test("Breadcrumb docs register a size example", () => {

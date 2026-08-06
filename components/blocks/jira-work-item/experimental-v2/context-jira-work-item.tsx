@@ -11,6 +11,7 @@ import {
 	type ActivityEvent,
 	type AgentSession,
 	type JiraWorkItemContextStatus,
+	type JiraWorkItemComposerDelivery,
 	type JiraWorkItemPreset,
 	type JiraWorkItemState,
 } from "@/components/blocks/jira-work-item/data/session-state";
@@ -28,6 +29,7 @@ export interface JiraWorkItemMeta {
 	orderedSessions: AgentSession[];
 	workingCount: number;
 	activityEvents: ActivityEvent[];
+	composerDelivery: JiraWorkItemComposerDelivery;
 }
 
 export interface JiraWorkItemContextValue {
@@ -46,10 +48,26 @@ interface JiraWorkItemProviderProps {
 	 * sessions stay pristine until the viewer opens the surface. */
 	active?: boolean;
 	initialState?: JiraWorkItemState;
+	initialStateRevision?: string | number;
+	composerDelivery?: JiraWorkItemComposerDelivery;
 }
 
-export function JiraWorkItemProvider({ children, initialPreset, initialState, workItem, active = true }: Readonly<JiraWorkItemProviderProps>) {
-	const { state, actions } = useJiraWorkItemController(initialPreset, workItem, active, initialState);
+export function JiraWorkItemProvider({
+	children,
+	initialPreset,
+	initialState,
+	initialStateRevision,
+	workItem,
+	active = true,
+	composerDelivery = "comment",
+}: Readonly<JiraWorkItemProviderProps>) {
+	const { state, actions } = useJiraWorkItemController(
+		initialPreset,
+		workItem,
+		active,
+		initialState,
+		initialStateRevision,
+	);
 
 	const meta = useMemo<JiraWorkItemMeta>(
 		() => ({
@@ -60,8 +78,9 @@ export function JiraWorkItemProvider({ children, initialPreset, initialState, wo
 			orderedSessions: selectOrderedSessions(state),
 			workingCount: selectWorkingCount(state),
 			activityEvents: selectActivityEvents(state),
+			composerDelivery,
 		}),
-		[initialPreset, workItem, state],
+		[composerDelivery, initialPreset, workItem, state],
 	);
 
 	const value = useMemo<JiraWorkItemContextValue>(() => ({ state, actions, meta }), [state, actions, meta]);

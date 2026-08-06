@@ -45,6 +45,7 @@ export type JiraActivitySegment =
 	| { type: "text"; text: string }
 	| { type: "code"; text: string }
 	| { type: "link"; text: string; href?: string }
+	| { type: "agent-mention"; text: string; avatarSrc?: string; brandName?: ThirdPartyLogoName }
 	| {
 			type: "lozenge";
 			text: string;
@@ -67,6 +68,10 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 	kind: "event";
 	/** Leading event glyph; when omitted the actor avatar is shown instead. */
 	icon?: JiraActivityEventIcon;
+	/** Hide the leading actor name for event content represented by its own tags. */
+	showActor?: boolean;
+	/** Hide the relative timestamp for event content that is intentionally self-contained. */
+	showTimestamp?: boolean;
 	segments: readonly JiraActivitySegment[];
 	/** Optional compact pull-request metadata shown in place of the standard action line. */
 	pullRequest?: {
@@ -83,6 +88,9 @@ export interface JiraActivityReply {
 	actor: JiraActivityActor;
 	timestamp: string;
 	body: string;
+	reactions?: readonly JiraActivityReaction[];
+	/** Optional agent-session summary used to open an embedded Rovo chat. */
+	sessionItem?: AgentListItem;
 }
 
 export interface JiraActivityCollapsible {

@@ -179,9 +179,10 @@ export const JIRA_DESIGN_KANBAN_AGENTS: readonly JiraKanbanAgentData[] = [
 
 export function createJiraDesignListRows(
 	columns: readonly JiraKanbanColumnData[],
+	workItemsByKey: ReadonlyMap<string, JiraForYouItem> = JIRA_DESIGN_WORK_ITEMS_BY_KEY,
 ): readonly JiraListRowData[] {
 	return columns.flatMap((column) => column.cards.flatMap((card) => {
-		const item = JIRA_DESIGN_WORK_ITEMS_BY_KEY.get(card.code);
+		const item = workItemsByKey.get(card.code);
 		if (!item) {
 			return [];
 		}

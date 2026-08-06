@@ -8,9 +8,10 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import type { AgentSession } from "@/components/blocks/jira-work-item/data/session-state";
 import { ActivityComposerAgentContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-agent-context-pill";
 import { ActivityComposerSkillContextPill } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-skill-context-pill";
-import { Spinner } from "@/components/ui/spinner";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ContextBarPill } from "@/components/ui-custom/context-bar";
+import { PixelLoader } from "@/components/ui-custom/pixel-loader";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
 	RichTextSuggestionMenu,
 	type RichTextSuggestionMenuItem,
@@ -38,14 +39,93 @@ const PILL_REVEAL_VARIANTS = {
 	},
 } satisfies Variants;
 
+const WORKING_SESSION_ACTIVITY_CYCLE_MS = 2_200;
+const WORKING_SESSION_ACTIVITY_STAGGER_MS = 480;
+
+const WORKING_SESSION_ACTIVITY_SCRIPTS: Readonly<Record<string, readonly string[]>> = {
+	"code-planner": [
+		"Plan the guest checkout architecture",
+		"Define the secure checkout API contract",
+		"Review server-side validation boundaries",
+		"Sequence the implementation handoff",
+	],
+	"claude-code": [
+		"Implement and verify guest checkout",
+		"Wire the storefront checkout flow",
+		"Integrate the approved API contract",
+		"Build deterministic checkout cases",
+		"Check payment and inventory failures",
+	],
+};
+
 interface ActivityComposerContextPillsProps {
 	onInvokeAgent: (agent: Pick<AgentSelectorAgent, "id" | "name" | "avatarSrc" | "brandName">) => void;
 	onInvokeSkill: (skill: SkillsDirectorySkill) => void;
 	onOpenAgentChat?: (agentId: string) => void;
-	runningSessions: readonly AgentSession[];
+	workingSessions: readonly AgentSession[];
 }
 
-function RunningSessionsList({
+function getWorkingSessionActivity(
+	session: Readonly<AgentSession>,
+	cycleIndex: number,
+): string {
+	if (session.status === "waiting") {
+		return session.waitingOn?.kind === "agent"
+			? `Waiting for ${session.waitingOn.agentName}`
+			: "Waiting for you";
+	}
+
+	const script = WORKING_SESSION_ACTIVITY_SCRIPTS[session.agentId];
+	if (!script?.length) return session.title ?? "Working";
+
+	return script[cycleIndex % script.length];
+}
+
+/**
+ * Keeps every agent's tool narration on its own quiet, staggered cadence.
+ * The first frame is the authored task title; subsequent frames cross-fade in
+ * place so opening the working-agents menu never makes every row move at once.
+ */
+function WorkingSessionActivityByline({
+	session,
+	sessionIndex,
+}: Readonly<{
+	session: AgentSession;
+	sessionIndex: number;
+}>) {
+	const shouldReduceMotion = Boolean(useReducedMotion());
+	const [activityCycleIndex, setActivityCycleIndex] = useState(0);
+	const cycleDelayMs = WORKING_SESSION_ACTIVITY_STAGGER_MS * (sessionIndex + 1);
+
+	useEffect(() => {
+		if (shouldReduceMotion || session.status === "waiting") {
+			return;
+		}
+
+		let intervalId: number | undefined;
+		const timeoutId = window.setTimeout(() => {
+			setActivityCycleIndex((index) => index + 1);
+			intervalId = window.setInterval(() => {
+				setActivityCycleIndex((index) => index + 1);
+			}, WORKING_SESSION_ACTIVITY_CYCLE_MS);
+		}, cycleDelayMs);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+			if (intervalId !== undefined) {
+				window.clearInterval(intervalId);
+			}
+		};
+	}, [cycleDelayMs, session.status, shouldReduceMotion]);
+
+	return (
+		<CyclingByline className="menu-row-title text-text-subtlest">
+			{getWorkingSessionActivity(session, activityCycleIndex)}
+		</CyclingByline>
+	);
+}
+
+function WorkingSessionsList({
 	onClose,
 	onOpenAgentChat,
 	sessions,
@@ -56,20 +136,27 @@ function RunningSessionsList({
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [selectedIndex, setSelectedIndex] = useState(0);
-	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session) => ({
-		description: session.title,
+	const items: readonly RichTextSuggestionMenuItem[] = sessions.map((session, sessionIndex) => ({
 		id: session.id,
 		icon: null,
 		label: session.agentName,
+		inlineMetadata: (
+			<WorkingSessionActivityByline
+				session={session}
+				sessionIndex={sessionIndex}
+			/>
+		),
 		leadingVisual: (
 			<AgentAvatarVisual
 				avatarSrc={session.agentAvatarSrc}
+				brandName={session.agentBrandName}
 				fallbackText={session.agentName}
 				sizePx={24}
 			/>
 		),
-		persistentDescription: true,
-		trailing: <Spinner label="" size="xs" variant="rainbow" />,
+		trailing: session.status === "waiting"
+			? <span className="text-xs text-text-subtle">Waiting</span>
+			: null,
 	}));
 
 	const openSession = (item: RichTextSuggestionMenuItem) => {
@@ -122,12 +209,12 @@ function RunningSessionsList({
 		>
 			<RichTextSuggestionMenu
 				className="rich-text-command-menu-borderless w-full!"
-				emptyLabel="No agents running"
+				emptyLabel="No agents working"
 				items={items}
 				onHover={setSelectedIndex}
 				onSelect={openSession}
 				selectedIndex={selectedIndex}
-				title="Running agents"
+				title="Working agents"
 			/>
 		</div>
 	);
@@ -153,51 +240,58 @@ export function ActivityComposerContextPills({
 	onInvokeAgent,
 	onInvokeSkill,
 	onOpenAgentChat,
-	runningSessions,
+	workingSessions,
 }: Readonly<ActivityComposerContextPillsProps>) {
 	const shouldReduceMotion = Boolean(useReducedMotion());
-	const runningTriggerRef = useRef<HTMLButtonElement>(null);
-	const shouldRestoreRunningTriggerFocusRef = useRef(false);
-	const [showRunningSessions, setShowRunningSessions] = useState(false);
+	const workingTriggerRef = useRef<HTMLButtonElement>(null);
+	const shouldRestoreWorkingTriggerFocusRef = useRef(false);
+	const [showWorkingSessions, setShowWorkingSessions] = useState(false);
 
 	useEffect(() => {
-		if (!showRunningSessions && shouldRestoreRunningTriggerFocusRef.current) {
-			shouldRestoreRunningTriggerFocusRef.current = false;
-			runningTriggerRef.current?.focus();
+		if (!showWorkingSessions && shouldRestoreWorkingTriggerFocusRef.current) {
+			shouldRestoreWorkingTriggerFocusRef.current = false;
+			workingTriggerRef.current?.focus();
 		}
-	}, [showRunningSessions]);
+	}, [showWorkingSessions]);
 
-	const closeRunningSessions = useCallback((restoreFocus: boolean) => {
-		shouldRestoreRunningTriggerFocusRef.current = restoreFocus;
-		setShowRunningSessions(false);
+	const closeWorkingSessions = useCallback((restoreFocus: boolean) => {
+		shouldRestoreWorkingTriggerFocusRef.current = restoreFocus;
+		setShowWorkingSessions(false);
 	}, []);
 
 	return (
 		<motion.div
 			animate="visible"
-			className="mb-3 flex flex-wrap gap-2"
+			className="mb-2 flex flex-wrap gap-2"
 			data-jira-work-item-context-pills
 			initial={shouldReduceMotion ? false : "hidden"}
 			variants={PILL_GROUP_VARIANTS}
 		>
-			{showRunningSessions && onOpenAgentChat ? (
-				<RunningSessionsList
-					onClose={closeRunningSessions}
+			{showWorkingSessions && onOpenAgentChat ? (
+				<WorkingSessionsList
+					onClose={closeWorkingSessions}
 					onOpenAgentChat={onOpenAgentChat}
-					sessions={runningSessions}
+					sessions={workingSessions}
 				/>
 			) : (
 				<>
-					{runningSessions.length > 0 && onOpenAgentChat ? (
+					{workingSessions.length > 0 && onOpenAgentChat ? (
 						<RevealingPill>
 							<ContextBarPill
-								aria-label={`${runningSessions.length} running agents`}
+								aria-label={`${workingSessions.length} agents working`}
 								className="motion-reduce:transition-none"
-								icon={<Spinner label="" size="xs" variant="rainbow" />}
-								onClick={() => setShowRunningSessions(true)}
-								ref={runningTriggerRef}
+								icon={(
+									<PixelLoader
+										className="size-3 justify-center"
+										pattern="diagonal-top-left"
+										shape="dot"
+										size="small"
+									/>
+								)}
+								onClick={() => setShowWorkingSessions(true)}
+								ref={workingTriggerRef}
 							>
-								{runningSessions.length} Running
+								{workingSessions.length} {workingSessions.length === 1 ? "agent" : "agents"} working
 							</ContextBarPill>
 						</RevealingPill>
 					) : null}

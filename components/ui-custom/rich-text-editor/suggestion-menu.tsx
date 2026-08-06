@@ -5,7 +5,6 @@
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
 import {
-	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useRef,
@@ -70,12 +69,18 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { cn } from "@/lib/utils";
 
 import { RichTextMentionVisualMark } from "./mention-visual";
+import { useCommandMenuScrollMask } from "./command-menu-scroll-mask";
 import {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,
 	getRichTextReferenceCategoryLabel,
 	isRichTextReferenceCategory,
 } from "./reference-categories";
+import {
+	getPreferredSuggestionIndex,
+	getSuggestionMatchRank,
+	rankSuggestionsByMatch,
+} from "./suggestion-ranking";
 import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
@@ -99,6 +104,11 @@ export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
 	description?: string;
+	/**
+	 * Optional supplementary content that stays on the title line. This is for
+	 * compact, dynamic metadata such as a running tool-call narration.
+	 */
+	inlineMetadata?: ReactNode;
 	shortcut?: string;
 	icon: ReactNode;
 	/** Optional fully rendered leading visual for domain-specific identity frames. */
@@ -595,14 +605,13 @@ export function RichTextSuggestionMenu({
 	selectedItemIds,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
-	const listRef = useRef<HTMLDivElement | null>(null);
-	const [hasScrolledList, setHasScrolledList] = useState(false);
+	const {
+		listProps,
+		menuProps,
+		remeasure: updateListScrollState,
+	} = useCommandMenuScrollMask();
+	const listRef = listProps.ref;
 	const isNested = Boolean(onBack);
-
-	const updateListScrollState = useCallback(() => {
-		const listElement = listRef.current;
-		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
-	}, []);
 
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- nested menu changes reset and remeasure the scroll container.
 	useEffect(() => {
@@ -611,7 +620,7 @@ export function RichTextSuggestionMenu({
 			listElement.scrollTop = 0;
 		}
 		updateListScrollState();
-	}, [isNested, title, updateListScrollState]);
+	}, [isNested, listRef, title, updateListScrollState]);
 	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useLayoutEffect(() => {
@@ -623,15 +632,15 @@ export function RichTextSuggestionMenu({
 
 		selectedElement.scrollIntoView({ block: "nearest" });
 		updateListScrollState();
-	}, [items, selectedIndex, title, updateListScrollState]);
+	}, [items, listRef, selectedIndex, title, updateListScrollState]);
 
 	return (
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
 			data-has-header={header ? "true" : undefined}
-			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			data-pointer-selects={onHover ? "true" : undefined}
+			{...menuProps}
 		>
 			{onBack ? (
 				<button
@@ -652,8 +661,7 @@ export function RichTextSuggestionMenu({
 				role="listbox"
 				aria-label={title}
 				aria-multiselectable={selectedItemIds ? true : undefined}
-				ref={listRef}
-				onScroll={updateListScrollState}
+				{...listProps}
 			>
 				{items.length > 0 ? (
 					items.map((item, index) => {
@@ -688,6 +696,16 @@ export function RichTextSuggestionMenu({
 
 export interface RichTextCommandMenuSearchFieldProps {
 	autoFocus?: boolean;
+	/**
+	 * Set when an ancestor owns list keyboard navigation — e.g. a cmdk `Command`
+	 * root, which handles Arrow/Enter through a React `onKeyDown` on its own
+	 * container and bails when the event is already `defaultPrevented`. In that
+	 * mode the field stops swallowing keys (no `stopPropagation`, no Enter
+	 * `preventDefault`) so navigation reaches the host. Defaults to false: the
+	 * field is self-contained and swallows keys so a surrounding TipTap editor
+	 * never sees them.
+	 */
+	hostOwnsKeyNavigation?: boolean;
 	icon: ReactNode;
 	id?: string;
 	label: string;
@@ -710,6 +728,7 @@ export interface RichTextCommandMenuSearchFieldProps {
 
 export function RichTextCommandMenuSearchField({
 	autoFocus,
+	hostOwnsKeyNavigation,
 	icon,
 	id,
 	label,
@@ -754,7 +773,9 @@ export function RichTextCommandMenuSearchField({
 				onChange={(event) => onValueChange(event.currentTarget.value)}
 				onKeyDown={(event) => {
 					onKeyDown?.(event);
-					event.stopPropagation();
+					if (!hostOwnsKeyNavigation) {
+						event.stopPropagation();
+					}
 					if (event.defaultPrevented) {
 						return;
 					}
@@ -763,7 +784,10 @@ export function RichTextCommandMenuSearchField({
 						onEscape();
 						return;
 					}
-					if (event.key === "Enter") {
+					// Leave Enter alone when the host owns navigation: cmdk's root
+					// handler skips events that are already `defaultPrevented`, so
+					// preventing here would stop Enter from picking the highlighted row.
+					if (event.key === "Enter" && !hostOwnsKeyNavigation) {
 						event.preventDefault();
 						onSubmit?.();
 					}
@@ -838,7 +862,15 @@ function RichTextSuggestionMenuOption({
 	const children = (
 		<>
 			<RichTextSuggestionMenuItemVisual item={item} />
-			{canRevealMetadata ? (
+			{item.inlineMetadata ? (
+				<span className="rich-text-command-menu-copy rich-text-command-menu-copy-inline">
+					<span className="menu-row-title">{item.label}</span>
+					<span aria-hidden="true" className="shrink-0 text-text-subtlest">·</span>
+					<span className="min-w-0 flex-1">
+						{item.inlineMetadata}
+					</span>
+				</span>
+			) : canRevealMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable">
 					<motion.span
 						className="menu-row-title"
@@ -960,7 +992,7 @@ function RichTextSuggestionMenuItemVisual({
 			label={item.label}
 			aria-hidden={true}
 			icon={item.icon}
-			variant="blue"
+			variant="gray"
 		/>
 	);
 
@@ -1238,19 +1270,31 @@ function buildFlatSurfaceRows(
 	sections: readonly FlatSectionSpec[],
 	query: string,
 	expandedSections: Readonly<Record<string, boolean>>,
+	rankMatches = false,
 ): readonly RichTextSuggestionMenuItem[] {
 	const normalizedQuery = query.trim();
 	const isFiltering = normalizedQuery.length > 0;
 	const rows: RichTextSuggestionMenuItem[] = [];
+	const resolvedSections = sections
+		.map((section, index) => {
+			const filteredItems = isFiltering
+				? filterItems(section.items, normalizedQuery)
+				: section.items;
+			const matchedItems = isFiltering && rankMatches
+				? rankSuggestionsByMatch(filteredItems, normalizedQuery)
+				: filteredItems;
+			return { index, matchedItems, section };
+		})
+		.filter(({ matchedItems }) => matchedItems.length > 0);
+	if (isFiltering && rankMatches) {
+		resolvedSections.sort((left, right) =>
+			getSuggestionMatchRank(left.matchedItems[0], normalizedQuery)
+			- getSuggestionMatchRank(right.matchedItems[0], normalizedQuery)
+			|| left.index - right.index,
+		);
+	}
 
-	for (const section of sections) {
-		const matchedItems = isFiltering
-			? filterItems(section.items, normalizedQuery)
-			: section.items;
-		if (matchedItems.length === 0) {
-			continue;
-		}
-
+	for (const { matchedItems, section } of resolvedSections) {
 		rows.push({
 			id: `${section.key}-heading`,
 			label: section.title,
@@ -1999,6 +2043,7 @@ export function createMentionSuggestionRenderer(
 	let selectedIndex = 0;
 	let activeCategory: RichTextMentionParentCategory | null = null;
 	let currentProps: SuggestionProps<RichTextMentionItem, RichTextMentionItem> | null = null;
+	let previousQuery: string | null = null;
 	// Per-section inline expansion for "View more" footers (flat variant only).
 	const expandedSections: Record<string, boolean> = {};
 	const labels = getMentionParentLabels(labelOverrides);
@@ -2035,7 +2080,7 @@ export function createMentionSuggestionRenderer(
 		props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>,
 	): readonly RichTextSuggestionMenuItem[] {
 		if (shouldUseFlatSurface(props.query)) {
-			return buildFlatSurfaceRows(getFlatSections(), props.query, expandedSections);
+			return buildFlatSurfaceRows(getFlatSections(), props.query, expandedSections, true);
 		}
 		return activeCategory ? getChildItems(props.query) : getParentItems(props.query);
 	}
@@ -2057,7 +2102,14 @@ export function createMentionSuggestionRenderer(
 	function update(props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>) {
 		currentProps = props;
 		const items = getVisibleItems(props);
-		selectedIndex = clampSelectedIndex(items, selectedIndex);
+		const queryChanged = previousQuery !== props.query;
+		previousQuery = props.query;
+		const preferredIndex = queryChanged
+			? getPreferredSuggestionIndex(items, props.query, isSelectableRow)
+			: -1;
+		selectedIndex = preferredIndex >= 0
+			? preferredIndex
+			: clampSelectedIndex(items, selectedIndex);
 
 		// When an "@" filter matches nothing, hide the popup entirely instead of
 		// surfacing a "no results" box — the empty composer already signals there
@@ -2243,6 +2295,7 @@ export function createMentionSuggestionRenderer(
 			currentProps = null;
 			selectedIndex = 0;
 			activeCategory = null;
+			previousQuery = null;
 		},
 	};
 }

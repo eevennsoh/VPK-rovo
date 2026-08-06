@@ -65,4 +65,46 @@ test("Tag removable demo centers its removable tag in the preview surface", () =
 		TAG_DEMO_SOURCE,
 		/export function TagDemoRemovable\(\)[\s\S]*className="flex min-h-\[352px\] w-full items-center justify-center"/u,
 	);
+	assert.match(TAG_DEMO_SOURCE, /<Tag className="self-center" onRemove=\{\(\) => setVisible\(false\)\}>Removable<\/Tag>/u);
+});
+
+test("Tag uses a rounded shell and remove control for every avatar type", () => {
+	const tagSource = fs.readFileSync(
+		path.join(process.cwd(), "components", "ui", "tag.tsx"),
+		"utf8",
+	);
+
+	assert.match(tagSource, /const removeButtonShapeClass = isAvatarType \|\| isRounded \? "rounded-full" : "rounded-xs";/u);
+	assert.match(tagSource, /isAvatarType \|\| isRounded \? "rounded-full" : "rounded-sm"/u);
+	assert.match(tagSource, /isOtherAvatarTag \? "ps-0\.5" : "ps-px"/u);
+	assert.match(tagSource, /hasElemAfter \? "pe-px" : isAvatarType \? "pe-1\.5" : "pe-\[4px\]"/u);
+	assert.doesNotMatch(tagSource, /isOtherAvatarTag \|\| type === "agent" \? "rounded-sm"/u);
+});
+
+test("Tag avatar demo uses removable controls without a team verification badge", () => {
+	const avatarTagsDemoSource = TAG_DEMO_SOURCE.match(
+		/export function TagDemoAvatarTags\(\)[\s\S]*?(?=export function TagDemoMentionTags\(\))/u,
+	)?.[0];
+
+	assert.ok(avatarTagsDemoSource);
+	assert.match(avatarTagsDemoSource, /type="other"\s+onRemove=\{\(\) => \{\}\}/u);
+	assert.doesNotMatch(avatarTagsDemoSource, /isVerified/u);
+});
+
+test("Tag at-mention demo shows rounded human, team, and agent treatments", () => {
+	const tagDetailsSource = fs.readFileSync(
+		path.join(process.cwd(), "app", "data", "details", "ui", "tag.ts"),
+		"utf8",
+	);
+	const tagRegistrySource = fs.readFileSync(
+		path.join(process.cwd(), "components", "website", "registry", "ui", "variants-progress.ts"),
+		"utf8",
+	);
+
+	assert.match(TAG_DEMO_SOURCE, /export function TagDemoMentionTags\(\)/u);
+	assert.match(TAG_DEMO_SOURCE, /type="user"[\s\S]*variant="editor"[\s\S]*Ee Venn Soh/u);
+	assert.match(TAG_DEMO_SOURCE, /type="other"[\s\S]*variant="editor"[\s\S]*Apple Ecosystem/u);
+	assert.match(TAG_DEMO_SOURCE, /type="agent"[\s\S]*variant="editor"[\s\S]*Code Planner/u);
+	assert.match(tagDetailsSource, /title: "At-mention tags"[\s\S]*demoSlug: "tag-demo-mention-tags"/u);
+	assert.match(tagRegistrySource, /"tag-demo-mention-tags"[\s\S]*default: mod\.TagDemoMentionTags/u);
 });

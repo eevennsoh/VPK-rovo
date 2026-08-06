@@ -1,20 +1,24 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
 import { ROVO_AGENT_SELECTOR_AGENTS, type SkillsDirectorySkill } from "@/app/data/directory";
+import {
+	EDITOR_PALETTE_MENTION_SOURCES,
+	mapAgentToMentionItem,
+} from "@/components/blocks/editor-palette/data/mention-sources";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { ActivityComposerContextPills } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer-context-pills";
 import { JiraWorkItemComposerMotion } from "@/components/blocks/jira-work-item/experimental-v2/components/jira-work-item-composer-motion";
 import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
-	findMentionedWorkingAgentSession,
-	findSteeredWorkingSession,
-	includesComposerAgentMention,
+	findMentionedAvailableAgents,
+	findMentionedWorkingAgentSessions,
+	findSteeredWorkingSessions,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/activity-composer-session-routing";
 import { JiraActivityComposer } from "@/components/blocks/jira-activity";
 import {
@@ -52,13 +56,29 @@ interface SessionTargetSelection {
  * first-time agent mention invokes that agent and adds it to Crew.
  */
 export function ActivityComposer({
+	agents,
+	onAgentPromptSubmit,
 	onOpenAgentChat,
-}: Readonly<{ onOpenAgentChat?: (agentId: string) => void }>) {
-	const { state, actions } = useJiraWorkItem();
+}: Readonly<{
+	agents?: readonly AgentSelectorAgent[];
+	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
+	onOpenAgentChat?: (agentId: string) => void;
+}>) {
+	const { state, actions, meta } = useJiraWorkItem();
+	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
+	const mentionSources = useMemo(() => agents
+		? {
+			...EDITOR_PALETTE_MENTION_SOURCES,
+			subagent: agents.map(mapAgentToMentionItem),
+		}
+		: EDITOR_PALETTE_MENTION_SOURCES, [agents]);
 	const [draft, setDraft] = useState("");
 	const [sessionTargetSelection, setSessionTargetSelection] = useState<SessionTargetSelection | null>(null);
 	const [selectedSessionTargetIndex, setSelectedSessionTargetIndex] = useState(0);
-	const mentionedWorkingAgentSession = findMentionedWorkingAgentSession(state.sessions, draft);
+	const mentionedWorkingAgentSessions = findMentionedWorkingAgentSessions(state.sessions, draft);
+	const mentionedWorkingAgentSession = mentionedWorkingAgentSessions.length === 1
+		? mentionedWorkingAgentSessions[0]
+		: null;
 	const hasResolvedSessionTarget = Boolean(
 		mentionedWorkingAgentSession
 		&& sessionTargetSelection?.sessionId === mentionedWorkingAgentSession.id,
@@ -69,11 +89,12 @@ export function ActivityComposer({
 		&& sessionTargetSelection?.sessionId === mentionedWorkingAgentSession.id
 		&& sessionTargetSelection.choice === "new",
 	);
-	const runningSessions = state.sessions.filter((session) => session.status === "running");
+	const workingSessions = state.sessions.filter((session) => session.status !== "completed");
 
 	const handlePromptChange = (next: string) => {
 		setDraft(next);
-		const nextMentionedSession = findMentionedWorkingAgentSession(state.sessions, next);
+		const nextMentionedSessions = findMentionedWorkingAgentSessions(state.sessions, next);
+		const nextMentionedSession = nextMentionedSessions.length === 1 ? nextMentionedSessions[0] : null;
 		setSelectedSessionTargetIndex(0);
 		setSessionTargetSelection((currentSelection) =>
 			nextMentionedSession && currentSelection?.sessionId === nextMentionedSession.id
@@ -104,13 +125,16 @@ export function ActivityComposer({
 	const handleSubmit = (body: string) => {
 		const text = body.trim();
 		if (!text) return;
-		const mentionedAgentSession = findMentionedWorkingAgentSession(state.sessions, text);
+		const mentionedAgentSessions = findMentionedWorkingAgentSessions(state.sessions, text);
+		const mentionedAgentSession = mentionedAgentSessions.length === 1 ? mentionedAgentSessions[0] : null;
 		const shouldStartNewSession = Boolean(
 			mentionedAgentSession
 			&& sessionTargetSelection?.sessionId === mentionedAgentSession.id
 			&& sessionTargetSelection.choice === "new",
 		);
-		const steeredSession = findSteeredWorkingSession(state.sessions, text);
+		const steeredSessions = findSteeredWorkingSessions(state.sessions, text);
+		const handledAgentIds = new Set<string>();
+		const handledAgentNames = new Set<string>();
 		if (mentionedAgentSession && shouldStartNewSession) {
 			actions.invokeAgent(
 				{
@@ -121,12 +145,31 @@ export function ActivityComposer({
 				"prompt",
 				text,
 			);
-		} else if (steeredSession) {
-			actions.replySession(steeredSession.id, text);
+			handledAgentIds.add(mentionedAgentSession.agentId);
+			handledAgentNames.add(mentionedAgentSession.agentName);
 		} else {
-			const invokedAgent = ROVO_AGENT_SELECTOR_AGENTS.find((agent) => includesComposerAgentMention(text, agent.name));
-			if (invokedAgent) {
-				actions.invokeAgent(invokedAgent, "prompt", text);
+			for (const steeredSession of steeredSessions) {
+				actions.replySession(steeredSession.id, text);
+				handledAgentIds.add(steeredSession.agentId);
+				handledAgentNames.add(steeredSession.agentName);
+			}
+		}
+		const invokedAgents = findMentionedAvailableAgents(
+			availableAgents,
+			text,
+			handledAgentIds,
+			handledAgentNames,
+		);
+		for (const invokedAgent of invokedAgents) {
+			actions.invokeAgent(invokedAgent, "prompt", text);
+		}
+		onAgentPromptSubmit?.(
+			[...handledAgentIds, ...invokedAgents.map((agent) => agent.id)],
+			text,
+		);
+		if (handledAgentIds.size === 0 && invokedAgents.length === 0) {
+			if (meta.composerDelivery === "broadcast-active-agents") {
+				actions.broadcastComment(text);
 			} else {
 				actions.addComment(text);
 			}
@@ -173,12 +216,13 @@ export function ActivityComposer({
 				onInvokeAgent={handleInvokeAgent}
 				onInvokeSkill={handleInvokeSkill}
 				onOpenAgentChat={onOpenAgentChat}
-				runningSessions={runningSessions}
+				workingSessions={workingSessions}
 			/>
 			<div className="relative" data-jira-work-item-composer-state="sticky">
 				<JiraWorkItemComposerMotion placement="sticky">
 					<JiraActivityComposer
 						author={JIRA_WORK_ITEM_CURRENT_USER}
+						mentionSources={mentionSources}
 						mentionSectionLabels={JIRA_WORK_ITEM_MENTION_LABELS}
 						onSubmit={handleSubmit}
 						onValueChange={handlePromptChange}

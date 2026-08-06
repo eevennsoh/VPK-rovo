@@ -35,6 +35,8 @@ export interface JiraActivityProps {
 	onEntriesChange?: (entries: readonly JiraActivityEntry[]) => void;
 	/** The signed-in viewer; authors new comments and replies. */
 	currentUser?: JiraActivityActor;
+	/** Known actors used to resolve reaction hover details before they appear in the timeline. */
+	actors?: readonly JiraActivityActor[];
 	/** Override the bottom composer. Pass `null` to suppress it. */
 	composer?: ReactNode | null;
 	/** Optional trailing action for each comment card. */
@@ -84,6 +86,7 @@ export function JiraActivity({
 	defaultEntries = JIRA_ACTIVITY_ENTRIES,
 	onEntriesChange,
 	currentUser = JIRA_ACTIVITY_CURRENT_USER,
+	actors = [],
 	composer,
 	renderCommentAction,
 	onViewSession,
@@ -108,6 +111,20 @@ export function JiraActivity({
 	const [uncontrolledFilter, setUncontrolledFilter] = useState(defaultFilter);
 	const filter = controlledFilter ?? uncontrolledFilter;
 	const collapsed = controlledCollapsed ?? false;
+	const actorsById = useMemo(() => {
+		const actorDirectory = new Map<string, JiraActivityActor>();
+		actorDirectory.set(currentUser.id, currentUser);
+		for (const entry of entries) {
+			actorDirectory.set(entry.actor.id, entry.actor);
+			if (entry.kind === "comment") {
+				for (const reply of entry.replies ?? []) {
+					actorDirectory.set(reply.actor.id, reply.actor);
+				}
+			}
+		}
+		for (const actor of actors) actorDirectory.set(actor.id, actor);
+		return actorDirectory;
+	}, [actors, currentUser, entries]);
 
 	function handleSortOrderChange(next: JiraActivitySortOrder) {
 		if (controlledSortOrder === undefined) {
@@ -256,6 +273,7 @@ export function JiraActivity({
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
+											actorsById={actorsById}
 											commentActions={commentActions}
 											currentUser={currentUser}
 											entry={entry}

@@ -1174,10 +1174,12 @@ export const PromptInputTextarea = ({
   const attachmentsRef = useRef(attachments);
   const controllerRef = useRef(controller);
   const nameRef = useRef(name);
+  const prefillMentionRequestRef = useRef(prefillMentionRequest);
   const activeEditorRef = useRef<Editor | null>(null);
   const lastEditorPublishedTextRef = useRef<string | null>(null);
   const lastMentionPrefillKeyRef = useRef(0);
   const pendingMentionPrefillKeyRef = useRef(0);
+  const prefillValueSyncGuardKeyRef = useRef(0);
   const lastMentionPrefillTextRef = useRef<string | null>(null);
   const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
   const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
@@ -1217,6 +1219,7 @@ export const PromptInputTextarea = ({
     attachmentsRef.current = attachments;
     controllerRef.current = controller;
     nameRef.current = name;
+    prefillMentionRequestRef.current = prefillMentionRequest;
     directoryAutocompleteListVisibleRef.current = directoryAutocompleteListVisible;
     directoryAutocompleteLimitRef.current = directoryAutocompleteLimit;
     onDirectoryAutocompleteChangeRef.current = onDirectoryAutocompleteChange;
@@ -1467,7 +1470,10 @@ export const PromptInputTextarea = ({
       const initial = controllerRef.current
         ? controllerRef.current.textInput.value
         : normalizedValueProp;
-      if (initial) {
+      // Editor creation is asynchronous and can finish after the keyed prefill
+      // effect has already inserted its mention. In that case, restoring the
+      // controlled plain-text value here would flatten the mention node.
+      if (initial && !prefillMentionRequestRef.current) {
         setComposerPlainText(activeEditor, initial);
       }
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, false);
@@ -1636,7 +1642,7 @@ export const PromptInputTextarea = ({
     const mention = prefillMentionRequest.mention;
     pendingMentionPrefillKeyRef.current = requestKey;
 
-    queueMicrotask(() => {
+    const prefillFrame = requestAnimationFrame(() => {
       if (pendingMentionPrefillKeyRef.current === requestKey) {
         pendingMentionPrefillKeyRef.current = 0;
       }
@@ -1645,24 +1651,20 @@ export const PromptInputTextarea = ({
       }
 
       lastMentionPrefillKeyRef.current = requestKey;
+      prefillValueSyncGuardKeyRef.current = requestKey;
       clearPendingAutoTagging();
       resetVisualTraceEditorState(editor);
       setDirectoryAutocompleteState(null);
-      editor.commands.setContent({
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [
-              {
-                type: "mention",
-                attrs: getMentionNodeAttrs(mention),
-              },
-              { type: "text", text: " " },
-            ],
-          },
-        ],
-      });
+      editor
+        .chain()
+        .focus()
+        .selectAll()
+        .insertContent([
+          { type: "mention", attrs: getMentionNodeAttrs(mention) },
+          { type: "text", text: " " },
+        ])
+        .run();
+      editor.createNodeViews();
       const prefillText = serializeComposerDoc(editor);
       lastMentionPrefillTextRef.current = prefillText;
       publishText(prefillText, editor.view.dom, true);
@@ -1671,6 +1673,7 @@ export const PromptInputTextarea = ({
 
     return () => {
       cancelled = true;
+      cancelAnimationFrame(prefillFrame);
       if (pendingMentionPrefillKeyRef.current === requestKey) {
         pendingMentionPrefillKeyRef.current = 0;
       }
@@ -1695,6 +1698,14 @@ export const PromptInputTextarea = ({
     }
 
     const currentText = serializeComposerDoc(editor);
+    if (
+      prefillMentionRequest?.requestKey === prefillValueSyncGuardKeyRef.current
+    ) {
+      if (currentText !== resolvedValue) {
+        return;
+      }
+      prefillValueSyncGuardKeyRef.current = 0;
+    }
     if (lastMentionPrefillTextRef.current === currentText && resolvedValue !== currentText) {
       return;
     }
@@ -1712,7 +1723,7 @@ export const PromptInputTextarea = ({
     }
 
     syncVisualTraceExternalValue(editor, resolvedValue, currentText);
-  }, [editor, resolvedValue, syncVisualTraceExternalValue]);
+  }, [editor, prefillMentionRequest, resolvedValue, syncVisualTraceExternalValue]);
 
   // Backspace on an empty composer removes the last attachment, matching the
   // previous textarea behavior.

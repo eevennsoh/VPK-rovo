@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/exhaustive-deps -- The metronome effect intentionally
 // re-subscribes only when the running gate flips, not on every state change.
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 
 import {
@@ -39,6 +39,7 @@ export interface JiraWorkItemActions {
 	): void;
 	replySession(sessionId: string, text: string): void;
 	addComment(text: string): void;
+	broadcastComment(text: string): void;
 	openSession(sessionId: string | null): void;
 	openGeneralSession(): void;
 	/** Launcher entry: reopen the latest session, else create a general one. */
@@ -80,11 +81,27 @@ export function useJiraWorkItemController(
 	workItem: WorkItemData,
 	active = true,
 	initialState?: JiraWorkItemState,
+	initialStateRevision?: string | number,
 ): JiraWorkItemController {
 	const [state, dispatch] = useReducer(jiraWorkItemReducer, { initialState, preset: initialPreset, workItem }, initState);
+	const previousInitialStateRevisionRef = useRef(initialStateRevision);
 	const shouldReduceMotion = useReducedMotion();
 	const isRunning = hasRunningSession(state) || isPlannerProcessing(state.planner);
 	const isFrozenRunningDemo = state.preset === "running";
+
+	// Scripted consumers can replace their authored snapshot without remounting
+	// the whole work-item surface. Skipping the initial revision avoids a second
+	// hydration on mount; subsequent revisions settle before the browser paints.
+	useLayoutEffect(() => {
+		if (
+			initialStateRevision === undefined
+			|| Object.is(previousInitialStateRevisionRef.current, initialStateRevision)
+		) {
+			return;
+		}
+		previousInitialStateRevisionRef.current = initialStateRevision;
+		if (initialState) dispatch({ type: "hydrate-state", state: initialState });
+	}, [initialState, initialStateRevision]);
 
 	// Metronome: while the surface is active (open) AND a session or planner task
 	// is processing, advance the pure timer engine on a fixed cadence. Gating on
@@ -130,6 +147,7 @@ export function useJiraWorkItemController(
 				}),
 			replySession: (sessionId, text) => run({ type: "reply-session", sessionId, text }),
 			addComment: (text) => run({ type: "add-comment", text }),
+			broadcastComment: (text) => run({ type: "broadcast-comment", text }),
 			openSession: (sessionId) => run({ type: "set-active-session", sessionId }),
 			openGeneralSession: () => run({ type: "open-general-session" }),
 			openLatestOrCreateGeneralSession: () => run({ type: "open-latest-or-general" }),
@@ -151,9 +169,11 @@ export function useJiraWorkItemController(
 			rejectPlannerProposal: () => run({ type: "reject-planner-proposal" }),
 			refinePlannerProposal: (prompt) => run({ type: "refine-planner-proposal", prompt }),
 			updateMetadata: (patch) => run({ type: "edit-metadata", patch }),
-			reset: () => run({ type: "reset", workItem }),
+			reset: () => run(initialState
+				? { type: "hydrate-state", state: initialState }
+				: { type: "reset", workItem }),
 		}),
-		[run, workItem],
+		[initialState, run, workItem],
 	);
 
 	return { state, actions };

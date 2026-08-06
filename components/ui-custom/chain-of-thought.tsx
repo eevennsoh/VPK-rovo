@@ -110,14 +110,23 @@ const BYLINE_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
  * The persistent byline on the active/last step keeps a fixed row height while
  * its text changes, so it stays put instead of flickering on every update.
  */
-export function CyclingByline({ children }: Readonly<{ children: ReactNode }>) {
+export function CyclingByline({
+	children,
+	className,
+}: Readonly<{
+	children: ReactNode;
+	className?: string;
+}>) {
 	const shouldReduceMotion = useReducedMotion();
 	const hasContent = children != null && children !== false;
 	const textKey = typeof children === "string" ? children : "byline";
 
 	return (
 		<motion.span
-			className="block overflow-hidden text-xs leading-4 text-text-subtle"
+			className={cn(
+				"block overflow-hidden",
+				className ?? "text-xs leading-4 text-text-subtle",
+			)}
 			initial={false}
 			animate={shouldReduceMotion ? undefined : { height: hasContent ? "auto" : 0 }}
 			transition={BYLINE_TRANSITION}

@@ -41,8 +41,8 @@ function toggleReaction(
 }
 
 const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
-  { emoji: "👍", count: 3, reacted: true },
-  { emoji: "🔥", count: 1 },
+  { emoji: "👍", count: 3, reacted: true, reactorNames: ["You", "Priya", "Mateo"] },
+  { emoji: "🔥", count: 1, reactorNames: ["Jordan"] },
 ]);
 
 <EmojiReactionBar
@@ -215,6 +215,12 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 						'Accessible label override, e.g. "Priya and 2 others reacted with thumbs up".',
 				},
 				{
+					name: "reactorNames",
+					type: "readonly string[]",
+					description:
+						"Names shown in the centered reaction tooltip on hover and keyboard focus.",
+				},
+				{
 					name: "onToggle",
 					type: "(emoji: string) => void",
 					description: "Called with the glyph when the pill is activated.",
@@ -282,7 +288,7 @@ const [reactions, setReactions] = useState<readonly EmojiReactionSummary[]>([
 		{
 			name: "EmojiReactionSummary",
 			description:
-				"Presentational view model (`emoji`, `count`, `reacted?`, `label?`). Consumers normalize their own storage — actor ids, server counts — into this shape at the boundary, which is what keeps the block domain-agnostic. `FREQUENT_EMOJI` and `emojiLabel(emoji)` ship alongside it.",
+				"Presentational view model (`emoji`, `count`, `reacted?`, `label?`, `reactorNames?`). Consumers normalize their own storage — actor ids, server counts — into this shape at the boundary, which is what keeps the block domain-agnostic. `FREQUENT_EMOJI` and `emojiLabel(emoji)` ship alongside it.",
 		},
 	],
 	examples: [

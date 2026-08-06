@@ -1,9 +1,9 @@
 import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import StopwatchIcon from "@atlaskit/icon/core/stopwatch";
 import TagIcon from "@atlaskit/icon/core/tag";
-import PersonAssigneeIcon from "@atlaskit/icon-lab/core/person-assignee";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -18,7 +18,7 @@ const EVENT_ICON: Record<JiraActivityEventIcon, typeof AddIcon> = {
 	label: TagIcon,
 	sla: StopwatchIcon,
 	status: ProjectStatusIcon,
-	delegated: PersonAssigneeIcon,
+	delegated: AiAgentIcon,
 	"in-progress": ProjectStatusIcon,
 	linked: BranchIcon,
 	"teamwork-graph": TeamworkGraphIcon,

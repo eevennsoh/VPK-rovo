@@ -33,11 +33,13 @@ function readProjectFile(relativePath) {
 test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
+	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
 	assert.match(BLOCK_SOURCE, /borderless \? null : "border border-border"/u);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? \([\s\S]*text-xs font-normal text-text-subtlest">· \{count\}/u);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
-	assert.match(BLOCK_SOURCE, /index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
+	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
+	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
 	assert.match(BLOCK_SOURCE, /import ChevronRightIcon from "@atlaskit\/icon\/core\/chevron-right"/u);
 	assert.match(BLOCK_SOURCE, /import \{ motion, useReducedMotion \} from "motion\/react"/u);
 	assert.match(BLOCK_SOURCE, /const prefersReducedMotion = useReducedMotion\(\);/u);
@@ -46,11 +48,21 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /style=\{\{ willChange: "transform" \}\}/u);
 	assert.match(BLOCK_SOURCE, /prefersReducedMotion \? \{ duration: 0 \} : \{ duration: 0\.15, ease: \[0\.4, 1, 0\.6, 1\] \}/u);
 	assert.match(BLOCK_SOURCE, /<ChevronRightIcon label="" size="small" \/>/u);
+	assert.match(BLOCK_SOURCE, /headerAction\?: Readonly<\{[\s\S]*label: string;[\s\S]*onClick\?: \(\) => void;/u);
+	assert.match(BLOCK_SOURCE, /className="group\/header relative flex w-full items-center"/u);
+	assert.match(BLOCK_SOURCE, /<SettingsIcon label="" size="small" \/>/u);
+	assert.match(BLOCK_SOURCE, /aria-label=\{headerAction\.label\}/u);
+	assert.match(BLOCK_SOURCE, /pointer-events-none absolute top-1\/2 right-8 -translate-y-1\/2 opacity-0 transition-opacity duration-fast ease-out-practical group-hover\/header:pointer-events-auto group-hover\/header:opacity-100 group-has-\[:focus-visible\]\/header:pointer-events-auto group-has-\[:focus-visible\]\/header:opacity-100 motion-reduce:transition-none/u);
+	assert.match(BLOCK_SOURCE, /<TooltipContent positionerClassName="z-\[502\]">\{headerAction\.label\}<\/TooltipContent>/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /Chevron(?:Up|Down)Icon/u);
-	assert.match(BLOCK_SOURCE, /className="group\/header flex w-full/u);
+	assert.match(BLOCK_SOURCE, /className="flex w-full items-center justify-between/u);
 	assert.match(BLOCK_SOURCE, /focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/u);
-	assert.match(BLOCK_SOURCE, /opacity-0 group-hover\/header:opacity-100 group-focus-visible\/header:opacity-100/u);
-	assert.match(BLOCK_SOURCE, /text-text-subtle group-hover\/header:text-text group-focus-visible\/header:text-text/u);
+	assert.match(BLOCK_SOURCE, /opacity-0 transition-opacity duration-fast ease-out-practical group-hover\/header:opacity-100 group-has-\[:focus-visible\]\/header:opacity-100 motion-reduce:transition-none/u);
+	assert.match(BLOCK_SOURCE, /text-text-subtle group-hover\/header:text-text group-has-\[:focus-visible\]\/header:text-text/u);
+	// Regression: header actions revealed on :focus-within stayed visible after the
+	// pointer left, because clicking the disclosure button keeps DOM focus inside
+	// the group. Only :focus-visible (keyboard focus) may pin them open.
+	assert.doesNotMatch(BLOCK_SOURCE, /group-focus-within\/header:/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /hover:bg-surface-hovered/u);
 	assert.match(BLOCK_SOURCE, /sections\.map\(\(section, index\) =>/u);
 	assert.match(BLOCK_SOURCE, /index === 0 \? "pt-1\.5" : null/u);
@@ -72,8 +84,9 @@ test("Artifact Pane property rows follow the Jira Session Flyout layout pattern"
 	assert.match(BLOCK_SOURCE, /\[&_\[data-slot=avatar-group-count\]\]:size-6/u);
 	assert.match(BLOCK_SOURCE, /\[&_\[data-slot=tile\]\]:size-6/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /\[&_\[data-slot=(?:avatar|avatar-group-count|tile)\]\]:size-4/u);
-	assert.match(BLOCK_SOURCE, /editable[\s\S]*\? "-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered motion-reduce:transition-none/u);
-	assert.doesNotMatch(BLOCK_SOURCE, /editable[\s\S]*\? "-m[xr]-2 rounded-md/u);
+	assert.match(BLOCK_SOURCE, /editable[\s\S]*"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"/u);
+	assert.match(BLOCK_SOURCE, /\[&>button\]:focus-visible:ring-0!/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /editable[\s\S]*"-m[xr]-2 rounded-md/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /py-0\.5 transition-colors/u);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:m-0!/u);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:min-h-8!/u);
@@ -182,4 +195,37 @@ test("Artifact Pane is registered as a documented block", () => {
 	assert.match(readProjectFile("app/data/details/blocks.ts"), /"artifact-pane": ARTIFACT_PANE_DETAIL/u);
 	assert.match(readProjectFile("components/website/registry/blocks.ts"), /"artifact-pane": dynamic\(/u);
 	assert.ok(fs.existsSync(path.join(process.cwd(), "components/website/demos/blocks/artifact-pane-demo.tsx")));
+});
+
+test("Artifact Pane labels picker fades its list once scrolled", () => {
+	// The picker hand-rolls the command-menu markup, so it does not inherit the
+	// `data-list-scrolled` bookkeeping that RichTextSuggestionMenu applies. Both
+	// halves of the shared hook must be wired, or a long label list clips hard
+	// under the search header instead of fading.
+	assert.match(LABELS_FIELD_SOURCE, /useCommandMenuScrollMask/u);
+	assert.match(LABELS_FIELD_SOURCE, /const \{ listProps, menuProps \} = useCommandMenuScrollMask\(\);/u);
+	// menuProps supplies data-list-scrolled on the menu root; listProps supplies
+	// the ref + onScroll on the scroller.
+	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu rich-text-command-menu-borderless"[\s\S]*\{\.\.\.menuProps\}/u);
+	assert.match(LABELS_FIELD_SOURCE, /className="rich-text-command-menu-list"[\s\S]*\{\.\.\.listProps\}/u);
+});
+
+test("editable property rows draw the shared input focus ring", () => {
+	const focusRingSource = readProjectFile("components/ui/focus-ring.ts");
+
+	// 1px solid focus line + 3px halo at 50%, matching Input/InputGroup. Drawn
+	// with ring + ring-offset (two stacked box-shadows) instead of a border so
+	// these borderless rows keep their geometry on focus.
+	assert.match(focusRingSource, /FOCUS_RING_HAS_VISIBLE[\s\S]*ring-offset-1 has-\[:focus-visible\]:ring-offset-ring/u);
+	assert.match(focusRingSource, /FOCUS_RING_POPUP_OPEN[\s\S]*ring-offset-1 has-\[\[data-popup-open\]\]:ring-offset-ring/u);
+
+	assert.match(BLOCK_SOURCE, /FOCUS_RING_HAS_VISIBLE,\n\s+FOCUS_RING_POPUP_OPEN,/u);
+});
+
+test("editable property rows key their focus ring off :focus-visible, not :focus-within", () => {
+	// The popover restores focus to its trigger on close, so `:focus-within`
+	// leaves the ring and background stuck on after a click-outside dismissal.
+	assert.doesNotMatch(BLOCK_SOURCE, /focus-within:ring/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /focus-within:bg-/u);
+	assert.match(BLOCK_SOURCE, /has-\[:focus-visible\]:bg-bg-input/u);
 });

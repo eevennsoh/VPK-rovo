@@ -92,13 +92,13 @@ test("third-party subagents use the shared hexagon avatar in suggestion palettes
 	assert.match(source, /item\.category === "subagent" && visual\?\.kind === "third-party"[\s\S]*<AgentAvatarVisual[\s\S]*brandName=\{visual\.name\}[\s\S]*sizePx=\{24\}/u);
 });
 
-test("fallback suggestion icons use the 24px blue IconTile treatment", () => {
+test("fallback suggestion icons use the 24px neutral IconTile treatment", () => {
 	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
 	const visualStart = source.indexOf("function RichTextSuggestionMenuItemVisual");
 	const visualSource = source.slice(visualStart, source.indexOf("function filterItems", visualStart));
 
 	assert.ok(visualStart > -1, "expected RichTextSuggestionMenuItemVisual source");
-	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant="blue"/u);
+	assert.match(visualSource, /<IconTile[\s\S]*size="small"[\s\S]*variant="gray"/u);
 	assert.doesNotMatch(visualSource, /text-icon-subtlest/u);
 });
 
@@ -110,4 +110,13 @@ test("composer directory autocomplete accepts the active visible list item on Ta
 	assert.match(extensionSource, /event\.key === "Tab" && !event\.shiftKey && controller\.hasAcceptableList\(\)[\s\S]*event\.preventDefault\(\);[\s\S]*return controller\.acceptActiveListItem\(\);/u);
 	assert.match(promptInputSource, /acceptActiveListItem: \(\) =>[\s\S]*acceptDirectoryAutocompleteIndexRef\.current\([\s\S]*directoryAutocompleteStateRef\.current\?\.activeIndex \?\? 0[\s\S]*\)/u);
 	assert.match(extensionSource, /\(\(event\.key === "Tab" && !event\.shiftKey\) \|\| event\.key === "ArrowRight"\) &&[\s\S]*!controller\.hasVisibleList\(\)/u);
+});
+
+test("document autocomplete only renders ghost text at the end of a text block", () => {
+	const editorSource = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
+
+	assert.match(
+		editorSource,
+		/const \{ \$from \} = selection;[\s\S]*!\$from\.parent\.isTextblock[\s\S]*\$from\.parentOffset !== \$from\.parent\.content\.size[\s\S]*setDirectoryAutocompleteState\(null\);/u,
+	);
 });

@@ -41,6 +41,10 @@ const CHANGED_FILES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-changed-files.tsx"),
 	"utf8",
 );
+const PROMPT_INPUT_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "ui-custom", "prompt-input.tsx"),
+	"utf8",
+);
 const NODE_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-node.tsx"),
 	"utf8",
@@ -57,6 +61,12 @@ const VARIANT_REGISTRY_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../website/registry/blocks-variants.ts"),
 	"utf8",
 );
+
+test("agent mention chips use canonical agent identity without a visible at-sign", () => {
+	assert.match(SEGMENTS_SOURCE, /brandName=\{segment\.brandName\}/u);
+	assert.match(SEGMENTS_SOURCE, />\s*\{segment\.text\}\s*<\/Tag>/u);
+	assert.doesNotMatch(SEGMENTS_SOURCE, /@\{segment\.text\}/u);
+});
 
 test("sample feed covers all three entry kinds", () => {
 	const kinds = new Set(JIRA_ACTIVITY_ENTRIES.map((entry) => entry.kind));
@@ -97,6 +107,7 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /openLabel=\{outputOpenLabel\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant\?: "activity" \| "jira-issue";/u);
 	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);
+	assert.match(CHANGED_FILES_SOURCE, /"group\/activity-card w-full bg-surface"/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.outputs\.length > 0 \? "p-3" : "px-3 pb-3 pt-0"/u);
 	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
 });
@@ -112,7 +123,8 @@ test("sample feed documents work by people, AI agents, and apps", () => {
 
 test("the current user is a person with an avatar (authors comments/replies)", () => {
 	assert.equal(JIRA_ACTIVITY_CURRENT_USER.kind, "person");
-	assert.ok(JIRA_ACTIVITY_CURRENT_USER.avatarSrc);
+	assert.equal(JIRA_ACTIVITY_CURRENT_USER.name, "Venn");
+	assert.equal(JIRA_ACTIVITY_CURRENT_USER.avatarSrc, "/avatar-user/venn/venn.png");
 });
 
 test("the comment entry has a rich body and a collapsible section", () => {
@@ -155,13 +167,13 @@ test("Teamwork Graph events use the VPK-wrapped functional icon", () => {
 	assert.doesNotMatch(NODE_SOURCE, /TeamworkGraphMark/u);
 });
 
-test("delegated events use the Person assignee icon", () => {
+test("delegated events use the ADS agent icon", () => {
 	assert.match(
 		NODE_SOURCE,
-		/import PersonAssigneeIcon from "@atlaskit\/icon-lab\/core\/person-assignee"/u,
+		/import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent"/u,
 	);
-	assert.match(NODE_SOURCE, /delegated: PersonAssigneeIcon/u);
-	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon/u);
+	assert.match(NODE_SOURCE, /delegated: AiAgentIcon/u);
+	assert.doesNotMatch(NODE_SOURCE, /ShortcutIcon|PersonAssigneeIcon/u);
 });
 
 test("the Medium priority event uses the Agent Sessions priority icon treatment", () => {
@@ -344,6 +356,12 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 		/import \{\s*AgentListActivityHeader,[\s\S]*type AgentListItem,[\s\S]*\} from "@\/components\/blocks\/agent-list"/u,
 	);
 	assert.match(CARD_SOURCE, /<AgentListActivityHeader/u);
+	assert.match(CARD_SOURCE, /<AgentListActivityHeader[\s\S]*leadWithAgentName/u);
+	assert.match(CARD_SOURCE, /messageTimestamp=\{timestamp\}/u);
+	assert.match(CARD_SOURCE, /activityGroupClass[\s\S]*group\/activity-card/u);
+	assert.match(CARD_SOURCE, /activityGroupClass,[\s\S]*"grid"/u);
+	assert.doesNotMatch(CARD_SOURCE, /"group\/activity-card w-full overflow-hidden/u);
+	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-hover\/activity-card:opacity-100/u);
 	// Both human and agent comments render the shared prompt-input composer, on
 	// the compact in-card surface rather than the bordered floating one.
 	assert.match(COMMENT_SOURCE, /variant="flush"/u);
@@ -384,14 +402,18 @@ test("controlled timelines can route inline agent replies to their owning sessio
 });
 
 test("human comments keep the stacked identity header and the flush composer geometry", () => {
-	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \}/u);
+	assert.match(COMMENT_SOURCE, /import \{ Avatar, AvatarFallback, AvatarGroup, AvatarImage \}/u);
 	assert.match(COMMENT_SOURCE, /entry\.actor\.kind === "person"/u);
 	assert.match(
 		COMMENT_SOURCE,
 		/headerLayout=\{entry\.actor\.kind === "person" \? "stacked" : "inline"\}/u,
 	);
-	assert.match(COMMENT_SOURCE, /<Avatar aria-hidden size="default">/u);
-	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{entry\.actor\.avatarSrc\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/<Avatar aria-hidden size=\{sizePx === 16 \? "xs" : "default"\}>/u,
+	);
+	assert.match(COMMENT_SOURCE, /function ActivityActorAvatar/u);
+	assert.match(COMMENT_SOURCE, /<AvatarImage alt="" src=\{actor\.avatarSrc\}/u);
 	// Reply is a disclosure the comment owns via `commentActions`, not a callback
 	// the consuming surface has to wire up.
 	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
@@ -408,7 +430,7 @@ test("the activity card hosts the action row in the body grid, not the bordered 
 	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
 	// Nothing renders it inside the `border-t` footer branch.
 	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
-	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-4 p-3" : "gap-2 p-3"/u);
+	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-3 p-3" : "gap-2 p-3"/u);
 });
 
 test("the comment action row pairs Reply with the shared emoji reaction bar", () => {
@@ -438,7 +460,82 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
 });
 
-test("Reply discloses the composer, defaulting to reply-and-reactions", () => {
+test("thread replies share the parent card as inset divided rows with their own actions", () => {
+	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
+	assert.match(COMMENT_SOURCE, /<div className="pl-6">\s*<JiraActivityCard[\s\S]*className="rounded-none border-0"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-3">/u);
+	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
+	assert.match(COMMENT_SOURCE, /activityGroup="activity-reply"/u);
+	assert.match(COMMENT_SOURCE, /item=\{reply\.sessionItem\}/u);
+	assert.match(COMMENT_SOURCE, /onView=\{onViewSession\}/u);
+	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
+	assert.match(COMMENT_SOURCE, /\? \(\) => onReply\(replyButtonRef\.current\)/u);
+	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
+	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="divide-y divide-border"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
+});
+
+test("a thread owns one bottom reply composer and targets the clicked author", () => {
+	assert.equal(
+		(COMMENT_SOURCE.match(/<JiraActivityComposer/gu) ?? []).length,
+		1,
+		"the parent and nested replies must not mount independent composers",
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/function toggleReply\(key: string, actor: JiraActivityActor, button: HTMLButtonElement \| null\)[\s\S]*setReplyTarget\(\{ key, actor \}\);\s*setReplyDraft\(""\);/u,
+	);
+	assert.match(COMMENT_SOURCE, /onReply=\{\(button\) => toggleReply\(reply\.id, reply\.actor, button\)\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/className=\{hasReplies && repliesExpanded \? "border-t border-border" : undefined\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /key=\{replyTarget\?\.key \?\? "thread-reply"\}/u);
+	assert.match(COMMENT_SOURCE, /onValueChange=\{setReplyDraft\}/u);
+	assert.match(COMMENT_SOURCE, /value=\{replyDraft\}/u);
+});
+
+test("comments with nested replies expose one shared header control to collapse the thread", () => {
+	assert.match(COMMENT_SOURCE, /import GrowVerticalIcon from "@atlaskit\/icon\/core\/grow-vertical"/u);
+	assert.match(COMMENT_SOURCE, /const \[repliesExpanded, setRepliesExpanded\] = useState\(true\)/u);
+	assert.match(COMMENT_SOURCE, /const hasReplies = replies\.length > 0/u);
+	assert.match(COMMENT_SOURCE, /repliesExpanded \? "Collapse nested comments" : "Expand nested comments"/u);
+	assert.match(COMMENT_SOURCE, /aria-controls=\{repliesId\}[\s\S]*aria-expanded=\{repliesExpanded\}[\s\S]*size="icon-compact"[\s\S]*variant="outline"[\s\S]*<GrowVerticalIcon label="" \/>/u);
+	assert.match(COMMENT_SOURCE, /className="aria-expanded:border-border aria-expanded:bg-bg-neutral-subtle/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /aria-expanded:border-transparent|aria-expanded:bg-transparent/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /opacity-0[\s\S]*group-hover\/activity-card:opacity-100/u);
+	assert.match(COMMENT_SOURCE, /const headerAction = action \|\| repliesToggle \? \([\s\S]*gap-2/u);
+	// The shared control rides the card's hover scope, but stays in the tab order:
+	// a `display: none` wrapper could never satisfy its own focus-visible reveal.
+	assert.match(
+		CARD_SOURCE,
+		/\{action \? \([\s\S]*"pointer-events-none flex shrink-0 items-center gap-2 opacity-0[\s\S]*actionVisibilityClass/u,
+	);
+	assert.doesNotMatch(CARD_SOURCE, /"hidden shrink-0 items-center gap-2/u);
+	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
+	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
+	assert.match(COMMENT_SOURCE, /repliesHidden=\{!repliesExpanded\}/u);
+});
+
+test("collapsed threads show a Slack-like participant, count, and timestamp summary", () => {
+	assert.match(COMMENT_SOURCE, /function CollapsedThreadSummary/u);
+	assert.match(COMMENT_SOURCE, /new Map\(replies\.map\(\(reply\) => \[reply\.actor\.id, reply\.actor\]\)\)/u);
+	assert.match(COMMENT_SOURCE, /<AvatarGroup[\s\S]*Reply participants:[\s\S]*actors\.slice\(0, 3\)\.map/u);
+	assert.match(COMMENT_SOURCE, /sizePx=\{16\}/u);
+	assert.match(COMMENT_SOURCE, /replyCountLabel[\s\S]*latestTimestamp/u);
+	assert.match(COMMENT_SOURCE, /text-xs font-normal text-text hover:underline/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /font-medium text-link[\s\S]*replyCountLabel/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /hover:no-underline/u);
+	assert.match(COMMENT_SOURCE, /shrink-0 text-text-subtle">\{replyCountLabel\}/u);
+	assert.match(COMMENT_SOURCE, /truncate text-text-subtlest group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
+	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:hidden[\s\S]*latestTimestamp/u);
+	assert.match(COMMENT_SOURCE, /group-hover\/thread-summary:inline[\s\S]*View all comments/u);
+	assert.match(COMMENT_SOURCE, /collapsedThreadSummary = hasReplies && !repliesExpanded/u);
+	assert.match(COMMENT_SOURCE, /<CollapsedThreadSummary onExpand=\{\(\) => setRepliesExpanded\(true\)\} replies=\{replies\} \/>/u);
+});
+
+test("Reply discloses the single thread composer, defaulting to reply-and-reactions", () => {
 	assert.match(
 		INDEX_SOURCE,
 		/commentActions\?: "none" \| "reactions" \| "reply-and-reactions";/u,
@@ -454,15 +551,18 @@ test("Reply discloses the composer, defaulting to reply-and-reactions", () => {
 	);
 	assert.match(
 		COMMENT_SOURCE,
-		/const composerVisible = allowReply && \(!collapsible \|\| replyOpen\);/u,
+		/const composerVisible = allowReply && \(!collapsible \|\| replyTarget !== null\);/u,
 	);
 	// The composer only mounts when visible, and aria-controls never dangles.
-	assert.match(COMMENT_SOURCE, /composerVisible \? \(\s*<div id=\{composerId\}>/u);
-	assert.match(COMMENT_SOURCE, /replyComposerId=\{composerVisible \? composerId : undefined\}/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/composerVisible \? \(\s*<div[\s\S]*?id=\{composerId\}/u,
+	);
+	assert.match(COMMENT_SOURCE, /replyComposerId=\{replyTarget\?\.key === entry\.id \? composerId : undefined\}/u);
 	assert.match(COMMENT_SOURCE, /const composerId = useId\(\);/u);
 	// "none" drops the row entirely; Reply is withheld when the entry opted out.
 	assert.match(COMMENT_SOURCE, /commentActions === "none" \? undefined : \(/u);
-	assert.match(COMMENT_SOURCE, /onReply=\{collapsible && allowReply \? toggleReply : undefined\}/u);
+	assert.match(COMMENT_SOURCE, /\? \(\) => toggleReply\(entry\.id, entry\.actor, replyButtonRef\.current\)/u);
 });
 
 test("toggling a reaction routes through the reducer with the current user's id", () => {
@@ -588,10 +688,32 @@ test("disclosing Reply focuses the composer through the editor's own autofocus",
 	// Only mounts on a Reply click in collapsible mode, so mounting is the moment
 	// to take focus; in the always-mounted modes it must never steal focus.
 	assert.match(COMMENT_SOURCE, /autoFocus=\{collapsible\}/u);
+	assert.match(COMMENT_SOURCE, /key=\{replyTarget\?\.key \?\? "thread-reply"\}/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /textareaRef/u);
 	// Collapsing still returns focus to the Reply button, which is a plain button.
 	assert.match(
 		COMMENT_SOURCE,
-		/if \(!replyToggledRef\.current \|\| replyOpen\) return;\s*replyButtonRef\.current\?\.focus\(\);/u,
+		/if \(!replyToggledRef\.current \|\| replyTarget !== null\) return;\s*activeReplyButtonRef\.current\?\.focus\(\);/u,
+	);
+});
+
+test("disclosing Reply prefills a rich mention token for the target actor", () => {
+	assert.match(COMPOSER_SOURCE, /prefillMentionRequest\?: \{ mention: RichTextMentionItem; requestKey: number \}/u);
+	assert.match(COMPOSER_SOURCE, /prefillMentionRequest=\{prefillMentionRequest\}/u);
+	assert.match(COMMENT_SOURCE, /function getReplyMention\(actor: JiraActivityActor\): RichTextMentionItem/u);
+	assert.match(COMMENT_SOURCE, /category === "human"|actor\.kind === "person"/u);
+	assert.match(COMMENT_SOURCE, /prefillMentionRequest=\{/u);
+	assert.match(COMMENT_SOURCE, /replyMention \? \{ mention: replyMention, requestKey: 1 \}/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /setReplyDraft\(`@\$\{actor\.name\} `\)/u);
+	assert.match(COMMENT_SOURCE, /setReplyTarget\(\{ key, actor \}\);\s*setReplyDraft\(""\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /prefillValueSyncGuardKeyRef\.current = requestKey;/u);
+	assert.match(PROMPT_INPUT_SOURCE, /editor\.createNodeViews\(\);/u);
+	assert.match(
+		PROMPT_INPUT_SOURCE,
+		/if \(initial && !prefillMentionRequestRef\.current\) \{\s*setComposerPlainText\(activeEditor, initial\);/u,
+	);
+	assert.match(
+		PROMPT_INPUT_SOURCE,
+		/prefillMentionRequest\?\.requestKey === prefillValueSyncGuardKeyRef\.current[\s\S]*currentText !== resolvedValue[\s\S]*return;/u,
 	);
 });

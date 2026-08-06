@@ -168,14 +168,22 @@ test("work item modal header keeps breadcrumbs shrinkable and actions fixed", ()
 	const source = readComponentSource("modal-header.tsx");
 
 	assert.match(source, /gridTemplateColumns: "minmax\(0, 1fr\) max-content"/);
-	assert.match(source, /<Breadcrumb className="min-w-0 overflow-hidden">/);
-	assert.match(source, /<BreadcrumbList className="min-w-0 flex-nowrap overflow-hidden">/);
+	assert.match(source, /<Breadcrumb className="min-w-0 overflow-visible" size="small">/);
+	assert.match(source, /<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">/);
 	assert.match(source, /className="min-w-0 max-w-\[240px\] shrink"/);
-	assert.match(source, /className="flex shrink-0 items-center gap-2"/);
+	assert.match(source, /className=\{cn\("flex shrink-0 items-center gap-2", actionsClassName\)\}/);
 	assert.match(source, /\[&_\[data-slot=breadcrumb-label-text\]\]:truncate/);
 	assert.doesNotMatch(source, /height: "32px"/);
 	assert.doesNotMatch(source, /marginTop: token\("space\.300"\)/);
 	assert.doesNotMatch(source, /marginBottom: token\("space\.200"\)/);
+});
+
+test("work item modal breadcrumb identifies its parent with the Jira Epic glyph", () => {
+	const source = readComponentSource("modal-header.tsx");
+
+	assert.match(source, /import EpicIcon from "@atlaskit\/icon\/core\/epic";/);
+	assert.match(source, /className="text-icon-accent-purple"[\s\S]*render=\{<EpicIcon color="currentColor" label="" \/>\}/);
+	assert.doesNotMatch(source, /avatar-project\/rocket\.svg/);
 });
 
 test("work item modal child-items table uses shared grid columns", () => {

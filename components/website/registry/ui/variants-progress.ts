@@ -116,6 +116,13 @@ export const UI_PROGRESS_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"tag-demo-mention-tags": dynamic(
+		() =>
+			import("../../demos/ui/tag-demo").then((mod) => ({
+				default: mod.TagDemoMentionTags,
+			})),
+		{ ssr: false },
+	),
 	"tag-demo-tag-group": dynamic(
 		() =>
 			import("../../demos/ui/tag-demo").then((mod) => ({

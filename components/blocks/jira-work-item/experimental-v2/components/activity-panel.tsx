@@ -5,15 +5,19 @@ import { useReducedMotion } from "motion/react";
 
 import { JiraActivity } from "@/components/blocks/jira-activity";
 import type {
+	JiraActivityActor,
 	JiraActivityCommentEntry,
 	JiraActivityReaction,
 	JiraActivityReply,
 } from "@/components/blocks/jira-activity";
 import { toggleReaction } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
+import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import { useJiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import {
+	composeActivitySessionThread,
 	JIRA_WORK_ITEM_CURRENT_USER,
 	mapActivityEventsToJiraEntries,
+	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 
 /**
@@ -32,13 +36,42 @@ export function useHasActivity(): boolean {
  * composer remains pinned by ExperimentalWorkItemLayout. Agent comment actions
  * open the corresponding floating session surface.
  */
-export function ActivityPanel() {
+export function ActivityPanel({
+	activitySessionThread,
+}: Readonly<{
+	activitySessionThread?: ActivitySessionThreadConfig;
+}>) {
 	const { state, meta, actions } = useJiraWorkItem();
 	const activityRootRef = useRef<HTMLDivElement>(null);
-	const lastScrolledSessionIdRef = useRef<string | null>(null);
+	const lastScrolledActivitySignatureRef = useRef<string | null>(null);
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const latestSessionId = state.sessions.at(-1)?.id ?? null;
-	const derivedEntries = useMemo(() => mapActivityEventsToJiraEntries(meta.activityEvents), [meta.activityEvents]);
+	const activityReferenceTimeMs = SESSION_EPOCH_MS + state.elapsedMs;
+	const composedActivityEvents = useMemo(
+		() => composeActivitySessionThread(meta.activityEvents, activitySessionThread),
+		[activitySessionThread, meta.activityEvents],
+	);
+	const reactionActors = useMemo(() => {
+		const actorDirectory = new Map<string, JiraActivityActor>();
+		for (const entry of mapActivityEventsToJiraEntries(meta.activityEvents, activityReferenceTimeMs)) {
+			actorDirectory.set(entry.actor.id, entry.actor);
+			if (entry.kind === "comment") {
+				for (const reply of entry.replies ?? []) {
+					actorDirectory.set(reply.actor.id, reply.actor);
+				}
+			}
+		}
+		return [...actorDirectory.values()];
+	}, [activityReferenceTimeMs, meta.activityEvents]);
+	const derivedEntries = useMemo(
+		() => mapActivityEventsToJiraEntries(composedActivityEvents, activityReferenceTimeMs, meta.activityEvents),
+		[activityReferenceTimeMs, composedActivityEvents, meta.activityEvents],
+	);
+	const latestActivityEntryId = derivedEntries.at(-1)?.id ?? null;
+	const activityRevealSignature = latestActivityEntryId
+		? `${latestActivityEntryId}:${activitySessionThread?.visibleSessionIds.join(",") ?? "default"}`
+		: null;
+	const autoScrollEnabled = Boolean(activitySessionThread) || Boolean(latestSessionId?.startsWith("session-"));
 	// Reactions and replies to human comments have no home in the work-item
 	// context, so they are held here and overlaid onto the derived timeline.
 	// Keyed by entry id rather than replacing the array, so streaming session
@@ -94,20 +127,24 @@ export function ActivityPanel() {
 	}
 
 	useEffect(() => {
-		if (!latestSessionId?.startsWith("session-") || lastScrolledSessionIdRef.current === latestSessionId) {
+		if (
+			!autoScrollEnabled
+			|| !latestActivityEntryId
+			|| !activityRevealSignature
+			|| lastScrolledActivitySignatureRef.current === activityRevealSignature
+		) {
 			return undefined;
 		}
 
 		const animationFrame = requestAnimationFrame(() => {
-			const activityEntryId = `activity-${latestSessionId}`;
 			const target = Array.from(
 				activityRootRef.current?.querySelectorAll<HTMLElement>("[data-jira-activity-entry-id]") ?? [],
-			).find((entry) => entry.dataset.jiraActivityEntryId === activityEntryId);
+			).find((entry) => entry.dataset.jiraActivityEntryId === latestActivityEntryId);
 			if (!target) {
 				return;
 			}
 
-			lastScrolledSessionIdRef.current = latestSessionId;
+			lastScrolledActivitySignatureRef.current = activityRevealSignature;
 			target.scrollIntoView({
 				behavior: shouldReduceMotion ? "auto" : "smooth",
 				block: "nearest",
@@ -115,11 +152,12 @@ export function ActivityPanel() {
 		});
 
 		return () => cancelAnimationFrame(animationFrame);
-	}, [latestSessionId, shouldReduceMotion]);
+	}, [activityRevealSignature, autoScrollEnabled, latestActivityEntryId, shouldReduceMotion]);
 
 	return (
 		<div ref={activityRootRef} data-jira-work-item-activity>
 			<JiraActivity
+				actors={reactionActors}
 				className="gap-2"
 				composer={null}
 				currentUser={JIRA_WORK_ITEM_CURRENT_USER}

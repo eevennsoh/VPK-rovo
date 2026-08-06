@@ -427,6 +427,15 @@
 }
 
 /*
+ * Tiptap appends an empty paragraph after a terminal list so the caret has a
+ * block to enter. Hide that generated block in the unfocused work-item read
+ * view, then restore it on focus so the description remains fully editable.
+ */
+.context-description-tiptap-editor:not(:focus) > p:last-child:has(> br.ProseMirror-trailingBreak:only-child) {
+	display: none;
+}
+
+/*
  * While the Teamwork Graph planner is running, the description hugs its content:
  * the reserved min-height is dropped so the empty-state placeholder sits on a
  * single line instead of a 48px block.
@@ -849,6 +858,14 @@
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
+}
+
+/* Compact status rows keep identity and live metadata on one line. */
+.rich-text-command-menu-copy-inline {
+	flex-direction: row;
+	align-items: center;
+	/* Matches the one normal text-space on each side of the inline `·`. */
+	column-gap: 4px;
 }
 
 /* Reveal-able / persistent copy: holds the label plus a description line stacked

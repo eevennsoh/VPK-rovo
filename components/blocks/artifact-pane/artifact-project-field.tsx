@@ -17,6 +17,7 @@ const PROJECT_AVATAR_SRCS: Readonly<Record<string, string>> = {
 	"assets-cmdb": "/avatar-project/gears.svg",
 	"esm-rfp-response": "/avatar-project/rocket.svg",
 	"rovo-brand-council": "/avatar-project/compass.svg",
+	"storefront-platform": "/avatar-project/storefront.svg",
 };
 
 const ARTIFACT_PROJECT_OPTIONS = PROJECT_OPTIONS.map((project) => ({

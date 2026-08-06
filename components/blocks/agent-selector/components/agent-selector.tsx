@@ -17,9 +17,11 @@ import { Icon } from "@/components/ui/icon";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Spinner } from "@/components/ui/spinner";
-import { CheckIcon } from "@/components/ui/vpk-icons";
+import { CheckIcon, SearchIcon } from "@/components/ui/vpk-icons";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
@@ -62,6 +64,16 @@ export interface AgentSelectorProps {
 	onQueryChange?: (query: string) => void;
 	query?: string;
 	searchPlaceholder?: string;
+	/**
+	 * Search field treatment.
+	 *
+	 * - `"boxed"` (default) — the bordered `CommandInput` used across directory
+	 *   and toolbar surfaces.
+	 * - `"palette"` — the borderless 44px editor-palette search bar shared with
+	 *   the "/" and "@" command menus and the work-item metadata pickers, so a
+	 *   selector opened from those surfaces reads as one family.
+	 */
+	searchVariant?: "boxed" | "palette";
 	pinnedAgentIds?: readonly string[];
 	pinnedItemsLabel?: string;
 	pinningEnabled?: boolean;
@@ -146,7 +158,7 @@ const ACTION_LABEL_CLASS = "text-text-subtle";
 // (e.g. the stop control's 6px padding + 4px `mr-1` = 10px would become 22px).
 // So we add the third column only when `showCheckIcon` is true.
 const AGENT_ROW_BASE_CLASS =
-	"grid h-11 w-full items-center gap-3 rounded-[12px] px-1.5 py-0 text-left";
+	"grid h-11 w-full items-center gap-3 rounded-[12px] py-0 pr-1.5 pl-2 text-left";
 const AGENT_ROW_CHECK_COLS = "grid-cols-[24px_minmax(0,1fr)_auto]";
 const AGENT_ROW_PLAIN_COLS = "grid-cols-[24px_minmax(0,1fr)]";
 const AGENT_COPY_CLASS =
@@ -478,6 +490,7 @@ export function AgentSelector({
 	onQueryChange,
 	query,
 	searchPlaceholder = "Search agents",
+	searchVariant = "boxed",
 	pinnedAgentIds,
 	pinnedItemsLabel = "Pinned",
 	pinningEnabled = true,
@@ -504,6 +517,7 @@ export function AgentSelector({
 	const disabledAgentIdSet = useMemo(() => new Set(disabledIds), [disabledIds]);
 	const pinnedAgentIdSet = useMemo(() => new Set(resolvedPinnedAgentIds), [resolvedPinnedAgentIds]);
 	const inProgressAgentIdSet = useMemo(() => new Set(inProgressIds), [inProgressIds]);
+	const listOverflow = useHasVerticalOverflow<HTMLDivElement>();
 	const visibleAgents = useMemo(() => {
 		const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 		const selectedAgents = selectedIds
@@ -598,16 +612,47 @@ export function AgentSelector({
 				{heading ? (
 					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
 				) : null}
-				<CommandInput
-					aria-label={searchPlaceholder}
-					inputGroupClassName="has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&>[data-align=inline-start]]:pl-3 has-[>[data-align=inline-start]]:[&>input]:pl-3"
-					onValueChange={handleQueryChange}
-					placeholder={searchPlaceholder}
-					value={resolvedQuery}
-					wrapperClassName="p-0"
-				/>
+				{searchVariant === "palette" ? (
+					// Bleed past the Command root's p-2 so the 44px palette bar spans the
+					// popup edge-to-edge, exactly like the "/" menu and metadata pickers.
+					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
+					// which owns row highlighting and activation for this list.
+					<div className="-mx-2 -mt-2 mb-1 overflow-hidden rounded-t-lg">
+						<RichTextCommandMenuSearchField
+							autoFocus
+							hostOwnsKeyNavigation
+							icon={<SearchIcon className="size-4 text-icon-subtle" />}
+							label={searchPlaceholder}
+							onClear={() => handleQueryChange("")}
+							onValueChange={handleQueryChange}
+							value={resolvedQuery}
+						/>
+					</div>
+				) : (
+					<CommandInput
+						aria-label={searchPlaceholder}
+						inputGroupClassName="has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&>[data-align=inline-start]]:pl-3 has-[>[data-align=inline-start]]:[&>input]:pl-3"
+						onValueChange={handleQueryChange}
+						placeholder={searchPlaceholder}
+						value={resolvedQuery}
+						wrapperClassName="p-0"
+					/>
+				)}
 			</div>
-			<CommandList aria-label={listLabel} className="min-h-0 max-h-none flex-1 p-0">
+			<CommandList
+				aria-label={listLabel}
+				className={cn(
+					"min-h-0 max-h-none flex-1 p-0",
+					// Fade the list under the sticky search header once it has scrolled,
+					// matching the editor-palette command menus. `scroll-mask-top` keeps
+					// the scrollbar gutter opaque so only the content column fades; the
+					// fade size is raised from the 24px default to the palette's 48px so
+					// a selector opened next to a "/" menu fades identically.
+					listOverflow.showTopScrollMask
+						&& "scroll-mask-top overscroll-contain [--scroll-mask-fade-size:3rem]",
+				)}
+				ref={listOverflow.ref}
+			>
 				{visibleAgents.length === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
 				<AgentSelectorGroup
 					agents={inProgressAgents}

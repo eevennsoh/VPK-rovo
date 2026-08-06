@@ -15,6 +15,8 @@ const POPOVER_SOURCE = readSource("components/emoji-picker-popover.tsx");
 const QUICK_BAR_SOURCE = readSource("components/emoji-quick-bar.tsx");
 const REACTION_BAR_SOURCE = readSource("components/emoji-reaction-bar.tsx");
 const REACTION_PILL_SOURCE = readSource("components/emoji-reaction-pill.tsx");
+const PAGE_SOURCE = readSource("page.tsx");
+const TOOLTIP_SOURCE = readSource("../../ui/tooltip.tsx");
 
 test("the quick bar offers exactly six frequent reactions", () => {
 	assert.equal(FREQUENT_EMOJI.length, 6);
@@ -97,14 +99,58 @@ test("the reaction pill inherits its selected styling from the Button base", () 
 	assert.doesNotMatch(REACTION_PILL_SOURCE, /shape="circle"/u);
 	// The count is visible text; only the glyph is hidden from screen readers.
 	assert.match(REACTION_PILL_SOURCE, /<span aria-hidden="true">\{emoji\}<\/span>/u);
-	assert.match(REACTION_PILL_SOURCE, /<span>\{count\}<\/span>/u);
+	assert.match(
+		REACTION_PILL_SOURCE,
+		/<TextMorphing config=\{REACTION_COUNT_MORPH\} text=\{String\(count\)\} \/>/u,
+	);
 	// The glyph is aria-hidden, so the name must spell it out rather than
 	// re-injecting the codepoint the hidden span just suppressed.
 	assert.match(
 		REACTION_PILL_SOURCE,
 		/aria-label=\{label \?\? `\$\{count\} reacted with \$\{emojiLabel\(emoji\)\}`\}/u,
 	);
-	assert.match(REACTION_PILL_SOURCE, /import \{ emojiLabel \} from "\.\.\/data\/emoji-frequent";/u);
+	assert.match(
+		REACTION_PILL_SOURCE,
+		/import \{ emojiLabel, formatReactionActorNames \} from "\.\.\/data\/emoji-frequent";/u,
+	);
+});
+
+test("the reaction count morphs per digit instead of swapping", () => {
+	// Adding a reaction should roll the count rather than hard-cut it, so the
+	// chip reads as the same number changing.
+	assert.match(
+		REACTION_PILL_SOURCE,
+		/import TextMorphing from "@\/components\/visual\/text-morphing";/u,
+	);
+	assert.match(
+		REACTION_PILL_SOURCE,
+		/const REACTION_COUNT_MORPH: TextMorphConfig = \{[\s\S]*variant: "number",/u,
+	);
+	// Pills mount with an existing count on page load; rolling every chip in on
+	// first paint would be noise, not feedback.
+	assert.match(REACTION_PILL_SOURCE, /const REACTION_COUNT_MORPH[\s\S]*initial: false,/u);
+	// 9 -> 10 widens the chip; easing the width keeps the row from jumping.
+	assert.match(REACTION_PILL_SOURCE, /const REACTION_COUNT_MORPH[\s\S]*autoSize: true,/u);
+	// Reduced motion is TextMorphing's job (it renders static text) — the pill
+	// must not hand-roll a second, divergent guard for the digits.
+	assert.doesNotMatch(REACTION_PILL_SOURCE, /useReducedMotion/u);
+	// Timing comes from the shared preset, never a hardcoded duration here.
+	assert.doesNotMatch(REACTION_PILL_SOURCE, /const REACTION_COUNT_MORPH[\s\S]*duration:/u);
+});
+
+test("reaction pills disclose the reacting people on hover and keyboard focus", () => {
+	assert.match(REACTION_PILL_SOURCE, /reactorNames\?: readonly string\[\];/u);
+	assert.match(REACTION_PILL_SOURCE, /if \(!reactorNames\?\.length\) return pill;/u);
+	assert.match(REACTION_PILL_SOURCE, /<TooltipTrigger render=\{pill\} \/>/u);
+	assert.match(
+		REACTION_PILL_SOURCE,
+		/<TooltipContent className="flex max-w-64 flex-col items-center pb-3 text-center">/u,
+	);
+	assert.match(REACTION_PILL_SOURCE, /<h1 aria-hidden="true" className="p-3 text-4xl leading-none">/u);
+	assert.match(REACTION_PILL_SOURCE, /\{formatReactionActorNames\(reactorNames\)\}\{" "\}/u);
+	assert.match(REACTION_PILL_SOURCE, /<span className="text-text-subtlest">/u);
+	assert.doesNotMatch(TOOLTIP_SOURCE, /\bshadow-(?:sm|md|lg|xl|2xl)\b/u);
+	assert.match(PAGE_SOURCE, /reactorNames: \["Code Planner", "GitHub Copilot", "Unit Test Creator"\]/u);
 });
 
 test("the quick bar offers actions without presenting selected state", () => {

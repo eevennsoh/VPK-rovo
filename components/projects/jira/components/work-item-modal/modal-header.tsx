@@ -1,8 +1,6 @@
 "use client";
 
 import { type CSSProperties, type ReactNode } from "react";
-import Image from "next/image";
-
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -15,7 +13,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Icon } from "@/components/ui/icon";
-import { Tile } from "@/components/ui/tile";
 import Heading from "@/components/ui/heading";
 
 import { useWorkItemModal } from "@/app/contexts/context-work-item-modal";
@@ -23,6 +20,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-summary";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import EpicIcon from "@atlaskit/icon/core/epic";
 import LockUnlockedIcon from "@atlaskit/icon/core/lock-unlocked";
 import ShareIcon from "@atlaskit/icon/core/share";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -70,22 +68,11 @@ export function ModalHeader({
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"
 							href="#"
 							before={
-								<Tile
+								<Icon
 									aria-hidden
-									isInset={false}
-									label={workItem.parent?.title ?? "Enterprise RFP Response"}
-									size="xxsmall"
-									variant="transparent"
-								>
-									<Image
-										alt=""
-										aria-hidden
-										className="object-contain"
-										height={16}
-										src="/avatar-project/rocket.svg"
-										width={16}
-									/>
-								</Tile>
+									className="text-icon-accent-purple"
+									render={<EpicIcon color="currentColor" label="" />}
+								/>
 							}
 						>
 							{workItem.parent?.title ?? "Enterprise RFP Response"}
@@ -94,7 +81,7 @@ export function ModalHeader({
 					<BreadcrumbSeparator className="shrink-0" />
 					<BreadcrumbItem className="min-w-0 flex-1">
 						<BreadcrumbPage
-							className="inline-flex min-w-0 items-center [&_[data-slot=breadcrumb-label-text]]:truncate"
+							className="text-text-subtlest inline-flex min-w-0 items-center [&_[data-slot=breadcrumb-label-text]]:truncate"
 							before={
 								<Icon
 									aria-hidden

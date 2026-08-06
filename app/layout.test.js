@@ -6,6 +6,11 @@ const test = require("node:test");
 const ROOT_LAYOUT_FILE = path.join(__dirname, "layout.tsx");
 const ROOT_LAYOUT_SOURCE = fs.readFileSync(ROOT_LAYOUT_FILE, "utf8");
 const ROOT_FAVICON_FILE = path.join(__dirname, "favicon.ico");
+const PRE_HYDRATION_SCRIPT_FILE = path.join(
+	__dirname,
+	"../components/utils/pre-hydration-script.tsx",
+);
+const PRE_HYDRATION_SCRIPT_SOURCE = fs.readFileSync(PRE_HYDRATION_SCRIPT_FILE, "utf8");
 
 const EXPECTED_FAVICON_LINKS = [
 	{ href: "/website/favicon-fallback.svg" },
@@ -110,17 +115,24 @@ test("RootLayout exposes browser color-scheme favicon links", () => {
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /theme-favicon/);
 });
 
-test("RootLayout runs the pre-hydration bootstrap through Next's beforeInteractive script", () => {
+test("RootLayout keeps the pre-hydration bootstrap executable only during server rendering", () => {
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/import Script from "next\/script";/,
+		/import \{ PreHydrationScript \} from "@\/components\/utils\/pre-hydration-script";/,
 	);
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/<Script id="vpk-pre-hydration" strategy="beforeInteractive">\s*\{preHydrationScript\}\s*<\/Script>/,
+		/<PreHydrationScript id="vpk-pre-hydration" html=\{preHydrationScript\} \/>/,
 	);
+	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /import Script from "next\/script";/);
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /<script(?:\s|>)/);
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /dangerouslySetInnerHTML=\{\{ __html: preHydrationScript \}\}/);
+	assert.match(
+		PRE_HYDRATION_SCRIPT_SOURCE,
+		/type=\{typeof window === "undefined" \? "text\/javascript" : "text\/plain"\}/,
+	);
+	assert.match(PRE_HYDRATION_SCRIPT_SOURCE, /suppressHydrationWarning/);
+	assert.match(PRE_HYDRATION_SCRIPT_SOURCE, /dangerouslySetInnerHTML=\{\{ __html: html \}\}/);
 });
 
 test("RootLayout mounts the runtime document title prefixer", () => {
@@ -130,7 +142,7 @@ test("RootLayout mounts the runtime document title prefixer", () => {
 	);
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
-		/<Script id="vpk-pre-hydration" strategy="beforeInteractive">\s*\{preHydrationScript\}\s*<\/Script>\s*<DocumentTitlePrefix \/>/,
+		/<PreHydrationScript id="vpk-pre-hydration" html=\{preHydrationScript\} \/>\s*<DocumentTitlePrefix \/>/,
 	);
 });
 

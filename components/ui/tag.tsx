@@ -254,9 +254,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// it carries its own internal padding, so the tag only needs a hairline 1px
 	// inset to clear the inner border (no remove button reserving space here).
 	const hasElemAfter = Boolean(resolvedElemAfter);
-	// Round the remove button to match the tag shape: pill tags (user avatars or
-	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
-	const removeButtonShapeClass = isUserAvatarTag || isRounded ? "rounded-full" : "rounded-xs";
+	// Round the remove button to match the tag shape: all avatar tags and
+	// explicitly rounded tags get a fully-rounded "x".
+	const removeButtonShapeClass = isAvatarType || isRounded ? "rounded-full" : "rounded-xs";
 	const removeButtonMarginClass = hasLeadingElement ? "mr-[-2px]" : "-mx-0.5";
 	const avatarTagBeforeShapeClass = isUserAvatarTag ? "rounded-full" : isOtherAvatarTag ? "rounded-xs" : "";
 
@@ -308,17 +308,18 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				cn(
 					"h-5",
 					// Front slot and avatar slot share one leading-padding/gap branch.
-					// 1px left padding so the visible inset reads correctly once the
-					// tag's 1px inner border is counted.
+					// Team/project avatars get 2px left padding so their rounded-square
+					// shape reads with the same inset as circular and hexagonal avatars.
 					hasLeadingElement
-						? cn(hasElemAfter ? "gap-1" : "gap-0.5", "py-0 ps-px")
+						? cn(hasElemAfter ? "gap-1" : "gap-0.5", "py-0", isOtherAvatarTag ? "ps-0.5" : "ps-px")
 						: "gap-1 py-0.5 ps-[4px]",
-					// Avatar types keep their fixed rounding; everything else honors `isRounded`.
-					isUserAvatarTag ? "rounded-full" : isOtherAvatarTag || type === "agent" ? "rounded-sm" : isRounded ? "rounded-full" : "rounded-sm",
+					// All avatar tags use the same pill shell while preserving the
+					// circle, square, or hexagon shape of their leading avatar.
+					isAvatarType || isRounded ? "rounded-full" : "rounded-sm",
 					// Removable tags and logo/default tags get 4px right padding;
 					// a trailing badge (`elemAfter`) tightens to 1px so it sits flush;
-					// otherwise keep the avatar-type defaults (user 6px, other 4px).
-					hasRemoveButton ? "pe-[4px]" : hasElemAfter ? "pe-px" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[4px]",
+					// otherwise every avatar type gets the same 6px trailing inset.
+					hasRemoveButton ? "pe-[4px]" : hasElemAfter ? "pe-px" : isAvatarType ? "pe-1.5" : "pe-[4px]",
 				),
 				isInteractive ? cn("cursor-pointer", isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed") : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",

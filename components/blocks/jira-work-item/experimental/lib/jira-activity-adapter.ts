@@ -44,19 +44,23 @@ function actorIdFromName(name: string): string {
 	return `jira-work-item-person-${normalizedName || "unknown"}`;
 }
 
-function humanActor(event: Readonly<HumanActivityEvent>): JiraActivityActor {
-	if (event.author.name === JIRA_WORK_ITEM_CURRENT_USER.name) {
-		return event.author.avatarUrl
-			? { ...JIRA_WORK_ITEM_CURRENT_USER, avatarSrc: event.author.avatarUrl }
+function humanAuthorActor(author: Readonly<HumanActivityEvent["author"]>): JiraActivityActor {
+	if (author.name === JIRA_WORK_ITEM_CURRENT_USER.name) {
+		return author.avatarUrl
+			? { ...JIRA_WORK_ITEM_CURRENT_USER, avatarSrc: author.avatarUrl }
 			: JIRA_WORK_ITEM_CURRENT_USER;
 	}
 
 	return {
-		id: actorIdFromName(event.author.name),
-		name: event.author.name,
+		id: actorIdFromName(author.name),
+		name: author.name,
 		kind: "person",
-		...(event.author.avatarUrl ? { avatarSrc: event.author.avatarUrl } : {}),
+		...(author.avatarUrl ? { avatarSrc: author.avatarUrl } : {}),
 	};
+}
+
+function humanActor(event: Readonly<HumanActivityEvent>): JiraActivityActor {
+	return humanAuthorActor(event.author);
 }
 
 function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityCommentEntry {
@@ -66,6 +70,19 @@ function mapHumanEvent(event: Readonly<HumanActivityEvent>): JiraActivityComment
 		actor: humanActor(event),
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		body: [{ type: "text", text: event.content }],
+		...(event.threadReplies
+			? {
+				replies: event.threadReplies.map((reply) => ({
+					id: reply.id,
+					actor: humanAuthorActor({
+						name: reply.authorName,
+						avatarUrl: reply.authorAvatarSrc,
+					}),
+					timestamp: formatSessionTimestamp(reply.createdAtMs),
+					body: reply.content,
+				})),
+			}
+			: {}),
 		// Human comments opt in to Reply. The flag was previously false only to
 		// suppress the always-mounted composer under every human comment; now that
 		// Reply-to-reveal is the default, the affordance costs nothing until used.
@@ -127,6 +144,8 @@ function mapStaticEvent(event: Readonly<StaticEventActivityEvent>): JiraActivity
 		actor: staticActor(event.actor),
 		timestamp: formatSessionTimestamp(event.createdAtMs),
 		...(event.icon ? { icon: event.icon } : {}),
+		...(event.showActor === undefined ? {} : { showActor: event.showActor }),
+		...(event.showTimestamp === undefined ? {} : { showTimestamp: event.showTimestamp }),
 		segments: event.segments,
 		...(event.pullRequest ? { pullRequest: event.pullRequest } : {}),
 	};
