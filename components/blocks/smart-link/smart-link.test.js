@@ -7,6 +7,7 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 
 const DIR = __dirname;
 const COMPONENT_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link.tsx"), "utf8");
+const TYPES_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link-types.ts"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx"), "utf8");
 const PULL_REQUEST_HELPER_SOURCE = fs.readFileSync(path.join(DIR, "lib", "pull-request-smart-link.ts"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "demos", "blocks", "smart-link-demo.tsx"), "utf8");
@@ -24,6 +25,21 @@ test("SmartLink is powered by the shared HoverCard primitive", () => {
 	assert.match(COMPONENT_SOURCE, /<HoverCardTrigger[\s\S]*render=\{[\s\S]*<SmartLinkTrigger/u);
 	assert.match(COMPONENT_SOURCE, /<HoverCardContent[\s\S]*alignOffset=\{alignOffset\}[\s\S]*positionerClassName=\{positionerClassName\}[\s\S]*<SmartLinkCard/u);
 	assert.match(COMPONENT_SOURCE, /aria-describedby=\{open \? `smart-link-card-\$\{item\.id\}` : undefined\}/u);
+});
+
+test("SmartLink supports a card appearance that expands any item into a block card", () => {
+	assert.match(TYPES_SOURCE, /export type SmartLinkAppearance = "inline" \| "card"/u);
+	assert.match(TYPES_SOURCE, /appearance\?: SmartLinkAppearance;/u);
+	assert.match(COMPONENT_SOURCE, /if \(appearance === "card"\)[\s\S]*<SmartLinkCard[\s\S]*appearance="block"/u);
+	assert.match(TYPES_SOURCE, /appearance\?: "block" \| "flyout"/u);
+	assert.match(COMPONENT_SOURCE, /border border-border bg-surface/u);
+	assert.match(COMPONENT_SOURCE, /SmartLinkFooterActions/u);
+	assert.match(COMPONENT_SOURCE, /function SmartLinkEngagementRow/u);
+	assert.match(COMPONENT_SOURCE, /Created by \{item\.author\.name\}/u);
+	assert.match(INDEX_SOURCE, /SmartLinkAppearance/u);
+	assert.match(DEMO_SOURCE, /export function SmartLinkDemoCard\(\)/u);
+	assert.match(DEMO_SOURCE, /appearance="card"/u);
+	assert.match(PAGE_SOURCE, /appearance="card"/u);
 });
 
 test("SmartLink exports the public component and type API", () => {
@@ -63,9 +79,11 @@ test("catalog details and registry expose smart-link demos", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-loom/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-generic/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-pull-request/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-card/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-removable-overlay/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link": dynamic\(\(\) => import\("\.\/demos\/blocks\/smart-link-demo"\)/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link-demo-pull-request"[\s\S]*SmartLinkDemoPullRequest/u);
+	assert.match(REGISTRY_SOURCE, /"smart-link-demo-card"[\s\S]*SmartLinkDemoCard/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link-demo-removable-overlay"[\s\S]*SmartLinkDemoRemovableOverlay/u);
 
 	for (const exportName of [
@@ -77,6 +95,7 @@ test("catalog details and registry expose smart-link demos", () => {
 		"SmartLinkDemoLoom",
 		"SmartLinkDemoGeneric",
 		"SmartLinkDemoPullRequest",
+		"SmartLinkDemoCard",
 		"SmartLinkDemoRemovableOverlay",
 	]) {
 		assert.match(REGISTRY_SOURCE, new RegExp(exportName, "u"));
@@ -84,8 +103,8 @@ test("catalog details and registry expose smart-link demos", () => {
 });
 
 test("SmartLink owns the pull-request variant with code stats in the flyout", () => {
-	assert.match(COMPONENT_SOURCE, /\| "pull-request"/u);
-	assert.match(COMPONENT_SOURCE, /codeStats\?: \{[\s\S]*additions: number;[\s\S]*deletions: number;/u);
+	assert.match(TYPES_SOURCE, /\| "pull-request"/u);
+	assert.match(TYPES_SOURCE, /codeStats\?: \{[\s\S]*additions: number;[\s\S]*deletions: number;/u);
 	assert.match(COMPONENT_SOURCE, /function SmartLinkCodeStats/u);
 	assert.match(COMPONENT_SOURCE, /text-text-success[\s\S]*\+\{codeStats\.additions\}/u);
 	assert.match(COMPONENT_SOURCE, /text-text-danger[\s\S]*-\{codeStats\.deletions\}/u);
@@ -94,7 +113,7 @@ test("SmartLink owns the pull-request variant with code stats in the flyout", ()
 });
 
 test("SmartLink owns its removable overlay variant", () => {
-	assert.match(COMPONENT_SOURCE, /onRemove\?: \(\) => void;[\s\S]*removeVariant\?: "overlay";[\s\S]*removeButtonLabel\?: string;/u);
+	assert.match(TYPES_SOURCE, /onRemove\?: \(\) => void;[\s\S]*removeVariant\?: "overlay";[\s\S]*removeButtonLabel\?: string;/u);
 	assert.match(COMPONENT_SOURCE, /group\/smart-link-remove/u);
 	assert.match(COMPONENT_SOURCE, /data-smart-link-text/u);
 	assert.match(COMPONENT_SOURCE, /data-slot="smart-link-remove-overlay-button"/u);
@@ -127,7 +146,7 @@ test("SmartLink visual rendering uses shared icon and logo primitives", () => {
 	assert.match(COMPONENT_SOURCE, /size: iconSize/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
-	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
+	assert.match(COMPONENT_SOURCE, /<span className="mt-0\.5 inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
 });
 
 test("the Jira work-item demo uses a blue work-item icon tile with rich card controls", () => {

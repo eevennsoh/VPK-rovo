@@ -3,6 +3,7 @@
 import AtlassianIntelligenceIcon from "@atlaskit/icon/core/atlassian-intelligence";
 import ClockIcon from "@atlaskit/icon/core/clock";
 import CommentIcon from "@atlaskit/icon/core/comment";
+import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import GoalIcon from "@atlaskit/icon/core/goal";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -102,6 +103,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 			{ name: "Anthony Chen", src: "/avatar-human/anthony-chen.png" },
 		],
 		avatarOverflow: 48,
+		metadata: [{ label: "50+ members" }],
 		description:
 			"Team created for purpose of Trust Scorecard reports. Model Ownership: aou_group Owner: Charlie Sutton Organisation Name: Core Design",
 		actions: SMART_LINK_PANEL_ACTIONS,
@@ -113,14 +115,18 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "goal",
 		provider: { name: "Goals", logo: { kind: "atlassian", name: "goals" } },
 		icon: { kind: "icon", icon: <GoalIcon label="" size="medium" /> },
-		avatars: [{ name: "Omar Salah", src: "/avatar-human/omar-salah.png" }],
-		status: { label: "Completed", variant: "success", metric: "1.0" },
-		dueDate: "Jun 30, 2025",
+		author: { name: "Omar Salah", src: "/avatar-human/omar-salah.png" },
+		date: "Updated on Jul 17, 2026",
+		metadata: [{ label: "6", icon: <PeopleGroupIcon label="" size="small" /> }],
+		status: { label: "On track", variant: "success", metric: "0.7" },
+		dueDate: "Dec 31, 2027",
+		description:
+			"Build a reliable motion practice that teams can consult for transitions, micro-interactions, and reduced-motion guidance across product surfaces.",
 		actions: [
 			...SMART_LINK_PANEL_ACTIONS,
 			{
-				id: "unfollow",
-				label: "Unfollow goal",
+				id: "follow",
+				label: "Follow",
 				icon: <GoalIcon label="" size="medium" />,
 			},
 		],
@@ -132,8 +138,9 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "project",
 		provider: { name: "Projects", logo: { kind: "atlassian", name: "projects" } },
 		icon: { kind: "avatar", src: "/avatar-project/rocket.svg", alt: "Custom Skills project" },
-		author: { name: "Omar Salah", src: "/avatar-human/omar-salah.png" },
-		date: "Updated last week",
+		author: { name: "Alfredo Huitron", src: "/avatar-human/omar-salah.png" },
+		date: "Updated on Jul 19, 2026",
+		metadata: [{ label: "27", icon: <PeopleGroupIcon label="" size="small" /> }],
 		status: { label: "On track", variant: "success" },
 		dueDate: "Jul 31, 2026",
 		description:
@@ -142,7 +149,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 			...SMART_LINK_PANEL_ACTIONS,
 			{
 				id: "unfollow",
-				label: "Unfollow project",
+				label: "Unfollow",
 				icon: <StarUnstarredIcon label="" size="medium" />,
 			},
 		],
@@ -214,8 +221,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		author: { name: "eevensoh" },
 		date: "Updated 3 hours ago",
 		metadata: [
-			{ label: "", metric: 1, icon: <PeopleGroupIcon label="" size="small" /> },
-			{ label: "", metric: 1, icon: <ClockIcon label="" size="small" /> },
+			{ label: "1", icon: <PeopleGroupIcon label="" size="small" /> },
+			{ label: "", metric: 1, icon: <EyeOpenIcon label="" size="small" /> },
 		],
 	},
 	toPullRequestSmartLink({
