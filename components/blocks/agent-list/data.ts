@@ -15,6 +15,11 @@ function createSessionAgent(agentId: string): AgentListAgent {
 	};
 }
 
+const DEMO_INVOKER = {
+	name: "Jordan Lee",
+	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+} as const;
+
 export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 	{
 		id: "performance-benchmarking",
@@ -22,6 +27,7 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		state: "running",
 		agent: createSessionAgent("progress-tracker"),
 		branch: "rovo/perf-27-benchmarks",
+		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 360,
 		prStatus: "created",
 	},
@@ -31,6 +37,7 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		state: "needs-input",
 		agent: createSessionAgent("readiness-checker"),
 		branch: "rovo/vita-142-vision-deck",
+		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 482,
 	},
 	{
@@ -39,6 +46,7 @@ export const AGENT_LIST_ITEMS: readonly AgentListItem[] = [
 		state: "complete",
 		agent: createSessionAgent("code-planner"),
 		branch: "rovo/web-461-readability",
+		invokedBy: DEMO_INVOKER,
 		elapsedSeconds: 754,
 		completedSecondsAgo: 68 * 60,
 		prStatus: "merged",

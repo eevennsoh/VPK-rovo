@@ -27,6 +27,7 @@ import type { JiraActivityChangedFilesEntry } from "./jira-activity-types";
 export function JiraActivityChangedFiles({
 	entry,
 	footer,
+	hideLeadAvatar = false,
 	onOutputOpen,
 	onView,
 	outputOpenLabel = "Open",
@@ -36,6 +37,8 @@ export function JiraActivityChangedFiles({
 }: Readonly<{
 	entry: JiraActivityChangedFilesEntry;
 	footer?: ReactNode;
+	/** When true, omit the session header avatar (timeline node already shows it). */
+	hideLeadAvatar?: boolean;
 	onOutputOpen?: (item: ArtifactListItem) => void;
 	onView?: (item: AgentListItem) => void;
 	outputOpenLabel?: "Open" | "View";
@@ -76,6 +79,7 @@ export function JiraActivityChangedFiles({
 								{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
 							</Button>
 						)}
+						hideAvatar={hideLeadAvatar}
 						item={sessionItem}
 						metadataPrefix={statusPresentation ? (
 							<span className="flex shrink-0 items-center gap-1 text-text">

@@ -220,19 +220,38 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{item\.state === "complete" \? "Last update" : "Agent runtime"\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/"pointer-events-none -ml-1 flex shrink-0 items-center gap-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
+		/"pointer-events-none flex shrink-0 items-center gap-2 pl-2 opacity-0[\s\S]*actionVisibilityClass[\s\S]*\{onView \? \(\s*<Button onClick=\{\(\) => onView\(item\)\}[\s\S]*View[\s\S]*<\/Button>/u,
 	);
 	assert.doesNotMatch(DETAIL_SOURCE, /Activity card/u);
+});
+
+test("activity-header lifecycle indicators sit flush right until hover actions expand", () => {
+	// Trailing cluster is right-aligned; actions collapse to 0fr so the loader
+	// (or awaiting glyph) owns the far edge at rest and only shifts inward when
+	// View / collapse controls expand on hover or keyboard focus.
+	assert.match(
+		CARD_SOURCE,
+		/stateMeta\.showLifecycle \|\| hasTrailingActions \? \([\s\S]*className="ml-auto flex shrink-0 items-center"/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/actionWidthClass[\s\S]*grid-cols-\[0fr\] group-hover\/activity-card:grid-cols-\[1fr\] group-has-\[:focus-visible\]\/activity-card:grid-cols-\[1fr\]/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/\{stateMeta\.showLifecycle \? <LifecycleIndicator state=\{item\.state\} \/> : null\}[\s\S]*\{hasTrailingActions \?/u,
+	);
 });
 
 test("activity-header actions stay focusable while hidden so keyboard users can reach View", () => {
 	assert.match(
 		CARD_SOURCE,
-		/\{onView \|\| action \? \([\s\S]*\{action\}[\s\S]*\) : null\}/u,
+		/\{hasTrailingActions \? \([\s\S]*\{action\}[\s\S]*\) : null\}/u,
 	);
 	// `display: none` would drop the controls from the tab order, and a hidden
 	// descendant can never satisfy the `:focus-visible` reveal condition itself.
 	assert.doesNotMatch(CARD_SOURCE, /"hidden -ml-1 shrink-0 items-center gap-2/u);
+	assert.doesNotMatch(CARD_SOURCE, /"hidden flex shrink-0 items-center gap-2 pl-2/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:opacity-100/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-has-\[:focus-visible\]\/activity-card:pointer-events-auto/u);
 });
@@ -271,6 +290,24 @@ test("the session activity header separates message time from active runtime", (
 		CARD_SOURCE,
 		/\{messageTimestamp \? "Working for " : null\}\s*<AgentListTime fallback=\{timeFallback\} item=\{item\} \/>/u,
 	);
+});
+
+test("the session activity header shows who invoked the agent after the timestamp", () => {
+	assert.match(TYPES_SOURCE, /export interface AgentListInvoker/u);
+	assert.match(TYPES_SOURCE, /invokedBy\?: AgentListInvoker;/u);
+	assert.match(CARD_SOURCE, /function InvokerBy/u);
+	assert.match(
+		CARD_SOURCE,
+		/\{messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
+	);
+	assert.match(
+		CARD_SOURCE,
+		/\{!messageTimestamp && item\.invokedBy \? \(\s*<InvokerBy invoker=\{item\.invokedBy\} \/>\s*\) : null\}/u,
+	);
+	assert.match(CARD_SOURCE, /<Avatar label=\{invoker\.name\} size="xs">/u);
+	assert.match(CARD_SOURCE, /<TooltipContent>\{invoker\.name\}<\/TooltipContent>/u);
+	assert.match(DATA_SOURCE, /invokedBy: DEMO_INVOKER/u);
+	assert.match(DATA_SOURCE, /name: "Jordan Lee"/u);
 });
 
 test("the session activity header can preserve a consumer-provided completed timestamp", () => {

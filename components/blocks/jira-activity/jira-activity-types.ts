@@ -80,6 +80,19 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		status: "Open" | "Merged";
 		additions: number;
 		deletions: number;
+		/** Optional owner/name path shown on phase-section PR cards (e.g. `eevensoh/vpk-rovo`). */
+		repository?: string;
+		/** Optional absolute URL for the pull request (Smart Link href). */
+		url?: string;
+		/** When the pull request was opened (ms). Used by Pull requests sort modes. */
+		createdAtMs?: number;
+		/** Most recent pull-request activity (ms). Falls back to `createdAtMs` when sorting. */
+		updatedAtMs?: number;
+		/**
+		 * Display name of the PR author (or primary involver). Compared to the
+		 * signed-in viewer for the Pull requests "By me" sort.
+		 */
+		authorName?: string;
 	};
 }
 
@@ -121,7 +134,7 @@ export interface JiraActivityReaction {
 	actorIds: readonly string[];
 }
 
-/** A bordered comment card with a rich body, optional collapsible, and replies. */
+/** A comment card with a rich body, optional collapsible, and replies. */
 export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	kind: "comment";
 	/** Optional trailing tag on the header, e.g. "Automation". */
@@ -166,5 +179,15 @@ export type JiraActivityEntry =
 /** Timeline ordering: `ascending` = oldest first, `descending` = newest first. */
 export type JiraActivitySortOrder = "ascending" | "descending";
 
-/** Timeline filtering: show every activity or only agent-authored cards, including generated outputs. */
-export type JiraActivityFilter = "all" | "agents-only";
+/**
+ * Timeline filtering for the Activities view control.
+ * - `all` — every entry (used with Latest/Oldest sort)
+ * - `agents-only` — agent-authored comments and generated-output cards
+ * - `needs-input` — entries awaiting viewer input (`sessionItem.state === "needs-input"`)
+ * - `comments-only` — human and agent comment cards only
+ */
+export type JiraActivityFilter =
+	| "all"
+	| "agents-only"
+	| "needs-input"
+	| "comments-only";

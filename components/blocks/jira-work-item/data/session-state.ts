@@ -774,8 +774,15 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 		reactions: comment.reactions,
 		threadReplies: comment.threadReplies,
 	}));
+	// Agent-to-agent prompts reuse `role: "human"` with the upstream agent name;
+	// only surface a person invoker when the prompt author is not another session agent.
+	const sessionAgentNames = new Set(state.sessions.map((session) => session.agentName));
 	const agentEvents: ActivityEvent[] = state.sessions.map((session) => {
 		const lastAgentMessage = [...session.messages].reverse().find((message) => message.role === "agent");
+		const promptMessage = session.messages.find((message) => message.role === "human");
+		const humanInvoker = promptMessage && !sessionAgentNames.has(promptMessage.authorName)
+			? promptMessage
+			: undefined;
 		const script = SESSION_SCRIPTS[session.scriptId] ?? SESSION_SCRIPTS["general-assist"];
 		return {
 			id: `activity-${session.id}`,
@@ -795,6 +802,16 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 			commandPreview: session.command,
 			responsePreview: lastAgentMessage?.content ?? session.previewText,
 			createdAtMs: session.startedAtMs,
+			...(humanInvoker
+				? {
+					invokedBy: {
+						name: humanInvoker.authorName,
+						...(humanInvoker.authorAvatarSrc
+							? { avatarSrc: humanInvoker.authorAvatarSrc }
+							: {}),
+					},
+				}
+				: {}),
 			waitingOn: session.waitingOn,
 			threadReplies: session.threadReplies,
 			progressChecklist: session.progressChecklist,

@@ -78,15 +78,15 @@ test("maps activity timestamps relative to the supplied story clock", async () =
 		},
 	], referenceTimeMs);
 
-	assert.equal(entry.timestamp, "4 minutes ago");
+	assert.equal(entry.timestamp, "4m ago");
 });
 
-test("selects the newest pull request for the work-item header", async () => {
+test("selects unique pull requests newest-first for the metadata rail", async () => {
 	const adapter = await loadAdapter();
 	const actor = { id: "github", name: "GitHub", kind: "agent" };
 	const events = [
 		{
-			id: "pr-opened",
+			id: "pr-1847-opened",
 			kind: "event",
 			actor,
 			segments: [],
@@ -100,14 +100,21 @@ test("selects the newest pull request for the work-item header", async () => {
 			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
 		},
 		{
-			id: "status-review",
+			id: "pr-1901-opened",
 			kind: "event",
-			actor: { id: "jordan", name: "Jordan Lee", kind: "person" },
-			segments: [{ type: "text", text: "moved to review" }],
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1901,
+				title: "Tighten checkout validation",
+				status: "Open",
+				additions: 12,
+				deletions: 3,
+			},
 			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
 		},
 		{
-			id: "pr-merged",
+			id: "pr-1847-merged",
 			kind: "event",
 			actor,
 			segments: [],
@@ -122,10 +129,19 @@ test("selects the newest pull request for the work-item header", async () => {
 		},
 	];
 
-	assert.equal(adapter.selectLatestPullRequestEntry([]), null);
-	assert.equal(adapter.selectLatestPullRequestEntry(events.slice(0, 2)).pullRequest.status, "Open");
-	assert.equal(adapter.selectLatestPullRequestEntry(events).id, "pr-merged");
-	assert.equal(adapter.selectLatestPullRequestEntry(events).pullRequest.status, "Merged");
+	assert.deepEqual(adapter.selectPullRequestEntries([]), []);
+	assert.deepEqual(
+		adapter.selectPullRequestEntries(events).map((entry) => ({
+			id: entry.id,
+			number: entry.pullRequest.number,
+			status: entry.pullRequest.status,
+		})),
+		[
+			{ id: "pr-1847-merged", number: 1847, status: "Merged" },
+			{ id: "pr-1901-opened", number: 1901, status: "Open" },
+		],
+	);
+	assert.equal(adapter.selectPullRequestEntries(events.slice(0, 1)).length, 1);
 });
 
 test("maps authored eyes reactions and agent handoff replies into Jira comments", async () => {
@@ -353,6 +369,73 @@ test("maps agent activity to rich Jira comments with lifecycle tags", async () =
 			elapsedSeconds: 180 + index,
 		});
 	}
+});
+
+test("maps the human session invoker onto AgentListItem.invokedBy", async () => {
+	const adapter = await loadAdapter();
+	const [withFace, currentUser, youAlias] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "activity-invoker-face",
+			kind: "agent",
+			sessionId: "session-invoker-face",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			agentBrandName: "claude",
+			status: "running",
+			title: "Lead guest checkout",
+			branch: "feature/guest-checkout",
+			elapsedSeconds: 120,
+			commandPreview: "Implement guest checkout",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 30),
+			invokedBy: {
+				name: "Jordan Lee",
+				avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+			},
+		},
+		{
+			id: "activity-invoker-venn",
+			kind: "agent",
+			sessionId: "session-invoker-venn",
+			agentId: "research-agent",
+			agentName: "Research agent",
+			agentAvatarSrc: "/research.svg",
+			status: "running",
+			title: "Review evidence",
+			branch: "rovo/review",
+			elapsedSeconds: 60,
+			commandPreview: "Review the evidence",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 31),
+			invokedBy: { name: "Venn" },
+		},
+		{
+			id: "activity-invoker-you",
+			kind: "agent",
+			sessionId: "session-invoker-you",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/code-planner.svg",
+			status: "running",
+			title: "Plan the contract",
+			branch: "rovo/plan",
+			elapsedSeconds: 30,
+			commandPreview: "Define the API contract",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 32),
+			invokedBy: { name: "You" },
+		},
+	]);
+
+	assert.deepEqual(withFace.sessionItem.invokedBy, {
+		name: "Jordan Lee",
+		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+	assert.deepEqual(currentUser.sessionItem.invokedBy, {
+		name: "Venn",
+		avatarSrc: "/avatar-user/venn/venn.png",
+	});
+	assert.deepEqual(youAlias.sessionItem.invokedBy, {
+		name: "Venn",
+		avatarSrc: "/avatar-user/venn/venn.png",
+	});
 });
 
 test("maps an agent progress checklist and image proof into its Jira comment", async () => {

@@ -201,10 +201,10 @@ function ThreadReplyCard({
 	}));
 
 	return (
-		<div className="pl-6">
+		<div className="pt-3 pl-6">
 			<JiraActivityCard
 				agentName={reply.actor.name}
-				className="rounded-none border-0"
+				className="rounded-none"
 				activityGroup="activity-reply"
 				headerAvatar={<ActivityActorAvatar actor={reply.actor} />}
 				headerLayout="stacked"
@@ -353,7 +353,10 @@ export function JiraActivityComment({
 		<JiraActivityCard
 			action={headerAction}
 			agentName={entry.actor.name}
-			headerAvatar={entry.actor.kind === "person" ? <ActivityActorAvatar actor={entry.actor} /> : undefined}
+			// Timeline node owns the size-8 avatar; nested replies keep pl-6. The
+			// flush composer pulls back across w-8 + gap-2 so it lines up with the
+			// parent avatar, not the indented reply column.
+			hideLeadAvatar
 			headerLayout={entry.actor.kind === "person" ? "stacked" : "inline"}
 			item={entry.sessionItem}
 			onView={onViewSession}
@@ -383,7 +386,7 @@ export function JiraActivityComment({
 			replyComposer={
 				composerVisible ? (
 					<div
-						className={hasReplies && repliesExpanded ? "border-t border-border" : undefined}
+						className="-ml-10 w-[calc(100%+2.5rem)]"
 						id={composerId}
 					>
 						<JiraActivityComposer
@@ -414,7 +417,7 @@ export function JiraActivityComment({
 				hasReplies ? (
 					<div
 						aria-label="Replies"
-						className="divide-y divide-border"
+						className="grid gap-2"
 						hidden={!repliesExpanded}
 						id={repliesId}
 						role="group"
@@ -436,7 +439,6 @@ export function JiraActivityComment({
 					</div>
 				) : undefined
 			}
-			repliesHidden={!repliesExpanded}
 			tag={entry.tag}
 			timestamp={entry.timestamp}
 		>

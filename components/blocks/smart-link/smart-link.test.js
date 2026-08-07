@@ -8,6 +8,7 @@ const { readWebsiteRegistrySource } = require(process.cwd() + "/components/websi
 const DIR = __dirname;
 const COMPONENT_SOURCE = fs.readFileSync(path.join(DIR, "components", "smart-link.tsx"), "utf8");
 const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx"), "utf8");
+const PULL_REQUEST_HELPER_SOURCE = fs.readFileSync(path.join(DIR, "lib", "pull-request-smart-link.ts"), "utf8");
 const DEMO_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "demos", "blocks", "smart-link-demo.tsx"), "utf8");
 const PAGE_SOURCE = fs.readFileSync(path.join(DIR, "page.tsx"), "utf8");
 const INDEX_SOURCE = fs.readFileSync(path.join(DIR, "index.ts"), "utf8");
@@ -40,6 +41,11 @@ test("demo data covers every required production variant", () => {
 		assert.match(DATA_SOURCE, new RegExp(`variant: "${variant}"`, "u"));
 	}
 
+	// Pull-request demos are built via the shared mapper (variant lives on the helper).
+	assert.match(DATA_SOURCE, /toPullRequestSmartLink/u);
+	assert.match(DATA_SOURCE, /variant === "pull-request"/u);
+	assert.match(DATA_SOURCE, /"pull-request"/u);
+	assert.match(PULL_REQUEST_HELPER_SOURCE, /variant: "pull-request"/u);
 	assert.match(DATA_SOURCE, /SMART_LINK_VARIANT_EXAMPLES/u);
 	assert.match(DATA_SOURCE, /Existing-assets-only/u);
 });
@@ -56,8 +62,10 @@ test("catalog details and registry expose smart-link demos", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-project/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-loom/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-generic/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-pull-request/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-removable-overlay/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link": dynamic\(\(\) => import\("\.\/demos\/blocks\/smart-link-demo"\)/u);
+	assert.match(REGISTRY_SOURCE, /"smart-link-demo-pull-request"[\s\S]*SmartLinkDemoPullRequest/u);
 	assert.match(REGISTRY_SOURCE, /"smart-link-demo-removable-overlay"[\s\S]*SmartLinkDemoRemovableOverlay/u);
 
 	for (const exportName of [
@@ -68,10 +76,21 @@ test("catalog details and registry expose smart-link demos", () => {
 		"SmartLinkDemoProject",
 		"SmartLinkDemoLoom",
 		"SmartLinkDemoGeneric",
+		"SmartLinkDemoPullRequest",
 		"SmartLinkDemoRemovableOverlay",
 	]) {
 		assert.match(REGISTRY_SOURCE, new RegExp(exportName, "u"));
 	}
+});
+
+test("SmartLink owns the pull-request variant with code stats in the flyout", () => {
+	assert.match(COMPONENT_SOURCE, /\| "pull-request"/u);
+	assert.match(COMPONENT_SOURCE, /codeStats\?: \{[\s\S]*additions: number;[\s\S]*deletions: number;/u);
+	assert.match(COMPONENT_SOURCE, /function SmartLinkCodeStats/u);
+	assert.match(COMPONENT_SOURCE, /text-text-success[\s\S]*\+\{codeStats\.additions\}/u);
+	assert.match(COMPONENT_SOURCE, /text-text-danger[\s\S]*-\{codeStats\.deletions\}/u);
+	assert.match(INDEX_SOURCE, /toPullRequestSmartLink/u);
+	assert.match(DEMO_SOURCE, /export function SmartLinkDemoPullRequest\(\)/u);
 });
 
 test("SmartLink owns its removable overlay variant", () => {

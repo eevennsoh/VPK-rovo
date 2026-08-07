@@ -16,6 +16,9 @@
 # testing
 /coverage
 
+# local reference clones (TipTap docs/source, etc.)
+/.reference/
+
 # browser automation artifacts
 /screenshots
 /public/screenshots/

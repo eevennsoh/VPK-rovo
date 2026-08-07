@@ -26,6 +26,13 @@ export interface AgentListAgent {
 	brandName?: ThirdPartyLogoName;
 }
 
+/** Person who started the session (prompt author), shown as `by <avatar>` in metadata. */
+export interface AgentListInvoker {
+	name: string;
+	/** Absolute path to a human face avatar under `public/`. */
+	avatarSrc?: string;
+}
+
 export interface AgentListItem {
 	id: string;
 	title: string;
@@ -35,6 +42,8 @@ export interface AgentListItem {
 	agent: AgentListAgent;
 	/** Feature branch the agent is working on. */
 	branch: string;
+	/** Human (or upstream actor) who invoked the session via the opening prompt. */
+	invokedBy?: AgentListInvoker;
 	/** Initial runtime shown by expanded activity cards, which tick while active. */
 	elapsedSeconds?: number;
 	/** Stable start time for live runtimes when supplied by real session data. */

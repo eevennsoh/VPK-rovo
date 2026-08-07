@@ -11,3 +11,18 @@ test("message markdown headings use typeset flow instead of Streamdown heading c
 	assert.match(MESSAGE_MARKDOWN_SOURCE, /Dropping the class lets[\s\S]*typeset's zero-specificity `:where\(\)` rules own block typography/u);
 	assert.match(MESSAGE_MARKDOWN_SOURCE, /\[&>\*:first-child\]:mt-0/u);
 });
+
+test("MarkdownPre preserves Streamdown data-block so mermaid fences are not treated as inline code", () => {
+	const preStart = MESSAGE_MARKDOWN_SOURCE.indexOf("function MarkdownPre");
+	assert.ok(preStart > -1, "expected MarkdownPre");
+	const preSource = MESSAGE_MARKDOWN_SOURCE.slice(
+		preStart,
+		MESSAGE_MARKDOWN_SOURCE.indexOf("export const streamdownComponents", preStart),
+	);
+
+	assert.match(preSource, /cloneElement/u);
+	assert.match(preSource, /"data-block":\s*"true"/u);
+	assert.match(MESSAGE_MARKDOWN_SOURCE, /inlineCode:\s*MarkdownInlineCode/u);
+	assert.match(MESSAGE_MARKDOWN_SOURCE, /code:\s*MarkdownCodeBlock/u);
+	assert.match(MESSAGE_MARKDOWN_SOURCE, /rawLanguage === "mermaid" \|\| rawLanguage === "mmd"/u);
+});

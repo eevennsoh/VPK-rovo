@@ -241,6 +241,8 @@ test("the Brief starts with an implementation-ready checkout specification befor
 	assert.match(description, /^Checkout-funnel research/u);
 	assert.match(description, /#### User outcome/u);
 	assert.match(description, /#### Scope/u);
+	assert.match(description, /#### Guest checkout flow/u);
+	assert.match(description, /```mermaid[\s\S]*flowchart TD[\s\S]*Continue as guest\?[\s\S]*```/u);
 	assert.match(description, /#### Acceptance criteria/u);
 	assert.doesNotMatch(description, /\*\*Continue as guest\*\*/u);
 	assert.match(description, /Declined payments and recoverable validation errors do not clear safe customer input/u);
@@ -351,8 +353,16 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	});
 	assert.equal(reviewClaude.status, "running");
 	assert.equal(reviewClaude.progressChecklist.filter((item) => item.completed).length, 4);
-	assert.ok(review.staticEvents.some((event) => event.id === "story-pr-opened"));
-	assert.ok(done.staticEvents.some((event) => event.id === "story-pr-merged"));
+	const openedPr = review.staticEvents.find((event) => event.id === "story-pr-opened");
+	const mergedPr = done.staticEvents.find((event) => event.id === "story-pr-merged");
+	assert.ok(openedPr?.pullRequest);
+	assert.ok(mergedPr?.pullRequest);
+	assert.equal(openedPr.pullRequest.authorName, "Venn");
+	assert.equal(mergedPr.pullRequest.authorName, "Venn");
+	assert.equal(typeof openedPr.pullRequest.createdAtMs, "number");
+	assert.equal(typeof openedPr.pullRequest.updatedAtMs, "number");
+	assert.equal(mergedPr.pullRequest.createdAtMs, openedPr.pullRequest.createdAtMs);
+	assert.ok(mergedPr.pullRequest.updatedAtMs > mergedPr.pullRequest.createdAtMs);
 	assert.equal(doneClaude.progressChecklist.filter((item) => item.completed).length, 5);
 	assert.match(doneClaude.previewText, /PR #1847 is merged with all 18 acceptance checks passing/u);
 	assert.ok(done.sessions.every((session) => session.status === "completed"));

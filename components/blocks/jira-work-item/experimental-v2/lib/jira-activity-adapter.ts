@@ -156,11 +156,27 @@ function agentActor(agent: Readonly<{
 	};
 }
 
+function resolveInvoker(event: Readonly<AgentActivityEvent>): AgentListItem["invokedBy"] {
+	if (!event.invokedBy) return undefined;
+	const name = event.invokedBy.name === "You"
+		? JIRA_WORK_ITEM_CURRENT_USER.name
+		: event.invokedBy.name;
+	const avatarSrc = event.invokedBy.avatarSrc
+		?? (name === JIRA_WORK_ITEM_CURRENT_USER.name
+			? JIRA_WORK_ITEM_CURRENT_USER.avatarSrc
+			: undefined);
+	return {
+		name,
+		...(avatarSrc ? { avatarSrc } : {}),
+	};
+}
+
 function agentSessionItem(event: Readonly<AgentActivityEvent>): AgentListItem {
 	const usesRovoLogo = event.agentId.startsWith("skill:");
 	const avatarSrc = usesRovoLogo
 		? undefined
 		: event.agentAvatarSrc ?? getDeterministicAgentAvatarSrc(event.agentId);
+	const invokedBy = resolveInvoker(event);
 
 	return {
 		id: event.sessionId,
@@ -176,6 +192,7 @@ function agentSessionItem(event: Readonly<AgentActivityEvent>): AgentListItem {
 		},
 		branch: event.branch,
 		elapsedSeconds: event.elapsedSeconds,
+		...(invokedBy ? { invokedBy } : {}),
 	};
 }
 
@@ -401,17 +418,25 @@ export function mapActivityEventsToJiraEntries(
 	});
 }
 
-/** Latest pull-request event for the work-item header, preserving timeline rendering. */
-export function selectLatestPullRequestEntry(
+/**
+ * Unique pull-request events for the metadata rail (newest first).
+ * Later updates for the same PR number win so Open → Merged collapses to one row.
+ */
+export function selectPullRequestEntries(
 	events: readonly ActivityEvent[],
 	referenceTimeMs?: number,
-): JiraActivityEventEntry | null {
+): JiraActivityEventEntry[] {
+	const seenNumbers = new Set<number>();
+	const entries: JiraActivityEventEntry[] = [];
+
 	for (let index = events.length - 1; index >= 0; index -= 1) {
 		const event = events[index];
-		if (event?.kind === "event" && event.pullRequest) {
-			return mapStaticEvent(event, referenceTimeMs);
-		}
+		if (event?.kind !== "event" || !event.pullRequest) continue;
+		const { number } = event.pullRequest;
+		if (seenNumbers.has(number)) continue;
+		seenNumbers.add(number);
+		entries.push(mapStaticEvent(event, referenceTimeMs));
 	}
 
-	return null;
+	return entries;
 }

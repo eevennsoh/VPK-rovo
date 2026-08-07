@@ -16,7 +16,7 @@ export default function ArtifactPanePage() {
 					{
 						content: <p className="text-xs leading-5 text-text-subtle">Repository, branch, and pull-request activity appears here.</p>,
 						id: "development",
-						title: "Development",
+						title: "Repositories",
 					},
 					{
 						content: <p className="text-xs leading-5 text-text-subtle">Linked Jira, Confluence, Drive, and Slack resources appear here.</p>,

@@ -28,10 +28,13 @@ import type { JiraActivityActor } from "./jira-activity-types";
  * here rather than as a className blob at each callsite.
  *
  * - `comment` — the standalone/sticky comment bar. Bordered floating box with
- *   the full-size 32px prompt controls.
- * - `flush` — the reply row nested inside an activity card. The card already
- *   owns the border and padding, so this drops its own chrome and tightens the
- *   controls to 24px.
+ *   the full-size 32px prompt controls and PromptInput's floating backdrop shadow.
+ * - `flush` — the reply row nested inside an activity card. Same bordered
+ *   floating chrome (rounded border, input fill) with controls tightened to
+ *   24px, but `shadow-none` so the soft backdrop never clips in the activity rail.
+ *
+ * Both surfaces keep FloatingComposer's floating border/fill and only override
+ * padding to `p-2` (FloatingComposer defaults to `p-3`).
  */
 const COMPOSER_SURFACES = {
 	comment: {
@@ -43,7 +46,10 @@ const COMPOSER_SURFACES = {
 		iconSize: "medium",
 	},
 	flush: {
-		chrome: "border-0 rounded-none bg-transparent px-4 py-1.5 shadow-none",
+		// Keep bordered input chrome; drop the floating backdrop shadow so nested
+		// replies are not clipped by scroll ancestors. Only control size differs
+		// from `comment` below.
+		chrome: "p-2 shadow-none",
 		// 24px controls. Shrinking the box on `size="icon"` keeps `rounded-md`;
 		// `size="icon-compact"` would also force the glyph to a fixed 12px.
 		controlClassName: "size-6",
@@ -58,7 +64,8 @@ export interface JiraActivityComposerProps {
 	placeholder: string;
 	/**
 	 * `reply` is a plain inline row with an avatar; `comment` is the bordered
-	 * floating box; `flush` is the chrome-less compact row inside a card.
+	 * floating box with backdrop shadow; `flush` is the same bordered chrome
+	 * without shadow and with compact 24px controls for in-card replies.
 	 */
 	variant?: "reply" | "comment" | "flush";
 	onSubmit: (body: string) => void;

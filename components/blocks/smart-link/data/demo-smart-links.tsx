@@ -16,6 +16,7 @@ import {
 	SMART_LINK_MODAL_ACTIONS,
 	SMART_LINK_PANEL_ACTIONS,
 } from "@/components/blocks/smart-link/data/smart-link-actions";
+import { toPullRequestSmartLink } from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 
 // Existing-assets-only demo data: Atlassian logos and checked-in /3p assets are
 // used directly; unavailable external artwork falls back to configurable tiles.
@@ -204,6 +205,18 @@ export const SMART_LINK_DEMO_ITEMS = [
 			},
 		],
 	},
+	toPullRequestSmartLink({
+		id: "pr-1847-guest-checkout",
+		number: 1847,
+		title: "Add guest checkout to the storefront",
+		status: "Open",
+		additions: 86,
+		deletions: 21,
+		repository: "eevensoh/vpk-rovo",
+		author: { name: "Venn", src: "/avatar-user/venn/venn.png" },
+		description:
+			"Guest checkout for the storefront: shoppers can continue without an account while the server owns pricing, inventory, and payment validation.",
+	}),
 ] satisfies SmartLinkItem[];
 
 export const SMART_LINK_VARIANT_EXAMPLES = {
@@ -214,6 +227,7 @@ export const SMART_LINK_VARIANT_EXAMPLES = {
 	project: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "project"),
 	loom: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "loom"),
 	generic: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "file" || item.variant === "generic"),
+	pullRequest: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "pull-request"),
 } as const;
 
 // Inline-status examples: work items whose status renders as a trailing lozenge
@@ -268,4 +282,5 @@ export const SMART_LINK_REQUIRED_VARIANTS = [
 	"article",
 	"file",
 	"generic",
+	"pull-request",
 ] as const;

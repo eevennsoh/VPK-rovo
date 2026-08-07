@@ -123,6 +123,20 @@ function mapAgentEvent(event: Readonly<AgentActivityEvent>): JiraActivityComment
 			},
 			branch: event.branch,
 			elapsedSeconds: event.elapsedSeconds,
+			...(event.invokedBy
+				? {
+					invokedBy: {
+						name: event.invokedBy.name === "You"
+							? JIRA_WORK_ITEM_CURRENT_USER.name
+							: event.invokedBy.name,
+						...(event.invokedBy.avatarSrc
+							? { avatarSrc: event.invokedBy.avatarSrc }
+							: event.invokedBy.name === "You" || event.invokedBy.name === JIRA_WORK_ITEM_CURRENT_USER.name
+								? { avatarSrc: JIRA_WORK_ITEM_CURRENT_USER.avatarSrc }
+								: {}),
+					},
+				}
+				: {}),
 		},
 	};
 }

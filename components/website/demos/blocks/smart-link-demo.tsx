@@ -65,6 +65,10 @@ export function SmartLinkDemoGeneric() {
 	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.generic} />;
 }
 
+export function SmartLinkDemoPullRequest() {
+	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.pullRequest} showStatus />;
+}
+
 export function SmartLinkDemoRemovableOverlay() {
 	const [items, setItems] = useState<SmartLinkItem[]>(() => [
 		...SMART_LINK_VARIANT_EXAMPLES.rich,

@@ -5,6 +5,11 @@ export {
 	SMART_LINK_MODAL_ACTIONS,
 	SMART_LINK_PANEL_ACTIONS,
 } from "@/components/blocks/smart-link/data/smart-link-actions";
+export {
+	toPullRequestSmartLink,
+	type PullRequestSmartLinkInput,
+	type PullRequestSmartLinkStatus,
+} from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 export type {
 	SmartLinkAction,
 	SmartLinkAvatar,

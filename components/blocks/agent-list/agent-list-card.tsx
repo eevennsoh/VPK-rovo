@@ -14,6 +14,7 @@ import {
 	type AgentStatesState,
 } from "@/components/blocks/agent-states";
 import { Shimmer } from "@/components/ui-custom/shimmer";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ElapsedTime, RelativeTime } from "@/components/ui/elapsed-time";
 import {
@@ -22,9 +23,16 @@ import {
 	HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { IconTile } from "@/components/ui/icon-tile";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type {
+	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
 	AgentListState,
@@ -90,6 +98,39 @@ function MetadataDot() {
 	return (
 		<span aria-hidden="true" className="text-text-subtlest">
 			·
+		</span>
+	);
+}
+
+function invokerInitials(name: string): string {
+	return (
+		name
+			.split(" ")
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((word) => word[0]?.toUpperCase())
+			.join("") || "?"
+	);
+}
+
+/** Compact `by <face>` metadata after the relative timestamp. */
+function InvokerBy({ invoker }: Readonly<{ invoker: AgentListInvoker }>) {
+	return (
+		<span className="flex shrink-0 items-center gap-1">
+			<span>by</span>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger render={<span className="inline-flex shrink-0" />}>
+						<Avatar label={invoker.name} size="xs">
+							{invoker.avatarSrc ? (
+								<AvatarImage alt="" src={invoker.avatarSrc} />
+							) : null}
+							<AvatarFallback>{invokerInitials(invoker.name)}</AvatarFallback>
+						</Avatar>
+					</TooltipTrigger>
+					<TooltipContent>{invoker.name}</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 		</span>
 	);
 }
@@ -188,6 +229,7 @@ export function AgentListActivityHeader({
 	item,
 	action,
 	activityGroup = "activity-card",
+	hideAvatar = false,
 	leadWithAgentName = false,
 	messageTimestamp,
 	metadataPrefix,
@@ -197,6 +239,8 @@ export function AgentListActivityHeader({
 	item: AgentListItem;
 	action?: ReactNode;
 	activityGroup?: "activity-card" | "activity-reply";
+	/** When true, omit the leading avatar (e.g. timeline node already shows it). */
+	hideAvatar?: boolean;
 	leadWithAgentName?: boolean;
 	messageTimestamp?: string;
 	metadataPrefix?: ReactNode;
@@ -208,22 +252,37 @@ export function AgentListActivityHeader({
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
 	const activityTimeTitle = item.state === "complete" ? "Last update" : "Agent runtime";
-	// Revealed on hover, but kept in layout and in the tab order: a `display: none`
+	const hasTrailingActions = Boolean(onView || action);
+	// Revealed on hover/focus, but kept in the tab order: a `display: none`
 	// wrapper could never satisfy its own `:focus-visible` reveal condition.
+	// Width collapses via `0fr`/`1fr` so the lifecycle indicator sits flush
+	// right at rest and only shifts inward when actions expand.
 	const actionVisibilityClass = activityGroup === "activity-reply"
 		? "group-hover/activity-reply:pointer-events-auto group-hover/activity-reply:opacity-100 group-has-[:focus-visible]/activity-reply:pointer-events-auto group-has-[:focus-visible]/activity-reply:opacity-100"
 		: "group-hover/activity-card:pointer-events-auto group-hover/activity-card:opacity-100 group-has-[:focus-visible]/activity-card:pointer-events-auto group-has-[:focus-visible]/activity-card:opacity-100";
+	const actionWidthClass = activityGroup === "activity-reply"
+		? "grid-cols-[0fr] group-hover/activity-reply:grid-cols-[1fr] group-has-[:focus-visible]/activity-reply:grid-cols-[1fr]"
+		: "grid-cols-[0fr] group-hover/activity-card:grid-cols-[1fr] group-has-[:focus-visible]/activity-card:grid-cols-[1fr]";
 
 	return (
-		<div className="flex min-w-0 items-center gap-3">
-			<AgentAvatarVisual
-				avatarClassName="shrink-0"
-				avatarSrc={item.agent.avatarSrc}
-				brandName={item.agent.brandName}
-				label={item.agent.name}
-				sizePx={32}
-				vpkLogo={item.agent.vpkLogo}
-			/>
+		<div
+			className={cn(
+				"flex min-w-0 items-center gap-2",
+				// Timeline node owns the size-8 avatar in an h-10 track; keep this
+				// two-line header on the same first-row height for optical center.
+				hideAvatar ? "min-h-10" : null,
+			)}
+		>
+			{hideAvatar ? null : (
+				<AgentAvatarVisual
+					avatarClassName="shrink-0"
+					avatarSrc={item.agent.avatarSrc}
+					brandName={item.agent.brandName}
+					label={item.agent.name}
+					sizePx={32}
+					vpkLogo={item.agent.vpkLogo}
+				/>
+			)}
 			<div className="min-w-0 flex-1">
 				<div className="flex min-w-0 items-center">
 					{stateMeta.shimmerTitle && !leadWithAgentName ? (
@@ -254,6 +313,9 @@ export function AgentListActivityHeader({
 							{messageTimestamp}
 						</span>
 					) : null}
+					{messageTimestamp && item.invokedBy ? (
+						<InvokerBy invoker={item.invokedBy} />
+					) : null}
 					{messageTimestamp && item.state !== "complete" ? <MetadataDot /> : null}
 					{!messageTimestamp || item.state !== "complete" ? (
 						<span
@@ -263,6 +325,9 @@ export function AgentListActivityHeader({
 							{messageTimestamp ? "Working for " : null}
 							<AgentListTime fallback={timeFallback} item={item} />
 						</span>
+					) : null}
+					{!messageTimestamp && item.invokedBy ? (
+						<InvokerBy invoker={item.invokedBy} />
 					) : null}
 					{leadWithAgentName ? null : (
 						<>
@@ -283,20 +348,33 @@ export function AgentListActivityHeader({
 					) : null}
 				</div>
 			</div>
-			{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
-			{onView || action ? (
-				<div
-					className={cn(
-						"pointer-events-none -ml-1 flex shrink-0 items-center gap-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
-						actionVisibilityClass,
-					)}
-				>
-					{onView ? (
-						<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
-							View
-						</Button>
+			{stateMeta.showLifecycle || hasTrailingActions ? (
+				<div className="ml-auto flex shrink-0 items-center">
+					{stateMeta.showLifecycle ? <LifecycleIndicator state={item.state} /> : null}
+					{hasTrailingActions ? (
+						<div
+							className={cn(
+								"grid transition-[grid-template-columns] duration-normal ease-out-practical motion-reduce:transition-none",
+								actionWidthClass,
+							)}
+						>
+							<div className="min-w-0 overflow-hidden">
+								<div
+									className={cn(
+										"pointer-events-none flex shrink-0 items-center gap-2 pl-2 opacity-0 transition-opacity duration-normal ease-out-practical motion-reduce:transition-none",
+										actionVisibilityClass,
+									)}
+								>
+									{onView ? (
+										<Button onClick={() => onView(item)} size="compact" type="button" variant="outline">
+											View
+										</Button>
+									) : null}
+									{action}
+								</div>
+							</div>
+						</div>
 					) : null}
-					{action}
 				</div>
 			) : null}
 		</div>

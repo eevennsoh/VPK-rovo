@@ -1097,6 +1097,7 @@ test("an invoked skill is immediately visible in Activity and remains steerable"
 	assert.equal(event.title, "Summarize comments");
 	assert.equal(event.commandPreview, "/Summarize comments");
 	assert.equal(event.status, "running");
+	assert.deepEqual(event.invokedBy, { name: "You" });
 
 	state = model.jiraWorkItemReducer(state, {
 		type: "reply-session",
@@ -1105,6 +1106,81 @@ test("an invoked skill is immediately visible in Activity and remains steerable"
 	});
 	assert.equal(state.activeSessionId, event.sessionId);
 	assert.ok(state.sessions[0].messages.some((message) => message.content.includes("Focus on unresolved decisions.")));
+});
+
+test("selectActivityEvents exposes the human prompt author as invokedBy", async () => {
+	const model = await loadSessionModel();
+	const state = {
+		...model.hydratePreset("blank", TEST_WORK_ITEM),
+		sessions: [
+			{
+				id: "session-human-invoker",
+				agentId: "claude-code",
+				agentName: "Claude Code",
+				agentBrandName: "claude",
+				status: "running",
+				command: "Implement guest checkout",
+				previewText: "Working on it",
+				steps: [],
+				progress: 0.5,
+				messages: [
+					{
+						id: "m0",
+						role: "human",
+						authorName: "Jordan Lee",
+						authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+						content: "Implement guest checkout",
+						createdAtMs: 1_000,
+					},
+					{
+						id: "m1",
+						role: "agent",
+						authorName: "Claude Code",
+						content: "Working on it",
+						createdAtMs: 2_000,
+					},
+				],
+				startedAtMs: 1_000,
+				scriptId: "general-assist",
+				scriptCursor: 0,
+				stepElapsedMs: 0,
+				resumedFromWait: false,
+				order: 0,
+			},
+			{
+				id: "session-agent-invoker",
+				agentId: "code-planner",
+				agentName: "Code Planner",
+				status: "running",
+				command: "Define the contract",
+				previewText: "Planning",
+				steps: [],
+				progress: 0.5,
+				messages: [
+					{
+						id: "m0",
+						role: "human",
+						authorName: "Claude Code",
+						content: "Define the contract",
+						createdAtMs: 3_000,
+					},
+				],
+				startedAtMs: 3_000,
+				scriptId: "general-assist",
+				scriptCursor: 0,
+				stepElapsedMs: 0,
+				resumedFromWait: false,
+				order: 1,
+			},
+		],
+	};
+
+	const events = model.selectActivityEvents(state).filter((event) => event.kind === "agent");
+	assert.deepEqual(events[0].invokedBy, {
+		name: "Jordan Lee",
+		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+	assert.equal(events[1].invokedBy, undefined);
 });
 
 test("most scripted agents complete while the pricing agent owns the Q&A checkpoint", async () => {

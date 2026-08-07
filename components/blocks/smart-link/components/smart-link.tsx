@@ -43,7 +43,8 @@ export type SmartLinkVariant =
 	| "loom"
 	| "article"
 	| "file"
-	| "generic";
+	| "generic"
+	| "pull-request";
 
 /** Inline chip size: "small" renders a 12px label, "large" a 16px label. */
 export type SmartLinkSize = "small" | "large";
@@ -118,6 +119,11 @@ export interface SmartLinkItem {
 		options?: ReadonlyArray<{ label: string; variant?: LozengeProps["variant"] }>;
 	};
 	dueDate?: string;
+	/** Diff stats rendered on pull-request flyout cards (+additions / -deletions). */
+	codeStats?: {
+		additions: number;
+		deletions: number;
+	};
 	actions?: ReadonlyArray<SmartLinkAction>;
 }
 
@@ -600,13 +606,35 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 	);
 }
 
+function SmartLinkCodeStats({
+	codeStats,
+}: Readonly<{ codeStats: NonNullable<SmartLinkItem["codeStats"]> }>) {
+	return (
+		<span
+			aria-label={`Code changes: ${codeStats.additions} additions, ${codeStats.deletions} deletions`}
+			className="inline-flex items-center gap-1 text-sm leading-5"
+		>
+			<span className="text-text-success">+{codeStats.additions}</span>
+			<span className="text-text-danger">-{codeStats.deletions}</span>
+		</span>
+	);
+}
+
 function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 	const hasMetadata = Boolean(item.metadata?.length);
 	const hasGoalDetails = item.status || item.dueDate;
 	const hasIssueDetails = item.assignee || item.priority;
 	const hasAuthorDetails = item.author || item.date;
+	const hasCodeStats = Boolean(item.codeStats);
 
-	if (!item.avatars?.length && !hasMetadata && !hasGoalDetails && !hasIssueDetails && !hasAuthorDetails) {
+	if (
+		!item.avatars?.length &&
+		!hasMetadata &&
+		!hasGoalDetails &&
+		!hasIssueDetails &&
+		!hasAuthorDetails &&
+		!hasCodeStats
+	) {
 		return null;
 	}
 
@@ -629,6 +657,7 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 				</span>
 			))}
 			{item.status ? <SmartLinkStatusDropdown status={item.status} /> : null}
+			{item.codeStats ? <SmartLinkCodeStats codeStats={item.codeStats} /> : null}
 			{item.priority ? <SmartLinkPriorityIndicator priority={item.priority} /> : null}
 			{item.dueDate ? (
 				<span className="inline-flex h-5 items-center rounded-sm border border-border-bold bg-surface px-1.5 text-xs leading-4 text-text">

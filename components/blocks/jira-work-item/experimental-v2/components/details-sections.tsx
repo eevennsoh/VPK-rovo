@@ -78,10 +78,10 @@ export function DevelopmentSectionContent() {
 	);
 }
 
-/** Collapsible Development section for surfaces without the artifact rail. */
+/** Collapsible Repositories section for surfaces without the artifact rail. */
 export function DevelopmentSection() {
 	return (
-		<CollapsibleSection title="Development">
+		<CollapsibleSection title="Repositories">
 			<DevelopmentSectionContent />
 		</CollapsibleSection>
 	);

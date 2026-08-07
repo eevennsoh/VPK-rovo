@@ -1,14 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	createContext,
+	use,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import { useReducedMotion } from "motion/react";
 
 import { JiraActivity } from "@/components/blocks/jira-activity";
 import type {
 	JiraActivityActor,
 	JiraActivityCommentEntry,
+	JiraActivityFilter,
 	JiraActivityReaction,
 	JiraActivityReply,
+	JiraActivitySortOrder,
 } from "@/components/blocks/jira-activity";
 import { toggleReaction } from "@/components/blocks/jira-activity/lib/jira-activity-reducer";
 import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
@@ -19,6 +30,43 @@ import {
 	mapActivityEventsToJiraEntries,
 	type ActivitySessionThreadConfig,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+
+/**
+ * Sort/filter chrome that ActivityPanel publishes so MetadataRail can place the
+ * control on the Details/Activity toggle row instead of the sticky feed header.
+ */
+export type ActivityRailChrome = {
+	count: number;
+	sortOrder: JiraActivitySortOrder;
+	filter: JiraActivityFilter;
+	onSortOrderChange: (next: JiraActivitySortOrder) => void;
+	onFilterChange: (next: JiraActivityFilter) => void;
+};
+
+type ActivityRailChromeContextValue = {
+	setChrome: (chrome: ActivityRailChrome | null) => void;
+};
+
+const ActivityRailChromeContext = createContext<ActivityRailChromeContextValue | null>(null);
+
+export function ActivityRailChromeProvider({
+	setChrome,
+	children,
+}: Readonly<{
+	setChrome: (chrome: ActivityRailChrome | null) => void;
+	children: ReactNode;
+}>) {
+	return (
+		<ActivityRailChromeContext value={{ setChrome }}>
+			{children}
+		</ActivityRailChromeContext>
+	);
+}
+
+/** Returns the chrome setter when rendered under MetadataRail; otherwise null. */
+function useSetActivityRailChrome(): ActivityRailChromeContextValue["setChrome"] | null {
+	return use(ActivityRailChromeContext)?.setChrome ?? null;
+}
 
 /**
  * True when the work item has at least one activity event to show. Callers use
@@ -35,6 +83,9 @@ export function useHasActivity(): boolean {
  * timeline's built-in composer is suppressed because the shared Jira Work Item
  * composer remains pinned by ExperimentalWorkItemLayout. Agent comment actions
  * open the corresponding floating session surface.
+ *
+ * When mounted under MetadataRail, sort/filter chrome and the activity count are
+ * published to the rail toggle row and the sticky feed header is omitted.
  */
 export function ActivityPanel({
 	activitySessionThread,
@@ -42,11 +93,15 @@ export function ActivityPanel({
 	activitySessionThread?: ActivitySessionThreadConfig;
 }>) {
 	const { state, meta, actions } = useJiraWorkItem();
+	const setActivityRailChrome = useSetActivityRailChrome();
+	const hideHeader = setActivityRailChrome != null;
 	const activityRootRef = useRef<HTMLDivElement>(null);
 	const lastScrolledActivitySignatureRef = useRef<string | null>(null);
 	const shouldReduceMotion = Boolean(useReducedMotion());
 	const latestSessionId = state.sessions.at(-1)?.id ?? null;
 	const activityReferenceTimeMs = SESSION_EPOCH_MS + state.elapsedMs;
+	const [sortOrder, setSortOrder] = useState<JiraActivitySortOrder>("ascending");
+	const [filter, setFilter] = useState<JiraActivityFilter>("all");
 	const composedActivityEvents = useMemo(
 		() => composeActivitySessionThread(meta.activityEvents, activitySessionThread),
 		[activitySessionThread, meta.activityEvents],
@@ -94,6 +149,18 @@ export function ActivityPanel({
 			...(replies ? { replies: [...(entry.replies ?? []), ...replies] } : {}),
 		};
 	});
+
+	useLayoutEffect(() => {
+		if (!setActivityRailChrome) return undefined;
+		setActivityRailChrome({
+			count: entries.length,
+			filter,
+			onFilterChange: setFilter,
+			onSortOrderChange: setSortOrder,
+			sortOrder,
+		});
+		return () => setActivityRailChrome(null);
+	}, [entries.length, filter, setActivityRailChrome, sortOrder]);
 
 	function handleToggleReaction(entry: JiraActivityCommentEntry, emoji: string) {
 		setLocalReactions((previous) => ({
@@ -162,11 +229,20 @@ export function ActivityPanel({
 				composer={null}
 				currentUser={JIRA_WORK_ITEM_CURRENT_USER}
 				entries={entries}
-				headerClassName="sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay [container-type:scroll-state]"
-				headerScrollFade
+				filter={hideHeader ? filter : undefined}
+				hideHeader={hideHeader}
+				headerClassName={
+					hideHeader
+						? undefined
+						: "sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay [container-type:scroll-state]"
+				}
+				headerScrollFade={!hideHeader}
+				onFilterChange={hideHeader ? setFilter : undefined}
+				onSortOrderChange={hideHeader ? setSortOrder : undefined}
 				onSubmitReply={handleSubmitReply}
 				onToggleReaction={handleToggleReaction}
 				onViewSession={(item) => actions.openSession(item.id)}
+				sortOrder={hideHeader ? sortOrder : undefined}
 			/>
 		</div>
 	);

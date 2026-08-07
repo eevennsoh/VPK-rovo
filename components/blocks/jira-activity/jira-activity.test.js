@@ -139,7 +139,10 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);
 	assert.match(CHANGED_FILES_SOURCE, /"group\/activity-card w-full bg-surface"/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.outputs\.length > 0 \? "p-3" : "px-3 pb-3 pt-0"/u);
-	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
+	assert.match(
+		INDEX_SOURCE,
+		/<JiraActivityChangedFiles[\s\S]*entry=\{entry\}[\s\S]*hideLeadAvatar[\s\S]*onView=\{onViewSession\}/u,
+	);
 });
 
 test("sample feed documents work by people, AI agents, and apps", () => {
@@ -252,7 +255,10 @@ test("agent output cards summarize the change and expose a View action", () => {
 	// the timeline wires from onViewSession.
 	assert.match(CHANGED_FILES_SOURCE, /type AgentListItem,/u);
 	assert.match(CHANGED_FILES_SOURCE, /onView\?: \(item: AgentListItem\) => void/u);
-	assert.match(INDEX_SOURCE, /<JiraActivityChangedFiles entry=\{entry\} onView=\{onViewSession\} \/>/u);
+	assert.match(
+		INDEX_SOURCE,
+		/<JiraActivityChangedFiles[\s\S]*entry=\{entry\}[\s\S]*hideLeadAvatar[\s\S]*onView=\{onViewSession\}/u,
+	);
 	// A short generated-work summary renders as its own paragraph above the outputs.
 	assert.match(
 		CHANGED_FILES_SOURCE,
@@ -285,17 +291,41 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 test("the header shows an activity count and a text-link sort control", () => {
 	// Count with singular/plural wording.
 	assert.match(HEADER_SOURCE, /\{count\}\s*\{count === 1 \? "Activity" : "Activities"\}/u);
-	// Sort surfaced as newest/oldest wording driving the underlying order.
-	assert.match(HEADER_SOURCE, /ascending: "Show oldest first"/u);
-	assert.match(HEADER_SOURCE, /descending: "Show latest first"/u);
+	// Trigger keeps a short "Show …" form; menu items drop Show/first/only.
+	assert.match(HEADER_SOURCE, /ascending: "Show oldest"/u);
+	assert.match(HEADER_SOURCE, /descending: "Show latest"/u);
+	assert.match(HEADER_SOURCE, /"agents-only": "Show agents"/u);
+	assert.match(HEADER_SOURCE, /"needs-input": "Show needs input"/u);
+	assert.match(HEADER_SOURCE, /"comments-only": "Show comments"/u);
+	assert.match(HEADER_SOURCE, /ascending: "Oldest"/u);
+	assert.match(HEADER_SOURCE, /descending: "Latest"/u);
+	assert.match(HEADER_SOURCE, /"agents-only": "Agents"/u);
+	assert.match(HEADER_SOURCE, /"needs-input": "Needs input"/u);
+	assert.match(HEADER_SOURCE, /"comments-only": "Comments"/u);
+	assert.doesNotMatch(HEADER_SOURCE, /Show (?:latest|oldest) first|Agents only|Show agents only/u);
+	// Compact menu: override default min-w-56 so short labels hug content.
+	assert.match(HEADER_SOURCE, /className="w-auto min-w-0"/u);
 	// Sort trigger is a borderless text link, not a bordered pill.
 	assert.match(HEADER_SOURCE, /hover:underline/u);
 	assert.match(HEADER_SOURCE, /text-text-subtlest \[&_svg\]:text-icon-subtlest/u);
 	// Its portal clears the work-item dialog's z-index.
 	assert.match(HEADER_SOURCE, /positionerClassName="z-\[502\]"/u);
+	// View/sort control is extractable for rail relocation; count can be omitted.
+	assert.match(HEADER_SOURCE, /export function JiraActivityViewControl/u);
+	assert.match(HEADER_SOURCE, /showAgentsOption = true/u);
+	assert.match(HEADER_SOURCE, /showAgentsOption[\s\S]*ACTIVITY_FILTER_VALUES\.map/u);
+	assert.match(HEADER_SOURCE, /showCount = true/u);
+	assert.match(HEADER_SOURCE, /showCount \? \(/u);
+	assert.match(INDEX_SOURCE, /hideHeader\?: boolean/u);
+	assert.match(INDEX_SOURCE, /hideHeader = false/u);
+	assert.match(INDEX_SOURCE, /hideHeader \? null : \(/u);
+	assert.match(
+		INDEX_SOURCE,
+		/export \{\s*JiraActivityHeader,\s*JiraActivityViewControl,\s*\} from "\.\/jira-activity-header"/u,
+	);
 });
 
-test("the header shows agent comments and generated-output cards", () => {
+test("the header offers Agents, Needs input, and Comments filters", () => {
 	const expectedAgentCards = JIRA_ACTIVITY_ENTRIES.filter(
 		(entry) =>
 			entry.actor.kind === "agent" &&
@@ -305,14 +335,24 @@ test("the header shows agent comments and generated-output cards", () => {
 		expectedAgentCards.map((entry) => entry.kind),
 		["comment", "changed-files"],
 	);
-	assert.match(HEADER_SOURCE, /value="agents-only"/u);
-	assert.match(HEADER_SOURCE, />\s*Show agents only\s*</u);
-	assert.match(INDEX_SOURCE, /entry\.actor\.kind === "agent"/u);
 	assert.match(
-		INDEX_SOURCE,
-		/entry\.kind === "comment" \|\|[\s\S]*entry\.kind === "changed-files" && entry\.outputs !== undefined/u,
+		HEADER_SOURCE,
+		/"agents-only",\s*"needs-input",\s*"comments-only"/u,
 	);
+	assert.match(
+		HEADER_SOURCE,
+		/filterActive \? FILTER_TRIGGER_LABELS\[filter\] : SORT_TRIGGER_LABELS\[sortOrder\]/u,
+	);
+	assert.match(TYPES_SOURCE, /\| "needs-input"/u);
+	assert.match(TYPES_SOURCE, /\| "comments-only"/u);
+	assert.match(INDEX_SOURCE, /filterJiraActivityEntries\(entries, filter\)/u);
 	assert.match(INDEX_SOURCE, /count=\{visibleEntries\.length\}/u);
+	// Sample feed seeds a waiting agent comment for the Needs input filter.
+	const needsInput = JIRA_ACTIVITY_ENTRIES.filter(
+		(entry) => entry.kind === "comment" && entry.sessionItem?.state === "needs-input",
+	);
+	assert.equal(needsInput.length, 1);
+	assert.equal(needsInput[0].id, "root-cause");
 });
 
 test("the header omits the separator and collapse control", () => {
@@ -338,7 +378,7 @@ test("one-line activity events use 12px type without shrinking expanded agent ca
 });
 
 test("event labels share the timeline node's 24px vertical alignment track", () => {
-	assert.match(NODE_SOURCE, /className="flex h-6 shrink-0 items-center justify-center"/u);
+	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
 	assert.match(EVENT_SOURCE, /<p className="flex h-6 items-center[^>]*>\s*<span>/u);
 	assert.doesNotMatch(INDEX_SOURCE, /entry\.kind === "event" && "pt-0\.5"/u);
 });
@@ -352,6 +392,9 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 		status: "Open",
 		additions: 148,
 		deletions: 37,
+		authorName: "Venn",
+		createdAtMs: Date.UTC(2026, 4, 12, 13, 40),
+		updatedAtMs: Date.UTC(2026, 4, 12, 13, 58),
 	});
 	assert.doesNotMatch(EVENT_SOURCE, /created pull request/u);
 	assert.match(EVENT_SOURCE, /variant=\{status === "Merged" \? "discovery" : "success"\}/u);
@@ -389,8 +432,13 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /activityGroupClass,[\s\S]*"grid"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"group\/activity-card w-full overflow-hidden/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-hover\/activity-card:opacity-100/u);
-	// Both human and agent comments render the shared prompt-input composer, on
-	// the compact in-card surface rather than the bordered floating one.
+	// Comment cards are borderless — outer chrome and footer separators stay off.
+	// Overflow stays visible so Avatar's hover scale is not clipped on the flush card edge.
+	assert.match(CARD_SOURCE, /"w-full overflow-visible bg-surface"/u);
+	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-hidden bg-surface"/u);
+	assert.doesNotMatch(CARD_SOURCE, /border border-border|border-t border-border|showFooterBorder/u);
+	// Both human and agent comments render the shared prompt-input composer on
+	// the compact in-card surface (same floating chrome, smaller controls).
 	assert.match(COMMENT_SOURCE, /variant="flush"/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /variant="reply"|variant="comment"/u);
 	assert.match(
@@ -412,9 +460,10 @@ test("documents the standalone activity card under Jira Activity", () => {
 	assert.match(DEMO_SOURCE, /<JiraActivityCard/u);
 	assert.match(DEMO_SOURCE, /item=\{entry\.sessionItem\}/u);
 	assert.match(DEMO_SOURCE, /placeholder="Ask, @mention, or \/ for actions"/u);
-	// The flush geometry is the composer's own `flush` surface, not a className
-	// blob copied into each callsite.
+	// The compact in-card geometry is the composer's own `flush` surface, not a
+	// className blob copied into each callsite.
 	assert.match(DEMO_SOURCE, /variant="flush"/u);
+	assert.doesNotMatch(DEMO_SOURCE, /overflow-visible px-1\.5 pt-1 pb-3/u);
 	assert.doesNotMatch(DEMO_SOURCE, /border-0 rounded-none bg-transparent/u);
 	assert.match(
 		VARIANT_REGISTRY_SOURCE,
@@ -444,20 +493,30 @@ test("human comments keep the stacked identity header and the flush composer geo
 	// Reply is a disclosure the comment owns via `commentActions`, not a callback
 	// the consuming surface has to wire up.
 	assert.doesNotMatch(COMMENT_SOURCE, /onReplyRequest/u);
-	// Flush composer: the chrome-less geometry is owned by the composer's `flush`
-	// surface, so the callsite carries no layout className of its own.
-	assert.doesNotMatch(COMMENT_SOURCE, /border-0 rounded-none bg-transparent|FLUSH_COMPOSER_CLASSNAME/u);
+	// Flush composer: compact controls + shadow-none are owned by the composer's
+	// `flush` surface; the callsite only mounts the composer (no chrome classNames).
+	assert.doesNotMatch(COMMENT_SOURCE, /border-0 rounded-none bg-transparent|FLUSH_COMPOSER_CLASSNAME|shadow-none/u);
+	// Pull across the timeline node (w-8) + li gap-2 so the prompt shares the
+	// parent avatar edge instead of the nested pl-6 reply column.
+	assert.match(
+		COMMENT_SOURCE,
+		/<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
+	);
+	assert.doesNotMatch(COMMENT_SOURCE, /overflow-visible px-1\.5 pt-1 pb-3/u);
 });
 
-test("the activity card hosts the action row in the body grid, not the bordered footer", () => {
+test("the activity card hosts the action row in the body grid, not the footer", () => {
 	// `action` is a header slot, so the reply/reaction row gets its own slot that
 	// lands last in the body grid and inherits the card's gap for both geometries.
 	assert.match(CARD_SOURCE, /footerActions\?: ReactNode;/u);
 	assert.match(CARD_SOURCE, /^\tfooterActions,$/mu);
 	assert.match(CARD_SOURCE, /\{detailsContent\}[\s\S]*\{footerActions\}[\s\S]*\{showFooter \? \(/u);
-	// Nothing renders it inside the `border-t` footer branch.
+	// Nothing renders it inside the footer branch.
 	assert.doesNotMatch(CARD_SOURCE, /\{showFooter \? \([\s\S]*\{footerActions\}/u);
-	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-3 p-3" : "gap-2 p-3"/u);
+	assert.match(CARD_SOURCE, /hasExpandedLayout \? "gap-3" : "gap-2"/u);
+	assert.doesNotMatch(CARD_SOURCE, /\bp-3\b/u);
+	assert.match(CARD_SOURCE, /className="grid gap-3"/u);
+	assert.doesNotMatch(CARD_SOURCE, /className="grid gap-3 overflow-visible"/u);
 });
 
 test("the comment action row pairs Reply with the shared emoji reaction bar", () => {
@@ -487,9 +546,11 @@ test("the comment action row pairs Reply with the shared emoji reaction bar", ()
 	assert.match(COMMENT_SOURCE, /footerActions=\{/u);
 });
 
-test("thread replies share the parent card as inset divided rows with their own actions", () => {
+test("thread replies share the parent card as inset gap-spaced rows with their own actions", () => {
 	assert.match(COMMENT_SOURCE, /function ThreadReplyCard/u);
-	assert.match(COMMENT_SOURCE, /<div className="pl-6">\s*<JiraActivityCard[\s\S]*className="rounded-none border-0"/u);
+	assert.match(COMMENT_SOURCE, /<div className="pt-3 pl-6">\s*<JiraActivityCard[\s\S]*className="rounded-none"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /className="rounded-none border-0"/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-6">/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /<div className="pl-3">/u);
 	assert.match(COMMENT_SOURCE, /headerLayout="stacked"/u);
 	assert.match(COMMENT_SOURCE, /activityGroup="activity-reply"/u);
@@ -498,7 +559,8 @@ test("thread replies share the parent card as inset divided rows with their own 
 	assert.match(COMMENT_SOURCE, /<JiraActivityCommentActions[\s\S]*onToggleReaction=\{toggleReaction\}/u);
 	assert.match(COMMENT_SOURCE, /\? \(\) => onReply\(replyButtonRef\.current\)/u);
 	assert.match(COMMENT_SOURCE, /<ThreadReplyCard[\s\S]*allowReply=\{allowReply\}/u);
-	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="divide-y divide-border"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
+	assert.match(COMMENT_SOURCE, /replies=\{[\s\S]*hasReplies \? \([\s\S]*aria-label="Replies"[\s\S]*className="grid gap-2"[\s\S]*role="group"[\s\S]*replies\.map\(\(reply\) => \([\s\S]*<ThreadReplyCard/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /divide-y divide-border/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /before:-top-3|before:left-4|before:w-px|ml-8/u);
 	assert.doesNotMatch(COMMENT_SOURCE, /import \{ Comment \} from "@\/components\/ui\/comment";/u);
 });
@@ -515,6 +577,10 @@ test("a thread owns one bottom reply composer and targets the clicked author", (
 	);
 	assert.match(COMMENT_SOURCE, /onReply=\{\(button\) => toggleReply\(reply\.id, reply\.actor, button\)\}/u);
 	assert.match(
+		COMMENT_SOURCE,
+		/composerVisible \? \([\s\S]*?<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
+	);
+	assert.doesNotMatch(
 		COMMENT_SOURCE,
 		/className=\{hasReplies && repliesExpanded \? "border-t border-border" : undefined\}/u,
 	);
@@ -542,7 +608,8 @@ test("comments with nested replies expose one shared header control to collapse 
 	assert.doesNotMatch(CARD_SOURCE, /"hidden shrink-0 items-center gap-2/u);
 	assert.match(COMMENT_SOURCE, /action=\{headerAction\}/u);
 	assert.match(COMMENT_SOURCE, /hidden=\{!repliesExpanded\}[\s\S]*id=\{repliesId\}/u);
-	assert.match(COMMENT_SOURCE, /repliesHidden=\{!repliesExpanded\}/u);
+	assert.doesNotMatch(COMMENT_SOURCE, /repliesHidden=/u);
+	assert.doesNotMatch(CARD_SOURCE, /repliesHidden/u);
 });
 
 test("collapsed threads show a Slack-like participant, count, and timestamp summary", () => {
@@ -583,7 +650,7 @@ test("Reply discloses the single thread composer, defaulting to reply-and-reacti
 	// The composer only mounts when visible, and aria-controls never dangles.
 	assert.match(
 		COMMENT_SOURCE,
-		/composerVisible \? \(\s*<div[\s\S]*?id=\{composerId\}/u,
+		/composerVisible \? \([\s\S]*?<div\s+className="-ml-10 w-\[calc\(100%\+2\.5rem\)\]"\s+id=\{composerId\}\s*>/u,
 	);
 	assert.match(COMMENT_SOURCE, /replyComposerId=\{replyTarget\?\.key === entry\.id \? composerId : undefined\}/u);
 	assert.match(COMMENT_SOURCE, /const composerId = useId\(\);/u);
@@ -670,18 +737,22 @@ test("the exported comment composer uses the shared floating Rovo prompt", () =>
 test("the two floating surfaces are separated by variant, not by callsite classNames", () => {
 	assert.match(COMPOSER_SOURCE, /variant\?: "reply" \| "comment" \| "flush"/u);
 	assert.match(COMPOSER_SOURCE, /const surface = COMPOSER_SURFACES\[variant\];/u);
-	// `comment` is the bordered floating box: overrides FloatingComposer's
-	// default `p-3` (12px) to `p-2` (8px); default 32px controls.
+	// Both floating surfaces keep PromptInput's bordered chrome and only override
+	// FloatingComposer's default `p-3` (12px) to `p-2` (8px). Flush drops the
+	// floating backdrop shadow; comment keeps it. Control size also separates them.
 	assert.match(
 		COMPOSER_SOURCE,
 		/comment: \{[\s\S]*?chrome: "p-2",[\s\S]*?controlClassName: "",/u,
 	);
-	// `flush` is the in-card row: chrome-less with 24px controls.
 	assert.match(
 		COMPOSER_SOURCE,
-		/flush: \{\s*chrome: "border-0 rounded-none bg-transparent px-4 py-1\.5 shadow-none",/u,
+		/flush: \{[\s\S]*?chrome: "p-2 shadow-none",[\s\S]*?controlClassName: "size-6",/u,
 	);
 	assert.match(COMPOSER_SOURCE, /controlClassName: "size-6"/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /border-0 rounded-none bg-transparent/u);
+	// Only flush opts out of the floating backdrop; comment keeps PromptInput's shadow.
+	assert.match(COMPOSER_SOURCE, /chrome: "p-2 shadow-none"/u);
+	assert.equal((COMPOSER_SOURCE.match(/chrome: "p-2"/gu) ?? []).length, 1);
 	// The floating comment bar keeps the default 16px ADS glyph; only the 24px
 	// in-card controls step down to the purpose-drawn small one.
 	assert.match(COMPOSER_SOURCE, /comment: \{[\s\S]*?iconSize: "medium",/u);

@@ -46,7 +46,7 @@ export const CONTEXT_TITLE_FONT_STYLE = {
 
 /** Editable title read view — typography comes from `CONTEXT_TITLE_FONT_STYLE`. */
 export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =
-	"relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent";
+	"relative h-auto overflow-visible border-0 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";
 
 export const CONTEXT_TITLE_INPUT_CLASS_NAME =
 	"h-auto border-2 px-1.5 py-1 focus:border-ring";

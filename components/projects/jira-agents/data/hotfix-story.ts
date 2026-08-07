@@ -53,6 +53,8 @@ export const JIRA_AGENTS_STORY_ITEM_ID = "shop-4821-guest-checkout";
 export const JIRA_AGENTS_STORY_ISSUE_KEY = "SHOP-4821";
 
 const STORY_EPOCH_MS = Date.UTC(2026, 7, 5, 2, 0, 0);
+/** Matches the `story-created` timeline event — one hour before the story clock. */
+const STORY_CREATED_AT_MS = STORY_EPOCH_MS - 3_600_000;
 
 const STORY_STATUS_BY_CHAPTER = {
 	brief: "To do",
@@ -117,6 +119,7 @@ export function shouldStartJiraAgentsPlan(
 export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
 	code: JIRA_AGENTS_STORY_ISSUE_KEY,
 	title: "Add guest checkout to the storefront",
+	createdAtMs: STORY_CREATED_AT_MS,
 	description: [
 		"Checkout-funnel research shows that mandatory account creation is the largest avoidable source of abandonment for first-time shoppers. We need to remove that barrier without weakening pricing, inventory, payment, or order-creation controls.",
 		"",
@@ -127,6 +130,19 @@ export const JIRA_AGENTS_STORY_WORK_ITEM_BASE: WorkItemData = {
 		"- Offer Continue as guest from the cart and sign-in step on desktop and mobile web.",
 		"- Collect email, delivery address, shipping method, and tokenized payment details.",
 		"- Recalculate prices, discounts, taxes, shipping, and inventory on the server before payment.",
+		"",
+		"#### Guest checkout flow",
+		"```mermaid",
+		"flowchart TD",
+		'\tcart["Cart / sign-in"] --> guest{"Continue as guest?"}',
+		'\tguest -->|yes| details["Email, address, shipping"]',
+		'\tguest -->|no| account["Sign in or create account"]',
+		'\tdetails --> payment["Tokenized payment"]',
+		'\tpayment --> validate{"Server validation"}',
+		'\tvalidate -->|ok| order["Create order"]',
+		'\tvalidate -->|recoverable error| details',
+		'\torder --> confirm["Confirmation"]',
+		"```",
 		"",
 		"#### Acceptance criteria",
 		"1. An eligible shopper can purchase without signing in or creating an account.",
@@ -227,7 +243,7 @@ const BRIEF_EVENTS: readonly StaticTimelineEvent[] = [
 		actor: HUMAN_ACTOR,
 		icon: "created",
 		segments: [{ type: "text", text: "created the feature story from the storefront conversion roadmap" }],
-		createdAtMs: STORY_EPOCH_MS - 3_600_000,
+		createdAtMs: STORY_CREATED_AT_MS,
 	},
 	{
 		id: "story-impact-labelled",
@@ -335,6 +351,12 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 			status: "Open",
 			additions: 86,
 			deletions: 21,
+			repository: "eevensoh/vpk-rovo",
+			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+			// Viewer is Venn (`JIRA_WORK_ITEM_CURRENT_USER`); "By me" sorts on authorName.
+			authorName: "Venn",
+			createdAtMs: STORY_EPOCH_MS - 1_080_000,
+			updatedAtMs: STORY_EPOCH_MS - 1_080_000,
 		},
 		createdAtMs: STORY_EPOCH_MS - 1_080_000,
 	},
@@ -355,6 +377,11 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 			status: "Merged",
 			additions: 86,
 			deletions: 21,
+			repository: "eevensoh/vpk-rovo",
+			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+			authorName: "Venn",
+			createdAtMs: STORY_EPOCH_MS - 1_080_000,
+			updatedAtMs: STORY_EPOCH_MS - 480_000,
 		},
 		createdAtMs: STORY_EPOCH_MS - 480_000,
 	},

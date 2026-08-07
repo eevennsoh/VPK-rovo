@@ -70,9 +70,14 @@ const V2_ONLY_FILES = new Set([
 	"components/development-repository-picker.tsx",
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// Metadata-rail Pull request toggle panel; v1 has no PR segment.
+	"components/pull-requests-panel.tsx",
+	"components/pull-request-sort-control.tsx",
 	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
 	// keeps comment bodies as a single plain-text segment.
 	"lib/activity-mention-segments.ts",
+	// Shared metadata-rail / embedded-chat width for the v2 dialog overlay.
+	"lib/layout-constants.ts",
 	// v2's Development rail section derives copy-ready git commands from the
 	// work item; v1 still renders the connect-a-repository empty state.
 	"lib/development-commands.test.js",
@@ -80,6 +85,9 @@ const V2_ONLY_FILES = new Set([
 	// Connected-repo fixtures / helpers live outside the picker component file
 	// so Fast Refresh can treat that module as components-only.
 	"lib/development-repositories.ts",
+	// Phase-section model for the Pull requests metadata panel.
+	"lib/pull-request-phases.ts",
+	"lib/pull-request-phases.test.js",
 ]);
 
 function readBlockFile(relativePath) {
@@ -131,11 +139,15 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	assert.match(dialogSource, /grid-cols-\[minmax\(0,1fr\)\]/u);
 	assert.match(
 		dialogSource,
-		/transition-\[margin-right\][\s\S]*@\[860px\]\/workitemdialog:mr-\[clamp\(320px,34vw,408px\)\][\s\S]*data-jira-work-item-header-column/u,
+		/METADATA_PANEL_WIDTH[\s\S]*"--work-item-side-panel-width": METADATA_PANEL_WIDTH/u,
 	);
 	assert.match(
 		dialogSource,
-		/absolute inset-y-0 right-0 z-30[\s\S]*translate-x-full[\s\S]*sidebarOpen \? "translate-x-0" : "pointer-events-none"/u,
+		/transition-\[margin-right\][\s\S]*@\[860px\]\/workitemdialog:mr-\[var\(--work-item-side-panel-width\)\][\s\S]*data-jira-work-item-header-column/u,
+	);
+	assert.match(
+		dialogSource,
+		/absolute inset-y-0 right-0 z-30[\s\S]*translate-x-full[\s\S]*@\[860px\]\/workitemdialog:w-\[var\(--work-item-side-panel-width\)\][\s\S]*sidebarOpen \? "translate-x-0" : "pointer-events-none"/u,
 	);
 	assert.match(dialogSource, /transition-\[margin-right\] duration-medium ease-in-out motion-reduce:transition-none/u);
 	assert.match(dialogSource, /transition-transform duration-medium ease-in-out[\s\S]*motion-reduce:transition-none/u);
@@ -221,10 +233,26 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.match(repositoryPickerSource, /useCommandMenuScrollMask\(\)[\s\S]*rich-text-command-menu rich-text-command-menu-embedded[\s\S]*rich-text-command-menu-list/u);
 	assert.match(repositoryPickerSource, /import \{ SearchIcon \} from "@\/components\/ui\/vpk-icons"/u);
 	assert.match(repositoryPickerSource, /icon=\{<SearchIcon className="size-4 text-icon-subtle" \/>\}/u);
-	assert.match(repositoryPickerSource, /className="h-11 w-full justify-start gap-3 rounded-lg px-2 font-normal"/u);
+	assert.match(repositoryPickerSource, /className="h-11 w-full justify-start gap-3 rounded-lg px-2 pe-9 font-normal"/u);
 	assert.equal((repositoryPickerSource.match(/inline-flex size-6 shrink-0 items-center justify-center leading-none \[&_svg\]:size-6!/gu) ?? []).length, 1);
+	assert.match(repositoryPickerSource, /import LinkExternalIcon from "@atlaskit\/icon\/core\/link-external";/u);
 	assert.match(repositoryPickerSource, /import FolderAddIcon from "@atlaskit\/icon-lab\/core\/folder-add";/u);
 	assert.match(repositoryPickerSource, /import HardwareAuditIcon from "@atlaskit\/icon-lab\/core\/hardware-audit";/u);
+	// Hover/focus-within reveals a far-right open-in-tab control; stopPropagation keeps row select separate.
+	assert.match(
+		repositoryPickerSource,
+		/className="group\/repository-row relative"[\s\S]*href=\{url\}[\s\S]*event\.stopPropagation\(\)[\s\S]*rel="noopener noreferrer"[\s\S]*target="_blank"/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical[\s\S]*group-hover\/repository-row:pointer-events-auto group-hover\/repository-row:opacity-100[\s\S]*group-focus-within\/repository-row:pointer-events-auto group-focus-within\/repository-row:opacity-100[\s\S]*focus-visible:pointer-events-auto focus-visible:opacity-100/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/aria-label=\{`Open \$\{name\} repository`\}[\s\S]*render=\{<LinkExternalIcon label="" size="small" \/>\}/u,
+	);
+	assert.match(repositoryPickerSource, /className="size-4" render=\{<LinkExternalIcon label="" size="small" \/>\}/u);
+	assert.match(repositoryPickerSource, /text-icon-subtle/u);
 	assert.match(
 		repositoryPickerSource,
 		/className="size-6 shrink-0" render=\{<FolderAddIcon label="" \/>\}[\s\S]*Add repositories/u,
@@ -239,6 +267,10 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.match(
 		developmentRepositoriesSource,
 		/export const CONNECTED_REPOSITORY_COUNT = DEVELOPMENT_REPOSITORIES\.length;/u,
+	);
+	assert.doesNotMatch(
+		developmentRepositoriesSource,
+		/formatConnectedRepositoryCountLabel|\b\d+ Repos?\b/u,
 	);
 	assert.match(
 		repositoryPickerSource,
@@ -280,6 +312,25 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.match(repositoryPickerSource, /Add repositories[\s\S]*Add environment/u);
 	assert.doesNotMatch(repositoryPickerSource, /Recents|Checkbox|owner|Refresh|DX docs validation|Select multiple/u);
 	assert.match(repositoryPickerSource, /positionerClassName="z-\[502\]"/u);
+});
+
+test("experimental v2 sticky composer does not mount codebase repo or branch pickers", () => {
+	const composerSource = readBlockFile("experimental-v2/components/activity-composer.tsx");
+	const developmentRepositoriesSource = readBlockFile("experimental-v2/lib/development-repositories.ts");
+
+	assert.doesNotMatch(composerSource, /ActivityComposerCodebasePickers|activity-composer-codebase-pickers|jira-work-item-composer-codebase/u);
+	assert.equal(
+		fs.existsSync(path.join(V2_DIR, "components/activity-composer-codebase-pickers.tsx")),
+		false,
+	);
+	// Branch defaults / resolvers were composer-picker-only; Repositories pane keeps the list helpers.
+	assert.doesNotMatch(
+		developmentRepositoriesSource,
+		/DEFAULT_DEVELOPMENT_REPOSITORY_ID|DEVELOPMENT_BRANCHES|DEFAULT_DEVELOPMENT_BRANCH|resolveDevelopmentRepository|resolveDevelopmentBranch/u,
+	);
+	assert.match(developmentRepositoriesSource, /export const DEVELOPMENT_REPOSITORIES/u);
+	assert.match(developmentRepositoriesSource, /export const CONNECTED_REPOSITORY_COUNT/u);
+	assert.match(developmentRepositoriesSource, /export function stripUrlScheme/u);
 });
 
 test("experimental v2 working-agents menu includes waiting sessions without changing its dismissal contract", () => {
@@ -461,6 +512,25 @@ test("experimental v2 keeps the metadata panel visible and uses asymmetric heade
 	assert.doesNotMatch(headerActionsSource, /usePanelLayout|Popover|PanelRightIcon/u);
 });
 
+test("experimental v2 dialog matches Rovo Canvas even viewport inset sizing", () => {
+	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
+	const inlineIndex = dialogSource.indexOf('if (presentation === "inline")');
+	const backdropIndex = dialogSource.indexOf("<Dialog.Backdrop");
+	const inlineSource = dialogSource.slice(inlineIndex, backdropIndex);
+	const popupSource = dialogSource.slice(backdropIndex);
+
+	assert.ok(inlineIndex >= 0 && inlineIndex < backdropIndex);
+	assert.match(inlineSource, /max-h-full w-full max-w-none shrink-0 outline-none/u);
+	assert.match(inlineSource, /fillsInlineContainer \? "h-full min-h-0 flex-1 shrink" : null/u);
+	assert.match(
+		popupSource,
+		/fixed inset-4 z-\[501\] h-auto w-auto max-w-none origin-center translate-x-0 translate-y-0 outline-none/u,
+	);
+	assert.doesNotMatch(popupSource, /calc\(100vw/u);
+	assert.doesNotMatch(popupSource, /calc\(100vh|100dvh/u);
+	assert.doesNotMatch(dialogSource, /max-w-\[1200px\]/u);
+});
+
 test("experimental v2 header overflow menu owns the restriction, watcher, and share actions", () => {
 	const overflowMenuSource = readBlockFile(
 		"experimental-v2/components/experimental-header-overflow-menu.tsx",
@@ -526,6 +596,37 @@ test("experimental v2 reuses the Artifact Pane project field", () => {
 	assert.doesNotMatch(detailsTabSource, /function AtlassianProjectEditor/u);
 });
 
+test("experimental v2 Details shows Reporter as a read-only property row", () => {
+	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
+	const titleBarSource = readBlockFile("experimental-v2/components/context-title-bar.tsx");
+	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
+
+	assert.match(
+		detailsTabSource,
+		/label="Assignee"[\s\S]*label="Reporter"[\s\S]*label="Priority"/u,
+	);
+	assert.match(
+		detailsTabSource,
+		/<ArtifactPanePropertyRow editable=\{false\} icon=\{<PersonIcon label="" size="small" \/>\} label="Reporter">[\s\S]*<PersonReadOnlyValue placeholder="Unassigned" value=\{draft\.reporter\} \/>/u,
+	);
+	assert.doesNotMatch(titleBarSource, /ContextTitleMeta|data-jira-work-item-title-meta|Reported/u);
+	assert.doesNotMatch(contextPanelSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
+});
+
+test("experimental v2 Details shows Priority as a primary always-visible field", () => {
+	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
+
+	// Priority sits with Status / Project / Assignee — outside the See more block.
+	assert.match(
+		detailsTabSource,
+		/label="Assignee"[\s\S]*label="Priority"[\s\S]*\{showMore \?/u,
+	);
+	assert.doesNotMatch(
+		detailsTabSource,
+		/\{showMore \? \([\s\S]*label="Priority"/u,
+	);
+});
+
 test("experimental v2 keeps the status focus ring visible while its menu is open", () => {
 	const detailFieldEditorsSource = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
 
@@ -553,7 +654,7 @@ test("experimental v2 reveals description mode tabs across the description scope
 	// Layout hover group wraps header + left column only — not the metadata rail.
 	assert.match(
 		layoutSource,
-		/className="group\/description-scope contents">[\s\S]*\{header\}[\s\S]*\{context\}[\s\S]*<\/div>\s*\{showMetadataTopScrollMask \? \([\s\S]*id="experimental-work-item-metadata-panel"/u,
+		/className="group\/description-scope contents">[\s\S]*\{header\}[\s\S]*\{context\}[\s\S]*<\/div>\s*<AnimatePresence[\s\S]*id="experimental-work-item-metadata-panel"/u,
 	);
 	assert.doesNotMatch(
 		layoutSource,
@@ -597,7 +698,11 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	);
 	assert.match(
 		contextPanelSource,
-		/export function ContextHeader\([\s\S]*selectLatestPullRequestEntry\([\s\S]*meta\.activityEvents,[\s\S]*SESSION_EPOCH_MS \+ state\.elapsedMs[\s\S]*className="flex min-w-0 flex-col gap-4" data-jira-work-item-context-header[\s\S]*className="flex min-w-0 flex-col items-start gap-1" data-jira-work-item-title-block[\s\S]*<WorkItemKeyCopy \/>[\s\S]*<ContextTitleBar \/>[\s\S]*latestPullRequestEntry \? \([\s\S]*data-jira-work-item-header-pull-request[\s\S]*<JiraActivityEvent entry=\{latestPullRequestEntry\} \/>[\s\S]*data-jira-work-item-header-actions[\s\S]*<ContextResources[\s\S]*descriptionViewMode=\{descriptionViewMode\}[\s\S]*outputs=\{outputs\}[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*onDescriptionViewModeChange=\{onDescriptionViewModeChange\}/u,
+		/export function ContextHeader\([\s\S]*className="flex min-w-0 flex-col gap-4" data-jira-work-item-context-header[\s\S]*className="flex min-w-0 flex-col items-start gap-1" data-jira-work-item-title-block[\s\S]*<WorkItemKeyCopy \/>[\s\S]*<ContextTitleBar \/>[\s\S]*data-jira-work-item-header-actions[\s\S]*<ContextResources[\s\S]*descriptionViewMode=\{descriptionViewMode\}[\s\S]*outputs=\{outputs\}[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*onDescriptionViewModeChange=\{onDescriptionViewModeChange\}/u,
+	);
+	assert.doesNotMatch(
+		contextPanelSource,
+		/selectLatestPullRequestEntry|data-jira-work-item-header-pull-request|JiraActivityEvent/u,
 	);
 	assert.match(
 		contextPanelSource,
@@ -611,6 +716,31 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	assert.match(
 		layoutSource,
 		/const contentStyle = \{[\s\S]*"--metadata-panel-offset"[\s\S]*className="order-1 min-w-0[^"]*"[\s\S]*style=\{contentStyle\}[\s\S]*\{header\}/u,
+	);
+	assert.match(
+		layoutSource,
+		/import \{ METADATA_PANEL_WIDTH \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/layout-constants"/u,
+	);
+	assert.match(
+		readBlockFile("experimental-v2/lib/layout-constants.ts"),
+		/export const METADATA_PANEL_WIDTH = "440px";/u,
+	);
+	assert.match(
+		layoutSource,
+		/"--metadata-panel-offset": metadataCollapsed \? "0px" : METADATA_PANEL_WIDTH/u,
+	);
+	assert.match(
+		layoutSource,
+		/@\[860px\]\/agentlayout:w-\[440px\][\s\S]*id="experimental-work-item-metadata-panel"/u,
+	);
+	// Metadata rail: keep pr-6 / pb-8; no pl-2 (was an unused 8px left inset).
+	assert.match(
+		layoutSource,
+		/@\[860px\]\/agentlayout:pr-6 @\[860px\]\/agentlayout:pb-8 @\[860px\]\/agentlayout:\[grid-area:2\/1\]"[\s\S]*id="experimental-work-item-metadata-panel"/u,
+	);
+	assert.doesNotMatch(
+		layoutSource,
+		/id="experimental-work-item-metadata-panel"[\s\S]*@\[860px\]\/agentlayout:pl-2|@\[860px\]\/agentlayout:pl-2[\s\S]*id="experimental-work-item-metadata-panel"/u,
 	);
 	// Keep the metadata rail flush — negative top margin clipped the Details/Activity toggle.
 	assert.match(layoutSource, /className="h-full min-w-0">\{metadata\}/u);
@@ -702,14 +832,25 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	);
 	assert.match(
 		titleBarSource,
-		/export function WorkItemKeyCopy\(\)[\s\S]*aria-label=\{copied \? "Work item key copied" : "Copy work item key"\}[\s\S]*className="group\/work-item-key h-5 gap-0 px-0 hover:bg-transparent focus-visible:bg-transparent"[\s\S]*data-jira-work-item-key[\s\S]*className="pointer-events-none inline-flex min-w-0 items-center font-mono text-xs leading-4 text-text-subtlest"[\s\S]*data-jira-work-item-key-label>\{workItem\.code\}[\s\S]*max-w-0 shrink-0[\s\S]*group-hover\/work-item-key:max-w-5[\s\S]*data-jira-work-item-key-copy-icon[\s\S]*className="ml-1 inline-flex shrink-0"[\s\S]*className=\{copied \? "text-icon-success" : "text-text-subtlest"\}[\s\S]*render=\{copied \? <StatusSuccessIcon[\s\S]*: <LinkIcon[\s\S]*<TooltipContent>\{copied \? "Work item key copied" : "Copy work item key"\}<\/TooltipContent>/u,
+		/export function WorkItemKeyCopy\(\)[\s\S]*<TooltipTrigger[\s\S]*delay=\{0\}[\s\S]*aria-label=\{copied \? "Work item key copied" : "Copy work item key"\}[\s\S]*className="group\/work-item-key inline-flex min-w-0 cursor-pointer items-center font-mono text-base leading-5 text-text-subtle hover:text-text focus-visible:text-text focus-visible:outline-none"[\s\S]*data-jira-work-item-key[\s\S]*role="button"[\s\S]*tabIndex=\{0\}[\s\S]*onClick=\{\(\) => void handleCopyWorkItemKey\(\)\}[\s\S]*onKeyDown=\{handleKeyDown\}[\s\S]*data-jira-work-item-key-label>\{workItem\.code\}[\s\S]*max-w-0 shrink-0[\s\S]*group-hover\/work-item-key:max-w-6[\s\S]*data-jira-work-item-key-copy-icon[\s\S]*className="ml-1 inline-flex size-4 shrink-0 items-center justify-center \[&_\[data-slot=icon\]\]:size-4 \[&_svg\]:size-4"[\s\S]*className=\{cn\("size-4", copied \? "text-icon-success" : "text-text-subtle"\)\}[\s\S]*render=\{copied \? <StatusSuccessIcon[\s\S]*: <LinkIcon[\s\S]*size="small"[\s\S]*<TooltipContent side="top">[\s\S]*\{copied \? "Work item key copied" : "Copy work item key"\}[\s\S]*<\/TooltipContent>/u,
 	);
+	assert.doesNotMatch(titleBarSource, /from "@\/components\/ui\/button"|<Button[\s\S]*data-jira-work-item-key/u);
 	assert.doesNotMatch(titleBarSource, /components\/ui\/tag|<Tag/u);
 	assert.match(
 		titleBarSource,
 		/export function ContextTitleBar\(\)[\s\S]*className="min-w-0 self-stretch @\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\]"[\s\S]*data-jira-work-item-title-column[\s\S]*<ContextEditableTitle \/>/u,
 	);
+	assert.doesNotMatch(titleBarSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
+	assert.doesNotMatch(contextPanelSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
 	assert.doesNotMatch(contextEditableHeaderSource, /readViewFitContainerWidth=\{false\}/u);
+	assert.match(
+		readBlockFile("experimental-v2/components/inline-edit-treatment.ts"),
+		/export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =\s*"relative h-auto overflow-visible border-0 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";/u,
+	);
+	assert.doesNotMatch(
+		readBlockFile("experimental-v2/components/inline-edit-treatment.ts"),
+		/export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =\s*"[^"]*border-2[^"]*"/u,
+	);
 	assert.doesNotMatch(titleBarSource, /export function ContextTitleBar\(\)[\s\S]*<WorkItemKeyCopy/u);
 	assert.doesNotMatch(dialogSource, /breadcrumbLeadingContent|WorkItemKeyCopy/u);
 	assert.match(
@@ -720,14 +861,18 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	assert.match(dialogSource, /gridTemplateRows: "minmax\(0, 1fr\)"/u);
 });
 
-test("experimental v2 removes the description row and keeps Activity sticky in the rail", () => {
+test("experimental v2 removes the description row and relocates Activity chrome to the rail toggle", () => {
 	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
 	const contextEditableHeaderSource = readBlockFile("experimental-v2/components/context-editable-header.tsx");
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
+	assert.match(activityPanelSource, /useSetActivityRailChrome/u);
+	assert.match(activityPanelSource, /hideHeader=\{hideHeader\}/u);
 	assert.match(
 		activityPanelSource,
-		/<JiraActivity[\s\S]*className="gap-2"[\s\S]*headerClassName="sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay \[container-type:scroll-state\]"[\s\S]*headerScrollFade/u,
+		/headerClassName=\{\s*hideHeader\s*\?\s*undefined\s*:\s*"sticky top-0 z-10 flex min-h-8 items-center bg-surface-overlay \[container-type:scroll-state\]"/u,
 	);
+	assert.match(activityPanelSource, /headerScrollFade=\{!hideHeader\}/u);
+	assert.match(activityPanelSource, /setActivityRailChrome\(\{[\s\S]*count: entries\.length/u);
 	assert.match(
 		activityPanelSource,
 		/mapActivityEventsToJiraEntries\(meta\.activityEvents, activityReferenceTimeMs\)/u,
@@ -750,12 +895,9 @@ test("experimental v2 removes the description row and keeps Activity sticky in t
 	);
 	assert.match(
 		layoutSource,
-		/ref: metadataScrollRef,[\s\S]*showTopScrollMask: showMetadataTopScrollMask,[\s\S]*showBottomScrollMask: showMetadataBottomScrollMask,[\s\S]*const metadataScrollMaskStyle = useMemo\([\s\S]*fadeTop: showMetadataTopScrollMask,[\s\S]*fadeBottom: showMetadataBottomScrollMask/u,
+		/ref: metadataScrollRef,[\s\S]*showBottomScrollMask: showMetadataBottomScrollMask,[\s\S]*const metadataScrollMaskStyle = useMemo\([\s\S]*fadeTop: false,[\s\S]*fadeBottom: showMetadataBottomScrollMask/u,
 	);
-	assert.match(
-		layoutSource,
-		/showMetadataTopScrollMask \? \([\s\S]*w-\[clamp\(320px,34vw,408px\)\][\s\S]*data-jira-work-item-metadata-scroll-mask[\s\S]*TOP_SCROLL_MASK_BLUR_LAYERS\.map/u,
-	);
+	assert.doesNotMatch(layoutSource, /showMetadataTopScrollMask|data-jira-work-item-metadata-scroll-mask/u);
 	assert.match(
 		layoutSource,
 		/ref=\{metadataScrollRef\}[\s\S]*style=\{\{[\s\S]*\.\.\.metadataScrollMaskStyle,[\s\S]*willChange:/u,
@@ -806,7 +948,14 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	);
 	assert.match(
 		metadataRailSource,
-		/<DevelopmentSectionContent \/>[\s\S]*count: CONNECTED_REPOSITORY_COUNT \|\| undefined,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
+		/<DevelopmentSectionContent \/>[\s\S]*count: CONNECTED_REPOSITORY_COUNT \|\| undefined,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Repositories"/u,
+	);
+	// Attachments / Automation / Repositories all use numeric counts (`· N`).
+	assert.match(metadataRailSource, /count: attachments\.length,/u);
+	assert.match(metadataRailSource, /count: automationRules\.length \|\| undefined,/u);
+	assert.doesNotMatch(
+		metadataRailSource,
+		/title: "Development"|formatConnectedRepositoryCountLabel|\b\d+ Repos?\b/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
 	assert.doesNotMatch(automationTabSource, /From Automation/u);
@@ -838,8 +987,12 @@ test("experimental v2 keeps its persistent metadata rail open", () => {
 	assert.match(compositionSource, /<PanelLayoutProvider>/u);
 });
 
-test("experimental v2 metadata rail toggles Details and Activity with Details default", () => {
+test("experimental v2 metadata rail toggles Details, Activity, and Pull requests with Details default", () => {
 	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	const pullRequestsPanelSource = readBlockFile("experimental-v2/components/pull-requests-panel.tsx");
+	const pullRequestSortControlSource = readBlockFile(
+		"experimental-v2/components/pull-request-sort-control.tsx",
+	);
 	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
 
 	assert.match(
@@ -848,11 +1001,67 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
+		/type MetadataRailView = "details" \| "activity" \| "pull-requests"/u,
+	);
+	assert.match(
+		metadataRailSource,
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group"/u,
 	);
 	assert.match(
 		metadataRailSource,
-		/<div className="px-3 pb-3">[\s\S]*<ToggleGroup[\s\S]*aria-label="Work item panel"[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*value=\{\[panelView\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="details">[\s\S]*Details[\s\S]*<ToggleGroupItem value="activity">[\s\S]*Activity/u,
+		/import \{\s*JIRA_WORK_ITEM_CURRENT_USER,\s*selectPullRequestEntries,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/jira-activity-adapter"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/import \{\s*DEFAULT_PULL_REQUEST_SORT_MODE,\s*type PullRequestSortMode,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/pull-request-phases"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/import \{ PullRequestsPanel \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/components\/pull-requests-panel"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/<div[\s\S]*className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-surface-overlay px-3 pt-1 pb-3 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-metadata-rail-toggle[\s\S]*<ToggleGroup[\s\S]*aria-label="Work item panel"[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*value=\{\[activePanelView\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="details">[\s\S]*Details[\s\S]*<ToggleGroupItem value="activity">[\s\S]*\$\{activityCount\} \$\{activityCount === 1 \? "Activity" : "Activities"\}[\s\S]*pullRequestCount > 0 \? \([\s\S]*<ToggleGroupItem value="pull-requests">[\s\S]*\$\{pullRequestCount\} \$\{pullRequestCount === 1 \? "Pull request" : "Pull requests"\}[\s\S]*<StickyRowScrollFade data-slot="jira-work-item-metadata-rail-scroll-fade" \/>/u,
+	);
+	assert.match(metadataRailSource, /ActivityRailChromeProvider/u);
+	assert.match(
+		metadataRailSource,
+		/import \{ JiraActivityViewControl \} from "@\/components\/blocks\/jira-activity"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/import \{ PullRequestSortControl \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/components\/pull-request-sort-control"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/activePanelView === "activity" && activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*menuAlign="end"/u,
+	);
+	// Pull requests uses a dedicated sort control (By me default); Activity keeps its view filters.
+	assert.match(
+		metadataRailSource,
+		/useState<PullRequestSortMode>\(DEFAULT_PULL_REQUEST_SORT_MODE\)/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/activePanelView === "pull-requests" \? \([\s\S]*<PullRequestSortControl[\s\S]*sortMode=\{pullRequestSortMode\}/u,
+	);
+	assert.match(pullRequestSortControlSource, /"by-me": "Show by me"/u);
+	assert.match(pullRequestSortControlSource, /"latest-activity": "Show latest activity"/u);
+	assert.match(pullRequestSortControlSource, /"newest-created": "Show newest created"/u);
+	assert.match(pullRequestSortControlSource, /"oldest-created": "Show oldest created"/u);
+	assert.match(pullRequestSortControlSource, /"largest-change": "Show largest change"/u);
+	assert.match(pullRequestSortControlSource, /"by-me": "By me"/u);
+	assert.match(pullRequestSortControlSource, /"latest-activity": "Latest activity"/u);
+	assert.match(pullRequestSortControlSource, /"newest-created": "Newest created"/u);
+	assert.match(pullRequestSortControlSource, /"oldest-created": "Oldest created"/u);
+	assert.match(pullRequestSortControlSource, /"largest-change": "Largest change"/u);
+	assert.match(
+		pullRequestSortControlSource,
+		/SORT_MENU_ORDER: readonly PullRequestSortMode\[\] = \[\s*"by-me",\s*"latest-activity",\s*"newest-created",\s*"oldest-created",\s*"largest-change",\s*\]/u,
 	);
 	// Joined outline filter segments (ToggleGroupDemoFilter) — not muted-track raised pills.
 	assert.doesNotMatch(metadataRailSource, /PANEL_VIEW_TOGGLE_CLASS|PANEL_VIEW_TOGGLE_ITEM_CLASS|bg-muted p-0\.5/u);
@@ -865,15 +1074,76 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailSource,
 		/<ToggleGroup[^>]*className="[^"]*w-full|<ToggleGroupItem[^>]*className="[^"]*flex-1/u,
 	);
-	// Both panels stay mounted (hidden/inert) so Activity local state survives toggles.
+	// Panels stay mounted (hidden/inert) so Activity local state survives toggles.
 	assert.match(
 		metadataRailSource,
-		/hidden=\{panelView !== "details"\}[\s\S]*inert=\{panelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
+		/hidden=\{activePanelView !== "details"\}[\s\S]*inert=\{activePanelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
 	);
 	assert.match(
 		metadataRailSource,
-		/activity != null \? \(\s*<div\s+className="px-3"\s+hidden=\{panelView !== "activity"\}[\s\S]*inert=\{panelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+		/activity != null \? \(\s*<div[\s\S]*?className="overflow-visible px-3"[\s\S]*?hidden=\{activePanelView !== "activity"\}[\s\S]*inert=\{activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
 	);
+	assert.match(
+		metadataRailSource,
+		/pullRequestCount > 0 \? \(\s*<div[\s\S]*?hidden=\{activePanelView !== "pull-requests"\}[\s\S]*inert=\{activePanelView !== "pull-requests" \? true : undefined\}[\s\S]*<PullRequestsPanel[\s\S]*borderless=\{borderless\}[\s\S]*currentUserName=\{JIRA_WORK_ITEM_CURRENT_USER\.name\}[\s\S]*entries=\{pullRequestEntries\}[\s\S]*sortMode=\{pullRequestSortMode\}/u,
+	);
+	// PR phases reuse ArtifactPane disclosure chrome (same as Details Attachments/etc.).
+	assert.match(
+		pullRequestsPanelSource,
+		/import \{ ArtifactPane, type ArtifactPaneSectionItem \} from "@\/components\/blocks\/artifact-pane"/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/groupPullRequestsByPhase\(entries, sortMode, currentUserName\)[\s\S]*data-jira-work-item-pull-requests/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/<ArtifactPane[\s\S]*aria-label="Pull requests"[\s\S]*borderless=\{borderless\}[\s\S]*data-jira-work-item-pull-requests[\s\S]*showSeparators=\{false\}/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/count: count > 0 \? count : undefined[\s\S]*title: <PhaseSectionTitle label=\{section\.label\} phaseId=\{section\.id\} \/>/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/data-jira-work-item-pull-request-phase=\{section\.id\}/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/data-jira-work-item-pull-request-empty[\s\S]*No pull requests/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/data-jira-work-item-pull-request-card=\{number\}/u,
+	);
+	// PR rows reuse the shared Smart Link pull-request variant (chip + flyout).
+	assert.match(
+		pullRequestsPanelSource,
+		/import \{\s*SmartLink,\s*toPullRequestSmartLink,\s*type SmartLinkAvatar,\s*type SmartLinkItem,\s*\} from "@\/components\/blocks\/smart-link"/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/toPullRequestSmartLink\(\{[\s\S]*href: pullRequest\.url[\s\S]*author: resolvePullRequestAuthor\(entry\)/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/<SmartLink[\s\S]*item=\{item\}[\s\S]*showStatus[\s\S]*side="left"/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsPanelSource,
+		/PullRequestActorAvatar|PullRequestRepoPill|GithubLogo|AgentAvatarVisual/u,
+	);
+	// Phase glyphs live in ArtifactPane title ReactNode; Needs review uses warning info.
+	assert.match(
+		pullRequestsPanelSource,
+		/PHASE_ICON[\s\S]*approved[\s\S]*needs-review[\s\S]*StatusInformationIcon[\s\S]*text-icon-warning[\s\S]*open[\s\S]*draft[\s\S]*merged-30d[\s\S]*closed-30d/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/import StatusInformationIcon from "@atlaskit\/icon\/core\/status-information"/u,
+	);
+	// No Accordion/Badge list chrome; no clock glyph for Needs your review.
+	assert.doesNotMatch(pullRequestsPanelSource, /Badge|Accordion|ClockIcon|Merged last 30 days|Closed last 30 days/u);
 	assert.doesNotMatch(
 		metadataRailSource,
 		/panelView === "details" \?/u,
