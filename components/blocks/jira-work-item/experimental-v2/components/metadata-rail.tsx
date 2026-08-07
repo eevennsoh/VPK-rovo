@@ -242,7 +242,7 @@ export function MetadataRail({
 
 	return (
 		<div className="flex min-w-0 flex-col gap-2">
-			<div className="px-3">
+			<div className="px-3 pb-3">
 				<ToggleGroup
 					aria-label="Work item panel"
 					multiple={false}
