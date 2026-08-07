@@ -99,11 +99,12 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /className="flex shrink-0 items-center gap-1 text-text"/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /flex shrink-0 items-center gap-1 font-medium/u);
 	assert.equal(changedFiles.sessionItem.completedSecondsAgo, 5 * 60);
-	assert.match(CHANGED_FILES_SOURCE, /aria-label=\{`\$\{viewActionLabel\} \$\{entry\.sessionItem\.agent\.name\}`\}/u);
-	assert.match(CHANGED_FILES_SOURCE, /onClick=\{\(\) => onView\?\.\(entry\.sessionItem\)\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /const sessionItem = entry\.sessionItem;/u);
+	assert.match(CHANGED_FILES_SOURCE, /aria-label=\{`\$\{viewActionLabel\} \$\{sessionItem\.agent\.name\}`\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /onClick=\{\(\) => onView\?\.\(sessionItem\)\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /\{viewActionLabel\}[\s\S]*viewActionLabel === "Open" \? <LinkExternalIcon label="" size="small" \/> : null/u);
 	assert.doesNotMatch(CHANGED_FILES_SOURCE, /ButtonGroup|Open with \$\{item\.agent\.name\}/u);
-	assert.match(CHANGED_FILES_SOURCE, /action=\{\([\s\S]*<Button[\s\S]*onClick=\{\(\) => onView\?\.\(entry\.sessionItem\)\}/u);
+	assert.match(CHANGED_FILES_SOURCE, /action=\{\([\s\S]*<Button[\s\S]*onClick=\{\(\) => onView\?\.\(sessionItem\)\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /openLabel=\{outputOpenLabel\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant\?: "activity" \| "jira-issue";/u);
 	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);

@@ -44,6 +44,7 @@ export function JiraActivityChangedFiles({
 	viewActionLabel?: "Open" | "View";
 }>) {
 	if (entry.sessionItem && entry.outputs) {
+		const sessionItem = entry.sessionItem;
 		const isJiraIssue = variant === "jira-issue";
 		const statusPresentation = status === "failed"
 			? {
@@ -64,9 +65,9 @@ export function JiraActivityChangedFiles({
 					<AgentListActivityHeader
 						action={(
 							<Button
-								aria-label={`${viewActionLabel} ${entry.sessionItem.agent.name}`}
+								aria-label={`${viewActionLabel} ${sessionItem.agent.name}`}
 								className="shrink-0 gap-1"
-								onClick={() => onView?.(entry.sessionItem)}
+								onClick={() => onView?.(sessionItem)}
 								size="compact"
 								type="button"
 								variant="outline"
@@ -75,7 +76,7 @@ export function JiraActivityChangedFiles({
 								{viewActionLabel === "Open" ? <LinkExternalIcon label="" size="small" /> : null}
 							</Button>
 						)}
-						item={entry.sessionItem}
+						item={sessionItem}
 						metadataPrefix={statusPresentation ? (
 							<span className="flex shrink-0 items-center gap-1 text-text">
 								<Icon
