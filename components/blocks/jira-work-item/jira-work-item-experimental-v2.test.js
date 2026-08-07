@@ -77,6 +77,9 @@ const V2_ONLY_FILES = new Set([
 	// work item; v1 still renders the connect-a-repository empty state.
 	"lib/development-commands.test.js",
 	"lib/development-commands.ts",
+	// Connected-repo fixtures / helpers live outside the picker component file
+	// so Fast Refresh can treat that module as components-only.
+	"lib/development-repositories.ts",
 ]);
 
 function readBlockFile(relativePath) {
@@ -115,7 +118,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail automationRules=\{props\.automationRules\} borderless \/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>\}[\s\S]*automationRules=\{props\.automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -205,6 +208,7 @@ test("experimental v2 shares the session/planner data layer with v1", () => {
 test("experimental v2 Development starts with a searchable provider-branded repository picker", () => {
 	const detailsSectionsSource = readBlockFile("experimental-v2/components/details-sections.tsx");
 	const repositoryPickerSource = readBlockFile("experimental-v2/components/development-repository-picker.tsx");
+	const developmentRepositoriesSource = readBlockFile("experimental-v2/lib/development-repositories.ts");
 
 	assert.match(
 		detailsSectionsSource,
@@ -219,17 +223,50 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.match(repositoryPickerSource, /icon=\{<SearchIcon className="size-4 text-icon-subtle" \/>\}/u);
 	assert.match(repositoryPickerSource, /className="h-11 w-full justify-start gap-3 rounded-lg px-2 font-normal"/u);
 	assert.equal((repositoryPickerSource.match(/inline-flex size-6 shrink-0 items-center justify-center leading-none \[&_svg\]:size-6!/gu) ?? []).length, 1);
-	assert.equal((repositoryPickerSource.match(/className="size-6 shrink-0" render=\{<AddIcon label="" \/>\}/gu) ?? []).length, 2);
+	assert.match(repositoryPickerSource, /import FolderAddIcon from "@atlaskit\/icon-lab\/core\/folder-add";/u);
+	assert.match(repositoryPickerSource, /import HardwareAuditIcon from "@atlaskit\/icon-lab\/core\/hardware-audit";/u);
+	assert.match(
+		repositoryPickerSource,
+		/className="size-6 shrink-0" render=\{<FolderAddIcon label="" \/>\}[\s\S]*Add repositories/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/className="size-6 shrink-0" render=\{<HardwareAuditIcon label="" \/>\}[\s\S]*Add environment/u,
+	);
+	assert.doesNotMatch(repositoryPickerSource, /@atlaskit\/icon\/core\/add|render=\{<AddIcon /u);
 	assert.match(repositoryPickerSource, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.equal((repositoryPickerSource.match(/<Separator className="mx-2 my-1 data-horizontal:w-auto" \/>/gu) ?? []).length, 1);
-	assert.match(repositoryPickerSource, />4 Connected repositories<\/span>/u);
+	assert.match(
+		developmentRepositoriesSource,
+		/export const CONNECTED_REPOSITORY_COUNT = DEVELOPMENT_REPOSITORIES\.length;/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/import \{[\s\S]*CONNECTED_REPOSITORY_COUNT[\s\S]*DEVELOPMENT_REPOSITORIES[\s\S]*stripUrlScheme[\s\S]*\} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/development-repositories"/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/\{CONNECTED_REPOSITORY_COUNT\} Connected repositories/u,
+	);
 	assert.doesNotMatch(repositoryPickerSource, /selectedRepository|DEFAULT_REPOSITORY_ID|Select repository,/u);
-	assert.match(repositoryPickerSource, /provider: "github"[\s\S]*provider: "bitbucket"/u);
+	assert.match(developmentRepositoriesSource, /provider: "github"[\s\S]*provider: "bitbucket"/u);
 	assert.match(repositoryPickerSource, /<GithubLogo borderless className="dark:invert \[\[data-color-mode=dark\]_&\]:invert" label="" size="small" \/>/u);
 	assert.match(repositoryPickerSource, /<BitbucketLogo appearance="brand" label="" size="small" \/>/u);
-	assert.match(repositoryPickerSource, /symphony-explainer[\s\S]*proximity[\s\S]*vpk-rovo[\s\S]*vpk-rovodev/u);
-	assert.match(repositoryPickerSource, /https:\/\/github\.com\/eevensoh\/symphony-explainer[\s\S]*https:\/\/bitbucket\.org\/eevensoh\/vpk-rovodev/u);
+	assert.match(developmentRepositoriesSource, /symphony-explainer[\s\S]*proximity[\s\S]*vpk-rovo[\s\S]*vpk-rovodev/u);
+	// Full URLs stay on the option data (search / future links); bylines strip the scheme.
+	assert.match(developmentRepositoriesSource, /https:\/\/github\.com\/eevensoh\/symphony-explainer[\s\S]*https:\/\/bitbucket\.org\/eevensoh\/vpk-rovodev/u);
 	assert.match(repositoryPickerSource, /`\$\{repository\.name\} \$\{repository\.url\}`/u);
+	assert.match(developmentRepositoriesSource, /export function stripUrlScheme\(url: string\): string/u);
+	assert.ok(
+		developmentRepositoriesSource.includes('return url.replace(/^https?:\\/\\//i, "");'),
+		"stripUrlScheme should drop a leading http(s):// case-insensitively",
+	);
+	assert.match(repositoryPickerSource, /\{stripUrlScheme\(url\)\}/u);
+	// Tiny behavior check mirroring `stripUrlScheme` (CJS contract test can't import the TSX module).
+	const stripUrlScheme = (url) => url.replace(/^https?:\/\//i, "");
+	assert.equal(stripUrlScheme("https://github.com/eevensoh/symphony-explainer"), "github.com/eevensoh/symphony-explainer");
+	assert.equal(stripUrlScheme("HTTP://bitbucket.org/eevensoh/vpk-rovo"), "bitbucket.org/eevensoh/vpk-rovo");
+	assert.equal(stripUrlScheme("github.com/eevensoh/proximity"), "github.com/eevensoh/proximity");
 	assert.match(repositoryPickerSource, /const REPOSITORY_LABEL_CLASS = "menu-row-title text-left";/u);
 	assert.match(repositoryPickerSource, /const REPOSITORY_DESCRIPTION_CLASS = "menu-row-byline text-left";/u);
 	// Byline URL stays hidden until hover/focus — same Motion reveal as AgentSelector.
@@ -503,6 +540,7 @@ test("experimental v2 keeps the status focus ring visible while its menu is open
 test("experimental v2 reveals description mode tabs across the description scope", () => {
 	const aiPlannerPanelSource = readBlockFile("experimental-v2/components/ai-planner-panel.tsx");
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
+	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	const richTextEditorStyles = fs.readFileSync(
 		path.join(BLOCK_DIR, "../../ui-custom/rich-text-editor/rich-text-editor.css"),
 		"utf8",
@@ -512,10 +550,24 @@ test("experimental v2 reveals description mode tabs across the description scope
 		aiPlannerPanelSource,
 		/className=\{cn\("group\/description-scope flex flex-col gap-6", hasPlanner \? "px-2 pb-2" : null\)\}/u,
 	);
+	// Layout hover group wraps header + left column only — not the metadata rail.
+	assert.match(
+		layoutSource,
+		/className="group\/description-scope contents">[\s\S]*\{header\}[\s\S]*\{context\}[\s\S]*<\/div>\s*\{showMetadataTopScrollMask \? \([\s\S]*id="experimental-work-item-metadata-panel"/u,
+	);
+	assert.doesNotMatch(
+		layoutSource,
+		/className="group\/description-scope[^"]*overflow-y-auto/u,
+	);
+	assert.doesNotMatch(
+		layoutSource,
+		/group\/description-scope[\s\S]*id="experimental-work-item-metadata-panel"[\s\S]*group\/description-scope/u,
+	);
 	assert.match(
 		contextResourcesSource,
-		/<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover\/description-scope:pointer-events-auto group-hover\/description-scope:opacity-100 group-has-\[:focus-visible\]\/description-scope:pointer-events-auto group-has-\[:focus-visible\]\/description-scope:opacity-100 @\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\] motion-reduce:transition-none">[\s\S]*aria-label="Copy work item as markdown"[\s\S]*navigator\.clipboard\.writeText\(markdown\)[\s\S]*<CopyIcon label="" size="small" \/>[\s\S]*Copy work item as markdown[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}[\s\S]*size="compact"/u,
+		/<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover\/description-scope:pointer-events-auto group-hover\/description-scope:opacity-100 group-has-\[:focus-visible\]\/description-scope:pointer-events-auto group-has-\[:focus-visible\]\/description-scope:opacity-100 @\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\] motion-reduce:transition-none">[\s\S]*aria-label="Copy work item as markdown"[\s\S]*navigator\.clipboard\.writeText\(markdown\)[\s\S]*<CopyIcon label="" size="small" \/>[\s\S]*Copy work item as markdown[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
 	);
+	assert.doesNotMatch(contextResourcesSource, /size="compact"/u);
 	assert.doesNotMatch(contextResourcesSource, /group-focus-within\/description-scope/u);
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-(?:list|trigger)\]\]/u);
 	assert.match(
@@ -560,7 +612,9 @@ test("experimental v2 gives the title and controls a full-width row above descri
 		layoutSource,
 		/const contentStyle = \{[\s\S]*"--metadata-panel-offset"[\s\S]*className="order-1 min-w-0[^"]*"[\s\S]*style=\{contentStyle\}[\s\S]*\{header\}/u,
 	);
-	assert.match(layoutSource, /className="h-full min-w-0 @\[860px\]\/agentlayout:-mt-5">\{metadata\}/u);
+	// Keep the metadata rail flush — negative top margin clipped the Details/Activity toggle.
+	assert.match(layoutSource, /className="h-full min-w-0">\{metadata\}/u);
+	assert.doesNotMatch(layoutSource, /agentlayout:-mt-5">\{metadata\}/u);
 	assert.match(
 		contextResourcesSource,
 		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-1[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
@@ -666,7 +720,7 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	assert.match(dialogSource, /gridTemplateRows: "minmax\(0, 1fr\)"/u);
 });
 
-test("experimental v2 removes the description row and keeps Activity sticky", () => {
+test("experimental v2 removes the description row and keeps Activity sticky in the rail", () => {
 	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
 	const contextEditableHeaderSource = readBlockFile("experimental-v2/components/context-editable-header.tsx");
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
@@ -684,6 +738,8 @@ test("experimental v2 removes the description row and keeps Activity sticky", ()
 		contextEditableHeaderSource,
 		/stuckToolbarScrollFade|toolbarRestingSeparator|toolbarRestingSeparatorLabel|toolbarReveal/u,
 	);
+	// Left column no longer hosts Activity — only Context scrolls there.
+	assert.doesNotMatch(layoutSource, /activity: ReactNode|useHasActivity|\{activity\}/u);
 	assert.match(
 		layoutSource,
 		/buildScrollMaskStyle\(\{ fadeTop: showTopScrollMask, fadeBottom: showBottomScrollMask \}\)/u,
@@ -742,8 +798,16 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	);
 	assert.doesNotMatch(metadataRailSource, /id: "apps"|title: "Apps"|<AppsSection/u);
 	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*showSeparators=\{false\}[\s\S]*sections=\{/u);
+	assert.match(metadataRailSource, /collapsible: false,[\s\S]*content: <DetailsTab draft=\{draft\} onChange=\{actions\.updateMetadata\} people=\{people\} \/>/u);
 	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
-	assert.match(metadataRailSource, /<DevelopmentSectionContent \/>[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u);
+	assert.match(
+		metadataRailSource,
+		/import \{ CONNECTED_REPOSITORY_COUNT \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/development-repositories"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/<DevelopmentSectionContent \/>[\s\S]*count: CONNECTED_REPOSITORY_COUNT \|\| undefined,[\s\S]*headerAction: \{ label: "Manage dev tools" \},[\s\S]*id: "development",[\s\S]*title: "Development"/u,
+	);
 	assert.doesNotMatch(metadataRailSource, /content: <DevelopmentSection \/>/u);
 	assert.doesNotMatch(automationTabSource, /From Automation/u);
 	assert.doesNotMatch(automationTabSource, /AutomationTile|core\/branch/u);
@@ -772,6 +836,62 @@ test("experimental v2 keeps its persistent metadata rail open", () => {
 
 	assert.doesNotMatch(compositionSource, /defaultMetadataCollapsed/u);
 	assert.match(compositionSource, /<PanelLayoutProvider>/u);
+});
+
+test("experimental v2 metadata rail toggles Details and Activity with Details default", () => {
+	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+
+	assert.match(
+		metadataRailSource,
+		/useState<MetadataRailView>\("details"\)/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group"/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/<div className="px-3 pb-3">[\s\S]*<ToggleGroup[\s\S]*aria-label="Work item panel"[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*value=\{\[panelView\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="details">[\s\S]*Details[\s\S]*<ToggleGroupItem value="activity">[\s\S]*Activity/u,
+	);
+	// Joined outline filter segments (ToggleGroupDemoFilter) — not muted-track raised pills.
+	assert.doesNotMatch(metadataRailSource, /PANEL_VIEW_TOGGLE_CLASS|PANEL_VIEW_TOGGLE_ITEM_CLASS|bg-muted p-0\.5/u);
+	assert.doesNotMatch(
+		metadataRailSource,
+		/from "@\/components\/ui\/tabs"|<Tabs[\s>]|TabsList|TabsTrigger|TabsContent/u,
+	);
+	assert.match(metadataRailSource, /variant="outline"/u);
+	assert.doesNotMatch(
+		metadataRailSource,
+		/<ToggleGroup[^>]*className="[^"]*w-full|<ToggleGroupItem[^>]*className="[^"]*flex-1/u,
+	);
+	// Both panels stay mounted (hidden/inert) so Activity local state survives toggles.
+	assert.match(
+		metadataRailSource,
+		/hidden=\{panelView !== "details"\}[\s\S]*inert=\{panelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/activity != null \? \(\s*<div\s+className="px-3"\s+hidden=\{panelView !== "activity"\}[\s\S]*inert=\{panelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+	);
+	assert.doesNotMatch(
+		metadataRailSource,
+		/panelView === "details" \?/u,
+	);
+	assert.match(
+		compositionSource,
+		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>\}/u,
+	);
+	// Activity lives only in the metadata rail Details/Activity toggle — not under description.
+	assert.equal(
+		(compositionSource.match(/<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>/gu) ?? []).length,
+		1,
+	);
+	// Layout slots are header/context/composer/metadata — no left-column activity prop.
+	assert.match(
+		compositionSource,
+		/<ExperimentalWorkItemLayout\n\s*header=\{[\s\S]*?\n\s*context=\{[\s\S]*?\n\s*composer=\{[\s\S]*?\n\s*fillContainer=\{[\s\S]*?\n\s*metadata=\{/u,
+	);
 });
 
 test("the block index resolves both experimental surfaces from one map", () => {

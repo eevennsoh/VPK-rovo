@@ -37,8 +37,12 @@ test("Editor toolbar block exports the public component and props", () => {
 	assert.match(componentSource, /export interface EditorToolbarProps/u);
 	assert.match(componentSource, /export function EditorToolbar/u);
 	assert.match(componentSource, /export function EditorToolbarModeTabs/u);
-	assert.match(componentSource, /size\?: TabsListProps\["size"\];/u);
-	assert.match(componentSource, /<TabsList size=\{size\}>/u);
+	assert.match(
+		componentSource,
+		/<ToggleGroup[\s\S]*aria-label="Editor view mode"[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*value=\{\[mode\]\}[\s\S]*variant="outline"/u,
+	);
+	assert.doesNotMatch(componentSource, /size\?: TabsListProps\["size"\];/u);
+	assert.doesNotMatch(componentSource, /TabsList|TabsTrigger|<Tabs[\s>]/u);
 	assert.match(componentSource, /endSlot\?: ReactNode;/u);
 	assert.match(componentSource, /controlsOverflow\?: "responsive" \| "fixed";/u);
 	assert.match(componentSource, /onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u);
@@ -147,7 +151,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	const vpkIconsSource = readProjectFile("components/ui/vpk-icons.tsx");
 
 	assert.match(componentSource, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
-	assert.match(componentSource, /import \{ Tabs, TabsList, TabsTrigger, type TabsListProps \} from "@\/components\/ui\/tabs";/u);
+	assert.doesNotMatch(componentSource, /from "@\/components\/ui\/tabs"/u);
 	assert.match(componentSource, /import \{ TextNormalIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(vpkIconsSource, /import TextNormalIconGlyph from "@atlaskit\/icon-lab\/core\/text-normal";/u);
 	assert.match(vpkIconsSource, /export function TextNormalIcon\([\s\S]*renderIcon=\{TextNormalIconGlyph as AtlaskitRenderIcon\}/u);
@@ -186,7 +190,11 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.doesNotMatch(componentSource, /label: "Memory"|category: "memory"|AiModelIcon/u);
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
 	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{currentMode\}/u);
-	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
+	assert.match(
+		componentSource,
+		/const modeItemClassName = "p-1\.5! text-icon-subtle";/u,
+	);
+	assert.match(componentSource, /<ToggleGroupItem[\s\S]*aria-label="Rendered text"[\s\S]*className=\{modeItemClassName\}[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<ToggleGroupItem[\s\S]*aria-label="Markdown source"[\s\S]*className=\{modeItemClassName\}[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(componentSource, />\s*Rendered\s*</u);
 	assert.doesNotMatch(componentSource, />\s*Markdown\s*</u);
 });

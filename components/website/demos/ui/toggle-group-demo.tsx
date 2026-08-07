@@ -8,12 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+/** Idle icon color; pressed state uses toggleVariants' `data-pressed:[&_svg]:text-icon-selected`. */
+const iconItemClassName = "text-icon-subtle";
+
+/** Dense product toolbar icon items: 6px padding + subtle idle icons. */
+const denseIconItemClassName = "p-1.5! text-icon-subtle";
+
 export default function ToggleGroupDemo() {
 	return (
 		<ToggleGroup defaultValue={["center"]}>
-			<ToggleGroupItem value="left" aria-label="Left"><AlignLeftIcon className="size-4" /></ToggleGroupItem>
-			<ToggleGroupItem value="center" aria-label="Center"><AlignCenterIcon className="size-4" /></ToggleGroupItem>
-			<ToggleGroupItem value="right" aria-label="Right"><AlignRightIcon className="size-4" /></ToggleGroupItem>
+			<ToggleGroupItem value="left" aria-label="Left" className={iconItemClassName}>
+				<AlignLeftIcon size="small" />
+			</ToggleGroupItem>
+			<ToggleGroupItem value="center" aria-label="Center" className={iconItemClassName}>
+				<AlignCenterIcon size="small" />
+			</ToggleGroupItem>
+			<ToggleGroupItem value="right" aria-label="Right" className={iconItemClassName}>
+				<AlignRightIcon size="small" />
+			</ToggleGroupItem>
 		</ToggleGroup>
 	);
 }
@@ -21,17 +33,14 @@ export default function ToggleGroupDemo() {
 export function ToggleGroupDemoBasic() {
 	return (
 		<ToggleGroup multiple spacing={1}>
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<BoldIcon
-				/>
+			<ToggleGroupItem value="bold" aria-label="Toggle bold" className={iconItemClassName}>
+				<BoldIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<ItalicIcon
-				/>
+			<ToggleGroupItem value="italic" aria-label="Toggle italic" className={iconItemClassName}>
+				<ItalicIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<UnderlineIcon
-				/>
+			<ToggleGroupItem value="underline" aria-label="Toggle underline" className={iconItemClassName}>
+				<UnderlineIcon size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
@@ -64,14 +73,14 @@ export function ToggleGroupDemoDateRange() {
 export function ToggleGroupDemoDefault() {
 	return (
 		<ToggleGroup>
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<AtlaskitBoldIcon label="" />
+			<ToggleGroupItem value="bold" aria-label="Toggle bold" className={iconItemClassName}>
+				<AtlaskitBoldIcon label="" size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<AtlaskitItalicIcon label="" />
+			<ToggleGroupItem value="italic" aria-label="Toggle italic" className={iconItemClassName}>
+				<AtlaskitItalicIcon label="" size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<AtlaskitUnderlineIcon label="" />
+			<ToggleGroupItem value="underline" aria-label="Toggle underline" className={iconItemClassName}>
+				<AtlaskitUnderlineIcon label="" size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
@@ -99,14 +108,14 @@ export function ToggleGroupDemoFilter() {
 export function ToggleGroupDemoMultiple() {
 	return (
 		<ToggleGroup>
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<AtlaskitBoldIcon label="" />
+			<ToggleGroupItem value="bold" aria-label="Toggle bold" className={iconItemClassName}>
+				<AtlaskitBoldIcon label="" size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<AtlaskitItalicIcon label="" />
+			<ToggleGroupItem value="italic" aria-label="Toggle italic" className={iconItemClassName}>
+				<AtlaskitItalicIcon label="" size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<AtlaskitUnderlineIcon label="" />
+			<ToggleGroupItem value="underline" aria-label="Toggle underline" className={iconItemClassName}>
+				<AtlaskitUnderlineIcon label="" size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
@@ -115,17 +124,26 @@ export function ToggleGroupDemoMultiple() {
 export function ToggleGroupDemoOutlineWithIcons() {
 	return (
 		<ToggleGroup variant="outline" multiple size="sm">
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<BoldIcon
-				/>
+			<ToggleGroupItem
+				value="bold"
+				aria-label="Toggle bold"
+				className={denseIconItemClassName}
+			>
+				<BoldIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<ItalicIcon
-				/>
+			<ToggleGroupItem
+				value="italic"
+				aria-label="Toggle italic"
+				className={denseIconItemClassName}
+			>
+				<ItalicIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<UnderlineIcon
-				/>
+			<ToggleGroupItem
+				value="underline"
+				aria-label="Toggle underline"
+				className={denseIconItemClassName}
+			>
+				<UnderlineIcon size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
@@ -182,15 +200,15 @@ export function ToggleGroupDemoSizes() {
 export function ToggleGroupDemoSort() {
 	return (
 		<ToggleGroup defaultValue={["newest"]} variant="outline" size="sm">
-			<ToggleGroupItem value="newest" aria-label="Newest">
+			<ToggleGroupItem value="newest" aria-label="Newest" className={iconItemClassName}>
 				<ArrowDownIcon size="small" />
 				Newest
 			</ToggleGroupItem>
-			<ToggleGroupItem value="oldest" aria-label="Oldest">
+			<ToggleGroupItem value="oldest" aria-label="Oldest" className={iconItemClassName}>
 				<ArrowUpIcon size="small" />
 				Oldest
 			</ToggleGroupItem>
-			<ToggleGroupItem value="popular" aria-label="Popular">
+			<ToggleGroupItem value="popular" aria-label="Popular" className={iconItemClassName}>
 				<TrendingUpIcon size="small" />
 				Popular
 			</ToggleGroupItem>
@@ -201,17 +219,26 @@ export function ToggleGroupDemoSort() {
 export function ToggleGroupDemoVerticalOutlineWithIcons() {
 	return (
 		<ToggleGroup variant="outline" multiple orientation="vertical" size="sm">
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<BoldIcon
-				/>
+			<ToggleGroupItem
+				value="bold"
+				aria-label="Toggle bold"
+				className={denseIconItemClassName}
+			>
+				<BoldIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<ItalicIcon
-				/>
+			<ToggleGroupItem
+				value="italic"
+				aria-label="Toggle italic"
+				className={denseIconItemClassName}
+			>
+				<ItalicIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<UnderlineIcon
-				/>
+			<ToggleGroupItem
+				value="underline"
+				aria-label="Toggle underline"
+				className={denseIconItemClassName}
+			>
+				<UnderlineIcon size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
@@ -269,50 +296,47 @@ export function ToggleGroupDemoVerticalWithSpacing() {
 export function ToggleGroupDemoVertical() {
 	return (
 		<ToggleGroup multiple orientation="vertical" spacing={1}>
-			<ToggleGroupItem value="bold" aria-label="Toggle bold">
-				<BoldIcon
-				/>
+			<ToggleGroupItem value="bold" aria-label="Toggle bold" className={iconItemClassName}>
+				<BoldIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="italic" aria-label="Toggle italic">
-				<ItalicIcon
-				/>
+			<ToggleGroupItem value="italic" aria-label="Toggle italic" className={iconItemClassName}>
+				<ItalicIcon size="small" />
 			</ToggleGroupItem>
-			<ToggleGroupItem value="underline" aria-label="Toggle underline">
-				<UnderlineIcon
-				/>
+			<ToggleGroupItem value="underline" aria-label="Toggle underline" className={iconItemClassName}>
+				<UnderlineIcon size="small" />
 			</ToggleGroupItem>
 		</ToggleGroup>
 	);
 }
 
 export function ToggleGroupDemoWithIcons() {
+	const withIconsItemClassName =
+		"text-icon-subtle aria-pressed:*:[svg]:fill-foreground aria-pressed:*:[svg]:stroke-foreground aria-pressed:bg-transparent";
+
 	return (
 		<ToggleGroup multiple variant="outline" spacing={2} size="sm">
 			<ToggleGroupItem
 				value="star"
 				aria-label="Toggle star"
-				className="aria-pressed:*:[svg]:fill-foreground aria-pressed:*:[svg]:stroke-foreground aria-pressed:bg-transparent"
+				className={withIconsItemClassName}
 			>
-				<StarIcon
-				/>
+				<StarIcon size="small" />
 				Star
 			</ToggleGroupItem>
 			<ToggleGroupItem
 				value="heart"
 				aria-label="Toggle heart"
-				className="aria-pressed:*:[svg]:fill-foreground aria-pressed:*:[svg]:stroke-foreground aria-pressed:bg-transparent"
+				className={withIconsItemClassName}
 			>
-				<HeartIcon
-				/>
+				<HeartIcon size="small" />
 				Heart
 			</ToggleGroupItem>
 			<ToggleGroupItem
 				value="bookmark"
 				aria-label="Toggle bookmark"
-				className="aria-pressed:*:[svg]:fill-foreground aria-pressed:*:[svg]:stroke-foreground aria-pressed:bg-transparent"
+				className={withIconsItemClassName}
 			>
-				<BookmarkIcon
-				/>
+				<BookmarkIcon size="small" />
 				Bookmark
 			</ToggleGroupItem>
 		</ToggleGroup>

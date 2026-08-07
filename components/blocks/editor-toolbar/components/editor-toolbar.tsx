@@ -37,7 +37,6 @@ import { useToolbarOverflow } from "@/components/blocks/editor-toolbar/hooks/use
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger, type TabsListProps } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor/markdown-format";
@@ -110,49 +109,57 @@ export interface EditorToolbarProps {
 
 export interface EditorToolbarModeTabsProps {
 	mode: EditorToolbarViewMode;
-	size?: TabsListProps["size"];
 	showDataFlowMode?: boolean;
 	onModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
 export function EditorToolbarModeTabs({
 	mode,
-	size = "default",
 	showDataFlowMode = false,
 	onModeChange,
 }: Readonly<EditorToolbarModeTabsProps>) {
-	function handleValueChange(value: string | null): void {
+	function handleValueChange(value: readonly string[]): void {
+		const next = value[0];
 		if (
-			value !== "rendered" &&
-			value !== "markdown" &&
-			value !== "data-flow"
+			next !== "rendered" &&
+			next !== "markdown" &&
+			next !== "data-flow"
 		) {
 			return;
 		}
 
-		if (value === "data-flow" && !showDataFlowMode) {
+		if (next === "data-flow" && !showDataFlowMode) {
 			return;
 		}
 
-		onModeChange(value);
+		onModeChange(next);
 	}
 
+	// 6px padding (p-1.5) overrides joined outline group `*:data-slot:px-3`.
+	// Idle icons use text-icon-subtle; pressed uses toggleVariants' icon-selected.
+	const modeItemClassName = "p-1.5! text-icon-subtle";
+
 	return (
-		<Tabs value={mode} onValueChange={handleValueChange}>
-			<TabsList size={size}>
-				<TabsTrigger aria-label="Rendered text" value="rendered" className="px-2">
-					<TextNormalIcon size="small" />
-				</TabsTrigger>
-				<TabsTrigger aria-label="Markdown source" value="markdown" className="px-2">
-					<MarkdownIcon label="" size="small" />
-				</TabsTrigger>
-				{showDataFlowMode ? (
-					<TabsTrigger aria-label="Data flow diagram" value="data-flow" className="px-2">
-						<DataFlowIcon label="" size="small" />
-					</TabsTrigger>
-				) : null}
-			</TabsList>
-		</Tabs>
+		<ToggleGroup
+			aria-label="Editor view mode"
+			multiple={false}
+			size="sm"
+			value={[mode]}
+			variant="outline"
+			onValueChange={handleValueChange}
+		>
+			<ToggleGroupItem aria-label="Rendered text" className={modeItemClassName} value="rendered">
+				<TextNormalIcon size="small" />
+			</ToggleGroupItem>
+			<ToggleGroupItem aria-label="Markdown source" className={modeItemClassName} value="markdown">
+				<MarkdownIcon label="" size="small" />
+			</ToggleGroupItem>
+			{showDataFlowMode ? (
+				<ToggleGroupItem aria-label="Data flow diagram" className={modeItemClassName} value="data-flow">
+					<DataFlowIcon label="" size="small" />
+				</ToggleGroupItem>
+			) : null}
+		</ToggleGroup>
 	);
 }
 

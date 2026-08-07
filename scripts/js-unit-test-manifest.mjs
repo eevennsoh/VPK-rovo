@@ -114,6 +114,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/ui/navigation-menu.test.js",
 		"components/ui/tabs.test.js",
 		"components/website/demos/ui/checkbox-demo.test.js",
+		"components/website/demos/ui/toggle-group-demo.test.js",
 		"components/ui-custom/animated-dots.test.js",
 		"components/ui-custom/message.test.js",
 		"components/ui-custom/plan.test.js",

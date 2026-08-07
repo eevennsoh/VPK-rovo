@@ -17,6 +17,12 @@ import { token } from "@/lib/tokens";
 
 export interface ArtifactPaneSectionItem {
 	content: ReactNode;
+	/**
+	 * When false, the section body is always shown without a disclosure header.
+	 * Useful when a parent surface already owns the section label (for example a
+	 * Details/Activity segmented control above the pane).
+	 */
+	collapsible?: boolean;
 	/** Collapsed summary rendered after the title — a plain count, or a ratio such as `"1/3"`. */
 	count?: number | string;
 	defaultOpen?: boolean;
@@ -178,8 +184,11 @@ export function ArtifactPane({
 			{...props}
 		>
 			{sections.map((section, index) => {
-				const open = openSectionIds.has(section.id);
-				const previousOpen = index > 0 ? openSectionIds.has(sections[index - 1].id) : false;
+				const collapsible = section.collapsible !== false;
+				const open = collapsible ? openSectionIds.has(section.id) : true;
+				const previousOpen = index > 0
+					? sections[index - 1].collapsible === false || openSectionIds.has(sections[index - 1].id)
+					: false;
 
 				return (
 					<Fragment key={section.id}>
@@ -194,14 +203,18 @@ export function ArtifactPane({
 								index === sections.length - 1 ? "pb-1.5" : null,
 							)}
 						>
-							<ArtifactPaneDisclosure
-								content={section.content}
-								count={section.count}
-								headerAction={section.headerAction}
-								onOpenChange={(nextOpen) => setSectionOpen(section.id, nextOpen)}
-								open={open}
-								title={section.title}
-							/>
+							{collapsible ? (
+								<ArtifactPaneDisclosure
+									content={section.content}
+									count={section.count}
+									headerAction={section.headerAction}
+									onOpenChange={(nextOpen) => setSectionOpen(section.id, nextOpen)}
+									open={open}
+									title={section.title}
+								/>
+							) : (
+								<div className="px-3 pb-3">{section.content}</div>
+							)}
 						</div>
 					</Fragment>
 				);

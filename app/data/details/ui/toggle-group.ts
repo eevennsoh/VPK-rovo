@@ -70,7 +70,8 @@ export const TOGGLE_GROUP_DETAIL: ComponentDetail = {
       },
       {
         title: "Outline with icons",
-        description: "Outline variant with icon items.",
+        description:
+          "Dense outline sm group with 12px icons, 6px padding, and subtle idle icon color (product toolbar style).",
         demoSlug: "toggle-group-demo-outline-with-icons",
       },
       {
@@ -85,7 +86,8 @@ export const TOGGLE_GROUP_DETAIL: ComponentDetail = {
       },
       {
         title: "Vertical outline with icons",
-        description: "Vertical outline variant with icons.",
+        description:
+          "Vertical dense outline sm group with 12px icons, 6px padding, and subtle idle icon color.",
         demoSlug: "toggle-group-demo-vertical-outline-with-icons",
       },
       {

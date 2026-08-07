@@ -3,9 +3,16 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
 
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
+import HardwareAuditIcon from "@atlaskit/icon-lab/core/hardware-audit";
 
+import {
+	CONNECTED_REPOSITORY_COUNT,
+	DEVELOPMENT_REPOSITORIES,
+	stripUrlScheme,
+	type DevelopmentRepositoryOption,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { BitbucketLogo } from "@/components/ui/logo";
@@ -17,20 +24,6 @@ import {
 	RichTextCommandMenuSearchField,
 	useCommandMenuScrollMask,
 } from "@/components/ui-custom/rich-text-editor";
-
-interface RepositoryOption {
-	id: string;
-	name: string;
-	provider: "bitbucket" | "github";
-	url: string;
-}
-
-const REPOSITORIES: readonly RepositoryOption[] = [
-	{ id: "symphony-explainer", name: "symphony-explainer", provider: "github", url: "https://github.com/eevensoh/symphony-explainer" },
-	{ id: "proximity", name: "proximity", provider: "github", url: "https://github.com/eevensoh/proximity" },
-	{ id: "vpk-rovo", name: "vpk-rovo", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovo" },
-	{ id: "vpk-rovodev", name: "vpk-rovodev", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovodev" },
-];
 
 // Mirror AgentSelector / GreetingPromptRow: label lifts and byline reveals on
 // hover/focus. Dynamic variants collapse the transition under reduced motion.
@@ -63,7 +56,7 @@ const REPOSITORY_COPY_CLASS =
 const REPOSITORY_LABEL_CLASS = "menu-row-title text-left";
 const REPOSITORY_DESCRIPTION_CLASS = "menu-row-byline text-left";
 
-function RepositoryProviderLogo({ provider }: Readonly<Pick<RepositoryOption, "provider">>) {
+function RepositoryProviderLogo({ provider }: Readonly<Pick<DevelopmentRepositoryOption, "provider">>) {
 	return provider === "bitbucket" ? (
 		<BitbucketLogo appearance="brand" label="" size="small" />
 	) : (
@@ -79,7 +72,7 @@ function RepositoryRow({
 }: Readonly<{
 	name: string;
 	onClick: () => void;
-	provider: RepositoryOption["provider"];
+	provider: DevelopmentRepositoryOption["provider"];
 	url: string;
 }>) {
 	// Mirror AgentSelector: drive Motion from explicit interaction state so the
@@ -123,7 +116,7 @@ function RepositoryRow({
 					style={{ willChange: "transform, opacity" }}
 					variants={repositoryDescriptionVariants}
 				>
-					{url}
+					{stripUrlScheme(url)}
 				</motion.span>
 			</motion.span>
 		</Button>
@@ -137,8 +130,8 @@ export function DevelopmentRepositoryPicker() {
 	const repositories = useMemo(() => {
 		const needle = query.trim().toLowerCase();
 		return needle
-			? REPOSITORIES.filter((repository) => `${repository.name} ${repository.url}`.toLowerCase().includes(needle))
-			: REPOSITORIES;
+			? DEVELOPMENT_REPOSITORIES.filter((repository) => `${repository.name} ${repository.url}`.toLowerCase().includes(needle))
+			: DEVELOPMENT_REPOSITORIES;
 	}, [query]);
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -162,7 +155,9 @@ export function DevelopmentRepositoryPicker() {
 					/>
 				)}
 			>
-				<span className="min-w-0 flex-1 truncate text-left">4 Connected repositories</span>
+				<span className="min-w-0 flex-1 truncate text-left">
+					{CONNECTED_REPOSITORY_COUNT} Connected repositories
+				</span>
 				<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronDownIcon label="" size="small" />} />
 			</PopoverTrigger>
 			<PopoverContent
@@ -202,11 +197,11 @@ export function DevelopmentRepositoryPicker() {
 				<Separator className="mx-2 my-1 data-horizontal:w-auto" />
 				<div className="p-1">
 					<Button className="h-8 w-full justify-start gap-3 rounded-lg px-2 font-normal" type="button" variant="ghost">
-						<Icon aria-hidden className="size-6 shrink-0" render={<AddIcon label="" />} />
+						<Icon aria-hidden className="size-6 shrink-0" render={<FolderAddIcon label="" />} />
 						Add repositories
 					</Button>
 					<Button className="h-8 w-full justify-start gap-3 rounded-lg px-2 font-normal" type="button" variant="ghost">
-						<Icon aria-hidden className="size-6 shrink-0" render={<AddIcon label="" />} />
+						<Icon aria-hidden className="size-6 shrink-0" render={<HardwareAuditIcon label="" />} />
 						Add environment
 					</Button>
 				</div>
