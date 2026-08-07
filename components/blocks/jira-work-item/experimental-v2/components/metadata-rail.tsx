@@ -295,7 +295,7 @@ export function MetadataRail({
 					]}
 				/>
 			) : (
-				activity
+				<div className="px-3">{activity}</div>
 			)}
 		</div>
 	);

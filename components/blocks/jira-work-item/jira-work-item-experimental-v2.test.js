@@ -860,7 +860,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/\) : \(\s*activity\s*\)/u,
+		/\) : \(\s*<div className="px-3">\{activity\}<\/div>\s*\)/u,
 	);
 	assert.match(
 		compositionSource,
