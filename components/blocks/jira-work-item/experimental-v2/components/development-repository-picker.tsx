@@ -4,6 +4,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import HardwareAuditIcon from "@atlaskit/icon-lab/core/hardware-audit";
 
@@ -24,6 +25,7 @@ import {
 	RichTextCommandMenuSearchField,
 	useCommandMenuScrollMask,
 } from "@/components/ui-custom/rich-text-editor";
+import { cn } from "@/lib/utils";
 
 // Mirror AgentSelector / GreetingPromptRow: label lifts and byline reveals on
 // hover/focus. Dynamic variants collapse the transition under reduced motion.
@@ -76,50 +78,82 @@ function RepositoryRow({
 	url: string;
 }>) {
 	// Mirror AgentSelector: drive Motion from explicit interaction state so the
-	// byline reveal matches hover and keyboard focus deterministically.
+	// byline reveal matches hover and keyboard focus deterministically. Keep the
+	// handlers on the row shell so moving to the external-link control does not
+	// collapse the byline mid-interaction.
 	const [isInteractionActive, setIsInteractionActive] = useState(false);
 	const prefersReducedMotion = useReducedMotion();
 	const revealByline = isInteractionActive;
 	const copyInstant = Boolean(prefersReducedMotion);
 
 	return (
-		<Button
-			className="h-11 w-full justify-start gap-3 rounded-lg px-2 font-normal"
-			onBlur={() => setIsInteractionActive(false)}
-			onClick={onClick}
+		<div
+			className="group/repository-row relative"
+			onBlur={(event) => {
+				const nextFocus = event.relatedTarget;
+				if (!(nextFocus instanceof Node) || !event.currentTarget.contains(nextFocus)) {
+					setIsInteractionActive(false);
+				}
+			}}
 			onFocus={() => setIsInteractionActive(true)}
 			onMouseEnter={() => setIsInteractionActive(true)}
 			onMouseLeave={() => setIsInteractionActive(false)}
-			type="button"
-			variant="ghost"
 		>
-			<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center leading-none [&_svg]:size-6!">
-				<RepositoryProviderLogo provider={provider} />
-			</span>
-			<motion.span
-				animate={revealByline ? "active" : "idle"}
-				className={REPOSITORY_COPY_CLASS}
-				custom={copyInstant}
-				initial={false}
+			<Button
+				className="h-11 w-full justify-start gap-3 rounded-lg px-2 pe-9 font-normal"
+				onClick={onClick}
+				type="button"
+				variant="ghost"
 			>
+				<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center leading-none [&_svg]:size-6!">
+					<RepositoryProviderLogo provider={provider} />
+				</span>
 				<motion.span
-					className={REPOSITORY_LABEL_CLASS}
+					animate={revealByline ? "active" : "idle"}
+					className={REPOSITORY_COPY_CLASS}
 					custom={copyInstant}
-					style={{ willChange: "transform" }}
-					variants={repositoryLabelVariants}
+					initial={false}
 				>
-					{name}
+					<motion.span
+						className={REPOSITORY_LABEL_CLASS}
+						custom={copyInstant}
+						style={{ willChange: "transform" }}
+						variants={repositoryLabelVariants}
+					>
+						{name}
+					</motion.span>
+					<motion.span
+						className={REPOSITORY_DESCRIPTION_CLASS}
+						custom={copyInstant}
+						style={{ willChange: "transform, opacity" }}
+						variants={repositoryDescriptionVariants}
+					>
+						{stripUrlScheme(url)}
+					</motion.span>
 				</motion.span>
-				<motion.span
-					className={REPOSITORY_DESCRIPTION_CLASS}
-					custom={copyInstant}
-					style={{ willChange: "transform, opacity" }}
-					variants={repositoryDescriptionVariants}
-				>
-					{stripUrlScheme(url)}
-				</motion.span>
-			</motion.span>
-		</Button>
+			</Button>
+			{/* Sibling link (not nested in the select button) so open-in-tab does not select the row. */}
+			<a
+				aria-label={`Open ${name} repository`}
+				className={cn(
+					"absolute end-2 top-1/2 z-10 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-icon-subtle",
+					"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+					"group-hover/repository-row:pointer-events-auto group-hover/repository-row:opacity-100",
+					"group-focus-within/repository-row:pointer-events-auto group-focus-within/repository-row:opacity-100",
+					"focus-visible:pointer-events-auto focus-visible:opacity-100",
+					"hover:text-icon focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
+					"motion-reduce:transition-none",
+				)}
+				href={url}
+				onClick={(event) => {
+					event.stopPropagation();
+				}}
+				rel="noopener noreferrer"
+				target="_blank"
+			>
+				<Icon aria-hidden className="size-4" render={<LinkExternalIcon label="" size="small" />} />
+			</a>
+		</div>
 	);
 }
 

@@ -7,7 +7,6 @@ import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { ContextEditableTitle } from "@/components/blocks/jira-work-item/experimental-v2/components/context-editable-header";
 import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -44,38 +43,41 @@ export function WorkItemKeyCopy() {
 
 	return (
 		<Tooltip onOpenChange={setTooltipOpen} open={copied || tooltipOpen}>
+			{/* Base UI TooltipTrigger defaults to 600ms; 0 keeps the copy affordance snappy. */}
 			<TooltipTrigger
+				delay={0}
 				render={
-					<Button
+					<button
+						type="button"
 						aria-label={copied ? "Work item key copied" : "Copy work item key"}
-						className="group/work-item-key h-5 gap-0 px-0 hover:bg-transparent focus-visible:bg-transparent"
+						className="group/work-item-key inline-flex min-w-0 cursor-pointer items-center border-0 bg-transparent p-0 font-mono text-base leading-5 text-text-subtle hover:text-text focus-visible:text-text focus-visible:outline-none"
 						data-jira-work-item-key
-						size="compact"
-						variant="ghost"
 						onClick={() => void handleCopyWorkItemKey()}
 					/>
 				}
 			>
-				<span className="pointer-events-none inline-flex min-w-0 items-center font-mono text-xs leading-4 text-text-subtlest">
+				<span className="pointer-events-none inline-flex min-w-0 items-center">
 					<span data-jira-work-item-key-label>{workItem.code}</span>
 					<span
 						aria-hidden
 						className={cn(
-							"inline-flex max-w-0 shrink-0 translate-x-1 scale-95 overflow-hidden opacity-0 transition-[max-width,opacity,translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/work-item-key:max-w-5 group-hover/work-item-key:translate-x-0 group-hover/work-item-key:scale-100 group-hover/work-item-key:opacity-100 group-focus-visible/work-item-key:max-w-5 group-focus-visible/work-item-key:translate-x-0 group-focus-visible/work-item-key:scale-100 group-focus-visible/work-item-key:opacity-100",
-							copied && "max-w-5 translate-x-0 scale-100 opacity-100",
+							"inline-flex max-w-0 shrink-0 translate-x-1 scale-95 overflow-hidden opacity-0 transition-[max-width,opacity,translate,scale] duration-normal ease-out-practical motion-reduce:transition-none group-hover/work-item-key:max-w-6 group-hover/work-item-key:translate-x-0 group-hover/work-item-key:scale-100 group-hover/work-item-key:opacity-100 group-focus-visible/work-item-key:max-w-6 group-focus-visible/work-item-key:translate-x-0 group-focus-visible/work-item-key:scale-100 group-focus-visible/work-item-key:opacity-100",
+							copied && "max-w-6 translate-x-0 scale-100 opacity-100",
 						)}
 						data-jira-work-item-key-copy-icon
 					>
-						<span className="ml-1 inline-flex shrink-0">
+						<span className="ml-1 inline-flex size-4 shrink-0 items-center justify-center [&_[data-slot=icon]]:size-4 [&_svg]:size-4">
 							<Icon
-								className={copied ? "text-icon-success" : "text-text-subtlest"}
+								className={cn("size-4", copied ? "text-icon-success" : "text-text-subtle")}
 								render={copied ? <StatusSuccessIcon label="" size="small" /> : <LinkIcon label="" size="small" />}
 							/>
 						</span>
 					</span>
 				</span>
 			</TooltipTrigger>
-			<TooltipContent>{copied ? "Work item key copied" : "Copy work item key"}</TooltipContent>
+			<TooltipContent side="top">
+				{copied ? "Work item key copied" : "Copy work item key"}
+			</TooltipContent>
 		</Tooltip>
 	);
 }

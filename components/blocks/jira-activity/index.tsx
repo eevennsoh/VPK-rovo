@@ -20,6 +20,7 @@ import type {
 	JiraActivityFilter,
 	JiraActivitySortOrder,
 } from "./jira-activity-types";
+import { filterJiraActivityEntries } from "./lib/jira-activity-filter";
 import {
 	createCommentEntry,
 	createReply,
@@ -59,6 +60,11 @@ export interface JiraActivityProps {
 	headerClassName?: string;
 	/** Adds a fade below the header while its wrapper is stuck to the top. */
 	headerScrollFade?: boolean;
+	/**
+	 * When true, omit the built-in header entirely so a parent can host the
+	 * activity count and view/sort control (e.g. MetadataRail toggle row).
+	 */
+	hideHeader?: boolean;
 	/** Controlled timeline ordering. */
 	sortOrder?: JiraActivitySortOrder;
 	/** Initial ordering when uncontrolled. Defaults to `ascending` (oldest first). */
@@ -96,6 +102,7 @@ export function JiraActivity({
 	className,
 	headerClassName,
 	headerScrollFade = false,
+	hideHeader = false,
 	sortOrder: controlledSortOrder,
 	defaultSortOrder = "ascending",
 	onSortOrderChange,
@@ -152,15 +159,7 @@ export function JiraActivity({
 	// Entries are stored oldest-first; `descending` shows newest first without
 	// mutating the canonical order the reducer appends to.
 	const visibleEntries = useMemo(
-		() =>
-			filter === "agents-only"
-				? entries.filter(
-						(entry) =>
-							entry.actor.kind === "agent" &&
-							(entry.kind === "comment" ||
-								(entry.kind === "changed-files" && entry.outputs !== undefined)),
-					)
-				: entries,
+		() => filterJiraActivityEntries(entries, filter),
 		[entries, filter],
 	);
 	const orderedEntries = useMemo(
@@ -212,20 +211,22 @@ export function JiraActivity({
 
 	return (
 		<div className={cn("flex w-full flex-col gap-4", className)}>
-			<div className={headerClassName} data-slot="jira-activity-header">
-				<JiraActivityHeader
-					count={visibleEntries.length}
-					filter={filter}
-					onFilterChange={handleFilterChange}
-					onSortOrderChange={handleSortOrderChange}
-					sortOrder={sortOrder}
-				/>
-				{headerScrollFade ? (
-					<StickyRowScrollFade
-						data-slot="jira-activity-header-scroll-fade"
+			{hideHeader ? null : (
+				<div className={headerClassName} data-slot="jira-activity-header">
+					<JiraActivityHeader
+						count={visibleEntries.length}
+						filter={filter}
+						onFilterChange={handleFilterChange}
+						onSortOrderChange={handleSortOrderChange}
+						sortOrder={sortOrder}
 					/>
-				) : null}
-			</div>
+					{headerScrollFade ? (
+						<StickyRowScrollFade
+							data-slot="jira-activity-header-scroll-fade"
+						/>
+					) : null}
+				</div>
+			)}
 
 			{collapsed ? null : (
 				<ol aria-label="Activity timeline" className="flex flex-col">
@@ -240,36 +241,40 @@ export function JiraActivity({
 								: isCardEntry || isNextEntryCard ? "pb-5" : "pb-3";
 
 						return (
-							<li className="flex gap-2" data-jira-activity-entry-id={entry.id} key={entry.id}>
+							<li
+								className="relative flex gap-2"
+								data-jira-activity-entry-id={entry.id}
+								key={entry.id}
+							>
 								<JiraActivityNode
 									actor={entry.actor}
 									icon={entry.kind === "event" ? entry.icon : undefined}
 									isLast={isLast}
+									size={isCardEntry ? "card" : "event"}
 								/>
-								<div
-									className={cn(
-										"min-w-0 flex-1",
-										entry.kind === "event" ? null : "relative -ml-8",
-										spacingClassName,
-									)}
-								>
-									{entry.kind === "event" ? null : (
-										<>
+								{isCardEntry ? (
+									<>
+										{/*
+										 * Spine is centered in the shared w-8 node (x=16). Covers are
+										 * positioned on the li so card content never needs a pull-left
+										 * offset; w-1 cover centered on the spine → left-3.5.
+										 */}
+										<span
+											aria-hidden
+											className="pointer-events-none absolute -top-1 left-3.5 h-1 w-1 bg-surface"
+										/>
+										{isLast ? null : (
 											<span
 												aria-hidden
-												className="pointer-events-none absolute -top-1 left-2.5 h-1 w-1 bg-surface"
+												className={cn(
+													"pointer-events-none absolute left-3.5 h-1 w-1 bg-surface",
+													isNextEntryCard ? "bottom-5" : "bottom-4",
+												)}
 											/>
-											{isLast ? null : (
-												<span
-													aria-hidden
-													className={cn(
-														"pointer-events-none absolute left-2.5 h-1 w-1 bg-surface",
-														isNextEntryCard ? "bottom-5" : "bottom-4",
-													)}
-												/>
-											)}
-										</>
-									)}
+										)}
+									</>
+								) : null}
+								<div className={cn("min-w-0 flex-1", spacingClassName)}>
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (
 										<JiraActivityComment
@@ -284,7 +289,11 @@ export function JiraActivity({
 										/>
 									) : null}
 									{entry.kind === "changed-files" ? (
-										<JiraActivityChangedFiles entry={entry} onView={onViewSession} />
+										<JiraActivityChangedFiles
+											entry={entry}
+											hideLeadAvatar
+											onView={onViewSession}
+										/>
 									) : null}
 								</div>
 							</li>
@@ -310,6 +319,10 @@ export function JiraActivity({
 export { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 export { JiraActivityCard, type JiraActivityCardProps } from "./jira-activity-card";
 export { JiraActivityComposer, type JiraActivityComposerProps } from "./jira-activity-composer";
+export {
+	JiraActivityHeader,
+	JiraActivityViewControl,
+} from "./jira-activity-header";
 export type {
 	JiraActivityActor,
 	JiraActivityActorKind,

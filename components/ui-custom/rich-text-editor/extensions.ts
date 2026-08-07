@@ -22,6 +22,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import { RichTextCodeBlock } from "./code-block-node";
 import { FrontmatterNode } from "./frontmatter-node";
 import { RichTextMentionNodeView } from "./mention-node-view";
 import {
@@ -517,7 +518,10 @@ export function createRichTextEditorExtensions(
 		StarterKit.configure({
 			link: false,
 			underline: false,
+			// Replaced by RichTextCodeBlock so ```mermaid fences get a NodeView.
+			codeBlock: false,
 		}),
+		RichTextCodeBlock,
 		// Registered AFTER StarterKit so `paragraph` stays the default block type for
 		// the doc's `block+` content (an empty/cleared doc fills with a paragraph,
 		// not this atom). Opt-in: only present for the skill editor.

@@ -57,6 +57,7 @@ export { AGENT_LIST_ITEMS } from "./data";
 export { AgentListActivityHeader } from "./agent-list-card";
 export type {
 	AgentListAgent,
+	AgentListInvoker,
 	AgentListItem,
 	AgentListPrStatus,
 	AgentListProps,

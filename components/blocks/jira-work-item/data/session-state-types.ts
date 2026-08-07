@@ -225,6 +225,14 @@ export interface AgentActivityEvent {
 	commandPreview: string;
 	responsePreview?: string;
 	createdAtMs: number;
+	/**
+	 * Opening prompt author from `session.messages` (`role: "human"`).
+	 * Activity cards render this as `by <avatar>` after the relative timestamp.
+	 */
+	invokedBy?: {
+		name: string;
+		avatarSrc?: string;
+	};
 	waitingOn?: AgentSessionWaitingOn;
 	threadReplies?: readonly AgentSessionThreadReply[];
 	progressChecklist?: readonly AgentSessionProgressItem[];

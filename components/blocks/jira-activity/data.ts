@@ -121,7 +121,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		kind: "comment",
 		actor: ROVO_DEV,
 		timestamp: "6min ago",
-		tag: AUTOMATION_TAG,
+		tag: { text: "Waiting for you", color: "yellow" },
 		body: [
 			{ type: "text", text: "Likely root cause is the unconditional " },
 			{ type: "code", text: "isLast" },
@@ -159,7 +159,7 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 		sessionItem: {
 			id: "performance-benchmarking",
 			title: "Conduct performance benchmarking",
-			state: "running",
+			state: "needs-input",
 			agent: {
 				name: "Progress tracker",
 				avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
@@ -245,6 +245,9 @@ export const JIRA_ACTIVITY_ENTRIES: readonly JiraActivityEntry[] = [
 			status: "Open",
 			additions: 148,
 			deletions: 37,
+			authorName: "Venn",
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 40),
+			updatedAtMs: Date.UTC(2026, 4, 12, 13, 58),
 		},
 	},
 ];

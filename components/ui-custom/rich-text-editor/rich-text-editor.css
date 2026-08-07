@@ -134,6 +134,24 @@
  * GitHub renders fenced code blocks on a subtle gray surface with a 6px radius
  * and no border. Inline code reuses the same surface at a smaller size.
  */
+/*
+ * Mermaid fences use a React CodeBlock NodeView (MessageResponse / Streamdown).
+ * Keep diagram chrome flush with surrounding description typography.
+ */
+.tiptap-editor .rich-text-mermaid-block {
+	outline: none;
+}
+
+.tiptap-editor .rich-text-mermaid-block-selected {
+	outline: 2px solid var(--ds-border-selected, #388bff);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+.tiptap-editor .rich-text-mermaid-diagram {
+	min-width: 0;
+}
+
 .tiptap-editor pre {
 	background-color: var(--ds-surface-sunken, #f6f8fa);
 	border: none;

@@ -3,6 +3,7 @@
 import AtlassianIntelligenceIcon from "@atlaskit/icon/core/atlassian-intelligence";
 import ClockIcon from "@atlaskit/icon/core/clock";
 import CommentIcon from "@atlaskit/icon/core/comment";
+import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import GoalIcon from "@atlaskit/icon/core/goal";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -16,6 +17,7 @@ import {
 	SMART_LINK_MODAL_ACTIONS,
 	SMART_LINK_PANEL_ACTIONS,
 } from "@/components/blocks/smart-link/data/smart-link-actions";
+import { toPullRequestSmartLink } from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 
 // Existing-assets-only demo data: Atlassian logos and checked-in /3p assets are
 // used directly; unavailable external artwork falls back to configurable tiles.
@@ -101,6 +103,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 			{ name: "Anthony Chen", src: "/avatar-human/anthony-chen.png" },
 		],
 		avatarOverflow: 48,
+		metadata: [{ label: "50+ members" }],
 		description:
 			"Team created for purpose of Trust Scorecard reports. Model Ownership: aou_group Owner: Charlie Sutton Organisation Name: Core Design",
 		actions: SMART_LINK_PANEL_ACTIONS,
@@ -112,14 +115,18 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "goal",
 		provider: { name: "Goals", logo: { kind: "atlassian", name: "goals" } },
 		icon: { kind: "icon", icon: <GoalIcon label="" size="medium" /> },
-		avatars: [{ name: "Omar Salah", src: "/avatar-human/omar-salah.png" }],
-		status: { label: "Completed", variant: "success", metric: "1.0" },
-		dueDate: "Jun 30, 2025",
+		author: { name: "Omar Salah", src: "/avatar-human/omar-salah.png" },
+		date: "Updated on Jul 17, 2026",
+		metadata: [{ label: "6", icon: <PeopleGroupIcon label="" size="small" /> }],
+		status: { label: "On track", variant: "success", metric: "0.7" },
+		dueDate: "Dec 31, 2027",
+		description:
+			"Build a reliable motion practice that teams can consult for transitions, micro-interactions, and reduced-motion guidance across product surfaces.",
 		actions: [
 			...SMART_LINK_PANEL_ACTIONS,
 			{
-				id: "unfollow",
-				label: "Unfollow goal",
+				id: "follow",
+				label: "Follow",
 				icon: <GoalIcon label="" size="medium" />,
 			},
 		],
@@ -131,8 +138,9 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "project",
 		provider: { name: "Projects", logo: { kind: "atlassian", name: "projects" } },
 		icon: { kind: "avatar", src: "/avatar-project/rocket.svg", alt: "Custom Skills project" },
-		author: { name: "Omar Salah", src: "/avatar-human/omar-salah.png" },
-		date: "Updated last week",
+		author: { name: "Alfredo Huitron", src: "/avatar-human/omar-salah.png" },
+		date: "Updated on Jul 19, 2026",
+		metadata: [{ label: "27", icon: <PeopleGroupIcon label="" size="small" /> }],
 		status: { label: "On track", variant: "success" },
 		dueDate: "Jul 31, 2026",
 		description:
@@ -141,7 +149,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 			...SMART_LINK_PANEL_ACTIONS,
 			{
 				id: "unfollow",
-				label: "Unfollow project",
+				label: "Unfollow",
 				icon: <StarUnstarredIcon label="" size="medium" />,
 			},
 		],
@@ -185,25 +193,50 @@ export const SMART_LINK_DEMO_ITEMS = [
 	{
 		id: "slack-release-plan",
 		href: "#slack-release-plan",
-		title: "Project Slingshot Release Plan",
+		title: "Message from John Duncan in #yum-council",
 		variant: "generic",
 		provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
 		icon: { kind: "third-party", name: "slack" },
+		avatars: [
+			{ name: "John Duncan", src: "/avatar-human/omar-salah.png" },
+			{ name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
+			{ name: "Veronica Rodriguez", src: "/avatar-human/veronica-rodriguez.png" },
+			{ name: "Anthony Chen", src: "/avatar-human/anthony-chen.png" },
+		],
+		date: "Sent on Jul 21, 2026",
 		metadata: [
-			{ label: "Sent on Feb 21, 2023" },
-			{ label: "", metric: 4, icon: <ThumbsUpIcon label="" size="small" /> },
-			{ label: "", metric: 16, icon: <CommentIcon label="" size="small" /> },
+			{ label: "", metric: 1, icon: <ThumbsUpIcon label="" size="small" /> },
+			{ label: "", metric: 13, icon: <CommentIcon label="" size="small" /> },
 		],
 		description:
-			"Project Slingshot is an AI-powered health monitoring app that helps pet owners keep track of their friend's health.",
-		actions: [
-			{
-				id: "open-preview",
-				label: "Open preview",
-				icon: <LinkIcon label="" size="medium" />,
-			},
+			"Maybe a spicey one, I don't like the tab component. Feels like we're using it to add the kitchen sink in everywhere. And the weird gray version on the new work item looks like its from Windows 95.",
+	},
+	{
+		id: "github-vpk-rovo",
+		href: "https://github.com/eevensoh/vpk-rovo",
+		title: "eevensoh/vpk-rovo",
+		variant: "generic",
+		provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
+		icon: { kind: "third-party", name: "github" },
+		author: { name: "eevensoh" },
+		date: "Updated 3 hours ago",
+		metadata: [
+			{ label: "1", icon: <PeopleGroupIcon label="" size="small" /> },
+			{ label: "", metric: 1, icon: <EyeOpenIcon label="" size="small" /> },
 		],
 	},
+	toPullRequestSmartLink({
+		id: "pr-1847-guest-checkout",
+		number: 1847,
+		title: "Add guest checkout to the storefront",
+		status: "Open",
+		additions: 86,
+		deletions: 21,
+		repository: "eevensoh/vpk-rovo",
+		author: { name: "eevensoh", src: "/avatar-user/venn/venn.png" },
+		description:
+			"## Summary - Add experimental-v2 pull requests panel with phase sorting, plus activity filtering and guest checkout for the storefront.",
+	}),
 ] satisfies SmartLinkItem[];
 
 export const SMART_LINK_VARIANT_EXAMPLES = {
@@ -214,6 +247,7 @@ export const SMART_LINK_VARIANT_EXAMPLES = {
 	project: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "project"),
 	loom: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "loom"),
 	generic: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "file" || item.variant === "generic"),
+	pullRequest: SMART_LINK_DEMO_ITEMS.filter((item) => item.variant === "pull-request"),
 } as const;
 
 // Inline-status examples: work items whose status renders as a trailing lozenge
@@ -268,4 +302,5 @@ export const SMART_LINK_REQUIRED_VARIANTS = [
 	"article",
 	"file",
 	"generic",
+	"pull-request",
 ] as const;

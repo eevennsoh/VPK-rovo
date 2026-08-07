@@ -16,10 +16,24 @@ import {
 function SmartLinkExampleSet({
 	items,
 	showStatus = false,
+	appearance = "inline",
 }: Readonly<{
 	items: (typeof SMART_LINK_VARIANT_EXAMPLES)[keyof typeof SMART_LINK_VARIANT_EXAMPLES];
 	showStatus?: boolean;
+	appearance?: "inline" | "card";
 }>) {
+	if (appearance === "card") {
+		return (
+			<div className="min-h-[260px] w-full bg-surface px-6 py-12 text-text">
+				<div className="mx-auto flex max-w-3xl flex-col gap-5">
+					{items.map((item) => (
+						<SmartLink appearance="card" item={item} key={item.id} />
+					))}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-[260px] w-full bg-surface px-6 py-12 text-text">
 			<div className="mx-auto flex max-w-3xl flex-col gap-5 text-xl leading-9">
@@ -63,6 +77,25 @@ export function SmartLinkDemoLoom() {
 
 export function SmartLinkDemoGeneric() {
 	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.generic} />;
+}
+
+export function SmartLinkDemoPullRequest() {
+	return <SmartLinkExampleSet items={SMART_LINK_VARIANT_EXAMPLES.pullRequest} showStatus />;
+}
+
+export function SmartLinkDemoCard() {
+	return (
+		<SmartLinkExampleSet
+			appearance="card"
+			items={[
+				...SMART_LINK_VARIANT_EXAMPLES.team,
+				...SMART_LINK_VARIANT_EXAMPLES.goal,
+				...SMART_LINK_VARIANT_EXAMPLES.project,
+				...SMART_LINK_VARIANT_EXAMPLES.pullRequest,
+				...SMART_LINK_VARIANT_EXAMPLES.generic,
+			]}
+		/>
+	);
 }
 
 export function SmartLinkDemoRemovableOverlay() {

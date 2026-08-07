@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const SMART_LINK_DETAIL: ComponentDetail = {
-		description: "Inline smart link chips with hover-only rich previews for Atlassian and third-party work references. Built on the shared HoverCard primitive.",
+		description: "Smart link chips with hover previews, plus a bordered card appearance that every item can expand into. Built on the shared HoverCard primitive for the inline mode.",
 		importStatement: `import { SmartLink } from "@/components/blocks/smart-link";
 import type { SmartLinkItem } from "@/components/blocks/smart-link";`,
 		usage: `import { SmartLink } from "@/components/blocks/smart-link";
@@ -16,10 +16,14 @@ const item: SmartLinkItem = {
   icon: { kind: "atlassian", name: "confluence" },
 };
 
+{/* Inline chip with hover flyout */}
 <SmartLink
   item={item}
   onActionSelect={(action, smartLink) => console.log(action.id, smartLink.id)}
-/>`,
+/>
+
+{/* Bordered block card for the same item */}
+<SmartLink appearance="card" item={item} />`,
 		demoLayout: {
 			previewContentWidth: "full",
 			examplesContentWidth: "full",
@@ -30,6 +34,12 @@ const item: SmartLinkItem = {
 				type: "SmartLinkItem",
 				required: true,
 				description: "Link, provider, preview metadata, and action data rendered by the trigger and hover card.",
+			},
+			{
+				name: "appearance",
+				type: '"inline" | "card"',
+				default: '"inline"',
+				description: "Presentation mode. inline is the chip with hover flyout; card is the bordered block card for the same item.",
 			},
 			{
 				name: "side",
@@ -72,6 +82,8 @@ const item: SmartLinkItem = {
 			{ title: "Project", description: "Project preview with avatar, status, update date, and project-specific action.", demoSlug: "smart-link-demo-project" },
 			{ title: "Loom", description: "Loom preview with media-style title, excerpt, and actions.", demoSlug: "smart-link-demo-loom" },
 			{ title: "Generic links", description: "File and message previews backed by existing third-party provider assets.", demoSlug: "smart-link-demo-generic" },
+			{ title: "Pull request", description: "GitHub pull request chip with status, diff stats, repository, and author in the flyout.", demoSlug: "smart-link-demo-pull-request" },
+			{ title: "Card", description: "Bordered block cards for teams, goals, projects, GitHub, and Slack — the expanded appearance for any smart link.", demoSlug: "smart-link-demo-card" },
 			{ title: "Removable (overlay)", description: "Smart Links with an X revealed over the trailing edge on hover or keyboard focus.", demoSlug: "smart-link-demo-removable-overlay" },
 			{ title: "Inline status", description: "Work item status rendered as a lozenge at the end of the inline chip.", demoSlug: "smart-link-demo-status" },
 			{ title: "Sizes", description: "12px and 16px inline chips for compact prose or prominent references.", demoSlug: "smart-link-demo-sizes" },

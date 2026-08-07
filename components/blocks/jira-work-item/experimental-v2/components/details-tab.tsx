@@ -61,11 +61,11 @@ export function DetailsTab({
 			<ArtifactPanePropertyRow editable={false} icon={<PersonIcon label="" size="small" />} label="Reporter">
 				<PersonReadOnlyValue placeholder="Unassigned" value={draft.reporter} />
 			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
+				<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
+			</ArtifactPanePropertyRow>
 			{showMore ? (
 				<>
-					<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
-						<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
-					</ArtifactPanePropertyRow>
 					<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Start date">
 						<DateRowField
 							ariaLabel="Change start date"

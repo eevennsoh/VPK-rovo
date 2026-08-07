@@ -25,6 +25,11 @@ export interface JiraActivityCardProps {
 	action?: ReactNode;
 	/** Optional leading identity shown in the plain activity-card header. */
 	headerAvatar?: ReactNode;
+	/**
+	 * When true, omit the leading avatar — the timeline node already owns the
+	 * size-8 identity so the content column stays flush with event copy.
+	 */
+	hideLeadAvatar?: boolean;
 	/** Header geometry for plain activity cards without a session summary. */
 	headerLayout?: "inline" | "stacked";
 	/** Named hover scope for cards nested inside another activity card. */
@@ -39,8 +44,6 @@ export interface JiraActivityCardProps {
 	footerActions?: ReactNode;
 	/** Optional rendered replies shown below the activity content. */
 	replies?: ReactNode;
-	/** Keep reply content mounted but remove it from layout and the accessibility tree. */
-	repliesHidden?: boolean;
 	/** Optional reply composer shown at the bottom of the card. */
 	replyComposer?: ReactNode;
 	className?: string;
@@ -58,6 +61,7 @@ export function JiraActivityCard({
 	tag,
 	action,
 	headerAvatar,
+	hideLeadAvatar = false,
 	headerLayout = "inline",
 	activityGroup = "activity-card",
 	onView,
@@ -65,13 +69,11 @@ export function JiraActivityCard({
 	details,
 	footerActions,
 	replies,
-	repliesHidden = false,
 	replyComposer,
 	className,
 }: Readonly<JiraActivityCardProps>) {
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const showFooter = replies != null || replyComposer != null;
-	const showFooterBorder = (replies != null && !repliesHidden) || replyComposer != null;
 	const detailsContent = details ? (
 		<div className="grid gap-1">
 			<button
@@ -107,7 +109,8 @@ export function JiraActivityCard({
 	return (
 		<div
 			className={cn(
-				"w-full overflow-hidden border border-border bg-surface",
+				// Visible so Avatar hover scale (1.12) is not clipped on the flush edge.
+				"w-full overflow-visible bg-surface",
 				hasExpandedLayout ? "rounded-xl" : "rounded-lg",
 				className,
 			)}
@@ -116,7 +119,7 @@ export function JiraActivityCard({
 				className={cn(
 					activityGroupClass,
 					"grid",
-					hasExpandedLayout ? "gap-3 p-3" : "gap-2 p-3",
+					hasExpandedLayout ? "gap-3" : "gap-2",
 				)}
 			>
 				{item ? (
@@ -124,6 +127,7 @@ export function JiraActivityCard({
 						<AgentListActivityHeader
 							action={action}
 							activityGroup={activityGroup}
+							hideAvatar={hideLeadAvatar}
 							item={item}
 							key={item.id}
 							leadWithAgentName
@@ -135,13 +139,17 @@ export function JiraActivityCard({
 				) : (
 					<>
 						<div
-							className={
-								hasStackedHeader
-									? "flex min-w-0 items-center gap-3"
-									: "flex min-w-0 items-start gap-3"
-							}
+							className={cn(
+								"flex min-w-0 gap-2",
+								hasStackedHeader ? "items-center" : "items-start",
+								// Match the timeline node's h-10 card track so the
+								// name/timestamp block optically centers with the
+								// out-of-card size-8 avatar (same as items-center
+								// when the avatar lived in this row).
+								hideLeadAvatar && hasStackedHeader ? "min-h-10" : null,
+							)}
 						>
-							{headerAvatar}
+							{hideLeadAvatar ? null : headerAvatar}
 							{hasStackedHeader ? (
 								<div className="min-w-0 flex-1">
 									<div className="flex min-w-0 items-center">
@@ -178,12 +186,12 @@ export function JiraActivityCard({
 				)}
 				{detailsContent}
 				{/* Last child of the body grid: inherits the card's gap and sits flush
-				under the content, while the bordered footer keeps hosting replies. */}
+				under the content, while the footer keeps hosting replies. */}
 				{footerActions}
 			</div>
 
 			{showFooter ? (
-				<div className={cn(showFooterBorder ? "border-t border-border" : null)}>
+				<div className="grid gap-3">
 					{replies}
 					{replyComposer}
 				</div>

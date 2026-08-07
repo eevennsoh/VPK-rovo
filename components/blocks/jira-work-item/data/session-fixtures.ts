@@ -229,6 +229,9 @@ export const FILLED_STATIC_EVENTS: StaticTimelineEvent[] = [
 			status: "Open",
 			additions: 148,
 			deletions: 37,
+			authorName: "Maya Chen",
+			createdAtMs: SESSION_EPOCH_MS - 1_200_000,
+			updatedAtMs: SESSION_EPOCH_MS - 1_200_000,
 		},
 		createdAtMs: SESSION_EPOCH_MS - 1_200_000, // −20min
 	},

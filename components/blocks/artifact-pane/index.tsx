@@ -23,7 +23,11 @@ export interface ArtifactPaneSectionItem {
 	 * Details/Activity segmented control above the pane).
 	 */
 	collapsible?: boolean;
-	/** Collapsed summary rendered after the title — a plain count, or a ratio such as `"1/3"`. */
+	/**
+	 * Collapsed summary rendered after the title.
+	 * Plain numbers and ratios (`"1/3"`) get an Attachments-style `· N` prefix;
+	 * labeled strings (e.g. `"3 open"`) render as provided.
+	 */
 	count?: number | string;
 	defaultOpen?: boolean;
 	headerAction?: Readonly<{
@@ -38,6 +42,14 @@ export interface ArtifactPaneProps extends Omit<ComponentProps<"section">, "chil
 	borderless?: boolean;
 	sections: readonly ArtifactPaneSectionItem[];
 	showSeparators?: boolean;
+}
+
+/** Numbers/ratios keep `· N`; labeled counts (e.g. `"3 open"`) render verbatim. */
+function formatCollapsedSectionCount(count: number | string): string {
+	if (typeof count === "number" || /^\d+(?:\/\d+)?$/u.test(count)) {
+		return `· ${count}`;
+	}
+	return count;
 }
 
 export function ArtifactPanePropertyRow({
@@ -99,7 +111,9 @@ function ArtifactPaneDisclosure({
 					>
 						{title}
 						{!open && count !== undefined ? (
-							<span className="shrink-0 text-xs font-normal text-text-subtlest">· {count}</span>
+							<span className="shrink-0 text-xs font-normal text-text-subtlest">
+								{formatCollapsedSectionCount(count)}
+							</span>
 						) : null}
 					</span>
 					<motion.span

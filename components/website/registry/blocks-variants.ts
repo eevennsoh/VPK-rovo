@@ -342,6 +342,20 @@ export const BLOCK_VARIANT_DEMO_ENTRIES: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"smart-link-demo-pull-request": dynamic(
+		() =>
+			import("../demos/blocks/smart-link-demo").then((mod) => ({
+				default: mod.SmartLinkDemoPullRequest,
+			})),
+		{ ssr: false },
+	),
+	"smart-link-demo-card": dynamic(
+		() =>
+			import("../demos/blocks/smart-link-demo").then((mod) => ({
+				default: mod.SmartLinkDemoCard,
+			})),
+		{ ssr: false },
+	),
 	"smart-link-demo-status": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoStatus })), { ssr: false }),
 	"smart-link-demo-sizes": dynamic(() => import("../demos/blocks/smart-link-demo").then((mod) => ({ default: mod.SmartLinkDemoSizes })), { ssr: false }),
 	"smart-link-demo-removable-overlay": dynamic(

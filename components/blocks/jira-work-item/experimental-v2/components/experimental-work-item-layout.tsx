@@ -10,6 +10,7 @@ import {
 	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout-motion";
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
+import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	buildScrollMaskBlurLayerStyles,
@@ -25,7 +26,6 @@ interface ExperimentalWorkItemLayoutProps {
 	fillContainer?: boolean;
 }
 
-const METADATA_PANEL_WIDTH = "clamp(320px, 34vw, 408px)";
 const TOP_SCROLL_MASK_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("top");
 const NARROW_BOTTOM_SCROLL_MASK_BLUR_LAYERS = buildScrollMaskBlurLayerStyles("bottom");
 
@@ -51,8 +51,9 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
  * Wide (container >= 860px): two scroll columns. The left column is a flex column
  * whose Context stack scrolls (`flex-1 overflow-y-auto`) while the `composer`
  * appears in a `shrink-0` footer after planner review, pinned to the bottom of
- * that column. The right rail (clamp 320-408px) holds Metadata (Details /
- * Activity toggle) and scrolls independently.
+ * that column. The right rail (440px) holds Metadata (Details /
+ * Activity toggle) and scrolls independently; its toggle row sticks to the
+ * rail scrollport (bottom mask only — top fade would ghost the sticky chrome).
  *
  * Narrow (< 860px): the columns collapse (`display: contents`) into a single
  * scroll flow ordered Context -> Metadata -> Composer via `order`. The composer
@@ -91,15 +92,16 @@ export function ExperimentalWorkItemLayout({
 	);
 	const {
 		ref: metadataScrollRef,
-		showTopScrollMask: showMetadataTopScrollMask,
 		showBottomScrollMask: showMetadataBottomScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
+	// Top fade would ghost the sticky MetadataRail toggle; that row's solid
+	// `bg-surface-overlay` covers scrolled content instead.
 	const metadataScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
-			fadeTop: showMetadataTopScrollMask,
+			fadeTop: false,
 			fadeBottom: showMetadataBottomScrollMask,
 		}),
-		[showMetadataTopScrollMask, showMetadataBottomScrollMask],
+		[showMetadataBottomScrollMask],
 	);
 	const contentLayoutTransition = shouldReduceMotion
 		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
@@ -125,7 +127,7 @@ export function ExperimentalWorkItemLayout({
 				{/* Description-scope hover group: header + left column only (not metadata). */}
 				<div className="group/description-scope contents">
 					<div
-						className="order-1 min-w-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6 @[860px]/agentlayout:[grid-area:1/1]"
+						className="order-1 min-w-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-3 @[860px]/agentlayout:[grid-area:1/1]"
 						style={contentStyle}
 					>
 						{header}
@@ -196,24 +198,12 @@ export function ExperimentalWorkItemLayout({
 						</motion.div>
 					</div>
 				</div>
-				{showMetadataTopScrollMask ? (
-					<div
-						aria-hidden
-						className="pointer-events-none relative z-30 hidden h-8 w-[clamp(320px,34vw,408px)] self-start justify-self-end @[860px]/agentlayout:block @[860px]/agentlayout:[grid-area:2/1]"
-						data-jira-work-item-metadata-scroll-mask
-					>
-						{TOP_SCROLL_MASK_BLUR_LAYERS.map((layerStyle, index) => (
-							<div key={index} style={layerStyle} />
-						))}
-						<div className="absolute inset-0 bg-linear-to-b from-surface-overlay to-transparent" />
-					</div>
-				) : null}
 				<AnimatePresence initial={false}>
 					{metadataCollapsed ? null : (
 						<motion.div
 							ref={metadataScrollRef}
 							animate="open"
-							className="order-3 min-w-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[clamp(320px,34vw,408px)] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:pl-2 @[860px]/agentlayout:[grid-area:2/1]"
+							className="order-3 min-w-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[440px] @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-4 @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pb-8 @[860px]/agentlayout:[grid-area:2/1]"
 							exit="closed"
 							id="experimental-work-item-metadata-panel"
 							initial="closed"

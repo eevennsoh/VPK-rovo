@@ -67,7 +67,10 @@ function TooltipContent({
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"
 					className={cn(
-						"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden origin-(--transform-origin) transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-0.5 data-[side=top]:data-starting-style:translate-y-0.5 data-[side=left]:data-starting-style:translate-x-0.5 data-[side=right]:data-starting-style:-translate-x-0.5 data-[side=inline-start]:data-starting-style:translate-x-0.5 data-[side=inline-end]:data-starting-style:-translate-x-0.5 data-[side=bottom]:data-ending-style:-translate-y-0.5 data-[side=top]:data-ending-style:translate-y-0.5 data-[side=left]:data-ending-style:translate-x-0.5 data-[side=right]:data-ending-style:-translate-x-0.5 data-[side=inline-start]:data-ending-style:translate-x-0.5 data-[side=inline-end]:data-ending-style:-translate-x-0.5",
+						// Opacity-only enter/exit. Side-axis translate compounds with Floating UI
+						// Positioner updates (and resizing triggers like WorkItemKeyCopy) into
+						// diagonal motion; scale from --transform-origin did the same.
+						"w-fit max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse outline-hidden transition-opacity duration-fast ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
 						className
 					)}
 					{...props}

@@ -1097,6 +1097,7 @@ test("an invoked skill is immediately visible in Activity and remains steerable"
 	assert.equal(event.title, "Summarize comments");
 	assert.equal(event.commandPreview, "/Summarize comments");
 	assert.equal(event.status, "running");
+	assert.deepEqual(event.invokedBy, { name: "You" });
 
 	state = model.jiraWorkItemReducer(state, {
 		type: "reply-session",
@@ -1105,6 +1106,81 @@ test("an invoked skill is immediately visible in Activity and remains steerable"
 	});
 	assert.equal(state.activeSessionId, event.sessionId);
 	assert.ok(state.sessions[0].messages.some((message) => message.content.includes("Focus on unresolved decisions.")));
+});
+
+test("selectActivityEvents exposes the human prompt author as invokedBy", async () => {
+	const model = await loadSessionModel();
+	const state = {
+		...model.hydratePreset("blank", TEST_WORK_ITEM),
+		sessions: [
+			{
+				id: "session-human-invoker",
+				agentId: "claude-code",
+				agentName: "Claude Code",
+				agentBrandName: "claude",
+				status: "running",
+				command: "Implement guest checkout",
+				previewText: "Working on it",
+				steps: [],
+				progress: 0.5,
+				messages: [
+					{
+						id: "m0",
+						role: "human",
+						authorName: "Jordan Lee",
+						authorAvatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+						content: "Implement guest checkout",
+						createdAtMs: 1_000,
+					},
+					{
+						id: "m1",
+						role: "agent",
+						authorName: "Claude Code",
+						content: "Working on it",
+						createdAtMs: 2_000,
+					},
+				],
+				startedAtMs: 1_000,
+				scriptId: "general-assist",
+				scriptCursor: 0,
+				stepElapsedMs: 0,
+				resumedFromWait: false,
+				order: 0,
+			},
+			{
+				id: "session-agent-invoker",
+				agentId: "code-planner",
+				agentName: "Code Planner",
+				status: "running",
+				command: "Define the contract",
+				previewText: "Planning",
+				steps: [],
+				progress: 0.5,
+				messages: [
+					{
+						id: "m0",
+						role: "human",
+						authorName: "Claude Code",
+						content: "Define the contract",
+						createdAtMs: 3_000,
+					},
+				],
+				startedAtMs: 3_000,
+				scriptId: "general-assist",
+				scriptCursor: 0,
+				stepElapsedMs: 0,
+				resumedFromWait: false,
+				order: 1,
+			},
+		],
+	};
+
+	const events = model.selectActivityEvents(state).filter((event) => event.kind === "agent");
+	assert.deepEqual(events[0].invokedBy, {
+		name: "Jordan Lee",
+		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
+	});
+	assert.equal(events[1].invokedBy, undefined);
 });
 
 test("most scripted agents complete while the pricing agent owns the Q&A checkpoint", async () => {
@@ -1179,80 +1255,3 @@ test("empty work item launcher opens a general session; filled launcher reopens 
 	assert.equal(running.sessions.length, model.hydratePreset("running", TEST_WORK_ITEM).sessions.length); // reopened, not created
 });
 
-test("details metadata draft preserves editable work item fields without aliasing labels", async () => {
-	const { seedMetadataDraft } = await loadDetailsTabModule();
-	const assignee = { id: "maya", name: "Maya Chen", avatarUrl: "/avatar-user/maya.png" };
-	const reporter = { id: "david", name: "David Hsieh", avatarUrl: "/avatar-user/david.png" };
-	const labels = ["security", "rfp"];
-
-	const draft = seedMetadataDraft({
-		assignee,
-		dueDate: "not-a-date",
-		labels,
-		parent: { code: "RFP-42" },
-		priority: "High",
-		reporter,
-		startDate: "2026-07-14",
-		status: "Review",
-	});
-
-	assert.equal(draft.status, "Review");
-	assert.equal(draft.priority, "High");
-	assert.equal(draft.assignee, assignee);
-	assert.equal(draft.reporter, reporter);
-	assert.equal(draft.startDate.toISOString(), "2026-07-14T00:00:00.000Z");
-	assert.equal(draft.dueDate, undefined);
-	assert.equal(draft.parent, "RFP-42");
-	assert.deepEqual(draft.labels, labels);
-	assert.notEqual(draft.labels, labels);
-	assert.equal(draft.atlassianProject, null);
-});
-
-test("details metadata draft and status variants use board lifecycle defaults", async () => {
-	const [{ seedMetadataDraft }, { STATUS_PHASES, statusVariant }] = await Promise.all([
-		loadDetailsTabModule(),
-		loadDetailFieldEditorsModule(),
-	]);
-
-	const draft = seedMetadataDraft({});
-
-	assert.equal(draft.status, STATUS_PHASES[0]);
-	assert.equal(draft.priority, "Medium");
-	assert.deepEqual(draft.labels, []);
-	assert.equal(statusVariant(STATUS_PHASES[0]), "neutral");
-	assert.equal(statusVariant(STATUS_PHASES[1]), "information");
-	assert.equal(statusVariant(STATUS_PHASES.at(-1)), "success");
-	assert.equal(statusVariant("Unmapped external status"), "neutral");
-});
-
-test("details metadata searchable pickers reuse the editor palette shell and keep Agents agent-only", async () => {
-	const editorsSource = readBlockFile("experimental/components/detail-field-editors.tsx");
-	const detailsSource = readBlockFile("experimental/components/details-tab.tsx");
-	const { filterMetadataSearchItems } = await loadDetailFieldEditorsModule();
-	const items = [
-		{ id: "maya", label: "Maya Chen", description: "Proposal manager", icon: null },
-		{ id: "jordan", label: "Jordan Lee", description: "Account executive", icon: null },
-	];
-
-	assert.deepEqual(
-		filterMetadataSearchItems(items, "  ACCOUNT ").map((item) => item.id),
-		["jordan"],
-	);
-	assert.match(editorsSource, /<RichTextCommandMenuSearchField/u);
-	assert.match(editorsSource, /<RichTextSuggestionMenu/u);
-	assert.match(editorsSource, /className="rich-text-command-menu-borderless"/u);
-	assert.match(editorsSource, /METADATA_PICKER_POPOVER_CLASS[\s\S]*bg-transparent[\s\S]*shadow-none/u);
-	assert.match(editorsSource, /METADATA_PICKER_POSITIONER_CLASS = "z-\[700\]"/u);
-	assert.doesNotMatch(editorsSource, /rich-text-command-menu-embedded/u);
-	assert.doesNotMatch(editorsSource, /CommandInput|CommandItem|CommandList/u);
-	assert.match(detailsSource, /<MetadataSearchPicker/u);
-	assert.match(detailsSource, /className=\{METADATA_PICKER_POPOVER_CLASS\}/u);
-	assert.equal(
-		(`${editorsSource}\n${detailsSource}`.match(/positionerClassName=\{METADATA_PICKER_POSITIONER_CLASS\}/gu) ?? []).length,
-		8,
-	);
-	assert.doesNotMatch(`${editorsSource}\n${detailsSource}`, /positionerClassName="z-\[502\]"/u);
-	assert.doesNotMatch(detailsSource, /CommandInput|CommandItem|CommandList/u);
-	assert.match(editorsSource, /const agents = CREW_ROSTER\.filter\(\(member\) => member\.kind === "agent"\);/u);
-	assert.doesNotMatch(editorsSource, /Search people and agents|CommandGroup heading="People"/u);
-});

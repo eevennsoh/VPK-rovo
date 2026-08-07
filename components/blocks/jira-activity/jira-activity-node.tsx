@@ -9,6 +9,7 @@ import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 import type { JiraActivityActor, JiraActivityEventIcon } from "./jira-activity-types";
 
@@ -35,9 +36,21 @@ function initialsOf(name: string): string {
 	);
 }
 
-function ActorGlyph({ actor }: Readonly<{ actor: JiraActivityActor }>) {
+function ActorGlyph({
+	actor,
+	sizePx,
+}: Readonly<{
+	actor: JiraActivityActor;
+	sizePx: 16 | 32;
+}>) {
 	if (actor.kind === "person") {
-		return (
+		// Card leads are named in the adjacent header copy; event glyphs keep an accessible label.
+		return sizePx === 32 ? (
+			<Avatar aria-hidden size="default">
+				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
+				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
+			</Avatar>
+		) : (
 			<Avatar label={actor.name} size="xs">
 				{actor.avatarSrc ? <AvatarImage alt="" src={actor.avatarSrc} /> : null}
 				<AvatarFallback>{initialsOf(actor.name)}</AvatarFallback>
@@ -52,7 +65,7 @@ function ActorGlyph({ actor }: Readonly<{ actor: JiraActivityActor }>) {
 			brandName={actor.brandName}
 			fallbackText={initialsOf(actor.name)}
 			label={actor.name}
-			sizePx={16}
+			sizePx={sizePx}
 			vpkLogo={actor.vpkLogo}
 		/>
 	);
@@ -70,24 +83,44 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 }
 
 /**
- * Leading timeline cell: an actor avatar (person / agent / app) or a neutral
- * event glyph, above a `w-px` connector that threads to the next entry. The
- * connector is omitted on the last entry. Spine lifted from
- * `components/ui/progress-tracker.tsx`.
+ * Leading timeline cell: event glyph or card-sized actor avatar above a `w-px`
+ * connector. Card entries place their size-8 identity in an `h-10` track (4px
+ * clearance above/below, matching event glyphs in `h-6`) so the spine never
+ * sits flush on the circle and the avatar optically centers with the stacked
+ * name/timestamp header. Content stays in the un-offset text column; the
+ * in-thread reply composer pulls back across this slot to share the avatar
+ * edge. Spine lifted from `components/ui/progress-tracker.tsx`.
  */
 export function JiraActivityNode({
 	actor,
 	icon,
 	isLast,
+	size = "event",
 }: Readonly<{
 	actor: JiraActivityActor;
 	icon?: JiraActivityEventIcon;
 	isLast: boolean;
+	/** `card` centers a size-8 avatar in h-10; `event` centers a 16px glyph in h-6. */
+	size?: "event" | "card";
 }>) {
+	const isCard = size === "card";
+
 	return (
-		<div className="flex w-6 shrink-0 flex-col items-center">
-			<div className="flex h-6 shrink-0 items-center justify-center">
-				{icon ? <EventGlyph icon={icon} /> : <ActorGlyph actor={actor} />}
+		<div className="flex w-8 shrink-0 flex-col items-center">
+			<div
+				className={cn(
+					"flex shrink-0 items-center justify-center",
+					// Card: 32px avatar in 40px → 4px spine gap. Event: 16px in 24px → 4px.
+					isCard ? "h-10" : "h-6",
+				)}
+			>
+				{isCard ? (
+					<ActorGlyph actor={actor} sizePx={32} />
+				) : icon ? (
+					<EventGlyph icon={icon} />
+				) : (
+					<ActorGlyph actor={actor} sizePx={16} />
+				)}
 			</div>
 			{isLast ? null : <div className="min-h-4 w-px flex-1 bg-border" />}
 		</div>

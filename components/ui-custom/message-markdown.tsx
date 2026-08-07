@@ -8,7 +8,7 @@ import type {
 	ReactElement,
 	ReactNode,
 } from "react";
-import { Children, Fragment, isValidElement, memo, use } from "react";
+import { Children, cloneElement, Fragment, isValidElement, memo, use } from "react";
 import type { BundledLanguage } from "shiki";
 import type { ExtraProps, LinkSafetyConfig } from "streamdown";
 import { Streamdown, StreamdownContext } from "streamdown";
@@ -398,8 +398,19 @@ const bareEl = (tag: string) =>
  * already renders a self-contained (`not-typeset`) CodeBlock, so a surviving
  * `<pre>` wrapper would be styled by typeset's `:where(pre)` rules and double-box
  * the highlighted output.
+ *
+ * Streamdown 2.x marks fenced (block) code by cloning the child `<code>` with
+ * `data-block` from its default `pre` renderer. When `components.inlineCode` is
+ * set, Streamdown routes `"data-block" in props` → `code`, else → `inlineCode`.
+ * We must preserve that marker while still omitting the `<pre>` element, or
+ * mermaid/fenced blocks fall through to MarkdownInlineCode (raw gray text).
  */
 function MarkdownPre({ children }: Readonly<{ children?: ReactNode }>) {
+	if (isValidElement(children)) {
+		return cloneElement(children as ReactElement<Record<string, unknown>>, {
+			"data-block": "true",
+		});
+	}
 	return <>{children}</>;
 }
 
