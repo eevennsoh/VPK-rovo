@@ -585,6 +585,53 @@ test("promotes @mentions of agents with a session in the stream into mention chi
 	]);
 });
 
+test("resolves case-varied overlapping agent mentions to the longest canonical name", async () => {
+	const adapter = await loadAdapter();
+	const [comment] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "comment-overlapping-mentions",
+			kind: "human",
+			author: { name: "Venn" },
+			content: "Ask @code planner pro to review the rollout.",
+			createdAtMs: Date.UTC(2026, 4, 12, 9),
+		},
+		{
+			id: "activity-planner",
+			kind: "agent",
+			sessionId: "session-planner",
+			agentId: "code-planner",
+			agentName: "Code Planner",
+			agentAvatarSrc: "/planner.png",
+			status: "running",
+			title: "Plan",
+			branch: "rovo/plan",
+			elapsedSeconds: 10,
+			commandPreview: "Plan",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 1),
+		},
+		{
+			id: "activity-planner-pro",
+			kind: "agent",
+			sessionId: "session-planner-pro",
+			agentId: "code-planner-pro",
+			agentName: "Code Planner Pro",
+			agentAvatarSrc: "/planner-pro.png",
+			status: "running",
+			title: "Review",
+			branch: "rovo/review",
+			elapsedSeconds: 10,
+			commandPreview: "Review",
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 2),
+		},
+	]);
+
+	assert.deepEqual(comment.body, [
+		{ type: "text", text: "Ask " },
+		{ type: "agent-mention", text: "Code Planner Pro", avatarSrc: "/planner-pro.png" },
+		{ type: "text", text: " to review the rollout." },
+	]);
+});
+
 test("leaves @text with no matching agent session as plain comment copy", async () => {
 	const adapter = await loadAdapter();
 	const [comment] = adapter.mapActivityEventsToJiraEntries([
