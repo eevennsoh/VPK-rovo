@@ -27,7 +27,7 @@ function pullRequestStatusPresentation(
 ): NonNullable<SmartLinkItem["status"]> {
 	switch (status) {
 		case "Open":
-			return { label: "Open", variant: "success" };
+			return { label: "Open", variant: "information" };
 		case "Merged":
 			return { label: "Merged", variant: "discovery" };
 		default: {

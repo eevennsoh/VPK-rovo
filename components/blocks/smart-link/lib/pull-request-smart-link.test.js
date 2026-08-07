@@ -46,7 +46,7 @@ test("toPullRequestSmartLink builds the pull-request SmartLink model", async () 
 	assert.equal(item.provider.name, "GitHub");
 	assert.deepEqual(item.provider.logo, { kind: "third-party", name: "github" });
 	assert.deepEqual(item.icon, { kind: "third-party", name: "github" });
-	assert.deepEqual(item.status, { label: "Open", variant: "success" });
+	assert.deepEqual(item.status, { label: "Open", variant: "information" });
 	assert.deepEqual(item.codeStats, { additions: 86, deletions: 21 });
 	assert.deepEqual(item.metadata, [{ label: "eevensoh/vpk-rovo" }]);
 	assert.deepEqual(item.author, { name: "Venn", src: "/avatar-user/venn/venn.png" });
