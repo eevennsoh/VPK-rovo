@@ -7,6 +7,12 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
 import HardwareAuditIcon from "@atlaskit/icon-lab/core/hardware-audit";
 
+import {
+	CONNECTED_REPOSITORY_COUNT,
+	DEVELOPMENT_REPOSITORIES,
+	stripUrlScheme,
+	type DevelopmentRepositoryOption,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { BitbucketLogo } from "@/components/ui/logo";
@@ -18,23 +24,6 @@ import {
 	RichTextCommandMenuSearchField,
 	useCommandMenuScrollMask,
 } from "@/components/ui-custom/rich-text-editor";
-
-interface RepositoryOption {
-	id: string;
-	name: string;
-	provider: "bitbucket" | "github";
-	url: string;
-}
-
-const REPOSITORIES: readonly RepositoryOption[] = [
-	{ id: "symphony-explainer", name: "symphony-explainer", provider: "github", url: "https://github.com/eevensoh/symphony-explainer" },
-	{ id: "proximity", name: "proximity", provider: "github", url: "https://github.com/eevensoh/proximity" },
-	{ id: "vpk-rovo", name: "vpk-rovo", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovo" },
-	{ id: "vpk-rovodev", name: "vpk-rovodev", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovodev" },
-];
-
-/** Connected-repo tally for the Development disclosure header (`Development · N`). */
-export const CONNECTED_REPOSITORY_COUNT = REPOSITORIES.length;
 
 // Mirror AgentSelector / GreetingPromptRow: label lifts and byline reveals on
 // hover/focus. Dynamic variants collapse the transition under reduced motion.
@@ -67,12 +56,7 @@ const REPOSITORY_COPY_CLASS =
 const REPOSITORY_LABEL_CLASS = "menu-row-title text-left";
 const REPOSITORY_DESCRIPTION_CLASS = "menu-row-byline text-left";
 
-/** Display-only: drop a leading http(s):// so bylines read as host/path. */
-export function stripUrlScheme(url: string): string {
-	return url.replace(/^https?:\/\//i, "");
-}
-
-function RepositoryProviderLogo({ provider }: Readonly<Pick<RepositoryOption, "provider">>) {
+function RepositoryProviderLogo({ provider }: Readonly<Pick<DevelopmentRepositoryOption, "provider">>) {
 	return provider === "bitbucket" ? (
 		<BitbucketLogo appearance="brand" label="" size="small" />
 	) : (
@@ -88,7 +72,7 @@ function RepositoryRow({
 }: Readonly<{
 	name: string;
 	onClick: () => void;
-	provider: RepositoryOption["provider"];
+	provider: DevelopmentRepositoryOption["provider"];
 	url: string;
 }>) {
 	// Mirror AgentSelector: drive Motion from explicit interaction state so the
@@ -146,8 +130,8 @@ export function DevelopmentRepositoryPicker() {
 	const repositories = useMemo(() => {
 		const needle = query.trim().toLowerCase();
 		return needle
-			? REPOSITORIES.filter((repository) => `${repository.name} ${repository.url}`.toLowerCase().includes(needle))
-			: REPOSITORIES;
+			? DEVELOPMENT_REPOSITORIES.filter((repository) => `${repository.name} ${repository.url}`.toLowerCase().includes(needle))
+			: DEVELOPMENT_REPOSITORIES;
 	}, [query]);
 
 	function handleOpenChange(nextOpen: boolean) {

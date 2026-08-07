@@ -77,6 +77,9 @@ const V2_ONLY_FILES = new Set([
 	// work item; v1 still renders the connect-a-repository empty state.
 	"lib/development-commands.test.js",
 	"lib/development-commands.ts",
+	// Connected-repo fixtures / helpers live outside the picker component file
+	// so Fast Refresh can treat that module as components-only.
+	"lib/development-repositories.ts",
 ]);
 
 function readBlockFile(relativePath) {
@@ -205,6 +208,7 @@ test("experimental v2 shares the session/planner data layer with v1", () => {
 test("experimental v2 Development starts with a searchable provider-branded repository picker", () => {
 	const detailsSectionsSource = readBlockFile("experimental-v2/components/details-sections.tsx");
 	const repositoryPickerSource = readBlockFile("experimental-v2/components/development-repository-picker.tsx");
+	const developmentRepositoriesSource = readBlockFile("experimental-v2/lib/development-repositories.ts");
 
 	assert.match(
 		detailsSectionsSource,
@@ -232,22 +236,29 @@ test("experimental v2 Development starts with a searchable provider-branded repo
 	assert.doesNotMatch(repositoryPickerSource, /@atlaskit\/icon\/core\/add|render=\{<AddIcon /u);
 	assert.match(repositoryPickerSource, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.equal((repositoryPickerSource.match(/<Separator className="mx-2 my-1 data-horizontal:w-auto" \/>/gu) ?? []).length, 1);
-	assert.match(repositoryPickerSource, /export const CONNECTED_REPOSITORY_COUNT = REPOSITORIES\.length;/u);
+	assert.match(
+		developmentRepositoriesSource,
+		/export const CONNECTED_REPOSITORY_COUNT = DEVELOPMENT_REPOSITORIES\.length;/u,
+	);
+	assert.match(
+		repositoryPickerSource,
+		/import \{[\s\S]*CONNECTED_REPOSITORY_COUNT[\s\S]*DEVELOPMENT_REPOSITORIES[\s\S]*stripUrlScheme[\s\S]*\} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/development-repositories"/u,
+	);
 	assert.match(
 		repositoryPickerSource,
 		/\{CONNECTED_REPOSITORY_COUNT\} Connected repositories/u,
 	);
 	assert.doesNotMatch(repositoryPickerSource, /selectedRepository|DEFAULT_REPOSITORY_ID|Select repository,/u);
-	assert.match(repositoryPickerSource, /provider: "github"[\s\S]*provider: "bitbucket"/u);
+	assert.match(developmentRepositoriesSource, /provider: "github"[\s\S]*provider: "bitbucket"/u);
 	assert.match(repositoryPickerSource, /<GithubLogo borderless className="dark:invert \[\[data-color-mode=dark\]_&\]:invert" label="" size="small" \/>/u);
 	assert.match(repositoryPickerSource, /<BitbucketLogo appearance="brand" label="" size="small" \/>/u);
-	assert.match(repositoryPickerSource, /symphony-explainer[\s\S]*proximity[\s\S]*vpk-rovo[\s\S]*vpk-rovodev/u);
+	assert.match(developmentRepositoriesSource, /symphony-explainer[\s\S]*proximity[\s\S]*vpk-rovo[\s\S]*vpk-rovodev/u);
 	// Full URLs stay on the option data (search / future links); bylines strip the scheme.
-	assert.match(repositoryPickerSource, /https:\/\/github\.com\/eevensoh\/symphony-explainer[\s\S]*https:\/\/bitbucket\.org\/eevensoh\/vpk-rovodev/u);
+	assert.match(developmentRepositoriesSource, /https:\/\/github\.com\/eevensoh\/symphony-explainer[\s\S]*https:\/\/bitbucket\.org\/eevensoh\/vpk-rovodev/u);
 	assert.match(repositoryPickerSource, /`\$\{repository\.name\} \$\{repository\.url\}`/u);
-	assert.match(repositoryPickerSource, /export function stripUrlScheme\(url: string\): string/u);
+	assert.match(developmentRepositoriesSource, /export function stripUrlScheme\(url: string\): string/u);
 	assert.ok(
-		repositoryPickerSource.includes('return url.replace(/^https?:\\/\\//i, "");'),
+		developmentRepositoriesSource.includes('return url.replace(/^https?:\\/\\//i, "");'),
 		"stripUrlScheme should drop a leading http(s):// case-insensitively",
 	);
 	assert.match(repositoryPickerSource, /\{stripUrlScheme\(url\)\}/u);
@@ -791,7 +802,7 @@ test("experimental v2 renders filled context resources as conditional metadata s
 	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
 	assert.match(
 		metadataRailSource,
-		/import \{ CONNECTED_REPOSITORY_COUNT \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/components\/development-repository-picker"/u,
+		/import \{ CONNECTED_REPOSITORY_COUNT \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/development-repositories"/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -854,13 +865,18 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailSource,
 		/<ToggleGroup[^>]*className="[^"]*w-full|<ToggleGroupItem[^>]*className="[^"]*flex-1/u,
 	);
+	// Both panels stay mounted (hidden/inert) so Activity local state survives toggles.
 	assert.match(
 		metadataRailSource,
-		/panelView === "details" \? \([\s\S]*<ArtifactPane/u,
+		/hidden=\{panelView !== "details"\}[\s\S]*inert=\{panelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
 	);
 	assert.match(
 		metadataRailSource,
-		/\) : \(\s*<div className="px-3">\{activity\}<\/div>\s*\)/u,
+		/activity != null \? \(\s*<div\s+className="px-3"\s+hidden=\{panelView !== "activity"\}[\s\S]*inert=\{panelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+	);
+	assert.doesNotMatch(
+		metadataRailSource,
+		/panelView === "details" \?/u,
 	);
 	assert.match(
 		compositionSource,

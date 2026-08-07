@@ -20,7 +20,7 @@ import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { DevelopmentSectionContent } from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
 import { DetailsTab } from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
-import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/components/development-repository-picker";
+import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
 import {
 	AutomationTab,
 	type WorkItemAutomationRule,
@@ -264,7 +264,11 @@ export function MetadataRail({
 					</ToggleGroupItem>
 				</ToggleGroup>
 			</div>
-			{panelView === "details" ? (
+			{/* Keep both panels mounted so Activity local reactions/replies/sort survive toggles. */}
+			<div
+				hidden={panelView !== "details"}
+				inert={panelView !== "details" ? true : undefined}
+			>
 				<ArtifactPane
 					aria-label="Work item details"
 					borderless={borderless}
@@ -294,9 +298,16 @@ export function MetadataRail({
 						},
 					]}
 				/>
-			) : (
-				<div className="px-3">{activity}</div>
-			)}
+			</div>
+			{activity != null ? (
+				<div
+					className="px-3"
+					hidden={panelView !== "activity"}
+					inert={panelView !== "activity" ? true : undefined}
+				>
+					{activity}
+				</div>
+			) : null}
 		</div>
 	);
 }
