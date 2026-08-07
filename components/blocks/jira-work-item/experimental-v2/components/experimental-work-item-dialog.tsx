@@ -9,6 +9,12 @@ import { ModalHeader } from "@/components/projects/jira/components/work-item-mod
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-breadcrumb-actions";
 import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 
+// Keep the embedded chat overlay the same width as the metadata rail so rail
+// content cannot peek through beside the session panel.
+const SIDE_PANEL_STYLE = {
+	"--work-item-side-panel-width": METADATA_PANEL_WIDTH,
+} as CSSProperties;
+
 interface ExperimentalWorkItemDialogProps {
 	inlineSurface: "card" | "fill";
 	open: boolean;
@@ -48,15 +54,10 @@ export function ExperimentalWorkItemDialog({
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
-	// Keep the embedded chat overlay the same width as the metadata rail so rail
-	// content cannot peek through beside the session panel.
-	const sidePanelStyle = {
-		"--work-item-side-panel-width": METADATA_PANEL_WIDTH,
-	} as CSSProperties;
 	const content = (
 		<div
 			className="@container/workitemdialog relative grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden"
-			style={sidePanelStyle}
+			style={SIDE_PANEL_STYLE}
 		>
 			<div
 				className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]"

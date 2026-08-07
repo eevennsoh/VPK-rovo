@@ -144,6 +144,73 @@ test("selects unique pull requests newest-first for the metadata rail", async ()
 	assert.equal(adapter.selectPullRequestEntries(events.slice(0, 1)).length, 1);
 });
 
+test("keeps same-numbered pull requests from distinct repositories", async () => {
+	const adapter = await loadAdapter();
+	const actor = { id: "github", name: "GitHub", kind: "agent" };
+	const events = [
+		{
+			id: "storefront-1847",
+			kind: "event",
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1847,
+				title: "Storefront checkout",
+				status: "Open",
+				additions: 40,
+				deletions: 4,
+				repository: "acme/storefront",
+				url: "https://github.com/acme/storefront/pull/1847",
+			},
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+		},
+		{
+			id: "payments-1847",
+			kind: "event",
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1847,
+				title: "Payments retry",
+				status: "Open",
+				additions: 18,
+				deletions: 2,
+				repository: "acme/payments",
+				url: "https://github.com/acme/payments/pull/1847",
+			},
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
+		},
+		{
+			id: "storefront-1847-merged",
+			kind: "event",
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1847,
+				title: "Storefront checkout",
+				status: "Merged",
+				additions: 40,
+				deletions: 4,
+				repository: "acme/storefront",
+				url: "https://github.com/acme/storefront/pull/1847",
+			},
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 7),
+		},
+	];
+
+	assert.deepEqual(
+		adapter.selectPullRequestEntries(events).map((entry) => ({
+			id: entry.id,
+			repository: entry.pullRequest.repository,
+			status: entry.pullRequest.status,
+		})),
+		[
+			{ id: "storefront-1847-merged", repository: "acme/storefront", status: "Merged" },
+			{ id: "payments-1847", repository: "acme/payments", status: "Open" },
+		],
+	);
+});
+
 test("maps authored eyes reactions and agent handoff replies into Jira comments", async () => {
 	const adapter = await loadAdapter();
 	const [humanEntry, agentEntry] = adapter.mapActivityEventsToJiraEntries([

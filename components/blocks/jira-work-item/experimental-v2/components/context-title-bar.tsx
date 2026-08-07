@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
 
 import LinkIcon from "@atlaskit/icon/core/link";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
@@ -41,26 +41,18 @@ export function WorkItemKeyCopy() {
 		setTooltipOpen(true);
 	};
 
-	const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
-		if (event.key !== "Enter" && event.key !== " ") return;
-		event.preventDefault();
-		void handleCopyWorkItemKey();
-	};
-
 	return (
 		<Tooltip onOpenChange={setTooltipOpen} open={copied || tooltipOpen}>
 			{/* Base UI TooltipTrigger defaults to 600ms; 0 keeps the copy affordance snappy. */}
 			<TooltipTrigger
 				delay={0}
 				render={
-					<span
+					<button
+						type="button"
 						aria-label={copied ? "Work item key copied" : "Copy work item key"}
-						className="group/work-item-key inline-flex min-w-0 cursor-pointer items-center font-mono text-base leading-5 text-text-subtle hover:text-text focus-visible:text-text focus-visible:outline-none"
+						className="group/work-item-key inline-flex min-w-0 cursor-pointer items-center border-0 bg-transparent p-0 font-mono text-base leading-5 text-text-subtle hover:text-text focus-visible:text-text focus-visible:outline-none"
 						data-jira-work-item-key
-						role="button"
-						tabIndex={0}
 						onClick={() => void handleCopyWorkItemKey()}
-						onKeyDown={handleKeyDown}
 					/>
 				}
 			>

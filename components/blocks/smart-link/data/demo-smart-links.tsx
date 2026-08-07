@@ -186,23 +186,36 @@ export const SMART_LINK_DEMO_ITEMS = [
 	{
 		id: "slack-release-plan",
 		href: "#slack-release-plan",
-		title: "Project Slingshot Release Plan",
+		title: "Message from John Duncan in #yum-council",
 		variant: "generic",
 		provider: { name: "Slack", logo: { kind: "third-party", name: "slack" } },
 		icon: { kind: "third-party", name: "slack" },
+		avatars: [
+			{ name: "John Duncan", src: "/avatar-human/omar-salah.png" },
+			{ name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
+			{ name: "Veronica Rodriguez", src: "/avatar-human/veronica-rodriguez.png" },
+			{ name: "Anthony Chen", src: "/avatar-human/anthony-chen.png" },
+		],
+		date: "Sent on Jul 21, 2026",
 		metadata: [
-			{ label: "Sent on Feb 21, 2023" },
-			{ label: "", metric: 4, icon: <ThumbsUpIcon label="" size="small" /> },
-			{ label: "", metric: 16, icon: <CommentIcon label="" size="small" /> },
+			{ label: "", metric: 1, icon: <ThumbsUpIcon label="" size="small" /> },
+			{ label: "", metric: 13, icon: <CommentIcon label="" size="small" /> },
 		],
 		description:
-			"Project Slingshot is an AI-powered health monitoring app that helps pet owners keep track of their friend's health.",
-		actions: [
-			{
-				id: "open-preview",
-				label: "Open preview",
-				icon: <LinkIcon label="" size="medium" />,
-			},
+			"Maybe a spicey one, I don't like the tab component. Feels like we're using it to add the kitchen sink in everywhere. And the weird gray version on the new work item looks like its from Windows 95.",
+	},
+	{
+		id: "github-vpk-rovo",
+		href: "https://github.com/eevensoh/vpk-rovo",
+		title: "eevensoh/vpk-rovo",
+		variant: "generic",
+		provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
+		icon: { kind: "third-party", name: "github" },
+		author: { name: "eevensoh" },
+		date: "Updated 3 hours ago",
+		metadata: [
+			{ label: "", metric: 1, icon: <PeopleGroupIcon label="" size="small" /> },
+			{ label: "", metric: 1, icon: <ClockIcon label="" size="small" /> },
 		],
 	},
 	toPullRequestSmartLink({
@@ -213,9 +226,9 @@ export const SMART_LINK_DEMO_ITEMS = [
 		additions: 86,
 		deletions: 21,
 		repository: "eevensoh/vpk-rovo",
-		author: { name: "Venn", src: "/avatar-user/venn/venn.png" },
+		author: { name: "eevensoh", src: "/avatar-user/venn/venn.png" },
 		description:
-			"Guest checkout for the storefront: shoppers can continue without an account while the server owns pricing, inventory, and payment validation.",
+			"## Summary - Add experimental-v2 pull requests panel with phase sorting, plus activity filtering and guest checkout for the storefront.",
 	}),
 ] satisfies SmartLinkItem[];
 

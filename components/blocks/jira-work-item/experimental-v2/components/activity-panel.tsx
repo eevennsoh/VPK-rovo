@@ -56,8 +56,9 @@ export function ActivityRailChromeProvider({
 	setChrome: (chrome: ActivityRailChrome | null) => void;
 	children: ReactNode;
 }>) {
+	const value = useMemo(() => ({ setChrome }), [setChrome]);
 	return (
-		<ActivityRailChromeContext value={{ setChrome }}>
+		<ActivityRailChromeContext value={value}>
 			{children}
 		</ActivityRailChromeContext>
 	);

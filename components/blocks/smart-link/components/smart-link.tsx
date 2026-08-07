@@ -16,6 +16,7 @@ import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -45,6 +46,13 @@ export type SmartLinkVariant =
 	| "file"
 	| "generic"
 	| "pull-request";
+
+/**
+ * Presentation mode for SmartLink:
+ * - `inline` — compact chip with hover flyout (default)
+ * - `card` — bordered block card that every item can expand into
+ */
+export type SmartLinkAppearance = "inline" | "card";
 
 /** Inline chip size: "small" renders a 12px label, "large" a 16px label. */
 export type SmartLinkSize = "small" | "large";
@@ -131,6 +139,11 @@ export type SmartLinkPriority = "highest" | "high" | "medium" | "low" | "lowest"
 
 export interface SmartLinkProps {
 	item: SmartLinkItem;
+	/**
+	 * How the smart link is presented. `inline` is the chip + hover flyout;
+	 * `card` renders the bordered block card for the same item data.
+	 */
+	appearance?: SmartLinkAppearance;
 	side?: React.ComponentProps<typeof HoverCardContent>["side"];
 	align?: React.ComponentProps<typeof HoverCardContent>["align"];
 	alignOffset?: React.ComponentProps<typeof HoverCardContent>["alignOffset"];
@@ -153,6 +166,11 @@ export interface SmartLinkProps {
 export interface SmartLinkCardProps {
 	item: SmartLinkItem;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
+	/**
+	 * `block` — bordered embedded card (default).
+	 * `flyout` — elevated hover preview with the same content layout.
+	 */
+	appearance?: "block" | "flyout";
 	className?: string;
 }
 
@@ -620,9 +638,13 @@ function SmartLinkCodeStats({
 	);
 }
 
+function isEngagementMetric(metadata: SmartLinkMetadata) {
+	return metadata.metric != null && !metadata.label;
+}
+
 function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
-	const hasMetadata = Boolean(item.metadata?.length);
-	const hasGoalDetails = item.status || item.dueDate;
+	const metadataItems = item.metadata?.filter((metadata) => !isEngagementMetric(metadata));
+	const hasMetadata = Boolean(metadataItems?.length);
 	const hasIssueDetails = item.assignee || item.priority;
 	const hasAuthorDetails = item.author || item.date;
 	const hasCodeStats = Boolean(item.codeStats);
@@ -630,10 +652,10 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 	if (
 		!item.avatars?.length &&
 		!hasMetadata &&
-		!hasGoalDetails &&
 		!hasIssueDetails &&
 		!hasAuthorDetails &&
-		!hasCodeStats
+		!hasCodeStats &&
+		!item.dueDate
 	) {
 		return null;
 	}
@@ -645,18 +667,19 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 			{item.author ? (
 				<span className="inline-flex min-w-0 items-center gap-2">
 					<SmartLinkAssigneeAvatar assignee={item.author} />
-					<span className="truncate">{item.author.name}</span>
+					<span className="truncate">Created by {item.author.name}</span>
 				</span>
 			) : null}
 			{item.author && item.date ? <span aria-hidden>·</span> : null}
 			{item.date ? <span className="truncate">{item.date}</span> : null}
-			{item.metadata?.map((metadata, index) => (
+			{metadataItems?.map((metadata, index) => (
 				<span className="inline-flex items-center gap-2" key={`${metadata.label}-${index}`}>
-					{index > 0 ? <span aria-hidden>·</span> : null}
+					{(index > 0 || item.avatars?.length || item.author || item.assignee || item.date) ? (
+						<span aria-hidden>·</span>
+					) : null}
 					<MetadataPill metadata={metadata} />
 				</span>
 			))}
-			{item.status ? <SmartLinkStatusDropdown status={item.status} /> : null}
 			{item.codeStats ? <SmartLinkCodeStats codeStats={item.codeStats} /> : null}
 			{item.priority ? <SmartLinkPriorityIndicator priority={item.priority} /> : null}
 			{item.dueDate ? (
@@ -664,6 +687,21 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 					{item.dueDate}
 				</span>
 			) : null}
+		</div>
+	);
+}
+
+function SmartLinkEngagementRow({ item }: Readonly<{ item: SmartLinkItem }>) {
+	const engagement = item.metadata?.filter(isEngagementMetric);
+	if (!engagement?.length) {
+		return null;
+	}
+
+	return (
+		<div className="flex flex-wrap items-center gap-3 px-4">
+			{engagement.map((metadata, index) => (
+				<MetadataPill key={`engagement-${index}`} metadata={metadata} />
+			))}
 		</div>
 	);
 }
@@ -728,11 +766,64 @@ function SmartLinkActionRow({
 	);
 }
 
-function SmartLinkFooter({ provider }: Readonly<{ provider: SmartLinkProvider }>) {
+function SmartLinkFooterActions({
+	actions,
+	item,
+	onActionSelect,
+}: Readonly<{
+	actions: ReadonlyArray<SmartLinkAction>;
+	item: SmartLinkItem;
+	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
+}>) {
 	return (
-		<div className="flex items-center gap-1 px-5 pt-2 pb-4 text-xs leading-4 text-text-subtlest">
-			{provider.logo ? renderVisual(provider.logo, "footer") : null}
-			<span className="truncate">{provider.name}</span>
+		<div className="flex flex-wrap items-center justify-end gap-2">
+			{actions.map((action) => (
+				<Button
+					key={action.id}
+					onClick={() => {
+						action.onSelect?.(item, action);
+						onActionSelect?.(action, item);
+					}}
+					size="compact"
+					type="button"
+					variant="outline"
+				>
+					{action.label}
+				</Button>
+			))}
+		</div>
+	);
+}
+
+function SmartLinkFooter({
+	provider,
+	actions,
+	item,
+	onActionSelect,
+	showActionButtons,
+}: Readonly<{
+	provider: SmartLinkProvider;
+	actions?: ReadonlyArray<SmartLinkAction>;
+	item: SmartLinkItem;
+	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
+	showActionButtons: boolean;
+}>) {
+	const hasActions = showActionButtons && Boolean(actions?.length);
+
+	return (
+		<div
+			className={cn(
+				"flex items-center gap-3 border-t border-border px-4 py-3 text-xs leading-4 text-text-subtlest",
+				hasActions ? "justify-between" : null,
+			)}
+		>
+			<div className="flex min-w-0 items-center gap-1">
+				{provider.logo ? renderVisual(provider.logo, "footer") : null}
+				<span className="truncate">{provider.name}</span>
+			</div>
+			{hasActions && actions ? (
+				<SmartLinkFooterActions actions={actions} item={item} onActionSelect={onActionSelect} />
+			) : null}
 		</div>
 	);
 }
@@ -740,37 +831,53 @@ function SmartLinkFooter({ provider }: Readonly<{ provider: SmartLinkProvider }>
 export function SmartLinkCard({
 	item,
 	onActionSelect,
+	appearance = "block",
 	className,
 }: Readonly<SmartLinkCardProps>) {
 	const titleId = useId();
+	const isFlyout = appearance === "flyout";
+	const showFooterButtons = appearance === "block";
+	const showFlyoutActions = isFlyout && Boolean(item.actions?.length);
 
 	return (
 		<div
 			aria-labelledby={titleId}
-			className={cn("w-[400px] overflow-hidden rounded-lg bg-surface-overlay text-text shadow-2xl", className)}
+			className={cn(
+				"w-full max-w-[32rem] overflow-hidden rounded-lg border border-border bg-surface text-text",
+				isFlyout && "bg-surface-overlay shadow-2xl",
+				className,
+			)}
 			id={`smart-link-card-${item.id}`}
 			role="group"
 		>
 			{item.previewImage ? <SmartLinkPreviewMedia image={item.previewImage} /> : null}
 			<div className="flex flex-col gap-2 px-4 pt-4 pb-2">
-				<div className="flex min-w-0 items-center gap-2">
-					<span className="inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
-					<h3 id={titleId} className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-5 text-link">
+				<div className="flex min-w-0 items-start gap-2">
+					<span className="mt-0.5 inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
+					<a
+						className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-5 text-link no-underline outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+						href={item.href}
+						id={titleId}
+					>
 						{item.title}
-					</h3>
+					</a>
+					{item.status ? (
+						<span className="shrink-0 pt-0.5">
+							<SmartLinkStatusDropdown status={item.status} />
+						</span>
+					) : null}
 				</div>
 				<SmartLinkMetadataRow item={item} />
 			</div>
 			{item.description ? (
 				<div className="px-4 py-1">
-					<p className="line-clamp-3 text-sm leading-5 text-text">
-						{item.description}
-					</p>
+					<p className="line-clamp-3 text-sm leading-5 text-text">{item.description}</p>
 				</div>
 			) : null}
-			{item.actions?.length ? (
+			<SmartLinkEngagementRow item={item} />
+			{showFlyoutActions ? (
 				<div className="flex w-full flex-col py-1">
-					{item.actions.map((action) => (
+					{item.actions?.map((action) => (
 						<SmartLinkActionRow
 							action={action}
 							item={item}
@@ -780,13 +887,20 @@ export function SmartLinkCard({
 					))}
 				</div>
 			) : null}
-			<SmartLinkFooter provider={item.provider} />
+			<SmartLinkFooter
+				actions={item.actions}
+				item={item}
+				onActionSelect={onActionSelect}
+				provider={item.provider}
+				showActionButtons={showFooterButtons}
+			/>
 		</div>
 	);
 }
 
 export function SmartLink({
 	item,
+	appearance = "inline",
 	side = "bottom",
 	align = "start",
 	alignOffset,
@@ -805,6 +919,17 @@ export function SmartLink({
 }: Readonly<SmartLinkProps>) {
 	const [open, setOpen] = useState(false);
 	const isRemovableOverlay = Boolean(onRemove) && removeVariant === "overlay";
+
+	if (appearance === "card") {
+		return (
+			<SmartLinkCard
+				appearance="block"
+				className={className}
+				item={item}
+				onActionSelect={onActionSelect}
+			/>
+		);
+	}
 
 	const handleOpenChange = (nextOpen: boolean) => {
 		setOpen(nextOpen);
@@ -839,6 +964,7 @@ export function SmartLink({
 				sideOffset={8}
 			>
 				<SmartLinkCard
+					appearance="flyout"
 					className={contentClassName}
 					item={item}
 					onActionSelect={onActionSelect}

@@ -12,6 +12,7 @@ export {
 } from "@/components/blocks/smart-link/lib/pull-request-smart-link";
 export type {
 	SmartLinkAction,
+	SmartLinkAppearance,
 	SmartLinkAvatar,
 	SmartLinkItem,
 	SmartLinkMetadata,

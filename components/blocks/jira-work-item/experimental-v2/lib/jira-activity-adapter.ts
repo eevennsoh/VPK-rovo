@@ -419,22 +419,34 @@ export function mapActivityEventsToJiraEntries(
 }
 
 /**
+ * Stable identity for collapsing Open → Merged updates of the same PR while
+ * keeping same-numbered PRs from different repositories distinct.
+ */
+function pullRequestIdentity(
+	pullRequest: NonNullable<StaticEventActivityEvent["pullRequest"]>,
+): string {
+	if (pullRequest.url) return pullRequest.url;
+	if (pullRequest.repository) return `${pullRequest.repository}#${pullRequest.number}`;
+	return `#${pullRequest.number}`;
+}
+
+/**
  * Unique pull-request events for the metadata rail (newest first).
- * Later updates for the same PR number win so Open → Merged collapses to one row.
+ * Later updates for the same PR identity win so Open → Merged collapses to one row.
  */
 export function selectPullRequestEntries(
 	events: readonly ActivityEvent[],
 	referenceTimeMs?: number,
 ): JiraActivityEventEntry[] {
-	const seenNumbers = new Set<number>();
+	const seenIdentities = new Set<string>();
 	const entries: JiraActivityEventEntry[] = [];
 
 	for (let index = events.length - 1; index >= 0; index -= 1) {
 		const event = events[index];
 		if (event?.kind !== "event" || !event.pullRequest) continue;
-		const { number } = event.pullRequest;
-		if (seenNumbers.has(number)) continue;
-		seenNumbers.add(number);
+		const identity = pullRequestIdentity(event.pullRequest);
+		if (seenIdentities.has(identity)) continue;
+		seenIdentities.add(identity);
 		entries.push(mapStaticEvent(event, referenceTimeMs));
 	}
 

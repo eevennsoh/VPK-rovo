@@ -1,6 +1,6 @@
 "use client";
 
-import { SmartLink, SmartLinkCard } from "@/components/blocks/smart-link/components/smart-link";
+import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
 import { SMART_LINK_DEMO_ITEMS } from "@/components/blocks/smart-link/data/demo-smart-links";
 
 export interface SmartLinkPageProps {
@@ -31,16 +31,19 @@ export default function SmartLinkPage({
 						Watch <SmartLink item={items[5]} /> and compare it with supporting files like <SmartLink item={items[6]} /> or <SmartLink item={items[7]} />.
 					</p>
 				</div>
-				<div className="max-h-[600px] overflow-y-auto rounded-lg border border-border p-4">
-					<div className="flex flex-wrap items-start gap-6">
-						{items.map((item) => (
-							<div className="flex flex-col gap-2" key={item.id}>
-								<span className="text-xs font-medium leading-4 text-text-subtlest">
-									{toTitleCase(item.provider.name)}
-								</span>
-								<SmartLinkCard item={item} />
-							</div>
-						))}
+				<div className="space-y-3">
+					<h2 className="text-xs font-medium leading-4 text-text-subtlest">Card appearance</h2>
+					<div className="max-h-[640px] overflow-y-auto rounded-lg border border-border p-4">
+						<div className="flex flex-wrap items-start gap-6">
+							{items.map((item) => (
+								<div className="flex w-full max-w-[32rem] flex-col gap-2" key={item.id}>
+									<span className="text-xs font-medium leading-4 text-text-subtlest">
+										{toTitleCase(item.provider.name)}
+									</span>
+									<SmartLink appearance="card" item={item} />
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -51,6 +54,7 @@ export default function SmartLinkPage({
 export { SmartLink, SmartLinkCard } from "@/components/blocks/smart-link/components/smart-link";
 export type {
 	SmartLinkAction,
+	SmartLinkAppearance,
 	SmartLinkAvatar,
 	SmartLinkItem,
 	SmartLinkMetadata,
