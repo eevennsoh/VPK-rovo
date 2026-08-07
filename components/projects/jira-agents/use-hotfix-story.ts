@@ -25,8 +25,8 @@ const ORCHESTRATION_SEQUENCE = {
 	comment: { next: "reaction-1", delayMs: 1_200 },
 	"reaction-1": { next: "reaction-2", delayMs: 1_000 },
 	"reaction-2": { next: "lead", delayMs: 1_500 },
-	lead: { next: "claude", delayMs: 1_500 },
-	claude: { next: "complete", delayMs: 1_200 },
+	lead: { next: "consult", delayMs: 1_800 },
+	consult: { next: "complete", delayMs: 1_500 },
 } as const satisfies Record<
 	Exclude<JiraAgentsOrchestrationStep, "idle" | "complete">,
 	{ next: Exclude<JiraAgentsOrchestrationStep, "idle">; delayMs: number }
@@ -72,7 +72,7 @@ export function useJiraAgentsStory(active = true): JiraAgentsStoryController {
 	useEffect(() => {
 		if (!active || orchestrationStep === "idle") return undefined;
 		if (orchestrationStep === "complete") {
-			selectChapter("plan");
+			selectChapter("working");
 			return undefined;
 		}
 

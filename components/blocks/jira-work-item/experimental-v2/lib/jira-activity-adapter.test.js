@@ -81,6 +81,53 @@ test("maps activity timestamps relative to the supplied story clock", async () =
 	assert.equal(entry.timestamp, "4 minutes ago");
 });
 
+test("selects the newest pull request for the work-item header", async () => {
+	const adapter = await loadAdapter();
+	const actor = { id: "github", name: "GitHub", kind: "agent" };
+	const events = [
+		{
+			id: "pr-opened",
+			kind: "event",
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1847,
+				title: "Add guest checkout to the storefront",
+				status: "Open",
+				additions: 86,
+				deletions: 21,
+			},
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 5),
+		},
+		{
+			id: "status-review",
+			kind: "event",
+			actor: { id: "jordan", name: "Jordan Lee", kind: "person" },
+			segments: [{ type: "text", text: "moved to review" }],
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 6),
+		},
+		{
+			id: "pr-merged",
+			kind: "event",
+			actor,
+			segments: [],
+			pullRequest: {
+				number: 1847,
+				title: "Add guest checkout to the storefront",
+				status: "Merged",
+				additions: 86,
+				deletions: 21,
+			},
+			createdAtMs: Date.UTC(2026, 4, 12, 9, 7),
+		},
+	];
+
+	assert.equal(adapter.selectLatestPullRequestEntry([]), null);
+	assert.equal(adapter.selectLatestPullRequestEntry(events.slice(0, 2)).pullRequest.status, "Open");
+	assert.equal(adapter.selectLatestPullRequestEntry(events).id, "pr-merged");
+	assert.equal(adapter.selectLatestPullRequestEntry(events).pullRequest.status, "Merged");
+});
+
 test("maps authored eyes reactions and agent handoff replies into Jira comments", async () => {
 	const adapter = await loadAdapter();
 	const [humanEntry, agentEntry] = adapter.mapActivityEventsToJiraEntries([
@@ -306,6 +353,43 @@ test("maps agent activity to rich Jira comments with lifecycle tags", async () =
 			elapsedSeconds: 180 + index,
 		});
 	}
+});
+
+test("maps an agent progress checklist and image proof into its Jira comment", async () => {
+	const adapter = await loadAdapter();
+	const progressChecklist = [
+		{ id: "consult", label: "Consult Code Planner", completed: true },
+		{ id: "implement", label: "Implement guest checkout", completed: true },
+		{ id: "verify-design", label: "Verify the final design", completed: false },
+	];
+	const imageAttachment = {
+		src: "/jira-agents/guest-checkout-final.png",
+		alt: "Final guest checkout design",
+		filename: "guest-checkout-final.png",
+		href: "/jira-agents/guest-checkout-final.png",
+	};
+	const [entry] = adapter.mapActivityEventsToJiraEntries([
+		{
+			id: "activity-claude-progress",
+			kind: "agent",
+			sessionId: "session-claude-progress",
+			agentId: "claude-code",
+			agentName: "Claude Code",
+			agentBrandName: "claude",
+			status: "running",
+			title: "Implement guest checkout",
+			branch: "claude/shop-4821-guest-checkout",
+			elapsedSeconds: 210,
+			commandPreview: "Take the lead on guest checkout",
+			responsePreview: "Implementing the approved guest checkout contract.",
+			progressChecklist,
+			imageAttachment,
+			createdAtMs: Date.UTC(2026, 4, 12, 13, 20),
+		},
+	]);
+
+	assert.deepEqual(entry.progressChecklist, progressChecklist);
+	assert.deepEqual(entry.imageAttachment, imageAttachment);
 });
 
 test("maps skill activity to the canonical VPK Rovo logo", async () => {

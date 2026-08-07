@@ -92,16 +92,16 @@ const STORY_AGENT_BY_ID = new Map(STORY_AGENTS.map((agent) => [agent.id, agent])
 
 export const JIRA_AGENTS_STORY_COMPOSER_AGENTS: readonly AgentSelectorAgent[] = [
 	{
-		id: CODE_PLANNER.id,
-		name: CODE_PLANNER.name,
-		byline: "Designs the checkout architecture, API contract, and delivery plan",
-		avatarSrc: CODE_PLANNER.avatarSrc,
-	},
-	{
 		id: CLAUDE_CODE.id,
 		name: CLAUDE_CODE.name,
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
+	},
+	{
+		id: CODE_PLANNER.id,
+		name: CODE_PLANNER.name,
+		byline: "Designs the checkout architecture, API contract, and delivery plan",
+		avatarSrc: CODE_PLANNER.avatarSrc,
 	},
 ];
 
@@ -154,13 +154,6 @@ const HUMAN_ACTOR: StaticTimelineEvent["actor"] = {
 	name: "Jordan Lee",
 	kind: "person",
 	avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-};
-
-const CODE_PLANNER_ACTOR: StaticTimelineEvent["actor"] = {
-	id: "static-code-planner",
-	name: CODE_PLANNER.name,
-	kind: "agent",
-	avatarSrc: CODE_PLANNER.avatarSrc,
 };
 
 const CLAUDE_CODE_ACTOR: StaticTimelineEvent["actor"] = {
@@ -257,146 +250,52 @@ const PLAN_EVENTS: readonly StaticTimelineEvent[] = [
 	{
 		id: "story-lead-delegated",
 		kind: "event",
-		actor: CODE_PLANNER_ACTOR,
+		actor: CLAUDE_CODE_ACTOR,
 		icon: "delegated",
 		showActor: false,
 		showTimestamp: false,
 		segments: [
-			{ type: "agent-mention", text: CODE_PLANNER.name, avatarSrc: CODE_PLANNER.avatarSrc },
 			{ type: "agent-mention", text: CLAUDE_CODE.name, brandName: CLAUDE_CODE.brandName },
+			{ type: "agent-mention", text: CODE_PLANNER.name, avatarSrc: CODE_PLANNER.avatarSrc },
 			{ type: "text", text: " Started working" },
 		],
 		createdAtMs: STORY_EPOCH_MS - 2_880_000,
 	},
 ];
 
-const WORKING_EVENTS: readonly StaticTimelineEvent[] = [
-	...PLAN_EVENTS,
-	{
-		id: "story-telemetry",
-		kind: "changed-files",
-		actor: CODE_PLANNER_ACTOR,
-		summary: "Planned the guest checkout architecture",
-		description: "Defined the OpenAPI contract, server-owned validation rules, idempotency behavior, and delivery sequence for the checkout service and storefront.",
-		tag: { text: "Technical plan", color: "blue" },
-		sessionItem: createStoryArtifactSession({
-			id: "story-checkout-plan",
-			title: "Planned the guest checkout architecture",
-			state: "running",
-			agent: CODE_PLANNER,
-			branch: JIRA_AGENTS_STORY_ISSUE_KEY,
-			elapsedSeconds: 312,
-		}),
-		outputs: [
-			{
-				id: "checkout-technical-plan",
-				title: "Guest checkout technical plan",
-				source: "Agent output",
-				owner: CODE_PLANNER.name,
-				iconName: "ai-chat",
-			},
-			{
-				id: "checkout-openapi-contract",
-				title: "Guest checkout OpenAPI contract",
-				source: "Agent snapshot",
-				owner: CODE_PLANNER.name,
-				iconName: "ai-chat",
-			},
-			{
-				id: "checkout-validation-rules",
-				title: "Checkout validation rules",
-				source: "Confluence page",
-				owner: CODE_PLANNER.name,
-				iconName: "page",
-			},
-		],
-		createdAtMs: STORY_EPOCH_MS - 2_460_000,
-	},
-];
+const WORKING_EVENTS: readonly StaticTimelineEvent[] = PLAN_EVENTS;
 
 const HANDOFF_EVENT: StaticTimelineEvent = {
-	id: "story-root-cause-handoff",
+	id: "story-changed-files",
 	kind: "changed-files",
-	actor: CODE_PLANNER_ACTOR,
-	summary: "Shared the checkout contract with Claude Code",
-	description: "Posted the request schema, validation errors, order response, and idempotency behavior so the storefront can integrate without duplicating pricing or inventory logic.",
-	branch: "#SHOP-4821",
-	tag: { text: "Handoff", color: "purple" },
+	actor: CLAUDE_CODE_ACTOR,
+	summary: "Changed 12 files",
+	description: "Implemented the guest order service plus the storefront delivery, payment, validation, confirmation, and post-purchase account flows against Code Planner's contract.",
+	branch: "feature/shop-4821-guest-checkout",
+	tag: { text: "Implementation complete", color: "green" },
 	sessionItem: createStoryArtifactSession({
-		id: "story-planner-handoff",
-		title: "Shared the checkout contract with Claude Code",
+		id: "story-claude-checkout",
+		title: "Implemented guest checkout end to end",
 		state: "complete",
-		agent: CODE_PLANNER,
-		branch: JIRA_AGENTS_STORY_ISSUE_KEY,
-		elapsedSeconds: 642,
+		agent: CLAUDE_CODE,
+		branch: "feature/shop-4821-guest-checkout",
+		elapsedSeconds: 482,
 	}),
 	outputs: [
 		{
-			id: "guest-checkout-contract",
-			title: "Guest checkout API contract",
+			id: "guest-checkout-implementation",
+			title: "Guest checkout implementation",
 			source: "Agent output",
-			owner: CODE_PLANNER.name,
+			owner: CLAUDE_CODE.name,
 			iconName: "ai-chat",
 		},
 	],
-	createdAtMs: STORY_EPOCH_MS - 1_800_000,
+	createdAtMs: STORY_EPOCH_MS - 1_320_000,
 };
 
 const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 	...WORKING_EVENTS,
 	HANDOFF_EVENT,
-	{
-		id: "story-changed-files",
-		kind: "changed-files",
-		actor: CLAUDE_CODE_ACTOR,
-		summary: "Changed 12 files",
-		description: "Implemented the guest order service plus the storefront delivery, payment, validation, confirmation, and post-purchase account flows against the approved contract.",
-		branch: "feature/shop-4821-guest-checkout",
-		tag: { text: "Ready for review", color: "green" },
-		sessionItem: {
-			id: "story-claude-checkout",
-			title: "Implement guest checkout end to end",
-			state: "complete",
-			agent: {
-				id: CLAUDE_CODE.id,
-				name: CLAUDE_CODE.name,
-				brandName: CLAUDE_CODE.brandName,
-			},
-			branch: "feature/shop-4821-guest-checkout",
-			elapsedSeconds: 482,
-			prStatus: "created",
-		},
-		outputs: [
-			{
-				id: "guest-checkout-implementation",
-				title: "Guest checkout implementation",
-				source: "Agent output",
-				owner: CLAUDE_CODE.name,
-				iconName: "ai-chat",
-			},
-		],
-		createdAtMs: STORY_EPOCH_MS - 1_200_000,
-	},
-	{
-		id: "story-pr-opened",
-		kind: "event",
-		actor: GITHUB_ACTOR,
-		icon: "linked",
-		segments: [],
-		pullRequest: {
-			number: 1847,
-			title: "Add guest checkout to the storefront",
-			status: "Open",
-			additions: 86,
-			deletions: 21,
-		},
-		createdAtMs: STORY_EPOCH_MS - 1_080_000,
-	},
-	statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 960_000),
-];
-
-const DONE_EVENTS: readonly StaticTimelineEvent[] = [
-	...REVIEW_EVENTS,
 	{
 		id: "story-regression-matrix",
 		kind: "changed-files",
@@ -422,8 +321,28 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 				iconName: "page",
 			},
 		],
-		createdAtMs: STORY_EPOCH_MS - 600_000,
+		createdAtMs: STORY_EPOCH_MS - 1_200_000,
 	},
+	{
+		id: "story-pr-opened",
+		kind: "event",
+		actor: GITHUB_ACTOR,
+		icon: "linked",
+		segments: [],
+		pullRequest: {
+			number: 1847,
+			title: "Add guest checkout to the storefront",
+			status: "Open",
+			additions: 86,
+			deletions: 21,
+		},
+		createdAtMs: STORY_EPOCH_MS - 1_080_000,
+	},
+	statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 960_000),
+];
+
+const DONE_EVENTS: readonly StaticTimelineEvent[] = [
+	...REVIEW_EVENTS,
 	{
 		id: "story-pr-merged",
 		kind: "event",
@@ -439,32 +358,6 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 		},
 		createdAtMs: STORY_EPOCH_MS - 480_000,
 	},
-	{
-		id: "story-release-verified",
-		kind: "changed-files",
-		actor: CODE_PLANNER_ACTOR,
-		summary: "Started the feature-flag rollout",
-		description: "Guest checkout is enabled for 10% of storefront traffic; order creation, payment success, and checkout completion metrics are healthy.",
-		tag: { text: "10% rollout", color: "green" },
-		sessionItem: createStoryArtifactSession({
-			id: "story-checkout-rollout",
-			title: "Started the feature-flag rollout",
-			state: "complete",
-			agent: CODE_PLANNER,
-			branch: "#1847",
-			elapsedSeconds: 812,
-		}),
-		outputs: [
-			{
-				id: "rollout-note",
-				title: "Guest checkout rollout note",
-				source: "Feature flag report",
-				owner: CODE_PLANNER.name,
-				iconName: "globe",
-			},
-		],
-		createdAtMs: STORY_EPOCH_MS - 360_000,
-	},
 	statusEvent("story-moved-done", "In review", "Done", STORY_EPOCH_MS - 240_000),
 ];
 
@@ -474,7 +367,10 @@ function createSession(
 	order: number,
 	options: {
 		command: string;
+		commandAuthorName?: string;
+		imageAttachment?: AgentSession["imageAttachment"];
 		previewText: string;
+		progressChecklist?: AgentSession["progressChecklist"];
 		title: string;
 		waitingOn?: AgentSession["waitingOn"];
 		threadReplies?: AgentSession["threadReplies"];
@@ -512,7 +408,7 @@ function createSession(
 			{
 				id: `story-session-${agent.id}-prompt`,
 				role: "human",
-				authorName: "Venn",
+				authorName: options.commandAuthorName ?? "Venn",
 				content: options.command,
 				createdAtMs: STORY_EPOCH_MS - 2_700_000 + order * 60_000,
 			},
@@ -531,6 +427,8 @@ function createSession(
 		stepElapsedMs: 0,
 		resumedFromWait: false,
 		order,
+		...(options.progressChecklist ? { progressChecklist: options.progressChecklist } : {}),
+		...(options.imageAttachment ? { imageAttachment: options.imageAttachment } : {}),
 		...(options.waitingOn ? { waitingOn: options.waitingOn } : {}),
 		...(options.threadReplies ? { threadReplies: options.threadReplies } : {}),
 	};
@@ -539,53 +437,59 @@ function createSession(
 function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 	if (chapter === "brief") return [];
 
-	const plannerStatus: AgentSessionStatus = chapter === "plan" || chapter === "working"
-		? "running"
-		: "completed";
-	const claudeStatus: AgentSessionStatus = chapter === "plan" || chapter === "handoff" || chapter === "review"
-		? "running"
-		: chapter === "working"
-			? "waiting"
-			: "completed";
+	const plannerStatus: AgentSessionStatus = chapter === "plan" ? "running" : "completed";
+	const claudeStatus: AgentSessionStatus = chapter === "done" ? "completed" : "running";
+	const completedChecklistItems = {
+		plan: 0,
+		working: 1,
+		handoff: 3,
+		review: 4,
+		done: 5,
+	} as const satisfies Record<Exclude<JiraAgentsStoryChapter, "brief">, number>;
+	const checklistLabels = [
+		"Consult Code Planner on the secure API and validation contract",
+		"Implement guest checkout end to end",
+		"Verify the final design and attach a screenshot",
+		"Run the acceptance coverage",
+		"Open the pull request and summarize the outcome",
+	] as const;
+	const progressChecklist = checklistLabels.map((label, index) => ({
+		id: `story-claude-progress-${index + 1}`,
+		label,
+		completed: index < completedChecklistItems[chapter],
+	}));
 
-	const planner = createSession(CODE_PLANNER, plannerStatus, 0, {
-		title: "Plan the guest checkout architecture",
-		command: "Lead the technical plan, define the secure checkout API and validation contract, then hand implementation to Claude Code.",
-		previewText: plannerStatus === "completed"
-			? "Technical plan approved with the OpenAPI contract, server-owned validation, idempotency, and delivery sequence."
-			: "Designing the checkout contract, validation rules, idempotency behavior, and implementation sequence. I will publish the OpenAPI schema and the server-owned validation rules before handing implementation to Claude Code.",
-	});
-	const claude = createSession(CLAUDE_CODE, claudeStatus, 1, {
-		title: "Implement and verify guest checkout",
-		command: "Implement the checkout service and storefront flow from Code Planner's contract, then run the acceptance coverage before opening the pull request.",
-		previewText: claudeStatus === "waiting"
-			? "Waiting for Code Planner to publish the checkout API contract."
-			: claudeStatus === "completed"
-				? "Guest checkout and its 18-check acceptance matrix are complete on PR #1847."
-				: chapter === "review"
-					? "Running the guest checkout acceptance matrix against PR #1847 and resolving the final review feedback."
-					: "Implementing the guest order service and storefront checkout against the approved contract. Pricing, inventory, and payment are recalculated on the server before the order is created.",
-		waitingOn: claudeStatus === "waiting"
+	const claude = createSession(CLAUDE_CODE, claudeStatus, 0, {
+		title: "Lead guest checkout implementation",
+		command: "Take the lead on implementing guest checkout. Consult Code Planner on the secure API and validation contract first, then implement and verify the work.",
+		previewText: chapter === "plan"
+			? "I'm taking the lead on SHOP-4821. Code Planner, review this work item and define the secure API contract, server-owned validation rules, idempotency behavior, and recoverable error handling before I implement it."
+			: chapter === "working"
+				? "Code Planner's contract is ready. I'm implementing the guest order service and storefront flow with server-owned pricing, inventory, payment validation, and idempotent order creation."
+				: chapter === "handoff"
+					? "Guest checkout is implemented. I've verified the final desktop and mobile flow and attached the final guest checkout design screenshot."
+					: chapter === "review"
+						? "The implementation and final design verification are complete. All 18 acceptance checks pass, and I'm opening PR #1847 with the evidence attached."
+						: "Guest checkout is implemented and verified. Shoppers can continue as guests, recoverable failures preserve safe input, and the server owns pricing, inventory, payment validation, and idempotent order creation. PR #1847 is merged with all 18 acceptance checks passing; the final design screenshot is attached.",
+		progressChecklist,
+		imageAttachment: chapter === "handoff" || chapter === "review" || chapter === "done"
 			? {
-				kind: "agent",
-				agentId: CODE_PLANNER.id ?? "code-planner",
-				agentName: CODE_PLANNER.name,
-				agentAvatarSrc: CODE_PLANNER.avatarSrc,
+				src: "/illustration/jira-agents/guest-checkout-final.png",
+				alt: "Final guest checkout design",
+				filename: "guest-checkout-final.png",
 			}
 			: undefined,
-		threadReplies: chapter === "handoff" || chapter === "review" || chapter === "done"
-			? [{
-				id: "story-planner-to-claude",
-				agentId: CODE_PLANNER.id ?? "code-planner",
-				agentName: CODE_PLANNER.name,
-				agentAvatarSrc: CODE_PLANNER.avatarSrc,
-				content: "The guest checkout technical plan is approved. I attached the OpenAPI contract and validation rules, including idempotency, pricing, inventory, and payment errors. You can implement the full-stack flow and run the acceptance matrix.",
-				createdAtMs: STORY_EPOCH_MS - 1_740_000,
-			}]
-			: undefined,
+	});
+	const planner = createSession(CODE_PLANNER, plannerStatus, 1, {
+		title: "Consult on the guest checkout contract",
+		commandAuthorName: CLAUDE_CODE.name,
+		command: "Review SHOP-4821 and define the secure request and response contract, server-owned validation rules, idempotency behavior, and recoverable error handling I should implement.",
+		previewText: plannerStatus === "completed"
+			? "Consultation complete. Use a server-owned guest-order endpoint that recalculates pricing, discounts, tax, shipping, and inventory. Require an idempotency key and return field-safe errors for address, inventory, and payment failures. The OpenAPI contract and validation matrix are ready."
+			: "Reviewing the checkout requirements and preparing the API contract, validation matrix, and idempotency rules for Claude Code.",
 	});
 
-	return [planner, claude];
+	return [claude, planner];
 }
 
 function activeAgentIds(sessions: readonly AgentSession[]): string[] {
@@ -598,7 +502,10 @@ function createStoryComments(
 	chapter: JiraAgentsStoryChapter,
 	sessions: readonly AgentSession[],
 ): AgentSessionComment[] {
-	const actorIds = activeAgentIds(sessions).map(getAgentActivityActorId);
+	const showAcknowledgementReactions = chapter === "plan";
+	const actorIds = showAcknowledgementReactions
+		? activeAgentIds(sessions).map(getAgentActivityActorId)
+		: [];
 	return [
 		{
 			id: "story-channel-brief",
@@ -617,7 +524,7 @@ function createStoryComments(
 		...(chapter === "brief" ? [] : [{
 			id: "story-channel-orchestration",
 			authorName: "Venn",
-			content: "@Code Planner lead the technical plan and API contract, then hand implementation and acceptance verification to @Claude Code.",
+			content: "@Claude Code take the lead on implementing guest checkout. Consult @Code Planner on the secure API and validation contract first, then implement and verify the work.",
 			createdAtMs: STORY_EPOCH_MS - 2_940_000,
 			...(actorIds.length > 0
 				? { reactions: [{ emoji: "👀", actorIds }] }
@@ -908,15 +815,15 @@ export function getJiraAgentsStoryColumn(
 export const JIRA_AGENTS_STORY_BOARD_AGENTS: readonly JiraKanbanAgentData[] = [
 	...JIRA_DESIGN_KANBAN_AGENTS,
 	{
-		id: CODE_PLANNER.id ?? "code-planner",
-		name: CODE_PLANNER.name,
-		byline: "Checkout architecture and API planning agent",
-		avatarSrc: CODE_PLANNER.avatarSrc,
-	},
-	{
 		id: CLAUDE_CODE.id ?? "claude-code",
 		name: CLAUDE_CODE.name,
 		byline: "Coding agent by Anthropic",
 		brandName: "claude",
+	},
+	{
+		id: CODE_PLANNER.id ?? "code-planner",
+		name: CODE_PLANNER.name,
+		byline: "Checkout architecture and API planning agent",
+		avatarSrc: CODE_PLANNER.avatarSrc,
 	},
 ];

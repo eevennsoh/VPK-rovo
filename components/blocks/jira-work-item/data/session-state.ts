@@ -797,6 +797,8 @@ export function selectActivityEvents(state: Readonly<JiraWorkItemState>): Activi
 			createdAtMs: session.startedAtMs,
 			waitingOn: session.waitingOn,
 			threadReplies: session.threadReplies,
+			progressChecklist: session.progressChecklist,
+			imageAttachment: session.imageAttachment,
 		};
 	});
 	return [...state.staticEvents, ...humanEvents, ...agentEvents].sort((a, b) => a.createdAtMs - b.createdAtMs);

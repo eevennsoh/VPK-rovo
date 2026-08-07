@@ -17,6 +17,7 @@ import {
 	CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME,
 	CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS,
 	CONTEXT_INLINE_EDIT_MOTION_PROPS,
+	CONTEXT_TITLE_FONT_STYLE,
 	CONTEXT_TITLE_INPUT_CLASS_NAME,
 	CONTEXT_TITLE_READ_VIEW_CLASS_NAME,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/inline-edit-treatment";
@@ -35,10 +36,11 @@ export function ContextEditableTitle() {
 			placeholder="Add a title"
 			editButtonLabel="Edit work item title"
 			readViewClassName={CONTEXT_TITLE_READ_VIEW_CLASS_NAME}
+			readViewStyle={CONTEXT_TITLE_FONT_STYLE}
 			readViewMotionProps={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_MOTION_PROPS}
 			readViewBackdropClassName={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME}
 			readViewBackdropMotionProps={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS}
-			inputProps={{ className: CONTEXT_TITLE_INPUT_CLASS_NAME }}
+			inputProps={{ className: CONTEXT_TITLE_INPUT_CLASS_NAME, style: CONTEXT_TITLE_FONT_STYLE }}
 			onConfirm={(value) => actions.editContextText("title", value)}
 		/>
 	);

@@ -35,7 +35,9 @@ import type { JiraActivityActor } from "./jira-activity-types";
  */
 const COMPOSER_SURFACES = {
 	comment: {
-		chrome: "",
+		// Override FloatingComposer's default `p-3` (12px) to `p-2` (8px) for this
+		// work-item activity comment surface only; other FloatingComposer callers keep `p-3`.
+		chrome: "p-2",
 		// 32px controls at the shared `Button` default, with the default ADS glyph.
 		controlClassName: "",
 		iconSize: "medium",

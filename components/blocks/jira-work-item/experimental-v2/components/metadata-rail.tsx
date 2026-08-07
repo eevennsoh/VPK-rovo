@@ -252,11 +252,7 @@ export function MetadataRail({
 					title: "Automation",
 				},
 				{
-					content: (
-						// The edited title lives in context resources; `workItem.title` is the
-						// immutable initial prop and would keep copying stale commands.
-						<DevelopmentSectionContent summary={contextResources.title} workItemKey={workItem.code} />
-					),
+					content: <DevelopmentSectionContent />,
 					headerAction: { label: "Manage dev tools" },
 					id: "development",
 					title: "Development",

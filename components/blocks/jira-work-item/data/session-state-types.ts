@@ -106,6 +106,19 @@ export interface AgentSessionReaction {
 	actorIds: readonly string[];
 }
 
+export interface AgentSessionProgressItem {
+	id: string;
+	label: string;
+	completed: boolean;
+}
+
+export interface AgentSessionImageAttachment {
+	src: string;
+	alt: string;
+	filename: string;
+	href?: string;
+}
+
 export interface HumanActivityThreadReply {
 	id: string;
 	authorName: string;
@@ -140,6 +153,10 @@ export interface AgentSession {
 	waitingOn?: AgentSessionWaitingOn;
 	/** Authored agent-to-agent handoffs rendered as replies beneath the activity card. */
 	threadReplies?: readonly AgentSessionThreadReply[];
+	/** Scripted progress that an agent updates in place on its lead activity comment. */
+	progressChecklist?: readonly AgentSessionProgressItem[];
+	/** Optional visual proof attached to the agent's lead activity comment. */
+	imageAttachment?: AgentSessionImageAttachment;
 }
 
 export interface AgentSessionComment {
@@ -210,6 +227,8 @@ export interface AgentActivityEvent {
 	createdAtMs: number;
 	waitingOn?: AgentSessionWaitingOn;
 	threadReplies?: readonly AgentSessionThreadReply[];
+	progressChecklist?: readonly AgentSessionProgressItem[];
+	imageAttachment?: AgentSessionImageAttachment;
 }
 
 /** Who performed a seeded, static timeline event (person, agent, or connected app). */

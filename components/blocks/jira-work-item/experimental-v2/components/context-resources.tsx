@@ -7,6 +7,7 @@ import AttachmentIcon from "@atlaskit/icon/core/attachment";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChildWorkItemsIcon from "@atlaskit/icon/core/child-work-items";
 import CommitIcon from "@atlaskit/icon/core/commit";
+import CopyIcon from "@atlaskit/icon/core/copy";
 import FileIcon from "@atlaskit/icon/core/file";
 import LinkIcon from "@atlaskit/icon/core/link";
 
@@ -16,7 +17,10 @@ import {
 	type EditorToolbarViewMode,
 } from "@/components/blocks/editor-toolbar";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/attachments-popover";
-import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import {
+	useJiraWorkItemMeta,
+	useJiraWorkItemState,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import {
 	AnimatedContextTitleActions,
 	type CodingAgentId,
@@ -32,6 +36,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +71,8 @@ export function ContextResources({
 	primaryCodingAgentId,
 	onDescriptionViewModeChange,
 }: Readonly<ContextResourcesProps>) {
-	const { planner } = useJiraWorkItemState();
+	const { contextResources, planner } = useJiraWorkItemState();
+	const { workItem } = useJiraWorkItemMeta();
 	const hasPlanner = planner.status !== "inactive" && planner.status !== "applied";
 	const [activeResourceAction, setActiveResourceAction] = useState<ContextResourceActionId | null>(null);
 	const resources: readonly ContextResourceAction[] = [
@@ -153,7 +159,29 @@ export function ContextResources({
 						)}
 					</div>
 					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
-					<div className="pointer-events-none ml-auto shrink-0 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
+					<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 @[860px]/agentlayout:mr-[var(--metadata-panel-offset)] motion-reduce:transition-none">
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										aria-label="Copy work item as markdown"
+										size="icon-compact"
+										type="button"
+										variant="outline"
+										onClick={() => {
+											const description = contextResources.description.trim();
+											const markdown = `# ${workItem.code}: ${contextResources.title}${description ? `\n\n${description}` : ""}`;
+											void navigator.clipboard.writeText(markdown);
+										}}
+									/>
+								}
+							>
+								<CopyIcon label="" size="small" />
+							</TooltipTrigger>
+							<TooltipContent positionerClassName="z-[502]">
+								Copy work item as markdown
+							</TooltipContent>
+						</Tooltip>
 						<EditorToolbarModeTabs
 							mode={descriptionViewMode}
 							onModeChange={onDescriptionViewModeChange}

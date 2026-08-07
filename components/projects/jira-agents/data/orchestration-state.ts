@@ -9,7 +9,7 @@ export type JiraAgentsOrchestrationStep =
 	| "reaction-1"
 	| "reaction-2"
 	| "lead"
-	| "claude"
+	| "consult"
 	| "complete";
 
 /**
@@ -22,20 +22,22 @@ export function createJiraAgentsOrchestrationState(
 	step: JiraAgentsOrchestrationStep,
 ): JiraWorkItemState {
 	if (step === "idle") return createJiraAgentsStoryState("brief");
-	if (step === "complete") return createJiraAgentsStoryState("plan");
+	if (step === "complete") return createJiraAgentsStoryState("working");
 
 	const brief = createJiraAgentsStoryState("brief");
 	const plan = createJiraAgentsStoryState("plan");
-	const orchestrationComment = plan.comments.find(
+	const working = createJiraAgentsStoryState("working");
+	const stageState = step === "consult" ? working : plan;
+	const orchestrationComment = stageState.comments.find(
 		(comment) => comment.id === "story-channel-orchestration",
 	);
 	const reactionCount = step === "reaction-1"
 		? 1
-		: step === "reaction-2" || step === "lead" || step === "claude"
+		: step === "reaction-2" || step === "lead"
 			? 2
 			: 0;
 	const showComment = step !== "agents-working";
-	const showLeadActivity = step === "lead" || step === "claude";
+	const showLeadActivity = step === "lead" || step === "consult";
 	const stagedComment = orchestrationComment
 		? {
 			...orchestrationComment,
@@ -51,10 +53,10 @@ export function createJiraAgentsOrchestrationState(
 		: null;
 
 	return {
-		...plan,
+		...stageState,
 		comments: showComment && stagedComment
 			? [...brief.comments, stagedComment]
 			: brief.comments,
-		staticEvents: showLeadActivity ? plan.staticEvents : brief.staticEvents,
+		staticEvents: showLeadActivity ? stageState.staticEvents : brief.staticEvents,
 	};
 }

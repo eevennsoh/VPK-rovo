@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup } from "motion/react";
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 
 import { useRovoChat } from "@/app/contexts";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
@@ -17,7 +17,8 @@ import { JiraWorkItemProvider } from "@/components/blocks/jira-work-item/experim
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-layout";
-import { ContextPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/context-panel";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
+import { ContextHeader, ContextPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/context-panel";
 import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
 import { ActivityComposer } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer";
 import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail";
@@ -69,6 +70,7 @@ const NOOP = () => undefined;
  */
 export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWorkItemProps>) {
 	const composerLayoutGroupId = useId();
+	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const { chatSurface } = useRovoChat();
 	const agentChatOpen = chatSurface === "floating";
 	const { initialPreset, initialState } = props;
@@ -122,10 +124,18 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 							workItemTitle={workItem.title}
 						>
 							<ExperimentalWorkItemLayout
-								context={(
-									<ContextPanel
+								header={(
+									<ContextHeader
+										descriptionViewMode={descriptionViewMode}
 										outputs={props.outputs}
 										primaryCodingAgentId={props.primaryCodingAgentId}
+										onDescriptionViewModeChange={setDescriptionViewMode}
+									/>
+								)}
+								context={(
+									<ContextPanel
+										descriptionViewMode={descriptionViewMode}
+										onDescriptionViewModeChange={setDescriptionViewMode}
 									/>
 								)}
 								activity={<ActivityPanel activitySessionThread={props.activitySessionThread} />}
@@ -142,7 +152,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 										aria-hidden={agentChatOpen}
 										inert={agentChatOpen ? true : undefined}
 									>
-									<MetadataRail automationRules={props.automationRules} borderless />
+										<MetadataRail automationRules={props.automationRules} borderless />
 									</div>
 								)}
 							/>

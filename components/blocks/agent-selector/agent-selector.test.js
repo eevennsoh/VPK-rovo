@@ -293,6 +293,37 @@ test("AgentSelector dropdowns do not inherit the generic menu height cap", () =>
 	}
 });
 
+test("AgentSelector Command root uses DropdownMenuContent container radius", () => {
+	// DropdownMenu popup is `rounded-xl` (12px). Command used to ship `rounded-xl!`;
+	// keep AgentSelector on the same non-important class so Assign agents / Use skills
+	// match other dropdown surfaces. SkillSelector has no separate radius override.
+	const commandSource = fs.readFileSync(
+		path.join(process.cwd(), "components/ui/command.tsx"),
+		"utf8",
+	);
+	const dropdownSource = fs.readFileSync(
+		path.join(process.cwd(), "components/ui/dropdown-menu.tsx"),
+		"utf8",
+	);
+	const skillSource = fs.readFileSync(
+		path.join(process.cwd(), "components/blocks/skill-selector/components/skill-selector.tsx"),
+		"utf8",
+	);
+	assert.match(dropdownSource, /popup:\s*"[^"]*\brounded-xl\b/u);
+	assert.match(
+		commandSource,
+		/"bg-popover text-popover-foreground rounded-xl p-1 flex size-full flex-col overflow-hidden"/u,
+	);
+	assert.doesNotMatch(
+		commandSource,
+		/"bg-popover text-popover-foreground rounded-xl! p-1 flex size-full flex-col overflow-hidden"/u,
+	);
+	assert.match(COMPONENT_SOURCE, /flex-1 rounded-xl p-1/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /rounded-xl!/u);
+	assert.doesNotMatch(skillSource, /rounded-xl!/u);
+	assert.match(COMPONENT_SOURCE, /-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl/u);
+});
+
 test("AgentSelector can swap its boxed search for the editor-palette bar", () => {
 	// Default stays the bordered CommandInput so existing directory and toolbar
 	// surfaces are untouched.
@@ -303,6 +334,11 @@ test("AgentSelector can swap its boxed search for the editor-palette bar", () =>
 	// cmdk's Command root owns Arrow/Enter for this list, so the field must not
 	// swallow them — without this the list stops responding to the keyboard.
 	assert.match(COMPONENT_SOURCE, /hostOwnsKeyNavigation/u);
+
+	// Gallery/demo surfaces match Assign agents (palette), not the boxed default.
+	assert.match(PAGE_SOURCE, /searchVariant="palette"/u);
+	assert.match(DETAILS_SOURCE, /searchVariant="palette"/u);
+	assert.match(DETAILS_SOURCE, /name: "searchVariant"/u);
 
 	// SkillSelector is a thin wrapper over AgentSelector; the variant has to
 	// reach it or "Use skills" cannot match "Assign agents".

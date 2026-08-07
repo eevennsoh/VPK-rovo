@@ -10,6 +10,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon, type LogoSize } from "@/components/ui/logo";
@@ -35,6 +36,7 @@ const ACTIONS_EXIT_TRANSITION: Transition = {
 };
 
 export type CodingAgentId =
+	| "claude-cli"
 	| "claude-code"
 	| "codex"
 	| "rovo-cli"
@@ -107,8 +109,6 @@ type CodingAgent = Readonly<{
 	id: CodingAgentId;
 	/** Human-readable label shown in the button/menu. */
 	label: string;
-	/** Contextual action revealed when the menu row is highlighted. */
-	byline: string;
 	/** Compact brand glyph shown in the primary split-button action. */
 	buttonLogo: ReactNode;
 	/** Brand glyph. Rovo is a 1P mark; the rest render via `LogoThirdParty`. */
@@ -131,13 +131,14 @@ function thirdPartyAgentLogo(name: ThirdPartyLogoName, size: LogoSize = "small")
  * fallback); Rovo uses the 1P `RovoColorIcon`.
  */
 const CODING_AGENTS: readonly CodingAgent[] = [
-	{ id: "claude-code", label: "Claude", byline: "Copy CLI command", buttonLogo: thirdPartyAgentLogo("claude", "xxsmall"), logo: thirdPartyAgentLogo("claude") },
-	{ id: "codex", label: "Codex", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo("openai-codex", "xxsmall"), logo: thirdPartyAgentLogo("openai-codex") },
-	{ id: "rovo-cli", label: "Rovo", byline: "Copy CLI command", buttonLogo: <RovoColorIcon size="small" />, logo: <RovoColorIcon size="small" /> },
-	{ id: "cursor", label: "Cursor", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo("cursor", "xxsmall"), logo: thirdPartyAgentLogo("cursor") },
-	{ id: "vs-code", label: "VS Code", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo("vs-code", "xxsmall"), logo: thirdPartyAgentLogo("vs-code") },
-	{ id: "github-copilot", label: "GitHub Copilot", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo("github-copilot", "xxsmall"), logo: thirdPartyAgentLogo("github-copilot") },
-	{ id: "gemini", label: "Gemini", byline: "Open in IDE", buttonLogo: thirdPartyAgentLogo("google-gemini", "xxsmall"), logo: thirdPartyAgentLogo("google-gemini") },
+	{ id: "claude-code", label: "Claude", buttonLogo: thirdPartyAgentLogo("claude", "xxsmall"), logo: thirdPartyAgentLogo("claude") },
+	{ id: "claude-cli", label: "Claude CLI", buttonLogo: thirdPartyAgentLogo("claude", "xxsmall"), logo: thirdPartyAgentLogo("claude") },
+	{ id: "codex", label: "Codex", buttonLogo: thirdPartyAgentLogo("openai-codex", "xxsmall"), logo: thirdPartyAgentLogo("openai-codex") },
+	{ id: "cursor", label: "Cursor", buttonLogo: thirdPartyAgentLogo("cursor", "xxsmall"), logo: thirdPartyAgentLogo("cursor") },
+	{ id: "gemini", label: "Gemini", buttonLogo: thirdPartyAgentLogo("google-gemini", "xxsmall"), logo: thirdPartyAgentLogo("google-gemini") },
+	{ id: "github-copilot", label: "GitHub Copilot", buttonLogo: thirdPartyAgentLogo("github-copilot", "xxsmall"), logo: thirdPartyAgentLogo("github-copilot") },
+	{ id: "rovo-cli", label: "Rovo CLI", buttonLogo: <RovoColorIcon size="small" />, logo: <RovoColorIcon size="small" /> },
+	{ id: "vs-code", label: "VS Code", buttonLogo: thirdPartyAgentLogo("vs-code", "xxsmall"), logo: thirdPartyAgentLogo("vs-code") },
 ];
 
 /**
@@ -194,24 +195,17 @@ export function ContextTitleActions({
 						<DropdownMenuGroup>
 							{codingAgents.map((agent) => (
 								<DropdownMenuItem
-									className="h-11 py-0"
 									elemBefore={<span aria-hidden className="inline-flex items-center justify-center leading-none">{agent.logo}</span>}
 									key={agent.id}
 									onSelect={() => setSelectedAgentId(agent.id)}
 								>
-									<span className="flex h-[34px] min-w-0 flex-col justify-start overflow-hidden">
-										<span className="menu-row-title translate-y-2 transition-transform duration-normal ease-out-practical group-data-[highlighted]/dropdown-menu-item:translate-y-0 motion-reduce:transition-none">
-											{agent.label}
-										</span>
-										<span className="menu-row-byline translate-y-1 opacity-0 transition-[transform,opacity] duration-normal ease-out-practical group-data-[highlighted]/dropdown-menu-item:translate-y-0 group-data-[highlighted]/dropdown-menu-item:opacity-100 motion-reduce:transition-none">
-											{agent.byline}
-										</span>
-									</span>
+									{agent.label}
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuGroup>
 					</div>
-					<div className="sticky bottom-0 border-t border-border bg-surface-overlay p-1">
+					<div className="sticky bottom-0 bg-surface-overlay px-1 pb-1">
+						<DropdownMenuSeparator className="mt-0" />
 						<DropdownMenuItem
 							className="gap-0.5"
 							elemBefore={<CopyIcon label="" size="small" />}

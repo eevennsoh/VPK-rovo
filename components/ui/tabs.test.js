@@ -15,6 +15,8 @@ const DETAILS_SOURCE = readDetailCategorySource("ui");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 
 test("TabsList exposes default and compact sizes with inset pill treatment", () => {
+	assert.match(SOURCE, /default: "rounded-md bg-muted"/u);
+	assert.match(SOURCE, /"gap-1\.5 rounded-sm border border-transparent/u);
 	assert.match(SOURCE, /size: \{\s*default: "group-data-horizontal\/tabs:h-8",\s*compact: "group-data-horizontal\/tabs:h-6"/u);
 	assert.match(SOURCE, /variant: "default",\s*size: "default",\s*className: "p-\[3px\]"/u);
 	assert.match(SOURCE, /variant: "default",\s*size: "compact",\s*className: "p-0\.5"/u);
