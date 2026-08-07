@@ -29,6 +29,10 @@ const COMMENT_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment.tsx"),
 	"utf8",
 );
+const TYPES_SOURCE = fs.readFileSync(
+	path.join(__dirname, "jira-activity-types.ts"),
+	"utf8",
+);
 const COMMENT_ACTIONS_SOURCE = fs.readFileSync(
 	path.join(__dirname, "jira-activity-comment-actions.tsx"),
 	"utf8",
@@ -66,6 +70,31 @@ test("agent mention chips use canonical agent identity without a visible at-sign
 	assert.match(SEGMENTS_SOURCE, /brandName=\{segment\.brandName\}/u);
 	assert.match(SEGMENTS_SOURCE, />\s*\{segment\.text\}\s*<\/Tag>/u);
 	assert.doesNotMatch(SEGMENTS_SOURCE, /@\{segment\.text\}/u);
+});
+
+test("agent comments support an inline read-only progress checklist", () => {
+	assert.match(
+		TYPES_SOURCE,
+		/progressChecklist\?: readonly JiraActivityProgressItem\[\]/u,
+	);
+	assert.match(COMMENT_SOURCE, /import \{ Checkbox \} from "@\/components\/ui\/checkbox";/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/<ul aria-label="Agent progress"[\s\S]*entry\.progressChecklist\.map[\s\S]*<Checkbox[\s\S]*checked=\{item\.completed\}[\s\S]*disabled/u,
+	);
+});
+
+test("agent comments render generated image evidence as a previewable attachment", () => {
+	assert.match(TYPES_SOURCE, /imageAttachment\?: JiraActivityImageAttachment/u);
+	assert.match(COMMENT_SOURCE, /import Image from "next\/image";/u);
+	assert.match(
+		COMMENT_SOURCE,
+		/<Attachment className="mt-3 w-full max-w-sm" size="sm">[\s\S]*<AttachmentMedia variant="image">[\s\S]*alt=\{entry\.imageAttachment\.alt\}[\s\S]*<AttachmentTitle>\{entry\.imageAttachment\.filename\}<\/AttachmentTitle>/u,
+	);
+	assert.match(
+		COMMENT_SOURCE,
+		/<AttachmentTrigger[\s\S]*aria-label=\{`Preview \$\{entry\.imageAttachment\.filename\}`\}[\s\S]*href=\{entry\.imageAttachment\.href \?\? entry\.imageAttachment\.src\}/u,
+	);
 });
 
 test("sample feed covers all three entry kinds", () => {
@@ -324,10 +353,7 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 		additions: 148,
 		deletions: 37,
 	});
-	assert.match(
-		EVENT_SOURCE,
-		/<span className="font-medium text-text">\{entry\.actor\.name\}<\/span> created pull request/u,
-	);
+	assert.doesNotMatch(EVENT_SOURCE, /created pull request/u);
 	assert.match(EVENT_SOURCE, /variant=\{status === "Merged" \? "discovery" : "success"\}/u);
 	assert.match(EVENT_SOURCE, /className="flex min-w-0 items-center gap-1"/u);
 	assert.match(EVENT_SOURCE, /className="flex shrink-0 items-center gap-1"/u);
@@ -644,11 +670,11 @@ test("the exported comment composer uses the shared floating Rovo prompt", () =>
 test("the two floating surfaces are separated by variant, not by callsite classNames", () => {
 	assert.match(COMPOSER_SOURCE, /variant\?: "reply" \| "comment" \| "flush"/u);
 	assert.match(COMPOSER_SOURCE, /const surface = COMPOSER_SURFACES\[variant\];/u);
-	// `comment` is the bordered floating box: no chrome override, default 32px
-	// controls.
+	// `comment` is the bordered floating box: overrides FloatingComposer's
+	// default `p-3` (12px) to `p-2` (8px); default 32px controls.
 	assert.match(
 		COMPOSER_SOURCE,
-		/comment: \{\s*chrome: "",[\s\S]*?controlClassName: "",/u,
+		/comment: \{[\s\S]*?chrome: "p-2",[\s\S]*?controlClassName: "",/u,
 	);
 	// `flush` is the in-card row: chrome-less with 24px controls.
 	assert.match(

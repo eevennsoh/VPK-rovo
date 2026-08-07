@@ -2,11 +2,22 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
+import Image from "next/image";
+
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
+import {
+	Attachment,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentMedia,
+	AttachmentTitle,
+	AttachmentTrigger,
+} from "@/components/ui/attachment";
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 
@@ -430,6 +441,47 @@ export function JiraActivityComment({
 			timestamp={entry.timestamp}
 		>
 			<JiraActivitySegments className="text-sm leading-5 text-text" segments={entry.body} />
+			{entry.progressChecklist?.length ? (
+				<ul aria-label="Agent progress" className="mt-3 grid gap-1.5">
+					{entry.progressChecklist.map((item) => (
+						<li className="flex min-w-0 items-start gap-2 text-sm leading-5 text-text" key={item.id}>
+							<Checkbox
+								aria-label={`${item.label}: ${item.completed ? "complete" : "incomplete"}`}
+								checked={item.completed}
+								className="mt-0.5 disabled:opacity-100"
+								disabled
+							/>
+							<span className={item.completed ? "text-text-subtle" : undefined}>{item.label}</span>
+						</li>
+					))}
+				</ul>
+			) : null}
+			{entry.imageAttachment ? (
+				<Attachment className="mt-3 w-full max-w-sm" size="sm">
+					<AttachmentMedia variant="image">
+						<Image
+							alt={entry.imageAttachment.alt}
+							height={160}
+							src={entry.imageAttachment.src}
+							width={160}
+						/>
+					</AttachmentMedia>
+					<AttachmentContent>
+						<AttachmentTitle>{entry.imageAttachment.filename}</AttachmentTitle>
+						<AttachmentDescription>Final design screenshot</AttachmentDescription>
+					</AttachmentContent>
+					<AttachmentTrigger
+						render={
+							<a
+								aria-label={`Preview ${entry.imageAttachment.filename}`}
+								href={entry.imageAttachment.href ?? entry.imageAttachment.src}
+								rel="noreferrer"
+								target="_blank"
+							/>
+						}
+					/>
+				</Attachment>
+			) : null}
 		</JiraActivityCard>
 	);
 }

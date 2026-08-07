@@ -67,7 +67,7 @@ export function ExperimentalWorkItemDialog({
 						actionsClassName="gap-1"
 						closeButtonDisabled={presentation === "inline"}
 						closeButtonVariant="ghost"
-						paddingBottom={0}
+						paddingBottom={token("space.150")}
 						paddingTop={token("space.150")}
 					/>
 				</div>

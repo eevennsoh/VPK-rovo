@@ -43,8 +43,8 @@ const JIRA_AGENTS_AUTOMATION_RULES = [
 	},
 ] as const satisfies readonly WorkItemAutomationRule[];
 
-const JIRA_AGENTS_PLANNER_SESSION_ID = "story-session-code-planner";
-const JIRA_AGENTS_CHILD_SESSION_IDS = ["story-session-claude-code"] as const;
+const JIRA_AGENTS_LEAD_SESSION_ID = "story-session-claude-code";
+const JIRA_AGENTS_CHILD_SESSION_IDS = ["story-session-code-planner"] as const;
 
 function getVisibleOrchestrationSessionIds(
 	controller: JiraAgentsStoryController,
@@ -56,12 +56,12 @@ function getVisibleOrchestrationSessionIds(
 		case "reaction-2":
 			return [];
 		case "lead":
-			return [JIRA_AGENTS_PLANNER_SESSION_ID];
-		case "claude":
-			return [JIRA_AGENTS_PLANNER_SESSION_ID, JIRA_AGENTS_CHILD_SESSION_IDS[0]];
+			return [JIRA_AGENTS_LEAD_SESSION_ID];
+		case "consult":
+			return [JIRA_AGENTS_LEAD_SESSION_ID, JIRA_AGENTS_CHILD_SESSION_IDS[0]];
 		case "idle":
 		case "complete":
-			return [JIRA_AGENTS_PLANNER_SESSION_ID, ...JIRA_AGENTS_CHILD_SESSION_IDS];
+			return [JIRA_AGENTS_LEAD_SESSION_ID, ...JIRA_AGENTS_CHILD_SESSION_IDS];
 	}
 }
 
@@ -103,7 +103,7 @@ function JiraAgentsWorkItemStage({
 		<div className="relative left-1/2 flex h-full min-h-0 w-screen -translate-x-1/2 items-start justify-center overflow-hidden px-8 pt-4 pb-4">
 			<ExperimentalV2JiraWorkItem
 				activitySessionThread={{
-					parentSessionId: JIRA_AGENTS_PLANNER_SESSION_ID,
+					parentSessionId: JIRA_AGENTS_LEAD_SESSION_ID,
 					childSessionIds: JIRA_AGENTS_CHILD_SESSION_IDS,
 					visibleSessionIds,
 				}}

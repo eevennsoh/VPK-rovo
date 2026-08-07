@@ -30,6 +30,7 @@ export function ModalHeader({
 	showClose = true,
 	actions,
 	actionsClassName,
+	breadcrumbLeadingContent,
 	closeButtonDisabled = false,
 	closeButtonVariant = "outline",
 	paddingTop,
@@ -38,6 +39,7 @@ export function ModalHeader({
 	showClose?: boolean;
 	actions?: ReactNode;
 	actionsClassName?: string;
+	breadcrumbLeadingContent?: ReactNode;
 	closeButtonDisabled?: boolean;
 	closeButtonVariant?: ButtonProps["variant"];
 	paddingTop?: CSSProperties["paddingTop"];
@@ -63,6 +65,11 @@ export function ModalHeader({
 		>
 			<Breadcrumb className="min-w-0 overflow-visible" size="small">
 				<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">
+					{breadcrumbLeadingContent ? (
+						<BreadcrumbItem className="mr-2 shrink-0">
+							{breadcrumbLeadingContent}
+						</BreadcrumbItem>
+					) : null}
 					<BreadcrumbItem className="min-w-0 max-w-[240px] shrink">
 						<BreadcrumbLink
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"

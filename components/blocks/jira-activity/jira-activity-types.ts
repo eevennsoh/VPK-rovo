@@ -98,6 +98,22 @@ export interface JiraActivityCollapsible {
 	content: readonly JiraActivitySegment[];
 }
 
+/** One read-only progress step maintained by an agent in its lead comment. */
+export interface JiraActivityProgressItem {
+	id: string;
+	label: string;
+	completed: boolean;
+}
+
+/** A generated image shown inline as evidence attached to a comment. */
+export interface JiraActivityImageAttachment {
+	src: string;
+	alt: string;
+	filename: string;
+	/** Optional preview destination; defaults to the image source. */
+	href?: string;
+}
+
 /** One emoji reaction on a comment, keyed by glyph. */
 export interface JiraActivityReaction {
 	emoji: string;
@@ -113,6 +129,10 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	body: readonly JiraActivitySegment[];
 	/** Optional collapsible detail section (e.g. "Investigation"). */
 	collapsible?: JiraActivityCollapsible;
+	/** Agent-owned progress steps, rendered as a compact read-only checklist. */
+	progressChecklist?: readonly JiraActivityProgressItem[];
+	/** Optional generated image evidence attached to the comment. */
+	imageAttachment?: JiraActivityImageAttachment;
 	replies?: readonly JiraActivityReply[];
 	/** Emoji reactions on this comment, in first-reacted order. */
 	reactions?: readonly JiraActivityReaction[];

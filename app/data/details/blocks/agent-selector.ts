@@ -1,7 +1,7 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const AGENT_SELECTOR_DETAIL: ComponentDetail = {
-		description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions.",
+		description: "Searchable command-list selector for assigning AI agents, with selected agents pinned first, optional selected-agent actions, and optional browse/create actions. Gallery demos use the borderless editor-palette search bar (`searchVariant=\"palette\"`), matching Assign agents on work items.",
 		importStatement: `import { AgentSelector } from "@/components/blocks/agent-selector";`,
 		usage: `import { AgentSelector } from "@/components/blocks/agent-selector";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -17,6 +17,7 @@ const agents: AgentSelectorAgent[] = [
 
 <AgentSelector
   agents={agents}
+  searchVariant="palette"
   selectedAgentIds={["github-copilot"]}
   onAgentToggle={(agentId) => console.log(agentId)}
   onBrowseAgents={() => console.log("browse agents")}
@@ -73,6 +74,12 @@ const agents: AgentSelectorAgent[] = [
 				name: "onQueryChange",
 				type: "(query: string) => void",
 				description: "Called when the search input changes.",
+			},
+			{
+				name: "searchVariant",
+				type: '"boxed" | "palette"',
+				default: '"boxed"',
+				description: "Search field treatment. \"boxed\" is the bordered CommandInput used on directory/toolbar surfaces; \"palette\" is the borderless 44px editor-palette bar (RichTextCommandMenuSearchField) shared with Assign agents and \"/\" / \"@\" command menus.",
 			},
 			{
 				name: "selectionMode",

@@ -589,7 +589,7 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 p-2", className)} shouldFilter={false}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 rounded-xl p-1", className)} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
 				<div aria-label={selectedActionsLabel} className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (
@@ -613,11 +613,11 @@ export function AgentSelector({
 					<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
 				) : null}
 				{searchVariant === "palette" ? (
-					// Bleed past the Command root's p-2 so the 44px palette bar spans the
+					// Bleed past the Command root's p-1 so the 44px palette bar spans the
 					// popup edge-to-edge, exactly like the "/" menu and metadata pickers.
 					// `hostOwnsKeyNavigation` hands Arrow/Enter back to the cmdk root,
 					// which owns row highlighting and activation for this list.
-					<div className="-mx-2 -mt-2 mb-1 overflow-hidden rounded-t-lg">
+					<div className="-mx-1 -mt-1 mb-1 overflow-hidden rounded-t-xl">
 						<RichTextCommandMenuSearchField
 							autoFocus
 							hostOwnsKeyNavigation

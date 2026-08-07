@@ -3,6 +3,7 @@
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 
 import * as React from "react"
+import type { CSSProperties } from "react"
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
 import CrossIcon from "@atlaskit/icon/core/cross"
 import { motion, type MotionProps } from "motion/react"
@@ -28,6 +29,7 @@ export interface InlineEditProps {
 	keepEditViewOpenOnBlur?: boolean
 	readViewFitContainerWidth?: boolean
 	readViewClassName?: string
+	readViewStyle?: CSSProperties
 	readViewMotionProps?: Pick<MotionProps, "initial" | "animate" | "whileHover" | "whileFocus" | "variants" | "transition">
 	readViewBackdropClassName?: string
 	readViewBackdropMotionProps?: Pick<MotionProps, "variants" | "transition">
@@ -76,6 +78,7 @@ function InlineEdit({
 	keepEditViewOpenOnBlur = false,
 	readViewFitContainerWidth = true,
 	readViewClassName,
+	readViewStyle,
 	readViewMotionProps,
 	readViewBackdropClassName,
 	readViewBackdropMotionProps,
@@ -218,6 +221,7 @@ function InlineEdit({
 						readViewClassName
 					)}
 					{...resolvedReadViewMotionProps}
+					style={readViewStyle}
 					onClick={beginEditing}
 				>
 					{readViewBackdropClassName || readViewBackdropMotionProps ? (

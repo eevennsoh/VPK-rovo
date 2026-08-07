@@ -259,6 +259,8 @@ function mapAgentEvent(
 			content: [{ type: "text", text: event.commandPreview }],
 		},
 		allowReply: event.status !== "completed",
+		...(event.progressChecklist ? { progressChecklist: event.progressChecklist } : {}),
+		...(event.imageAttachment ? { imageAttachment: event.imageAttachment } : {}),
 		...(event.threadReplies
 			? {
 				replies: event.threadReplies.map((reply) => {
@@ -397,4 +399,19 @@ export function mapActivityEventsToJiraEntries(
 				return mapStaticChangedFiles(event, referenceTimeMs);
 		}
 	});
+}
+
+/** Latest pull-request event for the work-item header, preserving timeline rendering. */
+export function selectLatestPullRequestEntry(
+	events: readonly ActivityEvent[],
+	referenceTimeMs?: number,
+): JiraActivityEventEntry | null {
+	for (let index = events.length - 1; index >= 0; index -= 1) {
+		const event = events[index];
+		if (event?.kind === "event" && event.pullRequest) {
+			return mapStaticEvent(event, referenceTimeMs);
+		}
+	}
+
+	return null;
 }

@@ -683,18 +683,20 @@
 /*
  * When the menu's own search field is focused (the user is typing into it), the
  * Return key submits THAT field — e.g. "Ask Rovo" or a category search — not a
- * menu row. Suppress BOTH highlight sources (the keyboard-selected row and any
+ * menu row. Suppress row highlight sources (the keyboard-selected row and any
  * hover), the copy reflow, and the Return (↵) affordance so the menu never
- * implies Return will activate a row while you are typing. Scoped to focus
- * INSIDE the menu, so the live editor's caret-anchored "/" and "@" menus — where
- * focus stays in the editor and Return DOES pick the highlighted row — are
- * unaffected.
+ * implies Return will activate a row while you are typing. The sticky search
+ * bar keeps its own hover (see `.rich-text-command-menu-search:hover` above) so
+ * it stays interactive like Assign agents / editor-palette search — exclude it
+ * from the sticky suppress via `:not(.rich-text-command-menu-search)`. Scoped
+ * to focus INSIDE the menu, so the live editor's caret-anchored "/" and "@"
+ * menus — where focus stays in the editor and Return DOES pick the highlighted
+ * row — are unaffected.
  */
 .rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:hover,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected,
-.rich-text-command-menu:focus-within .rich-text-command-menu-search:hover {
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search):hover,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:not(.rich-text-command-menu-search).rich-text-command-menu-item-selected {
 	background-color: transparent;
 }
 

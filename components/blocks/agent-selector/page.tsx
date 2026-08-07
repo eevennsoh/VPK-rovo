@@ -68,6 +68,7 @@ export default function AgentSelectorPage({
 			onBrowseAgents={() => undefined}
 			onCreateAgent={() => undefined}
 			selectionMode="single"
+			searchVariant="palette"
 			onPinnedAgentIdsChange={setPinnedAgentIds}
 			pinnedAgentIds={pinnedAgentIds}
 			showSelectedTickInSingleSelect={variant === "default" || variant === "selected-agent-actions"}

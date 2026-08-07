@@ -12,7 +12,10 @@
  * statically with no animation and no lingering backdrop.
  */
 
+import type { CSSProperties } from "react";
 import type { MotionProps } from "motion/react";
+
+import { token } from "@/lib/tokens";
 
 export const CONTEXT_INLINE_EDIT_MOTION_PROPS = {
 	initial: "rest",
@@ -36,12 +39,17 @@ export const CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 
 export const CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME = "-inset-0.5 bg-bg-neutral-subtle-hovered";
 
-/** Large editable title read view (mirrors the profile's name field). */
+/** ADS heading medium (20px / 1.25rem) for the editable work-item title. */
+export const CONTEXT_TITLE_FONT_STYLE = {
+	font: token("font.heading.medium"),
+} satisfies CSSProperties;
+
+/** Editable title read view — typography comes from `CONTEXT_TITLE_FONT_STYLE`. */
 export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =
-	"relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent";
+	"relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent";
 
 export const CONTEXT_TITLE_INPUT_CLASS_NAME =
-	"h-auto border-2 px-1.5 py-1 text-xl leading-7 font-semibold focus:border-ring md:text-xl";
+	"h-auto border-2 px-1.5 py-1 focus:border-ring";
 
 /** Multiline editable description read view + textarea (mirrors the description field). */
 export const CONTEXT_DESCRIPTION_READ_VIEW_CLASS_NAME =
