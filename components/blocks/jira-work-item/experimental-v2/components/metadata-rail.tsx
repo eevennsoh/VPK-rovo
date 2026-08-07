@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactElement } from "react";
+import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 
 import FilesIcon from "@atlaskit/icon/core/files";
 import LinkIcon from "@atlaskit/icon/core/link";
@@ -20,6 +20,7 @@ import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { DevelopmentSectionContent } from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
 import { DetailsTab } from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
+import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/components/development-repository-picker";
 import {
 	AutomationTab,
 	type WorkItemAutomationRule,
@@ -31,6 +32,9 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
+type MetadataRailView = "details" | "activity";
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
@@ -166,17 +170,22 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
 }
 
 /**
- * Work-item Details rail for the experimental variant. The shared ArtifactPane
- * owns the rail surface, disclosure controls, spacing, and dividers while this
- * adapter supplies work-item-specific content and metadata state.
+ * Work-item metadata rail for the experimental variant. A Details/Activity
+ * outline ToggleGroup (joined filter segments, same recipe as
+ * ToggleGroupDemoFilter / EditorToolbarModeTabs) owns the panel header;
+ * Details keeps the ArtifactPane surface, while Activity slots in the shared
+ * ActivityPanel from the composition root.
  */
 export function MetadataRail({
+	activity,
 	automationRules = [],
 	borderless = false,
 }: Readonly<{
+	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
 }> = {}) {
+	const [panelView, setPanelView] = useState<MetadataRailView>("details");
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
@@ -232,32 +241,62 @@ export function MetadataRail({
 	}
 
 	return (
-		<ArtifactPane
-			aria-label="Work item details"
-			borderless={borderless}
-			showSeparators={false}
-			sections={[
-				{
-					content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
-					defaultOpen: true,
-					id: "details",
-					title: "Details",
-				},
-				...resourceSections,
-				{
-					content: <AutomationTab rules={automationRules} />,
-					count: automationRules.length || undefined,
-					headerAction: { label: "Manage automations" },
-					id: "automation",
-					title: "Automation",
-				},
-				{
-					content: <DevelopmentSectionContent />,
-					headerAction: { label: "Manage dev tools" },
-					id: "development",
-					title: "Development",
-				},
-			]}
-		/>
+		<div className="flex min-w-0 flex-col gap-2">
+			<div className="px-3">
+				<ToggleGroup
+					aria-label="Work item panel"
+					multiple={false}
+					size="sm"
+					value={[panelView]}
+					variant="outline"
+					onValueChange={(value) => {
+						const next = value[0];
+						if (next === "details" || next === "activity") {
+							setPanelView(next);
+						}
+					}}
+				>
+					<ToggleGroupItem value="details">
+						Details
+					</ToggleGroupItem>
+					<ToggleGroupItem value="activity">
+						Activity
+					</ToggleGroupItem>
+				</ToggleGroup>
+			</div>
+			{panelView === "details" ? (
+				<ArtifactPane
+					aria-label="Work item details"
+					borderless={borderless}
+					showSeparators={false}
+					sections={[
+						{
+							collapsible: false,
+							content: <DetailsTab draft={draft} onChange={actions.updateMetadata} people={people} />,
+							defaultOpen: true,
+							id: "details",
+							title: "Details",
+						},
+						...resourceSections,
+						{
+							content: <AutomationTab rules={automationRules} />,
+							count: automationRules.length || undefined,
+							headerAction: { label: "Manage automations" },
+							id: "automation",
+							title: "Automation",
+						},
+						{
+							content: <DevelopmentSectionContent />,
+							count: CONNECTED_REPOSITORY_COUNT || undefined,
+							headerAction: { label: "Manage dev tools" },
+							id: "development",
+							title: "Development",
+						},
+					]}
+				/>
+			) : (
+				activity
+			)}
+		</div>
 	);
 }

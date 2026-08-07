@@ -138,7 +138,6 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 										onDescriptionViewModeChange={setDescriptionViewMode}
 									/>
 								)}
-								activity={<ActivityPanel activitySessionThread={props.activitySessionThread} />}
 								composer={(
 									<ActivityComposer
 										agents={props.composerAgents}
@@ -152,7 +151,11 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 										aria-hidden={agentChatOpen}
 										inert={agentChatOpen ? true : undefined}
 									>
-										<MetadataRail automationRules={props.automationRules} borderless />
+										<MetadataRail
+											activity={<ActivityPanel activitySessionThread={props.activitySessionThread} />}
+											automationRules={props.automationRules}
+											borderless
+										/>
 									</div>
 								)}
 							/>

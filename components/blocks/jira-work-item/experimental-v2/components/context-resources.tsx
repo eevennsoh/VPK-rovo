@@ -185,7 +185,6 @@ export function ContextResources({
 						<EditorToolbarModeTabs
 							mode={descriptionViewMode}
 							onModeChange={onDescriptionViewModeChange}
-							size="compact"
 						/>
 					</div>
 				</div>

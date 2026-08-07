@@ -3,8 +3,9 @@
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
 
-import AddIcon from "@atlaskit/icon/core/add";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import FolderAddIcon from "@atlaskit/icon-lab/core/folder-add";
+import HardwareAuditIcon from "@atlaskit/icon-lab/core/hardware-audit";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -31,6 +32,9 @@ const REPOSITORIES: readonly RepositoryOption[] = [
 	{ id: "vpk-rovo", name: "vpk-rovo", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovo" },
 	{ id: "vpk-rovodev", name: "vpk-rovodev", provider: "bitbucket", url: "https://bitbucket.org/eevensoh/vpk-rovodev" },
 ];
+
+/** Connected-repo tally for the Development disclosure header (`Development · N`). */
+export const CONNECTED_REPOSITORY_COUNT = REPOSITORIES.length;
 
 // Mirror AgentSelector / GreetingPromptRow: label lifts and byline reveals on
 // hover/focus. Dynamic variants collapse the transition under reduced motion.
@@ -62,6 +66,11 @@ const REPOSITORY_COPY_CLASS =
 	"flex min-h-[34px] min-w-0 flex-1 flex-col justify-start overflow-hidden text-left";
 const REPOSITORY_LABEL_CLASS = "menu-row-title text-left";
 const REPOSITORY_DESCRIPTION_CLASS = "menu-row-byline text-left";
+
+/** Display-only: drop a leading http(s):// so bylines read as host/path. */
+export function stripUrlScheme(url: string): string {
+	return url.replace(/^https?:\/\//i, "");
+}
 
 function RepositoryProviderLogo({ provider }: Readonly<Pick<RepositoryOption, "provider">>) {
 	return provider === "bitbucket" ? (
@@ -123,7 +132,7 @@ function RepositoryRow({
 					style={{ willChange: "transform, opacity" }}
 					variants={repositoryDescriptionVariants}
 				>
-					{url}
+					{stripUrlScheme(url)}
 				</motion.span>
 			</motion.span>
 		</Button>
@@ -162,7 +171,9 @@ export function DevelopmentRepositoryPicker() {
 					/>
 				)}
 			>
-				<span className="min-w-0 flex-1 truncate text-left">4 Connected repositories</span>
+				<span className="min-w-0 flex-1 truncate text-left">
+					{CONNECTED_REPOSITORY_COUNT} Connected repositories
+				</span>
 				<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronDownIcon label="" size="small" />} />
 			</PopoverTrigger>
 			<PopoverContent
@@ -202,11 +213,11 @@ export function DevelopmentRepositoryPicker() {
 				<Separator className="mx-2 my-1 data-horizontal:w-auto" />
 				<div className="p-1">
 					<Button className="h-8 w-full justify-start gap-3 rounded-lg px-2 font-normal" type="button" variant="ghost">
-						<Icon aria-hidden className="size-6 shrink-0" render={<AddIcon label="" />} />
+						<Icon aria-hidden className="size-6 shrink-0" render={<FolderAddIcon label="" />} />
 						Add repositories
 					</Button>
 					<Button className="h-8 w-full justify-start gap-3 rounded-lg px-2 font-normal" type="button" variant="ghost">
-						<Icon aria-hidden className="size-6 shrink-0" render={<AddIcon label="" />} />
+						<Icon aria-hidden className="size-6 shrink-0" render={<HardwareAuditIcon label="" />} />
 						Add environment
 					</Button>
 				</div>
