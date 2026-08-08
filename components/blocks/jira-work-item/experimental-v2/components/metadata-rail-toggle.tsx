@@ -105,8 +105,8 @@ function MetadataRailPanelSegment({
 /**
  * Details / Activity / Pull requests control for the metadata column.
  *
- * Non-scrolling column chrome (sibling above the rail body scrollport),
- * matching left ContextResources. Horizontal `px-3` matches ArtifactPane /
+ * Sticky column chrome inside the rail body scrollport, matching left
+ * ContextResources. Horizontal `px-3` matches ArtifactPane /
  * Activity rail content. Remains opacity-hidden until the rail body is
  * hovered, or until this control itself is hovered / keyboard-focused
  * (`:focus-visible`) — matching the description-scope reveal pattern without
@@ -147,14 +147,17 @@ export function MetadataRailToggle({
 				// Shared with left resources chrome: wide pb-7 separates chrome
 				// from the first body row (description ↔ Status).
 				"shrink-0 @[860px]/agentlayout:pb-7",
-				"opacity-0 transition-opacity duration-normal ease-out",
+				// Hover-reveal only on wide layouts. Narrow / stacked chrome stays
+				// fully visible so touch users can still switch panels.
+				"transition-opacity duration-normal ease-out @[860px]/agentlayout:opacity-0",
 				// Sort menus portal away, so hover drops — keep chrome up while a
 				// chevron trigger inside this tree reports aria-expanded.
-				"hover:opacity-100 has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:opacity-100",
-				"group-has-[[data-jira-work-item-metadata-rail-body]:hover]/metadata-rail:opacity-100",
+				"@[860px]/agentlayout:hover:opacity-100 @[860px]/agentlayout:has-[:focus-visible]:opacity-100 @[860px]/agentlayout:has-[[aria-expanded=true]]:opacity-100",
+				"@[860px]/agentlayout:group-has-[[data-jira-work-item-metadata-rail-body]:hover]/metadata-rail:opacity-100",
 				"motion-reduce:transition-none",
 				className,
 			)}
+			data-jira-work-item-column-chrome-fill="overlay"
 			data-jira-work-item-metadata-rail-toggle
 		>
 			<div

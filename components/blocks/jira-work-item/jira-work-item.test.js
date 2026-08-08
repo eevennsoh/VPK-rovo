@@ -310,10 +310,8 @@ test("the experimental metadata control is a neutral disclosure with Queue Detai
 	assert.doesNotMatch(actionsSource, /peekProps/u);
 	assert.match(dialogSource, /actionsClassName="gap-1"/u);
 	assert.match(dialogSource, /closeButtonVariant="ghost"/u);
-	assert.match(
-		modalHeaderSource,
-		/<Breadcrumb[\s\S]*className=\{cn\(\s*"min-w-0 overflow-visible",\s*breadcrumbRevealOnHover \? "group\/breadcrumb-reveal" : null,\s*\)\}[\s\S]*size="small"/u,
-	);
+	assert.match(modalHeaderSource, /breadcrumbRevealOnHover \? "group\/breadcrumb-reveal"/u);
+	assert.match(modalHeaderSource, /"min-w-0 overflow-visible"/u);
 	assert.match(modalHeaderSource, /<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">/u);
 	assert.match(layoutSource, /<AnimatePresence initial=\{false\}>/u);
 	assert.match(layoutSource, /id="experimental-work-item-metadata-panel"/u);

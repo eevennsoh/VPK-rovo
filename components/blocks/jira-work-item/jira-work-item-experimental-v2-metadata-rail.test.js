@@ -36,10 +36,10 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	);
 	// Left column no longer hosts Activity — only Context scrolls there.
 	assert.doesNotMatch(layoutSource, /activity: ReactNode|useHasActivity|\{activity\}/u);
-	// Chrome outside scrollport: progressive top+bottom masks on body scrollports.
+	// Sticky chrome owns the top seam; body masks stay bottom-only.
 	assert.match(
 		layoutSource,
-		/function useColumnScrollMask\([\s\S]*buildScrollMaskStyle\(\{[\s\S]*fadeTop: showTopScrollMask,[\s\S]*fadeBottom: showBottomScrollMask/u,
+		/function useColumnScrollMask\([\s\S]*buildScrollMaskStyle\(\{[\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
 	);
 	assert.doesNotMatch(layoutSource, /data-jira-work-item-header-scroll-mask|buildScrollMaskBlurLayerStyles\("top"\)/u);
 	assert.doesNotMatch(layoutSource, /showMetadataTopScrollMask|data-jira-work-item-metadata-scroll-mask|metadataScrollRef/u);
@@ -49,7 +49,7 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	);
 	assert.match(
 		readBlockFile("experimental-v2/components/metadata-rail.tsx"),
-		/buildScrollMaskStyle\(\{[\s\S]*fadeTop: showTopScrollMask,[\s\S]*fadeBottom: showBottomScrollMask/u,
+		/buildScrollMaskStyle\(\{[\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
 	);
 });
 
@@ -216,12 +216,12 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle \/>[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
+		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle \/>[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
 	);
-	// Same progressive top+bottom mask as the left description scrollport.
+	// Same sticky-top + bottom-only mask contract as the left scrollport.
 	assert.match(
 		metadataRailSource,
-		/buildScrollMaskStyle\(\{[\s\S]*fadeTop: showTopScrollMask,[\s\S]*fadeBottom: showBottomScrollMask/u,
+		/buildScrollMaskStyle\(\{[\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -269,9 +269,14 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 		/justify-between|activePanelView === "activity" && activityChrome|activePanelView === "pull-requests" \?/u,
 	);
 	assert.doesNotMatch(metadataRailToggleSource, /from "@\/components\/ui\/toggle-group"|<ToggleGroup[\s>]/u);
-	// Toggle is non-scrolling chrome (sibling above the body scrollport).
+	// Scrollport owns the sticky scroll-state container; toggle owns its fill.
 	assert.doesNotMatch(metadataRailToggleSource, /StickyRowScrollFade|sticky top-0|container-type:scroll-state/u);
 	assert.match(metadataRailToggleSource, /shrink-0 @\[860px\]\/agentlayout:pb-7/u);
+	assert.match(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill="overlay"/u);
+	assert.match(
+		metadataRailSource,
+		/relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*@\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-10 @\[860px\]\/agentlayout:\[container-type:scroll-state\][\s\S]*data-jira-work-item-column-chrome/u,
+	);
 	assert.match(
 		metadataRailToggleSource,
 		/flex w-full items-center px-3[\s\S]*data-jira-work-item-metadata-rail-toggle-content/u,
@@ -297,7 +302,7 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	// (no body focus-within — click-focus in rail fields must not stick opacity).
 	assert.match(
 		metadataRailToggleSource,
-		/opacity-0 transition-opacity duration-normal ease-out[\s\S]*hover:opacity-100 has-\[:focus-visible\]:opacity-100 has-\[\[aria-expanded=true\]\]:opacity-100[\s\S]*group-has-\[\[data-jira-work-item-metadata-rail-body\]:hover\]\/metadata-rail:opacity-100[\s\S]*motion-reduce:transition-none/u,
+		/@\[860px\]\/agentlayout:opacity-0[\s\S]*@\[860px\]\/agentlayout:hover:opacity-100 @\[860px\]\/agentlayout:has-\[:focus-visible\]:opacity-100 @\[860px\]\/agentlayout:has-\[\[aria-expanded=true\]\]:opacity-100[\s\S]*@\[860px\]\/agentlayout:group-has-\[\[data-jira-work-item-metadata-rail-body\]:hover\]\/metadata-rail:opacity-100[\s\S]*motion-reduce:transition-none/u,
 	);
 	assert.doesNotMatch(
 		metadataRailToggleSource,
