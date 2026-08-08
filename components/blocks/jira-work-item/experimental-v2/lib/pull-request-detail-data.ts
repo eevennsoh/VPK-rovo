@@ -199,7 +199,6 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		{
 			id: "github-actions-verification",
 			author: "github-actions",
-			avatarSrc: "/3p/github/32.svg",
 			type: "bot",
 			body: "All 18 checks passed. The guest checkout preview is ready for review.",
 			timestamp: "2 minutes ago",

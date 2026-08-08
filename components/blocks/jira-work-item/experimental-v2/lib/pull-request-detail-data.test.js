@@ -71,6 +71,7 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 		["github-actions", "Code Planner", "Unit Test Creator"],
 	);
 	assert.equal(detail.guidedReview?.discussion[0]?.type, "bot");
+	assert.equal(detail.guidedReview?.discussion[0]?.avatarSrc, undefined);
 	assert.ok(detail.guidedReview?.discussion.slice(1).every((item) => item.resolved));
 	assert.deepEqual(
 		detail.guidedReview?.chapters.map((chapter) => chapter.title),
