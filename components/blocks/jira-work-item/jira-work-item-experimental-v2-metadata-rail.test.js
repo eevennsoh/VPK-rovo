@@ -371,7 +371,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		contextPanelSource,
-		/selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView entry=\{selectedPullRequestEntry\} onBack=\{onPullRequestBack\} \/>[\s\S]*\) : \([\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
+		/const selectedPullRequestKey = selectedPullRequestEntry\?\.pullRequest[\s\S]*getPullRequestIdentity\(selectedPullRequestEntry\.pullRequest\)[\s\S]*<PullRequestDetailView[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}[\s\S]*onBack=\{onPullRequestBack\}[\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
 	);
 	assert.match(
 		contextResourcesSource,

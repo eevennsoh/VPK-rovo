@@ -7,6 +7,7 @@ import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-it
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { PullRequestDetailView } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view";
+import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
@@ -65,10 +66,18 @@ export function ContextPanel({
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 	onPullRequestBack: () => void;
 }>) {
+	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
+		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
+		: selectedPullRequestEntry?.id;
+
 	return (
 		<section aria-label="Work item context" className="flex flex-col">
 			{selectedPullRequestEntry ? (
-				<PullRequestDetailView entry={selectedPullRequestEntry} onBack={onPullRequestBack} />
+				<PullRequestDetailView
+					entry={selectedPullRequestEntry}
+					key={selectedPullRequestKey}
+					onBack={onPullRequestBack}
+				/>
 			) : (
 				<AiPlannerScope header={<AiPlannerPanel />}>
 					<ContextEditableDescription
