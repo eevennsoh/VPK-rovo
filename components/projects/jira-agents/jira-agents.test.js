@@ -185,7 +185,7 @@ test("Jira Agents seeds checkout automation rows without changing the shared emp
 	assert.match(compositionSource, /automationRules\?: readonly WorkItemAutomationRule\[\];/u);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>\}[\s\S]*automationRules=\{props\.automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
 	);
 	assert.match(automationSource, /rules = \[\]/u);
 });

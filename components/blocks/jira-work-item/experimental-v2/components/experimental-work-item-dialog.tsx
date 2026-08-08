@@ -7,6 +7,10 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-breadcrumb-actions";
+import {
+	ContextTitleBar,
+	WorkItemKeyCopy,
+} from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
 import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 
 // Keep the embedded chat overlay the same width as the metadata rail so rail
@@ -35,10 +39,12 @@ interface ExperimentalWorkItemDialogProps {
  * Title/Description) so modal geometry can mirror Rovo Canvas (`inset-4` even
  * viewport inset, `h-auto w-auto max-w-none`) while keeping Base UI's built-in
  * role=dialog, aria-modal, focus containment, focus restoration, and
- * Escape-to-close. The visible header reuses the standard `ModalHeader` (via the
- * surrounding `WorkItemModalProvider`) so the breadcrumb + actions match the
- * default work item view exactly; the accessible name is supplied by the sr-only
- * Dialog.Title/Description.
+ * Escape-to-close. The chrome header band stacks `ModalHeader` breadcrumbs
+ * (work-item key + epic trail + ⋯ / collapse / close) with the editable
+ * `ContextTitleBar` so breadcrumbs and title read as one band above the
+ * two-column body. Parent/current breadcrumb trail hover-reveals
+ * (`breadcrumbRevealOnHover`); the work-item key and header actions stay
+ * visible. The accessible name is supplied by the sr-only Dialog.Title/Description.
  */
 export function ExperimentalWorkItemDialog({
 	inlineSurface,
@@ -71,15 +77,19 @@ export function ExperimentalWorkItemDialog({
 							: null,
 					)}
 					data-jira-work-item-header-column
+					data-jira-work-item-header-band
 				>
 					<ModalHeader
 						actions={<ExperimentalBreadcrumbActions />}
 						actionsClassName="gap-1"
+						breadcrumbLeadingContent={<WorkItemKeyCopy />}
+						breadcrumbRevealOnHover
 						closeButtonDisabled={presentation === "inline"}
 						closeButtonVariant="ghost"
-						paddingBottom={token("space.150")}
+						paddingBottom={0}
 						paddingTop={token("space.150")}
 					/>
+					<ContextTitleBar />
 				</div>
 				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 					{children}

@@ -208,6 +208,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	className,
 	style,
 	onClick,
+	onKeyDown,
 	...props
 }: Readonly<TagProps>, ref) {
 	void as;
@@ -269,6 +270,17 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 		onRemove?.();
 	};
 
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLSpanElement>) => {
+		onKeyDown?.(event);
+		if (event.defaultPrevented || !isInteractive || disabled) {
+			return;
+		}
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			onClick?.(event as unknown as React.MouseEvent<HTMLSpanElement>);
+		}
+	};
+
 	// Resolve the single hover-reveal overlay control: a custom action takes
 	// precedence; otherwise the overlay-variant remove "×". Built lazily (null
 	// when neither applies) so non-removable tags allocate no icon/closure.
@@ -299,7 +311,10 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 		<span
 			{...props}
 			ref={ref}
+			role={isInteractive ? "button" : undefined}
+			tabIndex={isInteractive ? (disabled ? -1 : 0) : undefined}
 			onClick={onClick}
+			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
 			style={resolvedStyle}
 			className={cn(
 				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center text-xs leading-4 font-normal text-text transition-colors box-border",

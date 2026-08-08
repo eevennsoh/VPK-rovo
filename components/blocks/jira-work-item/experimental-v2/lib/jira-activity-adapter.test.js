@@ -209,6 +209,22 @@ test("keeps same-numbered pull requests from distinct repositories", async () =>
 			{ id: "payments-1847", repository: "acme/payments", status: "Open" },
 		],
 	);
+	assert.equal(
+		adapter.getPullRequestIdentity(events[0].pullRequest),
+		"https://github.com/acme/storefront/pull/1847",
+	);
+	assert.equal(
+		adapter.getPullRequestIdentity(events[1].pullRequest),
+		"https://github.com/acme/payments/pull/1847",
+	);
+	assert.notEqual(
+		adapter.getPullRequestIdentity(events[0].pullRequest),
+		adapter.getPullRequestIdentity(events[1].pullRequest),
+	);
+	assert.equal(
+		adapter.getPullRequestIdentity(events[0].pullRequest),
+		adapter.getPullRequestIdentity(events[2].pullRequest),
+	);
 });
 
 test("maps authored eyes reactions and agent handoff replies into Jira comments", async () => {

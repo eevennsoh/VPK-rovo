@@ -81,6 +81,8 @@ const PRIORITY_COLOR_CLASSES: Record<PriorityValue, string> = {
 export const METADATA_PICKER_POPOVER_CLASS =
 	"w-auto gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none dark:shadow-none [[data-color-mode=dark]_&]:shadow-none";
 export const METADATA_PICKER_POSITIONER_CLASS = "z-[700]";
+/** Clears the property-row focus ring (ring-3 + offset-1 ≈ 4px) below the trigger. */
+export const METADATA_PICKER_SIDE_OFFSET = 8;
 
 export function MetadataSearchPicker({
 	emptyLabel,
@@ -127,7 +129,26 @@ export function MetadataSearchPicker({
 	);
 }
 
-export function PersonLabel({ person }: Readonly<{ person: AgentPlannerAssignee }>) {
+const PERSON_LABEL_AVATAR_PX = {
+	xs: 16,
+	sm: 24,
+} as const;
+
+const PERSON_LABEL_TEXT_CLASS = {
+	xs: "text-xs",
+	sm: "text-sm",
+} as const;
+
+export function PersonLabel({
+	person,
+	prefix,
+	size = "sm",
+}: Readonly<{
+	person: AgentPlannerAssignee;
+	/** Muted inline text before the name, e.g. "Reported by". */
+	prefix?: string;
+	size?: keyof typeof PERSON_LABEL_AVATAR_PX;
+}>) {
 	const isAgent = person.kind === "agent";
 	const fallbackText = person.name.slice(0, 2).toUpperCase();
 	return (
@@ -138,15 +159,18 @@ export function PersonLabel({ person }: Readonly<{ person: AgentPlannerAssignee 
 					avatarSrc={person.avatarUrl}
 					brandName={person.brandName}
 					fallbackText={fallbackText}
-					sizePx={24}
+					sizePx={PERSON_LABEL_AVATAR_PX[size]}
 				/>
 			) : (
-				<Avatar className="shrink-0" size="sm">
+				<Avatar className="shrink-0" size={size}>
 					{person.avatarUrl ? <AvatarImage alt="" src={person.avatarUrl} /> : null}
 					<AvatarFallback>{fallbackText}</AvatarFallback>
 				</Avatar>
 			)}
-			<span className="min-w-0 truncate text-sm text-text">{person.name}</span>
+			<span className={cn("min-w-0 truncate", PERSON_LABEL_TEXT_CLASS[size])}>
+				{prefix ? <span className="text-text-subtlest">{prefix}{" "}</span> : null}
+				<span className="text-text">{person.name}</span>
+			</span>
 		</span>
 	);
 }
@@ -179,7 +203,7 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 			>
 				{value}
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={8}>
+			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
 				{STATUS_PHASES.map((phase) => (
 					<DropdownMenuItem
 						key={phase}
@@ -200,7 +224,7 @@ export function PriorityRowField({ value, onChange }: Readonly<{ value: Priority
 			<DropdownMenuTrigger render={<DetailValueTrigger aria-label={value ? `Change priority. Current priority: ${value}` : "Add priority"} />}>
 				{value ? <PriorityLabel value={value} /> : <span className="text-sm text-text-subtlest">Add priority</span>}
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={8}>
+			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
 				{PRIORITY_OPTIONS.map((option) => (
 					<DropdownMenuItem key={option} onSelect={() => onChange(option)} selected={option === value}>
 						<PriorityLabel value={option} />
@@ -242,7 +266,12 @@ export function PersonRowField({
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				{value ? <PersonLabel person={value} /> : <span className="text-sm text-text-subtlest">{placeholder}</span>}
 			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent
+				align="start"
+				className={METADATA_PICKER_POPOVER_CLASS}
+				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+				sideOffset={METADATA_PICKER_SIDE_OFFSET}
+			>
 				<MetadataSearchPicker
 					emptyLabel="No people found"
 					items={items}
@@ -310,7 +339,12 @@ export function DateRowField({
 			<PopoverTrigger render={<DetailValueTrigger aria-label={ariaLabel} />}>
 				<span className={cn("text-sm", value ? "text-text" : "text-text-subtlest")}>{label}</span>
 			</PopoverTrigger>
-			<PopoverContent align="start" className="w-auto min-w-(--anchor-width) p-2" positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent
+				align="start"
+				className="w-auto min-w-(--anchor-width) p-2"
+				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+				sideOffset={METADATA_PICKER_SIDE_OFFSET}
+			>
 				<CalendarComponent
 					mode="single"
 					onSelect={(next) => {
@@ -512,7 +546,12 @@ export function AgentsRowField({ value, onChange }: Readonly<{ value: readonly C
 	const shown = selectedAgents.slice(0, MAX_AGENT_AVATARS);
 	const overflow = selectedAgents.length - shown.length;
 	const editContent = (
-		<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+		<PopoverContent
+			align="start"
+			className={METADATA_PICKER_POPOVER_CLASS}
+			positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+			sideOffset={METADATA_PICKER_SIDE_OFFSET}
+		>
 			<MetadataSearchPicker
 				emptyLabel="No agents found"
 				items={items}

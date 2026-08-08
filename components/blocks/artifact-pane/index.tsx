@@ -69,8 +69,11 @@ export function ArtifactPanePropertyRow({
 					"flex min-h-8 min-w-0 items-center text-text [&_[data-slot=avatar-group-count]]:size-6 [&_[data-slot=avatar]]:size-6 [&_[data-slot=tile]]:size-6",
 					editable
 						? cn(
+								// `-ml-2` pulls into the label gap; lift the focused cell so the
+								// outward ring isn’t covered by the label/icon grid columns.
 								"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
-								"has-[:focus-visible]:bg-bg-input has-[[data-popup-open]]:bg-bg-input",
+								"has-[:focus-visible]:relative has-[:focus-visible]:z-10 has-[:focus-visible]:bg-bg-input",
+								"has-[[data-popup-open]]:relative has-[[data-popup-open]]:z-10 has-[[data-popup-open]]:bg-bg-input",
 								FOCUS_RING_HAS_VISIBLE,
 								FOCUS_RING_POPUP_OPEN,
 								"[&>button]:m-0! [&>button]:min-h-8! [&>button]:w-full! [&>button]:max-w-none! [&>button]:px-2! [&>button]:py-0! [&>button]:focus-visible:ring-0!",
@@ -190,8 +193,10 @@ export function ArtifactPane({
 		<section
 			aria-label={ariaLabel}
 			className={cn(
-				"flex flex-col overflow-hidden rounded-lg",
-				borderless ? null : "border border-border",
+				// Borderless panes (work-item details rail) must not clip property-row
+				// focus rings; bordered panes keep overflow-hidden for rounded chrome.
+				"flex flex-col rounded-lg",
+				borderless ? "overflow-visible" : "overflow-hidden border border-border",
 				className,
 			)}
 			style={{ backgroundColor: token("elevation.surface"), ...style }}

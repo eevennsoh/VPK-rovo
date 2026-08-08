@@ -8,6 +8,7 @@ import { LABEL_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata-
 import {
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
+	METADATA_PICKER_SIDE_OFFSET,
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -125,6 +126,7 @@ export function ArtifactLabelsField({
 				aria-label="Edit labels"
 				className={METADATA_PICKER_POPOVER_CLASS}
 				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+				sideOffset={METADATA_PICKER_SIDE_OFFSET}
 			>
 				<div
 					className="rich-text-command-menu rich-text-command-menu-borderless"

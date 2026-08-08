@@ -143,7 +143,7 @@ export function EditorToolbarModeTabs({
 		<ToggleGroup
 			aria-label="Editor view mode"
 			multiple={false}
-			size="sm"
+			size="default"
 			value={[mode]}
 			variant="outline"
 			onValueChange={handleValueChange}

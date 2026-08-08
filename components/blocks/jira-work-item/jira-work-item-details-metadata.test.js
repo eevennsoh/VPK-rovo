@@ -112,6 +112,17 @@ test("details metadata searchable pickers reuse the editor palette shell and kee
 	assert.match(editorsSource, /className="rich-text-command-menu-borderless"/u);
 	assert.match(editorsSource, /METADATA_PICKER_POPOVER_CLASS[\s\S]*bg-transparent[\s\S]*shadow-none/u);
 	assert.match(editorsSource, /METADATA_PICKER_POSITIONER_CLASS = "z-\[700\]"/u);
+	assert.match(editorsSource, /METADATA_PICKER_SIDE_OFFSET = 8/u);
+	assert.match(
+		editorsSource,
+		/PersonRowField[\s\S]*sideOffset=\{METADATA_PICKER_SIDE_OFFSET\}/u,
+	);
+	const editorsV2Source = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
+	assert.match(editorsV2Source, /METADATA_PICKER_SIDE_OFFSET = 8/u);
+	assert.match(
+		editorsV2Source,
+		/PersonRowField[\s\S]*sideOffset=\{METADATA_PICKER_SIDE_OFFSET\}/u,
+	);
 	assert.doesNotMatch(editorsSource, /rich-text-command-menu-embedded/u);
 	assert.doesNotMatch(editorsSource, /CommandInput|CommandItem|CommandList/u);
 	assert.match(detailsSource, /<MetadataSearchPicker/u);

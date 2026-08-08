@@ -7,13 +7,20 @@ import { useRovoChat } from "@/app/contexts";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import type {
 	JiraWorkItemComposerDelivery,
 	JiraWorkItemPreset,
 	JiraWorkItemState,
 } from "@/components/blocks/jira-work-item/data/session-state";
+import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import type { WorkItemData } from "@/app/contexts/context-work-item-modal";
-import { JiraWorkItemProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import {
+	JiraWorkItemProvider,
+	useJiraWorkItemMeta,
+	useJiraWorkItemState,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import { MetadataRailProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-layout";
@@ -25,7 +32,11 @@ import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
-import type { ActivitySessionThreadConfig } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import {
+	getPullRequestIdentity,
+	selectPullRequestEntries,
+	type ActivitySessionThreadConfig,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 
 interface ExperimentalV2JiraWorkItemBaseProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
@@ -54,6 +65,125 @@ export type ExperimentalV2JiraWorkItemProps = ExperimentalV2JiraWorkItemBaseProp
 
 const NOOP = () => undefined;
 
+interface ExperimentalV2JiraWorkItemContentProps {
+	activitySessionThread?: ActivitySessionThreadConfig;
+	automationRules?: readonly WorkItemAutomationRule[];
+	composerAgents?: readonly AgentSelectorAgent[];
+	inlineSurface: "card" | "fill";
+	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
+	onClose: () => void;
+	onOpenAgentChat?: (agentId: string) => void;
+	open: boolean;
+	outputs?: readonly string[];
+	presentation: "modal" | "inline";
+	primaryCodingAgentId?: CodingAgentId;
+	workItem: WorkItemData;
+}
+
+function ExperimentalV2JiraWorkItemContent({
+	activitySessionThread,
+	automationRules,
+	composerAgents,
+	inlineSurface,
+	onAgentPromptSubmit,
+	onClose,
+	onOpenAgentChat,
+	open,
+	outputs,
+	presentation,
+	primaryCodingAgentId,
+	workItem,
+}: Readonly<ExperimentalV2JiraWorkItemContentProps>) {
+	const composerLayoutGroupId = useId();
+	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
+	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
+	const { chatSurface } = useRovoChat();
+	const { activityEvents } = useJiraWorkItemMeta();
+	const { elapsedMs } = useJiraWorkItemState();
+	const agentChatOpen = chatSurface === "floating";
+	const pullRequestEntries = useMemo(
+		() => selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs),
+		[activityEvents, elapsedMs],
+	);
+	const selectedPullRequestEntry = useMemo(
+		() => pullRequestEntries.find((entry) => (
+			entry.pullRequest
+			&& getPullRequestIdentity(entry.pullRequest) === selectedPullRequestIdentity
+		)) ?? null,
+		[pullRequestEntries, selectedPullRequestIdentity],
+	);
+	const handlePullRequestSelect = (entry: JiraActivityEventEntry) => {
+		if (!entry.pullRequest) return;
+		const identity = getPullRequestIdentity(entry.pullRequest);
+		setSelectedPullRequestIdentity((currentIdentity) => (
+			currentIdentity === identity ? null : identity
+		));
+	};
+
+	return (
+		<PanelLayoutProvider>
+			<MetadataRailProvider pullRequestCount={pullRequestEntries.length}>
+				<LayoutGroup id={composerLayoutGroupId}>
+					<ExperimentalWorkItemDialog
+						inlineSurface={inlineSurface}
+						open={open}
+						onClose={onClose}
+						presentation={presentation}
+						sidebar={<FloatingSessionSurface />}
+						sidebarOpen={agentChatOpen}
+						workItemCode={workItem.code}
+						workItemTitle={workItem.title}
+					>
+						<ExperimentalWorkItemLayout
+							header={(
+								<ContextHeader
+									descriptionViewMode={descriptionViewMode}
+									outputs={outputs}
+									primaryCodingAgentId={primaryCodingAgentId}
+									pullRequestSelected={selectedPullRequestEntry !== null}
+									onDescriptionViewModeChange={setDescriptionViewMode}
+								/>
+							)}
+							context={(
+								<ContextPanel
+									descriptionViewMode={descriptionViewMode}
+									selectedPullRequestEntry={selectedPullRequestEntry}
+									onDescriptionViewModeChange={setDescriptionViewMode}
+									onPullRequestBack={() => setSelectedPullRequestIdentity(null)}
+								/>
+							)}
+							composer={(
+								<ActivityComposer
+									agents={composerAgents}
+									onAgentPromptSubmit={onAgentPromptSubmit}
+									onOpenAgentChat={onOpenAgentChat}
+								/>
+							)}
+							fillContainer={inlineSurface === "fill"}
+							metadata={(
+								<div
+									aria-hidden={agentChatOpen}
+									className="flex min-h-0 min-w-0 flex-1 flex-col"
+									inert={agentChatOpen ? true : undefined}
+								>
+									<MetadataRail
+										activity={<ActivityPanel activitySessionThread={activitySessionThread} />}
+										automationRules={automationRules}
+										borderless
+										pullRequestEntries={pullRequestEntries}
+										selectedPullRequestIdentity={selectedPullRequestIdentity}
+										onPullRequestSelect={handlePullRequestSelect}
+									/>
+								</div>
+							)}
+						/>
+					</ExperimentalWorkItemDialog>
+				</LayoutGroup>
+			</MetadataRailProvider>
+		</PanelLayoutProvider>
+	);
+}
+
 /**
  * Composition root for the experimental **v2** Jira Work Item surface.
  *
@@ -69,10 +199,6 @@ const NOOP = () => undefined;
  * full-height sibling column, keeping the chat within the work-item surface.
  */
 export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWorkItemProps>) {
-	const composerLayoutGroupId = useId();
-	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
-	const { chatSurface } = useRovoChat();
-	const agentChatOpen = chatSurface === "floating";
 	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
 	let inlineSurface: "card" | "fill" = "card";
@@ -111,57 +237,21 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 				initialStateRevision={props.initialStateRevision}
 				workItem={workItem}
 			>
-				<PanelLayoutProvider>
-					<LayoutGroup id={composerLayoutGroupId}>
-						<ExperimentalWorkItemDialog
-							inlineSurface={inlineSurface}
-							open={open}
-							onClose={onClose}
-							presentation={presentation}
-							sidebar={<FloatingSessionSurface />}
-							sidebarOpen={agentChatOpen}
-							workItemCode={workItem.code}
-							workItemTitle={workItem.title}
-						>
-							<ExperimentalWorkItemLayout
-								header={(
-									<ContextHeader
-										descriptionViewMode={descriptionViewMode}
-										outputs={props.outputs}
-										primaryCodingAgentId={props.primaryCodingAgentId}
-										onDescriptionViewModeChange={setDescriptionViewMode}
-									/>
-								)}
-								context={(
-									<ContextPanel
-										descriptionViewMode={descriptionViewMode}
-										onDescriptionViewModeChange={setDescriptionViewMode}
-									/>
-								)}
-								composer={(
-									<ActivityComposer
-										agents={props.composerAgents}
-										onAgentPromptSubmit={props.onAgentPromptSubmit}
-										onOpenAgentChat={props.onOpenAgentChat}
-									/>
-								)}
-								fillContainer={inlineSurface === "fill"}
-								metadata={(
-									<div
-										aria-hidden={agentChatOpen}
-										inert={agentChatOpen ? true : undefined}
-									>
-										<MetadataRail
-											activity={<ActivityPanel activitySessionThread={props.activitySessionThread} />}
-											automationRules={props.automationRules}
-											borderless
-										/>
-									</div>
-								)}
-							/>
-						</ExperimentalWorkItemDialog>
-					</LayoutGroup>
-				</PanelLayoutProvider>
+				<ExperimentalV2JiraWorkItemContent
+					activitySessionThread={props.activitySessionThread}
+					automationRules={props.automationRules}
+					composerAgents={props.composerAgents}
+					inlineSurface={inlineSurface}
+					key={props.initialStateRevision}
+					onAgentPromptSubmit={props.onAgentPromptSubmit}
+					onClose={onClose}
+					onOpenAgentChat={props.onOpenAgentChat}
+					open={open}
+					outputs={props.outputs}
+					presentation={presentation}
+					primaryCodingAgentId={props.primaryCodingAgentId}
+					workItem={workItem}
+				/>
 			</JiraWorkItemProvider>
 		</WorkItemModalProvider>
 	);

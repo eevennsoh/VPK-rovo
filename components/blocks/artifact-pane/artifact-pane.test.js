@@ -34,7 +34,7 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
 	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
-	assert.match(BLOCK_SOURCE, /borderless \? null : "border border-border"/u);
+	assert.match(BLOCK_SOURCE, /borderless \? "overflow-visible" : "overflow-hidden border border-border"/u);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(BLOCK_SOURCE, /function formatCollapsedSectionCount\(count: number \| string\): string/u);
 	assert.match(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);
@@ -88,6 +88,10 @@ test("Artifact Pane property rows follow the Jira Session Flyout layout pattern"
 	assert.match(BLOCK_SOURCE, /\[&_\[data-slot=tile\]\]:size-6/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /\[&_\[data-slot=(?:avatar|avatar-group-count|tile)\]\]:size-4/u);
 	assert.match(BLOCK_SOURCE, /editable[\s\S]*"-ml-2 rounded-md transition-colors duration-normal ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none"/u);
+	assert.match(
+		BLOCK_SOURCE,
+		/has-\[:focus-visible\]:relative has-\[:focus-visible\]:z-10 has-\[:focus-visible\]:bg-bg-input[\s\S]*has-\[\[data-popup-open\]\]:relative has-\[\[data-popup-open\]\]:z-10 has-\[\[data-popup-open\]\]:bg-bg-input/u,
+	);
 	assert.match(BLOCK_SOURCE, /\[&>button\]:focus-visible:ring-0!/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /editable[\s\S]*"-m[xr]-2 rounded-md/u);
 	assert.doesNotMatch(BLOCK_SOURCE, /py-0\.5 transition-colors/u);

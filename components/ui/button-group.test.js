@@ -30,6 +30,8 @@ const BUTTON_DETAIL_SOURCE = fs.readFileSync(
 
 const SELECTED_SEGMENT_SELECTOR =
 	"[&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]";
+const FOCUS_VISIBLE_SEGMENT_SELECTOR =
+	"[&>[data-slot]~[data-slot]:focus-visible]";
 const SELECTED_BUTTON_STATE_CLASSES = [
 	"aria-pressed:bg-bg-selected",
 	"aria-pressed:text-text-selected",
@@ -68,6 +70,26 @@ test("selected segments after the first paint a leading stroke without changing 
 
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:-ml-px`));
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:border-l`));
+});
+
+test("focus-visible segments after the first paint a leading ring-colored stroke", () => {
+	const requiredOverlayClasses = [
+		":relative",
+		":before:pointer-events-none",
+		":before:absolute",
+		":before:inset-y-0",
+		":before:-left-px",
+		":before:w-px",
+		":before:bg-ring",
+		":before:content-['']",
+	];
+
+	for (const className of requiredOverlayClasses) {
+		assert.ok(
+			BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}${className}`),
+			`focus-visible segment seam is missing ${className}`,
+		);
+	}
 });
 
 test("all button variants inherit one shared pressed and expanded state contract", () => {

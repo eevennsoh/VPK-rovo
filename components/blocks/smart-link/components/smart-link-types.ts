@@ -125,6 +125,10 @@ export interface SmartLinkProps {
 	openDelay?: number;
 	closeDelay?: number;
 	onOpenChange?: (open: boolean) => void;
+	/** When provided, render the inline trigger as a selectable button instead of a link. */
+	onActivate?: (item: SmartLinkItem) => void;
+	/** Whether the selectable inline trigger is currently selected. */
+	selected?: boolean;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
 	onRemove?: () => void;
 	removeVariant?: "overlay";

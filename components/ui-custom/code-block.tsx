@@ -474,6 +474,7 @@ export function CodeBlockContent({
     <div
       className="relative overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
       data-slot="code-block-scroll-area"
+      tabIndex={0}
       title={`${language} code example`}
     >
       <CodeBlockBody
