@@ -1,17 +1,23 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { ContextEditableDescription } from "@/components/blocks/jira-work-item/experimental-v2/components/context-editable-header";
 import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-item/experimental-v2/components/ai-planner-panel";
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
-import { PullRequestDetailView } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
+
+const PullRequestDetailView = dynamic(() =>
+	import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view")
+		.then((module) => module.PullRequestDetailView),
+);
 
 /**
  * Full-width heading for the experimental work item. The title and action row
