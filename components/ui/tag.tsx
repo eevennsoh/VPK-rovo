@@ -277,7 +277,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 		}
 		if (event.key === "Enter" || event.key === " ") {
 			event.preventDefault();
-			onClick?.();
+			onClick?.(event as unknown as React.MouseEvent<HTMLSpanElement>);
 		}
 	};
 
