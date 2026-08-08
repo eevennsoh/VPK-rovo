@@ -5,6 +5,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const {
+	DEFAULT_DEFERRED_MODULE_RULES,
 	DEFAULT_ROUTE_SHELL_FILES,
 	collectHeavyStaticImportsFromSource,
 	createHeavyImportRule,
@@ -100,6 +101,7 @@ test("verifies configured route shell files in a workspace", () => {
 
 		const failures = verifyLazyLoadBoundaries({
 			cwd,
+			deferredModuleRules: [],
 			routeShellFiles: [shellPath, "app/missing/page.tsx"],
 		});
 
@@ -108,6 +110,47 @@ test("verifies configured route shell files in a workspace", () => {
 			"missing-route-shell",
 		]);
 		assert.match(formatFailure(failures[1]), /configured route shell does not exist/u);
+	} finally {
+		rmSync(cwd, { force: true, recursive: true });
+	}
+});
+
+test("detects a deferred module pulled into an entry's static dependency graph", () => {
+	const cwd = mkdtempSync(path.join(os.tmpdir(), "vpk-deferred-boundary-"));
+	try {
+		const entryFile = "app/page.tsx";
+		const boundaryFile = "components/boundary.tsx";
+		const targetFile = "components/deferred.tsx";
+		mkdirSync(path.join(cwd, "app"), { recursive: true });
+		mkdirSync(path.join(cwd, "components"), { recursive: true });
+		writeFileSync(path.join(cwd, entryFile), 'import Boundary from "@/components/boundary";\nexport default Boundary;\n');
+		writeFileSync(path.join(cwd, targetFile), "export default function Deferred() { return null; }\n");
+		writeFileSync(path.join(cwd, boundaryFile), 'const Deferred = import("@/components/deferred");\nexport default Deferred;\n');
+
+		const rule = [{
+			entryFile,
+			reason: "the deferred subtree must stay split",
+			targetFile,
+		}];
+		assert.deepEqual(verifyLazyLoadBoundaries({
+			cwd,
+			deferredModuleRules: rule,
+			heavyImportRules: [],
+			routeShellFiles: [],
+		}), []);
+
+		writeFileSync(path.join(cwd, boundaryFile), 'import Deferred from "@/components/deferred";\nexport default Deferred;\n');
+		const failures = verifyLazyLoadBoundaries({
+			cwd,
+			deferredModuleRules: rule,
+			heavyImportRules: [],
+			routeShellFiles: [],
+		});
+
+		assert.equal(failures.length, 1);
+		assert.equal(failures[0].type, "deferred-module-statically-reachable");
+		assert.deepEqual(failures[0].dependencyPath, [entryFile, boundaryFile, targetFile]);
+		assert.match(formatFailure(failures[0]), /statically reachable/u);
 	} finally {
 		rmSync(cwd, { force: true, recursive: true });
 	}
@@ -122,6 +165,14 @@ test("default route shell list covers the measured app shells", () => {
 		"app/rovo/[[...id]]/page.tsx",
 		"app/studio/[[...id]]/page.tsx",
 	]);
+});
+
+test("default deferred module rules cover the Jira pull request review subtree", () => {
+	assert.deepEqual(DEFAULT_DEFERRED_MODULE_RULES, [{
+		entryFile: "components/projects/jira-agents/page.tsx",
+		reason: "the Jira pull request review subtree must stay out of the initial project bundle",
+		targetFile: "components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view.tsx",
+	}]);
 });
 
 test("package scripts expose and run the lazy-load verifier", () => {

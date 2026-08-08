@@ -14,9 +14,20 @@ import {
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
 
-const PullRequestDetailView = dynamic(() =>
-	import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view")
+const PullRequestDetailView = dynamic(
+	() => import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view")
 		.then((module) => module.PullRequestDetailView),
+	{
+		loading: () => (
+			<div
+				className="grid min-h-48 place-items-center p-6 text-sm text-text-subtle"
+				data-jira-work-item-pull-request-detail-loading
+				role="status"
+			>
+				Loading pull request details…
+			</div>
+		),
+	},
 );
 
 /**

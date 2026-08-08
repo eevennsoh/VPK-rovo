@@ -125,10 +125,6 @@ test("falls back to metadata-only overview for other pull requests", async () =>
 });
 
 test("detail UI exposes stable integration selectors and guided-review controls", () => {
-	const contextPanelSource = readFileSync(
-		join(__dirname, "../components/context-panel.tsx"),
-		"utf8",
-	);
 	const detailViewSource = readFileSync(
 		join(__dirname, "../components/pull-request-detail/pull-request-detail-view.tsx"),
 		"utf8",
@@ -146,9 +142,6 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		"utf8",
 	);
 
-	assert.match(contextPanelSource, /import dynamic from "next\/dynamic"/u);
-	assert.match(contextPanelSource, /const PullRequestDetailView = dynamic\(\(\) =>[\s\S]*import\("@\/components\/blocks\/jira-work-item\/experimental-v2\/components\/pull-request-detail\/pull-request-detail-view"\)[\s\S]*\.then\(\(module\) => module\.PullRequestDetailView\)/u);
-	assert.doesNotMatch(contextPanelSource, /import \{ PullRequestDetailView \} from/u);
 	assert.match(detailViewSource, /data-jira-work-item-pull-request-detail/u);
 	assert.match(detailViewSource, /Overview[\s\S]*Files \{review\.files\.length\}[\s\S]*Guide/u);
 	assert.match(detailViewSource, /onFinish=\{\(\) => setActiveTab\("details"\)\}/u);
