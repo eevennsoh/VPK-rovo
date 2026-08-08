@@ -185,10 +185,11 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
  * the composition root.
  *
  * Scroll ownership matches the left description column: toggle chrome
- * (`MetadataRailToggle`) sits above a flex-1 body scrollport (not inside it),
- * with `px-3` matching ArtifactPane / Activity content. The toggle reveals on
- * rail-body hover (not body focus-within). Activity count and sort/filter
- * publish through `ActivityRailChromeProvider` onto that toggle.
+ * (`MetadataRailToggle`) is the first, sticky child of the flex-1 body
+ * scrollport, with `px-3` matching ArtifactPane / Activity content. Keeping the
+ * first field below that in-flow spacer lets its focus halo paint fully. The
+ * toggle reveals on rail-body hover (not body focus-within). Activity count and
+ * sort/filter publish through `ActivityRailChromeProvider` onto that toggle.
  */
 export function MetadataRail({
 	activity,
@@ -265,47 +266,34 @@ export function MetadataRail({
 		});
 	}
 
-	const {
-		ref: metadataBodyScrollRef,
-		showBottomScrollMask,
-		showTopScrollMask,
-	} = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref: metadataBodyScrollRef, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const metadataBodyScrollMaskStyle = useMemo(
 		() => buildScrollMaskStyle({
-			fadeTop: showTopScrollMask,
+			fadeTop: false,
 			fadeBottom: showBottomScrollMask,
 		}),
-		[showBottomScrollMask, showTopScrollMask],
+		[showBottomScrollMask],
 	);
 
 	return (
 		<ActivityRailChromeProvider setChrome={setActivityChrome}>
-			{/*
-			 * Column chrome (toggle) above a flex-1 body scrollport — same shell
-			 * as left ContextResources. Chrome pb-7 alone separates the toggle
-			 * from the first Details row (matches left resources → description).
-			 * Progressive top/bottom masks live on the body scrollport.
-			 */}
-			{/*
-			 * Same column shell as DescriptionColumnShell: chrome shrink-0 above
-			 * a flex-1 min-h-0 overflow-y-auto scrollport (top+bottom masks).
-			 */}
+			{/* Same sticky-chrome-inside-scrollport shell as the description column. */}
 			<div
 				className="flex min-h-0 min-w-0 flex-1 flex-col"
 				data-jira-work-item-column-shell
 			>
-				<div
-					className="shrink-0"
-					data-jira-work-item-column-chrome
-				>
-					<MetadataRailToggle />
-				</div>
 				<div
 					ref={metadataBodyScrollRef}
 					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto @[860px]/agentlayout:pb-8"
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
+					<div
+						className="shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-10 @[860px]/agentlayout:[container-type:scroll-state]"
+						data-jira-work-item-column-chrome
+					>
+						<MetadataRailToggle />
+					</div>
 					<div
 						className="flex min-w-0 flex-col gap-2"
 						data-jira-work-item-column-body

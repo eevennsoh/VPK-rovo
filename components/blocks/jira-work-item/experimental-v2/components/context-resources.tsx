@@ -105,10 +105,14 @@ export function ContextResources({
 	const closeResourceAction = () => setActiveResourceAction(null);
 
 	return (
-		<>
+		<div
+			className="@[860px]/agentlayout:pt-6"
+			data-jira-work-item-column-chrome-fill={hasPlanner ? "input" : "overlay"}
+		>
 			{/*
-			 * Non-scrolling column chrome (sibling above the description
-			 * scrollport). Shared wide pb-7 aligns description with Details.
+			 * Sticky column chrome inside the description scrollport. Shared wide
+			 * pb-7 aligns description with Details; the parent receives a solid
+			 * fill only after its scroll-state container becomes stuck.
 			 */}
 			<div
 				className={cn(
@@ -216,6 +220,6 @@ export function ContextResources({
 					/>
 				</div>
 			) : null}
-		</>
+		</div>
 	);
 }

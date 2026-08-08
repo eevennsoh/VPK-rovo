@@ -46,30 +46,27 @@ const REDUCED_MOTION_METADATA_PANEL_VARIANTS: Variants = {
 };
 
 /**
- * Wide-column body scroll mask: chrome sits above the scrollport. Top + bottom
- * progressive masks still run on the scrollport so scrolled content fades at
- * the chrome/body seam (replacing StickyRowScrollFade on in-scroll sticky).
+ * Wide-column body scroll mask. Sticky chrome owns the top seam, so the
+ * scrollport only needs its progressive bottom mask.
  */
 function useColumnScrollMask() {
-	const {
-		ref,
-		showBottomScrollMask,
-		showTopScrollMask,
-	} = useHasVerticalOverflow<HTMLDivElement>();
+	const { ref, showBottomScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const style = useMemo(
 		() => buildScrollMaskStyle({
-			fadeTop: showTopScrollMask,
+			fadeTop: false,
 			fadeBottom: showBottomScrollMask,
 		}),
-		[showBottomScrollMask, showTopScrollMask],
+		[showBottomScrollMask],
 	);
 	return { ref, style } as const;
 }
 
 /**
- * Left-column shell: anchor chrome (ContextResources) is a non-scrolling
- * sibling above a flex-1 description scrollport. Narrow mode uses `contents`
- * so chrome/body flatten into the page order flow via `order`.
+ * Left-column shell: anchor chrome (ContextResources) is the first child of the
+ * description scrollport. Its resting height keeps the same alignment while
+ * leaving enough paint space above the first focusable field; on scroll it
+ * sticks and receives a solid fill through the scroll-state query. Narrow mode
+ * uses `contents` so chrome/body flatten into the page order flow via `order`.
  */
 function DescriptionColumnShell({
 	chrome,
@@ -89,17 +86,6 @@ function DescriptionColumnShell({
 			className="order-2 contents @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col"
 			data-jira-work-item-column-shell
 		>
-			{/*
-			 * Anchor chrome outside the overflow scrollport — buttons never
-			 * compete with description stacking. Wide pb-7 on the resource row
-			 * keeps description top aligned with the Details column body.
-			 */}
-			<div
-				className="order-1 shrink-0 @[860px]/agentlayout:px-6 @[860px]/agentlayout:pt-6"
-				data-jira-work-item-column-chrome
-			>
-				{chrome}
-			</div>
 			<div
 				ref={scrollRef}
 				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
@@ -107,7 +93,13 @@ function DescriptionColumnShell({
 				style={style}
 			>
 				<div
-					className="min-w-0 @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6"
+					className="order-1 shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-10 @[860px]/agentlayout:[container-type:scroll-state]"
+					data-jira-work-item-column-chrome
+				>
+					{chrome}
+				</div>
+				<div
+					className="order-2 min-w-0 @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-col @[860px]/agentlayout:gap-y-6"
 					data-jira-work-item-column-body
 					style={bodyStyle}
 				>
@@ -122,10 +114,10 @@ function DescriptionColumnShell({
  * Responsive layout for the experimental work item dialog body.
  *
  * Sits under the dialog header band (breadcrumbs + title). Wide
- * (container >= 860px): two columns with chrome *above* a flex-1 body
- * scrollport (progressive top + bottom masks on the scrollport), plus an
- * optional left composer footer. Left: ContextResources chrome + description
- * scroll; right: Details/Activity toggle chrome + metadata scroll (440px).
+ * (container >= 860px): two columns with transparent-at-rest sticky chrome as
+ * the first child of each flex-1 body scrollport, plus an optional left composer
+ * footer. Left: ContextResources chrome + description scroll; right:
+ * Details/Activity toggle chrome + metadata scroll (440px).
  * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
  * hover / `:focus-visible` on the toggle) — not body `:focus-within`.
  *
@@ -233,8 +225,8 @@ export function ExperimentalWorkItemLayout({
 							animate="open"
 							className={cn(
 								"order-3 min-w-0",
-								// Column shell (not the scrollport): toggle chrome is a
-								// shrink-0 sibling above the rail body scroll inside MetadataRail.
+								// Column shell (not the scrollport): MetadataRail owns the
+								// sticky chrome + body scroll chain.
 								// Stays a real box in narrow (not `contents`) so order-3 keeps
 								// Resources → Context → Metadata → Composer.
 								"@[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[440px] @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:[grid-area:1/1]",
