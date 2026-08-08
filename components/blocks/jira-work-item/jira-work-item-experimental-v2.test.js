@@ -30,7 +30,7 @@ const V2_DIVERGENCES = new Set([
 	"components/context-resources.tsx",
 	"components/context-title-actions.tsx",
 	"components/context-title-bar.tsx",
-	// v2 titles use ADS `font.heading.medium`; v1 keeps the text-xl utility treatment.
+	// v2 titles use ADS `font.heading.xxlarge`; v1 keeps the text-xl utility treatment.
 	"components/inline-edit-treatment.ts",
 	"components/detail-field-editors.tsx",
 	"components/details-sections.tsx",
@@ -70,6 +70,14 @@ const V2_ONLY_FILES = new Set([
 	"components/development-repository-picker.tsx",
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// Status + Reported by under the editable title (migrated out of Details rail).
+	"components/context-title-meta.tsx",
+	// Details/Activities toggle lives at the top of the metadata rail (extracted module).
+	"components/metadata-rail-toggle.tsx",
+	"context-metadata-rail.tsx",
+	// Details/Activity/PR view union + type guard (kept out of the provider
+	// module so Fast Refresh can treat that file as components/hooks only).
+	"lib/metadata-rail-view.ts",
 	// Metadata-rail Pull request toggle panel; v1 has no PR segment.
 	"components/pull-requests-panel.tsx",
 	"components/pull-request-sort-control.tsx",
@@ -133,7 +141,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -509,7 +517,9 @@ test("experimental v2 keeps the metadata panel visible and uses asymmetric heade
 	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
 	const headerActionsSource = readBlockFile("experimental-v2/components/experimental-breadcrumb-actions.tsx");
 
-	assert.match(dialogSource, /paddingBottom=\{token\("space\.150"\)\}[\s\S]*paddingTop=\{token\("space\.150"\)\}/u);
+	// No ModalHeader bottom padding; ContextTitleBar owns px-6 pb-4 on the title block.
+	assert.match(dialogSource, /paddingBottom=\{0\}[\s\S]*paddingTop=\{token\("space\.150"\)\}/u);
+	assert.doesNotMatch(dialogSource, /className="min-w-0 px-6 pb-4"/u);
 	assert.match(dialogSource, /closeButtonDisabled=\{presentation === "inline"\}/u);
 	assert.doesNotMatch(dialogSource, /showClose=\{presentation !== "inline"\}/u);
 	assert.match(headerActionsSource, /aria-label="Collapse"/u);
@@ -601,272 +611,6 @@ test("experimental v2 reuses the Artifact Pane project field", () => {
 		/<ArtifactProjectField onChange=\{\(id\) => onChange\(\{ atlassianProject: id \}\)\} value=\{draft\.atlassianProject\} \/>/u,
 	);
 	assert.doesNotMatch(detailsTabSource, /function AtlassianProjectEditor/u);
-});
-
-test("experimental v2 Details shows Reporter as a read-only property row", () => {
-	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
-	const titleBarSource = readBlockFile("experimental-v2/components/context-title-bar.tsx");
-	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
-
-	assert.match(
-		detailsTabSource,
-		/label="Assignee"[\s\S]*label="Reporter"[\s\S]*label="Priority"/u,
-	);
-	assert.match(
-		detailsTabSource,
-		/<ArtifactPanePropertyRow editable=\{false\} icon=\{<PersonIcon label="" size="small" \/>\} label="Reporter">[\s\S]*<PersonReadOnlyValue placeholder="Unassigned" value=\{draft\.reporter\} \/>/u,
-	);
-	assert.doesNotMatch(titleBarSource, /ContextTitleMeta|data-jira-work-item-title-meta|Reported/u);
-	assert.doesNotMatch(contextPanelSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
-});
-
-test("experimental v2 Details shows Priority as a primary always-visible field", () => {
-	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
-
-	// Priority sits with Status / Project / Assignee — outside the See more block.
-	assert.match(
-		detailsTabSource,
-		/label="Assignee"[\s\S]*label="Priority"[\s\S]*\{showMore \?/u,
-	);
-	assert.doesNotMatch(
-		detailsTabSource,
-		/\{showMore \? \([\s\S]*label="Priority"/u,
-	);
-});
-
-test("experimental v2 keeps the status focus ring visible while its menu is open", () => {
-	const detailFieldEditorsSource = readBlockFile("experimental-v2/components/detail-field-editors.tsx");
-
-	// `ring-ring/50` (not full opacity) so the open status pill matches the
-	// Input/InputGroup focus recipe used by the rest of the Details panel.
-	assert.match(
-		detailFieldEditorsSource,
-		/className="data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring\/50"/u,
-	);
-});
-
-test("experimental v2 reveals description mode tabs across the description scope", () => {
-	const aiPlannerPanelSource = readBlockFile("experimental-v2/components/ai-planner-panel.tsx");
-	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
-	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
-	const richTextEditorStyles = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../ui-custom/rich-text-editor/rich-text-editor.css"),
-		"utf8",
-	);
-
-	assert.match(
-		aiPlannerPanelSource,
-		/className=\{cn\("group\/description-scope flex flex-col gap-6", hasPlanner \? "px-2 pb-2" : null\)\}/u,
-	);
-	// Layout hover group wraps header + left column only — not the metadata rail.
-	assert.match(
-		layoutSource,
-		/className="group\/description-scope contents">[\s\S]*\{header\}[\s\S]*\{context\}[\s\S]*<\/div>\s*<AnimatePresence[\s\S]*id="experimental-work-item-metadata-panel"/u,
-	);
-	assert.doesNotMatch(
-		layoutSource,
-		/className="group\/description-scope[^"]*overflow-y-auto/u,
-	);
-	assert.doesNotMatch(
-		layoutSource,
-		/group\/description-scope[\s\S]*id="experimental-work-item-metadata-panel"[\s\S]*group\/description-scope/u,
-	);
-	assert.match(
-		contextResourcesSource,
-		/<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover\/description-scope:pointer-events-auto group-hover\/description-scope:opacity-100 group-has-\[:focus-visible\]\/description-scope:pointer-events-auto group-has-\[:focus-visible\]\/description-scope:opacity-100 @\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\] motion-reduce:transition-none">[\s\S]*aria-label="Copy work item as markdown"[\s\S]*navigator\.clipboard\.writeText\(markdown\)[\s\S]*<CopyIcon label="" size="small" \/>[\s\S]*Copy work item as markdown[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
-	);
-	assert.doesNotMatch(contextResourcesSource, /size="compact"/u);
-	assert.doesNotMatch(contextResourcesSource, /group-focus-within\/description-scope/u);
-	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-(?:list|trigger)\]\]/u);
-	assert.match(
-		richTextEditorStyles,
-		/\.context-description-tiptap-editor:not\(:focus\) > p:last-child:has\(> br\.ProseMirror-trailingBreak:only-child\) \{\s*display: none;/u,
-	);
-});
-
-test("experimental v2 gives the title and controls a full-width row above description and Details", () => {
-	const globalCss = fs.readFileSync(path.join(BLOCK_DIR, "../../../app/globals.css"), "utf8");
-	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
-	const contextEditableHeaderSource = readBlockFile("experimental-v2/components/context-editable-header.tsx");
-	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
-	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
-	const dialogSource = readBlockFile("experimental-v2/components/experimental-work-item-dialog.tsx");
-	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
-	const modalHeaderSource = fs.readFileSync(
-		path.join(BLOCK_DIR, "../../projects/jira/components/work-item-modal/modal-header.tsx"),
-		"utf8",
-	);
-	const titleActionsSource = readBlockFile("experimental-v2/components/context-title-actions.tsx");
-	const titleBarSource = readBlockFile("experimental-v2/components/context-title-bar.tsx");
-
-	assert.match(
-		compositionSource,
-		/useState<EditorToolbarViewMode>\("rendered"\)[\s\S]*header=\{\([\s\S]*<ContextHeader[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*context=\{\([\s\S]*<ContextPanel/u,
-	);
-	assert.match(
-		contextPanelSource,
-		/export function ContextHeader\([\s\S]*className="flex min-w-0 flex-col gap-4" data-jira-work-item-context-header[\s\S]*className="flex min-w-0 flex-col items-start gap-1" data-jira-work-item-title-block[\s\S]*<WorkItemKeyCopy \/>[\s\S]*<ContextTitleBar \/>[\s\S]*data-jira-work-item-header-actions[\s\S]*<ContextResources[\s\S]*descriptionViewMode=\{descriptionViewMode\}[\s\S]*outputs=\{outputs\}[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*onDescriptionViewModeChange=\{onDescriptionViewModeChange\}/u,
-	);
-	assert.doesNotMatch(
-		contextPanelSource,
-		/selectLatestPullRequestEntry|data-jira-work-item-header-pull-request/u,
-	);
-	assert.match(
-		contextPanelSource,
-		/export function ContextPanel\([\s\S]*<section aria-label="Work item context" className="flex flex-col">[\s\S]*selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*\) : \([\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
-	);
-	assert.doesNotMatch(contextPanelSource, /export function ContextPanel\([\s\S]*<ContextTitleBar|export function ContextPanel\([\s\S]*<ContextResources/u);
-	assert.match(
-		layoutSource,
-		/grid-rows-\[auto_minmax\(0,1fr\)\][\s\S]*\{header\}[\s\S]*\[grid-area:2\/1\][\s\S]*\{context\}[\s\S]*\[grid-area:2\/1\][\s\S]*\{metadata\}/u,
-	);
-	assert.match(
-		layoutSource,
-		/const contentStyle = \{[\s\S]*"--metadata-panel-offset"[\s\S]*className="order-1 min-w-0[^"]*"[\s\S]*style=\{contentStyle\}[\s\S]*\{header\}/u,
-	);
-	assert.match(
-		layoutSource,
-		/import \{ METADATA_PANEL_WIDTH \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/layout-constants"/u,
-	);
-	assert.match(
-		readBlockFile("experimental-v2/lib/layout-constants.ts"),
-		/export const METADATA_PANEL_WIDTH = "440px";/u,
-	);
-	assert.match(
-		layoutSource,
-		/"--metadata-panel-offset": metadataCollapsed \? "0px" : METADATA_PANEL_WIDTH/u,
-	);
-	assert.match(
-		layoutSource,
-		/@\[860px\]\/agentlayout:w-\[440px\][\s\S]*id="experimental-work-item-metadata-panel"/u,
-	);
-	// Metadata rail: keep pr-6 / pb-8; no pl-2 (was an unused 8px left inset).
-	assert.match(
-		layoutSource,
-		/@\[860px\]\/agentlayout:pr-6 @\[860px\]\/agentlayout:pb-8 @\[860px\]\/agentlayout:\[grid-area:2\/1\]"[\s\S]*id="experimental-work-item-metadata-panel"/u,
-	);
-	assert.doesNotMatch(
-		layoutSource,
-		/id="experimental-work-item-metadata-panel"[\s\S]*@\[860px\]\/agentlayout:pl-2|@\[860px\]\/agentlayout:pl-2[\s\S]*id="experimental-work-item-metadata-panel"/u,
-	);
-	// Keep the metadata rail flush — negative top margin clipped the Details/Activity toggle.
-	assert.match(layoutSource, /className="h-full min-w-0">\{metadata\}/u);
-	assert.doesNotMatch(layoutSource, /agentlayout:-mt-5">\{metadata\}/u);
-	assert.match(
-		contextResourcesSource,
-		/"sticky top-0 z-10 \[container-type:scroll-state\]"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-1[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
-	);
-	assert.match(
-		contextResourcesSource,
-		/const hasPlanner = planner\.status !== "inactive" && planner\.status !== "applied";[\s\S]*hasPlanner[\s\S]*\? "bg-bg-input \[&_\[data-slot=button\]\]:bg-bg-input[^"]*"[\s\S]*: "bg-surface-overlay"/u,
-	);
-	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-list\]\]:bg-bg-input/u);
-	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-trigger\]\[data-active\]\]:bg-bg-input/u);
-	assert.match(
-		contextResourcesSource,
-		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask";[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade[\s\S]*className=\{hasPlanner \? "\[&>div\]:from-bg-input" : undefined\}[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
-	);
-	assert.doesNotMatch(contextResourcesSource, /<div className="flex flex-col gap-4">/u);
-	assert.match(
-		globalCss,
-		/@container scroll-state\(stuck: top\) \{[\s\S]*\[data-jira-work-item-resource-row-content\] \{[\s\S]*padding-bottom: var\(--ds-space-100, 8px\);/u,
-	);
-	assert.match(
-		globalCss,
-		/\[data-jira-work-item-resource-row-content\]::before,[\s\S]*\[data-slot="jira-activity-header"\] > :first-child::before \{[\s\S]*bottom: 100%;[\s\S]*height: 2rem;[\s\S]*background: inherit;/u,
-	);
-	assert.doesNotMatch(contextResourcesSource, /className="flex flex-wrap items-start gap-2/u);
-	assert.match(
-		contextResourcesSource,
-		/<div className="[^"]*ml-auto shrink-0[^"]*@\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\][^"]*">[\s\S]*<EditorToolbarModeTabs[\s\S]*mode=\{descriptionViewMode\}[\s\S]*onModeChange=\{onDescriptionViewModeChange\}/u,
-	);
-	assert.match(contextResourcesSource, /buttonLabel: "Add attachments",[\s\S]*<AttachmentIcon label="" size="small" \/>/u);
-	assert.match(contextResourcesSource, /buttonLabel: "Add subtasks",[\s\S]*<ChildWorkItemsIcon label="" size="small" \/>/u);
-	assert.match(contextResourcesSource, /buttonLabel: "Link work items",[\s\S]*<LinkIcon label="" size="small" \/>[\s\S]*<LinkedWorkItemsPopover key="linkedItems" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
-	assert.match(
-		contextResourcesSource,
-		/<DropdownMenuTrigger[\s\S]*aria-label="Add to work item"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*resources\.map\(\(resource\) => \([\s\S]*onSelect=\{\(\) => setActiveResourceAction\(resource\.id\)\}[\s\S]*Create commit[\s\S]*Create branch/u,
-	);
-	assert.match(contextResourcesSource, /<AttachmentsPopover key="attachments" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
-	assert.match(contextResourcesSource, /<SubtasksPopover key="subtasks" open=\{open\} onOpenChange=\{onOpenChange\} trigger=\{trigger\} \/>/u);
-	assert.match(contextResourcesSource, /className="pointer-events-none absolute inset-0 opacity-0"[\s\S]*activeResourceAction === resource\.id/u);
-	assert.doesNotMatch(contextResourcesSource, /<Button size="compact" type="button" variant="outline">/u);
-	assert.doesNotMatch(contextResourcesSource, /const empty =|empty\.map/u);
-	assert.doesNotMatch(contextResourcesSource, /agentFieldName="attachments"|agentFieldName="subtasks"|agentFieldName="linkedItems"/u);
-	assert.match(titleActionsSource, /metadataTogglePending \|\| metadataLayoutAnimating/u);
-	assert.match(titleActionsSource, /inert=\{isInteractive \? undefined : true\}/u);
-	// Restriction, watcher, and share moved into the header overflow menu.
-	assert.doesNotMatch(titleActionsSource, /ContextHeaderActions|LockUnlockedIcon|EyeOpenIcon|ShareIcon/u);
-	assert.match(
-		titleActionsSource,
-		/export function ContextTitleActions\([\s\S]*useJiraWorkItemMeta\(\)[\s\S]*primaryAgentId \?\? \(initialPreset === "blank" \? null : "claude-code"\)[\s\S]*<ButtonGroup variant="split">[\s\S]*aria-label=\{primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"\}[\s\S]*className="has-data-\[icon=inline-start\]:pl-2 \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_img\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_svg\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_img\]:size-4! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_svg\]:size-4!"[\s\S]*size="compact"[\s\S]*className="inline-flex size-4 shrink-0 items-center justify-center \[&_span\]:flex! \[&_span\]:items-center! \[&_span\]:justify-center!"[\s\S]*data-agent-logo=\{primaryCodingAgent\?\.id === "rovo-cli" \? "rovo" : primaryCodingAgent \? "third-party" : undefined\}[\s\S]*data-icon=\{primaryCodingAgent \? "inline-start" : undefined\}[\s\S]*primaryCodingAgent\.buttonLogo[\s\S]*<CodeIcon aria-hidden size="small" \/>[\s\S]*primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"[\s\S]*aria-label="More open options" size="icon-compact"/u,
-	);
-	assert.doesNotMatch(titleActionsSource, /aria-label=\{primaryCodingAgent[\s\S]*className="gap-0\.5"[\s\S]*variant="outline"/u);
-	assert.doesNotMatch(titleActionsSource, /AddIcon|aria-label="Add"/u);
-	assert.match(titleActionsSource, /<motion\.div[\s\S]*className="flex shrink-0 items-center gap-1"/u);
-	assert.doesNotMatch(titleActionsSource, /export function ContextTitleActions\([\s\S]*<div className="flex shrink-0 items-center gap-2">/u);
-	assert.match(
-		titleActionsSource,
-		/const CODING_AGENTS[\s\S]*\{ id: "claude-code", label: "Claude"[\s\S]*\{ id: "claude-cli", label: "Claude CLI"[\s\S]*\{ id: "codex", label: "Codex"[\s\S]*\{ id: "cursor", label: "Cursor"[\s\S]*\{ id: "gemini", label: "Gemini"[\s\S]*\{ id: "github-copilot", label: "GitHub Copilot"[\s\S]*\{ id: "rovo-cli", label: "Rovo CLI"[\s\S]*\{ id: "vs-code", label: "VS Code"/u,
-	);
-	assert.match(
-		titleActionsSource,
-		/name === "cursor" \|\| name === "github-copilot"[\s\S]*"dark:brightness-0 dark:invert"[\s\S]*className=\{darkModeClassName\}/u,
-	);
-	assert.match(
-		titleActionsSource,
-		/codingAgents\.map\(\(agent\) => \([\s\S]*<DropdownMenuItem[\s\S]*elemBefore=\{<span aria-hidden className="inline-flex items-center justify-center leading-none">\{agent\.logo\}<\/span>\}[\s\S]*key=\{agent\.id\}[\s\S]*onSelect=\{\(\) => setSelectedAgentId\(agent\.id\)\}[\s\S]*\{agent\.label\}[\s\S]*Copy prompt/u,
-	);
-	assert.doesNotMatch(titleActionsSource, /byline|menu-row-title|menu-row-byline|className="h-11 py-0"/u);
-	assert.match(
-		titleActionsSource,
-		/<div className="sticky bottom-0 bg-surface-overlay px-1 pb-1">[\s\S]*<DropdownMenuSeparator className="mt-0" \/>[\s\S]*Copy prompt/u,
-	);
-	assert.doesNotMatch(titleActionsSource, /Configure MCP|Configure Teamwork Graph|\/icons\/mcp\.svg|TeamworkGraphIcon/u);
-	assert.doesNotMatch(titleActionsSource, /sticky bottom-0 border-t|<div className="border-t border-border p-1">/u);
-	assert.match(
-		titleActionsSource,
-		/<DropdownMenuContent[\s\S]*className="max-h-\[var\(--available-height\)\] p-0"[\s\S]*<div className="p-1">/u,
-	);
-	assert.doesNotMatch(titleActionsSource, /max-h-72|overflow-y-auto p-1/u);
-	assert.doesNotMatch(titleActionsSource, /DropdownMenuSub|ScreenIcon|CloudIcon/u);
-	assert.doesNotMatch(titleActionsSource, /ContextTitleActions\([\s\S]*collapsed = false/u);
-	assert.doesNotMatch(titleBarSource, /ContextTitleActions|AnimatedContextTitleActions/u);
-	assert.doesNotMatch(titleBarSource, /from "motion\/react"|usePanelLayout|px-6/u);
-	assert.match(
-		titleBarSource,
-		/navigator\.clipboard\?\.writeText\(workItem\.code\)[\s\S]*setCopied\(true\)[\s\S]*setTooltipOpen\(true\)/u,
-	);
-	assert.match(
-		titleBarSource,
-		/export function WorkItemKeyCopy\(\)[\s\S]*<TooltipTrigger[\s\S]*delay=\{0\}[\s\S]*render=\{\s*<button\s*type="button"\s*aria-label=\{copied \? "Work item key copied" : "Copy work item key"\}\s*className="group\/work-item-key inline-flex min-w-0 cursor-pointer items-center border-0 bg-transparent p-0 font-mono text-base leading-5 text-text-subtle hover:text-text focus-visible:text-text focus-visible:outline-none"\s*data-jira-work-item-key\s*onClick=\{\(\) => void handleCopyWorkItemKey\(\)\}\s*\/>\s*\}[\s\S]*data-jira-work-item-key-label>\{workItem\.code\}[\s\S]*max-w-0 shrink-0[\s\S]*group-hover\/work-item-key:max-w-6[\s\S]*data-jira-work-item-key-copy-icon[\s\S]*className="ml-1 inline-flex size-4 shrink-0 items-center justify-center \[&_\[data-slot=icon\]\]:size-4 \[&_svg\]:size-4"[\s\S]*className=\{cn\("size-4", copied \? "text-icon-success" : "text-text-subtle"\)\}[\s\S]*render=\{copied \? <StatusSuccessIcon[\s\S]*: <LinkIcon[\s\S]*size="small"[\s\S]*<TooltipContent side="top">[\s\S]*\{copied \? "Work item key copied" : "Copy work item key"\}[\s\S]*<\/TooltipContent>/u,
-	);
-	assert.doesNotMatch(titleBarSource, /role="button"|tabIndex=\{0\}|onKeyDown=\{handleKeyDown\}/u);
-	assert.doesNotMatch(titleBarSource, /from "@\/components\/ui\/button"|<Button[\s\S]*data-jira-work-item-key/u);
-	assert.doesNotMatch(titleBarSource, /components\/ui\/tag|<Tag/u);
-	assert.match(
-		titleBarSource,
-		/export function ContextTitleBar\(\)[\s\S]*className="min-w-0 self-stretch @\[860px\]\/agentlayout:mr-\[var\(--metadata-panel-offset\)\]"[\s\S]*data-jira-work-item-title-column[\s\S]*<ContextEditableTitle \/>/u,
-	);
-	assert.doesNotMatch(titleBarSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
-	assert.doesNotMatch(contextPanelSource, /ContextTitleMeta|data-jira-work-item-title-meta/u);
-	assert.doesNotMatch(contextEditableHeaderSource, /readViewFitContainerWidth=\{false\}/u);
-	assert.match(
-		readBlockFile("experimental-v2/components/inline-edit-treatment.ts"),
-		/export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =\s*"relative h-auto overflow-visible border-0 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";/u,
-	);
-	assert.doesNotMatch(
-		readBlockFile("experimental-v2/components/inline-edit-treatment.ts"),
-		/export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =\s*"[^"]*border-2[^"]*"/u,
-	);
-	assert.doesNotMatch(titleBarSource, /export function ContextTitleBar\(\)[\s\S]*<WorkItemKeyCopy/u);
-	assert.doesNotMatch(dialogSource, /breadcrumbLeadingContent|WorkItemKeyCopy/u);
-	assert.match(
-		modalHeaderSource,
-		/breadcrumbLeadingContent\?: ReactNode;[\s\S]*<BreadcrumbItem className="mr-2 shrink-0">[\s\S]*\{breadcrumbLeadingContent\}[\s\S]*<BreadcrumbItem className="min-w-0 max-w-\[240px\] shrink">/u,
-	);
-	assert.doesNotMatch(dialogSource, /ContextTitleBar/u);
-	assert.match(dialogSource, /gridTemplateRows: "minmax\(0, 1fr\)"/u);
 });
 
 test("the block index resolves both experimental surfaces from one map", () => {

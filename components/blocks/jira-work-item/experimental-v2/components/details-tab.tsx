@@ -7,7 +7,6 @@ import EpicIcon from "@atlaskit/icon/core/epic";
 import PersonIcon from "@atlaskit/icon/core/person";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import ProjectIcon from "@atlaskit/icon/core/project";
-import ProjectStatusIcon from "@atlaskit/icon/core/project-status";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
@@ -18,10 +17,8 @@ import { ArtifactProjectField } from "@/components/blocks/artifact-pane/artifact
 import type { AgentPlannerMetadata } from "@/components/blocks/jira-work-item/data/planner-state";
 import {
 	DateRowField,
-	PersonReadOnlyValue,
 	PersonRowField,
 	PriorityRowField,
-	StatusPill,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-editors";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -43,12 +40,7 @@ export function DetailsTab({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<ArtifactPanePropertyRow editable={false} icon={<ProjectStatusIcon label="" size="small" />} label="Status">
-				<StatusPill onChange={(next) => onChange({ status: next })} value={draft.status} />
-			</ArtifactPanePropertyRow>
-			<ArtifactPanePropertyRow icon={<ProjectIcon label="" size="small" />} label="Project">
-				<ArtifactProjectField onChange={(id) => onChange({ atlassianProject: id })} value={draft.atlassianProject} />
-			</ArtifactPanePropertyRow>
+			{/* Status + Reporter live under the title (ContextTitleMeta), not here. */}
 			<ArtifactPanePropertyRow icon={<PersonIcon label="" size="small" />} label="Assignee">
 				<PersonRowField
 					ariaLabel="Change assignee"
@@ -58,23 +50,23 @@ export function DetailsTab({
 					value={draft.assignee}
 				/>
 			</ArtifactPanePropertyRow>
-			<ArtifactPanePropertyRow editable={false} icon={<PersonIcon label="" size="small" />} label="Reporter">
-				<PersonReadOnlyValue placeholder="Unassigned" value={draft.reporter} />
-			</ArtifactPanePropertyRow>
 			<ArtifactPanePropertyRow icon={<PriorityMediumIcon label="" size="small" />} label="Priority">
 				<PriorityRowField onChange={(next) => onChange({ priority: next })} value={draft.priority} />
 			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<ProjectIcon label="" size="small" />} label="Project">
+				<ArtifactProjectField onChange={(id) => onChange({ atlassianProject: id })} value={draft.atlassianProject} />
+			</ArtifactPanePropertyRow>
+			<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Start date">
+				<DateRowField
+					ariaLabel="Change start date"
+					CalendarComponent={Calendar}
+					onChange={(next) => onChange({ startDate: next })}
+					placeholder="Add start date"
+					value={draft.startDate}
+				/>
+			</ArtifactPanePropertyRow>
 			{showMore ? (
 				<>
-					<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Start date">
-						<DateRowField
-							ariaLabel="Change start date"
-							CalendarComponent={Calendar}
-							onChange={(next) => onChange({ startDate: next })}
-							placeholder="Add start date"
-							value={draft.startDate}
-						/>
-					</ArtifactPanePropertyRow>
 					<ArtifactPanePropertyRow icon={<CalendarIcon label="" size="small" />} label="Due date">
 						<DateRowField
 							ariaLabel="Change due date"

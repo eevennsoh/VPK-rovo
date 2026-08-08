@@ -1,8 +1,5 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
-
-import { InlineEdit } from "@/components/ui/inline-edit";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { RichTextEditor } from "@/components/ui-custom/rich-text-editor";
@@ -12,36 +9,36 @@ import {
 	useJiraWorkItemActions,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { cn } from "@/lib/utils";
 import {
-	CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME,
-	CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS,
-	CONTEXT_INLINE_EDIT_MOTION_PROPS,
 	CONTEXT_TITLE_FONT_STYLE,
-	CONTEXT_TITLE_INPUT_CLASS_NAME,
 	CONTEXT_TITLE_READ_VIEW_CLASS_NAME,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/inline-edit-treatment";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 /**
- * Click-to-edit work item title. Rendered separately from the description so the
- * generated summary (TL;DR + next steps) can sit between them, per spec.
+ * Live work item title field.
+ *
+ * Matches the description editor’s direct-edit UX: click/focus the text and
+ * type — no InlineEdit read-view button, confirm/cancel, or hover-to-reveal
+ * chrome. Commits on every keystroke via `editContextText`.
  */
 export function ContextEditableTitle() {
 	const { contextResources } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
-	const shouldReduceMotion = useReducedMotion();
 	return (
-		<InlineEdit
-			value={contextResources.title}
+		<Input
+			aria-label="Work item title"
+			className={cn(
+				CONTEXT_TITLE_READ_VIEW_CLASS_NAME,
+				"w-full min-w-0 rounded-none text-text focus-visible:ring-0",
+			)}
+			data-jira-work-item-title
 			placeholder="Add a title"
-			editButtonLabel="Edit work item title"
-			readViewClassName={CONTEXT_TITLE_READ_VIEW_CLASS_NAME}
-			readViewStyle={CONTEXT_TITLE_FONT_STYLE}
-			readViewMotionProps={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_MOTION_PROPS}
-			readViewBackdropClassName={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME}
-			readViewBackdropMotionProps={shouldReduceMotion ? undefined : CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS}
-			inputProps={{ className: CONTEXT_TITLE_INPUT_CLASS_NAME, style: CONTEXT_TITLE_FONT_STYLE }}
-			onConfirm={(value) => actions.editContextText("title", value)}
+			style={CONTEXT_TITLE_FONT_STYLE}
+			value={contextResources.title}
+			variant="none"
+			onChange={(event) => actions.editContextText("title", event.currentTarget.value)}
 		/>
 	);
 }
@@ -49,11 +46,11 @@ export function ContextEditableTitle() {
 /**
  * Live work item description editor.
  *
- * Unlike the click-to-edit title, the description is a live TipTap editor (like
- * Studio's instructions/description): edits commit on every keystroke via
- * `editContextText`, with no confirm/cancel inline-edit step. The rendered and
- * Markdown views are controlled from the resource row above, while the
- * directory-backed slash menu keeps the same agent/skill sources.
+ * Unlike the former click-to-edit title, the description is a live TipTap
+ * editor (like Studio's instructions/description): edits commit on every
+ * keystroke via `editContextText`, with no confirm/cancel inline-edit step.
+ * The rendered and Markdown views are controlled from the resource row above,
+ * while the directory-backed slash menu keeps the same agent/skill sources.
  */
 export function ContextEditableDescription({
 	viewMode,

@@ -9,10 +9,6 @@ import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-it
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
-import {
-	ContextTitleBar,
-	WorkItemKeyCopy,
-} from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
 
 const PullRequestDetailView = dynamic(
 	() => import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view")
@@ -31,8 +27,10 @@ const PullRequestDetailView = dynamic(
 );
 
 /**
- * Full-width heading for the experimental work item. The title and action row
- * sit above the description/details grid so neither shares a row with metadata.
+ * Left-column anchor chrome (sibling above the description scrollport). The
+ * editable title lives in the dialog header band with breadcrumbs; this header
+ * only owns the ContextResources row (`+` / Open in Claude / description
+ * toolbar). Mirrors MetadataRailToggle on the right column.
  */
 export function ContextHeader({
 	descriptionViewMode,
@@ -48,12 +46,8 @@ export function ContextHeader({
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }>) {
 	return (
-		<header className="flex min-w-0 flex-col gap-4" data-jira-work-item-context-header>
-			<div className="flex min-w-0 flex-col items-start gap-1" data-jira-work-item-title-block>
-				<WorkItemKeyCopy />
-				<ContextTitleBar />
-			</div>
-			<div className="flex min-w-0 flex-col" data-jira-work-item-header-actions>
+		<header className="shrink-0" data-jira-work-item-context-header>
+			<div data-jira-work-item-header-actions>
 				<ContextResources
 					descriptionViewMode={descriptionViewMode}
 					outputs={outputs}

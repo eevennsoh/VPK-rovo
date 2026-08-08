@@ -6,6 +6,7 @@ import { PROJECT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadat
 import {
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
+	METADATA_PICKER_SIDE_OFFSET,
 	MetadataSearchPicker,
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
@@ -57,7 +58,12 @@ export function ArtifactProjectField({ value, onChange }: Readonly<{ value: stri
 					<span className="text-sm text-text-subtlest">Select project</span>
 				)}
 			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent
+				align="start"
+				className={METADATA_PICKER_POPOVER_CLASS}
+				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+				sideOffset={METADATA_PICKER_SIDE_OFFSET}
+			>
 				<MetadataSearchPicker
 					emptyLabel="No projects found"
 					items={items}

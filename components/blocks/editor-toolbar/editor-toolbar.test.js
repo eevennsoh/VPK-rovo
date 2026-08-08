@@ -39,7 +39,7 @@ test("Editor toolbar block exports the public component and props", () => {
 	assert.match(componentSource, /export function EditorToolbarModeTabs/u);
 	assert.match(
 		componentSource,
-		/<ToggleGroup[\s\S]*aria-label="Editor view mode"[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*value=\{\[mode\]\}[\s\S]*variant="outline"/u,
+		/<ToggleGroup[\s\S]*aria-label="Editor view mode"[\s\S]*multiple=\{false\}[\s\S]*size="default"[\s\S]*value=\{\[mode\]\}[\s\S]*variant="outline"/u,
 	);
 	assert.doesNotMatch(componentSource, /size\?: TabsListProps\["size"\];/u);
 	assert.doesNotMatch(componentSource, /TabsList|TabsTrigger|<Tabs[\s>]/u);

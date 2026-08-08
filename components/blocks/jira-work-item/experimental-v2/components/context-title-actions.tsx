@@ -3,8 +3,14 @@
 import { useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, type Transition } from "motion/react";
 
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import CopyIcon from "@atlaskit/icon/core/copy";
+
+import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,12 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RovoColorIcon, type LogoSize } from "@/components/ui/logo";
 import { LogoThirdParty } from "@/components/ui/logo-third-party";
-import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-data";
 import { CodeIcon } from "@/components/ui/vpk-icons";
-import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import CopyIcon from "@atlaskit/icon/core/copy";
 
 const ACTIONS_ENTER_TRANSITION: Transition = {
 	duration: 0.1,
@@ -165,7 +166,7 @@ export function ContextTitleActions({
 			<Button
 				aria-label={primaryCodingAgent ? `Open in ${primaryCodingAgent.label}` : "Open in"}
 				className="has-data-[icon=inline-start]:pl-2 [&_[aria-hidden][data-agent-logo=rovo]_img]:size-3! [&_[aria-hidden][data-agent-logo=rovo]_svg]:size-3! [&_[aria-hidden][data-agent-logo=third-party]_img]:size-4! [&_[aria-hidden][data-agent-logo=third-party]_svg]:size-4!"
-				size="compact"
+				size="default"
 				variant="outline"
 			>
 				<span
@@ -181,7 +182,7 @@ export function ContextTitleActions({
 			<DropdownMenu>
 				<DropdownMenuTrigger
 					render={
-						<Button aria-label="More open options" size="icon-compact" variant="outline">
+						<Button aria-label="More open options" size="icon" variant="outline">
 							<ChevronDownIcon label="" size="small" />
 						</Button>
 					}
