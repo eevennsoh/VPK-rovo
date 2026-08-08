@@ -57,6 +57,7 @@ interface ContextResourcesProps {
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestSelected: boolean;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }
 
@@ -69,6 +70,7 @@ export function ContextResources({
 	descriptionViewMode,
 	outputs = [],
 	primaryCodingAgentId,
+	pullRequestSelected,
 	onDescriptionViewModeChange,
 }: Readonly<ContextResourcesProps>) {
 	const { contextResources, planner } = useJiraWorkItemState();
@@ -159,34 +161,36 @@ export function ContextResources({
 						)}
 					</div>
 					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
-					<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 @[860px]/agentlayout:mr-[var(--metadata-panel-offset)] motion-reduce:transition-none">
-						<Tooltip>
-							<TooltipTrigger
-								render={
-									<Button
-										aria-label="Copy work item as markdown"
-										size="icon-compact"
-										type="button"
-										variant="outline"
-										onClick={() => {
-											const description = contextResources.description.trim();
-											const markdown = `# ${workItem.code}: ${contextResources.title}${description ? `\n\n${description}` : ""}`;
-											void navigator.clipboard.writeText(markdown);
-										}}
-									/>
-								}
-							>
-								<CopyIcon label="" size="small" />
-							</TooltipTrigger>
-							<TooltipContent positionerClassName="z-[502]">
-								Copy work item as markdown
-							</TooltipContent>
-						</Tooltip>
-						<EditorToolbarModeTabs
-							mode={descriptionViewMode}
-							onModeChange={onDescriptionViewModeChange}
-						/>
-					</div>
+					{pullRequestSelected ? null : (
+						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 @[860px]/agentlayout:mr-[var(--metadata-panel-offset)] motion-reduce:transition-none">
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											aria-label="Copy work item as markdown"
+											size="icon-compact"
+											type="button"
+											variant="outline"
+											onClick={() => {
+												const description = contextResources.description.trim();
+												const markdown = `# ${workItem.code}: ${contextResources.title}${description ? `\n\n${description}` : ""}`;
+												void navigator.clipboard.writeText(markdown);
+											}}
+										/>
+									}
+								>
+									<CopyIcon label="" size="small" />
+								</TooltipTrigger>
+								<TooltipContent positionerClassName="z-[502]">
+									Copy work item as markdown
+								</TooltipContent>
+							</Tooltip>
+							<EditorToolbarModeTabs
+								mode={descriptionViewMode}
+								onModeChange={onDescriptionViewModeChange}
+							/>
+						</div>
+					)}
 				</div>
 				<StickyRowScrollFade
 					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}

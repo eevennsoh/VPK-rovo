@@ -103,17 +103,17 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	);
 
 	assert.match(diffView, /<MultiFileDiff<InlineCommentAnnotationMetadata>/u);
-	assert.match(diffView, /lineAnnotations=\{lineAnnotations\}/u);
-	assert.match(diffView, /enableGutterUtility: true/u);
+	assert.match(diffView, /lineAnnotations=\{readOnly \? \[\] : lineAnnotations\}/u);
+	assert.match(diffView, /enableGutterUtility: !readOnly/u);
 	assert.match(diffView, /lineHoverHighlight: "both"/u);
 	assert.doesNotMatch(diffView, /onLineNumberClick/u);
-	assert.match(diffView, /renderAnnotation=\{\(\{ metadata \}\) => \(/u);
+	assert.match(diffView, /renderAnnotation=\{readOnly \? undefined : \(\{ metadata \}\) => \(/u);
 	assert.match(
 		diffView,
 		/key=\{metadata\.kind === "draft" \? metadata\.draft\.id : metadata\.comment\.id\}/u,
 		"Pierre indexes annotation slots, so the rendered editor needs its own stable comment identity",
 	);
-	assert.match(diffView, /renderGutterUtility=\{\(getHoveredLine\) => \(/u);
+	assert.match(diffView, /renderGutterUtility=\{readOnly \? undefined : \(getHoveredLine\) => \(/u);
 	assert.match(annotation, /aria-label="Add inline comment"/u);
 	assert.match(annotation, /onPointerDown=\{\(event\) => event\.stopPropagation\(\)\}/u);
 	assert.match(
@@ -122,7 +122,7 @@ test("code review extends Pierre gutter utilities and line annotations", () => {
 	);
 	assert.match(
 		annotation,
-		/className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-brand shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"/u,
+		/className="relative z-10 mr-2 size-5 rounded-sm border-0 bg-surface-overlay p-0 text-icon-subtle shadow-2xl hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"/u,
 	);
 	assert.match(annotation, /event\.stopPropagation\(\)/u);
 	assert.match(annotation, /event\.key === "Escape"/u);
@@ -190,6 +190,59 @@ test("code review orchestrator defaults the editor to unified layout", () => {
 	);
 
 	assert.match(source, /useState<DiffLayout>\("unified"\)/u);
+});
+
+test("read-only CodeReviewFileBrowser composes the shared explorer and diff", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review-file-browser.tsx",
+	);
+	const index = readProjectFile("components/blocks/code-review/index.ts");
+
+	assert.match(index, /export \{ CodeReviewFileBrowser \}/u);
+	assert.match(index, /export type \{ CodeReviewFileBrowserProps \}/u);
+	assert.match(source, /files: readonly ChangedFile\[\]/u);
+	assert.match(source, /defaultSelectedFileId\?: string/u);
+	assert.match(source, /rootLabel\?: string/u);
+	assert.match(source, /useState<DiffLayout>\("unified"\)/u);
+	assert.match(source, /<EditorExplorer/u);
+	assert.match(source, /includeDemoTree=\{false\}/u);
+	assert.match(source, /<EditorDiff/u);
+	assert.match(source, /readOnly/u);
+	assert.match(source, /No changed files\./u);
+});
+
+test("read-only file browser is caller-height constrained and stacks responsively", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review-file-browser.tsx",
+	);
+
+	assert.match(source, /@container\/code-review-file-browser h-full min-h-0 min-w-0/u);
+	assert.match(source, /grid-rows-\[minmax\(9rem,32%\)_minmax\(0,1fr\)\]/u);
+	assert.match(source, /@\[640px\]\/code-review-file-browser:grid-cols-\[240px_minmax\(0,1fr\)\]/u);
+	assert.doesNotMatch(source, /min-h-\[[0-9]|h-\[[0-9]/u);
+});
+
+test("read-only file browser excludes demo files and inline comment controls", () => {
+	const source = readProjectFile(
+		"components/blocks/code-review/components/code-review-file-browser.tsx",
+	);
+	const explorer = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-explorer.tsx",
+	);
+	const editorDiff = readProjectFile(
+		"components/blocks/code-review/components/editor/editor-diff.tsx",
+	);
+	const diffView = readProjectFile(
+		"components/blocks/code-review/components/diff-file-view.tsx",
+	);
+
+	assert.doesNotMatch(source, /EXPLORER_TREE|CHANGED_FILES|EDITOR_FILE/u);
+	assert.match(explorer, /if \(includeDemoTree\) \{[\s\S]*EXPLORER_TREE\.filter/u);
+	assert.match(explorer, /: `\$\{rootPath\}\/\$\{file\.path\}`/u);
+	assert.match(editorDiff, /\{readOnly \? null : \([\s\S]*aria-label=\{`Close/u);
+	assert.match(diffView, /lineAnnotations=\{readOnly \? \[\] : lineAnnotations\}/u);
+	assert.match(diffView, /renderAnnotation=\{readOnly \? undefined/u);
+	assert.match(diffView, /renderGutterUtility=\{readOnly \? undefined/u);
 });
 
 test("Code Review composes its editor into a Canvas with the shared Code Reviewer rail", () => {

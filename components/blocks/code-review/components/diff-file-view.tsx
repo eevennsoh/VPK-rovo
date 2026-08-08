@@ -25,6 +25,7 @@ interface DiffFileViewProps {
 	file: ChangedFile;
 	layout: DiffLayout;
 	className?: string;
+	readOnly?: boolean;
 	drafts: readonly InlineCommentDraft[];
 	comments: readonly InlineReviewComment[];
 	onAddDraft: (anchor: InlineCommentAnchor) => void;
@@ -53,6 +54,7 @@ export function DiffFileView({
 	file,
 	layout,
 	className,
+	readOnly = false,
 	drafts,
 	comments,
 	onAddDraft,
@@ -108,11 +110,11 @@ export function DiffFileView({
 				contents: file.newContents,
 				lang: file.language,
 			}}
-			lineAnnotations={lineAnnotations}
+			lineAnnotations={readOnly ? [] : lineAnnotations}
 			options={{
 				collapsedContextThreshold: 6,
 				diffStyle: layout,
-				enableGutterUtility: true,
+				enableGutterUtility: !readOnly,
 				hunkSeparators: "line-info",
 				lineHoverHighlight: "both",
 				theme: {
@@ -122,7 +124,7 @@ export function DiffFileView({
 				themeType: actualTheme,
 				unsafeCSS: DIFF_UNSAFE_CSS,
 			}}
-			renderAnnotation={({ metadata }) => (
+			renderAnnotation={readOnly ? undefined : ({ metadata }) => (
 				<InlineCommentAnnotation
 					key={metadata.kind === "draft" ? metadata.draft.id : metadata.comment.id}
 					metadata={metadata}
@@ -133,7 +135,7 @@ export function DiffFileView({
 					onUpdateDraft={onUpdateDraft}
 				/>
 			)}
-			renderGutterUtility={(getHoveredLine) => (
+			renderGutterUtility={readOnly ? undefined : (getHoveredLine) => (
 				<InlineCommentGutterButton
 					getHoveredLine={getHoveredLine}
 					onAddComment={handleAddComment}

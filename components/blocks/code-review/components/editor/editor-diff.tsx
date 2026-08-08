@@ -21,6 +21,7 @@ import { DiffFileView } from "../diff-file-view";
 interface EditorDiffProps {
 	file: ChangedFile;
 	layout: DiffLayout;
+	readOnly?: boolean;
 	drafts: readonly InlineCommentDraft[];
 	comments: readonly InlineReviewComment[];
 	onAddDraft: (anchor: InlineCommentAnchor) => void;
@@ -35,6 +36,7 @@ interface EditorDiffProps {
 export function EditorDiff({
 	file,
 	layout,
+	readOnly = false,
 	drafts,
 	comments,
 	onAddDraft,
@@ -48,12 +50,14 @@ export function EditorDiff({
 	return (
 		<section className="flex min-h-0 min-w-0 flex-col bg-surface">
 			<div className="flex h-9 shrink-0 items-stretch border-b border-border bg-surface-sunken">
-				<div className="flex items-center gap-1 border-r border-border bg-surface px-3 text-xs text-text">
+				<div className="flex min-w-0 items-center gap-1 border-r border-border bg-surface px-3 text-xs text-text">
 					<Icon aria-hidden className="text-icon-accent-orange" render={<CurlyBracketsIcon label="" size="small" />} />
-					<span>{file.path}</span>
-					<Button aria-label={`Close ${file.path}`} size="icon-compact" variant="ghost">
-						<CrossIcon label="" size="small" />
-					</Button>
+					<span className="truncate" title={file.path}>{file.path}</span>
+					{readOnly ? null : (
+						<Button aria-label={`Close ${file.path}`} size="icon-compact" variant="ghost">
+							<CrossIcon label="" size="small" />
+						</Button>
+					)}
 				</div>
 				{file.additions > 0 || file.deletions > 0 ? (
 					<span
@@ -100,6 +104,7 @@ export function EditorDiff({
 					drafts={drafts}
 					file={file}
 					layout={layout}
+					readOnly={readOnly}
 					onAddDraft={onAddDraft}
 					onCancelDraft={onCancelDraft}
 					onCommitDraft={onCommitDraft}

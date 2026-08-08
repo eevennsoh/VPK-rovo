@@ -73,6 +73,11 @@ const V2_ONLY_FILES = new Set([
 	// Metadata-rail Pull request toggle panel; v1 has no PR segment.
 	"components/pull-requests-panel.tsx",
 	"components/pull-request-sort-control.tsx",
+	"components/pull-request-detail/pull-request-files.tsx",
+	"components/pull-request-detail/pull-request-guide.tsx",
+	"components/pull-request-detail/pull-request-detail-header.tsx",
+	"components/pull-request-detail/pull-request-overview.tsx",
+	"components/pull-request-detail/pull-request-detail-view.tsx",
 	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
 	// keeps comment bodies as a single plain-text segment.
 	"lib/activity-mention-segments.ts",
@@ -88,6 +93,8 @@ const V2_ONLY_FILES = new Set([
 	// Phase-section model for the Pull requests metadata panel.
 	"lib/pull-request-phases.ts",
 	"lib/pull-request-phases.test.js",
+	"lib/pull-request-detail-data.ts",
+	"lib/pull-request-detail-data.test.js",
 ]);
 
 function readBlockFile(relativePath) {
@@ -126,7 +133,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>\}[\s\S]*automationRules=\{props\.automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -375,7 +382,7 @@ test("experimental v2 keeps comment-only composer delivery as the non-target def
 
 	assert.match(contextSource, /composerDelivery = "comment"/u);
 	assert.match(compositionSource, /composerAgents\?: readonly AgentSelectorAgent\[\];/u);
-	assert.match(compositionSource, /<ActivityComposer[\s\S]*agents=\{props\.composerAgents\}/u);
+	assert.match(compositionSource, /<ActivityComposer[\s\S]*agents=\{composerAgents\}/u);
 	assert.match(composerSource, /const availableAgents = agents \?\? ROVO_AGENT_SELECTOR_AGENTS;/u);
 	assert.match(composerSource, /agents[\s\S]*subagent: agents\.map\(mapAgentToMentionItem\)[\s\S]*: EDITOR_PALETTE_MENTION_SOURCES/u);
 	assert.match(
@@ -694,7 +701,7 @@ test("experimental v2 gives the title and controls a full-width row above descri
 
 	assert.match(
 		compositionSource,
-		/useState<EditorToolbarViewMode>\("rendered"\)[\s\S]*header=\{\([\s\S]*<ContextHeader[\s\S]*primaryCodingAgentId=\{props\.primaryCodingAgentId\}[\s\S]*context=\{\([\s\S]*<ContextPanel/u,
+		/useState<EditorToolbarViewMode>\("rendered"\)[\s\S]*header=\{\([\s\S]*<ContextHeader[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*context=\{\([\s\S]*<ContextPanel/u,
 	);
 	assert.match(
 		contextPanelSource,
@@ -702,11 +709,11 @@ test("experimental v2 gives the title and controls a full-width row above descri
 	);
 	assert.doesNotMatch(
 		contextPanelSource,
-		/selectLatestPullRequestEntry|data-jira-work-item-header-pull-request|JiraActivityEvent/u,
+		/selectLatestPullRequestEntry|data-jira-work-item-header-pull-request/u,
 	);
 	assert.match(
 		contextPanelSource,
-		/export function ContextPanel\([\s\S]*<section aria-label="Work item context" className="flex flex-col">[\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
+		/export function ContextPanel\([\s\S]*<section aria-label="Work item context" className="flex flex-col">[\s\S]*selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*\) : \([\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
 	);
 	assert.doesNotMatch(contextPanelSource, /export function ContextPanel\([\s\S]*<ContextTitleBar|export function ContextPanel\([\s\S]*<ContextResources/u);
 	assert.match(

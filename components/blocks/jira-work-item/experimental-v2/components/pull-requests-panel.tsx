@@ -10,7 +10,10 @@ import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
-import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import {
+	getPullRequestIdentity,
+	JIRA_WORK_ITEM_CURRENT_USER,
+} from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	DEFAULT_PULL_REQUEST_SORT_MODE,
 	defaultOpenPullRequestPhases,
@@ -100,21 +103,38 @@ function toPanelPullRequestSmartLink(entry: JiraActivityEventEntry): SmartLinkIt
 	});
 }
 
-function PullRequestCard({ entry }: Readonly<{ entry: JiraActivityEventEntry }>) {
+function PullRequestCard({
+	entry,
+	selected,
+	onSelectEntry,
+}: Readonly<{
+	entry: JiraActivityEventEntry;
+	selected: boolean;
+	onSelectEntry: (entry: JiraActivityEventEntry) => void;
+}>) {
 	const item = toPanelPullRequestSmartLink(entry);
 	if (!item) return null;
 
 	const number = entry.pullRequest?.number;
-	if (number == null) return null;
+	const pullRequest = entry.pullRequest;
+	if (number == null || !pullRequest) return null;
+	const identity = getPullRequestIdentity(pullRequest);
 
 	return (
-		<li className="min-w-0 px-2 py-1" data-jira-work-item-pull-request-card={number}>
+		<li
+			className="min-w-0 px-2 py-1"
+			data-jira-work-item-pull-request-card={number}
+			data-jira-work-item-pull-request-identity={identity}
+			data-selected={selected ? "true" : undefined}
+		>
 			<SmartLink
 				align="center"
 				alignOffset={0}
 				className="min-w-0 max-w-full"
 				item={item}
+				onActivate={() => onSelectEntry(entry)}
 				positionerClassName="z-[600]"
+				selected={selected}
 				showStatus
 				side="left"
 			/>
@@ -124,8 +144,12 @@ function PullRequestCard({ entry }: Readonly<{ entry: JiraActivityEventEntry }>)
 
 function PhaseSectionBody({
 	entries,
+	selectedIdentity,
+	onSelectEntry,
 }: Readonly<{
 	entries: readonly JiraActivityEventEntry[];
+	selectedIdentity: string | null;
+	onSelectEntry: (entry: JiraActivityEventEntry) => void;
 }>) {
 	if (entries.length === 0) {
 		return (
@@ -137,9 +161,19 @@ function PhaseSectionBody({
 
 	return (
 		<ul className="flex min-w-0 flex-col gap-0.5">
-			{entries.map((entry) => (
-				<PullRequestCard entry={entry} key={entry.id} />
-			))}
+			{entries.map((entry) => {
+				const identity = entry.pullRequest
+					? getPullRequestIdentity(entry.pullRequest)
+					: entry.id;
+				return (
+					<PullRequestCard
+						entry={entry}
+						key={identity}
+						selected={identity === selectedIdentity}
+						onSelectEntry={onSelectEntry}
+					/>
+				);
+			})}
 		</ul>
 	);
 }
@@ -156,13 +190,17 @@ export function PullRequestsPanel({
 	borderless = false,
 	currentUserName = JIRA_WORK_ITEM_CURRENT_USER.name,
 	entries,
+	selectedIdentity,
 	sortMode = DEFAULT_PULL_REQUEST_SORT_MODE,
+	onSelectEntry,
 }: Readonly<{
 	borderless?: boolean;
 	/** Display name of the signed-in viewer for the "By me" sort. */
 	currentUserName?: string;
 	entries: readonly JiraActivityEventEntry[];
+	selectedIdentity: string | null;
 	sortMode?: PullRequestSortMode;
+	onSelectEntry: (entry: JiraActivityEventEntry) => void;
 }>) {
 	const sections = useMemo(
 		() => groupPullRequestsByPhase(entries, sortMode, currentUserName),
@@ -176,7 +214,11 @@ export function PullRequestsPanel({
 			return {
 				content: (
 					<div data-jira-work-item-pull-request-phase={section.id}>
-						<PhaseSectionBody entries={section.entries} />
+						<PhaseSectionBody
+							entries={section.entries}
+							selectedIdentity={selectedIdentity}
+							onSelectEntry={onSelectEntry}
+						/>
 					</div>
 				),
 				count: count > 0 ? count : undefined,
@@ -185,7 +227,7 @@ export function PullRequestsPanel({
 				title: <PhaseSectionTitle label={section.label} phaseId={section.id} />,
 			};
 		});
-	}, [defaultOpen, sections]);
+	}, [defaultOpen, onSelectEntry, sections, selectedIdentity]);
 
 	return (
 		<ArtifactPane
