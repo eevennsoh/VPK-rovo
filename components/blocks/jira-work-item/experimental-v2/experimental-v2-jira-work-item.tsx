@@ -20,6 +20,7 @@ import {
 	useJiraWorkItemMeta,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import { MetadataRailProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { PanelLayoutProvider } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { ExperimentalWorkItemDialog } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-dialog";
 import { ExperimentalWorkItemLayout } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-work-item-layout";
@@ -121,61 +122,64 @@ function ExperimentalV2JiraWorkItemContent({
 
 	return (
 		<PanelLayoutProvider>
-			<LayoutGroup id={composerLayoutGroupId}>
-				<ExperimentalWorkItemDialog
-					inlineSurface={inlineSurface}
-					open={open}
-					onClose={onClose}
-					presentation={presentation}
-					sidebar={<FloatingSessionSurface />}
-					sidebarOpen={agentChatOpen}
-					workItemCode={workItem.code}
-					workItemTitle={workItem.title}
-				>
-					<ExperimentalWorkItemLayout
-						header={(
-							<ContextHeader
-								descriptionViewMode={descriptionViewMode}
-								outputs={outputs}
-								primaryCodingAgentId={primaryCodingAgentId}
-								pullRequestSelected={selectedPullRequestEntry !== null}
-								onDescriptionViewModeChange={setDescriptionViewMode}
-							/>
-						)}
-						context={(
-							<ContextPanel
-								descriptionViewMode={descriptionViewMode}
-								selectedPullRequestEntry={selectedPullRequestEntry}
-								onDescriptionViewModeChange={setDescriptionViewMode}
-								onPullRequestBack={() => setSelectedPullRequestIdentity(null)}
-							/>
-						)}
-						composer={(
-							<ActivityComposer
-								agents={composerAgents}
-								onAgentPromptSubmit={onAgentPromptSubmit}
-								onOpenAgentChat={onOpenAgentChat}
-							/>
-						)}
-						fillContainer={inlineSurface === "fill"}
-						metadata={(
-							<div
-								aria-hidden={agentChatOpen}
-								inert={agentChatOpen ? true : undefined}
-							>
-								<MetadataRail
-									activity={<ActivityPanel activitySessionThread={activitySessionThread} />}
-									automationRules={automationRules}
-									borderless
-									pullRequestEntries={pullRequestEntries}
-									selectedPullRequestIdentity={selectedPullRequestIdentity}
-									onPullRequestSelect={handlePullRequestSelect}
+			<MetadataRailProvider pullRequestCount={pullRequestEntries.length}>
+				<LayoutGroup id={composerLayoutGroupId}>
+					<ExperimentalWorkItemDialog
+						inlineSurface={inlineSurface}
+						open={open}
+						onClose={onClose}
+						presentation={presentation}
+						sidebar={<FloatingSessionSurface />}
+						sidebarOpen={agentChatOpen}
+						workItemCode={workItem.code}
+						workItemTitle={workItem.title}
+					>
+						<ExperimentalWorkItemLayout
+							header={(
+								<ContextHeader
+									descriptionViewMode={descriptionViewMode}
+									outputs={outputs}
+									primaryCodingAgentId={primaryCodingAgentId}
+									pullRequestSelected={selectedPullRequestEntry !== null}
+									onDescriptionViewModeChange={setDescriptionViewMode}
 								/>
-							</div>
-						)}
-					/>
-				</ExperimentalWorkItemDialog>
-			</LayoutGroup>
+							)}
+							context={(
+								<ContextPanel
+									descriptionViewMode={descriptionViewMode}
+									selectedPullRequestEntry={selectedPullRequestEntry}
+									onDescriptionViewModeChange={setDescriptionViewMode}
+									onPullRequestBack={() => setSelectedPullRequestIdentity(null)}
+								/>
+							)}
+							composer={(
+								<ActivityComposer
+									agents={composerAgents}
+									onAgentPromptSubmit={onAgentPromptSubmit}
+									onOpenAgentChat={onOpenAgentChat}
+								/>
+							)}
+							fillContainer={inlineSurface === "fill"}
+							metadata={(
+								<div
+									aria-hidden={agentChatOpen}
+									className="flex min-h-0 min-w-0 flex-1 flex-col"
+									inert={agentChatOpen ? true : undefined}
+								>
+									<MetadataRail
+										activity={<ActivityPanel activitySessionThread={activitySessionThread} />}
+										automationRules={automationRules}
+										borderless
+										pullRequestEntries={pullRequestEntries}
+										selectedPullRequestIdentity={selectedPullRequestIdentity}
+										onPullRequestSelect={handlePullRequestSelect}
+									/>
+								</div>
+							)}
+						/>
+					</ExperimentalWorkItemDialog>
+				</LayoutGroup>
+			</MetadataRailProvider>
 		</PanelLayoutProvider>
 	);
 }

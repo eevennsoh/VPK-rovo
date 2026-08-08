@@ -1,15 +1,10 @@
 /**
- * Click-to-edit "treatment" for the experimental Context panel.
+ * Title/description field treatment for the experimental Context panel.
  *
- * These motion + className constants are COPIED (not imported) from
- * `components/blocks/agent/components/agent-config-profile.tsx`, where the
- * equivalents (`AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS`, etc.) are module-private
- * and domain-bound. Duplicating them here keeps this bucket self-contained and
- * lets a plain `InlineEdit` reproduce the same subtle hover/focus padding-reveal.
- *
- * Reduced motion is NOT baked in here: the consumer (`context-editable-header`)
- * drops these props when `useReducedMotion()` is true, so the read view renders
- * statically with no animation and no lingering backdrop.
+ * v2’s title is an always-on heading-styled `Input` (no InlineEdit). The
+ * `CONTEXT_TITLE_*` classes keep the ADS heading look. Motion/backdrop
+ * constants below remain for any leftover InlineEdit-style surfaces and are
+ * COPIED (not imported) from `agent-config-profile.tsx`.
  */
 
 import type { CSSProperties } from "react";
@@ -39,17 +34,30 @@ export const CONTEXT_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 
 export const CONTEXT_INLINE_EDIT_BACKDROP_CLASS_NAME = "-inset-0.5 bg-bg-neutral-subtle-hovered";
 
-/** ADS heading medium (20px / 1.25rem) for the editable work-item title. */
+/**
+ * ADS heading xxlarge for the editable work-item title.
+ *
+ * `<input>` UAs force `overflow: clip` (so `overflow-visible` is a no-op) and
+ * paint glyphs against a tight content box. The token line-height (2.25rem for
+ * a 2rem face) clips descenders; a looser line-box after the `font` shorthand
+ * keeps “g”/“y” fully inside the clipped control while preserving the face.
+ */
 export const CONTEXT_TITLE_FONT_STYLE = {
-	font: token("font.heading.medium"),
+	font: token("font.heading.xxlarge"),
+	lineHeight: "2.75rem",
 } satisfies CSSProperties;
 
-/** Editable title read view — typography comes from `CONTEXT_TITLE_FONT_STYLE`. */
+/**
+ * Always-on title field chrome — typography comes from `CONTEXT_TITLE_FONT_STYLE`.
+ * `text-[length:unset] leading-[unset]` clears Input’s default `text-sm` so it
+ * cannot fight the heading font shorthand. `py-0` zeroes Input’s default `py-1`
+ * (descenders stay unclipped via the looser `lineHeight` on the font style).
+ */
 export const CONTEXT_TITLE_READ_VIEW_CLASS_NAME =
-	"relative h-auto overflow-visible border-0 bg-transparent px-0 py-1 hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";
+	"relative h-auto min-h-[2.75rem] border-0 bg-transparent px-0 py-0 text-[length:unset] leading-[unset] hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:bg-transparent";
 
 export const CONTEXT_TITLE_INPUT_CLASS_NAME =
-	"h-auto border-2 px-1.5 py-1 focus:border-ring";
+	"h-auto border-2 px-1.5 py-0 focus:border-ring";
 
 /** Multiline editable description read view + textarea (mirrors the description field). */
 export const CONTEXT_DESCRIPTION_READ_VIEW_CLASS_NAME =

@@ -31,6 +31,7 @@ export function ModalHeader({
 	actions,
 	actionsClassName,
 	breadcrumbLeadingContent,
+	breadcrumbRevealOnHover = false,
 	closeButtonDisabled = false,
 	closeButtonVariant = "outline",
 	paddingTop,
@@ -40,6 +41,11 @@ export function ModalHeader({
 	actions?: ReactNode;
 	actionsClassName?: string;
 	breadcrumbLeadingContent?: ReactNode;
+	/**
+	 * Hide parent/current trail until row hover or trail keyboard focus
+	 * (experimental-v2). Leading key content stays always-visible.
+	 */
+	breadcrumbRevealOnHover?: boolean;
 	closeButtonDisabled?: boolean;
 	closeButtonVariant?: ButtonProps["variant"];
 	paddingTop?: CSSProperties["paddingTop"];
@@ -47,6 +53,16 @@ export function ModalHeader({
 }>) {
 	const { meta } = useWorkItemModal();
 	const { workItem } = meta;
+	// Row hover (incl. over the always-visible key) reveals the trail; trail
+	// focus-visible also reveals siblings. Leading key stays full opacity.
+	const breadcrumbTrailRevealClassName = breadcrumbRevealOnHover
+		? [
+				"opacity-0 transition-opacity duration-normal ease-out",
+				"group-hover/breadcrumb-reveal:opacity-100",
+				"group-has-[[data-breadcrumb-trail]:has(:focus-visible)]/breadcrumb-reveal:opacity-100",
+				"motion-reduce:transition-none",
+			]
+		: null;
 
 	return (
 		<div
@@ -63,14 +79,27 @@ export function ModalHeader({
 				backgroundColor: token("elevation.surface.overlay"),
 			}}
 		>
-			<Breadcrumb className="min-w-0 overflow-visible" size="small">
+			{/* Trail hover/focus-visible reveal; leading key + actions stay visible. */}
+			<Breadcrumb
+				className={cn(
+					"min-w-0 overflow-visible",
+					breadcrumbRevealOnHover ? "group/breadcrumb-reveal" : null,
+				)}
+				data-jira-work-item-breadcrumb={
+					breadcrumbRevealOnHover ? "reveal-on-hover" : undefined
+				}
+				size="small"
+			>
 				<BreadcrumbList className="-m-1 min-w-0 flex-nowrap overflow-hidden p-1">
 					{breadcrumbLeadingContent ? (
 						<BreadcrumbItem className="mr-2 shrink-0">
 							{breadcrumbLeadingContent}
 						</BreadcrumbItem>
 					) : null}
-					<BreadcrumbItem className="min-w-0 max-w-[240px] shrink">
+					<BreadcrumbItem
+						className={cn("min-w-0 max-w-[240px] shrink", breadcrumbTrailRevealClassName)}
+						data-breadcrumb-trail=""
+					>
 						<BreadcrumbLink
 							className="[&_[data-slot=breadcrumb-label-text]]:truncate"
 							href="#"
@@ -85,8 +114,14 @@ export function ModalHeader({
 							{workItem.parent?.title ?? "Enterprise RFP Response"}
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					<BreadcrumbSeparator className="shrink-0" />
-					<BreadcrumbItem className="min-w-0 flex-1">
+					<BreadcrumbSeparator
+						className={cn("shrink-0", breadcrumbTrailRevealClassName)}
+						data-breadcrumb-trail=""
+					/>
+					<BreadcrumbItem
+						className={cn("min-w-0 flex-1", breadcrumbTrailRevealClassName)}
+						data-breadcrumb-trail=""
+					>
 						<BreadcrumbPage
 							className="text-text-subtlest inline-flex min-w-0 items-center [&_[data-slot=breadcrumb-label-text]]:truncate"
 							before={

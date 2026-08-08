@@ -29,10 +29,11 @@ const buttonGroupVariants = cva(
 				variant: ["connected", "split"],
 				orientation: "horizontal",
 				// Later segments suppress their physical left border to avoid a double
-				// seam. Paint selected seams as an overlay so fixed and auto-width
-				// buttons keep identical closed/open geometry.
+				// seam. Paint selected / focus-visible seams as an overlay so fixed and
+				// auto-width buttons keep identical closed/open geometry — without the
+				// overlay, focus-visible:border-ring is missing on the collapsed left edge.
 				className:
-					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:relative [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:pointer-events-none [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:absolute [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:inset-y-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:-left-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:w-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:bg-border-selected [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:content-[''] *:data-slot:rounded-r-none",
+					"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0 [&>[data-slot]~[data-slot]:focus-visible]:relative [&>[data-slot]~[data-slot]:focus-visible]:before:pointer-events-none [&>[data-slot]~[data-slot]:focus-visible]:before:absolute [&>[data-slot]~[data-slot]:focus-visible]:before:inset-y-0 [&>[data-slot]~[data-slot]:focus-visible]:before:-left-px [&>[data-slot]~[data-slot]:focus-visible]:before:w-px [&>[data-slot]~[data-slot]:focus-visible]:before:bg-ring [&>[data-slot]~[data-slot]:focus-visible]:before:content-[''] [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:relative [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:pointer-events-none [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:absolute [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:inset-y-0 [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:-left-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:w-px [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:bg-border-selected [&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]:before:content-[''] *:data-slot:rounded-r-none",
 			},
 			{
 				variant: "connected",

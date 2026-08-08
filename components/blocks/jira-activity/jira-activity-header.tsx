@@ -52,11 +52,35 @@ function isActivityFilterValue(
 	return (ACTIVITY_FILTER_VALUES as readonly string[]).includes(value);
 }
 
+const TEXT_LINK_TRIGGER_CLASS =
+	"h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline";
+
 /**
- * Text-link dropdown that chooses timeline order or an activity filter.
+ * Inset ghost chevron for panel segments. `my-1 me-1` keeps the 4px shell
+ * inset on top/right/bottom of a size-6 control in the h-8 segment; start
+ * margin is omitted so the segment's `gap-1.5` alone is the 6px label→icon gap.
+ *
+ * No `aria-pressed` on the chevron — the segment shell owns selected chrome.
+ * Menu-open uses Button's default `aria-expanded` selected border/fill.
+ */
+// Ring killed — segment shell recolors its existing border on chevron focus.
+const CHEVRON_TRIGGER_CLASS =
+	"my-1 me-1 shrink-0 border-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0! focus-visible:ring-offset-0!";
+
+function stopTriggerPropagation(event: { stopPropagation(): void }): void {
+	event.stopPropagation();
+}
+
+/**
+ * Dropdown that chooses timeline order or an activity filter.
  * Extracted so rail consumers can relocate it beside a Details/Activity toggle.
  * Pass `showAgentsOption={false}` for surfaces where activity filters do not
  * apply — only Latest/Oldest remain (Agents, Needs input, Comments omitted).
+ *
+ * `trigger="label"` is the text-link chrome used in headers; `trigger="chevron"`
+ * is the inset ghost icon control for segmented toggle groups (label click
+ * selects the panel; chevron opens this menu and shows selected chrome via
+ * `aria-expanded` while open).
  */
 export function JiraActivityViewControl({
 	sortOrder,
@@ -65,6 +89,8 @@ export function JiraActivityViewControl({
 	onFilterChange,
 	menuAlign = "start",
 	showAgentsOption = true,
+	trigger = "label",
+	onOpenChange,
 }: Readonly<{
 	sortOrder: JiraActivitySortOrder;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;
@@ -77,23 +103,45 @@ export function JiraActivityViewControl({
 	 * Pull requests sort uses Latest/Oldest only (or a dedicated PR control).
 	 */
 	showAgentsOption?: boolean;
+	/** `label` = text-link trigger; `chevron` = inset ghost icon in a panel segment. */
+	trigger?: "label" | "chevron";
+	/**
+	 * @deprecated Segment shell owns selected chrome; chevron selected look is
+	 * `aria-expanded` while the sort menu is open. Accepted and ignored.
+	 */
+	pressed?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }>) {
 	const filterActive =
 		showAgentsOption && filter !== "all" && isActivityFilterValue(filter);
+	const activeLabel = filterActive
+		? FILTER_TRIGGER_LABELS[filter]
+		: SORT_TRIGGER_LABELS[sortOrder];
+	const isChevron = trigger === "chevron";
+	const triggerButton = isChevron ? (
+		<Button
+			aria-label={`Sort and filter activities (${activeLabel})`}
+			className={CHEVRON_TRIGGER_CLASS}
+			data-jira-work-item-metadata-rail-sort-trigger="activity"
+			size="icon-compact"
+			type="button"
+			variant="ghost"
+			onClick={stopTriggerPropagation}
+			onPointerDown={stopTriggerPropagation}
+		/>
+	) : (
+		<Button
+			className={TEXT_LINK_TRIGGER_CLASS}
+			size="compact"
+			type="button"
+			variant="ghost"
+		/>
+	);
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={
-					<Button
-						className="h-auto gap-1 border-0 bg-transparent px-0 text-xs font-normal text-text-subtlest [&_svg]:text-icon-subtlest hover:bg-transparent hover:text-text-subtlest hover:underline focus-visible:ring-0 aria-expanded:bg-transparent aria-expanded:text-text-subtlest aria-expanded:underline"
-						size="compact"
-						type="button"
-						variant="ghost"
-					/>
-				}
-			>
-				{filterActive ? FILTER_TRIGGER_LABELS[filter] : SORT_TRIGGER_LABELS[sortOrder]}
+		<DropdownMenu onOpenChange={onOpenChange}>
+			<DropdownMenuTrigger render={triggerButton}>
+				{isChevron ? null : activeLabel}
 				<Icon aria-hidden render={<ChevronDownIcon label="" />} />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent

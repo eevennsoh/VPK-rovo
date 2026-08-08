@@ -156,7 +156,7 @@ test("PR #1847 opens a selectable guided review and restores the exact descripti
 	const originalDescription = await description.innerText();
 
 	await selectChapter(page, "Review");
-	const pullRequestsToggle = page.getByRole("button", { name: "1 Pull request" });
+	const pullRequestsToggle = page.getByRole("button", { name: "Pull requests" });
 	await pullRequestsToggle.click();
 	await expect(pullRequestsToggle).toHaveAttribute("aria-pressed", "true");
 

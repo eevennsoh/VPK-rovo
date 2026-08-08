@@ -21,6 +21,8 @@ test("tooltip content fades without side-axis translate or origin scale", () => 
 
 test("tooltip content keeps the shared portal positioner layer hook", () => {
 	assert.match(source, /positionerClassName\?: string/u);
+	assert.match(source, /"align" \| "alignOffset" \| "anchor" \| "side" \| "sideOffset"/u);
+	assert.match(source, /<TooltipPrimitive\.Positioner[\s\S]*anchor=\{anchor\}/u);
 	assert.match(
 		source,
 		/className=\{cn\("isolate z-\[200\]", positionerClassName\)\}/u,

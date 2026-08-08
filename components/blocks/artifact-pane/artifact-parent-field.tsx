@@ -8,6 +8,7 @@ import { PARENT_OPTIONS } from "@/components/blocks/jira-work-item/data/metadata
 import {
 	METADATA_PICKER_POPOVER_CLASS,
 	METADATA_PICKER_POSITIONER_CLASS,
+	METADATA_PICKER_SIDE_OFFSET,
 	MetadataSearchPicker,
 } from "@/components/blocks/jira-work-item/experimental/components/detail-field-editors";
 import { DetailValueTrigger } from "@/components/blocks/jira-work-item/experimental/components/detail-field-row";
@@ -80,7 +81,12 @@ export function ArtifactParentField({
 					<span className="text-sm text-text-subtlest">Add parent</span>
 				)}
 			</PopoverTrigger>
-			<PopoverContent align="start" className={METADATA_PICKER_POPOVER_CLASS} positionerClassName={METADATA_PICKER_POSITIONER_CLASS}>
+			<PopoverContent
+				align="start"
+				className={METADATA_PICKER_POPOVER_CLASS}
+				positionerClassName={METADATA_PICKER_POSITIONER_CLASS}
+				sideOffset={METADATA_PICKER_SIDE_OFFSET}
+			>
 				<div className="[&_.rich-text-command-menu-item:hover]:bg-bg-neutral-subtle-hovered!">
 					<MetadataSearchPicker
 						emptyLabel="No work items found"
