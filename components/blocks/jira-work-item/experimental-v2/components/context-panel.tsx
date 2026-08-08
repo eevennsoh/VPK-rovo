@@ -1,10 +1,13 @@
 "use client";
 
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { ContextEditableDescription } from "@/components/blocks/jira-work-item/experimental-v2/components/context-editable-header";
 import { AiPlannerPanel, AiPlannerScope } from "@/components/blocks/jira-work-item/experimental-v2/components/ai-planner-panel";
 import { ContextResources } from "@/components/blocks/jira-work-item/experimental-v2/components/context-resources";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
+import { PullRequestDetailView } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-detail-view";
+import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
@@ -18,11 +21,13 @@ export function ContextHeader({
 	descriptionViewMode,
 	outputs,
 	primaryCodingAgentId,
+	pullRequestSelected,
 	onDescriptionViewModeChange,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestSelected: boolean;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }>) {
 	return (
@@ -36,6 +41,7 @@ export function ContextHeader({
 					descriptionViewMode={descriptionViewMode}
 					outputs={outputs}
 					primaryCodingAgentId={primaryCodingAgentId}
+					pullRequestSelected={pullRequestSelected}
 					onDescriptionViewModeChange={onDescriptionViewModeChange}
 				/>
 			</div>
@@ -51,19 +57,35 @@ export function ContextHeader({
  */
 export function ContextPanel({
 	descriptionViewMode,
+	selectedPullRequestEntry,
 	onDescriptionViewModeChange,
+	onPullRequestBack,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
+	selectedPullRequestEntry: JiraActivityEventEntry | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
+	onPullRequestBack: () => void;
 }>) {
+	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
+		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
+		: selectedPullRequestEntry?.id;
+
 	return (
 		<section aria-label="Work item context" className="flex flex-col">
-			<AiPlannerScope header={<AiPlannerPanel />}>
-				<ContextEditableDescription
-					viewMode={descriptionViewMode}
-					onViewModeChange={onDescriptionViewModeChange}
+			{selectedPullRequestEntry ? (
+				<PullRequestDetailView
+					entry={selectedPullRequestEntry}
+					key={selectedPullRequestKey}
+					onBack={onPullRequestBack}
 				/>
-			</AiPlannerScope>
+			) : (
+				<AiPlannerScope header={<AiPlannerPanel />}>
+					<ContextEditableDescription
+						viewMode={descriptionViewMode}
+						onViewModeChange={onDescriptionViewModeChange}
+					/>
+				</AiPlannerScope>
+			)}
 		</section>
 	);
 }

@@ -422,7 +422,7 @@ export function mapActivityEventsToJiraEntries(
  * Stable identity for collapsing Open → Merged updates of the same PR while
  * keeping same-numbered PRs from different repositories distinct.
  */
-function pullRequestIdentity(
+export function getPullRequestIdentity(
 	pullRequest: NonNullable<StaticEventActivityEvent["pullRequest"]>,
 ): string {
 	if (pullRequest.url) return pullRequest.url;
@@ -444,7 +444,7 @@ export function selectPullRequestEntries(
 	for (let index = events.length - 1; index >= 0; index -= 1) {
 		const event = events[index];
 		if (event?.kind !== "event" || !event.pullRequest) continue;
-		const identity = pullRequestIdentity(event.pullRequest);
+		const identity = getPullRequestIdentity(event.pullRequest);
 		if (seenIdentities.has(identity)) continue;
 		seenIdentities.add(identity);
 		entries.push(mapStaticEvent(event, referenceTimeMs));

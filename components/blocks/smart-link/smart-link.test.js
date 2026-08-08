@@ -27,6 +27,21 @@ test("SmartLink is powered by the shared HoverCard primitive", () => {
 	assert.match(COMPONENT_SOURCE, /aria-describedby=\{open \? `smart-link-card-\$\{item\.id\}` : undefined\}/u);
 });
 
+test("SmartLink keeps existing inline consumers as external-link anchors", () => {
+	assert.match(COMPONENT_SOURCE, /if \(onActivate\) \{[\s\S]*<button[\s\S]*type="button"[\s\S]*return \([\s\S]*<a[\s\S]*href=\{item\.href\}/u);
+	assert.match(COMPONENT_SOURCE, /<SmartLinkCard[\s\S]*appearance="flyout"/u);
+	assert.match(COMPONENT_SOURCE, /<a[\s\S]*href=\{item\.href\}[\s\S]*id=\{titleId\}/u);
+});
+
+test("SmartLink selectable mode uses a pressed button and closes its preview on activation", () => {
+	assert.match(TYPES_SOURCE, /onActivate\?: \(item: SmartLinkItem\) => void;/u);
+	assert.match(TYPES_SOURCE, /selected\?: boolean;/u);
+	assert.match(COMPONENT_SOURCE, /<button[\s\S]*aria-pressed=\{selected\}[\s\S]*type="button"/u);
+	assert.match(COMPONENT_SOURCE, /onActivate &&[\s\S]*selected &&[\s\S]*border-border-selected bg-bg-selected text-text-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed/u);
+	assert.match(COMPONENT_SOURCE, /const handleActivate = \(\) => \{[\s\S]*handleOpenChange\(false\);[\s\S]*onActivate\?\.\(item\);/u);
+	assert.match(COMPONENT_SOURCE, /onActivate=\{onActivate \? handleActivate : undefined\}/u);
+});
+
 test("SmartLink supports a card appearance that expands any item into a block card", () => {
 	assert.match(TYPES_SOURCE, /export type SmartLinkAppearance = "inline" \| "card"/u);
 	assert.match(TYPES_SOURCE, /appearance\?: SmartLinkAppearance;/u);

@@ -160,7 +160,7 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	);
 	assert.match(
 		metadataRailSource,
-		/import \{\s*JIRA_WORK_ITEM_CURRENT_USER,\s*selectPullRequestEntries,\s*\} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/jira-activity-adapter"/u,
+		/import \{ JIRA_WORK_ITEM_CURRENT_USER \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/jira-activity-adapter"/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -181,7 +181,7 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	assert.match(metadataRailSource, /ActivityRailChromeProvider/u);
 	assert.match(
 		metadataRailSource,
-		/import \{ JiraActivityViewControl \} from "@\/components\/blocks\/jira-activity"/u,
+		/import \{\s*JiraActivityViewControl,\s*type JiraActivityEventEntry,\s*\} from "@\/components\/blocks\/jira-activity"/u,
 	);
 	assert.match(
 		metadataRailSource,
@@ -301,11 +301,11 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>\}/u,
+		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}/u,
 	);
 	// Activity lives only in the metadata rail Details/Activity toggle — not under description.
 	assert.equal(
-		(compositionSource.match(/<ActivityPanel activitySessionThread=\{props\.activitySessionThread\} \/>/gu) ?? []).length,
+		(compositionSource.match(/<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>/gu) ?? []).length,
 		1,
 	);
 	// Layout slots are header/context/composer/metadata — no left-column activity prop.
@@ -315,3 +315,66 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	);
 });
 
+test("experimental v2 keeps pull-request selection transient at the composition layer", () => {
+	const adapterSource = readBlockFile("experimental-v2/lib/jira-activity-adapter.ts");
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const contextPanelSource = readBlockFile("experimental-v2/components/context-panel.tsx");
+	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
+	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	const pullRequestsPanelSource = readBlockFile("experimental-v2/components/pull-requests-panel.tsx");
+	const persistedStateSource = readBlockFile("data/session-state.ts");
+
+	// Dedupe and selection use one repository-aware identity contract.
+	assert.match(adapterSource, /export function getPullRequestIdentity\(/u);
+	assert.match(adapterSource, /const identity = getPullRequestIdentity\(event\.pullRequest\);/u);
+	assert.doesNotMatch(adapterSource, /function pullRequestIdentity\(/u);
+	assert.match(
+		compositionSource,
+		/useState<string \| null>\(null\)[\s\S]*selectPullRequestEntries\(activityEvents, SESSION_EPOCH_MS \+ elapsedMs\)[\s\S]*pullRequestEntries\.find\([\s\S]*getPullRequestIdentity\(entry\.pullRequest\) === selectedPullRequestIdentity/u,
+	);
+	assert.match(
+		compositionSource,
+		/setSelectedPullRequestIdentity\(\(currentIdentity\) => \([\s\S]*currentIdentity === identity \? null : identity/u,
+	);
+	assert.match(
+		compositionSource,
+		/<JiraWorkItemProvider[\s\S]*<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u,
+	);
+	assert.doesNotMatch(persistedStateSource, /selectedPullRequest|pullRequestIdentity/u);
+
+	// The metadata rail receives current entries and does not own/reset selection
+	// when its Details / Activity / Pull requests view changes.
+	assert.match(
+		compositionSource,
+		/<MetadataRail[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onPullRequestSelect=\{handlePullRequestSelect\}/u,
+	);
+	assert.doesNotMatch(metadataRailSource, /selectPullRequestEntries|setSelectedPullRequestIdentity/u);
+	assert.match(
+		metadataRailSource,
+		/<PullRequestsPanel[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
+	);
+
+	// Each SmartLink becomes an aria-pressed selectable button through its shared
+	// onActivate/selected API; the list item retains stable inspection attributes.
+	assert.match(
+		pullRequestsPanelSource,
+		/data-jira-work-item-pull-request-card=\{number\}[\s\S]*data-jira-work-item-pull-request-identity=\{identity\}[\s\S]*data-selected=\{selected \? "true" : undefined\}/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
+		/<SmartLink[\s\S]*item=\{item\}[\s\S]*onActivate=\{\(\) => onSelectEntry\(entry\)\}[\s\S]*selected=\{selected\}/u,
+	);
+
+	assert.match(
+		compositionSource,
+		/<ContextPanel[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*onPullRequestBack=\{\(\) => setSelectedPullRequestIdentity\(null\)\}/u,
+	);
+	assert.match(
+		contextPanelSource,
+		/const selectedPullRequestKey = selectedPullRequestEntry\?\.pullRequest[\s\S]*getPullRequestIdentity\(selectedPullRequestEntry\.pullRequest\)[\s\S]*<PullRequestDetailView[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}[\s\S]*onBack=\{onPullRequestBack\}[\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
+	);
+	assert.match(
+		contextResourcesSource,
+		/<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*\{pullRequestSelected \? null : \([\s\S]*aria-label="Copy work item as markdown"[\s\S]*<EditorToolbarModeTabs/u,
+	);
+});

@@ -150,6 +150,99 @@ test("the shared-channel story exposes six keyboard-selectable chapters and cano
 	}
 });
 
+test("PR #1847 opens a selectable guided review and restores the exact description", async ({ page }) => {
+	await openWorkItem(page);
+	const description = page.getByRole("textbox", { name: "Work item description" });
+	const originalDescription = await description.innerText();
+
+	await selectChapter(page, "Review");
+	const pullRequestsToggle = page.getByRole("button", { name: "1 Pull request" });
+	await pullRequestsToggle.click();
+	await expect(pullRequestsToggle).toHaveAttribute("aria-pressed", "true");
+
+	const pullRequestCard = page.locator('[data-jira-work-item-pull-request-card="1847"]');
+	const pullRequestButton = pullRequestCard.getByRole("button", {
+		name: /#1847: Add guest checkout to the storefront Open/u,
+	});
+	await pullRequestButton.hover();
+	const flyoutLink = page
+		.locator('[id^="smart-link-card-"]')
+		.getByRole("link", { name: "#1847: Add guest checkout to the storefront" });
+	await expect(flyoutLink).toHaveAttribute(
+		"href",
+		"https://github.com/eevensoh/vpk-rovo/pull/1847",
+	);
+
+	await pullRequestButton.click();
+	await expect(pullRequestButton).toHaveAttribute("aria-pressed", "true");
+	await expect(description).toHaveCount(0);
+	const detail = page.locator("[data-jira-work-item-pull-request-detail]");
+	await expect(detail).toBeVisible();
+	await expect(detail.getByRole("heading", {
+		name: "Add guest checkout to the storefront",
+	})).toBeVisible();
+	await expect(detail.getByText("main", { exact: true })).toBeVisible();
+	await expect(detail.getByText("feature/shop-4821-guest-checkout", { exact: true })).toBeVisible();
+	await expect(detail.getByText("Description", { exact: true })).toBeVisible();
+	await expect(detail.getByText("Checks", { exact: true })).toBeVisible();
+	await expect(detail.getByText("Activity", { exact: true })).toBeVisible();
+	await expect(detail.getByText("5 groups passed · 18 checks", { exact: true })).toBeVisible();
+	await expect(detail.getByRole("button", { name: "Open in GitHub" })).toHaveAttribute(
+		"href",
+		"https://github.com/eevensoh/vpk-rovo/pull/1847",
+	);
+
+	await detail.getByRole("tab", { name: "Guide" }).click();
+	const guide = detail.locator("[data-jira-work-item-pull-request-guide]");
+	await expect(guide.getByText("01 / 03", { exact: true })).toBeVisible();
+	await expect(guide.getByRole("heading", { name: "Start a guest checkout" })).toBeVisible();
+	await expect(guide.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
+	await guide.getByRole("button", { name: "Next", exact: true }).click();
+	await expect(guide.getByText("02 / 03", { exact: true })).toBeVisible();
+	await expect(guide.getByRole("heading", {
+		name: "Keep order creation server-owned",
+	})).toBeVisible();
+	await guide.getByRole("button", { name: "Next", exact: true }).click();
+	await expect(guide.getByText("03 / 03", { exact: true })).toBeVisible();
+	await guide.getByRole("button", { name: "Finish", exact: true }).click();
+	await expect(detail.getByRole("tab", { name: "Overview" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+
+	await detail.getByRole("tab", { name: "Files 4" }).click();
+	const filesPanel = detail.getByRole("tabpanel", { name: "Files 4" });
+	await expect(filesPanel.getByRole("tree", { name: "Code review files" })).toBeVisible();
+	await expect(filesPanel.getByText("guest-checkout-flow.tsx", { exact: true })).toBeVisible();
+	await expect(filesPanel.getByText("guest-orders.js", { exact: true })).toBeVisible();
+	await expect(filesPanel.getByText("guest-order-service.js", { exact: true })).toBeVisible();
+	await expect(filesPanel.getByText("guest-checkout.spec.ts", { exact: true })).toBeVisible();
+	await expect(filesPanel.getByText(
+		"components/storefront/checkout/guest-checkout-flow.tsx",
+		{ exact: true },
+	)).toBeVisible();
+
+	await pullRequestButton.click();
+	await expect(pullRequestButton).toHaveAttribute("aria-pressed", "false");
+	await expect(description).toBeVisible();
+	expect(await description.innerText()).toBe(originalDescription);
+
+	await pullRequestButton.focus();
+	await page.keyboard.press("Enter");
+	await expect(detail).toBeVisible();
+	await detail.getByRole("button", { name: "Back to description" }).click();
+	await expect(description).toBeVisible();
+	expect(await description.innerText()).toBe(originalDescription);
+
+	await pullRequestButton.focus();
+	await page.keyboard.press("Enter");
+	await expect(detail).toBeVisible();
+	await selectChapter(page, "Done");
+	await expect(detail).toHaveCount(0);
+	await expect(description).toBeVisible();
+	expect(await description.innerText()).toBe(originalDescription);
+});
+
 test("Plan shows the working agent mentions followed by a Started working label", async ({ page }) => {
 	await openWorkItem(page);
 	await selectChapter(page, "Plan");

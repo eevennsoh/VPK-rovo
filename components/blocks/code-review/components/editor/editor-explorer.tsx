@@ -9,6 +9,7 @@ import {
 	type FileTree2GitStatus,
 	type FileTree2Item,
 } from "@/components/ui-custom/file-tree-2";
+import { cn } from "@/lib/utils";
 
 import { EXPLORER_TREE } from "../../data/explorer-tree";
 import type { ChangedFile, ExplorerNode } from "../../data/types";
@@ -32,14 +33,17 @@ interface CodeReviewTreeData {
 function createCodeReviewTreeData(
 	files: readonly ChangedFile[],
 	rootPath: string,
+	includeDemoTree: boolean,
 ): CodeReviewTreeData {
 	const changedFilesRootPath = `${rootPath}/CHANGED FILES`;
 	const itemsByPath = new Map<string, FileTree2Item>([
 		[rootPath, { path: rootPath, type: "folder" }],
-		[changedFilesRootPath, { path: changedFilesRootPath, type: "folder" }],
 	]);
 	const fileIdsByPath = new Map<string, string>();
 	const pathsByFileId = new Map<string, string>();
+	if (includeDemoTree) {
+		itemsByPath.set(changedFilesRootPath, { path: changedFilesRootPath, type: "folder" });
+	}
 
 	const addExplorerNode = (node: ExplorerNode, parentPath: string) => {
 		const path = `${parentPath}/${node.name}`;
@@ -59,15 +63,26 @@ function createCodeReviewTreeData(
 		}
 	};
 
-	for (const node of EXPLORER_TREE.filter((node) => !node.fileId)) {
-		addExplorerNode(node, rootPath);
+	if (includeDemoTree) {
+		for (const node of EXPLORER_TREE.filter((node) => !node.fileId)) {
+			addExplorerNode(node, rootPath);
+		}
 	}
 
 	for (const file of files) {
 		const fileName = file.path.split("/").at(-1) ?? file.path;
 		const path = file.explorerPath
 			? `${rootPath}/${file.explorerPath}`
-			: `${changedFilesRootPath}/${fileName}`;
+			: includeDemoTree
+				? `${changedFilesRootPath}/${fileName}`
+				: `${rootPath}/${file.path}`;
+		let parentPath = path.slice(0, path.lastIndexOf("/"));
+		while (parentPath && parentPath !== rootPath) {
+			if (!itemsByPath.has(parentPath)) {
+				itemsByPath.set(parentPath, { path: parentPath, type: "folder" });
+			}
+			parentPath = parentPath.slice(0, parentPath.lastIndexOf("/"));
+		}
 		const existingItem = itemsByPath.get(path);
 		itemsByPath.set(path, {
 			...existingItem,
@@ -90,26 +105,32 @@ function createCodeReviewTreeData(
 }
 
 interface EditorExplorerProps {
+	className?: string;
 	explorerRootLabel?: string;
 	files: readonly ChangedFile[];
+	includeDemoTree?: boolean;
 	selectedFileId: string;
+	showSearch?: boolean;
 	onFileSelect: (fileId: string) => void;
 }
 
 export function EditorExplorer({
+	className,
 	explorerRootLabel = CODE_REVIEW_ROOT_PATH,
 	files,
+	includeDemoTree = true,
 	selectedFileId,
+	showSearch = true,
 	onFileSelect,
 }: Readonly<EditorExplorerProps>) {
 	const { fileIdsByPath, items, pathsByFileId } = createCodeReviewTreeData(
 		files,
 		explorerRootLabel,
+		includeDemoTree,
 	);
-	const defaultExpandedPaths = [
-		explorerRootLabel,
-		`${explorerRootLabel}/CHANGED FILES`,
-	];
+	const defaultExpandedPaths = items
+		.filter((item) => item.type === "folder")
+		.map((item) => item.path);
 	const handleSelect = (path: string) => {
 		const fileId = fileIdsByPath.get(path);
 		if (fileId) {
@@ -118,20 +139,22 @@ export function EditorExplorer({
 	};
 
 	return (
-		<aside className="flex min-h-0 flex-col border-r border-border bg-surface-raised">
-			<div className="p-2 pb-1">
-				<label className="relative block">
-					<span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-icon-subtle">
-						<SearchIcon label="" size="small" />
-					</span>
-					<Input
-						aria-label="Search explorer"
-						className="pl-8"
-						isCompact
-						placeholder="vitafleet"
-					/>
-				</label>
-			</div>
+		<aside className={cn("flex min-h-0 flex-col border-r border-border bg-surface-raised", className)}>
+			{showSearch ? (
+				<div className="p-2 pb-1">
+					<label className="relative block">
+						<span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-icon-subtle">
+							<SearchIcon label="" size="small" />
+						</span>
+						<Input
+							aria-label="Search explorer"
+							className="pl-8"
+							isCompact
+							placeholder="vitafleet"
+						/>
+					</label>
+				</div>
+			) : null}
 			<ScrollArea className="min-h-0 flex-1 px-1 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity hover:[&_[data-slot=scroll-area-scrollbar]]:opacity-100 focus-within:[&_[data-slot=scroll-area-scrollbar]]:opacity-100">
 				<FileTree2
 					aria-label="Code review files"

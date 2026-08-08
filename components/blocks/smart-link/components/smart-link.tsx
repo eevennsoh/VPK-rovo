@@ -36,7 +36,6 @@ import { cn } from "@/lib/utils";
 
 import type {
 	SmartLinkAction,
-	SmartLinkAppearance,
 	SmartLinkAvatar,
 	SmartLinkCardProps,
 	SmartLinkItem,
@@ -262,47 +261,66 @@ function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card
 	);
 }
 
+type SmartLinkTriggerBaseProps = {
+	item: SmartLinkItem;
+	open: boolean;
+	removable?: boolean;
+	size?: SmartLinkSize;
+	showStatus?: boolean;
+	selected?: boolean;
+};
+
+type SmartLinkAnchorTriggerProps = SmartLinkTriggerBaseProps &
+	Omit<ComponentProps<"a">, "children" | "href"> & {
+		onActivate?: undefined;
+	};
+
+type SmartLinkButtonTriggerProps = SmartLinkTriggerBaseProps &
+	Omit<ComponentProps<"button">, "children" | "type"> & {
+		onActivate: () => void;
+	};
+
+type SmartLinkTriggerProps = SmartLinkAnchorTriggerProps | SmartLinkButtonTriggerProps;
+
 function SmartLinkTrigger({
 	item,
 	open,
 	removable = false,
 	size = "small",
 	showStatus = false,
+	selected = false,
+	onActivate,
 	className,
 	...props
-}: Readonly<
-	{ item: SmartLinkItem; open: boolean; removable?: boolean; size?: SmartLinkSize; showStatus?: boolean } & ComponentProps<"a">
->) {
+}: Readonly<SmartLinkTriggerProps>) {
 	const status = showStatus ? item.status : undefined;
 	// A goal chip's leading target icon takes the status lozenge tone so the icon
 	// and score badge read as one signal (e.g. green target + "On track" 0.7).
 	const goalIconTone =
 		item.variant === "goal" && status ? goalIconToneClasses[status.variant ?? "neutral"] : null;
-
-	return (
-		<a
-			{...props}
-			aria-describedby={open ? `smart-link-card-${item.id}` : undefined}
-			className={cn(
-				// Extends the VPK Tag visual contract: the small size keeps the same
-				// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
-				// inline chip sits on a single text line; the large size scales the
-				// label to 16px. Per-size gaps/padding live in triggerSizeClasses.
-				"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-				triggerSizeClasses[size],
-				// Match the gap beside a trailing status lozenge to the chip's
-				// top/bottom gap (see triggerStatusPaddingClasses).
-				status ? triggerStatusPaddingClasses[size] : null,
-				// Cap the chip at the parent's available width (`max-w-full`) so a long
-				// label truncates in place instead of pushing a trailing status lozenge
-				// outside the container. Without a status the chip keeps its own
-				// content-hugging cap so short inline references stay compact.
-				status ? "max-w-full" : "max-w-[11.25rem]",
-				open && "border-border-selected",
-				className,
-			)}
-			href={item.href}
-		>
+	const triggerClassName = cn(
+		// Extends the VPK Tag visual contract: the small size keeps the same
+		// compact pill metrics (h-5, text-xs/leading-4, rounded-sm) so the
+		// inline chip sits on a single text line; the large size scales the
+		// label to 16px. Per-size gaps/padding live in triggerSizeClasses.
+		"group/smart-link relative inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+		triggerSizeClasses[size],
+		// Match the gap beside a trailing status lozenge to the chip's
+		// top/bottom gap (see triggerStatusPaddingClasses).
+		status ? triggerStatusPaddingClasses[size] : null,
+		// Cap the chip at the parent's available width (`max-w-full`) so a long
+		// label truncates in place instead of pushing a trailing status lozenge
+		// outside the container. Without a status the chip keeps its own
+		// content-hugging cap so short inline references stay compact.
+		status ? "max-w-full" : "max-w-[11.25rem]",
+		open && "border-border-selected",
+		onActivate &&
+			selected &&
+			"border-border-selected bg-bg-selected text-text-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed",
+		className,
+	);
+	const content = (
+		<>
 			<span
 				className={cn(
 					"flex shrink-0 items-center justify-center [&>*]:size-full",
@@ -336,6 +354,39 @@ function SmartLinkTrigger({
 					{status.label}
 				</Lozenge>
 			) : null}
+		</>
+	);
+
+	if (onActivate) {
+		const { onClick, ...buttonProps } = props as ComponentProps<"button">;
+
+		return (
+			<button
+				{...buttonProps}
+				aria-describedby={open ? `smart-link-card-${item.id}` : undefined}
+				aria-pressed={selected}
+				className={triggerClassName}
+				onClick={(event) => {
+					onClick?.(event);
+					if (!event.defaultPrevented) {
+						onActivate();
+					}
+				}}
+				type="button"
+			>
+				{content}
+			</button>
+		);
+	}
+
+	return (
+		<a
+			{...(props as ComponentProps<"a">)}
+			aria-describedby={open ? `smart-link-card-${item.id}` : undefined}
+			className={triggerClassName}
+			href={item.href}
+		>
+			{content}
 		</a>
 	);
 }
@@ -806,6 +857,8 @@ export function SmartLink({
 	openDelay = 120,
 	closeDelay = 80,
 	onOpenChange,
+	onActivate,
+	selected = false,
 	onActionSelect,
 	onRemove,
 	removeVariant,
@@ -831,6 +884,10 @@ export function SmartLink({
 		setOpen(nextOpen);
 		onOpenChange?.(nextOpen);
 	};
+	const handleActivate = () => {
+		handleOpenChange(false);
+		onActivate?.(item);
+	};
 
 	const hoverCard = (
 		<HoverCard
@@ -844,8 +901,10 @@ export function SmartLink({
 					<SmartLinkTrigger
 						className={className}
 						item={item}
+						onActivate={onActivate ? handleActivate : undefined}
 						open={open}
 						removable={isRemovableOverlay}
+						selected={selected}
 						showStatus={showStatus}
 						size={size}
 					/>

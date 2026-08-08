@@ -14,10 +14,12 @@ import {
 	type WorkItemPerson,
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
-import { JiraActivityViewControl } from "@/components/blocks/jira-activity";
+import {
+	JiraActivityViewControl,
+	type JiraActivityEventEntry,
+} from "@/components/blocks/jira-activity";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
-import { SESSION_EPOCH_MS } from "@/components/blocks/jira-work-item/data/session-fixtures";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
 import {
 	ActivityRailChromeProvider,
@@ -37,10 +39,7 @@ import {
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
-import {
-	JIRA_WORK_ITEM_CURRENT_USER,
-	selectPullRequestEntries,
-} from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
+import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import {
 	DEFAULT_PULL_REQUEST_SORT_MODE,
 	type PullRequestSortMode,
@@ -206,26 +205,28 @@ export function MetadataRail({
 	activity,
 	automationRules = [],
 	borderless = false,
+	pullRequestEntries,
+	selectedPullRequestIdentity,
+	onPullRequestSelect,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
-}> = {}) {
+	pullRequestEntries: readonly JiraActivityEventEntry[];
+	selectedPullRequestIdentity: string | null;
+	onPullRequestSelect: (entry: JiraActivityEventEntry) => void;
+}>) {
 	const [panelView, setPanelView] = useState<MetadataRailView>("details");
 	const [activityChrome, setActivityChrome] = useState<ActivityRailChrome | null>(null);
 	const [pullRequestSortMode, setPullRequestSortMode] =
 		useState<PullRequestSortMode>(DEFAULT_PULL_REQUEST_SORT_MODE);
-	const { activityEvents, workItem } = useJiraWorkItemMeta();
-	const { contextResources, elapsedMs, metadata: draft } = useJiraWorkItemState();
+	const { workItem } = useJiraWorkItemMeta();
+	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
 	const { attachments, linkedItems, subtasks } = contextResources;
 	const people = useMemo(
 		() => mergePeople(workItem.assignee, workItem.reporter),
 		[workItem.assignee, workItem.reporter],
-	);
-	const pullRequestEntries = useMemo(
-		() => selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs),
-		[activityEvents, elapsedMs],
 	);
 	const pullRequestCount = pullRequestEntries.length;
 	const activePanelView =
@@ -384,7 +385,9 @@ export function MetadataRail({
 							borderless={borderless}
 							currentUserName={JIRA_WORK_ITEM_CURRENT_USER.name}
 							entries={pullRequestEntries}
+							selectedIdentity={selectedPullRequestIdentity}
 							sortMode={pullRequestSortMode}
+							onSelectEntry={onPullRequestSelect}
 						/>
 					</div>
 				) : null}

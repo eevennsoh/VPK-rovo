@@ -32,6 +32,7 @@ export const TEST_FILE_CLASSIFICATIONS = {
 		"components/blocks/jira-activity/lib/jira-activity-reducer.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/development-commands.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter.test.js",
+		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data.test.js",
 		"components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases.test.js",
 		"components/blocks/smart-link/lib/pull-request-smart-link.test.js",
 		"components/visual/text-morphing/lib.test.js",
