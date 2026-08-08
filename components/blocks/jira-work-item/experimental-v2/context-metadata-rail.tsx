@@ -3,16 +3,11 @@
 import { createContext, use, useMemo, useState, type ReactNode } from "react";
 
 import type { ActivityRailChrome } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-panel";
+import type { MetadataRailView } from "@/components/blocks/jira-work-item/experimental-v2/lib/metadata-rail-view";
 import {
 	DEFAULT_PULL_REQUEST_SORT_MODE,
 	type PullRequestSortMode,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases";
-
-export type MetadataRailView = "details" | "activity" | "pull-requests";
-
-export function isMetadataRailView(value: string | undefined): value is MetadataRailView {
-	return value === "details" || value === "activity" || value === "pull-requests";
-}
 
 interface MetadataRailContextValue {
 	/** Requested panel tab (may be coerced when pull requests are unavailable). */

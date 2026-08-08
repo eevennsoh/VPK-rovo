@@ -186,8 +186,12 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 		/useState<MetadataRailView>\("details"\)/u,
 	);
 	assert.match(
-		metadataRailContextSource,
+		readBlockFile("experimental-v2/lib/metadata-rail-view.ts"),
 		/export type MetadataRailView = "details" \| "activity" \| "pull-requests"/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/import type \{ MetadataRailView \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/metadata-rail-view"/u,
 	);
 	assert.match(
 		compositionSource,

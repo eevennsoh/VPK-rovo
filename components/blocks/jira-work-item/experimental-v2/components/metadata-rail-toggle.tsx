@@ -6,10 +6,8 @@ import {
 	JiraActivityViewControl,
 } from "@/components/blocks/jira-activity";
 import { PullRequestSortControl } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-request-sort-control";
-import {
-	useMetadataRail,
-	type MetadataRailView,
-} from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
+import type { MetadataRailView } from "@/components/blocks/jira-work-item/experimental-v2/lib/metadata-rail-view";
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
