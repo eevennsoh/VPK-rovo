@@ -477,12 +477,13 @@ test("experimental v2 metadata rail toggles Details, Activity, and Pull requests
 	// PR rows reuse the shared Smart Link pull-request variant (chip + flyout).
 	assert.match(
 		pullRequestsPanelSource,
-		/import \{\s*SmartLink,\s*toPullRequestSmartLink,\s*type SmartLinkAvatar,\s*type SmartLinkItem,\s*\} from "@\/components\/blocks\/smart-link"/u,
+		/import \{\s*SmartLink,\s*toPullRequestSmartLink,\s*type SmartLinkAvatar,\s*\} from "@\/components\/blocks\/smart-link"/u,
 	);
 	assert.match(
 		pullRequestsPanelSource,
 		/toPullRequestSmartLink\(\{[\s\S]*href: pullRequest\.url[\s\S]*author: resolvePullRequestAuthor\(entry\)/u,
 	);
+	assert.doesNotMatch(pullRequestsPanelSource, /toPanelPullRequestSmartLink/u);
 	assert.match(
 		pullRequestsPanelSource,
 		/<SmartLink[\s\S]*item=\{item\}[\s\S]*showStatus[\s\S]*side="left"/u,

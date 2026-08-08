@@ -25,7 +25,6 @@ import {
 	SmartLink,
 	toPullRequestSmartLink,
 	type SmartLinkAvatar,
-	type SmartLinkItem,
 } from "@/components/blocks/smart-link";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -86,11 +85,19 @@ function resolvePullRequestAuthor(entry: JiraActivityEventEntry): SmartLinkAvata
 	return { name };
 }
 
-function toPanelPullRequestSmartLink(entry: JiraActivityEventEntry): SmartLinkItem | null {
+function PullRequestCard({
+	entry,
+	selected,
+	onSelectEntry,
+}: Readonly<{
+	entry: JiraActivityEventEntry;
+	selected: boolean;
+	onSelectEntry: (entry: JiraActivityEventEntry) => void;
+}>) {
 	const pullRequest = entry.pullRequest;
 	if (!pullRequest) return null;
 
-	return toPullRequestSmartLink({
+	const item = toPullRequestSmartLink({
 		id: entry.id,
 		number: pullRequest.number,
 		title: pullRequest.title,
@@ -101,23 +108,7 @@ function toPanelPullRequestSmartLink(entry: JiraActivityEventEntry): SmartLinkIt
 		href: pullRequest.url,
 		author: resolvePullRequestAuthor(entry),
 	});
-}
-
-function PullRequestCard({
-	entry,
-	selected,
-	onSelectEntry,
-}: Readonly<{
-	entry: JiraActivityEventEntry;
-	selected: boolean;
-	onSelectEntry: (entry: JiraActivityEventEntry) => void;
-}>) {
-	const item = toPanelPullRequestSmartLink(entry);
-	if (!item) return null;
-
-	const number = entry.pullRequest?.number;
-	const pullRequest = entry.pullRequest;
-	if (number == null || !pullRequest) return null;
+	const number = pullRequest.number;
 	const identity = getPullRequestIdentity(pullRequest);
 
 	return (
