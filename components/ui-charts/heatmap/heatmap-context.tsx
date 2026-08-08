@@ -16,10 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Margin } from "../chart-context";
 import type { ChartPhase, ChartStatus } from "../chart-phase";
-import {
-  HEATMAP_DEFAULT_LEVEL_COLORS,
-  type HeatmapLevelStyles,
-} from "./heatmap-colors";
+import { type HeatmapLevelStyles } from "./heatmap-colors";
 
 type HeatmapTimeScale = ReturnType<typeof scaleTime<number>>;
 type HeatmapLinearScale = ReturnType<typeof scaleLinear<number>>;
@@ -203,13 +200,3 @@ export function HeatmapInteractionRoot({ children }: { children: ReactNode }) {
   }
   return <HeatmapInteractionProvider>{children}</HeatmapInteractionProvider>;
 }
-
-/** @deprecated Use {@link HEATMAP_DEFAULT_LEVEL_COLORS} */
-// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
-export const heatmapCssVars = {
-  empty: HEATMAP_DEFAULT_LEVEL_COLORS[0],
-  level1: HEATMAP_DEFAULT_LEVEL_COLORS[1],
-  level2: HEATMAP_DEFAULT_LEVEL_COLORS[2],
-  level3: HEATMAP_DEFAULT_LEVEL_COLORS[3],
-  level4: HEATMAP_DEFAULT_LEVEL_COLORS[4],
-} as const;
