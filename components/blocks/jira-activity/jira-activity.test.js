@@ -312,6 +312,30 @@ test("the header shows an activity count and a text-link sort control", () => {
 	assert.match(HEADER_SOURCE, /positionerClassName="z-\[502\]"/u);
 	// View/sort control is extractable for rail relocation; count can be omitted.
 	assert.match(HEADER_SOURCE, /export function JiraActivityViewControl/u);
+	assert.match(HEADER_SOURCE, /trigger = "label"/u);
+	assert.match(HEADER_SOURCE, /trigger\?: "label" \| "chevron"/u);
+	assert.match(
+		HEADER_SOURCE,
+		/data-jira-work-item-metadata-rail-sort-trigger="activity"/u,
+	);
+	// Chevron trigger is an inset ghost icon (not a heavy outline segment).
+	// Shell inset on top/right/bottom (`my-1 me-1`); label→icon gap is segment `gap-1.5`.
+	assert.match(
+		HEADER_SOURCE,
+		/CHEVRON_TRIGGER_CLASS =\s*"my-1 me-1 shrink-0 border-transparent shadow-none focus-visible:border-transparent focus-visible:ring-0! focus-visible:ring-offset-0!"/u,
+	);
+	assert.doesNotMatch(
+		HEADER_SOURCE,
+		/CHEVRON_TRIGGER_CLASS[\s\S]*aria-expanded:border-transparent/u,
+	);
+	assert.doesNotMatch(
+		HEADER_SOURCE,
+		/isChevron \? \([\s\S]*aria-pressed=\{pressed \|\| undefined\}/u,
+	);
+	assert.match(
+		HEADER_SOURCE,
+		/isChevron \? \([\s\S]*className=\{CHEVRON_TRIGGER_CLASS\}[\s\S]*size="icon-compact"[\s\S]*variant="ghost"/u,
+	);
 	assert.match(HEADER_SOURCE, /showAgentsOption = true/u);
 	assert.match(HEADER_SOURCE, /showAgentsOption[\s\S]*ACTIVITY_FILTER_VALUES\.map/u);
 	assert.match(HEADER_SOURCE, /showCount = true/u);
@@ -341,7 +365,7 @@ test("the header offers Agents, Needs input, and Comments filters", () => {
 	);
 	assert.match(
 		HEADER_SOURCE,
-		/filterActive \? FILTER_TRIGGER_LABELS\[filter\] : SORT_TRIGGER_LABELS\[sortOrder\]/u,
+		/const activeLabel = filterActive\s*\? FILTER_TRIGGER_LABELS\[filter\]\s*: SORT_TRIGGER_LABELS\[sortOrder\]/u,
 	);
 	assert.match(TYPES_SOURCE, /\| "needs-input"/u);
 	assert.match(TYPES_SOURCE, /\| "comments-only"/u);

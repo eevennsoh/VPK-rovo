@@ -18,15 +18,15 @@ import {
 } from "@/components/blocks/editor-toolbar";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/attachments-popover";
 import {
-	useJiraWorkItemMeta,
-	useJiraWorkItemState,
-} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import {
 	AnimatedContextTitleActions,
 	type CodingAgentId,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
+import {
+	useJiraWorkItemMeta,
+	useJiraWorkItemState,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 type ContextResourceActionId = "attachments" | "subtasks" | "linkedItems";
@@ -107,23 +106,27 @@ export function ContextResources({
 
 	return (
 		<>
+			{/*
+			 * Non-scrolling column chrome (sibling above the description
+			 * scrollport). Shared wide pb-7 aligns description with Details.
+			 */}
 			<div
 				className={cn(
-					"sticky top-0 z-10 [container-type:scroll-state]",
+					"shrink-0 @[860px]/agentlayout:pb-7",
 					hasPlanner
 						? "bg-bg-input [&_[data-slot=button]]:bg-bg-input [&_[data-slot=button]:hover]:bg-bg-neutral-subtle-hovered [&_[data-slot=button]:active]:bg-bg-neutral-subtle-pressed"
-						: "bg-surface-overlay",
+						: null,
 				)}
 				data-jira-work-item-resource-row
 			>
 				<div
-					className="flex flex-wrap items-start gap-1 *:focus-visible:relative *:focus-visible:z-10"
+					className="flex flex-wrap items-start gap-2 *:focus-visible:relative *:focus-visible:z-10"
 					data-jira-work-item-resource-row-content
 				>
 					<div className="relative inline-flex">
 						<DropdownMenu>
 							<DropdownMenuTrigger
-								render={<Button aria-label="Add to work item" size="icon-compact" type="button" variant="outline" />}
+								render={<Button aria-label="Add to work item" size="icon" type="button" variant="outline" />}
 							>
 								<AddIcon label="" size="small" />
 							</DropdownMenuTrigger>
@@ -156,19 +159,25 @@ export function ContextResources({
 									type="button"
 								/>,
 								activeResourceAction === resource.id,
-								(open) => (open ? setActiveResourceAction(resource.id) : closeResourceAction()),
+								(open) => {
+									if (open) {
+										setActiveResourceAction(resource.id);
+										return;
+									}
+									closeResourceAction();
+								},
 							),
 						)}
 					</div>
 					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
 					{pullRequestSelected ? null : (
-						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-1 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 @[860px]/agentlayout:mr-[var(--metadata-panel-offset)] motion-reduce:transition-none">
+						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
 							<Tooltip>
 								<TooltipTrigger
 									render={
 										<Button
 											aria-label="Copy work item as markdown"
-											size="icon-compact"
+											size="icon"
 											type="button"
 											variant="outline"
 											onClick={() => {
@@ -192,10 +201,6 @@ export function ContextResources({
 						</div>
 					)}
 				</div>
-				<StickyRowScrollFade
-					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}
-					data-slot="jira-work-item-resource-row-scroll-fade"
-				/>
 			</div>
 			{outputs.length > 0 ? (
 				<div className="mt-1">

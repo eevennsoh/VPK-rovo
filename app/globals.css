@@ -486,13 +486,14 @@
 			opacity: 1;
 		}
 
-		[data-jira-work-item-resource-row-content],
+		/* Activity headers still sticky-inside-scroll; column resource/toggle
+		   chrome now lives outside their scrollports (progressive mask owns
+		   the top fade instead). */
 		[data-slot="jira-activity-header"] > :first-child {
 			position: relative;
 			background: inherit;
 		}
 
-		[data-jira-work-item-resource-row-content]::before,
 		[data-slot="jira-activity-header"] > :first-child::before {
 			content: "";
 			position: absolute;
@@ -500,10 +501,6 @@
 			bottom: 100%;
 			height: 2rem;
 			background: inherit;
-		}
-
-		[data-jira-work-item-resource-row-content] {
-			padding-bottom: var(--ds-space-100, 8px);
 		}
 	}
 }
