@@ -196,7 +196,7 @@ export function PullRequest({
 	onActivate,
 	className,
 }: Readonly<PullRequestProps>) {
-	const activeSelected = Boolean(onActivate && selected);
+	const activeSelected = selected;
 	const body = (
 		<PullRequestCardBody
 			additions={additions}
@@ -245,6 +245,7 @@ export function PullRequest({
 			aria-label={`Pull request #${number}: ${title}`}
 			className={surfaceClassName}
 			data-pull-request={number}
+			data-selected={selected ? "true" : undefined}
 			role="group"
 		>
 			{body}
