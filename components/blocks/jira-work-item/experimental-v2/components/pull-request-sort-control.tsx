@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
 import type { PullRequestSortMode } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases";
@@ -85,12 +87,13 @@ export function PullRequestSortControl({
 	pressed?: boolean;
 	onOpenChange?: (open: boolean) => void;
 }>) {
+	const [open, setOpen] = useState(false);
 	const isChevron = trigger === "chevron";
 	const triggerButton = isChevron ? (
 		<Button
 			aria-label={`Sort pull requests (${SORT_TRIGGER_LABELS[sortMode]})`}
 			className={CHEVRON_TRIGGER_CLASS}
-			data-jira-work-item-metadata-rail-sort-trigger="pull-requests"
+			data-jira-work-item-pull-request-sort-trigger
 			size="icon-compact"
 			type="button"
 			variant="ghost"
@@ -107,7 +110,13 @@ export function PullRequestSortControl({
 	);
 
 	return (
-		<DropdownMenu onOpenChange={onOpenChange}>
+		<DropdownMenu
+			open={open}
+			onOpenChange={(next) => {
+				setOpen(next);
+				onOpenChange?.(next);
+			}}
+		>
 			<DropdownMenuTrigger render={triggerButton}>
 				{isChevron ? null : SORT_TRIGGER_LABELS[sortMode]}
 				<Icon aria-hidden render={<ChevronDownIcon label="" />} />
@@ -120,6 +129,10 @@ export function PullRequestSortControl({
 				<DropdownMenuRadioGroup
 					onValueChange={(value) => {
 						onSortModeChange(value as PullRequestSortMode);
+						// Nested menus: radio select does not always dismiss; close
+						// explicitly (same as context-popover-parts).
+						setOpen(false);
+						onOpenChange?.(false);
 					}}
 					value={sortMode}
 				>

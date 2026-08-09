@@ -58,7 +58,7 @@ function SelectTrigger({
 			data-variant={variant}
 			aria-busy={isLoading || undefined}
 			className={cn(
-				"data-placeholder:text-text-subtlest focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive gap-1.5 rounded-lg bg-transparent py-2 pr-2 pl-2.5 text-sm transition-colors select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-md *:data-[slot=select-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4 flex w-fit items-center justify-between whitespace-nowrap outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--opacity-disabled) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
+				"data-placeholder:text-text-subtlest focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive gap-1.5 rounded-lg bg-transparent px-2.5 py-2 text-sm transition-colors select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-md *:data-[slot=select-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4 flex w-fit items-center justify-between whitespace-nowrap outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--opacity-disabled) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
 				"data-[variant=default]:border-input data-[variant=default]:border data-[variant=default]:bg-bg-input data-[variant=default]:hover:bg-bg-input-hovered data-[variant=default]:active:bg-bg-input-pressed",
 				"data-[variant=subtle]:border data-[variant=subtle]:border-transparent data-[variant=subtle]:hover:bg-bg-input-hovered data-[variant=subtle]:active:bg-bg-input-pressed",
 				"data-[variant=none]:border-0 data-[variant=none]:bg-transparent",
@@ -99,6 +99,8 @@ interface SelectContentProps
 			"align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
 		> {
 	showScrollButtons?: boolean
+	/** Positioner stacking class. Defaults to `isolate z-[200]`; raise above dialogs (e.g. `z-[502]`). */
+	positionerClassName?: string
 }
 
 function SelectContent({
@@ -110,6 +112,8 @@ function SelectContent({
 	alignOffset = 0,
 	alignItemWithTrigger = true,
 	showScrollButtons = true,
+	positionerClassName,
+	"aria-label": ariaLabel,
 	...props
 }: Readonly<SelectContentProps>) {
 	return (
@@ -120,7 +124,7 @@ function SelectContent({
 				align={align}
 				alignOffset={alignOffset}
 				alignItemWithTrigger={alignItemWithTrigger}
-				className="isolate z-[200]"
+				className={cn("isolate z-[200]", positionerClassName)}
 			>
 				<SelectPrimitive.Popup
 					data-slot="select-content"
@@ -133,7 +137,7 @@ function SelectContent({
 					{...props}
 				>
 					{showScrollButtons ? <SelectScrollUpButton /> : null}
-					<SelectPrimitive.List>{children}</SelectPrimitive.List>
+					<SelectPrimitive.List aria-label={ariaLabel}>{children}</SelectPrimitive.List>
 					{showScrollButtons ? <SelectScrollDownButton /> : null}
 				</SelectPrimitive.Popup>
 			</SelectPrimitive.Positioner>
@@ -156,10 +160,14 @@ function SelectLabel({ className, inset, ...props }: Readonly<SelectLabelProps>)
 	)
 }
 
-type SelectItemProps = SelectPrimitive.Item.Props
+interface SelectItemProps extends SelectPrimitive.Item.Props {
+	/** Extra classes for ItemText (e.g. `whitespace-normal` for rich multi-line content). */
+	textClassName?: string
+}
 
 function SelectItem({
 	className,
+	textClassName,
 	children,
 	...props
 }: Readonly<SelectItemProps>) {
@@ -174,7 +182,10 @@ function SelectItem({
 			)}
 			{...props}
 		>
-			<span className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected">
+			<span
+				data-slot="select-item-indicator"
+				className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected"
+			>
 				<SelectPrimitive.ItemIndicator>
 					<Icon
 						render={<CheckMarkIcon label="" size="small" />}
@@ -183,7 +194,12 @@ function SelectItem({
 					/>
 				</SelectPrimitive.ItemIndicator>
 			</span>
-			<SelectPrimitive.ItemText className="flex min-w-0 flex-1 gap-2 whitespace-nowrap">
+			<SelectPrimitive.ItemText
+				className={cn(
+					"flex min-w-0 flex-1 gap-2 whitespace-nowrap",
+					textClassName,
+				)}
+			>
 				{children}
 			</SelectPrimitive.ItemText>
 		</SelectPrimitive.Item>

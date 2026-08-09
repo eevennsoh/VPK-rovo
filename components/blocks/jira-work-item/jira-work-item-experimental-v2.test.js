@@ -78,8 +78,9 @@ const V2_ONLY_FILES = new Set([
 	// Details/Activity/PR view union + type guard (kept out of the provider
 	// module so Fast Refresh can treat that file as components/hooks only).
 	"lib/metadata-rail-view.ts",
-	// Metadata-rail Pull request toggle panel; v1 has no PR segment.
+	// Pull requests Select in ContextResources; v1 has no PR surface.
 	"components/pull-requests-panel.tsx",
+	"components/pull-requests-select.tsx",
 	"components/pull-request-sort-control.tsx",
 	"components/pull-request-detail/pull-request-files.tsx",
 	"components/pull-request-detail/pull-request-guide.tsx",
@@ -98,7 +99,7 @@ const V2_ONLY_FILES = new Set([
 	// Connected-repo fixtures / helpers live outside the picker component file
 	// so Fast Refresh can treat that module as components-only.
 	"lib/development-repositories.ts",
-	// Phase-section model for the Pull requests metadata panel.
+	// Phase-section model for the Pull requests resource dropdown.
 	"lib/pull-request-phases.ts",
 	"lib/pull-request-phases.test.js",
 	"lib/pull-request-detail-data.ts",

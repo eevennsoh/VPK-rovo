@@ -9,12 +9,34 @@ type LozengeVariant = NonNullable<LozengeProps["variant"]>;
 export const STATUS_PHASES: readonly string[] = BOARD_COLUMNS.map((column) => column.title);
 export const PRIORITY_OPTIONS: readonly PriorityValue[] = ["Highest", "High", "Medium", "Low", "Lowest"];
 
-export function statusVariant(status: string): LozengeVariant {
-	const index = STATUS_PHASES.indexOf(status);
-	if (index >= 0 && index === STATUS_PHASES.length - 1) {
+/** Named tones so trigger + menu lozenges stay matched across board workflows. */
+const NAMED_STATUS_VARIANTS: Readonly<Record<string, LozengeVariant>> = {
+	"To do": "neutral",
+	"RFP Intake": "neutral",
+	"In progress": "information",
+	Drafting: "information",
+	"In review": "information",
+	Review: "information",
+	Done: "success",
+	Submitted: "success",
+};
+
+export function statusVariant(
+	status: string,
+	phases: readonly string[] = STATUS_PHASES,
+): LozengeVariant {
+	const named = NAMED_STATUS_VARIANTS[status];
+	if (named) {
+		return named;
+	}
+	const index = phases.indexOf(status);
+	if (index < 0) {
+		return "neutral";
+	}
+	if (index === phases.length - 1) {
 		return "success";
 	}
-	if (index <= 0) {
+	if (index === 0) {
 		return "neutral";
 	}
 	return "information";

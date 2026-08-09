@@ -92,6 +92,7 @@ test("details metadata draft and status variants use board lifecycle defaults", 
 	assert.equal(statusVariant(STATUS_PHASES[1]), "information");
 	assert.equal(statusVariant(STATUS_PHASES.at(-1)), "success");
 	assert.equal(statusVariant("Unmapped external status"), "neutral");
+	assert.equal(statusVariant("In review"), "information");
 });
 
 test("details metadata searchable pickers reuse the editor palette shell and keep Agents agent-only", async () => {

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import LinkIcon from "@atlaskit/icon/core/link";
 import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { ContextEditableTitle } from "@/components/blocks/jira-work-item/experimental-v2/components/context-editable-header";
 import { ContextTitleMeta } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-meta";
 import { useJiraWorkItemMeta } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
@@ -98,12 +99,17 @@ export function WorkItemKeyCopy() {
 }
 
 /**
- * Editable title in the dialog header band (under breadcrumbs), with Status
- * and Reported by beneath. Owns the header-band horizontal padding so the
- * title Input is not nested in extra `min-w-0` shells. Full-width of the
- * chrome column — the two-column body starts beneath this band.
+ * Editable title in the dialog header band (under breadcrumbs), with Status,
+ * optional read-only Pull requests Tag, and Reported by beneath. Owns the
+ * header-band horizontal padding so the title Input is not nested in extra
+ * `min-w-0` shells. Full-width of the chrome column — the two-column body
+ * starts beneath this band.
  */
-export function ContextTitleBar() {
+export function ContextTitleBar({
+	pullRequestEntries,
+}: Readonly<{
+	pullRequestEntries?: readonly JiraActivityEventEntry[];
+}> = {}) {
 	return (
 		<div
 			className="min-w-0 self-stretch px-6 pb-4"
@@ -111,7 +117,7 @@ export function ContextTitleBar() {
 			data-jira-work-item-title-column
 		>
 			<ContextEditableTitle />
-			<ContextTitleMeta />
+			<ContextTitleMeta pullRequestEntries={pullRequestEntries} />
 		</div>
 	);
 }

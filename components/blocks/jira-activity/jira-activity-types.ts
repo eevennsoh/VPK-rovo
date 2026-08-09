@@ -82,6 +82,8 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		deletions: number;
 		/** Optional owner/name path shown on phase-section PR cards (e.g. `eevensoh/vpk-rovo`). */
 		repository?: string;
+		/** Optional source branch shown on Pull Request block cards. */
+		branch?: string;
 		/** Optional absolute URL for the pull request (Smart Link href). */
 		url?: string;
 		/** When the pull request was opened (ms). Used by Pull requests sort modes. */

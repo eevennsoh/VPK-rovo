@@ -1,9 +1,11 @@
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
+import type { TagColor, TagTrailingMetric } from "@/components/ui/tag";
 
 /**
- * Phase buckets for the metadata-rail Pull requests panel. Order matches the
- * accordion stack (Approved → … → Closed). Only Open/Merged exist on today's
- * activity PR model; other phases stay empty until story data grows.
+ * Phase buckets for pull-request metrics and helper grouping. Order matches
+ * Approved → … → Closed. Only Open/Merged exist on today's activity PR model;
+ * other phases stay empty until story data grows. The ContextResources popover renders
+ * a flat Smart Link list (no accordion), but tag metrics still use these buckets.
  */
 export type PullRequestPhaseId =
 	| "approved"
@@ -130,8 +132,8 @@ export function sortPullRequestEntries(
 
 /**
  * Group unique PR entries into fixed phase sections, preserving the caller's
- * sort order within each section. Empty sections are kept so the accordion can
- * show "No pull requests".
+ * sort order within each section. Empty sections are kept for callers that need
+ * a fixed phase stack (e.g. metrics helpers / tests).
  */
 export function groupPullRequestsByPhase(
 	entries: readonly JiraActivityEventEntry[],
@@ -162,4 +164,43 @@ export function defaultOpenPullRequestPhases(
 	sections: readonly PullRequestPhaseSection[],
 ): PullRequestPhaseId[] {
 	return sections.filter((section) => section.entries.length > 0).map((section) => section.id);
+}
+
+/**
+ * Compact title-meta metric chips (Open lime, Needs input yellow, Draft gray,
+ * Merge purple). Draft stays empty until activity PR status can map to it.
+ */
+const PULL_REQUEST_TAG_METRICS: readonly {
+	phaseId: PullRequestPhaseId;
+	label: string;
+	color: TagColor;
+}[] = [
+	{ phaseId: "open", label: "Open", color: "lime" },
+	{ phaseId: "needs-review", label: "Needs input", color: "yellow" },
+	{ phaseId: "draft", label: "Draft", color: "gray" },
+	{ phaseId: "merged-30d", label: "Merged", color: "purple" },
+];
+
+/**
+ * Trailing metrics for the title-meta Pull requests Tag. Only non-empty
+ * Open / Needs input / Draft / Merged buckets are included.
+ */
+export function summarizePullRequestTagMetrics(
+	entries: readonly JiraActivityEventEntry[],
+): TagTrailingMetric[] {
+	const counts = new Map<PullRequestPhaseId, number>();
+	for (const entry of entries) {
+		const status = entry.pullRequest?.status;
+		if (!status) continue;
+		const phaseId = phaseIdForPullRequestStatus(status);
+		counts.set(phaseId, (counts.get(phaseId) ?? 0) + 1);
+	}
+
+	return PULL_REQUEST_TAG_METRICS.flatMap(({ phaseId, label, color }) => {
+		const count = counts.get(phaseId) ?? 0;
+		if (count <= 0) {
+			return [];
+		}
+		return [{ value: `${count} ${label}`, color }];
+	});
 }

@@ -13,6 +13,7 @@ import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
 import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -710,6 +711,8 @@ function SmartLinkActionRow({
 	);
 }
 
+const FOOTER_VISIBLE_ACTION_COUNT = 2;
+
 function SmartLinkFooterActions({
 	actions,
 	item,
@@ -719,15 +722,20 @@ function SmartLinkFooterActions({
 	item: SmartLinkItem;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
 }>) {
+	const visibleActions = actions.slice(0, FOOTER_VISIBLE_ACTION_COUNT);
+	const overflowActions = actions.slice(FOOTER_VISIBLE_ACTION_COUNT);
+
+	const runAction = (action: SmartLinkAction) => {
+		action.onSelect?.(item, action);
+		onActionSelect?.(action, item);
+	};
+
 	return (
 		<div className="flex flex-wrap items-center justify-end gap-2">
-			{actions.map((action) => (
+			{visibleActions.map((action) => (
 				<Button
 					key={action.id}
-					onClick={() => {
-						action.onSelect?.(item, action);
-						onActionSelect?.(action, item);
-					}}
+					onClick={() => runAction(action)}
 					size="compact"
 					type="button"
 					variant="outline"
@@ -735,6 +743,26 @@ function SmartLinkFooterActions({
 					{action.label}
 				</Button>
 			))}
+			{overflowActions.length > 0 ? (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button aria-label="More actions" size="icon-compact" type="button" variant="outline">
+								<ShowMoreHorizontalIcon label="" size="small" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end" sideOffset={6}>
+						<DropdownMenuGroup>
+							{overflowActions.map((action) => (
+								<DropdownMenuItem key={action.id} onSelect={() => runAction(action)}>
+									{action.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			) : null}
 		</div>
 	);
 }
@@ -760,7 +788,7 @@ function SmartLinkFooter({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-3 border-t border-border px-4 py-3 text-xs leading-4 text-text-subtlest",
+				"flex items-center gap-3 px-4 pt-2 pb-3 text-xs leading-4 text-text-subtlest",
 				hasActions ? "justify-between" : null,
 			)}
 		>
@@ -778,6 +806,8 @@ function SmartLinkFooter({
 export function SmartLinkCard({
 	item,
 	onActionSelect,
+	onActivate,
+	selected = false,
 	appearance = "block",
 	className,
 }: Readonly<SmartLinkCardProps>) {
@@ -785,13 +815,18 @@ export function SmartLinkCard({
 	const isFlyout = appearance === "flyout";
 	const showFooterButtons = appearance === "block";
 	const showFlyoutActions = isFlyout && Boolean(item.actions?.length);
+	const titleClassName =
+		"line-clamp-2 min-w-0 flex-1 text-left text-sm font-semibold leading-5 text-link no-underline outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50";
 
 	return (
 		<div
 			aria-labelledby={titleId}
 			className={cn(
-				"w-full max-w-[32rem] overflow-hidden rounded-lg border border-border bg-surface text-text",
-				isFlyout && "bg-surface-overlay shadow-2xl",
+				"w-full max-w-[32rem] overflow-hidden rounded-lg bg-surface text-text",
+				isFlyout ? "bg-surface-overlay shadow-2xl" : "border border-border",
+				onActivate &&
+					selected &&
+					"border-border-selected bg-bg-selected text-text-selected",
 				className,
 			)}
 			id={`smart-link-card-${item.id}`}
@@ -799,17 +834,25 @@ export function SmartLinkCard({
 		>
 			{item.previewImage ? <SmartLinkPreviewMedia image={item.previewImage} /> : null}
 			<div className="flex flex-col gap-2 px-4 pt-4 pb-2">
-				<div className="flex min-w-0 items-start gap-2">
-					<span className="mt-0.5 inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
-					<a
-						className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-5 text-link no-underline outline-none hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50"
-						href={item.href}
-						id={titleId}
-					>
-						{item.title}
-					</a>
+				<div className="flex min-w-0 items-center gap-2">
+					<span className="inline-flex shrink-0 items-center">{renderVisual(item.icon, "card")}</span>
+					{onActivate ? (
+						<button
+							aria-pressed={selected}
+							className={titleClassName}
+							id={titleId}
+							onClick={() => onActivate(item)}
+							type="button"
+						>
+							{item.title}
+						</button>
+					) : (
+						<a className={titleClassName} href={item.href} id={titleId}>
+							{item.title}
+						</a>
+					)}
 					{item.status ? (
-						<span className="shrink-0 pt-0.5">
+						<span className="shrink-0">
 							<SmartLinkStatusDropdown status={item.status} />
 						</span>
 					) : null}
@@ -876,6 +919,8 @@ export function SmartLink({
 				className={className}
 				item={item}
 				onActionSelect={onActionSelect}
+				onActivate={onActivate}
+				selected={selected}
 			/>
 		);
 	}

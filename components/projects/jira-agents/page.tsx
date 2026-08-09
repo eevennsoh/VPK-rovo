@@ -11,6 +11,7 @@ import type { JiraDesignView } from "@/components/projects/jira-golden-journeys/
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
 import { JIRA_AGENTS_GALLERY_ITEMS } from "./data/gallery-items";
 import {
+	JIRA_AGENTS_STATUS_PHASES,
 	JIRA_AGENTS_STORY_BOARD_AGENTS,
 	JIRA_AGENTS_STORY_COMPOSER_AGENTS,
 	JIRA_AGENTS_STORY_ITEM_ID,
@@ -116,6 +117,7 @@ function JiraAgentsWorkItemStage({
 				onAgentPromptSubmit={handleAgentPromptSubmit}
 				onOpenAgentChat={handleOpenAgentChat}
 				presentation="inline"
+				statusPhases={JIRA_AGENTS_STATUS_PHASES}
 				workItem={controller.workItem}
 			/>
 		</div>

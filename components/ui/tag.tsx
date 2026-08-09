@@ -82,7 +82,8 @@ const colorAliases: Record<TagColor, ResolvedTagColor> = {
 const tagColorClasses: Record<ResolvedTagColor, { border: string; icon: string; metric: string }> = {
 	gray: {
 		border: "border-border-accent-gray-subtle",
-		icon: "text-icon-accent-gray group-hover/tag:text-text-accent-gray group-active/tag:text-text-accent-gray",
+		// Default/standard front-slot glyphs stay icon-subtle at rest and on hover/active.
+		icon: "text-icon-subtle",
 		metric: "bg-bg-accent-gray-subtler",
 	},
 	blue: {
@@ -149,6 +150,36 @@ interface TagOverlayAction {
 	onClick: () => void;
 }
 
+/** One trailing metric chip — plain value or value + optional accent color. */
+type TagTrailingMetric =
+	| string
+	| number
+	| {
+			value: string | number;
+			color?: TagColor;
+	  };
+
+function normalizeTrailingMetrics(
+	trailingMetric: TagTrailingMetric | readonly TagTrailingMetric[] | undefined,
+): readonly { value: string; color?: TagColor }[] {
+	if (trailingMetric == null || trailingMetric === "") {
+		return [];
+	}
+	const items = Array.isArray(trailingMetric) ? trailingMetric : [trailingMetric];
+	return items.flatMap((item) => {
+		if (typeof item === "string" || typeof item === "number") {
+			if (item === "") {
+				return [];
+			}
+			return [{ value: String(item) }];
+		}
+		if (item.value === "" || item.value == null) {
+			return [];
+		}
+		return [{ value: String(item.value), color: item.color }];
+	});
+}
+
 interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	as?: React.ElementType;
 	children: React.ReactNode;
@@ -182,8 +213,12 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	 * the label keeps the ellipsis while the trailing element stays fully visible.
 	 */
 	elemAfter?: React.ReactNode;
-	/** Compact metric rendered after the tag text using the tag color's accent-subtler fill. */
-	trailingMetric?: string | number;
+	/**
+	 * Compact metric chip(s) after the tag text. A single value uses the tag
+	 * color's accent-subtler fill; pass an array (and optional per-chip `color`)
+	 * for multi-metric tags such as pull-request status tallies.
+	 */
+	trailingMetric?: TagTrailingMetric | readonly TagTrailingMetric[];
 	isVerified?: boolean;
 	maxWidth?: React.CSSProperties["maxWidth"];
 }
@@ -207,6 +242,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	maxWidth,
 	className,
 	style,
+	role,
 	onClick,
 	onKeyDown,
 	...props
@@ -221,7 +257,10 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// `type`s only differ in how the before-element itself is rendered (16px
 	// avatar vs 12px logo icon) and in their fixed rounding.
 	const hasLeadingElement = Boolean(elemBefore);
-	const isAvatarType = type !== "default";
+	// Only known avatar tag types get the pill shell. Unknown values (e.g. HTML
+	// `type="button"` merged onto the Tag by PopoverTrigger) fall back to the
+	// default `rounded-sm` treatment; `data-type` still reflects the prop as-is.
+	const isAvatarType = type === "user" || type === "other" || type === "agent";
 	const hasAvatarTagStyles = isAvatarType && hasLeadingElement;
 	const isUserAvatarTag = hasAvatarTagStyles && type === "user";
 	const isOtherAvatarTag = hasAvatarTagStyles && type === "other";
@@ -238,16 +277,27 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// right padding (matching non-removable logo/default tags).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
 	const hasOverlayControl = isOverlayRemove || Boolean(overlayAction);
+	const trailingMetrics = normalizeTrailingMetrics(trailingMetric);
 	const resolvedElemAfter = elemAfter ?? (
-		trailingMetric != null && trailingMetric !== "" ? (
+		trailingMetrics.length > 0 ? (
 			<span
-				className={cn(
-					"inline-flex h-4 min-w-6 shrink-0 items-center justify-center rounded-xs px-1 text-xs leading-4 text-text",
-					colorClasses.metric,
-				)}
-				data-slot="tag-trailing-metric"
+				className="inline-flex shrink-0 items-center gap-px"
+				data-slot="tag-trailing-metrics"
 			>
-				{trailingMetric}
+				{trailingMetrics.map((metric, index) => (
+					<span
+						key={`${metric.value}-${index}`}
+						className={cn(
+							"inline-flex h-4 min-w-6 shrink-0 items-center justify-center rounded-xs px-1 text-xs leading-4 text-text",
+							metric.color
+								? tagColorClasses[colorAliases[metric.color]].metric
+								: colorClasses.metric,
+						)}
+						data-slot="tag-trailing-metric"
+					>
+						{metric.value}
+					</span>
+				))}
 			</span>
 		) : null
 	);
@@ -311,13 +361,16 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 		<span
 			{...props}
 			ref={ref}
-			role={isInteractive ? "button" : undefined}
+			role={isInteractive ? "button" : role}
 			tabIndex={isInteractive ? (disabled ? -1 : 0) : undefined}
 			onClick={onClick}
 			onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
 			style={resolvedStyle}
 			className={cn(
-				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center text-xs leading-4 font-normal text-text transition-colors box-border",
+				"group/tag relative inline-flex min-w-0 shrink-0 self-start items-center text-xs leading-4 font-normal text-text transition-colors box-border",
+				// Multi-metric chips (e.g. "1 Open" + "1 Needs input") need room beyond the
+				// compact single-label max width used for ordinary tags.
+				trailingMetrics.length > 1 ? "max-w-none" : "max-w-[11.25rem]",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				isEditor ? "border-0 bg-bg-neutral" : cn("border bg-bg-neutral-subtle", colorClasses.border),
 				cn(
@@ -332,9 +385,16 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// circle, square, or hexagon shape of their leading avatar.
 					isAvatarType || isRounded ? "rounded-full" : "rounded-sm",
 					// Removable tags and logo/default tags get 4px right padding;
-					// a trailing badge (`elemAfter`) tightens to 1px so it sits flush;
-					// otherwise every avatar type gets the same 6px trailing inset.
-					hasRemoveButton ? "pe-[4px]" : hasElemAfter ? "pe-px" : isAvatarType ? "pe-1.5" : "pe-[4px]",
+					// any trailing badge/metric (single or multi) uses 1px so it
+					// sits flush and matches the inter-metric gap; otherwise every
+					// avatar type gets the same 6px trailing inset.
+					hasRemoveButton
+						? "pe-[4px]"
+						: hasElemAfter
+							? "pe-px"
+							: isAvatarType
+								? "pe-1.5"
+								: "pe-[4px]",
 				),
 				isInteractive ? cn("cursor-pointer", isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed") : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
@@ -355,7 +415,11 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 						// Solid product marks fill the full
 						// 16px box; avatars (type=user/other) likewise fill it.
 						"flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4 [&>[data-slot=icon]>span]:size-3! [&>[data-slot=icon]_svg]:size-3!",
-						hasAvatarTagStyles ? cn("overflow-hidden", avatarTagBeforeShapeClass) : colorClasses.icon,
+						// IconTile transparent forces `text-icon` on its root; inherit the
+						// front-slot tone so gray stays icon-subtle and accent colors hover.
+						hasAvatarTagStyles
+							? cn("overflow-hidden", avatarTagBeforeShapeClass)
+							: cn(colorClasses.icon, "[&_[data-slot=icon-tile]]:text-inherit"),
 					)}
 					data-slot="tag-before"
 				>
@@ -459,4 +523,14 @@ function TagGroup({ className, ...props }: Readonly<TagGroupProps>) {
 	return <div data-slot="tag-group" className={cn("flex flex-wrap gap-2", className)} {...props} />;
 }
 
-export { Tag, TagGroup, type TagProps, type TagGroupProps, type TagVariant, type TagColor, type TagType, type TagOverlayAction };
+export {
+	Tag,
+	TagGroup,
+	type TagProps,
+	type TagGroupProps,
+	type TagVariant,
+	type TagColor,
+	type TagType,
+	type TagOverlayAction,
+	type TagTrailingMetric,
+};

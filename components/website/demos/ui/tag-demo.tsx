@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import LockIcon from "@atlaskit/icon/core/lock-locked";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -196,31 +197,49 @@ export function TagDemoEditorTag() {
 
 export function TagDemoBadge() {
 	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Tag trailingMetric={8}>Epics</Tag>
-			<Tag color="blue" trailingMetric={12}>
-				In progress
-			</Tag>
-			<Tag color="green" trailingMetric={3}>
-				Done
-			</Tag>
-			<Tag
-				elemBefore={
-					<IconTile
-						aria-hidden
-						icon={<Icon render={<TagIcon label="" size="small" />} aria-hidden />}
-						label=""
-						size="xxsmall"
-						variant="transparent"
-					/>
-				}
-				trailingMetric={128}
-			>
-				Backlog
-			</Tag>
-			<Tag color="red" trailingMetric={5} onRemove={() => {}}>
-				Blocked
-			</Tag>
+		<div className="flex flex-col gap-2">
+			<div className="flex flex-wrap items-center gap-2">
+				<Tag trailingMetric={8}>Epics</Tag>
+				<Tag color="blue" trailingMetric={12}>
+					In progress
+				</Tag>
+				<Tag color="green" trailingMetric={3}>
+					Done
+				</Tag>
+				<Tag
+					elemBefore={
+						<IconTile
+							aria-hidden
+							icon={<Icon render={<TagIcon label="" size="small" />} aria-hidden />}
+							label=""
+							size="xxsmall"
+							variant="transparent"
+						/>
+					}
+					trailingMetric={128}
+				>
+					Backlog
+				</Tag>
+				<Tag color="red" trailingMetric={5} onRemove={() => {}}>
+					Blocked
+				</Tag>
+			</div>
+			<div className="flex flex-wrap items-center gap-2">
+				<Tag
+					elemBefore={
+						<Icon aria-hidden render={<PullRequestIcon label="" size="small" />} />
+					}
+					maxWidth="none"
+					trailingMetric={[
+						{ value: "1 Open", color: "lime" },
+						{ value: "1 Needs input", color: "yellow" },
+						{ value: "1 Draft", color: "gray" },
+						{ value: "1 Merged", color: "purple" },
+					]}
+				>
+					Pull requests
+				</Tag>
+			</div>
 		</div>
 	);
 }

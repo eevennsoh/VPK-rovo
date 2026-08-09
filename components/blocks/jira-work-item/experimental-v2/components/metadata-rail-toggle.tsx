@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import {
 	JiraActivityViewControl,
 } from "@/components/blocks/jira-activity";
-import { PullRequestSortControl } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-request-sort-control";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import type { MetadataRailView } from "@/components/blocks/jira-work-item/experimental-v2/lib/metadata-rail-view";
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
@@ -14,9 +13,9 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { cn } from "@/lib/utils";
 
 /**
- * Outer ButtonGroup segment chrome. `data-slot="button"` + `aria-pressed` keep
- * connected seams / selected edge overlays; the label + optional sort chevron
- * sit inside so the chevron can be an inset ghost control.
+ * Outer ButtonGroup segment chrome. `data-selected` keeps connected seams /
+ * selected edge overlays without putting button-only ARIA on a layout div; the
+ * label + optional sort chevron sit inside so the chevron can be inset.
  *
  * Focus only recolors the shell’s existing border (`border-ring`) — never an
  * outer ring halo. Trailing segments restore `border-l` while focused so the
@@ -25,7 +24,7 @@ import { cn } from "@/lib/utils";
 const PANEL_SEGMENT_SHELL_CLASS =
 	// `rounded-md` seeds left corners on the first segment; ButtonGroup strips
 	// inner / trailing edges and restores `rounded-r-md` on the last child.
-	"flex min-w-0 flex-1 items-center rounded-md border border-border bg-transparent text-[0.8rem] hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed aria-pressed:border-border-selected aria-pressed:bg-bg-selected aria-pressed:text-text-selected aria-pressed:hover:bg-bg-selected-hovered aria-pressed:active:bg-bg-selected-pressed has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:border-ring has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:border-ring";
+	"flex min-w-0 flex-1 items-center rounded-md border border-border bg-transparent text-[0.8rem] hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed data-[selected]:border-border-selected data-[selected]:bg-bg-selected data-[selected]:text-text-selected data-[selected]:hover:bg-bg-selected-hovered data-[selected]:active:bg-bg-selected-pressed has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:border-ring has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:border-ring";
 
 /**
  * ButtonGroup sets `border-l-0` on trailing segments. While a label/chevron
@@ -37,9 +36,9 @@ const PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS =
 
 /**
  * Ghost label; selected + focus chrome stay on the shell. Default h-8 matches
- * left chrome. Details fills the shell (`flex-1`); Activity/PR stay
- * content-sized beside the inset chevron (`pe-0` so `gap-1.5` is the full 6px
- * text→icon gap). Kill the Button focus halo — shell owns focus chrome.
+ * left chrome. Details fills the shell (`flex-1`); Activity stays content-sized
+ * beside the inset chevron (`pe-0` so `gap-1.5` is the full 6px text→icon gap).
+ * Kill the Button focus halo — shell owns focus chrome.
  */
 const PANEL_SEGMENT_LABEL_CLASS =
 	"min-w-0 rounded-none border-0 bg-transparent text-[0.8rem] shadow-none hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:ring-0! focus-visible:ring-offset-0! aria-pressed:border-transparent aria-pressed:bg-transparent aria-pressed:text-inherit aria-pressed:hover:bg-transparent aria-pressed:active:bg-transparent";
@@ -59,13 +58,13 @@ function MetadataRailPanelSegment({
 
 	return (
 		<div
-			aria-pressed={pressed || undefined}
 			className={cn(
 				PANEL_SEGMENT_SHELL_CLASS,
-				// Activity / Pull requests: center the packed label+chevron unit;
-				// restore collapsed left border while label/chevron is focused.
+				// Activity: center the packed label+chevron unit; restore
+				// collapsed left border while label/chevron is focused.
 				hasSortControl ? cn("justify-center", PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS) : null,
 			)}
+			data-selected={pressed ? "" : undefined}
 			data-slot="button"
 		>
 			{hasSortControl ? (
@@ -103,7 +102,7 @@ function MetadataRailPanelSegment({
 }
 
 /**
- * Details / Activity / Pull requests control for the metadata column.
+ * Details / Activity control for the metadata column.
  *
  * Sticky column chrome inside the rail body scrollport, matching left
  * ContextResources. Horizontal `px-3` matches ArtifactPane /
@@ -114,9 +113,10 @@ function MetadataRailPanelSegment({
  * intentionally omitted so click-focus in Status/Assignee (and similar) does
  * not leave the toggle stuck visible after pointer leave.
  *
- * Sorting lives in the segmented control: Activity and Pull requests each have
- * a chevron that opens that view’s sort menu (and selects the panel). The tab
- * label still only switches panels. Details has no sort chevron.
+ * Sorting for Activity lives in the segmented control via a chevron that opens
+ * that view’s sort menu (and selects the panel). The tab label still only
+ * switches panels. Details has no sort chevron. Pull requests live in the
+ * ContextResources dropdown, not this toggle.
  */
 export function MetadataRailToggle({
 	className,
@@ -127,10 +127,7 @@ export function MetadataRailToggle({
 	const {
 		activePanelView,
 		activityChrome,
-		pullRequestCount,
-		pullRequestSortMode,
 		setPanelView,
-		setPullRequestSortMode,
 	} = useMetadataRail();
 
 	if (metadataCollapsed) {
@@ -196,28 +193,6 @@ export function MetadataRailToggle({
 							selectPanel("activity");
 						}}
 					/>
-					{pullRequestCount > 0 ? (
-						<MetadataRailPanelSegment
-							label="Pull requests"
-							pressed={activePanelView === "pull-requests"}
-							sortControl={
-								<PullRequestSortControl
-									menuAlign="start"
-									sortMode={pullRequestSortMode}
-									trigger="chevron"
-									onOpenChange={(open) => {
-										if (open) {
-											selectPanel("pull-requests");
-										}
-									}}
-									onSortModeChange={setPullRequestSortMode}
-								/>
-							}
-							onSelect={() => {
-								selectPanel("pull-requests");
-							}}
-						/>
-					) : null}
 				</ButtonGroup>
 			</div>
 		</div>

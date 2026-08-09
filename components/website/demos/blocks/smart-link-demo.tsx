@@ -9,6 +9,7 @@ import {
 	type SmartLinkSize,
 } from "@/components/blocks/smart-link/components/smart-link";
 import {
+	SMART_LINK_DEMO_ITEMS,
 	SMART_LINK_STATUS_EXAMPLES,
 	SMART_LINK_VARIANT_EXAMPLES,
 } from "@/components/blocks/smart-link/data/demo-smart-links";
@@ -18,7 +19,7 @@ function SmartLinkExampleSet({
 	showStatus = false,
 	appearance = "inline",
 }: Readonly<{
-	items: (typeof SMART_LINK_VARIANT_EXAMPLES)[keyof typeof SMART_LINK_VARIANT_EXAMPLES];
+	items: readonly SmartLinkItem[];
 	showStatus?: boolean;
 	appearance?: "inline" | "card";
 }>) {
@@ -84,18 +85,7 @@ export function SmartLinkDemoPullRequest() {
 }
 
 export function SmartLinkDemoCard() {
-	return (
-		<SmartLinkExampleSet
-			appearance="card"
-			items={[
-				...SMART_LINK_VARIANT_EXAMPLES.team,
-				...SMART_LINK_VARIANT_EXAMPLES.goal,
-				...SMART_LINK_VARIANT_EXAMPLES.project,
-				...SMART_LINK_VARIANT_EXAMPLES.pullRequest,
-				...SMART_LINK_VARIANT_EXAMPLES.generic,
-			]}
-		/>
-	);
+	return <SmartLinkExampleSet appearance="card" items={SMART_LINK_DEMO_ITEMS} />;
 }
 
 export function SmartLinkDemoRemovableOverlay() {

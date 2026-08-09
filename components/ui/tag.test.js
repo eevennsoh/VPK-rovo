@@ -40,14 +40,35 @@ test("Tag exposes ADS visual-uplift color tokens and trailing metrics", () => {
 	assert.match(tagSource, /border: "border-border-accent-blue-subtle"/u);
 	assert.match(tagSource, /icon: "text-icon-accent-blue group-hover\/tag:text-text-accent-blue/u);
 	assert.match(tagSource, /metric: "bg-bg-accent-blue-subtler"/u);
+	// Gray/standard front-slot icons stay icon-subtle (no hover/active accent swap).
+	assert.match(tagSource, /border: "border-border-accent-gray-subtle"/u);
+	assert.match(tagSource, /icon: "text-icon-subtle"/u);
+	assert.doesNotMatch(
+		tagSource,
+		/icon: "text-icon-accent-gray group-hover\/tag:text-text-accent-gray group-active\/tag:text-text-accent-gray"/u,
+	);
+	// IconTile transparent's `text-icon` must inherit the front-slot tone (Backlog demo).
+	assert.match(tagSource, /\[&_\[data-slot=icon-tile\]\]:text-inherit/u);
 	assert.doesNotMatch(tagSource, /border-blue-500|border-red-500|border-neutral-500/u);
 	assert.match(tagSource, /\[&>\[data-slot=icon\]>span\]:size-3! \[&>\[data-slot=icon\]_svg\]:size-3!/u);
 
 	// Component keeps the escape-hatch trailing slot and also supports the
 	// package-compatible `trailingMetric` prop.
 	assert.match(tagSource, /elemAfter\?: React\.ReactNode;/u);
-	assert.match(tagSource, /trailingMetric\?: string \| number;/u);
+	assert.match(tagSource, /trailingMetric\?: TagTrailingMetric \| readonly TagTrailingMetric\[\];/u);
+	assert.match(tagSource, /type TagTrailingMetric =/u);
 	assert.match(tagSource, /data-slot="tag-trailing-metric"/u);
+	assert.match(tagSource, /data-slot="tag-trailing-metrics"/u);
+	// Inter-metric gap is 1px; any trailing metric/badge uses the same pe-px.
+	assert.match(
+		tagSource,
+		/className="inline-flex shrink-0 items-center gap-px"[\s\S]*data-slot="tag-trailing-metrics"/u,
+	);
+	assert.doesNotMatch(tagSource, /trailingMetrics\.length > 1[\s\S]*\? "pe-0\.5"/u);
+	assert.match(
+		TAG_DEMO_SOURCE,
+		/trailingMetric=\{\[[\s\S]*value: "1 Open"[\s\S]*color: "lime"[\s\S]*value: "1 Needs input"[\s\S]*color: "yellow"[\s\S]*value: "1 Draft"[\s\S]*color: "gray"[\s\S]*value: "1 Merged"[\s\S]*color: "purple"/u,
+	);
 	assert.match(tagSource, /const resolvedElemAfter = elemAfter \?\?/u);
 	assert.match(tagSource, /hasElemAfter \? "gap-1" : "gap-0\.5"/u);
 	assert.match(tagSource, /data-slot="tag-after-content"/u);
@@ -74,9 +95,10 @@ test("Tag click handlers expose a keyboard-operable button contract", () => {
 		"utf8",
 	);
 
-	assert.match(tagSource, /role=\{isInteractive \? "button" : undefined\}/u);
+	assert.match(tagSource, /role=\{isInteractive \? "button" : role\}/u);
 	assert.match(tagSource, /tabIndex=\{isInteractive \? \(disabled \? -1 : 0\) : undefined\}/u);
 	assert.match(tagSource, /event\.key === "Enter" \|\| event\.key === " "/u);
+	assert.match(tagSource, /className,\s*style,\s*role,\s*onClick,/u);
 });
 
 test("Tag uses a rounded shell and remove control for every avatar type", () => {
@@ -88,8 +110,43 @@ test("Tag uses a rounded shell and remove control for every avatar type", () => 
 	assert.match(tagSource, /const removeButtonShapeClass = isAvatarType \|\| isRounded \? "rounded-full" : "rounded-xs";/u);
 	assert.match(tagSource, /isAvatarType \|\| isRounded \? "rounded-full" : "rounded-sm"/u);
 	assert.match(tagSource, /isOtherAvatarTag \? "ps-0\.5" : "ps-px"/u);
-	assert.match(tagSource, /hasElemAfter \? "pe-px" : isAvatarType \? "pe-1\.5" : "pe-\[4px\]"/u);
+	assert.match(
+		tagSource,
+		/hasRemoveButton[\s\S]*\? "pe-\[4px\]"[\s\S]*: hasElemAfter[\s\S]*\? "pe-px"[\s\S]*: isAvatarType[\s\S]*\? "pe-1\.5"[\s\S]*: "pe-\[4px\]"/u,
+	);
 	assert.doesNotMatch(tagSource, /isOtherAvatarTag \|\| type === "agent" \? "rounded-sm"/u);
+});
+
+test("Tag ignores HTML button type when deciding avatar shell rounding", () => {
+	const tagSource = fs.readFileSync(
+		path.join(process.cwd(), "components", "ui", "tag.tsx"),
+		"utf8",
+	);
+	const pullRequestsSelectSource = fs.readFileSync(
+		path.join(
+			process.cwd(),
+			"components",
+			"blocks",
+			"jira-work-item",
+			"experimental-v2",
+			"components",
+			"pull-requests-select.tsx",
+		),
+		"utf8",
+	);
+
+	// Unknown `type` values (e.g. HTML `type="button"` merged onto Tag) must not
+	// flip the Tag into the avatar `rounded-full` shell.
+	assert.match(
+		tagSource,
+		/const isAvatarType = type === "user" \|\| type === "other" \|\| type === "agent";/u,
+	);
+	assert.doesNotMatch(tagSource, /const isAvatarType = type !== "default";/u);
+	assert.match(tagSource, /data-type=\{type\}/u);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/shape="rounded"|variant="rounded"/u,
+	);
 });
 
 test("Tag avatar demo uses removable controls without a team verification badge", () => {

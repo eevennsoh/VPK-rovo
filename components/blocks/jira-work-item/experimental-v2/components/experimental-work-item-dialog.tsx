@@ -3,15 +3,16 @@
 import { type CSSProperties, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 
-import { token } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
-import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { ExperimentalBreadcrumbActions } from "@/components/blocks/jira-work-item/experimental-v2/components/experimental-breadcrumb-actions";
 import {
 	ContextTitleBar,
 	WorkItemKeyCopy,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-bar";
 import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
+import { ModalHeader } from "@/components/projects/jira/components/work-item-modal/modal-header";
+import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 // Keep the embedded chat overlay the same width as the metadata rail so rail
 // content cannot peek through beside the session panel.
@@ -30,6 +31,7 @@ interface ExperimentalWorkItemDialogProps {
 	blanketContent?: ReactNode;
 	sidebar: ReactNode;
 	sidebarOpen: boolean;
+	pullRequestEntries?: readonly JiraActivityEventEntry[];
 }
 
 /**
@@ -57,6 +59,7 @@ export function ExperimentalWorkItemDialog({
 	blanketContent,
 	sidebar,
 	sidebarOpen,
+	pullRequestEntries,
 }: Readonly<ExperimentalWorkItemDialogProps>) {
 	const description = `Details, agent sessions, and activity for work item ${workItemCode}.`;
 	const fillsInlineContainer = presentation === "inline" && inlineSurface === "fill";
@@ -89,7 +92,7 @@ export function ExperimentalWorkItemDialog({
 						paddingBottom={0}
 						paddingTop={token("space.150")}
 					/>
-					<ContextTitleBar />
+					<ContextTitleBar pullRequestEntries={pullRequestEntries} />
 				</div>
 				<div style={{ minHeight: 0, minWidth: 0, display: "grid", overflow: "hidden" }}>
 					{children}

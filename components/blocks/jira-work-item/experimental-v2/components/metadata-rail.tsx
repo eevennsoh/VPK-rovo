@@ -17,9 +17,6 @@ import {
 	type WorkItemPerson,
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
-import {
-	type JiraActivityEventEntry,
-} from "@/components/blocks/jira-activity";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
@@ -33,7 +30,6 @@ import {
 import { DevelopmentSectionContent } from "@/components/blocks/jira-work-item/experimental-v2/components/details-sections";
 import { DetailsTab } from "@/components/blocks/jira-work-item/experimental-v2/components/details-tab";
 import { MetadataRailToggle } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail-toggle";
-import { PullRequestsPanel } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-requests-panel";
 import {
 	useJiraWorkItemActions,
 	useJiraWorkItemMeta,
@@ -41,7 +37,6 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
-import { JIRA_WORK_ITEM_CURRENT_USER } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
@@ -167,7 +162,8 @@ function SubtasksSectionTitle({ done, total }: Readonly<{ done: number; total: n
 	);
 }
 
-function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): WorkItemPerson[] {	const byName = new Map<string, WorkItemPerson>();
+function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): WorkItemPerson[] {
+	const byName = new Map<string, WorkItemPerson>();
 	for (const person of METADATA_PEOPLE) {
 		byName.set(person.name, person);
 	}
@@ -195,20 +191,13 @@ export function MetadataRail({
 	activity,
 	automationRules = [],
 	borderless = false,
-	pullRequestEntries,
-	selectedPullRequestIdentity,
-	onPullRequestSelect,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
-	pullRequestEntries: readonly JiraActivityEventEntry[];
-	selectedPullRequestIdentity: string | null;
-	onPullRequestSelect: (entry: JiraActivityEventEntry) => void;
 }>) {
 	const {
 		activePanelView,
-		pullRequestSortMode,
 		setActivityChrome,
 	} = useMetadataRail();
 	const { workItem } = useJiraWorkItemMeta();
@@ -219,7 +208,6 @@ export function MetadataRail({
 		() => mergePeople(workItem.assignee, workItem.reporter),
 		[workItem.assignee, workItem.reporter],
 	);
-	const pullRequestCount = pullRequestEntries.length;
 	const resourceSections: ArtifactPaneSectionItem[] = [];
 
 	if (attachments.length > 0) {
@@ -347,21 +335,6 @@ export function MetadataRail({
 								inert={activePanelView !== "activity" ? true : undefined}
 							>
 								{activity}
-							</div>
-						) : null}
-						{pullRequestCount > 0 ? (
-							<div
-								hidden={activePanelView !== "pull-requests"}
-								inert={activePanelView !== "pull-requests" ? true : undefined}
-							>
-								<PullRequestsPanel
-									borderless={borderless}
-									currentUserName={JIRA_WORK_ITEM_CURRENT_USER.name}
-									entries={pullRequestEntries}
-									selectedIdentity={selectedPullRequestIdentity}
-									sortMode={pullRequestSortMode}
-									onSelectEntry={onPullRequestSelect}
-								/>
 							</div>
 						) : null}
 					</div>

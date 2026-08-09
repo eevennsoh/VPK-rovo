@@ -40,7 +40,7 @@ export function DetailsTab({
 
 	return (
 		<div className="flex flex-col gap-2">
-			{/* Status + Reporter live under the title (ContextTitleMeta), not here. */}
+			{/* Status + PR Tag + Reporter live under the title (ContextTitleMeta). */}
 			<ArtifactPanePropertyRow icon={<PersonIcon label="" size="small" />} label="Assignee">
 				<PersonRowField
 					ariaLabel="Change assignee"

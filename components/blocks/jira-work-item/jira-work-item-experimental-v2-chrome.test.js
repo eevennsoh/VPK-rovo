@@ -12,7 +12,7 @@ function readBlockFile(relativePath) {
 	return fs.readFileSync(path.join(BLOCK_DIR, relativePath), "utf8");
 }
 
-test("experimental v2 places Status, PR Tag, and Reported by under the title", () => {
+test("experimental v2 places Status and Reported by under the title", () => {
 	const detailsTabSource = readBlockFile("experimental-v2/components/details-tab.tsx");
 	const titleBarSource = readBlockFile("experimental-v2/components/context-title-bar.tsx");
 	const titleMetaSource = readBlockFile("experimental-v2/components/context-title-meta.tsx");
@@ -25,30 +25,31 @@ test("experimental v2 places Status, PR Tag, and Reported by under the title", (
 		/label="Assignee"[\s\S]*label="Priority"[\s\S]*label="Project"[\s\S]*label="Start date"[\s\S]*\{showMore \?/u,
 	);
 
-	// Header band: status pill → PR Tag → "Reported by {name}" under the title (no stacked field labels).
+	// Header band: status pill → PR Tag → "Reported by {name}" under the title.
 	assert.match(
 		titleBarSource,
 		/import \{ ContextTitleMeta \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/components\/context-title-meta"/u,
 	);
 	assert.match(
 		titleBarSource,
-		/export function ContextTitleBar\(\)[\s\S]*<ContextEditableTitle \/>[\s\S]*<ContextTitleMeta \/>/u,
+		/export function ContextTitleBar\([\s\S]*<ContextEditableTitle \/>[\s\S]*<ContextTitleMeta[\s\S]*pullRequestEntries=\{pullRequestEntries\}/u,
 	);
 	assert.match(titleMetaSource, /data-jira-work-item-title-meta/u);
 	assert.match(titleMetaSource, /className="mt-2 flex items-center gap-4"/u);
 	assert.doesNotMatch(titleMetaSource, /TitleMetaField|label="Status"|label="Reported by"/u);
 	assert.match(titleMetaSource, /<StatusPill[\s\S]*value=\{metadata\.status\}/u);
 	assert.match(
-		titleMetaSource,
-		/const \{ pullRequestCount, setPanelView \} = useMetadataRail\(\)/u,
+		readBlockFile("experimental-v2/components/detail-field-editors.tsx"),
+		/const \{ statusPhases \} = useJiraWorkItemMeta\(\);[\s\S]*const phases = statusPhases \?\? STATUS_PHASES;[\s\S]*variant=\{statusVariant\(value, phases\)\}[\s\S]*\{phases\.map\(\(phase\) =>/u,
 	);
+	// Title-meta PR Tag is read-only display (metrics only); interactive dropdown is in ContextResources.
 	assert.match(
 		titleMetaSource,
-		/pullRequestCount > 0 \? \([\s\S]*data-jira-work-item-title-pull-requests[\s\S]*PullRequestIcon[\s\S]*onClick=\{openPullRequestsPanel\}[\s\S]*\$\{pullRequestCount\} \$\{pullRequestCount === 1 \? "Pull request" : "Pull requests"\}/u,
+		/summarizePullRequestTagMetrics\(pullRequestEntries\)[\s\S]*data-jira-work-item-title-meta[\s\S]*data-jira-work-item-title-pull-requests[\s\S]*trailingMetric=\{trailingMetric\}[\s\S]*Pull requests/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		titleMetaSource,
-		/const openPullRequestsPanel = \(\) => \{[\s\S]*if \(metadataCollapsed\) \{[\s\S]*toggleMetadata\(\);[\s\S]*\}[\s\S]*setPanelView\("pull-requests"\);/u,
+		/PullRequestsSelect|PullRequestsPopover|PopoverTrigger|onPullRequestSelect|selectedPullRequestIdentity|useMetadataRail|pullRequestCount|openPullRequestsPanel|setPanelView/u,
 	);
 	assert.match(
 		titleMetaSource,
@@ -168,10 +169,11 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 		compositionSource,
 		/useState<EditorToolbarViewMode>\("rendered"\)[\s\S]*header=\{\([\s\S]*<ContextHeader[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*context=\{\([\s\S]*<ContextPanel/u,
 	);
-	// Title lives in the dialog header band; ContextHeader is resources-only chrome.
+	// Title lives in the dialog header band; ContextHeader owns resources chrome
+	// including the interactive PR dropdown (title-meta Tag stays read-only).
 	assert.match(
 		contextPanelSource,
-		/export function ContextHeader\([\s\S]*className="shrink-0" data-jira-work-item-context-header[\s\S]*data-jira-work-item-header-actions[\s\S]*<ContextResources[\s\S]*descriptionViewMode=\{descriptionViewMode\}[\s\S]*outputs=\{outputs\}[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*onDescriptionViewModeChange=\{onDescriptionViewModeChange\}/u,
+		/export function ContextHeader\([\s\S]*className="shrink-0" data-jira-work-item-context-header[\s\S]*data-jira-work-item-header-actions[\s\S]*<ContextResources[\s\S]*descriptionViewMode=\{descriptionViewMode\}[\s\S]*outputs=\{outputs\}[\s\S]*primaryCodingAgentId=\{primaryCodingAgentId\}[\s\S]*pullRequestEntries=\{pullRequestEntries\}[\s\S]*pullRequestSelected=\{pullRequestSelected\}[\s\S]*selectedPullRequestIdentity=\{selectedPullRequestIdentity\}[\s\S]*onDescriptionViewModeChange=\{onDescriptionViewModeChange\}[\s\S]*onPullRequestClear=\{onPullRequestClear\}[\s\S]*onPullRequestSelect=\{onPullRequestSelect\}/u,
 	);
 	assert.doesNotMatch(contextPanelSource, /ContextTitleBar|WorkItemKeyCopy|data-jira-work-item-title-block/u);
 	assert.doesNotMatch(
@@ -260,7 +262,11 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.doesNotMatch(layoutSource, /agentlayout:-mt-5">\{metadata\}/u);
 	assert.match(
 		contextResourcesSource,
-		/"shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>/u,
+		/"shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*\{pullRequestSelected \? null : \(/u,
+	);
+	assert.match(
+		contextResourcesSource,
+		/<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onClearSelection=\{onPullRequestClear\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
 	);
 	assert.match(
 		contextResourcesSource,
@@ -375,11 +381,15 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.match(titleBarSource, /type="button"/u);
 	assert.match(
 		titleBarSource,
-		/export function ContextTitleBar\(\)[\s\S]*className="min-w-0 self-stretch px-6 pb-4"[\s\S]*data-jira-work-item-title-block[\s\S]*data-jira-work-item-title-column[\s\S]*<ContextEditableTitle \/>[\s\S]*<ContextTitleMeta \/>/u,
+		/export function ContextTitleBar\([\s\S]*className="min-w-0 self-stretch px-6 pb-4"[\s\S]*data-jira-work-item-title-block[\s\S]*data-jira-work-item-title-column[\s\S]*<ContextEditableTitle \/>[\s\S]*<ContextTitleMeta pullRequestEntries=\{pullRequestEntries\}/u,
 	);
 	assert.doesNotMatch(
 		titleBarSource,
-		/export function ContextTitleBar\(\)[\s\S]*data-jira-work-item-title(?!-)/u,
+		/selectedPullRequestIdentity|onPullRequestSelect/u,
+	);
+	assert.doesNotMatch(
+		titleBarSource,
+		/export function ContextTitleBar\([\s\S]*data-jira-work-item-title(?!-)/u,
 	);
 	assert.doesNotMatch(
 		titleBarSource,
@@ -419,7 +429,11 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		dialogSource,
-		/data-jira-work-item-header-band[\s\S]*breadcrumbLeadingContent=\{<WorkItemKeyCopy \/>\}[\s\S]*breadcrumbRevealOnHover[\s\S]*<ContextTitleBar \/>/u,
+		/data-jira-work-item-header-band[\s\S]*breadcrumbLeadingContent=\{<WorkItemKeyCopy \/>\}[\s\S]*breadcrumbRevealOnHover[\s\S]*<ContextTitleBar pullRequestEntries=\{pullRequestEntries\}/u,
+	);
+	assert.doesNotMatch(
+		dialogSource,
+		/selectedPullRequestIdentity|onPullRequestSelect/u,
 	);
 	assert.doesNotMatch(
 		dialogSource,
