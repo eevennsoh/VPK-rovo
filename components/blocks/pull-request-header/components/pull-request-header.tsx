@@ -18,8 +18,11 @@ import type {
 	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
-	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";
+import {
+	DEFAULT_COLLAPSE_OFFSET,
+	resolveVariant,
+} from "@/components/blocks/pull-request-header/components/pull-request-header-variant";
 
 export type {
 	PullRequestHeaderMergeState,
@@ -27,8 +30,6 @@ export type {
 	PullRequestHeaderStatus,
 	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";
-
-const DEFAULT_COLLAPSE_OFFSET = 16;
 const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
 const DEFAULT_AUTO_MERGE = true;
 const META_ENTER_TRANSITION = {
@@ -93,23 +94,6 @@ function BranchName({ name }: Readonly<{ name: string }>) {
 			{leaf}
 		</span>
 	);
-}
-
-export function resolveVariant({
-	variant,
-	scrollContainerRef,
-	collapseOffset = DEFAULT_COLLAPSE_OFFSET,
-}: Pick<
-	PullRequestHeaderProps,
-	"variant" | "scrollContainerRef" | "collapseOffset"
->): PullRequestHeaderVariant {
-	if (variant) {
-		return variant;
-	}
-
-	return (scrollContainerRef?.current?.scrollTop ?? 0) >= collapseOffset
-		? "compact"
-		: "expanded";
 }
 
 /**

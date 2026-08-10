@@ -10,6 +10,10 @@ const COMPONENT_SOURCE = fs.readFileSync(
 	path.join(DIR, "components", "pull-request-header.tsx"),
 	"utf8",
 );
+const VARIANT_SOURCE = fs.readFileSync(
+	path.join(DIR, "components", "pull-request-header-variant.ts"),
+	"utf8",
+);
 const TYPES_SOURCE = fs.readFileSync(
 	path.join(DIR, "components", "pull-request-header-types.ts"),
 	"utf8",
@@ -67,12 +71,16 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 });
 
 test("PullRequestHeader resolves controlled and scroll-driven variants", () => {
-	assert.match(COMPONENT_SOURCE, /export function resolveVariant/u);
+	assert.match(VARIANT_SOURCE, /export function resolveVariant/u);
+	assert.match(VARIANT_SOURCE, /const DEFAULT_COLLAPSE_OFFSET = 16/u);
 	assert.match(
-		COMPONENT_SOURCE,
+		VARIANT_SOURCE,
 		/if \(variant\) \{[\s\S]*return variant;[\s\S]*scrollTop[\s\S]*>= collapseOffset[\s\S]*\? "compact"[\s\S]*: "expanded"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /const DEFAULT_COLLAPSE_OFFSET = 16/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/from "@\/components\/blocks\/pull-request-header\/components\/pull-request-header-variant"/u,
+	);
 	assert.match(COMPONENT_SOURCE, /useSyncExternalStore/u);
 	assert.match(COMPONENT_SOURCE, /addEventListener\("scroll"/u);
 });
