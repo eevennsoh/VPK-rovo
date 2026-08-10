@@ -195,7 +195,7 @@ test("uses live SCM check state to block a guided pull request", async () => {
 	assert.equal(detail?.activity.at(-1)?.total, 2);
 });
 
-test("shows spinner path for guest-checkout in-progress (blocked, terminal check rows)", async () => {
+test("shows the checks spinner only while a check row is non-terminal", async () => {
 	const { arePullRequestChecksInProgress, resolvePullRequestDetailData } = await loadDetailData();
 	const checks = [
 		{
@@ -233,18 +233,18 @@ test("shows spinner path for guest-checkout in-progress (blocked, terminal check
 		2,
 	);
 	assert.equal(detail.checks.length, 3);
-	assert.equal(arePullRequestChecksInProgress(detail.checks, detail.mergeState), true);
+	assert.equal(arePullRequestChecksInProgress(detail.checks), false);
 	assert.ok(detail.checks.every((check) => typeof check.url === "string" && check.url.length > 0));
 
 	const settled = resolvePullRequestDetailData(pullRequestEntry());
 	assert.equal(settled?.mergeState, "ready");
-	assert.equal(arePullRequestChecksInProgress(settled.checks, settled.mergeState), false);
+	assert.equal(arePullRequestChecksInProgress(settled.checks), false);
 	assert.equal(arePullRequestChecksInProgress([{
 		id: "running",
 		name: "Running",
 		status: "running",
 		details: "In progress",
-	}], "ready"), true);
+	}]), true);
 });
 
 test("falls back to metadata-only overview for other pull requests", async () => {
@@ -296,6 +296,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	const railSource = readFileSync(
 		join(__dirname, "../components/pull-request-detail/pull-request-details-rail.tsx"),
+		"utf8",
+	);
+	const metadataRailContextSource = readFileSync(
+		join(__dirname, "../context-metadata-rail.tsx"),
 		"utf8",
 	);
 	const overviewSource = readFileSync(
@@ -409,11 +413,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		headerSource,
-		/onChecksRunningClick=\{\(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(PULL_REQUEST_CHECKS_SECTION_ID\)/u,
+		/onChecksRunningClick=\{\(\) => \{[\s\S]*setPanelView\("details"\)[\s\S]*requestExpandPullRequestSection\(data\.identity, PULL_REQUEST_CHECKS_SECTION_ID\)/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		headerSource,
-		/autoMerge=\{autoMerge\}[\s\S]*onAutoMergeChange=\{setAutoMerge\}[\s\S]*onMergeClick=\{\(\) => undefined\}[\s\S]*onChecksRunningClick=[\s\S]*onMoreActionsClick=\{\(\) => undefined\}/u,
+		/onMergeClick=\{\(\) => undefined\}|onMoreActionsClick=\{\(\) => undefined\}/u,
 	);
 	assert.match(
 		headerSource,
@@ -442,7 +446,15 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		railSource,
-		/pullRequestSectionExpandRequest[\s\S]*onOpenSectionIdsChange=\{setOpenSectionIds\}[\s\S]*openSectionIds=\{openSectionIds\}/u,
+		/pullRequestSectionExpandRequest\.pullRequestIdentity !== data\.identity[\s\S]*consumePullRequestSectionExpandRequest\(nonce\)[\s\S]*onOpenSectionIdsChange=\{setOpenSectionIds\}[\s\S]*openSectionIds=\{openSectionIds\}/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/requestExpandPullRequestSection: \(pullRequestIdentity: string, sectionId: string\)[\s\S]*consumePullRequestSectionExpandRequest: \(nonce: number\)/u,
+	);
+	assert.match(
+		metadataRailContextSource,
+		/current\?\.nonce === nonce \? null : current/u,
 	);
 	assert.match(railSource, /title: "Details"[\s\S]*ChecksSectionTitle[\s\S]*title: "Commits"/u);
 	assert.doesNotMatch(railSource, /id: "pull-request-reviewers"/u);
@@ -556,7 +568,7 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(
 		railSource,
-		/const checksInProgress = arePullRequestChecksInProgress\(data\.checks, data\.mergeState\);/u,
+		/const checksInProgress = arePullRequestChecksInProgress\(data\.checks\);/u,
 	);
 	assert.match(
 		railSource,

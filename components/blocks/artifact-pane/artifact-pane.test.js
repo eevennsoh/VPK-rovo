@@ -56,6 +56,14 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /openSectionIds\?: ReadonlySet<string>/u);
 	assert.match(BLOCK_SOURCE, /onOpenSectionIdsChange\?: \(openSectionIds: ReadonlySet<string>\) => void/u);
 	assert.match(BLOCK_SOURCE, /const isControlled = openSectionIdsProp !== undefined/u);
+	assert.doesNotMatch(
+		BLOCK_SOURCE,
+		/setUncontrolledOpenSectionIds\(\(current\) => \{[\s\S]*onOpenSectionIdsChange/u,
+	);
+	assert.match(
+		BLOCK_SOURCE,
+		/const next = apply\(uncontrolledOpenSectionIds\);[\s\S]*setUncontrolledOpenSectionIds\(next\);[\s\S]*onOpenSectionIdsChange\?\.\(next\)/u,
+	);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
 	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
 	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);

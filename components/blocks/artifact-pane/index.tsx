@@ -204,11 +204,9 @@ export function ArtifactPane({
 			onOpenSectionIdsChange?.(apply(openSectionIds));
 			return;
 		}
-		setUncontrolledOpenSectionIds((current) => {
-			const next = apply(current);
-			onOpenSectionIdsChange?.(next);
-			return next;
-		});
+		const next = apply(uncontrolledOpenSectionIds);
+		setUncontrolledOpenSectionIds(next);
+		onOpenSectionIdsChange?.(next);
 	};
 
 	return (

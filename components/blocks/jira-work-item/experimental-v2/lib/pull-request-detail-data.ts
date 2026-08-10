@@ -550,18 +550,13 @@ function resolveGuidedReviewActivity(
 
 /**
  * Whether the CI checks section title should show an indeterminate Spinner.
- * Aligns with the PR header “Checks running” state (`blocked`), not only
- * `running` / `queued` statuses — guest-checkout fixtures often use terminal
- * `failed` / `passed` rows while merge remains blocked.
+ * A blocked merge can be fully settled on a failed check, so only non-terminal
+ * check rows count as progress.
  */
 export function arePullRequestChecksInProgress(
 	checks: readonly PullRequestCheck[],
-	mergeState: PullRequestMergeState,
 ): boolean {
-	if (checks.some((check) => check.status === "running" || check.status === "queued")) {
-		return true;
-	}
-	return mergeState === "blocked";
+	return checks.some((check) => check.status === "running" || check.status === "queued");
 }
 
 /** Keep merge status aligned with the rail CI checklist when SCM omits mergeState. */

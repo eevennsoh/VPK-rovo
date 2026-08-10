@@ -55,12 +55,10 @@ export function PullRequestDetailHeader({
 			mergeState={mapPullRequestHeaderMergeState(data.mergeState)}
 			autoMerge={autoMerge}
 			onAutoMergeChange={setAutoMerge}
-			onMergeClick={() => undefined}
 			onChecksRunningClick={() => {
 				setPanelView("details");
-				requestExpandPullRequestSection(PULL_REQUEST_CHECKS_SECTION_ID);
+				requestExpandPullRequestSection(data.identity, PULL_REQUEST_CHECKS_SECTION_ID);
 			}}
-			onMoreActionsClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
 			className="rounded-xl border p-4"
 			data-jira-work-item-pull-request-detail-header

@@ -318,10 +318,13 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 
 /** Provider-neutral pull-request metadata rendered in the shared artifact rail. */
 export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDetailData }>) {
-	const { pullRequestSectionExpandRequest } = useMetadataRail();
+	const {
+		consumePullRequestSectionExpandRequest,
+		pullRequestSectionExpandRequest,
+	} = useMetadataRail();
 	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(() => new Set());
 	const passedChecks = data.checks.filter((check) => check.status === "passed").length;
-	const checksInProgress = arePullRequestChecksInProgress(data.checks, data.mergeState);
+	const checksInProgress = arePullRequestChecksInProgress(data.checks);
 	const author: PullRequestPerson = {
 		id: "pull-request-author",
 		name: data.authorName,
@@ -330,10 +333,13 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 	};
 
 	useEffect(() => {
-		if (!pullRequestSectionExpandRequest) {
+		if (
+			!pullRequestSectionExpandRequest ||
+			pullRequestSectionExpandRequest.pullRequestIdentity !== data.identity
+		) {
 			return;
 		}
-		const { sectionId } = pullRequestSectionExpandRequest;
+		const { nonce, sectionId } = pullRequestSectionExpandRequest;
 		setOpenSectionIds((current) => {
 			if (current.has(sectionId)) {
 				return current;
@@ -342,7 +348,8 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 			next.add(sectionId);
 			return next;
 		});
-	}, [pullRequestSectionExpandRequest]);
+		consumePullRequestSectionExpandRequest(nonce);
+	}, [consumePullRequestSectionExpandRequest, data.identity, pullRequestSectionExpandRequest]);
 
 	return (
 		<ArtifactPane
