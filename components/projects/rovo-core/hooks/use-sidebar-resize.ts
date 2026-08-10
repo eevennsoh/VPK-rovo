@@ -194,12 +194,20 @@ export function useSidebarResize({
 			setWillCollapse(false);
 			setIsResizing(false);
 		};
+		const handlePointerCancel = () => {
+			setSidebarWidth(lastValidWidthRef.current);
+			willCollapseRef.current = false;
+			setWillCollapse(false);
+			setIsResizing(false);
+		};
 
 		document.addEventListener("pointermove", handlePointerMove);
 		document.addEventListener("pointerup", handlePointerUp);
+		document.addEventListener("pointercancel", handlePointerCancel);
 		return () => {
 			document.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerup", handlePointerUp);
+			document.removeEventListener("pointercancel", handlePointerCancel);
 		};
 	}, [collapseThreshold, deltaSign, isResizing, maxWidth, minWidth, minWidthResistance, onCollapse]);
 
