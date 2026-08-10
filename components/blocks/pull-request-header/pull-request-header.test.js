@@ -223,9 +223,13 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 		COMPONENT_SOURCE,
 		/elemBefore=\{<CopyIcon label="" size="small" \/>\}[\s\S]*Copy link/u,
 	);
+	assert.match(COMPONENT_SOURCE, /function ScmProviderMark/u);
+	assert.match(COMPONENT_SOURCE, /AtlassianLogoMark[\s\S]*name="bitbucket"/u);
+	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="gitlab"/u);
+	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/BrandLogoMark[\s\S]*name="github"[\s\S]*\{openInScmLabel\}/u,
+		/elemBefore=\{<ScmProviderMark name=\{resolvedScmProviderName\} \/>\}[\s\S]*\{openInScmLabel\}/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -244,8 +248,15 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 		/window\.open\(url, "_blank", "noopener,noreferrer"\)/u,
 	);
 	assert.match(COMPONENT_SOURCE, /disabled=\{!hasPullRequestUrl\}/u);
-	assert.match(COMPONENT_SOURCE, /disabled=\{!onConvertToDraftClick\}/u);
-	assert.match(COMPONENT_SOURCE, /disabled=\{!onClosePullRequestClick\}/u);
+	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/disabled=\{!canMutatePullRequest \|\| !onConvertToDraftClick\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/disabled=\{!canMutatePullRequest \|\| !onClosePullRequestClick\}/u,
+	);
 	assert.doesNotMatch(COMPONENT_SOURCE, /onMoreActionsClick/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/avatar"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /GithubLogo/u);

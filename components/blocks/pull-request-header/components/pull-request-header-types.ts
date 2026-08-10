@@ -63,12 +63,12 @@ export interface PullRequestHeaderProps
 	scmProviderName?: string;
 	/**
 	 * Called when More actions → Convert to draft is selected.
-	 * Item stays disabled when omitted (pass a no-op stub to enable for demos).
+	 * Item stays disabled for merged PRs or when omitted (pass a no-op stub to enable for demos).
 	 */
 	onConvertToDraftClick?: () => void;
 	/**
 	 * Called when More actions → Close pull request is selected.
-	 * Item stays disabled when omitted (pass a no-op stub to enable for demos).
+	 * Item stays disabled for merged PRs or when omitted (pass a no-op stub to enable for demos).
 	 */
 	onClosePullRequestClick?: () => void;
 }

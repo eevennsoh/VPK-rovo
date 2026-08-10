@@ -19,7 +19,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -138,6 +138,25 @@ function copyPullRequestUrl(url: string) {
 
 function openPullRequestUrl(url: string) {
 	window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function ScmProviderMark({ name }: Readonly<{ name: string }>) {
+	const normalizedName = name.toLowerCase();
+	if (normalizedName.includes("bitbucket")) {
+		return <AtlassianLogoMark frame="chip" label={name} name="bitbucket" />;
+	}
+	if (normalizedName.includes("gitlab")) {
+		return <BrandLogoMark frame="chip" label={name} name="gitlab" />;
+	}
+	if (normalizedName.includes("github")) {
+		return <BrandLogoMark frame="chip" label={name} name="github" />;
+	}
+
+	return (
+		<span className="text-icon-subtle">
+			<PullRequestIcon color="currentColor" label="" size="small" />
+		</span>
+	);
 }
 
 function CompactPullRequestStatusIcon({
@@ -284,6 +303,7 @@ export function PullRequestHeader({
 		scmProviderName ?? resolveScmProviderName(url);
 	const openInScmLabel = `Open in ${resolvedScmProviderName}`;
 	const hasPullRequestUrl = Boolean(url);
+	const canMutatePullRequest = status === "Open";
 	const handlePrimaryClick = () => {
 		switch (mergeState) {
 			case "ready":
@@ -439,13 +459,7 @@ export function PullRequestHeader({
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										disabled={!hasPullRequestUrl}
-										elemBefore={
-											<BrandLogoMark
-												frame="chip"
-												label={resolvedScmProviderName}
-												name="github"
-											/>
-										}
+										elemBefore={<ScmProviderMark name={resolvedScmProviderName} />}
 										onSelect={() => {
 											if (!url) {
 												return;
@@ -457,7 +471,7 @@ export function PullRequestHeader({
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
-										disabled={!onConvertToDraftClick}
+										disabled={!canMutatePullRequest || !onConvertToDraftClick}
 										elemBefore={
 											<span className="text-icon-subtle">
 												<PullRequestIcon
@@ -474,7 +488,7 @@ export function PullRequestHeader({
 										Convert to draft
 									</DropdownMenuItem>
 									<DropdownMenuItem
-										disabled={!onClosePullRequestClick}
+										disabled={!canMutatePullRequest || !onClosePullRequestClick}
 										elemBefore={
 											<span className="text-icon-danger">
 												<MergeFailureIcon

@@ -145,13 +145,13 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			name: "onConvertToDraftClick",
 			type: "() => void",
 			description:
-				"Called when More actions → Convert to draft is selected. Pass a no-op stub to enable the item in demos.",
+				"Called when More actions → Convert to draft is selected. The item stays disabled for merged PRs; pass a no-op stub to enable it for open PR demos.",
 		},
 		{
 			name: "onClosePullRequestClick",
 			type: "() => void",
 			description:
-				"Called when More actions → Close pull request is selected. Pass a no-op stub to enable the item in demos.",
+				"Called when More actions → Close pull request is selected. The item stays disabled for merged PRs; pass a no-op stub to enable it for open PR demos.",
 		},
 	],
 };
