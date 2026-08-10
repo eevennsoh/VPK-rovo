@@ -417,7 +417,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(
 		headerSource,
-		/onMergeClick=\{\(\) => undefined\}|onMoreActionsClick=\{\(\) => undefined\}/u,
+		/autoMerge=\{autoMerge\}[\s\S]*onAutoMergeChange=\{setAutoMerge\}[\s\S]*onMergeClick=\{\(\) => undefined\}[\s\S]*onChecksRunningClick=[\s\S]*onConvertToDraftClick=\{\(\) => undefined\}[\s\S]*onClosePullRequestClick=\{\(\) => undefined\}/u,
+	);
+	assert.match(
+		headerSource,
+		/url=\{data\.url\}[\s\S]*scmProviderName=\{data\.provider\.name\}/u,
 	);
 	assert.match(
 		headerSource,
@@ -425,9 +429,10 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.doesNotMatch(headerSource, /authorName=\{data\.authorName\}/u);
 	assert.doesNotMatch(headerSource, /additions=\{data\.additions\}/u);
+	assert.doesNotMatch(headerSource, /onMoreActionsClick/u);
 	assert.match(headerSource, /className="rounded-xl border p-4"/u);
 	assert.match(headerSource, /style=\{\{ borderRadius: 12 \}\}/u);
-	assert.doesNotMatch(headerSource, /Open in GitHub|border-b border-border pb-4/u);
+	assert.doesNotMatch(headerSource, /border-b border-border pb-4/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-current-step/u);
 	assert.match(guideSource, /String\(currentStep \+ 1\)\.padStart\(2, "0"\)[\s\S]*String\(review\.chapters\.length\)\.padStart\(2, "0"\)/u);

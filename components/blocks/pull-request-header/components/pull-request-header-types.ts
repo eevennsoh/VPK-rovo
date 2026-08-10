@@ -51,6 +51,24 @@ export interface PullRequestHeaderProps
 	 * Consumers typically expand the CI checks disclosure in the metadata rail.
 	 */
 	onChecksRunningClick?: () => void;
-	/** Called when the More actions (ellipsis) icon button is activated. */
-	onMoreActionsClick?: () => void;
+	/**
+	 * Pull request URL used by More actions → Copy link and Open in {SCM}.
+	 * Those items stay disabled when omitted.
+	 */
+	url?: string;
+	/**
+	 * SCM product name for More actions → "Open in {name}" (e.g. `"GitHub"`).
+	 * When omitted, derived from `url` hostname (`github.com` → GitHub, etc.).
+	 */
+	scmProviderName?: string;
+	/**
+	 * Called when More actions → Convert to draft is selected.
+	 * Item stays disabled when omitted (pass a no-op stub to enable for demos).
+	 */
+	onConvertToDraftClick?: () => void;
+	/**
+	 * Called when More actions → Close pull request is selected.
+	 * Item stays disabled when omitted (pass a no-op stub to enable for demos).
+	 */
+	onClosePullRequestClick?: () => void;
 }

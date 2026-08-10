@@ -26,8 +26,8 @@ function mapPullRequestHeaderMergeState(
 			return "merge-conflicts";
 		case "blocked":
 			return "checks-running";
-		case "ready":
 		case "merged":
+		case "ready":
 			return "ready";
 		default: {
 			const _exhaustive: never = mergeState;
@@ -52,6 +52,8 @@ export function PullRequestDetailHeader({
 			baseBranch={data.baseBranch}
 			headBranch={data.headBranch}
 			repository={data.repository}
+			url={data.url}
+			scmProviderName={data.provider.name}
 			mergeState={mapPullRequestHeaderMergeState(data.mergeState)}
 			autoMerge={autoMerge}
 			onAutoMergeChange={setAutoMerge}
@@ -59,6 +61,8 @@ export function PullRequestDetailHeader({
 				setPanelView("details");
 				requestExpandPullRequestSection(data.identity, PULL_REQUEST_CHECKS_SECTION_ID);
 			}}
+			onConvertToDraftClick={() => undefined}
+			onClosePullRequestClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
 			className="rounded-xl border p-4"
 			data-jira-work-item-pull-request-detail-header

@@ -43,8 +43,9 @@ export default function PullRequestHeaderPage() {
 						className="rounded-xl border p-4"
 						mergeState="ready"
 						onAutoMergeChange={setAutoMerge}
+						onClosePullRequestClick={() => undefined}
+						onConvertToDraftClick={() => undefined}
 						onMergeClick={() => undefined}
-						onMoreActionsClick={() => undefined}
 						variant={variant}
 					/>
 				</section>
@@ -60,7 +61,8 @@ export default function PullRequestHeaderPage() {
 						mergeState="checks-running"
 						onAutoMergeChange={setAutoMerge}
 						onChecksRunningClick={() => undefined}
-						onMoreActionsClick={() => undefined}
+						onClosePullRequestClick={() => undefined}
+						onConvertToDraftClick={() => undefined}
 						variant="expanded"
 					/>
 				</section>
@@ -75,7 +77,8 @@ export default function PullRequestHeaderPage() {
 						className="rounded-xl border p-4"
 						mergeState="merge-conflicts"
 						onAutoMergeChange={setAutoMerge}
-						onMoreActionsClick={() => undefined}
+						onClosePullRequestClick={() => undefined}
+						onConvertToDraftClick={() => undefined}
 						variant="expanded"
 					/>
 				</section>
@@ -91,8 +94,9 @@ export default function PullRequestHeaderPage() {
 							className="p-4"
 							mergeState="ready"
 							onAutoMergeChange={setAutoMerge}
+							onClosePullRequestClick={() => undefined}
+							onConvertToDraftClick={() => undefined}
 							onMergeClick={() => undefined}
-							onMoreActionsClick={() => undefined}
 							scrollContainerRef={scrollContainerRef}
 						/>
 						<div

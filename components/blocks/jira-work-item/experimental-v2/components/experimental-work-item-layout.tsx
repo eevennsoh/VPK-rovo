@@ -103,7 +103,7 @@ function DescriptionColumnShell({
 			</div>
 			<div
 				ref={scrollRef}
-				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
+				className="order-2 contents @[860px]/agentlayout:relative @[860px]/agentlayout:block @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:min-w-0 @[860px]/agentlayout:flex-1 @[860px]/agentlayout:overflow-y-auto @[860px]/agentlayout:overscroll-y-none @[860px]/agentlayout:px-6 @[860px]/agentlayout:pb-6"
 				data-jira-work-item-scroll-region
 				style={style}
 			>
@@ -184,7 +184,7 @@ export function ExperimentalWorkItemLayout({
 		<div className="@container/agentlayout group/metadata-rail h-full min-h-0 min-w-0">
 			<div
 				ref={narrowScrollRef}
-				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto p-6 data-[fill-container]:pb-0 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
+				className="flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto overscroll-y-none p-6 data-[fill-container]:pb-0 @[860px]/agentlayout:relative @[860px]/agentlayout:grid @[860px]/agentlayout:grid-cols-1 @[860px]/agentlayout:grid-rows-[minmax(0,1fr)] @[860px]/agentlayout:gap-0 @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:p-0"
 				data-fill-container={fillContainer ? "" : undefined}
 			>
 				{/* Description-scope hover group: left column only (not metadata). */}

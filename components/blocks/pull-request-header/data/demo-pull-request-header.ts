@@ -8,6 +8,8 @@ export const DEMO_PULL_REQUEST_HEADER: PullRequestHeaderProps = {
 	baseBranch: "main",
 	headBranch: "feature/guest-checkout",
 	repository: "eevensoh/vpk-rovo",
+	url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+	scmProviderName: "GitHub",
 	mergeState: "ready",
 	defaultAutoMerge: true,
 };

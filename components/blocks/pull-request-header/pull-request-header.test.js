@@ -60,7 +60,11 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	assert.doesNotMatch(TYPES_SOURCE, /onChatClick/u);
 	assert.match(TYPES_SOURCE, /onMergeClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
-	assert.match(TYPES_SOURCE, /onMoreActionsClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /url\?: string/u);
+	assert.match(TYPES_SOURCE, /scmProviderName\?: string/u);
+	assert.match(TYPES_SOURCE, /onConvertToDraftClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onClosePullRequestClick\?: \(\) => void/u);
+	assert.doesNotMatch(TYPES_SOURCE, /onMoreActionsClick/u);
 	assert.match(
 		TYPES_SOURCE,
 		/merge-conflicts` stays disabled/u,
@@ -69,7 +73,6 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 		TYPES_SOURCE,
 		/export interface PullRequestHeaderProps[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestHeaderStatus;[\s\S]*baseBranch\?: string \| null;[\s\S]*headBranch\?: string \| null;[\s\S]*repository: string;/u,
 	);
-	assert.doesNotMatch(TYPES_SOURCE, /url: string/u);
 	assert.doesNotMatch(TYPES_SOURCE, /authorName/u);
 	assert.doesNotMatch(TYPES_SOURCE, /additions/u);
 	assert.doesNotMatch(TYPES_SOURCE, /updatedTime/u);
@@ -151,9 +154,14 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.doesNotMatch(COMPONENT_SOURCE, /aria-label="Chat"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /onChatClick/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/chevron-down"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/copy"/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/merge-failure"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/merge-success"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/pull-request"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/link-external"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/file"/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/cross"/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/inline-flex shrink-0 items-center gap-1[\s\S]*resolvedVariant === "compact" \? \([\s\S]*<CompactPullRequestStatusIcon status=\{status\} \/>[\s\S]*\) : null[\s\S]*#\{number\}/u,
@@ -172,7 +180,6 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
 	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
-	assert.match(COMPONENT_SOURCE, /disabled=\{!onMoreActionsClick\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="More actions"/u);
 	assert.match(COMPONENT_SOURCE, /label="Auto merge"/u);
@@ -203,13 +210,64 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 		COMPONENT_SOURCE,
 		/<BranchName name=\{branchPair\.headBranch\} \/>[\s\S]*→[\s\S]*<BranchName name=\{branchPair\.baseBranch\} \/>/u,
 	);
-	assert.doesNotMatch(COMPONENT_SOURCE, /Open in GitHub/u);
-	assert.doesNotMatch(COMPONENT_SOURCE, /ExternalLinkIcon/u);
+	assert.match(COMPONENT_SOURCE, /function resolveScmProviderName/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/const openInScmLabel = `Open in \$\{resolvedScmProviderName\}`/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/Copy link[\s\S]*DropdownMenuSeparator[\s\S]*Convert to draft[\s\S]*Close pull request/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/elemBefore=\{<CopyIcon label="" size="small" \/>\}[\s\S]*Copy link/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*name="github"[\s\S]*\{openInScmLabel\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/text-icon-subtle[\s\S]*<PullRequestIcon[\s\S]*Convert to draft/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/text-icon-danger[\s\S]*<MergeFailureIcon[\s\S]*variant="destructive"[\s\S]*Close pull request/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/navigator\.clipboard\.writeText\(url\)|copyPullRequestUrl/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/window\.open\(url, "_blank", "noopener,noreferrer"\)/u,
+	);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!hasPullRequestUrl\}/u);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!onConvertToDraftClick\}/u);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!onClosePullRequestClick\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /onMoreActionsClick/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /from "@\/components\/ui\/avatar"/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /GithubLogo/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /additions/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /Updated \{updatedTime\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /data-jira-work-item-pull-request-detail-header/u);
+});
+
+test("resolveScmProviderName maps common hosts", () => {
+	assert.match(
+		COMPONENT_SOURCE,
+		/host\.includes\("bitbucket\."\)[\s\S]*return "Bitbucket"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/host\.includes\("gitlab\."\)[\s\S]*return "GitLab"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/host\.includes\("github\."\)[\s\S]*return "GitHub"/u,
+	);
+	assert.match(COMPONENT_SOURCE, /return "source control"/u);
 });
 
 test("Pull Request Header demo shows controlled and scroll-driven modes", () => {
@@ -218,7 +276,11 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 	assert.match(DATA_SOURCE, /headBranch: "feature\/guest-checkout"/u);
 	assert.match(DATA_SOURCE, /mergeState: "ready"/u);
 	assert.match(DATA_SOURCE, /defaultAutoMerge: true/u);
-	assert.doesNotMatch(DATA_SOURCE, /url:/u);
+	assert.match(
+		DATA_SOURCE,
+		/url: "https:\/\/github\.com\/eevensoh\/vpk-rovo\/pull\/1847"/u,
+	);
+	assert.match(DATA_SOURCE, /scmProviderName: "GitHub"/u);
 	assert.doesNotMatch(DATA_SOURCE, /authorName/u);
 	assert.doesNotMatch(DATA_SOURCE, /additions/u);
 	assert.doesNotMatch(DATA_SOURCE, /updatedTime/u);
@@ -232,6 +294,9 @@ test("Pull Request Header demo shows controlled and scroll-driven modes", () => 
 	assert.match(PAGE_SOURCE, /mergeState="ready"/u);
 	assert.match(PAGE_SOURCE, /mergeState="checks-running"/u);
 	assert.match(PAGE_SOURCE, /onChecksRunningClick=\{\(\) => undefined\}/u);
+	assert.match(PAGE_SOURCE, /onConvertToDraftClick=\{\(\) => undefined\}/u);
+	assert.match(PAGE_SOURCE, /onClosePullRequestClick=\{\(\) => undefined\}/u);
+	assert.doesNotMatch(PAGE_SOURCE, /onMoreActionsClick/u);
 	assert.match(PAGE_SOURCE, /mergeState="merge-conflicts"/u);
 	assert.match(PAGE_SOURCE, /Checks running/u);
 	assert.match(PAGE_SOURCE, /Merge conflicts/u);
@@ -265,8 +330,12 @@ test("Pull Request Header block is registered in the website catalog", () => {
 	assert.match(BLOCK_DETAILS_SOURCE, /mergeState/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /defaultAutoMerge/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /onChecksRunningClick/u);
-	assert.match(BLOCK_DETAILS_SOURCE, /onMoreActionsClick/u);
-	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /Open in GitHub/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /url/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /scmProviderName/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /onConvertToDraftClick/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /onClosePullRequestClick/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /Open in \{SCM\}|Open in \{name\}/u);
+	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /onMoreActionsClick/u);
 	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /authorName/u);
 	assert.match(REGISTRY_SOURCE, /"pull-request-header": dynamic\(/u);
 });

@@ -312,7 +312,7 @@ export function MetadataRail({
 				</div>
 				<div
 					ref={metadataBodyScrollRef}
-					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto @[860px]/agentlayout:pb-8"
+					className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none @[860px]/agentlayout:pb-8"
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
