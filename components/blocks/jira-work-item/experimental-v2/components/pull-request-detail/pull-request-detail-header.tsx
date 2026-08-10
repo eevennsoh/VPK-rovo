@@ -1,35 +1,13 @@
 import type { RefObject } from "react";
 
 import { PullRequestHeader } from "@/components/blocks/pull-request-header";
-import type { PullRequestHeaderMergeState } from "@/components/blocks/pull-request-header";
 
-import type {
-	PullRequestDetailData,
-	PullRequestMergeState,
-} from "../../lib/pull-request-detail-data";
+import { mapPullRequestHeaderMergeState } from "../../lib/map-pull-request-header-merge-state";
+import type { PullRequestDetailData } from "../../lib/pull-request-detail-data";
 
 interface PullRequestDetailHeaderProps {
 	data: PullRequestDetailData;
 	scrollContainerRef: RefObject<HTMLElement | null>;
-}
-
-/** Maps domain PR merge status onto the shared header Merge button labels. */
-export function mapPullRequestHeaderMergeState(
-	mergeState: PullRequestMergeState,
-): PullRequestHeaderMergeState {
-	switch (mergeState) {
-		case "conflicts":
-			return "merge-conflicts";
-		case "blocked":
-			return "checks-running";
-		case "ready":
-		case "merged":
-			return "ready";
-		default: {
-			const _exhaustive: never = mergeState;
-			return _exhaustive;
-		}
-	}
 }
 
 /** Thin adapter: maps PR detail data onto the shared Pull request header block. */

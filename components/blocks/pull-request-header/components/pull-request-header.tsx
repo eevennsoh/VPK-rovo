@@ -24,12 +24,6 @@ import {
 	resolveVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-variant";
 
-export type {
-	PullRequestHeaderMergeState,
-	PullRequestHeaderProps,
-	PullRequestHeaderStatus,
-	PullRequestHeaderVariant,
-} from "@/components/blocks/pull-request-header/components/pull-request-header-types";
 const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
 const DEFAULT_AUTO_MERGE = true;
 const META_ENTER_TRANSITION = {
