@@ -219,7 +219,10 @@ export function RovoComposerActionButton({
 	const [isRealtimeWaveformIntroActive, setIsRealtimeWaveformIntroActive] = useState(false);
 	const [isDictationOptimisticActive, setIsDictationOptimisticActive] = useState(false);
 	const resolvedComposerBusy = isComposerBusy ?? (composerStatus === "submitted" || composerStatus === "streaming");
-	const resolvedRealtimeVoiceActive = liveVoiceEnabled && realtimeVoiceActive;
+	// The opt-in controls whether this composer can start live voice. An active
+	// session may have been started by a shell shortcut, so it must remain
+	// visible and stoppable even when this surface does not expose the start CTA.
+	const resolvedRealtimeVoiceActive = realtimeVoiceActive;
 	const isDictationActive = dictationState !== "idle" || isDictationOptimisticActive;
 	const idleAction = showSubmitWhenEmpty && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !showBackgroundStop
 		? "submit"
@@ -254,7 +257,7 @@ export function RovoComposerActionButton({
 	}, []);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
-		if (!liveVoiceEnabled || !onToggleRealtimeVoice) {
+		if ((!liveVoiceEnabled && !realtimeVoiceActive) || !onToggleRealtimeVoice) {
 			return;
 		}
 

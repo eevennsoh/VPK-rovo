@@ -66,11 +66,12 @@ test("card composer can opt into a visible disabled submit affordance while empt
 test("shared composer defaults live voice off while leaving dictation independent", () => {
 	assert.match(SEND_CONTROLS_SOURCE, /liveVoiceEnabled\?: boolean;/u);
 	assert.equal((SEND_CONTROLS_SOURCE.match(/liveVoiceEnabled = false/gu) ?? []).length, 2);
-	assert.match(SEND_CONTROLS_SOURCE, /const resolvedRealtimeVoiceActive = liveVoiceEnabled && realtimeVoiceActive;/u);
+	assert.match(SEND_CONTROLS_SOURCE, /const resolvedRealtimeVoiceActive = realtimeVoiceActive;/u);
 	assert.match(SEND_CONTROLS_SOURCE, /canStartDictation: Boolean\(onStartDictation\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /canStartRealtimeVoice: liveVoiceEnabled && Boolean\(onToggleRealtimeVoice\)/u);
 	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceStart = liveVoiceEnabled && idleAction === "voice-start"/u);
 	assert.match(SEND_CONTROLS_SOURCE, /const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean\(onToggleClicky\);/u);
+	assert.match(SEND_CONTROLS_SOURCE, /if \(\(!liveVoiceEnabled && !realtimeVoiceActive\) \|\| !onToggleRealtimeVoice\) \{/u);
 	assert.match(SEND_CONTROLS_SOURCE, /\) : resolvedRealtimeVoiceActive \? \(/u);
 	assert.match(SEND_CONTROLS_SOURCE, /<PromptInputDictationControl/u);
 });

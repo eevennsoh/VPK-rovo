@@ -170,6 +170,10 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
+	assert.match(
+		sessionSurfaceSource,
+		/const interceptedOnApplyAfterResponse = intercepted\.onApplyAfterResponse;[\s\S]*onApplyAfterResponse: interceptedOnApplyAfterResponse[\s\S]*preserveCompletedSessionTranscript\(\);[\s\S]*await interceptedOnApplyAfterResponse\(\);/u,
+	);
 	assert.doesNotMatch(sessionSurfaceSource, /children|createPortal|portalToViewport/u);
 	assert.match(sharedOverlaySource, /placement === "embedded"/u);
 	assert.match(

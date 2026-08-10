@@ -93,14 +93,14 @@ test("shared chat composer disables live voice by default while keeping dictatio
 	assert.equal((sidebarComposer.match(/liveVoiceEnabled=\{liveVoiceEnabled\}/gu) ?? []).length, 2);
 	assert.match(sendControls, /liveVoiceEnabled\?: boolean;/u);
 	assert.equal((sendControls.match(/liveVoiceEnabled = false/gu) ?? []).length, 2);
-	assert.match(sendControls, /const resolvedRealtimeVoiceActive = liveVoiceEnabled && realtimeVoiceActive;/u);
+	assert.match(sendControls, /const resolvedRealtimeVoiceActive = realtimeVoiceActive;/u);
 	assert.match(sendControls, /canStartDictation: Boolean\(onStartDictation\)/u);
 	assert.match(sendControls, /canStartRealtimeVoice: liveVoiceEnabled && Boolean\(onToggleRealtimeVoice\)/u);
 	assert.match(sendControls, /const shouldShowDictationStart = Boolean\(onStartDictation\) && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !submitDisabled;/u);
 	assert.match(sendControls, /const shouldShowRealtimeVoiceStart = liveVoiceEnabled && idleAction === "voice-start"/u);
 	assert.match(sendControls, /const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean\(onToggleClicky\);/u);
 	assert.match(sendControls, /\) : resolvedRealtimeVoiceActive \? \(/u);
-	assert.match(sendControls, /if \(!liveVoiceEnabled \|\| !onToggleRealtimeVoice\) \{/u);
+	assert.match(sendControls, /if \(\(!liveVoiceEnabled && !realtimeVoiceActive\) \|\| !onToggleRealtimeVoice\) \{/u);
 	assert.match(sendControls, /<PromptInputDictationControl/u);
 });
 

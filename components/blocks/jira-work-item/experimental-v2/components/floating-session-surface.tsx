@@ -109,14 +109,26 @@ export function FloatingSessionSurface({
 		const intercepted = onSessionReply?.(activeSession, text);
 		if (intercepted?.handled) {
 			const interceptedOnApply = intercepted.onApply;
+			const interceptedOnApplyAfterResponse = intercepted.onApplyAfterResponse;
+			const preserveCompletedSessionTranscript = () => {
+				if (activeSession.scriptId === "shop-4821-improve-description") {
+					openedSessionStateRef.current = `${activeSession.id}:completed`;
+				}
+			};
 			return {
 				...intercepted,
-				onApply: async () => {
-					if (activeSession.scriptId === "shop-4821-improve-description") {
-						openedSessionStateRef.current = `${activeSession.id}:completed`;
+				onApply: interceptedOnApply
+					? async () => {
+						preserveCompletedSessionTranscript();
+						await interceptedOnApply();
 					}
-					await interceptedOnApply?.();
-				},
+					: undefined,
+				onApplyAfterResponse: interceptedOnApplyAfterResponse
+					? async () => {
+						preserveCompletedSessionTranscript();
+						await interceptedOnApplyAfterResponse();
+					}
+					: undefined,
 			};
 		}
 		const script = SESSION_SCRIPTS[activeSession.scriptId] ?? SESSION_SCRIPTS["general-assist"];
