@@ -656,7 +656,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Layout slots are header/context/composer/metadata — no left-column activity prop.
 	assert.match(
 		compositionSource,
-		/<ExperimentalWorkItemLayout\n\s*header=\{[\s\S]*?\n\s*context=\{[\s\S]*?\n\s*composer=\{[\s\S]*?\n\s*fillContainer=\{[\s\S]*?\n\s*metadata=\{/u,
+		/<ExperimentalWorkItemLayout\n\s*metadataPanelResizing=\{metadataPanelResize\.isResizing\}\n\s*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}\n\s*header=\{[\s\S]*?\n\s*context=\{[\s\S]*?\n\s*composer=\{[\s\S]*?\n\s*fillContainer=\{[\s\S]*?\n\s*metadata=\{/u,
 	);
 });
 
