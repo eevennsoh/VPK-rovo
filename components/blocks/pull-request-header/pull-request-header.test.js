@@ -112,6 +112,14 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/comment"/u);
 	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/show-more-horizontal"/u);
+	assert.match(COMPONENT_SOURCE, /className="w-full flex-wrap sm:w-auto"/u);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!onChatClick\}/u);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!onAutoMergeChange\}/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/disabled=\{!onMergeClick \|\| mergeState !== "ready"\}/u,
+	);
+	assert.match(COMPONENT_SOURCE, /disabled=\{!onMoreActionsClick\}/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Chat"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Auto merge"/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="More actions"/u);

@@ -11,6 +11,7 @@ import { token } from "@/lib/tokens";
 export default function PullRequestHeaderPage() {
 	const [variant, setVariant] =
 		useState<PullRequestHeaderVariant>("expanded");
+	const [autoMerge, setAutoMerge] = useState(true);
 	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
 	return (
@@ -38,8 +39,13 @@ export default function PullRequestHeaderPage() {
 					</div>
 					<PullRequestHeader
 						{...DEMO_PULL_REQUEST_HEADER}
+						autoMerge={autoMerge}
 						className="rounded-xl border p-4"
 						mergeState="ready"
+						onAutoMergeChange={setAutoMerge}
+						onChatClick={() => undefined}
+						onMergeClick={() => undefined}
+						onMoreActionsClick={() => undefined}
 						variant={variant}
 					/>
 				</section>
@@ -50,8 +56,12 @@ export default function PullRequestHeaderPage() {
 					</h2>
 					<PullRequestHeader
 						{...DEMO_PULL_REQUEST_HEADER}
+						autoMerge={autoMerge}
 						className="rounded-xl border p-4"
 						mergeState="checks-running"
+						onAutoMergeChange={setAutoMerge}
+						onChatClick={() => undefined}
+						onMoreActionsClick={() => undefined}
 						variant="expanded"
 					/>
 				</section>
@@ -62,8 +72,12 @@ export default function PullRequestHeaderPage() {
 					</h2>
 					<PullRequestHeader
 						{...DEMO_PULL_REQUEST_HEADER}
+						autoMerge={autoMerge}
 						className="rounded-xl border p-4"
 						mergeState="merge-conflicts"
+						onAutoMergeChange={setAutoMerge}
+						onChatClick={() => undefined}
+						onMoreActionsClick={() => undefined}
 						variant="expanded"
 					/>
 				</section>
@@ -75,8 +89,13 @@ export default function PullRequestHeaderPage() {
 					<div className="overflow-hidden rounded-md border border-border">
 						<PullRequestHeader
 							{...DEMO_PULL_REQUEST_HEADER}
+							autoMerge={autoMerge}
 							className="p-4"
 							mergeState="ready"
+							onAutoMergeChange={setAutoMerge}
+							onChatClick={() => undefined}
+							onMergeClick={() => undefined}
+							onMoreActionsClick={() => undefined}
 							scrollContainerRef={scrollContainerRef}
 						/>
 						<div

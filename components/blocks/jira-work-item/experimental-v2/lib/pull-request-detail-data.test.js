@@ -305,12 +305,18 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(headerSource, /Back to description|onBack|ArrowLeftIcon/u);
 	assert.match(
 		headerSource,
-		/authorName=\{data\.authorName\}[\s\S]*baseBranch=\{data\.baseBranch\}[\s\S]*headBranch=\{data\.headBranch\}/u,
+		/mergeState=\{mapPullRequestHeaderMergeState\(data\.mergeState\)\}/u,
 	);
 	assert.match(
 		headerSource,
-		/repository=\{data\.repository\}[\s\S]*additions=\{data\.additions\}[\s\S]*deletions=\{data\.deletions\}[\s\S]*updatedTime=\{data\.updatedTime\}[\s\S]*url=\{data\.url\}/u,
+		/export function mapPullRequestHeaderMergeState[\s\S]*case "conflicts":[\s\S]*return "merge-conflicts"[\s\S]*case "blocked":[\s\S]*return "checks-running"/u,
 	);
+	assert.match(
+		headerSource,
+		/baseBranch=\{data\.baseBranch\}[\s\S]*headBranch=\{data\.headBranch\}[\s\S]*repository=\{data\.repository\}/u,
+	);
+	assert.doesNotMatch(headerSource, /authorName=\{data\.authorName\}/u);
+	assert.doesNotMatch(headerSource, /additions=\{data\.additions\}/u);
 	assert.doesNotMatch(headerSource, /Open in GitHub|border-b border-border pb-4/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide/u);
 	assert.match(guideSource, /data-jira-work-item-pull-request-guide-current-step/u);

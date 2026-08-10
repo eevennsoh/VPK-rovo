@@ -225,12 +225,13 @@ export function PullRequestHeader({
 					</div>
 					<ButtonGroup
 						aria-label="Pull request actions"
-						className="w-full sm:w-auto"
+						className="w-full flex-wrap sm:w-auto"
 						variant="separated"
 					>
 						<ButtonGroup>
 							<Button
 								aria-label="Chat"
+								disabled={!onChatClick}
 								onClick={onChatClick}
 								size="icon"
 								variant="outline"
@@ -241,6 +242,7 @@ export function PullRequestHeader({
 						<ButtonGroup>
 							<Toggle
 								aria-label="Auto merge"
+								disabled={!onAutoMergeChange}
 								variant="outline"
 								{...autoMergeToggleProps}
 							>
@@ -248,13 +250,18 @@ export function PullRequestHeader({
 							</Toggle>
 						</ButtonGroup>
 						<ButtonGroup>
-							<Button onClick={onMergeClick} variant="outline">
+							<Button
+								disabled={!onMergeClick || mergeState !== "ready"}
+								onClick={onMergeClick}
+								variant="outline"
+							>
 								{mergeStateLabel(mergeState)}
 							</Button>
 						</ButtonGroup>
 						<ButtonGroup>
 							<Button
 								aria-label="More actions"
+								disabled={!onMoreActionsClick}
 								onClick={onMoreActionsClick}
 								size="icon"
 								variant="outline"
