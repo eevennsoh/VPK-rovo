@@ -24,6 +24,8 @@ import {
 export interface JiraWorkItemMeta {
 	initialPreset: JiraWorkItemPreset;
 	workItem: WorkItemData;
+	/** Board lifecycle labels for the status pill; defaults to RFP BOARD_COLUMNS. */
+	statusPhases: readonly string[] | null;
 	contextStatus: JiraWorkItemContextStatus;
 	activeSession: AgentSession | null;
 	orderedSessions: AgentSession[];
@@ -50,6 +52,7 @@ interface JiraWorkItemProviderProps {
 	initialState?: JiraWorkItemState;
 	initialStateRevision?: string | number;
 	composerDelivery?: JiraWorkItemComposerDelivery;
+	statusPhases?: readonly string[];
 }
 
 export function JiraWorkItemProvider({
@@ -60,6 +63,7 @@ export function JiraWorkItemProvider({
 	workItem,
 	active = true,
 	composerDelivery = "comment",
+	statusPhases,
 }: Readonly<JiraWorkItemProviderProps>) {
 	const { state, actions } = useJiraWorkItemController(
 		initialPreset,
@@ -73,6 +77,7 @@ export function JiraWorkItemProvider({
 		() => ({
 			initialPreset,
 			workItem,
+			statusPhases: statusPhases ?? null,
 			contextStatus: selectContextStatus(state),
 			activeSession: selectActiveSession(state),
 			orderedSessions: selectOrderedSessions(state),
@@ -80,7 +85,7 @@ export function JiraWorkItemProvider({
 			activityEvents: selectActivityEvents(state),
 			composerDelivery,
 		}),
-		[composerDelivery, initialPreset, workItem, state],
+		[composerDelivery, initialPreset, statusPhases, workItem, state],
 	);
 
 	const value = useMemo<JiraWorkItemContextValue>(() => ({ state, actions, meta }), [state, actions, meta]);

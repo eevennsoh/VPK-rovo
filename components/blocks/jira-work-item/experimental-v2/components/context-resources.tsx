@@ -16,12 +16,14 @@ import {
 	EditorToolbarModeTabs,
 	type EditorToolbarViewMode,
 } from "@/components/blocks/editor-toolbar";
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { AttachmentsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/attachments-popover";
 import {
 	AnimatedContextTitleActions,
 	type CodingAgentId,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import { LinkedWorkItemsPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/linked-work-items-popover";
+import { PullRequestsSelect } from "@/components/blocks/jira-work-item/experimental-v2/components/pull-requests-select";
 import { SubtasksPopover } from "@/components/blocks/jira-work-item/experimental-v2/components/subtasks-popover";
 import {
 	useJiraWorkItemMeta,
@@ -56,21 +58,32 @@ interface ContextResourcesProps {
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestEntries: readonly JiraActivityEventEntry[];
 	pullRequestSelected: boolean;
+	selectedPullRequestIdentity: string | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
+	onPullRequestSelect: (entry: JiraActivityEventEntry) => void;
+	onPullRequestClear: () => void;
 }
 
 /**
  * Context resource controls: the shared plus menu launches the existing
- * Attachments, Subtasks, and linked-work-item popovers. Filled resource values
- * are rendered as conditional sections in the metadata rail.
+ * Attachments, Subtasks, and linked-work-item popovers. Pull requests open from
+ * a Select beside Open in Claude; the active filter is a removable Tag (title
+ * meta hosts a separate read-only multi-metric Tag). Filled
+ * attachment/subtask/link values are rendered as conditional sections in the
+ * metadata rail.
  */
 export function ContextResources({
 	descriptionViewMode,
 	outputs = [],
 	primaryCodingAgentId,
+	pullRequestEntries,
 	pullRequestSelected,
+	selectedPullRequestIdentity,
 	onDescriptionViewModeChange,
+	onPullRequestSelect,
+	onPullRequestClear,
 }: Readonly<ContextResourcesProps>) {
 	const { contextResources, planner } = useJiraWorkItemState();
 	const { workItem } = useJiraWorkItemMeta();
@@ -174,6 +187,14 @@ export function ContextResources({
 						)}
 					</div>
 					<AnimatedContextTitleActions primaryAgentId={primaryCodingAgentId} />
+					{pullRequestEntries.length > 0 ? (
+						<PullRequestsSelect
+							entries={pullRequestEntries}
+							selectedIdentity={selectedPullRequestIdentity}
+							onClearSelection={onPullRequestClear}
+							onSelectEntry={onPullRequestSelect}
+						/>
+					) : null}
 					{pullRequestSelected ? null : (
 						<div className="pointer-events-none ml-auto shrink-0 flex items-center gap-2 opacity-0 transition-opacity duration-normal ease-out group-hover/description-scope:pointer-events-auto group-hover/description-scope:opacity-100 group-has-[:focus-visible]/description-scope:pointer-events-auto group-has-[:focus-visible]/description-scope:opacity-100 motion-reduce:transition-none">
 							<Tooltip>

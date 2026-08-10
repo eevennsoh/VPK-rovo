@@ -462,7 +462,7 @@ export function SelectDemoSubscriptionPlan() {
 			defaultValue={SUBSCRIPTION_PLANS[0]}
 			itemToStringValue={(plan: (typeof SUBSCRIPTION_PLANS)[number]) => plan.name}
 		>
-			<SelectTrigger className="h-auto! w-72">
+			<SelectTrigger className="h-auto! w-96 whitespace-normal *:data-[slot=select-value]:line-clamp-none">
 				<SelectValue>
 					{(value: (typeof SUBSCRIPTION_PLANS)[number]) => <SelectPlanItem plan={value} />}
 				</SelectValue>

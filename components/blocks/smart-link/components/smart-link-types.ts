@@ -125,9 +125,13 @@ export interface SmartLinkProps {
 	openDelay?: number;
 	closeDelay?: number;
 	onOpenChange?: (open: boolean) => void;
-	/** When provided, render the inline trigger as a selectable button instead of a link. */
+	/**
+	 * When provided, render a selectable control instead of a navigational link:
+	 * the inline trigger becomes a pressed button, and the card title becomes a
+	 * pressed button (card appearance).
+	 */
 	onActivate?: (item: SmartLinkItem) => void;
-	/** Whether the selectable inline trigger is currently selected. */
+	/** Whether the selectable smart link is currently selected. */
 	selected?: boolean;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
 	onRemove?: () => void;
@@ -140,6 +144,13 @@ export interface SmartLinkProps {
 export interface SmartLinkCardProps {
 	item: SmartLinkItem;
 	onActionSelect?: (action: SmartLinkAction, item: SmartLinkItem) => void;
+	/**
+	 * When provided, render the card title as a selectable pressed button
+	 * instead of an external link.
+	 */
+	onActivate?: (item: SmartLinkItem) => void;
+	/** Whether the selectable card is currently selected. */
+	selected?: boolean;
 	/**
 	 * `block` — bordered embedded card (default).
 	 * `flyout` — elevated hover preview with the same content layout.

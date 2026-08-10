@@ -2,37 +2,40 @@
 
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
 	PersonLabel,
 	StatusPill,
 } from "@/components/blocks/jira-work-item/experimental-v2/components/detail-field-editors";
+import { summarizePullRequestTagMetrics } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-phases";
 import {
 	useJiraWorkItemActions,
 	useJiraWorkItemState,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
-import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
-import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
 import { Icon } from "@/components/ui/icon";
 import { Tag } from "@/components/ui/tag";
 
 /**
- * Status + PR count + Reported by under the editable title. Single horizontal
- * row: status pill, optional pull-request Tag (opens the metadata-rail PR
- * list), and inline "Reported by {name}" — wired to the same metadata draft as
- * DetailsTab.
+ * Status + read-only PR Tag + Reported by under the editable title. Single
+ * horizontal row: status pill, optional multi-metric Pull requests Tag
+ * (display only — the interactive dropdown lives in ContextResources), and
+ * inline "Reported by {name}" — wired to the same metadata draft as DetailsTab.
  */
-export function ContextTitleMeta() {
+export function ContextTitleMeta({
+	pullRequestEntries = [],
+}: Readonly<{
+	pullRequestEntries?: readonly JiraActivityEventEntry[];
+}>) {
 	const { metadata } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
-	const { pullRequestCount, setPanelView } = useMetadataRail();
-	const { metadataCollapsed, toggleMetadata } = usePanelLayout();
-
-	const openPullRequestsPanel = () => {
-		if (metadataCollapsed) {
-			toggleMetadata();
-		}
-		setPanelView("pull-requests");
-	};
+	const trailingMetric = pullRequestEntries.length > 0
+		? summarizePullRequestTagMetrics(pullRequestEntries)
+		: [];
+	const pullRequestsAriaLabel = trailingMetric.length > 0
+		? `Pull requests. ${trailingMetric.map((metric) => (
+			typeof metric === "object" ? metric.value : metric
+		)).join(", ")}`
+		: `Pull requests, ${pullRequestEntries.length}`;
 
 	return (
 		<div
@@ -43,18 +46,21 @@ export function ContextTitleMeta() {
 				onChange={(next) => actions.updateMetadata({ status: next })}
 				value={metadata.status}
 			/>
-			{pullRequestCount > 0 ? (
+			{pullRequestEntries.length > 0 ? (
 				<Tag
+					aria-label={pullRequestsAriaLabel}
 					data-jira-work-item-title-pull-requests
+					role="group"
 					elemBefore={
 						<Icon
 							aria-hidden
 							render={<PullRequestIcon label="" size="small" />}
 						/>
 					}
-					onClick={openPullRequestsPanel}
+					maxWidth="none"
+					trailingMetric={trailingMetric}
 				>
-					{`${pullRequestCount} ${pullRequestCount === 1 ? "Pull request" : "Pull requests"}`}
+					Pull requests
 				</Tag>
 			) : null}
 			{metadata.reporter ? (

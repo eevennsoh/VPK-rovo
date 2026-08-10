@@ -14,7 +14,10 @@ import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
 import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import { CREW_ROSTER, type CrewMember } from "@/components/blocks/jira-work-item/data/metadata-crew";
 import type { AgentSessionStatus } from "@/components/blocks/jira-work-item/data/session-state";
-import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
+import {
+	useJiraWorkItemMeta,
+	useJiraWorkItemState,
+} from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card/components/agent-profile-card";
 import { BOARD_AGENTS } from "@/components/projects/jira/data/board-agents";
 import type { AgentPlannerAssignee } from "@/components/blocks/jira-work-item/data/planner-state";
@@ -189,6 +192,9 @@ export function PriorityLabel({ value }: Readonly<{ value: PriorityValue }>) {
 
 /** Status pill for the Details header bar (video's "To Do ▾"). */
 export function StatusPill({ value, onChange }: Readonly<{ value: string; onChange: (next: string) => void }>) {
+	const { statusPhases } = useJiraWorkItemMeta();
+	const phases = statusPhases ?? STATUS_PHASES;
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -197,20 +203,20 @@ export function StatusPill({ value, onChange }: Readonly<{ value: string; onChan
 						aria-label={`Change status. Current status: ${value}`}
 						className="data-popup-open:border-ring data-popup-open:ring-3 data-popup-open:ring-ring/50"
 						size="compact"
-						variant={statusVariant(value)}
+						variant={statusVariant(value, phases)}
 					/>
 				}
 			>
 				{value}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56" positionerClassName={METADATA_PICKER_POSITIONER_CLASS} sideOffset={METADATA_PICKER_SIDE_OFFSET}>
-				{STATUS_PHASES.map((phase) => (
+				{phases.map((phase) => (
 					<DropdownMenuItem
 						key={phase}
 						onSelect={() => onChange(phase)}
 						selected={phase === value}
 					>
-						<Lozenge variant={statusVariant(phase)}>{phase}</Lozenge>
+						<Lozenge variant={statusVariant(phase, phases)}>{phase}</Lozenge>
 					</DropdownMenuItem>
 				))}
 			</DropdownMenuContent>

@@ -79,7 +79,7 @@ test("Jira Agents composes the six-chapter software delivery story without chang
 	const itemsSource = readProjectFile("components/projects/jira-agents/data/gallery-items.ts");
 
 	assert.match(pageSource, /<JiraAgentsStoryControls controller=\{storyController\} \/>/u);
-	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*workItem=\{controller\.workItem\}/u);
+	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*statusPhases=\{JIRA_AGENTS_STATUS_PHASES\}[\s\S]*workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
 	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
 	assert.doesNotMatch(pageSource, /key=\{controller\.launchId\}/u);

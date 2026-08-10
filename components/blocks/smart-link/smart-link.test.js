@@ -45,16 +45,47 @@ test("SmartLink selectable mode uses a pressed button and closes its preview on 
 test("SmartLink supports a card appearance that expands any item into a block card", () => {
 	assert.match(TYPES_SOURCE, /export type SmartLinkAppearance = "inline" \| "card"/u);
 	assert.match(TYPES_SOURCE, /appearance\?: SmartLinkAppearance;/u);
-	assert.match(COMPONENT_SOURCE, /if \(appearance === "card"\)[\s\S]*<SmartLinkCard[\s\S]*appearance="block"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/if \(appearance === "card"\)[\s\S]*<SmartLinkCard[\s\S]*appearance="block"[\s\S]*onActivate=\{onActivate\}[\s\S]*selected=\{selected\}/u,
+	);
 	assert.match(TYPES_SOURCE, /appearance\?: "block" \| "flyout"/u);
-	assert.match(COMPONENT_SOURCE, /border border-border bg-surface/u);
+	assert.match(TYPES_SOURCE, /onActivate\?: \(item: SmartLinkItem\) => void;/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/onActivate \? \([\s\S]*<button[\s\S]*aria-pressed=\{selected\}[\s\S]*onClick=\{\(\) => onActivate\(item\)\}[\s\S]*type="button"[\s\S]*: \([\s\S]*<a className=\{titleClassName\} href=\{item\.href\}/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/onActivate &&[\s\S]*selected &&[\s\S]*"border-border-selected bg-bg-selected text-text-selected"/u,
+	);
+	assert.match(
+		COMPONENT_SOURCE,
+		/isFlyout \? "bg-surface-overlay shadow-2xl" : "border border-border"/u,
+	);
 	assert.match(COMPONENT_SOURCE, /SmartLinkFooterActions/u);
 	assert.match(COMPONENT_SOURCE, /function SmartLinkEngagementRow/u);
 	assert.match(COMPONENT_SOURCE, /Created by \{item\.author\.name\}/u);
 	assert.match(INDEX_SOURCE, /SmartLinkAppearance/u);
 	assert.match(DEMO_SOURCE, /export function SmartLinkDemoCard\(\)/u);
 	assert.match(DEMO_SOURCE, /appearance="card"/u);
+	assert.match(
+		DEMO_SOURCE,
+		/export function SmartLinkDemoCard\(\)[\s\S]*appearance="card"[\s\S]*items=\{SMART_LINK_DEMO_ITEMS\}/u,
+	);
 	assert.match(PAGE_SOURCE, /appearance="card"/u);
+	assert.match(PAGE_SOURCE, /items = SMART_LINK_DEMO_ITEMS/u);
+});
+
+test("SmartLink card footer shows at most two action buttons and overflows the rest", () => {
+	assert.match(COMPONENT_SOURCE, /const FOOTER_VISIBLE_ACTION_COUNT = 2;/u);
+	assert.match(COMPONENT_SOURCE, /actions\.slice\(0, FOOTER_VISIBLE_ACTION_COUNT\)/u);
+	assert.match(COMPONENT_SOURCE, /actions\.slice\(FOOTER_VISIBLE_ACTION_COUNT\)/u);
+	assert.match(COMPONENT_SOURCE, /overflowActions\.length > 0 \?[\s\S]*<DropdownMenu>[\s\S]*aria-label="More actions"/u);
+	assert.match(COMPONENT_SOURCE, /ShowMoreHorizontalIcon/u);
+	assert.match(COMPONENT_SOURCE, /action\.id !== "copy-link"/u);
+	assert.match(DATA_SOURCE, /id: "laptop-refresh"[\s\S]*Summarize with Rovo[\s\S]*View related links/u);
+	assert.match(DATA_SOURCE, /id: "project-slingshot"[\s\S]*Summarize with AI/u);
 });
 
 test("SmartLink exports the public component and type API", () => {
@@ -161,7 +192,8 @@ test("SmartLink visual rendering uses shared icon and logo primitives", () => {
 	assert.match(COMPONENT_SOURCE, /size: iconSize/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
-	assert.match(COMPONENT_SOURCE, /<span className="mt-0\.5 inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
+	assert.match(COMPONENT_SOURCE, /className="flex min-w-0 items-center gap-2"/u);
+	assert.match(COMPONENT_SOURCE, /<span className="inline-flex shrink-0 items-center">\{renderVisual\(item\.icon, "card"\)\}<\/span>/u);
 });
 
 test("the Jira work-item demo uses a blue work-item icon tile with rich card controls", () => {

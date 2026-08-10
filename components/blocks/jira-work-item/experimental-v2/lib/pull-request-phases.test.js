@@ -183,3 +183,19 @@ test("default-open phases are only those with pull requests", async () => {
 
 	assert.deepEqual(defaultOpenPullRequestPhases(sections), ["open"]);
 });
+
+test("summarizePullRequestTagMetrics returns Open and Merged chips for known statuses", async () => {
+	const { summarizePullRequestTagMetrics } = await loadPhases();
+
+	assert.deepEqual(
+		summarizePullRequestTagMetrics([
+			prEntry("pr-1847", 1847, "Open"),
+			prEntry("pr-1901", 1901, "Merged"),
+		]),
+		[
+			{ value: "1 Open", color: "lime" },
+			{ value: "1 Merged", color: "purple" },
+		],
+	);
+	assert.deepEqual(summarizePullRequestTagMetrics([]), []);
+});

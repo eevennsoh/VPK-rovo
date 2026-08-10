@@ -1,0 +1,45 @@
+import type { PullRequestProps } from "@/components/blocks/pull-request/components/pull-request-types";
+
+/** Catalog fixtures for the Pull Request block. */
+export const DEMO_PULL_REQUESTS: readonly PullRequestProps[] = [
+	{
+		number: 1306,
+		title: "Add guest checkout to the storefront",
+		status: "Open",
+		author: {
+			name: "Venn",
+			avatarUrl: "/avatar-user/venn/venn.png",
+		},
+		repository: "eevensoh/vpk-rovo",
+		branch: "feature/guest-checkout",
+		additions: 86,
+		deletions: 21,
+		relativeTime: "2hr ago",
+	},
+	{
+		number: 1847,
+		title: "Fix threaded comment highlight bottom corners",
+		status: "Merged",
+		author: {
+			name: "Maya Chen",
+			avatarUrl: "/avatar-user/olivia-yang/color/asow-service-yellow.png",
+		},
+		repository: "eevensoh/vpk-rovo",
+		additions: 148,
+		deletions: 37,
+		relativeTime: "yesterday",
+	},
+	{
+		number: 902,
+		title: "Document pull request card block for the catalog",
+		status: "Open",
+		author: {
+			name: "Alex Rivera",
+		},
+		repository: "atlassian/design-system",
+		branch: "docs/pull-request-block",
+		additions: 42,
+		deletions: 3,
+		relativeTime: "5m ago",
+	},
+];

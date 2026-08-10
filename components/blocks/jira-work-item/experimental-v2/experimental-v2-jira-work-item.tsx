@@ -49,6 +49,8 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	onOpenAgentChat?: (agentId: string) => void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	/** Override status pill options (defaults to RFP board columns). */
+	statusPhases?: readonly string[];
 	workItem?: WorkItemData;
 	composerDelivery?: JiraWorkItemComposerDelivery;
 }
@@ -122,13 +124,14 @@ function ExperimentalV2JiraWorkItemContent({
 
 	return (
 		<PanelLayoutProvider>
-			<MetadataRailProvider pullRequestCount={pullRequestEntries.length}>
+			<MetadataRailProvider>
 				<LayoutGroup id={composerLayoutGroupId}>
 					<ExperimentalWorkItemDialog
 						inlineSurface={inlineSurface}
 						open={open}
 						onClose={onClose}
 						presentation={presentation}
+						pullRequestEntries={pullRequestEntries}
 						sidebar={<FloatingSessionSurface />}
 						sidebarOpen={agentChatOpen}
 						workItemCode={workItem.code}
@@ -140,8 +143,12 @@ function ExperimentalV2JiraWorkItemContent({
 									descriptionViewMode={descriptionViewMode}
 									outputs={outputs}
 									primaryCodingAgentId={primaryCodingAgentId}
+									pullRequestEntries={pullRequestEntries}
 									pullRequestSelected={selectedPullRequestEntry !== null}
+									selectedPullRequestIdentity={selectedPullRequestIdentity}
 									onDescriptionViewModeChange={setDescriptionViewMode}
+									onPullRequestClear={() => setSelectedPullRequestIdentity(null)}
+									onPullRequestSelect={handlePullRequestSelect}
 								/>
 							)}
 							context={(
@@ -170,9 +177,6 @@ function ExperimentalV2JiraWorkItemContent({
 										activity={<ActivityPanel activitySessionThread={activitySessionThread} />}
 										automationRules={automationRules}
 										borderless
-										pullRequestEntries={pullRequestEntries}
-										selectedPullRequestIdentity={selectedPullRequestIdentity}
-										onPullRequestSelect={handlePullRequestSelect}
 									/>
 								</div>
 							)}
@@ -235,6 +239,7 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 				initialPreset={initialPreset}
 				initialState={initialState}
 				initialStateRevision={props.initialStateRevision}
+				statusPhases={props.statusPhases}
 				workItem={workItem}
 			>
 				<ExperimentalV2JiraWorkItemContent

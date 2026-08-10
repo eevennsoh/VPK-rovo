@@ -38,6 +38,7 @@ import { APP_SIDEBAR_DETAIL } from "./blocks/app-sidebar";
 import { ANSWER_CARD_DETAIL } from "./blocks/answer-card";
 import { SPOTLIGHT_DETAIL } from "./blocks/spotlight";
 import { SMART_LINK_DETAIL } from "./blocks/smart-link";
+import { PULL_REQUEST_DETAIL } from "./blocks/pull-request";
 import { EMOJI_PICKER_DETAIL } from "./blocks/emoji-picker";
 import { ROVO_CANVAS_DETAIL } from "./blocks/rovo-canvas";
 import { DASHBOARD_DETAIL } from "./blocks/dashboard";
@@ -138,6 +139,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"answer-card": ANSWER_CARD_DETAIL,
 	spotlight: SPOTLIGHT_DETAIL,
 	"smart-link": SMART_LINK_DETAIL,
+	"pull-request": PULL_REQUEST_DETAIL,
 	"emoji-picker": EMOJI_PICKER_DETAIL,
 	"rovo-canvas": ROVO_CANVAS_DETAIL,
 	dashboard: DASHBOARD_DETAIL,

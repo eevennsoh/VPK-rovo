@@ -29,21 +29,30 @@ const PullRequestDetailView = dynamic(
 /**
  * Left-column anchor chrome (sibling above the description scrollport). The
  * editable title lives in the dialog header band with breadcrumbs; this header
- * only owns the ContextResources row (`+` / Open in Claude / description
- * toolbar). Mirrors MetadataRailToggle on the right column.
+ * owns the ContextResources row (`+` / Open in Claude / pull-requests Select /
+ * description toolbar). Title meta also hosts a multi-metric PR Tag. Mirrors
+ * MetadataRailToggle on the right column.
  */
 export function ContextHeader({
 	descriptionViewMode,
 	outputs,
 	primaryCodingAgentId,
+	pullRequestEntries,
 	pullRequestSelected,
+	selectedPullRequestIdentity,
 	onDescriptionViewModeChange,
+	onPullRequestSelect,
+	onPullRequestClear,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestEntries: readonly JiraActivityEventEntry[];
 	pullRequestSelected: boolean;
+	selectedPullRequestIdentity: string | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
+	onPullRequestSelect: (entry: JiraActivityEventEntry) => void;
+	onPullRequestClear: () => void;
 }>) {
 	return (
 		<header className="shrink-0" data-jira-work-item-context-header>
@@ -52,8 +61,12 @@ export function ContextHeader({
 					descriptionViewMode={descriptionViewMode}
 					outputs={outputs}
 					primaryCodingAgentId={primaryCodingAgentId}
+					pullRequestEntries={pullRequestEntries}
 					pullRequestSelected={pullRequestSelected}
+					selectedPullRequestIdentity={selectedPullRequestIdentity}
 					onDescriptionViewModeChange={onDescriptionViewModeChange}
+					onPullRequestClear={onPullRequestClear}
+					onPullRequestSelect={onPullRequestSelect}
 				/>
 			</div>
 		</header>

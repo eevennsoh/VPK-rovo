@@ -74,6 +74,14 @@ const WORK_ITEM_STATUS_BY_CHAPTER = {
 	done: "Done",
 } as const satisfies Record<JiraAgentsStoryChapter, string>;
 
+/** Status pill options for the guest-checkout work item (board workflow order). */
+export const JIRA_AGENTS_STATUS_PHASES = [
+	"To do",
+	"In progress",
+	"In review",
+	"Done",
+] as const satisfies readonly string[];
+
 type JiraAgentsStoryAgent = JiraForYouAgent & { brandName?: ThirdPartyLogoName };
 
 const CODE_PLANNER = {
@@ -352,6 +360,7 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 			additions: 86,
 			deletions: 21,
 			repository: "eevensoh/vpk-rovo",
+			branch: "feature/guest-checkout",
 			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
 			// Viewer is Venn (`JIRA_WORK_ITEM_CURRENT_USER`); "By me" sorts on authorName.
 			authorName: "Venn",
@@ -378,6 +387,7 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 			additions: 86,
 			deletions: 21,
 			repository: "eevensoh/vpk-rovo",
+			branch: "feature/guest-checkout",
 			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
 			authorName: "Venn",
 			createdAtMs: STORY_EPOCH_MS - 1_080_000,

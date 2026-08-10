@@ -218,12 +218,14 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "generic",
 		provider: { name: "GitHub", logo: { kind: "third-party", name: "github" } },
 		icon: { kind: "third-party", name: "github" },
-		author: { name: "eevensoh" },
+		author: { name: "eevensoh", src: "/avatar-user/venn/venn.png" },
 		date: "Updated 3 hours ago",
 		metadata: [
 			{ label: "1", icon: <PeopleGroupIcon label="" size="small" /> },
 			{ label: "", metric: 1, icon: <EyeOpenIcon label="" size="small" /> },
 		],
+		description:
+			"Venn Prototype Kit — a Next.js + Express playground for Atlassian Design System prototypes, Rovo chat, and AI-assisted UI experiments.",
 	},
 	toPullRequestSmartLink({
 		id: "pr-1847-guest-checkout",
