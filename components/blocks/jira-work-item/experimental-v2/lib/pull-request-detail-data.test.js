@@ -126,6 +126,8 @@ test("resolves the #1847 guest-checkout guided review fixture", async () => {
 			"opened",
 			"commits-pushed",
 			"checks-completed",
+			"comment-posted",
+			"review-submitted",
 			"review-submitted",
 			"review-submitted",
 			"thread-resolved",

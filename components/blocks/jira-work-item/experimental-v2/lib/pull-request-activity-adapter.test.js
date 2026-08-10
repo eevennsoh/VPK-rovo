@@ -104,6 +104,69 @@ test("moves review discussion into read-only Jira Activity comments", async () =
 	]);
 });
 
+test("preserves provider comments, review replies, and connected app branding", async () => {
+	const { adaptPullRequestActivity } = await loadAdapter();
+	const entries = adaptPullRequestActivity([
+		{
+			id: "actions",
+			kind: "comment-posted",
+			actor: { id: "github-actions", name: "github-actions", kind: "app" },
+			occurredAtMs: 100,
+			timestamp: "7 minutes ago",
+			tag: "Bot",
+			body: "React Doctor found no new issues.",
+			detail: { label: "Review details", body: "Reviewed commit abc1234." },
+		},
+		{
+			id: "codex",
+			kind: "review-submitted",
+			actor: { id: "codex", name: "Codex", kind: "app" },
+			occurredAtMs: 200,
+			timestamp: "5 minutes ago",
+			decision: "commented",
+			body: "Narrow the nullable address.",
+			filePath: "guest-order-service.js",
+			allowReply: true,
+			detail: { label: "About Codex in GitHub", body: "Automated review." },
+			replies: [{
+				id: "fixed",
+				actor: VENN,
+				timestamp: "3 minutes ago",
+				body: "Fixed in abc1234.",
+			}],
+		},
+	]);
+
+	assert.equal(entries[0].actor.brandName, "github");
+	assert.deepEqual(entries[0].tag, { text: "Bot" });
+	assert.deepEqual(entries[0].collapsible, {
+		label: "Review details",
+		content: [{ type: "text", text: "Reviewed commit abc1234." }],
+	});
+	assert.equal(entries[1].actor.brandName, "openai-codex");
+	assert.equal(entries[1].allowReply, true);
+	assert.equal(entries[1].replies[0].actor.name, "Venn");
+	assert.equal(entries[1].replies[0].body, "Fixed in abc1234.");
+});
+
+test("changes the activity revision when provider payload values change", async () => {
+	const { getPullRequestActivityRevision } = await loadAdapter();
+	const activity = [{
+		id: "checks",
+		kind: "checks-completed",
+		actor: GITHUB,
+		occurredAtMs: 100,
+		timestamp: "later",
+		passed: 2,
+		total: 3,
+	}];
+
+	assert.notEqual(
+		getPullRequestActivityRevision(activity),
+		getPullRequestActivityRevision([{ ...activity[0], passed: 3 }]),
+	);
+});
+
 test("keeps equal-time provider events in source order", async () => {
 	const { adaptPullRequestActivity } = await loadAdapter();
 	const entries = adaptPullRequestActivity([
