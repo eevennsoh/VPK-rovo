@@ -29,11 +29,11 @@ export interface PullRequestProps {
 	timestampMs?: number;
 	/** Static relative label reserved for callers; not rendered on the card. */
 	relativeTime?: string;
-	/** Marks the card as the active selection in a list. */
+	/** Marks the card as the active selection, including read-only summaries. */
 	selected?: boolean;
 	/**
 	 * When provided, the card activates as a pressed button (select-to-open).
-	 * Without it, the card is a non-interactive summary surface.
+	 * Without it, the card remains a non-interactive summary surface.
 	 */
 	onActivate?: () => void;
 	className?: string;
