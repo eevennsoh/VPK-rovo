@@ -309,20 +309,9 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		headerSource,
 		/mergeState=\{mapPullRequestHeaderMergeState\(data\.mergeState\)\}/u,
 	);
-	const mapperSource = fs.readFileSync(
-		path.join(
-			process.cwd(),
-			"components/blocks/jira-work-item/experimental-v2/lib/map-pull-request-header-merge-state.ts",
-		),
-		"utf8",
-	);
 	assert.match(
 		headerSource,
-		/from "\.\.\/\.\.\/lib\/map-pull-request-header-merge-state"/u,
-	);
-	assert.match(
-		mapperSource,
-		/export function mapPullRequestHeaderMergeState[\s\S]*case "conflicts":[\s\S]*return "merge-conflicts"[\s\S]*case "blocked":[\s\S]*return "checks-running"/u,
+		/function mapPullRequestHeaderMergeState[\s\S]*case "conflicts":[\s\S]*return "merge-conflicts"[\s\S]*case "blocked":[\s\S]*return "checks-running"/u,
 	);
 	assert.match(
 		headerSource,
