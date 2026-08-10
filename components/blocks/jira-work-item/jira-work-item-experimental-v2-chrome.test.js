@@ -217,7 +217,11 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	// scrollbars start below the controls.
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-scroll-fade-visible=\{showTopScrollMask \? "" : undefined\}[\s\S]*\{chrome\}[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body/u,
+		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-scroll-fade-visible=\{showTopScrollMask \? "" : undefined\}[\s\S]*\{chrome\}[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body/u,
+	);
+	assert.match(
+		layoutSource,
+		/flex h-full min-h-0 min-w-0 flex-col gap-6 overflow-y-auto overscroll-y-none/u,
 	);
 	assert.doesNotMatch(
 		layoutSource,
@@ -231,7 +235,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-column-chrome[\s\S]*order-2 contents @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*order-2 contents @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:overscroll-y-none @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		contextResourcesSource,

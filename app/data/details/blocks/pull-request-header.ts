@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_HEADER_DETAIL: ComponentDetail = {
 	description:
-		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + Auto merge menu) and More actions; use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
+		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with a Merge split button (primary label + Auto merge menu) and a More actions menu (Copy link, Open in {SCM}, Convert to draft, Close pull request); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
 	importStatement: `import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderProps } from "@/components/blocks/pull-request-header";`,
 	usage: `import { useRef } from "react";
@@ -130,10 +130,28 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 				"Called when the Checks running primary is activated (enabled only when `mergeState` is `checks-running`). In the work-item PR detail, this expands the CI checks disclosure in the metadata rail.",
 		},
 		{
-			name: "onMoreActionsClick",
+			name: "url",
+			type: "string",
+			description:
+				"Pull request URL for More actions → Copy link and Open in {SCM}. Those items stay disabled when omitted.",
+		},
+		{
+			name: "scmProviderName",
+			type: "string",
+			description:
+				'SCM product name for More actions → "Open in {name}" (e.g. `"GitHub"`). When omitted, derived from the `url` hostname.',
+		},
+		{
+			name: "onConvertToDraftClick",
 			type: "() => void",
 			description:
-				"Called when the More actions (ellipsis) icon button is activated.",
+				"Called when More actions → Convert to draft is selected. The item stays disabled for merged PRs; pass a no-op stub to enable it for open PR demos.",
+		},
+		{
+			name: "onClosePullRequestClick",
+			type: "() => void",
+			description:
+				"Called when More actions → Close pull request is selected. The item stays disabled for merged PRs; pass a no-op stub to enable it for open PR demos.",
 		},
 	],
 };

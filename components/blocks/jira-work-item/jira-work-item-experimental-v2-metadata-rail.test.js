@@ -305,7 +305,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/relative min-h-0 min-w-0 flex-1 overflow-y-auto/u,
+		/relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none/u,
 	);
 	// Activity chrome lives in MetadataRailToggle; its soft mask follows body
 	// scroll state while the body scrollport keeps its bottom-only mask.
@@ -357,7 +357,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	assert.doesNotMatch(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill/u);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*data-jira-work-item-scroll-region/u,
+		/data-jira-work-item-column-chrome[\s\S]*relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-none[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		metadataRailSource,

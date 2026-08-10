@@ -4,6 +4,8 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import CopyIcon from "@atlaskit/icon/core/copy";
+import MergeFailureIcon from "@atlaskit/icon/core/merge-failure";
 import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
 import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -14,9 +16,10 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -105,6 +108,57 @@ function isMergePrimaryEnabled({
 	}
 }
 
+/** Maps a PR URL hostname onto an SCM product label for “Open in …”. */
+function resolveScmProviderName(url: string | undefined): string {
+	if (!url) {
+		return "source control";
+	}
+
+	try {
+		const host = new URL(url).hostname.toLowerCase();
+		if (host.includes("bitbucket.")) {
+			return "Bitbucket";
+		}
+		if (host.includes("gitlab.")) {
+			return "GitLab";
+		}
+		if (host.includes("github.")) {
+			return "GitHub";
+		}
+	} catch {
+		// Fall through for non-URL strings.
+	}
+
+	return "source control";
+}
+
+function copyPullRequestUrl(url: string) {
+	void navigator.clipboard.writeText(url);
+}
+
+function openPullRequestUrl(url: string) {
+	window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function ScmProviderMark({ name }: Readonly<{ name: string }>) {
+	const normalizedName = name.toLowerCase();
+	if (normalizedName.includes("bitbucket")) {
+		return <AtlassianLogoMark frame="chip" label={name} name="bitbucket" />;
+	}
+	if (normalizedName.includes("gitlab")) {
+		return <BrandLogoMark frame="chip" label={name} name="gitlab" />;
+	}
+	if (normalizedName.includes("github")) {
+		return <BrandLogoMark frame="chip" label={name} name="github" />;
+	}
+
+	return (
+		<span className="text-icon-subtle">
+			<PullRequestIcon color="currentColor" label="" size="small" />
+		</span>
+	);
+}
+
 function CompactPullRequestStatusIcon({
 	status,
 }: Readonly<{ status: PullRequestHeaderStatus }>) {
@@ -162,7 +216,7 @@ function BranchName({ name }: Readonly<{ name: string }>) {
 
 /**
  * Full-width pull-request detail header: `#N` + title with a Merge split
- * button (primary label + Auto merge menu) and More actions, plus a
+ * button (primary label + Auto merge menu) and More actions menu, plus a
  * collapsible meta row for status, repository, and branch direction.
  */
 export function PullRequestHeader({
@@ -175,13 +229,16 @@ export function PullRequestHeader({
 	baseBranch,
 	headBranch,
 	repository,
+	url,
+	scmProviderName,
 	mergeState = DEFAULT_MERGE_STATE,
 	autoMerge,
 	defaultAutoMerge = DEFAULT_AUTO_MERGE,
 	onAutoMergeChange,
 	onMergeClick,
 	onChecksRunningClick,
-	onMoreActionsClick,
+	onConvertToDraftClick,
+	onClosePullRequestClick,
 	className,
 	...props
 }: Readonly<PullRequestHeaderProps>) {
@@ -242,6 +299,11 @@ export function PullRequestHeader({
 		onChecksRunningClick,
 		onMergeClick,
 	});
+	const resolvedScmProviderName =
+		scmProviderName ?? resolveScmProviderName(url);
+	const openInScmLabel = `Open in ${resolvedScmProviderName}`;
+	const hasPullRequestUrl = Boolean(url);
+	const canMutatePullRequest = status === "Open";
 	const handlePrimaryClick = () => {
 		switch (mergeState) {
 			case "ready":
@@ -370,15 +432,81 @@ export function PullRequestHeader({
 							</DropdownMenu>
 						</ButtonGroup>
 						<ButtonGroup>
-							<Button
-								aria-label="More actions"
-								disabled={!onMoreActionsClick}
-								onClick={onMoreActionsClick}
-								size="icon"
-								variant="outline"
-							>
-								<ShowMoreHorizontalIcon label="" size="small" />
-							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger
+									render={
+										<Button
+											aria-label="More actions"
+											size="icon"
+											variant="outline"
+										/>
+									}
+								>
+									<ShowMoreHorizontalIcon label="" size="small" />
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										disabled={!hasPullRequestUrl}
+										elemBefore={<CopyIcon label="" size="small" />}
+										onSelect={() => {
+											if (!url) {
+												return;
+											}
+											copyPullRequestUrl(url);
+										}}
+									>
+										Copy link
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										disabled={!hasPullRequestUrl}
+										elemBefore={<ScmProviderMark name={resolvedScmProviderName} />}
+										onSelect={() => {
+											if (!url) {
+												return;
+											}
+											openPullRequestUrl(url);
+										}}
+									>
+										{openInScmLabel}
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										disabled={!canMutatePullRequest || !onConvertToDraftClick}
+										elemBefore={
+											<span className="text-icon-subtle">
+												<PullRequestIcon
+													color="currentColor"
+													label=""
+													size="small"
+												/>
+											</span>
+										}
+										onSelect={() => {
+											onConvertToDraftClick?.();
+										}}
+									>
+										Convert to draft
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										disabled={!canMutatePullRequest || !onClosePullRequestClick}
+										elemBefore={
+											<span className="text-icon-danger">
+												<MergeFailureIcon
+													color="currentColor"
+													label=""
+													size="small"
+												/>
+											</span>
+										}
+										onSelect={() => {
+											onClosePullRequestClick?.();
+										}}
+										variant="destructive"
+									>
+										Close pull request
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</ButtonGroup>
 					</ButtonGroup>
 				</motion.div>
