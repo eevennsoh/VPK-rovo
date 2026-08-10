@@ -67,11 +67,11 @@ test("PullRequest selection styling works for read-only and interactive cards", 
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/const activeSelected = selected;[\s\S]*activeSelected[\s\S]*border-border-selected bg-bg-selected/u,
+		/const activeSelected = selected;[\s\S]*activeSelected\s*\?\s*"border-border-selected bg-bg-selected text-text-selected"\s*:\s*null,[\s\S]*onActivate && activeSelected\s*\?\s*"hover:bg-bg-selected-hovered"/u,
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/<div[\s\S]*data-pull-request=\{number\}[\s\S]*data-selected=\{selected \? "true" : undefined\}[\s\S]*role="group"/u,
+		/<div[\s\S]*aria-current=\{selected \? "true" : undefined\}[\s\S]*data-pull-request=\{number\}[\s\S]*data-selected=\{selected \? "true" : undefined\}[\s\S]*role="group"/u,
 	);
 	assert.match(COMPONENT_SOURCE, /border border-border bg-surface/u);
 	assert.match(
