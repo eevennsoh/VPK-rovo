@@ -44,10 +44,26 @@ test("Artifact Pane owns independently collapsible sections", () => {
 		/style=\{\{ backgroundColor: token\("elevation\.surface"\), \.\.\.style \}\}/u,
 	);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
-	assert.match(BLOCK_SOURCE, /function formatCollapsedSectionCount\(count: number \| string\): string/u);
-	assert.match(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);
-	assert.match(BLOCK_SOURCE, /return `· \$\{count\}`/u);
-	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? \([\s\S]*formatCollapsedSectionCount\(count\)/u);
+	assert.match(BLOCK_SOURCE, /function CollapsedSectionCount\(\{ count \}: Readonly<\{ count: number \| string \}>\)/u);
+	// All counts (numbers, ratios, labeled like "2/3 passed") use separate · + value siblings.
+	assert.doesNotMatch(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);
+	assert.match(BLOCK_SOURCE, /<span aria-hidden className=\{COLLAPSED_COUNT_CLASS_NAME\}>[\s\S]*·[\s\S]*<\/span>/u);
+	assert.match(BLOCK_SOURCE, /<span className=\{COLLAPSED_COUNT_CLASS_NAME\}>\{count\}<\/span>/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /return `· \$\{count\}`/u);
+	assert.doesNotMatch(BLOCK_SOURCE, /labeled counts[\s\S]*stay verbatim|render as provided/u);
+	assert.match(BLOCK_SOURCE, /!open && count !== undefined \? <CollapsedSectionCount count=\{count\} \/> : null/u);
+	assert.match(BLOCK_SOURCE, /className="flex min-w-0 items-center gap-1\.5 text-text-subtle/u);
+	assert.match(BLOCK_SOURCE, /openSectionIds\?: ReadonlySet<string>/u);
+	assert.match(BLOCK_SOURCE, /onOpenSectionIdsChange\?: \(openSectionIds: ReadonlySet<string>\) => void/u);
+	assert.match(BLOCK_SOURCE, /const isControlled = openSectionIdsProp !== undefined/u);
+	assert.doesNotMatch(
+		BLOCK_SOURCE,
+		/setUncontrolledOpenSectionIds\(\(current\) => \{[\s\S]*onOpenSectionIdsChange/u,
+	);
+	assert.match(
+		BLOCK_SOURCE,
+		/const next = apply\(uncontrolledOpenSectionIds\);[\s\S]*setUncontrolledOpenSectionIds\(next\);[\s\S]*onOpenSectionIdsChange\?\.\(next\)/u,
+	);
 	assert.match(BLOCK_SOURCE, /new Set\(sections\.filter\(\(section\) => section\.defaultOpen\)/u);
 	assert.match(BLOCK_SOURCE, /showSeparators = true/u);
 	assert.match(BLOCK_SOURCE, /showSeparators && index > 0 && \(open \|\| previousOpen\) \? \([\s\S]*className="px-3 py-1\.5"[\s\S]*<Separator \/>/u);
@@ -169,6 +185,11 @@ test("Artifact Pane demo provides editable, avatar-rich metadata fields", () => 
 	assert.match(PROJECT_FIELD_SOURCE, /export function ArtifactProjectField/u);
 	assert.match(PROJECT_FIELD_SOURCE, /PROJECT_AVATAR_SRCS[\s\S]*"esm-rfp-response": "\/avatar-project\/rocket\.svg"/u);
 	assert.match(PROJECT_FIELD_SOURCE, /<Tile aria-hidden className="p-0" isSnug/u);
+	// Full-bleed 24px tile (`p-0` + isSnug) + gap-2 = true 8px avatar→name gap.
+	assert.match(
+		PROJECT_FIELD_SOURCE,
+		/selected \? \([\s\S]*className="flex min-w-0 items-center gap-2"[\s\S]*<ProjectAvatar/u,
+	);
 	assert.match(PROJECT_FIELD_SOURCE, /<ProjectAvatar name=\{selected\.name\} src=\{selected\.avatarSrc\} \/>/u);
 	assert.match(PROJECT_FIELD_SOURCE, /icon: null,[\s\S]*visual: \{ kind: "avatar", shape: "square", src: project\.avatarSrc \}/u);
 	assert.match(DEMO_SOURCE, /className="mt-1 self-start text-xs leading-5 text-text-subtle underline-offset-2 hover:underline focus-visible:underline"/u);

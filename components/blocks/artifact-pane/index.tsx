@@ -24,9 +24,9 @@ export interface ArtifactPaneSectionItem {
 	 */
 	collapsible?: boolean;
 	/**
-	 * Collapsed summary rendered after the title.
-	 * Plain numbers and ratios (`"1/3"`) get an Attachments-style `· N` prefix;
-	 * labeled strings (e.g. `"3 open"`) render as provided.
+	 * Collapsed summary rendered after the title as separate `·` and value siblings
+	 * (parent `gap-1.5` = 6px). Accepts plain numbers, ratios (`"1/3"`), and labeled
+	 * strings (e.g. `"2/3 passed"`, `"3 open"`).
 	 */
 	count?: number | string;
 	defaultOpen?: boolean;
@@ -40,16 +40,29 @@ export interface ArtifactPaneSectionItem {
 
 export interface ArtifactPaneProps extends Omit<ComponentProps<"section">, "children"> {
 	borderless?: boolean;
+	/**
+	 * Controlled open section ids. When omitted, open state is owned internally
+	 * from each section's `defaultOpen`.
+	 */
+	openSectionIds?: ReadonlySet<string>;
+	/** Called when a disclosure opens or closes (controlled or uncontrolled). */
+	onOpenSectionIdsChange?: (openSectionIds: ReadonlySet<string>) => void;
 	sections: readonly ArtifactPaneSectionItem[];
 	showSeparators?: boolean;
 }
 
-/** Numbers/ratios keep `· N`; labeled counts (e.g. `"3 open"`) render verbatim. */
-function formatCollapsedSectionCount(count: number | string): string {
-	if (typeof count === "number" || /^\d+(?:\/\d+)?$/u.test(count)) {
-		return `· ${count}`;
-	}
-	return count;
+const COLLAPSED_COUNT_CLASS_NAME = "shrink-0 text-xs font-normal text-text-subtlest";
+
+/** Separate `·` + value siblings so parent `gap-1.5` owns the 6px title→sep→count gaps. */
+function CollapsedSectionCount({ count }: Readonly<{ count: number | string }>) {
+	return (
+		<>
+			<span aria-hidden className={COLLAPSED_COUNT_CLASS_NAME}>
+				·
+			</span>
+			<span className={COLLAPSED_COUNT_CLASS_NAME}>{count}</span>
+		</>
+	);
 }
 
 export function ArtifactPanePropertyRow({
@@ -113,11 +126,7 @@ function ArtifactPaneDisclosure({
 						style={{ font: token("font.heading.xxsmall") }}
 					>
 						{title}
-						{!open && count !== undefined ? (
-							<span className="shrink-0 text-xs font-normal text-text-subtlest">
-								{formatCollapsedSectionCount(count)}
-							</span>
-						) : null}
+						{!open && count !== undefined ? <CollapsedSectionCount count={count} /> : null}
 					</span>
 					<motion.span
 						animate={{ rotate: open ? 90 : 0 }}
@@ -168,17 +177,21 @@ export function ArtifactPane({
 	"aria-label": ariaLabel = "Artifact details",
 	borderless = false,
 	className,
+	openSectionIds: openSectionIdsProp,
+	onOpenSectionIdsChange,
 	sections,
 	showSeparators = true,
 	style,
 	...props
 }: Readonly<ArtifactPaneProps>) {
-	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(
+	const [uncontrolledOpenSectionIds, setUncontrolledOpenSectionIds] = useState<ReadonlySet<string>>(
 		() => new Set(sections.filter((section) => section.defaultOpen).map((section) => section.id)),
 	);
+	const isControlled = openSectionIdsProp !== undefined;
+	const openSectionIds = isControlled ? openSectionIdsProp : uncontrolledOpenSectionIds;
 
 	const setSectionOpen = (id: string, open: boolean) => {
-		setOpenSectionIds((current) => {
+		const apply = (current: ReadonlySet<string>) => {
 			const next = new Set(current);
 			if (open) {
 				next.add(id);
@@ -186,7 +199,14 @@ export function ArtifactPane({
 				next.delete(id);
 			}
 			return next;
-		});
+		};
+		if (isControlled) {
+			onOpenSectionIdsChange?.(apply(openSectionIds));
+			return;
+		}
+		const next = apply(uncontrolledOpenSectionIds);
+		setUncontrolledOpenSectionIds(next);
+		onOpenSectionIdsChange?.(next);
 	};
 
 	return (

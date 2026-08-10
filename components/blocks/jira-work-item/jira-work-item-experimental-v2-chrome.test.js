@@ -73,6 +73,15 @@ test("experimental v2 places Status and Reported by under the title", () => {
 		/className=\{cn\("min-w-0 truncate", PERSON_LABEL_TEXT_CLASS\[size\]\)\}/u,
 	);
 	assert.match(personLabelSource, /size = "sm"/u);
+	// Assignee / priority value rows share an 8px (gap-2) icon→text gap.
+	assert.match(
+		personLabelSource,
+		/export function PersonLabel\([\s\S]*className="flex min-w-0 items-center gap-2"/u,
+	);
+	assert.match(
+		personLabelSource,
+		/export function PriorityLabel\([\s\S]*className="flex min-w-0 items-center gap-2"[\s\S]*<IconTile[\s\S]*size="small"[\s\S]*variant="transparent"/u,
+	);
 });
 
 test("experimental v2 Details shows Priority as a primary always-visible field", () => {
@@ -120,7 +129,7 @@ test("experimental v2 reveals description mode tabs across the description scope
 	// Layout hover group wraps header + left column only — not the metadata rail.
 	assert.match(
 		layoutSource,
-		/className="group\/description-scope contents">[\s\S]*\{header\}[\s\S]*\{context\}[\s\S]*<\/div>\s*<AnimatePresence[\s\S]*id="experimental-work-item-metadata-panel"/u,
+		/className="group\/description-scope contents">[\s\S]*<DescriptionColumnShell[\s\S]*chrome=\{header\}[\s\S]*\{context\(leftScrollContainerRef\)\}[\s\S]*<\/div>\s*<\/div>\s*<AnimatePresence[\s\S]*id="experimental-work-item-metadata-panel"/u,
 	);
 	assert.doesNotMatch(
 		layoutSource,
@@ -184,28 +193,37 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 		contextPanelSource,
 		/export function ContextPanel\([\s\S]*<section aria-label="Work item context" className="flex flex-col">[\s\S]*selectedPullRequestEntry \? \([\s\S]*<PullRequestDetailView[\s\S]*\) : \([\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
 	);
+	assert.doesNotMatch(
+		contextPanelSource,
+		/Loading pull request details|data-jira-work-item-pull-request-detail-loading/u,
+	);
 	assert.doesNotMatch(contextPanelSource, /export function ContextPanel\([\s\S]*<ContextTitleBar|export function ContextPanel\([\s\S]*<ContextResources/u);
-	// Chrome stays inside the scrollport so the first field's focus halo has
-	// room to paint above it; sticky positioning preserves resting geometry.
+	// Chrome is outside the scrollport, so the native scrollbar begins below
+	// the controls and the first body field keeps its focus-ring clearance.
 	assert.match(
 		layoutSource,
-		/grid-rows-\[minmax\(0,1fr\)\][\s\S]*DescriptionColumnShell[\s\S]*chrome=\{header\}[\s\S]*\{context\}[\s\S]*id="experimental-work-item-metadata-panel"[\s\S]*\{metadata\}/u,
+		/grid-rows-\[minmax\(0,1fr\)\][\s\S]*DescriptionColumnShell[\s\S]*chrome=\{header\}[\s\S]*\{context\(leftScrollContainerRef\)\}[\s\S]*id="experimental-work-item-metadata-panel"[\s\S]*\{metadata\}/u,
 	);
 	assert.match(
 		layoutSource,
-		/function DescriptionColumnShell\([\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-jira-work-item-column-body/u,
+		/function DescriptionColumnShell\([\s\S]*data-jira-work-item-column-chrome[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body/u,
 	);
-	// Sticky chrome owns the top seam; the scrollport keeps only its bottom mask.
+	// Fixed chrome owns the top seam; the scrollport keeps only its bottom mask.
 	assert.match(
 		layoutSource,
 		/function useColumnScrollMask\([\s\S]*fadeTop: false,[\s\S]*fadeBottom: showBottomScrollMask/u,
 	);
-	// Wide chrome is sticky/scroll-state-aware, while its descendant owns the
-	// conditional fill so scrollTop 0 remains transparent.
+	// Wide chrome is a fixed sibling above the body-only scrollport, so native
+	// scrollbars start below the controls.
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-scroll-region[\s\S]*order-1 shrink-0 @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-20 @\[860px\]\/agentlayout:\[container-type:scroll-state\]"[\s\S]*data-jira-work-item-column-chrome[\s\S]*\{chrome\}/u,
+		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-scroll-fade-visible=\{showTopScrollMask \? "" : undefined\}[\s\S]*\{chrome\}[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-body/u,
 	);
+	assert.doesNotMatch(
+		layoutSource,
+		/data-jira-work-item-column-chrome[^>]*overflow-y-auto|COLUMN_CHROME_HEIGHT_VAR|container-type:scroll-state/u,
+	);
+	assert.doesNotMatch(layoutSource, /pinColumnChrome/u);
 	// Body is a z-0 stacking context so mermaid/code sticky z-10 cannot cover chrome.
 	assert.match(
 		layoutSource,
@@ -213,21 +231,20 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		layoutSource,
-		/order-2 contents @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome/u,
+		/data-jira-work-item-column-chrome[\s\S]*order-2 contents @\[860px\]\/agentlayout:relative @\[860px\]\/agentlayout:block[\s\S]*@\[860px\]\/agentlayout:overflow-y-auto @\[860px\]\/agentlayout:px-6 @\[860px\]\/agentlayout:pb-6"[\s\S]*data-jira-work-item-scroll-region/u,
 	);
 	assert.match(
 		contextResourcesSource,
-		/@\[860px\]\/agentlayout:pt-6[\s\S]*data-jira-work-item-column-chrome-fill=\{hasPlanner \? "input" : "overlay"\}[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:pb-7/u,
+		/@\[860px\]\/agentlayout:pt-6[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:pb-7/u,
 	);
-	// Sticky/scroll-state live on the layout chrome wrapper; the resource row
-	// owns StickyRowScrollFade for the stuck-top soft mask.
+	// The resource row owns the top-edge fade driven by its sibling scrollport.
 	assert.doesNotMatch(
 		contextResourcesSource,
 		/sticky top-0|container-type:scroll-state/u,
 	);
 	assert.match(
 		contextResourcesSource,
-		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade[\s\S]*className=\{hasPlanner \? "\[&>div\]:from-bg-input" : undefined\}[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-resource-row[\s\S]*pullRequestSelected \? null : \([\s\S]*<StickyRowScrollFade[\s\S]*group-data-\[scroll-fade-visible\]:opacity-100[\s\S]*from-bg-input[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
 	);
 	assert.match(
 		contextPanelSource,
@@ -236,10 +253,6 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.match(
 		layoutSource,
 		/const contentStyle = \{[\s\S]*"--metadata-panel-offset"[\s\S]*\[margin-right:var\(--metadata-panel-offset\)\][\s\S]*style=\{contentStyle\}/u,
-	);
-	assert.match(
-		layoutSource,
-		/import \{ METADATA_PANEL_WIDTH \} from "@\/components\/blocks\/jira-work-item\/experimental-v2\/lib\/layout-constants"/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v2/lib/layout-constants.ts"),
@@ -287,10 +300,9 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-trigger\]\[data-active\]\]:bg-bg-input/u);
 	assert.match(contextResourcesSource, /StickyRowScrollFade[\s\S]*from-bg-input/u);
 	assert.doesNotMatch(contextResourcesSource, /<div className="flex flex-col gap-4">/u);
-	// Scroll-state adds the semantic solid fill only once the sticky anchor moves.
-	assert.match(
+	assert.doesNotMatch(
 		globalCss,
-		/@container scroll-state\(stuck: top\) \{[\s\S]*\[data-jira-work-item-column-chrome-fill="overlay"\] \{[\s\S]*background: var\(--ds-surface-overlay, #fff\);[\s\S]*\[data-jira-work-item-column-chrome-fill="input"\] \{[\s\S]*background: var\(--ds-background-input, #fff\);/u,
+		/data-jira-work-item-column-chrome-fill/u,
 	);
 	assert.match(
 		globalCss,

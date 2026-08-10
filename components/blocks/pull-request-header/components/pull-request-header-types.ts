@@ -1,15 +1,16 @@
-import type { ComponentProps, RefObject } from "react";
+import type { RefObject } from "react";
+import type { HTMLMotionProps } from "motion/react";
 
 export type PullRequestHeaderStatus = "Open" | "Merged";
 export type PullRequestHeaderVariant = "expanded" | "compact";
-/** Controls the Merge button label in the title-row action group. */
+/** Controls the Merge split-button primary label in the title-row action group. */
 export type PullRequestHeaderMergeState =
 	| "checks-running"
 	| "merge-conflicts"
 	| "ready";
 
 export interface PullRequestHeaderProps
-	extends Omit<ComponentProps<"header">, "children"> {
+	extends Omit<HTMLMotionProps<"header">, "children"> {
 	/** Controlled presentation. Overrides scroll-driven collapse when provided. */
 	variant?: PullRequestHeaderVariant;
 	/** Scrollable element that automatically collapses the header when scrolled. */
@@ -29,21 +30,27 @@ export interface PullRequestHeaderProps
 	/** Owner/name path (e.g. `eevensoh/vpk-rovo`). */
 	repository: string;
 	/**
-	 * Merge button label state.
+	 * Merge split-button primary label state.
 	 * `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts",
 	 * `"ready"` → "Merge". Defaults to `"ready"`.
+	 * Primary is enabled when `ready` + `onMergeClick`, or `checks-running` +
+	 * `onChecksRunningClick`. `merge-conflicts` stays disabled (no related primary
+	 * action yet). The chevron menu stays available for Auto merge.
 	 */
 	mergeState?: PullRequestHeaderMergeState;
-	/** Controlled auto-merge toggle pressed state. */
+	/** Controlled Auto merge switch state (menu option). */
 	autoMerge?: boolean;
-	/** Uncontrolled auto-merge default. Defaults to `true` (on). */
+	/** Uncontrolled Auto merge default. Defaults to `true` (on). */
 	defaultAutoMerge?: boolean;
-	/** Called when the auto-merge toggle changes. */
+	/** Called when the Auto merge switch (merge options menu) changes. */
 	onAutoMergeChange?: (enabled: boolean) => void;
-	/** Called when the Chat icon button is activated. */
-	onChatClick?: () => void;
-	/** Called when the Merge button is activated. */
+	/** Called when the Merge primary action is activated (`ready` only). */
 	onMergeClick?: () => void;
+	/**
+	 * Called when the Checks running primary is activated (`checks-running` only).
+	 * Consumers typically expand the CI checks disclosure in the metadata rail.
+	 */
+	onChecksRunningClick?: () => void;
 	/** Called when the More actions (ellipsis) icon button is activated. */
 	onMoreActionsClick?: () => void;
 }

@@ -23,6 +23,8 @@ export interface PullRequestPerson {
 	id: string;
 	name: string;
 	avatarSrc?: string;
+	/** When omitted, treat as a human person avatar. */
+	kind?: "person" | "agent" | "app";
 }
 
 export interface PullRequestReviewer extends PullRequestPerson {
@@ -43,6 +45,8 @@ export interface PullRequestCommit {
 	timestamp: string;
 	additions: number;
 	deletions: number;
+	/** SCM commit page URL opened from the commits rail SHA. */
+	url?: string;
 }
 
 export interface PullRequestCheck {
@@ -50,6 +54,8 @@ export interface PullRequestCheck {
 	name: string;
 	status: "passed" | "failed" | "running" | "queued";
 	details: string;
+	/** SCM check-run / Actions URL opened from the CI checks rail row. */
+	url?: string;
 }
 
 export type PullRequestReviewDecision =
@@ -105,6 +111,8 @@ export type PullRequestActivity =
 
 export interface PullRequestGuidedReview {
 	summary: readonly string[];
+	/** Full markdown body for the Overview TipTap description editor. */
+	description: string;
 	chapters: readonly PullRequestGuideChapter[];
 	files: readonly PullRequestReviewFile[];
 }
@@ -137,17 +145,6 @@ export interface PullRequestDetailData {
 	activity: readonly PullRequestActivity[];
 	url: string;
 	guidedReview: PullRequestGuidedReview | null;
-}
-
-/** Convert guided-review summary bullets into markdown for the shared description editor. */
-export function formatPullRequestDescriptionMarkdown(
-	summary: readonly string[],
-): string {
-	if (summary.length === 0) {
-		return "";
-	}
-	const bullets = summary.map((item) => `- ${item}`).join("\n");
-	return `## Summary\n\n${bullets}`;
 }
 
 const GUIDED_REVIEW_FILES = [
@@ -278,6 +275,28 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 		"Keeps privileged order creation on the server behind a dedicated guest-order route.",
 		"Preserves checkout details after recoverable errors and verifies the full guest flow.",
 	],
+	description: `Adds a guest checkout path so shoppers can finish purchase without creating an account, while keeping privileged commerce work on the server.
+
+#### Summary
+
+- Lets shoppers complete checkout without creating an account.
+- Keeps privileged order creation on the server behind a dedicated guest-order route.
+- Preserves checkout details after recoverable errors and verifies the full guest flow.
+
+#### Changes
+
+- **Storefront guest flow** — Replace the account-required checkout entry with \`GuestCheckoutForm\`, wired to \`createGuestOrder\` and \`restoreCheckoutDraft\` so delivery and contact details survive recoverable failures.
+- **Guest-order route** — Narrow \`POST /guest-orders\` to accept cart, delivery, and email only, then delegate to \`guestOrderService.create\` instead of creating orders from the raw request body.
+- **Server-owned order service** — Create guest orders with \`customerMode: "guest"\` and return a recovery token so the client can resume safely after validation or payment issues.
+- **Browser coverage** — Extend the guest checkout Playwright spec to click “Checkout as guest”, submit email, place the order, and assert the confirmation heading.
+
+#### Test plan
+
+- [ ] From cart or sign-in, choose **Checkout as guest** and complete delivery → payment → confirmation without creating an account
+- [ ] Confirm declined payments and recoverable validation errors keep safe checkout fields populated
+- [ ] Retry a failed submission and verify the guest-order route does not create a duplicate order
+- [ ] Spot-check that privileged pricing / inventory / order creation still runs only through the guest-order service
+- [ ] Run lint, unit tests, and the guest checkout browser suite`,
 	chapters: [
 		{
 			id: "start-guest-checkout",
@@ -328,6 +347,8 @@ const GITHUB: PullRequestActivityActor = {
 	kind: "app",
 };
 
+const GUIDED_REVIEW_REPO_COMMIT_URL = "https://github.com/eevensoh/vpk-rovo/commit";
+
 const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 	{
 		id: "5f02a91",
@@ -337,6 +358,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "17 minutes ago",
 		additions: 34,
 		deletions: 8,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/5f02a91`,
 	},
 	{
 		id: "91c73d4",
@@ -346,6 +368,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "15 minutes ago",
 		additions: 24,
 		deletions: 6,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/91c73d4`,
 	},
 	{
 		id: "a2f74c1",
@@ -355,6 +378,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "12 minutes ago",
 		additions: 18,
 		deletions: 4,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/a2f74c1`,
 	},
 	{
 		id: "d34c112",
@@ -364,6 +388,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "10 minutes ago",
 		additions: 10,
 		deletions: 3,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/d34c112`,
 	},
 	{
 		id: "8b4e6fa",
@@ -373,6 +398,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "5 minutes ago",
 		additions: 7,
 		deletions: 2,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/8b4e6fa`,
 	},
 	{
 		id: "f8cc291",
@@ -382,13 +408,32 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		timestamp: "3 minutes ago",
 		additions: 5,
 		deletions: 1,
+		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/f8cc291`,
 	},
 ];
 
 const GUIDED_REVIEW_CHECKS: readonly PullRequestCheck[] = [
-	{ id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Completed in 1m 18s" },
-	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
-	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+	{
+		id: "lint-types",
+		name: "Lint and typecheck",
+		status: "passed",
+		details: "Completed in 1m 18s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471001",
+	},
+	{
+		id: "unit-tests",
+		name: "Unit tests",
+		status: "passed",
+		details: "418 tests in 2m 46s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471002",
+	},
+	{
+		id: "browser-tests",
+		name: "Guest checkout browser tests",
+		status: "passed",
+		details: "5 scenarios in 1m 32s",
+		url: "https://github.com/eevensoh/vpk-rovo/actions/runs/18471003",
+	},
 ];
 
 const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
@@ -503,6 +548,17 @@ function resolveGuidedReviewActivity(
 	));
 }
 
+/**
+ * Whether the CI checks section title should show an indeterminate Spinner.
+ * A blocked merge can be fully settled on a failed check, so only non-terminal
+ * check rows count as progress.
+ */
+export function arePullRequestChecksInProgress(
+	checks: readonly PullRequestCheck[],
+): boolean {
+	return checks.some((check) => check.status === "running" || check.status === "queued");
+}
+
 /** Keep merge status aligned with the rail CI checklist when SCM omits mergeState. */
 function resolveMergeState(
 	status: "Open" | "Merged",
@@ -546,13 +602,11 @@ export function resolvePullRequestDetailData(
 		identity,
 		number: pullRequest.number,
 		title: pullRequest.title,
-		description: guidedReview
-			? formatPullRequestDescriptionMarkdown(guidedReview.summary)
-			: "",
+		description: guidedReview?.description ?? "",
 		repository,
 		status: pullRequest.status,
-		authorName: pullRequest.authorName ?? "Unknown author",
-		authorAvatarSrc: guidedReview ? "/avatar-user/venn/venn.png" : undefined,
+		authorName: pullRequest.authorName ?? (isGuidedReview ? VENN.name : "Unknown author"),
+		authorAvatarSrc: isGuidedReview ? (VENN.avatarSrc ?? undefined) : undefined,
 		baseBranch: guidedReview ? "main" : null,
 		headBranch: guidedReview ? "feature/shop-4821-guest-checkout" : null,
 		additions: pullRequest.additions,

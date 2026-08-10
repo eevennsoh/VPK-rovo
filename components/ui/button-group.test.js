@@ -49,7 +49,9 @@ test("the split variation preserves connected geometry and uses the correct seam
 	assert.match(BUTTON_SOURCE, /data-variant=\{variant \?\? "default"\}/u);
 });
 
-test("selected segments after the first paint a leading stroke without changing seam geometry", () => {
+const LATER_SEGMENT_SELECTOR = "[&>[data-slot]~[data-slot]]";
+
+test("later segments keep a transparent leading :before mounted for seam transitions", () => {
 	const requiredOverlayClasses = [
 		":relative",
 		":before:pointer-events-none",
@@ -57,39 +59,42 @@ test("selected segments after the first paint a leading stroke without changing 
 		":before:inset-y-0",
 		":before:-left-px",
 		":before:w-px",
-		":before:bg-border-selected",
+		":before:bg-transparent",
 		":before:content-['']",
+		":before:transition-[background-color]",
 	];
 
 	for (const className of requiredOverlayClasses) {
 		assert.ok(
-			BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}${className}`),
-			`selected segment seam is missing ${className}`,
+			BUTTON_GROUP_SOURCE.includes(`${LATER_SEGMENT_SELECTOR}${className}`),
+			`later segment seam is missing ${className}`,
 		);
 	}
+
+	// Seam color must track Button border-color timing; do not invent a second curve.
+	assert.equal(
+		BUTTON_SOURCE.includes(
+			"transition-[background-color,border-color,box-shadow,color,opacity]",
+		),
+		true,
+	);
+});
+
+test("selected segments after the first paint a leading stroke without changing seam geometry", () => {
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:before:bg-border-selected`),
+		"selected segment seam is missing :before:bg-border-selected",
+	);
 
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:-ml-px`));
 	assert.ok(!BUTTON_GROUP_SOURCE.includes(`${SELECTED_SEGMENT_SELECTOR}:border-l`));
 });
 
 test("focus-visible segments after the first paint a leading ring-colored stroke", () => {
-	const requiredOverlayClasses = [
-		":relative",
-		":before:pointer-events-none",
-		":before:absolute",
-		":before:inset-y-0",
-		":before:-left-px",
-		":before:w-px",
-		":before:bg-ring",
-		":before:content-['']",
-	];
-
-	for (const className of requiredOverlayClasses) {
-		assert.ok(
-			BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}${className}`),
-			`focus-visible segment seam is missing ${className}`,
-		);
-	}
+	assert.ok(
+		BUTTON_GROUP_SOURCE.includes(`${FOCUS_VISIBLE_SEGMENT_SELECTOR}:before:bg-ring`),
+		"focus-visible segment seam is missing :before:bg-ring",
+	);
 });
 
 test("all button variants inherit one shared pressed and expanded state contract", () => {

@@ -1,31 +1,61 @@
+"use client";
+
+import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
+
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import CheckCircleUncheckedIcon from "@atlaskit/icon/core/check-circle-unchecked";
-import MergeSuccessIcon from "@atlaskit/icon/core/merge-success";
+import CopyIcon from "@atlaskit/icon/core/copy";
+import LinkExternalIcon from "@atlaskit/icon/core/link-external";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StatusErrorIcon from "@atlaskit/icon/core/status-error";
 import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { ArtifactPane, ArtifactPanePropertyRow } from "@/components/blocks/artifact-pane";
-import type {
-	PullRequestCheck,
-	PullRequestCommit,
-	PullRequestDetailData,
-	PullRequestMergeState,
-	PullRequestPerson,
-	PullRequestReviewer,
+import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
+import {
+	arePullRequestChecksInProgress,
+	type PullRequestCheck,
+	type PullRequestCommit,
+	type PullRequestDetailData,
+	type PullRequestPerson,
+	type PullRequestReviewer,
 } from "@/components/blocks/jira-work-item/experimental-v2/lib/pull-request-detail-data";
 import {
 	Avatar,
 	AvatarFallback,
-	AvatarGroup,
 	AvatarImage,
 	AvatarStatusIndicator,
 	type AvatarStatus,
 } from "@/components/ui/avatar";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Spinner } from "@/components/ui/spinner";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { cn } from "@/lib/utils";
+
+function copyCommitSha(event: MouseEvent<HTMLButtonElement>, sha: string) {
+	event.preventDefault();
+	event.stopPropagation();
+	void navigator.clipboard.writeText(sha);
+}
+
+function openScmUrl(url: string) {
+	window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function handleScmLinkKeyDown(event: KeyboardEvent<HTMLElement>, url: string) {
+	if (event.key === "Enter" || event.key === " ") {
+		event.preventDefault();
+		openScmUrl(url);
+	}
+}
+
+/** ArtifactPane section id for the CI checks disclosure. */
+export const PULL_REQUEST_CHECKS_SECTION_ID = "pull-request-checks";
 
 const REVIEWER_STATUS = {
 	approved: { label: "Approved", tone: "success" },
@@ -34,21 +64,11 @@ const REVIEWER_STATUS = {
 	pending: { label: "Pending", tone: "neutral" },
 } as const;
 
-const MERGE_STATE: Record<
-	PullRequestMergeState,
-	Readonly<{ label: string; tone: "danger" | "discovery" | "success" | "warning" }>
-> = {
-	ready: { label: "Ready to merge", tone: "success" },
-	blocked: { label: "Blocked by checks", tone: "warning" },
-	conflicts: { label: "Resolve conflicts", tone: "danger" },
-	merged: { label: "Merged", tone: "discovery" },
-};
-
 const CHECK_STATUS = {
-	passed: { label: "Passed", tone: "success", icon: CheckCircleIcon, iconClassName: "text-icon-success" },
-	failed: { label: "Failed", tone: "danger", icon: StatusErrorIcon, iconClassName: "text-icon-danger" },
-	running: { label: "Running", tone: "information", icon: StatusWarningIcon, iconClassName: "text-icon-information" },
-	queued: { label: "Queued", tone: "neutral", icon: CheckCircleUncheckedIcon, iconClassName: "text-icon-subtle" },
+	passed: { label: "Passed", icon: CheckCircleIcon, iconClassName: "text-icon-success" },
+	failed: { label: "Failed", icon: StatusErrorIcon, iconClassName: "text-icon-danger" },
+	running: { label: "Running", icon: StatusWarningIcon, iconClassName: "text-icon-information" },
+	queued: { label: "Queued", icon: CheckCircleUncheckedIcon, iconClassName: "text-icon-subtle" },
 } as const;
 
 function reviewerAvatarStatus(status: PullRequestReviewer["status"]): AvatarStatus | null {
@@ -68,8 +88,9 @@ function reviewerAvatarStatus(status: PullRequestReviewer["status"]): AvatarStat
 }
 
 function PersonAvatar({ person, size = "sm" }: Readonly<{ person: PullRequestPerson; size?: "xs" | "sm" }>) {
+	const isAgent = person.kind === "agent";
 	return (
-		<Avatar label={person.name} size={size}>
+		<Avatar label={person.name} shape={isAgent ? "hexagon" : "circle"} size={size}>
 			{person.avatarSrc ? <AvatarImage alt="" src={person.avatarSrc} /> : null}
 			<AvatarFallback>{person.name.slice(0, 1).toUpperCase()}</AvatarFallback>
 		</Avatar>
@@ -78,24 +99,28 @@ function PersonAvatar({ person, size = "sm" }: Readonly<{ person: PullRequestPer
 
 function ReviewersValue({ reviewers }: Readonly<{ reviewers: readonly PullRequestReviewer[] }>) {
 	if (reviewers.length === 0) {
-		return <p className="text-xs text-text-subtle">No reviewers requested</p>;
+		return <span className="text-text-subtle">No reviewers requested</span>;
 	}
 
 	return (
-		<AvatarGroup
-			data-jira-work-item-pull-request-reviewers
-			label={`Reviewers: ${reviewers
+		<div
+			aria-label={`Reviewers: ${reviewers
 				.map((reviewer) => `${reviewer.name} (${REVIEWER_STATUS[reviewer.status].label})`)
 				.join(", ")}`}
+			className="flex items-center gap-1"
+			data-jira-work-item-pull-request-reviewers
+			role="group"
 		>
 			{reviewers.map((reviewer) => {
 				const status = REVIEWER_STATUS[reviewer.status];
 				const avatarStatus = reviewerAvatarStatus(reviewer.status);
+				const isAgent = reviewer.kind === "agent";
 				return (
 					<Avatar
 						key={reviewer.id}
 						label={`${reviewer.name}, ${status.label}`}
-						size="sm"
+						shape={isAgent ? "hexagon" : "circle"}
+						size="default"
 						title={`${reviewer.name}: ${status.label}`}
 					>
 						{reviewer.avatarSrc ? <AvatarImage alt="" src={reviewer.avatarSrc} /> : null}
@@ -104,7 +129,7 @@ function ReviewersValue({ reviewers }: Readonly<{ reviewers: readonly PullReques
 					</Avatar>
 				);
 			})}
-		</AvatarGroup>
+		</div>
 	);
 }
 
@@ -115,41 +140,99 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 
 	return (
 		<ul className="flex flex-col" data-jira-work-item-pull-request-commits>
-			{commits.map((commit) => (
-				<li className="min-w-0" key={commit.id}>
-					<div className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 flex-col px-2 py-2">
-						<div className="flex min-w-0 items-center gap-2">
-							<span className="min-w-0 flex-1 text-sm text-text">{commit.title}</span>
-							<span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums">
-								<span className="text-text-success">+{commit.additions}</span>
-								<span className="text-text-danger">-{commit.deletions}</span>
-							</span>
+			{commits.map((commit) => {
+				const commitUrl = commit.url;
+				return (
+					<li className="min-w-0" key={commit.id}>
+						<div
+							className={cn(
+								"group -mx-2 flex w-[calc(100%+1rem)] min-w-0 flex-col rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
+								commitUrl ? "cursor-pointer" : null,
+							)}
+							role={commitUrl ? "link" : undefined}
+							tabIndex={commitUrl ? 0 : undefined}
+							onClick={
+								commitUrl
+									? () => {
+											openScmUrl(commitUrl);
+										}
+									: undefined
+							}
+							onKeyDown={
+								commitUrl
+									? (event) => {
+											handleScmLinkKeyDown(event, commitUrl);
+										}
+									: undefined
+							}
+						>
+							<div className="flex min-w-0 items-center gap-2">
+								<span className="min-w-0 flex-1 text-sm text-text">{commit.title}</span>
+								<span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums">
+									<span className="text-text-success">+{commit.additions}</span>
+									<span className="text-text-danger">-{commit.deletions}</span>
+								</span>
+							</div>
+							<div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-subtlest">
+								<span className="flex min-w-0 items-center gap-1">
+									<PersonAvatar person={commit.author} size="xs" />
+									<span className="min-w-0 truncate">{commit.author.name}</span>
+								</span>
+								<span aria-hidden>·</span>
+								<span className="shrink-0">{commit.timestamp}</span>
+								<span aria-hidden>·</span>
+								<span className="inline-flex shrink-0 items-center gap-0.5">
+									<code className="font-mono text-text-subtlest">{commit.shortSha}</code>
+									<Button
+										aria-label={`Copy commit ${commit.shortSha}`}
+										className={cn(
+											"size-3! min-h-0 min-w-0 p-0 text-icon-subtle hover:bg-transparent hover:text-icon",
+											"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+											"group-hover:pointer-events-auto group-hover:opacity-100",
+											"group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+											"focus-visible:pointer-events-auto focus-visible:opacity-100",
+											"motion-reduce:transition-none",
+										)}
+										size="icon-compact"
+										type="button"
+										variant="ghost"
+										onClick={(event) => {
+											copyCommitSha(event, commit.shortSha);
+										}}
+									>
+										<Icon aria-hidden className="size-3" render={<CopyIcon label="" size="small" />} />
+									</Button>
+								</span>
+							</div>
 						</div>
-						<div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-text-subtlest">
-							<PersonAvatar person={commit.author} size="xs" />
-							<span className="min-w-0 truncate">{commit.author.name}</span>
-							<span aria-hidden>·</span>
-							<span className="shrink-0">{commit.timestamp}</span>
-							<code className="shrink-0 font-mono">{commit.shortSha}</code>
-						</div>
-					</div>
-				</li>
-			))}
+					</li>
+				);
+			})}
 		</ul>
 	);
 }
 
-function ChecksSectionTitle({ passed, total }: Readonly<{ passed: number; total: number }>) {
+function ChecksSectionTitle({
+	inProgress,
+	passed,
+	total,
+}: Readonly<{ inProgress: boolean; passed: number; total: number }>) {
 	return (
 		<>
 			CI checks
-			<ProgressCircle
-				aria-hidden
-				animated={false}
-				size="xs"
-				value={total > 0 ? Math.round((passed / total) * 100) : 0}
-				variant="outline"
-			/>
+			{inProgress ? (
+				<span aria-hidden>
+					<Spinner size="xs" />
+				</span>
+			) : (
+				<ProgressCircle
+					aria-hidden
+					animated={false}
+					size="xs"
+					value={total > 0 ? Math.round((passed / total) * 100) : 0}
+					variant="outline"
+				/>
+			)}
 		</>
 	);
 }
@@ -160,20 +243,72 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 	}
 
 	return (
-		<ul className="flex flex-col gap-2" data-jira-work-item-pull-request-checks>
+		<ul className="flex flex-col" data-jira-work-item-pull-request-checks>
 			{checks.map((check) => {
 				const status = CHECK_STATUS[check.status];
 				const StatusIcon = status.icon;
+				const checkUrl = check.url;
 				return (
-					<li className="flex min-w-0 items-center gap-2 text-xs" key={check.id}>
-						<span aria-hidden className={status.iconClassName}>
-							<StatusIcon label="" size="small" />
-						</span>
+					<li
+						className={cn(
+							"group/check-row relative -mx-2 flex w-[calc(100%+1rem)] min-w-0 items-center gap-3 rounded-md px-2 py-2 transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered motion-reduce:transition-none",
+							checkUrl ? "cursor-pointer pe-7" : null,
+						)}
+						key={check.id}
+						role={checkUrl ? "link" : undefined}
+						tabIndex={checkUrl ? 0 : undefined}
+						onClick={
+							checkUrl
+								? () => {
+										openScmUrl(checkUrl);
+									}
+								: undefined
+						}
+						onKeyDown={
+							checkUrl
+								? (event) => {
+										handleScmLinkKeyDown(event, checkUrl);
+									}
+								: undefined
+						}
+					>
+						<IconTile
+							aria-hidden
+							as="span"
+							className={status.iconClassName}
+							icon={<StatusIcon color="currentColor" label="" size="small" />}
+							label=""
+							size="small"
+							variant="transparent"
+						/>
 						<div className="min-w-0 flex-1">
-							<p className="truncate text-text">{check.name}</p>
-							<p className="truncate text-text-subtlest">{check.details}</p>
+							<p className="truncate text-sm text-text">{check.name}</p>
+							<p className="truncate text-xs text-text-subtlest">{check.details}</p>
 						</div>
-						<Lozenge variant={status.tone}>{status.label}</Lozenge>
+						{checkUrl ? (
+							<Button
+								aria-label={`Open ${check.name} check details`}
+								className={cn(
+									"absolute end-0 top-1/2 z-10 size-6 min-h-0 min-w-0 -translate-y-1/2 p-0 text-icon-subtle hover:bg-transparent hover:text-icon",
+									"pointer-events-none opacity-0 transition-opacity duration-normal ease-out-practical",
+									"group-hover/check-row:pointer-events-auto group-hover/check-row:opacity-100",
+									"group-focus-within/check-row:pointer-events-auto group-focus-within/check-row:opacity-100",
+									"focus-visible:pointer-events-auto focus-visible:opacity-100",
+									"focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
+									"motion-reduce:transition-none",
+								)}
+								size="icon-compact"
+								type="button"
+								variant="ghost"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									openScmUrl(checkUrl);
+								}}
+							>
+								<Icon aria-hidden className="size-4" render={<LinkExternalIcon label="" size="small" />} />
+							</Button>
+						) : null}
 					</li>
 				);
 			})}
@@ -183,23 +318,48 @@ function ChecksValue({ checks }: Readonly<{ checks: readonly PullRequestCheck[] 
 
 /** Provider-neutral pull-request metadata rendered in the shared artifact rail. */
 export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDetailData }>) {
-	const mergeState = MERGE_STATE[data.mergeState];
-	const approvedReviewers = data.reviewers.filter((reviewer) => reviewer.status === "approved").length;
+	const {
+		consumePullRequestSectionExpandRequest,
+		pullRequestSectionExpandRequest,
+	} = useMetadataRail();
+	const [openSectionIds, setOpenSectionIds] = useState<ReadonlySet<string>>(() => new Set());
 	const passedChecks = data.checks.filter((check) => check.status === "passed").length;
+	const checksInProgress = arePullRequestChecksInProgress(data.checks);
+	const author: PullRequestPerson = {
+		id: "pull-request-author",
+		name: data.authorName,
+		avatarSrc: data.authorAvatarSrc,
+		kind: "person",
+	};
+
+	useEffect(() => {
+		if (
+			!pullRequestSectionExpandRequest ||
+			pullRequestSectionExpandRequest.pullRequestIdentity !== data.identity
+		) {
+			return;
+		}
+		const { nonce, sectionId } = pullRequestSectionExpandRequest;
+		setOpenSectionIds((current) => {
+			if (current.has(sectionId)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.add(sectionId);
+			return next;
+		});
+		consumePullRequestSectionExpandRequest(nonce);
+	}, [consumePullRequestSectionExpandRequest, data.identity, pullRequestSectionExpandRequest]);
 
 	return (
 		<ArtifactPane
 			aria-label={`Pull request #${data.number} details`}
 			borderless
 			className="[&>div:first-child]:pt-0"
+			onOpenSectionIdsChange={setOpenSectionIds}
+			openSectionIds={openSectionIds}
 			showSeparators={false}
 			sections={[
-				{
-					id: "pull-request-reviewers",
-					title: "Reviewers",
-					count: data.reviewers.length > 0 ? `${approvedReviewers}/${data.reviewers.length} approved` : 0,
-					content: <ReviewersValue reviewers={data.reviewers} />,
-				},
 				{
 					collapsible: false,
 					defaultOpen: true,
@@ -207,8 +367,17 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 					title: "Details",
 					content: (
 						<div className="flex flex-col gap-2" data-jira-work-item-pull-request-details>
-							<ArtifactPanePropertyRow editable={false} icon={<MergeSuccessIcon label="" size="small" />} label="Merge status">
-								<Lozenge variant={mergeState.tone}>{mergeState.label}</Lozenge>
+							<ArtifactPanePropertyRow editable={false} icon={<PeopleGroupIcon label="" size="small" />} label="Reviewers">
+								<ReviewersValue reviewers={data.reviewers} />
+							</ArtifactPanePropertyRow>
+							<ArtifactPanePropertyRow editable={false} icon={<CalendarIcon label="" size="small" />} label="Created">
+								<span className="flex min-w-0 items-center gap-2">
+									<PersonAvatar person={author} size="xs" />
+									<span>{data.createdTime}</span>
+								</span>
+							</ArtifactPanePropertyRow>
+							<ArtifactPanePropertyRow editable={false} icon={<CalendarIcon label="" size="small" />} label="Updated">
+								<span>{data.updatedTime}</span>
 							</ArtifactPanePropertyRow>
 							<ArtifactPanePropertyRow editable={false} icon={<TagIcon label="" size="small" />} label="Labels">
 								{data.labels.length > 0 ? (
@@ -217,26 +386,26 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 									</TagGroup>
 								) : <span className="text-text-subtle">No labels</span>}
 							</ArtifactPanePropertyRow>
-							<ArtifactPanePropertyRow editable={false} icon={<CalendarIcon label="" size="small" />} label="Created">
-								<span>{data.createdTime}</span>
-							</ArtifactPanePropertyRow>
-							<ArtifactPanePropertyRow editable={false} icon={<CalendarIcon label="" size="small" />} label="Updated">
-								<span>{data.updatedTime}</span>
-							</ArtifactPanePropertyRow>
 						</div>
 					),
+				},
+				{
+					id: PULL_REQUEST_CHECKS_SECTION_ID,
+					title: (
+						<ChecksSectionTitle
+							inProgress={checksInProgress}
+							passed={passedChecks}
+							total={data.checks.length}
+						/>
+					),
+					count: `${passedChecks}/${data.checks.length} passed`,
+					content: <ChecksValue checks={data.checks} />,
 				},
 				{
 					id: "pull-request-commits",
 					title: "Commits",
 					count: data.commits.length,
 					content: <CommitsValue commits={data.commits} />,
-				},
-				{
-					id: "pull-request-checks",
-					title: <ChecksSectionTitle passed={passedChecks} total={data.checks.length} />,
-					count: `${passedChecks}/${data.checks.length} passed`,
-					content: <ChecksValue checks={data.checks} />,
 				},
 			]}
 		/>
