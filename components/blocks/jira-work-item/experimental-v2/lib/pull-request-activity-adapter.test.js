@@ -143,10 +143,28 @@ test("preserves provider comments, review replies, and connected app branding", 
 		label: "Review details",
 		content: [{ type: "text", text: "Reviewed commit abc1234." }],
 	});
-	assert.equal(entries[1].actor.brandName, "openai");
+	assert.equal(entries[1].actor.brandName, "openai-codex");
 	assert.equal(entries[1].allowReply, true);
 	assert.equal(entries[1].replies[0].actor.name, "Venn");
 	assert.equal(entries[1].replies[0].body, "Fixed in abc1234.");
+});
+
+test("changes the activity revision when provider payload values change", async () => {
+	const { getPullRequestActivityRevision } = await loadAdapter();
+	const activity = [{
+		id: "checks",
+		kind: "checks-completed",
+		actor: GITHUB,
+		occurredAtMs: 100,
+		timestamp: "later",
+		passed: 2,
+		total: 3,
+	}];
+
+	assert.notEqual(
+		getPullRequestActivityRevision(activity),
+		getPullRequestActivityRevision([{ ...activity[0], passed: 3 }]),
+	);
 });
 
 test("keeps equal-time provider events in source order", async () => {

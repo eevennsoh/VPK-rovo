@@ -12,7 +12,7 @@ import type {
 function adaptActor(actor: PullRequestActivityActor): JiraActivityActor {
 	const brandName = actor.kind === "app"
 		? actor.id === "codex"
-			? "openai"
+			? "openai-codex"
 			: actor.id.startsWith("github") ? "github" : undefined
 		: undefined;
 	return {
@@ -151,4 +151,11 @@ export function adaptPullRequestActivity(
 			|| left.index - right.index
 		))
 		.map(({ item }) => adaptActivity(item));
+}
+
+/** Stable reset key that changes whenever provider activity payload content changes. */
+export function getPullRequestActivityRevision(
+	activity: readonly PullRequestActivity[],
+): string {
+	return JSON.stringify(activity);
 }
