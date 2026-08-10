@@ -151,6 +151,7 @@ export interface PullRequestDetailData {
 	status: "Open" | "Merged";
 	authorName: string;
 	authorAvatarSrc?: string;
+	authorKind: "person" | "agent" | "app";
 	baseBranch: string | null;
 	headBranch: string | null;
 	additions: number;
@@ -342,11 +343,31 @@ const GUIDED_REVIEW: PullRequestGuidedReview = {
 	files: GUIDED_REVIEW_FILES,
 };
 
+const COMPLETED_GUIDED_REVIEW: PullRequestGuidedReview = {
+	...GUIDED_REVIEW,
+	description: GUIDED_REVIEW.description.replaceAll("- [ ] ", "- [x] "),
+};
+
+function resolveGuidedReview(
+	checks: readonly PullRequestCheck[],
+): PullRequestGuidedReview {
+	return checks.length > 0 && checks.every((check) => check.status === "passed")
+		? COMPLETED_GUIDED_REVIEW
+		: GUIDED_REVIEW;
+}
+
 const VENN: PullRequestActivityActor = {
 	id: "venn",
 	name: "Venn",
 	kind: "person",
 	avatarSrc: "/avatar-user/venn/venn.png",
+};
+
+const CLAUDE_CODE: PullRequestActivityActor = {
+	id: "claude-code",
+	name: "Claude Code",
+	kind: "agent",
+	avatarSrc: "/avatar-agent/dev-agents/basic-coding-agent-template.svg",
 };
 
 const CODE_PLANNER: PullRequestActivityActor = {
@@ -388,8 +409,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "5f02a91",
 		shortSha: "5f02a91",
 		title: "Add the guest checkout storefront flow",
-		author: VENN,
-		timestamp: "17 minutes ago",
+		author: CLAUDE_CODE,
+		timestamp: "24 minutes ago",
 		additions: 34,
 		deletions: 8,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/5f02a91`,
@@ -399,7 +420,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		shortSha: "91c73d4",
 		title: "Keep guest order creation server-owned",
 		author: CODE_PLANNER,
-		timestamp: "15 minutes ago",
+		timestamp: "22 minutes ago",
 		additions: 24,
 		deletions: 6,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/91c73d4`,
@@ -408,8 +429,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "a2f74c1",
 		shortSha: "a2f74c1",
 		title: "Preserve checkout drafts after recoverable failures",
-		author: VENN,
-		timestamp: "12 minutes ago",
+		author: CLAUDE_CODE,
+		timestamp: "20 minutes ago",
 		additions: 18,
 		deletions: 4,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/a2f74c1`,
@@ -419,7 +440,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		shortSha: "d34c112",
 		title: "Cover declined payments and idempotent retries",
 		author: UNIT_TEST_CREATOR,
-		timestamp: "10 minutes ago",
+		timestamp: "18 minutes ago",
 		additions: 10,
 		deletions: 3,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/d34c112`,
@@ -428,8 +449,8 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		id: "8b4e6fa",
 		shortSha: "8b4e6fa",
 		title: "Fix nullable delivery-address validation in CI",
-		author: VENN,
-		timestamp: "5 minutes ago",
+		author: CLAUDE_CODE,
+		timestamp: "14 minutes ago",
 		additions: 7,
 		deletions: 2,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/8b4e6fa`,
@@ -439,7 +460,7 @@ const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
 		shortSha: "f8cc291",
 		title: "Tighten checkout keyboard coverage",
 		author: UNIT_TEST_CREATOR,
-		timestamp: "3 minutes ago",
+		timestamp: "12 minutes ago",
 		additions: 5,
 		deletions: 1,
 		url: `${GUIDED_REVIEW_REPO_COMMIT_URL}/f8cc291`,
@@ -474,20 +495,60 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 	{
 		id: "opened",
 		kind: "opened",
-		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 42),
-		timestamp: "18 minutes ago",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 35),
+		timestamp: "25 minutes ago",
 		baseBranch: "main",
 		headBranch: "feature/shop-4821-guest-checkout",
 	},
 	{
-		id: "commits-pushed",
+		id: "initial-commits-pushed",
 		kind: "commits-pushed",
-		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 48),
-		timestamp: "12 minutes ago",
-		commitCount: GUIDED_REVIEW_COMMITS.length,
-		headSha: GUIDED_REVIEW_COMMITS.at(-1)?.shortSha ?? "f8cc291",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 42),
+		timestamp: "18 minutes ago",
+		commitCount: 4,
+		headSha: "d34c112",
+	},
+	{
+		id: "codex-review",
+		kind: "review-submitted",
+		actor: CODEX,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 44),
+		timestamp: "16 minutes ago",
+		decision: "commented",
+		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
+		filePath: "backend/services/guest-order-service.js",
+		allowReply: true,
+		detail: {
+			label: "About Codex in GitHub",
+			body: "Codex reviewed commit d34c112 and posted this suggestion on the pull request.",
+		},
+		replies: [
+			{
+				id: "codex-review-fix",
+				actor: CLAUDE_CODE,
+				timestamp: "13 minutes ago",
+				body: "Fixed in 8b4e6fa. Delivery-address validation now narrows before order creation, and lint, typecheck, and the guest-checkout browser tests pass.",
+			},
+		],
+	},
+	{
+		id: "fix-commits-pushed",
+		kind: "commits-pushed",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 49),
+		timestamp: "11 minutes ago",
+		commitCount: 2,
+		headSha: "f8cc291",
+	},
+	{
+		id: "thread-resolved",
+		kind: "thread-resolved",
+		actor: CLAUDE_CODE,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 50),
+		timestamp: "10 minutes ago",
+		filePath: "backend/services/guest-order-service.js",
 	},
 	{
 		id: "checks-completed",
@@ -522,59 +583,50 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		filePath: "backend/services/guest-order-service.js",
 	},
 	{
-		id: "codex-review",
-		kind: "review-submitted",
-		actor: CODEX,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 55),
-		timestamp: "5 minutes ago",
-		decision: "commented",
-		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
-		filePath: "backend/services/guest-order-service.js",
-		allowReply: true,
-		detail: {
-			label: "About Codex in GitHub",
-			body: "Codex reviewed commit f8cc291 and posted this suggestion on the pull request.",
-		},
-		replies: [
-			{
-				id: "codex-review-fix",
-				actor: VENN,
-				timestamp: "3 minutes ago",
-				body: "Fixed in 8b4e6fa. Delivery-address validation now narrows before order creation, and lint, typecheck, and the guest-checkout browser tests pass.",
-			},
-		],
-	},
-	{
 		id: "unit-test-creator-review",
 		kind: "review-submitted",
 		actor: UNIT_TEST_CREATOR,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 56),
-		timestamp: "4 minutes ago",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 55),
+		timestamp: "5 minutes ago",
 		decision: "approved",
 		body: "The browser flow covers guest selection, safe input recovery, server validation, and the final confirmation state.",
 		filePath: "tests/storefront/guest-checkout.spec.ts",
 	},
 	{
-		id: "thread-resolved",
-		kind: "thread-resolved",
+		id: "venn-review",
+		kind: "review-submitted",
 		actor: VENN,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 57),
-		timestamp: "3 minutes ago",
-		filePath: "backend/services/guest-order-service.js",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 58),
+		timestamp: "2 minutes ago",
+		decision: "approved",
+		body: "I reviewed every guided chapter. The implementation, CI evidence, and automated reviews are ready to merge.",
 	},
 	{
 		id: "ready-to-merge",
 		kind: "ready-to-merge",
 		actor: GITHUB,
-		occurredAtMs: Date.UTC(2026, 7, 10, 1, 58),
-		timestamp: "2 minutes ago",
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 59),
+		timestamp: "1 minute ago",
 	},
 ];
 
-const GUIDED_REVIEW_REVIEWERS: readonly PullRequestReviewer[] = [
-	{ ...CODE_PLANNER, status: "approved" },
-	{ ...UNIT_TEST_CREATOR, status: "approved" },
-];
+function resolveGuidedReviewReviewers(
+	checks: readonly PullRequestCheck[],
+	reviewDecision: PullRequestReviewDecision,
+): readonly PullRequestReviewer[] {
+	const automatedReviewStatus = checks.length > 0
+		&& checks.every((check) => check.status === "passed")
+		? "approved"
+		: "pending";
+	return [
+		{ ...CODE_PLANNER, status: automatedReviewStatus },
+		{ ...UNIT_TEST_CREATOR, status: automatedReviewStatus },
+		{
+			...VENN,
+			status: reviewDecision === "approved" ? "approved" : "pending",
+		},
+	];
+}
 
 const GUIDED_REVIEW_LABELS: readonly PullRequestLabel[] = [
 	{ id: "checkout", name: "checkout", color: "blue" },
@@ -594,7 +646,7 @@ function resolvePullRequestProvider(url: string | undefined): PullRequestProvide
 
 function resolveGuidedReviewActivity(
 	checks: readonly PullRequestCheck[],
-	mergeState: PullRequestMergeState,
+	reviewDecision: PullRequestReviewDecision,
 ): readonly PullRequestActivity[] {
 	const passed = checks.filter((check) => check.status === "passed").length;
 	const checkActivityTemplate = GUIDED_REVIEW_ACTIVITY.find(
@@ -609,13 +661,21 @@ function resolveGuidedReviewActivity(
 		total: checks.length,
 	};
 
-	if (mergeState === "blocked") {
+	if (checks.some((check) => check.status === "failed")) {
 		return [GUIDED_REVIEW_ACTIVITY[0], GUIDED_REVIEW_ACTIVITY[1], checkActivity];
 	}
+	if (checks.some((check) => check.status === "running" || check.status === "queued")) {
+		return [GUIDED_REVIEW_ACTIVITY[0], GUIDED_REVIEW_ACTIVITY[1]];
+	}
 
-	return GUIDED_REVIEW_ACTIVITY.map((activity) => (
-		activity.kind === "checks-completed" ? checkActivity : activity
-	));
+	return GUIDED_REVIEW_ACTIVITY
+		.filter((activity) => (
+			reviewDecision === "approved"
+			|| (activity.id !== "venn-review" && activity.kind !== "ready-to-merge")
+		))
+		.map((activity) => (
+			activity.kind === "checks-completed" ? checkActivity : activity
+		));
 }
 
 /**
@@ -634,11 +694,16 @@ function resolveMergeState(
 	status: "Open" | "Merged",
 	explicit: PullRequestMergeState | undefined,
 	checks: readonly PullRequestCheck[],
+	reviewDecision: PullRequestReviewDecision,
 	isGuidedReview: boolean,
 ): PullRequestMergeState {
 	if (status === "Merged") return "merged";
-	if (explicit) return explicit;
+	if (explicit === "conflicts") return "conflicts";
 	if (checks.some((check) => check.status !== "passed")) return "blocked";
+	if (reviewDecision === "changes-requested" || reviewDecision === "review-required") {
+		return "blocked";
+	}
+	if (explicit) return explicit;
 	return isGuidedReview ? "ready" : "blocked";
 }
 
@@ -653,19 +718,18 @@ export function resolvePullRequestDetailData(
 	const repositoryIdentity = pullRequest.repository
 		? `${pullRequest.repository}#${pullRequest.number}`
 		: `#${pullRequest.number}`;
-	const guidedReview = identity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
-		|| repositoryIdentity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
-		? GUIDED_REVIEW
-		: null;
+	const isGuidedReview = identity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY
+		|| repositoryIdentity === GUIDED_REVIEW_PULL_REQUEST_IDENTITY;
 	const url = pullRequest.url ?? fallbackPullRequestUrl(pullRequest.repository ?? "", pullRequest.number);
-	const isGuidedReview = guidedReview !== null;
 	const commits = pullRequest.commits ?? (isGuidedReview ? GUIDED_REVIEW_COMMITS : []);
 	const checks = pullRequest.checks ?? (isGuidedReview ? GUIDED_REVIEW_CHECKS : []);
-	const reviewDecision = pullRequest.reviewDecision ?? (isGuidedReview ? "approved" : "not-required");
+	const guidedReview = isGuidedReview ? resolveGuidedReview(checks) : null;
+	const reviewDecision = pullRequest.reviewDecision ?? (isGuidedReview ? "review-required" : "not-required");
 	const mergeState = resolveMergeState(
 		pullRequest.status,
 		pullRequest.mergeState,
 		checks,
+		reviewDecision,
 		isGuidedReview,
 	);
 	return {
@@ -675,22 +739,23 @@ export function resolvePullRequestDetailData(
 		description: guidedReview?.description ?? "",
 		repository,
 		status: pullRequest.status,
-		authorName: pullRequest.authorName ?? (isGuidedReview ? VENN.name : "Unknown author"),
-		authorAvatarSrc: isGuidedReview ? (VENN.avatarSrc ?? undefined) : undefined,
+		authorName: isGuidedReview ? CLAUDE_CODE.name : (pullRequest.authorName ?? "Unknown author"),
+		authorAvatarSrc: isGuidedReview ? (CLAUDE_CODE.avatarSrc ?? undefined) : undefined,
+		authorKind: isGuidedReview ? CLAUDE_CODE.kind : "person",
 		baseBranch: guidedReview ? "main" : null,
 		headBranch: guidedReview ? "feature/shop-4821-guest-checkout" : null,
 		additions: pullRequest.additions,
 		deletions: pullRequest.deletions,
 		provider: resolvePullRequestProvider(url),
-		reviewers: isGuidedReview ? GUIDED_REVIEW_REVIEWERS : [],
+		reviewers: isGuidedReview ? resolveGuidedReviewReviewers(checks, reviewDecision) : [],
 		labels: isGuidedReview ? GUIDED_REVIEW_LABELS : [],
 		commits,
 		checks,
-		createdTime: isGuidedReview ? "18 minutes ago" : entry.timestamp,
+		createdTime: isGuidedReview ? "25 minutes ago" : entry.timestamp,
 		updatedTime: entry.timestamp,
 		reviewDecision,
 		mergeState,
-		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, mergeState) : [],
+		activity: isGuidedReview ? resolveGuidedReviewActivity(checks, reviewDecision) : [],
 		url,
 		guidedReview,
 	};

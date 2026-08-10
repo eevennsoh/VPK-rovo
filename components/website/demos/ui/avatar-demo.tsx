@@ -468,6 +468,10 @@ export function AvatarDemoAgentTiers() {
 		<div className="flex items-center gap-6">
 			{[
 				{
+					label: "Rovo",
+					avatar: <AgentAvatarVisual label="Rovo agent" sizePx={40} vpkLogo="rovo" />,
+				},
+				{
 					label: "1P",
 					avatar: <AgentAvatarVisual avatarSrc="/avatar-agent/teamwork-agents/customer-insights.svg" label="Atlassian agent" sizePx={40} />,
 				},

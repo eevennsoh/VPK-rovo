@@ -5,8 +5,10 @@ export type PullRequestHeaderStatus = "Open" | "Merged";
 export type PullRequestHeaderVariant = "expanded" | "compact";
 /** Controls the Merge split-button primary label in the title-row action group. */
 export type PullRequestHeaderMergeState =
+	| "checks-failed"
 	| "checks-running"
 	| "merge-conflicts"
+	| "review-required"
 	| "ready";
 
 export interface PullRequestHeaderProps
@@ -31,11 +33,12 @@ export interface PullRequestHeaderProps
 	repository: string;
 	/**
 	 * Merge split-button primary label state.
-	 * `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts",
-	 * `"ready"` → "Merge". Defaults to `"ready"`.
-	 * Primary is enabled when `ready` + `onMergeClick`, or `checks-running` +
-	 * `onChecksRunningClick`. `merge-conflicts` stays disabled (no related primary
-	 * action yet). The chevron menu stays available for Auto merge.
+	 * `"checks-failed"` → "Checks failed", `"checks-running"` → "Checks running",
+	 * `"merge-conflicts"` → "Merge conflicts", `"review-required"` →
+	 * "Review required", `"ready"` → "Merge". Defaults to `"ready"`.
+	 * Primary actions are enabled when their matching callback is available.
+	 * `merge-conflicts` stays disabled (no related primary action yet). The
+	 * chevron menu stays available for Auto merge.
 	 */
 	mergeState?: PullRequestHeaderMergeState;
 	/** Controlled Auto merge switch state (menu option). */
@@ -51,6 +54,10 @@ export interface PullRequestHeaderProps
 	 * Consumers typically expand the CI checks disclosure in the metadata rail.
 	 */
 	onChecksRunningClick?: () => void;
+	/** Called when the Checks failed primary is activated (`checks-failed` only). */
+	onChecksFailedClick?: () => void;
+	/** Called when the Review required primary is activated (`review-required` only). */
+	onReviewRequiredClick?: () => void;
 	/**
 	 * Pull request URL used by More actions → Copy link and Open in {SCM}.
 	 * Those items stay disabled when omitted.

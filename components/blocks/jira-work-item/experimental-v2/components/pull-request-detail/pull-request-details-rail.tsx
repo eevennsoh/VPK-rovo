@@ -329,7 +329,7 @@ export function PullRequestDetailsRail({ data }: Readonly<{ data: PullRequestDet
 		id: "pull-request-author",
 		name: data.authorName,
 		avatarSrc: data.authorAvatarSrc,
-		kind: "person",
+		kind: data.authorKind,
 	};
 
 	useEffect(() => {

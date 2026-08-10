@@ -81,13 +81,14 @@ import type {
 	StaticEventActivityEvent,
 	StaticTimelineEvent,
 } from "@/components/blocks/jira-work-item/data/session-state-types";
+import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 
 export * from "@/components/blocks/jira-work-item/data/session-state-types";
 
 export { formatSessionTimestamp } from "@/components/blocks/jira-work-item/data/session-time";
 export { getAgentActivityActorId } from "@/components/blocks/jira-work-item/data/shared-channel-state";
 
-const GENERAL_AGENT: AgentSessionAgent = { id: "rovo", name: "Rovo", avatarSrc: "/1p/rovo.svg" };
+const GENERAL_AGENT: AgentSessionAgent = { id: "rovo", name: "Rovo", avatarSrc: ROVO_LOGO_DATA_URI };
 
 // ────────────────────────────────────────────────────────────────────────────
 // Session construction (pure)

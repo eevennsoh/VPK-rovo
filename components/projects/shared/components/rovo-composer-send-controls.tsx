@@ -172,6 +172,7 @@ export interface RovoComposerActionButtonProps {
 	dictationTranscriptPreview?: string | null;
 	experimentalDarkCta?: boolean;
 	isComposerBusy?: boolean;
+	liveVoiceEnabled?: boolean;
 	clickyActive?: boolean;
 	micStream?: MediaStream | null;
 	onStartDictation?: () => void;
@@ -196,6 +197,7 @@ export function RovoComposerActionButton({
 	dictationTranscriptPreview = null,
 	experimentalDarkCta = false,
 	isComposerBusy,
+	liveVoiceEnabled = false,
 	clickyActive = false,
 	micStream = null,
 	onStartDictation,
@@ -217,31 +219,32 @@ export function RovoComposerActionButton({
 	const [isRealtimeWaveformIntroActive, setIsRealtimeWaveformIntroActive] = useState(false);
 	const [isDictationOptimisticActive, setIsDictationOptimisticActive] = useState(false);
 	const resolvedComposerBusy = isComposerBusy ?? (composerStatus === "submitted" || composerStatus === "streaming");
+	const resolvedRealtimeVoiceActive = liveVoiceEnabled && realtimeVoiceActive;
 	const isDictationActive = dictationState !== "idle" || isDictationOptimisticActive;
-	const idleAction = showSubmitWhenEmpty && !resolvedComposerBusy && !realtimeVoiceActive && !showBackgroundStop
+	const idleAction = showSubmitWhenEmpty && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !showBackgroundStop
 		? "submit"
 		: resolveRovoAppComposerIdleAction({
 			canStartDictation: Boolean(onStartDictation),
-			canStartRealtimeVoice: Boolean(onToggleRealtimeVoice),
+			canStartRealtimeVoice: liveVoiceEnabled && Boolean(onToggleRealtimeVoice),
 			canSubmit,
 			isComposerBusy: resolvedComposerBusy,
-			realtimeVoiceActive,
+			realtimeVoiceActive: resolvedRealtimeVoiceActive,
 			showBackgroundStop,
 			submitDisabled,
 		});
 	const realtimeWaveformState = resolveRovoAppComposerWaveformState({
 		hasMicStream: micStream !== null,
 		isIntroActive: isRealtimeWaveformIntroActive,
-		realtimeVoiceActive,
+		realtimeVoiceActive: resolvedRealtimeVoiceActive,
 	});
 	const isRealtimeMicWaveformActive = realtimeVoiceState === "listening" && realtimeWaveformState.active;
-	const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && realtimeVoiceActive;
+	const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && resolvedRealtimeVoiceActive;
 	const isDictationRecording = dictationState === "recording" && micStream !== null;
 	const experimentalDarkCtaClassName = experimentalDarkCta ? EXPERIMENTAL_DARK_CTA_CLASS_NAME : undefined;
 	const liveVoiceCtaClassName = experimentalDarkCtaClassName ?? BRAND_CTA_CLASS_NAME;
-	const shouldShowDictationStart = Boolean(onStartDictation) && !resolvedComposerBusy && !realtimeVoiceActive && !submitDisabled;
-	const shouldShowRealtimeVoiceStart = idleAction === "voice-start" && !canSubmit && Boolean(onToggleRealtimeVoice);
-	const shouldShowRealtimeVoiceRail = realtimeVoiceActive && Boolean(onToggleClicky);
+	const shouldShowDictationStart = Boolean(onStartDictation) && !resolvedComposerBusy && !resolvedRealtimeVoiceActive && !submitDisabled;
+	const shouldShowRealtimeVoiceStart = liveVoiceEnabled && idleAction === "voice-start" && !canSubmit && Boolean(onToggleRealtimeVoice);
+	const shouldShowRealtimeVoiceRail = resolvedRealtimeVoiceActive && Boolean(onToggleClicky);
 
 	const clearRealtimeWaveformIntro = useCallback(() => {
 		if (realtimeWaveformIntroTimeoutRef.current !== null) {
@@ -251,7 +254,7 @@ export function RovoComposerActionButton({
 	}, []);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
-		if (!onToggleRealtimeVoice) {
+		if (!liveVoiceEnabled || !onToggleRealtimeVoice) {
 			return;
 		}
 
@@ -268,7 +271,7 @@ export function RovoComposerActionButton({
 		}
 
 		onToggleRealtimeVoice();
-	}, [clearRealtimeWaveformIntro, onToggleRealtimeVoice, realtimeVoiceActive]);
+	}, [clearRealtimeWaveformIntro, liveVoiceEnabled, onToggleRealtimeVoice, realtimeVoiceActive]);
 
 	const handleStartDictation = useCallback(() => {
 		setIsDictationOptimisticActive(true);
@@ -281,10 +284,10 @@ export function RovoComposerActionButton({
 	}, [onStopDictation]);
 
 	useEffect(() => {
-		if (dictationState !== "idle" || realtimeVoiceActive) {
+		if (dictationState !== "idle" || resolvedRealtimeVoiceActive) {
 			setIsDictationOptimisticActive(false);
 		}
-	}, [dictationState, realtimeVoiceActive]);
+	}, [dictationState, resolvedRealtimeVoiceActive]);
 
 	useEffect(() => {
 		return () => {
@@ -381,7 +384,7 @@ export function RovoComposerActionButton({
 							</div>
 						</div>
 					</motion.div>
-				) : realtimeVoiceActive ? (
+				) : resolvedRealtimeVoiceActive ? (
 					<motion.div
 						key="waveform"
 						initial={{ opacity: 0, transform: "scale(0.8)" }}
@@ -504,6 +507,7 @@ export function RovoComposerSendControls({
 	experimentalDarkCta,
 	hideReasoningSelector = false,
 	isComposerBusy,
+	liveVoiceEnabled = false,
 	clickyActive,
 	micStream,
 	onCompanyKnowledgeChange,
@@ -566,6 +570,7 @@ export function RovoComposerSendControls({
 				dictationTranscriptPreview={dictationTranscriptPreview}
 				experimentalDarkCta={experimentalDarkCta}
 				isComposerBusy={isComposerBusy}
+				liveVoiceEnabled={liveVoiceEnabled}
 				clickyActive={clickyActive}
 				micStream={micStream}
 				onStop={onStop}

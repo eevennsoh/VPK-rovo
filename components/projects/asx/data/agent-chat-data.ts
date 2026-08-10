@@ -15,6 +15,7 @@ export interface AsxAgentChatScenario {
 	issueKey: string;
 	issueSummary: string;
 	intro?: string;
+	playbackVariant?: "jira-description-improvement" | "static-result";
 	question?: QuestionCardQuestion;
 	request?: string;
 	result?: string;
@@ -28,6 +29,7 @@ export interface AsxAgentChatPlaybackFrame {
 export interface AsxAgentChatPlayback {
 	assistantMessageId: string;
 	frames: readonly AsxAgentChatPlaybackFrame[];
+	keepThinkingActiveAfterLastFrame?: boolean;
 	userMessage: RovoUIMessage;
 }
 
@@ -159,6 +161,196 @@ function buildAsxQuestionCardParts(
 	];
 }
 
+function createThinkingStatus({
+	content,
+	label,
+	timestamp,
+	toolCallId,
+}: Readonly<{
+	content: string;
+	label: string;
+	timestamp: string;
+	toolCallId: string;
+}>): RovoUIMessage["parts"][number] {
+	return {
+		type: "data-thinking-status",
+		data: {
+			activity: "data",
+			content,
+			label,
+			source: "fallback",
+			timestamp,
+			toolCallId,
+		},
+	};
+}
+
+function createThinkingEvent({
+	input,
+	label,
+	output,
+	outputPreview,
+	phase,
+	timestamp,
+	toolCallId,
+	toolName,
+}: Readonly<{
+	input?: unknown;
+	label: string;
+	output?: unknown;
+	outputPreview?: string;
+	phase: "start" | "result";
+	timestamp: string;
+	toolCallId: string;
+	toolName: string;
+}>): RovoUIMessage["parts"][number] {
+	return {
+		type: "data-thinking-event",
+		id: `${toolCallId}-${phase}`,
+		data: {
+			eventId: `${toolCallId}-${phase}`,
+			phase,
+			toolName,
+			label,
+			toolCallId,
+			...(input !== undefined ? { input } : {}),
+			...(output !== undefined ? { output } : {}),
+			...(outputPreview ? { outputPreview } : {}),
+			timestamp,
+		},
+	};
+}
+
+function buildJiraDescriptionTraceParts(
+	scenario: AsxAgentChatScenario,
+	runId: string,
+	now: number,
+): ReadonlyArray<RovoUIMessage["parts"]> {
+	const parts: RovoUIMessage["parts"] = [];
+	const snapshots: RovoUIMessage["parts"][] = [];
+	const timestamp = (offsetMs: number) => new Date(now + offsetMs).toISOString();
+	const appendSnapshot = (...nextParts: RovoUIMessage["parts"]) => {
+		parts.push(...nextParts.flat());
+		snapshots.push([...parts]);
+	};
+	const tools = [
+		{
+			id: `jira-context-${runId}`,
+			toolName: "jira.read_work_item_context",
+			label: "Reading the current work item",
+			content: "Reviewing the existing outcome, known constraints, and initial acceptance criteria without changing the description.",
+			input: { issueKey: scenario.issueKey, fields: ["description", "comments", "attachments"] },
+			output: { issueKey: scenario.issueKey, descriptionState: "initial-draft", attachmentCount: 2 },
+			outputPreview: "Current description and supporting product evidence reviewed.",
+		},
+		{
+			id: `twg-context-${runId}`,
+			toolName: "twg.lookup_work_item_delivery_context",
+			label: "Connecting related delivery context",
+			content: "Using Teamwork Graph to correlate the reporter, checkout research, design brief, and storefront ownership signals.",
+			input: { issueKey: scenario.issueKey, relationshipDepth: 2 },
+			output: { sources: ["Jira", "Confluence", "Figma"], relatedSignals: 4 },
+			outputPreview: "Found 4 relevant delivery signals across Jira, Confluence, and Figma.",
+		},
+		{
+			id: `requirements-${runId}`,
+			toolName: "confluence.search_checkout_requirements",
+			label: "Checking product requirements",
+			content: "Comparing the draft against checkout-funnel research and the guest-checkout product brief.",
+			input: { query: "guest checkout safeguards recovery accessibility", issueKey: scenario.issueKey },
+			output: { matchedRequirements: 6, missingFromDraft: ["server validation", "recoverable errors", "mobile web"] },
+			outputPreview: "Identified three implementation-critical details missing from the initial draft.",
+		},
+		{
+			id: `draft-${runId}`,
+			toolName: "jira.draft_work_item_description",
+			label: "Drafting the improved description",
+			content: "Structuring a clearer user outcome, delivery scope, proposed flow, and testable acceptance criteria.",
+			input: { issueKey: scenario.issueKey, mode: "suggestion-only", preserveOriginal: true },
+			output: { status: "drafted", workItemUpdated: false },
+			outputPreview: "Improved description drafted; the work item remains unchanged.",
+		},
+	] as const;
+
+	tools.forEach((tool, index) => {
+		const offset = index * 800;
+		appendSnapshot(
+			createThinkingStatus({
+				content: tool.content,
+				label: tool.label,
+				timestamp: timestamp(offset),
+				toolCallId: tool.id,
+			}),
+			createThinkingEvent({
+				input: tool.input,
+				label: tool.label,
+				phase: "start",
+				timestamp: timestamp(offset),
+				toolCallId: tool.id,
+				toolName: tool.toolName,
+			}),
+		);
+		appendSnapshot(createThinkingEvent({
+			label: tool.label,
+			output: tool.output,
+			outputPreview: tool.outputPreview,
+			phase: "result",
+			timestamp: timestamp(offset + 500),
+			toolCallId: tool.id,
+			toolName: tool.toolName,
+		}));
+	});
+
+	return snapshots;
+}
+
+function buildJiraDescriptionPlayback(
+	scenario: AsxAgentChatScenario,
+	runId: string,
+	now: number,
+): Pick<AsxAgentChatPlayback, "frames" | "keepThinkingActiveAfterLastFrame"> {
+	const traceSnapshots = buildJiraDescriptionTraceParts(scenario, runId, now);
+	const finalTrace = traceSnapshots.at(-1) ?? [];
+	const questionCardParts = buildAsxQuestionCardParts(scenario, runId);
+
+	if (questionCardParts) {
+		const askToolCallId = `ask-user-${runId}`;
+		const timestamp = new Date(now + 3_400).toISOString();
+		return {
+			frames: [{
+				delayMs: 0,
+				parts: [
+					...finalTrace,
+					createThinkingStatus({
+						content: "The suggestion is ready. Waiting for Venn to decide whether Jira should apply it.",
+						label: "Awaiting user response",
+						timestamp,
+						toolCallId: askToolCallId,
+					}),
+					createThinkingEvent({
+						input: { questions: [scenario.question?.label] },
+						label: "Confirming the description update",
+						phase: "start",
+						timestamp,
+						toolCallId: askToolCallId,
+						toolName: "ask_user_questions",
+					}),
+					{ type: "data-turn-complete", data: { timestamp } },
+					...questionCardParts,
+				],
+			}],
+		};
+	}
+
+	return {
+		frames: traceSnapshots.map((parts, index) => ({
+			delayMs: index === 0 ? 0 : 400,
+			parts,
+		})),
+		keepThinkingActiveAfterLastFrame: true,
+	};
+}
+
 /**
  * Builds a deterministic local thinking -> generating -> completed transcript.
  * The ids vary per playback, while the visible content and timing stay stable.
@@ -212,15 +404,24 @@ export function buildAsxAgentChatPlayback(
 		},
 	};
 	const result = getScenarioResult(scenario);
+	const jiraDescriptionPlayback = scenario.playbackVariant === "jira-description-improvement"
+		? buildJiraDescriptionPlayback(scenario, runId, now)
+		: null;
+	const staticResultParts = scenario.playbackVariant === "static-result"
+		? [{ type: "text" as const, text: result, state: "done" as const }]
+		: null;
 
 	return {
 		assistantMessageId,
+		...(jiraDescriptionPlayback ?? {}),
 		userMessage: {
 			id: `asx-agent-user-${runId}`,
 			role: "user",
 			parts: [{ type: "text", text: getScenarioRequest(scenario), state: "done" }],
 		},
-		frames: questionCardParts ? [{ delayMs: 0, parts: questionCardParts }] : [
+		frames: jiraDescriptionPlayback?.frames ?? (staticResultParts
+			? [{ delayMs: 0, parts: staticResultParts }]
+			: questionCardParts ? [{ delayMs: 0, parts: questionCardParts }] : [
 			{ delayMs: 0, parts: [thinkingStatus] },
 			{ delayMs: 700, parts: [thinkingStatus, toolStart] },
 			{
@@ -231,6 +432,6 @@ export function buildAsxAgentChatPlayback(
 				delayMs: 800,
 				parts: [thinkingStatus, toolStart, toolResult, { type: "text", text: result, state: "done" }],
 			},
-		],
+		]),
 	};
 }

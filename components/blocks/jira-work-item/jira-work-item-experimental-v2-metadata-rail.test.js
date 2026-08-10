@@ -678,14 +678,11 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 		compositionSource,
 		/useState<string \| null>\(null\)[\s\S]*selectPullRequestEntries\(activityEvents, SESSION_EPOCH_MS \+ elapsedMs\)[\s\S]*pullRequestEntries\.find\([\s\S]*getPullRequestIdentity\(entry\.pullRequest\) === selectedPullRequestIdentity/u,
 	);
-	assert.match(
-		compositionSource,
-		/setSelectedPullRequestIdentity\(\(currentIdentity\) => \([\s\S]*currentIdentity === identity \? null : identity/u,
-	);
-	assert.match(
-		compositionSource,
-		/<JiraWorkItemProvider[\s\S]*<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u,
-	);
+	assert.match(compositionSource, /setSelectedPullRequestIdentity\(identity\);/u);
+	assert.match(compositionSource, /<JiraWorkItemProvider[\s\S]*initialStateRevision=\{props\.initialStateRevision\}/u);
+	assert.match(compositionSource, /setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u);
+	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
+	assert.doesNotMatch(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u);
 	assert.doesNotMatch(persistedStateSource, /selectedPullRequest|pullRequestIdentity/u);
 
 	// Dialog title bar gets PR entries for the read-only Tag; ContextHeader gets

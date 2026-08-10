@@ -19,12 +19,16 @@ import { PullRequestOverview } from "./pull-request-overview";
 type PullRequestDetailTab = "details" | "code" | "guide";
 
 interface PullRequestDetailViewProps {
+	approvalState?: "available" | "approved";
 	entry: JiraActivityEventEntry;
+	onApprove?: (identity: string) => void;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
+	approvalState,
 	entry,
+	onApprove,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
@@ -45,6 +49,7 @@ export function PullRequestDetailView({
 	const header = (
 		<PullRequestDetailHeader
 			data={data}
+			onGuideOpen={review ? () => setActiveTab("guide") : undefined}
 			scrollContainerRef={scrollContainerRef}
 		/>
 	);
@@ -89,7 +94,14 @@ export function PullRequestDetailView({
 							<PullRequestFiles review={review} />
 						</TabsContent>
 						<TabsContent value="guide">
-							<PullRequestGuide review={review} onFinish={() => setActiveTab("details")} />
+							<PullRequestGuide
+								approvalState={approvalState}
+								onApprove={onApprove
+									? () => onApprove(data.identity)
+									: undefined}
+								onFinish={() => setActiveTab("details")}
+								review={review}
+							/>
 						</TabsContent>
 					</div>
 				</Tabs>

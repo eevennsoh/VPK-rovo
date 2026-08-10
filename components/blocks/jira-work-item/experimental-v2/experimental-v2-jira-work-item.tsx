@@ -1,9 +1,10 @@
 "use client";
 
 import { LayoutGroup } from "motion/react";
-import { useId, useMemo, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useRovoChat } from "@/app/contexts";
+import type { SkillsDirectorySkill } from "@/app/data/directory";
 import { getAgentsWorkItemForCard } from "@/components/projects/jira/data/rfp-work-items";
 import { WorkItemModalProvider } from "@/app/contexts/context-work-item-modal";
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
@@ -30,6 +31,7 @@ import { ActivityPanel } from "@/components/blocks/jira-work-item/experimental-v
 import { ActivityComposer } from "@/components/blocks/jira-work-item/experimental-v2/components/activity-composer";
 import { MetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/components/metadata-rail";
 import { FloatingSessionSurface } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
+import type { SessionReplyInterceptor } from "@/components/blocks/jira-work-item/experimental-v2/components/floating-session-surface";
 import type { CodingAgentId } from "@/components/blocks/jira-work-item/experimental-v2/components/context-title-actions";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
 import {
@@ -47,8 +49,13 @@ interface ExperimentalV2JiraWorkItemBaseProps {
 	initialStateRevision?: string | number;
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
+	onPullRequestApprove?: (identity: string) => void;
+	onSessionReply?: SessionReplyInterceptor;
+	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	outputs?: readonly string[];
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
+	stageKey?: string;
 	/** Override status pill options (defaults to RFP board columns). */
 	statusPhases?: readonly string[];
 	workItem?: WorkItemData;
@@ -59,7 +66,7 @@ export type ExperimentalV2JiraWorkItemProps = ExperimentalV2JiraWorkItemBaseProp
 	| { presentation?: "modal"; open: boolean; onClose: () => void }
 	| {
 		presentation: "inline";
-		inlineSurface?: "card" | "fill";
+		inlineSurface?: "card" | "card-fill" | "fill";
 		open?: never;
 		onClose?: never;
 	}
@@ -71,14 +78,19 @@ interface ExperimentalV2JiraWorkItemContentProps {
 	activitySessionThread?: ActivitySessionThreadConfig;
 	automationRules?: readonly WorkItemAutomationRule[];
 	composerAgents?: readonly AgentSelectorAgent[];
-	inlineSurface: "card" | "fill";
+	inlineSurface: "card" | "card-fill" | "fill";
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onClose: () => void;
 	onOpenAgentChat?: (agentId: string) => void;
+	onPullRequestApprove?: (identity: string) => void;
+	onSessionReply?: SessionReplyInterceptor;
+	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 	open: boolean;
 	outputs?: readonly string[];
 	presentation: "modal" | "inline";
 	primaryCodingAgentId?: CodingAgentId;
+	pullRequestApprovalStates?: Readonly<Record<string, "available" | "approved">>;
+	stageKey?: string;
 	workItem: WorkItemData;
 }
 
@@ -90,23 +102,51 @@ function ExperimentalV2JiraWorkItemContent({
 	onAgentPromptSubmit,
 	onClose,
 	onOpenAgentChat,
+	onPullRequestApprove,
+	onSessionReply,
+	onSkillInvoke,
 	open,
 	outputs,
 	presentation,
 	primaryCodingAgentId,
+	pullRequestApprovalStates,
+	stageKey,
 	workItem,
 }: Readonly<ExperimentalV2JiraWorkItemContentProps>) {
 	const composerLayoutGroupId = useId();
 	const [descriptionViewMode, setDescriptionViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [selectedPullRequestIdentity, setSelectedPullRequestIdentity] = useState<string | null>(null);
+	const previousStageKeyRef = useRef(stageKey);
 	const { chatSurface } = useRovoChat();
 	const { activityEvents } = useJiraWorkItemMeta();
 	const { elapsedMs } = useJiraWorkItemState();
 	const agentChatOpen = chatSurface === "floating";
-	const pullRequestEntries = useMemo(
-		() => selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs),
-		[activityEvents, elapsedMs],
-	);
+	const pullRequestEntries = useMemo(() => (
+		selectPullRequestEntries(activityEvents, SESSION_EPOCH_MS + elapsedMs).map((entry) => {
+			if (!entry.pullRequest) return entry;
+			const identity = getPullRequestIdentity(entry.pullRequest);
+			if (pullRequestApprovalStates?.[identity] !== "approved") return entry;
+			return {
+				...entry,
+				pullRequest: {
+					...entry.pullRequest,
+					reviewDecision: "approved" as const,
+					mergeState: "ready" as const,
+				},
+			};
+		})
+	), [activityEvents, elapsedMs, pullRequestApprovalStates]);
+	useLayoutEffect(() => {
+		if (
+			stageKey === undefined
+			|| Object.is(previousStageKeyRef.current, stageKey)
+		) {
+			return;
+		}
+		previousStageKeyRef.current = stageKey;
+		setDescriptionViewMode("rendered");
+		setSelectedPullRequestIdentity(null);
+	}, [stageKey]);
 	const selectedPullRequestEntry = useMemo(
 		() => pullRequestEntries.find((entry) => (
 			entry.pullRequest
@@ -117,10 +157,11 @@ function ExperimentalV2JiraWorkItemContent({
 	const handlePullRequestSelect = (entry: JiraActivityEventEntry) => {
 		if (!entry.pullRequest) return;
 		const identity = getPullRequestIdentity(entry.pullRequest);
-		setSelectedPullRequestIdentity((currentIdentity) => (
-			currentIdentity === identity ? null : identity
-		));
+		setSelectedPullRequestIdentity(identity);
 	};
+	const selectedPullRequestApprovalState = selectedPullRequestIdentity
+		? pullRequestApprovalStates?.[selectedPullRequestIdentity]
+		: undefined;
 
 	return (
 		<PanelLayoutProvider>
@@ -132,7 +173,7 @@ function ExperimentalV2JiraWorkItemContent({
 						onClose={onClose}
 						presentation={presentation}
 						pullRequestEntries={pullRequestEntries}
-						sidebar={<FloatingSessionSurface />}
+						sidebar={<FloatingSessionSurface onSessionReply={onSessionReply} />}
 						sidebarOpen={agentChatOpen}
 						workItemCode={workItem.code}
 						workItemTitle={workItem.title}
@@ -154,6 +195,8 @@ function ExperimentalV2JiraWorkItemContent({
 							context={(scrollContainerRef) => (
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
+									onPullRequestApprove={onPullRequestApprove}
+									pullRequestApprovalState={selectedPullRequestApprovalState}
 									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									onDescriptionViewModeChange={setDescriptionViewMode}
@@ -164,9 +207,10 @@ function ExperimentalV2JiraWorkItemContent({
 									agents={composerAgents}
 									onAgentPromptSubmit={onAgentPromptSubmit}
 									onOpenAgentChat={onOpenAgentChat}
+									onSkillInvoke={onSkillInvoke}
 								/>
 							)}
-							fillContainer={inlineSurface === "fill"}
+							fillContainer={inlineSurface !== "card"}
 							metadata={(
 								<div
 									aria-hidden={agentChatOpen}
@@ -211,7 +255,7 @@ function ExperimentalV2JiraWorkItemContent({
 export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWorkItemProps>) {
 	const { initialPreset, initialState } = props;
 	let presentation: "modal" | "inline";
-	let inlineSurface: "card" | "fill" = "card";
+	let inlineSurface: "card" | "card-fill" | "fill" = "card";
 	let open: boolean;
 	let onClose: () => void;
 	if (props.presentation === "inline") {
@@ -253,14 +297,18 @@ export function ExperimentalV2JiraWorkItem(props: Readonly<ExperimentalV2JiraWor
 					automationRules={props.automationRules}
 					composerAgents={props.composerAgents}
 					inlineSurface={inlineSurface}
-					key={props.initialStateRevision}
 					onAgentPromptSubmit={props.onAgentPromptSubmit}
 					onClose={onClose}
 					onOpenAgentChat={props.onOpenAgentChat}
+					onPullRequestApprove={props.onPullRequestApprove}
+					onSessionReply={props.onSessionReply}
+					onSkillInvoke={props.onSkillInvoke}
 					open={open}
 					outputs={props.outputs}
 					presentation={presentation}
 					primaryCodingAgentId={props.primaryCodingAgentId}
+					pullRequestApprovalStates={props.pullRequestApprovalStates}
+					stageKey={props.stageKey}
 					workItem={workItem}
 				/>
 			</JiraWorkItemProvider>

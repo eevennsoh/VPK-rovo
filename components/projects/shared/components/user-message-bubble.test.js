@@ -23,6 +23,10 @@ const ROVO_CHAT_CONTEXT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
 	"utf8",
 );
+const ROVO_CHAT_HELPERS_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "app/contexts/rovo-chat-helpers.ts"),
+	"utf8",
+);
 
 test("shared user message bubble exposes copy and edit prompt actions", () => {
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /MessageCopyAction/);
@@ -33,9 +37,26 @@ test("shared user message bubble exposes copy and edit prompt actions", () => {
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /onConfirm=\{\(nextValue\) => void onEdit\(nextValue\)\}/);
 	assert.match(
 		USER_MESSAGE_BUBBLE_SOURCE,
-		/<MessageResponse className="font-medium text-inherit \[&_\*\]:text-inherit">[\s\S]*\{messageText\}[\s\S]*<\/MessageResponse>/u,
+		/<MessageResponse plain className="font-medium text-inherit \[&>\*\+\*\]:mt-3">[\s\S]*\{messageText\}[\s\S]*<\/MessageResponse>/u,
 	);
 	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /fitContent=\{!isEditing\}/);
+});
+
+test("Improve description renders as a skill tag without changing the raw message value", () => {
+	assert.match(
+		USER_MESSAGE_BUBBLE_SOURCE,
+		/import \{ SkillTag \} from "@\/components\/ui-custom\/skill-tag";/u,
+	);
+	assert.match(
+		USER_MESSAGE_BUBBLE_SOURCE,
+		/\["\/Improve description", "Improve description"\]/u,
+	);
+	assert.match(
+		USER_MESSAGE_BUBBLE_SOURCE,
+		/skillInvocationLabel \? \([\s\S]*<SkillTag variant="on-colored">\{skillInvocationLabel\}<\/SkillTag>[\s\S]*\) : \([\s\S]*<MessageResponse/u,
+	);
+	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /<MessageCopyAction text=\{messageText\} \/>/u);
+	assert.match(USER_MESSAGE_BUBBLE_SOURCE, /value=\{messageText\}/u);
 });
 
 test("sidebar and floating chat thread messages wire compact edit state", () => {
@@ -77,13 +98,12 @@ test("compact chat edit uses AI SDK message replacement semantics", () => {
 });
 
 test("compact chat message sanitizers tolerate persisted messages without parts arrays", () => {
-	assert.doesNotMatch(ROVO_CHAT_CONTEXT_SOURCE, /message\.parts\.length/u);
 	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
+		ROVO_CHAT_HELPERS_SOURCE,
 		/const hasPartsArray = Array\.isArray\(message\.parts\);[\s\S]*const messageParts = hasPartsArray \? message\.parts : \[\];[\s\S]*if \(!hasPartsArray \|\| nextParts\.length !== messageParts\.length\)/u,
 	);
 	assert.match(
-		ROVO_CHAT_CONTEXT_SOURCE,
+		ROVO_CHAT_HELPERS_SOURCE,
 		/const hasPartsArray = Array\.isArray\(message\.parts\);[\s\S]*let messageChanged = !hasPartsArray;[\s\S]*const messageParts = hasPartsArray \? message\.parts : \[\];/u,
 	);
 });

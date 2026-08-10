@@ -8,29 +8,43 @@ import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental
 
 import type {
 	PullRequestDetailData,
-	PullRequestMergeState,
 } from "../../lib/pull-request-detail-data";
 import { PULL_REQUEST_CHECKS_SECTION_ID } from "./pull-request-details-rail";
 
+const DEMO_MERGE = () => undefined;
+
 interface PullRequestDetailHeaderProps {
 	data: PullRequestDetailData;
+	onGuideOpen?: () => void;
 	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
-/** Maps domain PR merge status onto the shared header Merge split-button labels. */
+/** Derives the actionable header state from mergeability, checks, and review. */
 function mapPullRequestHeaderMergeState(
-	mergeState: PullRequestMergeState,
+	data: PullRequestDetailData,
 ): PullRequestHeaderMergeState {
-	switch (mergeState) {
+	switch (data.mergeState) {
 		case "conflicts":
 			return "merge-conflicts";
-		case "blocked":
-			return "checks-running";
 		case "merged":
+			return "ready";
 		case "ready":
+		case "blocked":
+			if (data.checks.some((check) => check.status === "failed")) {
+				return "checks-failed";
+			}
+			if (data.checks.some((check) => check.status === "running" || check.status === "queued")) {
+				return "checks-running";
+			}
+			if (
+				data.reviewDecision === "changes-requested"
+				|| data.reviewDecision === "review-required"
+			) {
+				return "review-required";
+			}
 			return "ready";
 		default: {
-			const _exhaustive: never = mergeState;
+			const _exhaustive: never = data.mergeState;
 			return _exhaustive;
 		}
 	}
@@ -39,10 +53,17 @@ function mapPullRequestHeaderMergeState(
 /** Thin adapter: maps PR detail data onto the shared Pull request header block. */
 export function PullRequestDetailHeader({
 	data,
+	onGuideOpen,
 	scrollContainerRef,
 }: Readonly<PullRequestDetailHeaderProps>) {
 	const [autoMerge, setAutoMerge] = useState(true);
 	const { requestExpandPullRequestSection, setPanelView } = useMetadataRail();
+	const isOpen = data.status === "Open";
+	const mergeReady = isOpen && data.mergeState === "ready";
+	const openChecks = () => {
+		setPanelView("details");
+		requestExpandPullRequestSection(data.identity, PULL_REQUEST_CHECKS_SECTION_ID);
+	};
 
 	return (
 		<PullRequestHeader
@@ -54,14 +75,14 @@ export function PullRequestDetailHeader({
 			repository={data.repository}
 			url={data.url}
 			scmProviderName={data.provider.name}
-			mergeState={mapPullRequestHeaderMergeState(data.mergeState)}
-			autoMerge={autoMerge}
-			onAutoMergeChange={setAutoMerge}
-			onChecksRunningClick={() => {
-				setPanelView("details");
-				requestExpandPullRequestSection(data.identity, PULL_REQUEST_CHECKS_SECTION_ID);
-			}}
+			mergeState={mapPullRequestHeaderMergeState(data)}
+			autoMerge={isOpen ? autoMerge : false}
+			onAutoMergeChange={isOpen ? setAutoMerge : undefined}
+			onChecksFailedClick={openChecks}
+			onChecksRunningClick={openChecks}
 			onConvertToDraftClick={() => undefined}
+			onMergeClick={mergeReady ? DEMO_MERGE : undefined}
+			onReviewRequiredClick={onGuideOpen}
 			onClosePullRequestClick={() => undefined}
 			scrollContainerRef={scrollContainerRef}
 			className="rounded-xl border p-4"

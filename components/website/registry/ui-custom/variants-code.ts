@@ -114,6 +114,13 @@ export const UI_CUSTOM_CODE_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"chain-of-thought-demo-twg-tool-call": dynamic(
+		() =>
+			import("../../demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+				default: mod.ChainOfThoughtDemoTwgToolCall,
+			})),
+		{ ssr: false },
+	),
 	"chain-of-thought-demo-tool-call-details-flow": dynamic(
 		() =>
 			import("../../demos/ui-custom/chain-of-thought-demo").then((mod) => ({

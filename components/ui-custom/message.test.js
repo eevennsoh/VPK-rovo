@@ -12,6 +12,25 @@ test("message markdown headings use typeset flow instead of Streamdown heading c
 	assert.match(MESSAGE_MARKDOWN_SOURCE, /\[&>\*:first-child\]:mt-0/u);
 });
 
+test("chat markdown anchors defer link chrome to typeset-chat ADS text-link rules", () => {
+	const anchorStart = MESSAGE_MARKDOWN_SOURCE.indexOf("function MarkdownAnchor");
+	assert.ok(anchorStart > -1, "expected MarkdownAnchor");
+	const anchorSource = MESSAGE_MARKDOWN_SOURCE.slice(
+		anchorStart,
+		MESSAGE_MARKDOWN_SOURCE.indexOf("Renders a bare HTML element", anchorStart),
+	);
+	assert.match(anchorSource, /void className/u);
+	assert.match(anchorSource, /\.typeset-chat a/u);
+	assert.match(anchorSource, /text-link/u);
+
+	const globalsSource = fs.readFileSync(
+		path.join(__dirname, "../../app/globals.css"),
+		"utf8",
+	);
+	assert.match(globalsSource, /\.typeset-chat a \{[\s\S]*color: var\(--color-link\);/u);
+	assert.match(globalsSource, /\.typeset-chat a:hover \{[\s\S]*text-decoration: underline;/u);
+});
+
 test("MarkdownPre preserves Streamdown data-block so mermaid fences are not treated as inline code", () => {
 	const preStart = MESSAGE_MARKDOWN_SOURCE.indexOf("function MarkdownPre");
 	assert.ok(preStart > -1, "expected MarkdownPre");

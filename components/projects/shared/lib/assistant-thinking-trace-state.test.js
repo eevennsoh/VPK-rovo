@@ -254,6 +254,7 @@ test("tool icon resolver maps agents thinking tools to specific icons", () => {
 		resolveToolIcon({ toolName: "teamwork_graph.search" }).iconComponent?.name,
 		/^TeamworkGraphIcon/u
 	);
+	assert.match(resolveToolIcon({ toolName: "twg.lookup_work_item_delivery_context" }).iconComponent?.name, /^TeamworkGraphIcon/u);
 	assert.match(
 		resolveToolIcon({ toolName: "rfp.map_requirements" }).iconComponent?.name,
 		/^ListChecklistIcon/u

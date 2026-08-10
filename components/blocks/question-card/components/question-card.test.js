@@ -110,6 +110,7 @@ test("QuestionCard keyboard shortcuts toggle multi-select options without submit
 	assert.doesNotMatch(keyboardSelect, /goToNextQuestion\(\)/u);
 
 	assert.match(enterKeyHandler, /handleKeyboardOptionSelect\(option\.id\)/u);
+	assert.match(enterKeyHandler, /isOptionButtonFocused \|\| document\.activeElement === footerButtonRef\.current/u);
 	assert.match(
 		QUESTION_CARD_HOOK_SOURCE,
 		/default: \{[\s\S]*const digit = Number\(event\.key\)[\s\S]*handleKeyboardOptionSelect\(option\.id\)/u,

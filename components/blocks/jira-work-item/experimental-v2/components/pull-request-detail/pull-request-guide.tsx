@@ -8,12 +8,22 @@ import { cn } from "@/lib/utils";
 import type { PullRequestGuidedReview } from "../../lib/pull-request-detail-data";
 
 interface PullRequestGuideProps {
+	approvalState?: "available" | "approved";
+	onApprove?: () => void;
 	review: PullRequestGuidedReview;
 	onFinish: () => void;
 }
 
-export function PullRequestGuide({ review, onFinish }: Readonly<PullRequestGuideProps>) {
+export function PullRequestGuide({
+	approvalState,
+	onApprove,
+	review,
+	onFinish,
+}: Readonly<PullRequestGuideProps>) {
 	const [currentStep, setCurrentStep] = useState(0);
+	const [visitedChapterIds, setVisitedChapterIds] = useState<ReadonlySet<string>>(
+		() => new Set(review.chapters[0] ? [review.chapters[0].id] : []),
+	);
 	const chapter = review.chapters[currentStep] ?? review.chapters[0];
 	if (!chapter) return null;
 
@@ -21,6 +31,15 @@ export function PullRequestGuide({ review, onFinish }: Readonly<PullRequestGuide
 	const chapterDiffs = chapterFiles.map((file) => ({ ...file, language: "diff" as const }));
 	const isFirst = currentStep === 0;
 	const isLast = currentStep === review.chapters.length - 1;
+	const approvalEnabled = approvalState !== undefined;
+	const approved = approvalState === "approved";
+	const allChaptersVisited = review.chapters.every((item) => visitedChapterIds.has(item.id));
+	const selectChapter = (index: number) => {
+		const nextChapter = review.chapters[index];
+		if (!nextChapter) return;
+		setVisitedChapterIds((visited) => new Set(visited).add(nextChapter.id));
+		setCurrentStep(index);
+	};
 
 	return (
 		<div
@@ -40,7 +59,7 @@ export function PullRequestGuide({ review, onFinish }: Readonly<PullRequestGuide
 										? "bg-bg-selected text-text-selected"
 										: "text-text-subtle hover:bg-bg-neutral-subtle-hovered",
 								)}
-								onClick={() => setCurrentStep(index)}
+								onClick={() => selectChapter(index)}
 								type="button"
 								variant="ghost"
 							>
@@ -74,24 +93,33 @@ export function PullRequestGuide({ review, onFinish }: Readonly<PullRequestGuide
 				<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 					<Button
 						disabled={isFirst}
-						onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
+						onClick={() => selectChapter(Math.max(0, currentStep - 1))}
 						type="button"
 						variant="ghost"
 					>
 						Back
 					</Button>
-					<Button
-						onClick={() => {
-							if (isLast) {
-								onFinish();
-								return;
-							}
-							setCurrentStep((step) => Math.min(review.chapters.length - 1, step + 1));
-						}}
-						type="button"
-					>
-						{isLast ? "Finish" : "Next"}
-					</Button>
+					{isLast ? null : (
+						<Button
+							onClick={() => selectChapter(Math.min(review.chapters.length - 1, currentStep + 1))}
+							type="button"
+						>
+							Next
+						</Button>
+					)}
+					{approvalEnabled ? (
+						<Button
+							disabled={approved || !allChaptersVisited || !onApprove}
+							onClick={onApprove}
+							type="button"
+						>
+							{approved ? "Approved" : "Approve pull request"}
+						</Button>
+					) : isLast ? (
+						<Button onClick={onFinish} type="button">
+							Finish
+						</Button>
+					) : null}
 				</div>
 			</section>
 		</div>

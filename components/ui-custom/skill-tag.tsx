@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 
 type SkillTagColor = SkillCollectionId | "2p3p";
 
+type SkillTagVariant = "default" | "on-colored";
+
 function normalizeSkillTagColor(color: SkillTagColor): SkillCollectionId {
 	return color === "2p3p" ? "marketplace" : color;
 }
@@ -34,6 +36,8 @@ function toKebabSkillLabel(value: string): string {
 interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	icon?: React.ReactNode;
 	color?: SkillTagColor;
+	/** Surface treatment. Use `on-colored` when the tag sits on a brand or other colored surface. */
+	variant?: SkillTagVariant;
 	focused?: boolean;
 	focusable?: boolean;
 	onRemove?: () => void;
@@ -53,6 +57,7 @@ function SkillTag({
 	children,
 	icon,
 	color = "default",
+	variant = "default",
 	focused = false,
 	focusable = false,
 	onClick,
@@ -67,6 +72,17 @@ function SkillTag({
 	const isInteractive = Boolean(onClick);
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 	const collection = getSkillCollectionMetadata(normalizeSkillTagColor(color));
+	const isOnColoredSurface = variant === "on-colored";
+	const surfaceClassName = isOnColoredSurface
+		? "bg-bg-inverse-subtle text-primary-foreground"
+		: "bg-bg-neutral text-text";
+	const interactiveSurfaceClassName = isOnColoredSurface
+		? "hover:bg-bg-inverse-subtle-hovered active:bg-bg-inverse-subtle-pressed"
+		: "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed";
+	const overlaySurfaceClassName = isOnColoredSurface
+		? "text-primary-foreground hover:bg-bg-inverse-subtle-hovered active:bg-bg-inverse-subtle-pressed"
+		: "text-icon-subtle hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed";
+	const overlayScrimClassName = isOnColoredSurface ? "from-bg-inverse-subtle" : "from-bg-neutral";
 	// Resolve the single hover-reveal overlay control: a custom action takes
 	// precedence over the remove "×". `isOverlay` drives the floating reveal +
 	// label-fade scrim; a plain inline remove stays laid out after the label.
@@ -104,11 +120,12 @@ function SkillTag({
 			onClick={onClick}
 			tabIndex={focusable ? (tabIndex ?? 0) : tabIndex}
 			className={cn(
-				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm border border-transparent bg-bg-neutral bg-clip-padding py-1 pl-2.5 align-middle text-xs leading-4 font-normal text-text outline-none transition-[background-color,border-color,box-shadow,color]",
+				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm border border-transparent bg-clip-padding py-1 pl-2.5 align-middle text-xs leading-4 font-normal outline-none transition-[background-color,border-color,box-shadow,color]",
+				surfaceClassName,
 				onRemove && !isOverlayRemove ? "pr-1" : "pr-1.5",
 				"focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 				focused && "border-ring ring-3 ring-ring/50",
-				isInteractive ? "cursor-pointer hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "cursor-default",
+				isInteractive ? cn("cursor-pointer", interactiveSurfaceClassName) : "cursor-default",
 				className,
 			)}
 			data-focused={focused ? "true" : undefined}
@@ -138,7 +155,7 @@ function SkillTag({
 			{shouldShowOverlayScrim ? (
 				<span
 					aria-hidden
-					className="pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-bg-neutral from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100"
+					className={cn("pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100", overlayScrimClassName)}
 					data-slot="skill-tag-overlay-scrim"
 				/>
 			) : null}
@@ -153,7 +170,8 @@ function SkillTag({
 							overlayControl.onClick();
 						}}
 						className={cn(
-							"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs text-icon-subtle transition-[opacity,background-color,color] duration-fast ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed",
+							"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs transition-[opacity,background-color,color] duration-fast ease-out",
+							overlaySurfaceClassName,
 							overlayControl.isOverlay
 								? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:pointer-events-auto group-focus-within/skill-tag:opacity-100"
 								: "opacity-100",
@@ -352,4 +370,4 @@ function SkillTagGroup({ children, className, maxRows, ...props }: Readonly<Skil
 	);
 }
 
-export { SkillTag, SkillTagCount, SkillTagGroup, type SkillTagProps, type SkillTagCountProps, type SkillTagGroupProps, type SkillTagColor };
+export { SkillTag, SkillTagCount, SkillTagGroup, type SkillTagProps, type SkillTagCountProps, type SkillTagGroupProps, type SkillTagColor, type SkillTagVariant };

@@ -12,6 +12,9 @@ const MANIFEST_SOURCE = readFileSync(join(ROOT, "app/data/component-manifest.ts"
 const DETAILS_SOURCE = readDetailCategorySource("ui-custom");
 const REGISTRY_SOURCE = readWebsiteRegistrySource();
 const DEMO_SOURCE = readFileSync(join(ROOT, "components/website/demos/ui-custom/twg-appstack-demo.tsx"), "utf8");
+const TWG_TOOL_SOURCE = readFileSync(join(ROOT, "components/ui-custom/twg-tool.tsx"), "utf8");
+const TWG_TOOL_DEMO_SOURCE = readFileSync(join(ROOT, "components/website/demos/ui-custom/twg-tool-demo.tsx"), "utf8");
+const THINKING_TRACE_PRESENTATION_SOURCE = readFileSync(join(ROOT, "components/projects/shared/lib/assistant-thinking-trace-presentation.tsx"), "utf8");
 
 test("TWG Appstack exposes the shared 16/20/24/32 tile size scale", () => {
 	assert.match(SOURCE, /export function TWGAppstack/u);
@@ -82,6 +85,63 @@ test("TWG Appstack only staggers its first reveal and layout-animates later sour
 test("TWG Appstack keeps the legacy TwgToolSourceStack adapter", () => {
 	assert.match(SOURCE, /export function TwgToolSourceStack\(props: TWGAppstackProps\)/u);
 	assert.match(SOURCE, /return <TWGAppstack \{\.\.\.props\} \/>/u);
+});
+
+test("TWG Tool aligns expanded reasoning content with the banner copy", () => {
+	assert.match(
+		TWG_TOOL_SOURCE,
+		/"mt-2 pl-12 overflow-hidden text-xs leading-5 text-text-subtle"/u,
+	);
+});
+
+test("TWG Tool only reserves banner inset for the animated loader", () => {
+	assert.match(
+		TWG_TOOL_SOURCE,
+		/const bannerPaddingClassName = showLoader \? "pl-1" : "";/u,
+	);
+});
+
+test("TWG Tool nested reasoning content can be expanded and collapsed", () => {
+	assert.match(
+		TWG_TOOL_DEMO_SOURCE,
+		/<ChainOfThoughtStep[\s\S]*label="Evaluating sources"[\s\S]*collapsible[\s\S]*defaultOpen/u,
+	);
+	assert.match(TWG_TOOL_DEMO_SOURCE, /description="Read through 6 sources"[\s\S]*showLoader=\{false\}[\s\S]*contentClassName="pl-2"/u);
+});
+
+test("assistant thinking TWG tools omit the nested loader", () => {
+	assert.match(
+		THINKING_TRACE_PRESENTATION_SOURCE,
+		/<TwgTool[\s\S]*onBannerClick=\{interactive \? toggleOpen : undefined\}[\s\S]*showLoader=\{false\}/u,
+	);
+	assert.match(
+		THINKING_TRACE_PRESENTATION_SOURCE,
+		/"twg\.lookup_work_item_delivery_context": \{[\s\S]*title: "Connecting work through Teamwork Graph"[\s\S]*className: "pl-2"/u,
+	);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /TWG_TOOL_ICON_CONTAINER_STYLE = \{ marginTop: 6 \}/u);
+	assert.match(
+		THINKING_TRACE_PRESENTATION_SOURCE,
+		/entry\.header\?\.type === "twg-tool" \? TWG_TOOL_ICON_CONTAINER_STYLE : undefined/u,
+	);
+});
+
+test("the TWG Tool demo exposes a no-loader variant", () => {
+	assert.match(
+		TWG_TOOL_DEMO_SOURCE,
+		/export function TwgToolDemoCompleted\(\)[\s\S]*showLoader=\{false\}[\s\S]*contentClassName="pl-2"/u,
+	);
+	assert.match(
+		DETAILS_SOURCE,
+		/title: "Without loader"[\s\S]*TWG Tool banner without the nested Teamwork Graph loader\./u,
+	);
+});
+
+test("all TWG Tool demos use a centered frame", () => {
+	assert.match(
+		TWG_TOOL_DEMO_SOURCE,
+		/function TwgToolDemoFrame[\s\S]*flex min-h-full w-full items-center justify-center p-4/u,
+	);
+	assert.equal((TWG_TOOL_DEMO_SOURCE.match(/<TwgToolDemoFrame>/gu) ?? []).length, 4);
 });
 
 test("TWG Appstack is wired into the ui-custom catalog", () => {

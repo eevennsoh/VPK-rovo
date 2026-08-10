@@ -105,6 +105,32 @@ test("sanitizes scaffolding text and keeps contextual lines", () => {
 	);
 });
 
+test("preserves fenced Mermaid blocks and the Markdown that follows them", () => {
+	const messageText = [
+		"I drafted an improved description.",
+		"",
+		"#### Guest checkout flow",
+		"```mermaid",
+		"flowchart TD",
+		'\tguest{\"Continue as guest?\"} --> confirmation[\"Confirmation\"]',
+		"```",
+		"",
+		"#### Acceptance criteria",
+		"1. A guest can complete checkout.",
+	].join("\n");
+
+	assert.equal(
+		sanitizeQuestionCardMessageText({
+			widgetPayload: {
+				sessionId: "request-user-input-12345",
+				questions: [{ id: "q-1", label: "Apply this description?" }],
+			},
+			messageText,
+		}),
+		messageText,
+	);
+});
+
 test("keeps text visible for translation question cards", () => {
 	assert.equal(
 		shouldSuppressQuestionCardMessageText({

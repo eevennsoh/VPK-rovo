@@ -59,10 +59,12 @@ export function ActivityComposer({
 	agents,
 	onAgentPromptSubmit,
 	onOpenAgentChat,
+	onSkillInvoke,
 }: Readonly<{
 	agents?: readonly AgentSelectorAgent[];
 	onAgentPromptSubmit?: (agentIds: readonly string[], prompt: string) => void;
 	onOpenAgentChat?: (agentId: string) => void;
+	onSkillInvoke?: (skill: SkillsDirectorySkill) => boolean | void;
 }>) {
 	const { state, actions, meta } = useJiraWorkItem();
 	const availableAgents = agents ?? ROVO_AGENT_SELECTOR_AGENTS;
@@ -115,11 +117,17 @@ export function ActivityComposer({
 	};
 
 	const handleInvokeSkill = (skill: SkillsDirectorySkill) => {
+		if (onSkillInvoke?.(skill) === true) return;
 		actions.launchSession(
 			{ id: `skill:${skill.id}`, name: "Rovo" },
 			`/${skill.name}`,
 			skill.name,
 		);
+	};
+
+	const handleOpenWorkingSession = (agentId: string, sessionId: string) => {
+		actions.openSession(sessionId);
+		onOpenAgentChat?.(agentId);
 	};
 
 	const handleSubmit = (body: string) => {
@@ -215,7 +223,7 @@ export function ActivityComposer({
 			<ActivityComposerContextPills
 				onInvokeAgent={handleInvokeAgent}
 				onInvokeSkill={handleInvokeSkill}
-				onOpenAgentChat={onOpenAgentChat}
+				onOpenAgentChat={onOpenAgentChat ? handleOpenWorkingSession : undefined}
 				workingSessions={workingSessions}
 			/>
 			<div className="relative" data-jira-work-item-composer-state="sticky">

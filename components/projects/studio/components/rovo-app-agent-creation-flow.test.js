@@ -516,7 +516,7 @@ test("Studio composer wires dictation separately from realtime live voice", () =
 	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = true;/u);
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
 	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
-	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
+	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ browserTranscriptionOnly: true \}\);/u);
 });
 
 test("Studio realtime voice streams browser interim dictation until server deltas arrive", () => {

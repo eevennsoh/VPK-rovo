@@ -134,11 +134,24 @@ test("experimental v2 exists with a distinctly named composition root", () => {
 
 	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
 	assert.match(compositionSource, /export function ExperimentalV2JiraWorkItem\(/u);
+	assert.match(compositionSource, /stageKey\?: string;/u);
+	assert.match(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*stageKey=\{props\.stageKey\}/u);
+	assert.doesNotMatch(compositionSource, /<ExperimentalV2JiraWorkItemContent[\s\S]*key=\{props\.initialStateRevision\}/u);
 	assert.match(compositionSource, /export default ExperimentalV2JiraWorkItem;/u);
 	assert.match(compositionSource, /export type ExperimentalV2JiraWorkItemProps/u);
 	// The v1 root filename must not linger in v2 — both roots are imported side
 	// by side by the block index, so their names have to stay distinct.
 	assert.equal(fs.existsSync(path.join(V2_DIR, "experimental-jira-work-item.tsx")), false);
+});
+
+test("experimental v2 resets stage-scoped view state only after the stage key changes", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+
+	assert.match(compositionSource, /const previousStageKeyRef = useRef\(stageKey\);/u);
+	assert.match(
+		compositionSource,
+		/useLayoutEffect\(\(\) => \{[\s\S]*Object\.is\(previousStageKeyRef\.current, stageKey\)[\s\S]*return;[\s\S]*previousStageKeyRef\.current = stageKey;[\s\S]*setDescriptionViewMode\("rendered"\);[\s\S]*setSelectedPullRequestIdentity\(null\);[\s\S]*\}, \[stageKey\]\);/u,
+	);
 });
 
 test("experimental v2 opens the shared agent chat as a full-height sibling column", () => {
@@ -153,7 +166,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface onSessionReply=\{onSessionReply\} \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -184,6 +197,11 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 		/className="grid h-full min-h-0 min-w-0 grid-rows-\[auto_minmax\(0,1fr\)\]"[\s\S]*data-jira-work-item-main-column/u,
 	);
 	assert.match(layoutSource, /\{metadataCollapsed \? null : \(/u);
+	assert.match(
+		layoutSource,
+		/sticky bottom-0 z-10 bg-surface-overlay[\s\S]*@\[860px\]\/agentlayout:bg-transparent[\s\S]*data-jira-work-item-composer-dock/u,
+	);
+	assert.match(layoutSource, /from-transparent to-surface-overlay/u);
 });
 
 test("experimental v2 and v1 are mutually isolated", () => {
@@ -377,20 +395,28 @@ test("experimental v2 working-agents menu includes waiting sessions without chan
 	assert.match(contextPillsSource, /inlineMetadata: \([\s\S]*<WorkingSessionActivityByline[\s\S]*sessionIndex=\{sessionIndex\}/u);
 	assert.match(contextPillsSource, /<AgentAvatarVisual[\s\S]*sizePx=\{24\}/u);
 	assert.match(contextPillsSource, /brandName=\{session\.agentBrandName\}/u);
+	assert.match(contextPillsSource, /vpkLogo=\{session\.agentName === "Rovo" \? "rovo" : undefined\}/u);
 	assert.match(contextPillsSource, /<CyclingByline className="menu-row-title text-text-subtlest">/u);
 	assert.match(contextPillsSource, /className="mb-2 flex flex-wrap gap-2"/u);
 	assert.match(contextPillsSource, /WORKING_SESSION_ACTIVITY_STAGGER_MS \* \(sessionIndex \+ 1\)/u);
 	assert.match(contextPillsSource, /window\.setTimeout\([\s\S]*window\.setInterval\([\s\S]*setActivityCycleIndex\(\(index\) => index \+ 1\)/u);
 	assert.match(contextPillsSource, /window\.clearTimeout\(timeoutId\);[\s\S]*window\.clearInterval\(intervalId\);/u);
 	assert.doesNotMatch(contextPillsSource, /Math\.random/u);
-	assert.match(contextPillsSource, /\{workingSessions\.length\} \{workingSessions\.length === 1 \? "agent" : "agents"\} working/u);
 	assert.match(
 		contextPillsSource,
-		/<ContextBarPill[\s\S]*icon=\{\([\s\S]*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern="diagonal-top-left"[\s\S]*shape="dot"[\s\S]*size="small"/u,
+		/const needsInputCount = workingSessions\.filter\(\(session\) => \([\s\S]*session\.status === "waiting" && session\.waitingOn\?\.kind === "user"[\s\S]*const summaryCount = needsInputCount > 0 \? needsInputCount : workingSessions\.length;[\s\S]*const summaryLabel = needsInputCount > 0[\s\S]*"agent needs" : "agents need"[\s\S]*"agent" : "agents"\} working`/u,
 	);
 	assert.match(
 		contextPillsSource,
-		/trailing: session\.status === "waiting"[\s\S]*<span className="text-xs text-text-subtle">Waiting<\/span>[\s\S]*: null/u,
+		/needsInputCount > 0 \? \([\s\S]*<Shimmer as="span">\{summaryLabel\}<\/Shimmer>[\s\S]*\) : summaryLabel/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/<ContextBarPill[\s\S]*aria-label=\{summaryLabel\}[\s\S]*icon=\{\([\s\S]*<PixelLoader[\s\S]*className="size-3 justify-center"[\s\S]*pattern=\{needsInputCount > 0 \? "breathing" : "diagonal-top-left"\}[\s\S]*shape="dot"[\s\S]*size="small"/u,
+	);
+	assert.match(
+		contextPillsSource,
+		/trailing: session\.status === "waiting"[\s\S]*<span className="text-xs text-text-subtle">\{session\.waitingOn\?\.kind === "user" \? "Needs input" : "Waiting"\}<\/span>[\s\S]*: null/u,
 	);
 	assert.doesNotMatch(contextPillsSource, /<Spinner/u);
 });

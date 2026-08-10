@@ -45,7 +45,7 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	);
 	assert.match(
 		TYPES_SOURCE,
-		/export type PullRequestHeaderMergeState =[\s\S]*"checks-running"[\s\S]*"merge-conflicts"[\s\S]*"ready"/u,
+		/export type PullRequestHeaderMergeState =[\s\S]*"checks-failed"[\s\S]*"checks-running"[\s\S]*"merge-conflicts"[\s\S]*"review-required"[\s\S]*"ready"/u,
 	);
 	assert.match(TYPES_SOURCE, /variant\?: PullRequestHeaderVariant/u);
 	assert.match(
@@ -59,7 +59,9 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 	assert.match(TYPES_SOURCE, /onAutoMergeChange\?: \(enabled: boolean\) => void/u);
 	assert.doesNotMatch(TYPES_SOURCE, /onChatClick/u);
 	assert.match(TYPES_SOURCE, /onMergeClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onChecksFailedClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /onChecksRunningClick\?: \(\) => void/u);
+	assert.match(TYPES_SOURCE, /onReviewRequiredClick\?: \(\) => void/u);
 	assert.match(TYPES_SOURCE, /url\?: string/u);
 	assert.match(TYPES_SOURCE, /scmProviderName\?: string/u);
 	assert.match(TYPES_SOURCE, /onConvertToDraftClick\?: \(\) => void/u);
@@ -177,7 +179,9 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	);
 	assert.match(COMPONENT_SOURCE, /function isMergePrimaryEnabled/u);
 	assert.match(COMPONENT_SOURCE, /handlePrimaryClick/u);
+	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*onChecksFailedClick/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*onChecksRunningClick/u);
+	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*onReviewRequiredClick/u);
 	assert.match(COMPONENT_SOURCE, /<ChevronDownIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /<ShowMoreHorizontalIcon label="" size="small" \/>/u);
 	assert.match(COMPONENT_SOURCE, /aria-label="Merge options"/u);
@@ -187,8 +191,10 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.match(COMPONENT_SOURCE, /closeOnClick=\{false\}/u);
 	assert.match(COMPONENT_SOURCE, /handleAutoMergeChange/u);
 	assert.match(COMPONENT_SOURCE, /DEFAULT_AUTO_MERGE = true/u);
+	assert.match(COMPONENT_SOURCE, /case "checks-failed":[\s\S]*return "Checks failed"/u);
 	assert.match(COMPONENT_SOURCE, /case "checks-running":[\s\S]*return "Checks running"/u);
 	assert.match(COMPONENT_SOURCE, /case "merge-conflicts":[\s\S]*return "Merge conflicts"/u);
+	assert.match(COMPONENT_SOURCE, /case "review-required":[\s\S]*return "Review required"/u);
 	assert.match(COMPONENT_SOURCE, /case "ready":[\s\S]*return "Merge"/u);
 	assert.match(
 		COMPONENT_SOURCE,
@@ -263,6 +269,14 @@ test("PullRequestHeader uses a two-row title and meta layout with action group",
 	assert.doesNotMatch(COMPONENT_SOURCE, /additions/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /Updated \{updatedTime\}/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /data-jira-work-item-pull-request-detail-header/u);
+});
+
+test("PullRequestHeader replaces merge controls with terminal merged state", () => {
+	assert.match(COMPONENT_SOURCE, /const canMutatePullRequest = status === "Open"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/\{canMutatePullRequest \? \([\s\S]*<ButtonGroup variant="split">[\s\S]*mergeStateLabel\(mergeState\)[\s\S]*aria-label="Merge options"[\s\S]*\) : \([\s\S]*<Button disabled[\s\S]*<MergeSuccessIcon[\s\S]*Merged[\s\S]*\)\}/u,
+	);
 });
 
 test("resolveScmProviderName maps common hosts", () => {
