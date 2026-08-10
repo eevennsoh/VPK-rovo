@@ -49,7 +49,7 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	assert.doesNotMatch(layoutSource, /showMetadataTopScrollMask|data-jira-work-item-metadata-scroll-mask|metadataScrollRef/u);
 	assert.match(
 		layoutSource,
-		/const \{ ref: leftScrollRef, style: leftScrollMaskStyle \} = useColumnScrollMask\(\);/u,
+		/const \{ ref: leftScrollMaskRef, style: leftScrollMaskStyle \} = useColumnScrollMask\(\);[\s\S]*leftScrollContainerRef[\s\S]*leftScrollMaskRef\(element\)/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v2/components/metadata-rail.tsx"),
