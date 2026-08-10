@@ -128,7 +128,7 @@ export function ContextResources({
 			 */}
 			<div
 				className={cn(
-					"relative shrink-0 @[860px]/agentlayout:pb-7",
+					"relative z-10 shrink-0 @[860px]/agentlayout:pb-7",
 					hasPlanner
 						? "bg-bg-input [&_[data-slot=button]]:bg-bg-input [&_[data-slot=button]:hover]:bg-bg-neutral-subtle-hovered [&_[data-slot=button]:active]:bg-bg-neutral-subtle-pressed"
 						: null,

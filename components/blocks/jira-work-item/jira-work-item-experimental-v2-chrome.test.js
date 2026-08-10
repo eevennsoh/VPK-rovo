@@ -239,7 +239,18 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		contextResourcesSource,
-		/@\[860px\]\/agentlayout:pt-6[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:pb-7/u,
+		/@\[860px\]\/agentlayout:pt-6[\s\S]*relative z-10 shrink-0 @\[860px\]\/agentlayout:pb-7/u,
+	);
+	// Both fixed chrome owners must paint above their later z-0 scroll bodies,
+	// otherwise the visible top fade is covered and content hard-clips at the seam.
+	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
+	assert.match(
+		metadataRailSource,
+		/className="group relative z-10 shrink-0"[\s\S]*data-jira-work-item-column-chrome[\s\S]*data-scroll-fade-visible=\{showTopScrollMask \? "" : undefined\}/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/className="relative z-0 flex min-w-0 flex-col gap-2"[\s\S]*data-jira-work-item-column-body/u,
 	);
 	// The resource row owns the top-edge fade driven by its sibling scrollport.
 	assert.doesNotMatch(
@@ -290,7 +301,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.doesNotMatch(layoutSource, /agentlayout:-mt-5">\{metadata\}/u);
 	assert.match(
 		contextResourcesSource,
-		/"relative shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="@container\/resource-row flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*\{pullRequestSelected \? null : \(/u,
+		/"relative z-10 shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="@container\/resource-row flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*\{pullRequestSelected \? null : \(/u,
 	);
 	assert.match(
 		contextResourcesSource,
