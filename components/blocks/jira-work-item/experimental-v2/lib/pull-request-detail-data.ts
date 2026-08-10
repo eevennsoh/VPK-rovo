@@ -70,6 +70,13 @@ export interface PullRequestActivityActor extends PullRequestPerson {
 	kind: "person" | "agent" | "app";
 }
 
+export interface PullRequestActivityReply {
+	id: string;
+	actor: PullRequestActivityActor;
+	timestamp: string;
+	body: string;
+}
+
 interface PullRequestActivityBase {
 	id: string;
 	actor: PullRequestActivityActor;
@@ -96,10 +103,25 @@ export type PullRequestActivity =
 			total: number;
 		})
 	| (PullRequestActivityBase & {
+			kind: "comment-posted";
+			body: string;
+			tag?: string;
+			detail?: {
+				label: string;
+				body: string;
+			};
+		})
+	| (PullRequestActivityBase & {
 			kind: "review-submitted";
 			decision: "approved" | "changes-requested" | "commented";
 			body: string;
 			filePath?: string;
+			replies?: readonly PullRequestActivityReply[];
+			allowReply?: boolean;
+			detail?: {
+				label: string;
+				body: string;
+			};
 		})
 	| (PullRequestActivityBase & {
 			kind: "thread-resolved";
@@ -347,6 +369,18 @@ const GITHUB: PullRequestActivityActor = {
 	kind: "app",
 };
 
+const GITHUB_ACTIONS: PullRequestActivityActor = {
+	id: "github-actions",
+	name: "github-actions",
+	kind: "app",
+};
+
+const CODEX: PullRequestActivityActor = {
+	id: "codex",
+	name: "Codex",
+	kind: "app",
+};
+
 const GUIDED_REVIEW_REPO_COMMIT_URL = "https://github.com/eevensoh/vpk-rovo/commit";
 
 const GUIDED_REVIEW_COMMITS: readonly PullRequestCommit[] = [
@@ -465,6 +499,19 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		total: GUIDED_REVIEW_CHECKS.length,
 	},
 	{
+		id: "react-doctor-comment",
+		kind: "comment-posted",
+		actor: GITHUB_ACTIONS,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 53),
+		timestamp: "7 minutes ago",
+		tag: "Bot",
+		body: "React Doctor found no new issues. 🎉",
+		detail: {
+			label: "Review details",
+			body: "Reviewed by React Doctor for commit f8cc291.",
+		},
+	},
+	{
 		id: "code-planner-review",
 		kind: "review-submitted",
 		actor: CODE_PLANNER,
@@ -473,6 +520,29 @@ const GUIDED_REVIEW_ACTIVITY: readonly PullRequestActivity[] = [
 		decision: "approved",
 		body: "Order creation stays server-owned, and the route forwards only the fields the guest-order service accepts.",
 		filePath: "backend/services/guest-order-service.js",
+	},
+	{
+		id: "codex-review",
+		kind: "review-submitted",
+		actor: CODEX,
+		occurredAtMs: Date.UTC(2026, 7, 10, 1, 55),
+		timestamp: "5 minutes ago",
+		decision: "commented",
+		body: "P2 · Narrow the nullable delivery address before creating the order. The current route can still forward an incomplete address after a recoverable validation failure.",
+		filePath: "backend/services/guest-order-service.js",
+		allowReply: true,
+		detail: {
+			label: "About Codex in GitHub",
+			body: "Codex reviewed commit f8cc291 and posted this suggestion on the pull request.",
+		},
+		replies: [
+			{
+				id: "codex-review-fix",
+				actor: VENN,
+				timestamp: "3 minutes ago",
+				body: "Fixed in 8b4e6fa. Delivery-address validation now narrows before order creation, and lint, typecheck, and the guest-checkout browser tests pass.",
+			},
+		],
 	},
 	{
 		id: "unit-test-creator-review",
