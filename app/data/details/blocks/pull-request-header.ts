@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_HEADER_DETAIL: ComponentDetail = {
 	description:
-		"Full-width pull-request detail header with expanded and compact variants. Use `variant` for controlled presentation, or provide `scrollContainerRef` to collapse the author, branches, and repository meta as the linked container scrolls.",
+		"Two-row pull-request detail header with expanded and compact variants. The title row stays visible with separated action groups (Chat · Auto merge + Merge · More actions); use `variant` or `scrollContainerRef` to collapse the status, repository, and branch meta row. Compact mode also shrinks the PR number and title to `text-sm`.",
 	importStatement: `import { PullRequestHeader } from "@/components/blocks/pull-request-header";
 import type { PullRequestHeaderProps } from "@/components/blocks/pull-request-header";`,
 	usage: `import { useRef } from "react";
@@ -16,15 +16,11 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   number={1847}
   title="Add the guest checkout storefront flow"
   status="Open"
-  authorName="Venn"
-  authorAvatarSrc="/avatar-user/venn/venn.png"
   baseBranch="main"
-  headBranch="feature/shop-4821-guest-checkout"
+  headBranch="feature/guest-checkout"
   repository="eevensoh/vpk-rovo"
-  additions={86}
-  deletions={21}
-  updatedTime="20m ago"
-  url="https://github.com/eevensoh/vpk-rovo/pull/1847"
+  mergeState="ready"
+  defaultAutoMerge
   variant="compact"
 />
 
@@ -44,7 +40,7 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			name: "variant",
 			type: '"expanded" | "compact"',
 			description:
-				"Controlled presentation override. When provided, it takes precedence over scroll-driven collapse.",
+				"Controlled presentation override. When provided, it takes precedence over scroll-driven collapse. Compact also applies `text-sm` to the PR number and title.",
 		},
 		{
 			name: "scrollContainerRef",
@@ -75,58 +71,66 @@ const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 			name: "status",
 			type: '"Open" | "Merged"',
 			required: true,
-			description: "Review state rendered as a status lozenge (Open = success, Merged = discovery).",
-		},
-		{
-			name: "authorName",
-			type: "string",
-			required: true,
-			description: "Author display name shown beside the avatar.",
-		},
-		{
-			name: "authorAvatarSrc",
-			type: "string",
-			description: "Optional author avatar image URL.",
+			description:
+				"Review state rendered as a status lozenge in the meta row (Open = success, Merged = discovery).",
 		},
 		{
 			name: "baseBranch",
 			type: "string | null",
-			description: "Target / base branch shown before the arrow. Branch pills omit when either side is missing.",
+			description:
+				"Target / base branch shown after the arrow. Branch text omits when either side is missing.",
 		},
 		{
 			name: "headBranch",
 			type: "string | null",
-			description: "Source / head branch shown after the arrow.",
+			description: "Source / head branch shown before the arrow.",
 		},
 		{
 			name: "repository",
 			type: "string",
 			required: true,
-			description: "Owner/name path shown next to the GitHub logo.",
+			description: "Owner/name path shown in the GitHub repository tag.",
 		},
 		{
-			name: "additions",
-			type: "number",
-			required: true,
-			description: "Lines added, shown in success green as `+N`.",
+			name: "mergeState",
+			type: '"checks-running" | "merge-conflicts" | "ready"',
+			default: '"ready"',
+			description:
+				'Merge button label: `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts", `"ready"` → "Merge".',
 		},
 		{
-			name: "deletions",
-			type: "number",
-			required: true,
-			description: "Lines deleted, shown in danger red as `-N`.",
+			name: "autoMerge",
+			type: "boolean",
+			description:
+				"Controlled Auto merge toggle pressed state. Prefer with `onAutoMergeChange`.",
 		},
 		{
-			name: "updatedTime",
-			type: "string",
-			required: true,
-			description: "Relative update label shown after the diff stats (e.g. `20m ago`).",
+			name: "defaultAutoMerge",
+			type: "boolean",
+			default: "true",
+			description:
+				"Uncontrolled Auto merge default. On (`true`) unless overridden.",
 		},
 		{
-			name: "url",
-			type: "string",
-			required: true,
-			description: "External URL opened by the Open in GitHub CTA.",
+			name: "onAutoMergeChange",
+			type: "(enabled: boolean) => void",
+			description: "Called when the Auto merge toggle changes.",
+		},
+		{
+			name: "onChatClick",
+			type: "() => void",
+			description: "Called when the Chat icon button is activated.",
+		},
+		{
+			name: "onMergeClick",
+			type: "() => void",
+			description: "Called when the Merge button is activated.",
+		},
+		{
+			name: "onMoreActionsClick",
+			type: "() => void",
+			description:
+				"Called when the More actions (ellipsis) icon button is activated.",
 		},
 	],
 };

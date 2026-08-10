@@ -3,27 +3,34 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import CommentIcon from "@atlaskit/icon/core/comment";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+
 import { Button } from "@/components/ui/button";
-import { GithubLogo } from "@/components/ui/logo-third-party";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
-import { ExternalLinkIcon } from "@/components/ui/vpk-icons";
-import { token } from "@/lib/tokens";
+import { Tag } from "@/components/ui/tag";
+import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 
 import type {
+	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
 	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";
 
 export type {
+	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
 	PullRequestHeaderVariant,
 } from "@/components/blocks/pull-request-header/components/pull-request-header-types";
 
 const DEFAULT_COLLAPSE_OFFSET = 16;
+const DEFAULT_MERGE_STATE: PullRequestHeaderMergeState = "ready";
+const DEFAULT_AUTO_MERGE = true;
 const META_ENTER_TRANSITION = {
 	duration: 0.2,
 	ease: [0, 0.4, 0, 1],
@@ -37,6 +44,8 @@ const LAYOUT_TRANSITION = {
 	ease: [0.4, 0, 0, 1],
 } as const; // duration-medium + ease-in-out
 const INSTANT_TRANSITION = { duration: 0 } as const;
+const TITLE_SIZE_TRANSITION =
+	"transition-[font-size] duration-medium ease-in-out motion-reduce:transition-none";
 
 function statusLozengeVariant(
 	status: PullRequestHeaderStatus,
@@ -53,7 +62,40 @@ function statusLozengeVariant(
 	}
 }
 
-function resolveVariant({
+function mergeStateLabel(mergeState: PullRequestHeaderMergeState): string {
+	switch (mergeState) {
+		case "checks-running":
+			return "Checks running";
+		case "merge-conflicts":
+			return "Merge conflicts";
+		case "ready":
+			return "Merge";
+		default: {
+			const _exhaustive: never = mergeState;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Renders `folder/leaf` with parent path segments in subtlest text. */
+function BranchName({ name }: Readonly<{ name: string }>) {
+	const separatorIndex = name.lastIndexOf("/");
+	if (separatorIndex === -1) {
+		return <span className="text-text">{name}</span>;
+	}
+
+	const parentPath = name.slice(0, separatorIndex + 1);
+	const leaf = name.slice(separatorIndex + 1);
+
+	return (
+		<span className="text-text">
+			<span className="text-text-subtlest">{parentPath}</span>
+			{leaf}
+		</span>
+	);
+}
+
+export function resolveVariant({
 	variant,
 	scrollContainerRef,
 	collapseOffset = DEFAULT_COLLAPSE_OFFSET,
@@ -71,8 +113,9 @@ function resolveVariant({
 }
 
 /**
- * Full-width pull-request detail header: `#N` + title + status, Open in GitHub
- * CTA, author + branch pills, and repository / diff / updated meta.
+ * Full-width pull-request detail header: `#N` + title with Chat / Auto merge /
+ * Merge / More actions group, plus a collapsible meta row for status,
+ * repository, and branch direction.
  */
 export function PullRequestHeader({
 	variant,
@@ -81,15 +124,16 @@ export function PullRequestHeader({
 	number,
 	title,
 	status,
-	authorName,
-	authorAvatarSrc,
 	baseBranch,
 	headBranch,
 	repository,
-	additions,
-	deletions,
-	updatedTime,
-	url,
+	mergeState = DEFAULT_MERGE_STATE,
+	autoMerge,
+	defaultAutoMerge = DEFAULT_AUTO_MERGE,
+	onAutoMergeChange,
+	onChatClick,
+	onMergeClick,
+	onMoreActionsClick,
 	className,
 	...props
 }: Readonly<PullRequestHeaderProps>) {
@@ -126,6 +170,24 @@ export function PullRequestHeader({
 	const exitTransition = shouldReduceMotion
 		? INSTANT_TRANSITION
 		: META_EXIT_TRANSITION;
+	const branchPair =
+		baseBranch && headBranch
+			? { baseBranch, headBranch }
+			: null;
+	const titleSizeClass =
+		resolvedVariant === "compact" ? "text-sm" : "text-base";
+	const autoMergeToggleProps =
+		autoMerge !== undefined
+			? {
+					pressed: autoMerge,
+					onPressedChange: onAutoMergeChange,
+				}
+			: {
+					defaultPressed: defaultAutoMerge,
+					...(onAutoMergeChange
+						? { onPressedChange: onAutoMergeChange }
+						: {}),
+				};
 
 	return (
 		<header
@@ -141,84 +203,103 @@ export function PullRequestHeader({
 				}
 			>
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="min-w-0">
-						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-							<span className="shrink-0 text-text-subtle">#{number}</span>
-							<h1
-								className="min-w-0 text-text"
-								style={{ font: token("font.heading.medium") }}
-							>
-								{title}
-							</h1>
-							<Lozenge variant={statusLozengeVariant(status)}>
-								{status}
-							</Lozenge>
-						</div>
+					<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+						<span
+							className={cn(
+								"shrink-0 font-normal text-text-subtlest",
+								TITLE_SIZE_TRANSITION,
+								titleSizeClass,
+							)}
+						>
+							#{number}
+						</span>
+						<h1
+							className={cn(
+								"min-w-0 font-medium text-text",
+								TITLE_SIZE_TRANSITION,
+								titleSizeClass,
+							)}
+						>
+							{title}
+						</h1>
 					</div>
-					<Button
+					<ButtonGroup
+						aria-label="Pull request actions"
 						className="w-full sm:w-auto"
-						nativeButton={false}
-						render={
-							<a
-								aria-label="Open pull request in GitHub"
-								href={url}
-								rel="noreferrer noopener"
-								target="_blank"
-							/>
-						}
-						variant="outline"
+						variant="separated"
 					>
-						Open in GitHub
-						<ExternalLinkIcon aria-hidden data-icon="inline-end" size="small" />
-					</Button>
+						<ButtonGroup>
+							<Button
+								aria-label="Chat"
+								onClick={onChatClick}
+								size="icon"
+								variant="outline"
+							>
+								<CommentIcon label="" />
+							</Button>
+						</ButtonGroup>
+						<ButtonGroup>
+							<Toggle
+								aria-label="Auto merge"
+								variant="outline"
+								{...autoMergeToggleProps}
+							>
+								Auto merge
+							</Toggle>
+						</ButtonGroup>
+						<ButtonGroup>
+							<Button onClick={onMergeClick} variant="outline">
+								{mergeStateLabel(mergeState)}
+							</Button>
+						</ButtonGroup>
+						<ButtonGroup>
+							<Button
+								aria-label="More actions"
+								onClick={onMoreActionsClick}
+								size="icon"
+								variant="outline"
+							>
+								<ShowMoreHorizontalIcon label="" />
+							</Button>
+						</ButtonGroup>
+					</ButtonGroup>
 				</div>
 				<AnimatePresence initial={false}>
 					{resolvedVariant === "expanded" ? (
 						<motion.div
-							animate={{ opacity: 1 }}
+							animate={{ height: "auto", opacity: 1 }}
+							className="overflow-hidden"
 							exit={{
+								height: 0,
 								opacity: 0,
 								transition: exitTransition,
 							}}
-							initial={{ opacity: 0 }}
+							initial={{ height: 0, opacity: 0 }}
 							key="pull-request-header-meta"
 							transition={enterTransition}
 						>
-							<div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle">
-								<Avatar label={authorName} size="xs">
-									{authorAvatarSrc ? (
-										<AvatarImage alt="" src={authorAvatarSrc} />
-									) : null}
-									<AvatarFallback>
-										{authorName.slice(0, 1).toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
-								<span className="font-medium text-text">{authorName}</span>
-								{baseBranch && headBranch ? (
-									<>
-										<code className="rounded-sm bg-bg-neutral px-1.5 py-0.5 text-text">
-											{baseBranch}
-										</code>
-										<span aria-hidden className="text-text">
-											←
+							<div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-text-subtle">
+								<Lozenge variant={statusLozengeVariant(status)}>
+									{status}
+								</Lozenge>
+								<Tag
+									color="gray"
+									elemBefore={
+										<BrandLogoMark frame="chip" label="GitHub" name="github" />
+									}
+									maxWidth="14rem"
+								>
+									{repository}
+								</Tag>
+								{branchPair ? (
+									<span className="min-w-0 truncate">
+										<BranchName name={branchPair.headBranch} />
+										<span aria-hidden className="px-1 text-text-subtle">
+											→
 										</span>
-										<code className="max-w-full truncate rounded-sm bg-bg-neutral px-1.5 py-0.5 text-text">
-											{headBranch}
-										</code>
-									</>
+										<BranchName name={branchPair.baseBranch} />
+									</span>
 								) : null}
-							</div>
-							<div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-text-subtle">
-								<span className="inline-flex min-w-0 items-center gap-1.5">
-									<GithubLogo aria-hidden borderless label="" size="xxsmall" />
-									<span className="truncate">{repository}</span>
-								</span>
-								<span className="flex shrink-0 items-center gap-2">
-									<span className="text-text-success">+{additions}</span>
-									<span className="text-text-danger">-{deletions}</span>
-									<span aria-hidden>·</span>
-									<span>Updated {updatedTime}</span>
-								</span>
 							</div>
 						</motion.div>
 					) : null}

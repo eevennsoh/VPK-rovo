@@ -18,9 +18,7 @@ export default function PullRequestHeaderPage() {
 			<div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
 				<section className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-center justify-between gap-3">
-						<h2 style={{ font: token("font.heading.small") }}>
-							Controlled variant
-						</h2>
+						<h2 style={{ font: token("font.heading.small") }}>Merge</h2>
 						<ToggleGroup
 							aria-label="Pull request header variant"
 							onValueChange={(values) => {
@@ -40,8 +38,33 @@ export default function PullRequestHeaderPage() {
 					</div>
 					<PullRequestHeader
 						{...DEMO_PULL_REQUEST_HEADER}
-						className="rounded-md border p-4"
+						className="rounded-xl border p-4"
+						mergeState="ready"
 						variant={variant}
+					/>
+				</section>
+
+				<section className="flex flex-col gap-3">
+					<h2 style={{ font: token("font.heading.small") }}>
+						Checks running
+					</h2>
+					<PullRequestHeader
+						{...DEMO_PULL_REQUEST_HEADER}
+						className="rounded-xl border p-4"
+						mergeState="checks-running"
+						variant="expanded"
+					/>
+				</section>
+
+				<section className="flex flex-col gap-3">
+					<h2 style={{ font: token("font.heading.small") }}>
+						Merge conflicts
+					</h2>
+					<PullRequestHeader
+						{...DEMO_PULL_REQUEST_HEADER}
+						className="rounded-xl border p-4"
+						mergeState="merge-conflicts"
+						variant="expanded"
 					/>
 				</section>
 
@@ -53,6 +76,7 @@ export default function PullRequestHeaderPage() {
 						<PullRequestHeader
 							{...DEMO_PULL_REQUEST_HEADER}
 							className="p-4"
+							mergeState="ready"
 							scrollContainerRef={scrollContainerRef}
 						/>
 						<div
@@ -78,6 +102,7 @@ export default function PullRequestHeaderPage() {
 
 export { PullRequestHeader } from "@/components/blocks/pull-request-header/components/pull-request-header";
 export type {
+	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
 	PullRequestHeaderVariant,

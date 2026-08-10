@@ -2,6 +2,11 @@ import type { ComponentProps, RefObject } from "react";
 
 export type PullRequestHeaderStatus = "Open" | "Merged";
 export type PullRequestHeaderVariant = "expanded" | "compact";
+/** Controls the Merge button label in the title-row action group. */
+export type PullRequestHeaderMergeState =
+	| "checks-running"
+	| "merge-conflicts"
+	| "ready";
 
 export interface PullRequestHeaderProps
 	extends Omit<ComponentProps<"header">, "children"> {
@@ -17,20 +22,28 @@ export interface PullRequestHeaderProps
 	title: string;
 	/** Review state rendered as a status lozenge. */
 	status: PullRequestHeaderStatus;
-	/** Author display name beside the avatar. */
-	authorName: string;
-	/** Optional author avatar image URL. */
-	authorAvatarSrc?: string;
-	/** Target / base branch shown before the arrow (e.g. `main`). */
+	/** Target / base branch shown after the arrow (e.g. `main`). */
 	baseBranch?: string | null;
-	/** Source / head branch shown after the arrow. */
+	/** Source / head branch shown before the arrow. */
 	headBranch?: string | null;
 	/** Owner/name path (e.g. `eevensoh/vpk-rovo`). */
 	repository: string;
-	additions: number;
-	deletions: number;
-	/** Relative update label shown after the diff stats (e.g. `20m ago`). */
-	updatedTime: string;
-	/** External URL opened by the GitHub CTA. */
-	url: string;
+	/**
+	 * Merge button label state.
+	 * `"checks-running"` → "Checks running", `"merge-conflicts"` → "Merge conflicts",
+	 * `"ready"` → "Merge". Defaults to `"ready"`.
+	 */
+	mergeState?: PullRequestHeaderMergeState;
+	/** Controlled auto-merge toggle pressed state. */
+	autoMerge?: boolean;
+	/** Uncontrolled auto-merge default. Defaults to `true` (on). */
+	defaultAutoMerge?: boolean;
+	/** Called when the auto-merge toggle changes. */
+	onAutoMergeChange?: (enabled: boolean) => void;
+	/** Called when the Chat icon button is activated. */
+	onChatClick?: () => void;
+	/** Called when the Merge button is activated. */
+	onMergeClick?: () => void;
+	/** Called when the More actions (ellipsis) icon button is activated. */
+	onMoreActionsClick?: () => void;
 }

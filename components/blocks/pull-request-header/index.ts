@@ -1,6 +1,7 @@
 export { default } from "@/components/blocks/pull-request-header/page";
 export { PullRequestHeader } from "@/components/blocks/pull-request-header/components/pull-request-header";
 export type {
+	PullRequestHeaderMergeState,
 	PullRequestHeaderProps,
 	PullRequestHeaderStatus,
 	PullRequestHeaderVariant,
