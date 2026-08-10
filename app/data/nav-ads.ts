@@ -37,6 +37,7 @@ const ADS_BLOCK_SLUGS = new Set([
 	"sidebar-rail",
 	"smart-link",
 	"pull-request",
+	"pull-request-header",
 	"question-card",
 	"approval-card",
 	"terminal-switch",

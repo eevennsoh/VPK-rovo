@@ -155,7 +155,7 @@ export function PersonLabel({
 	const isAgent = person.kind === "agent";
 	const fallbackText = person.name.slice(0, 2).toUpperCase();
 	return (
-		<span className="flex min-w-0 items-center gap-2">
+		<span className="flex min-w-0 items-center gap-1">
 			{isAgent ? (
 				<AgentAvatarVisual
 					avatarClassName="shrink-0"

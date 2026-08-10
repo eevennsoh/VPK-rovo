@@ -517,7 +517,7 @@
 	max-height: min(var(--rich-text-command-menu-max-height), calc(100vh - 48px));
 	overflow: hidden;
 	border: 1px solid var(--ds-border, #dfe1e6);
-	border-radius: var(--ds-radius-large, 8px);
+	border-radius: var(--ds-radius-xlarge, 12px);
 	background-color: var(--ds-surface-overlay, #ffffff);
 	box-shadow: var(--ds-shadow-overlay, 0 8px 12px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31));
 	color: var(--ds-text, #172b4d);

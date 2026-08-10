@@ -35,7 +35,7 @@ export const PROJECT_DETAILS: Record<string, ComponentDetail> = {
 		},
 	},
 	"jira-agents": {
-		description: "An early Jira Agents gallery scaffold with three empty cards: Jira For You, Kanban & List, and Work Item. The design for each stage has not been layered in yet.",
+		description: "A Jira Agents gallery with a Work Item stage for the software delivery story.",
 		importStatement: `import JiraAgentsPage from "@/components/projects/jira-agents";`,
 		demoLayout: {
 			previewHeight: "fixed",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
@@ -20,12 +20,12 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 
 interface PullRequestDetailViewProps {
 	entry: JiraActivityEventEntry;
-	onBack: () => void;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
 	entry,
-	onBack,
+	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
 	const data = resolvePullRequestDetailData(entry);
@@ -45,24 +45,29 @@ export function PullRequestDetailView({
 	return (
 		<section
 			aria-label={`Pull request #${data.number}: ${data.title}`}
-			className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface"
+			className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 			data-jira-work-item-pull-request-detail
 		>
-			<PullRequestDetailHeader data={data} onBack={onBack} />
+			<PullRequestDetailHeader
+				data={data}
+				scrollContainerRef={scrollContainerRef}
+			/>
 			{review ? (
 				<Tabs
 					className="min-h-0 flex-1"
 					onValueChange={(value) => setActiveTab(value as PullRequestDetailTab)}
 					value={activeTab}
 				>
-					<div className="shrink-0 px-4 sm:px-6">
+					<div className="shrink-0">
 						<TabsList aria-label="Pull request details" className="w-full justify-start" variant="line">
 							<TabsTrigger value="details">Overview</TabsTrigger>
 							<TabsTrigger value="code">Files {review.files.length}</TabsTrigger>
 							<TabsTrigger value="guide">Guide</TabsTrigger>
 						</TabsList>
 					</div>
-					<div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+					<div
+						className="min-h-0 flex-1 py-5"
+					>
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
 						</TabsContent>
@@ -75,7 +80,9 @@ export function PullRequestDetailView({
 					</div>
 				</Tabs>
 			) : (
-				<div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+				<div
+					className="min-h-0 flex-1 py-5"
+				>
 					<PullRequestOverview data={data} />
 				</div>
 			)}

@@ -271,6 +271,13 @@ export const UI_OVERLAY_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"select-demo-single-selection-tags": dynamic(
+		() =>
+			import("../../demos/ui/select-demo").then((mod) => ({
+				default: mod.SelectDemoSingleSelectionTags,
+			})),
+		{ ssr: false },
+	),
 	"select-demo-sides": dynamic(
 		() =>
 			import("../../demos/ui/select-demo").then((mod) => ({

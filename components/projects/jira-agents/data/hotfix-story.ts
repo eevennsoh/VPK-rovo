@@ -37,6 +37,7 @@ export type JiraAgentsStoryChapter =
 	| "plan"
 	| "working"
 	| "handoff"
+	| "fixing"
 	| "review"
 	| "done";
 
@@ -45,6 +46,7 @@ export const JIRA_AGENTS_STORY_CHAPTERS = [
 	{ label: "Plan", value: "plan" },
 	{ label: "Working", value: "working" },
 	{ label: "Handoff", value: "handoff" },
+	{ label: "Fixing", value: "fixing" },
 	{ label: "Review", value: "review" },
 	{ label: "Done", value: "done" },
 ] as const satisfies readonly { label: string; value: JiraAgentsStoryChapter }[];
@@ -61,6 +63,7 @@ const STORY_STATUS_BY_CHAPTER = {
 	plan: "In progress",
 	working: "In progress",
 	handoff: "In progress",
+	fixing: "In progress",
 	review: "In review",
 	done: "Done",
 } as const satisfies Record<JiraAgentsStoryChapter, JiraForYouStatus>;
@@ -70,6 +73,7 @@ const WORK_ITEM_STATUS_BY_CHAPTER = {
 	plan: "In progress",
 	working: "In progress",
 	handoff: "In progress",
+	fixing: "In progress",
 	review: "In review",
 	done: "Done",
 } as const satisfies Record<JiraAgentsStoryChapter, string>;
@@ -317,9 +321,69 @@ const HANDOFF_EVENT: StaticTimelineEvent = {
 	createdAtMs: STORY_EPOCH_MS - 1_320_000,
 };
 
+const FAILED_PR_CHECKS = [
+	{ id: "lint-types", name: "Lint and typecheck", status: "failed", details: "Failed after 42s · deliveryAddress may be null" },
+	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+] as const;
+
+const PASSED_PR_CHECKS = [
+	{ id: "lint-types", name: "Lint and typecheck", status: "passed", details: "Completed in 1m 18s" },
+	{ id: "unit-tests", name: "Unit tests", status: "passed", details: "418 tests in 2m 46s" },
+	{ id: "browser-tests", name: "Guest checkout browser tests", status: "passed", details: "5 scenarios in 1m 32s" },
+] as const;
+
+const FAILED_CI_EVENT: StaticTimelineEvent = {
+	id: "story-ci-failed",
+	kind: "event",
+	actor: GITHUB_ACTOR,
+	icon: "linked",
+	segments: [
+		{ type: "text", text: "blocked PR #1847 after " },
+		{ type: "code", text: "lint-and-typecheck" },
+		{ type: "text", text: " reported " },
+		{ type: "lozenge", text: "1 failed", variant: "danger" },
+	],
+	createdAtMs: STORY_EPOCH_MS - 1_140_000,
+};
+
+const FIXING_PR_EVENT: StaticTimelineEvent = {
+	id: "story-pr-fixing",
+	kind: "event",
+	actor: GITHUB_ACTOR,
+	icon: "linked",
+	segments: [],
+	pullRequest: {
+		number: 1847,
+		title: "Add guest checkout to the storefront",
+		status: "Open",
+		additions: 86,
+		deletions: 21,
+		repository: "eevensoh/vpk-rovo",
+		branch: "feature/guest-checkout",
+		targetBranch: "main",
+		url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
+		authorName: "Venn",
+		createdAtMs: STORY_EPOCH_MS - 1_200_000,
+		updatedAtMs: STORY_EPOCH_MS - 1_140_000,
+		reviewDecision: "review-required",
+		mergeState: "blocked",
+		checks: FAILED_PR_CHECKS,
+	},
+	createdAtMs: STORY_EPOCH_MS - 1_200_000,
+};
+
+const FIXING_EVENTS: readonly StaticTimelineEvent[] = [
+	...WORKING_EVENTS,
+	HANDOFF_EVENT,
+	FIXING_PR_EVENT,
+	FAILED_CI_EVENT,
+];
+
 const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 	...WORKING_EVENTS,
 	HANDOFF_EVENT,
+	FAILED_CI_EVENT,
 	{
 		id: "story-regression-matrix",
 		kind: "changed-files",
@@ -345,7 +409,7 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 				iconName: "page",
 			},
 		],
-		createdAtMs: STORY_EPOCH_MS - 1_200_000,
+		createdAtMs: STORY_EPOCH_MS - 1_020_000,
 	},
 	{
 		id: "story-pr-opened",
@@ -361,15 +425,19 @@ const REVIEW_EVENTS: readonly StaticTimelineEvent[] = [
 			deletions: 21,
 			repository: "eevensoh/vpk-rovo",
 			branch: "feature/guest-checkout",
+			targetBranch: "main",
 			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
 			// Viewer is Venn (`JIRA_WORK_ITEM_CURRENT_USER`); "By me" sorts on authorName.
 			authorName: "Venn",
-			createdAtMs: STORY_EPOCH_MS - 1_080_000,
-			updatedAtMs: STORY_EPOCH_MS - 1_080_000,
+			createdAtMs: STORY_EPOCH_MS - 1_200_000,
+			updatedAtMs: STORY_EPOCH_MS - 900_000,
+			reviewDecision: "approved",
+			mergeState: "ready",
+			checks: PASSED_PR_CHECKS,
 		},
-		createdAtMs: STORY_EPOCH_MS - 1_080_000,
+		createdAtMs: STORY_EPOCH_MS - 900_000,
 	},
-	statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 960_000),
+	statusEvent("story-moved-review", "In progress", "In review", STORY_EPOCH_MS - 840_000),
 ];
 
 const DONE_EVENTS: readonly StaticTimelineEvent[] = [
@@ -388,9 +456,10 @@ const DONE_EVENTS: readonly StaticTimelineEvent[] = [
 			deletions: 21,
 			repository: "eevensoh/vpk-rovo",
 			branch: "feature/guest-checkout",
+			targetBranch: "main",
 			url: "https://github.com/eevensoh/vpk-rovo/pull/1847",
 			authorName: "Venn",
-			createdAtMs: STORY_EPOCH_MS - 1_080_000,
+			createdAtMs: STORY_EPOCH_MS - 1_200_000,
 			updatedAtMs: STORY_EPOCH_MS - 480_000,
 		},
 		createdAtMs: STORY_EPOCH_MS - 480_000,
@@ -480,6 +549,7 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 		plan: 0,
 		working: 1,
 		handoff: 3,
+		fixing: 3,
 		review: 4,
 		done: 5,
 	} as const satisfies Record<Exclude<JiraAgentsStoryChapter, "brief">, number>;
@@ -487,8 +557,8 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 		"Consult Code Planner on the secure API and validation contract",
 		"Implement guest checkout end to end",
 		"Verify the final design and attach a screenshot",
-		"Run the acceptance coverage",
-		"Open the pull request and summarize the outcome",
+		"Open the pull request and fix its CI checks",
+		"Summarize the approved outcome",
 	] as const;
 	const progressChecklist = checklistLabels.map((label, index) => ({
 		id: `story-claude-progress-${index + 1}`,
@@ -505,11 +575,13 @@ function createStorySessions(chapter: JiraAgentsStoryChapter): AgentSession[] {
 				? "Code Planner's contract is ready. I'm implementing the guest order service and storefront flow with server-owned pricing, inventory, payment validation, and idempotent order creation."
 				: chapter === "handoff"
 					? "Guest checkout is implemented. I've verified the final desktop and mobile flow and attached the final guest checkout design screenshot."
-					: chapter === "review"
-						? "The implementation and final design verification are complete. All 18 acceptance checks pass, and I'm opening PR #1847 with the evidence attached."
-						: "Guest checkout is implemented and verified. Shoppers can continue as guests, recoverable failures preserve safe input, and the server owns pricing, inventory, payment validation, and idempotent order creation. PR #1847 is merged with all 18 acceptance checks passing; the final design screenshot is attached.",
+					: chapter === "fixing"
+						? "PR #1847 is open, but it cannot be merged yet. The lint-and-typecheck job found a nullable delivery-address path, so I'm fixing that failure and rerunning all three CI checks before review."
+						: chapter === "review"
+							? "The CI failure is fixed. All three pipeline checks and all 18 acceptance checks pass, so PR #1847 is ready for review with the evidence attached."
+							: "Guest checkout is implemented and verified. Shoppers can continue as guests, recoverable failures preserve safe input, and the server owns pricing, inventory, payment validation, and idempotent order creation. PR #1847 is merged with all 18 acceptance checks passing; the final design screenshot is attached.",
 		progressChecklist,
-		imageAttachment: chapter === "handoff" || chapter === "review" || chapter === "done"
+		imageAttachment: chapter === "handoff" || chapter === "fixing" || chapter === "review" || chapter === "done"
 			? {
 				src: "/illustration/jira-agents/guest-checkout-final.png",
 				alt: "Final guest checkout design",
@@ -580,6 +652,8 @@ function storyEventsForChapter(chapter: JiraAgentsStoryChapter): readonly Static
 			return WORKING_EVENTS;
 		case "handoff":
 			return [...WORKING_EVENTS, HANDOFF_EVENT];
+		case "fixing":
+			return FIXING_EVENTS;
 		case "review":
 			return REVIEW_EVENTS;
 		case "done":
@@ -675,7 +749,7 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 					priority: "high",
 					assignee: "Priya Hansra",
 					assigneeAvatarUrl: "/avatar-human/priya-hansra.png",
-					status: chapter === "handoff" || chapter === "review" || chapter === "done" ? "done" : "inprogress",
+					status: chapter === "handoff" || chapter === "fixing" || chapter === "review" || chapter === "done" ? "done" : "inprogress",
 				},
 				{
 					type: "Story",
@@ -685,7 +759,7 @@ export function createJiraAgentsStoryState(chapter: JiraAgentsStoryChapter): Jir
 					priority: "high",
 					assignee: "Veronica Rodriguez",
 					assigneeAvatarUrl: "/avatar-human/veronica-rodriguez.png",
-					status: chapter === "done" ? "done" : chapter === "handoff" || chapter === "review" ? "inprogress" : "todo",
+					status: chapter === "done" ? "done" : chapter === "handoff" || chapter === "fixing" || chapter === "review" ? "inprogress" : "todo",
 				},
 			],
 			linkedItems: [
@@ -819,7 +893,7 @@ function createJiraAgentsStoryCard(chapter: JiraAgentsStoryChapter): JiraKanbanC
 		...(activeSessions.length > 0
 			? { agentActivities: activeSessions.map(createBoardActivity) }
 			: {}),
-		...(chapter === "review" || chapter === "done"
+		...(chapter === "fixing" || chapter === "review" || chapter === "done"
 			? {
 				pullRequestNumber: 1847,
 				pullRequestStatus: chapter === "done" ? "merged" as const : "open" as const,

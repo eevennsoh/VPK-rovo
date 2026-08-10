@@ -70,6 +70,9 @@ const V2_ONLY_FILES = new Set([
 	"components/development-repository-picker.tsx",
 	"components/experimental-header-overflow-menu.tsx",
 	"components/context-popover-parts.tsx",
+	// Shared TipTap description surface used by WI ContextEditableDescription
+	// and PullRequestOverview — v1 keeps its own inline RichTextEditor wiring.
+	"components/context-description-editor.tsx",
 	// Status + Reported by under the editable title (migrated out of Details rail).
 	"components/context-title-meta.tsx",
 	// Details/Activities toggle lives at the top of the metadata rail (extracted module).
@@ -87,6 +90,9 @@ const V2_ONLY_FILES = new Set([
 	"components/pull-request-detail/pull-request-detail-header.tsx",
 	"components/pull-request-detail/pull-request-overview.tsx",
 	"components/pull-request-detail/pull-request-detail-view.tsx",
+	"components/pull-request-detail/pull-request-context-rail.tsx",
+	"components/pull-request-detail/pull-request-details-rail.tsx",
+	"components/pull-request-detail/pull-request-activity-panel.tsx",
 	// v2 promotes `@Agent` runs in authored comment copy into mention chips; v1
 	// keeps comment bodies as a single plain-text segment.
 	"lib/activity-mention-segments.ts",
@@ -104,6 +110,11 @@ const V2_ONLY_FILES = new Set([
 	"lib/pull-request-phases.test.js",
 	"lib/pull-request-detail-data.ts",
 	"lib/pull-request-detail-data.test.js",
+	"lib/pull-request-activity-adapter.ts",
+	"lib/pull-request-activity-adapter.test.js",
+	// Selected PR filter Tag status → icon/color map (open/merged/failed/draft).
+	"lib/pull-request-status-presentation.ts",
+	"lib/pull-request-status-presentation.test.js",
 ]);
 
 function readBlockFile(relativePath) {
@@ -142,7 +153,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);

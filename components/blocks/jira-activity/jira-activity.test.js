@@ -137,7 +137,14 @@ test("changed-files activity renders agent outputs with the compact Artifact Lis
 	assert.match(CHANGED_FILES_SOURCE, /openLabel=\{outputOpenLabel\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /variant\?: "activity" \| "jira-issue";/u);
 	assert.match(CHANGED_FILES_SOURCE, /isJiraIssue \? "rounded-xl" : "overflow-hidden rounded-lg border border-border"/u);
-	assert.match(CHANGED_FILES_SOURCE, /"group\/activity-card w-full bg-surface"/u);
+	assert.match(CHANGED_FILES_SOURCE, /"group\/activity-card w-full bg-transparent"/u);
+	assert.doesNotMatch(CHANGED_FILES_SOURCE, /"group\/activity-card w-full bg-surface"/u);
+	// Activity artifact footer stays transparent (ArtifactList defaults to raised + shadow).
+	assert.match(
+		CHANGED_FILES_SOURCE,
+		/rounded-none border-x-0 border-b-0 border-t border-border bg-transparent shadow-none/u,
+	);
+	assert.match(CHANGED_FILES_SOURCE, /style=\{isJiraIssue \? undefined : \{ boxShadow: "none" \}\}/u);
 	assert.match(CHANGED_FILES_SOURCE, /entry\.outputs\.length > 0 \? "p-3" : "px-3 pb-3 pt-0"/u);
 	assert.match(
 		INDEX_SOURCE,
@@ -417,6 +424,9 @@ test("the linked event uses the Jira Queue pull-request row", () => {
 		additions: 148,
 		deletions: 37,
 		authorName: "Venn",
+		repository: "eevensoh/vpk-rovo",
+		branch: "fix/comment-highlight",
+		targetBranch: "main",
 		createdAtMs: Date.UTC(2026, 4, 12, 13, 40),
 		updatedAtMs: Date.UTC(2026, 4, 12, 13, 58),
 	});
@@ -456,9 +466,10 @@ test("Jira Activity owns the shared activity card used by agent comments", () =>
 	assert.match(CARD_SOURCE, /activityGroupClass,[\s\S]*"grid"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"group\/activity-card w-full overflow-hidden/u);
 	assert.match(CARD_SOURCE, /actionVisibilityClass[\s\S]*group-hover\/activity-card:opacity-100/u);
-	// Comment cards are borderless — outer chrome and footer separators stay off.
+	// Comment cards are borderless and transparent — no fill over the feed surface.
 	// Overflow stays visible so Avatar's hover scale is not clipped on the flush card edge.
-	assert.match(CARD_SOURCE, /"w-full overflow-visible bg-surface"/u);
+	assert.match(CARD_SOURCE, /"w-full overflow-visible bg-transparent"/u);
+	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-visible bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /"w-full overflow-hidden bg-surface"/u);
 	assert.doesNotMatch(CARD_SOURCE, /border border-border|border-t border-border|showFooterBorder/u);
 	// Both human and agent comments render the shared prompt-input composer on

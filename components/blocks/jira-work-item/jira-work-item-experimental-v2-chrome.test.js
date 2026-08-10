@@ -35,7 +35,7 @@ test("experimental v2 places Status and Reported by under the title", () => {
 		/export function ContextTitleBar\([\s\S]*<ContextEditableTitle \/>[\s\S]*<ContextTitleMeta[\s\S]*pullRequestEntries=\{pullRequestEntries\}/u,
 	);
 	assert.match(titleMetaSource, /data-jira-work-item-title-meta/u);
-	assert.match(titleMetaSource, /className="mt-2 flex items-center gap-4"/u);
+	assert.match(titleMetaSource, /className="mt-2 flex items-center gap-2"/u);
 	assert.doesNotMatch(titleMetaSource, /TitleMetaField|label="Status"|label="Reported by"/u);
 	assert.match(titleMetaSource, /<StatusPill[\s\S]*value=\{metadata\.status\}/u);
 	assert.match(
@@ -204,7 +204,12 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	// conditional fill so scrollTop 0 remains transparent.
 	assert.match(
 		layoutSource,
-		/data-jira-work-item-scroll-region[\s\S]*order-1 shrink-0 @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-10 @\[860px\]\/agentlayout:\[container-type:scroll-state\]"[\s\S]*data-jira-work-item-column-chrome[\s\S]*\{chrome\}/u,
+		/data-jira-work-item-scroll-region[\s\S]*order-1 shrink-0 @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-20 @\[860px\]\/agentlayout:\[container-type:scroll-state\]"[\s\S]*data-jira-work-item-column-chrome[\s\S]*\{chrome\}/u,
+	);
+	// Body is a z-0 stacking context so mermaid/code sticky z-10 cannot cover chrome.
+	assert.match(
+		layoutSource,
+		/order-2 relative z-0 min-w-0[\s\S]*data-jira-work-item-column-body/u,
 	);
 	assert.match(
 		layoutSource,
@@ -212,11 +217,17 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.match(
 		contextResourcesSource,
-		/@\[860px\]\/agentlayout:pt-6[\s\S]*data-jira-work-item-column-chrome-fill=\{hasPlanner \? "input" : "overlay"\}[\s\S]*shrink-0 @\[860px\]\/agentlayout:pb-7/u,
+		/@\[860px\]\/agentlayout:pt-6[\s\S]*data-jira-work-item-column-chrome-fill=\{hasPlanner \? "input" : "overlay"\}[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:pb-7/u,
 	);
+	// Sticky/scroll-state live on the layout chrome wrapper; the resource row
+	// owns StickyRowScrollFade for the stuck-top soft mask.
 	assert.doesNotMatch(
 		contextResourcesSource,
-		/sticky top-0|StickyRowScrollFade/u,
+		/sticky top-0|container-type:scroll-state/u,
+	);
+	assert.match(
+		contextResourcesSource,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-resource-row[\s\S]*<StickyRowScrollFade[\s\S]*className=\{hasPlanner \? "\[&>div\]:from-bg-input" : undefined\}[\s\S]*data-slot="jira-work-item-resource-row-scroll-fade"/u,
 	);
 	assert.match(
 		contextPanelSource,
@@ -262,7 +273,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.doesNotMatch(layoutSource, /agentlayout:-mt-5">\{metadata\}/u);
 	assert.match(
 		contextResourcesSource,
-		/"shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*\{pullRequestSelected \? null : \(/u,
+		/"relative shrink-0 @\[860px\]\/agentlayout:pb-7"[\s\S]*data-jira-work-item-resource-row[\s\S]*className="@container\/resource-row flex flex-wrap items-start gap-2[^"]*"[\s\S]*data-jira-work-item-resource-row-content[\s\S]*aria-label="Add to work item"[\s\S]*resources\.map\(\(resource\) =>[\s\S]*resource\.renderPopover[\s\S]*<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*\{pullRequestSelected \? null : \(/u,
 	);
 	assert.match(
 		contextResourcesSource,
@@ -274,7 +285,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	);
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-list\]\]:bg-bg-input/u);
 	assert.doesNotMatch(contextResourcesSource, /\[&_\[data-slot=tabs-trigger\]\[data-active\]\]:bg-bg-input/u);
-	assert.doesNotMatch(contextResourcesSource, /StickyRowScrollFade|from-bg-input/u);
+	assert.match(contextResourcesSource, /StickyRowScrollFade[\s\S]*from-bg-input/u);
 	assert.doesNotMatch(contextResourcesSource, /<div className="flex flex-col gap-4">/u);
 	// Scroll-state adds the semantic solid fill only once the sticky anchor moves.
 	assert.match(
@@ -314,7 +325,7 @@ test("experimental v2 scopes ContextResources to the left column and the Details
 	assert.doesNotMatch(titleActionsSource, /ContextHeaderActions|LockUnlockedIcon|EyeOpenIcon|ShareIcon/u);
 	assert.match(
 		titleActionsSource,
-		/export function ContextTitleActions\([\s\S]*useJiraWorkItemMeta\(\)[\s\S]*primaryAgentId \?\? \(initialPreset === "blank" \? null : "claude-code"\)[\s\S]*<ButtonGroup variant="split">[\s\S]*aria-label=\{primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"\}[\s\S]*className="has-data-\[icon=inline-start\]:pl-2 \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_img\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_svg\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_img\]:size-4! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_svg\]:size-4!"[\s\S]*size="default"[\s\S]*className="inline-flex size-4 shrink-0 items-center justify-center \[&_span\]:flex! \[&_span\]:items-center! \[&_span\]:justify-center!"[\s\S]*data-agent-logo=\{primaryCodingAgent\?\.id === "rovo-cli" \? "rovo" : primaryCodingAgent \? "third-party" : undefined\}[\s\S]*data-icon=\{primaryCodingAgent \? "inline-start" : undefined\}[\s\S]*primaryCodingAgent\.buttonLogo[\s\S]*<CodeIcon aria-hidden size="small" \/>[\s\S]*primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"[\s\S]*aria-label="More open options" size="icon"/u,
+		/export function ContextTitleActions\([\s\S]*useJiraWorkItemMeta\(\)[\s\S]*primaryAgentId \?\? \(initialPreset === "blank" \? null : "claude-code"\)[\s\S]*<ButtonGroup variant="split">[\s\S]*aria-label=\{primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"\}[\s\S]*className="has-data-\[icon=inline-start\]:pl-2 @max-\[36rem\]\/resource-row:px-2 \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_img\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=rovo\]_svg\]:size-3! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_img\]:size-4! \[&_\[aria-hidden\]\[data-agent-logo=third-party\]_svg\]:size-4!"[\s\S]*size="default"[\s\S]*className="inline-flex size-4 shrink-0 items-center justify-center \[&_span\]:flex! \[&_span\]:items-center! \[&_span\]:justify-center!"[\s\S]*data-agent-logo=\{primaryCodingAgent\?\.id === "rovo-cli" \? "rovo" : primaryCodingAgent \? "third-party" : undefined\}[\s\S]*data-icon=\{primaryCodingAgent \? "inline-start" : undefined\}[\s\S]*primaryCodingAgent\.buttonLogo[\s\S]*<CodeIcon aria-hidden size="small" \/>[\s\S]*className="@max-\[36rem\]\/resource-row:hidden"[\s\S]*primaryCodingAgent \? `Open in \$\{primaryCodingAgent\.label\}` : "Open in"[\s\S]*aria-label="More open options" size="icon"/u,
 	);
 	assert.match(titleActionsSource, /buttonLogo: <RovoColorIcon size="small" \/>/u);
 	assert.match(titleActionsSource, /thirdPartyAgentLogo\("claude", "xxsmall"\)/u);

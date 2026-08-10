@@ -195,11 +195,14 @@ export function ArtifactPane({
 			className={cn(
 				// Borderless panes (work-item details rail) must not clip property-row
 				// focus rings; bordered panes keep overflow-hidden for rounded chrome.
+				// Borderless stays transparent so embedded rails inherit the parent
+				// modal/dialog fill (elevation.surface.overlay) instead of a darker
+				// elevation.surface plate in dark mode.
 				"flex flex-col rounded-lg",
-				borderless ? "overflow-visible" : "overflow-hidden border border-border",
+				borderless ? "overflow-visible bg-transparent" : "overflow-hidden border border-border",
 				className,
 			)}
-			style={{ backgroundColor: token("elevation.surface"), ...style }}
+			style={borderless ? style : { backgroundColor: token("elevation.surface"), ...style }}
 			{...props}
 		>
 			{sections.map((section, index) => {

@@ -273,8 +273,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	const isInteractive = Boolean(onClick);
 	const shouldShowVerifiedIcon = isOtherAvatarTag && isVerified;
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
-	// Any tag rendering the inline "x" remove button gets the standard 4px
-	// right padding (matching non-removable logo/default tags).
+	// Inline "x" remove: right padding is chosen so the hover-bg outer inset
+	// matches the centered 16px control's 2px top/bottom gap inside the 20px
+	// chip (bordered → pe-px; borderless editor → pe-0.5).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
 	const hasOverlayControl = isOverlayRemove || Boolean(overlayAction);
 	const trailingMetrics = normalizeTrailingMetrics(trailingMetric);
@@ -308,7 +309,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// Round the remove button to match the tag shape: all avatar tags and
 	// explicitly rounded tags get a fully-rounded "x".
 	const removeButtonShapeClass = isAvatarType || isRounded ? "rounded-full" : "rounded-xs";
-	const removeButtonMarginClass = hasLeadingElement ? "mr-[-2px]" : "-mx-0.5";
+	// Pull the remove control toward the label only; do not cancel the trailing
+	// pe that keeps the hover-bg 2px from the tag's right border.
+	const removeButtonMarginClass = hasLeadingElement ? undefined : "-ms-0.5";
 	const avatarTagBeforeShapeClass = isUserAvatarTag ? "rounded-full" : isOtherAvatarTag ? "rounded-xs" : "";
 
 	const childText = typeof children === "string" || typeof children === "number" ? String(children) : undefined;
@@ -384,12 +387,14 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// All avatar tags use the same pill shell while preserving the
 					// circle, square, or hexagon shape of their leading avatar.
 					isAvatarType || isRounded ? "rounded-full" : "rounded-sm",
-					// Removable tags and logo/default tags get 4px right padding;
-					// any trailing badge/metric (single or multi) uses 1px so it
-					// sits flush and matches the inter-metric gap; otherwise every
-					// avatar type gets the same 6px trailing inset.
+					// Removable: hover-bg → outer border should match the 2px
+					// top/bottom gap. Bordered chips need pe-px (1px pad + 1px
+					// border); borderless editor uses pe-0.5. Metric/badge chips
+					// keep pe-px; plain avatar / default tags keep their insets.
 					hasRemoveButton
-						? "pe-[4px]"
+						? isEditor
+							? "pe-0.5"
+							: "pe-px"
 						: hasElemAfter
 							? "pe-px"
 							: isAvatarType

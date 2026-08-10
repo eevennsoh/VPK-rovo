@@ -34,7 +34,15 @@ test("Artifact Pane owns independently collapsible sections", () => {
 	assert.match(BLOCK_SOURCE, /export function ArtifactPane\(/u);
 	assert.match(BLOCK_SOURCE, /sections: readonly ArtifactPaneSectionItem\[\];/u);
 	assert.match(BLOCK_SOURCE, /showSeparators\?: boolean;/u);
-	assert.match(BLOCK_SOURCE, /borderless \? "overflow-visible" : "overflow-hidden border border-border"/u);
+	assert.match(BLOCK_SOURCE, /borderless \? "overflow-visible bg-transparent" : "overflow-hidden border border-border"/u);
+	assert.match(
+		BLOCK_SOURCE,
+		/style=\{borderless \? style : \{ backgroundColor: token\("elevation\.surface"\), \.\.\.style \}\}/u,
+	);
+	assert.doesNotMatch(
+		BLOCK_SOURCE,
+		/style=\{\{ backgroundColor: token\("elevation\.surface"\), \.\.\.style \}\}/u,
+	);
 	assert.match(BLOCK_SOURCE, /<Collapsible onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(BLOCK_SOURCE, /function formatCollapsedSectionCount\(count: number \| string\): string/u);
 	assert.match(BLOCK_SOURCE, /typeof count === "number" \|\| \/\^\\d\+\(\?:\\\/\\d\+\)\?\$\/u\.test\(count\)/u);

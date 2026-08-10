@@ -5,6 +5,12 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 
 import { dropdownStyles } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/ui/icon"
+import {
+	SelectTag,
+	SelectTags,
+	type SelectTagProps,
+	type SelectTagsProps,
+} from "@/components/ui/select-tags"
 import { cn } from "@/lib/utils"
 import { Spinner } from "@/components/ui/spinner"
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down"
@@ -41,6 +47,12 @@ interface SelectTriggerProps extends SelectPrimitive.Trigger.Props {
 	size?: "sm" | "default"
 	variant?: "default" | "subtle" | "none"
 	isLoading?: boolean
+	/**
+	 * Host removable `SelectTag` controls inside the trigger. Renders as a
+	 * non-button host (`nativeButton={false}`) and relaxes height/clamp so
+	 * tags can wrap. Use for single-select clearable tags or multi-select tags.
+	 */
+	tags?: boolean
 }
 
 function SelectTrigger({
@@ -48,6 +60,9 @@ function SelectTrigger({
 	size = "default",
 	variant = "default",
 	isLoading = false,
+	tags = false,
+	nativeButton,
+	render,
 	children,
 	...props
 }: Readonly<SelectTriggerProps>) {
@@ -56,11 +71,21 @@ function SelectTrigger({
 			data-slot="select-trigger"
 			data-size={size}
 			data-variant={variant}
+			data-tags={tags ? "true" : undefined}
 			aria-busy={isLoading || undefined}
+			nativeButton={tags ? false : nativeButton}
+			render={tags ? (render ?? <div />) : render}
 			className={cn(
-				"data-placeholder:text-text-subtlest focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive gap-1.5 rounded-lg bg-transparent px-2.5 py-2 text-sm transition-colors select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-md *:data-[slot=select-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4 flex w-fit items-center justify-between whitespace-nowrap outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--opacity-disabled) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
-				"data-[variant=default]:border-input data-[variant=default]:border data-[variant=default]:bg-bg-input data-[variant=default]:hover:bg-bg-input-hovered data-[variant=default]:active:bg-bg-input-pressed",
-				"data-[variant=subtle]:border data-[variant=subtle]:border-transparent data-[variant=subtle]:hover:bg-bg-input-hovered data-[variant=subtle]:active:bg-bg-input-pressed",
+				// Radius matches outline Button / dropdown triggers (`rounded-md`).
+				// Resting tone matches outline Button (`text-text-subtle` /
+				// `text-icon-subtle`). Empty form states stay washed via
+				// `data-placeholder:text-text-subtlest`; chrome selects that should
+				// stay outline-button grey can override placeholder back to subtle.
+				"data-placeholder:text-text-subtlest focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive gap-1.5 rounded-md bg-transparent px-2.5 py-2 text-sm text-text-subtle transition-colors select-none focus-visible:ring-3 aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:gap-1.5 [&_svg:not([class*='size-'])]:size-4 flex w-fit cursor-pointer items-center justify-between whitespace-nowrap outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--opacity-disabled) *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle",
+				// Default fill matches outline Button (`bg-bg-neutral-subtle`), not
+				// `bg-bg-input` — input tokens read near-black in dark mode.
+				"data-[variant=default]:border-border data-[variant=default]:border data-[variant=default]:bg-bg-neutral-subtle data-[variant=default]:hover:bg-bg-neutral-subtle-hovered data-[variant=default]:active:bg-bg-neutral-subtle-pressed",
+				"data-[variant=subtle]:border data-[variant=subtle]:border-transparent data-[variant=subtle]:hover:bg-bg-neutral-subtle-hovered data-[variant=subtle]:active:bg-bg-neutral-subtle-pressed",
 				"data-[variant=none]:border-0 data-[variant=none]:bg-transparent",
 				// Border state overrides must be variant-scoped. The resting
 				// `data-[variant=*]:border-*` rules above have the same specificity as the
@@ -69,6 +94,8 @@ function SelectTrigger({
 				// (`none` needs no entry — `border-0` leaves nothing to colour.)
 				"data-[variant=default]:focus-visible:border-ring data-[variant=default]:aria-invalid:border-destructive",
 				"data-[variant=subtle]:focus-visible:border-ring data-[variant=subtle]:aria-invalid:border-destructive",
+				tags &&
+					"h-auto min-h-8 whitespace-normal *:data-[slot=select-value]:line-clamp-none *:data-[slot=select-value]:flex-wrap [&_[data-slot=tag]_button]:pointer-events-auto",
 				isLoading && "pointer-events-none opacity-(--opacity-loading)",
 				className
 			)}
@@ -76,14 +103,14 @@ function SelectTrigger({
 		>
 			{children}
 			{isLoading ? (
-				<Spinner size="xs" className="text-text-subtle" />
+				<Spinner size="xs" className="text-icon-subtle" />
 			) : (
 				<SelectPrimitive.Icon
 					render={
 						<Icon
 							render={<ChevronDownIcon label="" size="small" spacing="none" />}
 							label=""
-							className="text-text-subtle size-4 pointer-events-none"
+							className="text-icon-subtle size-4 pointer-events-none"
 						/>
 					}
 				/>
@@ -163,11 +190,18 @@ function SelectLabel({ className, inset, ...props }: Readonly<SelectLabelProps>)
 interface SelectItemProps extends SelectPrimitive.Item.Props {
 	/** Extra classes for ItemText (e.g. `whitespace-normal` for rich multi-line content). */
 	textClassName?: string
+	/**
+	 * When false, omits the trailing selected checkmark and its reserved
+	 * right padding (e.g. card-style options that show selection elsewhere).
+	 * Defaults to true.
+	 */
+	showIndicator?: boolean
 }
 
 function SelectItem({
 	className,
 	textClassName,
+	showIndicator = true,
 	children,
 	...props
 }: Readonly<SelectItemProps>) {
@@ -176,24 +210,27 @@ function SelectItem({
 			data-slot="select-item"
 			className={cn(
 				dropdownStyles.selectableItem,
-				"pr-8 pl-2",
+				"pl-2",
+				showIndicator ? "pr-8" : null,
 				"data-selected:bg-bg-selected data-selected:data-highlighted:bg-bg-selected-hovered data-selected:active:bg-bg-selected-pressed",
 				className
 			)}
 			{...props}
 		>
-			<span
-				data-slot="select-item-indicator"
-				className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected"
-			>
-				<SelectPrimitive.ItemIndicator>
-					<Icon
-						render={<CheckMarkIcon label="" size="small" />}
-						label="Selected"
-						className="text-text-selected"
-					/>
-				</SelectPrimitive.ItemIndicator>
-			</span>
+			{showIndicator ? (
+				<span
+					data-slot="select-item-indicator"
+					className="pointer-events-none absolute right-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected"
+				>
+					<SelectPrimitive.ItemIndicator>
+						<Icon
+							render={<CheckMarkIcon label="" size="small" />}
+							label="Selected"
+							className="text-text-selected"
+						/>
+					</SelectPrimitive.ItemIndicator>
+				</span>
+			) : null}
 			<SelectPrimitive.ItemText
 				className={cn(
 					"flex min-w-0 flex-1 gap-2 whitespace-nowrap",
@@ -270,6 +307,8 @@ export {
 	SelectScrollDownButton,
 	SelectScrollUpButton,
 	SelectSeparator,
+	SelectTag,
+	SelectTags,
 	SelectTrigger,
 	SelectValue,
 	type SelectGroupProps,
@@ -281,4 +320,6 @@ export {
 	type SelectSeparatorProps,
 	type SelectScrollUpButtonProps,
 	type SelectScrollDownButtonProps,
+	type SelectTagProps,
+	type SelectTagsProps,
 }

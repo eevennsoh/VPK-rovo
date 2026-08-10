@@ -39,7 +39,7 @@ export function ContextTitleMeta({
 
 	return (
 		<div
-			className="mt-2 flex items-center gap-4"
+			className="mt-2 flex items-center gap-2"
 			data-jira-work-item-title-meta
 		>
 			<StatusPill

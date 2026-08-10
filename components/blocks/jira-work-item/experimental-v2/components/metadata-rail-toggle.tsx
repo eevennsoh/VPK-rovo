@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import {
 	JiraActivityViewControl,
@@ -20,11 +20,24 @@ import { cn } from "@/lib/utils";
  * Focus only recolors the shell’s existing border (`border-ring`) — never an
  * outer ring halo. Trailing segments restore `border-l` while focused so the
  * collapsed join edge turns blue too.
+ *
+ * Pressed (`active:`) fill lives in `PANEL_SEGMENT_SHELL_ACTIVE_CLASS` and is
+ * only applied to Details. Activity keeps a sort chevron inside; CSS `:active`
+ * matches ancestors while a descendant is pressed, so shell `active:` would
+ * flash the whole segment on chevron mousedown even when click stops
+ * propagation. Label already uses transparent active.
  */
 const PANEL_SEGMENT_SHELL_CLASS =
 	// `rounded-md` seeds left corners on the first segment; ButtonGroup strips
 	// inner / trailing edges and restores `rounded-r-md` on the last child.
-	"flex min-w-0 flex-1 items-center rounded-md border border-border bg-transparent text-[0.8rem] hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed data-[selected]:border-border-selected data-[selected]:bg-bg-selected data-[selected]:text-text-selected data-[selected]:hover:bg-bg-selected-hovered data-[selected]:active:bg-bg-selected-pressed has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:border-ring has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:border-ring";
+	"flex min-w-0 flex-1 items-center rounded-md border border-border bg-transparent text-[0.8rem] hover:bg-bg-neutral-hovered data-[selected]:border-border-selected data-[selected]:bg-bg-selected data-[selected]:text-text-selected data-[selected]:hover:bg-bg-selected-hovered has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:border-ring has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:relative has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:z-10 has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:border-ring";
+
+/**
+ * Details-only shell press feedback. Omitted on Activity (`hasSortControl`) so
+ * chevron interaction cannot flash the parent via ancestor `:active`.
+ */
+const PANEL_SEGMENT_SHELL_ACTIVE_CLASS =
+	"active:bg-bg-neutral-pressed data-[selected]:active:bg-bg-selected-pressed";
 
 /**
  * ButtonGroup sets `border-l-0` on trailing segments. While a label/chevron
@@ -35,10 +48,24 @@ const PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS =
 	"has-[[data-jira-work-item-metadata-rail-panel-label]:focus-visible]:border-l! has-[[data-jira-work-item-metadata-rail-sort-trigger]:focus-visible]:border-l!";
 
 /**
+ * When the Activity shell is selected, tint only the sort chevron icon —
+ * not the button chrome. Full selected fill/border still comes from Button
+ * when the menu is open (`aria-expanded`). Chevron stays a menu trigger —
+ * no `aria-pressed` on the sort control.
+ */
+const PANEL_SEGMENT_SELECTED_CHEVRON_CLASS =
+	// Atlaskit Icon is a span with `color: currentColor`, not an `<svg>`, so
+	// tint the sort button itself — `[&_svg]` never reaches the glyph.
+	"data-[selected]:[&_[data-jira-work-item-metadata-rail-sort-trigger]]:text-icon-selected";
+/**
  * Ghost label; selected + focus chrome stay on the shell. Default h-8 matches
- * left chrome. Details fills the shell (`flex-1`); Activity stays content-sized
- * beside the inset chevron (`pe-0` so `gap-1.5` is the full 6px text→icon gap).
- * Kill the Button focus halo — shell owns focus chrome.
+ * left chrome. Details fills the shell (`flex-1`); Activity keeps a centered
+ * label+chevron unit, but the shell is the hit target (`onClick`) so empty
+ * padding still selects the panel. Chevron stops propagation. Label uses
+ * `pe-0` so `gap-1.5` is the full 6px text→icon gap. Kill Button selected
+ * fill/border and focus halo — shell owns those. `aria-pressed:text-inherit`
+ * picks up shell `data-[selected]:text-text-selected` (blue) for both
+ * Details and Activity labels.
  */
 const PANEL_SEGMENT_LABEL_CLASS =
 	"min-w-0 rounded-none border-0 bg-transparent text-[0.8rem] shadow-none hover:bg-transparent active:bg-transparent focus-visible:border-transparent focus-visible:ring-0! focus-visible:ring-offset-0! aria-pressed:border-transparent aria-pressed:bg-transparent aria-pressed:text-inherit aria-pressed:hover:bg-transparent aria-pressed:active:bg-transparent";
@@ -56,16 +83,32 @@ function MetadataRailPanelSegment({
 }>) {
 	const hasSortControl = sortControl != null;
 
+	const handleLabelClick = (event: MouseEvent<HTMLButtonElement>) => {
+		// Activity shell also listens — don't fire onSelect twice.
+		event.stopPropagation();
+		onSelect();
+	};
+
 	return (
 		<div
 			className={cn(
 				PANEL_SEGMENT_SHELL_CLASS,
 				// Activity: center the packed label+chevron unit; restore
-				// collapsed left border while label/chevron is focused.
-				hasSortControl ? cn("justify-center", PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS) : null,
+				// collapsed left border while label/chevron is focused; paint
+				// the chevron selected when this panel is active. Whole shell
+				// is clickable so padding outside the packed unit selects too.
+				// No shell `active:` — chevron mousedown would flash pressed.
+				hasSortControl
+					? cn(
+						"cursor-pointer justify-center",
+						PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS,
+						PANEL_SEGMENT_SELECTED_CHEVRON_CLASS,
+					)
+					: PANEL_SEGMENT_SHELL_ACTIVE_CLASS,
 			)}
 			data-selected={pressed ? "" : undefined}
 			data-slot="button"
+			onClick={hasSortControl ? onSelect : undefined}
 		>
 			{hasSortControl ? (
 				<div className="flex min-w-0 items-center gap-1.5">
@@ -76,7 +119,7 @@ function MetadataRailPanelSegment({
 						size="default"
 						type="button"
 						variant="ghost"
-						onClick={onSelect}
+						onClick={handleLabelClick}
 					>
 						{label}
 					</Button>
@@ -120,8 +163,10 @@ function MetadataRailPanelSegment({
  */
 export function MetadataRailToggle({
 	className,
+	context = "work-item",
 }: Readonly<{
 	className?: string;
+	context?: "work-item" | "pull-request";
 }>) {
 	const { metadataCollapsed } = usePanelLayout();
 	const {
@@ -161,7 +206,10 @@ export function MetadataRailToggle({
 				className="flex w-full items-center px-3"
 				data-jira-work-item-metadata-rail-toggle-content
 			>
-				<ButtonGroup aria-label="Work item panel" className="w-full">
+				<ButtonGroup
+					aria-label={context === "pull-request" ? "Pull request panel" : "Work item panel"}
+					className="w-full"
+				>
 					<MetadataRailPanelSegment
 						label="Details"
 						pressed={activePanelView === "details"}
@@ -177,6 +225,7 @@ export function MetadataRailToggle({
 								<JiraActivityViewControl
 									filter={activityChrome.filter}
 									menuAlign="start"
+									showAgentsOption={activityChrome.filterMode === "work-item"}
 									sortOrder={activityChrome.sortOrder}
 									trigger="chevron"
 									onFilterChange={activityChrome.onFilterChange}

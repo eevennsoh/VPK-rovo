@@ -151,12 +151,12 @@ function ExperimentalV2JiraWorkItemContent({
 									onPullRequestSelect={handlePullRequestSelect}
 								/>
 							)}
-							context={(
+							context={(scrollContainerRef) => (
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
+									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									onDescriptionViewModeChange={setDescriptionViewMode}
-									onPullRequestBack={() => setSelectedPullRequestIdentity(null)}
 								/>
 							)}
 							composer={(
@@ -174,9 +174,15 @@ function ExperimentalV2JiraWorkItemContent({
 									inert={agentChatOpen ? true : undefined}
 								>
 									<MetadataRail
-										activity={<ActivityPanel activitySessionThread={activitySessionThread} />}
+										activity={(
+											<ActivityPanel
+												activitySessionThread={activitySessionThread}
+												railChromeEnabled={selectedPullRequestEntry === null}
+											/>
+										)}
 										automationRules={automationRules}
 										borderless
+										selectedPullRequestEntry={selectedPullRequestEntry}
 									/>
 								</div>
 							)}

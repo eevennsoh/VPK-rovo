@@ -242,38 +242,21 @@ export function JiraActivity({
 
 						return (
 							<li
-								className="relative flex gap-2"
+								className="flex gap-2"
 								data-jira-activity-entry-id={entry.id}
 								key={entry.id}
 							>
+								{/*
+								 * Spine gaps come from JiraActivityNode's icon track (h-10 / h-6):
+								 * the connector only starts below that track, so each node gets a
+								 * clean 4px break without opaque color-matching covers.
+								 */}
 								<JiraActivityNode
 									actor={entry.actor}
 									icon={entry.kind === "event" ? entry.icon : undefined}
 									isLast={isLast}
 									size={isCardEntry ? "card" : "event"}
 								/>
-								{isCardEntry ? (
-									<>
-										{/*
-										 * Spine is centered in the shared w-8 node (x=16). Covers are
-										 * positioned on the li so card content never needs a pull-left
-										 * offset; w-1 cover centered on the spine → left-3.5.
-										 */}
-										<span
-											aria-hidden
-											className="pointer-events-none absolute -top-1 left-3.5 h-1 w-1 bg-surface"
-										/>
-										{isLast ? null : (
-											<span
-												aria-hidden
-												className={cn(
-													"pointer-events-none absolute left-3.5 h-1 w-1 bg-surface",
-													isNextEntryCard ? "bottom-5" : "bottom-4",
-												)}
-											/>
-										)}
-									</>
-								) : null}
 								<div className={cn("min-w-0 flex-1", spacingClassName)}>
 									{entry.kind === "event" ? <JiraActivityEvent entry={entry} /> : null}
 									{entry.kind === "comment" ? (

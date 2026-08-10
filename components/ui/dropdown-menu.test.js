@@ -8,8 +8,9 @@ const source = fs.readFileSync(
 	"utf8",
 );
 
-test("dropdown menu popup uses a 12px container radius", () => {
+test("dropdown menu popup uses a 12px container radius and 4px padding", () => {
 	assert.match(source, /popup:\s*"[^"]*\brounded-xl\b/u);
+	assert.match(source, /popup:\s*"[^"]*\bp-1\b/u);
 	assert.doesNotMatch(source, /popup:\s*"[^"]*\brounded-lg\b/u);
 });
 

@@ -9,10 +9,9 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 import { motion, useReducedMotion, type MotionProps, type Transition } from "motion/react"
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new"
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent"
-import CrossCircleIcon from "@atlaskit/icon/core/cross-circle"
-import LockLockedIcon from "@atlaskit/icon/core/lock-locked"
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
+import CrossIcon from "@atlaskit/icon/core/cross"
 import PersonIcon from "@atlaskit/icon/core/person"
-import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { Icon } from "@/components/ui/icon"
@@ -275,6 +274,42 @@ const presenceColorMap: Record<AvatarPresence, string> = {
 	focus: "bg-discovery",
 }
 
+// Glyphs match ADS / Figma Avatar Presence: solid online, slash busy, target focus, hollow offline.
+// Focus: thick discovery rim (parent fill) + large white disk + small discovery center dot.
+// Cutouts use bg-background so they stay in sync with the outer ring-background separator.
+function AvatarPresenceGlyph({ presence }: Readonly<{ presence: AvatarPresence }>) {
+	switch (presence) {
+		case "online":
+			return null
+		case "busy":
+			return (
+				<span
+					aria-hidden
+					className="absolute top-1/2 left-1/2 h-[22%] w-[72%] -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-background"
+				/>
+			)
+		case "focus":
+			return (
+				<>
+					<span aria-hidden className="absolute inset-[18%] rounded-full bg-background" />
+					{/* Center disc ~28% of badge diameter — matches Figma Focus target weight. */}
+					<span
+						aria-hidden
+						className="absolute top-1/2 left-1/2 size-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-discovery"
+					/>
+				</>
+			)
+		case "offline":
+			return (
+				<span aria-hidden className="absolute inset-1/4 rounded-full bg-background" />
+			)
+		default: {
+			const _exhaustive: never = presence
+			return _exhaustive
+		}
+	}
+}
+
 interface AvatarPresenceIndicatorProps extends React.ComponentProps<"span"> {
 	presence: AvatarPresence
 }
@@ -290,7 +325,8 @@ function AvatarPresenceIndicator({
 			role="img"
 			aria-label={presence}
 			className={cn(
-				"ring-background absolute right-0 bottom-0 z-10 rounded-full ring-2",
+				// overflow-hidden keeps busy/focus/offline glyphs inside the circular fill + ring.
+				"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2",
 				"group-data-[size=xs]/avatar:size-1.5",
 				"group-data-[size=sm]/avatar:size-2",
 				"group-data-[size=default]/avatar:size-2.5",
@@ -301,7 +337,9 @@ function AvatarPresenceIndicator({
 				className
 			)}
 			{...props}
-		/>
+		>
+			<AvatarPresenceGlyph presence={presence} />
+		</span>
 	)
 }
 
@@ -382,17 +420,89 @@ function AvatarProjectBadge({
 	)
 }
 
-type AvatarStatus = "approved" | "declined" | "locked"
+type AvatarStatus = "approved" | "declined" | "locked" | "warning"
 
+// Bang-only glyph for warning status — Atlaskit WarningIcon includes a triangle; Figma wants "!" alone.
+// Paths match the stem + dot from @atlaskit/icon/core/warning (16×16 viewBox), without the triangle.
+function AvatarWarningBangIcon({
+	label = "",
+	size = "small",
+	color = "currentColor",
+	...props
+}: Readonly<NewCoreIconProps>) {
+	const px = size === "small" ? 16 : 24
+	return (
+		<svg
+			width={px}
+			height={px}
+			viewBox="0 0 16 16"
+			fill="none"
+			aria-hidden={label ? undefined : true}
+			aria-label={label || undefined}
+			{...props}
+		>
+			<path fill={color} d="M7.25 4.5v5h1.5v-5z" />
+			<path fill={color} d="M9 11.75a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
+		</svg>
+	)
+}
+
+// Lock silhouette for locked status — Atlaskit LockLockedIcon path with the keyhole bar
+// subpath removed (too small/unclear at status-dot size). Keeps shackle hole + body frame.
+function AvatarLockedIcon({
+	label = "",
+	size = "small",
+	color = "currentColor",
+	...props
+}: Readonly<NewCoreIconProps>) {
+	const px = size === "small" ? 16 : 24
+	return (
+		<svg
+			width={px}
+			height={px}
+			viewBox="0 0 16 16"
+			fill="none"
+			aria-hidden={label ? undefined : true}
+			aria-label={label || undefined}
+			{...props}
+		>
+			<path
+				fill={color}
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M8 1.5A2.5 2.5 0 0 0 5.5 4v3h5V4A2.5 2.5 0 0 0 8 1.5M12 7V4a4 4 0 0 0-8 0v3a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M4 8.5a.5.5 0 0 0-.5.5v5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V9a.5.5 0 0 0-.5-.5z"
+			/>
+		</svg>
+	)
+}
+
+// Optical fit via CSS transform on the Icon wrapper — slightly under AvatarBadge's
+// 0.75/1/1.25 so glyphs leave a thin fill inset without looking wispy at 0.5.
 const STATUS_ICON_CLASS_NAME =
-	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:[&>span>svg]:size-2 group-data-[size=lg]/avatar:[&>span>svg]:size-2 group-data-[size=xl]/avatar:[&>span>svg]:size-2.5 group-data-[size=2xl]/avatar:[&>span>svg]:size-4"
+	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:scale-[0.65] group-data-[size=lg]/avatar:scale-[0.65] group-data-[size=xl]/avatar:scale-[0.85] group-data-[size=2xl]/avatar:scale-[1.1]"
 const LOCKED_STATUS_ICON_CLASS_NAME =
-	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:scale-75 group-data-[size=lg]/avatar:scale-75 group-data-[size=xl]/avatar:scale-100 group-data-[size=2xl]/avatar:scale-125"
+	"group-data-[size=xs]/avatar:hidden group-data-[size=sm]/avatar:hidden group-data-[size=default]/avatar:scale-[0.45] group-data-[size=lg]/avatar:scale-[0.45] group-data-[size=xl]/avatar:scale-[0.65] group-data-[size=2xl]/avatar:scale-[0.85]"
 
-const statusConfig: Record<AvatarStatus, { icon: typeof StatusVerifiedIcon; className: string; iconClassName: string; label: string }> = {
-	approved: { icon: StatusVerifiedIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Approved" },
-	declined: { icon: CrossCircleIcon, className: "bg-destructive text-destructive-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Declined" },
-	locked: { icon: LockLockedIcon, className: "bg-background text-icon-subtle", iconClassName: LOCKED_STATUS_ICON_CLASS_NAME, label: "Locked" },
+// Simple glyphs on presence-style circular fills (seal/disk icons read jagged or solid at this size).
+// Locked reuses offline presence fill so the grey stays in sync.
+const statusConfig: Record<
+	AvatarStatus,
+	{ icon: React.ComponentType<NewCoreIconProps>; className: string; iconClassName: string; label: string }
+> = {
+	approved: { icon: CheckMarkIcon, className: "bg-success text-success-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Approved" },
+	declined: { icon: CrossIcon, className: "bg-destructive text-destructive-foreground", iconClassName: STATUS_ICON_CLASS_NAME, label: "Declined" },
+	locked: {
+		icon: AvatarLockedIcon,
+		className: `${presenceColorMap.offline} text-icon-inverse`,
+		iconClassName: LOCKED_STATUS_ICON_CLASS_NAME,
+		label: "Locked",
+	},
+	warning: {
+		icon: AvatarWarningBangIcon,
+		className: "bg-warning text-icon",
+		iconClassName: STATUS_ICON_CLASS_NAME,
+		label: "Warning",
+	},
 }
 
 interface AvatarStatusIndicatorProps extends React.ComponentProps<"span"> {
@@ -413,7 +523,10 @@ function AvatarStatusIndicator({
 			role="img"
 			aria-label={config.label}
 			className={cn(
-				"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full ring-2",
+				// Same ring treatment as AvatarPresenceIndicator; overflow-hidden keeps glyphs
+				// from painting over ring-2 (which made status borders look thinner).
+				"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2",
+				"inline-flex items-center justify-center",
 				config.className,
 				"group-data-[size=xs]/avatar:size-1.5",
 				"group-data-[size=sm]/avatar:size-2",

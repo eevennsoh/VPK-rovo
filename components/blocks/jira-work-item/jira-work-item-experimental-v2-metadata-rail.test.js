@@ -14,6 +14,7 @@ function readBlockFile(relativePath) {
 
 test("experimental v2 removes the description row and relocates Activity chrome to the rail toggle", () => {
 	const activityPanelSource = readBlockFile("experimental-v2/components/activity-panel.tsx");
+	const contextDescriptionEditorSource = readBlockFile("experimental-v2/components/context-description-editor.tsx");
 	const contextEditableHeaderSource = readBlockFile("experimental-v2/components/context-editable-header.tsx");
 	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
 	assert.match(activityPanelSource, /useSetActivityRailChrome/u);
@@ -28,11 +29,14 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 		activityPanelSource,
 		/mapActivityEventsToJiraEntries\(meta\.activityEvents, activityReferenceTimeMs\)/u,
 	);
-	assert.match(contextEditableHeaderSource, /showToolbar=\{false\}/u);
-	assert.match(contextEditableHeaderSource, /viewMode=\{viewMode\}/u);
+	assert.match(contextDescriptionEditorSource, /showToolbar=\{false\}/u);
 	assert.doesNotMatch(
-		contextEditableHeaderSource,
+		contextDescriptionEditorSource,
 		/stuckToolbarScrollFade|toolbarRestingSeparator|toolbarRestingSeparatorLabel|toolbarReveal/u,
+	);
+	assert.match(
+		contextEditableHeaderSource,
+		/<ContextDescriptionEditor[\s\S]*viewMode=\{viewMode\}/u,
 	);
 	// Left column no longer hosts Activity — only Context scrolls there.
 	assert.doesNotMatch(layoutSource, /activity: ReactNode|useHasActivity|\{activity\}/u);
@@ -45,7 +49,7 @@ test("experimental v2 removes the description row and relocates Activity chrome 
 	assert.doesNotMatch(layoutSource, /showMetadataTopScrollMask|data-jira-work-item-metadata-scroll-mask|metadataScrollRef/u);
 	assert.match(
 		layoutSource,
-		/const \{ ref: leftScrollRef, style: leftScrollMaskStyle \} = useColumnScrollMask\(\);/u,
+		/const \{ ref: leftScrollMaskRef, style: leftScrollMaskStyle \} = useColumnScrollMask\(\);[\s\S]*leftScrollContainerRef[\s\S]*leftScrollMaskRef\(element\)/u,
 	);
 	assert.match(
 		readBlockFile("experimental-v2/components/metadata-rail.tsx"),
@@ -88,7 +92,12 @@ test("experimental v2 renders filled context resources as conditional metadata s
 		/id: "details",[\s\S]*\.\.\.resourceSections,[\s\S]*id: "automation"[\s\S]*id: "development"/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /id: "apps"|title: "Apps"|<AppsSection/u);
-	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*showSeparators=\{false\}[\s\S]*sections=\{/u);
+	assert.match(metadataRailSource, /<ArtifactPane[\s\S]*borderless=\{borderless\}[\s\S]*showSeparators=\{false\}[\s\S]*sections=\{/u);
+	// Borderless ArtifactPane must stay transparent so dark mode matches the modal fill.
+	assert.match(
+		readBlockFile("../artifact-pane/index.tsx"),
+		/borderless \? "overflow-visible bg-transparent"/u,
+	);
 	assert.match(metadataRailSource, /collapsible: false,[\s\S]*content: <DetailsTab draft=\{draft\} onChange=\{actions\.updateMetadata\} people=\{people\} \/>/u);
 	assert.match(metadataRailSource, /content: <AutomationTab rules=\{automationRules\} \/>,[\s\S]*count: automationRules\.length \|\| undefined,[\s\S]*headerAction: \{ label: "Manage automations" \},[\s\S]*id: "automation"/u);
 	assert.match(
@@ -184,26 +193,44 @@ test("experimental v2 shows a read-only title-meta PR Tag and opens PRs from Con
 		/<PullRequestsSelect[\s\S]*entries=\{pullRequestEntries\}[\s\S]*selectedIdentity=\{selectedPullRequestIdentity\}[\s\S]*onClearSelection=\{onPullRequestClear\}[\s\S]*onSelectEntry=\{onPullRequestSelect\}/u,
 	);
 
-	// Resources Select keeps a fixed trigger label; active filter is a removable Tag.
+	// Resources Select keeps a fixed trigger label; active filter uses shared
+	// SelectTag inside SelectTrigger `tags` (non-button host). Under the
+	// resource-row container (< 36rem) the label hides; icon/tag/chevron stay.
 	assert.match(
 		pullRequestsSelectSource,
 		/const TRIGGER_LABEL = "Review pull request"/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/aria-label=\{TRIGGER_LABEL\}[\s\S]*data-jira-work-item-resource-pull-requests[\s\S]*SelectValue>\{\(\) => TRIGGER_LABEL\}/u,
+		/<SelectTrigger[\s\S]*aria-label=\{TRIGGER_LABEL\}[\s\S]*className="gap-2 font-medium data-placeholder:text-text-subtle data-placeholder:\[&_svg\]:text-icon-subtle @max-\[36rem\]\/resource-row:gap-1\.5"[\s\S]*data-jira-work-item-resource-pull-requests[\s\S]*tags[\s\S]*<SelectValue[\s\S]*<SelectTags[\s\S]*className="truncate @max-\[36rem\]\/resource-row:hidden"[\s\S]*\{TRIGGER_LABEL\}[\s\S]*selectedTagLabel && selectedStatusPresentation && SelectedStatusIcon \? \([\s\S]*<SelectTag[\s\S]*aria-label=\{`\$\{selectedStatusPresentation\.label\} pull request \$\{selectedTagLabel\}`\}[\s\S]*color=\{selectedStatusPresentation\.tagColor\}[\s\S]*data-jira-work-item-resource-pull-request-filter[\s\S]*elemBefore=\{[\s\S]*SelectedStatusIcon[\s\S]*onRemove=\{onClearSelection\}[\s\S]*<\/SelectTrigger>/u,
+	);
+	assert.match(
+		pullRequestsSelectSource,
+		/getPullRequestStatusPresentation\(selectedPullRequest\.status\)/u,
+	);
+	assert.match(
+		pullRequestsSelectSource,
+		/MergeFailureIcon[\s\S]*MergeSuccessIcon[\s\S]*PullRequestIcon|"pull-request": PullRequestIcon[\s\S]*"merge-success": MergeSuccessIcon[\s\S]*"merge-failure": MergeFailureIcon/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
 		/data-jira-work-item-resource-pull-requests-menu[\s\S]*positionerClassName="z-\[502\]"/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		pullRequestsSelectSource,
-		/<Tag[\s\S]*data-jira-work-item-resource-pull-request-filter[\s\S]*removeButtonLabel="Remove"[\s\S]*onRemove=\{onClearSelection\}/u,
+		/<\/Select>\s*\{selectedTagLabel \?/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/stopSelectToggle|nativeButton=\{false\}|from "@\/components\/ui\/tag"/u,
 	);
 	assert.match(
 		pullRequestsSelectSource,
-		/<SelectItem[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*selected=\{selected\}/u,
+		/<SelectItem[\s\S]*showIndicator=\{false\}[\s\S]*textClassName="w-full min-w-0 whitespace-normal"[\s\S]*<PullRequest[\s\S]*selected=\{selected\}/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
+		/<SelectItem[\s\S]*pr-8|select-item-indicator\]:top-3/u,
 	);
 	assert.doesNotMatch(
 		pullRequestsSelectSource,
@@ -265,7 +292,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle \/>[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
+		/data-jira-work-item-column-shell[\s\S]*data-jira-work-item-scroll-region[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle context=\{pullRequestSelected \? "pull-request" : "work-item"\} \/>[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
 	);
 	// Same sticky-top + bottom-only mask contract as the left scrollport.
 	assert.match(
@@ -276,10 +303,15 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailSource,
 		/relative min-h-0 min-w-0 flex-1 overflow-y-auto/u,
 	);
-	// Activity chrome lives in MetadataRailToggle; scroll mask lives on the rail body scrollport.
+	// Activity chrome lives in MetadataRailToggle; sticky soft-mask sits on the
+	// scroll-state chrome wrapper (body scrollport keeps bottom-only mask).
+	assert.match(
+		metadataRailSource,
+		/import \{ StickyRowScrollFade \} from "@\/components\/visual\/scroll-mask"[\s\S]*data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle[\s\S]*<StickyRowScrollFade data-slot="jira-work-item-metadata-rail-scroll-fade"/u,
+	);
 	assert.doesNotMatch(
 		metadataRailSource,
-		/import \{ StickyRowScrollFade \}|<StickyRowScrollFade|<JiraActivityViewControl|<PullRequestSortControl/u,
+		/<JiraActivityViewControl|<PullRequestSortControl/u,
 	);
 	assert.doesNotMatch(metadataRailSource, /from "@\/components\/ui\/toggle-group"|<ToggleGroup[\s>]/u);
 	assert.doesNotMatch(contextResourcesSource, /MetadataRailToggle/u);
@@ -299,7 +331,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Pull requests are not a rail segment — interactive list is in ContextResources.
 	assert.match(
 		metadataRailToggleSource,
-		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label="Work item panel"[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*trigger="chevron"/u,
+		/data-jira-work-item-metadata-rail-toggle[\s\S]*data-jira-work-item-metadata-rail-toggle-content[\s\S]*<ButtonGroup[\s\S]*aria-label=\{context === "pull-request" \? "Pull request panel" : "Work item panel"\}[\s\S]*className="w-full"[\s\S]*MetadataRailPanelSegment[\s\S]*label="Details"[\s\S]*label="Activity"[\s\S]*activityChrome != null \? \([\s\S]*<JiraActivityViewControl[\s\S]*showAgentsOption=\{activityChrome\.filterMode === "work-item"\}[\s\S]*trigger="chevron"/u,
 	);
 	assert.doesNotMatch(
 		metadataRailToggleSource,
@@ -321,7 +353,11 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	assert.match(metadataRailToggleSource, /data-jira-work-item-column-chrome-fill="overlay"/u);
 	assert.match(
 		metadataRailSource,
-		/relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*@\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-10 @\[860px\]\/agentlayout:\[container-type:scroll-state\][\s\S]*data-jira-work-item-column-chrome/u,
+		/relative min-h-0 min-w-0 flex-1 overflow-y-auto[\s\S]*relative shrink-0 @\[860px\]\/agentlayout:sticky @\[860px\]\/agentlayout:top-0 @\[860px\]\/agentlayout:z-20 @\[860px\]\/agentlayout:\[container-type:scroll-state\][\s\S]*data-jira-work-item-column-chrome/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/relative z-0 flex min-w-0 flex-col gap-2"[\s\S]*data-jira-work-item-column-body[\s\S]*data-jira-work-item-metadata-rail-body/u,
 	);
 	assert.match(
 		metadataRailToggleSource,
@@ -334,7 +370,7 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Chrome→body gap is chrome pb only — outer flex must not stack gap-2 on the toggle.
 	assert.match(
 		metadataRailSource,
-		/data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle \/>/u,
+		/data-jira-work-item-column-chrome[\s\S]*<MetadataRailToggle context=\{pullRequestSelected \? "pull-request" : "work-item"\} \/>/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -373,10 +409,24 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		metadataRailToggleSource,
 		/<JiraActivityViewControl[\s\S]*trigger="chevron"/u,
 	);
-	// Chevron selected chrome is menu-open (`aria-expanded`), not segment `pressed`.
+	// Chevron icon tint comes from the selected shell (not button chrome /
+	// aria-pressed — that would mislabel the menu control). Full selected
+	// fill/border still applies when the menu is open via aria-expanded.
 	assert.doesNotMatch(
 		metadataRailToggleSource,
 		/<JiraActivityViewControl[\s\S]*pressed=\{activePanelView === "activity"\}/u,
+	);
+	assert.match(
+		metadataRailToggleSource,
+		/PANEL_SEGMENT_SELECTED_CHEVRON_CLASS[\s\S]*data-\[selected\]:\[\S*metadata-rail-sort-trigger\S*\]:text-icon-selected/u,
+	);
+	assert.doesNotMatch(
+		metadataRailToggleSource,
+		/PANEL_SEGMENT_SELECTED_CHEVRON_CLASS[\s\S]*data-\[selected\]:\[\S*metadata-rail-sort-trigger\S*\]:\[&_svg\]:text-icon-selected/u,
+	);
+	assert.doesNotMatch(
+		metadataRailToggleSource,
+		/PANEL_SEGMENT_SELECTED_CHEVRON_CLASS[\s\S]*data-\[selected\]:\[\S*metadata-rail-sort-trigger\S*\]:bg-bg-selected/u,
 	);
 	// Pull-request sort chrome is gone from the resource dropdown; Activity keeps its view filters.
 	assert.doesNotMatch(
@@ -424,8 +474,38 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/from "@\/components\/ui\/tabs"|<Tabs[\s>]|TabsList|TabsTrigger|TabsContent/u,
 	);
 	assert.match(metadataRailToggleSource, /PANEL_SEGMENT_SHELL_CLASS[\s\S]*flex min-w-0 flex-1 items-center rounded-md[\s\S]*border border-border/u);
+	// Shell pressed fill is Details-only — Activity keeps a sort chevron, and
+	// CSS `:active` matches ancestors while a descendant is pressed.
+	const panelSegmentShellClassMatch = metadataRailToggleSource.match(
+		/const PANEL_SEGMENT_SHELL_CLASS =\s*(?:\/\/[^\n]*\n\s*)*"([^"]+)"/u,
+	);
+	assert.ok(panelSegmentShellClassMatch);
+	// Selected label color: shell sets blue; ghost label inherits via
+	// aria-pressed:text-inherit (Button’s aria-pressed:text-text-selected is
+	// suppressed so fill/border stay on the shell). Chevron keeps its own
+	// text-icon-selected tint.
+	assert.match(panelSegmentShellClassMatch[1], /data-\[selected\]:text-text-selected/u);
+	assert.doesNotMatch(panelSegmentShellClassMatch[1], /data-\[selected\]:text-text(?:\s|$)/u);
+	assert.match(
+		metadataRailToggleSource,
+		/PANEL_SEGMENT_LABEL_CLASS[\s\S]*aria-pressed:text-inherit/u,
+	);
+	assert.doesNotMatch(panelSegmentShellClassMatch[1], /active:bg-bg-neutral-pressed|data-\[selected\]:active:bg-bg-selected-pressed/u);
+	assert.match(
+		metadataRailToggleSource,
+		/PANEL_SEGMENT_SHELL_ACTIVE_CLASS =\s*"active:bg-bg-neutral-pressed data-\[selected\]:active:bg-bg-selected-pressed"/u,
+	);
 	assert.match(metadataRailToggleSource, /data-selected=\{pressed \? "" : undefined\}/u);
 	assert.doesNotMatch(metadataRailToggleSource, /<div\s+aria-pressed=\{pressed \|\| undefined\}/u);
+	// Trailing Activity shell uses `data-selected` (not aria-pressed) so
+	// ButtonGroup’s selected seam overlay must include `[data-selected]`.
+	assert.match(
+		fs.readFileSync(
+			path.join(process.cwd(), "components", "ui", "button-group.tsx"),
+			"utf8",
+		),
+		/\[aria-expanded=true\],\[aria-pressed=true\],\[data-selected\]/u,
+	);
 	// Focus recolors the shell border only (no ring halo); trailing segments
 	// restore border-l. Label/chevron suppress Button’s ring-3 halo.
 	assert.match(
@@ -453,10 +533,20 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 		/data-jira-work-item-metadata-rail-panel-label=""/u,
 	);
 	assert.match(metadataRailToggleSource, /PANEL_SEGMENT_LABEL_CLASS[\s\S]*variant="ghost"/u);
-	// Details: fill shell + center label. Activity/PR: centered packed unit, 6px gap.
+	// Details: fill shell + center label + shell press feedback.
+	// Activity: centered packed unit, 6px gap; no shell active (chevron flash).
 	assert.match(
 		metadataRailToggleSource,
-		/hasSortControl \? cn\("justify-center", PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS\) : null/u,
+		/hasSortControl\s*\?\s*cn\(\s*"cursor-pointer justify-center",\s*PANEL_SEGMENT_FOCUS_LEFT_BORDER_CLASS,\s*PANEL_SEGMENT_SELECTED_CHEVRON_CLASS,\s*\)\s*:\s*PANEL_SEGMENT_SHELL_ACTIVE_CLASS/u,
+	);
+	// Activity: shell is the hit target; label stops propagation; chevron already does.
+	assert.match(
+		metadataRailToggleSource,
+		/onClick=\{hasSortControl \? onSelect : undefined\}/u,
+	);
+	assert.match(
+		metadataRailToggleSource,
+		/event\.stopPropagation\(\);\s*onSelect\(\);/u,
 	);
 	assert.match(
 		metadataRailToggleSource,
@@ -487,11 +577,11 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	// Panels stay mounted (hidden/inert) so Activity local state survives toggles.
 	assert.match(
 		metadataRailSource,
-		/hidden=\{activePanelView !== "details"\}[\s\S]*inert=\{activePanelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
+		/hidden=\{pullRequestSelected \|\| activePanelView !== "details"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "details" \? true : undefined\}[\s\S]*<ArtifactPane/u,
 	);
 	assert.match(
 		metadataRailSource,
-		/activity != null \? \(\s*<div[\s\S]*?className="overflow-visible px-3"[\s\S]*?hidden=\{activePanelView !== "activity"\}[\s\S]*inert=\{activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
+		/activity != null \? \(\s*<div[\s\S]*?className="overflow-visible px-3"[\s\S]*?hidden=\{pullRequestSelected \|\| activePanelView !== "activity"\}[\s\S]*inert=\{pullRequestSelected \|\| activePanelView !== "activity" \? true : undefined\}[\s\S]*\{activity\}/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -529,6 +619,10 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		pullRequestsPanelSource,
+		/\.\.\.\(pullRequest\.targetBranch \? \{ targetBranch: pullRequest\.targetBranch \} : \{\}\)/u,
+	);
+	assert.match(
+		pullRequestsPanelSource,
 		/<PullRequest[\s\S]*className="min-w-0 max-w-full"[\s\S]*selected=\{selected\}[\s\S]*onActivate=\{\(\) => onSelectEntry\(entry\)\}/u,
 	);
 	assert.match(pullRequestsPanelSource, /flex min-w-0 flex-col gap-2/u);
@@ -548,11 +642,11 @@ test("experimental v2 metadata rail toggles Details and Activity with Details de
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}/u,
 	);
 	// Activity lives only in the metadata rail Details/Activity toggle — not under description.
 	assert.equal(
-		(compositionSource.match(/<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>/gu) ?? []).length,
+		(compositionSource.match(/<ActivityPanel[\s\S]*?activitySessionThread=\{activitySessionThread\}[\s\S]*?\/>/gu) ?? []).length,
 		1,
 	);
 	// Layout slots are header/context/composer/metadata — no left-column activity prop.
@@ -569,6 +663,7 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	const contextResourcesSource = readBlockFile("experimental-v2/components/context-resources.tsx");
 	const metadataRailSource = readBlockFile("experimental-v2/components/metadata-rail.tsx");
 	const pullRequestsPanelSource = readBlockFile("experimental-v2/components/pull-requests-panel.tsx");
+	const pullRequestsSelectSource = readBlockFile("experimental-v2/components/pull-requests-select.tsx");
 	const persistedStateSource = readBlockFile("data/session-state.ts");
 
 	// Dedupe and selection use one repository-aware identity contract.
@@ -605,11 +700,15 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 	assert.match(
 		compositionSource,
-		/<MetadataRail\n\s*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}\n\s*automationRules=\{automationRules\}\n\s*borderless\n\s*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(
 		compositionSource,
 		/<MetadataRail\n[\s\S]*?pullRequestEntries=|<MetadataRail\n[\s\S]*?onPullRequestSelect=/u,
+	);
+	assert.match(
+		metadataRailSource,
+		/const PullRequestContextRail = dynamic\([\s\S]*pull-request-context-rail[\s\S]*selectedPullRequestEntry \? \([\s\S]*activePanelView=\{activePanelView\}[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}/u,
 	);
 	assert.doesNotMatch(
 		metadataRailSource,
@@ -621,12 +720,21 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 	);
 
 	// Select options are Pull Request block cards (display-only; SelectItem activates).
+	// No trailing checkmark — selection is shown on the card itself.
 	assert.match(
-		readBlockFile("experimental-v2/components/pull-requests-select.tsx"),
-		/<SelectItem[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*data-jira-work-item-pull-request-identity=\{identity\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*className="min-w-0 max-w-full w-full"[\s\S]*selected=\{selected\}/u,
+		pullRequestsSelectSource,
+		/<SelectContent[\s\S]*className="[^"]*rounded-xl p-1"[\s\S]*data-jira-work-item-resource-pull-requests-menu/u,
+	);
+	assert.match(
+		pullRequestsSelectSource,
+		/<SelectItem[\s\S]*group\/pr-option[\s\S]*data-\[highlighted\]:bg-transparent[\s\S]*data-jira-work-item-pull-request-card=\{pullRequest\.number\}[\s\S]*showIndicator=\{false\}[\s\S]*value=\{identity\}[\s\S]*<PullRequest[\s\S]*border-transparent[\s\S]*group-data-\[highlighted\]\/pr-option:bg-[\s\S]*selected=\{selected\}/u,
 	);
 	assert.doesNotMatch(
-		readBlockFile("experimental-v2/components/pull-requests-select.tsx"),
+		pullRequestsSelectSource,
+		/<SelectItem[\s\S]*p-1 data-selected:bg-transparent data-selected:data-highlighted:bg-bg-neutral-subtle-hovered/u,
+	);
+	assert.doesNotMatch(
+		pullRequestsSelectSource,
 		/<PullRequest[\s\S]*onActivate=/u,
 	);
 	assert.match(
@@ -640,12 +748,14 @@ test("experimental v2 keeps pull-request selection transient at the composition 
 
 	assert.match(
 		compositionSource,
-		/<ContextPanel[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*onPullRequestBack=\{\(\) => setSelectedPullRequestIdentity\(null\)\}/u,
+		/<ContextPanel[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*onDescriptionViewModeChange=\{setDescriptionViewMode\}/u,
 	);
+	assert.doesNotMatch(compositionSource, /onPullRequestBack/u);
 	assert.match(
 		contextPanelSource,
-		/const selectedPullRequestKey = selectedPullRequestEntry\?\.pullRequest[\s\S]*getPullRequestIdentity\(selectedPullRequestEntry\.pullRequest\)[\s\S]*<PullRequestDetailView[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}[\s\S]*onBack=\{onPullRequestBack\}[\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
+		/const selectedPullRequestKey = selectedPullRequestEntry\?\.pullRequest[\s\S]*getPullRequestIdentity\(selectedPullRequestEntry\.pullRequest\)[\s\S]*<PullRequestDetailView[\s\S]*entry=\{selectedPullRequestEntry\}[\s\S]*key=\{selectedPullRequestKey\}[\s\S]*<AiPlannerScope[\s\S]*<ContextEditableDescription/u,
 	);
+	assert.doesNotMatch(contextPanelSource, /onBack|onPullRequestBack/u);
 	assert.match(
 		contextResourcesSource,
 		/<AnimatedContextTitleActions primaryAgentId=\{primaryCodingAgentId\} \/>[\s\S]*\{pullRequestSelected \? null : \([\s\S]*aria-label="Copy work item as markdown"[\s\S]*<EditorToolbarModeTabs/u,

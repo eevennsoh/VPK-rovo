@@ -64,7 +64,10 @@ test("Tag exposes ADS visual-uplift color tokens and trailing metrics", () => {
 		tagSource,
 		/className="inline-flex shrink-0 items-center gap-px"[\s\S]*data-slot="tag-trailing-metrics"/u,
 	);
-	assert.doesNotMatch(tagSource, /trailingMetrics\.length > 1[\s\S]*\? "pe-0\.5"/u);
+	assert.match(
+		tagSource,
+		/: hasElemAfter\s*\n\s*\? "pe-px"/u,
+	);
 	assert.match(
 		TAG_DEMO_SOURCE,
 		/trailingMetric=\{\[[\s\S]*value: "1 Open"[\s\S]*color: "lime"[\s\S]*value: "1 Needs input"[\s\S]*color: "yellow"[\s\S]*value: "1 Draft"[\s\S]*color: "gray"[\s\S]*value: "1 Merged"[\s\S]*color: "purple"/u,
@@ -110,10 +113,13 @@ test("Tag uses a rounded shell and remove control for every avatar type", () => 
 	assert.match(tagSource, /const removeButtonShapeClass = isAvatarType \|\| isRounded \? "rounded-full" : "rounded-xs";/u);
 	assert.match(tagSource, /isAvatarType \|\| isRounded \? "rounded-full" : "rounded-sm"/u);
 	assert.match(tagSource, /isOtherAvatarTag \? "ps-0\.5" : "ps-px"/u);
+	// Removable hover-bg → outer border matches 2px top/bottom: bordered pe-px,
+	// borderless editor pe-0.5. Metric/badge chips stay on pe-px.
 	assert.match(
 		tagSource,
-		/hasRemoveButton[\s\S]*\? "pe-\[4px\]"[\s\S]*: hasElemAfter[\s\S]*\? "pe-px"[\s\S]*: isAvatarType[\s\S]*\? "pe-1\.5"[\s\S]*: "pe-\[4px\]"/u,
+		/hasRemoveButton[\s\S]*\? isEditor[\s\S]*\? "pe-0\.5"[\s\S]*: "pe-px"[\s\S]*: hasElemAfter[\s\S]*\? "pe-px"[\s\S]*: isAvatarType[\s\S]*\? "pe-1\.5"[\s\S]*: "pe-\[4px\]"/u,
 	);
+	assert.match(tagSource, /const removeButtonMarginClass = hasLeadingElement \? undefined : "-ms-0\.5";/u);
 	assert.doesNotMatch(tagSource, /isOtherAvatarTag \|\| type === "agent" \? "rounded-sm"/u);
 });
 

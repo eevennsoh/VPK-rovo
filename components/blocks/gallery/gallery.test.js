@@ -90,6 +90,18 @@ test("Gallery owns one viewport without document scrolling", () => {
 	assert.doesNotMatch(stageSource, /pt-20|pb-80|min-h-\[calc\(100dvh/u);
 });
 
+test("Gallery collapses the bottom carousel picker when there is only one card", () => {
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
+	const toggleSource = readProjectFile("components/blocks/gallery/components/gallery-toggle.tsx");
+
+	assert.match(gallerySource, /const showCarouselPicker = items\.length >= 2;/u);
+	assert.match(gallerySource, /isOpen && showCarouselPicker \?/u);
+	assert.match(gallerySource, /showOpenToggle=\{showCarouselPicker\}/u);
+	assert.match(toggleSource, /showOpenToggle\?: boolean;/u);
+	assert.match(toggleSource, /showOpenToggle = true,/u);
+	assert.match(toggleSource, /\{showOpenToggle \? \([\s\S]*aria-label=\{galleryToggleLabel\}[\s\S]*\) : null\}/u);
+});
+
 test("Gallery cards remain mounted toggle buttons with origin-aware selection state", () => {
 	const source = readProjectFile("components/blocks/gallery/components/gallery-card.tsx");
 	assert.match(source, /aria-pressed/u);

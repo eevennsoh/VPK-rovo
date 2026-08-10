@@ -405,7 +405,7 @@ export function AvatarDemoInEmpty() {
 
 export function AvatarDemoSizes() {
 	return (
-		<>
+		<div className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-center gap-2">
 				<Avatar size="sm">
 					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="User avatar" />
@@ -431,7 +431,7 @@ export function AvatarDemoSizes() {
 					<AvatarFallback>CN</AvatarFallback>
 				</Avatar>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -673,6 +673,14 @@ export function AvatarDemoStatus() {
 					<AvatarStatusIndicator status="locked" />
 				</Avatar>
 				<span className="text-xs text-text-subtle">Locked</span>
+			</div>
+			<div className="flex flex-col items-center gap-1">
+				<Avatar>
+					<AvatarImage src={PRIMARY_AVATAR_SRC} alt="Warning" />
+					<AvatarFallback>CN</AvatarFallback>
+					<AvatarStatusIndicator status="warning" />
+				</Avatar>
+				<span className="text-xs text-text-subtle">Warning</span>
 			</div>
 		</div>
 	);

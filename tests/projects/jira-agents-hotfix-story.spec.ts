@@ -19,7 +19,7 @@ function orchestrationEntry(page: Page): Locator {
 	return page.locator('[data-jira-activity-entry-id="story-channel-orchestration"]');
 }
 
-async function selectGalleryItem(page: Page, name: "Kanban & List" | "Work Item"): Promise<void> {
+async function selectGalleryItem(page: Page, name: "Work Item"): Promise<void> {
 	const openGallery = page.getByRole("button", { name: "Open gallery" });
 	if (await openGallery.isVisible()) {
 		await openGallery.click();
@@ -184,9 +184,15 @@ test("PR #1847 opens a selectable guided review and restores the exact descripti
 	await expect(detail.getByText("main", { exact: true })).toBeVisible();
 	await expect(detail.getByText("feature/shop-4821-guest-checkout", { exact: true })).toBeVisible();
 	await expect(detail.getByText("Description", { exact: true })).toBeVisible();
-	await expect(detail.getByText("Checks", { exact: true })).toBeVisible();
-	await expect(detail.getByText("Activity", { exact: true })).toBeVisible();
-	await expect(detail.getByText("5 groups passed · 18 checks", { exact: true })).toBeVisible();
+	await expect(detail.getByText("Checks", { exact: true })).toHaveCount(0);
+	await expect(detail.getByText("5 groups passed · 18 checks", { exact: true })).toHaveCount(0);
+	await expect(page.getByText("CI checks")).toBeVisible();
+	await expect(page.getByText("3/3 passed", { exact: true })).toBeVisible();
+	await expect(page.getByText("Ready to merge", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: /CI checks/u }).click();
+	await expect(page.locator("[data-jira-work-item-pull-request-checks]")).toContainText(
+		"Lint and typecheck",
+	);
 	await expect(detail.getByRole("button", { name: "Open in GitHub" })).toHaveAttribute(
 		"href",
 		"https://github.com/eevensoh/vpk-rovo/pull/1847",
@@ -230,7 +236,8 @@ test("PR #1847 opens a selectable guided review and restores the exact descripti
 	await pullRequestButton.focus();
 	await page.keyboard.press("Enter");
 	await expect(detail).toBeVisible();
-	await detail.getByRole("button", { name: "Back to description" }).click();
+	await pullRequestButton.click();
+	await expect(pullRequestButton).toHaveAttribute("aria-pressed", "false");
 	await expect(description).toBeVisible();
 	expect(await description.innerText()).toBe(originalDescription);
 
@@ -464,41 +471,4 @@ test("the Working chapter passes a scoped semantic accessibility audit", async (
 		return [...counts.entries()].filter(([, count]) => count > 1);
 	});
 	expect(duplicateIds).toEqual([]);
-});
-
-test("Kanban and List stay synchronized and dragging the story selects the destination chapter", async ({ page }) => {
-	await openWorkItem(page);
-	await selectChapter(page, "Review");
-	await selectGalleryItem(page, "Kanban & List");
-
-	const reviewColumn = page.locator('[data-jira-kanban-column="In review"]');
-	const doneColumn = page.locator('[data-jira-kanban-column="Done"]');
-	const storyCard = reviewColumn.locator('[draggable="true"]').filter({ hasText: "SHOP-4821" });
-	await expect(storyCard).toBeVisible();
-	await expect(doneColumn.getByText("SHOP-4821", { exact: true })).toHaveCount(0);
-
-	await page.getByRole("tab", { name: "List" }).click();
-	const storyRow = page
-		.getByTestId("jira-list")
-		.getByRole("row")
-		.filter({ hasText: "SHOP-4821" });
-	await expect(storyRow).toContainText("In review");
-
-	await page.getByRole("tab", { name: "Board" }).click();
-	const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
-	await storyCard.dispatchEvent("dragstart", { dataTransfer });
-	await expect(storyCard).toHaveAttribute("data-dragging", "true");
-	await doneColumn.dispatchEvent("dragover", { dataTransfer });
-	await doneColumn.dispatchEvent("drop", { dataTransfer });
-	await dataTransfer.dispose();
-	await expect(doneColumn.getByText("SHOP-4821", { exact: true })).toBeVisible();
-	await expect(reviewColumn.getByText("SHOP-4821", { exact: true })).toHaveCount(0);
-
-	await page.getByRole("tab", { name: "List" }).click();
-	await expect(storyRow).toContainText("Done");
-
-	await selectGalleryItem(page, "Work Item");
-	await expect(chapterButton(page, "Done")).toHaveAttribute("aria-pressed", "true");
-	await expectWorkingAgents(page, 0);
-	await expectEyesReaction(page, 0);
 });

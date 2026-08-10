@@ -1,11 +1,9 @@
 "use client";
 
-import BranchIcon from "@atlaskit/icon/core/branch";
+import ArrowRightIcon from "@atlaskit/icon/core/arrow-right";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RelativeTime } from "@/components/ui/elapsed-time";
 import { Icon } from "@/components/ui/icon";
-import { IconTile } from "@/components/ui/icon-tile";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
@@ -37,7 +35,7 @@ function statusLozengeVariant(
 ): NonNullable<LozengeProps["variant"]> {
 	switch (status) {
 		case "Open":
-			return "information";
+			return "success";
 		case "Merged":
 			return "discovery";
 		default: {
@@ -47,11 +45,26 @@ function statusLozengeVariant(
 	}
 }
 
+/** First path segment stays subtle (`rovo/…`); the remainder uses body text. */
+function BranchName({ name }: Readonly<{ name: string }>) {
+	const slashIndex = name.indexOf("/");
+	if (slashIndex === -1) {
+		return <span className="truncate text-text">{name}</span>;
+	}
+
+	return (
+		<span className="truncate">
+			<span className="text-text-subtlest">{name.slice(0, slashIndex + 1)}</span>
+			<span className="text-text">{name.slice(slashIndex + 1)}</span>
+		</span>
+	);
+}
+
 function PullRequestAuthorAvatar({
 	author,
 }: Readonly<{ author: PullRequestAuthor }>) {
 	return (
-		<Avatar label={author.name} size="default" shape="circle">
+		<Avatar label={author.name} size="sm" shape="circle">
 			{author.avatarUrl ? (
 				<AvatarImage alt={author.name} src={author.avatarUrl} />
 			) : null}
@@ -67,7 +80,7 @@ function PullRequestDiffStats({
 	return (
 		<span
 			aria-label={`${additions} additions, ${deletions} deletions`}
-			className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium tabular-nums leading-4"
+			className="inline-flex shrink-0 items-center gap-1 text-xs font-medium tabular-nums leading-4"
 			role="group"
 		>
 			<span className="text-text-success">+{additions}</span>
@@ -76,23 +89,31 @@ function PullRequestDiffStats({
 	);
 }
 
-function PullRequestMetaTime({
-	relativeTime,
-	selected,
-	timestampMs,
-}: Readonly<{ relativeTime?: string; selected: boolean; timestampMs?: number }>) {
-	const hasTimestamp = typeof timestampMs === "number" && Number.isFinite(timestampMs);
-	if (!hasTimestamp && !relativeTime) return null;
+function PullRequestBranchPath({
+	branch,
+	targetBranch,
+}: Readonly<{ branch?: string; targetBranch?: string }>) {
+	if (!branch && !targetBranch) return null;
 
 	return (
-		<RelativeTime
-			className={cn(
-				"shrink-0 text-xs leading-4",
-				selected ? "text-text-selected" : "text-text-subtlest",
-			)}
-			fallback={relativeTime}
-			timestampMs={hasTimestamp ? timestampMs : undefined}
-		/>
+		<span
+			aria-label={
+				branch && targetBranch
+					? `${branch} into ${targetBranch}`
+					: (branch ?? targetBranch)
+			}
+			className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden text-xs leading-5"
+		>
+			{branch ? <BranchName name={branch} /> : null}
+			{branch && targetBranch ? (
+				<span className="inline-flex size-3 shrink-0 items-center justify-center text-icon-subtle">
+					<Icon aria-hidden render={<ArrowRightIcon label="" size="small" />} />
+				</span>
+			) : null}
+			{targetBranch ? (
+				<span className="truncate text-text">{targetBranch}</span>
+			) : null}
+		</span>
 	);
 }
 
@@ -103,11 +124,9 @@ function PullRequestCardBody({
 	author,
 	repository,
 	branch,
+	targetBranch,
 	additions,
 	deletions,
-	relativeTime,
-	selected,
-	timestampMs,
 }: Readonly<
 	Pick<
 		PullRequestProps,
@@ -117,60 +136,43 @@ function PullRequestCardBody({
 		| "author"
 		| "repository"
 		| "branch"
+		| "targetBranch"
 		| "additions"
 		| "deletions"
-		| "relativeTime"
-		| "selected"
-		| "timestampMs"
 	>
 >) {
-	const titleLabel = `#${number} ${title}`;
-
 	return (
 		<>
 			{author ? <PullRequestAuthorAvatar author={author} /> : null}
-			<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-				<div className="flex min-w-0 items-start gap-2">
-					<span className="min-w-0 flex-1 truncate text-left text-sm font-semibold leading-5 text-text">
-						{titleLabel}
+			<div className="flex min-w-0 flex-1 flex-col">
+				<div className="flex min-w-0 items-center gap-2">
+					<span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-sm font-medium leading-5">
+						<span className="shrink-0 text-text-subtlest">#{number}</span>
+						<span className="min-w-0 truncate text-text">{title}</span>
 					</span>
 					<PullRequestDiffStats additions={additions} deletions={deletions} />
 				</div>
-				<div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden">
-					<PullRequestMetaTime
-						relativeTime={relativeTime}
-						selected={selected ?? false}
-						timestampMs={timestampMs}
-					/>
+				<div className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+					<Lozenge size="compact" variant={statusLozengeVariant(status)}>
+						{status}
+					</Lozenge>
 					{repository ? (
 						<Tag
 							color="gray"
-							elemBefore={<BrandLogoMark frame="chip" label="GitHub" name="github" />}
+							elemBefore={
+								<BrandLogoMark
+									className="dark:invert [[data-color-mode=dark]_&]:invert"
+									frame="chip"
+									label="GitHub"
+									name="github"
+								/>
+							}
 							maxWidth="9rem"
 						>
 							{repository}
 						</Tag>
 					) : null}
-					<Lozenge size="compact" variant={statusLozengeVariant(status)}>
-						{status}
-					</Lozenge>
-					{branch ? (
-						<Tag
-							color="gray"
-							elemBefore={
-								<IconTile
-									aria-hidden
-									icon={<Icon aria-hidden render={<BranchIcon label="" size="small" />} />}
-									label=""
-									size="xxsmall"
-									variant="transparent"
-								/>
-							}
-							maxWidth="7.5rem"
-						>
-							{branch}
-						</Tag>
-					) : null}
+					<PullRequestBranchPath branch={branch} targetBranch={targetBranch} />
 				</div>
 			</div>
 		</>
@@ -178,8 +180,8 @@ function PullRequestCardBody({
 }
 
 /**
- * Compact pull-request summary card: author avatar, `#N title`, diff stats,
- * relative time, and repo / status / branch pills.
+ * Compact pull-request summary card: author avatar, split `#N` + title, diff
+ * stats, status lozenge, repo pill, and `source → target` branch path.
  */
 export function PullRequest({
 	number,
@@ -188,14 +190,15 @@ export function PullRequest({
 	author,
 	repository,
 	branch,
+	targetBranch,
 	additions,
 	deletions,
-	relativeTime,
-	timestampMs,
 	selected = false,
 	onActivate,
 	className,
 }: Readonly<PullRequestProps>) {
+	// Apply selected chrome whenever `selected` is set — including display-only
+	// cards inside SelectItem (no onActivate; the item owns activation).
 	const activeSelected = selected;
 	const body = (
 		<PullRequestCardBody
@@ -204,17 +207,15 @@ export function PullRequest({
 			branch={branch}
 			deletions={deletions}
 			number={number}
-			relativeTime={relativeTime}
 			repository={repository}
-			selected={activeSelected}
 			status={status}
-			timestampMs={timestampMs}
+			targetBranch={targetBranch}
 			title={title}
 		/>
 	);
 
 	const surfaceClassName = cn(
-		"flex w-full min-w-0 items-start gap-3 rounded-lg border border-border bg-surface p-3 text-text",
+		"flex w-full min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-text",
 		onActivate
 			? "cursor-pointer text-left outline-none transition-[background-color,border-color] duration-normal ease-out-practical hover:bg-surface-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 			: null,

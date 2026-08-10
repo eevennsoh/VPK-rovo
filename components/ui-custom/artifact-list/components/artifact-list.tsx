@@ -250,13 +250,8 @@ export function ArtifactList({
 }: Readonly<ArtifactListProps>) {
 	return (
 		<div
-			className={cn(
-				variant === "compact"
-					? "overflow-hidden rounded-lg border border-border bg-surface"
-					: "overflow-hidden rounded-lg bg-surface-raised",
-				className,
-			)}
-			style={variant === "compact" ? undefined : { boxShadow: token("elevation.shadow.raised") }}
+			className={cn("overflow-hidden rounded-lg bg-surface-raised", className)}
+			style={{ boxShadow: token("elevation.shadow.raised") }}
 			{...props}
 		>
 			{items.map((item, index) => (
