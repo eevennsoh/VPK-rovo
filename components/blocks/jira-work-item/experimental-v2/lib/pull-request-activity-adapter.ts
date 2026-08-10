@@ -10,13 +10,27 @@ import type {
 } from "./pull-request-detail-data";
 
 function adaptActor(actor: PullRequestActivityActor): JiraActivityActor {
+	const brandName = actor.kind === "app"
+		? actor.id === "codex"
+			? "openai"
+			: actor.id.startsWith("github") ? "github" : undefined
+		: undefined;
 	return {
 		id: actor.id,
 		name: actor.name,
 		kind: actor.kind,
 		avatarSrc: actor.avatarSrc,
-		brandName: actor.kind === "app" && actor.id === "github" ? "github" : undefined,
+		brandName,
 	};
+}
+
+function adaptDetail(detail: { label: string; body: string } | undefined) {
+	return detail
+		? {
+				label: detail.label,
+				content: [{ type: "text", text: detail.body }] as const,
+			}
+		: undefined;
 }
 
 function reviewBody(activity: Extract<PullRequestActivity, { kind: "review-submitted" }>): JiraActivitySegment[] {
@@ -77,6 +91,15 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 					},
 				],
 			};
+		case "comment-posted":
+			return {
+				...base,
+				kind: "comment",
+				tag: activity.tag ? { text: activity.tag } : undefined,
+				body: [{ type: "text", text: activity.body }],
+				collapsible: adaptDetail(activity.detail),
+				allowReply: false,
+			};
 		case "review-submitted":
 			return {
 				...base,
@@ -87,7 +110,14 @@ function adaptActivity(activity: PullRequestActivity): JiraActivityEntry {
 						? { text: "Changes requested", color: "red" }
 						: { text: "Reviewed", color: "blue" },
 				body: reviewBody(activity),
-				allowReply: false,
+				collapsible: adaptDetail(activity.detail),
+				replies: activity.replies?.map((reply) => ({
+					id: reply.id,
+					actor: adaptActor(reply.actor),
+					timestamp: reply.timestamp,
+					body: reply.body,
+				})),
+				allowReply: activity.allowReply ?? false,
 			};
 		case "thread-resolved":
 			return {

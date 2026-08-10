@@ -23,6 +23,10 @@ export function PullRequestActivityPanel({
 	const setActivityRailChrome = useSetActivityRailChrome();
 	const [sortOrder, setSortOrder] = useState<JiraActivitySortOrder>("ascending");
 	const entries = useMemo(() => adaptPullRequestActivity(activity), [activity]);
+	const activityKey = useMemo(
+		() => activity.map((entry) => `${entry.id}:${entry.occurredAtMs}`).join("|"),
+		[activity],
+	);
 
 	useLayoutEffect(() => {
 		if (!setActivityRailChrome) return undefined;
@@ -41,11 +45,11 @@ export function PullRequestActivityPanel({
 		<div className="px-3" data-jira-work-item-pull-request-activity>
 			<JiraActivity
 				className="gap-2"
-				commentActions="none"
 				composer={null}
-				entries={entries}
+				defaultEntries={entries}
 				filter={ALL_ACTIVITY_FILTER}
 				hideHeader
+				key={activityKey}
 				sortOrder={sortOrder}
 			/>
 		</div>
