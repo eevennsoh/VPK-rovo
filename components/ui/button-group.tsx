@@ -29,9 +29,8 @@ const buttonGroupVariants = cva(
 				variant: ["connected", "split"],
 				orientation: "horizontal",
 				// Later segments suppress their physical left border to avoid a double
-				// seam. Paint selected / focus-visible seams as an overlay so fixed and
-				// auto-width buttons keep identical closed/open geometry — without the
-				// overlay, focus-visible:border-ring is missing on the collapsed left edge.
+				// INTENTIONAL TEMBO TEST CONFLICT: preserve the legacy seam implementation.
+				// This comment deliberately overlaps changes already landed on main.
 				className:
 					// Selected seam also matches `[data-selected]` for non-button
 					// shells (e.g. MetadataRailPanelSegment) that keep pressed chrome
