@@ -72,29 +72,33 @@ function loadStateModule() {
 	return stateModulePromise;
 }
 
-test("Jira Agents composes the six-chapter software delivery story without changing the gallery", () => {
+test("Jira Agents composes the seven-chapter software delivery story without changing the gallery", () => {
 	const pageSource = readProjectFile("components/projects/jira-agents/page.tsx");
 	const controlsSource = readProjectFile("components/projects/jira-agents/story-controls.tsx");
 	const controllerSource = readProjectFile("components/projects/jira-agents/use-hotfix-story.ts");
 	const itemsSource = readProjectFile("components/projects/jira-agents/data/gallery-items.ts");
+	const gallerySource = readProjectFile("components/blocks/gallery/components/gallery.tsx");
 
 	assert.match(pageSource, /<JiraAgentsStoryControls controller=\{storyController\} \/>/u);
 	assert.match(pageSource, /<ExperimentalV2JiraWorkItem[\s\S]*automationRules=\{JIRA_AGENTS_AUTOMATION_RULES\}[\s\S]*composerAgents=\{JIRA_AGENTS_STORY_COMPOSER_AGENTS\}[\s\S]*composerDelivery="broadcast-active-agents"[\s\S]*initialState=\{controller\.initialState\}[\s\S]*statusPhases=\{JIRA_AGENTS_STATUS_PHASES\}[\s\S]*workItem=\{controller\.workItem\}/u);
 	assert.match(pageSource, /onAgentPromptSubmit=\{handleAgentPromptSubmit\}/u);
 	assert.match(pageSource, /initialStateRevision=\{controller\.launchId\}/u);
 	assert.doesNotMatch(pageSource, /key=\{controller\.launchId\}/u);
-	assert.match(pageSource, /<JiraDesignWorkspaceStage[\s\S]*boardColumns=\{controller\.boardColumns\}[\s\S]*defaultOpenItemId=\{JIRA_AGENTS_STORY_ITEM_ID\}[\s\S]*sections=\{controller\.sections\}/u);
 	assert.match(pageSource, /selectAgent\(agentId, \{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u);
 	assert.match(controlsSource, /JIRA_AGENTS_STORY_CHAPTERS\.map/u);
 	assert.match(controlsSource, /aria-label="Open a software delivery story chapter"/u);
 	assert.match(controllerSource, /setLaunchId\(\(current\) => current \+ 1\);/u);
 	assert.match(controllerSource, /getJiraAgentsStoryChapterForStatus\(storyColumn\)/u);
-	assert.equal((itemsSource.match(/\bid:\s*"/gu) ?? []).length, 2);
-	assert.match(itemsSource, /id: "work-item",[\s\S]*id: "kanban-list"/u);
-	assert.match(itemsSource, /title: "Kanban & List",\s*titleLines: \["Kanban", "& List"\]/u);
+	assert.equal((itemsSource.match(/\bid:\s*"/gu) ?? []).length, 1);
+	assert.match(itemsSource, /id: "work-item"/u);
+	assert.doesNotMatch(itemsSource, /Kanban & List|id: "kanban-list"/u);
 	assert.doesNotMatch(itemsSource, /Jira For You|id: "for-you"/u);
+	assert.doesNotMatch(pageSource, /KanbanListStage|item\.id === "kanban-list"/u);
 	assert.doesNotMatch(pageSource, /ForYouStage|item\.id === "for-you"/u);
 	assert.doesNotMatch(pageSource, /WorkItemControls|useWorkItemStageController/u);
+	// Single-card jira-agents feed relies on shared Gallery collapsing the bottom picker.
+	assert.match(gallerySource, /const showCarouselPicker = items\.length >= 2;/u);
+	assert.match(gallerySource, /isOpen && showCarouselPicker \?/u);
 });
 
 test("submitting the complete @mentioned agent team starts the staged orchestration reveal", async () => {
@@ -185,7 +189,7 @@ test("Jira Agents seeds checkout automation rows without changing the shared emp
 	assert.match(compositionSource, /automationRules\?: readonly WorkItemAutomationRule\[\];/u);
 	assert.match(
 		compositionSource,
-		/<MetadataRail[\s\S]*activity=\{<ActivityPanel activitySessionThread=\{activitySessionThread\} \/>\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*\/>/u,
+		/<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.match(automationSource, /rules = \[\]/u);
 });
@@ -207,20 +211,20 @@ test("the software delivery chapters preserve the scripted status and agent-work
 	const story = await loadStoryModule();
 	const chapters = story.JIRA_AGENTS_STORY_CHAPTERS.map((chapter) => chapter.value);
 
-	assert.deepEqual(chapters, ["brief", "plan", "working", "handoff", "review", "done"]);
+	assert.deepEqual(chapters, ["brief", "plan", "working", "handoff", "fixing", "review", "done"]);
 	assert.deepEqual(
 		story.JIRA_AGENTS_STORY_COMPOSER_AGENTS.map((agent) => agent.name),
 		["Claude Code", "Code Planner"],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.getJiraAgentsStoryStatus(chapter)),
-		["To do", "In progress", "In progress", "In progress", "In review", "Done"],
+		["To do", "In progress", "In progress", "In progress", "In progress", "In review", "Done"],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => story.createJiraAgentsStoryState(chapter).sessions.filter(
 			(session) => session.status !== "completed",
 		).length),
-		[0, 2, 1, 1, 1, 0],
+		[0, 2, 1, 1, 1, 1, 0],
 	);
 	assert.deepEqual(
 		chapters.map((chapter) => {
@@ -229,7 +233,7 @@ test("the software delivery chapters preserve the scripted status and agent-work
 			);
 			return comment?.reactions?.[0]?.actorIds.length ?? 0;
 		}),
-		[0, 2, 0, 0, 0, 0],
+		[0, 2, 0, 0, 0, 0, 0],
 	);
 });
 
@@ -311,6 +315,7 @@ test("child work-item statuses follow the delivery chapters", async () => {
 			["done", "inprogress", "todo"],
 			["done", "done", "inprogress"],
 			["done", "done", "inprogress"],
+			["done", "done", "inprogress"],
 			["done", "done", "done"],
 		],
 	);
@@ -321,6 +326,7 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	const plan = story.createJiraAgentsStoryState("plan");
 	const working = story.createJiraAgentsStoryState("working");
 	const handoff = story.createJiraAgentsStoryState("handoff");
+	const fixing = story.createJiraAgentsStoryState("fixing");
 	const review = story.createJiraAgentsStoryState("review");
 	const done = story.createJiraAgentsStoryState("done");
 	const planClaude = plan.sessions.find((session) => session.agentId === "claude-code");
@@ -328,6 +334,7 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	const workingClaude = working.sessions.find((session) => session.agentId === "claude-code");
 	const workingPlanner = working.sessions.find((session) => session.agentId === "code-planner");
 	const handoffClaude = handoff.sessions.find((session) => session.agentId === "claude-code");
+	const fixingClaude = fixing.sessions.find((session) => session.agentId === "claude-code");
 	const reviewClaude = review.sessions.find((session) => session.agentId === "claude-code");
 	const doneClaude = done.sessions.find((session) => session.agentId === "claude-code");
 
@@ -351,6 +358,12 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 		alt: "Final guest checkout design",
 		filename: "guest-checkout-final.png",
 	});
+	assert.equal(fixingClaude.status, "running");
+	assert.equal(fixingClaude.progressChecklist.filter((item) => item.completed).length, 3);
+	assert.match(fixingClaude.previewText, /cannot be merged yet[\s\S]*lint-and-typecheck/u);
+	const fixingPr = fixing.staticEvents.find((event) => event.id === "story-pr-fixing");
+	assert.equal(fixingPr.pullRequest.mergeState, "blocked");
+	assert.equal(fixingPr.pullRequest.checks.filter((check) => check.status === "failed").length, 1);
 	assert.equal(reviewClaude.status, "running");
 	assert.equal(reviewClaude.progressChecklist.filter((item) => item.completed).length, 4);
 	const openedPr = review.staticEvents.find((event) => event.id === "story-pr-opened");
@@ -359,6 +372,9 @@ test("Claude leads one evolving A2A thread with checklist and design evidence", 
 	assert.ok(mergedPr?.pullRequest);
 	assert.equal(openedPr.pullRequest.authorName, "Venn");
 	assert.equal(mergedPr.pullRequest.authorName, "Venn");
+	assert.equal(openedPr.pullRequest.branch, "feature/guest-checkout");
+	assert.equal(openedPr.pullRequest.targetBranch, "main");
+	assert.equal(mergedPr.pullRequest.targetBranch, "main");
 	assert.equal(typeof openedPr.pullRequest.createdAtMs, "number");
 	assert.equal(typeof openedPr.pullRequest.updatedAtMs, "number");
 	assert.equal(mergedPr.pullRequest.createdAtMs, openedPr.pullRequest.createdAtMs);
@@ -474,7 +490,7 @@ test("SHOP-4821 is one shared route-owned item across board, list, and detail da
 
 test("agent session copy reads as a full comment, never a truncated preview", async () => {
 	const story = await loadStoryModule();
-	const chapters = ["brief", "plan", "working", "handoff", "review", "done"];
+	const chapters = ["brief", "plan", "working", "handoff", "fixing", "review", "done"];
 
 	for (const chapter of chapters) {
 		for (const session of story.createJiraAgentsStoryState(chapter).sessions) {

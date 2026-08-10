@@ -165,7 +165,7 @@ export function ContextTitleActions({
 		<ButtonGroup variant="split">
 			<Button
 				aria-label={primaryCodingAgent ? `Open in ${primaryCodingAgent.label}` : "Open in"}
-				className="has-data-[icon=inline-start]:pl-2 [&_[aria-hidden][data-agent-logo=rovo]_img]:size-3! [&_[aria-hidden][data-agent-logo=rovo]_svg]:size-3! [&_[aria-hidden][data-agent-logo=third-party]_img]:size-4! [&_[aria-hidden][data-agent-logo=third-party]_svg]:size-4!"
+				className="has-data-[icon=inline-start]:pl-2 @max-[36rem]/resource-row:px-2 [&_[aria-hidden][data-agent-logo=rovo]_img]:size-3! [&_[aria-hidden][data-agent-logo=rovo]_svg]:size-3! [&_[aria-hidden][data-agent-logo=third-party]_img]:size-4! [&_[aria-hidden][data-agent-logo=third-party]_svg]:size-4!"
 				size="default"
 				variant="outline"
 			>
@@ -177,7 +177,14 @@ export function ContextTitleActions({
 				>
 					{primaryCodingAgent ? primaryCodingAgent.buttonLogo : <CodeIcon aria-hidden size="small" />}
 				</span>
-				{primaryCodingAgent ? `Open in ${primaryCodingAgent.label}` : "Open in"}
+				{/*
+				 * Resource-row container query: drop the visible label under 36rem so
+				 * the split control keeps logo (+ chevron sibling) when chrome is tight.
+				 * Accessible name stays on aria-label.
+				 */}
+				<span className="@max-[36rem]/resource-row:hidden">
+					{primaryCodingAgent ? `Open in ${primaryCodingAgent.label}` : "Open in"}
+				</span>
 			</Button>
 			<DropdownMenu>
 				<DropdownMenuTrigger

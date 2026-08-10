@@ -80,21 +80,107 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
 });
 
-test("locked avatar status uses a white mask with an optically matched subtle icon", () => {
+test("avatar status indicator anchors to the top-right corner", () => {
 	assert.match(
 		AVATAR_SOURCE,
-		/locked: \{ icon: LockLockedIcon, className: "bg-background text-icon-subtle", iconClassName: LOCKED_STATUS_ICON_CLASS_NAME, label: "Locked" \}/,
+		/data-slot="avatar-status"[\s\S]*"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
 	);
+	assert.doesNotMatch(
+		AVATAR_SOURCE,
+		/data-slot="avatar-status"[\s\S]*absolute right-0 bottom-0/,
+	);
+});
+
+test("avatar status indicators use simple glyphs on presence-style circular fills", () => {
+	// Plain CheckMark/Cross/bang glyphs inside rounded-full colored fills; optical fit insets them.
+	assert.match(AVATAR_SOURCE, /import CheckMarkIcon from "@atlaskit\/icon\/core\/check-mark"/);
+	assert.match(AVATAR_SOURCE, /import CrossIcon from "@atlaskit\/icon\/core\/cross"/);
+	assert.doesNotMatch(AVATAR_SOURCE, /import LockLockedIcon from "@atlaskit\/icon\/core\/lock-locked"/);
+	assert.doesNotMatch(AVATAR_SOURCE, /import WarningIcon from "@atlaskit\/icon\/core\/warning"/);
+	assert.match(AVATAR_SOURCE, /function AvatarWarningBangIcon\(/);
+	assert.match(AVATAR_SOURCE, /function AvatarLockedIcon\(/);
+	assert.doesNotMatch(AVATAR_SOURCE, /StatusVerifiedIcon|status-verified/);
+	assert.doesNotMatch(AVATAR_SOURCE, /StatusWarningIcon|status-warning/);
+	assert.doesNotMatch(AVATAR_SOURCE, /CrossCircleIcon|cross-circle/);
+	assert.match(AVATAR_SOURCE, /type AvatarStatus = "approved" \| "declined" \| "locked" \| "warning"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/approved: \{ icon: CheckMarkIcon, className: "bg-success text-success-foreground"/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/declined: \{ icon: CrossIcon, className: "bg-destructive text-destructive-foreground"/,
+	);
+	assert.match(AVATAR_SOURCE, /offline: "bg-bg-neutral-bold"/);
+	assert.match(
+		AVATAR_SOURCE,
+		/locked: \{\s*icon: AvatarLockedIcon,\s*className: `\$\{presenceColorMap\.offline\} text-icon-inverse`/,
+	);
+	assert.doesNotMatch(AVATAR_SOURCE, /M7\.25 13v-3h1\.5v3z/);
+	assert.match(
+		AVATAR_SOURCE,
+		/warning: \{\s*icon: AvatarWarningBangIcon,\s*className: "bg-warning text-icon"/,
+	);
+	assert.match(AVATAR_SOURCE, /iconClassName: STATUS_ICON_CLASS_NAME,\s*label: "Warning"/);
+	assert.doesNotMatch(AVATAR_SOURCE, /locked: \{[^\n]*bg-background/);
 	assert.doesNotMatch(AVATAR_SOURCE, /locked: \{[^\n]*bg-warning/);
 	assert.match(
 		AVATAR_SOURCE,
-		/const STATUS_ICON_CLASS_NAME =[\s\S]*group-data-\[size=default\]\/avatar:\[&>span>svg\]:size-2/,
+		/const STATUS_ICON_CLASS_NAME =\n\t"group-data-\[size=xs\]\/avatar:hidden group-data-\[size=sm\]\/avatar:hidden group-data-\[size=default\]\/avatar:scale-\[0\.65\] group-data-\[size=lg\]\/avatar:scale-\[0\.65\] group-data-\[size=xl\]\/avatar:scale-\[0\.85\] group-data-\[size=2xl\]\/avatar:scale-\[1\.1\]"/,
 	);
 	assert.match(
 		AVATAR_SOURCE,
-		/const LOCKED_STATUS_ICON_CLASS_NAME =[\s\S]*group-data-\[size=default\]\/avatar:scale-75[\s\S]*group-data-\[size=2xl\]\/avatar:scale-125/,
+		/const LOCKED_STATUS_ICON_CLASS_NAME =\n\t"group-data-\[size=xs\]\/avatar:hidden group-data-\[size=sm\]\/avatar:hidden group-data-\[size=default\]\/avatar:scale-\[0\.45\] group-data-\[size=lg\]\/avatar:scale-\[0\.45\] group-data-\[size=xl\]\/avatar:scale-\[0\.65\] group-data-\[size=2xl\]\/avatar:scale-\[0\.85\]"/,
 	);
+	assert.doesNotMatch(AVATAR_SOURCE, /WARNING_STATUS_ICON_CLASS_NAME/);
+	assert.doesNotMatch(AVATAR_SOURCE, /STATUS_ICON_CLASS_NAME =[\s\S]*\[&>span>svg\]:size-/);
+	assert.doesNotMatch(AVATAR_SOURCE, /STATUS_ICON_CLASS_NAME =[\s\S]*scale-50/);
+	assert.doesNotMatch(AVATAR_SOURCE, /dangerouslySetInnerHTML|createElement\("svg"/);
 	assert.match(AVATAR_SOURCE, /<Icon[\s\S]*className=\{config\.iconClassName\}[\s\S]*render=\{<StatusIcon/);
+	// Status ring matches presence (ring-background + ring-2); overflow-hidden preserves thickness.
+	assert.match(
+		AVATAR_SOURCE,
+		/data-slot="avatar-presence"[\s\S]*"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/data-slot="avatar-status"[\s\S]*"ring-background absolute top-0 right-0 z-10 overflow-hidden rounded-full ring-2"/,
+	);
+});
+
+test("avatar presence indicators use ADS glyph treatments per variant", () => {
+	assert.match(AVATAR_SOURCE, /function AvatarPresenceGlyph\(/);
+	assert.match(AVATAR_SOURCE, /online: "bg-success"/);
+	assert.match(AVATAR_SOURCE, /busy: "bg-destructive"/);
+	assert.match(AVATAR_SOURCE, /focus: "bg-discovery"/);
+	assert.match(AVATAR_SOURCE, /offline: "bg-bg-neutral-bold"/);
+	// Busy: diagonal slash cutout; focus: purple rim + white disk + small discovery center dot; offline: hollow ring.
+	assert.match(
+		AVATAR_SOURCE,
+		/case "busy":\s*return \(\s*<span[\s\S]*rotate-45[\s\S]*bg-background/,
+	);
+	assert.doesNotMatch(AVATAR_SOURCE, /GoalIcon|@atlaskit\/icon\/core\/goal/);
+	assert.doesNotMatch(AVATAR_SOURCE, /FOCUS_PRESENCE_ICON_CLASS_NAME/);
+	assert.match(
+		AVATAR_SOURCE,
+		/case "focus":\s*return \(\s*<>\s*<span[\s\S]*inset-\[18%\][\s\S]*bg-background[\s\S]*size-\[28%\][\s\S]*bg-discovery/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/data-slot="avatar-presence"[\s\S]*"ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-full ring-2"/,
+	);
+	assert.match(
+		AVATAR_SOURCE,
+		/case "offline":\s*return \(\s*<span[\s\S]*inset-1\/4[\s\S]*bg-background/,
+	);
+	assert.match(AVATAR_SOURCE, /case "online":\s*return null/);
+	assert.match(AVATAR_SOURCE, /const _exhaustive: never = presence/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="online"/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="busy"/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="focus"/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarPresenceIndicator presence="offline"/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarStatusIndicator status="warning"/);
+	assert.match(AVATAR_DETAILS_SOURCE, /approved, declined, locked, warning/);
 });
 
 test("avatar badges optically scale wrapped Atlaskit icons", () => {

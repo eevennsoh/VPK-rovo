@@ -243,7 +243,7 @@ function DropdownMenuContainer({
 	return (
 		<div
 			className={cn(
-				"absolute top-full z-50 mt-1 min-w-52 rounded-lg bg-popover p-1 text-popover-foreground shadow-2xl",
+				"absolute top-full z-50 mt-1 min-w-52 rounded-xl bg-popover p-1 text-popover-foreground shadow-2xl",
 				align === "right" ? "right-0" : "left-0",
 			)}
 		>

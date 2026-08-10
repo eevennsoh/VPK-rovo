@@ -118,9 +118,12 @@ export function JiraActivityViewControl({
 		? FILTER_TRIGGER_LABELS[filter]
 		: SORT_TRIGGER_LABELS[sortOrder];
 	const isChevron = trigger === "chevron";
+	const chevronLabel = showAgentsOption
+		? `Sort and filter activities (${activeLabel})`
+		: `Sort pull request activity (${activeLabel})`;
 	const triggerButton = isChevron ? (
 		<Button
-			aria-label={`Sort and filter activities (${activeLabel})`}
+			aria-label={chevronLabel}
 			className={CHEVRON_TRIGGER_CLASS}
 			data-jira-work-item-metadata-rail-sort-trigger="activity"
 			size="icon-compact"

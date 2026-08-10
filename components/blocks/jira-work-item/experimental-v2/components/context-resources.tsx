@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
 
 type ContextResourceActionId = "attachments" | "subtasks" | "linkedItems";
@@ -69,8 +70,9 @@ interface ContextResourcesProps {
 /**
  * Context resource controls: the shared plus menu launches the existing
  * Attachments, Subtasks, and linked-work-item popovers. Pull requests open from
- * a Select beside Open in Claude; the active filter is a removable Tag (title
- * meta hosts a separate read-only multi-metric Tag). Filled
+ * a Select beside Open in Claude; the active filter is a removable Tag inside
+ * the Select trigger (title meta hosts a separate read-only multi-metric Tag).
+ * Filled
  * attachment/subtask/link values are rendered as conditional sections in the
  * metadata rail.
  */
@@ -126,10 +128,12 @@ export function ContextResources({
 			 * Sticky column chrome inside the description scrollport. Shared wide
 			 * pb-7 aligns description with Details; the parent receives a solid
 			 * fill only after its scroll-state container becomes stuck.
+			 * StickyRowScrollFade soft-masks content scrolling under this row
+			 * (opacity via @container scroll-state(stuck: top)).
 			 */}
 			<div
 				className={cn(
-					"shrink-0 @[860px]/agentlayout:pb-7",
+					"relative shrink-0 @[860px]/agentlayout:pb-7",
 					hasPlanner
 						? "bg-bg-input [&_[data-slot=button]]:bg-bg-input [&_[data-slot=button]:hover]:bg-bg-neutral-subtle-hovered [&_[data-slot=button]:active]:bg-bg-neutral-subtle-pressed"
 						: null,
@@ -137,7 +141,7 @@ export function ContextResources({
 				data-jira-work-item-resource-row
 			>
 				<div
-					className="flex flex-wrap items-start gap-2 *:focus-visible:relative *:focus-visible:z-10"
+					className="@container/resource-row flex flex-wrap items-start gap-2 *:focus-visible:relative *:focus-visible:z-10"
 					data-jira-work-item-resource-row-content
 				>
 					<div className="relative inline-flex">
@@ -226,6 +230,10 @@ export function ContextResources({
 						</div>
 					)}
 				</div>
+				<StickyRowScrollFade
+					className={hasPlanner ? "[&>div]:from-bg-input" : undefined}
+					data-slot="jira-work-item-resource-row-scroll-fade"
+				/>
 			</div>
 			{outputs.length > 0 ? (
 				<div className="mt-1">

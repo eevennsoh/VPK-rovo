@@ -11,19 +11,21 @@ export default function PullRequestPage() {
 	);
 
 	return (
-		<div className="flex w-full max-w-xl flex-col gap-3 bg-surface p-6 text-text">
-			{DEMO_PULL_REQUESTS.map((item) => (
-				<PullRequest
-					key={item.number}
-					{...item}
-					selected={item.number === selectedNumber}
-					onActivate={() =>
-						setSelectedNumber((current) => (
-							current === item.number ? null : item.number
-						))
-					}
-				/>
-			))}
+		<div className="flex h-full min-h-[360px] w-full items-center justify-center bg-surface p-6 text-text">
+			<div className="flex w-full max-w-xl flex-col gap-3">
+				{DEMO_PULL_REQUESTS.map((item) => (
+					<PullRequest
+						key={item.number}
+						{...item}
+						selected={item.number === selectedNumber}
+						onActivate={() =>
+							setSelectedNumber((current) => (
+								current === item.number ? null : item.number
+							))
+						}
+					/>
+				))}
+			</div>
 		</div>
 	);
 }

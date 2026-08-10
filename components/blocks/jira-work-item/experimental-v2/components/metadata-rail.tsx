@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, type ReactElement, type ReactNode } from "react";
 
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -17,6 +18,7 @@ import {
 	type WorkItemPerson,
 } from "@/app/contexts/context-work-item-modal";
 import { ArtifactPane, type ArtifactPaneSectionItem } from "@/components/blocks/artifact-pane";
+import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import { getAttachmentLabel } from "@/components/blocks/jira-work-item/data/context-fixtures";
 import { METADATA_PEOPLE } from "@/components/blocks/jira-work-item/data/metadata-people";
 import type { ContextLinkedItem } from "@/components/blocks/jira-work-item/data/session-state";
@@ -37,9 +39,27 @@ import {
 } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
 import { useMetadataRail } from "@/components/blocks/jira-work-item/experimental-v2/context-metadata-rail";
 import { CONNECTED_REPOSITORY_COUNT } from "@/components/blocks/jira-work-item/experimental-v2/lib/development-repositories";
+import { getPullRequestIdentity } from "@/components/blocks/jira-work-item/experimental-v2/lib/jira-activity-adapter";
 import { SmartLink, type SmartLinkItem } from "@/components/blocks/smart-link";
 import { SMART_LINK_MODAL_ACTIONS } from "@/components/blocks/smart-link/data/smart-link-actions";
 import { ProgressCircle } from "@/components/ui-custom/progress-circle";
+import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
+
+const PullRequestContextRail = dynamic(
+	() => import("@/components/blocks/jira-work-item/experimental-v2/components/pull-request-detail/pull-request-context-rail")
+		.then((module) => module.PullRequestContextRail),
+	{
+		loading: () => (
+			<div
+				className="grid min-h-32 place-items-center px-3 text-xs text-text-subtle"
+				data-jira-work-item-pull-request-rail-loading
+				role="status"
+			>
+				Loading pull request context…
+			</div>
+		),
+	},
+);
 
 function attachmentGlyph(attachment: Readonly<WorkItemAttachment>): ReactElement {
 	if (attachment.ext === "link") return <LinkIcon label="" size="small" color="currentColor" />;
@@ -176,9 +196,9 @@ function mergePeople(...seed: readonly (WorkItemPerson | null | undefined)[]): W
 }
 
 /**
- * Work-item metadata rail for the experimental variant. Details keeps the
- * ArtifactPane surface, while Activity slots in the shared ActivityPanel from
- * the composition root.
+ * Work-item metadata rail for the experimental variant. Details uses a
+ * borderless ArtifactPane (transparent — inherits the dialog fill), while
+ * Activity slots in the shared ActivityPanel from the composition root.
  *
  * Scroll ownership matches the left description column: toggle chrome
  * (`MetadataRailToggle`) is the first, sticky child of the flex-1 body
@@ -191,10 +211,12 @@ export function MetadataRail({
 	activity,
 	automationRules = [],
 	borderless = false,
+	selectedPullRequestEntry = null,
 }: Readonly<{
 	activity?: ReactNode;
 	automationRules?: readonly WorkItemAutomationRule[];
 	borderless?: boolean;
+	selectedPullRequestEntry?: JiraActivityEventEntry | null;
 }>) {
 	const {
 		activePanelView,
@@ -203,6 +225,10 @@ export function MetadataRail({
 	const { workItem } = useJiraWorkItemMeta();
 	const { contextResources, metadata: draft } = useJiraWorkItemState();
 	const actions = useJiraWorkItemActions();
+	const pullRequestSelected = selectedPullRequestEntry !== null;
+	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
+		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
+		: selectedPullRequestEntry?.id;
 	const { attachments, linkedItems, subtasks } = contextResources;
 	const people = useMemo(
 		() => mergePeople(workItem.assignee, workItem.reporter),
@@ -276,21 +302,32 @@ export function MetadataRail({
 					data-jira-work-item-scroll-region
 					style={metadataBodyScrollMaskStyle}
 				>
+					{/*
+					 * Same chrome-above-body stacking as DescriptionColumnShell:
+					 * sticky shell z-20 + body z-0 so rail content cannot cover the
+					 * Details/Activity toggle or its StickyRowScrollFade.
+					 */}
 					<div
-						className="shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-10 @[860px]/agentlayout:[container-type:scroll-state]"
+						className="relative shrink-0 @[860px]/agentlayout:sticky @[860px]/agentlayout:top-0 @[860px]/agentlayout:z-20 @[860px]/agentlayout:[container-type:scroll-state]"
 						data-jira-work-item-column-chrome
 					>
-						<MetadataRailToggle />
+						<MetadataRailToggle context={pullRequestSelected ? "pull-request" : "work-item"} />
+						{/*
+						 * Soft-mask under sticky Details/Activity chrome while content
+						 * scrolls beneath — same StickyRowScrollFade contract as
+						 * ContextResources (opacity via scroll-state stuck:top).
+						 */}
+						<StickyRowScrollFade data-slot="jira-work-item-metadata-rail-scroll-fade" />
 					</div>
 					<div
-						className="flex min-w-0 flex-col gap-2"
+						className="relative z-0 flex min-w-0 flex-col gap-2"
 						data-jira-work-item-column-body
 						data-jira-work-item-metadata-rail-body
 					>
 						{/* Keep panels mounted so Activity local reactions/replies/sort survive toggles. */}
 						<div
-							hidden={activePanelView !== "details"}
-							inert={activePanelView !== "details" ? true : undefined}
+							hidden={pullRequestSelected || activePanelView !== "details"}
+							inert={pullRequestSelected || activePanelView !== "details" ? true : undefined}
 						>
 							<ArtifactPane
 								aria-label="Work item details"
@@ -331,11 +368,18 @@ export function MetadataRail({
 								// overflow-visible: reply PromptInput shadows must paint past the
 								// padded content box; the rail scrollport still owns clipping.
 								className="overflow-visible px-3"
-								hidden={activePanelView !== "activity"}
-								inert={activePanelView !== "activity" ? true : undefined}
+								hidden={pullRequestSelected || activePanelView !== "activity"}
+								inert={pullRequestSelected || activePanelView !== "activity" ? true : undefined}
 							>
 								{activity}
 							</div>
+						) : null}
+						{selectedPullRequestEntry ? (
+							<PullRequestContextRail
+								activePanelView={activePanelView}
+								entry={selectedPullRequestEntry}
+								key={selectedPullRequestKey}
+							/>
 						) : null}
 					</div>
 				</div>

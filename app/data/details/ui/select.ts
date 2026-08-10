@@ -2,19 +2,38 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const SELECT_DETAIL: ComponentDetail = {
     description:
-      "A dropdown select component using Base UI with support for groups, scroll buttons, and keyboard navigation.",
+      "A dropdown select component using Base UI with support for groups, scroll buttons, keyboard navigation, and removable tags for single- or multi-select.",
     adsUrl: "https://atlassian.design/components/select",
     usage: `import {
   Select,
   SelectTrigger,
   SelectValue,
+  SelectTags,
+  SelectTag,
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
 
-<Select>
-  <SelectTrigger>
-    <SelectValue placeholder="Select option" />
+<Select multiple value={value} onValueChange={setValue}>
+  <SelectTrigger tags>
+    <SelectValue>
+      {(selected) =>
+        selected.length === 0 ? (
+          "Select options"
+        ) : (
+          <SelectTags>
+            {selected.map((item) => (
+              <SelectTag
+                key={item}
+                onRemove={() => setValue(selected.filter((v) => v !== item))}
+              >
+                {item}
+              </SelectTag>
+            ))}
+          </SelectTags>
+        )
+      }
+    </SelectValue>
   </SelectTrigger>
   <SelectContent>
     <SelectItem value="a">Option A</SelectItem>
@@ -27,6 +46,19 @@ export const SELECT_DETAIL: ComponentDetail = {
         type: '"sm" | "default"',
         default: '"default"',
         description: "Size of the select trigger.",
+      },
+      {
+        name: "tags",
+        type: "boolean",
+        default: "false",
+        description:
+          "On SelectTrigger: host removable SelectTag controls. Renders a non-button trigger so Tag remove buttons are valid HTML.",
+      },
+      {
+        name: "multiple",
+        type: "boolean",
+        default: "false",
+        description: "On Select root: allow selecting more than one item (value becomes an array).",
       },
       {
         name: "side",
@@ -42,8 +74,10 @@ export const SELECT_DETAIL: ComponentDetail = {
       },
     ],
     subComponents: [
-      { name: "SelectTrigger", description: "Button that opens the dropdown." },
-      { name: "SelectValue", description: "Displays the selected value." },
+      { name: "SelectTrigger", description: "Control that opens the dropdown. Use `tags` when hosting SelectTag." },
+      { name: "SelectValue", description: "Displays the selected value (supports a render prop)." },
+      { name: "SelectTags", description: "Flex row for labels and SelectTag chips inside a tags trigger." },
+      { name: "SelectTag", description: "Removable Tag for select triggers; stops remove from toggling the popup." },
       { name: "SelectContent", description: "Dropdown popup container." },
       { name: "SelectItem", description: "Individual selectable option." },
       { name: "SelectGroup", description: "Groups related items together." },
@@ -98,8 +132,13 @@ export const SELECT_DETAIL: ComponentDetail = {
       },
       {
         title: "Multiple selection",
-        description: "Select with multiple item selection.",
+        description: "Multi-select with removable tags in the trigger.",
         demoSlug: "select-demo-multiple-selection",
+      },
+      {
+        title: "Single selection tags",
+        description: "Single-select with a clearable tag beside a fixed label.",
+        demoSlug: "select-demo-single-selection-tags",
       },
       {
         title: "Sides",

@@ -6,15 +6,11 @@ import { RovoChatProvider, useRovoChat } from "@/app/contexts/context-rovo-chat"
 import { Gallery, type GalleryItem } from "@/components/blocks/gallery";
 import { ExperimentalV2JiraWorkItem } from "@/components/blocks/jira-work-item/experimental-v2/experimental-v2-jira-work-item";
 import type { WorkItemAutomationRule } from "@/components/blocks/jira-work-item/experimental-v2/components/automation-tab";
-import { JiraDesignWorkspaceStage } from "@/components/projects/jira-golden-journeys/components/for-you-stage";
-import type { JiraDesignView } from "@/components/projects/jira-golden-journeys/components/jira-design-view-tabs";
 import { JGP_CHAT_AGENT_PROFILES } from "@/components/projects/jira-golden-journeys/data/agent-chat-data";
 import { JIRA_AGENTS_GALLERY_ITEMS } from "./data/gallery-items";
 import {
 	JIRA_AGENTS_STATUS_PHASES,
-	JIRA_AGENTS_STORY_BOARD_AGENTS,
 	JIRA_AGENTS_STORY_COMPOSER_AGENTS,
-	JIRA_AGENTS_STORY_ITEM_ID,
 	shouldStartJiraAgentsPlan,
 } from "./data/hotfix-story";
 import { JiraAgentsStoryControls } from "./story-controls";
@@ -66,24 +62,6 @@ function getVisibleOrchestrationSessionIds(
 	}
 }
 
-function KanbanListStage({
-	controller,
-}: Readonly<{ controller: JiraAgentsStoryController }>): React.ReactElement {
-	const [view, setView] = useState<JiraDesignView>("board");
-
-	return (
-		<JiraDesignWorkspaceStage
-			agents={JIRA_AGENTS_STORY_BOARD_AGENTS}
-			boardColumns={controller.boardColumns}
-			defaultOpenItemId={JIRA_AGENTS_STORY_ITEM_ID}
-			onBoardColumnsChange={controller.updateBoardColumns}
-			onViewChange={setView}
-			sections={controller.sections}
-			view={view}
-		/>
-	);
-}
-
 function JiraAgentsWorkItemStage({
 	controller,
 }: Readonly<{ controller: JiraAgentsStoryController }>): React.ReactElement {
@@ -131,7 +109,6 @@ export default function JiraAgentsPage(): React.ReactElement {
 		setSelectedId(nextSelectedId);
 	}, []);
 	const renderSelectedItem = useCallback((item: GalleryItem): React.ReactNode => {
-		if (item.id === "kanban-list") return <KanbanListStage controller={storyController} />;
 		if (item.id === "work-item") return <JiraAgentsWorkItemStage controller={storyController} />;
 		return null;
 	}, [storyController]);

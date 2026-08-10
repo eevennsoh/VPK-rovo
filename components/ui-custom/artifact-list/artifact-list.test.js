@@ -133,17 +133,20 @@ test("Artifact List docs demo renders the sample items card", () => {
 	assert.match(sampleItems, /id: "vertexrail-assets-positioning-pr"[\s\S]*logoName: "github"[\s\S]*number: 1847[\s\S]*status: "Open"[\s\S]*additions: 148[\s\S]*deletions: 37/u);
 });
 
-test("Artifact List compact variant uses at least 48px stacked rows, 24px tiles, 12px gaps, and compact actions", () => {
+test("Artifact List compact variant shares default shell chrome, keeps denser rows, 24px tiles and compact actions", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /variant\?: "default" \| "compact";/u);
-	assert.match(source, /flex min-h-12 items-center gap-3 px-3 py-2/u);
+	// Shared raised shell; compact keeps denser min-h-12 rows (not default min-h-16).
+	assert.match(source, /overflow-hidden rounded-lg bg-surface-raised/u);
+	assert.doesNotMatch(source, /border border-border bg-surface/u);
+	assert.match(source, /variant === "compact"[\s\S]*flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
 	assert.match(source, /relative flex min-w-0 flex-1 items-center gap-3/u);
 	assert.doesNotMatch(source, /grid size-8 shrink-0 place-items-center/u);
 	assert.match(source, /size=\{variant === "compact" \? "small" : "medium"\}/u);
 	assert.match(source, /flex min-w-0 flex-1 flex-col overflow-hidden/u);
 	assert.match(source, /size=\{variant === "compact" \? "compact" : "default"\}/u);
-	assert.match(source, /overflow-hidden rounded-lg border border-border bg-surface/u);
 });

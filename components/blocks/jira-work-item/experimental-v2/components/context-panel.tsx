@@ -83,12 +83,10 @@ export function ContextPanel({
 	descriptionViewMode,
 	selectedPullRequestEntry,
 	onDescriptionViewModeChange,
-	onPullRequestBack,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
-	onPullRequestBack: () => void;
 }>) {
 	const selectedPullRequestKey = selectedPullRequestEntry?.pullRequest
 		? getPullRequestIdentity(selectedPullRequestEntry.pullRequest)
@@ -100,7 +98,6 @@ export function ContextPanel({
 				<PullRequestDetailView
 					entry={selectedPullRequestEntry}
 					key={selectedPullRequestKey}
-					onBack={onPullRequestBack}
 				/>
 			) : (
 				<AiPlannerScope header={<AiPlannerPanel />}>

@@ -71,22 +71,19 @@ test("snapshot events and comment copy share the content column left edge", () =
 });
 
 test("rich activity cards leave a 4px gap in the connector above and below", () => {
-	// Covers sit on the li over the shared w-8 spine (center x=16 → left-4;
-	// w-1 cover centered → left-3.5).
-	assert.match(INDEX_SOURCE, /li[\s\S]*className="relative flex gap-2"/u);
-	assert.match(
-		INDEX_SOURCE,
-		/absolute -top-1 left-3\.5 h-1 w-1 bg-surface/u,
-	);
-	assert.match(
-		INDEX_SOURCE,
-		/absolute left-3\.5 h-1 w-1 bg-surface/u,
-	);
-	assert.match(INDEX_SOURCE, /isNextEntryCard \? "bottom-5" : "bottom-4"/u);
-	assert.doesNotMatch(INDEX_SOURCE, /left-2\.5/u);
+	// Structural interruption only: card avatars sit in h-10 (32px → 4px above/below);
+	// the spine is a sibling that starts after the track. No opaque spine covers —
+	// those stacked with the track clearance and left an 8px orphan gap above icons.
+	assert.match(INDEX_SOURCE, /li[\s\S]*className="flex gap-2"/u);
+	assert.match(NODE_SOURCE, /isCard \? "h-10" : "h-6"/u);
+	assert.match(NODE_SOURCE, /className="min-h-4 w-px flex-1 bg-border"/u);
+	assert.doesNotMatch(INDEX_SOURCE, /absolute -top-1 left-3\.5 h-1 w-1/u);
+	assert.doesNotMatch(INDEX_SOURCE, /h-1 w-1 bg-surface/u);
+	assert.doesNotMatch(INDEX_SOURCE, /bottom-5|bottom-4/u);
 });
 
-test("card boundaries preserve the connector's 16px minimum visible stroke", () => {
+test("card boundaries keep richer spacing between entry types", () => {
+	// Padding separates card/event clusters; spine breaks stay on the node track.
 	assert.match(INDEX_SOURCE, /const isCardEntry = entry\.kind !== "event"/u);
 	assert.match(
 		INDEX_SOURCE,

@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const PULL_REQUEST_DETAIL: ComponentDetail = {
 	description:
-		"Compact pull-request summary card with author avatar, title, diff stats, relative time, and repo / status / branch pills. Built for selectable lists such as the Jira work-item Pull requests popover.",
+		"Compact pull-request summary card with author avatar, split `#N` + title, diff stats, status lozenge, repo pill, and `source → target` branch path. Built for selectable lists such as the Jira work-item Pull requests select.",
 	importStatement: `import { PullRequest } from "@/components/blocks/pull-request";
 import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 	usage: `import { PullRequest } from "@/components/blocks/pull-request";
@@ -13,10 +13,10 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
   status="Open"
   author={{ name: "Venn", avatarUrl: "/avatar-user/venn/venn.png" }}
   repository="eevensoh/vpk-rovo"
-  branch="feature/guest-checkout"
+  branch="rovo/rfp-103-response-validation"
+  targetBranch="main"
   additions={86}
   deletions={21}
-  relativeTime="2hr ago"
   selected
   onActivate={() => {}}
 />`,
@@ -29,19 +29,19 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 			name: "number",
 			type: "number",
 			required: true,
-			description: "Pull request number shown as `#N` before the title.",
+			description: "Pull request number shown as subtle `#N` before the title.",
 		},
 		{
 			name: "title",
 			type: "string",
 			required: true,
-			description: "Pull request title.",
+			description: "Pull request title shown after the number.",
 		},
 		{
 			name: "status",
 			type: '"Open" | "Merged"',
 			required: true,
-			description: "Review state rendered as a status lozenge.",
+			description: "Review state rendered as a status lozenge (Open = success, Merged = discovery).",
 		},
 		{
 			name: "author",
@@ -56,7 +56,12 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			name: "branch",
 			type: "string",
-			description: "Source branch pill. Omitted when absent.",
+			description: "Source / head branch shown before the arrow. Omitted when absent.",
+		},
+		{
+			name: "targetBranch",
+			type: "string",
+			description: "Target / base branch shown after the arrow (e.g. `main`).",
 		},
 		{
 			name: "additions",
@@ -73,12 +78,12 @@ import type { PullRequestProps } from "@/components/blocks/pull-request";`,
 		{
 			name: "timestampMs",
 			type: "number",
-			description: "Absolute timestamp used by shared RelativeTime aging.",
+			description: "Optional absolute timestamp reserved for callers; not rendered on the card.",
 		},
 		{
 			name: "relativeTime",
 			type: "string",
-			description: "Static relative label when timestampMs is unavailable.",
+			description: "Optional static relative label reserved for callers; not rendered on the card.",
 		},
 		{
 			name: "selected",

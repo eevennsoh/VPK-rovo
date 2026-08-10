@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { ChartBarIcon, ChartLineIcon, ChartPieIcon } from "@/components/ui/vpk-icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,7 +9,18 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Item, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectSeparator,
+	SelectTag,
+	SelectTags,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 export default function SelectDemo() {
 	return (
@@ -303,28 +316,87 @@ export function SelectDemoLargeList() {
 	);
 }
 
+const SELECT_DEMO_FRUIT_ITEMS = [
+	{ label: "Apple", value: "apple" },
+	{ label: "Banana", value: "banana" },
+	{ label: "Blueberry", value: "blueberry" },
+	{ label: "Grapes", value: "grapes" },
+	{ label: "Pineapple", value: "pineapple" },
+];
+
+function selectDemoFruitLabel(
+	items: ReadonlyArray<{ label: string; value: string }>,
+	value: string,
+): string {
+	return items.find((item) => item.value === value)?.label ?? value;
+}
+
 export function SelectDemoMultipleSelection() {
 	const items = [
-		{ label: "Apple", value: "apple" },
-		{ label: "Banana", value: "banana" },
-		{ label: "Blueberry", value: "blueberry" },
-		{ label: "Grapes", value: "grapes" },
-		{ label: "Pineapple", value: "pineapple" },
+		...SELECT_DEMO_FRUIT_ITEMS,
 		{ label: "Strawberry", value: "strawberry" },
 		{ label: "Watermelon", value: "watermelon" },
 	];
+	const [value, setValue] = useState<string[]>(["apple", "banana"]);
 	return (
-		<Select items={items} multiple defaultValue={[]}>
-			<SelectTrigger className="w-72">
+		<Select items={items} multiple onValueChange={setValue} value={value}>
+			<SelectTrigger className="w-72" tags>
 				<SelectValue>
-					{(value: string[]) => {
-						if (value.length === 0) {
+					{(selected: string[]) => {
+						if (selected.length === 0) {
 							return "Select fruits";
 						}
-						if (value.length === 1) {
-							return items.find((item) => item.value === value[0])?.label;
+						return (
+							<SelectTags>
+								{selected.map((selectedValue) => (
+									<SelectTag
+										key={selectedValue}
+										onRemove={() => {
+											setValue((current) =>
+												current.filter((candidate) => candidate !== selectedValue),
+											);
+										}}
+									>
+										{selectDemoFruitLabel(items, selectedValue)}
+									</SelectTag>
+								))}
+							</SelectTags>
+						);
+					}}
+				</SelectValue>
+			</SelectTrigger>
+			<SelectContent>
+				<SelectGroup>
+					{items.map((item) => (
+						<SelectItem key={item.value} value={item.value}>
+							{item.label}
+						</SelectItem>
+					))}
+				</SelectGroup>
+			</SelectContent>
+		</Select>
+	);
+}
+
+export function SelectDemoSingleSelectionTags() {
+	const items = SELECT_DEMO_FRUIT_ITEMS;
+	const [value, setValue] = useState<string | null>("apple");
+	return (
+		<Select items={items} onValueChange={setValue} value={value}>
+			<SelectTrigger className="w-72" tags>
+				<SelectValue>
+					{(selected: string | null) => {
+						if (!selected) {
+							return "Select a fruit";
 						}
-						return `${value.length} fruits selected`;
+						return (
+							<SelectTags>
+								<span className="truncate">Favorite</span>
+								<SelectTag onRemove={() => setValue(null)}>
+									{selectDemoFruitLabel(items, selected)}
+								</SelectTag>
+							</SelectTags>
+						);
 					}}
 				</SelectValue>
 			</SelectTrigger>

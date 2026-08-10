@@ -62,6 +62,7 @@ export function toPanelPullRequestProps(entry: JiraActivityEventEntry): PullRequ
 		deletions: pullRequest.deletions,
 		...(pullRequest.repository ? { repository: pullRequest.repository } : {}),
 		...(pullRequest.branch ? { branch: pullRequest.branch } : {}),
+		...(pullRequest.targetBranch ? { targetBranch: pullRequest.targetBranch } : {}),
 		...(typeof timestampMs === "number" ? { timestampMs } : {}),
 		...(author ? { author } : {}),
 	};

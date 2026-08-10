@@ -32,32 +32,38 @@ test("PullRequest exposes the compact card props contract", () => {
 	);
 	assert.match(
 		TYPES_SOURCE,
-		/export interface PullRequestProps \{[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestStatus;[\s\S]*author\?: PullRequestAuthor;[\s\S]*repository\?: string;[\s\S]*branch\?: string;[\s\S]*additions: number;[\s\S]*deletions: number;[\s\S]*timestampMs\?: number;[\s\S]*relativeTime\?: string;[\s\S]*selected\?: boolean;[\s\S]*onActivate\?: \(\) => void;/u,
+		/export interface PullRequestProps \{[\s\S]*number: number;[\s\S]*title: string;[\s\S]*status: PullRequestStatus;[\s\S]*author\?: PullRequestAuthor;[\s\S]*repository\?: string;[\s\S]*branch\?: string;[\s\S]*targetBranch\?: string;[\s\S]*additions: number;[\s\S]*deletions: number;[\s\S]*timestampMs\?: number;[\s\S]*relativeTime\?: string;[\s\S]*selected\?: boolean;[\s\S]*onActivate\?: \(\) => void;/u,
 	);
 });
 
-test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and RelativeTime", () => {
+test("PullRequest card reuses Avatar, Tag, Lozenge, BrandLogoMark, and ArrowRight", () => {
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/avatar"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/tag"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/lozenge"/u);
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-mark"/u);
-	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/elapsed-time"/u);
-	assert.match(COMPONENT_SOURCE, /BrandLogoMark[\s\S]*name="github"/u);
-	assert.match(COMPONENT_SOURCE, /<RelativeTime/u);
+	assert.match(COMPONENT_SOURCE, /from "@atlaskit\/icon\/core\/arrow-right"/u);
+	assert.match(
+		COMPONENT_SOURCE,
+		/BrandLogoMark[\s\S]*className="dark:invert \[\[data-color-mode=dark\]_&\]:invert"[\s\S]*name="github"/u,
+	);
+	assert.match(COMPONENT_SOURCE, /size="sm"/u);
 	assert.match(COMPONENT_SOURCE, /text-text-success">\+\{additions\}/u);
 	assert.match(COMPONENT_SOURCE, /text-text-danger">-\{deletions\}/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/aria-label=\{`\$\{additions\} additions, \$\{deletions\} deletions`\}[\s\S]*role="group"/u,
 	);
-	assert.match(COMPONENT_SOURCE, /branch \? \([\s\S]*BranchIcon/u);
+	assert.match(COMPONENT_SOURCE, /function PullRequestBranchPath/u);
+	assert.match(COMPONENT_SOURCE, /ArrowRightIcon/u);
 	assert.match(
 		COMPONENT_SOURCE,
-		/flex min-w-0 flex-nowrap items-center gap-1\.5 overflow-hidden/u,
+		/flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden/u,
 	);
-	assert.match(COMPONENT_SOURCE, /case "Open":[\s\S]*return "information"/u);
+	assert.match(COMPONENT_SOURCE, /shrink-0 text-text-subtlest">#\{number\}/u);
+	assert.match(COMPONENT_SOURCE, /case "Open":[\s\S]*return "success"/u);
 	assert.match(COMPONENT_SOURCE, /case "Merged":[\s\S]*return "discovery"/u);
 	assert.match(COMPONENT_SOURCE, /const _exhaustive: never = status/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /RelativeTime|from "@\/components\/ui\/elapsed-time"|BranchIcon|IconTile/u);
 });
 
 test("PullRequest selectable mode uses a pressed button with selected surface tokens", () => {
@@ -67,14 +73,26 @@ test("PullRequest selectable mode uses a pressed button with selected surface to
 	);
 	assert.match(
 		COMPONENT_SOURCE,
-		/onActivate && selected[\s\S]*border-border-selected bg-bg-selected/u,
+		/const activeSelected = Boolean\(selected\)[\s\S]*border-border-selected bg-bg-selected/u,
 	);
-	assert.match(COMPONENT_SOURCE, /border border-border bg-surface/u);
-	assert.match(
-		COMPONENT_SOURCE,
-		/selected \? "text-text-selected" : "text-text-subtlest"/u,
-	);
+	assert.match(COMPONENT_SOURCE, /border border-border px-3 py-1\.5/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /bg-surface-raised/u);
+	assert.match(COMPONENT_SOURCE, /items-center gap-2 rounded-lg/u);
 	assert.doesNotMatch(COMPONENT_SOURCE, /bg-\[#|text-\[#|purple-500|Open preview modal/u);
+});
+
+test("Pull Request demos include source → target branch paths", () => {
+	assert.match(DATA_SOURCE, /targetBranch: "main"/u);
+	assert.match(DATA_SOURCE, /branch: "rovo\/rfp-103-response-validation"/u);
+	assert.doesNotMatch(DATA_SOURCE, /number:\s*902/u);
+});
+
+test("Pull Request demo page centers the card list in the preview shell", () => {
+	assert.match(
+		PAGE_SOURCE,
+		/flex h-full min-h-\[360px\] w-full items-center justify-center/u,
+	);
+	assert.match(PAGE_SOURCE, /flex w-full max-w-xl flex-col gap-3/u);
 });
 
 test("Pull Request block is registered in the website catalog", () => {

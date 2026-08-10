@@ -6,9 +6,9 @@ export interface PullRequestAuthor {
 }
 
 export interface PullRequestProps {
-	/** Pull request number (shown as `#1306`). */
+	/** Pull request number (shown as `#1306` in subtle text). */
 	number: number;
-	/** Pull request title. */
+	/** Pull request title (shown after the number). */
 	title: string;
 	/** Review state shown as a status lozenge. */
 	status: PullRequestStatus;
@@ -16,16 +16,18 @@ export interface PullRequestProps {
 	author?: PullRequestAuthor;
 	/** Owner/name path (e.g. `eevensoh/vpk-rovo`). */
 	repository?: string;
-	/** Source branch name. Omitted from the badge row when absent. */
+	/** Source / head branch name shown before the arrow. */
 	branch?: string;
+	/** Target / base branch name shown after the arrow (e.g. `main`). */
+	targetBranch?: string;
 	additions: number;
 	deletions: number;
 	/**
-	 * Absolute timestamp (ms). When set, the card ages via shared `RelativeTime`.
-	 * Prefer this over a static `relativeTime` label.
+	 * Absolute timestamp (ms). Reserved for callers that already track PR age;
+	 * the compact card no longer renders a relative-time label.
 	 */
 	timestampMs?: number;
-	/** Static relative label used when `timestampMs` is unavailable. */
+	/** Static relative label reserved for callers; not rendered on the card. */
 	relativeTime?: string;
 	/** Marks the card as the active selection in a list. */
 	selected?: boolean;

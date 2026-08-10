@@ -85,8 +85,10 @@ function EventGlyph({ icon }: Readonly<{ icon: JiraActivityEventIcon }>) {
 /**
  * Leading timeline cell: event glyph or card-sized actor avatar above a `w-px`
  * connector. Card entries place their size-8 identity in an `h-10` track (4px
- * clearance above/below, matching event glyphs in `h-6`) so the spine never
- * sits flush on the circle and the avatar optically centers with the stacked
+ * clearance above/below, matching event glyphs in `h-6`) so the spine — a
+ * sibling that only starts after the track — never sits flush on the icon.
+ * That structural break is the timeline gap; opaque spine covers must not
+ * stack on top of it. The avatar optically centers with the stacked
  * name/timestamp header. Content stays in the un-offset text column; the
  * in-thread reply composer pulls back across this slot to share the avatar
  * edge. Spine lifted from `components/ui/progress-tracker.tsx`.

@@ -60,7 +60,8 @@ export function JiraActivityChangedFiles({
 		return (
 			<div
 				className={cn(
-					"group/activity-card w-full bg-surface",
+					// Transparent — agent output chrome matches comment cards over the feed surface.
+					"group/activity-card w-full bg-transparent",
 					isJiraIssue ? "rounded-xl" : "overflow-hidden rounded-lg border border-border",
 				)}
 			>
@@ -100,10 +101,14 @@ export function JiraActivityChangedFiles({
 
 				{entry.outputs.length > 0 ? (
 					<ArtifactList
-						className={isJiraIssue ? "mx-3 rounded-lg" : "rounded-none border-x-0 border-b-0"}
+						className={isJiraIssue
+							? "mx-3 rounded-lg"
+							// Flush footer — transparent over the feed; kill raised fill/shadow from ArtifactList.
+							: "rounded-none border-x-0 border-b-0 border-t border-border bg-transparent shadow-none"}
 						items={entry.outputs}
 						onOpen={onOutputOpen}
 						openLabel={outputOpenLabel}
+						style={isJiraIssue ? undefined : { boxShadow: "none" }}
 						variant="compact"
 					/>
 				) : null}

@@ -134,6 +134,8 @@ export function Gallery({
 	const visualKeyRef = useRef(1);
 
 	const isOpen = open ?? internalOpen;
+	// A single card has nothing to browse — keep the stage, collapse the bottom picker.
+	const showCarouselPicker = items.length >= 2;
 	const resolvedSelectedId = resolveSelectedId(items, selectedId ?? internalSelectedId);
 	const selectedItem =
 		resolvedSelectedId ? (items.find((item) => item.id === resolvedSelectedId) ?? null) : null;
@@ -218,6 +220,7 @@ export function Gallery({
 				centerContent={topBarCenter}
 				showBottomBorder={showTopBarBorder}
 				open={isOpen}
+				showOpenToggle={showCarouselPicker}
 				onToggle={handleToggle}
 				onReset={handleReset}
 				theme={theme}
@@ -233,7 +236,7 @@ export function Gallery({
 				/>
 			) : null}
 			<AnimatePresence>
-				{isOpen ? (
+				{isOpen && showCarouselPicker ? (
 					<motion.div
 						key="gallery-strip"
 						className="fixed inset-x-0 bottom-0 z-40"

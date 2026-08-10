@@ -5323,7 +5323,7 @@
 	},
 	"components": {
 		"summary": {
-			"manifestEntryCount": 415,
+			"manifestEntryCount": 417,
 			"categoryCount": 9
 		},
 		"categories": [
@@ -5365,7 +5365,7 @@
 			},
 			{
 				"category": "blocks",
-				"entryCount": 98,
+				"entryCount": 100,
 				"entries": [
 					{
 						"category": "blocks",
@@ -5708,6 +5708,18 @@
 						"slug": "prompt-gallery",
 						"name": "Prompt Gallery",
 						"importPath": "@/components/blocks/prompt-gallery"
+					},
+					{
+						"category": "blocks",
+						"slug": "pull-request",
+						"name": "Pull Request",
+						"importPath": "@/components/blocks/pull-request"
+					},
+					{
+						"category": "blocks",
+						"slug": "pull-request-header",
+						"name": "Pull Request Header",
+						"importPath": "@/components/blocks/pull-request-header"
 					},
 					{
 						"category": "blocks",

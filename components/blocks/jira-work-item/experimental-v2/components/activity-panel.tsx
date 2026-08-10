@@ -37,6 +37,7 @@ import {
  */
 export type ActivityRailChrome = {
 	count: number;
+	filterMode: "work-item" | "sort-only";
 	sortOrder: JiraActivitySortOrder;
 	filter: JiraActivityFilter;
 	onSortOrderChange: (next: JiraActivitySortOrder) => void;
@@ -65,7 +66,7 @@ export function ActivityRailChromeProvider({
 }
 
 /** Returns the chrome setter when rendered under MetadataRail; otherwise null. */
-function useSetActivityRailChrome(): ActivityRailChromeContextValue["setChrome"] | null {
+export function useSetActivityRailChrome(): ActivityRailChromeContextValue["setChrome"] | null {
 	return use(ActivityRailChromeContext)?.setChrome ?? null;
 }
 
@@ -90,8 +91,10 @@ export function useHasActivity(): boolean {
  */
 export function ActivityPanel({
 	activitySessionThread,
+	railChromeEnabled = true,
 }: Readonly<{
 	activitySessionThread?: ActivitySessionThreadConfig;
+	railChromeEnabled?: boolean;
 }>) {
 	const { state, meta, actions } = useJiraWorkItem();
 	const setActivityRailChrome = useSetActivityRailChrome();
@@ -152,16 +155,17 @@ export function ActivityPanel({
 	});
 
 	useLayoutEffect(() => {
-		if (!setActivityRailChrome) return undefined;
+		if (!setActivityRailChrome || !railChromeEnabled) return undefined;
 		setActivityRailChrome({
 			count: entries.length,
 			filter,
+			filterMode: "work-item",
 			onFilterChange: setFilter,
 			onSortOrderChange: setSortOrder,
 			sortOrder,
 		});
 		return () => setActivityRailChrome(null);
-	}, [entries.length, filter, setActivityRailChrome, sortOrder]);
+	}, [entries.length, filter, railChromeEnabled, setActivityRailChrome, sortOrder]);
 
 	function handleToggleReaction(entry: JiraActivityCommentEntry, emoji: string) {
 		setLocalReactions((previous) => ({

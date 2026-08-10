@@ -28,6 +28,8 @@ export interface GalleryToggleProps {
 	centerContent?: ReactNode;
 	showBottomBorder: boolean;
 	open: boolean;
+	/** Hides the open/close gallery control when the bottom picker is unavailable. */
+	showOpenToggle?: boolean;
 	onToggle: () => void;
 	className?: string;
 	/**
@@ -78,6 +80,7 @@ export function GalleryToggle({
 	centerContent,
 	showBottomBorder,
 	open,
+	showOpenToggle = true,
 	onToggle,
 	className,
 	onReset,
@@ -148,33 +151,35 @@ export function GalleryToggle({
 						<TooltipContent side="bottom">{themeLabel}</TooltipContent>
 					</Tooltip>
 
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<button
-									type="button"
-									aria-expanded={open}
-									aria-label={galleryToggleLabel}
-									onClick={onToggle}
-									className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
-								>
-									<GalleryControlSquircle>
-										<Icon
-											className={GALLERY_CONTROL_ICON_CLASS_NAME}
-											render={
-												open ? (
-													<ChevronDownIcon label="" color="currentColor" size="small" />
-												) : (
-													<ChevronUpIcon label="" color="currentColor" size="small" />
-												)
-											}
-										/>
-									</GalleryControlSquircle>
-								</button>
-							}
-						/>
-						<TooltipContent side="bottom">{galleryToggleLabel}</TooltipContent>
-					</Tooltip>
+					{showOpenToggle ? (
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<button
+										type="button"
+										aria-expanded={open}
+										aria-label={galleryToggleLabel}
+										onClick={onToggle}
+										className={GALLERY_CONTROL_BUTTON_CLASS_NAME}
+									>
+										<GalleryControlSquircle>
+											<Icon
+												className={GALLERY_CONTROL_ICON_CLASS_NAME}
+												render={
+													open ? (
+														<ChevronDownIcon label="" color="currentColor" size="small" />
+													) : (
+														<ChevronUpIcon label="" color="currentColor" size="small" />
+													)
+												}
+											/>
+										</GalleryControlSquircle>
+									</button>
+								}
+							/>
+							<TooltipContent side="bottom">{galleryToggleLabel}</TooltipContent>
+						</Tooltip>
+					) : null}
 				</div>
 			</TooltipProvider>
 		</div>

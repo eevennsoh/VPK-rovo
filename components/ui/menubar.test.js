@@ -10,8 +10,9 @@ test("menubar content opens with an 8px trigger gap", () => {
 	assert.match(source, /<DropdownMenuContent[\s\S]*sideOffset=\{sideOffset\}/u);
 });
 
-test("menubar submenu content keeps the 12px menu container radius", () => {
+test("menubar submenu content keeps the 12px menu container radius and 4px padding", () => {
 	assert.match(source, /data-slot="menubar-sub-content"[\s\S]*\brounded-xl\b/u);
+	assert.match(source, /data-slot="menubar-sub-content"[\s\S]*\bp-1\b/u);
 	assert.doesNotMatch(source, /data-slot="menubar-sub-content"[\s\S]*\brounded-lg\b/u);
 });
 

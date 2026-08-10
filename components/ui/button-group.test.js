@@ -29,7 +29,7 @@ const BUTTON_DETAIL_SOURCE = fs.readFileSync(
 );
 
 const SELECTED_SEGMENT_SELECTOR =
-	"[&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true])]";
+	"[&>[data-slot]~[data-slot]:is([aria-expanded=true],[aria-pressed=true],[data-selected])]";
 const FOCUS_VISIBLE_SEGMENT_SELECTOR =
 	"[&>[data-slot]~[data-slot]:focus-visible]";
 const SELECTED_BUTTON_STATE_CLASSES = [

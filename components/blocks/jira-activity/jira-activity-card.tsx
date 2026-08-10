@@ -110,7 +110,8 @@ export function JiraActivityCard({
 		<div
 			className={cn(
 				// Visible so Avatar hover scale (1.12) is not clipped on the flush edge.
-				"w-full overflow-visible bg-surface",
+				// Transparent — comment chrome is borderless and inherits the feed surface.
+				"w-full overflow-visible bg-transparent",
 				hasExpandedLayout ? "rounded-xl" : "rounded-lg",
 				className,
 			)}

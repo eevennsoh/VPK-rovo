@@ -82,8 +82,10 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		deletions: number;
 		/** Optional owner/name path shown on phase-section PR cards (e.g. `eevensoh/vpk-rovo`). */
 		repository?: string;
-		/** Optional source branch shown on Pull Request block cards. */
+		/** Optional source / head branch shown on Pull Request block cards. */
 		branch?: string;
+		/** Optional target / base branch shown after the arrow on PR cards. */
+		targetBranch?: string;
 		/** Optional absolute URL for the pull request (Smart Link href). */
 		url?: string;
 		/** When the pull request was opened (ms). Used by Pull requests sort modes. */
@@ -95,6 +97,31 @@ export interface JiraActivityEventEntry extends JiraActivityEntryBase {
 		 * signed-in viewer for the Pull requests "By me" sort.
 		 */
 		authorName?: string;
+		/** Provider-normalized review outcome for contextual PR details. */
+		reviewDecision?: "approved" | "changes-requested" | "review-required" | "not-required";
+		/** Provider-normalized mergeability for contextual PR details. */
+		mergeState?: "ready" | "blocked" | "conflicts" | "merged";
+		/** Commit summaries returned by the connected SCM. */
+		commits?: readonly {
+			id: string;
+			shortSha: string;
+			title: string;
+			author: {
+				id: string;
+				name: string;
+				avatarSrc?: string;
+			};
+			timestamp: string;
+			additions: number;
+			deletions: number;
+		}[];
+		/** CI/check-run summaries returned by the connected SCM. */
+		checks?: readonly {
+			id: string;
+			name: string;
+			status: "passed" | "failed" | "running" | "queued";
+			details: string;
+		}[];
 	};
 }
 
