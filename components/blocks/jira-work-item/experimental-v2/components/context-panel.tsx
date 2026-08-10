@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { RefObject } from "react";
 
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
@@ -81,10 +82,12 @@ export function ContextHeader({
  */
 export function ContextPanel({
 	descriptionViewMode,
+	scrollContainerRef,
 	selectedPullRequestEntry,
 	onDescriptionViewModeChange,
 }: Readonly<{
 	descriptionViewMode: EditorToolbarViewMode;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 	selectedPullRequestEntry: JiraActivityEventEntry | null;
 	onDescriptionViewModeChange: (mode: EditorToolbarViewMode) => void;
 }>) {
@@ -98,6 +101,7 @@ export function ContextPanel({
 				<PullRequestDetailView
 					entry={selectedPullRequestEntry}
 					key={selectedPullRequestKey}
+					scrollContainerRef={scrollContainerRef}
 				/>
 			) : (
 				<AiPlannerScope header={<AiPlannerPanel />}>

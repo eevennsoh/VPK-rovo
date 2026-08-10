@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState, type RefObject } from "react";
 
 import type { JiraActivityEventEntry } from "@/components/blocks/jira-activity";
 import {
@@ -20,13 +20,14 @@ type PullRequestDetailTab = "details" | "code" | "guide";
 
 interface PullRequestDetailViewProps {
 	entry: JiraActivityEventEntry;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 }
 
 export function PullRequestDetailView({
 	entry,
+	scrollContainerRef,
 }: Readonly<PullRequestDetailViewProps>) {
 	const [activeTab, setActiveTab] = useState<PullRequestDetailTab>("details");
-	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 	const data = resolvePullRequestDetailData(entry);
 
 	if (!data) {
@@ -65,8 +66,7 @@ export function PullRequestDetailView({
 						</TabsList>
 					</div>
 					<div
-						className="min-h-0 flex-1 overflow-y-auto py-5"
-						ref={scrollContainerRef}
+						className="min-h-0 flex-1 py-5"
 					>
 						<TabsContent value="details">
 							<PullRequestOverview data={data} />
@@ -81,8 +81,7 @@ export function PullRequestDetailView({
 				</Tabs>
 			) : (
 				<div
-					className="min-h-0 flex-1 overflow-y-auto py-5"
-					ref={scrollContainerRef}
+					className="min-h-0 flex-1 py-5"
 				>
 					<PullRequestOverview data={data} />
 				</div>

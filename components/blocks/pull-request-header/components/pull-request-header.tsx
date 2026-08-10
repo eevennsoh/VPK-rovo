@@ -53,7 +53,7 @@ function statusLozengeVariant(
 	}
 }
 
-export function resolveVariant({
+function resolveVariant({
 	variant,
 	scrollContainerRef,
 	collapseOffset = DEFAULT_COLLAPSE_OFFSET,
@@ -140,7 +140,7 @@ export function PullRequestHeader({
 						: { layout: LAYOUT_TRANSITION }
 				}
 			>
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 							<span className="shrink-0 text-text-subtle">#{number}</span>
@@ -160,6 +160,7 @@ export function PullRequestHeader({
 						nativeButton={false}
 						render={
 							<a
+								aria-label="Open pull request in GitHub"
 								href={url}
 								rel="noreferrer noopener"
 								target="_blank"
@@ -174,14 +175,12 @@ export function PullRequestHeader({
 				<AnimatePresence initial={false}>
 					{resolvedVariant === "expanded" ? (
 						<motion.div
-							animate={{ height: "auto", opacity: 1 }}
-							className="overflow-hidden"
+							animate={{ opacity: 1 }}
 							exit={{
-								height: 0,
 								opacity: 0,
 								transition: exitTransition,
 							}}
-							initial={{ height: 0, opacity: 0 }}
+							initial={{ opacity: 0 }}
 							key="pull-request-header-meta"
 							transition={enterTransition}
 						>

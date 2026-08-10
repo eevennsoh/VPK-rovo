@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, type CSSProperties, type ReactNode, type Ref } from "react";
+import {
+	useCallback,
+	useMemo,
+	useRef,
+	type CSSProperties,
+	type ReactNode,
+	type Ref,
+	type RefObject,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 
 import { useJiraWorkItemState } from "@/components/blocks/jira-work-item/experimental-v2/context-jira-work-item";
@@ -21,7 +29,7 @@ import { cn } from "@/lib/utils";
 
 interface ExperimentalWorkItemLayoutProps {
 	header: ReactNode;
-	context: ReactNode;
+	context: (scrollContainerRef: RefObject<HTMLDivElement | null>) => ReactNode;
 	metadata: ReactNode;
 	composer: ReactNode;
 	fillContainer?: boolean;
@@ -156,7 +164,12 @@ export function ExperimentalWorkItemLayout({
 		ref: narrowScrollRef,
 		showBottomScrollMask: showNarrowBottomScrollMask,
 	} = useHasVerticalOverflow<HTMLDivElement>();
-	const { ref: leftScrollRef, style: leftScrollMaskStyle } = useColumnScrollMask();
+	const { ref: leftScrollMaskRef, style: leftScrollMaskStyle } = useColumnScrollMask();
+	const leftScrollContainerRef = useRef<HTMLDivElement | null>(null);
+	const setLeftScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
+		leftScrollContainerRef.current = element;
+		leftScrollMaskRef(element);
+	}, [leftScrollMaskRef]);
 	const contentLayoutTransition = shouldReduceMotion
 		? METADATA_CONTENT_REDUCED_MOTION_TRANSITION
 		: metadataCollapsed
@@ -193,11 +206,11 @@ export function ExperimentalWorkItemLayout({
 						>
 							<DescriptionColumnShell
 								chrome={header}
-								scrollRef={leftScrollRef}
+								scrollRef={setLeftScrollContainerRef}
 								style={leftScrollMaskStyle}
 								bodyStyle={innerColumnStyle}
 							>
-								{context}
+								{context(leftScrollContainerRef)}
 							</DescriptionColumnShell>
 							{showStickyComposer ? (
 								<div

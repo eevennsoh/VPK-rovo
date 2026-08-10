@@ -62,7 +62,6 @@ function SelectTag({
 export {
 	SelectTag,
 	SelectTags,
-	stopSelectToggle,
 	type SelectTagProps,
 	type SelectTagsProps,
 }

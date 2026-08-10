@@ -117,11 +117,7 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 		<ul className="flex flex-col" data-jira-work-item-pull-request-commits>
 			{commits.map((commit) => (
 				<li className="min-w-0" key={commit.id}>
-					<button
-						aria-label={`${commit.title} (${commit.shortSha})`}
-						className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 flex-col rounded-md px-2 py-2 text-left outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-						type="button"
-					>
+					<div className="-mx-2 flex w-[calc(100%+1rem)] min-w-0 flex-col px-2 py-2">
 						<div className="flex min-w-0 items-center gap-2">
 							<span className="min-w-0 flex-1 text-sm text-text">{commit.title}</span>
 							<span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums">
@@ -136,7 +132,7 @@ function CommitsValue({ commits }: Readonly<{ commits: readonly PullRequestCommi
 							<span className="shrink-0">{commit.timestamp}</span>
 							<code className="shrink-0 font-mono">{commit.shortSha}</code>
 						</div>
-					</button>
+					</div>
 				</li>
 			))}
 		</ul>

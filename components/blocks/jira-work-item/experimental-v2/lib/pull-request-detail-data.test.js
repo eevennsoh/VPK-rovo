@@ -196,6 +196,10 @@ test("recognizes provider-neutral pull request URLs", async () => {
 });
 
 test("detail UI exposes stable integration selectors and guided-review controls", () => {
+	const contextPanelSource = readFileSync(
+		join(__dirname, "../components/context-panel.tsx"),
+		"utf8",
+	);
 	const detailViewSource = readFileSync(
 		join(__dirname, "../components/pull-request-detail/pull-request-detail-view.tsx"),
 		"utf8",
@@ -220,6 +224,14 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 		join(__dirname, "../components/pull-request-detail/pull-request-overview.tsx"),
 		"utf8",
 	);
+	const layoutSource = readFileSync(
+		join(__dirname, "../components/experimental-work-item-layout.tsx"),
+		"utf8",
+	);
+	const workItemSource = readFileSync(
+		join(__dirname, "../experimental-v2-jira-work-item.tsx"),
+		"utf8",
+	);
 
 	assert.match(detailViewSource, /data-jira-work-item-pull-request-detail/u);
 	assert.match(
@@ -232,13 +244,25 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	);
 	assert.match(detailViewSource, /className="shrink-0"/u);
 	assert.doesNotMatch(detailViewSource, /shrink-0 px-4 sm:px-6/u);
-	assert.match(detailViewSource, /min-h-0 flex-1 overflow-y-auto py-5/u);
-	assert.match(detailViewSource, /useRef<HTMLDivElement \| null>\(null\)/u);
+	assert.match(detailViewSource, /min-h-0 flex-1 py-5/u);
+	assert.doesNotMatch(detailViewSource, /overflow-y-auto|useRef<HTMLDivElement/u);
+	assert.match(
+		layoutSource,
+		/context: \(scrollContainerRef: RefObject<HTMLDivElement \| null>\) => ReactNode[\s\S]*scrollRef=\{setLeftScrollContainerRef\}[\s\S]*context\(leftScrollContainerRef\)/u,
+	);
+	assert.match(
+		workItemSource,
+		/context=\{\(scrollContainerRef\) => \([\s\S]*<ContextPanel[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+	);
+	assert.match(
+		contextPanelSource,
+		/<PullRequestDetailView[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
+	);
 	assert.match(
 		detailViewSource,
 		/<PullRequestDetailHeader[\s\S]*scrollContainerRef=\{scrollContainerRef\}/u,
 	);
-	assert.match(detailViewSource, /ref=\{scrollContainerRef\}/u);
+	assert.doesNotMatch(detailViewSource, /ref=\{scrollContainerRef\}/u);
 	assert.doesNotMatch(detailViewSource, /overflow-y-auto px-4 py-5 sm:px-6/u);
 	assert.match(detailViewSource, /Overview[\s\S]*Files \{review\.files\.length\}[\s\S]*Guide/u);
 	assert.match(detailViewSource, /onFinish=\{\(\) => setActiveTab\("details"\)\}/u);
@@ -309,7 +333,11 @@ test("detail UI exposes stable integration selectors and guided-review controls"
 	assert.doesNotMatch(railSource, /label="Review decision"|REVIEW_DECISION|Review required/u);
 	assert.match(
 		railSource,
-		/data-jira-work-item-pull-request-commits[\s\S]*<button[\s\S]*aria-label=\{`\$\{commit\.title\} \(\$\{commit\.shortSha\}\)`\}[\s\S]*-mx-2 flex w-\[calc\(100%\+1rem\)\][\s\S]*hover:bg-bg-neutral-subtle-hovered[\s\S]*type="button"/u,
+		/data-jira-work-item-pull-request-commits[\s\S]*<div className="-mx-2 flex w-\[calc\(100%\+1rem\)\] min-w-0 flex-col px-2 py-2"/u,
+	);
+	assert.doesNotMatch(
+		railSource,
+		/data-jira-work-item-pull-request-commits[\s\S]*<button|hover:bg-bg-neutral-subtle-hovered|focus-visible:ring/u,
 	);
 	assert.match(
 		railSource,

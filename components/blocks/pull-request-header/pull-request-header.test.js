@@ -52,7 +52,8 @@ test("PullRequestHeader exposes the detail header props contract", () => {
 });
 
 test("PullRequestHeader resolves controlled and scroll-driven variants", () => {
-	assert.match(COMPONENT_SOURCE, /export function resolveVariant/u);
+	assert.match(COMPONENT_SOURCE, /function resolveVariant/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /export function resolveVariant/u);
 	assert.match(
 		COMPONENT_SOURCE,
 		/if \(variant\) \{[\s\S]*return variant;[\s\S]*scrollTop[\s\S]*>= collapseOffset[\s\S]*\? "compact"[\s\S]*: "expanded"/u,
@@ -69,11 +70,9 @@ test("PullRequestHeader animates meta collapse and honors reduced motion", () =>
 	);
 	assert.match(COMPONENT_SOURCE, /<header[\s\S]*<motion\.div[\s\S]*layout/u);
 	assert.match(COMPONENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
-	assert.match(
-		COMPONENT_SOURCE,
-		/animate=\{\{ height: "auto", opacity: 1 \}\}/u,
-	);
-	assert.match(COMPONENT_SOURCE, /exit=\{\{[\s\S]*height: 0,[\s\S]*opacity: 0/u);
+	assert.match(COMPONENT_SOURCE, /animate=\{\{ opacity: 1 \}\}/u);
+	assert.match(COMPONENT_SOURCE, /exit=\{\{[\s\S]*opacity: 0/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /(?:animate|initial)=\{\{[^}]*height|height: 0/u);
 	assert.match(COMPONENT_SOURCE, /const shouldReduceMotion = useReducedMotion\(\) \?\? false/u);
 	assert.match(COMPONENT_SOURCE, /duration: 0\.2,[\s\S]*ease: \[0, 0\.4, 0, 1\]/u);
 	assert.match(COMPONENT_SOURCE, /duration: 0\.1,[\s\S]*ease: \[0\.6, 0, 0\.8, 0\.6\]/u);
@@ -88,6 +87,7 @@ test("PullRequestHeader matches the PR detail header design", () => {
 	assert.match(COMPONENT_SOURCE, /from "@\/components\/ui\/logo-third-party"/u);
 	assert.match(COMPONENT_SOURCE, /GithubLogo/u);
 	assert.match(COMPONENT_SOURCE, /Open in GitHub/u);
+	assert.match(COMPONENT_SOURCE, /aria-label="Open pull request in GitHub"/u);
 	assert.match(COMPONENT_SOURCE, /ExternalLinkIcon/u);
 	assert.match(COMPONENT_SOURCE, /shrink-0 text-text-subtle">#\{number\}/u);
 	assert.match(COMPONENT_SOURCE, /font: token\("font\.heading\.medium"\)/u);

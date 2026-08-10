@@ -151,9 +151,10 @@ function ExperimentalV2JiraWorkItemContent({
 									onPullRequestSelect={handlePullRequestSelect}
 								/>
 							)}
-							context={(
+							context={(scrollContainerRef) => (
 								<ContextPanel
 									descriptionViewMode={descriptionViewMode}
+									scrollContainerRef={scrollContainerRef}
 									selectedPullRequestEntry={selectedPullRequestEntry}
 									onDescriptionViewModeChange={setDescriptionViewMode}
 								/>
