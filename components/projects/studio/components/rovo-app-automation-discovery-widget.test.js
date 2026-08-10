@@ -178,7 +178,7 @@ test("scripted TWG trace step renders TwgTool as the first-level step header", (
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /function TraceNarrationRowsDetail/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /export function createAssistantThinkingToolTracePresentationResolver/u);
 	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /const entry = registry\[options\.toolCall\.toolName\];/u);
-	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /const renderHeader = \(\) => \([\s\S]*<TwgTool[\s\S]*title=\{header\.title\}[\s\S]*renderHeader\.displayName = "ToolTraceHeaderRender";/u);
+	assert.match(THINKING_TRACE_PRESENTATION_SOURCE, /const renderHeader = \(\{ isOpen, toggleOpen \}: ChainOfThoughtStepHeaderRenderContext\) => \([\s\S]*<TwgTool[\s\S]*title=\{header\.title\}[\s\S]*renderHeader\.displayName = "ToolTraceHeaderRender";/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /className="pl-11 text-xs leading-5 text-text-subtle"/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /ml-11 space-y-1 text-xs leading-5 text-text-subtle/u);
 	assert.doesNotMatch(THINKING_TRACE_SOURCE, /rounded-md border border-border\/60 bg-surface px-2\.5 py-2/u);
