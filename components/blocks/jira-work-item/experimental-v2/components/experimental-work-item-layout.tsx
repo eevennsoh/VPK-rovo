@@ -17,7 +17,6 @@ import {
 	METADATA_CONTENT_REDUCED_MOTION_TRANSITION,
 } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout-motion";
 import { usePanelLayout } from "@/components/blocks/jira-work-item/experimental-v2/context-panel-layout";
-import { METADATA_PANEL_WIDTH } from "@/components/blocks/jira-work-item/experimental-v2/lib/layout-constants";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	buildScrollMaskBlurLayerStyles,
@@ -30,6 +29,8 @@ interface ExperimentalWorkItemLayoutProps {
 	header: ReactNode;
 	context: (scrollContainerRef: RefObject<HTMLDivElement | null>) => ReactNode;
 	metadata: ReactNode;
+	metadataPanelResizing: boolean;
+	metadataPanelWidth: number;
 	composer: ReactNode;
 	fillContainer?: boolean;
 }
@@ -126,7 +127,8 @@ function DescriptionColumnShell({
  * (container >= 860px): two columns with fixed control chrome above separate
  * body scrollports, plus an optional left composer footer. Left:
  * ContextResources chrome + description scroll; right:
- * Details/Activity toggle chrome + metadata scroll (440px).
+ * Details/Activity toggle chrome + resizable metadata scroll (440px default
+ * and minimum, 720px maximum).
  * Toggle reveals via `group/metadata-rail` hover on the rail body (plus self
  * hover / `:focus-visible` on the toggle) — not body `:focus-within`.
  *
@@ -145,6 +147,8 @@ export function ExperimentalWorkItemLayout({
 	header,
 	context,
 	metadata,
+	metadataPanelResizing,
+	metadataPanelWidth,
 	composer,
 	fillContainer = false,
 }: Readonly<ExperimentalWorkItemLayoutProps>) {
@@ -172,7 +176,11 @@ export function ExperimentalWorkItemLayout({
 			? METADATA_CONTENT_COLLAPSE_TRANSITION
 			: METADATA_CONTENT_EXPAND_TRANSITION;
 	const contentStyle = {
-		"--metadata-panel-offset": metadataCollapsed ? "0px" : METADATA_PANEL_WIDTH,
+		"--metadata-panel-offset": metadataCollapsed ? "0px" : `${metadataPanelWidth}px`,
+	} as CSSProperties;
+	const metadataPanelStyle = {
+		"--metadata-panel-width": `${metadataPanelWidth}px`,
+		willChange: shouldReduceMotion ? undefined : "transform",
 	} as CSSProperties;
 	const constrainedColumnStyle = {
 		maxWidth: metadataCollapsed ? "800px" : "100%",
@@ -196,7 +204,7 @@ export function ExperimentalWorkItemLayout({
 						<motion.div
 							className="contents @[860px]/agentlayout:mx-auto @[860px]/agentlayout:flex @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:w-full @[860px]/agentlayout:flex-1 @[860px]/agentlayout:flex-col motion-reduce:transition-none"
 							data-jira-work-item-content-column
-							layout={shouldReduceMotion ? false : "position"}
+							layout={shouldReduceMotion || metadataPanelResizing ? false : "position"}
 							style={contentColumnStyle}
 							transition={contentLayoutTransition}
 						>
@@ -243,19 +251,17 @@ export function ExperimentalWorkItemLayout({
 						<motion.div
 							animate="open"
 							className={cn(
-								"order-3 min-w-0",
-								// Column shell (not the scrollport): MetadataRail owns the
-								// sticky chrome + body scroll chain.
+								"group/metadata-panel order-3 min-w-0",
+								// Column positioning shell: the parent grid owns clipping while
+								// MetadataRail owns the sticky chrome + body scroll chain.
 								// Stays a real box in narrow (not `contents`) so order-3 keeps
 								// Resources → Context → Metadata → Composer.
-								"@[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[440px] @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-hidden @[860px]/agentlayout:pr-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:[grid-area:1/1]",
+								"@[860px]/agentlayout:z-20 @[860px]/agentlayout:flex @[860px]/agentlayout:w-[var(--metadata-panel-width)] @[860px]/agentlayout:min-h-0 @[860px]/agentlayout:flex-col @[860px]/agentlayout:justify-self-end @[860px]/agentlayout:self-stretch @[860px]/agentlayout:overflow-visible @[860px]/agentlayout:px-6 @[860px]/agentlayout:pt-6 @[860px]/agentlayout:[grid-area:1/1]",
 							)}
 							exit="closed"
 							id="experimental-work-item-metadata-panel"
 							initial="closed"
-							style={{
-								willChange: shouldReduceMotion ? undefined : "transform",
-							}}
+							style={metadataPanelStyle}
 							variants={shouldReduceMotion ? REDUCED_MOTION_METADATA_PANEL_VARIANTS : METADATA_PANEL_VARIANTS}
 						>
 							{/* min-h-0 flex-1: keep the chrome→scrollport height chain intact. */}

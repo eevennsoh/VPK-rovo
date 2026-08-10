@@ -153,7 +153,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 
 	assert.match(
 		compositionSource,
-		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
+		/const agentChatOpen = chatSurface === "floating";[\s\S]*sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarOpen=\{agentChatOpen\}[\s\S]*aria-hidden=\{agentChatOpen\}[\s\S]*className="group\/metadata-resize relative flex min-h-0 min-w-0 flex-1 flex-col"[\s\S]*inert=\{agentChatOpen \? true : undefined\}[\s\S]*<MetadataRail[\s\S]*activity=\{\([\s\S]*<ActivityPanel[\s\S]*activitySessionThread=\{activitySessionThread\}[\s\S]*railChromeEnabled=\{selectedPullRequestEntry === null\}[\s\S]*automationRules=\{automationRules\}[\s\S]*borderless[\s\S]*selectedPullRequestEntry=\{selectedPullRequestEntry\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(compositionSource, /blanketContent=\{[\s\S]*<FloatingSessionSurface/u);
 	assert.match(sessionSurfaceSource, /<AsxRovoOverlay[\s\S]*placement="embedded"/u);
@@ -166,7 +166,7 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	assert.match(dialogSource, /grid-cols-\[minmax\(0,1fr\)\]/u);
 	assert.match(
 		dialogSource,
-		/METADATA_PANEL_WIDTH[\s\S]*"--work-item-side-panel-width": METADATA_PANEL_WIDTH/u,
+		/const sidePanelStyle = \{[\s\S]*"--work-item-side-panel-width": `\$\{sidebarWidth\}px`[\s\S]*style=\{sidePanelStyle\}/u,
 	);
 	assert.match(
 		dialogSource,
@@ -178,12 +178,38 @@ test("experimental v2 opens the shared agent chat as a full-height sibling colum
 	);
 	assert.match(dialogSource, /transition-\[margin-right\] duration-medium ease-in-out motion-reduce:transition-none/u);
 	assert.match(dialogSource, /transition-transform duration-medium ease-in-out[\s\S]*motion-reduce:transition-none/u);
+	assert.match(dialogSource, /sidebarResizing[\s\S]*\? "transition-none"[\s\S]*group\/chat-panel[\s\S]*\{sidebarOpen \? \([\s\S]*\{sidebarResizeHandle\}[\s\S]*\) : null\}/u);
 	assert.match(dialogSource, /aria-hidden=\{!sidebarOpen\}[\s\S]*inert=\{sidebarOpen \? undefined : true\}/u);
 	assert.match(
 		dialogSource,
 		/className="grid h-full min-h-0 min-w-0 grid-rows-\[auto_minmax\(0,1fr\)\]"[\s\S]*data-jira-work-item-main-column/u,
 	);
 	assert.match(layoutSource, /\{metadataCollapsed \? null : \(/u);
+});
+
+test("experimental v2 metadata panel exposes a notch-only resize handle and chat-only divider", () => {
+	const compositionSource = readBlockFile("experimental-v2/experimental-v2-jira-work-item.tsx");
+	const layoutSource = readBlockFile("experimental-v2/components/experimental-work-item-layout.tsx");
+
+	assert.match(
+		compositionSource,
+		/useSidebarResize\(\{[\s\S]*defaultWidth: METADATA_PANEL_DEFAULT_WIDTH_PX,[\s\S]*direction: "rtl",[\s\S]*maxWidth: METADATA_PANEL_MAX_WIDTH_PX,[\s\S]*minWidth: METADATA_PANEL_MIN_WIDTH_PX,[\s\S]*minWidthResistance: true,[\s\S]*<ExperimentalWorkItemLayout[\s\S]*metadataPanelResizing=\{metadataPanelResize\.isResizing\}[\s\S]*metadataPanelWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/function WorkItemSidePanelResizeHandle[\s\S]*<SidebarResizeHandle[\s\S]*aria-label=\{ariaLabel\}[\s\S]*aria-valuenow=\{resize\.sidebarWidth\}[\s\S]*bottom-6![\s\S]*\[&>div\]:h-16[\s\S]*\[&>div\]:transition-\[opacity,background-color,scale\][\s\S]*hover:\[&>div\]:scale-105[\s\S]*\[&>div\]:duration-medium[\s\S]*motion-reduce:\[&>div\]:scale-100[\s\S]*data-testid=\{testId\}[\s\S]*onKeyDown=\{resize\.onResizeHandleKeyDown\}[\s\S]*onPointerDown=\{resize\.onResizeHandlePointerDown\}[\s\S]*role="separator"[\s\S]*side="left"[\s\S]*tabIndex=\{0\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/sidebar=\{<FloatingSessionSurface \/>\}[\s\S]*sidebarResizeHandle=\{\([\s\S]*ariaLabel="Resize agent chat panel"[\s\S]*top-0![\s\S]*bottom-0![\s\S]*left-0![\s\S]*bg-border[\s\S]*group-hover\/chat-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-chat-resize-handle"[\s\S]*sidebarResizing=\{metadataPanelResize\.isResizing\}[\s\S]*sidebarWidth=\{metadataPanelResize\.sidebarWidth\}/u,
+	);
+	assert.match(
+		compositionSource,
+		/ariaLabel="Resize details and activity panel"[\s\S]*top-\[3\.875rem\]![\s\S]*left-\[calc\(-1\.5rem\+0\.375rem\)\]![\s\S]*bg-transparent![\s\S]*hover:bg-transparent![\s\S]*data-\[active\]:bg-transparent![\s\S]*focus-visible:bg-transparent![\s\S]*focus-visible:ring-0[\s\S]*group-hover\/metadata-panel:\[&>div\]:opacity-100[\s\S]*resize=\{metadataPanelResize\}[\s\S]*testId="jira-work-item-metadata-resize-handle"/u,
+	);
+	assert.match(layoutSource, /group\/metadata-panel order-3 min-w-0/u);
+	assert.doesNotMatch(compositionSource, /group-hover\/metadata-resize:(?:bg-border|\[&>div\]:opacity-100)/u);
+	assert.doesNotMatch(compositionSource, /\s\[&>div\]:opacity-100/u);
 });
 
 test("experimental v2 and v1 are mutually isolated", () => {
